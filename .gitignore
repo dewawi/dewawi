@@ -5,7 +5,3 @@
 !/files/.gitkeep
 /session/*
 !/session/.gitkeep
-
-# Inactive modules
-#/application/modules/ebay/*
-#/application/modules/magento/*
