@@ -1,0 +1,71 @@
+<?php
+$this->title = $this->translate('EMAIL');
+$this->headTitle($this->title);
+?>
+<div id="toolbar">
+	<a href="javascript:void(0)" onclick="refreshEmail('<?php echo $this->folder; ?>', <?php echo $this->page; ?>)"><?php echo $this->translate('EMAIL_REFRESH') ?></a>
+	<a href="<?php echo $this->url(array('controller'=>'email', 'action'=>'new', 'contactid'=>$this->contactid));?>"><?php echo $this->translate('EMAIL_NEW') ?></a>
+</div>
+<ul style="float:left;padding-left:18px;margin-right:10px;">
+<?php foreach($this->folders as $folder) : ?>
+	<li><a href="<?php echo $this->url(array('controller'=>'email', 'action'=>'index', 'folder'=>$folder['globalName'], 'page'=>1));?>">
+		<?php echo $this->escape($folder["localName"]); ?></a>
+	</li>
+	<?php if(isset($folder['subfolders'])) : ?>
+		<ul style="padding-left:18px;">
+		<?php foreach($folder['subfolders'] as $subfolder) : ?>
+			<li><a href="<?php echo $this->url(array('controller'=>'email', 'action'=>'index', 'folder'=>$subfolder['globalName']));?>">
+				<?php echo $this->escape($subfolder["localName"]); ?></a>
+			</li>
+		<?php endforeach; ?>
+		</ul>
+	<?php endif; ?>
+<?php endforeach; ?>
+</ul>
+<div id="emails">
+	<table width="100%">
+	<thead>
+	<tr>
+		<th id="subject"><?php echo $this->translate('EMAIL_SUBJECT') ?></th>
+		<th id="from"><?php echo $this->translate('EMAIL_FROM') ?></th>
+		<th id="date"><?php echo $this->translate('EMAIL_DATE') ?></th>
+		<th id="attachment"></th>
+		<th></th>
+	</tr>
+	</thead>
+	<tbody>
+	<?php foreach($this->emails as $email) : ?>
+	<tr<?php if($email["seen"] === false) : ?> class="unread"<?php endif ?>>
+		<td id="subject">
+			<a href="<?php echo $this->url(array('controller'=>'email', 'action'=>'view', 'id'=>$email['id']));?>">
+				<?php echo $this->escape($email["subject"]); ?>
+			</a>
+		</td>
+		<td id="from">
+			<a href="<?php echo $this->url(array('controller'=>'email', 'action'=>'view', 'id'=>$email['id']));?>">
+				<?php echo $this->escape($email["from"]);?>
+			</a>
+		</td>
+		<td id="date">
+			<a href="<?php echo $this->url(array('controller'=>'email', 'action'=>'view', 'id'=>$email['id']));?>">
+				<?php echo $this->escape($email["date"]); ?>
+			</a>
+		</td>
+		<td id="attachment">
+			<?php if($email["attachment"] === true) : ?>
+				<img src="<?php echo $this->baseUrl(); ?>/images/attachment.png">
+			<?php endif ?>
+		</td>
+		<td>
+			<a href="<?php echo $this->url(array('controller'=>'email', 'action'=>'reply', 'id'=>$email['id']));?>">
+				<?php echo $this->translate('EMAIL_REPLY'); ?>
+			</a>
+		</td>
+	</tr>
+	<?php endforeach; ?>
+	</tbody>
+	</table>
+</div>
+<div id="emailview">
+	<iframe id="emailframe" frameborder="0" src="" style="width: 100%; height: 100%;" name="emailframe"></iframe>
+</div>

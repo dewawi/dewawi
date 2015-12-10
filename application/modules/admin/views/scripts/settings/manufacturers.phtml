@@ -1,0 +1,50 @@
+<?php         
+$this->title = $this->translate('SETTINGS');
+$this->headTitle($this->title);
+echo $this->MenuSettings();
+?>
+
+<table id="settings">
+	<thead>
+		<tr>
+			<th>
+				<?php echo $this->translate("SETTINGS_MANUFACTURER"); ?>
+			</th>
+			<th>ID</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->manufacturers as $manufactur) { ?>
+		<tr id="line<?php echo $manufactur['id']; ?>">
+			<td id="name">
+				<div><?php echo $manufactur['name']; ?></div>
+				<?php echo $this->forms[$manufactur['id']]->getElement('name'); ?>
+			</td>
+			<td id="id">
+				<div><?php echo $manufactur['id']; ?></div>
+				<?php echo $this->forms[$manufactur['id']]->getElement('id'); ?>
+			</td>
+			<td>
+				<?php echo $this->Button("edit"); ?>
+				<?php echo $this->Button("save", "saveSetting(".$manufactur['id'].")", null, null, "display:none"); ?>
+				<?php echo $this->Button("delete", "deleteSetting(".$manufactur['id'].", deleteConfirm)"); ?>
+				<?php echo $this->Button("cancel", null, null, null, "display:none"); ?>
+			</td>
+		</tr>
+		<?php } ?>
+		<tr id="line0" style="display:none;">
+			<td id="name">
+				<div></div>
+				<?php echo $this->form->getElement('name'); ?>
+			</td>
+			<td id="id">
+				<div></div>
+				<?php echo $this->form->getElement('id'); ?>
+			</td>
+			<td>
+				<?php echo $this->Button("save", "saveSetting(0)", null, null, "display:none"); ?>
+			</td>
+		</tr>
+	</tbody>
+</table>

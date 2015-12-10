@@ -1,0 +1,150 @@
+<?php		 
+$this->title = $this->translate('PROCESSES');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th style="width:2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="title" style="width:18%">
+				<?php echo $this->translate('PROCESSES_TITLE') ?>
+			</th>
+			<th class="customer" style="width:10%">
+				<?php echo $this->translate('PROCESSES_CUSTOMER') ?>
+			</th>
+			<th class="notes" style="width:15%">
+				<?php echo $this->translate('PROCESSES_NOTES') ?>
+			</th>
+			<th class="payment" style="width:14%">
+				<?php echo $this->translate('PROCESSES_PAYMENT') ?>
+			</th>
+			<th class="delivery" style="width:28%">
+				<?php echo $this->translate('PROCESSES_SHIPPING') ?>
+			</th>
+			<th class="state" style="width:5%">
+				<?php echo $this->translate('PROCESSES_STATE') ?>
+			</th>
+			<th style="width:8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->processes as $process) : ?>
+		<tr class="state<?php echo $process->state; ?> <?php echo $process->paymentstatus; ?> <?php echo $process->deliverystatus; ?> <?php echo $process->supplierorderstatus; ?>">
+			<td><input class="id" type="checkbox" value="<?php echo $process->id; ?>" name="id"/></td>
+			<td class="title">
+				<p><a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'edit', 'id'=>$process->id));?>">
+						<?php echo $process->title ? $this->escape($process->title) : $this->escape($process->id);?>
+				</a></p>
+			</td>
+			<td class="customer">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->customerid));?>">
+					<?php echo $this->escape($process->customerid);?>
+				</a>
+				<?php if($process->billingname1) : ?><br/>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->customerid));?>">
+						<?php echo $this->escape($process->billingname1);?>
+						<?php //if($process->billingname2) echo "<br/>".$this->escape($process->billingname2);?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="notes">
+				<?php if($process->state == '105' || $process->state == '106') : ?>
+					<pre><?php echo $process->notes; ?></pre>
+				<?php else : ?>
+					<?php if($process->notes) : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $process->notes; ?>" data-type="textarea"><?php echo $process->notes; ?></pre>
+					<?php else : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $process->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+					<?php endif; ?>
+				<?php endif; ?>
+			</td>
+			<td class="payment">
+				<dt><?php echo $this->translate('PROCESSES_TOTAL') ;?>:</dt>
+				<span><?php echo $this->escape($process->total);?></span>
+				<?php if($process->prepaymenttotal) : ?>
+					<dt><?php echo $this->translate('PROCESSES_PREPAYMENT_TOTAL');?>:</dt>
+					<?php echo $this->escape($process->prepaymenttotal);?>
+				<?php endif; ?>
+				<?php if($process->creditnotetotal) : ?>
+					<dt><?php echo $this->translate('PROCESSES_CREDIT_NOTE_TOTAL');?>:</dt>
+					<?php echo $this->escape($process->creditnotetotal);?>
+				<?php endif; ?>
+				<?php if($process->paymentmethod) : ?>
+					<dt><?php echo $this->translate('PROCESSES_PAYMENT_METHOD') ;?>:</dt>
+					<?php echo $this->escape($process->paymentmethod);?>
+				<?php endif; ?>
+				<p class="paymentstatus">
+					<?php if($process->state == '105' || $process->state == '106') : ?>
+						<?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?>
+					<?php else : ?>
+						<span class="editable" data-name="paymentstatus" data-value="<?php echo $process->paymentstatus; ?>" data-type="select"><?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?></span>
+					<?php endif; ?>
+				</p>
+			</td>
+			<td class="delivery">
+				<?php if(!$process->editpositionsseparately) : ?>
+					<p class="deliverystatus">
+						<?php if($process->state == '105' || $process->state == '106') : ?>
+							<?php echo $this->translate($this->deliverystatus[$process->deliverystatus]); ?>
+						<?php else : ?>
+							<span class="editable" data-name="deliverystatus" data-value="<?php echo $process->deliverystatus; ?>" data-type="select"><?php echo $this->translate($this->deliverystatus[$process->deliverystatus]); ?></span>
+						<?php endif; ?>
+					</p>
+					<p class="deliverydate">
+						<span><?php echo $this->translate($process->deliverydate); ?></span>
+					</p>
+				<?php elseif(isset($this->positions[$process->id])) : ?>
+					<?php foreach($this->positions[$process->id] as $id => $position) : ?>
+						<p class="positions">
+							<?php if(isset($position['quantity'])) : ?>
+								<span><?php echo $position['quantity']; ?> x </span>
+							<?php endif; ?>
+							<?php if(isset($position['supplierorderstatus'])) : ?>
+								<span class="<?php echo $position['supplierorderstatus']; ?>">
+									<?php echo $this->translate($this->supplierorderstatus[$position['supplierorderstatus']]); ?>
+								</span>
+							<?php endif; ?>
+							<span class="<?php echo $position['deliverystatus']; ?>">
+								<?php echo $this->translate($this->deliverystatus[$position['deliverystatus']]); ?>
+								<?php if(isset($position['deliverydate'])) echo '('.$position['deliverydate'].')'; ?>
+							</span>
+						</p>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</td>
+			<td class="state">
+				<?php if($process->state == '105' || $process->state == '106') : ?>
+					<?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?>
+				<?php else : ?>
+					<span class="editable" data-name="state" data-value="<?php echo $process->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="buttons">
+				<?php if($process->completed || $process->cancelled) : ?>
+					<?php echo $this->toolbar->viewInline; ?>
+				<?php else : ?>
+					<?php echo $this->toolbar->editInline; ?>
+				<?php endif; ?>
+				<?php echo $this->toolbar->copyInline; ?>
+			</td>
+		</tr>
+		<tr style="border:none;">
+		</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td colspan="3" rowspan="1">
+				<div iclass="toolbar bottom">
+					<?php echo $this->ToolbarBottom(); ?>
+				</div>
+			</td>
+			<td id="total">
+				<b><?php echo $this->processes->total; ?></b>
+			</td>
+			<td colspan="3"></td>
+		</tr>
+	</tbody>
+</table>

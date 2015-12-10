@@ -1,0 +1,159 @@
+<?php 
+$this->title = $this->quoterequest['title'] ? $this->quoterequest['title'] : $this->translate('QUOTE_REQUEST')." ".$this->quoterequest['quoterequestid'];
+$this->headTitle($this->title);
+echo $this->ElFinder();
+?>
+
+<ul class="tabs">
+	<li class="active"><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
+	<li><a href="#tabFiles"><?php echo $this->translate('TABS_FILES') ?></a></li>
+	<li><a href="#tabDocument" onclick="savePdf()"><?php echo $this->translate('TABS_DOCUMENT') ?></a></li>
+</ul>
+
+<div class="tab_container">
+	<div id="tabOverview" class="tab_content active">
+		<div id="left">
+			<dl class="view">
+				<dt><label><?php echo $this->translate('QUOTE_REQUESTS_QUOTE_REQUEST_ID') ?></label></dt>
+				<dd><?php echo $this->quoterequest['quoterequestid']; ?></dd>
+				<?php if($this->quoterequest['vatin']) { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_VATIN') ?></label></dt>
+					<dd><?php echo $this->quoterequest['vatin']; ?></dd>
+				<?php } ?>
+				<?php if($this->quoterequest['quoterequestdate']) { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_QUOTE_REQUEST_DATE') ?></label></dt>
+					<dd><?php echo $this->quoterequest['quoterequestdate']; ?></dd>
+				<?php } ?>
+				<?php if($this->quoterequest['orderdate'] && $this->quoterequest['orderdate'] != "0000-00-00") { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_ORDER_DATE') ?></label></dt>
+					<dd><?php echo $this->quoterequest['orderdate']; ?></dd>
+				<?php } ?>
+				<?php if($this->quoterequest['deliverydate'] && ($this->quoterequest['deliverydate'] != "0000-00-00")) { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_DELIVERY_DATE') ?></label></dt>
+					<dd><?php echo $this->quoterequest['deliverydate']; ?></dd>
+				<?php } ?>
+				<?php if($this->quoterequest['paymentmethod']) { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_PAYMENT_METHOD') ?></label></dt>
+					<dd><?php echo $this->quoterequest['paymentmethod']; ?></dd>
+				<?php } ?>
+				<?php if($this->quoterequest['shippingmethod']) { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_SHIPPING_METHOD') ?></label></dt>
+					<dd><?php echo $this->quoterequest['shippingmethod']; ?></dd>
+				<?php } ?>
+				<?php if($this->quoterequest['header']) { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_HEADER') ?></label></dt>
+					<dd><?php echo $this->quoterequest['header']; ?></dd>
+				<?php } ?>
+				<?php if($this->quoterequest['footer']) { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_FOOTER') ?></label></dt>
+					<dd><?php echo $this->quoterequest['footer']; ?></dd>
+				<?php } ?>
+				<?php if($this->quoterequest['info']) { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_INFO') ?></label></dt>
+					<dd><?php echo $this->quoterequest['info']; ?></dd>
+				<?php } ?>
+			</dl>
+		</div>
+		<div id="right">
+			<dl class="view">
+				<dt><label><?php echo $this->translate('QUOTE_REQUESTS_CONTACT_ID') ?></label></dt>
+				<dd>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->quoterequest['contactid']));?>"><?php echo $this->quoterequest['contactid']; ?></a>
+					<input id="contactid" type="hidden" value="<?php echo $this->quoterequest['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
+				</dd>
+				<dt><label><?php echo $this->translate('QUOTE_REQUESTS_BILLING_ADDRESS') ?></label></dt>
+				<dd>
+					<?php echo $this->quoterequest['billingname1']; ?>
+					<?php if($this->quoterequest['billingname2']) echo "</br>".$this->quoterequest['billingname2']; ?>
+					<?php if($this->quoterequest['billingdepartment']) echo "</br>".$this->quoterequest['billingdepartment']; ?>
+					<?php if($this->quoterequest['billingstreet']) echo "</br>".$this->quoterequest['billingstreet']; ?>
+					<?php if($this->quoterequest['billingpostcode'] || $this->quoterequest['billingcity']) { ?>
+						</br>
+						<?php if($this->quoterequest['billingpostcode']) echo $this->quoterequest['billingpostcode']; ?>
+						<?php if($this->quoterequest['billingcity']) echo $this->quoterequest['billingcity']; ?>
+					<?php } ?>
+					<?php if($this->quoterequest['billingcountry']) echo "</br>".$this->translate($this->quoterequest['billingcountry']); ?>
+				</dd>
+				<?php if($this->quoterequest['shippingname1'] || $this->quoterequest['shippingname2']) { ?>
+					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_SHIPPING_ADDRESS') ?></label></dt>
+					<dd>
+						<?php echo $this->quoterequest['shippingname1']; ?>
+						<?php if($this->quoterequest['shippingname2']) echo "</br>".$this->quoterequest['shippingname2']; ?>
+						<?php if($this->quoterequest['shippingdepartment']) echo "</br>".$this->quoterequest['shippingdepartment']; ?>
+						<?php if($this->quoterequest['shippingstreet']) echo "</br>".$this->quoterequest['shippingstreet']; ?>
+						<?php if($this->quoterequest['shippingpostcode'] || $this->quoterequest['shippingcity']) { ?>
+							</br>
+							<?php if($this->quoterequest['shippingpostcode']) echo $this->quoterequest['shippingpostcode']; ?>
+							<?php if($this->quoterequest['shippingcity']) echo $this->quoterequest['shippingcity']; ?>
+						<?php } ?>
+						<?php if($this->quoterequest['shippingcountry']) echo "</br>".$this->translate($this->quoterequest['shippingcountry']); ?>
+						<?php if($this->quoterequest['shippingphone']) echo "</br>".$this->quoterequest['shippingphone']; ?>
+					</dd>
+				<?php } ?>
+			</dl>
+		</div>
+		<div style="clear:left"></div>
+		<h3><?php echo $this->translate('QUOTE_REQUESTS_POSITIONS') ?></h3>
+		<div id="positions">
+			<?php
+				$i = 1;
+				$length = count($this->positions);
+			?>
+			<table id="positions">
+			<thead>
+			<tr>
+			<th id="id">ID</th>
+			<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
+			<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
+			<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
+			<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
+			<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
+			<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
+			</tr>
+			</thead>
+			<tbody>
+			<?php foreach ($this->positions as $position) { ?>
+				<tr id="position<?php echo $position['id']; ?>">
+				<td id="id"><span><?php echo $position['id']; ?></span></td>
+				<td id="sku"><span><?php echo $position['sku']; ?></span></td>
+				<td id="title"><span><?php echo $position['title']; ?></span></td>
+				<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
+				<td id="price"><span><?php echo $position['price']; ?></span></td>
+				<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
+				<td id="uom"><span><?php echo $position['uom']; ?></span></td>
+				</tr>
+				<?php ++$i; ?>
+			<?php } ?>
+			</tbody>
+			</table>
+
+			<table id="total" align="right">
+				<tbody>
+					<tr>
+						<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+						<td align="right"><?php echo $this->quoterequest['subtotal']; ?></td>
+					</tr>
+					<tr>
+						<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
+						<td align="right"><?php echo $this->quoterequest['taxes']; ?></td>
+					</tr>
+					<tr>
+						<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+						<td align="right"><?php echo $this->quoterequest['total']; ?></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div style="clear:left"></div>
+	</div>
+	<div id="tabFiles" class="tab_content">
+		<div id="elfinder"></div>
+		<div style="clear:left"></div>
+	</div>
+	<div id="tabDocument" class="tab_content">
+		<p>
+			<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'download', 'id'=>$this->quoterequest['id']));?>" target="_blank"><?php echo $this->translate('QUOTE_REQUESTS_DOWNLOAD_PDF') ?></a>
+		</p>
+		<div id="output"></div>
+	</div>
+</div>

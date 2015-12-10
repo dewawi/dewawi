@@ -1,0 +1,242 @@
+<td><input id="id" type="checkbox" value="<?php echo $this->process['id'] ?>" name="id"/></td>
+<td id="overview">
+	<p><?php echo $this->translate('PROCESSES_TITLE') ;?>:<br/>
+		<a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'edit', 'id'=>$this->process['id']));?>">
+			<?php echo $this->process['title'] ? $this->escape($this->process['title']) : $this->escape($this->process['id']);?>
+	</a></p>
+	<p><?php echo $this->translate('PROCESSES_CUSTOMER_ID') ;?>:
+	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->process['customerid']));?>">
+		<?php echo $this->escape($this->process['customerid']);?>
+	</a>
+	<?php if($this->process['billingname1']) : ?><br/>
+	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->process['customerid']));?>">
+		<?php echo $this->escape($this->process['billingname1']);?>
+		<?php //if($this->process['billingname2']) echo "<br/>".$this->escape($this->process['billingname2']);?>
+	</a>
+	<?php endif; ?></p>
+	<?php if($this->process['info']) : ?>
+		<p><?php echo $this->translate('PROCESSES_INFO') ;?>:<br/>
+		<?php echo $this->escape($this->process['info']);?></p>
+	<?php endif; ?>
+</td>
+<td id="notes">
+	<p><?php echo $this->translate('PROCESSES_SUBTOTAL') ;?>:<br/>
+	<?php echo $this->escape($this->process['subtotal']);?></p>
+	<p><?php echo $this->translate('PROCESSES_TAXES') ;?>:<br/>
+	<?php echo $this->escape($this->process['taxes']);?></p>
+	<p><?php echo $this->translate('PROCESSES_TOTAL') ;?>:<br/>
+	<?php echo $this->escape($this->process['total']);?></p>
+</td>
+<td id="details">
+	<?php if($this->process['paymentmethod']) : ?>
+		<p><?php echo $this->translate('PROCESSES_PAYMENT_METHOD');?>:<br/>
+		<?php echo $this->escape($this->process['paymentmethod']);?></p>
+	<?php endif; ?>
+	<?php if($this->process['paymentdate'] != "0000-00-00") : ?>
+		<p><?php echo $this->translate('PROCESSES_PAYMENT_DATE');?>:<br/>
+		<?php echo $this->escape($this->process['paymentdate']);?></p>
+	<?php endif; ?>
+	<p><span<?php echo $this->process['paymentreceived'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+	<?php echo $this->translate('PROCESSES_PAYMENT_RECEIVED');?>
+	</span> 
+	<?php if($this->process['paymentreceived']) : ?>
+		<input id="paymentreceived" type="checkbox" disabled="disabled" checked="checked" value="1" name="paymentreceived">
+	<?php else : ?>
+		<input id="paymentreceived" type="checkbox" disabled="disabled" value="0" name="paymentreceived">
+	<?php endif; ?></p>
+	<?php if($this->process['invoiceid']) : ?>
+		<p><?php echo $this->translate('PROCESSES_INVOICE_ID');?>:<br/>
+		<?php echo $this->escape($this->process['invoiceid']);?></p>
+	<?php endif; ?>
+	<?php if($this->process['invoicedate'] != "0000-00-00") : ?>
+		<p><?php echo $this->translate('PROCESSES_INVOICE_DATE');?>:<br/>
+		<?php echo $this->escape($this->process['invoicedate']);?></p>
+	<?php endif; ?>
+</td>
+<td id="prepayment">
+	<?php if($this->process['prepayment']) : ?>
+		<p><?php echo $this->translate('PROCESSES_PREPAYMENT');?>:<br/>
+		<?php echo $this->escape($this->process['prepayment']);?></p>
+	<?php endif; ?>
+	<?php if($this->process['prepaymentdate'] != "0000-00-00") : ?>
+		<p><?php echo $this->translate('PROCESSES_PAYMENT_DATE');?>:<br/>
+		<?php echo $this->escape($this->process['prepaymentdate']);?></p>
+	<?php endif; ?>
+	<?php if($this->process['prepayment']) : ?>
+		<p><span<?php echo $this->process['prepaymentreceived'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+		<?php echo $this->translate('PROCESSES_PREPAYMENT_RECEIVED');?>
+		</span> 
+		<?php if($this->process['prepaymentreceived']) : ?>
+			<input id="prepaymentreceived" type="checkbox" disabled="disabled" checked="checked" value="1" name="prepaymentreceived">
+		<?php else : ?>
+			<input id="prepaymentreceived" type="checkbox" disabled="disabled" value="0" name="prepaymentreceived">
+		<?php endif; ?></p>
+	<?php endif; ?>
+	<?php if($this->process['invoiceid']) : ?>
+		<p><?php echo $this->translate('PROCESSES_INVOICE_ID');?>:<br/>
+		<?php echo $this->escape($this->process['invoiceid']);?></p>
+	<?php endif; ?>
+	<?php if($this->process['invoicedate'] != "0000-00-00") : ?>
+		<p><?php echo $this->translate('PROCESSES_INVOICE_DATE');?>:<br/>
+		<?php echo $this->escape($this->process['invoicedate']);?></p>
+	<?php endif; ?>
+</td>
+<td id="item">
+	<?php if($this->process['itemtype'] == "stockItem") : ?>
+		<div id="stockItemDetails">
+			<p><?php echo $this->translate('PROCESSES_ITEM_TYPE');?>:<br/>
+			<?php echo $this->translate('ITEMS_STOCK_ITEM');?></p>
+			<?php if($this->process['deliveryorderid']) : ?>
+				<p><?php echo $this->translate('PROCESSES_DELIVERY_ORDER_ID');?>:<br/>
+				<?php echo $this->escape($this->process['deliveryorderid']);?></p>
+			<?php endif; ?>
+			<?php if($this->process['deliveryorderdate']) : ?>
+				<p><?php echo $this->translate('PROCESSES_DELIVERY_ORDER_DATE');?>:<br/>
+				<?php echo $this->escape($this->process['deliveryorderdate']);?></p>
+			<?php endif; ?>
+		</div>
+	<?php elseif($this->process['itemtype'] == "deliveryItem") : ?>
+		<div id="deliveryItemDetails">
+			<p><?php echo $this->translate('PROCESSES_ITEM_TYPE');?>:<br/>
+			<?php echo $this->translate('ITEMS_DELIVERY_ITEM');?></p>
+			<table>
+				<tr>
+					<td>
+						<?php if($this->process['supplierid']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_ID');?>:<br/>
+							<?php echo $this->escape($this->process['supplierid']);?>
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php if($this->process['suppliername']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_NAME');?>:<br/>
+							<?php echo $this->escape($this->process['suppliername']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php if($this->process['purchaseorderid']) : ?>
+							<?php echo $this->translate('PROCESSES_PURCHASE_ORDER_ID');?>:<br/>
+							<?php echo $this->escape($this->process['purchaseorderid']);?>
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php if($this->process['purchaseorderdate'] != "0000-00-00") : ?>
+							<?php echo $this->translate('PROCESSES_PURCHASE_ORDER_DATE');?>:<br/>
+							<?php echo $this->escape($this->process['purchaseorderdate']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php if($this->process['suppliersalesorderid']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_SALES_ORDER_ID');?>:<br/>
+							<?php echo $this->escape($this->process['suppliersalesorderid']);?>
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php if($this->process['suppliersalesorderdate'] != "0000-00-00") : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_SALES_ORDER_DATE');?>:<br/>
+							<?php echo $this->escape($this->process['suppliersalesorderdate']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php if($this->process['supplierinvoiceid']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_INVOICE_ID');?>:<br/>
+							<?php echo $this->escape($this->process['supplierinvoiceid']);?>
+						<?php endif; ?>
+								</td>
+								<td>
+						<?php if($this->process['supplierinvoicedate'] != "0000-00-00") : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_INVOICE_DATE');?>:<br/>
+							<?php echo $this->escape($this->process['supplierinvoicedate']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<span<?php echo $this->process['supplierordered'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+						<?php echo $this->translate('PROCESSES_SUPPLIER_ORDERED');?>
+						</span> 
+						<?php if($this->process['supplierordered']) : ?>
+							<input id="supplierordered" type="checkbox" disabled="disabled" checked="checked" value="1" name="supplierordered">
+						<?php else : ?>
+							<input id="supplierordered" type="checkbox" disabled="disabled" value="0" name="supplierordered">
+						<?php endif; ?>
+					</td>
+					<td>
+						<span<?php echo $this->process['supplierpayed'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+						<?php echo $this->translate('PROCESSES_SUPPLIER_PAYED');?>
+						</span> 
+						<?php if($this->process['supplierpayed']) : ?>
+							<input id="supplierpayed" type="checkbox" disabled="disabled" checked="checked" value="1" name="supplierpayed">
+						<?php else : ?>
+							<input id="supplierpayed" type="checkbox" disabled="disabled" value="0" name="supplierpayed">
+						<?php endif; ?>
+					</td>
+				</tr>
+			</table>
+		</div>
+	<?php elseif($this->process['itemtype'] == "service") : ?>
+		<div id="serviceDetails">
+			<p><?php echo $this->translate('PROCESSES_ITEM_TYPE');?>:<br/>
+			<?php echo $this->translate('ITEMS_SERVICE');?></p>
+			<?php if($this->process['servicedate'] != "0000-00-00") : ?>
+				<p><?php echo $this->translate('PROCESSES_SERVICE_DATE');?>:<br/>
+				<?php echo $this->escape($this->process['servicedate']);?></p>
+			<?php endif; ?>
+			<span<?php echo $this->process['servicecompleted'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+			<?php echo $this->translate('PROCESSES_SERVICE_COMPLETED');?>
+			</span> 
+			<?php if($this->process['servicecompleted']) : ?>
+				<input id="servicecompleted" type="checkbox" disabled="disabled" checked="checked" value="1" name="servicecompleted">
+			<?php else : ?>
+				<input id="servicecompleted" type="checkbox" disabled="disabled" value="0" name="servicecompleted">
+			<?php endif; ?>
+		</div>
+	<?php endif; ?>
+</td>
+<td id="shipping">
+	<?php if($this->process['shippingmethod']) : ?>
+		<p><?php echo $this->translate('PROCESSES_SHIPPING_METHOD');?>:<br/>
+		<?php echo $this->escape($this->process['shippingmethod']);?></p>
+	<?php endif; ?>
+	<?php if($this->process['shipmentnumber']) : ?>
+		<p><?php echo $this->translate('PROCESSES_SHIPMENT_NUMBER');?>:<br/>
+		<?php echo $this->escape($this->process['shipmentnumber']);?></p>
+	<?php endif; ?>
+	<?php if($this->process['shipmentdate'] != "0000-00-00") : ?>
+		<p><?php echo $this->translate('PROCESSES_SHIPMENT_DATE');?>:<br/>
+		<?php echo $this->escape($this->process['shipmentdate']);?></p>
+	<?php endif; ?>
+	<?php if($this->process['deliverydate'] != "0000-00-00") : ?>
+		<p><?php echo $this->translate('PROCESSES_DELIVERY_DATE');?>:<br/>
+		<?php echo $this->escape($this->process['deliverydate']);?></p>
+	<?php endif; ?>
+	<span<?php echo $this->process['delivered'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+	<?php echo $this->translate('PROCESSES_DELIVERED');?>
+	</span> 
+	<?php if($this->process['delivered']) : ?>
+		<input id="delivered" type="checkbox" disabled="disabled" checked="checked" value="1" name="delivered">
+	<?php else : ?>
+		<input id="delivered" type="checkbox" disabled="disabled" value="0" name="delivered">
+	<?php endif; ?>
+</td>
+<td id="state">
+	<?php echo $this->translate($this->escape($this->states[$this->process['state']]['title']));?>
+</td>
+<td id="buttons">
+	<?php if($this->process['completed'] || $this->process['cancelled']) : ?>
+		<button class="view" onclick="setLocation('<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'view', 'id'=>$this->process['id']));?>')" type="button" title="<?php echo $this->translate('TOOLBAR_VIEW'); ?>"><span></span></button>
+		<button class="copy" onclick="copy(<?php echo $this->process['id'] ?>)" type="button" title="<?php echo $this->translate('TOOLBAR_COPY'); ?>"><span></span></button>
+	<?php else : ?>
+		<button class="edit" onclick="setLocation('<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'edit', 'id'=>$this->process['id']));?>')" type="button" title="<?php echo $this->translate('TOOLBAR_EDIT'); ?>"><span></span></button>
+		<button class="copy" onclick="copy(<?php echo $this->process['id'] ?>)" type="button" title="<?php echo $this->translate('TOOLBAR_COPY'); ?>"><span></span></button>
+	<?php endif; ?>
+	<button class="edit" onclick="edit(<?php echo $this->process['id']; ?>, 'inline')" type="button" title="<?php echo $this->translate('TOOLBAR_INLINE_EDIT'); ?>"><span><?php echo $this->translate('TOOLBAR_INLINE_EDIT'); ?></span></button>
+	<button class="details" type="button" title="<?php echo $this->translate('TOOLBAR_DETAILS'); ?>"><span><?php echo $this->translate('TOOLBAR_DETAILS'); ?></span></button>
+	<button class="positions" type="button" title="<?php echo $this->translate('TOOLBAR_POSITONS'); ?>"><span><?php echo $this->translate('TOOLBAR_POSITONS'); ?></span></button>
+</td>

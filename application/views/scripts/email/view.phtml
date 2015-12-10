@@ -1,0 +1,16 @@
+<?php
+$this->title = $this->email["subject"];
+$this->headTitle($this->title);
+?>
+<p><?php echo $this->translate('EMAIL_FROM') ?>: <?php echo $this->email["from"]; ?></p>
+<p><?php echo $this->translate('EMAIL_DATE') ?>: <?php echo $this->email["date"]; ?></p>
+
+<p></p>
+<?php echo $this->email["content"]; ?>
+<?php if($this->attachments) : ?>
+	<ul id="attachments">
+	<?php foreach($this->attachments as $attachment) : ?>
+		<li><a target="_blank" href="<?php echo $this->baseUrl(); ?>/cache/email/<?php echo $attachment; ?>"><?php echo $attachment; ?></a></li>
+	<?php endforeach; ?>
+	</ul>
+<?php endif; ?>

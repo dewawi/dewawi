@@ -1,0 +1,113 @@
+<?php		 
+$this->title = $this->translate('QUOTE_REQUESTS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="quoterequestid" width="5%">
+				<?php echo $this->translate('QUOTE_REQUESTS_QUOTE_REQUEST_ID'); ?>
+			</th>
+			<th class="title" width="28%">
+				<?php echo $this->translate('QUOTE_REQUESTS_TITLE'); ?>
+			</th>
+			<th class="contactid" width="5%">
+				<?php echo $this->translate('QUOTE_REQUESTS_CONTACT'); ?>
+			</th>
+			<th class="billingname" width="20%">
+			</th>
+			<th class="postcode" width="4%">
+				<?php echo $this->translate('QUOTE_REQUESTS_POSTCODE'); ?>
+			</th>
+			<th class="city" width="4%">
+				<?php echo $this->translate('QUOTE_REQUESTS_CITY'); ?>
+			</th>
+			<th class="modified" width="8%">
+				<?php echo $this->translate('QUOTE_REQUESTS_MODIFIED'); ?>
+			</th>
+			<th class="total" width="8%">
+				<?php echo $this->translate('QUOTE_REQUESTS_TOTAL'); ?>
+			</th>
+			<th class="state" width="6%">
+				<?php echo $this->translate('QUOTE_REQUESTS_STATE'); ?>
+			</th>
+			<th width="10%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->quoterequests as $quoterequest) : ?>
+		<tr class="state<?php echo $quoterequest->state; ?>">
+			<td><input class="id" type="checkbox" value="<?php echo $quoterequest->id ?>" name="id"/></td>
+			<td class="quoterequestid">
+				<?php if($quoterequest->quoterequestid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
+						<?php echo $this->escape($quoterequest->quoterequestid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="title">
+				<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
+					<?php echo $quoterequest->title ? $this->escape($quoterequest->title) : $this->escape($quoterequest->id); ?>
+				</a>
+			</td>
+			<td class="contactid">
+				<?php if($quoterequest->contactid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->contactid)); ?>">
+						<?php echo $this->escape($quoterequest->contactid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="billingname">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->contactid)); ?>">
+					<?php echo $this->escape($quoterequest->billingname1); ?>
+					<?php if($quoterequest->billingname2) echo "<br/>".$this->escape($quoterequest->billingname2); ?>
+				</a>
+			</td>
+			<td class="billingpostcode">
+				<?php echo $this->escape($quoterequest->billingpostcode); ?> 
+			</td>
+			<td class="billingcity">
+				<?php echo $this->escape($quoterequest->billingcity); ?>
+			</td>
+			<td class="modified">
+				<?php echo $this->escape(date("d.m.Y", strtotime($quoterequest->modified))); ?>
+			</td>
+			<td class="total">
+				<?php echo $this->escape($quoterequest->total); ?>
+			</td>
+			<td class="state">
+				<?php if($quoterequest->state == '105' || $quoterequest->state == '106') : ?>
+					<?php echo $this->translate($this->escape($this->options['states'][$quoterequest->state])); ?>
+				<?php else : ?>
+					<span class="editable" data-name="state" data-value="<?php echo $quoterequest->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$quoterequest->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="buttons">
+				<?php if($quoterequest->state == '105' || $quoterequest->state == '106') : ?>
+					<?php echo $this->toolbar->viewInline; ?>
+				<?php else : ?>
+					<?php echo $this->toolbar->editInline; ?>
+				<?php endif; ?>
+				<?php echo $this->toolbar->copyInline; ?>
+				<?php echo $this->toolbar->pdfInline; ?>
+			</td>
+		</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td colspan="7">
+				<div class="toolbar bottom">
+					<?php echo $this->ToolbarBottom(); ?>
+				</div>
+			</td>
+			<td id="total">
+				<b><?php echo $this->quoterequests->total; ?></b>
+			</td>
+			<td colspan="2"></td>
+		</tr>
+	</tbody>
+</table>

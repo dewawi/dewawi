@@ -1,0 +1,88 @@
+<?php
+$this->title = $this->translate('CONTACTS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="id" width="5%">
+				<?php echo $this->translate('CONTACTS_CONTACT_ID'); ?>
+			</th>
+			<th class="name" width="20%">
+				<?php echo $this->translate('CONTACTS_NAME'); ?>
+			</th>
+			<th class="phone" width="12%">
+				<?php echo $this->translate('CONTACTS_PHONE'); ?>
+			</th>
+			<th class="street" width="12%">
+				<?php echo $this->translate('CONTACTS_STREET'); ?>
+			</th>
+			<th class="postcode" width="7%">
+				<?php echo $this->translate('CONTACTS_POSTCODE'); ?>
+			</th>
+			<th class="city" width="10%">
+				<?php echo $this->translate('CONTACTS_CITY'); ?>
+			</th>
+			<th class="country" width="10%">
+				<?php echo $this->translate('CONTACTS_COUNTRY'); ?>
+			</th>
+			<th class="category" width="12%">
+				<?php echo $this->translate('CONTACTS_CATEGORY'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->contacts as $contact) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $contact->id ?>" name="id"/></td>
+				<td class="id">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
+						<?php echo $this->escape($contact->id); ?>
+					</a>
+				</td>
+				<td class="name">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
+						<?php echo $this->escape($contact->name1); ?>
+						<?php if($contact->name2) echo "<br/>".$this->escape($contact->name2); ?>
+					</a>
+				</td>
+				<td class="phone">
+					<?php echo str_replace(',', '<br>', $this->escape($contact->phones)); ?>
+				</td>
+				<td class="street">
+					<?php echo $this->escape($contact->street); ?>
+				</td>
+				<td class="postcode">
+					<?php echo $this->escape($contact->postcode); ?>
+				</td>
+				<td class="city">
+					<?php echo $this->escape($contact->city); ?>
+				</td>
+				<td class="country">
+					<?php echo $this->escape($this->translate($contact->country)); ?>
+				</td>
+				<td class="category">
+					<?php if($contact->catid) echo $this->escape($this->options['categories'][$contact->catid]['title']); ?>
+				</td>
+				<td class="buttons">
+					<?php echo $this->toolbar->editInline; ?>
+					<?php echo $this->toolbar->copyInline; ?>
+					<?php echo $this->toolbar->deleteInline; ?>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td colspan="9" rowspan="1">
+				<div class="toolbar bottom">
+					<?php echo $this->ToolbarBottom(); ?>
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>

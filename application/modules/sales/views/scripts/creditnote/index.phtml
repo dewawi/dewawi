@@ -1,0 +1,113 @@
+<?php		 
+$this->title = $this->translate('CREDIT_NOTES');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="creditnoteid" width="5%">
+				<?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_ID'); ?>
+			</th>
+			<th class="title" width="28%">
+				<?php echo $this->translate('CREDIT_NOTES_TITLE'); ?>
+			</th>
+			<th class="contactid" width="5%">
+				<?php echo $this->translate('CREDIT_NOTES_CONTACT'); ?>
+			</th>
+			<th class="billingname" width="20%">
+			</th>
+			<th class="postcode" width="4%">
+				<?php echo $this->translate('CREDIT_NOTES_POSTCODE'); ?>
+			</th>
+			<th class="city" width="4%">
+				<?php echo $this->translate('CREDIT_NOTES_CITY'); ?>
+			</th>
+			<th class="modified" width="8%">
+				<?php echo $this->translate('CREDIT_NOTES_MODIFIED'); ?>
+			</th>
+			<th class="total" width="8%">
+				<?php echo $this->translate('CREDIT_NOTES_TOTAL'); ?>
+			</th>
+			<th class="state" width="6%">
+				<?php echo $this->translate('CREDIT_NOTES_STATE'); ?>
+			</th>
+			<th width="10%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->creditnotes as $creditnote) : ?>
+		<tr class="state<?php echo $creditnote->state; ?>">
+			<td><input class="id" type="checkbox" value="<?php echo $creditnote->id ?>" name="id"/></td>
+			<td class="creditnoteid">
+				<?php if($creditnote->creditnoteid) : ?>
+					<a href="<?php echo $this->url(array('controller'=>'creditnote', 'action'=>'edit', 'id'=>$creditnote->id)); ?>">
+						<?php echo $this->escape($creditnote->creditnoteid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="title">
+				<a href="<?php echo $this->url(array('controller'=>'creditnote', 'action'=>'edit', 'id'=>$creditnote->id)); ?>">
+					<?php echo $creditnote->title ? $this->escape($creditnote->title) : $this->escape($creditnote->id); ?>
+				</a>
+			</td>
+			<td class="contactid">
+				<?php if($creditnote->contactid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$creditnote->contactid)); ?>">
+						<?php echo $this->escape($creditnote->contactid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="billingname">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$creditnote->contactid)); ?>">
+					<?php echo $this->escape($creditnote->billingname1); ?>
+					<?php if($creditnote->billingname2) echo "<br/>".$this->escape($creditnote->billingname2); ?>
+				</a>
+			</td>
+			<td class="billingpostcode">
+				<?php echo $this->escape($creditnote->billingpostcode); ?> 
+			</td>
+			<td class="billingcity">
+				<?php echo $this->escape($creditnote->billingcity); ?>
+			</td>
+			<td class="modified">
+				<?php echo $this->escape(date("d.m.Y", strtotime($creditnote->modified))); ?>
+			</td>
+			<td class="total">
+				<?php echo $this->escape($creditnote->total); ?>
+			</td>
+			<td class="state">
+				<?php if($creditnote->state == '105' || $creditnote->state == '106') : ?>
+					<?php echo $this->translate($this->escape($this->options['states'][$creditnote->state])); ?>
+				<?php else : ?>
+					<span class="editable" data-name="state" data-value="<?php echo $creditnote->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$creditnote->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="buttons">
+				<?php if($creditnote->state == '105' || $creditnote->state == '106') : ?>
+					<?php echo $this->toolbar->viewInline; ?>
+				<?php else : ?>
+					<?php echo $this->toolbar->editInline; ?>
+				<?php endif; ?>
+				<?php echo $this->toolbar->copyInline; ?>
+				<?php echo $this->toolbar->pdfInline; ?>
+			</td>
+		</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td colspan="7">
+				<div class="toolbar bottom">
+					<?php echo $this->ToolbarBottom(); ?>
+				</div>
+			</td>
+			<td id="total">
+				<b><?php echo $this->creditnotes->total; ?></b>
+			</td>
+			<td colspan="2"></td>
+		</tr>
+	</tbody>
+</table>

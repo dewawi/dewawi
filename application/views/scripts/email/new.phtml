@@ -1,0 +1,47 @@
+<?php
+$this->title = $this->translate('EMAIL_NEW');
+$this->headTitle($this->title);
+echo $this->CKEditor();
+echo $this->TreeMenu();
+?>
+<div id="left">
+	<form id="email" enctype="application/x-www-form-urlencoded" action="" method="post">
+		<dl class="form">
+			<?php echo $this->form->getElement('email') ?>
+			<?php echo $this->form->getElement('subject') ?>
+			<?php //echo $this->form->getElement('body') ?>
+			<dt id="body-label"><label class="optional" for="body">
+				<?php echo $this->translate('EMAIL_MESSAGE') ?></label>
+			</dt>
+			<dd id="body-element">
+				<textarea class="editor" rows="25" cols="65" id="body" name="body"><?php echo $this->email['content']; ?></textarea>
+			</dd>
+			<?php echo $this->form->getElement('submit') ?>
+		</dl>
+	</form>
+</div>
+<div id="right">
+	<form id="attachments" enctype="application/x-www-form-urlencoded" action="" method="post">
+		<h3><?php echo $this->translate('EMAIL_ATTACHMENTS') ?></h3>
+		<ul></ul>
+	</form>
+	<form id="files" enctype="application/x-www-form-urlencoded" action="" method="post">
+		<?php if(isset($this->files['contactSpecificFiles']) && $this->files['contactSpecificFiles']) : ?>
+		<h3><?php echo $this->translate('EMAIL_CONTACT_SPECIFIC_FILES') ?></h3>
+			<ul id="treemenu2" class="treeview">
+				<?php echo $this->files['contactSpecificFiles']; ?>
+			</ul>
+		<?php endif; ?>
+		<?php if(isset($this->files['standardAttachments']) && $this->files['standardAttachments']) : ?>
+		<h3><?php echo $this->translate('EMAIL_STANDARD_ATTACHMENTS') ?></h3>
+			<ul id="treemenu1" class="treeview">
+				<?php echo $this->files['standardAttachments']; ?>
+			</ul>
+		<?php endif; ?>
+	</form>
+</div>
+<div style="clear:left"></div>
+<script type="text/javascript">
+ddtreemenu.createTree("treemenu1", true)
+ddtreemenu.createTree("treemenu2", false)
+</script>

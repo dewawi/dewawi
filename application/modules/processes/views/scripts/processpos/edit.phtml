@@ -1,0 +1,112 @@
+<td id="id">
+	<input id="id" type="checkbox" value="<?php echo $this->form->getValue('id'); ?>" name="id"/>
+</td>
+<td>
+	<?php echo $this->form->itemtype;?>
+</td>
+<td>
+	<div id="stockItemDetails" <?php if($this->form->getValue('itemtype') != "stockItem") echo 'style="display:none"'; ?>>
+		<table width="100%">
+			<tr>
+				<td width="50%">
+					<?php echo $this->form->deliveryorderid;?>
+				</td>
+				<td width="50%">
+					<?php echo $this->form->deliveryorderdate;?>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="deliveryItemDetails" <?php if($this->form->getValue('itemtype') != "deliveryItem") echo 'style="display:none"'; ?>>
+		<table width="100%">
+			<tr>
+				<td width="10%">
+					<?php echo $this->form->purchaseorderid;?>
+				</td>
+				<td width="10%">
+					<?php echo $this->form->purchaseorderdate;?>
+				</td>
+				<td width="10%">
+					<?php echo $this->form->suppliersalesorderid;?>
+				</td>
+				<td width="10%">
+					<?php echo $this->form->suppliersalesorderdate;?>
+				</td>
+				<td width="10%">
+					<?php echo $this->form->supplierinvoiceid;?>
+				</td>
+				<td width="10%">
+					<?php echo $this->form->supplierinvoicedate;?>
+				</td>
+				<td width="10%">
+					<?php echo $this->form->supplierinvoicetotal;?>
+				</td>
+				<td width="10%">
+					<?php echo $this->form->supplierpaymentdate;?>
+				</td>
+				<td width="10%">
+					<?php echo $this->form->supplierordered;?>
+				</td>
+				<td width="10%">
+					<?php echo $this->form->supplierpayed;?>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="serviceDetails" <?php if($this->form->getValue('itemtype') != "serviceItem") echo 'style="display:none"'; ?>>
+		<table width="100%">
+			<tr>
+				<td width="50%">
+					<?php echo $this->form->servicedate;?>
+				</td>
+				<td width="50%" rowspan="2">
+					<?php echo $this->form->servicecompleted;?>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<?php echo $this->form->serviceexecutedby;?>
+				</td>
+			</tr>
+		</table>
+	</div>
+</td>
+<td>
+	<table width="100%">
+		<tr>
+			<td>
+				<?php echo $this->form->supplierid;?>
+			</td>
+			<td>
+				<?php echo $this->form->suppliername;?>
+			</td>
+		</tr>
+	</table>
+</td>
+<td>
+	<table width="100%">
+		<tr>
+			<td>
+				<?php echo $this->form->deliverydate;?>
+			</td>
+			<td>
+				<?php echo $this->form->shippingmethod;?>
+			</td>
+		</tr>
+	</table>
+</td>
+<td>
+	<table width="100%">
+		<tr>
+			<td>
+				<?php echo $this->form->shipmentnumber;?>
+			</td>
+			<td>
+				<?php echo $this->form->shipmentdate;?>
+			</td>
+		</tr>
+	</table>
+</td>
+<td>
+	<?php echo $this->form->delivered;?>
+</td>

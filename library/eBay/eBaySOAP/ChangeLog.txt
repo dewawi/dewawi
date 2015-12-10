@@ -1,0 +1,10 @@
+Version 1.1 December 1, 2005
+-----------
+- Limited XML Schema complexType <-> PHP class mappings
+- AddItem and ReviseItem examples
+- Update examples to use iterator and ArrayAccess interfaces
+	
+Version 1.0 September 29, 2005 
+-----------
+- Initial eBaySOAP and eBaySession classes
+- GetSearchResults and GetUser examples

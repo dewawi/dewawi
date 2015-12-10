@@ -1,0 +1,251 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--
+  This file is part of the jQuery formatCurrency Plugin.
+
+    The jQuery formatCurrency Plugin is free software: you can redistribute it
+    and/or modify it under the terms of the GNU General Public License as published 
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    The jQuery formatCurrency Plugin is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
+    of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along with 
+    the jQuery formatCurrency Plugin.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>jQuery FormatCurrency Tests</title>
+		<script type="text/javascript" src="../external/jquery-1.4.2.min.js"></script>
+		<script type="text/javascript" src="../jquery.formatCurrency-1.4.0.js"></script>
+		<script type="text/javascript" src="../i18n/jquery.formatCurrency.all.js"></script>
+		<script type="text/javascript" src="../external/qunit/qunit.js"></script>
+		<link rel="stylesheet" type="text/css" href="../external/qunit/qunit.css" />
+		
+		<script type="text/javascript" src="formatCurrency.tests.js">
+		</script>
+		<script type="text/javascript">
+		</script>
+		<style type="text/css">
+			body { font-family:"Helvetica Neue Light","HelveticaNeue-Light","Helvetica Neue",Calibri,Helvetica,Arial; }
+		</style>
+	</head>
+<body>
+	<h1 id="qunit-header">jQuery Format Currency Tests</h1>
+	<h2 id="qunit-banner"></h2>
+	<div id="qunit-testrunner-toolbar"></div>
+	<h2 id="qunit-userAgent"></h2>
+	<ol id="qunit-tests"></ol>
+
+	<div id="qunit-main"></div>
+	
+	<div class="samples" style="margin:1px auto; padding:10px 35px; background:#D2E0E6; font-size:small;" >
+		
+		<h2>formatCurrency(destination <em style='font:.8em'>optional</em>, settings)</h2>
+		<div class="usage"></div>
+		
+		<h4>settings</h4>
+		<ol>
+			<li>default <input type="text" class="val" value="123" /></li>
+			<li>default (html) <span class="useHtml">123</span></li>
+			<li>symbol <span class="symbol">123</span></li>
+			<li>roundUp <span class="roundUp">124.5451</span></li>
+			<li>roundDown <span class="roundDown">124.554</span></li>
+			<li>threeDecimals <span class="threeDecimals">123.000</span></li>
+			<li>noDecimals <span class="noDecimals">124.00</span></li>
+			<li>oneDecimal <span class="oneDecimal">123.9</span></li>
+			<li>roundToDollar <span class="roundToDollar">124.000</span></li>
+			<li>roundUpToDollar <span class="roundUpToDollar">123.9</span></li>
+			<li>roundDownToDollar <span class="roundDownToDollar">123.4</span></li>
+			<li>roundUpToNegativeDollar <span class="roundUpToNegativeDollar">-123.9</span></li>
+			<li>roundDownToNegativeDollar <span class="roundDownToNegativeDollar">-123.4</span></li>
+			<li>doNotAddZeroCentsOnDollar <span class="doNotAddZeroCentsOnDollar">123</span></li>
+			<li>noRounding <span class="noRounding">123.456</span></li>
+			<li>keepTrailingZeros <span class="keepTrailingZeros">124.0000</span></li>
+			<li>noTrailingDecimal <span class="noTrailingDecimal">123.</span></li>
+			<li>warnOnDecimalsEntered <span class="warnOnDecimalsEntered">123.456</span> with warning: <span class="warnOnDecimalsEnteredNotification">OK</span></li>
+			<li>warnOnDecimalsEnteredBeforeRounded <span class="warnOnDecimalsEnteredBeforeRounded">123.456</span> with warning: <span class="warnOnDecimalsEnteredBeforeRoundedNotification"></span></li>
+			<li>onlyWarnOnDecimalsEnteredAsAppropriate <span class="onlyWarnOnDecimalsEnteredAsAppropriate">123.45</span> with warning: <span class="onlyWarnOnDecimalsEnteredAsAppropriateNotification"></span></li>
+			<li>roundOneUp <span class="roundOneUp">123.999</span></li>
+			<li>roundOneDown <span class="roundOneDown">-123.999</span></li>
+			<li>negativeBrackets <span class="negativeBrackets">(123)</span></li>
+			<li>positiveFormat <span class="positiveFormat">123</span></li>
+			<li>negativeFormat <span class="negativeFormat">-123</span></li>
+			<li>negativeFormat of decimal <span class="negativeFormatDecimal">-0.25</span></li>
+			<li>defaultValue <span class="defaultValue"></span></li>
+			<li>noDefaultValue <span class="noDefaultValue"></span></li>
+			<li>lonelyNegative <span class="lonelyNegative">-</span></li>
+			<li>doNoRemoveZero <span class="doNoRemoveZero">0</span></li>
+			<li>issue2_doNotRound <span class="issue2_doNotRound">9.45</span></li>
+			<li>issue6_doNotRound <span class="issue6_doNotRound">154.20</span></li>
+			<li>decimalSymbol <span class="decimalSymbol">123</span></li>
+			<li>digitGroupSymbol <span class="digitGroupSymbol">123123</span></li>
+			<li>groupDigits <span class="groupDigits">123123</span></li>
+			<li><div>
+				src -
+				<span class='src'>1000</span>
+				dest - 
+				<span class='dest'></span>
+			</div></li>
+			<li><div>
+				src -
+				<input type='text' class='src2' value='1000' />
+				dest - 
+				<span class='dest2'></span>
+			</div></li>
+			<li>colorize <span class="colorize" style="color:green;">123123</span></li>
+			<li>colorize-neg <span class="colorize-neg">-123123</span></li>
+			<li>region <span class="region">1000</span></li>
+			<li>region fallback <span class="regionFallback">1000</span></li>
+			<li>region full fallback <span class="regionFullFallback">1000</span></li>
+			<li>setting multiple destinations <span class="multiDest multiDest1">1000</span> - <span class="multiDest multiDest2">1000</span></li>
+			<li>issue #11 <span class="blankShouldBeBlank"></span></li>
+			<li>issue #13 <span class="floatToCommaDecimal">33195.5</span></li>
+			<li>issue #15 <span class="formatCurrencyWithBlankSymbol">1,234.56</span></li>
+			<li>issue #19 <span class="formatCurrencyWithNegOneHundredth">-.01</span></li>
+		</ol>
+		
+		<h4>default (English - US)</h4>
+		<ol>
+			<li><input type="text" class='UStext' value='1000' /></li>
+			<li><div class='US'>1000</div></li>
+			<li><div class='UScents'>1000.50</div></li>
+			<li><div class='UScents-pennies'>1000.05</div></li>
+			<li><div class='USformatted'>$1000.05</div></li>
+			<li><div class='USneg'>-1000</div></li>
+			<li><div class='USextra-decimals-roundDown'>1000.052324</div></li>
+			<li><div class='USextra-decimals-roundUp'>1000.0588</div></li>
+			<li><div class='USwith-chars'>ABCDEFG1000.05</div></li>
+			<li><div class='USwith-chars-end'>1000.05ABCDEFG</div></li>
+			<li><div class='USwith-chars-mid'>10ABCDEFG00.05</div></li>
+			<li><div class='USmillions'>1000000</div></li>
+		</ol>
+		
+		
+		<h4>de (German)</h4>
+		<ol>
+			<li><div class='DE'>1000</div></li>
+			<li><div class='DEwithSymbol'>1000€</div></li>
+			<li><div class='DEdecimal'>1.000,33</div></li>
+			<li><div class='DEneg'>-1000</div></li>
+		</ol>
+		
+		<h4>en-IN (India)</h4>
+		<ol>
+			<li><div class='EnIN'>1000</div></li>
+			<li><div class='EnINwithSymbol'>Rs. 1000</div></li>
+			<li><div class='EnINdecimal'>Rs. 1,000.33</div></li>
+			<li><div class='EnINneg'>-1000</div></li>
+		</ol>
+		
+		<h4>fr (Frence)</h4>
+		<ol>
+			<li><div class='FR'>1000</div></li>
+			<li><div class='FRwithSymbol'>1000 €</div></li>
+			<li><div class='FRdecimal'>1 000,33 €</div></li>
+			<li><div class='FRneg'>-1000</div></li>
+		</ol>
+		
+		<h4>it (Italian)</h4>
+		<ol>
+			<li><div class='IT'>1000</div></li>
+			<li><div class='ITwithSymbol'>€ 1000</div></li>
+			<li><div class='ITdecimal'>€ 1.000,33</div></li>
+			<li><div class='ITneg'>-1000</div></li>
+		</ol>
+		
+		<h4>es (Spanish)</h4>
+		<ol>
+			<li><div class='ES'>1000</div></li>
+			<li><div class='ESwithSymbol'>1000 €</div></li>
+			<li><div class='ESdecimal'>1 000,33 €</div></li>
+			<li><div class='ESneg'>-1000</div></li>
+		</ol>
+		
+		<h4>zh (Chinese)</h4>
+		<ol>
+			<li><div class='ZH'>1000</div></li>
+			<li><div class='ZHwithSymbol'>¥1000</div></li>
+			<li><div class='ZHdecimal'>¥1,000.33</div></li>
+			<li><div class='ZHneg'>-1000</div></li>
+		</ol>
+		
+		<h4>ja (Japanese)</h4>
+		<ol>
+			<li><div class='JA'>1000</div></li>
+			<li><div class='JAwithSymbol'>¥1000</div></li>
+			<li><div class='JAdecimal'>¥1,000.33</div></li>
+			<li><div class='JAneg'>-1000</div></li>
+		</ol>
+		
+		<h2>toNumber(settings)</h2>
+		<div class="usage"></div>
+		
+		<h4>default (English - US)</h4>
+		<ol>
+			<li><input type="text" class="toVal" value="123" /></li>
+			<li><div class='toUS'>$1234.56</div></li>
+			<li><div class='toUSwhole'>1000</div></li>
+			<li><div class='toUSdecimal'>1,000.00</div></li>
+			<li><div class='toUSchars'>abcdefg</div></li>
+			<li><div class='toUSchars-end'>100abc</div></li>
+			<li><div class='toUSbad-element'>pass</div></li>
+			<li><div class='toNumberFromNegative'>(100)</div></li>
+		</ol>
+		
+		<h4>DE (German)</h4>
+		<ol>
+			<li><div class='toDE'>1234,56</div></li>
+			<li><div class='toDEformatted'>1.234,56 €</div></li>
+			<li><div class='toDEwhole'>1000</div></li>
+			<li><div class='toDEdecimal'>1.000,11</div></li>
+		</ol>
+		
+		<h4>en-IN (India)</h4>
+		<ol>
+			<li><div class='toEnIN'>1234.56</div></li>
+			<li><div class='toEnINformatted'>Rs. 1,234.56</div></li>
+			<li><div class='toEnINwhole'>1000</div></li>
+			<li><div class='toEnINdecimal'>1,000.11</div></li>
+		</ol>
+		
+		<h2>asNumber(settings)</h2>
+		<div class="usage"></div>
+		
+		<h4>default (English - US)</h4>
+		<ol>
+			<li><input type="text" class="asVal" value="123" /></li>
+			<li><div class='asUS'>1234.56</div></li>
+			<li><div class='asNoParse'>1234.56</div></li>
+			<li><div class='asUSwhole'>1000</div></li>
+			<li><div class='asUSwhole-lower'>1000</div></li>
+			<li><div class='asUSdecimal'>1,000.55</div></li>
+			<li><div class='asUSchars'>abcdefg</div></li>
+			<li><div class='asUSchars-end'>100abc</div></li>
+			<li><div class='asUSbad-parse'>1000</div></li>
+			<li><div class='asUSbad-element'>pass</div></li>
+			<li><div class='asNumberFromNegative'>-100</div></li>
+			<li><div class='asNumberFromNegative2'>(100)</div></li>
+			<li><div class='asNumberFromFormatted'>-100</div></li>
+		</ol>
+
+		<h4>DE (German)</h4>
+		<ol>
+			<li><div class='asDE'>1234,56</div></li>
+			<li><div class='asDEformatted'>1.234,56 €</div></li>
+			<li><div class='asDEwhole'>1000</div></li>
+			<li><div class='asDEdecimal'>1.000,11</div></li>
+		</ol>
+		
+		<h4>en-IN (India)</h4>
+		<ol>
+			<li><div class='asEnIN'>1234.56</div></li>
+			<li><div class='asEnINformatted'>Rs. 1,234.56</div></li>
+			<li><div class='asEnINwhole'>1000</div></li>
+			<li><div class='asEnINdecimal'>1,000.11</div></li>
+		</ol>
+	</div>
+</body>
+</html>

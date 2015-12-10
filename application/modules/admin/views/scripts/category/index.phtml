@@ -1,0 +1,113 @@
+<?php
+$this->title = $this->translate('ADMIN');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->AdminMenu();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="id" width="5%">
+				<?php echo $this->translate('ADMIN_CLIENT_ID'); ?>
+			</th>
+			<th class="name" width="20%">
+				<?php echo $this->translate('ADMIN_TITLE'); ?>
+			</th>
+			<th class="parentid" width="20%">
+				<?php echo $this->translate('ADMIN_PARENT_CATEGORY'); ?>
+			</th>
+			<th class="ordering" width="20%">
+				<?php echo $this->translate('ADMIN_ORDERING'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php $i0 = 1; ?>
+		<?php $count0 = count($this->categories); ?>
+		<?php foreach($this->categories as $category) : ?>
+			<?php if($category['parentid'] == 0) : ?>
+				<tr>
+					<td><input class="id" type="checkbox" value="<?php echo $category['id'] ?>" name="id"/></td>
+					<td class="id">
+						<?php echo $this->escape($category['id']); ?>
+					</td>
+					<td class="name">
+						<span class="editable" data-name="title"><?php echo $this->escape($category['title']); ?></span>
+					</td>
+					<td class="parentid">
+						<span class="editable" data-name="parentid" data-value="0" data-type="select"><?php echo $this->translate('ADMIN_MAIN_CATEGORY'); ?></span>
+					</td>
+					<td class="ordering">
+						<?php echo $this->escape($category['ordering']); ?>
+					</td>
+					<td class="buttons">
+						<?php if($i0>1) : ?>
+							<?php echo $this->toolbar->sortup; ?>
+						<?php endif; ?>
+						<?php if($i0<$count0) : ?>
+							<?php echo $this->toolbar->sortdown; ?>
+						<?php endif; ?>
+						<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
+						<?php echo $this->Button('delete', '', $this->translate('TOOLBAR_DELETE')); ?>
+					</td>
+				</tr>
+				<?php if(isset($category['childs'])) : ?>
+					<?php $i1 = 1; ?>
+					<?php $count1 = count($category['childs']); ?>
+					<?php foreach($category['childs'] as $child) : ?>
+						<tr>
+							<td><input class="id" type="checkbox" value="<?php echo $this->categories[$child]['id'] ?>" name="id"/></td>
+							<td class="id">
+								<?php echo $this->escape($this->categories[$child]['id']); ?>
+							</td>
+							<td class="name">
+								-- <span class="editable" data-name="title"><?php echo $this->escape($this->categories[$child]['title']); ?></span>
+							</td>
+							<td class="parentid">
+								<span class="editable" data-name="parentid" data-value="<?php echo $this->escape($category['id']); ?>" data-type="select"><?php echo $this->escape($category['title']); ?></span>
+							</td>
+							<td class="ordering">
+								<?php echo $this->escape($this->categories[$child]['ordering']); ?>
+							</td>
+							<td class="buttons">
+								<?php if($i1>1) : ?>
+									<?php echo $this->toolbar->sortup; ?>
+								<?php endif; ?>
+								<?php if($i1<$count1) : ?>
+									<?php echo $this->toolbar->sortdown; ?>
+								<?php endif; ?>
+								<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
+								<?php echo $this->Button('delete', '', $this->translate('TOOLBAR_DELETE')); ?>
+							</td>
+						</tr>
+						<?php ++$i1; ?>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			<?php endif; ?>
+			<?php ++$i0; ?>
+		<?php endforeach; ?>
+		<tr class="add">
+			<td>
+			</td>
+			<td>
+				<?php echo $this->translate('TOOLBAR_NEW'); ?>
+			</td>
+			<td>
+				<?php echo $this->form->title; ?>
+			</td>
+			<td>
+				<?php echo $this->form->parentid; ?>
+			</td>
+			<td>
+				<input type="hidden" name="type" value="<?php echo $this->toolbar->getValue('type'); ?>">
+			</td>
+			<td>
+				<?php echo $this->toolbar->save; ?>
+				<?php //echo $this->toolbar->cancel; ?>
+			</td>
+		</tr>
+	</tbody>
+</table>

@@ -1,0 +1,924 @@
+body,html {
+	margin: 0 5px;
+	font-family: Verdana,sans-serif;
+	font-size: 12px;
+	color: #444;
+}
+h1 {
+	font-size: 1.8em;
+	color: #069;
+}
+h2 {
+	font-size: 1.5em;
+	color: #069;
+}
+h3 {
+	font-size: 1.4em;
+}
+h4 {
+	font-size: 1.1em;
+	clear: left;
+	margin: 10px 0;
+	padding-top: 15px;
+}
+a {
+	color: #069;
+}
+p {
+	margin: 6px 0 8px;
+}
+p.error {
+	color: red;
+}
+input, button {
+	height: 20px;
+	font-size: 1.1em;
+	border: solid 1px #bcbcbc;
+	background-color: #fafafa;
+	margin: 2px 0;
+	padding-left: 2px;
+}
+input#search {
+	padding: 0 2px 2px;
+}
+select {
+	font-size: 1.0em;
+}
+textarea {
+	border: solid 1px #bcbcbc;
+	background-color: #fafafa;
+	margin: 2px 0;
+	padding-left: 2px;
+	padding-top: 2px;
+}
+button {
+	height: 24px;
+	min-width: 24px;
+	padding: 1px 0 3px 18px;
+	vertical-align: middle;
+}
+button[rel="addCustomer"] span {
+	padding-left: 20px;
+}
+button.add {
+	background: url("../images/add.png") no-repeat scroll 3px center transparent;
+}
+button.edit {
+	background: url("../images/edit.png") no-repeat scroll 3px center transparent;
+}
+button.view {
+	background: url("../images/view.png") no-repeat scroll 3px center transparent;
+}
+button.copy {
+	background: url("../images/copy.png") no-repeat scroll 3px center transparent;
+}
+button.settings {
+	background: url("../images/settings.png") no-repeat scroll 3px center transparent;
+}
+button.delete {
+	background: url("../images/delete.png") no-repeat scroll 3px center transparent;
+}
+button.cancel {
+	background: url("../images/cancel.png") no-repeat scroll 3px center transparent;
+}
+button.clear {
+	background: url("../images/clear.png") no-repeat scroll 3px center transparent;
+}
+button.reset {
+	background: url("../images/reset.png") no-repeat scroll 3px center transparent;
+}
+button.apply {
+	background: url("../images/apply.png") no-repeat scroll 3px center transparent;
+}
+button.save {
+	background: url("../images/save.png") no-repeat scroll 3px center transparent;
+}
+button.close {
+	background: url("../images/close.png") no-repeat scroll 3px center transparent;
+}
+button.details {
+	background: url("../images/details.png") no-repeat scroll 3px center transparent;
+}
+button.positions {
+	background: url("../images/positions.png") no-repeat scroll 3px center transparent;
+}
+button.back {
+	background: url("../images/back.png") no-repeat scroll 3px center transparent;
+}
+button.pdf {
+	background: url("../images/pdf.png") no-repeat scroll 3px center transparent;
+}
+button.get {
+	background: url("../images/get.png") no-repeat scroll 3px center transparent;
+}
+button.daterange {
+	background: url("../images/daterange.png") no-repeat scroll 3px center transparent;
+}
+button.select {
+	background: url("../images/select.png") no-repeat scroll 3px center transparent;
+}
+button.up {
+	background: url("../images/up.gif") no-repeat scroll 3px center transparent;
+}
+button.down {
+	background: url("../images/down.gif") no-repeat scroll 3px center transparent;
+}
+button.filter {
+	background: url("../images/filter.png") no-repeat scroll 3px center transparent;
+}
+td#buttons {
+	text-align:center;
+}
+td button, dd button, form button {
+	margin: 1px 0;
+	padding: 0;
+	border: none;
+	background-color:transparent;
+	cursor: pointer;
+}
+td button {
+	padding-left: 18px;
+}
+input.error, textarea.error {
+	border-color:red!important;
+	background-color:#ffe4e4!important;
+}
+textarea {
+	width:95%;
+}
+ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+hr {
+	height: 1px;
+	border: 0;
+	border-top: 1px solid #888888;
+}
+#container {
+	position:relative;
+}
+#main {
+	width: 100%;
+}
+#main td {
+	vertical-align: top;
+}
+#content {
+	padding: 15px 0;
+}
+#categories {
+	min-width: 200px;
+}
+#actions {
+	min-width: 200px;
+	padding: 45px 0 0 10px;
+}
+/* Table */
+table {
+	border-collapse: collapse;
+}
+th {
+	text-align: left;
+}
+td, th {
+	padding: 3px;
+}
+table#data > tbody > tr {
+	border-top: solid 1px #e0e0e0;
+}
+table#data > tbody > tr.alt {
+	background-color: #f7f7f7;
+}
+table#data > tbody > tr.highlight, #data td.highlight, #data th.highlight {
+	background: url('../images/dropline_bg.png') repeat;
+}
+table#data > tbody > tr.bottom {
+	background: none;
+}
+table#data > tbody > tr.state101 {
+	background-color: LightGray;
+}
+table#data > tbody > tr.state102 {
+	background-color: Yellow;
+}
+table#data > tbody > tr.state103 {
+	background-color: OrangeRed;
+}
+table#data > tbody > tr.state104 {
+	background-color: LimeGreen;
+}
+table#data td {
+	vertical-align: middle;
+}
+pre {
+	white-space: pre-wrap; /* css-3 */
+	white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+	white-space: -pre-wrap; /* Opera 4-6 */
+	white-space: -o-pre-wrap; /* Opera 7 */
+	word-wrap: break-word; /* Internet Explorer 5.5+ */
+}
+/* style form */
+form {
+	margin-bottom: 15px;
+}
+form dt {
+	width: 120px;
+	display: block;
+	float: left;
+	clear: left;
+	margin: 5px 0;
+}
+form dd {
+	margin-left: 0;
+	margin-right: 10px;
+	float: left;
+	
+}
+
+/* style view */
+.view dt {
+	width: 175px;
+	display: block;
+	font-weight: bold;
+	float: left;
+	clear: left;
+	margin: 5px 0;
+}
+.view dd {
+	margin-left: 0;
+	float: left;
+	max-width: 350px;
+	margin: 5px 0;
+}
+.clr {
+	clear:left;
+}
+ul.errors {
+	max-width:450px;
+}
+.notes pre {
+	display: block;
+	background-color: #fffaaa;
+	margin: 10px 5px 10px 0;
+	padding: 5px;
+}
+.notes textarea {
+	margin: 10px 5px 10px 0;
+}
+span.completed {
+	color: green;
+	font-weight: bold;
+}
+span.uncomplete {
+	color: red;
+	font-weight: bold;
+}
+
+/* Main navigation */
+/*
+LEVEL ONE
+*/
+ul#mainmenu {
+	position: relative;
+	width: 100%;
+	float: left;
+	margin: 0 0 1em 0;
+	padding: 0;
+	background-color: #ececec;
+	border: 1px solid #ccc;
+}
+ul#mainmenu li { font-weight: bold; float: left; zoom: 1; }
+ul#mainmenu a:hover { color: #000; }
+ul#mainmenu a:active { color: #ffa500; }
+ul#mainmenu li a { display: block; padding: 8px 15px; border-right: 1px solid #ccc; color: #444;
+	text-decoration: none;
+	font-weight: bold; }
+ul#mainmenu li:last-child a { border-right: none; } /* Doesn't work in IE */
+ul#mainmenu li.hover,
+ul#mainmenu li:hover { background: #fafafa; color: #069; position: relative; }
+ul#mainmenu li.hover a { color: #444; }
+#mainmenu li.active {
+	background-color: #fff;
+}
+
+/* 
+LEVEL TWO
+*/
+ul#mainmenu ul { width: 220px; visibility: hidden; position: absolute; top: 100%; left: 0; border-left: 1px solid #eee; border-right: 1px solid #eee; z-index: 999; }
+ul#mainmenu ul li { font-weight: normal; background: #f6f6f6; color: #000; border-bottom: 1px solid #ccc; float: none; }
+
+ /* IE 6 & 7 Needs Inline Block */
+ul#mainmenu ul li a { border-right: none; width: 100%; display: inline-block; } 
+
+/* 
+LEVEL THREE
+*/
+ul#mainmenu ul ul { left: 100%; top: 0; }
+ul#mainmenu li:hover > ul { visibility: visible; }
+/*#mainmenu {
+	width: 100%;
+	float: left;
+	margin: 0 0 1em 0;
+	padding: 0;
+	list-style: none;
+	background-color: #ececec;
+	border: 1px solid #ccc; 
+}
+.select #mainmenu {
+	width: auto;
+	float: none;
+	display: inline-block;
+}
+#mainmenu li {
+	float: left;
+}
+.select #mainmenu li {
+	float: none;
+	display: inline-block;
+}
+#mainmenu li a {
+	display: block;
+	padding: 8px 15px;
+	text-decoration: none;
+	font-weight: bold;
+	color: #444;
+	border-right: 1px solid #ccc;
+}
+#mainmenu li.active {
+	background-color: #fff;
+}
+#mainmenu li a:hover {
+	color: #069;
+	background-color: #fff;
+}*/
+
+/* Messages */
+#messages {
+	background: url("../images/warning.png") no-repeat scroll 10px center #FFF5CC;
+	border: 1px solid #F2DD8C;
+	margin: 5px 0 15px;
+	padding: 10px 35px;
+	/*bottom: 0;
+	left: 0;
+	position: fixed;*/
+}
+
+/* Editable */
+.editableContainer {
+	display: inline-block;
+}
+.editable {
+	display: inline-block;
+	min-width: 30px;
+	cursor: pointer;
+}
+pre.editable,
+span.editable {
+	color: #069;
+	border-bottom: 1px dashed #069;
+}
+
+/* Addresses */
+#addresses table {
+	float: left;
+	margin-top: 25px;
+	margin-right: 25px;
+}
+
+/* Loading */
+#loading {
+	display: none;
+}
+#loading #opacity {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	overflow: hidden;
+	padding: 0;
+	margin: 0;
+	background: #000;
+	filter: alpha(opacity=20);
+	-moz-opacity: 0.2;  
+	-khtml-opacity: 0.2;
+	opacity: 0.2;
+	z-index: 998;
+}
+#loading #img {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding: 0;
+	margin: 0;
+	overflow: hidden;
+	background: url('../images/ajax-loader.gif') no-repeat 50% 50% transparent;
+	opacity: 1;
+	z-index: 999;
+}
+
+table#total {
+	margin: 15px 0;
+}
+
+#daterange #sub {
+	position: absolute;
+	display: none;
+	padding: 10px;
+	background: #fafafa;
+	border: 1px solid #ccc;
+	margin-left: 2px;
+	z-index: 999;
+}
+#daterange li:hover {
+	cursor: pointer;
+	background-color: #F2DD8C;
+}
+.ui-datepicker .active a {
+	background: none repeat scroll 0 0 #FFF;
+}
+.mailto {
+	float:left;
+	margin-right:5px;
+	margin-top:2px;
+}
+
+/* Modal window */
+#fade { /*--Transparent background layer--*/
+	display: none; /*--hidden by default--*/
+	background: #000;
+	position: fixed; left: 0; top: 0;
+	width: 100%; height: 100%;
+	opacity: .80;
+	z-index: 9999;
+}
+#popup{
+}
+.popup_block{
+	display: none; /*--hidden by default--*/
+	background: #fff;
+	padding: 10px;
+	border: 10px solid #ddd;
+	float: left;
+	font-size: 1.2em;
+	position: fixed;
+	top: 10%;
+	bottom: 10%;
+	left: 50%;
+	z-index: 99999;
+	width: 1000px;
+	/*--CSS3 Box Shadows--*/
+	-webkit-box-shadow: 0px 0px 20px #000;
+	-moz-box-shadow: 0px 0px 20px #000;
+	box-shadow: 0px 0px 20px #000;
+	/*--CSS3 Rounded Corners--*/
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+}
+#popup .close {
+	height: 48px;
+	width: 48px;
+	background: url('../images/close-modal-window.png') no-repeat 0 0 transparent;
+	float: right;
+	margin: -36px -36px -30px 0;
+}
+/*--Making IE6 Understand Fixed Positioning--*/
+*html #fade {
+	position: absolute;
+}
+*html .popup_block {
+	position: absolute;
+}
+iframe {
+	border: none;
+}
+
+table#data  {
+	table-layout:fixed;
+	width: 100%;
+	word-break: break-all;
+	word-wrap: break-word;
+}
+#data button {
+	font-size: 1.1em;
+}
+#data textarea, #data input[type="text"], #data select {
+	font-size: 1.0em;
+}
+#data dt {
+	font-size: 0.9em;
+	font-style: italic;
+	margin:2px 0 0 0;
+}
+#data dd {
+	margin:0 0 2px 0;
+}
+#data tr.more {
+	/*display:none;*/
+}
+#data hr {
+	margin:0;
+}
+#data textarea, #data input[type=text], #data select {
+	width:90%;
+}
+#positions td td {
+	border: none;
+	vertical-align: bottom;
+}
+#positions .number {
+	text-align: right;
+}
+#positions .position,
+#positions .ordering {
+	text-align: center;
+}
+table#positions td.total {
+	text-align: center;
+	height: 25px;
+	font-size: 80%;
+	color: #444;
+}
+#positions .image img {
+	width: 150px;
+}
+#positions .description span {
+	padding-right: 30px;
+}
+#positions .position span {
+	display: none;
+}
+#positions td.taxrate, #positions td.uom {
+	vertical-align: top;
+}
+#positions td, #details td {
+	margin: 5px;
+	padding: 5px;
+}
+#positions dt, #details dt {
+	margin: 0;
+	width: 100%;
+	float: none;
+}
+#positions dd, #details dd {
+	min-width: 100%;
+	margin: 0;
+	float: none;
+}
+table#positions td#total {
+	font-size: 0.9em;
+	padding-top: 18px;
+	text-align: center;
+}
+table#details {
+	width: 100%;
+}
+#details textarea, #details input[type=text], #details select,
+#positions textarea, #positions input[type=text], #positions select {
+	width:100%;
+}
+.editpositionsseparately dt {
+	width: auto;
+	padding: 2px 5px;
+	font-weight: bold;
+	float: left;
+}
+.editpositionsseparately dd {
+	float: left;
+}
+
+.add #left, .edit #left, .apply #left {
+	float: left;
+	width: 55%;
+}
+.add #right, .edit #right, .apply #right {
+	float: left;
+	width: 45%;
+}
+.index #left {
+	float: left;
+	width: 60%;
+}
+.index #right {
+	float: left;
+	width: 40%;
+}
+
+#userinfo {
+	float: right;
+}
+
+.toolbar {
+	margin-top: -10px;
+	right: 10px;
+	position: absolute;
+	text-align: right;
+	width: 85%;
+}
+.edit .toolbar,
+.view .toolbar {
+	right: 15%;
+}
+.popup .toolbar {
+	right: 10px;
+}
+.index .toolbar,
+.select .toolbar {
+	margin-top: -35px;
+	right: 10px;
+}
+.upload .toolbar {
+	display: none;
+}
+.toolbar.top {
+	background-color: #fff;
+	width: 100%;
+	top: 0;
+	padding-bottom: 5px;
+	position: fixed;
+	margin-top: 0;
+	text-align: right;
+	z-index: 99;
+}
+.toolbar.bottom {
+	text-align: left;
+	margin: 5px;
+	position: relative;
+}
+.toolbar.positions {
+	text-align: left;
+	margin: 5px;
+	position: relative;
+	right: auto;
+}
+.toolbar div {
+	display:inline-block;
+}
+.toolbar #status img {
+	vertical-align:middle;
+}
+.toolbar #status #success, .toolbar #status #warning {
+	background: #eee;
+	border: 1px solid #ccc;
+	margin-right: 8px;
+	padding: 4px;
+}
+.toolbar #status #success {
+	display:none;
+}
+.toolbar #status #warning {
+	display:none;
+}
+#filter td {
+	vertical-align: top;
+}
+#filter td.space {
+	padding-right: 50px;
+}
+#filter h4 {
+	margin: 10px 0 2px;
+	padding: 0;
+}
+div#filter {
+	position: absolute;
+	display: none;
+	padding: 0 10px 10px;
+	background: #fafafa;
+	border: 1px solid #ccc;
+	margin-left: 2px;
+	text-align: left;
+	right: 0;
+	z-index: 999;
+}
+div#filter div {
+	display: block;
+}
+#filter .all,
+#filter .none,
+#filter .only {
+	cursor: pointer;
+	text-decoration: underline;
+	color: #069;
+}
+#filter input {
+	height: auto;
+	margin: 5px 3px 0 0;
+}
+#filter form {
+	margin-bottom: 0;
+}
+#ordering {
+	display: inline-block;
+}
+#ordering span {
+	cursor: pointer;
+	color: #006699;
+}
+#filter td#daterange {
+	padding-right: 30px;
+}
+#filter td.daterange {
+	width: 240px;
+}
+#activefilters {
+	padding: 5px;
+	background: #fafafa;
+	border: 1px solid #ccc;
+	margin: 0 3px 5px 0;
+}
+#activefilters li {
+	display: inline-block;
+}
+#activefilters button {
+	border: none;
+}
+.draft {
+	color: #ff0000;
+}
+
+.saved {
+	color: #00ff00;
+}
+
+.level0 {
+	
+}
+.level1 a {
+	padding-left:20px;
+	background: transparent url('../images/join.gif') no-repeat left center;
+}
+.level2 a {
+	margin-left:10px;
+	padding-left:20px;
+	background: transparent url('../images/join.gif') no-repeat left center;
+}
+.level3 a {
+	margin-left:20px;
+	padding-left:20px;
+	background: transparent url('../images/join.gif') no-repeat left center;
+}
+
+/* Tabs */
+ul.tabs {
+	margin: 0;
+	padding: 0;
+	float: left;
+	list-style: none;
+	height: 32px; /*--Set height of tabs--*/
+	border-bottom: 1px solid #999;
+	border-left: 1px solid #999;
+	width: 100%;
+}
+.popup ul.tabs {
+	width: 100%;
+}
+ul.tabs li {
+	float: left;
+	margin: 0;
+	padding: 0;
+	height: 31px; /*--Subtract 1px from the height of the unordered list--*/
+	line-height: 31px; /*--Vertically aligns the text within the tab--*/
+	border: 1px solid #999;
+	border-left: none;
+	margin-bottom: -1px; /*--Pull the list item down 1px--*/
+	overflow: hidden;
+	position: relative;
+	background: #e0e0e0;
+}
+ul.tabs li a {
+	text-decoration: none;
+	color: #000;
+	display: block;
+	font-size: 1.2em;
+	padding: 0 20px;
+	border: 1px solid #fff; /*--Gives the bevel look with a 1px white border inside the list item--*/
+	outline: none;
+}
+ul.tabs li a:hover {
+	background: #ccc;
+}
+html ul.tabs li.active, html ul.tabs li.active a:hover  { /*--Makes sure that the active tab does not listen to the hover properties--*/
+	background: #fff;
+	border-bottom: 1px solid #fff; /*--Makes the active tab look like it's connected with its content--*/
+}
+.tab_container {
+	border: 1px solid #999;
+	border-top: none;
+	overflow: hidden;
+	clear: both;
+	float: left;
+	background: #fff;
+	margin-bottom: 10px;
+	width: 100%;
+}
+.popup .tab_container {
+	width: 100%;
+}
+.tab_container .tab_content {
+	display:none;
+	padding: 15px;
+}
+.tab_container .tab_content.active {
+	display:block;
+	padding: 15px;
+}
+#files h3 {
+	padding-left:30px;
+}
+
+table#settings {
+	width: 100%;
+}
+#settings input {
+	display:none;
+}
+
+
+/*CSS for Simple Tree Menu*/
+
+.treeview li{ /*Style for LI elements in general (excludes an LI that contains sub lists)*/
+background: white url('../images/list.gif') no-repeat left center;
+list-style-type: none;
+padding-left: 22px;
+margin-bottom: 3px;
+}
+
+.treeview li.submenu, .treeview li.closed{ /* Style for LI that contains sub lists (other ULs). */
+background: white url(../images/closed.gif) no-repeat left 1px;
+cursor: hand !important;
+cursor: pointer !important;
+}
+
+.treeview li.open{ /* Style for LI that contains sub lists (other ULs). */
+background: white url(../images/open.gif) no-repeat left 1px;
+}
+
+.treeview a.active{ 
+font-weight: bold;
+}
+
+.treeview li.submenu ul{ /*Style for ULs that are children of LIs (submenu) */
+display: none; /*Hide them by default. Don't delete. */
+}
+
+.treeview .submenu ul li{ /*Style for LIs of ULs that are children of LIs (submenu) */
+cursor: default;
+}
+
+/* Processes */
+.deliverydate {
+font-weight: bold;
+}
+.deliveryItem, .stockItem {
+	background-color: #ececec!important;
+}
+.positions .deliveryIsWaiting,
+.positions .supplierNotOrdered,
+.positions .waitingForPayment,
+#positions .deliveryIsWaiting,
+#positions .supplierNotOrdered,
+#positions .waitingForPayment,
+.deliveryIsWaiting .deliverystatus span,
+.supplierNotOrdered .supplierorderstatus span,
+.waitingForPayment .paymentstatus span {
+	padding: 3px;
+	margin-right: 5px;
+	margin-top: 3px;
+	background-color: #ffabab!important;
+}
+.positions .partialDelivered,
+.positions .supplierOrdered,
+.positions .prepaymentReceived,
+#positions .partialDelivered,
+#positions .supplierOrdered,
+#positions .prepaymentReceived,
+.partialDelivered .deliverystatus span,
+.supplierOrdered .supplierorderstatus span,
+.prepaymentReceived .paymentstatus span {
+	padding: 3px;
+	margin-right: 5px;
+	margin-top: 3px;
+	background-color: #fffaaa!important;
+}
+.positions .deliveryCompleted,
+.positions .supplierPayed,
+.positions .paymentCompleted,
+#positions .deliveryCompleted,
+#positions .supplierPayed,
+#positions .paymentCompleted,
+.deliveryCompleted .deliverystatus span,
+.supplierPayed .supplierorderstatus span,
+.paymentCompleted .paymentstatus span {
+	padding: 3px;
+	margin-right: 5px;
+	margin-top: 3px;
+	background-color: #ccffcc!important;
+}
+.disabled td {
+	display: none;
+}

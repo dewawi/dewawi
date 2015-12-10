@@ -1,0 +1,67 @@
+<?php
+
+class Contacts_PhoneController extends Zend_Controller_Action
+{
+	public function addAction()
+	{
+		$request = $this->getRequest();
+
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+
+		$form = new Contacts_Form_Phone();
+
+		if($request->isPost()) {
+			$data = $request->getPost();
+			if($data['contactid']) {
+				if($form->isValid($data) || true) {
+					$phoneDb = new Contacts_Model_DbTable_Phone();
+					$latest = end($phoneDb->getPhone($data['contactid']));
+					$phoneDb->addPhone($data['contactid'], $data['type'], '', $latest['ordering']+1);
+					$phone = end($phoneDb->getPhone($data['contactid']));
+					echo $this->view->MultiForm('phone', $phone);
+				}
+			} else {
+				$timestamp = time();
+				$phone = array('id' => $timestamp, 'ordering' => $timestamp, 'type' => 'phone', 'phone' => '');
+				echo $this->view->MultiForm('phone', $phone);
+			}
+		}
+	}
+
+	public function editAction()
+	{
+		$request = $this->getRequest();
+		$id = $this->_getParam('id', 0);
+
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+
+		$form = new Contacts_Form_Phone();
+
+		if($request->isPost()) {
+			$data = $request->getPost();
+			if($form->isValid($data) || true) {
+				$phoneDb = new Contacts_Model_DbTable_Phone();
+				if($id > 0) {
+					$phoneDb->updatePhone($id, $data);
+				}
+			}
+		}
+
+		$this->view->form = $form;
+	}
+
+	public function deleteAction()
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+
+		if($this->getRequest()->isPost()) {
+			$id = $this->_getParam('id', 0);
+			$phoneDb = new Contacts_Model_DbTable_Phone();
+			$phoneDb->deletePhone($id);
+		}
+		//$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+	}
+}

@@ -1,0 +1,159 @@
+<?php 
+$this->title = $this->salesorder['title'] ? $this->salesorder['title'] : $this->translate('SALES_ORDER').' '.$this->salesorder['salesorderid'];
+$this->headTitle($this->title);
+echo $this->ElFinder();
+?>
+
+<ul class="tabs">
+	<li class="active"><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
+	<li><a href="#tabFiles"><?php echo $this->translate('TABS_FILES') ?></a></li>
+	<li><a href="#tabDocument" onclick="savePdf()"><?php echo $this->translate('TABS_DOCUMENT') ?></a></li>
+</ul>
+
+<div class="tab_container">
+	<div id="tabOverview" class="tab_content active">
+		<div id="left">
+			<dl class="view">
+				<dt><label><?php echo $this->translate('SALES_ORDERS_SALES_ORDER_ID') ?></label></dt>
+				<dd><?php echo $this->salesorder['salesorderid']; ?></dd>
+				<?php if($this->salesorder['vatin']) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_VATIN') ?></label></dt>
+					<dd><?php echo $this->salesorder['vatin']; ?></dd>
+				<?php } ?>
+				<?php if($this->salesorder['salesorderdate']) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_SALES_ORDER_DATE') ?></label></dt>
+					<dd><?php echo $this->salesorder['salesorderdate']; ?></dd>
+				<?php } ?>
+				<?php if($this->salesorder['orderdate'] && ($this->salesorder['orderdate'] != '0000-00-00')) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_ORDER_DATE') ?></label></dt>
+					<dd><?php echo $this->salesorder['orderdate']; ?></dd>
+				<?php } ?>
+				<?php if($this->salesorder['deliverydate'] && ($this->salesorder['deliverydate'] != '0000-00-00')) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_DELIVERY_DATE') ?></label></dt>
+					<dd><?php echo $this->salesorder['deliverydate']; ?></dd>
+				<?php } ?>
+				<?php if($this->salesorder['paymentmethod']) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_PAYMENT_METHOD') ?></label></dt>
+					<dd><?php echo $this->salesorder['paymentmethod']; ?></dd>
+				<?php } ?>
+				<?php if($this->salesorder['shippingmethod']) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_SHIPPING_METHOD') ?></label></dt>
+					<dd><?php echo $this->salesorder['shippingmethod']; ?></dd>
+				<?php } ?>
+				<?php if($this->salesorder['header']) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_HEADER') ?></label></dt>
+					<dd><?php echo $this->salesorder['header']; ?></dd>
+				<?php } ?>
+				<?php if($this->salesorder['footer']) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_FOOTER') ?></label></dt>
+					<dd><?php echo $this->salesorder['footer']; ?></dd>
+				<?php } ?>
+				<?php if($this->salesorder['info']) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_INFO') ?></label></dt>
+					<dd><?php echo $this->salesorder['info']; ?></dd>
+				<?php } ?>
+			</dl>
+		</div>
+		<div id="right">
+			<dl class="view">
+				<dt><label><?php echo $this->translate('SALES_ORDERS_CONTACT_ID') ?></label></dt>
+				<dd>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->salesorder['contactid']));?>"><?php echo $this->salesorder['contactid']; ?></a>
+					<input id="contactid" type="hidden" value="<?php echo $this->salesorder['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
+				</dd>
+				<dt><label><?php echo $this->translate('SALES_ORDERS_BILLING_ADDRESS') ?></label></dt>
+				<dd>
+					<?php echo $this->salesorder['billingname1']; ?>
+					<?php if($this->salesorder['billingname2']) echo '</br>'.$this->salesorder['billingname2']; ?>
+					<?php if($this->salesorder['billingdepartment']) echo '</br>'.$this->salesorder['billingdepartment']; ?>
+					<?php if($this->salesorder['billingstreet']) echo '</br>'.$this->salesorder['billingstreet']; ?>
+					<?php if($this->salesorder['billingpostcode'] || $this->salesorder['billingcity']) { ?>
+						</br>
+						<?php if($this->salesorder['billingpostcode']) echo $this->salesorder['billingpostcode']; ?>
+						<?php if($this->salesorder['billingcity']) echo $this->salesorder['billingcity']; ?>
+					<?php } ?>
+					<?php if($this->salesorder['billingcountry']) echo '</br>'.$this->translate($this->salesorder['billingcountry']); ?>
+				</dd>
+				<?php if($this->salesorder['shippingname1'] || $this->salesorder['shippingname2']) { ?>
+					<dt><label><?php echo $this->translate('SALES_ORDERS_SHIPPING_ADDRESS') ?></label></dt>
+					<dd>
+						<?php echo $this->salesorder['shippingname1']; ?>
+						<?php if($this->salesorder['shippingname2']) echo '</br>'.$this->salesorder['shippingname2']; ?>
+						<?php if($this->salesorder['shippingdepartment']) echo '</br>'.$this->salesorder['shippingdepartment']; ?>
+						<?php if($this->salesorder['shippingstreet']) echo '</br>'.$this->salesorder['shippingstreet']; ?>
+						<?php if($this->salesorder['shippingpostcode'] || $this->salesorder['shippingcity']) { ?>
+							</br>
+							<?php if($this->salesorder['shippingpostcode']) echo $this->salesorder['shippingpostcode']; ?>
+							<?php if($this->salesorder['shippingcity']) echo $this->salesorder['shippingcity']; ?>
+						<?php } ?>
+						<?php if($this->salesorder['shippingcountry']) echo '</br>'.$this->translate($this->salesorder['shippingcountry']); ?>
+						<?php if($this->salesorder['shippingphone']) echo '</br>'.$this->salesorder['shippingphone']; ?>
+					</dd>
+				<?php } ?>
+			</dl>
+		</div>
+		<div style="clear:left"></div>
+		<h3><?php echo $this->translate('SALES_ORDERS_POSITIONS') ?></h3>
+		<div id="positions">
+			<?php
+				$i = 1;
+				$length = count($this->positions);
+			?>
+			<table id="positions">
+			<thead>
+			<tr>
+			<th id="id">ID</th>
+			<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
+			<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
+			<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
+			<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
+			<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
+			<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
+			</tr>
+			</thead>
+			<tbody>
+			<?php foreach ($this->positions as $position) { ?>
+				<tr id="position<?php echo $position->id; ?>">
+				<td id="id"><span><?php echo $position->id; ?></span></td>
+				<td id="sku"><span><?php echo $position->sku; ?></span></td>
+				<td id="title"><span><?php echo $position->title; ?></span></td>
+				<td id="description"><span><?php echo $position->description; ?></span></td>
+				<td id="price"><span><?php echo $position->price; ?></span></td>
+				<td id="quantity"><span><?php echo $position->quantity; ?></span></td>
+				<td id="uom"><span><?php echo $position->uom; ?></span></td>
+				</tr>
+				<?php ++$i; ?>
+			<?php } ?>
+			</tbody>
+			</table>
+
+			<table id="total" align="right">
+				<tbody>
+					<tr>
+						<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+						<td align="right"><?php echo $this->salesorder['subtotal']; ?></td>
+					</tr>
+					<tr>
+						<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
+						<td align="right"><?php echo $this->salesorder['taxes']; ?></td>
+					</tr>
+					<tr>
+						<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+						<td align="right"><?php echo $this->salesorder['total']; ?></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div style="clear:left"></div>
+	</div>
+	<div id="tabFiles" class="tab_content">
+		<div id="elfinder"></div>
+		<div style="clear:left"></div>
+	</div>
+	<div id="tabDocument" class="tab_content">
+		<p>
+			<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'download', 'id'=>$this->salesorder['id']));?>" target="_blank"><?php echo $this->translate('SALES_ORDERS_DOWNLOAD_PDF') ?></a>
+		</p>
+		<div id="output"></div>
+	</div>
+</div>

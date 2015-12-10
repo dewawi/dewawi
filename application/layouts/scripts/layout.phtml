@@ -1,0 +1,93 @@
+<?php
+$this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
+$this->headTitle()->setSeparator(' - ');
+$this->headTitle('DEWAWI');
+echo $this->doctype();
+
+$javascripts = array('global.js', 'contacts.js');
+if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'.js')) array_push($javascripts, $this->module.'.js');
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+	<head>
+		<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico"/>
+		<?php echo $this->headMeta(); ?>
+		<?php echo $this->headTitle(); ?>
+		<?php echo $this->headLink(); ?>
+		<link href="<?php echo $this->baseUrl(); ?>/css/global.css" media="screen" rel="stylesheet" type="text/css" />
+		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.min.css" media="screen" rel="stylesheet" type="text/css"/>
+		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.structure.min.css" media="screen" rel="stylesheet" type="text/css"/>
+		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.theme.min.css" media="screen" rel="stylesheet" type="text/css"/>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.11.3.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/formatCurrency/jquery.formatCurrency-1.4.0.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/formatCurrency/i18n/jquery.formatCurrency.<?php echo str_replace('_', '-', 'de_DE'); ?>.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
+		<?php foreach($javascripts as $javascript) { ?>
+			<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/<?php echo $javascript; ?>"></script>
+		<?php } ?>
+		<?php echo $this->headScript(); ?>
+		<script type="text/javascript">
+			var action = "<?php echo $this->action; ?>";
+			<?php if(isset($this->id)) : ?>var id = <?php echo $this->id; ?>;<?php endif; ?>
+			var controller = "<?php echo $this->controller; ?>";
+			var module = "<?php echo $this->module; ?>";
+			var baseUrl = "<?php echo $this->baseUrl(); ?>";
+			var language = 'de-DE';
+			var deleteConfirm = "<?php echo $this->translate('MESSAGES_DELETE_CONFIRM'); ?>";
+			//Cookie path
+			var cookiePath = baseUrl;
+			if(module != 'default') cookiePath += "/"+module;
+			if(controller != 'index') cookiePath += "/"+controller;
+		</script>
+	</head>
+	<body>
+	<div id="container" class="<?php echo $this->module; ?> <?php echo $this->action; ?>">
+		<div id="userinfo">
+			<?php if(isset($this->user)) : ?>
+				<?php echo $this->user['name']; ?> |
+				<?php
+					$date = new Zend_Date();
+					echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
+				?> |
+				<a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
+				<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
+			<?php endif; ?>
+		</div>
+		<h1><a href="<?php echo $this->url(array('module'=>'default', 'controller'=>'index', 'action'=>'index', 'id'=>null), null, TRUE); ?>">DEWAWI</a></h1>
+		<?php echo $this->MainMenu(); ?>
+		<div class="clr"></div>
+		<div id="breadcrumbs">
+			<?php echo $this->Breadcrumbs(); ?>
+		</div>
+		<h2><?php echo $this->escape($this->title); ?></h2>
+		<div class="toolbar">
+			<?php echo $this->Toolbar(); ?>
+		</div>
+		<table id="main">
+			<tr>
+				<?php if($this->action == 'index' && ($this->module == 'contacts' || $this->module == 'items')) : ?>
+					<td id="categories">
+						<?php echo $this->TreeMenu($this->options['categories']); ?>
+					</td>
+				<?php endif; ?>
+				<td id="content">
+					<?php echo $this->layout()->content; ?>
+				</td>
+				<?php if($this->action == "edit" || $this->action == "view") : ?>
+					<td id="actions">
+						<?php echo $this->Actions(); ?>
+					</td>
+				<?php endif; ?>
+			</tr>
+		</table>
+	</div>
+	<div id="loading">
+		<div id="opacity"></div>
+		<div id="img"></div>
+	</div>
+	</body>
+</html>

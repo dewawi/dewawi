@@ -1,0 +1,113 @@
+<?php		 
+$this->title = $this->translate('QUOTES');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="quoteid" width="5%">
+				<?php echo $this->translate('QUOTES_QUOTE_ID'); ?>
+			</th>
+			<th class="title" width="28%">
+				<?php echo $this->translate('QUOTES_TITLE'); ?>
+			</th>
+			<th class="contactid" width="5%">
+				<?php echo $this->translate('QUOTES_CONTACT'); ?>
+			</th>
+			<th class="billingname" width="20%">
+			</th>
+			<th class="postcode" width="4%">
+				<?php echo $this->translate('QUOTES_POSTCODE'); ?>
+			</th>
+			<th class="city" width="4%">
+				<?php echo $this->translate('QUOTES_CITY'); ?>
+			</th>
+			<th class="modified" width="8%">
+				<?php echo $this->translate('QUOTES_MODIFIED'); ?>
+			</th>
+			<th class="total" width="8%">
+				<?php echo $this->translate('QUOTES_TOTAL'); ?>
+			</th>
+			<th class="state" width="6%">
+				<?php echo $this->translate('QUOTES_STATE'); ?>
+			</th>
+			<th width="10%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->quotes as $quote) : ?>
+		<tr class="state<?php echo $quote->state; ?>">
+			<td><input class="id" type="checkbox" value="<?php echo $quote->id ?>" name="id"/></td>
+			<td class="quoteid">
+				<?php if($quote->quoteid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id)); ?>">
+						<?php echo $this->escape($quote->quoteid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="title">
+				<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id)); ?>">
+					<?php echo $quote->title ? $this->escape($quote->title) : $this->escape($quote->id); ?>
+				</a>
+			</td>
+			<td class="contactid">
+				<?php if($quote->contactid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid)); ?>">
+						<?php echo $this->escape($quote->contactid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="billingname">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid)); ?>">
+					<?php echo $this->escape($quote->billingname1); ?>
+					<?php if($quote->billingname2) echo "<br/>".$this->escape($quote->billingname2); ?>
+				</a>
+			</td>
+			<td class="billingpostcode">
+				<?php echo $this->escape($quote->billingpostcode); ?> 
+			</td>
+			<td class="billingcity">
+				<?php echo $this->escape($quote->billingcity); ?>
+			</td>
+			<td class="modified">
+				<?php echo $this->escape(date("d.m.Y", strtotime($quote->modified))); ?>
+			</td>
+			<td class="total">
+				<?php echo $this->escape($quote->total); ?>
+			</td>
+			<td class="state">
+				<?php if($quote->state == '105' || $quote->state == '106') : ?>
+					<?php echo $this->translate($this->escape($this->options['states'][$quote->state])); ?>
+				<?php else : ?>
+					<span class="editable" data-name="state" data-value="<?php echo $quote->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$quote->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="buttons">
+				<?php if($quote->state == '105' || $quote->state == '106') : ?>
+					<?php echo $this->toolbar->viewInline; ?>
+				<?php else : ?>
+					<?php echo $this->toolbar->editInline; ?>
+				<?php endif; ?>
+				<?php echo $this->toolbar->copyInline; ?>
+				<?php echo $this->toolbar->pdfInline; ?>
+			</td>
+		</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td colspan="7">
+				<div class="toolbar bottom">
+					<?php echo $this->ToolbarBottom(); ?>
+				</div>
+			</td>
+			<td id="total">
+				<b><?php echo $this->quotes->total; ?></b>
+			</td>
+			<td colspan="2"></td>
+		</tr>
+	</tbody>
+</table>

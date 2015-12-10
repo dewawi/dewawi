@@ -1,0 +1,44 @@
+<?php         
+$this->title = $this->translate('FOOTERS');
+$this->headTitle($this->title);
+echo $this->MenuSettings();
+?>
+
+<table id="settings">
+	<thead>
+		<tr>
+			<th>
+				<?php echo $this->translate("SETTINGS_FOOTERS_COLUMN_1"); ?>
+			</th>
+			<th>
+				<?php echo $this->translate("SETTINGS_FOOTERS_COLUMN_2"); ?>
+			</th>
+			<th>
+				<?php echo $this->translate("SETTINGS_FOOTERS_COLUMN_3"); ?>
+			</th>
+			<th>
+				<?php echo $this->translate("SETTINGS_FOOTERS_COLUMN_4"); ?>
+			</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+				<?php echo $this->form1->getElement('text'); ?>
+				<?php echo $this->form1->getElement('width'); ?>
+			</td>
+			<td>
+				<?php echo $this->form2->getElement('text'); ?>
+				<?php echo $this->form2->getElement('width'); ?>
+			</td>
+			<td>
+				<?php echo $this->form3->getElement('text'); ?>
+				<?php echo $this->form3->getElement('width'); ?>
+			</td>
+			<td>
+				<?php echo $this->form4->getElement('text'); ?>
+				<?php echo $this->form4->getElement('width'); ?>
+			</td>
+		</tr>
+	</tbody>
+</table>

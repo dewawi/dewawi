@@ -1,0 +1,52 @@
+<?php 
+$this->title = $this->form->getValue('title');
+$this->headTitle($this->title);
+?>
+
+<ul class="tabs">
+	<li><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
+</ul>
+
+<div class="tab_container">
+	<div id="tabOverview" class="tab_content">
+		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div id="left">
+				<dl class="form">
+					<?php echo $this->form->getElement('id') ?>
+					<?php echo $this->form->getElement('sku') ?>
+					<?php echo $this->form->getElement('title') ?>
+					<?php echo $this->form->getElement('type') ?>
+					<?php echo $this->form->getElement('image') ?>
+					<?php echo $this->form->getElement('barcode') ?>
+					<?php echo $this->form->getElement('catid') ?>
+					<?php echo $this->form->getElement('manufacturerid') ?>
+					<?php echo $this->form->getElement('manufacturersku') ?>
+					<?php echo $this->form->getElement('quantity') ?>
+					<?php echo $this->form->getElement('uomid') ?>
+					<?php echo $this->form->getElement('weight') ?>
+					<?php echo $this->form->getElement('cost') ?>
+					<?php echo $this->form->getElement('price') ?>
+					<?php echo $this->form->getElement('margin') ?>
+					<?php echo $this->form->getElement('taxid') ?>
+				</dl>
+				<div style="clear:left"></div>
+				<dl class="form">
+					<dt><label><?php echo $this->translate('ITEMS_CREATED') ?></label></dt>
+					<dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('created')))) ?></label></dd>
+					<dt><label><?php echo $this->translate('ITEMS_MODIFIED') ?></label></dt>
+					<dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('modified')))) ?></label></dd>
+				</dl>
+				<div style="clear:left"></div>
+				<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+					<p><img src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+				<?php } ?>
+				<iframe src="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'upload', 'id'=>$this->form->getValue('id')));?>" width="100%" height="100%"></iframe>
+			</div>
+			<div id="right">
+				<?php echo $this->form->getElement('description') ?>
+				<?php echo $this->form->getElement('info') ?>
+			</div>
+		</form>
+		<div style="clear:left"></div>
+	</div>
+</div>

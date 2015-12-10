@@ -1,0 +1,11 @@
+/configs/database.ini
+/cache/*
+!/cache/.gitkeep
+/files/*
+!/files/.gitkeep
+/session/*
+!/session/.gitkeep
+
+# Inactive modules
+#/application/modules/ebay/*
+#/application/modules/magento/*

@@ -1,0 +1,103 @@
+<?php
+$i = 1;
+if($length = count($this->forms)) :
+?>
+<table id="positions">
+	<thead>
+		<tr>
+			<th style="width:2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th style="width:6%"><?php echo $this->translate('POSITION'); ?></th>
+			<th style="width:20%"><?php echo $this->translate('POSITIONS_ITEM'); ?></th>
+			<th style="width:40%"></th>
+			<th style="width:10%"></th>
+			<th style="width:10%"></th>
+			<th style="width:6%"><?php echo $this->translate('POSITIONS_TOTAL'); ?></th>
+			<?php if(!$this->purchaseorder['purchaseorderid']) : ?>
+				<th style="width:6%"></th>
+			<?php endif; ?>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->forms as $form) : ?>
+			<tr class="position<?php echo $form->getValue('id'); ?>">
+				<td class="id" rowspan="3">
+					<input class="id" type="checkbox" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+				</td>
+				<td class="position" rowspan="3">
+					<span><?php echo $form->getValue('ordering'); ?></span>
+					<?php echo $form->ordering; ?>
+				</td>
+				<td class="sku">
+					<?php echo $form->sku; ?>
+				</td>
+				<td class="title">
+					<?php echo $form->title; ?>
+				</td>
+				<td class="price">
+					<?php echo $form->price; ?>
+				</td>
+				<td class="quantity">
+					<?php echo $form->quantity; ?>
+				</td>
+				<td class="total">
+					<?php echo $form->getValue('total'); ?>
+				</td>
+				<?php if(!$this->purchaseorder['purchaseorderid']) : ?>
+				<td class="buttons" rowspan="3">
+					<?php echo $this->toolbar->delete->setLabel(''); ?>
+					<?php echo $this->toolbar->copy->setLabel(''); ?>
+					<?php if($i>1) : ?>
+						<?php echo $this->toolbar->sortup; ?>
+					<?php endif; ?>
+					<?php if($i<$length) : ?>
+						<?php echo $this->toolbar->sortdown; ?>
+					<?php endif; ?>
+				</td>
+				<?php endif; ?>
+			</tr>
+			<tr class="position<?php echo $form->getValue('id'); ?>">
+				<td class="description" colspan="2">
+					<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+					<?php echo $form->description; ?>
+				</td>
+				<td class="taxrate">
+					<?php echo $form->taxrate; ?>
+				</td>
+				<td class="uom">
+					<?php echo $form->uom; ?>
+				</td>
+				<td></td>
+			</tr>
+			<tr class="position<?php echo $form->getValue('id'); ?>">
+				<td class="image">
+					<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+					<?php echo $form->image; ?>
+				</td>
+				<td  colspan="4">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="10"><hr/></td>
+			</tr>
+			<?php ++$i; ?>
+		<?php endforeach; ?>
+	</tbody>
+</table>
+
+<table id="total" align="right">
+	<tbody>
+		<tr>
+			<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+			<td id="subtotal" align="right"><?php echo $this->purchaseorder['subtotal'] ?></td>
+		</tr>
+		<tr>
+			<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
+			<td id="taxes" align="right"><?php echo $this->purchaseorder['taxes'] ?></td>
+		</tr>
+		<tr>
+			<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+			<td id="total" align="right"><?php echo $this->purchaseorder['total'] ?></td>
+		</tr>
+	</tbody>
+</table>
+<?php endif; ?>

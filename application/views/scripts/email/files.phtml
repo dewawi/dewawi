@@ -1,0 +1,20 @@
+<?php 
+$this->title = $this->translate('UPLOAD');
+$this->headTitle($this->title);
+?>
+<?php if(isset($this->files['standardAttachments']) && $this->files['standardAttachments']) : ?>
+<h3><?php echo $this->translate('EMAIL_STANDARD_ATTACHMENTS') ?></h3>
+<form id="standardAttachments" enctype="application/x-www-form-urlencoded" action="" method="post">
+	<?php /*foreach($this->files['standardAttachments'] as $file) : ?>
+		<input type="checkbox" name="standardAttachment" value="<?php echo $file ?>" /> <a href="<?php echo $this->baseUrl().'/files/attachments/'.$file ?>" target="_blank"><?php echo $file ?></a><br />
+	<?php endforeach;*/ echo $this->files['standardAttachments']; ?>
+</form>
+<?php endif; ?>
+<?php if(isset($this->files['contactSpecificFiles']) && $this->files['contactSpecificFiles']) : ?>
+<h3><?php echo $this->translate('EMAIL_CONTACT_SPECIFIC_FILES') ?></h3>
+<form id="contactSpecificFiles" enctype="application/x-www-form-urlencoded" action="" method="post">
+	<?php foreach($this->files['contactSpecificFiles'] as $key => $file) : ?>
+		<input type="checkbox" name="contactSpecificFile" value="<?php echo $file ?>" /> <a href="<?php echo $this->baseUrl().'/files/contacts/'.$this->id.'/'.$file ?>" target="_blank"><?php echo $file ?></a><br />
+	<?php endforeach; ?>
+</form>
+<?php endif; ?>

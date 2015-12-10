@@ -1,0 +1,113 @@
+<?php		 
+$this->title = $this->translate('PURCHASE_ORDERS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="purchaseorderid" width="5%">
+				<?php echo $this->translate('PURCHASE_ORDERS_PURCHASE_ORDER_ID'); ?>
+			</th>
+			<th class="title" width="28%">
+				<?php echo $this->translate('PURCHASE_ORDERS_TITLE'); ?>
+			</th>
+			<th class="contactid" width="5%">
+				<?php echo $this->translate('PURCHASE_ORDERS_CONTACT'); ?>
+			</th>
+			<th class="billingname" width="20%">
+			</th>
+			<th class="postcode" width="4%">
+				<?php echo $this->translate('PURCHASE_ORDERS_POSTCODE'); ?>
+			</th>
+			<th class="city" width="4%">
+				<?php echo $this->translate('PURCHASE_ORDERS_CITY'); ?>
+			</th>
+			<th class="modified" width="8%">
+				<?php echo $this->translate('PURCHASE_ORDERS_MODIFIED'); ?>
+			</th>
+			<th class="total" width="8%">
+				<?php echo $this->translate('PURCHASE_ORDERS_TOTAL'); ?>
+			</th>
+			<th class="state" width="6%">
+				<?php echo $this->translate('PURCHASE_ORDERS_STATE'); ?>
+			</th>
+			<th width="10%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->purchaseorders as $purchaseorder) : ?>
+		<tr class="state<?php echo $purchaseorder->state; ?>">
+			<td><input class="id" type="checkbox" value="<?php echo $purchaseorder->id ?>" name="id"/></td>
+			<td class="purchaseorderid">
+				<?php if($purchaseorder->purchaseorderid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id)); ?>">
+						<?php echo $this->escape($purchaseorder->purchaseorderid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="title">
+				<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id)); ?>">
+					<?php echo $purchaseorder->title ? $this->escape($purchaseorder->title) : $this->escape($purchaseorder->id); ?>
+				</a>
+			</td>
+			<td class="contactid">
+				<?php if($purchaseorder->contactid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder->contactid)); ?>">
+						<?php echo $this->escape($purchaseorder->contactid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="billingname">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder->contactid)); ?>">
+					<?php echo $this->escape($purchaseorder->billingname1); ?>
+					<?php if($purchaseorder->billingname2) echo "<br/>".$this->escape($purchaseorder->billingname2); ?>
+				</a>
+			</td>
+			<td class="billingpostcode">
+				<?php echo $this->escape($purchaseorder->billingpostcode); ?> 
+			</td>
+			<td class="billingcity">
+				<?php echo $this->escape($purchaseorder->billingcity); ?>
+			</td>
+			<td class="modified">
+				<?php echo $this->escape(date("d.m.Y", strtotime($purchaseorder->modified))); ?>
+			</td>
+			<td class="total">
+				<?php echo $this->escape($purchaseorder->total); ?>
+			</td>
+			<td class="state">
+				<?php if($purchaseorder->state == '105' || $purchaseorder->state == '106') : ?>
+					<?php echo $this->translate($this->escape($this->options['states'][$purchaseorder->state])); ?>
+				<?php else : ?>
+					<span class="editable" data-name="state" data-value="<?php echo $purchaseorder->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$purchaseorder->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="buttons">
+				<?php if($purchaseorder->state == '105' || $purchaseorder->state == '106') : ?>
+					<?php echo $this->toolbar->viewInline; ?>
+				<?php else : ?>
+					<?php echo $this->toolbar->editInline; ?>
+				<?php endif; ?>
+				<?php echo $this->toolbar->copyInline; ?>
+				<?php echo $this->toolbar->pdfInline; ?>
+			</td>
+		</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td colspan="7">
+				<div class="toolbar bottom">
+					<?php echo $this->ToolbarBottom(); ?>
+				</div>
+			</td>
+			<td id="total">
+				<b><?php echo $this->purchaseorders->total; ?></b>
+			</td>
+			<td colspan="2"></td>
+		</tr>
+	</tbody>
+</table>

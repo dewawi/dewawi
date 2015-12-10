@@ -1,0 +1,63 @@
+<?php
+$this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
+$this->headTitle()->setSeparator(' - ');
+$this->headTitle('DEWAWI');
+echo $this->doctype();
+
+$javascripts = array('global.js', 'contacts.js');
+if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'.js')) array_push($javascripts, $this->module.'.js');
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+	<head>
+		<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico"/>
+		<?php echo $this->headMeta(); ?>
+		<?php echo $this->headTitle(); ?>
+		<?php echo $this->headLink(); ?>
+		<link href="<?php echo $this->baseUrl(); ?>/css/global.css" media="screen" rel="stylesheet" type="text/css" />
+		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.min.css" media="screen" rel="stylesheet" type="text/css"/>
+		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.structure.min.css" media="screen" rel="stylesheet" type="text/css"/>
+		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.theme.min.css" media="screen" rel="stylesheet" type="text/css"/>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.11.3.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
+		<?php foreach($javascripts as $javascript) { ?>
+			<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/<?php echo $javascript; ?>"></script>
+		<?php } ?>
+		<?php echo $this->headScript(); ?>
+		<script type="text/javascript">
+			var action = "<?php echo $this->action; ?>";
+			<?php if(isset($this->id)) : ?>var id = <?php echo $this->id; ?>;<?php endif; ?>
+			var controller = "<?php echo $this->controller; ?>";
+			var module = "<?php echo $this->module; ?>";
+			var baseUrl = "<?php echo $this->baseUrl(); ?>";
+			var deleteConfirm = "<?php echo $this->translate('MESSAGES_DELETE_CONFIRM'); ?>";
+			//Cookie path
+			var cookiePath = baseUrl;
+			if(module != 'default') cookiePath += "/"+module;
+			if(controller != 'index') cookiePath += "/"+controller;
+		</script>
+	</head>
+	<body>
+	<div class="<?php echo $this->action; ?> popup">
+		<h2><?php echo $this->escape($this->title); ?></h2>
+		<div class="toolbar">
+			<?php echo $this->Toolbar(); ?>
+		</div>
+		<table style="width:100%;">
+			<tr>
+				<td id="content">
+					<?php echo $this->layout()->content; ?>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="loading">
+		<div id="opacity"></div>
+		<div id="img"></div>
+	</div>
+	</body>
+</html>

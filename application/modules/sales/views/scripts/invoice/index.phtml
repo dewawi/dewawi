@@ -1,0 +1,119 @@
+<?php		 
+$this->title = $this->translate('INVOICES');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="invoiceid" width="5%">
+				<?php echo $this->translate('INVOICES_INVOICE_ID'); ?>
+			</th>
+			<th class="title" width="24%">
+				<?php echo $this->translate('INVOICES_TITLE'); ?>
+			</th>
+			<th class="contactid" width="5%">
+				<?php echo $this->translate('INVOICES_CONTACT'); ?>
+			</th>
+			<th class="billingname" width="16%">
+			</th>
+			<th class="postcode" width="4%">
+				<?php echo $this->translate('INVOICES_POSTCODE'); ?>
+			</th>
+			<th class="city" width="4%">
+				<?php echo $this->translate('INVOICES_CITY'); ?>
+			</th>
+			<th class="modified" width="8%">
+				<?php echo $this->translate('INVOICES_MODIFIED'); ?>
+			</th>
+			<th class="deliverydate" width="8%">
+				<?php echo $this->translate('INVOICES_DELIVERY_DATE'); ?>
+			</th>
+			<th class="total" width="8%">
+				<?php echo $this->translate('INVOICES_TOTAL'); ?>
+			</th>
+			<th class="state" width="6%">
+				<?php echo $this->translate('INVOICES_STATE'); ?>
+			</th>
+			<th width="10%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->invoices as $invoice) : ?>
+		<tr class="state<?php echo $invoice->state; ?>">
+			<td><input class="id" type="checkbox" value="<?php echo $invoice->id ?>" name="id"/></td>
+			<td class="invoiceid">
+				<?php if($invoice->invoiceid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id)); ?>">
+						<?php echo $this->escape($invoice->invoiceid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="title">
+				<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id)); ?>">
+					<?php echo $invoice->title ? $this->escape($invoice->title) : $this->translate('INVOICE')." ".$this->escape($invoice->invoiceid); ?>
+				</a>
+			</td>
+			<td class="contactid">
+				<?php if($invoice->contactid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->contactid)); ?>">
+						<?php echo $this->escape($invoice->contactid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="billingname">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->contactid)); ?>">
+					<?php echo $this->escape($invoice->billingname1); ?>
+					<?php if($invoice->billingname2) echo "<br/>".$this->escape($invoice->billingname2); ?>
+				</a>
+			</td>
+			<td class="billingpostcode">
+				<?php echo $this->escape($invoice->billingpostcode); ?> 
+			</td>
+			<td class="billingcity">
+				<?php echo $this->escape($invoice->billingcity); ?>
+			</td>
+			<td class="modified">
+				<?php echo $this->escape(date("d.m.Y", strtotime($invoice->modified))); ?>
+			</td>
+			<td class="deliverydate">
+				<?php if($invoice->deliverydate != "0000-00-00") echo $this->escape(date("d.m.Y", strtotime($invoice->deliverydate))); ?>
+			</td>
+			<td class="total">
+				<?php echo $this->escape($invoice->total); ?>
+			</td>
+			<td class="state">
+				<?php if($invoice->state == '105' || $invoice->state == '106') : ?>
+					<?php echo $this->translate($this->escape($this->options['states'][$invoice->state])); ?>
+				<?php else : ?>
+					<span class="editable" data-name="state" data-value="<?php echo $invoice->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$invoice->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="buttons">
+				<?php if($invoice->state == '105' || $invoice->state == '106') : ?>
+					<?php echo $this->toolbar->viewInline; ?>
+				<?php else : ?>
+					<?php echo $this->toolbar->editInline; ?>
+				<?php endif; ?>
+				<?php echo $this->toolbar->copyInline; ?>
+				<?php echo $this->toolbar->pdfInline; ?>
+			</td>
+		</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td colspan="8">
+				<div class="toolbar bottom">
+					<?php echo $this->ToolbarBottom(); ?>
+				</div>
+			</td>
+			<td id="total">
+				<b><?php echo $this->invoices->total; ?></b>
+			</td>
+			<td colspan="2"></td>
+		</tr>
+	</tbody>
+</table>

@@ -1,0 +1,36 @@
+<?php
+$this->title = $this->translate('ADMIN');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->AdminMenu();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="category" width="12%">
+				<?php echo $this->translate('ADMIN_LANGUAGE'); ?>
+			</th>
+			<th class="timezone" width="12%">
+				<?php echo $this->translate('ADMIN_TIMEZONE'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->config as $config) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $config->id ?>" name="id"/></td>
+				<td class="name">
+					<span class="editable" data-name="language"><?php echo $this->escape($config->language); ?></span>
+				</td>
+				<td class="name">
+					<span class="editable" data-name="timezone"><?php echo $this->escape($config->timezone); ?></span>
+				</td>
+				<td class="buttons">
+				</td>
+			</tr>
+		<?php endforeach; ?>
+	</tbody>
+</table>

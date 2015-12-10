@@ -1,0 +1,394 @@
+<?php         
+$this->title = $this->translate('CONTROL_PANEL');
+$this->headTitle($this->title);
+?>
+
+<div id="left">
+<?php if(isset($this->quotes) && count($this->quotes)) : ?>
+	<h3>
+		<?php echo $this->translate('QUOTES'); ?>
+		<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index'), null, TRUE); ?>">
+			<span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+		</a>
+	</h3>
+	<table style="max-width:99%;">
+		<thead>
+			<tr>
+				<th id="id" width="8%">
+					<?php echo $this->translate('QUOTES_ID') ?>
+				</th>
+				<th id="title" width="28%">
+					<?php echo $this->translate('QUOTES_TITLE') ?>
+				</th>
+				<th id="contactid" width="8%">
+					<?php echo $this->translate('QUOTES_CONTACT_ID') ?>
+				</th>
+				<th id="billingname1" width="20%">
+					<?php echo $this->translate('QUOTES_CONTACT') ?>
+				</th>
+				<th id="modified" width="8%">
+					<?php echo $this->translate('QUOTES_MODIFIED') ?>
+				</th>
+				<th id="state" width="6%">
+					<?php echo $this->translate('QUOTES_STATE') ?>
+				</th>
+				<th width="10%"></th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php foreach($this->quotes as $quote) : ?>
+			<tr class="state<?php echo $quote->state; ?>">
+				<td id="id">
+					<input class="id" type="hidden" value="<?php echo $quote->id ?>" name="id"/>
+					<input class="controller" type="hidden" value="quote" name="controller"/>
+					<input class="module" type="hidden" value="sales" name="module"/>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id)); ?>">
+						<?php echo $this->escape($quote->id); ?>
+					</a>
+				</td>
+				<td id="title">
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id)); ?>">
+						<?php echo $quote->title ? $this->escape($quote->title) : $this->escape($quote->id); ?>
+					</a>
+				</td>
+				<td id="contactid">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid)); ?>">
+						<?php echo $this->escape($quote->contactid); ?>
+					</a>
+				</td>
+				<td id="billingname1">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid)); ?>">
+						<?php echo $this->escape($quote->billingname1); ?>
+						<?php if($quote->billingname2) echo "<br/>".$this->escape($quote->billingname2); ?>
+					</a>
+				</td>
+				<td id="modified">
+					<?php echo $this->escape(date("d.m.Y", strtotime($quote->modified))); ?>
+				</td>
+				<td id="state">
+					<?php echo $this->translate($this->escape($this->options['states'][$quote->state])); ?>
+				</td>
+				<td id="buttons">
+					<?php echo $this->Button('edit', '', $this->translate('TOOLBAR_EDIT')); ?>
+					<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
+					<?php echo $this->Button('pdf', '', $this->translate('TOOLBAR_PDF')); ?>
+				</td>
+			</tr>
+			<?php endforeach; ?>
+		</tbody>
+	</table>
+<?php endif; ?>
+
+<?php if(isset($this->salesorders) && count($this->salesorders)) : ?>
+	<h3>
+		<?php echo $this->translate('SALES_ORDERS'); ?>
+		<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index'), null, TRUE); ?>">
+			<span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+		</a>
+	</h3>
+	<table style="max-width:99%;">
+		<thead>
+			<tr>
+				<th id="id" width="7%">
+					<?php echo $this->translate('SALES_ORDERS_ID') ?>
+				</th>
+				<th id="title" width="28%">
+					<?php echo $this->translate('SALES_ORDERS_TITLE') ?>
+				</th>
+				<th id="contactid" width="5%">
+					<?php echo $this->translate('SALES_ORDERS_CONTACT_ID') ?>
+				</th>
+				<th id="billingname1" width="20%">
+					<?php echo $this->translate('SALES_ORDERS_CONTACT') ?>
+				</th>
+				<th id="modified" width="8%">
+					<?php echo $this->translate('SALES_ORDERS_MODIFIED') ?>
+				</th>
+				<th width="6%">
+					<?php echo $this->translate('SALES_ORDERS_STATE') ?>
+				</th>
+				<th width="10%"></th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php foreach($this->salesorders as $salesorder) : ?>
+			<tr>
+				<td id="id">
+					<input class="id" type="hidden" value="<?php echo $salesorder->id ?>" name="id"/>
+					<input class="controller" type="hidden" value="salesorder" name="controller"/>
+					<input class="module" type="hidden" value="sales" name="module"/>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'edit', 'id'=>$salesorder->id)); ?>">
+						<?php echo $this->escape($salesorder->id); ?>
+					</a>
+				</td>
+				<td id="title">
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'edit', 'id'=>$salesorder->id)); ?>">
+						<?php echo $salesorder->title ? $this->escape($salesorder->title) : $this->escape($salesorder->id); ?>
+					</a>
+				</td>
+				<td id="contactid">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder->contactid)); ?>">
+						<?php echo $this->escape($salesorder->contactid); ?>
+					</a>
+				</td>
+				<td id="contact">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder->contactid)); ?>">
+						<?php echo $this->escape($salesorder->billingname1); ?>
+						<?php if($salesorder->billingname2) echo "<br/>".$this->escape($salesorder->billingname2); ?>
+					</a>
+				</td>
+				<td id="modified">
+					<?php echo $this->escape(date("d.m.Y", strtotime($salesorder->modified))); ?>
+				</td>
+				<td id="state">
+					<?php echo $this->translate($this->escape($this->options['states'][$salesorder->state])); ?>
+				</td>
+				<td id="buttons">
+					<?php echo $this->Button('edit', '', $this->translate('TOOLBAR_EDIT')); ?>
+					<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
+					<?php echo $this->Button('pdf', '', $this->translate('TOOLBAR_PDF')); ?>
+				</td>
+			</tr>
+			<?php endforeach; ?>
+		</tbody>
+	</table>
+<?php endif; ?>
+
+<?php if(isset($this->invoices) && count($this->invoices)) : ?>
+	<h3>
+		<?php echo $this->translate('INVOICES'); ?>
+		<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index'), null, TRUE); ?>">
+			<span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+		</a>
+	</h3>
+	<table style="max-width:99%;">
+		<thead>
+			<tr>
+				<th id="id" width="7%">
+					<?php echo $this->translate('INVOICES_ID') ?>
+				</th>
+				<th id="title" width="24%">
+					<?php echo $this->translate('INVOICES_TITLE') ?>
+				</th>
+				<th id="contactid" width="5%">
+					<?php echo $this->translate('INVOICES_CONTACT_ID') ?>
+				</th>
+				<th id="billingname1" width="16%">
+					<?php echo $this->translate('INVOICES_CONTACT') ?>
+				</th>
+				<th id="modified" width="8%">
+					<?php echo $this->translate('INVOICES_MODIFIED') ?>
+				</th>
+				<th width="6%">
+					<?php echo $this->translate('INVOICES_STATE') ?>
+				</th>
+				<th width="10%"></th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php foreach($this->invoices as $invoice) : ?>
+			<tr>
+				<td id="id">
+					<input class="id" type="hidden" value="<?php echo $invoice->id ?>" name="id"/>
+					<input class="controller" type="hidden" value="invoice" name="controller"/>
+					<input class="module" type="hidden" value="sales" name="module"/>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id)); ?>">
+						<?php echo $this->escape($invoice->id); ?>
+					</a>
+				</td>
+				<td id="title">
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id)); ?>">
+						<?php echo $invoice->title ? $this->escape($invoice->title) : $this->translate('INVOICE')." ".$this->escape($invoice->invoiceid); ?>
+					</a>
+				</td>
+				<td id="contactid">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->contactid)); ?>">
+						<?php echo $this->escape($invoice->contactid); ?>
+					</a>
+				</td>
+				<td id="contact">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->contactid)); ?>">
+						<?php echo $this->escape($invoice->billingname1); ?>
+						<?php if($invoice->billingname2) echo "<br/>".$this->escape($invoice->billingname2); ?>
+					</a>
+				</td>
+				<td id="modified">
+					<?php echo $this->escape(date("d.m.Y", strtotime($invoice->modified))); ?>
+				</td>
+				<td id="state">
+					<?php echo $this->translate($this->escape($this->options['states'][$invoice->state])); ?>
+				</td>
+				<td id="buttons">
+					<?php echo $this->Button('edit', '', $this->translate('TOOLBAR_EDIT')); ?>
+					<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
+					<?php echo $this->Button('pdf', '', $this->translate('TOOLBAR_PDF')); ?>
+				</td>
+			</tr>
+			<?php endforeach; ?>
+		</tbody>
+	</table>
+<?php endif; ?>
+
+<?php if(isset($this->quoterequests) && count($this->quoterequests)) : ?>
+	<h3>
+		<?php echo $this->translate('QUOTE_REQUESTS'); ?>
+		<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index'), null, TRUE); ?>">
+			<span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+		</a>
+	</h3>
+	<table style="max-width:99%;">
+		<thead>
+			<tr>
+				<th id="id" width="7%">
+					<?php echo $this->translate('QUOTE_REQUESTS_ID') ?>
+				</th>
+				<th id="title" width="28%">
+					<?php echo $this->translate('QUOTE_REQUESTS_TITLE') ?>
+				</th>
+				<th id="contactid" width="5%">
+					<?php echo $this->translate('QUOTE_REQUESTS_CONTACT_ID') ?>
+				</th>
+				<th id="billingname1" width="20%">
+					<?php echo $this->translate('QUOTE_REQUESTS_CONTACT') ?>
+				</th>
+				<th id="modified" width="8%">
+					<?php echo $this->translate('QUOTE_REQUESTS_MODIFIED') ?>
+				</th>
+				<th width="6%">
+					<?php echo $this->translate('QUOTE_REQUESTS_STATE') ?>
+				</th>
+				<th width="10%"></th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php foreach($this->quoterequests as $quoterequest) : ?>
+			<tr>
+				<td id="id">
+					<input class="id" type="hidden" value="<?php echo $quoterequest->id ?>" name="id"/>
+					<input class="controller" type="hidden" value="quoterequest" name="controller"/>
+					<input class="module" type="hidden" value="purchases" name="module"/>
+					<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
+						<?php echo $this->escape($quoterequest->id); ?>
+					</a>
+				</td>
+				<td id="title">
+					<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
+						<?php echo $quoterequest->title ? $this->escape($quoterequest->title) : $this->escape($quoterequest->id); ?>
+					</a>
+				</td>
+				<td id="contactid">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->contactid)); ?>">
+						<?php echo $this->escape($quoterequest->contactid); ?>
+					</a>
+				</td>
+				<td id="contact">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->contactid)); ?>">
+						<?php echo $this->escape($quoterequest->billingname1); ?>
+						<?php if($quoterequest->billingname2) echo "<br/>".$this->escape($quoterequest->billingname2); ?>
+					</a>
+				</td>
+				<td id="modified">
+					<?php echo $this->escape(date("d.m.Y", strtotime($quoterequest->modified))); ?>
+				</td>
+				<td id="state">
+					<?php echo $this->translate($this->escape($this->options['states'][$quoterequest->state])); ?>
+				</td>
+				<td id="buttons">
+					<?php echo $this->Button('edit', '', $this->translate('TOOLBAR_EDIT')); ?>
+					<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
+					<?php echo $this->Button('pdf', '', $this->translate('TOOLBAR_PDF')); ?>
+				</td>
+			</tr>
+			<?php endforeach; ?>
+		</tbody>
+	</table>
+<?php endif; ?>
+
+<?php if(isset($this->purchaseorders) && count($this->purchaseorders)) : ?>
+	<h3>
+		<?php echo $this->translate('PURCHASE_ORDERS'); ?>
+		<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index'), null, TRUE); ?>">
+			<span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+		</a>
+	</h3>
+	<table style="max-width:99%;">
+		<thead>
+			<tr>
+				<th id="id" width="7%">
+					<?php echo $this->translate('PURCHASE_ORDERS_ID') ?>
+				</th>
+				<th id="title" width="28%">
+					<?php echo $this->translate('PURCHASE_ORDERS_TITLE') ?>
+				</th>
+				<th id="contactid" width="5%">
+					<?php echo $this->translate('PURCHASE_ORDERS_CONTACT_ID') ?>
+				</th>
+				<th id="billingname1" width="20%">
+					<?php echo $this->translate('PURCHASE_ORDERS_CONTACT') ?>
+				</th>
+				<th id="modified" width="8%">
+					<?php echo $this->translate('PURCHASE_ORDERS_MODIFIED') ?>
+				</th>
+				<th width="6%">
+					<?php echo $this->translate('PURCHASE_ORDERS_STATE') ?>
+				</th>
+				<th width="10%"></th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php foreach($this->purchaseorders as $purchaseorder) : ?>
+			<tr>
+				<td id="id">
+					<input class="id" type="hidden" value="<?php echo $purchaseorder->id ?>" name="id"/>
+					<input class="controller" type="hidden" value="purchaseorder" name="controller"/>
+					<input class="module" type="hidden" value="purchases" name="module"/>
+					<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id)); ?>">
+						<?php echo $this->escape($purchaseorder->id); ?>
+					</a>
+				</td>
+				<td id="title">
+					<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id)); ?>">
+						<?php echo $purchaseorder->title ? $this->escape($purchaseorder->title) : $this->escape($purchaseorder->id); ?>
+					</a>
+				</td>
+				<td id="contactid">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder->contactid)); ?>">
+						<?php echo $this->escape($purchaseorder->contactid); ?>
+					</a>
+				</td>
+				<td id="contact">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder->contactid)); ?>">
+						<?php echo $this->escape($purchaseorder->billingname1); ?>
+						<?php if($purchaseorder->billingname2) echo "<br/>".$this->escape($purchaseorder->billingname2); ?>
+					</a>
+				</td>
+				<td id="modified">
+					<?php echo $this->escape(date("d.m.Y", strtotime($purchaseorder->modified))); ?>
+				</td>
+				<td id="state">
+					<?php echo $this->translate($this->escape($this->options['states'][$purchaseorder->state])); ?>
+				</td>
+				<td id="buttons">
+					<?php echo $this->toolbar->edit; ?>
+					<?php echo $this->toolbar->copy; ?>
+					<?php echo $this->toolbar->pdf; ?>
+				</td>
+			</tr>
+			<?php endforeach; ?>
+		</tbody>
+	</table>
+<?php endif; ?>
+</div>
+
+<div id="right">
+	<h3>
+		<?php echo $this->translate('STATISTICS'); ?>
+		<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index'), null, TRUE); ?>">
+			<span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('MORE'); ?></span>
+		</a>
+	</h3>
+	<img src="cache/chart/turnover-500-300.png">
+	<img src="cache/chart/turnover-category-500-300.png">
+</div>
+
+<div style="clear:left"></div>

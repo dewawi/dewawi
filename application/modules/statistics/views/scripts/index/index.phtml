@@ -1,0 +1,25 @@
+<?php
+$this->title = $this->translate('STATISTICS');
+$this->headTitle($this->title);
+?>
+
+<?php if($this->lenght == 13) : ?>
+	1 Jahr
+<?php else : ?>
+	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'lenght'=>'13')); ?>">1 Jahr</a>
+<?php endif; ?>
+<?php if($this->lenght == 25) : ?>
+	2 Jahre
+<?php else : ?>
+	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'lenght'=>'25')); ?>">2 Jahre</a>
+<?php endif; ?>
+<?php if($this->lenght == 61) : ?>
+	5 Jahre
+<?php else : ?>
+	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'lenght'=>'61')); ?>">5 Jahre</a>
+<?php endif; ?>
+
+<h3><?php echo $this->translate('STATISTICS_TURNOVER'); ?></h3>
+<img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-1000-400.png">
+<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
+<img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-category-1000-400.png">

@@ -1,0 +1,396 @@
+<?php         
+$this->title = 'Credit Note Pdf';
+$this->headTitle($this->title);
+
+//Config
+$client = $this->client;
+
+//Credit Note
+$id = $this->creditnote['id'];
+$creditnoteid = $this->creditnote['creditnoteid'];
+$contactid = $this->creditnote['contactid'];
+$creditnotedate = $this->creditnote['creditnotedate'];
+if($creditnotedate != '0000-00-00') $creditnotedate = implode('.', array_reverse(explode('-', $creditnotedate)));
+else $creditnotedate = 0;
+$orderdate = $this->creditnote['orderdate'];
+if($orderdate != '0000-00-00') $orderdate = implode('.', array_reverse(explode('-', $orderdate)));
+else $orderdate = 0;
+$deliverydate = $this->creditnote['deliverydate'];
+if($deliverydate != '0000-00-00') $deliverydate = implode('.', array_reverse(explode('-', $deliverydate)));
+else $deliverydate = 0;
+$vatin = $this->creditnote['vatin'];
+$header = $this->creditnote['header'];
+$footer = $this->creditnote['footer'];
+$created = $this->creditnote['created'];
+
+//BillingAddress
+$billingName1 = $this->creditnote['billingname1'];
+$billingName2 = $this->creditnote['billingname2'];
+$billingDepartment = $this->creditnote['billingdepartment'];
+$billingStreet = $this->creditnote['billingstreet'];
+$billingPostcode = $this->creditnote['billingpostcode'];
+$billingCity = $this->creditnote['billingcity'];
+$billingCountry = $this->translate($this->creditnote['billingcountry']);
+
+//ShippingAddress
+$shippingName1 = $this->creditnote['shippingname1'];
+$shippingName2 = $this->creditnote['shippingname2'];
+$shippingDepartment = $this->creditnote['shippingdepartment'];
+$shippingStreet = $this->creditnote['shippingstreet'];
+$shippingPostcode = $this->creditnote['shippingpostcode'];
+$shippingCity = $this->creditnote['shippingcity'];
+$shippingCountry = $this->translate($this->creditnote['shippingcountry']);
+$shippingPhone = $this->creditnote['shippingphone'];
+$shippingAddress = false;
+if($shippingName1 || $shippingStreet) $shippingAddress = true;
+
+//Positions
+$positions = $this->positions;
+
+//TCPDF
+require_once(BASE_PATH.'/library/Tcpdf/config/tcpdf_config.php');
+require_once(BASE_PATH.'/library/Tcpdf/tcpdf.php');
+
+// create new PDF document
+$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+// set document information
+$pdf->SetCreator(PDF_CREATOR);
+$pdf->SetAuthor(PDF_AUTHOR);
+if($creditnoteid) $pdf->SetTitle($this->translate('CREDIT_NOTE').' '.$creditnoteid.' '.$billingName1);
+else $pdf->SetTitle($this->translate('CREDIT_NOTE').' '.$this->translate('DOCUMENTS_SAMPLE').' '.$billingName1);
+$pdf->SetSubject($this->translate('CREDIT_NOTE'));
+
+// remove default header/footer
+$pdf->setPrintHeader(false);
+$pdf->setPrintFooter(false);
+
+// set default header data
+$pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
+
+// set header and footer fonts
+$pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+$pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+
+// set default monospaced font
+$pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+//set display mode
+$pdf->SetDisplayMode('real', 'OneColumn');
+
+//set margins
+$pdf->SetMargins(15, 30, 15);
+
+//set auto page breaks
+$pdf->SetAutoPageBreak(true, 30);
+
+//set image scale factor
+$pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+// add a page
+$pdf->AddPage();
+$pageStart = $pdf->getPage();
+
+//Website
+if(isset($this->template) && $this->template['website']) {
+	$website = $this->template['website'];
+} else {
+	$website = $client['website'];
+}
+
+//Logo
+if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/images/'.$this->template['logo'])) {
+	$logo = BASE_PATH.'/images/'.$this->template['logo'];
+} elseif(file_exists(BASE_PATH.'/images/logo.jpg')) {
+	$logo = BASE_PATH.'/images/logo.jpg';
+}
+$pdf->Image($logo, 145, 10, 0, 0, '', $website);
+
+//IMPORTANT INFORMATIONS
+$pdf->SetY(40);
+$pdf->setCellPaddings(0, 0, 0, 0);
+$pdf->SetFont('freesans', '', 9);
+$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_CREDIT_NOTE_ID'), 0, 'L', false, 0, 130);
+if($creditnoteid) $pdf->MultiCell(40, 5, $creditnoteid, 0, 'L', false, 1, 160);
+else $pdf->MultiCell(40, 5, ' - - - - - ', 0, 'L', false, 1, 160);
+$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_CREDIT_NOTE_DATE'), 0, 'L', false, 0, 130);
+if($creditnotedate) $pdf->MultiCell(28, 5, $creditnotedate, 0, 'L', false, 1, 160);
+else $pdf->MultiCell(28, 5, ' - - - - - ', 0, 'L', false, 1, 160);
+$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_CUSTOMER_ID'), 0, 'L', false, 0, 130);
+$pdf->MultiCell(28, 5, $contactid, 0, 'L', false, 1, 160);
+if($vatin) {
+	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_VATIN'), 0, 'L', false, 0, 130);
+	$pdf->MultiCell(84, 5, $vatin, 0, 'L', false, 1, 160);
+}
+if($orderdate) {
+	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_ORDER_DATE'), 0, 'L', false, 0, 130);
+	$pdf->MultiCell(84, 5, $orderdate, 0, 'L', false, 1, 160);
+}
+if($deliverydate) {
+	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_DELIVERY_DATE'), 0, 'L', false, 0, 130);
+	$pdf->MultiCell(84, 5, $deliverydate, 0, 'L', false, 1, 160);
+}
+$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_PERSON'), 0, 'L', false, 0, 130);
+$pdf->MultiCell(84, 5, $this->creditnote['contactperson'], 0, 'L', false, 1, 160);
+$pdf->ln(8);
+$y = $pdf->GetY();
+
+//Shipping Address
+if($shippingAddress) {
+	$pdf->SetFont('freesansb', 'B', 10);
+	$pdf->MultiCell(70, 0, $this->translate('DOCUMENTS_SHIPPING_ADDRESS'), 0, 'L', false, 1, 130);
+	$pdf->SetFont('freesans', '', 10);
+	$pdf->MultiCell(70, 0, $shippingName1, 0, 'L', false, 1, 130);
+	if($shippingName2) $pdf->MultiCell(70, 0, $shippingName2, 0, 'L', false, 1, 130);
+	if($shippingDepartment) $pdf->MultiCell(70, 0, $shippingDepartment, 0, 'L', false, 1, 130);
+	$pdf->MultiCell(70, 0, $shippingStreet, 0, 'L', false, 1, 130);
+	$shippingPostcodeCity = '';
+	if($shippingPostcode) $shippingPostcodeCity .= $shippingPostcode.' ';
+	if($shippingCity) $shippingPostcodeCity .= $shippingCity;
+	if($shippingPostcodeCity) $pdf->MultiCell(70, 0, $shippingPostcodeCity, 0, 'L', false, 1, 130);
+	if($shippingCountry) $pdf->MultiCell(70, 0, $shippingCountry, 0, 'L', false, 1, 130);
+	if($shippingPhone) $pdf->MultiCell(70, 0, $this->translate('DOCUMENTS_PHONE').' '.$shippingPhone, 0, 'L', false, 1, 130);
+	$pdf->ln(10);
+	$y = $pdf->GetY();
+}
+
+$pdf->setCellPaddings(0, 0, 0, 0);
+
+$x = $pdf->GetX()+5;
+$pdf->SetFont('freesansb', 'B', 15);
+$pdf->MultiCell(0, 0, mb_strtoupper($this->translate('CREDIT_NOTE'), 'UTF-8'), 0, 'L', false, 1, $x, 20);
+$pdf->ln(22);
+
+//LETTERHEAD
+$pdf->SetFont('freesans', '', 7);
+$address = $client['company'];
+if($client['address']) $address .= ', '.$client['address'];
+if($client['postcode']) $address .= ', '.$client['postcode'];
+if($client['city']) $address .= ' '.$client['city'];
+$pdf->MultiCell(70, 4, $address, 'B', 'L', false, 1, $x);
+$pdf->ln(4);
+$pdf->SetFont('freesans', '', 10);
+
+//Contact adress
+$pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, $x);
+if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, $x);
+if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, $x);
+if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, $x);
+$pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, $x);
+$pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, $x);
+$pdf->ln(20);
+if($y > $pdf->GetY()) $pdf->SetY($y);
+
+//HEADER
+if($header) {
+	$pdf->SetFont('freesans', '', 9);
+	$pdf->MultiCell(175, 0, $header, 0, 'L', false, 1, $x, '', $reseth=true, $stretch=0, $ishtml=true);
+	$pdf->ln(4);
+}
+
+if(count($positions)) {
+	$pdf->setCellPaddings(1, 0, 0, 0);
+
+	$pdf->SetFont('freesansb', 'B', 8);
+
+	//POSITIONS HEADER
+	$pdf->Cell(10, 5, $this->translate('DOCUMENTS_POSITION'), 'LTB');
+	$pdf->setCellPaddings(0, 0, 0, 0);
+	$pdf->Cell(98, 5, $this->translate('DOCUMENTS_DESCRIPTION'), 'TB');
+	$pdf->Cell(10, 5, $this->translate('DOCUMENTS_QUANTITY'), 'TB');
+	$pdf->Cell(12, 5, $this->translate('DOCUMENTS_UOM'), 'TB', 0, 'C');
+	$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_SINGLE'), 'TB', 0, 'C');
+	$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_TOTAL'), 'TBR', 0, 'C');
+	$pdf->ln(5);
+
+	//POSITIONS
+	$y = 0;
+	$i = 1;
+	foreach($positions as $position) {
+		$x = $pdf->getX();
+		$pdf->setCellPaddings(0, 2, 0, 0);
+		$pdf->SetFont('freesans', '', 9);
+		$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
+		$pdf->MultiCell(10, 0, $position->quantity, 0, 'C', false, 0, $x+108, '', true, 0);
+		if($position->uom) $pdf->MultiCell(12, 0, $position->uom, 0, 'C', false, 0, $x+118, '', true, 0);
+		$pdf->MultiCell(25, 0, $position->price, 0, 'C', false, 0, $x+130, '', true, 0);
+		$pdf->MultiCell(25, 0, $position->total, 0, 'C', false, 0, $x+155, '', true, 0);
+		$pdf->MultiCell(108, 0, $position->sku, 0, 'L', false, 2, $x+10, '', true, 0);
+		$pdf->setCellPaddings(0, 0, 0, 0);
+		if($position->title) {
+			$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 2, $x+10, '', true, 0);
+		}
+		if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
+			$startPage = $pdf->getPage();
+			$y = $pdf->getY();
+			$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
+			$endPage = $pdf->getPage();
+			if($startPage == $endPage) {
+				$imageHeight = $pdf->getY() - $y;
+			} else {
+				$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
+				$pdf->setPage($startPage);
+			}
+			if($position->description) {
+				$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
+			}
+		} elseif($position->description) {
+			$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+10, '', true, 0);
+		}
+		$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+		++$i;
+	}
+	$pdf->ln(4);
+
+	$pdf->SetFont('freesans', '', 9);
+
+	//FOOTER
+	if($footer) $pdf->MultiCell(105, 0, $footer, 0, 'L', false, 0, '', '', $reseth=true, $stretch=0, $ishtml=true);
+
+	$pdf->setCellPaddings(3, 1, 3, 1);
+
+	$pdf->SetFont('freesansb', 'B', 10);
+
+	//TOTAL BOX
+	$x = $pdf->getX();
+	$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_SUBTOTAL'), 'LT', 'L', false, 0 ,$x);
+	$pdf->MultiCell(30, 0, $this->creditnote['subtotal'], 'TR', 'R', false, 1);
+	$pdf->setCellPaddings(3, 0, 3, 1);
+	$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TAXES').' ('.$this->creditnote['taxrate'].'%)', 'L', 'L', false, 0 ,$x);
+	$pdf->MultiCell(30, 0, $this->creditnote['taxes'], 'R', 'R', false, 1);
+	$pdf->setCellPaddings(3, 1, 3, 1);
+	$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TOTAL'), 'LBT', 'L', false, 0 ,$x);
+	$pdf->MultiCell(30, 0, $this->creditnote['total'], 'RBT', 'R', false, 1);
+}
+
+$i = 1;
+$lastPage = $pdf->GetPage();
+while($i <= $lastPage) {
+	$pdf->setPage($i);
+
+	if(!$creditnoteid) {
+		sample($pdf, strtoupper($this->translate('DOCUMENTS_SAMPLE')));
+	}
+
+	if($this->creditnote['state'] == 7) {
+		cancelled($pdf, strtoupper($this->translate('DOCUMENTS_CANCELLED')));
+	}
+	if($i > 1) {
+		$pdf->Image($logo, 155, 10, 40, 0, '', $website);
+
+		$y = $pdf->GetY();
+		$pdf->SetY(20);
+
+		//New page info box
+		$pdf->setCellPaddings(1, 1, 0, 0);
+		$pdf->SetFont('freesans', '', 8);
+		$pdf->Write(0, $this->translate('DOCUMENTS_CREDIT_NOTE_ID').' ');
+		$pdf->SetFont('freesansb', 'B', 8);
+		if($creditnoteid) $pdf->Write(0, $creditnoteid.'     ');
+		else $pdf->Write(0, ' - - - - -     ');
+		$pdf->SetFont('freesans', '', 8);
+		$pdf->Write(0, $this->translate('DOCUMENTS_CREDIT_NOTE_DATE').' ');
+		$pdf->SetFont('freesansb', 'B', 8);
+		if($creditnotedate) $pdf->Write(0, $creditnotedate.'     ');
+		else $pdf->Write(0, ' - - - - -     ');
+		$pdf->SetFont('freesans', '', 8);
+		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');
+		$pdf->SetFont('freesansb', 'B', 8);
+		$pdf->Write(0, $contactid);
+		$pdf->ln();
+
+		$pdf->setCellPaddings(1, 0, 0, 0);
+
+		$pdf->SetFont('freesansb', 'B', 8);
+
+		//POSITIONS HEADER
+		$pdf->Cell(10, 5, $this->translate('DOCUMENTS_POSITION'), 'LTB');
+		$pdf->setCellPaddings(0, 0, 0, 0);
+		$pdf->Cell(98, 5, $this->translate('DOCUMENTS_DESCRIPTION'), 'TB');
+		$pdf->Cell(10, 5, $this->translate('DOCUMENTS_QUANTITY'), 'TB');
+		$pdf->Cell(12, 5, $this->translate('DOCUMENTS_UOM'), 'TB', 0, 'C');
+		$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_SINGLE'), 'TB', 0, 'C');
+		$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_TOTAL'), 'TBR', 0, 'C');
+		$pdf->ln(5);
+	}
+
+	$pdf->setCellPaddings(0, 2, 0, 2);
+	$pdf->SetAutoPageBreak(false);
+	$pdf->SetFont('freesans', '', 7);
+
+	//Footer
+	$x = 12;
+	$pdf->SetY(270);
+	foreach($this->footers as $footer) {
+		$width = $footer->width ? $footer->width : 40;
+		$pdf->MultiCell($width, 3, $footer->text, 0, 'L', false, 0, $x);
+		$x += $width;
+	}
+
+	// Page number
+	$pdf->SetY(284);
+	$pdf->SetFont('helvetica', 'I', 8);
+	$pdf->Cell(0, 10, $this->translate('DOCUMENTS_PAGE').' '.$pdf->getAliasNumPage().'/'.$pdf->getAliasNbPages(), 0, false, 'C', 0, '', 0, false, 'T', 'M');
+	$pdf->SetFont('freesans', '', 8);
+
+	$pdf->SetAutoPageBreak(true, 30);
+
+	$pdf->SetY($y);
+	++$i;
+}
+
+//Close and output PDF document
+if($this->action == 'download') {
+	if($creditnoteid) $pdf->Output($creditnoteid.' '.$this->translate('CREDIT_NOTE').' '.$billingName1.'.pdf', 'D');
+	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').' '.$this->translate('CREDIT_NOTE').' '.$billingName1.'.pdf', 'D');
+} else {
+	if($creditnoteid) {
+		if(!file_exists(BASE_PATH.'/files/contacts/'.$contactid.'/')) {
+			mkdir(BASE_PATH.'/files/contacts/'.$contactid.'/');
+			chmod(BASE_PATH.'/files/contacts/'.$contactid.'/', 0777);
+		}
+		$pdf->Output(BASE_PATH.'/files/contacts/'.$contactid.'/'.$this->translate('CREDIT_NOTE').'-'.$creditnoteid.'.pdf', 'F');
+		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$contactid.'/'.$this->translate('CREDIT_NOTE').'-'.$creditnoteid.'.pdf?'.time().'" width="900px" height="500px">';
+	} else {
+		if(!file_exists(BASE_PATH.'/cache/creditnote/')) {
+			mkdir(BASE_PATH.'/cache/creditnote/');
+			chmod(BASE_PATH.'/cache/creditnote/', 0777);
+		}
+		$pdf->Output(BASE_PATH.'/cache/creditnote/'.$id.'.pdf', 'F');
+		$html = '<iframe src="'.$this->baseUrl().'/cache/creditnote/'.$id.'.pdf?'.time().'" width="900px" height="500px">';
+	}
+	echo $html;
+}
+
+function sample($pdf, $txt) {
+	// set alpha to semi-transparency
+	$pdf->SetAlpha(0.5);
+	$pdf->SetTextColor(225, 225, 225);
+	$y = $pdf->GetY();
+	$width = $pdf->GetX();
+	$pdf->setY(140);
+	$pdf->SetFont('helvetica', 'B', 75);
+	$pdf->Write(0, $txt, '', false, 'C');
+	//$pdf->Cell(0, 200, $txt, 0, false, 'C', 0, '', 0, false, 'T', 'M');
+	$pdf->SetY($y);
+	$pdf->setX($width);
+	$pdf->SetTextColor(0, 0, 0);
+	// restore full opacity
+	$pdf->SetAlpha(1);
+}
+
+function cancelled($pdf, $txt) {
+	// set alpha to semi-transparency
+	$pdf->SetAlpha(0.5);
+	$pdf->SetTextColor(225, 225, 225);
+	$y = $pdf->GetY();
+	$width = $pdf->GetX();
+	$pdf->setY(140);
+	$pdf->SetFont('helvetica', 'B', 75);
+	$pdf->Write(0, $txt, '', false, 'C');
+	$pdf->SetY($y);
+	$pdf->setX($width);
+	$pdf->SetTextColor(0, 0, 0);
+	// restore full opacity
+	$pdf->SetAlpha(1);
+}

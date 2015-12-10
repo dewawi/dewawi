@@ -1,0 +1,25 @@
+<?php 
+$this->title = $this->translate('USERS_LOGIN');
+$this->headTitle($this->title);
+?>
+
+<form id="user" enctype="application/x-www-form-urlencoded" action="" method="post">
+	<div id="left">
+		<dl class="form">
+			<?php echo $this->form->getElement('id') ?>
+			<?php echo $this->form->getElement('username') ?>
+			<?php echo $this->form->getElement('password') ?>
+			<?php echo $this->form->getElement('client') ?>
+			<?php echo $this->form->getElement('stayLoggedIn') ?>
+			<?php echo $this->form->getElement('submit') ?>
+		</dl>
+	</div>
+	<div id="right">
+	</div>
+</form>
+<div style="clear:left"></div>
+
+<script type="text/javascript">
+$(document).ready(function(){
+});
+</script>

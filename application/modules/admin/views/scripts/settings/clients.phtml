@@ -1,0 +1,31 @@
+<?php         
+$this->title = $this->translate('SETTINGS');
+$this->headTitle($this->title);
+echo $this->MenuSettings();
+?>
+
+<table id="clients" style="width:100%;">
+	<tbody>
+	<?php foreach ($this->clients as $client) : ?>
+		<tr id="client<?php echo $client['id'] ?>">
+			<td>
+				<?php echo $this->forms[$client['id']]->getElement('company') ?>
+				<?php echo $this->forms[$client['id']]->getElement('address') ?>
+				<?php echo $this->forms[$client['id']]->getElement('postcode') ?>
+				<?php echo $this->forms[$client['id']]->getElement('city') ?>
+				<?php echo $this->forms[$client['id']]->getElement('country') ?>
+			</td>
+			<td>
+				<?php echo $this->forms[$client['id']]->getElement('email') ?>
+				<?php echo $this->forms[$client['id']]->getElement('website') ?>
+				<?php echo $this->forms[$client['id']]->getElement('language') ?>
+			</td>
+			<td id="buttons">
+				<button class="delete" onclick="deletePosition(<?php echo $client['id'] ?>)" type="button" title="<?php echo $this->translate('POSITIONS_DELETE') ?>"><span></span></button>
+				<button class="copy" onclick="copyPosition(<?php echo $client['id'] ?>)" type="button" title="<?php echo $this->translate('POSITIONS_COPY') ?>"><span></span></button>
+			</td>
+		</tr>
+	<?php endforeach; ?>
+	</tbody>
+	</table>
+</table>

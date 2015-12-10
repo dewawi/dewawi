@@ -1,0 +1,21 @@
+<?php         
+$this->title = $this->translate('SETTINGS');
+$this->headTitle($this->title);
+echo $this->MenuSettings();
+?>
+
+<form id="overview" enctype="application/x-www-form-urlencoded" action="" method="post">
+	<div id="left">
+		<dl class="form">
+			<?php echo $this->form->getElement('company') ?>
+			<?php echo $this->form->getElement('address') ?>
+			<?php echo $this->form->getElement('postcode') ?>
+			<?php echo $this->form->getElement('city') ?>
+			<?php echo $this->form->getElement('country') ?>
+			<?php echo $this->form->getElement('website') ?>
+			<?php echo $this->form->getElement('language') ?>
+		</dl>
+	</div>
+	<div id="right">
+	</div>
+</form>
