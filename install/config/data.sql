@@ -320,6 +320,27 @@ INSERT INTO `country` (`id`, `code`, `name`, `language`, `clientid`, `created`, 
 (256, 'CY', 'Zypern', 'de_DE', 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
+TRUNCATE `creditnote`;
+INSERT INTO `creditnote` (`id`, `creditnoteid`, `opportunityid`, `contactid`, `title`, `info`, `header`, `footer`, `vatin`, `creditnotedate`, `orderdate`, `deliverydate`, `paymentmethod`, `shippingmethod`, `billingname1`, `billingname2`, `billingdepartment`, `billingstreet`, `billingpostcode`, `billingcity`, `billingcountry`, `shippingname1`, `shippingname2`, `shippingdepartment`, `shippingstreet`, `shippingpostcode`, `shippingcity`, `shippingcountry`, `shippingphone`, `subtotal`, `taxes`, `total`, `taxfree`, `state`, `completed`, `cancelled`, `contactperson`, `templateid`, `language`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 0, 0, 1000, 'Angebot Sony Cyber-shot DSC-W810', '', '', '', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Jonas Kirsch', '', '', 'Inge Beisheim Platz 82', '31629', 'Estorf', 'DE', '', '', '', '', '', '', '', '', 99.0000, 18.8100, 117.8100, 0, 100, 0, 0, 'Admin', 0, '', 1, '2015-12-10 20:42:44', 1, '2015-12-10 20:42:51', 1, 0, '2015-12-10 20:42:51');
+
+
+TRUNCATE `creditnotepos`;
+INSERT INTO `creditnotepos` (`id`, `creditnoteid`, `itemid`, `sku`, `title`, `image`, `description`, `price`, `taxrate`, `quantity`, `total`, `uom`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`) VALUES
+(1, 1, 1, '30962377', 'Sony Cyber-shot DSC-W810', '', 'Kompakt Kamera, 20,1 Megapixel, 6x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20,1 Megapixel\n6fach optischer Zoom\n6,8 cm (2,7 Zoll) LCD-Display\nVideoaufnahmen in HD 720p\nSchwenkpanorama-Aufnahmen mit bis zu 360 Grad', 99.0000, 19.0000, 1.0000, 99.0000, 'Stück', 1, 1, '2015-12-10 20:42:44', 1, '0000-00-00 00:00:00', 0);
+
+
+TRUNCATE `deliveryorder`;
+INSERT INTO `deliveryorder` (`id`, `deliveryorderid`, `opportunityid`, `contactid`, `title`, `info`, `header`, `footer`, `vatin`, `deliveryorderdate`, `orderdate`, `deliverydate`, `paymentmethod`, `shippingmethod`, `billingname1`, `billingname2`, `billingdepartment`, `billingstreet`, `billingpostcode`, `billingcity`, `billingcountry`, `shippingname1`, `shippingname2`, `shippingdepartment`, `shippingstreet`, `shippingpostcode`, `shippingcity`, `shippingcountry`, `shippingphone`, `subtotal`, `taxes`, `total`, `taxfree`, `state`, `completed`, `cancelled`, `contactperson`, `templateid`, `language`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 0, 0, 1006, 'NIKON D3300 mit Speicherkarte und Adapter', '', '', '', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 488.0000, 92.7200, 580.7200, 0, 100, 0, 0, 'Admin', 0, '', 1, '2015-12-10 20:42:22', 1, '2015-12-10 20:43:18', 1, 0, '2015-12-10 20:43:18');
+
+
+TRUNCATE `deliveryorderpos`;
+INSERT INTO `deliveryorderpos` (`id`, `deliveryorderid`, `itemid`, `sku`, `title`, `image`, `description`, `price`, `taxrate`, `quantity`, `total`, `uom`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`) VALUES
+(1, 1, 5, '23280396', 'NIKON D3300', '', 'Spiegelreflex Kamera, AF-S DX NIKKOR 18-55 VR II 1:3,5–5,6G Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Nikkor Objektiv (AF-S DX VR II 18-55mm)\n7,5cm (3") LCD-Display\nVideoaufnahmen in Full HD 1080p\nHigh-Speed, Panorama', 449.0000, 19.0000, 1.0000, 449.0000, 'Stück', 1, 1, '2015-12-10 20:42:22', 1, '0000-00-00 00:00:00', 0),
+(2, 1, 12, '070059P', 'Samsung Speicherkarte mit Adapter', '', '32GB micro SDHC Card Class 10 - PRO+\nfür Smartphones, Tablets oder Action-Cameras\nHitze- & Kältebeständig von -25°C bis +85°C\nRöntgen- und Magnetsicher\nWasser-, Schock- und Stoßfest\nbis zu 95 MB/s Lesen und bis zu 90 MB/s Schreiben', 39.0000, 19.0000, 1.0000, 39.0000, 'Stück', 2, 1, '2015-12-10 20:42:22', 1, '0000-00-00 00:00:00', 0);
+
+
 TRUNCATE `email`;
 INSERT INTO `email` (`id`, `contactid`, `email`, `ordering`) VALUES
 (1, 1000, 'jonaskirsch@cuvox.de', 1),
