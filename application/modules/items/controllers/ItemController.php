@@ -217,6 +217,169 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
 
+	public function importAction()
+	{
+		//$this->_helper->viewRenderer->setNoRender();
+		//$this->_helper->getHelper('layout')->disableLayout();
+		
+		$form = new Application_Form_Upload();
+
+		if ($this->getRequest()->isPost()) {
+			$formData = $this->getRequest()->getPost();
+			if ($form->isValid($formData)) {
+				if(!file_exists(BASE_PATH.'/files/import/')) {
+					mkdir(BASE_PATH.'/files/import/');
+					chmod(BASE_PATH.'/files/import/', 0777);
+				}
+
+				/* Uploading Document File on Server */
+				$upload = new Zend_File_Transfer_Adapter_Http();
+				$upload->setDestination(BASE_PATH.'/files/import/');
+				try {
+					// upload received file(s)
+					$upload->receive();
+				} catch (Zend_File_Transfer_Exception $e) {
+					$e->getMessage();
+				}
+				$file = $upload->getFileName();
+                $data = fopen($file, 'r');
+
+                if ($data && ($data !== FALSE)) {
+                    $map = array();
+                    $dataTemplate = array();
+                    $row = 0;
+                    while (($datacsv = fgetcsv($data, 0, ',')) !== FALSE) {
+                        //print_r($datacsv);
+                        if($row == 0) {
+                            foreach($datacsv as $pos => $attr) {
+                                if($attr) {
+                                    $map[$attr] = $pos;
+                                }
+                            }
+                        //print_r($map);
+                        } elseif($row == 1) {
+                            if(isset($map['name_dewawi'])) $dataTemplate['name_dewawi'] = $datacsv[$map['name_dewawi']];
+                            if(isset($map['name_magento'])) $dataTemplate['name_magento'] = $datacsv[$map['name_magento']];
+                            if(isset($map['name_ebay'])) $dataTemplate['name_ebay'] = $datacsv[$map['name_ebay']];
+                            if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] = $datacsv[$map['short_description_magento']];
+                            if(isset($map['description_magento'])) $dataTemplate['description_magento'] = $datacsv[$map['description_magento']];
+                            if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] = $datacsv[$map['description_dewawi']];
+                        } else {
+                            if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] .= $datacsv[$map['short_description_magento']];
+                            if(isset($map['description_magento'])) $dataTemplate['description_magento'] .= $datacsv[$map['description_magento']];
+                            if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] .= "\n".$datacsv[$map['description_dewawi']];
+                        }
+                        $row++;
+                    }
+                    fclose($data);
+                    $data = fopen($file, 'r');
+                    $row = 0;
+                    $item = new Items_Model_DbTable_Item();
+                    while (($datacsv = fgetcsv($data, 0, ',')) !== FALSE) {
+                        if($row == 0) {
+                            foreach($datacsv as $pos => $attr) {
+                                if($attr) {
+                                    $map[$attr] = $pos;
+                                }
+                            }
+                        } elseif($datacsv[$map['sku']]) {
+                            //echo $datacsv[$map['sku']];
+                            //print_r($datacsv);
+                            $itemArray = $item->getItemId($datacsv[$map['sku']]);
+                            //print_r($itemArray);
+                            $updateData = array();
+                            foreach($map as $attr => $pos) {
+                                if(isset($itemArray[$attr])) {
+                                    if($attr == 'weight') {
+                                        $updateData['weight'] = preg_replace("/[^0-9]/", '', $datacsv[$map[$attr]]);
+                                    } elseif($attr != 'price') {
+                                        $updateData[$attr] = $datacsv[$map[$attr]];
+                                    }
+                                } elseif($attr == 'discount_dewawi') {
+                                    $updateData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_dewawi']])/100;
+                                    $updateData['price'] = str_replace(',', '.', $updateData['price']);
+                                } elseif($attr == 'name_dewawi') {
+                                    $name_dewawi = $dataTemplate['name_dewawi'];
+                                    foreach($map as $attrSub => $pos) {
+                                        if (strpos($dataTemplate['name_dewawi'], '#'.$attrSub.'#') !== false) {
+                                            $name_dewawi = str_replace('#'.$attrSub.'#', $datacsv[$map[$attrSub]], $name_dewawi);
+                                        }
+                                    }
+                                    $updateData['title'] = $name_dewawi;
+                                } elseif($attr == 'description_dewawi') {
+                                    $description_dewawi = $dataTemplate['description_dewawi'];
+                                    foreach($map as $attrSub => $pos) {
+                                        if (strpos($dataTemplate['description_dewawi'], '#'.$attrSub.'#') !== false) {
+                                            $description_dewawi = str_replace('#'.$attrSub.'#', $datacsv[$map[$attrSub]], $description_dewawi);
+                                        }
+                                    }
+                                    $updateData['description'] = trim($description_dewawi);
+                                }
+                            }
+                            //print_r($updateData);
+                            $item->updateItem($itemArray['id'], $updateData);
+
+                            if(isset($map['shop_enabled']) && $datacsv[$map['shop_enabled']]) {
+                                $updateDataMagento = array();
+                                foreach($map as $attr => $pos) {
+                                    if($attr == 'discount_shop') {
+                                        $updateDataMagento['special_price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_shop']])/100;
+                                        $updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
+                                    } elseif($attr == 'name_magento') {
+                                        $name_magento = $dataTemplate['name_magento'];
+                                        foreach($map as $attr => $pos) {
+                                            if (strpos($dataTemplate['name_magento'], '#'.$attr.'#') !== false) {
+                                                $name_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $name_magento);
+                                            }
+                                        }
+                                        $updateDataMagento['name'] = $name_magento;
+                                    } elseif($attr == 'name_ebay') {
+                                        $name_ebay = $dataTemplate['name_ebay'];
+                                        foreach($map as $attr => $pos) {
+                                            if (strpos($dataTemplate['name_ebay'], '#'.$attr.'#') !== false) {
+                                                $name_ebay = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $name_ebay);
+                                            }
+                                        }
+                                        $updateDataMagento['name_ebay'] = $name_ebay;
+                                    } elseif($attr == 'short_description_magento') {
+                                        $short_description_magento = $dataTemplate['short_description_magento'];
+                                        foreach($map as $attr => $pos) {
+                                            if (strpos($dataTemplate['short_description_magento'], '#'.$attr.'#') !== false) {
+                                                $short_description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $short_description_magento);
+                                            }
+                                        }
+                                        $updateDataMagento['short_description'] = $short_description_magento;
+                                    } elseif($attr == 'description_magento') {
+                                        $description_magento = $dataTemplate['description_magento'];
+                                        foreach($map as $attr => $pos) {
+                                            if (strpos($dataTemplate['description_magento'], '#'.$attr.'#') !== false) {
+                                                $description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $description_magento);
+                                            }
+                                        }
+                                        $updateDataMagento['description'] = $description_magento;
+                                    } else {
+                                        $updateDataMagento[$attr] = $datacsv[$map[$attr]];
+                                    }
+                                }
+                                //print_r($updateDataMagento);
+                                $this->magento($updateDataMagento);
+                            }
+                        }
+                        $row++;
+                    }
+                    fclose($data);
+                }
+                
+		        $this->view->data = $data;
+			} else {
+				$form->populate($formData);
+			}
+		}
+
+		$this->view->form = $form;
+		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
 	protected function uploadAction()
 	{
 		$this->_helper->getHelper('layout')->setLayout('plain');
@@ -317,6 +480,97 @@ class Items_ItemController extends Zend_Controller_Action
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
 	}
+
+	protected function magento($updateDataMagento)
+	{
+		//$this->_helper->viewRenderer->setNoRender();
+		//$this->_helper->getHelper('layout')->disableLayout();
+		
+        // Created by Rafael Corrêa Gomes
+        // Reference http://devdocs.magento.com/guides/m1x/api/rest/introduction.html#RESTAPIIntroduction-RESTResources
+        // Custom Resource
+        $apiResources = "products?limit=2";
+        // Custom Values
+        $isAdminUser = true;
+        $adminUrl = "admin";
+        $callbackUrl = "http://deec.dewawi.com/items/item/import";
+        $host = 'https://www.renocold.com/de/';
+        $consumerKey    = '8822c2751ad7d9b8d781951a906f5a6e';
+        $consumerSecret = '617741dda6e43522937c5e8f73b19be7';
+        // Don't change
+        $temporaryCredentialsRequestUrl = $host . "oauth/initiate?oauth_callback=" . urlencode($callbackUrl);
+        $adminAuthorizationUrl = ($isAdminUser) ? $host . $adminUrl . "/oauth_authorize" : $host . "oauth/authorize";
+        $accessTokenRequestUrl = $host . "oauth/token";
+        $apiUrl = $host . "api/rest/";
+        //session_start();
+        if(!isset($_SESSION['state'])) $_SESSION['state'] = 0;
+        if (!isset($_GET['oauth_token']) && isset($_SESSION['state']) && $_SESSION['state'] == 1) {
+            $_SESSION['state'] = 0;
+        }
+        //print_r($_GET);
+        //print_r($_SESSION);
+        try {
+            $authType = ($_SESSION['state'] == 2) ? OAUTH_AUTH_TYPE_AUTHORIZATION : OAUTH_AUTH_TYPE_URI;
+            $oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_HMACSHA1, $authType);
+            //print_r($oauthClient);
+            $oauthClient->enableDebug();
+            if (!isset($_GET['oauth_token']) && !$_SESSION['state']) {
+                print_r($temporaryCredentialsRequestUrl);
+                $requestToken = $oauthClient->getRequestToken($temporaryCredentialsRequestUrl);
+                print_r($requestToken);
+                $_SESSION['secret'] = $requestToken['oauth_token_secret'];
+                $_SESSION['state'] = 1;
+                header('Location: ' . $adminAuthorizationUrl . '?oauth_token=' . $requestToken['oauth_token']);
+                exit;
+            } else if ($_SESSION['state'] == 1) {
+                $oauthClient->setToken($_GET['oauth_token'], $_SESSION['secret']);
+                $accessToken = $oauthClient->getAccessToken($accessTokenRequestUrl);
+                $_SESSION['state'] = 2;
+                $_SESSION['token'] = $accessToken['oauth_token'];
+                $_SESSION['secret'] = $accessToken['oauth_token_secret'];
+                //print_r($accessToken);
+                header('Location: ' . $callbackUrl);
+                exit;
+            } else {
+                $oauthClient->setToken($_SESSION['token'], $_SESSION['secret']);
+                //$resourceUrl = $apiUrl.$apiResources;
+                $oauthClient->fetch('http://magento.deec.de/api/rest/products/'.$updateDataMagento['sku'], array(), 'GET', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
+                $product = json_decode($oauthClient->getLastResponse(), true);
+                //$product = $oauthClient->getLastResponse();
+                
+                $updateData = array();
+                foreach($updateDataMagento as $attr => $data) {
+                    if(array_key_exists($attr, $product)) {
+                        if($attr == 'weight') {
+                            $updateData['weight'] = preg_replace("/[^0-9]/", '', $data);
+                        } else {
+                            $updateData[$attr] = $data;
+                        }
+                    }
+                }
+                unset($updateData['manufacturer']);
+                unset($updateData['refrigerant']);
+                unset($updateData['delivery_time']);
+                unset($updateData['delivery_time_oos']);
+                //print_r($updateData);
+                //print_r($product);
+                $updateData = json_encode($updateData);
+                
+                //print_r($product);
+                
+                //$updateData['sku'] = $updateDataMagento['sku'];
+                //$updateData['name'] = $updateDataMagento['name'];
+                
+                $oauthClient->fetch('http://magento.deec.de/api/rest/products/'.$product['entity_id'], $updateData, 'PUT', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
+            }
+        } catch (OAuthException $e) {
+            echo "<pre>";
+            print_r($e->getMessage());
+            echo "<br/>";
+            print_r($e->lastResponse);
+            echo "</pre>";
+        }
+    }
 
 	protected function search($params, $categories)
 	{

@@ -69,9 +69,14 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 		</div>
 		<table id="main">
 			<tr>
-				<?php if($this->action == 'index' && ($this->module == 'contacts' || $this->module == 'items')) : ?>
+				<?php if($this->action == 'index' && $this->module == 'contacts') : ?>
 					<td id="categories">
 						<?php echo $this->TreeMenu($this->options['categories']); ?>
+					</td>
+				<?php elseif($this->action == 'index' && $this->module == 'items') : ?>
+					<td id="categories">
+						<?php echo $this->TreeMenu($this->options['categories']); ?><br>
+                        <p>» <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import', 'id'=>null)); ?>"><?php echo $this->translate('Import'); ?></a></p>
 					</td>
 				<?php endif; ?>
 				<td id="content">

@@ -15,6 +15,15 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getItemId($sku)
+	{
+		$row = $this->fetchRow('sku = "' . $sku . '"');
+		if (!$row) {
+			throw new Exception("Could not find row $sku");
+		}
+		return $row->toArray();
+	}
+
 	public function getItems($ids)
 	{
 		$row = $this->fetchAll("sku IN ('" . implode("', '", $ids) . "')");
