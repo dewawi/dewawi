@@ -1629,7 +1629,7 @@
      $XStep = $IconAreaWidth + 5;
      $XStep = $XSpacing;
 
-     $Boundaries = ""; $Boundaries["L"] = $X; $Boundaries["T"] = $Y; $Boundaries["R"] = 0; $Boundaries["B"] = 0; $vY = $Y; $vX = $X;
+     $Boundaries = array(); $Boundaries["L"] = $X; $Boundaries["T"] = $Y; $Boundaries["R"] = 0; $Boundaries["B"] = 0; $vY = $Y; $vX = $X;
      foreach($Data["Series"] as $SerieName => $Serie)
       {
        if ( $Serie["isDrawable"] == TRUE && $SerieName != $Data["Abscissa"] )
@@ -2501,12 +2501,12 @@
    function computeScale($XMin,$XMax,$MaxDivs,$Factors,$AxisID=0)
     {
      /* Compute each factors */
-     $Results = "";
+     $Results = array();
      foreach ($Factors as $Key => $Factor)
       $Results[$Factor] = $this->processScale($XMin,$XMax,$MaxDivs,array($Factor),$AxisID);
 
      /* Remove scales that are creating to much decimals */
-     $GoodScaleFactors = "";
+     $GoodScaleFactors = array();
      foreach ($Results as $Key => $Result)
       {
        $Decimals = preg_split("/\./",$Result["RowHeight"]);
@@ -2540,7 +2540,7 @@
      else
       $Mode = AXIS_FORMAT_DEFAULT;
 
-     $Scale = "";
+     $Scale = array();
      if ( $XMin != $XMax )
       {
        $Found = FALSE; $Rescaled = FALSE; $Scaled10Factor = .0001; $Result = 0;
@@ -3096,9 +3096,9 @@
      if ( !isset($Data["Axis"][$AxisID]) ) { return(-1); }
 
      if ( $SerieName != NULL ) { $AxisID = $Data["Series"][$SerieName]["Axis"]; }
-     if ( !is_array($Values) ) { $tmp = $Values; $Values = ""; $Values[0] = $tmp; }
+     if ( !is_array($Values) ) { $tmp = $Values; $Values = array(); $Values[0] = $tmp; }
 
-     $Result = "";
+     $Result = array();
      if ( $Data["Orientation"] == SCALE_POS_LEFTRIGHT )
       {
        $Height      = ($this->GraphAreaY2 - $this->GraphAreaY1) - $Data["Axis"][$AxisID]["Margin"]*2;
