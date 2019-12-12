@@ -629,6 +629,13 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$this->view->template = $template;
 		}
 
+		//Set language
+		if($salesorder['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$salesorder['language']);
+			Zend_Registry::set('Zend_Locale', $salesorder['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
+		}
+
 		$positions = $this->getPositions($id);
 		if(!$salesorder['salesorderid']) {
 			//Get latest salesorder Id
@@ -684,6 +691,13 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$template = $templateDb->getTemplate($salesorder['templateid']);
 			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
+		}
+
+		//Set language
+		if($salesorder['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$salesorder['language']);
+			Zend_Registry::set('Zend_Locale', $salesorder['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
 		$positions = $this->getPositions($id);

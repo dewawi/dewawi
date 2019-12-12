@@ -575,6 +575,13 @@ class Sales_QuoteController extends Zend_Controller_Action
 			$this->view->template = $template;
 		}
 
+		//Set language
+		if($quote['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quote['language']);
+			Zend_Registry::set('Zend_Locale', $quote['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
+		}
+
 		$positions = $this->getPositions($id);
 		if(!$quote['quoteid']) {
 			//Get latest quote Id
@@ -630,6 +637,13 @@ class Sales_QuoteController extends Zend_Controller_Action
 			$template = $templateDb->getTemplate($quote['templateid']);
 			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
+		}
+
+		//Set language
+		if($quote['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quote['language']);
+			Zend_Registry::set('Zend_Locale', $quote['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
 		$positions = $this->getPositions($id);

@@ -521,6 +521,13 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$this->view->template = $template;
 		}
 
+		//Set language
+		if($deliveryorder['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$deliveryorder['language']);
+			Zend_Registry::set('Zend_Locale', $deliveryorder['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
+		}
+
 		$positions = $this->getPositions($id);
 		if(!$deliveryorder['deliveryorderid']) {
 			//Get latest deliveryorder Id
@@ -576,6 +583,13 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$template = $templateDb->getTemplate($deliveryorder['templateid']);
 			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
+		}
+
+		//Set language
+		if($deliveryorder['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$deliveryorder['language']);
+			Zend_Registry::set('Zend_Locale', $deliveryorder['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
 		$positions = $this->getPositions($id);

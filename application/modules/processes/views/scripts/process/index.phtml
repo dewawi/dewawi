@@ -78,7 +78,7 @@ echo $this->ActiveFilter();
 				<?php endif; ?>
 				<p class="paymentstatus">
 					<?php if($process->state == '105' || $process->state == '106') : ?>
-						<span><?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?></span>
+						<?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?>
 					<?php else : ?>
 						<span class="editable" data-name="paymentstatus" data-value="<?php echo $process->paymentstatus; ?>" data-type="select"><?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?></span>
 					<?php endif; ?>
@@ -88,7 +88,7 @@ echo $this->ActiveFilter();
 				<?php if(!$process->editpositionsseparately) : ?>
 					<p class="deliverystatus">
 						<?php if($process->state == '105' || $process->state == '106') : ?>
-							<span><?php echo $this->translate($this->deliverystatus[$process->deliverystatus]); ?></span>
+							<?php echo $this->translate($this->deliverystatus[$process->deliverystatus]); ?>
 						<?php else : ?>
 							<span class="editable" data-name="deliverystatus" data-value="<?php echo $process->deliverystatus; ?>" data-type="select"><?php echo $this->translate($this->deliverystatus[$process->deliverystatus]); ?></span>
 						<?php endif; ?>

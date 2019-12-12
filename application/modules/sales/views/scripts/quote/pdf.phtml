@@ -156,10 +156,14 @@ $pdf->ln(22);
 
 //LETTERHEAD
 $pdf->SetFont('freesans', '', 7);
-$address = $client['company'];
-if($client['address']) $address .= ', '.$client['address'];
-if($client['postcode']) $address .= ', '.$client['postcode'];
-if($client['city']) $address .= ' '.$client['city'];
+if(isset($this->template) && $this->template['company']) {
+	$address = $this->template['company'];
+} else {
+	$address = $client['company'];
+    if($client['address']) $address .= ', '.$client['address'];
+    if($client['postcode']) $address .= ', '.$client['postcode'];
+    if($client['city']) $address .= ' '.$client['city'];
+}
 $pdf->MultiCell(70, 4, $address, 'B', 'L', false, 1, $x);
 $pdf->ln(4);
 $pdf->SetFont('freesans', '', 10);

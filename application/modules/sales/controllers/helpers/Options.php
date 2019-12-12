@@ -119,7 +119,8 @@ class Sales_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		//Get languages
 		$languages = array(
 			'de_DE' => 'LANGUAGES_DE_DE',
-			'en_US' => 'LANGUAGES_EN_US'
+			'en_US' => 'LANGUAGES_EN_US',
+			'tr_TR' => 'LANGUAGES_TR_TR'
 		);
 		$options['languages'] = $languages;
 

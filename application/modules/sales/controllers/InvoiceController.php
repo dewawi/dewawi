@@ -671,6 +671,13 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$this->view->template = $template;
 		}
 
+		//Set language
+		if($invoice['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$invoice['language']);
+			Zend_Registry::set('Zend_Locale', $invoice['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
+		}
+
 		$positions = $this->getPositions($id);
 		if(!$invoice['invoiceid']) {
 			//Get latest invoice Id
@@ -741,6 +748,13 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$template = $templateDb->getTemplate($invoice['templateid']);
 			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
+		}
+
+		//Set language
+		if($invoice['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$invoice['language']);
+			Zend_Registry::set('Zend_Locale', $invoice['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
 		$positions = $this->getPositions($id);

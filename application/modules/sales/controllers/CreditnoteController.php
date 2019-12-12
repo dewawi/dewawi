@@ -522,6 +522,13 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$this->view->template = $template;
 		}
 
+		//Set language
+		if($creditnote['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$creditnote['language']);
+			Zend_Registry::set('Zend_Locale', $creditnote['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
+		}
+
 		$positions = $this->getPositions($id);
 		if(!$creditnote['creditnoteid']) {
 			//Get latest creditnote Id
@@ -592,6 +599,13 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$template = $templateDb->getTemplate($creditnote['templateid']);
 			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
+		}
+
+		//Set language
+		if($creditnote['language']) {
+			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$creditnote['language']);
+			Zend_Registry::set('Zend_Locale', $creditnote['language']);
+			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
 		$positions = $this->getPositions($id);
