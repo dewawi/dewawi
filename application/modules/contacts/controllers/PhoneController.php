@@ -16,9 +16,11 @@ class Contacts_PhoneController extends Zend_Controller_Action
 			if($data['contactid']) {
 				if($form->isValid($data) || true) {
 					$phoneDb = new Contacts_Model_DbTable_Phone();
-					$latest = end($phoneDb->getPhone($data['contactid']));
+					$phoneDataBefore = $phoneDb->getPhone($data['contactid']);
+					$latest = end($phoneDataBefore);
 					$phoneDb->addPhone($data['contactid'], $data['type'], '', $latest['ordering']+1);
-					$phone = end($phoneDb->getPhone($data['contactid']));
+					$phoneDataAfter = $phoneDb->getPhone($data['contactid']);
+					$phone = end($phoneDataAfter);
 					echo $this->view->MultiForm('phone', $phone);
 				}
 			} else {
