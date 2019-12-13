@@ -5063,7 +5063,7 @@
 
      /* Build the offset data series */
      $OffsetData    = "";
-     $OverallOffset = "";
+     $OverallOffset = array();
      $SerieOrder    = array();
      foreach($Data["Series"] as $SerieName => $Serie)
       {
@@ -5131,7 +5131,7 @@
 
            if ( !is_array($PosArray) ) { $Value = $PosArray; $PosArray = ""; $PosArray[0] = $Value; }
 
-           $Plots = ""; $Plots[] = $X; $Plots[] = $YZero;
+           $Plots = array(); $Plots[] = $X; $Plots[] = $YZero;
            foreach($PosArray as $Key => $Height)
             {
              if ( $Height != VOID ) { $Plots[] = $X; $Plots[] = $YZero-$Height; }
