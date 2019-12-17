@@ -11,12 +11,14 @@
 		$host = $_POST['host'];
 		
 		// check connection
-		$connection = @mysql_connect($host, $username, $password);
-		if ($connection)
+		$connection = new mysqli($host, $username, $password, $database);
+        //print_r($connection);
+		if (mysqli_connect_errno())
 		{
-			$error = !mysql_select_db($database, $connection);
-			//@mysql_close($connection);
-			
+			$error = mysqli_connect_error();
+        }
+        else
+        {
 			if (!$error)
 			{
 				// save login in session for further use
@@ -28,10 +30,7 @@
 				// allow user to proceed
 				$goToNextStep = true;
 			}
-			else $error = mysql_error();
 		}
-		else
-			$error = mysql_error();
 	}
 	else
 	{
@@ -50,6 +49,5 @@
 			$host = "localhost";
 		}
 	}
-
 		
 	include("templates/database.php");

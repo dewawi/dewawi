@@ -10,9 +10,9 @@
 	$database = $_SESSION['db_name'];
 
 	// connect to db
-	$con = mysql_connect($host, $username, $password);
-	mysql_set_charset("UTF8", $con);
-	mysql_select_db($database, $con);
+	$con = mysqli_connect($host, $username, $password);
+	mysqli_set_charset("UTF8", $con);
+	mysqli_select_db($con, $database);
 	
 	// read structure sql
 	$structure = file_get_contents("config/structure.sql");
@@ -22,9 +22,10 @@
 	
 	foreach ($queries as $query)
 	{
-		if (!mysql_query($query['query']))
+		//print_r($query['query']);
+		if (!mysqli_query($con, $query['query']))
 		{
-			$errors[] = "<b>".mysql_error()."</b><br>(".substr($query['query'], 0, 200)."...)";
+			$errors[] = "<b>".mysqli_error()."</b><br>(".substr($query['query'], 0, 200)."...)";
 		}
 	}
 	
@@ -36,14 +37,14 @@
 	
 	foreach ($queries as $query)
 	{
-		if (!mysql_query($query['query']))
+		if (!mysqli_query($con, $query['query']))
 		{
-			$errors[] = "<b>".mysql_error()."</b><br>(".substr($query['query'], 0, 200)."...)";
+			$errors[] = "<b>".mysqli_error()."</b><br>(".substr($query['query'], 0, 200)."...)";
 		}
 	}
    
 	// close connection
-	mysql_close($con);
+	mysqli_close($con);
 	
 	// show error
 	include("templates/importSQL.php");
