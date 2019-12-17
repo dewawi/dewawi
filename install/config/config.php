@@ -12,7 +12,7 @@
 	// SERVER REQUIREMENTS
 	$requirements = array();
 	$requirements["phpVersion"] = "5";
-	$requirements["extensions"] = array("mysql", "pcre", "gd");
+	$requirements["extensions"] = array("mysqli", "pcre", "gd");
 
 	// FILE PERMISSIONS
 	// r = readable, w = writable, x = executable
