@@ -24,7 +24,7 @@ defined('APPLICATION_ENV')
 // Installation check, and check on removal of the install directory.
 if(!file_exists(BASE_PATH . '/configs/database.ini') || (filesize(BASE_PATH . '/configs/database.ini') < 10)) {
 	if(file_exists(BASE_PATH . '/install/index.php')) {
-		//header('Location: ' . substr($_SERVER['REQUEST_URI'], 0, strpos($_SERVER['REQUEST_URI'], 'index.php')) . 'install/index.php');
+		header('Location: ' . substr($_SERVER['REQUEST_URI'], 0, strpos($_SERVER['REQUEST_URI'], 'index.php')) . 'install/index.php');
 		echo 'No configuration file found. Exiting...';
 		exit;
 	} else {
