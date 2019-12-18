@@ -317,7 +317,7 @@ class Items_ItemController extends Zend_Controller_Action
                                 }
                             }
                             //print_r($updateData);
-                            //$item->updateItem($itemArray['id'], $updateData);
+                            $item->updateItem($itemArray['id'], $updateData);
 
                             if(isset($map['shop_enabled']) && $datacsv[$map['shop_enabled']]) {
                                 $updateDataMagento = array();
