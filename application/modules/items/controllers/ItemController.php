@@ -317,7 +317,7 @@ class Items_ItemController extends Zend_Controller_Action
                                 }
                             }
                             //print_r($updateData);
-                            $item->updateItem($itemArray['id'], $updateData);
+                            //$item->updateItem($itemArray['id'], $updateData);
 
                             if(isset($map['shop_enabled']) && $datacsv[$map['shop_enabled']]) {
                                 $updateDataMagento = array();
@@ -483,92 +483,96 @@ class Items_ItemController extends Zend_Controller_Action
 
 	protected function magento($updateDataMagento)
 	{
-		//$this->_helper->viewRenderer->setNoRender();
-		//$this->_helper->getHelper('layout')->disableLayout();
-		
-        // Created by Rafael Corrêa Gomes
-        // Reference http://devdocs.magento.com/guides/m1x/api/rest/introduction.html#RESTAPIIntroduction-RESTResources
-        // Custom Resource
-        $apiResources = "products?limit=2";
-        // Custom Values
-        $isAdminUser = true;
-        $adminUrl = "admin";
-        $callbackUrl = "http://deec.dewawi.com/items/item/import";
-        $host = 'https://www.renocold.com/de/';
-        $consumerKey    = '8822c2751ad7d9b8d781951a906f5a6e';
-        $consumerSecret = '617741dda6e43522937c5e8f73b19be7';
-        // Don't change
-        $temporaryCredentialsRequestUrl = $host . "oauth/initiate?oauth_callback=" . urlencode($callbackUrl);
-        $adminAuthorizationUrl = ($isAdminUser) ? $host . $adminUrl . "/oauth_authorize" : $host . "oauth/authorize";
-        $accessTokenRequestUrl = $host . "oauth/token";
-        $apiUrl = $host . "api/rest/";
-        //session_start();
-        if(!isset($_SESSION['state'])) $_SESSION['state'] = 0;
-        if (!isset($_GET['oauth_token']) && isset($_SESSION['state']) && $_SESSION['state'] == 1) {
-            $_SESSION['state'] = 0;
-        }
-        //print_r($_GET);
-        //print_r($_SESSION);
-        try {
-            $authType = ($_SESSION['state'] == 2) ? OAUTH_AUTH_TYPE_AUTHORIZATION : OAUTH_AUTH_TYPE_URI;
-            $oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_HMACSHA1, $authType);
-            //print_r($oauthClient);
-            $oauthClient->enableDebug();
-            if (!isset($_GET['oauth_token']) && !$_SESSION['state']) {
-                print_r($temporaryCredentialsRequestUrl);
-                $requestToken = $oauthClient->getRequestToken($temporaryCredentialsRequestUrl);
-                print_r($requestToken);
-                $_SESSION['secret'] = $requestToken['oauth_token_secret'];
-                $_SESSION['state'] = 1;
-                header('Location: ' . $adminAuthorizationUrl . '?oauth_token=' . $requestToken['oauth_token']);
-                exit;
-            } else if ($_SESSION['state'] == 1) {
-                $oauthClient->setToken($_GET['oauth_token'], $_SESSION['secret']);
-                $accessToken = $oauthClient->getAccessToken($accessTokenRequestUrl);
-                $_SESSION['state'] = 2;
-                $_SESSION['token'] = $accessToken['oauth_token'];
-                $_SESSION['secret'] = $accessToken['oauth_token_secret'];
-                //print_r($accessToken);
-                header('Location: ' . $callbackUrl);
-                exit;
-            } else {
-                $oauthClient->setToken($_SESSION['token'], $_SESSION['secret']);
-                //$resourceUrl = $apiUrl.$apiResources;
-                $oauthClient->fetch('http://magento.deec.de/api/rest/products/'.$updateDataMagento['sku'], array(), 'GET', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
-                $product = json_decode($oauthClient->getLastResponse(), true);
-                //$product = $oauthClient->getLastResponse();
-                
-                $updateData = array();
-                foreach($updateDataMagento as $attr => $data) {
-                    if(array_key_exists($attr, $product)) {
-                        if($attr == 'weight') {
-                            $updateData['weight'] = preg_replace("/[^0-9]/", '', $data);
-                        } else {
-                            $updateData[$attr] = $data;
+		if(file_exists(BASE_PATH.'/configs/magento.ini')) {
+            $magentoConfig = new Zend_Config_Ini(BASE_PATH.'/configs/magento.ini', 'production');
+		    //$this->_helper->viewRenderer->setNoRender();
+		    //$this->_helper->getHelper('layout')->disableLayout();
+		    
+            // Created by Rafael Corrêa Gomes
+            // Reference http://devdocs.magento.com/guides/m1x/api/rest/introduction.html#RESTAPIIntroduction-RESTResources
+            // Custom Resource
+            $apiResources = "products?limit=2";
+            // Custom Values
+            $isAdminUser = true;
+            $adminUrl = "admin";
+            $host = $magentoConfig->host;
+            $fetchUrl = $magentoConfig->fetchUrl;
+            $callbackUrl = $magentoConfig->callbackUrl;
+            $consumerKey    = $magentoConfig->consumerKey;
+            $consumerSecret = $magentoConfig->consumerSecret;
+            // Don't change
+            $temporaryCredentialsRequestUrl = $host . "oauth/initiate?oauth_callback=" . urlencode($callbackUrl);
+            $adminAuthorizationUrl = ($isAdminUser) ? $host . $adminUrl . "/oauth_authorize" : $host . "oauth/authorize";
+            $accessTokenRequestUrl = $host . "oauth/token";
+            $apiUrl = $host . "api/rest/";
+            //session_start();
+            if(!isset($_SESSION['state'])) $_SESSION['state'] = 0;
+            if (!isset($_GET['oauth_token']) && isset($_SESSION['state']) && $_SESSION['state'] == 1) {
+                $_SESSION['state'] = 0;
+            }
+            //print_r($_GET);
+            //print_r($_SESSION);
+            try {
+                $authType = ($_SESSION['state'] == 2) ? OAUTH_AUTH_TYPE_AUTHORIZATION : OAUTH_AUTH_TYPE_URI;
+                $oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_HMACSHA1, $authType);
+                //print_r($oauthClient);
+                $oauthClient->enableDebug();
+                if (!isset($_GET['oauth_token']) && !$_SESSION['state']) {
+                    print_r($temporaryCredentialsRequestUrl);
+                    $requestToken = $oauthClient->getRequestToken($temporaryCredentialsRequestUrl);
+                    print_r($requestToken);
+                    $_SESSION['secret'] = $requestToken['oauth_token_secret'];
+                    $_SESSION['state'] = 1;
+                    header('Location: ' . $adminAuthorizationUrl . '?oauth_token=' . $requestToken['oauth_token']);
+                    exit;
+                } else if ($_SESSION['state'] == 1) {
+                    $oauthClient->setToken($_GET['oauth_token'], $_SESSION['secret']);
+                    $accessToken = $oauthClient->getAccessToken($accessTokenRequestUrl);
+                    $_SESSION['state'] = 2;
+                    $_SESSION['token'] = $accessToken['oauth_token'];
+                    $_SESSION['secret'] = $accessToken['oauth_token_secret'];
+                    //print_r($accessToken);
+                    header('Location: ' . $callbackUrl);
+                    exit;
+                } else {
+                    $oauthClient->setToken($_SESSION['token'], $_SESSION['secret']);
+                    //$resourceUrl = $apiUrl.$apiResources;
+                    $oauthClient->fetch($fetchUrl.$updateDataMagento['sku'], array(), 'GET', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
+                    $product = json_decode($oauthClient->getLastResponse(), true);
+                    //$product = $oauthClient->getLastResponse();
+                    
+                    $updateData = array();
+                    foreach($updateDataMagento as $attr => $data) {
+                        if(array_key_exists($attr, $product)) {
+                            if($attr == 'weight') {
+                                $updateData['weight'] = preg_replace("/[^0-9]/", '', $data);
+                            } else {
+                                $updateData[$attr] = $data;
+                            }
                         }
                     }
+                    unset($updateData['manufacturer']);
+                    unset($updateData['refrigerant']);
+                    unset($updateData['delivery_time']);
+                    unset($updateData['delivery_time_oos']);
+                    //print_r($updateData);
+                    //print_r($product);
+                    $updateData = json_encode($updateData);
+                    
+                    //print_r($product);
+                    
+                    //$updateData['sku'] = $updateDataMagento['sku'];
+                    //$updateData['name'] = $updateDataMagento['name'];
+                    
+                    //$oauthClient->fetch($fetchUrl.$product['entity_id'], $updateData, 'PUT', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
                 }
-                unset($updateData['manufacturer']);
-                unset($updateData['refrigerant']);
-                unset($updateData['delivery_time']);
-                unset($updateData['delivery_time_oos']);
-                //print_r($updateData);
-                //print_r($product);
-                $updateData = json_encode($updateData);
-                
-                //print_r($product);
-                
-                //$updateData['sku'] = $updateDataMagento['sku'];
-                //$updateData['name'] = $updateDataMagento['name'];
-                
-                $oauthClient->fetch('http://magento.deec.de/api/rest/products/'.$product['entity_id'], $updateData, 'PUT', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
+            } catch (OAuthException $e) {
+                echo "<pre>";
+                print_r($e->getMessage());
+                echo "<br/>";
+                print_r($e->lastResponse);
+                echo "</pre>";
             }
-        } catch (OAuthException $e) {
-            echo "<pre>";
-            print_r($e->getMessage());
-            echo "<br/>";
-            print_r($e->lastResponse);
-            echo "</pre>";
         }
     }
 
