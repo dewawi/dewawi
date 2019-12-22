@@ -1,25 +1,88 @@
-<?php 
-$this->title = $this->translate('USERS_LOGIN');
-$this->headTitle($this->title);
+<?php
+$this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
+$this->headTitle()->setSeparator(' - ');
+$this->headTitle('DEWAWI');
+echo $this->doctype();
+
+$javascripts = array('global.js', 'contacts.js');
+if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'.js')) array_push($javascripts, $this->module.'.js');
 ?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+	<head>
+        <!-- mobile setting -->
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <link href="/css/global.css" media="screen" rel="stylesheet" type="text/css" />
+        <style>
+        body {
+	        background-color: #efefef;
+        }
+        div#login {
+	        width: 330px;
+	        height: 300px;
+	        background-color: #ffffff;
+	        position: absolute;
+	        top:0;
+	        bottom: 0;
+	        left: 0;
+	        right: 0;
+	        margin: auto;
+            border-color: #ddd;
+            border-radius: 4px;
+        }
+        div#header {
+            padding-top: 15px;
+        }
+        div#form {
+            margin-top: -15px;
+            padding: 20px;
+        }
+        input[type="text"],
+        input[type="submit"],
+        input[type="password"],
+        select {
+            height: 27px;
+            width: 150px;
+        }
+        form dt {
+            width: 125px;
+        }
+        div#header {
+            text-align: center;
+        }
+        </style>
+	</head>
+	<body>
 
-<form id="user" enctype="application/x-www-form-urlencoded" action="" method="post">
-	<div id="left">
-		<dl class="form">
-			<?php echo $this->form->getElement('id') ?>
-			<?php echo $this->form->getElement('username') ?>
-			<?php echo $this->form->getElement('password') ?>
-			<?php echo $this->form->getElement('client') ?>
-			<?php echo $this->form->getElement('stayLoggedIn') ?>
-			<?php echo $this->form->getElement('submit') ?>
-		</dl>
-	</div>
-	<div id="right">
-	</div>
-</form>
-<div style="clear:left"></div>
+        <?php 
+        $this->title = $this->translate('USERS_LOGIN');
+        $this->headTitle($this->title);
+        ?>
 
-<script type="text/javascript">
-$(document).ready(function(){
-});
-</script>
+        <div id="login">
+            <div id="header">
+                <h1><a href="https://www.dewawi.com/" target="_blank">
+                    <img height="50" width="200" src="<?php echo $this->baseUrl(); ?>/images/dewawi.jpg" alt="DEWAWI">
+                </a></h1>
+            </div>
+            <div id="form">
+                <form id="user" enctype="application/x-www-form-urlencoded" action="" method="post">
+		            <dl class="form">
+			            <?php echo $this->form->getElement('id') ?>
+			            <?php echo $this->form->getElement('username') ?>
+			            <?php echo $this->form->getElement('password') ?>
+			            <?php echo $this->form->getElement('client') ?>
+			            <?php echo $this->form->getElement('stayLoggedIn') ?>
+			            <?php echo $this->form->getElement('submit') ?>
+		            </dl>
+                </form>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+        $(document).ready(function(){
+        });
+        </script>
+
+
+	</body>
+</html>

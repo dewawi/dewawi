@@ -13,7 +13,7 @@ class Users_UserController extends Zend_Controller_Action
 		$auth = Zend_Registry::get('Zend_Auth');
 		if($auth->hasIdentity()) $this->_helper->redirector->gotoSimple('index', 'index', 'index');
 
-		$this->_helper->getHelper('layout')->setLayout('plain');
+		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Users_Form_User();
 		$form->submit->setLabel('USERS_LOGIN');
