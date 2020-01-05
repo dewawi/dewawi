@@ -241,7 +241,7 @@ class Zend_Rest_Route extends Zend_Controller_Router_Route_Module
      * @param bool $encode Weither to return urlencoded string
      * @return string Route path with user submitted parameters
      */
-    public function assemble($data = array(), $reset = false, $encode = true)
+    public function assemble($data = array(), $reset = false, $encode = true, $partial = false)
     {
         if (!$this->_keysSet) {
             if (null === $this->_request) {

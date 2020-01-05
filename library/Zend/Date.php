@@ -233,7 +233,7 @@ class Zend_Date extends Zend_Date_DateObject
      *
      * @param  array  $options  Options to set
      * @throws Zend_Date_Exception
-     * @return Options array if no option was given
+     * @return array|void if no option was given
      */
     public static function setOptions(array $options = array())
     {

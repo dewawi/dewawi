@@ -363,7 +363,7 @@ class Zend_Controller_Action_Helper_Redirector extends Zend_Controller_Action_He
         }
 
         // If relative URL, decide if we should prepend base URL
-        if (!preg_match('|^[a-z]+://|', $url)) {
+        if (!preg_match('|^[a-z]+://|i', $url)) {
             $url = $this->_prependBase($url);
         }
 
