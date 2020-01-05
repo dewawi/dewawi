@@ -9,6 +9,7 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
 	<head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico"/>
 		<?php echo $this->headMeta(); ?>
 		<?php echo $this->headTitle(); ?>
@@ -57,7 +58,9 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 				<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
 			<?php endif; ?>
 		</div>
-		<h1><a href="<?php echo $this->url(array('module'=>'default', 'controller'=>'index', 'action'=>'index', 'id'=>null), null, TRUE); ?>">DEWAWI</a></h1>
+		<h1><a href="<?php echo $this->url(array('module'=>'default', 'controller'=>'index', 'action'=>'index', 'id'=>null), null, TRUE); ?>">
+            <img height="50" width="200" src="<?php echo $this->baseUrl(); ?>/images/dewawi.jpg" alt="DEWAWI">
+        </a></h1>
 		<?php echo $this->MainMenu(); ?>
 		<div class="clr"></div>
 		<div id="breadcrumbs">
@@ -67,6 +70,8 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 		<div class="toolbar">
 			<?php echo $this->Toolbar(); ?>
 		</div>
+
+
 		<table id="main">
 			<tr>
 				<?php if($this->action == 'index' && $this->module == 'contacts') : ?>
@@ -93,6 +98,9 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 	<div id="loading">
 		<div id="opacity"></div>
 		<div id="img"></div>
+	</div>
+	<div id="footer">
+		<span><a href="https://www.dewawi.com/" target="_blank">DEWAWI Open Source Warenwirtschaftssystem</a></span>
 	</div>
 	</body>
 </html>
