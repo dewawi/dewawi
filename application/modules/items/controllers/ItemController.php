@@ -481,6 +481,7 @@ class Items_ItemController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
+    // NOTE: This is experimental and not properly tested
 	protected function magento($updateDataMagento)
 	{
 		if(file_exists(BASE_PATH.'/configs/magento.ini')) {
@@ -514,13 +515,15 @@ class Items_ItemController extends Zend_Controller_Action
             //print_r($_SESSION);
             try {
                 $authType = ($_SESSION['state'] == 2) ? OAUTH_AUTH_TYPE_AUTHORIZATION : OAUTH_AUTH_TYPE_URI;
+                //$oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_PLAINTEXT, $authType);
                 $oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_HMACSHA1, $authType);
                 //print_r($oauthClient);
                 $oauthClient->enableDebug();
+                //print_r('test');
                 if (!isset($_GET['oauth_token']) && !$_SESSION['state']) {
-                    print_r($temporaryCredentialsRequestUrl);
+                    //print_r($temporaryCredentialsRequestUrl);
                     $requestToken = $oauthClient->getRequestToken($temporaryCredentialsRequestUrl);
-                    print_r($requestToken);
+                    //print_r($requestToken);
                     $_SESSION['secret'] = $requestToken['oauth_token_secret'];
                     $_SESSION['state'] = 1;
                     header('Location: ' . $adminAuthorizationUrl . '?oauth_token=' . $requestToken['oauth_token']);
@@ -532,6 +535,7 @@ class Items_ItemController extends Zend_Controller_Action
                     $_SESSION['token'] = $accessToken['oauth_token'];
                     $_SESSION['secret'] = $accessToken['oauth_token_secret'];
                     //print_r($accessToken);
+                    //print_r($_SESSION);
                     header('Location: ' . $callbackUrl);
                     exit;
                 } else {
@@ -556,15 +560,23 @@ class Items_ItemController extends Zend_Controller_Action
                     unset($updateData['delivery_time']);
                     unset($updateData['delivery_time_oos']);
                     //print_r($updateData);
-                    //print_r($product);
                     $updateData = json_encode($updateData);
                     
-                    //print_r($product);
+                    //print_r($updateData);
                     
                     //$updateData['sku'] = $updateDataMagento['sku'];
                     //$updateData['name'] = $updateDataMagento['name'];
+                    //print_r($updateData);
+                    //print_r($product['sku']);
+                    //print_r('<br>');
+                    //print_r($product['entity_id']);
+                    //print_r('<br>');
                     
-                    //$oauthClient->fetch($fetchUrl.$product['entity_id'], $updateData, 'PUT', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
+                    $oauthClient->fetch($fetchUrl.$product['entity_id'], $updateData, 'PUT', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
+                    //$response = json_decode($oauthClient->getLastResponse(), true);
+                    //print_r($response);
+                    //print_r($oauthClient);
+                    //print_r(opcache_get_status());
                 }
             } catch (OAuthException $e) {
                 echo "<pre>";
