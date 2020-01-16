@@ -189,12 +189,12 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 
             <div class="row">
 		    <?php if($this->action == "edit" || $this->action == "view") : ?>
-                <div class="col-sm-12 col-md-10">
+                <div class="col-sm-12 col-lg-10">
                     <div id="content">
 					    <?php echo $this->layout()->content; ?>
 				    </div>
 				</div>
-                <div class="col-sm-12 col-md-2">
+                <div class="col-sm-12 col-lg-2">
 					<div id="actions">
 						<?php echo $this->Actions(); ?>
 					</div>

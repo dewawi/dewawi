@@ -715,7 +715,7 @@ function add(data, params) {
 			success: function(response){
 				isDirty = false;
 				//Append new form from response
-				$('div#'+data['controller']).append(response);
+				$('div#'+data['controller']+' button.add').before(response);
 				//Focus on new element
 				$('div#'+data['controller']+' div:last input:first').focus().select();
 				if(action == 'index') search();

@@ -136,15 +136,17 @@ echo $this->ActiveFilter();
 		<?php endforeach; ?>
 		<tr class="bottom">
 			<td></td>
-			<td colspan="3" rowspan="1">
-				<div class="toolbar bottom">
-					<?php echo $this->ToolbarBottom(); ?>
-				</div>
+			<td class="toolbar">
+				<?php echo $this->ToolbarBottom(); ?>
 			</td>
-			<td id="total">
-				<b><?php echo $this->processes->total; ?></b>
+			<td></td>
+			<td></td>
+			<td class="total">
+				<?php echo $this->processes->total; ?>
 			</td>
-			<td colspan="3"></td>
+			<td></td>
+			<td></td>
+			<td></td>
 		</tr>
 	</tbody>
 </table>

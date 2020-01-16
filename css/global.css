@@ -47,97 +47,120 @@ button[rel="addCustomer"] span {
 	padding-left: 20px;
 }
 button.add,
-button.add:hover {
+button.add:hover,
+button.add:focus {
 	background-image: url("../images/add.png");
 }
 button.edit,
-button.edit:hover {
+button.edit:hover,
+button.edit:focus {
 	background-image: url("../images/edit.png");
 }
 button.view,
-button.view:hover {
+button.view:hover,
+button.add:focus {
 	background-image: url("../images/view.png");
 }
 button.copy,
-button.copy:hover {
+button.copy:hover,
+button.copy:focus {
 	background-image: url("../images/copy.png");
 }
 button.settings,
-button.settings:hover {
+button.settings:hover,
+button.settings:focus {
 	background-image: url("../images/settings.png");
 }
 button.delete,
-button.delete:hover {
+button.delete:hover,
+button.delete:focus {
 	background-image: url("../images/delete.png");
 }
 button.cancel,
-button.cancel:hover {
+button.cancel:hover,
+button.cancel:focus {
 	background-image: url("../images/cancel.png");
 }
 button.clear,
-button.clear:hover {
+button.clear:hover,
+button.clear:focus {
 	background-image: url("../images/clear.png");
     min-height: 26px;
     vertical-align: middle;
 }
 button.reset,
-button.reset:hover {
+button.reset:hover,
+button.reset:focus {
 	background-image: url("../images/reset.png");
 }
 button.apply,
-button.apply:hover {
+button.apply:hover,
+button.apply:focus {
 	background-image: url("../images/apply.png");
 }
 button.save,
-button.save:hover {
+button.save:hover,
+button.save:focus {
 	background-image: url("../images/save.png");
 }
 button.email,
-button.email:hover {
+button.email:hover,
+button.email:focus {
 	background-image: url("../images/email.png");
 }
 button.close,
-button.close:hover {
+button.close:hover,
+button.close:focus {
 	background-image: url("../images/close.png");
 }
 button.details,
-button.details:hover {
+button.details:hover,
+button.details:focus {
 	background-image: url("../images/details.png");
 }
 button.positions,
-button.positions:hover {
+button.positions:hover,
+button.positions:focus {
 	background-image: url("../images/positions.png");
 }
 button.back,
-button.back:hover {
+button.back:hover,
+button.back:focus {
 	background-image: url("../images/back.png");
 }
 button.pdf,
-button.pdf:hover {
+button.pdf:hover,
+button.pdf:focus {
 	background-image: url("../images/pdf.png");
 }
 button.get,
-button.get:hover {
+button.get:hover,
+button.add:focus {
 	background-image: url("../images/get.png");
 }
 button.daterange,
-button.daterange:hover {
+button.daterange:hover,
+button.daterange:focus {
 	background-image: url("../images/daterange.png");
 }
 button.select,
-button.select:hover {
+button.select:hover,
+button.select:focus {
 	background-image: url("../images/select.png");
 }
 button.up,
-button.up:hover {
+button.up:hover,
+button.up:focus {
 	background-image: url("../images/up.png");
 }
 button.down,
-button.down:hover {
+button.down:hover,
+button.down:focus {
 	background-image: url("../images/down.png");
 }
 button.filter,
-button.filter:hover {
+button.filter:hover,
+button.filter:focus {
 	background-image: url("../images/filter.png");
 }
 #breadcrumbs {
@@ -178,7 +201,12 @@ hr {
 }
 #actions {
 	min-width: 200px;
-	padding: 45px 0 0 10px;
+	padding: 45px 10px 0 10px;
+}
+@media screen and (max-width: 1279px) {
+    #actions {
+	    padding: 10px;
+    }
 }
 #actions a {
     font-size: 0.9rem;
@@ -254,10 +282,20 @@ table#data th:last-child,
 table#data td:last-child {
 	flex-grow: 0.6;
 }
-table td.buttons button, table td.buttons button:hover
-table#data td.buttons button, table#data td.buttons button:hover
-table#details td.buttons button, table#details td.buttons button:hover
-table#positions td.buttons button, table#positions td.buttons button:hover {
+table#data tr.bottom td.toolbar {
+	flex-grow: 5;
+	text-align: left;
+	margin: 0;
+	padding: 5px;
+}
+table#data tr.bottom td.total {
+	font-weight: bold;
+}
+
+table td.buttons button, table td.buttons button[type="button"]:hover,
+table#data td.buttons button, table#data td.buttons button[type="button"]:hover,
+table#details td.buttons button, table#details td.buttons button[type="button"]:hover,
+table#positions td.buttons button, table#positions td.buttons button[type="button"]:hover {
     font-size: 0.8rem;
     background-repeat: no-repeat;
     background-position-y: center;
@@ -542,7 +580,8 @@ form .multiform dd:first-child {
     }
 }
 form button[type="button"],
-form button[type="button"]:hover {
+form button[type="button"]:hover,
+form button[type="button"]:focus {
     font-size: 0.8rem;
     vertical-align: middle;
     background-repeat: no-repeat;
@@ -597,16 +636,20 @@ span.uncomplete {
 #messages {
 	background: url("../images/warning.png") no-repeat scroll 10px center #FFF5CC;
 	border: 1px solid #F2DD8C;
-	margin: 5px 0 15px;
+	margin: 5px 6px 15px;
 	padding: 10px 35px;
-	/*bottom: 0;
-	left: 0;
-	position: fixed;*/
+}
+#messages li {
+    font-size: 0.9rem;
 }
 
 /* Editable */
 .editableContainer {
 	display: inline-block;
+	height: 100%;
+}
+.editableContainer textarea {
+	height: 100%!important;
 }
 .editable {
 	display: inline-block;
@@ -772,11 +815,6 @@ iframe {
 	text-align: right;
 	z-index: 99;
 }
-.toolbar.bottom {
-	text-align: left;
-	margin: 5px;
-	position: relative;
-}
 .toolbar.positions {
 	text-align: left;
 	margin: 5px;
@@ -807,7 +845,8 @@ iframe {
     padding: 3px 3px 3px;
 }
 .toolbar button,
-.toolbar button:hover {
+.toolbar button:hover,
+.toolbar button:focus {
     font-size: 0.8rem;
     background-repeat: no-repeat;
     background-position-y: center;
@@ -821,7 +860,8 @@ iframe {
 }
 @media screen and (max-width: 767px) {
     .toolbar button,
-    .toolbar button:hover {
+    .toolbar button:hover,
+    .toolbar button:focus {
         margin: 0;
     }
 }
@@ -896,7 +936,8 @@ div#filter div {
 	display: inline-block;
 }
 #activefilters button,
-#activefilters button:hover {
+#activefilters button:hover,
+#activefilters button:focus {
     font-size: 0.8rem;
     background-repeat: no-repeat;
     background-position-y: center;
@@ -1024,8 +1065,12 @@ table#settings {
 
 
 /*CSS for Simple Tree Menu*/
+#categories a {
+font-size: 0.9rem;
+}
 
 .treeview li{ /*Style for LI elements in general (excludes an LI that contains sub lists)*/
+font-size: 0.9rem;
 background: white url('../images/list.gif') no-repeat left center;
 list-style-type: none;
 padding-left: 22px;

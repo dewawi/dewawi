@@ -99,15 +99,20 @@ echo $this->ActiveFilter();
 		<?php endforeach; ?>
 		<tr class="bottom">
 			<td></td>
-			<td colspan="7">
-				<div class="toolbar bottom">
-					<?php echo $this->ToolbarBottom(); ?>
-				</div>
+			<td></td>
+			<td class="toolbar">
+				<?php echo $this->ToolbarBottom(); ?>
 			</td>
-			<td id="total">
-				<b><?php echo $this->deliveryorders->total; ?></b>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td class="total">
+				<?php echo $this->deliveryorders->total; ?>
 			</td>
-			<td colspan="2"></td>
+			<td></td>
+			<td></td>
 		</tr>
 	</tbody>
 </table>
