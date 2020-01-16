@@ -49,12 +49,12 @@ echo $this->ActiveFilter();
 					</a>
 				<?php endif; ?>
 			</td>
-			<td class="title">
+			<td data-label="<?php echo $this->translate('PURCHASE_ORDERS_TITLE') ?>" class="title">
 				<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id)); ?>">
 					<?php echo $purchaseorder->title ? $this->escape($purchaseorder->title) : $this->escape($purchaseorder->id); ?>
 				</a>
 			</td>
-			<td class="contactid">
+			<td data-label="<?php echo $this->translate('PURCHASE_ORDERS_CONTACT') ?>" class="contactid">
 				<?php if($purchaseorder->contactid) : ?>
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder->contactid)); ?>">
 						<?php echo $this->escape($purchaseorder->contactid); ?>
@@ -67,19 +67,19 @@ echo $this->ActiveFilter();
 					<?php if($purchaseorder->billingname2) echo "<br/>".$this->escape($purchaseorder->billingname2); ?>
 				</a>
 			</td>
-			<td class="billingpostcode">
+			<td data-label="<?php echo $this->translate('PURCHASE_ORDERS_POSTCODE') ?>" class="billingpostcode">
 				<?php echo $this->escape($purchaseorder->billingpostcode); ?> 
 			</td>
-			<td class="billingcity">
+			<td data-label="<?php echo $this->translate('PURCHASE_ORDERS_CITY') ?>" class="billingcity">
 				<?php echo $this->escape($purchaseorder->billingcity); ?>
 			</td>
-			<td class="modified">
+			<td data-label="<?php echo $this->translate('PURCHASE_ORDERS_MODIFIED') ?>" class="modified">
 				<?php echo $this->escape(date("d.m.Y", strtotime($purchaseorder->modified))); ?>
 			</td>
-			<td class="total">
+			<td data-label="<?php echo $this->translate('PURCHASE_ORDERS_TOTAL') ?>" class="total">
 				<?php echo $this->escape($purchaseorder->total); ?>
 			</td>
-			<td class="state">
+			<td data-label="<?php echo $this->translate('PURCHASE_ORDERS_STATE') ?>" class="state">
 				<?php if($purchaseorder->state == '105' || $purchaseorder->state == '106') : ?>
 					<?php echo $this->translate($this->escape($this->options['states'][$purchaseorder->state])); ?>
 				<?php else : ?>

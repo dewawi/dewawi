@@ -65,10 +65,12 @@ $(document).ready(function(){
 		if($(this).hasClass('number')) $(this).formatCurrency({ region: language });
 		var data = {};
 		var params = {};
-		params['id'] = $(this).closest('tr').find('input.id').val();
+		params['id'] = $(this).closest('tr.wrap').find('input.id').val();
 		params[controller+'id'] = id;
 		params['element'] = this.name;
 		data[this.name] = this.value;
+        //console.log(data);
+        //console.log(params);
 		if(this.name == 'ordering') sort(params['id'], this.value);
 		else editPosition(data, params);
 	});

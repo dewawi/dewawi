@@ -49,12 +49,12 @@ echo $this->ActiveFilter();
 					</a>
 				<?php endif; ?>
 			</td>
-			<td class="title">
+			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_TITLE') ?>" class="title">
 				<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
 					<?php echo $quoterequest->title ? $this->escape($quoterequest->title) : $this->escape($quoterequest->id); ?>
 				</a>
 			</td>
-			<td class="contactid">
+			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_CONTACT') ?>" class="contactid">
 				<?php if($quoterequest->contactid) : ?>
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->contactid)); ?>">
 						<?php echo $this->escape($quoterequest->contactid); ?>
@@ -67,19 +67,19 @@ echo $this->ActiveFilter();
 					<?php if($quoterequest->billingname2) echo "<br/>".$this->escape($quoterequest->billingname2); ?>
 				</a>
 			</td>
-			<td class="billingpostcode">
+			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_POSTCODE') ?>" class="billingpostcode">
 				<?php echo $this->escape($quoterequest->billingpostcode); ?> 
 			</td>
-			<td class="billingcity">
+			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_CITY') ?>" class="billingcity">
 				<?php echo $this->escape($quoterequest->billingcity); ?>
 			</td>
-			<td class="modified">
+			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_MODIFIED') ?>" class="modified">
 				<?php echo $this->escape(date("d.m.Y", strtotime($quoterequest->modified))); ?>
 			</td>
-			<td class="total">
+			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_TOTAL') ?>" class="total">
 				<?php echo $this->escape($quoterequest->total); ?>
 			</td>
-			<td class="state">
+			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_STATE') ?>" class="state">
 				<?php if($quoterequest->state == '105' || $quoterequest->state == '106') : ?>
 					<?php echo $this->translate($this->escape($this->options['states'][$quoterequest->state])); ?>
 				<?php else : ?>

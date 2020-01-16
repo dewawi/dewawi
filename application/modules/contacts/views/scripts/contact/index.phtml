@@ -40,33 +40,33 @@ echo $this->ActiveFilter();
 		<?php foreach($this->contacts as $contact) : ?>
 			<tr>
 				<td><input class="id" type="checkbox" value="<?php echo $contact->id ?>" name="id"/></td>
-				<td class="id">
+				<td data-label="<?php echo $this->translate('CONTACTS_CONTACT_ID') ?>" class="id">
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
 						<?php echo $this->escape($contact->id); ?>
 					</a>
 				</td>
-				<td class="name">
+				<td data-label="<?php echo $this->translate('CONTACTS_NAME') ?>" class="name">
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
 						<?php echo $this->escape($contact->name1); ?>
 						<?php if($contact->name2) echo "<br/>".$this->escape($contact->name2); ?>
 					</a>
 				</td>
-				<td class="phone">
+				<td data-label="<?php echo $this->translate('CONTACTS_PHONE') ?>" class="phone">
 					<?php echo str_replace(',', '<br>', $this->escape($contact->phones)); ?>
 				</td>
-				<td class="street">
+				<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street">
 					<?php echo $this->escape($contact->street); ?>
 				</td>
-				<td class="postcode">
+				<td data-label="<?php echo $this->translate('CONTACTS_POSTCODE') ?>" class="postcode">
 					<?php echo $this->escape($contact->postcode); ?>
 				</td>
-				<td class="city">
+				<td  data-label="<?php echo $this->translate('CONTACTS_CITY') ?>" class="city">
 					<?php echo $this->escape($contact->city); ?>
 				</td>
-				<td class="country">
+				<td data-label="<?php echo $this->translate('CONTACTS_COUNTRY') ?>" class="country">
 					<?php echo $this->escape($this->translate($contact->country)); ?>
 				</td>
-				<td class="category">
+				<td data-label="<?php echo $this->translate('CONTACTS_CATEGORY') ?>" class="category">
 					<?php if($contact->catid) echo $this->escape($this->options['categories'][$contact->catid]['title']); ?>
 				</td>
 				<td class="buttons">

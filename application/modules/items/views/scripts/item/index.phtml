@@ -34,33 +34,33 @@ echo $this->ActiveFilter();
 		<?php foreach($this->items as $item) : ?>
 			<tr>
 				<td><input class="id" type="checkbox" value="<?php echo $item->id ?>" name="id"/></td>
-				<td class="sku">
+				<td data-label="<?php echo $this->translate('ITEMS_SKU') ?>" class="sku">
 					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'edit', 'id'=>$item->id)); ?>">
 						<?php echo $this->escape($item->sku); ?>
 					</a>
 				</td>
-				<td class="title">
+				<td data-label="<?php echo $this->translate('ITEMS_TITLE') ?>" class="title">
 					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'edit', 'id'=>$item->id)); ?>">
 						<?php echo $this->escape($item->title); ?>
 					</a><br/>
 					<?php echo $this->escape($item->description); ?>
 				</td>
-				<td class="cost">
+				<td data-label="<?php echo $this->translate('ITEMS_COST') ?>" class="cost">
 					<?php echo $this->escape($item->cost); ?>
 				</td>
-				<td class="price">
+				<td data-label="<?php echo $this->translate('ITEMS_PRICE') ?>" class="price">
 					<?php echo $this->escape($item->price); ?>
 				</td>
-				<td class="quantity">
+				<td data-label="<?php echo $this->translate('ITEMS_QUANTITY') ?>" class="quantity">
 					<?php echo $this->escape($item->quantity); ?>
 				</td>
-				<td class="uomid">
+				<td data-label="<?php echo $this->translate('ITEMS_UOM') ?>" class="uomid">
 					<?php if($item->uomid) echo $this->escape($this->uoms[$item->uomid]); ?>
 				</td>
-				<td class="category">
+				<td data-label="<?php echo $this->translate('ITEMS_CATEGORY') ?>" class="category">
 					<?php if($item->catid) echo $this->escape($this->options['categories'][$item->catid]['title']); ?>
 				</td>
-				<td class="manufacturer">
+				<td data-label="<?php echo $this->translate('ITEMS_MANUFACTURER') ?>" class="manufacturer">
 					<?php if($item->manufacturerid) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
 				</td>
 				<td class="buttons">

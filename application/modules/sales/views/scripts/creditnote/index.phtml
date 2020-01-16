@@ -49,12 +49,12 @@ echo $this->ActiveFilter();
 					</a>
 				<?php endif; ?>
 			</td>
-			<td class="title">
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_TITLE') ?>" class="title">
 				<a href="<?php echo $this->url(array('controller'=>'creditnote', 'action'=>'edit', 'id'=>$creditnote->id)); ?>">
 					<?php echo $creditnote->title ? $this->escape($creditnote->title) : $this->escape($creditnote->id); ?>
 				</a>
 			</td>
-			<td class="contactid">
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_CONTACT') ?>" class="contactid">
 				<?php if($creditnote->contactid) : ?>
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$creditnote->contactid)); ?>">
 						<?php echo $this->escape($creditnote->contactid); ?>
@@ -67,19 +67,19 @@ echo $this->ActiveFilter();
 					<?php if($creditnote->billingname2) echo "<br/>".$this->escape($creditnote->billingname2); ?>
 				</a>
 			</td>
-			<td class="billingpostcode">
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_POSTCODE') ?>" class="billingpostcode">
 				<?php echo $this->escape($creditnote->billingpostcode); ?> 
 			</td>
-			<td class="billingcity">
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_CITY') ?>" class="billingcity">
 				<?php echo $this->escape($creditnote->billingcity); ?>
 			</td>
-			<td class="modified">
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_MODIFIED') ?>" class="modified">
 				<?php echo $this->escape(date("d.m.Y", strtotime($creditnote->modified))); ?>
 			</td>
-			<td class="total">
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_TOTAL') ?>" class="total">
 				<?php echo $this->escape($creditnote->total); ?>
 			</td>
-			<td class="state">
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_STATE') ?>" class="state">
 				<?php if($creditnote->state == '105' || $creditnote->state == '106') : ?>
 					<?php echo $this->translate($this->escape($this->options['states'][$creditnote->state])); ?>
 				<?php else : ?>

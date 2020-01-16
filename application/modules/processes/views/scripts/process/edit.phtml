@@ -23,139 +23,56 @@ echo $this->ElFinder();
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
 		<form id="process" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<dl class="form">
-				<table style="min-width:1050px;">
-					<tr>
-						<td>
-							<?php echo $this->form->getElement('id'); ?>
-							<?php echo $this->form->getElement('title'); ?>
-							<h4><?php echo $this->translate('PROCESSES_CUSTOMER'); ?></h4>
-							<?php echo $this->toolbar->select; ?>
-							<div style="clear:left"></div>
-							<?php echo $this->form->getElement('customerid'); ?>
-							<?php echo $this->form->getElement('billingname1'); ?>
-							<?php echo $this->form->getElement('notes'); ?>
-						</td>
-						<td>
-							<?php echo $this->form->getElement('info'); ?>
-						</td>
-					</tr>
-					<tr>
-						<td colspan="3">
-							<table style="width:100%;">
-								<tr>
-									<td>
-										<h4><?php echo $this->translate('PROCESSES_PAYMENT'); ?></h4>
-										<?php echo $this->form->getElement('total'); ?>
-										<?php echo $this->form->getElement('paymentmethod'); ?>
-										<?php echo $this->form->getElement('paymentdate'); ?>
-										<?php echo $this->form->getElement('invoiceid'); ?>
-										<?php echo $this->form->getElement('invoicedate'); ?>
-										<?php echo $this->form->getElement('paymentstatus'); ?>
-									</td>
-									<td>
-										<h4><?php echo $this->translate('PROCESSES_PREPAYMENT'); ?></h4>
-										<?php echo $this->form->getElement('prepaymenttotal'); ?>
-										<?php echo $this->form->getElement('prepaymentdate'); ?>
-										<?php echo $this->form->getElement('prepaymentinvoiceid'); ?>
-										<?php echo $this->form->getElement('prepaymentinvoicedate'); ?>
-									</td>
-									<td>
-										<h4><?php echo $this->translate('PROCESSES_CREDIT_NOTE'); ?></h4>
-										<?php echo $this->form->getElement('creditnotetotal'); ?>
-										<?php echo $this->form->getElement('creditnoteid'); ?>
-										<?php echo $this->form->getElement('creditnotedate'); ?>
-									</td>
-								</tr>
-							</table>
-						</td>
-					</tr>
-				</table>
-			</dl>
-		</form>
-		<div style="clear:left"></div>
-	</div>
-	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">
-		<?php echo $this->toolbar->select; ?>
-		<form id="process" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<div id="left">
-				<dl class="form">
-					<?php echo $this->form->getElement('customerid'); ?>
-					<?php echo $this->form->getElement('billingname1'); ?>
-					<?php echo $this->form->getElement('billingname2'); ?>
-					<?php echo $this->form->getElement('billingdepartment'); ?>
-					<dt><label><b><?php echo $this->translate('CUSTOMERS_ADDRESS'); ?></b></label></dt>
-					<dd></dd>
-					<?php echo $this->form->getElement('billingstreet'); ?>
-					<?php echo $this->form->getElement('billingpostcode'); ?>
-					<?php echo $this->form->getElement('billingcity'); ?>
-					<?php echo $this->form->getElement('billingcountry'); ?>
-					<?php echo $this->form->getElement('vatin'); ?>
-					<?php echo $this->form->getElement('taxfree'); ?>
-					<dt><label><b><?php echo $this->translate('CUSTOMERS_CUSTOMER_DATA'); ?></b></label></dt>
-					<dt id="phone1"<?php if(!$this->customer['phone1']) echo ' style="display:none;"'; ?>>
-						<label><?php echo $this->translate('CUSTOMERS_PHONE'); ?></label>
-					</dt>
-					<dd id="phone1"<?php if(!$this->customer['phone1']) echo ' style="display:none;"'; ?>>
-						<?php echo $this->customer['phone1']; ?>
-					</dd>
-					<dt id="phone2"<?php if(!$this->customer['phone2']) echo ' style="display:none;"'; ?>>
-						<label><?php echo $this->translate('CUSTOMERS_PHONE'); ?></label>
-					</dt>
-					<dd id="phone2"<?php if(!$this->customer['phone2']) echo ' style="display:none;"'; ?>>
-						<?php echo $this->customer['phone2']; ?>
-					</dd>
-					<dt id="phone3"<?php if(!$this->customer['phone3']) echo ' style="display:none;"'; ?>>
-						<label><?php echo $this->translate('CUSTOMERS_PHONE'); ?></label>
-					</dt>
-					<dd id="phone3"<?php if(!$this->customer['phone3']) echo ' style="display:none;"'; ?>>
-						<?php echo $this->customer['phone3']; ?>
-					</dd>
-					<dt id="fax"<?php if(!$this->customer['fax']) echo ' style="display:none;"'; ?>>
-						<label><?php echo $this->translate('CUSTOMERS_FAX'); ?></label>
-					</dt>
-					<dd id="fax"<?php if(!$this->customer['fax']) echo ' style="display:none;"'; ?>>
-						<?php echo $this->customer['fax']; ?>
-					</dd>
-					<dt id="mobile"<?php if(!$this->customer['mobile']) echo ' style="display:none;"'; ?>>
-						<label><?php echo $this->translate('CUSTOMERS_MOBILE'); ?></label>
-					</dt>
-					<dd id="mobile"<?php if(!$this->customer['mobile']) echo ' style="display:none;"'; ?>>
-						<?php echo $this->customer['mobile']; ?>
-					</dd>
-					<dt id="email1"<?php if(!$this->customer['email1']) echo ' style="display:none;"'; ?>>
-						<label><?php echo $this->translate('CUSTOMERS_EMAIL'); ?></label>
-					</dt>
-					<dd id="email1"<?php if(!$this->customer['email1']) echo ' style="display:none;"'; ?>>
-						<?php echo $this->customer['email1']; ?>
-					</dd>
-					<dt id="email2"<?php if(!$this->customer['email2']) echo ' style="display:none;"'; ?>>
-						<label><?php echo $this->translate('CUSTOMERS_EMAIL'); ?></label>
-					</dt>
-					<dd id="email2"<?php if(!$this->customer['email2']) echo ' style="display:none;"'; ?>>
-						<?php echo $this->customer['email2']; ?>
-					</dd>
-					<dt id="email3"<?php if(!$this->customer['email3']) echo ' style="display:none;"'; ?>>
-						<label><?php echo $this->translate('CUSTOMERS_EMAIL'); ?></label>
-					</dt>
-					<dd id="email3"<?php if(!$this->customer['email3']) echo ' style="display:none;"'; ?>>
-						<?php echo $this->customer['email3']; ?>
-					</dd>
-					<dt id="internet"<?php if(!$this->customer['internet']) echo ' style="display:none;"'; ?>>
-						<label><?php echo $this->translate('CUSTOMERS_INTERNET'); ?></label>
-					</dt>
-					<dd id="internet"<?php if(!$this->customer['internet']) echo ' style="display:none;"'; ?>>
-						<?php echo $this->customer['internet']; ?>
-					</dd>
-				</dl>
-			</div>
-			<div id="right">
-				<dl class="form">
-					<?php echo $this->form->getElement('customerinfo'); ?>
-				</dl>
-			</div>
-		</form>
-		<div style="clear:left"></div>
+            <div class="row">
+                <div class="col-sm-12 col-lg-7">
+				    <dl class="form">
+						<?php echo $this->form->getElement('id'); ?>
+						<?php echo $this->form->getElement('title'); ?>
+						<h4><?php echo $this->translate('PROCESSES_CUSTOMER'); ?></h4>
+						<?php echo $this->toolbar->select; ?>
+						<div style="clear:left"></div>
+						<?php echo $this->form->getElement('customerid'); ?>
+						<?php echo $this->form->getElement('billingname1'); ?>
+						<?php echo $this->form->getElement('notes'); ?>
+				    </dl>
+		        </div>
+                <div class="col-sm-12 col-lg-5">
+				    <dl class="form">
+						<?php echo $this->form->getElement('info'); ?>
+	                </dl>
+	            </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12 col-lg-4">
+                    <dl class="form">
+						<h4><?php echo $this->translate('PROCESSES_PAYMENT'); ?></h4>
+						<?php echo $this->form->getElement('total'); ?>
+						<?php echo $this->form->getElement('paymentmethod'); ?>
+						<?php echo $this->form->getElement('paymentdate'); ?>
+						<?php echo $this->form->getElement('invoiceid'); ?>
+						<?php echo $this->form->getElement('invoicedate'); ?>
+						<?php echo $this->form->getElement('paymentstatus'); ?>
+                    </dl>
+	            </div>
+                <div class="col-sm-12 col-lg-4">
+                    <dl class="form">
+						<h4><?php echo $this->translate('PROCESSES_PREPAYMENT'); ?></h4>
+						<?php echo $this->form->getElement('prepaymenttotal'); ?>
+						<?php echo $this->form->getElement('prepaymentdate'); ?>
+						<?php echo $this->form->getElement('prepaymentinvoiceid'); ?>
+						<?php echo $this->form->getElement('prepaymentinvoicedate'); ?>
+                    </dl>
+	            </div>
+                <div class="col-sm-12 col-lg-4">
+                    <dl class="form">
+						<h4><?php echo $this->translate('PROCESSES_CREDIT_NOTE'); ?></h4>
+						<?php echo $this->form->getElement('creditnotetotal'); ?>
+						<?php echo $this->form->getElement('creditnoteid'); ?>
+						<?php echo $this->form->getElement('creditnotedate'); ?>
+                    </dl>
+	            </div>
+            </div>
+        </form>
 	</div>
 	<div id="tabPositions" class="tab_content<?php if($this->activeTab == '#tabPositions') : ?> active<?php endif; ?>">
 		<?php echo $this->ToolbarPositions(); ?>
@@ -226,13 +143,95 @@ echo $this->ElFinder();
 				<?php echo $this->form->editpositionsseparately; ?>
 			</div>
 		</form>
-		<div style="clear:left"></div>
 		<div id="positions" <?php if(!$this->form->getValue('editpositionsseparately')) echo ' class="disabled"'; ?>></div>
 		<?php echo $this->ToolbarPositions("bottom"); ?>
 	</div>
+	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">
+		<form id="process" enctype="application/x-www-form-urlencoded" action="" method="post">
+		    <?php echo $this->toolbar->select; ?>
+            <div class="row">
+                <div class="col-sm-12 col-lg-7">
+				    <dl class="form">
+					    <?php echo $this->form->getElement('customerid'); ?>
+					    <?php echo $this->form->getElement('billingname1'); ?>
+					    <?php echo $this->form->getElement('billingname2'); ?>
+					    <?php echo $this->form->getElement('billingdepartment'); ?>
+					    <dt><label><b><?php echo $this->translate('CUSTOMERS_ADDRESS'); ?></b></label></dt>
+					    <dd></dd>
+					    <?php echo $this->form->getElement('billingstreet'); ?>
+					    <?php echo $this->form->getElement('billingpostcode'); ?>
+					    <?php echo $this->form->getElement('billingcity'); ?>
+					    <?php echo $this->form->getElement('billingcountry'); ?>
+					    <?php echo $this->form->getElement('vatin'); ?>
+					    <?php echo $this->form->getElement('taxfree'); ?>
+					    <dt><label><b><?php echo $this->translate('CUSTOMERS_CUSTOMER_DATA'); ?></b></label></dt>
+					    <dt id="phone1"<?php if(!$this->customer['phone1']) echo ' style="display:none;"'; ?>>
+						    <label><?php echo $this->translate('CUSTOMERS_PHONE'); ?></label>
+					    </dt>
+					    <dd id="phone1"<?php if(!$this->customer['phone1']) echo ' style="display:none;"'; ?>>
+						    <?php echo $this->customer['phone1']; ?>
+					    </dd>
+					    <dt id="phone2"<?php if(!$this->customer['phone2']) echo ' style="display:none;"'; ?>>
+						    <label><?php echo $this->translate('CUSTOMERS_PHONE'); ?></label>
+					    </dt>
+					    <dd id="phone2"<?php if(!$this->customer['phone2']) echo ' style="display:none;"'; ?>>
+						    <?php echo $this->customer['phone2']; ?>
+					    </dd>
+					    <dt id="phone3"<?php if(!$this->customer['phone3']) echo ' style="display:none;"'; ?>>
+						    <label><?php echo $this->translate('CUSTOMERS_PHONE'); ?></label>
+					    </dt>
+					    <dd id="phone3"<?php if(!$this->customer['phone3']) echo ' style="display:none;"'; ?>>
+						    <?php echo $this->customer['phone3']; ?>
+					    </dd>
+					    <dt id="fax"<?php if(!$this->customer['fax']) echo ' style="display:none;"'; ?>>
+						    <label><?php echo $this->translate('CUSTOMERS_FAX'); ?></label>
+					    </dt>
+					    <dd id="fax"<?php if(!$this->customer['fax']) echo ' style="display:none;"'; ?>>
+						    <?php echo $this->customer['fax']; ?>
+					    </dd>
+					    <dt id="mobile"<?php if(!$this->customer['mobile']) echo ' style="display:none;"'; ?>>
+						    <label><?php echo $this->translate('CUSTOMERS_MOBILE'); ?></label>
+					    </dt>
+					    <dd id="mobile"<?php if(!$this->customer['mobile']) echo ' style="display:none;"'; ?>>
+						    <?php echo $this->customer['mobile']; ?>
+					    </dd>
+					    <dt id="email1"<?php if(!$this->customer['email1']) echo ' style="display:none;"'; ?>>
+						    <label><?php echo $this->translate('CUSTOMERS_EMAIL'); ?></label>
+					    </dt>
+					    <dd id="email1"<?php if(!$this->customer['email1']) echo ' style="display:none;"'; ?>>
+						    <?php echo $this->customer['email1']; ?>
+					    </dd>
+					    <dt id="email2"<?php if(!$this->customer['email2']) echo ' style="display:none;"'; ?>>
+						    <label><?php echo $this->translate('CUSTOMERS_EMAIL'); ?></label>
+					    </dt>
+					    <dd id="email2"<?php if(!$this->customer['email2']) echo ' style="display:none;"'; ?>>
+						    <?php echo $this->customer['email2']; ?>
+					    </dd>
+					    <dt id="email3"<?php if(!$this->customer['email3']) echo ' style="display:none;"'; ?>>
+						    <label><?php echo $this->translate('CUSTOMERS_EMAIL'); ?></label>
+					    </dt>
+					    <dd id="email3"<?php if(!$this->customer['email3']) echo ' style="display:none;"'; ?>>
+						    <?php echo $this->customer['email3']; ?>
+					    </dd>
+					    <dt id="internet"<?php if(!$this->customer['internet']) echo ' style="display:none;"'; ?>>
+						    <label><?php echo $this->translate('CUSTOMERS_INTERNET'); ?></label>
+					    </dt>
+					    <dd id="internet"<?php if(!$this->customer['internet']) echo ' style="display:none;"'; ?>>
+						    <?php echo $this->customer['internet']; ?>
+					    </dd>
+				    </dl>
+			    </div>
+                <div class="col-sm-12 col-lg-5">
+				    <dl class="form">
+					    <?php echo $this->form->getElement('customerinfo'); ?>
+				    </dl>
+			    </div>
+			</div>
+		</form>
+	</div>
 	<div id="tabSupplier" class="tab_content<?php if($this->activeTab == '#tabSupplier') : ?> active<?php endif; ?>">
 		<form id="process" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<div id="left">
+            <div class="col-sm-12">
 				<dl class="form">
 					<?php echo $this->form->supplierid; ?>
 					<?php echo $this->form->suppliername; ?>
@@ -246,14 +245,11 @@ echo $this->ElFinder();
 					<?php //echo $this->form->supplierdeliverydate;?>
 				</dl>
 			</div>
-			<div id="right">
-			</div>
 		</form>
-		<div style="clear:left"></div>
 	</div>
 	<div id="tabShippingAddress" class="tab_content<?php if($this->activeTab == '#tabShippingAddress') : ?> active<?php endif; ?>">
 		<form id="process" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<div id="left">
+            <div class="col-sm-12">
 				<dl class="form">
 					<?php echo $this->form->getElement('shippingname1'); ?>
 					<?php echo $this->form->getElement('shippingname2'); ?>
@@ -265,10 +261,7 @@ echo $this->ElFinder();
 					<?php echo $this->form->getElement('shippingemail'); ?>
 				</dl>
 			</div>
-			<div id="right">
-			</div>
 		</form>
-		<div style="clear:left"></div>
 	</div>
 	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 		<div id="elfinder"></div>

@@ -26,7 +26,7 @@ class Processes_Form_Toolbar extends Zend_Form
 		$form['edit'] = new Zend_Form_Element_Button('edit');
 		$form['edit']->setLabel('TOOLBAR_EDIT')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'edit');
+			->setAttrib('class', 'edit hidden-sm');
 
 		$form['editInline'] = new Zend_Form_Element_Button('edit');
 		$form['editInline']->setLabel('')
@@ -42,7 +42,7 @@ class Processes_Form_Toolbar extends Zend_Form
 		$form['copy'] = new Zend_Form_Element_Button('copy');
 		$form['copy']->setLabel('TOOLBAR_COPY')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy');
+			->setAttrib('class', 'copy hidden-sm');
 
 		$form['copyInline'] = new Zend_Form_Element_Button('copy');
 		$form['copyInline']->setLabel('')
@@ -52,7 +52,7 @@ class Processes_Form_Toolbar extends Zend_Form
 		$form['delete'] = new Zend_Form_Element_Button('delete');
 		$form['delete']->setLabel('TOOLBAR_DELETE')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'delete');
+			->setAttrib('class', 'delete hidden-sm');
 
 		$form['keyword'] = new Zend_Form_Element_Text('keyword');
 		$form['keyword']->setDecorators(array('ViewHelper'))
@@ -66,12 +66,12 @@ class Processes_Form_Toolbar extends Zend_Form
 
 		$form['filter'] = new Zend_Form_Element_Button('TOOLBAR_FILTER');
 		$form['filter']->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'filter');
+			->setAttrib('class', 'filter hidden-sm');
 
 		$form['reset'] = new Zend_Form_Element_Button('reset');
 		$form['reset']->setLabel('TOOLBAR_RESET')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'reset');
+			->setAttrib('class', 'reset hidden-sm');
 
 		$form['state'] = new Zend_Form_Element_Select('state');
 		$form['state']->setDecorators(array('ViewHelper'))
@@ -161,12 +161,14 @@ class Processes_Form_Toolbar extends Zend_Form
 			->addMultiOption('250', '250')
 			->addMultiOption('500', '500')
 			->addMultiOption('0', 'TOOLBAR_ALL')
-			->setAttrib('default', '50');
+			->setAttrib('default', '50')
+			->setAttrib('class', 'hidden-sm');
 
 		$form['catid'] = new Zend_Form_Element_Select('catid');
 		$form['catid']->setDecorators(array('ViewHelper'))
 			->addMultiOption('0', 'CATEGORIES_ALL')
-			->setAttrib('default', '0');
+			->setAttrib('default', '0')
+			->setAttrib('class', 'hidden-sm');
 
 		$this->addElements($form);
 	}

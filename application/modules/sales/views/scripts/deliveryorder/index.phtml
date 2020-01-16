@@ -49,12 +49,12 @@ echo $this->ActiveFilter();
 					</a>
 				<?php endif; ?>
 			</td>
-			<td class="title">
+			<td data-label="<?php echo $this->translate('DELIVERY_ORDERS_TITLE') ?>" class="title">
 				<a href="<?php echo $this->url(array('controller'=>'deliveryorder', 'action'=>'edit', 'id'=>$deliveryorder->id)); ?>">
 					<?php echo $deliveryorder->title ? $this->escape($deliveryorder->title) : $this->escape($deliveryorder->id); ?>
 				</a>
 			</td>
-			<td class="contactid">
+			<td data-label="<?php echo $this->translate('DELIVERY_ORDERS_CONTACT') ?>" class="contactid">
 				<?php if($deliveryorder->contactid) : ?>
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$deliveryorder->contactid)); ?>">
 						<?php echo $this->escape($deliveryorder->contactid); ?>
@@ -67,19 +67,19 @@ echo $this->ActiveFilter();
 					<?php if($deliveryorder->billingname2) echo "<br/>".$this->escape($deliveryorder->billingname2); ?>
 				</a>
 			</td>
-			<td class="billingpostcode">
+			<td data-label="<?php echo $this->translate('DELIVERY_ORDERS_POSTCODE') ?>" class="billingpostcode">
 				<?php echo $this->escape($deliveryorder->billingpostcode); ?> 
 			</td>
-			<td class="billingcity">
+			<td data-label="<?php echo $this->translate('DELIVERY_ORDERS_CITY') ?>" class="billingcity">
 				<?php echo $this->escape($deliveryorder->billingcity); ?>
 			</td>
-			<td class="modified">
+			<td data-label="<?php echo $this->translate('DELIVERY_ORDERS_MODIFIED') ?>" class="modified">
 				<?php echo $this->escape(date("d.m.Y", strtotime($deliveryorder->modified))); ?>
 			</td>
-			<td class="total">
+			<td data-label="<?php echo $this->translate('DELIVERY_ORDERS_TOTAL') ?>" class="total">
 				<?php echo $this->escape($deliveryorder->total); ?>
 			</td>
-			<td class="state">
+			<td data-label="<?php echo $this->translate('DELIVERY_ORDERS_STATE') ?>" class="state">
 				<?php if($deliveryorder->state == '105' || $deliveryorder->state == '106') : ?>
 					<?php echo $this->translate($this->escape($this->options['states'][$deliveryorder->state])); ?>
 				<?php else : ?>

@@ -17,7 +17,7 @@ class Zend_View_Helper_ActiveFilter extends Zend_View_Helper_Abstract{
 		$options = $this->view->options;
 		if(count($filters)) : ?>
 			<div id="activefilters">
-				<?php echo $this->view->translate('TOOLBAR_SELECTED_FILTER').':'; ?>
+				<span><?php echo $this->view->translate('TOOLBAR_SELECTED_FILTER').':'; ?></span>
 				<ul>
 					<?php if(isset($filters['keyword'])) : ?>
 						<li>

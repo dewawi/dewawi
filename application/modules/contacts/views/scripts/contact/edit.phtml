@@ -18,56 +18,56 @@ echo $this->ElFinder();
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
 		<form id="contact" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<div id="left">
-				<dl class="form">
-					<?php echo $this->form->getElement('id'); ?>
-					<?php echo $this->form->getElement('catid'); ?>
-					<?php echo $this->form->getElement('name1'); ?>
-					<?php echo $this->form->getElement('name2'); ?>
-					<?php echo $this->form->getElement('department'); ?>
-					<?php echo $this->formPrimaryAddress->getElement('street'); ?>
-					<?php echo $this->formPrimaryAddress->getElement('postcode'); ?>
-					<?php echo $this->formPrimaryAddress->getElement('city'); ?>
-					<?php echo $this->formPrimaryAddress->getElement('country'); ?>
-					<dt id="phone-label">
-						<label for="phone"><?php echo $this->translate('CONTACTS_PHONE') ?></label>
-					</dt>
-					<div id="phone" style="float:left;">
-						<?php foreach($this->phone as $phone) : ?>
-							<?php echo $this->MultiForm('phone', $phone); ?>
-						<?php endforeach; ?>
-					</div>
-					<dt><label></label></dt>
-					<?php echo $this->Button('add', 'add({\'controller\':\'phone\',\'action\':\'add\',\'type\':\'phone\'});', '', '', 'float:left;'); ?>
-					<div style="clear:left"></div>
-					<dt id="email-label">
-						<label for="email"><?php echo $this->translate('CONTACTS_EMAIL') ?></label>
-					</dt>
-					<div id="email" style="float:left;">
-						<?php foreach($this->email as $email) : ?>
-							<?php echo $this->MultiForm('email', $email); ?>
-						<?php endforeach; ?>
-					</div>
-					<dt><label></label></dt>
-					<?php echo $this->Button('add', 'add({\'controller\':\'email\',\'action\':\'add\',\'type\':\'email\'});', '', '', 'float:left;'); ?>
-					<div style="clear:left"></div>
-					<dt id="internet-label">
-						<label for="internet"><?php echo $this->translate('CONTACTS_INTERNET') ?></label>
-					</dt>
-					<div id="internet" style="float:left;">
-						<?php foreach($this->internet as $internet) : ?>
-							<?php echo $this->MultiForm('internet', $internet); ?>
-						<?php endforeach; ?>
-					</div>
-					<dt><label></label></dt>
-					<?php echo $this->Button('add', 'add({\'controller\':\'internet\',\'action\':\'add\',\'type\':\'internet\'});', '', '', 'float:left;'); ?>
-					<?php echo $this->form->getElement('vatin'); ?>
-					<?php echo $this->form->getElement('taxfree'); ?>
-				</dl>
-			</div>
-			<div id="right"><?php echo $this->form->getElement('info'); ?></div>
+            <div class="row">
+                <div class="col-sm-12 col-lg-7">
+				    <dl class="form">
+					    <?php echo $this->form->getElement('id'); ?>
+					    <?php echo $this->form->getElement('catid'); ?>
+					    <?php echo $this->form->getElement('name1'); ?>
+					    <?php echo $this->form->getElement('name2'); ?>
+					    <?php echo $this->form->getElement('department'); ?>
+					    <?php echo $this->formPrimaryAddress->getElement('street'); ?>
+					    <?php echo $this->formPrimaryAddress->getElement('postcode'); ?>
+					    <?php echo $this->formPrimaryAddress->getElement('city'); ?>
+					    <?php echo $this->formPrimaryAddress->getElement('country'); ?>
+					    <dt id="phone-label">
+						    <label for="phone"><?php echo $this->translate('CONTACTS_PHONE') ?></label>
+					    </dt>
+					    <div id="phone" class="multiform">
+						    <?php foreach($this->phone as $phone) : ?>
+							    <?php echo $this->MultiForm('phone', $phone); ?>
+						    <?php endforeach; ?>
+					        <?php echo $this->Button('add', 'add({\'controller\':\'phone\',\'action\':\'add\',\'type\':\'phone\'});', '', '', ''); ?>
+					    </div>
+					    <dt id="email-label">
+						    <label for="email"><?php echo $this->translate('CONTACTS_EMAIL') ?></label>
+					    </dt>
+					    <div id="email" class="multiform">
+						    <?php foreach($this->email as $email) : ?>
+							    <?php echo $this->MultiForm('email', $email); ?>
+						    <?php endforeach; ?>
+					        <?php echo $this->Button('add', 'add({\'controller\':\'email\',\'action\':\'add\',\'type\':\'email\'});', '', '', ''); ?>
+					    </div>
+					    <dt id="internet-label">
+						    <label for="internet"><?php echo $this->translate('CONTACTS_INTERNET') ?></label>
+					    </dt>
+					    <div id="internet" class="multiform">
+						    <?php foreach($this->internet as $internet) : ?>
+							    <?php echo $this->MultiForm('internet', $internet); ?>
+						    <?php endforeach; ?>
+					        <?php echo $this->Button('add', 'add({\'controller\':\'internet\',\'action\':\'add\',\'type\':\'internet\'});', '', '', ''); ?>
+					    </div>
+					    <?php echo $this->form->getElement('vatin'); ?>
+					    <?php echo $this->form->getElement('taxfree'); ?>
+				    </dl>
+		        </div>
+                <div class="col-sm-12 col-lg-5">
+				    <dl class="form">
+                        <?php echo $this->form->getElement('info'); ?>
+				    </dl>
+		        </div>
+		    </div>
 		</form>
-		<div style="clear:left"></div>
 	</div>
 	<div id="tabShipping" class="tab_content<?php if($this->activeTab == '#tabShipping') : ?> active<?php endif; ?>">
 		<form id="contact" enctype="application/x-www-form-urlencoded" action="" method="post">
@@ -82,13 +82,11 @@ echo $this->ElFinder();
 				<?php echo $this->formShippingAddress->getElement('phone'); ?>
 			</dl>
 		</form>
-		<div style="clear:left"></div>
 	</div>
 	<div id="tabHistory" class="tab_content<?php if($this->activeTab == '#tabHistory') : ?> active<?php endif; ?>">
 		<?php echo $this->History(); ?>
 	</div>
 	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 		<div id="elfinder"></div>
-		<div style="clear:left"></div>
 	</div>
 </div>

@@ -6,6 +6,7 @@ class Zend_View_Helper_ContactData extends Zend_View_Helper_Abstract{
 
 	public function ContactData() { ?>
 		<dt><label><b><?php echo $this->view->translate('CONTACTS_CONTACT_DATA'); ?></b></label></dt>
+		<div style="clear:left"></div>
 		<dt id="phone"<?php if(!count($this->view->contact['phone'])) echo ' style="display:none;"'; ?>>
 			<label><?php echo $this->view->translate('CONTACTS_PHONE'); ?></label>
 		</dt>

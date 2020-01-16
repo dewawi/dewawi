@@ -34,12 +34,12 @@ echo $this->ActiveFilter();
 		<?php foreach($this->processes as $process) : ?>
 		<tr class="state<?php echo $process->state; ?> <?php echo $process->paymentstatus; ?> <?php echo $process->deliverystatus; ?> <?php echo $process->supplierorderstatus; ?>">
 			<td><input class="id" type="checkbox" value="<?php echo $process->id; ?>" name="id"/></td>
-			<td class="title">
+			<td data-label="<?php echo $this->translate('PROCESSES_TITLE') ?>" class="title">
 				<p><a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'edit', 'id'=>$process->id));?>">
 						<?php echo $process->title ? $this->escape($process->title) : $this->escape($process->id);?>
 				</a></p>
 			</td>
-			<td class="customer">
+			<td data-label="<?php echo $this->translate('PROCESSES_CUSTOMER') ?>" class="customer">
 				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->customerid));?>">
 					<?php echo $this->escape($process->customerid);?>
 				</a>
@@ -50,9 +50,9 @@ echo $this->ActiveFilter();
 					</a>
 				<?php endif; ?>
 			</td>
-			<td class="notes">
+			<td data-label="<?php echo $this->translate('PROCESSES_NOTES') ?>" class="notes">
 				<?php if($process->state == '105' || $process->state == '106') : ?>
-					<pre><?php echo $process->notes; ?></pre>
+					<?php echo $process->notes; ?>
 				<?php else : ?>
 					<?php if($process->notes) : ?>
 						<pre class="editable" data-name="notes" data-value="<?php echo $process->notes; ?>" data-type="textarea"><?php echo $process->notes; ?></pre>
@@ -61,7 +61,7 @@ echo $this->ActiveFilter();
 					<?php endif; ?>
 				<?php endif; ?>
 			</td>
-			<td class="payment">
+			<td data-label="<?php echo $this->translate('PROCESSES_PAYMENT') ?>" class="payment">
 				<dt><?php echo $this->translate('PROCESSES_TOTAL') ;?>:</dt>
 				<span><?php echo $this->escape($process->total);?></span>
 				<?php if($process->prepaymenttotal) : ?>
@@ -84,7 +84,7 @@ echo $this->ActiveFilter();
 					<?php endif; ?>
 				</p>
 			</td>
-			<td class="delivery">
+			<td data-label="<?php echo $this->translate('PROCESSES_SHIPPING') ?>" class="delivery">
 				<?php if(!$process->editpositionsseparately) : ?>
 					<p class="deliverystatus">
 						<?php if($process->state == '105' || $process->state == '106') : ?>
@@ -115,7 +115,7 @@ echo $this->ActiveFilter();
 					<?php endforeach; ?>
 				<?php endif; ?>
 			</td>
-			<td class="state">
+			<td data-label="<?php echo $this->translate('PROCESSES_TITLE') ?>" class="state">
 				<?php if($process->state == '105' || $process->state == '106') : ?>
 					<?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?>
 				<?php else : ?>
@@ -137,7 +137,7 @@ echo $this->ActiveFilter();
 		<tr class="bottom">
 			<td></td>
 			<td colspan="3" rowspan="1">
-				<div iclass="toolbar bottom">
+				<div class="toolbar bottom">
 					<?php echo $this->ToolbarBottom(); ?>
 				</div>
 			</td>

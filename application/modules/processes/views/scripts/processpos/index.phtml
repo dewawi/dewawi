@@ -2,16 +2,13 @@
 $i = 1;
 if($length = count($this->forms)) :
 ?>
-<table id="positions" width="100%">
+<table id="positions" class="noheader" width="100%">
 	<tbody>
 		<?php foreach($this->forms as $form) :
 			if($form->getValue('itemtype') == 'stockItem') $rowspan = 2;
 			elseif($form->getValue('itemtype') == 'deliveryItem') $rowspan = 2;
 			else $rowspan = 1;
 		?>
-		<tr>
-			<td colspan="13"><hr/></td>
-		</tr>
 		<tr class="position<?php echo $form->getValue('id'); ?>">
 			<td class="id" rowspan ="<?php echo $rowspan; ?>">
 				<input class="id" type="checkbox" value="<?php echo $form->getValue('id'); ?>" name="id"/>
@@ -75,19 +72,30 @@ if($length = count($this->forms)) :
 			<td>
 				<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
 			</td>
+			<td></td>
 			<td>
 				<?php echo $form->deliveryorderid; ?>
 			</td>
 			<td>
 				<?php echo $form->deliveryorderdate; ?>
 			</td>
-			<td colspan="6"></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
 		</tr>
 		<tr class="position<?php echo $form->getValue('id'); ?> deliveryItem"<?php if($form->getValue('itemtype') != "deliveryItem") echo ' style="display:none"'; ?>>
 			<!--<td>
 				<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
 				<b><?php echo $this->translate('PROCESSES_SUPPLIER_DATA'); ?></b>
 			</td>-->
+			<td></td>
+			<td></td>
 			<td>
 				<?php echo $form->supplierid; ?>
 			</td>
@@ -116,6 +124,8 @@ if($length = count($this->forms)) :
 				<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
 				<?php echo $form->supplierorderstatus; ?>
 			</td>
+			<td></td>
+			<td></td>
 		</tr>
 		<!--<tr class="position<?php echo $form->getValue('id'); ?> deliveryItem"<?php if($form->getValue('itemtype') != "deliveryItem") echo ' style="display:none"'; ?>>
 			<td>

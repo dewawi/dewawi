@@ -16,9 +16,11 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 		<div id="<?php echo $type.$element['id']; ?>">
 			<?php echo $form->getElement($type); ?>
 			<?php if($type == 'email') : ?>
-				<a class="mailto" href="mailto:<?php echo $element[$type]; ?>" <?php if(!$element[$type]) echo 'style="display:none"'; ?>>
-					<img src="<?php echo $this->view->baseUrl(); ?>/images/email.png">
-				</a>
+                <?php if($element[$type]) : ?>
+		            <?php echo $this->view->Button('email', 'location.href='."'".'mailto:'.$element[$type]."'", '', '', ''); ?>
+			    <?php else : ?>
+		            <?php echo $this->view->Button('email', 'location.href='."'".'mailto:'.$element[$type]."'", '', '', 'display:none'); ?>
+			    <?php endif; ?>
 			<?php endif; ?>
 			<?php if(isset($element['type'])) :
 				$form->type->setAttrib('id', $type.'type'.$element['id']);
@@ -28,7 +30,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 				$form->type->setValue($element['type']); ?>
 				<?php echo $form->getElement('type'); ?>
 			<?php endif; ?>
-		<?php echo $this->view->Button('delete', 'del('.$element['id'].', deleteConfirm, \''.$type.'\');', '', '', 'float:left;'); ?>
+		<?php echo $this->view->Button('delete', 'del('.$element['id'].', deleteConfirm, \''.$type.'\');', '', '', ''); ?>
 		</div>
 	<?php }
 }

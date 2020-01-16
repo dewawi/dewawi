@@ -49,12 +49,12 @@ echo $this->ActiveFilter();
 					</a>
 				<?php endif; ?>
 			</td>
-			<td class="title">
+			<td data-label="<?php echo $this->translate('QUOTES_TITLE') ?>" class="title">
 				<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id)); ?>">
 					<?php echo $quote->title ? $this->escape($quote->title) : $this->escape($quote->id); ?>
 				</a>
 			</td>
-			<td class="contactid">
+			<td data-label="<?php echo $this->translate('QUOTES_CONTACT') ?>" class="contactid">
 				<?php if($quote->contactid) : ?>
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid)); ?>">
 						<?php echo $this->escape($quote->contactid); ?>
@@ -67,19 +67,19 @@ echo $this->ActiveFilter();
 					<?php if($quote->billingname2) echo "<br/>".$this->escape($quote->billingname2); ?>
 				</a>
 			</td>
-			<td class="billingpostcode">
+			<td data-label="<?php echo $this->translate('QUOTES_POSTCODE') ?>" class="billingpostcode">
 				<?php echo $this->escape($quote->billingpostcode); ?> 
 			</td>
-			<td class="billingcity">
+			<td data-label="<?php echo $this->translate('QUOTES_CITY') ?>" class="billingcity">
 				<?php echo $this->escape($quote->billingcity); ?>
 			</td>
-			<td class="modified">
+			<td data-label="<?php echo $this->translate('QUOTES_MODIFIED') ?>" class="modified">
 				<?php echo $this->escape(date("d.m.Y", strtotime($quote->modified))); ?>
 			</td>
-			<td class="total">
+			<td data-label="<?php echo $this->translate('QUOTES_TOTAL') ?>" class="total">
 				<?php echo $this->escape($quote->total); ?>
 			</td>
-			<td class="state">
+			<td data-label="<?php echo $this->translate('QUOTES_STATE') ?>" class="state">
 				<?php if($quote->state == '105' || $quote->state == '106') : ?>
 					<?php echo $this->translate($this->escape($this->options['states'][$quote->state])); ?>
 				<?php else : ?>
