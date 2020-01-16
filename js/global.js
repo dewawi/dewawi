@@ -409,7 +409,7 @@ $(document).ready(function(){
 	$('#cost, #price').on('textchange', function () {
 		var price = $('#price').asNumber({ region: language });
 		var cost = $('#cost').asNumber({ region: language });
-		if(cost & price) {
+		if(cost && price) {
 			var margin = price-cost;
 			$('input#margin').val(margin);
 			$('input#margin').formatCurrency({ region: language });
@@ -746,6 +746,8 @@ function edit(data, params) {
 			isDirty = false;
 		}
 	});
+    //console.log(url);
+    //console.log(data);
 	return response;
 }
 

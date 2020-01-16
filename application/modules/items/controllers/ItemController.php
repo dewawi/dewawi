@@ -155,9 +155,15 @@ class Items_ItemController extends Zend_Controller_Action
 				if(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['modified'] = $this->_date;
 					$data['modifiedby'] = $this->_user['id'];
+					if(array_key_exists('cost', $data)) {
+						$locale = Zend_Registry::get('Zend_Locale');
+						$data['cost'] = Zend_Locale_Format::getNumber($data['cost'],array('precision' => 2,'locale' => $locale));
+                        $data['margin'] = $item['price'] - $data['cost'];
+					}
 					if(array_key_exists('price', $data)) {
 						$locale = Zend_Registry::get('Zend_Locale');
 						$data['price'] = Zend_Locale_Format::getNumber($data['price'],array('precision' => 2,'locale' => $locale));
+                        $data['margin'] = $data['price'] - $item['cost'];
 					}
 					if(array_key_exists('quantity', $data)) {
 						$locale = Zend_Registry::get('Zend_Locale');
