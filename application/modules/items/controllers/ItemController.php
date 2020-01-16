@@ -304,6 +304,9 @@ class Items_ItemController extends Zend_Controller_Action
                                 } elseif($attr == 'discount_dewawi') {
                                     $updateData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_dewawi']])/100;
                                     $updateData['price'] = str_replace(',', '.', $updateData['price']);
+                                } elseif($attr == 'price_dewawi') {
+                                    $updateData['price'] = $datacsv[$map['price_dewawi']];
+                                    $updateData['price'] = str_replace(',', '.', $updateData['price']);
                                 } elseif($attr == 'name_dewawi') {
                                     $name_dewawi = $dataTemplate['name_dewawi'];
                                     foreach($map as $attrSub => $pos) {
@@ -330,6 +333,9 @@ class Items_ItemController extends Zend_Controller_Action
                                 foreach($map as $attr => $pos) {
                                     if($attr == 'discount_shop') {
                                         $updateDataMagento['special_price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_shop']])/100;
+                                        $updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
+                                    elseif($attr == 'price_shop') {
+                                        $updateDataMagento['special_price'] = $datacsv[$map['price_shop']];
                                         $updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
                                     } elseif($attr == 'name_magento') {
                                         $name_magento = $dataTemplate['name_magento'];
