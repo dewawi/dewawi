@@ -11,18 +11,18 @@ class Users_Form_User extends Zend_Form
 
 		$username = new Zend_Form_Element_Text('username');
 		$username->setLabel('USERS_USERNAME')
-			//->setRequired(true)
+			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			//->addValidator('NotEmpty')
+			->addValidator('NotEmpty')
 			->setAttrib('size', '50');
 
 		$password = new Zend_Form_Element_Password('password');
 		$password->setLabel('USERS_PASSWORD')
-			//->setRequired(true)
+			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			//->addValidator('NotEmpty')
+			->addValidator('NotEmpty')
 			->setAttrib('size', '50');
 
 		$client = new Zend_Form_Element_Select('client');

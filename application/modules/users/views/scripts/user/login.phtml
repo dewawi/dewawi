@@ -32,6 +32,18 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
                 border-color: #ddd;
                 border-radius: 4px;
             }
+            div#messages {
+	            width: 260px;
+	            height: 35px;
+	            position: absolute;
+	            top:400px;
+	            bottom: 0;
+	            left: 0;
+	            right: 0;
+	            margin: auto;
+                border-color: #ddd;
+                border-radius: 4px;
+            }
             div#header {
                 padding-top: 15px;
             }
@@ -46,16 +58,24 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
                 margin-left: 0;
             }
             form dd input[type="text"],
-            form dd input[type="submit"],
-            form dd input[type="password"],
-            form dd select {
+            form dd input[type="password"] {
                 height: 27px;
-                width: 100%;
-                font-size: 1.1em;
+                width: 135px;
+                font-size: 1em;
                 border: solid 1px #bcbcbc;
                 background-color: #fafafa;
                 margin: 2px 0;
                 padding: 2px 8px;
+            }
+            form dd input[type="submit"],
+            form dd select {
+                height: 30px;
+                width: 153px;
+                font-size: 1em;
+                border: solid 1px #bcbcbc;
+                background-color: #fafafa;
+                margin: 2px 0;
+                padding: 2px 4px;
             }
             form dt {
                 width: 125px;
@@ -65,13 +85,16 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
                 margin: 5px 0;
             }
             form dd {
-                width: 50%;
+                width: 155px;
                 margin-left: 0;
                 margin-right: 10px;
                 float: left;
             }
             div#header {
                 text-align: center;
+            }
+            ul.errors {
+                display: none;
             }
         </style>
 	</head>
@@ -82,6 +105,7 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
         $this->headTitle($this->title);
         ?>
 
+        <?php echo $this->Messages(); ?>
         <div id="login">
             <div id="header">
                 <h1><a href="https://www.dewawi.com/" target="_blank">

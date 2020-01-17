@@ -278,6 +278,10 @@ table#data th.title,
 table#data td.title {
 	flex-grow: 5;
 }
+table#data th.notes,
+table#data td.notes {
+	flex-grow: 2;
+}
 table#data th:last-child,
 table#data td:last-child {
 	flex-grow: 0.6;

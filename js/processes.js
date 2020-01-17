@@ -3,7 +3,7 @@ $(document).ready(function(){
 		//alert('asd');
 	});
 	$('#positions').on('change', 'tr select.itemType', function() {
-		var id = $(this).closest('tr').find('input.id').val();
+		var id = $(this).closest('tr.wrap').find('input.id').val();
 		var type = $(this).val();
 		$('.position'+id+'.stockItem').hide();
 		$('.position'+id+'.deliveryItem').hide();
@@ -30,12 +30,12 @@ $(document).ready(function(){
 		$('#details td.supplierorderstatus').removeClass('supplierNotOrdered supplierOrdered supplierPayed').addClass(status);
 	});
 	$('#positions').on('change', 'tr select.deliveryStatus', function() {
-		var id = $(this).closest('tr').find('input.id').val();
+		var id = $(this).closest('tr.wrap').find('input.id').val();
 		var status = $(this).val();
 		$('.position'+id+' td.deliverystatus').removeClass('deliveryIsWaiting partialDelivered deliveryCompleted').addClass(status);
 	});
 	$('#positions').on('change', 'tr select.supplierOrderStatus', function() {
-		var id = $(this).closest('tr').find('input.id').val();
+		var id = $(this).closest('tr.wrap').find('input.id').val();
 		var status = $(this).val();
 		$('.position'+id+' td.supplierorderstatus').removeClass('supplierNotOrdered supplierOrdered supplierPayed').addClass(status);
 	});

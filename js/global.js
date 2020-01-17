@@ -66,6 +66,7 @@ $(document).ready(function(){
 		var data = {};
 		var params = {};
 		params['id'] = $(this).closest('tr.wrap').find('input.id').val();
+        console.log(params['id']);
 		params[controller+'id'] = id;
 		params['element'] = this.name;
 		data[this.name] = this.value;
@@ -476,7 +477,8 @@ $(document).ready(function(){
 							}
 						});
 					});
-					var id = $(this).closest('div').find('input.id').val();
+                    //copy and delete function on edit page
+					var id = $(this).closest('.toolbar').find('input.id').val();
 					if(id) {
 						if(className == 'copy') {
 							copy(id);
@@ -766,7 +768,7 @@ function editPosition(data, params) {
 				$('table#total #subtotal').text(response['subtotal']);
 				$('table#total #taxes').text(response['taxes']);
 				$('table#total #total').text(response['total']);
-				$('tr.position'+params['id']).find('.total').text(response[params['id']]['total']);
+				$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
 			}
 		}
 	});

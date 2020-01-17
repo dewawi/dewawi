@@ -26,8 +26,14 @@ function access($attr, $path, $data, $volume) {
 		:  null;                                    // else elFinder decide it itself
 }
 
-$path = '../../../files/';
-$URL = '/../../../files/';
+if ($_GET['extrapath']) {
+    $path = '../../../../'.$_GET['extrapath'].'/files/';
+    $URL = '/../../../../'.$_GET['extrapath'].'/files/';  
+} else {
+    $path = '../../../files/';
+    $URL = '/../../../files/';
+}
+
 if(isset($_GET['directory']) && $_GET['directory'] && $_GET['directory'] != 0) {
 	$path = $path.'contacts/'.$_GET['directory'].'/';
 	$URL = $URL.'contacts/'.$_GET['directory'].'/';

@@ -12,6 +12,12 @@ class Zend_View_Helper_ElFinder extends Zend_View_Helper_Abstract{
 		$this->view->headScript()->appendFile($elfinder_base_uri.'js/i18n/elfinder.de.js');
 		$this->view->headScript()->prependFile($elfinder_base_uri.'js/elfinder.min.js');
 
+        $url = $this->view->baseUrl()."/library/elFinder/php/connector.minimal.php?directory='+directory";
+        if(is_link(BASE_PATH.'/library')) {
+            $path = explode('/', BASE_PATH);
+            $url = $url."+'&extrapath=".end($path);
+        }
+
 		$this->view->headScript()->captureStart(); ?>
 		function elfinder() {
 			var directory = 0;
@@ -20,7 +26,7 @@ class Zend_View_Helper_ElFinder extends Zend_View_Helper_Abstract{
 			else if($('#customerid').val()) directory = $('#customerid').val();
 			$('#elfinder').elfinder({
 				lang: 'de',
-				url: '<?php echo $this->view->baseUrl(); ?>/library/elFinder/php/connector.minimal.php?directory='+directory,
+				url: '<?php echo $url; ?>',
 				//customData: { contactid : directory },
 				rememberLastDir: false,
 				allowShortcuts: false,

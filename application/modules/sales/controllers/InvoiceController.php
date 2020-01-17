@@ -808,7 +808,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 				$mail->setBodyHtml($body);
 				$mail->setFrom($this->_config->mailfrom, $this->_config->fromname);
 				$mail->addTo($email);
-				$mail->addBcc("remzi.demen@deec.de");
 				$mail->setSubject($subject);
 
 				if($file) {

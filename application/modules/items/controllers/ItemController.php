@@ -334,7 +334,7 @@ class Items_ItemController extends Zend_Controller_Action
                                     if($attr == 'discount_shop') {
                                         $updateDataMagento['special_price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_shop']])/100;
                                         $updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
-                                    elseif($attr == 'price_shop') {
+                                    } elseif($attr == 'price_shop') {
                                         $updateDataMagento['special_price'] = $datacsv[$map['price_shop']];
                                         $updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
                                     } elseif($attr == 'name_magento') {

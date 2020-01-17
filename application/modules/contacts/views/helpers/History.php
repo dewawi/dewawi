@@ -7,7 +7,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 	public function History() {
 		if(count($this->view->history['quotes'])) : ?>
 		<h3><?php echo $this->view->translate('QUOTES') ?></h3>
-		<table>
+		<table id="data">
 			<thead>
 				<tr>
 					<th id="quoteid"><?php echo $this->view->translate('QUOTES_QUOTE_ID') ?></th>
@@ -19,7 +19,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<th id="subtotal"><?php echo $this->view->translate('QUOTES_SUBTOTAL') ?></th>
 					<th id="total"><?php echo $this->view->translate('QUOTES_TOTAL') ?></th>
 					<th id="state"><?php echo $this->view->translate('QUOTES_STATE') ?></th>
-					<th id="buttons"></th>
+					<th class="buttons"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -64,7 +64,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<td id="state">
 						<?php echo $this->view->translate($this->view->escape($this->view->states[$quote->state]));?>
 					</td>
-					<td id="buttons">
+					<td class="buttons">
 						<?php if($quote->state == '105' || $quote->state == '106') : ?>
 							<?php echo $this->view->toolbar->view->setLabel(''); ?>
 						<?php else : ?>
@@ -80,7 +80,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 		<?php endif; ?>
 		<?php if(count($this->view->history['salesorders'])) : ?>
 		<h3><?php echo $this->view->translate('SALES_ORDERS') ?></h3>
-		<table>
+		<table id="data">
 			<thead>
 				<tr>
 					<th id="salesorderid"><?php echo $this->view->translate('SALES_ORDERS_SALES_ORDER_ID') ?></th>
@@ -93,7 +93,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<th id="subtotal"><?php echo $this->view->translate('SALES_ORDERS_SUBTOTAL') ?></th>
 					<th id="total"><?php echo $this->view->translate('SALES_ORDERS_TOTAL') ?></th>
 					<th id="state"><?php echo $this->view->translate('SALES_ORDERS_STATE') ?></th>
-					<th id="buttons"></th>
+					<th class="buttons"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -141,7 +141,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<td id="state">
 						<?php echo $this->view->translate($this->view->escape($this->view->states[$salesorder->state]));?>
 					</td>
-					<td id="buttons">
+					<td class="buttons">
 						<?php if($salesorder->state == '105' || $salesorder->state == '106') : ?>
 							<?php echo $this->view->toolbar->view->setLabel(''); ?>
 						<?php else : ?>
@@ -157,7 +157,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 		<?php endif; ?>
 		<?php if(count($this->view->history['invoices'])) : ?>
 		<h3><?php echo $this->view->translate('INVOICES') ?></h3>
-		<table>
+		<table id="data">
 			<thead>
 				<tr>
 					<th id="invoiceid"><?php echo $this->view->translate('INVOICES_INVOICE_ID'); ?></th>
@@ -170,7 +170,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<th id="subtotal"><?php echo $this->view->translate('INVOICES_SUBTOTAL') ?></th>
 					<th id="total"><?php echo $this->view->translate('INVOICES_TOTAL') ?></th>
 					<th id="state"><?php echo $this->view->translate('INVOICES_STATE') ?></th>
-					<th id="buttons"></th>
+					<th class="buttons"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -218,7 +218,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<td id="state">
 						<?php echo $this->view->translate($this->view->escape($this->view->states[$invoice->state]));?>
 					</td>
-					<td id="buttons">
+					<td class="buttons">
 						<?php if($invoice->state == '105' || $invoice->state == '106') : ?>
 							<?php echo $this->view->toolbar->view->setLabel(''); ?>
 						<?php else : ?>
@@ -234,7 +234,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 		<?php endif; ?>
 		<?php if(count($this->view->history['deliveryorders'])) : ?>
 		<h3><?php echo $this->view->translate('DELIVERY_ORDERS') ?></h3>
-		<table>
+		<table id="data">
 			<thead>
 				<tr>
 					<th id="deliveryorderid"><?php echo $this->view->translate('DELIVERY_ORDERS_DELIVERY_ORDER_ID'); ?></th>
@@ -247,7 +247,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<th id="subtotal"><?php echo $this->view->translate('DELIVERY_ORDERS_SUBTOTAL') ?></th>
 					<th id="total"><?php echo $this->view->translate('DELIVERY_ORDERS_TOTAL') ?></th>
 					<th id="state"><?php echo $this->view->translate('DELIVERY_ORDERS_STATE') ?></th>
-					<th id="buttons"></th>
+					<th class="buttons"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -295,7 +295,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<td id="state">
 						<?php echo $this->view->translate($this->view->escape($this->view->states[$deliveryorder->state]));?>
 					</td>
-					<td id="buttons">
+					<td class="buttons">
 						<?php if($deliveryorder->state == '105' || $deliveryorder->state == '106') : ?>
 							<?php echo $this->view->toolbar->view->setLabel(''); ?>
 						<?php else : ?>
@@ -311,7 +311,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 		<?php endif; ?>
 		<?php if(count($this->view->history['creditnotes'])) : ?>
 		<h3><?php echo $this->view->translate('CREDIT_NOTES') ?></h3>
-		<table>
+		<table id="data">
 			<thead>
 				<tr>
 					<th id="creditnoteid"><?php echo $this->view->translate('CREDIT_NOTES_CREDIT_NOTE_ID'); ?></th>
@@ -324,7 +324,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<th id="subtotal"><?php echo $this->view->translate('CREDIT_NOTES_SUBTOTAL') ?></th>
 					<th id="total"><?php echo $this->view->translate('CREDIT_NOTES_TOTAL') ?></th>
 					<th id="state"><?php echo $this->view->translate('CREDIT_NOTES_STATE') ?></th>
-					<th id="buttons"></th>
+					<th class="buttons"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -372,7 +372,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<td id="state">
 						<?php echo $this->view->translate($this->view->escape($this->view->states[$creditnote->state]));?>
 					</td>
-					<td id="buttons">
+					<td class="buttons">
 						<?php if($creditnote->state == '105' || $creditnote->state == '106') : ?>
 							<?php echo $this->view->toolbar->view->setLabel(''); ?>
 						<?php else : ?>
@@ -388,7 +388,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 		<?php endif; ?>
 		<?php if(count($this->view->history['quoterequests'])) : ?>
 		<h3><?php echo $this->view->translate('QUOTE_REQUESTS') ?></h3>
-		<table>
+		<table id="data">
 			<thead>
 				<tr>
 					<th id="quoterequestid"><?php echo $this->view->translate('QUOTE_REQUESTS_QUOTE_REQUEST_ID'); ?></th>
@@ -401,7 +401,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<th id="subtotal"><?php echo $this->view->translate('QUOTE_REQUESTS_SUBTOTAL') ?></th>
 					<th id="total"><?php echo $this->view->translate('QUOTE_REQUESTS_TOTAL') ?></th>
 					<th id="state"><?php echo $this->view->translate('QUOTE_REQUESTS_STATE') ?></th>
-					<th id="buttons"></th>
+					<th class="buttons"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -449,7 +449,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<td id="state">
 						<?php echo $this->view->translate($this->view->escape($this->view->states[$quoterequest->state]));?>
 					</td>
-					<td id="buttons">
+					<td class="buttons">
 						<?php if($quoterequest->state == '105' || $quoterequest->state == '106') : ?>
 							<?php echo $this->view->toolbar->view->setLabel(''); ?>
 						<?php else : ?>
@@ -465,7 +465,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 		<?php endif; ?>
 		<?php if(count($this->view->history['purchaseorders'])) : ?>
 		<h3><?php echo $this->view->translate('PURCHASE_ORDERS') ?></h3>
-		<table>
+		<table id="data">
 			<thead>
 				<tr>
 					<th id="purchaseorderid"><?php echo $this->view->translate('PURCHASE_ORDERS_PURCHASE_ORDER_ID'); ?></th>
@@ -478,7 +478,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<th id="subtotal"><?php echo $this->view->translate('PURCHASE_ORDERS_SUBTOTAL') ?></th>
 					<th id="total"><?php echo $this->view->translate('PURCHASE_ORDERS_TOTAL') ?></th>
 					<th id="state"><?php echo $this->view->translate('PURCHASE_ORDERS_STATE') ?></th>
-					<th id="buttons"></th>
+					<th class="buttons"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -526,7 +526,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<td id="state">
 						<?php echo $this->view->translate($this->view->escape($this->view->states[$purchaseorder->state]));?>
 					</td>
-					<td id="buttons">
+					<td class="buttons">
 						<?php if($purchaseorder->state == '105' || $purchaseorder->state == '106') : ?>
 							<?php echo $this->view->toolbar->view->setLabel(''); ?>
 						<?php else : ?>
@@ -542,7 +542,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 		<?php endif; ?>
 		<?php if(count($this->view->history['processes'])) : ?>
 		<h3><?php echo $this->view->translate('PROCESSES') ?></h3>
-		<table>
+		<table id="data">
 			<thead>
 				<tr>
 					<th id="id"><?php echo $this->view->translate('PROCESSES_ID'); ?></th>
@@ -554,7 +554,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<th id="subtotal"><?php echo $this->view->translate('PROCESSES_SUBTOTAL') ?></th>
 					<th id="total"><?php echo $this->view->translate('PROCESSES_TOTAL') ?></th>
 					<th id="state"><?php echo $this->view->translate('PROCESSES_STATE') ?></th>
-					<th id="buttons"></th>
+					<th class="buttons"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -599,7 +599,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					<td id="state">
 						<?php echo $this->view->translate($this->view->escape($this->view->states[$process->state]));?>
 					</td>
-					<td id="buttons">
+					<td class="buttons">
 						<?php if($process->completed || $process->cancelled) : ?>
 							<?php echo $this->view->toolbar->view->setLabel(''); ?>
 						<?php else : ?>

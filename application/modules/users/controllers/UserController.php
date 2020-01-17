@@ -2,10 +2,16 @@
 
 class Users_UserController extends Zend_Controller_Action
 {
+	/**
+	 * FlashMessenger
+	 *
+	 * @var Zend_Controller_Action_Helper_FlashMessenger
+	 */
+	protected $_flashMessenger = null;
 
 	public function init()
 	{
-		/* Initialize action controller here */
+		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
 	}
 
 	public function loginAction()
@@ -70,12 +76,18 @@ class Users_UserController extends Zend_Controller_Action
 					}
 					$this->_helper->redirector->gotoSimple("index", "index");
 				} else {
-					echo "error";
+				    $this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
 				}
 			} else {
+				$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
 				$form->populate($formData);
 			}
 		}
+		$this->view->messages = array_merge(
+						$this->_flashMessenger->getMessages(),
+						$this->_flashMessenger->getCurrentMessages()
+						);
+		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function logoutAction()
