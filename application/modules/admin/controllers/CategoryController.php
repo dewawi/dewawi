@@ -92,18 +92,21 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$options = $this->_helper->Options->getOptions($form);
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
-			if($form->isValid($data)) {
-				$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $params['parentid']) + 1;
+			//if($form->isValid($data)) {
+				$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
 				$data['created'] = $this->_date;
 				$data['createdby'] = $this->_user['id'];
 				$data['clientid'] = $params['clientid'];
+				//$data['parentid'] = $params['parentid'];
 
 				$categoryDb = new Admin_Model_DbTable_Category();
 				$id = $categoryDb->addCategory($data);
+				//echo Zend_Json::encode($data);
 				echo Zend_Json::encode($categoryDb->getCategory($id));
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
+			//} else {
+			//	echo Zend_Json::encode($data);
+				//echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+			//}
 		}
 	}
 
@@ -141,10 +144,27 @@ class Admin_CategoryController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					$categoryDb = new Admin_Model_DbTable_Category();
-					$categoryDb->updateCategory($id, $data);
+				    $data['modified'] = $this->_date;
+				    $data['modifiedby'] = $this->_user['id'];
+                    if($element == 'parentid') {
+				        $data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
+                        $categoryArray = $categoryDb->getCategory($id);
+					    $categoryDb->updateCategory($id, $data);
+
+			            //sort old parent category
+                		$categories = $this->_helper->Categories->getCategories(null, $params['clientid'], $params['type'], $categoryArray['parentid']);
+                        $i = 1;
+                        foreach($categories as $category) {
+                            if(isset($category['id'])) {
+                                //if($category['ordering'] != $i)
+                                $categoryDb->updateCategory($category['id'], array('ordering' => $i));
+                                ++$i;
+                            }
+                        }
+                    } else {
+					    $categoryDb->updateCategory($id, $data);
+                    }
 					echo Zend_Json::encode($categoryDb->getCategory($id));
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -310,8 +330,10 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$i = 1;
 		$orderings = array();
 		foreach($categories as $category) {
-			$orderings[$i] = $category['id'];
-			++$i;
+            if(isset($category['id'])) {
+			    $orderings[$i] = $category['id'];
+			    ++$i;
+		    }
 		}
 		return $orderings;
 	}

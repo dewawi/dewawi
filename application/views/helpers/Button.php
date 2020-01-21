@@ -12,7 +12,8 @@ class Zend_View_Helper_Button extends Zend_View_Helper_Abstract{
 		if($title) $html .= ' title="'.$title.'"';
 		if($rel) $html .= ' rel="'.$rel.'"';
 		if($id) $html .= ' data-id="'.$id.'"';
-		$html .= '><span>'.$value.'</span></button>';
+		if($value) $html .= '><span>'.$value.'</span></button>';
+		else $html .= '>'.$value.'</button>';
 		return $html;
 	}
 }

@@ -3,7 +3,7 @@ $this->title = $this->translate('ADMIN');
 $this->headTitle($this->title);
 echo $this->Messages();
 echo $this->AdminMenu();
-?>
+//print_r($this->categories); ?>
 
 <table id="data">
 	<thead>
@@ -44,47 +44,23 @@ echo $this->AdminMenu();
 						<?php echo $this->escape($category['ordering']); ?>
 					</td>
 					<td class="buttons">
+						<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
+						<?php echo $this->Button('delete', '', $this->translate('TOOLBAR_DELETE')); ?>
 						<?php if($i0>1) : ?>
 							<?php echo $this->toolbar->sortup; ?>
 						<?php endif; ?>
 						<?php if($i0<$count0) : ?>
 							<?php echo $this->toolbar->sortdown; ?>
 						<?php endif; ?>
-						<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
-						<?php echo $this->Button('delete', '', $this->translate('TOOLBAR_DELETE')); ?>
 					</td>
 				</tr>
-				<?php if(isset($category['childs'])) : ?>
-					<?php $i1 = 1; ?>
-					<?php $count1 = count($category['childs']); ?>
-					<?php foreach($category['childs'] as $child) : ?>
-						<tr>
-							<td><input class="id" type="checkbox" value="<?php echo $this->categories[$child]['id'] ?>" name="id"/></td>
-							<td class="id">
-								<?php echo $this->escape($this->categories[$child]['id']); ?>
-							</td>
-							<td class="name">
-								-- <span class="editable" data-name="title"><?php echo $this->escape($this->categories[$child]['title']); ?></span>
-							</td>
-							<td class="parentid">
-								<span class="editable" data-name="parentid" data-value="<?php echo $this->escape($category['id']); ?>" data-type="select"><?php echo $this->escape($category['title']); ?></span>
-							</td>
-							<td class="ordering">
-								<?php echo $this->escape($this->categories[$child]['ordering']); ?>
-							</td>
-							<td class="buttons">
-								<?php if($i1>1) : ?>
-									<?php echo $this->toolbar->sortup; ?>
-								<?php endif; ?>
-								<?php if($i1<$count1) : ?>
-									<?php echo $this->toolbar->sortdown; ?>
-								<?php endif; ?>
-								<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
-								<?php echo $this->Button('delete', '', $this->translate('TOOLBAR_DELETE')); ?>
-							</td>
-						</tr>
-						<?php ++$i1; ?>
-					<?php endforeach; ?>
+				<?php if(isset($this->categories[$category['id']]['childs'])) : ?>
+					<?php $buttons = array(); ?>
+					<?php $buttons['copy'] = $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
+					<?php $buttons['delete'] = $this->Button('delete', '', $this->translate('TOOLBAR_DELETE')); ?>
+					<?php $buttons['sortup'] = $this->toolbar->sortup; ?>
+					<?php $buttons['sortdown'] = $this->toolbar->sortdown; ?>
+                    <?php subCategories($this->categories, $category['id'], $buttons); ?>
 				<?php endif; ?>
 			<?php endif; ?>
 			<?php ++$i0; ?>
@@ -104,10 +80,47 @@ echo $this->AdminMenu();
 			<td>
 				<input type="hidden" name="type" value="<?php echo $this->toolbar->getValue('type'); ?>">
 			</td>
-			<td>
+			<td class="buttons">
 				<?php echo $this->toolbar->save; ?>
 				<?php //echo $this->toolbar->cancel; ?>
 			</td>
 		</tr>
 	</tbody>
 </table>
+
+<?php function subCategories($categories, $id, $buttons, $seperator = '--') { ?>
+	<?php $i1 = 1; ?>
+	<?php $count1 = count($categories[$id]['childs']); ?>
+	<?php foreach($categories[$id]['childs'] as $child) : ?>
+		<tr>
+			<td><input class="id" type="checkbox" value="<?php echo $categories[$child]['id'] ?>" name="id"/></td>
+			<td class="id">
+				<?php echo $categories[$child]['id']; ?>
+			</td>
+			<td class="name">
+				<?php echo $seperator; ?> <span class="editable" data-name="title"><?php echo $categories[$child]['title']; ?></span>
+			</td>
+			<td class="parentid">
+				<span class="editable" data-name="parentid" data-value="<?php echo $categories[$child]['parentid']; ?>" data-type="select"><?php echo $categories[$categories[$child]['parentid']]['title']; ?></span>
+			</td>
+			<td class="ordering">
+				<?php echo $categories[$child]['ordering']; ?>
+			</td>
+			<td class="buttons">
+				<?php echo $buttons['copy']; ?>
+				<?php echo $buttons['delete']; ?>
+				<?php if($i1>1) : ?>
+					<?php echo $buttons['sortup']; ?>
+				<?php endif; ?>
+				<?php if($i1<$count1) : ?>
+					<?php echo $buttons['sortdown']; ?>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<?php ++$i1; ?>
+        <?php if(isset($categories[$child]['childs'])) : ?>
+	        <?php $seperatorChild = '--'.$seperator; ?>
+            <?php subCategories($categories, $child, $buttons, $seperatorChild); ?>
+        <?php endif; ?>
+	<?php endforeach; ?>
+<?php } ?>

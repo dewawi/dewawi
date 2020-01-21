@@ -679,6 +679,7 @@ function save() {
 
 //Add
 function add(data, params) {
+    //console.log(data);
 	params = params || null;
 	if(params) {
 		var url = baseUrl;
@@ -720,6 +721,7 @@ function add(data, params) {
 				$('div#'+data['controller']+' button.add').before(response);
 				//Focus on new element
 				$('div#'+data['controller']+' div:last input:first').focus().select();
+                //console.log(response);
 				if(action == 'index') search();
 			}
 		});

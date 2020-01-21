@@ -255,6 +255,13 @@ table#positions > tbody > tr > td:nth-child(2) {
 	flex-grow: 0.2;
     min-width: 25px;
 }
+#tabHistory table#data > thead > tr > th:first-child,
+#tabHistory table#data > tbody > tr > td:first-child {
+    padding: 6px 0;
+	flex-grow: 0.6;
+    min-width: 50px;
+    border-left: 5px solid transparent;
+}
 table#positions > thead > tr > th:nth-child(2),
 table#positions > tbody > tr > td:nth-child(2),
 table#positions > thead > tr > th:last-child,
@@ -304,8 +311,11 @@ table#positions td.buttons button, table#positions td.buttons button[type="butto
     background-repeat: no-repeat;
     background-position-y: center;
     background-position-x: 5px;
-    padding: 8px 2px 15px 25px;
+    padding: 1px 2px 1px 25px;
 	border: solid 1px #bcbcbc;
+    height:26px;
+    display: inline-block;
+    vertical-align: top;
     margin: 0;
 }
 table#data label, table#data input[type="text"], table#data textarea, table#data select, table#data option,
@@ -542,6 +552,10 @@ form dd textarea {
 form dt#id-label,
 form dd#id-element {
     display: none;
+}
+form#contact dt#id-label,
+form#contact dd#id-element {
+    display: inline-block;
 }
 form dt#info-label,
 form dt#header-label,
