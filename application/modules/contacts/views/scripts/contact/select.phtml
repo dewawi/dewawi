@@ -47,7 +47,7 @@ $this->headTitle($this->title);
 				<td class="category">
 					<?php if($contact->catid) echo $this->escape($this->categories[$contact->catid]['title']); ?>
 				</td>
-				<td>
+				<td class="buttons">
 					<?php echo $this->Button('apply', 'window.parent.applyContact('.$this->escape($contact->id).')', 'TOOLBAR_APPLY'); ?>
 				</td>
 			</tr>

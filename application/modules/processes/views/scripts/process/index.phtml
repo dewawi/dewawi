@@ -52,7 +52,7 @@ echo $this->ActiveFilter();
 			</td>
 			<td data-label="<?php echo $this->translate('PROCESSES_NOTES') ?>" class="notes">
 				<?php if($process->state == '105' || $process->state == '106') : ?>
-					<?php echo $process->notes; ?>
+					<?php echo nl2br($process->notes); ?>
 				<?php else : ?>
 					<?php if($process->notes) : ?>
 						<pre class="editable" data-name="notes" data-value="<?php echo $process->notes; ?>" data-type="textarea"><?php echo $process->notes; ?></pre>
@@ -78,7 +78,9 @@ echo $this->ActiveFilter();
 				<?php endif; ?>
 				<p class="paymentstatus">
 					<?php if($process->state == '105' || $process->state == '106') : ?>
-						<?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?>
+                        <span class="<?php echo $process->paymentstatus; ?>">
+						    <?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?>
+                        </span>
 					<?php else : ?>
 						<span class="editable" data-name="paymentstatus" data-value="<?php echo $process->paymentstatus; ?>" data-type="select"><?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?></span>
 					<?php endif; ?>

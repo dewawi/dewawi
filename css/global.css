@@ -7,6 +7,9 @@ h4 {
 a {
 	color: #069;
 }
+br {
+    line-height: 1;
+}
 p.error {
 	color: red;
 }
@@ -283,7 +286,11 @@ table#positions th {
 }
 table#data th.title,
 table#data td.title {
-	flex-grow: 5;
+	flex-grow: 2;
+}
+table#data th.state,
+table#data td.state {
+	flex-grow: 0.5;
 }
 table#data th.notes,
 table#data td.notes {
@@ -291,10 +298,16 @@ table#data td.notes {
 }
 table#data th:last-child,
 table#data td:last-child {
-	flex-grow: 0.6;
+	flex-grow: 0.1;
+    min-width: 30px;
+}
+.admin table#data th:last-child,
+.admin table#data td:last-child {
+	flex-grow: 0.5;
+    min-width: 100px;
 }
 table#data tr.bottom td.toolbar {
-	flex-grow: 5;
+	flex-grow: 3;
 	text-align: left;
 	margin: 0;
 	padding: 5px;
@@ -641,6 +654,9 @@ ul.errors {
 .notes textarea {
 	margin: 10px 5px 10px 0;
 }
+textarea#notes {
+    font-family: Menlo, Consolas, monospace;
+}
 span.completed {
 	color: green;
 	font-weight: bold;
@@ -883,6 +899,9 @@ iframe {
         margin: 0;
     }
 }
+#filter tbody {
+	border: 0;
+}
 #filter td {
 	vertical-align: top;
 }
@@ -902,7 +921,7 @@ div#filter {
 	margin-left: 2px;
 	text-align: left;
 	right: 0;
-	z-index: 999;
+	z-index: 9999;
 }
 div#filter div {
 	display: block;
@@ -919,7 +938,8 @@ div#filter div {
 	margin: 5px 3px 0 0;
 }
 #filter form {
-	margin-bottom: 0;
+	margin-top: 15px;
+	padding: 0;
 }
 #ordering {
 	display: inline-block;

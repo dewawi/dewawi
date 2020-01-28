@@ -46,7 +46,7 @@ $this->headTitle($this->title);
 				<td class="category">
 					<?php if($item->catid) echo $this->escape($this->categories[$item->catid]['title']);?>
 				</td>
-				<td>
+				<td class="buttons">
 					<?php echo $this->Button('apply', 'applyPosition('.$this->escape($item->id).')', 'TOOLBAR_APPLY'); ?>
 				</td>
 			</tr>
