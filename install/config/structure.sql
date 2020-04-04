@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS `client` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 INSERT INTO `client` (`id`, `company`, `address`, `postcode`, `city`, `country`, `email`, `website`, `language`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'Demo', '', '', '', '', '', '', '', '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+(1, 'Company', '', '', '', '', '', '', '', '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 DROP TABLE IF EXISTS `config`;
 CREATE TABLE IF NOT EXISTS `config` (
@@ -441,6 +441,9 @@ CREATE TABLE IF NOT EXISTS `language` (
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `language` (`id`, `code`, `name`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'de_DE', 'Deutsch', 100, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 DROP TABLE IF EXISTS `magentocustomer`;
 CREATE TABLE IF NOT EXISTS `magentocustomer` (
@@ -1039,7 +1042,9 @@ CREATE TABLE IF NOT EXISTS `template` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  `activated` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `textblock`;

@@ -106,15 +106,16 @@ class Sales_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 
 		//Get templates
 		$templateDb = new Application_Model_DbTable_Template();
-		$templateObject = $templateDb->fetchAll(
+        $templates = $templateDb->getTemplates($clientid);
+		/*$templateObject = $templateDb->fetchAll(
 			$templateDb->select()
 				->where('clientid = ?', $clientid)
 		);
-		$templates = array();
-		foreach($templateObject as $template) {
-			$templates[$template->id] = $template->description;
+		$templates = array();*/
+		foreach($templates as $template) {
+			$options['templates'][$template['id']] = $template['description'];
 		}
-		$options['templates'] = $templates;
+		//$options['templates'] = $templates;
 
 		//Get languages
 		$languages = array(
@@ -129,7 +130,7 @@ class Sales_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		if(isset($form->country))$form->country->addMultiOptions($countries);
 		if(isset($form->paymentmethod)) $form->paymentmethod->addMultiOptions($paymentmethods);
 		if(isset($form->shippingmethod)) $form->shippingmethod->addMultiOptions($shippingmethods);
-		if(isset($form->templateid)) $form->templateid->addMultiOptions($templates);
+		if(isset($form->templateid)) $form->templateid->addMultiOptions($options['templates']);
 		if(isset($form->language)) $form->language->addMultiOptions($languages);
 
 		return $options;
