@@ -38,4 +38,5 @@
 	'ADMIN_MAIN_CATEGORY' => 'Hauptkategorie',
 	'ADMIN_PARENT_CATEGORY' => 'Überkategorie',
 	'ADMIN_ORDERING' => 'Position',
+	'ADMIN_CHILD_COUNT' => 'Anzahl der Subkategorien',
 );

@@ -923,6 +923,9 @@ function reset() {
 //Copy
 function copy(cid, cmodule, ccontroller){
 	cid = cid || id;
+console.log(cid);
+console.log(cmodule);
+console.log(baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid);
 	cmodule = cmodule || module;
 	ccontroller = ccontroller || controller;
 	$.ajax({
@@ -930,6 +933,7 @@ function copy(cid, cmodule, ccontroller){
 		url: baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid,
 		cache: false,
 		success: function(response){
+console.log(response);
 			if(id && response) setLocation(baseUrl+'/'+cmodule+'/'+ccontroller+'/edit/id/'+response);
 			else search();
 		}
@@ -1083,6 +1087,7 @@ function sort(id, ordering){
 			if(action == 'edit') {
 				getPositions();
 			} else {
+                //console.log(response);
 				search();
 			}
 		}

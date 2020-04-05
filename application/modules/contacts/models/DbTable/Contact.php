@@ -21,6 +21,16 @@ class Contacts_Model_DbTable_Contact extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getContactsByCategory($catid)
+	{
+		$catid = (int)$catid;
+		$row = $this->fetchAll('catid = ' . $catid);
+		if (!$row) {
+			throw new Exception("Could not find row $catid");
+		}
+		return $row->toArray();
+	}
+
 	public function addContact($data)
 	{
 		$this->insert($data);

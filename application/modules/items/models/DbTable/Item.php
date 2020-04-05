@@ -33,6 +33,16 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getItemsByCategory($catid)
+	{
+		$catid = (int)$catid;
+		$row = $this->fetchAll('catid = ' . $catid);
+		if (!$row) {
+			throw new Exception("Could not find row $catid");
+		}
+		return $row->toArray();
+	}
+
 	public function addItem($data)
 	{
 		$this->insert($data);

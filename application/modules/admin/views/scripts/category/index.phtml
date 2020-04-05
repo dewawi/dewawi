@@ -10,13 +10,16 @@ echo $this->AdminMenu();
 		<tr>
 			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
 			<th class="id" width="5%">
-				<?php echo $this->translate('ADMIN_CLIENT_ID'); ?>
+				<?php echo $this->translate('ADMIN_ID'); ?>
 			</th>
 			<th class="name" width="20%">
 				<?php echo $this->translate('ADMIN_TITLE'); ?>
 			</th>
 			<th class="parentid" width="20%">
 				<?php echo $this->translate('ADMIN_PARENT_CATEGORY'); ?>
+			</th>
+			<th class="parentid" width="20%">
+				<?php echo $this->translate('ADMIN_CHILD_COUNT'); ?>
 			</th>
 			<th class="ordering" width="20%">
 				<?php echo $this->translate('ADMIN_ORDERING'); ?>
@@ -40,8 +43,15 @@ echo $this->AdminMenu();
 					<td class="parentid">
 						<span class="editable" data-name="parentid" data-value="0" data-type="select"><?php echo $this->translate('ADMIN_MAIN_CATEGORY'); ?></span>
 					</td>
-					<td class="ordering">
+					<td class="parentid">
 						<?php echo $this->escape($category['ordering']); ?>
+					</td>
+					<td class="ordering">
+						<?php if($category['childcount']>0) : ?>
+						    <?php echo $this->escape($category['childcount']); ?>
+			            <?php else : ?>
+                            -
+						<?php endif; ?>
 					</td>
 					<td class="buttons">
 						<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
@@ -78,6 +88,8 @@ echo $this->AdminMenu();
 				<?php echo $this->form->parentid; ?>
 			</td>
 			<td>
+			</td>
+			<td>
 				<input type="hidden" name="type" value="<?php echo $this->toolbar->getValue('type'); ?>">
 			</td>
 			<td class="buttons">
@@ -88,7 +100,7 @@ echo $this->AdminMenu();
 	</tbody>
 </table>
 
-<?php function subCategories($categories, $id, $buttons, $seperator = '--') { ?>
+<?php function subCategories($categories, $id, $buttons, $seperator = '&nbsp;&nbsp;&boxur;&boxh;') { ?>
 	<?php $i1 = 1; ?>
 	<?php $count1 = count($categories[$id]['childs']); ?>
 	<?php foreach($categories[$id]['childs'] as $child) : ?>
@@ -102,6 +114,13 @@ echo $this->AdminMenu();
 			</td>
 			<td class="parentid">
 				<span class="editable" data-name="parentid" data-value="<?php echo $categories[$child]['parentid']; ?>" data-type="select"><?php echo $categories[$categories[$child]['parentid']]['title']; ?></span>
+			</td>
+			<td class="ordering">
+			    <?php if($categories[$child]['childcount']>0) : ?>
+				    <?php echo $categories[$child]['childcount']; ?>
+			    <?php else : ?>
+                    -
+			    <?php endif; ?>
 			</td>
 			<td class="ordering">
 				<?php echo $categories[$child]['ordering']; ?>
@@ -119,7 +138,7 @@ echo $this->AdminMenu();
 		</tr>
 		<?php ++$i1; ?>
         <?php if(isset($categories[$child]['childs'])) : ?>
-	        <?php $seperatorChild = '--'.$seperator; ?>
+	        <?php $seperatorChild = '&nbsp;&nbsp;&nbsp;'.$seperator; ?>
             <?php subCategories($categories, $child, $buttons, $seperatorChild); ?>
         <?php endif; ?>
 	<?php endforeach; ?>
