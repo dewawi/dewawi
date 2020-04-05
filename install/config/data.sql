@@ -510,6 +510,21 @@ INSERT INTO `shippingmethod` (`id`, `title`, `ordering`, `clientid`, `created`, 
 (3, 'Selbstabholung', 0, 1, '2015-12-06 15:35:52', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
+TRUNCATE `state`;
+INSERT INTO `state` (`id`, `title`, `standard`, `completed`, `cancelled`, `extra`, `module`, `controller`, `color`, `ordering`, `clientid`) VALUES
+(1, 'PROCESSES_STATE_CREATED', 1, 0, 0, 'standard', 'processes', 'process', '', 1, 1),
+(2, 'PROCESSES_STATE_IN_PROGRESS', 0, 0, 0, '', 'processes', 'process', '#D3D3D3', 2, 1),
+(3, 'PROCESSES_STATE_PLEASE_CHECK', 0, 0, 0, '', 'processes', 'process', '#FFFF00', 3, 1),
+(4, 'PROCESSES_STATE_PLEASE_DELETE', 0, 0, 0, '', 'processes', 'process', '#FF0000', 4, 1),
+(5, 'PROCESSES_STATE_COMPLETED', 0, 1, 0, 'completed', 'processes', 'process', '', 5, 1),
+(6, 'PROCESSES_STATE_CANCELLED', 0, 0, 1, 'cancelled', 'processes', 'process', '', 6, 1);
+
+
+TRUNCATE `template`;
+INSERT INTO `template` (`id`, `description`, `filename`, `logo`, `website`, `default`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`, `activated`, `deleted`) VALUES
+(1, 'Demo', 'Demo', '', '', 1, 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00', 1, 0);
+
+
 TRUNCATE `uom`;
 INSERT INTO `uom` (`id`, `title`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
 (1, 'Stück', 0, 1, '2015-12-06 15:39:14', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),

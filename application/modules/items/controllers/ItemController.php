@@ -267,10 +267,12 @@ class Items_ItemController extends Zend_Controller_Action
                             if(isset($map['name_dewawi'])) $dataTemplate['name_dewawi'] = $datacsv[$map['name_dewawi']];
                             if(isset($map['name_magento'])) $dataTemplate['name_magento'] = $datacsv[$map['name_magento']];
                             if(isset($map['name_ebay'])) $dataTemplate['name_ebay'] = $datacsv[$map['name_ebay']];
+                            if(isset($map['mini_description_magento'])) $dataTemplate['mini_description_magento'] = $datacsv[$map['mini_description_magento']];
                             if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] = $datacsv[$map['short_description_magento']];
                             if(isset($map['description_magento'])) $dataTemplate['description_magento'] = $datacsv[$map['description_magento']];
                             if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] = $datacsv[$map['description_dewawi']];
                         } else {
+                            if(isset($map['mini_description_magento'])) $dataTemplate['mini_description_magento'] .= $datacsv[$map['mini_description_magento']];
                             if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] .= $datacsv[$map['short_description_magento']];
                             if(isset($map['description_magento'])) $dataTemplate['description_magento'] .= $datacsv[$map['description_magento']];
                             if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] .= "\n".$datacsv[$map['description_dewawi']];
@@ -353,6 +355,14 @@ class Items_ItemController extends Zend_Controller_Action
                                             }
                                         }
                                         $updateDataMagento['name_ebay'] = $name_ebay;
+                                    } elseif($attr == 'mini_description_magento') {
+                                        $mini_description_magento = $dataTemplate['mini_description_magento'];
+                                        foreach($map as $attr => $pos) {
+                                            if (strpos($dataTemplate['mini_description_magento'], '#'.$attr.'#') !== false) {
+                                                $mini_description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $mini_description_magento);
+                                            }
+                                        }
+                                        $updateDataMagento['mini_description'] = $mini_description_magento;
                                     } elseif($attr == 'short_description_magento') {
                                         $short_description_magento = $dataTemplate['short_description_magento'];
                                         foreach($map as $attr => $pos) {
