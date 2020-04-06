@@ -1,63 +1,15 @@
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
-TRUNCATE `address`;
-INSERT INTO `address` (`id`, `contactid`, `type`, `name1`, `name2`, `department`, `street`, `postcode`, `city`, `country`, `phone`, `clientid`, `created`, `modified`) VALUES
-(1, 1000, 'primaryAddress', '', '', '', 'Inge Beisheim Platz 82', '31629', 'Estorf', 'DE', '', 1, '2015-11-29 20:28:25', '0000-00-00 00:00:00'),
-(2, 1000, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-11-29 20:28:25', '0000-00-00 00:00:00'),
-(3, 1001, 'primaryAddress', '', '', '', 'Hollander Strasse 12', '56414', 'Hundsangen', 'DE', '', 1, '2015-12-07 22:07:49', '0000-00-00 00:00:00'),
-(4, 1001, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:07:49', '0000-00-00 00:00:00'),
-(5, 1002, 'primaryAddress', '', '', '', 'Unter den Linden 12', '39031', 'Magdeburg', 'DE', '', 1, '2015-12-07 22:09:33', '0000-00-00 00:00:00'),
-(6, 1002, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:09:33', '0000-00-00 00:00:00'),
-(7, 1003, 'primaryAddress', '', '', '', 'Luetzowplatz 26', '54636', 'Rittersdorf', 'DE', '', 1, '2015-12-07 22:11:06', '0000-00-00 00:00:00'),
-(8, 1003, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:11:06', '0000-00-00 00:00:00'),
-(9, 1004, 'primaryAddress', '', '', '', 'Hardenbergstraße 90', '76848', 'Dimbach', 'DE', '', 1, '2015-12-07 22:13:38', '0000-00-00 00:00:00'),
-(10, 1004, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:13:38', '0000-00-00 00:00:00'),
-(11, 1005, 'primaryAddress', '', '', '', 'Rosenstrasse 47', '81379', 'München', 'DE', '', 1, '2015-12-07 22:15:04', '0000-00-00 00:00:00'),
-(12, 1005, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:15:04', '0000-00-00 00:00:00'),
-(13, 1006, 'primaryAddress', '', '', '', 'Mohrenstrasse 93', '78652', 'Deißlingen', 'DE', '', 1, '2015-12-07 22:17:27', '0000-00-00 00:00:00'),
-(14, 1006, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:17:27', '0000-00-00 00:00:00'),
-(15, 1007, 'primaryAddress', '', '', '', 'Holstenwall 48', '95146', 'Selbitz', 'DE', '', 1, '2015-12-07 22:18:57', '0000-00-00 00:00:00'),
-(16, 1007, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:18:57', '0000-00-00 00:00:00'),
-(17, 1008, 'primaryAddress', '', '', '', 'Gotzkowskystrasse 79', '57629', 'Dreifelden', 'DE', '', 1, '2015-12-07 22:20:50', '0000-00-00 00:00:00'),
-(18, 1008, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:20:50', '0000-00-00 00:00:00'),
-(19, 1009, 'primaryAddress', '', '', '', 'Am Borsigturm 63', '40670', 'Meerbusch Strümp', 'DE', '', 1, '2015-12-07 22:23:06', '0000-00-00 00:00:00'),
-(20, 1009, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:23:06', '0000-00-00 00:00:00'),
-(21, 1010, 'primaryAddress', '', '', '', 'Scharnweberstrasse 3', '68542', 'Heddesheim', 'DE', '', 1, '2015-12-07 22:24:47', '0000-00-00 00:00:00'),
-(22, 1010, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:24:47', '0000-00-00 00:00:00'),
-(23, 1011, 'primaryAddress', '', '', '', 'Ansbacher Strasse 22', '54687', 'Arzfeld', 'DE', '', 1, '2015-12-07 22:26:16', '0000-00-00 00:00:00'),
-(24, 1011, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:26:16', '0000-00-00 00:00:00'),
-(25, 1012, 'primaryAddress', '', '', '', 'Hermannstrasse 3', '67591', 'Mölsheim', 'DE', '', 1, '2015-12-07 22:27:16', '0000-00-00 00:00:00'),
-(26, 1012, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:27:16', '0000-00-00 00:00:00');
+
+TRUNCATE `client`;
+INSERT INTO `client` (`id`, `company`, `address`, `postcode`, `city`, `country`, `email`, `website`, `language`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'Unternehmen', '', '', '', '', '', '', '', '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
-TRUNCATE `category`;
-INSERT INTO `category` (`id`, `parentid`, `title`, `type`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 0, 'Privatkunden', 'contact', 1, 1, '2015-12-06 15:21:16', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(2, 0, 'Geschäftskunden', 'contact', 2, 1, '2015-12-06 15:21:30', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(3, 0, 'Wiederverkäufer', 'contact', 3, 1, '2015-12-06 15:21:47', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(4, 0, 'Kompaktkameras', 'item', 1, 1, '2015-12-03 17:21:39', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(5, 0, 'Spiegelreflexkameras', 'item', 2, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(6, 0, 'Outdoorkameras', 'item', 3, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(7, 0, 'Objektive', 'item', 4, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(8, 0, 'Zubehör', 'item', 5, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
-
-
-TRUNCATE `contact`;
-INSERT INTO `contact` (`id`, `catid`, `type`, `name1`, `name2`, `department`, `info`, `vatin`, `taxfree`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1000, 1, '', 'Jonas Kirsch', '', '', '', '', 0, 1, '2015-11-29 20:28:25', 1, '2015-12-07 22:07:43', 1, 0, '2015-12-07 22:07:43'),
-(1001, 1, '', 'Dirk Kunze', '', '', '', '', 0, 1, '2015-12-07 22:07:49', 1, '2015-12-07 22:08:18', 1, 0, '2015-12-07 22:08:52'),
-(1002, 1, '', 'Ulrike Papst', '', '', '', '', 0, 1, '2015-12-07 22:09:33', 1, '2015-12-07 22:09:54', 1, 0, '2015-12-07 22:10:38'),
-(1003, 2, '', 'Strategy Planner', 'Barbara Fiedler', '', '', '', 0, 1, '2015-12-07 22:11:06', 1, '2015-12-07 22:12:49', 1, 0, '2015-12-07 22:12:49'),
-(1004, 1, '', 'Frank Thalberg', '', '', '', '', 0, 1, '2015-12-07 22:13:38', 1, '2015-12-07 22:14:04', 1, 0, '2015-12-07 22:14:43'),
-(1005, 3, '', 'Channel Home Centers', 'Felix Reinhardt', '', '', '', 0, 1, '2015-12-07 22:15:04', 1, '2015-12-07 22:15:45', 1, 0, '2015-12-07 22:16:10'),
-(1006, 1, '', 'Diana Mehler', '', '', '\n\n\n \n', '', 0, 1, '2015-12-07 22:17:27', 1, '2015-12-07 22:17:44', 1, 0, '2015-12-07 22:18:34'),
-(1007, 2, '', 'Buehler Foods', 'Jennifer Ebersbacher', '', '', '', 0, 1, '2015-12-07 22:18:57', 1, '2015-12-07 22:19:27', 1, 0, '2015-12-07 22:20:02'),
-(1008, 3, '', 'Asian Solutions', 'Leonie Fried', '', '', '', 0, 1, '2015-12-07 22:20:50', 1, '2015-12-07 22:21:08', 1, 0, '2015-12-07 22:21:54'),
-(1009, 1, '', 'Ursula Kirsch', '', '', '', '', 0, 1, '2015-12-07 22:23:06', 1, '2015-12-07 22:25:49', 1, 0, '2015-12-07 22:25:49'),
-(1010, 2, '', 'Frank and Seder', 'Brigitte Baumgartner', '', '', '', 0, 1, '2015-12-07 22:24:47', 1, '2015-12-07 22:25:56', 1, 0, '2015-12-07 22:25:56'),
-(1011, 1, '', 'Swen Fisher', '', '', '', '', 0, 1, '2015-12-07 22:26:16', 1, '2015-12-07 22:26:38', 1, 0, '2015-12-07 22:26:38'),
-(1012, 1, '', 'Eric Luft', '', '', '', '', 0, 1, '2015-12-07 22:27:16', 1, '2015-12-07 22:28:40', 1, 0, '2015-12-07 22:28:40');
+TRUNCATE `config`;
+INSERT INTO `config` (`id`, `timezone`, `language`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'Europe/Berlin', 'de_DE', '0000-00-00 00:00:00', 0, '2015-11-26 11:21:28', 1, 1, '2015-11-26 11:21:28');
 
 
 TRUNCATE `country`;
@@ -320,194 +272,45 @@ INSERT INTO `country` (`id`, `code`, `name`, `language`, `clientid`, `created`, 
 (256, 'CY', 'Zypern', 'de_DE', 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
-TRUNCATE `creditnote`;
-INSERT INTO `creditnote` (`id`, `creditnoteid`, `opportunityid`, `contactid`, `title`, `info`, `header`, `footer`, `vatin`, `creditnotedate`, `orderdate`, `deliverydate`, `paymentmethod`, `shippingmethod`, `billingname1`, `billingname2`, `billingdepartment`, `billingstreet`, `billingpostcode`, `billingcity`, `billingcountry`, `shippingname1`, `shippingname2`, `shippingdepartment`, `shippingstreet`, `shippingpostcode`, `shippingcity`, `shippingcountry`, `shippingphone`, `subtotal`, `taxes`, `total`, `taxfree`, `state`, `completed`, `cancelled`, `contactperson`, `templateid`, `language`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 0, 0, 1000, 'Angebot Sony Cyber-shot DSC-W810', '', '', '', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Jonas Kirsch', '', '', 'Inge Beisheim Platz 82', '31629', 'Estorf', 'DE', '', '', '', '', '', '', '', '', 99.0000, 18.8100, 117.8100, 0, 100, 0, 0, 'Admin', 0, '', 1, '2015-12-10 20:42:44', 1, '2015-12-10 20:42:51', 1, 0, '2015-12-10 20:42:51');
-
-
-TRUNCATE `creditnotepos`;
-INSERT INTO `creditnotepos` (`id`, `creditnoteid`, `itemid`, `sku`, `title`, `image`, `description`, `price`, `taxrate`, `quantity`, `total`, `uom`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`) VALUES
-(1, 1, 1, '30962377', 'Sony Cyber-shot DSC-W810', '', 'Kompakt Kamera, 20,1 Megapixel, 6x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20,1 Megapixel\n6fach optischer Zoom\n6,8 cm (2,7 Zoll) LCD-Display\nVideoaufnahmen in HD 720p\nSchwenkpanorama-Aufnahmen mit bis zu 360 Grad', 99.0000, 19.0000, 1.0000, 99.0000, 'Stück', 1, 1, '2015-12-10 20:42:44', 1, '0000-00-00 00:00:00', 0);
-
-
-TRUNCATE `deliveryorder`;
-INSERT INTO `deliveryorder` (`id`, `deliveryorderid`, `opportunityid`, `contactid`, `title`, `info`, `header`, `footer`, `vatin`, `deliveryorderdate`, `orderdate`, `deliverydate`, `paymentmethod`, `shippingmethod`, `billingname1`, `billingname2`, `billingdepartment`, `billingstreet`, `billingpostcode`, `billingcity`, `billingcountry`, `shippingname1`, `shippingname2`, `shippingdepartment`, `shippingstreet`, `shippingpostcode`, `shippingcity`, `shippingcountry`, `shippingphone`, `subtotal`, `taxes`, `total`, `taxfree`, `state`, `completed`, `cancelled`, `contactperson`, `templateid`, `language`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 0, 0, 1006, 'NIKON D3300 mit Speicherkarte und Adapter', '', '', '', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 488.0000, 92.7200, 580.7200, 0, 100, 0, 0, 'Admin', 0, '', 1, '2015-12-10 20:42:22', 1, '2015-12-10 20:43:18', 1, 0, '2015-12-10 20:43:18');
-
-
-TRUNCATE `deliveryorderpos`;
-INSERT INTO `deliveryorderpos` (`id`, `deliveryorderid`, `itemid`, `sku`, `title`, `image`, `description`, `price`, `taxrate`, `quantity`, `total`, `uom`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`) VALUES
-(1, 1, 5, '23280396', 'NIKON D3300', '', 'Spiegelreflex Kamera, AF-S DX NIKKOR 18-55 VR II 1:3,5–5,6G Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Nikkor Objektiv (AF-S DX VR II 18-55mm)\n7,5cm (3") LCD-Display\nVideoaufnahmen in Full HD 1080p\nHigh-Speed, Panorama', 449.0000, 19.0000, 1.0000, 449.0000, 'Stück', 1, 1, '2015-12-10 20:42:22', 1, '0000-00-00 00:00:00', 0),
-(2, 1, 12, '070059P', 'Samsung Speicherkarte mit Adapter', '', '32GB micro SDHC Card Class 10 - PRO+\nfür Smartphones, Tablets oder Action-Cameras\nHitze- & Kältebeständig von -25°C bis +85°C\nRöntgen- und Magnetsicher\nWasser-, Schock- und Stoßfest\nbis zu 95 MB/s Lesen und bis zu 90 MB/s Schreiben', 39.0000, 19.0000, 1.0000, 39.0000, 'Stück', 2, 1, '2015-12-10 20:42:22', 1, '0000-00-00 00:00:00', 0);
-
-
-TRUNCATE `email`;
-INSERT INTO `email` (`id`, `contactid`, `email`, `ordering`) VALUES
-(1, 1000, 'jonaskirsch@cuvox.de', 1),
-(2, 1001, 'dirkkunze@einrot.com', 1),
-(3, 1002, 'ulrikepapst@cuvox.de', 1),
-(4, 1003, 'barbara.fiedler@strokelawyer.de', 1),
-(5, 1004, 'frankthalberg@cuvox.de', 1),
-(6, 1005, 'felix.reinhardt@wirebrowser.de', 1),
-(7, 1007, 'jebersbacher@clearancemagazines.de', 1),
-(8, 1008, 'leonie.fried@asiansolutions.de', 1),
-(9, 1009, 'ursulakirsch@einrot.com', 1),
-(10, 1010, 'bbaumgartner@cuvox.de', 1),
-(11, 1011, 'swen.fisher@einrot.com', 1),
-(12, 1012, 'eric.luft@consumermenu.de', 1);
-
-
-TRUNCATE `internet`;
-INSERT INTO `internet` (`id`, `contactid`, `internet`, `ordering`) VALUES
-(1, 1003, 'www.strokelawyer.de', 1),
-(2, 1005, 'www.wirebrowser.de', 1),
-(3, 1007, 'www.clearancemagazines.de', 1),
-(4, 1008, 'www.asiansolutions.de', 1);
-
-
-TRUNCATE `invoice`;
-INSERT INTO `invoice` (`id`, `invoiceid`, `opportunityid`, `contactid`, `title`, `info`, `header`, `footer`, `vatin`, `invoicedate`, `orderdate`, `deliverydate`, `paymentmethod`, `shippingmethod`, `billingname1`, `billingname2`, `billingdepartment`, `billingstreet`, `billingpostcode`, `billingcity`, `billingcountry`, `shippingname1`, `shippingname2`, `shippingdepartment`, `shippingstreet`, `shippingpostcode`, `shippingcity`, `shippingcountry`, `shippingphone`, `subtotal`, `taxes`, `total`, `taxfree`, `state`, `completed`, `cancelled`, `contactperson`, `ebayorderid`, `templateid`, `language`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 0, 0, 1004, 'Canon EOS 750D Kit + Ultraweitwinkel Objektiv', '', '', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Frank Thalberg', '', '', 'Hardenbergstraße 90', '76848', 'Dimbach', 'DE', '', '', '', '', '', '', '', '', 968.0000, 183.9200, 1151.9200, 0, 100, 0, 0, 'Admin', NULL, 0, '', 1, '2015-12-10 20:40:52', 1, '2015-12-10 20:41:18', 1, 0, '2015-12-10 20:41:18'),
-(2, 0, 0, 1011, 'Sony Spiegelreflexkamera', '', '', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Swen Fisher', '', '', 'Ansbacher Strasse 22', '54687', 'Arzfeld', 'DE', '', '', '', '', '', '', '', '', 549.0000, 104.3100, 653.3100, 0, 102, 0, 0, 'Admin', NULL, 0, '', 1, '2015-12-10 20:40:55', 1, '2015-12-10 20:43:58', 1, 0, '2015-12-10 20:43:58'),
-(3, 0, 0, 1006, 'NIKON D3300 mit Speicherkarte und Adapter', '', '', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Diana Mehler', '', '', 'Mohrenstrasse 93', '78652', 'Deißlingen', 'DE', '', '', '', '', '', '', '', '', 488.0000, 92.7200, 580.7200, 0, 100, 0, 0, 'Admin', NULL, 0, '', 1, '2015-12-10 20:40:58', 1, '2015-12-10 20:41:26', 1, 0, '2015-12-10 20:43:55'),
-(4, 0, 0, 1000, 'Angebot Sony Cyber-shot DSC-W810', '', '', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Jonas Kirsch', '', '', 'Inge Beisheim Platz 82', '31629', 'Estorf', 'DE', '', '', '', '', '', '', '', '', 99.0000, 18.8100, 117.8100, 0, 101, 0, 0, 'Admin', NULL, 0, '', 1, '2015-12-10 20:41:02', 1, '2015-12-10 20:43:54', 1, 0, '2015-12-10 20:43:54'),
-(5, 0, 0, 1008, '10 x Olympus TG-4', '', '', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Asian Solutions', 'Leonie Fried', '', 'Gotzkowskystrasse 79', '57629', 'Dreifelden', 'DE', '', '', '', '', '', '', '', '', 3990.0000, 758.1000, 4748.1000, 0, 104, 0, 0, 'Admin', NULL, 0, '', 1, '2015-12-10 20:41:04', 1, '2015-12-10 20:43:40', 1, 0, '2015-12-10 20:43:40');
-
-
-TRUNCATE `invoicepos`;
-INSERT INTO `invoicepos` (`id`, `invoiceid`, `itemid`, `sku`, `title`, `image`, `description`, `price`, `taxrate`, `quantity`, `total`, `uom`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`) VALUES
-(1, 1, 4, '83678284', 'Canon EOS 750D Kit', '', 'Spiegelreflex Kamera, Canon EF-S 18-55mm f/3.5-5.6 IS STM Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Canon Objektiv (18-55mm /F3,5-5,6 IS STM)\n7,7 cm (3,0 Zoll) ClearView II Touchscreen LCD\nVideoaufnahmen in Full HD 1080p\nWiFi, NFC', 689.0000, 19.0000, 1.0000, 689.0000, 'Stück', 1, 1, '2015-12-10 20:40:52', 1, '0000-00-00 00:00:00', 0),
-(2, 1, 10, '58903972', 'Canon EF-S 10-18mm', '', 'Ultraweitwinkel Objektiv f/4.5-5.6 IS STM\n10-18 mm Brennweite\nf4.5-5.6 Lichtstärke\n67 mm Filterdurchmesser\n0,22 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', 279.0000, 19.0000, 1.0000, 279.0000, 'Stück', 2, 1, '2015-12-10 20:40:52', 1, '0000-00-00 00:00:00', 0),
-(3, 2, 9, '76384370', 'Sony Alpha SLT-A58K', '', 'Spiegelreflexkamera, inkl. Objektiv (18-55mm), 20,1 MP\n6,7cm (2,7“) Display (flexibel neigbar)\nVideoaufnahmen in HD 720p\nSchwenkpanorama, integrierte Zoomwippe', 549.0000, 19.0000, 1.0000, 549.0000, 'Stück', 1, 1, '2015-12-10 20:40:55', 1, '0000-00-00 00:00:00', 0),
-(4, 3, 5, '23280396', 'NIKON D3300', '', 'Spiegelreflex Kamera, AF-S DX NIKKOR 18-55 VR II 1:3,5–5,6G Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Nikkor Objektiv (AF-S DX VR II 18-55mm)\n7,5cm (3") LCD-Display\nVideoaufnahmen in Full HD 1080p\nHigh-Speed, Panorama', 449.0000, 19.0000, 1.0000, 449.0000, 'Stück', 1, 1, '2015-12-10 20:40:58', 1, '0000-00-00 00:00:00', 0),
-(5, 3, 12, '070059P', 'Samsung Speicherkarte mit Adapter', '', '32GB micro SDHC Card Class 10 - PRO+\nfür Smartphones, Tablets oder Action-Cameras\nHitze- & Kältebeständig von -25°C bis +85°C\nRöntgen- und Magnetsicher\nWasser-, Schock- und Stoßfest\nbis zu 95 MB/s Lesen und bis zu 90 MB/s Schreiben', 39.0000, 19.0000, 1.0000, 39.0000, 'Stück', 2, 1, '2015-12-10 20:40:58', 1, '0000-00-00 00:00:00', 0),
-(6, 4, 1, '30962377', 'Sony Cyber-shot DSC-W810', '', 'Kompakt Kamera, 20,1 Megapixel, 6x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20,1 Megapixel\n6fach optischer Zoom\n6,8 cm (2,7 Zoll) LCD-Display\nVideoaufnahmen in HD 720p\nSchwenkpanorama-Aufnahmen mit bis zu 360 Grad', 99.0000, 19.0000, 1.0000, 99.0000, 'Stück', 1, 1, '2015-12-10 20:41:02', 1, '0000-00-00 00:00:00', 0),
-(7, 5, 8, '46119584', 'Olympus TG-4', '', 'Outdoor Kamera, 16 Megapixel, 4x opt. Zoom, 7,6 cm (3 Zoll) Display\n16 Megapixel\n4fach optischer Zoom\nWasserdicht bis 15 m, stoßfest bis 2,1 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p\nIntegrierte Panoramafunktion', 399.0000, 19.0000, 10.0000, 399.0000, 'Stück', 1, 1, '2015-12-10 20:41:04', 1, '0000-00-00 00:00:00', 0);
-
-
-TRUNCATE `item`;
-INSERT INTO `item` (`id`, `catid`, `sku`, `barcode`, `title`, `type`, `image`, `description`, `info`, `quantity`, `weight`, `cost`, `price`, `margin`, `taxid`, `uomid`, `manufacturerid`, `manufacturersku`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 4, '30962377', '', 'Sony Cyber-shot DSC-W810', 'stockItem', '', 'Kompakt Kamera, 20,1 Megapixel, 6x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20,1 Megapixel\n6fach optischer Zoom\n6,8 cm (2,7 Zoll) LCD-Display\nVideoaufnahmen in HD 720p\nSchwenkpanorama-Aufnahmen mit bis zu 360 Grad', '', 0, 0.0000, 0.0000, 99.0000, 0.0000, 1, 1, 7, '', 1, '2015-12-06 21:43:01', 1, '2015-12-07 22:52:21', 1, 0, '2015-12-07 22:52:21'),
-(2, 4, '65492595', '', 'Canon IXUS 160', 'stockItem', '', 'Kompakt Kamera, 20 Megapixel, 8x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20 Megapixel\n8fach optischer Zoom\n6,8 cm (2,7 Zoll) TFT LCD-Display\nVideoaufnahmen in HD 720p', '', 0, 0.0000, 0.0000, 95.0000, 0.0000, 1, 1, 1, '', 1, '2015-12-06 21:52:08', 1, '2015-12-07 22:50:49', 1, 0, '2015-12-07 22:50:49'),
-(3, 4, '54407190', '', 'FUJIFILM FINEPIX X100', 'stockItem', '', 'Kompakt Kamera, 16,3 Megapixel, 7,1 cm (2,8 Zoll) Display\n16,3 Megapixel\n7,1 cm (2,8 Zoll) LC-Display\nVideoaufnahmen in Full HD 1080p\nPanorama', '', 0, 0.0000, 0.0000, 1199.0000, 0.0000, 1, 1, 3, '', 1, '2015-12-06 21:54:21', 1, '2015-12-07 22:51:22', 1, 0, '2015-12-07 22:51:22'),
-(4, 5, '83678284', '', 'Canon EOS 750D Kit', 'stockItem', '', 'Spiegelreflex Kamera, Canon EF-S 18-55mm f/3.5-5.6 IS STM Zoom\n24,2 Megapixel mit CMOS-Sensor\nInkl. Canon Objektiv (18-55mm /F3,5-5,6 IS STM)\n7,7 cm (3,0 Zoll) ClearView II Touchscreen LCD\nVideoaufnahmen in Full HD 1080p\nWiFi, NFC', '', 0, 0.0000, 0.0000, 689.0000, 0.0000, 1, 1, 1, '', 1, '2015-12-06 21:57:22', 1, '2015-12-07 22:50:34', 1, 0, '2015-12-07 22:50:34'),
-(5, 5, '23280396', '', 'NIKON D3300', 'stockItem', '', 'Spiegelreflex Kamera, AF-S DX NIKKOR 18-55 VR II 1:3,5–5,6G Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Nikkor Objektiv (AF-S DX VR II 18-55mm)\n7,5cm (3") LCD-Display\nVideoaufnahmen in Full HD 1080p\nHigh-Speed, Panorama', '', 0, 0.0000, 0.0000, 449.0000, 0.0000, 1, 1, 2, '', 1, '2015-12-06 21:59:21', 1, '2015-12-07 22:52:31', 1, 0, '2015-12-07 22:52:31'),
-(6, 4, '54995194', '', 'Panasonic DMC-LX7EG-K', 'stockItem', '', 'Digitalkamera, 10,1 Megapixel, 3,8x opt. Zoom\n10,1 Megapixel\n3,8fach optischer Zoom\n7,5 cm (3,0 Zoll) LCD-Display (920.000 Pixel)\nVideoaufnahmen in Full HD 1080p\nGroßer Multi-Aspekt-MOS Sensor (1/1,7-Zoll)', '', 0, 0.0000, 0.0000, 349.0000, 0.0000, 1, 1, 5, '', 1, '2015-12-06 22:15:28', 1, '2015-12-07 22:51:13', 1, 0, '2015-12-07 22:51:13'),
-(7, 6, '43848170', '', 'NIKON Coolpix S33', 'stockItem', '', 'Outdoor Kamera, 13,2 Megapixel, 3x opt. Zoom, 6,7 cm (2,7 Zoll) Display\n13,2 Megapixel\n3fach optischer Zoom\nWasserdicht bis 10 m, stoßfest bis 1,5 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p', '', 0, 0.0000, 0.0000, 99.0000, 0.0000, 1, 1, 2, '', 1, '2015-12-06 22:19:31', 1, '2015-12-07 22:52:12', 1, 0, '2015-12-07 22:52:12'),
-(8, 6, '46119584', '', 'Olympus TG-4', 'stockItem', '', 'Outdoor Kamera, 16 Megapixel, 4x opt. Zoom, 7,6 cm (3 Zoll) Display\n16 Megapixel\n4fach optischer Zoom\nWasserdicht bis 15 m, stoßfest bis 2,1 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p\nIntegrierte Panoramafunktion', '', 0, 0.0000, 0.0000, 399.0000, 0.0000, 1, 1, 4, '', 1, '2015-12-06 22:21:30', 1, '2015-12-07 22:51:33', 1, 0, '2015-12-07 22:51:33'),
-(9, 5, '76384370', '', 'Sony Alpha SLT-A58K', 'stockItem', '', 'Spiegelreflexkamera, inkl. Objektiv (18-55mm), 20,1 MP\n6,7cm (2,7“) Display (flexibel neigbar)\nVideoaufnahmen in HD 720p\nSchwenkpanorama, integrierte Zoomwippe', '', 0, 0.0000, 0.0000, 549.0000, 0.0000, 1, 1, 7, '', 1, '2015-12-06 22:24:37', 1, '2015-12-07 22:50:15', 1, 0, '2015-12-07 22:50:15'),
-(10, 7, '58903972', '', 'Canon EF-S 10-18mm', 'stockItem', '', 'Ultraweitwinkel Objektiv f/4.5-5.6 IS STM \n10-18 mm Brennweite\nf4.5-5.6 Lichtstärke\n67 mm Filterdurchmesser\n0,22 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', '', 0, 0.0000, 0.0000, 279.0000, 0.0000, 1, 1, 1, '', 1, '2015-12-06 22:26:49', 1, '2015-12-07 22:51:02', 1, 0, '2015-12-07 22:51:02'),
-(11, 7, '44061390', '', 'Nikon AF-S NIKKOR 200-500mm', 'stockItem', '', 'Supertele Objektiv 1:5.6E ED VR \n200-500 mm Brennweite\nf1:5.6 Lichtstärke\n95 mm Filterdurchmesser\n2,2 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', '', 0, 0.0000, 0.0000, 1599.0000, 0.0000, 1, 1, 2, '', 1, '2015-12-06 22:28:34', 1, '2015-12-07 22:52:03', 1, 0, '2015-12-07 22:52:03'),
-(12, 8, '070059P', '', 'Samsung Speicherkarte mit Adapter', 'stockItem', '', '32GB micro SDHC Card Class 10 - PRO+\nfür Smartphones, Tablets oder Action-Cameras\nHitze- & Kältebeständig von -25°C bis +85°C\nRöntgen- und Magnetsicher\nWasser-, Schock- und Stoßfest\nbis zu 95 MB/s Lesen und bis zu 90 MB/s Schreiben', '', 0, 0.0000, 0.0000, 39.0000, 0.0000, 1, 1, 6, '', 1, '2015-12-06 22:33:50', 1, '2015-12-07 22:52:50', 1, 0, '2015-12-07 22:52:50');
-
-
-TRUNCATE `quote`;
-INSERT INTO `quote` (`id`, `quoteid`, `opportunityid`, `contactid`, `title`, `info`, `header`, `footer`, `vatin`, `quotedate`, `orderdate`, `deliverydate`, `paymentmethod`, `shippingmethod`, `billingname1`, `billingname2`, `billingdepartment`, `billingstreet`, `billingpostcode`, `billingcity`, `billingcountry`, `shippingname1`, `shippingname2`, `shippingdepartment`, `shippingstreet`, `shippingpostcode`, `shippingcity`, `shippingcountry`, `shippingphone`, `subtotal`, `taxes`, `total`, `taxfree`, `state`, `completed`, `cancelled`, `contactperson`, `templateid`, `language`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 0, 0, 1000, 'Angebot Sony Cyber-shot DSC-W810', '', 'Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Jonas Kirsch', '', '', 'Inge Beisheim Platz 82', '31629', 'Estorf', 'DE', '', '', '', '', '', '', '', '', 99.0000, 18.8100, 117.8100, 0, 101, 0, 0, 'Admin', 0, '', 1, '2015-12-07 22:38:01', 1, '2015-12-10 20:37:54', 1, 0, '2015-12-10 20:37:54'),
-(2, 0, 0, 1004, 'Canon EOS 750D Kit + Ultraweitwinkel Objektiv', '', 'Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Frank Thalberg', '', '', 'Hardenbergstraße 90', '76848', 'Dimbach', 'DE', '', '', '', '', '', '', '', '', 968.0000, 183.9200, 1151.9200, 0, 100, 0, 0, 'Admin', 0, '', 1, '2015-12-07 22:47:12', 1, '2015-12-07 22:53:51', 1, 0, '2015-12-10 20:37:50'),
-(3, 0, 0, 1008, '10 x Olympus TG-4', '', 'Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Asian Solutions', 'Leonie Fried', '', 'Gotzkowskystrasse 79', '57629', 'Dreifelden', 'DE', '', '', '', '', '', '', '', '', 3990.0000, 758.1000, 4748.1000, 0, 100, 0, 0, 'Admin', 0, '', 1, '2015-12-07 22:55:01', 1, '2015-12-07 22:56:01', 1, 0, '2015-12-10 20:20:48'),
-(4, 0, 0, 1006, 'NIKON D3300 mit Speicherkarte und Adapter', '', 'Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Diana Mehler', '', '', 'Mohrenstrasse 93', '78652', 'Deißlingen', 'DE', '', '', '', '', '', '', '', '', 488.0000, 92.7200, 580.7200, 0, 104, 0, 0, 'Admin', 0, '', 1, '2015-12-07 22:56:49', 1, '2015-12-10 20:38:05', 1, 0, '2015-12-10 20:38:05'),
-(5, 0, 0, 1011, 'Sony Spiegelreflexkamera', '', 'Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Swen Fisher', '', '', 'Ansbacher Strasse 22', '54687', 'Arzfeld', 'DE', '', '', '', '', '', '', '', '', 549.0000, 104.3100, 653.3100, 0, 103, 0, 0, 'Admin', 0, '', 1, '2015-12-07 22:58:33', 1, '2015-12-10 20:37:43', 1, 0, '2015-12-10 20:37:43');
-
-
-TRUNCATE `quotepos`;
-INSERT INTO `quotepos` (`id`, `quoteid`, `itemid`, `sku`, `title`, `image`, `description`, `price`, `taxrate`, `quantity`, `total`, `uom`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`) VALUES
-(3, 2, 4, '83678284', 'Canon EOS 750D Kit', '', 'Spiegelreflex Kamera, Canon EF-S 18-55mm f/3.5-5.6 IS STM Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Canon Objektiv (18-55mm /F3,5-5,6 IS STM)\n7,7 cm (3,0 Zoll) ClearView II Touchscreen LCD\nVideoaufnahmen in Full HD 1080p\nWiFi, NFC', 689.0000, 19.0000, 1.0000, 689.0000, 'Stück', 1, 1, '2015-12-07 22:47:12', 1, '0000-00-00 00:00:00', 0),
-(4, 2, 10, '58903972', 'Canon EF-S 10-18mm', '', 'Ultraweitwinkel Objektiv f/4.5-5.6 IS STM\n10-18 mm Brennweite\nf4.5-5.6 Lichtstärke\n67 mm Filterdurchmesser\n0,22 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', 279.0000, 19.0000, 1.0000, 279.0000, 'Stück', 2, 1, '2015-12-07 22:47:12', 1, '0000-00-00 00:00:00', 0),
-(5, 1, 1, '30962377', 'Sony Cyber-shot DSC-W810', '', 'Kompakt Kamera, 20,1 Megapixel, 6x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20,1 Megapixel\n6fach optischer Zoom\n6,8 cm (2,7 Zoll) LCD-Display\nVideoaufnahmen in HD 720p\nSchwenkpanorama-Aufnahmen mit bis zu 360 Grad', 99.0000, 19.0000, 1.0000, 99.0000, 'Stück', 1, 1, '2015-12-07 22:47:41', 1, '2015-12-07 22:48:16', 1),
-(8, 3, 8, '46119584', 'Olympus TG-4', '', 'Outdoor Kamera, 16 Megapixel, 4x opt. Zoom, 7,6 cm (3 Zoll) Display\n16 Megapixel\n4fach optischer Zoom\nWasserdicht bis 15 m, stoßfest bis 2,1 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p\nIntegrierte Panoramafunktion', 399.0000, 19.0000, 10.0000, 399.0000, 'Stück', 1, 1, '2015-12-07 22:55:29', 1, '2015-12-07 22:56:26', 1),
-(10, 4, 5, '23280396', 'NIKON D3300', '', 'Spiegelreflex Kamera, AF-S DX NIKKOR 18-55 VR II 1:3,5–5,6G Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Nikkor Objektiv (AF-S DX VR II 18-55mm)\n7,5cm (3") LCD-Display\nVideoaufnahmen in Full HD 1080p\nHigh-Speed, Panorama', 449.0000, 19.0000, 1.0000, 449.0000, 'Stück', 1, 1, '2015-12-07 22:57:22', 1, '0000-00-00 00:00:00', 0),
-(11, 4, 12, '070059P', 'Samsung Speicherkarte mit Adapter', '', '32GB micro SDHC Card Class 10 - PRO+\nfür Smartphones, Tablets oder Action-Cameras\nHitze- & Kältebeständig von -25°C bis +85°C\nRöntgen- und Magnetsicher\nWasser-, Schock- und Stoßfest\nbis zu 95 MB/s Lesen und bis zu 90 MB/s Schreiben', 39.0000, 19.0000, 1.0000, 39.0000, 'Stück', 2, 1, '2015-12-07 22:57:27', 1, '0000-00-00 00:00:00', 0),
-(13, 5, 9, '76384370', 'Sony Alpha SLT-A58K', '', 'Spiegelreflexkamera, inkl. Objektiv (18-55mm), 20,1 MP\n6,7cm (2,7“) Display (flexibel neigbar)\nVideoaufnahmen in HD 720p\nSchwenkpanorama, integrierte Zoomwippe', 549.0000, 19.0000, 1.0000, 549.0000, 'Stück', 1, 1, '2015-12-07 22:59:41', 1, '0000-00-00 00:00:00', 0);
-
-
-TRUNCATE `phone`;
-INSERT INTO `phone` (`id`, `contactid`, `type`, `phone`, `ordering`) VALUES
-(1, 1000, 'phone', '04140 48 47 91', 1),
-(2, 1001, 'phone', '06435 26 80 00', 1),
-(3, 1002, 'phone', '0391 22 22 50', 1),
-(4, 1003, 'phone', '06569 41 92 98', 1),
-(5, 1003, 'fax', '06569 41 92 99', 2),
-(6, 1004, 'phone', '06392 59 02 93', 1),
-(7, 1005, 'phone', '089 58 44 29', 1),
-(8, 1006, 'phone', '07420 23 92 81', 1),
-(9, 1007, 'phone', '034928 73 95', 1),
-(10, 1008, 'phone', '02666 28 38 42', 1),
-(11, 1008, 'fax', '02666 28 38 11', 2),
-(12, 1009, 'phone', '02150 96 80 84', 1),
-(13, 1010, 'phone', '06201 39 51 26', 1),
-(14, 1011, 'phone', '06550 63 16 68', 1),
-(15, 1012, 'phone', '06243 45 44 37', 1);
-
-
-TRUNCATE `process`;
-INSERT INTO `process` (`id`, `quoteid`, `salesorderid`, `invoiceid`, `prepaymentinvoiceid`, `deliveryorderid`, `creditnoteid`, `purchaseorderid`, `customerid`, `supplierid`, `title`, `info`, `notes`, `header`, `footer`, `vatin`, `processdate`, `salesorderdate`, `invoicedate`, `invoicetotal`, `prepaymentinvoicedate`, `deliveryorderdate`, `creditnotedate`, `purchaseorderdate`, `paymentmethod`, `shippingmethod`, `shipmentnumber`, `shipmentdate`, `deliverydate`, `deliverystatus`, `itemtype`, `suppliername`, `supplierordered`, `suppliersalesorderid`, `suppliersalesorderdate`, `supplierinvoiceid`, `supplierinvoicedate`, `supplierinvoicetotal`, `supplierpaymentdate`, `supplierdeliverydate`, `supplierorderstatus`, `servicedate`, `servicecompleted`, `billingname1`, `billingname2`, `billingdepartment`, `billingstreet`, `billingpostcode`, `billingcity`, `billingcountry`, `shippingname1`, `shippingname2`, `shippingdepartment`, `shippingstreet`, `shippingpostcode`, `shippingcity`, `shippingcountry`, `shippingphone`, `subtotal`, `taxes`, `total`, `paymentdate`, `prepayment`, `prepaymenttotal`, `prepaymentdate`, `paymentstatus`, `creditnote`, `creditnotetotal`, `editpositionsseparately`, `taxfree`, `state`, `completed`, `cancelled`, `contactperson`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 0, 0, 0, 0, 0, 0, '', 1004, '', 'Canon EOS 750D Kit + Ultraweitwinkel Objektiv', '', 'Ultraweitwinkel Objektiv im Rückstand', 'Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', '0000-00-00', '0000-00-00', '', '', '', '0000-00-00', '0000-00-00', 'partialDelivered', '', '', 0, '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', 0, 'Frank Thalberg', '', '', 'Hardenbergstraße 90', '76848', 'Dimbach', 'DE', '', '', '', '', '', '', '', '', 968.0000, 183.9200, 1151.9200, '0000-00-00', 0, 0.0000, '0000-00-00', 'paymentCompleted', 0, 0.0000, 0, 0, 101, 0, 0, 'Admin', 0, '2015-12-10 20:18:51', 1, '2015-12-10 20:21:28', 1, 0, '2015-12-10 20:23:04'),
-(2, 0, 0, 0, 0, 0, 0, '', 1008, '', '10 x Olympus TG-4', '', '', 'Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', '0000-00-00', '0000-00-00', '', '', '', '0000-00-00', '0000-00-00', 'deliveryCompleted', '', '', 0, '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', 0, 'Asian Solutions', 'Leonie Fried', '', 'Gotzkowskystrasse 79', '57629', 'Dreifelden', 'DE', '', '', '', '', '', '', '', '', 3990.0000, 758.1000, 4748.1000, '0000-00-00', 0, 0.0000, '0000-00-00', 'paymentCompleted', 0, 0.0000, 0, 0, 104, 0, 0, 'Admin', 0, '2015-12-10 20:20:56', 1, '2015-12-10 20:55:46', 1, 0, '2015-12-10 20:55:46'),
-(3, 0, 0, 0, 0, 0, 0, '', 1006, '', 'NIKON D3300 mit Speicherkarte und Adapter', '', 'Speicherkarte ist defekt Kunde wird die Karte zurück schicken', 'Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', '0000-00-00', '0000-00-00', '', '', '', '0000-00-00', '0000-00-00', 'deliveryCompleted', '', '', 0, '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', 0, 'Diana Mehler', '', '', 'Mohrenstrasse 93', '78652', 'Deißlingen', 'DE', '', '', '', '', '', '', '', '', 488.0000, 92.7200, 580.7200, '0000-00-00', 0, 0.0000, '0000-00-00', 'paymentCompleted', 0, 0.0000, 0, 0, 102, 0, 0, 'Admin', 0, '2015-12-10 20:22:33', 1, '2015-12-10 20:25:27', 1, 0, '2015-12-10 20:25:27'),
-(4, 0, 0, 0, 0, 0, 0, '', 1011, '', 'Sony Spiegelreflexkamera', '', '', 'Gem&auml;&szlig; unseren allgemeinen Gesch&auml;ftsbedingungen nehmen wir in Auftrag:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', '0000-00-00', '0000-00-00', '', '', '', '0000-00-00', '0000-00-00', 'deliveryIsWaiting', '', '', 0, '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', 0, 'Swen Fisher', '', '', 'Ansbacher Strasse 22', '54687', 'Arzfeld', 'DE', '', '', '', '', '', '', '', '', 549.0000, 104.3100, 653.3100, '0000-00-00', 0, 0.0000, '0000-00-00', 'waitingForPayment', 0, 0.0000, 0, 0, 101, 0, 0, 'Admin', 0, '2015-12-10 20:54:40', 1, '2015-12-10 20:55:33', 1, 0, '2015-12-10 20:55:33'),
-(5, 0, 0, 0, 0, 0, 0, '', 1000, '', 'Sony Cyber-shot DSC-W810', '', '', 'Gem&auml;&szlig; unseren allgemeinen Gesch&auml;ftsbedingungen nehmen wir in Auftrag:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', '0000-00-00', '0000-00-00', '', '', '', '0000-00-00', '0000-00-00', 'deliveryIsWaiting', '', '', 0, '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', 0, 'Jonas Kirsch', '', '', 'Inge Beisheim Platz 82', '31629', 'Estorf', 'DE', '', '', '', '', '', '', '', '', 99.0000, 18.8100, 117.8100, '0000-00-00', 0, 0.0000, '0000-00-00', 'waitingForPayment', 0, 0.0000, 0, 0, 100, 0, 0, 'Admin', 0, '2015-12-10 20:54:51', 1, '2015-12-10 20:55:31', 1, 0, '2015-12-10 20:55:31');
-
-
-TRUNCATE `processpos`;
-INSERT INTO `processpos` (`id`, `processid`, `deliveryorderid`, `purchaseorderid`, `supplierid`, `itemid`, `notes`, `deliveryorderdate`, `itemtype`, `purchaseorderdate`, `shippingmethod`, `shipmentnumber`, `shipmentdate`, `deliverydate`, `deliverystatus`, `sku`, `title`, `image`, `description`, `price`, `taxrate`, `quantity`, `total`, `uom`, `suppliername`, `suppliersalesorderid`, `suppliersalesorderdate`, `supplierinvoiceid`, `supplierinvoicedate`, `supplierinvoicetotal`, `supplierpaymentdate`, `supplierdeliverydate`, `supplierorderstatus`, `servicedate`, `serviceexecutedby`, `servicecompleted`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`) VALUES
-(1, 1, 0, '', '', 0, '', '0000-00-00', '', '0000-00-00', '', '', '0000-00-00', '0000-00-00', 'deliveryIsWaiting', '83678284', 'Canon EOS 750D Kit', '', 'Spiegelreflex Kamera, Canon EF-S 18-55mm f/3.5-5.6 IS STM Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Canon Objektiv (18-55mm /F3,5-5,6 IS STM)\n7,7 cm (3,0 Zoll) ClearView II Touchscreen LCD\nVideoaufnahmen in Full HD 1080p\nWiFi, NFC', 689.0000, 19.0000, 1.0000, 0.0000, 'Stück', '', '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', '', 0, 1, 0, '2015-12-10 20:18:51', 1, '2015-12-10 20:19:48', 1),
-(2, 1, 0, '', '', 0, '', '0000-00-00', '', '0000-00-00', '', '', '0000-00-00', '0000-00-00', 'deliveryIsWaiting', '58903972', 'Canon EF-S 10-18mm', '', 'Ultraweitwinkel Objektiv f/4.5-5.6 IS STM\n10-18 mm Brennweite\nf4.5-5.6 Lichtstärke\n67 mm Filterdurchmesser\n0,22 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', 279.0000, 19.0000, 1.0000, 0.0000, 'Stück', '', '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', '', 0, 2, 0, '2015-12-10 20:18:51', 1, '0000-00-00 00:00:00', 0),
-(3, 2, 0, '', '', 0, '', '0000-00-00', '', '0000-00-00', '', '', '0000-00-00', '0000-00-00', 'deliveryIsWaiting', '46119584', 'Olympus TG-4', '', 'Outdoor Kamera, 16 Megapixel, 4x opt. Zoom, 7,6 cm (3 Zoll) Display\n16 Megapixel\n4fach optischer Zoom\nWasserdicht bis 15 m, stoßfest bis 2,1 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p\nIntegrierte Panoramafunktion', 399.0000, 19.0000, 10.0000, 0.0000, 'Stück', '', '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', '', 0, 1, 0, '2015-12-10 20:20:56', 1, '0000-00-00 00:00:00', 0),
-(4, 3, 0, '', '', 0, '', '0000-00-00', '', '0000-00-00', '', '', '0000-00-00', '0000-00-00', 'deliveryIsWaiting', '23280396', 'NIKON D3300', '', 'Spiegelreflex Kamera, AF-S DX NIKKOR 18-55 VR II 1:3,5–5,6G Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Nikkor Objektiv (AF-S DX VR II 18-55mm)\n7,5cm (3") LCD-Display\nVideoaufnahmen in Full HD 1080p\nHigh-Speed, Panorama', 449.0000, 19.0000, 1.0000, 0.0000, 'Stück', '', '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', '', 0, 1, 0, '2015-12-10 20:22:33', 1, '0000-00-00 00:00:00', 0),
-(5, 3, 0, '', '', 0, '', '0000-00-00', '', '0000-00-00', '', '', '0000-00-00', '0000-00-00', 'deliveryIsWaiting', '070059P', 'Samsung Speicherkarte mit Adapter', '', '32GB micro SDHC Card Class 10 - PRO+\nfür Smartphones, Tablets oder Action-Cameras\nHitze- & Kältebeständig von -25°C bis +85°C\nRöntgen- und Magnetsicher\nWasser-, Schock- und Stoßfest\nbis zu 95 MB/s Lesen und bis zu 90 MB/s Schreiben', 39.0000, 19.0000, 1.0000, 0.0000, 'Stück', '', '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', '', 0, 2, 0, '2015-12-10 20:22:33', 1, '0000-00-00 00:00:00', 0),
-(6, 4, 0, '', '', 0, '', '0000-00-00', '', '0000-00-00', '', '', '0000-00-00', '0000-00-00', 'deliveryIsWaiting', '76384370', 'Sony Alpha SLT-A58K', '', 'Spiegelreflexkamera, inkl. Objektiv (18-55mm), 20,1 MP\n6,7cm (2,7“) Display (flexibel neigbar)\nVideoaufnahmen in HD 720p\nSchwenkpanorama, integrierte Zoomwippe', 549.0000, 19.0000, 1.0000, 0.0000, 'Stück', '', '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', '', 0, 1, 0, '2015-12-10 20:54:40', 1, '0000-00-00 00:00:00', 0),
-(7, 5, 0, '', '', 0, '', '0000-00-00', '', '0000-00-00', '', '', '0000-00-00', '0000-00-00', 'deliveryIsWaiting', '30962377', 'Sony Cyber-shot DSC-W810', '', 'Kompakt Kamera, 20,1 Megapixel, 6x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20,1 Megapixel\n6fach optischer Zoom\n6,8 cm (2,7 Zoll) LCD-Display\nVideoaufnahmen in HD 720p\nSchwenkpanorama-Aufnahmen mit bis zu 360 Grad', 99.0000, 19.0000, 1.0000, 0.0000, 'Stück', '', '', '0000-00-00', '', '0000-00-00', 0.0000, '0000-00-00', '0000-00-00', 'supplierNotOrdered', '0000-00-00', '', 0, 1, 0, '2015-12-10 20:54:51', 1, '0000-00-00 00:00:00', 0);
-
-
 TRUNCATE `taxrate`;
 INSERT INTO `taxrate` (`id`, `name`, `rate`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'MwSt.', 19.0000, 1, '2015-12-03 17:06:12', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
-
-
-TRUNCATE `manufacturer`;
-INSERT INTO `manufacturer` (`id`, `name`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'Canon', 0, 1, '2015-12-03 17:14:39', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(2, 'Nikon', 0, 1, '2015-12-03 17:17:03', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(3, 'Fujifilm', 0, 1, '2015-12-04 10:39:39', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(4, 'Olympus', 0, 1, '2015-12-04 10:39:48', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(5, 'Panasonic', 0, 1, '2015-12-04 10:39:54', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(6, 'Samsung', 0, 1, '2015-12-04 10:44:29', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(7, 'Sony', 0, 1, '2015-12-04 10:44:40', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+(1, 'MwSt.', 19.0000, 1, '2015-12-03 17:06:12', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(2, 'MwSt.', 7.0000, 1, '2015-12-03 17:06:12', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
 TRUNCATE `paymentmethod`;
 INSERT INTO `paymentmethod` (`id`, `title`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
 (1, 'Vorkasse/Überweisung', 0, 1, '2015-12-06 15:32:04', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
 (2, 'auf Rechnung', 0, 1, '2015-12-06 15:32:18', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(3, 'Paypal', 0, 1, '2015-12-06 15:32:23', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+(3, 'per Lastschrift', 0, 1, '2015-12-06 15:32:18', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(4, 'Kreditkarte/EC-Karte', 0, 1, '2015-12-06 15:32:18', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(5, 'Paypal', 0, 1, '2015-12-06 15:32:23', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
-TRUNCATE `salesorder`;
-INSERT INTO `salesorder` (`id`, `salesorderid`, `opportunityid`, `contactid`, `title`, `info`, `header`, `footer`, `vatin`, `salesorderdate`, `orderdate`, `deliverydate`, `paymentmethod`, `shippingmethod`, `billingname1`, `billingname2`, `billingdepartment`, `billingstreet`, `billingpostcode`, `billingcity`, `billingcountry`, `shippingname1`, `shippingname2`, `shippingdepartment`, `shippingstreet`, `shippingpostcode`, `shippingcity`, `shippingcountry`, `shippingphone`, `subtotal`, `taxes`, `total`, `taxfree`, `state`, `completed`, `cancelled`, `contactperson`, `templateid`, `language`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 0, 0, 1004, 'Canon EOS 750D Kit + Ultraweitwinkel Objektiv', '', 'Gem&auml;&szlig; unseren allgemeinen Gesch&auml;ftsbedingungen nehmen wir in Auftrag:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Frank Thalberg', '', '', 'Hardenbergstraße 90', '76848', 'Dimbach', 'DE', '', '', '', '', '', '', '', '', 968.0000, 183.9200, 1151.9200, 0, 100, 0, 0, 'Admin', 0, '', 1, '2015-12-10 20:18:48', 1, '2015-12-10 20:31:41', 1, 0, '2015-12-10 20:35:25'),
-(2, 0, 0, 1008, '10 x Olympus TG-4', '', 'Gem&auml;&szlig; unseren allgemeinen Gesch&auml;ftsbedingungen nehmen wir in Auftrag:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Asian Solutions', 'Leonie Fried', '', 'Gotzkowskystrasse 79', '57629', 'Dreifelden', 'DE', '', '', '', '', '', '', '', '', 3990.0000, 758.1000, 4748.1000, 0, 102, 0, 0, 'Admin', 0, '', 1, '2015-12-10 20:20:54', 1, '2015-12-10 20:34:36', 1, 0, '2015-12-10 20:34:36'),
-(3, 0, 0, 1006, 'NIKON D3300 mit Speicherkarte und Adapter', '', 'Gem&auml;&szlig; unseren allgemeinen Gesch&auml;ftsbedingungen nehmen wir in Auftrag:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Diana Mehler', '', '', 'Mohrenstrasse 93', '78652', 'Deißlingen', 'DE', '', '', '', '', '', '', '', '', 488.0000, 92.7200, 580.7200, 0, 101, 0, 0, 'Admin', 0, '', 1, '2015-12-10 20:22:30', 1, '2015-12-10 20:36:15', 1, 0, '2015-12-10 20:36:15'),
-(4, 0, 0, 1000, 'Angebot Sony Cyber-shot DSC-W810', '', 'Gem&auml;&szlig; unseren allgemeinen Gesch&auml;ftsbedingungen nehmen wir in Auftrag:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Jonas Kirsch', '', '', 'Inge Beisheim Platz 82', '31629', 'Estorf', 'DE', '', '', '', '', '', '', '', '', 99.0000, 18.8100, 117.8100, 0, 100, 0, 0, 'Admin', 0, '', 1, '2015-12-10 20:34:54', 1, '2015-12-10 20:35:56', 1, 0, '2015-12-10 20:35:56'),
-(5, 0, 0, 1011, 'Sony Spiegelreflexkamera', '', 'Gem&auml;&szlig; unseren allgemeinen Gesch&auml;ftsbedingungen nehmen wir in Auftrag:', 'Lieferung: Frei Baustelle Deutschland, ausgenommen deutsche Inseln.<br />\nLieferzeit: 5-7 Werktage nach Zahlungseingang<br />\n&nbsp;', '', '0000-00-00', '0000-00-00', '0000-00-00', '', '', 'Swen Fisher', '', '', 'Ansbacher Strasse 22', '54687', 'Arzfeld', 'DE', '', '', '', '', '', '', '', '', 549.0000, 104.3100, 653.3100, 0, 104, 0, 0, 'Admin', 0, '', 1, '2015-12-10 20:35:23', 1, '2015-12-10 20:36:12', 1, 0, '2015-12-10 20:36:12');
+TRUNCATE `language`;
+INSERT INTO `language` (`id`, `code`, `name`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'de_DE', 'Deutsch', 100, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
-TRUNCATE `salesorderpos`;
-INSERT INTO `salesorderpos` (`id`, `salesorderid`, `itemid`, `sku`, `title`, `image`, `description`, `price`, `taxrate`, `quantity`, `total`, `uom`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`) VALUES
-(1, 1, 4, '83678284', 'Canon EOS 750D Kit', '', 'Spiegelreflex Kamera, Canon EF-S 18-55mm f/3.5-5.6 IS STM Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Canon Objektiv (18-55mm /F3,5-5,6 IS STM)\n7,7 cm (3,0 Zoll) ClearView II Touchscreen LCD\nVideoaufnahmen in Full HD 1080p\nWiFi, NFC', 689.0000, 19.0000, 1.0000, 689.0000, 'Stück', 1, 1, '2015-12-10 20:18:48', 1, '0000-00-00 00:00:00', 0),
-(2, 1, 10, '58903972', 'Canon EF-S 10-18mm', '', 'Ultraweitwinkel Objektiv f/4.5-5.6 IS STM\n10-18 mm Brennweite\nf4.5-5.6 Lichtstärke\n67 mm Filterdurchmesser\n0,22 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', 279.0000, 19.0000, 1.0000, 279.0000, 'Stück', 2, 1, '2015-12-10 20:18:48', 1, '0000-00-00 00:00:00', 0),
-(3, 2, 8, '46119584', 'Olympus TG-4', '', 'Outdoor Kamera, 16 Megapixel, 4x opt. Zoom, 7,6 cm (3 Zoll) Display\n16 Megapixel\n4fach optischer Zoom\nWasserdicht bis 15 m, stoßfest bis 2,1 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p\nIntegrierte Panoramafunktion', 399.0000, 19.0000, 10.0000, 399.0000, 'Stück', 1, 1, '2015-12-10 20:20:54', 1, '0000-00-00 00:00:00', 0),
-(4, 3, 5, '23280396', 'NIKON D3300', '', 'Spiegelreflex Kamera, AF-S DX NIKKOR 18-55 VR II 1:3,5–5,6G Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Nikkor Objektiv (AF-S DX VR II 18-55mm)\n7,5cm (3") LCD-Display\nVideoaufnahmen in Full HD 1080p\nHigh-Speed, Panorama', 449.0000, 19.0000, 1.0000, 449.0000, 'Stück', 1, 1, '2015-12-10 20:22:30', 1, '0000-00-00 00:00:00', 0),
-(5, 3, 12, '070059P', 'Samsung Speicherkarte mit Adapter', '', '32GB micro SDHC Card Class 10 - PRO+\nfür Smartphones, Tablets oder Action-Cameras\nHitze- & Kältebeständig von -25°C bis +85°C\nRöntgen- und Magnetsicher\nWasser-, Schock- und Stoßfest\nbis zu 95 MB/s Lesen und bis zu 90 MB/s Schreiben', 39.0000, 19.0000, 1.0000, 39.0000, 'Stück', 2, 1, '2015-12-10 20:22:30', 1, '0000-00-00 00:00:00', 0),
-(6, 4, 1, '30962377', 'Sony Cyber-shot DSC-W810', '', 'Kompakt Kamera, 20,1 Megapixel, 6x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20,1 Megapixel\n6fach optischer Zoom\n6,8 cm (2,7 Zoll) LCD-Display\nVideoaufnahmen in HD 720p\nSchwenkpanorama-Aufnahmen mit bis zu 360 Grad', 99.0000, 19.0000, 1.0000, 99.0000, 'Stück', 1, 1, '2015-12-10 20:34:54', 1, '0000-00-00 00:00:00', 0),
-(7, 5, 9, '76384370', 'Sony Alpha SLT-A58K', '', 'Spiegelreflexkamera, inkl. Objektiv (18-55mm), 20,1 MP\n6,7cm (2,7“) Display (flexibel neigbar)\nVideoaufnahmen in HD 720p\nSchwenkpanorama, integrierte Zoomwippe', 549.0000, 19.0000, 1.0000, 549.0000, 'Stück', 1, 1, '2015-12-10 20:35:23', 1, '0000-00-00 00:00:00', 0);
+TRUNCATE `module`;
+INSERT INTO `module` (`id`, `name`, `menu`, `ordering`, `active`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'Admin', '', 1, 1, '0000-00-00 00:00:00', 0, '2015-11-24 14:40:56', 1, 0, '2015-11-24 14:40:56'),
+(2, 'Contacts', '{\n "CONTACTS": {\n  "title":"CONTACTS",\n  "module":"contacts",\n  "controller":"contact",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 16:48:39', 1, '2015-11-24 14:40:57', 1, 0, '2015-11-24 14:40:57'),
+(3, 'Items', '{\n "ITEMS": {\n  "title":"ITEMS",\n  "module":"items",\n  "controller":"item",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 16:48:52', 1, '2015-11-24 14:40:50', 1, 0, '2015-11-24 14:40:50'),
+(4, 'Processes', '{\n "PROCESSES": {\n  "title":"PROCESSES",\n  "module":"processes",\n  "controller":"process",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 16:49:01', 1, '2015-11-24 14:40:45', 1, 0, '2015-11-24 14:40:45'),
+(5, 'Sales', '{\n "SALES": {\n  "title":"SALES",\n  "module":"sales",\n  "childs": {\n   "10": {\n    "title":"QUOTES",\n    "module":"sales",\n    "controller":"quote",\n    "action":"index"\n   },\n   "20": {\n    "title":"SALES_ORDERS",\n    "module":"sales",\n    "controller":"salesorder",\n    "action":"index"\n   },\n   "30": {\n    "title":"INVOICES",\n    "module":"sales",\n    "controller":"invoice",\n    "action":"index"\n   },\n   "40": {\n    "title":"DELIVERY_ORDERS",\n    "module":"sales",\n    "controller":"deliveryorder",\n    "action":"index"\n   },\n   "50": {\n    "title":"CREDIT_NOTES",\n    "module":"sales",\n    "controller":"creditnote",\n    "action":"index"\n   }\n  }\n }\n}', 1, 1, '2015-11-21 16:52:09', 1, '2015-11-24 14:40:04', 1, 0, '2015-11-24 14:40:04'),
+(6, 'Purchases', '{\n "PURCHASES": {\n  "title":"PURCHASES",\n  "module":"purchases",\n  "childs": {\n   "10": {\n    "title":"QUOTE_REQUESTS",\n    "module":"purchases",\n    "controller":"quoterequest",\n    "action":"index"\n   },\n   "20": {\n    "title":"PURCHASE_ORDERS",\n    "module":"purchases",\n    "controller":"purchaseorder",\n    "action":"index"\n   }\n  }\n }\n}', 1, 1, '2015-11-21 17:05:52', 1, '2015-11-24 14:39:48', 1, 0, '2015-11-24 14:39:48'),
+(7, 'Statistics', '{\n "STATISTICS": {\n  "title":"STATISTICS",\n  "module":"statistics",\n  "controller":"index",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 17:05:52', 1, '2015-11-24 14:40:37', 1, 0, '2015-11-24 14:40:37'),
+(8, 'eBay', '{\n "EBAY": {\n  "title":"EBAY",\n  "module":"ebay",\n  "controller":"index",\n  "action":"index"\n }\n}', 1, 0, '2015-11-21 17:25:03', 1, '2015-11-24 14:39:15', 1, 0, '2015-11-24 14:39:15'),
+(9, 'Magento', '{\n "MAGENTO": {\n  "title":"MAGENTO",\n  "module":"magento",\n  "childs": {\n   "10": {\n    "title":"MENU_MAGENTO_ORDERS",\n    "module":"magento",\n    "controller":"order",\n    "action":"index"\n   },\n   "20": {\n    "title":"MENU_MAGENTO_ITEMS",\n    "module":"magento",\n    "controller":"item",\n    "action":"index"\n   },\n   "30": {\n    "title":"MENU_MAGENTO_CUSTOMERS",\n    "module":"magento",\n    "controller":"customer",\n    "action":"index"\n   }\n  }\n }\n}', 1, 0, '2015-11-24 14:38:48', 1, '2015-11-24 14:38:57', 1, 0, '2015-11-24 14:38:57');
 
 
 TRUNCATE `shippingmethod`;
 INSERT INTO `shippingmethod` (`id`, `title`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
 (1, 'Paketversand', 0, 1, '2015-12-06 15:33:33', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
 (2, 'per Spedition', 0, 1, '2015-12-06 15:35:14', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(3, 'Selbstabholung', 0, 1, '2015-12-06 15:35:52', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+(3, 'Expressversand', 0, 1, '2015-12-06 15:33:33', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(4, 'Selbstabholung', 0, 1, '2015-12-06 15:35:52', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
 TRUNCATE `state`;
@@ -522,7 +325,7 @@ INSERT INTO `state` (`id`, `title`, `standard`, `completed`, `cancelled`, `extra
 
 TRUNCATE `template`;
 INSERT INTO `template` (`id`, `description`, `filename`, `logo`, `website`, `default`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`, `activated`, `deleted`) VALUES
-(1, 'Demo', 'Demo', '', '', 1, 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00', 1, 0);
+(1, 'Vorlage', '', '', '', 1, 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00', 1, 0);
 
 
 TRUNCATE `uom`;
@@ -532,3 +335,8 @@ INSERT INTO `uom` (`id`, `title`, `ordering`, `clientid`, `created`, `createdby`
 (3, 'Std.', 0, 1, '2015-12-06 15:41:50', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
 (4, 'kg', 0, 1, '2015-12-06 15:41:54', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
 (5, 'm', 0, 1, '2015-12-06 15:41:57', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+
+
+TRUNCATE `user`;
+INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `smtphost`, `smtpauth`, `smtpsecure`, `smtpuser`, `smtppass`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'Admin', '', '', '', '', '', '', 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');

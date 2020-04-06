@@ -61,10 +61,7 @@ CREATE TABLE IF NOT EXISTS `client` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
-
-INSERT INTO `client` (`id`, `company`, `address`, `postcode`, `city`, `country`, `email`, `website`, `language`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'Company', '', '', '', '', '', '', '', '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `config`;
 CREATE TABLE IF NOT EXISTS `config` (
@@ -77,10 +74,7 @@ CREATE TABLE IF NOT EXISTS `config` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
-
-INSERT INTO `config` (`id`, `timezone`, `language`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'Europe/Berlin', 'de_DE', '0000-00-00 00:00:00', 0, '2015-11-26 11:21:28', 1, 1, '2015-11-26 11:21:28');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `contact`;
 CREATE TABLE IF NOT EXISTS `contact` (
@@ -442,9 +436,6 @@ CREATE TABLE IF NOT EXISTS `language` (
   `lockedtime` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `language` (`id`, `code`, `name`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'de_DE', 'Deutsch', 100, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
-
 DROP TABLE IF EXISTS `magentocustomer`;
 CREATE TABLE IF NOT EXISTS `magentocustomer` (
   `id` int(11) NOT NULL,
@@ -506,18 +497,7 @@ CREATE TABLE IF NOT EXISTS `module` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
-
-INSERT INTO `module` (`id`, `name`, `menu`, `ordering`, `active`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'Admin', '', 1, 1, '0000-00-00 00:00:00', 0, '2015-11-24 14:40:56', 1, 0, '2015-11-24 14:40:56'),
-(2, 'Contacts', '{\n "CONTACTS": {\n  "title":"CONTACTS",\n  "module":"contacts",\n  "controller":"contact",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 16:48:39', 1, '2015-11-24 14:40:57', 1, 0, '2015-11-24 14:40:57'),
-(3, 'Items', '{\n "ITEMS": {\n  "title":"ITEMS",\n  "module":"items",\n  "controller":"item",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 16:48:52', 1, '2015-11-24 14:40:50', 1, 0, '2015-11-24 14:40:50'),
-(4, 'Processes', '{\n "PROCESSES": {\n  "title":"PROCESSES",\n  "module":"processes",\n  "controller":"process",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 16:49:01', 1, '2015-11-24 14:40:45', 1, 0, '2015-11-24 14:40:45'),
-(5, 'Sales', '{\n "SALES": {\n  "title":"SALES",\n  "module":"sales",\n  "childs": {\n   "10": {\n    "title":"QUOTES",\n    "module":"sales",\n    "controller":"quote",\n    "action":"index"\n   },\n   "20": {\n    "title":"SALES_ORDERS",\n    "module":"sales",\n    "controller":"salesorder",\n    "action":"index"\n   },\n   "30": {\n    "title":"INVOICES",\n    "module":"sales",\n    "controller":"invoice",\n    "action":"index"\n   },\n   "40": {\n    "title":"DELIVERY_ORDERS",\n    "module":"sales",\n    "controller":"deliveryorder",\n    "action":"index"\n   },\n   "50": {\n    "title":"CREDIT_NOTES",\n    "module":"sales",\n    "controller":"creditnote",\n    "action":"index"\n   }\n  }\n }\n}', 1, 1, '2015-11-21 16:52:09', 1, '2015-11-24 14:40:04', 1, 0, '2015-11-24 14:40:04'),
-(6, 'Purchases', '{\n "PURCHASES": {\n  "title":"PURCHASES",\n  "module":"purchases",\n  "childs": {\n   "10": {\n    "title":"QUOTE_REQUESTS",\n    "module":"purchases",\n    "controller":"quoterequest",\n    "action":"index"\n   },\n   "20": {\n    "title":"PURCHASE_ORDERS",\n    "module":"purchases",\n    "controller":"purchaseorder",\n    "action":"index"\n   }\n  }\n }\n}', 1, 1, '2015-11-21 17:05:52', 1, '2015-11-24 14:39:48', 1, 0, '2015-11-24 14:39:48'),
-(7, 'Statistics', '{\n "STATISTICS": {\n  "title":"STATISTICS",\n  "module":"statistics",\n  "controller":"index",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 17:05:52', 1, '2015-11-24 14:40:37', 1, 0, '2015-11-24 14:40:37'),
-(8, 'eBay', '{\n "EBAY": {\n  "title":"EBAY",\n  "module":"ebay",\n  "controller":"index",\n  "action":"index"\n }\n}', 1, 0, '2015-11-21 17:25:03', 1, '2015-11-24 14:39:15', 1, 0, '2015-11-24 14:39:15'),
-(9, 'Magento', '{\n "MAGENTO": {\n  "title":"MAGENTO",\n  "module":"magento",\n  "childs": {\n   "10": {\n    "title":"MENU_MAGENTO_ORDERS",\n    "module":"magento",\n    "controller":"order",\n    "action":"index"\n   },\n   "20": {\n    "title":"MENU_MAGENTO_ITEMS",\n    "module":"magento",\n    "controller":"item",\n    "action":"index"\n   },\n   "30": {\n    "title":"MENU_MAGENTO_CUSTOMERS",\n    "module":"magento",\n    "controller":"customer",\n    "action":"index"\n   }\n  }\n }\n}', 1, 0, '2015-11-24 14:38:48', 1, '2015-11-24 14:38:57', 1, 0, '2015-11-24 14:38:57');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `paymentmethod`;
 CREATE TABLE IF NOT EXISTS `paymentmethod` (
@@ -1088,10 +1068,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
-
-INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `smtphost`, `smtpauth`, `smtpsecure`, `smtpuser`, `smtppass`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'Admin', '', '', '', '', '', '', 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 ALTER TABLE `address`
@@ -1246,9 +1223,9 @@ ALTER TABLE `archive`
 ALTER TABLE `category`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `client`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `config`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `contact`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `country`
@@ -1290,7 +1267,7 @@ ALTER TABLE `magentouser`
 ALTER TABLE `manufacturer`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `module`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `paymentmethod`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `phone`
@@ -1332,4 +1309,4 @@ ALTER TABLE `textblock`
 ALTER TABLE `uom`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
