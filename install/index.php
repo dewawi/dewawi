@@ -7,6 +7,7 @@
 	if(file_exists(BASE_PATH . '/../configs/database.ini') && (filesize(BASE_PATH . '/../configs/database.ini') > 10)) {
 		//header('Location: ../');
 		echo 'A configuration file is already exists. Exiting...';
+        header("Location: ../");
 		exit;
 	}
 

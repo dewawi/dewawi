@@ -6,13 +6,13 @@
 	// INTRODUCTION
 	$introduction = array();
 	$introduction["product"] = "DEWAWI";
-	$introduction["productVersion"] = "0.6";
+	$introduction["productVersion"] = "0.7";
 	$introduction["company"] = "DEWAWI Open Source";
 
 	// SERVER REQUIREMENTS
 	$requirements = array();
-	$requirements["phpVersion"] = "5";
-	$requirements["extensions"] = array("mysqli", "pcre", "gd");
+	$requirements["phpVersion"] = "5.3";
+	$requirements["extensions"] = array("curl", "mysqli", "pcre", "gd", "openssl");
 
 	// FILE PERMISSIONS
 	// r = readable, w = writable, x = executable
