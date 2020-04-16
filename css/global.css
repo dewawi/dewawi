@@ -201,6 +201,7 @@ hr {
 }
 #categories {
 	min-width: 200px;
+    margin-left: 3px;
 }
 #actions {
 	min-width: 200px;
@@ -1107,11 +1108,15 @@ table#settings {
 font-size: 0.9rem;
 }
 
+ul.treeview{
+padding-left: 0;
+}
+
 .treeview li{ /*Style for LI elements in general (excludes an LI that contains sub lists)*/
 font-size: 0.9rem;
-background: white url('../images/list.gif') no-repeat left center;
+background: transparent url('../images/list.png') no-repeat left center;
 list-style-type: none;
-padding-left: 22px;
+padding-left: 20px;
 margin-bottom: 3px;
 }
 
