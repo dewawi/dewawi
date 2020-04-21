@@ -1,8 +1,8 @@
 <?php 
 $this->title = $this->form->getValue('title') ? $this->form->getValue('title') : $this->translate('CREDIT_NOTES_NEW_CREDIT_NOTE');
 $this->headTitle($this->title);
-echo $this->CKEditor();
-echo $this->ElFinder();
+echo $this->TinyMCE();
+//echo $this->ElFinder();
 ?>
 
 <ul class="tabs">
