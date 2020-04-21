@@ -4,7 +4,6 @@ $this->headTitle()->setSeparator(' - ');
 $this->headTitle('DEWAWI');
 echo $this->doctype();
 
-$javascripts = array('global.js', 'contacts.js');
 if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'.js')) array_push($javascripts, $this->module.'.js');
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
@@ -15,19 +14,14 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 		<?php echo $this->headTitle(); ?>
 		<?php echo $this->headLink(); ?>
 		<link href="<?php echo $this->baseUrl(); ?>/css/global.css" media="screen" rel="stylesheet" type="text/css" />
-		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.min.css" media="screen" rel="stylesheet" type="text/css"/>
-		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.structure.min.css" media="screen" rel="stylesheet" type="text/css"/>
-		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.theme.min.css" media="screen" rel="stylesheet" type="text/css"/>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.11.3.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/UI/jquery-ui.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
-		<?php foreach($javascripts as $javascript) { ?>
-			<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/<?php echo $javascript; ?>"></script>
-		<?php } ?>
+        <script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
 		<?php echo $this->headScript(); ?>
 		<script type="text/javascript">
 			var action = "<?php echo $this->action; ?>";
