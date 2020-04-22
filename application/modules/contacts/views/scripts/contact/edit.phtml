@@ -1,7 +1,7 @@
 <?php 
 $this->title = $this->form->getValue('name1');
 $this->headTitle($this->title);
-echo $this->ElFinder();
+echo $this->FileManager();
 ?>
 
 <ul class="tabs">
@@ -87,6 +87,6 @@ echo $this->ElFinder();
 		<?php echo $this->History(); ?>
 	</div>
 	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
-		<div id="elfinder"></div>
+	    <iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
 	</div>
 </div>

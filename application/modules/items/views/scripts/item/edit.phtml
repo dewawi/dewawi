@@ -1,10 +1,13 @@
 <?php 
 $this->title = $this->form->getValue('title');
 $this->headTitle($this->title);
+echo $this->FileManager();
 ?>
 
 <ul class="tabs">
 	<li><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
+	<li<?php if($this->activeTab == "#tabImages") : ?> class="active"<?php endif; ?>>
+		<a href="#tabImages"><?php echo $this->translate('TABS_IMAGES'); ?></a></li>
 </ul>
 
 <div class="tab_container">
@@ -36,15 +39,43 @@ $this->headTitle($this->title);
 					    <dt><label><?php echo $this->translate('ITEMS_MODIFIED') ?></label></dt>
 					    <dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('modified')))) ?></label></dd>
 				    </dl>
-				    <?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
-					    <p><img src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
-				    <?php } ?>
-				    <iframe src="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'upload', 'id'=>$this->form->getValue('id')));?>" width="100%" height="100%"></iframe>
 		        </div>
                 <div class="col-sm-12 col-lg-5">
 				    <?php echo $this->form->getElement('description') ?>
 				    <?php echo $this->form->getElement('info') ?>
 			    </div>
+		    </div>
+		</form>
+	</div>
+	<div id="" class="tab_content">
+		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+            <div class="row">
+                <div class="col-sm-12 col-lg-7">
+					    <?php echo $this->form->getElement('image') ?>
+		        </div>
+                <div class="col-sm-12 col-lg-5">
+				    <?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+					    <p><img src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+				    <?php } ?>
+				    <iframe src="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'upload', 'id'=>$this->form->getValue('id')));?>" width="100%" height="100%"></iframe>
+		        </div>
+		    </div>
+		</form>
+	</div>
+	<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+            <div class="row">
+                <div class="col-sm-12 col-lg-7">
+				    <iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?controller=item&lang=de&type=0" width="100%" height="500px"></iframe>
+				    <dl class="form">
+					    <?php echo $this->form->getElement('image') ?>
+				    </dl>
+			    </div>
+                <div class="col-sm-12 col-lg-5">
+				    <?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+					    <p><img id="preview" src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+				    <?php } ?>
+		        </div>
 		    </div>
 		</form>
 	</div>
