@@ -3,8 +3,6 @@ $this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
 $this->headTitle()->setSeparator(' - ');
 $this->headTitle('DEWAWI');
 echo $this->doctype();
-
-if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'.js')) array_push($javascripts, $this->module.'.js');
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
 	<head>
@@ -14,7 +12,7 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 		<?php echo $this->headTitle(); ?>
 		<?php echo $this->headLink(); ?>
 		<link href="<?php echo $this->baseUrl(); ?>/css/global.css" media="screen" rel="stylesheet" type="text/css" />
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.11.3.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.12.4.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
@@ -22,6 +20,7 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
         <script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/settings.js"></script>
 		<?php echo $this->headScript(); ?>
 		<script type="text/javascript">
 			var action = "<?php echo $this->action; ?>";
