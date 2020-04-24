@@ -21,7 +21,7 @@ class Sales_Form_Toolbar extends Zend_Form
 		$form['viewInline'] = new Zend_Form_Element_Button('view');
 		$form['viewInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'view');
+			->setAttrib('class', 'view nolabel');
 
 		$form['edit'] = new Zend_Form_Element_Button('edit');
 		$form['edit']->setLabel('TOOLBAR_EDIT')
@@ -31,7 +31,7 @@ class Sales_Form_Toolbar extends Zend_Form
 		$form['editInline'] = new Zend_Form_Element_Button('edit');
 		$form['editInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'edit');
+			->setAttrib('class', 'edit nolabel');
 
 		$form['select'] = new Zend_Form_Element_Button('select');
 		$form['select']->setLabel('TOOLBAR_SELECT')
@@ -47,7 +47,7 @@ class Sales_Form_Toolbar extends Zend_Form
 		$form['copyInline'] = new Zend_Form_Element_Button('copy');
 		$form['copyInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy');
+			->setAttrib('class', 'copy nolabel');
 
 		$form['pdf'] = new Zend_Form_Element_Button('pdf');
 		$form['pdf']->setLabel('TOOLBAR_PDF')
@@ -57,7 +57,7 @@ class Sales_Form_Toolbar extends Zend_Form
 		$form['pdfInline'] = new Zend_Form_Element_Button('pdf');
 		$form['pdfInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'pdf');
+			->setAttrib('class', 'pdf nolabel');
 
 		$form['delete'] = new Zend_Form_Element_Button('delete');
 		$form['delete']->setLabel('TOOLBAR_DELETE')
@@ -71,7 +71,7 @@ class Sales_Form_Toolbar extends Zend_Form
 		$form['clear'] = new Zend_Form_Element_Button('clear');
 		$form['clear']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'clear')
+			->setAttrib('class', 'clear nolabel')
 			->setAttrib('rel', 'keyword');
 
 		$form['filter'] = new Zend_Form_Element_Button('TOOLBAR_FILTER');

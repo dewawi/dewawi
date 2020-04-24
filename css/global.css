@@ -61,7 +61,7 @@ button.edit:focus {
 }
 button.view,
 button.view:hover,
-button.add:focus {
+button.view:focus {
 	background-image: url("../images/view.png");
 }
 button.copy,
@@ -138,7 +138,7 @@ button.pdf:focus {
 }
 button.get,
 button.get:hover,
-button.add:focus {
+button.get:focus {
 	background-image: url("../images/get.png");
 }
 button.daterange,
@@ -166,6 +166,59 @@ button.filter:hover,
 button.filter:focus {
 	background-image: url("../images/filter.png");
 }
+button.nolabel[type="button"],
+button.nolabel[type="button"]:hover,
+button.nolabel[type="button"]:focus {
+    font-size: 0.8rem;
+    vertical-align: middle;
+    background-repeat: no-repeat;
+    background-position-y: center;
+    background-position-x: 5px;
+    padding: 8px 2px 15px 25px;
+	border: solid 1px #bcbcbc;
+    margin: 0 3px;
+}
+form button.tox-tbtn[type="button"],
+form button.tox-tbtn[type="button"]:hover,
+form button.tox-tbtn[type="button"]:focus {
+    padding: 0;
+    margin: 2px 1px 3px 1px;
+}
+.toolbar button, button#select,
+.toolbar button:hover, button#select:hover,
+.toolbar button:focus, button#select:focus {
+    font-size: 0.8rem;
+    background-repeat: no-repeat;
+    background-position-y: center;
+    background-position-x: 5px;
+    padding: 3px 3px 3px 25px;
+	border: solid 1px #bcbcbc;
+    margin: 0 3px;
+}
+.toolbar button#keyword {
+    max-width: 45%;
+}
+@media screen and (max-width: 767px) {
+    .toolbar button,
+    .toolbar button:hover,
+
+    .toolbar button:focus {
+        margin: 0;
+    }
+}
+/*td#buttons {
+	text-align:center;
+}
+td button, dd button, form button {
+	margin: 1px 0;
+	padding: 0;
+	border: none;
+	background-color:transparent;
+	cursor: pointer;
+}
+td button {
+	padding-left: 18px;
+}*/
 #breadcrumbs {
 	font-size: 0.8rem;
     background-color: #efefef;
@@ -214,19 +267,6 @@ hr {
 }
 #actions a {
     font-size: 0.9rem;
-}
-td#buttons {
-	text-align:center;
-}
-td button, dd button, form button {
-	margin: 1px 0;
-	padding: 0;
-	border: none;
-	background-color:transparent;
-	cursor: pointer;
-}
-td button {
-	padding-left: 18px;
 }
 table,
 table#data,
@@ -317,21 +357,6 @@ table#data tr.bottom td.total {
 	font-weight: bold;
 }
 
-table td.buttons button, table td.buttons button[type="button"]:hover,
-table#data td.buttons button, table#data td.buttons button[type="button"]:hover,
-table#details td.buttons button, table#details td.buttons button[type="button"]:hover,
-table#positions td.buttons button, table#positions td.buttons button[type="button"]:hover {
-    font-size: 0.8rem;
-    background-repeat: no-repeat;
-    background-position-y: center;
-    background-position-x: 5px;
-    padding: 1px 2px 1px 25px;
-	border: solid 1px #bcbcbc;
-    height:26px;
-    display: inline-block;
-    vertical-align: top;
-    margin: 0;
-}
 table#data label, table#data input[type="text"], table#data textarea, table#data select, table#data option,
 table#details label, table#details input[type="text"], table#details textarea, table#details select, table#details option,
 table#positions label, table#positions input[type="text"], table#positions textarea, table#positions select, table#positions option {
@@ -574,6 +599,7 @@ form#contact dd#id-element {
 form dt#info-label,
 form dt#header-label,
 form dt#footer-label,
+form dt#textblock-label,
 form dt#description-label,
 form dt#contactinfo-label,
 form dt#customerinfo-label {
@@ -582,6 +608,7 @@ form dt#customerinfo-label {
 form dd#info-element,
 form dd#header-element,
 form dd#footer-element,
+form dd#textblock-element,
 form dd#description-element,
 form dd#contactinfo-element,
 form dd#customerinfo-element {
@@ -610,18 +637,6 @@ form .multiform dd:first-child {
 	    font-size: 0.9em;
 	    padding: 5px 5px;
     }
-}
-form button[type="button"],
-form button[type="button"]:hover,
-form button[type="button"]:focus {
-    font-size: 0.8rem;
-    vertical-align: middle;
-    background-repeat: no-repeat;
-    background-position-y: center;
-    background-position-x: 5px;
-    padding: 8px 2px 15px 25px;
-	border: solid 1px #bcbcbc;
-    margin: 0 3px;
 }
 
 /* style view */
@@ -879,27 +894,6 @@ iframe {
     font-size: 0.8rem;
     padding: 3px 3px 3px;
 }
-.toolbar button,
-.toolbar button:hover,
-.toolbar button:focus {
-    font-size: 0.8rem;
-    background-repeat: no-repeat;
-    background-position-y: center;
-    background-position-x: 5px;
-    padding: 3px 3px 3px 25px;
-	border: solid 1px #bcbcbc;
-    margin: 0 3px;
-}
-.toolbar button#keyword {
-    max-width: 45%;
-}
-@media screen and (max-width: 767px) {
-    .toolbar button,
-    .toolbar button:hover,
-    .toolbar button:focus {
-        margin: 0;
-    }
-}
 #filter tbody {
 	border: 0;
 }
@@ -973,17 +967,6 @@ div#filter div {
 #activefilters li {
     font-size: 0.8rem;
 	display: inline-block;
-}
-#activefilters button,
-#activefilters button:hover,
-#activefilters button:focus {
-    font-size: 0.8rem;
-    background-repeat: no-repeat;
-    background-position-y: center;
-    background-position-x: 5px;
-    padding: 3px 3px 3px 25px;
-	border: solid 1px #bcbcbc;
-    margin: 0 3px;
 }
 .draft {
 	color: #ff0000;
@@ -1076,6 +1059,7 @@ html ul.tabs li.active, html ul.tabs li.active a:hover  { /*--Makes sure that th
 }
 .tab_container .tab_content {
 	display:none;
+    min-height: 300px;
 }
 .tab_container .tab_content.active {
 	display:block;
@@ -1086,10 +1070,8 @@ html ul.tabs li.active, html ul.tabs li.active a:hover  { /*--Makes sure that th
 #tabFiles {
     padding: 10px;
 }
-@media screen and (max-width: 767px) {
-    .elfinder .elfinder-navbar {
-	    display: none !important;
-    }
+#tabImages iframe {
+    margin-top: 8px;
 }
 #files h3 {
 	padding-left:30px;
@@ -1196,12 +1178,4 @@ font-weight: bold;
 }
 .disabled {
 	display: none;
-}
-a.cke_button[role="button"] {
-    margin: 3px;
-    padding: 3px;
-}
-a.cke_combo_button[role="button"] {
-    margin: 1px;
-    padding: 0;
 }

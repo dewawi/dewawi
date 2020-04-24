@@ -611,6 +611,8 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 				<?php endforeach; ?>
 			</tbody>
 		</table>
+		<?php else : ?>
+        <div id="messages"><ul><li><?php echo $this->view->translate('Es sind noch keine Aktivititen vorhanden.') ?></li></ul></div>
 		<?php endif;
 	}
 }

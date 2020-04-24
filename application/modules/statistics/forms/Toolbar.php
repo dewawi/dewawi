@@ -15,7 +15,7 @@ class Statistics_Form_Toolbar extends Zend_Form
 		$form['clear'] = new Zend_Form_Element_Button('clear');
 		$form['clear']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'clear')
+			->setAttrib('class', 'clear nolabel')
 			->setAttrib('rel', 'keyword');
 
 		$form['reset'] = new Zend_Form_Element_Button('reset');

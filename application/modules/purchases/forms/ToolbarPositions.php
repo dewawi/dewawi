@@ -24,20 +24,30 @@ class Purchases_Form_ToolbarPositions extends Zend_Form
 			->setDecorators(array('ViewHelper'))
 			->setAttrib('class', 'copyPosition copy');
 
+		$form['copypos'] = new Zend_Form_Element_Button('copypos');
+		$form['copypos']->setLabel('')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('class', 'copyPosition copy nolabel');
+
 		$form['delete'] = new Zend_Form_Element_Button('delete');
 		$form['delete']->setLabel('TOOLBAR_DELETE')
 			->setDecorators(array('ViewHelper'))
 			->setAttrib('class', 'deletePosition delete');
 
+		$form['deletepos'] = new Zend_Form_Element_Button('deletepos');
+		$form['deletepos']->setLabel('')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('class', 'deletePosition delete nolabel');
+
 		$form['sortup'] = new Zend_Form_Element_Button('sortup');
 		$form['sortup']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'up');
+			->setAttrib('class', 'up nolabel');
 
 		$form['sortdown'] = new Zend_Form_Element_Button('sortdown');
 		$form['sortdown']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'down');
+			->setAttrib('class', 'down nolabel');
 
 		$this->addElements($form);
 	}

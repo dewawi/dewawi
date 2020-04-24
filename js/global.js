@@ -392,11 +392,10 @@ $(document).ready(function(){
 
 		var activeTab = $(this).find('a').attr('href'); //Find the href attribute value to identify the active tab + content
 		$(activeTab).fadeIn(); //Fade in the active ID content
-		if(activeTab == '#tabFiles') {
-			$('#tabFiles').html('<div id="elfinder"></div>');
-			elfinder();
+		if(activeTab == '#tabFiles' || activeTab == '#tabImages') {
+			//$('#tabFiles').html('<div id="elfinder"></div>');
+			//elfinder();
 		}
-
 		return false;
 	});
 	if($.cookie('tab') == '#tabPositions') {
@@ -529,7 +528,7 @@ $(document).ready(function(){
 	});
 
 	//Date picker
-	$('.datePicker').datepicker(datePickerOptions);
+	/*$('.datePicker').datepicker(datePickerOptions);
 	$(document).on('click', '.datePickerLive', function() {
 		$(this).datepicker(datePickerOptions);
 	});
@@ -585,7 +584,7 @@ $(document).ready(function(){
 		};
 		$.extend(dateToPickerOptions, datePickerOptions)
 		var datesTo = $('#toDatePicker').datepicker(dateToPickerOptions);
-	}
+	}*/
 
 	//Table alt
 	$('#data tbody tr:nth-child(2n+1)').addClass('alt');
@@ -752,6 +751,7 @@ function edit(data, params) {
 	});
     //console.log(url);
     //console.log(data);
+    //console.log(response);
 	return response;
 }
 
@@ -1032,7 +1032,7 @@ function getPositions(scrollTo) {
 				}, 2000);*/
 				window.scrollTo(0, scrollTo);
 			}
-			$('.datePickerLive').datepicker(datePickerOptions);
+			//$('.datePickerLive').datepicker(datePickerOptions);
 		}
 	});
 }
@@ -1103,11 +1103,11 @@ function pushMessages(messages){
 
 function removeMessages(){
 	if($('#messages').length) {
-		$('#messages').delay(8000).fadeTo(2000, 0.00, function() {
+		/*$('#messages').delay(8000).fadeTo(2000, 0.00, function() {
 			$(this).slideUp('slow', function() {
 				$(this).remove();
 			});
-		});
+		});*/
 	}
 }
 

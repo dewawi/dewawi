@@ -81,8 +81,8 @@ if($length = count($this->forms)) :
 				</td>
 				<?php if(!$this->quote['quoteid']) : ?>
 				<td class="buttons">
-					<?php echo $this->toolbar->delete->setLabel(''); ?>
-					<?php echo $this->toolbar->copy->setLabel(''); ?>
+					<?php echo $this->toolbar->deletepos; ?>
+					<?php echo $this->toolbar->copypos; ?>
 					<?php if($i>1) : ?>
 						<?php echo $this->toolbar->sortup; ?>
 					<?php endif; ?>

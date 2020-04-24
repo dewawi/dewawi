@@ -26,7 +26,7 @@ class Contacts_Form_Toolbar extends Zend_Form
 		$form['editInline'] = new Zend_Form_Element_Button('edit');
 		$form['editInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'edit');
+			->setAttrib('class', 'edit nolabel');
 
 		$form['copy'] = new Zend_Form_Element_Button('copy');
 		$form['copy']->setLabel('TOOLBAR_COPY')
@@ -36,7 +36,7 @@ class Contacts_Form_Toolbar extends Zend_Form
 		$form['copyInline'] = new Zend_Form_Element_Button('copy');
 		$form['copyInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy');
+			->setAttrib('class', 'copy nolabel');
 
 		$form['pdf'] = new Zend_Form_Element_Button('pdf');
 		$form['pdf']->setLabel('TOOLBAR_PDF')
@@ -51,7 +51,7 @@ class Contacts_Form_Toolbar extends Zend_Form
 		$form['deleteInline'] = new Zend_Form_Element_Button('delete');
 		$form['deleteInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'delete');
+			->setAttrib('class', 'delete nolabel');
 
 		$form['keyword'] = new Zend_Form_Element_Text('keyword');
 		$form['keyword']->setDecorators(array('ViewHelper'))
@@ -60,7 +60,7 @@ class Contacts_Form_Toolbar extends Zend_Form
 		$form['clear'] = new Zend_Form_Element_Button('clear');
 		$form['clear']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'clear')
+			->setAttrib('class', 'clear nolabel')
 			->setAttrib('rel', 'keyword');
 
 		$form['reset'] = new Zend_Form_Element_Button('reset');

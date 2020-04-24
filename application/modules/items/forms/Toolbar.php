@@ -21,7 +21,7 @@ class Items_Form_Toolbar extends Zend_Form
 		$form['editInline'] = new Zend_Form_Element_Button('edit');
 		$form['editInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'edit');
+			->setAttrib('class', 'edit nolabel');
 
 		$form['save'] = new Zend_Form_Element_Button('save');
 		$form['save']->setLabel('TOOLBAR_SAVE')
@@ -36,7 +36,7 @@ class Items_Form_Toolbar extends Zend_Form
 		$form['copyInline'] = new Zend_Form_Element_Button('copy');
 		$form['copyInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy');
+			->setAttrib('class', 'copy nolabel');
 
 		$form['delete'] = new Zend_Form_Element_Button('delete');
 		$form['delete']->setLabel('TOOLBAR_DELETE')
@@ -50,7 +50,7 @@ class Items_Form_Toolbar extends Zend_Form
 		$form['clear'] = new Zend_Form_Element_Button('clear');
 		$form['clear']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'clear')
+			->setAttrib('class', 'clear nolabel')
 			->setAttrib('rel', 'keyword');
 
 		$form['reset'] = new Zend_Form_Element_Button('reset');
