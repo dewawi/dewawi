@@ -30,8 +30,8 @@ class Sales_Form_Creditnote extends Zend_Form
 		$form['info']->setLabel('CREDIT_NOTES_INFO')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('cols', '65')
-			->setAttrib('rows', '30');
+			->setAttrib('cols', '50')
+			->setAttrib('rows', '10');
 
 		$form['header'] = new Zend_Form_Element_Textarea('header');
 		$form['header']->setLabel('CREDIT_NOTES_HEADER')

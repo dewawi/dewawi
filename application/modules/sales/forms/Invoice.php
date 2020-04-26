@@ -31,7 +31,7 @@ class Sales_Form_Invoice extends Zend_Form
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('cols', '50')
-			->setAttrib('rows', '15');
+			->setAttrib('rows', '10');
 
 		$form['header'] = new Zend_Form_Element_Textarea('header');
 		$form['header']->setLabel('INVOICES_HEADER')

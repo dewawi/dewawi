@@ -163,7 +163,20 @@ class Sales_QuoteController extends Zend_Controller_Action
 				$this->_helper->getHelper('layout')->disableLayout();
 				$data = $request->getPost();
 				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
+                if(($element == 'textblockheader' || $element == 'textblockfooter')) {
+					$data['modified'] = $this->_date;
+					$data['modifiedby'] = $this->_user['id'];
+				    $textblockDb = new Sales_Model_DbTable_Textblock();
+                    if(strpos($element, 'header') !== false) {
+					    $data['text'] = $data['textblockheader'];
+					    unset($data['textblockheader']);
+					    $textblockDb->updateTextblock($data, 'quote', 'header');
+                    } elseif(strpos($element, 'footer') !== false) {
+					    $data['text'] = $data['textblockfooter'];
+					    unset($data['textblockfooter']);
+					    $textblockDb->updateTextblock($data, 'quote', 'footer');
+                    }
+				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
 					$data['modified'] = $this->_date;
 					$data['modifiedby'] = $this->_user['id'];
@@ -848,13 +861,16 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 	protected function getTextblocks()
 	{
-		$textblocksDb = new Application_Model_DbTable_Textblock();
-		$textblocks = $textblocksDb->fetchAll(
+	    $textblocksDb = new Sales_Model_DbTable_Textblock();
+		$textblocksObject = $textblocksDb->fetchAll(
 			$textblocksDb->select()
+				->where('controller = ?', 'quote')
 				->where('clientid = ?', $this->_user['clientid'])
 				->order('ordering')
 		);
-
+		$textblocks = array();
+		foreach($textblocksObject as $textblock)
+            $textblocks[$textblock->section] = $textblock->text;
 		return $textblocks;
 	}
 

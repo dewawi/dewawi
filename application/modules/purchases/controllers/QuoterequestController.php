@@ -163,7 +163,20 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 				$this->_helper->getHelper('layout')->disableLayout();
 				$data = $request->getPost();
 				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
+                if(($element == 'textblockheader' || $element == 'textblockfooter')) {
+					$data['modified'] = $this->_date;
+					$data['modifiedby'] = $this->_user['id'];
+				    $textblockDb = new Purchases_Model_DbTable_Textblock();
+                    if(strpos($element, 'header') !== false) {
+					    $data['text'] = $data['textblockheader'];
+					    unset($data['textblockheader']);
+					    $textblockDb->updateTextblock($data, 'quoterequest', 'header');
+                    } elseif(strpos($element, 'footer') !== false) {
+					    $data['text'] = $data['textblockfooter'];
+					    unset($data['textblockfooter']);
+					    $textblockDb->updateTextblock($data, 'quoterequest', 'footer');
+                    }
+				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
 					$data['modified'] = $this->_date;
 					$data['modifiedby'] = $this->_user['id'];
@@ -199,6 +212,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 					$this->view->toolbarPositions = $toolbarPositions;
+					$this->view->textblocks = $this->getTextblocks();
 				}
 			}
 		}
@@ -716,6 +730,21 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		);
 
 		return $positions;
+	}
+
+	protected function getTextblocks()
+	{
+	    $textblocksDb = new Purchases_Model_DbTable_Textblock();
+		$textblocksObject = $textblocksDb->fetchAll(
+			$textblocksDb->select()
+				->where('controller = ?', 'quoterequest')
+				->where('clientid = ?', $this->_user['clientid'])
+				->order('ordering')
+		);
+		$textblocks = array();
+		foreach($textblocksObject as $textblock)
+            $textblocks[$textblock->section] = $textblock->text;
+		return $textblocks;
 	}
 
 	protected function isLocked($locked, $lockedtime)

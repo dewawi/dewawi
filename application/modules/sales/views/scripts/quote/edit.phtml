@@ -23,7 +23,7 @@ echo $this->FileManager();
 	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
 		<form id="quote" enctype="application/x-www-form-urlencoded" action="" method="post">
             <div class="row">
-                <div class="col-sm-12 col-lg-7">
+                <div class="col-sm-12 col-lg-6">
 				    <dl class="form">
 					    <?php echo $this->form->id; ?>
 					    <?php echo $this->form->title; ?>
@@ -36,59 +36,49 @@ echo $this->FileManager();
 					    <?php echo $this->form->deliverydate; ?>
 					    <?php echo $this->form->paymentmethod; ?>
 					    <?php echo $this->form->shippingmethod; ?>
-					    <?php echo $this->form->info; ?>
 					    <?php echo $this->form->opportunityid; ?>
 				    </dl>
 			    </div>
-                <div class="col-sm-12 col-lg-5">
+                <div class="col-sm-12 col-lg-6">
 				    <dl class="form">
-					    <?php echo $this->form->header; ?>
-					    <?php echo $this->form->footer; ?>
+					    <?php echo $this->form->info; ?>
 				    </dl>
 			    </div>
 		    </div>
-
-				<h3>Textbausteine</h3>
-				<h4>DEEC</h4>
-Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an: (unsere AGB&acute;s finden Sie auf <a href="http://www.deec.de">www.deec.de</a>)<br />
-<br />
-<strong>Lieferung:</strong> Frei Baustelle Deutschland, ausgenommen deutsche Inseln. Abladen bauseits.<br />
-<strong>Lieferzeit:</strong> 5-7 Werktage nach Zahlungseingang und technischer Klärung<br />
-<br />
-<strong>Herstellergarantie:</strong><br />
-2 Jahre Herstellergarantie bei Kühlzellen (ausgenommen elektrische Teile), 2 Jahre bei Kühlaggregaten (nur bei nachgewiesener Wartung) und 1 Jahr bei anderen Lieferteilen (einschl. der elektrischen Teile bei Kühlzellen).<br />
-<br />
-Irrtümer, Änderungen und Zwischenverkauf vorbehalten!
-
-				<h4>BERGCOLD</h4>
-Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&auml;ftsbedingungen&quot; freibleibend an: (unsere AGB&acute;s finden Sie auf <a href="http://www.bergcold.com">www.bergcold.com</a>)<br />
-<br />
-<strong>Lieferung:</strong> EXW ab Werk Duisburg inkl. Verpackung gem&auml;&szlig; Incoterms 2010<br />
-<br />
-<strong>Lieferung:</strong> CIP Bestimmungsort innerhalb Deutschlands gemäß Incoterms 2010, ausgenommen Ost- und Nordseeinseln<br />
-<br />
-<strong>Lieferzeit:</strong> 4-5 Wochen nach Zahlungseingang und Kl&auml;rung aller technischen Fragen und Einzelheiten<br />
-<br />
-<strong>Lieferzeit:</strong> 3-4 Werktage nach Zahlungseingang und Kl&auml;rung aller technischen Fragen und Einzelheiten<br />
-<br />
-<strong>Zahlungsbedingungen:</strong> 50% Vorkasse, Rest bei Fertigstellung jedoch vor Verladung der Ware ohne Abzug<br />
-<br />
-<strong>Zahlungsbedingungen:</strong> Vorkasse ohne Abzug<br />
-<br />
-<strong>Gew&auml;hrleistung</strong><br />
-<strong>Aufstellung im Inland:</strong> Vollkostengew&auml;hrleistung f&uuml;r die Dauer von 12 Monaten ab Inbetriebnahme, jedoch maximal 18 Monate ab Werksauslieferung. In Verbindung mit einem Wartungsvertrag verl&auml;ngert sich die Gew&auml;hrleistung auf 24 Monate.<br />
-<strong>Aufstellung im Ausland:</strong> Gew&auml;hrleistung auf Ersatzteile f&uuml;r die Dauer von 12 Monaten ab Inbetriebnahme, jedoch maximal 18 Monate ab Werksauslieferung<br />
-<br />
-<strong>Nicht im Angebot enthalten sind:</strong> Inbetriebnahme, Aufstellung, Elektroinstallation oder Wasserverrohrung vor Ort.<br />
-<br />
-<strong>Bei Au&szlig;enaufstellung und Au&szlig;entemperaturen unter +4&deg;C, nur mit Frostschutzzusatz oder eine Verdampfer-Frostschutzheizung einsetzen.</strong>
-<br />
-<br />Irrtümer, Änderungen und Zwischenverkauf vorbehalten
-
-				<?php /*foreach($this->textblocks as $textblock) : ?>
-					<p><?php echo $textblock->text; ?></p>
-				<?php endforeach;*/ ?>
-
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+					    <?php echo $this->form->header; ?>
+				    </dl>
+			    </div>
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+					    <dt id="textblock-label">
+                            <label>Textbausteine-Kopftext</label>
+                        </dt>
+					    <dd id="textblock-element">
+					        <textarea id="textblockheader" class="editor" name="textblockheader" cols="75" rows="18"><?php echo $this->textblocks['header']; ?></textarea>
+					    </dd>
+				    </dl>
+			    </div>
+		    </div>
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+					    <?php echo $this->form->footer; ?>
+				    </dl>
+			    </div>
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+					    <dt id="textblock-label">
+                            <label>Textbausteine-Fußtext</label>
+                        </dt>
+					    <dd id="textblock-element">
+					        <textarea id="textblockfooter" class="editor" name="textblockfooter" cols="75" rows="18"><?php echo $this->textblocks['footer']; ?></textarea>
+					    </dd>
+				    </dl>
+			    </div>
+		    </div>
 		</form>
 	</div>
 	<div id="tabPositions" class="tab_content<?php if($this->activeTab == '#tabPositions') : ?> active<?php endif; ?>">
@@ -98,10 +88,13 @@ Wir danken f&uuml;r Ihre Anfrage und bieten zu unseren &quot;Allgemeinen Gesch&a
 	</div>
 	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">
 		<form id="quote" enctype="application/x-www-form-urlencoded" action="" method="post">
-		    <?php echo $this->toolbar->select; ?>
             <div class="row">
                 <div class="col-sm-12 col-lg-7">
 				    <dl class="form">
+					    <dt></dt>
+					    <dd>
+						    <?php echo $this->toolbar->select; ?>
+					    </dd>
 					    <?php echo $this->form->contactid; ?>
 					    <?php echo $this->form->billingname1; ?>
 					    <?php echo $this->form->billingname2; ?>

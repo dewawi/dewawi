@@ -23,7 +23,7 @@ echo $this->FileManager();
 	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
 		<form id="deliveryorder" enctype="application/x-www-form-urlencoded" action="" method="post">
             <div class="row">
-                <div class="col-sm-12 col-lg-7">
+                <div class="col-sm-12 col-lg-6">
 				    <dl class="form">
 					    <?php echo $this->form->id; ?>
 					    <?php echo $this->form->title; ?>
@@ -37,17 +37,50 @@ echo $this->FileManager();
 					    <?php echo $this->form->deliverydate; ?>
 					    <?php echo $this->form->paymentmethod; ?>
 					    <?php echo $this->form->shippingmethod; ?>
-					    <?php echo $this->form->info; ?>
 					    <?php echo $this->form->opportunityid; ?>
 				    </dl>
 			    </div>
-                <div class="col-sm-12 col-lg-5">
+                <div class="col-sm-12 col-lg-6">
 				    <dl class="form">
-					    <?php echo $this->form->header; ?>
-					    <?php echo $this->form->footer; ?>
+					    <?php echo $this->form->info; ?>
 				    </dl>
 			    </div>
 			</div>
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+					    <?php echo $this->form->header; ?>
+				    </dl>
+			    </div>
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+					    <dt id="textblock-label">
+                            <label>Textbausteine-Kopftext</label>
+                        </dt>
+					    <dd id="textblock-element">
+					        <textarea id="textblockheader" class="editor" name="textblockheader" cols="75" rows="18"><?php echo $this->textblocks['header']; ?></textarea>
+					    </dd>
+				    </dl>
+			    </div>
+		    </div>
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+					    <?php echo $this->form->footer; ?>
+				    </dl>
+			    </div>
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+					    <dt id="textblock-label">
+                            <label>Textbausteine-Fußtext</label>
+                        </dt>
+					    <dd id="textblock-element">
+					        <textarea id="textblockfooter" class="editor" name="textblockfooter" cols="75" rows="18"><?php echo $this->textblocks['footer']; ?></textarea>
+					    </dd>
+				    </dl>
+			    </div>
+		    </div>
+		</form>
 		</form>
 	</div>
 	<div id="tabPositions" class="tab_content<?php if($this->activeTab == '#tabPositions') : ?> active<?php endif; ?>">

@@ -148,10 +148,13 @@ echo $this->FileManager();
 	</div>
 	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">
 		<form id="process" enctype="application/x-www-form-urlencoded" action="" method="post">
-		    <?php echo $this->toolbar->select; ?>
             <div class="row">
                 <div class="col-sm-12 col-lg-7">
 				    <dl class="form">
+					    <dt></dt>
+					    <dd>
+						    <?php echo $this->toolbar->select; ?>
+					    </dd>
 					    <?php echo $this->form->getElement('customerid'); ?>
 					    <?php echo $this->form->getElement('billingname1'); ?>
 					    <?php echo $this->form->getElement('billingname2'); ?>
