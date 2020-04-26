@@ -1,6 +1,6 @@
 <?php
 /**
-* Class inserts neccery code for initialize file manager elFinder	
+* Class inserts neccery code for initialize file manager TreeMenu
 */
 class Zend_View_Helper_TreeMenu extends Zend_View_Helper_Abstract{
 

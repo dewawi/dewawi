@@ -160,14 +160,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$data['created'] = $this->_date;
 		$addressDb->addAddress($data);
 
-		//Create contact folder if does not already exists
-        $path = BASE_PATH.'/files/contacts/';
-		if(file_exists($path) && is_dir($path) && is_writable($path)) {
-		    if(!file_exists($path.$id) && !is_dir($path.$id)) {
-		        mkdir($path.'/'.$id);
-		        chmod(BASE_PATH.'/files/contacts/'.$id.'/', 0777);
-		    }
-		}
+        //Check if the directory exists
+        $this->checkDirectory($id);
 
 		$this->_helper->redirector->gotoSimple('edit', 'contact', null, array('id' => $id));
 	}
@@ -274,16 +268,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 					//History
 					$history = $this->getHistory($id);
 
+                    //Check if the directory exists
+                    $this->checkDirectory($id);
+
 					//Files
 					$files = array();
-					//Create contact folder if does not already exists
                     $path = BASE_PATH.'/files/contacts/';
-					if(file_exists($path) && is_dir($path) && is_writable($path)) {
-					    if(!file_exists($path.$id) && !is_dir($path.$id)) {
-					        mkdir($path.'/'.$id);
-					        chmod(BASE_PATH.'/files/contacts/'.$id.'/', 0777);
-					    }
-					}
 					if(file_exists($path.$id) && is_dir($path.$id)) {
 					    if($handle = opendir($path.$id)) {
 						    $files['contactSpecific'] = array();
@@ -310,14 +300,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 				}
 			}
 
-			//Create contact folder if does not already exists
-            $path = BASE_PATH.'/files/contacts/';
-			if(file_exists($path) && is_dir($path) && is_writable($path)) {
-			    if(!file_exists($path.$id) && !is_dir($path.$id)) {
-			        mkdir($path.'/'.$id);
-			        chmod(BASE_PATH.'/files/contacts/'.$id.'/', 0777);
-			    }
-			}
+            //Check if the directory exists
+            $this->checkDirectory($id);
 		}
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -405,14 +389,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 			$internetDb->addInternet($contactid, $internet['internet'], $internet['ordering']);
 		}
 
-		//Create contact folder if does not already exists
-        $path = BASE_PATH.'/files/contacts/';
-		if(file_exists($path) && is_dir($path) && is_writable($path)) {
-		    if(!file_exists($path.$contactid) && !is_dir($path.$contactid)) {
-		        mkdir($path.'/'.$contactid);
-		        chmod(BASE_PATH.'/files/contacts/'.$contactid.'/', 0777);
-		    }
-		}
+        //Check if the directory exists
+        $this->checkDirectory($id);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -884,6 +862,20 @@ echo '{
 			$process->total = $this->_currency->toCurrency($process->total);
 		}*/
 		return $history;
+	}
+
+	protected function checkDirectory($id) {
+		//Create contact folder if does not already exists
+        $path = BASE_PATH.'/files/contacts/';
+        $group = substr($id, 0, 1).'/';
+		if(file_exists($path) && is_dir($path) && is_writable($path)) {
+		    if(file_exists($path.$group) && is_dir($path.$group) && is_writable($path.$group)) {
+		        if(!file_exists($path.$group.$id) && !is_dir($path.$group.$id)) {
+		            mkdir($path.$group.$id);
+		            chmod(BASE_PATH.'/files/contacts/'.$group.$id.'/', 0777);
+		        }
+		    }
+		}
 	}
 
 	protected function isLocked($locked, $lockedtime)

@@ -34,9 +34,12 @@ if ($_GET['extrapath']) {
     $URL = '/../../../files/';
 }
 
-if(isset($_GET['directory']) && $_GET['directory'] && $_GET['directory'] != 0) {
-	$path = $path.'contacts/'.$_GET['directory'].'/';
-	$URL = $URL.'contacts/'.$_GET['directory'].'/';
+if(isset($_GET['directory']) && $_GET['directory'] && $_GET['directory'] == 'images') {
+    $path = $path.'images/';
+    $URL = $URL.'images/';
+} else if(isset($_GET['directory']) && $_GET['directory'] && $_GET['directory'] != 0) {
+    $path = $path.'contacts/'.$_GET['directory'].'/';
+    $URL = $URL.'contacts/'.$_GET['directory'].'/';
 } else {
 	$path = $path.'/uploads/';
 	$URL = $URL.'/uploads/';

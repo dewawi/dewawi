@@ -412,6 +412,7 @@ class Items_ItemController extends Zend_Controller_Action
 		if ($this->getRequest()->isPost()) {
 			$formData = $this->getRequest()->getPost();
 			if ($form->isValid($formData)) {
+				$id = $this->_getParam('id', 0);
 				$contactid = $this->_getParam('contactid', 0);
 
 				if(!file_exists(BASE_PATH.'/files/images/')) {
@@ -425,6 +426,12 @@ class Items_ItemController extends Zend_Controller_Action
 				try {
 					// upload received file(s)
 					$upload->receive();
+                    $location = $upload->getFileName();
+                    $locationArray = explode('/',$location);
+                    $data = array();
+                    $data['image'] = end($locationArray);
+					$item = new Items_Model_DbTable_Item();
+					$item->updateItem($id, $data);
 				} catch (Zend_File_Transfer_Exception $e) {
 					$e->getMessage();
 				}
@@ -634,6 +641,17 @@ class Items_ItemController extends Zend_Controller_Action
 		}
 
 		return $items;
+	}
+
+	protected function checkDirectory($id) {
+		//Create images folder if does not already exists
+        $path = BASE_PATH.'/files/images/';
+		if(file_exists($path) && is_dir($path) && is_writable($path)) {
+	        if(!file_exists($path.$id) && !is_dir($path.$id)) {
+	            mkdir($path);
+	            chmod(BASE_PATH.'/files/images/', 0777);
+	        }
+		}
 	}
 
 	protected function isLocked($locked, $lockedtime)
