@@ -50,12 +50,12 @@ class Admin_Form_Toolbar extends Zend_Form
 		$form['sortup'] = new Zend_Form_Element_Button('sortup');
 		$form['sortup']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'up');
+			->setAttrib('class', 'up nolabel');
 
 		$form['sortdown'] = new Zend_Form_Element_Button('sortdown');
 		$form['sortdown']->setLabel('')
 			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'down')
+			->setAttrib('class', 'down nolabel')
 			->setAttrib('default', '');
 
 		$this->addElements($form);

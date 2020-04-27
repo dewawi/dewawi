@@ -24,6 +24,9 @@ echo $this->AdminMenu();
 			<th class="postcode" width="7%">
 				<?php echo $this->translate('ADMIN_CITY'); ?>
 			</th>
+			<th class="postcode" width="7%">
+				<?php echo $this->translate('ADMIN_COUNTRY'); ?>
+			</th>
 			<th class="city" width="10%">
 				<?php echo $this->translate('ADMIN_EMAIL'); ?>
 			</th>
@@ -56,6 +59,9 @@ echo $this->AdminMenu();
 					<span class="editable" data-name="city"><?php echo $this->escape($client->city); ?></span>
 				</td>
 				<td class="name">
+					<span class="editable" data-name="country"><?php echo $this->escape($client->country); ?></span>
+				</td>
+				<td class="name">
 					<span class="editable" data-name="email"><?php echo $this->escape($client->email); ?></span>
 				</td>
 				<td class="name">
@@ -65,8 +71,8 @@ echo $this->AdminMenu();
 					<span class="editable" data-name="language"><?php echo $this->escape($client->language); ?></span>
 				</td>
 				<td class="buttons">
-					<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
-					<?php echo $this->Button('delete', '', $this->translate('TOOLBAR_DELETE')); ?>
+					<?php echo $this->Button('copy'); ?>
+					<?php echo $this->Button('delete'); ?>
 				</td>
 			</tr>
 		<?php endforeach; ?>
@@ -87,6 +93,9 @@ echo $this->AdminMenu();
 			</td>
 			<td>
 				<?php echo $this->form->city; ?>
+			</td>
+			<td>
+				<?php echo $this->form->country; ?>
 			</td>
 			<td>
 				<?php echo $this->form->email; ?>

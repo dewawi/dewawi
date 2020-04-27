@@ -57,20 +57,16 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 		$categories = $this->_helper->Categories->getCategories($form, $params['clientid'], $params['type']);
 
-        $childCount = array();
-        if($params['type'] == 'contact') {
-		    $contactDb = new Contacts_Model_DbTable_Contact();
-            foreach($categories as $category) {
-		        $contacts = $contactDb->getContactsByCategory($category['id']);
-                $categories[$category['id']]['childcount'] = count($contacts);
+        /*$childCount = array();
+        foreach($categories as $category) {
+            if(isset($category['childs'])) {
+                $categories[$category['id']]['childcount'] = count($category['childs']);
+                foreach($category['childs'] as $child) {
+                    if(isset($categories[$child]['childs']))
+                        $categories[$category['id']]['childcount'] += count($categories[$child]['childs']);
+                }
             }
-        } elseif($params['type'] == 'item') {
-		    $itemDb = new Items_Model_DbTable_Item();
-            foreach($categories as $category) {
-		        $items = $itemDb->getItemsByCategory($category['id']);
-                $categories[$category['id']]['childcount'] = count($items);
-            }
-        }
+        }*/
 
 		$this->view->form = $form;
 		$this->view->categories = $categories;
@@ -89,20 +85,16 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 		$categories = $this->_helper->Categories->getCategories($form, $params['clientid'], $params['type']);
 
-        $childCount = array();
-        if($params['type'] == 'contact') {
-		    $contactDb = new Contacts_Model_DbTable_Contact();
-            foreach($categories as $category) {
-		        $contacts = $contactDb->getContactsByCategory($category['id']);
-                $categories[$category['id']]['childcount'] = count($contacts);
+        /*$childCount = array();
+        foreach($categories as $category) {
+            if(isset($category['childs'])) {
+                $categories[$category['id']]['childcount'] = count($category['childs']);
+                foreach($category['childs'] as $child) {
+                    if(isset($categories[$child]['childs']))
+                        $categories[$category['id']]['childcount'] += count($categories[$child]['childs']);
+                }
             }
-        } elseif($params['type'] == 'item') {
-		    $itemDb = new Items_Model_DbTable_Item();
-            foreach($categories as $category) {
-		        $items = $itemDb->getItemsByCategory($category['id']);
-                $categories[$category['id']]['childcount'] = count($items);
-            }
-        }
+        }*/
 
 		$this->view->form = $form;
 		$this->view->categories = $categories;

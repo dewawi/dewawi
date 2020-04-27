@@ -29,8 +29,8 @@ echo $this->AdminMenu();
 					<span class="editable" data-name="title"><?php echo $this->escape($paymentmethod->title); ?></span>
 				</td>
 				<td class="buttons">
-					<?php echo $this->Button('copy', '', $this->translate('TOOLBAR_COPY')); ?>
-					<?php echo $this->Button('delete', '', $this->translate('TOOLBAR_DELETE')); ?>
+					<?php echo $this->Button('copy'); ?>
+					<?php echo $this->Button('delete'); ?>
 				</td>
 			</tr>
 		<?php endforeach; ?>

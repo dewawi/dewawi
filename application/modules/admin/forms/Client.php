@@ -53,9 +53,15 @@ class Admin_Form_Client extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
-		$form['language'] = new Zend_Form_Element_Select('language');
-		$form['language']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
+		$form['language'] = new Zend_Form_Element_Text('language');
+		$form['language']->setLabel('ADMIN_LANGUAGE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '12');
+
+		//$form['language'] = new Zend_Form_Element_Select('language');
+		//$form['language']->setDecorators(array('ViewHelper'))
+		//	->setAttrib('default', '');
 
 		$this->addElements($form);
 	}
