@@ -765,11 +765,26 @@ function editPosition(data, params) {
 		cache: false,
 		success: function(response){
 			isDirty = false;
-			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'taxrate')) {
+			if((params['element'] == 'price') || (params['element'] == 'quantity')) {
 				$('table#total #subtotal').text(response['subtotal']);
-				$('table#total #taxes').text(response['taxes']);
 				$('table#total #total').text(response['total']);
 				$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
+                $.each(response['taxes'], function(key, val) {
+                    if(key != 'total') $('td[data-rate="'+key+'"]').text(val);
+                });
+			} else if(params['element'] == 'taxrate') {
+				//$('table#total #taxes').text(response['taxes']);
+				//$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
+                /*$.each(response['taxes'], function(key, val) {
+                    if(key != 'total') {
+                        if($('td[data-rate="'+key+'"]').length) {
+                            $('td[data-rate="'+key+'"]').text(val);
+                        } else {
+			                getPositions($(document).height());
+                        }
+                    }
+                });*/
+			    getPositions($(document).height());
 			}
 		}
 	});

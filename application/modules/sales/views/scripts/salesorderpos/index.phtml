@@ -103,10 +103,12 @@ if($length = count($this->forms)) :
 			<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
 			<td id="subtotal" align="right"><?php echo $this->salesorder['subtotal'] ?></td>
 		</tr>
-		<tr>
-			<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
-			<td id="taxes" align="right"><?php echo $this->salesorder['taxes'] ?></td>
-		</tr>
+		<?php foreach($this->salesorder['taxes'] as $rate => $tax) : ?>
+		    <tr>
+			    <td><?php echo $this->translate('POSITIONS_TAXES')." (".$tax['title'].")"; ?></td>
+			    <td id="taxes" align="right" data-rate="<?php echo $rate; ?>"><?php echo $tax['value']; ?></td>
+		    </tr>
+		<?php endforeach; ?>
 		<tr>
 			<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
 			<td id="total" align="right"><?php echo $this->salesorder['total'] ?></td>

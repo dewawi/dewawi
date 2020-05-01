@@ -56,11 +56,19 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 		$taxRates = $this->_helper->TaxRate->getTaxRates($locale);
 
 		$forms = array();
+        $taxes = array();
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$position->ordering] = $position->ordering;
+            if(!isset($taxes[$position->taxrate]) && isset($taxRates[$position->taxrate])) {
+                $taxes[$position->taxrate] = array();
+                $taxes[$position->taxrate]['value'] = 0;
+                $taxes[$position->taxrate]['title'] = $taxRates[$position->taxrate];
+            }
 		}
 		foreach($positions as $position) {
+            if(isset($taxes[$position->taxrate])) $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
+
 			$position->total =  $this->_currency->toCurrency($position->price*$position->quantity);
 			$position->price =  $this->_currency->toCurrency($position->price);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
@@ -73,8 +81,11 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 		}
 
 		$deliveryorder['subtotal'] = $this->_currency->toCurrency($deliveryorder['subtotal']);
-		$deliveryorder['taxes'] = $this->_currency->toCurrency($deliveryorder['taxes']);
 		$deliveryorder['total'] = $this->_currency->toCurrency($deliveryorder['total']);
+        foreach($taxes as $rate => $data) {
+		    $taxes[$rate]['value'] = $this->_currency->toCurrency($data['value']);
+        }
+		$deliveryorder['taxes'] = $taxes;
 
 		$this->view->forms = $forms;
 		$this->view->deliveryorder = $deliveryorder;

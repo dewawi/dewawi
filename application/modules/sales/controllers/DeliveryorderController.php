@@ -183,7 +183,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
-						$data['taxes'] = $calculations['row']['taxes'];
+						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
 					}
 					$deliveryorderDb->updateDeliveryorder($id, $data);
