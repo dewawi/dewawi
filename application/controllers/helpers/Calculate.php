@@ -47,10 +47,7 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			$calculations['locale']['total'] = $currency->toCurrency($calculations['row']['subtotal']+$calculations['row']['taxes']);
 			$calculations['locale']['taxes'] = $currency->toCurrency($calculations['row']['taxes']);
 
-			header('Content-type: application/json');
-			echo Zend_Json::encode($calculations['locale']);
-
-			return $calculations['row'];
+			return $calculations;
 		}
 	}
 }

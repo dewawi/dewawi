@@ -749,7 +749,6 @@ function edit(data, params) {
 			isDirty = false;
 		}
 	});
-    //console.log(url);
     //console.log(data);
     //console.log(response);
 	return response;
@@ -766,7 +765,7 @@ function editPosition(data, params) {
 		cache: false,
 		success: function(response){
 			isDirty = false;
-			if((params['element'] == 'price') || (params['element'] == 'quantity')) {
+			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'taxrate')) {
 				$('table#total #subtotal').text(response['subtotal']);
 				$('table#total #taxes').text(response['taxes']);
 				$('table#total #total').text(response['total']);
@@ -923,9 +922,9 @@ function reset() {
 //Copy
 function copy(cid, cmodule, ccontroller){
 	cid = cid || id;
-console.log(cid);
-console.log(cmodule);
-console.log(baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid);
+    //console.log(cid);
+    //console.log(cmodule);
+    //console.log(baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid);
 	cmodule = cmodule || module;
 	ccontroller = ccontroller || controller;
 	$.ajax({
@@ -933,7 +932,7 @@ console.log(baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid);
 		url: baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid,
 		cache: false,
 		success: function(response){
-console.log(response);
+            //console.log(response);
 			if(id && response) setLocation(baseUrl+'/'+cmodule+'/'+ccontroller+'/edit/id/'+response);
 			else search();
 		}
@@ -1176,6 +1175,7 @@ function modalWindow() {
 	'margin-left' : -popMargLeft
 	});
 
+	$('body').css('overflow', 'hidden');
 	$('body').append('<div id="fade"></div>');
 	$('#fade').css({'filter' : 'alpha(opacity=80)'}).fadeIn();
 
@@ -1202,6 +1202,7 @@ function modalWindowClose() {
 	if(action == 'index') {
 		$('iframe#edit').attr('src', baseUrl+'/index/blank');
 	}
+	$('body').css('overflow', 'auto');
 
 	return false;
 }

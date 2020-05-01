@@ -100,6 +100,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$form = new Items_Form_Item();
 
 		if($request->isPost()) {
+		    header('Content-type: application/json');
 			$this->_helper->viewRenderer->setNoRender();
 			$this->_helper->getHelper('layout')->disableLayout();
 			$data = array();
@@ -125,7 +126,8 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				$position->addPosition($data);
 
 				//Calculate
-				//$this->_helper->Calculate($processid, $this->_currency, $this->_date, $this->_user['id']);
+				//$calculations = $this->_helper->Calculate($processid, $this->_currency, $this->_date, $this->_user['id']);
+			    //echo Zend_Json::encode($calculations['locale']);
 			} else {
 				$form->populate($request->getPost());
 			}
@@ -183,6 +185,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$form->ordering->addMultiOptions($this->getOrdering($processid));
 
 		if($request->isPost()) {
+		    header('Content-type: application/json');
 			$data = $request->getPost();
 			$element = key($data);
 			if(isset($form->$element) && $form->isValidPartial($data)) {
@@ -206,6 +209,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
+		    header('Content-type: application/json');
 			$id = (int)$this->_getParam('id', 0);
 			$position = new Processes_Model_DbTable_Processpos();
 			$data = $position->getPosition($id);
@@ -222,7 +226,8 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$position->addPosition($data);
 
 			//Calculate
-			//$this->_helper->Calculate($data['processid'], $this->_currency, $this->_date, $this->_user['id']);
+			//$calculations = $this->_helper->Calculate($data['processid'], $this->_currency, $this->_date, $this->_user['id']);
+	        //echo Zend_Json::encode($calculations['locale']);
 		}
 	}
 
@@ -267,6 +272,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
+		    header('Content-type: application/json');
 			$data = $request->getPost();
 			if($data['delete'] == 'Yes') {
 				if(!is_array($data['id'])) {
@@ -277,7 +283,8 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 				//Reorder and calculate
 				$this->setOrdering($data['processid']);
-				//$this->_helper->Calculate($data['processid'], $this->_currency, $this->_date, $this->_user['id']);
+				//$calculations = $this->_helper->Calculate($data['processid'], $this->_currency, $this->_date, $this->_user['id']);
+	            //echo Zend_Json::encode($calculations['locale']);
 			}
 		}
 	}

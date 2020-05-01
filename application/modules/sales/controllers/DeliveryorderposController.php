@@ -101,6 +101,7 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 		$form = new Items_Form_Item();
 
 		if($request->isPost()) {
+		    header('Content-type: application/json');
 			$this->_helper->viewRenderer->setNoRender();
 			$this->_helper->getHelper('layout')->disableLayout();
 			$data = array();
@@ -126,7 +127,8 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 				$position->addPosition($data);
 
 				//Calculate
-				$this->_helper->Calculate($deliveryorderid, $this->_currency, $this->_date, $this->_user['id']);
+				$calculations = $this->_helper->Calculate($deliveryorderid, $this->_currency, $this->_date, $this->_user['id']);
+			    echo Zend_Json::encode($calculations['locale']);
 			} else {
 				$form->populate($request->getPost());
 			}
@@ -184,6 +186,7 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 		$form->taxrate->addMultiOptions($this->_helper->TaxRate->getTaxRates($locale));
 
 		if($request->isPost()) {
+		    header('Content-type: application/json');
 			$data = $request->getPost();
 			$element = key($data);
 			if(isset($form->$element) && $form->isValidPartial($data)) {
@@ -195,8 +198,10 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 				$position = new Sales_Model_DbTable_Deliveryorderpos();
 				$position->updatePosition($id, $data);
 
-				if(($element == 'price') || ($element == 'quantity'))
-					$this->_helper->Calculate($deliveryorderid, $this->_currency, $this->_date, $this->_user['id']);
+				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate')) {
+					$calculations = $this->_helper->Calculate($deliveryorderid, $this->_currency, $this->_date, $this->_user['id']);
+			        echo Zend_Json::encode($calculations['locale']);
+                }
 			} else {
 				throw new Exception('Form is invalid');
 			}
@@ -210,6 +215,7 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
+		    header('Content-type: application/json');
 			$id = (int)$this->_getParam('id', 0);
 			$position = new Sales_Model_DbTable_Deliveryorderpos();
 			$data = $position->getPosition($id);
@@ -226,7 +232,8 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 			$position->addPosition($data);
 
 			//Calculate
-			$this->_helper->Calculate($data['deliveryorderid'], $this->_currency, $this->_date, $this->_user['id']);
+			$calculations = $this->_helper->Calculate($data['deliveryorderid'], $this->_currency, $this->_date, $this->_user['id']);
+	        echo Zend_Json::encode($calculations['locale']);
 		}
 	}
 
@@ -271,6 +278,7 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
+		    header('Content-type: application/json');
 			$data = $request->getPost();
 			if($data['delete'] == 'Yes') {
 				if(!is_array($data['id'])) {
@@ -281,7 +289,8 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 
 				//Reorder and calculate
 				$this->setOrdering($data['deliveryorderid']);
-				$this->_helper->Calculate($data['deliveryorderid'], $this->_currency, $this->_date, $this->_user['id']);
+				$calculations = $this->_helper->Calculate($data['deliveryorderid'], $this->_currency, $this->_date, $this->_user['id']);
+	            echo Zend_Json::encode($calculations['locale']);
 			}
 		}
 	}

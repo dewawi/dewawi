@@ -188,9 +188,9 @@ class Processes_ProcessController extends Zend_Controller_Action
 					$data['modifiedby'] = $this->_user['id'];
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $data['taxfree']);
-						$data['subtotal'] = $calculations['subtotal'];
-						$data['taxes'] = $calculations['taxes'];
-						$data['total'] = $calculations['total'];
+						$data['subtotal'] = $calculations['row']['subtotal'];
+						$data['taxes'] = $calculations['row']['taxes'];
+						$data['total'] = $calculations['row']['total'];
 					}
 					if(isset($data['total'])) {
 						$data['total'] =  Zend_Locale_Format::getNumber($data['total'], array('precision' => 2,'locale' => $locale));
