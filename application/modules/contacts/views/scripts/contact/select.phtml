@@ -3,7 +3,7 @@ $this->title = $this->translate('CONTACTS');
 $this->headTitle($this->title);
 ?>
 
-<table>
+<table id="data">
 	<thead>
 		<tr>
 			<th><input type="checkbox" class="checkall" name="checkall"/></th>
@@ -48,7 +48,7 @@ $this->headTitle($this->title);
 					<?php if($contact->catid) echo $this->escape($this->categories[$contact->catid]['title']); ?>
 				</td>
 				<td class="buttons">
-					<?php echo $this->Button('apply', 'window.parent.applyContact('.$this->escape($contact->id).')', 'TOOLBAR_APPLY'); ?>
+					<?php echo $this->Button('apply', 'window.parent.applyContact('.$this->escape($contact->id).')'); ?>
 				</td>
 			</tr>
 		<?php endforeach; ?>

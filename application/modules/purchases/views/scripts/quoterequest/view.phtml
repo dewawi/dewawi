@@ -1,7 +1,7 @@
 <?php 
 $this->title = $this->quoterequest['title'] ? $this->quoterequest['title'] : $this->translate('QUOTE_REQUEST')." ".$this->quoterequest['quoterequestid'];
 $this->headTitle($this->title);
-echo $this->ElFinder();
+echo $this->FileManager();
 ?>
 
 <ul class="tabs">
@@ -146,9 +146,8 @@ echo $this->ElFinder();
 		</div>
 		<div style="clear:left"></div>
 	</div>
-	<div id="tabFiles" class="tab_content">
-		<div id="elfinder"></div>
-		<div style="clear:left"></div>
+	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
 	</div>
 	<div id="tabDocument" class="tab_content">
 		<p>

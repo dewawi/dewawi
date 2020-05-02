@@ -9,6 +9,23 @@ if (session_id() == '') {
     session_start();
 }
 
+if(isset($_SESSION['RF']['extrapath']) && $_SESSION['RF']['extrapath']) {
+    $upload_dir = '/files/';
+    $current_path = '../../../'.$_SESSION['RF']['extrapath'].'/files/';
+    $thumbs_base_path = '../../../'.$_SESSION['RF']['extrapath'].'/cache/thumbs/';
+    $thumbs_upload_dir = '/cache/thumbs/';
+} else {
+    $upload_dir = '/files/';
+    $current_path = '../../files/';
+    $thumbs_base_path = '../../cache/thumbs/';
+    $thumbs_upload_dir = '/cache/thumbs/';
+}
+//echo $current_path;
+//echo $_SESSION['RF']['subfolder'];
+
+$writable = false;
+if(isset($_SESSION['RF']['writable']) && $_SESSION['RF']['writable']) $writable = true;
+
 mb_internal_encoding('UTF-8');
 mb_http_output('UTF-8');
 mb_http_input('UTF-8');
@@ -81,7 +98,7 @@ $config = array(
     | with start and final /
     |
     */
-    'upload_dir' => '/files/',
+    'upload_dir' => $upload_dir,
     /*
     |--------------------------------------------------------------------------
     | relative path from filemanager folder to upload folder
@@ -90,7 +107,7 @@ $config = array(
     | with final /
     |
     */
-    'current_path' => '../../files/',
+    'current_path' => $current_path,
 
     /*
     |--------------------------------------------------------------------------
@@ -101,7 +118,7 @@ $config = array(
     | DO NOT put inside upload folder
     |
     */
-    'thumbs_base_path' => '../files/thumbs/',
+    'thumbs_base_path' => $thumbs_base_path,
 
     /*
     |--------------------------------------------------------------------------
@@ -112,7 +129,7 @@ $config = array(
     | DO NOT put inside upload folder
     |
     */
-    'thumbs_upload_dir' => '/files/thumbs/',
+    'thumbs_upload_dir' => $thumbs_upload_dir,
 
 
     /*
@@ -341,21 +358,21 @@ $config = array(
     //*************************
     //Permissions configuration
     //******************
-    'delete_files'                            => true,
-    'create_folders'                          => true,
-    'delete_folders'                          => true,
-    'upload_files'                            => true,
-    'rename_files'                            => true,
-    'rename_folders'                          => true,
-    'duplicate_files'                         => true,
-    'extract_files'                           => true,
-    'copy_cut_files'                          => true, // for copy/cut files
-    'copy_cut_dirs'                           => true, // for copy/cut directories
-    'chmod_files'                             => true, // change file permissions
-    'chmod_dirs'                              => true, // change folder permissions
-    'preview_text_files'                      => true, // eg.: txt, log etc.
-    'edit_text_files'                         => true, // eg.: txt, log etc.
-    'create_text_files'                       => true, // only create files with exts. defined in $config['editable_text_file_exts']
+    'delete_files'                            => $writable,
+    'create_folders'                          => $writable,
+    'delete_folders'                          => $writable,
+    'upload_files'                            => $writable,
+    'rename_files'                            => $writable,
+    'rename_folders'                          => $writable,
+    'duplicate_files'                         => $writable,
+    'extract_files'                           => $writable,
+    'copy_cut_files'                          => $writable, // for copy/cut files
+    'copy_cut_dirs'                           => $writable, // for copy/cut directories
+    'chmod_files'                             => $writable, // change file permissions
+    'chmod_dirs'                              => $writable, // change folder permissions
+    'preview_text_files'                      => $writable, // eg.: txt, log etc.
+    'edit_text_files'                         => $writable, // eg.: txt, log etc.
+    'create_text_files'                       => $writable, // only create files with exts. defined in $config['editable_text_file_exts']
     'download_files'			  => true, // allow download files or just preview
 
     // you can preview these type of files if $preview_text_files is true

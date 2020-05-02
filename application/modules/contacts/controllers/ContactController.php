@@ -175,6 +175,9 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContact($id);
 
+        //Check if the directory exists
+        $dirwritable = $this->checkDirectory($id);
+
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'contact', null, array('id' => $id));
 		} elseif($this->isLocked($contact['locked'], $contact['lockedtime'])) {
@@ -268,9 +271,6 @@ class Contacts_ContactController extends Zend_Controller_Action
 					//History
 					$history = $this->getHistory($id);
 
-                    //Check if the directory exists
-                    $this->checkDirectory($id);
-
 					//Files
 					$files = array();
                     $path = BASE_PATH.'/files/contacts/';
@@ -290,6 +290,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$this->view->form = $form;
 					$this->view->formPrimaryAddress = $formPrimaryAddress;
 					$this->view->formShippingAddress = $formShippingAddress;
+                    $this->view->dirwritable = $dirwritable;
 					$this->view->history = $history;
 					$this->view->files = $files;
 					$this->view->phone = $phone;
@@ -299,11 +300,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$this->view->toolbar = $toolbar;
 				}
 			}
-
-            //Check if the directory exists
-            $this->checkDirectory($id);
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+        $this->view->messages = array_merge(
+            $this->_helper->flashMessenger->getMessages(),
+            $this->_helper->flashMessenger->getCurrentMessages()
+        );
+        $this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function copyAction()
@@ -389,8 +391,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 			$internetDb->addInternet($contactid, $internet['internet'], $internet['ordering']);
 		}
 
-        //Check if the directory exists
-        $this->checkDirectory($id);
+        //Create the directory for the new contact
+        $this->checkDirectory($contactid);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -867,15 +869,19 @@ echo '{
 	protected function checkDirectory($id) {
 		//Create contact folder if does not already exists
         $path = BASE_PATH.'/files/contacts/';
-        $group = substr($id, 0, 1).'/';
-		if(file_exists($path) && is_dir($path) && is_writable($path)) {
-		    if(file_exists($path.$group) && is_dir($path.$group) && is_writable($path.$group)) {
-		        if(!file_exists($path.$group.$id) && !is_dir($path.$group.$id)) {
-		            mkdir($path.$group.$id);
-		            chmod(BASE_PATH.'/files/contacts/'.$group.$id.'/', 0777);
-		        }
-		    }
-		}
+        $dir1 = substr($id, 0, 1).'/';
+        if(strlen($id) > 1) $dir2 = substr($id, 1, 1).'/';
+        else $dir2 = '0/';
+        if(file_exists($path.$dir1.$dir2.$id) && is_dir($path.$dir1.$dir2.$id) && is_writable($path.$dir1.$dir2.$id)) {
+            return true;
+        } elseif(is_writable($path)) {
+            $response = mkdir($path.$dir1.$dir2.$id, 0777, true);
+            if($response === false) $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+			return $response;
+        } else {
+            $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+			return false;
+        }
 	}
 
 	protected function isLocked($locked, $lockedtime)

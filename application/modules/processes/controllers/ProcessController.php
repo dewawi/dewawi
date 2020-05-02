@@ -201,6 +201,16 @@ class Processes_ProcessController extends Zend_Controller_Action
 					if(isset($data['prepaymenttotal'])) {
 						$data['prepaymenttotal'] =  Zend_Locale_Format::getNumber($data['prepaymenttotal'], array('precision' => 2,'locale' => $locale));
 					}
+
+                    //Update file manager subfolder if contact is changed
+                    if(isset($data['contactid']) && $data['contactid']) {
+                        $dir1 = substr($data['contactid'], 0, 1).'/';
+                        if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
+                        else $dir2 = '0/';
+                        $defaultNamespace = new Zend_Session_Namespace('RF');
+                        $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
+                    }
+
 					$processDb->updateProcess($id, $data);
 					echo Zend_Json::encode($processDb->getProcess($id));
 				} else {
@@ -262,6 +272,9 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$processDb = new Processes_Model_DbTable_Process();
 		$process = $processDb->getProcess($id);
 
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContact($process['contactid']);
+
 		$process['processdate'] = date('d.m.Y', strtotime($process['processdate']));
 
 		//Get positions
@@ -292,6 +305,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->view->toolbar = $toolbar;
 
 		$this->view->process = $process;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->uoms = $uoms;
 		$this->view->evaluate = $this->evaluate($positionsObject, $process['taxfree']);

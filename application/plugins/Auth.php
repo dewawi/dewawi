@@ -12,7 +12,14 @@ class Application_Plugin_Auth extends Zend_Controller_Plugin_Abstract
 			$identity = $auth->getIdentity();
 
 			$userDb = new Users_Model_DbTable_User();
-			$user = array('id' => $identity->id, 'username' => $identity->username, 'name' => $identity->name, 'email' => $identity->email, 'clientid' => $identity->clientid);
+			$user = array(
+                        'id' => $identity->id,
+                        'username' => $identity->username,
+                        'name' => $identity->name,
+                        'email' => $identity->email,
+                        'permissions' => $identity->permissions,
+                        'clientid' => $identity->clientid
+                        );
 
 			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
 			$authNamespace->user = $user['username'];

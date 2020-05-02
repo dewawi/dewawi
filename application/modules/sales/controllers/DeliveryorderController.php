@@ -186,6 +186,16 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
 					}
+
+                    //Update file manager subfolder if contact is changed
+                    if(isset($data['contactid']) && $data['contactid']) {
+                        $dir1 = substr($data['contactid'], 0, 1).'/';
+                        if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
+                        else $dir2 = '0/';
+                        $defaultNamespace = new Zend_Session_Namespace('RF');
+                        $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
+                    }
+
 					$deliveryorderDb->updateDeliveryorder($id, $data);
 					echo Zend_Json::encode($deliveryorderDb->getDeliveryorder($id));
 				} else {
@@ -227,6 +237,9 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
 		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContact($deliveryorder['contactid']);
+
 		$deliveryorder['taxes'] = $this->_currency->toCurrency($deliveryorder['taxes']);
 		$deliveryorder['subtotal'] = $this->_currency->toCurrency($deliveryorder['subtotal']);
 		$deliveryorder['total'] = $this->_currency->toCurrency($deliveryorder['total']);
@@ -242,6 +255,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->view->toolbar = $toolbar;
 
 		$this->view->deliveryorder = $deliveryorder;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}

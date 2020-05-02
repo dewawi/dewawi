@@ -186,6 +186,16 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
 					}
+
+                    //Update file manager subfolder if contact is changed
+                    if(isset($data['contactid']) && $data['contactid']) {
+                        $dir1 = substr($data['contactid'], 0, 1).'/';
+                        if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
+                        else $dir2 = '0/';
+                        $defaultNamespace = new Zend_Session_Namespace('RF');
+                        $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
+                    }
+
 					$quoterequestDb->updateQuoterequest($id, $data);
 					echo Zend_Json::encode($quoterequestDb->getQuoterequest($id));
 				} else {
@@ -227,6 +237,9 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequest = $quoterequestDb->getQuoterequest($id);
 
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContact($quoterequest['contactid']);
+
 		$quoterequest['taxes'] = $this->_currency->toCurrency($quoterequest['taxes']);
 		$quoterequest['subtotal'] = $this->_currency->toCurrency($quoterequest['subtotal']);
 		$quoterequest['total'] = $this->_currency->toCurrency($quoterequest['total']);
@@ -242,6 +255,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$this->view->toolbar = $toolbar;
 
 		$this->view->quoterequest = $quoterequest;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}

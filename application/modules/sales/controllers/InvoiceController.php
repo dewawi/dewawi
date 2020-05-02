@@ -186,6 +186,16 @@ class Sales_InvoiceController extends Zend_Controller_Action
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
 					}
+
+                    //Update file manager subfolder if contact is changed
+                    if(isset($data['contactid']) && $data['contactid']) {
+                        $dir1 = substr($data['contactid'], 0, 1).'/';
+                        if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
+                        else $dir2 = '0/';
+                        $defaultNamespace = new Zend_Session_Namespace('RF');
+                        $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
+                    }
+
 					$invoiceDb->updateInvoice($id, $data);
 					echo Zend_Json::encode($invoiceDb->getInvoice($id));
 				} else {
@@ -227,6 +237,9 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$invoice = $invoiceDb->getInvoice($id);
 
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContact($invoice['contactid']);
+
 		$invoice['taxes'] = $this->_currency->toCurrency($invoice['taxes']);
 		$invoice['subtotal'] = $this->_currency->toCurrency($invoice['subtotal']);
 		$invoice['total'] = $this->_currency->toCurrency($invoice['total']);
@@ -247,6 +260,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 
 		$this->view->files = $files;
 		$this->view->invoice = $invoice;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->email = $email;
 		$this->view->messages = $this->_flashMessenger->getMessages();

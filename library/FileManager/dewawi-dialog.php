@@ -6,22 +6,22 @@
             .container-fluid {
                 padding: 0 20px !important;
             }
-            .featherlight {
+            /*.featherlight {
               display: none!important;
-            }
+            }*/
             /*.ff-item-type-1 {
               display: none!important;
             }
             .navbar + div.row-fluid {
               display: none!important;
             }*/
-            div.entire.types {
+            /*div.entire.types {
               display: none!important;
             }
             div.view-controller {
                 float: right!important;
                 text-align: right;
-            }
+            }*/
             .modal-body {
                 max-height: 550px;
             }

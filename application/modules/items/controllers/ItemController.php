@@ -129,6 +129,9 @@ class Items_ItemController extends Zend_Controller_Action
 		$itemDb = new Items_Model_DbTable_Item();
 		$item = $itemDb->getItem($id);
 
+        //Check if the directory exists
+        $dirwritable = $this->checkDirectory($id);
+
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'item', null, array('id' => $id));
 		} elseif($this->isLocked($item['locked'], $item['lockedtime'])) {
@@ -195,12 +198,17 @@ class Items_ItemController extends Zend_Controller_Action
 					$toolbar = new Items_Form_Toolbar();
 
 					$this->view->form = $form;
+                    $this->view->dirwritable = $dirwritable;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}
 			}
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+        $this->view->messages = array_merge(
+            $this->_helper->flashMessenger->getMessages(),
+            $this->_helper->flashMessenger->getCurrentMessages()
+        );
+        $this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function copyAction()
@@ -219,6 +227,9 @@ class Items_ItemController extends Zend_Controller_Action
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
 		echo $itemid = $item->addItem($data);
+
+        //Create the directory for the new item
+        $this->checkDirectory($itemid);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -644,14 +655,21 @@ class Items_ItemController extends Zend_Controller_Action
 	}
 
 	protected function checkDirectory($id) {
-		//Create images folder if does not already exists
-        $path = BASE_PATH.'/files/images/';
-		if(file_exists($path) && is_dir($path) && is_writable($path)) {
-	        if(!file_exists($path.$id) && !is_dir($path.$id)) {
-	            mkdir($path);
-	            chmod(BASE_PATH.'/files/images/', 0777);
-	        }
-		}
+		//Create contact folder if does not already exists
+        $path = BASE_PATH.'/files/items/';
+        $dir1 = substr($id, 0, 1).'/';
+        if(strlen($id) > 1) $dir2 = substr($id, 1, 1).'/';
+        else $dir2 = '0/';
+        if(file_exists($path.$dir1.$dir2.$id) && is_dir($path.$dir1.$dir2.$id) && is_writable($path.$dir1.$dir2.$id)) {
+            return true;
+        } elseif(is_writable($path)) {
+            $response = mkdir($path.$dir1.$dir2.$id, 0777, true);
+            if($response === false) $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+			return $response;
+        } else {
+            $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+			return false;
+        }
 	}
 
 	protected function isLocked($locked, $lockedtime)

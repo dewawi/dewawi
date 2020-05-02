@@ -186,6 +186,16 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
 					}
+
+                    //Update file manager subfolder if contact is changed
+                    if(isset($data['contactid']) && $data['contactid']) {
+                        $dir1 = substr($data['contactid'], 0, 1).'/';
+                        if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
+                        else $dir2 = '0/';
+                        $defaultNamespace = new Zend_Session_Namespace('RF');
+                        $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
+                    }
+
 					$creditnoteDb->updateCreditnote($id, $data);
 					echo Zend_Json::encode($creditnoteDb->getCreditnote($id));
 				} else {
@@ -227,6 +237,9 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$creditnote = $creditnoteDb->getCreditnote($id);
 
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContact($creditnote['contactid']);
+
 		$creditnote['creditnotedate'] = date("d.m.Y", strtotime($creditnote['creditnotedate']));
 		$creditnote['taxes'] = $this->_currency->toCurrency($creditnote['taxes']);
 		$creditnote['subtotal'] = $this->_currency->toCurrency($creditnote['subtotal']);
@@ -243,6 +256,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$this->view->toolbar = $toolbar;
 
 		$this->view->creditnote = $creditnote;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}

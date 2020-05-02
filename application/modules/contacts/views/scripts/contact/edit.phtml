@@ -1,6 +1,7 @@
 <?php 
 $this->title = $this->form->getValue('name1');
 $this->headTitle($this->title);
+echo $this->Messages();
 echo $this->FileManager();
 ?>
 
@@ -11,8 +12,10 @@ echo $this->FileManager();
 		<a href="#tabShipping"><?php echo $this->translate('TABS_SHIPPING_ADDRESSES'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabHistory") : ?> class="active"<?php endif; ?>>
 		<a href="#tabHistory"><?php echo $this->translate('TABS_HISTORY'); ?></a></li>
-	<li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
-		<a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
+    <?php if($this->dirwritable) : ?>
+	    <li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
+		    <a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
+    <?php endif; ?>
 </ul>
 
 <div class="tab_container">
@@ -86,7 +89,9 @@ echo $this->FileManager();
 	<div id="tabHistory" class="tab_content<?php if($this->activeTab == '#tabHistory') : ?> active<?php endif; ?>">
 		<?php echo $this->History(); ?>
 	</div>
-	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
-	    <iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
-	</div>
+    <?php if($this->dirwritable) : ?>
+	    <div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+	        <iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
+	    </div>
+    <?php endif; ?>
 </div>

@@ -1,13 +1,16 @@
 <?php 
 $this->title = $this->form->getValue('title');
 $this->headTitle($this->title);
+echo $this->Messages();
 echo $this->FileManager();
 ?>
 
 <ul class="tabs">
 	<li><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
-	<li<?php if($this->activeTab == "#tabImages") : ?> class="active"<?php endif; ?>>
-		<a href="#tabImages"><?php echo $this->translate('TABS_IMAGES'); ?></a></li>
+    <?php if($this->dirwritable) : ?>
+	    <li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
+		    <a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
+    <?php endif; ?>
 </ul>
 
 <div class="tab_container">
@@ -62,7 +65,12 @@ echo $this->FileManager();
 		    </div>
 		</form>
 	</div>
-	<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+    <?php if($this->dirwritable) : ?>
+	    <div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+	        <iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
+	    </div>
+    <?php endif; ?>
+	<!--<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
             <div class="row">
                 <div class="col-sm-12 col-lg-7">
@@ -78,5 +86,5 @@ echo $this->FileManager();
 		        </div>
 		    </div>
 		</form>
-	</div>
+	</div>-->
 </div>

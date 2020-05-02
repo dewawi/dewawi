@@ -62,7 +62,7 @@ class Users_UserController extends Zend_Controller_Action
 
 				if ($result->isValid()) {
 					$storage = $auth->getStorage();
-					$userInfo = $authAdapter->getResultRowObject(array('id', 'username', 'name', 'email'));
+					$userInfo = $authAdapter->getResultRowObject(array('id', 'username', 'name', 'email', 'permissions'));
 					$userInfo->clientid = $client;
 					$storage->write($userInfo); //Store into session
 
