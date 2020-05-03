@@ -186,6 +186,12 @@ class Sales_QuoteController extends Zend_Controller_Action
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
 					}
+					if(isset($data['deliverydate'])) {
+                        if(Zend_Date::isDate($data['deliverydate'])) {
+                            $deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
+                            $data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
+					    }
+					}
 
                     //Update file manager subfolder if contact is changed
                     if(isset($data['contactid']) && $data['contactid']) {
@@ -210,6 +216,11 @@ class Sales_QuoteController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-controller', 'contact');
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
+
+                        //Convert dates to the display format
+                        $deliverydate = new Zend_Date($data['deliverydate']);
+                        if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
+                        else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
 					}
 					$form->populate($data);
 

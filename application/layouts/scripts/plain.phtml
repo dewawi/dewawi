@@ -12,7 +12,10 @@ echo $this->doctype();
 		<?php echo $this->headTitle(); ?>
 		<?php echo $this->headLink(); ?>
 		<link href="<?php echo $this->baseUrl(); ?>/css/global.css" media="screen" rel="stylesheet" type="text/css" />
+		<link href="<?php echo $this->baseUrl(); ?>/library/miniCSS/mini-default.min.css" media="screen" rel="stylesheet" type="text/css"/>
+		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.css" media="screen" rel="stylesheet" type="text/css"/>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.12.4.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
@@ -36,22 +39,28 @@ echo $this->doctype();
 		</script>
 	</head>
 	<body>
-	<div class="<?php echo $this->action; ?> popup">
-		<h2><?php echo $this->escape($this->title); ?></h2>
-		<div class="toolbar">
-			<?php echo $this->Toolbar(); ?>
-		</div>
-		<table style="width:100%;">
-			<tr>
-				<td id="content">
-					<?php echo $this->layout()->content; ?>
-				</td>
-			</tr>
-		</table>
-	</div>
-	<div id="loading">
-		<div id="opacity"></div>
-		<div id="img"></div>
-	</div>
+	    <div class="<?php echo $this->action; ?> popup">
+            <div class="container">
+                <div class="row">
+                    <div class="col-sm-12">
+		                <h2><?php echo $this->escape($this->title); ?></h2>
+		                <div class="toolbar">
+			                <?php echo $this->Toolbar(); ?>
+		                </div>
+				    </div>
+		        </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div id="content">
+					        <?php echo $this->layout()->content; ?>
+				        </div>
+				    </div>
+		        </div>
+	        </div>
+	    </div>
+	    <div id="loading">
+		    <div id="opacity"></div>
+		    <div id="img"></div>
+	    </div>
 	</body>
 </html>

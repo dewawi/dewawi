@@ -13,9 +13,12 @@ echo $this->doctype();
 		<?php echo $this->headLink(); ?>
 		<link href="<?php echo $this->baseUrl(); ?>/css/global.css" media="screen" rel="stylesheet" type="text/css" />
 		<link href="<?php echo $this->baseUrl(); ?>/library/miniCSS/mini-default.min.css" media="screen" rel="stylesheet" type="text/css"/>
+		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.css" media="screen" rel="stylesheet" type="text/css"/>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.12.4.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/formatCurrency/jquery.formatCurrency-1.4.0.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/formatCurrency/i18n/jquery.formatCurrency.<?php echo str_replace('_', '-', 'de_DE'); ?>.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/i18n/datepicker.de-DE.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
@@ -24,7 +27,6 @@ echo $this->doctype();
         <script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/processes.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/settings.js"></script>
 		<?php echo $this->headScript(); ?>
 		<script type="text/javascript">
 			var action = "<?php echo $this->action; ?>";

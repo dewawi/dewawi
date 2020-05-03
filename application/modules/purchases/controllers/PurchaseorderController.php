@@ -186,6 +186,18 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
 					}
+					if(isset($data['orderdate'])) {
+                        if(Zend_Date::isDate($data['orderdate'])) {
+                            $orderdate = new Zend_Date($data['orderdate'], Zend_Date::DATES, 'de');
+                            $data['orderdate'] = $orderdate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['deliverydate'])) {
+                        if(Zend_Date::isDate($data['deliverydate'])) {
+                            $deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
+                            $data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
+					    }
+					}
 
                     //Update file manager subfolder if contact is changed
                     if(isset($data['contactid']) && $data['contactid']) {
@@ -210,6 +222,14 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-controller', 'contact');
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
+
+                        //Convert dates to the display format
+                        $orderdate = new Zend_Date($data['orderdate']);
+                        if($data['orderdate'] == '0000-00-00') $data['orderdate'] = '';
+                        else $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
+                        $deliverydate = new Zend_Date($data['deliverydate']);
+                        if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
+                        else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
 					}
 					$form->populate($data);
 
