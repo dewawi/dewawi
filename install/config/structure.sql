@@ -3,7 +3,7 @@ SET time_zone = "+00:00";
 
 DROP TABLE IF EXISTS `address`;
 CREATE TABLE IF NOT EXISTS `address` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `contactid` int(11) NOT NULL,
   `type` varchar(255) NOT NULL,
   `name1` varchar(255) NOT NULL,
@@ -16,21 +16,24 @@ CREATE TABLE IF NOT EXISTS `address` (
   `phone` varchar(255) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
-  `modified` datetime NOT NULL
+  `modified` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `archive`;
 CREATE TABLE IF NOT EXISTS `archive` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `year` int(11) NOT NULL,
   `month` varchar(255) NOT NULL,
   `data` text NOT NULL,
-  `clientid` int(11) NOT NULL
+  `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `category`;
 CREATE TABLE IF NOT EXISTS `category` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `parentid` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
   `type` varchar(255) NOT NULL,
@@ -41,12 +44,14 @@ CREATE TABLE IF NOT EXISTS `category` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `client`;
 CREATE TABLE IF NOT EXISTS `client` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `company` varchar(255) NOT NULL,
   `address` text NOT NULL,
   `postcode` varchar(255) NOT NULL,
@@ -60,12 +65,14 @@ CREATE TABLE IF NOT EXISTS `client` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `config`;
 CREATE TABLE IF NOT EXISTS `config` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `timezone` varchar(255) NOT NULL,
   `language` varchar(255) NOT NULL,
   `created` datetime NOT NULL,
@@ -73,12 +80,13 @@ CREATE TABLE IF NOT EXISTS `config` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `contact`;
 CREATE TABLE IF NOT EXISTS `contact` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `catid` int(11) NOT NULL,
   `type` varchar(255) NOT NULL,
   `name1` varchar(255) NOT NULL,
@@ -93,12 +101,13 @@ CREATE TABLE IF NOT EXISTS `contact` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `country`;
 CREATE TABLE IF NOT EXISTS `country` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `code` varchar(2) NOT NULL,
   `name` varchar(255) NOT NULL,
   `language` varchar(255) NOT NULL,
@@ -108,12 +117,13 @@ CREATE TABLE IF NOT EXISTS `country` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `creditnote`;
 CREATE TABLE IF NOT EXISTS `creditnote` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `creditnoteid` int(11) NOT NULL,
   `opportunityid` int(11) NOT NULL,
   `contactid` int(11) NOT NULL,
@@ -158,12 +168,13 @@ CREATE TABLE IF NOT EXISTS `creditnote` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `creditnotepos`;
 CREATE TABLE IF NOT EXISTS `creditnotepos` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `creditnoteid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL,
   `sku` varchar(255) NOT NULL,
@@ -180,12 +191,13 @@ CREATE TABLE IF NOT EXISTS `creditnotepos` (
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `deliveryorder`;
 CREATE TABLE IF NOT EXISTS `deliveryorder` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `deliveryorderid` int(11) NOT NULL,
   `opportunityid` int(11) NOT NULL,
   `contactid` int(11) NOT NULL,
@@ -230,12 +242,13 @@ CREATE TABLE IF NOT EXISTS `deliveryorder` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `deliveryorderpos`;
 CREATE TABLE IF NOT EXISTS `deliveryorderpos` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `deliveryorderid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL,
   `sku` varchar(255) NOT NULL,
@@ -252,33 +265,36 @@ CREATE TABLE IF NOT EXISTS `deliveryorderpos` (
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `documentrelation`;
 CREATE TABLE IF NOT EXISTS `documentrelation` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `contactid` int(11) NOT NULL,
   `documentid` int(11) NOT NULL,
   `module` varchar(255) NOT NULL,
   `controller` varchar(255) NOT NULL,
   `created` datetime NOT NULL,
-  `createdby` int(11) NOT NULL
+  `createdby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `ebayhistory`;
 CREATE TABLE IF NOT EXISTS `ebayhistory` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `userid` varchar(255) NOT NULL,
   `orderid` varchar(255) NOT NULL,
   `contactid` int(11) NOT NULL,
   `invoiceid` int(11) NOT NULL,
-  `clientid` int(11) NOT NULL
+  `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `ebayuser`;
 CREATE TABLE IF NOT EXISTS `ebayuser` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `userid` varchar(255) NOT NULL,
   `catid` int(11) NOT NULL,
   `templateid` int(11) NOT NULL,
@@ -291,38 +307,44 @@ CREATE TABLE IF NOT EXISTS `ebayuser` (
   `appid` varchar(255) NOT NULL,
   `certid` varchar(255) NOT NULL,
   `serverurl` varchar(255) NOT NULL,
-  `clientid` int(11) NOT NULL
+  `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `email`;
 CREATE TABLE IF NOT EXISTS `email` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `contactid` int(11) NOT NULL,
   `email` varchar(255) NOT NULL,
-  `ordering` int(11) NOT NULL
+  `ordering` int(11) NOT NULL,
+  PRIMARY KEY (id),
+  KEY (contactid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `footer`;
 CREATE TABLE IF NOT EXISTS `footer` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `templateid` int(11) NOT NULL,
   `column` int(11) NOT NULL,
   `text` text NOT NULL,
   `width` int(11) NOT NULL,
-  `clientid` int(11) NOT NULL
+  `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `internet`;
 CREATE TABLE IF NOT EXISTS `internet` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `contactid` int(11) NOT NULL,
   `internet` varchar(255) NOT NULL,
-  `ordering` int(11) NOT NULL
+  `ordering` int(11) NOT NULL,
+  PRIMARY KEY (id),
+  KEY (contactid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `invoice`;
 CREATE TABLE IF NOT EXISTS `invoice` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `invoiceid` int(11) NOT NULL,
   `opportunityid` int(11) NOT NULL,
   `contactid` int(11) NOT NULL,
@@ -368,12 +390,13 @@ CREATE TABLE IF NOT EXISTS `invoice` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `invoicepos`;
 CREATE TABLE IF NOT EXISTS `invoicepos` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `invoiceid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL,
   `sku` varchar(255) NOT NULL,
@@ -390,12 +413,13 @@ CREATE TABLE IF NOT EXISTS `invoicepos` (
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `item`;
 CREATE TABLE IF NOT EXISTS `item` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `catid` int(11) NOT NULL,
   `sku` varchar(255) NOT NULL,
   `barcode` varchar(255) NOT NULL,
@@ -419,12 +443,13 @@ CREATE TABLE IF NOT EXISTS `item` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `language`;
 CREATE TABLE IF NOT EXISTS `language` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `code` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
   `clientid` int(11) NOT NULL,
@@ -433,46 +458,50 @@ CREATE TABLE IF NOT EXISTS `language` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `magentocustomer`;
 CREATE TABLE IF NOT EXISTS `magentocustomer` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `contactid` int(11) NOT NULL,
   `magentocustomerid` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `magentohistory`;
 CREATE TABLE IF NOT EXISTS `magentohistory` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `magentocustomerid` varchar(255) NOT NULL,
   `orderid` varchar(255) NOT NULL,
   `contactid` int(11) NOT NULL,
   `invoiceid` int(11) NOT NULL,
-  `clientid` int(11) NOT NULL
+  `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `magentouser`;
 CREATE TABLE IF NOT EXISTS `magentouser` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `userid` varchar(255) NOT NULL,
   `catid` int(11) NOT NULL,
   `templateid` int(11) NOT NULL,
   `language` varchar(255) NOT NULL,
   `key` varchar(255) NOT NULL,
   `url` varchar(255) NOT NULL,
-  `clientid` int(11) NOT NULL
+  `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `manufacturer`;
 CREATE TABLE IF NOT EXISTS `manufacturer` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
@@ -481,12 +510,13 @@ CREATE TABLE IF NOT EXISTS `manufacturer` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `module`;
 CREATE TABLE IF NOT EXISTS `module` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `menu` text NOT NULL,
   `ordering` int(11) NOT NULL,
@@ -496,12 +526,13 @@ CREATE TABLE IF NOT EXISTS `module` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `paymentmethod`;
 CREATE TABLE IF NOT EXISTS `paymentmethod` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
@@ -510,21 +541,24 @@ CREATE TABLE IF NOT EXISTS `paymentmethod` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `phone`;
 CREATE TABLE IF NOT EXISTS `phone` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `contactid` int(11) NOT NULL,
   `type` varchar(255) NOT NULL,
   `phone` varchar(255) NOT NULL,
-  `ordering` int(11) NOT NULL
+  `ordering` int(11) NOT NULL,
+  PRIMARY KEY (id),
+  KEY (contactid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `process`;
 CREATE TABLE IF NOT EXISTS `process` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `quoteid` int(11) NOT NULL,
   `salesorderid` int(11) NOT NULL,
   `invoiceid` int(11) NOT NULL,
@@ -604,12 +638,13 @@ CREATE TABLE IF NOT EXISTS `process` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `processpos`;
 CREATE TABLE IF NOT EXISTS `processpos` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `processid` int(11) NOT NULL,
   `deliveryorderid` int(11) NOT NULL,
   `purchaseorderid` varchar(255) NOT NULL,
@@ -650,12 +685,13 @@ CREATE TABLE IF NOT EXISTS `processpos` (
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `purchaseorder`;
 CREATE TABLE IF NOT EXISTS `purchaseorder` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `purchaseorderid` int(11) NOT NULL,
   `opportunityid` int(11) NOT NULL,
   `contactid` int(11) NOT NULL,
@@ -700,12 +736,13 @@ CREATE TABLE IF NOT EXISTS `purchaseorder` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `purchaseorderpos`;
 CREATE TABLE IF NOT EXISTS `purchaseorderpos` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `purchaseorderid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL,
   `sku` varchar(255) NOT NULL,
@@ -722,12 +759,13 @@ CREATE TABLE IF NOT EXISTS `purchaseorderpos` (
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `quote`;
 CREATE TABLE IF NOT EXISTS `quote` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `quoteid` int(11) NOT NULL,
   `opportunityid` int(11) NOT NULL,
   `contactid` int(11) NOT NULL,
@@ -772,12 +810,13 @@ CREATE TABLE IF NOT EXISTS `quote` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `quotepos`;
 CREATE TABLE IF NOT EXISTS `quotepos` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `quoteid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL,
   `sku` varchar(255) NOT NULL,
@@ -794,12 +833,13 @@ CREATE TABLE IF NOT EXISTS `quotepos` (
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `quoterequest`;
 CREATE TABLE IF NOT EXISTS `quoterequest` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `quoterequestid` int(11) NOT NULL,
   `opportunityid` int(11) NOT NULL,
   `contactid` int(11) NOT NULL,
@@ -844,12 +884,13 @@ CREATE TABLE IF NOT EXISTS `quoterequest` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `quoterequestpos`;
 CREATE TABLE IF NOT EXISTS `quoterequestpos` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `quoterequestid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL,
   `sku` varchar(255) NOT NULL,
@@ -866,12 +907,13 @@ CREATE TABLE IF NOT EXISTS `quoterequestpos` (
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `salesorder`;
 CREATE TABLE IF NOT EXISTS `salesorder` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `salesorderid` int(11) NOT NULL,
   `opportunityid` int(11) NOT NULL,
   `contactid` int(11) NOT NULL,
@@ -916,12 +958,13 @@ CREATE TABLE IF NOT EXISTS `salesorder` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `salesorderpos`;
 CREATE TABLE IF NOT EXISTS `salesorderpos` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `salesorderid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL,
   `sku` varchar(255) NOT NULL,
@@ -938,19 +981,21 @@ CREATE TABLE IF NOT EXISTS `salesorderpos` (
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `shipmenttracking`;
 CREATE TABLE IF NOT EXISTS `shipmenttracking` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `carrier` varchar(255) NOT NULL,
-  `clientid` int(11) NOT NULL
+  `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `shippingaddress`;
 CREATE TABLE IF NOT EXISTS `shippingaddress` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `contactid` int(11) NOT NULL,
   `name1` varchar(255) NOT NULL,
   `name2` varchar(255) NOT NULL,
@@ -962,12 +1007,13 @@ CREATE TABLE IF NOT EXISTS `shippingaddress` (
   `phone` varchar(255) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
-  `modified` datetime NOT NULL
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `shippingmethod`;
 CREATE TABLE IF NOT EXISTS `shippingmethod` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
@@ -976,12 +1022,13 @@ CREATE TABLE IF NOT EXISTS `shippingmethod` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `state`;
 CREATE TABLE IF NOT EXISTS `state` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `standard` tinyint(4) NOT NULL,
   `completed` tinyint(4) NOT NULL,
@@ -991,12 +1038,13 @@ CREATE TABLE IF NOT EXISTS `state` (
   `controller` varchar(255) NOT NULL,
   `color` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
-  `clientid` int(11) NOT NULL
+  `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `taxrate`;
 CREATE TABLE IF NOT EXISTS `taxrate` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `rate` decimal(15,4) NOT NULL,
   `clientid` int(11) NOT NULL,
@@ -1005,12 +1053,13 @@ CREATE TABLE IF NOT EXISTS `taxrate` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `template`;
 CREATE TABLE IF NOT EXISTS `template` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `description` varchar(255) NOT NULL,
   `filename` varchar(255) NOT NULL,
   `logo` varchar(255) NOT NULL,
@@ -1024,20 +1073,29 @@ CREATE TABLE IF NOT EXISTS `template` (
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
   `activated` int(11) NOT NULL,
-  `deleted` int(11) NOT NULL
+  `deleted` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `textblock`;
 CREATE TABLE IF NOT EXISTS `textblock` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `text` text NOT NULL,
+  `module` varchar(255) NOT NULL,
+  `controller` varchar(255) NOT NULL,
+  `section` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
-  `clientid` int(11) NOT NULL
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `uom`;
 CREATE TABLE IF NOT EXISTS `uom` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
@@ -1046,16 +1104,18 @@ CREATE TABLE IF NOT EXISTS `uom` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE IF NOT EXISTS `user` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(255) NOT NULL,
   `password` varchar(32) NOT NULL,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
+  `permissions` text NOT NULL,
   `smtphost` varchar(255) NOT NULL,
   `smtpauth` varchar(255) NOT NULL,
   `smtpsecure` varchar(255) NOT NULL,
@@ -1067,246 +1127,6 @@ CREATE TABLE IF NOT EXISTS `user` (
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-ALTER TABLE `address`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `archive`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `category`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `client`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `config`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `contact`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `country`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `creditnote`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `creditnotepos`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `deliveryorder`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `deliveryorderpos`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `documentrelation`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `ebayhistory`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `ebayuser`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `email`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `contactid` (`contactid`);
-
-ALTER TABLE `footer`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `internet`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `contactid` (`contactid`);
-
-ALTER TABLE `invoice`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `invoicepos`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `item`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `language`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `magentocustomer`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `magentohistory`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `magentouser`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `manufacturer`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `module`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `paymentmethod`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `phone`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `contactid` (`contactid`);
-
-ALTER TABLE `process`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `processpos`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `purchaseorder`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `purchaseorderpos`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `quote`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `quotepos`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `quoterequest`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `quoterequestpos`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `salesorder`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `salesorderpos`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `shipmenttracking`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `shippingaddress`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `shippingmethod`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `state`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `taxrate`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `template`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `textblock`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `uom`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `user`
-  ADD PRIMARY KEY (`id`);
-
-
-ALTER TABLE `address`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `archive`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `category`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `client`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `config`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `contact`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `country`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `creditnote`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `creditnotepos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `deliveryorder`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `deliveryorderpos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `documentrelation`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `ebayhistory`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `ebayuser`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `email`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `footer`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `internet`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `invoice`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `invoicepos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `item`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `language`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `magentocustomer`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `magentohistory`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `magentouser`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `manufacturer`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `module`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `paymentmethod`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `phone`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `process`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `processpos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `purchaseorder`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `purchaseorderpos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `quote`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `quotepos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `quoterequest`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `quoterequestpos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `salesorder`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `salesorderpos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `shipmenttracking`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `shippingaddress`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `shippingmethod`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `state`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `taxrate`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `template`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `textblock`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `uom`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
