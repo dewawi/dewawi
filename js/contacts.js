@@ -80,6 +80,9 @@ function applyContact(contactID) {
 
 	isDirty = true;
 	edit(data);
+
+    //Refresh file manager
+    $('#tabFiles iframe').attr('src', function (i, val) { return val; });
 }
 
 //Get contact data

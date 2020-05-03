@@ -3,7 +3,9 @@ var timeout = 0;
 
 //Date picker options
 var datePickerOptions = {
-	numberOfMonths: 1,
+	autoHide: true,
+	language: 'de-DE'
+	/*numberOfMonths: 1,
 	showWeek: true,
 	dateFormat: 'yy-mm-dd',
 	monthNames: ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
@@ -15,7 +17,7 @@ var datePickerOptions = {
 	firstDay: 1,
 	changeMonth: true,
 	changeYear: true,
-	onClose: function(){$(this).trigger('change')}
+	onClose: function(){$(this).trigger('change')}*/
 };
 
 $(document).ready(function(){
@@ -528,9 +530,9 @@ $(document).ready(function(){
 	});
 
 	//Date picker
-	/*$('.datePicker').datepicker(datePickerOptions);
-	$(document).on('click', '.datePickerLive', function() {
-		$(this).datepicker(datePickerOptions);
+	$('.datePicker').datepicker(datePickerOptions);
+	/*$(document).on('click', '.datePickerLive', function() {
+		$(this).datepicker();
 	});
 
 	var from = new Date($('#from').val());

@@ -184,9 +184,9 @@ form button.tox-tbtn[type="button"]:focus {
     padding: 0;
     margin: 2px 1px 3px 1px;
 }
-.toolbar button, button#select,
-.toolbar button:hover, button#select:hover,
-.toolbar button:focus, button#select:focus {
+.toolbar button, .buttons button, button#select,
+.toolbar button:hover, .buttons button:hover, button#select:hover,
+.toolbar button:focus, .buttons button:focus, button#select:focus {
     font-size: 0.8rem;
     background-repeat: no-repeat;
     background-position-y: center;
@@ -684,10 +684,13 @@ span.uncomplete {
 
 /* Messages */
 #messages {
-	background: url("../images/warning.png") no-repeat scroll 10px center #FFF5CC;
+	background: url("../images/warning.png") no-repeat scroll 12px center #FFF5CC;
 	border: 1px solid #F2DD8C;
 	margin: 5px 6px 15px;
 	padding: 10px 35px;
+}
+#messages ul {
+    padding-left: 0;
 }
 #messages li {
     font-size: 0.9rem;
@@ -813,6 +816,24 @@ span.editable {
 	background: url('../images/close-modal-window.png') no-repeat 0 0 transparent;
 	float: right;
 	margin: -36px -36px -30px 0;
+}
+@media screen and (max-width: 1279px) {
+    .popup_block{
+        width: 100%;
+        padding: 0;
+        left: 0;
+        border: 0;
+	    border-radius: 0;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        margin-left: 0 !important;
+    }
+    #popup .close {
+	    margin: 0;
+        position: absolute;
+        right: 0;
+    }
 }
 /*--Making IE6 Understand Fixed Positioning--*/
 *html #fade {

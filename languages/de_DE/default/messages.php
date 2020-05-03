@@ -15,5 +15,6 @@
 	'MESSAGES_PROCESSES_SUCCESFULLY_GENERATED' => 'Vorgang erfolgreich generiert.',
 	'MESSAGES_SEARCH_RETURNED_NO_RESULTS' => 'Die Suche hat keine Ergebnisse geliefert',
 	'MESSAGES_CANCEL_CONFIRM' => 'Sind Sie sicher dass Sie den Eintrag stornieren möchten?',
-	'MESSAGES_DELETE_CONFIRM' => 'Sind Sie sicher dass Sie den Eintrag löschen möchten?'
+	'MESSAGES_DELETE_CONFIRM' => 'Sind Sie sicher dass Sie den Eintrag löschen möchten?',
+	'MESSAGES_DIRECTORY_IS_NOT_WRITABLE' => 'Die Dateien können nicht gespeichert werden weil der Zielordner schreibgeschützt ist!'
 );
