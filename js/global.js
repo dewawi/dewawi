@@ -531,8 +531,8 @@ $(document).ready(function(){
 
 	//Date picker
 	$('.datePicker').datepicker(datePickerOptions);
-	/*$(document).on('click', '.datePickerLive', function() {
-		$(this).datepicker();
+	$(document).on('click', '.datePickerLive', function() {
+		$(this).datepicker(datePickerOptions);
 	});
 
 	var from = new Date($('#from').val());
@@ -540,8 +540,10 @@ $(document).ready(function(){
 
 	if($('#fromDatePicker').length) {
 		var dateFromPickerOptions = {
+	        language: 'de-DE',
 			inline: true,
-			altField: '#from',
+            container: $('#fromDatePicker'),
+			/*
 			defaultDate: $('#from').val(),
 			beforeShowDay: function(date) {
 				return [true, from <= date && date <= to ? 'active' : ''];
@@ -557,16 +559,18 @@ $(document).ready(function(){
 				$.cookie('from', $('#from').val(), { path: cookiePath });
 				$.cookie('daterange', 'custom', { path: cookiePath });
 				if(action == 'index') search();
-			}
+			}*/
 		}
-		$.extend(dateFromPickerOptions, datePickerOptions)
-		var datesFrom = $('#fromDatePicker').datepicker(dateFromPickerOptions);
+		//$.extend(dateFromPickerOptions, datePickerOptions)
+		var datesFrom = $('#from').datepicker(dateFromPickerOptions);
 	}
 
 	if($('#toDatePicker').length) {
 		var dateToPickerOptions = {
+	        language: 'de-DE',
 			inline: true,
-			altField: '#to',
+            container: $('#toDatePicker'),
+			/*
 			defaultDate: $('#to').val(),
 			beforeShowDay: function(date) {
 				return [true, from <= date && date <= to ? 'active' : ''];
@@ -582,11 +586,11 @@ $(document).ready(function(){
 				$.cookie('to', $('#to').val(), { path: cookiePath });
 				$.cookie('daterange', 'custom', { path: cookiePath });
 				if(action == 'index') search();
-			}
+			}*/
 		};
-		$.extend(dateToPickerOptions, datePickerOptions)
-		var datesTo = $('#toDatePicker').datepicker(dateToPickerOptions);
-	}*/
+		//$.extend(dateToPickerOptions, datePickerOptions)
+		var datesTo = $('#to').datepicker(dateToPickerOptions);
+	}
 
 	//Table alt
 	$('#data tbody tr:nth-child(2n+1)').addClass('alt');
@@ -1048,7 +1052,7 @@ function getPositions(scrollTo) {
 				}, 2000);*/
 				window.scrollTo(0, scrollTo);
 			}
-			//$('.datePickerLive').datepicker(datePickerOptions);
+			$('.datePickerLive').datepicker(datePickerOptions);
 		}
 	});
 }

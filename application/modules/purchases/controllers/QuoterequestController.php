@@ -222,15 +222,15 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-controller', 'contact');
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
-
-                        //Convert dates to the display format
-                        $orderdate = new Zend_Date($data['orderdate']);
-                        if($data['orderdate'] == '0000-00-00') $data['orderdate'] = '';
-                        else $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
-                        $deliverydate = new Zend_Date($data['deliverydate']);
-                        if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
-                        else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
 					}
+                    //Convert dates to the display format
+                    $orderdate = new Zend_Date($data['orderdate']);
+                    if($data['orderdate'] == '0000-00-00') $data['orderdate'] = '';
+                    else $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
+                    $deliverydate = new Zend_Date($data['deliverydate']);
+                    if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
+                    else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
+
 					$form->populate($data);
 
 					//Toolbar
@@ -260,6 +260,12 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContact($quoterequest['contactid']);
 
+        //Convert dates to the display format
+		$quoterequest['quoterequestdate'] = date("d.m.Y", strtotime($quoterequest['quoterequestdate']));
+		if($quoterequest['orderdate'] != '0000-00-00') $quoterequest['orderdate'] = date("d.m.Y", strtotime($quoterequest['orderdate']));
+		if($quoterequest['deliverydate'] != '0000-00-00') $quoterequest['deliverydate'] = date("d.m.Y", strtotime($quoterequest['deliverydate']));
+
+        //Convert numbers to the display format
 		$quoterequest['taxes'] = $this->_currency->toCurrency($quoterequest['taxes']);
 		$quoterequest['subtotal'] = $this->_currency->toCurrency($quoterequest['subtotal']);
 		$quoterequest['total'] = $this->_currency->toCurrency($quoterequest['total']);
@@ -685,8 +691,12 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['daterange']) $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
 		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
+		if($params['daterange']) {
+            $params['from'] = date('Y-m-d', strtotime($params['from']));
+            $params['to'] = date('Y-m-d', strtotime($params['to']));
+            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+        }
 
 		if($params['catid']) {
 			$quoterequests = $quoterequestsDb->fetchAll(

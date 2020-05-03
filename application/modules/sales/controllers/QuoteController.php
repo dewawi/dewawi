@@ -216,12 +216,12 @@ class Sales_QuoteController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-controller', 'contact');
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
-
-                        //Convert dates to the display format
-                        $deliverydate = new Zend_Date($data['deliverydate']);
-                        if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
-                        else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
 					}
+                    //Convert dates to the display format
+                    $deliverydate = new Zend_Date($data['deliverydate']);
+                    if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
+                    else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
+
 					$form->populate($data);
 
 					//Toolbar
@@ -251,7 +251,11 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContact($quote['contactid']);
 
+        //Convert dates to the display format
 		$quote['quotedate'] = date("d.m.Y", strtotime($quote['quotedate']));
+		if($quote['deliverydate'] != '0000-00-00') $quote['deliverydate'] = date("d.m.Y", strtotime($quote['deliverydate']));
+
+        //Convert numbers to the display format
 		$quote['taxes'] = $this->_currency->toCurrency($quote['taxes']);
 		$quote['subtotal'] = $this->_currency->toCurrency($quote['subtotal']);
 		$quote['total'] = $this->_currency->toCurrency($quote['total']);
@@ -803,8 +807,12 @@ class Sales_QuoteController extends Zend_Controller_Action
 		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['daterange']) $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
 		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
+		if($params['daterange']) {
+            $params['from'] = date('Y-m-d', strtotime($params['from']));
+            $params['to'] = date('Y-m-d', strtotime($params['to']));
+            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+        }
 
 		if($params['catid']) {
 			$quotes = $quotesDb->fetchAll(

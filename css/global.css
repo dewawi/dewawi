@@ -773,9 +773,6 @@ span.editable {
 	cursor: pointer;
 	background-color: #F2DD8C;
 }
-.ui-datepicker .active a {
-	background: none repeat scroll 0 0 #FFF;
-}
 
 /* Modal window */
 #fade { /*--Transparent background layer--*/
@@ -950,7 +947,6 @@ div#filter div {
 	color: #069;
 }
 #filter input {
-	height: auto;
 	margin: 5px 3px 0 0;
 }
 #filter form {
@@ -969,6 +965,9 @@ div#filter div {
 }
 #filter td.daterange {
 	width: 240px;
+}
+#filter td.daterange .datepicker-hide {
+	display: none;
 }
 #activefilters {
 	padding: 5px 12px;

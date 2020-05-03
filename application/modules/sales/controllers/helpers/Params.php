@@ -31,9 +31,11 @@ class Sales_Controller_Action_Helper_Params extends Zend_Controller_Action_Helpe
 		$toolbar->states->setValue($params['states']);
 
 		$params['from'] = $request->getParam('from', $request->getCookie('from', date('Y-m-d', strtotime('-1 month'))));
+		$params['from'] = date("d.m.Y", strtotime($params['from']));
 		$toolbar->from->setValue($params['from']);
 
 		$params['to'] = $request->getParam('to', $request->getCookie('to', date('Y-m-d', strtotime('now'))));
+		$params['to'] = date("d.m.Y", strtotime($params['to']));
 		$toolbar->to->setValue($params['to']);
 
 		$params['daterange'] = $request->getParam('daterange', $request->getCookie('daterange', $toolbar->daterange->getAttrib('default')));

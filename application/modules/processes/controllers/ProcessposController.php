@@ -65,6 +65,23 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$position->supplierinvoicetotal =  $this->_currency->toCurrency($position->supplierinvoicetotal);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
 
+            //Convert dates to the display format
+            $deliverydate = new Zend_Date($position->deliverydate);
+            if($position->deliverydate == '0000-00-00') $position->deliverydate = '';
+            else $position->deliverydate = $deliverydate->get('dd.MM.yyyy');
+            $deliveryorderdate = new Zend_Date($position->deliveryorderdate);
+            if($position->deliveryorderdate == '0000-00-00') $position->deliveryorderdate = '';
+            else $position->deliveryorderdate = $deliveryorderdate->get('dd.MM.yyyy');
+            $purchaseorderdate = new Zend_Date($position->purchaseorderdate);
+            if($position->purchaseorderdate == '0000-00-00') $position->purchaseorderdate = '';
+            else $position->purchaseorderdate = $purchaseorderdate->get('dd.MM.yyyy');
+            $suppliersalesorderdate = new Zend_Date($position->suppliersalesorderdate);
+            if($position->suppliersalesorderdate == '0000-00-00') $position->suppliersalesorderdate = '';
+            else $position->suppliersalesorderdate = $suppliersalesorderdate->get('dd.MM.yyyy');
+            $supplierpaymentdate = new Zend_Date($position->supplierpaymentdate);
+            if($position->supplierpaymentdate == '0000-00-00') $position->supplierpaymentdate = '';
+            else $position->supplierpaymentdate = $supplierpaymentdate->get('dd.MM.yyyy');
+
 			$form = new Processes_Form_Processpos();
 			$forms[$position->id] = $form->populate($position->toArray());
 			$forms[$position->id]->uom->addMultiOptions($uoms);
@@ -193,6 +210,37 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				$data['modifiedby'] = $this->_user['id'];
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'supplierinvoicetotal'))
 					$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
+
+				if(isset($data['deliverydate'])) {
+                    if(Zend_Date::isDate($data['deliverydate'])) {
+                        $deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
+                        $data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
+				    }
+				}
+				if(isset($data['deliveryorderdate'])) {
+                    if(Zend_Date::isDate($data['deliveryorderdate'])) {
+                        $deliveryorderdate = new Zend_Date($data['deliveryorderdate'], Zend_Date::DATES, 'de');
+                        $data['deliveryorderdate'] = $deliveryorderdate->get('yyyy-MM-dd');
+				    }
+				}
+				if(isset($data['purchaseorderdate'])) {
+                    if(Zend_Date::isDate($data['purchaseorderdate'])) {
+                        $purchaseorderdate = new Zend_Date($data['purchaseorderdate'], Zend_Date::DATES, 'de');
+                        $data['purchaseorderdate'] = $purchaseorderdate->get('yyyy-MM-dd');
+				    }
+				}
+				if(isset($data['suppliersalesorderdate'])) {
+                    if(Zend_Date::isDate($data['suppliersalesorderdate'])) {
+                        $suppliersalesorderdate = new Zend_Date($data['suppliersalesorderdate'], Zend_Date::DATES, 'de');
+                        $data['suppliersalesorderdate'] = $suppliersalesorderdate->get('yyyy-MM-dd');
+				    }
+				}
+				if(isset($data['supplierpaymentdate'])) {
+                    if(Zend_Date::isDate($data['supplierpaymentdate'])) {
+                        $supplierpaymentdate = new Zend_Date($data['supplierpaymentdate'], Zend_Date::DATES, 'de');
+                        $data['supplierpaymentdate'] = $supplierpaymentdate->get('yyyy-MM-dd');
+				    }
+				}
 
 				$position = new Processes_Model_DbTable_Processpos();
 				$position->updatePosition($id, $data);

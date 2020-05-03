@@ -66,6 +66,10 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$processIDs = array();
 		foreach($processes as $process) {
 			array_push($processIDs, $process['id']);
+
+            $deliverydate = new Zend_Date($process['deliverydate']);
+            if($process['deliverydate'] == '0000-00-00') $process['deliverydate'] = '';
+            else $process['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
 		}
 
 		$this->view->processes = $processes;
@@ -201,6 +205,72 @@ class Processes_ProcessController extends Zend_Controller_Action
 					if(isset($data['prepaymenttotal'])) {
 						$data['prepaymenttotal'] =  Zend_Locale_Format::getNumber($data['prepaymenttotal'], array('precision' => 2,'locale' => $locale));
 					}
+					if(isset($data['paymentdate'])) {
+                        if(Zend_Date::isDate($data['paymentdate'])) {
+                            $paymentdate = new Zend_Date($data['paymentdate'], Zend_Date::DATES, 'de');
+                            $data['paymentdate'] = $paymentdate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['invoicedate'])) {
+                        if(Zend_Date::isDate($data['invoicedate'])) {
+                            $invoicedate = new Zend_Date($data['invoicedate'], Zend_Date::DATES, 'de');
+                            $data['invoicedate'] = $invoicedate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['prepaymentdate'])) {
+                        if(Zend_Date::isDate($data['prepaymentdate'])) {
+                            $prepaymentdate = new Zend_Date($data['prepaymentdate'], Zend_Date::DATES, 'de');
+                            $data['prepaymentdate'] = $prepaymentdate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['prepaymentinvoicedate'])) {
+                        if(Zend_Date::isDate($data['prepaymentinvoicedate'])) {
+                            $prepaymentinvoicedate = new Zend_Date($data['prepaymentinvoicedate'], Zend_Date::DATES, 'de');
+                            $data['prepaymentinvoicedate'] = $prepaymentinvoicedate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['creditnotedate'])) {
+                        if(Zend_Date::isDate($data['creditnotedate'])) {
+                            $creditnotedate = new Zend_Date($data['creditnotedate'], Zend_Date::DATES, 'de');
+                            $data['creditnotedate'] = $creditnotedate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['deliverydate'])) {
+                        if(Zend_Date::isDate($data['deliverydate'])) {
+                            $deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
+                            $data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['deliveryorderdate'])) {
+                        if(Zend_Date::isDate($data['deliveryorderdate'])) {
+                            $deliveryorderdate = new Zend_Date($data['deliveryorderdate'], Zend_Date::DATES, 'de');
+                            $data['deliveryorderdate'] = $deliveryorderdate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['purchaseorderdate'])) {
+                        if(Zend_Date::isDate($data['purchaseorderdate'])) {
+                            $purchaseorderdate = new Zend_Date($data['purchaseorderdate'], Zend_Date::DATES, 'de');
+                            $data['purchaseorderdate'] = $purchaseorderdate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['suppliersalesorderdate'])) {
+                        if(Zend_Date::isDate($data['suppliersalesorderdate'])) {
+                            $suppliersalesorderdate = new Zend_Date($data['suppliersalesorderdate'], Zend_Date::DATES, 'de');
+                            $data['suppliersalesorderdate'] = $suppliersalesorderdate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['supplierinvoicedate'])) {
+                        if(Zend_Date::isDate($data['supplierinvoicedate'])) {
+                            $supplierinvoicedate = new Zend_Date($data['supplierinvoicedate'], Zend_Date::DATES, 'de');
+                            $data['supplierinvoicedate'] = $supplierinvoicedate->get('yyyy-MM-dd');
+					    }
+					}
+					if(isset($data['supplierpaymentdate'])) {
+                        if(Zend_Date::isDate($data['supplierpaymentdate'])) {
+                            $supplierpaymentdate = new Zend_Date($data['supplierpaymentdate'], Zend_Date::DATES, 'de');
+                            $data['supplierpaymentdate'] = $supplierpaymentdate->get('yyyy-MM-dd');
+					    }
+					}
 
                     //Update file manager subfolder if contact is changed
                     if(isset($data['contactid']) && $data['contactid']) {
@@ -249,6 +319,41 @@ class Processes_ProcessController extends Zend_Controller_Action
 						$form->supplierinvoicedate->setAttrib('disabled', 'disabled');
 						$form->supplierpaymentdate->setAttrib('disabled', 'disabled');
 					}
+                    //Convert dates to the display format
+                    $paymentdate = new Zend_Date($data['paymentdate']);
+                    if($data['paymentdate'] == '0000-00-00') $data['paymentdate'] = '';
+                    else $data['paymentdate'] = $paymentdate->get('dd.MM.yyyy');
+                    $invoicedate = new Zend_Date($data['invoicedate']);
+                    if($data['invoicedate'] == '0000-00-00') $data['invoicedate'] = '';
+                    else $data['invoicedate'] = $invoicedate->get('dd.MM.yyyy');
+                    $prepaymentdate = new Zend_Date($data['prepaymentdate']);
+                    if($data['prepaymentdate'] == '0000-00-00') $data['prepaymentdate'] = '';
+                    else $data['prepaymentdate'] = $prepaymentdate->get('dd.MM.yyyy');
+                    $prepaymentinvoicedate = new Zend_Date($data['prepaymentinvoicedate']);
+                    if($data['prepaymentinvoicedate'] == '0000-00-00') $data['prepaymentinvoicedate'] = '';
+                    else $data['prepaymentinvoicedate'] = $prepaymentinvoicedate->get('dd.MM.yyyy');
+                    $creditnotedate = new Zend_Date($data['creditnotedate']);
+                    if($data['creditnotedate'] == '0000-00-00') $data['creditnotedate'] = '';
+                    else $data['creditnotedate'] = $creditnotedate->get('dd.MM.yyyy');
+                    $deliverydate = new Zend_Date($data['deliverydate']);
+                    if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
+                    else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
+                    $deliveryorderdate = new Zend_Date($data['deliveryorderdate']);
+                    if($data['deliveryorderdate'] == '0000-00-00') $data['deliveryorderdate'] = '';
+                    else $data['deliveryorderdate'] = $deliveryorderdate->get('dd.MM.yyyy');
+                    $purchaseorderdate = new Zend_Date($data['purchaseorderdate']);
+                    if($data['purchaseorderdate'] == '0000-00-00') $data['purchaseorderdate'] = '';
+                    else $data['purchaseorderdate'] = $purchaseorderdate->get('dd.MM.yyyy');
+                    $suppliersalesorderdate = new Zend_Date($data['suppliersalesorderdate']);
+                    if($data['suppliersalesorderdate'] == '0000-00-00') $data['suppliersalesorderdate'] = '';
+                    else $data['suppliersalesorderdate'] = $suppliersalesorderdate->get('dd.MM.yyyy');
+                    $supplierinvoicedate = new Zend_Date($data['supplierinvoicedate']);
+                    if($data['supplierinvoicedate'] == '0000-00-00') $data['supplierinvoicedate'] = '';
+                    else $data['supplierinvoicedate'] = $supplierinvoicedate->get('dd.MM.yyyy');
+                    $supplierpaymentdate = new Zend_Date($data['supplierpaymentdate']);
+                    if($data['supplierpaymentdate'] == '0000-00-00') $data['supplierpaymentdate'] = '';
+                    else $data['supplierpaymentdate'] = $supplierpaymentdate->get('dd.MM.yyyy');
+
 					$form->populate($data);
 
 					//Toolbar
@@ -455,9 +560,13 @@ class Processes_ProcessController extends Zend_Controller_Action
 		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['daterange']) $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
 		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
 		if($params['paymentstatus']) $query = $this->_helper->Query->getQueryPaymentstatus($query, $params['paymentstatus'], $schema);
+		if($params['daterange']) {
+            $params['from'] = date('Y-m-d', strtotime($params['from']));
+            $params['to'] = date('Y-m-d', strtotime($params['to']));
+            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+        }
 
 		if($params['catid']) {
 			$processes = $processesDb->fetchAll(
@@ -563,6 +672,9 @@ class Processes_ProcessController extends Zend_Controller_Action
 				} else {
 					$positions[$position->processid][$position->ordering]['deliverystatus'] = $position->deliverystatus;
 					if($position->deliverydate != '0000-00-00')
+                        //$deliverydate = new Zend_Date($position->deliverydate);
+                        //if($position->deliverydate == '0000-00-00') $position->deliverydate = '';
+                        //else $position->deliverydate = $deliverydate->get('dd.MM.yyyy');
 						$positions[$position->processid][$position->ordering]['deliverydate'] = $position->deliverydate;
 					if($position->itemtype == 'deliveryItem')
 						$positions[$position->processid][$position->ordering]['supplierorderstatus'] = $position->supplierorderstatus;

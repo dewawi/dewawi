@@ -222,15 +222,15 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-controller', 'contact');
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
-
-                        //Convert dates to the display format
-                        $orderdate = new Zend_Date($data['orderdate']);
-                        if($data['orderdate'] == '0000-00-00') $data['orderdate'] = '';
-                        else $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
-                        $deliverydate = new Zend_Date($data['deliverydate']);
-                        if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
-                        else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
 					}
+                    //Convert dates to the display format
+                    $orderdate = new Zend_Date($data['orderdate']);
+                    if($data['orderdate'] == '0000-00-00') $data['orderdate'] = '';
+                    else $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
+                    $deliverydate = new Zend_Date($data['deliverydate']);
+                    if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
+                    else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
+
 					$form->populate($data);
 
 					//Toolbar
@@ -260,7 +260,12 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContact($creditnote['contactid']);
 
+        //Convert dates to the display format
 		$creditnote['creditnotedate'] = date("d.m.Y", strtotime($creditnote['creditnotedate']));
+		if($creditnote['orderdate'] != '0000-00-00') $creditnote['orderdate'] = date("d.m.Y", strtotime($creditnote['orderdate']));
+		if($creditnote['deliverydate'] != '0000-00-00') $creditnote['deliverydate'] = date("d.m.Y", strtotime($creditnote['deliverydate']));
+
+        //Convert numbers to the display format
 		$creditnote['taxes'] = $this->_currency->toCurrency($creditnote['taxes']);
 		$creditnote['subtotal'] = $this->_currency->toCurrency($creditnote['subtotal']);
 		$creditnote['total'] = $this->_currency->toCurrency($creditnote['total']);
@@ -775,8 +780,12 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['daterange']) $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
 		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
+		if($params['daterange']) {
+            $params['from'] = date('Y-m-d', strtotime($params['from']));
+            $params['to'] = date('Y-m-d', strtotime($params['to']));
+            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+        }
 
 		if($params['catid']) {
 			$creditnotes = $creditnotesDb->fetchAll(
