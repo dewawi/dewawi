@@ -66,12 +66,16 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 					</td>
 					<td class="buttons">
 						<?php if($quote->state == '105' || $quote->state == '106') : ?>
-							<?php echo $this->view->toolbar->view->setLabel(''); ?>
+						    <?php $view = $this->view->toolbar->view->setLabel(''); ?>
+						    <?php echo $view->setAttrib('class', 'view nolabel'); ?>
 						<?php else : ?>
-							<?php echo $this->view->toolbar->edit->setLabel(''); ?>
+						    <?php $edit = $this->view->toolbar->edit->setLabel(''); ?>
+						    <?php echo $edit->setAttrib('class', 'edit nolabel'); ?>
 						<?php endif; ?>
-						<?php echo $this->view->toolbar->copy->setLabel(''); ?>
-						<?php echo $this->view->toolbar->pdf->setLabel(''); ?>
+						<?php $copy = $this->view->toolbar->copy->setLabel(''); ?>
+						<?php echo $copy->setAttrib('class', 'copy nolabel'); ?>
+						<?php $pdf = $this->view->toolbar->pdf->setLabel(''); ?>
+						<?php echo $pdf->setAttrib('class', 'pdf nolabel'); ?>
 					</td>
 				</tr>
 				<?php endforeach; ?>
