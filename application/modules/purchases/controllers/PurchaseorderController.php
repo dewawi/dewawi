@@ -119,6 +119,9 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorder = $purchaseorderDb->getPurchaseorder($id);
 
+        //Check if the directory exists
+        $dirwritable = $this->checkDirectory($id);
+
 		if($purchaseorder['purchaseorderid']) {
 			$this->_helper->redirector->gotoSimple('view', 'purchaseorder', null, array('id' => $id));
 		} elseif($this->isLocked($purchaseorder['locked'], $purchaseorder['lockedtime'])) {
@@ -789,6 +792,24 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		foreach($textblocksObject as $textblock)
             $textblocks[$textblock->section] = $textblock->text;
 		return $textblocks;
+	}
+
+	protected function checkDirectory($id) {
+		//Create contact folder if does not already exists
+        $path = BASE_PATH.'/files/contacts/';
+        $dir1 = substr($id, 0, 1).'/';
+        if(strlen($id) > 1) $dir2 = substr($id, 1, 1).'/';
+        else $dir2 = '0/';
+        if(file_exists($path.$dir1.$dir2.$id) && is_dir($path.$dir1.$dir2.$id) && is_writable($path.$dir1.$dir2.$id)) {
+            return true;
+        } elseif(is_writable($path)) {
+            $response = mkdir($path.$dir1.$dir2.$id, 0777, true);
+            if($response === false) $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+			return $response;
+        } else {
+            $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+			return false;
+        }
 	}
 
 	protected function isLocked($locked, $lockedtime)

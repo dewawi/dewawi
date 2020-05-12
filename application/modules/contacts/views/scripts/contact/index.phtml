@@ -67,7 +67,7 @@ echo $this->ActiveFilter();
 					<?php echo $this->escape($this->translate($contact->country)); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('CONTACTS_CATEGORY') ?>" class="category">
-					<?php if($contact->catid) echo $this->escape($this->options['categories'][$contact->catid]['title']); ?>
+					<?php if($contact->catid && isset($this->options['categories'][$contact->catid])) echo $this->escape($this->options['categories'][$contact->catid]['title']); ?>
 				</td>
 				<td class="buttons">
 					<?php echo $this->toolbar->editInline; ?>

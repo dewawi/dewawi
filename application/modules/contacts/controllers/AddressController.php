@@ -11,7 +11,7 @@ class Contacts_AddressController extends Zend_Controller_Action
 
 		$form = new Contacts_Form_Contact();
 
-		/*if($request->isPost()) {
+		if($request->isPost()) {
 			$data = $request->getPost();
 			if($form->isValid($data) || true) {
 				$addressDb = new Contacts_Model_DbTable_Address();
@@ -20,7 +20,7 @@ class Contacts_AddressController extends Zend_Controller_Action
 				$address = end($addressDb->getAddress($data['contactid']));
 				echo $this->view->MultiForm('address', $address);
 			}
-		}*/
+		}
 	}
 
 	public function editAction()
@@ -33,7 +33,7 @@ class Contacts_AddressController extends Zend_Controller_Action
 
 		$form = new Contacts_Form_Contact();
 
-		/*if($request->isPost()) {
+		if($request->isPost()) {
 			$data = $request->getPost();
 			if($form->isValid($data) || true) {
 				$addressDb = new Contacts_Model_DbTable_Address();
@@ -41,7 +41,7 @@ class Contacts_AddressController extends Zend_Controller_Action
 					$addressDb->updateAddress($id, $data);
 				}
 			}
-		}*/
+		}
 
 		$this->view->form = $form;
 	}

@@ -1,4 +1,4 @@
-<?php         
+<?php
 $this->title = 'Sales order Pdf';
 $this->headTitle($this->title);
 
@@ -347,18 +347,14 @@ if($this->action == 'download') {
 	if($salesorderid) $pdf->Output($salesorderid.' '.$this->translate('SALES_ORDERS').' '.$billingName1.'.pdf', 'D');
 	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').' '.$this->translate('SALES_ORDERS').' '.$billingName1.'.pdf', 'D');
 } else {
+    $path = BASE_PATH.'/files/contacts/';
+    $dir1 = substr($contactid, 0, 1).'/';
+    if(strlen($contactid) > 1) $dir2 = substr($contactid, 1, 1).'/';
+    else $dir2 = '0/';
 	if($salesorderid) {
-		if(!file_exists(BASE_PATH.'/files/contacts/'.$contactid.'/')) {
-			mkdir(BASE_PATH.'/files/contacts/'.$contactid.'/');
-			chmod(BASE_PATH.'/files/contacts/'.$contactid.'/', 0777);
-		}
-		$pdf->Output(BASE_PATH.'/files/contacts/'.$contactid.'/'.$this->translate('SALES_ORDERS').'-'.$salesorderid.'.pdf', 'F');
-		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$contactid.'/'.$this->translate('SALES_ORDERS').'-'.$salesorderid.'.pdf?'.time().'" width="900px" height="500px">';
+		$pdf->Output($path.$dir1.$dir2.$contactid.'/'.$this->translate('SALES_ORDERS').'-'.$salesorderid.'.pdf', 'F');
+		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$dir1.$dir2.$contactid.'/'.$this->translate('SALES_ORDERS').'-'.$salesorderid.'.pdf?'.time().'" width="900px" height="500px">';
 	} else {
-		if(!file_exists(BASE_PATH.'/cache/salesorder/')) {
-			mkdir(BASE_PATH.'/cache/salesorder/');
-			chmod(BASE_PATH.'/cache/salesorder/', 0777);
-		}
 		$pdf->Output(BASE_PATH.'/cache/salesorder/'.$id.'.pdf', 'F');
 		$html = '<iframe src="'.$this->baseUrl().'/cache/salesorder/'.$id.'.pdf?'.time().'" width="900px" height="500px">';
 	}

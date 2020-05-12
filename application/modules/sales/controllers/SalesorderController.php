@@ -119,6 +119,9 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 		$salesorder = $salesorderDb->getSalesorder($id);
 
+        //Check if the directory exists
+        $dirwritable = $this->checkDirectory($id);
+
 		if($salesorder['salesorderid']) {
 			$this->_helper->redirector->gotoSimple('view','salesorder',null,array('id' => $id));
 		} elseif($this->isLocked($salesorder['locked'], $salesorder['lockedtime'])) {
@@ -872,7 +875,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$schema = 's';
 		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['daterange']) $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
             $params['from'] = date('Y-m-d', strtotime($params['from']));
@@ -971,6 +974,24 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		foreach($textblocksObject as $textblock)
             $textblocks[$textblock->section] = $textblock->text;
 		return $textblocks;
+	}
+
+	protected function checkDirectory($id) {
+		//Create contact folder if does not already exists
+        $path = BASE_PATH.'/files/contacts/';
+        $dir1 = substr($id, 0, 1).'/';
+        if(strlen($id) > 1) $dir2 = substr($id, 1, 1).'/';
+        else $dir2 = '0/';
+        if(file_exists($path.$dir1.$dir2.$id) && is_dir($path.$dir1.$dir2.$id) && is_writable($path.$dir1.$dir2.$id)) {
+            return true;
+        } elseif(is_writable($path)) {
+            $response = mkdir($path.$dir1.$dir2.$id, 0777, true);
+            if($response === false) $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+			return $response;
+        } else {
+            $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+			return false;
+        }
 	}
 
 	protected function isLocked($locked, $lockedtime)

@@ -60,12 +60,18 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$position->ordering] = $position->ordering;
-            if(!isset($taxes[$position->taxrate]) && isset($taxRates[$position->taxrate])) {
-                $taxes[$position->taxrate] = array();
-                $taxes[$position->taxrate]['value'] = 0;
-                $taxes[$position->taxrate]['title'] = $taxRates[$position->taxrate];
-            }
 		}
+        if($creditnote['taxfree']) {
+            $taxes[] = array('value' => 0, 'title' => 0);
+        } else {
+		    foreach($positions as $position) {
+                if(!isset($taxes[$position->taxrate]) && isset($taxRates[$position->taxrate])) {
+                    $taxes[$position->taxrate] = array();
+                    $taxes[$position->taxrate]['value'] = 0;
+                    $taxes[$position->taxrate]['title'] = $taxRates[$position->taxrate];
+                }
+            }
+        }
 		foreach($positions as $position) {
             if(isset($taxes[$position->taxrate])) $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
 

@@ -1,4 +1,4 @@
-<?php         
+<?php
 $this->title = 'Invoice Pdf';
 $this->headTitle($this->title);
 
@@ -348,18 +348,14 @@ if($this->action == 'download') {
 	if($invoiceid) $pdf->Output($invoiceid.' '.$this->translate('INVOICE').' '.$billingName1.'.pdf', 'D');
 	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').' '.$this->translate('INVOICE').' '.$billingName1.'.pdf', 'D');
 } else {
+    $path = BASE_PATH.'/files/contacts/';
+    $dir1 = substr($contactid, 0, 1).'/';
+    if(strlen($contactid) > 1) $dir2 = substr($contactid, 1, 1).'/';
+    else $dir2 = '0/';
 	if($invoiceid) {
-		if(!file_exists(BASE_PATH.'/files/contacts/'.$contactid.'/')) {
-			mkdir(BASE_PATH.'/files/contacts/'.$contactid.'/');
-			chmod(BASE_PATH.'/files/contacts/'.$contactid.'/', 0777);
-		}
-		$pdf->Output(BASE_PATH.'/files/contacts/'.$contactid.'/'.$this->translate('INVOICE').'-'.$invoiceid.'.pdf', 'F');
-		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$contactid.'/'.$this->translate('INVOICE').'-'.$invoiceid.'.pdf?'.time().'" width="900px" height="500px">';
+		$pdf->Output($path.$dir1.$dir2.$contactid.'/'.$this->translate('INVOICE').'-'.$invoiceid.'.pdf', 'F');
+		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$dir1.$dir2.$contactid.'/'.$this->translate('INVOICE').'-'.$invoiceid.'.pdf?'.time().'" width="900px" height="500px">';
 	} else {
-		if(!file_exists(BASE_PATH.'/cache/invoice/')) {
-			mkdir(BASE_PATH.'/cache/invoice/');
-			chmod(BASE_PATH.'/cache/invoice/', 0777);
-		}
 		$pdf->Output(BASE_PATH.'/cache/invoice/'.$id.'.pdf', 'F');
 		$html = '<iframe src="'.$this->baseUrl().'/cache/invoice/'.$id.'.pdf?'.time().'" width="900px" height="500px">';
 	}
