@@ -6,7 +6,7 @@
 	// INTRODUCTION
 	$introduction = array();
 	$introduction["product"] = "DEWAWI";
-	$introduction["productVersion"] = "0.7";
+	$introduction["productVersion"] = "0.8";
 	$introduction["company"] = "DEWAWI Open Source";
 
 	// SERVER REQUIREMENTS
