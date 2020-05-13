@@ -380,10 +380,10 @@ $(document).ready(function(){
 	//$('ul.tabs li:first').addClass('active').show(); //Activate first tab
 	$('.tab_container:not(:has(.tab_content.active))').children(':first-child').addClass('active').show();
 	//$('.tab_content:first').show(); //Show first tab content
-	$(document).on('click', 'ul.tabs li', function() {
+	$('ul.tabs').on('click', 'li', function() {
 		$('ul.tabs li').removeClass('active'); //Remove any 'active' class
 		$(this).addClass('active'); //Add 'active' class to selected tab
-
+	    //$('.datepicker-container').addClass('datepicker-hide').off('click.datepicker', $('.datePicker').click); //Hide date picker
 		$('.tab_content').hide(); //Hide all tab content
 
 		if(($(this).find('a').attr('href') == '#tabFinish') || ($(this).find('a').attr('href') == '#tabDocument') || ($(this).find('a').attr('href') == '#tabFiles')) {
@@ -398,7 +398,7 @@ $(document).ready(function(){
 			//$('#tabFiles').html('<div id="elfinder"></div>');
 			//elfinder();
 		}
-		return false;
+		//return false;
 	});
 	if($.cookie('tab') == '#tabPositions') {
 		getPositions();				

@@ -44,6 +44,7 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			if($taxfree === null) $taxfree = $object['taxfree'];
 			if($taxfree) $calculations['row']['taxes']['total'] = 0;
 
+            if(!isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] = 0;
 			$calculations['row']['total'] = $calculations['row']['subtotal'] + $calculations['row']['taxes']['total'];
 
 			$objectDb->updateTotal($id, $calculations['row']['subtotal'], $calculations['row']['taxes']['total'], $calculations['row']['total'], $date, $user);
@@ -52,7 +53,7 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			$calculations['locale']['total'] = $currency->toCurrency($calculations['row']['subtotal']+$calculations['row']['taxes']['total']);
                 foreach($calculations['row']['taxes'] as $key => $value)
                     $calculations['locale']['taxes'][$key] = $currency->toCurrency($value);
-
+//print_r($calculations);
 			return $calculations;
 		}
 	}
