@@ -61,6 +61,15 @@ $(document).ready(function(){
 		edit(data, params);
 		//validate(data, params);
 	});
+	$('.edit form input').on('textchange', function() {
+		isDirty = true;
+	});
+	$('.edit form textarea').on('textchange', function() {
+		isDirty = true;
+	});
+	$('.edit form select').on('textchange', function() {
+		isDirty = true;
+	});
 
 	//Positions
 	$('#positions').on('change', 'input:not(.id), textarea, select', function() {
@@ -380,7 +389,7 @@ $(document).ready(function(){
 	//$('ul.tabs li:first').addClass('active').show(); //Activate first tab
 	$('.tab_container:not(:has(.tab_content.active))').children(':first-child').addClass('active').show();
 	//$('.tab_content:first').show(); //Show first tab content
-	$('ul.tabs').on('click', 'li', function() {
+	$('ul.tabs').on('click', 'li', function(event) {
 		$('ul.tabs li').removeClass('active'); //Remove any 'active' class
 		$(this).addClass('active'); //Add 'active' class to selected tab
 	    //$('.datepicker-container').addClass('datepicker-hide').off('click.datepicker', $('.datePicker').click); //Hide date picker
@@ -399,6 +408,7 @@ $(document).ready(function(){
 			//elfinder();
 		}
 		//return false;
+        event.preventDefault();
 	});
 	if($.cookie('tab') == '#tabPositions') {
 		getPositions();				
