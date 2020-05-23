@@ -600,7 +600,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$creditnoteDb->saveCreditnote($id, $newCreditnoteId, $this->_date, 105, $this->_date, $this->_user['id']);
 			$creditnote = $creditnoteDb->getCreditnote($id);
 
-			//Update item data
+			//Update item data and inventory
 			if(count($positions)) {
 				$itemsDb = new Items_Model_DbTable_Item();
 				foreach($positions as $position) {
@@ -608,8 +608,30 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 						$itemsDb->select()
 							->where('sku = ?', $position['sku'])
 					);
-					if($item) {
+					if($item && $item['inventory']) {
+                        $inventoryDb = new Items_Model_DbTable_Inventory();
 						$quantity = $item->quantity + $position->quantity;
+                        $inventory = array(
+                                    'contactid' => $creditnote['contactid'],
+                                    'type' => 'inflow',
+                                    'docid' => $creditnote['id'],
+                                    'doctype' => 'creditnote',
+                                    'creditnoteid' => $creditnote['creditnoteid'],
+                                    'date' => $creditnote['creditnotedate'],
+                                    'comment' => 'Gutschrift '.$creditnote['creditnoteid'].' vom '.date("d.m.Y", strtotime($creditnote['creditnotedate'])),
+                                    'sku' => $position['sku'],
+                                    'itemid' => $position['itemid'],
+                                    'price' => $position['price'],
+                                    'taxrate' => $position['taxrate'],
+                                    'quantity' => $position['quantity'],
+                                    'total' => $position['total'],
+                                    'uom' => $position['uom'],
+                                    'clientid' => $creditnote['clientid'],
+                                    'warehouseid' => 1,
+                                    'created' => $this->_date,
+                                    'createdby' => $this->_user['id']
+                                    );
+                        $inventoryDb->addInventory($inventory);
 						$itemsDb->quantityItem($item->id, $quantity, $this->_date, $this->_user['id']);
 					}
 				}

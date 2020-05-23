@@ -106,6 +106,7 @@ class Items_ItemController extends Zend_Controller_Action
 				$data['cost'] = $form->getValue('cost') ? Zend_Locale_Format::getNumber($form->getValue('cost'),array('precision' => 2,'locale' => $locale)) : 0;
 				$data['price'] = $form->getValue('price') ? Zend_Locale_Format::getNumber($form->getValue('price'),array('precision' => 2,'locale' => $locale)) : 0;
 				$data['margin'] = $form->getValue('margin') ? Zend_Locale_Format::getNumber($form->getValue('margin'),array('precision' => 2,'locale' => $locale)) : 0;
+				$data['inventory'] = 1;
 				$data['created'] = $this->_date;
 				$data['createdby'] = $this->_user['id'];
 				$data['clientid'] = $this->_user['clientid'];
@@ -194,11 +195,15 @@ class Items_ItemController extends Zend_Controller_Action
 					$item['weight'] = $this->_currency->toCurrency($item['weight'],array('precision' => 4,'locale' => $locale));
 					$form->populate($item);
 
+					//History
+					$inventory = $this->getInventory($item['sku']);
+
 					//Toolbar
 					$toolbar = new Items_Form_Toolbar();
 
 					$this->view->form = $form;
                     $this->view->dirwritable = $dirwritable;
+					$this->view->inventory = $inventory;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}
@@ -221,6 +226,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$data = $item->getItem($id);
 		unset($data['id']);
 		$data['quantity'] = 0;
+		$data['inventory'] = 1;
 		$data['title'] = $data['title'].' 2';
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
@@ -652,6 +658,16 @@ class Items_ItemController extends Zend_Controller_Action
 		}
 
 		return $items;
+	}
+
+	protected function getInventory($sku) {
+		$inventoryDb = new Items_Model_DbTable_Inventory();
+		$inventory = $inventoryDb->fetchAll(
+				$inventoryDb->select()
+					->where('sku = ?', $sku)
+					->where('clientid = ?', $this->_user['clientid'])
+		);
+		return $inventory;
 	}
 
 	protected function checkDirectory($id) {

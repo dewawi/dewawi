@@ -10,7 +10,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
             if(count($data)) $history = true;
         }
 		if(!$history) { ?>
-            <div id="messages"><ul><li><?php echo $this->view->translate('Es sind noch keine Aktivititen vorhanden.') ?></li></ul></div>
+            <div id="messages"><ul><li><?php echo $this->view->translate('Es sind noch keine Aktivitäten vorhanden.') ?></li></ul></div>
 		<?php } else {
 		    if(count($this->view->history['quotes'])) : ?>
 		        <h3><?php echo $this->view->translate('QUOTES') ?></h3>

@@ -429,6 +429,7 @@ CREATE TABLE IF NOT EXISTS `item` (
   `description` text NOT NULL,
   `info` text NOT NULL,
   `quantity` decimal(10,0) NOT NULL,
+  `inventory` int(11) NOT NULL,
   `weight` decimal(15,4) NOT NULL,
   `cost` decimal(15,4) NOT NULL,
   `price` decimal(15,4) NOT NULL,
@@ -437,6 +438,35 @@ CREATE TABLE IF NOT EXISTS `item` (
   `uomid` int(11) NOT NULL,
   `manufacturerid` int(11) NOT NULL,
   `manufacturersku` varchar(255) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `locked` int(11) NOT NULL,
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `inventory`;
+CREATE TABLE IF NOT EXISTS `inventory` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `itemid` int(11) NOT NULL,
+  `sku` varchar(255) NOT NULL,
+  `contactid` int(11) NOT NULL,
+  `docid` int(11) NOT NULL,
+  `doctype` varchar(255) NOT NULL,
+  `invoiceid` int(11) NOT NULL,
+  `creditnoteid` int(11) NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `date` date NOT NULL,
+  `comment` varchar(255) NOT NULL,
+  `price` decimal(15,4) NOT NULL,
+  `taxrate` decimal(15,4) NOT NULL,
+  `quantity` decimal(9,4) DEFAULT NULL,
+  `total` decimal(15,4) NOT NULL,
+  `uom` varchar(255) NOT NULL,
+  `warehouseid` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
@@ -1121,6 +1151,21 @@ CREATE TABLE IF NOT EXISTS `user` (
   `smtpsecure` varchar(255) NOT NULL,
   `smtpuser` varchar(255) NOT NULL,
   `smtppass` varchar(32) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `locked` int(11) NOT NULL,
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `warehouse`;
+CREATE TABLE IF NOT EXISTS `warehouse` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `description` varchar(255) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,

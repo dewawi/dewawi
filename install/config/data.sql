@@ -358,3 +358,8 @@ INSERT INTO `uom` (`id`, `title`, `ordering`, `clientid`, `created`, `createdby`
 TRUNCATE `user`;
 INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `permissions`, `smtphost`, `smtpauth`, `smtpsecure`, `smtpuser`, `smtppass`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
 (1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'Admin', '', '', '', '', '', '', '', 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+
+
+TRUNCATE `warehouse`;
+INSERT INTO `warehouse` (`id`, `title`, `description`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'Hauptlager', 'Hauptlager', 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');

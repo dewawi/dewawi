@@ -13,5 +13,6 @@
 	'TABS_EMAIL' => 'E-Mail',
 	'TABS_EMAIL_SETTINGS' => 'E-Mail Einstellungen',
 	'TABS_CATEGORIES' => 'Kategorien',
-	'TABS_SUPPLIER_DETAILS' => 'Lieferantendetails'
+	'TABS_SUPPLIER_DETAILS' => 'Lieferantendetails',
+	'TABS_INVENTORY' => 'Buchungsverlauf'
 );
