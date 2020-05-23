@@ -139,7 +139,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				$data['created'] = $this->_date;
 				$data['createdby'] = $this->_user['id'];
 				$data['clientid'] = $this->_user['clientid'];
-				$position = new Sales_Model_DbTable_Processpos();
+				$position = new Processes_Model_DbTable_Processpos();
 				$position->addPosition($data);
 
 				//Calculate
@@ -162,7 +162,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$processid = (int)$this->_getParam('id', 0);
+		$processid = (int)$this->_getParam('processid', 0);
 
 		if($this->getRequest()->isPost()) {
 			$data = array();
@@ -177,11 +177,13 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$data['quantity'] = 1;
 			$data['total'] = 0;
 			$data['uom'] = '';
+			$data['deliverystatus'] = 'deliveryIsWaiting';
+			$data['supplierorderstatus'] = 'supplierNotOrdered';
 			$data['ordering'] = $this->getLatestOrdering($processid) + 1;
 			$data['created'] = $this->_date;
 			$data['createdby'] = $this->_user['id'];
 			$data['clientid'] = $this->_user['clientid'];
-			$position = new Sales_Model_DbTable_Processpos();
+			$position = new Processes_Model_DbTable_Processpos();
 			$position->addPosition($data);
 		}
 	}
@@ -276,6 +278,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			//Calculate
 			//$calculations = $this->_helper->Calculate($data['processid'], $this->_currency, $this->_date, $this->_user['id']);
 	        //echo Zend_Json::encode($calculations['locale']);
+	        echo Zend_Json::encode(true);
 		}
 	}
 
@@ -333,6 +336,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				$this->setOrdering($data['processid']);
 				//$calculations = $this->_helper->Calculate($data['processid'], $this->_currency, $this->_date, $this->_user['id']);
 	            //echo Zend_Json::encode($calculations['locale']);
+	            echo Zend_Json::encode(true);
 			}
 		}
 	}
