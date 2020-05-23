@@ -15,6 +15,7 @@
 	'ITEMS_IMAGE' => 'Bild',
 	'ITEMS_CATEGORY' => 'Kategorie',
 	'ITEMS_INFO' => 'Info',
+	'ITEMS_INFO_INTERNAL' => 'Interne Informationen',
 	'ITEMS_COST' => 'Einkaufspreis',
 	'ITEMS_PRICE' => 'Verkaufspreis',
 	'ITEMS_MARGIN' => 'Marge',

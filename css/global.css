@@ -638,6 +638,9 @@ form .multiform dd:first-child {
 	    padding: 5px 5px;
     }
 }
+div.info {
+    margin: -8px 6px 8px;
+}
 
 /* style view */
 .view dt {

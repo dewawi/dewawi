@@ -65,7 +65,7 @@ class Items_Form_Item extends Zend_Form
 			->setAttrib('rows', '25');
 
 		$form['info'] = new Zend_Form_Element_Textarea('info');
-		$form['info']->setLabel('ITEMS_INFO')
+		$form['info']->setLabel('ITEMS_INFO_INTERNAL')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('cols', '75')

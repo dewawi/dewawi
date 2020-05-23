@@ -24,6 +24,7 @@
 	'CONTACTS_SHIPPING_ADDRESS' => 'Lieferadresse',
 	'CONTACTS_CONTACT_DATA' => 'Kontaktdaten',
 	'CONTACTS_INFO' => 'Info',
+	'CONTACTS_INFO_INTERNAL' => 'Interne Informationen',
 	'CONTACTS_VATIN' => 'USt-IdNr.',
 	'CONTACTS_TAX_FREE' => 'Umsatzsteuer frei',
 	'CONTACTS_TYPE' => 'Kontakttyp',

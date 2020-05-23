@@ -129,7 +129,7 @@ class Contacts_Form_Contact extends Zend_Form
 			->setAttrib('size', '30');
 
 		$form['info'] = new Zend_Form_Element_Textarea('info');
-		$form['info']->setLabel('CONTACTS_INFO')
+		$form['info']->setLabel('CONTACTS_INFO_INTERNAL')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('cols', '62')
