@@ -28,7 +28,7 @@ class Contacts_Form_Contact extends Zend_Form
 			//->addValidator('NotEmpty');
 
 		$form['name1'] = new Zend_Form_Element_Text('name1');
-		$form['name1']->setLabel('CONTACTS_NAME')
+		$form['name1']->setLabel('CONTACTS_NAME_ORGANISATION')
 			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
@@ -37,7 +37,7 @@ class Contacts_Form_Contact extends Zend_Form
 			->setAttrib('class', 'required');	
 
 		$form['name2'] = new Zend_Form_Element_Text('name2');
-		$form['name2']->setLabel('')
+		$form['name2']->setLabel('CONTACTS_NAME_AFFIX')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '40');
@@ -135,6 +135,18 @@ class Contacts_Form_Contact extends Zend_Form
 			->setAttrib('cols', '62')
 			->setAttrib('rows', '30');
 
+		$form['debitornumber'] = new Zend_Form_Element_Text('debitornumber');
+		$form['debitornumber']->setLabel('CONTACTS_DEBITOR_NUMBER')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '30');
+
+		$form['taxnumber'] = new Zend_Form_Element_Text('taxnumber');
+		$form['taxnumber']->setLabel('CONTACTS_TAX_NUMBER')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '30');
+
 		$form['vatin'] = new Zend_Form_Element_Text('vatin');
 		$form['vatin']->setLabel('CONTACTS_VATIN')
 			->addFilter('StripTags')
@@ -143,6 +155,42 @@ class Contacts_Form_Contact extends Zend_Form
 
 		$form['taxfree'] = new Zend_Form_Element_Checkbox('taxfree');
 		$form['taxfree']->setLabel('CONTACTS_TAX_FREE');
+
+		$form['discount'] = new Zend_Form_Element_Text('discount');
+		$form['discount']->setLabel('CONTACTS_DISCOUNT')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '30');
+
+		$form['discountrule'] = new Zend_Form_Element_Select('discountrule');
+		$form['discountrule']->setLabel('CONTACTS_DISCOUNT_RULE')
+			->addMultiOption('', 'CONTACTS_NONE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim');
+
+		$form['paymentmethod'] = new Zend_Form_Element_Select('paymentmethod');
+		$form['paymentmethod']->setLabel('CONTACTS_PAYMENT_METHOD')
+			->addMultiOption('', 'CONTACTS_NONE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim');
+
+		$form['paymentterm'] = new Zend_Form_Element_Text('paymentterm');
+		$form['paymentterm']->setLabel('CONTACTS_PAYMENT_TERM')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '30');
+
+		$form['cashdiscountdays'] = new Zend_Form_Element_Text('cashdiscountdays');
+		$form['cashdiscountdays']->setLabel('CONTACTS_CASH_DISCOUNT_DAYS')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '30');
+
+		$form['cashdiscountpercent'] = new Zend_Form_Element_Text('cashdiscountpercent');
+		$form['cashdiscountpercent']->setLabel('CONTACTS_CASH_DISCOUNT_DAYS_PERCENT')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '30');
 
 		$this->addElements($form);
 	}

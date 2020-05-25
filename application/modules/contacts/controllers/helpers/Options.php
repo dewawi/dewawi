@@ -54,9 +54,23 @@ class Contacts_Controller_Action_Helper_Options extends Zend_Controller_Action_H
 		asort($countries);
 		$options['countries'] = $countries;
 
+		//Get payment methods
+		$paymentmethodDb = new Application_Model_DbTable_Paymentmethod();
+		$paymentmethodObject = $paymentmethodDb->fetchAll(
+			$paymentmethodDb->select()
+				->where('clientid = ?', $clientid)
+		);
+		$paymentmethods = array();
+		foreach($paymentmethodObject as $paymentmethod) {
+			$paymentmethods[$paymentmethod->title] = $paymentmethod->title;
+		}
+		$options['paymentmethods'] = $paymentmethods;
+
+
 		//Set form options
-		$form->catid->addMultiOptions($this->getMenuStructure($categories));
-		$form->country->addMultiOptions($options['countries']);
+		if(isset($form->catid)) $form->catid->addMultiOptions($this->getMenuStructure($categories));
+		if(isset($form->country)) $form->country->addMultiOptions($options['countries']);
+		if(isset($form->paymentmethod)) $form->paymentmethod->addMultiOptions($paymentmethods);
 
 		return $options;
 	}

@@ -9,7 +9,7 @@ class Contacts_Form_Address extends Zend_Form
 		$form = array();
 
 		$form['name1'] = new Zend_Form_Element_Text('name1');
-		$form['name1']->setLabel('CONTACTS_NAME')
+		$form['name1']->removeDecorator('label')
 			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
@@ -30,37 +30,43 @@ class Contacts_Form_Address extends Zend_Form
 			->setAttrib('size', '40');
 
 		$form['street'] = new Zend_Form_Element_Textarea('street');
-		$form['street']->setLabel('CONTACTS_STREET')
+		$form['street']->removeDecorator('label')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('cols', '30')
-			->setAttrib('rows', '3')
-			->setAttrib('data-controller', '3')
-			->setAttrib('rows', '3');
+			->setAttrib('cols', '25')
+			->setAttrib('rows', '2');
 
 		$form['postcode'] = new Zend_Form_Element_Text('postcode');
-		$form['postcode']->setLabel('CONTACTS_POSTCODE')
+		$form['postcode']->removeDecorator('label')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
 		$form['city'] = new Zend_Form_Element_Text('city');
-		$form['city']->setLabel('CONTACTS_CITY')
+		$form['city']->removeDecorator('label')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
 		$form['country'] = new Zend_Form_Element_Select('country');
-		$form['country']->setLabel('CONTACTS_COUNTRY')
+		$form['country']->removeDecorator('label')
 			->setRequired(true)
 			->addValidator('NotEmpty')
 			->setAttrib('class', 'required');
 
 		$form['phone'] = new Zend_Form_Element_Text('phone');
-		$form['phone']->setLabel('CONTACTS_PHONE')
+		$form['phone']->removeDecorator('label')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
+
+		$form['type'] = new Zend_Form_Element_Select('type');
+		$form['type']->removeDecorator('label')
+			//->setRequired(true)
+			->addMultiOption('none', '')
+			->addMultiOption('billing', 'CONTACTS_BILLING_ADDRESS')
+			->addMultiOption('shipping', 'CONTACTS_SHIPPING_ADDRESS')
+			->addMultiOption('other', 'CONTACTS_OTHER_ADDRESS');
 
 		$this->addElements($form);
 	}

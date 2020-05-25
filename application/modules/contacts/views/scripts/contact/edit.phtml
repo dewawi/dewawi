@@ -8,8 +8,8 @@ echo $this->FileManager();
 <ul class="tabs">
 	<li<?php if($this->activeTab == "#tabOverview") : ?> class="active"<?php endif; ?>>
 		<a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW'); ?></a></li>
-	<li<?php if($this->activeTab == "#tabShipping") : ?> class="active"<?php endif; ?>>
-		<a href="#tabShipping"><?php echo $this->translate('TABS_SHIPPING_ADDRESSES'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabPayment") : ?> class="active"<?php endif; ?>>
+		<a href="#tabPayment"><?php echo $this->translate('TABS_PAYMENT'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabHistory") : ?> class="active"<?php endif; ?>>
 		<a href="#tabHistory"><?php echo $this->translate('TABS_HISTORY'); ?></a></li>
     <?php if($this->dirwritable) : ?>
@@ -22,49 +22,29 @@ echo $this->FileManager();
 	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
 		<form id="contact" enctype="application/x-www-form-urlencoded" action="" method="post">
             <div class="row">
-                <div class="col-sm-12 col-lg-7">
+                <div class="col-sm-12 col-lg-6">
 				    <dl class="form">
 					    <?php echo $this->form->getElement('id'); ?>
 					    <?php echo $this->form->getElement('catid'); ?>
 					    <?php echo $this->form->getElement('name1'); ?>
 					    <?php echo $this->form->getElement('name2'); ?>
 					    <?php echo $this->form->getElement('department'); ?>
-					    <?php echo $this->formPrimaryAddress->getElement('street'); ?>
-					    <?php echo $this->formPrimaryAddress->getElement('postcode'); ?>
-					    <?php echo $this->formPrimaryAddress->getElement('city'); ?>
-					    <?php echo $this->formPrimaryAddress->getElement('country'); ?>
-					    <dt id="phone-label">
-						    <label for="phone"><?php echo $this->translate('CONTACTS_PHONE') ?></label>
-					    </dt>
-					    <div id="phone" class="multiform">
-						    <?php foreach($this->phone as $phone) : ?>
-							    <?php echo $this->MultiForm('phone', $phone); ?>
-						    <?php endforeach; ?>
-					        <?php echo $this->Button('add', 'add({\'controller\':\'phone\',\'action\':\'add\',\'type\':\'phone\'});', '', '', ''); ?>
-					    </div>
-					    <dt id="email-label">
-						    <label for="email"><?php echo $this->translate('CONTACTS_EMAIL') ?></label>
-					    </dt>
-					    <div id="email" class="multiform">
-						    <?php foreach($this->email as $email) : ?>
-							    <?php echo $this->MultiForm('email', $email); ?>
-						    <?php endforeach; ?>
-					        <?php echo $this->Button('add', 'add({\'controller\':\'email\',\'action\':\'add\',\'type\':\'email\'});', '', '', ''); ?>
-					    </div>
-					    <dt id="internet-label">
-						    <label for="internet"><?php echo $this->translate('CONTACTS_INTERNET') ?></label>
-					    </dt>
-					    <div id="internet" class="multiform">
-						    <?php foreach($this->internet as $internet) : ?>
-							    <?php echo $this->MultiForm('internet', $internet); ?>
-						    <?php endforeach; ?>
-					        <?php echo $this->Button('add', 'add({\'controller\':\'internet\',\'action\':\'add\',\'type\':\'internet\'});', '', '', ''); ?>
-					    </div>
-					    <?php echo $this->form->getElement('vatin'); ?>
-					    <?php echo $this->form->getElement('taxfree'); ?>
+                        <h4>Adressen</h4>
+                        <?php echo $this->MultiForm('address', $this->address, array(
+                                                                            //array('label' => 'CONTACTS_NAME', 'field' => 'name1'),
+                                                                            array('label' => 'CONTACTS_STREET', 'field' => 'street'),
+                                                                            array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
+                                                                            array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))
+                                                                            )); ?>
+                        <h4>Kontaktdetails</h4>
+                        <?php echo $this->MultiForm('phone', $this->phone, array('phone', 'type'), 'CONTACTS_PHONE'); ?>
+                        <hr>
+                        <?php echo $this->MultiForm('email', $this->email, '', 'CONTACTS_EMAIL'); ?>
+                        <hr>
+                        <?php echo $this->MultiForm('internet', $this->internet, 'internet', 'CONTACTS_INTERNET'); ?>
 				    </dl>
 		        </div>
-                <div class="col-sm-12 col-lg-5">
+                <div class="col-sm-12 col-lg-6">
 				    <dl class="form">
                         <?php echo $this->form->getElement('info'); ?>
                         <div class="info"><small>Interne Informationen werden nicht auf Angeboten, Rechnungen etc. angezeigt.</small></div>
@@ -73,18 +53,34 @@ echo $this->FileManager();
 		    </div>
 		</form>
 	</div>
-	<div id="tabShipping" class="tab_content<?php if($this->activeTab == '#tabShipping') : ?> active<?php endif; ?>">
+	<div id="tabPayment" class="tab_content<?php if($this->activeTab == '#tabPayment') : ?> active<?php endif; ?>">
 		<form id="contact" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<dl class="form">
-				<?php echo $this->formShippingAddress->getElement('name1'); ?>
-				<?php echo $this->formShippingAddress->getElement('name2'); ?>
-				<?php echo $this->formShippingAddress->getElement('department'); ?>
-				<?php echo $this->formShippingAddress->getElement('street'); ?>
-				<?php echo $this->formShippingAddress->getElement('postcode'); ?>
-				<?php echo $this->formShippingAddress->getElement('city'); ?>
-				<?php echo $this->formShippingAddress->getElement('country'); ?>
-				<?php echo $this->formShippingAddress->getElement('phone'); ?>
-			</dl>
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+                        <h4>Zahlung</h4>
+			            <?php echo $this->form->getElement('debitornumber'); ?>
+			            <?php echo $this->form->getElement('paymentmethod'); ?>
+			            <?php echo $this->form->getElement('paymentterm'); ?>
+                        <h4>Steuer</h4>
+			            <?php echo $this->form->getElement('taxnumber'); ?>
+			            <?php echo $this->form->getElement('vatin'); ?>
+			            <?php echo $this->form->getElement('taxfree'); ?>
+				    </dl>
+		        </div>
+                <div class="col-sm-12 col-lg-6">
+				    <dl class="form">
+                        <h4>Skonto</h4>
+			            <?php echo $this->form->getElement('cashdiscountdays'); ?>
+			            <?php echo $this->form->getElement('cashdiscountpercent'); ?>
+                        <h4>Rabatt</h4>
+			            <?php echo $this->form->getElement('discount'); ?>
+			            <?php echo $this->form->getElement('discountrule'); ?>
+                        <h4>Bankverbindung</h4>
+                        <?php echo $this->MultiForm('bankaccount', $this->bankAccount, array('iban', 'bic'), 'CONTACTS_IBAN_BIC'); ?>
+				    </dl>
+		        </div>
+		    </div>
 		</form>
 	</div>
 	<div id="tabHistory" class="tab_content<?php if($this->activeTab == '#tabHistory') : ?> active<?php endif; ?>">

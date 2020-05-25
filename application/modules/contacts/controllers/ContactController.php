@@ -135,30 +135,22 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$data['createdby'] = $this->_user['id'];
 		$data['clientid'] = $this->_user['clientid'];
 
+		$client = Zend_Registry::get('Client');
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$id = $contactDb->addContact($data);
 
 		$addressDb = new Contacts_Model_DbTable_Address();
+		$addressDb->addAddress($id, 'billing', '', '', '', $client['country'], 1);
 
-		$client = Zend_Registry::get('Client');
+		$phoneDb = new Contacts_Model_DbTable_Phone();
+		$phoneDb->addPhone($id, 'phone', '', 1);
 
-		//Primary Address
-		$data = array();
-		$data['contactid'] = $id;
-		$data['type'] = 'primaryAddress';
-		$data['country'] = $client['country'];
-		$data['clientid'] = $this->_user['clientid'];
-		$data['created'] = $this->_date;
-		$addressDb->addAddress($data);
+		$emailDb = new Contacts_Model_DbTable_Email();
+		$emailDb->addEmail($id, '', 1);
 
-		//Shipping Address
-		$data = array();
-		$data['contactid'] = $id;
-		$data['type'] = 'shippingAddress';
-		$data['country'] = $client['country'];
-		$data['clientid'] = $this->_user['clientid'];
-		$data['created'] = $this->_date;
-		$addressDb->addAddress($data);
+		$internetDb = new Contacts_Model_DbTable_Internet();
+		$internetDb->addInternet($id, '', 1);
 
         //Check if the directory exists
         $this->checkDirectory($id);
@@ -236,37 +228,13 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$internetDb = new Contacts_Model_DbTable_Internet();
 					$internet = $internetDb->getInternet($id);
 
-					$addressDb = new Application_Model_DbTable_Address();
+					//Bank account
+					$bankAccountDb = new Contacts_Model_DbTable_Bankaccount();
+					$bankAccount = $bankAccountDb->getBankaccount($id);
 
-					//Primary Address
-					$primaryAddress = $addressDb->fetchRow(
-						$addressDb->select()
-							->where('contactid = ?', $id)
-							->where('type = ?', 'primaryAddress')
-							->where('clientid = ?', $this->_user['clientid'])
-					);
-					$formPrimaryAddress = new Contacts_Form_Address();
-					$formPrimaryAddress->country->addMultiOptions($options['countries']);
-					$formPrimaryAddress->populate($primaryAddress->toArray());
-					foreach($formPrimaryAddress as $element) {
-						$element->setAttrib('data-id', $primaryAddress['id']);
-						$element->setAttrib('data-controller', 'address');
-					}
-
-					//Shipping address
-					$shippingAddress = $addressDb->fetchRow(
-						$addressDb->select()
-							->where('contactid = ?', $id)
-							->where('type = ?', 'shippingAddress')
-							->where('clientid = ?', $this->_user['clientid'])
-					);
-					$formShippingAddress = new Contacts_Form_Address();
-					$formShippingAddress->populate($shippingAddress->toArray());
-					foreach($formShippingAddress as $element) {
-						$element->setAttrib('data-id', $shippingAddress['id']);
-						$element->setAttrib('data-controller', 'address');
-					}
-					$formShippingAddress->country->addMultiOptions($options['countries']);
+					//Addresses
+					$addressDb = new Contacts_Model_DbTable_Address();
+					$address = $addressDb->getAddress($id);
 
 					//History
 					$history = $this->getHistory($id);
@@ -288,14 +256,15 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$toolbar = new Contacts_Form_Toolbar();
 
 					$this->view->form = $form;
-					$this->view->formPrimaryAddress = $formPrimaryAddress;
-					$this->view->formShippingAddress = $formShippingAddress;
+					$this->view->options = $options;
                     $this->view->dirwritable = $dirwritable;
 					$this->view->history = $history;
 					$this->view->files = $files;
+					$this->view->address = $address;
 					$this->view->phone = $phone;
 					$this->view->email = $email;
 					$this->view->internet = $internet;
+					$this->view->bankAccount = $bankAccount;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}
@@ -338,37 +307,13 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$data['modifiedby'] = 0;
 		echo $contactid = $contact->addContact($data);
 
-		$addressDb = new Application_Model_DbTable_Address();
-
-		//Primary Address
-		$primaryAddress = $addressDb->fetchRow(
-			$addressDb->select()
-				->where('contactid = ?', $id)
-				->where('type = ?', 'primaryAddress')
-				->where('clientid = ?', $this->_user['clientid'])
-		);
-		$street = $primaryAddress['street'];
-		$postcode = $primaryAddress['postcode'];
-		$city = $primaryAddress['city'];
-		$country = $primaryAddress['country'];
-		$addressDb->addAddress($contactid, 'primaryAddress', '', '', '', $street, $postcode, $city, $country, '', $this->_user['clientid'], $this->_date);
-
-		//Shipping Address
-		$shippingAddress = $addressDb->fetchRow(
-			$addressDb->select()
-				->where('contactid = ?', $id)
-				->where('type = ?', 'shippingAddress')
-				->where('clientid = ?', $this->_user['clientid'])
-		);
-		$shippingname1 = $shippingAddress['name1'];
-		$shippingname2 = $shippingAddress['name2'];
-		$shippingdepartment = $shippingAddress['department'];
-		$shippingstreet = $shippingAddress['street'];
-		$shippingpostcode = $shippingAddress['postcode'];
-		$shippingcity = $shippingAddress['city'];
-		$shippingcountry = $shippingAddress['country'];
-		$shippingphone = $shippingAddress['phone'];
-		$addressDb->addAddress($contactid, 'shippingAddress', $shippingname1, $shippingname2, $shippingdepartment, $shippingstreet, $shippingpostcode, $shippingcity, $shippingcountry, $shippingphone, $this->_user['clientid'], $this->_date);
+		//Copy addresses
+		$addressDb = new Contacts_Model_DbTable_Address();
+		$addresses = $addressDb->getAddress($id);
+		foreach($addresses as $address) {
+			$addressDb->addAddress($contactid, $address['type'], $address['street'], $address['postcode'], $address['city'], $address['country'], $address['ordering']);
+		}
+		//$this->_user['clientid'], $this->_date
 
 		//Phone
 		$phoneDb = new Contacts_Model_DbTable_Phone();

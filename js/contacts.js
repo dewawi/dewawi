@@ -1,9 +1,9 @@
 $(document).ready(function(){
 	//Contact
-	$(document).on('blur', '#address input', function() {
-		var formElementId = $(this).attr('name');
-		validateAddress(formElementId);
-	});
+	//$(document).on('blur', '#address input', function() {
+	//	var formElementId = $(this).attr('name');
+	//	validateAddress(formElementId);
+	//});
 });
 
 //Apply Contact

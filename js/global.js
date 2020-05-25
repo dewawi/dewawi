@@ -31,7 +31,8 @@ $(document).ready(function(){
 				lock($(this).closest('tr').find('input.id').val());
 			});
 		}
-	}, 60000); // 60 seconds
+console.log(isDirty);
+	}, 3000); // 60 seconds
 
 	//Auto validate and save
 	$('input.required').blur(function() {
@@ -67,9 +68,9 @@ $(document).ready(function(){
 	$('.edit form textarea').on('textchange', function() {
 		isDirty = true;
 	});
-	$('.edit form select').on('textchange', function() {
-		isDirty = true;
-	});
+	//$('.edit form select').on('textchange', function() {
+	//	isDirty = true;
+	//});
 
 	//Positions
 	$('#positions').on('change', 'input:not(.id), textarea, select', function() {
@@ -763,6 +764,7 @@ function edit(data, params) {
 		success: function(json){
 			response = json;
 			isDirty = false;
+            //console.log(isDirty);
 		}
 	});
     //console.log(data);

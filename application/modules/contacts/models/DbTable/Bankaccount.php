@@ -1,11 +1,11 @@
 <?php
 
-class Contacts_Model_DbTable_Address extends Zend_Db_Table_Abstract
+class Contacts_Model_DbTable_Bankaccount extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'address';
+	protected $_name = 'bankaccount';
 
-	public function getAddress($contactid)
+	public function getBankaccount($contactid)
 	{
 		$contactid = (int)$contactid;
 		$row = $this->fetchAll('contactid = ' . $contactid);
@@ -15,27 +15,24 @@ class Contacts_Model_DbTable_Address extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function addAddress($contactid, $type, $street, $postcode, $city, $country, $ordering)
+	public function addBankaccount($contactid, $iban, $bic, $ordering)
 	{
 		$data = array(
 			'contactid' => $contactid,
-			'type' => $type,
-			'street' => $street,
-			'postcode' => $postcode,
-			'city' => $city,
-			'country' => $country,
+			'iban' => $iban,
+			'bic' => $bic,
 			'ordering' => $ordering
-        );
+		);
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateAddress($id, $data)
+	public function updateBankaccount($id, $data)
 	{
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function deleteAddress($id)
+	public function deleteBankaccount($id)
 	{
 		$this->delete('id =' . (int)$id);
 	}

@@ -21,12 +21,12 @@ class Contacts_PhoneController extends Zend_Controller_Action
 					$phoneDb->addPhone($data['contactid'], $data['type'], '', $latest['ordering']+1);
 					$phoneDataAfter = $phoneDb->getPhone($data['contactid']);
 					$phone = end($phoneDataAfter);
-					echo $this->view->MultiForm('phone', $phone);
+					echo $this->view->MultiForm('phone', $phone, array('phone', 'type'));
 				}
 			} else {
 				$timestamp = time();
 				$phone = array('id' => $timestamp, 'ordering' => $timestamp, 'type' => 'phone', 'phone' => '');
-				echo $this->view->MultiForm('phone', $phone);
+				echo $this->view->MultiForm('phone', $phone, array('phone', 'type'));
 			}
 		}
 	}

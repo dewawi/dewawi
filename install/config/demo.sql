@@ -2,33 +2,20 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
 TRUNCATE `address`;
-INSERT INTO `address` (`id`, `contactid`, `type`, `name1`, `name2`, `department`, `street`, `postcode`, `city`, `country`, `phone`, `clientid`, `created`, `modified`) VALUES
-(1, 1000, 'primaryAddress', '', '', '', 'Inge Beisheim Platz 82', '31629', 'Estorf', 'DE', '', 1, '2015-11-29 20:28:25', '0000-00-00 00:00:00'),
-(2, 1000, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-11-29 20:28:25', '0000-00-00 00:00:00'),
-(3, 1001, 'primaryAddress', '', '', '', 'Hollander Strasse 12', '56414', 'Hundsangen', 'DE', '', 1, '2015-12-07 22:07:49', '0000-00-00 00:00:00'),
-(4, 1001, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:07:49', '0000-00-00 00:00:00'),
-(5, 1002, 'primaryAddress', '', '', '', 'Unter den Linden 12', '39031', 'Magdeburg', 'DE', '', 1, '2015-12-07 22:09:33', '0000-00-00 00:00:00'),
-(6, 1002, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:09:33', '0000-00-00 00:00:00'),
-(7, 1003, 'primaryAddress', '', '', '', 'Luetzowplatz 26', '54636', 'Rittersdorf', 'DE', '', 1, '2015-12-07 22:11:06', '0000-00-00 00:00:00'),
-(8, 1003, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:11:06', '0000-00-00 00:00:00'),
-(9, 1004, 'primaryAddress', '', '', '', 'Hardenbergstraße 90', '76848', 'Dimbach', 'DE', '', 1, '2015-12-07 22:13:38', '0000-00-00 00:00:00'),
-(10, 1004, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:13:38', '0000-00-00 00:00:00'),
-(11, 1005, 'primaryAddress', '', '', '', 'Rosenstrasse 47', '81379', 'München', 'DE', '', 1, '2015-12-07 22:15:04', '0000-00-00 00:00:00'),
-(12, 1005, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:15:04', '0000-00-00 00:00:00'),
-(13, 1006, 'primaryAddress', '', '', '', 'Mohrenstrasse 93', '78652', 'Deißlingen', 'DE', '', 1, '2015-12-07 22:17:27', '0000-00-00 00:00:00'),
-(14, 1006, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:17:27', '0000-00-00 00:00:00'),
-(15, 1007, 'primaryAddress', '', '', '', 'Holstenwall 48', '95146', 'Selbitz', 'DE', '', 1, '2015-12-07 22:18:57', '0000-00-00 00:00:00'),
-(16, 1007, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:18:57', '0000-00-00 00:00:00'),
-(17, 1008, 'primaryAddress', '', '', '', 'Gotzkowskystrasse 79', '57629', 'Dreifelden', 'DE', '', 1, '2015-12-07 22:20:50', '0000-00-00 00:00:00'),
-(18, 1008, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:20:50', '0000-00-00 00:00:00'),
-(19, 1009, 'primaryAddress', '', '', '', 'Am Borsigturm 63', '40670', 'Meerbusch Strümp', 'DE', '', 1, '2015-12-07 22:23:06', '0000-00-00 00:00:00'),
-(20, 1009, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:23:06', '0000-00-00 00:00:00'),
-(21, 1010, 'primaryAddress', '', '', '', 'Scharnweberstrasse 3', '68542', 'Heddesheim', 'DE', '', 1, '2015-12-07 22:24:47', '0000-00-00 00:00:00'),
-(22, 1010, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:24:47', '0000-00-00 00:00:00'),
-(23, 1011, 'primaryAddress', '', '', '', 'Ansbacher Strasse 22', '54687', 'Arzfeld', 'DE', '', 1, '2015-12-07 22:26:16', '0000-00-00 00:00:00'),
-(24, 1011, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:26:16', '0000-00-00 00:00:00'),
-(25, 1012, 'primaryAddress', '', '', '', 'Hermannstrasse 3', '67591', 'Mölsheim', 'DE', '', 1, '2015-12-07 22:27:16', '0000-00-00 00:00:00'),
-(26, 1012, 'shippingAddress', '', '', '', '', '', '', '', '', 1, '2015-12-07 22:27:16', '0000-00-00 00:00:00');
+INSERT INTO `address` (`id`, `contactid`, `type`, `name1`, `name2`, `department`, `street`, `postcode`, `city`, `country`, `phone`, `ordering`, `clientid`, `created`, `modified`) VALUES
+(1, 1000, 'billing', '', '', '', 'Inge Beisheim Platz 82', '31629', 'Estorf', 'DE', '', 1, 1, '2015-11-29 20:28:25', '0000-00-00 00:00:00'),
+(2, 1001, 'billing', '', '', '', 'Hollander Strasse 12', '56414', 'Hundsangen', 'DE', '', 1, 1, '2015-12-07 22:07:49', '0000-00-00 00:00:00'),
+(3, 1002, 'billing', '', '', '', 'Unter den Linden 12', '39031', 'Magdeburg', 'DE', '', 1, 1, '2015-12-07 22:09:33', '0000-00-00 00:00:00'),
+(4, 1003, 'billing', '', '', '', 'Luetzowplatz 26', '54636', 'Rittersdorf', 'DE', '', 1, 1, '2015-12-07 22:11:06', '0000-00-00 00:00:00'),
+(5, 1004, 'billing', '', '', '', 'Hardenbergstraße 90', '76848', 'Dimbach', 'DE', '', 1, 1, '2015-12-07 22:13:38', '0000-00-00 00:00:00'),
+(6, 1005, 'billing', '', '', '', 'Rosenstrasse 47', '81379', 'München', 'DE', '', 1, 1, '2015-12-07 22:15:04', '0000-00-00 00:00:00'),
+(7, 1006, 'billing', '', '', '', 'Mohrenstrasse 93', '78652', 'Deißlingen', 'DE', '', 1, 1, '2015-12-07 22:17:27', '0000-00-00 00:00:00'),
+(8, 1007, 'billing', '', '', '', 'Holstenwall 48', '95146', 'Selbitz', 'DE', '', 1, 1, '2015-12-07 22:18:57', '0000-00-00 00:00:00'),
+(9, 1008, 'billing', '', '', '', 'Gotzkowskystrasse 79', '57629', 'Dreifelden', 'DE', '', 1, 1, '2015-12-07 22:20:50', '0000-00-00 00:00:00'),
+(10, 1009, 'billing', '', '', '', 'Am Borsigturm 63', '40670', 'Meerbusch Strümp', 'DE', '', 1, 1, '2015-12-07 22:23:06', '0000-00-00 00:00:00'),
+(11, 1010, 'billing', '', '', '', 'Scharnweberstrasse 3', '68542', 'Heddesheim', 'DE', '', 1, 1, '2015-12-07 22:24:47', '0000-00-00 00:00:00'),
+(12, 1011, 'billing', '', '', '', 'Ansbacher Strasse 22', '54687', 'Arzfeld', 'DE', '', 1, 1, '2015-12-07 22:26:16', '0000-00-00 00:00:00'),
+(13, 1012, 'billing', '', '', '', 'Hermannstrasse 3', '67591', 'Mölsheim', 'DE', '', 1, 1, '2015-12-07 22:27:16', '0000-00-00 00:00:00'),
 
 
 TRUNCATE `category`;
@@ -36,11 +23,13 @@ INSERT INTO `category` (`id`, `parentid`, `title`, `type`, `ordering`, `clientid
 (1, 0, 'Privatkunden', 'contact', 1, 1, '2015-12-06 15:21:16', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
 (2, 0, 'Geschäftskunden', 'contact', 2, 1, '2015-12-06 15:21:30', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
 (3, 0, 'Wiederverkäufer', 'contact', 3, 1, '2015-12-06 15:21:47', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(4, 0, 'Kompaktkameras', 'item', 1, 1, '2015-12-03 17:21:39', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(5, 0, 'Spiegelreflexkameras', 'item', 2, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(6, 0, 'Outdoorkameras', 'item', 3, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(7, 0, 'Objektive', 'item', 4, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(8, 0, 'Zubehör', 'item', 5, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+(4, 0, 'Partner', 'contact', 3, 1, '2015-12-06 15:21:47', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(5, 0, 'Lieferanten', 'contact', 3, 1, '2015-12-06 15:21:47', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(6, 0, 'Kompaktkameras', 'item', 1, 1, '2015-12-03 17:21:39', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(7, 0, 'Spiegelreflexkameras', 'item', 2, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(8, 0, 'Outdoorkameras', 'item', 3, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(9, 0, 'Objektive', 'item', 4, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(10, 0, 'Zubehör', 'item', 5, 1, '2015-12-03 17:21:59', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
 TRUNCATE `contact`;
@@ -127,18 +116,18 @@ INSERT INTO `invoicepos` (`id`, `invoiceid`, `itemid`, `sku`, `title`, `image`, 
 
 TRUNCATE `item`;
 INSERT INTO `item` (`id`, `catid`, `sku`, `barcode`, `title`, `type`, `image`, `description`, `info`, `quantity`, `weight`, `cost`, `price`, `margin`, `taxid`, `uomid`, `manufacturerid`, `manufacturersku`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 4, '30962377', '', 'Sony Cyber-shot DSC-W810', 'stockItem', '', 'Kompakt Kamera, 20,1 Megapixel, 6x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20,1 Megapixel\n6fach optischer Zoom\n6,8 cm (2,7 Zoll) LCD-Display\nVideoaufnahmen in HD 720p\nSchwenkpanorama-Aufnahmen mit bis zu 360 Grad', '', 0, 0.0000, 0.0000, 99.0000, 0.0000, 1, 1, 7, '', 1, '2015-12-06 21:43:01', 1, '2015-12-07 22:52:21', 1, 0, '2015-12-07 22:52:21'),
-(2, 4, '65492595', '', 'Canon IXUS 160', 'stockItem', '', 'Kompakt Kamera, 20 Megapixel, 8x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20 Megapixel\n8fach optischer Zoom\n6,8 cm (2,7 Zoll) TFT LCD-Display\nVideoaufnahmen in HD 720p', '', 0, 0.0000, 0.0000, 95.0000, 0.0000, 1, 1, 1, '', 1, '2015-12-06 21:52:08', 1, '2015-12-07 22:50:49', 1, 0, '2015-12-07 22:50:49'),
-(3, 4, '54407190', '', 'FUJIFILM FINEPIX X100', 'stockItem', '', 'Kompakt Kamera, 16,3 Megapixel, 7,1 cm (2,8 Zoll) Display\n16,3 Megapixel\n7,1 cm (2,8 Zoll) LC-Display\nVideoaufnahmen in Full HD 1080p\nPanorama', '', 0, 0.0000, 0.0000, 1199.0000, 0.0000, 1, 1, 3, '', 1, '2015-12-06 21:54:21', 1, '2015-12-07 22:51:22', 1, 0, '2015-12-07 22:51:22'),
-(4, 5, '83678284', '', 'Canon EOS 750D Kit', 'stockItem', '', 'Spiegelreflex Kamera, Canon EF-S 18-55mm f/3.5-5.6 IS STM Zoom\n24,2 Megapixel mit CMOS-Sensor\nInkl. Canon Objektiv (18-55mm /F3,5-5,6 IS STM)\n7,7 cm (3,0 Zoll) ClearView II Touchscreen LCD\nVideoaufnahmen in Full HD 1080p\nWiFi, NFC', '', 0, 0.0000, 0.0000, 689.0000, 0.0000, 1, 1, 1, '', 1, '2015-12-06 21:57:22', 1, '2015-12-07 22:50:34', 1, 0, '2015-12-07 22:50:34'),
-(5, 5, '23280396', '', 'NIKON D3300', 'stockItem', '', 'Spiegelreflex Kamera, AF-S DX NIKKOR 18-55 VR II 1:3,5–5,6G Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Nikkor Objektiv (AF-S DX VR II 18-55mm)\n7,5cm (3") LCD-Display\nVideoaufnahmen in Full HD 1080p\nHigh-Speed, Panorama', '', 0, 0.0000, 0.0000, 449.0000, 0.0000, 1, 1, 2, '', 1, '2015-12-06 21:59:21', 1, '2015-12-07 22:52:31', 1, 0, '2015-12-07 22:52:31'),
-(6, 4, '54995194', '', 'Panasonic DMC-LX7EG-K', 'stockItem', '', 'Digitalkamera, 10,1 Megapixel, 3,8x opt. Zoom\n10,1 Megapixel\n3,8fach optischer Zoom\n7,5 cm (3,0 Zoll) LCD-Display (920.000 Pixel)\nVideoaufnahmen in Full HD 1080p\nGroßer Multi-Aspekt-MOS Sensor (1/1,7-Zoll)', '', 0, 0.0000, 0.0000, 349.0000, 0.0000, 1, 1, 5, '', 1, '2015-12-06 22:15:28', 1, '2015-12-07 22:51:13', 1, 0, '2015-12-07 22:51:13'),
-(7, 6, '43848170', '', 'NIKON Coolpix S33', 'stockItem', '', 'Outdoor Kamera, 13,2 Megapixel, 3x opt. Zoom, 6,7 cm (2,7 Zoll) Display\n13,2 Megapixel\n3fach optischer Zoom\nWasserdicht bis 10 m, stoßfest bis 1,5 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p', '', 0, 0.0000, 0.0000, 99.0000, 0.0000, 1, 1, 2, '', 1, '2015-12-06 22:19:31', 1, '2015-12-07 22:52:12', 1, 0, '2015-12-07 22:52:12'),
-(8, 6, '46119584', '', 'Olympus TG-4', 'stockItem', '', 'Outdoor Kamera, 16 Megapixel, 4x opt. Zoom, 7,6 cm (3 Zoll) Display\n16 Megapixel\n4fach optischer Zoom\nWasserdicht bis 15 m, stoßfest bis 2,1 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p\nIntegrierte Panoramafunktion', '', 0, 0.0000, 0.0000, 399.0000, 0.0000, 1, 1, 4, '', 1, '2015-12-06 22:21:30', 1, '2015-12-07 22:51:33', 1, 0, '2015-12-07 22:51:33'),
-(9, 5, '76384370', '', 'Sony Alpha SLT-A58K', 'stockItem', '', 'Spiegelreflexkamera, inkl. Objektiv (18-55mm), 20,1 MP\n6,7cm (2,7“) Display (flexibel neigbar)\nVideoaufnahmen in HD 720p\nSchwenkpanorama, integrierte Zoomwippe', '', 0, 0.0000, 0.0000, 549.0000, 0.0000, 1, 1, 7, '', 1, '2015-12-06 22:24:37', 1, '2015-12-07 22:50:15', 1, 0, '2015-12-07 22:50:15'),
-(10, 7, '58903972', '', 'Canon EF-S 10-18mm', 'stockItem', '', 'Ultraweitwinkel Objektiv f/4.5-5.6 IS STM \n10-18 mm Brennweite\nf4.5-5.6 Lichtstärke\n67 mm Filterdurchmesser\n0,22 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', '', 0, 0.0000, 0.0000, 279.0000, 0.0000, 1, 1, 1, '', 1, '2015-12-06 22:26:49', 1, '2015-12-07 22:51:02', 1, 0, '2015-12-07 22:51:02'),
-(11, 7, '44061390', '', 'Nikon AF-S NIKKOR 200-500mm', 'stockItem', '', 'Supertele Objektiv 1:5.6E ED VR \n200-500 mm Brennweite\nf1:5.6 Lichtstärke\n95 mm Filterdurchmesser\n2,2 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', '', 0, 0.0000, 0.0000, 1599.0000, 0.0000, 1, 1, 2, '', 1, '2015-12-06 22:28:34', 1, '2015-12-07 22:52:03', 1, 0, '2015-12-07 22:52:03'),
-(12, 8, '070059P', '', 'Samsung Speicherkarte mit Adapter', 'stockItem', '', '32GB micro SDHC Card Class 10 - PRO+\nfür Smartphones, Tablets oder Action-Cameras\nHitze- & Kältebeständig von -25°C bis +85°C\nRöntgen- und Magnetsicher\nWasser-, Schock- und Stoßfest\nbis zu 95 MB/s Lesen und bis zu 90 MB/s Schreiben', '', 0, 0.0000, 0.0000, 39.0000, 0.0000, 1, 1, 6, '', 1, '2015-12-06 22:33:50', 1, '2015-12-07 22:52:50', 1, 0, '2015-12-07 22:52:50');
+(1, 6, '30962377', '', 'Sony Cyber-shot DSC-W810', 'stockItem', '', 'Kompakt Kamera, 20,1 Megapixel, 6x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20,1 Megapixel\n6fach optischer Zoom\n6,8 cm (2,7 Zoll) LCD-Display\nVideoaufnahmen in HD 720p\nSchwenkpanorama-Aufnahmen mit bis zu 360 Grad', '', 0, 0.0000, 0.0000, 99.0000, 0.0000, 1, 1, 7, '', 1, '2015-12-06 21:43:01', 1, '2015-12-07 22:52:21', 1, 0, '2015-12-07 22:52:21'),
+(2, 6, '65492595', '', 'Canon IXUS 160', 'stockItem', '', 'Kompakt Kamera, 20 Megapixel, 8x opt. Zoom, 6,8 cm (2,7 Zoll) Display\n20 Megapixel\n8fach optischer Zoom\n6,8 cm (2,7 Zoll) TFT LCD-Display\nVideoaufnahmen in HD 720p', '', 0, 0.0000, 0.0000, 95.0000, 0.0000, 1, 1, 1, '', 1, '2015-12-06 21:52:08', 1, '2015-12-07 22:50:49', 1, 0, '2015-12-07 22:50:49'),
+(3, 6, '54407190', '', 'FUJIFILM FINEPIX X100', 'stockItem', '', 'Kompakt Kamera, 16,3 Megapixel, 7,1 cm (2,8 Zoll) Display\n16,3 Megapixel\n7,1 cm (2,8 Zoll) LC-Display\nVideoaufnahmen in Full HD 1080p\nPanorama', '', 0, 0.0000, 0.0000, 1199.0000, 0.0000, 1, 1, 3, '', 1, '2015-12-06 21:54:21', 1, '2015-12-07 22:51:22', 1, 0, '2015-12-07 22:51:22'),
+(4, 7, '83678284', '', 'Canon EOS 750D Kit', 'stockItem', '', 'Spiegelreflex Kamera, Canon EF-S 18-55mm f/3.5-5.6 IS STM Zoom\n24,2 Megapixel mit CMOS-Sensor\nInkl. Canon Objektiv (18-55mm /F3,5-5,6 IS STM)\n7,7 cm (3,0 Zoll) ClearView II Touchscreen LCD\nVideoaufnahmen in Full HD 1080p\nWiFi, NFC', '', 0, 0.0000, 0.0000, 689.0000, 0.0000, 1, 1, 1, '', 1, '2015-12-06 21:57:22', 1, '2015-12-07 22:50:34', 1, 0, '2015-12-07 22:50:34'),
+(5, 7, '23280396', '', 'NIKON D3300', 'stockItem', '', 'Spiegelreflex Kamera, AF-S DX NIKKOR 18-55 VR II 1:3,5–5,6G Zoom, 24,2 Megapixel\n24,2 Megapixel mit CMOS-Sensor\nInkl. Nikkor Objektiv (AF-S DX VR II 18-55mm)\n7,5cm (3") LCD-Display\nVideoaufnahmen in Full HD 1080p\nHigh-Speed, Panorama', '', 0, 0.0000, 0.0000, 449.0000, 0.0000, 1, 1, 2, '', 1, '2015-12-06 21:59:21', 1, '2015-12-07 22:52:31', 1, 0, '2015-12-07 22:52:31'),
+(6, 6, '54995194', '', 'Panasonic DMC-LX7EG-K', 'stockItem', '', 'Digitalkamera, 10,1 Megapixel, 3,8x opt. Zoom\n10,1 Megapixel\n3,8fach optischer Zoom\n7,5 cm (3,0 Zoll) LCD-Display (920.000 Pixel)\nVideoaufnahmen in Full HD 1080p\nGroßer Multi-Aspekt-MOS Sensor (1/1,7-Zoll)', '', 0, 0.0000, 0.0000, 349.0000, 0.0000, 1, 1, 5, '', 1, '2015-12-06 22:15:28', 1, '2015-12-07 22:51:13', 1, 0, '2015-12-07 22:51:13'),
+(7, 8, '43848170', '', 'NIKON Coolpix S33', 'stockItem', '', 'Outdoor Kamera, 13,2 Megapixel, 3x opt. Zoom, 6,7 cm (2,7 Zoll) Display\n13,2 Megapixel\n3fach optischer Zoom\nWasserdicht bis 10 m, stoßfest bis 1,5 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p', '', 0, 0.0000, 0.0000, 99.0000, 0.0000, 1, 1, 2, '', 1, '2015-12-06 22:19:31', 1, '2015-12-07 22:52:12', 1, 0, '2015-12-07 22:52:12'),
+(8, 8, '46119584', '', 'Olympus TG-4', 'stockItem', '', 'Outdoor Kamera, 16 Megapixel, 4x opt. Zoom, 7,6 cm (3 Zoll) Display\n16 Megapixel\n4fach optischer Zoom\nWasserdicht bis 15 m, stoßfest bis 2,1 m & frostfest bis -10°C\nVideoaufnahmen in Full HD 1080p\nIntegrierte Panoramafunktion', '', 0, 0.0000, 0.0000, 399.0000, 0.0000, 1, 1, 4, '', 1, '2015-12-06 22:21:30', 1, '2015-12-07 22:51:33', 1, 0, '2015-12-07 22:51:33'),
+(9, 7, '76384370', '', 'Sony Alpha SLT-A58K', 'stockItem', '', 'Spiegelreflexkamera, inkl. Objektiv (18-55mm), 20,1 MP\n6,7cm (2,7“) Display (flexibel neigbar)\nVideoaufnahmen in HD 720p\nSchwenkpanorama, integrierte Zoomwippe', '', 0, 0.0000, 0.0000, 549.0000, 0.0000, 1, 1, 7, '', 1, '2015-12-06 22:24:37', 1, '2015-12-07 22:50:15', 1, 0, '2015-12-07 22:50:15'),
+(10, 9, '58903972', '', 'Canon EF-S 10-18mm', 'stockItem', '', 'Ultraweitwinkel Objektiv f/4.5-5.6 IS STM \n10-18 mm Brennweite\nf4.5-5.6 Lichtstärke\n67 mm Filterdurchmesser\n0,22 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', '', 0, 0.0000, 0.0000, 279.0000, 0.0000, 1, 1, 1, '', 1, '2015-12-06 22:26:49', 1, '2015-12-07 22:51:02', 1, 0, '2015-12-07 22:51:02'),
+(11, 9, '44061390', '', 'Nikon AF-S NIKKOR 200-500mm', 'stockItem', '', 'Supertele Objektiv 1:5.6E ED VR \n200-500 mm Brennweite\nf1:5.6 Lichtstärke\n95 mm Filterdurchmesser\n2,2 m Naheinstellgrenze\nBildstabilisator, integrierte Motorsteuerung', '', 0, 0.0000, 0.0000, 1599.0000, 0.0000, 1, 1, 2, '', 1, '2015-12-06 22:28:34', 1, '2015-12-07 22:52:03', 1, 0, '2015-12-07 22:52:03'),
+(12, 10, '070059P', '', 'Samsung Speicherkarte mit Adapter', 'stockItem', '', '32GB micro SDHC Card Class 10 - PRO+\nfür Smartphones, Tablets oder Action-Cameras\nHitze- & Kältebeständig von -25°C bis +85°C\nRöntgen- und Magnetsicher\nWasser-, Schock- und Stoßfest\nbis zu 95 MB/s Lesen und bis zu 90 MB/s Schreiben', '', 0, 0.0000, 0.0000, 39.0000, 0.0000, 1, 1, 6, '', 1, '2015-12-06 22:33:50', 1, '2015-12-07 22:52:50', 1, 0, '2015-12-07 22:52:50');
 
 
 TRUNCATE `quote`;

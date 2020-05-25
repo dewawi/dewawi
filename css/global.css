@@ -588,6 +588,9 @@ form dd textarea {
     width: 95%;
     display: block;
 }
+form .multiform dd textarea {
+    width: 85%;
+}
 form dt#id-label,
 form dd#id-element {
     display: none;
@@ -615,11 +618,14 @@ form dd#customerinfo-element {
 	width: 100%;
 }
 form .multiform {
+    display: inline-block;
+}
+form .sub-group {
 	width: 70%;
     display: inline-block;
 }
-form .multiform dd {
-	width: 30%;
+form .multiform .sub-group dd {
+	width: 40%;
 }
 form .multiform dd:first-child {
 	width: 45%;

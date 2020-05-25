@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `address` (
   `city` varchar(255) NOT NULL,
   `country` varchar(255) NOT NULL,
   `phone` varchar(255) NOT NULL,
+  `ordering` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
   `modified` datetime NOT NULL,
@@ -28,6 +29,27 @@ CREATE TABLE IF NOT EXISTS `archive` (
   `month` varchar(255) NOT NULL,
   `data` text NOT NULL,
   `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `bankaccount`;
+CREATE TABLE IF NOT EXISTS `bankaccount` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `contactid` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `iban` varchar(255) NOT NULL,
+  `bic` varchar(255) NOT NULL,
+  `accountnumber` varchar(255) NOT NULL,
+  `bankcode` varchar(255) NOT NULL,
+  `currency` varchar(255) NOT NULL,
+  `ordering` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `locked` int(11) NOT NULL,
+  `lockedtime` datetime NOT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -93,8 +115,16 @@ CREATE TABLE IF NOT EXISTS `contact` (
   `name2` varchar(255) NOT NULL,
   `department` varchar(255) NOT NULL,
   `info` text NOT NULL,
+  `taxnumber` varchar(255) NOT NULL,
   `vatin` varchar(255) NOT NULL,
   `taxfree` tinyint(3) NOT NULL,
+  `debitornumber` varchar(255) NOT NULL,
+  `discount` decimal(15,4) NOT NULL,
+  `discountrule` varchar(255) NOT NULL,
+  `paymentmethod` varchar(255) NOT NULL,
+  `paymentterm` varchar(255) NOT NULL,
+  `cashdiscountdays` int(11) NOT NULL,
+  `cashdiscountpercent` decimal(9,4) DEFAULT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
