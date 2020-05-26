@@ -58,7 +58,7 @@ echo $this->ActiveFilter();
 					<?php if($item->uomid) echo $this->escape($this->uoms[$item->uomid]); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_CATEGORY') ?>" class="category">
-					<?php if($item->catid) echo $this->escape($this->options['categories'][$item->catid]['title']); ?>
+					<?php if($item->catid && isset($this->options['categories'][$item->catid])) echo $this->escape($this->options['categories'][$item->catid]['title']); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_MANUFACTURER') ?>" class="manufacturer">
 					<?php if($item->manufacturerid) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>

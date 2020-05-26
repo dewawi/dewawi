@@ -138,7 +138,7 @@ class Statistics_Model_Charts
 		$turnoverData->setAbscissa('Labels');
 
 		/* Create a pChart object and associate your dataset */
-		$turnover = new pImage($width, $height, $turnoverData);
+		$turnover = new pImage($width, $height, $turnoverData, TRUE);
 
 		/* Turn off AA processing */
 		$turnover->Antialias = FALSE;
@@ -187,7 +187,7 @@ class Statistics_Model_Charts
 		$turnoverCategoriesData->setAbscissa('Labels');
 
 		/* Create a pChart object and associate your dataset */ 
-		$turnoverCategories = new pImage($width, $height, $turnoverCategoriesData);
+		$turnoverCategories = new pImage($width, $height, $turnoverCategoriesData, TRUE);
 
 		/* Turn off AA processing */
 		$turnoverCategories->Antialias = FALSE;

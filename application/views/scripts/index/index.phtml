@@ -4,12 +4,150 @@ $this->headTitle($this->title);
 ?>
 
 <div class="row">
+    <div class="col-sm-12 col-md-4">
+        <?php if(isset($this->contacts) && count($this->contacts)) : ?>
+	        <h3>
+		        <?php echo $this->translate('CONTACTS'); ?>
+		        <a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index'), null, TRUE); ?>">
+			        <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+		        </a>
+	        </h3>
+	        <table id="data">
+		        <thead>
+			        <tr>
+				        <th id="id" width="7%">
+					        <?php echo $this->translate('CONTACTS_CONTACT_ID') ?>
+				        </th>
+				        <th id="contactid" width="5%">
+					        <?php echo $this->translate('CONTACTS_NAME') ?>
+				        </th>
+				        <th width="10%"></th>
+			        </tr>
+		        </thead>
+		        <tbody>
+			        <?php foreach($this->contacts as $contact) : ?>
+			        <tr>
+				        <td id="id">
+					        <input class="id" type="hidden" value="<?php echo $contact->id ?>" name="id"/>
+					        <input class="controller" type="hidden" value="contact" name="controller"/>
+					        <input class="module" type="hidden" value="purchases" name="module"/>
+					        <a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
+						        <?php echo $this->escape($contact->id); ?>
+					        </a>
+				        </td>
+				        <td id="contact">
+					        <a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
+						        <?php echo $this->escape($contact->name1); ?>
+					        </a>
+				        </td>
+				        <td class="buttons">
+					        <?php echo $this->toolbar->edit; ?>
+				        </td>
+			        </tr>
+			        <?php endforeach; ?>
+		        </tbody>
+	        </table>
+        <?php endif; ?>
+    </div>
+    <div class="col-sm-12 col-md-4">
+        <?php if(isset($this->items) && count($this->items)) : ?>
+	        <h3>
+		        <?php echo $this->translate('ITEMS'); ?>
+		        <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index'), null, TRUE); ?>">
+			        <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+		        </a>
+	        </h3>
+	        <table id="data">
+		        <thead>
+			        <tr>
+				        <th id="id" width="7%">
+					        <?php echo $this->translate('ITEMS_SKU') ?>
+				        </th>
+				        <th id="contactid" width="5%">
+					        <?php echo $this->translate('ITEMS_TITLE') ?>
+				        </th>
+				        <th width="10%"></th>
+			        </tr>
+		        </thead>
+		        <tbody>
+			        <?php foreach($this->items as $item) : ?>
+			        <tr>
+				        <td id="id">
+					        <input class="id" type="hidden" value="<?php echo $item->id ?>" name="id"/>
+					        <input class="controller" type="hidden" value="item" name="controller"/>
+					        <input class="module" type="hidden" value="purchases" name="module"/>
+					        <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'edit', 'id'=>$item->id)); ?>">
+						        <?php echo $this->escape($item->sku); ?>
+					        </a>
+				        </td>
+				        <td id="item">
+					        <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'edit', 'id'=>$item->id)); ?>">
+						        <?php echo $this->escape($item->title); ?>>
+					        </a>
+				        </td>
+				        <td class="buttons">
+					        <?php echo $this->toolbar->edit; ?>
+				        </td>
+			        </tr>
+			        <?php endforeach; ?>
+		        </tbody>
+	        </table>
+        <?php endif; ?>
+    </div>
+    <div class="col-sm-12 col-md-4">
+        <?php if(isset($this->inventories) && count($this->inventories)) : ?>
+	        <h3>
+		        <?php echo $this->translate('ITEMS_INVENTORY'); ?>
+		        <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'inventory', 'action'=>'index'), null, TRUE); ?>">
+			        <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+		        </a>
+	        </h3>
+	        <table id="data">
+		        <thead>
+			        <tr>
+				        <th id="id" width="7%">
+					        <?php echo $this->translate('ITEMS_INVENTORY_ID') ?>
+				        </th>
+				        <th id="contactid" width="5%">
+					        <?php echo $this->translate('ITEMS_INVENTORY_COMMENT') ?>
+				        </th>
+				        <th width="10%"></th>
+			        </tr>
+		        </thead>
+		        <tbody>
+			        <?php foreach($this->inventories as $inventory) : ?>
+			        <tr>
+				        <td id="id">
+					        <input class="id" type="hidden" value="<?php echo $inventory->id ?>" name="id"/>
+					        <input class="controller" type="hidden" value="inventory" name="controller"/>
+					        <input class="module" type="hidden" value="purchases" name="module"/>
+					        <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'inventory', 'action'=>'edit', 'id'=>$inventory->id)); ?>">
+						        <?php echo $this->escape($inventory->sku); ?>
+					        </a>
+				        </td>
+				        <td id="inventory">
+					        <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>$inventory->doctype, 'action'=>'edit', 'id'=>$inventory->docid)); ?>">
+						        <?php echo $this->escape($inventory->comment); ?>
+					        </a>
+				        </td>
+				        <td class="buttons">
+					        <?php echo $this->toolbar->edit; ?>
+				        </td>
+			        </tr>
+			        <?php endforeach; ?>
+		        </tbody>
+	        </table>
+        <?php endif; ?>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-sm-12 col-lg-8">
         <?php if(isset($this->quotes) && count($this->quotes)) : ?>
 	        <h3>
 		        <?php echo $this->translate('QUOTES'); ?>
 		        <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index'), null, TRUE); ?>">
-			        <span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+			        <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
 		        </a>
 	        </h3>
 	        <table id="data">
@@ -84,7 +222,7 @@ $this->headTitle($this->title);
 	        <h3>
 		        <?php echo $this->translate('SALES_ORDERS'); ?>
 		        <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index'), null, TRUE); ?>">
-			        <span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+			        <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
 		        </a>
 	        </h3>
 	        <table id="data">
@@ -159,7 +297,7 @@ $this->headTitle($this->title);
 	        <h3>
 		        <?php echo $this->translate('INVOICES'); ?>
 		        <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index'), null, TRUE); ?>">
-			        <span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+			        <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
 		        </a>
 	        </h3>
 	        <table id="data">
@@ -234,7 +372,7 @@ $this->headTitle($this->title);
 	        <h3>
 		        <?php echo $this->translate('QUOTE_REQUESTS'); ?>
 		        <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index'), null, TRUE); ?>">
-			        <span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+			        <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
 		        </a>
 	        </h3>
 	        <table id="data">
@@ -309,7 +447,7 @@ $this->headTitle($this->title);
 	        <h3>
 		        <?php echo $this->translate('PURCHASE_ORDERS'); ?>
 		        <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index'), null, TRUE); ?>">
-			        <span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+			        <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
 		        </a>
 	        </h3>
 	        <table id="data">
@@ -382,13 +520,23 @@ $this->headTitle($this->title);
         </div>
         <div class="col-sm-12 col-lg-4">
             <h3>
-	            <?php echo $this->translate('STATISTICS'); ?>
+	            <?php echo $this->translate('STATISTICS_TURNOVER'); ?>
 	            <a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index'), null, TRUE); ?>">
-		            <span style="font-size:80%;font-weight:normal;"><?php echo $this->translate('MORE'); ?></span>
+		            <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('MORE'); ?></span>
 	            </a>
             </h3>
-            <img style="min-width:85%" src="cache/chart/turnover-500-300.png">
-            <img style="min-width:85%" src="cache/chart/turnover-category-500-300.png">
+            <br/>
+            <img style="min-width:85%" src="cache/chart/turnover-750-400.png">
+            <br/>
+            <br/>
+            <h3>
+	            <?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?>
+	            <a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index'), null, TRUE); ?>">
+		            <span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('MORE'); ?></span>
+	            </a>
+            </h3>
+            <br/>
+            <img style="min-width:85%" src="cache/chart/turnover-category-750-400.png">
         </div>
     </div>
 </div>

@@ -1125,20 +1125,25 @@ padding-left: 0;
 
 .treeview li{ /*Style for LI elements in general (excludes an LI that contains sub lists)*/
 font-size: 0.9rem;
-background: transparent url('../images/list.png') no-repeat left center;
+background: transparent url('../images/list.png') no-repeat 4px center;
 list-style-type: none;
-padding-left: 20px;
+padding-left: 24px;
 margin-bottom: 3px;
 }
 
 .treeview li.submenu, .treeview li.closed{ /* Style for LI that contains sub lists (other ULs). */
-background: white url(../images/closed.gif) no-repeat left 1px;
+background: transparent url(../images/closed.gif) no-repeat 4px 4px;
 cursor: hand !important;
 cursor: pointer !important;
 }
 
 .treeview li.open{ /* Style for LI that contains sub lists (other ULs). */
-background: white url(../images/open.gif) no-repeat left 1px;
+background: #fbfbfb url(../images/open.gif) no-repeat 4px 7px;
+border: 1px solid #efefef;
+padding-top: 3px;
+}
+.treeview li.open li.open{ /* Style for LI that contains sub lists (other ULs). */
+border: none;
 }
 
 .treeview a.active{ 
@@ -1147,6 +1152,11 @@ font-weight: bold;
 
 .treeview li.submenu ul{ /*Style for ULs that are children of LIs (submenu) */
 display: none; /*Hide them by default. Don't delete. */
+}
+
+.treeview li.open ul{
+padding: 0;
+margin: 0 -10px 0;
 }
 
 .treeview .submenu ul li{ /*Style for LIs of ULs that are children of LIs (submenu) */

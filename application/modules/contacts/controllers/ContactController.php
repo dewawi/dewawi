@@ -111,7 +111,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 					->from(array('c' => 'contact'))
 					->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
 					->where('c.id = ?', $contactid)
-					->where('a.type = ?', 'primaryAddress')
+					->where('a.type = ?', 'billing')
 					->where('c.clientid = ?', $this->_user['clientid'])
 					->where('a.clientid = ?', $this->_user['clientid'])
 					->setIntegrityCheck(false)
@@ -559,7 +559,7 @@ echo '{
 		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, $schema);
 		if($params['country']) $query = $this->_helper->Query->getQueryCountryC($query, $params['country'], 'a');
 		if($query) {
-			$query .= " AND a.type = 'primaryAddress'";
+			$query .= " AND a.type = 'billing'";
 			$query .= ' AND c.clientid = '.$this->_user['clientid'];
 		}
 

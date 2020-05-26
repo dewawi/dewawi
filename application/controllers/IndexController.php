@@ -43,7 +43,7 @@ class IndexController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$charts = new Statistics_Model_Charts();
-		$charts->createCharts(13, 500, 300, $this->view->translate('STATISTICS_UNCATEGORIZED'), $params, $options);
+		$charts->createCharts(13, 750, 400, $this->view->translate('STATISTICS_UNCATEGORIZED'), $params, $options);
 
 		$quotesDb = new Sales_Model_DbTable_Quote();
 		$quotes = $quotesDb->fetchAll(
@@ -89,6 +89,30 @@ class IndexController extends Zend_Controller_Action
 				->limit(5)
 		);
 		$this->view->purchaseorders = $purchaseorders;
+
+		$contactsDb = new Contacts_Model_DbTable_Contact();
+		$contacts = $contactsDb->fetchAll(
+			$contactsDb->select()
+				->order('id desc')
+				->limit(5)
+		);
+		$this->view->contacts = $contacts;
+
+		$itemsDb = new Items_Model_DbTable_Item();
+		$items = $itemsDb->fetchAll(
+			$itemsDb->select()
+				->order('id desc')
+				->limit(5)
+		);
+		$this->view->items = $items;
+
+		$inventoryDb = new Items_Model_DbTable_Inventory();
+		$inventory = $inventoryDb->fetchAll(
+			$inventoryDb->select()
+				->order('id desc')
+				->limit(5)
+		);
+		$this->view->inventories = $inventory;
 
 		$this->view->options = $options;
 		$this->view->toolbar = new Application_Form_Toolbar();

@@ -31,8 +31,7 @@ $(document).ready(function(){
 				lock($(this).closest('tr').find('input.id').val());
 			});
 		}
-console.log(isDirty);
-	}, 3000); // 60 seconds
+	}, 60000); // 60 seconds
 
 	//Auto validate and save
 	$('input.required').blur(function() {

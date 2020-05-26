@@ -15,7 +15,7 @@ INSERT INTO `address` (`id`, `contactid`, `type`, `name1`, `name2`, `department`
 (10, 1009, 'billing', '', '', '', 'Am Borsigturm 63', '40670', 'Meerbusch Strümp', 'DE', '', 1, 1, '2015-12-07 22:23:06', '0000-00-00 00:00:00'),
 (11, 1010, 'billing', '', '', '', 'Scharnweberstrasse 3', '68542', 'Heddesheim', 'DE', '', 1, 1, '2015-12-07 22:24:47', '0000-00-00 00:00:00'),
 (12, 1011, 'billing', '', '', '', 'Ansbacher Strasse 22', '54687', 'Arzfeld', 'DE', '', 1, 1, '2015-12-07 22:26:16', '0000-00-00 00:00:00'),
-(13, 1012, 'billing', '', '', '', 'Hermannstrasse 3', '67591', 'Mölsheim', 'DE', '', 1, 1, '2015-12-07 22:27:16', '0000-00-00 00:00:00'),
+(13, 1012, 'billing', '', '', '', 'Hermannstrasse 3', '67591', 'Mölsheim', 'DE', '', 1, 1, '2015-12-07 22:27:16', '0000-00-00 00:00:00');
 
 
 TRUNCATE `category`;
