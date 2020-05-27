@@ -24,6 +24,7 @@ header .sub1 {
     visibility: hidden;
     position: absolute;
     z-index: 9999;
+    min-width: 175px;
 }
 header button:hover + .sub1 {
     visibility: visible;

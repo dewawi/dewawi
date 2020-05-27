@@ -192,7 +192,17 @@ class Items_ItemController extends Zend_Controller_Action
 					$item['price'] = $this->_currency->toCurrency($item['price']);
 					$item['margin'] = $this->_currency->toCurrency($item['margin']);
 					$locale = Zend_Registry::get('Zend_Locale');
-					$item['weight'] = $this->_currency->toCurrency($item['weight'],array('precision' => 4,'locale' => $locale));
+					$item['quantity'] = ($item['quantity'] != 0) ? $this->_currency->toCurrency($item['quantity'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['minquantity'] = ($item['minquantity'] != 0) ? $this->_currency->toCurrency($item['minquantity'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['orderquantity'] = ($item['orderquantity'] != 0) ? $this->_currency->toCurrency($item['orderquantity'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['width'] = ($item['width'] != 0) ? $this->_currency->toCurrency($item['width'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['length'] = ($item['length'] != 0) ? $this->_currency->toCurrency($item['length'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['height'] = ($item['height'] != 0) ? $this->_currency->toCurrency($item['height'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['weight'] = ($item['weight'] != 0) ? $this->_currency->toCurrency($item['weight'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['packwidth'] = ($item['packwidth'] != 0) ? $this->_currency->toCurrency($item['packwidth'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['packlength'] = ($item['packlength'] != 0) ? $this->_currency->toCurrency($item['packlength'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['packheight'] = ($item['packheight'] != 0) ? $this->_currency->toCurrency($item['packheight'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['packweight'] = ($item['packweight'] != 0) ? $this->_currency->toCurrency($item['packweight'],array('precision' => 2,'locale' => $locale)) : '';
 					$form->populate($item);
 
 					//History

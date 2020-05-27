@@ -30,7 +30,7 @@ $this->headTitle($this->title);
 				        <td id="id">
 					        <input class="id" type="hidden" value="<?php echo $contact->id ?>" name="id"/>
 					        <input class="controller" type="hidden" value="contact" name="controller"/>
-					        <input class="module" type="hidden" value="purchases" name="module"/>
+					        <input class="module" type="hidden" value="contacts" name="module"/>
 					        <a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
 						        <?php echo $this->escape($contact->id); ?>
 					        </a>
@@ -75,14 +75,14 @@ $this->headTitle($this->title);
 				        <td id="id">
 					        <input class="id" type="hidden" value="<?php echo $item->id ?>" name="id"/>
 					        <input class="controller" type="hidden" value="item" name="controller"/>
-					        <input class="module" type="hidden" value="purchases" name="module"/>
+					        <input class="module" type="hidden" value="items" name="module"/>
 					        <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'edit', 'id'=>$item->id)); ?>">
 						        <?php echo $this->escape($item->sku); ?>
 					        </a>
 				        </td>
 				        <td id="item">
 					        <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'edit', 'id'=>$item->id)); ?>">
-						        <?php echo $this->escape($item->title); ?>>
+						        <?php echo $this->escape($item->title); ?>
 					        </a>
 				        </td>
 				        <td class="buttons">
@@ -120,7 +120,7 @@ $this->headTitle($this->title);
 				        <td id="id">
 					        <input class="id" type="hidden" value="<?php echo $inventory->id ?>" name="id"/>
 					        <input class="controller" type="hidden" value="inventory" name="controller"/>
-					        <input class="module" type="hidden" value="purchases" name="module"/>
+					        <input class="module" type="hidden" value="items" name="module"/>
 					        <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'inventory', 'action'=>'edit', 'id'=>$inventory->id)); ?>">
 						        <?php echo $this->escape($inventory->sku); ?>
 					        </a>

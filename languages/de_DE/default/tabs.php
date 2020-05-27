@@ -15,5 +15,6 @@
 	'TABS_CATEGORIES' => 'Kategorien',
 	'TABS_SUPPLIER_DETAILS' => 'Lieferantendetails',
 	'TABS_PAYMENT' => 'Zahlungsinformationen',
+	'TABS_DETAILS' => 'Details',
 	'TABS_INVENTORY' => 'Buchungsverlauf'
 );
