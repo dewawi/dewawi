@@ -1,0 +1,118 @@
+<?php
+$i = 1;
+if($length = count($this->forms)) :
+?>
+<table id="positions">
+	<thead>
+		<tr>
+			<th><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th><?php echo $this->translate('POSITION'); ?></th>
+			<th class="flex50"><?php echo $this->translate('POSITIONS_ITEM'); ?></th>
+			<th><?php echo $this->translate('POSITIONS_TOTAL'); ?></th>
+			<th></th>
+			<th></th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->forms as $form) : ?>
+			<tr class="position<?php echo $form->getValue('id'); ?> wrap">
+				<td class="id">
+					<input class="id" type="checkbox" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+				</td>
+				<td class="position">
+					<span><?php echo $form->getValue('ordering'); ?></span>
+					<?php echo $form->ordering; ?>
+				</td>
+				<td class="flex50">
+                    <table>
+                        <tr>
+				            <td class="sku">
+					            <?php echo $form->sku; ?>
+				            </td>
+				            <td class="title">
+					            <?php echo $form->title; ?>
+				            </td>
+		                </tr>
+                        <tr>
+				            <td class="description">
+					            <input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+					            <?php echo $form->description; ?>
+				            </td>
+		                </tr>
+                        <tr>
+				            <td class="image">
+					            <input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+					            <?php echo $form->image; ?>
+				            </td>
+		                </tr>
+	                </table>
+				</td>
+				<td>
+                    <table>
+                        <tr>
+				            <td class="price">
+					            <?php echo $form->price; ?>
+				            </td>
+		                </tr>
+                        <tr>
+				            <td class="taxrate">
+					            <?php echo $form->taxrate; ?>
+				            </td>
+		                </tr>
+	                </table>
+				</td>
+				<td>
+                    <table>
+                        <tr>
+				            <td class="quantity">
+					            <?php echo $form->quantity; ?>
+				            </td>
+		                </tr>
+                        <tr>
+				            <td class="uom">
+					            <?php echo $form->uom; ?>
+				            </td>
+		                </tr>
+	                </table>
+				</td>
+				<td class="total">
+					<?php echo $form->getValue('total'); ?>
+				</td>
+				<?php if(!$this->reminder['reminderid']) : ?>
+				<td class="buttons">
+					<?php echo $this->toolbar->deletepos; ?>
+					<?php echo $this->toolbar->copypos; ?>
+					<?php if($i>1) : ?>
+						<?php echo $this->toolbar->sortup; ?>
+					<?php endif; ?>
+					<?php if($i<$length) : ?>
+						<?php echo $this->toolbar->sortdown; ?>
+					<?php endif; ?>
+				</td>
+				<?php endif; ?>
+			</tr>
+			<?php ++$i; ?>
+		<?php endforeach; ?>
+	</tbody>
+</table>
+
+<table id="total">
+	<tbody>
+		<tr>
+			<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+			<td id="subtotal" align="right"><?php echo $this->reminder['subtotal'] ?></td>
+		</tr>
+		<?php foreach($this->reminder['taxes'] as $rate => $tax) : ?>
+		    <tr>
+			    <td><?php echo $this->translate('POSITIONS_TAXES')." (".$tax['title'].")"; ?></td>
+			    <td id="taxes" align="right" data-rate="<?php echo $rate; ?>"><?php echo $tax['value']; ?></td>
+		    </tr>
+		<?php endforeach; ?>
+		<tr>
+			<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+			<td id="total" align="right"><?php echo $this->reminder['total'] ?></td>
+		</tr>
+	</tbody>
+</table>
+<?php endif; ?>

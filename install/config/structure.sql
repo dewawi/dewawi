@@ -838,6 +838,80 @@ CREATE TABLE IF NOT EXISTS `purchaseorderpos` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `reminder`;
+CREATE TABLE IF NOT EXISTS `reminder` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `reminderid` int(11) NOT NULL,
+  `opportunityid` int(11) NOT NULL,
+  `contactid` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `info` text NOT NULL,
+  `header` text NOT NULL,
+  `footer` text NOT NULL,
+  `vatin` varchar(255) NOT NULL,
+  `reminderdate` date NOT NULL,
+  `orderdate` date NOT NULL,
+  `deliverydate` date NOT NULL,
+  `paymentmethod` varchar(255) NOT NULL,
+  `shippingmethod` varchar(255) NOT NULL,
+  `billingname1` varchar(255) NOT NULL,
+  `billingname2` varchar(255) NOT NULL,
+  `billingdepartment` varchar(255) NOT NULL,
+  `billingstreet` text NOT NULL,
+  `billingpostcode` varchar(255) NOT NULL,
+  `billingcity` varchar(255) NOT NULL,
+  `billingcountry` varchar(255) NOT NULL,
+  `shippingname1` varchar(255) NOT NULL,
+  `shippingname2` varchar(255) NOT NULL,
+  `shippingdepartment` varchar(255) NOT NULL,
+  `shippingstreet` text NOT NULL,
+  `shippingpostcode` varchar(255) NOT NULL,
+  `shippingcity` varchar(255) NOT NULL,
+  `shippingcountry` varchar(255) NOT NULL,
+  `shippingphone` varchar(255) NOT NULL,
+  `subtotal` decimal(15,4) NOT NULL,
+  `taxes` decimal(15,4) NOT NULL,
+  `total` decimal(15,4) NOT NULL,
+  `taxfree` tinyint(3) NOT NULL,
+  `state` tinyint(3) NOT NULL,
+  `completed` tinyint(3) NOT NULL,
+  `cancelled` tinyint(3) NOT NULL,
+  `contactperson` varchar(255) NOT NULL,
+  `templateid` int(11) NOT NULL,
+  `language` varchar(255) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `locked` int(11) NOT NULL,
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `reminderpos`;
+CREATE TABLE IF NOT EXISTS `reminderpos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `reminderid` int(11) NOT NULL,
+  `itemid` int(11) NOT NULL,
+  `sku` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `image` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `price` decimal(15,4) NOT NULL,
+  `taxrate` decimal(15,4) NOT NULL,
+  `quantity` decimal(9,4) DEFAULT NULL,
+  `total` decimal(15,4) NOT NULL,
+  `uom` varchar(255) NOT NULL,
+  `ordering` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DROP TABLE IF EXISTS `quote`;
 CREATE TABLE IF NOT EXISTS `quote` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

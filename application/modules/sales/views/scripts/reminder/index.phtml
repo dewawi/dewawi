@@ -1,0 +1,118 @@
+<?php		 
+$this->title = $this->translate('REMINDERS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="reminderid" width="5%">
+				<?php echo $this->translate('REMINDERS_REMINDER_ID'); ?>
+			</th>
+			<th class="title" width="28%">
+				<?php echo $this->translate('REMINDERS_TITLE'); ?>
+			</th>
+			<th class="contactid" width="5%">
+				<?php echo $this->translate('REMINDERS_CONTACT'); ?>
+			</th>
+			<th class="billingname" width="20%">
+			</th>
+			<th class="postcode" width="4%">
+				<?php echo $this->translate('REMINDERS_POSTCODE'); ?>
+			</th>
+			<th class="city" width="4%">
+				<?php echo $this->translate('REMINDERS_CITY'); ?>
+			</th>
+			<th class="modified" width="8%">
+				<?php echo $this->translate('REMINDERS_MODIFIED'); ?>
+			</th>
+			<th class="total" width="8%">
+				<?php echo $this->translate('REMINDERS_TOTAL'); ?>
+			</th>
+			<th class="state" width="6%">
+				<?php echo $this->translate('REMINDERS_STATE'); ?>
+			</th>
+			<th width="10%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->reminders as $reminder) : ?>
+		<tr class="state<?php echo $reminder->state; ?>">
+			<td><input class="id" type="checkbox" value="<?php echo $reminder->id ?>" name="id"/></td>
+			<td class="reminderid">
+				<?php if($reminder->reminderid) : ?>
+					<a href="<?php echo $this->url(array('controller'=>'reminder', 'action'=>'edit', 'id'=>$reminder->id)); ?>">
+						<?php echo $this->escape($reminder->reminderid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td data-label="<?php echo $this->translate('REMINDERS_TITLE') ?>" class="title">
+				<a href="<?php echo $this->url(array('controller'=>'reminder', 'action'=>'edit', 'id'=>$reminder->id)); ?>">
+					<?php echo $reminder->title ? $this->escape($reminder->title) : $this->escape($reminder->id); ?>
+				</a>
+			</td>
+			<td data-label="<?php echo $this->translate('REMINDERS_CONTACT') ?>" class="contactid">
+				<?php if($reminder->contactid) : ?>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$reminder->contactid)); ?>">
+						<?php echo $this->escape($reminder->contactid); ?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td class="billingname">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$reminder->contactid)); ?>">
+					<?php echo $this->escape($reminder->billingname1); ?>
+					<?php if($reminder->billingname2) echo "<br/>".$this->escape($reminder->billingname2); ?>
+				</a>
+			</td>
+			<td data-label="<?php echo $this->translate('REMINDERS_POSTCODE') ?>" class="billingpostcode">
+				<?php echo $this->escape($reminder->billingpostcode); ?> 
+			</td>
+			<td data-label="<?php echo $this->translate('REMINDERS_CITY') ?>" class="billingcity">
+				<?php echo $this->escape($reminder->billingcity); ?>
+			</td>
+			<td data-label="<?php echo $this->translate('REMINDERS_MODIFIED') ?>" class="modified">
+				<?php echo $this->escape(date("d.m.Y", strtotime($reminder->modified))); ?>
+			</td>
+			<td data-label="<?php echo $this->translate('REMINDERS_TOTAL') ?>" class="total">
+				<?php echo $this->escape($reminder->total); ?>
+			</td>
+			<td data-label="<?php echo $this->translate('REMINDERS_STATE') ?>" class="state">
+				<?php if($reminder->state == '105' || $reminder->state == '106') : ?>
+					<?php echo $this->translate($this->escape($this->options['states'][$reminder->state])); ?>
+				<?php else : ?>
+					<span class="editable" data-name="state" data-value="<?php echo $reminder->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$reminder->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="buttons">
+				<?php if($reminder->state == '105' || $reminder->state == '106') : ?>
+					<?php echo $this->toolbar->viewInline; ?>
+				<?php else : ?>
+					<?php echo $this->toolbar->editInline; ?>
+				<?php endif; ?>
+				<?php echo $this->toolbar->copyInline; ?>
+				<?php echo $this->toolbar->pdfInline; ?>
+			</td>
+		</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td></td>
+			<td class="toolbar">
+				<?php echo $this->ToolbarBottom(); ?>
+			</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td class="total">
+				<?php echo $this->reminders->total; ?>
+			</td>
+			<td></td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>

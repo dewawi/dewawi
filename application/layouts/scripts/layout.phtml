@@ -100,12 +100,14 @@ echo $this->doctype();
                     <span>Verkauf</span>
                     <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Angebote</a>
                     <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Auftragsbestätigungen</a>
-                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Rechnungen</a>
                     <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Lieferscheine</a>
-                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Gutschriften</a>
                     <span>Einkauf</span>
                     <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Anfragen</a>
                     <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Bestellungen</a>
+                    <span>Buchhaltung</span>
+                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Rechnungen</a>
+                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Gutschriften</a>
+                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Mahnungen</a>
                     <a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Statistiken</a>
                 </nav>
             </div>
@@ -122,9 +124,7 @@ echo $this->doctype();
                             <div class="sub1">
                                 <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>">Angebote</a>
                                 <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Auftragsbestätigungen</a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>">Rechnungen</a>
                                 <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'index', 'id'=>null)); ?>">Lieferscheine</a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>">Gutschriften</a>
                             </div>
                         </div>
                         <div class="sub">
@@ -132,6 +132,14 @@ echo $this->doctype();
                             <div class="sub1">
                                 <a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>">Anfragen</a>
                                 <a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>">Bestellungen</a>
+                            </div>
+                        </div>
+                        <div class="sub">
+                            <button>Buchhaltung</button>
+                            <div class="sub1">
+                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>">Rechnungen</a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>">Gutschriften</a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>">Mahnungen</a>
                             </div>
                         </div>
                         <a class="button" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Statistiken</a>
