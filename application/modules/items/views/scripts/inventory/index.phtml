@@ -1,0 +1,90 @@
+<?php
+$this->title = $this->translate('ITEMS_INVENTORY');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="sku" width="10%">
+				<?php echo $this->translate('ITEMS_SKU'); ?>
+			</th>
+			<th class="title" width="32%">
+				<?php echo $this->translate('ITEMS_TITLE'); ?>
+			</th>
+			<th class="cost" width="8%">
+				<?php echo $this->translate('ITEMS_INVENTORY_COMMENT'); ?>
+			</th>
+			<th class="cost" width="8%">
+				<?php echo $this->translate('ITEMS_INVENTORY_TYPE'); ?>
+			</th>
+			<th class="price" width="8%">
+				<?php echo $this->translate('ITEMS_INVENTORY_DOCUMENT'); ?>
+			</th>
+			<th class="quantity" width="8%">
+				<?php echo $this->translate('ITEMS_INVENTORY_PRICE'); ?>
+			</th>
+			<th width="8%"><?php echo $this->translate('ITEMS_INVENTORY_QUANTITY'); ?></th>
+			<th width="8%"><?php echo $this->translate('ITEMS_CATEGORY'); ?></th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->inventory as $inventory) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $inventory->id ?>" name="id"/></td>
+				<td data-label="<?php echo $this->translate('ITEMS_SKU') ?>" class="sku">
+					<?php echo $this->escape($inventory->sku); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_TITLE') ?>" class="title">
+					<?php echo $this->escape($inventory->title); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_INVENTORY_COMMENT') ?>" class="comment">
+					<?php echo $this->escape($inventory->comment); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_INVENTORY_TYPE') ?>" class="doctype">
+			        <?php if($inventory->type == 'inflow') echo $this->translate('ITEMS_INVENTORY_INFLOW'); ?>
+			        <?php if($inventory->type == 'outflow') echo $this->translate('ITEMS_INVENTORY_OUTFLOW'); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_INVENTORY_DOCUMENT') ?>" class="cost">
+			        <?php if($inventory->doctype == 'invoice') : ?>
+			            <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'view', 'id'=>$inventory->docid));?>">
+				            <?php echo $this->translate('INVOICE'); ?> <?php echo $this->escape($inventory->invoiceid);?>
+			            </a>
+	                <?php endif; ?>
+			        <?php if($inventory->doctype == 'creditnote') : ?>
+			            <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'view', 'id'=>$inventory->docid));?>">
+				            <?php echo $this->translate('CREDIT_NOTE'); ?> <?php echo $this->escape($inventory->creditnoteid);?>
+			            </a>
+	                <?php endif; ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_INVENTORY_PRICE') ?>" class="price">
+					<?php echo $this->escape($inventory->price); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_INVENTORY_QUANTITY') ?>" class="quantity">
+					<?php echo $this->escape($inventory->quantity); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_CATEGORY') ?>" class="category">
+					<?php if($inventory->catid && isset($this->options['categories'][$inventory->catid])) echo $this->escape($this->options['categories'][$inventory->catid]['title']); ?>
+				</td>
+				<td class="buttons">
+					<?php echo $this->toolbar->editInline; ?>
+					<?php echo $this->toolbar->copyInline; ?>
+					<?php echo $this->toolbar->deleteInline; ?>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td>
+				<div class="toolbar bottom">
+					<?php echo $this->ToolbarBottom(); ?>
+				</div>
+			</td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>

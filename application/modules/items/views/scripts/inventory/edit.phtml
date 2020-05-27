@@ -7,8 +7,6 @@ echo $this->FileManager();
 
 <ul class="tabs">
 	<li><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
-	<li<?php if($this->activeTab == "#tabDetails") : ?> class="active"<?php endif; ?>>
-        <a href="#tabDetails"><?php echo $this->translate('TABS_DETAILS') ?></a></li>
 	<li<?php if($this->activeTab == "#tabInventory") : ?> class="active"<?php endif; ?>>
         <a href="#tabInventory"><?php echo $this->translate('TABS_INVENTORY') ?></a></li>
     <?php if($this->dirwritable) : ?>
@@ -27,46 +25,18 @@ echo $this->FileManager();
 					    <?php echo $this->form->getElement('sku') ?>
 					    <?php echo $this->form->getElement('title') ?>
 					    <?php echo $this->form->getElement('type') ?>
+					    <?php echo $this->form->getElement('image') ?>
+					    <?php echo $this->form->getElement('barcode') ?>
 					    <?php echo $this->form->getElement('catid') ?>
-					    <?php echo $this->form->getElement('gtin') ?>
-                        <h4>Preise</h4>
+					    <?php echo $this->form->getElement('manufacturerid') ?>
+					    <?php echo $this->form->getElement('manufacturersku') ?>
+					    <?php echo $this->form->getElement('quantity') ?>
+					    <?php echo $this->form->getElement('uomid') ?>
+					    <?php echo $this->form->getElement('weight') ?>
 					    <?php echo $this->form->getElement('cost') ?>
 					    <?php echo $this->form->getElement('price') ?>
 					    <?php echo $this->form->getElement('margin') ?>
 					    <?php echo $this->form->getElement('taxid') ?>
-                        <h4>Hersteller</h4>
-					    <?php echo $this->form->getElement('manufacturerid') ?>
-					    <?php echo $this->form->getElement('manufacturersku') ?>
-					    <?php echo $this->form->getElement('manufacturergtin') ?>
-                        <h4>Zoll</h4>
-					    <?php echo $this->form->getElement('ctn') ?>
-					    <?php echo $this->form->getElement('origincountry') ?>
-					    <?php echo $this->form->getElement('originregion') ?>
-				    </dl>
-		        </div>
-                <div class="col-sm-12 col-lg-5">
-				    <?php echo $this->form->getElement('description') ?>
-				    <?php echo $this->form->getElement('info') ?>
-                    <div class="info"><small>Interne Informationen werden nicht auf Angeboten, Rechnungen etc. angezeigt.</small></div>
-			    </div>
-		    </div>
-		</form>
-	</div>
-	<div id="tabDetails" class="tab_content<?php if($this->activeTab == '#tabDetails') : ?> active<?php endif; ?>">
-		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
-            <div class="row">
-                <div class="col-sm-12 col-lg-6">
-                        <h4>Lager</h4>
-					    <?php echo $this->form->getElement('quantity') ?>
-					    <?php echo $this->form->getElement('inventory') ?>
-					    <?php echo $this->form->getElement('minquantity') ?>
-					    <?php echo $this->form->getElement('orderquantity') ?>
-					    <?php echo $this->form->getElement('quantityreminder') ?>
-					    <?php echo $this->form->getElement('warehouseid') ?>
-					    <?php echo $this->form->getElement('uomid') ?>
-                        <h4>Sonstiges</h4>
-					    <?php echo $this->form->getElement('image') ?>
-				    <dl class="form">
 				    </dl>
 				    <dl class="form">
 					    <dt><label><?php echo $this->translate('ITEMS_CREATED') ?></label></dt>
@@ -75,17 +45,10 @@ echo $this->FileManager();
 					    <dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('modified')))) ?></label></dd>
 				    </dl>
 		        </div>
-                <div class="col-sm-12 col-lg-6">
-                        <h4>Abmessungen und Gewicht</h4>
-					    <?php echo $this->form->getElement('width') ?>
-					    <?php echo $this->form->getElement('length') ?>
-					    <?php echo $this->form->getElement('height') ?>
-					    <?php echo $this->form->getElement('weight') ?>
-                        <h4>Verpackungsmaße und Gewicht</h4>
-					    <?php echo $this->form->getElement('packwidth') ?>
-					    <?php echo $this->form->getElement('packlength') ?>
-					    <?php echo $this->form->getElement('packheight') ?>
-					    <?php echo $this->form->getElement('packweight') ?>
+                <div class="col-sm-12 col-lg-5">
+				    <?php echo $this->form->getElement('description') ?>
+				    <?php echo $this->form->getElement('info') ?>
+                    <div class="info"><small>Interne Informationen werden nicht auf Angeboten, Rechnungen etc. angezeigt.</small></div>
 			    </div>
 		    </div>
 		</form>
@@ -113,7 +76,6 @@ echo $this->FileManager();
 	        <iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
 	    </div>
     <?php endif; ?>
-</div>
 
 	<!--<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
@@ -132,3 +94,4 @@ echo $this->FileManager();
 		    </div>
 		</form>
 	</div>-->
+</div>

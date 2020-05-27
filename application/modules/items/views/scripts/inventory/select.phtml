@@ -1,0 +1,55 @@
+<?php
+$this->title = $this->translate('ITEMS');
+$this->headTitle($this->title);
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="sku"><?php echo $this->translate('ITEMS_SKU'); ?></th>
+			<th class="title"><?php echo $this->translate('ITEMS_TITLE'); ?></th>
+			<th class="cost"><?php echo $this->translate('ITEMS_COST'); ?></th>
+			<th class="price"><?php echo $this->translate('ITEMS_PRICE'); ?></th>
+			<th class="quantity"><?php echo $this->translate('ITEMS_QUANTITY'); ?></th>
+			<th class="uomid"><?php echo $this->translate('ITEMS_UOM'); ?></th>
+			<th class="manufacturer"><?php echo $this->translate('ITEMS_MANUFACTURER'); ?></th>
+			<th class="category"><?php echo $this->translate('ITEMS_CATEGORY'); ?></th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->items as $item) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $item->id ?>" name="id"/></span></td>
+				<td class="sku">
+					<?php echo $this->escape($item->sku);?>
+				</td>
+				<td class="title">
+					<?php echo $this->escape($item->title);?>
+				</td>
+				<td class="cost">
+					<?php echo $this->escape($item->cost);?>
+				</td>
+				<td class="price">
+					<?php echo $this->escape($item->price);?>
+				</td>
+				<td class="quantity">
+					<?php if($item->quantity) echo $this->escape($item->quantity);?>
+				</td>
+				<td class="uomid">
+					<?php if($item->uomid) echo $this->escape($this->uoms[$item->uomid]);?>
+				</td>
+				<td class="manufacturer">
+					<?php if($item->manufacturerid) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]);?>
+				</td>
+				<td class="category">
+					<?php if($item->catid) echo $this->escape($this->categories[$item->catid]['title']);?>
+				</td>
+				<td class="buttons">
+					<?php echo $this->Button('apply', 'applyPosition('.$this->escape($item->id).')'); ?>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+	</tbody>
+</table>

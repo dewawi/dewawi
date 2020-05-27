@@ -25,7 +25,7 @@
 	'ITEMS_ORDER_QUANTITY' => 'Min. Bestellmenge',
 	'ITEMS_QUANTITY_REMINDER' => 'Bestand melden',
 	'ITEMS_WAREHOUSE' => 'Lager',
-	'ITEMS_VAT' => 'Mwstsatz',
+	'ITEMS_VAT' => 'Umsatzsteuer',
 	'ITEMS_UOM' => 'Messeinheit',
 	'ITEMS_MANUFACTURER' => 'Hersteller',
 	'ITEMS_MANUFACTURER_SKU' => 'Herst.-Artnum',
