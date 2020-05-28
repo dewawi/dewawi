@@ -345,7 +345,7 @@ INSERT INTO `textblock` (`id`, `text`, `module`, `controller`, `section`, `order
 (13, '<p>Sehr geehrte Damen und Herren,</p>\n<p>vielen Dank f&uuml;r Ihr Angebot, hiermit bestellen wir nachfolgende Positionen;</p>', 'purchases', 'purchaseorder', 'header', 1, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:18:56', 1),
 (14, '<p>Wir bitten um schnellstm&ouml;gliche Lieferung.</p>', 'purchases', 'purchaseorder', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:22:49', 1),
 (15, '', 'sales', 'creditnote', 'header', 1, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:55:57', 1),
-(16, '', 'sales', 'creditnote', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:57:18', 1),;
+(16, '', 'sales', 'creditnote', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:57:18', 1);
 
 
 TRUNCATE `uom`;
