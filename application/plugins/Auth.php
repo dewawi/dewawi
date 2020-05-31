@@ -17,6 +17,7 @@ class Application_Plugin_Auth extends Zend_Controller_Plugin_Abstract
                         'username' => $identity->username,
                         'name' => $identity->name,
                         'email' => $identity->email,
+                        'admin' => $identity->admin,
                         'permissions' => $identity->permissions,
                         'clientid' => $identity->clientid
                         );

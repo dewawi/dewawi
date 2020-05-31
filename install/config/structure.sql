@@ -1264,6 +1264,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `password` varchar(32) NOT NULL,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
+  `admin` tinyint(3) NOT NULL,
   `permissions` text NOT NULL,
   `smtphost` varchar(255) NOT NULL,
   `smtpauth` varchar(255) NOT NULL,
