@@ -372,6 +372,35 @@ CREATE TABLE IF NOT EXISTS `internet` (
   KEY (contactid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `inventory`;
+CREATE TABLE IF NOT EXISTS `inventory` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `itemid` int(11) NOT NULL,
+  `sku` varchar(255) NOT NULL,
+  `contactid` int(11) NOT NULL,
+  `docid` int(11) NOT NULL,
+  `doctype` varchar(255) NOT NULL,
+  `invoiceid` int(11) NOT NULL,
+  `creditnoteid` int(11) NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `date` date NOT NULL,
+  `comment` varchar(255) NOT NULL,
+  `price` decimal(15,4) NOT NULL,
+  `taxrate` decimal(15,4) NOT NULL,
+  `quantity` decimal(9,4) DEFAULT NULL,
+  `total` decimal(15,4) NOT NULL,
+  `uom` varchar(255) NOT NULL,
+  `warehouseid` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `locked` int(11) NOT NULL,
+  `lockedtime` datetime NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DROP TABLE IF EXISTS `invoice`;
 CREATE TABLE IF NOT EXISTS `invoice` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -475,43 +504,14 @@ CREATE TABLE IF NOT EXISTS `item` (
   `ctn` varchar(255) NOT NULL,
   `origincountry` varchar(255) NOT NULL,
   `originregion` varchar(255) NOT NULL,
-  `width` decimal(15,4) NOT NULL,
   `length` decimal(15,4) NOT NULL,
+  `width` decimal(15,4) NOT NULL,
   `height` decimal(15,4) NOT NULL,
   `weight` decimal(15,4) NOT NULL,
-  `packwidth` decimal(15,4) NOT NULL,
   `packlength` decimal(15,4) NOT NULL,
+  `packwidth` decimal(15,4) NOT NULL,
   `packheight` decimal(15,4) NOT NULL,
   `packweight` decimal(15,4) NOT NULL,
-  `clientid` int(11) NOT NULL,
-  `created` datetime NOT NULL,
-  `createdby` int(11) NOT NULL,
-  `modified` datetime NOT NULL,
-  `modifiedby` int(11) NOT NULL,
-  `locked` int(11) NOT NULL,
-  `lockedtime` datetime NOT NULL,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `inventory`;
-CREATE TABLE IF NOT EXISTS `inventory` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `itemid` int(11) NOT NULL,
-  `sku` varchar(255) NOT NULL,
-  `contactid` int(11) NOT NULL,
-  `docid` int(11) NOT NULL,
-  `doctype` varchar(255) NOT NULL,
-  `invoiceid` int(11) NOT NULL,
-  `creditnoteid` int(11) NOT NULL,
-  `type` varchar(255) NOT NULL,
-  `date` date NOT NULL,
-  `comment` varchar(255) NOT NULL,
-  `price` decimal(15,4) NOT NULL,
-  `taxrate` decimal(15,4) NOT NULL,
-  `quantity` decimal(9,4) DEFAULT NULL,
-  `total` decimal(15,4) NOT NULL,
-  `uom` varchar(255) NOT NULL,
-  `warehouseid` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
@@ -1264,6 +1264,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `password` varchar(32) NOT NULL,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
+  `admin` tinyint(3) NOT NULL,
   `permissions` text NOT NULL,
   `smtphost` varchar(255) NOT NULL,
   `smtpauth` varchar(255) NOT NULL,
