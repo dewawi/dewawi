@@ -70,10 +70,10 @@ class Items_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$options['taxrates'] = $uoms;
 
 		//Set form options
-		$form->catid->addMultiOptions($this->getMenuStructure($categories));
-		$form->manufacturerid->addMultiOptions($manufacturers);
-		if(isset($form->uomid)) $form->uomid->addMultiOptions($uoms);
-		if(isset($form->taxid))$form->taxid->addMultiOptions($taxrates);
+		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($this->getMenuStructure($options['categories']));
+		if(isset($form->manufacturerid) && isset($options['manufacturers'])) $form->catid->addMultiOptions($this->getMenuStructure($options['manufacturers']));
+		if(isset($form->uomid) && isset($options['uoms'])) $form->catid->addMultiOptions($this->getMenuStructure($options['uoms']));
+		if(isset($form->taxid) && isset($options['taxrates'])) $form->catid->addMultiOptions($this->getMenuStructure($options['taxrates']));
 
 		return $options;
 	}

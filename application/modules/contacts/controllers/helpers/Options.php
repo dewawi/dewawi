@@ -68,9 +68,9 @@ class Contacts_Controller_Action_Helper_Options extends Zend_Controller_Action_H
 
 
 		//Set form options
-		if(isset($form->catid)) $form->catid->addMultiOptions($this->getMenuStructure($categories));
-		if(isset($form->country)) $form->country->addMultiOptions($options['countries']);
-		if(isset($form->paymentmethod)) $form->paymentmethod->addMultiOptions($paymentmethods);
+		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($this->getMenuStructure($options['categories']));
+		if(isset($form->country) && isset($options['countries'])) $form->country->addMultiOptions($options['countries']);
+		if(isset($form->paymentmethod) && isset($options['paymentmethods'])) $form->paymentmethod->addMultiOptions($options['paymentmethods']);
 
 		return $options;
 	}

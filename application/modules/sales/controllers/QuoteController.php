@@ -104,6 +104,11 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$data['createdby'] = $this->_user['id'];
 		$data['clientid'] = $this->_user['clientid'];
 
+		//Get default template
+		$templateDb = new Application_Model_DbTable_Template();
+		$template = $templateDb->getDefaultTemplate();
+        if(isset($template)) $data['templateid'] = $template['id'];
+
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$id = $quoteDb->addQuote($data);
 

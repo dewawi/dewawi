@@ -25,8 +25,8 @@ class Admin_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$options['languages'] = $languages;
 
 		//Set form options
-		if(isset($form->clientid)) $form->clientid->addMultiOptions($clients);
-		if(isset($form->language)) $form->language->addMultiOptions($languages);
+		if(isset($form->clientid) && isset($options['clients'])) $form->language->addMultiOptions($options['clients']);
+		if(isset($form->language) && isset($options['languages'])) $form->language->addMultiOptions($options['languages']);
 
 		return $options;
 	}

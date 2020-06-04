@@ -98,8 +98,8 @@ if(isset($this->template) && $this->template['website']) {
 //Logo
 if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
 	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
+    $pdf->Image($logo, 145, 10, 0, 0, '', $website);
 }
-$pdf->Image($logo, 145, 10, 0, 0, '', $website);
 
 //IMPORTANT INFORMATIONS
 $pdf->SetY(40);
@@ -271,7 +271,9 @@ while($i <= $lastPage) {
 		cancelled($pdf, strtoupper($this->translate('DOCUMENTS_CANCELLED')));
 	}
 	if($i > 1) {
-		$pdf->Image($logo, 155, 10, 40, 0, '', $website);
+        if(isset($logo)) {
+		    $pdf->Image($logo, 155, 10, 40, 0, '', $website);
+        }
 
 		$y = $pdf->GetY();
 		$pdf->SetY(20);

@@ -15,6 +15,14 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getDefaultTemplate()
+	{
+		$row = $this->fetchRow('`default` = 1 AND `activated` = 1');
+		if($row) {
+		    return $row->toArray();
+		}
+	}
+
 	public function getTemplates($clientid)
 	{
 		$row = $this->fetchAll('clientid = ' . $clientid . ' AND activated = 1');

@@ -112,10 +112,10 @@ class Processes_Controller_Action_Helper_Options extends Zend_Controller_Action_
 		$options['shippingmethods'] = $shippingmethods;
 
 		//Set form options
-		if(isset($form->catid)) $form->catid->addMultiOptions($this->getMenuStructure($categories));
-		if(isset($form->country))$form->country->addMultiOptions($countries);
-		if(isset($form->paymentmethod)) $form->paymentmethod->addMultiOptions($paymentmethods);
-		if(isset($form->shippingmethod)) $form->shippingmethod->addMultiOptions($shippingmethods);
+		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($this->getMenuStructure($options['categories']));
+		if(isset($form->country) && isset($options['countries'])) $form->country->addMultiOptions($options['countries']);
+		if(isset($form->paymentmethod) && isset($options['paymentmethods'])) $form->paymentmethod->addMultiOptions($options['paymentmethods']);
+		if(isset($form->shippingmethod) && isset($options['shippingmethods'])) $form->shippingmethod->addMultiOptions($options['shippingmethods']);
 
 		return $options;
 	}

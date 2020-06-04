@@ -55,8 +55,8 @@ class Statistics_Controller_Action_Helper_Options extends Zend_Controller_Action
 		$options['countries'] = $countries;
 
 		//Set form options
-		if(isset($form->catid)) $form->catid->addMultiOptions($this->getMenuStructure($categories));
-		if(isset($form->country))$form->country->addMultiOptions($countries);
+		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($this->getMenuStructure($options['categories']));
+		if(isset($form->country) && isset($options['countries'])) $form->country->addMultiOptions($options['countries']);
 
 		return $options;
 	}
