@@ -604,6 +604,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 		$this->view->quote = $quote;
 		$this->view->positions = $positions;
+		$this->view->calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $quote['taxfree']);
 		$this->view->footers = $this->_helper->Footer->getFooters($templateid, $this->_user['clientid']);
 	}
 
