@@ -83,6 +83,9 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 
 	public function deleteItem($id)
 	{
-		$this->delete('id =' . (int)$id);
+		$data = array(
+			'deleted' => 1
+		);
+		$this->update($data, 'id =' . (int)$id);
 	}
 }

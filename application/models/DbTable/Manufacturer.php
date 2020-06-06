@@ -13,28 +13,4 @@ class Application_Model_DbTable_Manufacturer extends Zend_Db_Table_Abstract
 		}
 		return $row->toArray();
 	}
-
-	public function addManufacturer($name, $clientid, $created)
-	{
-		$data = array(
-			'name' => $name,
-			'clientid' => $clientid,
-			'created' => $created,
-		);
-		$this->insert($data);
-	}
-
-	public function updateManufacturer($id, $name, $modified)
-	{
-		$data = array(
-			'name' => $name,
-			'modified' => $modified,
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function deleteManufacturer($id)
-	{
-		$this->delete('id =' . (int)$id);
-	}
 }

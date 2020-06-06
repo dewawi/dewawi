@@ -53,6 +53,9 @@ class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
 
 	public function deleteCategory($id)
 	{
-		$this->delete('id =' . (int)$id);
+		$data = array(
+			'deleted' => 1
+		);
+		$this->update($data, 'id =' . (int)$id);
 	}
 }

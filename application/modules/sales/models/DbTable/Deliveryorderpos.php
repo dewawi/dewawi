@@ -47,12 +47,18 @@ class Sales_Model_DbTable_Deliveryorderpos extends Zend_Db_Table_Abstract
 
 	public function deletePosition($id)
 	{
-		$this->delete('id =' . (int)$id);
+		$data = array(
+			'deleted' => 1
+		);
+		$this->update($data, 'id =' . (int)$id);
 	}
 
 	public function deletePositions($ids)
 	{
+		$data = array(
+			'deleted' => 1
+		);
 		$where = $this->getAdapter()->quoteInto('id IN (?)', $ids);
-		$this->delete($where);
+		$this->update($data, $where);
 	}
 }

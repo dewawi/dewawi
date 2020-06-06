@@ -36,9 +36,4 @@ class Admin_Model_DbTable_Config extends Zend_Db_Table_Abstract
 		);
 		$this->update($data, 'id = '. (int)$id);
 	}
-
-	public function deleteConfig($id)
-	{
-		$this->delete('id =' . (int)$id);
-	}
 }

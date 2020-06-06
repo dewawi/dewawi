@@ -79,6 +79,9 @@ class Sales_Model_DbTable_Deliveryorder extends Zend_Db_Table_Abstract
 
 	public function deleteDeliveryorder($id)
 	{
-		$this->delete('id =' . (int)$id);
+		$data = array(
+			'deleted' => 1
+		);
+		$this->update($data, 'id =' . (int)$id);
 	}
 }

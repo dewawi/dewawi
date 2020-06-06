@@ -71,9 +71,9 @@ class Items_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 
 		//Set form options
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($this->getMenuStructure($options['categories']));
-		if(isset($form->manufacturerid) && isset($options['manufacturers'])) $form->catid->addMultiOptions($this->getMenuStructure($options['manufacturers']));
-		if(isset($form->uomid) && isset($options['uoms'])) $form->catid->addMultiOptions($this->getMenuStructure($options['uoms']));
-		if(isset($form->taxid) && isset($options['taxrates'])) $form->catid->addMultiOptions($this->getMenuStructure($options['taxrates']));
+		if(isset($form->manufacturerid) && isset($options['manufacturers'])) $form->manufacturerid->addMultiOptions($options['manufacturers']);
+		if(isset($form->uomid) && isset($options['uoms'])) $form->uomid->addMultiOptions($this->getMenuStructure($options['uoms']));
+		if(isset($form->taxid) && isset($options['taxrates'])) $form->taxid->addMultiOptions($this->getMenuStructure($options['taxrates']));
 
 		return $options;
 	}

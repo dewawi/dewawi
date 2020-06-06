@@ -54,6 +54,9 @@ class Items_Model_DbTable_Inventory extends Zend_Db_Table_Abstract
 
 	public function deleteInventory($id)
 	{
-		$this->delete('id =' . (int)$id);
+		$data = array(
+			'deleted' => 1
+		);
+		$this->update($data, 'id =' . (int)$id);
 	}
 }

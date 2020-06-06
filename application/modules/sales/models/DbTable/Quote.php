@@ -79,6 +79,9 @@ class Sales_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 
 	public function deleteQuote($id)
 	{
-		$this->delete('id =' . (int)$id);
+		$data = array(
+			'deleted' => 1
+		);
+		$this->update($data, 'id =' . (int)$id);
 	}
 }

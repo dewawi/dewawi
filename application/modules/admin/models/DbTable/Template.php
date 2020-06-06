@@ -45,6 +45,9 @@ class Admin_Model_DbTable_Template extends Zend_Db_Table_Abstract
 
 	public function deleteTemplate($id)
 	{
-		$this->delete('id =' . (int)$id);
+		$data = array(
+			'deleted' => 1
+		);
+		$this->update($data, 'id =' . (int)$id);
 	}
 }

@@ -37,6 +37,9 @@ class Contacts_Model_DbTable_Address extends Zend_Db_Table_Abstract
 
 	public function deleteAddress($id)
 	{
-		$this->delete('id =' . (int)$id);
+		$data = array(
+			'deleted' => 1
+		);
+		$this->update($data, 'id =' . (int)$id);
 	}
 }

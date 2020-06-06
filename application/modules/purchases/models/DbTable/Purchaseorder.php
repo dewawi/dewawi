@@ -79,6 +79,9 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 
 	public function deletePurchaseorder($id)
 	{
-		$this->delete('id =' . (int)$id);
+		$data = array(
+			'deleted' => 1
+		);
+		$this->update($data, 'id =' . (int)$id);
 	}
 }
