@@ -18,7 +18,7 @@ class Contacts_BankaccountController extends Zend_Controller_Action
 					$bankAccountDb = new Contacts_Model_DbTable_Bankaccount();
 					$bankAccountDataBefore = $bankAccountDb->getBankaccount($data['contactid']);
 					$latest = end($bankAccountDataBefore);
-					$bankAccountDb->addBankaccount($data['contactid'], '', '', $latest['ordering']+1);
+					$bankAccountDb->addBankaccount(array('contactid' => $data['contactid'], 'ordering' => $latest['ordering']+1));
 					$bankAccountDataAfter = $bankAccountDb->getBankaccount($data['contactid']);
 					$bankAccount = end($bankAccountDataAfter);
 					echo $this->view->MultiForm('bankaccount', $bankAccount, array('iban', 'bic'));

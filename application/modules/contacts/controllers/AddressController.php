@@ -29,7 +29,7 @@ class Contacts_AddressController extends Zend_Controller_Action
 					$addressDb = new Contacts_Model_DbTable_Address();
 					$addressDataBefore = $addressDb->getAddress($data['contactid']);
 					$latest = end($addressDataBefore);
-					$addressDb->addAddress($data['contactid'], $data['type'], '', '', '', $client['country'], $latest['ordering']+1);
+		            $addressDb->addAddress(array('contactid' => $data['contactid'], 'type' => $data['type'], 'country' => $client['country'], 'ordering' => $latest['ordering']+1));
 					$addressDataAfter = $addressDb->getAddress($data['contactid']);
 					$address = end($addressDataAfter);
 					echo $this->view->MultiForm('address', $address, array(

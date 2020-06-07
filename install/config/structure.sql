@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS `address` (
   `ordering` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
   `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -50,6 +52,7 @@ CREATE TABLE IF NOT EXISTS `bankaccount` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -97,6 +100,7 @@ CREATE TABLE IF NOT EXISTS `config` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `timezone` varchar(255) NOT NULL,
   `language` varchar(255) NOT NULL,
+  `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
@@ -132,6 +136,7 @@ CREATE TABLE IF NOT EXISTS `contact` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -199,6 +204,7 @@ CREATE TABLE IF NOT EXISTS `creditnote` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -222,6 +228,7 @@ CREATE TABLE IF NOT EXISTS `creditnotepos` (
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -273,6 +280,7 @@ CREATE TABLE IF NOT EXISTS `deliveryorder` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -296,6 +304,7 @@ CREATE TABLE IF NOT EXISTS `deliveryorderpos` (
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -347,6 +356,12 @@ CREATE TABLE IF NOT EXISTS `email` (
   `contactid` int(11) NOT NULL,
   `email` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY (contactid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -359,6 +374,14 @@ CREATE TABLE IF NOT EXISTS `footer` (
   `text` text NOT NULL,
   `width` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
+  `language` varchar(255) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `locked` int(11) NOT NULL,
+  `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -368,6 +391,12 @@ CREATE TABLE IF NOT EXISTS `internet` (
   `contactid` int(11) NOT NULL,
   `internet` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY (contactid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -398,6 +427,7 @@ CREATE TABLE IF NOT EXISTS `inventory` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -450,6 +480,7 @@ CREATE TABLE IF NOT EXISTS `invoice` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -473,6 +504,7 @@ CREATE TABLE IF NOT EXISTS `invoicepos` (
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -519,6 +551,7 @@ CREATE TABLE IF NOT EXISTS `item` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -534,6 +567,7 @@ CREATE TABLE IF NOT EXISTS `language` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -586,6 +620,7 @@ CREATE TABLE IF NOT EXISTS `manufacturer` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -602,6 +637,7 @@ CREATE TABLE IF NOT EXISTS `module` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -617,6 +653,7 @@ CREATE TABLE IF NOT EXISTS `paymentmethod` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -627,6 +664,12 @@ CREATE TABLE IF NOT EXISTS `phone` (
   `type` varchar(255) NOT NULL,
   `phone` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY (contactid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -714,6 +757,7 @@ CREATE TABLE IF NOT EXISTS `process` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -761,6 +805,7 @@ CREATE TABLE IF NOT EXISTS `processpos` (
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -812,6 +857,7 @@ CREATE TABLE IF NOT EXISTS `purchaseorder` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -835,6 +881,7 @@ CREATE TABLE IF NOT EXISTS `purchaseorderpos` (
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -886,6 +933,7 @@ CREATE TABLE IF NOT EXISTS `reminder` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -909,6 +957,7 @@ CREATE TABLE IF NOT EXISTS `reminderpos` (
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -960,6 +1009,7 @@ CREATE TABLE IF NOT EXISTS `quote` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -983,6 +1033,7 @@ CREATE TABLE IF NOT EXISTS `quotepos` (
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1034,6 +1085,7 @@ CREATE TABLE IF NOT EXISTS `quoterequest` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1057,6 +1109,7 @@ CREATE TABLE IF NOT EXISTS `quoterequestpos` (
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1108,6 +1161,7 @@ CREATE TABLE IF NOT EXISTS `salesorder` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1131,6 +1185,7 @@ CREATE TABLE IF NOT EXISTS `salesorderpos` (
   `createdby` int(11) NOT NULL,
   `modified` datetime NOT NULL,
   `modifiedby` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1172,6 +1227,7 @@ CREATE TABLE IF NOT EXISTS `shippingmethod` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1203,6 +1259,7 @@ CREATE TABLE IF NOT EXISTS `taxrate` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1254,6 +1311,7 @@ CREATE TABLE IF NOT EXISTS `uom` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1278,6 +1336,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
