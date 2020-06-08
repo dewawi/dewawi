@@ -126,7 +126,7 @@ class Processes_Controller_Action_Helper_Options extends Zend_Controller_Action_
 		$optionsStructure = array();
 		$count = count($options);
 		foreach($options as $option) {
-			if($option['parent'] == $id) {
+			if(isset($option['parent']) && ($option['parent'] == $id)) {
 				$optionsStructure[$option['id']] = str_repeat(' -- ', $level).$option['title'];
 				if(isset($option['childs']) && !empty($option['childs'])) {
 					$childOptions = $this->getMenuStructure($options, $option['id'], $level+1);

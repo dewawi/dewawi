@@ -39,7 +39,7 @@ class Contacts_Model_Get
 				->order($order.' '.$params['sort'])
 				->limit($params['limit'])
 		);
-echo $query;
+
 		return $contacts;
 	}
 

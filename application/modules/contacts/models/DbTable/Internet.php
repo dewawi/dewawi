@@ -47,9 +47,9 @@ class Contacts_Model_DbTable_Internet extends Zend_Db_Table_Abstract
 
 	public function deleteInternet($id)
 	{
-		$data = array(
-			'deleted' => 1
-		);
-		$this->update($data, 'id =' . (int)$id);
+		$id = (int)$id;
+		$data = array('deleted' => 1);
+		$where = $this->getAdapter()->quoteInto('id = ?', $id);
+		$this->update($data, $where);
 	}
 }

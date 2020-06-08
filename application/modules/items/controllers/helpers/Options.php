@@ -67,13 +67,13 @@ class Items_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		foreach($taxratesObject as $taxrate) {
 			$taxrates[$taxrate->id] = Zend_Locale_Format::toNumber($taxrate->rate,array('precision' => 1,'locale' => $locale)).' %';
 		}
-		$options['taxrates'] = $uoms;
+		$options['taxrates'] = $taxrates;
 
 		//Set form options
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($this->getMenuStructure($options['categories']));
 		if(isset($form->manufacturerid) && isset($options['manufacturers'])) $form->manufacturerid->addMultiOptions($options['manufacturers']);
-		if(isset($form->uomid) && isset($options['uoms'])) $form->uomid->addMultiOptions($this->getMenuStructure($options['uoms']));
-		if(isset($form->taxid) && isset($options['taxrates'])) $form->taxid->addMultiOptions($this->getMenuStructure($options['taxrates']));
+		if(isset($form->uomid) && isset($options['uoms'])) $form->uomid->addMultiOptions($options['uoms']);
+		if(isset($form->taxid) && isset($options['taxrates'])) $form->taxid->addMultiOptions($options['taxrates']);
 
 		return $options;
 	}
@@ -84,7 +84,7 @@ class Items_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$optionsStructure = array();
 		$count = count($options);
 		foreach($options as $option) {
-			if($option['parent'] == $id) {
+			if(isset($option['parent']) && ($option['parent'] == $id)) {
 				$optionsStructure[$option['id']] = str_repeat(' -- ', $level).$option['title'];
 				if(isset($option['childs']) && !empty($option['childs'])) {
 					$childOptions = $this->getMenuStructure($options, $option['id'], $level+1);

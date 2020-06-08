@@ -632,7 +632,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
                                     'createdby' => $this->_user['id']
                                     );
                         $inventoryDb->addInventory($inventory);
-						$itemsDb->quantityItem($item->id, $quantity, $this->_date, $this->_user['id']);
+						$itemsDb->quantityItem($item->id, $quantity);
 					}
 				}
 			}

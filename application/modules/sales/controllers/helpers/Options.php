@@ -106,16 +106,15 @@ class Sales_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 
 		//Get templates
 		$templateDb = new Application_Model_DbTable_Template();
-        $templates = $templateDb->getTemplates($clientid);
-		/*$templateObject = $templateDb->fetchAll(
+		$templateObject = $templateDb->fetchAll(
 			$templateDb->select()
 				->where('clientid = ?', $clientid)
 		);
-		$templates = array();*/
-		foreach($templates as $template) {
-			$options['templates'][$template['id']] = $template['description'];
+		$templates = array();
+		foreach($templateObject as $template) {
+			$templates[$template->id] = $template->description;
 		}
-		//$options['templates'] = $templates;
+		$options['templates'] = $templates;
 
 		//Get languages
 		$languages = array(
@@ -141,7 +140,7 @@ class Sales_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$optionsStructure = array();
 		$count = count($options);
 		foreach($options as $option) {
-			if($option['parent'] == $id) {
+			if(isset($option['parent']) && ($option['parent'] == $id)) {
 				$optionsStructure[$option['id']] = str_repeat(' -- ', $level).$option['title'];
 				if(isset($option['childs']) && !empty($option['childs'])) {
 					$childOptions = $this->getMenuStructure($options, $option['id'], $level+1);

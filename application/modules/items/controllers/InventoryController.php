@@ -107,9 +107,6 @@ class Items_InventoryController extends Zend_Controller_Action
 				$data['price'] = $form->getValue('price') ? Zend_Locale_Format::getNumber($form->getValue('price'),array('precision' => 2,'locale' => $locale)) : 0;
 				$data['margin'] = $form->getValue('margin') ? Zend_Locale_Format::getNumber($form->getValue('margin'),array('precision' => 2,'locale' => $locale)) : 0;
 				$data['inventory'] = 1;
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $this->_user['clientid'];
 				$item = new Items_Model_DbTable_Item();
 				$item->addItem($data);
 				$this->_helper->redirector('index');
@@ -146,7 +143,7 @@ class Items_InventoryController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$itemDb->lock($id, $this->_user['id'], $this->_date);
+			$itemDb->lock($id);
 
 			$form = new Items_Form_Item();
 			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
@@ -157,8 +154,6 @@ class Items_InventoryController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					if(array_key_exists('cost', $data)) {
 						$locale = Zend_Registry::get('Zend_Locale');
 						$data['cost'] = Zend_Locale_Format::getNumber($data['cost'],array('precision' => 2,'locale' => $locale));
@@ -228,8 +223,6 @@ class Items_InventoryController extends Zend_Controller_Action
 		$data['quantity'] = 0;
 		$data['inventory'] = 1;
 		$data['title'] = $data['title'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
 		echo $itemid = $item->addItem($data);
@@ -487,7 +480,7 @@ class Items_InventoryController extends Zend_Controller_Action
 			$user = $userDb->getUser($item['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$itemDb->lock($id, $this->_user['id'], $this->_date);
+			$itemDb->lock($id);
 		}
 	}
 
@@ -508,7 +501,7 @@ class Items_InventoryController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$itemDb = new Items_Model_DbTable_Item();
-		$itemDb->lock($id, $this->_user['id'], $this->_date);
+		$itemDb->lock($id);
 	}
 
 	public function validateAction()

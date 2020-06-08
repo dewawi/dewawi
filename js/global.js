@@ -1159,21 +1159,26 @@ function previewPdf(){
 
 function savePdf(){
 	$('#output').html('');
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+module+'/'+controller+'/save/id/'+id,
-		cache: false,
-		success: function(data){
-			$('#output').html(data);
-			if(action != 'view') {
-				window.location = baseUrl+'/'+module+'/'+controller+'/view/id/'+id;
-				$('ul.tabs li').removeClass('active');
-				$(this).addClass('active');
-				$('.tab_content').hide();
-				var activeTab = $(this).find('a').attr('href');
-			}
-		}
-	});
+    var contactid = $('#contactid').val();
+    if(contactid > 0) {
+	    $.ajax({
+		    type: 'POST',
+		    url: baseUrl+'/'+module+'/'+controller+'/save/id/'+id,
+		    cache: false,
+		    success: function(data){
+			    $('#output').html(data);
+			    if(action != 'view') {
+				    window.location = baseUrl+'/'+module+'/'+controller+'/view/id/'+id;
+				    $('ul.tabs li').removeClass('active');
+				    $(this).addClass('active');
+				    $('.tab_content').hide();
+				    var activeTab = $(this).find('a').attr('href');
+			    }
+		    }
+	    });
+	} else {
+	    $('#output').html('<b>Bitte vor dem speichern dem Beleg einen Kontakt zuweisen.</b>');
+    }
 }
 
 function downloadPdf(){

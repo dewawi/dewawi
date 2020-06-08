@@ -44,7 +44,8 @@ class Items_ItemController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$items = $this->search($params, $options['categories']);
+	    $get = new Items_Model_Get();
+		$items = $get->items($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->items = $items;
 		$this->view->options = $options;
@@ -64,7 +65,8 @@ class Items_ItemController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$items = $this->search($params, $options['categories']);
+	    $get = new Items_Model_Get();
+		$items = $get->items($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->items = $items;
 		$this->view->options = $options;
@@ -81,7 +83,8 @@ class Items_ItemController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$items = $this->search($params, $options['categories']);
+	    $get = new Items_Model_Get();
+		$items = $get->items($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->items = $items;
 		$this->view->options = $options;
@@ -92,33 +95,16 @@ class Items_ItemController extends Zend_Controller_Action
 
 	public function addAction()
 	{
-		$request = $this->getRequest();
-		$locale = Zend_Registry::get('Zend_Locale');
-		$catid = $this->_getParam('catid', 0);
+		$data = array();
+		$data['inventory'] = 1;
 
-		$form = new Items_Form_Item();
-		$toolbar = new Items_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$item = new Items_Model_DbTable_Item();
+		$id = $item->addItem($data);
 
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data)) {
-				$data['cost'] = $form->getValue('cost') ? Zend_Locale_Format::getNumber($form->getValue('cost'),array('precision' => 2,'locale' => $locale)) : 0;
-				$data['price'] = $form->getValue('price') ? Zend_Locale_Format::getNumber($form->getValue('price'),array('precision' => 2,'locale' => $locale)) : 0;
-				$data['margin'] = $form->getValue('margin') ? Zend_Locale_Format::getNumber($form->getValue('margin'),array('precision' => 2,'locale' => $locale)) : 0;
-				$data['inventory'] = 1;
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $this->_user['clientid'];
-				$item = new Items_Model_DbTable_Item();
-				$item->addItem($data);
-				$this->_helper->redirector('index');
-			} else {
-				$form->populate($data);
-			}
-		}
-		$this->view->form = $form;
-		$this->view->toolbar = $toolbar;
+        //Check if the directory exists
+        $this->checkDirectory($id);
+
+		$this->_helper->redirector->gotoSimple('edit', 'item', null, array('id' => $id));
 	}
 
 	public function editAction()
@@ -146,7 +132,7 @@ class Items_ItemController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$itemDb->lock($id, $this->_user['id'], $this->_date);
+			$itemDb->lock($id);
 
 			$form = new Items_Form_Item();
 			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
@@ -157,8 +143,6 @@ class Items_ItemController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					if(array_key_exists('cost', $data)) {
 						$locale = Zend_Registry::get('Zend_Locale');
 						$data['cost'] = Zend_Locale_Format::getNumber($data['cost'],array('precision' => 2,'locale' => $locale));
@@ -238,8 +222,6 @@ class Items_ItemController extends Zend_Controller_Action
 		$data['quantity'] = 0;
 		$data['inventory'] = 1;
 		$data['title'] = $data['title'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
 		echo $itemid = $item->addItem($data);
@@ -497,7 +479,7 @@ class Items_ItemController extends Zend_Controller_Action
 			$user = $userDb->getUser($item['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$itemDb->lock($id, $this->_user['id'], $this->_date);
+			$itemDb->lock($id);
 		}
 	}
 
@@ -518,7 +500,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$itemDb = new Items_Model_DbTable_Item();
-		$itemDb->lock($id, $this->_user['id'], $this->_date);
+		$itemDb->lock($id);
 	}
 
 	public function validateAction()
@@ -643,32 +625,6 @@ class Items_ItemController extends Zend_Controller_Action
             }
         }
     }
-
-	protected function search($params, $categories)
-	{
-		$itemsDb = new Items_Model_DbTable_Item();
-
-		$columns = array('title', 'sku', 'description');
-
-		$query = '';
-		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories);
-
-		$items = $itemsDb->fetchAll(
-			$itemsDb->select()
-				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
-				->limit($params['limit'])
-		);
-
-		foreach($items as $item) {
-			if(strlen($item->description) > 43) $item->description = substr($item->description, 0, 40).'...';
-			$item->cost = $this->_currency->toCurrency($item->cost);
-			$item->price = $this->_currency->toCurrency($item->price);
-		}
-
-		return $items;
-	}
 
 	protected function getInventory($sku) {
 		$inventoryDb = new Items_Model_DbTable_Inventory();
