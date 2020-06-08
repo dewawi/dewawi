@@ -120,7 +120,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnote = $creditnoteDb->getCreditnote($id);
 
         //Check if the directory exists
-        $dirwritable = $this->checkDirectory($id);
+        $dirwritable = $this->checkDirectory($creditnote['contactid']);
 
 		if($creditnote['creditnoteid']) {
 			$this->_helper->redirector->gotoSimple('view', 'creditnote', null, array('id' => $id));

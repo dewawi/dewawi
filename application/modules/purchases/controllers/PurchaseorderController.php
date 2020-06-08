@@ -120,7 +120,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorder = $purchaseorderDb->getPurchaseorder($id);
 
         //Check if the directory exists
-        $dirwritable = $this->checkDirectory($id);
+        $dirwritable = $this->checkDirectory($purchaseorder['contactid']);
 
 		if($purchaseorder['purchaseorderid']) {
 			$this->_helper->redirector->gotoSimple('view', 'purchaseorder', null, array('id' => $id));

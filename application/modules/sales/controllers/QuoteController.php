@@ -125,7 +125,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$quote = $quoteDb->getQuote($id);
 
         //Check if the directory exists
-        $dirwritable = $this->checkDirectory($id);
+        $dirwritable = $this->checkDirectory($quote['contactid']);
 
 		if($quote['quoteid']) {
 			$this->_helper->redirector->gotoSimple('view', 'quote', null, array('id' => $id));

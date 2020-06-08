@@ -120,7 +120,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequest = $quoterequestDb->getQuoterequest($id);
 
         //Check if the directory exists
-        $dirwritable = $this->checkDirectory($id);
+        $dirwritable = $this->checkDirectory($quoterequest['contactid']);
 
 		if($quoterequest['quoterequestid']) {
 			$this->_helper->redirector->gotoSimple('view', 'quoterequest', null, array('id' => $id));

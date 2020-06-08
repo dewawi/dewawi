@@ -120,7 +120,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoice = $invoiceDb->getInvoice($id);
 
         //Check if the directory exists
-        $dirwritable = $this->checkDirectory($id);
+        $dirwritable = $this->checkDirectory($invoice['contactid']);
 
 		if($invoice['invoiceid']) {
 			$this->_helper->redirector->gotoSimple('view', 'invoice', null, array('id' => $id));

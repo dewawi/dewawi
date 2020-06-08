@@ -120,7 +120,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$reminder = $reminderDb->getReminder($id);
 
         //Check if the directory exists
-        $dirwritable = $this->checkDirectory($id);
+        $dirwritable = $this->checkDirectory($reminder['contactid']);
 
 		if($reminder['reminderid']) {
 			$this->_helper->redirector->gotoSimple('view', 'reminder', null, array('id' => $id));

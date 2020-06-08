@@ -120,7 +120,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 
         //Check if the directory exists
-        $dirwritable = $this->checkDirectory($id);
+        $dirwritable = $this->checkDirectory($deliveryorder['contactid']);
 
 		if($deliveryorder['deliveryorderid']) {
 			$this->_helper->redirector->gotoSimple('view', 'deliveryorder', null, array('id' => $id));
