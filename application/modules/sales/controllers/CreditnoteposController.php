@@ -340,6 +340,7 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 			$positionsDb->select()
 				->where('creditnoteid = ?', $creditnoteid)
 				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 		return $positions;

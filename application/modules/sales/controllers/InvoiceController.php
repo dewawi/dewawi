@@ -60,7 +60,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$invoices = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->invoices = $invoices;
 		$this->view->options = $options;
@@ -81,7 +82,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$invoices = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->invoices = $invoices;
 		$this->view->options = $options;
@@ -735,6 +737,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$latestInvoice = $invoiceDb->fetchRow(
 				$invoiceDb->select()
 					->where('clientid = ?', $this->_user['clientid'])
+				    ->where('deleted = ?', 0)
 					->order('invoiceid DESC')
 					->limit(1)
 			);
@@ -1115,89 +1118,6 @@ print_r($_FILES);*/
 		}*/
 	//}
 
-	protected function search($params, $categories)
-	{
-		$invoicesDb = new Sales_Model_DbTable_Invoice();
-
-		$columns = array('i.title', 'i.invoiceid', 'i.contactid', 'i.billingname1', 'i.billingname2', 'i.billingdepartment', 'i.billingstreet', 'i.billingpostcode', 'i.billingcity', 'i.shippingname1', 'i.shippingname2', 'i.shippingdepartment', 'i.shippingstreet', 'i.shippingpostcode', 'i.shippingcity');
-
-		$query = '';
-		$schema = 'i';
-		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
-		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
-
-		if($params['catid']) {
-			$invoices = $invoicesDb->fetchAll(
-				$invoicesDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'invoice'))
-					->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($invoices) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$invoices = $invoicesDb->fetchAll(
-					$invoicesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'invoice'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$invoices = $invoicesDb->fetchAll(
-				$invoicesDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'invoice'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($invoices) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$invoices = $invoicesDb->fetchAll(
-					$invoicesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'invoice'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		}
-
-		$invoices->subtotal = 0;
-		$invoices->total = 0;
-		foreach($invoices as $invoice) {
-			$invoices->subtotal += $invoice->subtotal;
-			$invoices->total += $invoice->total;
-			$invoice->subtotal = $this->_currency->toCurrency($invoice->subtotal);
-			$invoice->taxes = $this->_currency->toCurrency($invoice->taxes);
-			$invoice->total = $this->_currency->toCurrency($invoice->total);
-		}
-		$invoices->subtotal = $this->_currency->toCurrency($invoices->subtotal);
-		$invoices->total = $this->_currency->toCurrency($invoices->total);
-
-		return $invoices;
-	}
-
 	protected function getPositions($id)
 	{
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
@@ -1205,6 +1125,7 @@ print_r($_FILES);*/
 			$positionsDb->select()
 				->where('invoiceid = ?', $id)
 				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 

@@ -366,7 +366,8 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$positions = $positionsDb->fetchAll(
 			$positionsDb->select()
 				->where('processid = ?', $processid)
-				//->where('clientid = ?', $this->_user['clientid'])
+				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 		return $positions;

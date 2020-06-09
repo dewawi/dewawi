@@ -340,6 +340,7 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 			$positionsDb->select()
 				->where('deliveryorderid = ?', $deliveryorderid)
 				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 		return $positions;

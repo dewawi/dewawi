@@ -60,7 +60,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$salesorders = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$salesorders = $get->salesorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->salesorders = $salesorders;
 		$this->view->options = $options;
@@ -81,7 +82,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$salesorders = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$salesorders = $get->salesorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->salesorders = $salesorders;
 		$this->view->options = $options;
@@ -699,6 +701,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$latestSalesorder = $salesorderDb->fetchRow(
 				$salesorderDb->select()
 					->where('clientid = ?', $this->_user['clientid'])
+				    ->where('deleted = ?', 0)
 					->order('salesorderid DESC')
 					->limit(1)
 			);
@@ -865,89 +868,6 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function search($params, $categories)
-	{
-		$salesordersDb = new Sales_Model_DbTable_Salesorder();
-
-		$columns = array('s.title', 's.salesorderid', 's.contactid', 's.billingname1', 's.billingname2', 's.billingdepartment', 's.billingstreet', 's.billingpostcode', 's.billingcity', 's.shippingname1', 's.shippingname2', 's.shippingdepartment', 's.shippingstreet', 's.shippingpostcode', 's.shippingcity');
-
-		$query = '';
-		$schema = 's';
-		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
-		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
-
-		if($params['catid']) {
-			$salesorders = $salesordersDb->fetchAll(
-				$salesordersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'salesorder'))
-					->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($salesorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$salesorders = $salesordersDb->fetchAll(
-					$salesordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'salesorder'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$salesorders = $salesordersDb->fetchAll(
-				$salesordersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'salesorder'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($salesorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$salesorders = $salesordersDb->fetchAll(
-					$salesordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'salesorder'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		}
-
-		$salesorders->subtotal = 0;
-		$salesorders->total = 0;
-		foreach($salesorders as $salesorder) {
-			$salesorders->subtotal += $salesorder->subtotal;
-			$salesorders->total += $salesorder->total;
-			$salesorder->subtotal = $this->_currency->toCurrency($salesorder->subtotal);
-			$salesorder->taxes = $this->_currency->toCurrency($salesorder->taxes);
-			$salesorder->total = $this->_currency->toCurrency($salesorder->total);
-		}
-		$salesorders->subtotal = $this->_currency->toCurrency($salesorders->subtotal);
-		$salesorders->total = $this->_currency->toCurrency($salesorders->total);
-
-		return $salesorders;
-	}
-
 	protected function getPositions($id)
 	{
 		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
@@ -955,6 +875,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$positionsDb->select()
 				->where('salesorderid = ?', $id)
 				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 

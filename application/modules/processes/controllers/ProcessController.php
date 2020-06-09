@@ -60,7 +60,8 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$processes = $this->search($params, $options['categories']);
+        $get = new Processes_Model_Get();
+		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		//Get positions
 		$processIDs = array();
@@ -95,7 +96,8 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$processes = $this->search($params, $options['categories']);
+        $get = new Processes_Model_Get();
+		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		//Get positions
 		$processIDs = array();
@@ -387,6 +389,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$positionsObject = $positionsDb->fetchAll(
 			$positionsDb->select()
 				->where('processid = ?', $id)
+			    ->where('deleted = ?', 0)
 				->order('ordering')
 		);
 		$positions = array();
@@ -447,6 +450,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 			$positionsDb->select()
 				->where('processid = ?', $id)
 				->where('clientid = ?', $this->_user['clientid'])
+			    ->where('deleted = ?', 0)
 		);
 		foreach($positions as $position) {
 			$positionData = $position->toArray();
@@ -549,97 +553,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function search($params, $categories)
-	{
-		$processesDb = new Processes_Model_DbTable_Process();
-
-		$columns = array('p.title', 'p.customerid', 'p.billingname1', 'p.billingname2', 'p.billingdepartment', 'p.billingstreet', 'p.billingpostcode', 'p.billingcity', 'p.shippingname1', 'p.shippingname2', 'p.shippingdepartment', 'p.shippingstreet', 'p.shippingpostcode', 'p.shippingcity');
-
-		$query = '';
-		$schema = 'p';
-		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
-		if($params['paymentstatus']) $query = $this->_helper->Query->getQueryPaymentstatus($query, $params['paymentstatus'], $schema);
-		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
-
-		if($params['catid']) {
-			$processes = $processesDb->fetchAll(
-				$processesDb->select()
-					->setIntegrityCheck(false)
-					->from(array('p' => 'process'))
-					->join(array('c' => 'contact'), 'p.customerid = c.id', array('catid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($processes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$processes = $processesDb->fetchAll(
-					$processesDb->select()
-						->setIntegrityCheck(false)
-						->from(array('p' => 'process'))
-						->join(array('c' => 'contact'), 'p.customerid = c.id', array('catid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$processes = $processesDb->fetchAll(
-				$processesDb->select()
-					->setIntegrityCheck(false)
-					->from(array('p' => 'process'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($processes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$processes = $processesDb->fetchAll(
-					$processesDb->select()
-						->setIntegrityCheck(false)
-						->from(array('p' => 'process'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		}
-
-		$processes->subtotal = 0;
-		$processes->total = 0;
-		foreach($processes as $process) {
-			$processes->subtotal += $process->subtotal;
-			$processes->total += $process->total;
-			if($process->prepayment == 0.0000) $process->prepayment = 0;
-			else {
-				//$process->stillToPay = $this->_currency->toCurrency($processes->subtotal-$process->prepayment);
-				$process->prepayment = $this->_currency->toCurrency($process->prepayment);
-			}
-			if($process->total == 0.0000) $process->total = 0;
-			else $process->total = $this->_currency->toCurrency($process->total);
-			if($process->prepaymenttotal == 0.0000) $process->prepaymenttotal = 0;
-			else $process->prepaymenttotal = $this->_currency->toCurrency($process->prepaymenttotal);
-			if($process->creditnotetotal == 0.0000) $process->creditnotetotal = 0;
-			else $process->creditnotetotal = $this->_currency->toCurrency($process->creditnotetotal);
-		}
-		$processes->total = $this->_currency->toCurrency($processes->total);
-
-		return $processes;
-	}
-
 	protected function getPositions($processIDs)
 	{
 		$positions = array();
@@ -648,6 +561,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 			$positionsObject = $positionsDb->fetchAll(
 				$positionsDb->select()
 					->where('processid IN (?)', $processIDs)
+				    ->where('deleted = ?', 0)
 					->order('ordering')
 			);
 

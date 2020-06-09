@@ -60,7 +60,8 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$quotes = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$quotes = $get->quotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;
@@ -81,7 +82,8 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$quotes = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$quotes = $get->quotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;
@@ -639,6 +641,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 			$latestQuote = $quoteDb->fetchRow(
 				$quoteDb->select()
 					->where('clientid = ?', $this->_user['clientid'])
+				    ->where('deleted = ?', 0)
 					->order('quoteid DESC')
 					->limit(1)
 			);
@@ -805,89 +808,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function search($params, $categories)
-	{
-		$quotesDb = new Sales_Model_DbTable_Quote();
-
-		$columns = array('q.title', 'q.quoteid', 'q.contactid', 'q.billingname1', 'q.billingname2', 'q.billingdepartment', 'q.billingstreet', 'q.billingpostcode', 'q.billingcity', 'q.shippingname1', 'q.shippingname2', 'q.shippingdepartment', 'q.shippingstreet', 'q.shippingpostcode', 'q.shippingcity');
-
-		$query = '';
-		$schema = 'q';
-		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
-		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
-
-		if($params['catid']) {
-			$quotes = $quotesDb->fetchAll(
-				$quotesDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'quote'))
-					->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($quotes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$quotes = $quotesDb->fetchAll(
-					$quotesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'quote'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$quotes = $quotesDb->fetchAll(
-				$quotesDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'quote'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($quotes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$quotes = $quotesDb->fetchAll(
-					$quotesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'quote'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		}
-
-		$quotes->subtotal = 0;
-		$quotes->total = 0;
-		foreach($quotes as $quote) {
-			$quotes->subtotal += $quote->subtotal;
-			$quotes->total += $quote->total;
-			$quote->subtotal = $this->_currency->toCurrency($quote->subtotal);
-			$quote->taxes = $this->_currency->toCurrency($quote->taxes);
-			$quote->total = $this->_currency->toCurrency($quote->total);
-		}
-		$quotes->subtotal = $this->_currency->toCurrency($quotes->subtotal);
-		$quotes->total = $this->_currency->toCurrency($quotes->total);
-
-		return $quotes;
-	}
-
 	protected function getPositions($id)
 	{
 		$positionsDb = new Sales_Model_DbTable_Quotepos();
@@ -895,6 +815,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 			$positionsDb->select()
 				->where('quoteid = ?', $id)
 				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 

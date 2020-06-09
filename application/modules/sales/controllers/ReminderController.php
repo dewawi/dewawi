@@ -60,7 +60,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$reminders = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$reminders = $get->reminders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->reminders = $reminders;
 		$this->view->options = $options;
@@ -81,7 +82,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$reminders = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$reminders = $get->reminders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->reminders = $reminders;
 		$this->view->options = $options;
@@ -591,6 +593,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 			$latestReminder = $reminderDb->fetchRow(
 				$reminderDb->select()
 					->where('clientid = ?', $this->_user['clientid'])
+				    ->where('deleted = ?', 0)
 					->order('reminderid DESC')
 					->limit(1)
 			);
@@ -757,89 +760,6 @@ class Sales_ReminderController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function search($params, $categories)
-	{
-		$remindersDb = new Sales_Model_DbTable_Reminder();
-
-		$columns = array('cr.title', 'cr.reminderid', 'cr.contactid', 'cr.billingname1', 'cr.billingname2', 'cr.billingdepartment', 'cr.billingstreet', 'cr.billingpostcode', 'cr.billingcity', 'cr.shippingname1', 'cr.shippingname2', 'cr.shippingdepartment', 'cr.shippingstreet', 'cr.shippingpostcode', 'cr.shippingcity');
-
-		$query = '';
-		$schema = 'cr';
-		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
-		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
-
-		if($params['catid']) {
-			$reminders = $remindersDb->fetchAll(
-				$remindersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'reminder'))
-					->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($reminders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$reminders = $remindersDb->fetchAll(
-					$remindersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'reminder'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$reminders = $remindersDb->fetchAll(
-				$remindersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'reminder'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($reminders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$reminders = $remindersDb->fetchAll(
-					$remindersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'reminder'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		}
-
-		$reminders->subtotal = 0;
-		$reminders->total = 0;
-		foreach($reminders as $reminder) {
-			$reminders->subtotal += $reminder->subtotal;
-			$reminders->total += $reminder->total;
-			$reminder->subtotal = $this->_currency->toCurrency($reminder->subtotal);
-			$reminder->taxes = $this->_currency->toCurrency($reminder->taxes);
-			$reminder->total = $this->_currency->toCurrency($reminder->total);
-		}
-		$reminders->subtotal = $this->_currency->toCurrency($reminders->subtotal);
-		$reminders->total = $this->_currency->toCurrency($reminders->total);
-
-		return $reminders;
-	}
-
 	protected function getPositions($id)
 	{
 		$positionsDb = new Sales_Model_DbTable_Reminderpos();
@@ -847,6 +767,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 			$positionsDb->select()
 				->where('reminderid = ?', $id)
 				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 

@@ -340,6 +340,7 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 			$positionsDb->select()
 				->where('quoterequestid = ?', $quoterequestid)
 				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 		return $positions;

@@ -60,7 +60,8 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$deliveryorders = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$deliveryorders = $get->deliveryorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->deliveryorders = $deliveryorders;
 		$this->view->options = $options;
@@ -81,7 +82,8 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$deliveryorders = $this->search($params, $options['categories']);
+        $get = new Sales_Model_Get();
+		$deliveryorders = $get->deliveryorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->deliveryorders = $deliveryorders;
 		$this->view->options = $options;
@@ -591,6 +593,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$latestDeliveryorder = $deliveryorderDb->fetchRow(
 				$deliveryorderDb->select()
 					->where('clientid = ?', $this->_user['clientid'])
+				    ->where('deleted = ?', 0)
 					->order('deliveryorderid DESC')
 					->limit(1)
 			);
@@ -757,89 +760,6 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function search($params, $categories)
-	{
-		$deliveryordersDb = new Sales_Model_DbTable_Deliveryorder();
-
-		$columns = array('d.title', 'd.deliveryorderid', 'd.contactid', 'd.billingname1', 'd.billingname2', 'd.billingdepartment', 'd.billingstreet', 'd.billingpostcode', 'd.billingcity', 'd.shippingname1', 'd.shippingname2', 'd.shippingdepartment', 'd.shippingstreet', 'd.shippingpostcode', 'd.shippingcity');
-
-		$query = '';
-		$schema = 'd';
-		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
-		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
-
-		if($params['catid']) {
-			$deliveryorders = $deliveryordersDb->fetchAll(
-				$deliveryordersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'deliveryorder'))
-					->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($deliveryorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$deliveryorders = $deliveryordersDb->fetchAll(
-					$deliveryordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'deliveryorder'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$deliveryorders = $deliveryordersDb->fetchAll(
-				$deliveryordersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'deliveryorder'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($deliveryorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$deliveryorders = $deliveryordersDb->fetchAll(
-					$deliveryordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'deliveryorder'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		}
-
-		$deliveryorders->subtotal = 0;
-		$deliveryorders->total = 0;
-		foreach($deliveryorders as $deliveryorder) {
-			$deliveryorders->subtotal += $deliveryorder->subtotal;
-			$deliveryorders->total += $deliveryorder->total;
-			$deliveryorder->subtotal = $this->_currency->toCurrency($deliveryorder->subtotal);
-			$deliveryorder->taxes = $this->_currency->toCurrency($deliveryorder->taxes);
-			$deliveryorder->total = $this->_currency->toCurrency($deliveryorder->total);
-		}
-		$deliveryorders->subtotal = $this->_currency->toCurrency($deliveryorders->subtotal);
-		$deliveryorders->total = $this->_currency->toCurrency($deliveryorders->total);
-
-		return $deliveryorders;
-	}
-
 	protected function getPositions($id)
 	{
 		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
@@ -847,6 +767,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$positionsDb->select()
 				->where('deliveryorderid = ?', $id)
 				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 

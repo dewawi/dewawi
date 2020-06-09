@@ -60,7 +60,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$purchaseorders = $this->search($params, $options['categories']);
+        $get = new Purchases_Model_Get();
+		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;
@@ -81,7 +82,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$purchaseorders = $this->search($params, $options['categories']);
+        $get = new Purchases_Model_Get();
+		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;
@@ -524,6 +526,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			$latestPurchaseorder = $purchaseorderDb->fetchRow(
 				$purchaseorderDb->select()
 					->where('clientid = ?', $this->_user['clientid'])
+				    ->where('deleted = ?', 0)
 					->order('purchaseorderid DESC')
 					->limit(1)
 			);
@@ -683,89 +686,6 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function search($params, $categories)
-	{
-		$purchaseordersDb = new Purchases_Model_DbTable_Purchaseorder();
-
-		$columns = array('p.title', 'p.purchaseorderid', 'p.contactid', 'p.billingname1', 'p.billingname2', 'p.billingdepartment', 'p.billingstreet', 'p.billingpostcode', 'p.billingcity', 'p.shippingname1', 'p.shippingname2', 'p.shippingdepartment', 'p.shippingstreet', 'p.shippingpostcode', 'p.shippingcity');
-
-		$query = '';
-		$schema = 'p';
-		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $this->_helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $this->_helper->Query->getQueryCountry($query, $params['country'], $schema);
-		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $this->_helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
-
-		if($params['catid']) {
-			$purchaseorders = $purchaseordersDb->fetchAll(
-				$purchaseordersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'purchaseorder'))
-					->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($purchaseorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$purchaseorders = $purchaseordersDb->fetchAll(
-					$purchaseordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'purchaseorder'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.id', array('catid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$purchaseorders = $purchaseordersDb->fetchAll(
-				$purchaseordersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'purchaseorder'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($purchaseorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $this->_helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$purchaseorders = $purchaseordersDb->fetchAll(
-					$purchaseordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'purchaseorder'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		}
-
-		$purchaseorders->subtotal = 0;
-		$purchaseorders->total = 0;
-		foreach($purchaseorders as $purchaseorder) {
-			$purchaseorders->subtotal += $purchaseorder->subtotal;
-			$purchaseorders->total += $purchaseorder->total;
-			$purchaseorder->subtotal = $this->_currency->toCurrency($purchaseorder->subtotal);
-			$purchaseorder->taxes = $this->_currency->toCurrency($purchaseorder->taxes);
-			$purchaseorder->total = $this->_currency->toCurrency($purchaseorder->total);
-		}
-		$purchaseorders->subtotal = $this->_currency->toCurrency($purchaseorders->subtotal);
-		$purchaseorders->total = $this->_currency->toCurrency($purchaseorders->total);
-
-		return $purchaseorders;
-	}
-
 	protected function getPositions($id)
 	{
 		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
@@ -773,6 +693,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			$positionsDb->select()
 				->where('purchaseorderid = ?', $id)
 				->where('clientid = ?', $this->_user['clientid'])
+				->where('deleted = ?', 0)
 				->order('ordering')
 		);
 
