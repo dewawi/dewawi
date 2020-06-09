@@ -303,7 +303,7 @@ class Items_InventoryController extends Zend_Controller_Action
                         } elseif($datacsv[$map['sku']]) {
                             //echo $datacsv[$map['sku']];
                             //print_r($datacsv);
-                            $itemArray = $item->getItemId($datacsv[$map['sku']]);
+                            $itemArray = $item->getItemBySKU($datacsv[$map['sku']]);
                             //print_r($itemArray);
                             $updateData = array();
                             foreach($map as $attr => $pos) {

@@ -160,25 +160,12 @@ echo $this->FileManager();
 		<div id="left">
 			<form id="email" enctype="application/x-www-form-urlencoded" action="" method="post">
 				<dl class="form">
-					<?php echo $this->email->getElement('email') ?>
-					<?php echo $this->email->getElement('subject') ?>
-					<?php echo $this->email->getElement('body') ?>
+					<?php //echo $this->email->getElement('email') ?>
+					<?php //echo $this->email->getElement('subject') ?>
+					<?php //echo $this->email->getElement('body') ?>
 					<?php //echo $this->email->getElement('attachment') ?>
 				</dl>
 			</form>
 		</div>
-		<div id="right">
-			<h3><?php echo $this->translate('EMAIL_FILES') ?></h3>
-			<form id="files" enctype="application/x-www-form-urlencoded" action="" method="post">
-				<dl class="form">
-					<?php foreach($this->files as $key => $file) : ?>
-						<input type="checkbox" name="file" value="<?php echo $file ?>|<?php echo $this->translate('INVOICE').'_'.$this->invoice['invoiceid'].'_'.$this->invoice['billingname1'].'.pdf' ?>" /> <a href="<?php echo $this->baseUrl().$file ?>" target="_blank"><?php echo $this->translate('INVOICE')."_".$this->invoice['invoiceid']."_".$this->invoice['billingname1'].".pdf" ?></a><br />
-					<?php endforeach; ?>
-				</dl>
-			</form>
-			<iframe src="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'upload', 'id'=>$this->invoice['id']));?>" width="100%" height="100%"></iframe>
-		</div>
-		<div style="clear:left"></div>
-		<a href="javascript:void(0)" onclick="email()"><?php echo $this->translate('EMAIL_SEND') ?></a>
 	</div>
 </div>

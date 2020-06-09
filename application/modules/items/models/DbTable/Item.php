@@ -25,14 +25,16 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getItemId($sku)
+	public function getItemBySKU($sku)
 	{
-		$where = $this->getAdapter()->quoteInto('sku = ?', $sku);
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
 		$data = $this->fetchRow($where);
-		if (!$row) {
+		if (!$data) {
 			throw new Exception("Could not find row $sku");
 		}
-		return $row->toArray();
+		return $data->toArray();
 	}
 
 	public function getItems($ids)

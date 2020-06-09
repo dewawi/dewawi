@@ -80,6 +80,12 @@ echo $this->doctype();
 				            ?> |
 				            <a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
 				            <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
+			                <?php if(false) : ?>
+                                <select id="clientid" name="clientid">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+			                <?php endif; ?>
 			            <?php endif; ?>
 		            </div>
 			    </div>
@@ -105,7 +111,7 @@ echo $this->doctype();
                     <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Anfragen</a>
                     <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Bestellungen</a>
                     <span>Buchhaltung</span>
-                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Rechnungen</a>
+                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Abrechnung</a>
                     <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Gutschriften</a>
                     <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Mahnungen</a>
                     <a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Statistiken</a>
@@ -135,7 +141,7 @@ echo $this->doctype();
                             </div>
                         </div>
                         <div class="sub">
-                            <button>Buchhaltung</button>
+                            <button>Abrechnung</button>
                             <div class="sub1">
                                 <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>">Rechnungen</a>
                                 <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>">Gutschriften</a>

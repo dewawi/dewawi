@@ -12,9 +12,11 @@ class Items_Model_Get
 		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories);
 		if($query) {
+			$query .= ' AND clientid = '.$clientid;
 			$query .= ' AND deleted = 0';
 		} else {
-			$query = 'deleted = 0';
+			$query = 'clientid = '.$clientid;
+			$query .= ' AND deleted = 0';
         }
 
 

@@ -280,18 +280,12 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
 		}
 
-		//E-Mail form
-		$email = new Application_Form_Email();
-		$files = array(0 => "/cache/invoice/".$id.".pdf");
-
 		$toolbar = new Sales_Form_Toolbar();
 		$this->view->toolbar = $toolbar;
 
-		$this->view->files = $files;
 		$this->view->invoice = $invoice;
 		$this->view->contact = $contact;
 		$this->view->positions = $positions;
-		$this->view->email = $email;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -754,13 +748,10 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			if(count($positions)) {
 				$itemsDb = new Items_Model_DbTable_Item();
 				foreach($positions as $position) {
-					$item = $itemsDb->fetchRow(
-						$itemsDb->select()
-							->where('sku = ?', $position['sku'])
-					);
+                    $item = $itemsDb->getItemBySKU($position['sku']);
 					if($item && $item['inventory']) {
                         $inventoryDb = new Items_Model_DbTable_Inventory();
-						$quantity = $item->quantity - $position->quantity;
+						$quantity = $item['quantity'] - $position->quantity;
                         $inventory = array(
                                     'contactid' => $invoice['contactid'],
                                     'type' => 'outflow',
@@ -782,7 +773,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
                                     'createdby' => $this->_user['id']
                                     );
                         $inventoryDb->addInventory($inventory);
-						$itemsDb->quantityItem($item->id, $quantity);
+						$itemsDb->quantityItem($item['id'], $quantity);
 					}
 				}
 			}
