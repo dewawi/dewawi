@@ -243,11 +243,15 @@ class Sales_SalesorderController extends Zend_Controller_Action
 					$toolbar->state->setValue($data['state']);
 					$toolbarPositions = new Sales_Form_ToolbarPositions();
 
+					//Get text blocks
+		            $textblocksDb = new Sales_Model_DbTable_Textblock();
+		            $textblocks = $textblocksDb->getTextblocks('salesorder');
+
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 					$this->view->toolbarPositions = $toolbarPositions;
-					$this->view->textblocks = $this->getTextblocks();
+					$this->view->textblocks = $textblocks;
 				}
 			}
 		}
@@ -275,7 +279,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorder['subtotal'] = $this->_currency->toCurrency($salesorder['subtotal']);
 		$salesorder['total'] = $this->_currency->toCurrency($salesorder['total']);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$position->description = str_replace("\n", '<br>', $position->description);
 			$position->price = $this->_currency->toCurrency($position->price);
@@ -314,8 +319,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		echo $salesorderid = $salesorder->addSalesorder($data);
 
-		$positions = $this->getPositions($id);
 		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['salesorderid'] = $salesorderid;
@@ -348,7 +353,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$quote = new Sales_Model_DbTable_Quote();
 		$quoteid = $quote->addQuote($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsQuoteDb = new Sales_Model_DbTable_Quotepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -383,7 +389,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsInvoiceDb = new Sales_Model_DbTable_Invoicepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -435,7 +442,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$deliveryorder = new Sales_Model_DbTable_Deliveryorder();
 		$deliveryorderid = $deliveryorder->addDeliveryorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsDeliveryorderDb = new Sales_Model_DbTable_Deliveryorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -487,7 +495,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequestid = $quoterequest->addQuoterequest($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsQuoterequestDb = new Purchases_Model_DbTable_Quoterequestpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -543,7 +552,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsPurchaseorderDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -595,7 +605,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$process = new Processes_Model_DbTable_Process();
 		$processID = $process->addProcess($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		$processposDb = new Processes_Model_DbTable_Processpos();
 		foreach($positions as $position) {
 			$positionData = array();
@@ -646,7 +657,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -695,19 +707,11 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(!$salesorder['salesorderid']) {
-			//Get latest salesorder Id
-			$latestSalesorder = $salesorderDb->fetchRow(
-				$salesorderDb->select()
-					->where('clientid = ?', $this->_user['clientid'])
-				    ->where('deleted = ?', 0)
-					->order('salesorderid DESC')
-					->limit(1)
-			);
-
 			//Set new salesorder Id
-			$newSalesorderId = $latestSalesorder['salesorderid']+1;
+			$newSalesorderId = $salesorderDb->getLatestSalesorderID()+1;
 			$salesorderDb->saveSalesorder($id, $newSalesorderId, $this->_date, 105, $this->_date, $this->_user['id']);
 			$salesorder = $salesorderDb->getSalesorder($id);
 		}
@@ -760,7 +764,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -807,8 +812,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$salesorder = new Sales_Model_DbTable_Salesorder();
 			$salesorder->deleteSalesorder($id);
 
-			$positions = $this->getPositions($id);
-			$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		    $positionsDb = new Sales_Model_DbTable_Salesorderpos();
+		    $positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}
@@ -866,35 +871,6 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$json = $form->getMessages();
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
-	}
-
-	protected function getPositions($id)
-	{
-		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('salesorderid = ?', $id)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-
-		return $positions;
-	}
-
-	protected function getTextblocks()
-	{
-	    $textblocksDb = new Sales_Model_DbTable_Textblock();
-		$textblocksObject = $textblocksDb->fetchAll(
-			$textblocksDb->select()
-				->where('controller = ?', 'salesorder')
-				->where('clientid = ?', $this->_user['clientid'])
-				->order('ordering')
-		);
-		$textblocks = array();
-		foreach($textblocksObject as $textblock)
-            $textblocks[$textblock->section] = $textblock->text;
-		return $textblocks;
 	}
 
 	protected function checkDirectory($id) {

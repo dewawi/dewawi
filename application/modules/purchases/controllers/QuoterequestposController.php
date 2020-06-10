@@ -46,7 +46,8 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 		$quoterequest = $quoterequestDb->getQuoterequest($quoterequestid);
 
 		//Get positions
-		$positions = $this->getPositions($quoterequestid);
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($quoterequestid);
 
 		//Get units of measurements
 		$uoms = $this->_helper->Uom->getUoms();
@@ -96,14 +97,6 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 		$this->view->forms = $forms;
 		$this->view->quoterequest = $quoterequest;
 		$this->view->toolbar = new Purchases_Form_ToolbarPositions();
-	}
-
-	public function selectAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$positions = new Purchases_Model_DbTable_Quoterequestpos();
-		$this->view->positions = $positions->fetchAll();
 	}
 
 	public function applyAction()
@@ -333,26 +326,14 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function getPositions($quoterequestid)
-	{
-		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('quoterequestid = ?', $quoterequestid)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-		return $positions;
-	}
-
 	protected function setOrdering($quoterequestid)
 	{
 		$i = 1;
-		$positions = $this->getPositions($quoterequestid);
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($quoterequestid);
 		foreach($positions as $position) {
 			if($position->ordering != $i) {
-				if(!isset($positionsDb)) $positionsDb = new Sales_Model_DbTable_Quoterequestpos();
+				if(!isset($positionsDb)) $positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
 				$positionsDb->sortPosition($position->id, $i);
 			}
 			++$i;
@@ -361,8 +342,9 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 
 	protected function getOrdering($quoterequestid)
 	{
-		$positions = $this->getPositions($quoterequestid);
 		$i = 1;
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($quoterequestid);
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$i] = $position->id;

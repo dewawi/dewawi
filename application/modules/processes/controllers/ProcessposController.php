@@ -46,7 +46,8 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$process = $processDb->getProcess($processid);
 
 		//Get positions
-		$positions = $this->getPositions($processid);
+		$positionsDb = new Processes_Model_DbTable_Processpos();
+		$positions = $positionsDb->getPositions($processid);
 
 		//Get units of measurements
 		$uoms = $this->_helper->Uom->getUoms();
@@ -95,14 +96,6 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		}
 		$this->view->forms = $forms;
 		$this->view->toolbar = new Processes_Form_ToolbarPositions();
-	}
-
-	public function selectAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$positions = new Processes_Model_DbTable_Processpos();
-		$this->view->positions = $positions->fetchAll();
 	}
 
 	public function applyAction()
@@ -360,23 +353,11 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function getPositions($processid)
-	{
-		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('processid = ?', $processid)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-		return $positions;
-	}
-
 	protected function setOrdering($processid)
 	{
 		$i = 1;
-		$positions = $this->getPositions($processid);
+		$positionsDb = new Processes_Model_DbTable_Processpos();
+		$positions = $positionsDb->getPositions($processid);
 		foreach($positions as $position) {
 			if($position->ordering != $i) {
 				if(!isset($positionsDb)) $positionsDb = new Processes_Model_DbTable_Processpos();
@@ -388,8 +369,9 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 	protected function getOrdering($processid)
 	{
-		$positions = $this->getPositions($processid);
 		$i = 1;
+		$positionsDb = new Processes_Model_DbTable_Processpos();
+		$positions = $positionsDb->getPositions($processid);
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$i] = $position->id;

@@ -46,7 +46,8 @@ class Sales_QuoteposController extends Zend_Controller_Action
 		$quote = $quoteDb->getQuote($quoteid);
 
 		//Get positions
-		$positions = $this->getPositions($quoteid);
+		$positionsDb = new Sales_Model_DbTable_Quotepos();
+		$positions = $positionsDb->getPositions($quoteid);
 
 		//Get units of measurements
 		$uoms = $this->_helper->Uom->getUoms();
@@ -96,14 +97,6 @@ class Sales_QuoteposController extends Zend_Controller_Action
 		$this->view->forms = $forms;
 		$this->view->quote = $quote;
 		$this->view->toolbar = new Sales_Form_ToolbarPositions();
-	}
-
-	public function selectAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$positions = new Sales_Model_DbTable_Quotepos();
-		$this->view->positions = $positions->fetchAll();
 	}
 
 	public function applyAction()
@@ -333,23 +326,11 @@ class Sales_QuoteposController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function getPositions($quoteid)
-	{
-		$positionsDb = new Sales_Model_DbTable_Quotepos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('quoteid = ?', $quoteid)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-		return $positions;
-	}
-
 	protected function setOrdering($quoteid)
 	{
 		$i = 1;
-		$positions = $this->getPositions($quoteid);
+		$positionsDb = new Sales_Model_DbTable_Quotepos();
+		$positions = $positionsDb->getPositions($quoteid);
 		foreach($positions as $position) {
 			if($position->ordering != $i) {
 				if(!isset($positionsDb)) $positionsDb = new Sales_Model_DbTable_Quotepos();
@@ -361,8 +342,9 @@ class Sales_QuoteposController extends Zend_Controller_Action
 
 	protected function getOrdering($quoteid)
 	{
-		$positions = $this->getPositions($quoteid);
 		$i = 1;
+		$positionsDb = new Sales_Model_DbTable_Quotepos();
+		$positions = $positionsDb->getPositions($quoteid);
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$i] = $position->id;

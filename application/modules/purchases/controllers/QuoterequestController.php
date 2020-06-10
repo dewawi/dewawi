@@ -243,11 +243,15 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 					$toolbar->state->setValue($data['state']);
 					$toolbarPositions = new Purchases_Form_ToolbarPositions();
 
+					//Get text blocks
+		            $textblocksDb = new Purchases_Model_DbTable_Textblock();
+		            $textblocks = $textblocksDb->getTextblocks('quoterequest');
+
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 					$this->view->toolbarPositions = $toolbarPositions;
-					$this->view->textblocks = $this->getTextblocks();
+					$this->view->textblocks = $textblocks;
 				}
 			}
 		}
@@ -275,7 +279,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequest['subtotal'] = $this->_currency->toCurrency($quoterequest['subtotal']);
 		$quoterequest['total'] = $this->_currency->toCurrency($quoterequest['total']);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$position->description = str_replace("\n", '<br>', $position->description);
 			$position->price = $this->_currency->toCurrency($position->price);
@@ -314,8 +319,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		echo $quoterequestid = $quoterequest->addQuoterequest($data);
 
-		$positions = $this->getPositions($id);
 		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['quoterequestid'] = $quoterequestid;
@@ -348,7 +353,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsSalesorderDb = new Sales_Model_DbTable_Salesorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -383,7 +389,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsInvoiceDb = new Sales_Model_DbTable_Invoicepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -435,7 +442,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsPurchaseorderDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -478,7 +486,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -520,19 +529,11 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$this->view->template = $template;
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($id);
 		if(!$quoterequest['quoterequestid']) {
-			//Get latest quoterequest Id
-			$latestQuoterequest = $quoterequestDb->fetchRow(
-				$quoterequestDb->select()
-					->where('clientid = ?', $this->_user['clientid'])
-				    ->where('deleted = ?', 0)
-					->order('quoterequestid DESC')
-					->limit(1)
-			);
-
 			//Set new quoterequest Id
-			$newQuoterequestId = $latestQuoterequest['quoterequestid']+1;
+			$newQuoterequestId = $quoterequestDb->getLatestQuoterequestID()+1;
 			$quoterequestDb->saveQuoterequest($id, $newQuoterequestId, $this->_date, 105, $this->_date, $this->_user['id']);
 			$quoterequest = $quoterequestDb->getQuoterequest($id);
 		}
@@ -578,7 +579,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$this->view->template = $template;
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -625,8 +627,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 			$quoterequest->deleteQuoterequest($id);
 
-			$positions = $this->getPositions($id);
-			$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		    $positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		    $positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}
@@ -684,35 +686,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$json = $form->getMessages();
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
-	}
-
-	protected function getPositions($id)
-	{
-		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('quoterequestid = ?', $id)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-
-		return $positions;
-	}
-
-	protected function getTextblocks()
-	{
-	    $textblocksDb = new Purchases_Model_DbTable_Textblock();
-		$textblocksObject = $textblocksDb->fetchAll(
-			$textblocksDb->select()
-				->where('controller = ?', 'quoterequest')
-				->where('clientid = ?', $this->_user['clientid'])
-				->order('ordering')
-		);
-		$textblocks = array();
-		foreach($textblocksObject as $textblock)
-            $textblocks[$textblock->section] = $textblock->text;
-		return $textblocks;
 	}
 
 	protected function checkDirectory($id) {

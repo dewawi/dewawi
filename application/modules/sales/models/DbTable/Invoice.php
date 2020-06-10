@@ -5,12 +5,34 @@ class Sales_Model_DbTable_Invoice extends Zend_Db_Table_Abstract
 
 	protected $_name = 'invoice';
 
+	protected $_date = null;
+
+	protected $_user = null;
+
+	public function init()
+	{
+		$this->_date = date('Y-m-d H:i:s');
+		$this->_user = Zend_Registry::get('User');
+	}
+
 	public function getInvoice($id)
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
 		if(!$row) return false;
 		return $row->toArray();
+	}
+
+	public function getLatestInvoiceID()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where, 'invoiceid DESC');
+		if (!$data) {
+			throw new Exception("Could not find row");
+		}
+		return $data->invoiceid;
 	}
 
 	public function addInvoice($data)

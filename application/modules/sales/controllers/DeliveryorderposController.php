@@ -46,7 +46,8 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 		$deliveryorder = $deliveryorderDb->getDeliveryorder($deliveryorderid);
 
 		//Get positions
-		$positions = $this->getPositions($deliveryorderid);
+		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
+		$positions = $positionsDb->getPositions($deliveryorderid);
 
 		//Get units of measurements
 		$uoms = $this->_helper->Uom->getUoms();
@@ -96,14 +97,6 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 		$this->view->forms = $forms;
 		$this->view->deliveryorder = $deliveryorder;
 		$this->view->toolbar = new Sales_Form_ToolbarPositions();
-	}
-
-	public function selectAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$positions = new Sales_Model_DbTable_Deliveryorderpos();
-		$this->view->positions = $positions->fetchAll();
 	}
 
 	public function applyAction()
@@ -333,23 +326,11 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function getPositions($deliveryorderid)
-	{
-		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('deliveryorderid = ?', $deliveryorderid)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-		return $positions;
-	}
-
 	protected function setOrdering($deliveryorderid)
 	{
 		$i = 1;
-		$positions = $this->getPositions($deliveryorderid);
+		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
+		$positions = $positionsDb->getPositions($deliveryorderid);
 		foreach($positions as $position) {
 			if($position->ordering != $i) {
 				if(!isset($positionsDb)) $positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
@@ -361,8 +342,9 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 
 	protected function getOrdering($deliveryorderid)
 	{
-		$positions = $this->getPositions($deliveryorderid);
 		$i = 1;
+		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
+		$positions = $positionsDb->getPositions($deliveryorderid);
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$i] = $position->id;

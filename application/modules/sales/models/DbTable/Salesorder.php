@@ -5,6 +5,16 @@ class Sales_Model_DbTable_Salesorder extends Zend_Db_Table_Abstract
 
 	protected $_name = 'salesorder';
 
+	protected $_date = null;
+
+	protected $_user = null;
+
+	public function init()
+	{
+		$this->_date = date('Y-m-d H:i:s');
+		$this->_user = Zend_Registry::get('User');
+	}
+
 	public function getSalesorder($id)
 	{
 		$id = (int)$id;
@@ -13,6 +23,18 @@ class Sales_Model_DbTable_Salesorder extends Zend_Db_Table_Abstract
 			throw new Exception("Could not find row $id");
 		}
 		return $row->toArray();
+	}
+
+	public function getLatestSalesorderID()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where, 'salesorderid DESC');
+		if (!$data) {
+			throw new Exception("Could not find row");
+		}
+		return $data->salesorderid;
 	}
 
 	public function addSalesorder($data)

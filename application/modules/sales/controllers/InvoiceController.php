@@ -243,11 +243,15 @@ class Sales_InvoiceController extends Zend_Controller_Action
 					$toolbar->state->setValue($data['state']);
 					$toolbarPositions = new Sales_Form_ToolbarPositions();
 
+					//Get text blocks
+		            $textblocksDb = new Sales_Model_DbTable_Textblock();
+		            $textblocks = $textblocksDb->getTextblocks('invoice');
+
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 					$this->view->toolbarPositions = $toolbarPositions;
-					$this->view->textblocks = $this->getTextblocks();
+					$this->view->textblocks = $textblocks;
 				}
 			}
 		}
@@ -275,7 +279,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoice['subtotal'] = $this->_currency->toCurrency($invoice['subtotal']);
 		$invoice['total'] = $this->_currency->toCurrency($invoice['total']);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$position->description = str_replace("\n", '<br>', $position->description);
 			$position->price = $this->_currency->toCurrency($position->price);
@@ -314,8 +319,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoice = new Sales_Model_DbTable_Invoice();
 		echo $invoiceid = $invoice->addInvoice($data);
 
-		$positions = $this->getPositions($id);
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['invoiceid'] = $invoiceid;
@@ -348,7 +353,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$quote = new Sales_Model_DbTable_Quote();
 		$quoteid = $quote->addQuote($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsQuoteDb = new Sales_Model_DbTable_Quotepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -383,7 +389,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsSalesorderDb = new Sales_Model_DbTable_Salesorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -435,7 +442,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$deliveryorder = new Sales_Model_DbTable_Deliveryorder();
 		$deliveryorderid = $deliveryorder->addDeliveryorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsDeliveryorderDb = new Sales_Model_DbTable_Deliveryorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -470,7 +478,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$creditnote = new Sales_Model_DbTable_Creditnote();
 		$creditnoteid = $creditnote->addCreditnote($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsCreditnoteDb = new Sales_Model_DbTable_Creditnotepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -522,7 +531,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequestid = $quoterequest->addQuoterequest($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsQuoterequestDb = new Purchases_Model_DbTable_Quoterequestpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -579,7 +589,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsPurchaseorderDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -631,7 +642,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$process = new Processes_Model_DbTable_Process();
 		$processID = $process->addProcess($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		$processposDb = new Processes_Model_DbTable_Processpos();
 		foreach($positions as $position) {
 			$positionData = array();
@@ -682,7 +694,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -731,19 +744,11 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		if(!$invoice['invoiceid']) {
-			//Get latest invoice Id
-			$latestInvoice = $invoiceDb->fetchRow(
-				$invoiceDb->select()
-					->where('clientid = ?', $this->_user['clientid'])
-				    ->where('deleted = ?', 0)
-					->order('invoiceid DESC')
-					->limit(1)
-			);
-
 			//Set new invoice Id
-			$newInvoiceId = $latestInvoice['invoiceid']+1;
+			$newInvoiceId = $invoiceDb->getLatestInvoiceID()+1;
 			$invoiceDb->saveInvoice($id, $newInvoiceId, $this->_date, 105, $this->_date, $this->_user['id']);
 			$invoice = $invoiceDb->getInvoice($id);
 
@@ -830,7 +835,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -1010,8 +1016,8 @@ print_r($_FILES);*/
 			$invoice = new Sales_Model_DbTable_Invoice();
 			$invoice->deleteInvoice($id);
 
-			$positions = $this->getPositions($id);
-			$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		    $positionsDb = new Sales_Model_DbTable_Invoicepos();
+		    $positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}
@@ -1117,35 +1123,6 @@ print_r($_FILES);*/
 			echo '';
 		}*/
 	//}
-
-	protected function getPositions($id)
-	{
-		$positionsDb = new Sales_Model_DbTable_Invoicepos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('invoiceid = ?', $id)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-
-		return $positions;
-	}
-
-	protected function getTextblocks()
-	{
-	    $textblocksDb = new Sales_Model_DbTable_Textblock();
-		$textblocksObject = $textblocksDb->fetchAll(
-			$textblocksDb->select()
-				->where('controller = ?', 'invoice')
-				->where('clientid = ?', $this->_user['clientid'])
-				->order('ordering')
-		);
-		$textblocks = array();
-		foreach($textblocksObject as $textblock)
-            $textblocks[$textblock->section] = $textblock->text;
-		return $textblocks;
-	}
 
 	protected function checkDirectory($id) {
 		//Create contact folder if does not already exists

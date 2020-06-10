@@ -5,6 +5,16 @@ class Sales_Model_DbTable_Deliveryorderpos extends Zend_Db_Table_Abstract
 
 	protected $_name = 'deliveryorderpos';
 
+	protected $_date = null;
+
+	protected $_user = null;
+
+	public function init()
+	{
+		$this->_date = date('Y-m-d H:i:s');
+		$this->_user = Zend_Registry::get('User');
+	}
+
 	public function getPosition($id)
 	{
 		$id = (int)$id;
@@ -13,6 +23,20 @@ class Sales_Model_DbTable_Deliveryorderpos extends Zend_Db_Table_Abstract
 			throw new Exception("Could not find row $id");
 		}
 		return $row->toArray();
+	}
+
+	public function getPositions($deliveryorderid)
+	{
+		$deliveryorderid = (int)$deliveryorderid;
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('deliveryorderid = ?', $deliveryorderid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'ordering');
+		if (!$data) {
+			throw new Exception("Could not find row $deliveryorderid");
+		}
+		return $data;
 	}
 
 	public function addPosition($data)

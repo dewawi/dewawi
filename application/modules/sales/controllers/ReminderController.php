@@ -243,11 +243,15 @@ class Sales_ReminderController extends Zend_Controller_Action
 					$toolbar->state->setValue($data['state']);
 					$toolbarPositions = new Sales_Form_ToolbarPositions();
 
+					//Get text blocks
+		            $textblocksDb = new Sales_Model_DbTable_Textblock();
+		            $textblocks = $textblocksDb->getTextblocks('reminder');
+
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 					$this->view->toolbarPositions = $toolbarPositions;
-					$this->view->textblocks = $this->getTextblocks();
+					$this->view->textblocks = $textblocks;
 				}
 			}
 		}
@@ -275,7 +279,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$reminder['subtotal'] = $this->_currency->toCurrency($reminder['subtotal']);
 		$reminder['total'] = $this->_currency->toCurrency($reminder['total']);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$position->description = str_replace("\n", '<br>', $position->description);
 			$position->price = $this->_currency->toCurrency($position->price);
@@ -314,8 +319,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$reminder = new Sales_Model_DbTable_Reminder();
 		echo $reminderid = $reminder->addReminder($data);
 
-		$positions = $this->getPositions($id);
 		$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['reminderid'] = $reminderid;
@@ -348,7 +353,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsSalesorderDb = new Sales_Model_DbTable_Salesorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -383,7 +389,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsInvoiceDb = new Sales_Model_DbTable_Invoicepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -435,7 +442,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequestid = $quoterequest->addQuoterequest($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsQuoterequestDb = new Purchases_Model_DbTable_Quoterequestpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -491,7 +499,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsPurchaseorderDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -538,7 +547,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -587,19 +597,11 @@ class Sales_ReminderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(!$reminder['reminderid']) {
-			//Get latest reminder Id
-			$latestReminder = $reminderDb->fetchRow(
-				$reminderDb->select()
-					->where('clientid = ?', $this->_user['clientid'])
-				    ->where('deleted = ?', 0)
-					->order('reminderid DESC')
-					->limit(1)
-			);
-
 			//Set new reminder Id
-			$newReminderId = $latestReminder['reminderid']+1;
+			$newReminderId = $reminderDb->getLatestReminderID()+1;
 			$reminderDb->saveReminder($id, $newReminderId, $this->_date, 105, $this->_date, $this->_user['id']);
 			$reminder = $reminderDb->getReminder($id);
 		}
@@ -652,7 +654,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -699,8 +702,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 			$reminder = new Sales_Model_DbTable_Reminder();
 			$reminder->deleteReminder($id);
 
-			$positions = $this->getPositions($id);
-			$positionsDb = new Sales_Model_DbTable_Reminderpos();
+		    $positionsDb = new Sales_Model_DbTable_Reminderpos();
+		    $positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}
@@ -758,35 +761,6 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$json = $form->getMessages();
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
-	}
-
-	protected function getPositions($id)
-	{
-		$positionsDb = new Sales_Model_DbTable_Reminderpos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('reminderid = ?', $id)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-
-		return $positions;
-	}
-
-	protected function getTextblocks()
-	{
-	    $textblocksDb = new Sales_Model_DbTable_Textblock();
-		$textblocksObject = $textblocksDb->fetchAll(
-			$textblocksDb->select()
-				->where('controller = ?', 'reminder')
-				->where('clientid = ?', $this->_user['clientid'])
-				->order('ordering')
-		);
-		$textblocks = array();
-		foreach($textblocksObject as $textblock)
-            $textblocks[$textblock->section] = $textblock->text;
-		return $textblocks;
 	}
 
 	protected function checkDirectory($id) {

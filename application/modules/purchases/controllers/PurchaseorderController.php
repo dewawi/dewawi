@@ -243,11 +243,15 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 					$toolbar->state->setValue($data['state']);
 					$toolbarPositions = new Purchases_Form_ToolbarPositions();
 
+					//Get text blocks
+		            $textblocksDb = new Purchases_Model_DbTable_Textblock();
+		            $textblocks = $textblocksDb->getTextblocks('purchaseorder');
+
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 					$this->view->toolbarPositions = $toolbarPositions;
-					$this->view->textblocks = $this->getTextblocks();
+					$this->view->textblocks = $textblocks;
 				}
 			}
 		}
@@ -275,7 +279,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorder['subtotal'] = $this->_currency->toCurrency($purchaseorder['subtotal']);
 		$purchaseorder['total'] = $this->_currency->toCurrency($purchaseorder['total']);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$position->description = str_replace("\n", '<br>', $position->description);
 			$position->price = $this->_currency->toCurrency($position->price);
@@ -314,8 +319,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		echo $purchaseorderid = $purchaseorder->addPurchaseorder($data);
 
-		$positions = $this->getPositions($id);
 		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['purchaseorderid'] = $purchaseorderid;
@@ -348,7 +353,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsSalesorderDb = new Sales_Model_DbTable_Salesorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -383,7 +389,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsInvoiceDb = new Sales_Model_DbTable_Invoicepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -435,7 +442,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequestid = $quoterequest->addQuoterequest($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsQuoterequestDb = new Purchases_Model_DbTable_Quoterequestpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -478,7 +486,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -520,19 +529,11 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			$this->view->template = $template;
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(!$purchaseorder['purchaseorderid']) {
-			//Get latest purchaseorder Id
-			$latestPurchaseorder = $purchaseorderDb->fetchRow(
-				$purchaseorderDb->select()
-					->where('clientid = ?', $this->_user['clientid'])
-				    ->where('deleted = ?', 0)
-					->order('purchaseorderid DESC')
-					->limit(1)
-			);
-
 			//Set new purchaseorder Id
-			$newPurchaseorderId = $latestPurchaseorder['purchaseorderid']+1;
+			$newPurchaseorderId = $purchaseorderDb->getLatestPurchaseorderID()+1;
 			$purchaseorderDb->savePurchaseorder($id, $newPurchaseorderId, $this->_date, 105, $this->_date, $this->_user['id']);
 			$purchaseorder = $purchaseorderDb->getPurchaseorder($id);
 		}
@@ -578,7 +579,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			$this->view->template = $template;
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -625,8 +627,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 			$purchaseorder->deletePurchaseorder($id);
 
-			$positions = $this->getPositions($id);
-			$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		    $positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		    $positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}
@@ -684,35 +686,6 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$json = $form->getMessages();
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
-	}
-
-	protected function getPositions($id)
-	{
-		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('purchaseorderid = ?', $id)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-
-		return $positions;
-	}
-
-	protected function getTextblocks()
-	{
-	    $textblocksDb = new Purchases_Model_DbTable_Textblock();
-		$textblocksObject = $textblocksDb->fetchAll(
-			$textblocksDb->select()
-				->where('controller = ?', 'purchaseorder')
-				->where('clientid = ?', $this->_user['clientid'])
-				->order('ordering')
-		);
-		$textblocks = array();
-		foreach($textblocksObject as $textblock)
-            $textblocks[$textblock->section] = $textblock->text;
-		return $textblocks;
 	}
 
 	protected function checkDirectory($id) {

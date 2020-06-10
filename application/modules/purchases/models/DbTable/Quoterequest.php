@@ -5,6 +5,16 @@ class Purchases_Model_DbTable_Quoterequest extends Zend_Db_Table_Abstract
 
 	protected $_name = 'quoterequest';
 
+	protected $_date = null;
+
+	protected $_user = null;
+
+	public function init()
+	{
+		$this->_date = date('Y-m-d H:i:s');
+		$this->_user = Zend_Registry::get('User');
+	}
+
 	public function getQuoterequest($id)
 	{
 		$id = (int)$id;
@@ -13,6 +23,18 @@ class Purchases_Model_DbTable_Quoterequest extends Zend_Db_Table_Abstract
 			throw new Exception("Could not find row $id");
 		}
 		return $row->toArray();
+	}
+
+	public function getLatestQuoterequestID()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where, 'quoterequestid DESC');
+		if (!$data) {
+			throw new Exception("Could not find row");
+		}
+		return $data->quoterequestid;
 	}
 
 	public function addQuoterequest($data)

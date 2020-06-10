@@ -5,6 +5,16 @@ class Sales_Model_DbTable_Deliveryorder extends Zend_Db_Table_Abstract
 
 	protected $_name = 'deliveryorder';
 
+	protected $_date = null;
+
+	protected $_user = null;
+
+	public function init()
+	{
+		$this->_date = date('Y-m-d H:i:s');
+		$this->_user = Zend_Registry::get('User');
+	}
+
 	public function getDeliveryorder($id)
 	{
 		$id = (int)$id;
@@ -13,6 +23,18 @@ class Sales_Model_DbTable_Deliveryorder extends Zend_Db_Table_Abstract
 			throw new Exception("Could not find row $id");
 		}
 		return $row->toArray();
+	}
+
+	public function getLatestDeliveryorderID()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where, 'deliveryorderid DESC');
+		if (!$data) {
+			throw new Exception("Could not find row");
+		}
+		return $data->deliveryorderid;
 	}
 
 	public function addDeliveryorder($data)

@@ -5,6 +5,16 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 
 	protected $_name = 'purchaseorder';
 
+	protected $_date = null;
+
+	protected $_user = null;
+
+	public function init()
+	{
+		$this->_date = date('Y-m-d H:i:s');
+		$this->_user = Zend_Registry::get('User');
+	}
+
 	public function getPurchaseorder($id)
 	{
 		$id = (int)$id;
@@ -13,6 +23,18 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 			throw new Exception("Could not find row $id");
 		}
 		return $row->toArray();
+	}
+
+	public function getLatestPurchaseorderID()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where, 'purchaseorderid DESC');
+		if (!$data) {
+			throw new Exception("Could not find row");
+		}
+		return $data->purchaseorderid;
 	}
 
 	public function addPurchaseorder($data)

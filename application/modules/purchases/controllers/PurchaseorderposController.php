@@ -46,7 +46,8 @@ class Purchases_PurchaseorderposController extends Zend_Controller_Action
 		$purchaseorder = $purchaseorderDb->getPurchaseorder($purchaseorderid);
 
 		//Get positions
-		$positions = $this->getPositions($purchaseorderid);
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($purchaseorderid);
 
 		//Get units of measurements
 		$uoms = $this->_helper->Uom->getUoms();
@@ -96,14 +97,6 @@ class Purchases_PurchaseorderposController extends Zend_Controller_Action
 		$this->view->forms = $forms;
 		$this->view->purchaseorder = $purchaseorder;
 		$this->view->toolbar = new Purchases_Form_ToolbarPositions();
-	}
-
-	public function selectAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$positions = new Purchases_Model_DbTable_Purchaseorderpos();
-		$this->view->positions = $positions->fetchAll();
 	}
 
 	public function applyAction()
@@ -333,26 +326,14 @@ class Purchases_PurchaseorderposController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function getPositions($purchaseorderid)
-	{
-		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('purchaseorderid = ?', $purchaseorderid)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-		return $positions;
-	}
-
 	protected function setOrdering($purchaseorderid)
 	{
 		$i = 1;
-		$positions = $this->getPositions($purchaseorderid);
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($purchaseorderid);
 		foreach($positions as $position) {
 			if($position->ordering != $i) {
-				if(!isset($positionsDb)) $positionsDb = new Sales_Model_DbTable_Purchaseorderpos();
+				if(!isset($positionsDb)) $positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
 				$positionsDb->sortPosition($position->id, $i);
 			}
 			++$i;
@@ -361,8 +342,9 @@ class Purchases_PurchaseorderposController extends Zend_Controller_Action
 
 	protected function getOrdering($purchaseorderid)
 	{
-		$positions = $this->getPositions($purchaseorderid);
 		$i = 1;
+		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+		$positions = $positionsDb->getPositions($purchaseorderid);
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$i] = $position->id;

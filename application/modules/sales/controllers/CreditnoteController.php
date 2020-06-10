@@ -243,11 +243,15 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 					$toolbar->state->setValue($data['state']);
 					$toolbarPositions = new Sales_Form_ToolbarPositions();
 
+					//Get text blocks
+		            $textblocksDb = new Sales_Model_DbTable_Textblock();
+		            $textblocks = $textblocksDb->getTextblocks('creditnote');
+
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 					$this->view->toolbarPositions = $toolbarPositions;
-					$this->view->textblocks = $this->getTextblocks();
+					$this->view->textblocks = $textblocks;
 				}
 			}
 		}
@@ -275,7 +279,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnote['subtotal'] = $this->_currency->toCurrency($creditnote['subtotal']);
 		$creditnote['total'] = $this->_currency->toCurrency($creditnote['total']);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$position->description = str_replace("\n", '<br>', $position->description);
 			$position->price = $this->_currency->toCurrency($position->price);
@@ -314,8 +319,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnote = new Sales_Model_DbTable_Creditnote();
 		echo $creditnoteid = $creditnote->addCreditnote($data);
 
-		$positions = $this->getPositions($id);
 		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['creditnoteid'] = $creditnoteid;
@@ -348,7 +353,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsSalesorderDb = new Sales_Model_DbTable_Salesorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -383,7 +389,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsInvoiceDb = new Sales_Model_DbTable_Invoicepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -435,7 +442,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequestid = $quoterequest->addQuoterequest($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsQuoterequestDb = new Purchases_Model_DbTable_Quoterequestpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -491,7 +499,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($id);
 		$positionsPurchaseorderDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
@@ -538,7 +547,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -587,19 +597,11 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($id);
 		if(!$creditnote['creditnoteid']) {
-			//Get latest creditnote Id
-			$latestCreditnote = $creditnoteDb->fetchRow(
-				$creditnoteDb->select()
-					->where('clientid = ?', $this->_user['clientid'])
-				    ->where('deleted = ?', 0)
-					->order('creditnoteid DESC')
-					->limit(1)
-			);
-
 			//Set new creditnote Id
-			$newCreditnoteId = $latestCreditnote['creditnoteid']+1;
+			$newCreditnoteId = $creditnoteDb->getLatestCreditnoteID()+1;
 			$creditnoteDb->saveCreditnote($id, $newCreditnoteId, $this->_date, 105, $this->_date, $this->_user['id']);
 			$creditnote = $creditnoteDb->getCreditnote($id);
 
@@ -607,10 +609,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			if(count($positions)) {
 				$itemsDb = new Items_Model_DbTable_Item();
 				foreach($positions as $position) {
-					$item = $itemsDb->fetchRow(
-						$itemsDb->select()
-							->where('sku = ?', $position['sku'])
-					);
+                    $item = $itemsDb->getItemBySKU($position['sku']);
 					if($item && $item['inventory']) {
                         $inventoryDb = new Items_Model_DbTable_Inventory();
 						$quantity = $item->quantity + $position->quantity;
@@ -689,7 +688,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		$positions = $this->getPositions($id);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
@@ -736,8 +736,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$creditnote = new Sales_Model_DbTable_Creditnote();
 			$creditnote->deleteCreditnote($id);
 
-			$positions = $this->getPositions($id);
-			$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		    $positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		    $positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}
@@ -795,35 +795,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$json = $form->getMessages();
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
-	}
-
-	protected function getPositions($id)
-	{
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('creditnoteid = ?', $id)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-
-		return $positions;
-	}
-
-	protected function getTextblocks()
-	{
-	    $textblocksDb = new Sales_Model_DbTable_Textblock();
-		$textblocksObject = $textblocksDb->fetchAll(
-			$textblocksDb->select()
-				->where('controller = ?', 'creditnote')
-				->where('clientid = ?', $this->_user['clientid'])
-				->order('ordering')
-		);
-		$textblocks = array();
-		foreach($textblocksObject as $textblock)
-            $textblocks[$textblock->section] = $textblock->text;
-		return $textblocks;
 	}
 
 	protected function checkDirectory($id) {

@@ -46,7 +46,8 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 		$creditnote = $creditnoteDb->getCreditnote($creditnoteid);
 
 		//Get positions
-		$positions = $this->getPositions($creditnoteid);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($creditnoteid);
 
 		//Get units of measurements
 		$uoms = $this->_helper->Uom->getUoms();
@@ -96,14 +97,6 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 		$this->view->forms = $forms;
 		$this->view->creditnote = $creditnote;
 		$this->view->toolbar = new Sales_Form_ToolbarPositions();
-	}
-
-	public function selectAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$positions = new Sales_Model_DbTable_Creditnotepos();
-		$this->view->positions = $positions->fetchAll();
 	}
 
 	public function applyAction()
@@ -333,23 +326,11 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-	protected function getPositions($creditnoteid)
-	{
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('creditnoteid = ?', $creditnoteid)
-				->where('clientid = ?', $this->_user['clientid'])
-				->where('deleted = ?', 0)
-				->order('ordering')
-		);
-		return $positions;
-	}
-
 	protected function setOrdering($creditnoteid)
 	{
 		$i = 1;
-		$positions = $this->getPositions($creditnoteid);
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($creditnoteid);
 		foreach($positions as $position) {
 			if($position->ordering != $i) {
 				if(!isset($positionsDb)) $positionsDb = new Sales_Model_DbTable_Creditnotepos();
@@ -361,8 +342,9 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 
 	protected function getOrdering($creditnoteid)
 	{
-		$positions = $this->getPositions($creditnoteid);
 		$i = 1;
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positions = $positionsDb->getPositions($creditnoteid);
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$i] = $position->id;
