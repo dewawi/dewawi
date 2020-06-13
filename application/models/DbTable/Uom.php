@@ -14,4 +14,17 @@ class Application_Model_DbTable_Uom extends Zend_Db_Table_Abstract
 		}
 		return $row->toArray();
 	}
+
+	public function getUoms()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where);
+
+		$uoms = array();
+		foreach($data as $uom) {
+			$uoms[$uom->id] = $uom->title;
+		}
+		return $uoms;
+	}
 }

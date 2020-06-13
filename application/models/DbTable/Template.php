@@ -5,6 +5,16 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 
 	protected $_name = 'template';
 
+	protected $_date = null;
+
+	protected $_user = null;
+
+	public function init()
+	{
+		$this->_date = date('Y-m-d H:i:s');
+		$this->_user = Zend_Registry::get('User');
+	}
+
 	public function getTemplate($id)
 	{
 		$id = (int)$id;
@@ -23,12 +33,17 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		}
 	}
 
-	public function getTemplates($clientid)
+	public function getTemplates()
 	{
-		$row = $this->fetchAll('clientid = ' . $clientid . ' AND activated = 1');
-		if (!$row) {
-			throw new Exception("Could not find row $clientid");
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
+		$data = $this->fetchAll($where);
+
+		$templates = array();
+		foreach($data as $template) {
+			$templates[$template->id] = $template->description;
 		}
-		return $row->toArray();
+		return $templates;
 	}
 }

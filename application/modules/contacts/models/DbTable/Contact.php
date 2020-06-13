@@ -33,6 +33,15 @@ class Contacts_Model_DbTable_Contact extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getLatestContacts()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'id DESC', 5);
+		return $data;
+	}
+
 	public function addContact($data)
 	{
 		$data['clientid'] = $this->_user['clientid'];

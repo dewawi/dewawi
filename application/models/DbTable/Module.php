@@ -14,4 +14,12 @@ class Application_Model_DbTable_Module extends Zend_Db_Table_Abstract
 		}
 		return $row->toArray();
 	}
+
+	public function getModules()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where);
+		return $data;
+	}
 }

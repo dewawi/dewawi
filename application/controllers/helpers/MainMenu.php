@@ -4,7 +4,7 @@ class Application_Controller_Action_Helper_MainMenu extends Zend_Controller_Acti
 {
 	public function getMainMenu() {
 		$modulesDb = new Application_Model_DbTable_Module();
-		$modules = $modulesDb->fetchAll();
+		$modules = $modulesDb->getModules();
 		$mainmenu = array();
 		foreach($modules as $module) {
 			if($module->active && $module->menu) {

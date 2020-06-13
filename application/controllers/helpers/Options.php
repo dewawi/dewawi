@@ -8,99 +8,26 @@ class Application_Controller_Action_Helper_Options extends Zend_Controller_Actio
 
 		//Get categories
 		$categoriesDb = new Application_Model_DbTable_Category();
-		$categoriesObject = $categoriesDb->fetchAll(
-					$categoriesDb->select()
-						->where('type = ?', 'contact')
-						->where('clientid = ?', $clientid)
-						->order('ordering')
-		);
-		$categories = array();
-		foreach($categoriesObject as $category) {
-			if(!$category->parentid) {
-				$categories[$category->id]['id'] = $category->id;
-				$categories[$category->id]['title'] = $category->title;
-				$categories[$category->id]['parent'] = $category->parentid;
-				if($category->parentid) {
-					if(!isset($categories[$category->parentid])) $categories[$category->parentid] = array();
-					if(!isset($categories[$category->parentid]['childs'])) $categories[$category->parentid]['childs'] = array();
-					array_push($categories[$category->parentid]['childs'], $category->id);
-				}
-			}
-		}
-		foreach($categoriesObject as $category) {
-			if($category->parentid) {
-				$categories[$category->id]['id'] = $category->id;
-				$categories[$category->id]['title'] = $category->title;
-				$categories[$category->id]['parent'] = $category->parentid;
-				if($category->parentid) {
-					if(!isset($categories[$category->parentid])) $categories[$category->parentid] = array();
-					if(!isset($categories[$category->parentid]['childs'])) $categories[$category->parentid]['childs'] = array();
-					array_push($categories[$category->parentid]['childs'], $category->id);
-				}
-			}
-		}
+		$categories = $categoriesDb->getCategories('contact');
 		$options['categories'] = $categories;
 
 		//Get states
-		$options['states'] = array(
-			'100' => 'STATES_CREATED',
-			'101' => 'STATES_IN_PROCESS',
-			'102' => 'STATES_PLEASE_CHECK',
-			'103' => 'STATES_PLEASE_DELETE',
-			'104' => 'STATES_RELEASED',
-			'105' => 'STATES_COMPLETED',
-			'106' => 'STATES_CANCELLED'
-		);
-
-		//Get payment methods
-		$paymentmethodDb = new Application_Model_DbTable_Paymentmethod();
-		$paymentmethodObject = $paymentmethodDb->fetchAll(
-			$paymentmethodDb->select()
-				->where('clientid = ?', $clientid)
-		);
-		$paymentmethods = array();
-		foreach($paymentmethodObject as $paymentmethod) {
-			$paymentmethods[$paymentmethod->title] = $paymentmethod->title;
-		}
-		$options['paymentmethods'] = $paymentmethods;
-
-		//Get shipping methods
-		$shippingmethodDb = new Application_Model_DbTable_Shippingmethod();
-		$shippingmethodObject = $shippingmethodDb->fetchAll(
-			$shippingmethodDb->select()
-				->where('clientid = ?', $clientid)
-		);
-		$shippingmethods = array();
-		foreach($shippingmethodObject as $shippingmethod) {
-			$shippingmethods[$shippingmethod->title] = $shippingmethod->title;
-		}
-		$options['shippingmethods'] = $shippingmethods;
+		$stateDb = new Application_Model_DbTable_State();
+		$states = $stateDb->getStates();
+		$options['states'] = $states;
 
 		//Get templates
 		$templateDb = new Application_Model_DbTable_Template();
-		$templateObject = $templateDb->fetchAll(
-			$templateDb->select()
-				->where('clientid = ?', $clientid)
-		);
-		$templates = array();
-		foreach($templateObject as $template) {
-			$templates[$template->id] = $template->description;
-		}
+		$templates = $templateDb->getTemplates();
 		$options['templates'] = $templates;
 
 		//Get languages
-		$languages = array(
-			'de_DE' => 'LANGUAGES_DE_DE',
-			'en_US' => 'LANGUAGES_EN_US'
-		);
+		$languageDb = new Application_Model_DbTable_Language();
+		$languages = $languageDb->getLanguages();
 		$options['languages'] = $languages;
 
 		//Set form options
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($this->getMenuStructure($options['categories']));
-		//if(isset($form->country) && isset($options['countries'])) $form->country->addMultiOptions($options['countries']);
-		//if(isset($form->paymentmethod) && isset($options['paymentmethods'])) $form->paymentmethod->addMultiOptions($options['paymentmethods']);
-		//if(isset($form->shippingmethod) && isset($options['shippingmethods'])) $form->shippingmethod->addMultiOptions($options['shippingmethods']);
-		//if(isset($form->templateid) && isset($options['templates'])) $form->templateid->addMultiOptions($options['templates']);
 		if(isset($form->language) && isset($options['languages'])) $form->language->addMultiOptions($options['languages']);
 
 		return $options;

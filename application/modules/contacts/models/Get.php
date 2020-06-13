@@ -2,6 +2,23 @@
 
 class Contacts_Model_Get
 {
+	public function contact($id)
+	{
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->fetchRow(
+			$contactDb->select()
+				->from(array('c' => 'contact'))
+				->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
+				->joinLeft(array('p' => 'phone'), 'c.id = p.contactid', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
+				->joinLeft(array('e' => 'email'), 'c.id = e.contactid', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
+				->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
+				->group('c.id')
+				->where('c.id = ?', $id)
+				->setIntegrityCheck(false)
+		);
+		return $contact;
+	}
+
 	public function contacts($params, $categories, $clientid, $helper)
 	{
 		$contactsDb = new Contacts_Model_DbTable_Contact();
@@ -66,14 +83,17 @@ class Contacts_Model_Get
 					$quoteDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 						->orWhere('id IN (?)', $documentrelationIDs['sales']['quote'])
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		} else {
 			$history['quotes'] = $quoteDb->fetchAll(
 					$quoteDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		}
 		foreach($history['quotes'] as $quote) {
@@ -95,14 +115,17 @@ class Contacts_Model_Get
 					$salesorderDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 						->orWhere('id IN (?)', $documentrelationIDs['sales']['salesorder'])
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		} else {
 			$history['salesorders'] = $salesorderDb->fetchAll(
 					$salesorderDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		}
 		foreach($history['salesorders'] as $salesorder) {
@@ -124,14 +147,17 @@ class Contacts_Model_Get
 					$invoiceDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 						->orWhere('id IN (?)', $documentrelationIDs['sales']['invoice'])
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		} else {
 			$history['invoices'] = $invoiceDb->fetchAll(
 					$invoiceDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		}
 		foreach($history['invoices'] as $invoice) {
@@ -153,14 +179,17 @@ class Contacts_Model_Get
 					$deliveryorderDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 						->orWhere('id IN (?)', $documentrelationIDs['sales']['deliveryorder'])
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		} else {
 			$history['deliveryorders'] = $deliveryorderDb->fetchAll(
 					$deliveryorderDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		}
 		foreach($history['deliveryorders'] as $deliveryorder) {
@@ -182,14 +211,17 @@ class Contacts_Model_Get
 					$creditnoteDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 						->orWhere('id IN (?)', $documentrelationIDs['sales']['creditnote'])
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		} else {
 			$history['creditnotes'] = $creditnoteDb->fetchAll(
 					$creditnoteDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		}
 		foreach($history['creditnotes'] as $creditnote) {
@@ -211,14 +243,17 @@ class Contacts_Model_Get
 					$quoterequestDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 						->orWhere('id IN (?)', $documentrelationIDs['purchases']['quoterequest'])
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		} else {
 			$history['quoterequests'] = $quoterequestDb->fetchAll(
 					$quoterequestDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		}
 		foreach($history['quoterequests'] as $quoterequest) {
@@ -240,14 +275,17 @@ class Contacts_Model_Get
 					$purchaseorderDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 						->orWhere('id IN (?)', $documentrelationIDs['purchases']['purchaseorder'])
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		} else {
 			$history['purchaseorders'] = $purchaseorderDb->fetchAll(
 					$purchaseorderDb->select()
 						->where('contactid = ?', $id)
 						->where('clientid = ?', $clientid)
+						->where('deleted = ?', 0)
 			);
 		}
 		foreach($history['purchaseorders'] as $purchaseorder) {
@@ -261,6 +299,7 @@ class Contacts_Model_Get
 		$history['processes'] = $processesDb->fetchAll(
 				$processesDb->select()
 					->where('customerid = ?', $id)
+					->where('deleted = ?', 0)
 					//->where('clientid = ?', $clientid)
 		);
 		/*foreach($history['processes'] as $process) {

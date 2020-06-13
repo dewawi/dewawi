@@ -41,19 +41,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-
-		$contact = $contactDb->fetchRow(
-			$contactDb->select()
-				->from(array('c' => 'contact'))
-				->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
-				->joinLeft(array('p' => 'phone'), 'c.id = p.contactid', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
-				->joinLeft(array('e' => 'email'), 'c.id = e.contactid', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
-				->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
-				->group('c.id')
-				->where('c.id = ?', $this->_getParam('id', 0))
-				->setIntegrityCheck(false)
-		);
+		$get = new Contacts_Model_Get();
+		$contact = $get->contact($this->_getParam('id', 0));
 
 		header('Content-type: application/json');
 		echo Zend_Json::encode($contact);
@@ -107,23 +96,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		if($contactid) {
-			$contactsDb = new Contacts_Model_DbTable_Contact();
-			$contacts = $contactsDb->fetchAll(
-				$contactsDb->select()
-					->from(array('c' => 'contact'))
-					->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
-					->where('c.id = ?', $contactid)
-					->where('a.type = ?', 'billing')
-					->where('c.clientid = ?', $this->_user['clientid'])
-					->where('a.clientid = ?', $this->_user['clientid'])
-					->setIntegrityCheck(false)
-			);
 			$params['keyword'] = $contactid;
 			$toolbar->keyword->setValue($params['keyword']);
-		} else {
-		    $get = new Contacts_Model_Get();
-		    $contacts = $get->contacts($params, $options['categories'], $this->_user['clientid'], $this->_helper);
 		}
+
+		$get = new Contacts_Model_Get();
+		$contacts = $get->contacts($params, $options['categories'], $this->_user['clientid'], $this->_helper);
 
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
@@ -525,15 +503,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 			$query .= "clientid = ".$this->_user["clientid"].")";
 		}
 
-		$contactsDb = new Contacts_Model_DbTable_Contact();
-		$contacts = $contactsDb->fetchAll(
-			$contactsDb->select()
-				->from('contact', array('id', 'name1'))
-				->where($query)
-				->setIntegrityCheck(false)
-				->order($order." ".$sort)
-				->limit(100)
-		);
+		$toolbar = new Contacts_Form_Toolbar();
+		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$get = new Contacts_Model_Get();
+		$contacts = $get->contacts($params, $options['categories'], $this->_user['clientid'], $this->_helper);
 
 		header('Content-type: application/json');
 		//$suggestions = array("suggestions" => array());

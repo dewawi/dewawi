@@ -17,12 +17,7 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 
 			//Get positions
 			$positionsDb = new $classPos();
-			$positions = $positionsDb->fetchAll(
-				$positionsDb->select()
-					->where($controller.'id = ?', $id)
-				    ->where('deleted = ?', 0)
-					->order('ordering')
-			);
+			$positions = $positionsDb->getPositions($id);
 
 			$calculations = array();
 			$calculations['row'] = array();

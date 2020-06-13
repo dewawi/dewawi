@@ -7,21 +7,13 @@ class Admin_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$options = array();
 
 		//Get clients
-		$clientsDb = new Admin_Model_DbTable_Client();
-		$clientsObject = $clientsDb->fetchAll();
-		$clients = array();
-		foreach($clientsObject as $client) {
-			$clients[$client->id] = $client->company;
-		}
+		$clientDb = new Application_Model_DbTable_Client();
+		$clients = $clientDb->getClients();
 		$options['clients'] = $clients;
 
 		//Get languages
-		$languagesDb = new Admin_Model_DbTable_Language();
-		$languagesObject = $languagesDb->fetchAll();
-		$languages = array();
-		foreach($languagesObject as $language) {
-			$languages[$language->code] = $language->name;
-		}
+		$languageDb = new Application_Model_DbTable_Language();
+		$languages = $languageDb->getLanguages();
 		$options['languages'] = $languages;
 
 		//Set form options

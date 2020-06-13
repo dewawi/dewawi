@@ -13,4 +13,17 @@ class Application_Model_DbTable_Manufacturer extends Zend_Db_Table_Abstract
 		}
 		return $row->toArray();
 	}
+
+	public function getManufacturers()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where);
+
+		$manufacturers = array();
+		foreach($data as $manufacturer) {
+			$manufacturers[$manufacturer->id] = $manufacturer->name;
+		}
+		return $manufacturers;
+	}
 }
