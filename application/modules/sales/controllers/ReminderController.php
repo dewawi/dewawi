@@ -61,7 +61,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$reminders = $get->reminders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$reminders = $get->reminders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->reminders = $reminders;
 		$this->view->options = $options;
@@ -83,7 +83,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$reminders = $get->reminders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$reminders = $get->reminders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->reminders = $reminders;
 		$this->view->options = $options;
@@ -567,9 +567,13 @@ class Sales_ReminderController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($templateid);
+
 		$this->view->reminder = $reminder;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($templateid, $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function saveAction()
@@ -624,9 +628,13 @@ class Sales_ReminderController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($reminder['templateid']);
+
 		$this->view->reminder = $reminder;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($reminder['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function downloadAction()
@@ -674,9 +682,13 @@ class Sales_ReminderController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($reminder['templateid']);
+
 		$this->view->reminder = $reminder;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($reminder['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function cancelAction()

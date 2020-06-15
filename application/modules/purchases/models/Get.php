@@ -2,11 +2,11 @@
 
 class Purchases_Model_Get
 {
-	public function quoterequests($params, $categories, $clientid, $helper, $currency)
+	public function quoterequests($params, $categories, $clientid, $helper, $currency, $flashMessenger)
 	{
 		$quoterequestsDb = new Purchases_Model_DbTable_Quoterequest();
 
-		$columns = array('q.title', 'q.quoteid', 'q.contactid', 'q.billingname1', 'q.billingname2', 'q.billingdepartment', 'q.billingstreet', 'q.billingpostcode', 'q.billingcity', 'q.shippingname1', 'q.shippingname2', 'q.shippingdepartment', 'q.shippingstreet', 'q.shippingpostcode', 'q.shippingcity');
+		$columns = array('q.title', 'q.quoterequestid', 'q.contactid', 'q.billingname1', 'q.billingname2', 'q.billingdepartment', 'q.billingstreet', 'q.billingpostcode', 'q.billingcity', 'q.shippingname1', 'q.shippingname2', 'q.shippingdepartment', 'q.shippingstreet', 'q.shippingpostcode', 'q.shippingcity');
 
 		$query = '';
 		$schema = 'q';
@@ -39,7 +39,7 @@ class Purchases_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($quoterequests) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$quoterequests = $quoterequestsDb->fetchAll(
 					$quoterequestsDb->select()
@@ -63,7 +63,7 @@ class Purchases_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($quoterequests) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$quoterequests = $quoterequestsDb->fetchAll(
 					$quoterequestsDb->select()
@@ -92,7 +92,7 @@ class Purchases_Model_Get
 		return $quoterequests;
 	}
 
-	public function purchaseorders($params, $categories, $clientid, $helper, $currency)
+	public function purchaseorders($params, $categories, $clientid, $helper, $currency, $flashMessenger)
 	{
 		$purchaseordersDb = new Purchases_Model_DbTable_Purchaseorder();
 
@@ -129,7 +129,7 @@ class Purchases_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($purchaseorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$purchaseorders = $purchaseordersDb->fetchAll(
 					$purchaseordersDb->select()
@@ -153,7 +153,7 @@ class Purchases_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($purchaseorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$purchaseorders = $purchaseordersDb->fetchAll(
 					$purchaseordersDb->select()

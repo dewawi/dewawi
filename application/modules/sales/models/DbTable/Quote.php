@@ -37,6 +37,16 @@ class Sales_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 		return $data->quoteid;
 	}
 
+	public function getLatestQuotes()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('quoteid = ?', 0);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'id DESC', 5);
+		return $data;
+	}
+
 	public function addQuote($data)
 	{
 		$this->insert($data);

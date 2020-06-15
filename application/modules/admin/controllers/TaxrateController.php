@@ -57,11 +57,7 @@ class Admin_TaxrateController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$taxratesDb = new Admin_Model_DbTable_Taxrate();
-		$taxrates = $taxratesDb->fetchAll(
-				$taxratesDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$taxrates = $taxratesDb->getTaxrates();
 
 		$this->view->form = $form;
 		$this->view->taxrates = $taxrates;
@@ -80,11 +76,7 @@ class Admin_TaxrateController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$taxratesDb = new Admin_Model_DbTable_Taxrate();
-		$taxrates = $taxratesDb->fetchAll(
-				$taxratesDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$taxrates = $taxratesDb->getTaxrates();
 
 		$this->view->form = $form;
 		$this->view->taxrates = $taxrates;

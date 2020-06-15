@@ -37,6 +37,16 @@ class Sales_Model_DbTable_Salesorder extends Zend_Db_Table_Abstract
 		return $data->salesorderid;
 	}
 
+	public function getLatestSalesorders()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('salesorderid = ?', 0);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'id DESC', 5);
+		return $data;
+	}
+
 	public function addSalesorder($data)
 	{
 		$this->insert($data);

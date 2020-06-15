@@ -55,7 +55,7 @@ class Admin_IndexController extends Zend_Controller_Action
 		$toolbar = new Admin_Form_Toolbar();
 
 		$configDb = new Admin_Model_DbTable_Config();
-		$config = $configDb->fetchAll();
+		$config = $configDb->getConfigs();
 
 		$this->view->form = $form;
 		$this->view->config = $config;

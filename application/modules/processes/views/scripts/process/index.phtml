@@ -79,10 +79,10 @@ echo $this->ActiveFilter();
 				<p class="paymentstatus">
 					<?php if($process->state == '105' || $process->state == '106') : ?>
                         <span class="<?php echo $process->paymentstatus; ?>">
-						    <?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?>
+						    <?php echo $this->translate($this->options['paymentstatus'][$process->paymentstatus]); ?>
                         </span>
 					<?php else : ?>
-						<span class="editable" data-name="paymentstatus" data-value="<?php echo $process->paymentstatus; ?>" data-type="select"><?php echo $this->translate($this->paymentstatus[$process->paymentstatus]); ?></span>
+						<span class="editable" data-name="paymentstatus" data-value="<?php echo $process->paymentstatus; ?>" data-type="select"><?php echo $this->translate($this->options['paymentstatus'][$process->paymentstatus]); ?></span>
 					<?php endif; ?>
 				</p>
 			</td>
@@ -90,9 +90,9 @@ echo $this->ActiveFilter();
 				<?php if(!$process->editpositionsseparately) : ?>
 					<p class="deliverystatus">
 						<?php if($process->state == '105' || $process->state == '106') : ?>
-							<?php echo $this->translate($this->deliverystatus[$process->deliverystatus]); ?>
+							<?php echo $this->translate($this->options['deliverystatus'][$process->deliverystatus]); ?>
 						<?php else : ?>
-							<span class="editable" data-name="deliverystatus" data-value="<?php echo $process->deliverystatus; ?>" data-type="select"><?php echo $this->translate($this->deliverystatus[$process->deliverystatus]); ?></span>
+							<span class="editable" data-name="deliverystatus" data-value="<?php echo $process->deliverystatus; ?>" data-type="select"><?php echo $this->translate($this->options['deliverystatus'][$process->deliverystatus]); ?></span>
 						<?php endif; ?>
 					</p>
 					<p class="deliverydate">
@@ -106,11 +106,11 @@ echo $this->ActiveFilter();
 							<?php endif; ?>
 							<?php if(isset($position['supplierorderstatus'])) : ?>
 								<span class="<?php echo $position['supplierorderstatus']; ?>">
-									<?php echo $this->translate($this->supplierorderstatus[$position['supplierorderstatus']]); ?>
+									<?php echo $this->translate($this->options['supplierorderstatus'][$position['supplierorderstatus']]); ?>
 								</span>
 							<?php endif; ?>
 							<span class="<?php echo $position['deliverystatus']; ?>">
-								<?php echo $this->translate($this->deliverystatus[$position['deliverystatus']]); ?>
+								<?php echo $this->translate($this->options['deliverystatus'][$position['deliverystatus']]); ?>
 								<?php if(isset($position['deliverydate'])) echo '('.$position['deliverydate'].')'; ?>
 							</span>
 						</p>

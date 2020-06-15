@@ -25,6 +25,15 @@ class Items_Model_DbTable_Inventory extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getInventoryBySKU($sku)
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$data = $this->fetchAll($where);
+		return $data;
+	}
+
 	public function getInventorys($ids)
 	{
 		$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
@@ -33,6 +42,15 @@ class Items_Model_DbTable_Inventory extends Zend_Db_Table_Abstract
 			throw new Exception("Could not find row $ids");
 		}
 		return $row->toArray();
+	}
+
+	public function getLatestInventorys()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'id DESC', 5);
+		return $data;
 	}
 
 	public function addInventory($data)

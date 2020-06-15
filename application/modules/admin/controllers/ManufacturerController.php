@@ -57,11 +57,7 @@ class Admin_ManufacturerController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$manufacturersDb = new Admin_Model_DbTable_Manufacturer();
-		$manufacturers = $manufacturersDb->fetchAll(
-				$manufacturersDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$manufacturers = $manufacturersDb->getManufacturers();
 
 		$this->view->form = $form;
 		$this->view->manufacturers = $manufacturers;
@@ -80,11 +76,7 @@ class Admin_ManufacturerController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$manufacturersDb = new Admin_Model_DbTable_Manufacturer();
-		$manufacturers = $manufacturersDb->fetchAll(
-				$manufacturersDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$manufacturers = $manufacturersDb->getManufacturers();
 
 		$this->view->form = $form;
 		$this->view->manufacturers = $manufacturers;

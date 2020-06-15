@@ -49,22 +49,23 @@ class Sales_InvoiceposController extends Zend_Controller_Action
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
 		$positions = $positionsDb->getPositions($invoiceid);
 
-		//Get units of measurements
-		$uoms = $this->_helper->Uom->getUoms();
-		$uoms = array_combine($uoms, $uoms);
+		//Get uoms
+		$uomDb = new Application_Model_DbTable_Uom();
+		$uoms = $uomDb->getUoms();
 
 		//Get tax rates
-		$taxRates = $this->_helper->TaxRate->getTaxRates($locale);
+		$taxrateDb = new Application_Model_DbTable_Taxrate();
+		$taxrates = $taxrateDb->getTaxrates();
 
 		$forms = array();
         $taxes = array();
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$position->ordering] = $position->ordering;
-            if(!isset($taxes[$position->taxrate]) && isset($taxRates[$position->taxrate])) {
+            if(!isset($taxes[$position->taxrate]) && isset($taxrates[$position->taxrate])) {
                 $taxes[$position->taxrate] = array();
                 $taxes[$position->taxrate]['value'] = 0;
-                $taxes[$position->taxrate]['title'] = $taxRates[$position->taxrate];
+                $taxes[$position->taxrate]['title'] = $taxrates[$position->taxrate];
             }
 		}
 		foreach($positions as $position) {
@@ -77,7 +78,7 @@ class Sales_InvoiceposController extends Zend_Controller_Action
 			$form = new Sales_Form_Invoicepos();
 			$forms[$position->id] = $form->populate($position->toArray());
 			$forms[$position->id]->uom->addMultiOptions($uoms);
-			$forms[$position->id]->taxrate->addMultiOptions($taxRates);
+			$forms[$position->id]->taxrate->addMultiOptions($taxrates);
 			$forms[$position->id]->ordering->addMultiOptions($orderings);
 		}
 
@@ -119,10 +120,22 @@ class Sales_InvoiceposController extends Zend_Controller_Action
 				$data['image'] = $item['image'];
 				$data['description'] = $item['description'];
 				$data['price'] = $item['price'];
-				$data['taxrate'] = $item['taxid'] ? $this->_helper->TaxRate->getTaxRate($item['taxid']) : 0;
+                if($item['taxid']) {
+		            $taxrateDb = new Application_Model_DbTable_Taxrate();
+				    $taxrate = $taxrateDb->getTaxrate($item['taxid']);
+				    $data['taxrate'] = $taxrate['rate'];
+                } else {
+                    $data['taxrate'] = 0;
+                }
 				$data['quantity'] = 1;
 				$data['total'] = $data['price']*$data['quantity'];
-				$data['uom'] = $item['uomid'] ? $this->_helper->Uom->getUom($item['uomid']) : '';
+                if($item['taxid']) {
+		            $uomDb = new Application_Model_DbTable_Uom();
+				    $uom = $uomDb->getUom($item['uomid']);
+				    $data['uom'] = $uom['title'];
+                } else {
+                    $data['uom'] = '';
+                }
 				$data['ordering'] = $this->getLatestOrdering($invoiceid) + 1;
 				$data['created'] = $this->_date;
 				$data['createdby'] = $this->_user['id'];
@@ -184,10 +197,18 @@ class Sales_InvoiceposController extends Zend_Controller_Action
 		$id = $this->_getParam('id', 0);
 		$invoiceid = $this->_getParam('invoiceid', 0);
 
+		//Get uoms
+		$uomDb = new Application_Model_DbTable_Uom();
+		$uoms = $uomDb->getUoms();
+
+		//Get tax rates
+		$taxrateDb = new Application_Model_DbTable_Taxrate();
+		$taxrates = $taxrateDb->getTaxrates();
+
 		$form = new Sales_Form_Invoicepos();
-		$form->uom->addMultiOptions($this->_helper->Uom->getUoms());
+		$form->uom->addMultiOptions($uoms);
 		$form->ordering->addMultiOptions($this->getOrdering($invoiceid));
-		$form->taxrate->addMultiOptions($this->_helper->TaxRate->getTaxRates($locale));
+		$form->taxrate->addMultiOptions($taxrates);
 
 		if($request->isPost()) {
 		    header('Content-type: application/json');
@@ -308,9 +329,17 @@ class Sales_InvoiceposController extends Zend_Controller_Action
 
 		$form = new Sales_Form_Invoicepos();
 
-		$form->uom->addMultiOptions($this->_helper->Uom->getUoms());
-		$form->ordering->addMultiOptions($this->getOrdering($invoiceid));
-		$form->taxrate->addMultiOptions($this->_helper->TaxRate->getTaxRates($locale));
+		//Get uoms
+		$uomDb = new Application_Model_DbTable_Uom();
+		$uoms = $uomDb->getUoms();
+
+		//Get tax rates
+		$taxrateDb = new Application_Model_DbTable_Taxrate();
+		$taxrates = $taxrateDb->getTaxrates();
+
+		$form->uom->addMultiOptions($uoms);
+		$form->ordering->addMultiOptions($this->getOrdering($salesorderid));
+		$form->taxrate->addMultiOptions($taxrates);
 
 		$data = $this->getRequest()->getPost();
 		$form->$data['element']->isValid($data[$data['element']]);

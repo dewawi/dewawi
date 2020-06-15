@@ -55,18 +55,10 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$toolbar = new Admin_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
-		$categories = $this->_helper->Categories->getCategories($form, $params['clientid'], $params['type']);
 
-        /*$childCount = array();
-        foreach($categories as $category) {
-            if(isset($category['childs'])) {
-                $categories[$category['id']]['childcount'] = count($category['childs']);
-                foreach($category['childs'] as $child) {
-                    if(isset($categories[$child]['childs']))
-                        $categories[$category['id']]['childcount'] += count($categories[$child]['childs']);
-                }
-            }
-        }*/
+		$categoriesDb = new Admin_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories($params['type']);
+		$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
 
 		$this->view->form = $form;
 		$this->view->categories = $categories;
@@ -83,18 +75,10 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$toolbar = new Admin_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
-		$categories = $this->_helper->Categories->getCategories($form, $params['clientid'], $params['type']);
 
-        /*$childCount = array();
-        foreach($categories as $category) {
-            if(isset($category['childs'])) {
-                $categories[$category['id']]['childcount'] = count($category['childs']);
-                foreach($category['childs'] as $child) {
-                    if(isset($categories[$child]['childs']))
-                        $categories[$category['id']]['childcount'] += count($categories[$child]['childs']);
-                }
-            }
-        }*/
+		$categoriesDb = new Admin_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories($params['type']);
+		$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
 
 		$this->view->form = $form;
 		$this->view->categories = $categories;
@@ -161,7 +145,8 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$form = new Admin_Form_Category();
 			$options = $this->_helper->Options->getOptions($form);
 			$params = $this->_helper->Params->getParams($form, $options);
-			$categories = $this->_helper->Categories->getCategories($form, $params['clientid'], $params['type']);
+		    $categoriesDb = new Admin_Model_DbTable_Category();
+		    $categories = $categoriesDb->getCategories($params['type']);
 			if($request->isPost()) {
 				$data = $request->getPost();
 				$element = key($data);
@@ -208,7 +193,8 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$data = $categoryDb->getCategory($id);
 		unset($data['id']);
 
-		$categories = $this->_helper->Categories->getCategories(null, $data['clientid'], $data['type'], $data['parentid']);
+		$categoriesDb = new Admin_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories($data['type'], $data['parentid']);
 		foreach($categories as $category) {
             if(isset($category['ordering'])) {
 			    if($category['ordering'] > $data['ordering']) {
@@ -226,7 +212,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$data['modifiedby'] = 0;
 		$newId = $categoryDb->addCategory($data);
 
-		$childCategories = $this->_helper->Categories->getCategories(null, $data['clientid'], $data['type'], $id);
+		$childCategories = $categoriesDb->getCategories($data['type'], $id);
         if(isset($childCategories[$id]['childs'])) $this->copyChilds($id, $childCategories, $newId);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -286,7 +272,8 @@ class Admin_CategoryController extends Zend_Controller_Action
 		        if(!empty($contacts)) {
                     $this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
                 } else {
-		            $categories = $this->_helper->Categories->getCategories(null, $category['clientid'], $category['type'], $category['parentid']);
+		            $categoriesDb = new Admin_Model_DbTable_Category();
+		            $categories = $categoriesDb->getCategories($category['type'], $category['parentid']);
                     print_r($categories);
 		            /*foreach($categories as $categoryChild) {
                         if(isset($category['ordering'])) {
@@ -377,7 +364,8 @@ class Admin_CategoryController extends Zend_Controller_Action
 	protected function setOrdering($clientid, $type, $parentid)
 	{
 		$i = 1;
-		$categories = $this->_helper->Categories->getCategories(null, $clientid, $type, $parentid);
+        $categoriesDb = new Admin_Model_DbTable_Category();
+        $categories = $categoriesDb->getCategories($type, $parentid);
 		foreach($categories as $category) {
             if(isset($category['ordering'])) {
 			    //if($category['ordering'] != $i) {
@@ -393,8 +381,9 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 	protected function getOrdering($clientid, $type, $parentid)
 	{
-		$categories = $this->_helper->Categories->getCategories(null, $clientid, $type, $parentid);
 		$i = 1;
+        $categoriesDb = new Admin_Model_DbTable_Category();
+        $categories = $categoriesDb->getCategories($type, $parentid);
 		$orderings = array();
 		foreach($categories as $category) {
             if(isset($category['id'])) {
@@ -424,7 +413,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 		    $data['modified'] = '0000-00-00';
 		    $data['modifiedby'] = 0;
 		    $newChildId = $categoryDb->addCategory($data);
-		    $childCategories = $this->_helper->Categories->getCategories(null, $data['clientid'], $data['type'], $child);
+            $childCategories = $categoryDb->getCategories($data['type'], $child);
             if(isset($childCategories[$child]['childs'])) $this->copyChilds($child, $childCategories, $newChildId);
         }
 	}

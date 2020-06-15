@@ -44,12 +44,12 @@ class Items_InventoryController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$inventory = $this->search($params, $options['categories']);
+	    $get = new Items_Model_Get();
+		$inventory = $get->inventory($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->inventory = $inventory;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->uoms = $this->_helper->Uom->getUoms();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -64,12 +64,12 @@ class Items_InventoryController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$inventory = $this->search($params, $options['categories']);
+	    $get = new Items_Model_Get();
+		$inventory = $get->inventory($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->inventory = $inventory;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->uoms = $this->_helper->Uom->getUoms();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -81,12 +81,12 @@ class Items_InventoryController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$items = $this->search($params, $options['categories']);
+	    $get = new Items_Model_Get();
+		$inventory = $get->inventory($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
 
 		$this->view->items = $items;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->uoms = $this->_helper->Uom->getUoms();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -191,7 +191,8 @@ class Items_InventoryController extends Zend_Controller_Action
 					$form->populate($item);
 
 					//History
-					$inventory = $this->getInventory($item['sku']);
+		            $inventoryDb = new Items_Model_DbTable_Inventory();
+					$inventory = $inventoryDb->getInventoryBySKU($item['sku']);
 
 					//Toolbar
 					$toolbar = new Items_Form_Toolbar();
@@ -626,47 +627,6 @@ class Items_InventoryController extends Zend_Controller_Action
             }
         }
     }
-
-	protected function search($params, $categories)
-	{
-		$inventoryDb = new Items_Model_DbTable_Inventory();
-
-		$columns = array('comment', 'sku', 'contactid');
-
-		$query = '';
-		$schema = 'in';
-		if($params['keyword']) $query = $this->_helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $this->_helper->Query->getQueryCategory($query, $params['catid'], $categories);
-
-	    $inventories = $inventoryDb->fetchAll(
-		    $inventoryDb->select()
-				->setIntegrityCheck(false)
-				->from(array($schema => 'inventory'))
-				->join(array('i' => 'item'), $schema.'.sku = i.sku', array('catid', 'title'))
-				->group($schema.'.id')
-			    ->where($query ? $query : 1)
-			    ->order($params['order'].' '.$params['sort'])
-			    ->limit($params['limit'])
-	    );
-
-		foreach($inventories as $inventory) {
-			if(strlen($inventory->comment) > 43) $inventory->comment = substr($inventory->comment, 0, 40).'...';
-			$inventory->price = $this->_currency->toCurrency($inventory->price);
-			$inventory->total = $this->_currency->toCurrency($inventory->total);
-		}
-
-		return $inventories;
-	}
-
-	protected function getInventory($sku) {
-		$inventoryDb = new Items_Model_DbTable_Inventory();
-		$inventory = $inventoryDb->fetchAll(
-				$inventoryDb->select()
-					->where('sku = ?', $sku)
-					->where('clientid = ?', $this->_user['clientid'])
-		);
-		return $inventory;
-	}
 
 	protected function checkDirectory($id) {
 		//Create contact folder if does not already exists

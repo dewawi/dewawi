@@ -37,6 +37,16 @@ class Sales_Model_DbTable_Deliveryorder extends Zend_Db_Table_Abstract
 		return $data->deliveryorderid;
 	}
 
+	public function getLatestDeliveryorders()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('deliveryorderid = ?', 0);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'id DESC', 5);
+		return $data;
+	}
+
 	public function addDeliveryorder($data)
 	{
 		$this->insert($data);

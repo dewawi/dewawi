@@ -2,7 +2,7 @@
 
 class Processes_Model_Get
 {
-	public function processes($params, $categories, $clientid, $helper, $currency)
+	public function processes($params, $categories, $clientid, $helper, $currency, $flashMessenger)
 	{
 		$processesDb = new Processes_Model_DbTable_Process();
 
@@ -40,8 +40,15 @@ class Processes_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($processes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
+		        if($query) {
+			        $query .= ' AND p.clientid = '.$clientid;
+			        $query .= ' AND p.deleted = 0';
+		        } else {
+			        $query = 'p.clientid = '.$clientid;
+			        $query .= ' AND p.deleted = 0';
+                }
 				$processes = $processesDb->fetchAll(
 					$processesDb->select()
 						->setIntegrityCheck(false)
@@ -64,8 +71,15 @@ class Processes_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($processes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
+		        if($query) {
+			        $query .= ' AND p.clientid = '.$clientid;
+			        $query .= ' AND p.deleted = 0';
+		        } else {
+			        $query = 'p.clientid = '.$clientid;
+			        $query .= ' AND p.deleted = 0';
+                }
 				$processes = $processesDb->fetchAll(
 					$processesDb->select()
 						->setIntegrityCheck(false)

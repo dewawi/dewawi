@@ -61,7 +61,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->invoices = $invoices;
 		$this->view->options = $options;
@@ -83,7 +83,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->invoices = $invoices;
 		$this->view->options = $options;
@@ -714,9 +714,13 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($templateid);
+
 		$this->view->invoice = $invoice;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($templateid, $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function saveAction()
@@ -805,9 +809,13 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($invoice['templateid']);
+
 		$this->view->invoice = $invoice;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($invoice['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function downloadAction()
@@ -855,9 +863,13 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($invoice['templateid']);
+
 		$this->view->invoice = $invoice;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($invoice['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	protected function emailAction()
@@ -1076,53 +1088,6 @@ print_r($_FILES);*/
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
 	}
-
-	/*public function testAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$invoicesDb = new Sales_Model_DbTable_Invoice();
-		$invoices = $invoicesDb->fetchAll(
-			$invoicesDb->select()
-				->where('id BETWEEN 49501 AND 50500')
-		);
-
-		foreach($invoices as $invoice) {
-			$positionsDb = new Sales_Model_DbTable_Invoicepos();
-			$positions = $positionsDb->fetchAll(
-				$positionsDb->select()
-					->where('invoiceid = ?', $invoice->id)
-			);
-			$subtotal = 0;
-			foreach($positions as $position) {
-				$subtotal += ($position->quantity*$position->price);
-			}
-			$subtotal = round($subtotal, 2);
-			$taxes = round($subtotal*19/100, 2);
-			if($invoice->taxfree) $taxes = 0;
-			$total = round($taxes+$subtotal, 2);
-			echo '<pre>';
-			echo $subtotal.' '.$taxes.' '.$total;
-			echo '</pre>';
-
-			$invoicesDb->updateTotal($invoice->id, $subtotal, $taxes, $total, null, null);
-		}
-
-		/*$positionsDb = new Sales_Model_DbTable_Invoicepos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('id BETWEEN 0 AND 400')
-		);
-
-		foreach($positions as $position) {
-			$total = 0;
-			foreach($positions as $position) {
-				$subtotal += $position;
-			}
-			echo '';
-		}*/
-	//}
 
 	protected function checkDirectory($id) {
 		//Create contact folder if does not already exists

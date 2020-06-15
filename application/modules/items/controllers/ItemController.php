@@ -50,7 +50,6 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->items = $items;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->uoms = $this->_helper->Uom->getUoms();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -71,7 +70,6 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->items = $items;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->uoms = $this->_helper->Uom->getUoms();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -89,7 +87,6 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->items = $items;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->uoms = $this->_helper->Uom->getUoms();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -190,7 +187,8 @@ class Items_ItemController extends Zend_Controller_Action
 					$form->populate($item);
 
 					//History
-					$inventory = $this->getInventory($item['sku']);
+		            $inventoryDb = new Items_Model_DbTable_Inventory();
+					$inventory = $inventoryDb->getInventoryBySKU($item['sku']);
 
 					//Toolbar
 					$toolbar = new Items_Form_Toolbar();
@@ -625,16 +623,6 @@ class Items_ItemController extends Zend_Controller_Action
             }
         }
     }
-
-	protected function getInventory($sku) {
-		$inventoryDb = new Items_Model_DbTable_Inventory();
-		$inventory = $inventoryDb->fetchAll(
-				$inventoryDb->select()
-					->where('sku = ?', $sku)
-					->where('clientid = ?', $this->_user['clientid'])
-		);
-		return $inventory;
-	}
 
 	protected function checkDirectory($id) {
 		//Create contact folder if does not already exists

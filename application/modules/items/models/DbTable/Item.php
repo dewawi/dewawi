@@ -58,6 +58,15 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getLatestItems()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'id DESC', 5);
+		return $data;
+	}
+
 	public function addItem($data)
 	{
 		$data['clientid'] = $this->_user['clientid'];

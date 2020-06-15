@@ -37,6 +37,16 @@ class Sales_Model_DbTable_Creditnote extends Zend_Db_Table_Abstract
 		return $data->creditnoteid;
 	}
 
+	public function getLatestCreditnotes()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('creditnoteid = ?', 0);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'id DESC', 5);
+		return $data;
+	}
+
 	public function addCreditnote($data)
 	{
 		$this->insert($data);

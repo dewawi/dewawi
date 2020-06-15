@@ -61,7 +61,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$quotes = $get->quotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$quotes = $get->quotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;
@@ -83,7 +83,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$quotes = $get->quotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$quotes = $get->quotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;
@@ -615,10 +615,14 @@ class Sales_QuoteController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($templateid);
+
 		$this->view->quote = $quote;
 		$this->view->positions = $positions;
 		$this->view->calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $quote['taxfree']);
-		$this->view->footers = $this->_helper->Footer->getFooters($templateid, $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function saveAction()
@@ -673,9 +677,13 @@ class Sales_QuoteController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($quote['templateid']);
+
 		$this->view->quote = $quote;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($quote['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function downloadAction()
@@ -723,9 +731,13 @@ class Sales_QuoteController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($quote['templateid']);
+
 		$this->view->quote = $quote;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($quote['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function cancelAction()

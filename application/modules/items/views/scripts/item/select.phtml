@@ -38,13 +38,13 @@ $this->headTitle($this->title);
 					<?php if($item->quantity) echo $this->escape($item->quantity);?>
 				</td>
 				<td class="uomid">
-					<?php if($item->uomid) echo $this->escape($this->uoms[$item->uomid]);?>
+					<?php if($item->uomid && isset($this->options['uoms'][$item->uomid])) echo $this->escape($this->options['uoms'][$item->uomid]); ?>
 				</td>
 				<td class="manufacturer">
-					<?php if($item->manufacturerid) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]);?>
+					<?php if($item->manufacturerid && isset($this->options['manufacturers'][$item->manufacturerid])) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
 				</td>
 				<td class="category">
-					<?php if($item->catid) echo $this->escape($this->categories[$item->catid]['title']);?>
+					<?php if($item->catid && isset($this->options['categories'][$item->catid])) echo $this->escape($this->options['categories'][$item->catid]['title']); ?>
 				</td>
 				<td class="buttons">
 					<?php echo $this->Button('apply', 'applyPosition('.$this->escape($item->id).')'); ?>

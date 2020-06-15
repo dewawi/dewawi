@@ -27,9 +27,13 @@ class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
 
 	public function getPositions($processid)
 	{
-		$processid = (int)$processid;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('processid = ?', $processid);
+        if(is_array($processid)) {
+		    $where[] = $this->getAdapter()->quoteInto('processid IN (?)', $processid);
+        } else {
+		    $processid = (int)$processid;
+		    $where[] = $this->getAdapter()->quoteInto('processid = ?', $processid);
+        }
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');

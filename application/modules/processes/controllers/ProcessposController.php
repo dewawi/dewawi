@@ -49,12 +49,13 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$positionsDb = new Processes_Model_DbTable_Processpos();
 		$positions = $positionsDb->getPositions($processid);
 
-		//Get units of measurements
-		$uoms = $this->_helper->Uom->getUoms();
-		$uoms = array_combine($uoms, $uoms);
+		//Get uoms
+		$uomDb = new Application_Model_DbTable_Uom();
+		$uoms = $uomDb->getUoms();
 
 		//Get shipping methods
-		$shippingmethods = $this->_helper->ShippingMethod->getShippingMethods($this->_user['clientid']);
+		$shippingmethodDb = new Application_Model_DbTable_Shippingmethod();
+		$shippingmethods = $shippingmethodDb->getShippingmethods();
 
 		$forms = array();
 		$orderings = array();
@@ -124,10 +125,22 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				$data['image'] = $item['image'];
 				$data['description'] = $item['description'];
 				$data['price'] = $item['price'];
-				$data['taxrate'] = $item['taxid'] ? $this->_helper->TaxRate->getTaxRate($item['taxid']) : 0;
+                if($item['taxid']) {
+		            $taxrateDb = new Application_Model_DbTable_Taxrate();
+				    $taxrate = $taxrateDb->getTaxrate($item['taxid']);
+				    $data['taxrate'] = $taxrate['rate'];
+                } else {
+                    $data['taxrate'] = 0;
+                }
 				$data['quantity'] = 1;
 				$data['total'] = $data['price']*$data['quantity'];
-				$data['uom'] = $item['uomid'] ? $this->_helper->Uom->getUom($item['uomid']) : '';
+                if($item['taxid']) {
+		            $uomDb = new Application_Model_DbTable_Uom();
+				    $uom = $uomDb->getUom($item['uomid']);
+				    $data['uom'] = $uom['title'];
+                } else {
+                    $data['uom'] = '';
+                }
 				$data['ordering'] = $this->getLatestOrdering($processid) + 1;
 				$data['created'] = $this->_date;
 				$data['createdby'] = $this->_user['id'];
@@ -191,9 +204,17 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$id = $this->_getParam('id', 0);
 		$processid = $this->_getParam('processid', 0);
 
+		//Get uoms
+		$uomDb = new Application_Model_DbTable_Uom();
+		$uoms = $uomDb->getUoms();
+
+		//Get shipping methods
+		$shippingmethodDb = new Application_Model_DbTable_Shippingmethod();
+		$shippingmethods = $shippingmethodDb->getShippingmethods();
+
 		$form = new Processes_Form_Processpos();
-		$form->uom->addMultiOptions($this->_helper->Uom->getUoms());
-		$form->shippingmethod->addMultiOptions($this->_helper->ShippingMethod->getShippingMethods($this->_user['clientid']));
+		$form->uom->addMultiOptions($uoms);
+		$form->shippingmethod->addMultiOptions($shippingmethods);
 		$form->ordering->addMultiOptions($this->getOrdering($processid));
 
 		if($request->isPost()) {
@@ -341,9 +362,17 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 		$form = new Processes_Form_Processpos();
 
-		$form->uom->addMultiOptions($this->_helper->Uom->getUoms());
+		//Get uoms
+		$uomDb = new Application_Model_DbTable_Uom();
+		$uoms = $uomDb->getUoms();
+
+		//Get shipping methods
+		$shippingmethodDb = new Application_Model_DbTable_Shippingmethod();
+		$shippingmethods = $shippingmethodDb->getShippingmethods();
+
+		$form->uom->addMultiOptions($uoms);
 		$form->ordering->addMultiOptions($this->getOrdering($processid));
-		$form->shippingmethod->addMultiOptions($this->_helper->ShippingMethod->getShippingMethods($this->_user['clientid']));
+		$form->shippingmethod->addMultiOptions($shippingmethods);
 
 		$data = $this->getRequest()->getPost();
 		$form->$data['element']->isValid($data[$data['element']]);

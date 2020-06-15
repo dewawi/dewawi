@@ -61,7 +61,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$salesorders = $get->salesorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$salesorders = $get->salesorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->salesorders = $salesorders;
 		$this->view->options = $options;
@@ -83,7 +83,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$salesorders = $get->salesorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$salesorders = $get->salesorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->salesorders = $salesorders;
 		$this->view->options = $options;
@@ -600,6 +600,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$data["createdby"] = $this->_user['id'];
 		$data["modified"] = "0000-00-00";
 		$data["modifiedby"] = 0;
+		$data['clientid'] = $this->_user['clientid'];
 		unset($data["id"]);
 
 		$process = new Processes_Model_DbTable_Process();
@@ -623,6 +624,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$positionData["createdby"] = $this->_user['id'];
 			$positionData["modified"] = "0000-00-00";
 			$positionData["modifiedby"] = 0;
+		    $positionData['clientid'] = $this->_user['clientid'];
 			unset($positionData['id']);
 			$processposDb->addPosition($positionData);
 		}
@@ -677,9 +679,13 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($templateid);
+
 		$this->view->salesorder = $salesorder;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($templateid, $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function saveAction()
@@ -734,9 +740,13 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($salesorder['templateid']);
+
 		$this->view->salesorder = $salesorder;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($salesorder['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function downloadAction()
@@ -784,9 +794,13 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($salesorder['templateid']);
+
 		$this->view->salesorder = $salesorder;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($salesorder['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function cancelAction()

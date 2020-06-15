@@ -57,11 +57,7 @@ class Admin_ModuleController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$modulesDb = new Admin_Model_DbTable_Module();
-		$modules = $modulesDb->fetchAll(
-				$modulesDb->select()
-					//->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$modules = $modulesDb->getModules();
 
 		$this->view->form = $form;
 		$this->view->modules = $modules;
@@ -80,11 +76,7 @@ class Admin_ModuleController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$modulesDb = new Admin_Model_DbTable_Module();
-		$modules = $modulesDb->fetchAll(
-				$modulesDb->select()
-					//->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$modules = $modulesDb->getModules();
 
 		$this->view->form = $form;
 		$this->view->modules = $modules;

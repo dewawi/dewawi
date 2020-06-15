@@ -97,7 +97,7 @@ echo $this->FileManager();
 					    <?php echo $this->form->getElement('image') ?>
 		        </div>
                 <div class="col-sm-12 col-lg-5">
-				    <?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+				    <?php if($this->form->getValue('image') && file_exists(BASE_PATH."/files/images/".$this->form->getValue('image'))) { ?>
 					    <p><img src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
 				    <?php } ?>
 				    <iframe src="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'upload', 'id'=>$this->form->getValue('id')));?>" width="100%" height="100%"></iframe>

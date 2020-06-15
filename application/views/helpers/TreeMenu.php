@@ -21,7 +21,7 @@ class Zend_View_Helper_TreeMenu extends Zend_View_Helper_Abstract{
 		else $categoryTree = '<ul>';
 		$count = count($categories);
 		foreach($categories as $catid => $category) {
-			if($category['parent'] == $id) {
+			if($category['parentid'] == $id) {
 				$categoryTree .= '<li><a id="'.$category['id'].'" href="#">'.$category['title'].'</a>';
 				if(isset($category['childs']) && !empty($category['childs'])) {
 					$categoryTree .= $this->getElements($categories, $category['id']);

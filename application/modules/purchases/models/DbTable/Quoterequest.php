@@ -37,6 +37,16 @@ class Purchases_Model_DbTable_Quoterequest extends Zend_Db_Table_Abstract
 		return $data->quoterequestid;
 	}
 
+	public function getLatestQuoterequests()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('quoterequestid = ?', 0);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'id DESC', 5);
+		return $data;
+	}
+
 	public function addQuoterequest($data)
 	{
 		$this->insert($data);

@@ -57,11 +57,7 @@ class Admin_TemplateController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$templatesDb = new Admin_Model_DbTable_Template();
-		$templates = $templatesDb->fetchAll(
-				$templatesDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$templates = $templatesDb->getTemplates();
 
 		$this->view->form = $form;
 		$this->view->templates = $templates;
@@ -80,11 +76,7 @@ class Admin_TemplateController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$templatesDb = new Admin_Model_DbTable_Template();
-		$templates = $templatesDb->fetchAll(
-				$templatesDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$templates = $templatesDb->getTemplates();
 
 		$this->view->form = $form;
 		$this->view->templates = $templates;

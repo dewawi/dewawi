@@ -55,13 +55,13 @@ echo $this->ActiveFilter();
 					<?php echo $this->escape($item->quantity); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_UOM') ?>" class="uomid">
-					<?php if($item->uomid) echo $this->escape($this->uoms[$item->uomid]); ?>
+					<?php if($item->uomid && isset($this->options['uoms'][$item->uomid])) echo $this->escape($this->options['uoms'][$item->uomid]); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_CATEGORY') ?>" class="category">
 					<?php if($item->catid && isset($this->options['categories'][$item->catid])) echo $this->escape($this->options['categories'][$item->catid]['title']); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_MANUFACTURER') ?>" class="manufacturer">
-					<?php if($item->manufacturerid) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
+					<?php if($item->manufacturerid && isset($this->options['manufacturers'][$item->manufacturerid])) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
 				</td>
 				<td class="buttons">
 					<?php echo $this->toolbar->editInline; ?>

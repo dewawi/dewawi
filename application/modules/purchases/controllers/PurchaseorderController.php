@@ -61,7 +61,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Purchases_Model_Get();
-		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;
@@ -83,7 +83,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Purchases_Model_Get();
-		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;
@@ -506,9 +506,13 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($templateid);
+
 		$this->view->purchaseorder = $purchaseorder;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($templateid, $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function saveAction()
@@ -556,9 +560,13 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($purchaseorder['templateid']);
+
 		$this->view->purchaseorder = $purchaseorder;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($purchaseorder['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function downloadAction()
@@ -599,9 +607,13 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			}
 		}
 
+		//Get footers
+		$footerDb = new Application_Model_DbTable_Footer();
+		$footers = $footerDb->getFooters($purchaseorder['templateid']);
+
 		$this->view->purchaseorder = $purchaseorder;
 		$this->view->positions = $positions;
-		$this->view->footers = $this->_helper->Footer->getFooters($purchaseorder['templateid'], $this->_user['clientid']);
+		$this->view->footers = $footers;
 	}
 
 	public function cancelAction()

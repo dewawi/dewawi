@@ -57,11 +57,7 @@ class Admin_UomController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$uomsDb = new Admin_Model_DbTable_Uom();
-		$uoms = $uomsDb->fetchAll(
-				$uomsDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$uoms = $uomsDb->getUoms();
 
 		$this->view->form = $form;
 		$this->view->uoms = $uoms;
@@ -80,11 +76,7 @@ class Admin_UomController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$uomsDb = new Admin_Model_DbTable_Uom();
-		$uoms = $uomsDb->fetchAll(
-				$uomsDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$uoms = $uomsDb->getUoms();
 
 		$this->view->form = $form;
 		$this->view->uoms = $uoms;

@@ -55,7 +55,7 @@ class Admin_ClientController extends Zend_Controller_Action
 		$toolbar = new Admin_Form_Toolbar();
 
 		$clientsDb = new Admin_Model_DbTable_Client();
-		$clients = $clientsDb->fetchAll();
+		$clients = $clientsDb->getClients();
 
 		$this->view->form = $form;
 		$this->view->clients = $clients;
@@ -72,7 +72,7 @@ class Admin_ClientController extends Zend_Controller_Action
 		$toolbar = new Admin_Form_Toolbar();
 
 		$clientsDb = new Admin_Model_DbTable_Client();
-		$clients = $clientsDb->fetchAll();
+		$clients = $clientsDb->getClients();
 
 		$this->view->form = $form;
 		$this->view->clients = $clients;

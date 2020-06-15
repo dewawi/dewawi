@@ -57,11 +57,7 @@ class Admin_PaymentmethodController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$paymentmethodsDb = new Admin_Model_DbTable_Paymentmethod();
-		$paymentmethods = $paymentmethodsDb->fetchAll(
-				$paymentmethodsDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$paymentmethods = $paymentmethodsDb->getPaymentmethods();
 
 		$this->view->form = $form;
 		$this->view->paymentmethods = $paymentmethods;
@@ -80,11 +76,7 @@ class Admin_PaymentmethodController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$paymentmethodsDb = new Admin_Model_DbTable_Paymentmethod();
-		$paymentmethods = $paymentmethodsDb->fetchAll(
-				$paymentmethodsDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$paymentmethods = $paymentmethodsDb->getShippingmethods();
 
 		$this->view->form = $form;
 		$this->view->paymentmethods = $paymentmethods;

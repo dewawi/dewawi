@@ -57,11 +57,7 @@ class Admin_UserController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$usersDb = new Admin_Model_DbTable_User();
-		$users = $usersDb->fetchAll(
-				$usersDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$users = $usersDb->getUsers();
 
 		$this->view->form = $form;
 		$this->view->users = $users;
@@ -80,11 +76,7 @@ class Admin_UserController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$usersDb = new Admin_Model_DbTable_User();
-		$users = $usersDb->fetchAll(
-				$usersDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$users = $usersDb->getUsers();
 
 		$this->view->form = $form;
 		$this->view->users = $users;

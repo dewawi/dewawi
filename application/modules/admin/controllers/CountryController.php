@@ -57,11 +57,7 @@ class Admin_CountryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$countriesDb = new Admin_Model_DbTable_Country();
-		$countries = $countriesDb->fetchAll(
-				$countriesDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$countries = $countriesDb->getCountries();
 
 		$this->view->form = $form;
 		$this->view->countries = $countries;
@@ -80,11 +76,7 @@ class Admin_CountryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$countriesDb = new Admin_Model_DbTable_Country();
-		$countries = $countriesDb->fetchAll(
-				$countriesDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$countries = $countriesDb->getCountries();
 
 		$this->view->form = $form;
 		$this->view->countries = $countries;

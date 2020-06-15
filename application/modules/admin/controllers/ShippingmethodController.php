@@ -57,11 +57,7 @@ class Admin_ShippingmethodController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$shippingmethodsDb = new Admin_Model_DbTable_Shippingmethod();
-		$shippingmethods = $shippingmethodsDb->fetchAll(
-				$shippingmethodsDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$shippingmethods = $shippingmethodsDb->getShippingmethods();
 
 		$this->view->form = $form;
 		$this->view->shippingmethods = $shippingmethods;
@@ -80,11 +76,7 @@ class Admin_ShippingmethodController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$shippingmethodsDb = new Admin_Model_DbTable_Shippingmethod();
-		$shippingmethods = $shippingmethodsDb->fetchAll(
-				$shippingmethodsDb->select()
-					->where('clientid = ?', $params['clientid'])
-					//->where('language = ?', $params['language'])
-			);
+		$shippingmethods = $shippingmethodsDb->getShippingmethods();
 
 		$this->view->form = $form;
 		$this->view->shippingmethods = $shippingmethods;

@@ -61,7 +61,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		//Get positions
 		$processIDs = array();
@@ -77,9 +77,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->positions = $this->getPositions($processIDs);
-		$this->view->paymentstatus = $this->_helper->PaymentStatus->getPaymentStatus();
-		$this->view->deliverystatus = $this->_helper->DeliveryStatus->getDeliveryStatus();
-		$this->view->supplierorderstatus = $this->_helper->SupplierOrderStatus->getSupplierOrderStatus();
 		$this->view->messages = array_merge(
 						$this->_flashMessenger->getMessages(),
 						$this->_flashMessenger->getCurrentMessages()
@@ -97,7 +94,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
 
 		//Get positions
 		$processIDs = array();
@@ -109,9 +106,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->positions = $this->getPositions($processIDs);
-		$this->view->paymentstatus = $this->_helper->PaymentStatus->getPaymentStatus();
-		$this->view->deliverystatus = $this->_helper->DeliveryStatus->getDeliveryStatus();
-		$this->view->supplierorderstatus = $this->_helper->SupplierOrderStatus->getSupplierOrderStatus();
 		$this->view->messages = array_merge(
 						$this->_flashMessenger->getMessages(),
 						$this->_flashMessenger->getCurrentMessages()
@@ -386,12 +380,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 		//Get positions
 		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positionsObject = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('processid = ?', $id)
-			    ->where('deleted = ?', 0)
-				->order('ordering')
-		);
+		$positionsObject = $positionsDb->getPositions($id);
 		$positions = array();
 		foreach($positionsObject as $positionObject) {
 			foreach($positionObject as $key => $value) {
@@ -401,21 +390,12 @@ class Processes_ProcessController extends Zend_Controller_Action
 			$positions[$positionObject->id]['quantity'] = Zend_Locale_Format::toNumber($positions[$positionObject->id]['quantity'],array('precision' => 2,'locale' => Zend_Registry::get('Zend_Locale')));
 		}
 
-		//Get units of measurement
-		$uomDb = new Application_Model_DbTable_Uom();
-		$uom = $uomDb->fetchAll();
-		$uoms = array();
-		foreach($uom as $value) {
-			$uoms[$value->title] = $value->title;
-		}
-
 		$toolbar = new Processes_Form_Toolbar();
 		$this->view->toolbar = $toolbar;
 
 		$this->view->process = $process;
 		$this->view->contact = $contact;
 		$this->view->positions = $positions;
-		$this->view->uoms = $uoms;
 		$this->view->evaluate = $this->evaluate($positionsObject, $process['taxfree']);
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -446,12 +426,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		echo $newID = $processDb->addProcess($data);
 
 		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positions = $positionsDb->fetchAll(
-			$positionsDb->select()
-				->where('processid = ?', $id)
-				->where('clientid = ?', $this->_user['clientid'])
-			    ->where('deleted = ?', 0)
-		);
+		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$positionData = $position->toArray();
 			unset($positionData['id']);
@@ -490,10 +465,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 			$process->deleteProcess($id);
 
 			$positionsDb = new Processes_Model_DbTable_Processpos();
-			$positions = $positionsDb->fetchAll(
-				$positionsDb->select()
-					->where('processid = ?', $id)
-			);
+			$positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}
@@ -558,12 +530,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$positions = array();
 		if(!empty($processIDs)) {
 			$positionsDb = new Processes_Model_DbTable_Processpos();
-			$positionsObject = $positionsDb->fetchAll(
-				$positionsDb->select()
-					->where('processid IN (?)', $processIDs)
-				    ->where('deleted = ?', 0)
-					->order('ordering')
-			);
+		    $positionsObject = $positionsDb->getPositions($processIDs);
 
 			foreach($positionsObject as $position) {
 				if(!isset($previous[$position->processid])) {

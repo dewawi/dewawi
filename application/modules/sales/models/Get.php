@@ -2,7 +2,7 @@
 
 class Sales_Model_Get
 {
-	public function quotes($params, $categories, $clientid, $helper, $currency)
+	public function quotes($params, $categories, $clientid, $helper, $currency, $flashMessenger)
 	{
 		$quotesDb = new Sales_Model_DbTable_Quote();
 
@@ -39,7 +39,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($quotes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$quotes = $quotesDb->fetchAll(
 					$quotesDb->select()
@@ -63,7 +63,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($quotes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$quotes = $quotesDb->fetchAll(
 					$quotesDb->select()
@@ -92,7 +92,7 @@ class Sales_Model_Get
 		return $quotes;
 	}
 
-	public function invoices($params, $categories, $clientid, $helper, $currency)
+	public function invoices($params, $categories, $clientid, $helper, $currency, $flashMessenger)
 	{
 		$invoicesDb = new Sales_Model_DbTable_Invoice();
 
@@ -129,7 +129,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($invoices) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$invoices = $invoicesDb->fetchAll(
 					$invoicesDb->select()
@@ -153,7 +153,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($invoices) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$invoices = $invoicesDb->fetchAll(
 					$invoicesDb->select()
@@ -182,7 +182,7 @@ class Sales_Model_Get
 		return $invoices;
 	}
 
-	public function salesorders($params, $categories, $clientid, $helper, $currency)
+	public function salesorders($params, $categories, $clientid, $helper, $currency, $flashMessenger)
 	{
 		$salesordersDb = new Sales_Model_DbTable_Salesorder();
 
@@ -219,7 +219,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($salesorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$salesorders = $salesordersDb->fetchAll(
 					$salesordersDb->select()
@@ -243,7 +243,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($salesorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$salesorders = $salesordersDb->fetchAll(
 					$salesordersDb->select()
@@ -272,7 +272,7 @@ class Sales_Model_Get
 		return $salesorders;
 	}
 
-	public function deliveryorders($params, $categories, $clientid, $helper, $currency)
+	public function deliveryorders($params, $categories, $clientid, $helper, $currency, $flashMessenger)
 	{
 		$deliveryordersDb = new Sales_Model_DbTable_Deliveryorder();
 
@@ -309,7 +309,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($deliveryorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$deliveryorders = $deliveryordersDb->fetchAll(
 					$deliveryordersDb->select()
@@ -333,7 +333,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($deliveryorders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$deliveryorders = $deliveryordersDb->fetchAll(
 					$deliveryordersDb->select()
@@ -362,7 +362,7 @@ class Sales_Model_Get
 		return $deliveryorders;
 	}
 
-	public function creditnotes($params, $categories, $clientid, $helper, $currency)
+	public function creditnotes($params, $categories, $clientid, $helper, $currency, $flashMessenger)
 	{
 		$creditnotesDb = new Sales_Model_DbTable_Creditnote();
 
@@ -399,7 +399,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($creditnotes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$creditnotes = $creditnotesDb->fetchAll(
 					$creditnotesDb->select()
@@ -423,7 +423,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($creditnotes) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$creditnotes = $creditnotesDb->fetchAll(
 					$creditnotesDb->select()
@@ -452,7 +452,7 @@ class Sales_Model_Get
 		return $creditnotes;
 	}
 
-	public function reminders($params, $categories, $clientid, $helper, $currency)
+	public function reminders($params, $categories, $clientid, $helper, $currency, $flashMessenger)
 	{
 		$remindersDb = new Sales_Model_DbTable_Reminder();
 
@@ -489,7 +489,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($reminders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$reminders = $remindersDb->fetchAll(
 					$remindersDb->select()
@@ -513,7 +513,7 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 			if(!count($reminders) && $params['keyword']) {
-				$this->_flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 				$reminders = $remindersDb->fetchAll(
 					$remindersDb->select()
