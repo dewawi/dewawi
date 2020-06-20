@@ -24,7 +24,8 @@ class Application_Model_DbTable_Taxrate extends Zend_Db_Table_Abstract
 		$taxrates = array();
 		$locale = Zend_Registry::get('Zend_Locale');
 		foreach($data as $taxrate) {
-			$taxrates[$taxrate->id] = Zend_Locale_Format::toNumber($taxrate->rate,array('precision' => 1,'locale' => $locale)).' %';
+			$taxrates[$taxrate->id] = $taxrate->rate;
+			//$taxrates[$taxrate->id] = Zend_Locale_Format::toNumber($taxrate->rate,array('precision' => 1,'locale' => $locale)).' %';
 		}
 		return $taxrates;
 	}

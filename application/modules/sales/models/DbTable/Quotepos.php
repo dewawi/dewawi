@@ -41,13 +41,20 @@ class Sales_Model_DbTable_Quotepos extends Zend_Db_Table_Abstract
 
 	public function addPosition($data)
 	{
+		$data['clientid'] = $this->_user['clientid'];
+		$data['created'] = $this->_date;
+		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
 	public function updatePosition($id, $data)
 	{
-		$this->update($data, 'id = '. (int)$id);
+		$id = (int)$id;
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
+		$where = $this->getAdapter()->quoteInto('id = ?', $id);
+		$this->update($data, $where);
 	}
 
 	public function sortPosition($id, $ordering)

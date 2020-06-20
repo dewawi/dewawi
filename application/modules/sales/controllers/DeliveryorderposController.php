@@ -67,15 +67,15 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
             $taxes[] = array('value' => 0, 'title' => 0);
         } else {
 		    foreach($positions as $position) {
-                if(!isset($taxes[$position->taxrate]) && isset($taxrates[$position->taxrate])) {
+                if(!isset($taxes[$position->taxrate]) && array_search($position->taxrate, $taxrates)) {
                     $taxes[$position->taxrate] = array();
-                    $taxes[$position->taxrate]['value'] = 0;
-                    $taxes[$position->taxrate]['title'] = $taxrates[$position->taxrate];
+                    $taxes[$position->taxrate]['value'] = $position->taxrate;
+                    $taxes[$position->taxrate]['title'] = Zend_Locale_Format::toNumber($position->taxrate,array('precision' => 1,'locale' => $locale)).' %';
                 }
             }
         }
 		foreach($positions as $position) {
-            if(isset($taxes[$position->taxrate])) $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
+            if(array_search($position->taxrate, $taxrates)) $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
 
 			$position->total =  $this->_currency->toCurrency($position->price*$position->quantity);
 			$position->price =  $this->_currency->toCurrency($position->price);
@@ -84,8 +84,10 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 			$form = new Sales_Form_Deliveryorderpos();
 			$forms[$position->id] = $form->populate($position->toArray());
 			$forms[$position->id]->uom->addMultiOptions($uoms);
-			$forms[$position->id]->taxrate->addMultiOptions($taxrates);
 			$forms[$position->id]->ordering->addMultiOptions($orderings);
+			$forms[$position->id]->taxrate->setValue(array_search($position->taxrate, $taxrates));
+		    foreach($taxrates as $id => $value)
+			    $forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
 		}
 
 		$deliveryorder['subtotal'] = $this->_currency->toCurrency($deliveryorder['subtotal']);
@@ -143,9 +145,6 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
                     $data['uom'] = '';
                 }
 				$data['ordering'] = $this->getLatestOrdering($deliveryorderid) + 1;
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $this->_user['clientid'];
 				$position = new Sales_Model_DbTable_Deliveryorderpos();
 				$position->addPosition($data);
 
@@ -185,9 +184,6 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 			$data['total'] = 0;
 			$data['uom'] = '';
 			$data['ordering'] = $this->getLatestOrdering($deliveryorderid) + 1;
-			$data['created'] = $this->_date;
-			$data['createdby'] = $this->_user['id'];
-			$data['clientid'] = $this->_user['clientid'];
 			$position = new Sales_Model_DbTable_Deliveryorderpos();
 			$position->addPosition($data);
 		}
@@ -221,8 +217,8 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 			$data = $request->getPost();
 			$element = key($data);
 			if(isset($form->$element) && $form->isValidPartial($data)) {
-				$data['modified'] = $this->_date;
-				$data['modifiedby'] = $this->_user['id'];
+				if(($element == 'taxrate') && ($data[$element] != 0))
+					$data['taxrate'] = $taxrates[$data['taxrate']];
 				if(($element == 'price') || ($element == 'quantity'))
 					$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
 
@@ -255,8 +251,6 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 				if($ordering > $data['ordering']) $position->updatePosition($positionId, array('ordering' => ($ordering+1)));
 			}
 			$data['ordering'] += 1;
-			$data['created'] = $this->_date;
-			$data['createdby'] = $this->_user['id'];
 			$data['modified'] = '0000-00-00';
 			$data['modifiedby'] = 0;
 			unset($data['id']);

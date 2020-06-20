@@ -142,9 +142,6 @@ class Processes_ProcessposController extends Zend_Controller_Action
                     $data['uom'] = '';
                 }
 				$data['ordering'] = $this->getLatestOrdering($processid) + 1;
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $this->_user['clientid'];
 				$position = new Processes_Model_DbTable_Processpos();
 				$position->addPosition($data);
 
@@ -186,9 +183,6 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$data['deliverystatus'] = 'deliveryIsWaiting';
 			$data['supplierorderstatus'] = 'supplierNotOrdered';
 			$data['ordering'] = $this->getLatestOrdering($processid) + 1;
-			$data['created'] = $this->_date;
-			$data['createdby'] = $this->_user['id'];
-			$data['clientid'] = $this->_user['clientid'];
 			$position = new Processes_Model_DbTable_Processpos();
 			$position->addPosition($data);
 		}
@@ -222,8 +216,6 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$data = $request->getPost();
 			$element = key($data);
 			if(isset($form->$element) && $form->isValidPartial($data)) {
-				$data['modified'] = $this->_date;
-				$data['modifiedby'] = $this->_user['id'];
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'supplierinvoicetotal'))
 					$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
 
@@ -282,8 +274,6 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				if($ordering > $data['ordering']) $position->updatePosition($positionId, array('ordering' => ($ordering+1)));
 			}
 			$data['ordering'] += 1;
-			$data['created'] = $this->_date;
-			$data['createdby'] = $this->_user['id'];
 			$data['modified'] = '0000-00-00';
 			$data['modifiedby'] = 0;
 			unset($data['id']);

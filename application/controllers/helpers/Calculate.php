@@ -35,6 +35,9 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 
 				$calculations['locale'][$position->id]['price'] = $currency->toCurrency($position->price);
 				$calculations['locale'][$position->id]['total'] = $currency->toCurrency($calculations['row'][$position->id]['total']);
+
+			    $objectPosDb = new $classPos();
+				$objectPosDb->updatePosition($position->id, array('total' => ($position->price*$position->quantity*(1+$position->taxrate/100))));
 			}
 
 			if($taxfree === null) $taxfree = $object['taxfree'];
