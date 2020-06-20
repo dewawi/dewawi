@@ -6,17 +6,24 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 	{
 		$keyword = trim($keyword);
 		if($keyword) {
+            //Remove special chracters from keyword
+            $search =  '!"#€$%&/()=?*+\'-.,;:_§^{}[]´`¸';
+            $search = str_split($search);
+            $keyword = str_replace($search, " ", $keyword);
+            //Split keyword
 			$keywords = explode(' ', $keyword);
 			foreach($keywords as $keyword) {
-				if($query) $query .= ' AND ';
-				$query .= '(';
-				$i = 0;
-				foreach($columns as $column) {
-					if($i) $query .= ' OR ';
-					$query .= $column." LIKE '%".$keyword."%'";
-					++$i;
-				}
-				$query .= ')';
+                if($keyword) {
+				    if($query) $query .= ' AND ';
+				    $query .= '(';
+				    $i = 0;
+				    foreach($columns as $column) {
+					    if($i) $query .= ' OR ';
+					    $query .= $column." LIKE '%".$keyword."%'";
+					    ++$i;
+				    }
+				    $query .= ')';
+			    }
 			}
 		}
 		return $query;
