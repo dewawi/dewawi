@@ -70,15 +70,14 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function savePurchaseorder($id, $purchaseorderid, $purchaseorderdate, $state, $modified, $modifiedby)
+	public function savePurchaseorder($id, $purchaseorderid)
 	{
-		$data = array(
-			'purchaseorderid' => $purchaseorderid,
-			'purchaseorderdate' => $purchaseorderdate,
-			'state' => $state,
-			'modified' => $modified,
-			'modifiedby' => $modifiedby
-		);
+		$data = array();
+		$data['purchaseorderid'] = $purchaseorderid;
+		$data['purchaseorderdate'] = $this->_date;
+		$data['state'] = 105;
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 

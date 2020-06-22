@@ -29,16 +29,16 @@ class Users_UserController extends Zend_Controller_Action
 		//Clients
 		$clientsDb = new Application_Model_DbTable_Client();
 		$clients = $clientsDb->getClients();
-		foreach($clients as $id => $company) {
-			$form->client->addMultiOption($id, $company);
-		}
+		//foreach($clients as $id => $company) {
+		//	$form->client->addMultiOption($id, $company);
+		//}
 
 		if ($this->getRequest()->isPost()) {
 			$formData = $this->getRequest()->getPost();
 			if ($form->isValid($formData)) {
 				$username = $formData['username'];
 				$password = $formData['password'];
-				$client = $formData['client'];
+				//$client = $formData['client'];
 				$stayLoggedIn = $formData['stayLoggedIn'];
 
 				$authNamespace = new Zend_Session_Namespace('Zend_Auth');
@@ -62,8 +62,8 @@ class Users_UserController extends Zend_Controller_Action
 
 				if ($result->isValid()) {
 					$storage = $auth->getStorage();
-					$userInfo = $authAdapter->getResultRowObject(array('id', 'username', 'name', 'email', 'admin', 'permissions'));
-					$userInfo->clientid = $client;
+					$userInfo = $authAdapter->getResultRowObject(array('id', 'clientid', 'username', 'name', 'email', 'admin', 'permissions'));
+					//$userInfo->clientid = $client;
 					$storage->write($userInfo); //Store into session
 
 					if($this->_getParam('url', null)) {
@@ -94,5 +94,16 @@ class Users_UserController extends Zend_Controller_Action
 	{
 		Zend_Auth::getInstance()->clearIdentity();
 		$this->_helper->redirector->gotoSimple('index', 'index', 'index');
+	}
+
+	public function clientAction()
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+		$clientid = $this->_getParam('clientid', 0);
+        if($clientid) {
+		    $authNamespace = new Zend_Session_Namespace('Zend_Auth');
+		    $authNamespace->storage->clientid = $clientid;
+        }
 	}
 }

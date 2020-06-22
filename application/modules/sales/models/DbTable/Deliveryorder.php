@@ -70,15 +70,14 @@ class Sales_Model_DbTable_Deliveryorder extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function saveDeliveryorder($id, $deliveryorderid, $deliveryorderdate, $state, $modified, $modifiedby)
+	public function saveDeliveryorder($id, $deliveryorderid)
 	{
-		$data = array(
-			'deliveryorderid' => $deliveryorderid,
-			'deliveryorderdate' => $deliveryorderdate,
-			'state' => $state,
-			'modified' => $modified,
-			'modifiedby' => $modifiedby
-		);
+		$data = array();
+		$data['deliveryorderid'] = $deliveryorderid;
+		$data['deliveryorderdate'] = $this->_date;
+		$data['state'] = 105;
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 

@@ -31,7 +31,14 @@ class Application_Plugin_Auth extends Zend_Controller_Plugin_Abstract
 
 			$clientDb = new Application_Model_DbTable_Client();
 			$client = $clientDb->getClient($user['clientid']);
-			Zend_Registry::set('Client', $client); 
+			Zend_Registry::set('Client', $client);
+
+            if($user['admin']) {
+		        $form = new Application_Form_Client();
+		        $form->clientid->addMultiOptions($clientDb->getClients());
+		        $form->clientid->setValue($user['clientid']);
+                $view->switcher = $form->getElement('clientid');
+            }
 		} elseif($params['module'] != 'users' && $params['action'] != 'login') {
 			$redirector = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
 			if(isset($params['id']) && $params['id']) {

@@ -18,6 +18,7 @@ class Application_Model_DbTable_Language extends Zend_Db_Table_Abstract
 	public function getLanguages()
 	{
 		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
 

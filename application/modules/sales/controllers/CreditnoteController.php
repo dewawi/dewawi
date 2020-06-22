@@ -605,8 +605,10 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(!$creditnote['creditnoteid']) {
 			//Set new creditnote Id
-			$newCreditnoteId = $creditnoteDb->getLatestCreditnoteID()+1;
-			$creditnoteDb->saveCreditnote($id, $newCreditnoteId, $this->_date, 105, $this->_date, $this->_user['id']);
+		    $incrementDb = new Application_Model_DbTable_Increment();
+		    $increment = $incrementDb->getIncrement('creditnoteid');
+			$creditnoteDb->saveCreditnote($id, $increment);
+		    $incrementDb->setIncrement(($increment+1), 'creditnoteid');
 			$creditnote = $creditnoteDb->getCreditnote($id);
 
 			//Update item data and inventory

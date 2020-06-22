@@ -287,6 +287,11 @@ INSERT INTO `paymentmethod` (`id`, `title`, `ordering`, `clientid`, `created`, `
 (5, 'Paypal', 0, 1, '2015-12-06 15:32:23', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
+TRUNCATE `increment`;
+INSERT INTO `increment` (`clientid`, `contactid`, `creditnoteid`, `deliveryorderid`, `invoiceid`, `purchaseorderid`, `quoteid`, `quoterequestid`, `reminderid`, `salesorderid`) VALUES
+('1', '10000', '10000', '10000', '10000', '10000', '10000', '10000', '10000', '10000'); 
+
+
 TRUNCATE `language`;
 INSERT INTO `language` (`id`, `code`, `name`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
 (1, 'de_DE', 'Deutsch', 100, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
@@ -340,12 +345,12 @@ INSERT INTO `textblock` (`id`, `text`, `module`, `controller`, `section`, `order
 (8, '<p>ACHTUNG: Reklamationsverhalten<br />Sollte es bei einer Anlieferung durch eine Spedition zu einem Transportschaden kommen, lassen Sie diesen bitte direkt auf den Papieren der Spedition vermerken. Sollte der Schaden nicht auf den Papieren der Spedition vermerkt sein, wird dieser von uns nicht anerkannt.</p>\n<p>Die gelieferte Ware bleibt bis zur vollst&auml;ndigen Bezahlung unser Eigentum.</p>\n<p>&nbsp;</p>\n<p>Ware ordnungsgem&auml;&szlig; erhalten: <br /><br /><br />___________________________<br />Datum, Unterschrift</p>', 'sales', 'deliveryorder', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:51:57', 1),
 (9, '<p>Sehr geehrte Damen und Herren,</p>\n<p>gem&auml;&szlig; unserer Vereinbarung schreiben wir Ihnen folgende Leistungen gut;</p>', 'sales', 'creditnote', 'header', 1, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:55:57', 1),
 (10, '<p>Wir &uuml;berweisen Ihnen den Gutschriftbetrag in den n&auml;chsten Tagen auf Ihr Bankkonto.</p>\n<p>F&uuml;r weitere Fragen stehen wir Ihnen sehr gerne zur Verf&uuml;gung.</p>', 'sales', 'creditnote', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:57:18', 1),
-(11, '<p>Sehr geehrte Damen und Herren,</p>\n<p>bitte erstellen Sie uns ein Angebot f&uuml;r die folgende Produkte/Leistungen;</p>', 'purchases', 'quoterequest', 'header', 1, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:07:43', 1),
-(12, '<p>Bitte erstellen Sie uns ein ausf&uuml;hrliches Angebot mit genauer Angabe zu den Preisen, den Zahlungs- und Lieferungsbedingungen und der k&uuml;rzesten Lieferfrist.</p>\n<p>Geben Sie uns bitte Ihre Lieferzeit, Gew&auml;hrleistung und Zahlungsbedingungen an.</p>\n<p>Wir ben&ouml;tigen die Ware sp&auml;testens in 10 Tagen nach Auftragserteilung.</p>\n<p>Bitte nennen Sie uns Ihre Zahlungsbedingungen.</p>\n<p>Wir freuen uns auf Ihre baldige Antwort.</p>', 'purchases', 'quoterequest', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:12:29', 1),
-(13, '<p>Sehr geehrte Damen und Herren,</p>\n<p>vielen Dank f&uuml;r Ihr Angebot, hiermit bestellen wir nachfolgende Positionen;</p>', 'purchases', 'purchaseorder', 'header', 1, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:18:56', 1),
-(14, '<p>Wir bitten um schnellstm&ouml;gliche Lieferung.</p>', 'purchases', 'purchaseorder', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:22:49', 1),
-(15, '', 'sales', 'creditnote', 'header', 1, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:55:57', 1),
-(16, '', 'sales', 'creditnote', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:57:18', 1);
+(11, '', 'sales', 'reminder', 'header', 1, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:55:57', 1),
+(12, '', 'sales', 'reminder', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 18:57:18', 1),
+(13, '<p>Sehr geehrte Damen und Herren,</p>\n<p>bitte erstellen Sie uns ein Angebot f&uuml;r die folgende Produkte/Leistungen;</p>', 'purchases', 'quoterequest', 'header', 1, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:07:43', 1),
+(14, '<p>Bitte erstellen Sie uns ein ausf&uuml;hrliches Angebot mit genauer Angabe zu den Preisen, den Zahlungs- und Lieferungsbedingungen und der k&uuml;rzesten Lieferfrist.</p>\n<p>Geben Sie uns bitte Ihre Lieferzeit, Gew&auml;hrleistung und Zahlungsbedingungen an.</p>\n<p>Wir ben&ouml;tigen die Ware sp&auml;testens in 10 Tagen nach Auftragserteilung.</p>\n<p>Bitte nennen Sie uns Ihre Zahlungsbedingungen.</p>\n<p>Wir freuen uns auf Ihre baldige Antwort.</p>', 'purchases', 'quoterequest', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:12:29', 1),
+(15, '<p>Sehr geehrte Damen und Herren,</p>\n<p>vielen Dank f&uuml;r Ihr Angebot, hiermit bestellen wir nachfolgende Positionen;</p>', 'purchases', 'purchaseorder', 'header', 1, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:18:56', 1),
+(16, '<p>Wir bitten um schnellstm&ouml;gliche Lieferung.</p>', 'purchases', 'purchaseorder', 'footer', 2, 1, '0000-00-00 00:00:00', 0, '2020-04-25 19:22:49', 1);
 
 
 TRUNCATE `uom`;

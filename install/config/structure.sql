@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS `config` (
 DROP TABLE IF EXISTS `contact`;
 CREATE TABLE IF NOT EXISTS `contact` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `contactid` int(11) NOT NULL,
   `catid` int(11) NOT NULL,
   `type` varchar(255) NOT NULL,
   `name1` varchar(255) NOT NULL,
@@ -383,6 +384,21 @@ CREATE TABLE IF NOT EXISTS `footer` (
   `lockedtime` datetime NOT NULL,
   `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `increment`;
+CREATE TABLE IF NOT EXISTS `increment` (
+  `clientid` int(11) NOT NULL,
+  `contactid` int(11) NOT NULL,
+  `creditnoteid` int(11) NOT NULL,
+  `deliveryorderid` int(11) NOT NULL,
+  `invoiceid` int(11) NOT NULL,
+  `purchaseorderid` int(11) NOT NULL,
+  `quoteid` int(11) NOT NULL,
+  `quoterequestid` int(11) NOT NULL,
+  `reminderid` int(11) NOT NULL,
+  `salesorderid` int(11) NOT NULL,
+  PRIMARY KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `internet`;
@@ -1194,24 +1210,6 @@ CREATE TABLE IF NOT EXISTS `shipmenttracking` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `carrier` varchar(255) NOT NULL,
   `clientid` int(11) NOT NULL,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `shippingaddress`;
-CREATE TABLE IF NOT EXISTS `shippingaddress` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `contactid` int(11) NOT NULL,
-  `name1` varchar(255) NOT NULL,
-  `name2` varchar(255) NOT NULL,
-  `department` varchar(255) NOT NULL,
-  `street` text NOT NULL,
-  `postcode` varchar(12) NOT NULL,
-  `city` varchar(255) NOT NULL,
-  `country` varchar(255) NOT NULL,
-  `phone` varchar(255) NOT NULL,
-  `clientid` int(11) NOT NULL,
-  `created` datetime NOT NULL,
-  `modified` datetime NOT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -654,8 +654,10 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(!$quote['quoteid']) {
 			//Set new quote Id
-			$newQuoteId = $quoteDb->getLatestQuoteID()+1;
-			$quoteDb->saveQuote($id, $newQuoteId, $this->_date, 105, $this->_date, $this->_user['id']);
+		    $incrementDb = new Application_Model_DbTable_Increment();
+		    $increment = $incrementDb->getIncrement('quoteid');
+			$quoteDb->saveQuote($id, $increment);
+		    $incrementDb->setIncrement(($increment+1), 'quoteid');
 			$quote = $quoteDb->getQuote($id);
 		}
 

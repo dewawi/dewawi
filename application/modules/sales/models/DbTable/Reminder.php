@@ -70,15 +70,14 @@ class Sales_Model_DbTable_Reminder extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function saveReminder($id, $reminderid, $reminderdate, $state, $modified, $modifiedby)
+	public function saveReminder($id, $reminderid)
 	{
-		$data = array(
-			'reminderid' => $reminderid,
-			'reminderdate' => $reminderdate,
-			'state' => $state,
-			'modified' => $modified,
-			'modifiedby' => $modifiedby
-		);
+		$data = array();
+		$data['reminderid'] = $reminderid;
+		$data['reminderdate'] = $this->_date;
+		$data['state'] = 105;
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 

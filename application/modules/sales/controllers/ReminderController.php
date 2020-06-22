@@ -605,8 +605,10 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(!$reminder['reminderid']) {
 			//Set new reminder Id
-			$newReminderId = $reminderDb->getLatestReminderID()+1;
-			$reminderDb->saveReminder($id, $newReminderId, $this->_date, 105, $this->_date, $this->_user['id']);
+		    $incrementDb = new Application_Model_DbTable_Increment();
+		    $increment = $incrementDb->getIncrement('reminderid');
+			$reminderDb->saveReminder($id, $increment);
+		    $incrementDb->setIncrement(($increment+1), 'reminderid');
 			$reminder = $reminderDb->getReminder($id);
 		}
 

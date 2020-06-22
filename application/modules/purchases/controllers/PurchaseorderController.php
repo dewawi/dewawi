@@ -537,8 +537,10 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(!$purchaseorder['purchaseorderid']) {
 			//Set new purchaseorder Id
-			$newPurchaseorderId = $purchaseorderDb->getLatestPurchaseorderID()+1;
-			$purchaseorderDb->savePurchaseorder($id, $newPurchaseorderId, $this->_date, 105, $this->_date, $this->_user['id']);
+		    $incrementDb = new Application_Model_DbTable_Increment();
+		    $increment = $incrementDb->getIncrement('purchaseorderid');
+			$purchaseorderDb->savePurchaseorder($id, $increment);
+		    $incrementDb->setIncrement(($increment+1), 'purchaseorderid');
 			$purchaseorder = $purchaseorderDb->getPurchaseorder($id);
 		}
 

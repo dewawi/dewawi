@@ -19,6 +19,7 @@ class Application_Model_DbTable_Shippingmethod extends Zend_Db_Table_Abstract
 	{
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
 
 		$shippingmethods = array();

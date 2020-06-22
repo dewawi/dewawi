@@ -18,18 +18,28 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 	public function getTemplate($id)
 	{
 		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id . ' AND activated = 1');
-		if (!$row) {
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where);
+		if(!$data) {
 			throw new Exception("Could not find row $id");
 		}
-		return $row->toArray();
+		return $data->toArray();
 	}
 
 	public function getDefaultTemplate()
 	{
-		$row = $this->fetchRow('`default` = 1 AND `activated` = 1');
-		if($row) {
-		    return $row->toArray();
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('`default` = ?', 1);
+		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where);
+		if($data) {
+		    return $data->toArray();
 		}
 	}
 

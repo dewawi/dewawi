@@ -537,8 +537,10 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(!$quoterequest['quoterequestid']) {
 			//Set new quoterequest Id
-			$newQuoterequestId = $quoterequestDb->getLatestQuoterequestID()+1;
-			$quoterequestDb->saveQuoterequest($id, $newQuoterequestId, $this->_date, 105, $this->_date, $this->_user['id']);
+		    $incrementDb = new Application_Model_DbTable_Increment();
+		    $increment = $incrementDb->getIncrement('quoterequestid');
+			$quoterequestDb->saveQuoterequest($id, $increment);
+		    $incrementDb->setIncrement(($increment+1), 'quoterequestid');
 			$quoterequest = $quoterequestDb->getQuoterequest($id);
 		}
 

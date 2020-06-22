@@ -80,11 +80,8 @@ echo $this->doctype();
 				            ?> |
 				            <a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
 				            <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
-			                <?php if(false) : ?>
-                                <select id="clientid" name="clientid">
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                </select>
+			                <?php if(isset($this->switcher)) : ?>
+                                <?php echo $this->switcher; ?>
 			                <?php endif; ?>
 			            <?php endif; ?>
 		            </div>

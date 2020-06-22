@@ -70,15 +70,14 @@ class Purchases_Model_DbTable_Quoterequest extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function saveQuoterequest($id, $quoterequestid, $quoterequestdate, $state, $modified, $modifiedby)
+	public function saveQuoterequest($id, $quoterequestid)
 	{
-		$data = array(
-			'quoterequestid' => $quoterequestid,
-			'quoterequestdate' => $quoterequestdate,
-			'state' => $state,
-			'modified' => $modified,
-			'modifiedby' => $modifiedby
-		);
+		$data = array();
+		$data['quoterequestid'] = $quoterequestid;
+		$data['quoterequestdate'] = $this->_date;
+		$data['state'] = 105;
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 

@@ -752,8 +752,10 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(!$invoice['invoiceid']) {
 			//Set new invoice Id
-			$newInvoiceId = $invoiceDb->getLatestInvoiceID()+1;
-			$invoiceDb->saveInvoice($id, $newInvoiceId, $this->_date, 105, $this->_date, $this->_user['id']);
+		    $incrementDb = new Application_Model_DbTable_Increment();
+		    $increment = $incrementDb->getIncrement('invoiceid');
+			$invoiceDb->saveInvoice($id, $increment);
+		    $incrementDb->setIncrement(($increment+1), 'invoiceid');
 			$invoice = $invoiceDb->getInvoice($id);
 
 			//Update item data and inventory

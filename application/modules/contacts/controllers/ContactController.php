@@ -41,6 +41,9 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
+		//$contactDb = new Contacts_Model_DbTable_Contact();
+		//$contact = $contactDb->getContact($this->_getParam('id', 0));
+
 		$get = new Contacts_Model_Get();
 		$contact = $get->contact($this->_getParam('id', 0));
 
@@ -117,6 +120,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$id = $contactDb->addContact($data);
+
+        //Set increment value
+		$incrementDb = new Application_Model_DbTable_Increment();
+		$increment = $incrementDb->getIncrement('contactid');
+		$contactDb->updateContact($id, array('contactid' => $increment));
+		$incrementDb->setIncrement(($increment+1), 'contactid');
 
 		$addressDb = new Contacts_Model_DbTable_Address();
 		$addressDb->addAddress(array('contactid' => $id, 'type' => 'billing', 'country' => $client['country'], 'ordering' => 1));

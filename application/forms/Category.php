@@ -11,8 +11,8 @@ class Application_Form_Category extends Zend_Form
 
         $parentid = new Zend_Form_Element_Select('parentid');
         $parentid->setLabel('CATEGORIES_PARENT')
-		->addMultiOption(0, 'CATEGORIES_MAIN_CATEGORY')
-		->addFilter('Int');
+		        ->addMultiOption(0, 'CATEGORIES_MAIN_CATEGORY')
+		        ->addFilter('Int');
 
         $title = new Zend_Form_Element_Text('title');
         $title->setLabel('CATEGORIES_TITLE')
@@ -23,11 +23,11 @@ class Application_Form_Category extends Zend_Form
 
         $type = new Zend_Form_Element_Hidden('type');
         $type->setRequired(true)
-		->addValidator('NotEmpty');
+		        ->addValidator('NotEmpty');
 
         $ordering = new Zend_Form_Element_Hidden('ordering');
         $ordering->setLabel('CATEGORIES_ORDERING')
-		->addFilter('Int');
+		        ->addFilter('Int');
 
         $this->addElements(array($id, $parentid, $title, $type, $ordering));
     }

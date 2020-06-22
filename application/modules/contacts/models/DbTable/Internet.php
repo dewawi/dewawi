@@ -18,8 +18,10 @@ class Contacts_Model_DbTable_Internet extends Zend_Db_Table_Abstract
 	public function getInternet($contactid)
 	{
 		$contactid = (int)$contactid;
-        $where = 'contactid = ? AND deleted = 0';
-		$where = $this->getAdapter()->quoteInto($where, $contactid);
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
 		if(!$data) {
 			throw new Exception("Could not find row $contactid");

@@ -33,6 +33,23 @@ $(document).ready(function(){
 		}
 	}, 60000); // 60 seconds
 
+    //Set client
+	$('#clientid').on('change', '', function() {
+		//console.log($('#client').val());
+	    $.ajax({
+		    type: 'POST',
+		    async: true,
+		    url: baseUrl+'/users/user/client/clientid/'+$('#clientid').val(),
+		    cache: false,
+		    success: function(json){
+			    //response = json;
+			    //isDirty = false;
+                //console.log(isDirty);
+                location.reload();
+		    }
+	});
+	});
+
 	//Auto validate and save
 	$('input.required').blur(function() {
 		if(!$(this).val()) $(this).addClass('error');

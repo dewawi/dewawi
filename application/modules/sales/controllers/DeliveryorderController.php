@@ -605,8 +605,10 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(!$deliveryorder['deliveryorderid']) {
 			//Set new deliveryorder Id
-			$newDeliveryorderId = $deliveryorderDb->getLatestDeliveryorderID()+1;
-			$deliveryorderDb->saveDeliveryorder($id, $newDeliveryorderId, $this->_date, 105, $this->_date, $this->_user['id']);
+		    $incrementDb = new Application_Model_DbTable_Increment();
+		    $increment = $incrementDb->getIncrement('deliveryorderid');
+			$deliveryorderDb->saveDeliveryorder($id, $increment);
+		    $incrementDb->setIncrement(($increment+1), 'deliveryorderid');
 			$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 		}
 

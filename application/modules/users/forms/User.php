@@ -25,9 +25,9 @@ class Users_Form_User extends Zend_Form
 			->addValidator('NotEmpty')
 			->setAttrib('size', '50');
 
-		$client = new Zend_Form_Element_Select('client');
-		$client->setLabel('USERS_CLIENT')
-			->addFilter('Int');
+		//$client = new Zend_Form_Element_Select('client');
+		//$client->setLabel('USERS_CLIENT')
+		//	->addFilter('Int');
 
 
 		$stayLoggedIn = new Zend_Form_Element_Checkbox('stayLoggedIn');
@@ -36,6 +36,6 @@ class Users_Form_User extends Zend_Form
 		$submit = new Zend_Form_Element_Submit('submit');
 		$submit->setAttrib('id', 'submitbutton');
 
-		$this->addElements(array($id, $username, $password, $client, $stayLoggedIn, $submit));
+		$this->addElements(array($id, $username, $password, $stayLoggedIn, $submit));
 	}
 }

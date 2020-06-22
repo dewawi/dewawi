@@ -10,10 +10,10 @@ $(document).ready(function(){
 function applyContact(contactID) {
 	var data = {};
 	var contact = getContact(contactID);
-	$('#tabOverview #contactid').val(contact['id']);
-	$('#tabCustomer #contactid').val(contact['id']);
-	$('#tabOverview #customerid').val(contact['id']);
-	$('#tabCustomer #customerid').val(contact['id']);
+	$('#tabOverview #contactid').val(contact['contactid']);
+	$('#tabCustomer #contactid').val(contact['contactid']);
+	$('#tabOverview #customerid').val(contact['contactid']);
+	$('#tabCustomer #customerid').val(contact['contactid']);
 	$('#tabOverview #billingname1').val(contact['name1']);
 	$('#tabCustomer #billingname1').val(contact['name1']);
 	$('#billingname2').val(contact['name2']);
@@ -25,7 +25,7 @@ function applyContact(contactID) {
 	$('#taxfree').val(contact['taxfree']);
 	$('#contactinfo').val(contact['info']);
 
-	data['contactid'] = contact['id'];
+	data['contactid'] = contact['contactid'];
 	data['billingname1'] = contact['name1'];
 	data['billingname2'] = contact['name2'];
 	data['billingstreet'] = contact['street'];

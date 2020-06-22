@@ -717,8 +717,10 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(!$salesorder['salesorderid']) {
 			//Set new salesorder Id
-			$newSalesorderId = $salesorderDb->getLatestSalesorderID()+1;
-			$salesorderDb->saveSalesorder($id, $newSalesorderId, $this->_date, 105, $this->_date, $this->_user['id']);
+		    $incrementDb = new Application_Model_DbTable_Increment();
+		    $increment = $incrementDb->getIncrement('salesorderid');
+			$salesorderDb->saveSalesorder($id, $increment);
+		    $incrementDb->setIncrement(($increment+1), 'salesorderid');
 			$salesorder = $salesorderDb->getSalesorder($id);
 		}
 
