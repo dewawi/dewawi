@@ -1,7 +1,7 @@
 /configs/database.ini
 /cache/*
 !/cache/.gitkeep
-/files/*
-!/files/.gitkeep
+/files/*/*
+!/files/*/.gitkeep
 /session/*
 !/session/.gitkeep
