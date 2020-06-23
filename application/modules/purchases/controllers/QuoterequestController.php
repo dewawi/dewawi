@@ -703,6 +703,9 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 	}
 
 	protected function checkDirectory($id) {
+		//Create cache folder if does not already exists
+        $cache = BASE_PATH.'/cache/';
+        if(!file_exists($cache.'quoterequest/') && is_writable($cache)) mkdir($cache.'quoterequest/', 0777, true);
 		//Create contact folder if does not already exists
         $path = BASE_PATH.'/files/contacts/';
         $dir1 = substr($id, 0, 1).'/';

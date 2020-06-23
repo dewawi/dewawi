@@ -812,6 +812,9 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 	}
 
 	protected function checkDirectory($id) {
+		//Create cache folder if does not already exists
+        $cache = BASE_PATH.'/cache/';
+        if(!file_exists($cache.'creditnote/') && is_writable($cache)) mkdir($cache.'creditnote/', 0777, true);
 		//Create contact folder if does not already exists
         $path = BASE_PATH.'/files/contacts/';
         $dir1 = substr($id, 0, 1).'/';
