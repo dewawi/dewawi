@@ -75,7 +75,8 @@ class Sales_InvoiceposController extends Zend_Controller_Action
             }
         }
 		foreach($positions as $position) {
-            if(array_search($position->taxrate, $taxrates)) $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
+            if(!$invoice['taxfree'] && array_search($position->taxrate, $taxrates))
+                $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
 
 			$position->total =  $this->_currency->toCurrency($position->price*$position->quantity);
 			$position->price =  $this->_currency->toCurrency($position->price);
