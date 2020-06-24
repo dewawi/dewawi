@@ -8,8 +8,11 @@ class Contacts_Form_Contact extends Zend_Form
 
 		$form = array();
 
-		$form['id'] = new Zend_Form_Element_Text('id');
-		$form['id']->setLabel('CONTACTS_CONTACT_ID')
+		$form['id'] = new Zend_Form_Element_Hidden('id');
+		$form['id']->addFilter('Int');
+
+		$form['contactid'] = new Zend_Form_Element_Text('contactid');
+		$form['contactid']->setLabel('CONTACTS_CONTACT_ID')
 			->addFilter('Int')
 			->setAttrib('readonly', 'readonly');
 

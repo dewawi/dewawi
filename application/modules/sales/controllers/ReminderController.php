@@ -145,7 +145,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 			//Get contact
 			if($reminder['contactid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContact($reminder['contactid']);
+				$contact = $contactDb->getContactWithID($reminder['contactid']);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -267,7 +267,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$reminder = $reminderDb->getReminder($id);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($reminder['contactid']);
+		$contact = $contactDb->getContactWithID($reminder['contactid']);
 
         //Convert dates to the display format
 		$reminder['reminderdate'] = date("d.m.Y", strtotime($reminder['reminderdate']));

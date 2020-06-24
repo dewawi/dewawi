@@ -56,13 +56,13 @@ echo $this->ActiveFilter();
 			</td>
 			<td data-label="<?php echo $this->translate('QUOTES_CONTACT') ?>" class="contactid">
 				<?php if($quote->contactid) : ?>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid)); ?>">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->cid)); ?>">
 						<?php echo $this->escape($quote->contactid); ?>
 					</a>
 				<?php endif; ?>
 			</td>
 			<td class="billingname">
-				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid)); ?>">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->cid)); ?>">
 					<?php echo $this->escape($quote->billingname1); ?>
 					<?php if($quote->billingname2) echo "<br/>".$this->escape($quote->billingname2); ?>
 				</a>

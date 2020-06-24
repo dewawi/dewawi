@@ -40,11 +40,11 @@ echo $this->ActiveFilter();
 				</a></p>
 			</td>
 			<td data-label="<?php echo $this->translate('PROCESSES_CUSTOMER') ?>" class="customer">
-				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->customerid));?>">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->cid));?>">
 					<?php echo $this->escape($process->customerid);?>
 				</a>
 				<?php if($process->billingname1) : ?><br/>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->customerid));?>">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->cid));?>">
 						<?php echo $this->escape($process->billingname1);?>
 						<?php //if($process->billingname2) echo "<br/>".$this->escape($process->billingname2);?>
 					</a>

@@ -145,7 +145,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			//Get contact
 			if($creditnote['contactid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContact($creditnote['contactid']);
+				$contact = $contactDb->getContactWithID($creditnote['contactid']);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -267,7 +267,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnote = $creditnoteDb->getCreditnote($id);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($creditnote['contactid']);
+		$contact = $contactDb->getContactWithID($creditnote['contactid']);
 
         //Convert dates to the display format
 		$creditnote['creditnotedate'] = date("d.m.Y", strtotime($creditnote['creditnotedate']));

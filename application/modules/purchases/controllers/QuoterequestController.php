@@ -145,7 +145,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			//Get contact
 			if($quoterequest['contactid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContact($quoterequest['contactid']);
+				$contact = $contactDb->getContactWithID($quoterequest['contactid']);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -267,7 +267,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequest = $quoterequestDb->getQuoterequest($id);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($quoterequest['contactid']);
+		$contact = $contactDb->getContactWithID($quoterequest['contactid']);
 
         //Convert dates to the display format
 		$quoterequest['quoterequestdate'] = date("d.m.Y", strtotime($quoterequest['quoterequestdate']));

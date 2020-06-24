@@ -23,6 +23,18 @@ class Contacts_Model_DbTable_Contact extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getContactWithID($contactid)
+	{
+		$contactid = (int)$contactid;
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$row = $this->fetchRow($where);
+		if(!$row) return false;
+		return $row->toArray();
+	}
+
 	public function getContactsByCategory($catid)
 	{
 		$catid = (int)$catid;

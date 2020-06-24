@@ -159,7 +159,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 			//Get contact
 			if($process['customerid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContact($process['customerid']);
+				$contact = $contactDb->getContactWithID($process['customerid']);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -374,7 +374,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$process = $processDb->getProcess($id);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($process['contactid']);
+		$contact = $contactDb->getContactWithID($process['contactid']);
 
 		$process['processdate'] = date('d.m.Y', strtotime($process['processdate']));
 

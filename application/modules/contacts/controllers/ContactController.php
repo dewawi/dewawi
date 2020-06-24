@@ -223,7 +223,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 					//History
 		            $get = new Contacts_Model_Get();
-		            $history = $get->history($id, $this->_user['clientid']);
+		            $history = $get->history($contact['contactid'], $this->_user['clientid']);
 
 					//Files
 					$files = array();

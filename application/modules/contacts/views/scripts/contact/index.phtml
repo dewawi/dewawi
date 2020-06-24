@@ -42,7 +42,7 @@ echo $this->ActiveFilter();
 				<td><input class="id" type="checkbox" value="<?php echo $contact->id ?>" name="id"/></td>
 				<td data-label="<?php echo $this->translate('CONTACTS_CONTACT_ID') ?>" class="id">
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
-						<?php echo $this->escape($contact->id); ?>
+						<?php echo $this->escape($contact->contactid); ?>
 					</a>
 				</td>
 				<td data-label="<?php echo $this->translate('CONTACTS_NAME') ?>" class="name">

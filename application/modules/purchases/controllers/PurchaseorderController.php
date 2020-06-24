@@ -145,7 +145,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			//Get contact
 			if($purchaseorder['contactid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContact($purchaseorder['contactid']);
+				$contact = $contactDb->getContactWithID($purchaseorder['contactid']);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -267,7 +267,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorder = $purchaseorderDb->getPurchaseorder($id);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($purchaseorder['contactid']);
+		$contact = $contactDb->getContactWithID($purchaseorder['contactid']);
 
         //Convert dates to the display format
 		$purchaseorder['purchaseorderdate'] = date("d.m.Y", strtotime($purchaseorder['purchaseorderdate']));

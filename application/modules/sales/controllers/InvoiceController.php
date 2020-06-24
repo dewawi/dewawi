@@ -145,7 +145,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			//Get contact
 			if($invoice['contactid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContact($invoice['contactid']);
+				$contact = $contactDb->getContactWithID($invoice['contactid']);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -267,7 +267,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoice = $invoiceDb->getInvoice($id);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($invoice['contactid']);
+		$contact = $contactDb->getContactWithID($invoice['contactid']);
 
         //Convert dates to the display format
 		$invoice['invoicedate'] = date("d.m.Y", strtotime($invoice['invoicedate']));

@@ -150,7 +150,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 			//Get contact
 			if($quote['contactid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContact($quote['contactid']);
+				$contact = $contactDb->getContactWithID($quote['contactid']);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -263,7 +263,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$quote = $quoteDb->getQuote($id);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($quote['contactid']);
+		$contact = $contactDb->getContactWithID($quote['contactid']);
 
         //Convert dates to the display format
 		$quote['quotedate'] = date("d.m.Y", strtotime($quote['quotedate']));

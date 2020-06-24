@@ -145,7 +145,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			//Get contact
 			if($deliveryorder['contactid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContact($deliveryorder['contactid']);
+				$contact = $contactDb->getContactWithID($deliveryorder['contactid']);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -267,7 +267,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($deliveryorder['contactid']);
+		$contact = $contactDb->getContactWithID($deliveryorder['contactid']);
 
         //Convert dates to the display format
 		$deliveryorder['deliveryorderdate'] = date("d.m.Y", strtotime($deliveryorder['deliveryorderdate']));
