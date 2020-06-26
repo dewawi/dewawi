@@ -5,6 +5,16 @@ class Admin_Model_DbTable_Language extends Zend_Db_Table_Abstract
 
 	protected $_name = 'language';
 
+	protected $_date = null;
+
+	protected $_user = null;
+
+	public function init()
+	{
+		$this->_date = date('Y-m-d H:i:s');
+		$this->_user = Zend_Registry::get('User');
+	}
+
 	public function getLanguage($id)
 	{
 		$id = (int)$id;
@@ -17,12 +27,16 @@ class Admin_Model_DbTable_Language extends Zend_Db_Table_Abstract
 
 	public function addLanguage($data)
 	{
+		$data['created'] = $this->_date;
+		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
 	public function updateLanguage($id, $data)
 	{
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 

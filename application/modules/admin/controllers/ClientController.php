@@ -91,11 +91,112 @@ class Admin_ClientController extends Zend_Controller_Action
 			$form = new Admin_Form_Client();
 			$data = $request->getPost();
 			if($form->isValid($data)) {
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-
 				$clientDb = new Admin_Model_DbTable_Client();
 				$id = $clientDb->addClient($data);
+
+                //Add config row
+				$configDb = new Admin_Model_DbTable_Config();
+				$configDb->addConfig(array(
+                                    'timezone' => 'Europe/Berlin',
+                                    'language' => 'de_DE',
+                                    'clientid' => $id
+                                    ));
+
+                //Add increment row
+				$incrementDb = new Admin_Model_DbTable_Increment();
+				$incrementDb->addIncrement(array(
+                                    'clientid' => $id,
+                                    'contactid' => 10000,
+                                    'creditnoteid' => 10000,
+                                    'deliveryorderid' => 10000,
+                                    'invoiceid' => 10000,
+                                    'purchaseorderid' => 10000,
+                                    'quoteid' => 10000,
+                                    'quoterequestid' => 10000,
+                                    'reminderid' => 10000,
+                                    'salesorderid' => 10000
+                                    ));
+
+                //Add language row
+				$languageDb = new Admin_Model_DbTable_Language();
+				$languageDb->addLanguage(array(
+                                    'code' => 'de_DE',
+                                    'name' => 'Deutsch',
+                                    'clientid' => $id
+                                    ));
+
+                //Add taxrate row
+				$taxrateDb = new Admin_Model_DbTable_Taxrate();
+				$taxrateDb->addTaxrate(array(
+                                    'name' => 'MwSt.',
+                                    'rate' => 19.0000,
+                                    'clientid' => $id
+                                    ));
+				$taxrateDb = new Admin_Model_DbTable_Taxrate();
+				$taxrateDb->addTaxrate(array(
+                                    'name' => 'MwSt.',
+                                    'rate' => 7.0000,
+                                    'clientid' => $id
+                                    ));
+
+                //Add template row
+				$templateDb = new Admin_Model_DbTable_Template();
+				$templateDb->addTemplate(array(
+                                    'description' => 'Vorlage',
+                                    'default' => 1,
+                                    'clientid' => $id
+                                    ));
+
+                //Add textblock row
+				$textblockDb = new Admin_Model_DbTable_Textblock();
+				$textblockDb->addTextblock($textblockDb->getTextblock(1), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(2), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(3), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(4), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(5), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(6), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(7), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(8), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(9), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(10), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(11), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(12), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(13), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(14), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(15), $id);
+				$textblockDb->addTextblock($textblockDb->getTextblock(16), $id);
+
+                //Add uom row
+				$uomDb = new Admin_Model_DbTable_Uom();
+				$uomDb->addUom(array(
+                                    'title' => 'Stück',
+                                    'clientid' => $id
+                                    ));
+				$uomDb->addUom(array(
+                                    'title' => 'Pack.',
+                                    'clientid' => $id
+                                    ));
+				$uomDb->addUom(array(
+                                    'title' => 'Std.',
+                                    'clientid' => $id
+                                    ));
+				$uomDb->addUom(array(
+                                    'title' => 'kg',
+                                    'clientid' => $id
+                                    ));
+				$uomDb->addUom(array(
+                                    'title' => 'm',
+                                    'clientid' => $id
+                                    ));
+
+                //Add warehouse row
+				$warehouseDb = new Admin_Model_DbTable_Warehouse();
+				$warehouseDb->addWarehouse(array(
+                                    'title' => 'Hauptlager',
+                                    'description' => 'Hauptlager',
+                                    'clientid' => $id
+                                    ));
+
 				echo Zend_Json::encode($clientDb->getClient($id));
 			} else {
 				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));

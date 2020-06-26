@@ -1,9 +1,9 @@
 <?php
 
-class Admin_Model_DbTable_Template extends Zend_Db_Table_Abstract
+class Admin_Model_DbTable_Warehouse extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'template';
+	protected $_name = 'warehouse';
 
 	protected $_date = null;
 
@@ -15,7 +15,7 @@ class Admin_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		$this->_user = Zend_Registry::get('User');
 	}
 
-	public function getTemplate($id)
+	public function getWarehouse($id)
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
@@ -25,7 +25,7 @@ class Admin_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getTemplates()
+	public function getWarehouses()
 	{
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
@@ -33,7 +33,7 @@ class Admin_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		return $data;
 	}
 
-	public function addTemplate($data)
+	public function addWarehouse($data)
 	{
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
@@ -41,7 +41,7 @@ class Admin_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateTemplate($id, $data)
+	public function updateWarehouse($id, $data)
 	{
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
@@ -63,13 +63,5 @@ class Admin_Model_DbTable_Template extends Zend_Db_Table_Abstract
 			'locked' => 0
 		);
 		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function deleteTemplate($id)
-	{
-		$data = array(
-			'deleted' => 1
-		);
-		$this->update($data, 'id =' . (int)$id);
 	}
 }

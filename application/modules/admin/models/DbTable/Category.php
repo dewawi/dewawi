@@ -68,6 +68,8 @@ class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
 
 	public function addCategory($data)
 	{
+		$data['created'] = $this->_date;
+		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}

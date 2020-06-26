@@ -35,12 +35,16 @@ class Admin_Model_DbTable_Taxrate extends Zend_Db_Table_Abstract
 
 	public function addTaxrate($data)
 	{
+		$data['created'] = $this->_date;
+		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
 	public function updateTaxrate($id, $data)
 	{
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 
