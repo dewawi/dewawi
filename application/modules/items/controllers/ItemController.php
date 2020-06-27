@@ -98,8 +98,8 @@ class Items_ItemController extends Zend_Controller_Action
 		$item = new Items_Model_DbTable_Item();
 		$id = $item->addItem($data);
 
-        //Check if the directory exists
-        $this->checkDirectory($id);
+        //Check if the directory is writable
+		$this->_helper->Directory->isWritable($id, 'item', $this->_flashMessenger);
 
 		$this->_helper->redirector->gotoSimple('edit', 'item', null, array('id' => $id));
 	}
@@ -113,8 +113,8 @@ class Items_ItemController extends Zend_Controller_Action
 		$itemDb = new Items_Model_DbTable_Item();
 		$item = $itemDb->getItem($id);
 
-        //Check if the directory exists
-        $dirwritable = $this->checkDirectory($id);
+        //Check if the directory is writable
+        $dirwritable = $this->_helper->Directory->isWritable($id, 'item', $this->_flashMessenger);
 
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'item', null, array('id' => $id));
@@ -224,8 +224,8 @@ class Items_ItemController extends Zend_Controller_Action
 		$data['modifiedby'] = 0;
 		echo $itemid = $item->addItem($data);
 
-        //Create the directory for the new item
-        $this->checkDirectory($itemid);
+        //Check if the directory is writable
+		$this->_helper->Directory->isWritable($itemid, 'item', $this->_flashMessenger);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -623,24 +623,6 @@ class Items_ItemController extends Zend_Controller_Action
             }
         }
     }
-
-	protected function checkDirectory($id) {
-		//Create contact folder if does not already exists
-        $path = BASE_PATH.'/files/items/';
-        $dir1 = substr($id, 0, 1).'/';
-        if(strlen($id) > 1) $dir2 = substr($id, 1, 1).'/';
-        else $dir2 = '0/';
-        if(file_exists($path.$dir1.$dir2.$id) && is_dir($path.$dir1.$dir2.$id) && is_writable($path.$dir1.$dir2.$id)) {
-            return true;
-        } elseif(is_writable($path)) {
-            $response = mkdir($path.$dir1.$dir2.$id, 0777, true);
-            if($response === false) $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
-			return $response;
-        } else {
-            $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
-			return false;
-        }
-	}
 
 	protected function isLocked($locked, $lockedtime)
 	{

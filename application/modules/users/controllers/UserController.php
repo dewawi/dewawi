@@ -106,4 +106,15 @@ class Users_UserController extends Zend_Controller_Action
 		    $authNamespace->storage->clientid = $clientid;
         }
 	}
+
+	public function languageAction()
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+		$language = $this->_getParam('language', 0);
+        if($language) {
+		    $authNamespace = new Zend_Session_Namespace('Zend_Auth');
+		    $authNamespace->storage->language = $language;
+        }
+	}
 }

@@ -5,71 +5,63 @@
 class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
 
 	public function FileManager() {
+		$this->_user = Zend_Registry::get('User');
         $defaultNamespace = new Zend_Session_Namespace('RF');
 
         if($this->view->user['permissions']) $defaultNamespace->writable = true;
         else $defaultNamespace->writable = false;
 
-        if($this->view->controller == 'contact') {
-            $dir1 = substr($this->view->id, 0, 1).'/';
-            if(strlen($this->view->id) > 1) $dir2 = substr($this->view->id, 1, 1).'/';
-            else $dir2 = '0/';
+        if($this->view->module == 'contacts') {
+
+            $clientid = $this->_user['clientid'];
+            $dir1 = substr($clientid, 0, 1);
+            if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+            else $dir2 = '0';
+
+            $id = $this->view->id;
+            $dir3 = substr($id, 0, 1);
+            if(strlen($id) > 1) $dir4 = substr($id, 1, 1);
+            else $dir4 = '0';
+
+            $url = $dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
+
             $defaultNamespace->view_type = '1'; //detailed list
-            $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$this->view->id.'/';
-        } elseif($this->view->controller == 'quote') {
-            $dir1 = substr($this->view->contact['id'], 0, 1).'/';
-            if(strlen($this->view->contact['id']) > 1) $dir2 = substr($this->view->contact['id'], 1, 1).'/';
-            else $dir2 = '0/';
+            $defaultNamespace->subfolder = 'contacts/'.$url;
+        } elseif($this->view->module == 'sales') {
+
+            $clientid = $this->_user['clientid'];
+            $dir1 = substr($clientid, 0, 1);
+            if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+            else $dir2 = '0';
+
+            $id = $this->view->contact['id'];
+            $dir3 = substr($id, 0, 1);
+            if(strlen($id) > 1) $dir4 = substr($id, 1, 1);
+            else $dir4 = '0';
+
+            $url = $dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
+
             $defaultNamespace->view_type = '1'; //detailed list
-            $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$this->view->contact['id'].'/';
-        } elseif($this->view->controller == 'salesorder') {
-            $dir1 = substr($this->view->contact['id'], 0, 1).'/';
-            if(strlen($this->view->contact['id']) > 1) $dir2 = substr($this->view->contact['id'], 1, 1).'/';
-            else $dir2 = '0/';
-            $defaultNamespace->view_type = '1'; //detailed list
-            $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$this->view->contact['id'].'/';
-        } elseif($this->view->controller == 'invoice') {
-            $dir1 = substr($this->view->contact['id'], 0, 1).'/';
-            if(strlen($this->view->contact['id']) > 1) $dir2 = substr($this->view->contact['id'], 1, 1).'/';
-            else $dir2 = '0/';
-            $defaultNamespace->view_type = '1'; //detailed list
-            $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$this->view->contact['id'].'/';
-        } elseif($this->view->controller == 'deliveryorder') {
-            $dir1 = substr($this->view->contact['id'], 0, 1).'/';
-            if(strlen($this->view->contact['id']) > 1) $dir2 = substr($this->view->contact['id'], 1, 1).'/';
-            else $dir2 = '0/';
-            $defaultNamespace->view_type = '1'; //detailed list
-            $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$this->view->contact['id'].'/';
-        } elseif($this->view->controller == 'creditnote') {
-            $dir1 = substr($this->view->contact['id'], 0, 1).'/';
-            if(strlen($this->view->contact['id']) > 1) $dir2 = substr($this->view->contact['id'], 1, 1).'/';
-            else $dir2 = '0/';
-            $defaultNamespace->view_type = '1'; //detailed list
-            $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$this->view->contact['id'].'/';
-        } elseif($this->view->controller == 'quoterequest') {
-            $dir1 = substr($this->view->contact['id'], 0, 1).'/';
-            if(strlen($this->view->contact['id']) > 1) $dir2 = substr($this->view->contact['id'], 1, 1).'/';
-            else $dir2 = '0/';
-            $defaultNamespace->view_type = '1'; //detailed list
-            $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$this->view->contact['id'].'/';
-        } elseif($this->view->controller == 'purchaseorder') {
-            $dir1 = substr($this->view->contact['id'], 0, 1).'/';
-            if(strlen($this->view->contact['id']) > 1) $dir2 = substr($this->view->contact['id'], 1, 1).'/';
-            else $dir2 = '0/';
-            $defaultNamespace->view_type = '1'; //detailed list
-            $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$this->view->contact['id'].'/';
-        } elseif($this->view->controller == 'item') {
-            $dir1 = substr($this->view->id, 0, 1).'/';
-            if(strlen($this->view->id) > 1) $dir2 = substr($this->view->id, 1, 1).'/';
-            else $dir2 = '0/';
+            $defaultNamespace->subfolder = 'contacts/'.$url;
+        } elseif($this->view->module == 'items') {
+
+            $clientid = $this->_user['clientid'];
+            $dir1 = substr($clientid, 0, 1);
+            if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+            else $dir2 = '0';
+
+            $id = $this->view->id;
+            $dir3 = substr($id, 0, 1);
+            if(strlen($id) > 1) $dir4 = substr($id, 1, 1);
+            else $dir4 = '0';
+
+            $url = $dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
+
             $defaultNamespace->view_type = '0'; //boxes
-            $defaultNamespace->subfolder = 'items/'.$dir1.$dir2.$this->view->id.'/';
+            $defaultNamespace->subfolder = 'items/'.$url;
         }
-        if(is_link(BASE_PATH.'/library')) {
-            $path = explode('/', BASE_PATH);
-            $defaultNamespace->extrapath = end($path);
-        }
-        //print_r(session_id());
+        //error_log($url);
+        //if($this->view->id == 39053) print_r($defaultNamespace->subfolder);
 	}
 }
 

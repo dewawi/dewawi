@@ -139,8 +139,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$internetDb = new Contacts_Model_DbTable_Internet();
 		$internetDb->addInternet(array('contactid' => $id, 'ordering' => 1));
 
-        //Check if the directory exists
-        $this->checkDirectory($id);
+        //Check if the directory is writable
+        $this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
 
 		$this->_helper->redirector->gotoSimple('edit', 'contact', null, array('id' => $id));
 	}
@@ -152,10 +152,16 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$activeTab = $request->getCookie('tab', null);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($id);
+        if($id) $contact = $contactDb->getContact($id);
 
-        //Check if the directory exists
-        $dirwritable = $this->checkDirectory($id);
+        //Redirect to index if there is no data
+        if(!$contact) {
+			$this->_helper->redirector->gotoSimple('index', 'contact');
+			$this->_flashMessenger->addMessage('MESSAGES_NOT_FOUND');
+        }
+
+        //Check if the directory is writable
+        $dirwritable = $this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
 
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'contact', null, array('id' => $id));
@@ -329,8 +335,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 		    $internetDb->addInternet(array('contactid' => $contactid, 'internet' => $internet['internet'], 'ordering' => $internet['ordering']));
 		}
 
-        //Create the directory for the new contact
-        $this->checkDirectory($contactid);
+        //Check if the directory is writable
+        $this->_helper->Directory->isWritable($contactid, 'contact', $this->_flashMessenger);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -535,24 +541,6 @@ echo '{
         ]
     }';
     //print_r($suggestions);
-	}
-
-	protected function checkDirectory($id) {
-		//Create contact folder if does not already exists
-        $path = BASE_PATH.'/files/contacts/';
-        $dir1 = substr($id, 0, 1).'/';
-        if(strlen($id) > 1) $dir2 = substr($id, 1, 1).'/';
-        else $dir2 = '0/';
-        if(file_exists($path.$dir1.$dir2.$id) && is_dir($path.$dir1.$dir2.$id) && is_writable($path.$dir1.$dir2.$id)) {
-            return true;
-        } elseif(is_writable($path)) {
-            $response = mkdir($path.$dir1.$dir2.$id, 0777, true);
-            if($response === false) $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
-			return $response;
-        } else {
-            $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
-			return false;
-        }
 	}
 
 	protected function isLocked($locked, $lockedtime)

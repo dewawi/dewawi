@@ -121,8 +121,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequest = $quoterequestDb->getQuoterequest($id);
 
-        //Check if the directory exists
-        $dirwritable = $this->checkDirectory($quoterequest['contactid']);
+        //Check if the directory is writable
+		$dirwritable = $this->_helper->Directory->isWritable($quoterequest['contactid'], 'quoterequest', $this->_flashMessenger);
 
 		if($quoterequest['quoterequestid']) {
 			$this->_helper->redirector->gotoSimple('view', 'quoterequest', null, array('id' => $id));
@@ -700,27 +700,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$json = $form->getMessages();
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
-	}
-
-	protected function checkDirectory($id) {
-		//Create cache folder if does not already exists
-        $cache = BASE_PATH.'/cache/';
-        if(!file_exists($cache.'quoterequest/') && is_writable($cache)) mkdir($cache.'quoterequest/', 0777, true);
-		//Create contact folder if does not already exists
-        $path = BASE_PATH.'/files/contacts/';
-        $dir1 = substr($id, 0, 1).'/';
-        if(strlen($id) > 1) $dir2 = substr($id, 1, 1).'/';
-        else $dir2 = '0/';
-        if(file_exists($path.$dir1.$dir2.$id) && is_dir($path.$dir1.$dir2.$id) && is_writable($path.$dir1.$dir2.$id)) {
-            return true;
-        } elseif(is_writable($path)) {
-            $response = mkdir($path.$dir1.$dir2.$id, 0777, true);
-            if($response === false) $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
-			return $response;
-        } else {
-            $this->_flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
-			return false;
-        }
 	}
 
 	protected function isLocked($locked, $lockedtime)
