@@ -342,13 +342,17 @@ if($this->action == 'download') {
 	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').' '.$this->translate('QUOTE').' '.$billingName1.'.pdf', 'D');
 } else {
     $path = BASE_PATH.'/files/contacts/';
-    $dir1 = substr($contactid, 0, 1).'/';
-    if(strlen($contactid) > 1) $dir2 = substr($contactid, 1, 1).'/';
-    else $dir2 = '0/';
+    $dir1 = substr($client['id'], 0, 1);
+    if(strlen($client['id']) > 1) $dir2 = substr($client['id'], 1, 1);
+    else $dir2 = '0';
+    $dir3 = substr($this->contact['id'], 0, 1).'/';
+    if(strlen($this->contact['id']) > 1) $dir4 = substr($this->contact['id'], 1, 1).'/';
+    else $dir4 = '0/';
+    $url = $dir1.'/'.$dir2.'/'.$client['id'].'/'.$dir3.'/'.$dir4.'/'.$this->contact['id'].'/';
 	if($quoteid) {
-        if(!file_exists($path.$dir1.$dir2.$contactid.'/'.$this->translate('QUOTE').'-'.$quoteid.'.pdf'))
-		    $pdf->Output($path.$dir1.$dir2.$contactid.'/'.$this->translate('QUOTE').'-'.$quoteid.'.pdf', 'F');
-		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$dir1.$dir2.$contactid.'/'.$this->translate('QUOTE').'-'.$quoteid.'.pdf?'.time().'" width="900px" height="500px">';
+        if(!file_exists($path.$url.$this->translate('QUOTE').'-'.$quoteid.'.pdf'))
+		    $pdf->Output($path.$url.$this->translate('QUOTE').'-'.$quoteid.'.pdf', 'F');
+		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$this->translate('QUOTE').'-'.$quoteid.'.pdf?'.time().'" width="900px" height="500px">';
 	} else {
 		$pdf->Output(BASE_PATH.'/cache/quote/'.$id.'.pdf', 'F');
 		$html = '<iframe src="'.$this->baseUrl().'/cache/quote/'.$id.'.pdf?'.time().'" width="900px" height="500px">';

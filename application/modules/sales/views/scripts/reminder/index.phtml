@@ -56,13 +56,13 @@ echo $this->ActiveFilter();
 			</td>
 			<td data-label="<?php echo $this->translate('REMINDERS_CONTACT') ?>" class="contactid">
 				<?php if($reminder->contactid) : ?>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$reminder->contactid)); ?>">
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$reminder->cid)); ?>">
 						<?php echo $this->escape($reminder->contactid); ?>
 					</a>
 				<?php endif; ?>
 			</td>
 			<td class="billingname">
-				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$reminder->contactid)); ?>">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$reminder->cid)); ?>">
 					<?php echo $this->escape($reminder->billingname1); ?>
 					<?php if($reminder->billingname2) echo "<br/>".$this->escape($reminder->billingname2); ?>
 				</a>

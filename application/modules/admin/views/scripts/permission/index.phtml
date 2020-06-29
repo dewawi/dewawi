@@ -1,0 +1,50 @@
+<?php
+$this->title = $this->translate('ADMIN');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->AdminMenu();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="id" width="5%">
+				<?php echo $this->translate('ADMIN_ID'); ?>
+			</th>
+			<th class="name" width="20%">
+				<?php echo $this->translate('ADMIN_USER_NAME'); ?>
+			</th>
+			<th class="password" width="20%">
+				<?php echo $this->translate('ADMIN_PASSWORD'); ?>
+			</th>
+			<th class="email" width="20%">
+				<?php echo $this->translate('ADMIN_EMAIL'); ?>
+			</th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->permissions as $permission) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $permission->id ?>" name="id"/></td>
+				<td class="id">
+					<?php echo $this->escape($permission->id); ?>
+				</td>
+				<td class="username">
+				    <?php echo $this->forms[$permission->id]->add; ?>
+				    <?php echo $this->forms[$permission->id]->edit; ?>
+				    <?php echo $this->forms[$permission->id]->view; ?>
+					<?php /*foreach($permission->contacts as  $contacts) : ?>
+                        <span><?php echo $this->escape($contacts); ?></span>
+					<?php endforeach;*/ ?>
+				</td>
+				<td class="username">
+					<span data-name="contacts"><?php //echo $this->escape($permission->contacts); ?></span>
+				</td>
+				<td class="username">
+					<span class="editable" data-name="contacts"><?php //echo $this->escape($permission->contacts); ?></span>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+	</tbody>
+</table>

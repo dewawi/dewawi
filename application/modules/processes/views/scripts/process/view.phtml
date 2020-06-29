@@ -54,7 +54,7 @@ echo $this->FileManager();
 			<dl class="view">
 				<dt><label><?php echo $this->translate('QUOTES_CONTACT_ID') ?></label></dt>
 				<dd>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->quote['contactid']));?>"><?php echo $this->quote['contactid']; ?></a>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->quote['contactid']; ?></a>
 					<input id="contactid" type="hidden" value="<?php echo $this->quote['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
 				</dd>
 				<dt><label><?php echo $this->translate('QUOTES_BILLING_ADDRESS') ?></label></dt>

@@ -57,7 +57,9 @@ echo $this->doctype();
 					            $date = new Zend_Date();
 					            echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
 				            ?> |
-				            <a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
+				            <?php if($this->user['admin']) : ?>
+				                <a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
+			                <?php endif; ?>
 				            <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
 			            <?php endif; ?>
 		            </div>
@@ -78,10 +80,13 @@ echo $this->doctype();
 					            $date = new Zend_Date();
 					            echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
 				            ?> |
-				            <a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
+				            <?php if($this->user['admin']) : ?>
+                                <a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
+			                <?php endif; ?>
 				            <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
 			                <?php if(isset($this->switcher)) : ?>
                                 <?php echo $this->switcher; ?>
+                                <?php echo $this->language; ?>
 			                <?php endif; ?>
 			            <?php endif; ?>
 		            </div>
@@ -105,7 +110,7 @@ echo $this->doctype();
                     <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Auftragsbestätigungen</a>
                     <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Lieferscheine</a>
                     <span>Einkauf</span>
-                    <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Anfragen</a>
+                    <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->translate('MENU_QUOTE_REQUESTS'); ?></a>
                     <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Bestellungen</a>
                     <span>Buchhaltung</span>
                     <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Abrechnung</a>
@@ -118,34 +123,34 @@ echo $this->doctype();
             <div class="row">
                 <div class="col-sm-12 hidden-sm">
                     <header>
-                        <a class="button" href="<?php echo $this->url(array('module'=>'index', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Übersicht</a>
-                        <a class="button<?php if($this->controller == 'contact') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index', 'id'=>null)); ?>">Kontakte</a>
-                        <a class="button<?php if($this->controller == 'item') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>">Artikel</a>
-                        <a class="button<?php if($this->controller == 'process') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'index', 'id'=>null)); ?>">Vorgänge</a>
+                        <a class="button" href="<?php echo $this->url(array('module'=>'index', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('CONTROL_PANEL'); ?></a>
+                        <a class="button<?php if($this->controller == 'contact') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_CONTACTS'); ?></a>
+                        <a class="button<?php if($this->controller == 'item') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_ITEMS'); ?></a>
+                        <a class="button<?php if($this->controller == 'process') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PROCESSES'); ?></a>
                         <div class="sub">
-                            <button<?php if(($this->controller == 'quote') || ($this->controller == 'salesorder') || ($this->controller == 'deliveryorder')) echo ' class="active"'; ?>>Verkauf</button>
+                            <button<?php if(($this->controller == 'quote') || ($this->controller == 'salesorder') || ($this->controller == 'deliveryorder')) echo ' class="active"'; ?>><?php echo $this->translate('MENU_SALES'); ?></button>
                             <div class="sub1">
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>">Angebote</a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Auftragsbestätigungen</a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'index', 'id'=>null)); ?>">Lieferscheine</a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_QUOTES'); ?></a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->translate('MENU_SALES_ORDERS'); ?></a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_DELIVERY_ORDERS'); ?></a>
                             </div>
                         </div>
                         <div class="sub">
-                            <button<?php if(($this->controller == 'quoterequest') || ($this->controller == 'purchaseorder')) echo ' class="active"'; ?>>Einkauf</button>
+                            <button<?php if(($this->controller == 'quoterequest') || ($this->controller == 'purchaseorder')) echo ' class="active"'; ?>><?php echo $this->translate('MENU_PURCHASES'); ?></button>
                             <div class="sub1">
-                                <a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>">Anfragen</a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>">Bestellungen</a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_QUOTE_REQUESTS'); ?></a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PURCHASE_ORDERS'); ?></a>
                             </div>
                         </div>
                         <div class="sub">
                             <button<?php if(($this->controller == 'invoice') || ($this->controller == 'creditnote') || ($this->controller == 'reminder')) echo ' class="active"'; ?>>Abrechnung</button>
                             <div class="sub1">
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>">Rechnungen</a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>">Gutschriften</a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>">Mahnungen</a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_INVOICES'); ?></a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_CREDIT_NOTES'); ?></a>
+                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_REMINDERS'); ?></a>
                             </div>
                         </div>
-                        <a class="button<?php if($this->module == 'statistics') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Statistiken</a>
+                        <a class="button<?php if($this->module == 'statistics') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_STATISTICS'); ?></a>
                     </header>
 			    </div>
 			</div>

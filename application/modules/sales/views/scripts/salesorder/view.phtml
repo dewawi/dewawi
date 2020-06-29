@@ -58,7 +58,7 @@ echo $this->FileManager();
 			<dl class="view">
 				<dt><label><?php echo $this->translate('SALES_ORDERS_CONTACT_ID') ?></label></dt>
 				<dd>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->salesorder['contactid']));?>"><?php echo $this->salesorder['contactid']; ?></a>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->salesorder['contactid']; ?></a>
 					<input id="contactid" type="hidden" value="<?php echo $this->salesorder['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
 				</dd>
 				<dt><label><?php echo $this->translate('SALES_ORDERS_BILLING_ADDRESS') ?></label></dt>

@@ -29,16 +29,17 @@ echo $this->FileManager();
 					    <?php echo $this->form->getElement('type') ?>
 					    <?php echo $this->form->getElement('catid') ?>
 					    <?php echo $this->form->getElement('gtin') ?>
-                        <h4>Preise</h4>
+                        <h4><?php echo $this->translate('ITEMS_PRICES') ?></h4>
 					    <?php echo $this->form->getElement('cost') ?>
 					    <?php echo $this->form->getElement('price') ?>
 					    <?php echo $this->form->getElement('margin') ?>
 					    <?php echo $this->form->getElement('taxid') ?>
-                        <h4>Hersteller</h4>
+                        <h4><?php echo $this->translate('ITEMS_MANUFACTURER') ?></h4>
 					    <?php echo $this->form->getElement('manufacturerid') ?>
 					    <?php echo $this->form->getElement('manufacturersku') ?>
 					    <?php echo $this->form->getElement('manufacturergtin') ?>
-                        <h4>Zoll</h4>
+                        <h4><?php echo $this->translate('ITEMS_CUSTOMS') ?></h4>
+
 					    <?php echo $this->form->getElement('ctn') ?>
 					    <?php echo $this->form->getElement('origincountry') ?>
 					    <?php echo $this->form->getElement('originregion') ?>

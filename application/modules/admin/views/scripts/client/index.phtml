@@ -36,6 +36,9 @@ echo $this->AdminMenu();
 			<th class="category" width="12%">
 				<?php echo $this->translate('ADMIN_LANGUAGE'); ?>
 			</th>
+			<th class="category" width="12%">
+				<?php echo $this->translate('ADMIN_ACTIVATED'); ?>
+			</th>
 			<th width="8%"></th>
 		</tr>
 	</thead>
@@ -69,6 +72,9 @@ echo $this->AdminMenu();
 				</td>
 				<td class="name">
 					<span class="editable" data-name="language"><?php echo $this->escape($client->language); ?></span>
+				</td>
+				<td class="name">
+				    <?php echo $this->forms[$client->id]->activated; ?>
 				</td>
 				<td class="buttons">
 					<?php echo $this->Button('copy'); ?>
@@ -105,6 +111,9 @@ echo $this->AdminMenu();
 			</td>
 			<td>
 				<?php echo $this->form->language; ?>
+			</td>
+			<td>
+				<?php echo $this->form->activated; ?>
 			</td>
 			<td class="buttons">
 				<?php echo $this->toolbar->save; ?>
