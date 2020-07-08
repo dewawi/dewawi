@@ -2,6 +2,9 @@
 
 class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 {
+
+	protected $_user = null;
+
 	protected function _initDoctype()
 	{
 		$this->bootstrap('view');
@@ -9,15 +12,61 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		$view->doctype('XHTML1_STRICT');
 	}
 
+	protected function _initAuth()
+	{
+		$auth = Zend_Auth::getInstance();
+		Zend_Registry::set('Zend_Auth', $auth);
+		if($auth->hasIdentity()) {
+			$identity = $auth->getIdentity();
+
+			$user = array(
+                        'id' => $identity->id,
+                        'username' => $identity->username,
+                        'name' => $identity->name,
+                        'email' => $identity->email,
+                        'admin' => $identity->admin,
+                        'permissions' => $identity->permissions,
+                        'clientid' => $identity->clientid
+                        );
+
+			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
+			$authNamespace->user = $user['username'];
+			if(($_SESSION['__ZF']['Zend_Auth']['ENT'] - time()) < 3600) $authNamespace->setExpirationSeconds(3600);
+
+			Zend_Registry::set('User', $user);
+
+            //error_log($identity->clientid);
+		}
+	}
+
+	protected function _initDatabase()
+	{
+		$this->bootstrap('db');
+	}
+
+	protected function _initClient()
+	{
+		$auth = Zend_Auth::getInstance();
+		if($auth->hasIdentity()) {
+			$clientDb = new Application_Model_DbTable_Client();
+			$client = $clientDb->getClient();
+			Zend_Registry::set('Client', $client);
+		}
+	}
+
 	protected function _initLocale()
 	{
 		//Config
-		$this->bootstrap('db');
 		$configDb = new Application_Model_DbTable_Config();
 		$config = $configDb->getConfig();
 
 		//Locale
-		$language = new Zend_Locale($config['language']);
+	    $authNamespace = new Zend_Session_Namespace('Zend_Auth');
+	    if(isset($authNamespace->storage->language) && $authNamespace->storage->language) {
+            $language = new Zend_Locale($authNamespace->storage->language);
+        } else {
+		    $language = new Zend_Locale($config['language']);
+        }
 		Zend_Registry::set('Zend_Locale', $language);
 
 		//Date
@@ -56,7 +105,12 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
 	protected function _initAcl()
 	{
-		$acl = new Zend_Acl();
+		$auth = Zend_Auth::getInstance();
+		if($auth->hasIdentity()) {
+        }
+
+
+		/*$acl = new Zend_Acl();
 
 		// Add groups to the Role registry using Zend_Acl_Role
 		// Guest does not inherit access controls
@@ -79,7 +133,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
 		$acl->allow('editor', null, array('publish', 'archive', 'delete'));
 
-		$acl->allow('administrator');
+		$acl->allow('administrator');*/
 
 		/*echo $acl->isAllowed('guest', null, 'view') ?
 			 "allowed" : "denied";
@@ -116,7 +170,8 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
 	protected function _initPlugins() {
 		$front = Zend_Controller_Front::getInstance();
-		$front->registerPlugin(new Application_Plugin_Auth());
+		$front->registerPlugin(new Application_Plugin_Acl());
+		$front->registerPlugin(new Application_Plugin_Analytics());
 		$front->registerPlugin(new Application_Plugin_Translate());
 	}
 

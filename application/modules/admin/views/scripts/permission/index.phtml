@@ -5,22 +5,19 @@ echo $this->Messages();
 echo $this->AdminMenu();
 ?>
 
-<table id="data">
+<table id="data" class="permissions">
 	<thead>
 		<tr>
 			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="id" width="5%">
+			<th class="id">
 				<?php echo $this->translate('ADMIN_ID'); ?>
 			</th>
-			<th class="name" width="20%">
-				<?php echo $this->translate('ADMIN_USER_NAME'); ?>
+			<?php foreach($this->modules as $module) : ?>
+			<th class="<?php echo $this->escape($module); ?>">
+                <?php echo $this->escape($module); ?>
 			</th>
-			<th class="password" width="20%">
-				<?php echo $this->translate('ADMIN_PASSWORD'); ?>
-			</th>
-			<th class="email" width="20%">
-				<?php echo $this->translate('ADMIN_EMAIL'); ?>
-			</th>
+			<?php endforeach; ?>
+			<th></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -30,20 +27,20 @@ echo $this->AdminMenu();
 				<td class="id">
 					<?php echo $this->escape($permission->id); ?>
 				</td>
-				<td class="username">
-				    <?php echo $this->forms[$permission->id]->add; ?>
-				    <?php echo $this->forms[$permission->id]->edit; ?>
-				    <?php echo $this->forms[$permission->id]->view; ?>
-					<?php /*foreach($permission->contacts as  $contacts) : ?>
-                        <span><?php echo $this->escape($contacts); ?></span>
-					<?php endforeach;*/ ?>
+				<?php foreach($this->modules as $module) : ?>
+				<td class="<?php echo $this->escape($module); ?>">
+                    <input type="hidden" name="module" class="module" value="<?php echo $this->escape($module); ?>">
+					<?php foreach($permission->$module as $controller => $actions) : ?>
+                        <input type="hidden" name="controller" class="controller" value="<?php echo $this->escape($controller); ?>">
+                        <h4><?php echo $this->escape($controller); ?></h4>
+				        <?php echo $this->forms[$permission->id][$module][$controller]->add; ?>
+				        <?php echo $this->forms[$permission->id][$module][$controller]->edit; ?>
+				        <?php echo $this->forms[$permission->id][$module][$controller]->view; ?>
+				        <?php echo $this->forms[$permission->id][$module][$controller]->delete; ?>
+					<?php endforeach; ?>
 				</td>
-				<td class="username">
-					<span data-name="contacts"><?php //echo $this->escape($permission->contacts); ?></span>
-				</td>
-				<td class="username">
-					<span class="editable" data-name="contacts"><?php //echo $this->escape($permission->contacts); ?></span>
-				</td>
+				<?php endforeach; ?>
+				<td></td>
 			</tr>
 		<?php endforeach; ?>
 	</tbody>

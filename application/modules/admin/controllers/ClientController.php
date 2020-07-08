@@ -57,7 +57,14 @@ class Admin_ClientController extends Zend_Controller_Action
 		$clientsDb = new Admin_Model_DbTable_Client();
 		$clients = $clientsDb->getClients();
 
+        $forms = array();
+		foreach($clients as $client) {
+            $forms[$client->id] = new Admin_Form_Client();
+            $forms[$client->id]->activated->setValue($client->activated);
+        }
+
 		$this->view->form = $form;
+		$this->view->forms = $forms;
 		$this->view->clients = $clients;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();

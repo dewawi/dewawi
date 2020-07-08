@@ -59,6 +59,9 @@ class Admin_Form_Client extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
+		$form['activated'] = new Zend_Form_Element_Checkbox('activated');
+		$form['activated']->addFilter('Int')->removeDecorator('Label');
+
 		//$form['language'] = new Zend_Form_Element_Select('language');
 		//$form['language']->setDecorators(array('ViewHelper'))
 		//	->setAttrib('default', '');
