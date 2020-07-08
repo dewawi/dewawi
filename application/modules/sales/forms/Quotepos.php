@@ -54,6 +54,22 @@ class Sales_Form_Quotepos extends Zend_Form
 			->setRequired(true)
 			->addValidator('NotEmpty');
 
+		$form['priceruleamount'] = new Zend_Form_Element_Text('priceruleamount');
+		$form['priceruleamount']->setLabel('POSITIONS_PRICE_RULE_AMOUNT')
+            ->setRequired(true)
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->addValidator('Float')
+			->addValidator('NotEmpty')
+			->setAttrib('class', 'number')
+			->setAttrib('size', '20');
+
+		$form['priceruleapply'] = new Zend_Form_Element_Select('priceruleapply');
+		$form['priceruleapply']->setLabel('POSITIONS_PRICE_RULE_APPLY')
+			->addMultiOption(0, 'POSITIONS_NONE')
+			->setRequired(true)
+			->addValidator('NotEmpty');
+
 		$form['quantity'] = new Zend_Form_Element_Text('quantity');
 		$form['quantity']->setLabel('POSITIONS_QUANTITY')
 			->setRequired(true)

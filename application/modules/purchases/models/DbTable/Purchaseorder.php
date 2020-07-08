@@ -49,23 +49,28 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 
 	public function addPurchaseorder($data)
 	{
+		$data['created'] = $this->_date;
+		$data['createdby'] = $this->_user['id'];
+		$data['clientid'] = $this->_user['clientid'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
 	public function updatePurchaseorder($id, $data)
 	{
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '.(int)$id);
 	}
 
-	public function updateTotal($id, $subtotal, $taxes, $total, $modified, $modifiedby)
+	public function updateTotal($id, $subtotal, $taxes, $total)
 	{
 		$data = array(
 			'subtotal' => $subtotal,
 			'taxes' => $taxes,
-			'total' => $total
-			//'modified' => $modified,
-			//'modifiedby' => $modifiedby
+			'total' => $total,
+			'modified' => $this->_date,
+			'modifiedby' => $this->_user['id']
 		);
 		$this->update($data, 'id = '. (int)$id);
 	}
@@ -81,21 +86,21 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function setState($id, $state, $modified, $modifiedby)
+	public function setState($id, $state)
 	{
 		$data = array(
 			'state' => $state,
-			'modified' => $modified,
-			'modifiedby' => $modifiedby
+			'modified' => $this->_date,
+			'modifiedby' => $this->_user['id']
 		);
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function lock($id, $locked, $lockedtime)
+	public function lock($id)
 	{
 		$data = array(
-			'locked' => $locked,
-			'lockedtime' => $lockedtime
+			'locked' => $this->_user['id'],
+			'lockedtime' => $this->_date
 		);
 		$this->update($data, 'id = '. (int)$id);
 	}

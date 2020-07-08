@@ -102,9 +102,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$data = array();
 		$data['contactid'] = $contactid;
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_user['clientid'];
 
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$id = $quoterequestDb->addQuoterequest($data);
@@ -121,9 +118,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequest = $quoterequestDb->getQuoterequest($id);
 
-        //Check if the directory is writable
-		$dirwritable = $this->_helper->Directory->isWritable($quoterequest['contactid'], 'quoterequest', $this->_flashMessenger);
-
 		if($quoterequest['quoterequestid']) {
 			$this->_helper->redirector->gotoSimple('view', 'quoterequest', null, array('id' => $id));
 		} elseif($this->isLocked($quoterequest['locked'], $quoterequest['lockedtime'])) {
@@ -137,7 +131,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$quoterequestDb->lock($id, $this->_user['id'], $this->_date);
+			$quoterequestDb->lock($id);
 
 			$form = new Purchases_Form_Quoterequest();
 			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
@@ -147,17 +141,20 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 				$contactDb = new Contacts_Model_DbTable_Contact();
 				$contact = $contactDb->getContactWithID($quoterequest['contactid']);
 
+                //Check if the directory is writable
+		        $dirwritable = $this->_helper->Directory->isWritable($contact['id'], 'quoterequest', $this->_flashMessenger);
+
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($quoterequest['contactid']);
+				$contact['phone'] = $phoneDb->getPhone($contact['id']);
 
 				//Email
 				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmail($quoterequest['contactid']);
+				$contact['email'] = $emailDb->getEmail($contact['id']);
 
 				//Internet
 				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($quoterequest['contactid']);
+				$contact['internet'] = $internetDb->getInternet($contact['id']);
 
 				$this->view->contact = $contact;
 			}
@@ -169,8 +166,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
                 if(($element == 'textblockheader' || $element == 'textblockfooter')) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 				    $textblockDb = new Purchases_Model_DbTable_Textblock();
                     if(strpos($element, 'header') !== false) {
 					    $data['text'] = $data['textblockheader'];
@@ -183,8 +178,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
                     }
 				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
@@ -309,12 +302,9 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$data['title'] = $data['title'].' 2';
 		$data['quoterequestdate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		echo $quoterequestid = $quoterequest->addQuoterequest($data);
@@ -324,8 +314,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['quoterequestid'] = $quoterequestid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id']);
@@ -344,11 +332,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate']);
 		$data['salesorderdate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
@@ -359,8 +344,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['salesorderid'] = $salesorderid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['quoterequestid']);
@@ -380,11 +363,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate']);
 		$data['invoicedate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
@@ -395,8 +375,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['invoiceid'] = $invoiceid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['quoterequestid']);
@@ -433,11 +411,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
@@ -448,8 +423,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['purchaseorderid'] = $purchaseorderid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['quoterequestid']);
@@ -479,6 +452,9 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequest = $quoterequestDb->getQuoterequest($id);
 
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID($quoterequest['contactid']);
+
 		//Set language
 		if($quoterequest['language']) {
 			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quoterequest['language']);
@@ -490,9 +466,20 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
+                $price = $position->price;
+                if($position->priceruleamount && $position->priceruleapply) {
+                    if($position->priceruleapply == 'bypercent')
+				        $price = $price*(100-$position->priceruleamount)/100;
+                    elseif($position->priceruleapply == 'byfixed')
+				        $price = ($price-$position->priceruleamount);
+                    elseif($position->priceruleapply == 'topercent')
+				        $price = $price*(100+$position->priceruleamount)/100;
+                    elseif($position->priceruleapply == 'tofixed')
+				        $price = ($price+$position->priceruleamount);
+                }
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $this->_currency->toCurrency($position->price*$position->quantity);
-				$position->price = $this->_currency->toCurrency($position->price);
+				$position->total = $this->_currency->toCurrency($price*$position->quantity);
+				$position->price = $this->_currency->toCurrency($price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
@@ -511,6 +498,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$footers = $footerDb->getFooters($templateid);
 
 		$this->view->quoterequest = $quoterequest;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->footers = $footers;
 	}
@@ -525,6 +513,9 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequest = $quoterequestDb->getQuoterequest($id);
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID($quoterequest['contactid']);
 
 		if($quoterequest['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
@@ -567,6 +558,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$footers = $footerDb->getFooters($quoterequest['templateid']);
 
 		$this->view->quoterequest = $quoterequest;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->footers = $footers;
 	}
@@ -581,6 +573,9 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequest = $quoterequestDb->getQuoterequest($id);
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID($quoterequest['contactid']);
 
 		if($quoterequest['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
@@ -614,6 +609,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$footers = $footerDb->getFooters($quoterequest['templateid']);
 
 		$this->view->quoterequest = $quoterequest;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->footers = $footers;
 	}
@@ -626,7 +622,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 			$quoterequest = new Purchases_Model_DbTable_Quoterequest();
-			$quoterequest->setState($id, 106, $this->_date, $this->_user['id']);
+			$quoterequest->setState($id, 106);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
 	}
@@ -664,7 +660,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$user = $userDb->getUser($quoterequest['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$quoterequestDb->lock($id, $this->_user['id'], $this->_date);
+			$quoterequestDb->lock($id);
 		}
 	}
 
@@ -685,7 +681,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
-		$quoterequestDb->lock($id, $this->_user['id'], $this->_date);
+		$quoterequestDb->lock($id);
 	}
 
 	public function validateAction()

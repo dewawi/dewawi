@@ -27,7 +27,25 @@ class Sales_Model_Get
 			$query .= ' AND q.deleted = 0';
         }
 
-		if($params['catid']) {
+		$quotes = $quotesDb->fetchAll(
+			$quotesDb->select()
+				->setIntegrityCheck(false)
+				->from(array($schema => 'quote'))
+				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->group($schema.'.id')
+				->where($query ? $query : 1)
+				->order($params['order'].' '.$params['sort'])
+				->limit($params['limit'])
+		);
+		if(!count($quotes) && $params['keyword']) {
+			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
+		    if($query) {
+			    $query .= ' AND q.clientid = '.$clientid;
+			    $query .= ' AND q.deleted = 0';
+		    } else {
+			    $query = 'q.clientid = '.$clientid;
+			    $query .= ' AND q.deleted = 0';
+            }
 			$quotes = $quotesDb->fetchAll(
 				$quotesDb->select()
 					->setIntegrityCheck(false)
@@ -38,46 +56,9 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-			if(!count($quotes) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$quotes = $quotesDb->fetchAll(
-					$quotesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'quote'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$quotes = $quotesDb->fetchAll(
-				$quotesDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'quote'))
-					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($quotes) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$quotes = $quotesDb->fetchAll(
-					$quotesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'quote'))
-					    ->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
+		    if(!count($quotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
+        //error_log($query);
 
 		$quotes->subtotal = 0;
 		$quotes->total = 0;
@@ -119,7 +100,18 @@ class Sales_Model_Get
 			$query .= ' AND i.deleted = 0';
         }
 
-		if($params['catid']) {
+		$invoices = $invoicesDb->fetchAll(
+			$invoicesDb->select()
+				->setIntegrityCheck(false)
+				->from(array($schema => 'invoice'))
+				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->group($schema.'.id')
+				->where($query ? $query : 1)
+				->order($params['order'].' '.$params['sort'])
+				->limit($params['limit'])
+		);
+		if(!count($invoices) && $params['keyword']) {
+			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 			$invoices = $invoicesDb->fetchAll(
 				$invoicesDb->select()
 					->setIntegrityCheck(false)
@@ -130,45 +122,7 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-			if(!count($invoices) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$invoices = $invoicesDb->fetchAll(
-					$invoicesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'invoice'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$invoices = $invoicesDb->fetchAll(
-				$invoicesDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'invoice'))
-				    ->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($invoices) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$invoices = $invoicesDb->fetchAll(
-					$invoicesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'invoice'))
-					    ->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
+		    if(!count($invoices)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
 
 		$invoices->subtotal = 0;
@@ -211,7 +165,18 @@ class Sales_Model_Get
 			$query .= ' AND s.deleted = 0';
         }
 
-		if($params['catid']) {
+		$salesorders = $salesordersDb->fetchAll(
+			$salesordersDb->select()
+				->setIntegrityCheck(false)
+				->from(array($schema => 'salesorder'))
+				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->group($schema.'.id')
+				->where($query ? $query : 1)
+				->order($params['order'].' '.$params['sort'])
+				->limit($params['limit'])
+		);
+		if(!count($salesorders) && $params['keyword']) {
+			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 			$salesorders = $salesordersDb->fetchAll(
 				$salesordersDb->select()
 					->setIntegrityCheck(false)
@@ -222,45 +187,7 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-			if(!count($salesorders) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$salesorders = $salesordersDb->fetchAll(
-					$salesordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'salesorder'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$salesorders = $salesordersDb->fetchAll(
-				$salesordersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'salesorder'))
-				    ->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($salesorders) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$salesorders = $salesordersDb->fetchAll(
-					$salesordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'salesorder'))
-					    ->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
+		    if(!count($salesorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
 
 		$salesorders->subtotal = 0;
@@ -303,7 +230,18 @@ class Sales_Model_Get
 			$query .= ' AND d.deleted = 0';
         }
 
-		if($params['catid']) {
+		$deliveryorders = $deliveryordersDb->fetchAll(
+			$deliveryordersDb->select()
+				->setIntegrityCheck(false)
+				->from(array($schema => 'deliveryorder'))
+				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->group($schema.'.id')
+				->where($query ? $query : 1)
+				->order($params['order'].' '.$params['sort'])
+				->limit($params['limit'])
+		);
+		if(!count($deliveryorders) && $params['keyword']) {
+			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 			$deliveryorders = $deliveryordersDb->fetchAll(
 				$deliveryordersDb->select()
 					->setIntegrityCheck(false)
@@ -314,45 +252,7 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-			if(!count($deliveryorders) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$deliveryorders = $deliveryordersDb->fetchAll(
-					$deliveryordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'deliveryorder'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$deliveryorders = $deliveryordersDb->fetchAll(
-				$deliveryordersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'deliveryorder'))
-					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($deliveryorders) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$deliveryorders = $deliveryordersDb->fetchAll(
-					$deliveryordersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'deliveryorder'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
+		    if(!count($deliveryorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
 
 		$deliveryorders->subtotal = 0;
@@ -395,7 +295,18 @@ class Sales_Model_Get
 			$query .= ' AND cr.deleted = 0';
         }
 
-		if($params['catid']) {
+		$creditnotes = $creditnotesDb->fetchAll(
+			$creditnotesDb->select()
+				->setIntegrityCheck(false)
+				->from(array($schema => 'creditnote'))
+				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->group($schema.'.id')
+				->where($query ? $query : 1)
+				->order($params['order'].' '.$params['sort'])
+				->limit($params['limit'])
+		);
+		if(!count($creditnotes) && $params['keyword']) {
+			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 			$creditnotes = $creditnotesDb->fetchAll(
 				$creditnotesDb->select()
 					->setIntegrityCheck(false)
@@ -406,45 +317,7 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-			if(!count($creditnotes) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$creditnotes = $creditnotesDb->fetchAll(
-					$creditnotesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'creditnote'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$creditnotes = $creditnotesDb->fetchAll(
-				$creditnotesDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'creditnote'))
-				    ->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($creditnotes) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$creditnotes = $creditnotesDb->fetchAll(
-					$creditnotesDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'creditnote'))
-					    ->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
+		    if(!count($creditnotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
 
 		$creditnotes->subtotal = 0;
@@ -487,7 +360,18 @@ class Sales_Model_Get
 			$query .= ' AND cr.deleted = 0';
         }
 
-		if($params['catid']) {
+		$reminders = $remindersDb->fetchAll(
+			$remindersDb->select()
+				->setIntegrityCheck(false)
+				->from(array($schema => 'reminder'))
+				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->group($schema.'.id')
+				->where($query ? $query : 1)
+				->order($params['order'].' '.$params['sort'])
+				->limit($params['limit'])
+		);
+		if(!count($reminders) && $params['keyword']) {
+			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
 			$reminders = $remindersDb->fetchAll(
 				$remindersDb->select()
 					->setIntegrityCheck(false)
@@ -498,45 +382,7 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-			if(!count($reminders) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$reminders = $remindersDb->fetchAll(
-					$remindersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'reminder'))
-						->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$reminders = $remindersDb->fetchAll(
-				$remindersDb->select()
-					->setIntegrityCheck(false)
-					->from(array($schema => 'reminder'))
-				    ->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($reminders) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-				$reminders = $remindersDb->fetchAll(
-					$remindersDb->select()
-						->setIntegrityCheck(false)
-						->from(array($schema => 'reminder'))
-					    ->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
+		    if(!count($reminders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
 
 		$reminders->subtotal = 0;

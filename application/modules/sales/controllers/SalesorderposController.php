@@ -53,6 +53,10 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 		$uomDb = new Application_Model_DbTable_Uom();
 		$uoms = $uomDb->getUoms();
 
+		//Get price rule apply
+		$priceruleapplyDb = new Application_Model_DbTable_Priceruleapply();
+		$priceruleapply = $priceruleapplyDb->getPriceruleapply();
+
 		//Get tax rates
 		$taxrateDb = new Application_Model_DbTable_Taxrate();
 		$taxrates = $taxrateDb->getTaxrates();
@@ -69,7 +73,7 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 		    foreach($positions as $position) {
                 if(!isset($taxes[$position->taxrate]) && array_search($position->taxrate, $taxrates)) {
                     $taxes[$position->taxrate] = array();
-                    $taxes[$position->taxrate]['value'] = $position->taxrate;
+                    $taxes[$position->taxrate]['value'] = 0;
                     $taxes[$position->taxrate]['title'] = Zend_Locale_Format::toNumber($position->taxrate,array('precision' => 1,'locale' => $locale)).' %';
                 }
             }
@@ -78,13 +82,30 @@ class Sales_SalesorderposController extends Zend_Controller_Action
             if(!$salesorder['taxfree'] && array_search($position->taxrate, $taxrates))
                 $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
 
-			$position->total =  $this->_currency->toCurrency($position->price*$position->quantity);
+            $price = $position->price;
+            if($position->priceruleamount && $position->priceruleapply) {
+                if($position->priceruleapply == 'bypercent')
+			        $price = $price*(100-$position->priceruleamount)/100;
+                elseif($position->priceruleapply == 'byfixed')
+			        $price = ($price-$position->priceruleamount);
+                elseif($position->priceruleapply == 'topercent')
+			        $price = $price*(100+$position->priceruleamount)/100;
+                elseif($position->priceruleapply == 'tofixed')
+			        $price = ($price+$position->priceruleamount);
+            }
+			$position->total =  $this->_currency->toCurrency($price*$position->quantity);
 			$position->price =  $this->_currency->toCurrency($position->price);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
+			$position->priceruleamount =  $this->_currency->toCurrency($position->priceruleamount);
 
 			$form = new Sales_Form_Salesorderpos();
 			$forms[$position->id] = $form->populate($position->toArray());
 			$forms[$position->id]->uom->addMultiOptions($uoms);
+            if($position->uom) {
+                $uom = array_search($position->uom, $uoms);
+                if($uom) $forms[$position->id]->uom->setValue($uom);
+            }
+			$forms[$position->id]->priceruleapply->addMultiOptions($priceruleapply);
 			$forms[$position->id]->ordering->addMultiOptions($orderings);
 			$forms[$position->id]->taxrate->setValue(array_search($position->taxrate, $taxrates));
 		    foreach($taxrates as $id => $value)
@@ -138,7 +159,7 @@ class Sales_SalesorderposController extends Zend_Controller_Action
                 }
 				$data['quantity'] = 1;
 				$data['total'] = $data['price']*$data['quantity'];
-                if($item['taxid']) {
+                if($item['uomid']) {
 		            $uomDb = new Application_Model_DbTable_Uom();
 				    $uom = $uomDb->getUom($item['uomid']);
 				    $data['uom'] = $uom['title'];
@@ -220,13 +241,15 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 			if(isset($form->$element) && $form->isValidPartial($data)) {
 				if(($element == 'taxrate') && ($data[$element] != 0))
 					$data['taxrate'] = $taxrates[$data['taxrate']];
-				if(($element == 'price') || ($element == 'quantity'))
+				if(($element == 'price') || ($element == 'quantity') || ($element == 'priceruleamount'))
 					$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
+				if(($element == 'uom') && ($data[$element] != 0))
+					$data['uom'] = $uoms[$data[$element]];
 
 				$position = new Sales_Model_DbTable_Salesorderpos();
 				$position->updatePosition($id, $data);
 
-				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate')) {
+				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleapply')) {
 					$calculations = $this->_helper->Calculate($salesorderid, $this->_currency, $this->_date, $this->_user['id']);
 			        echo Zend_Json::encode($calculations['locale']);
                 }

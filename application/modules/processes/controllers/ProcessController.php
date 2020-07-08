@@ -119,9 +119,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 		$data = array();
 		$data['customerid'] = $customerid;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_user['clientid'];
+		$data['state'] = 100;
 
 		$processDb = new Processes_Model_DbTable_Process();
 		$id = $processDb->addProcess($data);
@@ -151,7 +149,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$processDb->lock($id, $this->_user['id'], $this->_date);
+			$processDb->lock($id);
 
 			$form = new Processes_Form_Process();
 			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
@@ -163,15 +161,15 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($process['customerid']);
+				$contact['phone'] = $phoneDb->getPhone($contact['id']);
 
 				//Email
 				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmail($process['customerid']);
+				$contact['email'] = $emailDb->getEmail($contact['id']);
 
 				//Internet
 				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($process['customerid']);
+				$contact['internet'] = $internetDb->getInternet($contact['id']);
 
 				$this->view->contact = $contact;
 			}
@@ -184,8 +182,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
@@ -416,8 +412,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
 		$data['contactperson'] = $this->_user['name'];
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
@@ -431,8 +425,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 			$positionData = $position->toArray();
 			unset($positionData['id']);
 			$positionData['processid'] = $newID;
-			$positionData['created'] = $this->_date;
-			$positionData['createdby'] = $this->_user['id'];
 			$positionData['modified'] = '0000-00-00';
 			$positionData['modifiedby'] = 0;
 			$positionsDb->addPosition($positionData);
@@ -449,7 +441,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 			$process = new Processes_Model_DbTable_Process();
-			$process->setState($id, 7, $this->_date, $this->_user['id']);
+			$process->setState($id, 7);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
 	}
@@ -487,7 +479,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 			$user = $userDb->getUser($process['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$processDb->lock($id, $this->_user['id'], $this->_date);
+			$processDb->lock($id);
 		}
 	}
 
@@ -508,7 +500,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$processDb = new Processes_Model_DbTable_Process();
-		$processDb->lock($id, $this->_user['id'], $this->_date);
+		$processDb->lock($id);
 	}
 
 	public function validateAction()

@@ -102,9 +102,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$data = array();
 		$data['contactid'] = $contactid;
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_user['clientid'];
 
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$id = $invoiceDb->addInvoice($data);
@@ -121,9 +118,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$invoice = $invoiceDb->getInvoice($id);
 
-        //Check if the directory is writable
-		$dirwritable = $this->_helper->Directory->isWritable($invoice['contactid'], 'invoice', $this->_flashMessenger);
-
 		if($invoice['invoiceid']) {
 			$this->_helper->redirector->gotoSimple('view', 'invoice', null, array('id' => $id));
 		} elseif($this->isLocked($invoice['locked'], $invoice['lockedtime'])) {
@@ -137,7 +131,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$invoiceDb->lock($id, $this->_user['id'], $this->_date);
+			$invoiceDb->lock($id);
 
 			$form = new Sales_Form_Invoice();
 			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
@@ -147,17 +141,20 @@ class Sales_InvoiceController extends Zend_Controller_Action
 				$contactDb = new Contacts_Model_DbTable_Contact();
 				$contact = $contactDb->getContactWithID($invoice['contactid']);
 
+                //Check if the directory is writable
+		        $dirwritable = $this->_helper->Directory->isWritable($contact['id'], 'invoice', $this->_flashMessenger);
+
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($invoice['contactid']);
+				$contact['phone'] = $phoneDb->getPhone($contact['id']);
 
 				//Email
 				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmail($invoice['contactid']);
+				$contact['email'] = $emailDb->getEmail($contact['id']);
 
 				//Internet
 				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($invoice['contactid']);
+				$contact['internet'] = $internetDb->getInternet($contact['id']);
 
 				$this->view->contact = $contact;
 			}
@@ -169,8 +166,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
                 if(($element == 'textblockheader' || $element == 'textblockfooter')) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 				    $textblockDb = new Sales_Model_DbTable_Textblock();
                     if(strpos($element, 'header') !== false) {
 					    $data['text'] = $data['textblockheader'];
@@ -183,8 +178,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
                     }
 				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
@@ -309,12 +302,9 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$data['title'] = $data['title'].' 2';
 		$data['invoicedate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$invoice = new Sales_Model_DbTable_Invoice();
 		echo $invoiceid = $invoice->addInvoice($data);
@@ -324,8 +314,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['invoiceid'] = $invoiceid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id']);
@@ -344,11 +332,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
 		$data['quotedate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$quote = new Sales_Model_DbTable_Quote();
 		$quoteid = $quote->addQuote($data);
@@ -359,8 +344,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['quoteid'] = $quoteid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['invoiceid']);
@@ -380,11 +363,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
 		$data['salesorderdate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
@@ -395,8 +375,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['salesorderid'] = $salesorderid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['invoiceid']);
@@ -412,6 +390,13 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$id = $this->_getParam('id', 0);
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
+
+        if($data['invoiceid'] && $data['invoicedate']) {
+		    $invoicedate = date("d.m.Y", strtotime($data['invoicedate']));
+            $header = $this->view->translate('DOCUMENTS_INVOICE_ID_%s_FROM_%s');
+            $header = '<p>'.sprintf($header, $data['invoiceid'], $invoicedate).'</p>';
+            $data['header'] = $header.$data['header'];
+        }
 
 		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
 		$data['deliveryorderdate'] = '0000-00-00';
@@ -433,11 +418,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$deliveryorder = new Sales_Model_DbTable_Deliveryorder();
 		$deliveryorderid = $deliveryorder->addDeliveryorder($data);
@@ -448,8 +430,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['deliveryorderid'] = $deliveryorderid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['invoiceid']);
@@ -469,11 +449,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
 		$data['creditnotedate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$creditnote = new Sales_Model_DbTable_Creditnote();
 		$creditnoteid = $creditnote->addCreditnote($data);
@@ -484,8 +461,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['creditnoteid'] = $creditnoteid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['invoiceid']);
@@ -522,11 +497,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequestid = $quoterequest->addQuoterequest($data);
@@ -537,8 +509,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['quoterequestid'] = $quoterequestid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['invoiceid']);
@@ -580,11 +550,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
@@ -595,8 +562,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['purchaseorderid'] = $purchaseorderid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['invoiceid']);
@@ -633,11 +598,9 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
-		$data["created"] = $this->_date;
-		$data["createdby"] = $this->_user['id'];
-		$data["modified"] = "0000-00-00";
-		$data["modifiedby"] = 0;
-		unset($data["id"]);
+		$data['modified'] = '0000-00-00';
+		$data['modifiedby'] = 0;
+		unset($data['id']);
 
 		$process = new Processes_Model_DbTable_Process();
 		$processID = $process->addProcess($data);
@@ -656,8 +619,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$positionData['taxrate'] = $position->taxrate;
 			$positionData['deliverystatus'] = 'deliveryIsWaiting';
 			$positionData['supplierorderstatus'] = 'supplierNotOrdered';
-			$positionData["created"] = $this->_date;
-			$positionData["createdby"] = $this->_user['id'];
 			$positionData["modified"] = "0000-00-00";
 			$positionData["modifiedby"] = 0;
 			unset($positionData['id']);
@@ -687,6 +648,9 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$invoice = $invoiceDb->getInvoice($id);
 
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID($invoice['contactid']);
+
 		//Set language
 		if($invoice['language']) {
 			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$invoice['language']);
@@ -698,9 +662,20 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
+                $price = $position->price;
+                if($position->priceruleamount && $position->priceruleapply) {
+                    if($position->priceruleapply == 'bypercent')
+				        $price = $price*(100-$position->priceruleamount)/100;
+                    elseif($position->priceruleapply == 'byfixed')
+				        $price = ($price-$position->priceruleamount);
+                    elseif($position->priceruleapply == 'topercent')
+				        $price = $price*(100+$position->priceruleamount)/100;
+                    elseif($position->priceruleapply == 'tofixed')
+				        $price = ($price+$position->priceruleamount);
+                }
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $this->_currency->toCurrency($position->price*$position->quantity);
-				$position->price = $this->_currency->toCurrency($position->price);
+				$position->total = $this->_currency->toCurrency($price*$position->quantity);
+				$position->price = $this->_currency->toCurrency($price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
@@ -719,6 +694,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$footers = $footerDb->getFooters($templateid);
 
 		$this->view->invoice = $invoice;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->footers = $footers;
 	}
@@ -733,6 +709,9 @@ class Sales_InvoiceController extends Zend_Controller_Action
 
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$invoice = $invoiceDb->getInvoice($id);
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID($invoice['contactid']);
 
 		if($invoice['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
@@ -816,6 +795,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$footers = $footerDb->getFooters($invoice['templateid']);
 
 		$this->view->invoice = $invoice;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->footers = $footers;
 	}
@@ -830,6 +810,9 @@ class Sales_InvoiceController extends Zend_Controller_Action
 
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$invoice = $invoiceDb->getInvoice($id);
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID($invoice['contactid']);
 
 		if($invoice['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
@@ -870,6 +853,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$footers = $footerDb->getFooters($invoice['templateid']);
 
 		$this->view->invoice = $invoice;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->footers = $footers;
 	}
@@ -1015,7 +999,7 @@ print_r($_FILES);*/
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 			$invoice = new Sales_Model_DbTable_Invoice();
-			$invoice->setState($id, 106, $this->_date, $this->_user['id']);
+			$invoice->setState($id, 106);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
 	}
@@ -1053,7 +1037,7 @@ print_r($_FILES);*/
 			$user = $userDb->getUser($invoice['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$invoiceDb->lock($id, $this->_user['id'], $this->_date);
+			$invoiceDb->lock($id);
 		}
 	}
 
@@ -1074,7 +1058,7 @@ print_r($_FILES);*/
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$invoiceDb->lock($id, $this->_user['id'], $this->_date);
+		$invoiceDb->lock($id);
 	}
 
 	public function validateAction()

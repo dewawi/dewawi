@@ -102,9 +102,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$data = array();
 		$data['contactid'] = $contactid;
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_user['clientid'];
 
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$id = $creditnoteDb->addCreditnote($data);
@@ -121,9 +118,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$creditnote = $creditnoteDb->getCreditnote($id);
 
-        //Check if the directory is writable
-		$dirwritable = $this->_helper->Directory->isWritable($creditnote['contactid'], 'creditnote', $this->_flashMessenger);
-
 		if($creditnote['creditnoteid']) {
 			$this->_helper->redirector->gotoSimple('view', 'creditnote', null, array('id' => $id));
 		} elseif($this->isLocked($creditnote['locked'], $creditnote['lockedtime'])) {
@@ -137,7 +131,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$creditnoteDb->lock($id, $this->_user['id'], $this->_date);
+			$creditnoteDb->lock($id);
 
 			$form = new Sales_Form_Creditnote();
 			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
@@ -147,17 +141,20 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 				$contactDb = new Contacts_Model_DbTable_Contact();
 				$contact = $contactDb->getContactWithID($creditnote['contactid']);
 
+                //Check if the directory is writable
+		        $dirwritable = $this->_helper->Directory->isWritable($contact['id'], 'creditnote', $this->_flashMessenger);
+
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($creditnote['contactid']);
+				$contact['phone'] = $phoneDb->getPhone($contact['id']);
 
 				//Email
 				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmail($creditnote['contactid']);
+				$contact['email'] = $emailDb->getEmail($contact['id']);
 
 				//Internet
 				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($creditnote['contactid']);
+				$contact['internet'] = $internetDb->getInternet($contact['id']);
 
 				$this->view->contact = $contact;
 			}
@@ -169,8 +166,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
                 if(($element == 'textblockheader' || $element == 'textblockfooter')) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 				    $textblockDb = new Sales_Model_DbTable_Textblock();
                     if(strpos($element, 'header') !== false) {
 					    $data['text'] = $data['textblockheader'];
@@ -183,8 +178,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
                     }
 				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
@@ -309,8 +302,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$data['title'] = $data['title'].' 2';
 		$data['creditnotedate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
@@ -325,7 +316,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$dataPosition = $position->toArray();
 			$dataPosition['creditnoteid'] = $creditnoteid;
 			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id']);
@@ -344,11 +334,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		unset($data['id'], $data['creditnoteid'], $data['creditnotedate']);
 		$data['salesorderdate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
@@ -359,8 +346,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['salesorderid'] = $salesorderid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['creditnoteid']);
@@ -380,11 +365,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		unset($data['id'], $data['creditnoteid'], $data['creditnotedate']);
 		$data['invoicedate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
@@ -395,8 +377,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['invoiceid'] = $invoiceid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['creditnoteid']);
@@ -433,11 +413,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequestid = $quoterequest->addQuoterequest($data);
@@ -448,8 +425,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['quoterequestid'] = $quoterequestid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['creditnoteid']);
@@ -490,11 +465,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
@@ -505,8 +477,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['purchaseorderid'] = $purchaseorderid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['createdby'] = $this->_user['id'];
 			$dataPosition['modified'] = '0000-00-00';
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['creditnoteid']);
@@ -540,6 +510,9 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$creditnote = $creditnoteDb->getCreditnote($id);
 
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID($creditnote['contactid']);
+
 		//Set language
 		if($creditnote['language']) {
 			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$creditnote['language']);
@@ -551,9 +524,20 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
+                $price = $position->price;
+                if($position->priceruleamount && $position->priceruleapply) {
+                    if($position->priceruleapply == 'bypercent')
+				        $price = $price*(100-$position->priceruleamount)/100;
+                    elseif($position->priceruleapply == 'byfixed')
+				        $price = ($price-$position->priceruleamount);
+                    elseif($position->priceruleapply == 'topercent')
+				        $price = $price*(100+$position->priceruleamount)/100;
+                    elseif($position->priceruleapply == 'tofixed')
+				        $price = ($price+$position->priceruleamount);
+                }
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $this->_currency->toCurrency($position->price*$position->quantity);
-				$position->price = $this->_currency->toCurrency($position->price);
+				$position->total = $this->_currency->toCurrency($price*$position->quantity);
+				$position->price = $this->_currency->toCurrency($price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
@@ -572,6 +556,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$footers = $footerDb->getFooters($templateid);
 
 		$this->view->creditnote = $creditnote;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->footers = $footers;
 	}
@@ -586,6 +571,9 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$creditnote = $creditnoteDb->getCreditnote($id);
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID($creditnote['contactid']);
 
 		if($creditnote['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
@@ -669,6 +657,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$footers = $footerDb->getFooters($creditnote['templateid']);
 
 		$this->view->creditnote = $creditnote;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->footers = $footers;
 	}
@@ -683,6 +672,9 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$creditnote = $creditnoteDb->getCreditnote($id);
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID($creditnote['contactid']);
 
 		if($creditnote['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
@@ -723,6 +715,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$footers = $footerDb->getFooters($creditnote['templateid']);
 
 		$this->view->creditnote = $creditnote;
+		$this->view->contact = $contact;
 		$this->view->positions = $positions;
 		$this->view->footers = $footers;
 	}
@@ -735,7 +728,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 			$creditnote = new Sales_Model_DbTable_Creditnote();
-			$creditnote->setState($id, 106, $this->_date, $this->_user['id']);
+			$creditnote->setState($id, 106);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
 	}
@@ -773,7 +766,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$user = $userDb->getUser($creditnote['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$creditnoteDb->lock($id, $this->_user['id'], $this->_date);
+			$creditnoteDb->lock($id);
 		}
 	}
 
@@ -794,7 +787,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
-		$creditnoteDb->lock($id, $this->_user['id'], $this->_date);
+		$creditnoteDb->lock($id);
 	}
 
 	public function validateAction()

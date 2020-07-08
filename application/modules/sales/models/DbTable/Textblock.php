@@ -33,9 +33,12 @@ class Sales_Model_DbTable_Textblock extends Zend_Db_Table_Abstract
 
 	public function updateTextblock($data, $controller, $section)
 	{
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$where = array();
-        $where[] = "controller = '".$controller."'";
-        $where[] = "section = '".$section."'";
+		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
+		$where[] = $this->getAdapter()->quoteInto('section = ?', $section);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
 		$this->update($data, $where);
 	}
 }

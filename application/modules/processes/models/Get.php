@@ -28,70 +28,36 @@ class Processes_Model_Get
 			$query .= ' AND p.deleted = 0';
         }
 
-		if($params['catid']) {
+		$processes = $processesDb->fetchAll(
+			$processesDb->select()
+				->setIntegrityCheck(false)
+				->from(array('p' => 'process'))
+				->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->group($schema.'.id')
+				->where($query ? $query : 1)
+				->order($params['order'].' '.$params['sort'])
+				->limit($params['limit'])
+		);
+		if(!count($processes) && $params['keyword']) {
+			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
+	        if($query) {
+		        $query .= ' AND p.clientid = '.$clientid;
+		        $query .= ' AND p.deleted = 0';
+	        } else {
+		        $query = 'p.clientid = '.$clientid;
+		        $query .= ' AND p.deleted = 0';
+            }
 			$processes = $processesDb->fetchAll(
 				$processesDb->select()
 					->setIntegrityCheck(false)
 					->from(array('p' => 'process'))
-					->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
+				    ->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-			if(!count($processes) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		        if($query) {
-			        $query .= ' AND p.clientid = '.$clientid;
-			        $query .= ' AND p.deleted = 0';
-		        } else {
-			        $query = 'p.clientid = '.$clientid;
-			        $query .= ' AND p.deleted = 0';
-                }
-				$processes = $processesDb->fetchAll(
-					$processesDb->select()
-						->setIntegrityCheck(false)
-						->from(array('p' => 'process'))
-					    ->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
-		} else {
-			$processes = $processesDb->fetchAll(
-				$processesDb->select()
-					->setIntegrityCheck(false)
-					->from(array('p' => 'process'))
-					->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
-					->group($schema.'.id')
-					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
-					->limit($params['limit'])
-			);
-			if(!count($processes) && $params['keyword']) {
-				$flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
-				$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		        if($query) {
-			        $query .= ' AND p.clientid = '.$clientid;
-			        $query .= ' AND p.deleted = 0';
-		        } else {
-			        $query = 'p.clientid = '.$clientid;
-			        $query .= ' AND p.deleted = 0';
-                }
-				$processes = $processesDb->fetchAll(
-					$processesDb->select()
-						->setIntegrityCheck(false)
-						->from(array('p' => 'process'))
-					    ->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
-						->group($schema.'.id')
-						->where($query ? $query : 1)
-						->order($params['order'].' '.$params['sort'])
-						->limit($params['limit'])
-				);
-			}
+		    if(!count($processes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
 
 		$processes->subtotal = 0;

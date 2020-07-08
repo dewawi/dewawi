@@ -53,6 +53,10 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$uomDb = new Application_Model_DbTable_Uom();
 		$uoms = $uomDb->getUoms();
 
+		//Get price rule apply
+		$priceruleapplyDb = new Application_Model_DbTable_Priceruleapply();
+		$priceruleapply = $priceruleapplyDb->getPriceruleapply();
+
 		//Get shipping methods
 		$shippingmethodDb = new Application_Model_DbTable_Shippingmethod();
 		$shippingmethods = $shippingmethodDb->getShippingmethods();
@@ -66,6 +70,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$position->price =  $this->_currency->toCurrency($position->price);
 			$position->supplierinvoicetotal =  $this->_currency->toCurrency($position->supplierinvoicetotal);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
+			$position->priceruleamount =  $this->_currency->toCurrency($position->priceruleamount);
 
             //Convert dates to the display format
             $deliverydate = new Zend_Date($position->deliverydate);
@@ -87,6 +92,11 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$form = new Processes_Form_Processpos();
 			$forms[$position->id] = $form->populate($position->toArray());
 			$forms[$position->id]->uom->addMultiOptions($uoms);
+            if($position->uom) {
+                $uom = array_search($position->uom, $uoms);
+                if($uom) $forms[$position->id]->uom->setValue($uom);
+            }
+			$forms[$position->id]->priceruleapply->addMultiOptions($priceruleapply);
 			$forms[$position->id]->ordering->addMultiOptions($orderings);
 			$forms[$position->id]->shippingmethod->addMultiOptions($shippingmethods);
 			foreach($forms[$position->id] as $element) {
@@ -134,7 +144,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
                 }
 				$data['quantity'] = 1;
 				$data['total'] = $data['price']*$data['quantity'];
-                if($item['taxid']) {
+                if($item['uomid']) {
 		            $uomDb = new Application_Model_DbTable_Uom();
 				    $uom = $uomDb->getUom($item['uomid']);
 				    $data['uom'] = $uom['title'];
@@ -218,6 +228,8 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			if(isset($form->$element) && $form->isValidPartial($data)) {
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'supplierinvoicetotal'))
 					$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
+				if(($element == 'uom') && ($data[$element] != 0))
+					$data['uom'] = $uoms[$data[$element]];
 
 				if(isset($data['deliverydate'])) {
                     if(Zend_Date::isDate($data['deliverydate'])) {
