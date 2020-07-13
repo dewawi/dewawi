@@ -34,12 +34,12 @@ class Admin_Model_DbTable_Client extends Zend_Db_Table_Abstract
 		$orWhere[] = $this->getAdapter()->quoteInto('parentid = ?', $this->_user['clientid']);
 		$orWhere[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll(
-                    $this->select()
-                        ->where('id = ?', $this->_user['clientid'])
-                        ->where('deleted = ?', 0)
-                        ->orWhere('parentid = ?', $this->_user['clientid'])
-                        ->where('deleted = ?', 0)
-                        );
+            $this->select()
+                ->where('id = ?', $this->_user['clientid'])
+                ->where('deleted = ?', 0)
+                ->orWhere('parentid = ?', $this->_user['clientid'])
+                ->where('deleted = ?', 0)
+            );
 		return $data;
 	}
 

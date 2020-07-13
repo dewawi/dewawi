@@ -11,9 +11,6 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 		$auth = Zend_Auth::getInstance();
 		if($auth->hasIdentity()) {
 			$user = Zend_Registry::get('User');
-			$view = Zend_Controller_Front::getInstance()
-                            ->getParam('bootstrap')
-                            ->getResource('view');
 
             //Access control
             $acl = array(
@@ -26,11 +23,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
                 error_log('PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
             } elseif($params['module'] == 'admin') {
                 if($user['admin']) {
-	                $form = new Application_Form_Client();
-		            $clientDb = new Application_Model_DbTable_Client();
-	                $form->clientid->addMultiOptions($clientDb->getClients());
-	                $form->clientid->setValue($user['clientid']);
-                    $view->switcher = $form->getElement('clientid');
+                    //error_log('PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
                 } else {
                     error_log('NO_PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
 			        $flashMessenger->addMessage('MESSAGES_ACCESS_DENIED');
