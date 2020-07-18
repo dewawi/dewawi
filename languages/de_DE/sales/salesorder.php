@@ -48,7 +48,7 @@
 	'SALES_ORDERS_SUBTOTAL' => 'Nettobetrag',
 	'SALES_ORDERS_TAXES' => 'Umsatzsteuer',
 	'SALES_ORDERS_TOTAL' => 'Gesamtbetrag',
-    'SALES_ORDERS_CURRENCY' => 'Währung'
+    'SALES_ORDERS_CURRENCY' => 'Währung',
 	'SALES_ORDERS_TEMPLATE' => 'Vorlage',
 	'SALES_ORDERS_LANGUAGE' => 'Sprache'
 );

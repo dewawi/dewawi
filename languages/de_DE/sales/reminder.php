@@ -47,7 +47,7 @@
 	'REMINDERS_SUBTOTAL' => 'Nettobetrag',
 	'REMINDERS_TAXES' => 'Umsatzsteuer',
 	'REMINDERS_TOTAL' => 'Gesamtbetrag',
-    'REMINDERS_CURRENCY' => 'Währung'    
+    'REMINDERS_CURRENCY' => 'Währung',
 	'REMINDERS_TEMPLATE' => 'Vorlage',
 	'REMINDERS_LANGUAGE' => 'Sprache'
 );

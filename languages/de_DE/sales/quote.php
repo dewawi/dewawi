@@ -46,7 +46,7 @@
 	'QUOTES_NONE' => 'keine',
 	'QUOTES_SUBTOTAL' => 'Nettobetrag',
 	'QUOTES_TAXES' => 'Umsatzsteuer',
-    'QUOTES_CURRENCY' => 'Währung'
+    'QUOTES_CURRENCY' => 'Währung',
 	'QUOTES_TOTAL' => 'Gesamtbetrag',
 	'QUOTES_TEMPLATE' => 'Vorlage',
 	'QUOTES_LANGUAGE' => 'Sprache'

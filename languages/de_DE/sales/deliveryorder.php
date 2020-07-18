@@ -46,7 +46,7 @@
 	'DELIVERY_ORDERS_SUBTOTAL' => 'Nettobetrag',
 	'DELIVERY_ORDERS_TAXES' => 'Umsatzsteuer',
 	'DELIVERY_ORDERS_TOTAL' => 'Gesamtbetrag',
-    'DELIVERY_ORDERS_CURRENCY' => 'Währung'
+    'DELIVERY_ORDERS_CURRENCY' => 'Währung',
 	'DELIVERY_ORDERS_DELIVERY_DATE' => 'Liefertermin:',
 	'DELIVERY_ORDERS_TEMPLATE' => 'Vorlage',
 	'DELIVERY_ORDERS_LANGUAGE' => 'Sprache'

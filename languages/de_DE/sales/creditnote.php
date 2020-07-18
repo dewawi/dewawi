@@ -47,7 +47,7 @@
 	'CREDIT_NOTES_SUBTOTAL' => 'Nettobetrag',
 	'CREDIT_NOTES_TAXES' => 'Umsatzsteuer',
 	'CREDIT_NOTES_TOTAL' => 'Gesamtbetrag',
-    'CREDIT_NOTES_CURRENCY' => 'Währung'
+    'CREDIT_NOTES_CURRENCY' => 'Währung',
 	'CREDIT_NOTES_TEMPLATE' => 'Vorlage',
 	'CREDIT_NOTES_LANGUAGE' => 'Sprache'
 );

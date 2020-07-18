@@ -46,7 +46,7 @@
 	'PURCHASE_ORDERS_SUBTOTAL' => 'Nettobetrag',
 	'PURCHASE_ORDERS_TAXES' => 'Umsatzsteuer',
 	'PURCHASE_ORDERS_TOTAL' => 'Gesamtbetrag',
-    'PURCHASE_ORDERS_CURRENCY' => 'Währung'
+    'PURCHASE_ORDERS_CURRENCY' => 'Währung',
 	'PURCHASE_ORDERS_DELIVERY_DATE' => 'Liefertermin:',
 	'PURCHASE_ORDERS_TEMPLATE' => 'Vorlage',
 	'PURCHASE_ORDERS_LANGUAGE' => 'Sprache'

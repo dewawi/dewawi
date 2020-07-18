@@ -21,7 +21,7 @@
 	'ITEMS_PRICE' => 'Verkaufspreis',
 	'ITEMS_PRICES' => 'Preise',
 	'ITEMS_MARGIN' => 'Marge',
-    'ITEMS_CURRENCY' => 'Währung'
+    'ITEMS_CURRENCY' => 'Währung',
 	'ITEMS_QUANTITY' => 'Bestand',
 	'ITEMS_MIN_QUANTITY' => 'Min. Bestand',
 	'ITEMS_ORDER_QUANTITY' => 'Min. Bestellmenge',
