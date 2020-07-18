@@ -25,8 +25,6 @@
 	'TOOLBAR_PRINT' => 'Ausdrucken',
 	'TOOLBAR_IMPORT' => 'Importieren',
 	'TOOLBAR_EXPORT' => 'Exportieren',
-	'TOOLBAR_DATA_SAVED' => 'Daten sind gespeichert',
-	'TOOLBAR_DATA_NOT_SAVED' => 'Nicht gespeicherte Daten',
 	'TOOLBAR_FILTER' => 'Filter',
 	'TOOLBAR_RESET' => 'Zurücksetzen',
 	'TOOLBAR_SELECTED_FILTER' => 'Ausgewählte Filter',

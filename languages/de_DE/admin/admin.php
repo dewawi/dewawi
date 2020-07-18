@@ -13,6 +13,7 @@
 	'ADMIN_TEMPLATES' => 'Vorlagen',
 	'ADMIN_UOMS' => 'Messeinheiten',
 	'ADMIN_USERS' => 'Benutzer',
+    'ADMIN_PERMISSIONS' => 'Benutzerrechte',
 	'ADMIN_MODULES' => 'Module',
 	//General
 	'ADMIN_ID' => 'ID',
@@ -39,4 +40,9 @@
 	'ADMIN_PARENT_CATEGORY' => 'Überkategorie',
 	'ADMIN_ORDERING' => 'Position',
 	'ADMIN_CHILD_COUNT' => 'Anzahl der Subkategorien',
+    'ADMIN_ACTIVATED' => 'Activated',
+    'ADMIN_ADD' => 'Hinzufügen',
+    'ADMIN_EDIT' => 'Bearbeiten',
+    'ADMIN_VIEW' => 'Ansichten',
+    'ADMIN_DELETE' => 'Löschen'
 );

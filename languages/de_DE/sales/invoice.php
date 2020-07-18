@@ -48,6 +48,7 @@
 	'INVOICES_SUBTOTAL' => 'Nettobetrag',
 	'INVOICES_TAXES' => 'Umsatzsteuer',
 	'INVOICES_TOTAL' => 'Gesamtbetrag',
+    'INVOICES_CURRENCY' => 'Währung'
 	'INVOICES_TEMPLATE' => 'Vorlage',
 	'INVOICES_LANGUAGE' => 'Sprache'
 );

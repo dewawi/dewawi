@@ -1,5 +1,6 @@
 <?php return array(
 	'MESSAGES_LOCKED' => 'Zugriff verweigert! Der Eintrag wird vermutlich von jemand anderen bearbeitet.',
+	'MESSAGES_ACCESS_DENIED' => 'Zugriff verweigert! Sie haben keine Berechtigung zum Durchführen dieses Vorgangs.',
 	'MESSAGES_ACCESS_DENIED_%1$s' => 'Zugriff verweigert! Der Eintrag wird von %1$s bearbeitet.',
 	'MESSAGES_CHECKED_OUT' => 'Zugriff verweigert! Der Eintrag wird vermutlich von jemand anderen bearbeitet.',
 	'MESSAGES_SUCCESFULLY_COPIED' => 'Der Eintrag wurde erfolgreich kopiert!',
@@ -13,7 +14,7 @@
 	'MESSAGES_QUOTE_REQUEST_SUCCESFULLY_GENERATED' => 'Anfrage erfolgreich generiert.',
 	'MESSAGES_PURCHASE_ORDER_SUCCESFULLY_GENERATED' => 'Bestellung erfolgreich generiert.',
 	'MESSAGES_PROCESSES_SUCCESFULLY_GENERATED' => 'Vorgang erfolgreich generiert.',
-	'MESSAGES_SEARCH_RETURNED_NO_RESULTS' => 'Die Suche hat keine Ergebnisse geliefert',
+	'MESSAGES_SEARCH_RETURNED_NO_RESULTS' => 'Die Suche hat keine Ergebnisse geliefert.',
 	'MESSAGES_CANCEL_CONFIRM' => 'Sind Sie sicher dass Sie den Eintrag stornieren möchten?',
 	'MESSAGES_DELETE_CONFIRM' => 'Sind Sie sicher dass Sie den Eintrag löschen möchten?',
 	'MESSAGES_DIRECTORY_IS_NOT_WRITABLE' => 'Die Dateien können nicht gespeichert werden weil der Zielordner schreibgeschützt ist!'

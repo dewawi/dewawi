@@ -1,0 +1,25 @@
+<?php return array(
+	'MENU_PRICE_RULES' => 'Preisregeln',
+	//Price rules
+	'ITEMS_PRICE_RULES' => 'Preisregeln',
+	'PRICE_RULES_TITLE' => 'Titel',
+	'PRICE_RULES_AMOUNT' => 'Betrag',
+	'PRICE_RULES_ACTION' => 'Aktion',
+	'PRICE_RULES_FROM' => 'Von',
+	'PRICE_RULES_TO' => 'Bis',
+	'PRICE_RULES_PRIORITY' => 'Priorität',
+	'PRICE_RULES_DISCARD_SUBSEQUENT_RULES' => 'Nachfolgende Regeln verwerfen',
+	'PRICE_RULES_ACTIVATED' => 'Aktiviert',
+	'PRICE_RULES_CREATED' => 'Erstellt',
+	'PRICE_RULES_MODIFIED' => 'Bearbeitet',
+    'PRICE_RULES_APPLY_RULES_ON' => 'Regeln übernehmen auf:',
+	'PRICE_RULES_ITEM_CATEGORY' => 'Artikelkategorie',
+	'PRICE_RULES_ITEM_APPLY_TO_SUBCATEGORIES' => 'Auf Unterkategorien anwenden',
+	'PRICE_RULES_ITEM_TYPE' => 'Artikeltyp',
+	'PRICE_RULES_ITEM_MANUFACTURER' => 'Hersteller',
+	'PRICE_RULES_CONTACT_CATEGORY' => 'Kontaktkategorie',
+	'PRICE_RULES_CONTACT_APPLY_TO_SUBCATEGORIES' => 'Auf Unterkategorien anwenden',
+	'PRICE_RULES_ITEMS_ALL_CATEGORIES' => 'Alle Kategorien',
+	'PRICE_RULES_ITEMS_ALL_TYPES' => 'Alle Typen',
+	'PRICE_RULES_ITEMS_ALL_MANUFACTURERS' => 'Alle Hersteller'
+);

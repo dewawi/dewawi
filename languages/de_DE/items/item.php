@@ -19,7 +19,9 @@
 	'ITEMS_INFO_INTERNAL' => 'Interne Informationen',
 	'ITEMS_COST' => 'Einkaufspreis',
 	'ITEMS_PRICE' => 'Verkaufspreis',
+	'ITEMS_PRICES' => 'Preise',
 	'ITEMS_MARGIN' => 'Marge',
+    'ITEMS_CURRENCY' => 'Währung'
 	'ITEMS_QUANTITY' => 'Bestand',
 	'ITEMS_MIN_QUANTITY' => 'Min. Bestand',
 	'ITEMS_ORDER_QUANTITY' => 'Min. Bestellmenge',
@@ -43,5 +45,9 @@
 	'ITEMS_CREATED' => 'Erstellzeit',
 	'ITEMS_MODIFIED' => 'le. Änderung',
 	'ITEMS_SAVE' => 'Speichern',
-	'ITEMS_DELETE' => 'Löschen'
+	'ITEMS_DELETE' => 'Löschen',
+    'ITEMS_PRICE_RULE_BY_PERCENT' => 'Rabatt in Prozent',
+    'ITEMS_PRICE_RULE_BY_FIXED' => 'Festbetrag-Rabatt',
+    'ITEMS_PRICE_RULE_TO_PERCENT' => 'Aufpreis in Prozent',
+    'ITEMS_PRICE_RULE_TO_FIXED' => 'Festbetrag-Aufpreis'
 );
