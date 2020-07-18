@@ -1,0 +1,26 @@
+<?php return array(
+	//Positions
+	'POSITION' => 'Pos.',
+	'POSITIONS_NEW' => 'New',
+	'POSITIONS_OVERVIEW' => 'Overview',
+	'POSITIONS_SKU' => 'SKU',
+	'POSITIONS_TITLE' => 'Title',
+	'POSITIONS_DESCRIPTION' => 'Description',
+	'POSITIONS_ITEM' => 'Item',
+	'POSITIONS_SUPPLIER' => 'Supplier',
+	'POSITIONS_SHIPPING' => 'Shipping',
+	'POSITIONS_PRICE' => 'Price',
+	'POSITIONS_PRICE_RULE_AMOUNT' => 'Price rule',
+	'POSITIONS_PRICE_RULE_APPLY' => 'Apply',
+	'POSITIONS_TAX_RATE' => 'Tax rate',
+	'POSITIONS_QUANTITY' => 'Quantity',
+	'POSITIONS_UOM' => 'UOM',
+	'POSITIONS_IMAGE' => 'Image',
+	'POSITIONS_UP' => '&uarr;',
+	'POSITIONS_DOWN' => '&darr;',
+	'POSITIONS_DELETE' => 'Delete',
+	'POSITIONS_SUBTOTAL' => 'Subtotal',
+	'POSITIONS_TAXES' => 'Taxes',
+	'POSITIONS_TOTAL' => 'Total',
+	'POSITIONS_NONE' => 'None'
+);
