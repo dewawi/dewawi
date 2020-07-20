@@ -79,6 +79,22 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 		return $query;
 	}
 
+	public function getQueryClient($query, $clientid, $schema = null)
+	{
+		if($query) $query .= ' AND ';
+		if($schema) $query .= '('.$schema.'.clientid = '.$clientid.')';
+        else $query .= '(clientid = '.$clientid.')';
+		return $query;
+	}
+
+	public function getQueryDeleted($query, $schema = null)
+	{
+		if($query) $query .= ' AND ';
+		if($schema) $query .= '('.$schema.'.deleted = 0)';
+		else $query .= '(deleted = 0)';
+		return $query;
+	}
+
 	public function getChildCategories($category, $categories) {
 		$childCategories = array();
 		array_push($childCategories, $categories[$category]['childs']);

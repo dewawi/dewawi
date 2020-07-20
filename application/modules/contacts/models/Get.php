@@ -23,7 +23,7 @@ class Contacts_Model_Get
 	{
 		$contactsDb = new Contacts_Model_DbTable_Contact();
 
-		$columns = array('c.id', 'c.name1', 'c.name2', 'a.postcode', 'a.street', 'a.postcode', 'a.city', 'a.country', 'p.phone', 'e.email', 'i.internet');
+		$columns = array('c.contactid', 'c.name1', 'c.name2', 'a.postcode', 'a.street', 'a.postcode', 'a.city', 'a.country', 'p.phone', 'e.email', 'i.internet');
 
 		$query = '';
 		$schema = 'c';

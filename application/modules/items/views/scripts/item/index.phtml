@@ -21,6 +21,9 @@ echo $this->ActiveFilter();
 			<th class="price" width="8%">
 				<?php echo $this->translate('ITEMS_PRICE'); ?>
 			</th>
+			<th class="price" width="8%">
+				<?php echo $this->translate('ITEMS_CURRENCY'); ?>
+			</th>
 			<th class="quantity" width="8%">
 				<?php echo $this->translate('ITEMS_QUANTITY'); ?>
 			</th>
@@ -50,6 +53,9 @@ echo $this->ActiveFilter();
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_PRICE') ?>" class="price">
 					<?php echo $this->escape($item->price); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_CURRENCY') ?>" class="price">
+					<?php echo $this->escape($item->currency); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_QUANTITY') ?>" class="quantity">
 					<?php echo $this->escape($item->quantity); ?>

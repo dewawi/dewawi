@@ -183,6 +183,11 @@ class Sales_Form_Invoice extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
+		$form['currency'] = new Zend_Form_Element_Select('currency');
+		$form['currency']->setLabel('INVOICES_CURRENCY')
+			->setRequired(true)
+			->addValidator('NotEmpty');
+
 		$form['taxfree'] = new Zend_Form_Element_Checkbox('taxfree');
 		$form['taxfree']->setLabel('CONTACTS_TAX_FREE');
 

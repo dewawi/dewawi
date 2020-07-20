@@ -6,8 +6,6 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 	protected $_user = null;
 
-	protected $_currency = null;
-
 	/**
 	 * FlashMessenger
 	 *
@@ -21,10 +19,6 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 		$this->_date = date('Y-m-d H:i:s');
 		$this->_user = Zend_Registry::get('User');
-
-		$this->_currency = new Zend_Currency();
-		if(($this->view->action != "select") && ($this->view->action != "search"))
-			$this->_currency->setFormat(array('display' => Zend_Currency::NO_SYMBOL));
 
 		$this->view->id = isset($params['id']) ? $params['id'] : 0;
 		$this->view->action = $params['action'];
@@ -53,13 +47,12 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$uomDb = new Application_Model_DbTable_Uom();
 		$uoms = $uomDb->getUoms();
 
-		//Get price rule apply
-		$priceruleapplyDb = new Application_Model_DbTable_Priceruleapply();
-		$priceruleapply = $priceruleapplyDb->getPriceruleapply();
-
 		//Get shipping methods
 		$shippingmethodDb = new Application_Model_DbTable_Shippingmethod();
 		$shippingmethods = $shippingmethodDb->getShippingmethods();
+
+        //Get currency
+		$currency = $this->_helper->Currency->getCurrency($process['currency']);
 
 		$forms = array();
 		$orderings = array();
@@ -67,10 +60,9 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$orderings[$position->ordering] = $position->ordering;
 		}
 		foreach($positions as $position) {
-			$position->price =  $this->_currency->toCurrency($position->price);
-			$position->supplierinvoicetotal =  $this->_currency->toCurrency($position->supplierinvoicetotal);
+			$position->price =  $currency->toCurrency($position->price);
+			$position->supplierinvoicetotal =  $currency->toCurrency($position->supplierinvoicetotal);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-			$position->priceruleamount =  $this->_currency->toCurrency($position->priceruleamount);
 
             //Convert dates to the display format
             $deliverydate = new Zend_Date($position->deliverydate);
@@ -96,7 +88,6 @@ class Processes_ProcessposController extends Zend_Controller_Action
                 $uom = array_search($position->uom, $uoms);
                 if($uom) $forms[$position->id]->uom->setValue($uom);
             }
-			$forms[$position->id]->priceruleapply->addMultiOptions($priceruleapply);
 			$forms[$position->id]->ordering->addMultiOptions($orderings);
 			$forms[$position->id]->shippingmethod->addMultiOptions($shippingmethods);
 			foreach($forms[$position->id] as $element) {
@@ -156,7 +147,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				$position->addPosition($data);
 
 				//Calculate
-				//$calculations = $this->_helper->Calculate($processid, $this->_currency, $this->_date, $this->_user['id']);
+				//$calculations = $this->_helper->Calculate($processid, $this->_date, $this->_user['id']);
 			    //echo Zend_Json::encode($calculations['locale']);
 			} else {
 				$form->populate($request->getPost());
@@ -292,7 +283,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$position->addPosition($data);
 
 			//Calculate
-			//$calculations = $this->_helper->Calculate($data['processid'], $this->_currency, $this->_date, $this->_user['id']);
+			//$calculations = $this->_helper->Calculate($data['processid'], $this->_date, $this->_user['id']);
 	        //echo Zend_Json::encode($calculations['locale']);
 	        echo Zend_Json::encode(true);
 		}
@@ -350,7 +341,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 				//Reorder and calculate
 				$this->setOrdering($data['processid']);
-				//$calculations = $this->_helper->Calculate($data['processid'], $this->_currency, $this->_date, $this->_user['id']);
+				//$calculations = $this->_helper->Calculate($data['processid'], $this->_date, $this->_user['id']);
 	            //echo Zend_Json::encode($calculations['locale']);
 	            echo Zend_Json::encode(true);
 			}

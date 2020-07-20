@@ -6,8 +6,6 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 
 	protected $_user = null;
 
-	protected $_currency = null;
-
 	/**
 	 * FlashMessenger
 	 *
@@ -21,10 +19,6 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 
 		$this->_date = date('Y-m-d H:i:s');
 		$this->_user = Zend_Registry::get('User');
-
-		$this->_currency = new Zend_Currency();
-		if(($this->view->action != "select") && ($this->view->action != "search"))
-			$this->_currency->setFormat(array('display' => Zend_Currency::NO_SYMBOL));
 
 		$this->view->id = isset($params['id']) ? $params['id'] : 0;
 		$this->view->action = $params['action'];
@@ -53,13 +47,16 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 		$uomDb = new Application_Model_DbTable_Uom();
 		$uoms = $uomDb->getUoms();
 
-		//Get price rule apply
-		$priceruleapplyDb = new Application_Model_DbTable_Priceruleapply();
-		$priceruleapply = $priceruleapplyDb->getPriceruleapply();
+		//Get price rule actions
+		$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
+		$priceruleactions = $priceruleactionDb->getPriceruleactions();
 
 		//Get tax rates
 		$taxrateDb = new Application_Model_DbTable_Taxrate();
 		$taxrates = $taxrateDb->getTaxrates();
+
+        //Get currency
+		$currency = $this->_helper->Currency->getCurrency($salesorder['currency']);
 
 		$forms = array();
         $taxes = array();
@@ -83,20 +80,20 @@ class Sales_SalesorderposController extends Zend_Controller_Action
                 $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
 
             $price = $position->price;
-            if($position->priceruleamount && $position->priceruleapply) {
-                if($position->priceruleapply == 'bypercent')
+            if($position->priceruleamount && $position->priceruleaction) {
+                if($position->priceruleaction == 'bypercent')
 			        $price = $price*(100-$position->priceruleamount)/100;
-                elseif($position->priceruleapply == 'byfixed')
+                elseif($position->priceruleaction == 'byfixed')
 			        $price = ($price-$position->priceruleamount);
-                elseif($position->priceruleapply == 'topercent')
+                elseif($position->priceruleaction == 'topercent')
 			        $price = $price*(100+$position->priceruleamount)/100;
-                elseif($position->priceruleapply == 'tofixed')
+                elseif($position->priceruleaction == 'tofixed')
 			        $price = ($price+$position->priceruleamount);
             }
-			$position->total =  $this->_currency->toCurrency($price*$position->quantity);
-			$position->price =  $this->_currency->toCurrency($position->price);
+			$position->total =  $currency->toCurrency($price*$position->quantity);
+			$position->price =  $currency->toCurrency($position->price);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-			$position->priceruleamount =  $this->_currency->toCurrency($position->priceruleamount);
+			$position->priceruleamount =  $currency->toCurrency($position->priceruleamount);
 
 			$form = new Sales_Form_Salesorderpos();
 			$forms[$position->id] = $form->populate($position->toArray());
@@ -105,17 +102,17 @@ class Sales_SalesorderposController extends Zend_Controller_Action
                 $uom = array_search($position->uom, $uoms);
                 if($uom) $forms[$position->id]->uom->setValue($uom);
             }
-			$forms[$position->id]->priceruleapply->addMultiOptions($priceruleapply);
+			$forms[$position->id]->priceruleaction->addMultiOptions($priceruleactions);
 			$forms[$position->id]->ordering->addMultiOptions($orderings);
 			$forms[$position->id]->taxrate->setValue(array_search($position->taxrate, $taxrates));
 		    foreach($taxrates as $id => $value)
 			    $forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
 		}
 
-		$salesorder['subtotal'] = $this->_currency->toCurrency($salesorder['subtotal']);
-		$salesorder['total'] = $this->_currency->toCurrency($salesorder['total']);
+		$salesorder['subtotal'] = $currency->toCurrency($salesorder['subtotal']);
+		$salesorder['total'] = $currency->toCurrency($salesorder['total']);
         foreach($taxes as $rate => $data) {
-		    $taxes[$rate]['value'] = $this->_currency->toCurrency($data['value']);
+		    $taxes[$rate]['value'] = $currency->toCurrency($data['value']);
         }
 		$salesorder['taxes'] = $taxes;
 
@@ -141,15 +138,31 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 			$this->_helper->getHelper('layout')->disableLayout();
 			$data = array();
 			if($itemid && $salesorderid) {
+		        //Get item
 				$item = new Items_Model_DbTable_Item();
 				$item = $item->getItem($itemid);
+
+		        //Get sales order
+		        $salesorderDb = new Sales_Model_DbTable_Salesorder();
+		        $salesorder = $salesorderDb->getSalesorder($salesorderid);
+
+                //Check price rules
+				$data = $this->_helper->PriceRule($salesorder['contactid'], $item, $data, $this->_helper);
+
+                //Check currency
+                if($salesorder['currency'] == $item['currency']) {
+				    $data['price'] = $item['price'];
+                } else {
+				    $data['price'] = $this->_helper->Currency($item['currency'], $salesorder['currency'], $item['price'], $this->_helper);
+                }
+                $data['currency'] = $salesorder['currency'];
+
 				$data['salesorderid'] = $salesorderid;
 				$data['itemid'] = $itemid;
 				$data['sku'] = $item['sku'];
 				$data['title'] = $item['title'];
 				$data['image'] = $item['image'];
 				$data['description'] = $item['description'];
-				$data['price'] = $item['price'];
                 if($item['taxid']) {
 		            $taxrateDb = new Application_Model_DbTable_Taxrate();
 				    $taxrate = $taxrateDb->getTaxrate($item['taxid']);
@@ -167,11 +180,12 @@ class Sales_SalesorderposController extends Zend_Controller_Action
                     $data['uom'] = '';
                 }
 				$data['ordering'] = $this->getLatestOrdering($salesorderid) + 1;
+
 				$position = new Sales_Model_DbTable_Salesorderpos();
 				$position->addPosition($data);
 
 				//Calculate
-				$calculations = $this->_helper->Calculate($salesorderid, $this->_currency, $this->_date, $this->_user['id']);
+				$calculations = $this->_helper->Calculate($salesorderid, $this->_date, $this->_user['id']);
 			    echo Zend_Json::encode($calculations['locale']);
 			} else {
 				$form->populate($request->getPost());
@@ -249,8 +263,8 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 				$position = new Sales_Model_DbTable_Salesorderpos();
 				$position->updatePosition($id, $data);
 
-				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleapply')) {
-					$calculations = $this->_helper->Calculate($salesorderid, $this->_currency, $this->_date, $this->_user['id']);
+				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
+					$calculations = $this->_helper->Calculate($salesorderid, $this->_date, $this->_user['id']);
 			        echo Zend_Json::encode($calculations['locale']);
                 }
 			} else {
@@ -281,7 +295,7 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 			$position->addPosition($data);
 
 			//Calculate
-			$calculations = $this->_helper->Calculate($data['salesorderid'], $this->_currency, $this->_date, $this->_user['id']);
+			$calculations = $this->_helper->Calculate($data['salesorderid'], $this->_date, $this->_user['id']);
 	        echo Zend_Json::encode($calculations['locale']);
 		}
 	}
@@ -338,7 +352,7 @@ class Sales_SalesorderposController extends Zend_Controller_Action
 
 				//Reorder and calculate
 				$this->setOrdering($data['salesorderid']);
-				$calculations = $this->_helper->Calculate($data['salesorderid'], $this->_currency, $this->_date, $this->_user['id']);
+				$calculations = $this->_helper->Calculate($data['salesorderid'], $this->_date, $this->_user['id']);
 	            echo Zend_Json::encode($calculations['locale']);
 			}
 		}

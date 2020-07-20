@@ -6,8 +6,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 
 	protected $_user = null;
 
-	protected $_currency = null;
-
 	/**
 	 * FlashMessenger
 	 *
@@ -28,10 +26,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_currency = new Zend_Currency();
-		if(($this->view->action != 'index') && ($this->view->action != 'select') && ($this->view->action != 'search') && ($this->view->action != 'download') && ($this->view->action != 'save') && ($this->view->action != 'preview') && ($this->view->action != 'get'))
-			$this->_currency->setFormat(array('display' => Zend_Currency::NO_SYMBOL));
 
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
 	}
@@ -61,7 +55,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
+		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
 
 		$this->view->invoices = $invoices;
 		$this->view->options = $options;
@@ -83,7 +77,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
+		$invoices = $get->invoices($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
 
 		$this->view->invoices = $invoices;
 		$this->view->options = $options;
@@ -178,8 +172,16 @@ class Sales_InvoiceController extends Zend_Controller_Action
                     }
 				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
+					if(isset($data['currency'])) {
+		                $positionsDb = new Sales_Model_DbTable_Invoicepos();
+		                $positions = $positionsDb->getPositions($id);
+		                foreach($positions as $position) {
+	                        $positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
+		                }
+					    //$this->_helper->Currency->convert($id, 'creditnote');
+					}
 					if(isset($data['taxfree'])) {
-						$calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $data['taxfree']);
+						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
@@ -267,16 +269,19 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		if($invoice['orderdate'] != '0000-00-00') $invoice['orderdate'] = date("d.m.Y", strtotime($invoice['orderdate']));
 		if($invoice['deliverydate'] != '0000-00-00') $invoice['deliverydate'] = date("d.m.Y", strtotime($invoice['deliverydate']));
 
+        //Get currency
+		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
+
         //Convert numbers to the display format
-		$invoice['taxes'] = $this->_currency->toCurrency($invoice['taxes']);
-		$invoice['subtotal'] = $this->_currency->toCurrency($invoice['subtotal']);
-		$invoice['total'] = $this->_currency->toCurrency($invoice['total']);
+		$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
+		$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
+		$invoice['total'] = $currency->toCurrency($invoice['total']);
 
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
 		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$position->description = str_replace("\n", '<br>', $position->description);
-			$position->price = $this->_currency->toCurrency($position->price);
+			$position->price = $currency->toCurrency($position->price);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
 		}
 
@@ -654,34 +659,36 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		//Set language
 		if($invoice['language']) {
 			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$invoice['language']);
-			Zend_Registry::set('Zend_Locale', $invoice['language']);
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
+
+        //Get currency
+		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
 
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
                 $price = $position->price;
-                if($position->priceruleamount && $position->priceruleapply) {
-                    if($position->priceruleapply == 'bypercent')
+                if($position->priceruleamount && $position->priceruleaction) {
+                    if($position->priceruleaction == 'bypercent')
 				        $price = $price*(100-$position->priceruleamount)/100;
-                    elseif($position->priceruleapply == 'byfixed')
+                    elseif($position->priceruleaction == 'byfixed')
 				        $price = ($price-$position->priceruleamount);
-                    elseif($position->priceruleapply == 'topercent')
+                    elseif($position->priceruleaction == 'topercent')
 				        $price = $price*(100+$position->priceruleamount)/100;
-                    elseif($position->priceruleapply == 'tofixed')
+                    elseif($position->priceruleaction == 'tofixed')
 				        $price = ($price+$position->priceruleamount);
                 }
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $this->_currency->toCurrency($price*$position->quantity);
-				$position->price = $this->_currency->toCurrency($price);
+				$position->total = $currency->toCurrency($price*$position->quantity);
+				$position->price = $currency->toCurrency($price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
-			$invoice['taxes'] = $this->_currency->toCurrency($invoice['taxes']);
-			$invoice['subtotal'] = $this->_currency->toCurrency($invoice['subtotal']);
-			$invoice['total'] = $this->_currency->toCurrency($invoice['total']);
+			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
+			$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
+			$invoice['total'] = $currency->toCurrency($invoice['total']);
 			if($invoice['taxfree']) {
 				$invoice['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
 			} else {
@@ -723,9 +730,11 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		//Set language
 		if($invoice['language']) {
 			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$invoice['language']);
-			Zend_Registry::set('Zend_Locale', $invoice['language']);
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
+
+        //Get currency
+		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
 
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
 		$positions = $positionsDb->getPositions($id);
@@ -775,14 +784,14 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $this->_currency->toCurrency($position->price*$position->quantity);
-				$position->price = $this->_currency->toCurrency($position->price);
+				$position->total = $currency->toCurrency($position->price*$position->quantity);
+				$position->price = $currency->toCurrency($position->price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => Zend_Registry::get('Zend_Locale')));
 			}
 
-			$invoice['taxes'] = $this->_currency->toCurrency($invoice['taxes']);
-			$invoice['subtotal'] = $this->_currency->toCurrency($invoice['subtotal']);
-			$invoice['total'] = $this->_currency->toCurrency($invoice['total']);
+			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
+			$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
+			$invoice['total'] = $currency->toCurrency($invoice['total']);
 			if($invoice['taxfree']) {
 				$invoice['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
 			} else {
@@ -824,23 +833,25 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		//Set language
 		if($invoice['language']) {
 			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$invoice['language']);
-			Zend_Registry::set('Zend_Locale', $invoice['language']);
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
+
+        //Get currency
+		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
 
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $this->_currency->toCurrency($position->price*$position->quantity);
-				$position->price = $this->_currency->toCurrency($position->price);
+				$position->total = $currency->toCurrency($position->price*$position->quantity);
+				$position->price = $currency->toCurrency($position->price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity, array('precision' => $precision,'locale' => Zend_Registry::get('Zend_Locale')));
 			}
 
-			$invoice['taxes'] = $this->_currency->toCurrency($invoice['taxes']);
-			$invoice['subtotal'] = $this->_currency->toCurrency($invoice['subtotal']);
-			$invoice['total'] = $this->_currency->toCurrency($invoice['total']);
+			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
+			$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
+			$invoice['total'] = $currency->toCurrency($invoice['total']);
 			if($invoice['taxfree']) {
 				$invoice['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
 			} else {

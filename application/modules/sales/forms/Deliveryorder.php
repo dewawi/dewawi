@@ -184,7 +184,13 @@ class Sales_Form_Deliveryorder extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
+		$form['currency'] = new Zend_Form_Element_Select('currency');
+		$form['currency']->setLabel('DELIVERY_ORDERS_CURRENCY')
+			->setRequired(true)
+			->addValidator('NotEmpty');
+
 		$form['taxfree'] = new Zend_Form_Element_Hidden('taxfree');
+		$form['taxfree']->setLabel('CONTACTS_TAX_FREE');
 
 		$form['contactinfo'] = new Zend_Form_Element_Textarea('contactinfo');
 		$form['contactinfo']->setLabel('DELIVERY_ORDERS_CONTACT_INFO')

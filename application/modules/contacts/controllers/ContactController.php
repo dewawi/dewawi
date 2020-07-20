@@ -6,8 +6,6 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 	protected $_user = null;
 
-	protected $_currency = null;
-
 	/**
 	 * FlashMessenger
 	 *
@@ -20,10 +18,6 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 
 		$this->_date = date('Y-m-d H:i:s');
-
-		$this->_currency = new Zend_Currency();
-		if(($this->view->action != 'index') && ($this->view->action != 'select') && ($this->view->action != 'search') && ($this->view->action != 'download') && ($this->view->action != 'save') && ($this->view->action != 'preview') && ($this->view->action != 'get'))
-			$this->_currency->setFormat(array('display' => Zend_Currency::NO_SYMBOL));
 
 		$this->view->id = isset($params['id']) ? $params['id'] : 0;
 		$this->view->action = $params['action'];
@@ -197,7 +191,14 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$element = 'info';
 				}
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$contactDb = new Contacts_Model_DbTable_Contact();
+					if(array_key_exists('priceruleamount', $data)) {
+						$locale = Zend_Registry::get('Zend_Locale');
+						$data['priceruleamount'] = Zend_Locale_Format::getNumber($data['priceruleamount'],array('precision' => 2,'locale' => $locale));
+					}
+					if(array_key_exists('cashdiscountpercent', $data)) {
+						$locale = Zend_Registry::get('Zend_Locale');
+						$data['cashdiscountpercent'] = Zend_Locale_Format::getNumber($data['cashdiscountpercent'],array('precision' => 2,'locale' => $locale));
+					}
 					$contactDb->updateContact($id, $data);
 				} else {
 					throw new Exception('Form is invalid');
@@ -205,6 +206,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 			} else {
 				if($id > 0) {
 					$data = $contact;
+                    $currency = $this->_helper->Currency->getCurrency();
+					if($data['priceruleamount'] == '0.0000') $data['priceruleamount'] = '';
+					else $data['priceruleamount'] = $currency->toCurrency($data['priceruleamount']);
+					if($data['cashdiscountdays'] == '0') $data['cashdiscountdays'] = '';
+					if($data['cashdiscountpercent'] == '0.0000') $data['cashdiscountpercent'] = '';
+					else $data['cashdiscountpercent'] = $currency->toCurrency($data['cashdiscountpercent']);
 					$form->populate($data);
 
 					//Phone

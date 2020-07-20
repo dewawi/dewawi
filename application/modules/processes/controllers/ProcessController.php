@@ -6,8 +6,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 	protected $_user = null;
 
-	protected $_currency = null;
-
 	/**
 	 * FlashMessenger
 	 *
@@ -28,10 +26,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_currency = new Zend_Currency();
-		if(($this->view->action != 'index') && ($this->view->action != 'select') && ($this->view->action != 'search') && ($this->view->action != 'download') && ($this->view->action != 'save') && ($this->view->action != 'preview') && ($this->view->action != 'get'))
-			$this->_currency->setFormat(array('display' => Zend_Currency::NO_SYMBOL));
 
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
 	}
@@ -61,7 +55,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
+		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
 
 		//Get positions
 		$processIDs = array();
@@ -94,7 +88,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency, $this->_flashMessenger);
+		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
 
 		//Get positions
 		$processIDs = array();
@@ -118,7 +112,9 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$customerid = $this->_getParam('customerid', 0);
 
 		$data = array();
+		$data['title'] = $this->view->translate('PROCESSES_NEW_PROCESS');
 		$data['customerid'] = $customerid;
+		$data['currency'] = 'EUR';
 		$data['state'] = 100;
 
 		$processDb = new Processes_Model_DbTable_Process();
@@ -182,19 +178,30 @@ class Processes_ProcessController extends Zend_Controller_Action
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
+					if(isset($data['currency'])) {
+		                $positionsDb = new Sales_Model_DbTable_Processpos();
+		                $positions = $positionsDb->getPositions($id);
+		                foreach($positions as $position) {
+	                        $positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
+		                }
+					    //$this->_helper->Currency->convert($id, 'creditnote');
+					}
 					if(isset($data['taxfree'])) {
-						$calculations = $this->_helper->Calculate($id, $this->_currency, $this->_date, $this->_user['id'], $data['taxfree']);
+						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
 					}
 					if(isset($data['total'])) {
+		                $locale = Zend_Registry::get('Zend_Locale');
 						$data['total'] =  Zend_Locale_Format::getNumber($data['total'], array('precision' => 2,'locale' => $locale));
 					}
 					if(isset($data['supplierinvoicetotal'])) {
+		                $locale = Zend_Registry::get('Zend_Locale');
 						$data['supplierinvoicetotal'] =  Zend_Locale_Format::getNumber($data['supplierinvoicetotal'], array('precision' => 2,'locale' => $locale));
 					}
 					if(isset($data['prepaymenttotal'])) {
+		                $locale = Zend_Registry::get('Zend_Locale');
 						$data['prepaymenttotal'] =  Zend_Locale_Format::getNumber($data['prepaymenttotal'], array('precision' => 2,'locale' => $locale));
 					}
 					if(isset($data['paymentdate'])) {
@@ -288,9 +295,12 @@ class Processes_ProcessController extends Zend_Controller_Action
 						$form->customerinfo->setAttrib('data-module', 'contacts');
 						$form->customerinfo->setAttrib('readonly', null);
 					}
-					$data['total'] = $this->_currency->toCurrency($data['total']);
-					$data['prepaymenttotal'] = $this->_currency->toCurrency($data['prepaymenttotal']);
-					$data['creditnotetotal'] = $this->_currency->toCurrency($data['creditnotetotal']);
+                    //Get currency
+		            $currency = $this->_helper->Currency->getCurrency($data['currency'], 'USE_SYMBOL');
+					$data['total'] = $currency->toCurrency($data['total']);
+					$data['prepaymenttotal'] = $currency->toCurrency($data['prepaymenttotal']);
+					$data['creditnotetotal'] = $currency->toCurrency($data['creditnotetotal']);
+					$data['supplierinvoicetotal'] = $currency->toCurrency($data['supplierinvoicetotal']);
 					if($process['editpositionsseparately']) {
 						$form->deliverystatus->setAttrib('disabled', 'disabled');
 						$form->shippingmethod->setAttrib('disabled', 'disabled');
@@ -372,7 +382,11 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID($process['contactid']);
 
+        //Convert dates to the display format
 		$process['processdate'] = date('d.m.Y', strtotime($process['processdate']));
+
+        //Get currency
+		$currency = $this->_helper->Currency->getCurrency($process['currency'], 'USE_SYMBOL');
 
 		//Get positions
 		$positionsDb = new Processes_Model_DbTable_Processpos();
@@ -382,7 +396,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 			foreach($positionObject as $key => $value) {
 				$positions[$positionObject->id][$key] = $value;
 			}
-			$positions[$positionObject->id]['price'] =  $this->_currency->toCurrency($positions[$positionObject->id]['price']);
+			$positions[$positionObject->id]['price'] =  $currency->toCurrency($positions[$positionObject->id]['price']);
 			$positions[$positionObject->id]['quantity'] = Zend_Locale_Format::toNumber($positions[$positionObject->id]['quantity'],array('precision' => 2,'locale' => Zend_Registry::get('Zend_Locale')));
 		}
 

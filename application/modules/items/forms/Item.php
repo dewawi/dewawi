@@ -130,11 +130,18 @@ class Items_Form_Item extends Zend_Form
 
 		$form['taxid'] = new Zend_Form_Element_Select('taxid');
 		$form['taxid']->setLabel('ITEMS_VAT')
+			->addMultiOption(0, 'ITEMS_NONE')
 			->setRequired(true)
 			->addValidator('NotEmpty');
 
-		$form['uomid'] = new Zend_Form_Element_Select('uomid');
-		$form['uomid']->setLabel('ITEMS_UOM')
+		$form['taxid'] = new Zend_Form_Element_Select('taxid');
+		$form['taxid']->setLabel('ITEMS_VAT')
+			->addMultiOption(0, 'ITEMS_NONE')
+			->setRequired(true)
+			->addValidator('NotEmpty');
+
+		$form['currency'] = new Zend_Form_Element_Select('currency');
+		$form['currency']->setLabel('ITEMS_CURRENCY')
 			->addMultiOption(0, 'ITEMS_NONE')
 			->setRequired(true)
 			->addValidator('NotEmpty');

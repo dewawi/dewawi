@@ -2,7 +2,7 @@
 
 class Purchases_Model_Get
 {
-	public function quoterequests($params, $categories, $clientid, $helper, $currency, $flashMessenger)
+	public function quoterequests($params, $categories, $clientid, $helper, $flashMessenger)
 	{
 		$quoterequestsDb = new Purchases_Model_DbTable_Quoterequest();
 
@@ -19,13 +19,8 @@ class Purchases_Model_Get
             $params['to'] = date('Y-m-d', strtotime($params['to']));
             $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		if($query) {
-			$query .= ' AND q.clientid = '.$clientid;
-			$query .= ' AND q.deleted = 0';
-		} else {
-			$query = 'q.clientid = '.$clientid;
-			$query .= ' AND q.deleted = 0';
-        }
+		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		$query = $helper->Query->getQueryDeleted($query, $schema);
 
 		$quoterequests = $quoterequestsDb->fetchAll(
 			$quoterequestsDb->select()
@@ -39,13 +34,8 @@ class Purchases_Model_Get
 		);
 		if(!count($quoterequests) && $params['keyword']) {
 			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		    if($query) {
-			    $query .= ' AND q.clientid = '.$clientid;
-			    $query .= ' AND q.deleted = 0';
-		    } else {
-			    $query = 'q.clientid = '.$clientid;
-			    $query .= ' AND q.deleted = 0';
-            }
+		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		    $query = $helper->Query->getQueryDeleted($query, $schema);
 			$quoterequests = $quoterequestsDb->fetchAll(
 				$quoterequestsDb->select()
 					->setIntegrityCheck(false)
@@ -56,14 +46,16 @@ class Purchases_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-		    if(!count($quoterequests)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
+	    if(!count($quoterequests)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$quoterequests->subtotal = 0;
 		$quoterequests->total = 0;
+        $currency = $helper->Currency->getCurrency();
 		foreach($quoterequests as $quoterequest) {
 			$quoterequests->subtotal += $quoterequest->subtotal;
 			$quoterequests->total += $quoterequest->total;
+		    $currency = $helper->Currency->setCurrency($currency, $quoterequest->currency, 'USE_SYMBOL');
 			$quoterequest->subtotal = $currency->toCurrency($quoterequest->subtotal);
 			$quoterequest->taxes = $currency->toCurrency($quoterequest->taxes);
 			$quoterequest->total = $currency->toCurrency($quoterequest->total);
@@ -74,7 +66,7 @@ class Purchases_Model_Get
 		return $quoterequests;
 	}
 
-	public function purchaseorders($params, $categories, $clientid, $helper, $currency, $flashMessenger)
+	public function purchaseorders($params, $categories, $clientid, $helper, $flashMessenger)
 	{
 		$purchaseordersDb = new Purchases_Model_DbTable_Purchaseorder();
 
@@ -91,13 +83,8 @@ class Purchases_Model_Get
             $params['to'] = date('Y-m-d', strtotime($params['to']));
             $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		if($query) {
-			$query .= ' AND p.clientid = '.$clientid;
-			$query .= ' AND p.deleted = 0';
-		} else {
-			$query = 'p.clientid = '.$clientid;
-			$query .= ' AND p.deleted = 0';
-        }
+		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		$query = $helper->Query->getQueryDeleted($query, $schema);
 
 		$purchaseorders = $purchaseordersDb->fetchAll(
 			$purchaseordersDb->select()
@@ -111,13 +98,8 @@ class Purchases_Model_Get
 		);
 		if(!count($purchaseorders) && $params['keyword']) {
 			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		    if($query) {
-			    $query .= ' AND q.clientid = '.$clientid;
-			    $query .= ' AND q.deleted = 0';
-		    } else {
-			    $query = 'q.clientid = '.$clientid;
-			    $query .= ' AND q.deleted = 0';
-            }
+		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		    $query = $helper->Query->getQueryDeleted($query, $schema);
 			$purchaseorders = $purchaseordersDb->fetchAll(
 				$purchaseordersDb->select()
 					->setIntegrityCheck(false)
@@ -128,14 +110,16 @@ class Purchases_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-		    if(!count($purchaseorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
+	    if(!count($purchaseorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$purchaseorders->subtotal = 0;
 		$purchaseorders->total = 0;
+        $currency = $helper->Currency->getCurrency();
 		foreach($purchaseorders as $purchaseorder) {
 			$purchaseorders->subtotal += $purchaseorder->subtotal;
 			$purchaseorders->total += $purchaseorder->total;
+		    $currency = $helper->Currency->setCurrency($currency, $purchaseorder->currency, 'USE_SYMBOL');
 			$purchaseorder->subtotal = $currency->toCurrency($purchaseorder->subtotal);
 			$purchaseorder->taxes = $currency->toCurrency($purchaseorder->taxes);
 			$purchaseorder->total = $currency->toCurrency($purchaseorder->total);

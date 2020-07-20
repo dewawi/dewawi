@@ -27,8 +27,8 @@ class Users_UserController extends Zend_Controller_Action
 		$this->view->form = $form;
 
 		//Clients
-		$clientsDb = new Application_Model_DbTable_Client();
-		$clients = $clientsDb->getClients();
+		//$clientsDb = new Application_Model_DbTable_Client();
+		//$clients = $clientsDb->getClients();
 		//foreach($clients as $id => $company) {
 		//	$form->client->addMultiOption($id, $company);
 		//}

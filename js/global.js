@@ -33,7 +33,11 @@ $(document).ready(function(){
 		}
 	}, 60000); // 60 seconds
 
-    //Set client
+	//setInterval(function(){
+	//    console.log(isDirty);
+	//}, 1000); // 6 seconds
+
+    //Client switcher
 	$('#clientid').on('change', '', function() {
 		//console.log($('#client').val());
 	    $.ajax({
@@ -47,7 +51,24 @@ $(document).ready(function(){
                 //console.log(isDirty);
                 location.reload();
 		    }
+	    });
 	});
+
+    //Language switcher
+	$('#userinfo #language').on('change', '', function() {
+		//console.log($('#language').val());
+	    $.ajax({
+		    type: 'POST',
+		    async: true,
+		    url: baseUrl+'/users/user/language/language/'+$('#language').val(),
+		    cache: false,
+		    success: function(json){
+			    //response = json;
+			    //isDirty = false;
+                //console.log(isDirty);
+                location.reload();
+		    }
+	    });
 	});
 
 	//Auto validate and save
@@ -79,7 +100,9 @@ $(document).ready(function(){
 		//validate(data, params);
 	});
 	$('.edit form input').on('textchange', function() {
-		isDirty = true;
+        if (!$(this).hasClass('datePicker')) {
+		    isDirty = true;
+        }
 	});
 	$('.edit form textarea').on('textchange', function() {
 		isDirty = true;
@@ -242,6 +265,33 @@ $(document).ready(function(){
 			//Unlock
 			unlock(params['id']);
 		}
+	});
+	$('#data').on('change', '#activated', function() {
+        //console.log($('#activated').is(':checked'));
+	    var data = {};
+	    var params = {};
+		params['id'] = $(this).closest('tr').find('input.id').val();
+        if(params['id']) {
+		    if($(this).is(':checked')) data[this.name] = 1;
+            else data[this.name] = 0;
+            edit(data, params);
+        }
+	});
+	$('#data.permissions').on('change', 'input', function() {
+        //console.log($('#activated').is(':checked'));
+	    var data = {};
+	    var params = {};
+		params['id'] = $(this).closest('tr').find('input.id').val();
+		data['controller'] = $(this).closest('td').find('input.controller').val();
+		data['module'] = $(this).closest('td').find('input.module').val();
+		data['element'] = this.name;
+        if(params['id']) {
+		    if($(this).is(':checked')) data[this.name] = 1;
+            else data[this.name] = 0;
+            edit(data, params);
+            //console.log(params);
+            //console.log(data);
+        }
 	});
 
 	//Change title
@@ -780,7 +830,7 @@ function edit(data, params) {
 		success: function(json){
 			response = json;
 			isDirty = false;
-            //console.log(isDirty);
+            console.log(isDirty);
 		}
 	});
     //console.log(data);
@@ -799,7 +849,7 @@ function editPosition(data, params) {
 		cache: false,
 		success: function(response){
 			isDirty = false;
-			if((params['element'] == 'price') || (params['element'] == 'quantity')) {
+			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleapply')) {
 				$('table#total #subtotal').text(response['subtotal']);
 				$('table#total #total').text(response['total']);
 				$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);

@@ -63,6 +63,7 @@ echo $this->FileManager();
 			            <?php echo $this->form->getElement('debitornumber'); ?>
 			            <?php echo $this->form->getElement('paymentmethod'); ?>
 			            <?php echo $this->form->getElement('paymentterm'); ?>
+					    <?php echo $this->form->getElement('currency') ?>
                         <h4>Steuer</h4>
 			            <?php echo $this->form->getElement('taxnumber'); ?>
 			            <?php echo $this->form->getElement('vatin'); ?>
@@ -74,9 +75,9 @@ echo $this->FileManager();
                         <h4>Skonto</h4>
 			            <?php echo $this->form->getElement('cashdiscountdays'); ?>
 			            <?php echo $this->form->getElement('cashdiscountpercent'); ?>
-                        <h4>Rabatt</h4>
-			            <?php echo $this->form->getElement('discount'); ?>
-			            <?php echo $this->form->getElement('discountrule'); ?>
+                        <h4>Kundenpreis/Rabatt</h4>
+			            <?php echo $this->form->getElement('priceruleamount'); ?>
+			            <?php echo $this->form->getElement('priceruleaction'); ?>
                         <h4>Bankverbindung</h4>
                         <?php echo $this->MultiForm('bankaccount', $this->bankAccount, array('iban', 'bic'), 'CONTACTS_IBAN_BIC'); ?>
 				    </dl>

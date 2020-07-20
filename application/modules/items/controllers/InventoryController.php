@@ -6,8 +6,6 @@ class Items_InventoryController extends Zend_Controller_Action
 
 	protected $_user = null;
 
-	protected $_currency = null;
-
 	/**
 	 * FlashMessenger
 	 *
@@ -20,10 +18,6 @@ class Items_InventoryController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 
 		$this->_date = date('Y-m-d H:i:s');
-
-		$this->_currency = new Zend_Currency();
-		if(($this->view->action != 'index') && ($this->view->action != 'select') && ($this->view->action != 'search') && ($this->view->action != 'download') && ($this->view->action != 'save') && ($this->view->action != 'preview') && ($this->view->action != 'get'))
-			$this->_currency->setFormat(array('display' => Zend_Currency::NO_SYMBOL));
 
 		$this->view->id = isset($params['id']) ? $params['id'] : 0;
 		$this->view->action = $params['action'];
@@ -45,7 +39,7 @@ class Items_InventoryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 	    $get = new Items_Model_Get();
-		$inventory = $get->inventory($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$inventory = $get->inventory($params, $options['categories'], $this->_user['clientid'], $this->_helper);
 
 		$this->view->inventory = $inventory;
 		$this->view->options = $options;
@@ -65,7 +59,7 @@ class Items_InventoryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 	    $get = new Items_Model_Get();
-		$inventory = $get->inventory($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$inventory = $get->inventory($params, $options['categories'], $this->_user['clientid'], $this->_helper);
 
 		$this->view->inventory = $inventory;
 		$this->view->options = $options;
@@ -82,7 +76,7 @@ class Items_InventoryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 	    $get = new Items_Model_Get();
-		$inventory = $get->inventory($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$inventory = $get->inventory($params, $options['categories'], $this->_user['clientid'], $this->_helper);
 
 		$this->view->items = $items;
 		$this->view->options = $options;
@@ -183,11 +177,12 @@ class Items_InventoryController extends Zend_Controller_Action
 				}
 			} else {
 				if($id > 0) {
-					$item['cost'] = $this->_currency->toCurrency($item['cost']);
-					$item['price'] = $this->_currency->toCurrency($item['price']);
-					$item['margin'] = $this->_currency->toCurrency($item['margin']);
+                    $currency = $this->_helper->Currency->getCurrency($item['currency']);
+					$item['cost'] = $currency->toCurrency($item['cost']);
+					$item['price'] = $currency->toCurrency($item['price']);
+					$item['margin'] = $currency->toCurrency($item['margin']);
 					$locale = Zend_Registry::get('Zend_Locale');
-					$item['weight'] = $this->_currency->toCurrency($item['weight'],array('precision' => 4,'locale' => $locale));
+					$item['weight'] = $currency->toCurrency($item['weight'],array('precision' => 4,'locale' => $locale));
 					$form->populate($item);
 
 					//History

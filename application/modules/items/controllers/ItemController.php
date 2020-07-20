@@ -6,8 +6,6 @@ class Items_ItemController extends Zend_Controller_Action
 
 	protected $_user = null;
 
-	protected $_currency = null;
-
 	/**
 	 * FlashMessenger
 	 *
@@ -20,10 +18,6 @@ class Items_ItemController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 
 		$this->_date = date('Y-m-d H:i:s');
-
-		$this->_currency = new Zend_Currency();
-		if(($this->view->action != 'index') && ($this->view->action != 'select') && ($this->view->action != 'search') && ($this->view->action != 'download') && ($this->view->action != 'save') && ($this->view->action != 'preview') && ($this->view->action != 'get'))
-			$this->_currency->setFormat(array('display' => Zend_Currency::NO_SYMBOL));
 
 		$this->view->id = isset($params['id']) ? $params['id'] : 0;
 		$this->view->action = $params['action'];
@@ -45,7 +39,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 	    $get = new Items_Model_Get();
-		$items = $get->items($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$items = $get->items($params, $options['categories'], $this->_user['clientid'], $this->_helper);
 
 		$this->view->items = $items;
 		$this->view->options = $options;
@@ -65,7 +59,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 	    $get = new Items_Model_Get();
-		$items = $get->items($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$items = $get->items($params, $options['categories'], $this->_user['clientid'], $this->_helper);
 
 		$this->view->items = $items;
 		$this->view->options = $options;
@@ -82,7 +76,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 	    $get = new Items_Model_Get();
-		$items = $get->items($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_currency);
+		$items = $get->items($params, $options['categories'], $this->_user['clientid'], $this->_helper);
 
 		$this->view->items = $items;
 		$this->view->options = $options;
@@ -162,28 +156,28 @@ class Items_ItemController extends Zend_Controller_Action
 						$locale = Zend_Registry::get('Zend_Locale');
 						$data['weight'] = Zend_Locale_Format::getNumber($data['weight'],array('precision' => 4,'locale' => $locale));
 					}
-					$item = new Items_Model_DbTable_Item();
-					$item->updateItem($id, $data);
+					$itemDb->updateItem($id, $data);
 				} else {
 					throw new Exception('Form is invalid');
 				}
 			} else {
 				if($id > 0) {
-					$item['cost'] = $this->_currency->toCurrency($item['cost']);
-					$item['price'] = $this->_currency->toCurrency($item['price']);
-					$item['margin'] = $this->_currency->toCurrency($item['margin']);
+                    $currency = $this->_helper->Currency->getCurrency($item['currency']);
+					$item['cost'] = $currency->toCurrency($item['cost']);
+					$item['price'] = $currency->toCurrency($item['price']);
+					$item['margin'] = $currency->toCurrency($item['margin']);
 					$locale = Zend_Registry::get('Zend_Locale');
-					$item['quantity'] = ($item['quantity'] != 0) ? $this->_currency->toCurrency($item['quantity'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['minquantity'] = ($item['minquantity'] != 0) ? $this->_currency->toCurrency($item['minquantity'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['orderquantity'] = ($item['orderquantity'] != 0) ? $this->_currency->toCurrency($item['orderquantity'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['width'] = ($item['width'] != 0) ? $this->_currency->toCurrency($item['width'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['length'] = ($item['length'] != 0) ? $this->_currency->toCurrency($item['length'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['height'] = ($item['height'] != 0) ? $this->_currency->toCurrency($item['height'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['weight'] = ($item['weight'] != 0) ? $this->_currency->toCurrency($item['weight'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packwidth'] = ($item['packwidth'] != 0) ? $this->_currency->toCurrency($item['packwidth'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packlength'] = ($item['packlength'] != 0) ? $this->_currency->toCurrency($item['packlength'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packheight'] = ($item['packheight'] != 0) ? $this->_currency->toCurrency($item['packheight'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packweight'] = ($item['packweight'] != 0) ? $this->_currency->toCurrency($item['packweight'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['quantity'] = ($item['quantity'] != 0) ? $currency->toCurrency($item['quantity'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['minquantity'] = ($item['minquantity'] != 0) ? $currency->toCurrency($item['minquantity'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['orderquantity'] = ($item['orderquantity'] != 0) ? $currency->toCurrency($item['orderquantity'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['width'] = ($item['width'] != 0) ? $currency->toCurrency($item['width'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['length'] = ($item['length'] != 0) ? $currency->toCurrency($item['length'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['height'] = ($item['height'] != 0) ? $currency->toCurrency($item['height'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['weight'] = ($item['weight'] != 0) ? $currency->toCurrency($item['weight'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['packwidth'] = ($item['packwidth'] != 0) ? $currency->toCurrency($item['packwidth'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['packlength'] = ($item['packlength'] != 0) ? $currency->toCurrency($item['packlength'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['packheight'] = ($item['packheight'] != 0) ? $currency->toCurrency($item['packheight'],array('precision' => 2,'locale' => $locale)) : '';
+					$item['packweight'] = ($item['packweight'] != 0) ? $currency->toCurrency($item['packweight'],array('precision' => 2,'locale' => $locale)) : '';
 					$form->populate($item);
 
 					//History

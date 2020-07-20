@@ -600,10 +600,6 @@ form dt#id-label,
 form dd#id-element {
     display: none;
 }
-form#contact dt#id-label,
-form#contact dd#id-element {
-    display: inline-block;
-}
 form dt#info-label,
 form dt#header-label,
 form dt#footer-label,

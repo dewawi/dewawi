@@ -150,6 +150,7 @@ echo $this->doctype();
                                 <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_REMINDERS'); ?></a>
                             </div>
                         </div>
+                        <a class="button<?php if($this->controller == 'pricerule') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'pricerule', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PRICE_RULES'); ?></a>
                         <a class="button<?php if($this->module == 'statistics') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_STATISTICS'); ?></a>
                     </header>
 			    </div>
@@ -209,7 +210,7 @@ echo $this->doctype();
 					</div>
 				</div>
 			<?php else : ?>
-			    <?php if($this->action == 'index' && $this->module == 'contacts') : ?>
+			    <?php if($this->action == 'index' && $this->controller == 'contact' && $this->module == 'contacts') : ?>
                     <div class="hidden-sm hidden-md col-lg-2">
 				        <div id="categories">
 					        <?php echo $this->TreeMenu($this->options['categories']); ?>
@@ -220,7 +221,7 @@ echo $this->doctype();
 			                <?php echo $this->layout()->content; ?>
 		                </div>
 		            </div>
-			    <?php elseif($this->action == 'index' && $this->module == 'items') : ?>
+			    <?php elseif($this->action == 'index' && $this->controller == 'item' && $this->module == 'items') : ?>
                     <div class="hidden-sm hidden-md col-lg-2">
 				        <div id="categories">
 					        <?php echo $this->TreeMenu($this->options['categories']); ?><br>

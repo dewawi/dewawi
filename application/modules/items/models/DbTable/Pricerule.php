@@ -25,11 +25,18 @@ class Items_Model_DbTable_Pricerule extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getPricerules()
+	public function getPricerules($options)
 	{
 		$where = array();
+        foreach($options as $key => $option) {
+		    //$where[] = $this->getAdapter()->quoteInto($key.' = ? OR '.$key.' = 0', $option);
+        }
+        //$where[] = $this->getAdapter()->quoteInto('`from` <= ?',  $this->_date);
+        //$where[] = $this->getAdapter()->quoteInto('`to` >= ?',  $this->_date);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
-		$data = $this->fetchAll($where);
+		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'priority');
 		return $data;
 	}
 

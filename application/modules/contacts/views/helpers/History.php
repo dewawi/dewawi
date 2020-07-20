@@ -46,12 +46,12 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 						        </a>
 					        </td>
 					        <td id="contactid">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($quote->contactid);?>
 						        </a>
 					        </td>
 					        <td id="contact">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($quote->billingname1);?>
 							        <?php if($quote->billingname2) echo "<br/>".$this->view->escape($quote->billingname2);?>
 						        </a>
@@ -124,12 +124,12 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 						        </a>
 					        </td>
 					        <td id="contactid">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($salesorder->contactid);?>
 						        </a>
 					        </td>
 					        <td id="contact">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($salesorder->billingname1);?>
 							        <?php if($salesorder->billingname2) echo "<br/>".$this->view->escape($salesorder->billingname2);?>
 						        </a>
@@ -201,12 +201,12 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 						        </a>
 					        </td>
 					        <td id="contactid">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($invoice->contactid);?>
 						        </a>
 					        </td>
 					        <td id="contact">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($invoice->billingname1);?>
 							        <?php if($invoice->billingname2) echo "<br/>".$this->view->escape($invoice->billingname2);?>
 						        </a>
@@ -278,12 +278,12 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 						        </a>
 					        </td>
 					        <td id="contactid">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$deliveryorder->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($deliveryorder->contactid);?>
 						        </a>
 					        </td>
 					        <td id="contact">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$deliveryorder->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($deliveryorder->billingname1);?>
 							        <?php if($deliveryorder->billingname2) echo "<br/>".$this->view->escape($deliveryorder->billingname2);?>
 						        </a>
@@ -355,12 +355,12 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 						        </a>
 					        </td>
 					        <td id="contactid">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$creditnote->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($creditnote->contactid);?>
 						        </a>
 					        </td>
 					        <td id="contact">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$creditnote->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($creditnote->billingname1);?>
 							        <?php if($creditnote->billingname2) echo "<br/>".$this->view->escape($creditnote->billingname2);?>
 						        </a>
@@ -432,12 +432,12 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 						        </a>
 					        </td>
 					        <td id="contactid">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($quoterequest->contactid);?>
 						        </a>
 					        </td>
 					        <td id="contact">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($quoterequest->billingname1);?>
 							        <?php if($quoterequest->billingname2) echo "<br/>".$this->view->escape($quoterequest->billingname2);?>
 						        </a>
@@ -509,12 +509,12 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 						        </a>
 					        </td>
 					        <td id="contactid">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($purchaseorder->contactid);?>
 						        </a>
 					        </td>
 					        <td id="contact">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder->contactid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($purchaseorder->billingname1);?>
 							        <?php if($purchaseorder->billingname2) echo "<br/>".$this->view->escape($purchaseorder->billingname2);?>
 						        </a>
@@ -585,12 +585,12 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 						        </a>
 					        </td>
 					        <td id="customerid">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->customerid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($process->customerid);?>
 						        </a>
 					        </td>
 					        <td id="contact">
-						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->customerid));?>">
+						        <a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
 							        <?php echo $this->view->escape($process->billingname1);?>
 							        <?php if($process->billingname2) echo "<br/>".$this->view->escape($process->billingname2);?>
 						        </a>

@@ -12,7 +12,7 @@ class Sales_Form_Reminder extends Zend_Form
 		$form['id']->addFilter('Int')->removeDecorator('Label');
 
 		$form['reminderid'] = new Zend_Form_Element_Text('reminderid');
-		$form['reminderid']->setLabel('CREDIT_NOTES_CREDIT_NOTE_ID')
+		$form['reminderid']->setLabel('REMINDERS_REMINDER_ID')
 			->addFilter('Int')
 			->setAttrib('size', '5')
 			->setAttrib('readonly', 'readonly');
@@ -21,20 +21,20 @@ class Sales_Form_Reminder extends Zend_Form
 		$form['opportunityid']->addFilter('Int');
 
 		$form['title'] = new Zend_Form_Element_Text('title');
-		$form['title']->setLabel('CREDIT_NOTES_TITLE')
+		$form['title']->setLabel('REMINDERS_TITLE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '40');
 
 		$form['info'] = new Zend_Form_Element_Textarea('info');
-		$form['info']->setLabel('CREDIT_NOTES_INFO')
+		$form['info']->setLabel('REMINDERS_INFO')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('cols', '50')
 			->setAttrib('rows', '10');
 
 		$form['header'] = new Zend_Form_Element_Textarea('header');
-		$form['header']->setLabel('CREDIT_NOTES_HEADER')
+		$form['header']->setLabel('REMINDERS_HEADER')
 			->addFilter('StripTags', array(array(
 				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
 				'allowAttribs' => array('style','title','href')
@@ -45,7 +45,7 @@ class Sales_Form_Reminder extends Zend_Form
 			->setAttrib('class', 'editor');
 
 		$form['footer'] = new Zend_Form_Element_Textarea('footer');
-		$form['footer']->setLabel('CREDIT_NOTES_FOOTER')
+		$form['footer']->setLabel('REMINDERS_FOOTER')
 			->addFilter('StripTags', array(array(
 				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
 				'allowAttribs' => array('style','title','href')
@@ -56,41 +56,41 @@ class Sales_Form_Reminder extends Zend_Form
 			->setAttrib('class', 'editor');
 
 		$form['vatin'] = new Zend_Form_Element_Text('vatin');
-		$form['vatin']->setLabel('CREDIT_NOTES_VATIN')
+		$form['vatin']->setLabel('REMINDERS_VATIN')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
 		$form['reminderdate'] = new Zend_Form_Element_Text('reminderdate');
-		$form['reminderdate']->setLabel('CREDIT_NOTES_CREDIT_NOTE_DATE')
+		$form['reminderdate']->setLabel('REMINDERS_REMINDER_DATE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('class', 'datePicker')
 			->setAttrib('size', '9');
 
 		$form['orderdate'] = new Zend_Form_Element_Text('orderdate');
-		$form['orderdate']->setLabel('CREDIT_NOTES_ORDER_DATE')
+		$form['orderdate']->setLabel('REMINDERS_ORDER_DATE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('class', 'datePicker')
 			->setAttrib('size', '9');
 
 		$form['deliverydate'] = new Zend_Form_Element_Text('deliverydate');
-		$form['deliverydate']->setLabel('CREDIT_NOTES_DELIVERY_DATE')
+		$form['deliverydate']->setLabel('REMINDERS_DELIVERY_DATE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('class', 'datePicker')
 			->setAttrib('size', '9');
 
 		$form['paymentmethod'] = new Zend_Form_Element_Select('paymentmethod');
-		$form['paymentmethod']->setLabel('CREDIT_NOTES_PAYMENT_METHOD')
-			->addMultiOption('', 'CREDIT_NOTES_NONE')
+		$form['paymentmethod']->setLabel('REMINDERS_PAYMENT_METHOD')
+			->addMultiOption('', 'REMINDERS_NONE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim');
 
 		$form['shippingmethod'] = new Zend_Form_Element_Select('shippingmethod');
-		$form['shippingmethod']->setLabel('CREDIT_NOTES_SHIPPING_METHOD')
-			->addMultiOption('', 'CREDIT_NOTES_NONE')
+		$form['shippingmethod']->setLabel('REMINDERS_SHIPPING_METHOD')
+			->addMultiOption('', 'REMINDERS_NONE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim');
 
@@ -136,7 +136,7 @@ class Sales_Form_Reminder extends Zend_Form
 			->setAttrib('readonly', 'readonly');
 
 		$form['shippingname1'] = new Zend_Form_Element_Text('shippingname1');
-		$form['shippingname1']->setLabel('CREDIT_NOTES_SHIPPING_NAME')
+		$form['shippingname1']->setLabel('REMINDERS_SHIPPING_NAME')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '50');
@@ -148,47 +148,52 @@ class Sales_Form_Reminder extends Zend_Form
 			->setAttrib('size', '50');
 
 		$form['shippingdepartment'] = new Zend_Form_Element_Text('shippingdepartment');
-		$form['shippingdepartment']->setLabel('CREDIT_NOTES_SHIPPING_DEPARTMENT')
+		$form['shippingdepartment']->setLabel('REMINDERS_SHIPPING_DEPARTMENT')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '50');
 
 		$form['shippingstreet'] = new Zend_Form_Element_Textarea('shippingstreet');
-		$form['shippingstreet']->setLabel('CREDIT_NOTES_SHIPPING_STREET')
+		$form['shippingstreet']->setLabel('REMINDERS_SHIPPING_STREET')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('cols', '30')
 			->setAttrib('rows', '3');
 
 		$form['shippingpostcode'] = new Zend_Form_Element_Text('shippingpostcode');
-		$form['shippingpostcode']->setLabel('CREDIT_NOTES_SHIPPING_POSTCODE')
+		$form['shippingpostcode']->setLabel('REMINDERS_SHIPPING_POSTCODE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
 		$form['shippingcity'] = new Zend_Form_Element_Text('shippingcity');
-		$form['shippingcity']->setLabel('CREDIT_NOTES_SHIPPING_CITY')
+		$form['shippingcity']->setLabel('REMINDERS_SHIPPING_CITY')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
 		$form['shippingcountry'] = new Zend_Form_Element_Text('shippingcountry');
-		$form['shippingcountry']->setLabel('CREDIT_NOTES_SHIPPING_COUNTRY')
+		$form['shippingcountry']->setLabel('REMINDERS_SHIPPING_COUNTRY')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
 		$form['shippingphone'] = new Zend_Form_Element_Text('shippingphone');
-		$form['shippingphone']->setLabel('CREDIT_NOTES_SHIPPING_PHONE')
+		$form['shippingphone']->setLabel('REMINDERS_SHIPPING_PHONE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
+
+		$form['currency'] = new Zend_Form_Element_Select('currency');
+		$form['currency']->setLabel('REMINDERS_CURRENCY')
+			->setRequired(true)
+			->addValidator('NotEmpty');
 
 		$form['taxfree'] = new Zend_Form_Element_Checkbox('taxfree');
 		$form['taxfree']->setLabel('CONTACTS_TAX_FREE');
 
 		$form['contactinfo'] = new Zend_Form_Element_Textarea('contactinfo');
-		$form['contactinfo']->setLabel('CREDIT_NOTES_CONTACT_INFO')
+		$form['contactinfo']->setLabel('REMINDERS_CONTACT_INFO')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('cols', '62')
@@ -196,17 +201,17 @@ class Sales_Form_Reminder extends Zend_Form
 			->setAttrib('readonly', 'readonly');
 
 		$form['templateid'] = new Zend_Form_Element_Select('templateid');
-		$form['templateid']->setLabel('CREDIT_NOTES_TEMPLATE')
+		$form['templateid']->setLabel('REMINDERS_TEMPLATE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim');
 
 		$form['language'] = new Zend_Form_Element_Select('language');
-		$form['language']->setLabel('CREDIT_NOTES_LANGUAGE')
+		$form['language']->setLabel('REMINDERS_LANGUAGE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim');
 
 		$form['state'] = new Zend_Form_Element_Text('state');
-		$form['state']->setLabel('CREDIT_NOTES_STATE')
+		$form['state']->setLabel('REMINDERS_STATE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');

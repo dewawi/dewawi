@@ -64,8 +64,8 @@ class Sales_Form_Reminderpos extends Zend_Form
 			->setAttrib('class', 'number')
 			->setAttrib('size', '20');
 
-		$form['priceruleapply'] = new Zend_Form_Element_Select('priceruleapply');
-		$form['priceruleapply']->setLabel('POSITIONS_PRICE_RULE_APPLY')
+		$form['priceruleaction'] = new Zend_Form_Element_Select('priceruleaction');
+		$form['priceruleaction']->setLabel('POSITIONS_PRICE_RULE_APPLY')
 			->addMultiOption(0, 'POSITIONS_NONE')
 			->setRequired(true)
 			->addValidator('NotEmpty');

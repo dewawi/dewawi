@@ -59,6 +59,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		//Config
 		$configDb = new Application_Model_DbTable_Config();
 		$config = $configDb->getConfig();
+		Zend_Registry::set('Config', $config);
 
 		//Locale
 	    $authNamespace = new Zend_Session_Namespace('Zend_Auth');
@@ -68,11 +69,18 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		    $language = new Zend_Locale($config['language']);
         }
 		Zend_Registry::set('Zend_Locale', $language);
+        //error_log($language->toString());
 
-		//Date
-		$phpSettings = $this->getOption('phpSettings');
+        $currency = new Zend_Currency(array(
+            'locale' => $language,
+            'precision' => 2
+        ));
+		Zend_Registry::set('Zend_Currency', $currency);
+
+		//Time zone
 		date_default_timezone_set($config['timezone']);
-		$date = new Zend_Date();
+		//$phpSettings = $this->getOption('phpSettings');
+		//$date = new Zend_Date();
 		//echo $date, "\n";
 		//echo $date->toString('YYYY-MM-dd HH:mm:ss'); 
 		/*$date = $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);*/

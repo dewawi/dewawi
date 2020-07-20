@@ -21,11 +21,23 @@ class Contacts_Controller_Action_Helper_Options extends Zend_Controller_Action_H
 		$paymentmethods = $paymentmethodDb->getPaymentmethods();
 		$options['paymentmethods'] = $paymentmethods;
 
+		//Get currencies
+		$currencyDb = new Application_Model_DbTable_Currency();
+		$currencies = $currencyDb->getCurrencies();
+		$options['currencies'] = $currencies;
+
+		//Get price rule actions
+		$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
+		$priceruleactions = $priceruleactionDb->getPriceruleactions();
+		$options['priceruleactions'] = $priceruleactions;
+
 		//Set form options
         $MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
 		if(isset($form->country) && isset($options['countries'])) $form->country->addMultiOptions($options['countries']);
 		if(isset($form->paymentmethod) && isset($options['paymentmethods'])) $form->paymentmethod->addMultiOptions($options['paymentmethods']);
+		if(isset($form->currency) && isset($options['currencies'])) $form->currency->addMultiOptions($options['currencies']);
+		if(isset($form->priceruleaction) && isset($options['priceruleactions'])) $form->priceruleaction->addMultiOptions($options['priceruleactions']);
 
 		return $options;
 	}

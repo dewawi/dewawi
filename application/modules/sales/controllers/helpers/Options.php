@@ -36,6 +36,11 @@ class Sales_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$shippingmethods = $shippingmethodDb->getShippingmethods();
 		$options['shippingmethods'] = $shippingmethods;
 
+		//Get currencies
+		$currencyDb = new Application_Model_DbTable_Currency();
+		$currencies = $currencyDb->getCurrencies();
+		$options['currencies'] = $currencies;
+
 		//Get templates
 		$templateDb = new Application_Model_DbTable_Template();
 		$templates = $templateDb->getTemplates();
@@ -52,6 +57,7 @@ class Sales_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		if(isset($form->country) && isset($options['countries'])) $form->country->addMultiOptions($options['countries']);
 		if(isset($form->paymentmethod) && isset($options['paymentmethods'])) $form->paymentmethod->addMultiOptions($options['paymentmethods']);
 		if(isset($form->shippingmethod) && isset($options['shippingmethods'])) $form->shippingmethod->addMultiOptions($options['shippingmethods']);
+		if(isset($form->currency) && isset($options['currencies'])) $form->currency->addMultiOptions($options['currencies']);
 		if(isset($form->templateid) && isset($options['templates'])) $form->templateid->addMultiOptions($options['templates']);
 		if(isset($form->language) && isset($options['languages'])) $form->language->addMultiOptions($options['languages']);
 

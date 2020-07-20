@@ -2,7 +2,7 @@
 
 class Sales_Model_Get
 {
-	public function quotes($params, $categories, $clientid, $helper, $currency, $flashMessenger)
+	public function quotes($params, $categories, $clientid, $helper, $flashMessenger)
 	{
 		$quotesDb = new Sales_Model_DbTable_Quote();
 
@@ -19,13 +19,8 @@ class Sales_Model_Get
             $params['to'] = date('Y-m-d', strtotime($params['to']));
             $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		if($query) {
-			$query .= ' AND q.clientid = '.$clientid;
-			$query .= ' AND q.deleted = 0';
-		} else {
-			$query = 'q.clientid = '.$clientid;
-			$query .= ' AND q.deleted = 0';
-        }
+		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		$query = $helper->Query->getQueryDeleted($query, $schema);
 
 		$quotes = $quotesDb->fetchAll(
 			$quotesDb->select()
@@ -37,15 +32,23 @@ class Sales_Model_Get
 				->order($params['order'].' '.$params['sort'])
 				->limit($params['limit'])
 		);
+
+
+		/*$select = $quotesDb->select()
+			->setIntegrityCheck(false)
+			->from(array($schema => 'quote'))
+			->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
+			->group($schema.'.id')
+			->where($query ? $query : 1)
+			->order($params['order'].' '.$params['sort'])
+			->limit($params['limit']);
+        error_log($select->__toString());*/
+
+
 		if(!count($quotes) && $params['keyword']) {
 			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		    if($query) {
-			    $query .= ' AND q.clientid = '.$clientid;
-			    $query .= ' AND q.deleted = 0';
-		    } else {
-			    $query = 'q.clientid = '.$clientid;
-			    $query .= ' AND q.deleted = 0';
-            }
+		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		    $query = $helper->Query->getQueryDeleted($query, $schema);
 			$quotes = $quotesDb->fetchAll(
 				$quotesDb->select()
 					->setIntegrityCheck(false)
@@ -56,15 +59,16 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-		    if(!count($quotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
-        //error_log($query);
+	    if(!count($quotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$quotes->subtotal = 0;
 		$quotes->total = 0;
+        $currency = $helper->Currency->getCurrency();
 		foreach($quotes as $quote) {
 			$quotes->subtotal += $quote->subtotal;
 			$quotes->total += $quote->total;
+		    $currency = $helper->Currency->setCurrency($currency, $quote->currency, 'USE_SYMBOL');
 			$quote->subtotal = $currency->toCurrency($quote->subtotal);
 			$quote->taxes = $currency->toCurrency($quote->taxes);
 			$quote->total = $currency->toCurrency($quote->total);
@@ -75,7 +79,7 @@ class Sales_Model_Get
 		return $quotes;
 	}
 
-	public function invoices($params, $categories, $clientid, $helper, $currency, $flashMessenger)
+	public function invoices($params, $categories, $clientid, $helper, $flashMessenger)
 	{
 		$invoicesDb = new Sales_Model_DbTable_Invoice();
 
@@ -92,13 +96,8 @@ class Sales_Model_Get
             $params['to'] = date('Y-m-d', strtotime($params['to']));
             $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		if($query) {
-			$query .= ' AND i.clientid = '.$clientid;
-			$query .= ' AND i.deleted = 0';
-		} else {
-			$query = 'i.clientid = '.$clientid;
-			$query .= ' AND i.deleted = 0';
-        }
+		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		$query = $helper->Query->getQueryDeleted($query, $schema);
 
 		$invoices = $invoicesDb->fetchAll(
 			$invoicesDb->select()
@@ -112,6 +111,8 @@ class Sales_Model_Get
 		);
 		if(!count($invoices) && $params['keyword']) {
 			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		    $query = $helper->Query->getQueryDeleted($query, $schema);
 			$invoices = $invoicesDb->fetchAll(
 				$invoicesDb->select()
 					->setIntegrityCheck(false)
@@ -122,14 +123,16 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-		    if(!count($invoices)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
+	    if(!count($invoices)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$invoices->subtotal = 0;
 		$invoices->total = 0;
+        $currency = $helper->Currency->getCurrency();
 		foreach($invoices as $invoice) {
 			$invoices->subtotal += $invoice->subtotal;
 			$invoices->total += $invoice->total;
+		    $currency = $helper->Currency->setCurrency($currency, $invoice->currency, 'USE_SYMBOL');
 			$invoice->subtotal = $currency->toCurrency($invoice->subtotal);
 			$invoice->taxes = $currency->toCurrency($invoice->taxes);
 			$invoice->total = $currency->toCurrency($invoice->total);
@@ -140,7 +143,7 @@ class Sales_Model_Get
 		return $invoices;
 	}
 
-	public function salesorders($params, $categories, $clientid, $helper, $currency, $flashMessenger)
+	public function salesorders($params, $categories, $clientid, $helper, $flashMessenger)
 	{
 		$salesordersDb = new Sales_Model_DbTable_Salesorder();
 
@@ -157,13 +160,8 @@ class Sales_Model_Get
             $params['to'] = date('Y-m-d', strtotime($params['to']));
             $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		if($query) {
-			$query .= ' AND s.clientid = '.$clientid;
-			$query .= ' AND s.deleted = 0';
-		} else {
-			$query = 's.clientid = '.$clientid;
-			$query .= ' AND s.deleted = 0';
-        }
+		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		$query = $helper->Query->getQueryDeleted($query, $schema);
 
 		$salesorders = $salesordersDb->fetchAll(
 			$salesordersDb->select()
@@ -177,6 +175,8 @@ class Sales_Model_Get
 		);
 		if(!count($salesorders) && $params['keyword']) {
 			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		    $query = $helper->Query->getQueryDeleted($query, $schema);
 			$salesorders = $salesordersDb->fetchAll(
 				$salesordersDb->select()
 					->setIntegrityCheck(false)
@@ -187,14 +187,16 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-		    if(!count($salesorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
+	    if(!count($salesorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$salesorders->subtotal = 0;
 		$salesorders->total = 0;
+        $currency = $helper->Currency->getCurrency();
 		foreach($salesorders as $salesorder) {
 			$salesorders->subtotal += $salesorder->subtotal;
 			$salesorders->total += $salesorder->total;
+		    $currency = $helper->Currency->setCurrency($currency, $salesorder->currency, 'USE_SYMBOL');
 			$salesorder->subtotal = $currency->toCurrency($salesorder->subtotal);
 			$salesorder->taxes = $currency->toCurrency($salesorder->taxes);
 			$salesorder->total = $currency->toCurrency($salesorder->total);
@@ -205,7 +207,7 @@ class Sales_Model_Get
 		return $salesorders;
 	}
 
-	public function deliveryorders($params, $categories, $clientid, $helper, $currency, $flashMessenger)
+	public function deliveryorders($params, $categories, $clientid, $helper, $flashMessenger)
 	{
 		$deliveryordersDb = new Sales_Model_DbTable_Deliveryorder();
 
@@ -222,13 +224,8 @@ class Sales_Model_Get
             $params['to'] = date('Y-m-d', strtotime($params['to']));
             $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		if($query) {
-			$query .= ' AND d.clientid = '.$clientid;
-			$query .= ' AND d.deleted = 0';
-		} else {
-			$query = 'd.clientid = '.$clientid;
-			$query .= ' AND d.deleted = 0';
-        }
+		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		$query = $helper->Query->getQueryDeleted($query, $schema);
 
 		$deliveryorders = $deliveryordersDb->fetchAll(
 			$deliveryordersDb->select()
@@ -242,6 +239,8 @@ class Sales_Model_Get
 		);
 		if(!count($deliveryorders) && $params['keyword']) {
 			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		    $query = $helper->Query->getQueryDeleted($query, $schema);
 			$deliveryorders = $deliveryordersDb->fetchAll(
 				$deliveryordersDb->select()
 					->setIntegrityCheck(false)
@@ -252,14 +251,16 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-		    if(!count($deliveryorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
+	    if(!count($deliveryorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$deliveryorders->subtotal = 0;
 		$deliveryorders->total = 0;
+        $currency = $helper->Currency->getCurrency();
 		foreach($deliveryorders as $deliveryorder) {
 			$deliveryorders->subtotal += $deliveryorder->subtotal;
 			$deliveryorders->total += $deliveryorder->total;
+		    $currency = $helper->Currency->setCurrency($currency, $deliveryorder->currency, 'USE_SYMBOL');
 			$deliveryorder->subtotal = $currency->toCurrency($deliveryorder->subtotal);
 			$deliveryorder->taxes = $currency->toCurrency($deliveryorder->taxes);
 			$deliveryorder->total = $currency->toCurrency($deliveryorder->total);
@@ -270,7 +271,7 @@ class Sales_Model_Get
 		return $deliveryorders;
 	}
 
-	public function creditnotes($params, $categories, $clientid, $helper, $currency, $flashMessenger)
+	public function creditnotes($params, $categories, $clientid, $helper, $flashMessenger)
 	{
 		$creditnotesDb = new Sales_Model_DbTable_Creditnote();
 
@@ -287,13 +288,8 @@ class Sales_Model_Get
             $params['to'] = date('Y-m-d', strtotime($params['to']));
             $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		if($query) {
-			$query .= ' AND cr.clientid = '.$clientid;
-			$query .= ' AND cr.deleted = 0';
-		} else {
-			$query = 'cr.clientid = '.$clientid;
-			$query .= ' AND cr.deleted = 0';
-        }
+		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		$query = $helper->Query->getQueryDeleted($query, $schema);
 
 		$creditnotes = $creditnotesDb->fetchAll(
 			$creditnotesDb->select()
@@ -307,6 +303,8 @@ class Sales_Model_Get
 		);
 		if(!count($creditnotes) && $params['keyword']) {
 			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		    $query = $helper->Query->getQueryDeleted($query, $schema);
 			$creditnotes = $creditnotesDb->fetchAll(
 				$creditnotesDb->select()
 					->setIntegrityCheck(false)
@@ -317,14 +315,16 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-		    if(!count($creditnotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
+	    if(!count($creditnotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$creditnotes->subtotal = 0;
 		$creditnotes->total = 0;
+	    $currency = $helper->Currency->getCurrency();
 		foreach($creditnotes as $creditnote) {
 			$creditnotes->subtotal += $creditnote->subtotal;
 			$creditnotes->total += $creditnote->total;
+		    $currency = $helper->Currency->setCurrency($currency, $creditnote->currency, 'USE_SYMBOL');
 			$creditnote->subtotal = $currency->toCurrency($creditnote->subtotal);
 			$creditnote->taxes = $currency->toCurrency($creditnote->taxes);
 			$creditnote->total = $currency->toCurrency($creditnote->total);
@@ -335,7 +335,7 @@ class Sales_Model_Get
 		return $creditnotes;
 	}
 
-	public function reminders($params, $categories, $clientid, $helper, $currency, $flashMessenger)
+	public function reminders($params, $categories, $clientid, $helper, $flashMessenger)
 	{
 		$remindersDb = new Sales_Model_DbTable_Reminder();
 
@@ -352,13 +352,8 @@ class Sales_Model_Get
             $params['to'] = date('Y-m-d', strtotime($params['to']));
             $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		if($query) {
-			$query .= ' AND cr.clientid = '.$clientid;
-			$query .= ' AND cr.deleted = 0';
-		} else {
-			$query = 'cr.clientid = '.$clientid;
-			$query .= ' AND cr.deleted = 0';
-        }
+		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		$query = $helper->Query->getQueryDeleted($query, $schema);
 
 		$reminders = $remindersDb->fetchAll(
 			$remindersDb->select()
@@ -372,6 +367,8 @@ class Sales_Model_Get
 		);
 		if(!count($reminders) && $params['keyword']) {
 			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		    $query = $helper->Query->getQueryDeleted($query, $schema);
 			$reminders = $remindersDb->fetchAll(
 				$remindersDb->select()
 					->setIntegrityCheck(false)
@@ -382,14 +379,16 @@ class Sales_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-		    if(!count($reminders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
+	    if(!count($reminders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$reminders->subtotal = 0;
 		$reminders->total = 0;
+	    $currency = $helper->Currency->getCurrency();
 		foreach($reminders as $reminder) {
 			$reminders->subtotal += $reminder->subtotal;
 			$reminders->total += $reminder->total;
+		    $currency = $helper->Currency->setCurrency($currency, $reminder->currency, 'USE_SYMBOL');
 			$reminder->subtotal = $currency->toCurrency($reminder->subtotal);
 			$reminder->taxes = $currency->toCurrency($reminder->taxes);
 			$reminder->total = $currency->toCurrency($reminder->total);

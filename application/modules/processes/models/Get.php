@@ -2,7 +2,7 @@
 
 class Processes_Model_Get
 {
-	public function processes($params, $categories, $clientid, $helper, $currency, $flashMessenger)
+	public function processes($params, $categories, $clientid, $helper, $flashMessenger)
 	{
 		$processesDb = new Processes_Model_DbTable_Process();
 
@@ -20,13 +20,8 @@ class Processes_Model_Get
             $params['to'] = date('Y-m-d', strtotime($params['to']));
             $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		if($query) {
-			$query .= ' AND p.clientid = '.$clientid;
-			$query .= ' AND p.deleted = 0';
-		} else {
-			$query = 'p.clientid = '.$clientid;
-			$query .= ' AND p.deleted = 0';
-        }
+		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
+		$query = $helper->Query->getQueryDeleted($query, $schema);
 
 		$processes = $processesDb->fetchAll(
 			$processesDb->select()
@@ -40,13 +35,8 @@ class Processes_Model_Get
 		);
 		if(!count($processes) && $params['keyword']) {
 			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-	        if($query) {
-		        $query .= ' AND p.clientid = '.$clientid;
-		        $query .= ' AND p.deleted = 0';
-	        } else {
-		        $query = 'p.clientid = '.$clientid;
-		        $query .= ' AND p.deleted = 0';
-            }
+	        $query = $helper->Query->getQueryClient($query, $clientid, $schema);
+	        $query = $helper->Query->getQueryDeleted($query, $schema);
 			$processes = $processesDb->fetchAll(
 				$processesDb->select()
 					->setIntegrityCheck(false)
@@ -57,14 +47,16 @@ class Processes_Model_Get
 					->order($params['order'].' '.$params['sort'])
 					->limit($params['limit'])
 			);
-		    if(!count($processes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 		}
+	    if(!count($processes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$processes->subtotal = 0;
 		$processes->total = 0;
+        $currency = $helper->Currency->getCurrency();
 		foreach($processes as $process) {
 			$processes->subtotal += $process->subtotal;
 			$processes->total += $process->total;
+		    $currency = $helper->Currency->setCurrency($currency, $process->currency, 'USE_SYMBOL');
 			if($process->prepayment == 0.0000) $process->prepayment = 0;
 			else {
 				//$process->stillToPay = $currency->toCurrency($processes->subtotal-$process->prepayment);

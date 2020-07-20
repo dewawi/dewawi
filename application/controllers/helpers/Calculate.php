@@ -2,7 +2,7 @@
 
 class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Action_Helper_Abstract
 {
-	public function direct($id, $currency, $date, $user, $taxfree = null) {
+	public function direct($id, $date, $user, $taxfree = null) {
 		$request = $this->getRequest();
 		$module = $request->getParam('module', null);
 		$controller = $request->getParam('controller', null);
@@ -24,8 +24,21 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			$calculations['locale'] = array();
 			$calculations['row']['subtotal'] = 0;
 			$calculations['row']['taxes'] = array();
+            $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		    $currency = $currencyHelper->getCurrency();
 			foreach($positions as $position) {
-				$calculations['row'][$position->id]['total'] = $position->price*$position->quantity;
+                $price = $position->price;
+                if($position->priceruleamount && $position->priceruleaction) {
+                    if($position->priceruleaction == 'bypercent')
+				        $price = $price*(100-$position->priceruleamount)/100;
+                    elseif($position->priceruleaction == 'byfixed')
+				        $price = ($price-$position->priceruleamount);
+                    elseif($position->priceruleaction == 'topercent')
+				        $price = $price*(100+$position->priceruleamount)/100;
+                    elseif($position->priceruleaction == 'tofixed')
+				        $price = ($price+$position->priceruleamount);
+                }
+				$calculations['row'][$position->id]['total'] = $price*$position->quantity;
 				$calculations['row']['subtotal'] += $calculations['row'][$position->id]['total'];
 
 				if(isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] += $calculations['row'][$position->id]['total']*$position->taxrate/100;
@@ -33,11 +46,12 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 				if(isset($calculations['row']['taxes'][$position->taxrate])) $calculations['row']['taxes'][$position->taxrate] += $calculations['row'][$position->id]['total']*$position->taxrate/100;
                 else $calculations['row']['taxes'][$position->taxrate] = $calculations['row'][$position->id]['total']*$position->taxrate/100;
 
-				$calculations['locale'][$position->id]['price'] = $currency->toCurrency($position->price);
+			    $currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
+				$calculations['locale'][$position->id]['price'] = $currency->toCurrency($price);
 				$calculations['locale'][$position->id]['total'] = $currency->toCurrency($calculations['row'][$position->id]['total']);
 
 			    $objectPosDb = new $classPos();
-				$objectPosDb->updatePosition($position->id, array('total' => ($position->price*$position->quantity*(1+$position->taxrate/100))));
+				$objectPosDb->updatePosition($position->id, array('total' => ($price*$position->quantity*(1+$position->taxrate/100))));
 			}
 
 			if($taxfree === null) $taxfree = $object['taxfree'];
@@ -46,13 +60,12 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
             if(!isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] = 0;
 			$calculations['row']['total'] = $calculations['row']['subtotal'] + $calculations['row']['taxes']['total'];
 
-			$objectDb->updateTotal($id, $calculations['row']['subtotal'], $calculations['row']['taxes']['total'], $calculations['row']['total'], $date, $user);
+			$objectDb->updateTotal($id, $calculations['row']['subtotal'], $calculations['row']['taxes']['total'], $calculations['row']['total']);
 
 			$calculations['locale']['subtotal'] = $currency->toCurrency($calculations['row']['subtotal']);
 			$calculations['locale']['total'] = $currency->toCurrency($calculations['row']['subtotal']+$calculations['row']['taxes']['total']);
                 foreach($calculations['row']['taxes'] as $key => $value)
                     $calculations['locale']['taxes'][$key] = $currency->toCurrency($value);
-//print_r($calculations);
 			return $calculations;
 		}
 	}

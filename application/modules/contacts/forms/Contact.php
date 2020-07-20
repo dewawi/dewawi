@@ -159,14 +159,15 @@ class Contacts_Form_Contact extends Zend_Form
 		$form['taxfree'] = new Zend_Form_Element_Checkbox('taxfree');
 		$form['taxfree']->setLabel('CONTACTS_TAX_FREE');
 
-		$form['discount'] = new Zend_Form_Element_Text('discount');
-		$form['discount']->setLabel('CONTACTS_DISCOUNT')
+		$form['priceruleamount'] = new Zend_Form_Element_Text('priceruleamount');
+		$form['priceruleamount']->setLabel('CONTACTS_PRICE_RULE_AMOUNT')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
+			->setAttrib('class', 'number')
 			->setAttrib('size', '30');
 
-		$form['discountrule'] = new Zend_Form_Element_Select('discountrule');
-		$form['discountrule']->setLabel('CONTACTS_DISCOUNT_RULE')
+		$form['priceruleaction'] = new Zend_Form_Element_Select('priceruleaction');
+		$form['priceruleaction']->setLabel('CONTACTS_PRICE_RULE_APPLY')
 			->addMultiOption('', 'CONTACTS_NONE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim');
@@ -183,6 +184,12 @@ class Contacts_Form_Contact extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
+		$form['currency'] = new Zend_Form_Element_Select('currency');
+		$form['currency']->setLabel('CONTACTS_CURRENCY')
+			->addMultiOption(0, 'CONTACTS_NONE')
+			->setRequired(true)
+			->addValidator('NotEmpty');
+
 		$form['cashdiscountdays'] = new Zend_Form_Element_Text('cashdiscountdays');
 		$form['cashdiscountdays']->setLabel('CONTACTS_CASH_DISCOUNT_DAYS')
 			->addFilter('StripTags')
@@ -193,6 +200,7 @@ class Contacts_Form_Contact extends Zend_Form
 		$form['cashdiscountpercent']->setLabel('CONTACTS_CASH_DISCOUNT_DAYS_PERCENT')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
+			->setAttrib('class', 'number')
 			->setAttrib('size', '30');
 
 		$this->addElements($form);
