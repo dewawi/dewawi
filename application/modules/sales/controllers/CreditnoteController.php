@@ -96,7 +96,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$data = array();
 		$data['title'] = $this->view->translate('CREDIT_NOTES_NEW_CREDIT_NOTE');
 		$data['contactid'] = $contactid;
-		$data['currency'] = 'EUR';
+		$data['currency'] = 'EUR'; // to do get standard currency
 		$data['state'] = 100;
 
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();

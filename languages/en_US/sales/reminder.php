@@ -47,7 +47,7 @@
 	'REMINDERS_SUBTOTAL' => 'Subtotal',
 	'REMINDERS_TAXES' => 'Taxes',
 	'REMINDERS_TOTAL' => 'Total',
-    'REMINDERS_CURRENCY' => 'Currency'
+    'REMINDERS_CURRENCY' => 'Currency',
 	'REMINDERS_TEMPLATE' => 'Template',
 	'REMINDERS_LANGUAGE' => 'Language'
 );

@@ -48,7 +48,7 @@
 	'SALES_ORDERS_SUBTOTAL' => 'Subtotal',
 	'SALES_ORDERS_TAXES' => 'Taxes',
 	'SALES_ORDERS_TOTAL' => 'Total',
-    'SALES_ORDERS_CURRENCY' => 'Currency'
+    'SALES_ORDERS_CURRENCY' => 'Currency',
 	'SALES_ORDERS_TEMPLATE' => 'Template',
 	'SALES_ORDERS_LANGUAGE' => 'Language'
 );

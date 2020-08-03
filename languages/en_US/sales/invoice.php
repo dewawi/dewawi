@@ -48,7 +48,7 @@
 	'INVOICES_SUBTOTAL' => 'Subtotal',
 	'INVOICES_TAXES' => 'Taxes',
 	'INVOICES_TOTAL' => 'Total',
-    'INVOICES_CURRENCY' => 'Currency'
+    'INVOICES_CURRENCY' => 'Currency',
 	'INVOICES_TEMPLATE' => 'Template',
 	'INVOICES_LANGUAGE' => 'Language'
 );

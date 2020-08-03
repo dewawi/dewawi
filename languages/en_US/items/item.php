@@ -21,7 +21,7 @@
 	'ITEMS_PRICE' => 'Price',
 	'ITEMS_PRICES' => 'Prices',
 	'ITEMS_MARGIN' => 'Margin',
-    'ITEMS_CURRENCY' => 'Currency'
+    'ITEMS_CURRENCY' => 'Currency',
 	'ITEMS_QUANTITY' => 'Quantity',
 	'ITEMS_MIN_QUANTITY' => 'Min. Quantity',
 	'ITEMS_ORDER_QUANTITY' => 'Order quantity',

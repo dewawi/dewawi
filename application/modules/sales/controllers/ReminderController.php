@@ -94,7 +94,9 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$contactid = $this->_getParam('contactid', 0);
 
 		$data = array();
+		$data['title'] = $this->view->translate('REMINDERS_NEW_REMINDER');
 		$data['contactid'] = $contactid;
+		$data['currency'] = 'EUR'; // to do get standard currency
 		$data['state'] = 100;
 
 		$reminderDb = new Sales_Model_DbTable_Reminder();

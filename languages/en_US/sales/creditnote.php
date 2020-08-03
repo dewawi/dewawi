@@ -47,7 +47,7 @@
 	'CREDIT_NOTES_SUBTOTAL' => 'Subtotal',
 	'CREDIT_NOTES_TAXES' => 'Taxes',
 	'CREDIT_NOTES_TOTAL' => 'Total',
-    'CREDIT_NOTES_CURRENCY' => 'Currency'
+    'CREDIT_NOTES_CURRENCY' => 'Currency',
 	'CREDIT_NOTES_TEMPLATE' => 'Template',
 	'CREDIT_NOTES_LANGUAGE' => 'Language'
 );

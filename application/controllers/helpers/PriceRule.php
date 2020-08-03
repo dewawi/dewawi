@@ -53,6 +53,8 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
                 foreach($pricerules as $id => $pricerule) {
                     if($pricerule->contactcatid && ($contact['catid'] == 0)) {
                         unset($pricerules[$id]);
+                    } elseif($pricerule->contactcatid == $contact['catid']) {
+                        //Contact category is the same keep the rule
                     } elseif($contact['catid'] && $pricerule->contactsubcat) {
             			$isParent = $helper->Category->isParent($contact['catid'], $pricerule->contactcatid, $categoriesContact);
                         if(!$isParent) unset($pricerules[$id]);
@@ -74,6 +76,7 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
                     }
                 }
             }
+            //error_log(count($pricerules));
 
             //Apply the price rules to the position
             if(count($pricerules) == 1) {

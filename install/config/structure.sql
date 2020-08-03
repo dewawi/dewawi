@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS `client` (
   `modifiedby` int(11) NOT NULL,
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
+  `activated` int(11) NOT NULL,
   `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -388,7 +389,7 @@ CREATE TABLE IF NOT EXISTS `footer` (
 
 DROP TABLE IF EXISTS `increment`;
 CREATE TABLE IF NOT EXISTS `increment` (
-  `clientid` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL AUTO_INCREMENT,
   `contactid` int(11) NOT NULL,
   `creditnoteid` int(11) NOT NULL,
   `deliveryorderid` int(11) NOT NULL,
@@ -662,6 +663,28 @@ CREATE TABLE IF NOT EXISTS `paymentmethod` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime NOT NULL,
+  `modifiedby` int(11) NOT NULL,
+  `locked` int(11) NOT NULL,
+  `lockedtime` datetime NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `permission`;
+CREATE TABLE IF NOT EXISTS `permission` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `userid` int(11) NOT NULL,
+  `default` text NOT NULL,
+  `contacts` text NOT NULL,
+  `items` text NOT NULL,
+  `processes` text NOT NULL,
+  `purchases` text NOT NULL,
+  `sales` text NOT NULL,
+  `statistics` text NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime NOT NULL,
   `createdby` int(11) NOT NULL,
@@ -1277,7 +1300,7 @@ CREATE TABLE IF NOT EXISTS `template` (
   `locked` int(11) NOT NULL,
   `lockedtime` datetime NOT NULL,
   `activated` int(11) NOT NULL,
-  `deleted` int(11) NOT NULL,
+  `deleted` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

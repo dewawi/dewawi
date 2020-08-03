@@ -94,7 +94,9 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$contactid = $this->_getParam('contactid', 0);
 
 		$data = array();
+		$data['title'] = $this->view->translate('DELIVERY_ORDERS_NEW_DELIVERY_ORDER');
 		$data['contactid'] = $contactid;
+		$data['currency'] = 'EUR'; // to do get standard currency
 		$data['state'] = 100;
 
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();

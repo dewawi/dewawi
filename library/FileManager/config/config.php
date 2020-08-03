@@ -3,23 +3,16 @@
 $version = "9.14.0";
 
 //Set DEWAWI session directory
-ini_set('session.save_path', '../../session');
+//ini_set('session.save_path', '../../session');
 
 if (session_id() == '') {
     session_start();
 }
 
-if(isset($_SESSION['RF']['extrapath']) && $_SESSION['RF']['extrapath']) {
-    $upload_dir = '/files/';
-    $current_path = '../../../'.$_SESSION['RF']['extrapath'].'/files/';
-    $thumbs_base_path = '../../../'.$_SESSION['RF']['extrapath'].'/cache/thumbs/';
-    $thumbs_upload_dir = '/cache/thumbs/';
-} else {
-    $upload_dir = '/files/';
-    $current_path = '../../files/';
-    $thumbs_base_path = '../../cache/thumbs/';
-    $thumbs_upload_dir = '/cache/thumbs/';
-}
+$upload_dir = '/files/';
+$current_path = '../../files/';
+$thumbs_base_path = '../../cache/thumbs/';
+$thumbs_upload_dir = '/cache/thumbs/';
 //echo $current_path;
 //echo $_SESSION['RF']['subfolder'];
 

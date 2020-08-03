@@ -94,9 +94,9 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$contactid = $this->_getParam('contactid', 0);
 
 		$data = array();
-		$data['title'] = $this->view->translate('CREDIT_NOTES_NEW_QUOTE_REQUEST');
+		$data['title'] = $this->view->translate('QUOTE_REQUESTS_NEW_QUOTE_REQUEST');
 		$data['contactid'] = $contactid;
-		$data['currency'] = 'EUR';
+		$data['currency'] = 'EUR'; // to do get standard currency
 		$data['state'] = 100;
 
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();

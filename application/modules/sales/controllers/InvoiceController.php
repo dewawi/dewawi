@@ -94,7 +94,9 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$contactid = $this->_getParam('contactid', 0);
 
 		$data = array();
+		$data['title'] = $this->view->translate('INVOICES_NEW_INVOICE');
 		$data['contactid'] = $contactid;
+		$data['currency'] = 'EUR'; // to do get standard currency
 		$data['state'] = 100;
 
 		$invoiceDb = new Sales_Model_DbTable_Invoice();

@@ -88,7 +88,7 @@ class Items_Form_Pricerule extends Zend_Form
 			->addValidator('NotEmpty')
 			->setAttrib('class', 'required');
 
-		$form['contactsubcat'] = new Zend_Form_Element_Checkbox('itemsubcat');
+		$form['contactsubcat'] = new Zend_Form_Element_Checkbox('contactsubcat');
 		$form['contactsubcat']->setLabel('PRICE_RULES_CONTACT_APPLY_TO_SUBCATEGORIES');
 
 		$form['modified'] = new Zend_Form_Element_Text('modified');

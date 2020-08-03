@@ -94,7 +94,9 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$contactid = $this->_getParam('contactid', 0);
 
 		$data = array();
+		$data['title'] = $this->view->translate('QUOTES_NEW_QUOTE');
 		$data['contactid'] = $contactid;
+		$data['currency'] = 'EUR'; // to do get standard currency
 		$data['state'] = 100;
 
 		//Get default template

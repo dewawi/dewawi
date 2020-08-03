@@ -46,7 +46,7 @@
 	'QUOTES_NONE' => 'None',
 	'QUOTES_SUBTOTAL' => 'Subtotal',
 	'QUOTES_TAXES' => 'Taxes',
-    'QUOTES_CURRENCY' => 'Currency'
+    'QUOTES_CURRENCY' => 'Currency',
 	'QUOTES_TOTAL' => 'Total',
 	'QUOTES_TEMPLATE' => 'Template',
 	'QUOTES_LANGUAGE' => 'Language'

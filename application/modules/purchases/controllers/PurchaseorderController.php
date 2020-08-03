@@ -96,7 +96,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$data = array();
 		$data['title'] = $this->view->translate('PURCHASE_ORDERS_NEW_PURCHASE_ORDER');
 		$data['contactid'] = $contactid;
-		$data['currency'] = 'EUR';
+		$data['currency'] = 'EUR'; // to do get standard currency
 		$data['state'] = 100;
 
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();

@@ -47,7 +47,7 @@
 	'QUOTE_REQUESTS_SUBTOTAL' => 'Subtotal',
 	'QUOTE_REQUESTS_TAXES' => 'Taxes',
 	'QUOTE_REQUESTS_TOTAL' => 'Total',
-    'QUOTE_REQUESTS_CURRENCY' => 'Currency'
+    'QUOTE_REQUESTS_CURRENCY' => 'Currency',
 	'QUOTE_REQUESTS_DELIVERY_DATE' => 'Delivery date:',
 	'QUOTE_REQUESTS_TEMPLATE' => 'Template',
 	'QUOTE_REQUESTS_LANGUAGE' => 'Language'

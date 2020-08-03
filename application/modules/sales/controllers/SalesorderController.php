@@ -94,7 +94,9 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$contactid = $this->_getParam('contactid', 0);
 
 		$data = array();
+		$data['title'] = $this->view->translate('SALES_ORDERS_NEW_SALES_ORDER');
 		$data['contactid'] = $contactid;
+		$data['currency'] = 'EUR'; // to do get standard currency
 		$data['state'] = 100;
 
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();

@@ -38,7 +38,7 @@
 	'CONTACTS_TAX_NUMBER' => 'Tax number',
 	'CONTACTS_VATIN' => 'VATIN',
 	'CONTACTS_TAX_FREE' => 'Tax free',
-    'CONTACTS_CURRENCY' => 'Currency'
+    'CONTACTS_CURRENCY' => 'Currency',
 	'CONTACTS_DISCOUNT' => 'Discount',
 	'CONTACTS_DISCOUNT_RULE' => 'Discount rule',
 	'CONTACTS_PAYMENT_METHOD' => 'Payment method',
