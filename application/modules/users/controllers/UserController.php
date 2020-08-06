@@ -16,7 +16,7 @@ class Users_UserController extends Zend_Controller_Action
 
 	public function loginAction()
 	{
-		$auth = Zend_Registry::get('Zend_Auth');
+		$auth = Zend_Auth::getInstance();
 		if($auth->hasIdentity()) $this->_helper->redirector->gotoSimple('index', 'index', 'index');
 
 		$this->_helper->getHelper('layout')->disableLayout();
@@ -38,11 +38,10 @@ class Users_UserController extends Zend_Controller_Action
 			if ($form->isValid($formData)) {
 				$username = $formData['username'];
 				$password = $formData['password'];
-				//$client = $formData['client'];
 				$stayLoggedIn = $formData['stayLoggedIn'];
 
 				$authNamespace = new Zend_Session_Namespace('Zend_Auth');
-				$authNamespace->user = $username;
+				//$authNamespace->user = $username;
 				if($stayLoggedIn) $authNamespace->setExpirationSeconds(864000);
 				else $authNamespace->setExpirationSeconds(3600);
 
@@ -57,13 +56,20 @@ class Users_UserController extends Zend_Controller_Action
 				$authAdapter->setIdentity($username);
 				$authAdapter->setCredential($password);
 
-				$auth = Zend_Auth::getInstance();
 				$result = $auth->authenticate($authAdapter);
 
 				if ($result->isValid()) {
 					$storage = $auth->getStorage();
-					$userInfo = $authAdapter->getResultRowObject(array('id', 'clientid', 'username', 'name', 'email', 'admin', 'permissions'));
-					//$userInfo->clientid = $client;
+					$userInfo = $authAdapter->getResultRowObject(
+                                    array(
+                                        'id',
+                                        'username',
+                                        'name',
+                                        'email',
+                                        'admin',
+                                        'permissions',
+                                        'clientid'
+                                    ));
 					$storage->write($userInfo); //Store into session
 
 					if($this->_getParam('url', null)) {

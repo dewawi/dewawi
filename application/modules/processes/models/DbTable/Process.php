@@ -9,10 +9,13 @@ class Processes_Model_DbTable_Process extends Zend_Db_Table_Abstract
 
 	protected $_user = null;
 
+	protected $_client = null;
+
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
+	    $this->_user = Zend_Registry::get('User');
+		$this->_client = Zend_Registry::get('Client');
 	}
 
 	public function getProcess($id)
@@ -25,11 +28,22 @@ class Processes_Model_DbTable_Process extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getProcesses($contactid)
+	{
+		$contactid = (int)$contactid;
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('customerid = ?', $contactid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where);
+		return $data;
+	}
+
 	public function addProcess($data)
 	{
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_user['clientid'];
+		$data['clientid'] = $this->_client['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}

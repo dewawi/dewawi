@@ -23,7 +23,6 @@ class Statistics_IndexController extends Zend_Controller_Action
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
@@ -35,7 +34,7 @@ class Statistics_IndexController extends Zend_Controller_Action
 		$lenght = $this->_getParam('lenght', 25);
 
 		$toolbar = new Statistics_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$chart = new Statistics_Model_Charts();
@@ -55,7 +54,7 @@ class Statistics_IndexController extends Zend_Controller_Action
 		$lenght = $this->_getParam('lenght', 25);
 
 		$toolbar = new Statistics_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$chart = new Statistics_Model_Charts();

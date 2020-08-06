@@ -51,11 +51,11 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$deliveryorders = $get->deliveryorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$deliveryorders = $get->deliveryorders($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->deliveryorders = $deliveryorders;
 		$this->view->options = $options;
@@ -73,11 +73,11 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$deliveryorders = $get->deliveryorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$deliveryorders = $get->deliveryorders($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->deliveryorders = $deliveryorders;
 		$this->view->options = $options;
@@ -130,7 +130,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$deliveryorderDb->lock($id);
 
 			$form = new Sales_Form_Deliveryorder();
-			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+			$options = $this->_helper->Options->getOptions($form);
 
 			//Get contact
 			if($deliveryorder['contactid']) {
@@ -773,7 +773,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Sales_Form_Deliveryorder();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();

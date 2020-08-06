@@ -9,10 +9,13 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 
 	protected $_user = null;
 
+	protected $_client = null;
+
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
+	    $this->_user = Zend_Registry::get('User');
+		$this->_client = Zend_Registry::get('Client');
 	}
 
 	public function getItem($id)
@@ -29,7 +32,7 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 	{
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchRow($where);
 		if (!$data) {
 			throw new Exception("Could not find row $sku");
@@ -61,7 +64,7 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 	public function getLatestItems()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC', 5);
 		return $data;
@@ -69,7 +72,7 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 
 	public function addItem($data)
 	{
-		$data['clientid'] = $this->_user['clientid'];
+		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);

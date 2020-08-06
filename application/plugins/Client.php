@@ -12,25 +12,27 @@ class Application_Plugin_Client extends Zend_Controller_Plugin_Abstract
                             ->getResource('view');
 
             //Get client
-            $clientDb = new Application_Model_DbTable_Client();
-            $client = $clientDb->getClient($user['clientid']);
+			$client = Zend_Registry::get('Client');
 
             //Client switcher
             if($user['admin']) {
                 $form = new Application_Form_Client();
+                $clientDb = new Application_Model_DbTable_Client();
                 $form->clientid->addMultiOptions($clientDb->getClients($client['parentid']));
-                $form->clientid->setValue($user['clientid']);
+                $form->clientid->setValue($client['id']);
                 $view->clientSwitcher = $form->getElement('clientid');
             }
 
             //Change clientid if parentid exists
             if($client['parentid']) {
 		        $params = $request->getParams();
-                if(($params['module'] == 'contacts') || ($params['module'] == 'items')) {
-                    $user = Zend_Registry::get('User');
-                    $user['clientid'] = $client['parentid'];
-                    Zend_Registry::set('User', $user);
+                if(isset($client['modules'][$params['module']])) {
+                    $client = Zend_Registry::get('Client');
+                    $client['id'] = $client['modules'][$params['module']];
+                    Zend_Registry::set('Client', $client);
                 }
+                //error_log($client['id']);
+                error_log($params['module']);
             }
 		}
 	}

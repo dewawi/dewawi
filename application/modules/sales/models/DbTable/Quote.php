@@ -9,10 +9,13 @@ class Sales_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 
 	protected $_user = null;
 
+	protected $_client = null;
+
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
+	    $this->_user = Zend_Registry::get('User');
+		$this->_client = Zend_Registry::get('Client');
 	}
 
 	public function getQuote($id)
@@ -25,10 +28,22 @@ class Sales_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getQuotes($contactid)
+	{
+		$contactid = (int)$contactid;
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where);
+error_log($this->_client['id']);
+		return $data;
+	}
+
 	public function getLatestQuoteID()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where, 'quoteid DESC');
 		if (!$data) {
@@ -41,7 +56,7 @@ class Sales_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 	{
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('quoteid = ?', 0);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC', 5);
 		return $data;
@@ -51,7 +66,7 @@ class Sales_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 	{
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_user['clientid'];
+		$data['clientid'] = $this->_client['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}

@@ -23,7 +23,6 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
@@ -35,11 +34,11 @@ class Items_PriceruleController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Items_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 	    $get = new Items_Model_Get();
-		$pricerules = $get->pricerules($params, $options['categories'], $this->_user['clientid'], $this->_helper);
+		$pricerules = $get->pricerules($params, $options['categories']);
 
 		$this->view->pricerules = $pricerules;
 		$this->view->options = $options;
@@ -55,11 +54,11 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Items_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 	    $get = new Items_Model_Get();
-		$pricerules = $get->pricerules($params, $options['categories'], $this->_user['clientid'], $this->_helper);
+		$pricerules = $get->pricerules($params, $options['categories']);
 
 		$this->view->pricerules = $pricerules;
 		$this->view->options = $options;
@@ -72,11 +71,11 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->setLayout('plain');
 
 		$toolbar = new Items_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 	    $get = new Items_Model_Get();
-		$pricerules = $get->pricerules($params, $options['categories'], $this->_user['clientid'], $this->_helper);
+		$pricerules = $get->pricerules($params, $options['categories']);
 
 		$this->view->pricerules = $pricerules;
 		$this->view->options = $options;
@@ -119,7 +118,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 			$priceruleDb->lock($id);
 
 			$form = new Items_Form_Pricerule();
-			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+			$options = $this->_helper->Options->getOptions($form);
 
 			if($request->isPost()) {
 				$this->_helper->viewRenderer->setNoRender();
@@ -254,7 +253,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Items_Form_Pricerule();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 
 		$data = $this->getRequest()->getPost();
 		$form->$data['element']->isValid($data[$data['element']]);

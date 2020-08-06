@@ -9,10 +9,13 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 
 	protected $_user = null;
 
+	protected $_client = null;
+
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
+	    $this->_user = Zend_Registry::get('User');
+		$this->_client = Zend_Registry::get('Client');
 	}
 
 	public function getTemplate($id)
@@ -20,7 +23,7 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		$id = (int)$id;
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where);
@@ -33,7 +36,7 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 	public function getDefaultTemplate()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('`default` = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
@@ -46,7 +49,7 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 	public function getTemplates()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
 		$data = $this->fetchAll($where);
 

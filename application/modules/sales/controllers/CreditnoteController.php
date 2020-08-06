@@ -51,11 +51,11 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$creditnotes = $get->creditnotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$creditnotes = $get->creditnotes($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->creditnotes = $creditnotes;
 		$this->view->options = $options;
@@ -73,11 +73,11 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$creditnotes = $get->creditnotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$creditnotes = $get->creditnotes($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->creditnotes = $creditnotes;
 		$this->view->options = $options;
@@ -130,7 +130,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$creditnoteDb->lock($id);
 
 			$form = new Sales_Form_Creditnote();
-			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+			$options = $this->_helper->Options->getOptions($form);
 
 			//Get contact
 			if($creditnote['contactid']) {
@@ -312,7 +312,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$data['modified'] = '0000-00-00';
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
-		$data['clientid'] = $this->_user['clientid'];
 
 		$creditnote = new Sales_Model_DbTable_Creditnote();
 		echo $creditnoteid = $creditnote->addCreditnote($data);
@@ -809,7 +808,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Sales_Form_Creditnote();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();

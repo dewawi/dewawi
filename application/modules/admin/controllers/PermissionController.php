@@ -23,7 +23,6 @@ class Admin_PermissionController extends Zend_Controller_Action
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
@@ -53,7 +52,7 @@ class Admin_PermissionController extends Zend_Controller_Action
 
 		$form = new Admin_Form_Permission();
 		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$permissionsDb = new Admin_Model_DbTable_Permission();
@@ -88,7 +87,7 @@ class Admin_PermissionController extends Zend_Controller_Action
 
 		$form = new Admin_Form_Permission();
 		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$permissionsDb = new Admin_Model_DbTable_Permission();

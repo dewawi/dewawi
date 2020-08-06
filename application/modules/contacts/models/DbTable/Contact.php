@@ -9,10 +9,13 @@ class Contacts_Model_DbTable_Contact extends Zend_Db_Table_Abstract
 
 	protected $_user = null;
 
+	protected $_client = null;
+
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
+	    $this->_user = Zend_Registry::get('User');
+		$this->_client = Zend_Registry::get('Client');
 	}
 
 	public function getContact($id)
@@ -28,7 +31,7 @@ class Contacts_Model_DbTable_Contact extends Zend_Db_Table_Abstract
 		$contactid = (int)$contactid;
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$row = $this->fetchRow($where);
 		if(!$row) return false;
@@ -48,7 +51,7 @@ class Contacts_Model_DbTable_Contact extends Zend_Db_Table_Abstract
 	public function getLatestContacts()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC', 5);
 		return $data;
@@ -56,7 +59,7 @@ class Contacts_Model_DbTable_Contact extends Zend_Db_Table_Abstract
 
 	public function addContact($data)
 	{
-		$data['clientid'] = $this->_user['clientid'];
+		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);

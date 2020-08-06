@@ -5,7 +5,8 @@
 class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
 
 	public function FileManager() {
-		$this->_user = Zend_Registry::get('User');
+
+		$client = Zend_Registry::get('Client');
         $defaultNamespace = new Zend_Session_Namespace('RF');
 
         if($this->view->user['permissions']) $defaultNamespace->writable = true;
@@ -13,7 +14,7 @@ class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
 
         if($this->view->module == 'contacts') {
 
-            $clientid = $this->_user['clientid'];
+            $clientid = $client['id'];
             $dir1 = substr($clientid, 0, 1);
             if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
             else $dir2 = '0';
@@ -29,7 +30,7 @@ class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
             $defaultNamespace->subfolder = 'contacts/'.$url;
         } elseif($this->view->module == 'sales') {
 
-            $clientid = $this->_user['clientid'];
+            $clientid = $client['id'];
             $dir1 = substr($clientid, 0, 1);
             if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
             else $dir2 = '0';
@@ -45,7 +46,7 @@ class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
             $defaultNamespace->subfolder = 'contacts/'.$url;
         } elseif($this->view->module == 'items') {
 
-            $clientid = $this->_user['clientid'];
+            $clientid = $client['id'];
             $dir1 = substr($clientid, 0, 1);
             if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
             else $dir2 = '0';

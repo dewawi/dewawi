@@ -51,11 +51,11 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$salesorders = $get->salesorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$salesorders = $get->salesorders($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->salesorders = $salesorders;
 		$this->view->options = $options;
@@ -73,11 +73,11 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$salesorders = $get->salesorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$salesorders = $get->salesorders($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->salesorders = $salesorders;
 		$this->view->options = $options;
@@ -130,7 +130,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$salesorderDb->lock($id);
 
 			$form = new Sales_Form_Salesorder();
-			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+			$options = $this->_helper->Options->getOptions($form);
 
 			//Get contact
 			if($salesorder['contactid']) {
@@ -888,7 +888,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Sales_Form_Salesorder();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();

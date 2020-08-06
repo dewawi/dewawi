@@ -9,10 +9,13 @@ class Admin_Model_DbTable_Template extends Zend_Db_Table_Abstract
 
 	protected $_user = null;
 
+	protected $_client = null;
+
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
+	    $this->_user = Zend_Registry::get('User');
+		$this->_client = Zend_Registry::get('Client');
 	}
 
 	public function getTemplate($id)
@@ -28,7 +31,7 @@ class Admin_Model_DbTable_Template extends Zend_Db_Table_Abstract
 	public function getTemplates()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchAll($where);
 		return $data;
 	}

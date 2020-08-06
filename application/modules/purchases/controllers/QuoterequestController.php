@@ -51,11 +51,11 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Purchases_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Purchases_Model_Get();
-		$quoterequests = $get->quoterequests($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$quoterequests = $get->quoterequests($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->quoterequests = $quoterequests;
 		$this->view->options = $options;
@@ -73,11 +73,11 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Purchases_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Purchases_Model_Get();
-		$quoterequests = $get->quoterequests($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$quoterequests = $get->quoterequests($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->quoterequests = $quoterequests;
 		$this->view->options = $options;
@@ -130,7 +130,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$quoterequestDb->lock($id);
 
 			$form = new Purchases_Form_Quoterequest();
-			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+			$options = $this->_helper->Options->getOptions($form);
 
 			//Get contact
 			if($quoterequest['contactid']) {
@@ -717,7 +717,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Purchases_Form_Quoterequest();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();

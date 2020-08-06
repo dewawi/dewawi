@@ -9,10 +9,13 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 
 	protected $_user = null;
 
+	protected $_client = null;
+
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
+	    $this->_user = Zend_Registry::get('User');
+		$this->_client = Zend_Registry::get('Client');
 	}
 
 	public function getPurchaseorder($id)
@@ -25,10 +28,21 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getPurchaseorders($contactid)
+	{
+		$contactid = (int)$contactid;
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where);
+		return $data;
+	}
+
 	public function getLatestPurchaseorderID()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where, 'purchaseorderid DESC');
 		if (!$data) {
@@ -41,7 +55,7 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 	{
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('purchaseorderid = ?', 0);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_user['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC', 5);
 		return $data;
@@ -51,7 +65,7 @@ class Purchases_Model_DbTable_Purchaseorder extends Zend_Db_Table_Abstract
 	{
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_user['clientid'];
+		$data['clientid'] = $this->_client['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}

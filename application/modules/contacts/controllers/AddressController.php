@@ -4,7 +4,6 @@ class Contacts_AddressController extends Zend_Controller_Action
 {
 	public function init()
 	{
-		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 	}
 
@@ -16,7 +15,7 @@ class Contacts_AddressController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Contacts_Form_Contact();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 	    $this->view->options = $options;
 	    $this->view->action = 'add';
 

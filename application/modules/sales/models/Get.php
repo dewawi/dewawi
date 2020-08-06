@@ -2,25 +2,31 @@
 
 class Sales_Model_Get
 {
-	public function quotes($params, $categories, $clientid, $helper, $flashMessenger)
+	public function quotes($params, $categories, $flashMessenger)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['sales'];
+        }
+
 		$quotesDb = new Sales_Model_DbTable_Quote();
 
 		$columns = array('q.title', 'q.quoteid', 'q.contactid', 'q.billingname1', 'q.billingname2', 'q.billingdepartment', 'q.billingstreet', 'q.billingpostcode', 'q.billingcity', 'q.shippingname1', 'q.shippingname2', 'q.shippingdepartment', 'q.shippingstreet', 'q.shippingpostcode', 'q.shippingcity');
 
 		$query = '';
 		$schema = 'q';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $helper->Query->getQueryCountry($query, $params['country'], $schema);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
             $params['from'] = date('Y-m-d', strtotime($params['from']));
             $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		$query = $helper->Query->getQueryDeleted($query, $schema);
+		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		$query = $queryHelper->getQueryDeleted($query, $schema);
 
 		$quotes = $quotesDb->fetchAll(
 			$quotesDb->select()
@@ -46,9 +52,9 @@ class Sales_Model_Get
 
 
 		if(!count($quotes) && $params['keyword']) {
-			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		    $query = $helper->Query->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		    $query = $queryHelper->getQueryDeleted($query, $schema);
 			$quotes = $quotesDb->fetchAll(
 				$quotesDb->select()
 					->setIntegrityCheck(false)
@@ -64,11 +70,12 @@ class Sales_Model_Get
 
 		$quotes->subtotal = 0;
 		$quotes->total = 0;
-        $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($quotes as $quote) {
 			$quotes->subtotal += $quote->subtotal;
 			$quotes->total += $quote->total;
-		    $currency = $helper->Currency->setCurrency($currency, $quote->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $quote->currency, 'USE_SYMBOL');
 			$quote->subtotal = $currency->toCurrency($quote->subtotal);
 			$quote->taxes = $currency->toCurrency($quote->taxes);
 			$quote->total = $currency->toCurrency($quote->total);
@@ -79,25 +86,31 @@ class Sales_Model_Get
 		return $quotes;
 	}
 
-	public function invoices($params, $categories, $clientid, $helper, $flashMessenger)
+	public function invoices($params, $categories, $flashMessenger)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['sales'];
+        }
+
 		$invoicesDb = new Sales_Model_DbTable_Invoice();
 
 		$columns = array('i.title', 'i.invoiceid', 'i.contactid', 'i.billingname1', 'i.billingname2', 'i.billingdepartment', 'i.billingstreet', 'i.billingpostcode', 'i.billingcity', 'i.shippingname1', 'i.shippingname2', 'i.shippingdepartment', 'i.shippingstreet', 'i.shippingpostcode', 'i.shippingcity');
 
 		$query = '';
 		$schema = 'i';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $helper->Query->getQueryCountry($query, $params['country'], $schema);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
             $params['from'] = date('Y-m-d', strtotime($params['from']));
             $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		$query = $helper->Query->getQueryDeleted($query, $schema);
+		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		$query = $queryHelper->getQueryDeleted($query, $schema);
 
 		$invoices = $invoicesDb->fetchAll(
 			$invoicesDb->select()
@@ -110,9 +123,9 @@ class Sales_Model_Get
 				->limit($params['limit'])
 		);
 		if(!count($invoices) && $params['keyword']) {
-			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		    $query = $helper->Query->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		    $query = $queryHelper->getQueryDeleted($query, $schema);
 			$invoices = $invoicesDb->fetchAll(
 				$invoicesDb->select()
 					->setIntegrityCheck(false)
@@ -128,11 +141,12 @@ class Sales_Model_Get
 
 		$invoices->subtotal = 0;
 		$invoices->total = 0;
-        $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($invoices as $invoice) {
 			$invoices->subtotal += $invoice->subtotal;
 			$invoices->total += $invoice->total;
-		    $currency = $helper->Currency->setCurrency($currency, $invoice->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $invoice->currency, 'USE_SYMBOL');
 			$invoice->subtotal = $currency->toCurrency($invoice->subtotal);
 			$invoice->taxes = $currency->toCurrency($invoice->taxes);
 			$invoice->total = $currency->toCurrency($invoice->total);
@@ -143,25 +157,31 @@ class Sales_Model_Get
 		return $invoices;
 	}
 
-	public function salesorders($params, $categories, $clientid, $helper, $flashMessenger)
+	public function salesorders($params, $categories, $flashMessenger)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['sales'];
+        }
+
 		$salesordersDb = new Sales_Model_DbTable_Salesorder();
 
 		$columns = array('s.title', 's.salesorderid', 's.contactid', 's.billingname1', 's.billingname2', 's.billingdepartment', 's.billingstreet', 's.billingpostcode', 's.billingcity', 's.shippingname1', 's.shippingname2', 's.shippingdepartment', 's.shippingstreet', 's.shippingpostcode', 's.shippingcity');
 
 		$query = '';
 		$schema = 's';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $helper->Query->getQueryCountry($query, $params['country'], $schema);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
             $params['from'] = date('Y-m-d', strtotime($params['from']));
             $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		$query = $helper->Query->getQueryDeleted($query, $schema);
+		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		$query = $queryHelper->getQueryDeleted($query, $schema);
 
 		$salesorders = $salesordersDb->fetchAll(
 			$salesordersDb->select()
@@ -174,9 +194,9 @@ class Sales_Model_Get
 				->limit($params['limit'])
 		);
 		if(!count($salesorders) && $params['keyword']) {
-			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		    $query = $helper->Query->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		    $query = $queryHelper->getQueryDeleted($query, $schema);
 			$salesorders = $salesordersDb->fetchAll(
 				$salesordersDb->select()
 					->setIntegrityCheck(false)
@@ -192,11 +212,12 @@ class Sales_Model_Get
 
 		$salesorders->subtotal = 0;
 		$salesorders->total = 0;
-        $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($salesorders as $salesorder) {
 			$salesorders->subtotal += $salesorder->subtotal;
 			$salesorders->total += $salesorder->total;
-		    $currency = $helper->Currency->setCurrency($currency, $salesorder->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $salesorder->currency, 'USE_SYMBOL');
 			$salesorder->subtotal = $currency->toCurrency($salesorder->subtotal);
 			$salesorder->taxes = $currency->toCurrency($salesorder->taxes);
 			$salesorder->total = $currency->toCurrency($salesorder->total);
@@ -207,25 +228,31 @@ class Sales_Model_Get
 		return $salesorders;
 	}
 
-	public function deliveryorders($params, $categories, $clientid, $helper, $flashMessenger)
+	public function deliveryorders($params, $categories, $flashMessenger)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['sales'];
+        }
+
 		$deliveryordersDb = new Sales_Model_DbTable_Deliveryorder();
 
 		$columns = array('d.title', 'd.deliveryorderid', 'd.contactid', 'd.billingname1', 'd.billingname2', 'd.billingdepartment', 'd.billingstreet', 'd.billingpostcode', 'd.billingcity', 'd.shippingname1', 'd.shippingname2', 'd.shippingdepartment', 'd.shippingstreet', 'd.shippingpostcode', 'd.shippingcity');
 
 		$query = '';
 		$schema = 'd';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $helper->Query->getQueryCountry($query, $params['country'], $schema);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
             $params['from'] = date('Y-m-d', strtotime($params['from']));
             $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		$query = $helper->Query->getQueryDeleted($query, $schema);
+		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		$query = $queryHelper->getQueryDeleted($query, $schema);
 
 		$deliveryorders = $deliveryordersDb->fetchAll(
 			$deliveryordersDb->select()
@@ -238,9 +265,9 @@ class Sales_Model_Get
 				->limit($params['limit'])
 		);
 		if(!count($deliveryorders) && $params['keyword']) {
-			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		    $query = $helper->Query->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		    $query = $queryHelper->getQueryDeleted($query, $schema);
 			$deliveryorders = $deliveryordersDb->fetchAll(
 				$deliveryordersDb->select()
 					->setIntegrityCheck(false)
@@ -256,11 +283,12 @@ class Sales_Model_Get
 
 		$deliveryorders->subtotal = 0;
 		$deliveryorders->total = 0;
-        $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($deliveryorders as $deliveryorder) {
 			$deliveryorders->subtotal += $deliveryorder->subtotal;
 			$deliveryorders->total += $deliveryorder->total;
-		    $currency = $helper->Currency->setCurrency($currency, $deliveryorder->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $deliveryorder->currency, 'USE_SYMBOL');
 			$deliveryorder->subtotal = $currency->toCurrency($deliveryorder->subtotal);
 			$deliveryorder->taxes = $currency->toCurrency($deliveryorder->taxes);
 			$deliveryorder->total = $currency->toCurrency($deliveryorder->total);
@@ -271,25 +299,31 @@ class Sales_Model_Get
 		return $deliveryorders;
 	}
 
-	public function creditnotes($params, $categories, $clientid, $helper, $flashMessenger)
+	public function creditnotes($params, $categories, $flashMessenger)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['sales'];
+        }
+
 		$creditnotesDb = new Sales_Model_DbTable_Creditnote();
 
 		$columns = array('cr.title', 'cr.creditnoteid', 'cr.contactid', 'cr.billingname1', 'cr.billingname2', 'cr.billingdepartment', 'cr.billingstreet', 'cr.billingpostcode', 'cr.billingcity', 'cr.shippingname1', 'cr.shippingname2', 'cr.shippingdepartment', 'cr.shippingstreet', 'cr.shippingpostcode', 'cr.shippingcity');
 
 		$query = '';
 		$schema = 'cr';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $helper->Query->getQueryCountry($query, $params['country'], $schema);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
             $params['from'] = date('Y-m-d', strtotime($params['from']));
             $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		$query = $helper->Query->getQueryDeleted($query, $schema);
+		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		$query = $queryHelper->getQueryDeleted($query, $schema);
 
 		$creditnotes = $creditnotesDb->fetchAll(
 			$creditnotesDb->select()
@@ -302,9 +336,9 @@ class Sales_Model_Get
 				->limit($params['limit'])
 		);
 		if(!count($creditnotes) && $params['keyword']) {
-			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		    $query = $helper->Query->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		    $query = $queryHelper->getQueryDeleted($query, $schema);
 			$creditnotes = $creditnotesDb->fetchAll(
 				$creditnotesDb->select()
 					->setIntegrityCheck(false)
@@ -320,11 +354,12 @@ class Sales_Model_Get
 
 		$creditnotes->subtotal = 0;
 		$creditnotes->total = 0;
-	    $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($creditnotes as $creditnote) {
 			$creditnotes->subtotal += $creditnote->subtotal;
 			$creditnotes->total += $creditnote->total;
-		    $currency = $helper->Currency->setCurrency($currency, $creditnote->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $creditnote->currency, 'USE_SYMBOL');
 			$creditnote->subtotal = $currency->toCurrency($creditnote->subtotal);
 			$creditnote->taxes = $currency->toCurrency($creditnote->taxes);
 			$creditnote->total = $currency->toCurrency($creditnote->total);
@@ -335,25 +370,31 @@ class Sales_Model_Get
 		return $creditnotes;
 	}
 
-	public function reminders($params, $categories, $clientid, $helper, $flashMessenger)
+	public function reminders($params, $categories, $flashMessenger)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['sales'];
+        }
+
 		$remindersDb = new Sales_Model_DbTable_Reminder();
 
 		$columns = array('cr.title', 'cr.reminderid', 'cr.contactid', 'cr.billingname1', 'cr.billingname2', 'cr.billingdepartment', 'cr.billingstreet', 'cr.billingpostcode', 'cr.billingcity', 'cr.shippingname1', 'cr.shippingname2', 'cr.shippingdepartment', 'cr.shippingstreet', 'cr.shippingpostcode', 'cr.shippingcity');
 
 		$query = '';
 		$schema = 'cr';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $helper->Query->getQueryCountry($query, $params['country'], $schema);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
             $params['from'] = date('Y-m-d', strtotime($params['from']));
             $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		$query = $helper->Query->getQueryDeleted($query, $schema);
+		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		$query = $queryHelper->getQueryDeleted($query, $schema);
 
 		$reminders = $remindersDb->fetchAll(
 			$remindersDb->select()
@@ -366,9 +407,9 @@ class Sales_Model_Get
 				->limit($params['limit'])
 		);
 		if(!count($reminders) && $params['keyword']) {
-			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		    $query = $helper->Query->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
+		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		    $query = $queryHelper->getQueryDeleted($query, $schema);
 			$reminders = $remindersDb->fetchAll(
 				$remindersDb->select()
 					->setIntegrityCheck(false)
@@ -384,11 +425,12 @@ class Sales_Model_Get
 
 		$reminders->subtotal = 0;
 		$reminders->total = 0;
-	    $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($reminders as $reminder) {
 			$reminders->subtotal += $reminder->subtotal;
 			$reminders->total += $reminder->total;
-		    $currency = $helper->Currency->setCurrency($currency, $reminder->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $reminder->currency, 'USE_SYMBOL');
 			$reminder->subtotal = $currency->toCurrency($reminder->subtotal);
 			$reminder->taxes = $currency->toCurrency($reminder->taxes);
 			$reminder->total = $currency->toCurrency($reminder->total);

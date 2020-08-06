@@ -2,26 +2,32 @@
 
 class Processes_Model_Get
 {
-	public function processes($params, $categories, $clientid, $helper, $flashMessenger)
+	public function processes($params, $categories, $flashMessenger)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['processes'];
+        }
+
 		$processesDb = new Processes_Model_DbTable_Process();
 
 		$columns = array('p.title', 'p.customerid', 'p.billingname1', 'p.billingname2', 'p.billingdepartment', 'p.billingstreet', 'p.billingpostcode', 'p.billingcity', 'p.shippingname1', 'p.shippingname2', 'p.shippingdepartment', 'p.shippingstreet', 'p.shippingpostcode', 'p.shippingcity');
 
 		$query = '';
 		$schema = 'p';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories, 'c');
-		if($params['states']) $query = $helper->Query->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $helper->Query->getQueryCountry($query, $params['country'], $schema);
-		if($params['paymentstatus']) $query = $helper->Query->getQueryPaymentstatus($query, $params['paymentstatus'], $schema);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['paymentstatus']) $query = $queryHelper->getQueryPaymentstatus($query, $params['paymentstatus'], $schema);
 		if($params['daterange']) {
             $params['from'] = date('Y-m-d', strtotime($params['from']));
             $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $helper->Query->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
         }
-		$query = $helper->Query->getQueryClient($query, $clientid, $schema);
-		$query = $helper->Query->getQueryDeleted($query, $schema);
+		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+		$query = $queryHelper->getQueryDeleted($query, $schema);
 
 		$processes = $processesDb->fetchAll(
 			$processesDb->select()
@@ -34,9 +40,9 @@ class Processes_Model_Get
 				->limit($params['limit'])
 		);
 		if(!count($processes) && $params['keyword']) {
-			$query = $helper->Query->getQueryKeyword('', $params['keyword'], $columns);
-	        $query = $helper->Query->getQueryClient($query, $clientid, $schema);
-	        $query = $helper->Query->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
+	        $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+	        $query = $queryHelper->getQueryDeleted($query, $schema);
 			$processes = $processesDb->fetchAll(
 				$processesDb->select()
 					->setIntegrityCheck(false)
@@ -52,11 +58,12 @@ class Processes_Model_Get
 
 		$processes->subtotal = 0;
 		$processes->total = 0;
-        $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($processes as $process) {
 			$processes->subtotal += $process->subtotal;
 			$processes->total += $process->total;
-		    $currency = $helper->Currency->setCurrency($currency, $process->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $process->currency, 'USE_SYMBOL');
 			if($process->prepayment == 0.0000) $process->prepayment = 0;
 			else {
 				//$process->stillToPay = $currency->toCurrency($processes->subtotal-$process->prepayment);

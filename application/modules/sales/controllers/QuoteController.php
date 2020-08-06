@@ -51,11 +51,11 @@ class Sales_QuoteController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$quotes = $get->quotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$quotes = $get->quotes($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;
@@ -73,11 +73,11 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Sales_Model_Get();
-		$quotes = $get->quotes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$quotes = $get->quotes($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;
@@ -135,7 +135,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 			$quoteDb->lock($id);
 
 			$form = new Sales_Form_Quote();
-			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+			$options = $this->_helper->Options->getOptions($form);
 
 			//Get contact
 			if($quote['contactid']) {
@@ -831,7 +831,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Sales_Form_Quote();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();

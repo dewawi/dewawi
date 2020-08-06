@@ -3,10 +3,10 @@
 class Application_Controller_Action_Helper_Directory extends Zend_Controller_Action_Helper_Abstract
 {
 	public function isWritable($id, $type, $flashMessenger) {
-		$this->_user = Zend_Registry::get('User');
-        //error_log($id.'/'.$type.'/'.$this->_user['clientid']);
 
-        $clientid = $this->_user['clientid'];
+		$client = Zend_Registry::get('Client');
+
+        $clientid = $client['id'];
         $dir1 = substr($clientid, 0, 1);
         if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
         else $dir2 = '0';

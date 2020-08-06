@@ -23,7 +23,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
@@ -51,11 +50,11 @@ class Processes_ProcessController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Processes_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$processes = $get->processes($params, $options['categories'], $this->_flashMessenger);
 
 		//Get positions
 		$processIDs = array();
@@ -84,11 +83,11 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Processes_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$processes = $get->processes($params, $options['categories'], $this->_flashMessenger);
 
 		//Get positions
 		$processIDs = array();
@@ -148,7 +147,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 			$processDb->lock($id);
 
 			$form = new Processes_Form_Process();
-			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+			$options = $this->_helper->Options->getOptions($form);
 
 			//Get contact
 			if($process['customerid']) {
@@ -523,7 +522,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Processes_Form_Process();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();

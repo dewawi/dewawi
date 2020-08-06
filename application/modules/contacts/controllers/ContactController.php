@@ -23,7 +23,6 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
@@ -50,11 +49,11 @@ class Contacts_ContactController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Contacts_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options['categories'], $this->_user['clientid'], $this->_helper);
+		$contacts = $get->contacts($params, $options['categories']);
 
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
@@ -70,11 +69,11 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Contacts_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options['categories'], $this->_user['clientid'], $this->_helper);
+		$contacts = $get->contacts($params, $options['categories']);
 
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
@@ -89,7 +88,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->setLayout('plain');
 
 		$toolbar = new Contacts_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		if($contactid) {
@@ -98,7 +97,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		}
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options['categories'], $this->_user['clientid'], $this->_helper);
+		$contacts = $get->contacts($params, $options['categories']);
 
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
@@ -173,7 +172,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 			$contactDb->lock($id);
 
 			$form = new Contacts_Form_Contact();
-			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+			$options = $this->_helper->Options->getOptions($form);
 
 			if($request->isPost()) {
 				$this->_helper->viewRenderer->setNoRender();
@@ -236,7 +235,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 					//History
 		            $get = new Contacts_Model_Get();
-		            $history = $get->history($contact['contactid'], $this->_user['clientid']);
+		            $history = $get->history($contact['contactid']);
 
 					//Files
 					$files = array();
@@ -319,7 +318,6 @@ class Contacts_ContactController extends Zend_Controller_Action
             );
 			$addressDb->addAddress($data);
 		}
-		//$this->_user['clientid'], $this->_date
 
 		//Phone
 		$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -375,35 +373,6 @@ class Contacts_ContactController extends Zend_Controller_Action
 		}
 
 		$this->view->form = $form;
-	}
-
-	public function pdfAction()
-	{
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$id = $this->_getParam('id', 0);
-		$templateid = $this->_getParam('templateid', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
-		$templateid = 100;
-		$locale = 'de';
-
-		if($templateid) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($templateid);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
-			$this->view->template = $template;
-		}
-
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($id);
-
-		//Set language
-		$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quote['language']);
-		Zend_Registry::set('Zend_Locale', $quote['language']);
-		Zend_Registry::set('Zend_Translate', $translate);
-
-		$this->view->contact = $contact;
-		$this->view->footers = $this->_helper->Footer->getFooters($templateid, $this->_user['clientid']);
 	}
 
 
@@ -482,7 +451,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Contacts_Form_Contact();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();
@@ -522,15 +491,15 @@ class Contacts_ContactController extends Zend_Controller_Action
 			} elseif($keyword) {
 				$query .= $column." LIKE '%".$keyword."%' AND ";
 			}
-			$query .= "clientid = ".$this->_user["clientid"].")";
+			$query .= "clientid = ".$this->_client['id'].")";
 		}
 
 		$toolbar = new Contacts_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options['categories'], $this->_user['clientid'], $this->_helper);
+		$contacts = $get->contacts($params, $options['categories']);
 
 		header('Content-type: application/json');
 		//$suggestions = array("suggestions" => array());

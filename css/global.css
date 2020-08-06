@@ -866,6 +866,15 @@ iframe {
 	text-align: right;
     padding: 10px 0;
 }
+#userinfo dd {
+    display: inline-block;
+    margin: 0;
+}
+#userinfo dd select,
+#userinfo dd option {
+    padding: 5px;
+    font-size: 0.8rem;
+}
 .toolbar {
 	text-align: right;
     margin-top: 10px;

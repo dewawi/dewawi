@@ -19,23 +19,29 @@ class Contacts_Model_Get
 		return $contact;
 	}
 
-	public function contacts($params, $categories, $clientid, $helper)
+	public function contacts($params, $categories)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['contacts'];
+        }
+
 		$contactsDb = new Contacts_Model_DbTable_Contact();
 
 		$columns = array('c.contactid', 'c.name1', 'c.name2', 'a.postcode', 'a.street', 'a.postcode', 'a.city', 'a.country', 'p.phone', 'e.email', 'i.internet');
 
 		$query = '';
 		$schema = 'c';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories, $schema);
-		if($params['country']) $query = $helper->Query->getQueryCountryC($query, $params['country'], 'a');
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountryC($query, $params['country'], 'a');
 		if($query) {
 			$query .= " AND a.type = 'billing'";
-			$query .= ' AND c.clientid = '.$clientid;
+			$query .= ' AND c.clientid = '.$client['id'];
 			$query .= ' AND c.deleted = 0';
 		} else {
-			$query = 'c.clientid = '.$clientid;
+			$query = 'c.clientid = '.$client['id'];
 			$query .= ' AND c.deleted = 0';
         }
 
@@ -60,42 +66,23 @@ class Contacts_Model_Get
 		return $contacts;
 	}
 
-	public function history($id, $clientid) {
+	public function history($contactid) {
 		$this->_currency = new Zend_Currency();
 		$this->_currency->setFormat(array('display' => Zend_Currency::USE_SYMBOL));
 
-		$documentrelationDb = new Application_Model_DbTable_Documentrelation();
-		$documentrelations = $documentrelationDb->fetchAll(
-				$documentrelationDb->select()
-					->where('contactid = ?', $id)
-		);
-		$documentrelationIDs = array();
-		foreach($documentrelations as $documentrelation) {
-			if(!isset($documentrelationIDs[$documentrelation['module']][$documentrelation['controller']]))
-				$documentrelationIDs[$documentrelation['module']][$documentrelation['controller']] = array();
-			array_push($documentrelationIDs[$documentrelation['module']][$documentrelation['controller']], $documentrelation['documentid']);
-		}
+        // Set client for sales module
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            if(isset($client['modules']['sales'])) {
+                $client['id'] = $client['modules']['sales'];
+		        $client = Zend_Registry::set('Client', $client);
+            }
+        }
 
 		//Quotes
 		$quoteDb = new Sales_Model_DbTable_Quote();
-		if(isset($documentrelationIDs['sales']['quote'])) {
-			$history['quotes'] = $quoteDb->fetchAll(
-					$quoteDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-						->orWhere('id IN (?)', $documentrelationIDs['sales']['quote'])
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		} else {
-			$history['quotes'] = $quoteDb->fetchAll(
-					$quoteDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		}
+		$history['quotes'] = $quoteDb->getQuotes($contactid);
+
 		foreach($history['quotes'] as $quote) {
 			$quote->subtotal = $this->_currency->toCurrency($quote->subtotal);
 			$quote->taxes = $this->_currency->toCurrency($quote->taxes);
@@ -110,24 +97,8 @@ class Contacts_Model_Get
 
 		//Sales orders
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
-		if(isset($documentrelationIDs['sales']['salesorder'])) {
-			$history['salesorders'] = $salesorderDb->fetchAll(
-					$salesorderDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-						->orWhere('id IN (?)', $documentrelationIDs['sales']['salesorder'])
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		} else {
-			$history['salesorders'] = $salesorderDb->fetchAll(
-					$salesorderDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		}
+		$history['salesorders'] = $salesorderDb->getSalesorders($contactid);
+
 		foreach($history['salesorders'] as $salesorder) {
 			$salesorder->subtotal = $this->_currency->toCurrency($salesorder->subtotal);
 			$salesorder->taxes = $this->_currency->toCurrency($salesorder->taxes);
@@ -142,24 +113,8 @@ class Contacts_Model_Get
 
 		//Invoices
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		if(isset($documentrelationIDs['sales']['invoice'])) {
-			$history['invoices'] = $invoiceDb->fetchAll(
-					$invoiceDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-						->orWhere('id IN (?)', $documentrelationIDs['sales']['invoice'])
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		} else {
-			$history['invoices'] = $invoiceDb->fetchAll(
-					$invoiceDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		}
+		$history['invoices'] = $invoiceDb->getInvoices($contactid);
+
 		foreach($history['invoices'] as $invoice) {
 			$invoice->subtotal = $this->_currency->toCurrency($invoice->subtotal);
 			$invoice->taxes = $this->_currency->toCurrency($invoice->taxes);
@@ -174,24 +129,8 @@ class Contacts_Model_Get
 
 		//Delivery orders
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		if(isset($documentrelationIDs['sales']['deliveryorder'])) {
-			$history['deliveryorders'] = $deliveryorderDb->fetchAll(
-					$deliveryorderDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-						->orWhere('id IN (?)', $documentrelationIDs['sales']['deliveryorder'])
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		} else {
-			$history['deliveryorders'] = $deliveryorderDb->fetchAll(
-					$deliveryorderDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		}
+		$history['deliveryorders'] = $deliveryorderDb->getDeliveryorders($contactid);
+
 		foreach($history['deliveryorders'] as $deliveryorder) {
 			$deliveryorder->subtotal = $this->_currency->toCurrency($deliveryorder->subtotal);
 			$deliveryorder->taxes = $this->_currency->toCurrency($deliveryorder->taxes);
@@ -206,24 +145,8 @@ class Contacts_Model_Get
 
 		//Credit notes
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
-		if(isset($documentrelationIDs['sales']['creditnote'])) {
-			$history['creditnotes'] = $creditnoteDb->fetchAll(
-					$creditnoteDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-						->orWhere('id IN (?)', $documentrelationIDs['sales']['creditnote'])
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		} else {
-			$history['creditnotes'] = $creditnoteDb->fetchAll(
-					$creditnoteDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		}
+		$history['creditnotes'] = $creditnoteDb->getCreditnotes($contactid);
+
 		foreach($history['creditnotes'] as $creditnote) {
 			$creditnote->subtotal = $this->_currency->toCurrency($creditnote->subtotal);
 			$creditnote->taxes = $this->_currency->toCurrency($creditnote->taxes);
@@ -238,24 +161,17 @@ class Contacts_Model_Get
 
 		//Quote requests
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
-		if(isset($documentrelationIDs['purchases']['quoterequest'])) {
-			$history['quoterequests'] = $quoterequestDb->fetchAll(
-					$quoterequestDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-						->orWhere('id IN (?)', $documentrelationIDs['purchases']['quoterequest'])
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		} else {
-			$history['quoterequests'] = $quoterequestDb->fetchAll(
-					$quoterequestDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		}
+		$history['quoterequests'] = $quoterequestDb->getQuoterequests($contactid);
+
+        // Set client for purchases module
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            if(isset($client['modules']['purchases'])) {
+                $client['id'] = $client['modules']['purchases'];
+		        $client = Zend_Registry::set('Client', $client);
+            }
+        }
+
 		foreach($history['quoterequests'] as $quoterequest) {
 			$quoterequest->subtotal = $this->_currency->toCurrency($quoterequest->subtotal);
 			$quoterequest->taxes = $this->_currency->toCurrency($quoterequest->taxes);
@@ -270,24 +186,8 @@ class Contacts_Model_Get
 
 		//Purchase orders
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
-		if(isset($documentrelationIDs['purchases']['purchaseorder'])) {
-			$history['purchaseorders'] = $purchaseorderDb->fetchAll(
-					$purchaseorderDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-						->orWhere('id IN (?)', $documentrelationIDs['purchases']['purchaseorder'])
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		} else {
-			$history['purchaseorders'] = $purchaseorderDb->fetchAll(
-					$purchaseorderDb->select()
-						->where('contactid = ?', $id)
-						->where('clientid = ?', $clientid)
-						->where('deleted = ?', 0)
-			);
-		}
+		$history['purchaseorders'] = $purchaseorderDb->getPurchaseorders($contactid);
+
 		foreach($history['purchaseorders'] as $purchaseorder) {
 			$purchaseorder->subtotal = $this->_currency->toCurrency($purchaseorder->subtotal);
 			$purchaseorder->taxes = $this->_currency->toCurrency($purchaseorder->taxes);
@@ -296,17 +196,17 @@ class Contacts_Model_Get
 
 		//Processes
 		$processesDb = new Processes_Model_DbTable_Process();
-		$history['processes'] = $processesDb->fetchAll(
-				$processesDb->select()
-					->where('customerid = ?', $id)
-					->where('deleted = ?', 0)
-					//->where('clientid = ?', $clientid)
-		);
-		/*foreach($history['processes'] as $process) {
-			$process->subtotal = $this->_currency->toCurrency($process->subtotal);
-			$process->taxes = $this->_currency->toCurrency($process->taxes);
-			$process->total = $this->_currency->toCurrency($process->total);
-		}*/
+		$history['processes'] = $processesDb->getProcesses($contactid);
+
+        // Set client back for contacts module
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            if(isset($client['modules']['contacts'])) {
+                $client['id'] = $client['modules']['contacts'];
+		        $client = Zend_Registry::set('Client', $client);
+            }
+        }
+
 		return $history;
 	}
 }

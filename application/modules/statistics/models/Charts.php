@@ -12,6 +12,7 @@ class Statistics_Model_Charts
 		$m = date('m', strtotime('-'.($lenght-1).' month'));
 
 		$user = Zend_Registry::get('User');
+	    $client = Zend_Registry::get('Client');
 
 		$invoicesDb = new Sales_Model_DbTable_Invoice();
 		$creditnotesDb = new Sales_Model_DbTable_Creditnote();
@@ -26,8 +27,8 @@ class Statistics_Model_Charts
 					$ym = str_pad($m, 2, '0', STR_PAD_LEFT);
 					$query = 'i.state = 105';
 					$query .= " AND (invoicedate BETWEEN '".$y."-".$ym."-"."01' AND '".$y."-".$ym."-"."31')";
-					$query .= ' AND i.clientid = '.$user['clientid'];
-					$query .= ' AND c.clientid = '.$user['clientid'];
+					$query .= ' AND i.clientid = '.$client['id'];
+					$query .= ' AND c.clientid = '.$client['id'];
 					if($params['catid']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 					if($params['country']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], 'i');
 					$invoices = $invoicesDb->fetchAll(
@@ -42,8 +43,8 @@ class Statistics_Model_Charts
 					$ym = str_pad($m, 2, '0', STR_PAD_LEFT);
 					$query = 'i.state = 105';
 					$query .= " AND (creditnotedate BETWEEN '".$y."-".$ym."-"."01' AND '".$y."-".$ym."-"."31')";
-					$query .= ' AND i.clientid = '.$user['clientid'];
-					$query .= ' AND c.clientid = '.$user['clientid'];
+					$query .= ' AND i.clientid = '.$client['id'];
+					$query .= ' AND c.clientid = '.$client['id'];
 					if($params['catid']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 					if($params['country']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], 'i');
 					$creditnotes = $creditnotesDb->fetchAll(
@@ -93,7 +94,7 @@ class Statistics_Model_Charts
 					foreach($turnoverCategories as $key => $value) {
 						if(isset($value[$y.$ym])) $dataDb .= $key.':'.$value[$y.$ym].';';
 					}
-					//$archiveDb->addArchive($y.$ym, $dataDb, $user['clientid']);
+					//$archiveDb->addArchive($y.$ym, $dataDb, $client['id']);
 					$months[$y.$ym] = $y.'/'.$ym;
 				}
 				++$m;

@@ -51,11 +51,11 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Purchases_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Purchases_Model_Get();
-		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;
@@ -73,11 +73,11 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Purchases_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
         $get = new Purchases_Model_Get();
-		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_user['clientid'], $this->_helper, $this->_flashMessenger);
+		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;
@@ -130,7 +130,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			$purchaseorderDb->lock($id);
 
 			$form = new Purchases_Form_Purchaseorder();
-			$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+			$options = $this->_helper->Options->getOptions($form);
 
 			//Get contact
 			if($purchaseorder['contactid']) {
@@ -717,7 +717,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Purchases_Form_Purchaseorder();
-		$options = $this->_helper->Options->getOptions($form, $this->_user['clientid']);
+		$options = $this->_helper->Options->getOptions($form);
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();

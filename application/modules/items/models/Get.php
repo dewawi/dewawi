@@ -2,17 +2,23 @@
 
 class Items_Model_Get
 {
-	public function items($params, $categories, $clientid, $helper)
+	public function items($params, $categories)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['items'];
+        }
+
 		$itemsDb = new Items_Model_DbTable_Item();
 
 		$columns = array('title', 'sku', 'description');
 
 		$query = '';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories);
-		$query = $helper->Query->getQueryClient($query, $clientid);
-		$query = $helper->Query->getQueryDeleted($query);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories);
+		$query = $queryHelper->getQueryClient($query, $client['id']);
+		$query = $queryHelper->getQueryDeleted($query);
 
 		$items = $itemsDb->fetchAll(
 			$itemsDb->select()
@@ -21,10 +27,11 @@ class Items_Model_Get
 				->limit($params['limit'])
 		);
 
-        $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($items as $item) {
 			if(strlen($item->description) > 43) $item->description = substr($item->description, 0, 40).'...';
-		    $currency = $helper->Currency->setCurrency($currency, $item->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $item->currency, 'USE_SYMBOL');
 			$item->cost = $currency->toCurrency($item->cost);
 			$item->price = $currency->toCurrency($item->price);
 		}
@@ -32,16 +39,22 @@ class Items_Model_Get
 		return $items;
 	}
 
-	public function inventory($params, $categories, $clientid, $helper)
+	public function inventory($params, $categories)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['items'];
+        }
+
 		$inventoryDb = new Items_Model_DbTable_Inventory();
 
 		$columns = array('comment', 'sku', 'contactid');
 
 		$query = '';
 		$schema = 'in';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories);
 
 	    $inventories = $inventoryDb->fetchAll(
 		    $inventoryDb->select()
@@ -54,10 +67,11 @@ class Items_Model_Get
 			    ->limit($params['limit'])
 	    );
 
-        $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($inventories as $inventory) {
 			if(strlen($inventory->comment) > 43) $inventory->comment = substr($inventory->comment, 0, 40).'...';
-		    $currency = $helper->Currency->setCurrency($currency, $inventory->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $inventory->currency, 'USE_SYMBOL');
 			$inventory->price = $currency->toCurrency($inventory->price);
 			$inventory->total = $currency->toCurrency($inventory->total);
 		}
@@ -65,17 +79,23 @@ class Items_Model_Get
 		return $inventories;
 	}
 
-	public function pricerules($params, $categories, $clientid, $helper)
+	public function pricerules($params, $categories)
 	{
+		$client = Zend_Registry::get('Client');
+        if($client['parentid']) {
+            $client['id'] = $client['modules']['items'];
+        }
+
 		$pricerulesDb = new Items_Model_DbTable_Pricerule();
 
 		$columns = array('title');
 
 		$query = '';
-		if($params['keyword']) $query = $helper->Query->getQueryKeyword($query, $params['keyword'], $columns);
-		//if($params['catid']) $query = $helper->Query->getQueryCategory($query, $params['catid'], $categories);
-		$query = $helper->Query->getQueryClient($query, $clientid);
-		$query = $helper->Query->getQueryDeleted($query);
+        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		//if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories);
+		$query = $queryHelper->getQueryClient($query, $client['id']);
+		$query = $queryHelper->getQueryDeleted($query);
 
 		$pricerules = $pricerulesDb->fetchAll(
 			$pricerulesDb->select()
@@ -84,9 +104,10 @@ class Items_Model_Get
 				->limit($params['limit'])
 		);
 
-        $currency = $helper->Currency->getCurrency();
+        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+        $currency = $currencyHelper->getCurrency();
 		foreach($pricerules as $pricerule) {
-		    $currency = $helper->Currency->setCurrency($currency, $pricerule->currency, 'USE_SYMBOL');
+		    $currency = $currencyHelper->setCurrency($currency, $pricerule->currency, 'USE_SYMBOL');
 			$pricerule['amount'] = $currency->toCurrency($pricerule['amount']);
             $from = new Zend_Date($pricerule['from']);
             if($pricerule['from'] == '0000-00-00 00:00:00') $pricerule['from'] = '';

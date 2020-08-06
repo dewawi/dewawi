@@ -21,6 +21,13 @@ class Admin_Form_Config extends Zend_Form
 			->setDecorators(array('ViewHelper'))
 			->setAttrib('default', '');
 
+		$form['analytics'] = new Zend_Form_Element_Textarea('analytics');
+		$form['analytics']->setLabel('ADMIN_ANALYTICS')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('cols', '62')
+			->setAttrib('rows', '30')
+			->setAttrib('default', '');
+
 		$this->addElements($form);
 	}
 }
