@@ -85,7 +85,20 @@ class Items_ItemController extends Zend_Controller_Action
 
 	public function addAction()
 	{
+        $catid = $this->_getParam('catid', 0);
+
+        //Get primary tax rate
+        $taxrates = new Application_Model_DbTable_Taxrate();
+		$taxrate = $taxrates->getPrimaryTaxrate();
+
+        //Get primary currency
+        $currencies = new Application_Model_DbTable_Currency();
+		$currency = $currencies->getPrimaryCurrency();
+
 		$data = array();
+		$data['catid'] = $catid;
+		$data['taxid'] = $taxrate['id'];
+		$data['currency'] = $currency['code'];
 		$data['inventory'] = 1;
 
 		$item = new Items_Model_DbTable_Item();

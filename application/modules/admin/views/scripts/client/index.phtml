@@ -12,6 +12,9 @@ echo $this->AdminMenu();
 			<th class="id" width="5%">
 				<?php echo $this->translate('ADMIN_CLIENT_ID'); ?>
 			</th>
+			<th class="id" width="5%">
+				<?php echo $this->translate('ADMIN_PARENT_ID'); ?>
+			</th>
 			<th class="name" width="20%">
 				<?php echo $this->translate('ADMIN_COMPANY'); ?>
 			</th>
@@ -34,9 +37,6 @@ echo $this->AdminMenu();
 				<?php echo $this->translate('ADMIN_WEBSITE'); ?>
 			</th>
 			<th class="category" width="12%">
-				<?php echo $this->translate('ADMIN_LANGUAGE'); ?>
-			</th>
-			<th class="category" width="12%">
 				<?php echo $this->translate('ADMIN_ACTIVATED'); ?>
 			</th>
 			<th width="8%"></th>
@@ -48,6 +48,9 @@ echo $this->AdminMenu();
 				<td><input class="id" type="checkbox" value="<?php echo $client->id ?>" name="id"/></td>
 				<td class="id">
 					<?php echo $this->escape($client->id); ?>
+				</td>
+				<td class="name">
+					<span class="editable" data-name="company"><?php echo $this->escape($client->parentid); ?></span>
 				</td>
 				<td class="name">
 					<span class="editable" data-name="company"><?php echo $this->escape($client->company); ?></span>
@@ -71,9 +74,6 @@ echo $this->AdminMenu();
 					<span class="editable" data-name="website"><?php echo $this->escape($client->website); ?></span>
 				</td>
 				<td class="name">
-					<span class="editable" data-name="language"><?php echo $this->escape($client->language); ?></span>
-				</td>
-				<td class="name">
 				    <?php echo $this->forms[$client->id]->activated; ?>
 				</td>
 				<td class="buttons">
@@ -87,6 +87,9 @@ echo $this->AdminMenu();
 			</td>
 			<td>
 				<?php echo $this->translate('TOOLBAR_NEW'); ?>
+			</td>
+			<td>
+				<?php echo $this->form->parentid; ?>
 			</td>
 			<td>
 				<?php echo $this->form->company; ?>
@@ -108,9 +111,6 @@ echo $this->AdminMenu();
 			</td>
 			<td>
 				<?php echo $this->form->website; ?>
-			</td>
-			<td>
-				<?php echo $this->form->language; ?>
 			</td>
 			<td>
 				<?php echo $this->form->activated; ?>

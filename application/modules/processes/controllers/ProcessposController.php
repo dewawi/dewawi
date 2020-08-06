@@ -166,7 +166,14 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$processid = (int)$this->_getParam('processid', 0);
+        //Get process data
+		$processid = $this->_getParam('processid', 0);
+        $processDb = new Processes_Model_DbTable_Process();
+		$process = $processDb->getProcess($processid);
+
+        //Get primary tax rate
+        $taxrates = new Application_Model_DbTable_Taxrate();
+		$taxrate = $taxrates->getPrimaryTaxrate();
 
 		if($this->getRequest()->isPost()) {
 			$data = array();
@@ -177,9 +184,10 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$data['image'] = '';
 			$data['description'] = '';
 			$data['price'] = 0;
-			$data['taxrate'] = 0;
+			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
+		    $data['currency'] = $process['currency'];
 			$data['uom'] = '';
 			$data['deliverystatus'] = 'deliveryIsWaiting';
 			$data['supplierorderstatus'] = 'supplierNotOrdered';

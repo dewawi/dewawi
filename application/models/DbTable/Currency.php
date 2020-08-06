@@ -18,6 +18,18 @@ class Application_Model_DbTable_Currency extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
+	public function getPrimaryCurrency()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where, 'ordering');
+		if(!$data) {
+			throw new Exception("Could not find currency");
+		}
+		return $data->toArray();
+	}
+
 	public function getCurrencies()
 	{
 		$where = array();

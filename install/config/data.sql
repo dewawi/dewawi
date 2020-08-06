@@ -3,8 +3,8 @@ SET time_zone = "+00:00";
 
 
 TRUNCATE `client`;
-INSERT INTO `client` (`id`, `company`, `address`, `postcode`, `city`, `country`, `email`, `website`, `language`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'Unternehmen', '', '', '', 'DE', '', '', '', '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+INSERT INTO `client` (`id`, `company`, `address`, `postcode`, `city`, `country`, `email`, `website`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'Unternehmen', '', '', '', 'DE', '', '', '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
 TRUNCATE `config`;
@@ -271,11 +271,16 @@ INSERT INTO `country` (`id`, `code`, `name`, `language`, `clientid`, `created`, 
 (255, 'CF', 'Zentralafrikanische Republik', 'de_DE', 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
 (256, 'CY', 'Zypern', 'de_DE', 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
+TRUNCATE `currency`;
+INSERT INTO `currency` (`id`, `code`, `name`, `symbol`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`, `deleted`) VALUES
+(1, 'EUR', 'Euro', '€', 0, 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00', 0),
+(2, 'GBP', 'British pound', '£', 0, 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00', 0),
+(3, 'USD', '', '$', 0, 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00', 0);
 
 TRUNCATE `taxrate`;
-INSERT INTO `taxrate` (`id`, `name`, `rate`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'MwSt.', 19.0000, 1, '2015-12-03 17:06:12', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
-(2, 'MwSt.', 7.0000, 1, '2015-12-03 17:06:12', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+INSERT INTO `taxrate` (`id`, `name`, `rate`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'MwSt.', 19.0000, 1, 1, '2015-12-03 17:06:12', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00'),
+(2, 'MwSt.', 7.0000, 2, 1, '2015-12-03 17:06:12', 1, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
 TRUNCATE `paymentmethod`;
@@ -293,8 +298,8 @@ INSERT INTO `increment` (`clientid`, `contactid`, `creditnoteid`, `deliveryorder
 
 
 TRUNCATE `language`;
-INSERT INTO `language` (`id`, `code`, `name`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'de_DE', 'Deutsch', 100, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+INSERT INTO `language` (`id`, `code`, `name`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'de_DE', 'Deutsch', 1, 100, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
 TRUNCATE `module`;

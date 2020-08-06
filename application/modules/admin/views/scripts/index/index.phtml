@@ -9,11 +9,11 @@ echo $this->AdminMenu();
 	<thead>
 		<tr>
 			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="category" width="12%">
-				<?php echo $this->translate('ADMIN_LANGUAGE'); ?>
-			</th>
 			<th class="timezone" width="12%">
 				<?php echo $this->translate('ADMIN_TIMEZONE'); ?>
+			</th>
+			<th class="category" width="12%">
+				<?php echo $this->translate('ADMIN_LANGUAGE'); ?>
 			</th>
 			<th class="analytics" width="12%">
 				<?php echo $this->translate('ADMIN_ANALYTICS'); ?>
@@ -25,11 +25,11 @@ echo $this->AdminMenu();
 		<?php foreach($this->config as $config) : ?>
 			<tr>
 				<td><input class="id" type="checkbox" value="<?php echo $config->id ?>" name="id"/></td>
-				<td class="languagename">
-					<span class="editable" data-name="language"><?php echo $this->escape($config->language); ?></span>
-				</td>
 				<td class="timezone">
 					<span class="editable" data-name="timezone"><?php echo $this->escape($config->timezone); ?></span>
+				</td>
+				<td class="languagename">
+					<span class="editable" data-name="language"><?php echo $this->escape($config->language); ?></span>
 				</td>
 				<td class="analytics">
 					<pre class="editable" data-name="analytics" data-type="textarea"><?php echo $this->escape($config->analytics); ?></pre>

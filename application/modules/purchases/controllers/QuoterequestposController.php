@@ -204,7 +204,14 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
+        //Get quote request data
 		$quoterequestid = $this->_getParam('quoterequestid', 0);
+        $quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
+		$quoterequest = $quoterequestDb->getQuoterequest($quoterequestid);
+
+        //Get primary tax rate
+        $taxrates = new Application_Model_DbTable_Taxrate();
+		$taxrate = $taxrates->getPrimaryTaxrate();
 
 		if($this->getRequest()->isPost()) {
 			$data = array();
@@ -215,9 +222,10 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 			$data['image'] = '';
 			$data['description'] = '';
 			$data['price'] = 0;
-			$data['taxrate'] = 0;
+			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
+		    $data['currency'] = $quoterequest['currency'];
 			$data['uom'] = '';
 			$data['ordering'] = $this->getLatestOrdering($quoterequestid) + 1;
 			$position = new Purchases_Model_DbTable_Quoterequestpos();

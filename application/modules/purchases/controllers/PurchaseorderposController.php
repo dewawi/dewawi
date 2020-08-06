@@ -204,7 +204,14 @@ class Purchases_PurchaseorderposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
+        //Get purchase order data
 		$purchaseorderid = $this->_getParam('purchaseorderid', 0);
+        $purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
+		$purchaseorder = $purchaseorderDb->getPurchaseorder($purchaseorderid);
+
+        //Get primary tax rate
+        $taxrates = new Application_Model_DbTable_Taxrate();
+		$taxrate = $taxrates->getPrimaryTaxrate();
 
 		if($this->getRequest()->isPost()) {
 			$data = array();
@@ -215,9 +222,10 @@ class Purchases_PurchaseorderposController extends Zend_Controller_Action
 			$data['image'] = '';
 			$data['description'] = '';
 			$data['price'] = 0;
-			$data['taxrate'] = 0;
+			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
+		    $data['currency'] = $purchaseorder['currency'];
 			$data['uom'] = '';
 			$data['ordering'] = $this->getLatestOrdering($purchaseorderid) + 1;
 			$position = new Purchases_Model_DbTable_Purchaseorderpos();

@@ -204,7 +204,14 @@ class Sales_ReminderposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
+        //Get reminder data
 		$reminderid = $this->_getParam('reminderid', 0);
+        $reminderDb = new Sales_Model_DbTable_Reminder();
+		$reminder = $reminderDb->getReminder($reminderid);
+
+        //Get primary tax rate
+        $taxrates = new Application_Model_DbTable_Taxrate();
+		$taxrate = $taxrates->getPrimaryTaxrate();
 
 		if($this->getRequest()->isPost()) {
 			$data = array();
@@ -215,9 +222,10 @@ class Sales_ReminderposController extends Zend_Controller_Action
 			$data['image'] = '';
 			$data['description'] = '';
 			$data['price'] = 0;
-			$data['taxrate'] = 0;
+			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
+		    $data['currency'] = $reminder['currency'];
 			$data['uom'] = '';
 			$data['ordering'] = $this->getLatestOrdering($reminderid) + 1;
 			$position = new Sales_Model_DbTable_Reminderpos();

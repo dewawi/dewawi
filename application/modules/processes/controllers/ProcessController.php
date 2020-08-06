@@ -110,10 +110,14 @@ class Processes_ProcessController extends Zend_Controller_Action
 	{
 		$customerid = $this->_getParam('customerid', 0);
 
+        //Get primary currency
+        $currencies = new Application_Model_DbTable_Currency();
+		$currency = $currencies->getPrimaryCurrency();
+
 		$data = array();
 		$data['title'] = $this->view->translate('PROCESSES_NEW_PROCESS');
 		$data['customerid'] = $customerid;
-		$data['currency'] = 'EUR';
+		$data['currency'] = $currency['code'];
 		$data['state'] = 100;
 
 		$processDb = new Processes_Model_DbTable_Process();

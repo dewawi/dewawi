@@ -11,6 +11,12 @@ class Admin_Form_Client extends Zend_Form
 		$form['id'] = new Zend_Form_Element_Hidden('id');
 		$form['id']->addFilter('Int')->removeDecorator('Label');
 
+		$form['parentid'] = new Zend_Form_Element_Text('parentid');
+		$form['parentid']->setLabel('ADMIN_PARENT_ID')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '12');
+
 		$form['company'] = new Zend_Form_Element_Text('company');
 		$form['company']->setLabel('ADMIN_COMPANY')
 			->addFilter('StripTags')
@@ -49,12 +55,6 @@ class Admin_Form_Client extends Zend_Form
 
 		$form['website'] = new Zend_Form_Element_Text('website');
 		$form['website']->setLabel('ADMIN_WEBSITE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['language'] = new Zend_Form_Element_Text('language');
-		$form['language']->setLabel('ADMIN_LANGUAGE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');

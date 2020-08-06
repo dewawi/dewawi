@@ -205,7 +205,14 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
+        //Get credit note data
 		$creditnoteid = $this->_getParam('creditnoteid', 0);
+        $creditnoteDb = new Sales_Model_DbTable_Creditnote();
+		$creditnote = $creditnoteDb->getCreditnote($creditnoteid);
+
+        //Get primary tax rate
+        $taxrates = new Application_Model_DbTable_Taxrate();
+		$taxrate = $taxrates->getPrimaryTaxrate();
 
 		if($this->getRequest()->isPost()) {
 			$data = array();
@@ -216,9 +223,10 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 			$data['image'] = '';
 			$data['description'] = '';
 			$data['price'] = 0;
-			$data['taxrate'] = 0;
+			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
+		    $data['currency'] = $creditnote['currency'];
 			$data['uom'] = '';
 			$data['ordering'] = $this->getLatestOrdering($creditnoteid) + 1;
 			$position = new Sales_Model_DbTable_Creditnotepos();

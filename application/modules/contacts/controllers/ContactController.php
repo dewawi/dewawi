@@ -107,7 +107,10 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 	public function addAction()
 	{
+        $catid = $this->_getParam('catid', 0);
+
 		$data = array();
+		$data['catid'] = $catid;
 
 		$client = Zend_Registry::get('Client');
 

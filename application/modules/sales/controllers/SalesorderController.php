@@ -93,10 +93,24 @@ class Sales_SalesorderController extends Zend_Controller_Action
 	{
 		$contactid = $this->_getParam('contactid', 0);
 
+        //Get primary currency
+        $currencies = new Application_Model_DbTable_Currency();
+		$currency = $currencies->getPrimaryCurrency();
+
+        //Get primary language
+        $languages = new Application_Model_DbTable_Language();
+		$language = $languages->getPrimaryLanguage();
+
+        //Get primary template
+        $templates = new Application_Model_DbTable_Template();
+		$template = $templates->getPrimaryTemplate();
+
 		$data = array();
 		$data['title'] = $this->view->translate('SALES_ORDERS_NEW_SALES_ORDER');
 		$data['contactid'] = $contactid;
-		$data['currency'] = 'EUR'; // to do get standard currency
+		$data['currency'] = $currency['code'];
+		$data['templateid'] = $template['id'];
+		$data['language'] = $language['code'];
 		$data['state'] = 100;
 
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();

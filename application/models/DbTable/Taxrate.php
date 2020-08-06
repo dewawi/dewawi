@@ -28,6 +28,18 @@ class Application_Model_DbTable_Taxrate extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getPrimaryTaxrate()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where, 'ordering');
+		if(!$data) {
+			throw new Exception("Could not find tax rate");
+		}
+		return $data->toArray();
+	}
+
 	public function getTaxrates()
 	{
 		$where = array();

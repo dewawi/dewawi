@@ -6,36 +6,75 @@ class Users_Form_User extends Zend_Form
 	{
 		$this->setName('user');
 
-		$id = new Zend_Form_Element_Hidden('id');
-		$id->addFilter('Int');
+		$form = array();
 
-		$username = new Zend_Form_Element_Text('username');
-		$username->setLabel('USERS_USERNAME')
+		$form['id'] = new Zend_Form_Element_Hidden('id');
+		$form['id']->addFilter('Int');
+
+		$form['username'] = new Zend_Form_Element_Text('username');
+		$form['username']->setLabel('USERS_USERNAME')
 			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->addValidator('NotEmpty')
 			->setAttrib('size', '50');
 
-		$password = new Zend_Form_Element_Password('password');
-		$password->setLabel('USERS_PASSWORD')
+		$form['password'] = new Zend_Form_Element_Password('password');
+		$form['password']->setLabel('USERS_PASSWORD')
 			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->addValidator('NotEmpty')
 			->setAttrib('size', '50');
 
-		//$client = new Zend_Form_Element_Select('client');
-		//$client->setLabel('USERS_CLIENT')
-		//	->addFilter('Int');
+		$form['name'] = new Zend_Form_Element_Text('name');
+		$form['name']->setLabel('USERS_NAME')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '50');
 
+		$form['email'] = new Zend_Form_Element_Text('email');
+		$form['email']->setLabel('USERS_EMAIL')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '50');
 
-		$stayLoggedIn = new Zend_Form_Element_Checkbox('stayLoggedIn');
-		$stayLoggedIn->setLabel('USERS_STAY_LOGGED_IN');
+		$form['smtphost'] = new Zend_Form_Element_Text('smtphost');
+		$form['smtphost']->setLabel('USERS_SMTP_HOST')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '50');
 
-		$submit = new Zend_Form_Element_Submit('submit');
-		$submit->setAttrib('id', 'submitbutton');
+		$form['smtpauth'] = new Zend_Form_Element_Text('smtpauth');
+		$form['smtpauth']->setLabel('USERS_SMTP_AUTH')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '50');
 
-		$this->addElements(array($id, $username, $password, $stayLoggedIn, $submit));
+		$form['smtpsecure'] = new Zend_Form_Element_Text('smtpsecure');
+		$form['smtpsecure']->setLabel('USERS_SMTP_SECURE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '50');
+
+		$form['smtpuser'] = new Zend_Form_Element_Text('smtpuser');
+		$form['smtpuser']->setLabel('USERS_SMTP_USER')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '50');
+
+		$form['smtppass'] = new Zend_Form_Element_Text('smtppass');
+		$form['smtppass']->setLabel('USERS_SMTP_PASSWORD')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '50');
+
+		$form['stayLoggedIn'] = new Zend_Form_Element_Checkbox('stayLoggedIn');
+		$form['stayLoggedIn']->setLabel('USERS_STAY_LOGGED_IN');
+
+		$form['submit'] = new Zend_Form_Element_Submit('submit');
+		$form['submit']->setAttrib('id', 'submitbutton');
+
+		$this->addElements($form);
 	}
 }

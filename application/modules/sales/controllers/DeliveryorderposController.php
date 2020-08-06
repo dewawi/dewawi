@@ -204,7 +204,14 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
+        //Get delivery order data
 		$deliveryorderid = $this->_getParam('deliveryorderid', 0);
+        $deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
+		$deliveryorder = $deliveryorderDb->getDeliveryorder($deliveryorderid);
+
+        //Get primary tax rate
+        $taxrates = new Application_Model_DbTable_Taxrate();
+		$taxrate = $taxrates->getPrimaryTaxrate();
 
 		if($this->getRequest()->isPost()) {
 			$data = array();
@@ -215,9 +222,10 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 			$data['image'] = '';
 			$data['description'] = '';
 			$data['price'] = 0;
-			$data['taxrate'] = 0;
+			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
+		    $data['currency'] = $deliveryorder['currency'];
 			$data['uom'] = '';
 			$data['ordering'] = $this->getLatestOrdering($deliveryorderid) + 1;
 			$position = new Sales_Model_DbTable_Deliveryorderpos();
