@@ -17,8 +17,8 @@
 
 	$.formatCurrency.regions['en-US'] = {
 		symbol: '$',
-		positiveFormat: '%s%n',
-		negativeFormat: '(%s%n)',
+		positiveFormat: '%n',
+		negativeFormat: '-%n',
 		decimalSymbol: '.',
 		digitGroupSymbol: ',',
 		groupDigits: true

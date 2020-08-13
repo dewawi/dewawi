@@ -67,8 +67,7 @@ class Contacts_Model_Get
 	}
 
 	public function history($contactid) {
-		$this->_currency = new Zend_Currency();
-		$this->_currency->setFormat(array('display' => Zend_Currency::USE_SYMBOL));
+        $currency = Zend_Registry::get('Zend_Currency');
 
         // Set client for sales module
 		$client = Zend_Registry::get('Client');
@@ -84,9 +83,9 @@ class Contacts_Model_Get
 		$history['quotes'] = $quoteDb->getQuotes($contactid);
 
 		foreach($history['quotes'] as $quote) {
-			$quote->subtotal = $this->_currency->toCurrency($quote->subtotal);
-			$quote->taxes = $this->_currency->toCurrency($quote->taxes);
-			$quote->total = $this->_currency->toCurrency($quote->total);
+			$quote->subtotal = $currency->toCurrency($quote->subtotal);
+			$quote->taxes = $currency->toCurrency($quote->taxes);
+			$quote->total = $currency->toCurrency($quote->total);
 			if($quote->quotedate && ($quote->quotedate != '0000-00-00'))
 				$quote->quotedate = date('d.m.Y', strtotime($quote->quotedate));
 			if($quote->modified && ($quote->modified != '0000-00-00'))
@@ -100,9 +99,9 @@ class Contacts_Model_Get
 		$history['salesorders'] = $salesorderDb->getSalesorders($contactid);
 
 		foreach($history['salesorders'] as $salesorder) {
-			$salesorder->subtotal = $this->_currency->toCurrency($salesorder->subtotal);
-			$salesorder->taxes = $this->_currency->toCurrency($salesorder->taxes);
-			$salesorder->total = $this->_currency->toCurrency($salesorder->total);
+			$salesorder->subtotal = $currency->toCurrency($salesorder->subtotal);
+			$salesorder->taxes = $currency->toCurrency($salesorder->taxes);
+			$salesorder->total = $currency->toCurrency($salesorder->total);
 			if($salesorder->salesorderdate && ($salesorder->salesorderdate != '0000-00-00'))
 				$salesorder->salesorderdate = date('d.m.Y', strtotime($salesorder->salesorderdate));
 			if($salesorder->modified && ($salesorder->modified != '0000-00-00'))
@@ -116,9 +115,9 @@ class Contacts_Model_Get
 		$history['invoices'] = $invoiceDb->getInvoices($contactid);
 
 		foreach($history['invoices'] as $invoice) {
-			$invoice->subtotal = $this->_currency->toCurrency($invoice->subtotal);
-			$invoice->taxes = $this->_currency->toCurrency($invoice->taxes);
-			$invoice->total = $this->_currency->toCurrency($invoice->total);
+			$invoice->subtotal = $currency->toCurrency($invoice->subtotal);
+			$invoice->taxes = $currency->toCurrency($invoice->taxes);
+			$invoice->total = $currency->toCurrency($invoice->total);
 			if($invoice->invoicedate && ($invoice->invoicedate != '0000-00-00'))
 				$invoice->invoicedate = date('d.m.Y', strtotime($invoice->invoicedate));
 			if($invoice->modified && ($invoice->modified != '0000-00-00'))
@@ -132,9 +131,9 @@ class Contacts_Model_Get
 		$history['deliveryorders'] = $deliveryorderDb->getDeliveryorders($contactid);
 
 		foreach($history['deliveryorders'] as $deliveryorder) {
-			$deliveryorder->subtotal = $this->_currency->toCurrency($deliveryorder->subtotal);
-			$deliveryorder->taxes = $this->_currency->toCurrency($deliveryorder->taxes);
-			$deliveryorder->total = $this->_currency->toCurrency($deliveryorder->total);
+			$deliveryorder->subtotal = $currency->toCurrency($deliveryorder->subtotal);
+			$deliveryorder->taxes = $currency->toCurrency($deliveryorder->taxes);
+			$deliveryorder->total = $currency->toCurrency($deliveryorder->total);
 			if($deliveryorder->deliveryorderdate && ($deliveryorder->deliveryorderdate != '0000-00-00'))
 				$deliveryorder->deliveryorderdate = date('d.m.Y', strtotime($deliveryorder->deliveryorderdate));
 			if($deliveryorder->modified && ($deliveryorder->modified != '0000-00-00'))
@@ -148,9 +147,9 @@ class Contacts_Model_Get
 		$history['creditnotes'] = $creditnoteDb->getCreditnotes($contactid);
 
 		foreach($history['creditnotes'] as $creditnote) {
-			$creditnote->subtotal = $this->_currency->toCurrency($creditnote->subtotal);
-			$creditnote->taxes = $this->_currency->toCurrency($creditnote->taxes);
-			$creditnote->total = $this->_currency->toCurrency($creditnote->total);
+			$creditnote->subtotal = $currency->toCurrency($creditnote->subtotal);
+			$creditnote->taxes = $currency->toCurrency($creditnote->taxes);
+			$creditnote->total = $currency->toCurrency($creditnote->total);
 			if($creditnote->creditnotedate && ($creditnote->creditnotedate != '0000-00-00'))
 				$creditnote->creditnotedate = date('d.m.Y', strtotime($creditnote->creditnotedate));
 			if($creditnote->modified && ($creditnote->modified != '0000-00-00'))
@@ -173,9 +172,9 @@ class Contacts_Model_Get
         }
 
 		foreach($history['quoterequests'] as $quoterequest) {
-			$quoterequest->subtotal = $this->_currency->toCurrency($quoterequest->subtotal);
-			$quoterequest->taxes = $this->_currency->toCurrency($quoterequest->taxes);
-			$quoterequest->total = $this->_currency->toCurrency($quoterequest->total);
+			$quoterequest->subtotal = $currency->toCurrency($quoterequest->subtotal);
+			$quoterequest->taxes = $currency->toCurrency($quoterequest->taxes);
+			$quoterequest->total = $currency->toCurrency($quoterequest->total);
 			if($quoterequest->quoterequestdate && ($quoterequest->quoterequestdate != '0000-00-00'))
 				$quoterequest->quoterequestdate = date('d.m.Y', strtotime($quoterequest->quoterequestdate));
 			if($quoterequest->modified && ($quoterequest->modified != '0000-00-00'))
@@ -189,9 +188,9 @@ class Contacts_Model_Get
 		$history['purchaseorders'] = $purchaseorderDb->getPurchaseorders($contactid);
 
 		foreach($history['purchaseorders'] as $purchaseorder) {
-			$purchaseorder->subtotal = $this->_currency->toCurrency($purchaseorder->subtotal);
-			$purchaseorder->taxes = $this->_currency->toCurrency($purchaseorder->taxes);
-			$purchaseorder->total = $this->_currency->toCurrency($purchaseorder->total);
+			$purchaseorder->subtotal = $currency->toCurrency($purchaseorder->subtotal);
+			$purchaseorder->taxes = $currency->toCurrency($purchaseorder->taxes);
+			$purchaseorder->total = $currency->toCurrency($purchaseorder->total);
 		}
 
 		//Processes

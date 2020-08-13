@@ -3,10 +3,10 @@
 class Application_Controller_Action_Helper_MainMenu extends Zend_Controller_Action_Helper_Abstract
 {
 	public function getMainMenu() {
-		$modulesDb = new Application_Model_DbTable_Module();
-		$modules = $modulesDb->getModules();
+		//$modulesDb = new Application_Model_DbTable_Module();
+		//$modules = $modulesDb->getModules();
 		$mainmenu = array();
-		foreach($modules as $module) {
+		/*foreach($modules as $module) {
 			if($module->active && $module->menu) {
 				$data = Zend_Json::decode($module->menu);
 				foreach($data as $key => $value) {
@@ -24,7 +24,7 @@ class Application_Controller_Action_Helper_MainMenu extends Zend_Controller_Acti
 			if(isset($value['childs'])) {
 				ksort($mainmenu[$key]['childs']);
 			}
-		}
+		}*/
 		return $mainmenu;
 	}
 }

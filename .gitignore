@@ -1,4 +1,5 @@
 /configs/database.ini
+/configs/magento.ini
 /cache/*
 !/cache/.gitkeep
 /files/*/*

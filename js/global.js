@@ -4,20 +4,7 @@ var timeout = 0;
 //Date picker options
 var datePickerOptions = {
 	autoHide: true,
-	language: 'de-DE'
-	/*numberOfMonths: 1,
-	showWeek: true,
-	dateFormat: 'yy-mm-dd',
-	monthNames: ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
-	monthNamesShort: ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
-	dayNames: ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],
-	dayNamesShort: ['So','Mo','Di','Mi','Do','Fr','Sa'],
-	dayNamesMin: ['So','Mo','Di','Mi','Do','Fr','Sa'],
-	weekHeader: 'Wo',
-	firstDay: 1,
-	changeMonth: true,
-	changeYear: true,
-	onClose: function(){$(this).trigger('change')}*/
+	language: language
 };
 
 $(document).ready(function(){
@@ -617,26 +604,9 @@ $(document).ready(function(){
 
 	if($('#fromDatePicker').length) {
 		var dateFromPickerOptions = {
-	        language: 'de-DE',
+	        language: language,
 			inline: true,
-            container: $('#fromDatePicker'),
-			/*
-			defaultDate: $('#from').val(),
-			beforeShowDay: function(date) {
-				return [true, from <= date && date <= to ? 'active' : ''];
-			},
-			onSelect: function( selectedDate ) {
-				var option = this.id == 'from' ? 'minDate' : 'maxDate',
-					instance = $( this ).data( 'datepicker' ),
-					date = $.datepicker.parseDate(
-						instance.settings.dateFormat ||
-						$.datepicker._defaults.dateFormat,
-						selectedDate, instance.settings );
-				datesFrom.not( this ).datepicker( 'option', option, date );
-				$.cookie('from', $('#from').val(), { path: cookiePath });
-				$.cookie('daterange', 'custom', { path: cookiePath });
-				if(action == 'index') search();
-			}*/
+            container: $('#fromDatePicker')
 		}
 		//$.extend(dateFromPickerOptions, datePickerOptions)
 		var datesFrom = $('#from').datepicker(dateFromPickerOptions);
@@ -644,26 +614,9 @@ $(document).ready(function(){
 
 	if($('#toDatePicker').length) {
 		var dateToPickerOptions = {
-	        language: 'de-DE',
+	        language: language,
 			inline: true,
-            container: $('#toDatePicker'),
-			/*
-			defaultDate: $('#to').val(),
-			beforeShowDay: function(date) {
-				return [true, from <= date && date <= to ? 'active' : ''];
-			},
-			onSelect: function( selectedDate ) {
-				var option = this.id == 'from' ? 'minDate' : 'maxDate',
-					instance = $( this ).data( 'datepicker' ),
-					date = $.datepicker.parseDate(
-						instance.settings.dateFormat ||
-						$.datepicker._defaults.dateFormat,
-						selectedDate, instance.settings );
-				datesTo.not( this ).datepicker( 'option', option, date );
-				$.cookie('to', $('#to').val(), { path: cookiePath });
-				$.cookie('daterange', 'custom', { path: cookiePath });
-				if(action == 'index') search();
-			}*/
+            container: $('#toDatePicker')
 		};
 		//$.extend(dateToPickerOptions, datePickerOptions)
 		var datesTo = $('#to').datepicker(dateToPickerOptions);

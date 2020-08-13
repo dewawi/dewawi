@@ -5,6 +5,8 @@
 class Zend_View_Helper_TinyMCE extends Zend_View_Helper_Abstract{
 
 	public function TinyMCE() {
+        $language = Zend_Registry::get('Zend_Locale');
+
 		$this->view->headScript()->appendFile($this->view->baseUrl().'/library/TinyMCE/tinymce.min.js');
 
 		$this->view->headScript()->captureStart(); ?>
@@ -12,7 +14,7 @@ class Zend_View_Helper_TinyMCE extends Zend_View_Helper_Abstract{
             var contentCache = [];
             tinymce.init({
                 selector: '.editor',
-                language: 'de',
+                language: '<?php echo substr($language, 0, 2) ?>',
                 menubar: false,
                 height: 450,
                 valid_elements: 'a[href|target=_blank],p[style],em,h1,h2,h3,h4,h5,strong/b,br,ul,ol,li',
