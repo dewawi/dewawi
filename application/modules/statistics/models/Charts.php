@@ -109,7 +109,11 @@ class Statistics_Model_Charts
 			if(isset($options['categories'][$id]['childs']) && ($id != $params['catid'])) {
 				foreach($options['categories'][$id]['childs'] as $childId) {
 					foreach($values as $month => $value) {
-						$turnoverCategories[$id][$month] += $turnoverCategories[$childId][$month];
+						if(isset($turnoverCategories[$id][$month])) {
+							$turnoverCategories[$id][$month] += $turnoverCategories[$childId][$month];
+						} else {
+							$turnoverCategories[$id][$month] = $turnoverCategories[$childId][$month];
+						}
 					}
 					unset($turnoverCategories[$childId]);
 				}
@@ -126,8 +130,8 @@ class Statistics_Model_Charts
 		require_once(BASE_PATH.'/library/pChart/class/pImage.class.php');
 
 		//Turnover
-		/* Create your dataset object */ 
-		$turnoverData = new pData(); 
+		/* Create your dataset object */
+		$turnoverData = new pData();
 
 		/* Add data in your dataset */
 		$turnoverData->addPoints($turnover,'Values');
@@ -150,14 +154,14 @@ class Statistics_Model_Charts
 		/* Define the boundaries of the graph area */
 		$turnover->setGraphArea(75, 20, $width-30, $height-60);
 
-		/* Draw the scale, keep everything automatic */ 
+		/* Draw the scale, keep everything automatic */
 		$turnover->drawScale(array('DrawSubTicks' => TRUE, 'Mode' => SCALE_MODE_START0, 'LabelRotation' => 45));
 
 		/* Draw the scale, keep everything automatic */
 		$settings = array('Gradient' => TRUE, 'GradientMode' => GRADIENT_EFFECT_CAN, 'DisplayPos' => LABEL_POS_INSIDE, 'DisplayValues' => TRUE, 'DisplayR' => 0, 'DisplayG' => 0, 'DisplayB' => 0, 'DisplayShadow' => TRUE, 'Surrounding' => 10);
 		$turnover->drawBarChart($settings);
 
-		/* Build the PNG file and send it to the web browser */ 
+		/* Build the PNG file and send it to the web browser */
 		if(!file_exists(BASE_PATH.'/cache/chart/')) {
 			mkdir(BASE_PATH.'/cache/chart/');
 			chmod(BASE_PATH.'/cache/chart/', 0777);
@@ -165,7 +169,7 @@ class Statistics_Model_Charts
 		$turnover->Render(BASE_PATH.'/cache/chart/turnover-'.$width.'-'.$height.'.png');
 
 		//Turnover by categories
-		/* Create your dataset object */ 
+		/* Create your dataset object */
 		$turnoverCategoriesData = new pData();
 
 		/* Add data in your dataset */
@@ -187,7 +191,7 @@ class Statistics_Model_Charts
 		$turnoverCategoriesData->setSerieDescription('Labels', 'Months');
 		$turnoverCategoriesData->setAbscissa('Labels');
 
-		/* Create a pChart object and associate your dataset */ 
+		/* Create a pChart object and associate your dataset */
 		$turnoverCategories = new pImage($width, $height, $turnoverCategoriesData, TRUE);
 
 		/* Turn off AA processing */
