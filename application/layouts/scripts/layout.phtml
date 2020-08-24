@@ -5,9 +5,9 @@ $this->headTitle('DEWAWI');
 echo $this->doctype();
 $this->language = str_replace('_', '-', $this->language);
 ?>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico"/>
 		<?php echo $this->headMeta(); ?>
 		<?php echo $this->headTitle(); ?>
@@ -38,222 +38,228 @@ $this->language = str_replace('_', '-', $this->language);
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
-        <script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/processes.js"></script>
 		<?php echo $this->headScript(); ?>
 	</head>
 	<body>
 
-    <div class="container">
+	<div class="container">
 
-	    <div class="<?php echo $this->module; ?> <?php echo $this->action; ?>">
+		<div class="<?php echo $this->module; ?> <?php echo $this->action; ?>">
 
-            <div class="row">
-                <div class="col-sm-12 hidden-lg">
-		            <div id="userinfo">
-			            <?php if(isset($this->user)) : ?>
-				            <?php echo $this->user['name']; ?> |
-				            <?php
-					            $date = new Zend_Date();
-					            echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
-				            ?> |
-				            <?php if($this->user['admin']) : ?>
-				                <a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
-			                <?php endif; ?>
-				            <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
-			            <?php endif; ?>
-		            </div>
-			    </div>
+			<div class="row">
+				<div class="col-sm-12 hidden-lg">
+					<div id="userinfo">
+						<?php if(isset($this->user)) : ?>
+							<?php echo $this->user['name']; ?> |
+							<?php
+								$date = new Zend_Date();
+								echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
+							?> |
+							<?php //if($this->user['admin']) : ?>
+								<a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
+							<?php //endif; ?>
+							<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
+						<?php endif; ?>
+					</div>
+				</div>
 			</div>
 
-            <div class="row">
-                <div class="col-sm-6">
-		            <h1><a href="<?php echo $this->url(array('module'=>'default', 'controller'=>'index', 'action'=>'index', 'id'=>null), null, TRUE); ?>">
-                        <img height="50" width="200" src="<?php echo $this->baseUrl(); ?>/images/dewawi.png" alt="DEWAWI">
-                    </a></h1>
-			    </div>
-                <div class="col-sm-6 hidden-sm hidden-md">
-		            <div id="userinfo">
-			            <?php if(isset($this->user)) : ?>
-				            <?php echo $this->user['name']; ?> |
-				            <?php
-					            $date = new Zend_Date();
-					            echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
-				            ?> |
-				            <?php if($this->user['admin']) : ?>
-                                <a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
-			                <?php endif; ?>
-				            <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
-			                <?php if($this->user['admin'] && $this->action == 'index') : ?>
-                                <?php echo $this->clientSwitcher; ?>
-                                <?php echo $this->languageSwitcher; ?>
-			                <?php endif; ?>
-			            <?php endif; ?>
-		            </div>
-			    </div>
-                <div class="col-sm-6 hidden-lg" style="text-align: right;">
-                    <label for="doc-drawer-checkbox" class="button drawer-toggle col-sm"></label>
-			    </div>
+			<div class="row">
+				<div class="col-sm-6">
+					<h1><a href="<?php echo $this->url(array('module'=>'default', 'controller'=>'index', 'action'=>'index', 'id'=>null), null, TRUE); ?>">
+						<img height="50" width="200" src="<?php echo $this->baseUrl(); ?>/images/dewawi.png" alt="DEWAWI">
+					</a></h1>
+				</div>
+				<div class="col-sm-6 hidden-sm hidden-md">
+					<div id="userinfo">
+						<?php if(isset($this->user)) : ?>
+							<?php echo $this->user['name']; ?> |
+							<?php
+								$date = new Zend_Date();
+								echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
+							?> |
+							<?php //if($this->user['admin']) : ?>
+								<a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
+							<?php //endif; ?>
+							<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
+							<?php if($this->action == 'index') : ?>
+								<?php echo $this->clientSwitcher; ?>
+								<?php echo $this->languageSwitcher; ?>
+							<?php endif; ?>
+						<?php endif; ?>
+					</div>
+				</div>
+				<div class="col-sm-6 hidden-lg" style="text-align: right;">
+					<label for="doc-drawer-checkbox" class="button drawer-toggle col-sm"></label>
+				</div>
 			</div>
 
-            <?php if(isset($this->user)) : ?>
-            <div class="row" id="doc-wrapper">
-                <input id="doc-drawer-checkbox" class="drawer" value="on" type="checkbox">
-                <nav class="col-md-4 col-lg-3" id="nav-drawer" style="position: fixed;">
-                    <h3>Menu</h3>
-                    <label for="doc-drawer-checkbox" class="button drawer-close"></label>
-                    <a href="<?php echo $this->url(array('module'=>'index', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Übersicht</a>
-                    <a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index', 'id'=>null)); ?>">Kontakte</a>
-                    <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>">Artikel</a>
-                    <a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'index', 'id'=>null)); ?>">Vorgänge</a>
-                    <span>Verkauf</span>
-                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Angebote</a>
-                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Auftragsbestätigungen</a>
-                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Lieferscheine</a>
-                    <span>Einkauf</span>
-                    <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->translate('MENU_QUOTE_REQUESTS'); ?></a>
-                    <a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Bestellungen</a>
-                    <span>Buchhaltung</span>
-                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Abrechnung</a>
-                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Gutschriften</a>
-                    <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Mahnungen</a>
-                    <a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Statistiken</a>
-                </nav>
-            </div>
-
-            <div class="row">
-                <div class="col-sm-12 hidden-sm">
-                    <header>
-                        <a class="button" href="<?php echo $this->url(array('module'=>'index', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('CONTROL_PANEL'); ?></a>
-                        <a class="button<?php if($this->controller == 'contact') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_CONTACTS'); ?></a>
-                        <a class="button<?php if($this->controller == 'item') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_ITEMS'); ?></a>
-                        <a class="button<?php if($this->controller == 'process') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PROCESSES'); ?></a>
-                        <div class="sub">
-                            <button<?php if(($this->controller == 'quote') || ($this->controller == 'salesorder') || ($this->controller == 'deliveryorder')) echo ' class="active"'; ?>><?php echo $this->translate('MENU_SALES'); ?></button>
-                            <div class="sub1">
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_QUOTES'); ?></a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->translate('MENU_SALES_ORDERS'); ?></a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_DELIVERY_ORDERS'); ?></a>
-                            </div>
-                        </div>
-                        <div class="sub">
-                            <button<?php if(($this->controller == 'quoterequest') || ($this->controller == 'purchaseorder')) echo ' class="active"'; ?>><?php echo $this->translate('MENU_PURCHASES'); ?></button>
-                            <div class="sub1">
-                                <a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_QUOTE_REQUESTS'); ?></a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PURCHASE_ORDERS'); ?></a>
-                            </div>
-                        </div>
-                        <div class="sub">
-                            <button<?php if(($this->controller == 'invoice') || ($this->controller == 'creditnote') || ($this->controller == 'reminder')) echo ' class="active"'; ?>>Abrechnung</button>
-                            <div class="sub1">
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_INVOICES'); ?></a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_CREDIT_NOTES'); ?></a>
-                                <a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_REMINDERS'); ?></a>
-                            </div>
-                        </div>
-                        <a class="button<?php if($this->controller == 'pricerule') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'pricerule', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PRICE_RULES'); ?></a>
-                        <a class="button<?php if($this->module == 'statistics') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_STATISTICS'); ?></a>
-                    </header>
-			    </div>
+			<?php if(isset($this->user)) : ?>
+			<div class="row" id="doc-wrapper">
+				<input id="doc-drawer-checkbox" class="drawer" value="on" type="checkbox">
+				<nav class="col-md-4 col-lg-3" id="nav-drawer" style="position: fixed;">
+					<h3>Menu</h3>
+					<label for="doc-drawer-checkbox" class="button drawer-close"></label>
+					<a href="<?php echo $this->url(array('module'=>'index', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Übersicht</a>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index', 'id'=>null)); ?>">Kontakte</a>
+					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>">Artikel</a>
+					<a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'index', 'id'=>null)); ?>">Vorgänge</a>
+					<span>Verkauf</span>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Angebote</a>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Auftragsbestätigungen</a>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Lieferscheine</a>
+					<span>Einkauf</span>
+					<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->translate('MENU_QUOTE_REQUESTS'); ?></a>
+					<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Bestellungen</a>
+					<span>Buchhaltung</span>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Abrechnung</a>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Gutschriften</a>
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Mahnungen</a>
+					<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Statistiken</a>
+				</nav>
 			</div>
 
-            <!--<div class="row">
-                <div class="col-sm-12 hidden-sm">
-		            <?php //echo $this->MainMenu(); ?>
-			    </div>
+			<div class="row">
+				<div class="col-sm-12 hidden-sm">
+					<header>
+						<a class="button" href="<?php echo $this->url(array('module'=>'index', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('CONTROL_PANEL'); ?></a>
+						<a class="button<?php if($this->controller == 'contact') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_CONTACTS'); ?></a>
+						<a class="button<?php if($this->controller == 'item') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_ITEMS'); ?></a>
+						<a class="button<?php if($this->controller == 'process') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PROCESSES'); ?></a>
+						<div class="sub">
+							<button<?php if(($this->controller == 'quote') || ($this->controller == 'salesorder') || ($this->controller == 'deliveryorder')) echo ' class="active"'; ?>><?php echo $this->translate('MENU_SALES'); ?></button>
+							<div class="sub1">
+								<a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_QUOTES'); ?></a>
+								<a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->translate('MENU_SALES_ORDERS'); ?></a>
+								<a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_DELIVERY_ORDERS'); ?></a>
+							</div>
+						</div>
+						<div class="sub">
+							<button<?php if(($this->controller == 'quoterequest') || ($this->controller == 'purchaseorder')) echo ' class="active"'; ?>><?php echo $this->translate('MENU_PURCHASES'); ?></button>
+							<div class="sub1">
+								<a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_QUOTE_REQUESTS'); ?></a>
+								<a class="button" href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PURCHASE_ORDERS'); ?></a>
+							</div>
+						</div>
+						<div class="sub">
+							<button<?php if(($this->controller == 'invoice') || ($this->controller == 'creditnote') || ($this->controller == 'reminder')) echo ' class="active"'; ?>>Abrechnung</button>
+							<div class="sub1">
+								<a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_INVOICES'); ?></a>
+								<a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_CREDIT_NOTES'); ?></a>
+								<a class="button" href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_REMINDERS'); ?></a>
+							</div>
+						</div>
+						<a class="button<?php if($this->controller == 'pricerule') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'pricerule', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PRICE_RULES'); ?></a>
+						<a class="button<?php if($this->module == 'statistics') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_STATISTICS'); ?></a>
+					</header>
+				</div>
+			</div>
+
+			<!--<div class="row">
+				<div class="col-sm-12 hidden-sm">
+					<?php //echo $this->MainMenu(); ?>
+				</div>
 			</div>-->
 
-            <div class="row">
-                <div class="col-sm-12 col-md-12">
-		            <div id="breadcrumbs">
-			            <?php echo $this->Breadcrumbs(); ?>
-		            </div>
-			    </div>
-			</div>
-            <?php endif; ?>
-
-		    <?php if($this->action == "edit" || $this->action == "view") : ?>
-                <div class="row">
-                    <div class="col-sm-12 col-md-6">
-		                <h2><?php echo $this->escape($this->title); ?></h2>
-			        </div>
-                    <div class="col-sm-12 col-md-6">
-		                <div class="toolbar">
-			                <?php echo $this->Toolbar(); ?>
-		                </div>
-			        </div>
-			    </div>
-			<?php else : ?>
-                <div class="row">
-                    <div class="col-sm-12 col-md-2">
-		                <h2><?php echo $this->escape($this->title); ?></h2>
-			        </div>
-                    <div class="col-sm-12 col-md-10">
-		                <div class="toolbar">
-			                <?php echo $this->Toolbar(); ?>
-		                </div>
-			        </div>
-			    </div>
-		    <?php endif; ?>
-
-
-
-
-            <div class="row">
-		    <?php if($this->action == "edit" || $this->action == "view") : ?>
-                <div class="col-sm-12 col-lg-10">
-                    <div id="content">
-					    <?php echo $this->layout()->content; ?>
-				    </div>
+			<div class="row">
+				<div class="col-sm-12 col-md-12">
+					<div id="breadcrumbs">
+						<?php echo $this->Breadcrumbs(); ?>
+					</div>
 				</div>
-                <div class="col-sm-12 col-lg-2">
+			</div>
+			<?php endif; ?>
+
+			<?php if($this->action == "edit" || $this->action == "view") : ?>
+				<div class="row">
+					<div class="col-sm-12 col-md-6">
+						<h2><?php echo $this->escape($this->title); ?></h2>
+					</div>
+					<div class="col-sm-12 col-md-6">
+						<div class="toolbar">
+							<?php echo $this->Toolbar(); ?>
+						</div>
+					</div>
+				</div>
+			<?php else : ?>
+				<div class="row">
+					<div class="col-sm-12 col-md-2">
+						<h2><?php echo $this->escape($this->title); ?></h2>
+					</div>
+					<div class="col-sm-12 col-md-10">
+						<div class="toolbar">
+							<?php echo $this->Toolbar(); ?>
+						</div>
+					</div>
+				</div>
+			<?php endif; ?>
+
+
+
+
+			<div class="row">
+			<?php if($this->action == "edit" || $this->action == "view") : ?>
+				<div class="col-sm-12 col-lg-10">
+					<div id="content">
+						<?php echo $this->layout()->content; ?>
+					</div>
+				</div>
+				<div class="col-sm-12 col-lg-2">
 					<div id="actions">
 						<?php echo $this->Actions(); ?>
 					</div>
 				</div>
 			<?php else : ?>
-			    <?php if($this->action == 'index' && $this->controller == 'contact' && $this->module == 'contacts') : ?>
-                    <div class="hidden-sm hidden-md col-lg-2">
-				        <div id="categories">
-					        <?php echo $this->TreeMenu($this->options['categories']); ?>
-				        </div>
-				    </div>
-                    <div class="col-sm-12 col-lg-10">
-                        <div id="content">
-			                <?php echo $this->layout()->content; ?>
-		                </div>
-		            </div>
-			    <?php elseif($this->action == 'index' && $this->controller == 'item' && $this->module == 'items') : ?>
-                    <div class="hidden-sm hidden-md col-lg-2">
-				        <div id="categories">
-					        <?php echo $this->TreeMenu($this->options['categories']); ?><br>
-                            <p>» <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import', 'id'=>null)); ?>"><?php echo $this->translate('Import'); ?></a></p>
-				        </div>
-				    </div>
-                    <div class="col-sm-12 col-lg-10">
-                        <div id="content">
-			                <?php echo $this->layout()->content; ?>
-		                </div>
-		            </div>
-			    <?php else : ?>
-                    <div class="col-sm-12">
-                        <div id="content">
-			                <?php echo $this->layout()->content; ?>
-		                </div>
-		            </div>
-			    <?php endif; ?>
-			    </div>
-		    <?php endif; ?>
+				<?php if($this->action == 'index' && $this->controller == 'contact' && $this->module == 'contacts') : ?>
+					<div class="hidden-sm hidden-md col-lg-2">
+						<div id="categories">
+							<?php echo $this->TreeMenu($this->options['categories']); ?>
+						</div>
+					</div>
+					<div class="col-sm-12 col-lg-10">
+						<div id="content">
+							<?php echo $this->layout()->content; ?>
+						</div>
+					</div>
+				<?php elseif($this->action == 'index' && $this->controller == 'item' && $this->module == 'items') : ?>
+					<div class="hidden-sm hidden-md col-lg-2">
+						<div id="categories">
+							<?php echo $this->TreeMenu($this->options['categories']); ?><br>
+							<p>» <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import', 'id'=>null)); ?>"><?php echo $this->translate('Import'); ?></a></p>
+						</div>
+					</div>
+					<div class="col-sm-12 col-lg-10">
+						<div id="content">
+							<?php echo $this->layout()->content; ?>
+						</div>
+					</div>
+				<?php else : ?>
+					<div class="col-sm-12">
+						<div id="content">
+							<?php echo $this->layout()->content; ?>
+						</div>
+					</div>
+				<?php endif; ?>
+				</div>
+			<?php endif; ?>
 			</div>
 
 
-            <div class="row">
-                <div class="col-sm-12 col-md-12">
-	                <div id="footer">
-		                <span><a href="https://www.dewawi.com/" target="_blank">DEWAWI Open Source Warenwirtschaftssystem</a></span>
-	                </div>
-			    </div>
+			<div class="row">
+				<div class="col-sm-12 col-md-12">
+					<div id="footer">
+						<span>
+							<?php if(false) : ?>
+								<?php echo 'test'; ?>
+							<?php else : ?>
+								<a href="https://www.dewawi.com/" target="_blank">DEWAWI Open Source Warenwirtschaftssystem</a>
+							<?php endif; ?>
+						</span>
+					</div>
+				</div>
 			</div>
 
 		</div>
@@ -264,7 +270,7 @@ $this->language = str_replace('_', '-', $this->language);
 		<div id="img"></div>
 	</div>
 
-    <?php echo $this->analytics; ?>
+	<?php echo $this->analytics; ?>
 
 	</body>
 </html>

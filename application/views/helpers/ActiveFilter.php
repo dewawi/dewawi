@@ -26,21 +26,21 @@ class Zend_View_Helper_ActiveFilter extends Zend_View_Helper_Abstract{
 							<?php echo $this->view->Button('clear', '', '', '', '', 'keyword'); ?>
 						</li>
 					<?php endif; ?>
-					<?php if(isset($filters['catid'])) : ?>
+					<?php if(isset($filters['catid']) && isset($options['categories'])) : ?>
 						<li>
 							<b><?php echo $this->view->translate('TOOLBAR_CATEGORY').':'; ?></b>
 							<?php echo $options['categories'][$filters['catid']]['title']; ?>
 							<?php echo $this->view->Button('clear', '', '', '', '', 'catid'); ?>
 						</li>
 					<?php endif; ?>
-					<?php if(isset($filters['country'])) : ?>
+					<?php if(isset($filters['country']) && isset($options['countries'])) : ?>
 						<li>
 							<b><?php echo $this->view->translate('TOOLBAR_COUNTRY').':'; ?></b>
 							<?php echo $options['countries'][$filters['country']]; ?>
 							<?php echo $this->view->Button('clear', '', '', '', '', 'country'); ?>
 						</li>
 					<?php endif; ?>
-					<?php if(isset($filters['daterange'])) : ?>
+					<?php if(isset($filters['daterange']) && isset($options['daterange'])) : ?>
 						<li>
 							<b><?php echo $this->view->translate('TOOLBAR_DATE_RANGE').':'; ?></b>
 							<?php if($filters['daterange'] == 'custom') : ?>
@@ -51,7 +51,7 @@ class Zend_View_Helper_ActiveFilter extends Zend_View_Helper_Abstract{
 							<?php echo $this->view->Button('clear', '', '', '', '', 'daterange'); ?>
 						</li>
 					<?php endif; ?>
-					<?php if(isset($filters['states']) && count($filters['states'])) : ?>
+					<?php if(isset($filters['states']) && count($filters['states']) && isset($options['states'])) : ?>
 						<li>
 							<b><?php echo $this->view->translate('TOOLBAR_STATE').':'; ?></b>
 							<?php foreach($filters['states'] as $state) : ?>
@@ -60,7 +60,7 @@ class Zend_View_Helper_ActiveFilter extends Zend_View_Helper_Abstract{
 							<?php echo $this->view->Button('clear', '', '', '', '', 'states'); ?>
 						</li>
 					<?php endif; ?>
-					<?php if(isset($filters['paymentstatus']) && count($filters['paymentstatus'])) : ?>
+					<?php if(isset($filters['paymentstatus']) && count($filters['paymentstatus']) && isset($options['paymentstatus'])) : ?>
 						<li>
 							<b><?php echo $this->view->translate('TOOLBAR_STATE').':'; ?></b>
 							<?php foreach($filters['paymentstatus'] as $paymentstatus) : ?>
