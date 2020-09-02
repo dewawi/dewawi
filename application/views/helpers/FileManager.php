@@ -28,7 +28,7 @@ class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
 
             $defaultNamespace->view_type = '1'; //detailed list
             $defaultNamespace->subfolder = 'contacts/'.$url;
-        } elseif($this->view->module == 'sales') {
+        } elseif($this->view->module == 'sales' || $this->view->module == 'purchases' || $this->view->module == 'processes') {
 
             $clientid = $client['id'];
             $dir1 = substr($clientid, 0, 1);

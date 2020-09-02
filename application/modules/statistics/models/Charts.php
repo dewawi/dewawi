@@ -34,7 +34,7 @@ class Statistics_Model_Charts
 					$invoices = $invoicesDb->fetchAll(
 						$invoicesDb->select()
 							->from(array('i' => 'invoice'))
-							->join(array('c' => 'contact'), 'i.contactid = c.id', array('catid'))
+							->join(array('c' => 'contact'), 'i.contactid = c.contactid', array('catid'))
 							->where($query ? $query : 1)
 							->setIntegrityCheck(false)
 					);
@@ -50,7 +50,7 @@ class Statistics_Model_Charts
 					$creditnotes = $creditnotesDb->fetchAll(
 						$creditnotesDb->select()
 							->from(array('i' => 'creditnote'))
-							->join(array('c' => 'contact'), 'i.contactid = c.id', array('catid'))
+							->join(array('c' => 'contact'), 'i.contactid = c.contactid', array('catid'))
 							->where($query ? $query : 1)
 							->setIntegrityCheck(false)
 					);
