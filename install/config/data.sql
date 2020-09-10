@@ -8,8 +8,8 @@ INSERT INTO `client` (`id`, `company`, `address`, `postcode`, `city`, `country`,
 
 
 TRUNCATE `config`;
-INSERT INTO `config` (`id`, `timezone`, `language`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'Europe/Berlin', 'de_DE', '0000-00-00 00:00:00', 0, '2015-11-26 11:21:28', 1, 1, '2015-11-26 11:21:28');
+INSERT INTO `config` (`id`, `timezone`, `language`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'Europe/Berlin', 'de_DE', 1, '0000-00-00 00:00:00', 0, '2015-11-26 11:21:28', 1, 1, '2015-11-26 11:21:28');
 
 
 TRUNCATE `country`;
@@ -294,12 +294,12 @@ INSERT INTO `paymentmethod` (`id`, `title`, `ordering`, `clientid`, `created`, `
 
 TRUNCATE `increment`;
 INSERT INTO `increment` (`clientid`, `contactid`, `creditnoteid`, `deliveryorderid`, `invoiceid`, `purchaseorderid`, `quoteid`, `quoterequestid`, `reminderid`, `salesorderid`) VALUES
-('1', '10000', '10000', '10000', '10000', '10000', '10000', '10000', '10000', '10000'); 
+(1, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000);
 
 
 TRUNCATE `language`;
 INSERT INTO `language` (`id`, `code`, `name`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'de_DE', 'Deutsch', 1, 100, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+(1, 'de_DE', 'Deutsch', 1, 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
 
 
 TRUNCATE `module`;
@@ -334,8 +334,8 @@ INSERT INTO `state` (`id`, `title`, `standard`, `completed`, `cancelled`, `extra
 
 
 TRUNCATE `template`;
-INSERT INTO `template` (`id`, `description`, `filename`, `logo`, `website`, `default`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`, `activated`, `deleted`) VALUES
-(1, 'Vorlage', '', '', '', 1, 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00', 1, 0);
+INSERT INTO `template` (`id`, `description`, `filename`, `logo`, `website`, `default`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`, `activated`, `deleted`) VALUES
+(1, 'Vorlage', '', '', '', 1, 1, 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00', 1, 0);
 
 
 TRUNCATE `textblock`;
@@ -370,6 +370,11 @@ INSERT INTO `uom` (`id`, `title`, `ordering`, `clientid`, `created`, `createdby`
 TRUNCATE `user`;
 INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `admin`, `permissions`, `smtphost`, `smtpauth`, `smtpsecure`, `smtpuser`, `smtppass`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
 (1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'Admin', '', 1, '', '', '', '', '', '', 1, '0000-00-00 00:00:00', 0, '0000-00-00 00:00:00', 0, 0, '0000-00-00 00:00:00');
+
+
+TRUNCATE `permission`;
+INSERT INTO `permission` (`id`, `userid`, `default`, `contacts`, `items`, `processes`, `purchases`, `sales`, `statistics`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`, `deleted`) VALUES
+(1, 1, '{\"index\":[\"view\"]}', '{\r\n\"contact\":[\"add\",\"edit\",\"view\",\"delete\"]\r\n}', '{\"item\":[\"add\",\"edit\",\"view\",\"delete\"],\"inventory\":[\"add\",\"edit\",\"view\",\"delete\"],\r\n\"pricerule\":[\"add\",\"edit\",\"view\",\"delete\"]}', '{\r\n\"process\":[\"add\",\"edit\",\"view\",\"delete\"]\r\n}', '{\r\n\"quoterequest\":[\"add\",\"edit\",\"view\",\"delete\"],\r\n\"purchaseorder\":[\"add\",\"edit\",\"view\",\"delete\"]\r\n}', '{\r\n\"quote\":[\"add\",\"edit\",\"view\",\"delete\"],\r\n\"salesorder\":[\"add\",\"edit\",\"view\",\"delete\"],\r\n\"deliveryorder\":[\"add\",\"edit\",\"view\",\"delete\"],\r\n\"invoice\":[\"add\",\"edit\",\"view\",\"delete\"],\r\n\"creditnote\":[\"add\",\"edit\",\"view\",\"delete\"],\r\n\"reminder\":[\"add\",\"edit\",\"view\",\"delete\"]\r\n}', '{\r\n\"index\":[\"view\"]\r\n}', 1, '2020-06-23 15:05:06', 1, '0000-00-00 00:00:00', 0, 1, '2020-07-05 18:34:11', 0);
 
 
 TRUNCATE `warehouse`;
