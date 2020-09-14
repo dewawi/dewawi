@@ -39,7 +39,8 @@ $shippingDepartment = $this->deliveryorder['shippingdepartment'];
 $shippingStreet = $this->deliveryorder['shippingstreet'];
 $shippingPostcode = $this->deliveryorder['shippingpostcode'];
 $shippingCity = $this->deliveryorder['shippingcity'];
-$shippingCountry = $this->translate($this->deliveryorder['shippingcountry']);
+$shippingCountry = $this->deliveryorder['shippingcountry'];
+if($shippingCountry) $shippingCountry = $this->translate($shippingCountry);
 $shippingPhone = $this->deliveryorder['shippingphone'];
 $shippingAddress = false;
 
