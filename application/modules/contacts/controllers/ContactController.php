@@ -107,7 +107,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 	public function addAction()
 	{
-        $catid = $this->_getParam('catid', 0);
+		$catid = $this->_getParam('catid', 0);
 
 		$data = array();
 		$data['catid'] = $catid;
@@ -117,7 +117,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$id = $contactDb->addContact($data);
 
-        //Set increment value
+		//Set increment value
 		$incrementDb = new Application_Model_DbTable_Increment();
 		$increment = $incrementDb->getIncrement('contactid');
 		$contactDb->updateContact($id, array('contactid' => $increment));
@@ -127,7 +127,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$addressDb->addAddress(array('contactid' => $id, 'type' => 'billing', 'country' => $client['country'], 'ordering' => 1));
 
 		$phoneDb = new Contacts_Model_DbTable_Phone();
-	    $phoneDb->addPhone(array('contactid' => $id, 'type' => 'phone', 'ordering' => 1));
+		$phoneDb->addPhone(array('contactid' => $id, 'type' => 'phone', 'ordering' => 1));
 
 		$emailDb = new Contacts_Model_DbTable_Email();
 		$emailDb->addEmail(array('contactid' => $id, 'ordering' => 1));
@@ -135,8 +135,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$internetDb = new Contacts_Model_DbTable_Internet();
 		$internetDb->addInternet(array('contactid' => $id, 'ordering' => 1));
 
-        //Check if the directory is writable
-        $this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
+		//Check if the directory is writable
+		$this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
 
 		$this->_helper->redirector->gotoSimple('edit', 'contact', null, array('id' => $id));
 	}
@@ -148,16 +148,16 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$activeTab = $request->getCookie('tab', null);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-        if($id) $contact = $contactDb->getContact($id);
+		if($id) $contact = $contactDb->getContact($id);
 
-        //Redirect to index if there is no data
-        if(!$contact) {
+		//Redirect to index if there is no data
+		if(!$contact) {
 			$this->_helper->redirector->gotoSimple('index', 'contact');
 			$this->_flashMessenger->addMessage('MESSAGES_NOT_FOUND');
-        }
+		}
 
-        //Check if the directory is writable
-        $dirwritable = $this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
+		//Check if the directory is writable
+		$dirwritable = $this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
 
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'contact', null, array('id' => $id));
@@ -208,7 +208,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 			} else {
 				if($id > 0) {
 					$data = $contact;
-                    $currency = $this->_helper->Currency->getCurrency();
+					$currency = $this->_helper->Currency->getCurrency();
 					if($data['priceruleamount'] == '0.0000') $data['priceruleamount'] = '';
 					else $data['priceruleamount'] = $currency->toCurrency($data['priceruleamount']);
 					if($data['cashdiscountdays'] == '0') $data['cashdiscountdays'] = '';
@@ -237,20 +237,20 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$address = $addressDb->getAddress($id);
 
 					//History
-		            $get = new Contacts_Model_Get();
-		            $history = $get->history($contact['contactid']);
+					$get = new Contacts_Model_Get();
+					$history = $get->history($contact['contactid']);
 
 					//Files
 					$files = array();
-                    $path = BASE_PATH.'/files/contacts/';
+					$path = BASE_PATH.'/files/contacts/';
 					if(file_exists($path.$id) && is_dir($path.$id)) {
-					    if($handle = opendir($path.$id)) {
-						    $files['contactSpecific'] = array();
-						    while (false !== ($entry = readdir($handle))) {
-							    if(substr($entry, 0, strlen('.')) !== '.') array_push($files['contactSpecific'], $entry);
-						    }
-						    closedir($handle);
-					    }
+						if($handle = opendir($path.$id)) {
+							$files['contactSpecific'] = array();
+							while (false !== ($entry = readdir($handle))) {
+								if(substr($entry, 0, strlen('.')) !== '.') array_push($files['contactSpecific'], $entry);
+							}
+							closedir($handle);
+						}
 					}
 
 					//Toolbar
@@ -258,7 +258,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 					$this->view->form = $form;
 					$this->view->options = $options;
-                    $this->view->dirwritable = $dirwritable;
+					$this->view->dirwritable = $dirwritable;
 					$this->view->history = $history;
 					$this->view->files = $files;
 					$this->view->address = $address;
@@ -271,11 +271,11 @@ class Contacts_ContactController extends Zend_Controller_Action
 				}
 			}
 		}
-        $this->view->messages = array_merge(
-            $this->_helper->flashMessenger->getMessages(),
-            $this->_helper->flashMessenger->getCurrentMessages()
-        );
-        $this->_helper->flashMessenger->clearCurrentMessages();
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function copyAction()
@@ -301,24 +301,32 @@ class Contacts_ContactController extends Zend_Controller_Action
 			$data['shippingcountry'],
 			$data['shippingphone']
 		);
+
+		//Set increment value
+		$incrementDb = new Application_Model_DbTable_Increment();
+		$increment = $incrementDb->getIncrement('contactid');
+		$incrementDb->setIncrement(($increment+1), 'contactid');
+
 		$data['name1'] = $data['name1'].' 2';
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['contactid'] = $increment;
+
 		echo $contactid = $contact->addContact($data);
 
 		//Copy addresses
 		$addressDb = new Contacts_Model_DbTable_Address();
 		$addresses = $addressDb->getAddress($id);
 		foreach($addresses as $address) {
-		    $data = array(
-			    'contactid' => $contactid,
-			    'type' => $address['type'],
-			    'street' => $address['street'],
-			    'postcode' => $address['postcode'],
-			    'city' => $address['city'],
-			    'country' => $address['country'],
-			    'ordering' => $address['ordering']
-            );
+			$data = array(
+				'contactid' => $contactid,
+				'type' => $address['type'],
+				'street' => $address['street'],
+				'postcode' => $address['postcode'],
+				'city' => $address['city'],
+				'country' => $address['country'],
+				'ordering' => $address['ordering']
+			);
 			$addressDb->addAddress($data);
 		}
 
@@ -326,25 +334,25 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$phoneDb = new Contacts_Model_DbTable_Phone();
 		$phones = $phoneDb->getPhone($id);
 		foreach($phones as $phone) {
-	        $phoneDb->addPhone(array('contactid' => $contactid, 'type' => $phone['type'], 'phone' => $phone['phone'], 'ordering' => $phone['ordering']));
+			$phoneDb->addPhone(array('contactid' => $contactid, 'type' => $phone['type'], 'phone' => $phone['phone'], 'ordering' => $phone['ordering']));
 		}
 
 		//Email
 		$emailDb = new Contacts_Model_DbTable_Email();
 		$emails = $emailDb->getEmail($id);
 		foreach($emails as $email) {
-		    $emailDb->addEmail(array('contactid' => $contactid, 'email' => $internet['email'], 'ordering' => $email['ordering']));
+			$emailDb->addEmail(array('contactid' => $contactid, 'email' => $email['email'], 'ordering' => $email['ordering']));
 		}
 
 		//Internet
 		$internetDb = new Contacts_Model_DbTable_Internet();
 		$internets = $internetDb->getInternet($id);
 		foreach($internets as $internet) {
-		    $internetDb->addInternet(array('contactid' => $contactid, 'internet' => $internet['internet'], 'ordering' => $internet['ordering']));
+			$internetDb->addInternet(array('contactid' => $contactid, 'internet' => $internet['internet'], 'ordering' => $internet['ordering']));
 		}
 
-        //Check if the directory is writable
-        $this->_helper->Directory->isWritable($contactid, 'contact', $this->_flashMessenger);
+		//Check if the directory is writable
+		$this->_helper->Directory->isWritable($contactid, 'contact', $this->_flashMessenger);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -511,15 +519,15 @@ class Contacts_ContactController extends Zend_Controller_Action
 		//}
 		//echo Zend_Json::encode($suggestions);
 echo '{
-        // Query is not required as of version 1.2.5
-        query: "Unit",
-        suggestions: [
-            { value: "United Arab Emirates", data: "AE" },
-            { value: "United Kingdom",       data: "UK" },
-            { value: "United States",        data: "US" }
-        ]
-    }';
-    //print_r($suggestions);
+		// Query is not required as of version 1.2.5
+		query: "Unit",
+		suggestions: [
+			{ value: "United Arab Emirates", data: "AE" },
+			{ value: "United Kingdom",	   data: "UK" },
+			{ value: "United States",		data: "US" }
+		]
+	}';
+	//print_r($suggestions);
 	}
 
 	protected function isLocked($locked, $lockedtime)

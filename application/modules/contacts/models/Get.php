@@ -22,9 +22,9 @@ class Contacts_Model_Get
 	public function contacts($params, $categories)
 	{
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            $client['id'] = $client['modules']['contacts'];
-        }
+		if($client['parentid']) {
+			$client['id'] = $client['modules']['contacts'];
+		}
 
 		$contactsDb = new Contacts_Model_DbTable_Contact();
 
@@ -32,7 +32,7 @@ class Contacts_Model_Get
 
 		$query = '';
 		$schema = 'c';
-        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountryC($query, $params['country'], 'a');
@@ -43,7 +43,7 @@ class Contacts_Model_Get
 		} else {
 			$query = 'c.clientid = '.$client['id'];
 			$query .= ' AND c.deleted = 0';
-        }
+		}
 
 		$order = $params['order'];
 		if(($order == 'street') || ($order == 'postcode') || ($order == 'city') || ($order == 'country')) $order = 'a.'.$order;
@@ -67,17 +67,17 @@ class Contacts_Model_Get
 	}
 
 	public function history($contactid) {
-        $currency = Zend_Registry::get('Zend_Currency');
+		$currency = Zend_Registry::get('Zend_Currency');
 
-        // Set client for sales module
+		// Set client for sales module
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            if(isset($client['modules']['sales'])) {
-                $client['id'] = $client['modules']['sales'];
-		        $client = Zend_Registry::set('Client', $client);
-            }
-        }
-
+		if($client['parentid']) {
+			if(isset($client['modules']['sales'])) {
+				$client['id'] = $client['modules']['sales'];
+				$client = Zend_Registry::set('Client', $client);
+			}
+		}
+error_log($contactid);
 		//Quotes
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$history['quotes'] = $quoteDb->getQuotes($contactid);
@@ -162,14 +162,14 @@ class Contacts_Model_Get
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$history['quoterequests'] = $quoterequestDb->getQuoterequests($contactid);
 
-        // Set client for purchases module
+		// Set client for purchases module
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            if(isset($client['modules']['purchases'])) {
-                $client['id'] = $client['modules']['purchases'];
-		        $client = Zend_Registry::set('Client', $client);
-            }
-        }
+		if($client['parentid']) {
+			if(isset($client['modules']['purchases'])) {
+				$client['id'] = $client['modules']['purchases'];
+				$client = Zend_Registry::set('Client', $client);
+			}
+		}
 
 		foreach($history['quoterequests'] as $quoterequest) {
 			$quoterequest->subtotal = $currency->toCurrency($quoterequest->subtotal);
@@ -197,14 +197,14 @@ class Contacts_Model_Get
 		$processesDb = new Processes_Model_DbTable_Process();
 		$history['processes'] = $processesDb->getProcesses($contactid);
 
-        // Set client back for contacts module
+		// Set client back for contacts module
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            if(isset($client['modules']['contacts'])) {
-                $client['id'] = $client['modules']['contacts'];
-		        $client = Zend_Registry::set('Client', $client);
-            }
-        }
+		if($client['parentid']) {
+			if(isset($client['modules']['contacts'])) {
+				$client['id'] = $client['modules']['contacts'];
+				$client = Zend_Registry::set('Client', $client);
+			}
+		}
 
 		return $history;
 	}
