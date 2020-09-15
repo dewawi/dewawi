@@ -20,7 +20,7 @@ class Application_Plugin_Translate extends Zend_Controller_Plugin_Abstract
 
 		if(Zend_Registry::isRegistered('User')) {
 			$user = Zend_Registry::get('User');
-			if($user['admin']) {
+			//if($user['admin']) {
 				//Get languages
 				$languageDb = new Application_Model_DbTable_Language();
 				$languages = $languageDb->getLanguages();
@@ -33,7 +33,7 @@ class Application_Plugin_Translate extends Zend_Controller_Plugin_Abstract
 					$form->language->setValue($authNamespace->storage->language);
 				}
 				$view->languageSwitcher = $form->getElement('language');
-			}
+			//}
 
 			$view->language = $language;
 

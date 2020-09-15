@@ -24,11 +24,11 @@ echo $this->FileManager();
 					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_QUOTE_REQUEST_DATE') ?></label></dt>
 					<dd><?php echo $this->quoterequest['quoterequestdate']; ?></dd>
 				<?php } ?>
-				<?php if($this->quoterequest['orderdate'] && $this->quoterequest['orderdate'] != "0000-00-00") { ?>
+				<?php if($this->quoterequest['orderdate']) { ?>
 					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_ORDER_DATE') ?></label></dt>
 					<dd><?php echo $this->quoterequest['orderdate']; ?></dd>
 				<?php } ?>
-				<?php if($this->quoterequest['deliverydate'] && ($this->quoterequest['deliverydate'] != "0000-00-00")) { ?>
+				<?php if($this->quoterequest['deliverydate']) { ?>
 					<dt><label><?php echo $this->translate('QUOTE_REQUESTS_DELIVERY_DATE') ?></label></dt>
 					<dd><?php echo $this->quoterequest['deliverydate']; ?></dd>
 				<?php } ?>

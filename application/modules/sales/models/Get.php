@@ -5,9 +5,9 @@ class Sales_Model_Get
 	public function quotes($params, $categories, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            $client['id'] = $client['modules']['sales'];
-        }
+		if($client['parentid']) {
+			$client['id'] = $client['modules']['sales'];
+		}
 
 		$quotesDb = new Sales_Model_DbTable_Quote();
 
@@ -15,16 +15,16 @@ class Sales_Model_Get
 
 		$query = '';
 		$schema = 'q';
-        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
+			$params['from'] = date('Y-m-d', strtotime($params['from']));
+			$params['to'] = date('Y-m-d', strtotime($params['to']));
+			$query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+		}
 		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
 		$query = $queryHelper->getQueryDeleted($query, $schema);
 
@@ -48,13 +48,13 @@ class Sales_Model_Get
 			->where($query ? $query : 1)
 			->order($params['order'].' '.$params['sort'])
 			->limit($params['limit']);
-        error_log($select->__toString());*/
+		error_log($select->__toString());*/
 
 
 		if(!count($quotes) && $params['keyword']) {
 			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
-		    $query = $queryHelper->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+			$query = $queryHelper->getQueryDeleted($query, $schema);
 			$quotes = $quotesDb->fetchAll(
 				$quotesDb->select()
 					->setIntegrityCheck(false)
@@ -66,16 +66,16 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 		}
-	    if(!count($quotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+		if(!count($quotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$quotes->subtotal = 0;
 		$quotes->total = 0;
-        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-        $currency = $currencyHelper->getCurrency();
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$currency = $currencyHelper->getCurrency();
 		foreach($quotes as $quote) {
 			$quotes->subtotal += $quote->subtotal;
 			$quotes->total += $quote->total;
-		    $currency = $currencyHelper->setCurrency($currency, $quote->currency, 'USE_SYMBOL');
+			$currency = $currencyHelper->setCurrency($currency, $quote->currency, 'USE_SYMBOL');
 			$quote->subtotal = $currency->toCurrency($quote->subtotal);
 			$quote->taxes = $currency->toCurrency($quote->taxes);
 			$quote->total = $currency->toCurrency($quote->total);
@@ -89,9 +89,9 @@ class Sales_Model_Get
 	public function invoices($params, $categories, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            $client['id'] = $client['modules']['sales'];
-        }
+		if($client['parentid']) {
+			$client['id'] = $client['modules']['sales'];
+		}
 
 		$invoicesDb = new Sales_Model_DbTable_Invoice();
 
@@ -99,16 +99,16 @@ class Sales_Model_Get
 
 		$query = '';
 		$schema = 'i';
-        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
+			$params['from'] = date('Y-m-d', strtotime($params['from']));
+			$params['to'] = date('Y-m-d', strtotime($params['to']));
+			$query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+		}
 		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
 		$query = $queryHelper->getQueryDeleted($query, $schema);
 
@@ -124,8 +124,8 @@ class Sales_Model_Get
 		);
 		if(!count($invoices) && $params['keyword']) {
 			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
-		    $query = $queryHelper->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+			$query = $queryHelper->getQueryDeleted($query, $schema);
 			$invoices = $invoicesDb->fetchAll(
 				$invoicesDb->select()
 					->setIntegrityCheck(false)
@@ -137,16 +137,16 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 		}
-	    if(!count($invoices)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+		if(!count($invoices)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$invoices->subtotal = 0;
 		$invoices->total = 0;
-        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-        $currency = $currencyHelper->getCurrency();
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$currency = $currencyHelper->getCurrency();
 		foreach($invoices as $invoice) {
 			$invoices->subtotal += $invoice->subtotal;
 			$invoices->total += $invoice->total;
-		    $currency = $currencyHelper->setCurrency($currency, $invoice->currency, 'USE_SYMBOL');
+			$currency = $currencyHelper->setCurrency($currency, $invoice->currency, 'USE_SYMBOL');
 			$invoice->subtotal = $currency->toCurrency($invoice->subtotal);
 			$invoice->taxes = $currency->toCurrency($invoice->taxes);
 			$invoice->total = $currency->toCurrency($invoice->total);
@@ -160,9 +160,9 @@ class Sales_Model_Get
 	public function salesorders($params, $categories, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            $client['id'] = $client['modules']['sales'];
-        }
+		if($client['parentid']) {
+			$client['id'] = $client['modules']['sales'];
+		}
 
 		$salesordersDb = new Sales_Model_DbTable_Salesorder();
 
@@ -170,16 +170,16 @@ class Sales_Model_Get
 
 		$query = '';
 		$schema = 's';
-        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
+			$params['from'] = date('Y-m-d', strtotime($params['from']));
+			$params['to'] = date('Y-m-d', strtotime($params['to']));
+			$query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+		}
 		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
 		$query = $queryHelper->getQueryDeleted($query, $schema);
 
@@ -195,8 +195,8 @@ class Sales_Model_Get
 		);
 		if(!count($salesorders) && $params['keyword']) {
 			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
-		    $query = $queryHelper->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+			$query = $queryHelper->getQueryDeleted($query, $schema);
 			$salesorders = $salesordersDb->fetchAll(
 				$salesordersDb->select()
 					->setIntegrityCheck(false)
@@ -208,16 +208,16 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 		}
-	    if(!count($salesorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+		if(!count($salesorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$salesorders->subtotal = 0;
 		$salesorders->total = 0;
-        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-        $currency = $currencyHelper->getCurrency();
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$currency = $currencyHelper->getCurrency();
 		foreach($salesorders as $salesorder) {
 			$salesorders->subtotal += $salesorder->subtotal;
 			$salesorders->total += $salesorder->total;
-		    $currency = $currencyHelper->setCurrency($currency, $salesorder->currency, 'USE_SYMBOL');
+			$currency = $currencyHelper->setCurrency($currency, $salesorder->currency, 'USE_SYMBOL');
 			$salesorder->subtotal = $currency->toCurrency($salesorder->subtotal);
 			$salesorder->taxes = $currency->toCurrency($salesorder->taxes);
 			$salesorder->total = $currency->toCurrency($salesorder->total);
@@ -231,9 +231,9 @@ class Sales_Model_Get
 	public function deliveryorders($params, $categories, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            $client['id'] = $client['modules']['sales'];
-        }
+		if($client['parentid']) {
+			$client['id'] = $client['modules']['sales'];
+		}
 
 		$deliveryordersDb = new Sales_Model_DbTable_Deliveryorder();
 
@@ -241,16 +241,16 @@ class Sales_Model_Get
 
 		$query = '';
 		$schema = 'd';
-        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
+			$params['from'] = date('Y-m-d', strtotime($params['from']));
+			$params['to'] = date('Y-m-d', strtotime($params['to']));
+			$query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+		}
 		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
 		$query = $queryHelper->getQueryDeleted($query, $schema);
 
@@ -266,8 +266,8 @@ class Sales_Model_Get
 		);
 		if(!count($deliveryorders) && $params['keyword']) {
 			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
-		    $query = $queryHelper->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+			$query = $queryHelper->getQueryDeleted($query, $schema);
 			$deliveryorders = $deliveryordersDb->fetchAll(
 				$deliveryordersDb->select()
 					->setIntegrityCheck(false)
@@ -279,16 +279,16 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 		}
-	    if(!count($deliveryorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+		if(!count($deliveryorders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$deliveryorders->subtotal = 0;
 		$deliveryorders->total = 0;
-        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-        $currency = $currencyHelper->getCurrency();
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$currency = $currencyHelper->getCurrency();
 		foreach($deliveryorders as $deliveryorder) {
 			$deliveryorders->subtotal += $deliveryorder->subtotal;
 			$deliveryorders->total += $deliveryorder->total;
-		    $currency = $currencyHelper->setCurrency($currency, $deliveryorder->currency, 'USE_SYMBOL');
+			$currency = $currencyHelper->setCurrency($currency, $deliveryorder->currency, 'USE_SYMBOL');
 			$deliveryorder->subtotal = $currency->toCurrency($deliveryorder->subtotal);
 			$deliveryorder->taxes = $currency->toCurrency($deliveryorder->taxes);
 			$deliveryorder->total = $currency->toCurrency($deliveryorder->total);
@@ -302,9 +302,9 @@ class Sales_Model_Get
 	public function creditnotes($params, $categories, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            $client['id'] = $client['modules']['sales'];
-        }
+		if($client['parentid']) {
+			$client['id'] = $client['modules']['sales'];
+		}
 
 		$creditnotesDb = new Sales_Model_DbTable_Creditnote();
 
@@ -312,16 +312,16 @@ class Sales_Model_Get
 
 		$query = '';
 		$schema = 'cr';
-        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
+			$params['from'] = date('Y-m-d', strtotime($params['from']));
+			$params['to'] = date('Y-m-d', strtotime($params['to']));
+			$query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+		}
 		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
 		$query = $queryHelper->getQueryDeleted($query, $schema);
 
@@ -337,8 +337,8 @@ class Sales_Model_Get
 		);
 		if(!count($creditnotes) && $params['keyword']) {
 			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
-		    $query = $queryHelper->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+			$query = $queryHelper->getQueryDeleted($query, $schema);
 			$creditnotes = $creditnotesDb->fetchAll(
 				$creditnotesDb->select()
 					->setIntegrityCheck(false)
@@ -350,16 +350,16 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 		}
-	    if(!count($creditnotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+		if(!count($creditnotes)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$creditnotes->subtotal = 0;
 		$creditnotes->total = 0;
-        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-        $currency = $currencyHelper->getCurrency();
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$currency = $currencyHelper->getCurrency();
 		foreach($creditnotes as $creditnote) {
 			$creditnotes->subtotal += $creditnote->subtotal;
 			$creditnotes->total += $creditnote->total;
-		    $currency = $currencyHelper->setCurrency($currency, $creditnote->currency, 'USE_SYMBOL');
+			$currency = $currencyHelper->setCurrency($currency, $creditnote->currency, 'USE_SYMBOL');
 			$creditnote->subtotal = $currency->toCurrency($creditnote->subtotal);
 			$creditnote->taxes = $currency->toCurrency($creditnote->taxes);
 			$creditnote->total = $currency->toCurrency($creditnote->total);
@@ -373,9 +373,9 @@ class Sales_Model_Get
 	public function reminders($params, $categories, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
-        if($client['parentid']) {
-            $client['id'] = $client['modules']['sales'];
-        }
+		if($client['parentid']) {
+			$client['id'] = $client['modules']['sales'];
+		}
 
 		$remindersDb = new Sales_Model_DbTable_Reminder();
 
@@ -383,16 +383,16 @@ class Sales_Model_Get
 
 		$query = '';
 		$schema = 'cr';
-        $queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
 		if($params['daterange']) {
-            $params['from'] = date('Y-m-d', strtotime($params['from']));
-            $params['to'] = date('Y-m-d', strtotime($params['to']));
-            $query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
-        }
+			$params['from'] = date('Y-m-d', strtotime($params['from']));
+			$params['to'] = date('Y-m-d', strtotime($params['to']));
+			$query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
+		}
 		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
 		$query = $queryHelper->getQueryDeleted($query, $schema);
 
@@ -408,8 +408,8 @@ class Sales_Model_Get
 		);
 		if(!count($reminders) && $params['keyword']) {
 			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
-		    $query = $queryHelper->getQueryClient($query, $client['id'], $schema);
-		    $query = $queryHelper->getQueryDeleted($query, $schema);
+			$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
+			$query = $queryHelper->getQueryDeleted($query, $schema);
 			$reminders = $remindersDb->fetchAll(
 				$remindersDb->select()
 					->setIntegrityCheck(false)
@@ -421,16 +421,16 @@ class Sales_Model_Get
 					->limit($params['limit'])
 			);
 		}
-	    if(!count($reminders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
+		if(!count($reminders)) $flashMessenger->addMessage('MESSAGES_SEARCH_RETURNED_NO_RESULTS');
 
 		$reminders->subtotal = 0;
 		$reminders->total = 0;
-        $currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-        $currency = $currencyHelper->getCurrency();
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$currency = $currencyHelper->getCurrency();
 		foreach($reminders as $reminder) {
 			$reminders->subtotal += $reminder->subtotal;
 			$reminders->total += $reminder->total;
-		    $currency = $currencyHelper->setCurrency($currency, $reminder->currency, 'USE_SYMBOL');
+			$currency = $currencyHelper->setCurrency($currency, $reminder->currency, 'USE_SYMBOL');
 			$reminder->subtotal = $currency->toCurrency($reminder->subtotal);
 			$reminder->taxes = $currency->toCurrency($reminder->taxes);
 			$reminder->total = $currency->toCurrency($reminder->total);

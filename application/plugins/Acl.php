@@ -22,13 +22,13 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 			if($params['controller'] == 'error') {
 				error_log('PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
 			} elseif($params['module'] == 'admin') {
-				if($user['admin']) {
+				//if($user['admin']) {
 					//error_log('PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
-				} else {
-					error_log('NO_PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
-					$flashMessenger->addMessage('MESSAGES_ACCESS_DENIED');
-					$redirector->gotoSimple('index', 'index', 'default');
-				}
+				//} else {
+				//	error_log('NO_PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
+				//	$flashMessenger->addMessage('MESSAGES_ACCESS_DENIED');
+				//	$redirector->gotoSimple('index', 'index', 'default');
+				//}
 			} else {
 				$permissionsDb = new Application_Model_DbTable_Permission();
 				$permissions = $permissionsDb->getPermissions();

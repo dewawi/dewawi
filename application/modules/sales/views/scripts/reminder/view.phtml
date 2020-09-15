@@ -24,11 +24,11 @@ echo $this->FileManager();
 					<dt><label><?php echo $this->translate('REMINDERS_REMINDER_DATE') ?></label></dt>
 					<dd><?php echo $this->reminder['reminderdate']; ?></dd>
 				<?php } ?>
-				<?php if($this->reminder['orderdate'] && ($this->reminder['orderdate'] != "0000-00-00")) { ?>
+				<?php if($this->reminder['orderdate']) { ?>
 					<dt><label><?php echo $this->translate('REMINDERS_ORDER_DATE') ?></label></dt>
 					<dd><?php echo $this->reminder['orderdate']; ?></dd>
 				<?php } ?>
-				<?php if($this->reminder['deliverydate'] && ($this->reminder['deliverydate'] != "0000-00-00")) { ?>
+				<?php if($this->reminder['deliverydate']) { ?>
 					<dt><label><?php echo $this->translate('REMINDERS_DELIVERY_DATE') ?></label></dt>
 					<dd><?php echo $this->reminder['deliverydate']; ?></dd>
 				<?php } ?>

@@ -14,7 +14,7 @@ class Items_Model_DbTable_Inventory extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    $this->_user = Zend_Registry::get('User');
+		$this->_user = Zend_Registry::get('User');
 		$this->_client = Zend_Registry::get('Client');
 	}
 

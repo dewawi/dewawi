@@ -9,127 +9,127 @@ if(($this->module != 'contacts') && file_exists(BASE_PATH.'/js/'.$this->module.'
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
 	<head>
-        <!-- mobile setting -->
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-        <link href="/css/global.css" media="screen" rel="stylesheet" type="text/css" />
-        <style>
-            body {
-	            background-color: #efefef;
-                font-family: Verdana,sans-serif;
-                font-size: 14px;
-                color: #444;
-            }
-            div#login {
-	            width: 330px;
-	            height: 315px;
-	            background-color: #ffffff;
-	            position: absolute;
-	            top:0;
-	            bottom: 0;
-	            left: 0;
-	            right: 0;
-	            margin: auto;
-                border-color: #ddd;
-                border-radius: 4px;
-            }
-            div#messages {
-	            width: 260px;
-	            height: 35px;
-	            position: absolute;
-	            top:400px;
-	            bottom: 0;
-	            left: 0;
-	            right: 0;
-	            margin: auto;
-                border-color: #ddd;
-                border-radius: 4px;
-            }
-            div#header {
-                padding-top: 15px;
-            }
-            div#form {
-                margin-top: -20px;
-                padding: 20px;
-            }
-            form dd#stayLoggedIn-element {
-                width: auto;
-            }
-            form dd#stayLoggedIn-element input {
-                margin-left: 0;
-            }
-            form dd input[type="text"],
-            form dd input[type="password"] {
-                height: 27px;
-                width: 135px;
-                font-size: 1em;
-                border: solid 1px #bcbcbc;
-                background-color: #fafafa;
-                margin: 2px 0;
-                padding: 2px 8px;
-            }
-            form dd input[type="submit"],
-            form dd select {
-                height: 30px;
-                width: 153px;
-                font-size: 1em;
-                border: solid 1px #bcbcbc;
-                background-color: #fafafa;
-                margin: 2px 0;
-                padding: 2px 4px;
-            }
-            form dt {
-                width: 125px;
-                display: block;
-                float: left;
-                clear: left;
-                margin: 5px 0;
-            }
-            form dd {
-                width: 155px;
-                margin-left: 0;
-                margin-right: 10px;
-                float: left;
-            }
-            div#header {
-                text-align: center;
-            }
-            ul.errors {
-                display: none;
-            }
-        </style>
+		<!-- mobile setting -->
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link href="/css/global.css" media="screen" rel="stylesheet" type="text/css" />
+		<style>
+			body {
+				background-color: #efefef;
+				font-family: Verdana,sans-serif;
+				font-size: 14px;
+				color: #444;
+			}
+			div#login {
+				width: 330px;
+				height: 315px;
+				background-color: #ffffff;
+				position: absolute;
+				top:0;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				margin: auto;
+				border-color: #ddd;
+				border-radius: 4px;
+			}
+			div#messages {
+				width: 260px;
+				height: 35px;
+				position: absolute;
+				top:400px;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				margin: auto;
+				border-color: #ddd;
+				border-radius: 4px;
+			}
+			div#header {
+				padding-top: 15px;
+			}
+			div#form {
+				margin-top: -20px;
+				padding: 20px;
+			}
+			form dd#stayLoggedIn-element {
+				width: auto;
+			}
+			form dd#stayLoggedIn-element input {
+				margin-left: 0;
+			}
+			form dd input[type="text"],
+			form dd input[type="password"] {
+				height: 27px;
+				width: 135px;
+				font-size: 1em;
+				border: solid 1px #bcbcbc;
+				background-color: #fafafa;
+				margin: 2px 0;
+				padding: 2px 8px;
+			}
+			form dd input[type="submit"],
+			form dd select {
+				height: 30px;
+				width: 153px;
+				font-size: 1em;
+				border: solid 1px #bcbcbc;
+				background-color: #fafafa;
+				margin: 2px 0;
+				padding: 2px 4px;
+			}
+			form dt {
+				width: 125px;
+				display: block;
+				float: left;
+				clear: left;
+				margin: 5px 0;
+			}
+			form dd {
+				width: 155px;
+				margin-left: 0;
+				margin-right: 10px;
+				float: left;
+			}
+			div#header {
+				text-align: center;
+			}
+			ul.errors {
+				display: none;
+			}
+		</style>
 	</head>
 	<body>
 
-        <?php 
-        $this->title = $this->translate('USERS_LOGIN');
-        $this->headTitle($this->title);
-        ?>
+		<?php 
+		$this->title = $this->translate('USERS_LOGIN');
+		$this->headTitle($this->title);
+		?>
 
-        <?php echo $this->Messages(); ?>
-        <div id="login">
-            <div id="header">
-                <h1><a href="https://www.dewawi.com/" target="_blank">
-                    <img height="50" width="200" src="<?php echo $this->baseUrl(); ?>/images/dewawi.png" alt="DEWAWI">
-                </a></h1>
-            </div>
-            <div id="form">
-                <form id="user" enctype="application/x-www-form-urlencoded" action="" method="post">
-		            <dl class="form">
-			            <?php echo $this->form->getElement('id') ?>
-			            <?php echo $this->form->getElement('username') ?>
-			            <?php echo $this->form->getElement('password') ?>
-			            <?php //echo $this->form->getElement('client') ?>
-			            <?php echo $this->form->getElement('stayLoggedIn') ?>
-			            <?php echo $this->form->getElement('submit') ?>
-		            </dl>
-                </form>
-            </div>
-        </div>
+		<?php echo $this->Messages(); ?>
+		<div id="login">
+			<div id="header">
+				<h1><a href="https://www.dewawi.com/" target="_blank">
+					<img height="50" width="200" src="<?php echo $this->baseUrl(); ?>/images/dewawi.png" alt="DEWAWI">
+				</a></h1>
+			</div>
+			<div id="form">
+				<form id="user" enctype="application/x-www-form-urlencoded" action="" method="post">
+					<dl class="form">
+						<?php echo $this->form->getElement('id') ?>
+						<?php echo $this->form->getElement('username') ?>
+						<?php echo $this->form->getElement('password') ?>
+						<?php //echo $this->form->getElement('client') ?>
+						<?php echo $this->form->getElement('stayLoggedIn') ?>
+						<?php echo $this->form->getElement('submit') ?>
+					</dl>
+				</form>
+			</div>
+		</div>
 
-        <script type="text/javascript">
-        $(document).ready(function(){
-        });
-        </script>
+		<script type="text/javascript">
+		$(document).ready(function(){
+		});
+		</script>
 
 
 	</body>

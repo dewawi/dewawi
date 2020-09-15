@@ -56,7 +56,7 @@ class Purchases_Form_Purchaseorderpos extends Zend_Form
 
 		$form['priceruleamount'] = new Zend_Form_Element_Text('priceruleamount');
 		$form['priceruleamount']->setLabel('POSITIONS_PRICE_RULE_AMOUNT')
-            ->setRequired(true)
+			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->addValidator('Float')

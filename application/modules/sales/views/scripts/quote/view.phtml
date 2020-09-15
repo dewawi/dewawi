@@ -24,7 +24,7 @@ echo $this->FileManager();
 					<dt><label><?php echo $this->translate('QUOTES_QUOTE_DATE') ?></label></dt>
 					<dd><?php echo $this->quote['quotedate']; ?></dd>
 				<?php } ?>
-				<?php if($this->quote['deliverydate'] && ($this->quote['deliverydate'] != "0000-00-00")) { ?>
+				<?php if($this->quote['deliverydate']) { ?>
 					<dt><label><?php echo $this->translate('QUOTES_DELIVERY_DATE') ?></label></dt>
 					<dd><?php echo $this->quote['deliverydate']; ?></dd>
 				<?php } ?>

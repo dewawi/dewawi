@@ -22,65 +22,65 @@ echo $this->FileManager();
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
 		<form id="deliveryorder" enctype="application/x-www-form-urlencoded" action="" method="post">
-            <div class="row">
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-					    <?php echo $this->form->id; ?>
-					    <?php echo $this->form->title; ?>
-					    <dt id="contactid-label"><label><?php echo $this->translate('DELIVERY_ORDERS_CONTACT'); ?></label></dt>
-					    <dd>
-						    <?php echo $this->toolbar->select; ?>
-						    <input id="contactid" type="text" value="<?php echo $this->form->getValue('contactid'); ?>" size="3" readonly="readonly" name="contactid"/>
-						    <input id="billingname1" type="text" value="<?php echo $this->form->getValue('billingname1'); ?>" size="20" readonly="readonly" name="billingname1"/>
-					    </dd>
-					    <?php echo $this->form->orderdate; ?>
-					    <?php echo $this->form->deliverydate; ?>
-					    <?php echo $this->form->paymentmethod; ?>
-					    <?php echo $this->form->shippingmethod; ?>
-					    <?php echo $this->form->currency; ?>
-					    <?php echo $this->form->opportunityid; ?>
-				    </dl>
-			    </div>
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-					    <?php echo $this->form->info; ?>
-				    </dl>
-			    </div>
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->id; ?>
+						<?php echo $this->form->title; ?>
+						<dt id="contactid-label"><label><?php echo $this->translate('DELIVERY_ORDERS_CONTACT'); ?></label></dt>
+						<dd>
+							<?php echo $this->toolbar->select; ?>
+							<input id="contactid" type="text" value="<?php echo $this->form->getValue('contactid'); ?>" size="3" readonly="readonly" name="contactid"/>
+							<input id="billingname1" type="text" value="<?php echo $this->form->getValue('billingname1'); ?>" size="20" readonly="readonly" name="billingname1"/>
+						</dd>
+						<?php echo $this->form->orderdate; ?>
+						<?php echo $this->form->deliverydate; ?>
+						<?php echo $this->form->paymentmethod; ?>
+						<?php echo $this->form->shippingmethod; ?>
+						<?php echo $this->form->currency; ?>
+						<?php echo $this->form->opportunityid; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->info; ?>
+					</dl>
+				</div>
 			</div>
-            <div class="row">
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-					    <?php echo $this->form->header; ?>
-				    </dl>
-			    </div>
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-					    <dt id="textblock-label">
-                            <label>Textbausteine-Kopftext</label>
-                        </dt>
-					    <dd id="textblock-element">
-					        <textarea id="textblockheader" class="editor" name="textblockheader" cols="75" rows="18"><?php echo $this->textblocks['header']; ?></textarea>
-					    </dd>
-				    </dl>
-			    </div>
-		    </div>
-            <div class="row">
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-					    <?php echo $this->form->footer; ?>
-				    </dl>
-			    </div>
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-					    <dt id="textblock-label">
-                            <label>Textbausteine-Fußtext</label>
-                        </dt>
-					    <dd id="textblock-element">
-					        <textarea id="textblockfooter" class="editor" name="textblockfooter" cols="75" rows="18"><?php echo $this->textblocks['footer']; ?></textarea>
-					    </dd>
-				    </dl>
-			    </div>
-		    </div>
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->header; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<dt id="textblock-label">
+							<label>Textbausteine-Kopftext</label>
+						</dt>
+						<dd id="textblock-element">
+							<textarea id="textblockheader" class="editor" name="textblockheader" cols="75" rows="18"><?php echo $this->textblocks['header']; ?></textarea>
+						</dd>
+					</dl>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->footer; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<dt id="textblock-label">
+							<label>Textbausteine-Fußtext</label>
+						</dt>
+						<dd id="textblock-element">
+							<textarea id="textblockfooter" class="editor" name="textblockfooter" cols="75" rows="18"><?php echo $this->textblocks['footer']; ?></textarea>
+						</dd>
+					</dl>
+				</div>
+			</div>
 		</form>
 		</form>
 	</div>
@@ -91,32 +91,32 @@ echo $this->FileManager();
 	</div>
 	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">
 		<form id="deliveryorder" enctype="application/x-www-form-urlencoded" action="" method="post">
-		    <?php echo $this->toolbar->select; ?>
-            <div class="row">
-                <div class="col-sm-12 col-lg-7">
-				    <dl class="form">
-					    <?php echo $this->form->contactid; ?>
-					    <?php echo $this->form->billingname1; ?>
-					    <?php echo $this->form->billingname2; ?>
-					    <?php echo $this->form->billingdepartment; ?>
-					    <dt><label><b><?php echo $this->translate('CONTACTS_ADDRESS'); ?></b></label></dt>
-					    <dd></dd>
-					    <?php echo $this->form->billingstreet; ?>
-					    <?php echo $this->form->billingpostcode; ?>
-					    <?php echo $this->form->billingcity; ?>
-					    <?php echo $this->form->billingcountry; ?>
-					    <?php echo $this->form->vatin; ?>
-					    <?php echo $this->form->taxfree; ?>
-					    <?php if(isset($this->contact)) : ?>
-						    <?php echo $this->ContactData(); ?>
-					    <?php endif; ?>
-				    </dl>
-			    </div>
-                <div class="col-sm-12 col-lg-5">
-				    <dl class="form">
-					    <?php echo $this->form->contactinfo; ?>
-				    </dl>
-			    </div>
+			<?php echo $this->toolbar->select; ?>
+			<div class="row">
+				<div class="col-sm-12 col-lg-7">
+					<dl class="form">
+						<?php echo $this->form->contactid; ?>
+						<?php echo $this->form->billingname1; ?>
+						<?php echo $this->form->billingname2; ?>
+						<?php echo $this->form->billingdepartment; ?>
+						<dt><label><b><?php echo $this->translate('CONTACTS_ADDRESS'); ?></b></label></dt>
+						<dd></dd>
+						<?php echo $this->form->billingstreet; ?>
+						<?php echo $this->form->billingpostcode; ?>
+						<?php echo $this->form->billingcity; ?>
+						<?php echo $this->form->billingcountry; ?>
+						<?php echo $this->form->vatin; ?>
+						<?php echo $this->form->taxfree; ?>
+						<?php if(isset($this->contact)) : ?>
+							<?php echo $this->ContactData(); ?>
+						<?php endif; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-5">
+					<dl class="form">
+						<?php echo $this->form->contactinfo; ?>
+					</dl>
+				</div>
 			</div>
 		</form>
 	</div>
@@ -143,23 +143,23 @@ echo $this->FileManager();
 		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
 	</div>
 	<div id="tabFinish" class="tab_content">
-        <form id="deliveryorder" enctype="application/x-www-form-urlencoded" action="" method="post">
-            <div class="row">
-                <div class="col-sm-6">
-		            <div id="datacheck"></div>
-		            <dl class="form">
-			            <?php echo $this->form->templateid; ?>
-			            <?php echo $this->form->language; ?>
-		            </dl>
-                </div>
-                <div class="col-sm-12">
-		            <br/>
-		            <a href="#" onclick="savePdf()"><?php echo $this->translate('DELIVERY_ORDERS_SAVE_AND_BOOK'); ?></a> |
-		            <a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'download', 'id'=>$this->form->getValue('id')));?>" target="_blank"><?php echo $this->translate('DELIVERY_ORDERS_DOWNLOAD_PDF'); ?></a>
-		            <div id="output"></div>
-	            </div>
-            </div>
-        </form>
+		<form id="deliveryorder" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-6">
+					<div id="datacheck"></div>
+					<dl class="form">
+						<?php echo $this->form->templateid; ?>
+						<?php echo $this->form->language; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12">
+					<br/>
+					<a href="#" onclick="savePdf()"><?php echo $this->translate('DELIVERY_ORDERS_SAVE_AND_BOOK'); ?></a> |
+					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'download', 'id'=>$this->form->getValue('id')));?>" target="_blank"><?php echo $this->translate('DELIVERY_ORDERS_DOWNLOAD_PDF'); ?></a>
+					<div id="output"></div>
+				</div>
+			</div>
+		</form>
 	</div>
 </div>
 

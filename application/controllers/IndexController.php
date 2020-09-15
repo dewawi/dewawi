@@ -24,9 +24,9 @@ class IndexController extends Zend_Controller_Action
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
 		if(Zend_Registry::isRegistered('User')) {
-            $this->view->user = $this->_user = Zend_Registry::get('User');
-		    $this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-        }
+			$this->view->user = $this->_user = Zend_Registry::get('User');
+			$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
+		}
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
 	}
 

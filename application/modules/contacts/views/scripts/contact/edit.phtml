@@ -12,85 +12,85 @@ echo $this->FileManager();
 		<a href="#tabPayment"><?php echo $this->translate('TABS_PAYMENT'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabHistory") : ?> class="active"<?php endif; ?>>
 		<a href="#tabHistory"><?php echo $this->translate('TABS_HISTORY'); ?></a></li>
-    <?php if($this->dirwritable) : ?>
-	    <li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
-		    <a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
-    <?php endif; ?>
+	<?php if($this->dirwritable) : ?>
+		<li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
+			<a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
+	<?php endif; ?>
 </ul>
 
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
 		<form id="contact" enctype="application/x-www-form-urlencoded" action="" method="post">
-            <div class="row">
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-					    <?php echo $this->form->getElement('id'); ?>
-					    <?php echo $this->form->getElement('contactid'); ?>
-					    <?php echo $this->form->getElement('catid'); ?>
-					    <?php echo $this->form->getElement('name1'); ?>
-					    <?php echo $this->form->getElement('name2'); ?>
-					    <?php echo $this->form->getElement('department'); ?>
-                        <h4>Adressen</h4>
-                        <?php echo $this->MultiForm('address', $this->address, array(
-                                                                            //array('label' => 'CONTACTS_NAME', 'field' => 'name1'),
-                                                                            array('label' => 'CONTACTS_STREET', 'field' => 'street'),
-                                                                            array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
-                                                                            array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))
-                                                                            )); ?>
-                        <h4>Kontaktdetails</h4>
-                        <?php echo $this->MultiForm('phone', $this->phone, array('phone', 'type'), 'CONTACTS_PHONE'); ?>
-                        <hr>
-                        <?php echo $this->MultiForm('email', $this->email, '', 'CONTACTS_EMAIL'); ?>
-                        <hr>
-                        <?php echo $this->MultiForm('internet', $this->internet, 'internet', 'CONTACTS_INTERNET'); ?>
-				    </dl>
-		        </div>
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-                        <?php echo $this->form->getElement('info'); ?>
-                        <div class="info"><small>Interne Informationen werden nicht auf Angeboten, Rechnungen etc. angezeigt.</small></div>
-				    </dl>
-		        </div>
-		    </div>
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->getElement('id'); ?>
+						<?php echo $this->form->getElement('contactid'); ?>
+						<?php echo $this->form->getElement('catid'); ?>
+						<?php echo $this->form->getElement('name1'); ?>
+						<?php echo $this->form->getElement('name2'); ?>
+						<?php echo $this->form->getElement('department'); ?>
+						<h4>Adressen</h4>
+						<?php echo $this->MultiForm('address', $this->address, array(
+																			//array('label' => 'CONTACTS_NAME', 'field' => 'name1'),
+																			array('label' => 'CONTACTS_STREET', 'field' => 'street'),
+																			array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
+																			array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))
+																			)); ?>
+						<h4>Kontaktdetails</h4>
+						<?php echo $this->MultiForm('phone', $this->phone, array('phone', 'type'), 'CONTACTS_PHONE'); ?>
+						<hr>
+						<?php echo $this->MultiForm('email', $this->email, '', 'CONTACTS_EMAIL'); ?>
+						<hr>
+						<?php echo $this->MultiForm('internet', $this->internet, 'internet', 'CONTACTS_INTERNET'); ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->getElement('info'); ?>
+						<div class="info"><small>Interne Informationen werden nicht auf Angeboten, Rechnungen etc. angezeigt.</small></div>
+					</dl>
+				</div>
+			</div>
 		</form>
 	</div>
 	<div id="tabPayment" class="tab_content<?php if($this->activeTab == '#tabPayment') : ?> active<?php endif; ?>">
 		<form id="contact" enctype="application/x-www-form-urlencoded" action="" method="post">
-            <div class="row">
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-                        <h4>Zahlung</h4>
-			            <?php echo $this->form->getElement('debitornumber'); ?>
-			            <?php echo $this->form->getElement('paymentmethod'); ?>
-			            <?php echo $this->form->getElement('paymentterm'); ?>
-					    <?php echo $this->form->getElement('currency') ?>
-                        <h4>Steuer</h4>
-			            <?php echo $this->form->getElement('taxnumber'); ?>
-			            <?php echo $this->form->getElement('vatin'); ?>
-			            <?php echo $this->form->getElement('taxfree'); ?>
-				    </dl>
-		        </div>
-                <div class="col-sm-12 col-lg-6">
-				    <dl class="form">
-                        <h4>Skonto</h4>
-			            <?php echo $this->form->getElement('cashdiscountdays'); ?>
-			            <?php echo $this->form->getElement('cashdiscountpercent'); ?>
-                        <h4>Kundenpreis/Rabatt</h4>
-			            <?php echo $this->form->getElement('priceruleamount'); ?>
-			            <?php echo $this->form->getElement('priceruleaction'); ?>
-                        <h4>Bankverbindung</h4>
-                        <?php echo $this->MultiForm('bankaccount', $this->bankAccount, array('iban', 'bic'), 'CONTACTS_IBAN_BIC'); ?>
-				    </dl>
-		        </div>
-		    </div>
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<h4>Zahlung</h4>
+						<?php echo $this->form->getElement('debitornumber'); ?>
+						<?php echo $this->form->getElement('paymentmethod'); ?>
+						<?php echo $this->form->getElement('paymentterm'); ?>
+						<?php echo $this->form->getElement('currency') ?>
+						<h4>Steuer</h4>
+						<?php echo $this->form->getElement('taxnumber'); ?>
+						<?php echo $this->form->getElement('vatin'); ?>
+						<?php echo $this->form->getElement('taxfree'); ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<h4>Skonto</h4>
+						<?php echo $this->form->getElement('cashdiscountdays'); ?>
+						<?php echo $this->form->getElement('cashdiscountpercent'); ?>
+						<h4>Kundenpreis/Rabatt</h4>
+						<?php echo $this->form->getElement('priceruleamount'); ?>
+						<?php echo $this->form->getElement('priceruleaction'); ?>
+						<h4>Bankverbindung</h4>
+						<?php echo $this->MultiForm('bankaccount', $this->bankAccount, array('iban', 'bic'), 'CONTACTS_IBAN_BIC'); ?>
+					</dl>
+				</div>
+			</div>
 		</form>
 	</div>
 	<div id="tabHistory" class="tab_content<?php if($this->activeTab == '#tabHistory') : ?> active<?php endif; ?>">
 		<?php echo $this->History(); ?>
 	</div>
-    <?php if($this->dirwritable) : ?>
-	    <div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
-	        <iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
-	    </div>
-    <?php endif; ?>
+	<?php if($this->dirwritable) : ?>
+		<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+			<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
+		</div>
+	<?php endif; ?>
 </div>

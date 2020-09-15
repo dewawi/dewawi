@@ -41,7 +41,7 @@ class Items_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$options['priceruleactions'] = $priceruleactions;
 
 		//Set form options
-        $MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
+		$MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
 		if(isset($form->manufacturerid) && isset($options['manufacturers'])) $form->manufacturerid->addMultiOptions($options['manufacturers']);
 		if(isset($form->uomid) && isset($options['uoms'])) $form->uomid->addMultiOptions($options['uoms']);

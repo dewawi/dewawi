@@ -16,8 +16,8 @@ class Contacts_AddressController extends Zend_Controller_Action
 
 		$form = new Contacts_Form_Contact();
 		$options = $this->_helper->Options->getOptions($form);
-	    $this->view->options = $options;
-	    $this->view->action = 'add';
+		$this->view->options = $options;
+		$this->view->action = 'add';
 
 		$client = Zend_Registry::get('Client');
 
@@ -28,24 +28,24 @@ class Contacts_AddressController extends Zend_Controller_Action
 					$addressDb = new Contacts_Model_DbTable_Address();
 					$addressDataBefore = $addressDb->getAddress($data['contactid']);
 					$latest = end($addressDataBefore);
-		            $addressDb->addAddress(array('contactid' => $data['contactid'], 'type' => $data['type'], 'country' => $client['country'], 'ordering' => $latest['ordering']+1));
+					$addressDb->addAddress(array('contactid' => $data['contactid'], 'type' => $data['type'], 'country' => $client['country'], 'ordering' => $latest['ordering']+1));
 					$addressDataAfter = $addressDb->getAddress($data['contactid']);
 					$address = end($addressDataAfter);
 					echo $this->view->MultiForm('address', $address, array(
-                                                                        //array('label' => 'CONTACTS_NAME', 'field' => 'name1'),
-                                                                        array('label' => 'CONTACTS_STREET', 'field' => 'street'),
-                                                                        array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
-                                                                        array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))
-                                                                        ));
-			    }
+																		//array('label' => 'CONTACTS_NAME', 'field' => 'name1'),
+																		array('label' => 'CONTACTS_STREET', 'field' => 'street'),
+																		array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
+																		array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))
+																		));
+				}
 			} else {
 				$timestamp = time();
 				$address = array('id' => $timestamp, 'ordering' => $timestamp, 'type' => 'address', 'address' => '');
 				echo $this->view->MultiForm('address', $address, array(
-                                                                    array('label' => 'CONTACTS_STREET', 'field' => 'street'),
-                                                                    array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
-                                                                    array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))
-                                                                    ));
+																	array('label' => 'CONTACTS_STREET', 'field' => 'street'),
+																	array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
+																	array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))
+																	));
 			}
 		}
 	}

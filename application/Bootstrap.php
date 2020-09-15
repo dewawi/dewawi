@@ -19,14 +19,14 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 			$identity = $auth->getIdentity();
 
 			$user = array(
-                        'id' => $identity->id,
-                        'username' => $identity->username,
-                        'name' => $identity->name,
-                        'email' => $identity->email,
-                        'admin' => $identity->admin,
-                        'permissions' => $identity->permissions,
-                        'clientid' => $identity->clientid
-                        );
+						'id' => $identity->id,
+						'username' => $identity->username,
+						'name' => $identity->name,
+						'email' => $identity->email,
+						'admin' => $identity->admin,
+						'permissions' => $identity->permissions,
+						'clientid' => $identity->clientid
+						);
 
 			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
 			$authNamespace->user = $user['username'];
@@ -48,16 +48,16 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
 			$clientDb = new Application_Model_DbTable_Client();
 			$client = $clientDb->getClient();
-            if($client['parentid']) {
-                $client['modules'] = array(
-                        'contacts' => $client['parentid'],
-                        'items' => $client['parentid'],
-                        'sales' => $client['id'],
-                        'purchases' => $client['id'],
-                        'processes' => $client['id'],
-                        'statistics' => $client['id']
-                        );
-            }
+			if($client['parentid']) {
+				$client['modules'] = array(
+						'contacts' => $client['parentid'],
+						'items' => $client['parentid'],
+						'sales' => $client['id'],
+						'purchases' => $client['id'],
+						'processes' => $client['id'],
+						'statistics' => $client['id']
+						);
+			}
 			Zend_Registry::set('Client', $client);
 		}
 	}
@@ -66,34 +66,34 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 	{
 		$auth = Zend_Auth::getInstance();
 		if($auth->hasIdentity()) {
-		    //Config
-		    $configDb = new Application_Model_DbTable_Config();
-		    $config = $configDb->getConfig();
-		    Zend_Registry::set('Config', $config);
-        }
+			//Config
+			$configDb = new Application_Model_DbTable_Config();
+			$config = $configDb->getConfig();
+			Zend_Registry::set('Config', $config);
+		}
 
-	    //Locale
-        $authNamespace = new Zend_Session_Namespace('Zend_Auth');
-        if(isset($authNamespace->storage->language) && $authNamespace->storage->language) {
-            $language = new Zend_Locale($authNamespace->storage->language);
-        } elseif(isset($config)) {
-	        $language = new Zend_Locale($config['language']);
-        } else {
-	        $files = scandir(BASE_PATH.'/languages/');
-	        $language = new Zend_Locale($files[2]);
-        }
-	    Zend_Registry::set('Zend_Locale', $language);
+		//Locale
+		$authNamespace = new Zend_Session_Namespace('Zend_Auth');
+		if(isset($authNamespace->storage->language) && $authNamespace->storage->language) {
+			$language = new Zend_Locale($authNamespace->storage->language);
+		} elseif(isset($config)) {
+			$language = new Zend_Locale($config['language']);
+		} else {
+			$files = scandir(BASE_PATH.'/languages/');
+			$language = new Zend_Locale($files[2]);
+		}
+		Zend_Registry::set('Zend_Locale', $language);
 
-        $currency = new Zend_Currency(array(
-            'locale' => $language,
-            'precision' => 2
-        ));
-	    Zend_Registry::set('Zend_Currency', $currency);
+		$currency = new Zend_Currency(array(
+			'locale' => $language,
+			'precision' => 2
+		));
+		Zend_Registry::set('Zend_Currency', $currency);
 
-	    //Time zone
-        if(isset($config)) {
-	        date_default_timezone_set($config['timezone']);
-        }
+		//Time zone
+		if(isset($config)) {
+			date_default_timezone_set($config['timezone']);
+		}
 	}
 
 	protected function _initSessions() {

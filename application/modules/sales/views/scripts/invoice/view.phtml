@@ -25,11 +25,11 @@ echo $this->FileManager();
 					<dt><label><?php echo $this->translate('INVOICES_INVOICE_DATE') ?></label></dt>
 					<dd><?php echo $this->invoice['invoicedate']; ?></dd>
 				<?php } ?>
-				<?php if($this->invoice['orderdate'] && ($this->invoice['orderdate'] != "0000-00-00")) { ?>
+				<?php if($this->invoice['orderdate']) { ?>
 					<dt><label><?php echo $this->translate('INVOICES_ORDER_DATE') ?></label></dt>
 					<dd><?php echo $this->invoice['orderdate']; ?></dd>
 				<?php } ?>
-				<?php if($this->invoice['deliverydate'] && ($this->invoice['deliverydate'] != "0000-00-00")) { ?>
+				<?php if($this->invoice['deliverydate']) { ?>
 					<dt><label><?php echo $this->translate('INVOICES_DELIVERY_DATE') ?></label></dt>
 					<dd><?php echo $this->invoice['deliverydate']; ?></dd>
 				<?php } ?>

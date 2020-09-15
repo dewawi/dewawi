@@ -14,7 +14,7 @@ class Sales_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    $this->_user = Zend_Registry::get('User');
+		$this->_user = Zend_Registry::get('User');
 		$this->_client = Zend_Registry::get('Client');
 	}
 
@@ -36,7 +36,6 @@ class Sales_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
-error_log($this->_client['id']);
 		return $data;
 	}
 

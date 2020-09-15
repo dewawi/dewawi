@@ -11,36 +11,36 @@ echo $this->Messages();
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content">
 		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
-            <div class="row">
-                <div class="col-sm-12 col-lg-7">
-				    <dl class="form">
-					    <?php echo $this->form->getElement('id') ?>
-					    <?php echo $this->form->getElement('title') ?>
-					    <?php echo $this->form->getElement('amount') ?>
-					    <?php echo $this->form->getElement('action') ?>
-					    <?php echo $this->form->getElement('from') ?>
-					    <?php echo $this->form->getElement('to') ?>
-					    <?php echo $this->form->getElement('priority') ?>
-					    <?php echo $this->form->getElement('subsequent') ?>
-					    <?php echo $this->form->getElement('activated') ?>
-				    </dl>
-				    <dl class="form">
-					    <dt><label><?php echo $this->translate('PRICE_RULES_CREATED') ?></label></dt>
-					    <dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('created')))) ?></label></dd>
-					    <dt><label><?php echo $this->translate('PRICE_RULES_MODIFIED') ?></label></dt>
-					    <dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('modified')))) ?></label></dd>
-				    </dl>
-		        </div>
-                <div class="col-sm-12 col-lg-5">
-                    <h4><?php echo $this->translate('PRICE_RULES_APPLY_RULES_ON') ?></h4>
-				    <?php echo $this->form->getElement('itemcatid') ?>
-				    <?php echo $this->form->getElement('itemsubcat') ?>
-				    <?php echo $this->form->getElement('itemtype') ?>
-				    <?php echo $this->form->getElement('itemmanufacturer') ?>
-				    <?php echo $this->form->getElement('contactcatid') ?>
-				    <?php echo $this->form->getElement('contactsubcat') ?>
-			    </div>
-		    </div>
+			<div class="row">
+				<div class="col-sm-12 col-lg-7">
+					<dl class="form">
+						<?php echo $this->form->getElement('id') ?>
+						<?php echo $this->form->getElement('title') ?>
+						<?php echo $this->form->getElement('amount') ?>
+						<?php echo $this->form->getElement('action') ?>
+						<?php echo $this->form->getElement('from') ?>
+						<?php echo $this->form->getElement('to') ?>
+						<?php echo $this->form->getElement('priority') ?>
+						<?php echo $this->form->getElement('subsequent') ?>
+						<?php echo $this->form->getElement('activated') ?>
+					</dl>
+					<dl class="form">
+						<dt><label><?php echo $this->translate('PRICE_RULES_CREATED') ?></label></dt>
+						<dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('created')))) ?></label></dd>
+						<dt><label><?php echo $this->translate('PRICE_RULES_MODIFIED') ?></label></dt>
+						<dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('modified')))) ?></label></dd>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-5">
+					<h4><?php echo $this->translate('PRICE_RULES_APPLY_RULES_ON') ?></h4>
+					<?php echo $this->form->getElement('itemcatid') ?>
+					<?php echo $this->form->getElement('itemsubcat') ?>
+					<?php echo $this->form->getElement('itemtype') ?>
+					<?php echo $this->form->getElement('itemmanufacturer') ?>
+					<?php echo $this->form->getElement('contactcatid') ?>
+					<?php echo $this->form->getElement('contactsubcat') ?>
+				</div>
+			</div>
 		</form>
 	</div>
 </div>

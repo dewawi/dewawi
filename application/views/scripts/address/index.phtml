@@ -1,4 +1,4 @@
-<?php         
+<?php
 $this->title = "Address List";
 $this->headTitle($this->title);
 ?>
@@ -7,27 +7,27 @@ $this->headTitle($this->title);
 <?php foreach($this->addresses as $address) : ?>
 <table>
 	<tr>
-	    <td>Street Address</td>
-	    <td><?php echo str_replace("\n", "<br/>", $this->escape($address->street));?></td>
+		<td>Street Address</td>
+		<td><?php echo str_replace("\n", "<br/>", $this->escape($address->street));?></td>
 	</tr>
 	<tr>
-	    <td>Postcode</td>
-	    <td><?php echo $this->escape($address->postcode);?></td>
+		<td>Postcode</td>
+		<td><?php echo $this->escape($address->postcode);?></td>
 	</tr>
 	<tr>
-	    <td>City</td>
-	    <td><?php echo $this->escape($address->city);?></td>
+		<td>City</td>
+		<td><?php echo $this->escape($address->city);?></td>
 	</tr>
 	<tr>
-	    <td>Country</td>
-	    <td><?php echo $this->escape($address->country);?></td>
+		<td>Country</td>
+		<td><?php echo $this->escape($address->country);?></td>
 	</tr>
 	<tr>
-	    <td></td>
-	    <td>
+		<td></td>
+		<td>
 		<!--<a href="<?php echo $this->url(array('controller'=>'address', 'action'=>'edit', 'id'=>$address->id));?>">Edit</a>-->
 		<button onclick="deleteAddress(<?php echo $address->id ?>)" type="button" id="delete" name="delete">Delete</button>
-	    </td>
+		</td>
 	</tr>
 </table>
 <?php endforeach; ?>

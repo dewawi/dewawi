@@ -55,65 +55,65 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 		$taxrateDb = new Application_Model_DbTable_Taxrate();
 		$taxrates = $taxrateDb->getTaxrates();
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quoterequest['currency']);
 
 		$forms = array();
-        $taxes = array();
+		$taxes = array();
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$position->ordering] = $position->ordering;
 		}
-        if($quoterequest['taxfree']) {
-            $taxes[] = array('value' => 0, 'title' => 0);
-        } else {
-		    foreach($positions as $position) {
-                if(!isset($taxes[$position->taxrate]) && array_search($position->taxrate, $taxrates)) {
-                    $taxes[$position->taxrate] = array();
-                    $taxes[$position->taxrate]['value'] = 0;
-                    $taxes[$position->taxrate]['title'] = Zend_Locale_Format::toNumber($position->taxrate,array('precision' => 1,'locale' => $locale)).' %';
-                }
-            }
-        }
+		if($quoterequest['taxfree']) {
+			$taxes[] = array('value' => 0, 'title' => 0);
+		} else {
+			foreach($positions as $position) {
+				if(!isset($taxes[$position->taxrate]) && array_search($position->taxrate, $taxrates)) {
+					$taxes[$position->taxrate] = array();
+					$taxes[$position->taxrate]['value'] = 0;
+					$taxes[$position->taxrate]['title'] = Zend_Locale_Format::toNumber($position->taxrate,array('precision' => 1,'locale' => $locale)).' %';
+				}
+			}
+		}
 		foreach($positions as $position) {
-            if(!$quoterequest['taxfree'] && array_search($position->taxrate, $taxrates))
-                $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
+			if(!$quoterequest['taxfree'] && array_search($position->taxrate, $taxrates))
+				$taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
 
-            $price = $position->price;
-            if($position->priceruleamount && $position->priceruleaction) {
-                if($position->priceruleaction == 'bypercent')
-			        $price = $price*(100-$position->priceruleamount)/100;
-                elseif($position->priceruleaction == 'byfixed')
-			        $price = ($price-$position->priceruleamount);
-                elseif($position->priceruleaction == 'topercent')
-			        $price = $price*(100+$position->priceruleamount)/100;
-                elseif($position->priceruleaction == 'tofixed')
-			        $price = ($price+$position->priceruleamount);
-            }
-			$position->total =  $currency->toCurrency($price*$position->quantity);
-			$position->price =  $currency->toCurrency($position->price);
+			$price = $position->price;
+			if($position->priceruleamount && $position->priceruleaction) {
+				if($position->priceruleaction == 'bypercent')
+					$price = $price*(100-$position->priceruleamount)/100;
+				elseif($position->priceruleaction == 'byfixed')
+					$price = ($price-$position->priceruleamount);
+				elseif($position->priceruleaction == 'topercent')
+					$price = $price*(100+$position->priceruleamount)/100;
+				elseif($position->priceruleaction == 'tofixed')
+					$price = ($price+$position->priceruleamount);
+			}
+			$position->total = $currency->toCurrency($price*$position->quantity);
+			$position->price = $currency->toCurrency($position->price);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-			$position->priceruleamount =  $currency->toCurrency($position->priceruleamount);
+			$position->priceruleamount = $currency->toCurrency($position->priceruleamount);
 
 			$form = new Purchases_Form_Quoterequestpos();
 			$forms[$position->id] = $form->populate($position->toArray());
 			$forms[$position->id]->uom->addMultiOptions($uoms);
-            if($position->uom) {
-                $uom = array_search($position->uom, $uoms);
-                if($uom) $forms[$position->id]->uom->setValue($uom);
-            }
+			if($position->uom) {
+				$uom = array_search($position->uom, $uoms);
+				if($uom) $forms[$position->id]->uom->setValue($uom);
+			}
 			$forms[$position->id]->priceruleaction->addMultiOptions($priceruleactions);
 			$forms[$position->id]->ordering->addMultiOptions($orderings);
 			$forms[$position->id]->taxrate->setValue(array_search($position->taxrate, $taxrates));
-		    foreach($taxrates as $id => $value)
-			    $forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
+			foreach($taxrates as $id => $value)
+				$forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
 		}
 
 		$quoterequest['subtotal'] = $currency->toCurrency($quoterequest['subtotal']);
 		$quoterequest['total'] = $currency->toCurrency($quoterequest['total']);
-        foreach($taxes as $rate => $data) {
-		    $taxes[$rate]['value'] = $currency->toCurrency($data['value']);
-        }
+		foreach($taxes as $rate => $data) {
+			$taxes[$rate]['value'] = $currency->toCurrency($data['value']);
+		}
 		$quoterequest['taxes'] = $taxes;
 
 		$this->view->forms = $forms;
@@ -133,29 +133,29 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 		$form = new Items_Form_Item();
 
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$this->_helper->viewRenderer->setNoRender();
 			$this->_helper->getHelper('layout')->disableLayout();
 			$data = array();
 			if($itemid && $quoterequestid) {
-		        //Get item
+				//Get item
 				$item = new Items_Model_DbTable_Item();
 				$item = $item->getItem($itemid);
 
-		        //Get quote request
-		        $quoterequestDb = new Sales_Model_DbTable_Quoterequest();
-		        $quoterequest = $quoterequestDb->getQuoterequest($quoterequestid);
+				//Get quote request
+				$quoterequestDb = new Sales_Model_DbTable_Quoterequest();
+				$quoterequest = $quoterequestDb->getQuoterequest($quoterequestid);
 
-                //Check price rules
+				//Check price rules
 				$data = $this->_helper->PriceRule($quoterequest['contactid'], $item, $data, $this->_helper);
 
-                //Check currency
-                if($quoterequest['currency'] == $item['currency']) {
-				    $data['price'] = $item['price'];
-                } else {
-				    $data['price'] = $this->_helper->Currency($item['currency'], $quoterequest['currency'], $item['price'], $this->_helper);
-                }
-                $data['currency'] = $quoterequest['currency'];
+				//Check currency
+				if($quoterequest['currency'] == $item['currency']) {
+					$data['price'] = $item['price'];
+				} else {
+					$data['price'] = $this->_helper->Currency($item['currency'], $quoterequest['currency'], $item['price'], $this->_helper);
+				}
+				$data['currency'] = $quoterequest['currency'];
 
 				$data['quoterequestid'] = $quoterequestid;
 				$data['itemid'] = $itemid;
@@ -163,22 +163,22 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 				$data['title'] = $item['title'];
 				$data['image'] = $item['image'];
 				$data['description'] = $item['description'];
-                if($item['taxid']) {
-		            $taxrateDb = new Application_Model_DbTable_Taxrate();
-				    $taxrate = $taxrateDb->getTaxrate($item['taxid']);
-				    $data['taxrate'] = $taxrate['rate'];
-                } else {
-                    $data['taxrate'] = 0;
-                }
+				if($item['taxid']) {
+					$taxrateDb = new Application_Model_DbTable_Taxrate();
+					$taxrate = $taxrateDb->getTaxrate($item['taxid']);
+					$data['taxrate'] = $taxrate['rate'];
+				} else {
+					$data['taxrate'] = 0;
+				}
 				$data['quantity'] = 1;
 				$data['total'] = $data['price']*$data['quantity'];
-                if($item['uomid']) {
-		            $uomDb = new Application_Model_DbTable_Uom();
-				    $uom = $uomDb->getUom($item['uomid']);
-				    $data['uom'] = $uom['title'];
-                } else {
-                    $data['uom'] = '';
-                }
+				if($item['uomid']) {
+					$uomDb = new Application_Model_DbTable_Uom();
+					$uom = $uomDb->getUom($item['uomid']);
+					$data['uom'] = $uom['title'];
+				} else {
+					$data['uom'] = '';
+				}
 				$data['ordering'] = $this->getLatestOrdering($quoterequestid) + 1;
 
 				$position = new Purchases_Model_DbTable_Quoterequestpos();
@@ -186,7 +186,7 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 
 				//Calculate
 				$calculations = $this->_helper->Calculate($quoterequestid, $this->_date, $this->_user['id']);
-			    echo Zend_Json::encode($calculations['locale']);
+				echo Zend_Json::encode($calculations['locale']);
 			} else {
 				$form->populate($request->getPost());
 			}
@@ -204,13 +204,13 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-        //Get quote request data
+		//Get quote request data
 		$quoterequestid = $this->_getParam('quoterequestid', 0);
-        $quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
+		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequest = $quoterequestDb->getQuoterequest($quoterequestid);
 
-        //Get primary tax rate
-        $taxrates = new Application_Model_DbTable_Taxrate();
+		//Get primary tax rate
+		$taxrates = new Application_Model_DbTable_Taxrate();
 		$taxrate = $taxrates->getPrimaryTaxrate();
 
 		if($this->getRequest()->isPost()) {
@@ -225,7 +225,7 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
-		    $data['currency'] = $quoterequest['currency'];
+			$data['currency'] = $quoterequest['currency'];
 			$data['uom'] = '';
 			$data['ordering'] = $this->getLatestOrdering($quoterequestid) + 1;
 			$position = new Purchases_Model_DbTable_Quoterequestpos();
@@ -257,7 +257,7 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 		$form->taxrate->addMultiOptions($taxrates);
 
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$data = $request->getPost();
 			$element = key($data);
 			if(isset($form->$element) && $form->isValidPartial($data)) {
@@ -273,8 +273,8 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
 					$calculations = $this->_helper->Calculate($quoterequestid, $this->_date, $this->_user['id']);
-			        echo Zend_Json::encode($calculations['locale']);
-                }
+					echo Zend_Json::encode($calculations['locale']);
+				}
 			} else {
 				throw new Exception('Form is invalid');
 			}
@@ -288,7 +288,7 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$id = (int)$this->_getParam('id', 0);
 			$position = new Purchases_Model_DbTable_Quoterequestpos();
 			$data = $position->getPosition($id);
@@ -297,14 +297,14 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 				if($ordering > $data['ordering']) $position->updatePosition($positionId, array('ordering' => ($ordering+1)));
 			}
 			$data['ordering'] += 1;
-			$data['modified'] = '0000-00-00';
+			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
 			unset($data['id']);
 			$position->addPosition($data);
 
 			//Calculate
 			$calculations = $this->_helper->Calculate($data['quoterequestid'], $this->_date, $this->_user['id']);
-	        echo Zend_Json::encode($calculations['locale']);
+			echo Zend_Json::encode($calculations['locale']);
 		}
 	}
 
@@ -328,12 +328,12 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 			} elseif($data['ordering'] > 0) {
 				if($data['ordering'] < $currentOrdering) {
 					$position->sortPosition($data['id'], $data['ordering']);
-					foreach($orderings as  $ordering => $positionId) {
+					foreach($orderings as $ordering => $positionId) {
 						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $position->sortPosition($positionId, $ordering+1);
 					}
 				} elseif($data['ordering'] > $currentOrdering) {
 					$position->sortPosition($data['id'], $data['ordering']);
-					foreach($orderings as  $ordering => $positionId) {
+					foreach($orderings as $ordering => $positionId) {
 						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $position->sortPosition($positionId, $ordering-1);
 					}
 				}
@@ -349,7 +349,7 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$data = $request->getPost();
 			if($data['delete'] == 'Yes') {
 				if(!is_array($data['id'])) {
@@ -361,7 +361,7 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 				//Reorder and calculate
 				$this->setOrdering($data['quoterequestid']);
 				$calculations = $this->_helper->Calculate($data['quoterequestid'], $this->_date, $this->_user['id']);
-	            echo Zend_Json::encode($calculations['locale']);
+				echo Zend_Json::encode($calculations['locale']);
 			}
 		}
 	}

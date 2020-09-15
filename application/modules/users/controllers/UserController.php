@@ -24,10 +24,10 @@ class Users_UserController extends Zend_Controller_Action
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
 		if(Zend_Registry::isRegistered('User')) {
-            $this->view->user = $this->_user = Zend_Registry::get('User');
-		    $this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-        }
-	    $this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
+			$this->view->user = $this->_user = Zend_Registry::get('User');
+			$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
+		}
+		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
 	}
 
 	public function editAction()
@@ -76,11 +76,11 @@ class Users_UserController extends Zend_Controller_Action
 				}
 			}
 		}
-        $this->view->messages = array_merge(
-            $this->_helper->flashMessenger->getMessages(),
-            $this->_helper->flashMessenger->getCurrentMessages()
-        );
-        $this->_helper->flashMessenger->clearCurrentMessages();
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function loginAction()
@@ -130,15 +130,15 @@ class Users_UserController extends Zend_Controller_Action
 				if ($result->isValid()) {
 					$storage = $auth->getStorage();
 					$userInfo = $authAdapter->getResultRowObject(
-                                    array(
-                                        'id',
-                                        'username',
-                                        'name',
-                                        'email',
-                                        'admin',
-                                        'permissions',
-                                        'clientid'
-                                    ));
+									array(
+										'id',
+										'username',
+										'name',
+										'email',
+										'admin',
+										'permissions',
+										'clientid'
+									));
 					$storage->write($userInfo); //Store into session
 
 					if($this->_getParam('url', null)) {
@@ -151,7 +151,7 @@ class Users_UserController extends Zend_Controller_Action
 					}
 					$this->_helper->redirector->gotoSimple("index", "index");
 				} else {
-				    $this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
+					$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
 				}
 			} else {
 				$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
@@ -176,10 +176,10 @@ class Users_UserController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 		$clientid = $this->_getParam('clientid', 0);
-        if($clientid) {
-		    $authNamespace = new Zend_Session_Namespace('Zend_Auth');
-		    $authNamespace->storage->clientid = $clientid;
-        }
+		if($clientid) {
+			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
+			$authNamespace->storage->clientid = $clientid;
+		}
 	}
 
 	public function languageAction()
@@ -187,10 +187,10 @@ class Users_UserController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 		$language = $this->_getParam('language', 0);
-        if($language) {
-		    $authNamespace = new Zend_Session_Namespace('Zend_Auth');
-		    $authNamespace->storage->language = $language;
-        }
+		if($language) {
+			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
+			$authNamespace->storage->language = $language;
+		}
 	}
 
 	public function lockAction()

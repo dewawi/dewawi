@@ -27,7 +27,7 @@ class Application_Controller_Action_Helper_Options extends Zend_Controller_Actio
 		$options['languages'] = $languages;
 
 		//Set form options
-        $MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
+		$MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
 		if(isset($form->language) && isset($options['languages'])) $form->language->addMultiOptions($options['languages']);
 

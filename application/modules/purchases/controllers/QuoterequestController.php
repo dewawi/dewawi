@@ -54,7 +54,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-        $get = new Purchases_Model_Get();
+		$get = new Purchases_Model_Get();
 		$quoterequests = $get->quoterequests($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->quoterequests = $quoterequests;
@@ -76,7 +76,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-        $get = new Purchases_Model_Get();
+		$get = new Purchases_Model_Get();
 		$quoterequests = $get->quoterequests($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->quoterequests = $quoterequests;
@@ -93,16 +93,16 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 	{
 		$contactid = $this->_getParam('contactid', 0);
 
-        //Get primary currency
-        $currencies = new Application_Model_DbTable_Currency();
+		//Get primary currency
+		$currencies = new Application_Model_DbTable_Currency();
 		$currency = $currencies->getPrimaryCurrency();
 
-        //Get primary language
-        $languages = new Application_Model_DbTable_Language();
+		//Get primary language
+		$languages = new Application_Model_DbTable_Language();
 		$language = $languages->getPrimaryLanguage();
 
-        //Get primary template
-        $templates = new Application_Model_DbTable_Template();
+		//Get primary template
+		$templates = new Application_Model_DbTable_Template();
 		$template = $templates->getPrimaryTemplate();
 
 		$data = array();
@@ -151,8 +151,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 				$contactDb = new Contacts_Model_DbTable_Contact();
 				$contact = $contactDb->getContactWithID($quoterequest['contactid']);
 
-                //Check if the directory is writable
-		        $dirwritable = $this->_helper->Directory->isWritable($contact['id'], 'quoterequest', $this->_flashMessenger);
+				//Check if the directory is writable
+				$dirwritable = $this->_helper->Directory->isWritable($contact['id'], 'quoterequest', $this->_flashMessenger);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -175,26 +175,26 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 				$this->_helper->getHelper('layout')->disableLayout();
 				$data = $request->getPost();
 				$element = key($data);
-                if(($element == 'textblockheader' || $element == 'textblockfooter')) {
-				    $textblockDb = new Purchases_Model_DbTable_Textblock();
-                    if(strpos($element, 'header') !== false) {
-					    $data['text'] = $data['textblockheader'];
-					    unset($data['textblockheader']);
-					    $textblockDb->updateTextblock($data, 'quoterequest', 'header');
-                    } elseif(strpos($element, 'footer') !== false) {
-					    $data['text'] = $data['textblockfooter'];
-					    unset($data['textblockfooter']);
-					    $textblockDb->updateTextblock($data, 'quoterequest', 'footer');
-                    }
+				if(($element == 'textblockheader' || $element == 'textblockfooter')) {
+					$textblockDb = new Purchases_Model_DbTable_Textblock();
+					if(strpos($element, 'header') !== false) {
+						$data['text'] = $data['textblockheader'];
+						unset($data['textblockheader']);
+						$textblockDb->updateTextblock($data, 'quoterequest', 'header');
+					} elseif(strpos($element, 'footer') !== false) {
+						$data['text'] = $data['textblockfooter'];
+						unset($data['textblockfooter']);
+						$textblockDb->updateTextblock($data, 'quoterequest', 'footer');
+					}
 				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
 					if(isset($data['currency'])) {
-		                $positionsDb = new Sales_Model_DbTable_Quoterequestpos();
-		                $positions = $positionsDb->getPositions($id);
-		                foreach($positions as $position) {
-	                        $positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
-		                }
-					    //$this->_helper->Currency->convert($id, 'creditnote');
+						$positionsDb = new Sales_Model_DbTable_Quoterequestpos();
+						$positions = $positionsDb->getPositions($id);
+						foreach($positions as $position) {
+							$positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
+						}
+						//$this->_helper->Currency->convert($id, 'creditnote');
 					}
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
@@ -203,26 +203,30 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 						$data['total'] = $calculations['row']['total'];
 					}
 					if(isset($data['orderdate'])) {
-                        if(Zend_Date::isDate($data['orderdate'])) {
-                            $orderdate = new Zend_Date($data['orderdate'], Zend_Date::DATES, 'de');
-                            $data['orderdate'] = $orderdate->get('yyyy-MM-dd');
-					    }
+						if(Zend_Date::isDate($data['orderdate'])) {
+							$orderdate = new Zend_Date($data['orderdate'], Zend_Date::DATES, 'de');
+							$data['orderdate'] = $orderdate->get('yyyy-MM-dd');
+						} else {
+							$data['orderdate'] = NULL;
+						}
 					}
 					if(isset($data['deliverydate'])) {
-                        if(Zend_Date::isDate($data['deliverydate'])) {
-                            $deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
-                            $data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
-					    }
+						if(Zend_Date::isDate($data['deliverydate'])) {
+							$deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
+							$data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
+						} else {
+							$data['deliverydate'] = NULL;
+						}
 					}
 
-                    //Update file manager subfolder if contact is changed
-                    if(isset($data['contactid']) && $data['contactid']) {
-                        $dir1 = substr($data['contactid'], 0, 1).'/';
-                        if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
-                        else $dir2 = '0/';
-                        $defaultNamespace = new Zend_Session_Namespace('RF');
-                        $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
-                    }
+					//Update file manager subfolder if contact is changed
+					if(isset($data['contactid']) && $data['contactid']) {
+						$dir1 = substr($data['contactid'], 0, 1).'/';
+						if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
+						else $dir2 = '0/';
+						$defaultNamespace = new Zend_Session_Namespace('RF');
+						$defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
+					}
 
 					$quoterequestDb->updateQuoterequest($id, $data);
 					echo Zend_Json::encode($quoterequestDb->getQuoterequest($id));
@@ -239,13 +243,11 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
 					}
-                    //Convert dates to the display format
-                    $orderdate = new Zend_Date($data['orderdate']);
-                    if($data['orderdate'] == '0000-00-00') $data['orderdate'] = '';
-                    else $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
-                    $deliverydate = new Zend_Date($data['deliverydate']);
-                    if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
-                    else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
+					//Convert dates to the display format
+					$orderdate = new Zend_Date($data['orderdate']);
+					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
+					$deliverydate = new Zend_Date($data['deliverydate']);
+					if($data['deliverydate']) $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
 
 					$form->populate($data);
 
@@ -255,8 +257,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 					$toolbarPositions = new Purchases_Form_ToolbarPositions();
 
 					//Get text blocks
-		            $textblocksDb = new Purchases_Model_DbTable_Textblock();
-		            $textblocks = $textblocksDb->getTextblocks('quoterequest');
+					$textblocksDb = new Purchases_Model_DbTable_Textblock();
+					$textblocks = $textblocksDb->getTextblocks('quoterequest');
 
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
@@ -280,15 +282,15 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID($quoterequest['contactid']);
 
-        //Convert dates to the display format
-		$quoterequest['quoterequestdate'] = date("d.m.Y", strtotime($quoterequest['quoterequestdate']));
-		if($quoterequest['orderdate'] != '0000-00-00') $quoterequest['orderdate'] = date("d.m.Y", strtotime($quoterequest['orderdate']));
-		if($quoterequest['deliverydate'] != '0000-00-00') $quoterequest['deliverydate'] = date("d.m.Y", strtotime($quoterequest['deliverydate']));
+		//Convert dates to the display format
+		if($quoterequest['quoterequestdate']) $quoterequest['quoterequestdate'] = date("d.m.Y", strtotime($quoterequest['quoterequestdate']));
+		if($quoterequest['orderdate']) $quoterequest['orderdate'] = date("d.m.Y", strtotime($quoterequest['orderdate']));
+		if($quoterequest['deliverydate']) $quoterequest['deliverydate'] = date("d.m.Y", strtotime($quoterequest['deliverydate']));
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quoterequest['currency'], 'USE_SYMBOL');
 
-        //Convert numbers to the display format
+		//Convert numbers to the display format
 		$quoterequest['taxes'] = $currency->toCurrency($quoterequest['taxes']);
 		$quoterequest['subtotal'] = $currency->toCurrency($quoterequest['subtotal']);
 		$quoterequest['total'] = $currency->toCurrency($quoterequest['total']);
@@ -321,11 +323,14 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 
 		unset($data['id'], $data['quoterequestid']);
 		$data['title'] = $data['title'].' 2';
-		$data['quoterequestdate'] = '0000-00-00';
+		$data['quoterequestdate'] = NULL;
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		echo $quoterequestid = $quoterequest->addQuoterequest($data);
@@ -335,7 +340,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['quoterequestid'] = $quoterequestid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id']);
 			$positionsDb->addPosition($dataPosition);
@@ -351,10 +356,13 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$data = $quoterequestDb->getQuoterequest($id);
 
 		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate']);
-		$data['salesorderdate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
@@ -365,7 +373,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['salesorderid'] = $salesorderid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['quoterequestid']);
 			$positionsSalesorderDb->addPosition($dataPosition);
@@ -382,10 +390,13 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$data = $quoterequestDb->getQuoterequest($id);
 
 		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate']);
-		$data['invoicedate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
@@ -396,7 +407,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['invoiceid'] = $invoiceid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['quoterequestid']);
 			$positionsInvoiceDb->addPosition($dataPosition);
@@ -413,7 +424,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$data = $quoterequestDb->getQuoterequest($id);
 
 		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate']);
-		$data['purchaseorderdate'] = '0000-00-00';
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -432,8 +442,12 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
@@ -444,7 +458,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['purchaseorderid'] = $purchaseorderid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['quoterequestid']);
 			$positionsPurchaseorderDb->addPosition($dataPosition);
@@ -482,24 +496,24 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quoterequest['currency'], 'USE_SYMBOL');
 
 		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
-                $price = $position->price;
-                if($position->priceruleamount && $position->priceruleaction) {
-                    if($position->priceruleaction == 'bypercent')
-				        $price = $price*(100-$position->priceruleamount)/100;
-                    elseif($position->priceruleaction == 'byfixed')
-				        $price = ($price-$position->priceruleamount);
-                    elseif($position->priceruleaction == 'topercent')
-				        $price = $price*(100+$position->priceruleamount)/100;
-                    elseif($position->priceruleaction == 'tofixed')
-				        $price = ($price+$position->priceruleamount);
-                }
+				$price = $position->price;
+				if($position->priceruleamount && $position->priceruleaction) {
+					if($position->priceruleaction == 'bypercent')
+						$price = $price*(100-$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'byfixed')
+						$price = ($price-$position->priceruleamount);
+					elseif($position->priceruleaction == 'topercent')
+						$price = $price*(100+$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'tofixed')
+						$price = ($price+$position->priceruleamount);
+				}
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
 				$position->total = $currency->toCurrency($price*$position->quantity);
 				$position->price = $currency->toCurrency($price);
@@ -553,17 +567,17 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quoterequest['currency'], 'USE_SYMBOL');
 
 		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
 		$positions = $positionsDb->getPositions($id);
 		if(!$quoterequest['quoterequestid']) {
 			//Set new quoterequest Id
-		    $incrementDb = new Application_Model_DbTable_Increment();
-		    $increment = $incrementDb->getIncrement('quoterequestid');
+			$incrementDb = new Application_Model_DbTable_Increment();
+			$increment = $incrementDb->getIncrement('quoterequestid');
 			$quoterequestDb->saveQuoterequest($id, $increment);
-		    $incrementDb->setIncrement(($increment+1), 'quoterequestid');
+			$incrementDb->setIncrement(($increment+1), 'quoterequestid');
 			$quoterequest = $quoterequestDb->getQuoterequest($id);
 		}
 
@@ -622,7 +636,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quoterequest['currency'], 'USE_SYMBOL');
 
 		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
@@ -678,8 +692,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 			$quoterequest->deleteQuoterequest($id);
 
-		    $positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
-		    $positions = $positionsDb->getPositions($id);
+			$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+			$positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}

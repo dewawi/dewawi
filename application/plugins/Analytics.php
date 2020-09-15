@@ -6,13 +6,13 @@ class Application_Plugin_Analytics extends Zend_Controller_Plugin_Abstract
 	{
 		$auth = Zend_Auth::getInstance();
 		if($auth->hasIdentity()) {
-		    $config = Zend_Registry::get('Config');
+			$config = Zend_Registry::get('Config');
 
 			$view = Zend_Controller_Front::getInstance()
-                            ->getParam('bootstrap')
-                            ->getResource('view');
+							->getParam('bootstrap')
+							->getResource('view');
 
-            if(isset($config['analytics'])) $view->analytics = $config['analytics'];
+			if(isset($config['analytics'])) $view->analytics = $config['analytics'];
 		}
 	}
 }

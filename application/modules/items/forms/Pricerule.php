@@ -96,7 +96,7 @@ class Items_Form_Pricerule extends Zend_Form
 
 		$form['activated'] = new Zend_Form_Element_Checkbox('activated');
 		$form['activated']->setLabel('PRICE_RULES_ACTIVATED')
-            ->addFilter('Int');
+			->addFilter('Int');
 
 		$this->addElements($form);
 	}

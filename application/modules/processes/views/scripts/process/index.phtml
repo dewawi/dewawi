@@ -1,4 +1,4 @@
-<?php		 
+<?php
 $this->title = $this->translate('PROCESSES');
 $this->headTitle($this->title);
 echo $this->Messages();
@@ -78,9 +78,9 @@ echo $this->ActiveFilter();
 				<?php endif; ?>
 				<p class="paymentstatus">
 					<?php if($process->state == '105' || $process->state == '106') : ?>
-                        <span class="<?php echo $process->paymentstatus; ?>">
-						    <?php echo $this->translate($this->options['paymentstatus'][$process->paymentstatus]); ?>
-                        </span>
+						<span class="<?php echo $process->paymentstatus; ?>">
+							<?php echo $this->translate($this->options['paymentstatus'][$process->paymentstatus]); ?>
+						</span>
 					<?php else : ?>
 						<span class="editable" data-name="paymentstatus" data-value="<?php echo $process->paymentstatus; ?>" data-type="select"><?php echo $this->translate($this->options['paymentstatus'][$process->paymentstatus]); ?></span>
 					<?php endif; ?>
@@ -96,7 +96,7 @@ echo $this->ActiveFilter();
 						<?php endif; ?>
 					</p>
 					<p class="deliverydate">
-						<span><?php echo $this->translate($process->deliverydate); ?></span>
+						<span><?php echo $this->escape($process->deliverydate); ?></span>
 					</p>
 				<?php elseif(isset($this->positions[$process->id])) : ?>
 					<?php foreach($this->positions[$process->id] as $id => $position) : ?>

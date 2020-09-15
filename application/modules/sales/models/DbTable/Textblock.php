@@ -14,7 +14,7 @@ class Sales_Model_DbTable_Textblock extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    $this->_user = Zend_Registry::get('User');
+		$this->_user = Zend_Registry::get('User');
 		$this->_client = Zend_Registry::get('Client');
 	}
 
@@ -30,7 +30,7 @@ class Sales_Model_DbTable_Textblock extends Zend_Db_Table_Abstract
 		}
 		$textblocks = array();
 		foreach($data as $textblock)
-            $textblocks[$textblock->section] = $textblock->text;
+			$textblocks[$textblock->section] = $textblock->text;
 		return $textblocks;
 	}
 

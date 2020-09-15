@@ -22,8 +22,8 @@ class Application_Model_DbTable_Category extends Zend_Db_Table_Abstract
 	{
 		$where = array();
 		if($parentid !== null) {
-		    $where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
-        }
+			$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
+		}
 		$where[] = $this->getAdapter()->quoteInto('type = ?', $type);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);

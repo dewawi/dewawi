@@ -37,7 +37,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-	    $get = new Items_Model_Get();
+		$get = new Items_Model_Get();
 		$pricerules = $get->pricerules($params, $options['categories']);
 
 		$this->view->pricerules = $pricerules;
@@ -57,7 +57,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-	    $get = new Items_Model_Get();
+		$get = new Items_Model_Get();
 		$pricerules = $get->pricerules($params, $options['categories']);
 
 		$this->view->pricerules = $pricerules;
@@ -74,7 +74,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-	    $get = new Items_Model_Get();
+		$get = new Items_Model_Get();
 		$pricerules = $get->pricerules($params, $options['categories']);
 
 		$this->view->pricerules = $pricerules;
@@ -87,7 +87,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 	{
 		$data = array();
 
-	    $pricerule = new Items_Model_DbTable_Pricerule();
+		$pricerule = new Items_Model_DbTable_Pricerule();
 		$id = $pricerule->addPricerule($data);
 
 		$this->_helper->redirector->gotoSimple('edit', 'pricerule', null, array('id' => $id));
@@ -99,7 +99,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$id = $this->_getParam('id', 0);
 		$activeTab = $request->getCookie('tab', null);
 
-	    $priceruleDb = new Items_Model_DbTable_Pricerule();
+		$priceruleDb = new Items_Model_DbTable_Pricerule();
 		$pricerule = $priceruleDb->getPricerule($id);
 
 		if(false) {
@@ -131,16 +131,16 @@ class Items_PriceruleController extends Zend_Controller_Action
 						$data['amount'] = Zend_Locale_Format::getNumber($data['amount'],array('precision' => 2,'locale' => $locale));
 					}
 					if(isset($data['from'])) {
-                        if(Zend_Date::isDate($data['from'])) {
-                            $from = new Zend_Date($data['from'], Zend_Date::DATES, 'de');
-                            $data['from'] = $from->get('yyyy-MM-dd');
-					    }
+						if(Zend_Date::isDate($data['from'])) {
+							$from = new Zend_Date($data['from'], Zend_Date::DATES, 'de');
+							$data['from'] = $from->get('yyyy-MM-dd');
+						}
 					}
 					if(isset($data['to'])) {
-                        if(Zend_Date::isDate($data['to'])) {
-                            $to = new Zend_Date($data['to'], Zend_Date::DATES, 'de');
-                            $data['to'] = $to->get('yyyy-MM-dd');
-					    }
+						if(Zend_Date::isDate($data['to'])) {
+							$to = new Zend_Date($data['to'], Zend_Date::DATES, 'de');
+							$data['to'] = $to->get('yyyy-MM-dd');
+						}
 					}
 					$priceruleDb->updatePricerule($id, $data);
 					echo Zend_Json::encode($priceruleDb->getPricerule($id));
@@ -149,16 +149,14 @@ class Items_PriceruleController extends Zend_Controller_Action
 				}
 			} else {
 				if($id > 0) {
-                    $currency = $this->_helper->Currency->getCurrency($pricerule['currency']);
+					$currency = $this->_helper->Currency->getCurrency($pricerule['currency']);
 					$pricerule['amount'] = $currency->toCurrency($pricerule['amount']);
 
-                    //Convert dates to the display format
-                    $from = new Zend_Date($pricerule['from']);
-                    if($pricerule['from'] == '0000-00-00 00:00:00') $pricerule['from'] = '';
-                    else $pricerule['from'] = $from->get('dd.MM.yyyy');
-                    $to = new Zend_Date($pricerule['to']);
-                    if($pricerule['to'] == '0000-00-00 00:00:00') $pricerule['to'] = '';
-                    else $pricerule['to'] = $to->get('dd.MM.yyyy');
+					//Convert dates to the display format
+					$from = new Zend_Date($pricerule['from']);
+					if($pricerule['from']) $pricerule['from'] = $from->get('dd.MM.yyyy');
+					$to = new Zend_Date($pricerule['to']);
+					if($pricerule['to']) $pricerule['to'] = $to->get('dd.MM.yyyy');
 
 					$form->populate($pricerule);
 
@@ -171,11 +169,11 @@ class Items_PriceruleController extends Zend_Controller_Action
 				}
 			}
 		}
-        $this->view->messages = array_merge(
-            $this->_helper->flashMessenger->getMessages(),
-            $this->_helper->flashMessenger->getCurrentMessages()
-        );
-        $this->_helper->flashMessenger->clearCurrentMessages();
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function copyAction()
@@ -189,8 +187,10 @@ class Items_PriceruleController extends Zend_Controller_Action
 		unset($data['id']);
 		$data['activated'] = 0;
 		$data['title'] = $data['title'].' 2';
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		echo $priceruleid = $pricerule->addPricerule($data);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');

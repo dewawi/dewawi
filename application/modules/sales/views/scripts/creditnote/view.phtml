@@ -24,11 +24,11 @@ echo $this->FileManager();
 					<dt><label><?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_DATE') ?></label></dt>
 					<dd><?php echo $this->creditnote['creditnotedate']; ?></dd>
 				<?php } ?>
-				<?php if($this->creditnote['orderdate'] && ($this->creditnote['orderdate'] != "0000-00-00")) { ?>
+				<?php if($this->creditnote['orderdate']) { ?>
 					<dt><label><?php echo $this->translate('CREDIT_NOTES_ORDER_DATE') ?></label></dt>
 					<dd><?php echo $this->creditnote['orderdate']; ?></dd>
 				<?php } ?>
-				<?php if($this->creditnote['deliverydate'] && ($this->creditnote['deliverydate'] != "0000-00-00")) { ?>
+				<?php if($this->creditnote['deliverydate']) { ?>
 					<dt><label><?php echo $this->translate('CREDIT_NOTES_DELIVERY_DATE') ?></label></dt>
 					<dd><?php echo $this->creditnote['deliverydate']; ?></dd>
 				<?php } ?>

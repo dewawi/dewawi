@@ -4,15 +4,15 @@ class Statistics_Model_Charts
 {
 	public function createCharts($lenght, $width = 1000, $height = 400, $statisticsUncategorized, $params, $options)
 	{
-//print_r($params);
-//print_r($options);
+		//print_r($params);
+		//print_r($options);
 		$year = date('Y');
 		$month = date('m');
 		$y = date('Y', strtotime('-'.($lenght-1).' month'));
 		$m = date('m', strtotime('-'.($lenght-1).' month'));
 
 		$user = Zend_Registry::get('User');
-	    $client = Zend_Registry::get('Client');
+		$client = Zend_Registry::get('Client');
 
 		$invoicesDb = new Sales_Model_DbTable_Invoice();
 		$creditnotesDb = new Sales_Model_DbTable_Creditnote();

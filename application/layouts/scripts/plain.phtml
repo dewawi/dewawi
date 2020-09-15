@@ -7,7 +7,7 @@ $this->language = str_replace('_', '-', $this->language);
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
 	<head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico"/>
 		<?php echo $this->headMeta(); ?>
 		<?php echo $this->headTitle(); ?>
@@ -36,34 +36,34 @@ $this->language = str_replace('_', '-', $this->language);
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
-        <script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/settings.js"></script>
 		<?php echo $this->headScript(); ?>
 	</head>
 	<body>
-	    <div class="<?php echo $this->action; ?> popup">
-            <div class="container">
-                <div class="row">
-                    <div class="col-sm-12">
-		                <h2><?php echo $this->escape($this->title); ?></h2>
-		                <div class="toolbar">
-			                <?php echo $this->Toolbar(); ?>
-		                </div>
-				    </div>
-		        </div>
-                <div class="row">
-                    <div class="col-sm-12">
-                        <div id="content">
-					        <?php echo $this->layout()->content; ?>
-				        </div>
-				    </div>
-		        </div>
-	        </div>
-	    </div>
-	    <div id="loading">
-		    <div id="opacity"></div>
-		    <div id="img"></div>
-	    </div>
+		<div class="<?php echo $this->action; ?> popup">
+			<div class="container">
+				<div class="row">
+					<div class="col-sm-12">
+						<h2><?php echo $this->escape($this->title); ?></h2>
+						<div class="toolbar">
+							<?php echo $this->Toolbar(); ?>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-12">
+						<div id="content">
+							<?php echo $this->layout()->content; ?>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="loading">
+			<div id="opacity"></div>
+			<div id="img"></div>
+		</div>
 	</body>
 </html>

@@ -7,9 +7,9 @@ class Zend_View_Helper_Button extends Zend_View_Helper_Abstract{
 	public function Button($class, $onclick = '', $title = '', $value = '', $style = '', $rel = '', $id = '') {
 		$html = '<button type="button"';
 		if($class) {
-		    if(!$title) $html .= ' class="'.$class.' nolabel"';
-            else $html .= ' class="'.$class.'"';
-        }
+			if(!$title) $html .= ' class="'.$class.' nolabel"';
+			else $html .= ' class="'.$class.'"';
+		}
 		if($style) $html .= ' style="'.$style.'"';
 		if($onclick) $html .= ' onclick="'.$onclick.'"';
 		if($title) $html .= ' title="'.$title.'"';

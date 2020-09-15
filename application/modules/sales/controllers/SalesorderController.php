@@ -54,7 +54,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-        $get = new Sales_Model_Get();
+		$get = new Sales_Model_Get();
 		$salesorders = $get->salesorders($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->salesorders = $salesorders;
@@ -76,7 +76,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-        $get = new Sales_Model_Get();
+		$get = new Sales_Model_Get();
 		$salesorders = $get->salesorders($params, $options['categories'], $this->_flashMessenger);
 
 		$this->view->salesorders = $salesorders;
@@ -93,16 +93,16 @@ class Sales_SalesorderController extends Zend_Controller_Action
 	{
 		$contactid = $this->_getParam('contactid', 0);
 
-        //Get primary currency
-        $currencies = new Application_Model_DbTable_Currency();
+		//Get primary currency
+		$currencies = new Application_Model_DbTable_Currency();
 		$currency = $currencies->getPrimaryCurrency();
 
-        //Get primary language
-        $languages = new Application_Model_DbTable_Language();
+		//Get primary language
+		$languages = new Application_Model_DbTable_Language();
 		$language = $languages->getPrimaryLanguage();
 
-        //Get primary template
-        $templates = new Application_Model_DbTable_Template();
+		//Get primary template
+		$templates = new Application_Model_DbTable_Template();
 		$template = $templates->getPrimaryTemplate();
 
 		$data = array();
@@ -151,8 +151,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 				$contactDb = new Contacts_Model_DbTable_Contact();
 				$contact = $contactDb->getContactWithID($salesorder['contactid']);
 
-                //Check if the directory is writable
-		        $dirwritable = $this->_helper->Directory->isWritable($contact['id'], 'salesorder', $this->_flashMessenger);
+				//Check if the directory is writable
+				$dirwritable = $this->_helper->Directory->isWritable($contact['id'], 'salesorder', $this->_flashMessenger);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -175,26 +175,26 @@ class Sales_SalesorderController extends Zend_Controller_Action
 				$this->_helper->getHelper('layout')->disableLayout();
 				$data = $request->getPost();
 				$element = key($data);
-                if(($element == 'textblockheader' || $element == 'textblockfooter')) {
-				    $textblockDb = new Sales_Model_DbTable_Textblock();
-                    if(strpos($element, 'header') !== false) {
-					    $data['text'] = $data['textblockheader'];
-					    unset($data['textblockheader']);
-					    $textblockDb->updateTextblock($data, 'salesorder', 'header');
-                    } elseif(strpos($element, 'footer') !== false) {
-					    $data['text'] = $data['textblockfooter'];
-					    unset($data['textblockfooter']);
-					    $textblockDb->updateTextblock($data, 'salesorder', 'footer');
-                    }
+				if(($element == 'textblockheader' || $element == 'textblockfooter')) {
+					$textblockDb = new Sales_Model_DbTable_Textblock();
+					if(strpos($element, 'header') !== false) {
+						$data['text'] = $data['textblockheader'];
+						unset($data['textblockheader']);
+						$textblockDb->updateTextblock($data, 'salesorder', 'header');
+					} elseif(strpos($element, 'footer') !== false) {
+						$data['text'] = $data['textblockfooter'];
+						unset($data['textblockfooter']);
+						$textblockDb->updateTextblock($data, 'salesorder', 'footer');
+					}
 				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
 					if(isset($data['currency'])) {
-		                $positionsDb = new Sales_Model_DbTable_Salesorderpos();
-		                $positions = $positionsDb->getPositions($id);
-		                foreach($positions as $position) {
-	                        $positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
-		                }
-					    //$this->_helper->Currency->convert($id, 'creditnote');
+						$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+						$positions = $positionsDb->getPositions($id);
+						foreach($positions as $position) {
+							$positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
+						}
+						//$this->_helper->Currency->convert($id, 'creditnote');
 					}
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
@@ -203,26 +203,30 @@ class Sales_SalesorderController extends Zend_Controller_Action
 						$data['total'] = $calculations['row']['total'];
 					}
 					if(isset($data['orderdate'])) {
-                        if(Zend_Date::isDate($data['orderdate'])) {
-                            $orderdate = new Zend_Date($data['orderdate'], Zend_Date::DATES, 'de');
-                            $data['orderdate'] = $orderdate->get('yyyy-MM-dd');
-					    }
+						if(Zend_Date::isDate($data['orderdate'])) {
+							$orderdate = new Zend_Date($data['orderdate'], Zend_Date::DATES, 'de');
+							$data['orderdate'] = $orderdate->get('yyyy-MM-dd');
+						} else {
+							$data['orderdate'] = NULL;
+						}
 					}
 					if(isset($data['deliverydate'])) {
-                        if(Zend_Date::isDate($data['deliverydate'])) {
-                            $deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
-                            $data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
-					    }
+						if(Zend_Date::isDate($data['deliverydate'])) {
+							$deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
+							$data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
+						} else {
+							$data['deliverydate'] = NULL;
+						}
 					}
 
-                    //Update file manager subfolder if contact is changed
-                    if(isset($data['contactid']) && $data['contactid']) {
-                        $dir1 = substr($data['contactid'], 0, 1).'/';
-                        if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
-                        else $dir2 = '0/';
-                        $defaultNamespace = new Zend_Session_Namespace('RF');
-                        $defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
-                    }
+					//Update file manager subfolder if contact is changed
+					if(isset($data['contactid']) && $data['contactid']) {
+						$dir1 = substr($data['contactid'], 0, 1).'/';
+						if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
+						else $dir2 = '0/';
+						$defaultNamespace = new Zend_Session_Namespace('RF');
+						$defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
+					}
 
 					$salesorderDb->updateSalesorder($id, $data);
 					echo Zend_Json::encode($salesorderDb->getSalesorder($id));
@@ -239,13 +243,11 @@ class Sales_SalesorderController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
 					}
-                    //Convert dates to the display format
-                    $orderdate = new Zend_Date($data['orderdate']);
-                    if($data['orderdate'] == '0000-00-00') $data['orderdate'] = '';
-                    else $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
-                    $deliverydate = new Zend_Date($data['deliverydate']);
-                    if($data['deliverydate'] == '0000-00-00') $data['deliverydate'] = '';
-                    else $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
+					//Convert dates to the display format
+					$orderdate = new Zend_Date($data['orderdate']);
+					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
+					$deliverydate = new Zend_Date($data['deliverydate']);
+					if($data['deliverydate']) $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
 
 					$form->populate($data);
 
@@ -255,8 +257,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 					$toolbarPositions = new Sales_Form_ToolbarPositions();
 
 					//Get text blocks
-		            $textblocksDb = new Sales_Model_DbTable_Textblock();
-		            $textblocks = $textblocksDb->getTextblocks('salesorder');
+					$textblocksDb = new Sales_Model_DbTable_Textblock();
+					$textblocks = $textblocksDb->getTextblocks('salesorder');
 
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
@@ -280,15 +282,15 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID($salesorder['contactid']);
 
-        //Convert dates to the display format
-		$salesorder['salesorderdate'] = date("d.m.Y", strtotime($salesorder['salesorderdate']));
-		if($salesorder['orderdate'] != '0000-00-00') $salesorder['orderdate'] = date("d.m.Y", strtotime($salesorder['orderdate']));
-		if($salesorder['deliverydate'] != '0000-00-00') $salesorder['deliverydate'] = date("d.m.Y", strtotime($salesorder['deliverydate']));
+		//Convert dates to the display format
+		if($salesorder['salesorderdate']) $salesorder['salesorderdate'] = date("d.m.Y", strtotime($salesorder['salesorderdate']));
+		if($salesorder['orderdate']) $salesorder['orderdate'] = date("d.m.Y", strtotime($salesorder['orderdate']));
+		if($salesorder['deliverydate']) $salesorder['deliverydate'] = date("d.m.Y", strtotime($salesorder['deliverydate']));
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($salesorder['currency'], 'USE_SYMBOL');
 
-        //Convert numbers to the display format
+		//Convert numbers to the display format
 		$salesorder['taxes'] = $currency->toCurrency($salesorder['taxes']);
 		$salesorder['subtotal'] = $currency->toCurrency($salesorder['subtotal']);
 		$salesorder['total'] = $currency->toCurrency($salesorder['total']);
@@ -321,11 +323,14 @@ class Sales_SalesorderController extends Zend_Controller_Action
 
 		unset($data['id'], $data['salesorderid']);
 		$data['title'] = $data['title'].' 2';
-		$data['salesorderdate'] = '0000-00-00';
+		$data['salesorderdate'] = NULL;
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		echo $salesorderid = $salesorder->addSalesorder($data);
@@ -335,7 +340,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['salesorderid'] = $salesorderid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id']);
 			$positionsDb->addPosition($dataPosition);
@@ -351,10 +356,13 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$data = $salesorderDb->getSalesorder($id);
 
 		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
-		$data['quotedate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$quote = new Sales_Model_DbTable_Quote();
 		$quoteid = $quote->addQuote($data);
@@ -365,7 +373,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['quoteid'] = $quoteid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);
 			$positionsQuoteDb->addPosition($dataPosition);
@@ -381,18 +389,21 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 		$data = $salesorderDb->getSalesorder($id);
 
-        if($data['salesorderid'] && $data['salesorderdate']) {
-		    $salesorderdate = date("d.m.Y", strtotime($data['salesorderdate']));
-            $header = $this->view->translate('DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s');
-            $header = '<p>'.sprintf($header, $data['salesorderid'], $salesorderdate).'</p>';
-            $data['header'] = $header.$data['header'];
-        }
+		if($data['salesorderid'] && $data['salesorderdate']) {
+			$salesorderdate = date("d.m.Y", strtotime($data['salesorderdate']));
+			$header = $this->view->translate('DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s');
+			$header = '<p>'.sprintf($header, $data['salesorderid'], $salesorderdate).'</p>';
+			$data['header'] = $header.$data['header'];
+		}
 
 		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
-		$data['invoicedate'] = '0000-00-00';
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
@@ -403,7 +414,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['invoiceid'] = $invoiceid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);
 			$positionsInvoiceDb->addPosition($dataPosition);
@@ -419,15 +430,14 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 		$data = $salesorderDb->getSalesorder($id);
 
-        if($data['salesorderid'] && $data['salesorderdate']) {
-		    $salesorderdate = date("d.m.Y", strtotime($data['salesorderdate']));
-            $header = $this->view->translate('DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s');
-            $header = '<p>'.sprintf($header, $data['salesorderid'], $salesorderdate).'</p>';
-            $data['header'] = $header.$data['header'];
-        }
+		if($data['salesorderid'] && $data['salesorderdate']) {
+			$salesorderdate = date("d.m.Y", strtotime($data['salesorderdate']));
+			$header = $this->view->translate('DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s');
+			$header = '<p>'.sprintf($header, $data['salesorderid'], $salesorderdate).'</p>';
+			$data['header'] = $header.$data['header'];
+		}
 
 		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
-		$data['deliveryorderdate'] = '0000-00-00';
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -446,8 +456,12 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$deliveryorder = new Sales_Model_DbTable_Deliveryorder();
 		$deliveryorderid = $deliveryorder->addDeliveryorder($data);
@@ -458,7 +472,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['deliveryorderid'] = $deliveryorderid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);
 			$positionsDeliveryorderDb->addPosition($dataPosition);
@@ -475,7 +489,6 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$data = $salesorderDb->getSalesorder($id);
 
 		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
-		$data['quoterequestdate'] = '0000-00-00';
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -494,8 +507,12 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequestid = $quoterequest->addQuoterequest($data);
@@ -506,7 +523,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['quoterequestid'] = $quoterequestid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);
 			$positionsQuoterequestDb->addPosition($dataPosition);
@@ -527,7 +544,6 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$data = $salesorderDb->getSalesorder($id);
 
 		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
-		$data['purchaseorderdate'] = '0000-00-00';
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -546,8 +562,12 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$data['shippingphone'] = '';
 		}
 		$data['state'] = 100;
-		$data['modified'] = '0000-00-00';
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
@@ -558,7 +578,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			$dataPosition['purchaseorderid'] = $purchaseorderid;
-			$dataPosition['modified'] = '0000-00-00';
+			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);
 			$positionsPurchaseorderDb->addPosition($dataPosition);
@@ -594,8 +614,10 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		unset($data['id']);
 
 		$process = new Processes_Model_DbTable_Process();
@@ -615,8 +637,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$positionData['taxrate'] = $position->taxrate;
 			$positionData['deliverystatus'] = 'deliveryIsWaiting';
 			$positionData['supplierorderstatus'] = 'supplierNotOrdered';
-			$positionData["modified"] = "0000-00-00";
-			$positionData["modifiedby"] = 0;
+			$dataPosition['modified'] = NULL;
+			$positionData['modifiedby'] = 0;
 			unset($positionData['id']);
 			$processposDb->addPosition($positionData);
 		}
@@ -653,24 +675,24 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($salesorder['currency'], 'USE_SYMBOL');
 
 		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
-                $price = $position->price;
-                if($position->priceruleamount && $position->priceruleaction) {
-                    if($position->priceruleaction == 'bypercent')
-				        $price = $price*(100-$position->priceruleamount)/100;
-                    elseif($position->priceruleaction == 'byfixed')
-				        $price = ($price-$position->priceruleamount);
-                    elseif($position->priceruleaction == 'topercent')
-				        $price = $price*(100+$position->priceruleamount)/100;
-                    elseif($position->priceruleaction == 'tofixed')
-				        $price = ($price+$position->priceruleamount);
-                }
+				$price = $position->price;
+				if($position->priceruleamount && $position->priceruleaction) {
+					if($position->priceruleaction == 'bypercent')
+						$price = $price*(100-$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'byfixed')
+						$price = ($price-$position->priceruleamount);
+					elseif($position->priceruleaction == 'topercent')
+						$price = $price*(100+$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'tofixed')
+						$price = ($price+$position->priceruleamount);
+				}
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
 				$position->total = $currency->toCurrency($price*$position->quantity);
 				$position->price = $currency->toCurrency($price);
@@ -724,17 +746,17 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($salesorder['currency'], 'USE_SYMBOL');
 
 		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(!$salesorder['salesorderid']) {
 			//Set new salesorder Id
-		    $incrementDb = new Application_Model_DbTable_Increment();
-		    $increment = $incrementDb->getIncrement('salesorderid');
+			$incrementDb = new Application_Model_DbTable_Increment();
+			$increment = $incrementDb->getIncrement('salesorderid');
 			$salesorderDb->saveSalesorder($id, $increment);
-		    $incrementDb->setIncrement(($increment+1), 'salesorderid');
+			$incrementDb->setIncrement(($increment+1), 'salesorderid');
 			$salesorder = $salesorderDb->getSalesorder($id);
 		}
 
@@ -793,7 +815,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($salesorder['currency'], 'USE_SYMBOL');
 
 		$positionsDb = new Sales_Model_DbTable_Salesorderpos();
@@ -849,8 +871,8 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$salesorder = new Sales_Model_DbTable_Salesorder();
 			$salesorder->deleteSalesorder($id);
 
-		    $positionsDb = new Sales_Model_DbTable_Salesorderpos();
-		    $positions = $positionsDb->getPositions($id);
+			$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+			$positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}

@@ -49,10 +49,10 @@ echo $this->ActiveFilter();
 					<?php echo $this->escape($pricerule->amount); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('PRICE_RULES_ACTION') ?>" class="price">
-			        <?php if($pricerule->action == 'bypercent') echo $this->translate('ITEMS_PRICE_RULE_BY_PERCENT'); ?>
-			        <?php if($pricerule->action == 'byfixed') echo $this->translate('ITEMS_PRICE_RULE_BY_FIXED'); ?>
-			        <?php if($pricerule->action == 'topercent') echo $this->translate('ITEMS_PRICE_RULE_TO_PERCENT'); ?>
-			        <?php if($pricerule->action == 'tofixed') echo $this->translate('ITEMS_PRICE_RULE_TO_FIXED'); ?>
+					<?php if($pricerule->action == 'bypercent') echo $this->translate('ITEMS_PRICE_RULE_BY_PERCENT'); ?>
+					<?php if($pricerule->action == 'byfixed') echo $this->translate('ITEMS_PRICE_RULE_BY_FIXED'); ?>
+					<?php if($pricerule->action == 'topercent') echo $this->translate('ITEMS_PRICE_RULE_TO_PERCENT'); ?>
+					<?php if($pricerule->action == 'tofixed') echo $this->translate('ITEMS_PRICE_RULE_TO_FIXED'); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('PRICE_RULES_FROM') ?>" class="price">
 					<?php echo $this->escape($pricerule->from); ?>

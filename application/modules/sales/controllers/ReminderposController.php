@@ -55,65 +55,65 @@ class Sales_ReminderposController extends Zend_Controller_Action
 		$taxrateDb = new Application_Model_DbTable_Taxrate();
 		$taxrates = $taxrateDb->getTaxrates();
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($reminder['currency']);
 
 		$forms = array();
-        $taxes = array();
+		$taxes = array();
 		$orderings = array();
 		foreach($positions as $position) {
 			$orderings[$position->ordering] = $position->ordering;
 		}
-        if($reminder['taxfree']) {
-            $taxes[] = array('value' => 0, 'title' => 0);
-        } else {
-		    foreach($positions as $position) {
-                if(!isset($taxes[$position->taxrate]) && array_search($position->taxrate, $taxrates)) {
-                    $taxes[$position->taxrate] = array();
-                    $taxes[$position->taxrate]['value'] = 0;
-                    $taxes[$position->taxrate]['title'] = Zend_Locale_Format::toNumber($position->taxrate,array('precision' => 1,'locale' => $locale)).' %';
-                }
-            }
-        }
+		if($reminder['taxfree']) {
+			$taxes[] = array('value' => 0, 'title' => 0);
+		} else {
+			foreach($positions as $position) {
+				if(!isset($taxes[$position->taxrate]) && array_search($position->taxrate, $taxrates)) {
+					$taxes[$position->taxrate] = array();
+					$taxes[$position->taxrate]['value'] = 0;
+					$taxes[$position->taxrate]['title'] = Zend_Locale_Format::toNumber($position->taxrate,array('precision' => 1,'locale' => $locale)).' %';
+				}
+			}
+		}
 		foreach($positions as $position) {
-            if(!$reminder['taxfree'] && array_search($position->taxrate, $taxrates))
-                $taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
+			if(!$reminder['taxfree'] && array_search($position->taxrate, $taxrates))
+				$taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
 
-            $price = $position->price;
-            if($position->priceruleamount && $position->priceruleaction) {
-                if($position->priceruleaction == 'bypercent')
-			        $price = $price*(100-$position->priceruleamount)/100;
-                elseif($position->priceruleaction == 'byfixed')
-			        $price = ($price-$position->priceruleamount);
-                elseif($position->priceruleaction == 'topercent')
-			        $price = $price*(100+$position->priceruleamount)/100;
-                elseif($position->priceruleaction == 'tofixed')
-			        $price = ($price+$position->priceruleamount);
-            }
-			$position->total =  $currency->toCurrency($price*$position->quantity);
-			$position->price =  $currency->toCurrency($position->price);
+			$price = $position->price;
+			if($position->priceruleamount && $position->priceruleaction) {
+				if($position->priceruleaction == 'bypercent')
+					$price = $price*(100-$position->priceruleamount)/100;
+				elseif($position->priceruleaction == 'byfixed')
+					$price = ($price-$position->priceruleamount);
+				elseif($position->priceruleaction == 'topercent')
+					$price = $price*(100+$position->priceruleamount)/100;
+				elseif($position->priceruleaction == 'tofixed')
+					$price = ($price+$position->priceruleamount);
+			}
+			$position->total = $currency->toCurrency($price*$position->quantity);
+			$position->price = $currency->toCurrency($position->price);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-			$position->priceruleamount =  $currency->toCurrency($position->priceruleamount);
+			$position->priceruleamount = $currency->toCurrency($position->priceruleamount);
 
 			$form = new Sales_Form_Reminderpos();
 			$forms[$position->id] = $form->populate($position->toArray());
 			$forms[$position->id]->uom->addMultiOptions($uoms);
-            if($position->uom) {
-                $uom = array_search($position->uom, $uoms);
-                if($uom) $forms[$position->id]->uom->setValue($uom);
-            }
+			if($position->uom) {
+				$uom = array_search($position->uom, $uoms);
+				if($uom) $forms[$position->id]->uom->setValue($uom);
+			}
 			$forms[$position->id]->priceruleaction->addMultiOptions($priceruleactions);
 			$forms[$position->id]->ordering->addMultiOptions($orderings);
 			$forms[$position->id]->taxrate->setValue(array_search($position->taxrate, $taxrates));
-		    foreach($taxrates as $id => $value)
-			    $forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
+			foreach($taxrates as $id => $value)
+				$forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
 		}
 
 		$reminder['subtotal'] = $currency->toCurrency($reminder['subtotal']);
 		$reminder['total'] = $currency->toCurrency($reminder['total']);
-        foreach($taxes as $rate => $data) {
-		    $taxes[$rate]['value'] = $currency->toCurrency($data['value']);
-        }
+		foreach($taxes as $rate => $data) {
+			$taxes[$rate]['value'] = $currency->toCurrency($data['value']);
+		}
 		$reminder['taxes'] = $taxes;
 
 		$this->view->forms = $forms;
@@ -133,29 +133,29 @@ class Sales_ReminderposController extends Zend_Controller_Action
 		$form = new Items_Form_Item();
 
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$this->_helper->viewRenderer->setNoRender();
 			$this->_helper->getHelper('layout')->disableLayout();
 			$data = array();
 			if($itemid && $reminderid) {
-		        //Get item
+				//Get item
 				$item = new Items_Model_DbTable_Item();
 				$item = $item->getItem($itemid);
 
-		        //Get reminder
-		        $reminderDb = new Sales_Model_DbTable_Reminder();
-		        $reminder = $reminderDb->getReminder($reminderid);
+				//Get reminder
+				$reminderDb = new Sales_Model_DbTable_Reminder();
+				$reminder = $reminderDb->getReminder($reminderid);
 
-                //Check price rules
+				//Check price rules
 				$data = $this->_helper->PriceRule($reminder['contactid'], $item, $data, $this->_helper);
 
-                //Check currency
-                if($reminder['currency'] == $item['currency']) {
-				    $data['price'] = $item['price'];
-                } else {
-				    $data['price'] = $this->_helper->Currency($item['currency'], $reminder['currency'], $item['price'], $this->_helper);
-                }
-                $data['currency'] = $reminder['currency'];
+				//Check currency
+				if($reminder['currency'] == $item['currency']) {
+					$data['price'] = $item['price'];
+				} else {
+					$data['price'] = $this->_helper->Currency($item['currency'], $reminder['currency'], $item['price'], $this->_helper);
+				}
+				$data['currency'] = $reminder['currency'];
 
 				$data['reminderid'] = $reminderid;
 				$data['itemid'] = $itemid;
@@ -163,22 +163,22 @@ class Sales_ReminderposController extends Zend_Controller_Action
 				$data['title'] = $item['title'];
 				$data['image'] = $item['image'];
 				$data['description'] = $item['description'];
-                if($item['taxid']) {
-		            $taxrateDb = new Application_Model_DbTable_Taxrate();
-				    $taxrate = $taxrateDb->getTaxrate($item['taxid']);
-				    $data['taxrate'] = $taxrate['rate'];
-                } else {
-                    $data['taxrate'] = 0;
-                }
+				if($item['taxid']) {
+					$taxrateDb = new Application_Model_DbTable_Taxrate();
+					$taxrate = $taxrateDb->getTaxrate($item['taxid']);
+					$data['taxrate'] = $taxrate['rate'];
+				} else {
+					$data['taxrate'] = 0;
+				}
 				$data['quantity'] = 1;
 				$data['total'] = $data['price']*$data['quantity'];
-                if($item['uomid']) {
-		            $uomDb = new Application_Model_DbTable_Uom();
-				    $uom = $uomDb->getUom($item['uomid']);
-				    $data['uom'] = $uom['title'];
-                } else {
-                    $data['uom'] = '';
-                }
+				if($item['uomid']) {
+					$uomDb = new Application_Model_DbTable_Uom();
+					$uom = $uomDb->getUom($item['uomid']);
+					$data['uom'] = $uom['title'];
+				} else {
+					$data['uom'] = '';
+				}
 				$data['ordering'] = $this->getLatestOrdering($reminderid) + 1;
 
 				$position = new Sales_Model_DbTable_Reminderpos();
@@ -186,7 +186,7 @@ class Sales_ReminderposController extends Zend_Controller_Action
 
 				//Calculate
 				$calculations = $this->_helper->Calculate($reminderid, $this->_date, $this->_user['id']);
-			    echo Zend_Json::encode($calculations['locale']);
+				echo Zend_Json::encode($calculations['locale']);
 			} else {
 				$form->populate($request->getPost());
 			}
@@ -204,13 +204,13 @@ class Sales_ReminderposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-        //Get reminder data
+		//Get reminder data
 		$reminderid = $this->_getParam('reminderid', 0);
-        $reminderDb = new Sales_Model_DbTable_Reminder();
+		$reminderDb = new Sales_Model_DbTable_Reminder();
 		$reminder = $reminderDb->getReminder($reminderid);
 
-        //Get primary tax rate
-        $taxrates = new Application_Model_DbTable_Taxrate();
+		//Get primary tax rate
+		$taxrates = new Application_Model_DbTable_Taxrate();
 		$taxrate = $taxrates->getPrimaryTaxrate();
 
 		if($this->getRequest()->isPost()) {
@@ -225,7 +225,7 @@ class Sales_ReminderposController extends Zend_Controller_Action
 			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
-		    $data['currency'] = $reminder['currency'];
+			$data['currency'] = $reminder['currency'];
 			$data['uom'] = '';
 			$data['ordering'] = $this->getLatestOrdering($reminderid) + 1;
 			$position = new Sales_Model_DbTable_Reminderpos();
@@ -257,7 +257,7 @@ class Sales_ReminderposController extends Zend_Controller_Action
 		$form->taxrate->addMultiOptions($taxrates);
 
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$data = $request->getPost();
 			$element = key($data);
 			if(isset($form->$element) && $form->isValidPartial($data)) {
@@ -273,8 +273,8 @@ class Sales_ReminderposController extends Zend_Controller_Action
 
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
 					$calculations = $this->_helper->Calculate($reminderid, $this->_date, $this->_user['id']);
-			        echo Zend_Json::encode($calculations['locale']);
-                }
+					echo Zend_Json::encode($calculations['locale']);
+				}
 			} else {
 				throw new Exception('Form is invalid');
 			}
@@ -288,7 +288,7 @@ class Sales_ReminderposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$id = (int)$this->_getParam('id', 0);
 			$position = new Sales_Model_DbTable_Reminderpos();
 			$data = $position->getPosition($id);
@@ -297,14 +297,14 @@ class Sales_ReminderposController extends Zend_Controller_Action
 				if($ordering > $data['ordering']) $position->updatePosition($positionId, array('ordering' => ($ordering+1)));
 			}
 			$data['ordering'] += 1;
-			$data['modified'] = '0000-00-00';
+			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
 			unset($data['id']);
 			$position->addPosition($data);
 
 			//Calculate
 			$calculations = $this->_helper->Calculate($data['reminderid'], $this->_date, $this->_user['id']);
-	        echo Zend_Json::encode($calculations['locale']);
+			echo Zend_Json::encode($calculations['locale']);
 		}
 	}
 
@@ -328,12 +328,12 @@ class Sales_ReminderposController extends Zend_Controller_Action
 			} elseif($data['ordering'] > 0) {
 				if($data['ordering'] < $currentOrdering) {
 					$position->sortPosition($data['id'], $data['ordering']);
-					foreach($orderings as  $ordering => $positionId) {
+					foreach($orderings as $ordering => $positionId) {
 						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $position->sortPosition($positionId, $ordering+1);
 					}
 				} elseif($data['ordering'] > $currentOrdering) {
 					$position->sortPosition($data['id'], $data['ordering']);
-					foreach($orderings as  $ordering => $positionId) {
+					foreach($orderings as $ordering => $positionId) {
 						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $position->sortPosition($positionId, $ordering-1);
 					}
 				}
@@ -349,7 +349,7 @@ class Sales_ReminderposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$data = $request->getPost();
 			if($data['delete'] == 'Yes') {
 				if(!is_array($data['id'])) {
@@ -361,7 +361,7 @@ class Sales_ReminderposController extends Zend_Controller_Action
 				//Reorder and calculate
 				$this->setOrdering($data['reminderid']);
 				$calculations = $this->_helper->Calculate($data['reminderid'], $this->_date, $this->_user['id']);
-	            echo Zend_Json::encode($calculations['locale']);
+				echo Zend_Json::encode($calculations['locale']);
 			}
 		}
 	}

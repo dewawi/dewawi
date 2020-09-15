@@ -70,7 +70,7 @@ if($length = count($this->forms)) :
 		<tr class="position<?php echo $form->getValue('id'); ?> stockItem  wrap"<?php if($form->getValue('itemtype') != "stockItem") echo ' style="display:none"'; ?>>
 			<td>
 				<input class="id" type="checkbox" value="<?php echo $form->getValue('id'); ?>" name="id"/>
-            </td>
+			</td>
 			<td></td>
 			<td>
 				<?php echo $form->deliveryorderid; ?>
@@ -94,7 +94,7 @@ if($length = count($this->forms)) :
 			</td>-->
 			<td>
 				<input class="id" type="checkbox" value="<?php echo $form->getValue('id'); ?>" name="id"/>
-            </td>
+			</td>
 			<td></td>
 			<td>
 				<?php echo $form->supplierid; ?>
@@ -110,9 +110,11 @@ if($length = count($this->forms)) :
 			</td>
 			<td>
 				<?php echo $form->suppliersalesorderid; ?>
+				<?php echo $form->supplierinvoiceid; ?>
 			</td>
 			<td>
 				<?php echo $form->suppliersalesorderdate; ?>
+				<?php echo $form->supplierinvoicedate; ?>
 			</td>
 			<td>
 				<?php echo $form->supplierinvoicetotal; ?>

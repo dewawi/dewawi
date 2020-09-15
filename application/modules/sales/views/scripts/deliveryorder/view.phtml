@@ -24,11 +24,11 @@ echo $this->FileManager();
 					<dt><label><?php echo $this->translate('DELIVERY_ORDERS_DELIVERY_ORDER_DATE') ?></label></dt>
 					<dd><?php echo $this->deliveryorder['deliveryorderdate']; ?></dd>
 				<?php } ?>
-				<?php if($this->deliveryorder['orderdate'] && ($this->deliveryorder['orderdate'] != "0000-00-00")) { ?>
+				<?php if($this->deliveryorder['orderdate']) { ?>
 					<dt><label><?php echo $this->translate('DELIVERY_ORDERS_ORDER_DATE') ?></label></dt>
 					<dd><?php echo $this->deliveryorder['orderdate']; ?></dd>
 				<?php } ?>
-				<?php if($this->deliveryorder['deliverydate'] && ($this->deliveryorder['deliverydate'] != "0000-00-00")) { ?>
+				<?php if($this->deliveryorder['deliverydate']) { ?>
 					<dt><label><?php echo $this->translate('DELIVERY_ORDERS_DELIVERY_DATE') ?></label></dt>
 					<dd><?php echo $this->deliveryorder['deliverydate']; ?></dd>
 				<?php } ?>

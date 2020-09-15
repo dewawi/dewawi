@@ -77,7 +77,7 @@ class Contacts_Model_Get
 				$client = Zend_Registry::set('Client', $client);
 			}
 		}
-error_log($contactid);
+
 		//Quotes
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$history['quotes'] = $quoteDb->getQuotes($contactid);
@@ -86,12 +86,9 @@ error_log($contactid);
 			$quote->subtotal = $currency->toCurrency($quote->subtotal);
 			$quote->taxes = $currency->toCurrency($quote->taxes);
 			$quote->total = $currency->toCurrency($quote->total);
-			if($quote->quotedate && ($quote->quotedate != '0000-00-00'))
-				$quote->quotedate = date('d.m.Y', strtotime($quote->quotedate));
-			if($quote->modified && ($quote->modified != '0000-00-00'))
-				$quote->modified = date('d.m.Y', strtotime($quote->modified));
-			if($quote->deliverydate && ($quote->deliverydate != '0000-00-00'))
-				$quote->deliverydate = date('d.m.Y', strtotime($quote->deliverydate));
+			if($quote->quotedate) $quote->quotedate = date('d.m.Y', strtotime($quote->quotedate));
+			if($quote->modified) $quote->modified = date('d.m.Y', strtotime($quote->modified));
+			if($quote->deliverydate) $quote->deliverydate = date('d.m.Y', strtotime($quote->deliverydate));
 		}
 
 		//Sales orders
@@ -102,12 +99,9 @@ error_log($contactid);
 			$salesorder->subtotal = $currency->toCurrency($salesorder->subtotal);
 			$salesorder->taxes = $currency->toCurrency($salesorder->taxes);
 			$salesorder->total = $currency->toCurrency($salesorder->total);
-			if($salesorder->salesorderdate && ($salesorder->salesorderdate != '0000-00-00'))
-				$salesorder->salesorderdate = date('d.m.Y', strtotime($salesorder->salesorderdate));
-			if($salesorder->modified && ($salesorder->modified != '0000-00-00'))
-				$salesorder->modified = date('d.m.Y', strtotime($salesorder->modified));
-			if($salesorder->deliverydate && ($salesorder->deliverydate != '0000-00-00'))
-				$salesorder->deliverydate = date('d.m.Y', strtotime($salesorder->deliverydate));
+			if($salesorder->salesorderdate) $salesorder->salesorderdate = date('d.m.Y', strtotime($salesorder->salesorderdate));
+			if($salesorder->modified) $salesorder->modified = date('d.m.Y', strtotime($salesorder->modified));
+			if($salesorder->deliverydate) $salesorder->deliverydate = date('d.m.Y', strtotime($salesorder->deliverydate));
 		}
 
 		//Invoices
@@ -118,12 +112,9 @@ error_log($contactid);
 			$invoice->subtotal = $currency->toCurrency($invoice->subtotal);
 			$invoice->taxes = $currency->toCurrency($invoice->taxes);
 			$invoice->total = $currency->toCurrency($invoice->total);
-			if($invoice->invoicedate && ($invoice->invoicedate != '0000-00-00'))
-				$invoice->invoicedate = date('d.m.Y', strtotime($invoice->invoicedate));
-			if($invoice->modified && ($invoice->modified != '0000-00-00'))
-				$invoice->modified = date('d.m.Y', strtotime($invoice->modified));
-			if($invoice->deliverydate && ($invoice->deliverydate != '0000-00-00'))
-				$invoice->deliverydate = date('d.m.Y', strtotime($invoice->deliverydate));
+			if($invoice->invoicedate) $invoice->invoicedate = date('d.m.Y', strtotime($invoice->invoicedate));
+			if($invoice->modified) $invoice->modified = date('d.m.Y', strtotime($invoice->modified));
+			if($invoice->deliverydate) $invoice->deliverydate = date('d.m.Y', strtotime($invoice->deliverydate));
 		}
 
 		//Delivery orders
@@ -134,12 +125,9 @@ error_log($contactid);
 			$deliveryorder->subtotal = $currency->toCurrency($deliveryorder->subtotal);
 			$deliveryorder->taxes = $currency->toCurrency($deliveryorder->taxes);
 			$deliveryorder->total = $currency->toCurrency($deliveryorder->total);
-			if($deliveryorder->deliveryorderdate && ($deliveryorder->deliveryorderdate != '0000-00-00'))
-				$deliveryorder->deliveryorderdate = date('d.m.Y', strtotime($deliveryorder->deliveryorderdate));
-			if($deliveryorder->modified && ($deliveryorder->modified != '0000-00-00'))
-				$deliveryorder->modified = date('d.m.Y', strtotime($deliveryorder->modified));
-			if($deliveryorder->deliverydate && ($deliveryorder->deliverydate != '0000-00-00'))
-				$deliveryorder->deliverydate = date('d.m.Y', strtotime($deliveryorder->deliverydate));
+			if($deliveryorder->deliveryorderdate) $deliveryorder->deliveryorderdate = date('d.m.Y', strtotime($deliveryorder->deliveryorderdate));
+			if($deliveryorder->modified) $deliveryorder->modified = date('d.m.Y', strtotime($deliveryorder->modified));
+			if($deliveryorder->deliverydate) $deliveryorder->deliverydate = date('d.m.Y', strtotime($deliveryorder->deliverydate));
 		}
 
 		//Credit notes
@@ -150,12 +138,9 @@ error_log($contactid);
 			$creditnote->subtotal = $currency->toCurrency($creditnote->subtotal);
 			$creditnote->taxes = $currency->toCurrency($creditnote->taxes);
 			$creditnote->total = $currency->toCurrency($creditnote->total);
-			if($creditnote->creditnotedate && ($creditnote->creditnotedate != '0000-00-00'))
-				$creditnote->creditnotedate = date('d.m.Y', strtotime($creditnote->creditnotedate));
-			if($creditnote->modified && ($creditnote->modified != '0000-00-00'))
-				$creditnote->modified = date('d.m.Y', strtotime($creditnote->modified));
-			if($creditnote->deliverydate && ($creditnote->deliverydate != '0000-00-00'))
-				$creditnote->deliverydate = date('d.m.Y', strtotime($creditnote->deliverydate));
+			if($creditnote->creditnotedate) $creditnote->creditnotedate = date('d.m.Y', strtotime($creditnote->creditnotedate));
+			if($creditnote->modified) $creditnote->modified = date('d.m.Y', strtotime($creditnote->modified));
+			if($creditnote->deliverydate) $creditnote->deliverydate = date('d.m.Y', strtotime($creditnote->deliverydate));
 		}
 
 		//Quote requests
@@ -175,12 +160,9 @@ error_log($contactid);
 			$quoterequest->subtotal = $currency->toCurrency($quoterequest->subtotal);
 			$quoterequest->taxes = $currency->toCurrency($quoterequest->taxes);
 			$quoterequest->total = $currency->toCurrency($quoterequest->total);
-			if($quoterequest->quoterequestdate && ($quoterequest->quoterequestdate != '0000-00-00'))
-				$quoterequest->quoterequestdate = date('d.m.Y', strtotime($quoterequest->quoterequestdate));
-			if($quoterequest->modified && ($quoterequest->modified != '0000-00-00'))
-				$quoterequest->modified = date('d.m.Y', strtotime($quoterequest->modified));
-			if($quoterequest->deliverydate && ($quoterequest->deliverydate != '0000-00-00'))
-				$quoterequest->deliverydate = date('d.m.Y', strtotime($quoterequest->deliverydate));
+			if($quoterequest->quoterequestdate) $quoterequest->quoterequestdate = date('d.m.Y', strtotime($quoterequest->quoterequestdate));
+			if($quoterequest->modified) $quoterequest->modified = date('d.m.Y', strtotime($quoterequest->modified));
+			if($quoterequest->deliverydate) $quoterequest->deliverydate = date('d.m.Y', strtotime($quoterequest->deliverydate));
 		}
 
 		//Purchase orders

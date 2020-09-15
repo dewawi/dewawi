@@ -26,70 +26,70 @@ if($length = count($this->forms)) :
 					<?php echo $form->ordering; ?>
 				</td>
 				<td class="flex50">
-                    <table>
-                        <tr>
-				            <td class="sku">
-					            <?php echo $form->sku; ?>
-				            </td>
-				            <td class="title">
-					            <?php echo $form->title; ?>
-				            </td>
-		                </tr>
-                        <tr>
-				            <td class="description">
-					            <input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
-					            <?php echo $form->description; ?>
-				            </td>
-		                </tr>
-                        <tr>
-				            <td class="image">
-					            <input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
-					            <?php echo $form->image; ?>
-				            </td>
-		                </tr>
-	                </table>
+					<table>
+						<tr>
+							<td class="sku">
+								<?php echo $form->sku; ?>
+							</td>
+							<td class="title">
+								<?php echo $form->title; ?>
+							</td>
+						</tr>
+						<tr>
+							<td class="description">
+								<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+								<?php echo $form->description; ?>
+							</td>
+						</tr>
+						<tr>
+							<td class="image">
+								<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+								<?php echo $form->image; ?>
+							</td>
+						</tr>
+					</table>
 				</td>
 				<td>
-                    <table>
-                        <tr>
-				            <td class="price">
-					            <?php echo $form->price; ?>
-				            </td>
-		                </tr>
-                        <tr>
-				            <td class="taxrate">
-					            <?php echo $form->taxrate; ?>
-				            </td>
-		                </tr>
-	                </table>
+					<table>
+						<tr>
+							<td class="price">
+								<?php echo $form->price; ?>
+							</td>
+						</tr>
+						<tr>
+							<td class="taxrate">
+								<?php echo $form->taxrate; ?>
+							</td>
+						</tr>
+					</table>
 				</td>
 				<td>
-                    <table>
-                        <tr>
-				            <td class="priceruleamount">
-					            <?php echo $form->priceruleamount; ?>
-				            </td>
-		                </tr>
-                        <tr>
-				            <td class="priceruleaction">
-					            <?php echo $form->priceruleaction; ?>
-				            </td>
-		                </tr>
-	                </table>
+					<table>
+						<tr>
+							<td class="priceruleamount">
+								<?php echo $form->priceruleamount; ?>
+							</td>
+						</tr>
+						<tr>
+							<td class="priceruleaction">
+								<?php echo $form->priceruleaction; ?>
+							</td>
+						</tr>
+					</table>
 				</td>
 				<td>
-                    <table>
-                        <tr>
-				            <td class="quantity">
-					            <?php echo $form->quantity; ?>
-				            </td>
-		                </tr>
-                        <tr>
-				            <td class="uom">
-					            <?php echo $form->uom; ?>
-				            </td>
-		                </tr>
-	                </table>
+					<table>
+						<tr>
+							<td class="quantity">
+								<?php echo $form->quantity; ?>
+							</td>
+						</tr>
+						<tr>
+							<td class="uom">
+								<?php echo $form->uom; ?>
+							</td>
+						</tr>
+					</table>
 				</td>
 				<td class="total">
 					<?php echo $form->getValue('total'); ?>
@@ -119,10 +119,10 @@ if($length = count($this->forms)) :
 			<td id="subtotal" align="right"><?php echo $this->salesorder['subtotal'] ?></td>
 		</tr>
 		<?php foreach($this->salesorder['taxes'] as $rate => $tax) : ?>
-		    <tr>
-			    <td><?php echo $this->translate('POSITIONS_TAXES')." (".$tax['title'].")"; ?></td>
-			    <td id="taxes" align="right" data-rate="<?php echo $rate; ?>"><?php echo $tax['value']; ?></td>
-		    </tr>
+			<tr>
+				<td><?php echo $this->translate('POSITIONS_TAXES')." (".$tax['title'].")"; ?></td>
+				<td id="taxes" align="right" data-rate="<?php echo $rate; ?>"><?php echo $tax['value']; ?></td>
+			</tr>
 		<?php endforeach; ?>
 		<tr>
 			<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>

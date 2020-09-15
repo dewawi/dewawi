@@ -14,7 +14,7 @@ class Items_Model_DbTable_Pricerule extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    $this->_user = Zend_Registry::get('User');
+		$this->_user = Zend_Registry::get('User');
 		$this->_client = Zend_Registry::get('Client');
 	}
 
@@ -31,11 +31,11 @@ class Items_Model_DbTable_Pricerule extends Zend_Db_Table_Abstract
 	public function getPricerules($options)
 	{
 		$where = array();
-        foreach($options as $key => $option) {
-		    //$where[] = $this->getAdapter()->quoteInto($key.' = ? OR '.$key.' = 0', $option);
-        }
-        //$where[] = $this->getAdapter()->quoteInto('`from` <= ?',  $this->_date);
-        //$where[] = $this->getAdapter()->quoteInto('`to` >= ?',  $this->_date);
+		foreach($options as $key => $option) {
+			//$where[] = $this->getAdapter()->quoteInto($key.' = ? OR '.$key.' = 0', $option);
+		}
+		//$where[] = $this->getAdapter()->quoteInto('`from` <= ?',  $this->_date);
+		//$where[] = $this->getAdapter()->quoteInto('`to` >= ?',  $this->_date);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);

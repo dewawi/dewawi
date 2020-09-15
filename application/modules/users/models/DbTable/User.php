@@ -14,7 +14,7 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    if(Zend_Registry::isRegistered('User')) $this->_user = Zend_Registry::get('User');
+		if(Zend_Registry::isRegistered('User')) $this->_user = Zend_Registry::get('User');
 		if(Zend_Registry::isRegistered('Client')) $this->_client = Zend_Registry::get('Client');
 	}
 

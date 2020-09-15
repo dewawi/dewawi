@@ -80,7 +80,7 @@ echo $this->ActiveFilter();
 				<?php echo $this->escape(date("d.m.Y", strtotime($invoice->modified))); ?>
 			</td>
 			<td data-label="<?php echo $this->translate('INVOICES_DELIVERY_DATE') ?>" class="deliverydate">
-				<?php if($invoice->deliverydate != "0000-00-00") echo $this->escape(date("d.m.Y", strtotime($invoice->deliverydate))); ?>
+				<?php if($invoice->deliverydate) echo $this->escape(date("d.m.Y", strtotime($invoice->deliverydate))); ?>
 			</td>
 			<td data-label="<?php echo $this->translate('INVOICES_TOTAL') ?>" class="total">
 				<?php echo $this->escape($invoice->total); ?>

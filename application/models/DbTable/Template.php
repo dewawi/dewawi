@@ -14,7 +14,7 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    $this->_user = Zend_Registry::get('User');
+		$this->_user = Zend_Registry::get('User');
 		$this->_client = Zend_Registry::get('Client');
 	}
 
@@ -54,7 +54,7 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where);
 		if($data) {
-		    return $data->toArray();
+			return $data->toArray();
 		}
 	}
 

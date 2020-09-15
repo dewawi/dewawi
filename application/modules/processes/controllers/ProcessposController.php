@@ -51,7 +51,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$shippingmethodDb = new Application_Model_DbTable_Shippingmethod();
 		$shippingmethods = $shippingmethodDb->getShippingmethods();
 
-        //Get currency
+		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($process['currency']);
 
 		$forms = array();
@@ -60,34 +60,31 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$orderings[$position->ordering] = $position->ordering;
 		}
 		foreach($positions as $position) {
-			$position->price =  $currency->toCurrency($position->price);
-			$position->supplierinvoicetotal =  $currency->toCurrency($position->supplierinvoicetotal);
+			$position->price = $currency->toCurrency($position->price);
+			$position->supplierinvoicetotal = $currency->toCurrency($position->supplierinvoicetotal);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
 
-            //Convert dates to the display format
-            $deliverydate = new Zend_Date($position->deliverydate);
-            if($position->deliverydate == '0000-00-00') $position->deliverydate = '';
-            else $position->deliverydate = $deliverydate->get('dd.MM.yyyy');
-            $deliveryorderdate = new Zend_Date($position->deliveryorderdate);
-            if($position->deliveryorderdate == '0000-00-00') $position->deliveryorderdate = '';
-            else $position->deliveryorderdate = $deliveryorderdate->get('dd.MM.yyyy');
-            $purchaseorderdate = new Zend_Date($position->purchaseorderdate);
-            if($position->purchaseorderdate == '0000-00-00') $position->purchaseorderdate = '';
-            else $position->purchaseorderdate = $purchaseorderdate->get('dd.MM.yyyy');
-            $suppliersalesorderdate = new Zend_Date($position->suppliersalesorderdate);
-            if($position->suppliersalesorderdate == '0000-00-00') $position->suppliersalesorderdate = '';
-            else $position->suppliersalesorderdate = $suppliersalesorderdate->get('dd.MM.yyyy');
-            $supplierpaymentdate = new Zend_Date($position->supplierpaymentdate);
-            if($position->supplierpaymentdate == '0000-00-00') $position->supplierpaymentdate = '';
-            else $position->supplierpaymentdate = $supplierpaymentdate->get('dd.MM.yyyy');
+			//Convert dates to the display format
+			$deliverydate = new Zend_Date($position->deliverydate);
+			if($position->deliverydate) $position->deliverydate = $deliverydate->get('dd.MM.yyyy');
+			$deliveryorderdate = new Zend_Date($position->deliveryorderdate);
+			if($position->deliveryorderdate) $position->deliveryorderdate = $deliveryorderdate->get('dd.MM.yyyy');
+			$purchaseorderdate = new Zend_Date($position->purchaseorderdate);
+			if($position->purchaseorderdate) $position->purchaseorderdate = $purchaseorderdate->get('dd.MM.yyyy');
+			$suppliersalesorderdate = new Zend_Date($position->suppliersalesorderdate);
+			if($position->suppliersalesorderdate) $position->suppliersalesorderdate = $suppliersalesorderdate->get('dd.MM.yyyy');
+			$supplierinvoicedate = new Zend_Date($position->supplierinvoicedate);
+			if($position->supplierinvoicedate) $position->supplierinvoicedate = $supplierinvoicedate->get('dd.MM.yyyy');
+			$supplierpaymentdate = new Zend_Date($position->supplierpaymentdate);
+			if($position->supplierpaymentdate) $position->supplierpaymentdate = $supplierpaymentdate->get('dd.MM.yyyy');
 
 			$form = new Processes_Form_Processpos();
 			$forms[$position->id] = $form->populate($position->toArray());
 			$forms[$position->id]->uom->addMultiOptions($uoms);
-            if($position->uom) {
-                $uom = array_search($position->uom, $uoms);
-                if($uom) $forms[$position->id]->uom->setValue($uom);
-            }
+			if($position->uom) {
+				$uom = array_search($position->uom, $uoms);
+				if($uom) $forms[$position->id]->uom->setValue($uom);
+			}
 			$forms[$position->id]->ordering->addMultiOptions($orderings);
 			$forms[$position->id]->shippingmethod->addMultiOptions($shippingmethods);
 			foreach($forms[$position->id] as $element) {
@@ -112,7 +109,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$form = new Items_Form_Item();
 
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$this->_helper->viewRenderer->setNoRender();
 			$this->_helper->getHelper('layout')->disableLayout();
 			$data = array();
@@ -126,29 +123,29 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				$data['image'] = $item['image'];
 				$data['description'] = $item['description'];
 				$data['price'] = $item['price'];
-                if($item['taxid']) {
-		            $taxrateDb = new Application_Model_DbTable_Taxrate();
-				    $taxrate = $taxrateDb->getTaxrate($item['taxid']);
-				    $data['taxrate'] = $taxrate['rate'];
-                } else {
-                    $data['taxrate'] = 0;
-                }
+				if($item['taxid']) {
+					$taxrateDb = new Application_Model_DbTable_Taxrate();
+					$taxrate = $taxrateDb->getTaxrate($item['taxid']);
+					$data['taxrate'] = $taxrate['rate'];
+				} else {
+					$data['taxrate'] = 0;
+				}
 				$data['quantity'] = 1;
 				$data['total'] = $data['price']*$data['quantity'];
-                if($item['uomid']) {
-		            $uomDb = new Application_Model_DbTable_Uom();
-				    $uom = $uomDb->getUom($item['uomid']);
-				    $data['uom'] = $uom['title'];
-                } else {
-                    $data['uom'] = '';
-                }
+				if($item['uomid']) {
+					$uomDb = new Application_Model_DbTable_Uom();
+					$uom = $uomDb->getUom($item['uomid']);
+					$data['uom'] = $uom['title'];
+				} else {
+					$data['uom'] = '';
+				}
 				$data['ordering'] = $this->getLatestOrdering($processid) + 1;
 				$position = new Processes_Model_DbTable_Processpos();
 				$position->addPosition($data);
 
 				//Calculate
 				//$calculations = $this->_helper->Calculate($processid, $this->_date, $this->_user['id']);
-			    //echo Zend_Json::encode($calculations['locale']);
+				//echo Zend_Json::encode($calculations['locale']);
 			} else {
 				$form->populate($request->getPost());
 			}
@@ -166,13 +163,13 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-        //Get process data
+		//Get process data
 		$processid = $this->_getParam('processid', 0);
-        $processDb = new Processes_Model_DbTable_Process();
+		$processDb = new Processes_Model_DbTable_Process();
 		$process = $processDb->getProcess($processid);
 
-        //Get primary tax rate
-        $taxrates = new Application_Model_DbTable_Taxrate();
+		//Get primary tax rate
+		$taxrates = new Application_Model_DbTable_Taxrate();
 		$taxrate = $taxrates->getPrimaryTaxrate();
 
 		if($this->getRequest()->isPost()) {
@@ -187,7 +184,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
-		    $data['currency'] = $process['currency'];
+			$data['currency'] = $process['currency'];
 			$data['uom'] = '';
 			$data['deliverystatus'] = 'deliveryIsWaiting';
 			$data['supplierorderstatus'] = 'supplierNotOrdered';
@@ -221,7 +218,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$form->ordering->addMultiOptions($this->getOrdering($processid));
 
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$data = $request->getPost();
 			$element = key($data);
 			if(isset($form->$element) && $form->isValidPartial($data)) {
@@ -231,34 +228,52 @@ class Processes_ProcessposController extends Zend_Controller_Action
 					$data['uom'] = $uoms[$data[$element]];
 
 				if(isset($data['deliverydate'])) {
-                    if(Zend_Date::isDate($data['deliverydate'])) {
-                        $deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
-                        $data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
-				    }
+					if(Zend_Date::isDate($data['deliverydate'])) {
+						$deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
+						$data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
+					} else {
+						$data['deliverydate'] = NULL;
+					}
 				}
 				if(isset($data['deliveryorderdate'])) {
-                    if(Zend_Date::isDate($data['deliveryorderdate'])) {
-                        $deliveryorderdate = new Zend_Date($data['deliveryorderdate'], Zend_Date::DATES, 'de');
-                        $data['deliveryorderdate'] = $deliveryorderdate->get('yyyy-MM-dd');
-				    }
+					if(Zend_Date::isDate($data['deliveryorderdate'])) {
+						$deliveryorderdate = new Zend_Date($data['deliveryorderdate'], Zend_Date::DATES, 'de');
+						$data['deliveryorderdate'] = $deliveryorderdate->get('yyyy-MM-dd');
+					} else {
+						$data['deliveryorderdate'] = NULL;
+					}
 				}
 				if(isset($data['purchaseorderdate'])) {
-                    if(Zend_Date::isDate($data['purchaseorderdate'])) {
-                        $purchaseorderdate = new Zend_Date($data['purchaseorderdate'], Zend_Date::DATES, 'de');
-                        $data['purchaseorderdate'] = $purchaseorderdate->get('yyyy-MM-dd');
-				    }
+					if(Zend_Date::isDate($data['purchaseorderdate'])) {
+						$purchaseorderdate = new Zend_Date($data['purchaseorderdate'], Zend_Date::DATES, 'de');
+						$data['purchaseorderdate'] = $purchaseorderdate->get('yyyy-MM-dd');
+					} else {
+						$data['purchaseorderdate'] = NULL;
+					}
 				}
 				if(isset($data['suppliersalesorderdate'])) {
-                    if(Zend_Date::isDate($data['suppliersalesorderdate'])) {
-                        $suppliersalesorderdate = new Zend_Date($data['suppliersalesorderdate'], Zend_Date::DATES, 'de');
-                        $data['suppliersalesorderdate'] = $suppliersalesorderdate->get('yyyy-MM-dd');
-				    }
+					if(Zend_Date::isDate($data['suppliersalesorderdate'])) {
+						$suppliersalesorderdate = new Zend_Date($data['suppliersalesorderdate'], Zend_Date::DATES, 'de');
+						$data['suppliersalesorderdate'] = $suppliersalesorderdate->get('yyyy-MM-dd');
+					} else {
+						$data['suppliersalesorderdate'] = NULL;
+					}
+				}
+				if(isset($data['supplierinvoicedate'])) {
+					if(Zend_Date::isDate($data['supplierinvoicedate'])) {
+						$supplierinvoicedate = new Zend_Date($data['supplierinvoicedate'], Zend_Date::DATES, 'de');
+						$data['supplierinvoicedate'] = $supplierinvoicedate->get('yyyy-MM-dd');
+					} else {
+						$data['supplierinvoicedate'] = NULL;
+					}
 				}
 				if(isset($data['supplierpaymentdate'])) {
-                    if(Zend_Date::isDate($data['supplierpaymentdate'])) {
-                        $supplierpaymentdate = new Zend_Date($data['supplierpaymentdate'], Zend_Date::DATES, 'de');
-                        $data['supplierpaymentdate'] = $supplierpaymentdate->get('yyyy-MM-dd');
-				    }
+					if(Zend_Date::isDate($data['supplierpaymentdate'])) {
+						$supplierpaymentdate = new Zend_Date($data['supplierpaymentdate'], Zend_Date::DATES, 'de');
+						$data['supplierpaymentdate'] = $supplierpaymentdate->get('yyyy-MM-dd');
+					} else {
+						$data['supplierpaymentdate'] = NULL;
+					}
 				}
 
 				$position = new Processes_Model_DbTable_Processpos();
@@ -276,7 +291,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$id = (int)$this->_getParam('id', 0);
 			$position = new Processes_Model_DbTable_Processpos();
 			$data = $position->getPosition($id);
@@ -285,15 +300,15 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				if($ordering > $data['ordering']) $position->updatePosition($positionId, array('ordering' => ($ordering+1)));
 			}
 			$data['ordering'] += 1;
-			$data['modified'] = '0000-00-00';
+			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
 			unset($data['id']);
 			$position->addPosition($data);
 
 			//Calculate
 			//$calculations = $this->_helper->Calculate($data['processid'], $this->_date, $this->_user['id']);
-	        //echo Zend_Json::encode($calculations['locale']);
-	        echo Zend_Json::encode(true);
+			//echo Zend_Json::encode($calculations['locale']);
+			echo Zend_Json::encode(true);
 		}
 	}
 
@@ -306,7 +321,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		if($request->isPost()) {
 			$data = $request->getPost();
 			$orderings = $this->getOrdering($data['processid']);
-			$currentOrdering = array_search($data['id'], $orderings); 
+			$currentOrdering = array_search($data['id'], $orderings);
 			$position = new Processes_Model_DbTable_Processpos();
 			if($data['ordering'] == 'down') {
 				$position->sortPosition($data['id'], $currentOrdering+1);
@@ -317,12 +332,12 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			} elseif($data['ordering'] > 0) {
 				if($data['ordering'] < $currentOrdering) {
 					$position->sortPosition($data['id'], $data['ordering']);
-					foreach($orderings as  $ordering => $positionId) {
+					foreach($orderings as $ordering => $positionId) {
 						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $position->sortPosition($positionId, $ordering+1);
 					}
 				} elseif($data['ordering'] > $currentOrdering) {
 					$position->sortPosition($data['id'], $data['ordering']);
-					foreach($orderings as  $ordering => $positionId) {
+					foreach($orderings as $ordering => $positionId) {
 						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $position->sortPosition($positionId, $ordering-1);
 					}
 				}
@@ -338,7 +353,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
-		    header('Content-type: application/json');
+			header('Content-type: application/json');
 			$data = $request->getPost();
 			if($data['delete'] == 'Yes') {
 				if(!is_array($data['id'])) {
@@ -350,8 +365,8 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				//Reorder and calculate
 				$this->setOrdering($data['processid']);
 				//$calculations = $this->_helper->Calculate($data['processid'], $this->_date, $this->_user['id']);
-	            //echo Zend_Json::encode($calculations['locale']);
-	            echo Zend_Json::encode(true);
+				//echo Zend_Json::encode($calculations['locale']);
+				echo Zend_Json::encode(true);
 			}
 		}
 	}

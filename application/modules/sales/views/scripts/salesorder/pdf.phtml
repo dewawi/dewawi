@@ -10,14 +10,11 @@ $id = $this->salesorder['id'];
 $salesorderid = $this->salesorder['salesorderid'];
 $contactid = $this->salesorder['contactid'];
 $salesorderdate = $this->salesorder['salesorderdate'];
-if($salesorderdate != '0000-00-00') $salesorderdate = implode('.', array_reverse(explode('-', $salesorderdate)));
-else $salesorderdate = 0;
+if($salesorderdate) $salesorderdate = implode('.', array_reverse(explode('-', $salesorderdate)));
 $orderdate = $this->salesorder['orderdate'];
-if($orderdate != '0000-00-00') $orderdate = implode('.', array_reverse(explode('-', $orderdate)));
-else $orderdate = 0;
+if($orderdate) $orderdate = implode('.', array_reverse(explode('-', $orderdate)));
 $deliverydate = $this->salesorder['deliverydate'];
-if($deliverydate != '0000-00-00') $deliverydate = implode('.', array_reverse(explode('-', $deliverydate)));
-else $deliverydate = 0;
+if($deliverydate) $deliverydate = implode('.', array_reverse(explode('-', $deliverydate)));
 $vatin = $this->salesorder['vatin'];
 $header = $this->salesorder['header'];
 $footer = $this->salesorder['footer'];
@@ -102,7 +99,7 @@ if(isset($this->template) && $this->template['website']) {
 //Logo
 if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
 	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
-    $pdf->Image($logo, 145, 10, 0, 0, '', $website);
+	$pdf->Image($logo, 145, 10, 0, 0, '', $website);
 }
 
 //IMPORTANT INFORMATIONS
@@ -165,9 +162,9 @@ if(isset($this->template) && isset($this->template['company']) && $this->templat
 	$address = $this->template['company'];
 } else {
 	$address = $client['company'];
-    if($client['address']) $address .= ', '.$client['address'];
-    if($client['postcode']) $address .= ', '.$client['postcode'];
-    if($client['city']) $address .= ' '.$client['city'];
+	if($client['address']) $address .= ', '.$client['address'];
+	if($client['postcode']) $address .= ', '.$client['postcode'];
+	if($client['city']) $address .= ' '.$client['city'];
 }
 $pdf->MultiCell(70, 4, $address, 'B', 'L', false, 1, $x);
 $pdf->ln(4);
@@ -278,9 +275,9 @@ while($i <= $lastPage) {
 		cancelled($pdf, strtoupper($this->translate('DOCUMENTS_CANCELLED')));
 	}
 	if($i > 1) {
-        if(isset($logo)) {
-		    $pdf->Image($logo, 155, 10, 40, 0, '', $website);
-        }
+		if(isset($logo)) {
+			$pdf->Image($logo, 155, 10, 40, 0, '', $website);
+		}
 
 		$y = $pdf->GetY();
 		$pdf->SetY(20);
@@ -290,13 +287,13 @@ while($i <= $lastPage) {
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_SALES_ORDER_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($salesorderid) $pdf->Write(0, $salesorderid.'     ');
-		else $pdf->Write(0, ' - - - - -     ');
+		if($salesorderid) $pdf->Write(0, $salesorderid.'	 ');
+		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_SALES_ORDER_DATE').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($salesorderdate) $pdf->Write(0, $salesorderdate.'     ');
-		else $pdf->Write(0, ' - - - - -     ');
+		if($salesorderdate) $pdf->Write(0, $salesorderdate.'	 ');
+		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
@@ -348,16 +345,16 @@ if($this->action == 'download') {
 	if($salesorderid) $pdf->Output($salesorderid.' '.$this->translate('SALES_ORDERS').' '.$billingName1.'.pdf', 'D');
 	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').' '.$this->translate('SALES_ORDERS').' '.$billingName1.'.pdf', 'D');
 } else {
-    $path = BASE_PATH.'/files/contacts/';
-    $dir1 = substr($client['id'], 0, 1);
-    if(strlen($client['id']) > 1) $dir2 = substr($client['id'], 1, 1);
-    else $dir2 = '0';
-    $dir3 = substr($this->contact['id'], 0, 1).'/';
-    if(strlen($this->contact['id']) > 1) $dir4 = substr($this->contact['id'], 1, 1).'/';
-    else $dir4 = '0/';
-    $url = $dir1.'/'.$dir2.'/'.$client['id'].'/'.$dir3.'/'.$dir4.'/'.$this->contact['id'].'/';
+	$path = BASE_PATH.'/files/contacts/';
+	$dir1 = substr($client['id'], 0, 1);
+	if(strlen($client['id']) > 1) $dir2 = substr($client['id'], 1, 1);
+	else $dir2 = '0';
+	$dir3 = substr($this->contact['id'], 0, 1).'/';
+	if(strlen($this->contact['id']) > 1) $dir4 = substr($this->contact['id'], 1, 1).'/';
+	else $dir4 = '0/';
+	$url = $dir1.'/'.$dir2.'/'.$client['id'].'/'.$dir3.'/'.$dir4.'/'.$this->contact['id'].'/';
 	if($salesorderid) {
-        if(!file_exists($path.$url.$this->translate('SALES_ORDERS').'-'.$salesorderid.'.pdf'))
+		if(!file_exists($path.$url.$this->translate('SALES_ORDERS').'-'.$salesorderid.'.pdf'))
 			$pdf->Output($path.$url.$this->translate('SALES_ORDERS').'-'.$salesorderid.'.pdf', 'F');
 		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$this->translate('SALES_ORDERS').'-'.$salesorderid.'.pdf?'.time().'" width="900px" height="500px">';
 	} else {

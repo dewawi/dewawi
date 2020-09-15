@@ -52,7 +52,7 @@ class Purchases_Controller_Action_Helper_Options extends Zend_Controller_Action_
 		$options['languages'] = $languages;
 
 		//Set form options
-        $MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
+		$MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
 		if(isset($form->country) && isset($options['countries'])) $form->country->addMultiOptions($options['countries']);
 		if(isset($form->paymentmethod) && isset($options['paymentmethods'])) $form->paymentmethod->addMultiOptions($options['paymentmethods']);

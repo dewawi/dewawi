@@ -37,7 +37,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-	    $get = new Items_Model_Get();
+		$get = new Items_Model_Get();
 		$items = $get->items($params, $options['categories']);
 
 		$this->view->items = $items;
@@ -57,7 +57,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-	    $get = new Items_Model_Get();
+		$get = new Items_Model_Get();
 		$items = $get->items($params, $options['categories']);
 
 		$this->view->items = $items;
@@ -74,7 +74,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-	    $get = new Items_Model_Get();
+		$get = new Items_Model_Get();
 		$items = $get->items($params, $options['categories']);
 
 		$this->view->items = $items;
@@ -85,14 +85,14 @@ class Items_ItemController extends Zend_Controller_Action
 
 	public function addAction()
 	{
-        $catid = $this->_getParam('catid', 0);
+		$catid = $this->_getParam('catid', 0);
 
-        //Get primary tax rate
-        $taxrates = new Application_Model_DbTable_Taxrate();
+		//Get primary tax rate
+		$taxrates = new Application_Model_DbTable_Taxrate();
 		$taxrate = $taxrates->getPrimaryTaxrate();
 
-        //Get primary currency
-        $currencies = new Application_Model_DbTable_Currency();
+		//Get primary currency
+		$currencies = new Application_Model_DbTable_Currency();
 		$currency = $currencies->getPrimaryCurrency();
 
 		$data = array();
@@ -104,7 +104,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$item = new Items_Model_DbTable_Item();
 		$id = $item->addItem($data);
 
-        //Check if the directory is writable
+		//Check if the directory is writable
 		$this->_helper->Directory->isWritable($id, 'item', $this->_flashMessenger);
 
 		$this->_helper->redirector->gotoSimple('edit', 'item', null, array('id' => $id));
@@ -119,8 +119,8 @@ class Items_ItemController extends Zend_Controller_Action
 		$itemDb = new Items_Model_DbTable_Item();
 		$item = $itemDb->getItem($id);
 
-        //Check if the directory is writable
-        $dirwritable = $this->_helper->Directory->isWritable($id, 'item', $this->_flashMessenger);
+		//Check if the directory is writable
+		$dirwritable = $this->_helper->Directory->isWritable($id, 'item', $this->_flashMessenger);
 
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'item', null, array('id' => $id));
@@ -149,12 +149,12 @@ class Items_ItemController extends Zend_Controller_Action
 					if(array_key_exists('cost', $data)) {
 						$locale = Zend_Registry::get('Zend_Locale');
 						$data['cost'] = Zend_Locale_Format::getNumber($data['cost'],array('precision' => 2,'locale' => $locale));
-                        $data['margin'] = $item['price'] - $data['cost'];
+						$data['margin'] = $item['price'] - $data['cost'];
 					}
 					if(array_key_exists('price', $data)) {
 						$locale = Zend_Registry::get('Zend_Locale');
 						$data['price'] = Zend_Locale_Format::getNumber($data['price'],array('precision' => 2,'locale' => $locale));
-                        $data['margin'] = $data['price'] - $item['cost'];
+						$data['margin'] = $data['price'] - $item['cost'];
 					}
 					if(array_key_exists('quantity', $data)) {
 						$locale = Zend_Registry::get('Zend_Locale');
@@ -174,7 +174,7 @@ class Items_ItemController extends Zend_Controller_Action
 				}
 			} else {
 				if($id > 0) {
-                    $currency = $this->_helper->Currency->getCurrency($item['currency']);
+					$currency = $this->_helper->Currency->getCurrency($item['currency']);
 					$item['cost'] = $currency->toCurrency($item['cost']);
 					$item['price'] = $currency->toCurrency($item['price']);
 					$item['margin'] = $currency->toCurrency($item['margin']);
@@ -193,25 +193,25 @@ class Items_ItemController extends Zend_Controller_Action
 					$form->populate($item);
 
 					//History
-		            $inventoryDb = new Items_Model_DbTable_Inventory();
+					$inventoryDb = new Items_Model_DbTable_Inventory();
 					$inventory = $inventoryDb->getInventoryBySKU($item['sku']);
 
 					//Toolbar
 					$toolbar = new Items_Form_Toolbar();
 
 					$this->view->form = $form;
-                    $this->view->dirwritable = $dirwritable;
+					$this->view->dirwritable = $dirwritable;
 					$this->view->inventory = $inventory;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}
 			}
 		}
-        $this->view->messages = array_merge(
-            $this->_helper->flashMessenger->getMessages(),
-            $this->_helper->flashMessenger->getCurrentMessages()
-        );
-        $this->_helper->flashMessenger->clearCurrentMessages();
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function copyAction()
@@ -226,11 +226,13 @@ class Items_ItemController extends Zend_Controller_Action
 		$data['quantity'] = 0;
 		$data['inventory'] = 1;
 		$data['title'] = $data['title'].' 2';
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		echo $itemid = $item->addItem($data);
 
-        //Check if the directory is writable
+		//Check if the directory is writable
 		$this->_helper->Directory->isWritable($itemid, 'item', $this->_flashMessenger);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -240,7 +242,7 @@ class Items_ItemController extends Zend_Controller_Action
 	{
 		//$this->_helper->viewRenderer->setNoRender();
 		//$this->_helper->getHelper('layout')->disableLayout();
-		
+
 		$form = new Application_Form_Upload();
 
 		if ($this->getRequest()->isPost()) {
@@ -261,151 +263,151 @@ class Items_ItemController extends Zend_Controller_Action
 					$e->getMessage();
 				}
 				$file = $upload->getFileName();
-                $data = fopen($file, 'r');
+				$data = fopen($file, 'r');
 
-                if ($data && ($data !== FALSE)) {
-                    $map = array();
-                    $dataTemplate = array();
-                    $row = 0;
-                    while (($datacsv = fgetcsv($data, 0, ',')) !== FALSE) {
-                        //print_r($datacsv);
-                        if($row == 0) {
-                            foreach($datacsv as $pos => $attr) {
-                                if($attr) {
-                                    $map[$attr] = $pos;
-                                }
-                            }
-                        //print_r($map);
-                        } elseif($row == 1) {
-                            if(isset($map['name_dewawi'])) $dataTemplate['name_dewawi'] = $datacsv[$map['name_dewawi']];
-                            if(isset($map['name_magento'])) $dataTemplate['name_magento'] = $datacsv[$map['name_magento']];
-                            if(isset($map['name_ebay'])) $dataTemplate['name_ebay'] = $datacsv[$map['name_ebay']];
-                            if(isset($map['mini_description_magento'])) $dataTemplate['mini_description_magento'] = $datacsv[$map['mini_description_magento']];
-                            if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] = $datacsv[$map['short_description_magento']];
-                            if(isset($map['description_magento'])) $dataTemplate['description_magento'] = $datacsv[$map['description_magento']];
-                            if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] = $datacsv[$map['description_dewawi']];
-                        } else {
-                            if(isset($map['mini_description_magento'])) $dataTemplate['mini_description_magento'] .= $datacsv[$map['mini_description_magento']];
-                            if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] .= $datacsv[$map['short_description_magento']];
-                            if(isset($map['description_magento'])) $dataTemplate['description_magento'] .= $datacsv[$map['description_magento']];
-                            if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] .= "\n".$datacsv[$map['description_dewawi']];
-                        }
-                        $row++;
-                    }
-                    fclose($data);
-                    $data = fopen($file, 'r');
-                    $row = 0;
-                    $item = new Items_Model_DbTable_Item();
-                    while (($datacsv = fgetcsv($data, 0, ',')) !== FALSE) {
-                        if($row == 0) {
-                            foreach($datacsv as $pos => $attr) {
-                                if($attr) {
-                                    $map[$attr] = $pos;
-                                }
-                            }
-                        } elseif($datacsv[$map['sku']]) {
-                            //echo $datacsv[$map['sku']];
-                            //print_r($datacsv);
-                            $itemArray = $item->getItemBySKU($datacsv[$map['sku']]);
-                            //print_r($itemArray);
-                            $updateData = array();
-                            foreach($map as $attr => $pos) {
-                                if(isset($itemArray[$attr])) {
-                                    if($attr == 'weight') {
-                                        $updateData['weight'] = preg_replace("/[^0-9]/", '', $datacsv[$map[$attr]]);
-                                    } elseif($attr != 'price') {
-                                        $updateData[$attr] = $datacsv[$map[$attr]];
-                                    }
-                                } elseif($attr == 'discount_dewawi') {
-                                    $updateData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_dewawi']])/100;
-                                    $updateData['price'] = str_replace(',', '.', $updateData['price']);
-                                } elseif($attr == 'price_dewawi') {
-                                    $updateData['price'] = $datacsv[$map['price_dewawi']];
-                                    $updateData['price'] = str_replace(',', '.', $updateData['price']);
-                                } elseif($attr == 'name_dewawi') {
-                                    $name_dewawi = $dataTemplate['name_dewawi'];
-                                    foreach($map as $attrSub => $pos) {
-                                        if (strpos($dataTemplate['name_dewawi'], '#'.$attrSub.'#') !== false) {
-                                            $name_dewawi = str_replace('#'.$attrSub.'#', $datacsv[$map[$attrSub]], $name_dewawi);
-                                        }
-                                    }
-                                    $updateData['title'] = $name_dewawi;
-                                } elseif($attr == 'description_dewawi') {
-                                    $description_dewawi = $dataTemplate['description_dewawi'];
-                                    foreach($map as $attrSub => $pos) {
-                                        if (strpos($dataTemplate['description_dewawi'], '#'.$attrSub.'#') !== false) {
-                                            $description_dewawi = str_replace('#'.$attrSub.'#', $datacsv[$map[$attrSub]], $description_dewawi);
-                                        }
-                                    }
-                                    $updateData['description'] = trim($description_dewawi);
-                                }
-                            }
-                            //print_r($updateData);
-                            $item->updateItem($itemArray['id'], $updateData);
+				if ($data && ($data !== FALSE)) {
+					$map = array();
+					$dataTemplate = array();
+					$row = 0;
+					while (($datacsv = fgetcsv($data, 0, ',')) !== FALSE) {
+						//print_r($datacsv);
+						if($row == 0) {
+							foreach($datacsv as $pos => $attr) {
+								if($attr) {
+									$map[$attr] = $pos;
+								}
+							}
+						//print_r($map);
+						} elseif($row == 1) {
+							if(isset($map['name_dewawi'])) $dataTemplate['name_dewawi'] = $datacsv[$map['name_dewawi']];
+							if(isset($map['name_magento'])) $dataTemplate['name_magento'] = $datacsv[$map['name_magento']];
+							if(isset($map['name_ebay'])) $dataTemplate['name_ebay'] = $datacsv[$map['name_ebay']];
+							if(isset($map['mini_description_magento'])) $dataTemplate['mini_description_magento'] = $datacsv[$map['mini_description_magento']];
+							if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] = $datacsv[$map['short_description_magento']];
+							if(isset($map['description_magento'])) $dataTemplate['description_magento'] = $datacsv[$map['description_magento']];
+							if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] = $datacsv[$map['description_dewawi']];
+						} else {
+							if(isset($map['mini_description_magento'])) $dataTemplate['mini_description_magento'] .= $datacsv[$map['mini_description_magento']];
+							if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] .= $datacsv[$map['short_description_magento']];
+							if(isset($map['description_magento'])) $dataTemplate['description_magento'] .= $datacsv[$map['description_magento']];
+							if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] .= "\n".$datacsv[$map['description_dewawi']];
+						}
+						$row++;
+					}
+					fclose($data);
+					$data = fopen($file, 'r');
+					$row = 0;
+					$item = new Items_Model_DbTable_Item();
+					while (($datacsv = fgetcsv($data, 0, ',')) !== FALSE) {
+						if($row == 0) {
+							foreach($datacsv as $pos => $attr) {
+								if($attr) {
+									$map[$attr] = $pos;
+								}
+							}
+						} elseif($datacsv[$map['sku']]) {
+							//echo $datacsv[$map['sku']];
+							//print_r($datacsv);
+							$itemArray = $item->getItemBySKU($datacsv[$map['sku']]);
+							//print_r($itemArray);
+							$updateData = array();
+							foreach($map as $attr => $pos) {
+								if(isset($itemArray[$attr])) {
+									if($attr == 'weight') {
+										$updateData['weight'] = preg_replace("/[^0-9]/", '', $datacsv[$map[$attr]]);
+									} elseif($attr != 'price') {
+										$updateData[$attr] = $datacsv[$map[$attr]];
+									}
+								} elseif($attr == 'discount_dewawi') {
+									$updateData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_dewawi']])/100;
+									$updateData['price'] = str_replace(',', '.', $updateData['price']);
+								} elseif($attr == 'price_dewawi') {
+									$updateData['price'] = $datacsv[$map['price_dewawi']];
+									$updateData['price'] = str_replace(',', '.', $updateData['price']);
+								} elseif($attr == 'name_dewawi') {
+									$name_dewawi = $dataTemplate['name_dewawi'];
+									foreach($map as $attrSub => $pos) {
+										if (strpos($dataTemplate['name_dewawi'], '#'.$attrSub.'#') !== false) {
+											$name_dewawi = str_replace('#'.$attrSub.'#', $datacsv[$map[$attrSub]], $name_dewawi);
+										}
+									}
+									$updateData['title'] = $name_dewawi;
+								} elseif($attr == 'description_dewawi') {
+									$description_dewawi = $dataTemplate['description_dewawi'];
+									foreach($map as $attrSub => $pos) {
+										if (strpos($dataTemplate['description_dewawi'], '#'.$attrSub.'#') !== false) {
+											$description_dewawi = str_replace('#'.$attrSub.'#', $datacsv[$map[$attrSub]], $description_dewawi);
+										}
+									}
+									$updateData['description'] = trim($description_dewawi);
+								}
+							}
+							//print_r($updateData);
+							$item->updateItem($itemArray['id'], $updateData);
 
-                            if(isset($map['shop_enabled']) && $datacsv[$map['shop_enabled']]) {
-                                $updateDataMagento = array();
-                                foreach($map as $attr => $pos) {
-                                    if($attr == 'discount_shop') {
-                                        $updateDataMagento['special_price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_shop']])/100;
-                                        $updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
-                                    } elseif($attr == 'price_shop') {
-                                        $updateDataMagento['special_price'] = $datacsv[$map['price_shop']];
-                                        $updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
-                                    } elseif($attr == 'name_magento') {
-                                        $name_magento = $dataTemplate['name_magento'];
-                                        foreach($map as $attr => $pos) {
-                                            if (strpos($dataTemplate['name_magento'], '#'.$attr.'#') !== false) {
-                                                $name_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $name_magento);
-                                            }
-                                        }
-                                        $updateDataMagento['name'] = $name_magento;
-                                    } elseif($attr == 'name_ebay') {
-                                        $name_ebay = $dataTemplate['name_ebay'];
-                                        foreach($map as $attr => $pos) {
-                                            if (strpos($dataTemplate['name_ebay'], '#'.$attr.'#') !== false) {
-                                                $name_ebay = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $name_ebay);
-                                            }
-                                        }
-                                        $updateDataMagento['name_ebay'] = $name_ebay;
-                                    } elseif($attr == 'mini_description_magento') {
-                                        $mini_description_magento = $dataTemplate['mini_description_magento'];
-                                        foreach($map as $attr => $pos) {
-                                            if (strpos($dataTemplate['mini_description_magento'], '#'.$attr.'#') !== false) {
-                                                $mini_description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $mini_description_magento);
-                                            }
-                                        }
-                                        $updateDataMagento['mini_description'] = $mini_description_magento;
-                                    } elseif($attr == 'short_description_magento') {
-                                        $short_description_magento = $dataTemplate['short_description_magento'];
-                                        foreach($map as $attr => $pos) {
-                                            if (strpos($dataTemplate['short_description_magento'], '#'.$attr.'#') !== false) {
-                                                $short_description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $short_description_magento);
-                                            }
-                                        }
-                                        $updateDataMagento['short_description'] = $short_description_magento;
-                                    } elseif($attr == 'description_magento') {
-                                        $description_magento = $dataTemplate['description_magento'];
-                                        foreach($map as $attr => $pos) {
-                                            if (strpos($dataTemplate['description_magento'], '#'.$attr.'#') !== false) {
-                                                $description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $description_magento);
-                                            }
-                                        }
-                                        $updateDataMagento['description'] = $description_magento;
-                                    } else {
-                                        $updateDataMagento[$attr] = $datacsv[$map[$attr]];
-                                    }
-                                }
-                                //print_r($updateDataMagento);
-                                $this->magento($updateDataMagento);
-                            }
-                        }
-                        $row++;
-                    }
-                    fclose($data);
-                }
-                
-		        $this->view->data = $data;
+							if(isset($map['shop_enabled']) && $datacsv[$map['shop_enabled']]) {
+								$updateDataMagento = array();
+								foreach($map as $attr => $pos) {
+									if($attr == 'discount_shop') {
+										$updateDataMagento['special_price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_shop']])/100;
+										$updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
+									} elseif($attr == 'price_shop') {
+										$updateDataMagento['special_price'] = $datacsv[$map['price_shop']];
+										$updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
+									} elseif($attr == 'name_magento') {
+										$name_magento = $dataTemplate['name_magento'];
+										foreach($map as $attr => $pos) {
+											if (strpos($dataTemplate['name_magento'], '#'.$attr.'#') !== false) {
+												$name_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $name_magento);
+											}
+										}
+										$updateDataMagento['name'] = $name_magento;
+									} elseif($attr == 'name_ebay') {
+										$name_ebay = $dataTemplate['name_ebay'];
+										foreach($map as $attr => $pos) {
+											if (strpos($dataTemplate['name_ebay'], '#'.$attr.'#') !== false) {
+												$name_ebay = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $name_ebay);
+											}
+										}
+										$updateDataMagento['name_ebay'] = $name_ebay;
+									} elseif($attr == 'mini_description_magento') {
+										$mini_description_magento = $dataTemplate['mini_description_magento'];
+										foreach($map as $attr => $pos) {
+											if (strpos($dataTemplate['mini_description_magento'], '#'.$attr.'#') !== false) {
+												$mini_description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $mini_description_magento);
+											}
+										}
+										$updateDataMagento['mini_description'] = $mini_description_magento;
+									} elseif($attr == 'short_description_magento') {
+										$short_description_magento = $dataTemplate['short_description_magento'];
+										foreach($map as $attr => $pos) {
+											if (strpos($dataTemplate['short_description_magento'], '#'.$attr.'#') !== false) {
+												$short_description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $short_description_magento);
+											}
+										}
+										$updateDataMagento['short_description'] = $short_description_magento;
+									} elseif($attr == 'description_magento') {
+										$description_magento = $dataTemplate['description_magento'];
+										foreach($map as $attr => $pos) {
+											if (strpos($dataTemplate['description_magento'], '#'.$attr.'#') !== false) {
+												$description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $description_magento);
+											}
+										}
+										$updateDataMagento['description'] = $description_magento;
+									} else {
+										$updateDataMagento[$attr] = $datacsv[$map[$attr]];
+									}
+								}
+								//print_r($updateDataMagento);
+								$this->magento($updateDataMagento);
+							}
+						}
+						$row++;
+					}
+					fclose($data);
+				}
+
+				$this->view->data = $data;
 			} else {
 				$form->populate($formData);
 			}
@@ -439,10 +441,10 @@ class Items_ItemController extends Zend_Controller_Action
 				try {
 					// upload received file(s)
 					$upload->receive();
-                    $location = $upload->getFileName();
-                    $locationArray = explode('/',$location);
-                    $data = array();
-                    $data['image'] = end($locationArray);
+					$location = $upload->getFileName();
+					$locationArray = explode('/',$location);
+					$data = array();
+					$data['image'] = end($locationArray);
 					$item = new Items_Model_DbTable_Item();
 					$item->updateItem($id, $data);
 				} catch (Zend_File_Transfer_Exception $e) {
@@ -523,112 +525,112 @@ class Items_ItemController extends Zend_Controller_Action
 		echo Zend_Json::encode($json);
 	}
 
-    // NOTE: This is experimental and not properly tested
+	// NOTE: This is experimental and not properly tested
 	protected function magento($updateDataMagento)
 	{
 		if(file_exists(BASE_PATH.'/configs/magento.ini')) {
-            $magentoConfig = new Zend_Config_Ini(BASE_PATH.'/configs/magento.ini', 'production');
-		    //$this->_helper->viewRenderer->setNoRender();
-		    //$this->_helper->getHelper('layout')->disableLayout();
-		    
-            // Created by Rafael Corrêa Gomes
-            // Reference http://devdocs.magento.com/guides/m1x/api/rest/introduction.html#RESTAPIIntroduction-RESTResources
-            // Custom Resource
-            $apiResources = "products?limit=2";
-            // Custom Values
-            $isAdminUser = true;
-            $adminUrl = "admin";
-            $host = $magentoConfig->host;
-            $fetchUrl = $magentoConfig->fetchUrl;
-            $callbackUrl = $magentoConfig->callbackUrl;
-            $consumerKey    = $magentoConfig->consumerKey;
-            $consumerSecret = $magentoConfig->consumerSecret;
-            // Don't change
-            $temporaryCredentialsRequestUrl = $host . "oauth/initiate?oauth_callback=" . urlencode($callbackUrl);
-            $adminAuthorizationUrl = ($isAdminUser) ? $host . $adminUrl . "/oauth_authorize" : $host . "oauth/authorize";
-            $accessTokenRequestUrl = $host . "oauth/token";
-            $apiUrl = $host . "api/rest/";
-            //session_start();
-            if(!isset($_SESSION['state'])) $_SESSION['state'] = 0;
-            if (!isset($_GET['oauth_token']) && isset($_SESSION['state']) && $_SESSION['state'] == 1) {
-                $_SESSION['state'] = 0;
-            }
-            //print_r($_GET);
-            //print_r($_SESSION);
-            try {
-                $authType = ($_SESSION['state'] == 2) ? OAUTH_AUTH_TYPE_AUTHORIZATION : OAUTH_AUTH_TYPE_URI;
-                //$oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_PLAINTEXT, $authType);
-                $oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_HMACSHA1, $authType);
-                //print_r($oauthClient);
-                $oauthClient->enableDebug();
-                //print_r('test');
-                if (!isset($_GET['oauth_token']) && !$_SESSION['state']) {
-                    //print_r($temporaryCredentialsRequestUrl);
-                    $requestToken = $oauthClient->getRequestToken($temporaryCredentialsRequestUrl);
-                    //print_r($requestToken);
-                    $_SESSION['secret'] = $requestToken['oauth_token_secret'];
-                    $_SESSION['state'] = 1;
-                    header('Location: ' . $adminAuthorizationUrl . '?oauth_token=' . $requestToken['oauth_token']);
-                    exit;
-                } else if ($_SESSION['state'] == 1) {
-                    $oauthClient->setToken($_GET['oauth_token'], $_SESSION['secret']);
-                    $accessToken = $oauthClient->getAccessToken($accessTokenRequestUrl);
-                    $_SESSION['state'] = 2;
-                    $_SESSION['token'] = $accessToken['oauth_token'];
-                    $_SESSION['secret'] = $accessToken['oauth_token_secret'];
-                    //print_r($accessToken);
-                    //print_r($_SESSION);
-                    header('Location: ' . $callbackUrl);
-                    exit;
-                } else {
-                    $oauthClient->setToken($_SESSION['token'], $_SESSION['secret']);
-                    //$resourceUrl = $apiUrl.$apiResources;
-                    $oauthClient->fetch($fetchUrl.$updateDataMagento['sku'], array(), 'GET', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
-                    $product = json_decode($oauthClient->getLastResponse(), true);
-                    //$product = $oauthClient->getLastResponse();
-                    
-                    $updateData = array();
-                    foreach($updateDataMagento as $attr => $data) {
-                        if(array_key_exists($attr, $product)) {
-                            if($attr == 'weight') {
-                                $updateData['weight'] = preg_replace("/[^0-9]/", '', $data);
-                            } else {
-                                $updateData[$attr] = $data;
-                            }
-                        }
-                    }
-                    unset($updateData['manufacturer']);
-                    unset($updateData['refrigerant']);
-                    unset($updateData['delivery_time']);
-                    unset($updateData['delivery_time_oos']);
-                    //print_r($updateData);
-                    $updateData = json_encode($updateData);
-                    
-                    //print_r($updateData);
-                    
-                    //$updateData['sku'] = $updateDataMagento['sku'];
-                    //$updateData['name'] = $updateDataMagento['name'];
-                    //print_r($updateData);
-                    //print_r($product['sku']);
-                    //print_r('<br>');
-                    //print_r($product['entity_id']);
-                    //print_r('<br>');
-                    
-                    $oauthClient->fetch($fetchUrl.$product['entity_id'], $updateData, 'PUT', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
-                    //$response = json_decode($oauthClient->getLastResponse(), true);
-                    //print_r($response);
-                    //print_r($oauthClient);
-                    //print_r(opcache_get_status());
-                }
-            } catch (OAuthException $e) {
-                echo "<pre>";
-                print_r($e->getMessage());
-                echo "<br/>";
-                print_r($e->lastResponse);
-                echo "</pre>";
-            }
-        }
-    }
+			$magentoConfig = new Zend_Config_Ini(BASE_PATH.'/configs/magento.ini', 'production');
+			//$this->_helper->viewRenderer->setNoRender();
+			//$this->_helper->getHelper('layout')->disableLayout();
+
+			// Created by Rafael Corrêa Gomes
+			// Reference http://devdocs.magento.com/guides/m1x/api/rest/introduction.html#RESTAPIIntroduction-RESTResources
+			// Custom Resource
+			$apiResources = "products?limit=2";
+			// Custom Values
+			$isAdminUser = true;
+			$adminUrl = "admin";
+			$host = $magentoConfig->host;
+			$fetchUrl = $magentoConfig->fetchUrl;
+			$callbackUrl = $magentoConfig->callbackUrl;
+			$consumerKey	= $magentoConfig->consumerKey;
+			$consumerSecret = $magentoConfig->consumerSecret;
+			// Don't change
+			$temporaryCredentialsRequestUrl = $host . "oauth/initiate?oauth_callback=" . urlencode($callbackUrl);
+			$adminAuthorizationUrl = ($isAdminUser) ? $host . $adminUrl . "/oauth_authorize" : $host . "oauth/authorize";
+			$accessTokenRequestUrl = $host . "oauth/token";
+			$apiUrl = $host . "api/rest/";
+			//session_start();
+			if(!isset($_SESSION['state'])) $_SESSION['state'] = 0;
+			if (!isset($_GET['oauth_token']) && isset($_SESSION['state']) && $_SESSION['state'] == 1) {
+				$_SESSION['state'] = 0;
+			}
+			//print_r($_GET);
+			//print_r($_SESSION);
+			try {
+				$authType = ($_SESSION['state'] == 2) ? OAUTH_AUTH_TYPE_AUTHORIZATION : OAUTH_AUTH_TYPE_URI;
+				//$oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_PLAINTEXT, $authType);
+				$oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_HMACSHA1, $authType);
+				//print_r($oauthClient);
+				$oauthClient->enableDebug();
+				//print_r('test');
+				if (!isset($_GET['oauth_token']) && !$_SESSION['state']) {
+					//print_r($temporaryCredentialsRequestUrl);
+					$requestToken = $oauthClient->getRequestToken($temporaryCredentialsRequestUrl);
+					//print_r($requestToken);
+					$_SESSION['secret'] = $requestToken['oauth_token_secret'];
+					$_SESSION['state'] = 1;
+					header('Location: ' . $adminAuthorizationUrl . '?oauth_token=' . $requestToken['oauth_token']);
+					exit;
+				} else if ($_SESSION['state'] == 1) {
+					$oauthClient->setToken($_GET['oauth_token'], $_SESSION['secret']);
+					$accessToken = $oauthClient->getAccessToken($accessTokenRequestUrl);
+					$_SESSION['state'] = 2;
+					$_SESSION['token'] = $accessToken['oauth_token'];
+					$_SESSION['secret'] = $accessToken['oauth_token_secret'];
+					//print_r($accessToken);
+					//print_r($_SESSION);
+					header('Location: ' . $callbackUrl);
+					exit;
+				} else {
+					$oauthClient->setToken($_SESSION['token'], $_SESSION['secret']);
+					//$resourceUrl = $apiUrl.$apiResources;
+					$oauthClient->fetch($fetchUrl.$updateDataMagento['sku'], array(), 'GET', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
+					$product = json_decode($oauthClient->getLastResponse(), true);
+					//$product = $oauthClient->getLastResponse();
+
+					$updateData = array();
+					foreach($updateDataMagento as $attr => $data) {
+						if(array_key_exists($attr, $product)) {
+							if($attr == 'weight') {
+								$updateData['weight'] = preg_replace("/[^0-9]/", '', $data);
+							} else {
+								$updateData[$attr] = $data;
+							}
+						}
+					}
+					unset($updateData['manufacturer']);
+					unset($updateData['refrigerant']);
+					unset($updateData['delivery_time']);
+					unset($updateData['delivery_time_oos']);
+					//print_r($updateData);
+					$updateData = json_encode($updateData);
+
+					//print_r($updateData);
+
+					//$updateData['sku'] = $updateDataMagento['sku'];
+					//$updateData['name'] = $updateDataMagento['name'];
+					//print_r($updateData);
+					//print_r($product['sku']);
+					//print_r('<br>');
+					//print_r($product['entity_id']);
+					//print_r('<br>');
+
+					$oauthClient->fetch($fetchUrl.$product['entity_id'], $updateData, 'PUT', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
+					//$response = json_decode($oauthClient->getLastResponse(), true);
+					//print_r($response);
+					//print_r($oauthClient);
+					//print_r(opcache_get_status());
+				}
+			} catch (OAuthException $e) {
+				echo "<pre>";
+				print_r($e->getMessage());
+				echo "<br/>";
+				print_r($e->lastResponse);
+				echo "</pre>";
+			}
+		}
+	}
 
 	protected function isLocked($locked, $lockedtime)
 	{

@@ -10,11 +10,9 @@ $id = $this->quote['id'];
 $quoteid = $this->quote['quoteid'];
 $contactid = $this->quote['contactid'];
 $quotedate = $this->quote['quotedate'];
-if($quotedate != '0000-00-00') $quotedate = implode('.', array_reverse(explode('-', $quotedate)));
-else $quotedate = 0;
+if($quotedate) $quotedate = implode('.', array_reverse(explode('-', $quotedate)));
 $deliverydate = $this->quote['deliverydate'];
-if($deliverydate != '0000-00-00') $deliverydate = implode('.', array_reverse(explode('-', $deliverydate)));
-else $deliverydate = 0;
+if($deliverydate) $deliverydate = implode('.', array_reverse(explode('-', $deliverydate)));
 $vatin = $this->quote['vatin'];
 $header = $this->quote['header'];
 $footer = $this->quote['footer'];
@@ -99,7 +97,7 @@ if(isset($this->template) && $this->template['website']) {
 //Logo
 if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
 	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
-    $pdf->Image($logo, 145, 10, 0, 0, '', $website);
+	$pdf->Image($logo, 145, 10, 0, 0, '', $website);
 }
 
 //IMPORTANT INFORMATIONS
@@ -159,9 +157,9 @@ if(isset($this->template) && isset($this->template['company']) && $this->templat
 	$address = $this->template['company'];
 } else {
 	$address = $client['company'];
-    if($client['address']) $address .= ', '.$client['address'];
-    if($client['postcode']) $address .= ', '.$client['postcode'];
-    if($client['city']) $address .= ' '.$client['city'];
+	if($client['address']) $address .= ', '.$client['address'];
+	if($client['postcode']) $address .= ', '.$client['postcode'];
+	if($client['city']) $address .= ' '.$client['city'];
 }
 $pdf->MultiCell(70, 4, $address, 'B', 'L', false, 1, $x);
 $pdf->ln(4);
@@ -272,9 +270,9 @@ while($i <= $lastPage) {
 		cancelled($pdf, strtoupper($this->translate('DOCUMENTS_CANCELLED')));
 	}
 	if($i > 1) {
-        if(isset($logo)) {
-		    $pdf->Image($logo, 155, 10, 40, 0, '', $website);
-        }
+		if(isset($logo)) {
+			$pdf->Image($logo, 155, 10, 40, 0, '', $website);
+		}
 
 		$y = $pdf->GetY();
 		$pdf->SetY(20);
@@ -284,13 +282,13 @@ while($i <= $lastPage) {
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_QUOTE_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($quoteid) $pdf->Write(0, $quoteid.'     ');
-		else $pdf->Write(0, ' - - - - -     ');
+		if($quoteid) $pdf->Write(0, $quoteid.'	 ');
+		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_QUOTE_DATE').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($quotedate) $pdf->Write(0, $quotedate.'     ');
-		else $pdf->Write(0, ' - - - - -     ');
+		if($quotedate) $pdf->Write(0, $quotedate.'	 ');
+		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
@@ -342,17 +340,17 @@ if($this->action == 'download') {
 	if($quoteid) $pdf->Output($quoteid.' '.$this->translate('QUOTE').' '.$billingName1.'.pdf', 'D');
 	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').' '.$this->translate('QUOTE').' '.$billingName1.'.pdf', 'D');
 } else {
-    $path = BASE_PATH.'/files/contacts/';
-    $dir1 = substr($client['id'], 0, 1);
-    if(strlen($client['id']) > 1) $dir2 = substr($client['id'], 1, 1);
-    else $dir2 = '0';
-    $dir3 = substr($this->contact['id'], 0, 1).'/';
-    if(strlen($this->contact['id']) > 1) $dir4 = substr($this->contact['id'], 1, 1).'/';
-    else $dir4 = '0/';
-    $url = $dir1.'/'.$dir2.'/'.$client['id'].'/'.$dir3.'/'.$dir4.'/'.$this->contact['id'].'/';
+	$path = BASE_PATH.'/files/contacts/';
+	$dir1 = substr($client['id'], 0, 1);
+	if(strlen($client['id']) > 1) $dir2 = substr($client['id'], 1, 1);
+	else $dir2 = '0';
+	$dir3 = substr($this->contact['id'], 0, 1).'/';
+	if(strlen($this->contact['id']) > 1) $dir4 = substr($this->contact['id'], 1, 1).'/';
+	else $dir4 = '0/';
+	$url = $dir1.'/'.$dir2.'/'.$client['id'].'/'.$dir3.'/'.$dir4.'/'.$this->contact['id'].'/';
 	if($quoteid) {
-        if(!file_exists($path.$url.$this->translate('QUOTE').'-'.$quoteid.'.pdf'))
-		    $pdf->Output($path.$url.$this->translate('QUOTE').'-'.$quoteid.'.pdf', 'F');
+		if(!file_exists($path.$url.$this->translate('QUOTE').'-'.$quoteid.'.pdf'))
+			$pdf->Output($path.$url.$this->translate('QUOTE').'-'.$quoteid.'.pdf', 'F');
 		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$this->translate('QUOTE').'-'.$quoteid.'.pdf?'.time().'" width="900px" height="500px">';
 	} else {
 		$pdf->Output(BASE_PATH.'/cache/quote/'.$id.'.pdf', 'F');
