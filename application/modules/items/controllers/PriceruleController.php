@@ -104,18 +104,8 @@ class Items_PriceruleController extends Zend_Controller_Action
 
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'pricerule', null, array('id' => $id));
-		} elseif($this->isLocked($pricerule['locked'], $pricerule['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
 		} else {
-			$priceruleDb->lock($id);
+			$this->_helper->Access->lock($id, $this->_user['id'], $pricerule['locked'], $pricerule['lockedtime']);
 
 			$form = new Items_Form_Pricerule();
 			$options = $this->_helper->Options->getOptions($form);
@@ -211,70 +201,24 @@ class Items_PriceruleController extends Zend_Controller_Action
 
 	public function lockAction()
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$priceruleDb = new Items_Model_DbTable_Pricerule();
-		$pricerule = $priceruleDb->getPricerule($id);
-		if($this->isLocked($pricerule['locked'], $pricerule['lockedtime'])) {
-			$userDb = new Users_Model_DbTable_User();
-			$user = $userDb->getUser($pricerule['locked']);
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
-		} else {
-			$priceruleDb->lock($id);
-		}
+		$this->_helper->Access->lock($id, $this->_user['id']);
 	}
 
 	public function unlockAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$priceruleDb = new Items_Model_DbTable_Pricerule();
-		$priceruleDb->unlock($id);
+		$this->_helper->Access->unlock($id);
 	}
 
 	public function keepaliveAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$priceruleDb = new Items_Model_DbTable_Pricerule();
-		$priceruleDb->lock($id);
+		$this->_helper->Access->keepalive($id);
 	}
 
 	public function validateAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Items_Form_Pricerule();
-		$options = $this->_helper->Options->getOptions($form);
-
-		$data = $this->getRequest()->getPost();
-		$form->$data['element']->isValid($data[$data['element']]);
-
-		$json = $form->getMessages();
-		header('Content-type: application/json');
-		echo Zend_Json::encode($json);
-	}
-
-	protected function isLocked($locked, $lockedtime)
-	{
-		if($locked && ($locked != $this->_user['id'])) {
-			$timeout = strtotime($lockedtime) + 300; // 5 minutes
-			$timestamp = strtotime($this->_date);
-			if($timeout < $timestamp) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			return false;
-		}
+		$this->_helper->Validate();
 	}
 }

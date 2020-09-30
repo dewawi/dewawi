@@ -89,11 +89,12 @@ class Sales_Model_DbTable_Creditnote extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function saveCreditnote($id, $creditnoteid)
+	public function saveCreditnote($id, $creditnoteid, $filename)
 	{
 		$data = array();
 		$data['creditnoteid'] = $creditnoteid;
 		$data['creditnotedate'] = $this->_date;
+		$data['filename'] = $filename;
 		$data['state'] = 105;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];

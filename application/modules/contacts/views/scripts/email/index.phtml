@@ -1,0 +1,78 @@
+<?php
+$this->title = $this->translate('CONTACTS');
+$this->headTitle($this->title);
+echo $this->Messages();
+//echo $this->ActiveFilter();
+?>
+
+<?php if(count($this->emailmessages)) : ?>
+	<table id="data">
+		<thead>
+			<tr>
+				<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+				<th class="id">
+					<?php echo $this->translate('CONTACTS_EMAIL_RECIPIENT'); ?>
+				</th>
+				<th class="phone" style="flex-grow: 2;">
+					<?php echo $this->translate('CONTACTS_EMAIL_BODY'); ?>
+				</th>
+				<th class="phone">
+					<?php echo $this->translate('CONTACTS_ATTACHMENTS'); ?>
+				</th>
+				<th class="phone" style="flex-grow: 0.5;">
+					<?php echo $this->translate('CONTACTS_EMAIL_SENT'); ?>
+				</th>
+				<th class="phone" style="flex-grow: 0.5;">
+					<?php echo $this->translate('CONTACTS_EMAIL_SENT_BY'); ?>
+				</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php foreach($this->emailmessages as $emailmessage) : ?>
+				<tr>
+					<td><input class="id" type="checkbox" value="<?php echo $emailmessage['id'] ?>" name="id"/></td>
+					<td data-label="<?php echo $this->translate('CONTACTS_PHONE') ?>" class="phone">
+						<?php echo str_replace(',', '<br>', $this->escape($emailmessage['recipient'])); ?>
+					</td>
+					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street" style="flex-grow: 2;">
+						<p><b><?php echo $this->translate('CONTACTS_EMAIL_SUBJECT'); ?>:</b> <?php echo $this->escape($emailmessage['subject']); ?></p>
+						<?php echo $emailmessage['body']; ?>
+					</td>
+					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street">
+						<?php if($emailmessage['attachment']): ?>
+							<?php $attachments = explode(',', $emailmessage['attachment']); ?>
+							<?php foreach($attachments as $attachment) : ?>
+								<?php //$headers = get_headers('https://'.$_SERVER['HTTP_HOST'].'/files/attachments/'.$this->module.'/'.$this->controller.'/'.$this->url.'/'.$attachment); ?>
+								<?php //if(stripos($headers[0], '200 OK')) : ?>
+									<a href="<?php echo $this->baseUrl(); ?>/files/attachments/<?php echo $this->module; ?>/<?php echo $this->controller; ?>/<?php echo $this->url; ?>/<?php echo $attachment; ?>" target="_blank"><?php echo $attachment; ?></a><br>
+								<?php //else : ?>
+									<?php //echo $attachment; ?>
+								<?php //endif; ?>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</td>
+					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street" style="flex-grow: 0.5;">
+						<?php echo $this->escape($emailmessage['messagesent']); ?>
+					</td>
+					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street" style="flex-grow: 0.5;">
+						<?php echo $this->escape($this->users[$emailmessage['messagesentby']]); ?>
+					</td>
+					<td class="buttons">
+						<?php //echo $this->toolbar->editInline; ?>
+						<?php //echo $this->toolbar->copyInline; ?>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+			<tr class="bottom">
+				<td></td>
+				<td>
+					<div class="toolbar bottom">
+						<?php //echo $this->ToolbarBottom(); ?>
+					</div>
+				</td>
+				<td></td>
+			</tr>
+		</tbody>
+	</table>
+<?php endif; ?>

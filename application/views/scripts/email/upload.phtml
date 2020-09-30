@@ -1,9 +1,9 @@
-<?php 
+<?php
 $this->title = $this->translate('UPLOAD');
 $this->headTitle($this->title);
 ?>
 <script type="text/javascript">
-$(document).ready(function(){
+/*$(document).ready(function(){
 	$.ajax({
 		type: "POST",
 		url: baseUrl+"/"+controller+"/files/id/"+id,
@@ -12,7 +12,7 @@ $(document).ready(function(){
 			$('#files', parent.document).html(data);
 		}
 	});
-});
+});*/
 </script>
 <form id="upload" enctype="multipart/form-data" action="" method="post">
 	<dl class="form">

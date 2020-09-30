@@ -120,23 +120,10 @@ class Items_InventoryController extends Zend_Controller_Action
 		$itemDb = new Items_Model_DbTable_Item();
 		$item = $itemDb->getItem($id);
 
-		//Check if the directory is writable
-		$dirwritable = $this->_helper->Directory->isWritable($id, 'item', $this->_flashMessenger);
-
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'item', null, array('id' => $id));
-		} elseif($this->isLocked($item['locked'], $item['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
 		} else {
-			$itemDb->lock($id);
+			$this->_helper->Access->lock($id, $this->_user['id'], $item['locked'], $item['lockedtime']);
 
 			$form = new Items_Form_Item();
 			$options = $this->_helper->Options->getOptions($form);
@@ -223,9 +210,6 @@ class Items_InventoryController extends Zend_Controller_Action
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
 		echo $itemid = $item->addItem($data);
-
-		//Check if the directory is writable
-		$this->_helper->Directory->isWritable($itemid, 'item', $this->_flashMessenger);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -465,177 +449,24 @@ class Items_InventoryController extends Zend_Controller_Action
 
 	public function lockAction()
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$itemDb = new Items_Model_DbTable_Item();
-		$item = $itemDb->getProcess($id);
-		if($this->isLocked($item['locked'], $item['lockedtime'])) {
-			$userDb = new Users_Model_DbTable_User();
-			$user = $userDb->getUser($item['locked']);
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
-		} else {
-			$itemDb->lock($id);
-		}
+		$this->_helper->Access->lock($id, $this->_user['id']);
 	}
 
 	public function unlockAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$itemDb = new Items_Model_DbTable_Item();
-		$itemDb->unlock($id);
+		$this->_helper->Access->unlock($id);
 	}
 
 	public function keepaliveAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$itemDb = new Items_Model_DbTable_Item();
-		$itemDb->lock($id);
+		$this->_helper->Access->keepalive($id);
 	}
 
 	public function validateAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Items_Form_Item();
-		$options = $this->_helper->Options->getOptions($form);
-
-		$data = $this->getRequest()->getPost();
-		$form->$data['element']->isValid($data[$data['element']]);
-
-		$json = $form->getMessages();
-		header('Content-type: application/json');
-		echo Zend_Json::encode($json);
-	}
-
-	// NOTE: This is experimental and not properly tested
-	protected function magento($updateDataMagento)
-	{
-		if(file_exists(BASE_PATH.'/configs/magento.ini')) {
-			$magentoConfig = new Zend_Config_Ini(BASE_PATH.'/configs/magento.ini', 'production');
-			//$this->_helper->viewRenderer->setNoRender();
-			//$this->_helper->getHelper('layout')->disableLayout();
-
-			// Created by Rafael Corrêa Gomes
-			// Reference http://devdocs.magento.com/guides/m1x/api/rest/introduction.html#RESTAPIIntroduction-RESTResources
-			// Custom Resource
-			$apiResources = "products?limit=2";
-			// Custom Values
-			$isAdminUser = true;
-			$adminUrl = "admin";
-			$host = $magentoConfig->host;
-			$fetchUrl = $magentoConfig->fetchUrl;
-			$callbackUrl = $magentoConfig->callbackUrl;
-			$consumerKey	= $magentoConfig->consumerKey;
-			$consumerSecret = $magentoConfig->consumerSecret;
-			// Don't change
-			$temporaryCredentialsRequestUrl = $host . "oauth/initiate?oauth_callback=" . urlencode($callbackUrl);
-			$adminAuthorizationUrl = ($isAdminUser) ? $host . $adminUrl . "/oauth_authorize" : $host . "oauth/authorize";
-			$accessTokenRequestUrl = $host . "oauth/token";
-			$apiUrl = $host . "api/rest/";
-			//session_start();
-			if(!isset($_SESSION['state'])) $_SESSION['state'] = 0;
-			if (!isset($_GET['oauth_token']) && isset($_SESSION['state']) && $_SESSION['state'] == 1) {
-				$_SESSION['state'] = 0;
-			}
-			//print_r($_GET);
-			//print_r($_SESSION);
-			try {
-				$authType = ($_SESSION['state'] == 2) ? OAUTH_AUTH_TYPE_AUTHORIZATION : OAUTH_AUTH_TYPE_URI;
-				//$oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_PLAINTEXT, $authType);
-				$oauthClient = new OAuth($consumerKey, $consumerSecret, OAUTH_SIG_METHOD_HMACSHA1, $authType);
-				//print_r($oauthClient);
-				$oauthClient->enableDebug();
-				//print_r('test');
-				if (!isset($_GET['oauth_token']) && !$_SESSION['state']) {
-					//print_r($temporaryCredentialsRequestUrl);
-					$requestToken = $oauthClient->getRequestToken($temporaryCredentialsRequestUrl);
-					//print_r($requestToken);
-					$_SESSION['secret'] = $requestToken['oauth_token_secret'];
-					$_SESSION['state'] = 1;
-					header('Location: ' . $adminAuthorizationUrl . '?oauth_token=' . $requestToken['oauth_token']);
-					exit;
-				} else if ($_SESSION['state'] == 1) {
-					$oauthClient->setToken($_GET['oauth_token'], $_SESSION['secret']);
-					$accessToken = $oauthClient->getAccessToken($accessTokenRequestUrl);
-					$_SESSION['state'] = 2;
-					$_SESSION['token'] = $accessToken['oauth_token'];
-					$_SESSION['secret'] = $accessToken['oauth_token_secret'];
-					//print_r($accessToken);
-					//print_r($_SESSION);
-					header('Location: ' . $callbackUrl);
-					exit;
-				} else {
-					$oauthClient->setToken($_SESSION['token'], $_SESSION['secret']);
-					//$resourceUrl = $apiUrl.$apiResources;
-					$oauthClient->fetch($fetchUrl.$updateDataMagento['sku'], array(), 'GET', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
-					$product = json_decode($oauthClient->getLastResponse(), true);
-					//$product = $oauthClient->getLastResponse();
-
-					$updateData = array();
-					foreach($updateDataMagento as $attr => $data) {
-						if(array_key_exists($attr, $product)) {
-							if($attr == 'weight') {
-								$updateData['weight'] = preg_replace("/[^0-9]/", '', $data);
-							} else {
-								$updateData[$attr] = $data;
-							}
-						}
-					}
-					unset($updateData['manufacturer']);
-					unset($updateData['refrigerant']);
-					unset($updateData['delivery_time']);
-					unset($updateData['delivery_time_oos']);
-					//print_r($updateData);
-					$updateData = json_encode($updateData);
-
-					//print_r($updateData);
-
-					//$updateData['sku'] = $updateDataMagento['sku'];
-					//$updateData['name'] = $updateDataMagento['name'];
-					//print_r($updateData);
-					//print_r($product['sku']);
-					//print_r('<br>');
-					//print_r($product['entity_id']);
-					//print_r('<br>');
-
-					$oauthClient->fetch($fetchUrl.$product['entity_id'], $updateData, 'PUT', array('Content-Type' => 'application/json', 'Accept' => '*/*'));
-					//$response = json_decode($oauthClient->getLastResponse(), true);
-					//print_r($response);
-					//print_r($oauthClient);
-					//print_r(opcache_get_status());
-				}
-			} catch (OAuthException $e) {
-				echo "<pre>";
-				print_r($e->getMessage());
-				echo "<br/>";
-				print_r($e->lastResponse);
-				echo "</pre>";
-			}
-		}
-	}
-
-	protected function isLocked($locked, $lockedtime)
-	{
-		if($locked && ($locked != $this->_user['id'])) {
-			$timeout = strtotime($lockedtime) + 300; // 5 minutes
-			$timestamp = strtotime($this->_date);
-			if($timeout < $timestamp) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			return false;
-		}
+		$this->_helper->Validate();
 	}
 }

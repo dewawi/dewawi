@@ -107,11 +107,11 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 			'lifetime' => 86400, // cache lifetime of 24 hours
 			'automatic_serialization' => true
 		);
-		 
+
 		$backendOptions = array(
 			'cache_dir' => BASE_PATH . '/cache/' // Directory where to put the cache files
 		);
-		 
+
 		// getting a Zend_Cache_Core object
 		$cache = Zend_Cache::factory('Core',
 						'File',

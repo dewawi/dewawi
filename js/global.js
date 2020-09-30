@@ -21,41 +21,41 @@ $(document).ready(function(){
 	}, 60000); // 60 seconds
 
 	//setInterval(function(){
-	//    console.log(isDirty);
+	//		console.log(isDirty);
 	//}, 1000); // 6 seconds
 
-    //Client switcher
+		//Client switcher
 	$('#clientid').on('change', '', function() {
 		//console.log($('#client').val());
-	    $.ajax({
-		    type: 'POST',
-		    async: true,
-		    url: baseUrl+'/users/user/client/clientid/'+$('#clientid').val(),
-		    cache: false,
-		    success: function(json){
-			    //response = json;
-			    //isDirty = false;
-                //console.log(isDirty);
-                location.reload();
-		    }
-	    });
+			$.ajax({
+				type: 'POST',
+				async: true,
+				url: baseUrl+'/users/user/client/clientid/'+$('#clientid').val(),
+				cache: false,
+				success: function(json){
+					//response = json;
+					//isDirty = false;
+								//console.log(isDirty);
+								location.reload();
+				}
+			});
 	});
 
-    //Language switcher
+		//Language switcher
 	$('#userinfo #language').on('change', '', function() {
 		//console.log($('#language').val());
-	    $.ajax({
-		    type: 'POST',
-		    async: true,
-		    url: baseUrl+'/users/user/language/language/'+$('#language').val(),
-		    cache: false,
-		    success: function(json){
-			    //response = json;
-			    //isDirty = false;
-                //console.log(isDirty);
-                location.reload();
-		    }
-	    });
+			$.ajax({
+				type: 'POST',
+				async: true,
+				url: baseUrl+'/users/user/language/language/'+$('#language').val(),
+				cache: false,
+				success: function(json){
+					//response = json;
+					//isDirty = false;
+								//console.log(isDirty);
+								location.reload();
+				}
+			});
 	});
 
 	//Auto validate and save
@@ -87,9 +87,9 @@ $(document).ready(function(){
 		//validate(data, params);
 	});
 	$('.edit form input').on('textchange', function() {
-        if (!$(this).hasClass('datePicker')) {
-		    isDirty = true;
-        }
+				if (!$(this).hasClass('datePicker')) {
+				isDirty = true;
+				}
 	});
 	$('.edit form textarea').on('textchange', function() {
 		isDirty = true;
@@ -104,12 +104,12 @@ $(document).ready(function(){
 		var data = {};
 		var params = {};
 		params['id'] = $(this).closest('tr.wrap').find('input.id').val();
-        console.log(params['id']);
+				//console.log(params['id']);
 		params[controller+'id'] = id;
 		params['element'] = this.name;
 		data[this.name] = this.value;
-        //console.log(data);
-        //console.log(params);
+				//console.log(data);
+				//console.log(params);
 		if(this.name == 'ordering') sort(params['id'], this.value);
 		else editPosition(data, params);
 	});
@@ -123,7 +123,7 @@ $(document).ready(function(){
 				$(this).html('&nbsp;');
 				$(this).attr('data-empty', 'true');
 			}
-			
+
 		});
 	}
 	$('#content').on('click', '.editable', function() {
@@ -254,31 +254,31 @@ $(document).ready(function(){
 		}
 	});
 	$('#data').on('change', '#activated', function() {
-        //console.log($('#activated').is(':checked'));
-	    var data = {};
-	    var params = {};
+				//console.log($('#activated').is(':checked'));
+			var data = {};
+			var params = {};
 		params['id'] = $(this).closest('tr').find('input.id').val();
-        if(params['id']) {
-		    if($(this).is(':checked')) data[this.name] = 1;
-            else data[this.name] = 0;
-            edit(data, params);
-        }
+				if(params['id']) {
+				if($(this).is(':checked')) data[this.name] = 1;
+						else data[this.name] = 0;
+						edit(data, params);
+				}
 	});
 	$('#data.permissions').on('change', 'input', function() {
-        //console.log($('#activated').is(':checked'));
-	    var data = {};
-	    var params = {};
+				//console.log($('#activated').is(':checked'));
+			var data = {};
+			var params = {};
 		params['id'] = $(this).closest('tr').find('input.id').val();
 		data['controller'] = $(this).closest('td').find('input.controller').val();
 		data['module'] = $(this).closest('td').find('input.module').val();
 		data['element'] = this.name;
-        if(params['id']) {
-		    if($(this).is(':checked')) data[this.name] = 1;
-            else data[this.name] = 0;
-            edit(data, params);
-            //console.log(params);
-            //console.log(data);
-        }
+				if(params['id']) {
+				if($(this).is(':checked')) data[this.name] = 1;
+						else data[this.name] = 0;
+						edit(data, params);
+						//console.log(params);
+						//console.log(data);
+				}
 	});
 
 	//Change title
@@ -446,7 +446,7 @@ $(document).ready(function(){
 	$('ul.tabs').on('click', 'li', function(event) {
 		$('ul.tabs li').removeClass('active'); //Remove any 'active' class
 		$(this).addClass('active'); //Add 'active' class to selected tab
-	    //$('.datepicker-container').addClass('datepicker-hide').off('click.datepicker', $('.datePicker').click); //Hide date picker
+			//$('.datepicker-container').addClass('datepicker-hide').off('click.datepicker', $('.datePicker').click); //Hide date picker
 		$('.tab_content').hide(); //Hide all tab content
 
 		if(($(this).find('a').attr('href') == '#tabFinish') || ($(this).find('a').attr('href') == '#tabDocument') || ($(this).find('a').attr('href') == '#tabFiles')) {
@@ -462,10 +462,10 @@ $(document).ready(function(){
 			//elfinder();
 		}
 		//return false;
-        event.preventDefault();
+				event.preventDefault();
 	});
 	if($.cookie('tab') == '#tabPositions') {
-		getPositions();				
+		getPositions();
 	}
 
 	//Prices and quantities
@@ -542,7 +542,7 @@ $(document).ready(function(){
 							}
 						});
 					});
-                    //copy and delete function on edit page
+										//copy and delete function on edit page
 					var id = $(this).closest('.toolbar').find('input.id').val();
 					if(id) {
 						if(className == 'copy') {
@@ -604,9 +604,9 @@ $(document).ready(function(){
 
 	if($('#fromDatePicker').length) {
 		var dateFromPickerOptions = {
-	        language: language,
+					language: language,
 			inline: true,
-            container: $('#fromDatePicker')
+						container: $('#fromDatePicker')
 		}
 		//$.extend(dateFromPickerOptions, datePickerOptions)
 		var datesFrom = $('#from').datepicker(dateFromPickerOptions);
@@ -614,9 +614,9 @@ $(document).ready(function(){
 
 	if($('#toDatePicker').length) {
 		var dateToPickerOptions = {
-	        language: language,
+					language: language,
 			inline: true,
-            container: $('#toDatePicker')
+						container: $('#toDatePicker')
 		};
 		//$.extend(dateToPickerOptions, datePickerOptions)
 		var datesTo = $('#to').datepicker(dateToPickerOptions);
@@ -714,7 +714,7 @@ function save() {
 
 //Add
 function add(data, params) {
-    //console.log(data);
+		//console.log(data);
 	params = params || null;
 	if(params) {
 		var url = baseUrl;
@@ -756,7 +756,7 @@ function add(data, params) {
 				$('div#'+data['controller']+' button.add').before(response);
 				//Focus on new element
 				$('div#'+data['controller']+' div:last input:first').focus().select();
-                //console.log(response);
+								//console.log(response);
 				if(action == 'index') search();
 			}
 		});
@@ -783,11 +783,11 @@ function edit(data, params) {
 		success: function(json){
 			response = json;
 			isDirty = false;
-            console.log(isDirty);
+						//console.log(isDirty);
 		}
 	});
-    //console.log(data);
-    //console.log(response);
+		//console.log(data);
+		//console.log(response);
 	return response;
 }
 
@@ -806,22 +806,22 @@ function editPosition(data, params) {
 				$('table#total #subtotal').text(response['subtotal']);
 				$('table#total #total').text(response['total']);
 				$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
-                $.each(response['taxes'], function(key, val) {
-                    if(key != 'total') $('td[data-rate="'+key+'"]').text(val);
-                });
+								$.each(response['taxes'], function(key, val) {
+										if(key != 'total') $('td[data-rate="'+key+'"]').text(val);
+								});
 			} else if(params['element'] == 'taxrate') {
 				//$('table#total #taxes').text(response['taxes']);
 				//$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
-                /*$.each(response['taxes'], function(key, val) {
-                    if(key != 'total') {
-                        if($('td[data-rate="'+key+'"]').length) {
-                            $('td[data-rate="'+key+'"]').text(val);
-                        } else {
-			                getPositions($(document).height());
-                        }
-                    }
-                });*/
-			    getPositions($(document).height());
+								/*$.each(response['taxes'], function(key, val) {
+										if(key != 'total') {
+												if($('td[data-rate="'+key+'"]').length) {
+														$('td[data-rate="'+key+'"]').text(val);
+												} else {
+											getPositions($(document).height());
+												}
+										}
+								});*/
+					getPositions($(document).height());
 			}
 		}
 	});
@@ -974,9 +974,9 @@ function reset() {
 //Copy
 function copy(cid, cmodule, ccontroller){
 	cid = cid || id;
-    //console.log(cid);
-    //console.log(cmodule);
-    //console.log(baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid);
+		//console.log(cid);
+		//console.log(cmodule);
+		//console.log(baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid);
 	cmodule = cmodule || module;
 	ccontroller = ccontroller || controller;
 	$.ajax({
@@ -984,7 +984,7 @@ function copy(cid, cmodule, ccontroller){
 		url: baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid,
 		cache: false,
 		success: function(response){
-            //console.log(response);
+						//console.log(response);
 			if(id && response) setLocation(baseUrl+'/'+cmodule+'/'+ccontroller+'/edit/id/'+response);
 			else search();
 		}
@@ -1011,8 +1011,9 @@ function cancel(id, message){
 }
 
 //Delete
-function del(id, message, type){
+function del(id, message, type, cmodule){
 	type = type || controller;
+	cmodule = cmodule || module;
 	var answer = confirm(message);
 	if (answer == true) {
 		if(action == 'add') {
@@ -1020,12 +1021,14 @@ function del(id, message, type){
 		} else {
 			$.ajax({
 				type: 'POST',
-				url: baseUrl+'/'+module+'/'+type+'/delete/id/'+id,
+				url: baseUrl+'/'+cmodule+'/'+type+'/delete/id/'+id,
 				cache: false,
 				success: function(data){
 					if(action == 'edit') {
 						$('div#'+type+id).remove();
-						if(type == controller) window.location = baseUrl+'/'+module+'/'+controller;
+						if(type == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
+					} else if(type == 'attachment') {
+						$('div#'+type+id).remove();
 					} else {
 						search();
 					}
@@ -1088,6 +1091,74 @@ function getPositions(scrollTo) {
 	});
 }
 
+//Get Positions
+function getEmailmessages(scrollTo) {
+	var contactid = $('#contactid').val();
+	var data = {};
+	if(controller != 'contact') {;
+		data.documentid = id;
+		data.module = module;
+		data.controller = controller
+	}
+	scrollTo = scrollTo || null;
+	$.ajax({
+		type: 'POST',
+		url: baseUrl+'/contacts/email/index/contactid/'+contactid,
+		cache: false,
+		data: data,
+		success: function(data){
+			$('#emailmessages').html(data);
+			autosize($('#emailmessages').find('textarea'));
+			if(data) $('#tabPositions .toolbar.emailmessages.bottom').show();
+			else $('#tabPositions .toolbar.emailmessages.bottom').hide();
+			if(scrollTo) {
+				/*$('html, body').animate({
+					scrollTop: $('#position'+scrollTo).offset().top
+				}, 2000);*/
+				window.scrollTo(0, scrollTo);
+			}
+			//$('.datePickerLive').datepicker(datePickerOptions);
+		}
+	});
+}
+
+function sendMessage(){
+	var data = {};
+	data.recipient = $('#recipient').val();
+	data.cc = $('#cc').val();
+	data.bcc = $('#bcc').val();
+	data.replyto = $('#replyto').val();
+	data.subject = $('#subject').val();
+	data.body = tinymce.get('body').getContent();
+	data.module = module;
+	data.controller = controller;
+
+	data.files = {};
+
+	$('#attachments .file input[type="checkbox"]').each(function(index, element) {
+		if($(this).is(':checked')) data.files[$(this).val()] = $(this).val();
+	});
+
+	var contactid = $('#contactid').val();
+
+	if((module == 'contacts')) var url = baseUrl+'/contacts/email/send/contactid/'+contactid;
+	else var url = baseUrl+'/contacts/email/send/contactid/'+contactid+'/documentid/'+id;
+
+	if(contactid > 0) {
+		$.ajax({
+			type: 'POST',
+			url: url,
+			cache: false,
+			data: data,
+			success: function(response){
+				getEmailmessages(window.pageYOffset);
+			}
+		});
+	} else {
+		$('#output').html('<b>Bitte vor dem speichern dem Beleg einen Kontakt zuweisen.</b>');
+	}
+}
+
 //Copy Position
 function copyPosition(positionID){
 	$.ajax({
@@ -1138,7 +1209,7 @@ function sort(id, ordering){
 			if(action == 'edit') {
 				getPositions();
 			} else {
-                //console.log(response);
+								//console.log(response);
 				search();
 			}
 		}
@@ -1179,26 +1250,26 @@ function previewPdf(){
 
 function savePdf(){
 	$('#output').html('');
-    var contactid = $('#contactid').val();
-    if(contactid > 0) {
-	    $.ajax({
-		    type: 'POST',
-		    url: baseUrl+'/'+module+'/'+controller+'/save/id/'+id,
-		    cache: false,
-		    success: function(data){
-			    $('#output').html(data);
-			    if(action != 'view') {
-				    window.location = baseUrl+'/'+module+'/'+controller+'/view/id/'+id;
-				    $('ul.tabs li').removeClass('active');
-				    $(this).addClass('active');
-				    $('.tab_content').hide();
-				    var activeTab = $(this).find('a').attr('href');
-			    }
-		    }
-	    });
+		var contactid = $('#contactid').val();
+		if(contactid > 0) {
+			$.ajax({
+				type: 'POST',
+				url: baseUrl+'/'+module+'/'+controller+'/save/id/'+id,
+				cache: false,
+				success: function(data){
+					$('#output').html(data);
+					if(action != 'view') {
+						window.location = baseUrl+'/'+module+'/'+controller+'/view/id/'+id;
+						$('ul.tabs li').removeClass('active');
+						$(this).addClass('active');
+						$('.tab_content').hide();
+						var activeTab = $(this).find('a').attr('href');
+					}
+				}
+			});
 	} else {
-	    $('#output').html('<b>Bitte vor dem speichern dem Beleg einen Kontakt zuweisen.</b>');
-    }
+		$('#output').html('<b>Bitte vor dem speichern dem Beleg einen Kontakt zuweisen.</b>');
+	}
 }
 
 function downloadPdf(){

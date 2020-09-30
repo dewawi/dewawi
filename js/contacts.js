@@ -83,6 +83,8 @@ function applyContact(contactID) {
 
     //Refresh file manager
     $('#tabFiles iframe').attr('src', function (i, val) { return val; });
+    $('#tabFiles #messages').hide();
+    $('#tabFiles iframe').show();
 }
 
 //Get contact data

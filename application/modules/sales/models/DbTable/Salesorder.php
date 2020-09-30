@@ -89,11 +89,12 @@ class Sales_Model_DbTable_Salesorder extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function saveSalesorder($id, $salesorderid)
+	public function saveSalesorder($id, $salesorderid, $filename)
 	{
 		$data = array();
 		$data['salesorderid'] = $salesorderid;
 		$data['salesorderdate'] = $this->_date;
+		$data['filename'] = $filename;
 		$data['state'] = 105;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];

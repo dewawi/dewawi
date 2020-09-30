@@ -28,6 +28,9 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
+
+		//Check if the directory is writable
+		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'attachment', $this->_flashMessenger);
 	}
 
 	public function getAction()
@@ -130,18 +133,8 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 
 		if($deliveryorder['deliveryorderid']) {
 			$this->_helper->redirector->gotoSimple('view', 'deliveryorder', null, array('id' => $id));
-		} elseif($this->isLocked($deliveryorder['locked'], $deliveryorder['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
 		} else {
-			$deliveryorderDb->lock($id);
+			$this->_helper->Access->lock($id, $this->_user['id'], $deliveryorder['locked'], $deliveryorder['lockedtime']);
 
 			$form = new Sales_Form_Deliveryorder();
 			$options = $this->_helper->Options->getOptions($form);
@@ -150,9 +143,6 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			if($deliveryorder['contactid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
 				$contact = $contactDb->getContactWithID($deliveryorder['contactid']);
-
-				//Check if the directory is writable
-				$dirwritable = $this->_helper->Directory->isWritable($contact['id'], 'deliveryorder', $this->_flashMessenger);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -221,11 +211,10 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 
 					//Update file manager subfolder if contact is changed
 					if(isset($data['contactid']) && $data['contactid']) {
-						$dir1 = substr($data['contactid'], 0, 1).'/';
-						if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
-						else $dir2 = '0/';
+						$contactUrl = $this->_helper->Directory->getUrl($data['contactid']);
 						$defaultNamespace = new Zend_Session_Namespace('RF');
-						$defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
+						$defaultNamespace->view_type = '1'; //detailed list
+						$defaultNamespace->subfolder = 'contacts/'.$contactUrl;
 					}
 
 					$deliveryorderDb->updateDeliveryorder($id, $data);
@@ -306,9 +295,55 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$toolbar = new Sales_Form_Toolbar();
 		$this->view->toolbar = $toolbar;
 
+		//Get email templates
+		$emailtemplatesDb = new Contacts_Model_DbTable_Emailtemplate();
+		$emailtemplates = $emailtemplatesDb->getEmailtemplates('sales', 'deliveryorder');
+
+		//Get email
+		$emailDb = new Contacts_Model_DbTable_Email();
+		$contact['email'] = $emailDb->getEmail($contact['id']);
+
+		//Get email form
+		$emailForm = new Contacts_Form_Emailmessage();
+		if(isset($contact['email'][0])) $emailForm->recipient->setValue($contact['email'][0]['email']);
+		if($emailtemplates[0]['cc']) $emailForm->cc->setValue($emailtemplates[0]['cc']);
+		if($emailtemplates[0]['bcc']) $emailForm->bcc->setValue($emailtemplates[0]['bcc']);
+		if($emailtemplates[0]['replyto']) $emailForm->replyto->setValue($emailtemplates[0]['replyto']);
+		$emailForm->subject->setValue($emailtemplates[0]['subject']);
+		$emailForm->body->setValue($emailtemplates[0]['body']);
+
+		//Copy file to attachments
+		$filename = $deliveryorder['filename'];
+		$contactUrl = $this->_helper->Directory->getUrl($contact['id']);
+		$contactFilePath = BASE_PATH.'/files/contacts/'.$contactUrl.'/'.$filename;
+		$documentUrl = $this->_helper->Directory->getUrl($deliveryorder['id']);
+		$documentFilePath = BASE_PATH.'/files/attachments/sales/deliveryorder/'.$documentUrl;
+		if(file_exists($documentFilePath) && !file_exists($documentFilePath.'/'.$filename)) {
+			if(copy($contactFilePath, $documentFilePath.'/'.$filename)) {
+				$data = array();
+				$data['documentid'] = $id;
+				$data['filename'] = $filename;
+				$data['filetype'] = mime_content_type($documentFilePath.'/'.$filename);
+				$data['filesize'] = filesize($documentFilePath.'/'.$filename);
+				$data['location'] = $documentFilePath.'/'.$filename;
+				$data['module'] = 'sales';
+				$data['controller'] = 'deliveryorder';
+				$data['ordering'] = 1;
+			}
+		}
+
+		//Get email attachments
+		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
+		if(isset($data)) $emailattachmentDb->addEmailattachment($data);
+		$attachments = $emailattachmentDb->getEmailattachments($id, 'sales', 'deliveryorder');
+
 		$this->view->deliveryorder = $deliveryorder;
 		$this->view->contact = $contact;
 		$this->view->positions = $positions;
+		$this->view->emailForm = $emailForm;
+		$this->view->contactUrl = $contactUrl;
+		$this->view->documentUrl = $documentUrl;
+		$this->view->attachments = $attachments;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -629,13 +664,19 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
 
+		//Get positions
 		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
 		$positions = $positionsDb->getPositions($id);
+
+		//Set new document Id and filename
 		if(!$deliveryorder['deliveryorderid']) {
 			//Set new deliveryorder Id
 			$incrementDb = new Application_Model_DbTable_Increment();
 			$increment = $incrementDb->getIncrement('deliveryorderid');
-			$deliveryorderDb->saveDeliveryorder($id, $increment);
+			$filenameDb = new Application_Model_DbTable_Filename();
+			$filename = $filenameDb->getFilename('deliveryorder', $deliveryorder['language']);
+            $filename = str_replace('%NUMBER%', $increment, $filename);
+			$deliveryorderDb->saveDeliveryorder($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'deliveryorderid');
 			$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 		}
@@ -762,68 +803,24 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 
 	public function lockAction()
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
-		if($this->isLocked($deliveryorder['locked'], $deliveryorder['lockedtime'])) {
-			$userDb = new Users_Model_DbTable_User();
-			$user = $userDb->getUser($deliveryorder['locked']);
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
-		} else {
-			$deliveryorderDb->lock($id);
-		}
+		$this->_helper->Access->lock($id, $this->_user['id']);
 	}
 
 	public function unlockAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorderDb->unlock($id);
+		$this->_helper->Access->unlock($id);
 	}
 
 	public function keepaliveAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorderDb->lock($id);
+		$this->_helper->Access->keepalive($id);
 	}
 
 	public function validateAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Sales_Form_Deliveryorder();
-		$options = $this->_helper->Options->getOptions($form);
-
-		$form->isValid($this->_getAllParams());
-		$json = $form->getMessages();
-		header('Content-type: application/json');
-		echo Zend_Json::encode($json);
-	}
-
-	protected function isLocked($locked, $lockedtime)
-	{
-		if($locked && ($locked != $this->_user['id'])) {
-			$timeout = strtotime($lockedtime) + 300; // 5 minutes
-			$timestamp = strtotime($this->_date);
-			if($timeout < $timestamp) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			return false;
-		}
+		$this->_helper->Validate();
 	}
 }

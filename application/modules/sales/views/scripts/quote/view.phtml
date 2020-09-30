@@ -1,13 +1,15 @@
-<?php 
+<?php
 $this->title = $this->quote['title'] ? $this->quote['title'] : $this->translate('QUOTE')." ".$this->quote['quoteid'];
 $this->headTitle($this->title);
+echo $this->TinyMCE();
 echo $this->FileManager();
 ?>
 
 <ul class="tabs">
 	<li class="active"><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
 	<li><a href="#tabFiles"><?php echo $this->translate('TABS_FILES') ?></a></li>
-	<li><a href="#tabDocument" onclick="savePdf()"><?php echo $this->translate('TABS_DOCUMENT') ?></a></li>
+	<li><a href="#tabDocument"><?php echo $this->translate('TABS_DOCUMENT') ?></a></li>
+	<li><a href="#tabMessages" onclick="getEmailmessages()"><?php echo $this->translate('TABS_MESSAGES') ?></a></li>
 </ul>
 
 <div class="tab_container">
@@ -149,6 +151,9 @@ echo $this->FileManager();
 		<p>
 			<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'download', 'id'=>$this->quote['id']));?>" target="_blank"><?php echo $this->translate('QUOTES_DOWNLOAD_PDF') ?></a>
 		</p>
-		<div id="output"></div>
+		<iframe src="<?php echo $this->baseUrl(); ?>/files/contacts/<?php echo $this->contactUrl; ?>/<?php echo $this->quote['filename']; ?>?<?php echo time(); ?>" width="900px" height="500px"></iframe>
+	</div>
+	<div id="tabMessages" class="tab_content<?php if($this->activeTab == '#tabMessages') : ?> active<?php endif; ?>">
+		<?php echo $this->EmailMessages(); ?>
 	</div>
 </div>

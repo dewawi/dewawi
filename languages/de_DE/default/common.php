@@ -29,7 +29,7 @@
 	'EMAIL_MESSAGE_SUCCESFULLY_SENT' => 'Nachricht erfolgreich gesendet!',
 	//Upload
 	'UPLOAD' => 'Datei hochladen',
-	'UPLOAD_SUBMIT' => 'Senden',
+	'UPLOAD_SUBMIT' => 'Hochladen',
 	//FILES
 	'FILE' => 'Datei',
 	'FILE_TYPE' => 'Dateityp',

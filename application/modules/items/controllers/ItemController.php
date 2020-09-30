@@ -27,6 +27,9 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
+
+		//Check if the directory is writable
+		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
 	}
 
 	public function indexAction()
@@ -104,9 +107,6 @@ class Items_ItemController extends Zend_Controller_Action
 		$item = new Items_Model_DbTable_Item();
 		$id = $item->addItem($data);
 
-		//Check if the directory is writable
-		$this->_helper->Directory->isWritable($id, 'item', $this->_flashMessenger);
-
 		$this->_helper->redirector->gotoSimple('edit', 'item', null, array('id' => $id));
 	}
 
@@ -119,23 +119,10 @@ class Items_ItemController extends Zend_Controller_Action
 		$itemDb = new Items_Model_DbTable_Item();
 		$item = $itemDb->getItem($id);
 
-		//Check if the directory is writable
-		$dirwritable = $this->_helper->Directory->isWritable($id, 'item', $this->_flashMessenger);
-
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'item', null, array('id' => $id));
-		} elseif($this->isLocked($item['locked'], $item['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
 		} else {
-			$itemDb->lock($id);
+			$this->_helper->Access->lock($id, $this->_user['id'], $item['locked'], $item['lockedtime']);
 
 			$form = new Items_Form_Item();
 			$options = $this->_helper->Options->getOptions($form);
@@ -231,9 +218,6 @@ class Items_ItemController extends Zend_Controller_Action
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
 		echo $itemid = $item->addItem($data);
-
-		//Check if the directory is writable
-		$this->_helper->Directory->isWritable($itemid, 'item', $this->_flashMessenger);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -473,56 +457,25 @@ class Items_ItemController extends Zend_Controller_Action
 
 	public function lockAction()
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$itemDb = new Items_Model_DbTable_Item();
-		$item = $itemDb->getProcess($id);
-		if($this->isLocked($item['locked'], $item['lockedtime'])) {
-			$userDb = new Users_Model_DbTable_User();
-			$user = $userDb->getUser($item['locked']);
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
-		} else {
-			$itemDb->lock($id);
-		}
+		$this->_helper->Access->lock($id, $this->_user['id']);
 	}
 
 	public function unlockAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$itemDb = new Items_Model_DbTable_Item();
-		$itemDb->unlock($id);
+		$this->_helper->Access->unlock($id);
 	}
 
 	public function keepaliveAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$itemDb = new Items_Model_DbTable_Item();
-		$itemDb->lock($id);
+		$this->_helper->Access->keepalive($id);
 	}
 
 	public function validateAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Items_Form_Item();
-		$options = $this->_helper->Options->getOptions($form);
-
-		$data = $this->getRequest()->getPost();
-		$form->$data['element']->isValid($data[$data['element']]);
-
-		$json = $form->getMessages();
-		header('Content-type: application/json');
-		echo Zend_Json::encode($json);
+		$this->_helper->Validate();
 	}
 
 	// NOTE: This is experimental and not properly tested
@@ -629,21 +582,6 @@ class Items_ItemController extends Zend_Controller_Action
 				print_r($e->lastResponse);
 				echo "</pre>";
 			}
-		}
-	}
-
-	protected function isLocked($locked, $lockedtime)
-	{
-		if($locked && ($locked != $this->_user['id'])) {
-			$timeout = strtotime($lockedtime) + 300; // 5 minutes
-			$timestamp = strtotime($this->_date);
-			if($timeout < $timestamp) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			return false;
 		}
 	}
 }

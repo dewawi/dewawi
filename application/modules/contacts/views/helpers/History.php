@@ -622,6 +622,83 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+			<?php endif; ?>
+			<?php if(count($this->view->history['reminders'])) : ?>
+				<h3><?php echo $this->view->translate('REMINDERS') ?></h3>
+				<table id="data">
+					<thead>
+						<tr>
+							<th id="reminderid"><?php echo $this->view->translate('REMINDERS_REMINDER_ID'); ?></th>
+							<th id="title"><?php echo $this->view->translate('REMINDERS_TITLE') ?></th>
+							<th id="contactid"><?php echo $this->view->translate('REMINDERS_CONTACT_ID') ?></th>
+							<th id="contact"><?php echo $this->view->translate('REMINDERS_CONTACT') ?></th>
+							<th id="reminderdate"><?php echo $this->view->translate('REMINDERS_REMINDER_DATE') ?></th>
+							<th id="modified"><?php echo $this->view->translate('REMINDERS_MODIFIED') ?></th>
+							<th id="deliverydate"><?php echo $this->view->translate('REMINDERS_DELIVERY_DATE') ?></th>
+							<th id="subtotal"><?php echo $this->view->translate('REMINDERS_SUBTOTAL') ?></th>
+							<th id="total"><?php echo $this->view->translate('REMINDERS_TOTAL') ?></th>
+							<th id="state"><?php echo $this->view->translate('REMINDERS_STATE') ?></th>
+							<th class="buttons"></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach($this->view->history['reminders'] as $reminder) : ?>
+						<tr>
+							<td id="reminderid">
+								<input class="id" type="hidden" value="<?php echo $reminder->id ?>" name="id"/>
+								<input class="controller" type="hidden" value="reminder" name="controller"/>
+								<input class="module" type="hidden" value="sales" name="module"/>
+								<a href="<?php echo $this->view->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'edit', 'id'=>$reminder->id));?>">
+									<?php echo $this->view->escape($reminder->reminderid) ? $this->view->escape($reminder->reminderid) : $this->view->translate('REMINDER')." ".$this->view->escape($reminder->id); ?>
+								</a>
+							</td>
+							<td id="title">
+								<a href="<?php echo $this->view->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'edit', 'id'=>$reminder->id));?>">
+									<?php echo $reminder->title ? $this->view->escape($reminder->title) : $this->view->translate('REMINDER')." ".$this->view->escape($reminder->reminderid);?>
+								</a>
+							</td>
+							<td id="contactid">
+								<a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
+									<?php echo $this->view->escape($reminder->contactid);?>
+								</a>
+							</td>
+							<td id="contact">
+								<a href="<?php echo $this->view->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->view->id));?>">
+									<?php echo $this->view->escape($reminder->billingname1);?>
+									<?php if($reminder->billingname2) echo "<br/>".$this->view->escape($reminder->billingname2);?>
+								</a>
+							</td>
+							<td id="reminderdate">
+								<?php echo $this->view->escape($reminder->reminderdate);?>
+							</td>
+							<td id="modified">
+								<?php echo $this->view->escape($reminder->modified);?>
+							</td>
+							<td id="deliverydate">
+								<?php if($reminder->deliverydate) echo $this->view->escape($reminder->deliverydate); ?>
+							</td>
+							<td id="subtotal">
+								<?php echo $this->view->escape($reminder->subtotal);?>
+							</td>
+							<td id="total">
+								<?php echo $this->view->escape($reminder->total);?>
+							</td>
+							<td id="state">
+								<?php echo $this->view->translate($this->view->escape($this->view->states[$reminder->state]));?>
+							</td>
+							<td class="buttons">
+								<?php if($reminder->state == '105' || $reminder->state == '106') : ?>
+									<?php echo $this->view->toolbar->view->setLabel(''); ?>
+								<?php else : ?>
+									<?php echo $this->view->toolbar->edit->setLabel(''); ?>
+								<?php endif; ?>
+								<?php echo $this->view->toolbar->copy->setLabel(''); ?>
+								<?php echo $this->view->toolbar->pdf->setLabel(''); ?>
+							</td>
+						</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
 			<?php endif;
 		}
 	}

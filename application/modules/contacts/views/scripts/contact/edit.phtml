@@ -1,6 +1,7 @@
-<?php 
+<?php
 $this->title = $this->form->getValue('name1');
 $this->headTitle($this->title);
+echo $this->TinyMCE();
 echo $this->Messages();
 echo $this->FileManager();
 ?>
@@ -12,6 +13,8 @@ echo $this->FileManager();
 		<a href="#tabPayment"><?php echo $this->translate('TABS_PAYMENT'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabHistory") : ?> class="active"<?php endif; ?>>
 		<a href="#tabHistory"><?php echo $this->translate('TABS_HISTORY'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabMessages") : ?> class="active"<?php endif; ?>>
+		<a href="#tabMessages" onclick="getEmailmessages()"><?php echo $this->translate('TABS_MESSAGES'); ?></a></li>
 	<?php if($this->dirwritable) : ?>
 		<li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
 			<a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
@@ -87,6 +90,9 @@ echo $this->FileManager();
 	</div>
 	<div id="tabHistory" class="tab_content<?php if($this->activeTab == '#tabHistory') : ?> active<?php endif; ?>">
 		<?php echo $this->History(); ?>
+	</div>
+	<div id="tabMessages" class="tab_content<?php if($this->activeTab == '#tabMessages') : ?> active<?php endif; ?>">
+		<?php echo $this->EmailMessages(); ?>
 	</div>
 	<?php if($this->dirwritable) : ?>
 		<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">

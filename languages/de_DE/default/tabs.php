@@ -11,6 +11,7 @@
 	'TABS_DOCUMENT' => 'Beleg',
 	'TABS_FILES' => 'Dateien',
 	'TABS_EMAIL' => 'E-Mail',
+	'TABS_MESSAGES' => 'Nachrichten',
 	'TABS_EMAIL_SETTINGS' => 'E-Mail Einstellungen',
 	'TABS_CATEGORIES' => 'Kategorien',
 	'TABS_SUPPLIER_DETAILS' => 'Lieferantendetails',

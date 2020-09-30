@@ -14,7 +14,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 
 			//Access control
 			$acl = array(
-					'add' => array('add', 'copy', 'generate'),
+					'add' => array('add', 'copy', 'generate', 'send', 'upload'),
 					'edit' => array('edit', 'import', 'lock', 'unlock', 'keepalive', 'apply', 'sort', 'save', 'cancel'),
 					'view' => array('view', 'get', 'index', 'search', 'select', 'export', 'preview', 'download'),
 					'delete' => array('delete')
@@ -30,6 +30,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 				//	$redirector->gotoSimple('index', 'index', 'default');
 				//}
 			} else {
+				//Check for permissions
 				$permissionsDb = new Application_Model_DbTable_Permission();
 				$permissions = $permissionsDb->getPermissions();
 				if(isset($permissions[$params['module']])) {
@@ -65,6 +66,26 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 				//error_log($params['module']);
 				//error_log($_SERVER['REQUEST_URI']);
 				//$flashMessenger->addMessage('MESSAGES_LOCKED');
+
+				//Check if document is locked
+				/*if(($params['module'] == 'sales') && ($params['controller'] == 'quote')) {
+					$view = Zend_Controller_Front::getInstance()
+									->getParam('bootstrap')
+									->getResource('view');
+					$viewRenderer = Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer');
+					$layout = Zend_Controller_Action_HelperBroker::getStaticHelper('layout');
+					$message = $view->translate('MESSAGES_ACCESS_DENIED_%s');
+					//$message = sprintf($message, $users[$quote['locked']]);
+					if($request->isPost()) {
+						header('Content-type: application/json');
+						$viewRenderer->setNoRender();
+						$layout->disableLayout();
+						echo Zend_Json::encode(array('message' => $message));
+					} else {
+						$flashMessenger->addMessage($message);
+						//$redirector->gotoSimple('index', 'quote', 'sales');
+					}
+				}*/
 			}
 		} elseif($params['module'] != 'users' && $params['action'] != 'login') {
 			if(isset($params['id']) && $params['id']) {

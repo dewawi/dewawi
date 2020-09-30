@@ -138,18 +138,8 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 		if($process['completed'] || $process['cancelled']) {
 			$this->_helper->redirector->gotoSimple('view', 'process', null, array('id' => $id));
-		} elseif($this->isLocked($process['locked'], $process['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
 		} else {
-			$processDb->lock($id);
+			$this->_helper->Access->lock($id, $this->_user['id'], $process['locked'], $process['lockedtime']);
 
 			$form = new Processes_Form_Process();
 			$options = $this->_helper->Options->getOptions($form);
@@ -495,54 +485,25 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 	public function lockAction()
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$processDb = new Processes_Model_DbTable_Process();
-		$process = $processDb->getProcess($id);
-		if($this->isLocked($process['locked'], $process['lockedtime'])) {
-			$userDb = new Users_Model_DbTable_User();
-			$user = $userDb->getUser($process['locked']);
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
-		} else {
-			$processDb->lock($id);
-		}
+		$this->_helper->Access->lock($id, $this->_user['id']);
 	}
 
 	public function unlockAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$processDb = new Processes_Model_DbTable_Process();
-		$processDb->unlock($id);
+		$this->_helper->Access->unlock($id);
 	}
 
 	public function keepaliveAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$processDb = new Processes_Model_DbTable_Process();
-		$processDb->lock($id);
+		$this->_helper->Access->keepalive($id);
 	}
 
 	public function validateAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Processes_Form_Process();
-		$options = $this->_helper->Options->getOptions($form);
-
-		$form->isValid($this->_getAllParams());
-		$json = $form->getMessages();
-		header('Content-type: application/json');
-		echo Zend_Json::encode($json);
+		$this->_helper->Validate();
 	}
 
 	protected function getPositions($processIDs)
@@ -588,20 +549,5 @@ class Processes_ProcessController extends Zend_Controller_Action
 			}
 		}
 		return $positions;
-	}
-
-	protected function isLocked($locked, $lockedtime)
-	{
-		if($locked && ($locked != $this->_user['id'])) {
-			$timeout = strtotime($lockedtime) + 300; // 5 minutes
-			$timestamp = strtotime($this->_date);
-			if($timeout < $timestamp) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			return false;
-		}
 	}
 }

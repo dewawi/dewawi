@@ -19,6 +19,7 @@ $vatin = $this->deliveryorder['vatin'];
 $header = $this->deliveryorder['header'];
 $footer = $this->deliveryorder['footer'];
 $created = $this->deliveryorder['created'];
+$filename = $this->deliveryorder['filename'];
 
 //BillingAddress
 $billingName1 = $this->deliveryorder['billingname1'];
@@ -320,8 +321,8 @@ while($i <= $lastPage) {
 
 //Close and output PDF document
 if($this->action == 'download') {
-	if($deliveryorderid) $pdf->Output($deliveryorderid.' '.$this->translate('DELIVERY_ORDER').' '.$billingName1.'.pdf', 'D');
-	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').' '.$this->translate('DELIVERY_ORDER').' '.$billingName1.'.pdf', 'D');
+	if($deliveryorderid) $pdf->Output($filename, 'D');
+	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').'_Lieferschein_'.$billingName1.'.pdf', 'D');
 } else {
 	$path = BASE_PATH.'/files/contacts/';
 	$dir1 = substr($client['id'], 0, 1);
@@ -332,9 +333,9 @@ if($this->action == 'download') {
 	else $dir4 = '0/';
 	$url = $dir1.'/'.$dir2.'/'.$client['id'].'/'.$dir3.'/'.$dir4.'/'.$this->contact['id'].'/';
 	if($deliveryorderid) {
-		if(!file_exists($path.$url.$this->translate('DELIVERY_ORDER').'-'.$deliveryorderid.'.pdf'))
-			$pdf->Output($path.$url.$this->translate('DELIVERY_ORDER').'-'.$deliveryorderid.'.pdf', 'F');
-		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$this->translate('DELIVERY_ORDER').'-'.$deliveryorderid.'.pdf?'.time().'" width="900px" height="500px">';
+		if(!file_exists($path.$url.$filename))
+			$pdf->Output($path.$url.$filename, 'F');
+		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$filename.'?'.time().'" width="900px" height="500px">';
 	} else {
 		$pdf->Output(BASE_PATH.'/cache/deliveryorder/'.$id.'.pdf', 'F');
 		$html = '<iframe src="'.$this->baseUrl().'/cache/deliveryorder/'.$id.'.pdf?'.time().'" width="900px" height="500px">';

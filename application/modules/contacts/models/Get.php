@@ -130,6 +130,19 @@ class Contacts_Model_Get
 			if($deliveryorder->deliverydate) $deliveryorder->deliverydate = date('d.m.Y', strtotime($deliveryorder->deliverydate));
 		}
 
+		//Reminders
+		$reminderDb = new Sales_Model_DbTable_Reminder();
+		$history['reminders'] = $reminderDb->getReminders($contactid);
+
+		foreach($history['reminders'] as $reminder) {
+			$reminder->subtotal = $currency->toCurrency($reminder->subtotal);
+			$reminder->taxes = $currency->toCurrency($reminder->taxes);
+			$reminder->total = $currency->toCurrency($reminder->total);
+			if($reminder->reminderdate) $reminder->reminderdate = date('d.m.Y', strtotime($reminder->reminderdate));
+			if($reminder->modified) $reminder->modified = date('d.m.Y', strtotime($reminder->modified));
+			if($reminder->deliverydate) $reminder->deliverydate = date('d.m.Y', strtotime($reminder->deliverydate));
+		}
+
 		//Credit notes
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$history['creditnotes'] = $creditnoteDb->getCreditnotes($contactid);
@@ -189,5 +202,23 @@ class Contacts_Model_Get
 		}
 
 		return $history;
+	}
+
+	public function attachments($module, $controller, $id) {
+		$attachments = array();
+		$directoryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory');
+		$url = $directoryHelper->getUrl($id);
+		$path = BASE_PATH.'/files/attachments/'.$module.'/'.$controller.'/'.$url;
+		if(file_exists($path)) {
+			if($handle = opendir($path)) {
+			while(false !== ($entry = readdir($handle))) {
+				if($entry != "." && $entry != "..") {
+					array_push($attachments, $entry);
+				}
+			}
+			closedir($handle);
+			}
+		}
+		return $attachments;
 	}
 }

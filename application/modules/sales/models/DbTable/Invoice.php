@@ -87,11 +87,12 @@ class Sales_Model_DbTable_Invoice extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function saveInvoice($id, $invoiceid)
+	public function saveInvoice($id, $invoiceid, $filename)
 	{
 		$data = array();
 		$data['invoiceid'] = $invoiceid;
 		$data['invoicedate'] = $this->_date;
+		$data['filename'] = $filename;
 		$data['state'] = 105;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];

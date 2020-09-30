@@ -1,14 +1,15 @@
 <?php 
 $this->title = $this->invoice['title'] ? $this->invoice['title'] : $this->translate('INVOICE')." ".$this->invoice['invoiceid'];
 $this->headTitle($this->title);
+echo $this->TinyMCE();
 echo $this->FileManager();
 ?>
 
 <ul class="tabs">
 	<li class="active"><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
 	<li><a href="#tabFiles"><?php echo $this->translate('TABS_FILES') ?></a></li>
-	<li><a href="#tabDocument" onclick="savePdf()"><?php echo $this->translate('TABS_DOCUMENT') ?></a></li>
-	<!--<li><a href="#tabEmail"><?php echo $this->translate('TABS_EMAIL') ?></a></li>-->
+	<li><a href="#tabDocument"><?php echo $this->translate('TABS_DOCUMENT') ?></a></li>
+	<li><a href="#tabMessages" onclick="getEmailmessages()"><?php echo $this->translate('TABS_MESSAGES') ?></a></li>
 </ul>
 
 <div class="tab_container">
@@ -154,18 +155,9 @@ echo $this->FileManager();
 		<p>
 			<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'download', 'id'=>$this->invoice['id']));?>" target="_blank"><?php echo $this->translate('INVOICES_DOWNLOAD_PDF') ?></a>
 		</p>
-		<div id="output"></div>
+		<iframe src="<?php echo $this->baseUrl(); ?>/files/contacts/<?php echo $this->contactUrl; ?>/<?php echo $this->invoice['filename']; ?>?<?php echo time(); ?>" width="900px" height="500px"></iframe>
 	</div>
-	<div id="tabEmail" class="tab_content">
-		<div id="left">
-			<form id="email" enctype="application/x-www-form-urlencoded" action="" method="post">
-				<dl class="form">
-					<?php //echo $this->email->getElement('email') ?>
-					<?php //echo $this->email->getElement('subject') ?>
-					<?php //echo $this->email->getElement('body') ?>
-					<?php //echo $this->email->getElement('attachment') ?>
-				</dl>
-			</form>
-		</div>
+	<div id="tabMessages" class="tab_content<?php if($this->activeTab == '#tabMessages') : ?> active<?php endif; ?>">
+		<?php echo $this->EmailMessages(); ?>
 	</div>
 </div>

@@ -4,18 +4,11 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 {
 	public function isWritable($id, $type, $flashMessenger) {
 
-		$client = Zend_Registry::get('Client');
+		$url = $this->getUrl($id);
 
-		$clientid = $client['id'];
-		$dir1 = substr($clientid, 0, 1);
-		if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
-		else $dir2 = '0';
-
-		$dir3 = substr($id, 0, 1);
-		if(strlen($id) > 1) $dir4 = substr($id, 1, 1);
-		else $dir4 = '0';
-
-		$url = $dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
+		$request  = $this->getRequest();
+		$module = $request->getParam('module', null);
+		$controller = $request->getParam('controller', null);
 
 		if($type == 'item') {
 			//Create contact folder if does not already exists
@@ -43,6 +36,20 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 				$flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
 				return false;
 			}
+		} elseif($type == 'attachment') {
+			//Create attachments folder if does not already exists
+			$path = BASE_PATH.'/files/attachments/'.$module.'/'.$controller.'/';
+			if(file_exists($path.$url) && is_dir($path.$url) && is_writable($path.$url)) {
+				return true;
+			} elseif(is_writable($path)) {
+				//error_log($path.$url);
+				$response = mkdir($path.$url, 0777, true);
+				if($response === false) $flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+				return $response;
+			} else {
+				$flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+				return false;
+			}
 		} else {
 			//Create cache folder if does not already exists
 			$cache = BASE_PATH.'/cache/';
@@ -61,5 +68,23 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 			}
 		}
 		return false;
+	}
+
+	public function getUrl($id) {
+
+		$client = Zend_Registry::get('Client');
+
+		$clientid = $client['id'];
+		$dir1 = substr($clientid, 0, 1);
+		if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+		else $dir2 = '0';
+
+		$dir3 = substr($id, 0, 1);
+		if(strlen($id) > 1) $dir4 = substr($id, 1, 1);
+		else $dir4 = '0';
+
+		$url = $dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
+
+		return $url;
 	}
 }

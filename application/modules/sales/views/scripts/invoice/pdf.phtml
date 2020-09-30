@@ -19,6 +19,7 @@ $vatin = $this->invoice['vatin'];
 $header = $this->invoice['header'];
 $footer = $this->invoice['footer'];
 $created = $this->invoice['created'];
+$filename = $this->invoice['filename'];
 
 //BillingAddress
 $billingName1 = $this->invoice['billingname1'];
@@ -172,14 +173,16 @@ $pdf->ln(4);
 $pdf->SetFont('freesans', '', 10);
 
 //Contact adress
-$pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, $x);
-if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, $x);
-if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, $x);
-if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, $x);
-$pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, $x);
-$pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, $x);
-$pdf->ln(20);
-if($y > $pdf->GetY()) $pdf->SetY($y);
+if($contactid) {
+    $pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, $x);
+    if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, $x);
+    if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, $x);
+    if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, $x);
+    $pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, $x);
+    $pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, $x);
+    $pdf->ln(20);
+    if($y > $pdf->GetY()) $pdf->SetY($y);
+}
 
 //HEADER
 if($header) {
@@ -343,8 +346,8 @@ while($i <= $lastPage) {
 
 //Close and output PDF document
 if($this->action == 'download') {
-	if($invoiceid) $pdf->Output($invoiceid.' '.$this->translate('INVOICE').' '.$billingName1.'.pdf', 'D');
-	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').' '.$this->translate('INVOICE').' '.$billingName1.'.pdf', 'D');
+	if($invoiceid) $pdf->Output($filename, 'D');
+	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').'_Rechnung_'.$billingName1.'.pdf', 'D');
 } else {
 	$path = BASE_PATH.'/files/contacts/';
 	$dir1 = substr($client['id'], 0, 1);
@@ -355,9 +358,9 @@ if($this->action == 'download') {
 	else $dir4 = '0/';
 	$url = $dir1.'/'.$dir2.'/'.$client['id'].'/'.$dir3.'/'.$dir4.'/'.$this->contact['id'].'/';
 	if($invoiceid) {
-		if(!file_exists($path.$url.$this->translate('INVOICE').'-'.$invoiceid.'.pdf'))
-			$pdf->Output($path.$url.$this->translate('INVOICE').'-'.$invoiceid.'.pdf', 'F');
-		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$this->translate('INVOICE').'-'.$invoiceid.'.pdf?'.time().'" width="900px" height="500px">';
+		if(!file_exists($path.$url.$filename))
+			$pdf->Output($path.$url.$filename, 'F');
+		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$filename.'?'.time().'" width="900px" height="500px">';
 	} else {
 		$pdf->Output(BASE_PATH.'/cache/invoice/'.$id.'.pdf', 'F');
 		$html = '<iframe src="'.$this->baseUrl().'/cache/invoice/'.$id.'.pdf?'.time().'" width="900px" height="500px">';

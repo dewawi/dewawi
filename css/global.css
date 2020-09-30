@@ -664,6 +664,9 @@ div.info {
 	max-width: 350px;
 	margin: 5px 0;
 }
+.view #emailmessage dd {
+	max-width: 600px;
+}
 .clr {
 	clear:left;
 }

@@ -89,11 +89,12 @@ class Sales_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function saveQuote($id, $quoteid)
+	public function saveQuote($id, $quoteid, $filename)
 	{
 		$data = array();
 		$data['quoteid'] = $quoteid;
 		$data['quotedate'] = $this->_date;
+		$data['filename'] = $filename;
 		$data['state'] = 105;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];

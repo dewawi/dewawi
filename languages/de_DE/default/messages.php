@@ -1,7 +1,7 @@
 <?php return array(
 	'MESSAGES_LOCKED' => 'Zugriff verweigert! Der Eintrag wird vermutlich von jemand anderen bearbeitet.',
 	'MESSAGES_ACCESS_DENIED' => 'Zugriff verweigert! Sie haben keine Berechtigung zum Durchführen dieses Vorgangs.',
-	'MESSAGES_ACCESS_DENIED_%1$s' => 'Zugriff verweigert! Der Eintrag wird von %1$s bearbeitet.',
+	'MESSAGES_ACCESS_DENIED_%s' => 'Zugriff verweigert! Der Eintrag wird von <b>%s</b> bearbeitet.',
 	'MESSAGES_CHECKED_OUT' => 'Zugriff verweigert! Der Eintrag wird vermutlich von jemand anderen bearbeitet.',
 	'MESSAGES_SUCCESFULLY_COPIED' => 'Der Eintrag wurde erfolgreich kopiert!',
 	'MESSAGES_SUCCESFULLY_DELETED' => 'Der Eintrag wurde erfolgreich gelöscht!',

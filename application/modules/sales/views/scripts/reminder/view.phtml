@@ -1,13 +1,15 @@
 <?php 
 $this->title = $this->reminder['title'] ? $this->reminder['title'] : $this->translate('REMINDER')." ".$this->reminder['reminderid'];
 $this->headTitle($this->title);
+echo $this->TinyMCE();
 echo $this->FileManager();
 ?>
 
 <ul class="tabs">
 	<li class="active"><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
 	<li><a href="#tabFiles"><?php echo $this->translate('TABS_FILES') ?></a></li>
-	<li><a href="#tabDocument" onclick="savePdf()"><?php echo $this->translate('TABS_DOCUMENT') ?></a></li>
+	<li><a href="#tabDocument"><?php echo $this->translate('TABS_DOCUMENT') ?></a></li>
+	<li><a href="#tabMessages" onclick="getEmailmessages()"><?php echo $this->translate('TABS_MESSAGES') ?></a></li>
 </ul>
 
 <div class="tab_container">
@@ -153,6 +155,9 @@ echo $this->FileManager();
 		<p>
 			<a href="<?php echo $this->url(array('controller'=>'reminder', 'action'=>'download', 'id'=>$this->reminder['id']));?>" target="_blank"><?php echo $this->translate('REMINDERS_DOWNLOAD_PDF') ?></a>
 		</p>
-		<div id="output"></div>
+		<iframe src="<?php echo $this->baseUrl(); ?>/files/contacts/<?php echo $this->contactUrl; ?>/<?php echo $this->reminder['filename']; ?>?<?php echo time(); ?>" width="900px" height="500px"></iframe>
+	</div>
+	<div id="tabMessages" class="tab_content<?php if($this->activeTab == '#tabMessages') : ?> active<?php endif; ?>">
+		<?php echo $this->EmailMessages(); ?>
 	</div>
 </div>

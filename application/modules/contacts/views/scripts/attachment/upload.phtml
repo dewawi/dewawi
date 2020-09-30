@@ -1,0 +1,46 @@
+<?php
+$this->title = $this->translate('UPLOAD');
+$this->headTitle($this->title);
+?>
+<script type="text/javascript">
+$(document).ready(function(){
+	$('#attachments .file input', parent.document).each(function(index, element) {
+		$(this)[0].checked = true;
+	});
+	$('#attachments', parent.document).append($('#uploads').html());
+	$('#attachments .file input', parent.document).each(function(index, element) {
+		$(this)[0].checked = true;
+	});
+	/*$.ajax({
+		type: "POST",
+		url: baseUrl+"/"+controller+"/files/id/"+id,
+		cache: false,
+		success: function(data){
+			$('#files', parent.document).html(data);
+		}
+	});*/
+});
+</script>
+<form id="upload" enctype="multipart/form-data" action="" method="post">
+	<dl class="form">
+		<?php echo $this->form->getElement('file') ?>
+		<?php echo $this->form->getElement('submit') ?>
+	</dl>
+</form>
+<?php if(isset($this->uploads)) : ?>
+	<div id="uploads" style="display:none;">
+		<?php foreach($this->uploads as $attachment) : ?>
+			<?php //$headers = get_headers('https://'.$_SERVER['HTTP_HOST'].'/files/attachments/'.$attachment['module'].'/'.$attachment['controller'].'/'.$this->url.'/'.$attachment['filename']); ?>
+			<?php //if(stripos($headers[0], '200 OK')) : ?>
+			<div id="attachment<?php echo $attachment['id']; ?>" class="file" style="clear: left;">
+				<input id="file<?php echo $attachment['id']; ?>" type="checkbox" value="<?php echo $attachment['id']; ?>" size="5" name="file" style="float: left;"/>
+				<a href="<?php echo $this->baseUrl(); ?>/files/attachments/<?php echo $attachment['module']; ?>/<?php echo $attachment['controller']; ?>/<?php echo $this->documentUrl; ?>/<?php echo $attachment['filename']; ?>" target="_blank">
+					<span class="filename"><?php echo $attachment['filename']; ?></span>
+					<span class="filesize">(<?php echo $this->HumanFileSize($attachment['filesize']); ?>)</span>
+				</a>
+				<button type="button" class="delete nolabel" onclick="del('<?php echo $attachment['id']; ?>', deleteConfirm, 'attachment', 'contacts');"></button><br>
+			</div>
+			<?php //endif; ?>
+		<?php endforeach; ?>
+	</div>
+<?php endif; ?>

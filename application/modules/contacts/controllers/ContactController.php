@@ -20,6 +20,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->_date = date('Y-m-d H:i:s');
 
 		$this->view->id = isset($params['id']) ? $params['id'] : 0;
+		$this->view->contactid = isset($params['contactid']) ? $params['contactid'] : 0;
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
@@ -27,6 +28,13 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
+
+		//Check if the directory is writable
+		$id = 0;
+		if($this->view->contactid) $id = $this->view->contactid;
+		elseif($this->view->id) $id = $this->view->id;
+		if($id) $this->view->dirwritable = $this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
+		if($id) $this->view->dirwritable = $this->_helper->Directory->isWritable($id, 'attachment', $this->_flashMessenger);
 	}
 
 	public function getAction()
@@ -135,9 +143,6 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$internetDb = new Contacts_Model_DbTable_Internet();
 		$internetDb->addInternet(array('contactid' => $id, 'ordering' => 1));
 
-		//Check if the directory is writable
-		$this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
-
 		$this->_helper->redirector->gotoSimple('edit', 'contact', null, array('id' => $id));
 	}
 
@@ -156,23 +161,10 @@ class Contacts_ContactController extends Zend_Controller_Action
 			$this->_flashMessenger->addMessage('MESSAGES_NOT_FOUND');
 		}
 
-		//Check if the directory is writable
-		$dirwritable = $this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
-
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'contact', null, array('id' => $id));
-		} elseif($this->isLocked($contact['locked'], $contact['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
 		} else {
-			$contactDb->lock($id);
+			$this->_helper->Access->lock($id, $this->_user['id'], $contact['locked'], $contact['lockedtime']);
 
 			$form = new Contacts_Form_Contact();
 			$options = $this->_helper->Options->getOptions($form);
@@ -240,6 +232,25 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$get = new Contacts_Model_Get();
 					$history = $get->history($contact['contactid']);
 
+					//Get email templates
+					$emailtemplatesDb = new Contacts_Model_DbTable_Emailtemplate();
+					$emailtemplates = $emailtemplatesDb->getEmailtemplates('contacts', 'contact');
+
+					//Get email form
+					$emailForm = new Contacts_Form_Emailmessage();
+					if(isset($contact['email'][0])) $emailForm->recipient->setValue($contact['email'][0]['email']);
+					if($emailtemplates[0]['cc']) $emailForm->cc->setValue($emailtemplates[0]['cc']);
+					if($emailtemplates[0]['bcc']) $emailForm->bcc->setValue($emailtemplates[0]['bcc']);
+					if($emailtemplates[0]['replyto']) $emailForm->replyto->setValue($emailtemplates[0]['replyto']);
+					$emailForm->subject->setValue($emailtemplates[0]['subject']);
+					$emailForm->body->setValue($emailtemplates[0]['body']);
+					$this->view->emailForm = $emailForm;
+					$this->view->url = $this->_helper->Directory->getUrl($contact['contactid']);
+
+					//Get email attachments
+					$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
+					$attachments = $emailattachmentDb->getEmailattachments($id, 'contacts', 'contact');
+
 					//Files
 					$files = array();
 					$path = BASE_PATH.'/files/contacts/';
@@ -258,7 +269,6 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 					$this->view->form = $form;
 					$this->view->options = $options;
-					$this->view->dirwritable = $dirwritable;
 					$this->view->history = $history;
 					$this->view->files = $files;
 					$this->view->address = $address;
@@ -266,6 +276,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$this->view->email = $email;
 					$this->view->internet = $internet;
 					$this->view->bankAccount = $bankAccount;
+					$this->view->attachments = $attachments;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}
@@ -351,41 +362,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 			$internetDb->addInternet(array('contactid' => $contactid, 'internet' => $internet['internet'], 'ordering' => $internet['ordering']));
 		}
 
-		//Check if the directory is writable
-		$this->_helper->Directory->isWritable($contactid, 'contact', $this->_flashMessenger);
-
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
-
-	protected function uploadAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$form = new Application_Form_Upload();
-		//$form->file->setDestination('/var/www/dewawi/files/');
-
-		if($this->getRequest()->isPost()) {
-			$formData = $this->getRequest()->getPost();
-			if($form->isValid($formData)) {
-				$contactid = $this->_getParam('contactid', 0);
-
-				/* Uploading Document File on Server */
-				$upload = new Zend_File_Transfer_Adapter_Http();
-				$upload->setDestination(BASE_PATH.'/files/contacts/'.$contactid.'/');
-				try {
-					// upload received file(s)
-					$upload->receive();
-				} catch (Zend_File_Transfer_Exception $e) {
-					$e->getMessage();
-				}
-			} else {
-				$form->populate($formData);
-			}
-		}
-
-		$this->view->form = $form;
-	}
-
 
 	public function deleteAction()
 	{
@@ -420,54 +398,25 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 	public function lockAction()
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($id);
-		if($this->isLocked($contact['locked'], $contact['lockedtime'])) {
-			$userDb = new Users_Model_DbTable_User();
-			$user = $userDb->getUser($contact['locked']);
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
-		} else {
-			$contactDb->lock($id);
-		}
+		$this->_helper->Access->lock($id, $this->_user['id']);
 	}
 
 	public function unlockAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contactDb->unlock($id);
+		$this->_helper->Access->unlock($id);
 	}
 
 	public function keepaliveAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contactDb->lock($id);
+		$this->_helper->Access->keepalive($id);
 	}
 
 	public function validateAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Contacts_Form_Contact();
-		$options = $this->_helper->Options->getOptions($form);
-
-		$form->isValid($this->_getAllParams());
-		$json = $form->getMessages();
-		header('Content-type: application/json');
-		echo Zend_Json::encode($json);
+		$this->_helper->Validate();
 	}
 
 	public function autocompleteAction()
@@ -528,20 +477,5 @@ echo '{
 		]
 	}';
 	//print_r($suggestions);
-	}
-
-	protected function isLocked($locked, $lockedtime)
-	{
-		if($locked && ($locked != $this->_user['id'])) {
-			$timeout = strtotime($lockedtime) + 300; // 5 minutes
-			$timestamp = strtotime($this->_date);
-			if($timeout < $timestamp) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			return false;
-		}
 	}
 }
