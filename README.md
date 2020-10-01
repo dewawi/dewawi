@@ -27,5 +27,6 @@ http://www.dewawi.com
 - [Zend Framework (1.16.1)](https://framework.zend.com/)
 - [ZF1 Future (1.16.1)](https://github.com/Shardj/zf1-future)
 - [RESPONSIVE filemanager (9.14.0)](https://www.responsivefilemanager.com/)
+- [PHPMailer (6.1.7)](https://github.com/PHPMailer/PHPMailer)
 - [pChart (2.1.4)](http://www.pchart.net/)
 - [Datejs (1.0)](https://github.com/datejs/Datejs)
