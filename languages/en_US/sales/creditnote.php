@@ -2,6 +2,7 @@
 	//Menu
 	'MENU_CREDIT_NOTES' => 'Credit notes',
 	//Actions
+	'ACTIONS_CREATE_CREDIT_NOTE' => 'Create credit note',
 	'ACTIONS_GENERATE_CREDIT_NOTE' => 'Generate credit note',
 	//Credit note
 	'CREDITNOTE' => 'Credit note',

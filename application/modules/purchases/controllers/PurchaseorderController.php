@@ -110,11 +110,37 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 
 		$data = array();
 		$data['title'] = $this->view->translate('PURCHASE_ORDERS_NEW_PURCHASE_ORDER');
-		$data['contactid'] = $contactid;
 		$data['currency'] = $currency['code'];
 		$data['templateid'] = $template['id'];
 		$data['language'] = $language['code'];
 		$data['state'] = 100;
+
+		//Get contact data
+		if($contactid) {
+			$contactDb = new Contacts_Model_DbTable_Contact();
+			$contact = $contactDb->getContact($contactid);
+
+			//Get basic data
+			$data['contactid'] = $contact['contactid'];
+			$data['billingname1'] = $contact['name1'];
+			$data['billingname2'] = $contact['name2'];
+			$data['billingdepartment'] = $contact['department'];
+
+			//Get addresses
+			$addressDb = new Contacts_Model_DbTable_Address();
+			$addresses = $addressDb->getAddress($contact['id']);
+			if(count($addresses)) {
+				$data['billingstreet'] = $addresses[0]['street'];
+				$data['billingpostcode'] = $addresses[0]['postcode'];
+				$data['billingcity'] = $addresses[0]['city'];
+				$data['billingcountry'] = $addresses[0]['country'];
+			}
+
+			//Get additonal data
+			if($contact['vatin']) $data['vatin'] = $contact['vatin'];
+			if($contact['currency']) $data['currency'] = $contact['currency'];
+			if($contact['taxfree']) $data['taxfree'] = $contact['taxfree'];
+		}
 
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 		$id = $purchaseorderDb->addPurchaseorder($data);

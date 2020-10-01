@@ -2,6 +2,7 @@
 	//Menu
 	'MENU_DELIVERY_ORDERS' => 'Lieferscheine',
 	//Actions
+	'ACTIONS_CREATE_DELIVERY_ORDER' => 'Lieferschein erstellen',
 	'ACTIONS_GENERATE_DELIVERY_ORDER' => 'Lieferschein generieren',
 	//Delivery order
 	'DELIVERYORDER' => 'Lieferschein',

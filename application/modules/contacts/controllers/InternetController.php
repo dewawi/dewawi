@@ -41,9 +41,10 @@ class Contacts_InternetController extends Zend_Controller_Action
 				$internetDb = new Contacts_Model_DbTable_Internet();
 				if($id > 0) {
 					$internetDb->updateInternet($id, $data);
-				} else {
-					$internetDb->addInternet($data['contactid'], $data['internet'], $data['ordering']);
+					echo Zend_Json::encode($data);
 				}
+			} else {
+				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 			}
 		}
 

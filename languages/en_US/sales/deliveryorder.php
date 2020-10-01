@@ -2,6 +2,7 @@
 	//Menu
 	'MENU_DELIVERY_ORDERS' => 'Delivery orders',
 	//Actions
+	'ACTIONS_CREATE_DELIVERY_ORDER' => 'Create delivery order',
 	'ACTIONS_GENERATE_DELIVERY_ORDER' => 'Generate delivery order',
 	//Delivery order
 	'DELIVERYORDER' => 'Delivery order',

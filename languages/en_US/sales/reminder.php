@@ -2,6 +2,7 @@
 	//Menu
 	'MENU_REMINDERS' => 'Reminders',
 	//Actions
+	'ACTIONS_CREATE_REMINDER' => 'Create reminder',
 	'ACTIONS_GENERATE_REMINDER' => 'Generate reminder',
 	//Credit note
 	'REMINDER' => 'Reminder',

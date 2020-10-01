@@ -28,6 +28,21 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getUsers()
+	{
+		$data = $this->fetchAll(
+			$this->select()
+				->where('clientid = ?', $this->_client['id'])
+				->where('deleted = ?', 0)
+				->from($this->_name, array('id', 'name'))
+		);
+		$users = array();
+		foreach ($data as $user) {
+			$users[$user['id']] = $user['name'];
+		}
+		return $users;
+	}
+
 	public function getUserByUsername($username)
 	{
 		$row = $this->fetchRow(

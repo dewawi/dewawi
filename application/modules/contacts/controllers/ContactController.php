@@ -194,8 +194,9 @@ class Contacts_ContactController extends Zend_Controller_Action
 						$data['cashdiscountpercent'] = Zend_Locale_Format::getNumber($data['cashdiscountpercent'],array('precision' => 2,'locale' => $locale));
 					}
 					$contactDb->updateContact($id, $data);
+					echo Zend_Json::encode($contactDb->getContact($id));
 				} else {
-					throw new Exception('Form is invalid');
+					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 				}
 			} else {
 				if($id > 0) {
@@ -239,11 +240,13 @@ class Contacts_ContactController extends Zend_Controller_Action
 					//Get email form
 					$emailForm = new Contacts_Form_Emailmessage();
 					if(isset($contact['email'][0])) $emailForm->recipient->setValue($contact['email'][0]['email']);
-					if($emailtemplates[0]['cc']) $emailForm->cc->setValue($emailtemplates[0]['cc']);
-					if($emailtemplates[0]['bcc']) $emailForm->bcc->setValue($emailtemplates[0]['bcc']);
-					if($emailtemplates[0]['replyto']) $emailForm->replyto->setValue($emailtemplates[0]['replyto']);
-					$emailForm->subject->setValue($emailtemplates[0]['subject']);
-					$emailForm->body->setValue($emailtemplates[0]['body']);
+					if(isset($emailtemplates[0])) {
+						if($emailtemplates[0]['cc']) $emailForm->cc->setValue($emailtemplates[0]['cc']);
+						if($emailtemplates[0]['bcc']) $emailForm->bcc->setValue($emailtemplates[0]['bcc']);
+						if($emailtemplates[0]['replyto']) $emailForm->replyto->setValue($emailtemplates[0]['replyto']);
+						$emailForm->subject->setValue($emailtemplates[0]['subject']);
+						$emailForm->body->setValue($emailtemplates[0]['body']);
+					}
 					$this->view->emailForm = $emailForm;
 					$this->view->url = $this->_helper->Directory->getUrl($contact['contactid']);
 

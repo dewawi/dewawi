@@ -10,13 +10,15 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 		$module = $request->getParam('module', null);
 		$controller = $request->getParam('controller', null);
 
+		$path = BASE_PATH.'/files/';
+
 		if($type == 'item') {
 			//Create contact folder if does not already exists
-			$path = BASE_PATH.'/files/items/';
-			if(file_exists($path.$url) && is_dir($path.$url) && is_writable($path.$url)) {
+			$dir = 'items/';
+			if(file_exists($path.$dir.$url) && is_dir($path.$dir.$url) && is_writable($path.$dir.$url)) {
 				return true;
 			} elseif(is_writable($path)) {
-				$response = mkdir($path.$url, 0777, true);
+				$response = mkdir($path.$dir.$url, 0777, true);
 				if($response === false) $flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
 				return $response;
 			} else {
@@ -25,11 +27,11 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 			}
 		} elseif($type == 'contact') {
 			//Create contact folder if does not already exists
-			$path = BASE_PATH.'/files/contacts/';
-			if(file_exists($path.$url) && is_dir($path.$url) && is_writable($path.$url)) {
+			$dir = 'contacts/';
+			if(file_exists($path.$dir.$url) && is_dir($path.$dir.$url) && is_writable($path.$dir.$url)) {
 				return true;
 			} elseif(is_writable($path)) {
-				$response = mkdir($path.$url, 0777, true);
+				$response = mkdir($path.$dir.$url, 0777, true);
 				if($response === false) $flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
 				return $response;
 			} else {
@@ -38,12 +40,12 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 			}
 		} elseif($type == 'attachment') {
 			//Create attachments folder if does not already exists
-			$path = BASE_PATH.'/files/attachments/'.$module.'/'.$controller.'/';
-			if(file_exists($path.$url) && is_dir($path.$url) && is_writable($path.$url)) {
+			$dir = 'attachments/'.$module.'/'.$controller.'/';
+			if(file_exists($path.$dir.$url) && is_dir($path.$dir.$url) && is_writable($path.$dir.$url)) {
 				return true;
 			} elseif(is_writable($path)) {
-				//error_log($path.$url);
-				$response = mkdir($path.$url, 0777, true);
+				//error_log($path.$dir.$url);
+				$response = mkdir($path.$dir.$url, 0777, true);
 				if($response === false) $flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
 				return $response;
 			} else {
@@ -56,10 +58,10 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 			if(!file_exists($cache.$type.'/') && is_writable($cache)) mkdir($cache.$type.'/', 0777, true);
 			//Create contact folder if does not already exists
 			$path = BASE_PATH.'/files/contacts/';
-			if(file_exists($path.$url) && is_dir($path.$url) && is_writable($path.$url)) {
+			if(file_exists($path.$dir.$url) && is_dir($path.$dir.$url) && is_writable($path.$dir.$url)) {
 				return true;
 			} elseif(is_writable($path)) {
-				$response = mkdir($path.$url, 0777, true);
+				$response = mkdir($path.$dir.$url, 0777, true);
 				if($response === false) $flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
 				return $response;
 			} else {

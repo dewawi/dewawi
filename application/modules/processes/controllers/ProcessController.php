@@ -115,11 +115,47 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$currencies = new Application_Model_DbTable_Currency();
 		$currency = $currencies->getPrimaryCurrency();
 
+		//Get primary language
+		$languages = new Application_Model_DbTable_Language();
+		$language = $languages->getPrimaryLanguage();
+
+		//Get primary template
+		$templates = new Application_Model_DbTable_Template();
+		$template = $templates->getPrimaryTemplate();
+
 		$data = array();
 		$data['title'] = $this->view->translate('PROCESSES_NEW_PROCESS');
-		$data['customerid'] = $customerid;
 		$data['currency'] = $currency['code'];
+		$data['templateid'] = $template['id'];
+		$data['language'] = $language['code'];
 		$data['state'] = 100;
+
+		//Get contact data
+		if($contactid) {
+			$contactDb = new Contacts_Model_DbTable_Contact();
+			$contact = $contactDb->getContact($contactid);
+
+			//Get basic data
+			$data['customerid'] = $contact['contactid'];
+			$data['billingname1'] = $contact['name1'];
+			$data['billingname2'] = $contact['name2'];
+			$data['billingdepartment'] = $contact['department'];
+
+			//Get addresses
+			$addressDb = new Contacts_Model_DbTable_Address();
+			$addresses = $addressDb->getAddress($contact['id']);
+			if(count($addresses)) {
+				$data['billingstreet'] = $addresses[0]['street'];
+				$data['billingpostcode'] = $addresses[0]['postcode'];
+				$data['billingcity'] = $addresses[0]['city'];
+				$data['billingcountry'] = $addresses[0]['country'];
+			}
+
+			//Get additonal data
+			if($contact['vatin']) $data['vatin'] = $contact['vatin'];
+			if($contact['currency']) $data['currency'] = $contact['currency'];
+			if($contact['taxfree']) $data['taxfree'] = $contact['taxfree'];
+		}
 
 		$processDb = new Processes_Model_DbTable_Process();
 		$id = $processDb->addProcess($data);

@@ -156,8 +156,9 @@ class Items_ItemController extends Zend_Controller_Action
 						$data['weight'] = Zend_Locale_Format::getNumber($data['weight'],array('precision' => 4,'locale' => $locale));
 					}
 					$itemDb->updateItem($id, $data);
+					echo Zend_Json::encode($itemDb->getItem($id));
 				} else {
-					throw new Exception('Form is invalid');
+					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 				}
 			} else {
 				if($id > 0) {
@@ -187,7 +188,6 @@ class Items_ItemController extends Zend_Controller_Action
 					$toolbar = new Items_Form_Toolbar();
 
 					$this->view->form = $form;
-					$this->view->dirwritable = $dirwritable;
 					$this->view->inventory = $inventory;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;

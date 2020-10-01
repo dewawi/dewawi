@@ -47,7 +47,10 @@ class Contacts_PhoneController extends Zend_Controller_Action
 				$phoneDb = new Contacts_Model_DbTable_Phone();
 				if($id > 0) {
 					$phoneDb->updatePhone($id, $data);
+					echo Zend_Json::encode($data);
 				}
+			} else {
+				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 			}
 		}
 

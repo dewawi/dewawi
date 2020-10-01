@@ -101,9 +101,10 @@ class Contacts_EmailController extends Zend_Controller_Action
 				$emailDb = new Contacts_Model_DbTable_Email();
 				if($id > 0) {
 					$emailDb->updateEmail($id, $data);
-				} else {
-					$emailDb->addEmail($data['contactid'], $data['email'], $data['ordering']);
+					echo Zend_Json::encode($data);
 				}
+			} else {
+				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 			}
 		}
 

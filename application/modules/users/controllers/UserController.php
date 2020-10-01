@@ -41,18 +41,8 @@ class Users_UserController extends Zend_Controller_Action
 
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'user', null, array('id' => $id));
-		} elseif($this->isLocked($user['locked'], $user['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
 		} else {
-			$userDb->lock($id);
+			$this->_helper->Access->lock($id, $this->_user['id'], $user['locked'], $user['lockedtime']);
 
 			$form = new Users_Form_User();
 			$options = $this->_helper->Options->getOptions($form);
@@ -195,54 +185,24 @@ class Users_UserController extends Zend_Controller_Action
 
 	public function lockAction()
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$itemDb = new Items_Model_DbTable_Item();
-		$item = $itemDb->getProcess($id);
-		if($this->isLocked($item['locked'], $item['lockedtime'])) {
-			$userDb = new Users_Model_DbTable_User();
-			$user = $userDb->getUser($item['locked']);
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
-		} else {
-			$itemDb->lock($id);
-		}
+		$this->_helper->Access->lock($id, $this->_user['id']);
 	}
 
 	public function unlockAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$itemDb = new Items_Model_DbTable_Item();
-		$itemDb->unlock($id);
+		$this->_helper->Access->unlock($id);
 	}
 
 	public function keepaliveAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$itemDb = new Items_Model_DbTable_Item();
-		$itemDb->lock($id);
+		$this->_helper->Access->keepalive($id);
 	}
 
-	protected function isLocked($locked, $lockedtime)
+	public function validateAction()
 	{
-		if($locked && ($locked != $this->_user['id'])) {
-			$timeout = strtotime($lockedtime) + 300; // 5 minutes
-			$timestamp = strtotime($this->_date);
-			if($timeout < $timestamp) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			return false;
-		}
+		$this->_helper->Validate();
 	}
 }

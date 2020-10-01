@@ -66,7 +66,10 @@ class Contacts_AddressController extends Zend_Controller_Action
 				$addressDb = new Contacts_Model_DbTable_Address();
 				if($id > 0) {
 					$addressDb->updateAddress($id, $data);
+					echo Zend_Json::encode($data);
 				}
+			} else {
+				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 			}
 		}
 
