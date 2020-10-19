@@ -11,7 +11,7 @@
 
 	// connect to db
 	$con = mysqli_connect($host, $username, $password);
-	mysqli_set_charset("UTF8", $con);
+	mysqli_set_charset($con, "UTF8");
 	mysqli_select_db($con, $database);
 	
 	// read structure sql
