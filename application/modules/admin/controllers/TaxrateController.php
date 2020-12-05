@@ -96,10 +96,6 @@ class Admin_TaxrateController extends Zend_Controller_Action
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
 			if($form->isValid($data)) {
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $params['clientid'];
-
 				$taxrateDb = new Admin_Model_DbTable_Taxrate();
 				$id = $taxrateDb->addTaxrate($data);
 				echo Zend_Json::encode($taxrateDb->getTaxrate($id));
@@ -133,7 +129,7 @@ class Admin_TaxrateController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$taxrateDb->lock($id, $this->_user['id'], $this->_date);
+			$taxrateDb->lock($id);
 
 			$form = new Admin_Form_Taxrate();
 			$options = $this->_helper->Options->getOptions($form);
@@ -142,8 +138,6 @@ class Admin_TaxrateController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					$taxrateDb = new Admin_Model_DbTable_Taxrate();
 					$taxrateDb->updateTaxrate($id, $data);
 					echo Zend_Json::encode($taxrateDb->getTaxrate($id));
@@ -165,10 +159,10 @@ class Admin_TaxrateController extends Zend_Controller_Action
 		$data = $taxrateDb->getTaxrate($id);
 		unset($data['id']);
 		$data['name'] = $data['name'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		$taxrateDb->addTaxrate($data);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -202,7 +196,7 @@ class Admin_TaxrateController extends Zend_Controller_Action
 			$user = $userDb->getUser($taxrate['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$taxrateDb->lock($id, $this->_user['id'], $this->_date);
+			$taxrateDb->lock($id);
 		}
 	}
 
@@ -223,7 +217,7 @@ class Admin_TaxrateController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$taxrateDb = new Admin_Model_DbTable_Taxrate();
-		$taxrateDb->lock($id, $this->_user['id'], $this->_date);
+		$taxrateDb->lock($id);
 	}
 
 

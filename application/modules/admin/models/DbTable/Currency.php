@@ -1,9 +1,9 @@
 <?php
 
-class Admin_Model_DbTable_Client extends Zend_Db_Table_Abstract
+class Admin_Model_DbTable_Currency extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'client';
+	protected $_name = 'currency';
 
 	protected $_date = null;
 
@@ -18,7 +18,7 @@ class Admin_Model_DbTable_Client extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getClient($id)
+	public function getCurrency($id)
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
@@ -28,33 +28,20 @@ class Admin_Model_DbTable_Client extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getClients()
-	{
-		if($this->_user['admin']) {
-			$where = array();
-			$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-			$data = $this->fetchAll($where);
-		} else {
-			$data = $this->fetchAll(
-				$this->select()
-					->where('id = ?', $this->_client['id'])
-					->where('deleted = ?', 0)
-					->orWhere('parentid = ?', $this->_client['id'])
-					->where('deleted = ?', 0)
-				);
-		}
-		return $data;
-	}
-
-	public function addClient($data)
+	public function addCurrency($data, $clientid = 0)
 	{
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
+        if($clientid) {
+		    $data['clientid'] = $clientid;
+        } else {
+		    $data['clientid'] = $this->_client['id'];
+        }
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateClient($id, $data)
+	public function updateCurrency($id, $data)
 	{
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
@@ -76,7 +63,7 @@ class Admin_Model_DbTable_Client extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function deleteClient($id)
+	public function deleteCurrency($id)
 	{
 		$data = array();
 		$data['deleted'] = 1;

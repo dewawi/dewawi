@@ -14,7 +14,7 @@ class Admin_Model_DbTable_Warehouse extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    $this->_user = Zend_Registry::get('User');
+		$this->_user = Zend_Registry::get('User');
 		$this->_client = Zend_Registry::get('Client');
 	}
 
@@ -36,10 +36,15 @@ class Admin_Model_DbTable_Warehouse extends Zend_Db_Table_Abstract
 		return $data;
 	}
 
-	public function addWarehouse($data)
+	public function addWarehouse($data, $clientid = 0)
 	{
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
+        if($clientid) {
+		    $data['clientid'] = $clientid;
+        } else {
+		    $data['clientid'] = $this->_client['id'];
+        }
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
@@ -51,20 +56,25 @@ class Admin_Model_DbTable_Warehouse extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function lock($id, $locked, $lockedtime)
+	public function lock($id)
 	{
-		$data = array(
-			'locked' => $locked,
-			'lockedtime' => $lockedtime
-		);
+		$data = array();
+		$data['locked'] = $this->_user['id'];
+		$data['lockedtime'] = $this->_date;
 		$this->update($data, 'id = '. (int)$id);
 	}
 
 	public function unlock($id)
 	{
-		$data = array(
-			'locked' => 0
-		);
+		$data = array();
+		$data['locked'] = 0;
 		$this->update($data, 'id = '. (int)$id);
+	}
+
+	public function deleteWarehouse($id)
+	{
+		$data = array();
+		$data['deleted'] = 1;
+		$this->update($data, 'id =' . (int)$id);
 	}
 }

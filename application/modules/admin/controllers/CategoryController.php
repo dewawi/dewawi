@@ -99,9 +99,6 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$data = $request->getPost();
 			//if($form->isValid($data)) {
 				$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $params['clientid'];
 				//$data['parentid'] = $params['parentid'];
 
 				$categoryDb = new Admin_Model_DbTable_Category();
@@ -139,40 +136,39 @@ class Admin_CategoryController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$categoryDb->lock($id, $this->_user['id'], $this->_date);
+			$categoryDb->lock($id);
 
 			$form = new Admin_Form_Category();
 			$options = $this->_helper->Options->getOptions($form);
 			$params = $this->_helper->Params->getParams($form, $options);
-		    $categoriesDb = new Admin_Model_DbTable_Category();
-		    $categories = $categoriesDb->getCategories($params['type']);
+			$categoriesDb = new Admin_Model_DbTable_Category();
+			$categories = $categoriesDb->getCategories($params['type']);
 			if($request->isPost()) {
 				$data = $request->getPost();
 				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
+				//if(isset($form->$element) && $form->isValidPartial($data)) { // to do add options for parentid before form validation
+				if(isset($form->$element)) {
 					$categoryDb = new Admin_Model_DbTable_Category();
-				    $data['modified'] = $this->_date;
-				    $data['modifiedby'] = $this->_user['id'];
-                    if($element == 'parentid') {
-				        $data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-                        $categoryArray = $categoryDb->getCategory($id);
-					    $categoryDb->updateCategory($id, $data);
+					if($element == 'parentid') {
+						$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
+						$categoryArray = $categoryDb->getCategory($id);
+						$categoryDb->updateCategory($id, $data);
 
-			            //sort old parent category
-			            $this->setOrdering($categoryArray['clientid'], $categoryArray['type'], $categoryArray['parentid']);
+						//sort old parent category
+						$this->setOrdering($categoryArray['clientid'], $categoryArray['type'], $categoryArray['parentid']);
 
-                		/*$categories = $this->_helper->Categories->getCategories(null, $params['clientid'], $params['type'], $categoryArray['parentid']);
-                        $i = 1;
-                        foreach($categories as $category) {
-                            if(isset($category['id'])) {
-                                //if($category['ordering'] != $i)
-                                $categoryDb->updateCategory($category['id'], array('ordering' => $i));
-                                ++$i;
-                            }
-                        }*/
-                    } else {
-					    $categoryDb->updateCategory($id, $data);
-                    }
+						/*$categories = $this->_helper->Categories->getCategories(null, $params['clientid'], $params['type'], $categoryArray['parentid']);
+						$i = 1;
+						foreach($categories as $category) {
+							if(isset($category['id'])) {
+								//if($category['ordering'] != $i)
+								$categoryDb->updateCategory($category['id'], array('ordering' => $i));
+								++$i;
+							}
+						}*/
+					} else {
+						$categoryDb->updateCategory($id, $data);
+					}
 					echo Zend_Json::encode($categoryDb->getCategory($id));
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -195,24 +191,24 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$categoriesDb = new Admin_Model_DbTable_Category();
 		$categories = $categoriesDb->getCategories($data['type'], $data['parentid']);
 		foreach($categories as $category) {
-            if(isset($category['ordering'])) {
-			    if($category['ordering'] > $data['ordering']) {
-				    if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
-				    $categoriesDb->sortCategory($category['id'], $category['ordering'] + 1);
-			    }
+			if(isset($category['ordering'])) {
+				if($category['ordering'] > $data['ordering']) {
+					if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
+					$categoriesDb->sortCategory($category['id'], $category['ordering'] + 1);
+				}
 			}
 		}
 
 		$data['title'] = $data['title'].' 2';
 		$data['ordering'] = $data['ordering'] + 1;
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		$newId = $categoryDb->addCategory($data);
 
 		$childCategories = $categoriesDb->getCategories($data['type'], $id);
-        if(isset($childCategories[$id]['childs'])) $this->copyChilds($id, $childCategories, $newId);
+		if(isset($childCategories[$id]['childs'])) $this->copyChilds($id, $childCategories, $newId);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 
@@ -240,12 +236,12 @@ class Admin_CategoryController extends Zend_Controller_Action
 			} elseif($data['ordering'] > 0) {
 				if($data['ordering'] < $currentOrdering) {
 					$categoryDb->sortCategory($data['id'], $data['ordering']);
-					foreach($orderings as  $ordering => $id) {
+					foreach($orderings as $ordering => $id) {
 						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $categoryDb->sortCategory($id, $ordering+1);
 					}
 				} elseif($data['ordering'] > $currentOrdering) {
 					$categoryDb->sortCategory($data['id'], $data['ordering']);
-					foreach($orderings as  $ordering => $id) {
+					foreach($orderings as $ordering => $id) {
 						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $categoryDb->sortCategory($id, $ordering-1);
 					}
 				}
@@ -265,31 +261,31 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$categoryDb = new Admin_Model_DbTable_Category();
 			$category = $categoryDb->getCategory($id);
 
-            if($category['type'] == 'contact') {
-			    $contactDb = new Contacts_Model_DbTable_Contact();
-			    $contacts = $contactDb->getContactsByCategory($id);
-		        if(!empty($contacts)) {
-                    $this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
-                } else {
-		            $categoriesDb = new Admin_Model_DbTable_Category();
-		            $categories = $categoriesDb->getCategories($category['type'], $category['parentid']);
-                    print_r($categories);
-		            /*foreach($categories as $categoryChild) {
-                        if(isset($category['ordering'])) {
-			                if($categoryChild['ordering'] > $category['ordering']) {
-				                if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
-				                $categoriesDb->sortCategory($categoryChild['id'], $categoryChild['ordering'] - 1);
-			                }
-			            }
-		            }
-			        $categoryDb->deleteCategory($id);
-			        $this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
-		            $this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');*/
-                }
-            } elseif($category['type'] == 'item') {
-			    $itemDb = new Items_Model_DbTable_Item();
-			    $items = $contactDb->getItemsByCategory($id);
-            }
+			if($category['type'] == 'contact') {
+				$contactDb = new Contacts_Model_DbTable_Contact();
+				$contacts = $contactDb->getContactsByCategory($id);
+				if(!empty($contacts)) {
+					$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
+				} else {
+					$categoriesDb = new Admin_Model_DbTable_Category();
+					$categories = $categoriesDb->getCategories($category['type'], $category['parentid']);
+					print_r($categories);
+					/*foreach($categories as $categoryChild) {
+						if(isset($category['ordering'])) {
+							if($categoryChild['ordering'] > $category['ordering']) {
+								if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
+								$categoriesDb->sortCategory($categoryChild['id'], $categoryChild['ordering'] - 1);
+							}
+						}
+					}
+					$categoryDb->deleteCategory($id);
+					$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
+					$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');*/
+				}
+			} elseif($category['type'] == 'item') {
+				$itemDb = new Items_Model_DbTable_Item();
+				$items = $contactDb->getItemsByCategory($id);
+			}
 		//}
 	}
 
@@ -307,7 +303,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$user = $userDb->getUser($category['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$categoryDb->lock($id, $this->_user['id'], $this->_date);
+			$categoryDb->lock($id);
 		}
 	}
 
@@ -328,7 +324,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$categoryDb = new Admin_Model_DbTable_Category();
-		$categoryDb->lock($id, $this->_user['id'], $this->_date);
+		$categoryDb->lock($id);
 	}
 
 
@@ -363,17 +359,17 @@ class Admin_CategoryController extends Zend_Controller_Action
 	protected function setOrdering($clientid, $type, $parentid)
 	{
 		$i = 1;
-        $categoriesDb = new Admin_Model_DbTable_Category();
-        $categories = $categoriesDb->getCategories($type, $parentid);
+		$categoriesDb = new Admin_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories($type, $parentid);
 		foreach($categories as $category) {
-            if(isset($category['ordering'])) {
-			    //if($category['ordering'] != $i) {
-				    if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
-                    //print_r($category);
-                    //print_r($i);
-				    $categoriesDb->sortCategory($category['id'], $i);
-			        ++$i;
-			    //}
+			if(isset($category['ordering'])) {
+				//if($category['ordering'] != $i) {
+					if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
+					//print_r($category);
+					//print_r($i);
+					$categoriesDb->sortCategory($category['id'], $i);
+					++$i;
+				//}
 			}
 		}
 	}
@@ -381,14 +377,14 @@ class Admin_CategoryController extends Zend_Controller_Action
 	protected function getOrdering($clientid, $type, $parentid)
 	{
 		$i = 1;
-        $categoriesDb = new Admin_Model_DbTable_Category();
-        $categories = $categoriesDb->getCategories($type, $parentid);
+		$categoriesDb = new Admin_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories($type, $parentid);
 		$orderings = array();
 		foreach($categories as $category) {
-            if(isset($category['id'])) {
-			    $orderings[$i] = $category['id'];
-			    ++$i;
-		    }
+			if(isset($category['id'])) {
+				$orderings[$i] = $category['id'];
+				++$i;
+			}
 		}
 		return $orderings;
 	}
@@ -403,17 +399,17 @@ class Admin_CategoryController extends Zend_Controller_Action
 	protected function copyChilds($oldId, $categories, $newId)
 	{
 		foreach($categories[$oldId]['childs'] as $child) {
-		    $categoryDb = new Admin_Model_DbTable_Category();
-		    $data = $categoryDb->getCategory($child);
-		    unset($data['id']);
-		    $data['parentid'] = $newId;
-		    $data['created'] = $this->_date;
-		    $data['createdby'] = $this->_user['id'];
-		    $data['modified'] = '0000-00-00';
-		    $data['modifiedby'] = 0;
-		    $newChildId = $categoryDb->addCategory($data);
-            $childCategories = $categoryDb->getCategories($data['type'], $child);
-            if(isset($childCategories[$child]['childs'])) $this->copyChilds($child, $childCategories, $newChildId);
-        }
+			$categoryDb = new Admin_Model_DbTable_Category();
+			$data = $categoryDb->getCategory($child);
+			unset($data['id']);
+			$data['parentid'] = $newId;
+			$data['modified'] = NULL;
+			$data['modifiedby'] = 0;
+			$data['locked'] = 0;
+			$data['lockedtime'] = NULL;
+			$newChildId = $categoryDb->addCategory($data);
+			$childCategories = $categoryDb->getCategories($data['type'], $child);
+			if(isset($childCategories[$child]['childs'])) $this->copyChilds($child, $childCategories, $newChildId);
+		}
 	}
 }

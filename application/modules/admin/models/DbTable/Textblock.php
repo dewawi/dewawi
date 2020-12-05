@@ -14,7 +14,7 @@ class Admin_Model_DbTable_Textblock extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    $this->_user = Zend_Registry::get('User');
+		$this->_user = Zend_Registry::get('User');
 		$this->_client = Zend_Registry::get('Client');
 	}
 
@@ -40,16 +40,20 @@ class Admin_Model_DbTable_Textblock extends Zend_Db_Table_Abstract
 		}
 		$textblocks = array();
 		foreach($data as $textblock)
-            $textblocks[$textblock->section] = $textblock->text;
+			$textblocks[$textblock->section] = $textblock->text;
 		return $textblocks;
 	}
 
 	public function addTextblock($data, $clientid = 0)
 	{
-        if(isset($data['id'])) unset($data['id']);
-        if(!$clientid) $data['clientid'] = $clientid;
+		if(isset($data['id'])) unset($data['id']);
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
+        if($clientid) {
+		    $data['clientid'] = $clientid;
+        } else {
+		    $data['clientid'] = $this->_client['id'];
+        }
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
@@ -57,8 +61,17 @@ class Admin_Model_DbTable_Textblock extends Zend_Db_Table_Abstract
 	public function updateTextblock($data, $controller, $section)
 	{
 		$where = array();
-        $where[] = "controller = '".$controller."'";
-        $where[] = "section = '".$section."'";
+		$where[] = "controller = '".$controller."'";
+		$where[] = "section = '".$section."'";
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, $where);
+	}
+
+	public function deleteTextblock($id)
+	{
+		$data = array();
+		$data['deleted'] = 1;
+		$this->update($data, 'id =' . (int)$id);
 	}
 }

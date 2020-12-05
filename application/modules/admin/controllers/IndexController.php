@@ -86,15 +86,13 @@ class Admin_IndexController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$configDb->lock($id, $this->_user['id'], $this->_date);
+			$configDb->lock($id);
 
 			$form = new Admin_Form_Config();
 			if($request->isPost()) {
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					$configDb = new Admin_Model_DbTable_Config();
 					$configDb->updateConfig($id, $data);
 					echo Zend_Json::encode($configDb->getConfig($id));
@@ -120,7 +118,7 @@ class Admin_IndexController extends Zend_Controller_Action
 			$user = $userDb->getUser($config['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$configDb->lock($id, $this->_user['id'], $this->_date);
+			$configDb->lock($id);
 		}
 	}
 
@@ -141,7 +139,7 @@ class Admin_IndexController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$configDb = new Admin_Model_DbTable_Config();
-		$configDb->lock($id, $this->_user['id'], $this->_date);
+		$configDb->lock($id);
 	}
 
 

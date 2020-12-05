@@ -60,7 +60,7 @@ echo $this->AdminMenu();
 					<?php $buttons['delete'] = $this->Button('delete'); ?>
 					<?php $buttons['sortup'] = $this->toolbar->sortup; ?>
 					<?php $buttons['sortdown'] = $this->toolbar->sortdown; ?>
-                    <?php subCategories($this->categories, $category['id'], $buttons); ?>
+					<?php subCategories($this->categories, $category['id'], $buttons); ?>
 				<?php endif; ?>
 			<?php endif; ?>
 			<?php ++$i0; ?>
@@ -118,9 +118,9 @@ echo $this->AdminMenu();
 			</td>
 		</tr>
 		<?php ++$i1; ?>
-        <?php if(isset($categories[$child]['childs'])) : ?>
-	        <?php $seperatorChild = '&nbsp;&nbsp;&nbsp;'.$seperator; ?>
-            <?php subCategories($categories, $child, $buttons, $seperatorChild); ?>
-        <?php endif; ?>
+		<?php if(isset($categories[$child]['childs'])) : ?>
+			<?php $seperatorChild = '&nbsp;&nbsp;&nbsp;'.$seperator; ?>
+			<?php subCategories($categories, $child, $buttons, $seperatorChild); ?>
+		<?php endif; ?>
 	<?php endforeach; ?>
 <?php } ?>

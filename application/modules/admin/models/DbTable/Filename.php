@@ -1,9 +1,9 @@
 <?php
 
-class Admin_Model_DbTable_Increment extends Zend_Db_Table_Abstract
+class Admin_Model_DbTable_Filename extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'increment';
+	protected $_name = 'filename';
 
 	protected $_date = null;
 
@@ -18,7 +18,7 @@ class Admin_Model_DbTable_Increment extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getIncrement($type)
+	public function getFilename($type)
 	{
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
@@ -29,7 +29,7 @@ class Admin_Model_DbTable_Increment extends Zend_Db_Table_Abstract
 		return $data->$type;
 	}
 
-	public function setIncrement($id, $type)
+	public function setFilename($id, $type)
 	{
 		$data = array(
 			$type => $id,
@@ -37,7 +37,7 @@ class Admin_Model_DbTable_Increment extends Zend_Db_Table_Abstract
 		$this->update($data, 'clientid = '. (int)$this->_client['id']);
 	}
 
-	public function addIncrement($data, $clientid = 0)
+	public function addFilename($data, $clientid = 0)
 	{
 		//$data['created'] = $this->_date;
 		//$data['createdby'] = $this->_user['id'];
@@ -50,14 +50,14 @@ class Admin_Model_DbTable_Increment extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateIncrement($id, $data)
+	public function updateFilename($id, $data)
 	{
 		//$data['modified'] = $this->_date;
 		//$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function deleteIncrement($id)
+	public function deleteFilename($id)
 	{
 		$data = array();
 		$data['deleted'] = 1;

@@ -96,10 +96,6 @@ class Admin_PaymentmethodController extends Zend_Controller_Action
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
 			if($form->isValid($data)) {
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $params['clientid'];
-
 				$paymentmethodDb = new Admin_Model_DbTable_Paymentmethod();
 				$id = $paymentmethodDb->addPaymentmethod($data);
 				echo Zend_Json::encode($paymentmethodDb->getPaymentmethod($id));
@@ -133,7 +129,7 @@ class Admin_PaymentmethodController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$paymentmethodDb->lock($id, $this->_user['id'], $this->_date);
+			$paymentmethodDb->lock($id);
 
 			$form = new Admin_Form_Paymentmethod();
 			$options = $this->_helper->Options->getOptions($form);
@@ -142,8 +138,6 @@ class Admin_PaymentmethodController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					$paymentmethodDb = new Admin_Model_DbTable_Paymentmethod();
 					$paymentmethodDb->updatePaymentmethod($id, $data);
 					echo Zend_Json::encode($paymentmethodDb->getPaymentmethod($id));
@@ -165,10 +159,10 @@ class Admin_PaymentmethodController extends Zend_Controller_Action
 		$data = $paymentmethodDb->getPaymentmethod($id);
 		unset($data['id']);
 		$data['title'] = $data['title'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		$paymentmethodDb->addPaymentmethod($data);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -202,7 +196,7 @@ class Admin_PaymentmethodController extends Zend_Controller_Action
 			$user = $userDb->getUser($paymentmethod['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$paymentmethodDb->lock($id, $this->_user['id'], $this->_date);
+			$paymentmethodDb->lock($id);
 		}
 	}
 
@@ -223,7 +217,7 @@ class Admin_PaymentmethodController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$paymentmethodDb = new Admin_Model_DbTable_Paymentmethod();
-		$paymentmethodDb->lock($id, $this->_user['id'], $this->_date);
+		$paymentmethodDb->lock($id);
 	}
 
 

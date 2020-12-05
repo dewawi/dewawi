@@ -14,7 +14,7 @@ echo $this->AdminMenu();
 			</th>
 			<?php foreach($this->modules as $module) : ?>
 			<th class="<?php echo $this->escape($module); ?>">
-                <?php echo $this->escape($module); ?>
+				<?php echo $this->escape($module); ?>
 			</th>
 			<?php endforeach; ?>
 			<th></th>
@@ -29,14 +29,14 @@ echo $this->AdminMenu();
 				</td>
 				<?php foreach($this->modules as $module) : ?>
 				<td class="<?php echo $this->escape($module); ?>">
-                    <input type="hidden" name="module" class="module" value="<?php echo $this->escape($module); ?>">
+					<input type="hidden" name="module" class="module" value="<?php echo $this->escape($module); ?>">
 					<?php foreach($permission->$module as $controller => $actions) : ?>
-                        <input type="hidden" name="controller" class="controller" value="<?php echo $this->escape($controller); ?>">
-                        <h4><?php echo $this->escape($controller); ?></h4>
-				        <?php echo $this->forms[$permission->id][$module][$controller]->add; ?>
-				        <?php echo $this->forms[$permission->id][$module][$controller]->edit; ?>
-				        <?php echo $this->forms[$permission->id][$module][$controller]->view; ?>
-				        <?php echo $this->forms[$permission->id][$module][$controller]->delete; ?>
+						<input type="hidden" name="controller" class="controller" value="<?php echo $this->escape($controller); ?>">
+						<h4><?php echo $this->escape($controller); ?></h4>
+						<?php echo $this->forms[$permission->id][$module][$controller]->add; ?>
+						<?php echo $this->forms[$permission->id][$module][$controller]->edit; ?>
+						<?php echo $this->forms[$permission->id][$module][$controller]->view; ?>
+						<?php echo $this->forms[$permission->id][$module][$controller]->delete; ?>
 					<?php endforeach; ?>
 				</td>
 				<?php endforeach; ?>

@@ -56,11 +56,11 @@ class Admin_ClientController extends Zend_Controller_Action
 		$clientsDb = new Admin_Model_DbTable_Client();
 		$clients = $clientsDb->getClients();
 
-        $forms = array();
+		$forms = array();
 		foreach($clients as $client) {
-            $forms[$client->id] = new Admin_Form_Client();
-            $forms[$client->id]->activated->setValue($client->activated);
-        }
+			$forms[$client->id] = new Admin_Form_Client();
+			$forms[$client->id]->activated->setValue($client->activated);
+		}
 
 		$this->view->form = $form;
 		$this->view->forms = $forms;
@@ -100,60 +100,161 @@ class Admin_ClientController extends Zend_Controller_Action
 				$clientDb = new Admin_Model_DbTable_Client();
 				$id = $clientDb->addClient($data);
 
-                //Add config row
+				//Add category row
+				$categoryDb = new Admin_Model_DbTable_Category();
+				$categoryDb->addCategory(array(
+									'title' => 'Privatkunden',
+									'type' => 'contact',
+									'ordering' => 1,
+									'parentid' => 0
+									), $id);
+				$categoryDb->addCategory(array(
+									'title' => 'Geschäftskunden',
+									'type' => 'contact',
+									'ordering' => 2,
+									'parentid' => 0
+									), $id);
+				$categoryDb->addCategory(array(
+									'title' => 'Lieferanten',
+									'type' => 'contact',
+									'ordering' => 3,
+									'parentid' => 0
+									), $id);
+
+				//Add config row
 				$configDb = new Admin_Model_DbTable_Config();
 				$configDb->addConfig(array(
-                                    'timezone' => 'Europe/Berlin',
-                                    'language' => 'de_DE',
-                                    'clientid' => $id
-                                    ));
+									'timezone' => 'Europe/Berlin',
+									'language' => 'de_DE'
+									), $id);
 
-                //Add increment row
+				//Add currency row
+				$currencyDb = new Admin_Model_DbTable_Currency();
+				$currencyDb->addCurrency(array(
+									'code' => 'EUR',
+									'name' => 'Euro',
+									'symbol' => '€'
+									), $id);
+				$currencyDb->addCurrency(array(
+									'code' => 'USD',
+									'name' => 'US Dollar',
+									'symbol' => '$'
+									), $id);
+
+				//Add exchange rate row
+				//$currencyDb = new Admin_Model_DbTable_Currency();
+				//$currencyDb->addCurrency(array(
+				//					'code' => 'EUR',
+				//					'name' => 'Euro',
+				//					'symbol' => '€',
+				//					'clientid' => $id
+				//					));
+				//$currencyDb->addCurrency(array(
+				//					'code' => 'USD',
+				//					'name' => 'US Dollar',
+				//					'symbol' => '$',
+				//					'clientid' => $id
+				//					));
+
+				//Add file name row
+				$filenameDb = new Admin_Model_DbTable_Filename();
+				$filenameDb->addFilename(array(
+									'creditnote' => 'Gutschrift-%NUMBER%.pdf',
+									'deliveryorder' => 'Lieferschein-%NUMBER%.pdf',
+									'invoice' => 'Rechnung-%NUMBER%.pdf',
+									'purchaseorder' => 'Bestellung-%NUMBER%.pdf',
+									'quote' => 'Angebot-%NUMBER%.pdf',
+									'quoterequest' => 'Anfrage-%NUMBER%.pdf',
+									'reminder' => 'Mahnung-%NUMBER%.pdf',
+									'salesorder' => 'Auftragsbestaetigung-%NUMBER%.pdf'
+									), $id);
+
+				//Add increment row
 				$incrementDb = new Admin_Model_DbTable_Increment();
 				$incrementDb->addIncrement(array(
-                                    'clientid' => $id,
-                                    'contactid' => 10000,
-                                    'creditnoteid' => 10000,
-                                    'deliveryorderid' => 10000,
-                                    'invoiceid' => 10000,
-                                    'purchaseorderid' => 10000,
-                                    'quoteid' => 10000,
-                                    'quoterequestid' => 10000,
-                                    'reminderid' => 10000,
-                                    'salesorderid' => 10000
-                                    ));
+									'clientid' => $id,
+									'contactid' => 10000,
+									'creditnoteid' => 10000,
+									'deliveryorderid' => 10000,
+									'invoiceid' => 10000,
+									'purchaseorderid' => 10000,
+									'quoteid' => 10000,
+									'quoterequestid' => 10000,
+									'reminderid' => 10000,
+									'salesorderid' => 10000
+									), $id);
 
-                //Add language row
+				//Add language row
+				//To do: get loaded languages
 				$languageDb = new Admin_Model_DbTable_Language();
 				$languageDb->addLanguage(array(
-                                    'code' => 'de_DE',
-                                    'name' => 'Deutsch',
-                                    'clientid' => $id
-                                    ));
+									'code' => 'de_DE',
+									'name' => 'Deutsch'
+									), $id);
+				$languageDb->addLanguage(array(
+									'code' => 'en_US',
+									'name' => 'Englisch'
+									), $id);
 
-                //Add taxrate row
+				//Add payment method row
+				//$paymentmethodDb = new Admin_Model_DbTable_Paymentmethod();
+				//$paymentmethodDb->addPaymentmethod(array(
+				//					'code' => 'de_DE',
+				//					'name' => 'Deutsch',
+				//					'clientid' => $id
+				//					));
+				//$paymentmethodDb->addPaymentmethod(array(
+				//					'code' => 'de_DE',
+				//					'name' => 'Deutsch',
+				//					'clientid' => $id
+				//					));
+
+				//Add shipping method row
+				//$shippingmethodDb = new Admin_Model_DbTable_Shippingmethod();
+				//$shippingmethodDb->addState(array(
+				//					'code' => 'de_DE',
+				//					'name' => 'Deutsch',
+				//					'clientid' => $id
+				//					));
+				//$shippingmethodDb->addState(array(
+				//					'code' => 'de_DE',
+				//					'name' => 'Deutsch',
+				//					'clientid' => $id
+				//					));
+
+				//Add state row
+				//$stateDb = new Admin_Model_DbTable_State();
+				//$stateDb->addState(array(
+				//					'code' => 'de_DE',
+				//					'name' => 'Deutsch',
+				//					'clientid' => $id
+				//					));
+				//$stateDb->addState(array(
+				//					'code' => 'de_DE',
+				//					'name' => 'Deutsch',
+				//					'clientid' => $id
+				//					));
+
+				//Add taxrate row
 				$taxrateDb = new Admin_Model_DbTable_Taxrate();
 				$taxrateDb->addTaxrate(array(
-                                    'name' => 'MwSt.',
-                                    'rate' => 19.0000,
-                                    'clientid' => $id
-                                    ));
+									'name' => 'MwSt (16%)',
+									'rate' => 16.0000
+									), $id);
 				$taxrateDb = new Admin_Model_DbTable_Taxrate();
 				$taxrateDb->addTaxrate(array(
-                                    'name' => 'MwSt.',
-                                    'rate' => 7.0000,
-                                    'clientid' => $id
-                                    ));
+									'name' => 'MwSt (5%)',
+									'rate' => 5.0000
+									), $id);
 
-                //Add template row
+				//Add template row
 				$templateDb = new Admin_Model_DbTable_Template();
 				$templateDb->addTemplate(array(
-                                    'description' => 'Vorlage',
-                                    'default' => 1,
-                                    'clientid' => $id
-                                    ));
+									'description' => 'Vorlage',
+									'default' => 1
+									), $id);
 
-                //Add textblock row
+				//Add textblock row
 				$textblockDb = new Admin_Model_DbTable_Textblock();
 				$textblockDb->addTextblock($textblockDb->getTextblock(1), $id);
 				$textblockDb->addTextblock($textblockDb->getTextblock(2), $id);
@@ -172,36 +273,30 @@ class Admin_ClientController extends Zend_Controller_Action
 				$textblockDb->addTextblock($textblockDb->getTextblock(15), $id);
 				$textblockDb->addTextblock($textblockDb->getTextblock(16), $id);
 
-                //Add uom row
+				//Add uom row
 				$uomDb = new Admin_Model_DbTable_Uom();
 				$uomDb->addUom(array(
-                                    'title' => 'Stück',
-                                    'clientid' => $id
-                                    ));
+									'title' => 'Stück'
+									), $id);
 				$uomDb->addUom(array(
-                                    'title' => 'Pack.',
-                                    'clientid' => $id
-                                    ));
+									'title' => 'Pack.'
+									), $id);
 				$uomDb->addUom(array(
-                                    'title' => 'Std.',
-                                    'clientid' => $id
-                                    ));
+									'title' => 'Std.'
+									), $id);
 				$uomDb->addUom(array(
-                                    'title' => 'kg',
-                                    'clientid' => $id
-                                    ));
+									'title' => 'kg'
+									), $id);
 				$uomDb->addUom(array(
-                                    'title' => 'm',
-                                    'clientid' => $id
-                                    ));
+									'title' => 'm'
+									), $id);
 
-                //Add warehouse row
+				//Add warehouse row
 				$warehouseDb = new Admin_Model_DbTable_Warehouse();
 				$warehouseDb->addWarehouse(array(
-                                    'title' => 'Hauptlager',
-                                    'description' => 'Hauptlager',
-                                    'clientid' => $id
-                                    ));
+									'title' => 'Hauptlager',
+									'description' => 'Hauptlager'
+									), $id);
 
 				echo Zend_Json::encode($clientDb->getClient($id));
 			} else {
@@ -234,15 +329,13 @@ class Admin_ClientController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$clientDb->lock($id, $this->_user['id'], $this->_date);
+			$clientDb->lock($id);
 
 			$form = new Admin_Form_Client();
 			if($request->isPost()) {
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					$clientDb = new Admin_Model_DbTable_Client();
 					$clientDb->updateClient($id, $data);
 					echo Zend_Json::encode($clientDb->getClient($id));
@@ -264,10 +357,10 @@ class Admin_ClientController extends Zend_Controller_Action
 		$data = $clientDb->getClient($id);
 		unset($data['id']);
 		$data['company'] = $data['company'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		$clientDb->addClient($data);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -301,7 +394,7 @@ class Admin_ClientController extends Zend_Controller_Action
 			$user = $userDb->getUser($client['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$clientDb->lock($id, $this->_user['id'], $this->_date);
+			$clientDb->lock($id);
 		}
 	}
 
@@ -322,7 +415,7 @@ class Admin_ClientController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$clientDb = new Admin_Model_DbTable_Client();
-		$clientDb->lock($id, $this->_user['id'], $this->_date);
+		$clientDb->lock($id);
 	}
 
 

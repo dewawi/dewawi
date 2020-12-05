@@ -14,7 +14,7 @@ class Admin_Model_DbTable_Permission extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    $this->_user = Zend_Registry::get('User');
+		$this->_user = Zend_Registry::get('User');
 		$this->_client = Zend_Registry::get('Client');
 	}
 
@@ -34,53 +34,55 @@ class Admin_Model_DbTable_Permission extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchAll($where);
 
-        $permissions = array();
-        foreach($data as $id => $permission) {
-            $permission['default'] = json_decode($permission['default']);
-            $permission['contacts'] = json_decode($permission['contacts']);
-            $permission['items'] = json_decode($permission['items']);
-            $permission['processes'] = json_decode($permission['processes']);
-            $permission['purchases'] = json_decode($permission['purchases']);
-            $permission['sales'] = json_decode($permission['sales']);
-            $permission['statistics'] = json_decode($permission['statistics']);
-            $permissions[$id] = $permission;
-        }
+		$permissions = array();
+		foreach($data as $id => $permission) {
+			$permission['default'] = json_decode($permission['default']);
+			$permission['contacts'] = json_decode($permission['contacts']);
+			$permission['items'] = json_decode($permission['items']);
+			$permission['processes'] = json_decode($permission['processes']);
+			$permission['purchases'] = json_decode($permission['purchases']);
+			$permission['sales'] = json_decode($permission['sales']);
+			$permission['statistics'] = json_decode($permission['statistics']);
+			$permissions[$id] = $permission;
+		}
 		return $permissions;
 	}
 
 	public function addPermission($data)
 	{
+		$data['created'] = $this->_date;
+		$data['createdby'] = $this->_user['id'];
+		$data['clientid'] = $this->_client['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
 	public function updatePermission($id, $data)
 	{
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function lock($id, $locked, $lockedtime)
+	public function lock($id)
 	{
-		$data = array(
-			'locked' => $locked,
-			'lockedtime' => $lockedtime
-		);
+		$data = array();
+		$data['locked'] = $this->_user['id'];
+		$data['lockedtime'] = $this->_date;
 		$this->update($data, 'id = '. (int)$id);
 	}
 
 	public function unlock($id)
 	{
-		$data = array(
-			'locked' => 0
-		);
+		$data = array();
+		$data['locked'] = 0;
 		$this->update($data, 'id = '. (int)$id);
 	}
 
 	public function deletePermission($id)
 	{
-		$data = array(
-			'deleted' => 1
-		);
+		$data = array();
+		$data['deleted'] = 1;
 		$this->update($data, 'id =' . (int)$id);
 	}
 }

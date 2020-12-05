@@ -96,12 +96,31 @@ class Admin_UserController extends Zend_Controller_Action
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
 			if($form->isValid($data)) {
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $params['clientid'];
-
 				$userDb = new Admin_Model_DbTable_User();
 				$id = $userDb->addUser($data);
+
+				//Add permission row
+				$permissionDb = new Admin_Model_DbTable_Permission();
+				$permissionDb->addPermission(array(
+									'default' => '{"index":["view"]}',
+									'contacts' => '{"contact":["add","edit","view","delete"]
+                                                    "email":["add","edit","view","delete"]}',
+									'items' => '{"item":["add","edit","view","delete"],
+													"inventory":["add","edit","view","delete"],
+													"pricerule":["add","edit","view","delete"]}',
+									'processes' => '{"process":["add","edit","view","delete"]}',
+									'purchases' => '{"quoterequest":["add","edit","view","delete"],
+													"purchaseorder":["add","edit","view","delete"]}',
+									'sales' => '{"quote":["add","edit","view","delete"],
+													"salesorder":["add","edit","view","delete"],
+													"deliveryorder":["add","edit","view","delete"],
+													"invoice":["add","edit","view","delete"],
+													"creditnote":["add","edit","view","delete"],
+													"reminder":["add","edit","view","delete"]}',
+									'statistics' => '{"index":["view"]}',
+									'userid' => $id
+									));
+
 				echo Zend_Json::encode($userDb->getUser($id));
 			} else {
 				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -133,7 +152,7 @@ class Admin_UserController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$userDb->lock($id, $this->_user['id'], $this->_date);
+			$userDb->lock($id);
 
 			$form = new Admin_Form_User();
 			$options = $this->_helper->Options->getOptions($form);
@@ -142,8 +161,6 @@ class Admin_UserController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					$userDb = new Admin_Model_DbTable_User();
 					$userDb->updateUser($id, $data);
 					echo Zend_Json::encode($userDb->getUser($id));
@@ -165,10 +182,10 @@ class Admin_UserController extends Zend_Controller_Action
 		$data = $userDb->getUser($id);
 		unset($data['id']);
 		$data['username'] = $data['username'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		$userDb->addUser($data);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -202,7 +219,7 @@ class Admin_UserController extends Zend_Controller_Action
 			$user = $userDb->getUser($user['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$userDb->lock($id, $this->_user['id'], $this->_date);
+			$userDb->lock($id);
 		}
 	}
 
@@ -223,7 +240,7 @@ class Admin_UserController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$userDb = new Admin_Model_DbTable_User();
-		$userDb->lock($id, $this->_user['id'], $this->_date);
+		$userDb->lock($id);
 	}
 
 

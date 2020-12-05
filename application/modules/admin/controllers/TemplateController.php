@@ -96,10 +96,6 @@ class Admin_TemplateController extends Zend_Controller_Action
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
 			if($form->isValid($data)) {
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $params['clientid'];
-
 				$templateDb = new Admin_Model_DbTable_Template();
 				$id = $templateDb->addTemplate($data);
 				echo Zend_Json::encode($templateDb->getTemplate($id));
@@ -133,7 +129,7 @@ class Admin_TemplateController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$templateDb->lock($id, $this->_user['id'], $this->_date);
+			$templateDb->lock($id);
 
 			$form = new Admin_Form_Template();
 			$options = $this->_helper->Options->getOptions($form);
@@ -142,8 +138,6 @@ class Admin_TemplateController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					$templateDb = new Admin_Model_DbTable_Template();
 					$templateDb->updateTemplate($id, $data);
 					echo Zend_Json::encode($templateDb->getTemplate($id));
@@ -165,10 +159,10 @@ class Admin_TemplateController extends Zend_Controller_Action
 		$data = $templateDb->getTemplate($id);
 		unset($data['id']);
 		$data['description'] = $data['description'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		$templateDb->addTemplate($data);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -202,7 +196,7 @@ class Admin_TemplateController extends Zend_Controller_Action
 			$user = $userDb->getUser($template['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$templateDb->lock($id, $this->_user['id'], $this->_date);
+			$templateDb->lock($id);
 		}
 	}
 
@@ -223,7 +217,7 @@ class Admin_TemplateController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$templateDb = new Admin_Model_DbTable_Template();
-		$templateDb->lock($id, $this->_user['id'], $this->_date);
+		$templateDb->lock($id);
 	}
 
 

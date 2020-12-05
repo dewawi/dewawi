@@ -58,20 +58,20 @@ class Admin_PermissionController extends Zend_Controller_Action
 		$permissionsDb = new Admin_Model_DbTable_Permission();
 		$permissions = $permissionsDb->getPermissions();
 
-        $forms = array();
-        $modules = array('contacts', 'items', 'processes', 'purchases', 'sales', 'statistics');
+		$forms = array();
+		$modules = array('contacts', 'items', 'processes', 'purchases', 'sales', 'statistics');
 		foreach($permissions as $permission) {
-		    foreach($modules as $module) {
-                if($permission[$module]) {
-                    foreach($permission[$module] as $controller => $actions) {
-                        $forms[$permission['id']][$module][$controller] = new Admin_Form_Permission();
-                        foreach($actions as $action) {
-                            $forms[$permission['id']][$module][$controller]->$action->setValue(1);
-                        }
-                    }
-                }
-            }
-        }
+			foreach($modules as $module) {
+				if($permission[$module]) {
+					foreach($permission[$module] as $controller => $actions) {
+						$forms[$permission['id']][$module][$controller] = new Admin_Form_Permission();
+						foreach($actions as $action) {
+							$forms[$permission['id']][$module][$controller]->$action->setValue(1);
+						}
+					}
+				}
+			}
+		}
 
 		$this->view->forms = $forms;
 		$this->view->modules = $modules;
@@ -112,10 +112,6 @@ class Admin_PermissionController extends Zend_Controller_Action
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
 			if($form->isValid($data)) {
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				//$data['clientid'] = $params['clientid'];
-
 				$permissionDb = new Admin_Model_DbTable_Permission();
 				$id = $permissionDb->addPermission($data);
 				echo Zend_Json::encode($permissionDb->getPermission($id));
@@ -150,7 +146,7 @@ class Admin_PermissionController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$permissionDb->lock($id, $this->_user['id'], $this->_date);
+			$permissionDb->lock($id);
 
 			$form = new Admin_Form_Permission();
 			$options = $this->_helper->Options->getOptions($form);
@@ -161,13 +157,13 @@ class Admin_PermissionController extends Zend_Controller_Action
 				if(isset($form->$element) && $form->isValidPartial($data)) {
 					$permissionDb = new Admin_Model_DbTable_Permission();
 					$permissions = $permissionDb->getPermission($id);
-                    $permission = json_decode($permission[$data['module']], true);
-                    if($data[$element]) array_push($permission[$data['controller']], $element);
-                    else {
-                        $key = array_search($element, $permission[$data['controller']]);
-                        unset($permission[$data['controller']][$key]);
-                    }
-                    $permission = json_encode($permission);
+					$permission = json_decode($permission[$data['module']], true);
+					if($data[$element]) array_push($permission[$data['controller']], $element);
+					else {
+						$key = array_search($element, $permission[$data['controller']]);
+						unset($permission[$data['controller']][$key]);
+					}
+					$permission = json_encode($permission);
 					$permissionDb = new Admin_Model_DbTable_Permission();
 					$permissionDb->updatePermission($id, array($data['module'] => $permission));
 					echo Zend_Json::encode($permissionDb->getPermission($id));
@@ -189,10 +185,10 @@ class Admin_PermissionController extends Zend_Controller_Action
 		$data = $permissionDb->getPermission($id);
 		unset($data['id']);
 		$data['name'] = $data['name'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		$permissionDb->addPermission($data);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -226,7 +222,7 @@ class Admin_PermissionController extends Zend_Controller_Action
 			$permission = $permissionDb->getPermission($permission['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $permission['name'])));
 		} else {
-			$permissionDb->lock($id, $this->_permission['id'], $this->_date);
+			$permissionDb->lock($id);
 		}
 	}
 
@@ -247,7 +243,7 @@ class Admin_PermissionController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$permissionDb = new Admin_Model_DbTable_Permission();
-		$permissionDb->lock($id, $this->_permission['id'], $this->_date);
+		$permissionDb->lock($id);
 	}
 
 

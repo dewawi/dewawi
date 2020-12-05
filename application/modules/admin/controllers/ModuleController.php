@@ -96,10 +96,6 @@ class Admin_ModuleController extends Zend_Controller_Action
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
 			if($form->isValid($data)) {
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				//$data['clientid'] = $params['clientid'];
-
 				$moduleDb = new Admin_Model_DbTable_Module();
 				$id = $moduleDb->addModule($data);
 				echo Zend_Json::encode($moduleDb->getModule($id));
@@ -133,7 +129,7 @@ class Admin_ModuleController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$moduleDb->lock($id, $this->_user['id'], $this->_date);
+			$moduleDb->lock($id);
 
 			$form = new Admin_Form_Module();
 			$options = $this->_helper->Options->getOptions($form);
@@ -142,8 +138,6 @@ class Admin_ModuleController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					$moduleDb = new Admin_Model_DbTable_Module();
 					$moduleDb->updateModule($id, $data);
 					echo Zend_Json::encode($moduleDb->getModule($id));
@@ -165,10 +159,10 @@ class Admin_ModuleController extends Zend_Controller_Action
 		$data = $moduleDb->getModule($id);
 		unset($data['id']);
 		$data['name'] = $data['name'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		$moduleDb->addModule($data);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -202,7 +196,7 @@ class Admin_ModuleController extends Zend_Controller_Action
 			$user = $userDb->getUser($module['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$moduleDb->lock($id, $this->_user['id'], $this->_date);
+			$moduleDb->lock($id);
 		}
 	}
 
@@ -223,7 +217,7 @@ class Admin_ModuleController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$moduleDb = new Admin_Model_DbTable_Module();
-		$moduleDb->lock($id, $this->_user['id'], $this->_date);
+		$moduleDb->lock($id);
 	}
 
 

@@ -28,6 +28,16 @@ class Admin_Form_Config extends Zend_Form
 			->setAttrib('rows', '30')
 			->setAttrib('default', '');
 
+		$form['logo'] = new Zend_Form_Element_Text('logo');
+		$form['logo']->setLabel('ADMIN_LOGO')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('default', '');
+
+		$form['footer'] = new Zend_Form_Element_Text('footer');
+		$form['footer']->setLabel('ADMIN_FOOTER')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('default', '');
+
 		$this->addElements($form);
 	}
 }

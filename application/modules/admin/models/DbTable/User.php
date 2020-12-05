@@ -14,7 +14,7 @@ class Admin_Model_DbTable_User extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-	    $this->_user = Zend_Registry::get('User');
+		$this->_user = Zend_Registry::get('User');
 		$this->_client = Zend_Registry::get('Client');
 	}
 
@@ -38,37 +38,39 @@ class Admin_Model_DbTable_User extends Zend_Db_Table_Abstract
 
 	public function addUser($data)
 	{
+		$data['created'] = $this->_date;
+		$data['createdby'] = $this->_user['id'];
+		$data['clientid'] = $this->_client['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
 	public function updateUser($id, $data)
 	{
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function lock($id, $locked, $lockedtime)
+	public function lock($id)
 	{
-		$data = array(
-			'locked' => $locked,
-			'lockedtime' => $lockedtime
-		);
+		$data = array();
+		$data['locked'] = $this->_user['id'];
+		$data['lockedtime'] = $this->_date;
 		$this->update($data, 'id = '. (int)$id);
 	}
 
 	public function unlock($id)
 	{
-		$data = array(
-			'locked' => 0
-		);
+		$data = array();
+		$data['locked'] = 0;
 		$this->update($data, 'id = '. (int)$id);
 	}
 
 	public function deleteUser($id)
 	{
-		$data = array(
-			'deleted' => 1
-		);
+		$data = array();
+		$data['deleted'] = 1;
 		$this->update($data, 'id =' . (int)$id);
 	}
 }

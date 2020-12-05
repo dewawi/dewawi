@@ -96,10 +96,6 @@ class Admin_UomController extends Zend_Controller_Action
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
 			if($form->isValid($data)) {
-				$data['created'] = $this->_date;
-				$data['createdby'] = $this->_user['id'];
-				$data['clientid'] = $params['clientid'];
-
 				$uomDb = new Admin_Model_DbTable_Uom();
 				$id = $uomDb->addUom($data);
 				echo Zend_Json::encode($uomDb->getUom($id));
@@ -133,7 +129,7 @@ class Admin_UomController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$uomDb->lock($id, $this->_user['id'], $this->_date);
+			$uomDb->lock($id);
 
 			$form = new Admin_Form_Uom();
 			$options = $this->_helper->Options->getOptions($form);
@@ -142,8 +138,6 @@ class Admin_UomController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['modified'] = $this->_date;
-					$data['modifiedby'] = $this->_user['id'];
 					$uomDb = new Admin_Model_DbTable_Uom();
 					$uomDb->updateUom($id, $data);
 					echo Zend_Json::encode($uomDb->getUom($id));
@@ -165,10 +159,10 @@ class Admin_UomController extends Zend_Controller_Action
 		$data = $uomDb->getUom($id);
 		unset($data['id']);
 		$data['title'] = $data['title'].' 2';
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['modified'] = '0000-00-00';
+		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = NULL;
 		$uomDb->addUom($data);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
@@ -202,7 +196,7 @@ class Admin_UomController extends Zend_Controller_Action
 			$user = $userDb->getUser($uom['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$uomDb->lock($id, $this->_user['id'], $this->_date);
+			$uomDb->lock($id);
 		}
 	}
 
@@ -223,7 +217,7 @@ class Admin_UomController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$uomDb = new Admin_Model_DbTable_Uom();
-		$uomDb->lock($id, $this->_user['id'], $this->_date);
+		$uomDb->lock($id);
 	}
 
 
