@@ -23,6 +23,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
+		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
@@ -30,6 +31,7 @@ class Items_ItemController extends Zend_Controller_Action
 
 		//Check if the directory is writable
 		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
+		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
 	}
 
 	public function indexAction()
@@ -249,40 +251,28 @@ class Items_ItemController extends Zend_Controller_Action
 				$file = $upload->getFileName();
 				$data = fopen($file, 'r');
 
-				if ($data && ($data !== FALSE)) {
+				//Get manufacturers
+				$manufacturersDb = new Application_Model_DbTable_Manufacturer();
+				$manufacturers = $manufacturersDb->getManufacturers();
+
+				//Get uoms
+				$uomsDb = new Application_Model_DbTable_Uom();
+				$uoms = $uomsDb->getUoms();
+
+				if($data && ($data !== FALSE)) {
 					$map = array();
 					$dataTemplate = array();
 					$row = 0;
-					while (($datacsv = fgetcsv($data, 0, ',')) !== FALSE) {
-						//print_r($datacsv);
-						if($row == 0) {
-							foreach($datacsv as $pos => $attr) {
-								if($attr) {
-									$map[$attr] = $pos;
-								}
-							}
-						//print_r($map);
-						} elseif($row == 1) {
-							if(isset($map['name_dewawi'])) $dataTemplate['name_dewawi'] = $datacsv[$map['name_dewawi']];
-							if(isset($map['name_magento'])) $dataTemplate['name_magento'] = $datacsv[$map['name_magento']];
-							if(isset($map['name_ebay'])) $dataTemplate['name_ebay'] = $datacsv[$map['name_ebay']];
-							if(isset($map['mini_description_magento'])) $dataTemplate['mini_description_magento'] = $datacsv[$map['mini_description_magento']];
-							if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] = $datacsv[$map['short_description_magento']];
-							if(isset($map['description_magento'])) $dataTemplate['description_magento'] = $datacsv[$map['description_magento']];
-							if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] = $datacsv[$map['description_dewawi']];
-						} else {
-							if(isset($map['mini_description_magento'])) $dataTemplate['mini_description_magento'] .= $datacsv[$map['mini_description_magento']];
-							if(isset($map['short_description_magento'])) $dataTemplate['short_description_magento'] .= $datacsv[$map['short_description_magento']];
-							if(isset($map['description_magento'])) $dataTemplate['description_magento'] .= $datacsv[$map['description_magento']];
-							if(isset($map['description_dewawi'])) $dataTemplate['description_dewawi'] .= "\n".$datacsv[$map['description_dewawi']];
-						}
-						$row++;
-					}
-					fclose($data);
-					$data = fopen($file, 'r');
-					$row = 0;
-					$item = new Items_Model_DbTable_Item();
-					while (($datacsv = fgetcsv($data, 0, ',')) !== FALSE) {
+					$itemDb = new Items_Model_DbTable_Item();
+					$itemInfo = $itemDb->getInfo();
+					$itemImage = new Items_Model_DbTable_Itemimage();
+					$ebayitemDb = new Items_Model_DbTable_Ebayitem();
+					$shopitemDb = new Items_Model_DbTable_Shopitem();
+
+					//Get categories
+					$categoryIndex = $this->getProductCategoryIndex();
+
+					while(($datacsv = fgetcsv($data, 0, ',')) !== FALSE) {
 						if($row == 0) {
 							foreach($datacsv as $pos => $attr) {
 								if($attr) {
@@ -291,103 +281,236 @@ class Items_ItemController extends Zend_Controller_Action
 							}
 						} elseif($datacsv[$map['sku']]) {
 							//echo $datacsv[$map['sku']];
-							//print_r($datacsv);
-							$itemArray = $item->getItemBySKU($datacsv[$map['sku']]);
-							//print_r($itemArray);
+							//print_r($map);
+							$images = array();
+							$attributes = array();
 							$updateData = array();
+							$shopData = array();
 							foreach($map as $attr => $pos) {
-								if(isset($itemArray[$attr])) {
+								if(array_search($attr, $itemInfo)) {
 									if($attr == 'weight') {
-										$updateData['weight'] = preg_replace("/[^0-9]/", '', $datacsv[$map[$attr]]);
-									} elseif($attr != 'price') {
+										if(is_numeric($datacsv[$map['weight']])) $updateData['weight'] = $datacsv[$map['weight']];
+									} elseif($attr == 'price') {
+										if(isset($map['dewawidiscount']) && $datacsv[$map['dewawidiscount']]) {
+											$updateData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['dewawidiscount']])/100;
+										} else {
+											$updateData['price'] = $datacsv[$map[$attr]];
+										}
+									} else {
 										$updateData[$attr] = $datacsv[$map[$attr]];
+										//var_dump($datacsv[$map[$attr]]);
 									}
-								} elseif($attr == 'discount_dewawi') {
-									$updateData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_dewawi']])/100;
-									$updateData['price'] = str_replace(',', '.', $updateData['price']);
-								} elseif($attr == 'price_dewawi') {
-									$updateData['price'] = $datacsv[$map['price_dewawi']];
-									$updateData['price'] = str_replace(',', '.', $updateData['price']);
-								} elseif($attr == 'name_dewawi') {
-									$name_dewawi = $dataTemplate['name_dewawi'];
-									foreach($map as $attrSub => $pos) {
-										if (strpos($dataTemplate['name_dewawi'], '#'.$attrSub.'#') !== false) {
-											$name_dewawi = str_replace('#'.$attrSub.'#', $datacsv[$map[$attrSub]], $name_dewawi);
+								} elseif($attr == 'category') {
+									$updateData['catid'] = 0;
+									$currentCategory = $categoryIndex;
+									$shopCategories = explode(' > ', $datacsv[$map['category']]);
+									foreach($shopCategories as $shopCategory) {
+										if(isset($currentCategory[md5($shopCategory)])) {
+											$currentCategory = $currentCategory[md5($shopCategory)];
+											$updateData['catid'] = $currentCategory['id'];
+											if(isset($currentCategory['childs'])) $currentCategory = $currentCategory['childs'];
+										} else {
+											$updateData['catid'] = 0;
 										}
 									}
-									$updateData['title'] = $name_dewawi;
-								} elseif($attr == 'description_dewawi') {
-									$description_dewawi = $dataTemplate['description_dewawi'];
-									foreach($map as $attrSub => $pos) {
-										if (strpos($dataTemplate['description_dewawi'], '#'.$attrSub.'#') !== false) {
-											$description_dewawi = str_replace('#'.$attrSub.'#', $datacsv[$map[$attrSub]], $description_dewawi);
+									if($updateData['catid'] == 0) {
+										/* TO DO handle if no category found */
+										echo 'No category found for '.$datacsv[$map['sku']].': '.$datacsv[$map['category']]."<br>";
+									}
+								} elseif($attr == 'manufacturer') {
+									if($manufacturerid = array_search($datacsv[$map['manufacturer']], $manufacturers)) {
+										$updateData['manufacturerid'] = $manufacturerid;
+									}
+								/*} elseif($attr == 'weightunit') {
+									if($weightuomid = array_search($datacsv[$map['weightunit']], $uoms)) {
+										$updateData['weightuomid'] = $weightuomid;
+									}*/
+								} elseif(strpos($attr, 'attributetitle') !== FALSE) {
+									if($datacsv[$map[$attr]]) {
+										$attributes[str_replace('attributetitle', '', $attr)]['title'] = $datacsv[$map[$attr]];
+									}
+								} elseif(strpos($attr, 'attributevalue') !== FALSE) {
+									if($datacsv[$map[$attr]]) {
+										$attributes[str_replace('attributevalue', '', $attr)]['value'] = $datacsv[$map[$attr]];
+									}
+								} elseif((strpos($attr, 'image') !== FALSE) && (strpos($attr, 'url') !== FALSE)) {
+									$imageUrl = $datacsv[$map[$attr]];
+
+									$clientid = $this->view->client['id'];
+									$dir1 = substr($clientid, 0, 1);
+									if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+									else $dir2 = '0';
+									$url = '/media/items/'.$dir1.'/'.$dir2.'/'.$clientid;
+
+									if(file_exists(BASE_PATH.$url.$imageUrl)) {
+										$imageID = str_replace('image', '', str_replace('url', '', $attr));
+										$images[$imageID]['url'] = $imageUrl;
+										if(isset($map['image'.$imageID.'ordering']) && $datacsv[$map['image'.$imageID.'ordering']]) {
+											$images[$imageID]['ordering'] = $datacsv[$map['image'.$imageID.'ordering']];
+										} else {
+											$images[$imageID]['ordering'] = $imageID;
 										}
 									}
-									$updateData['description'] = trim($description_dewawi);
+								} elseif((strpos($attr, 'image') !== FALSE) && (strpos($attr, 'title') !== FALSE)) {
+									$images[str_replace('image', '', str_replace('title', '', $attr))]['title'] = $datacsv[$map[$attr]];
+								}
+								//Add system variables to attributes
+								if($attr == 'sku') {
+									if($datacsv[$map['sku']]) {
+										$attributes[$attr]['title'] = 'Artikelnummer';
+										$attributes[$attr]['value'] = $datacsv[$map['sku']];
+									}
+								} elseif($attr == 'weight') {
+									if($datacsv[$map['weight']]) {
+										$attributes[$attr]['title'] = 'Gewicht';
+										$attributes[$attr]['value'] = $datacsv[$map['weight']];
+									}
+								} elseif($attr == 'manufacturer') {
+									if($datacsv[$map['manufacturer']]) {
+										$attributes[$attr]['title'] = 'Hersteller';
+										$attributes[$attr]['value'] = $datacsv[$map['manufacturer']];
+									}
 								}
 							}
-							//print_r($updateData);
-							$item->updateItem($itemArray['id'], $updateData);
-
-							if(isset($map['shop_enabled']) && $datacsv[$map['shop_enabled']]) {
-								$updateDataMagento = array();
-								foreach($map as $attr => $pos) {
-									if($attr == 'discount_shop') {
-										$updateDataMagento['special_price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['discount_shop']])/100;
-										$updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
-									} elseif($attr == 'price_shop') {
-										$updateDataMagento['special_price'] = $datacsv[$map['price_shop']];
-										$updateDataMagento['special_price'] = str_replace(',', '.', $updateDataMagento['special_price']);
-									} elseif($attr == 'name_magento') {
-										$name_magento = $dataTemplate['name_magento'];
-										foreach($map as $attr => $pos) {
-											if (strpos($dataTemplate['name_magento'], '#'.$attr.'#') !== false) {
-												$name_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $name_magento);
+							//Search and replace variable placeholders
+							foreach($updateData as $key => $variable) {
+if(($key == 'sku') && ($variable =='MGM-103EA11XA')) {
+error_log($variable);
+error_log($updateData['shoptitle']);
+}
+								if(isset($updateData['title']) && (strpos($updateData['title'], '#'.$key.'#') !== false)) {
+									$updateData['title'] = str_replace('#'.$key.'#', $variable, $updateData['title']);
+								}
+								if(isset($updateData['shoptitle']) && (strpos($updateData['shoptitle'], '#'.$key.'#') !== false)) {
+									$updateData['shoptitle'] = str_replace('#'.$key.'#', $variable, $updateData['shoptitle']);
+								}
+if(($key == 'sku') && ($variable =='MGM-103EA11XA')) {
+error_log($variable);
+error_log($updateData['shoptitle']);
+}
+								if(isset($updateData['ebaytitle']) && (strpos($updateData['ebaytitle'], '#'.$key.'#') !== false)) {
+									$updateData['ebaytitle'] = str_replace('#'.$key.'#', $variable, $updateData['ebaytitle']);
+								}
+								if(isset($updateData['description']) && (strpos($updateData['description'], '#'.$key.'#') !== false)) {
+									$updateData['description'] = str_replace('#'.$key.'#', $variable, $updateData['description']);
+								}
+								if(isset($updateData['shopdescription']) && (strpos($updateData['shopdescription'], '#'.$key.'#') !== false)) {
+									$updateData['shopdescription'] = str_replace('#'.$key.'#', $variable, $updateData['shopdescription']);
+								}
+								if(isset($updateData['shopdescriptionshort']) && (strpos($updateData['shopdescriptionshort'], '#'.$key.'#') !== false)) {
+									$updateData['shopdescriptionshort'] = str_replace('#'.$key.'#', $variable, $updateData['shopdescriptionshort']);
+								}
+								if(isset($updateData['shopdescriptionmini']) && (strpos($updateData['shopdescriptionmini'], '#'.$key.'#') !== false)) {
+									$updateData['shopdescriptionmini'] = str_replace('#'.$key.'#', $variable, $updateData['shopdescriptionmini']);
+								}
+								if(count($images)) {
+									foreach($images as $id => $image) {
+										if(isset($image['title'])) {
+											if(strpos($image['title'], '#'.$key.'#') !== false) {
+												$images[$id]['title'] = str_replace('#'.$key.'#', $variable, $image['title']);
 											}
 										}
-										$updateDataMagento['name'] = $name_magento;
-									} elseif($attr == 'name_ebay') {
-										$name_ebay = $dataTemplate['name_ebay'];
-										foreach($map as $attr => $pos) {
-											if (strpos($dataTemplate['name_ebay'], '#'.$attr.'#') !== false) {
-												$name_ebay = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $name_ebay);
-											}
-										}
-										$updateDataMagento['name_ebay'] = $name_ebay;
-									} elseif($attr == 'mini_description_magento') {
-										$mini_description_magento = $dataTemplate['mini_description_magento'];
-										foreach($map as $attr => $pos) {
-											if (strpos($dataTemplate['mini_description_magento'], '#'.$attr.'#') !== false) {
-												$mini_description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $mini_description_magento);
-											}
-										}
-										$updateDataMagento['mini_description'] = $mini_description_magento;
-									} elseif($attr == 'short_description_magento') {
-										$short_description_magento = $dataTemplate['short_description_magento'];
-										foreach($map as $attr => $pos) {
-											if (strpos($dataTemplate['short_description_magento'], '#'.$attr.'#') !== false) {
-												$short_description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $short_description_magento);
-											}
-										}
-										$updateDataMagento['short_description'] = $short_description_magento;
-									} elseif($attr == 'description_magento') {
-										$description_magento = $dataTemplate['description_magento'];
-										foreach($map as $attr => $pos) {
-											if (strpos($dataTemplate['description_magento'], '#'.$attr.'#') !== false) {
-												$description_magento = str_replace('#'.$attr.'#', $datacsv[$map[$attr]], $description_magento);
-											}
-										}
-										$updateDataMagento['description'] = $description_magento;
-									} else {
-										$updateDataMagento[$attr] = $datacsv[$map[$attr]];
 									}
 								}
-								//print_r($updateDataMagento);
-								$this->magento($updateDataMagento);
+							}
+							//Search and replace attribute placeholders
+							foreach($attributes as $attribute) {
+								if(isset($updateData['title']) && (strpos($updateData['title'], '#'.$attribute['title'].'#') !== false)) {
+									$updateData['title'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['title']);
+								}
+								if(isset($updateData['shoptitle']) && (strpos($updateData['shoptitle'], '#'.$attribute['title'].'#') !== false)) {
+									$updateData['shoptitle'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['shoptitle']);
+								}
+								if(isset($updateData['ebaytitle']) && (strpos($updateData['ebaytitle'], '#'.$attribute['title'].'#') !== false)) {
+									$updateData['ebaytitle'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['ebaytitle']);
+								}
+								if(isset($updateData['description']) && (strpos($updateData['description'], '#'.$attribute['title'].'#') !== false)) {
+									$updateData['description'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['description']);
+								}
+								if(isset($updateData['shopdescription']) && (strpos($updateData['shopdescription'], '#'.$attribute['title'].'#') !== false)) {
+									$updateData['shopdescription'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['shopdescription']);
+								}
+								if(isset($updateData['shopdescriptionshort']) && (strpos($updateData['shopdescriptionshort'], '#'.$attribute['title'].'#') !== false)) {
+									$updateData['shopdescriptionshort'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['shopdescriptionshort']);
+								}
+								if(isset($updateData['shopdescriptionmini']) && (strpos($updateData['shopdescriptionmini'], '#'.$attribute['title'].'#') !== false)) {
+									$updateData['shopdescriptionmini'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['shopdescriptionmini']);
+								}
+								if(count($images)) {
+									foreach($images as $id => $image) {
+										if(isset($image['title'])) {
+											if(strpos($image['title'], '#'.$attribute['title'].'#') !== false) {
+												$images[$id]['title'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $image['title']);
+											}
+										}
+									}
+								}
+							}
+							//if(strpos($updateData['description'], '#manufacturer#') !== false) {
+							//	$updateData['description'] = str_replace('#manufacturer#', $updateData['manufacturer'], $updateData['description']);
+							//}
+							$updateData['attributes'] = json_encode($attributes);
+							//print_r('--------------------------------------');
+							//print_r($updateData);
+							//print_r('--------------------------------------');
+							//print_r(json_decode($attributes, true));
+
+							//Create and update the item
+							if($item = $itemDb->getItemBySKU($datacsv[$map['sku']])) {
+								//error_log(print_r($updateData,true));
+								$itemDb->updateItem($item['id'], $updateData);
+								if(isset($map['ebayuserid'])) {
+									if($datacsv[$map['ebayuserid']] == 0) {
+										$ebayitemDb->deleteEbayitem($item['id']);
+									} elseif(!$ebayitemDb->getEbayitem($item['id'], $datacsv[$map['ebayuserid']])) {
+										$ebayitemDb->addEbayitem(array('itemid' => $item['id'], 'ebayuserid' => $datacsv[$map['ebayuserid']]));
+									}
+								}
+								if(isset($map['shopid'])) {
+									if($datacsv[$map['shopid']] == 0) {
+										$shopitemDb->deleteShopitem($item['id']);
+									} elseif(!$shopitemDb->getShopitem($item['id'], $datacsv[$map['shopid']])) {
+										$shopitemDb->addShopitem(array('itemid' => $item['id'], 'shopid' => $datacsv[$map['shopid']]));
+									}
+								}
+							} else {
+								$updateData['sku'] = $datacsv[$map['sku']];
+								$updateData['inventory'] = 1;
+								$updateData['currency'] = 'EUR';
+								$updateData['taxid'] = 1;
+								if(!$updateData['catid']) $updateData['catid'] = 0;
+								$itemid = $itemDb->addItem($updateData);
+								if(isset($map['ebayuserid'])) {
+									if($datacsv[$map['ebayuserid']] == 0) {
+										$ebayitemDb->deleteEbayitem($itemid);
+									} else {
+										$ebayitemDb->addEbayitem(array('itemid' => $itemid, 'ebayuserid' => $datacsv[$map['ebayuserid']]));
+									}
+								}
+								if(isset($map['shopid'])) {
+									if($datacsv[$map['shopid']] == 0) {
+										$shopitemDb->deleteShopitem($itemid);
+									} else {
+										$shopitemDb->addShopitem(array('itemid' => $itemid, 'shopid' => $datacsv[$map['shopid']]));
+									}
+								}
+							}
+
+							//Delete existing item images
+							$itemImage->deleteItemimagesByItemID($item['id']);
+
+							//Create and update item images
+							foreach($images as $image) {
+								if(isset($image['url']) && $image['url']) {
+									$image['itemid'] = $item['id'];
+									//error_log(var_dump($image));
+									$itemImage->addItemimage($image);
+								}
 							}
 						}
 						$row++;
 					}
+					//print_r($map);
 					fclose($data);
 				}
 
@@ -476,6 +599,52 @@ class Items_ItemController extends Zend_Controller_Action
 	public function validateAction()
 	{
 		$this->_helper->Validate();
+	}
+
+	public function getProductCategoryIndex() {
+		$categoryDb = new Application_Model_DbTable_Category();
+		$categories = $categoryDb->getCategories('item');
+		$categoriesByID = array();
+		foreach($categories as $category) {
+			$categoriesByID[$category['id']] = $category['title'];
+		}
+
+		$childCategories = array();
+		foreach($categories as $category) {
+			if(isset($childCategories[$category['parentid']])) {
+				array_push($childCategories[$category['parentid']], $category['id']);
+			} else {
+				$childCategories[$category['parentid']] = array($category['id']);
+			}
+		}
+
+		$categoryIndex = array();
+		foreach($categories as $category) {
+			if($category['parentid'] == 0) {
+				$categoryIndex[md5($category['title'])]['id'] = $category['id'];
+				$categoryIndex[md5($category['title'])]['title'] = $category['title'];
+				if(isset($childCategories[$category['id']])) {
+					$categoryIndex[md5($category['title'])]['childs'] = $this->getSubCategoryIndex($categoriesByID, $childCategories, $category['id']);
+				}
+			}
+		}
+		//var_dump($categoriesByID);
+		//var_dump($childCategories);
+		//var_dump($categoryIndex);
+
+		return $categoryIndex;
+	}
+
+	public function getSubCategoryIndex($categories, $childCategories, $id) {
+		$subCategories = array();
+		foreach($childCategories[$id] as $child) {
+			$subCategories[md5($categories[$child])]['id'] = $child;
+			$subCategories[md5($categories[$child])]['title'] = $categories[$child];
+			if(isset($childCategories[$child])) {
+				$subCategories[md5($categories[$child])]['childs'] = $this->getSubCategoryIndex($categories, $childCategories, $child);
+			}
+		}
+		return $subCategories;
 	}
 
 	// NOTE: This is experimental and not properly tested

@@ -32,7 +32,7 @@ class Items_Model_DbTable_Pricerule extends Zend_Db_Table_Abstract
 	{
 		$where = array();
 		foreach($options as $key => $option) {
-			//$where[] = $this->getAdapter()->quoteInto($key.' = ? OR '.$key.' = 0', $option);
+			$where[] = $this->getAdapter()->quoteInto($key.' = ? OR '.$key.' = 0 OR '.$key.' IS NULL', $option);
 		}
 		//$where[] = $this->getAdapter()->quoteInto('`from` <= ?',  $this->_date);
 		//$where[] = $this->getAdapter()->quoteInto('`to` >= ?',  $this->_date);

@@ -32,15 +32,27 @@ class Items_Form_Pricerule extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '20');
 
-		$form['from'] = new Zend_Form_Element_Text('from');
-		$form['from']->setLabel('PRICE_RULES_FROM')
+		$form['amountmin'] = new Zend_Form_Element_Text('amountmin');
+		$form['amountmin']->setLabel('PRICE_RULES_AMOUNT_MINIMUM')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '20');
+
+		$form['amountmax'] = new Zend_Form_Element_Text('amountmax');
+		$form['amountmax']->setLabel('PRICE_RULES_AMOUNT_MAXIMUM')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '20');
+
+		$form['datefrom'] = new Zend_Form_Element_Text('datefrom');
+		$form['datefrom']->setLabel('PRICE_RULES_DATE_FROM')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('class', 'datePicker')
 			->setAttrib('size', '9');
 
-		$form['to'] = new Zend_Form_Element_Text('to');
-		$form['to']->setLabel('PRICE_RULES_TO')
+		$form['dateto'] = new Zend_Form_Element_Text('dateto');
+		$form['dateto']->setLabel('PRICE_RULES_DATE_TO')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('class', 'datePicker')
@@ -90,6 +102,18 @@ class Items_Form_Pricerule extends Zend_Form
 
 		$form['contactsubcat'] = new Zend_Form_Element_Checkbox('contactsubcat');
 		$form['contactsubcat']->setLabel('PRICE_RULES_CONTACT_APPLY_TO_SUBCATEGORIES');
+
+		$form['pricefrom'] = new Zend_Form_Element_Text('pricefrom');
+		$form['pricefrom']->setLabel('PRICE_RULES_PRICE_FROM')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '20');
+
+		$form['priceto'] = new Zend_Form_Element_Text('priceto');
+		$form['priceto']->setLabel('PRICE_RULES_PRICE_TO')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '20');
 
 		$form['modified'] = new Zend_Form_Element_Text('modified');
 		$form['created'] = new Zend_Form_Element_Text('created');

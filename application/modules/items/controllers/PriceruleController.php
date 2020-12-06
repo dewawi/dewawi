@@ -117,19 +117,55 @@ class Items_PriceruleController extends Zend_Controller_Action
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
 					if(array_key_exists('amount', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['amount'] = Zend_Locale_Format::getNumber($data['amount'],array('precision' => 2,'locale' => $locale));
-					}
-					if(isset($data['from'])) {
-						if(Zend_Date::isDate($data['from'])) {
-							$from = new Zend_Date($data['from'], Zend_Date::DATES, 'de');
-							$data['from'] = $from->get('yyyy-MM-dd');
+						if($data['amount']) {
+							$locale = Zend_Registry::get('Zend_Locale');
+							$data['amount'] = Zend_Locale_Format::getNumber($data['amount'],array('precision' => 2,'locale' => $locale));
+						} else {
+							$data['amount'] = NULL;
 						}
 					}
-					if(isset($data['to'])) {
-						if(Zend_Date::isDate($data['to'])) {
-							$to = new Zend_Date($data['to'], Zend_Date::DATES, 'de');
-							$data['to'] = $to->get('yyyy-MM-dd');
+					if(isset($data['amountmin'])) {
+						if($data['amountmin']) {
+							$locale = Zend_Registry::get('Zend_Locale');
+							$data['amountmin'] = Zend_Locale_Format::getNumber($data['amountmin'],array('precision' => 2,'locale' => $locale));
+						} else {
+							$data['amountmin'] = NULL;
+						}
+					}
+					if(isset($data['amountmax'])) {
+						if($data['amountmax']) {
+							$locale = Zend_Registry::get('Zend_Locale');
+							$data['amountmax'] = Zend_Locale_Format::getNumber($data['amountmax'],array('precision' => 2,'locale' => $locale));
+						} else {
+							$data['amountmax'] = NULL;
+						}
+					}
+					if(isset($data['pricefrom'])) {
+						if($data['pricefrom']) {
+							$locale = Zend_Registry::get('Zend_Locale');
+							$data['pricefrom'] = Zend_Locale_Format::getNumber($data['pricefrom'],array('precision' => 2,'locale' => $locale));
+						} else {
+							$data['pricefrom'] = NULL;
+						}
+					}
+					if(isset($data['priceto'])) {
+						if($data['priceto']) {
+							$locale = Zend_Registry::get('Zend_Locale');
+							$data['priceto'] = Zend_Locale_Format::getNumber($data['priceto'],array('precision' => 2,'locale' => $locale));
+						} else {
+							$data['priceto'] = NULL;
+						}
+					}
+					if(isset($data['datefrom'])) {
+						if(Zend_Date::isDate($data['datefrom'])) {
+							$datefrom = new Zend_Date($data['datefrom'], Zend_Date::DATES, 'de');
+							$data['datefrom'] = $datefrom->get('yyyy-MM-dd');
+						}
+					}
+					if(isset($data['dateto'])) {
+						if(Zend_Date::isDate($data['dateto'])) {
+							$dateto = new Zend_Date($data['dateto'], Zend_Date::DATES, 'de');
+							$data['dateto'] = $dateto->get('yyyy-MM-dd');
 						}
 					}
 					$priceruleDb->updatePricerule($id, $data);
@@ -139,14 +175,19 @@ class Items_PriceruleController extends Zend_Controller_Action
 				}
 			} else {
 				if($id > 0) {
-					$currency = $this->_helper->Currency->getCurrency($pricerule['currency']);
+					$currency = $this->_helper->Currency->getCurrency('EUR');
+					//$currency = $this->_helper->Currency->getCurrency($pricerule['currency']);
 					$pricerule['amount'] = $currency->toCurrency($pricerule['amount']);
+					if($pricerule['amountmin']) $pricerule['amountmin'] = $currency->toCurrency($pricerule['amountmin']);
+					if($pricerule['amountmax']) $pricerule['amountmax'] = $currency->toCurrency($pricerule['amountmax']);
+					if($pricerule['pricefrom']) $pricerule['pricefrom'] = $currency->toCurrency($pricerule['pricefrom']);
+					if($pricerule['priceto']) $pricerule['priceto'] = $currency->toCurrency($pricerule['priceto']);
 
 					//Convert dates to the display format
-					$from = new Zend_Date($pricerule['from']);
-					if($pricerule['from']) $pricerule['from'] = $from->get('dd.MM.yyyy');
-					$to = new Zend_Date($pricerule['to']);
-					if($pricerule['to']) $pricerule['to'] = $to->get('dd.MM.yyyy');
+					$datefrom = new Zend_Date($pricerule['datefrom']);
+					if($pricerule['datefrom']) $pricerule['datefrom'] = $datefrom->get('dd.MM.yyyy');
+					$dateto = new Zend_Date($pricerule['dateto']);
+					if($pricerule['dateto']) $pricerule['dateto'] = $dateto->get('dd.MM.yyyy');
 
 					$form->populate($pricerule);
 

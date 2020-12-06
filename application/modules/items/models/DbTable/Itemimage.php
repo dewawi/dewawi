@@ -1,9 +1,9 @@
 <?php
 
-class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
+class Items_Model_DbTable_Itemimage extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'item';
+	protected $_name = 'itemimage';
 
 	protected $_date = null;
 
@@ -18,12 +18,7 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getInfo()
-	{
-		return $this->info(Zend_Db_Table_Abstract::COLS);
-	}
-
-	public function getItem($id)
+	public function getItemimage($id)
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
@@ -33,17 +28,20 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getItemBySKU($sku)
+	public function getItemimageByItemID($itemid)
 	{
+		$itemid = (int)$itemid;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
+		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
+		if (!$data) {
+			throw new Exception("Could not find row $itemid");
+		}
+		return $data->toArray();
 	}
 
-	public function getItems($ids)
+	public function getItemimages($ids)
 	{
 		$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
 		$data = $this->fetchAll($where);
@@ -53,27 +51,7 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getItemsByCategory($catid)
-	{
-		$catid = (int)$catid;
-		$where = $this->getAdapter()->quoteInto('catid = ?', $catid);
-		$data = $this->fetchAll($where);
-		if (!$row) {
-			throw new Exception("Could not find row $catid");
-		}
-		return $row->toArray();
-	}
-
-	public function getLatestItems()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'id DESC', 5);
-		return $data;
-	}
-
-	public function addItem($data)
+	public function addItemimage($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -82,20 +60,9 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateItem($id, $data)
+	public function updateItemimage($id, $data)
 	{
 		$id = (int)$id;
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
-	}
-
-	public function quantityItem($id, $quantity)
-	{
-		$id = (int)$id;
-		$data = array();
-		$data['quantity'] = $quantity;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
@@ -120,11 +87,18 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deleteItem($id)
+	public function deleteItemimage($id)
 	{
 		$id = (int)$id;
 		$data = array('deleted' => 1);
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
+	}
+
+	public function deleteItemimagesByItemID($itemid)
+	{
+		$itemid = (int)$itemid;
+		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
+		$this->delete($where);
 	}
 }

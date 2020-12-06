@@ -19,10 +19,10 @@ echo $this->ActiveFilter();
 				<?php echo $this->translate('PRICE_RULES_ACTION'); ?>
 			</th>
 			<th class="price" width="8%">
-				<?php echo $this->translate('PRICE_RULES_FROM'); ?>
+				<?php echo $this->translate('PRICE_RULES_DATE_FROM'); ?>
 			</th>
 			<th class="quantity" width="8%">
-				<?php echo $this->translate('PRICE_RULES_TO'); ?>
+				<?php echo $this->translate('PRICE_RULES_DATE_TO'); ?>
 			</th>
 			<th class="quantity" width="8%">
 				<?php echo $this->translate('PRICE_RULES_PRIORITY'); ?>
@@ -55,10 +55,10 @@ echo $this->ActiveFilter();
 					<?php if($pricerule->action == 'tofixed') echo $this->translate('ITEMS_PRICE_RULE_TO_FIXED'); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('PRICE_RULES_FROM') ?>" class="price">
-					<?php echo $this->escape($pricerule->from); ?>
+					<?php echo $this->escape($pricerule->datefrom); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('PRICE_RULES_TO') ?>" class="price">
-					<?php echo $this->escape($pricerule->to); ?>
+					<?php echo $this->escape($pricerule->dateto); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('PRICE_RULES_PRIORITY') ?>" class="price">
 					<?php echo $this->escape($pricerule->priority); ?>

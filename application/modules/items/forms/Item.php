@@ -38,8 +38,8 @@ class Items_Form_Item extends Zend_Form
 			->addValidator('NotEmpty')
 			->setAttrib('class', 'required');
 
-		$form['image'] = new Zend_Form_Element_Text('image');
-		$form['image']->setLabel('ITEMS_IMAGE')
+		$form['video'] = new Zend_Form_Element_Text('video');
+		$form['video']->setLabel('ITEMS_VIDEO')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '20');

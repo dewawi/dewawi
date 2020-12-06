@@ -9,6 +9,7 @@ echo $this->Messages();
 		<?php echo $this->form->getElement('file') ?>
 		<?php echo $this->form->getElement('submit') ?>
 	</dl>
+	<p>Max: <?php echo ini_get('upload_max_filesize'); ?></p>
 </form>
 
 <br>

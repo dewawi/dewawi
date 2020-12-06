@@ -107,12 +107,12 @@ class Items_Model_Get
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 		$currency = $currencyHelper->getCurrency();
 		foreach($pricerules as $pricerule) {
-			$currency = $currencyHelper->setCurrency($currency, $pricerule->currency, 'USE_SYMBOL');
+			$currency = $currencyHelper->setCurrency($currency, $pricerule->currency);
 			$pricerule['amount'] = $currency->toCurrency($pricerule['amount']);
-			$from = new Zend_Date($pricerule['from']);
-			if($pricerule['from']) $pricerule['from'] = $from->get('dd.MM.yyyy');
-			$to = new Zend_Date($pricerule['to']);
-			if($pricerule['to']) $pricerule['to'] = $to->get('dd.MM.yyyy');
+			$datefrom = new Zend_Date($pricerule['datefrom']);
+			if($pricerule['datefrom']) $pricerule['datefrom'] = $datefrom->get('dd.MM.yyyy');
+			$dateto = new Zend_Date($pricerule['dateto']);
+			if($pricerule['dateto']) $pricerule['dateto'] = $dateto->get('dd.MM.yyyy');
 		}
 
 		return $pricerules;

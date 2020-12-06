@@ -18,8 +18,10 @@ echo $this->Messages();
 						<?php echo $this->form->getElement('title') ?>
 						<?php echo $this->form->getElement('amount') ?>
 						<?php echo $this->form->getElement('action') ?>
-						<?php echo $this->form->getElement('from') ?>
-						<?php echo $this->form->getElement('to') ?>
+						<?php echo $this->form->getElement('amountmin') ?>
+						<?php echo $this->form->getElement('amountmax') ?>
+						<?php echo $this->form->getElement('datefrom') ?>
+						<?php echo $this->form->getElement('dateto') ?>
 						<?php echo $this->form->getElement('priority') ?>
 						<?php echo $this->form->getElement('subsequent') ?>
 						<?php echo $this->form->getElement('activated') ?>
@@ -39,6 +41,8 @@ echo $this->Messages();
 					<?php echo $this->form->getElement('itemmanufacturer') ?>
 					<?php echo $this->form->getElement('contactcatid') ?>
 					<?php echo $this->form->getElement('contactsubcat') ?>
+					<?php echo $this->form->getElement('pricefrom') ?>
+					<?php echo $this->form->getElement('priceto') ?>
 				</div>
 			</div>
 		</form>
