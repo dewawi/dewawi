@@ -26,13 +26,15 @@ class Application_Plugin_Translate extends Zend_Controller_Plugin_Abstract
 				$languages = $languageDb->getLanguages();
 
 				//Language switcher
-				$form = new Application_Form_Language();
-				$form->language->addMultiOptions($languages);
-				$authNamespace = new Zend_Session_Namespace('Zend_Auth');
-				if(isset($authNamespace->storage->language) && $authNamespace->storage->language) {
-					$form->language->setValue($authNamespace->storage->language);
+                if(count($languages) > 1) {
+				    $form = new Application_Form_Language();
+				    $form->language->addMultiOptions($languages);
+				    $authNamespace = new Zend_Session_Namespace('Zend_Auth');
+				    if(isset($authNamespace->storage->language) && $authNamespace->storage->language) {
+					    $form->language->setValue($authNamespace->storage->language);
+				    }
+				    $view->languageSwitcher = $form->getElement('language');
 				}
-				$view->languageSwitcher = $form->getElement('language');
 			//}
 
 			$view->language = $language;

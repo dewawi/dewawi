@@ -18,9 +18,12 @@ class Application_Plugin_Client extends Zend_Controller_Plugin_Abstract
 			//if($user['admin']) {
 				$form = new Application_Form_Client();
 				$clientDb = new Application_Model_DbTable_Client();
-				$form->clientid->addMultiOptions($clientDb->getClients($client['parentid']));
-				$form->clientid->setValue($client['id']);
-				$view->clientSwitcher = $form->getElement('clientid');
+                $clients = $clientDb->getClients($client['parentid']);
+                if(count($clients) > 1) {
+				    $form->clientid->addMultiOptions($clients);
+				    $form->clientid->setValue($client['id']);
+				    $view->clientSwitcher = $form->getElement('clientid');
+                }
 			//}
 
 			//Change clientid if parentid exists
