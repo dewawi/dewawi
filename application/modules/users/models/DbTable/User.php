@@ -55,6 +55,15 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function updateUser($id, $data)
+	{
+		$id = (int)$id;
+		$data['modified'] = $this->_date;
+		$data['modifiedby'] = $this->_user['id'];
+		$where = $this->getAdapter()->quoteInto('id = ?', $id);
+		$this->update($data, $where);
+	}
+
 	public function lock($id)
 	{
 		$id = (int)$id;

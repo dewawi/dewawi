@@ -13,6 +13,7 @@ class Users_Form_User extends Zend_Form
 
 		$form['username'] = new Zend_Form_Element_Text('username');
 		$form['username']->setLabel('USERS_USERNAME')
+			->setAttrib('disable', 'disable')
 			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
@@ -63,7 +64,7 @@ class Users_Form_User extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '50');
 
-		$form['smtppass'] = new Zend_Form_Element_Text('smtppass');
+		$form['smtppass'] = new Zend_Form_Element_Password('smtppass');
 		$form['smtppass']->setLabel('USERS_SMTP_PASSWORD')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')

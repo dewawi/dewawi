@@ -32,8 +32,8 @@ class Users_UserController extends Zend_Controller_Action
 
 	public function editAction()
 	{
+		$id = $this->_user['id'];
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
 		$activeTab = $request->getCookie('tab', null);
 
 		$userDb = new Users_Model_DbTable_User();
@@ -54,13 +54,77 @@ class Users_UserController extends Zend_Controller_Action
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
 					$userDb->updateUser($id, $data);
+					echo Zend_Json::encode(array('saved' => true));
 				} else {
 					throw new Exception('Form is invalid');
 				}
 			} else {
 				if($id > 0) {
 					$form->populate($user);
+					$form->password->setValue('xxxxxxxxxx');
+					$form->password->renderPassword = true;
+					$form->smtppass->setValue('xxxxxxxxxx');
+					$form->smtppass->renderPassword = true;
 
+					$this->view->form = $form;
+					$this->view->activeTab = $activeTab;
+				}
+			}
+		}
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
+	}
+
+	public function passwordAction()
+	{
+		$this->_helper->getHelper('layout')->setLayout('plain');
+
+		$id = $this->_user['id'];
+		$request = $this->getRequest();
+		$activeTab = $request->getCookie('tab', null);
+
+		$userDb = new Users_Model_DbTable_User();
+		$user = $userDb->getUser($id);
+
+		if(false) {
+			$this->_helper->redirector->gotoSimple('view', 'user', null, array('id' => $id));
+		} else {
+			$this->_helper->Access->lock($id, $this->_user['id'], $user['locked'], $user['lockedtime']);
+
+			$form = new Users_Form_Password();
+			$options = $this->_helper->Options->getOptions($form);
+
+			if($request->isPost()) {
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->getHelper('layout')->disableLayout();
+				$data = $request->getPost();
+				if(isset($data['passwordactual']) && $data['passwordactual']) {
+					if(isset($data['passwordnew']) && $data['passwordnew']) {
+						if(isset($data['passwordconfirm']) && $data['passwordconfirm']) {
+							if($data['passwordnew'] == $data['passwordconfirm']) {
+								if(md5($data['passwordactual']) == $user['password']) {
+									$userDb->updateUser($id, array('password' => md5($data['passwordnew'])));
+									echo Zend_Json::encode(array('saved' => true));
+								} else {
+									echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+								}
+							} else {
+								echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+							}
+						} else {
+							echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+						}
+					} else {
+						echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+					}
+				} else {
+					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+				}
+			} else {
+				if($id > 0) {
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
 				}
@@ -80,21 +144,14 @@ class Users_UserController extends Zend_Controller_Action
 
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Users_Form_User();
+		$form = new Users_Form_Login();
 		$form->submit->setLabel('USERS_LOGIN');
 		$form->id->removeDecorator('Label');
 		$this->view->form = $form;
 
-		//Clients
-		//$clientsDb = new Application_Model_DbTable_Client();
-		//$clients = $clientsDb->getClients();
-		//foreach($clients as $id => $company) {
-		//	$form->client->addMultiOption($id, $company);
-		//}
-
-		if ($this->getRequest()->isPost()) {
+		if($this->getRequest()->isPost()) {
 			$formData = $this->getRequest()->getPost();
-			if ($form->isValid($formData)) {
+			if($form->isValid($formData)) {
 				$username = $formData['username'];
 				$password = $formData['password'];
 				$stayLoggedIn = $formData['stayLoggedIn'];
@@ -108,7 +165,8 @@ class Users_UserController extends Zend_Controller_Action
 				$authAdapter = new Zend_Auth_Adapter_DbTable($db);
 
 				$authAdapter->setTableName('user');
-				$authAdapter->setIdentityColumn('username');
+                if(strpos($username, '@')) $authAdapter->setIdentityColumn('email');
+				else $authAdapter->setIdentityColumn('username');
 				$authAdapter->setCredentialColumn('password');
 				$authAdapter->setCredentialTreatment('MD5(?)');
 
@@ -117,7 +175,7 @@ class Users_UserController extends Zend_Controller_Action
 
 				$result = $auth->authenticate($authAdapter);
 
-				if ($result->isValid()) {
+				if($result->isValid()) {
 					$storage = $auth->getStorage();
 					$userInfo = $authAdapter->getResultRowObject(
 									array(

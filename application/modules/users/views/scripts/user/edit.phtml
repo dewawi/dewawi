@@ -11,7 +11,7 @@ echo $this->FileManager();
 
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content">
-		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+		<form id="user" enctype="application/x-www-form-urlencoded" action="" method="post">
 			<div class="row">
 				<div class="col-sm-12 col-lg-7">
 					<dl class="form">
@@ -19,6 +19,10 @@ echo $this->FileManager();
 						<?php echo $this->form->getElement('username') ?>
 						<?php echo $this->form->getElement('name') ?>
 						<?php echo $this->form->getElement('email') ?>
+						<dt id="password-label"><label><?php echo $this->translate('USERS_PASSWORD'); ?></label></dt>
+						<dd>
+							<button name="password" id="password" type="button" class="password poplight" rel="newPassword">Neues Passwort</button>
+						</dd>
 					</dl>
 				</div>
 				<div class="col-sm-12 col-lg-5">
@@ -31,5 +35,11 @@ echo $this->FileManager();
 				</div>
 			</div>
 		</form>
+	</div>
+</div>
+
+<div id="popup">
+	<div id="newPassword" class="popup_block">
+		<iframe src="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'password'));?>" width="100%" height="100%"></iframe>
 	</div>
 </div>
