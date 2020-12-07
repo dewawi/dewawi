@@ -24,7 +24,7 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 		} else {
 			$options = array();
 			if($item['type']) $options['itemtype'] = $item['type'];
-			if($item['manufacturerid']) $options['manufacturer'] = $item['manufacturerid'];
+			if($item['manufacturerid']) $options['itemmanufacturer'] = $item['manufacturerid'];
 
 			$priceruleDb = new Items_Model_DbTable_Pricerule();
 			$pricerulesObject = $priceruleDb->getPricerules($options);
@@ -61,28 +61,39 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 					}
 				}
 			}
-			//Remove price rules which are not applicable to the dates
+			//Remove price rules which are not applicable to the item price
 			if(count($pricerules)) {
 				foreach($pricerules as $id => $pricerule) {
-					if($pricerule->from) {
-						if(strtotime($pricerule->from) > strtotime(date('Y-m-d').' 23:59:59')) {
+					if($pricerule->pricefrom) {
+						if($pricerule->pricefrom > $item['price']) {
 							unset($pricerules[$id]);
 						}
 					}
-					if($pricerule->to) {
-						if(strtotime($pricerule->to) < strtotime(date('Y-m-d').' 00:00:00')) {
+					if($pricerule->priceto) {
+						if($pricerule->priceto < $item['price']) {
 							unset($pricerules[$id]);
 						}
 					}
 				}
 			}
-			//error_log(count($pricerules));
+			//Remove price rules which are not applicable to the dates
+			if(count($pricerules)) {
+				foreach($pricerules as $id => $pricerule) {
+					if($pricerule->datefrom) {
+						if(strtotime($pricerule->datefrom) > strtotime(date('Y-m-d').' 23:59:59')) {
+							unset($pricerules[$id]);
+						}
+					}
+					if($pricerule->dateto) {
+						if(strtotime($pricerule->dateto) < strtotime(date('Y-m-d').' 00:00:00')) {
+							unset($pricerules[$id]);
+						}
+					}
+				}
+			}
 
 			//Apply the price rules to the position
-			if(count($pricerules) == 1) {
-				$data['priceruleamount'] = $pricerules[0]->amount;
-				$data['priceruleaction'] = $pricerules[0]->action;
-			} else {
+			if(count($pricerules)) {
 				foreach($pricerules as $pricerule) {
 					if($pricerule->amount && $pricerule->action) {
 						$priceruleamount = $pricerule->amount;

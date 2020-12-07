@@ -25,6 +25,21 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 				$flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
 				return false;
 			}
+		} elseif($type == 'media') {
+			//Create media folder if does not already exists
+			$url = $this->getShortUrl();
+			$path = BASE_PATH.'/media/';
+			$dir = 'items/';
+			if(file_exists($path.$dir.$url) && is_dir($path.$dir.$url) && is_writable($path.$dir.$url)) {
+				return true;
+			} elseif(is_writable($path)) {
+				$response = mkdir($path.$dir.$url, 0777, true);
+				if($response === false) $flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+				return $response;
+			} else {
+				$flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+				return false;
+			}
 		} elseif($type == 'contact') {
 			//Create contact folder if does not already exists
 			$dir = 'contacts/';
@@ -86,6 +101,20 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 		else $dir4 = '0';
 
 		$url = $dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
+
+		return $url;
+	}
+
+	public function getShortUrl() {
+
+		$client = Zend_Registry::get('Client');
+
+		$clientid = $client['id'];
+		$dir1 = substr($clientid, 0, 1);
+		if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+		else $dir2 = '0';
+
+		$url = $dir1.'/'.$dir2.'/'.$clientid;
 
 		return $url;
 	}
