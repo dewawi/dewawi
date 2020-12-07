@@ -74,9 +74,9 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
 		//Locale
 		$authNamespace = new Zend_Session_Namespace('Zend_Auth');
-		if(isset($authNamespace->storage->language) && $authNamespace->storage->language) {
+		if(isset($authNamespace->storage->language) && $authNamespace->storage->language && file_exists(BASE_PATH.'/languages/'.$authNamespace->storage->language)) {
 			$language = new Zend_Locale($authNamespace->storage->language);
-		} elseif(isset($config)) {
+		} elseif(isset($config) && file_exists(BASE_PATH.'/languages/'.$config['language'])) {
 			$language = new Zend_Locale($config['language']);
 		} else {
 			$files = scandir(BASE_PATH.'/languages/');
