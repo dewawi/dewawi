@@ -22,13 +22,17 @@ class Application_Model_DbTable_Country extends Zend_Db_Table_Abstract
 	{
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$data = $this->fetchAll($where);
+		$data = $this->fetchAll($where, 'name');
 
 		$countries = array();
+		$translate = Zend_Registry::get('Zend_Translate');
 		foreach($data as $country) {
-			$countries[$country->code] = $country->name;
+			$countries[$country->code] = $translate->translate($country->code);
 		}
-		asort($countries);
+		//Sort countries with current locale
+		$language = Zend_Registry::get('Zend_Locale');
+		$collator = Collator::create($language);
+		$collator->asort($countries);
 		return $countries;
 	}
 }
