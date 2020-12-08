@@ -290,12 +290,12 @@ while($i <= $lastPage) {
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_SALES_ORDER_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($salesorderid) $pdf->Write(0, $salesorderid.'	 ');
+		if($salesorderid) $pdf->Write(0, $salesorderid.'   ');
 		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_SALES_ORDER_DATE').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($salesorderdate) $pdf->Write(0, $salesorderdate.'	 ');
+		if($salesorderdate) $pdf->Write(0, $salesorderdate.'   ');
 		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');

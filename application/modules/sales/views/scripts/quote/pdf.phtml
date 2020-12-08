@@ -285,12 +285,12 @@ while($i <= $lastPage) {
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_QUOTE_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($quoteid) $pdf->Write(0, $quoteid.'	 ');
+		if($quoteid) $pdf->Write(0, $quoteid.'   ');
 		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_QUOTE_DATE').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($quotedate) $pdf->Write(0, $quotedate.'	 ');
+		if($quotedate) $pdf->Write(0, $quotedate.'   ');
 		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');

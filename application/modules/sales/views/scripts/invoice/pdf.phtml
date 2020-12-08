@@ -291,12 +291,12 @@ while($i <= $lastPage) {
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_INVOICE_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($invoiceid) $pdf->Write(0, $invoiceid.'	 ');
+		if($invoiceid) $pdf->Write(0, $invoiceid.'   ');
 		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_INVOICE_DATE').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($invoicedate) $pdf->Write(0, $invoicedate.'	 ');
+		if($invoicedate) $pdf->Write(0, $invoicedate.'   ');
 		else $pdf->Write(0, ' - - - - -	 ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');
