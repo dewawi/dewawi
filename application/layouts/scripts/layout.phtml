@@ -53,7 +53,11 @@ $this->language = str_replace('_', '-', $this->language);
 				<div class="col-sm-12 hidden-lg">
 					<div id="userinfo">
 						<?php if(isset($this->user)) : ?>
-							<?php echo $this->user['name']; ?> |
+							<?php if($this->user['name']) : ?>
+							    <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>"><?php echo $this->user['name']; ?></a> |
+							<?php else : ?>
+							    <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>"><?php echo $this->user['email']; ?></a> |
+						    <?php endif; ?>
 							<?php
 								$date = new Zend_Date();
 								echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
@@ -76,7 +80,11 @@ $this->language = str_replace('_', '-', $this->language);
 				<div class="col-sm-6 hidden-sm hidden-md">
 					<div id="userinfo">
 						<?php if(isset($this->user)) : ?>
-							<?php echo $this->user['name']; ?> |
+							<?php if($this->user['name']) : ?>
+							    <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>"><?php echo $this->user['name']; ?></a> |
+							<?php else : ?>
+							    <a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>"><?php echo $this->user['email']; ?></a> |
+						    <?php endif; ?>
 							<?php
 								$date = new Zend_Date();
 								echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
