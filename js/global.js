@@ -703,6 +703,25 @@ function save() {
 			isDirty = false;
 			document.getElementById(controller).submit();
 		}
+	} else if(action == 'password') {
+		var data = {};
+		data['passwordactual'] = $('#passwordactual').val();
+		data['passwordnew'] = $('#passwordnew').val();
+		data['passwordconfirm'] = $('#passwordconfirm').val();
+		var url = baseUrl+'/'+module+'/'+controller+'/'+action;
+		$.ajax({
+			type: 'POST',
+			async: false,
+			url: url,
+			data: data,
+			cache: false,
+			success: function(json){
+				response = json;
+				isDirty = false;
+				//Close the modal window
+				window.parent.modalWindowClose();
+			}
+		});
 	} else {
 		var data = $(".add :input")
 			.filter(function(index, element) {
@@ -783,11 +802,10 @@ function edit(data, params) {
 		success: function(json){
 			response = json;
 			isDirty = false;
-						//console.log(isDirty);
 		}
 	});
-		//console.log(data);
-		//console.log(response);
+	//console.log(data);
+	//console.log(response);
 	return response;
 }
 
