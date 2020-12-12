@@ -767,6 +767,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
 
+		//Get positions
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
@@ -838,10 +839,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
 
-		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Invoicepos();
-		$positions = $positionsDb->getPositions($id);
-
 		//Set new document Id and filename
 		if(!$invoice['invoiceid']) {
 			//Set new invoice Id
@@ -855,7 +852,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$invoice = $invoiceDb->getInvoice($id);
 
 			//Update item data and inventory
-			if(count($positions)) {
+			/*if(count($positions)) {
 				$itemsDb = new Items_Model_DbTable_Item();
 				foreach($positions as $position) {
 					$item = $itemsDb->getItemBySKU($position['sku']);
@@ -886,15 +883,29 @@ class Sales_InvoiceController extends Zend_Controller_Action
 						$itemsDb->quantityItem($item['id'], $quantity);
 					}
 				}
-			}
+			}*/
 		}
 
+		//Get positions
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
+				$price = $position->price;
+				if($position->priceruleamount && $position->priceruleaction) {
+					if($position->priceruleaction == 'bypercent')
+						$price = $price*(100-$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'byfixed')
+						$price = ($price-$position->priceruleamount);
+					elseif($position->priceruleaction == 'topercent')
+						$price = $price*(100+$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'tofixed')
+						$price = ($price+$position->priceruleamount);
+				}
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($position->price*$position->quantity);
-				$position->price = $currency->toCurrency($position->price);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => Zend_Registry::get('Zend_Locale')));
+				$position->total = $currency->toCurrency($price*$position->quantity);
+				$position->price = $currency->toCurrency($price);
+				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
 			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
@@ -947,14 +958,26 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
 
+		//Get positions
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
+				$price = $position->price;
+				if($position->priceruleamount && $position->priceruleaction) {
+					if($position->priceruleaction == 'bypercent')
+						$price = $price*(100-$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'byfixed')
+						$price = ($price-$position->priceruleamount);
+					elseif($position->priceruleaction == 'topercent')
+						$price = $price*(100+$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'tofixed')
+						$price = ($price+$position->priceruleamount);
+				}
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($position->price*$position->quantity);
-				$position->price = $currency->toCurrency($position->price);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity, array('precision' => $precision,'locale' => Zend_Registry::get('Zend_Locale')));
+				$position->total = $currency->toCurrency($price*$position->quantity);
+				$position->price = $currency->toCurrency($price);
+				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
 			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);

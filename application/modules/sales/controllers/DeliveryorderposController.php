@@ -161,7 +161,7 @@ class Sales_DeliveryorderposController extends Zend_Controller_Action
 				$data['itemid'] = $itemid;
 				$data['sku'] = $item['sku'];
 				$data['title'] = $item['title'];
-				$data['image'] = $item['image'];
+				//$data['image'] = $item['image'];
 				$data['description'] = $item['description'];
 				if($item['taxid']) {
 					$taxrateDb = new Application_Model_DbTable_Taxrate();

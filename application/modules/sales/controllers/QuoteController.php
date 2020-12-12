@@ -672,6 +672,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quote['currency'], 'USE_SYMBOL');
 
+		//Get positions
 		$positionsDb = new Sales_Model_DbTable_Quotepos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
@@ -744,10 +745,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quote['currency'], 'USE_SYMBOL');
 
-		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Quotepos();
-		$positions = $positionsDb->getPositions($id);
-
 		//Set new document Id and filename
 		if(!$quote['quoteid']) {
 			$incrementDb = new Application_Model_DbTable_Increment();
@@ -760,12 +757,26 @@ class Sales_QuoteController extends Zend_Controller_Action
 			$quote = $quoteDb->getQuote($id);
 		}
 
+		//Get positions
+		$positionsDb = new Sales_Model_DbTable_Quotepos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
+				$price = $position->price;
+				if($position->priceruleamount && $position->priceruleaction) {
+					if($position->priceruleaction == 'bypercent')
+						$price = $price*(100-$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'byfixed')
+						$price = ($price-$position->priceruleamount);
+					elseif($position->priceruleaction == 'topercent')
+						$price = $price*(100+$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'tofixed')
+						$price = ($price+$position->priceruleamount);
+				}
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($position->price*$position->quantity);
-				$position->price = $currency->toCurrency($position->price);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => Zend_Registry::get('Zend_Locale')));
+				$position->total = $currency->toCurrency($price*$position->quantity);
+				$position->price = $currency->toCurrency($price);
+				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
 			$quote['taxes'] = $currency->toCurrency($quote['taxes']);
@@ -818,14 +829,26 @@ class Sales_QuoteController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quote['currency'], 'USE_SYMBOL');
 
+		//Get positions
 		$positionsDb = new Sales_Model_DbTable_Quotepos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
+				$price = $position->price;
+				if($position->priceruleamount && $position->priceruleaction) {
+					if($position->priceruleaction == 'bypercent')
+						$price = $price*(100-$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'byfixed')
+						$price = ($price-$position->priceruleamount);
+					elseif($position->priceruleaction == 'topercent')
+						$price = $price*(100+$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'tofixed')
+						$price = ($price+$position->priceruleamount);
+				}
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($position->price*$position->quantity);
-				$position->price = $currency->toCurrency($position->price);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => Zend_Registry::get('Zend_Locale')));
+				$position->total = $currency->toCurrency($price*$position->quantity);
+				$position->price = $currency->toCurrency($price);
+				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
 			$quote['taxes'] = $currency->toCurrency($quote['taxes']);

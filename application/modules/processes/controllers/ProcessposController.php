@@ -120,7 +120,7 @@ class Processes_ProcessposController extends Zend_Controller_Action
 				$data['itemid'] = $itemid;
 				$data['sku'] = $item['sku'];
 				$data['title'] = $item['title'];
-				$data['image'] = $item['image'];
+				//$data['image'] = $item['image'];
 				$data['description'] = $item['description'];
 				$data['price'] = $item['price'];
 				if($item['taxid']) {

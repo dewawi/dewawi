@@ -619,6 +619,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
 
+		//Get positions
 		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
@@ -690,10 +691,6 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
 
-		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
-		$positions = $positionsDb->getPositions($id);
-
 		//Set new document Id and filename
 		if(!$deliveryorder['deliveryorderid']) {
 			//Set new deliveryorder Id
@@ -707,12 +704,26 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 		}
 
+		//Get positions
+		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
+		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
+				$price = $position->price;
+				if($position->priceruleamount && $position->priceruleaction) {
+					if($position->priceruleaction == 'bypercent')
+						$price = $price*(100-$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'byfixed')
+						$price = ($price-$position->priceruleamount);
+					elseif($position->priceruleaction == 'topercent')
+						$price = $price*(100+$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'tofixed')
+						$price = ($price+$position->priceruleamount);
+				}
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($position->price*$position->quantity);
-				$position->price = $currency->toCurrency($position->price);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => Zend_Registry::get('Zend_Locale')));
+				$position->total = $currency->toCurrency($price*$position->quantity);
+				$position->price = $currency->toCurrency($price);
+				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
 			$deliveryorder['taxes'] = $currency->toCurrency($deliveryorder['taxes']);
@@ -765,14 +776,26 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
 
+		//Get positions
 		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			foreach($positions as $position) {
+				$price = $position->price;
+				if($position->priceruleamount && $position->priceruleaction) {
+					if($position->priceruleaction == 'bypercent')
+						$price = $price*(100-$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'byfixed')
+						$price = ($price-$position->priceruleamount);
+					elseif($position->priceruleaction == 'topercent')
+						$price = $price*(100+$position->priceruleamount)/100;
+					elseif($position->priceruleaction == 'tofixed')
+						$price = ($price+$position->priceruleamount);
+				}
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($position->price*$position->quantity);
-				$position->price = $currency->toCurrency($position->price);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => Zend_Registry::get('Zend_Locale')));
+				$position->total = $currency->toCurrency($price*$position->quantity);
+				$position->price = $currency->toCurrency($price);
+				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
 			$deliveryorder['taxes'] = $currency->toCurrency($deliveryorder['taxes']);
