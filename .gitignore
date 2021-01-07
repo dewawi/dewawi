@@ -4,5 +4,7 @@
 !/cache/.gitkeep
 /files/*/*
 !/files/*/.gitkeep
+/media/*/*
+!/media/*/.gitkeep
 /session/*
 !/session/.gitkeep
