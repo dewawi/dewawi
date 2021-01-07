@@ -54,6 +54,11 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 				return false;
 			}
 		} elseif($type == 'attachment') {
+			//Create cache folder if does not already exists
+			if(!file_exists(BASE_PATH.'/cache/'.$controller.'/')) {
+				mkdir(BASE_PATH.'/cache/'.$controller.'/');
+				chmod(BASE_PATH.'/cache/'.$controller.'/', 0777);
+			}
 			//Create attachments folder if does not already exists
 			$dir = 'attachments/'.$module.'/'.$controller.'/';
 			if(file_exists($path.$dir.$url) && is_dir($path.$dir.$url) && is_writable($path.$dir.$url)) {
