@@ -12,12 +12,13 @@
 	// SERVER REQUIREMENTS
 	$requirements = array();
 	$requirements["phpVersion"] = "5.3";
-	$requirements["extensions"] = array("curl", "mysqli", "pcre", "gd", "openssl");
+	$requirements["extensions"] = array("gd", "mbstring", "mysqli", "openssl", "pcre", "intl", "zip", "ssh2", "xml");
 
 	// FILE PERMISSIONS
 	// r = readable, w = writable, x = executable
 	$filePermissions = array();
 	$filePermissions["cache"] = "rw";
 	$filePermissions["configs"] = "rw";
-	$filePermissions["session"] = "rw";
 	$filePermissions["files"] = "rw";
+	$filePermissions["media"] = "rw";
+	$filePermissions["session"] = "rw";
