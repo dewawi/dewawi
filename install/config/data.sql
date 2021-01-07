@@ -270,6 +270,10 @@ INSERT INTO `currency` (`id`, `code`, `name`, `symbol`, `ordering`, `clientid`, 
 (2, 'GBP', 'British pound', '£', 0, 1, NULL, 0, NULL, 0, 0, NULL, 0),
 (3, 'USD', 'US Dollar', '$', 0, 1, NULL, 0, NULL, 0, 0, NULL, 0);
 
+INSERT INTO `filename` (`id`, `clientid`, `creditnote`, `deliveryorder`, `invoice`, `purchaseorder`, `quote`, `quoterequest`, `reminder`, `salesorder`, `language`) VALUES
+(100, '100', 'Gutschrift-%NUMBER%.pdf', 'Lieferschein-%NUMBER%.pdf', 'Rechnung-%NUMBER%.pdf', 'Bestellung-%NUMBER%.pdf', 'Angebot-%NUMBER%.pdf', 'Anfrage-%NUMBER%.pdf', 'Mahnung-%NUMBER%.pdf', 'Auftragsbestaetigung-%NUMBER%.pdf', 'de_DE'),
+(101, '100', 'Credit-Note-%NUMBER%.pdf', 'Delivery-Order-%NUMBER%.pdf', 'Invoice-%NUMBER%.pdf', 'Purchase-Order-%NUMBER%.pdf', 'Quote-%NUMBER%.pdf', 'Quote-Request-%NUMBER%.pdf', 'Reminder-%NUMBER%.pdf', 'Sales-Order-%NUMBER%.pdf', 'en_US');
+
 INSERT INTO `increment` (`clientid`, `contactid`, `creditnoteid`, `deliveryorderid`, `invoiceid`, `purchaseorderid`, `quoteid`, `quoterequestid`, `reminderid`, `salesorderid`) VALUES
 (1, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000);
 
