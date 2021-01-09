@@ -173,8 +173,10 @@ class Users_UserController extends Zend_Controller_Action
 				$authAdapter->setIdentity($username);
 				$authAdapter->setCredential($password);
 
-				$result = $auth->authenticate($authAdapter);
+				//Select only active users
+				$authAdapter->getDbSelect()->where('deleted = 0');
 
+				$result = $auth->authenticate($authAdapter);
 				if($result->isValid()) {
 					$storage = $auth->getStorage();
 					$userInfo = $authAdapter->getResultRowObject(

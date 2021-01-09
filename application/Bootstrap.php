@@ -30,7 +30,10 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
 			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
 			$authNamespace->user = $user['username'];
-			if(($_SESSION['__ZF']['Zend_Auth']['ENT'] - time()) < 3600) $authNamespace->setExpirationSeconds(3600);
+
+			$lifetime = $_SESSION['__ZF']['Zend_Auth']['ENT'] - time();
+			if($lifetime < 3600) $authNamespace->setExpirationSeconds(3600);
+			if($lifetime > 3600) $authNamespace->setExpirationSeconds(864000);
 
 			Zend_Registry::set('User', $user);
 		}
