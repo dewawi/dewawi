@@ -80,7 +80,14 @@ class Admin_ClientController extends Zend_Controller_Action
 		$clientsDb = new Admin_Model_DbTable_Client();
 		$clients = $clientsDb->getClients();
 
+		$forms = array();
+		foreach($clients as $client) {
+			$forms[$client->id] = new Admin_Form_Client();
+			$forms[$client->id]->activated->setValue($client->activated);
+		}
+
 		$this->view->form = $form;
+		$this->view->forms = $forms;
 		$this->view->clients = $clients;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
@@ -374,10 +381,14 @@ class Admin_ClientController extends Zend_Controller_Action
 
 		if($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
-			$clientDb = new Admin_Model_DbTable_Client();
-			$clientDb->deleteClient($id);
+			if($id == $this->_user['clientid']) {
+				$this->_flashMessenger->addMessage('MESSAGES_OWN_CLINET_CAN_NOT_BE_DELETED');
+			} else {
+				$clientDb = new Admin_Model_DbTable_Client();
+				//$clientDb->deleteClient($id);
+				$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+			}
 		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
 
 	public function lockAction()
