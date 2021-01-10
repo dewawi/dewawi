@@ -8,7 +8,11 @@ echo $this->AdminMenu();
 <table id="data">
 	<thead>
 		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th width="2%">
+				<?php if($this->user['admin']) : ?>
+					<input type="checkbox" class="checkall" name="checkall"/>
+				<?php endif; ?>
+			</th>
 			<th class="id" width="5%">
 				<?php echo $this->translate('ADMIN_ID'); ?>
 			</th>
@@ -21,13 +25,21 @@ echo $this->AdminMenu();
 			<th class="email" width="20%">
 				<?php echo $this->translate('ADMIN_EMAIL'); ?>
 			</th>
-			<th width="8%"></th>
+			<?php if($this->user['admin']) : ?>
+				<th width="8%"></th>
+			<?php endif; ?>
 		</tr>
 	</thead>
 	<tbody>
 		<?php foreach($this->users as $user) : ?>
 			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $user->id ?>" name="id"/></td>
+				<td>
+					<?php if($this->user['admin']) : ?>
+						<input class="id" type="checkbox" value="<?php echo $user->id ?>" name="id"/>
+					<?php else : ?>
+						<input class="id" type="hidden" value="<?php echo $user->id ?>" name="id"/>
+					<?php endif; ?>
+				</td>
 				<td class="id">
 					<?php echo $this->escape($user->id); ?>
 				</td>
@@ -40,12 +52,15 @@ echo $this->AdminMenu();
 				<td class="email">
 					<span class="editable" data-name="email"><?php echo $this->escape($user->email); ?></span>
 				</td>
-				<td class="buttons">
-					<?php echo $this->Button('copy'); ?>
-					<?php echo $this->Button('delete'); ?>
-				</td>
+				<?php if($this->user['admin']) : ?>
+					<td class="buttons">
+						<?php echo $this->Button('copy'); ?>
+						<?php echo $this->Button('delete'); ?>
+					</td>
+				<?php endif; ?>
 			</tr>
 		<?php endforeach; ?>
+		<?php if($this->user['admin']) : ?>
 		<tr class="add">
 			<td>
 			</td>
@@ -66,5 +81,6 @@ echo $this->AdminMenu();
 				<?php //echo $this->toolbar->cancel; ?>
 			</td>
 		</tr>
+		<?php endif; ?>
 	</tbody>
 </table>

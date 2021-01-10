@@ -32,6 +32,7 @@ class Admin_Model_DbTable_Paymentmethod extends Zend_Db_Table_Abstract
 	{
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
 		return $data;
 	}

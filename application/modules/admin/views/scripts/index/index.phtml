@@ -8,7 +8,11 @@ echo $this->AdminMenu();
 <table id="data">
 	<thead>
 		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th width="2%">
+				<?php if($this->user['admin']) : ?>
+					<input type="checkbox" class="checkall" name="checkall"/>
+				<?php endif; ?>
+			</th>
 			<th class="timezone" width="12%">
 				<?php echo $this->translate('ADMIN_TIMEZONE'); ?>
 			</th>
@@ -24,15 +28,21 @@ echo $this->AdminMenu();
 	<tbody>
 		<?php foreach($this->config as $config) : ?>
 			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $config->id ?>" name="id"/></td>
+				<td>
+					<?php if($this->user['admin']) : ?>
+						<input class="id" type="checkbox" value="<?php echo $config->id ?>" name="id"/>
+					<?php else : ?>
+						<input class="id" type="hidden" value="<?php echo $config->id ?>" name="id"/>
+					<?php endif; ?>
+				</td>
 				<td class="timezone">
-					<span class="editable" data-name="timezone"><?php echo $this->escape($config->timezone); ?></span>
+					<span<?php if($this->user['admin']) : ?> class="editable" data-name="timezone"<?php endif; ?>><?php echo $this->escape($config->timezone); ?></span>
 				</td>
 				<td class="languagename">
-					<span class="editable" data-name="language"><?php echo $this->escape($config->language); ?></span>
+					<span<?php if($this->user['admin']) : ?> class="editable" data-name="language"<?php endif; ?>><?php echo $this->escape($config->language); ?></span>
 				</td>
 				<td class="analytics">
-					<pre class="editable" data-name="analytics" data-type="textarea"><?php echo $this->escape($config->analytics); ?></pre>
+					<pre<?php if($this->user['admin']) : ?> class="editable" data-name="analytics" data-type="textarea"<?php endif; ?>><?php echo $this->escape($config->analytics); ?></pre>
 				</td>
 				<td class="buttons">
 				</td>

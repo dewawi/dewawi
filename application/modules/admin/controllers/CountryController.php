@@ -96,6 +96,7 @@ class Admin_CountryController extends Zend_Controller_Action
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
 			if($form->isValid($data)) {
+				$data['language'] = Zend_Registry::get('Zend_Locale');
 				$countryDb = new Admin_Model_DbTable_Country();
 				$id = $countryDb->addCountry($data);
 				echo Zend_Json::encode($countryDb->getCountry($id));
@@ -158,7 +159,7 @@ class Admin_CountryController extends Zend_Controller_Action
 		$countryDb = new Admin_Model_DbTable_Country();
 		$data = $countryDb->getCountry($id);
 		unset($data['id']);
-		$data['code'] = $data['code'].' 2';
+		$data['code'] = 'XX';
 		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;

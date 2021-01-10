@@ -69,8 +69,6 @@ class Admin_Model_DbTable_Country extends Zend_Db_Table_Abstract
 
 	public function deleteCountry($id)
 	{
-		$data = array();
-		$data['deleted'] = 1;
-		$this->update($data, 'id =' . (int)$id);
+		$this->delete('id =' . (int)$id);
 	}
 }

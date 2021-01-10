@@ -28,6 +28,16 @@ class Admin_Model_DbTable_Permission extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getPermissionByUserID($userid)
+	{
+		$userid = (int)$userid;
+		$row = $this->fetchRow('userid = ' . $userid);
+		if (!$row) {
+			throw new Exception("Could not find row $userid");
+		}
+		return $row->toArray();
+	}
+
 	public function getPermissions()
 	{
 		$where = array();

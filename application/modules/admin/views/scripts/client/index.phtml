@@ -8,13 +8,19 @@ echo $this->AdminMenu();
 <table id="data">
 	<thead>
 		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th width="2%">
+				<?php if($this->user['admin']) : ?>
+					<input type="checkbox" class="checkall" name="checkall"/>
+				<?php endif; ?>
+			</th>
 			<th class="id" width="5%">
 				<?php echo $this->translate('ADMIN_CLIENT_ID'); ?>
 			</th>
-			<th class="id" width="5%">
-				<?php echo $this->translate('ADMIN_PARENT_ID'); ?>
-			</th>
+			<?php if($this->user['admin']) : ?>
+				<th class="id" width="5%">
+					<?php echo $this->translate('ADMIN_PARENT_ID'); ?>
+				</th>
+			<?php endif; ?>
 			<th class="name" width="20%">
 				<?php echo $this->translate('ADMIN_COMPANY'); ?>
 			</th>
@@ -36,22 +42,32 @@ echo $this->AdminMenu();
 			<th class="country" width="10%">
 				<?php echo $this->translate('ADMIN_WEBSITE'); ?>
 			</th>
-			<th class="category" width="12%">
-				<?php echo $this->translate('ADMIN_ACTIVATED'); ?>
-			</th>
-			<th width="8%"></th>
+			<?php if($this->user['admin']) : ?>
+				<th class="category" width="12%">
+					<?php echo $this->translate('ADMIN_ACTIVATED'); ?>
+				</th>
+				<th width="8%"></th>
+			<?php endif; ?>
 		</tr>
 	</thead>
 	<tbody>
 		<?php foreach($this->clients as $client) : ?>
 			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $client->id ?>" name="id"/></td>
+				<td>
+					<?php if($this->user['admin']) : ?>
+						<input class="id" type="checkbox" value="<?php echo $client->id ?>" name="id"/>
+					<?php else : ?>
+						<input class="id" type="hidden" value="<?php echo $client->id ?>" name="id"/>
+					<?php endif; ?>
+				</td>
 				<td class="id">
 					<?php echo $this->escape($client->id); ?>
 				</td>
-				<td class="name">
-					<span class="editable" data-name="company"><?php echo $this->escape($client->parentid); ?></span>
-				</td>
+				<?php if($this->user['admin']) : ?>
+					<td class="name">
+						<span class="editable" data-name="company"><?php echo $this->escape($client->parentid); ?></span>
+					</td>
+				<?php endif; ?>
 				<td class="name">
 					<span class="editable" data-name="company"><?php echo $this->escape($client->company); ?></span>
 				</td>
@@ -73,13 +89,15 @@ echo $this->AdminMenu();
 				<td class="name">
 					<span class="editable" data-name="website"><?php echo $this->escape($client->website); ?></span>
 				</td>
-				<td class="name">
-					<?php echo $this->forms[$client->id]->activated; ?>
-				</td>
-				<td class="buttons">
-					<?php echo $this->Button('copy'); ?>
-					<?php echo $this->Button('delete'); ?>
-				</td>
+				<?php if($this->user['admin']) : ?>
+					<td class="name">
+						<?php echo $this->forms[$client->id]->activated; ?>
+					</td>
+					<td class="buttons">
+						<?php echo $this->Button('copy'); ?>
+						<?php echo $this->Button('delete'); ?>
+					</td>
+				<?php endif; ?>
 			</tr>
 		<?php endforeach; ?>
 		<?php if($this->user['admin']) : ?>

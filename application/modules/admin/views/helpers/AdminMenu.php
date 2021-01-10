@@ -14,9 +14,11 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'shippingmethod', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_SHIPPING_METHODS'); ?></a> |
 		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'taxrate', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_TAX_RATES'); ?></a> |
 		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'template', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_TEMPLATES'); ?></a> |
+		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'footer', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_FOOTERS'); ?></a> |
 		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'uom', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_UOMS'); ?></a> |
 		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'user', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_USERS'); ?></a> |
-		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'permission', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_PERMISSIONS'); ?></a>
+		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'permission', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_PERMISSIONS'); ?></a> |
+		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'currency', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_CURRENCIES'); ?></a>
 		<?php /*
 		<a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'module', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_MODULES'); ?></a>
 		*/ ?>

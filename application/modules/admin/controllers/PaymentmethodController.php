@@ -75,7 +75,7 @@ class Admin_PaymentmethodController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$paymentmethodsDb = new Admin_Model_DbTable_Paymentmethod();
-		$paymentmethods = $paymentmethodsDb->getShippingmethods();
+		$paymentmethods = $paymentmethodsDb->getPaymentmethods();
 
 		$this->view->form = $form;
 		$this->view->paymentmethods = $paymentmethods;

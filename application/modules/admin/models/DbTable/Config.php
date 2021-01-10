@@ -28,6 +28,16 @@ class Admin_Model_DbTable_Config extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getConfigByClientID($clientid)
+	{
+		$clientid = (int)$clientid;
+		$row = $this->fetchRow('clientid = ' . $clientid);
+		if (!$row) {
+			throw new Exception("Could not find row $clientid");
+		}
+		return $row->toArray();
+	}
+
 	public function getConfigs()
 	{
 		$where = array();

@@ -8,7 +8,11 @@ echo $this->AdminMenu();
 <table id="data">
 	<thead>
 		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th width="2%">
+				<?php if($this->user['admin']) : ?>
+					<input type="checkbox" class="checkall" name="checkall"/>
+				<?php endif; ?>
+			</th>
 			<th class="id" width="5%">
 				<?php echo $this->translate('ADMIN_ID'); ?>
 			</th>
@@ -21,7 +25,13 @@ echo $this->AdminMenu();
 	<tbody>
 		<?php foreach($this->uoms as $uom) : ?>
 			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $uom->id ?>" name="id"/></td>
+				<td>
+					<?php if($this->user['admin']) : ?>
+						<input class="id" type="checkbox" value="<?php echo $uom->id ?>" name="id"/>
+					<?php else : ?>
+						<input class="id" type="hidden" value="<?php echo $uom->id ?>" name="id"/>
+					<?php endif; ?>
+				</td>
 				<td class="id">
 					<?php echo $this->escape($uom->id); ?>
 				</td>

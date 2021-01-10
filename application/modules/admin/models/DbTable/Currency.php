@@ -28,6 +28,15 @@ class Admin_Model_DbTable_Currency extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getCurrencies()
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where);
+		return $data;
+	}
+
 	public function addCurrency($data, $clientid = 0)
 	{
 		$data['created'] = $this->_date;

@@ -8,7 +8,11 @@ echo $this->AdminMenu();
 <table id="data" class="permissions">
 	<thead>
 		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th width="2%">
+				<?php if($this->user['admin']) : ?>
+					<input type="checkbox" class="checkall" name="checkall"/>
+				<?php endif; ?>
+			</th>
 			<th class="id">
 				<?php echo $this->translate('ADMIN_ID'); ?>
 			</th>
@@ -23,7 +27,13 @@ echo $this->AdminMenu();
 	<tbody>
 		<?php foreach($this->permissions as $permission) : ?>
 			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $permission->id ?>" name="id"/></td>
+				<td>
+					<?php if($this->user['admin']) : ?>
+						<input class="id" type="checkbox" value="<?php echo $permission->id ?>" name="id"/>
+					<?php else : ?>
+						<input class="id" type="hidden" value="<?php echo $permission->id ?>" name="id"/>
+					<?php endif; ?>
+				</td>
 				<td class="id">
 					<?php echo $this->escape($permission->id); ?>
 				</td>
@@ -33,6 +43,12 @@ echo $this->AdminMenu();
 					<?php foreach($permission->$module as $controller => $actions) : ?>
 						<input type="hidden" name="controller" class="controller" value="<?php echo $this->escape($controller); ?>">
 						<h4><?php echo $this->escape($controller); ?></h4>
+						<?php if(!$this->user['admin']) : ?>
+							<?php $this->forms[$permission->id][$module][$controller]->add->setAttrib('disabled', 'disabled'); ?>
+							<?php $this->forms[$permission->id][$module][$controller]->edit->setAttrib('disabled', 'disabled'); ?>
+							<?php $this->forms[$permission->id][$module][$controller]->view->setAttrib('disabled', 'disabled'); ?>
+							<?php $this->forms[$permission->id][$module][$controller]->delete->setAttrib('disabled', 'disabled'); ?>
+						<?php endif; ?>
 						<?php echo $this->forms[$permission->id][$module][$controller]->add; ?>
 						<?php echo $this->forms[$permission->id][$module][$controller]->edit; ?>
 						<?php echo $this->forms[$permission->id][$module][$controller]->view; ?>

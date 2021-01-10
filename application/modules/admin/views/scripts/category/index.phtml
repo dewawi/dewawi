@@ -8,7 +8,11 @@ echo $this->AdminMenu();
 <table id="data">
 	<thead>
 		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th width="2%">
+				<?php if($this->user['admin']) : ?>
+					<input type="checkbox" class="checkall" name="checkall"/>
+				<?php endif; ?>
+			</th>
 			<th class="id" width="5%">
 				<?php echo $this->translate('ADMIN_ID'); ?>
 			</th>
@@ -30,7 +34,13 @@ echo $this->AdminMenu();
 		<?php foreach($this->categories as $category) : ?>
 			<?php if($category['parentid'] == 0) : ?>
 				<tr>
-					<td><input class="id" type="checkbox" value="<?php echo $category['id'] ?>" name="id"/></td>
+					<td>
+						<?php if($this->user['admin']) : ?>
+							<input class="id" type="checkbox" value="<?php echo $category['id'] ?>" name="id"/>
+						<?php else : ?>
+							<input class="id" type="hidden" value="<?php echo $category['id'] ?>" name="id"/>
+						<?php endif; ?>
+					</td>
 					<td class="id">
 						<?php echo $this->escape($category['id']); ?>
 					</td>
@@ -60,7 +70,7 @@ echo $this->AdminMenu();
 					<?php $buttons['delete'] = $this->Button('delete'); ?>
 					<?php $buttons['sortup'] = $this->toolbar->sortup; ?>
 					<?php $buttons['sortdown'] = $this->toolbar->sortdown; ?>
-					<?php subCategories($this->categories, $category['id'], $buttons); ?>
+					<?php subCategories($this->categories, $category['id'], $buttons, $this->user['admin']); ?>
 				<?php endif; ?>
 			<?php endif; ?>
 			<?php ++$i0; ?>
@@ -88,12 +98,18 @@ echo $this->AdminMenu();
 	</tbody>
 </table>
 
-<?php function subCategories($categories, $id, $buttons, $seperator = '&nbsp;&nbsp;&boxur;&boxh;') { ?>
+<?php function subCategories($categories, $id, $buttons, $admin, $seperator = '&nbsp;&nbsp;&boxur;&boxh;') { ?>
 	<?php $i1 = 1; ?>
 	<?php $count1 = count($categories[$id]['childs']); ?>
 	<?php foreach($categories[$id]['childs'] as $child) : ?>
 		<tr>
-			<td><input class="id" type="checkbox" value="<?php echo $categories[$child]['id'] ?>" name="id"/></td>
+			<td>
+				<?php if($admin) : ?>
+					<input class="id" type="checkbox" value="<?php echo $categories[$child]['id'] ?>" name="id"/>
+				<?php else : ?>
+					<input class="id" type="hidden" value="<?php echo $categories[$child]['id'] ?>" name="id"/>
+				<?php endif; ?>
+			</td>
 			<td class="id">
 				<?php echo $categories[$child]['id']; ?>
 			</td>
@@ -120,7 +136,7 @@ echo $this->AdminMenu();
 		<?php ++$i1; ?>
 		<?php if(isset($categories[$child]['childs'])) : ?>
 			<?php $seperatorChild = '&nbsp;&nbsp;&nbsp;'.$seperator; ?>
-			<?php subCategories($categories, $child, $buttons, $seperatorChild); ?>
+			<?php subCategories($categories, $child, $buttons, $admin, $seperatorChild); ?>
 		<?php endif; ?>
 	<?php endforeach; ?>
 <?php } ?>
