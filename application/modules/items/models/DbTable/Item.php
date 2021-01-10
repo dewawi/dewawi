@@ -57,7 +57,7 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 	{
 		$catid = (int)$catid;
 		$where = $this->getAdapter()->quoteInto('catid = ?', $catid);
-		$data = $this->fetchAll($where);
+		$row = $this->fetchAll($where);
 		if (!$row) {
 			throw new Exception("Could not find row $catid");
 		}
