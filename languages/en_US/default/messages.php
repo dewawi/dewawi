@@ -17,5 +17,9 @@
 	'MESSAGES_SEARCH_RETURNED_NO_RESULTS' => 'The search did not return any results.',
 	'MESSAGES_CANCEL_CONFIRM' => 'Are you sure that you want to cancel the entry?',
 	'MESSAGES_DELETE_CONFIRM' => 'Are you sure that you want to delete the entry?',
-	'MESSAGES_DIRECTORY_IS_NOT_WRITABLE' => 'The files cannot be saved because the target folder is writable!'
+	'MESSAGES_DIRECTORY_IS_NOT_WRITABLE' => 'The files cannot be saved because the target folder is writable!',
+	'MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY' => 'The category is not empty and can not be deleted!',
+	'MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS' => 'The category has child categories and can not be deleted!',
+	'MESSAGES_OWN_CLINET_CAN_NOT_BE_DELETED' => 'Own client account can not be deleted!',
+	'MESSAGES_OWN_USER_CAN_NOT_BE_DELETED' => 'Own user account can not be deleted!'
 );
