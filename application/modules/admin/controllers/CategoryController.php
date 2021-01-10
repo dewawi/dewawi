@@ -227,10 +227,10 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$category = $categoryDb->getCategory($data['id']);
 			$orderings = $this->getOrdering($category['clientid'], $category['type'], $category['parentid']);
 			$currentOrdering = array_search($data['id'], $orderings);
-			if($data['ordering'] == 'down') {
+			if(($data['ordering'] == 'down') && (isset($orderings[$currentOrdering+1]))) {
 				$categoryDb->sortCategory($data['id'], $currentOrdering+1);
 				$categoryDb->sortCategory($orderings[$currentOrdering+1], $currentOrdering);
-			} elseif($data['ordering'] == 'up') {
+			} elseif(($data['ordering'] == 'up') && (isset($orderings[$currentOrdering-1]))) {
 				$categoryDb->sortCategory($data['id'], $currentOrdering-1);
 				$categoryDb->sortCategory($orderings[$currentOrdering-1], $currentOrdering);
 			} elseif($data['ordering'] > 0) {
@@ -256,7 +256,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		//if($this->getRequest()->isPost()) {
+		if($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 			$categoryDb = new Admin_Model_DbTable_Category();
 			$category = $categoryDb->getCategory($id);
@@ -265,28 +265,40 @@ class Admin_CategoryController extends Zend_Controller_Action
 				$contactDb = new Contacts_Model_DbTable_Contact();
 				$contacts = $contactDb->getContactsByCategory($id);
 				if(!empty($contacts)) {
+					//Do not delete the category if it is not empty
 					$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
 				} else {
 					$categoriesDb = new Admin_Model_DbTable_Category();
-					$categories = $categoriesDb->getCategories($category['type'], $category['parentid']);
-					print_r($categories);
-					/*foreach($categories as $categoryChild) {
-						if(isset($category['ordering'])) {
-							if($categoryChild['ordering'] > $category['ordering']) {
-								if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
-								$categoriesDb->sortCategory($categoryChild['id'], $categoryChild['ordering'] - 1);
-							}
-						}
+					$categories = $categoriesDb->getCategories($category['type'], $category['id']);
+					if(!empty($categories)) {
+						//Do not delete the category if it has child categories
+						$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS');
+					} else {
+						$categoryDb->deleteCategory($id);
+						$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
+						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 					}
-					$categoryDb->deleteCategory($id);
-					$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
-					$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');*/
 				}
 			} elseif($category['type'] == 'item') {
 				$itemDb = new Items_Model_DbTable_Item();
-				$items = $contactDb->getItemsByCategory($id);
+				$items = $itemDb->getItemsByCategory($id);
+				if(!empty($items)) {
+					//Do not delete the category if it is not empty
+					$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
+				} else {
+					$categoriesDb = new Admin_Model_DbTable_Category();
+					$categories = $categoriesDb->getCategories($category['type'], $category['id']);
+					if(!empty($categories)) {
+						//Do not delete the category if it has child categories
+						$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS');
+					} else {
+						$categoryDb->deleteCategory($id);
+						$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
+						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+					}
+				}
 			}
-		//}
+		}
 	}
 
 	public function lockAction()
