@@ -368,7 +368,18 @@ class Admin_ClientController extends Zend_Controller_Action
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
-		$clientDb->addClient($data);
+		$clientid = $clientDb->addClient($data);
+
+		//Copy config row
+		$configDb = new Admin_Model_DbTable_Config();
+		$config = $configDb->getConfigByClientID($id);
+		unset($config['id']);
+		$config['clientid'] = $clientid;
+		$config['modified'] = NULL;
+		$config['modifiedby'] = 0;
+		$config['locked'] = 0;
+		$config['lockedtime'] = NULL;
+		$configDb->addConfig($config);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -385,7 +396,7 @@ class Admin_ClientController extends Zend_Controller_Action
 				$this->_flashMessenger->addMessage('MESSAGES_OWN_CLINET_CAN_NOT_BE_DELETED');
 			} else {
 				$clientDb = new Admin_Model_DbTable_Client();
-				//$clientDb->deleteClient($id);
+				$clientDb->deleteClient($id);
 				$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 			}
 		}

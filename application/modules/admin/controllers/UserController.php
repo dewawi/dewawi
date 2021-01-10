@@ -181,12 +181,24 @@ class Admin_UserController extends Zend_Controller_Action
 		$userDb = new Admin_Model_DbTable_User();
 		$data = $userDb->getUser($id);
 		unset($data['id']);
-		$data['username'] = $data['username'].' 2';
+		$data['username'] = $data['username'].'2';
+		$data['email'] = $data['email'].'2';
 		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
-		$userDb->addUser($data);
+		$userid = $userDb->addUser($data);
+
+		//Copy user permissions
+		$permissionDb = new Admin_Model_DbTable_Permission();
+		$permissions = $permissionDb->getPermissionByUserID($id);
+		unset($permissions['id']);
+		$permissions['userid'] = $userid;
+		$permissions['modified'] = NULL;
+		$permissions['modifiedby'] = 0;
+		$permissions['locked'] = 0;
+		$permissions['lockedtime'] = NULL;
+		$permissionDb->addPermission($permissions);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -199,10 +211,14 @@ class Admin_UserController extends Zend_Controller_Action
 
 		if($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
-			$userDb = new Admin_Model_DbTable_User();
-			$userDb->deleteUser($id);
+			if($id == $this->_user['id']) {
+				$this->_flashMessenger->addMessage('MESSAGES_OWN_USER_CAN_NOT_BE_DELETED');
+			} else {
+				$userDb = new Admin_Model_DbTable_User();
+				$userDb->deleteUser($id);
+				$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+			}
 		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
 
 	public function lockAction()
