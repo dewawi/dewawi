@@ -115,25 +115,17 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$currencies = new Application_Model_DbTable_Currency();
 		$currency = $currencies->getPrimaryCurrency();
 
-		//Get primary language
-		$languages = new Application_Model_DbTable_Language();
-		$language = $languages->getPrimaryLanguage();
-
-		//Get primary template
-		$templates = new Application_Model_DbTable_Template();
-		$template = $templates->getPrimaryTemplate();
-
 		$data = array();
 		$data['title'] = $this->view->translate('PROCESSES_NEW_PROCESS');
+		$data['deliverystatus'] = 'deliveryIsWaiting';
+		$data['paymentstatus'] = 'waitingForPayment';
 		$data['currency'] = $currency['code'];
-		$data['templateid'] = $template['id'];
-		$data['language'] = $language['code'];
 		$data['state'] = 100;
 
 		//Get contact data
 		if($customerid) {
 			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContact($contactid);
+			$contact = $contactDb->getContact($customerid);
 
 			//Get basic data
 			$data['customerid'] = $contact['contactid'];
@@ -166,7 +158,8 @@ class Processes_ProcessController extends Zend_Controller_Action
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);//		$element = $this->_getParam('element', null);
+		$id = $this->_getParam('id', 0);
+		//$element = $this->_getParam('element', null);
 		$activeTab = $request->getCookie('tab', null);
 
 		$processDb = new Processes_Model_DbTable_Process();
@@ -324,12 +317,12 @@ class Processes_ProcessController extends Zend_Controller_Action
 					}
 
 					//Update file manager subfolder if contact is changed
-					if(isset($data['contactid']) && $data['contactid']) {
-						$dir1 = substr($data['contactid'], 0, 1).'/';
-						if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
+					if(isset($data['customerid']) && $data['customerid']) {
+						$dir1 = substr($data['customerid'], 0, 1).'/';
+						if(strlen($data['customerid']) > 1) $dir2 = substr($data['customerid'], 1, 1).'/';
 						else $dir2 = '0/';
 						$defaultNamespace = new Zend_Session_Namespace('RF');
-						$defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
+						$defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['customerid'].'/';
 					}
 
 					$processDb->updateProcess($id, $data);
@@ -421,7 +414,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$process = $processDb->getProcess($id);
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($process['contactid']);
+		$contact = $contactDb->getContactWithID($process['customerid']);
 
 		//Convert dates to the display format
 		if($process['processdate']) $process['processdate'] = date('d.m.Y', strtotime($process['processdate']));
@@ -447,7 +440,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->view->process = $process;
 		$this->view->contact = $contact;
 		$this->view->positions = $positions;
-		$this->view->evaluate = $this->evaluate($positionsObject, $process['taxfree']);
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 

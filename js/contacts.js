@@ -78,7 +78,13 @@ function applyContact(contactID) {
 	//Close the modal window
 	modalWindowClose();
 
+	if(module == 'processes') {
+		data['customerid'] = data['contactid'];
+		delete data.contactid;
+	}
+
 	isDirty = true;
+	//console.log(data);
 	edit(data);
 
     //Refresh file manager
