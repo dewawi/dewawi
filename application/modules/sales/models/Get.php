@@ -2,7 +2,7 @@
 
 class Sales_Model_Get
 {
-	public function quotes($params, $categories, $flashMessenger)
+	public function quotes($params, $options, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -17,9 +17,9 @@ class Sales_Model_Get
 		$schema = 'q';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
 			$params['to'] = date('Y-m-d', strtotime($params['to']));
@@ -86,7 +86,7 @@ class Sales_Model_Get
 		return $quotes;
 	}
 
-	public function invoices($params, $categories, $flashMessenger)
+	public function invoices($params, $options, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -101,9 +101,9 @@ class Sales_Model_Get
 		$schema = 'i';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
 			$params['to'] = date('Y-m-d', strtotime($params['to']));
@@ -157,7 +157,7 @@ class Sales_Model_Get
 		return $invoices;
 	}
 
-	public function salesorders($params, $categories, $flashMessenger)
+	public function salesorders($params, $options, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -172,9 +172,9 @@ class Sales_Model_Get
 		$schema = 's';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
 			$params['to'] = date('Y-m-d', strtotime($params['to']));
@@ -228,7 +228,7 @@ class Sales_Model_Get
 		return $salesorders;
 	}
 
-	public function deliveryorders($params, $categories, $flashMessenger)
+	public function deliveryorders($params, $options, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -243,9 +243,9 @@ class Sales_Model_Get
 		$schema = 'd';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
 			$params['to'] = date('Y-m-d', strtotime($params['to']));
@@ -299,7 +299,7 @@ class Sales_Model_Get
 		return $deliveryorders;
 	}
 
-	public function creditnotes($params, $categories, $flashMessenger)
+	public function creditnotes($params, $options, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -314,9 +314,9 @@ class Sales_Model_Get
 		$schema = 'cr';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
 			$params['to'] = date('Y-m-d', strtotime($params['to']));
@@ -370,7 +370,7 @@ class Sales_Model_Get
 		return $creditnotes;
 	}
 
-	public function reminders($params, $categories, $flashMessenger)
+	public function reminders($params, $options, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -385,9 +385,9 @@ class Sales_Model_Get
 		$schema = 'cr';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
 			$params['to'] = date('Y-m-d', strtotime($params['to']));

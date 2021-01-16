@@ -2,7 +2,7 @@
 
 class Purchases_Model_Get
 {
-	public function quoterequests($params, $categories, $flashMessenger)
+	public function quoterequests($params, $options, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -17,9 +17,9 @@ class Purchases_Model_Get
 		$schema = 'q';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
 			$params['to'] = date('Y-m-d', strtotime($params['to']));
@@ -73,7 +73,7 @@ class Purchases_Model_Get
 		return $quoterequests;
 	}
 
-	public function purchaseorders($params, $categories, $flashMessenger)
+	public function purchaseorders($params, $options, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -88,9 +88,9 @@ class Purchases_Model_Get
 		$schema = 'p';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
 			$params['to'] = date('Y-m-d', strtotime($params['to']));

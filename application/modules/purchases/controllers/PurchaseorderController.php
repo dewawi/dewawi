@@ -58,7 +58,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Purchases_Model_Get();
-		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_flashMessenger);
+		$purchaseorders = $get->purchaseorders($params, $options, $this->_flashMessenger);
 
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;
@@ -80,7 +80,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Purchases_Model_Get();
-		$purchaseorders = $get->purchaseorders($params, $options['categories'], $this->_flashMessenger);
+		$purchaseorders = $get->purchaseorders($params, $options, $this->_flashMessenger);
 
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;

@@ -26,14 +26,14 @@ class Zend_View_Helper_ActiveFilter extends Zend_View_Helper_Abstract{
 							<?php echo $this->view->Button('clear', '', '', '', '', 'keyword'); ?>
 						</li>
 					<?php endif; ?>
-					<?php if(isset($filters['catid']) && isset($options['categories'])) : ?>
+					<?php if(isset($filters['catid']) && isset($options['categories']) && isset($options['categories'][$filters['catid']])) : ?>
 						<li>
 							<b><?php echo $this->view->translate('TOOLBAR_CATEGORY').':'; ?></b>
 							<?php echo $options['categories'][$filters['catid']]['title']; ?>
 							<?php echo $this->view->Button('clear', '', '', '', '', 'catid'); ?>
 						</li>
 					<?php endif; ?>
-					<?php if(isset($filters['country']) && isset($options['countries'])) : ?>
+					<?php if(isset($filters['country']) && isset($options['countries']) && isset($options['countries'][$filters['country']])) : ?>
 						<li>
 							<b><?php echo $this->view->translate('TOOLBAR_COUNTRY').':'; ?></b>
 							<?php echo $options['countries'][$filters['country']]; ?>

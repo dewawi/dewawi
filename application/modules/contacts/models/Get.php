@@ -19,7 +19,7 @@ class Contacts_Model_Get
 		return $contact;
 	}
 
-	public function contacts($params, $categories)
+	public function contacts($params, $options)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -34,8 +34,8 @@ class Contacts_Model_Get
 		$schema = 'c';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountryC($query, $params['country'], 'a');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountryC($query, $params['country'], $options['countries'], 'a');
 		if($query) {
 			$query .= " AND a.type = 'billing'";
 			$query .= ' AND c.clientid = '.$client['id'];

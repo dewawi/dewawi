@@ -58,7 +58,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$invoices = $get->invoices($params, $options['categories'], $this->_flashMessenger);
+		$invoices = $get->invoices($params, $options, $this->_flashMessenger);
 
 		$this->view->invoices = $invoices;
 		$this->view->options = $options;
@@ -80,7 +80,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$invoices = $get->invoices($params, $options['categories'], $this->_flashMessenger);
+		$invoices = $get->invoices($params, $options, $this->_flashMessenger);
 
 		$this->view->invoices = $invoices;
 		$this->view->options = $options;

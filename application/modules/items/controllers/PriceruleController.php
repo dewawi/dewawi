@@ -38,7 +38,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Items_Model_Get();
-		$pricerules = $get->pricerules($params, $options['categories']);
+		$pricerules = $get->pricerules($params, $options);
 
 		$this->view->pricerules = $pricerules;
 		$this->view->options = $options;
@@ -58,7 +58,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Items_Model_Get();
-		$pricerules = $get->pricerules($params, $options['categories']);
+		$pricerules = $get->pricerules($params, $options);
 
 		$this->view->pricerules = $pricerules;
 		$this->view->options = $options;
@@ -75,7 +75,7 @@ class Items_PriceruleController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Items_Model_Get();
-		$pricerules = $get->pricerules($params, $options['categories']);
+		$pricerules = $get->pricerules($params, $options);
 
 		$this->view->pricerules = $pricerules;
 		$this->view->options = $options;

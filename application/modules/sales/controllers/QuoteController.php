@@ -58,7 +58,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$quotes = $get->quotes($params, $options['categories'], $this->_flashMessenger);
+		$quotes = $get->quotes($params, $options, $this->_flashMessenger);
 
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;
@@ -80,7 +80,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$quotes = $get->quotes($params, $options['categories'], $this->_flashMessenger);
+		$quotes = $get->quotes($params, $options, $this->_flashMessenger);
 
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;

@@ -58,7 +58,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$deliveryorders = $get->deliveryorders($params, $options['categories'], $this->_flashMessenger);
+		$deliveryorders = $get->deliveryorders($params, $options, $this->_flashMessenger);
 
 		$this->view->deliveryorders = $deliveryorders;
 		$this->view->options = $options;
@@ -80,7 +80,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$deliveryorders = $get->deliveryorders($params, $options['categories'], $this->_flashMessenger);
+		$deliveryorders = $get->deliveryorders($params, $options, $this->_flashMessenger);
 
 		$this->view->deliveryorders = $deliveryorders;
 		$this->view->options = $options;

@@ -58,7 +58,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$creditnotes = $get->creditnotes($params, $options['categories'], $this->_flashMessenger);
+		$creditnotes = $get->creditnotes($params, $options, $this->_flashMessenger);
 
 		$this->view->creditnotes = $creditnotes;
 		$this->view->options = $options;
@@ -80,7 +80,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$creditnotes = $get->creditnotes($params, $options['categories'], $this->_flashMessenger);
+		$creditnotes = $get->creditnotes($params, $options, $this->_flashMessenger);
 
 		$this->view->creditnotes = $creditnotes;
 		$this->view->options = $options;

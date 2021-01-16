@@ -58,7 +58,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$reminders = $get->reminders($params, $options['categories'], $this->_flashMessenger);
+		$reminders = $get->reminders($params, $options, $this->_flashMessenger);
 
 		$this->view->reminders = $reminders;
 		$this->view->options = $options;
@@ -80,7 +80,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$reminders = $get->reminders($params, $options['categories'], $this->_flashMessenger);
+		$reminders = $get->reminders($params, $options, $this->_flashMessenger);
 
 		$this->view->reminders = $reminders;
 		$this->view->options = $options;

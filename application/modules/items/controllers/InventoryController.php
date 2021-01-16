@@ -38,7 +38,7 @@ class Items_InventoryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Items_Model_Get();
-		$inventory = $get->inventory($params, $options['categories']);
+		$inventory = $get->inventory($params, $options);
 
 		$this->view->inventory = $inventory;
 		$this->view->options = $options;
@@ -58,7 +58,7 @@ class Items_InventoryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Items_Model_Get();
-		$inventory = $get->inventory($params, $options['categories']);
+		$inventory = $get->inventory($params, $options);
 
 		$this->view->inventory = $inventory;
 		$this->view->options = $options;
@@ -75,7 +75,7 @@ class Items_InventoryController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Items_Model_Get();
-		$inventory = $get->inventory($params, $options['categories']);
+		$inventory = $get->inventory($params, $options);
 
 		$this->view->items = $items;
 		$this->view->options = $options;

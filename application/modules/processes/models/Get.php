@@ -2,7 +2,7 @@
 
 class Processes_Model_Get
 {
-	public function processes($params, $categories, $flashMessenger)
+	public function processes($params, $options, $flashMessenger)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -17,9 +17,9 @@ class Processes_Model_Get
 		$schema = 'p';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $categories, 'c');
+		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['paymentstatus']) $query = $queryHelper->getQueryPaymentstatus($query, $params['paymentstatus'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));

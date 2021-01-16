@@ -58,7 +58,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$salesorders = $get->salesorders($params, $options['categories'], $this->_flashMessenger);
+		$salesorders = $get->salesorders($params, $options, $this->_flashMessenger);
 
 		$this->view->salesorders = $salesorders;
 		$this->view->options = $options;
@@ -80,7 +80,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$salesorders = $get->salesorders($params, $options['categories'], $this->_flashMessenger);
+		$salesorders = $get->salesorders($params, $options, $this->_flashMessenger);
 
 		$this->view->salesorders = $salesorders;
 		$this->view->options = $options;

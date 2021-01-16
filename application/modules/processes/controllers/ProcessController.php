@@ -54,7 +54,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options['categories'], $this->_flashMessenger);
+		$processes = $get->processes($params, $options, $this->_flashMessenger);
 
 		//Get positions
 		$processIDs = array();
@@ -88,7 +88,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options['categories'], $this->_flashMessenger);
+		$processes = $get->processes($params, $options, $this->_flashMessenger);
 
 		//Get positions
 		$processIDs = array();
@@ -131,7 +131,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$data['state'] = 100;
 
 		//Get contact data
-		if($contactid) {
+		if($customerid) {
 			$contactDb = new Contacts_Model_DbTable_Contact();
 			$contact = $contactDb->getContact($contactid);
 

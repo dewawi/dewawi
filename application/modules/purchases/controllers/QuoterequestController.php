@@ -58,7 +58,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Purchases_Model_Get();
-		$quoterequests = $get->quoterequests($params, $options['categories'], $this->_flashMessenger);
+		$quoterequests = $get->quoterequests($params, $options, $this->_flashMessenger);
 
 		$this->view->quoterequests = $quoterequests;
 		$this->view->options = $options;
@@ -80,7 +80,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Purchases_Model_Get();
-		$quoterequests = $get->quoterequests($params, $options['categories'], $this->_flashMessenger);
+		$quoterequests = $get->quoterequests($params, $options, $this->_flashMessenger);
 
 		$this->view->quoterequests = $quoterequests;
 		$this->view->options = $options;

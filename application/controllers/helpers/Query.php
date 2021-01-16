@@ -31,15 +31,17 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 
 	public function getQueryCategory($query, $catid, $categories, $schema = null)
 	{
-		if($query) $query .= ' AND ';
-		if(isset($categories[$catid]['childs'])) {
-			$childs = $this->getChildCategories($catid, $categories);
-			$childs = $this->getString($childs);
-			if($schema) $query .= '('.$schema.'.catid IN ('.$catid.','.$childs.'))';
-			else $query .= '(catid IN ('.$catid.','.$childs.'))';
-		} else {
-			if($schema) $query .= '('.$schema.'.catid = '.$catid.')';
-			else $query .= '(catid = '.$catid.')';
+		if(isset($categories[$catid])) {
+			if($query) $query .= ' AND ';
+			if(isset($categories[$catid]['childs'])) {
+				$childs = $this->getChildCategories($catid, $categories);
+				$childs = $this->getString($childs);
+				if($schema) $query .= '('.$schema.'.catid IN ('.$catid.','.$childs.'))';
+				else $query .= '(catid IN ('.$catid.','.$childs.'))';
+			} else {
+				if($schema) $query .= '('.$schema.'.catid = '.$catid.')';
+				else $query .= '(catid = '.$catid.')';
+			}
 		}
 		return $query;
 	}
@@ -51,17 +53,21 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 		return $query;
 	}
 
-	public function getQueryCountry($query, $country, $schema)
+	public function getQueryCountry($query, $country, $countries, $schema)
 	{
-		if($query) $query .= ' AND ';
-		$query .= "(".$schema.".billingcountry = '".$country."' OR ".$schema.".shippingcountry = '".$country."')";
+		if(isset($countries[$country])) {
+			if($query) $query .= ' AND ';
+			$query .= "(".$schema.".billingcountry = '".$country."' OR ".$schema.".shippingcountry = '".$country."')";
+		}
 		return $query;
 	}
 
-	public function getQueryCountryC($query, $country, $schema)
+	public function getQueryCountryC($query, $country, $countries, $schema)
 	{
-		if($query) $query .= ' AND ';
-		$query .= "(".$schema.".country = '".$country."')";
+		if(isset($countries[$country])) {
+			if($query) $query .= ' AND ';
+			$query .= "(".$schema.".country = '".$country."')";
+		}
 		return $query;
 	}
 

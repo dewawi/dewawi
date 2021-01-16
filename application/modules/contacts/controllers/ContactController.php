@@ -61,7 +61,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options['categories']);
+		$contacts = $get->contacts($params, $options);
 
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
@@ -81,7 +81,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options['categories']);
+		$contacts = $get->contacts($params, $options);
 
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
@@ -105,7 +105,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		}
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options['categories']);
+		$contacts = $get->contacts($params, $options);
 
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
@@ -462,7 +462,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options['categories']);
+		$contacts = $get->contacts($params, $options);
 
 		header('Content-type: application/json');
 		//$suggestions = array("suggestions" => array());
