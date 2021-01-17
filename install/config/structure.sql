@@ -1147,6 +1147,8 @@ CREATE TABLE IF NOT EXISTS `processpos` (
   `description` text DEFAULT NULL,
   `price` decimal(12,4) DEFAULT NULL,
   `taxrate` decimal(12,4) DEFAULT NULL,
+  `priceruleamount` decimal(12,4) DEFAULT NULL,
+  `priceruleaction` varchar(255) DEFAULT NULL,
   `quantity` decimal(12,4) DEFAULT NULL,
   `total` decimal(12,4) DEFAULT NULL,
   `currency` varchar(255) DEFAULT NULL,
