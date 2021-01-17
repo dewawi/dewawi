@@ -1,152 +1,154 @@
 <?php 
-$this->title = $this->quote['title'] ? $this->quote['title'] : $this->translate('QUOTE')." ".$this->quote['quoteid'];
+$this->title = $this->process['title'] ? $this->process['title'] : $this->translate('PROCESS')." ".$this->process['processid'];
 $this->headTitle($this->title);
+echo $this->TinyMCE();
 echo $this->FileManager();
 ?>
 
 <ul class="tabs">
 	<li class="active"><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
 	<li><a href="#tabFiles"><?php echo $this->translate('TABS_FILES') ?></a></li>
-	<li><a href="#tabDocument" onclick="savePdf()"><?php echo $this->translate('TABS_DOCUMENT') ?></a></li>
+	<li><a href="#tabMessages" onclick="getEmailmessages()"><?php echo $this->translate('TABS_MESSAGES') ?></a></li>
 </ul>
 
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content active">
-		<div id="left">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('QUOTES_QUOTE_ID') ?></label></dt>
-				<dd><?php echo $this->quote['quoteid']; ?></dd>
-				<?php if($this->quote['vatin']) { ?>
-					<dt><label><?php echo $this->translate('QUOTES_VATIN') ?></label></dt>
-					<dd><?php echo $this->quote['vatin']; ?></dd>
-				<?php } ?>
-				<?php if($this->quote['quotedate']) { ?>
-					<dt><label><?php echo $this->translate('QUOTES_QUOTE_DATE') ?></label></dt>
-					<dd><?php echo $this->quote['quotedate']; ?></dd>
-				<?php } ?>
-				<?php if($this->quote['deliverydate']) { ?>
-					<dt><label><?php echo $this->translate('QUOTES_DELIVERY_DATE') ?></label></dt>
-					<dd><?php echo $this->quote['deliverydate']; ?></dd>
-				<?php } ?>
-				<?php if($this->quote['paymentmethod']) { ?>
-					<dt><label><?php echo $this->translate('QUOTES_PAYMENT_METHOD') ?></label></dt>
-					<dd><?php echo $this->quote['paymentmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->quote['shippingmethod']) { ?>
-					<dt><label><?php echo $this->translate('QUOTES_SHIPPING_METHOD') ?></label></dt>
-					<dd><?php echo $this->quote['shippingmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->quote['header']) { ?>
-					<dt><label><?php echo $this->translate('QUOTES_HEADER') ?></label></dt>
-					<dd><?php echo $this->quote['header']; ?></dd>
-				<?php } ?>
-				<?php if($this->quote['footer']) { ?>
-					<dt><label><?php echo $this->translate('QUOTES_FOOTER') ?></label></dt>
-					<dd><?php echo $this->quote['footer']; ?></dd>
-				<?php } ?>
-				<?php if($this->quote['info']) { ?>
-					<dt><label><?php echo $this->translate('QUOTES_INFO') ?></label></dt>
-					<dd><?php echo $this->quote['info']; ?></dd>
-				<?php } ?>
-			</dl>
-		</div>
-		<div id="right">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('QUOTES_CONTACT_ID') ?></label></dt>
-				<dd>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->quote['contactid']; ?></a>
-					<input id="contactid" type="hidden" value="<?php echo $this->quote['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
-				</dd>
-				<dt><label><?php echo $this->translate('QUOTES_BILLING_ADDRESS') ?></label></dt>
-				<dd>
-					<?php echo $this->quote['billingname1']; ?>
-					<?php if($this->quote['billingname2']) echo "</br>".$this->quote['billingname2']; ?>
-					<?php if($this->quote['billingdepartment']) echo "</br>".$this->quote['billingdepartment']; ?>
-					<?php if($this->quote['billingstreet']) echo "</br>".$this->quote['billingstreet']; ?>
-					<?php if($this->quote['billingpostcode'] || $this->quote['billingcity']) { ?>
-						</br>
-						<?php if($this->quote['billingpostcode']) echo $this->quote['billingpostcode']; ?>
-						<?php if($this->quote['billingcity']) echo $this->quote['billingcity']; ?>
+		<div class="row">
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<?php if($this->process['vatin']) { ?>
+						<dt><label><?php echo $this->translate('PROCESSES_VATIN') ?></label></dt>
+						<dd><?php echo $this->process['vatin']; ?></dd>
 					<?php } ?>
-					<?php if($this->quote['billingcountry']) echo "</br>".$this->translate($this->quote['billingcountry']); ?>
-				</dd>
-				<?php if($this->quote['shippingname1'] || $this->quote['shippingname2']) { ?>
-					<dt><label><?php echo $this->translate('QUOTES_SHIPPING_ADDRESS') ?></label></dt>
+					<?php if($this->process['processdate']) { ?>
+						<dt><label><?php echo $this->translate('PROCESSES_PROCESS_DATE') ?></label></dt>
+						<dd><?php echo $this->process['processdate']; ?></dd>
+					<?php } ?>
+					<?php if($this->process['deliverydate']) { ?>
+						<dt><label><?php echo $this->translate('PROCESSES_DELIVERY_DATE') ?></label></dt>
+						<dd><?php echo $this->process['deliverydate']; ?></dd>
+					<?php } ?>
+					<?php if($this->process['paymentmethod']) { ?>
+						<dt><label><?php echo $this->translate('PROCESSES_PAYMENT_METHOD') ?></label></dt>
+						<dd><?php echo $this->process['paymentmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->process['shippingmethod']) { ?>
+						<dt><label><?php echo $this->translate('PROCESSES_SHIPPING_METHOD') ?></label></dt>
+						<dd><?php echo $this->process['shippingmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->process['header']) { ?>
+						<dt><label><?php echo $this->translate('PROCESSES_HEADER') ?></label></dt>
+						<dd><?php echo $this->process['header']; ?></dd>
+					<?php } ?>
+					<?php if($this->process['footer']) { ?>
+						<dt><label><?php echo $this->translate('PROCESSES_FOOTER') ?></label></dt>
+						<dd><?php echo $this->process['footer']; ?></dd>
+					<?php } ?>
+					<?php if($this->process['info']) { ?>
+						<dt><label><?php echo $this->translate('PROCESSES_INFO') ?></label></dt>
+						<dd><?php echo $this->process['info']; ?></dd>
+					<?php } ?>
+				</dl>
+			</div>
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('PROCESSES_CUSTOMER_ID') ?></label></dt>
 					<dd>
-						<?php echo $this->quote['shippingname1']; ?>
-						<?php if($this->quote['shippingname2']) echo "</br>".$this->quote['shippingname2']; ?>
-						<?php if($this->quote['shippingdepartment']) echo "</br>".$this->quote['shippingdepartment']; ?>
-						<?php if($this->quote['shippingstreet']) echo "</br>".$this->quote['shippingstreet']; ?>
-						<?php if($this->quote['shippingpostcode'] || $this->quote['shippingcity']) { ?>
-							</br>
-							<?php if($this->quote['shippingpostcode']) echo $this->quote['shippingpostcode']; ?>
-							<?php if($this->quote['shippingcity']) echo $this->quote['shippingcity']; ?>
-						<?php } ?>
-						<?php if($this->quote['shippingcountry']) echo "</br>".$this->translate($this->quote['shippingcountry']); ?>
-						<?php if($this->quote['shippingphone']) echo "</br>".$this->quote['shippingphone']; ?>
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->process['customerid']; ?></a>
+						<input id="customerid" type="hidden" value="<?php echo $this->process['customerid']; ?>" size="5" readonly="readonly" name="customerid"/>
 					</dd>
-				<?php } ?>
-			</dl>
+					<dt><label><?php echo $this->translate('PROCESSES_BILLING_ADDRESS') ?></label></dt>
+					<dd>
+						<?php echo $this->process['billingname1']; ?>
+						<?php if($this->process['billingname2']) echo "</br>".$this->process['billingname2']; ?>
+						<?php if($this->process['billingdepartment']) echo "</br>".$this->process['billingdepartment']; ?>
+						<?php if($this->process['billingstreet']) echo "</br>".$this->process['billingstreet']; ?>
+						<?php if($this->process['billingpostcode'] || $this->process['billingcity']) { ?>
+							</br>
+							<?php if($this->process['billingpostcode']) echo $this->process['billingpostcode']; ?>
+							<?php if($this->process['billingcity']) echo $this->process['billingcity']; ?>
+						<?php } ?>
+						<?php if($this->process['billingcountry']) echo "</br>".$this->translate($this->process['billingcountry']); ?>
+					</dd>
+					<?php if($this->process['shippingname1'] || $this->process['shippingname2']) { ?>
+						<dt><label><?php echo $this->translate('PROCESSES_SHIPPING_ADDRESS') ?></label></dt>
+						<dd>
+							<?php echo $this->process['shippingname1']; ?>
+							<?php if($this->process['shippingname2']) echo "</br>".$this->process['shippingname2']; ?>
+							<?php if($this->process['shippingdepartment']) echo "</br>".$this->process['shippingdepartment']; ?>
+							<?php if($this->process['shippingstreet']) echo "</br>".$this->process['shippingstreet']; ?>
+							<?php if($this->process['shippingpostcode'] || $this->process['shippingcity']) { ?>
+								</br>
+								<?php if($this->process['shippingpostcode']) echo $this->process['shippingpostcode']; ?>
+								<?php if($this->process['shippingcity']) echo $this->process['shippingcity']; ?>
+							<?php } ?>
+							<?php if($this->process['shippingcountry']) echo "</br>".$this->translate($this->process['shippingcountry']); ?>
+							<?php if($this->process['shippingphone']) echo "</br>".$this->process['shippingphone']; ?>
+						</dd>
+					<?php } ?>
+				</dl>
+			</div>
 		</div>
-		<div style="clear:left"></div>
-		<h3><?php echo $this->translate('QUOTES_POSITIONS') ?></h3>
-		<div id="positions">
-			<?php
-				$i = 1;
-				$length = count($this->positions);
-			?>
-			<table id="positions">
-			<thead>
-			<tr>
-			<th id="id">ID</th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
-			<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
-			<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
-			</tr>
-			</thead>
-			<tbody>
-			<?php foreach ($this->positions as $position) { ?>
-				<tr id="position<?php echo $position['id']; ?>">
-				<td id="id"><span><?php echo $position['id']; ?></span></td>
-				<td id="sku"><span><?php echo $position['sku']; ?></span></td>
-				<td id="title"><span><?php echo $position['title']; ?></span></td>
-				<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
-				<td id="price"><span><?php echo $position['price']; ?></span></td>
-				<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
-				<td id="uom"><span><?php echo $position['uom']; ?></span></td>
-				</tr>
-				<?php ++$i; ?>
-			<?php } ?>
-			</tbody>
-			</table>
+		<div class="row">
+			<div class="col-sm-12 col-lg-12">
+				<h3><?php echo $this->translate('PROCESSES_POSITIONS') ?></h3>
+				<div id="positions">
+					<?php
+						$i = 1;
+						$length = count($this->positions);
+					?>
+					<table id="positions">
+					<thead>
+					<tr>
+					<th id="id">ID</th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
+					<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
+					<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
+					</tr>
+					</thead>
+					<tbody>
+					<?php foreach ($this->positions as $position) { ?>
+						<tr id="position<?php echo $position['id']; ?>">
+						<td id="id"><span><?php echo $position['id']; ?></span></td>
+						<td id="sku"><span><?php echo $position['sku']; ?></span></td>
+						<td id="title"><span><?php echo $position['title']; ?></span></td>
+						<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
+						<td id="price"><span><?php echo $position['price']; ?></span></td>
+						<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
+						<td id="uom"><span><?php echo $position['uom']; ?></span></td>
+						</tr>
+						<?php ++$i; ?>
+					<?php } ?>
+					</tbody>
+					</table>
 
-			<table id="total" align="right">
-			<thead>
-			</thead>
-			<tbody>
-			<tr>
-			<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
-			<td align="right"><?php echo $this->evaluate["subtotal"]; ?></td>
-			</tr>
-			<?php if($this->evaluate["taxes"]) { ?>
-				<tr>
-				<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
-				<td align="right"><?php echo $this->evaluate["taxes"]; ?></td>
-				</tr>
-			<?php } ?>
-			<tr>
-			<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
-			<td align="right"><?php echo $this->evaluate["total"]; ?></td>
-			</tr>
-			</tbody>
-			</table>
+					<table id="total" align="right">
+						<tbody>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+								<td align="right"><?php echo $this->process['subtotal']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
+								<td align="right"><?php echo $this->process['taxes']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+								<td align="right"><?php echo $this->process['total']; ?></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
-		<div style="clear:left"></div>
 	</div>
 	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
+	</div>
+	<div id="tabMessages" class="tab_content<?php if($this->activeTab == '#tabMessages') : ?> active<?php endif; ?>">
+		<?php echo $this->EmailMessages(); ?>
 	</div>
 </div>

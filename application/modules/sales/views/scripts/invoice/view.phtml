@@ -14,139 +14,143 @@ echo $this->FileManager();
 
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content active">
-		<div id="left">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('INVOICES_INVOICE_ID') ?></label></dt>
-				<dd><?php echo $this->invoice['invoiceid']; ?></dd>
-				<?php if($this->invoice['vatin']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_VATIN') ?></label></dt>
-					<dd><?php echo $this->invoice['vatin']; ?></dd>
-				<?php } ?>
-				<?php if($this->invoice['invoicedate']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_INVOICE_DATE') ?></label></dt>
-					<dd><?php echo $this->invoice['invoicedate']; ?></dd>
-				<?php } ?>
-				<?php if($this->invoice['orderdate']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_ORDER_DATE') ?></label></dt>
-					<dd><?php echo $this->invoice['orderdate']; ?></dd>
-				<?php } ?>
-				<?php if($this->invoice['deliverydate']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_DELIVERY_DATE') ?></label></dt>
-					<dd><?php echo $this->invoice['deliverydate']; ?></dd>
-				<?php } ?>
-				<?php if($this->invoice['paymentmethod']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_PAYMENT_METHOD') ?></label></dt>
-					<dd><?php echo $this->invoice['paymentmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->invoice['shippingmethod']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_SHIPPING_METHOD') ?></label></dt>
-					<dd><?php echo $this->invoice['shippingmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->invoice['header']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_HEADER') ?></label></dt>
-					<dd><?php echo $this->invoice['header']; ?></dd>
-				<?php } ?>
-				<?php if($this->invoice['footer']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_FOOTER') ?></label></dt>
-					<dd><?php echo $this->invoice['footer']; ?></dd>
-				<?php } ?>
-				<?php if($this->invoice['info']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_INFO') ?></label></dt>
-					<dd><?php echo $this->invoice['info']; ?></dd>
-				<?php } ?>
-			</dl>
-		</div>
-		<div id="right">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('INVOICES_CONTACT_ID') ?></label></dt>
-				<dd>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->invoice['contactid']; ?></a>
-					<input id="contactid" type="hidden" value="<?php echo $this->invoice['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
-				</dd>
-				<dt><label><?php echo $this->translate('INVOICES_BILLING_ADDRESS') ?></label></dt>
-				<dd>
-					<?php echo $this->invoice['billingname1']; ?>
-					<?php if($this->invoice['billingname2']) echo "</br>".$this->invoice['billingname2']; ?>
-					<?php if($this->invoice['billingdepartment']) echo "</br>".$this->invoice['billingdepartment']; ?>
-					<?php if($this->invoice['billingstreet']) echo "</br>".$this->invoice['billingstreet']; ?>
-					<?php if($this->invoice['billingpostcode'] || $this->invoice['billingcity']) { ?>
-						</br>
-						<?php if($this->invoice['billingpostcode']) echo $this->invoice['billingpostcode']; ?>
-						<?php if($this->invoice['billingcity']) echo $this->invoice['billingcity']; ?>
+		<div class="row">
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('INVOICES_INVOICE_ID') ?></label></dt>
+					<dd><?php echo $this->invoice['invoiceid']; ?></dd>
+					<?php if($this->invoice['vatin']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_VATIN') ?></label></dt>
+						<dd><?php echo $this->invoice['vatin']; ?></dd>
 					<?php } ?>
-					<?php if($this->invoice['billingcountry']) echo "</br>".$this->translate($this->invoice['billingcountry']); ?>
-				</dd>
-				<?php if($this->invoice['shippingname1'] || $this->invoice['shippingname2']) { ?>
-					<dt><label><?php echo $this->translate('INVOICES_SHIPPING_ADDRESS') ?></label></dt>
+					<?php if($this->invoice['invoicedate']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_INVOICE_DATE') ?></label></dt>
+						<dd><?php echo $this->invoice['invoicedate']; ?></dd>
+					<?php } ?>
+					<?php if($this->invoice['orderdate']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_ORDER_DATE') ?></label></dt>
+						<dd><?php echo $this->invoice['orderdate']; ?></dd>
+					<?php } ?>
+					<?php if($this->invoice['deliverydate']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_DELIVERY_DATE') ?></label></dt>
+						<dd><?php echo $this->invoice['deliverydate']; ?></dd>
+					<?php } ?>
+					<?php if($this->invoice['paymentmethod']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_PAYMENT_METHOD') ?></label></dt>
+						<dd><?php echo $this->invoice['paymentmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->invoice['shippingmethod']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_SHIPPING_METHOD') ?></label></dt>
+						<dd><?php echo $this->invoice['shippingmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->invoice['header']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_HEADER') ?></label></dt>
+						<dd><?php echo $this->invoice['header']; ?></dd>
+					<?php } ?>
+					<?php if($this->invoice['footer']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_FOOTER') ?></label></dt>
+						<dd><?php echo $this->invoice['footer']; ?></dd>
+					<?php } ?>
+					<?php if($this->invoice['info']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_INFO') ?></label></dt>
+						<dd><?php echo $this->invoice['info']; ?></dd>
+					<?php } ?>
+				</dl>
+			</div>
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('INVOICES_CONTACT_ID') ?></label></dt>
 					<dd>
-						<?php echo $this->invoice['shippingname1']; ?>
-						<?php if($this->invoice['shippingname2']) echo "</br>".$this->invoice['shippingname2']; ?>
-						<?php if($this->invoice['shippingdepartment']) echo "</br>".$this->invoice['shippingdepartment']; ?>
-						<?php if($this->invoice['shippingstreet']) echo "</br>".$this->invoice['shippingstreet']; ?>
-						<?php if($this->invoice['shippingpostcode'] || $this->invoice['shippingcity']) { ?>
-							</br>
-							<?php if($this->invoice['shippingpostcode']) echo $this->invoice['shippingpostcode']; ?>
-							<?php if($this->invoice['shippingcity']) echo $this->invoice['shippingcity']; ?>
-						<?php } ?>
-						<?php if($this->invoice['shippingcountry']) echo "</br>".$this->translate($this->invoice['shippingcountry']); ?>
-						<?php if($this->invoice['shippingphone']) echo "</br>".$this->invoice['shippingphone']; ?>
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->invoice['contactid']; ?></a>
+						<input id="contactid" type="hidden" value="<?php echo $this->invoice['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
 					</dd>
-				<?php } ?>
-			</dl>
+					<dt><label><?php echo $this->translate('INVOICES_BILLING_ADDRESS') ?></label></dt>
+					<dd>
+						<?php echo $this->invoice['billingname1']; ?>
+						<?php if($this->invoice['billingname2']) echo "</br>".$this->invoice['billingname2']; ?>
+						<?php if($this->invoice['billingdepartment']) echo "</br>".$this->invoice['billingdepartment']; ?>
+						<?php if($this->invoice['billingstreet']) echo "</br>".$this->invoice['billingstreet']; ?>
+						<?php if($this->invoice['billingpostcode'] || $this->invoice['billingcity']) { ?>
+							</br>
+							<?php if($this->invoice['billingpostcode']) echo $this->invoice['billingpostcode']; ?>
+							<?php if($this->invoice['billingcity']) echo $this->invoice['billingcity']; ?>
+						<?php } ?>
+						<?php if($this->invoice['billingcountry']) echo "</br>".$this->translate($this->invoice['billingcountry']); ?>
+					</dd>
+					<?php if($this->invoice['shippingname1'] || $this->invoice['shippingname2']) { ?>
+						<dt><label><?php echo $this->translate('INVOICES_SHIPPING_ADDRESS') ?></label></dt>
+						<dd>
+							<?php echo $this->invoice['shippingname1']; ?>
+							<?php if($this->invoice['shippingname2']) echo "</br>".$this->invoice['shippingname2']; ?>
+							<?php if($this->invoice['shippingdepartment']) echo "</br>".$this->invoice['shippingdepartment']; ?>
+							<?php if($this->invoice['shippingstreet']) echo "</br>".$this->invoice['shippingstreet']; ?>
+							<?php if($this->invoice['shippingpostcode'] || $this->invoice['shippingcity']) { ?>
+								</br>
+								<?php if($this->invoice['shippingpostcode']) echo $this->invoice['shippingpostcode']; ?>
+								<?php if($this->invoice['shippingcity']) echo $this->invoice['shippingcity']; ?>
+							<?php } ?>
+							<?php if($this->invoice['shippingcountry']) echo "</br>".$this->translate($this->invoice['shippingcountry']); ?>
+							<?php if($this->invoice['shippingphone']) echo "</br>".$this->invoice['shippingphone']; ?>
+						</dd>
+					<?php } ?>
+				</dl>
+			</div>
 		</div>
-		<div style="clear:left"></div>
-		<h3><?php echo $this->translate('INVOICES_POSITIONS') ?></h3>
-		<div id="positions">
-			<?php
-				$i = 1;
-				$length = count($this->positions);
-			?>
-			<table id="positions">
-			<thead>
-			<tr>
-			<th id="id">ID</th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
-			<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
-			<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
-			</tr>
-			</thead>
-			<tbody>
-			<?php foreach ($this->positions as $position) { ?>
-				<tr id="position<?php echo $position['id']; ?>">
-				<td id="id"><span><?php echo $position['id']; ?></span></td>
-				<td id="sku"><span><?php echo $position['sku']; ?></span></td>
-				<td id="title"><span><?php echo $position['title']; ?></span></td>
-				<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
-				<td id="price"><span><?php echo $position['price']; ?></span></td>
-				<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
-				<td id="uom"><span><?php echo $position['uom']; ?></span></td>
-				</tr>
-				<?php ++$i; ?>
-			<?php } ?>
-			</tbody>
-			</table>
+		<div class="row">
+			<div class="col-sm-12 col-lg-12">
+				<h3><?php echo $this->translate('INVOICES_POSITIONS') ?></h3>
+				<div id="positions">
+					<?php
+						$i = 1;
+						$length = count($this->positions);
+					?>
+					<table id="positions">
+					<thead>
+					<tr>
+					<th id="id">ID</th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
+					<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
+					<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
+					</tr>
+					</thead>
+					<tbody>
+					<?php foreach ($this->positions as $position) { ?>
+						<tr id="position<?php echo $position['id']; ?>">
+						<td id="id"><span><?php echo $position['id']; ?></span></td>
+						<td id="sku"><span><?php echo $position['sku']; ?></span></td>
+						<td id="title"><span><?php echo $position['title']; ?></span></td>
+						<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
+						<td id="price"><span><?php echo $position['price']; ?></span></td>
+						<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
+						<td id="uom"><span><?php echo $position['uom']; ?></span></td>
+						</tr>
+						<?php ++$i; ?>
+					<?php } ?>
+					</tbody>
+					</table>
 
-			<table id="total" align="right">
-				<tbody>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
-						<td align="right"><?php echo $this->invoice['subtotal']; ?></td>
-					</tr>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
-						<td align="right"><?php echo $this->invoice['taxes']; ?></td>
-					</tr>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
-						<td align="right"><?php echo $this->invoice['total']; ?></td>
-					</tr>
-				</tbody>
-			</table>
+					<table id="total" align="right">
+						<tbody>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+								<td align="right"><?php echo $this->invoice['subtotal']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
+								<td align="right"><?php echo $this->invoice['taxes']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+								<td align="right"><?php echo $this->invoice['total']; ?></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
-		<div style="clear:left"></div>
 	</div>
 	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>

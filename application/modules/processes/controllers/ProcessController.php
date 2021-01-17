@@ -440,9 +440,10 @@ class Processes_ProcessController extends Zend_Controller_Action
 	public function viewAction()
 	{
 		$id = $this->_getParam('id', 0);
+		$locale = Zend_Registry::get('Zend_Locale');
+
 		$processDb = new Processes_Model_DbTable_Process();
 		$process = $processDb->getProcess($id);
-
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID($process['customerid']);
 
@@ -452,24 +453,54 @@ class Processes_ProcessController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($process['currency'], 'USE_SYMBOL');
 
-		//Get positions
+		//Convert numbers to the display format
+		$process['taxes'] = $currency->toCurrency($process['taxes']);
+		$process['subtotal'] = $currency->toCurrency($process['subtotal']);
+		$process['total'] = $currency->toCurrency($process['total']);
+
 		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positionsObject = $positionsDb->getPositions($id);
-		$positions = array();
-		foreach($positionsObject as $positionObject) {
-			foreach($positionObject as $key => $value) {
-				$positions[$positionObject->id][$key] = $value;
-			}
-			$positions[$positionObject->id]['price'] =  $currency->toCurrency($positions[$positionObject->id]['price']);
-			$positions[$positionObject->id]['quantity'] = Zend_Locale_Format::toNumber($positions[$positionObject->id]['quantity'],array('precision' => 2,'locale' => Zend_Registry::get('Zend_Locale')));
+		$positions = $positionsDb->getPositions($id);
+		foreach($positions as $position) {
+			$position->price = $currency->toCurrency($position->price);
+			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
 		}
 
 		$toolbar = new Processes_Form_Toolbar();
 		$this->view->toolbar = $toolbar;
 
+		//Get email templates
+		$emailtemplatesDb = new Contacts_Model_DbTable_Emailtemplate();
+		$emailtemplates = $emailtemplatesDb->getEmailtemplates('processes', 'process');
+
+		//Get email
+		$emailDb = new Contacts_Model_DbTable_Email();
+		$contact['email'] = $emailDb->getEmail($contact['id']);
+
+		//Get email form
+		$emailForm = new Contacts_Form_Emailmessage();
+		if(isset($contact['email'][0])) $emailForm->recipient->setValue($contact['email'][0]['email']);
+		if($emailtemplates[0]['cc']) $emailForm->cc->setValue($emailtemplates[0]['cc']);
+		if($emailtemplates[0]['bcc']) $emailForm->bcc->setValue($emailtemplates[0]['bcc']);
+		if($emailtemplates[0]['replyto']) $emailForm->replyto->setValue($emailtemplates[0]['replyto']);
+		$emailForm->subject->setValue($emailtemplates[0]['subject']);
+		$emailForm->body->setValue($emailtemplates[0]['body']);
+
+		//Copy file to attachments
+		$contactUrl = $this->_helper->Directory->getUrl($contact['id']);
+		$documentUrl = $this->_helper->Directory->getUrl($process['id']);
+
+		//Get email attachments
+		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
+		if(isset($data)) $emailattachmentDb->addEmailattachment($data);
+		$attachments = $emailattachmentDb->getEmailattachments($id, 'processes', 'process');
+
 		$this->view->process = $process;
 		$this->view->contact = $contact;
 		$this->view->positions = $positions;
+		$this->view->emailForm = $emailForm;
+		$this->view->contactUrl = $contactUrl;
+		$this->view->documentUrl = $documentUrl;
+		$this->view->attachments = $attachments;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 

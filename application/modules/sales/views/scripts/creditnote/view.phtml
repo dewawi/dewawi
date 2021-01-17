@@ -14,139 +14,143 @@ echo $this->FileManager();
 
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content active">
-		<div id="left">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_ID') ?></label></dt>
-				<dd><?php echo $this->creditnote['creditnoteid']; ?></dd>
-				<?php if($this->creditnote['vatin']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_VATIN') ?></label></dt>
-					<dd><?php echo $this->creditnote['vatin']; ?></dd>
-				<?php } ?>
-				<?php if($this->creditnote['creditnotedate']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_DATE') ?></label></dt>
-					<dd><?php echo $this->creditnote['creditnotedate']; ?></dd>
-				<?php } ?>
-				<?php if($this->creditnote['orderdate']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_ORDER_DATE') ?></label></dt>
-					<dd><?php echo $this->creditnote['orderdate']; ?></dd>
-				<?php } ?>
-				<?php if($this->creditnote['deliverydate']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_DELIVERY_DATE') ?></label></dt>
-					<dd><?php echo $this->creditnote['deliverydate']; ?></dd>
-				<?php } ?>
-				<?php if($this->creditnote['paymentmethod']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_PAYMENT_METHOD') ?></label></dt>
-					<dd><?php echo $this->creditnote['paymentmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->creditnote['shippingmethod']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_SHIPPING_METHOD') ?></label></dt>
-					<dd><?php echo $this->creditnote['shippingmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->creditnote['header']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_HEADER') ?></label></dt>
-					<dd><?php echo $this->creditnote['header']; ?></dd>
-				<?php } ?>
-				<?php if($this->creditnote['footer']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_FOOTER') ?></label></dt>
-					<dd><?php echo $this->creditnote['footer']; ?></dd>
-				<?php } ?>
-				<?php if($this->creditnote['info']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_INFO') ?></label></dt>
-					<dd><?php echo $this->creditnote['info']; ?></dd>
-				<?php } ?>
-			</dl>
-		</div>
-		<div id="right">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('CREDIT_NOTES_CONTACT_ID') ?></label></dt>
-				<dd>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->creditnote['contactid']; ?></a>
-					<input id="contactid" type="hidden" value="<?php echo $this->creditnote['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
-				</dd>
-				<dt><label><?php echo $this->translate('CREDIT_NOTES_BILLING_ADDRESS') ?></label></dt>
-				<dd>
-					<?php echo $this->creditnote['billingname1']; ?>
-					<?php if($this->creditnote['billingname2']) echo "</br>".$this->creditnote['billingname2']; ?>
-					<?php if($this->creditnote['billingdepartment']) echo "</br>".$this->creditnote['billingdepartment']; ?>
-					<?php if($this->creditnote['billingstreet']) echo "</br>".$this->creditnote['billingstreet']; ?>
-					<?php if($this->creditnote['billingpostcode'] || $this->creditnote['billingcity']) { ?>
-						</br>
-						<?php if($this->creditnote['billingpostcode']) echo $this->creditnote['billingpostcode']; ?>
-						<?php if($this->creditnote['billingcity']) echo $this->creditnote['billingcity']; ?>
+		<div class="row">
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_ID') ?></label></dt>
+					<dd><?php echo $this->creditnote['creditnoteid']; ?></dd>
+					<?php if($this->creditnote['vatin']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_VATIN') ?></label></dt>
+						<dd><?php echo $this->creditnote['vatin']; ?></dd>
 					<?php } ?>
-					<?php if($this->creditnote['billingcountry']) echo "</br>".$this->translate($this->creditnote['billingcountry']); ?>
-				</dd>
-				<?php if($this->creditnote['shippingname1'] || $this->creditnote['shippingname2']) { ?>
-					<dt><label><?php echo $this->translate('CREDIT_NOTES_SHIPPING_ADDRESS') ?></label></dt>
+					<?php if($this->creditnote['creditnotedate']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_DATE') ?></label></dt>
+						<dd><?php echo $this->creditnote['creditnotedate']; ?></dd>
+					<?php } ?>
+					<?php if($this->creditnote['orderdate']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_ORDER_DATE') ?></label></dt>
+						<dd><?php echo $this->creditnote['orderdate']; ?></dd>
+					<?php } ?>
+					<?php if($this->creditnote['deliverydate']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_DELIVERY_DATE') ?></label></dt>
+						<dd><?php echo $this->creditnote['deliverydate']; ?></dd>
+					<?php } ?>
+					<?php if($this->creditnote['paymentmethod']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_PAYMENT_METHOD') ?></label></dt>
+						<dd><?php echo $this->creditnote['paymentmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->creditnote['shippingmethod']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_SHIPPING_METHOD') ?></label></dt>
+						<dd><?php echo $this->creditnote['shippingmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->creditnote['header']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_HEADER') ?></label></dt>
+						<dd><?php echo $this->creditnote['header']; ?></dd>
+					<?php } ?>
+					<?php if($this->creditnote['footer']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_FOOTER') ?></label></dt>
+						<dd><?php echo $this->creditnote['footer']; ?></dd>
+					<?php } ?>
+					<?php if($this->creditnote['info']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_INFO') ?></label></dt>
+						<dd><?php echo $this->creditnote['info']; ?></dd>
+					<?php } ?>
+				</dl>
+			</div>
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('CREDIT_NOTES_CONTACT_ID') ?></label></dt>
 					<dd>
-						<?php echo $this->creditnote['shippingname1']; ?>
-						<?php if($this->creditnote['shippingname2']) echo "</br>".$this->creditnote['shippingname2']; ?>
-						<?php if($this->creditnote['shippingdepartment']) echo "</br>".$this->creditnote['shippingdepartment']; ?>
-						<?php if($this->creditnote['shippingstreet']) echo "</br>".$this->creditnote['shippingstreet']; ?>
-						<?php if($this->creditnote['shippingpostcode'] || $this->creditnote['shippingcity']) { ?>
-							</br>
-							<?php if($this->creditnote['shippingpostcode']) echo $this->creditnote['shippingpostcode']; ?>
-							<?php if($this->creditnote['shippingcity']) echo $this->creditnote['shippingcity']; ?>
-						<?php } ?>
-						<?php if($this->creditnote['shippingcountry']) echo "</br>".$this->translate($this->creditnote['shippingcountry']); ?>
-						<?php if($this->creditnote['shippingphone']) echo "</br>".$this->creditnote['shippingphone']; ?>
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->creditnote['contactid']; ?></a>
+						<input id="contactid" type="hidden" value="<?php echo $this->creditnote['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
 					</dd>
-				<?php } ?>
-			</dl>
+					<dt><label><?php echo $this->translate('CREDIT_NOTES_BILLING_ADDRESS') ?></label></dt>
+					<dd>
+						<?php echo $this->creditnote['billingname1']; ?>
+						<?php if($this->creditnote['billingname2']) echo "</br>".$this->creditnote['billingname2']; ?>
+						<?php if($this->creditnote['billingdepartment']) echo "</br>".$this->creditnote['billingdepartment']; ?>
+						<?php if($this->creditnote['billingstreet']) echo "</br>".$this->creditnote['billingstreet']; ?>
+						<?php if($this->creditnote['billingpostcode'] || $this->creditnote['billingcity']) { ?>
+							</br>
+							<?php if($this->creditnote['billingpostcode']) echo $this->creditnote['billingpostcode']; ?>
+							<?php if($this->creditnote['billingcity']) echo $this->creditnote['billingcity']; ?>
+						<?php } ?>
+						<?php if($this->creditnote['billingcountry']) echo "</br>".$this->translate($this->creditnote['billingcountry']); ?>
+					</dd>
+					<?php if($this->creditnote['shippingname1'] || $this->creditnote['shippingname2']) { ?>
+						<dt><label><?php echo $this->translate('CREDIT_NOTES_SHIPPING_ADDRESS') ?></label></dt>
+						<dd>
+							<?php echo $this->creditnote['shippingname1']; ?>
+							<?php if($this->creditnote['shippingname2']) echo "</br>".$this->creditnote['shippingname2']; ?>
+							<?php if($this->creditnote['shippingdepartment']) echo "</br>".$this->creditnote['shippingdepartment']; ?>
+							<?php if($this->creditnote['shippingstreet']) echo "</br>".$this->creditnote['shippingstreet']; ?>
+							<?php if($this->creditnote['shippingpostcode'] || $this->creditnote['shippingcity']) { ?>
+								</br>
+								<?php if($this->creditnote['shippingpostcode']) echo $this->creditnote['shippingpostcode']; ?>
+								<?php if($this->creditnote['shippingcity']) echo $this->creditnote['shippingcity']; ?>
+							<?php } ?>
+							<?php if($this->creditnote['shippingcountry']) echo "</br>".$this->translate($this->creditnote['shippingcountry']); ?>
+							<?php if($this->creditnote['shippingphone']) echo "</br>".$this->creditnote['shippingphone']; ?>
+						</dd>
+					<?php } ?>
+				</dl>
+			</div>
 		</div>
-		<div style="clear:left"></div>
-		<h3><?php echo $this->translate('CREDIT_NOTES_POSITIONS') ?></h3>
-		<div id="positions">
-			<?php
-				$i = 1;
-				$length = count($this->positions);
-			?>
-			<table id="positions">
-			<thead>
-			<tr>
-			<th id="id">ID</th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
-			<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
-			<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
-			</tr>
-			</thead>
-			<tbody>
-			<?php foreach ($this->positions as $position) { ?>
-				<tr id="position<?php echo $position['id']; ?>">
-				<td id="id"><span><?php echo $position['id']; ?></span></td>
-				<td id="sku"><span><?php echo $position['sku']; ?></span></td>
-				<td id="title"><span><?php echo $position['title']; ?></span></td>
-				<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
-				<td id="price"><span><?php echo $position['price']; ?></span></td>
-				<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
-				<td id="uom"><span><?php echo $position['uom']; ?></span></td>
-				</tr>
-				<?php ++$i; ?>
-			<?php } ?>
-			</tbody>
-			</table>
+		<div class="row">
+			<div class="col-sm-12 col-lg-12">
+				<h3><?php echo $this->translate('CREDIT_NOTES_POSITIONS') ?></h3>
+				<div id="positions">
+					<?php
+						$i = 1;
+						$length = count($this->positions);
+					?>
+					<table id="positions">
+					<thead>
+					<tr>
+					<th id="id">ID</th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
+					<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
+					<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
+					</tr>
+					</thead>
+					<tbody>
+					<?php foreach ($this->positions as $position) { ?>
+						<tr id="position<?php echo $position['id']; ?>">
+						<td id="id"><span><?php echo $position['id']; ?></span></td>
+						<td id="sku"><span><?php echo $position['sku']; ?></span></td>
+						<td id="title"><span><?php echo $position['title']; ?></span></td>
+						<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
+						<td id="price"><span><?php echo $position['price']; ?></span></td>
+						<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
+						<td id="uom"><span><?php echo $position['uom']; ?></span></td>
+						</tr>
+						<?php ++$i; ?>
+					<?php } ?>
+					</tbody>
+					</table>
 
-			<table id="total" align="right">
-				<tbody>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
-						<td align="right"><?php echo $this->creditnote['subtotal']; ?></td>
-					</tr>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
-						<td align="right"><?php echo $this->creditnote['taxes']; ?></td>
-					</tr>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
-						<td align="right"><?php echo $this->creditnote['total']; ?></td>
-					</tr>
-				</tbody>
-			</table>
+					<table id="total" align="right">
+						<tbody>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+								<td align="right"><?php echo $this->creditnote['subtotal']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
+								<td align="right"><?php echo $this->creditnote['taxes']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+								<td align="right"><?php echo $this->creditnote['total']; ?></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
-		<div style="clear:left"></div>
 	</div>
 	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>

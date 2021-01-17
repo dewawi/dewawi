@@ -14,139 +14,143 @@ echo $this->FileManager();
 
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content active">
-		<div id="left">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('REMINDERS_REMINDER_ID') ?></label></dt>
-				<dd><?php echo $this->reminder['reminderid']; ?></dd>
-				<?php if($this->reminder['vatin']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_VATIN') ?></label></dt>
-					<dd><?php echo $this->reminder['vatin']; ?></dd>
-				<?php } ?>
-				<?php if($this->reminder['reminderdate']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_REMINDER_DATE') ?></label></dt>
-					<dd><?php echo $this->reminder['reminderdate']; ?></dd>
-				<?php } ?>
-				<?php if($this->reminder['orderdate']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_ORDER_DATE') ?></label></dt>
-					<dd><?php echo $this->reminder['orderdate']; ?></dd>
-				<?php } ?>
-				<?php if($this->reminder['deliverydate']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_DELIVERY_DATE') ?></label></dt>
-					<dd><?php echo $this->reminder['deliverydate']; ?></dd>
-				<?php } ?>
-				<?php if($this->reminder['paymentmethod']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_PAYMENT_METHOD') ?></label></dt>
-					<dd><?php echo $this->reminder['paymentmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->reminder['shippingmethod']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_SHIPPING_METHOD') ?></label></dt>
-					<dd><?php echo $this->reminder['shippingmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->reminder['header']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_HEADER') ?></label></dt>
-					<dd><?php echo $this->reminder['header']; ?></dd>
-				<?php } ?>
-				<?php if($this->reminder['footer']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_FOOTER') ?></label></dt>
-					<dd><?php echo $this->reminder['footer']; ?></dd>
-				<?php } ?>
-				<?php if($this->reminder['info']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_INFO') ?></label></dt>
-					<dd><?php echo $this->reminder['info']; ?></dd>
-				<?php } ?>
-			</dl>
-		</div>
-		<div id="right">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('REMINDERS_CONTACT_ID') ?></label></dt>
-				<dd>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->reminder['contactid']; ?></a>
-					<input id="contactid" type="hidden" value="<?php echo $this->reminder['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
-				</dd>
-				<dt><label><?php echo $this->translate('REMINDERS_BILLING_ADDRESS') ?></label></dt>
-				<dd>
-					<?php echo $this->reminder['billingname1']; ?>
-					<?php if($this->reminder['billingname2']) echo "</br>".$this->reminder['billingname2']; ?>
-					<?php if($this->reminder['billingdepartment']) echo "</br>".$this->reminder['billingdepartment']; ?>
-					<?php if($this->reminder['billingstreet']) echo "</br>".$this->reminder['billingstreet']; ?>
-					<?php if($this->reminder['billingpostcode'] || $this->reminder['billingcity']) { ?>
-						</br>
-						<?php if($this->reminder['billingpostcode']) echo $this->reminder['billingpostcode']; ?>
-						<?php if($this->reminder['billingcity']) echo $this->reminder['billingcity']; ?>
+		<div class="row">
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('REMINDERS_REMINDER_ID') ?></label></dt>
+					<dd><?php echo $this->reminder['reminderid']; ?></dd>
+					<?php if($this->reminder['vatin']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_VATIN') ?></label></dt>
+						<dd><?php echo $this->reminder['vatin']; ?></dd>
 					<?php } ?>
-					<?php if($this->reminder['billingcountry']) echo "</br>".$this->translate($this->reminder['billingcountry']); ?>
-				</dd>
-				<?php if($this->reminder['shippingname1'] || $this->reminder['shippingname2']) { ?>
-					<dt><label><?php echo $this->translate('REMINDERS_SHIPPING_ADDRESS') ?></label></dt>
+					<?php if($this->reminder['reminderdate']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_REMINDER_DATE') ?></label></dt>
+						<dd><?php echo $this->reminder['reminderdate']; ?></dd>
+					<?php } ?>
+					<?php if($this->reminder['orderdate']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_ORDER_DATE') ?></label></dt>
+						<dd><?php echo $this->reminder['orderdate']; ?></dd>
+					<?php } ?>
+					<?php if($this->reminder['deliverydate']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_DELIVERY_DATE') ?></label></dt>
+						<dd><?php echo $this->reminder['deliverydate']; ?></dd>
+					<?php } ?>
+					<?php if($this->reminder['paymentmethod']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_PAYMENT_METHOD') ?></label></dt>
+						<dd><?php echo $this->reminder['paymentmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->reminder['shippingmethod']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_SHIPPING_METHOD') ?></label></dt>
+						<dd><?php echo $this->reminder['shippingmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->reminder['header']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_HEADER') ?></label></dt>
+						<dd><?php echo $this->reminder['header']; ?></dd>
+					<?php } ?>
+					<?php if($this->reminder['footer']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_FOOTER') ?></label></dt>
+						<dd><?php echo $this->reminder['footer']; ?></dd>
+					<?php } ?>
+					<?php if($this->reminder['info']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_INFO') ?></label></dt>
+						<dd><?php echo $this->reminder['info']; ?></dd>
+					<?php } ?>
+				</dl>
+			</div>
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('REMINDERS_CONTACT_ID') ?></label></dt>
 					<dd>
-						<?php echo $this->reminder['shippingname1']; ?>
-						<?php if($this->reminder['shippingname2']) echo "</br>".$this->reminder['shippingname2']; ?>
-						<?php if($this->reminder['shippingdepartment']) echo "</br>".$this->reminder['shippingdepartment']; ?>
-						<?php if($this->reminder['shippingstreet']) echo "</br>".$this->reminder['shippingstreet']; ?>
-						<?php if($this->reminder['shippingpostcode'] || $this->reminder['shippingcity']) { ?>
-							</br>
-							<?php if($this->reminder['shippingpostcode']) echo $this->reminder['shippingpostcode']; ?>
-							<?php if($this->reminder['shippingcity']) echo $this->reminder['shippingcity']; ?>
-						<?php } ?>
-						<?php if($this->reminder['shippingcountry']) echo "</br>".$this->translate($this->reminder['shippingcountry']); ?>
-						<?php if($this->reminder['shippingphone']) echo "</br>".$this->reminder['shippingphone']; ?>
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->reminder['contactid']; ?></a>
+						<input id="contactid" type="hidden" value="<?php echo $this->reminder['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
 					</dd>
-				<?php } ?>
-			</dl>
+					<dt><label><?php echo $this->translate('REMINDERS_BILLING_ADDRESS') ?></label></dt>
+					<dd>
+						<?php echo $this->reminder['billingname1']; ?>
+						<?php if($this->reminder['billingname2']) echo "</br>".$this->reminder['billingname2']; ?>
+						<?php if($this->reminder['billingdepartment']) echo "</br>".$this->reminder['billingdepartment']; ?>
+						<?php if($this->reminder['billingstreet']) echo "</br>".$this->reminder['billingstreet']; ?>
+						<?php if($this->reminder['billingpostcode'] || $this->reminder['billingcity']) { ?>
+							</br>
+							<?php if($this->reminder['billingpostcode']) echo $this->reminder['billingpostcode']; ?>
+							<?php if($this->reminder['billingcity']) echo $this->reminder['billingcity']; ?>
+						<?php } ?>
+						<?php if($this->reminder['billingcountry']) echo "</br>".$this->translate($this->reminder['billingcountry']); ?>
+					</dd>
+					<?php if($this->reminder['shippingname1'] || $this->reminder['shippingname2']) { ?>
+						<dt><label><?php echo $this->translate('REMINDERS_SHIPPING_ADDRESS') ?></label></dt>
+						<dd>
+							<?php echo $this->reminder['shippingname1']; ?>
+							<?php if($this->reminder['shippingname2']) echo "</br>".$this->reminder['shippingname2']; ?>
+							<?php if($this->reminder['shippingdepartment']) echo "</br>".$this->reminder['shippingdepartment']; ?>
+							<?php if($this->reminder['shippingstreet']) echo "</br>".$this->reminder['shippingstreet']; ?>
+							<?php if($this->reminder['shippingpostcode'] || $this->reminder['shippingcity']) { ?>
+								</br>
+								<?php if($this->reminder['shippingpostcode']) echo $this->reminder['shippingpostcode']; ?>
+								<?php if($this->reminder['shippingcity']) echo $this->reminder['shippingcity']; ?>
+							<?php } ?>
+							<?php if($this->reminder['shippingcountry']) echo "</br>".$this->translate($this->reminder['shippingcountry']); ?>
+							<?php if($this->reminder['shippingphone']) echo "</br>".$this->reminder['shippingphone']; ?>
+						</dd>
+					<?php } ?>
+				</dl>
+			</div>
 		</div>
-		<div style="clear:left"></div>
-		<h3><?php echo $this->translate('REMINDERS_POSITIONS') ?></h3>
-		<div id="positions">
-			<?php
-				$i = 1;
-				$length = count($this->positions);
-			?>
-			<table id="positions">
-			<thead>
-			<tr>
-			<th id="id">ID</th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
-			<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
-			<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
-			</tr>
-			</thead>
-			<tbody>
-			<?php foreach ($this->positions as $position) { ?>
-				<tr id="position<?php echo $position['id']; ?>">
-				<td id="id"><span><?php echo $position['id']; ?></span></td>
-				<td id="sku"><span><?php echo $position['sku']; ?></span></td>
-				<td id="title"><span><?php echo $position['title']; ?></span></td>
-				<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
-				<td id="price"><span><?php echo $position['price']; ?></span></td>
-				<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
-				<td id="uom"><span><?php echo $position['uom']; ?></span></td>
-				</tr>
-				<?php ++$i; ?>
-			<?php } ?>
-			</tbody>
-			</table>
+		<div class="row">
+			<div class="col-sm-12 col-lg-12">
+				<h3><?php echo $this->translate('REMINDERS_POSITIONS') ?></h3>
+				<div id="positions">
+					<?php
+						$i = 1;
+						$length = count($this->positions);
+					?>
+					<table id="positions">
+					<thead>
+					<tr>
+					<th id="id">ID</th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
+					<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
+					<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
+					</tr>
+					</thead>
+					<tbody>
+					<?php foreach ($this->positions as $position) { ?>
+						<tr id="position<?php echo $position['id']; ?>">
+						<td id="id"><span><?php echo $position['id']; ?></span></td>
+						<td id="sku"><span><?php echo $position['sku']; ?></span></td>
+						<td id="title"><span><?php echo $position['title']; ?></span></td>
+						<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
+						<td id="price"><span><?php echo $position['price']; ?></span></td>
+						<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
+						<td id="uom"><span><?php echo $position['uom']; ?></span></td>
+						</tr>
+						<?php ++$i; ?>
+					<?php } ?>
+					</tbody>
+					</table>
 
-			<table id="total" align="right">
-				<tbody>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
-						<td align="right"><?php echo $this->reminder['subtotal']; ?></td>
-					</tr>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
-						<td align="right"><?php echo $this->reminder['taxes']; ?></td>
-					</tr>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
-						<td align="right"><?php echo $this->reminder['total']; ?></td>
-					</tr>
-				</tbody>
-			</table>
+					<table id="total" align="right">
+						<tbody>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+								<td align="right"><?php echo $this->reminder['subtotal']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
+								<td align="right"><?php echo $this->reminder['taxes']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+								<td align="right"><?php echo $this->reminder['total']; ?></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
-		<div style="clear:left"></div>
 	</div>
 	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>

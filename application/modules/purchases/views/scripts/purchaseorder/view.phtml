@@ -14,139 +14,143 @@ echo $this->FileManager();
 
 <div class="tab_container">
 	<div id="tabOverview" class="tab_content active">
-		<div id="left">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('PURCHASE_ORDERS_PURCHASE_ORDER_ID') ?></label></dt>
-				<dd><?php echo $this->purchaseorder['purchaseorderid']; ?></dd>
-				<?php if($this->purchaseorder['vatin']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_VATIN') ?></label></dt>
-					<dd><?php echo $this->purchaseorder['vatin']; ?></dd>
-				<?php } ?>
-				<?php if($this->purchaseorder['purchaseorderdate']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_PURCHASE_ORDER_DATE') ?></label></dt>
-					<dd><?php echo $this->purchaseorder['purchaseorderdate']; ?></dd>
-				<?php } ?>
-				<?php if($this->purchaseorder['orderdate']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_ORDER_DATE') ?></label></dt>
-					<dd><?php echo $this->purchaseorder['orderdate']; ?></dd>
-				<?php } ?>
-				<?php if($this->purchaseorder['deliverydate']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_DELIVERY_DATE') ?></label></dt>
-					<dd><?php echo $this->purchaseorder['deliverydate']; ?></dd>
-				<?php } ?>
-				<?php if($this->purchaseorder['paymentmethod']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_PAYMENT_METHOD') ?></label></dt>
-					<dd><?php echo $this->purchaseorder['paymentmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->purchaseorder['shippingmethod']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_SHIPPING_METHOD') ?></label></dt>
-					<dd><?php echo $this->purchaseorder['shippingmethod']; ?></dd>
-				<?php } ?>
-				<?php if($this->purchaseorder['header']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_HEADER') ?></label></dt>
-					<dd><?php echo $this->purchaseorder['header']; ?></dd>
-				<?php } ?>
-				<?php if($this->purchaseorder['footer']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_FOOTER') ?></label></dt>
-					<dd><?php echo $this->invoice['footer']; ?></dd>
-				<?php } ?>
-				<?php if($this->purchaseorder['info']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_INFO') ?></label></dt>
-					<dd><?php echo $this->purchaseorder['info']; ?></dd>
-				<?php } ?>
-			</dl>
-		</div>
-		<div id="right">
-			<dl class="view">
-				<dt><label><?php echo $this->translate('PURCHASE_ORDERS_CONTACT_ID') ?></label></dt>
-				<dd>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->purchaseorder['contactid']; ?></a>
-					<input id="contactid" type="hidden" value="<?php echo $this->purchaseorder['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
-				</dd>
-				<dt><label><?php echo $this->translate('PURCHASE_ORDERS_BILLING_ADDRESS') ?></label></dt>
-				<dd>
-					<?php echo $this->purchaseorder['billingname1']; ?>
-					<?php if($this->purchaseorder['billingname2']) echo "</br>".$this->purchaseorder['billingname2']; ?>
-					<?php if($this->purchaseorder['billingdepartment']) echo "</br>".$this->purchaseorder['billingdepartment']; ?>
-					<?php if($this->purchaseorder['billingstreet']) echo "</br>".$this->purchaseorder['billingstreet']; ?>
-					<?php if($this->purchaseorder['billingpostcode'] || $this->purchaseorder['billingcity']) { ?>
-						</br>
-						<?php if($this->purchaseorder['billingpostcode']) echo $this->purchaseorder['billingpostcode']; ?>
-						<?php if($this->purchaseorder['billingcity']) echo $this->purchaseorder['billingcity']; ?>
+		<div class="row">
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_PURCHASE_ORDER_ID') ?></label></dt>
+					<dd><?php echo $this->purchaseorder['purchaseorderid']; ?></dd>
+					<?php if($this->purchaseorder['vatin']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_VATIN') ?></label></dt>
+						<dd><?php echo $this->purchaseorder['vatin']; ?></dd>
 					<?php } ?>
-					<?php if($this->purchaseorder['billingcountry']) echo "</br>".$this->translate($this->purchaseorder['billingcountry']); ?>
-				</dd>
-				<?php if($this->purchaseorder['shippingname1'] || $this->purchaseorder['shippingname2']) { ?>
-					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_SHIPPING_ADDRESS') ?></label></dt>
+					<?php if($this->purchaseorder['purchaseorderdate']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_PURCHASE_ORDER_DATE') ?></label></dt>
+						<dd><?php echo $this->purchaseorder['purchaseorderdate']; ?></dd>
+					<?php } ?>
+					<?php if($this->purchaseorder['orderdate']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_ORDER_DATE') ?></label></dt>
+						<dd><?php echo $this->purchaseorder['orderdate']; ?></dd>
+					<?php } ?>
+					<?php if($this->purchaseorder['deliverydate']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_DELIVERY_DATE') ?></label></dt>
+						<dd><?php echo $this->purchaseorder['deliverydate']; ?></dd>
+					<?php } ?>
+					<?php if($this->purchaseorder['paymentmethod']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_PAYMENT_METHOD') ?></label></dt>
+						<dd><?php echo $this->purchaseorder['paymentmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->purchaseorder['shippingmethod']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_SHIPPING_METHOD') ?></label></dt>
+						<dd><?php echo $this->purchaseorder['shippingmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->purchaseorder['header']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_HEADER') ?></label></dt>
+						<dd><?php echo $this->purchaseorder['header']; ?></dd>
+					<?php } ?>
+					<?php if($this->purchaseorder['footer']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_FOOTER') ?></label></dt>
+						<dd><?php echo $this->invoice['footer']; ?></dd>
+					<?php } ?>
+					<?php if($this->purchaseorder['info']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_INFO') ?></label></dt>
+						<dd><?php echo $this->purchaseorder['info']; ?></dd>
+					<?php } ?>
+				</dl>
+			</div>
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_CONTACT_ID') ?></label></dt>
 					<dd>
-						<?php echo $this->purchaseorder['shippingname1']; ?>
-						<?php if($this->purchaseorder['shippingname2']) echo "</br>".$this->purchaseorder['shippingname2']; ?>
-						<?php if($this->purchaseorder['shippingdepartment']) echo "</br>".$this->purchaseorder['shippingdepartment']; ?>
-						<?php if($this->purchaseorder['shippingstreet']) echo "</br>".$this->purchaseorder['shippingstreet']; ?>
-						<?php if($this->purchaseorder['shippingpostcode'] || $this->purchaseorder['shippingcity']) { ?>
-							</br>
-							<?php if($this->purchaseorder['shippingpostcode']) echo $this->purchaseorder['shippingpostcode']; ?>
-							<?php if($this->purchaseorder['shippingcity']) echo $this->purchaseorder['shippingcity']; ?>
-						<?php } ?>
-						<?php if($this->purchaseorder['shippingcountry']) echo "</br>".$this->translate($this->purchaseorder['shippingcountry']); ?>
-						<?php if($this->purchaseorder['shippingphone']) echo "</br>".$this->purchaseorder['shippingphone']; ?>
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->purchaseorder['contactid']; ?></a>
+						<input id="contactid" type="hidden" value="<?php echo $this->purchaseorder['contactid']; ?>" size="5" readonly="readonly" name="contactid"/>
 					</dd>
-				<?php } ?>
-			</dl>
+					<dt><label><?php echo $this->translate('PURCHASE_ORDERS_BILLING_ADDRESS') ?></label></dt>
+					<dd>
+						<?php echo $this->purchaseorder['billingname1']; ?>
+						<?php if($this->purchaseorder['billingname2']) echo "</br>".$this->purchaseorder['billingname2']; ?>
+						<?php if($this->purchaseorder['billingdepartment']) echo "</br>".$this->purchaseorder['billingdepartment']; ?>
+						<?php if($this->purchaseorder['billingstreet']) echo "</br>".$this->purchaseorder['billingstreet']; ?>
+						<?php if($this->purchaseorder['billingpostcode'] || $this->purchaseorder['billingcity']) { ?>
+							</br>
+							<?php if($this->purchaseorder['billingpostcode']) echo $this->purchaseorder['billingpostcode']; ?>
+							<?php if($this->purchaseorder['billingcity']) echo $this->purchaseorder['billingcity']; ?>
+						<?php } ?>
+						<?php if($this->purchaseorder['billingcountry']) echo "</br>".$this->translate($this->purchaseorder['billingcountry']); ?>
+					</dd>
+					<?php if($this->purchaseorder['shippingname1'] || $this->purchaseorder['shippingname2']) { ?>
+						<dt><label><?php echo $this->translate('PURCHASE_ORDERS_SHIPPING_ADDRESS') ?></label></dt>
+						<dd>
+							<?php echo $this->purchaseorder['shippingname1']; ?>
+							<?php if($this->purchaseorder['shippingname2']) echo "</br>".$this->purchaseorder['shippingname2']; ?>
+							<?php if($this->purchaseorder['shippingdepartment']) echo "</br>".$this->purchaseorder['shippingdepartment']; ?>
+							<?php if($this->purchaseorder['shippingstreet']) echo "</br>".$this->purchaseorder['shippingstreet']; ?>
+							<?php if($this->purchaseorder['shippingpostcode'] || $this->purchaseorder['shippingcity']) { ?>
+								</br>
+								<?php if($this->purchaseorder['shippingpostcode']) echo $this->purchaseorder['shippingpostcode']; ?>
+								<?php if($this->purchaseorder['shippingcity']) echo $this->purchaseorder['shippingcity']; ?>
+							<?php } ?>
+							<?php if($this->purchaseorder['shippingcountry']) echo "</br>".$this->translate($this->purchaseorder['shippingcountry']); ?>
+							<?php if($this->purchaseorder['shippingphone']) echo "</br>".$this->purchaseorder['shippingphone']; ?>
+						</dd>
+					<?php } ?>
+				</dl>
+			</div>
 		</div>
-		<div style="clear:left"></div>
-		<h3><?php echo $this->translate('PURCHASE_ORDERS_POSITIONS') ?></h3>
-		<div id="positions">
-			<?php
-				$i = 1;
-				$length = count($this->positions);
-			?>
-			<table id="positions">
-			<thead>
-			<tr>
-			<th id="id">ID</th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
-			<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
-			<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
-			<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
-			<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
-			</tr>
-			</thead>
-			<tbody>
-			<?php foreach ($this->positions as $position) { ?>
-				<tr id="position<?php echo $position['id']; ?>">
-				<td id="id"><span><?php echo $position['id']; ?></span></td>
-				<td id="sku"><span><?php echo $position['sku']; ?></span></td>
-				<td id="title"><span><?php echo $position['title']; ?></span></td>
-				<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
-				<td id="price"><span><?php echo $position['price']; ?></span></td>
-				<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
-				<td id="uom"><span><?php echo $position['uom']; ?></span></td>
-				</tr>
-				<?php ++$i; ?>
-			<?php } ?>
-			</tbody>
-			</table>
+		<div class="row">
+			<div class="col-sm-12 col-lg-12">
+				<h3><?php echo $this->translate('PURCHASE_ORDERS_POSITIONS') ?></h3>
+				<div id="positions">
+					<?php
+						$i = 1;
+						$length = count($this->positions);
+					?>
+					<table id="positions">
+					<thead>
+					<tr>
+					<th id="id">ID</th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
+					<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
+					<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
+					</tr>
+					</thead>
+					<tbody>
+					<?php foreach ($this->positions as $position) { ?>
+						<tr id="position<?php echo $position['id']; ?>">
+						<td id="id"><span><?php echo $position['id']; ?></span></td>
+						<td id="sku"><span><?php echo $position['sku']; ?></span></td>
+						<td id="title"><span><?php echo $position['title']; ?></span></td>
+						<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
+						<td id="price"><span><?php echo $position['price']; ?></span></td>
+						<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
+						<td id="uom"><span><?php echo $position['uom']; ?></span></td>
+						</tr>
+						<?php ++$i; ?>
+					<?php } ?>
+					</tbody>
+					</table>
 
-			<table id="total" align="right">
-				<tbody>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
-						<td align="right"><?php echo $this->purchaseorder['subtotal']; ?></td>
-					</tr>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
-						<td align="right"><?php echo $this->purchaseorder['taxes']; ?></td>
-					</tr>
-					<tr>
-						<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
-						<td align="right"><?php echo $this->purchaseorder['total']; ?></td>
-					</tr>
-				</tbody>
-			</table>
+					<table id="total" align="right">
+						<tbody>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+								<td align="right"><?php echo $this->purchaseorder['subtotal']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
+								<td align="right"><?php echo $this->purchaseorder['taxes']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+								<td align="right"><?php echo $this->purchaseorder['total']; ?></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
-		<div style="clear:left"></div>
 	</div>
 	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
