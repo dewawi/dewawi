@@ -13,27 +13,27 @@ class Processes_Form_Process extends Zend_Form
 
 		$form['salesorderid'] = new Zend_Form_Element_Text('salesorderid');
 		$form['salesorderid']->setLabel('PROCESSES_SALES_ORDER_ID')
-			->addFilter('Int')
+			//->addFilter('Int')
 			->setAttrib('size', '5');
 
 		$form['invoiceid'] = new Zend_Form_Element_Text('invoiceid');
 		$form['invoiceid']->setLabel('PROCESSES_INVOICE_ID')
-			->addFilter('Int')
+			//->addFilter('Int')
 			->setAttrib('size', '5');
 
 		$form['prepaymentinvoiceid'] = new Zend_Form_Element_Text('prepaymentinvoiceid');
 		$form['prepaymentinvoiceid']->setLabel('PROCESSES_PREPAYMENT_INVOICE_ID')
-			->addFilter('Int')
+			//->addFilter('Int')
 			->setAttrib('size', '5');
 
 		$form['deliveryorderid'] = new Zend_Form_Element_Text('deliveryorderid');
 		$form['deliveryorderid']->setLabel('PROCESSES_DELIVERY_ORDER_ID')
-			->addFilter('Int')
+			//->addFilter('Int')
 			->setAttrib('size', '5');
 
 		$form['creditnoteid'] = new Zend_Form_Element_Text('creditnoteid');
 		$form['creditnoteid']->setLabel('PROCESSES_CREDIT_NOTE_ID')
-			->addFilter('Int')
+			//->addFilter('Int')
 			->setAttrib('size', '5');
 
 		$form['purchaseorderid'] = new Zend_Form_Element_Text('purchaseorderid');
@@ -324,8 +324,16 @@ class Processes_Form_Process extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
+		$form['currency'] = new Zend_Form_Element_Select('currency');
+		$form['currency']->setLabel('QUOTES_CURRENCY')
+			->setRequired(true)
+			->addValidator('NotEmpty');
+
+		$form['taxfree'] = new Zend_Form_Element_Checkbox('taxfree');
+		$form['taxfree']->setLabel('CONTACTS_TAX_FREE');
+
 		$form['customerinfo'] = new Zend_Form_Element_Textarea('customerinfo');
-		$form['customerinfo']->setLabel('QUOTES_CONTACT_INFO')
+		$form['customerinfo']->setLabel('PROCESSES_CONTACT_INFO')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('cols', '62')

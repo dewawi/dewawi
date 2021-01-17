@@ -569,10 +569,6 @@ form dd {
 	margin-right: 2px;
 	display: inline-block;
 }
-form#process dd {
-	width: 100%;
-	display: block;
-}
 form dd input[type="text"] {
 	max-width: 100%;
 	padding: 5px 10px;
@@ -854,6 +850,10 @@ span.editable {
 }
 iframe {
 	border: none;
+}
+.editpositionsseparately {
+	display: block;
+	height: 50px;
 }
 .editpositionsseparately dt {
 	width: auto;
@@ -1177,6 +1177,9 @@ cursor: default;
 }
 
 /* Processes */
+#process table#details > tbody > tr > td:first-child {
+	display: none;
+}
 .deliverydate {
 font-weight: bold;
 }
@@ -1195,9 +1198,6 @@ font-weight: bold;
 .deliveryIsWaiting .deliverystatus span,
 .supplierNotOrdered .supplierorderstatus span,
 .waitingForPayment .paymentstatus span {
-	padding: 3px;
-	margin-right: 5px;
-	margin-top: 3px;
 	background-color: #ffabab!important;
 }
 .positions .partialDelivered,
@@ -1209,9 +1209,6 @@ font-weight: bold;
 .partialDelivered .deliverystatus span,
 .supplierOrdered .supplierorderstatus span,
 .prepaymentReceived .paymentstatus span {
-	padding: 3px;
-	margin-right: 5px;
-	margin-top: 3px;
 	background-color: #fffaaa!important;
 }
 .positions .deliveryCompleted,
@@ -1223,11 +1220,8 @@ font-weight: bold;
 .deliveryCompleted .deliverystatus span,
 .supplierPayed .supplierorderstatus span,
 .paymentCompleted .paymentstatus span {
-	padding: 3px;
-	margin-right: 5px;
-	margin-top: 3px;
 	background-color: #ccffcc!important;
 }
 .disabled {
-	display: none;
+	display: none!important;
 }

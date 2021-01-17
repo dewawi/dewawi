@@ -42,13 +42,13 @@ $(document).ready(function(){
 	$('.editpositionsseparately').on('change', '#editpositionsseparately', function() {
 		if($("#editpositionsseparately").is(':checked')) {
 			$("#positions").removeClass("disabled");
-			$("#details").addClass("disabled");
-			$("#details").find('input, select, textarea').attr("disabled", "disabled");
+			$("#tabPositions .row").addClass("disabled");
+			$("#tabPositions .row").find('input, select, textarea').attr("disabled", "disabled");
 			$("#positions").find('input, select, textarea').removeAttr('disabled');
 		} else {
-			$("#details").removeClass("disabled");
+			$("#tabPositions .row").removeClass("disabled");
 			$("#positions").addClass("disabled");
-			$("#details").find('input, select, textarea').removeAttr('disabled');
+			$("#tabPositions .row").find('input, select, textarea').removeAttr('disabled');
 			$("#positions").find('input, select, textarea').attr("disabled", "disabled");
 		}
 	});

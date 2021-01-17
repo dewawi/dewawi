@@ -202,7 +202,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 				if(isset($form->$element) && $form->isValidPartial($data)) {
 					$data['contactperson'] = $this->_user['name'];
 					if(isset($data['currency'])) {
-						$positionsDb = new Sales_Model_DbTable_Processpos();
+						$positionsDb = new Processes_Model_DbTable_Processpos();
 						$positions = $positionsDb->getPositions($id);
 						foreach($positions as $position) {
 							$positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
@@ -215,17 +215,40 @@ class Processes_ProcessController extends Zend_Controller_Action
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
 					}
+					if(isset($data['salesorderid']) && !$data['salesorderid']) $data['salesorderid'] = 0;
+					if(isset($data['invoiceid']) && !$data['invoiceid']) $data['invoiceid'] = 0;
+					if(isset($data['prepaymentinvoiceid']) && !$data['prepaymentinvoiceid']) $data['prepaymentinvoiceid'] = 0;
+					if(isset($data['deliveryorderid']) && !$data['deliveryorderid']) $data['deliveryorderid'] = 0;
+					if(isset($data['creditnoteid']) && !$data['creditnoteid']) $data['creditnoteid'] = 0;
+					if(isset($data['purchaseorderid']) && !$data['purchaseorderid']) $data['purchaseorderid'] = 0;
+					if(isset($data['supplierid']) && !$data['supplierid']) $data['supplierid'] = 0;
 					if(isset($data['total'])) {
 						$locale = Zend_Registry::get('Zend_Locale');
 						$data['total'] =  Zend_Locale_Format::getNumber($data['total'], array('precision' => 2,'locale' => $locale));
 					}
 					if(isset($data['supplierinvoicetotal'])) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['supplierinvoicetotal'] =  Zend_Locale_Format::getNumber($data['supplierinvoicetotal'], array('precision' => 2,'locale' => $locale));
+						if($data['supplierinvoicetotal']) {
+							$locale = Zend_Registry::get('Zend_Locale');
+							$data['supplierinvoicetotal'] =  Zend_Locale_Format::getNumber($data['supplierinvoicetotal'], array('precision' => 2,'locale' => $locale));
+						} else {
+							$data['supplierinvoicetotal'] = NULL;
+						}
 					}
 					if(isset($data['prepaymenttotal'])) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['prepaymenttotal'] =  Zend_Locale_Format::getNumber($data['prepaymenttotal'], array('precision' => 2,'locale' => $locale));
+						if($data['prepaymenttotal']) {
+							$locale = Zend_Registry::get('Zend_Locale');
+							$data['prepaymenttotal'] =  Zend_Locale_Format::getNumber($data['prepaymenttotal'], array('precision' => 2,'locale' => $locale));
+						} else {
+							$data['prepaymenttotal'] = NULL;
+						}
+					}
+					if(isset($data['creditnotetotal'])) {
+						if($data['creditnotetotal']) {
+							$locale = Zend_Registry::get('Zend_Locale');
+							$data['creditnotetotal'] =  Zend_Locale_Format::getNumber($data['creditnotetotal'], array('precision' => 2,'locale' => $locale));
+						} else {
+							$data['creditnotetotal'] = NULL;
+						}
 					}
 					if(isset($data['paymentdate'])) {
 						if(Zend_Date::isDate($data['paymentdate'])) {
@@ -341,11 +364,11 @@ class Processes_ProcessController extends Zend_Controller_Action
 						$form->customerinfo->setAttrib('readonly', null);
 					}
 					//Get currency
-					$currency = $this->_helper->Currency->getCurrency($data['currency'], 'USE_SYMBOL');
+					$currency = $this->_helper->Currency->getCurrency($data['currency']);
 					$data['total'] = $currency->toCurrency($data['total']);
-					$data['prepaymenttotal'] = $currency->toCurrency($data['prepaymenttotal']);
-					$data['creditnotetotal'] = $currency->toCurrency($data['creditnotetotal']);
-					$data['supplierinvoicetotal'] = $currency->toCurrency($data['supplierinvoicetotal']);
+					if($data['prepaymenttotal']) $data['prepaymenttotal'] = $currency->toCurrency($data['prepaymenttotal']);
+					if($data['creditnotetotal']) $data['creditnotetotal'] = $currency->toCurrency($data['creditnotetotal']);
+					if($data['supplierinvoicetotal']) $data['supplierinvoicetotal'] = $currency->toCurrency($data['supplierinvoicetotal']);
 					if($process['editpositionsseparately']) {
 						$form->deliverystatus->setAttrib('disabled', 'disabled');
 						$form->shippingmethod->setAttrib('disabled', 'disabled');
@@ -366,6 +389,13 @@ class Processes_ProcessController extends Zend_Controller_Action
 						$form->supplierinvoicedate->setAttrib('disabled', 'disabled');
 						$form->supplierpaymentdate->setAttrib('disabled', 'disabled');
 					}
+					if($data['salesorderid'] == 0) $data['salesorderid'] = NULL;
+					if($data['invoiceid'] == 0) $data['invoiceid'] = NULL;
+					if($data['prepaymentinvoiceid'] == 0) $data['prepaymentinvoiceid'] = NULL;
+					if($data['deliveryorderid'] == 0) $data['deliveryorderid'] = NULL;
+					if($data['creditnoteid'] == 0) $data['creditnoteid'] = NULL;
+					if($data['purchaseorderid'] == 0) $data['purchaseorderid'] = NULL;
+					if($data['supplierid'] == 0) $data['supplierid'] = NULL;
 					//Convert dates to the display format
 					$paymentdate = new Zend_Date($data['paymentdate']);
 					if($data['paymentdate']) $data['paymentdate'] = $paymentdate->get('dd.MM.yyyy');

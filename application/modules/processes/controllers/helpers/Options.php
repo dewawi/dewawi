@@ -51,12 +51,18 @@ class Processes_Controller_Action_Helper_Options extends Zend_Controller_Action_
 		$shippingmethods = $shippingmethodDb->getShippingmethods();
 		$options['shippingmethods'] = $shippingmethods;
 
+		//Get currencies
+		$currencyDb = new Application_Model_DbTable_Currency();
+		$currencies = $currencyDb->getCurrencies();
+		$options['currencies'] = $currencies;
+
 		//Set form options
 		$MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
 		if(isset($form->country) && isset($options['countries'])) $form->country->addMultiOptions($options['countries']);
 		if(isset($form->paymentmethod) && isset($options['paymentmethods'])) $form->paymentmethod->addMultiOptions($options['paymentmethods']);
 		if(isset($form->shippingmethod) && isset($options['shippingmethods'])) $form->shippingmethod->addMultiOptions($options['shippingmethods']);
+		if(isset($form->currency) && isset($options['currencies'])) $form->currency->addMultiOptions($options['currencies']);
 
 		return $options;
 	}
