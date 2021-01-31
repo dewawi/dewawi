@@ -1,86 +1,92 @@
 <?php
-$this->title = $this->translate('ADMIN');
+$this->title = $this->translate('ADMIN_CURRENCIES');
 $this->headTitle($this->title);
 echo $this->Messages();
-echo $this->AdminMenu();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th width="2%">
-				<?php if($this->user['admin']) : ?>
-					<input type="checkbox" class="checkall" name="checkall"/>
-				<?php endif; ?>
-			</th>
-			<th class="id" width="5%">
-				<?php echo $this->translate('ADMIN_ID'); ?>
-			</th>
-			<th class="code" width="7%">
-				<?php echo $this->translate('ADMIN_CURRENCY_CODE'); ?>
-			</th>
-			<th class="name" width="10%">
-				<?php echo $this->translate('ADMIN_NAME'); ?>
-			</th>
-			<th class="symbol" width="10%">
-				<?php echo $this->translate('ADMIN_CURRENCY_SYMBOL'); ?>
-			</th>
-			<?php if($this->user['admin']) : ?>
-				<th width="8%"></th>
-			<?php endif; ?>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->currencies as $currency) : ?>
-			<tr>
-				<td>
+<div class="row">
+	<div class="hidden-sm hidden-md col-lg-2">
+		<?php echo $this->AdminMenu(); ?>
+	</div>
+	<div class="col-sm-12 col-lg-10">
+		<table id="data">
+			<thead>
+				<tr>
+					<th width="2%">
+						<?php if($this->user['admin']) : ?>
+							<input type="checkbox" class="checkall" name="checkall"/>
+						<?php endif; ?>
+					</th>
+					<th class="id" width="5%">
+						<?php echo $this->translate('ADMIN_ID'); ?>
+					</th>
+					<th class="code" width="7%">
+						<?php echo $this->translate('ADMIN_CURRENCY_CODE'); ?>
+					</th>
+					<th class="name" width="10%">
+						<?php echo $this->translate('ADMIN_NAME'); ?>
+					</th>
+					<th class="symbol" width="10%">
+						<?php echo $this->translate('ADMIN_CURRENCY_SYMBOL'); ?>
+					</th>
 					<?php if($this->user['admin']) : ?>
-						<input class="id" type="checkbox" value="<?php echo $currency->id ?>" name="id"/>
-					<?php else : ?>
-						<input class="id" type="hidden" value="<?php echo $currency->id ?>" name="id"/>
+						<th width="8%"></th>
 					<?php endif; ?>
-				</td>
-				<td class="id">
-					<?php echo $this->escape($currency->id); ?>
-				</td>
-				<td class="name">
-					<span class="editable" data-name="code"><?php echo $this->escape($currency->code); ?></span>
-				</td>
-				<td class="name">
-					<span class="editable" data-name="name"><?php echo $this->escape($currency->name); ?></span>
-				</td>
-				<td class="name">
-					<span class="editable" data-name="symbol"><?php echo $this->escape($currency->symbol); ?></span>
-				</td>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->currencies as $currency) : ?>
+					<tr>
+						<td>
+							<?php if($this->user['admin']) : ?>
+								<input class="id" type="checkbox" value="<?php echo $currency->id ?>" name="id"/>
+							<?php else : ?>
+								<input class="id" type="hidden" value="<?php echo $currency->id ?>" name="id"/>
+							<?php endif; ?>
+						</td>
+						<td class="id">
+							<?php echo $this->escape($currency->id); ?>
+						</td>
+						<td class="name">
+							<span class="editable" data-name="code"><?php echo $this->escape($currency->code); ?></span>
+						</td>
+						<td class="name">
+							<span class="editable" data-name="name"><?php echo $this->escape($currency->name); ?></span>
+						</td>
+						<td class="name">
+							<span class="editable" data-name="symbol"><?php echo $this->escape($currency->symbol); ?></span>
+						</td>
+						<?php if($this->user['admin']) : ?>
+							<td class="buttons">
+								<?php echo $this->Button('copy'); ?>
+								<?php echo $this->Button('delete'); ?>
+							</td>
+						<?php endif; ?>
+					</tr>
+				<?php endforeach; ?>
 				<?php if($this->user['admin']) : ?>
-					<td class="buttons">
-						<?php echo $this->Button('copy'); ?>
-						<?php echo $this->Button('delete'); ?>
-					</td>
+					<tr class="add">
+						<td>
+						</td>
+						<td>
+							<?php echo $this->translate('TOOLBAR_NEW'); ?>
+						</td>
+						<td>
+							<?php echo $this->form->code; ?>
+						</td>
+						<td>
+							<?php echo $this->form->name; ?>
+						</td>
+						<td>
+							<?php echo $this->form->symbol; ?>
+						</td>
+						<td class="buttons">
+							<?php echo $this->toolbar->save; ?>
+							<?php //echo $this->toolbar->cancel; ?>
+						</td>
+					</tr>
 				<?php endif; ?>
-			</tr>
-		<?php endforeach; ?>
-		<?php if($this->user['admin']) : ?>
-			<tr class="add">
-				<td>
-				</td>
-				<td>
-					<?php echo $this->translate('TOOLBAR_NEW'); ?>
-				</td>
-				<td>
-					<?php echo $this->form->code; ?>
-				</td>
-				<td>
-					<?php echo $this->form->name; ?>
-				</td>
-				<td>
-					<?php echo $this->form->symbol; ?>
-				</td>
-				<td class="buttons">
-					<?php echo $this->toolbar->save; ?>
-					<?php //echo $this->toolbar->cancel; ?>
-				</td>
-			</tr>
-		<?php endif; ?>
-	</tbody>
-</table>
+			</tbody>
+		</table>
+	</div>
+</div>

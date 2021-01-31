@@ -1,63 +1,69 @@
 <?php
-$this->title = $this->translate('ADMIN');
+$this->title = $this->translate('ADMIN_PERMISSIONS');
 $this->headTitle($this->title);
 echo $this->Messages();
-echo $this->AdminMenu();
 ?>
 
-<table id="data" class="permissions">
-	<thead>
-		<tr>
-			<th width="2%">
-				<?php if($this->user['admin']) : ?>
-					<input type="checkbox" class="checkall" name="checkall"/>
-				<?php endif; ?>
-			</th>
-			<th class="id">
-				<?php echo $this->translate('ADMIN_ID'); ?>
-			</th>
-			<?php foreach($this->modules as $module) : ?>
-			<th class="<?php echo $this->escape($module); ?>">
-				<?php echo $this->escape($module); ?>
-			</th>
-			<?php endforeach; ?>
-			<th></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->permissions as $permission) : ?>
-			<tr>
-				<td>
-					<?php if($this->user['admin']) : ?>
-						<input class="id" type="checkbox" value="<?php echo $permission->id ?>" name="id"/>
-					<?php else : ?>
-						<input class="id" type="hidden" value="<?php echo $permission->id ?>" name="id"/>
-					<?php endif; ?>
-				</td>
-				<td class="id">
-					<?php echo $this->escape($permission->id); ?>
-				</td>
-				<?php foreach($this->modules as $module) : ?>
-				<td class="<?php echo $this->escape($module); ?>">
-					<input type="hidden" name="module" class="module" value="<?php echo $this->escape($module); ?>">
-					<?php foreach($permission->$module as $controller => $actions) : ?>
-						<input type="hidden" name="controller" class="controller" value="<?php echo $this->escape($controller); ?>">
-						<h4><?php echo $this->escape($controller); ?></h4>
-						<?php if(!$this->user['admin']) : ?>
-							<?php $this->forms[$permission->id][$module][$controller]->add->setAttrib('disabled', 'disabled'); ?>
-							<?php $this->forms[$permission->id][$module][$controller]->edit->setAttrib('disabled', 'disabled'); ?>
-							<?php $this->forms[$permission->id][$module][$controller]->view->setAttrib('disabled', 'disabled'); ?>
-							<?php $this->forms[$permission->id][$module][$controller]->delete->setAttrib('disabled', 'disabled'); ?>
+<div class="row">
+	<div class="hidden-sm hidden-md col-lg-2">
+		<?php echo $this->AdminMenu(); ?>
+	</div>
+	<div class="col-sm-12 col-lg-10">
+		<table id="data" class="permissions">
+			<thead>
+				<tr>
+					<th width="2%">
+						<?php if($this->user['admin']) : ?>
+							<input type="checkbox" class="checkall" name="checkall"/>
 						<?php endif; ?>
-						<?php echo $this->forms[$permission->id][$module][$controller]->add; ?>
-						<?php echo $this->forms[$permission->id][$module][$controller]->edit; ?>
-						<?php echo $this->forms[$permission->id][$module][$controller]->view; ?>
-						<?php echo $this->forms[$permission->id][$module][$controller]->delete; ?>
+					</th>
+					<th class="id">
+						<?php echo $this->translate('ADMIN_ID'); ?>
+					</th>
+					<?php foreach($this->modules as $module) : ?>
+					<th class="<?php echo $this->escape($module); ?>">
+						<?php echo $this->escape($module); ?>
+					</th>
 					<?php endforeach; ?>
-				</td>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->permissions as $permission) : ?>
+					<tr>
+						<td>
+							<?php if($this->user['admin']) : ?>
+								<input class="id" type="checkbox" value="<?php echo $permission->id ?>" name="id"/>
+							<?php else : ?>
+								<input class="id" type="hidden" value="<?php echo $permission->id ?>" name="id"/>
+							<?php endif; ?>
+						</td>
+						<td class="id">
+							<?php echo $this->escape($permission->id); ?>
+						</td>
+						<?php foreach($this->modules as $module) : ?>
+						<td class="<?php echo $this->escape($module); ?>">
+							<input type="hidden" name="module" class="module" value="<?php echo $this->escape($module); ?>">
+							<?php foreach($permission->$module as $controller => $actions) : ?>
+								<input type="hidden" name="controller" class="controller" value="<?php echo $this->escape($controller); ?>">
+								<h4><?php echo $this->escape($controller); ?></h4>
+								<?php if(!$this->user['admin']) : ?>
+									<?php $this->forms[$permission->id][$module][$controller]->add->setAttrib('disabled', 'disabled'); ?>
+									<?php $this->forms[$permission->id][$module][$controller]->edit->setAttrib('disabled', 'disabled'); ?>
+									<?php $this->forms[$permission->id][$module][$controller]->view->setAttrib('disabled', 'disabled'); ?>
+									<?php $this->forms[$permission->id][$module][$controller]->delete->setAttrib('disabled', 'disabled'); ?>
+								<?php endif; ?>
+								<?php echo $this->forms[$permission->id][$module][$controller]->add; ?>
+								<?php echo $this->forms[$permission->id][$module][$controller]->edit; ?>
+								<?php echo $this->forms[$permission->id][$module][$controller]->view; ?>
+								<?php echo $this->forms[$permission->id][$module][$controller]->delete; ?>
+							<?php endforeach; ?>
+						</td>
+						<?php endforeach; ?>
+						<td></td>
+					</tr>
 				<?php endforeach; ?>
-				<td></td>
-			</tr>
-		<?php endforeach; ?>
-	</tbody>
-</table>
+			</tbody>
+		</table>
+	</div>
+</div>

@@ -2,51 +2,57 @@
 $this->title = $this->translate('ADMIN');
 $this->headTitle($this->title);
 echo $this->Messages();
-echo $this->AdminMenu();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th width="2%">
-				<?php if($this->user['admin']) : ?>
-					<input type="checkbox" class="checkall" name="checkall"/>
-				<?php endif; ?>
-			</th>
-			<th class="timezone" width="12%">
-				<?php echo $this->translate('ADMIN_TIMEZONE'); ?>
-			</th>
-			<th class="category" width="12%">
-				<?php echo $this->translate('ADMIN_LANGUAGE'); ?>
-			</th>
-			<th class="analytics" width="12%">
-				<?php echo $this->translate('ADMIN_ANALYTICS'); ?>
-			</th>
-			<th width="8%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->config as $config) : ?>
-			<tr>
-				<td>
-					<?php if($this->user['admin']) : ?>
-						<input class="id" type="checkbox" value="<?php echo $config->id ?>" name="id"/>
-					<?php else : ?>
-						<input class="id" type="hidden" value="<?php echo $config->id ?>" name="id"/>
-					<?php endif; ?>
-				</td>
-				<td class="timezone">
-					<span<?php if($this->user['admin']) : ?> class="editable" data-name="timezone"<?php endif; ?>><?php echo $this->escape($config->timezone); ?></span>
-				</td>
-				<td class="languagename">
-					<span<?php if($this->user['admin']) : ?> class="editable" data-name="language"<?php endif; ?>><?php echo $this->escape($config->language); ?></span>
-				</td>
-				<td class="analytics">
-					<pre<?php if($this->user['admin']) : ?> class="editable" data-name="analytics" data-type="textarea"<?php endif; ?>><?php echo $this->escape($config->analytics); ?></pre>
-				</td>
-				<td class="buttons">
-				</td>
-			</tr>
-		<?php endforeach; ?>
-	</tbody>
-</table>
+<div class="row">
+	<div class="hidden-sm hidden-md col-lg-2">
+		<?php echo $this->AdminMenu(); ?>
+	</div>
+	<div class="col-sm-12 col-lg-10">
+		<table id="data">
+			<thead>
+				<tr>
+					<th width="2%">
+						<?php if($this->user['admin']) : ?>
+							<input type="checkbox" class="checkall" name="checkall"/>
+						<?php endif; ?>
+					</th>
+					<th class="timezone" width="12%">
+						<?php echo $this->translate('ADMIN_TIMEZONE'); ?>
+					</th>
+					<th class="category" width="12%">
+						<?php echo $this->translate('ADMIN_LANGUAGE'); ?>
+					</th>
+					<th class="analytics" width="12%">
+						<?php echo $this->translate('ADMIN_ANALYTICS'); ?>
+					</th>
+					<th width="8%"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->config as $config) : ?>
+					<tr>
+						<td>
+							<?php if($this->user['admin']) : ?>
+								<input class="id" type="checkbox" value="<?php echo $config->id ?>" name="id"/>
+							<?php else : ?>
+								<input class="id" type="hidden" value="<?php echo $config->id ?>" name="id"/>
+							<?php endif; ?>
+						</td>
+						<td class="timezone">
+							<span<?php if($this->user['admin']) : ?> class="editable" data-name="timezone"<?php endif; ?>><?php echo $this->escape($config->timezone); ?></span>
+						</td>
+						<td class="languagename">
+							<span<?php if($this->user['admin']) : ?> class="editable" data-name="language"<?php endif; ?>><?php echo $this->escape($config->language); ?></span>
+						</td>
+						<td class="analytics">
+							<pre<?php if($this->user['admin']) : ?> class="editable" data-name="analytics" data-type="textarea"<?php endif; ?>><?php echo $this->escape($config->analytics); ?></pre>
+						</td>
+						<td class="buttons">
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+</div>

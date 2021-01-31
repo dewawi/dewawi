@@ -1,5 +1,5 @@
 <?php
-$this->title = $this->translate('ADMIN_SHIPPING_METHODS');
+$this->title = $this->translate('ADMIN_DELIVERY_TIMES');
 $this->headTitle($this->title);
 echo $this->Messages();
 ?>
@@ -27,20 +27,20 @@ echo $this->Messages();
 				</tr>
 			</thead>
 			<tbody>
-				<?php foreach($this->shippingmethods as $shippingmethod) : ?>
+				<?php foreach($this->deliverytimes as $deliverytime) : ?>
 					<tr>
 						<td>
 							<?php if($this->user['admin']) : ?>
-								<input class="id" type="checkbox" value="<?php echo $shippingmethod->id ?>" name="id"/>
+								<input class="id" type="checkbox" value="<?php echo $deliverytime->id ?>" name="id"/>
 							<?php else : ?>
-								<input class="id" type="hidden" value="<?php echo $shippingmethod->id ?>" name="id"/>
+								<input class="id" type="hidden" value="<?php echo $deliverytime->id ?>" name="id"/>
 							<?php endif; ?>
 						</td>
 						<td class="id">
-							<?php echo $this->escape($shippingmethod->id); ?>
+							<?php echo $this->escape($deliverytime->id); ?>
 						</td>
 						<td class="name">
-							<span class="editable" data-name="title"><?php echo $this->escape($shippingmethod->title); ?></span>
+							<span class="editable" data-name="title"><?php echo $this->escape($deliverytime->title); ?></span>
 						</td>
 						<td class="buttons">
 							<?php echo $this->Button('copy'); ?>
