@@ -6,5 +6,7 @@
 !/files/*/.gitkeep
 /media/*/*
 !/media/*/.gitkeep
+/logs/*
+!/logs/.gitkeep
 /session/*
 !/session/.gitkeep
