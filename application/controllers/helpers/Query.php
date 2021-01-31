@@ -93,6 +93,22 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 		return $query;
 	}
 
+	public function getQueryShopID($query, $shopid, $schema = null)
+	{
+		if($query) $query .= ' AND ';
+		if($schema) $query .= '('.$schema.'.shopid = '.$shopid.')';
+		else $query .= '(shopid = '.$shopid.')';
+		return $query;
+	}
+
+	public function getQueryAccountID($query, $accountid, $schema = null)
+	{
+		if($query) $query .= ' AND ';
+		if($schema) $query .= '('.$schema.'.accountid = '.$accountid.')';
+		else $query .= '(accountid = '.$accountid.')';
+		return $query;
+	}
+
 	public function getQueryDeleted($query, $schema = null)
 	{
 		if($query) $query .= ' AND ';
