@@ -157,7 +157,6 @@ class Users_UserController extends Zend_Controller_Action
 				$stayLoggedIn = $formData['stayLoggedIn'];
 
 				$authNamespace = new Zend_Session_Namespace('Zend_Auth');
-				//$authNamespace->user = $username;
 				if($stayLoggedIn) $authNamespace->setExpirationSeconds(864000);
 				else $authNamespace->setExpirationSeconds(3600);
 
@@ -174,7 +173,7 @@ class Users_UserController extends Zend_Controller_Action
 				$authAdapter->setCredential($password);
 
 				//Select only active users
-				$authAdapter->getDbSelect()->where('deleted = 0');
+				//$authAdapter->getDbSelect()->where('deleted = 0');
 
 				$result = $auth->authenticate($authAdapter);
 				if($result->isValid()) {
@@ -187,23 +186,38 @@ class Users_UserController extends Zend_Controller_Action
 										'email',
 										'admin',
 										'permissions',
-										'clientid'
+										'clientid',
+										'activated',
+										'deleted'
 									));
-					$storage->write($userInfo); //Store into session
 
-					if($this->_getParam('url', null)) {
-						$url = explode("|", $this->_getParam('url', null));
-						if(isset($url[3]) && $url[3]) {
-							$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0], array('id' => $url[3]));
-						} else {
-							$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0]);
+					if($userInfo->deleted) {
+						$auth->clearIdentity();
+						$this->_flashMessenger->addMessage('Benutzerkonto existiert nicht mehr.');
+					} elseif($userInfo->activated) {
+						//Store user info into session
+						$storage->write($userInfo);
+
+						//Redirect if url is defined
+						if($this->_getParam('url', null)) {
+							$url = explode("|", $this->_getParam('url', null));
+							if(isset($url[3]) && $url[3]) {
+								$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0], array('id' => $url[3]));
+							} else {
+								$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0]);
+							}
 						}
+						$this->_helper->redirector->gotoSimple("index", "index");
+					} else {
+						$auth->clearIdentity();
+						$this->_flashMessenger->addMessage('Benutzerkonto ist nicht aktiviert.');
 					}
-					$this->_helper->redirector->gotoSimple("index", "index");
 				} else {
+					$auth->clearIdentity();
 					$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
 				}
 			} else {
+				$auth->clearIdentity();
 				$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
 				$form->populate($formData);
 			}
@@ -217,7 +231,13 @@ class Users_UserController extends Zend_Controller_Action
 
 	public function logoutAction()
 	{
+		// Clear session data
 		Zend_Auth::getInstance()->clearIdentity();
+
+		// Remove expiration time from session
+		unset($_SESSION['__ZF']['Zend_Auth']['ENT']);
+
+		// Redirect to start
 		$this->_helper->redirector->gotoSimple('index', 'index', 'index');
 	}
 
