@@ -101,6 +101,18 @@ class Items_Form_Item extends Zend_Form
 			->addMultiOption('1', 'Hauptlager')
 			->addValidator('NotEmpty');
 
+		$form['deliverytime'] = new Zend_Form_Element_Select('deliverytime');
+		$form['deliverytime']->setLabel('ITEMS_DELIVERY_TIME')
+			->setRequired(true)
+			->addMultiOption(0, 'ITEMS_NONE')
+			->addValidator('NotEmpty');
+
+		$form['deliverytimeoos'] = new Zend_Form_Element_Select('deliverytimeoos');
+		$form['deliverytimeoos']->setLabel('ITEMS_DELIVERY_TIME_OOS')
+			->setRequired(true)
+			->addMultiOption(0, 'ITEMS_NONE')
+			->addValidator('NotEmpty');
+
 		$form['cost'] = new Zend_Form_Element_Text('cost');
 		$form['cost']->setLabel('ITEMS_COST')
 			->addFilter('StripTags')
