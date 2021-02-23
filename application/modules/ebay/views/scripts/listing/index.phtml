@@ -1,0 +1,115 @@
+<?php
+$this->title = $this->translate('EBAY_LISTINGS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="ebayuserid" width="10%">
+				<?php echo $this->translate('EBAY_USER_ID'); ?>
+			</th>
+			<th class="sku" width="32%">
+				<?php echo $this->translate('EBAY_ITEM_SKU'); ?>
+			</th>
+			<th class="category1" width="8%">
+				<?php echo $this->translate('EBAY_CATEGORY1'); ?>
+			</th>
+			<th class="category2" width="8%">
+				<?php echo $this->translate('EBAY_CATEGORY2'); ?>
+			</th>
+			<th class="ebaystorecategory1" width="8%">
+				<?php echo $this->translate('EBAY_STORE_CATEGORY1'); ?>
+			</th>
+			<th class="ebaystorecategory2" width="8%">
+				<?php echo $this->translate('EBAY_STORE_CATEGORY2'); ?>
+			</th>
+			<th class="shippingpolicy" width="8%">
+				<?php echo $this->translate('EBAY_SHIPPING_POLICY'); ?>
+			</th>
+			<th class="paymentpolicy" width="8%">
+				<?php echo $this->translate('EBAY_PAYMENT_POLICY'); ?>
+			</th>
+			<th class="returnpolicy" width="8%">
+				<?php echo $this->translate('EBAY_RETURN_POLICY'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->listings as $listing) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $listing->id ?>" name="id"/></td>
+				<td data-label="<?php echo $this->translate('EBAY_USER_ID') ?>" class="ebayuserid">
+					<span class="editable" data-name="ebayuserid"><?php echo $this->escape($listing->accountid); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_SKU') ?>" class="sku">
+					<span class="editable" data-name="sku"><?php echo $this->escape($listing->sku); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_CATEGORY1') ?>" class="category1">
+					<span class="editable" data-name="category1"><?php echo $this->escape($listing->category1); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_CATEGORY2') ?>" class="category2">
+					<span class="editable" data-name="category2"><?php echo $this->escape($listing->category2); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_STORE_CATEGORY1') ?>" class="ebaystorecategory1">
+					<span class="editable" data-name="ebaystorecategory1"><?php echo $this->escape($listing->ebaystorecategory1); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_STORE_CATEGORY2') ?>" class="ebaystorecategory2">
+					<span class="editable" data-name="ebaystorecategory2"><?php echo $this->escape($listing->ebaystorecategory2); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_SHIPPING_POLICY') ?>" class="shippingpolicy">
+					<span class="editable" data-name="shippingpolicy"><?php echo $this->escape($listing->shippingpolicy); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_PAYMENT_POLICY') ?>" class="paymentpolicy">
+					<span class="editable" data-name="paymentpolicy"><?php echo $this->escape($listing->paymentpolicy); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_RETURN_POLICY') ?>" class="returnpolicy">
+					<span class="editable" data-name="returnpolicy"><?php echo $this->escape($listing->returnpolicy); ?></span>
+				</td>
+				<td class="buttons">
+					<?php echo $this->Button('copy'); ?>
+					<?php echo $this->Button('delete'); ?>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		<tr class="add">
+			<td>
+				<?php echo $this->translate('TOOLBAR_NEW'); ?>
+			</td>
+			<td>
+				<?php echo $this->form->ebayuserid; ?>
+			</td>
+			<td>
+				<?php echo $this->form->sku; ?>
+			</td>
+			<td>
+				<?php echo $this->form->category1; ?>
+			</td>
+			<td>
+				<?php echo $this->form->category2; ?>
+			</td>
+			<td>
+				<?php echo $this->form->ebaystorecategory1; ?>
+			</td>
+			<td>
+				<?php echo $this->form->ebaystorecategory2; ?>
+			</td>
+			<td>
+				<?php echo $this->form->paymentpolicy; ?>
+			</td>
+			<td>
+				<?php echo $this->form->shippingpolicy; ?>
+			</td>
+			<td>
+				<?php echo $this->form->returnpolicy; ?>
+			</td>
+			<td class="buttons">
+				<?php echo $this->toolbar->save; ?>
+			</td>
+		</tr>
+	</tbody>
+</table>

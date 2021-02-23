@@ -1,0 +1,88 @@
+<?php
+$this->title = $this->translate('EBAY_ACCOUNTS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="userid" width="10%">
+				<?php echo $this->translate('EBAY_USER_ID'); ?>
+			</th>
+			<th class="locale" width="32%">
+				<?php echo $this->translate('EBAY_LOCALE'); ?>
+			</th>
+			<th class="measurementsystem" width="8%">
+				<?php echo $this->translate('EBAY_MEASUREMENT_SYSTEM'); ?>
+			</th>
+			<th class="shippingpolicy" width="8%">
+				<?php echo $this->translate('EBAY_SHIPPING_POLICY'); ?>
+			</th>
+			<th class="paymentpolicy" width="8%">
+				<?php echo $this->translate('EBAY_PAYMENT_POLICY'); ?>
+			</th>
+			<th class="returnpolicy" width="8%">
+				<?php echo $this->translate('EBAY_RETURN_POLICY'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->accounts as $account) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $account->id ?>" name="id"/></td>
+				<td data-label="<?php echo $this->translate('EBAY_USER_ID') ?>" class="userid">
+					<span class="editable" data-name="userid"><?php echo $this->escape($account->userid); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_LOCALE') ?>" class="locale">
+					<span class="editable" data-name="locale"><?php echo $this->escape($account->locale); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_MEASUREMENT_SYSTEM') ?>" class="measurementsystem">
+					<span class="editable" data-name="measurementsystem"><?php echo $this->escape($account->measurementsystem); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_SHIPPING_POLICY') ?>" class="shippingpolicy">
+					<span class="editable" data-name="shippingpolicy"><?php echo $this->escape($account->shippingpolicy); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_PAYMENT_POLICY') ?>" class="paymentpolicy">
+					<span class="editable" data-name="paymentpolicy"><?php echo $this->escape($account->paymentpolicy); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_RETURN_POLICY') ?>" class="returnpolicy">
+					<span class="editable" data-name="returnpolicy"><?php echo $this->escape($account->returnpolicy); ?></span>
+				</td>
+				<td class="buttons">
+					<?php echo $this->Button('copy'); ?>
+					<?php echo $this->Button('delete'); ?>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		<tr class="add">
+			<td>
+				<?php echo $this->translate('TOOLBAR_NEW'); ?>
+			</td>
+			<td>
+				<?php echo $this->form->userid; ?>
+			</td>
+			<td>
+				<?php echo $this->form->locale; ?>
+			</td>
+			<td>
+				<?php echo $this->form->measurementsystem; ?>
+			</td>
+			<td>
+				<?php echo $this->form->paymentpolicy; ?>
+			</td>
+			<td>
+				<?php echo $this->form->shippingpolicy; ?>
+			</td>
+			<td>
+				<?php echo $this->form->returnpolicy; ?>
+			</td>
+			<td class="buttons">
+				<?php echo $this->toolbar->save; ?>
+			</td>
+		</tr>
+	</tbody>
+</table>

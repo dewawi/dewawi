@@ -1,0 +1,63 @@
+<?php
+$this->title = $this->translate('EBAY_OVERVIEW');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="userid" width="10%">
+				<?php echo $this->translate('EBAY_USER_ID'); ?>
+			</th>
+			<th class="locale" width="32%">
+				<?php echo $this->translate('EBAY_TOTAL_ITEM_COUNT'); ?>
+			</th>
+			<th class="locale" width="32%">
+				<?php echo $this->translate('EBAY_LISTED_ITEM_COUNT'); ?>
+			</th>
+			<th class="files" width="8%">
+				<?php echo $this->translate('EBAY_UPLOAD_FILES'); ?>
+			</th>
+			<th class="updated" width="8%">
+				<?php echo $this->translate('EBAY_UPDATED'); ?>
+			</th>
+			<th class="uploaded" width="8%">
+				<?php echo $this->translate('EBAY_UPLOADED'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->accounts as $account) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $account->id ?>" name="id"/></td>
+				<td data-label="<?php echo $this->translate('EBAY_USER_ID') ?>" class="userid">
+					<?php echo $this->escape($account->userid); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_TOTAL_ITEM_COUNT') ?>" class="count">
+					<?php echo $this->escape($this->stats[$account->id]['total']); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_LISTED_ITEM_COUNT') ?>" class="count">
+					<?php echo $this->escape($this->stats[$account->id]['listed']); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_UPLOAD_FILES') ?>" class="files">
+					<a href="<?php echo $this->baseUrl().$this->files[$account->id]['url'].$this->files[$account->id]['filename']; ?>.csv" target="_blank"><?php echo $this->escape($this->files[$account->id]['filename']); ?>.csv</a><br>
+					<a href="<?php echo $this->baseUrl().$this->files[$account->id]['url'].$this->files[$account->id]['filename']; ?>.zip" target="_blank"><?php echo $this->escape($this->files[$account->id]['filename']); ?>.zip</a>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_UPDATED') ?>" class="updated">
+					<?php echo $this->escape($account->updated); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('EBAY_UPLOADED') ?>" class="updated">
+					<?php echo $this->escape($account->uploaded); ?>
+				</td>
+				<td class="buttons">
+					<a href="<?php echo $this->url(array('module'=>'ebay', 'controller'=>'index', 'action'=>'sync', 'accountid'=>$account->id)); ?>"><?php echo $this->translate('ACTIONS_REFRESH') ?></a><br>
+					<a href="<?php echo $this->url(array('module'=>'ebay', 'controller'=>'index', 'action'=>'upload', 'accountid'=>$account->id)); ?>"><?php echo $this->translate('ACTIONS_UPLOAD') ?></a>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+	</tbody>
+</table>

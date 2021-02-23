@@ -1,0 +1,87 @@
+<?php
+$this->title = $this->translate('SHOPS_ACCOUNTS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="id" width="10%">
+				<?php echo $this->translate('SHOPS_ID'); ?>
+			</th>
+			<th class="title" width="10%">
+				<?php echo $this->translate('SHOPS_TITLE'); ?>
+			</th>
+			<th class="type" width="32%">
+				<?php echo $this->translate('SHOPS_TYPE'); ?>
+			</th>
+			<th class="host" width="8%">
+				<?php echo $this->translate('SHOPS_HOST'); ?>
+			</th>
+			<th class="username" width="8%">
+				<?php echo $this->translate('SHOPS_USERNAME'); ?>
+			</th>
+			<th class="key" width="8%">
+				<?php echo $this->translate('SHOPS_KEY'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->accounts as $account) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $account->id ?>" name="id"/></td>
+				<td data-label="<?php echo $this->translate('SHOPS_ID') ?>" class="id">
+					<span class="editable" data-name="id"><?php echo $this->escape($account->id); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('SHOPS_TITLE') ?>" class="title">
+					<span class="editable" data-name="title"><?php echo $this->escape($account->title); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('SHOPS_TYPE') ?>" class="type">
+					<span class="editable" data-name="type"><?php echo $this->escape($account->type); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('SHOPS_HOST') ?>" class="host">
+					<span class="editable" data-name="host"><?php echo $this->escape($account->host); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('SHOPS_USERNAME') ?>" class="username">
+					<span class="editable" data-name="username"><?php echo $this->escape($account->username); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('SHOPS_KEY') ?>" class="key">
+					<span class="editable" data-name="key"><?php //echo $this->escape($account->key); ?></span>
+				</td>
+				<td class="buttons">
+					<?php echo $this->Button('copy'); ?>
+					<?php echo $this->Button('delete'); ?>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		<tr class="add">
+			<td>
+			</td>
+			<td>
+				<?php echo $this->translate('TOOLBAR_NEW'); ?>
+			</td>
+			<td class="title">
+				<?php echo $this->form->title; ?>
+			</td>
+			<td>
+				<?php echo $this->form->type; ?>
+			</td>
+			<td>
+				<?php echo $this->form->host; ?>
+			</td>
+			<td>
+				<?php echo $this->form->username; ?>
+			</td>
+			<td>
+				<?php echo $this->form->key; ?>
+			</td>
+			<td class="buttons">
+				<?php echo $this->toolbar->save; ?>
+			</td>
+		</tr>
+	</tbody>
+</table>

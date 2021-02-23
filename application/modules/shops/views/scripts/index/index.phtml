@@ -1,0 +1,55 @@
+<?php
+$this->title = $this->translate('SHOPS_ACCOUNTS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="id" width="10%">
+				<?php echo $this->translate('SHOPS_ID'); ?>
+			</th>
+			<th class="title" width="10%">
+				<?php echo $this->translate('SHOPS_TITLE'); ?>
+			</th>
+			<th class="locale" width="32%">
+				<?php echo $this->translate('SHOPS_TOTAL_ITEM_COUNT'); ?>
+			</th>
+			<th class="locale" width="32%">
+				<?php echo $this->translate('SHOPS_LISTED_ITEM_COUNT'); ?>
+			</th>
+			<th class="updated" width="8%">
+				<?php echo $this->translate('SHOPS_UPDATED'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->accounts as $account) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $account->id ?>" name="id"/></td>
+				<td data-label="<?php echo $this->translate('SHOPS_ID') ?>" class="id">
+					<span class="editable" data-name="id"><?php echo $this->escape($account->id); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('SHOPS_TITLE') ?>" class="title">
+					<span class="editable" data-name="title"><?php echo $this->escape($account->title); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('SHOPS_TOTAL_ITEM_COUNT') ?>" class="count">
+					<?php echo $this->escape($this->stats[$account->id]['total']); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('SHOPS_LISTED_ITEM_COUNT') ?>" class="count">
+					<?php echo $this->escape($this->stats[$account->id]['listed']); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('SHOPS_UPDATED') ?>" class="updated">
+					<?php echo $this->escape($account->updated); ?>
+				</td>
+				<td class="buttons">
+					<a href="<?php echo $this->url(array('module'=>'shops', 'controller'=>'index', 'action'=>'sync', 'shopid'=>$account->id)); ?>"><?php echo $this->translate('ACTIONS_REFRESH') ?></a>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+	</tbody>
+</table>
