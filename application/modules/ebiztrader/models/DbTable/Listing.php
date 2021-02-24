@@ -1,9 +1,9 @@
 <?php
 
-class Items_Model_DbTable_Ebayitem extends Zend_Db_Table_Abstract
+class Ebiztrader_Model_DbTable_Listing extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'ebayitem';
+	protected $_name = 'ebiztraderlisting';
 
 	protected $_date = null;
 
@@ -18,18 +18,18 @@ class Items_Model_DbTable_Ebayitem extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getEbayitem($itemid, $ebayuserid)
+	public function getListing($itemid, $accountid)
 	{
 		$itemid = (int)$itemid;
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
-		$where[] = $this->getAdapter()->quoteInto('ebayuserid = ?', $ebayuserid);
+		$where[] = $this->getAdapter()->quoteInto('accountid = ?', $accountid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchRow($where);
 		return $data ? $data->toArray() : $data;
 	}
 
-	public function getEbayitems($ids)
+	public function getListings($ids)
 	{
 		$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
 		$data = $this->fetchAll($where);
@@ -39,7 +39,7 @@ class Items_Model_DbTable_Ebayitem extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function addEbayitem($data)
+	public function addListing($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -48,7 +48,7 @@ class Items_Model_DbTable_Ebayitem extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateEbayitem($id, $data)
+	public function updateListing($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -75,7 +75,7 @@ class Items_Model_DbTable_Ebayitem extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deleteEbayitem($itemid)
+	public function deleteListing($itemid)
 	{
 		$itemid = (int)$itemid;
 		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);

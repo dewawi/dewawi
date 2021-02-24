@@ -1,0 +1,70 @@
+<?php
+$this->title = $this->translate('EBIZ_TRADER_ORDERS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="userid" width="10%">
+				<?php echo $this->translate('EBIZ_TRADER_USER_ID'); ?>
+			</th>
+			<th class="orderid" width="32%">
+				<?php echo $this->translate('EBIZ_TRADER_ORDER_ID'); ?>
+			</th>
+			<th class="contactid" width="8%">
+				<?php echo $this->translate('EBIZ_TRADER_CONTACT_ID'); ?>
+			</th>
+			<th class="invoiceid" width="8%">
+				<?php echo $this->translate('EBIZ_TRADER_INVOICE_ID'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->orders as $order) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $order->id ?>" name="id"/></td>
+				<td data-label="<?php echo $this->translate('EBIZ_TRADER_USER_ID') ?>" class="userid">
+					<span class="editable" data-name="userid"><?php echo $this->escape($order->userid); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBIZ_TRADER_ORDER_ID') ?>" class="orderid">
+					<span class="editable" data-name="orderid"><?php echo $this->escape($order->orderid); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBIZ_TRADER_CONTACT_ID') ?>" class="contactid">
+					<span class="editable" data-name="contactid"><?php echo $this->escape($order->contactid); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBIZ_TRADER_INVOICE_ID') ?>" class="invoiceid">
+					<span class="editable" data-name="invoiceid"><?php echo $this->escape($order->invoiceid); ?></span>
+				</td>
+				<td class="buttons">
+					<?php echo $this->Button('copy'); ?>
+					<?php echo $this->Button('delete'); ?>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		<tr class="add">
+			<td>
+				<?php echo $this->translate('TOOLBAR_NEW'); ?>
+			</td>
+			<td>
+				<?php echo $this->form->userid; ?>
+			</td>
+			<td>
+				<?php echo $this->form->orderid; ?>
+			</td>
+			<td>
+				<?php echo $this->form->contactid; ?>
+			</td>
+			<td>
+				<?php echo $this->form->invoiceid; ?>
+			</td>
+			<td class="buttons">
+				<?php echo $this->toolbar->save; ?>
+			</td>
+		</tr>
+	</tbody>
+</table>

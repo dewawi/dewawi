@@ -1,9 +1,9 @@
 <?php
 
-class Items_Model_DbTable_Ebiztraderitem extends Zend_Db_Table_Abstract
+class Ebiztrader_Model_DbTable_Order extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'ebiztraderitem';
+	protected $_name = 'ebiztraderorder';
 
 	protected $_date = null;
 
@@ -18,18 +18,18 @@ class Items_Model_DbTable_Ebiztraderitem extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getEbiztraderitem($itemid, $userid)
+	public function getEbiztraderuser($itemid, $ebiztraderuserid)
 	{
 		$itemid = (int)$itemid;
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
-		$where[] = $this->getAdapter()->quoteInto('userid = ?', $userid);
+		$where[] = $this->getAdapter()->quoteInto('ebiztraderuserid = ?', $ebiztraderuserid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchRow($where);
 		return $data ? $data->toArray() : $data;
 	}
 
-	public function getEbiztraderitems($ids)
+	public function getEbiztraderusers($ids)
 	{
 		$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
 		$data = $this->fetchAll($where);
@@ -39,7 +39,7 @@ class Items_Model_DbTable_Ebiztraderitem extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function addEbiztraderitem($data)
+	public function addEbiztraderuser($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -48,7 +48,7 @@ class Items_Model_DbTable_Ebiztraderitem extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateEbiztraderitem($id, $data)
+	public function updateEbiztraderuser($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -75,7 +75,7 @@ class Items_Model_DbTable_Ebiztraderitem extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deleteEbiztraderitem($itemid)
+	public function deleteEbiztraderuser($itemid)
 	{
 		$itemid = (int)$itemid;
 		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);

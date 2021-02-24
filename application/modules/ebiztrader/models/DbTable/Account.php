@@ -1,9 +1,9 @@
 <?php
 
-class Items_Model_DbTable_Shopitem extends Zend_Db_Table_Abstract
+class Ebiztrader_Model_DbTable_Account extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'shopitem';
+	protected $_name = 'ebiztraderaccount';
 
 	protected $_date = null;
 
@@ -18,18 +18,26 @@ class Items_Model_DbTable_Shopitem extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getShopitem($itemid, $shopid)
+	public function getAccount($id)
 	{
-		$itemid = (int)$itemid;
+		$id = (int)$id;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
+		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchRow($where);
 		return $data ? $data->toArray() : $data;
 	}
 
-	public function getShopitems($ids)
+	public function getAccountByUserID($userid)
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('userid = ?', $userid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$data = $this->fetchRow($where);
+		return $data ? $data->toArray() : $data;
+	}
+
+	public function getAccounts($ids)
 	{
 		$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
 		$data = $this->fetchAll($where);
@@ -39,7 +47,7 @@ class Items_Model_DbTable_Shopitem extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function addShopitem($data)
+	public function addAccount($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -48,7 +56,7 @@ class Items_Model_DbTable_Shopitem extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateShopitem($id, $data)
+	public function updateAccount($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -75,7 +83,7 @@ class Items_Model_DbTable_Shopitem extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deleteShopitem($itemid)
+	public function deleteAccount($itemid)
 	{
 		$itemid = (int)$itemid;
 		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);

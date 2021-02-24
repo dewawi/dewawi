@@ -7,6 +7,8 @@ echo $this->Messages();
 <form id="upload" enctype="multipart/form-data" action="" method="post">
 	<dl class="form">
 		<?php echo $this->form->getElement('file') ?>
+		<?php echo $this->form->getElement('separator') ?>
+		<?php echo $this->form->getElement('delimiter') ?>
 		<?php echo $this->form->getElement('submit') ?>
 	</dl>
 	<p>Max: <?php echo ini_get('upload_max_filesize'); ?></p>

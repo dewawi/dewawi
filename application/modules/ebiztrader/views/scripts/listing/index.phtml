@@ -1,0 +1,85 @@
+<?php
+$this->title = $this->translate('EBIZ_TRADER_LISTINGS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="accountid" width="10%">
+				<?php echo $this->translate('EBIZ_TRADER_USER_ID'); ?>
+			</th>
+			<th class="itemid" width="32%">
+				<?php echo $this->translate('EBIZ_TRADER_ITEM_ID'); ?>
+			</th>
+			<th class="category1" width="8%">
+				<?php echo $this->translate('EBIZ_TRADER_CATEGORY1'); ?>
+			</th>
+			<th class="category2" width="8%">
+				<?php echo $this->translate('EBIZ_TRADER_CATEGORY2'); ?>
+			</th>
+			<th class="ebiztraderstorecategory1" width="8%">
+				<?php echo $this->translate('EBIZ_TRADER_STORE_CATEGORY1'); ?>
+			</th>
+			<th class="ebiztraderstorecategory2" width="8%">
+				<?php echo $this->translate('EBIZ_TRADER_STORE_CATEGORY2'); ?>
+			</th>
+			<th class="shippingpolicy" width="8%">
+				<?php echo $this->translate('EBIZ_TRADER_SHIPPING_POLICY'); ?>
+			</th>
+			<th class="paymentpolicy" width="8%">
+				<?php echo $this->translate('EBIZ_TRADER_PAYMENT_POLICY'); ?>
+			</th>
+			<th class="returnpolicy" width="8%">
+				<?php echo $this->translate('EBIZ_TRADER_RETURN_POLICY'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->listings as $listing) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $listing->id ?>" name="id"/></td>
+				<td data-label="<?php echo $this->translate('EBIZ_TRADER_USER_ID') ?>" class="accountid">
+					<span class="editable" data-name="accountid"><?php echo $this->escape($listing->accountid); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBIZ_TRADER_ITEM_ID') ?>" class="itemid">
+					<span class="editable" data-name="itemid"><?php echo $this->escape($listing->itemid); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBIZ_TRADER_CATEGORY1') ?>" class="category1">
+					<span class="editable" data-name="category1"><?php echo $this->escape($listing->category1); ?></span>
+				</td>
+				<td data-label="<?php echo $this->translate('EBIZ_TRADER_CATEGORY2') ?>" class="category2">
+					<span class="editable" data-name="category2"><?php echo $this->escape($listing->category2); ?></span>
+				</td>
+				<td class="buttons">
+					<?php echo $this->Button('copy'); ?>
+					<?php echo $this->Button('delete'); ?>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		<tr class="add">
+			<td>
+				<?php echo $this->translate('TOOLBAR_NEW'); ?>
+			</td>
+			<td>
+				<?php echo $this->form->accountid; ?>
+			</td>
+			<td>
+				<?php echo $this->form->itemid; ?>
+			</td>
+			<td>
+				<?php echo $this->form->category1; ?>
+			</td>
+			<td>
+				<?php echo $this->form->category2; ?>
+			</td>
+			<td class="buttons">
+				<?php echo $this->toolbar->save; ?>
+			</td>
+		</tr>
+	</tbody>
+</table>
