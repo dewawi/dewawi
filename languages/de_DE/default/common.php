@@ -9,6 +9,8 @@
 	//Actions
 	'ACTIONS_OPEN_MAILBOX' => 'Postfach öffnen',
 	'ACTIONS_NEW_EMAIL' => 'E-Mail schreiben',
+	'ACTIONS_REFRESH' => 'Aktualisieren',
+	'ACTIONS_UPLOAD' => 'Hochladen',
 	//E-Mail
 	'EMAIL' => 'E-Mail',
 	'EMAIL_SUBJECT' => 'Betreff',

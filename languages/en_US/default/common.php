@@ -9,6 +9,8 @@
 	//Actions
 	'ACTIONS_OPEN_MAILBOX' => 'Open mailbox',
 	'ACTIONS_NEW_EMAIL' => 'New Email',
+	'ACTIONS_REFRESH' => 'Refresh',
+	'ACTIONS_UPLOAD' => 'Upload',
 	//E-Mail
 	'EMAIL' => 'Email',
 	'EMAIL_SUBJECT' => 'Subject',

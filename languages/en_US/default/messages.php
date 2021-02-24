@@ -21,5 +21,7 @@
 	'MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY' => 'The category is not empty and can not be deleted!',
 	'MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS' => 'The category has child categories and can not be deleted!',
 	'MESSAGES_OWN_CLINET_CAN_NOT_BE_DELETED' => 'Own client account can not be deleted!',
-	'MESSAGES_OWN_USER_CAN_NOT_BE_DELETED' => 'Own user account can not be deleted!'
+	'MESSAGES_OWN_USER_CAN_NOT_BE_DELETED' => 'Own user account can not be deleted!',
+	'MESSAGES_RECORDS_SUCCESFULLY_UPDATED' => 'Records successfully updated.',
+	'MESSAGES_RECORDS_SUCCESFULLY_UPLOADED' => 'Records successfully uploaded.'
 );

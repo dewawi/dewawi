@@ -21,5 +21,7 @@
 	'MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY' => 'Ausgewählte Kategorie enthält Einträge und kann nicht gelöscht werden!',
 	'MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS' => 'Ausgewählte Kategorie hat Unterkategorien und kann nicht gelöscht werden!',
 	'MESSAGES_OWN_CLINET_CAN_NOT_BE_DELETED' => 'Eigene Mandantenkonto kann nicht gelöscht werden!',
-	'MESSAGES_OWN_USER_CAN_NOT_BE_DELETED' => 'Eigene Benutzerkonto kann nicht gelöscht werden!'
+	'MESSAGES_OWN_USER_CAN_NOT_BE_DELETED' => 'Eigene Benutzerkonto kann nicht gelöscht werden!',
+	'MESSAGES_RECORDS_SUCCESFULLY_UPDATED' => 'Datensätze wurden erfolgreich aktualisiert.',
+	'MESSAGES_RECORDS_SUCCESFULLY_UPLOADED' => 'Datensätze wurden erfolgreich hochgeladen.'
 );
