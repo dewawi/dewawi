@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS `client` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
-  `activated` int(11) NOT NULL DEFAULT 0,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -355,57 +355,7 @@ CREATE TABLE IF NOT EXISTS `documentrelation` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `ebayhistory` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `userid` varchar(255) NOT NULL,
-  `orderid` varchar(255) NOT NULL,
-  `contactid` int(11) NOT NULL DEFAULT 0,
-  `invoiceid` int(11) NOT NULL,
-  `clientid` int(11) NOT NULL,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `ebayitem` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ebayuserid` int(11) NOT NULL,
-  `itemid` int(11) NOT NULL,
-  `ebaycategory1` varchar(255) DEFAULT NULL,
-  `ebaycategory2` varchar(255) DEFAULT NULL,
-  `ebaystorecategory1` varchar(255) DEFAULT NULL,
-  `ebaystorecategory2` varchar(255) DEFAULT NULL,
-  `shippingpolicy` varchar(255) DEFAULT NULL,
-  `paymentpolicy` varchar(255) DEFAULT NULL,
-  `returnpolicy` varchar(255) DEFAULT NULL,
-  `clientid` int(11) NOT NULL,
-  `created` datetime DEFAULT NULL,
-  `createdby` int(11) NOT NULL DEFAULT 0,
-  `modified` datetime DEFAULT NULL,
-  `modifiedby` int(11) NOT NULL DEFAULT 0,
-  `locked` int(11) NOT NULL DEFAULT 0,
-  `lockedtime` datetime DEFAULT NULL,
-  `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `ebaytemplate` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `userid` varchar(255) NOT NULL,
-  `catid` int(11) NOT NULL DEFAULT 0,
-  `locale` varchar(255) DEFAULT NULL,
-  `logo` varchar(255) DEFAULT NULL,
-  `html` text DEFAULT NULL,
-  `clientid` int(11) NOT NULL,
-  `created` datetime DEFAULT NULL,
-  `createdby` int(11) NOT NULL DEFAULT 0,
-  `modified` datetime DEFAULT NULL,
-  `modifiedby` int(11) NOT NULL DEFAULT 0,
-  `locked` int(11) NOT NULL DEFAULT 0,
-  `lockedtime` datetime DEFAULT NULL,
-  `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `ebayuser` (
+CREATE TABLE IF NOT EXISTS `ebayaccount` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userid` varchar(255) NOT NULL,
   `catid` int(11) NOT NULL DEFAULT 0,
@@ -428,22 +378,62 @@ CREATE TABLE IF NOT EXISTS `ebayuser` (
   `certid` varchar(255) DEFAULT NULL,
   `serverurl` varchar(255) DEFAULT NULL,
   `clientid` int(11) NOT NULL,
+  `updated` datetime DEFAULT NULL,
+  `updatedby` int(11) NOT NULL DEFAULT 0,
+  `uploaded` datetime DEFAULT NULL,
+  `uploadedby` int(11) NOT NULL DEFAULT 0,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `ebiztraderitem` (
+CREATE TABLE IF NOT EXISTS `ebayhistory` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `itemid` int(11) NOT NULL,
   `userid` varchar(255) NOT NULL,
+  `orderid` varchar(255) NOT NULL,
+  `contactid` int(11) NOT NULL DEFAULT 0,
+  `invoiceid` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `ebaylisting` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `accountid` int(11) NOT NULL,
+  `itemid` int(11) NOT NULL,
   `category1` varchar(255) DEFAULT NULL,
   `category2` varchar(255) DEFAULT NULL,
+  `ebaystorecategory1` varchar(255) DEFAULT NULL,
+  `ebaystorecategory2` varchar(255) DEFAULT NULL,
+  `shippingpolicy` varchar(255) DEFAULT NULL,
+  `paymentpolicy` varchar(255) DEFAULT NULL,
+  `returnpolicy` varchar(255) DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `listed` datetime DEFAULT NULL,
+  `listedby` int(11) NOT NULL DEFAULT 0,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `ebayorder` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `accountid` int(11) NOT NULL,
+  `orderid` varchar(255) NOT NULL,
+  `contactid` int(11) NOT NULL DEFAULT 0,
+  `invoiceid` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
@@ -455,11 +445,68 @@ CREATE TABLE IF NOT EXISTS `ebiztraderitem` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `ebiztraderuser` (
+CREATE TABLE IF NOT EXISTS `ebaytemplate` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `accountid` int(11) NOT NULL,
+  `catid` int(11) NOT NULL DEFAULT 0,
+  `locale` varchar(255) DEFAULT NULL,
+  `logo` varchar(255) DEFAULT NULL,
+  `html` text DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `ebiztraderaccount` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userid` varchar(255) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `importid` varchar(255) DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `updated` datetime DEFAULT NULL,
+  `updatedby` int(11) NOT NULL DEFAULT 0,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `ebiztraderlisting` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `accountid` int(11) NOT NULL,
+  `itemid` int(11) NOT NULL,
+  `category1` varchar(255) DEFAULT NULL,
+  `category2` varchar(255) DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `listed` datetime DEFAULT NULL,
+  `listedby` int(11) NOT NULL DEFAULT 0,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `ebiztraderorder` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `accountid` int(11) NOT NULL,
+  `orderid` varchar(255) NOT NULL,
+  `contactid` int(11) NOT NULL DEFAULT 0,
+  `invoiceid` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
@@ -547,7 +594,7 @@ CREATE TABLE IF NOT EXISTS `emailtemplate` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
-  `activated` int(11) NOT NULL DEFAULT 0,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1033,7 +1080,7 @@ CREATE TABLE `pricerule` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
-  `activated` int(11) NOT NULL DEFAULT 0,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1592,7 +1639,7 @@ CREATE TABLE IF NOT EXISTS `shippingmethod` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `shop` (
+CREATE TABLE IF NOT EXISTS `shopaccount` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) DEFAULT NULL,
   `type` varchar(255) NOT NULL,
@@ -1601,12 +1648,15 @@ CREATE TABLE IF NOT EXISTS `shop` (
   `password` varchar(255) DEFAULT NULL,
   `dbname` varchar(255) DEFAULT NULL,
   `clientid` int(11) NOT NULL,
+  `updated` datetime DEFAULT NULL,
+  `updatedby` int(11) NOT NULL DEFAULT 0,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1615,6 +1665,26 @@ CREATE TABLE IF NOT EXISTS `shopitem` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `shopid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `listed` datetime DEFAULT NULL,
+  `listedby` int(11) NOT NULL DEFAULT 0,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `shoporder` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shopid` varchar(255) NOT NULL,
+  `orderid` varchar(255) NOT NULL,
+  `contactid` int(11) NOT NULL DEFAULT 0,
+  `invoiceid` int(11) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
@@ -1673,7 +1743,7 @@ CREATE TABLE IF NOT EXISTS `template` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
-  `activated` int(11) NOT NULL DEFAULT 0,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1729,6 +1799,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
