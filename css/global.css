@@ -347,6 +347,15 @@ table#data td:last-child {
 	flex-grow: 0.1;
     min-width: 30px;
 }
+.shops table#data th:last-child,
+.shops table#data td:last-child,
+.ebay table#data th:last-child,
+.ebay table#data td:last-child,
+.ebiztrader table#data th:last-child,
+.ebiztrader table#data td:last-child {
+	flex-grow: 0.5;
+    min-width: 100px;
+}
 .admin table#data th:last-child,
 .admin table#data td:last-child {
 	flex-grow: 0.5;
