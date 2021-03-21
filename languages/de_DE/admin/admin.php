@@ -52,7 +52,7 @@
 	'ADMIN_LOGO' => 'Logo',
 	'ADMIN_MENU' => 'Menu',
 	'ADMIN_ACTIVE' => 'Active',
-	'ADMIN_PASSWORD' => 'Passwort (MD5)',
+	'ADMIN_PASSWORD' => 'Passwort',
 	'ADMIN_MAIN_CATEGORY' => 'Hauptkategorie',
 	'ADMIN_PARENT_CATEGORY' => 'Überkategorie',
 	'ADMIN_ORDERING' => 'Position',

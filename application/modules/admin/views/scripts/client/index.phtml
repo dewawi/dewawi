@@ -94,7 +94,7 @@ echo $this->Messages();
 							<span class="editable" data-name="website"><?php echo $this->escape($client->website); ?></span>
 						</td>
 						<?php if($this->user['admin']) : ?>
-							<td class="name">
+							<td class="activated">
 								<?php echo $this->forms[$client->id]->activated; ?>
 							</td>
 							<td class="buttons">

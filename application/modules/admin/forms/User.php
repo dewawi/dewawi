@@ -17,7 +17,7 @@ class Admin_Form_User extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
-		$form['password'] = new Zend_Form_Element_Text('password');
+		$form['password'] = new Zend_Form_Element_Password('password');
 		$form['password']->setLabel('ADMIN_PASSWORD')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
@@ -36,6 +36,9 @@ class Admin_Form_User extends Zend_Form
 		$form['clientid'] = new Zend_Form_Element_Select('clientid');
 		$form['clientid']->setDecorators(array('ViewHelper'))
 			->setAttrib('default', '0');
+
+		$form['activated'] = new Zend_Form_Element_Checkbox('activated');
+		$form['activated']->addFilter('Int')->removeDecorator('Label');
 
 		$this->addElements($form);
 	}

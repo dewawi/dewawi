@@ -58,7 +58,14 @@ class Admin_UserController extends Zend_Controller_Action
 		$usersDb = new Admin_Model_DbTable_User();
 		$users = $usersDb->getUsers();
 
+		$forms = array();
+		foreach($users as $user) {
+			$forms[$user->id] = new Admin_Form_User();
+			$forms[$user->id]->activated->setValue($user->activated);
+		}
+
 		$this->view->form = $form;
+		$this->view->forms = $forms;
 		$this->view->users = $users;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
@@ -77,7 +84,14 @@ class Admin_UserController extends Zend_Controller_Action
 		$usersDb = new Admin_Model_DbTable_User();
 		$users = $usersDb->getUsers();
 
+		$forms = array();
+		foreach($users as $user) {
+			$forms[$user->id] = new Admin_Form_User();
+			$forms[$user->id]->activated->setValue($user->activated);
+		}
+
 		$this->view->form = $form;
+		$this->view->forms = $forms;
 		$this->view->users = $users;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
@@ -97,6 +111,7 @@ class Admin_UserController extends Zend_Controller_Action
 			$data = $request->getPost();
 			if($form->isValid($data)) {
 				$userDb = new Admin_Model_DbTable_User();
+				$data['password'] = md5($data['password']);
 				$id = $userDb->addUser($data);
 
 				//Add permission row
@@ -161,9 +176,14 @@ class Admin_UserController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
+					if(isset($data['password']) && $data['password']) {
+						$data['password'] = md5($data['password']);
+					}
 					$userDb = new Admin_Model_DbTable_User();
 					$userDb->updateUser($id, $data);
-					echo Zend_Json::encode($userDb->getUser($id));
+					$response = $userDb->getUser($id);
+					$response['password'] = '******';
+					echo Zend_Json::encode($response);
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 				}

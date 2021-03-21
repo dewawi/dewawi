@@ -30,6 +30,9 @@ echo $this->Messages();
 						<?php echo $this->translate('ADMIN_EMAIL'); ?>
 					</th>
 					<?php if($this->user['admin']) : ?>
+						<th class="category" width="12%">
+							<?php echo $this->translate('ADMIN_ACTIVATED'); ?>
+						</th>
 						<th width="8%"></th>
 					<?php endif; ?>
 				</tr>
@@ -48,15 +51,26 @@ echo $this->Messages();
 							<?php echo $this->escape($user->id); ?>
 						</td>
 						<td class="username">
-							<span class="editable" data-name="username"><?php echo $this->escape($user->username); ?></span>
+							<?php if($this->user['admin']) : ?>
+								<span class="editable" data-name="username"><?php echo $this->escape($user->username); ?></span>
+							<?php else : ?>
+								<span><?php echo $this->escape($user->username); ?></span>
+							<?php endif; ?>
 						</td>
 						<td class="password">
-							<span class="editable" data-name="password"><?php echo $this->escape($user->password); ?></span>
+							<?php if($this->user['admin']) : ?>
+								<span class="editable" data-name="password">******</span>
+							<?php else : ?>
+								<span>******</span>
+							<?php endif; ?>
 						</td>
 						<td class="email">
 							<span class="editable" data-name="email"><?php echo $this->escape($user->email); ?></span>
 						</td>
 						<?php if($this->user['admin']) : ?>
+							<td class="activated">
+								<?php echo $this->forms[$user->id]->activated; ?>
+							</td>
 							<td class="buttons">
 								<?php echo $this->Button('copy'); ?>
 								<?php echo $this->Button('delete'); ?>
@@ -65,26 +79,29 @@ echo $this->Messages();
 					</tr>
 				<?php endforeach; ?>
 				<?php if($this->user['admin']) : ?>
-				<tr class="add">
-					<td>
-					</td>
-					<td>
-						<?php echo $this->translate('TOOLBAR_NEW'); ?>
-					</td>
-					<td>
-						<?php echo $this->form->username; ?>
-					</td>
-					<td>
-						<?php echo $this->form->password; ?>
-					</td>
-					<td>
-						<?php echo $this->form->email; ?>
-					</td>
-					<td class="buttons">
-						<?php echo $this->toolbar->save; ?>
-						<?php //echo $this->toolbar->cancel; ?>
-					</td>
-				</tr>
+					<tr class="add">
+						<td>
+						</td>
+						<td>
+							<?php echo $this->translate('TOOLBAR_NEW'); ?>
+						</td>
+						<td>
+							<?php echo $this->form->username; ?>
+						</td>
+						<td>
+							<?php echo $this->form->password; ?>
+						</td>
+						<td>
+							<?php echo $this->form->email; ?>
+						</td>
+						<td>
+							<?php echo $this->form->activated; ?>
+						</td>
+						<td class="buttons">
+							<?php echo $this->toolbar->save; ?>
+							<?php //echo $this->toolbar->cancel; ?>
+						</td>
+					</tr>
 				<?php endif; ?>
 			</tbody>
 		</table>
