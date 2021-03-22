@@ -99,6 +99,16 @@ class Items_Form_Toolbar extends Zend_Form
 			->setAttrib('default', '0')
 			->setAttrib('class', 'hidden-sm');
 
+		$form['tagid'] = new Zend_Form_Element_Select('tagid');
+		$form['tagid']->setDecorators(array('ViewHelper'))
+			->addMultiOption('0', 'TAGS_ALL')
+			->setAttrib('default', '0')
+			->setAttrib('class', 'hidden-sm');
+
+		$form['page'] = new Zend_Form_Element_Text('page');
+		$form['page']->setDecorators(array('ViewHelper'))
+			->setAttrib('default', '');
+
 		$this->addElements($form);
 	}
 }

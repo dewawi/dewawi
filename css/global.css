@@ -371,9 +371,9 @@ table#data tr.bottom td.total {
 	font-weight: bold;
 }
 
-table#data label, table#data input[type="text"], table#data textarea, table#data select, table#data option,
-table#details label, table#details input[type="text"], table#details textarea, table#details select, table#details option,
-table#positions label, table#positions input[type="text"], table#positions textarea, table#positions select, table#positions option {
+table#data label, table#data input[type="text"], table#data input[type="password"], table#data textarea, table#data select, table#data option,
+table#details label, table#details input[type="text"], table#details input[type="password"], table#details textarea, table#details select, table#details option,
+table#positions label, table#positions input[type="text"], table#positions input[type="password"], table#positions textarea, table#positions select, table#positions option {
 	margin: 0;
 	padding: 3px 5px;
     width: 100%;

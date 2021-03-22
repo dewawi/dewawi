@@ -20,12 +20,21 @@ class Items_Model_Get
 		$query = $queryHelper->getQueryClient($query, $client['id']);
 		$query = $queryHelper->getQueryDeleted($query);
 
-		$items = $itemsDb->fetchAll(
-			$itemsDb->select()
-				->where($query ? $query : 0)
-				->order($params['order'].' '.$params['sort'])
-				->limit($params['limit'])
-		);
+		if($params['tagid']) {
+			$items = $itemsDb->fetchAll(
+				$itemsDb->select()
+					->where($query ? $query : 0)
+					->order($params['order'].' '.$params['sort'])
+					->limit($params['limit'])
+			);
+		} else {
+			$items = $itemsDb->fetchAll(
+				$itemsDb->select()
+					->where($query ? $query : 0)
+					->order($params['order'].' '.$params['sort'])
+					->limit($params['limit'])
+			);
+		}
 
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 		$currency = $currencyHelper->getCurrency();
@@ -116,5 +125,28 @@ class Items_Model_Get
 		}
 
 		return $pricerules;
+	}
+
+	public function tags($module, $controller, $id = null) {
+		if($id) {
+			$client = Zend_Registry::get('Client');
+			$tagEntityDb = new Application_Model_DbTable_Tagentity();
+			$tags = $tagEntityDb->fetchAll(
+				$tagEntityDb->select()
+					->setIntegrityCheck(false)
+					->from(array('t' => 'tagentity'))
+					->join(array('tag' => 'tag'), 't.tagid = tag.id', array('title as tag', 'module', 'controller'))
+					->group('t.id')
+					->where('(t.entityid = "'.$id.'") AND (t.module = "'.$module.'") AND (t.controller = "'.$controller.'") AND (t.clientid = "'.$client['id'].'") AND (t.deleted = 0)')
+					//->order($order.' '.$params['sort'])
+					//->limit($params['limit'], $params['offset'])
+			);
+			$tags = $tags->toArray();
+		} else {
+			$tagsDb = new Application_Model_DbTable_Tag();
+			$tags = $tagsDb->getTags($module, $controller);
+		}
+
+		return $tags;
 	}
 }

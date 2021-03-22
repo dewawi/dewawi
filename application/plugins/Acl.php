@@ -36,7 +36,10 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 				if(isset($permissions[$params['module']])) {
 					$module = json_decode($permissions[$params['module']], true);
 					if(substr($params['controller'], -3) == 'pos') $params['controller'] = substr($params['controller'], 0, -3);
+					//TO DO
 					if($params['module'] == 'contacts') $params['controller'] = 'contact';
+					//TO DO
+					if($params['module'] == 'items') $params['controller'] = 'item';
 					if(strpos($params['action'], 'generate') !== false) $params['action'] = 'generate';
 					if(isset($module[$params['controller']])) {
 						//User can not add if there is no edit permission

@@ -28,8 +28,11 @@ echo $this->ActiveFilter();
 				<?php echo $this->translate('ITEMS_QUANTITY'); ?>
 			</th>
 			<th width="8%"><?php echo $this->translate('ITEMS_UOM'); ?></th>
-			<th width="8%"><?php echo $this->translate('ITEMS_CATEGORY'); ?></th>
 			<th width="8%"><?php echo $this->translate('ITEMS_MANUFACTURER'); ?></th>
+			<th width="8%"><?php echo $this->translate('ITEMS_CATEGORY'); ?></th>
+			<th class="tags" width="12%">
+				<?php echo $this->translate('TAGS'); ?>
+			</th>
 			<th width="8%"></th>
 		</tr>
 	</thead>
@@ -63,11 +66,21 @@ echo $this->ActiveFilter();
 				<td data-label="<?php echo $this->translate('ITEMS_UOM') ?>" class="uomid">
 					<?php if($item->uomid && isset($this->options['uoms'][$item->uomid])) echo $this->escape($this->options['uoms'][$item->uomid]); ?>
 				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_CATEGORY') ?>" class="category">
-					<?php if($item->catid && isset($this->options['categories'][$item->catid])) echo $this->escape($this->options['categories'][$item->catid]['title']); ?>
-				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_MANUFACTURER') ?>" class="manufacturer">
 					<?php if($item->manufacturerid && isset($this->options['manufacturers'][$item->manufacturerid])) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_CATEGORY') ?>" class="category">
+					<?php if($item->catid && isset($this->options['categories'][$item->catid])) : ?>
+						<span class="editable" data-name="catid" data-value="<?php echo $item->catid; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['categories'][$item->catid]['title'])); ?></span>
+					<?php else : ?>
+						<span class="editable" data-name="catid" data-value="" data-type="select"><?php echo $this->translate('TOOLBAR_NEW') ;?></span>
+					<?php endif; ?>
+				</td>
+				<td data-label="<?php echo $this->translate('TAGS') ?>" class="tags">
+					<?php foreach($this->tagEntites[$item->id] as $tagEntity) : ?>
+						<span><?php echo $this->escape($tagEntity['tag']); ?></span>
+					<?php endforeach; ?>
+					<span class="editable" data-name="tagid" data-value="" data-type="select"></span>
 				</td>
 				<td class="buttons">
 					<?php echo $this->toolbar->editInline; ?>

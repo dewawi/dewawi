@@ -33,6 +33,13 @@ class Zend_View_Helper_ActiveFilter extends Zend_View_Helper_Abstract{
 							<?php echo $this->view->Button('clear', '', '', '', '', 'catid'); ?>
 						</li>
 					<?php endif; ?>
+					<?php if(isset($filters['tagid']) && isset($options['tags']) && isset($options['tags'][$filters['tagid']])) : ?>
+						<li>
+							<b><?php echo $this->view->translate('TOOLBAR_TAG').':'; ?></b>
+							<?php echo $options['tags'][$filters['tagid']]; ?>
+							<?php echo $this->view->Button('clear', '', '', '', '', 'tagid'); ?>
+						</li>
+					<?php endif; ?>
 					<?php if(isset($filters['country']) && isset($options['countries']) && isset($options['countries'][$filters['country']])) : ?>
 						<li>
 							<b><?php echo $this->view->translate('TOOLBAR_COUNTRY').':'; ?></b>

@@ -61,8 +61,16 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
+		$tags = $get->tags('contacts', 'contact');
 		$contacts = $get->contacts($params, $options);
 
+		$tagEntites = array();
+		foreach($contacts as $contact) {
+			$tagEntites[$contact->id] = $get->tags('contacts', 'contact', $contact->id);
+		}
+
+		$this->view->tags = $tags;
+		$this->view->tagEntites = $tagEntites;
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
@@ -81,8 +89,16 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
+		$tags = $get->tags('contacts', 'contact');
 		$contacts = $get->contacts($params, $options);
 
+		$tagEntites = array();
+		foreach($contacts as $contact) {
+			$tagEntites[$contact->id] = $get->tags('contacts', 'contact', $contact->id);
+		}
+
+		$this->view->tags = $tags;
+		$this->view->tagEntites = $tagEntites;
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
@@ -229,8 +245,9 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$addressDb = new Contacts_Model_DbTable_Address();
 					$address = $addressDb->getAddress($id);
 
-					//History
+					//History and tags
 					$get = new Contacts_Model_Get();
+					$tags = $get->tags('contacts', 'contact', $contact['id']);
 					$history = $get->history($contact['contactid']);
 
 					//Get email templates
@@ -272,6 +289,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 					$this->view->form = $form;
 					$this->view->options = $options;
+					$this->view->tags = $tags;
 					$this->view->history = $history;
 					$this->view->files = $files;
 					$this->view->address = $address;

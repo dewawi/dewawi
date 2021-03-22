@@ -23,6 +23,12 @@ class Items_Controller_Action_Helper_Params extends Zend_Controller_Action_Helpe
 		$params['sort'] = $request->getParam('sort', $request->getCookie('sort', $toolbar->sort->getAttrib('default')));
 		$toolbar->sort->setValue($params['sort']);
 
+		$params['page'] = $request->getParam('page', $request->getCookie('page', $toolbar->page->getAttrib('default')));
+		$toolbar->page->setValue($params['page']);
+
+		$params['tagid'] = $request->getParam('tagid', $request->getCookie('tagid', $toolbar->tagid->getAttrib('default')));
+		$toolbar->tagid->setValue($params['tagid']);
+
 		return $params;
 	}
 }

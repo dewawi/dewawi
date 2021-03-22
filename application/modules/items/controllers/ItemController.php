@@ -43,8 +43,16 @@ class Items_ItemController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Items_Model_Get();
+		$tags = $get->tags('items', 'item');
 		$items = $get->items($params, $options);
 
+		$tagEntites = array();
+		foreach($items as $item) {
+			$tagEntites[$item->id] = $get->tags('items', 'item', $item->id);
+		}
+
+		$this->view->tags = $tags;
+		$this->view->tagEntites = $tagEntites;
 		$this->view->items = $items;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
@@ -63,8 +71,16 @@ class Items_ItemController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Items_Model_Get();
+		$tags = $get->tags('items', 'item');
 		$items = $get->items($params, $options);
 
+		$tagEntites = array();
+		foreach($items as $item) {
+			$tagEntites[$item->id] = $get->tags('items', 'item', $item->id);
+		}
+
+		$this->view->tags = $tags;
+		$this->view->tagEntites = $tagEntites;
 		$this->view->items = $items;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
@@ -182,6 +198,10 @@ class Items_ItemController extends Zend_Controller_Action
 					$item['packweight'] = ($item['packweight'] != 0) ? $currency->toCurrency($item['packweight'],array('precision' => 2,'locale' => $locale)) : '';
 					$form->populate($item);
 
+					//Tags
+					$get = new Items_Model_Get();
+					$tags = $get->tags('items', 'item', $item['id']);
+
 					//Attributes
 					$attributesDb = new Items_Model_DbTable_Itemattribute();
 					$attributes = $attributesDb->getItemattributesByItemID($item['id']);
@@ -194,6 +214,7 @@ class Items_ItemController extends Zend_Controller_Action
 					$toolbar = new Items_Form_Toolbar();
 
 					$this->view->form = $form;
+					$this->view->tags = $tags;
 					$this->view->attributes = $attributes;
 					$this->view->inventory = $inventory;
 					$this->view->activeTab = $activeTab;
@@ -559,6 +580,7 @@ class Items_ItemController extends Zend_Controller_Action
 								}
 								if(isset($map['shopid']) && isset($datacsv[$map['shopid']])) {
 									if($datacsv[$map['shopid']] == 0) {
+										echo 'Deleted sku: '.$item['sku'].', itemid: '.$item['id']."<br>";
 										$shopItemDb->deleteItem($item['id']);
 									} elseif(!$shopItemDb->getItem($item['id'], $datacsv[$map['shopid']])) {
 										$shopItemDb->addItem(array('itemid' => $item['id'], 'shopid' => $datacsv[$map['shopid']]));

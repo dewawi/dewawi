@@ -24,7 +24,7 @@ $(document).ready(function(){
 	//		console.log(isDirty);
 	//}, 1000); // 6 seconds
 
-		//Client switcher
+	//Client switcher
 	$('#clientid').on('change', '', function() {
 		//console.log($('#client').val());
 			$.ajax({
@@ -150,7 +150,11 @@ $(document).ready(function(){
 			if(!$(this).next(type).length) {
 				//Create a new input with attributes
 				if(type == 'input') {
-					$(this).after('<input type="text">');
+					if($(this).data('name') == 'password') {
+						$(this).after('<input type="password">');
+					} else {
+						$(this).after('<input type="text">');
+					}
 					var input = $(this).next(type);
 					if(!$(this).data('empty') && (input.data('action') != 'add')) input.val($(this).text());
 				} else if(type == 'select') {
@@ -233,19 +237,33 @@ $(document).ready(function(){
 		} else {
 			//Replace the text with new value
 			if(this.nodeName == 'SELECT') {
-				var value = response[this.name];
-				//$(this).parent().hide();
-				if(value.match(/^\d+$/)) { //If value is numeric
-					$(this).closest('tr').removeClass(this.name+previousValue);
-					$(this).closest('tr').addClass(this.name+value);
+				if(response['message'] !== undefined) {
+					//Handle error message
 				} else {
-					$(this).closest('tr').removeClass(previousValue);
-					$(this).closest('tr').addClass(value);
+					var value = response[this.name];
+					//$(this).parent().hide();
+					if(value.match(/^\d+$/)) { //If value is numeric
+						$(this).closest('tr').removeClass(this.name+previousValue);
+						$(this).closest('tr').addClass(this.name+value);
+					} else {
+						$(this).closest('tr').removeClass(previousValue);
+						$(this).closest('tr').addClass(value);
+					}
+					var value = $(this).find('option[value="'+response[this.name]+'"]').text();
+					if(this.name == 'tagid') {
+						$(this).prev('.editable').before('<span>'+value+'</span>');
+						$('.editable').show();
+						//Hide and unlock visible elements
+						$('.editableValue:visible').each(function(index) {
+							$(this).hide();
+							unlock($(this).closest('tr').find('input.id').val());
+						});
+					} else {
+						$(this).prev('.editable').text(value);
+						previousValue = response[this.name];
+					}
+					if(this.name == 'parentid') search();
 				}
-				var value = $(this).find('option[value="'+response[this.name]+'"]').text();
-				$(this).prev('.editable').text(value);
-				previousValue = response[this.name];
-				if(this.name == 'parentid') search();
 			} else {
 				$(this).prev('.editable').text(response[this.name]);
 			}
@@ -254,31 +272,31 @@ $(document).ready(function(){
 		}
 	});
 	$('#data').on('change', '#activated', function() {
-				//console.log($('#activated').is(':checked'));
-			var data = {};
-			var params = {};
+		//console.log($('#activated').is(':checked'));
+		var data = {};
+		var params = {};
 		params['id'] = $(this).closest('tr').find('input.id').val();
-				if(params['id']) {
-				if($(this).is(':checked')) data[this.name] = 1;
-						else data[this.name] = 0;
-						edit(data, params);
-				}
+			if(params['id']) {
+			if($(this).is(':checked')) data[this.name] = 1;
+				else data[this.name] = 0;
+				edit(data, params);
+			}
 	});
 	$('#data.permissions').on('change', 'input', function() {
-				//console.log($('#activated').is(':checked'));
-			var data = {};
-			var params = {};
+		//console.log($('#activated').is(':checked'));
+		var data = {};
+		var params = {};
 		params['id'] = $(this).closest('tr').find('input.id').val();
 		data['controller'] = $(this).closest('td').find('input.controller').val();
 		data['module'] = $(this).closest('td').find('input.module').val();
 		data['element'] = this.name;
-				if(params['id']) {
-				if($(this).is(':checked')) data[this.name] = 1;
-						else data[this.name] = 0;
-						edit(data, params);
-						//console.log(params);
-						//console.log(data);
-				}
+			if(params['id']) {
+			if($(this).is(':checked')) data[this.name] = 1;
+				else data[this.name] = 0;
+				edit(data, params);
+				//console.log(params);
+				//console.log(data);
+			}
 	});
 
 	//Change title
@@ -733,8 +751,8 @@ function save() {
 
 //Add
 function add(data, params) {
-		//console.log(data);
 	params = params || null;
+	//console.log(params);
 	if(params) {
 		var url = baseUrl;
 		params = params || null;
@@ -758,6 +776,7 @@ function add(data, params) {
 		});
 		return response;
 	} else {
+		//console.log(data);
 		data[controller+'id'] = id;
 		var url = baseUrl+'/'+module;
 		if(data['controller']) url += '/'+data['controller'];
@@ -788,10 +807,15 @@ function edit(data, params) {
 	params = params || null;
 	if(params && params['module']) url += '/'+params['module'];
 	else url += '/'+module;
-	if(params && params['controller']) url += '/'+params['controller'];
-	else url += '/'+controller;
-	if(params && params['id']) url += '/edit/id/'+params['id'];
-	else url += '/edit/id/'+id;
+	if(data['tagid']) {
+		url += '/tag/add/tagid/'+data['tagid'];
+		if(params && params['id']) data[controller+'id'] = params['id'];
+	} else {
+		if(params && params['controller']) url += '/'+params['controller'];
+		else url += '/'+controller;
+		if(params && params['id']) url += '/edit/id/'+params['id'];
+		else url += '/edit/id/'+id;
+	}
 	var response;
 	$.ajax({
 		type: 'POST',
@@ -926,6 +950,10 @@ function clear(element) {
 	} else if(element == 'catid') {
 		$('#catid').val(0);
 		$.cookie('catid', 0, { path: cookiePath });
+		search();
+	} else if(element == 'tagid') {
+		$('#tagid').val(0);
+		$.cookie('tagid', 0, { path: cookiePath });
 		search();
 	} else if(element == 'country') {
 		$('#country').val(0);

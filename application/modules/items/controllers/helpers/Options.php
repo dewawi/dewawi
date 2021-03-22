@@ -45,6 +45,11 @@ class Items_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$priceruleactions = $priceruleactionDb->getPriceruleactions();
 		$options['priceruleactions'] = $priceruleactions;
 
+		//Get tags
+		$tagDb = new Application_Model_DbTable_Tag();
+		$tags = $tagDb->getTags('items', 'item');
+		$options['tags'] = $tags;
+
 		//Set form options
 		$MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
@@ -58,6 +63,7 @@ class Items_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		if(isset($form->itemmanufacturer) && isset($options['manufacturers'])) $form->itemmanufacturer->addMultiOptions($options['manufacturers']);
 		if(isset($form->itemcatid) && isset($options['categories'])) $form->itemcatid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
 		if(isset($form->contactcatid) && isset($options['contactCategories'])) $form->contactcatid->addMultiOptions($MenuStructure->getMenuStructure($options['contactCategories']));
+		if(isset($form->tagid) && isset($options['tags'])) $form->tagid->addMultiOptions($options['tags']);
 
 		return $options;
 	}

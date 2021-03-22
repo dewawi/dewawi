@@ -33,6 +33,9 @@ echo $this->ActiveFilter();
 			<th class="category" width="12%">
 				<?php echo $this->translate('CONTACTS_CATEGORY'); ?>
 			</th>
+			<th class="tags" width="12%">
+				<?php echo $this->translate('TAGS'); ?>
+			</th>
 			<th width="8%"></th>
 		</tr>
 	</thead>
@@ -64,10 +67,20 @@ echo $this->ActiveFilter();
 					<?php echo $this->escape($contact->city); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('CONTACTS_COUNTRY') ?>" class="country">
-					<?php echo $this->escape($this->translate($contact->country)); ?>
+					<?php if($contact->country) echo $this->escape($this->translate($contact->country)); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('CONTACTS_CATEGORY') ?>" class="category">
-					<?php if($contact->catid && isset($this->options['categories'][$contact->catid])) echo $this->escape($this->options['categories'][$contact->catid]['title']); ?>
+					<?php if($contact->catid && isset($this->options['categories'][$contact->catid])) : ?>
+						<span class="editable" data-name="catid" data-value="<?php echo $contact->catid; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['categories'][$contact->catid]['title'])); ?></span>
+					<?php else : ?>
+						<span class="editable" data-name="catid" data-value="" data-type="select"><?php echo $this->translate('TOOLBAR_NEW') ;?></span>
+					<?php endif; ?>
+				</td>
+				<td data-label="<?php echo $this->translate('TAGS') ?>" class="tags">
+					<?php foreach($this->tagEntites[$contact->id] as $tagEntity) : ?>
+						<span><?php echo $this->escape($tagEntity['tag']); ?></span>
+					<?php endforeach; ?>
+					<span class="editable" data-name="tagid" data-value="" data-type="select"></span>
 				</td>
 				<td class="buttons">
 					<?php echo $this->toolbar->editInline; ?>

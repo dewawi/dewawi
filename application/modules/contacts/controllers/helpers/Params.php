@@ -26,6 +26,12 @@ class Contacts_Controller_Action_Helper_Params extends Zend_Controller_Action_He
 		$params['country'] = $request->getParam('country', $request->getCookie('country', $toolbar->country->getAttrib('default')));
 		$toolbar->country->setValue($params['country']);
 
+		$params['page'] = $request->getParam('page', $request->getCookie('page', $toolbar->page->getAttrib('default')));
+		$toolbar->page->setValue($params['page']);
+
+		$params['tagid'] = $request->getParam('tagid', $request->getCookie('tagid', $toolbar->tagid->getAttrib('default')));
+		$toolbar->tagid->setValue($params['tagid']);
+
 		return $params;
 	}
 }

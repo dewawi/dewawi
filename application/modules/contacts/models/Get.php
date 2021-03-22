@@ -44,24 +44,43 @@ class Contacts_Model_Get
 			$query = 'c.clientid = '.$client['id'];
 			$query .= ' AND c.deleted = 0';
 		}
+		$params['offset'] = 0;
+		if($params['page']) $params['offset'] = $params['page']*$params['limit'];
 
 		$order = $params['order'];
 		if(($order == 'street') || ($order == 'postcode') || ($order == 'city') || ($order == 'country')) $order = 'a.'.$order;
 		else $order = 'c.'.$order;
 
-		$contacts = $contactsDb->fetchAll(
-			$contactsDb->select()
-				->setIntegrityCheck(false)
-				->from(array($schema => 'contact'))
-				->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
-				->joinLeft(array('p' => 'phone'), 'c.id = p.contactid', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
-				->joinLeft(array('e' => 'email'), 'c.id = e.contactid', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
-				->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
-				->group($schema.'.id')
-				->where($query ? $query : 1)
-				->order($order.' '.$params['sort'])
-				->limit($params['limit'])
-		);
+		if($params['tagid']) {
+			$contacts = $contactsDb->fetchAll(
+				$contactsDb->select()
+					->setIntegrityCheck(false)
+					->from(array($schema => 'contact'))
+					->join(array('t' => 'tagentity'), '(c.id = t.entityid) AND (t.tagid = '.$params['tagid'].') AND (t.deleted = 0)', array('tagid', 'entityid'))
+					->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
+					->joinLeft(array('p' => 'phone'), 'c.id = p.contactid', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
+					->joinLeft(array('e' => 'email'), 'c.id = e.contactid', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
+					->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
+					->group($schema.'.id')
+					->where($query ? $query : 1)
+					->order($order.' '.$params['sort'])
+					->limit($params['limit'], $params['offset'])
+			);
+		} else {
+			$contacts = $contactsDb->fetchAll(
+				$contactsDb->select()
+					->setIntegrityCheck(false)
+					->from(array($schema => 'contact'))
+					->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
+					->joinLeft(array('p' => 'phone'), 'c.id = p.contactid', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
+					->joinLeft(array('e' => 'email'), 'c.id = e.contactid', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
+					->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
+					->group($schema.'.id')
+					->where($query ? $query : 1)
+					->order($order.' '.$params['sort'])
+					->limit($params['limit'], $params['offset'])
+			);
+		}
 
 		return $contacts;
 	}
@@ -220,5 +239,28 @@ class Contacts_Model_Get
 			}
 		}
 		return $attachments;
+	}
+
+	public function tags($module, $controller, $id = null) {
+		if($id) {
+			$client = Zend_Registry::get('Client');
+			$tagEntityDb = new Application_Model_DbTable_Tagentity();
+			$tags = $tagEntityDb->fetchAll(
+				$tagEntityDb->select()
+					->setIntegrityCheck(false)
+					->from(array('t' => 'tagentity'))
+					->join(array('tag' => 'tag'), 't.tagid = tag.id', array('title as tag', 'module', 'controller'))
+					->group('t.id')
+					->where('(t.entityid = "'.$id.'") AND (t.module = "'.$module.'") AND (t.controller = "'.$controller.'") AND (t.clientid = "'.$client['id'].'") AND (t.deleted = 0)')
+					//->order($order.' '.$params['sort'])
+					//->limit($params['limit'], $params['offset'])
+			);
+			$tags = $tags->toArray();
+		} else {
+			$tagsDb = new Application_Model_DbTable_Tag();
+			$tags = $tagsDb->getTags($module, $controller);
+		}
+
+		return $tags;
 	}
 }

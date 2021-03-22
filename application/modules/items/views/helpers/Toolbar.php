@@ -41,6 +41,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 				<?php //echo $this->view->toolbar->manufacturerid; ?>
 				<?php echo $this->view->toolbar->limit; ?>
 				<?php echo $this->view->toolbar->catid; ?>
+				<?php echo $this->view->toolbar->tagid; ?>
 			<?php endif; ?>
 		<?php endif;
 	}
