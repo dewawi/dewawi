@@ -47,5 +47,6 @@
 	'TOOLBAR_ALL_COUNTRIES' => 'alle Länder',
 	'TOOLBAR_COUNTRY' => 'Land',
 	'TOOLBAR_ORDERING' => 'Anordnung',
-	'TOOLBAR_EMPTY' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+	'TOOLBAR_EMPTY' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
+	'TOOLBAR_TAG' => 'Tag'
 );

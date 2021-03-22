@@ -32,6 +32,9 @@
 	//Upload
 	'UPLOAD' => 'Upload',
 	'UPLOAD_SUBMIT' => 'Submit',
+	//TAGS
+	'TAGS' => 'Tags',
+	'TAGS_ALL' => 'All Tags',
 	//FILES
 	'FILE' => 'File',
 	'FILE_TYPE' => 'Type',

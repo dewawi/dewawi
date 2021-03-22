@@ -46,5 +46,7 @@
 	'TOOLBAR_ONLY' => 'Only',
 	'TOOLBAR_ALL_COUNTRIES' => 'All countries',
 	'TOOLBAR_COUNTRY' => 'Country',
-	'TOOLBAR_ORDERING' => 'Ordering'
+	'TOOLBAR_ORDERING' => 'Ordering',
+	'TOOLBAR_EMPTY' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
+	'TOOLBAR_TAG' => 'Tag'
 );
