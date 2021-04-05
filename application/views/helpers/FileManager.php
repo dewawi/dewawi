@@ -9,8 +9,8 @@ class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
 		$client = Zend_Registry::get('Client');
 		$defaultNamespace = new Zend_Session_Namespace('RF');
 
-		if($this->view->user['permissions']) $defaultNamespace->writable = true;
-		else $defaultNamespace->writable = false;
+		$defaultNamespace->fldr = '';
+		$defaultNamespace->writable = true;
 
 		if($this->view->module == 'contacts') {
 
