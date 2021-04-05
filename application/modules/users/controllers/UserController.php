@@ -185,7 +185,6 @@ class Users_UserController extends Zend_Controller_Action
 										'name',
 										'email',
 										'admin',
-										'permissions',
 										'clientid',
 										'activated',
 										'deleted'

@@ -347,8 +347,8 @@ INSERT INTO `uom` (`id`, `title`, `ordering`, `clientid`, `created`, `createdby`
 (4, 'kg', 0, 1, '2015-12-06 15:41:54', 1, NULL, 0, 0, NULL),
 (5, 'm', 0, 1, '2015-12-06 15:41:57', 1, NULL, 0, 0, NULL);
 
-INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `admin`, `permissions`, `smtphost`, `smtpauth`, `smtpsecure`, `smtpuser`, `smtppass`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'Admin', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, 0, NULL, 0, 0, NULL);
+INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `admin`, `smtphost`, `smtpauth`, `smtpsecure`, `smtpuser`, `smtppass`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'Admin', NULL, 1, NULL, NULL, NULL, NULL, NULL, 1, NULL, 0, NULL, 0, 0, NULL);
 
 INSERT INTO `warehouse` (`id`, `title`, `description`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
 (1, 'Hauptlager', 'Hauptlager', 1, NULL, 0, NULL, 0, 0, NULL);

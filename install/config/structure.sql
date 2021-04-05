@@ -1816,7 +1816,6 @@ CREATE TABLE IF NOT EXISTS `user` (
   `name` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `admin` tinyint(1) NOT NULL DEFAULT 0,
-  `permissions` text DEFAULT NULL,
   `emailsender` varchar(255) DEFAULT NULL,
   `smtphost` varchar(255) DEFAULT NULL,
   `smtpauth` varchar(255) DEFAULT NULL,

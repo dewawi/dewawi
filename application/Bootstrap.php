@@ -24,8 +24,9 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 						'name' => $identity->name,
 						'email' => $identity->email,
 						'admin' => $identity->admin,
-						'permissions' => $identity->permissions,
-						'clientid' => $identity->clientid
+						'clientid' => $identity->clientid,
+						'activated' => $identity->activated,
+						'deleted' => $identity->deleted
 						);
 
 			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
