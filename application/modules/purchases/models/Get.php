@@ -17,7 +17,7 @@ class Purchases_Model_Get
 		$schema = 'q';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {
@@ -88,7 +88,7 @@ class Purchases_Model_Get
 		$schema = 'p';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['daterange']) {

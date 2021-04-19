@@ -29,7 +29,7 @@ class Statistics_Model_Charts
 					$query .= " AND (invoicedate BETWEEN '".$y."-".$ym."-"."01' AND '".$y."-".$ym."-"."31')";
 					$query .= ' AND i.clientid = '.$client['id'];
 					$query .= ' AND c.clientid = '.$client['id'];
-					if($params['catid']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
+					$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 					if($params['country']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['countries'], 'i');
 					$invoices = $invoicesDb->fetchAll(
 						$invoicesDb->select()
@@ -45,7 +45,7 @@ class Statistics_Model_Charts
 					$query .= " AND (creditnotedate BETWEEN '".$y."-".$ym."-"."01' AND '".$y."-".$ym."-"."31')";
 					$query .= ' AND i.clientid = '.$client['id'];
 					$query .= ' AND c.clientid = '.$client['id'];
-					if($params['catid']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
+					$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 					if($params['country']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['countries'], 'i');
 					$creditnotes = $creditnotesDb->fetchAll(
 						$creditnotesDb->select()

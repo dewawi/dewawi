@@ -31,7 +31,13 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 
 	public function getQueryCategory($query, $catid, $categories, $schema = null)
 	{
-		if(isset($categories[$catid])) {
+		if($catid == '0') {
+			if($query) $query .= ' AND ';
+			if($schema) $query .= '('.$schema.'.catid = 0)';
+			else $query .= '(catid = 0)';
+		} elseif($catid == 'all') {
+			//Do nothing
+		} elseif(isset($categories[$catid])) {
 			if($query) $query .= ' AND ';
 			if(isset($categories[$catid]['childs'])) {
 				$childs = $this->getChildCategories($catid, $categories);

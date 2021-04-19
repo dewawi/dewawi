@@ -16,7 +16,7 @@ class Items_Model_Get
 		$query = '';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
 		$query = $queryHelper->getQueryClient($query, $client['id']);
 		$query = $queryHelper->getQueryDeleted($query);
 
@@ -63,7 +63,7 @@ class Items_Model_Get
 		$schema = 'in';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
 
 		$inventories = $inventoryDb->fetchAll(
 			$inventoryDb->select()
@@ -102,7 +102,7 @@ class Items_Model_Get
 		$query = '';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		//if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
 		$query = $queryHelper->getQueryClient($query, $client['id']);
 		$query = $queryHelper->getQueryDeleted($query);
 

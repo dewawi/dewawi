@@ -34,7 +34,7 @@ class Contacts_Model_Get
 		$schema = 'c';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['catid']) $query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], $schema);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountryC($query, $params['country'], $options['countries'], 'a');
 		if($query) {
 			$query .= " AND a.type = 'billing'";
@@ -56,6 +56,7 @@ class Contacts_Model_Get
 				$contactsDb->select()
 					->setIntegrityCheck(false)
 					->from(array($schema => 'contact'))
+					//->columns(array('TotalRecords' => new Zend_Db_Expr('COUNT(t.id)')))
 					->join(array('t' => 'tagentity'), '(c.id = t.entityid) AND (t.tagid = '.$params['tagid'].') AND (t.deleted = 0)', array('tagid', 'entityid'))
 					->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
 					->joinLeft(array('p' => 'phone'), 'c.id = p.contactid', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
@@ -66,6 +67,21 @@ class Contacts_Model_Get
 					->order($order.' '.$params['sort'])
 					->limit($params['limit'], $params['offset'])
 			);
+			/*$count = $contactsDb->fetchRow(
+				$contactsDb->select()
+					->setIntegrityCheck(false)
+					->from(array($schema => 'contact'))
+					->columns(array('TotalRecords' => new Zend_Db_Expr('COUNT(*)')))
+					->join(array('t' => 'tagentity'), '(c.id = t.entityid) AND (t.tagid = '.$params['tagid'].') AND (t.deleted = 0)', array('tagid', 'entityid'))
+					->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
+					->joinLeft(array('p' => 'phone'), 'c.id = p.contactid', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
+					->joinLeft(array('e' => 'email'), 'c.id = e.contactid', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
+					->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
+					->group($schema.'.id')
+					->where($query ? $query : 1)
+			);*/
+			//print_r($count->TotalRecords);
+			//print_r($params['tagid']);
 		} else {
 			$contacts = $contactsDb->fetchAll(
 				$contactsDb->select()

@@ -51,8 +51,8 @@ class Statistics_Form_Toolbar extends Zend_Form
 
 		$form['catid'] = new Zend_Form_Element_Select('catid');
 		$form['catid']->setDecorators(array('ViewHelper'))
-			->addMultiOption('0', 'CATEGORIES_ALL')
-			->setAttrib('default', '0');
+			->addMultiOption('all', 'CATEGORIES_ALL')
+			->setAttrib('default', 'all');
 
 		$form['width'] = new Zend_Form_Element_Text('width');
 		$form['width']->setDecorators(array('ViewHelper'))

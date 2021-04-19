@@ -17,6 +17,7 @@ class Application_Controller_Action_Helper_MenuStructure extends Zend_Controller
 				++$i;
 			}
 		}
+		if(($count > 0) && ($level == 0)) $optionsStructure[0] = 'CATEGORIES_NOT_CATEGORISED';
 		return $optionsStructure;
 	}
 }
