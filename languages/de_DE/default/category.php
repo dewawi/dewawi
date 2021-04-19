@@ -5,6 +5,7 @@
 	'CATEGORIES_NEW_CATEGORY' => 'Neue Kategorie',
 	'CATEGORIES_MAIN_CATEGORY' => 'Hauptkategorie',
 	'CATEGORIES_ALL' => 'Alle Kategorien',
+	'CATEGORIES_NOT_CATEGORISED' => 'Nicht kategorisiert',
 	'CATEGORIES_ID' => 'ID',
 	'CATEGORIES_TITLE' => 'Name',
 	'CATEGORIES_PARENT' => 'Übergeordneter Eintrag',
