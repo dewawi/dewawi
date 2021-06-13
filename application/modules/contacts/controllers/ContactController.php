@@ -250,20 +250,20 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$tags = $get->tags('contacts', 'contact', $contact['id']);
 					$history = $get->history($contact['contactid']);
 
-					//Get email templates
-					$emailtemplatesDb = new Contacts_Model_DbTable_Emailtemplate();
-					$emailtemplates = $emailtemplatesDb->getEmailtemplates('contacts', 'contact');
-
 					//Get email form
 					$emailForm = new Contacts_Form_Emailmessage();
 					if(isset($contact['email'][0])) $emailForm->recipient->setValue($contact['email'][0]['email']);
-					if(isset($emailtemplates[0])) {
-						if($emailtemplates[0]['cc']) $emailForm->cc->setValue($emailtemplates[0]['cc']);
-						if($emailtemplates[0]['bcc']) $emailForm->bcc->setValue($emailtemplates[0]['bcc']);
-						if($emailtemplates[0]['replyto']) $emailForm->replyto->setValue($emailtemplates[0]['replyto']);
-						$emailForm->subject->setValue($emailtemplates[0]['subject']);
-						$emailForm->body->setValue($emailtemplates[0]['body']);
+
+					//Get email templates
+					$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
+					if($emailtemplate = $emailtemplateDb->getEmailtemplate('contacts', 'contact')) {
+						if($emailtemplate['cc']) $emailForm->cc->setValue($emailtemplate['cc']);
+						if($emailtemplate['bcc']) $emailForm->bcc->setValue($emailtemplate['bcc']);
+						if($emailtemplate['replyto']) $emailForm->replyto->setValue($emailtemplate['replyto']);
+						$emailForm->subject->setValue($emailtemplate['subject']);
+						$emailForm->body->setValue($emailtemplate['body']);
 					}
+
 					$this->view->emailForm = $emailForm;
 					$this->view->url = $this->_helper->Directory->getUrl($contact['contactid']);
 

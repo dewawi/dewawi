@@ -321,10 +321,6 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$toolbar = new Sales_Form_Toolbar();
 		$this->view->toolbar = $toolbar;
 
-		//Get email templates
-		$emailtemplatesDb = new Contacts_Model_DbTable_Emailtemplate();
-		$emailtemplates = $emailtemplatesDb->getEmailtemplates('sales', 'reminder');
-
 		//Get email
 		$emailDb = new Contacts_Model_DbTable_Email();
 		$contact['email'] = $emailDb->getEmail($contact['id']);
@@ -332,11 +328,16 @@ class Sales_ReminderController extends Zend_Controller_Action
 		//Get email form
 		$emailForm = new Contacts_Form_Emailmessage();
 		if(isset($contact['email'][0])) $emailForm->recipient->setValue($contact['email'][0]['email']);
-		if($emailtemplates[0]['cc']) $emailForm->cc->setValue($emailtemplates[0]['cc']);
-		if($emailtemplates[0]['bcc']) $emailForm->bcc->setValue($emailtemplates[0]['bcc']);
-		if($emailtemplates[0]['replyto']) $emailForm->replyto->setValue($emailtemplates[0]['replyto']);
-		$emailForm->subject->setValue($emailtemplates[0]['subject']);
-		$emailForm->body->setValue($emailtemplates[0]['body']);
+
+		//Get email templates
+		$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
+		if($emailtemplate = $emailtemplateDb->getEmailtemplate('sales', 'reminder')) {
+			if($emailtemplate['cc']) $emailForm->cc->setValue($emailtemplate['cc']);
+			if($emailtemplate['bcc']) $emailForm->bcc->setValue($emailtemplate['bcc']);
+			if($emailtemplate['replyto']) $emailForm->replyto->setValue($emailtemplate['replyto']);
+			$emailForm->subject->setValue($emailtemplate['subject']);
+			$emailForm->body->setValue($emailtemplate['body']);
+		}
 
 		//Copy file to attachments
 		$filename = $reminder['filename'];
