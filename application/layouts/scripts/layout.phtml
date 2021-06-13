@@ -225,6 +225,11 @@ $this->language = str_replace('_', '-', $this->language);
 					<div class="hidden-sm hidden-md col-lg-2">
 						<div id="categories">
 							<?php echo $this->TreeMenu($this->options['categories']); ?>
+							<p>
+								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'import', 'id'=>null)); ?>"><?php echo $this->translate('Import'); ?></a> |
+								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'export', 'id'=>null)); ?>"><?php echo $this->translate('Export'); ?></a>
+							</p>
+							<?php if($this->tags) echo $this->Tags($this->tags, 'contacts', 'contact'); ?>
 						</div>
 					</div>
 					<div class="col-sm-12 col-lg-10">
@@ -236,7 +241,11 @@ $this->language = str_replace('_', '-', $this->language);
 					<div class="hidden-sm hidden-md col-lg-2">
 						<div id="categories">
 							<?php echo $this->TreeMenu($this->options['categories']); ?><br>
-							<p>» <a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import', 'id'=>null)); ?>"><?php echo $this->translate('Import'); ?></a></p>
+							<p>
+								<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import', 'id'=>null)); ?>"><?php echo $this->translate('Import'); ?></a> |
+								<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'export', 'id'=>null)); ?>"><?php echo $this->translate('Export'); ?></a>
+							</p>
+							<?php if($this->tags) echo $this->Tags($this->tags, 'items', 'item'); ?>
 						</div>
 					</div>
 					<div class="col-sm-12 col-lg-10">

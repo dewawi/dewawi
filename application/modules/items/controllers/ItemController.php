@@ -250,11 +250,21 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
 
+	public function deleteAction()
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+
+		if ($this->getRequest()->isPost()) {
+			$id = $this->_getParam('id', 0);
+			$item = new Items_Model_DbTable_Item();
+			$item->deleteItem($id);
+		}
+		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+	}
+
 	public function importAction()
 	{
-		//$this->_helper->viewRenderer->setNoRender();
-		//$this->_helper->getHelper('layout')->disableLayout();
-
 		$request = $this->getRequest();
 
 		$form = new Items_Form_Import();
@@ -309,15 +319,15 @@ class Items_ItemController extends Zend_Controller_Action
 					//Get categories
 					$categoryIndex = $this->getProductCategoryIndex();
 
-					//Get 
+					//Get
 					if($formData['separator'] == 'comma') $separator = ',';
 					if($formData['separator'] == 'semicolon') $separator = ';';
 					if($formData['delimiter'] == 'single') $delimeter = "'";
 					if($formData['delimiter'] == 'double') $delimeter = '"';
 
 					$row = 0;
-					$itemsUpdated = 0;
-					$itemsCreated = 0;
+					$rowsUpdated = 0;
+					$rowsCreated = 0;
 					while(($datacsv = fgetcsv($data, 0, $separator, $delimeter)) !== FALSE) {
 						if($row == 0) {
 							foreach($datacsv as $pos => $attr) {
@@ -343,7 +353,11 @@ class Items_ItemController extends Zend_Controller_Action
 											if(isset($map['dewawidiscount']) && $datacsv[$map['dewawidiscount']]) {
 												$updateData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['dewawidiscount']])/100;
 											} elseif($datacsv[$map[$attr]]) {
-												$updateData['price'] = $datacsv[$map[$attr]];
+												if(is_numeric($datacsv[$map[$attr]])) {
+													$updateData['price'] = $datacsv[$map[$attr]];
+												} else {
+													echo 'Price is not numeric for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
+												}
 											}
 										} elseif(($attr == 'deliverytime') || ($attr == 'deliverytimeoos')) {
 											if($deliverytimeid = array_search($datacsv[$map[$attr]], $deliverytimes)) {
@@ -512,8 +526,9 @@ class Items_ItemController extends Zend_Controller_Action
 								//error_log(print_r($updateData,true));
 								$itemDb->updateItem($item['id'], $updateData);
 								if(isset($map['ebayuserid']) && isset($datacsv[$map['ebayuserid']])) {
-									if($datacsv[$map['ebayuserid']] == 0) {
-										$ebayListingDb->deleteListing($item['id']);
+									if($datacsv[$map['ebayuserid']] == '0') {
+										$ebayListingDb->deleteListingByItemID($item['id']);
+										echo 'Item deleted from eBay: '.$item['sku'].', itemid: '.$item['id'].'<br>';
 									} elseif($datacsv[$map['ebayuserid']]) {
 										$ebayAccount = $ebayAccountDb->getAccountByUserID($datacsv[$map['ebayuserid']]);
 										if($ebayAccount) {
@@ -554,7 +569,8 @@ class Items_ItemController extends Zend_Controller_Action
 								}
 								if(isset($map['ebiztraderuserid']) && isset($datacsv[$map['ebiztraderuserid']])) {
 									if($datacsv[$map['ebiztraderuserid']] == '0') {
-										$ebiztraderListingDb->deleteListing($item['id']);
+										$ebiztraderListingDb->deleteListingByItemID($item['id']);
+										echo 'Item deleted from ebiz-trader: '.$item['sku'].', itemid: '.$item['id'].'<br>';
 									} elseif($datacsv[$map['ebiztraderuserid']]) {
 										$ebiztraderAccount = $ebiztraderAccountDb->getAccountByUserID($datacsv[$map['ebiztraderuserid']]);
 										if($ebiztraderAccount) {
@@ -579,14 +595,27 @@ class Items_ItemController extends Zend_Controller_Action
 									}
 								}
 								if(isset($map['shopid']) && isset($datacsv[$map['shopid']])) {
-									if($datacsv[$map['shopid']] == 0) {
-										echo 'Deleted sku: '.$item['sku'].', itemid: '.$item['id']."<br>";
-										$shopItemDb->deleteItem($item['id']);
-									} elseif(!$shopItemDb->getItem($item['id'], $datacsv[$map['shopid']])) {
-										$shopItemDb->addItem(array('itemid' => $item['id'], 'shopid' => $datacsv[$map['shopid']]));
+									if($datacsv[$map['shopid']] == '0') {
+										$shopItemDb->deleteItemByItemID($item['id']);
+										echo 'Item deleted from shop: '.$item['sku'].', itemid: '.$item['id'].'<br>';
+									} elseif($datacsv[$map['shopid']] && !$shopItemDb->getItem($item['id'], $datacsv[$map['shopid']])) {
+										$shopData['item_id'] = $item['id'];
+										$shopData['shop_id'] = $datacsv[$map['shop_id']];
+										$shopData['title'] = $datacsv[$map['shop_title']] ? $datacsv[$map['shop_title']] : $item['title'];
+										$shopData['price'] = $item['price'];
+										//$shopData['title'] = $datacsv[$map['shopcategory']];
+										$shopData['description'] = $datacsv[$map['shop_description']];
+										$shopData['description_short'] = $datacsv[$map['shop_description_short']];
+										$shopData['description_mini'] = $datacsv[$map['shop_description_mini']];
+										$shopItemDb->addItem($shopData);
+
+										$asdasd['shopdescription'] = '';
+										$asdasd['shopdescriptionshort'] = '';
+										$asdasd['shopdescriptionmini'] = '';
+										$itemDb->updateItem($asdasd);
 									}
 								}
-								++$itemsUpdated;
+								++$rowsUpdated;
 
 								//Delete existing item attributes
 								$itemAttribute->deleteItemattributesByItemID($item['id']);
@@ -651,19 +680,21 @@ class Items_ItemController extends Zend_Controller_Action
 								$itemid = $itemDb->addItem($updateData);
 								if(isset($map['ebayuserid'])) {
 									if($datacsv[$map['ebayuserid']] == 0) {
-										$ebayListingDb->deleteListing($itemid);
+										$ebayListingDb->deleteListingByItemID($itemid);
+										echo 'Item deleted from eBay: '.$updateData['sku'].', itemid: '.$itemid.'<br>';
 									} else {
 										$ebayListingDb->addListing(array('itemid' => $itemid, 'ebayuserid' => $datacsv[$map['ebayuserid']]));
 									}
 								}
 								if(isset($map['shopid'])) {
 									if($datacsv[$map['shopid']] == 0) {
-										$shopItemDb->deleteItem($itemid);
+										$shopItemDb->deleteItemByItemID($itemid);
+										echo 'Item deleted from shop: '.$updateData['sku'].', itemid: '.$itemid.'<br>';
 									} else {
 										$shopItemDb->addItem(array('itemid' => $itemid, 'shopid' => $datacsv[$map['shopid']]));
 									}
 								}
-								++$itemsCreated;
+								++$rowsCreated;
 
 								//Create item images
 								foreach($images as $image) {
@@ -695,8 +726,8 @@ class Items_ItemController extends Zend_Controller_Action
 				}
 
 				echo ($row-1).' rows are processed<br>';
-				echo $itemsUpdated.' existing items are updated<br>';
-				echo $itemsCreated.' new items are created<br>';
+				echo $rowsUpdated.' existing rows are updated<br>';
+				echo $rowsCreated.' new rows are created<br>';
 
 				$this->view->data = $data;
 			} else {
@@ -706,6 +737,104 @@ class Items_ItemController extends Zend_Controller_Action
 
 		$this->view->form = $form;
 		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
+	public function exportAction()
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+
+		$toolbar = new Items_Form_Toolbar();
+		$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$get = new Items_Model_Get();
+		$tags = $get->tags('items', 'item');
+		$params['limit'] = 0;
+		$items = $get->items($params, $options);
+
+		$tagEntites = array();
+		foreach($items as $item) {
+			$tagEntites[$item->id] = $get->tags('items', 'item', $item->id);
+		}
+
+		require_once(BASE_PATH.'/library/Dewawi/Directory.php');
+		$Directory = new Dewawi_Directory();
+		$fileUrl = $Directory->getShortUrl($this->_user['clientid']);
+		$filePath = BASE_PATH.'/files/export/'.$fileUrl.'/';
+		$itemsFileCsv = 'items-'.time().'.csv';
+		$itemsFileZip = 'items-'.time().'.zip';
+
+		//Get csv data
+		if(count($items)) {
+			//Create CSV data
+			$csvData = array();
+			$csvData[0]['id'] = 'id';
+			$csvData[0]['sku'] = 'sku';
+			$csvData[0]['gtin'] = 'gtin';
+			$csvData[0]['title'] = 'title';
+			$csvData[0]['description'] = 'description';
+			$csvData[0]['quantity'] = 'quantity';
+			$csvData[0]['price'] = 'price';
+			$csvData[0]['currency'] = 'currency';
+			$csvData[0]['taxid'] = 'taxid';
+			$csvData[0]['manufacturersku'] = 'manufacturersku';
+			$csvData[0]['manufacturergtin'] = 'manufacturergtin';
+			$csvData[0]['length'] = 'length';
+			$csvData[0]['width'] = 'width';
+			$csvData[0]['height'] = 'height';
+			$csvData[0]['weight'] = 'weight';
+			$csvData[0]['tags'] = 'tags';
+			foreach($items as $item) {
+				$csvData[$item->id]['id'] = $item->id;
+				$csvData[$item->id]['sku'] = $item->sku;
+				$csvData[$item->id]['gtin'] = $item->gtin;
+				$csvData[$item->id]['title'] = $item->title;
+				$csvData[$item->id]['description'] = $item->description;
+				$csvData[$item->id]['quantity'] = $item->quantity;
+				$csvData[$item->id]['price'] = $item->price;
+				$csvData[$item->id]['currency'] = $item->currency;
+				$csvData[$item->id]['taxid'] = $item->taxid;
+				$csvData[$item->id]['manufacturersku'] = $item->manufacturersku;
+				$csvData[$item->id]['manufacturergtin'] = $item->manufacturergtin;
+				$csvData[$item->id]['length'] = $item->length;
+				$csvData[$item->id]['width'] = $item->width;
+				$csvData[$item->id]['height'] = $item->height;
+				$csvData[$item->id]['weight'] = $item->weight;
+				$csvData[$item->id]['category'] = $options['categories'][$item->catid]['title'];
+				$tags = '';
+				foreach ($tagEntites[$item->id] as $entity) {
+					$tags .= $entity['tag'];
+				}
+				$csvData[$item->id]['tags'] = $tags;
+			}
+			//Save data to items.csv
+			$itemsFile = fopen($filePath.$itemsFileCsv, 'w');
+			foreach($csvData as $fields) {
+				fputcsv($itemsFile, $fields);
+			}
+			fclose($itemsFile);
+
+			//Create product zip archive
+			$zip = new ZipArchive;
+			$status = $zip->open($filePath.$itemsFileZip, ZipArchive::CREATE);
+			if($status === TRUE) {
+				$zip->addFile($filePath.$itemsFileCsv, $itemsFileCsv);
+				$zip->close();
+			} else {
+			}
+
+			// We'll be outputting a PDF
+			header('Content-type: text/csv');
+
+			// It will be called downloaded.pdf
+			header('Content-Disposition: attachment; filename="'.$itemsFileCsv.'"');
+
+			// The PDF source is in original.pdf
+			readfile($filePath.$itemsFileCsv);
+		} else {
+			$this->_helper->redirector->gotoSimple('index', 'item');
+		}
 	}
 
 	protected function uploadAction()
@@ -747,19 +876,6 @@ class Items_ItemController extends Zend_Controller_Action
 		}
 
 		$this->view->form = $form;
-	}
-
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if ($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$item = new Items_Model_DbTable_Item();
-			$item->deleteItem($id);
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
 
 	public function lockAction()

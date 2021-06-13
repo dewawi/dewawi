@@ -417,6 +417,260 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
 
+	public function importAction()
+	{
+		$request = $this->getRequest();
+
+		$form = new Contacts_Form_Import();
+
+		if($request->isPost()) {
+			$formData = $request->getPost();
+			if($form->isValid($formData)) {
+				if(!file_exists(BASE_PATH.'/files/import/')) {
+					mkdir(BASE_PATH.'/files/import/');
+					chmod(BASE_PATH.'/files/import/', 0777);
+				}
+
+				/* Uploading Document File on Server */
+				$upload = new Zend_File_Transfer_Adapter_Http();
+				$upload->setDestination(BASE_PATH.'/files/import/');
+				try {
+					// upload received file(s)
+					$upload->receive();
+				} catch (Zend_File_Transfer_Exception $e) {
+					$e->getMessage();
+				}
+				$file = $upload->getFileName();
+				$data = fopen($file, 'r');
+
+				if($data && ($data !== FALSE)) {
+					$map = array();
+					$dataTemplate = array();
+					$contactDb = new Contacts_Model_DbTable_Contact();
+					$contactInfo = $contactDb->getInfo();
+					$contactAddress = new Contacts_Model_DbTable_Address();
+					$contactEmail = new Contacts_Model_DbTable_Email();
+					$contactInternet = new Contacts_Model_DbTable_Internet();
+					$contactPhone = new Contacts_Model_DbTable_Phone();
+
+					//Get categories
+					$categoryIndex = $this->getProductCategoryIndex();
+
+					//Get
+					if($formData['separator'] == 'comma') $separator = ',';
+					if($formData['separator'] == 'semicolon') $separator = ';';
+					if($formData['delimiter'] == 'single') $delimeter = "'";
+					if($formData['delimiter'] == 'double') $delimeter = '"';
+
+					$row = 0;
+					$rowsUpdated = 0;
+					$rowsCreated = 0;
+					while(($datacsv = fgetcsv($data, 0, $separator, $delimeter)) !== FALSE) {
+						if($row == 0) {
+							foreach($datacsv as $pos => $attr) {
+								if($attr) {
+									$map[$attr] = $pos;
+								}
+							}
+						} elseif(isset($datacsv[$map['name1']]) && $datacsv[$map['name1']]) {
+							//echo $datacsv[$map['sku']];
+							//print_r($map);
+							$updateData = array();
+							foreach($map as $attr => $pos) {
+								if(isset($datacsv[$map[$attr]])) {
+									if(array_search($attr, $contactInfo)) {
+										if($attr == 'priceruleamount') {
+											if(is_numeric($datacsv[$map['priceruleamount']])) {
+												$updateData['priceruleamount'] = $datacsv[$map['priceruleamount']];
+											} else {
+												echo 'Price rule amount is not numeric for '.$datacsv[$map['name1']].': '.$datacsv[$map[$attr]]."<br>";
+											}
+										} else {
+											$updateData[$attr] = $datacsv[$map[$attr]];
+											//var_dump($datacsv[$map[$attr]]);
+										}
+									} elseif($attr == 'category') {
+										$updateData['catid'] = 0;
+										$currentCategory = $categoryIndex;
+										$shopCategories = explode(' > ', $datacsv[$map['category']]);
+										foreach($shopCategories as $shopCategory) {
+											if(isset($currentCategory[md5($shopCategory)])) {
+												$currentCategory = $currentCategory[md5($shopCategory)];
+												$updateData['catid'] = $currentCategory['id'];
+												if(isset($currentCategory['childs'])) $currentCategory = $currentCategory['childs'];
+											} else {
+												$updateData['catid'] = 0;
+											}
+										}
+										if($updateData['catid'] == 0) {
+											/* TO DO handle if no category found */
+											echo 'No category found for '.$datacsv[$map['name1']].': '.$datacsv[$map['category']]."<br>";
+										}
+									}
+								}
+							}
+
+							//Create and update the contact
+							if($contact = $contactDb->getContactWithID($datacsv[$map['name1']])) {
+								//error_log(print_r($updateData,true));
+								$contactDb->updateContact($contact['id'], $updateData);
+								++$rowsUpdated;
+							} else {
+								if(!$updateData['catid']) $updateData['catid'] = 0;
+
+								$id = $contactDb->addContact($updateData);
+
+								//Set increment value
+								$incrementDb = new Application_Model_DbTable_Increment();
+								$increment = $incrementDb->getIncrement('contactid');
+								$contactDb->updateContact($id, array('contactid' => $increment));
+								$incrementDb->setIncrement(($increment+1), 'contactid');
+
+								$addressDb = new Contacts_Model_DbTable_Address();
+								$addressDb->addAddress(array(
+														'contactid' => $id,
+														'type' => 'billing',
+														'street' => $datacsv[$map['street']],
+														'postcode' => $datacsv[$map['postcode']],
+														'city' => $datacsv[$map['city']],
+														'country' => $datacsv[$map['country']],
+														'ordering' => 1
+													));
+
+								if(isset($datacsv[$map['phone']]) && $datacsv[$map['phone']]) {
+									$phoneDb = new Contacts_Model_DbTable_Phone();
+									$phoneDb->addPhone(array('contactid' => $id, 'type' => 'phone', 'phone' => $datacsv[$map['phone']], 'ordering' => 1));
+								}
+
+								if(isset($datacsv[$map['email']]) && $datacsv[$map['email']]) {
+									$emailDb = new Contacts_Model_DbTable_Email();
+									$emailDb->addEmail(array('contactid' => $id, 'email' => $datacsv[$map['email']], 'ordering' => 1));
+								}
+
+								if(isset($datacsv[$map['internet']]) && $datacsv[$map['internet']]) {
+									$internetDb = new Contacts_Model_DbTable_Internet();
+									$internetDb->addInternet(array('contactid' => $id, 'internet' => $datacsv[$map['internet']], 'ordering' => 1));
+								}
+								++$rowsCreated;
+							}
+						}
+						$row++;
+					}
+					//print_r($map);
+					fclose($data);
+				} else {
+					echo 'ERROR: No data recieved<br>';
+				}
+
+				echo ($row-1).' rows are processed<br>';
+				echo $rowsUpdated.' existing rows are updated<br>';
+				echo $rowsCreated.' new rows are created<br>';
+
+				$this->view->data = $data;
+			} else {
+				$form->populate($formData);
+			}
+		}
+
+		$this->view->form = $form;
+		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
+	public function exportAction()
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+
+		$toolbar = new Contacts_Form_Toolbar();
+		$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$get = new Contacts_Model_Get();
+		$tags = $get->tags('contacts', 'contact');
+		$params['limit'] = 0;
+		$contacts = $get->contacts($params, $options);
+
+		$tagEntites = array();
+		foreach($contacts as $contact) {
+			$tagEntites[$contact->id] = $get->tags('contacts', 'contact', $contact->id);
+		}
+
+		require_once(BASE_PATH.'/library/Dewawi/Directory.php');
+		$Directory = new Dewawi_Directory();
+		$fileUrl = $Directory->getShortUrl($this->_user['clientid']);
+		$filePath = BASE_PATH.'/files/export/'.$fileUrl.'/';
+		$contactsFileCsv = 'contacts-'.time().'.csv';
+		$contactsFileZip = 'contacts-'.time().'.zip';
+
+		//Get csv data
+		if(count($contacts)) {
+			//Create CSV data
+			$csvData = array();
+			$csvData[0]['id'] = 'id';
+			$csvData[0]['name1'] = 'name1';
+			$csvData[0]['name2'] = 'name2';
+			$csvData[0]['department'] = 'department';
+			$csvData[0]['street'] = 'street';
+			$csvData[0]['postcode'] = 'postcode';
+			$csvData[0]['city'] = 'city';
+			$csvData[0]['country'] = 'country';
+			$csvData[0]['taxnumber'] = 'taxnumber';
+			$csvData[0]['vatin'] = 'vatin';
+			$csvData[0]['phone'] = 'phone';
+			$csvData[0]['email'] = 'email';
+			$csvData[0]['internet'] = 'internet';
+			$csvData[0]['$category'] = 'category';
+			$csvData[0]['tags'] = 'tags';
+			foreach($contacts as $contact) {
+				$csvData[$contact->id]['id'] = $contact->id;
+				$csvData[$contact->id]['name1'] = $contact->name1;
+				$csvData[$contact->id]['name2'] = $contact->name2;
+				$csvData[$contact->id]['department'] = $contact->department;
+				$csvData[$contact->id]['street'] = $contact->street;
+				$csvData[$contact->id]['postcode'] = $contact->postcode;
+				$csvData[$contact->id]['city'] = $contact->city;
+				$csvData[$contact->id]['country'] = $contact->country;
+				$csvData[$contact->id]['taxnumber'] = $contact->taxnumber;
+				$csvData[$contact->id]['vatin'] = $contact->vatin;
+				$csvData[$contact->id]['phone'] = $contact->phones;
+				$csvData[$contact->id]['email'] = $contact->emails;
+				$csvData[$contact->id]['internet'] = $contact->internets;
+				$csvData[$contact->id]['category'] = $options['categories'][$contact->catid]['title'];
+				$tags = '';
+				foreach ($tagEntites[$contact->id] as $entity) {
+					$tags .= $entity['tag'];
+				}
+				$csvData[$contact->id]['tags'] = $tags;
+			}
+			//Save data to contacts.csv
+			$contactsFile = fopen($filePath.$contactsFileCsv, 'w');
+			foreach($csvData as $fields) {
+				fputcsv($contactsFile, $fields);
+			}
+			fclose($contactsFile);
+
+			//Create product zip archive
+			$zip = new ZipArchive;
+			$status = $zip->open($filePath.$contactsFileZip, ZipArchive::CREATE);
+			if($status === TRUE) {
+				$zip->addFile($filePath.$contactsFileCsv, $contactsFileCsv);
+				$zip->close();
+			} else {
+			}
+
+			// We'll be outputting a PDF
+			header('Content-type: text/csv');
+
+			// It will be called downloaded.pdf
+			header('Content-Disposition: attachment; filename="'.$contactsFileCsv.'"');
+
+			// The PDF source is in original.pdf
+			readfile($filePath.$contactsFileCsv);
+		} else {
+			$this->_helper->redirector->gotoSimple('index', 'contact');
+		}
+	}
+
 	public function lockAction()
 	{
 		$id = $this->_getParam('id', 0);
@@ -438,6 +692,52 @@ class Contacts_ContactController extends Zend_Controller_Action
 	public function validateAction()
 	{
 		$this->_helper->Validate();
+	}
+
+	public function getProductCategoryIndex() {
+		$categoryDb = new Application_Model_DbTable_Category();
+		$categories = $categoryDb->getCategories('contact');
+		$categoriesByID = array();
+		foreach($categories as $category) {
+			$categoriesByID[$category['id']] = $category['title'];
+		}
+
+		$childCategories = array();
+		foreach($categories as $category) {
+			if(isset($childCategories[$category['parentid']])) {
+				array_push($childCategories[$category['parentid']], $category['id']);
+			} else {
+				$childCategories[$category['parentid']] = array($category['id']);
+			}
+		}
+
+		$categoryIndex = array();
+		foreach($categories as $category) {
+			if($category['parentid'] == 0) {
+				$categoryIndex[md5($category['title'])]['id'] = $category['id'];
+				$categoryIndex[md5($category['title'])]['title'] = $category['title'];
+				if(isset($childCategories[$category['id']])) {
+					$categoryIndex[md5($category['title'])]['childs'] = $this->getSubCategoryIndex($categoriesByID, $childCategories, $category['id']);
+				}
+			}
+		}
+		//var_dump($categoriesByID);
+		//var_dump($childCategories);
+		//var_dump($categoryIndex);
+
+		return $categoryIndex;
+	}
+
+	public function getSubCategoryIndex($categories, $childCategories, $id) {
+		$subCategories = array();
+		foreach($childCategories[$id] as $child) {
+			$subCategories[md5($categories[$child])]['id'] = $child;
+			$subCategories[md5($categories[$child])]['title'] = $categories[$child];
+			if(isset($childCategories[$child])) {
+				$subCategories[md5($categories[$child])]['childs'] = $this->getSubCategoryIndex($categories, $childCategories, $child);
+			}
+		}
+		return $subCategories;
 	}
 
 	public function autocompleteAction()

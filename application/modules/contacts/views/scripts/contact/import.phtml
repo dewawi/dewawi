@@ -1,0 +1,47 @@
+<?php
+$this->title = $this->translate('CONTACTS');
+$this->headTitle($this->title);
+echo $this->Messages();
+?>
+
+<form id="upload" enctype="multipart/form-data" action="" method="post">
+	<dl class="form">
+		<?php echo $this->form->getElement('file') ?>
+		<?php echo $this->form->getElement('separator') ?>
+		<?php echo $this->form->getElement('delimiter') ?>
+		<?php echo $this->form->getElement('submit') ?>
+	</dl>
+	<p>Max: <?php echo ini_get('upload_max_filesize'); ?></p>
+</form>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+<table>
+<?php
+/*
+if ($this->data && ($this->data !== FALSE)) {
+	while (($data = fgetcsv($this->data, 0, ',')) !== FALSE) {
+		print_r($data);
+	}
+	fclose($this->data);
+}
+
+$row = 1;
+if ($this->data && ($this->data !== FALSE)) {
+	while (($data = fgetcsv($this->data, 0, ',')) !== FALSE) {
+		$num = count($data);
+		echo "<tr>\n";
+		$row++;
+		for ($c=0; $c < $num; $c++) {
+				echo "<td>".$data[$c] . "</td>\n";
+		}
+		echo "</tr>\n";
+	}
+	fclose($this->data);
+}*/
+?>
+</table>
