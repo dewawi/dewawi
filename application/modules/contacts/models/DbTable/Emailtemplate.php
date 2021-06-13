@@ -26,9 +26,6 @@ class Contacts_Model_DbTable_Emailtemplate extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where);
-		if(!$data) {
-			throw new Exception("Could not find row $module/$controller");
-		}
-		return $data->toArray();
+		return $data ? $data->toArray() : $data;
 	}
 }
