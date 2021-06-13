@@ -2,11 +2,11 @@
 	$config['header'] = "DEWAWI Setup Wizard";
 	$config['applicationPath'] = "../";
 	$config['database_file'] = "configs/database.ini";
-	
+
 	// INTRODUCTION
 	$introduction = array();
 	$introduction["product"] = "DEWAWI";
-	$introduction["productVersion"] = "0.9";
+	$introduction["productVersion"] = "1.0.0";
 	$introduction["company"] = "DEWAWI Open Source";
 
 	// SERVER REQUIREMENTS
