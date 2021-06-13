@@ -20,7 +20,8 @@ class Application_Controller_Action_Helper_MenuStructure extends Zend_Controller
 		if(($count > 0) && ($level == 0)) {
 			$request  = $this->getRequest();
 			$module = $request->getParam('module', null);
-			if($module != 'admin') $optionsStructure[0] = 'CATEGORIES_NOT_CATEGORISED';
+			$action = $request->getParam('action', null);
+			if(($module != 'admin') && (($action == 'index') || ($action == 'select'))) $optionsStructure[0] = 'CATEGORIES_NOT_CATEGORISED';
 		}
 		return $optionsStructure;
 	}

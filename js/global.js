@@ -880,6 +880,7 @@ function search() {
 	data.type = $('#type').val();
 	data.country = $('#country').val();
 	data.catid = $('#catid').val();
+	data.tagid = $('#tagid').val();
 	data.category = $('#category').val();
 	data.daterange = $('#daterange input:checked').val();
 	data.from = $('#from').val();
@@ -948,8 +949,8 @@ function clear(element) {
 		$.cookie('keyword', '', { path: cookiePath });
 		search();
 	} else if(element == 'catid') {
-		$('#catid').val(0);
-		$.cookie('catid', 0, { path: cookiePath });
+		$('#catid').val('all');
+		$.cookie('catid', 'all', { path: cookiePath });
 		search();
 	} else if(element == 'tagid') {
 		$('#tagid').val(0);
