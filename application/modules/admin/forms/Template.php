@@ -37,6 +37,9 @@ class Admin_Form_Template extends Zend_Form
 		$form['clientid']->setDecorators(array('ViewHelper'))
 			->setAttrib('default', '0');
 
+		$form['activated'] = new Zend_Form_Element_Checkbox('activated');
+		$form['activated']->addFilter('Int')->removeDecorator('Label');
+
 		$this->addElements($form);
 	}
 }

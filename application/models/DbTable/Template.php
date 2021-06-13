@@ -63,6 +63,7 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
 
 		$templates = array();

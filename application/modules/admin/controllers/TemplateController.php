@@ -58,7 +58,14 @@ class Admin_TemplateController extends Zend_Controller_Action
 		$templatesDb = new Admin_Model_DbTable_Template();
 		$templates = $templatesDb->getTemplates();
 
+		$forms = array();
+		foreach($templates as $template) {
+			$forms[$template->id] = new Admin_Form_Template();
+			$forms[$template->id]->activated->setValue($template->activated);
+		}
+
 		$this->view->form = $form;
+		$this->view->forms = $forms;
 		$this->view->templates = $templates;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
@@ -77,7 +84,14 @@ class Admin_TemplateController extends Zend_Controller_Action
 		$templatesDb = new Admin_Model_DbTable_Template();
 		$templates = $templatesDb->getTemplates();
 
+		$forms = array();
+		foreach($templates as $template) {
+			$forms[$template->id] = new Admin_Form_Template();
+			$forms[$template->id]->activated->setValue($template->activated);
+		}
+
 		$this->view->form = $form;
+		$this->view->forms = $forms;
 		$this->view->templates = $templates;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();

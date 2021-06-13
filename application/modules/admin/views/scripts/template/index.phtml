@@ -29,6 +29,9 @@ echo $this->Messages();
 					<th class="website" width="20%">
 						<?php echo $this->translate('ADMIN_WEBSITE'); ?>
 					</th>
+					<th class="category" width="12%">
+						<?php echo $this->translate('ADMIN_ACTIVATED'); ?>
+					</th>
 					<th width="8%"></th>
 				</tr>
 			</thead>
@@ -54,6 +57,9 @@ echo $this->Messages();
 						<td class="name">
 							<span class="editable" data-name="website"><?php echo $this->escape($template->website); ?></span>
 						</td>
+						<td class="activated">
+							<?php echo $this->forms[$template->id]->activated; ?>
+						</td>
 						<td class="buttons">
 							<?php echo $this->Button('copy'); ?>
 							<?php echo $this->Button('delete'); ?>
@@ -74,6 +80,9 @@ echo $this->Messages();
 					</td>
 					<td>
 						<?php echo $this->form->website; ?>
+					</td>
+					<td>
+						<?php echo $this->form->activated; ?>
 					</td>
 					<td class="buttons">
 						<?php echo $this->toolbar->save; ?>
