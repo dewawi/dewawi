@@ -264,7 +264,6 @@ $this->language = str_replace('_', '-', $this->language);
 			<?php endif; ?>
 			</div>
 
-
 			<div class="row">
 				<div class="col-sm-12 col-md-12">
 					<div id="footer">
@@ -272,13 +271,19 @@ $this->language = str_replace('_', '-', $this->language);
 							<?php if(false) : ?>
 								<?php echo 'test'; ?>
 							<?php else : ?>
-								<a href="https://www.dewawi.com/" target="_blank">DEWAWI Open Source Warenwirtschaftssystem</a>
+								<p>
+									<a href="https://www.dewawi.com/" target="_blank">DEWAWI Open Source Warenwirtschaftssystem</a>
+								</p>
+								<?php if($this->module == 'admin') : ?>
+									<p>
+										<span>Version 1.0.0</span>
+									</p>
+								<?php endif; ?>
 							<?php endif; ?>
 						</span>
 					</div>
 				</div>
 			</div>
-
 		</div>
 	</div>
 

@@ -257,6 +257,10 @@ hr {
     margin-top: 15px;
     font-size: 0.8rem;
 }
+#footer p a,
+#footer p span {
+    font-size: 0.9rem;
+}
 #categories {
 	min-width: 200px;
     margin-left: 3px;
@@ -760,7 +764,7 @@ span.editable {
 	margin: 0;
 	background: #000;
 	filter: alpha(opacity=20);
-	-moz-opacity: 0.2;  
+	-moz-opacity: 0.2;
 	-khtml-opacity: 0.2;
 	opacity: 0.2;
 	z-index: 998;
@@ -1028,7 +1032,7 @@ div#filter div {
 }
 
 .level0 {
-	
+
 }
 .level1 a {
 	padding-left:20px;
@@ -1168,7 +1172,7 @@ padding-top: 3px;
 border: none;
 }
 
-.treeview a.active{ 
+.treeview a.active{
 font-weight: bold;
 }
 
