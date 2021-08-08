@@ -146,8 +146,8 @@ class Items_Form_Item extends Zend_Form
 			->setRequired(true)
 			->addValidator('NotEmpty');
 
-		$form['taxid'] = new Zend_Form_Element_Select('taxid');
-		$form['taxid']->setLabel('ITEMS_VAT')
+		$form['uomid'] = new Zend_Form_Element_Select('uomid');
+		$form['uomid']->setLabel('ITEMS_UOM')
 			->addMultiOption(0, 'ITEMS_NONE')
 			->setRequired(true)
 			->addValidator('NotEmpty');
