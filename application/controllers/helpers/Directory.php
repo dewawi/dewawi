@@ -40,6 +40,20 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 				$flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
 				return false;
 			}
+		} elseif($type == 'export') {
+			//Create export folder if does not already exists
+			$url = $this->getShortUrl();
+			$dir = 'export/';
+			if(file_exists($path.$dir.$url) && is_dir($path.$dir.$url) && is_writable($path.$dir.$url)) {
+				return true;
+			} elseif(is_writable($path)) {
+				$response = mkdir($path.$dir.$url, 0777, true);
+				if($response === false) $flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+				return $response;
+			} else {
+				$flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+				return false;
+			}
 		} elseif($type == 'contact') {
 			//Create contact folder if does not already exists
 			$dir = 'contacts/';

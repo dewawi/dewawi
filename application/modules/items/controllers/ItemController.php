@@ -32,6 +32,7 @@ class Items_ItemController extends Zend_Controller_Action
 		//Check if the directory is writable
 		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
 		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
+		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'export', $this->_flashMessenger);
 	}
 
 	public function indexAction()
@@ -358,6 +359,10 @@ class Items_ItemController extends Zend_Controller_Action
 												} else {
 													echo 'Price is not numeric for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
 												}
+											}
+										} elseif($attr == 'quantity') {
+											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
+												$updateData[$attr] = $datacsv[$map[$attr]];
 											}
 										} elseif(($attr == 'deliverytime') || ($attr == 'deliverytimeoos')) {
 											if($deliverytimeid = array_search($datacsv[$map[$attr]], $deliverytimes)) {
@@ -690,7 +695,7 @@ class Items_ItemController extends Zend_Controller_Action
 									if($datacsv[$map['shopid']] == 0) {
 										$shopItemDb->deleteItemByItemID($itemid);
 										echo 'Item deleted from shop: '.$updateData['sku'].', itemid: '.$itemid.'<br>';
-									} else {
+									} elseif($map['shopid']) {
 										$shopItemDb->addItem(array('itemid' => $itemid, 'shopid' => $datacsv[$map['shopid']]));
 									}
 								}
