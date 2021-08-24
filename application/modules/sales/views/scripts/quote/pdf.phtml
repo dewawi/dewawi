@@ -98,7 +98,7 @@ if(isset($this->template) && $this->template['website']) {
 //Logo
 if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
 	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
-	$pdf->Image($logo, 145, 10, 0, 0, '', $website);
+	$pdf->Image($logo, 145, 10, 50, 0, '', $website);
 }
 
 //IMPORTANT INFORMATIONS
@@ -261,7 +261,7 @@ if(count($positions)) {
 }
 
 $i = 1;
-$lastPage = $pdf->GetPage();
+$lastPage = $pdf->getNumPages();
 while($i <= $lastPage) {
 	$pdf->setPage($i);
 
@@ -286,12 +286,12 @@ while($i <= $lastPage) {
 		$pdf->Write(0, $this->translate('DOCUMENTS_QUOTE_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
 		if($quoteid) $pdf->Write(0, $quoteid.'   ');
-		else $pdf->Write(0, ' - - - - -	 ');
+		else $pdf->Write(0, ' - - - - -  ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_QUOTE_DATE').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
 		if($quotedate) $pdf->Write(0, $quotedate.'   ');
-		else $pdf->Write(0, ' - - - - -	 ');
+		else $pdf->Write(0, ' - - - - -  ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);

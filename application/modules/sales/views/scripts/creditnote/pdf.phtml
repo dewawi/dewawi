@@ -100,7 +100,7 @@ if(isset($this->template) && $this->template['website']) {
 //Logo
 if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
 	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
-	$pdf->Image($logo, 145, 10, 0, 0, '', $website);
+	$pdf->Image($logo, 145, 10, 50, 0, '', $website);
 }
 
 //IMPORTANT INFORMATIONS
@@ -267,7 +267,7 @@ if(count($positions)) {
 }
 
 $i = 1;
-$lastPage = $pdf->GetPage();
+$lastPage = $pdf->getNumPages();
 while($i <= $lastPage) {
 	$pdf->setPage($i);
 
@@ -291,13 +291,13 @@ while($i <= $lastPage) {
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_CREDIT_NOTE_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($creditnoteid) $pdf->Write(0, $creditnoteid.'	 ');
-		else $pdf->Write(0, ' - - - - -	 ');
+		if($creditnoteid) $pdf->Write(0, $creditnoteid.'   ');
+		else $pdf->Write(0, ' - - - - -  ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_CREDIT_NOTE_DATE').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
-		if($creditnotedate) $pdf->Write(0, $creditnotedate.'	 ');
-		else $pdf->Write(0, ' - - - - -	 ');
+		if($creditnotedate) $pdf->Write(0, $creditnotedate.'   ');
+		else $pdf->Write(0, ' - - - - -  ');
 		$pdf->SetFont('freesans', '', 8);
 		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');
 		$pdf->SetFont('freesansb', 'B', 8);
