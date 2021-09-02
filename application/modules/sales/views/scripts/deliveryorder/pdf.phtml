@@ -8,9 +8,12 @@ $client = $this->client;
 //Delivery order
 $id = $this->deliveryorder['id'];
 $deliveryorderid = $this->deliveryorder['deliveryorderid'];
+$salesorderid = $this->deliveryorder['salesorderid'];
 $contactid = $this->deliveryorder['contactid'];
 $deliveryorderdate = $this->deliveryorder['deliveryorderdate'];
 if($deliveryorderdate) $deliveryorderdate = implode('.', array_reverse(explode('-', $deliveryorderdate)));
+$salesorderdate = $this->deliveryorder['salesorderdate'];
+if($salesorderdate) $salesorderdate = implode('.', array_reverse(explode('-', $salesorderdate)));
 $orderdate = $this->deliveryorder['orderdate'];
 if($orderdate) $orderdate = implode('.', array_reverse(explode('-', $orderdate)));
 $deliverydate = $this->deliveryorder['deliverydate'];
@@ -164,6 +167,15 @@ if($shippingCountry) $pdf->MultiCell(70, 0, $shippingCountry, 0, 'L', false, 1, 
 if($shippingPhone) $pdf->MultiCell(70, 0, $this->translate('DOCUMENTS_PHONE').' '.$shippingPhone, 0, 'L', false, 1, '');
 $pdf->ln(20);
 if($y > $pdf->GetY()) $pdf->SetY($y);
+
+//Sales Order ID
+if($salesorderid) {
+	$info = $this->translate('DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s');
+	$info = sprintf($info, $salesorderid, $salesorderdate);
+	$pdf->SetFont('freesansb', 'B', 10);
+	$pdf->MultiCell(175, 0, $info, 0, 'L', false, 1, '', '', $reseth=true, $stretch=0, $ishtml=true);
+	$pdf->ln(4);
+}
 
 //HEADER
 if($header) {

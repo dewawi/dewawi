@@ -17,8 +17,9 @@ class Sales_Form_Salesorder extends Zend_Form
 			->setAttrib('size', '5')
 			->setAttrib('readonly', 'readonly');
 
-		$form['opportunityid'] = new Zend_Form_Element_Hidden('opportunityid');
-		$form['opportunityid']->addFilter('Int');
+		$form['quoteid'] = new Zend_Form_Element_Text('quoteid');
+		$form['quoteid']->setLabel('SALES_ORDERS_QUOTE_ID')
+			->setAttrib('size', '5');
 
 		$form['title'] = new Zend_Form_Element_Text('title');
 		$form['title']->setLabel('SALES_ORDERS_TITLE')
@@ -63,6 +64,13 @@ class Sales_Form_Salesorder extends Zend_Form
 
 		$form['salesorderdate'] = new Zend_Form_Element_Text('salesorderdate');
 		$form['salesorderdate']->setLabel('SALES_ORDERS_SALES_ORDER_DATE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('class', 'datePicker')
+			->setAttrib('size', '9');
+
+		$form['quotedate'] = new Zend_Form_Element_Text('quotedate');
+		$form['quotedate']->setLabel('SALES_ORDERS_QUOTE_DATE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('class', 'datePicker')

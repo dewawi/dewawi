@@ -212,11 +212,33 @@ class Sales_InvoiceController extends Zend_Controller_Action
 						}
 						//$this->_helper->Currency->convert($id, 'creditnote');
 					}
+					if(isset($data['salesorderid'])) {
+						if($data['salesorderid']) {
+							$data['salesorderid'] = str_replace(['+', '-'], '', filter_var($data['salesorderid'], FILTER_SANITIZE_NUMBER_INT));
+						} else {
+							$data['salesorderid'] = 0;
+						}
+					}
+					if(isset($data['salesorderdate'])) {
+						if(Zend_Date::isDate($data['salesorderdate'])) {
+							$salesorderdate = new Zend_Date($data['salesorderdate'], Zend_Date::DATES, 'de');
+							$data['salesorderdate'] = $salesorderdate->get('yyyy-MM-dd');
+						} else {
+							$data['salesorderdate'] = NULL;
+						}
+					}
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
 						$data['taxes'] = $calculations['row']['taxes']['total'];
 						$data['total'] = $calculations['row']['total'];
+					}
+					if(isset($data['salesorderid'])) {
+						if($data['salesorderid']) {
+							$data['salesorderid'] = str_replace(['+', '-'], '', filter_var($data['salesorderid'], FILTER_SANITIZE_NUMBER_INT));
+						} else {
+							$data['salesorderid'] = 0;
+						}
 					}
 					if(isset($data['orderdate'])) {
 						if(Zend_Date::isDate($data['orderdate'])) {
@@ -258,7 +280,11 @@ class Sales_InvoiceController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
 					}
+					if(!$data['salesorderid']) $data['salesorderid'] = NULL;
+
 					//Convert dates to the display format
+					$salesorderdate = new Zend_Date($data['salesorderdate']);
+					if($data['salesorderdate']) $data['salesorderdate'] = $salesorderdate->get('dd.MM.yyyy');
 					$orderdate = new Zend_Date($data['orderdate']);
 					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
 					$deliverydate = new Zend_Date($data['deliverydate']);
@@ -417,7 +443,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
+		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['ebayorderid']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -451,7 +477,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
+		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['ebayorderid']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -485,14 +511,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		if($data['invoiceid'] && $data['invoicedate']) {
-			$invoicedate = date("d.m.Y", strtotime($data['invoicedate']));
-			$header = $this->view->translate('DOCUMENTS_INVOICE_ID_%s_FROM_%s');
-			$header = '<p>'.sprintf($header, $data['invoiceid'], $invoicedate).'</p>';
-			$data['header'] = $header.$data['header'];
-		}
-
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
+		unset($data['id'], $data['ebayorderid']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -543,7 +562,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
+		unset($data['id'], $data['ebayorderid']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -577,7 +596,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
+		unset($data['id'], $data['ebayorderid']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -633,7 +652,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['ebayorderid']);
+		unset($data['id'], $data['ebayorderid']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -847,7 +866,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$increment = $incrementDb->getIncrement('invoiceid');
 			$filenameDb = new Application_Model_DbTable_Filename();
 			$filename = $filenameDb->getFilename('invoice', $invoice['language']);
-            $filename = str_replace('%NUMBER%', $increment, $filename);
+			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$invoiceDb->saveInvoice($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'invoiceid');
 			$invoice = $invoiceDb->getInvoice($id);

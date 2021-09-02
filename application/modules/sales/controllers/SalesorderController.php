@@ -212,6 +212,21 @@ class Sales_SalesorderController extends Zend_Controller_Action
 						}
 						//$this->_helper->Currency->convert($id, 'creditnote');
 					}
+					if(isset($data['quoteid'])) {
+						if($data['quoteid']) {
+							$data['quoteid'] = str_replace(['+', '-'], '', filter_var($data['quoteid'], FILTER_SANITIZE_NUMBER_INT));
+						} else {
+							$data['quoteid'] = 0;
+						}
+					}
+					if(isset($data['quotedate'])) {
+						if(Zend_Date::isDate($data['quotedate'])) {
+							$quotedate = new Zend_Date($data['quotedate'], Zend_Date::DATES, 'de');
+							$data['quotedate'] = $quotedate->get('yyyy-MM-dd');
+						} else {
+							$data['quotedate'] = NULL;
+						}
+					}
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
@@ -258,7 +273,11 @@ class Sales_SalesorderController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
 					}
+					if(!$data['quoteid']) $data['quoteid'] = NULL;
+
 					//Convert dates to the display format
+					$quotedate = new Zend_Date($data['quotedate']);
+					if($data['quotedate']) $data['quotedate'] = $quotedate->get('dd.MM.yyyy');
 					$orderdate = new Zend_Date($data['orderdate']);
 					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
 					$deliverydate = new Zend_Date($data['deliverydate']);
@@ -451,14 +470,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 		$data = $salesorderDb->getSalesorder($id);
 
-		if($data['salesorderid'] && $data['salesorderdate']) {
-			$salesorderdate = date("d.m.Y", strtotime($data['salesorderdate']));
-			$header = $this->view->translate('DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s');
-			$header = '<p>'.sprintf($header, $data['salesorderid'], $salesorderdate).'</p>';
-			$data['header'] = $header.$data['header'];
-		}
-
-		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
+		unset($data['id']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -492,14 +504,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 		$data = $salesorderDb->getSalesorder($id);
 
-		if($data['salesorderid'] && $data['salesorderdate']) {
-			$salesorderdate = date("d.m.Y", strtotime($data['salesorderdate']));
-			$header = $this->view->translate('DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s');
-			$header = '<p>'.sprintf($header, $data['salesorderid'], $salesorderdate).'</p>';
-			$data['header'] = $header.$data['header'];
-		}
-
-		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
+		unset($data['id']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -550,7 +555,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 		$data = $salesorderDb->getSalesorder($id);
 
-		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
+		unset($data['id']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -605,7 +610,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 		$data = $salesorderDb->getSalesorder($id);
 
-		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
+		unset($data['id']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -819,7 +824,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$increment = $incrementDb->getIncrement('salesorderid');
 			$filenameDb = new Application_Model_DbTable_Filename();
 			$filename = $filenameDb->getFilename('salesorder', $salesorder['language']);
-            $filename = str_replace('%NUMBER%', $increment, $filename);
+			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$salesorderDb->saveSalesorder($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'salesorderid');
 			$salesorder = $salesorderDb->getSalesorder($id);

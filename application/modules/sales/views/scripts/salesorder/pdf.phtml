@@ -8,9 +8,12 @@ $client = $this->client;
 //Sales order
 $id = $this->salesorder['id'];
 $salesorderid = $this->salesorder['salesorderid'];
+$quoteid = $this->salesorder['quoteid'];
 $contactid = $this->salesorder['contactid'];
 $salesorderdate = $this->salesorder['salesorderdate'];
 if($salesorderdate) $salesorderdate = implode('.', array_reverse(explode('-', $salesorderdate)));
+$quotedate = $this->salesorder['quotedate'];
+if($quotedate) $quotedate = implode('.', array_reverse(explode('-', $quotedate)));
 $orderdate = $this->salesorder['orderdate'];
 if($orderdate) $orderdate = implode('.', array_reverse(explode('-', $orderdate)));
 $deliverydate = $this->salesorder['deliverydate'];
@@ -173,14 +176,23 @@ $pdf->SetFont('freesans', '', 10);
 
 //Contact adress
 if($contactid) {
-    $pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, $x);
-    if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, $x);
-    if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, $x);
-    if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, $x);
-    $pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, $x);
-    $pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, $x);
-    $pdf->ln(20);
-    if($y > $pdf->GetY()) $pdf->SetY($y);
+	$pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, $x);
+	if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, $x);
+	if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, $x);
+	if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, $x);
+	$pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, $x);
+	$pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, $x);
+	$pdf->ln(20);
+	if($y > $pdf->GetY()) $pdf->SetY($y);
+}
+
+//Quote ID
+if($quoteid) {
+	$info = $this->translate('DOCUMENTS_QUOTE_ID_%s_FROM_%s');
+	$info = sprintf($info, $quoteid, $quotedate);
+	$pdf->SetFont('freesansb', 'B', 10);
+	$pdf->MultiCell(175, 0, $info, 0, 'L', false, 1, $x, '', $reseth=true, $stretch=0, $ishtml=true);
+	$pdf->ln(4);
 }
 
 //HEADER

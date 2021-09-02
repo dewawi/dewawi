@@ -17,8 +17,13 @@ class Sales_Form_Creditnote extends Zend_Form
 			->setAttrib('size', '5')
 			->setAttrib('readonly', 'readonly');
 
-		$form['opportunityid'] = new Zend_Form_Element_Hidden('opportunityid');
-		$form['opportunityid']->addFilter('Int');
+		$form['salesorderid'] = new Zend_Form_Element_Text('salesorderid');
+		$form['salesorderid']->setLabel('CREDIT_NOTES_SALES_ORDER_ID')
+			->setAttrib('size', '5');
+
+		$form['invoiceid'] = new Zend_Form_Element_Text('invoiceid');
+		$form['invoiceid']->setLabel('CREDIT_NOTES_INVOICE_ID')
+			->setAttrib('size', '5');
 
 		$form['title'] = new Zend_Form_Element_Text('title');
 		$form['title']->setLabel('CREDIT_NOTES_TITLE')
@@ -63,6 +68,13 @@ class Sales_Form_Creditnote extends Zend_Form
 
 		$form['creditnotedate'] = new Zend_Form_Element_Text('creditnotedate');
 		$form['creditnotedate']->setLabel('CREDIT_NOTES_CREDIT_NOTE_DATE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('class', 'datePicker')
+			->setAttrib('size', '9');
+
+		$form['invoicedate'] = new Zend_Form_Element_Text('invoicedate');
+		$form['invoicedate']->setLabel('CREDIT_NOTES_INVOICE_DATE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('class', 'datePicker')

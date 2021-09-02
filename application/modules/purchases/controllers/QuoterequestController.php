@@ -417,7 +417,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$data = $quoterequestDb->getQuoterequest($id);
 
-		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate']);
+		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -451,7 +451,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$data = $quoterequestDb->getQuoterequest($id);
 
-		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate']);
+		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -485,7 +485,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$data = $quoterequestDb->getQuoterequest($id);
 
-		unset($data['id'], $data['quoterequestid'], $data['quoterequestdate']);
+		unset($data['id']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -643,7 +643,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$increment = $incrementDb->getIncrement('quoterequestid');
 			$filenameDb = new Application_Model_DbTable_Filename();
 			$filename = $filenameDb->getFilename('quoterequest', $quoterequest['language']);
-            $filename = str_replace('%NUMBER%', $increment, $filename);
+			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$quoterequestDb->saveQuoterequest($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'quoterequestid');
 			$quoterequest = $quoterequestDb->getQuoterequest($id);

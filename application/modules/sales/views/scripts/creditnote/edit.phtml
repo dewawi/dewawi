@@ -33,12 +33,14 @@ echo $this->FileManager();
 							<input id="contactid" type="text" value="<?php echo $this->form->getValue('contactid'); ?>" size="3" readonly="readonly" name="contactid"/>
 							<input id="billingname1" type="text" value="<?php echo $this->form->getValue('billingname1'); ?>" size="20" readonly="readonly" name="billingname1"/>
 						</dd>
+						<?php echo $this->form->invoiceid; ?>
+						<?php echo $this->form->invoicedate; ?>
+						<?php echo $this->form->salesorderid; ?>
 						<?php echo $this->form->orderdate; ?>
 						<?php echo $this->form->deliverydate; ?>
 						<?php echo $this->form->paymentmethod; ?>
 						<?php echo $this->form->shippingmethod; ?>
 						<?php echo $this->form->currency; ?>
-						<?php echo $this->form->opportunityid; ?>
 					</dl>
 				</div>
 				<div class="col-sm-12 col-lg-6">

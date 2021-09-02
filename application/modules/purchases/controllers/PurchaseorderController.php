@@ -417,7 +417,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 		$data = $purchaseorderDb->getPurchaseorder($id);
 
-		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate']);
+		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -451,7 +451,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 		$data = $purchaseorderDb->getPurchaseorder($id);
 
-		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate']);
+		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -485,7 +485,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 		$data = $purchaseorderDb->getPurchaseorder($id);
 
-		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate']);
+		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -643,7 +643,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			$increment = $incrementDb->getIncrement('purchaseorderid');
 			$filenameDb = new Application_Model_DbTable_Filename();
 			$filename = $filenameDb->getFilename('purchaseorder', $purchaseorder['language']);
-            $filename = str_replace('%NUMBER%', $increment, $filename);
+			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$purchaseorderDb->savePurchaseorder($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'purchaseorderid');
 			$purchaseorder = $purchaseorderDb->getPurchaseorder($id);

@@ -17,9 +17,6 @@ class Sales_Form_Quote extends Zend_Form
 			->setAttrib('size', '5')
 			->setAttrib('readonly', 'readonly');
 
-		$form['opportunityid'] = new Zend_Form_Element_Hidden('opportunityid');
-		$form['opportunityid']->addFilter('Int');
-
 		$form['title'] = new Zend_Form_Element_Text('title');
 		$form['title']->setLabel('QUOTES_TITLE')
 			->addFilter('StripTags')

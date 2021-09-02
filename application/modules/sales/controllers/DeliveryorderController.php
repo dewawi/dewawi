@@ -212,6 +212,13 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 						}
 						//$this->_helper->Currency->convert($id, 'creditnote');
 					}
+					if(isset($data['salesorderid'])) {
+						if($data['salesorderid']) {
+							$data['salesorderid'] = str_replace(['+', '-'], '', filter_var($data['salesorderid'], FILTER_SANITIZE_NUMBER_INT));
+						} else {
+							$data['salesorderid'] = 0;
+						}
+					}
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
@@ -258,7 +265,11 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
 					}
+					if(!$data['salesorderid']) $data['salesorderid'] = NULL;
+
 					//Convert dates to the display format
+					$salesorderdate = new Zend_Date($data['salesorderdate']);
+					if($data['salesorderdate']) $data['salesorderdate'] = $salesorderdate->get('dd.MM.yyyy');
 					$orderdate = new Zend_Date($data['orderdate']);
 					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
 					$deliverydate = new Zend_Date($data['deliverydate']);
@@ -417,7 +428,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
 		$data = $deliveryorderDb->getDeliveryorder($id);
 
-		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate']);
+		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -451,7 +462,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
 		$data = $deliveryorderDb->getDeliveryorder($id);
 
-		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate']);
+		unset($data['id']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -699,7 +710,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$increment = $incrementDb->getIncrement('deliveryorderid');
 			$filenameDb = new Application_Model_DbTable_Filename();
 			$filename = $filenameDb->getFilename('deliveryorder', $deliveryorder['language']);
-            $filename = str_replace('%NUMBER%', $increment, $filename);
+			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$deliveryorderDb->saveDeliveryorder($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'deliveryorderid');
 			$deliveryorder = $deliveryorderDb->getDeliveryorder($id);

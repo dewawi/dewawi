@@ -212,6 +212,21 @@ class Sales_ReminderController extends Zend_Controller_Action
 						}
 						//$this->_helper->Currency->convert($id, 'creditnote');
 					}
+					if(isset($data['invoiceid'])) {
+						if($data['invoiceid']) {
+							$data['invoiceid'] = str_replace(['+', '-'], '', filter_var($data['invoiceid'], FILTER_SANITIZE_NUMBER_INT));
+						} else {
+							$data['invoiceid'] = 0;
+						}
+					}
+					if(isset($data['invoicedate'])) {
+						if(Zend_Date::isDate($data['invoicedate'])) {
+							$invoicedate = new Zend_Date($data['invoicedate'], Zend_Date::DATES, 'de');
+							$data['invoicedate'] = $invoicedate->get('yyyy-MM-dd');
+						} else {
+							$data['invoicedate'] = NULL;
+						}
+					}
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
@@ -258,7 +273,11 @@ class Sales_ReminderController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
 					}
+					if(!$data['invoiceid']) $data['invoiceid'] = NULL;
+
 					//Convert dates to the display format
+					$invoicedate = new Zend_Date($data['invoicedate']);
+					if($data['invoicedate']) $data['invoicedate'] = $invoicedate->get('dd.MM.yyyy');
 					$orderdate = new Zend_Date($data['orderdate']);
 					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
 					$deliverydate = new Zend_Date($data['deliverydate']);
@@ -699,7 +718,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 			$increment = $incrementDb->getIncrement('reminderid');
 			$filenameDb = new Application_Model_DbTable_Filename();
 			$filename = $filenameDb->getFilename('reminder', $reminder['language']);
-            $filename = str_replace('%NUMBER%', $increment, $filename);
+			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$reminderDb->saveReminder($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'reminderid');
 			$reminder = $reminderDb->getReminder($id);

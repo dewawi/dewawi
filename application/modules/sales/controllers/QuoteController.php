@@ -405,14 +405,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$data = $quoteDb->getQuote($id);
 
-		if($data['quoteid'] && $data['quotedate']) {
-			$quotedate = date("d.m.Y", strtotime($data['quotedate']));
-			$header = $this->view->translate('DOCUMENTS_QUOTE_ID_%s_FROM_%s');
-			$header = '<p>'.sprintf($header, $data['quoteid'], $quotedate).'</p>';
-			$data['header'] = $header.$data['header'];
-		}
-
-		unset($data['id'], $data['quoteid'], $data['quotedate']);
+		unset($data['id']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -446,14 +439,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$data = $quoteDb->getQuote($id);
 
-		if($data['quoteid'] && $data['quotedate']) {
-			$quotedate = date("d.m.Y", strtotime($data['quotedate']));
-			$header = $this->view->translate('DOCUMENTS_QUOTE_ID_%s_FROM_%s');
-			$header = '<p>'.sprintf($header, $data['quoteid'], $quotedate).'</p>';
-			$data['header'] = $header.$data['header'];
-		}
-
-		unset($data['id'], $data['quoteid'], $data['quotedate']);
+		unset($data['id']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -487,7 +473,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$data = $quoteDb->getQuote($id);
 
-		unset($data['id'], $data['quoteid'], $data['quotedate']);
+		unset($data['id']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -538,7 +524,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$data = $quoteDb->getQuote($id);
 
-		unset($data['id'], $data['quoteid'], $data['quotedate']);
+		unset($data['id']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -593,7 +579,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$data = $quoteDb->getQuote($id);
 
-		unset($data['id'], $data['quoteid'], $data['quotedate']);
+		unset($data['id']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -752,7 +738,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 			$increment = $incrementDb->getIncrement('quoteid');
 			$filenameDb = new Application_Model_DbTable_Filename();
 			$filename = $filenameDb->getFilename('quote', $quote['language']);
-            $filename = str_replace('%NUMBER%', $increment, $filename);
+			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$quoteDb->saveQuote($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'quoteid');
 			$quote = $quoteDb->getQuote($id);

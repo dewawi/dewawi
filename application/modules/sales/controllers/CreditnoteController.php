@@ -212,6 +212,28 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 						}
 						//$this->_helper->Currency->convert($id, 'creditnote');
 					}
+					if(isset($data['salesorderid'])) {
+						if($data['salesorderid']) {
+							$data['salesorderid'] = str_replace(['+', '-'], '', filter_var($data['salesorderid'], FILTER_SANITIZE_NUMBER_INT));
+						} else {
+							$data['salesorderid'] = 0;
+						}
+					}
+					if(isset($data['invoiceid'])) {
+						if($data['invoiceid']) {
+							$data['invoiceid'] = str_replace(['+', '-'], '', filter_var($data['invoiceid'], FILTER_SANITIZE_NUMBER_INT));
+						} else {
+							$data['invoiceid'] = 0;
+						}
+					}
+					if(isset($data['invoicedate'])) {
+						if(Zend_Date::isDate($data['invoicedate'])) {
+							$invoicedate = new Zend_Date($data['invoicedate'], Zend_Date::DATES, 'de');
+							$data['invoicedate'] = $invoicedate->get('yyyy-MM-dd');
+						} else {
+							$data['invoicedate'] = NULL;
+						}
+					}
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
@@ -258,7 +280,12 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 						$form->contactinfo->setAttrib('data-module', 'contacts');
 						$form->contactinfo->setAttrib('readonly', null);
 					}
+					if(!$data['salesorderid']) $data['salesorderid'] = NULL;
+					if(!$data['invoiceid']) $data['invoiceid'] = NULL;
+
 					//Convert dates to the display format
+					$invoicedate = new Zend_Date($data['invoicedate']);
+					if($data['invoicedate']) $data['invoicedate'] = $invoicedate->get('dd.MM.yyyy');
 					$orderdate = new Zend_Date($data['orderdate']);
 					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
 					$deliverydate = new Zend_Date($data['deliverydate']);
@@ -418,7 +445,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$data = $creditnoteDb->getCreditnote($id);
 
-		unset($data['id'], $data['creditnoteid'], $data['creditnotedate']);
+		unset($data['id'], $data['creditnoteid'], $data['creditnotedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -452,7 +479,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$data = $creditnoteDb->getCreditnote($id);
 
-		unset($data['id'], $data['creditnoteid'], $data['creditnotedate']);
+		unset($data['id'], $data['creditnoteid'], $data['creditnotedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -486,7 +513,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$data = $creditnoteDb->getCreditnote($id);
 
-		unset($data['id'], $data['creditnoteid'], $data['creditnotedate']);
+		unset($data['id'], $data['creditnoteid'], $data['creditnotedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -541,7 +568,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$data = $creditnoteDb->getCreditnote($id);
 
-		unset($data['id'], $data['creditnoteid'], $data['creditnotedate']);
+		unset($data['id'], $data['creditnoteid'], $data['creditnotedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -700,7 +727,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$increment = $incrementDb->getIncrement('creditnoteid');
 			$filenameDb = new Application_Model_DbTable_Filename();
 			$filename = $filenameDb->getFilename('creditnote', $creditnote['language']);
-            $filename = str_replace('%NUMBER%', $increment, $filename);
+			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$creditnoteDb->saveCreditnote($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'creditnoteid');
 			$creditnote = $creditnoteDb->getCreditnote($id);
