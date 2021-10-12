@@ -13,7 +13,7 @@
 	'MESSAGES_CREDIT_NOTE_SUCCESFULLY_GENERATED' => 'Gutschrift erfolgreich generiert.',
 	'MESSAGES_QUOTE_REQUEST_SUCCESFULLY_GENERATED' => 'Anfrage erfolgreich generiert.',
 	'MESSAGES_PURCHASE_ORDER_SUCCESFULLY_GENERATED' => 'Bestellung erfolgreich generiert.',
-	'MESSAGES_PROCESSES_SUCCESFULLY_GENERATED' => 'Vorgang erfolgreich generiert.',
+	'MESSAGES_PROCESS_SUCCESFULLY_GENERATED' => 'Vorgang erfolgreich generiert.',
 	'MESSAGES_SEARCH_RETURNED_NO_RESULTS' => 'Die Suche hat keine Ergebnisse geliefert.',
 	'MESSAGES_CANCEL_CONFIRM' => 'Sind Sie sicher dass Sie den Eintrag stornieren möchten?',
 	'MESSAGES_DELETE_CONFIRM' => 'Sind Sie sicher dass Sie den Eintrag löschen möchten?',

@@ -10,12 +10,14 @@
 	'REMINDERS' => 'Mahnungen',
 	'REMINDERS_ID' => 'ID',
 	'REMINDERS_REMINDER_ID' => 'Belegnr.',
+	'REMINDERS_INVOICE_ID' => 'Rechnungsnummer',
 	'REMINDERS_NEW_REMINDER' => 'Neue Mahnung',
 	'REMINDERS_TITLE' => 'Projekt',
 	'REMINDERS_CONTACT' => 'Kunde',
 	'REMINDERS_CONTACT_ID' => 'Kundennr.',
 	'REMINDERS_VATIN' => 'USt-IdNr.',
 	'REMINDERS_REMINDER_DATE' => 'Belegdatum',
+	'REMINDERS_INVOICE_DATE' => 'Rechnungsdatum',
 	'REMINDERS_ORDER_DATE' => 'Bestelldatum',
 	'REMINDERS_DELIVERY_DATE' => 'Lieferdatum',
 	'REMINDERS_HEADER' => 'Kopftext',
@@ -48,7 +50,7 @@
 	'REMINDERS_SUBTOTAL' => 'Nettobetrag',
 	'REMINDERS_TAXES' => 'Umsatzsteuer',
 	'REMINDERS_TOTAL' => 'Gesamtbetrag',
-    'REMINDERS_CURRENCY' => 'Währung',
+	'REMINDERS_CURRENCY' => 'Währung',
 	'REMINDERS_TEMPLATE' => 'Vorlage',
 	'REMINDERS_LANGUAGE' => 'Sprache'
 );

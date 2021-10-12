@@ -10,12 +10,14 @@
 	'SALES_ORDERS' => 'Auftragsbestätigungen',
 	'SALES_ORDERS_ID' => 'ID',
 	'SALES_ORDERS_SALES_ORDER_ID' => 'Belegnr.',
+	'SALES_ORDERS_QUOTE_ID' => 'Angebotsnummer',
 	'SALES_ORDERS_NEW_SALES_ORDER' => 'Neue Auftragsbestätigung',
 	'SALES_ORDERS_TITLE' => 'Projekt',
 	'SALES_ORDERS_CONTACT' => 'Kunde',
 	'SALES_ORDERS_CONTACT_ID' => 'Kundennr.',
 	'SALES_ORDERS_VATIN' => 'USt-IdNr.',
 	'SALES_ORDERS_SALES_ORDER_DATE' => 'Belegdatum',
+	'SALES_ORDERS_QUOTE_DATE' => 'Angebotsdatum',
 	'SALES_ORDERS_ORDER_DATE' => 'Bestelldatum',
 	'SALES_ORDERS_DELIVERY_DATE' => 'Lieferdatum',
 	'SALES_ORDERS_HEADER' => 'Kopftext',
@@ -48,7 +50,7 @@
 	'SALES_ORDERS_SUBTOTAL' => 'Nettobetrag',
 	'SALES_ORDERS_TAXES' => 'Umsatzsteuer',
 	'SALES_ORDERS_TOTAL' => 'Gesamtbetrag',
-    'SALES_ORDERS_CURRENCY' => 'Währung',
+	'SALES_ORDERS_CURRENCY' => 'Währung',
 	'SALES_ORDERS_TEMPLATE' => 'Vorlage',
 	'SALES_ORDERS_LANGUAGE' => 'Sprache'
 );

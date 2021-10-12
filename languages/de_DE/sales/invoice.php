@@ -9,6 +9,7 @@
 	'INVOICES' => 'Rechnungen',
 	'INVOICES_ID' => 'ID',
 	'INVOICES_INVOICE_ID' => 'Rechnungsnr.',
+	'INVOICES_SALES_ORDER_ID' => 'Auftragsnummer',
 	'INVOICES_NEW_INVOICE' => 'Neue Rechnung',
 	'INVOICES_TITLE' => 'Projekt',
 	'INVOICES_CONTACT' => 'Kunde',
@@ -16,6 +17,7 @@
 	'INVOICES_VATIN' => 'USt-IdNr.',
 	'INVOICES_DATE' => 'Datum',
 	'INVOICES_INVOICE_DATE' => 'Rechnungsdat.',
+	'INVOICES_SALES_ORDER_DATE' => 'Auftragsdatum',
 	'INVOICES_ORDER_DATE' => 'Bestelldatum',
 	'INVOICES_DELIVERY_DATE' => 'Lieferdatum',
 	'INVOICES_HEADER' => 'Kopftext',
@@ -48,7 +50,7 @@
 	'INVOICES_SUBTOTAL' => 'Nettobetrag',
 	'INVOICES_TAXES' => 'Umsatzsteuer',
 	'INVOICES_TOTAL' => 'Gesamtbetrag',
-    'INVOICES_CURRENCY' => 'Währung',
+	'INVOICES_CURRENCY' => 'Währung',
 	'INVOICES_TEMPLATE' => 'Vorlage',
 	'INVOICES_LANGUAGE' => 'Sprache'
 );
