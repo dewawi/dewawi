@@ -724,7 +724,7 @@ span.uncomplete {
 	height: 100%;
 }
 .editableContainer textarea {
-	height: 100%!important;
+    font-size: 12px!important;
 }
 .editable {
 	display: inline-block;
