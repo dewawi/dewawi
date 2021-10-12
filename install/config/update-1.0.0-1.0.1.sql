@@ -35,3 +35,4 @@ ALTER TABLE `invoice` ADD `deliveryorderid` INT(11) NOT NULL DEFAULT '0' AFTER `
 ALTER TABLE `invoice` ADD `deliveryorderdate` DATE NULL DEFAULT NULL AFTER `salesorderdate`;
 ALTER TABLE `purchaseorder` ADD `quoterequestid` INT(11) NOT NULL DEFAULT '0' AFTER `invoiceid`;
 ALTER TABLE `purchaseorder` ADD `quoterequestdate` DATE NULL DEFAULT NULL AFTER `invoicedate`;
+ALTER TABLE `emailtemplate` ADD `userid` INT(11) NOT NULL AFTER `id`; 
