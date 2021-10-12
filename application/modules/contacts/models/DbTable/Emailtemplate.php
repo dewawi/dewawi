@@ -23,6 +23,7 @@ class Contacts_Model_DbTable_Emailtemplate extends Zend_Db_Table_Abstract
 		$where = array();
 		if($module) $where[] = $this->getAdapter()->quoteInto('module = ?', $module);
 		if($controller) $where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
+		$where[] = $this->getAdapter()->quoteInto('userid = ?', $this->_user['id']);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where);
