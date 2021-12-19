@@ -512,13 +512,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$data = $invoiceDb->getInvoice($id);
 
 		unset($data['id'], $data['ebayorderid']);
-		$data['billingname1'] = '';
-		$data['billingname2'] = '';
-		$data['billingdepartment'] = '';
-		$data['billingstreet'] = '';
-		$data['billingpostcode'] = '';
-		$data['billingcity'] = '';
-		$data['billingcountry'] = '';
 		if(!$data['shippingname1']) {
 			$data['shippingname1'] = $data['billingname1'];
 			$data['shippingname2'] = $data['billingname2'];

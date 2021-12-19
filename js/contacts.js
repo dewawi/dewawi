@@ -10,6 +10,7 @@ $(document).ready(function(){
 function applyContact(contactID) {
 	var data = {};
 	var contact = getContact(contactID);
+
 	$('#tabOverview #contactid').val(contact['contactid']);
 	$('#tabCustomer #contactid').val(contact['contactid']);
 	$('#tabOverview #customerid').val(contact['contactid']);
@@ -53,6 +54,22 @@ function applyContact(contactID) {
 		data['shippingcity'] = contact['shippingcity'];
 		data['shippingcountry'] = contact['shippingcountry'];
 		data['shippingphone'] = contact['shippingphone'];
+	} else if(controller == 'deliveryorder') {
+		$('#shippingname1').val(contact['name1']);
+		$('#shippingname2').val(contact['name2']);
+		$('#shippingdepartment').val(contact['department']);
+		$('#shippingstreet').val(contact['street']);
+		$('#shippingpostcode').val(contact['postcode']);
+		$('#shippingcity').val(contact['city']);
+		$('#shippingcountry').val(contact['country']);
+
+		data['shippingname1'] = contact['name1'];
+		data['shippingname2'] = contact['name2'];
+		data['shippingdepartment'] = contact['department'];
+		data['shippingstreet'] = contact['street'];
+		data['shippingpostcode'] = contact['postcode'];
+		data['shippingcity'] = contact['city'];
+		data['shippingcountry'] = contact['country'];
 	}
 
 	//Refresh contact data
@@ -87,10 +104,10 @@ function applyContact(contactID) {
 	//console.log(data);
 	edit(data);
 
-    //Refresh file manager
-    $('#tabFiles iframe').attr('src', function (i, val) { return val; });
-    $('#tabFiles #messages').hide();
-    $('#tabFiles iframe').show();
+	//Refresh file manager
+	$('#tabFiles iframe').attr('src', function (i, val) { return val; });
+	$('#tabFiles #messages').hide();
+	$('#tabFiles iframe').show();
 }
 
 //Get contact data

@@ -436,7 +436,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 		$data = $salesorderDb->getSalesorder($id);
 
-		unset($data['id'], $data['salesorderid'], $data['salesorderdate']);
+		unset($data['id'], $data['salesorderid'], $data['salesorderdate'], $data['quoteid'], $data['quotedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -505,13 +505,6 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$data = $salesorderDb->getSalesorder($id);
 
 		unset($data['id']);
-		$data['billingname1'] = '';
-		$data['billingname2'] = '';
-		$data['billingdepartment'] = '';
-		$data['billingstreet'] = '';
-		$data['billingpostcode'] = '';
-		$data['billingcity'] = '';
-		$data['billingcountry'] = '';
 		if(!$data['shippingname1']) {
 			$data['shippingname1'] = $data['billingname1'];
 			$data['shippingname2'] = $data['billingname2'];

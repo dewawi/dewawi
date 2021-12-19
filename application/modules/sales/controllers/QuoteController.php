@@ -474,13 +474,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$data = $quoteDb->getQuote($id);
 
 		unset($data['id']);
-		$data['billingname1'] = '';
-		$data['billingname2'] = '';
-		$data['billingdepartment'] = '';
-		$data['billingstreet'] = '';
-		$data['billingpostcode'] = '';
-		$data['billingcity'] = '';
-		$data['billingcountry'] = '';
 		if(!$data['shippingname1']) {
 			$data['shippingname1'] = $data['billingname1'];
 			$data['shippingname2'] = $data['billingname2'];
