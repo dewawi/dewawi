@@ -164,7 +164,7 @@ class Users_UserController extends Zend_Controller_Action
 				$authAdapter = new Zend_Auth_Adapter_DbTable($db);
 
 				$authAdapter->setTableName('user');
-                if(strpos($username, '@')) $authAdapter->setIdentityColumn('email');
+				if(strpos($username, '@')) $authAdapter->setIdentityColumn('email');
 				else $authAdapter->setIdentityColumn('username');
 				$authAdapter->setCredentialColumn('password');
 				$authAdapter->setCredentialTreatment('MD5(?)');
@@ -196,6 +196,10 @@ class Users_UserController extends Zend_Controller_Action
 					} elseif($userInfo->activated) {
 						//Store user info into session
 						$storage->write($userInfo);
+
+						//Store login time into database
+						$userDb = new Users_Model_DbTable_User();
+						$userDb->updateLoginTime($userInfo->id, $this->_date);
 
 						//Redirect if url is defined
 						if($this->_getParam('url', null)) {
