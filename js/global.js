@@ -844,7 +844,7 @@ function editPosition(data, params) {
 		cache: false,
 		success: function(response){
 			isDirty = false;
-			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleapply')) {
+			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleaction')) {
 				$('table#total #subtotal').text(response['subtotal']);
 				$('table#total #total').text(response['total']);
 				$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
