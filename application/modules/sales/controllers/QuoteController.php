@@ -727,6 +727,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 		//Set new document Id and filename
 		if(!$quote['quoteid']) {
+			//Set new quote Id
 			$incrementDb = new Application_Model_DbTable_Increment();
 			$increment = $incrementDb->getIncrement('quoteid');
 			$filenameDb = new Application_Model_DbTable_Filename();

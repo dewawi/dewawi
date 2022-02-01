@@ -704,6 +704,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
 
 		//Set new document Id and filename
+		$updateInventory = false;
 		if(!$deliveryorder['deliveryorderid']) {
 			//Set new deliveryorder Id
 			$incrementDb = new Application_Model_DbTable_Increment();
@@ -714,12 +715,80 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$deliveryorderDb->saveDeliveryorder($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'deliveryorderid');
 			$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
+			$updateInventory = true;
 		}
 
 		//Get positions
 		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
+			//Update item data and inventory
+			if($updateInventory) {
+				$itemsDb = new Items_Model_DbTable_Item();
+				foreach($positions as $position) {
+					$item = $itemsDb->getItemBySKU($position['sku']);
+					if($item && $item['inventory']) {
+						$inventoryDb = new Items_Model_DbTable_Inventory();
+						$quantity = $item['quantity'] - $position->quantity;
+						$inventory = array(
+									'contactid' => $deliveryorder['contactid'],
+									'type' => 'outflow',
+									'docid' => $deliveryorder['id'],
+									'doctype' => 'deliveryorder',
+									'quoteid' => $deliveryorder['quoteid'],
+									'salesorderid' => $deliveryorder['salesorderid'],
+									'invoiceid' => $deliveryorder['invoiceid'],
+									'deliveryorderid' => $deliveryorder['deliveryorderid'],
+									'inventorydate' => $this->_date,
+									'quotedate' => $deliveryorder['quotedate'],
+									'salesorderdate' => $deliveryorder['salesorderdate'],
+									'invoicedate' => $deliveryorder['invoicedate'],
+									'deliveryorderdate' => $deliveryorder['deliveryorderdate'],
+									'orderdate' => $deliveryorder['orderdate'],
+									'deliverydate' => $deliveryorder['deliverydate'],
+									'comment' => 'Lieferschein '.$deliveryorder['deliveryorderid'].' vom '.date("d.m.Y", strtotime($deliveryorder['deliveryorderdate'])),
+									'vatin' => $deliveryorder['vatin'],
+									'paymentmethod' => $deliveryorder['paymentmethod'],
+									'shippingmethod' => $deliveryorder['shippingmethod'],
+									'billingname1' => $deliveryorder['billingname1'],
+									'billingname2' => $deliveryorder['billingname2'],
+									'billingdepartment' => $deliveryorder['billingdepartment'],
+									'billingstreet' => $deliveryorder['billingstreet'],
+									'billingpostcode' => $deliveryorder['billingpostcode'],
+									'billingcity' => $deliveryorder['billingcity'],
+									'billingcountry' => $deliveryorder['billingcountry'],
+									'shippingname1' => $deliveryorder['shippingname1'],
+									'shippingname2' => $deliveryorder['shippingname2'],
+									'shippingdepartment' => $deliveryorder['shippingdepartment'],
+									'shippingstreet' => $deliveryorder['shippingstreet'],
+									'shippingpostcode' => $deliveryorder['shippingpostcode'],
+									'shippingcity' => $deliveryorder['shippingcity'],
+									'shippingcountry' => $deliveryorder['shippingcountry'],
+									'shippingphone' => $deliveryorder['shippingphone'],
+									'contactperson' => $deliveryorder['contactperson'],
+									'language' => $deliveryorder['language'],
+									'taxfree' => $deliveryorder['taxfree'],
+									'sku' => $position['sku'],
+									'itemid' => $position['itemid'],
+									'title' => $position['title'],
+									'image' => $position['image'],
+									'description' => $position['description'],
+									'price' => $position['price'],
+									'taxrate' => $position['taxrate'],
+									'priceruleamount' => $position['priceruleamount'],
+									'priceruleaction' => $position['priceruleaction'],
+									'quantity' => $position['quantity'],
+									'total' => $position['total'],
+									'currency' => $position['currency'],
+									'uom' => $position['uom'],
+									'warehouseid' => 1
+									);
+						$inventoryDb->addInventory($inventory);
+						$itemsDb->quantityItem($item['id'], $quantity);
+					}
+				}
+			}
+
 			foreach($positions as $position) {
 				$price = $position->price;
 				if($position->priceruleamount && $position->priceruleaction) {

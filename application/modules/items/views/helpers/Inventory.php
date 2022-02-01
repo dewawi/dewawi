@@ -20,9 +20,9 @@ class Zend_View_Helper_Inventory extends Zend_View_Helper_Abstract{
 						<th id="quantity"><?php echo $this->view->translate('ITEMS_INVENTORY_QUANTITY') ?></th>
 						<th id="type"><?php echo $this->view->translate('ITEMS_INVENTORY_TYPE') ?></th>
 						<th id="contactid"><?php echo $this->view->translate('CONTACTS_CONTACT_ID') ?></th>
-						<th id="date"><?php echo $this->view->translate('ITEMS_INVENTORY_DATE') ?></th>
+						<th id="inventorydate"><?php echo $this->view->translate('ITEMS_INVENTORY_DATE') ?></th>
 						<th id="price"><?php echo $this->view->translate('ITEMS_INVENTORY_PRICE') ?></th>
-						<th id="total"><?php echo $this->view->translate('ITEMS_INVENTORY_UOM') ?></th>
+						<th id="uom"><?php echo $this->view->translate('ITEMS_INVENTORY_UOM') ?></th>
 						<th class="buttons"></th>
 					</tr>
 				</thead>
@@ -62,14 +62,14 @@ class Zend_View_Helper_Inventory extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($inventory->contactid);?>
 							</a>
 						</td>
-						<td id="date">
-							<?php echo $this->view->escape(date("d.m.Y", strtotime($inventory->date)));?>
+						<td id="inventorydate">
+							<?php echo $this->view->escape(date("d.m.Y", strtotime($inventory->inventorydate)));?>
 						</td>
 						<td id="price">
 							<?php echo $this->view->escape($inventory->price);?>
 						</td>
-						<td id="total">
-							<?php echo $this->view->escape($inventory->uom);?>
+						<td id="uom">
+							<?php if($inventory->uom) echo $this->view->escape($inventory->uom);?>
 						</td>
 						<td class="buttons">
 						</td>

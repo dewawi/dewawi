@@ -863,40 +863,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$invoiceDb->saveInvoice($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment+1), 'invoiceid');
 			$invoice = $invoiceDb->getInvoice($id);
-
-			//Update item data and inventory
-			/*if(count($positions)) {
-				$itemsDb = new Items_Model_DbTable_Item();
-				foreach($positions as $position) {
-					$item = $itemsDb->getItemBySKU($position['sku']);
-					if($item && $item['inventory']) {
-						$inventoryDb = new Items_Model_DbTable_Inventory();
-						$quantity = $item['quantity'] - $position->quantity;
-						$inventory = array(
-									'contactid' => $invoice['contactid'],
-									'type' => 'outflow',
-									'docid' => $invoice['id'],
-									'doctype' => 'invoice',
-									'invoiceid' => $invoice['invoiceid'],
-									'date' => $invoice['invoicedate'],
-									'comment' => 'Rechnung '.$invoice['invoiceid'].' vom '.date("d.m.Y", strtotime($invoice['invoicedate'])),
-									'sku' => $position['sku'],
-									'itemid' => $position['itemid'],
-									'price' => $position['price'],
-									'taxrate' => $position['taxrate'],
-									'quantity' => $position['quantity'],
-									'total' => $position['total'],
-									'uom' => $position['uom'],
-									'clientid' => $invoice['clientid'],
-									'warehouseid' => 1,
-									'created' => $this->_date,
-									'createdby' => $this->_user['id']
-									);
-						$inventoryDb->addInventory($inventory);
-						$itemsDb->quantityItem($item['id'], $quantity);
-					}
-				}
-			}*/
 		}
 
 		//Get positions
