@@ -35,15 +35,20 @@ class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
 			if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
 			else $dir2 = '0';
 
-			$id = $this->view->contact['id'];
-			$dir3 = substr($id, 0, 1);
-			if(strlen($id) > 1) $dir4 = substr($id, 1, 1);
-			else $dir4 = '0';
-
-			$url = $dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
+			if(isset($this->view->contact['id']) && $this->view->contact['id']) {
+				$id = $this->view->contact['id'];
+				$dir3 = substr($id, 0, 1);
+				if(strlen($id) > 1) $dir4 = substr($id, 1, 1);
+				else $dir4 = '0';
+				$url = 'contacts/'.$dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
+			} else {
+				$url = 'uploads';
+				$defaultNamespace->writable = false;
+			}
 
 			$defaultNamespace->view_type = '1'; //detailed list
-			$defaultNamespace->subfolder = 'contacts/'.$url;
+			$defaultNamespace->subfolder = $url;
+
 		} elseif($this->view->module == 'items') {
 
 			$clientid = $client['id'];
