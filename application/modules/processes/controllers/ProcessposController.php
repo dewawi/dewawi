@@ -52,7 +52,8 @@ class Processes_ProcessposController extends Zend_Controller_Action
 		$shippingmethods = $shippingmethodDb->getShippingmethods();
 
 		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($process['currency']);
+		$currencyHelper = $this->_helper->Currency;
+		$currency = $currencyHelper->getCurrency();
 
 		$forms = array();
 		$orderings = array();
@@ -60,6 +61,8 @@ class Processes_ProcessposController extends Zend_Controller_Action
 			$orderings[$position->ordering] = $position->ordering;
 		}
 		foreach($positions as $position) {
+			// Set editable values without currency symbol
+			$currencyHelper->setCurrency($currency, $position->currency, 'NO_SYMBOL');
 			$position->price = $currency->toCurrency($position->price);
 			$position->supplierinvoicetotal = $currency->toCurrency($position->supplierinvoicetotal);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));

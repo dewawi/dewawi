@@ -56,7 +56,8 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 		$taxrates = $taxrateDb->getTaxrates();
 
 		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($creditnote['currency']);
+		$currencyHelper = $this->_helper->Currency;
+		$currency = $currencyHelper->getCurrency();
 
 		$forms = array();
 		$taxes = array();
@@ -90,7 +91,13 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 				elseif($position->priceruleaction == 'tofixed')
 					$price = ($price+$position->priceruleamount);
 			}
+
+			// Set position total with currency symbol
+			$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
 			$position->total = $currency->toCurrency($price*$position->quantity);
+
+			// Set editable values without currency symbol
+			$currencyHelper->setCurrency($currency, $position->currency, 'NO_SYMBOL');
 			$position->price = $currency->toCurrency($position->price);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
 			$position->priceruleamount = $currency->toCurrency($position->priceruleamount);
@@ -109,7 +116,8 @@ class Sales_CreditnoteposController extends Zend_Controller_Action
 				$forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
 		}
 
-		$currency = $this->_helper->Currency->setCurrency($currency, $creditnote['currency'], 'USE_SYMBOL');
+		// Set grand total with currency symbol
+		$currencyHelper->setCurrency($currency, $creditnote['currency'], 'USE_SYMBOL');
 		$creditnote['subtotal'] = $currency->toCurrency($creditnote['subtotal']);
 		$creditnote['total'] = $currency->toCurrency($creditnote['total']);
 		foreach($taxes as $rate => $data) {
