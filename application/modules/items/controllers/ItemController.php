@@ -307,6 +307,14 @@ class Items_ItemController extends Zend_Controller_Action
 				$uomsDb = new Application_Model_DbTable_Uom();
 				$uoms = $uomsDb->getUoms();
 
+				//Get tax rates
+				$taxratesDb = new Application_Model_DbTable_Taxrate();
+				$taxrates = $taxratesDb->getTaxRates();
+
+				//Get currencies
+				$currenciesDb = new Application_Model_DbTable_Currency();
+				$currencies = $currenciesDb->getCurrencies();
+
 				if($data && ($data !== FALSE)) {
 					$map = array();
 					$dataTemplate = array();
@@ -375,6 +383,12 @@ class Items_ItemController extends Zend_Controller_Action
 											} else {
 												echo 'No delivery time option found for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
 											}
+										} elseif($attr == 'currency') {
+											if($currencyid = array_search($datacsv[$map[$attr]], $currencies)) {
+												$updateData[$attr] = $currencyid;
+											} else {
+												echo 'No currency option found for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
+											}
 										} elseif($attr == 'inventory') {
 											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
 												$updateData[$attr] = $datacsv[$map[$attr]];
@@ -400,11 +414,23 @@ class Items_ItemController extends Zend_Controller_Action
 											/* TO DO handle if no category found */
 											echo 'No category found for '.$datacsv[$map['sku']].': '.$datacsv[$map['category']]."<br>";
 										}
+									} elseif($attr == 'uom') {
+										if($uomid = array_search($datacsv[$map[$attr]], $uoms)) {
+											$updateData['uomid'] = $uomid;
+										} else {
+											echo 'No uom option found for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
+										}
 									} elseif($attr == 'manufacturer') {
 										if($manufacturerid = array_search($datacsv[$map['manufacturer']], $manufacturers)) {
 											$updateData['manufacturerid'] = $manufacturerid;
 										} else {
 											echo 'No manufacturer found for '.$datacsv[$map['sku']].': '.$datacsv[$map['manufacturer']]."<br>";
+										}
+									} elseif($attr == 'tax') {
+										if($taxid = array_search($datacsv[$map['tax']], $taxrates)) {
+											$updateData['taxid'] = $taxid;
+										} else {
+											echo 'No tax rate found for '.$datacsv[$map['tax']].': '.$datacsv[$map['taxid']]."<br>";
 										}
 									/*} elseif($attr == 'weightunit') {
 										if($weightuomid = array_search($datacsv[$map['weightunit']], $uoms)) {
@@ -647,17 +673,17 @@ class Items_ItemController extends Zend_Controller_Action
 								foreach($options as $key => $option) {
 									if(isset($option['title']) && $option['title']) {
 										$option['itemid'] = $item['id'];
-								        if(isset($option['rows']) && count($option['rows'])) {
+										if(isset($option['rows']) && count($option['rows'])) {
 											$optionRows = $option['rows'];
 											unset($option['rows']);
-										    $optionid = $itemOption->addItemoption($option);
-								            //Create and update item option rows
-								            foreach($optionRows as $optionRow) {
+											$optionid = $itemOption->addItemoption($option);
+											//Create and update item option rows
+											foreach($optionRows as $optionRow) {
 												$optionRow['optionid'] = $optionid;
-										    	$itemOptionRow->addItemoptionrow($optionRow);
-                                            }
-										    ++$ordering;
-                                        }
+												$itemOptionRow->addItemoptionrow($optionRow);
+											}
+											++$ordering;
+										}
 									}
 								}
 
@@ -673,15 +699,21 @@ class Items_ItemController extends Zend_Controller_Action
 									}
 								}
 							} else {
-								//Get primary tax rate
-								$taxrates = new Application_Model_DbTable_Taxrate();
-								$taxrate = $taxrates->getPrimaryTaxrate();
-
 								$updateData['sku'] = $datacsv[$map['sku']];
-								$updateData['inventory'] = 1;
-								$updateData['currency'] = 'EUR';
-								$updateData['taxid'] = $taxrate['id'];
+								if(!$updateData['taxid']) {
+									//Get primary tax rate
+									$taxrates = new Application_Model_DbTable_Taxrate();
+									$taxrate = $taxratesDb->getPrimaryTaxrate();
+									$updateData['taxid'] = $taxrate['id'];
+								}
+								if(!$updateData['currency']) $updateData['currency'] = 'EUR';
 								if(!$updateData['catid']) $updateData['catid'] = 0;
+								if(!$updateData['minquantity']) $updateData['minquantity'] = NULL;
+								if(!$updateData['orderquantity']) $updateData['orderquantity'] = NULL;
+								if(!$updateData['length']) $updateData['length'] = NULL;
+								if(!$updateData['width']) $updateData['width'] = NULL;
+								if(!$updateData['height']) $updateData['height'] = NULL;
+								if(!isset($updateData['inventory'])) $updateData['inventory'] = 1;
 								$itemid = $itemDb->addItem($updateData);
 								if(isset($map['ebayuserid'])) {
 									if($datacsv[$map['ebayuserid']] == 0) {
