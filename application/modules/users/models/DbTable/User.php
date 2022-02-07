@@ -64,6 +64,14 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
+	public function updateLoginTime($id, $date)
+	{
+		$id = (int)$id;
+		$data['logintime'] = $date;
+		$where = $this->getAdapter()->quoteInto('id = ?', $id);
+		$this->update($data, $where);
+	}
+
 	public function lock($id)
 	{
 		$id = (int)$id;
