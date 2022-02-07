@@ -27,6 +27,7 @@ echo $this->FileManager();
 				</div>
 				<div class="col-sm-12 col-lg-5">
 					<h4><?php echo $this->translate('USERS_MAIL_SETTINGS') ?></h4>
+					<?php echo $this->form->getElement('emailsender') ?>
 					<?php echo $this->form->getElement('smtphost') ?>
 					<?php echo $this->form->getElement('smtpauth') ?>
 					<?php echo $this->form->getElement('smtpsecure') ?>

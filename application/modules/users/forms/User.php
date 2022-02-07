@@ -40,6 +40,12 @@ class Users_Form_User extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '50');
 
+		$form['emailsender'] = new Zend_Form_Element_Text('emailsender');
+		$form['emailsender']->setLabel('USERS_EMAIL_SENDER')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '50');
+
 		$form['smtphost'] = new Zend_Form_Element_Text('smtphost');
 		$form['smtphost']->setLabel('USERS_SMTP_HOST')
 			->addFilter('StripTags')

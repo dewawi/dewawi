@@ -7,6 +7,7 @@
 	'USERS_PASSWORD_CONFIRM' => 'Passwort bestätigen',
 	'USERS_NAME' => 'Name',
 	'USERS_EMAIL' => 'E-Mail',
+	'USERS_EMAIL_SENDER' => 'Absender',
 	'USERS_CLIENT' => 'Mandant',
 	'USERS_LOGIN' => 'Einloggen',
 	'USERS_LOGOUT' => 'Ausloggen',
