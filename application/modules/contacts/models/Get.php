@@ -21,6 +21,8 @@ class Contacts_Model_Get
 
 	public function contacts($params, $options)
 	{
+		$user = Zend_Registry::get('User');
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['contacts'];
@@ -37,7 +39,6 @@ class Contacts_Model_Get
 		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountryC($query, $params['country'], $options['countries'], 'a');
 		if($query) {
-			$query .= " AND a.type = 'billing'";
 			$query .= ' AND c.clientid = '.$client['id'];
 			$query .= ' AND c.deleted = 0';
 		} else {
@@ -58,7 +59,7 @@ class Contacts_Model_Get
 					->from(array($schema => 'contact'))
 					//->columns(array('TotalRecords' => new Zend_Db_Expr('COUNT(t.id)')))
 					->join(array('t' => 'tagentity'), '(c.id = t.entityid) AND (t.tagid = '.$params['tagid'].') AND (t.deleted = 0)', array('tagid', 'entityid'))
-					->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
+					->joinLeft(array('a' => 'address'), '(c.id = a.contactid) AND (a.type = '."'billing'".')', array('street', 'postcode', 'city', 'country'))
 					->joinLeft(array('p' => 'phone'), 'c.id = p.contactid', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
 					->joinLeft(array('e' => 'email'), 'c.id = e.contactid', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
 					->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
@@ -87,7 +88,7 @@ class Contacts_Model_Get
 				$contactsDb->select()
 					->setIntegrityCheck(false)
 					->from(array($schema => 'contact'))
-					->join(array('a' => 'address'), 'c.id = a.contactid', array('street', 'postcode', 'city', 'country'))
+					->joinLeft(array('a' => 'address'), '(c.id = a.contactid) AND (a.type = '."'billing'".')', array('street', 'postcode', 'city', 'country'))
 					->joinLeft(array('p' => 'phone'), 'c.id = p.contactid', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
 					->joinLeft(array('e' => 'email'), 'c.id = e.contactid', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
 					->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
