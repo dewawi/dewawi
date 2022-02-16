@@ -76,3 +76,4 @@ ALTER TABLE `inventory` ADD `description` TEXT NULL DEFAULT NULL AFTER `image`;
 ALTER TABLE `inventory` ADD `priceruleamount` DECIMAL(12,4) NULL DEFAULT NULL AFTER `taxrate`;
 ALTER TABLE `inventory` ADD `priceruleaction` VARCHAR(255) NULL DEFAULT NULL AFTER `priceruleamount`;
 ALTER TABLE `inventory` ADD `currency` VARCHAR(255) NULL DEFAULT NULL AFTER `quantity`;
+ALTER TABLE `address` ADD INDEX(`contactid`);

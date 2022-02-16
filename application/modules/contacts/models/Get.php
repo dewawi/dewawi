@@ -21,8 +21,6 @@ class Contacts_Model_Get
 
 	public function contacts($params, $options)
 	{
-		$user = Zend_Registry::get('User');
-
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['contacts'];
