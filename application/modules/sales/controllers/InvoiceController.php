@@ -801,7 +801,10 @@ class Sales_InvoiceController extends Zend_Controller_Action
 				$position->price = $currency->toCurrency($price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
-
+			if($invoice['prepayment']) {
+				$invoice['balance'] = $currency->toCurrency($invoice['total']-$invoice['prepayment']);
+				$invoice['prepayment'] = $currency->toCurrency($invoice['prepayment']);
+			}
 			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
 			$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
 			$invoice['total'] = $currency->toCurrency($invoice['total']);
@@ -886,7 +889,10 @@ class Sales_InvoiceController extends Zend_Controller_Action
 				$position->price = $currency->toCurrency($price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
-
+			if($invoice['prepayment']) {
+				$invoice['balance'] = $currency->toCurrency($invoice['total']-$invoice['prepayment']);
+				$invoice['prepayment'] = $currency->toCurrency($invoice['prepayment']);
+			}
 			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
 			$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
 			$invoice['total'] = $currency->toCurrency($invoice['total']);
@@ -958,7 +964,10 @@ class Sales_InvoiceController extends Zend_Controller_Action
 				$position->price = $currency->toCurrency($price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
-
+			if($invoice['prepayment']) {
+				$invoice['balance'] = $currency->toCurrency($invoice['total']-$invoice['prepayment']);
+				$invoice['prepayment'] = $currency->toCurrency($invoice['prepayment']);
+			}
 			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
 			$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
 			$invoice['total'] = $currency->toCurrency($invoice['total']);

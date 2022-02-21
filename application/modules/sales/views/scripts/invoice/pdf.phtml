@@ -274,8 +274,14 @@ if(count($positions)) {
 	$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TAXES').' ('.$this->invoice['taxrate'].'%)', 'L', 'L', false, 0 ,$x);
 	$pdf->MultiCell(30, 0, $this->invoice['taxes'], 'R', 'R', false, 1);
 	$pdf->setCellPaddings(3, 1, 3, 1);
-	$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TOTAL'), 'LBT', 'L', false, 0 ,$x);
+	$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_INVOICE_TOTAL'), 'LBT', 'L', false, 0 ,$x);
 	$pdf->MultiCell(30, 0, $this->invoice['total'], 'RBT', 'R', false, 1);
+	if($this->invoice['prepayment']) {
+		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_PREPAYMENT'), 'L', 'L', false, 0 ,$x);
+		$pdf->MultiCell(30, 0, '- '.$this->invoice['prepayment'], 'R', 'R', false, 1);
+		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_BALANCE'), 'LB', 'L', false, 0 ,$x);
+		$pdf->MultiCell(30, 0, $this->invoice['balance'], 'RB', 'R', false, 1);
+	}
 }
 
 $i = 1;
