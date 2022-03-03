@@ -11,7 +11,7 @@ class Items_Model_Get
 
 		$itemsDb = new Items_Model_DbTable_Item();
 
-		$columns = array('title', 'sku', 'description');
+		$columns = array('title', 'sku', 'manufacturersku', 'description');
 
 		$query = '';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
