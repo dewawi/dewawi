@@ -477,7 +477,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 									$map[$attr] = $pos;
 								}
 							}
-						} elseif(isset($datacsv[$map['name1']]) && $datacsv[$map['name1']]) {
+						} elseif(isset($map['name1']) && isset($datacsv[$map['name1']]) && $datacsv[$map['name1']]) {
 							//echo $datacsv[$map['sku']];
 							//print_r($map);
 							$updateData = array();

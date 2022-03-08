@@ -349,7 +349,7 @@ class Items_ItemController extends Zend_Controller_Action
 									$map[$attr] = $pos;
 								}
 							}
-						} elseif(isset($datacsv[$map['sku']]) && $datacsv[$map['sku']]) {
+						} elseif(isset($map['sku']) && isset($datacsv[$map['sku']]) && $datacsv[$map['sku']]) {
 							//echo $datacsv[$map['sku']];
 							//print_r($map);
 							$images = array();
