@@ -426,14 +426,19 @@ class Contacts_ContactController extends Zend_Controller_Action
 		if($request->isPost()) {
 			$formData = $request->getPost();
 			if($form->isValid($formData)) {
-				if(!file_exists(BASE_PATH.'/files/import/')) {
-					mkdir(BASE_PATH.'/files/import/');
-					chmod(BASE_PATH.'/files/import/', 0777);
+
+				$clientid = $this->view->client['id'];
+				$dir1 = substr($clientid, 0, 1);
+				if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+				else $dir2 = '0';
+
+				if(!file_exists(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/')) {
+					mkdir(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/', 0777, true);
 				}
 
 				/* Uploading Document File on Server */
 				$upload = new Zend_File_Transfer_Adapter_Http();
-				$upload->setDestination(BASE_PATH.'/files/import/');
+				$upload->setDestination(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/');
 				try {
 					// upload received file(s)
 					$upload->receive();
