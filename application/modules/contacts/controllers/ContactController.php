@@ -521,7 +521,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 								$contactDb->updateContact($contact['id'], $updateData);
 								++$rowsUpdated;
 							} else {
-								if(!$updateData['catid']) $updateData['catid'] = 0;
+								if(!isset($updateData['catid'])) $updateData['catid'] = 0;
 
 								$id = $contactDb->addContact($updateData);
 
@@ -531,28 +531,34 @@ class Contacts_ContactController extends Zend_Controller_Action
 								$contactDb->updateContact($id, array('contactid' => $increment));
 								$incrementDb->setIncrement(($increment+1), 'contactid');
 
+                                $address = array();
+								$address['street'] = isset($map['street']) ? $datacsv[$map['street']] : NULL;
+								$address['postcode'] = isset($map['postcode']) ? $datacsv[$map['postcode']] : NULL;
+								$address['city'] = isset($map['city']) ? $datacsv[$map['city']] : NULL;
+								$address['country'] = isset($map['country']) ? $datacsv[$map['country']] : NULL;
+
 								$addressDb = new Contacts_Model_DbTable_Address();
 								$addressDb->addAddress(array(
 														'contactid' => $id,
 														'type' => 'billing',
-														'street' => $datacsv[$map['street']],
-														'postcode' => $datacsv[$map['postcode']],
-														'city' => $datacsv[$map['city']],
-														'country' => $datacsv[$map['country']],
+														'street' => $address['street'],
+														'postcode' => $address['postcode'],
+														'city' => $address['city'],
+														'country' => $address['country'],
 														'ordering' => 1
 													));
 
-								if(isset($datacsv[$map['phone']]) && $datacsv[$map['phone']]) {
+								if(isset($map['phone']) && isset($datacsv[$map['phone']]) && $datacsv[$map['phone']]) {
 									$phoneDb = new Contacts_Model_DbTable_Phone();
 									$phoneDb->addPhone(array('contactid' => $id, 'type' => 'phone', 'phone' => $datacsv[$map['phone']], 'ordering' => 1));
 								}
 
-								if(isset($datacsv[$map['email']]) && $datacsv[$map['email']]) {
+								if(isset($map['email']) && isset($datacsv[$map['email']]) && $datacsv[$map['email']]) {
 									$emailDb = new Contacts_Model_DbTable_Email();
 									$emailDb->addEmail(array('contactid' => $id, 'email' => $datacsv[$map['email']], 'ordering' => 1));
 								}
 
-								if(isset($datacsv[$map['internet']]) && $datacsv[$map['internet']]) {
+								if(isset($map['internet']) && isset($datacsv[$map['internet']]) && $datacsv[$map['internet']]) {
 									$internetDb = new Contacts_Model_DbTable_Internet();
 									$internetDb->addInternet(array('contactid' => $id, 'internet' => $datacsv[$map['internet']], 'ordering' => 1));
 								}
