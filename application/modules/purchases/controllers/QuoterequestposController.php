@@ -152,7 +152,7 @@ class Purchases_QuoterequestposController extends Zend_Controller_Action
 				$item = $item->getItem($itemid);
 
 				//Get quote request
-				$quoterequestDb = new Sales_Model_DbTable_Quoterequest();
+				$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 				$quoterequest = $quoterequestDb->getQuoterequest($quoterequestid);
 
 				//Check price rules

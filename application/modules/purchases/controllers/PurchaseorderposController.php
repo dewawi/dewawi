@@ -152,7 +152,7 @@ class Purchases_PurchaseorderposController extends Zend_Controller_Action
 				$item = $item->getItem($itemid);
 
 				//Get purchase order
-				$purchaseorderDb = new Sales_Model_DbTable_Purchaseorder();
+				$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 				$purchaseorder = $purchaseorderDb->getPurchaseorder($purchaseorderid);
 
 				//Check price rules
