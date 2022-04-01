@@ -417,7 +417,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 		$data = $purchaseorderDb->getPurchaseorder($id);
 
-		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
+		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate'], $data['quoterequestid'], $data['quoterequestdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -451,7 +451,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 		$data = $purchaseorderDb->getPurchaseorder($id);
 
-		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
+		unset($data['id'], $data['purchaseorderid'], $data['purchaseorderdate'], $data['quoterequestid'], $data['quoterequestdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;

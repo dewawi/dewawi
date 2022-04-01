@@ -453,7 +453,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['ebayorderid']);
+		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['prepayment'], $data['ebayorderid']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -487,7 +487,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['ebayorderid']);
+		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['prepayment'], $data['ebayorderid']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -521,7 +521,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['ebayorderid']);
+		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
 		if(!$data['shippingname1']) {
 			$data['shippingname1'] = $data['billingname1'];
 			$data['shippingname2'] = $data['billingname2'];
@@ -565,7 +565,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['ebayorderid']);
+		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -599,7 +599,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['ebayorderid']);
+		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -655,7 +655,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['ebayorderid']);
+		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
 		$data['billingname1'] = '';
 		$data['billingname2'] = '';
 		$data['billingdepartment'] = '';
@@ -719,6 +719,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$data['subtotal'] = $invoice['subtotal'];
 		$data['taxes'] = $invoice['taxes'];
 		$data['total'] = $invoice['total'];
+		$data['prepaymenttotal'] = $invoice['prepayment'];
 		$data['customerid'] = $invoice['contactid'];
 		$data['deliverystatus'] = 'deliveryIsWaiting';
 		$data['supplierorderstatus'] = 'supplierNotOrdered';
@@ -730,7 +731,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
-		unset($data['id']);
+		unset($data['id'], $data['prepayment']);
 
 		$process = new Processes_Model_DbTable_Process();
 		$processID = $process->addProcess($data);
