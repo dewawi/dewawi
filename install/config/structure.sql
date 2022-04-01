@@ -793,6 +793,7 @@ CREATE TABLE IF NOT EXISTS `invoice` (
   `subtotal` decimal(12,4) DEFAULT NULL,
   `taxes` decimal(12,4) DEFAULT NULL,
   `total` decimal(12,4) DEFAULT NULL,
+  `prepayment` decimal(12,4) DEFAULT NULL,
   `currency` varchar(255) DEFAULT NULL,
   `taxfree` tinyint(1) NOT NULL DEFAULT 0,
   `state` int(11) NOT NULL,
