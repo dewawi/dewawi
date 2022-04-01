@@ -151,6 +151,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 	public function editAction()
 	{
 		$request = $this->getRequest();
+		$locale = Zend_Registry::get('Zend_Locale');
 		$id = $this->_getParam('id', 0);
 		$activeTab = $request->getCookie('tab', null);
 
@@ -184,6 +185,11 @@ class Sales_InvoiceController extends Zend_Controller_Action
 
 				$this->view->contact = $contact;
 			}
+
+			//Get currency
+			$currencyHelper = $this->_helper->Currency;
+			$currency = $currencyHelper->getCurrency();
+			$currencyHelper->setCurrency($currency, $invoice['currency'], 'NO_SYMBOL');
 
 			if($request->isPost()) {
 				header('Content-type: application/json');
@@ -227,6 +233,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 							$data['salesorderdate'] = NULL;
 						}
 					}
+					if(($element == 'prepayment'))
+						$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
@@ -289,6 +297,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
 					$deliverydate = new Zend_Date($data['deliverydate']);
 					if($data['deliverydate']) $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
+
+					$data['prepayment'] = $currency->toCurrency($data['prepayment']);
 
 					$form->populate($data);
 
