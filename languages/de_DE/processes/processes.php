@@ -69,6 +69,7 @@
 	'PROCESSES_PARTIAL_DElIVERED' => 'Teillieferung erfolgt',
 	'PROCESSES_DELIVERY_COMPLETED' => 'Lieferung abgeschlossen',
 	'PROCESSES_INFO' => 'Info',
+	'PROCESSES_CONTACT_INFO' => 'Kontakt-Info',
 	'PROCESSES_NOTES' => 'Notizen',
 	'PROCESSES_HEADER' => 'Kopftext',
 	'PROCESSES_FOOTER' => 'Fußtext',
