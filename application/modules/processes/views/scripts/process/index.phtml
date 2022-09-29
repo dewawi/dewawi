@@ -110,7 +110,7 @@ echo $this->ActiveFilter();
 								</span>
 							<?php endif; ?>
 							<span class="<?php echo $position['deliverystatus']; ?>">
-								<?php echo $this->translate($this->options['deliverystatus'][$position['deliverystatus']]); ?>
+								<?php if(isset($position['deliverystatus'])) echo $this->translate($this->options['deliverystatus'][$position['deliverystatus']]); ?>
 								<?php if(isset($position['deliverydate'])) echo '('.$position['deliverydate'].')'; ?>
 							</span>
 						</p>
