@@ -37,9 +37,10 @@ class Items_Model_DbTable_Inventory extends Zend_Db_Table_Abstract
 		return $data;
 	}
 
-	public function getInventorys($ids)
+	public function getInventorys($deliveryorderid)
 	{
-		$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
+		//$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
+		$where[] = $this->getAdapter()->quoteInto('deliveryorderid = ?', $deliveryorderid);
 		$data = $this->fetchAll($where);
 		if (!$row) {
 			throw new Exception("Could not find row $ids");

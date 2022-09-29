@@ -33,6 +33,9 @@ echo $this->ActiveFilter();
 			<th class="quantity" width="8%">
 				<?php echo $this->translate('PRICE_RULES_CONTACT_CATEGORY'); ?>
 			</th>
+			<th class="activated" width="8%">
+				<?php echo $this->translate('PRICE_RULES_ACTIVATED'); ?>
+			</th>
 			<th width="8%"></th>
 		</tr>
 	</thead>
@@ -68,6 +71,9 @@ echo $this->ActiveFilter();
 				</td>
 				<td data-label="<?php echo $this->translate('PRICE_RULES_CONTACT_CATEGORY') ?>" class="category">
 					<?php if($pricerule->contactcatid && isset($this->options['contactCategories'][$pricerule->contactcatid])) echo $this->escape($this->options['contactCategories'][$pricerule->contactcatid]['title']); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('PRICE_RULES_AMOUNT') ?>" class="price">
+					<?php echo $this->escape($pricerule->activated); ?>
 				</td>
 				<td class="buttons">
 					<?php echo $this->toolbar->editInline; ?>

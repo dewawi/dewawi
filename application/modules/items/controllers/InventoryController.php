@@ -89,19 +89,15 @@ class Items_InventoryController extends Zend_Controller_Action
 		$locale = Zend_Registry::get('Zend_Locale');
 		$catid = $this->_getParam('catid', 0);
 
-		$form = new Items_Form_Item();
+		$form = new Items_Form_Inventory();
 		$toolbar = new Items_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($form);
 
 		if($request->isPost()) {
 			$data = $request->getPost();
 			if($form->isValid($data)) {
-				$data['cost'] = $form->getValue('cost') ? Zend_Locale_Format::getNumber($form->getValue('cost'),array('precision' => 2,'locale' => $locale)) : 0;
-				$data['price'] = $form->getValue('price') ? Zend_Locale_Format::getNumber($form->getValue('price'),array('precision' => 2,'locale' => $locale)) : 0;
-				$data['margin'] = $form->getValue('margin') ? Zend_Locale_Format::getNumber($form->getValue('margin'),array('precision' => 2,'locale' => $locale)) : 0;
-				$data['inventory'] = 1;
-				$item = new Items_Model_DbTable_Item();
-				$item->addItem($data);
+				$item = new Items_Model_DbTable_Inventory();
+				$item->addInventory($data);
 				$this->_helper->redirector('index');
 			} else {
 				$form->populate($data);
