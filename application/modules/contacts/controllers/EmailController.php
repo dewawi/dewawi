@@ -149,9 +149,22 @@ class Contacts_EmailController extends Zend_Controller_Action
 
 					//Recipients
 					$mail->setFrom($user['smtpuser'], $user['emailsender']);
-					$mail->addAddress($data['recipient']);						// Add a recipient
-					if($data['replyto']) $mail->addReplyTo($data['replyto']);
-					if($data['cc']) $mail->addCC($data['cc']);
+					$data['recipient'] = str_replace(' ', '', $data['recipient']);			// Remove spaces
+					$mail->addAddress($data['recipient']);									// Add a recipient
+					$data['replyto'] = str_replace(' ', '', $data['replyto']);				// Remove spaces
+					if($data['replyto']) $mail->addReplyTo($data['replyto']);				// Add reply to
+					$data['cc'] = str_replace(' ', '', $data['cc']);						// Remove spaces
+					if($data['cc']) {														// Add copy recipients
+						if(strpos($data['cc'], ',') !== false) {
+							$ccs = explode(',', $data['cc']);
+							foreach($ccs as $cc) {
+								$mail->addCC($cc);
+							}
+						} else {
+							$mail->addCC($data['cc']);
+						}
+					}
+					$data['bcc'] = str_replace(' ', '', $data['bcc']);
 					if($data['bcc']) $mail->addBCC($data['bcc']);
 
 					//Get email attachments
