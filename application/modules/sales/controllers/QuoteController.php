@@ -293,6 +293,10 @@ class Sales_QuoteController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quote['currency'], 'USE_SYMBOL');
 
+		//Get price rule actions
+		$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
+		$priceruleactions = $priceruleactionDb->getPriceruleactions();
+
 		//Convert numbers to the display format
 		$quote['taxes'] = $currency->toCurrency($quote['taxes']);
 		$quote['subtotal'] = $currency->toCurrency($quote['subtotal']);
@@ -355,6 +359,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->view->quote = $quote;
 		$this->view->contact = $contact;
 		$this->view->positions = $positions;
+		$this->view->priceruleactions = $priceruleactions;
 		$this->view->emailForm = $emailForm;
 		$this->view->contactUrl = $contactUrl;
 		$this->view->documentUrl = $documentUrl;
