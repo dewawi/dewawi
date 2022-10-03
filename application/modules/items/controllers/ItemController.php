@@ -203,9 +203,24 @@ class Items_ItemController extends Zend_Controller_Action
 					$get = new Items_Model_Get();
 					$tags = $get->tags('items', 'item', $item['id']);
 
+					//Attribute groups
+					$attributegroupsDb = new Items_Model_DbTable_Itemattributegroup();
+					$attributegroups = $attributegroupsDb->getItemattributegroupsByItemID($item['id']);
+
 					//Attributes
+					$attributesByGroup = array();
 					$attributesDb = new Items_Model_DbTable_Itemattribute();
-					$attributes = $attributesDb->getItemattributesByItemID($item['id']);
+					foreach($attributegroups as $id => $attributegroup) {
+						$attributesByGroup[$id] = array();
+						$attributesByGroup[$id]['title'] = $attributegroup['title'];
+						$attributesByGroup[$id]['description'] = $attributegroup['description'];
+						$attributesByGroup[$id]['attributes'] = $attributesDb->getItemattributesByGroupID($item['id'], $attributegroup['id']);
+					}
+					$attributesByGroup[] = array(
+						'title' => 'Sonstiges',
+						'description' => '',
+						'attributes' => $attributesDb->getItemattributesByGroupID($item['id'], 0)
+					);
 
 					//History
 					$inventoryDb = new Items_Model_DbTable_Inventory();
@@ -216,7 +231,8 @@ class Items_ItemController extends Zend_Controller_Action
 
 					$this->view->form = $form;
 					$this->view->tags = $tags;
-					$this->view->attributes = $attributes;
+					$this->view->attributegroups = $attributegroups;
+					$this->view->attributesByGroup = $attributesByGroup;
 					$this->view->inventory = $inventory;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;

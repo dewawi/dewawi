@@ -11,6 +11,8 @@ echo $this->FileManager();
 		<a href="#tabDetails"><?php echo $this->translate('TABS_DETAILS') ?></a></li>
 	<li<?php if($this->activeTab == "#tabInventory") : ?> class="active"<?php endif; ?>>
 		<a href="#tabInventory"><?php echo $this->translate('TABS_INVENTORY') ?></a></li>
+	<li<?php if($this->activeTab == "#tabAttributes") : ?> class="active"<?php endif; ?>>
+		<a href="#tabAttributes"><?php echo $this->translate('ITEMS_ATTRIBUTE') ?></a></li>
 	<?php if($this->dirwritable) : ?>
 		<li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
 			<a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
@@ -97,7 +99,7 @@ echo $this->FileManager();
 			</div>
 		</form>
 	</div>
-	<div id="" class="tab_content">
+	<div id="tabImages" class="tab_content">
 		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
 			<div class="row">
 				<div class="col-sm-12 col-lg-7">
@@ -110,6 +112,9 @@ echo $this->FileManager();
 				</div>
 			</div>
 		</form>
+	</div>
+	<div id="tabAttributes" class="tab_content<?php if($this->activeTab == '#tabAttributes') : ?> active<?php endif; ?>">
+		<?php echo $this->Attributes(); ?>
 	</div>
 	<div id="tabInventory" class="tab_content<?php if($this->activeTab == '#tabInventory') : ?> active<?php endif; ?>">
 		<?php echo $this->Inventory(); ?>

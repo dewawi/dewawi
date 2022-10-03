@@ -1,9 +1,9 @@
 <?php
 
-class Items_Model_DbTable_Itemattribute extends Zend_Db_Table_Abstract
+class Items_Model_DbTable_Itemattributegroup extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'itemattribute';
+	protected $_name = 'itemattributegroup';
 
 	protected $_date = null;
 
@@ -18,7 +18,7 @@ class Items_Model_DbTable_Itemattribute extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getItemattribute($id)
+	public function getItemattributegroup($id)
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
@@ -28,7 +28,7 @@ class Items_Model_DbTable_Itemattribute extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getItemattributesByItemID($itemid)
+	public function getItemattributegroupsByItemID($itemid)
 	{
 		$itemid = (int)$itemid;
 		$where = array();
@@ -41,31 +41,7 @@ class Items_Model_DbTable_Itemattribute extends Zend_Db_Table_Abstract
 		return $data->toArray();
 	}
 
-	public function getItemattributesByGroupID($itemid, $attributegroupid)
-	{
-		$attributegroupid = (int)$attributegroupid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
-		$where[] = $this->getAdapter()->quoteInto('attributegroupid = ?', $attributegroupid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$data = $this->fetchAll($where, 'ordering');
-		if (!$data) {
-			throw new Exception("Could not find row $itemid");
-		}
-		return $data->toArray();
-	}
-
-	public function getItemattributes($ids)
-	{
-		$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
-		$data = $this->fetchAll($where);
-		if (!$row) {
-			throw new Exception("Could not find row $ids");
-		}
-		return $row->toArray();
-	}
-
-	public function addItemattribute($data)
+	public function addItemattributegroup($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -74,7 +50,7 @@ class Items_Model_DbTable_Itemattribute extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateItemattribute($id, $data)
+	public function updateItemattributegroup($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -101,7 +77,7 @@ class Items_Model_DbTable_Itemattribute extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deleteItemattribute($id)
+	public function deleteItemattributegroup($id)
 	{
 		$id = (int)$id;
 		$data = array('deleted' => 1);
@@ -109,7 +85,7 @@ class Items_Model_DbTable_Itemattribute extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deleteItemattributesByItemID($itemid)
+	public function deleteItemattributegroupsByItemID($itemid)
 	{
 		$itemid = (int)$itemid;
 		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
