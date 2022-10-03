@@ -31,7 +31,7 @@ class Contacts_AddressController extends Zend_Controller_Action
 					$addressDb->addAddress(array('contactid' => $data['contactid'], 'type' => $data['type'], 'country' => $client['country'], 'ordering' => $latest['ordering']+1));
 					$addressDataAfter = $addressDb->getAddress($data['contactid']);
 					$address = end($addressDataAfter);
-					echo $this->view->MultiForm('address', $address, array(
+					echo $this->view->MultiForm('contacts', 'address', $address, array(
 																		//array('label' => 'CONTACTS_NAME', 'field' => 'name1'),
 																		array('label' => 'CONTACTS_STREET', 'field' => 'street'),
 																		array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
@@ -41,7 +41,7 @@ class Contacts_AddressController extends Zend_Controller_Action
 			} else {
 				$timestamp = time();
 				$address = array('id' => $timestamp, 'ordering' => $timestamp, 'type' => 'address', 'address' => '');
-				echo $this->view->MultiForm('address', $address, array(
+				echo $this->view->MultiForm('contacts', 'address', $address, array(
 																	array('label' => 'CONTACTS_STREET', 'field' => 'street'),
 																	array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
 																	array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))

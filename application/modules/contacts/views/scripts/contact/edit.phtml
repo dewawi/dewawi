@@ -34,20 +34,20 @@ echo $this->FileManager();
 						<?php echo $this->form->getElement('name2'); ?>
 						<?php echo $this->form->getElement('department'); ?>
 						<h4>Adressen</h4>
-						<?php echo $this->MultiForm('address', $this->address, array(
+						<?php echo $this->MultiForm('contacts', 'address', $this->address, array(
 																			//array('label' => 'CONTACTS_NAME', 'field' => 'name1'),
 																			array('label' => 'CONTACTS_STREET', 'field' => 'street'),
 																			array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
 																			array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))
 																			)); ?>
 						<h4>Kontaktdetails</h4>
-						<?php echo $this->MultiForm('phone', $this->phone, array('phone', 'type'), 'CONTACTS_PHONE'); ?>
+						<?php echo $this->MultiForm('contacts', 'phone', $this->phone, array('phone', 'type'), 'CONTACTS_PHONE'); ?>
 						<hr>
-						<?php echo $this->MultiForm('email', $this->email, '', 'CONTACTS_EMAIL'); ?>
+						<?php echo $this->MultiForm('contacts', 'email', $this->email, '', 'CONTACTS_EMAIL'); ?>
 						<hr>
-						<?php echo $this->MultiForm('internet', $this->internet, 'internet', 'CONTACTS_INTERNET'); ?>
+						<?php echo $this->MultiForm('contacts', 'internet', $this->internet, 'internet', 'CONTACTS_INTERNET'); ?>
 						<hr>
-						<?php echo $this->MultiForm('tag', $this->tags, 'tag', 'TAGS'); ?>
+						<?php echo $this->MultiForm('contacts', 'tag', $this->tags, 'tag', 'TAGS'); ?>
 					</dl>
 				</div>
 				<div class="col-sm-12 col-lg-6">
@@ -84,7 +84,7 @@ echo $this->FileManager();
 						<?php echo $this->form->getElement('priceruleamount'); ?>
 						<?php echo $this->form->getElement('priceruleaction'); ?>
 						<h4>Bankverbindung</h4>
-						<?php echo $this->MultiForm('bankaccount', $this->bankAccount, array('iban', 'bic'), 'CONTACTS_IBAN_BIC'); ?>
+						<?php echo $this->MultiForm('contacts', 'bankaccount', $this->bankAccount, array('iban', 'bic'), 'CONTACTS_IBAN_BIC'); ?>
 					</dl>
 				</div>
 			</div>

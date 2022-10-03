@@ -21,12 +21,12 @@ class Contacts_BankaccountController extends Zend_Controller_Action
 					$bankAccountDb->addBankaccount(array('contactid' => $data['contactid'], 'ordering' => $latest['ordering']+1));
 					$bankAccountDataAfter = $bankAccountDb->getBankaccount($data['contactid']);
 					$bankAccount = end($bankAccountDataAfter);
-					echo $this->view->MultiForm('bankaccount', $bankAccount, array('iban', 'bic'));
+					echo $this->view->MultiForm('contacts', 'bankaccount', $bankAccount, array('iban', 'bic'));
 				}
 			} else {
 				$timestamp = time();
 				$bankAccount = array('id' => $timestamp, 'ordering' => $timestamp, 'type' => 'bankAccount', 'bankAccount' => '');
-				echo $this->view->MultiForm('bankaccount', $bankAccount, array('iban', 'bic'));
+				echo $this->view->MultiForm('contacts', 'bankaccount', $bankAccount, array('iban', 'bic'));
 			}
 		}
 	}

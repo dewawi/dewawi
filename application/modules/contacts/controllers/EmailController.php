@@ -80,7 +80,7 @@ class Contacts_EmailController extends Zend_Controller_Action
 				$emailDb->addEmail(array('contactid' => $data['contactid'], 'ordering' => $latest['ordering']+1));
 				$emailDataAfter = $emailDb->getEmail($data['contactid']);
 				$email = end($emailDataAfter);
-				echo $this->view->MultiForm('email', $email);
+				echo $this->view->MultiForm('contacts', 'email', $email);
 			}
 		}
 	}

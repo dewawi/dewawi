@@ -95,7 +95,7 @@ class Items_TagController extends Zend_Controller_Action
 					$tagEntityDb->addTagEntity(array('tagid' => 0, 'entityid' => $data['itemid'], 'module' => 'items', 'controller' => 'item', 'ordering' => $latest['ordering']+1));
 					$tagEntityDataAfter = $tagEntityDb->getTagEntities('items', 'item', $data['itemid']);
 					$tagEntity = end($tagEntityDataAfter);
-					echo $this->view->MultiForm('tag', $tagEntity);
+					echo $this->view->MultiForm('items', 'tag', $tagEntity);
 				}
 			}
 		}

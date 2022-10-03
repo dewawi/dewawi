@@ -95,7 +95,7 @@ class Contacts_TagController extends Zend_Controller_Action
 					$tagEntityDb->addTagEntity(array('tagid' => 0, 'entityid' => $data['contactid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latest['ordering']+1));
 					$tagEntityDataAfter = $tagEntityDb->getTagEntities('contacts', 'contact', $data['contactid']);
 					$tagEntity = end($tagEntityDataAfter);
-					echo $this->view->MultiForm('tag', $tagEntity);
+					echo $this->view->MultiForm('contacts', 'tag', $tagEntity);
 				}
 			}
 		}

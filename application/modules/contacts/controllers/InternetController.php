@@ -20,7 +20,7 @@ class Contacts_InternetController extends Zend_Controller_Action
 				$internetDb->addInternet(array('contactid' => $data['contactid'], 'ordering' => $latest['ordering']+1));
 				$internetDataAfter = $internetDb->getInternet($data['contactid']);
 				$internet = end($internetDataAfter);
-				echo $this->view->MultiForm('internet', $internet);
+				echo $this->view->MultiForm('contacts', 'internet', $internet);
 			}
 		}
 	}

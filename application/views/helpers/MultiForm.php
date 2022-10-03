@@ -4,8 +4,8 @@
 */
 class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 
-	public function MultiForm($controller, $data, $elements = null, $label = null) {
-		$className = 'Contacts_Form_'.ucfirst($controller);
+	public function MultiForm($module, $controller, $data, $elements = null, $label = null) {
+		$className = ucfirst($module).'_Form_'.ucfirst($controller);
 		$form = new $className; ?>
 		<?php if($label) : ?>
 			<dt id="<?php echo $controller; ?>-label">
@@ -36,6 +36,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 						<?php endif; ?>
 					<?php endif; ?>
 					<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\');', '', '', ''); ?>
+                <?php //Create forms for address ?>
 				<?php elseif(is_array($elements[0])) : ?>
 					<div class="field-group">
 						<?php foreach($elements as $element) : ?>
