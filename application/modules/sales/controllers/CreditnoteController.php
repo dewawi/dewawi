@@ -296,7 +296,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 					//Toolbar
 					$toolbar = new Sales_Form_Toolbar();
 					$toolbar->state->setValue($data['state']);
-					$toolbarPositions = new Sales_Form_ToolbarPositions();
 
 					//Get text blocks
 					$textblocksDb = new Sales_Model_DbTable_Textblock();
@@ -305,7 +304,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
-					$this->view->toolbarPositions = $toolbarPositions;
 					$this->view->textblocks = $textblocks;
 				}
 			}
