@@ -186,7 +186,7 @@ class Sales_PositionController extends Zend_Controller_Action
 				$data['currency'] = $parent['currency'];
 
 				$data['parentid'] = $params['parentid'];
-				$data['possetid'] = 0;
+				$data['possetid'] = $params['setid'];
 				$data['itemid'] = $params['itemid'];
 				$data['sku'] = $item['sku'];
 				$data['title'] = $item['title'];
@@ -208,7 +208,7 @@ class Sales_PositionController extends Zend_Controller_Action
 				} else {
 					$data['uom'] = '';
 				}
-				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parentid']) + 1;
+				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parentid'], $params['setid']) + 1;
 
 				$positionsDb = new $positionClass();
 				$positionsDb->addPosition($data);
@@ -292,7 +292,7 @@ class Sales_PositionController extends Zend_Controller_Action
 
 		$form = new $formClass();
 		$form->uom->addMultiOptions($uoms);
-		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parentid']));
+		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parentid'], 0));
 		$form->taxrate->addMultiOptions($taxrates);
 
 		if($request->isPost()) {
@@ -407,7 +407,7 @@ class Sales_PositionController extends Zend_Controller_Action
 		$taxrates = $taxrateDb->getTaxrates();
 
 		$form->uom->addMultiOptions($uoms);
-		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parentid']));
+		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parentid'], 0));
 		$form->taxrate->addMultiOptions($taxrates);
 
 		$data = $this->getRequest()->getPost();
