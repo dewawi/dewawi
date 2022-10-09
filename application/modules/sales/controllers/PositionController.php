@@ -35,9 +35,10 @@ class Sales_PositionController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 		$locale = Zend_Registry::get('Zend_Locale');
 
-        //Define belonging classes
-        $parentClass = 'Sales_Model_DbTable_'.ucfirst($params['parent']);
-        $positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+		//Define belonging classes
+		$parentClass = 'Sales_Model_DbTable_'.ucfirst($params['parent']);
+		$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+		$positionSetClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'posset');
 
 		//Get parent data
 		$parentDb = new $parentClass();
@@ -47,6 +48,10 @@ class Sales_PositionController extends Zend_Controller_Action
 		//Get positions
 		$positionsDb = new $positionClass();
 		$positions = $positionsDb->getPositions($params['parentid']);
+
+		//Get position sets
+		$positionSetDb = new $positionSetClass();
+		$positionSets = $positionSetDb->getPositionSets($params['parentid']);
 
 		//Get uoms
 		$uomDb = new Application_Model_DbTable_Uom();
@@ -64,7 +69,7 @@ class Sales_PositionController extends Zend_Controller_Action
 		$currencyHelper = $this->_helper->Currency;
 		$currency = $currencyHelper->getCurrency();
 
-		$forms = array();
+		$sets = array();
 		$taxes = array();
 		if($parent['taxfree']) {
 			$taxes[] = array('value' => 0, 'title' => 0);
@@ -77,45 +82,52 @@ class Sales_PositionController extends Zend_Controller_Action
 				}
 			}
 		}
-		foreach($positions as $position) {
-			if(!$parent['taxfree'] && array_search($position->taxrate, $taxrates))
-				$taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
+		foreach($positionSets as $positionSet) {
+			$forms = array();
+			foreach($positions as $position) {
+				if($positionSet->id == $position->possetid) {
+					if(!$parent['taxfree'] && array_search($position->taxrate, $taxrates))
+						$taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
 
-			$price = $position->price;
-			if($position->priceruleamount && $position->priceruleaction) {
-				if($position->priceruleaction == 'bypercent')
-					$price = $price*(100-$position->priceruleamount)/100;
-				elseif($position->priceruleaction == 'byfixed')
-					$price = ($price-$position->priceruleamount);
-				elseif($position->priceruleaction == 'topercent')
-					$price = $price*(100+$position->priceruleamount)/100;
-				elseif($position->priceruleaction == 'tofixed')
-					$price = ($price+$position->priceruleamount);
+					$price = $position->price;
+					if($position->priceruleamount && $position->priceruleaction) {
+						if($position->priceruleaction == 'bypercent')
+							$price = $price*(100-$position->priceruleamount)/100;
+						elseif($position->priceruleaction == 'byfixed')
+							$price = ($price-$position->priceruleamount);
+						elseif($position->priceruleaction == 'topercent')
+							$price = $price*(100+$position->priceruleamount)/100;
+						elseif($position->priceruleaction == 'tofixed')
+							$price = ($price+$position->priceruleamount);
+					}
+
+					// Set position total with currency symbol
+					$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
+					$position->total = $currency->toCurrency($price*$position->quantity);
+
+					// Set editable values without currency symbol
+					$currencyHelper->setCurrency($currency, $position->currency, 'NO_SYMBOL');
+					$position->price = $currency->toCurrency($position->price);
+					$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
+					$position->priceruleamount = $currency->toCurrency($position->priceruleamount);
+
+					$formClass = 'Sales_Form_'.ucfirst($params['parent'].'pos');
+					$form = new $formClass();
+					$forms[$position->id] = $form->populate($position->toArray());
+					$forms[$position->id]->uom->addMultiOptions($uoms);
+					if($position->uom) {
+						$uom = array_search($position->uom, $uoms);
+						if($uom) $forms[$position->id]->uom->setValue($uom);
+					}
+					$forms[$position->id]->priceruleaction->addMultiOptions($priceruleactions);
+					$forms[$position->id]->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parentid'], $positionSet['id']));
+					$forms[$position->id]->taxrate->setValue(array_search($position->taxrate, $taxrates));
+					foreach($taxrates as $id => $value)
+						$forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
+				}
 			}
-
-			// Set position total with currency symbol
-			$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
-			$position->total = $currency->toCurrency($price*$position->quantity);
-
-			// Set editable values without currency symbol
-			$currencyHelper->setCurrency($currency, $position->currency, 'NO_SYMBOL');
-			$position->price = $currency->toCurrency($position->price);
-			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-			$position->priceruleamount = $currency->toCurrency($position->priceruleamount);
-
-            $formClass = 'Sales_Form_'.ucfirst($params['parent'].'pos');
-			$form = new $formClass();
-			$forms[$position->id] = $form->populate($position->toArray());
-			$forms[$position->id]->uom->addMultiOptions($uoms);
-			if($position->uom) {
-				$uom = array_search($position->uom, $uoms);
-				if($uom) $forms[$position->id]->uom->setValue($uom);
-			}
-			$forms[$position->id]->priceruleaction->addMultiOptions($priceruleactions);
-			$forms[$position->id]->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parentid']));
-			$forms[$position->id]->taxrate->setValue(array_search($position->taxrate, $taxrates));
-			foreach($taxrates as $id => $value)
-				$forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
+			$sets[$positionSet->id]['forms'] = $forms;
+			$sets[$positionSet->id]['title'] = $positionSet->title;
 		}
 
 		// Set grand total with currency symbol
@@ -127,9 +139,10 @@ class Sales_PositionController extends Zend_Controller_Action
 		}
 		$parent['taxes'] = $taxes;
 
-		$this->view->forms = $forms;
+		$this->view->sets = $sets;
 		$this->view->parent = $parent;
 		$this->view->toolbar = new Sales_Form_ToolbarPositions();
+		$this->view->toolbarPositions = new Sales_Form_ToolbarPositions();
 	}
 
 	public function applyAction()
@@ -152,13 +165,13 @@ class Sales_PositionController extends Zend_Controller_Action
 				$item = new Items_Model_DbTable_Item();
 				$item = $item->getItem($params['itemid']);
 
-                //Define belonging classes
-                $parentClass = 'Sales_Model_DbTable_'.ucfirst($params['parent']);
-                $positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+				//Define belonging classes
+				$parentClass = 'Sales_Model_DbTable_'.ucfirst($params['parent']);
+				$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
 
 				//Get parent data
-		        $parentDb = new $parentClass();
-		        $parentMethod = 'get'.$params['parent'];
+				$parentDb = new $parentClass();
+				$parentMethod = 'get'.$params['parent'];
 				$parent = $parentDb->$parentMethod($params['parentid']);
 
 				//Check price rules
@@ -172,8 +185,8 @@ class Sales_PositionController extends Zend_Controller_Action
 				}
 				$data['currency'] = $parent['currency'];
 
-			    $data[$params['parent'].'id'] = $params['parentid'];
-			    $data['possetid'] = 0;
+				$data['parentid'] = $params['parentid'];
+				$data['possetid'] = 0;
 				$data['itemid'] = $params['itemid'];
 				$data['sku'] = $item['sku'];
 				$data['title'] = $item['title'];
@@ -222,9 +235,9 @@ class Sales_PositionController extends Zend_Controller_Action
 
 		$params = $this->_getAllParams();
 
-        //Define belonging classes
-        $parentClass = 'Sales_Model_DbTable_'.ucfirst($params['parent']);
-        $positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+		//Define belonging classes
+		$parentClass = 'Sales_Model_DbTable_'.ucfirst($params['parent']);
+		$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
 
 		//Get parent data
 		$parentDb = new $parentClass();
@@ -237,8 +250,8 @@ class Sales_PositionController extends Zend_Controller_Action
 
 		if($this->getRequest()->isPost()) {
 			$data = array();
-			$data[$params['parent'].'id'] = $params['parentid'];
-			$data['possetid'] = 0;
+			$data['parentid'] = $params['parentid'];
+			$data['possetid'] = $params['setid'];
 			$data['itemid'] = 0;
 			$data['sku'] = '';
 			$data['title'] = '';
@@ -250,7 +263,7 @@ class Sales_PositionController extends Zend_Controller_Action
 			$data['total'] = 0;
 			$data['currency'] = $parent['currency'];
 			$data['uom'] = '';
-			$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parentid']) + 1;
+			$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parentid'], $params['setid']) + 1;
 			$positionDb = new $positionClass();
 			$positionDb->addPosition($data);
 		}
@@ -273,9 +286,9 @@ class Sales_PositionController extends Zend_Controller_Action
 		$taxrateDb = new Application_Model_DbTable_Taxrate();
 		$taxrates = $taxrateDb->getTaxrates();
 
-        //Define belonging classes
-        $formClass = 'Sales_Form_'.ucfirst($params['parent'].'pos');
-        $modelClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+		//Define belonging classes
+		$formClass = 'Sales_Form_'.ucfirst($params['parent'].'pos');
+		$modelClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
 
 		$form = new $formClass();
 		$form->uom->addMultiOptions($uoms);
@@ -317,10 +330,10 @@ class Sales_PositionController extends Zend_Controller_Action
 
 		if($request->isPost()) {
 			header('Content-type: application/json');
-            $positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+			$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
 			$positionDb = new $positionClass();
 			$data = $positionDb->getPosition($params['id']);
-			$this->_helper->Ordering->pushOrdering($data['ordering'], $data[$params['parent'].'id']);
+			$this->_helper->Ordering->pushOrdering($data['ordering'], $data['parentid'], $data['possetid']);
 			$data['ordering'] += 1;
 			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
@@ -343,7 +356,7 @@ class Sales_PositionController extends Zend_Controller_Action
 
 		if($request->isPost()) {
 			$data = $request->getPost();
-			$this->_helper->Ordering->sortOrdering($data['id'], $params['parentid'], $data['ordering']);
+			$this->_helper->Ordering->sortOrdering($data['id'], $params['parentid'], $params['setid'], $data['ordering']);
 		}
 	}
 
@@ -362,13 +375,13 @@ class Sales_PositionController extends Zend_Controller_Action
 				if(!is_array($data['id'])) {
 					$data['id'] = array($data['id']);
 				}
-                $positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
-			    $positionDb = new $positionClass();
-			    $positionDb->getPositions($data['id']);
+				$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+				$positionDb = new $positionClass();
+				$positionDb->deletePositions($data['id']);
 
 				//Reorder and calculate
-				$this->_helper->Ordering->setOrdering($params['parentid']);
-				$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
+				$this->_helper->Ordering->setOrdering($data['parentid'], $params['setid']);
+				$calculations = $this->_helper->Calculate($data['parentid'], $this->_date, $this->_user['id']);
 				echo Zend_Json::encode($calculations['locale']);
 			}
 		}
@@ -382,7 +395,7 @@ class Sales_PositionController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 		$locale = Zend_Registry::get('Zend_Locale');
 
-        $formClass = 'Sales_Form_'.ucfirst($params['parent'].'pos');
+		$formClass = 'Sales_Form_'.ucfirst($params['parent'].'pos');
 		$form = new $formClass();
 
 		//Get uoms
