@@ -919,14 +919,27 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
-			$deliveryorder = new Sales_Model_DbTable_Deliveryorder();
-			$deliveryorder->deleteDeliveryorder($id);
+			$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
+			$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 
+			// Delete inventories
+			if($deliveryorder['deliveryorderid']) {
+				$inventoryDb = new Items_Model_DbTable_Inventory();
+				$inventories = $inventoryDb->getInventorys($deliveryorder['deliveryorderid']);
+				foreach($inventories as $inventory) {
+					$inventoryDb->deleteInventory($inventory->id);
+				}
+			}
+
+			// Delete positions
 			$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
 			$positions = $positionsDb->getPositions($id);
 			foreach($positions as $position) {
 				$positionsDb->deletePosition($position->id);
 			}
+
+			// Delete delivery order
+			$deliveryorderDb->deleteDeliveryorder($id);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
