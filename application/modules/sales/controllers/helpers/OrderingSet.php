@@ -2,25 +2,27 @@
 
 class Application_Controller_Action_Helper_OrderingSet extends Zend_Controller_Action_Helper_Abstract
 {
-	public function setOrdering($parentid)
+	public function setOrdering($parent, $parentid)
 	{
 		$i = 1;
-		$positionsDb = new Sales_Model_DbTable_Creditnoteposset();
+		$positionClass = 'Sales_Model_DbTable_'.ucfirst($parent.'posset');
+		$positionsDb = new $positionClass();
 		$positions = $positionsDb->getPositionSets($parentid);
 		foreach($positions as $position) {
 			if($position->ordering != $i) {
-				if(!isset($positionsDb)) $positionsDb = new Sales_Model_DbTable_Creditnoteposset();
+				if(!isset($positionsDb)) $positionsDb = new $positionClass();
 				$positionsDb->sortPositionSet($position->id, $i);
 			}
 			++$i;
 		}
 	}
 
-	public function sortOrdering($id, $parentid, $target)
+	public function sortOrdering($id, $parent, $parentid, $target)
 	{
-		$orderings = $this->getOrderingId($parentid);
+		$orderings = $this->getOrderingId($parent, $parentid);
 		$currentOrdering = array_search($id, $orderings); 
-		$positionsDb = new Sales_Model_DbTable_Creditnoteposset();
+		$positionClass = 'Sales_Model_DbTable_'.ucfirst($parent.'posset');
+		$positionsDb = new $positionClass();
 		if($target == 'down') {
 			$positionsDb->sortPositionSet($id, $currentOrdering+1);
 			$positionsDb->sortPositionSet($orderings[$currentOrdering+1], $currentOrdering);
@@ -40,13 +42,14 @@ class Application_Controller_Action_Helper_OrderingSet extends Zend_Controller_A
 				}
 			}
 		}
-		$this->setOrdering($parentid);
+		$this->setOrdering($parent, $parentid);
 	}
 
-	public function getOrdering($parentid)
+	public function getOrdering($parent, $parentid)
 	{
 		$i = 1;
-		$positionsDb = new Sales_Model_DbTable_Creditnoteposset();
+		$positionClass = 'Sales_Model_DbTable_'.ucfirst($parent.'posset');
+		$positionsDb = new $positionClass();
 		$positions = $positionsDb->getPositionSets($parentid);
 		$orderings = array();
 		foreach($positions as $position) {
@@ -56,10 +59,11 @@ class Application_Controller_Action_Helper_OrderingSet extends Zend_Controller_A
 		return $orderings;
 	}
 
-	public function getOrderingId($parentid)
+	public function getOrderingId($parent, $parentid)
 	{
 		$i = 1;
-		$positionsDb = new Sales_Model_DbTable_Creditnoteposset();
+		$positionClass = 'Sales_Model_DbTable_'.ucfirst($parent.'posset');
+		$positionsDb = new $positionClass();
 		$positions = $positionsDb->getPositionSets($parentid);
 		$orderings = array();
 		foreach($positions as $position) {
@@ -69,18 +73,19 @@ class Application_Controller_Action_Helper_OrderingSet extends Zend_Controller_A
 		return $orderings;
 	}
 
-	public function pushOrdering($origin, $parentid)
+	public function pushOrdering($origin, $parent, $parentid)
 	{
-		$positionsDb = new Sales_Model_DbTable_Creditnoteposset();
-		$orderings = $this->getOrderingId($parentid);
+		$positionClass = 'Sales_Model_DbTable_'.ucfirst($parent.'posset');
+		$positionsDb = new $positionClass();
+		$orderings = $this->getOrderingId($parent, $parentid);
 		foreach($orderings as $ordering => $positionId) {
 			if($ordering > $origin) $positionsDb->updatePositionSet($positionId, array('ordering' => ($ordering+1)));
 		}
 	}
 
-	public function getLatestOrdering($parentid)
+	public function getLatestOrdering($parent, $parentid)
 	{
-		$ordering = $this->getOrdering($parentid);
+		$ordering = $this->getOrdering($parent, $parentid);
 		end($ordering);
 		return key($ordering);
 	}
