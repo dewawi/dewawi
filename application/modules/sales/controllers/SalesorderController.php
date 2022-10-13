@@ -420,7 +420,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['salesorderid'] = $salesorderid;
+			$dataPosition['parentid'] = $salesorderid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id']);
@@ -453,7 +453,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$positionsQuoteDb = new Sales_Model_DbTable_Quotepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['quoteid'] = $quoteid;
+			$dataPosition['parentid'] = $quoteid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);
@@ -487,7 +487,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$positionsInvoiceDb = new Sales_Model_DbTable_Invoicepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['invoiceid'] = $invoiceid;
+			$dataPosition['parentid'] = $invoiceid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);
@@ -531,7 +531,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$positionsDeliveryorderDb = new Sales_Model_DbTable_Deliveryorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['deliveryorderid'] = $deliveryorderid;
+			$dataPosition['parentid'] = $deliveryorderid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);
@@ -582,7 +582,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$positionsQuoterequestDb = new Purchases_Model_DbTable_Quoterequestpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['quoterequestid'] = $quoterequestid;
+			$dataPosition['parentid'] = $quoterequestid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);
@@ -637,7 +637,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$positionsPurchaseorderDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['purchaseorderid'] = $purchaseorderid;
+			$dataPosition['parentid'] = $purchaseorderid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['salesorderid']);

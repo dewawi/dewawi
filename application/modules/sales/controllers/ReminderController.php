@@ -420,7 +420,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$positions = $positionsDb->getPositions($id);
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['reminderid'] = $reminderid;
+			$dataPosition['parentid'] = $reminderid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id']);
@@ -453,7 +453,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$positionsSalesorderDb = new Sales_Model_DbTable_Salesorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['salesorderid'] = $salesorderid;
+			$dataPosition['parentid'] = $salesorderid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['reminderid']);
@@ -487,7 +487,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$positionsInvoiceDb = new Sales_Model_DbTable_Invoicepos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['invoiceid'] = $invoiceid;
+			$dataPosition['parentid'] = $invoiceid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['reminderid']);
@@ -538,7 +538,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$positionsQuoterequestDb = new Purchases_Model_DbTable_Quoterequestpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['quoterequestid'] = $quoterequestid;
+			$dataPosition['parentid'] = $quoterequestid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['reminderid']);
@@ -593,7 +593,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$positionsPurchaseorderDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
-			$dataPosition['purchaseorderid'] = $purchaseorderid;
+			$dataPosition['parentid'] = $purchaseorderid;
 			$dataPosition['modified'] = NULL;
 			$dataPosition['modifiedby'] = 0;
 			unset($dataPosition['id'], $dataPosition['reminderid']);
