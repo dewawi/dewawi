@@ -28,11 +28,12 @@ class Sales_Model_DbTable_Deliveryorderpos extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getPositions($deliveryorderid)
+	public function getPositions($parentid, $setid = 0)
 	{
-		$deliveryorderid = (int)$deliveryorderid;
+		$parentid = (int)$parentid;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('deliveryorderid = ?', $deliveryorderid);
+		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
+		if($setid) $where[] = $this->getAdapter()->quoteInto('possetid = ?', $setid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');

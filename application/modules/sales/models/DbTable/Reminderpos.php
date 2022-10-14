@@ -28,11 +28,12 @@ class Sales_Model_DbTable_Reminderpos extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getPositions($reminderid)
+	public function getPositions($parentid, $setid = 0)
 	{
-		$reminderid = (int)$reminderid;
+		$parentid = (int)$parentid;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('reminderid = ?', $reminderid);
+		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
+		if($setid) $where[] = $this->getAdapter()->quoteInto('possetid = ?', $setid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');

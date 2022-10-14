@@ -28,16 +28,17 @@ class Purchases_Model_DbTable_Purchaseorderpos extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getPositions($purchaseorderid)
+	public function getPositions($parentid, $setid = 0)
 	{
-		$purchaseorderid = (int)$purchaseorderid;
+		$parentid = (int)$parentid;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('purchaseorderid = ?', $purchaseorderid);
+		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
+		if($setid) $where[] = $this->getAdapter()->quoteInto('possetid = ?', $setid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');
 		if (!$data) {
-			throw new Exception("Could not find row $purchaseorderid");
+			throw new Exception("Could not find row $parentid");
 		}
 		return $data;
 	}

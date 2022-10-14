@@ -1,9 +1,9 @@
 <?php
 
-class Sales_Model_DbTable_Invoicepos extends Zend_Db_Table_Abstract
+class Sales_Model_DbTable_Invoiceposset extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'invoicepos';
+	protected $_name = 'invoiceposset';
 
 	protected $_date = null;
 
@@ -18,7 +18,7 @@ class Sales_Model_DbTable_Invoicepos extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getPosition($id)
+	public function getPositionSet($id)
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
@@ -28,22 +28,21 @@ class Sales_Model_DbTable_Invoicepos extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getPositions($parentid, $setid = 0)
+	public function getPositionSets($parentid)
 	{
 		$parentid = (int)$parentid;
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
-		if($setid) $where[] = $this->getAdapter()->quoteInto('possetid = ?', $setid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');
 		if (!$data) {
-			throw new Exception("Could not find row $invoiceid");
+			throw new Exception("Could not find row $parentid");
 		}
 		return $data;
 	}
 
-	public function addPosition($data)
+	public function addPositionSet($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -52,7 +51,7 @@ class Sales_Model_DbTable_Invoicepos extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updatePosition($id, $data)
+	public function updatePositionSet($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -61,7 +60,7 @@ class Sales_Model_DbTable_Invoicepos extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function sortPosition($id, $ordering)
+	public function sortPositionSet($id, $ordering)
 	{
 		$data = array(
 			'ordering' => $ordering,
@@ -69,7 +68,7 @@ class Sales_Model_DbTable_Invoicepos extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function sortPositions($orderings)
+	public function sortPositionSets($orderings)
 	{
 		$ids = implode(',', array_keys($orderings));
 		$sql = "UPDATE ".$this->_name." SET ordering = CASE id ";
@@ -80,7 +79,7 @@ class Sales_Model_DbTable_Invoicepos extends Zend_Db_Table_Abstract
 		$this->_db->query($sql);
 	}
 
-	public function deletePosition($id)
+	public function deletePositionSet($id)
 	{
 		$data = array(
 			'deleted' => 1
@@ -88,7 +87,7 @@ class Sales_Model_DbTable_Invoicepos extends Zend_Db_Table_Abstract
 		$this->update($data, 'id =' . (int)$id);
 	}
 
-	public function deletePositions($ids)
+	public function deletePositionSets($ids)
 	{
 		$data = array(
 			'deleted' => 1
