@@ -215,8 +215,9 @@ CREATE TABLE IF NOT EXISTS `creditnote` (
 
 CREATE TABLE IF NOT EXISTS `creditnotepos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `creditnoteid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL DEFAULT 0,
+  `possetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -235,6 +236,24 @@ CREATE TABLE IF NOT EXISTS `creditnotepos` (
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `creditnoteposset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -316,8 +335,9 @@ CREATE TABLE IF NOT EXISTS `deliveryorder` (
 
 CREATE TABLE IF NOT EXISTS `deliveryorderpos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `deliveryorderid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL DEFAULT 0,
+  `possetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -336,6 +356,24 @@ CREATE TABLE IF NOT EXISTS `deliveryorderpos` (
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `deliveryorderposset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -817,8 +855,9 @@ CREATE TABLE IF NOT EXISTS `invoice` (
 
 CREATE TABLE IF NOT EXISTS `invoicepos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `invoiceid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL DEFAULT 0,
+  `possetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -837,6 +876,24 @@ CREATE TABLE IF NOT EXISTS `invoicepos` (
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `invoiceposset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1340,8 +1397,9 @@ CREATE TABLE IF NOT EXISTS `purchaseorder` (
 
 CREATE TABLE IF NOT EXISTS `purchaseorderpos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `purchaseorderid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL DEFAULT 0,
+  `possetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -1360,6 +1418,24 @@ CREATE TABLE IF NOT EXISTS `purchaseorderpos` (
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `purchaseorderposset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1418,8 +1494,9 @@ CREATE TABLE IF NOT EXISTS `quote` (
 
 CREATE TABLE IF NOT EXISTS `quotepos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `quoteid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL DEFAULT 0,
+  `possetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -1438,6 +1515,24 @@ CREATE TABLE IF NOT EXISTS `quotepos` (
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `quoteposset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1502,8 +1597,9 @@ CREATE TABLE IF NOT EXISTS `quoterequest` (
 
 CREATE TABLE IF NOT EXISTS `quoterequestpos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `quoterequestid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL DEFAULT 0,
+  `possetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -1522,6 +1618,24 @@ CREATE TABLE IF NOT EXISTS `quoterequestpos` (
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `quoterequestposset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1582,8 +1696,9 @@ CREATE TABLE IF NOT EXISTS `reminder` (
 
 CREATE TABLE IF NOT EXISTS `reminderpos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `reminderid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL DEFAULT 0,
+  `possetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -1602,6 +1717,24 @@ CREATE TABLE IF NOT EXISTS `reminderpos` (
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `reminderposset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1662,8 +1795,9 @@ CREATE TABLE IF NOT EXISTS `salesorder` (
 
 CREATE TABLE IF NOT EXISTS `salesorderpos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `salesorderid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `itemid` int(11) NOT NULL DEFAULT 0,
+  `possetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -1682,6 +1816,24 @@ CREATE TABLE IF NOT EXISTS `salesorderpos` (
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `salesorderposset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
