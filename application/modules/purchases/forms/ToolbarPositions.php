@@ -13,6 +13,11 @@ class Purchases_Form_ToolbarPositions extends Zend_Form
 			->setDecorators(array('ViewHelper'))
 			->setAttrib('class', 'addPosition add');
 
+		$form['addset'] = new Zend_Form_Element_Button('addset');
+		$form['addset']->setLabel('TOOLBAR_NEW_SET')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('class', 'addSet add');
+
 		$form['select'] = new Zend_Form_Element_Button('select');
 		$form['select']->setLabel('TOOLBAR_SELECT')
 			->setDecorators(array('ViewHelper'))
