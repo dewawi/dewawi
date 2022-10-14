@@ -1,0 +1,161 @@
+<?php $s = 1; ?>
+<?php $sets = count($this->sets); ?>
+<?php if($sets == 0) : ?>
+    <input type="hidden" class="setid" name="setid" value="0">
+	<div class="toolbar positionsets" style="float:right;">
+		<?php echo $this->toolbarPositions->addset; ?>
+	</div>
+		<?php echo $this->ToolbarPositions(); ?>
+<?php endif; ?>
+<?php foreach($this->sets as $id => $set) : ?>
+	<div class="set">
+	    <input type="hidden" class="setid" name="setid" value="<?php echo $id; ?>">
+		<div class="toolbar positionsets" style="float:right;">
+			<?php echo $this->toolbarPositions->addset; ?>
+			<?php if($s>1) : ?>
+				<?php echo $this->toolbarPositions->sortup; ?>
+			<?php endif; ?>
+			<?php if($s<$sets) : ?>
+				<?php echo $this->toolbarPositions->sortdown; ?>
+			<?php endif; ?>
+		</div>
+		<h3><span class="editable" data-name="title" data-value="<?php echo $set['title']; ?>" data-type="input" data-id="<?php echo $id; ?>" data-controller="positionset"><?php echo $set['title']; ?></span></h3>
+		<?php echo $this->ToolbarPositions(); ?>
+		<table id="positions">
+			<thead>
+				<tr>
+					<th><input type="checkbox" class="checkall" name="checkall"/></th>
+					<th><?php echo $this->translate('POSITION'); ?></th>
+					<th class="flex50"><?php echo $this->translate('POSITIONS_ITEM'); ?></th>
+					<th><?php echo $this->translate('POSITIONS_TOTAL'); ?></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php $i = 1; ?>
+				<?php if($length = count($set['forms'])) : ?>
+				<?php foreach($set['forms'] as $form) : ?>
+					<tr class="position<?php echo $form->getValue('id'); ?> wrap">
+						<td class="id">
+							<input class="id" type="checkbox" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+						</td>
+						<td class="position">
+							<span><?php echo $form->getValue('ordering'); ?></span>
+							<?php echo $form->ordering; ?>
+						</td>
+						<td class="flex50">
+							<table>
+								<tr>
+									<td class="sku">
+										<?php echo $form->sku; ?>
+									</td>
+									<td class="title">
+										<?php echo $form->title; ?>
+									</td>
+								</tr>
+								<tr>
+									<td class="description">
+										<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+										<?php echo $form->description; ?>
+									</td>
+								</tr>
+								<tr>
+									<td class="image">
+										<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+										<?php echo $form->image; ?>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td>
+							<table>
+								<tr>
+									<td class="price">
+										<?php echo $form->price; ?>
+									</td>
+								</tr>
+								<tr>
+									<td class="taxrate">
+										<?php echo $form->taxrate; ?>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td>
+							<table>
+								<tr>
+									<td class="priceruleamount">
+										<?php echo $form->priceruleamount; ?>
+									</td>
+								</tr>
+								<tr>
+									<td class="priceruleaction">
+										<?php echo $form->priceruleaction; ?>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td>
+							<table>
+								<tr>
+									<td class="quantity">
+										<?php echo $form->quantity; ?>
+									</td>
+								</tr>
+								<tr>
+									<td class="uom">
+										<?php echo $form->uom; ?>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td class="total">
+							<?php echo $form->getValue('total'); ?>
+						</td>
+						<?php //Display buttons if parent not completed ?>
+						<?php if($this->parent['state'] != '105' || $this->parent['state'] != '106') : ?>
+						<td class="buttons">
+							<?php echo $this->toolbar->deletepos; ?>
+							<?php echo $this->toolbar->copypos; ?>
+							<?php if($i>1) : ?>
+								<?php echo $this->toolbar->sortup; ?>
+							<?php endif; ?>
+							<?php if($i<$length) : ?>
+								<?php echo $this->toolbar->sortdown; ?>
+							<?php endif; ?>
+						</td>
+						<?php endif; ?>
+					</tr>
+					<?php ++$i; ?>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+
+		<table id="total">
+			<tbody>
+				<tr>
+					<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+					<td id="subtotal" align="right"><?php echo $this->parent['subtotal'] ?></td>
+				</tr>
+				<?php foreach($this->parent['taxes'] as $rate => $tax) : ?>
+					<tr>
+						<td><?php echo $this->translate('POSITIONS_TAXES')." (".$tax['title'].")"; ?></td>
+						<td id="taxes" align="right" data-rate="<?php echo $rate; ?>"><?php echo $tax['value']; ?></td>
+					</tr>
+				<?php endforeach; ?>
+				<tr>
+					<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+					<td id="total" align="right"><?php echo $this->parent['total'] ?></td>
+				</tr>
+			</tbody>
+		</table>
+		<?php echo $this->ToolbarPositions('bottom'); ?>
+		<div style="height:150px"></div>
+		<?php endif; ?>
+	</div>
+	<?php ++$s; ?>
+	<hr>
+<?php endforeach; ?>
