@@ -1,6 +1,6 @@
 <?php
 
-class Sales_PositionsetController extends Zend_Controller_Action
+class Purchases_PositionsetController extends Zend_Controller_Action
 {
 	protected $_date = null;
 
@@ -36,9 +36,9 @@ class Sales_PositionsetController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 
 		//Define belonging classes
-		$parentClass = 'Sales_Model_DbTable_'.ucfirst($params['parent']);
-		$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
-		$positionSetClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'posset');
+		$parentClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent']);
+		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'pos');
+		$positionSetClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'posset');
 
 		//Get parent data
 		$parentDb = new $parentClass();
@@ -102,8 +102,8 @@ class Sales_PositionsetController extends Zend_Controller_Action
 		$taxrates = $taxrateDb->getTaxrates();
 
 		//Define belonging classes
-		$formClass = 'Sales_Form_'.ucfirst($params['parent'].'pos');
-		$modelClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'posset');
+		$formClass = 'Purchases_Form_'.ucfirst($params['parent'].'pos');
+		$modelClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'posset');
 
 		$form = new $formClass();
 		$form->uom->addMultiOptions($uoms);
@@ -146,7 +146,7 @@ class Sales_PositionsetController extends Zend_Controller_Action
 
 		if($request->isPost()) {
 			header('Content-type: application/json');
-			$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+			$positionClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'pos');
 			$positionDb = new $positionClass();
 			$data = $positionDb->getPosition($params['id']);
 			$this->_helper->Ordering->pushOrdering($data['ordering'], $params['parent'], $data['parentid']);
@@ -191,8 +191,8 @@ class Sales_PositionsetController extends Zend_Controller_Action
 				if(!is_array($data['id'])) {
 					$data['id'] = array($data['id']);
 				}
-				$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
-				$positionSetClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'posset');
+				$positionClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'pos');
+				$positionSetClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'posset');
 
 				$creditnote = new $positionSetClass();
 				$creditnote->deleteCreditnote($id);
@@ -216,7 +216,7 @@ class Sales_PositionsetController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 		$locale = Zend_Registry::get('Zend_Locale');
 
-		$formClass = 'Sales_Form_'.ucfirst($params['parent'].'pos');
+		$formClass = 'Purchases_Form_'.ucfirst($params['parent'].'pos');
 		$form = new $formClass();
 
 		//Get uoms
