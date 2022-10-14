@@ -85,9 +85,7 @@ echo $this->FileManager();
 		</form>
 	</div>
 	<div id="tabPositions" class="tab_content<?php if($this->activeTab == '#tabPositions') : ?> active<?php endif; ?>">
-		<?php echo $this->ToolbarPositions(); ?>
 		<div id="positions"></div>
-		<?php echo $this->ToolbarPositions("bottom"); ?>
 	</div>
 	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">
 		<form id="reminder" enctype="application/x-www-form-urlencoded" action="" method="post">
@@ -168,17 +166,4 @@ echo $this->FileManager();
 		</form>
 	</div>
 </div>
-
-<div id="popup">
-	<div id="addCustomer" class="popup_block">
-		<?php if($this->form->getValue('contactid')) : ?>
-			<iframe src="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'select', 'contactid'=>$this->form->getValue('contactid'), 'parent'=>$this->module.'|'.$this->controller));?>" width="100%" height="100%"></iframe>
-		<?php else : ?>
-			<iframe src="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'select', 'parent'=>$this->module.'|'.$this->controller));?>" width="100%" height="100%"></iframe>
-		<?php endif; ?>
-	</div>
-
-	<div id="selectPosition" class="popup_block">
-		<iframe src="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'select', 'parent'=>$this->module.'|'.$this->controller.'|'.$this->form->getValue('id')));?>" width="100%" height="100%"></iframe>
-	</div>
-</div>
+<?php echo $this->Popup(); ?>
