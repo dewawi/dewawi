@@ -18,6 +18,16 @@ class Sales_Form_ToolbarPositions extends Zend_Form
 			->setDecorators(array('ViewHelper'))
 			->setAttrib('class', 'addSet add');
 
+		$form['copyset'] = new Zend_Form_Element_Button('copyset');
+		$form['copyset']->setLabel('TOOLBAR_COPY_SET')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('class', 'copySet copy');
+
+		$form['deleteset'] = new Zend_Form_Element_Button('deleteset');
+		$form['deleteset']->setLabel('TOOLBAR_DELETE_SET')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('class', 'deleteSet delete');
+
 		$form['select'] = new Zend_Form_Element_Button('select');
 		$form['select']->setLabel('TOOLBAR_SELECT')
 			->setDecorators(array('ViewHelper'))
