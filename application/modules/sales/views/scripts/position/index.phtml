@@ -1,24 +1,15 @@
 <?php $s = 1; ?>
 <?php $sets = count($this->sets); ?>
 <?php if($sets == 0) : ?>
-    <input type="hidden" class="setid" name="setid" value="0">
+	<input type="hidden" class="setid" name="setid" value="0">
 	<div class="toolbar positionsets" style="float:right;">
 		<?php echo $this->toolbarPositions->addset; ?>
 	</div>
-		<?php echo $this->ToolbarPositions(); ?>
 <?php endif; ?>
 <?php foreach($this->sets as $id => $set) : ?>
 	<div class="set">
-	    <input type="hidden" class="setid" name="setid" value="<?php echo $id; ?>">
-		<div class="toolbar positionsets" style="float:right;">
-			<?php echo $this->toolbarPositions->addset; ?>
-			<?php if($s>1) : ?>
-				<?php echo $this->toolbarPositions->sortup; ?>
-			<?php endif; ?>
-			<?php if($s<$sets) : ?>
-				<?php echo $this->toolbarPositions->sortdown; ?>
-			<?php endif; ?>
-		</div>
+		<input type="hidden" class="setid" name="setid" value="<?php echo $id; ?>">
+		<?php echo $this->ToolbarPositionSets($sets, $s); ?>
 		<h3><span class="editable" data-name="title" data-value="<?php echo $set['title']; ?>" data-type="input" data-id="<?php echo $id; ?>" data-controller="positionset"><?php echo $set['title']; ?></span></h3>
 		<?php echo $this->ToolbarPositions(); ?>
 		<table id="positions">
