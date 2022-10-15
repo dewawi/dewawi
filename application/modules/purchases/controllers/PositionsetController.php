@@ -146,15 +146,31 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 
 		if($request->isPost()) {
 			header('Content-type: application/json');
-			$positionClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'pos');
-			$positionDb = new $positionClass();
-			$data = $positionDb->getPosition($params['id']);
-			$this->_helper->Ordering->pushOrdering($data['ordering'], $params['parent'], $data['parentid']);
+
+			//Define belonging classes
+			$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+			$positionSetClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'posset');
+
+			//Copy position set
+			$positionSetDb = new $positionSetClass();
+			$data = $positionSetDb->getPositionSet($params['id']);
+			$this->_helper->OrderingSet->pushOrdering($data['ordering'], $params['parent'], $data['parentid']);
 			$data['ordering'] += 1;
 			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
 			unset($data['id']);
-			$positionDb->addPosition($data);
+			$id = $positionSetDb->addPositionSet($data);
+
+			//Get positions and copy
+			$positionDb = new $positionClass();
+			$positions = $positionDb->getPositions($params['parentid'], $params['id']);
+			foreach($positions as $position) {
+				$positionData = (array)$position;
+				$positionData['modified'] = NULL;
+				$positionData['modifiedby'] = 0;
+				unset($positionData['id']);
+				$positionDb->addPosition($positionData);
+			}
 
 			//Calculate
 			$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
@@ -188,21 +204,24 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 			header('Content-type: application/json');
 			$data = $request->getPost();
 			if($data['delete'] == 'Yes') {
-				if(!is_array($data['id'])) {
-					$data['id'] = array($data['id']);
-				}
-				$positionClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'pos');
-				$positionSetClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'posset');
+				//Define belonging classes
+				$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
+				$positionSetClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'posset');
 
-				$creditnote = new $positionSetClass();
-				$creditnote->deleteCreditnote($id);
-
+				//Get positions and delete
 				$positionDb = new $positionClass();
-				$positionDb->getPositions($data['id']);
+				$positions = $positionDb->getPositions($data['parentid'], $data['id']);
+				foreach($positions as $position) {
+					$positionDb->deletePosition($position->id);
+				}
+
+				//Delete position set itself
+				$positionSetDb = new $positionSetClass();
+				$positionSetDb->deletePositionSet($data['id']);
 
 				//Reorder and calculate
-				$this->_helper->Ordering->setOrdering($params['parent'], $params['parentid']);
-				$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
+				$this->_helper->OrderingSet->setOrdering($params['parent'], $data['parentid'], $data['id']);
+				$calculations = $this->_helper->Calculate($data['parentid'], $this->_date, $this->_user['id']);
 				echo Zend_Json::encode($calculations['locale']);
 			}
 		}
