@@ -9,7 +9,7 @@ echo $this->FileManager();
 	<li<?php if($this->activeTab == "#tabOverview") : ?> class="active"<?php endif; ?>>
 		<a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabPositions") : ?> class="active"<?php endif; ?>>
-		<a href="#tabPositions" onclick="getPositions()"><?php echo $this->translate('TABS_DETAILS'); ?></a></li>
+		<a href="#tabPositions" onclick="getPositions('process', 'pos')"><?php echo $this->translate('TABS_DETAILS'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabCustomer") : ?> class="active"<?php endif; ?>>
 		<a href="#tabCustomer"><?php echo $this->translate('TABS_CUSTOMER'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabSupplier") : ?> class="active"<?php endif; ?>>
@@ -121,7 +121,9 @@ echo $this->FileManager();
 				<?php echo $this->form->editpositionsseparately; ?>
 			</div>
 		</form>
-		<div id="positions" <?php if(!$this->form->getValue('editpositionsseparately')) echo ' class="disabled"'; ?>></div>
+		<div class="positionsContainer" data-parent="process" data-type="pos">
+		    <div id="positions" <?php if(!$this->form->getValue('editpositionsseparately')) echo ' class="disabled"'; ?>></div>
+        </div>
 		<?php echo $this->ToolbarPositions("bottom"); ?>
 	</div>
 	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">

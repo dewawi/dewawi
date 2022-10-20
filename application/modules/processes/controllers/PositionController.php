@@ -1,6 +1,6 @@
 <?php
 
-class Processes_ProcessposController extends Zend_Controller_Action
+class Processes_PositionController extends Zend_Controller_Action
 {
 	protected $_date = null;
 
@@ -32,16 +32,16 @@ class Processes_ProcessposController extends Zend_Controller_Action
 	{
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$processid = $this->_getParam('processid', 0);
+		$parentid = $this->_getParam('parentid', 0);
 		$locale = Zend_Registry::get('Zend_Locale');
 
 		//Get process
 		$processDb = new Processes_Model_DbTable_Process();
-		$process = $processDb->getProcess($processid);
+		$process = $processDb->getProcess($parentid);
 
 		//Get positions
 		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positions = $positionsDb->getPositions($processid);
+		$positions = $positionsDb->getPositions($parentid);
 
 		//Get uoms
 		$uomDb = new Application_Model_DbTable_Uom();
