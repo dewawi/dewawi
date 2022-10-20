@@ -269,7 +269,6 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 					//Toolbar
 					$toolbar = new Purchases_Form_Toolbar();
 					$toolbar->state->setValue($data['state']);
-					$toolbarPositions = new Purchases_Form_ToolbarPositions();
 
 					//Get text blocks
 					$textblocksDb = new Purchases_Model_DbTable_Textblock();
@@ -278,7 +277,6 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
-					$this->view->toolbarPositions = $toolbarPositions;
 					$this->view->textblocks = $textblocks;
 				}
 			}
