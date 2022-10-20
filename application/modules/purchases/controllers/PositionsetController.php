@@ -37,8 +37,8 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 
 		//Define belonging classes
 		$parentClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent']);
-		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'pos');
-		$positionSetClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'posset');
+		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+		$positionSetClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
 
 		//Get parent data
 		$parentDb = new $parentClass();
@@ -57,7 +57,7 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 				$data['title'] = '';
 				$data['image'] = '';
 				$data['description'] = '';
-				$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['parentid']) + 1;
+				$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['type'], $params['parentid']) + 1;
 				$positionSetDb = new $positionSetClass();
 				$positionSetDb->addPositionSet($data);
 			} else {
@@ -71,12 +71,12 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 				$data['title'] = '';
 				$data['image'] = '';
 				$data['description'] = '';
-				$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['parentid']) + 1;
+				$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['type'], $params['parentid']) + 1;
 				$positionSetDb = new $positionSetClass();
 				$positionSetId = $positionSetDb->addPositionSet($data);
 
 				//Move all positions to the new set
-				$positionData = array('possetid' => $positionSetId);
+				$positionData = array($params['type'].'setid' => $positionSetId);
 				foreach($positions as $position) {
 					$positionsDb->updatePosition($position->id, $positionData);
 				}
@@ -102,12 +102,12 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 		$taxrates = $taxrateDb->getTaxrates();
 
 		//Define belonging classes
-		$formClass = 'Purchases_Form_'.ucfirst($params['parent'].'pos');
-		$modelClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].'posset');
+		$formClass = 'Purchases_Form_'.ucfirst($params['parent'].$params['type']);
+		$modelClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
 
 		$form = new $formClass();
 		$form->uom->addMultiOptions($uoms);
-		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['parentid'], $params['id']));
+		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], $params['id']));
 		$form->taxrate->addMultiOptions($taxrates);
 
 		if($request->isPost()) {
@@ -148,13 +148,13 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 			header('Content-type: application/json');
 
 			//Define belonging classes
-			$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
-			$positionSetClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'posset');
+			$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+			$positionSetClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
 
 			//Copy position set
 			$positionSetDb = new $positionSetClass();
 			$data = $positionSetDb->getPositionSet($params['id']);
-			$this->_helper->OrderingSet->pushOrdering($data['ordering'], $params['parent'], $data['parentid']);
+			$this->_helper->OrderingSet->pushOrdering($data['ordering'], $params['parent'], $params['type'], $data['parentid']);
 			$data['ordering'] += 1;
 			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
@@ -165,7 +165,8 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 			$positionDb = new $positionClass();
 			$positions = $positionDb->getPositions($params['parentid'], $params['id']);
 			foreach($positions as $position) {
-				$positionData = (array)$position;
+				$positionData = $position->toArray();
+				$positionData[$params['type'].'setid'] = $id;
 				$positionData['modified'] = NULL;
 				$positionData['modifiedby'] = 0;
 				unset($positionData['id']);
@@ -188,7 +189,7 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 
 		if($request->isPost()) {
 			$data = $request->getPost();
-			$this->_helper->OrderingSet->sortOrdering($data['id'], $params['parent'], $params['parentid'], $data['ordering']);
+			$this->_helper->OrderingSet->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $data['ordering']);
 		}
 	}
 
@@ -205,8 +206,8 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 			$data = $request->getPost();
 			if($data['delete'] == 'Yes') {
 				//Define belonging classes
-				$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'pos');
-				$positionSetClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].'posset');
+				$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+				$positionSetClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
 
 				//Get positions and delete
 				$positionDb = new $positionClass();
@@ -220,7 +221,7 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 				$positionSetDb->deletePositionSet($data['id']);
 
 				//Reorder and calculate
-				$this->_helper->OrderingSet->setOrdering($params['parent'], $data['parentid'], $data['id']);
+				$this->_helper->OrderingSet->setOrdering($params['parent'], $params['type'], $data['parentid'], $data['id']);
 				$calculations = $this->_helper->Calculate($data['parentid'], $this->_date, $this->_user['id']);
 				echo Zend_Json::encode($calculations['locale']);
 			}
@@ -235,7 +236,7 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 		$locale = Zend_Registry::get('Zend_Locale');
 
-		$formClass = 'Purchases_Form_'.ucfirst($params['parent'].'pos');
+		$formClass = 'Purchases_Form_'.ucfirst($params['parent'].$params['type']);
 		$form = new $formClass();
 
 		//Get uoms
@@ -247,7 +248,7 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 		$taxrates = $taxrateDb->getTaxrates();
 
 		$form->uom->addMultiOptions($uoms);
-		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['parentid']));
+		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid']));
 		$form->taxrate->addMultiOptions($taxrates);
 
 		$data = $this->getRequest()->getPost();

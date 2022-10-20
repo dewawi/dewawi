@@ -2,10 +2,10 @@
 
 class Application_Controller_Action_Helper_Ordering extends Zend_Controller_Action_Helper_Abstract
 {
-	public function setOrdering($parent, $parentid, $setid)
+	public function setOrdering($parent, $type, $parentid, $setid)
 	{
 		$i = 1;
-		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.'pos');
+		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.$type);
 		$positionsDb = new $positionClass();
 		$positions = $positionsDb->getPositions($parentid, $setid);
 		foreach($positions as $position) {
@@ -17,11 +17,11 @@ class Application_Controller_Action_Helper_Ordering extends Zend_Controller_Acti
 		}
 	}
 
-	public function sortOrdering($id, $parent, $parentid, $setid, $target)
+	public function sortOrdering($id, $parent, $type, $parentid, $setid, $target)
 	{
-		$orderings = $this->getOrderingId($parent, $parentid, $setid);
+		$orderings = $this->getOrderingId($parent, $type, $parentid, $setid);
 		$currentOrdering = array_search($id, $orderings);
-		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.'pos');
+		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.$type);
 		$positionsDb = new $positionClass();
 		if($target == 'down') {
 			$positionsDb->sortPosition($id, $currentOrdering+1);
@@ -42,13 +42,13 @@ class Application_Controller_Action_Helper_Ordering extends Zend_Controller_Acti
 				}
 			}
 		}
-		$this->setOrdering($parent, $parentid, $setid);
+		$this->setOrdering($parent, $type, $parentid, $setid);
 	}
 
-	public function getOrdering($parent, $parentid, $setid)
+	public function getOrdering($parent, $type, $parentid, $setid)
 	{
 		$i = 1;
-		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.'pos');
+		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.$type);
 		$positionsDb = new $positionClass();
 		$positions = $positionsDb->getPositions($parentid, $setid);
 		$orderings = array();
@@ -59,10 +59,10 @@ class Application_Controller_Action_Helper_Ordering extends Zend_Controller_Acti
 		return $orderings;
 	}
 
-	public function getOrderingId($parent, $parentid, $setid)
+	public function getOrderingId($parent, $type, $parentid, $setid)
 	{
 		$i = 1;
-		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.'pos');
+		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.$type);
 		$positionsDb = new $positionClass();
 		$positions = $positionsDb->getPositions($parentid, $setid);
 		$orderings = array();
@@ -73,19 +73,19 @@ class Application_Controller_Action_Helper_Ordering extends Zend_Controller_Acti
 		return $orderings;
 	}
 
-	public function pushOrdering($origin, $parent, $parentid, $setid)
+	public function pushOrdering($origin, $parent, $type, $parentid, $setid)
 	{
-		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.'pos');
+		$positionClass = 'Purchases_Model_DbTable_'.ucfirst($parent.$type);
 		$positionsDb = new $positionClass();
-		$orderings = $this->getOrderingId($parent, $parentid, $setid);
+		$orderings = $this->getOrderingId($parent, $type, $parentid, $setid);
 		foreach($orderings as $ordering => $positionId) {
 			if($ordering > $origin) $positionsDb->updatePosition($positionId, array('ordering' => ($ordering+1)));
 		}
 	}
 
-	public function getLatestOrdering($parent, $parentid, $setid)
+	public function getLatestOrdering($parent, $type, $parentid, $setid)
 	{
-		$ordering = $this->getOrdering($parent, $parentid, $setid);
+		$ordering = $this->getOrdering($parent, $type, $parentid, $setid);
 		end($ordering);
 		return key($ordering);
 	}
