@@ -5,44 +5,37 @@
 class Zend_View_Helper_Attributes extends Zend_View_Helper_Abstract{
 
 	public function Attributes() {
+		$i = 1;
 		$data = false;
-		if(count($this->view->attributesByGroup)) $data = true;
+		if($length = count($this->view->attributesByGroup)) $data = true;
+		--$length;
+		//print_r($this->view->attributesByGroup);
 		if(!$data) { ?>
 			<div id="messages"><ul><li><?php echo $this->view->translate('Es sind noch keine Eigenschaften vorhanden.') ?></li></ul></div>
 		<?php } else { ?>
 			<?php foreach($this->view->attributesByGroup as $attributesByGroup) : ?>
 				<h4><?php echo $attributesByGroup['title']; ?></h4>
 				<p><?php echo $attributesByGroup['description']; ?></p>
-				<table id="data">
-					<thead>
-						<tr>
-							<th id="id"><?php echo $this->view->translate('ITEMS_ATTRIBUTE_ID') ?></th>
-							<th id="title"><?php echo $this->view->translate('ITEMS_ATTRIBUTE_TITLE') ?></th>
-							<th id="value"><?php echo $this->view->translate('ITEMS_ATTRIBUTE_VALUE') ?></th>
-							<th class="buttons"></th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach($attributesByGroup['attributes'] as $attribute) : ?>
-						<tr>
-							<td id="id">
-								<input class="id" type="hidden" value="<?php echo $attribute->id ?>" name="id"/>
-								<input class="controller" type="hidden" value="attribute" name="controller"/>
-								<input class="module" type="hidden" value="items" name="module"/>
-								<?php echo $this->view->escape($attribute['id']); ?>
-							</td>
-							<td id="title">
-								<?php echo $this->view->escape($attribute['title']);?>
-							</td>
-							<td id="value">
-								<?php echo $this->view->escape($attribute['value']);?>
-							</td>
-							<td class="buttons">
-							</td>
-						</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
+				<?php if(isset($attributesByGroup['id'])) : ?>
+				<div class="sub-group">
+					<input type="hidden" name="id" value="<?php echo $attributesByGroup['id']; ?>" id="id">
+					<dd id="attributegroup<?php echo $attributesByGroup['id']; ?>-element">
+						<input type="text" name="title" id="attributegroup<?php echo $attributesByGroup['id']; ?>" value="<?php echo $attributesByGroup['title']; ?>" size="30" data-id="<?php echo $attributesByGroup['id']; ?>" data-ordering="<?php echo $attributesByGroup['ordering']; ?>" data-controller="attributegroup">
+					</dd>
+					<dd id="attributegroup<?php echo $attributesByGroup['id']; ?>-element">
+						<input type="text" name="description" id="attributegroup<?php echo $attributesByGroup['id']; ?>" value="<?php echo $attributesByGroup['description']; ?>" size="30" data-id="<?php echo $attributesByGroup['id']; ?>" data-ordering="<?php echo $attributesByGroup['ordering']; ?>" data-controller="attributegroup">
+					</dd>
+					<button type="button" class="delete nolabel" onclick="del(<?php echo $attributesByGroup['id']; ?>, deleteConfirm, 'attributegroup');"></button>
+					<?php if($i>1 && $i<=$length) : ?>
+						<button name="sortup" id="sortup" type="button" class="up nolabel" data-id="3404156" data-ordering="1" data-controller="attributegroup"></button>
+					<?php endif; ?>
+					<?php if($i<$length) : ?>
+						<button name="sortdown" id="sortdown" type="button" class="down nolabel" data-id="3404156" data-ordering="1" data-controller="attributegroup"></button>
+					<?php endif; ?>
+				</div>
+				<?php endif;?>
+				<?php echo $this->view->MultiForm('items', 'attribute', $attributesByGroup['attributes'], array('title', 'value'), '', $attributesByGroup['id']); ?>
+				<?php ++$i; ?>
 			<?php endforeach;?>
 		<?php }
 	}

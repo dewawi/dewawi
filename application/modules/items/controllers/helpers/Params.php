@@ -29,6 +29,9 @@ class Items_Controller_Action_Helper_Params extends Zend_Controller_Action_Helpe
 		$params['tagid'] = $request->getParam('tagid', $request->getCookie('tagid', $toolbar->tagid->getAttrib('default')));
 		$toolbar->tagid->setValue($params['tagid']);
 
+		$parent = explode('|', $request->getParam('parent'));
+		$params['parent'] = isset($parent[1]) ? $parent[1] : false;
+
 		return $params;
 	}
 }

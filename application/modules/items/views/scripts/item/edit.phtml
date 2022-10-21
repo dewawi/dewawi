@@ -12,7 +12,9 @@ echo $this->FileManager();
 	<li<?php if($this->activeTab == "#tabInventory") : ?> class="active"<?php endif; ?>>
 		<a href="#tabInventory"><?php echo $this->translate('TABS_INVENTORY') ?></a></li>
 	<li<?php if($this->activeTab == "#tabAttributes") : ?> class="active"<?php endif; ?>>
-		<a href="#tabAttributes"><?php echo $this->translate('ITEMS_ATTRIBUTE') ?></a></li>
+		<a href="#tabAttributes" onclick="getPositions('item', 'atr')"><?php echo $this->translate('ITEMS_ATTRIBUTES'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabOptions") : ?> class="active"<?php endif; ?>>
+		<a href="#tabOptions" onclick="getPositions('item', 'opt')"><?php echo $this->translate('ITEMS_OPTIONS'); ?></a></li>
 	<?php if($this->dirwritable) : ?>
 		<li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
 			<a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
@@ -114,7 +116,10 @@ echo $this->FileManager();
 		</form>
 	</div>
 	<div id="tabAttributes" class="tab_content<?php if($this->activeTab == '#tabAttributes') : ?> active<?php endif; ?>">
-		<?php echo $this->Attributes(); ?>
+		<div class="positionsContainer" data-parent="item" data-type="atr"></div>
+	</div>
+	<div id="tabOptions" class="tab_content<?php if($this->activeTab == '#tabOptions') : ?> active<?php endif; ?>">
+		<div class="positionsContainer" data-parent="item" data-type="opt"></div>
 	</div>
 	<div id="tabInventory" class="tab_content<?php if($this->activeTab == '#tabInventory') : ?> active<?php endif; ?>">
 		<?php echo $this->Inventory(); ?>

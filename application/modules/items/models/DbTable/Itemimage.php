@@ -35,10 +35,8 @@ class Items_Model_DbTable_Itemimage extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchRow($where);
-		if (!$data) {
-			throw new Exception("Could not find row $itemid");
-		}
-		return $data->toArray();
+		if($data) $data->toArray();
+		return $data;
 	}
 
 	public function getItemimages($ids)
