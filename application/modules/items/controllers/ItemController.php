@@ -248,6 +248,53 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
 
+	public function downloadAction()
+	{
+		$this->_helper->getHelper('layout')->disableLayout();
+
+		$id = $this->_getParam('id', 0);
+		$catid = $this->_getParam('catid', 0);
+
+		if($id) {
+			$this->_helper->viewRenderer->setRender('pdf');
+			//$this->_helper->viewRenderer->setNoRender();
+
+			$itemDb = new Items_Model_DbTable_Item();
+			$item = $itemDb->getItem($id);
+
+			//Get attribute sets
+			$attributeSetsDb = new Items_Model_DbTable_Itematrset();
+			$attributeSets = $attributeSetsDb->getPositionSets($item['id']);
+
+			//Get attributes
+			$attributesDb = new Items_Model_DbTable_Itematr();
+			$attributes = $attributesDb->getPositions($item['id']);
+
+			//Get images
+			$imagesDb = new Items_Model_DbTable_Itemimage();
+			$images = $imagesDb->getItemimageByItemID($item['id']);
+
+			//Attributes
+			$attributesByGroup = array();
+			$attributesDb = new Items_Model_DbTable_Itematr();
+			foreach($attributeSets as $id => $attributeSet) {
+				$attributesByGroup[$id] = array();
+				$attributesByGroup[$id]['title'] = $attributeSet['title'];
+				$attributesByGroup[$id]['description'] = $attributeSet['description'];
+				$attributesByGroup[$id]['attributes'] = $attributesDb->getPositions($item['id'], $attributeSet['id']);
+			}
+			$attributesByGroup[] = array(
+				'title' => 'Sonstiges',
+				'description' => '',
+				'attributes' => $attributesDb->getPositions($item['id'], 0)
+			);
+
+			$this->view->item = $item;
+			$this->view->images = $images;
+			$this->view->attributesByGroup = $attributesByGroup;
+		}
+	}
+
 	public function deleteAction()
 	{
 		$this->_helper->viewRenderer->setNoRender();
