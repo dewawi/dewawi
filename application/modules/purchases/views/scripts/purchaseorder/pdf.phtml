@@ -173,14 +173,14 @@ $pdf->SetFont('freesans', '', 10);
 
 //Contact adress
 if($contactid) {
-    $pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, '');
-    if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, '');
-    if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, '');
-    if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, '');
-    $pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, '');
-    $pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, '');
-    $pdf->ln(20);
-    if($y > $pdf->GetY()) $pdf->SetY($y);
+	$pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, '');
+	if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, '');
+	if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, '');
+	if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, '');
+	$pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, '');
+	$pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, '');
+	$pdf->ln(20);
+	if($y > $pdf->GetY()) $pdf->SetY($y);
 }
 
 //HEADER
