@@ -51,7 +51,7 @@ $this->headTitle($this->title);
 					<?php if($item->catid && isset($this->options['categories'][$item->catid])) echo $this->escape($this->options['categories'][$item->catid]['title']); ?>
 				</td>
 				<td class="buttons">
-					<?php echo $this->Button('apply', 'applyPosition('.$this->escape($item->id).')'); ?>
+					<?php echo $this->Button('apply', 'applyPosition(\''.$this->parent.'\', \'pos\', '.$this->escape($item->id).', window.parent.setid)'); ?>
 				</td>
 			</tr>
 		<?php endforeach; ?>
