@@ -1,5 +1,6 @@
 var isDirty = false;
 var timeout = 0;
+var setid = 0;
 
 //Date picker options
 var datePickerOptions = {
@@ -15,7 +16,9 @@ $(document).ready(function(){
 		} else if(action = 'index') {
 			//Keep alive editable elements
 			$('.editableValue:visible').each(function(e) {
-				lock($(this).closest('tr').find('input.id').val());
+				if(action == 'index') {
+					lock($(this).closest('tr').find('input.id').val());
+				}
 			});
 		}
 	}, 60000); // 60 seconds
@@ -41,7 +44,7 @@ $(document).ready(function(){
 			});
 	});
 
-		//Language switcher
+	//Language switcher
 	$('#userinfo #language').on('change', '', function() {
 		//console.log($('#language').val());
 			$.ajax({
@@ -98,25 +101,29 @@ $(document).ready(function(){
 	//	isDirty = true;
 	//});
 
-	//Positions
-	$('#positions').on('change', 'input:not(.id), textarea, select', function() {
-		if($(this).hasClass('number')) $(this).formatCurrency({ region: language });
-		var data = {};
-		var params = {};
-		params['id'] = $(this).closest('tr.wrap').find('input.id').val();
-				//console.log(params['id']);
-		params[controller+'id'] = id;
-		params['element'] = this.name;
-		data[this.name] = this.value;
-				//console.log(data);
-				//console.log(params);
-		if(this.name == 'ordering') sort(params['id'], this.value);
-		else editPosition(data, params);
+	//Handle sub entities
+	$('.positionsContainer').on('change', 'input:not(.id), textarea, select', function() {
+		if(!$(this).hasClass('editableValue')) {
+			if($(this).hasClass('number')) $(this).formatCurrency({ region: language });
+			var data = {};
+			var params = {};
+			params['id'] = $(this).closest('tr.wrap').find('input.id').val();
+			params['parentid'] = id;
+			params['element'] = this.name;
+			data[this.name] = this.value;
+			var parent = $(this).closest('div.positionsContainer').data('parent');
+			var type = $(this).closest('div.positionsContainer').data('type');
+			if(this.name == 'ordering') {
+				var setid = $(this).closest('div.set').find('input.setid').val();
+				sort(parent, type, params['id'], setid, this.value);
+			}
+			else editPosition(parent, type, data, params);
+		}
 	});
 
 	//Editable
 	var previousValue;
-	if(action == 'index') {
+	//if(action == 'index') {
 		$('#data .editable').each(function() {
 			$(this).wrap('<div class="editableContainer"></div>');
 			if(!$(this).text()) {
@@ -125,9 +132,11 @@ $(document).ready(function(){
 			}
 
 		});
-	}
+	//}
 	$('#content').on('click', '.editable', function() {
-		var id = $(this).closest('tr').find('input.id').val();
+		if(typeof id === 'undefined') {
+			var id = $(this).closest('tr').find('input.id').val();
+		}
 		var type = $(this).data('type') || 'input';
 		//Close and unlock all other elements
 		var editableValue = $(this).next('.editableValue');
@@ -135,13 +144,17 @@ $(document).ready(function(){
 		$('.editableValue:visible').each(function(e) {
 			if($(this)[0] != editableValue[0]) {
 				$(this).hide();
-				if(id != $(this).closest('tr').find('input.id').val()) {
-					unlock($(this).closest('tr').find('input.id').val());
+				if(action == 'index') {
+					if(id != $(this).closest('tr').find('input.id').val()) {
+						unlock($(this).closest('tr').find('input.id').val());
+					}
 				}
 			}
 		});
 		//Lock
-		var lockMessage = lock(id);
+		if(action == 'index') {
+			var lockMessage = lock(id);
+		}
 		//Check if there is a message
 		if(typeof lockMessage !== 'undefined') {
 			pushMessages(lockMessage);
@@ -219,14 +232,16 @@ $(document).ready(function(){
 		}
 		data[this.name] = value;
 		//Check dataset info on the element
-		if(typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
-		if(typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;
-		if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
-		if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
-		if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
+		if(typeof this.previousSibling.dataset.id !== 'undefined') params['id'] = this.previousSibling.dataset.id;
+		if(typeof this.previousSibling.dataset.action !== 'undefined') params['action'] = this.previousSibling.dataset.action;
+		if(typeof this.previousSibling.dataset.controller !== 'undefined') params['controller'] = this.previousSibling.dataset.controller;
+		if(typeof this.previousSibling.dataset.module !== 'undefined') params['module'] = this.previousSibling.dataset.module;
+		if(typeof this.previousSibling.dataset.ordering !== 'undefined') data['ordering'] = this.previousSibling.dataset.ordering;
 		if(params['action'] == 'add') {
 			var response = add(data, params);
 			this.dataset.action = '';
+		} else if(params['controller'] == 'positionset') {
+			var response = editPositionSet(data, params);
 		} else {
 			var response = edit(data, params);
 		}
@@ -442,7 +457,11 @@ $(document).ready(function(){
 	});
 
 	//Modal window
-	$('button.poplight').click(modalWindow);
+	$(document).on('click', 'button.poplight', function() {
+		var popID = $(this).attr('rel');
+		setid = $(this).closest('div.set').find('input.setid').val();
+		modalWindow(popID, setid);
+	});
 	$(document).on('click', 'a.close, #fade', modalWindowClose);
 
 	//Loading
@@ -482,9 +501,13 @@ $(document).ready(function(){
 		//return false;
 				event.preventDefault();
 	});
-	if($.cookie('tab') == '#tabPositions') {
-		getPositions();
-	}
+	//if($.cookie('tab') == '#tabPositions') {
+		$('div.positionsContainer').each(function() {
+			var parent = $(this).closest('div.positionsContainer').data('parent');
+			var type = $(this).closest('div.positionsContainer').data('type');
+			getPositions(parent, type);
+		});
+	//}
 
 	//Prices and quantities
 	$('.number').on('blur, change', function() {
@@ -515,7 +538,24 @@ $(document).ready(function(){
 				} else if(className == 'save') {
 					save();
 				} else if(className == 'addPosition') {
-					addPosition();
+					var parent = $(this).closest('div.positionsContainer').data('parent');
+					var type = $(this).closest('div.positionsContainer').data('type');
+					var setid = $(this).closest('div.set').find('input.setid').val();
+					addPosition(parent, type, setid);
+				} else if(className == 'addSet') {
+					var parent = $(this).closest('div.positionsContainer').data('parent');
+					var type = $(this).closest('div.positionsContainer').data('type');
+					addSet(parent, type);
+				} else if(className == 'copySet') {
+					var parent = $(this).closest('div.positionsContainer').data('parent');
+					var type = $(this).closest('div.positionsContainer').data('type');
+					var setid = $(this).closest('div.set').find('input.setid').val();
+					if(setid != "0") copySet(parent, type, setid);
+				} else if(className == 'deleteSet') {
+					var parent = $(this).closest('div.positionsContainer').data('parent');
+					var type = $(this).closest('div.positionsContainer').data('type');
+					var setid = $(this).closest('div.set').find('input.setid').val();
+					if(setid != "0") deleteSet(parent, type, setid);
 				} else if(className == 'clear') {
 					var element = $(this).attr('rel');
 					clear(element);
@@ -548,19 +588,27 @@ $(document).ready(function(){
 							if(this.checked) {
 								switch(className) {
 									case 'copyPosition':
-										copyPosition($(this).val());
+			                            var parent = $(this).closest('div.positionsContainer').data('parent');
+			                            var type = $(this).closest('div.positionsContainer').data('type');
+										copyPosition(parent, type, $(this).val());
 										break;
 									case 'applyPosition':
-										applyPosition($(this).val());
+			                            var parent = $(this).closest('div.positionsContainer').data('parent');
+			                            var type = $(this).closest('div.positionsContainer').data('type');
+										window.parent.console.log(parent);
+										//applyPosition(parent, type, $(this).val(), window.parent.setid);
 										break;
 									case 'deletePosition':
-										deletePosition($(this).val());
+			                            var parent = $(this).closest('div.positionsContainer').data('parent');
+			                            var type = $(this).closest('div.positionsContainer').data('type');
+										var setid = $(this).closest('div.set').find('input.setid').val();
+										deletePosition(parent, type, $(this).val(), setid);
 										break;
 								}
 							}
 						});
 					});
-										//copy and delete function on edit page
+					//copy and delete function on edit page
 					var id = $(this).closest('.toolbar').find('input.id').val();
 					if(id) {
 						if(className == 'copy') {
@@ -569,21 +617,40 @@ $(document).ready(function(){
 							del(id, deleteConfirm);
 						}
 					}
+			        var parent = $(this).closest('div.positionsContainer').data('parent');
+			        var type = $(this).closest('div.positionsContainer').data('type');
+					var setid = $(this).closest('div.set').find('input.setid').val();
+					if(className == 'up') {
+						sort(parent, type, setid, -1, 'up');
+					} else if(className == 'down') {
+						sort(parent, type, setid, -1, 'down');
+					}
 				} else if(className == 'up') {
+			        var parent = $(this).closest('div.positionsContainer').data('parent');
+			        var type = $(this).closest('div.positionsContainer').data('type');
 					var id = $(this).closest('tr').find('input.id').val();
-					sort(id, 'up');
+					var setid = $(this).closest('div.set').find('input.setid').val();
+					sort(parent, type, id, setid, 'up');
 				} else if(className == 'down') {
+			        var parent = $(this).closest('div.positionsContainer').data('parent');
+			        var type = $(this).closest('div.positionsContainer').data('type');
 					var id = $(this).closest('tr').find('input.id').val();
-					sort(id, 'down');
+					var setid = $(this).closest('div.set').find('input.setid').val();
+					sort(parent, type, id, setid, 'down');
 				} else if(className == 'copyPosition') {
+			        var parent = $(this).closest('div.positionsContainer').data('parent');
+			        var type = $(this).closest('div.positionsContainer').data('type');
 					var positionID = $(this).closest('tr').find('input.id').val();
-					copyPosition(positionID);
+					copyPosition(parent, type, positionID);
 				} else if(className == 'deletePosition') {
 					/*var ids = $('input:checkbox:checked').map(function () {
 						return this.value;
 					}).get();*/
+			        var parent = $(this).closest('div.positionsContainer').data('parent');
+			        var type = $(this).closest('div.positionsContainer').data('type');
 					var positionID = $(this).closest('tr').find('input.id').val();
-					deletePosition(positionID);
+					var setid = $(this).closest('div.set').find('input.setid').val();
+					deletePosition(parent, type, positionID, setid);
 				} else {
 					var cid = $(this).closest('tr').find('input.id').val() || id;
 					if(cid) {
@@ -656,7 +723,7 @@ $(document).ready(function(){
 	removeMessages();
 
 	//Check all
-	$('#content, #positions').on('click', '.checkall', function() {
+	$('#content, .positionsContainer').on('click', '.checkall', function() {
 		$(this).parents('div').find('input.id:checkbox').prop('checked', this.checked);
 	});
 
@@ -833,42 +900,6 @@ function edit(data, params) {
 	return response;
 }
 
-function editPosition(data, params) {
-	var url = baseUrl+'/'+module+'/'+controller+'pos';
-	if(params['id']) url += '/edit/id/'+params['id'];
-	if(params[controller+'id']) url += '/'+controller+'id/'+params[controller+'id'];
-	$.ajax({
-		type: 'POST',
-		url: url,
-		data: data,
-		cache: false,
-		success: function(response){
-			isDirty = false;
-			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleaction')) {
-				$('table#total #subtotal').text(response['subtotal']);
-				$('table#total #total').text(response['total']);
-				$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
-								$.each(response['taxes'], function(key, val) {
-										if(key != 'total') $('td[data-rate="'+key+'"]').text(val);
-								});
-			} else if(params['element'] == 'taxrate') {
-				//$('table#total #taxes').text(response['taxes']);
-				//$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
-								/*$.each(response['taxes'], function(key, val) {
-										if(key != 'total') {
-												if($('td[data-rate="'+key+'"]').length) {
-														$('td[data-rate="'+key+'"]').text(val);
-												} else {
-											getPositions($(document).height());
-												}
-										}
-								});*/
-					getPositions($(document).height());
-			}
-		}
-	});
-}
-
 //Search
 function search() {
 	data = {};
@@ -889,6 +920,7 @@ function search() {
 	data.order = $('#order').val();
 	data.sort = $('#sort').val();
 	data.clientid = $('#clientid').val();
+	if(typeof window.parent.controller !== 'undefined') data.parent = window.parent.controller;
 	data.paymentstatus = [];
 	$('input[name="paymentstatus[]"]:checked').each(function() {
 		data.paymentstatus.push(this.value);
@@ -1085,46 +1117,103 @@ function del(id, message, type, cmodule){
 	}
 }
 
-//Add position
-function addPosition() {
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+module+'/'+controller+'pos/add/'+controller+'id/'+id,
-		cache: false,
-		success: function(){
-			$('#status #warning').hide();
-			$('#status #success').show();
-			isDirty = false;
-			getPositions($(document).height());
-		}
-	});
-}
-
 //Apply position
-function applyPosition(itemId) {
+function applyPosition(parent, type, itemId, setid) {
 	$.ajax({
 		type: 'POST',
-		url: window.parent.baseUrl+'/'+window.parent.module+'/'+window.parent.controller+'pos/apply/'+window.parent.controller+'id/'+window.parent.id+'/itemid/'+itemId,
+		url: window.parent.baseUrl+'/'+window.parent.module+'/position/apply/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+window.parent.id+'/itemid/'+itemId,
 		cache: false,
 		success: function(){
-			window.parent.getPositions($(parent.document).height());
+			window.parent.getPositions(parent, type, $(parent.document).height());
 			if(action == 'apply') {
 				history.go(-1);
 			}
 		}
 	});
+    //console.log(parent);
+}
+
+//Edit position
+function editPosition(parent, type, data, params) {
+	var url = baseUrl+'/'+module+'/position';
+	if(params['id']) url += '/edit/id/'+params['id'];
+	if(params['parentid']) url += '/parent/'+parent+'/type/'+type+'/parentid/'+params['parentid'];
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: data,
+		cache: false,
+		success: function(response){
+			isDirty = false;
+			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleaction')) {
+				$('table#total #subtotal').text(response['subtotal']);
+				$('table#total #total').text(response['total']);
+				$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
+								$.each(response['taxes'], function(key, val) {
+										if(key != 'total') $('td[data-rate="'+key+'"]').text(val);
+								});
+			} else if(params['element'] == 'taxrate') {
+				getPositions(parent, type, $(document).height());
+			}
+		}
+	});
+}
+
+//Add position
+function addPosition(parent, type, setid) {
+	$.ajax({
+		type: 'POST',
+		url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id,
+		cache: false,
+		success: function(){
+			$('#status #warning').hide();
+			$('#status #success').show();
+			isDirty = false;
+			getPositions(parent, type, $(document).height());
+		}
+	});
+}
+
+//Copy Position
+function copyPosition(parent, type, positionID){
+	$.ajax({
+		type: 'POST',
+		url: baseUrl+'/'+window.parent.module+'/position/copy/parent/'+parent+'/type/'+type+'/id/'+positionID+'/parentid/'+id,
+		cache: false,
+		success: function(){
+			getPositions(parent, type, window.pageYOffset);
+		}
+	});
+}
+
+//Delete Position
+function deletePosition(parent, type, positionID, setid){
+	var data = {};
+	data.id = positionID;
+	data.setid = setid;
+	data.parentid = id;
+	data.delete = 'Yes';
+	$.ajax({
+		type: 'POST',
+		url: baseUrl+'/'+window.parent.module+'/position/delete/parent/'+parent+'/type/'+type,
+		cache: false,
+		data: data,
+		success: function(){
+			getPositions(parent, type, window.pageYOffset);
+		}
+	});
 }
 
 //Get Positions
-function getPositions(scrollTo) {
+function getPositions(parent, type, scrollTo) {
 	scrollTo = scrollTo || null;
 	$.ajax({
 		type: 'POST',
-		url: baseUrl+'/'+window.parent.module+'/'+controller+'pos/index/'+controller+'id/'+id,
+		url: baseUrl+'/'+window.parent.module+'/position/index/parent/'+parent+'/type/'+type+'/parentid/'+id,
 		cache: false,
 		success: function(data){
-			$('#positions').html(data);
-			autosize($('#positions').find('textarea'));
+			$('.positionsContainer[data-parent="'+parent+'"]').html(data);
+			autosize($('.positionsContainer').find('textarea'));
 			if(data) $('#tabPositions .toolbar.positions.bottom').show();
 			else $('#tabPositions .toolbar.positions.bottom').hide();
 			if(scrollTo) {
@@ -1138,7 +1227,81 @@ function getPositions(scrollTo) {
 	});
 }
 
-//Get Positions
+//Add Set
+function addSet(parent, type) {
+	$.ajax({
+		type: 'POST',
+		url: baseUrl+'/'+module+'/positionset/add/parent/'+parent+'/type/'+type+'/parentid/'+id,
+		cache: false,
+		success: function(){
+			$('#status #warning').hide();
+			$('#status #success').show();
+			isDirty = false;
+			getPositions(parent, type, $(document).height());
+		}
+	});
+}
+
+//Copy Set
+function copySet(parent, type, setid){
+	$.ajax({
+		type: 'POST',
+		url: baseUrl+'/'+window.parent.module+'/positionset/copy/parent/'+parent+'/type/'+type+'/id/'+setid+'/parentid/'+id,
+		cache: false,
+		success: function(){
+			getPositions(parent, type, window.pageYOffset);
+		}
+	});
+}
+
+//Delete Set
+function deleteSet(parent, type, setid){
+	var data = {};
+	data.id = setid;
+	data.parentid = id;
+	data.delete = 'Yes';
+	$.ajax({
+		type: 'POST',
+		url: baseUrl+'/'+window.parent.module+'/positionset/delete/parent/'+parent+'/type/'+type,
+		cache: false,
+		data: data,
+		success: function(){
+			getPositions(parent, type, window.pageYOffset);
+		}
+	});
+}
+
+//Edit position
+function editPositionSet(data, params) {
+	var response;
+	var url = baseUrl+'/'+module+'/positionset';
+	if(params['id']) url += '/edit/id/'+params['id'];
+	url += '/parent/'+controller+'/parentid/'+id;
+	$.ajax({
+		type: 'POST',
+		async: false,
+		url: url,
+		data: data,
+		cache: false,
+		success: function(json){
+			isDirty = false;
+			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleaction')) {
+				$('table#total #subtotal').text(json['subtotal']);
+				$('table#total #total').text(json['total']);
+				$('tr.position'+params['id']+'.wrap').find('.total').text(json[params['id']]['total']);
+								$.each(json['taxes'], function(key, val) {
+										if(key != 'total') $('td[data-rate="'+key+'"]').text(val);
+								});
+			} else if(params['element'] == 'taxrate') {
+				getPositions(controller, $(document).height());
+			}
+			response = json;
+		}
+	});
+	return response;
+}
+
+//Get Email Messages
 function getEmailmessages(scrollTo) {
 	var contactid = $('#contactid').val();
 	var data = {};
@@ -1206,46 +1369,20 @@ function sendMessage(){
 	}
 }
 
-//Copy Position
-function copyPosition(positionID){
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+window.parent.module+'/'+controller+'pos/copy/id/'+positionID,
-		cache: false,
-		success: function(){
-			getPositions(window.pageYOffset);
-		}
-	});
-}
-
-//Delete Position
-function deletePosition(positionID){
-	var data = {};
-	data.id = positionID;
-	data[controller+'id'] = id;
-	data.delete = 'Yes';
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+window.parent.module+'/'+controller+'pos/delete',
-		cache: false,
-		data: data,
-		success: function(){
-			getPositions(window.pageYOffset);
-		}
-	});
-}
-
 //Ordering
-function sort(id, ordering){
+function sort(parent, type, id, setid, ordering){
 	var data = {};
 	data.id = id;
 	data.ordering = ordering;
-	var url = baseUrl+'/'+module+'/'+controller;
+	var url = baseUrl+'/'+module+'/';
 	if(action == 'edit') {
-		data[controller+'id'] = window.id;
-		url += 'pos/sort/id/'+id;
+		if(setid == -1) {
+			url += 'positionset/sort/id/'+id+'/parent/'+parent+'/type/'+type+'/parentid/'+window.id;
+		} else {
+			url += 'position/sort/id/'+id+'/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+window.id;
+		}
 	} else {
-		url += '/sort/id/'+id;
+		url += controller+'/sort/id/'+id;
 	}
 	$.ajax({
 		type: 'POST',
@@ -1254,9 +1391,8 @@ function sort(id, ordering){
 		data: data,
 		success: function(response){
 			if(action == 'edit') {
-				getPositions();
+				getPositions(parent, type, window.pageYOffset);
 			} else {
-								//console.log(response);
 				search();
 			}
 		}
@@ -1332,8 +1468,7 @@ function downloadPdf(){
 }
 
 //Modal Window
-function modalWindow() {
-	var popID = $(this).attr('rel');
+function modalWindow(popID, setid) {
 	//var popURL = $(this).attr('href');
 	//var query= popURL.split('?');
 	//var dim= query[1].split('&');

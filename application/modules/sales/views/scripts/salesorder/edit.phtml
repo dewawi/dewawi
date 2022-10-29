@@ -9,7 +9,7 @@ echo $this->FileManager();
 	<li<?php if($this->activeTab == "#tabOverview") : ?> class="active"<?php endif; ?>>
 		<a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabPositions") : ?> class="active"<?php endif; ?>>
-		<a href="#tabPositions" onclick="getPositions()"><?php echo $this->translate('TABS_POSITIONS'); ?></a></li>
+		<a href="#tabPositions" onclick="getPositions('salesorder', 'pos')"><?php echo $this->translate('TABS_POSITIONS'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabCustomer") : ?> class="active"<?php endif; ?>>
 		<a href="#tabCustomer"><?php echo $this->translate('TABS_CUSTOMER'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabShippingAddress") : ?> class="active"<?php endif; ?>>
@@ -85,7 +85,7 @@ echo $this->FileManager();
 		</form>
 	</div>
 	<div id="tabPositions" class="tab_content<?php if($this->activeTab == '#tabPositions') : ?> active<?php endif; ?>">
-		<div id="positions"></div>
+		<div class="positionsContainer" data-parent="salesorder" data-type="pos"></div>
 	</div>
 	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">
 		<form id="salesorder" enctype="application/x-www-form-urlencoded" action="" method="post">
