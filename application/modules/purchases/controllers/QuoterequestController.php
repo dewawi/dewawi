@@ -393,18 +393,12 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$data['lockedtime'] = NULL;
 
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
-		echo $quoterequestid = $quoterequest->addQuoterequest($data);
+		$quoterequestid = $quoterequest->addQuoterequest($data);
 
-		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		//Copy positions
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
 		$positions = $positionsDb->getPositions($id);
-		foreach($positions as $position) {
-			$dataPosition = $position->toArray();
-			$dataPosition['parentid'] = $quoterequestid;
-			$dataPosition['modified'] = NULL;
-			$dataPosition['modifiedby'] = 0;
-			unset($dataPosition['id']);
-			$positionsDb->addPosition($dataPosition);
-		}
+		$this->_helper->Position->copyPositions($positions, $quoterequestid, 'purchases', 'quoterequest', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -425,19 +419,12 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$data['lockedtime'] = NULL;
 
 		$salesorder = new Sales_Model_DbTable_Salesorder();
-		$salesorderid = $salesorder->addSalesorder($data);
+		echo $salesorderid = $salesorder->addSalesorder($data);
 
-		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		//Copy positions
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
 		$positions = $positionsDb->getPositions($id);
-		$positionsSalesorderDb = new Sales_Model_DbTable_Salesorderpos();
-		foreach($positions as $position) {
-			$dataPosition = $position->toArray();
-			$dataPosition['parentid'] = $salesorderid;
-			$dataPosition['modified'] = NULL;
-			$dataPosition['modifiedby'] = 0;
-			unset($dataPosition['id'], $dataPosition['quoterequestid']);
-			$positionsSalesorderDb->addPosition($dataPosition);
-		}
+		$this->_helper->Position->copyPositions($positions, $salesorderid, 'sales', 'salesorder', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SALES_ORDER_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', 'salesorder', 'sales', array('id' => $salesorderid));
@@ -461,17 +448,10 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
 
-		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		//Copy positions
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
 		$positions = $positionsDb->getPositions($id);
-		$positionsInvoiceDb = new Sales_Model_DbTable_Invoicepos();
-		foreach($positions as $position) {
-			$dataPosition = $position->toArray();
-			$dataPosition['parentid'] = $invoiceid;
-			$dataPosition['modified'] = NULL;
-			$dataPosition['modifiedby'] = 0;
-			unset($dataPosition['id'], $dataPosition['quoterequestid']);
-			$positionsInvoiceDb->addPosition($dataPosition);
-		}
+		$this->_helper->Position->copyPositions($positions, $invoiceid, 'sales', 'invoice', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_INVOICE_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', 'invoice', 'sales', array('id' => $invoiceid));
@@ -512,17 +492,10 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
 
-		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+		//Copy positions
+		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
 		$positions = $positionsDb->getPositions($id);
-		$positionsPurchaseorderDb = new Purchases_Model_DbTable_Purchaseorderpos();
-		foreach($positions as $position) {
-			$dataPosition = $position->toArray();
-			$dataPosition['parentid'] = $purchaseorderid;
-			$dataPosition['modified'] = NULL;
-			$dataPosition['modifiedby'] = 0;
-			unset($dataPosition['id'], $dataPosition['quoterequestid']);
-			$positionsPurchaseorderDb->addPosition($dataPosition);
-		}
+		$this->_helper->Position->copyPositions($positions, $purchaseorderid, 'purchases', 'purchaseorder', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_PURCHASE_ORDER_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', 'purchaseorder', 'purchases', array('id' => $purchaseorderid));

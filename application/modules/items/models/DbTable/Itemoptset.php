@@ -95,4 +95,11 @@ class Items_Model_DbTable_Itemoptset extends Zend_Db_Table_Abstract
 		$where = $this->getAdapter()->quoteInto('id IN (?)', $ids);
 		$this->update($data, $where);
 	}
+
+	public function deletePositionSetsByItemID($itemid)
+	{
+		$itemid = (int)$itemid;
+		$where = $this->getAdapter()->quoteInto('parentid = ?', $itemid);
+		$this->delete($where);
+	}
 }

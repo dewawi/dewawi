@@ -69,7 +69,6 @@ class Purchases_PositionController extends Zend_Controller_Action
 		$currencyHelper = $this->_helper->Currency;
 		$currency = $currencyHelper->getCurrency();
 
-		$sets = array();
 		$taxes = array();
 		if(isset($parent['taxfree']) && $parent['taxfree']) {
 			$taxes[] = array('value' => 0, 'title' => 0);
@@ -90,52 +89,64 @@ class Purchases_PositionController extends Zend_Controller_Action
 			$object->ordering = 0;
 			$positionSets[0] = $object;
 		}
+		$sets = array();
 		foreach($positionSets as $positionSet) {
-			$forms = array();
-			foreach($positions as $position) {
-				if($positionSet->id == $position->{$params['type'].'setid'}) {
-					if(isset($parent['taxfree']) && !$parent['taxfree'] && array_search($position->taxrate, $taxrates))
-						$taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
-
-					$price = $position->price;
-					if($position->priceruleamount && $position->priceruleaction) {
-						if($position->priceruleaction == 'bypercent')
-							$price = $price*(100-$position->priceruleamount)/100;
-						elseif($position->priceruleaction == 'byfixed')
-							$price = ($price-$position->priceruleamount);
-						elseif($position->priceruleaction == 'topercent')
-							$price = $price*(100+$position->priceruleamount)/100;
-						elseif($position->priceruleaction == 'tofixed')
-							$price = ($price+$position->priceruleamount);
-					}
-
-					// Set position total with currency symbol
-					$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
-					$position->total = $currency->toCurrency($price*$position->quantity);
-
-					// Set editable values without currency symbol
-					$currencyHelper->setCurrency($currency, $position->currency, 'NO_SYMBOL');
-					$position->price = $currency->toCurrency($position->price);
-					$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-					$position->priceruleamount = $currency->toCurrency($position->priceruleamount);
-
-					$formClass = 'Purchases_Form_'.ucfirst($params['parent'].$params['type']);
-					$form = new $formClass();
-					$forms[$position->id] = $form->populate($position->toArray());
-					$forms[$position->id]->uom->addMultiOptions($uoms);
-					if($position->uom) {
-						$uom = array_search($position->uom, $uoms);
-						if($uom) $forms[$position->id]->uom->setValue($uom);
-					}
-					$forms[$position->id]->priceruleaction->addMultiOptions($priceruleactions);
-					$forms[$position->id]->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], $positionSet->id));
-					$forms[$position->id]->taxrate->setValue(array_search($position->taxrate, $taxrates));
-					foreach($taxrates as $id => $value)
-						$forms[$position->id]->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
-				}
-			}
-			$sets[$positionSet->id]['forms'] = $forms;
 			$sets[$positionSet->id]['title'] = $positionSet->title;
+		}
+		$forms = array();
+		$childs = array();
+		$options = array();
+		$optionsDb = new Items_Model_DbTable_Itemopt();
+		foreach($positions as $position) {
+			if(isset($parent['taxfree']) && !$parent['taxfree'] && array_search($position->taxrate, $taxrates))
+				$taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
+
+			$price = $position->price;
+			if($position->priceruleamount && $position->priceruleaction) {
+				if($position->priceruleaction == 'bypercent')
+					$price = $price*(100-$position->priceruleamount)/100;
+				elseif($position->priceruleaction == 'byfixed')
+					$price = ($price-$position->priceruleamount);
+				elseif($position->priceruleaction == 'topercent')
+					$price = $price*(100+$position->priceruleamount)/100;
+				elseif($position->priceruleaction == 'tofixed')
+					$price = ($price+$position->priceruleamount);
+			}
+
+			// Set position total with currency symbol
+			$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
+			$position->total = $currency->toCurrency($price*$position->quantity);
+
+			// Set editable values without currency symbol
+			$currencyHelper->setCurrency($currency, $position->currency, 'NO_SYMBOL');
+			$position->price = $currency->toCurrency($position->price);
+			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
+			$position->priceruleamount = $currency->toCurrency($position->priceruleamount);
+
+			$formClass = 'Purchases_Form_'.ucfirst($params['parent'].$params['type']);
+			$form = new $formClass();
+			$form->populate($position->toArray());
+			$form->uom->addMultiOptions($uoms);
+			if($position->uom) {
+				$uom = array_search($position->uom, $uoms);
+				if($uom) $form->uom->setValue($uom);
+			}
+			$form->priceruleaction->addMultiOptions($priceruleactions);
+			$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], $position->{$params['type'].'setid'}));
+			$form->taxrate->setValue(array_search($position->taxrate, $taxrates));
+			foreach($taxrates as $id => $value)
+				$form->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
+
+			if($position->masterid) {
+				$childs[$position->masterid][] = $form;
+			} else {
+				$forms[$position->{$params['type'].'setid'}][$position->id]['form'] = $form;
+			}
+
+			//Get options
+			if($position->itemid) {
+				$options[$position->id] = $optionsDb->getPositions($position->itemid);
+			}
 		}
 
 		// Set grand total with currency symbol
@@ -146,11 +157,15 @@ class Purchases_PositionController extends Zend_Controller_Action
 			$taxes[$rate]['value'] = $currency->toCurrency($data['value']);
 		}
 		$parent['taxes'] = $taxes;
+		$parent['type'] = $params['parent'];
 
 		$this->view->sets = $sets;
+		$this->view->forms = $forms;
+		$this->view->childs = $childs;
 		$this->view->parent = $parent;
-		$this->view->toolbar = new Purchases_Form_ToolbarPositions();
-		$this->view->toolbarPositions = new Purchases_Form_ToolbarPositions();
+		$this->view->options = $options;
+		$this->view->toolbar = new Sales_Form_ToolbarPositions();
+		$this->view->toolbarPositions = new Sales_Form_ToolbarPositions();
 	}
 
 	public function applyAction()
@@ -252,6 +267,13 @@ class Purchases_PositionController extends Zend_Controller_Action
 		$parentMethod = 'get'.$params['parent'];
 		$parent = $parentDb->$parentMethod($params['parentid']);
 
+		//Get option data
+		$params['optionid'] = isset($params['optionid']) ? $params['optionid'] : 0;
+		if($params['optionid']) {
+			$optionDb = new Items_Model_DbTable_Itemopt();
+			$option = $optionDb->getPosition($params['optionid']);
+		}
+
 		//Get primary tax rate
 		$taxrates = new Application_Model_DbTable_Taxrate();
 		$taxrate = $taxrates->getPrimaryTaxrate();
@@ -272,6 +294,15 @@ class Purchases_PositionController extends Zend_Controller_Action
 			$data['currency'] = $parent['currency'];
 			$data['uom'] = '';
 			$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid']) + 1;
+			if(isset($option)) {
+				$data['masterid'] = $params['masterid'];
+				$data['sku'] = $option['sku'];
+				$data['itemid'] = $option['itemid'];
+				$data['title'] = $option['title'];
+				$data['description'] = $option['description'];
+				$data['price'] = $option['price'];
+				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid']) + 1;
+			}
 			$positionDb = new $positionClass();
 			$positionDb->addPosition($data);
 		}
@@ -341,12 +372,29 @@ class Purchases_PositionController extends Zend_Controller_Action
 			$positionClass = 'Purchases_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
 			$positionDb = new $positionClass();
 			$data = $positionDb->getPosition($params['id']);
-			$this->_helper->Ordering->pushOrdering($data['ordering'], $params['parent'], $params['type'], $data['parentid'], $data[$params['type'].'setid']);
+			$this->_helper->Ordering->pushOrdering($data['ordering'], $params['parent'], $params['type'], $data['parentid'], $data[$params['type'].'setid'], $data['masterid']);
+
+			//Get child positions
+			$positions = $positionDb->getPositions($data['parentid'], $data[$params['type'].'setid'], $data['id']);
+
+			//Create new position
 			$data['ordering'] += 1;
 			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
 			unset($data['id']);
-			$positionDb->addPosition($data);
+			$id = $positionDb->addPosition($data);
+
+			//Create child positions
+			if($positions && count($positions)) {
+				foreach($positions as $position) {
+					$data = $position->toArray();
+					$data['masterid'] = $id;
+					$data['modified'] = NULL;
+					$data['modifiedby'] = 0;
+					unset($data['id']);
+					$positionDb->addPosition($data);
+				}
+			}
 
 			//Calculate
 			$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
@@ -364,7 +412,8 @@ class Purchases_PositionController extends Zend_Controller_Action
 
 		if($request->isPost()) {
 			$data = $request->getPost();
-			$this->_helper->Ordering->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $params['setid'], $data['ordering']);
+			if(!isset($params['masterid'])) $params['masterid'] = 0;
+			$this->_helper->Ordering->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid'], $data['ordering']);
 		}
 	}
 
@@ -387,8 +436,17 @@ class Purchases_PositionController extends Zend_Controller_Action
 				$positionDb = new $positionClass();
 				$positionDb->deletePositions($data['id']);
 
+				//Delete child positions
+				$positions = $positionDb->getPositions($params['parentid'], $params['setid'], $data['id']);
+				if($positions && count($positions)) {
+					foreach($positions as $position) {
+						$positionDb->deletePositions($position->id);
+					}
+				}
+
 				//Reorder and calculate
-				$this->_helper->Ordering->setOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid']);
+				if(!isset($params['masterid'])) $params['masterid'] = 0;
+				$this->_helper->Ordering->setOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid']);
 				$calculations = $this->_helper->Calculate($data['parentid'], $this->_date, $this->_user['id']);
 				echo Zend_Json::encode($calculations['locale']);
 			}

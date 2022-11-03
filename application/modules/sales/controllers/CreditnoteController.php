@@ -422,17 +422,10 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnote = new Sales_Model_DbTable_Creditnote();
 		echo $creditnoteid = $creditnote->addCreditnote($data);
 
+		//Copy positions
 		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
 		$positions = $positionsDb->getPositions($id);
-		foreach($positions as $position) {
-			$dataPosition = $position->toArray();
-			$dataPosition['parentid'] = $creditnoteid;
-			$dataPosition['created'] = $this->_date;
-			$dataPosition['modified'] = NULL;
-			$dataPosition['modifiedby'] = 0;
-			unset($dataPosition['id']);
-			$positionsDb->addPosition($dataPosition);
-		}
+		$this->_helper->Position->copyPositions($positions, $creditnoteid, 'sales', 'creditnote', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
@@ -455,17 +448,10 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$salesorder = new Sales_Model_DbTable_Salesorder();
 		$salesorderid = $salesorder->addSalesorder($data);
 
+		//Copy positions
 		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
 		$positions = $positionsDb->getPositions($id);
-		$positionsSalesorderDb = new Sales_Model_DbTable_Salesorderpos();
-		foreach($positions as $position) {
-			$dataPosition = $position->toArray();
-			$dataPosition['parentid'] = $salesorderid;
-			$dataPosition['modified'] = NULL;
-			$dataPosition['modifiedby'] = 0;
-			unset($dataPosition['id'], $dataPosition['creditnoteid']);
-			$positionsSalesorderDb->addPosition($dataPosition);
-		}
+		$this->_helper->Position->copyPositions($positions, $salesorderid, 'sales', 'salesorder', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SALES_ORDER_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', 'salesorder', null, array('id' => $salesorderid));
@@ -489,17 +475,10 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$invoice = new Sales_Model_DbTable_Invoice();
 		$invoiceid = $invoice->addInvoice($data);
 
+		//Copy positions
 		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
 		$positions = $positionsDb->getPositions($id);
-		$positionsInvoiceDb = new Sales_Model_DbTable_Invoicepos();
-		foreach($positions as $position) {
-			$dataPosition = $position->toArray();
-			$dataPosition['parentid'] = $invoiceid;
-			$dataPosition['modified'] = NULL;
-			$dataPosition['modifiedby'] = 0;
-			unset($dataPosition['id'], $dataPosition['creditnoteid']);
-			$positionsInvoiceDb->addPosition($dataPosition);
-		}
+		$this->_helper->Position->copyPositions($positions, $invoiceid, 'sales', 'invoice', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_INVOICE_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', 'invoice', null, array('id' => $invoiceid));
@@ -540,21 +519,10 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequestid = $quoterequest->addQuoterequest($data);
 
+		//Copy positions
 		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
 		$positions = $positionsDb->getPositions($id);
-		$positionsQuoterequestDb = new Purchases_Model_DbTable_Quoterequestpos();
-		foreach($positions as $position) {
-			$dataPosition = $position->toArray();
-			$dataPosition['parentid'] = $quoterequestid;
-			$dataPosition['modified'] = NULL;
-			$dataPosition['modifiedby'] = 0;
-			unset($dataPosition['id'], $dataPosition['creditnoteid']);
-			$positionsQuoterequestDb->addPosition($dataPosition);
-		}
-
-		//Add document relation
-		$documentrelationDb = new Application_Model_DbTable_Documentrelation();
-		$documentrelationDb->addDocumentrelation($data['contactid'], $quoterequestid, "purchases", "quoterequest", $this->_date, $this->_user['id']);
+		$this->_helper->Position->copyPositions($positions, $quoterequestid, 'purchases', 'quoterequest', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_REQUEST_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', 'quoterequest', 'purchases', array('id' => $quoterequestid));
@@ -595,21 +563,10 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
 
+		//Copy positions
 		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
 		$positions = $positionsDb->getPositions($id);
-		$positionsPurchaseorderDb = new Purchases_Model_DbTable_Purchaseorderpos();
-		foreach($positions as $position) {
-			$dataPosition = $position->toArray();
-			$dataPosition['parentid'] = $purchaseorderid;
-			$dataPosition['modified'] = NULL;
-			$dataPosition['modifiedby'] = 0;
-			unset($dataPosition['id'], $dataPosition['creditnoteid']);
-			$positionsPurchaseorderDb->addPosition($dataPosition);
-		}
-
-		//Add document relation
-		$documentrelationDb = new Application_Model_DbTable_Documentrelation();
-		$documentrelationDb->addDocumentrelation($data['contactid'], $purchaseorderid, "purchases", "purchaseorder", $this->_date, $this->_user['id']);
+		$this->_helper->Position->copyPositions($positions, $purchaseorderid, 'purchases', 'purchaseorder', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_PURCHASE_ORDER_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', 'purchaseorder', 'purchases', array('id' => $purchaseorderid));

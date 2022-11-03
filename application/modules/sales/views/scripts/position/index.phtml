@@ -6,12 +6,13 @@
 		<?php echo $this->toolbarPositions->addset; ?>
 	</div>
 <?php endif; ?>
-<?php foreach($this->sets as $id => $set) : ?>
+<?php foreach($this->sets as $setid => $set) : ?>
 	<div class="set">
-		<input type="hidden" class="setid" name="setid" value="<?php echo $id; ?>">
+		<input type="hidden" class="setid" name="setid" value="<?php echo $setid; ?>">
 		<?php echo $this->ToolbarPositionSets($sets, $s); ?>
-		<h3><span class="editable" data-name="title" data-value="<?php echo $set['title']; ?>" data-type="input" data-id="<?php echo $id; ?>" data-controller="positionset"><?php echo $set['title']; ?></span></h3>
+		<h3><span class="editable" data-name="title" data-value="<?php echo $set['title']; ?>" data-type="input" data-id="<?php echo $setid; ?>" data-controller="positionset"><?php echo $set['title']; ?></span></h3>
 		<?php echo $this->ToolbarPositions(); ?>
+		<?php if(isset($this->forms[$setid]) && ($length = count($this->forms[$setid]))) : ?>
 		<table id="positions">
 			<thead>
 				<tr>
@@ -27,36 +28,35 @@
 			</thead>
 			<tbody>
 				<?php $i = 1; ?>
-				<?php if($length = count($set['forms'])) : ?>
-				<?php foreach($set['forms'] as $form) : ?>
-					<tr class="position<?php echo $form->getValue('id'); ?> wrap">
+				<?php foreach($this->forms[$setid] as $position) : ?>
+					<tr class="position<?php echo $position['form']->getValue('id'); ?> wrap master">
 						<td class="id">
-							<input class="id" type="checkbox" value="<?php echo $form->getValue('id'); ?>" name="id"/>
+							<input class="id" type="checkbox" value="<?php echo $position['form']->getValue('id'); ?>" name="id"/>
 						</td>
 						<td class="position">
-							<span><?php echo $form->getValue('ordering'); ?></span>
-							<?php echo $form->ordering; ?>
+							<span><?php echo $position['form']->getValue('ordering'); ?></span>
+							<?php echo $position['form']->ordering; ?>
 						</td>
 						<td class="flex50">
 							<table>
 								<tr>
 									<td class="sku">
-										<?php echo $form->sku; ?>
+										<?php echo $position['form']->sku; ?>
 									</td>
 									<td class="title">
-										<?php echo $form->title; ?>
+										<?php echo $position['form']->title; ?>
 									</td>
 								</tr>
 								<tr>
 									<td class="description">
-										<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
-										<?php echo $form->description; ?>
+										<input class="id" type="hidden" value="<?php echo $position['form']->getValue('id'); ?>" name="id"/>
+										<?php echo $position['form']->description; ?>
 									</td>
 								</tr>
 								<tr>
 									<td class="image">
-										<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
-										<?php echo $form->image; ?>
+										<input class="id" type="hidden" value="<?php echo $position['form']->getValue('id'); ?>" name="id"/>
+										<?php echo $position['form']->image; ?>
 									</td>
 								</tr>
 							</table>
@@ -65,12 +65,12 @@
 							<table>
 								<tr>
 									<td class="price">
-										<?php echo $form->price; ?>
+										<?php echo $position['form']->price; ?>
 									</td>
 								</tr>
 								<tr>
 									<td class="taxrate">
-										<?php echo $form->taxrate; ?>
+										<?php echo $position['form']->taxrate; ?>
 									</td>
 								</tr>
 							</table>
@@ -79,12 +79,12 @@
 							<table>
 								<tr>
 									<td class="priceruleamount">
-										<?php echo $form->priceruleamount; ?>
+										<?php echo $position['form']->priceruleamount; ?>
 									</td>
 								</tr>
 								<tr>
 									<td class="priceruleaction">
-										<?php echo $form->priceruleaction; ?>
+										<?php echo $position['form']->priceruleaction; ?>
 									</td>
 								</tr>
 							</table>
@@ -93,18 +93,18 @@
 							<table>
 								<tr>
 									<td class="quantity">
-										<?php echo $form->quantity; ?>
+										<?php echo $position['form']->quantity; ?>
 									</td>
 								</tr>
 								<tr>
 									<td class="uom">
-										<?php echo $form->uom; ?>
+										<?php echo $position['form']->uom; ?>
 									</td>
 								</tr>
 							</table>
 						</td>
 						<td class="total">
-							<?php echo $form->getValue('total'); ?>
+							<?php echo $position['form']->getValue('total'); ?>
 						</td>
 						<?php //Display buttons if parent not completed ?>
 						<?php if($this->parent['state'] != '105' || $this->parent['state'] != '106') : ?>
@@ -120,6 +120,50 @@
 						</td>
 						<?php endif; ?>
 					</tr>
+					<?php $c = 1; ?>
+					<?php if(isset($this->childs[$position['form']->getValue('id')])) : ?>
+					<?php $childs = $this->childs[$position['form']->getValue('id')]; ?>
+					<?php if(isset($childs) && ($childsCount = count($childs))) : ?>
+						<?php foreach($childs as $child) : ?>
+							<tr class="position<?php echo $child->getValue('id'); ?> wrap child" data-masterid="<?php echo $position['form']->getValue('id'); ?>">
+								<td style="max-width: 75px;"><input class="id" type="checkbox" value="<?php echo $child->getValue('id'); ?>" name="id"/></td>
+								<td><?php echo $child->sku; ?></td>
+								<td><?php echo $child->title; ?></td>
+								<td><?php echo $child->description; ?></td>
+								<td style="max-width: 200px;"><?php echo $child->price; ?></td>
+								<?php if($this->parent['state'] != '105' || $this->parent['state'] != '106') : ?>
+								<td class="buttons">
+									<?php echo $this->toolbar->deletepos; ?>
+									<?php echo $this->toolbar->copypos; ?>
+									<?php if($c>1) : ?>
+										<?php echo $this->toolbar->sortup; ?>
+									<?php endif; ?>
+									<?php if($c<$childsCount) : ?>
+										<?php echo $this->toolbar->sortdown; ?>
+									<?php endif; ?>
+								</td>
+								<?php endif; ?>
+							</tr>
+						<?php ++$c; ?>
+						<?php endforeach; ?>
+					<?php endif; ?>
+					<?php endif; ?>
+					<?php if(isset($this->options[$position['form']->getValue('id')]) && count($this->options[$position['form']->getValue('id')])) : ?>
+						<tr><td><h4>Optionen</h4></td><td></td><td></td><td></td></tr>
+						<?php foreach($this->options[$position['form']->getValue('id')] as $option) : ?>
+							<tr>
+								<td><input class="id" type="checkbox" value="<?php echo $option->id; ?>" name="id"/></td>
+								<td><?php echo $option->sku; ?></td>
+								<td><?php echo $option->title; ?></td>
+								<td><?php echo $option->description; ?></td>
+								<td><?php echo $option->price; ?></td>
+								<td class="buttons">
+									<?php //echo $this->controller; ?>
+									<?php echo $this->Button('add', 'addOption(\''.$this->parent['type'].'\', \'pos\', '.$this->escape($option->id).', '.$this->escape($setid).', '.$position['form']->getValue('id').')'); ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
 					<?php ++$i; ?>
 				<?php endforeach; ?>
 			</tbody>
