@@ -1,0 +1,104 @@
+<?php
+$this->title = $this->translate('TASKS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th style="width:2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="title" style="width:18%">
+				<?php echo $this->translate('TASKS_TITLE') ?>
+			</th>
+			<th class="customer" style="width:10%">
+				<?php echo $this->translate('TASKS_CUSTOMER') ?>
+			</th>
+			<th class="notes" style="width:15%">
+				<?php echo $this->translate('TASKS_NOTES') ?>
+			</th>
+			<th class="responsible" style="width:14%">
+				<?php echo $this->translate('TASKS_RESPONSIBLE_PERSON') ?>
+			</th>
+			<th class="priority" style="width:28%">
+				<?php echo $this->translate('TASKS_PRIORITY') ?>
+			</th>
+			<th class="state" style="width:5%">
+				<?php echo $this->translate('TASKS_STATE') ?>
+			</th>
+			<th style="width:8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->tasks as $task) : ?>
+		<tr class="state<?php echo $task->state; ?> <?php echo $task->paymentstatus; ?> <?php echo $task->deliverystatus; ?> <?php echo $task->supplierorderstatus; ?>">
+			<td><input class="id" type="checkbox" value="<?php echo $task->id; ?>" name="id"/></td>
+			<td data-label="<?php echo $this->translate('TASKS_TITLE') ?>" class="title">
+				<p><a href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'edit', 'id'=>$task->id));?>">
+						<?php echo $task->title ? $this->escape($task->title) : $this->escape($task->id);?>
+				</a></p>
+			</td>
+			<td data-label="<?php echo $this->translate('TASKS_CUSTOMER') ?>" class="customer">
+				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$task->cid));?>">
+					<?php echo $this->escape($task->customerid);?>
+				</a>
+				<?php if($task->billingname1) : ?><br/>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$task->cid));?>">
+						<?php echo $this->escape($task->billingname1);?>
+						<?php //if($task->billingname2) echo "<br/>".$this->escape($task->billingname2);?>
+					</a>
+				<?php endif; ?>
+			</td>
+			<td data-label="<?php echo $this->translate('TASKS_NOTES') ?>" class="notes">
+				<?php if($task->state == '105' || $task->state == '106') : ?>
+					<?php echo nl2br($task->notes); ?>
+				<?php else : ?>
+					<?php if($task->notes) : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $task->notes; ?>" data-type="textarea"><?php echo $task->notes; ?></pre>
+					<?php else : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $task->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+					<?php endif; ?>
+				<?php endif; ?>
+			</td>
+			<td data-label="<?php echo $this->translate('TASKS_RESPONSIBLE_PERSON') ?>" class="responsible">
+				<?php echo $this->escape($task->contactperson);?>
+			</td>
+			<td data-label="<?php echo $this->translate('TASKS_PRIORITY') ?>" class="priority">
+				Hoch
+			</td>
+			<td data-label="<?php echo $this->translate('TASKS_TITLE') ?>" class="state">
+				<?php if($task->state == '105' || $task->state == '106') : ?>
+					<?php echo $this->translate($this->escape($this->options['states'][$task->state])); ?>
+				<?php else : ?>
+					<span class="editable" data-name="state" data-value="<?php echo $task->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$task->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="buttons">
+				<?php if($task->completed || $task->cancelled) : ?>
+					<?php echo $this->toolbar->viewInline; ?>
+				<?php else : ?>
+					<?php echo $this->toolbar->editInline; ?>
+				<?php endif; ?>
+				<?php echo $this->toolbar->copyInline; ?>
+			</td>
+		</tr>
+		<tr style="border:none;">
+		</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td class="toolbar">
+				<?php echo $this->ToolbarBottom(); ?>
+			</td>
+			<td></td>
+			<td></td>
+			<td class="total">
+				<?php echo $this->tasks->total; ?>
+			</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>

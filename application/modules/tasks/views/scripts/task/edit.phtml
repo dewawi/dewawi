@@ -1,0 +1,266 @@
+<?php 
+$this->title = $this->form->getValue('title') ? $this->form->getValue('title') : $this->translate('TASKS_NEW_TASK');
+$this->headTitle($this->title);
+echo $this->TinyMCE();
+echo $this->FileManager();
+?>
+
+<ul class="tabs">
+	<li<?php if($this->activeTab == "#tabOverview") : ?> class="active"<?php endif; ?>>
+		<a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabPositions") : ?> class="active"<?php endif; ?>>
+		<a href="#tabPositions" onclick="getPositions('task', 'pos')"><?php echo $this->translate('TABS_DETAILS'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabCustomer") : ?> class="active"<?php endif; ?>>
+		<a href="#tabCustomer"><?php echo $this->translate('TABS_CUSTOMER'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabSupplier") : ?> class="active"<?php endif; ?>>
+		<a href="#tabSupplier"><?php echo $this->translate('TABS_SUPPLIER'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabShippingAddress") : ?> class="active"<?php endif; ?>>
+		<a href="#tabShippingAddress"><?php echo $this->translate('TABS_SHIPPING_ADDRESS'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
+		<a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
+</ul>
+
+<div class="tab_container">
+	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
+		<form id="task" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->id; ?>
+						<?php echo $this->form->title; ?>
+						<dt id="customerid-label"><label><?php echo $this->translate('TASKS_CUSTOMER'); ?></label></dt>
+						<dd>
+							<?php echo $this->toolbar->select; ?>
+							<input id="customerid" type="text" value="<?php echo $this->form->getValue('customerid'); ?>" size="3" readonly="readonly" name="customerid"/>
+							<input id="billingname1" type="text" value="<?php echo $this->form->getValue('billingname1'); ?>" size="20" readonly="readonly" name="billingname1"/>
+						</dd>
+						<?php echo $this->form->notes; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->info; ?>
+					</dl>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12 col-lg-4">
+					<dl class="form">
+						<h4><?php echo $this->translate('TASKS_PAYMENT'); ?></h4>
+						<?php echo $this->form->total; ?>
+						<?php echo $this->form->paymentmethod; ?>
+						<?php echo $this->form->paymentdate; ?>
+						<?php echo $this->form->invoiceid; ?>
+						<?php echo $this->form->invoicedate; ?>
+						<?php echo $this->form->paymentstatus; ?>
+						<?php echo $this->form->currency; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-4">
+					<dl class="form">
+						<h4><?php echo $this->translate('TASKS_PREPAYMENT'); ?></h4>
+						<?php echo $this->form->prepaymenttotal; ?>
+						<?php echo $this->form->prepaymentdate; ?>
+						<?php echo $this->form->prepaymentinvoiceid; ?>
+						<?php echo $this->form->prepaymentinvoicedate; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-4">
+					<dl class="form">
+						<h4><?php echo $this->translate('TASKS_CREDIT_NOTE'); ?></h4>
+						<?php echo $this->form->creditnotetotal; ?>
+						<?php echo $this->form->creditnoteid; ?>
+						<?php echo $this->form->creditnotedate; ?>
+					</dl>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div id="tabPositions" class="tab_content<?php if($this->activeTab == '#tabPositions') : ?> active<?php endif; ?>">
+		<?php echo $this->ToolbarPositions(); ?>
+		<form id="task" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row<?php if($this->form->getValue('editpositionsseparately')) echo ' disabled'; ?>">
+				<div class="col-sm-12 col-lg-4">
+					<dl class="form">
+						<h4><?php echo $this->translate('TASKS_DELIVERY'); ?></h4>
+						<div class="deliverystatus <?php echo $this->form->getValue('deliverystatus'); ?>">
+							<?php echo $this->form->deliverystatus; ?>
+						</div>
+						<?php echo $this->form->shippingmethod; ?>
+						<?php echo $this->form->deliverydate; ?>
+						<?php echo $this->form->deliveryorderid; ?>
+						<?php echo $this->form->deliveryorderdate; ?>
+						<?php //echo $this->form->shipmentdate; ?>
+						<?php //echo $this->form->shipmentnumber; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-4">
+					<dl class="form">
+						<h4><?php echo $this->translate('TASKS_SUPPLIER_DATA'); ?></h4>
+						<?php echo $this->form->supplierid; ?>
+						<?php echo $this->form->purchaseorderid; ?>
+						<?php echo $this->form->suppliersalesorderid; ?>
+						<?php echo $this->form->supplierinvoiceid; ?>
+						<?php echo $this->form->supplierinvoicetotal; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-4">
+					<dl class="form">
+						<div class="supplierorderstatus <?php echo $this->form->getValue('supplierorderstatus'); ?>">
+							<?php echo $this->form->supplierorderstatus; ?>
+						</div>
+						<?php echo $this->form->suppliername; ?>
+						<?php echo $this->form->purchaseorderdate; ?>
+						<?php echo $this->form->suppliersalesorderdate; ?>
+						<?php echo $this->form->supplierinvoicedate; ?>
+						<?php echo $this->form->supplierpaymentdate; ?>
+					</dl>
+				</div>
+			</div>
+			<div class="editpositionsseparately">
+				<?php echo $this->form->editpositionsseparately; ?>
+			</div>
+		</form>
+		<div class="positionsContainer" data-parent="task" data-type="pos">
+			<div id="positions" <?php if(!$this->form->getValue('editpositionsseparately')) echo ' class="disabled"'; ?>></div>
+		</div>
+		<?php echo $this->ToolbarPositions("bottom"); ?>
+	</div>
+	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">
+		<form id="task" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-7">
+					<dl class="form">
+						<dt></dt>
+						<dd>
+							<?php echo $this->toolbar->select; ?>
+						</dd>
+						<?php echo $this->form->customerid; ?>
+						<?php echo $this->form->billingname1; ?>
+						<?php echo $this->form->billingname2; ?>
+						<?php echo $this->form->billingdepartment; ?>
+						<dt><label><b><?php echo $this->translate('TASKS_ADDRESS'); ?></b></label></dt>
+						<dd></dd>
+						<?php echo $this->form->billingstreet; ?>
+						<?php echo $this->form->billingpostcode; ?>
+						<?php echo $this->form->billingcity; ?>
+						<?php echo $this->form->billingcountry; ?>
+						<?php echo $this->form->vatin; ?>
+						<?php echo $this->form->taxfree; ?>
+						<dt><label><b><?php echo $this->translate('TASKS_CONTACT_DATA'); ?></b></label></dt>
+						<dt id="phone1"<?php if(!$this->customer['phone1']) echo ' style="display:none;"'; ?>>
+							<label><?php echo $this->translate('CUSTOMERS_PHONE'); ?></label>
+						</dt>
+						<dd id="phone1"<?php if(!$this->customer['phone1']) echo ' style="display:none;"'; ?>>
+							<?php echo $this->customer['phone1']; ?>
+						</dd>
+						<dt id="phone2"<?php if(!$this->customer['phone2']) echo ' style="display:none;"'; ?>>
+							<label><?php echo $this->translate('CUSTOMERS_PHONE'); ?></label>
+						</dt>
+						<dd id="phone2"<?php if(!$this->customer['phone2']) echo ' style="display:none;"'; ?>>
+							<?php echo $this->customer['phone2']; ?>
+						</dd>
+						<dt id="phone3"<?php if(!$this->customer['phone3']) echo ' style="display:none;"'; ?>>
+							<label><?php echo $this->translate('CUSTOMERS_PHONE'); ?></label>
+						</dt>
+						<dd id="phone3"<?php if(!$this->customer['phone3']) echo ' style="display:none;"'; ?>>
+							<?php echo $this->customer['phone3']; ?>
+						</dd>
+						<dt id="fax"<?php if(!$this->customer['fax']) echo ' style="display:none;"'; ?>>
+							<label><?php echo $this->translate('CUSTOMERS_FAX'); ?></label>
+						</dt>
+						<dd id="fax"<?php if(!$this->customer['fax']) echo ' style="display:none;"'; ?>>
+							<?php echo $this->customer['fax']; ?>
+						</dd>
+						<dt id="mobile"<?php if(!$this->customer['mobile']) echo ' style="display:none;"'; ?>>
+							<label><?php echo $this->translate('CUSTOMERS_MOBILE'); ?></label>
+						</dt>
+						<dd id="mobile"<?php if(!$this->customer['mobile']) echo ' style="display:none;"'; ?>>
+							<?php echo $this->customer['mobile']; ?>
+						</dd>
+						<dt id="email1"<?php if(!$this->customer['email1']) echo ' style="display:none;"'; ?>>
+							<label><?php echo $this->translate('CUSTOMERS_EMAIL'); ?></label>
+						</dt>
+						<dd id="email1"<?php if(!$this->customer['email1']) echo ' style="display:none;"'; ?>>
+							<?php echo $this->customer['email1']; ?>
+						</dd>
+						<dt id="email2"<?php if(!$this->customer['email2']) echo ' style="display:none;"'; ?>>
+							<label><?php echo $this->translate('CUSTOMERS_EMAIL'); ?></label>
+						</dt>
+						<dd id="email2"<?php if(!$this->customer['email2']) echo ' style="display:none;"'; ?>>
+							<?php echo $this->customer['email2']; ?>
+						</dd>
+						<dt id="email3"<?php if(!$this->customer['email3']) echo ' style="display:none;"'; ?>>
+							<label><?php echo $this->translate('CUSTOMERS_EMAIL'); ?></label>
+						</dt>
+						<dd id="email3"<?php if(!$this->customer['email3']) echo ' style="display:none;"'; ?>>
+							<?php echo $this->customer['email3']; ?>
+						</dd>
+						<dt id="internet"<?php if(!$this->customer['internet']) echo ' style="display:none;"'; ?>>
+							<label><?php echo $this->translate('CUSTOMERS_INTERNET'); ?></label>
+						</dt>
+						<dd id="internet"<?php if(!$this->customer['internet']) echo ' style="display:none;"'; ?>>
+							<?php echo $this->customer['internet']; ?>
+						</dd>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-5">
+					<dl class="form">
+						<?php echo $this->form->customerinfo; ?>
+					</dl>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div id="tabSupplier" class="tab_content<?php if($this->activeTab == '#tabSupplier') : ?> active<?php endif; ?>">
+		<form id="task" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="col-sm-12">
+				<dl class="form">
+					<?php echo $this->form->supplierid; ?>
+					<?php echo $this->form->suppliername; ?>
+					<?php //echo $this->form->purchaseorderid;?>
+					<?php //echo $this->form->purchaseorderdate;?>
+					<?php //echo $this->form->suppliersalesorderid;?>
+					<?php //echo $this->form->suppliersalesorderdate;?>
+					<?php //echo $this->form->supplierinvoiceid;?>
+					<?php //echo $this->form->supplierinvoicedate;?>
+					<?php //echo $this->form->supplierordered;?>
+					<?php //echo $this->form->supplierdeliverydate;?>
+				</dl>
+			</div>
+		</form>
+	</div>
+	<div id="tabShippingAddress" class="tab_content<?php if($this->activeTab == '#tabShippingAddress') : ?> active<?php endif; ?>">
+		<form id="task" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="col-sm-12">
+				<dl class="form">
+					<?php echo $this->form->shippingname1; ?>
+					<?php echo $this->form->shippingname2; ?>
+					<?php echo $this->form->shippingdepartment; ?>
+					<?php echo $this->form->shippingstreet; ?>
+					<?php echo $this->form->shippingpostcode; ?>
+					<?php echo $this->form->shippingcity; ?>
+					<?php echo $this->form->shippingcountry; ?>
+					<?php echo $this->form->shippingemail; ?>
+				</dl>
+			</div>
+		</form>
+	</div>
+	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
+	</div>
+</div>
+
+<div id="popup">
+	<div id="addCustomer" class="popup_block">
+		<?php if($this->form->getValue('customerid')) : ?>
+			<iframe src="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'select', 'contactid'=>$this->form->getValue('customerid'), 'parent'=>$this->module.'|'.$this->controller));?>" width="100%" height="100%"></iframe>
+		<?php else : ?>
+			<iframe src="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'select', 'parent'=>$this->module.'|'.$this->controller));?>" width="100%" height="100%"></iframe>
+		<?php endif; ?>
+	</div>
+
+	<div id="selectPosition" class="popup_block">
+		<iframe src="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'select', 'parent'=>$this->module.'|'.$this->controller.'|'.$this->form->getValue('id')));?>" width="100%" height="100%"></iframe>
+	</div>
+</div>

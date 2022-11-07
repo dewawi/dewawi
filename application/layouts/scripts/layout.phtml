@@ -114,6 +114,7 @@ $this->language = str_replace('_', '-', $this->language);
 					<a href="<?php echo $this->url(array('module'=>'index', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">Übersicht</a>
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index', 'id'=>null)); ?>">Kontakte</a>
 					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>">Artikel</a>
+					<a href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'index', 'id'=>null)); ?>">Aufgaben</a>
 					<a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'index', 'id'=>null)); ?>">Vorgänge</a>
 					<span>Verkauf</span>
 					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1">Angebote</a>
@@ -136,6 +137,7 @@ $this->language = str_replace('_', '-', $this->language);
 						<a class="button" href="<?php echo $this->url(array('module'=>'index', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('CONTROL_PANEL'); ?></a>
 						<a class="button<?php if($this->controller == 'contact') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_CONTACTS'); ?></a>
 						<a class="button<?php if($this->controller == 'item') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_ITEMS'); ?></a>
+						<a class="button<?php if($this->controller == 'task') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_TASKS'); ?></a>
 						<a class="button<?php if($this->controller == 'process') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PROCESSES'); ?></a>
 						<div class="sub">
 							<button<?php if(($this->controller == 'quote') || ($this->controller == 'salesorder') || ($this->controller == 'deliveryorder')) echo ' class="active"'; ?>><?php echo $this->translate('MENU_SALES'); ?></button>

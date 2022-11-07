@@ -1,0 +1,242 @@
+<td><input id="id" type="checkbox" value="<?php echo $this->task['id'] ?>" name="id"/></td>
+<td id="overview">
+	<p><?php echo $this->translate('TASKS_TITLE') ;?>:<br/>
+		<a href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'edit', 'id'=>$this->task['id']));?>">
+			<?php echo $this->task['title'] ? $this->escape($this->task['title']) : $this->escape($this->task['id']);?>
+	</a></p>
+	<p><?php echo $this->translate('TASKS_CUSTOMER_ID') ;?>:
+	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->task['customerid']));?>">
+		<?php echo $this->escape($this->task['customerid']);?>
+	</a>
+	<?php if($this->task['billingname1']) : ?><br/>
+	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->task['customerid']));?>">
+		<?php echo $this->escape($this->task['billingname1']);?>
+		<?php //if($this->task['billingname2']) echo "<br/>".$this->escape($this->task['billingname2']);?>
+	</a>
+	<?php endif; ?></p>
+	<?php if($this->task['info']) : ?>
+		<p><?php echo $this->translate('TASKS_INFO') ;?>:<br/>
+		<?php echo $this->escape($this->task['info']);?></p>
+	<?php endif; ?>
+</td>
+<td id="notes">
+	<p><?php echo $this->translate('TASKS_SUBTOTAL') ;?>:<br/>
+	<?php echo $this->escape($this->task['subtotal']);?></p>
+	<p><?php echo $this->translate('TASKS_TAXES') ;?>:<br/>
+	<?php echo $this->escape($this->task['taxes']);?></p>
+	<p><?php echo $this->translate('TASKS_TOTAL') ;?>:<br/>
+	<?php echo $this->escape($this->task['total']);?></p>
+</td>
+<td id="details">
+	<?php if($this->task['paymentmethod']) : ?>
+		<p><?php echo $this->translate('TASKS_PAYMENT_METHOD');?>:<br/>
+		<?php echo $this->escape($this->task['paymentmethod']);?></p>
+	<?php endif; ?>
+	<?php if($this->task['paymentdate']) : ?>
+		<p><?php echo $this->translate('TASKS_PAYMENT_DATE');?>:<br/>
+		<?php echo $this->escape($this->task['paymentdate']);?></p>
+	<?php endif; ?>
+	<p><span<?php echo $this->task['paymentreceived'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+	<?php echo $this->translate('TASKS_PAYMENT_RECEIVED');?>
+	</span> 
+	<?php if($this->task['paymentreceived']) : ?>
+		<input id="paymentreceived" type="checkbox" disabled="disabled" checked="checked" value="1" name="paymentreceived">
+	<?php else : ?>
+		<input id="paymentreceived" type="checkbox" disabled="disabled" value="0" name="paymentreceived">
+	<?php endif; ?></p>
+	<?php if($this->task['invoiceid']) : ?>
+		<p><?php echo $this->translate('TASKS_INVOICE_ID');?>:<br/>
+		<?php echo $this->escape($this->task['invoiceid']);?></p>
+	<?php endif; ?>
+	<?php if($this->task['invoicedate']) : ?>
+		<p><?php echo $this->translate('TASKS_INVOICE_DATE');?>:<br/>
+		<?php echo $this->escape($this->task['invoicedate']);?></p>
+	<?php endif; ?>
+</td>
+<td id="prepayment">
+	<?php if($this->task['prepayment']) : ?>
+		<p><?php echo $this->translate('TASKS_PREPAYMENT');?>:<br/>
+		<?php echo $this->escape($this->task['prepayment']);?></p>
+	<?php endif; ?>
+	<?php if($this->task['prepaymentdate']) : ?>
+		<p><?php echo $this->translate('TASKS_PAYMENT_DATE');?>:<br/>
+		<?php echo $this->escape($this->task['prepaymentdate']);?></p>
+	<?php endif; ?>
+	<?php if($this->task['prepayment']) : ?>
+		<p><span<?php echo $this->task['prepaymentreceived'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+		<?php echo $this->translate('TASKS_PREPAYMENT_RECEIVED');?>
+		</span> 
+		<?php if($this->task['prepaymentreceived']) : ?>
+			<input id="prepaymentreceived" type="checkbox" disabled="disabled" checked="checked" value="1" name="prepaymentreceived">
+		<?php else : ?>
+			<input id="prepaymentreceived" type="checkbox" disabled="disabled" value="0" name="prepaymentreceived">
+		<?php endif; ?></p>
+	<?php endif; ?>
+	<?php if($this->task['invoiceid']) : ?>
+		<p><?php echo $this->translate('TASKS_INVOICE_ID');?>:<br/>
+		<?php echo $this->escape($this->task['invoiceid']);?></p>
+	<?php endif; ?>
+	<?php if($this->task['invoicedate']) : ?>
+		<p><?php echo $this->translate('TASKS_INVOICE_DATE');?>:<br/>
+		<?php echo $this->escape($this->task['invoicedate']);?></p>
+	<?php endif; ?>
+</td>
+<td id="item">
+	<?php if($this->task['itemtype'] == "stockItem") : ?>
+		<div id="stockItemDetails">
+			<p><?php echo $this->translate('TASKS_ITEM_TYPE');?>:<br/>
+			<?php echo $this->translate('ITEMS_STOCK_ITEM');?></p>
+			<?php if($this->task['deliveryorderid']) : ?>
+				<p><?php echo $this->translate('TASKS_DELIVERY_ORDER_ID');?>:<br/>
+				<?php echo $this->escape($this->task['deliveryorderid']);?></p>
+			<?php endif; ?>
+			<?php if($this->task['deliveryorderdate']) : ?>
+				<p><?php echo $this->translate('TASKS_DELIVERY_ORDER_DATE');?>:<br/>
+				<?php echo $this->escape($this->task['deliveryorderdate']);?></p>
+			<?php endif; ?>
+		</div>
+	<?php elseif($this->task['itemtype'] == "deliveryItem") : ?>
+		<div id="deliveryItemDetails">
+			<p><?php echo $this->translate('TASKS_ITEM_TYPE');?>:<br/>
+			<?php echo $this->translate('ITEMS_DELIVERY_ITEM');?></p>
+			<table>
+				<tr>
+					<td>
+						<?php if($this->task['supplierid']) : ?>
+							<?php echo $this->translate('TASKS_SUPPLIER_ID');?>:<br/>
+							<?php echo $this->escape($this->task['supplierid']);?>
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php if($this->task['suppliername']) : ?>
+							<?php echo $this->translate('TASKS_SUPPLIER_NAME');?>:<br/>
+							<?php echo $this->escape($this->task['suppliername']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php if($this->task['purchaseorderid']) : ?>
+							<?php echo $this->translate('TASKS_PURCHASE_ORDER_ID');?>:<br/>
+							<?php echo $this->escape($this->task['purchaseorderid']);?>
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php if($this->task['purchaseorderdate']) : ?>
+							<?php echo $this->translate('TASKS_PURCHASE_ORDER_DATE');?>:<br/>
+							<?php echo $this->escape($this->task['purchaseorderdate']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php if($this->task['suppliersalesorderid']) : ?>
+							<?php echo $this->translate('TASKS_SUPPLIER_SALES_ORDER_ID');?>:<br/>
+							<?php echo $this->escape($this->task['suppliersalesorderid']);?>
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php if($this->task['suppliersalesorderdate']) : ?>
+							<?php echo $this->translate('TASKS_SUPPLIER_SALES_ORDER_DATE');?>:<br/>
+							<?php echo $this->escape($this->task['suppliersalesorderdate']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php if($this->task['supplierinvoiceid']) : ?>
+							<?php echo $this->translate('TASKS_SUPPLIER_INVOICE_ID');?>:<br/>
+							<?php echo $this->escape($this->task['supplierinvoiceid']);?>
+						<?php endif; ?>
+								</td>
+								<td>
+						<?php if($this->task['supplierinvoicedate']) : ?>
+							<?php echo $this->translate('TASKS_SUPPLIER_INVOICE_DATE');?>:<br/>
+							<?php echo $this->escape($this->task['supplierinvoicedate']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<span<?php echo $this->task['supplierordered'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+						<?php echo $this->translate('TASKS_SUPPLIER_ORDERED');?>
+						</span> 
+						<?php if($this->task['supplierordered']) : ?>
+							<input id="supplierordered" type="checkbox" disabled="disabled" checked="checked" value="1" name="supplierordered">
+						<?php else : ?>
+							<input id="supplierordered" type="checkbox" disabled="disabled" value="0" name="supplierordered">
+						<?php endif; ?>
+					</td>
+					<td>
+						<span<?php echo $this->task['supplierpayed'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+						<?php echo $this->translate('TASKS_SUPPLIER_PAYED');?>
+						</span> 
+						<?php if($this->task['supplierpayed']) : ?>
+							<input id="supplierpayed" type="checkbox" disabled="disabled" checked="checked" value="1" name="supplierpayed">
+						<?php else : ?>
+							<input id="supplierpayed" type="checkbox" disabled="disabled" value="0" name="supplierpayed">
+						<?php endif; ?>
+					</td>
+				</tr>
+			</table>
+		</div>
+	<?php elseif($this->task['itemtype'] == "service") : ?>
+		<div id="serviceDetails">
+			<p><?php echo $this->translate('TASKS_ITEM_TYPE');?>:<br/>
+			<?php echo $this->translate('ITEMS_SERVICE');?></p>
+			<?php if($this->task['servicedate']) : ?>
+				<p><?php echo $this->translate('TASKS_SERVICE_DATE');?>:<br/>
+				<?php echo $this->escape($this->task['servicedate']);?></p>
+			<?php endif; ?>
+			<span<?php echo $this->task['servicecompleted'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+			<?php echo $this->translate('TASKS_SERVICE_COMPLETED');?>
+			</span> 
+			<?php if($this->task['servicecompleted']) : ?>
+				<input id="servicecompleted" type="checkbox" disabled="disabled" checked="checked" value="1" name="servicecompleted">
+			<?php else : ?>
+				<input id="servicecompleted" type="checkbox" disabled="disabled" value="0" name="servicecompleted">
+			<?php endif; ?>
+		</div>
+	<?php endif; ?>
+</td>
+<td id="shipping">
+	<?php if($this->task['shippingmethod']) : ?>
+		<p><?php echo $this->translate('TASKS_SHIPPING_METHOD');?>:<br/>
+		<?php echo $this->escape($this->task['shippingmethod']);?></p>
+	<?php endif; ?>
+	<?php if($this->task['shipmentnumber']) : ?>
+		<p><?php echo $this->translate('TASKS_SHIPMENT_NUMBER');?>:<br/>
+		<?php echo $this->escape($this->task['shipmentnumber']);?></p>
+	<?php endif; ?>
+	<?php if($this->task['shipmentdate']) : ?>
+		<p><?php echo $this->translate('TASKS_SHIPMENT_DATE');?>:<br/>
+		<?php echo $this->escape($this->task['shipmentdate']);?></p>
+	<?php endif; ?>
+	<?php if($this->task['deliverydate']) : ?>
+		<p><?php echo $this->translate('TASKS_DELIVERY_DATE');?>:<br/>
+		<?php echo $this->escape($this->task['deliverydate']);?></p>
+	<?php endif; ?>
+	<span<?php echo $this->task['delivered'] ? ' class="completed"' : ' class="uncomplete"'; ?>>
+	<?php echo $this->translate('TASKS_DELIVERED');?>
+	</span> 
+	<?php if($this->task['delivered']) : ?>
+		<input id="delivered" type="checkbox" disabled="disabled" checked="checked" value="1" name="delivered">
+	<?php else : ?>
+		<input id="delivered" type="checkbox" disabled="disabled" value="0" name="delivered">
+	<?php endif; ?>
+</td>
+<td id="state">
+	<?php echo $this->translate($this->escape($this->states[$this->task['state']]['title']));?>
+</td>
+<td id="buttons">
+	<?php if($this->task['completed'] || $this->task['cancelled']) : ?>
+		<button class="view" onclick="setLocation('<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'view', 'id'=>$this->task['id']));?>')" type="button" title="<?php echo $this->translate('TOOLBAR_VIEW'); ?>"><span></span></button>
+		<button class="copy" onclick="copy(<?php echo $this->task['id'] ?>)" type="button" title="<?php echo $this->translate('TOOLBAR_COPY'); ?>"><span></span></button>
+	<?php else : ?>
+		<button class="edit" onclick="setLocation('<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'edit', 'id'=>$this->task['id']));?>')" type="button" title="<?php echo $this->translate('TOOLBAR_EDIT'); ?>"><span></span></button>
+		<button class="copy" onclick="copy(<?php echo $this->task['id'] ?>)" type="button" title="<?php echo $this->translate('TOOLBAR_COPY'); ?>"><span></span></button>
+	<?php endif; ?>
+	<button class="edit" onclick="edit(<?php echo $this->task['id']; ?>, 'inline')" type="button" title="<?php echo $this->translate('TOOLBAR_INLINE_EDIT'); ?>"><span><?php echo $this->translate('TOOLBAR_INLINE_EDIT'); ?></span></button>
+	<button class="details" type="button" title="<?php echo $this->translate('TOOLBAR_DETAILS'); ?>"><span><?php echo $this->translate('TOOLBAR_DETAILS'); ?></span></button>
+	<button class="positions" type="button" title="<?php echo $this->translate('TOOLBAR_POSITONS'); ?>"><span><?php echo $this->translate('TOOLBAR_POSITONS'); ?></span></button>
+</td>

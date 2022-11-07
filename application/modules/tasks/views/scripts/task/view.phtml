@@ -1,0 +1,154 @@
+<?php 
+$this->title = $this->task['title'] ? $this->task['title'] : $this->translate('TASK')." ".$this->task['taskid'];
+$this->headTitle($this->title);
+echo $this->TinyMCE();
+echo $this->FileManager();
+?>
+
+<ul class="tabs">
+	<li class="active"><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
+	<li><a href="#tabFiles"><?php echo $this->translate('TABS_FILES') ?></a></li>
+	<li><a href="#tabMessages" onclick="getEmailmessages()"><?php echo $this->translate('TABS_MESSAGES') ?></a></li>
+</ul>
+
+<div class="tab_container">
+	<div id="tabOverview" class="tab_content active">
+		<div class="row">
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<?php if($this->task['vatin']) { ?>
+						<dt><label><?php echo $this->translate('TASKS_VATIN') ?></label></dt>
+						<dd><?php echo $this->task['vatin']; ?></dd>
+					<?php } ?>
+					<?php if($this->task['taskdate']) { ?>
+						<dt><label><?php echo $this->translate('TASKS_TASK_DATE') ?></label></dt>
+						<dd><?php echo $this->task['taskdate']; ?></dd>
+					<?php } ?>
+					<?php if($this->task['deliverydate']) { ?>
+						<dt><label><?php echo $this->translate('TASKS_DELIVERY_DATE') ?></label></dt>
+						<dd><?php echo $this->task['deliverydate']; ?></dd>
+					<?php } ?>
+					<?php if($this->task['paymentmethod']) { ?>
+						<dt><label><?php echo $this->translate('TASKS_PAYMENT_METHOD') ?></label></dt>
+						<dd><?php echo $this->task['paymentmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->task['shippingmethod']) { ?>
+						<dt><label><?php echo $this->translate('TASKS_SHIPPING_METHOD') ?></label></dt>
+						<dd><?php echo $this->task['shippingmethod']; ?></dd>
+					<?php } ?>
+					<?php if($this->task['header']) { ?>
+						<dt><label><?php echo $this->translate('TASKS_HEADER') ?></label></dt>
+						<dd><?php echo $this->task['header']; ?></dd>
+					<?php } ?>
+					<?php if($this->task['footer']) { ?>
+						<dt><label><?php echo $this->translate('TASKS_FOOTER') ?></label></dt>
+						<dd><?php echo $this->task['footer']; ?></dd>
+					<?php } ?>
+					<?php if($this->task['info']) { ?>
+						<dt><label><?php echo $this->translate('TASKS_INFO') ?></label></dt>
+						<dd><?php echo $this->task['info']; ?></dd>
+					<?php } ?>
+				</dl>
+			</div>
+			<div class="col-sm-12 col-lg-6">
+				<dl class="view">
+					<dt><label><?php echo $this->translate('TASKS_CUSTOMER_ID') ?></label></dt>
+					<dd>
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->contact['id']));?>"><?php echo $this->task['customerid']; ?></a>
+						<input id="customerid" type="hidden" value="<?php echo $this->task['customerid']; ?>" size="5" readonly="readonly" name="customerid"/>
+					</dd>
+					<dt><label><?php echo $this->translate('TASKS_BILLING_ADDRESS') ?></label></dt>
+					<dd>
+						<?php echo $this->task['billingname1']; ?>
+						<?php if($this->task['billingname2']) echo "</br>".$this->task['billingname2']; ?>
+						<?php if($this->task['billingdepartment']) echo "</br>".$this->task['billingdepartment']; ?>
+						<?php if($this->task['billingstreet']) echo "</br>".$this->task['billingstreet']; ?>
+						<?php if($this->task['billingpostcode'] || $this->task['billingcity']) { ?>
+							</br>
+							<?php if($this->task['billingpostcode']) echo $this->task['billingpostcode']; ?>
+							<?php if($this->task['billingcity']) echo $this->task['billingcity']; ?>
+						<?php } ?>
+						<?php if($this->task['billingcountry']) echo "</br>".$this->translate($this->task['billingcountry']); ?>
+					</dd>
+					<?php if($this->task['shippingname1'] || $this->task['shippingname2']) { ?>
+						<dt><label><?php echo $this->translate('TASKS_SHIPPING_ADDRESS') ?></label></dt>
+						<dd>
+							<?php echo $this->task['shippingname1']; ?>
+							<?php if($this->task['shippingname2']) echo "</br>".$this->task['shippingname2']; ?>
+							<?php if($this->task['shippingdepartment']) echo "</br>".$this->task['shippingdepartment']; ?>
+							<?php if($this->task['shippingstreet']) echo "</br>".$this->task['shippingstreet']; ?>
+							<?php if($this->task['shippingpostcode'] || $this->task['shippingcity']) { ?>
+								</br>
+								<?php if($this->task['shippingpostcode']) echo $this->task['shippingpostcode']; ?>
+								<?php if($this->task['shippingcity']) echo $this->task['shippingcity']; ?>
+							<?php } ?>
+							<?php if($this->task['shippingcountry']) echo "</br>".$this->translate($this->task['shippingcountry']); ?>
+							<?php if($this->task['shippingphone']) echo "</br>".$this->task['shippingphone']; ?>
+						</dd>
+					<?php } ?>
+				</dl>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-sm-12 col-lg-12">
+				<h3><?php echo $this->translate('TASKS_POSITIONS') ?></h3>
+				<div id="positions">
+					<?php
+						$i = 1;
+						$length = count($this->positions);
+					?>
+					<table id="positions">
+					<thead>
+					<tr>
+					<th id="id">ID</th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_SKU'); ?></th>
+					<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
+					<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
+					</tr>
+					</thead>
+					<tbody>
+					<?php foreach ($this->positions as $position) { ?>
+						<tr id="position<?php echo $position['id']; ?>">
+						<td id="id"><span><?php echo $position['id']; ?></span></td>
+						<td id="sku"><span><?php echo $position['sku']; ?></span></td>
+						<td id="title"><span><?php echo $position['title']; ?></span></td>
+						<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
+						<td id="price"><span><?php echo $position['price']; ?></span></td>
+						<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
+						<td id="uom"><span><?php echo $position['uom']; ?></span></td>
+						</tr>
+						<?php ++$i; ?>
+					<?php } ?>
+					</tbody>
+					</table>
+
+					<table id="total" align="right">
+						<tbody>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></td>
+								<td align="right"><?php echo $this->task['subtotal']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TAXES'); ?></td>
+								<td align="right"><?php echo $this->task['taxes']; ?></td>
+							</tr>
+							<tr>
+								<td><?php echo $this->translate('POSITIONS_TOTAL'); ?></td>
+								<td align="right"><?php echo $this->task['total']; ?></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
+	</div>
+	<div id="tabMessages" class="tab_content<?php if($this->activeTab == '#tabMessages') : ?> active<?php endif; ?>">
+		<?php echo $this->EmailMessages(); ?>
+	</div>
+</div>
