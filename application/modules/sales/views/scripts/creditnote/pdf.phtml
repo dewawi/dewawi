@@ -189,7 +189,7 @@ if($contactid) {
 
 //Invoice ID
 if($invoiceid) {
-	$info = $this->translate('DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s');
+	$info = $this->translate('DOCUMENTS_INVOICE_ID_%s_FROM_%s');
 	$info = sprintf($info, $invoiceid, $invoicedate);
 	$pdf->SetFont('freesansb', 'B', 10);
 	$pdf->MultiCell(175, 0, $info, 0, 'L', false, 1, $x, '', $reseth=true, $stretch=0, $ishtml=true);
