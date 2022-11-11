@@ -44,6 +44,8 @@ class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
 			if(!$category->parentid) {
 				$categories[$category->id]['id'] = $category->id;
 				$categories[$category->id]['title'] = $category->title;
+				$categories[$category->id]['image'] = $category->image;
+				$categories[$category->id]['description'] = $category->description;
 				$categories[$category->id]['parentid'] = $category->parentid;
 				$categories[$category->id]['ordering'] = $category->ordering;
 				if($category->parentid) {
@@ -57,6 +59,8 @@ class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
 			if($category->parentid) {
 				$categories[$category->id]['id'] = $category->id;
 				$categories[$category->id]['title'] = $category->title;
+				$categories[$category->id]['image'] = $category->image;
+				$categories[$category->id]['description'] = $category->description;
 				$categories[$category->id]['parentid'] = $category->parentid;
 				$categories[$category->id]['ordering'] = $category->ordering;
 				if($category->parentid) {

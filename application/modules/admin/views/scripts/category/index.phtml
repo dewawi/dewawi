@@ -17,11 +17,17 @@ echo $this->Messages();
 							<input type="checkbox" class="checkall" name="checkall"/>
 						<?php endif; ?>
 					</th>
-					<th class="id" width="5%">
+					<th class="id" width="1%">
 						<?php echo $this->translate('ADMIN_ID'); ?>
 					</th>
 					<th class="name" width="20%">
 						<?php echo $this->translate('ADMIN_TITLE'); ?>
+					</th>
+					<th class="image" width="20%">
+						<?php echo $this->translate('ADMIN_CATEGORY_IMAGE'); ?>
+					</th>
+					<th class="description" width="20%">
+						<?php echo $this->translate('ADMIN_CATEGORY_DESCRIPTION'); ?>
 					</th>
 					<th class="parentid" width="20%">
 						<?php echo $this->translate('ADMIN_PARENT_CATEGORY'); ?>
@@ -50,6 +56,12 @@ echo $this->Messages();
 							</td>
 							<td class="name">
 								<span class="editable" data-name="title"><?php echo $this->escape($category['title']); ?></span>
+							</td>
+							<td class="image">
+								<span class="editable" data-name="image" data-value="0" data-type="input"><?php echo $this->escape($category['image']); ?></span>
+							</td>
+							<td class="description">
+								<span class="editable" data-name="description" data-value="0" data-type="textarea"><?php echo $this->escape($category['description']); ?></span>
 							</td>
 							<td class="parentid">
 								<span class="editable" data-name="parentid" data-value="0" data-type="select"><?php echo $this->translate('ADMIN_MAIN_CATEGORY'); ?></span>
@@ -119,6 +131,12 @@ echo $this->Messages();
 					</td>
 					<td class="name">
 						<?php echo $seperator; ?> <span class="editable" data-name="title"><?php echo $categories[$child]['title']; ?></span>
+					</td>
+					<td class="image">
+						<span class="editable" data-name="image" data-value="0" data-type="input"><?php echo $categories[$child]['image']; ?></span>
+					</td>
+					<td class="description">
+						<span class="editable" data-name="description" data-value="0" data-type="textarea"><?php echo $categories[$child]['description']; ?></span>
 					</td>
 					<td class="parentid">
 						<span class="editable" data-name="parentid" data-value="<?php echo $categories[$child]['parentid']; ?>" data-type="select"><?php echo $categories[$categories[$child]['parentid']]['title']; ?></span>

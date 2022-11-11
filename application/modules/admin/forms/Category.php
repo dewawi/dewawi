@@ -17,6 +17,19 @@ class Admin_Form_Category extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
+		$form['image'] = new Zend_Form_Element_Text('image');
+		$form['image']->setLabel('ADMIN_CATEGORY_IMAGE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '12');
+
+		$form['description'] = new Zend_Form_Element_Textarea('description');
+		$form['description']->setLabel('ADMIN_CATEGORY_DESCRIPTION')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('cols', '40')
+			->setAttrib('rows', '20');
+
 		$form['parentid'] = new Zend_Form_Element_Select('parentid');
 		$form['parentid']->setLabel('ADMIN_MAIN_CATEGORY')
 			->addMultiOption('0', 'ADMIN_MAIN_CATEGORY')
