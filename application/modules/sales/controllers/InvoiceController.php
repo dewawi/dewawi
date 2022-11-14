@@ -432,20 +432,20 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		echo $invoiceid = $invoice->addInvoice($data);
 
 		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positionsDb = new Sales_Model_DbTable_Invoicepos();
 		$positions = $positionsDb->getPositions($id);
 		$this->_helper->Position->copyPositions($positions, $invoiceid, 'sales', 'invoice', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
 
-	public function generatequoteAction()
+	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);
+		$target = $this->_getParam('target', 0);
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$data = $invoiceDb->getInvoice($id);
 
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['prepayment'], $data['ebayorderid']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -454,252 +454,88 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
 
-		$quote = new Sales_Model_DbTable_Quote();
-		$quoteid = $quote->addQuote($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $quoteid, 'sales', 'quote', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'quote', null, array('id' => $quoteid));
-	}
-
-	public function generatesalesorderAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$data = $invoiceDb->getInvoice($id);
-
-		unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['prepayment'], $data['ebayorderid']);
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$salesorder = new Sales_Model_DbTable_Salesorder();
-		$salesorderid = $salesorder->addSalesorder($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $salesorderid, 'sales', 'salesorder', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SALES_ORDER_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'salesorder', null, array('id' => $salesorderid));
-	}
-
-	public function generatedeliveryorderAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$data = $invoiceDb->getInvoice($id);
-
-		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
-		if(!$data['shippingname1']) {
-			$data['shippingname1'] = $data['billingname1'];
-			$data['shippingname2'] = $data['billingname2'];
-			$data['shippingdepartment'] = $data['billingdepartment'];
-			$data['shippingstreet'] = $data['billingstreet'];
-			$data['shippingpostcode'] = $data['billingpostcode'];
-			$data['shippingcity'] = $data['billingcity'];
-			$data['shippingcountry'] = $data['billingcountry'];
-			$data['shippingphone'] = '';
+		if($target == 'quote') {
+			unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['prepayment'], $data['ebayorderid']);
+			$module = 'sales';
+		} elseif($target == 'salesorder') {
+			unset($data['id'], $data['invoiceid'], $data['invoicedate'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['deliverydate'], $data['prepayment'], $data['ebayorderid']);
+			$module = 'sales';
+		} elseif($target == 'deliveryorder') {
+			unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
+			$module = 'sales';
+		} elseif($target == 'creditnote') {
+			unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
+			$module = 'sales';
+		} elseif($target == 'quoterequest') {
+			$data['billingname1'] = '';
+			$data['billingname2'] = '';
+			$data['billingdepartment'] = '';
+			$data['billingstreet'] = '';
+			$data['billingpostcode'] = '';
+			$data['billingcity'] = '';
+			$data['billingcountry'] = '';
+			if(!$data['shippingname1']) {
+				$data['shippingname1'] = $data['billingname1'];
+				$data['shippingname2'] = $data['billingname2'];
+				$data['shippingdepartment'] = $data['billingdepartment'];
+				$data['shippingstreet'] = $data['billingstreet'];
+				$data['shippingpostcode'] = $data['billingpostcode'];
+				$data['shippingcity'] = $data['billingcity'];
+				$data['shippingcountry'] = $data['billingcountry'];
+				$data['shippingphone'] = '';
+			}
+			unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
+			$module = 'purchases';
+		} elseif($target == 'purchaseorder') {
+			$data['billingname1'] = '';
+			$data['billingname2'] = '';
+			$data['billingdepartment'] = '';
+			$data['billingstreet'] = '';
+			$data['billingpostcode'] = '';
+			$data['billingcity'] = '';
+			$data['billingcountry'] = '';
+			if(!$data['shippingname1']) {
+				$data['shippingname1'] = $data['billingname1'];
+				$data['shippingname2'] = $data['billingname2'];
+				$data['shippingdepartment'] = $data['billingdepartment'];
+				$data['shippingstreet'] = $data['billingstreet'];
+				$data['shippingpostcode'] = $data['billingpostcode'];
+				$data['shippingcity'] = $data['billingcity'];
+				$data['shippingcountry'] = $data['billingcountry'];
+				$data['shippingphone'] = '';
+			}
+			unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
+			$module = 'purchases';
+		} elseif($target == 'process') {
+			/*$form = new Processes_Form_Process();
+			$elements = $form->getElements();
+			foreach($elements as $key => $value) {
+				if(isset($invoice[$key])) $data[$key] = $invoice[$key];
+			}*/
+			$data['prepaymenttotal'] = $data['prepayment'];
+			$data['customerid'] = $data['contactid'];
+			$data['deliverystatus'] = 'deliveryIsWaiting';
+			$data['supplierorderstatus'] = 'supplierNotOrdered';
+			$data['paymentstatus'] = 'waitingForPayment';
+			unset($data['id'], $data['contactid'], $data['quotedate'], $data['orderdate'], $data['prepayment'], $data['ebayorderid'], $data['templateid'], $data['language'], $data['filename']);
+			$module = 'processes';
 		}
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
 
-		$deliveryorder = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorderid = $deliveryorder->addDeliveryorder($data);
+		//Define belonging classes
+		$parentClass = ucfirst($module).'_Model_DbTable_'.ucfirst($target);
+
+		//Create new dataset
+		$parentDb = new $parentClass();
+		$parentMethod = 'add'.ucfirst($target);
+		$newid = $parentDb->$parentMethod($data);
 
 		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $deliveryorderid, 'sales', 'deliveryorder', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_DELIVERY_ORDER_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'deliveryorder', null, array('id' => $deliveryorderid));
-	}
-
-	public function generatecreditnoteAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$data = $invoiceDb->getInvoice($id);
-
-		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$creditnote = new Sales_Model_DbTable_Creditnote();
-		$creditnoteid = $creditnote->addCreditnote($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $creditnoteid, 'sales', 'creditnote', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_CREDIT_NOTE_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'creditnote', null, array('id' => $creditnoteid));
-	}
-
-	public function generatequoterequestAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$data = $invoiceDb->getInvoice($id);
-
-		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
-		$data['billingname1'] = '';
-		$data['billingname2'] = '';
-		$data['billingdepartment'] = '';
-		$data['billingstreet'] = '';
-		$data['billingpostcode'] = '';
-		$data['billingcity'] = '';
-		$data['billingcountry'] = '';
-		if(!$data['shippingname1']) {
-			$data['shippingname1'] = $data['billingname1'];
-			$data['shippingname2'] = $data['billingname2'];
-			$data['shippingdepartment'] = $data['billingdepartment'];
-			$data['shippingstreet'] = $data['billingstreet'];
-			$data['shippingpostcode'] = $data['billingpostcode'];
-			$data['shippingcity'] = $data['billingcity'];
-			$data['shippingcountry'] = $data['billingcountry'];
-			$data['shippingphone'] = '';
-		}
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
-		$quoterequestid = $quoterequest->addQuoterequest($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $quoterequestid, 'purchases', 'quoterequest', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_REQUEST_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'quoterequest', 'purchases', array('id' => $quoterequestid));
-	}
-
-
-	public function generatepurchaseorderAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$data = $invoiceDb->getInvoice($id);
-
-		unset($data['id'], $data['deliveryorderid'], $data['deliveryorderdate'], $data['prepayment'], $data['ebayorderid']);
-		$data['billingname1'] = '';
-		$data['billingname2'] = '';
-		$data['billingdepartment'] = '';
-		$data['billingstreet'] = '';
-		$data['billingpostcode'] = '';
-		$data['billingcity'] = '';
-		$data['billingcountry'] = '';
-		if(!$data['shippingname1']) {
-			$data['shippingname1'] = $data['billingname1'];
-			$data['shippingname2'] = $data['billingname2'];
-			$data['shippingdepartment'] = $data['billingdepartment'];
-			$data['shippingstreet'] = $data['billingstreet'];
-			$data['shippingpostcode'] = $data['billingpostcode'];
-			$data['shippingcity'] = $data['billingcity'];
-			$data['shippingcountry'] = $data['billingcountry'];
-			$data['shippingphone'] = '';
-		}
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
-		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $purchaseorderid, 'purchases', 'purchaseorder', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_PURCHASE_ORDER_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'purchaseorder', 'purchases', array('id' => $purchaseorderid));
-	}
-
-	public function generateprocessAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$invoice = $invoiceDb->getInvoice($id);
-
-		$data = array();
-		$form = new Processes_Form_Process();
-		$elements = $form->getElements();
-		foreach($elements as $key => $value) {
-			if(isset($invoice[$key])) $data[$key] = $invoice[$key];
-		}
-		$data['subtotal'] = $invoice['subtotal'];
-		$data['taxes'] = $invoice['taxes'];
-		$data['total'] = $invoice['total'];
-		$data['prepaymenttotal'] = $invoice['prepayment'];
-		$data['customerid'] = $invoice['contactid'];
-		$data['deliverystatus'] = 'deliveryIsWaiting';
-		$data['supplierorderstatus'] = 'supplierNotOrdered';
-		$data['paymentstatus'] = 'waitingForPayment';
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-		unset($data['id'], $data['prepayment']);
-
-		$process = new Processes_Model_DbTable_Process();
-		$processID = $process->addProcess($data);
-
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
 		$positions = $positionsDb->getPositions($id);
-		$processposDb = new Processes_Model_DbTable_Processpos();
-		foreach($positions as $position) {
-			$positionData = array();
-			$positionForm = new Processes_Form_Processpos();
-			$positionElements = $positionForm->getElements();
-			foreach($positionElements as $key => $value) {
-				if(isset($position->$key)) $positionData[$key] = $position->$key;
-			}
-			$positionData['processid'] = $processID;
-			$positionData['taxrate'] = $position->taxrate;
-			$positionData['deliverystatus'] = 'deliveryIsWaiting';
-			$positionData['supplierorderstatus'] = 'supplierNotOrdered';
-			$dataPosition['modified'] = NULL;
-			$positionData['modifiedby'] = 0;
-			unset($positionData['id']);
-			$processposDb->addPosition($positionData);
-		}
+		$this->_helper->Position->copyPositions($positions, $newid, $module, $target, $this->_date);
 
-		$this->_flashMessenger->addMessage('MESSAGES_PROCESS_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('index','process','processes');
+		$this->_flashMessenger->addMessage('MESSAGES_DOCUMENT_SUCCESFULLY_GENERATED');
+		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
 
 	public function previewAction()

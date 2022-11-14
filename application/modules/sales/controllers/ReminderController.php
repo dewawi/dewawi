@@ -415,20 +415,20 @@ class Sales_ReminderController extends Zend_Controller_Action
 		echo $reminderid = $reminder->addReminder($data);
 
 		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
 		$positions = $positionsDb->getPositions($id);
 		$this->_helper->Position->copyPositions($positions, $reminderid, 'sales', 'reminder', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
 
-	public function generatesalesorderAction()
+	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);
+		$target = $this->_getParam('target', 0);
 		$reminderDb = new Sales_Model_DbTable_Reminder();
 		$data = $reminderDb->getReminder($id);
 
-		unset($data['id'], $data['reminderid'], $data['reminderdate']);
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -437,131 +437,82 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
 
-		$salesorder = new Sales_Model_DbTable_Salesorder();
-		$salesorderid = $salesorder->addSalesorder($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $salesorderid, 'sales', 'salesorder', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SALES_ORDER_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'salesorder', null, array('id' => $salesorderid));
-	}
-
-	public function generateinvoiceAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$reminderDb = new Sales_Model_DbTable_Reminder();
-		$data = $reminderDb->getReminder($id);
-
-		unset($data['id'], $data['reminderid'], $data['reminderdate']);
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$invoice = new Sales_Model_DbTable_Invoice();
-		$invoiceid = $invoice->addInvoice($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $invoiceid, 'sales', 'invoice', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_INVOICE_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'invoice', null, array('id' => $invoiceid));
-	}
-
-	public function generatequoterequestAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$reminderDb = new Sales_Model_DbTable_Reminder();
-		$data = $reminderDb->getReminder($id);
-
-		unset($data['id'], $data['reminderid'], $data['reminderdate']);
-		$data['billingname1'] = '';
-		$data['billingname2'] = '';
-		$data['billingdepartment'] = '';
-		$data['billingstreet'] = '';
-		$data['billingpostcode'] = '';
-		$data['billingcity'] = '';
-		$data['billingcountry'] = '';
-		if(!$data['shippingname1']) {
-			$data['shippingname1'] = $data['billingname1'];
-			$data['shippingname2'] = $data['billingname2'];
-			$data['shippingdepartment'] = $data['billingdepartment'];
-			$data['shippingstreet'] = $data['billingstreet'];
-			$data['shippingpostcode'] = $data['billingpostcode'];
-			$data['shippingcity'] = $data['billingcity'];
-			$data['shippingcountry'] = $data['billingcountry'];
-			$data['shippingphone'] = '';
+		if($target == 'salesorder') {
+			unset($data['id'], $data['reminderid'], $data['reminderdate']);
+			$module = 'sales';
+		} elseif($target == 'invoice') {
+			unset($data['id'], $data['reminderid'], $data['reminderdate']);
+			$module = 'sales';
+		} elseif($target == 'quoterequest') {
+			$data['billingname1'] = '';
+			$data['billingname2'] = '';
+			$data['billingdepartment'] = '';
+			$data['billingstreet'] = '';
+			$data['billingpostcode'] = '';
+			$data['billingcity'] = '';
+			$data['billingcountry'] = '';
+			if(!$data['shippingname1']) {
+				$data['shippingname1'] = $data['billingname1'];
+				$data['shippingname2'] = $data['billingname2'];
+				$data['shippingdepartment'] = $data['billingdepartment'];
+				$data['shippingstreet'] = $data['billingstreet'];
+				$data['shippingpostcode'] = $data['billingpostcode'];
+				$data['shippingcity'] = $data['billingcity'];
+				$data['shippingcountry'] = $data['billingcountry'];
+				$data['shippingphone'] = '';
+			}
+			unset($data['id'], $data['reminderid'], $data['reminderdate']);
+			$module = 'purchases';
+		} elseif($target == 'purchaseorder') {
+			$data['billingname1'] = '';
+			$data['billingname2'] = '';
+			$data['billingdepartment'] = '';
+			$data['billingstreet'] = '';
+			$data['billingpostcode'] = '';
+			$data['billingcity'] = '';
+			$data['billingcountry'] = '';
+			if(!$data['shippingname1']) {
+				$data['shippingname1'] = $data['billingname1'];
+				$data['shippingname2'] = $data['billingname2'];
+				$data['shippingdepartment'] = $data['billingdepartment'];
+				$data['shippingstreet'] = $data['billingstreet'];
+				$data['shippingpostcode'] = $data['billingpostcode'];
+				$data['shippingcity'] = $data['billingcity'];
+				$data['shippingcountry'] = $data['billingcountry'];
+				$data['shippingphone'] = '';
+			}
+			unset($data['id'], $data['reminderid'], $data['reminderdate']);
+			$module = 'purchases';
+		} elseif($target == 'process') {
+			/*$form = new Processes_Form_Process();
+			$elements = $form->getElements();
+			foreach($elements as $key => $value) {
+				if(isset($invoice[$key])) $data[$key] = $invoice[$key];
+			}*/
+			//$data['prepaymenttotal'] = $data['prepayment'];
+			$data['customerid'] = $data['contactid'];
+			$data['deliverystatus'] = 'deliveryIsWaiting';
+			$data['supplierorderstatus'] = 'supplierNotOrdered';
+			$data['paymentstatus'] = 'waitingForPayment';
+			unset($data['id']);
+			$module = 'processes';
 		}
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
 
-		$quoterequest = new Purchases_Model_DbTable_Quoterequest();
-		$quoterequestid = $quoterequest->addQuoterequest($data);
+		//Define belonging classes
+		$parentClass = ucfirst($module).'_Model_DbTable_'.ucfirst($target);
+
+		//Create new dataset
+		$parentDb = new $parentClass();
+		$parentMethod = 'add'.ucfirst($target);
+		$newid = $parentDb->$parentMethod($data);
 
 		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
+		$positionsDb = new Sales_Model_DbTable_Reminderpos();
 		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $quoterequestid, 'purchases', 'quoterequest', $this->_date);
+		$this->_helper->Position->copyPositions($positions, $newid, $module, $target, $this->_date);
 
-		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_REQUEST_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'quoterequest', 'purchases', array('id' => $quoterequestid));
-	}
-
-	public function generatepurchaseorderAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$reminderDb = new Sales_Model_DbTable_Reminder();
-		$data = $reminderDb->getReminder($id);
-
-		unset($data['id'], $data['reminderid'], $data['reminderdate']);
-		$data['billingname1'] = '';
-		$data['billingname2'] = '';
-		$data['billingdepartment'] = '';
-		$data['billingstreet'] = '';
-		$data['billingpostcode'] = '';
-		$data['billingcity'] = '';
-		$data['billingcountry'] = '';
-		if(!$data['shippingname1']) {
-			$data['shippingname1'] = $data['billingname1'];
-			$data['shippingname2'] = $data['billingname2'];
-			$data['shippingdepartment'] = $data['billingdepartment'];
-			$data['shippingstreet'] = $data['billingstreet'];
-			$data['shippingpostcode'] = $data['billingpostcode'];
-			$data['shippingcity'] = $data['billingcity'];
-			$data['shippingcountry'] = $data['billingcountry'];
-			$data['shippingphone'] = '';
-		}
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
-		$purchaseorderid = $purchaseorder->addPurchaseorder($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $purchaseorderid, 'purchases', 'purchaseorder', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_PURCHASE_ORDER_SUCCESFULLY_GENERATED');
-		$this->_helper->redirector->gotoSimple('edit', 'purchaseorder', 'purchases', array('id' => $purchaseorderid));
+		$this->_flashMessenger->addMessage('MESSAGES_DOCUMENT_SUCCESFULLY_GENERATED');
+		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
 
 	public function previewAction()
