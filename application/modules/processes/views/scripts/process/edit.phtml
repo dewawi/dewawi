@@ -122,8 +122,8 @@ echo $this->FileManager();
 			</div>
 		</form>
 		<div class="positionsContainer" data-parent="process" data-type="pos">
-		    <div id="positions" <?php if(!$this->form->getValue('editpositionsseparately')) echo ' class="disabled"'; ?>></div>
-        </div>
+			<div id="positions" <?php if(!$this->form->getValue('editpositionsseparately')) echo ' class="disabled"'; ?>></div>
+		</div>
 		<?php echo $this->ToolbarPositions("bottom"); ?>
 	</div>
 	<div id="tabCustomer" class="tab_content<?php if($this->activeTab == '#tabCustomer') : ?> active<?php endif; ?>">

@@ -105,9 +105,8 @@ class Processes_PositionController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->setLayout('plain');
 
 		$request = $this->getRequest();
+		$params = $this->_getAllParams();
 		$locale = Zend_Registry::get('Zend_Locale');
-		$itemid = $this->_getParam('itemid', 0);
-		$processid = $this->_getParam('processid', 0);
 
 		$form = new Items_Form_Item();
 
@@ -116,11 +115,11 @@ class Processes_PositionController extends Zend_Controller_Action
 			$this->_helper->viewRenderer->setNoRender();
 			$this->_helper->getHelper('layout')->disableLayout();
 			$data = array();
-			if($itemid && $processid) {
+			if($params['itemid'] && $params['parentid']) {
 				$item = new Items_Model_DbTable_Item();
-				$item = $item->getItem($itemid);
-				$data['processid'] = $processid;
-				$data['itemid'] = $itemid;
+				$item = $item->getItem($params['itemid']);
+				$data['parentid'] = $params['parentid'];
+				$data['itemid'] = $params['itemid'];
 				$data['sku'] = $item['sku'];
 				$data['title'] = $item['title'];
 				//$data['image'] = $item['image'];
@@ -142,20 +141,20 @@ class Processes_PositionController extends Zend_Controller_Action
 				} else {
 					$data['uom'] = '';
 				}
-				$data['ordering'] = $this->getLatestOrdering($processid) + 1;
+				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid']) + 1;
 				$position = new Processes_Model_DbTable_Processpos();
 				$position->addPosition($data);
 
 				//Calculate
-				//$calculations = $this->_helper->Calculate($processid, $this->_date, $this->_user['id']);
+				//$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
 				//echo Zend_Json::encode($calculations['locale']);
 			} else {
 				$form->populate($request->getPost());
 			}
 		} else {
-			if($itemid > 0) {
+			if($params['itemid'] > 0) {
 				$item = new Items_Model_DbTable_Item();
-				$form->populate($item->getItem($itemid));
+				$form->populate($item->getItem($params['itemid']));
 			}
 		}
 		$this->view->form = $form;
@@ -166,10 +165,23 @@ class Processes_PositionController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		//Get process data
-		$processid = $this->_getParam('processid', 0);
-		$processDb = new Processes_Model_DbTable_Process();
-		$process = $processDb->getProcess($processid);
+		$params = $this->_getAllParams();
+
+		//Define belonging classes
+		$parentClass = 'Processes_Model_DbTable_'.ucfirst($params['parent']);
+		$positionClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+
+		//Get parent data
+		$parentDb = new $parentClass();
+		$parentMethod = 'get'.$params['parent'];
+		$parent = $parentDb->$parentMethod($params['parentid']);
+
+		//Get option data
+		$params['optionid'] = isset($params['optionid']) ? $params['optionid'] : 0;
+		if($params['optionid']) {
+			$optionDb = new Items_Model_DbTable_Itemopt();
+			$option = $optionDb->getPosition($params['optionid']);
+		}
 
 		//Get primary tax rate
 		$taxrates = new Application_Model_DbTable_Taxrate();
@@ -177,7 +189,8 @@ class Processes_PositionController extends Zend_Controller_Action
 
 		if($this->getRequest()->isPost()) {
 			$data = array();
-			$data['processid'] = $processid;
+			$data['parentid'] = $params['parentid'];
+			$data[$params['type'].'setid'] = $params['setid'];
 			$data['itemid'] = 0;
 			$data['sku'] = '';
 			$data['title'] = '';
@@ -187,13 +200,22 @@ class Processes_PositionController extends Zend_Controller_Action
 			$data['taxrate'] = $taxrate['rate'];
 			$data['quantity'] = 1;
 			$data['total'] = 0;
-			$data['currency'] = $process['currency'];
+			$data['currency'] = $parent['currency'];
 			$data['uom'] = '';
 			$data['deliverystatus'] = 'deliveryIsWaiting';
 			$data['supplierorderstatus'] = 'supplierNotOrdered';
-			$data['ordering'] = $this->getLatestOrdering($processid) + 1;
-			$position = new Processes_Model_DbTable_Processpos();
-			$position->addPosition($data);
+			$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid']) + 1;
+			if(isset($option)) {
+				$data['masterid'] = $params['masterid'];
+				$data['sku'] = $option['sku'];
+				$data['itemid'] = $option['itemid'];
+				$data['title'] = $option['title'];
+				$data['description'] = $option['description'];
+				$data['price'] = $option['price'];
+				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid']) + 1;
+			}
+			$positionDb = new $positionClass();
+			$positionDb->addPosition($data);
 		}
 	}
 
@@ -203,9 +225,8 @@ class Processes_PositionController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$request = $this->getRequest();
+		$params = $this->_getAllParams();
 		$locale = Zend_Registry::get('Zend_Locale');
-		$id = $this->_getParam('id', 0);
-		$processid = $this->_getParam('processid', 0);
 
 		//Get uoms
 		$uomDb = new Application_Model_DbTable_Uom();
@@ -215,10 +236,14 @@ class Processes_PositionController extends Zend_Controller_Action
 		$shippingmethodDb = new Application_Model_DbTable_Shippingmethod();
 		$shippingmethods = $shippingmethodDb->getShippingmethods();
 
-		$form = new Processes_Form_Processpos();
+		//Define belonging classes
+		$formClass = 'Processes_Form_'.ucfirst($params['parent'].$params['type']);
+		$modelClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+
+		$form = new $formClass();
 		$form->uom->addMultiOptions($uoms);
+		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], 0));
 		$form->shippingmethod->addMultiOptions($shippingmethods);
-		$form->ordering->addMultiOptions($this->getOrdering($processid));
 
 		if($request->isPost()) {
 			header('Content-type: application/json');
@@ -279,8 +304,8 @@ class Processes_PositionController extends Zend_Controller_Action
 					}
 				}
 
-				$position = new Processes_Model_DbTable_Processpos();
-				$position->updatePosition($id, $data);
+				$position = new $modelClass();
+				$position->updatePosition($params['id'], $data);
 			} else {
 				throw new Exception('Form is invalid');
 			}
@@ -293,24 +318,39 @@ class Processes_PositionController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$request = $this->getRequest();
+		$params = $this->_getAllParams();
+
 		if($request->isPost()) {
 			header('Content-type: application/json');
-			$id = (int)$this->_getParam('id', 0);
-			$position = new Processes_Model_DbTable_Processpos();
-			$data = $position->getPosition($id);
-			$orderings = $this->getOrdering($data['processid']);
-			foreach($orderings as $ordering => $positionId) {
-				if($ordering > $data['ordering']) $position->updatePosition($positionId, array('ordering' => ($ordering+1)));
-			}
+			$positionClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+			$positionDb = new $positionClass();
+			$data = $positionDb->getPosition($params['id']);
+			$this->_helper->Ordering->pushOrdering($data['ordering'], $params['parent'], $params['type'], $data['parentid'], $data[$params['type'].'setid'], $data['masterid']);
+
+			//Get child positions
+			$positions = $positionDb->getPositions($data['parentid'], $data[$params['type'].'setid'], $data['id']);
+
+			//Create new position
 			$data['ordering'] += 1;
 			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
 			unset($data['id']);
-			$position->addPosition($data);
+			$id = $positionDb->addPosition($data);
+
+			//Create child positions
+			if($positions && count($positions)) {
+				foreach($positions as $position) {
+					$data = $position->toArray();
+					$data['masterid'] = $id;
+					$data['modified'] = NULL;
+					$data['modifiedby'] = 0;
+					unset($data['id']);
+					$positionDb->addPosition($data);
+				}
+			}
 
 			//Calculate
-			//$calculations = $this->_helper->Calculate($data['processid'], $this->_date, $this->_user['id']);
-			//echo Zend_Json::encode($calculations['locale']);
+			//$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
 			echo Zend_Json::encode(true);
 		}
 	}
@@ -321,31 +361,12 @@ class Processes_PositionController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$request = $this->getRequest();
+		$params = $this->_getAllParams();
+
 		if($request->isPost()) {
 			$data = $request->getPost();
-			$orderings = $this->getOrdering($data['processid']);
-			$currentOrdering = array_search($data['id'], $orderings);
-			$position = new Processes_Model_DbTable_Processpos();
-			if($data['ordering'] == 'down') {
-				$position->sortPosition($data['id'], $currentOrdering+1);
-				$position->sortPosition($orderings[$currentOrdering+1], $currentOrdering);
-			} elseif($data['ordering'] == 'up') {
-				$position->sortPosition($data['id'], $currentOrdering-1);
-				$position->sortPosition($orderings[$currentOrdering-1], $currentOrdering);
-			} elseif($data['ordering'] > 0) {
-				if($data['ordering'] < $currentOrdering) {
-					$position->sortPosition($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $positionId) {
-						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $position->sortPosition($positionId, $ordering+1);
-					}
-				} elseif($data['ordering'] > $currentOrdering) {
-					$position->sortPosition($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $positionId) {
-						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $position->sortPosition($positionId, $ordering-1);
-					}
-				}
-			}
-			$this->setOrdering($data['processid']);
+			if(!isset($params['masterid'])) $params['masterid'] = 0;
+			$this->_helper->Ordering->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid'], $data['ordering']);
 		}
 	}
 
@@ -355,6 +376,8 @@ class Processes_PositionController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$request = $this->getRequest();
+		$params = $this->_getAllParams();
+
 		if($request->isPost()) {
 			header('Content-type: application/json');
 			$data = $request->getPost();
@@ -362,13 +385,22 @@ class Processes_PositionController extends Zend_Controller_Action
 				if(!is_array($data['id'])) {
 					$data['id'] = array($data['id']);
 				}
-				$positionDb = new Processes_Model_DbTable_Processpos();
+				$positionClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+				$positionDb = new $positionClass();
 				$positionDb->deletePositions($data['id']);
 
+				//Delete child positions
+				$positions = $positionDb->getPositions($params['parentid'], $params['setid'], $data['id']);
+				if($positions && count($positions)) {
+					foreach($positions as $position) {
+						$positionDb->deletePositions($position->id);
+					}
+				}
+
 				//Reorder and calculate
-				$this->setOrdering($data['processid']);
-				//$calculations = $this->_helper->Calculate($data['processid'], $this->_date, $this->_user['id']);
-				//echo Zend_Json::encode($calculations['locale']);
+				if(!isset($params['masterid'])) $params['masterid'] = 0;
+				$this->_helper->Ordering->setOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid']);
+				//$calculations = $this->_helper->Calculate($data['parentid'], $this->_date, $this->_user['id']);
 				echo Zend_Json::encode(true);
 			}
 		}
@@ -379,7 +411,11 @@ class Processes_PositionController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Processes_Form_Processpos();
+		$params = $this->_getAllParams();
+		$locale = Zend_Registry::get('Zend_Locale');
+
+		$formClass = 'Processes_Form_'.ucfirst($params['parent'].$params['type']);
+		$form = new $formClass();
 
 		//Get uoms
 		$uomDb = new Application_Model_DbTable_Uom();
@@ -390,7 +426,7 @@ class Processes_PositionController extends Zend_Controller_Action
 		$shippingmethods = $shippingmethodDb->getShippingmethods();
 
 		$form->uom->addMultiOptions($uoms);
-		$form->ordering->addMultiOptions($this->getOrdering($processid));
+		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], 0));
 		$form->shippingmethod->addMultiOptions($shippingmethods);
 
 		$data = $this->getRequest()->getPost();
@@ -399,39 +435,5 @@ class Processes_PositionController extends Zend_Controller_Action
 		$json = $form->getMessages();
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
-	}
-
-	protected function setOrdering($processid)
-	{
-		$i = 1;
-		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positions = $positionsDb->getPositions($processid);
-		foreach($positions as $position) {
-			if($position->ordering != $i) {
-				if(!isset($positionsDb)) $positionsDb = new Processes_Model_DbTable_Processpos();
-				$positionsDb->sortPosition($position->id, $i);
-			}
-			++$i;
-		}
-	}
-
-	protected function getOrdering($processid)
-	{
-		$i = 1;
-		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positions = $positionsDb->getPositions($processid);
-		$orderings = array();
-		foreach($positions as $position) {
-			$orderings[$i] = $position->id;
-			++$i;
-		}
-		return $orderings;
-	}
-
-	protected function getLatestOrdering($processid)
-	{
-		$ordering = $this->getOrdering($processid);
-		end($ordering);
-		return key($ordering);
 	}
 }

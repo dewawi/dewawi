@@ -1,9 +1,9 @@
 <?php
 
-class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
+class Processes_Model_DbTable_Processposset extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'processpos';
+	protected $_name = 'processposset';
 
 	protected $_date = null;
 
@@ -18,7 +18,7 @@ class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getPosition($id)
+	public function getPositionSet($id)
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
@@ -28,17 +28,11 @@ class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getPositions($parentid, $setid = null, $masterid = null)
+	public function getPositionSets($parentid)
 	{
+		$parentid = (int)$parentid;
 		$where = array();
-		if(is_array($parentid)) {
-			$where[] = $this->getAdapter()->quoteInto('parentid IN (?)', $parentid);
-		} else {
-			$parentid = (int)$parentid;
-			$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
-		}
-		if($masterid !== null) $where[] = $this->getAdapter()->quoteInto('masterid = ?', $masterid);
-		if($setid !== null) $where[] = $this->getAdapter()->quoteInto('possetid = ?', $setid);
+		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');
@@ -48,7 +42,7 @@ class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
 		return $data;
 	}
 
-	public function addPosition($data)
+	public function addPositionSet($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -57,7 +51,7 @@ class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updatePosition($id, $data)
+	public function updatePositionSet($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -66,7 +60,7 @@ class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function sortPosition($id, $ordering)
+	public function sortPositionSet($id, $ordering)
 	{
 		$data = array(
 			'ordering' => $ordering,
@@ -74,7 +68,7 @@ class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function sortPositions($orderings)
+	public function sortPositionSets($orderings)
 	{
 		$ids = implode(',', array_keys($orderings));
 		$sql = "UPDATE ".$this->_name." SET ordering = CASE id ";
@@ -85,7 +79,7 @@ class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
 		$this->_db->query($sql);
 	}
 
-	public function deletePosition($id)
+	public function deletePositionSet($id)
 	{
 		$data = array(
 			'deleted' => 1
@@ -93,7 +87,7 @@ class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
 		$this->update($data, 'id =' . (int)$id);
 	}
 
-	public function deletePositions($ids)
+	public function deletePositionSets($ids)
 	{
 		$data = array(
 			'deleted' => 1
