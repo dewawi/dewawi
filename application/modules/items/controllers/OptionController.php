@@ -307,8 +307,8 @@ class Items_OptionController extends Zend_Controller_Action
 									$map[$attr] = $pos;
 								}
 							}
-						} elseif(isset($map['sku']) && isset($datacsv[$map['sku']]) && $datacsv[$map['sku']]) {
-							//echo $datacsv[$map['sku']];
+						} elseif(isset($map['parentsku']) && isset($datacsv[$map['parentsku']]) && $datacsv[$map['parentsku']]) {
+							//echo $datacsv[$map['parentsku']];
 							//print_r($map);
 							$optionData = array();
 							foreach($map as $attr => $pos) {
@@ -322,7 +322,7 @@ class Items_OptionController extends Zend_Controller_Action
 											if(is_numeric($datacsv[$map[$attr]])) {
 												$optionData['price'] = $datacsv[$map[$attr]];
 											} else {
-												echo 'Price is not numeric for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
+												echo 'Price is not numeric for '.$datacsv[$map['parentsku']].': '.$datacsv[$map[$attr]]."<br>";
 											}
 										}
 									} elseif($attr == 'quantity') {
@@ -333,7 +333,7 @@ class Items_OptionController extends Zend_Controller_Action
 										if($currencyid = array_search($datacsv[$map[$attr]], $currencies)) {
 											$optionData[$attr] = $currencyid;
 										} else {
-											echo 'No currency option found for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
+											echo 'No currency option found for '.$datacsv[$map['parentsku']].': '.$datacsv[$map[$attr]]."<br>";
 										}
 									} elseif($attr == 'inventory') {
 										if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
@@ -341,13 +341,14 @@ class Items_OptionController extends Zend_Controller_Action
 										}
 									} else {
 										$optionData[$attr] = $datacsv[$map[$attr]];
-										//var_dump($datacsv[$map[$attr]]);
+										//var_dump($attr);
 									}
 								}
 							}
+							//var_dump($optionData);
 
 							//Create and update the item
-							if($item = $itemDb->getItemBySKU($optionData['sku'])) {
+							if($item = $itemDb->getItemBySKU($optionData['parentsku'])) {
 								//print_r($optionData);
 								if(isset($optionSets[$item['id']])) {
 									$optionSetKey = array_search($optionData['set'], $optionSets[$item['id']]);
@@ -369,6 +370,7 @@ class Items_OptionController extends Zend_Controller_Action
 						$row++;
 
 					}
+					//print_r($options);
 
 					$optionSetIds = array();
 					foreach($optionSets as $itemid => $optionSet) {
@@ -398,10 +400,9 @@ class Items_OptionController extends Zend_Controller_Action
 						foreach($optionSet as $id => $option) {
 							$option['optsetid'] = array_search($option['set'], $optionSetIds[$itemid]);
 							$option['ordering'] = $ordering;
-							$option['sku'] = $option['code'];
 							unset($option['set']);
 							unset($option['value']);
-							unset($option['code']);
+							unset($option['parentsku']);
 							$itemOption->addPosition($option);
 							++$ordering;
 							++$rowsCreated;

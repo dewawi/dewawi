@@ -480,7 +480,7 @@ class Items_ItemController extends Zend_Controller_Action
 									/*} elseif($attr == 'weightunit') {
 										if($weightuomid = array_search($datacsv[$map['weightunit']], $uoms)) {
 											$updateData['weightuomid'] = $weightuomid;
-										}*/
+										}
 									} elseif(strpos($attr, 'attributetitle') !== FALSE) {
 										if($datacsv[$map[$attr]]) {
 											$attributes[str_replace('attributetitle', '', $attr)]['title'] = $datacsv[$map[$attr]];
@@ -488,7 +488,7 @@ class Items_ItemController extends Zend_Controller_Action
 									} elseif(strpos($attr, 'attributevalue') !== FALSE) {
 										if($datacsv[$map[$attr]]) {
 											$attributes[str_replace('attributevalue', '', $attr)]['value'] = $datacsv[$map[$attr]];
-										}
+										}*/
 									} elseif((strpos($attr, 'option') !== FALSE) && (strpos($attr, 'title') !== FALSE)) {
 										if($datacsv[$map[$attr]]) {
 											$optionID = str_replace('option', '', str_replace('title', '', $attr));
@@ -538,7 +538,7 @@ class Items_ItemController extends Zend_Controller_Action
 										$images[str_replace('image', '', str_replace('title', '', $attr))]['title'] = $datacsv[$map[$attr]];
 									}
 									//Add system variables to attributes and placeholders
-									if($attr == 'sku') {
+									/*if($attr == 'sku') {
 										if($datacsv[$map['sku']]) {
 											$attributes[] = array('title' => 'Artikelnummer', 'value' => $datacsv[$map['sku']]);
 											$placeholders[] = array('title' => 'sku', 'value' => $datacsv[$map['sku']]);
@@ -557,51 +557,66 @@ class Items_ItemController extends Zend_Controller_Action
 											$attributes[] = array('title' => 'Hersteller', 'value' => $datacsv[$map['manufacturer']]);
 											$placeholders[] = array('title' => 'manufacturer', 'value' => $datacsv[$map['manufacturer']]);
 										}
-									}
-								}
-							}
-							//Search and replace placeholders
-							foreach(array_merge($placeholders, $attributes) as $attribute) {
-								if(isset($attribute['title']) && isset($attribute['value'])) {
-									if(isset($updateData['title']) && (strpos($updateData['title'], '#'.$attribute['title'].'#') !== false)) {
-										$updateData['title'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['title']);
-									}
-									if(isset($updateData['shoptitle']) && (strpos($updateData['shoptitle'], '#'.$attribute['title'].'#') !== false)) {
-										$updateData['shoptitle'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['shoptitle']);
-									}
-									if(isset($updateData['ebaytitle']) && (strpos($updateData['ebaytitle'], '#'.$attribute['title'].'#') !== false)) {
-										$updateData['ebaytitle'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['ebaytitle']);
-									}
-									if(isset($updateData['description']) && (strpos($updateData['description'], '#'.$attribute['title'].'#') !== false)) {
-										$updateData['description'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['description']);
-									}
-									if(isset($updateData['shopdescription']) && (strpos($updateData['shopdescription'], '#'.$attribute['title'].'#') !== false)) {
-										$updateData['shopdescription'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['shopdescription']);
-									}
-									if(isset($updateData['shopdescriptionshort']) && (strpos($updateData['shopdescriptionshort'], '#'.$attribute['title'].'#') !== false)) {
-										$updateData['shopdescriptionshort'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['shopdescriptionshort']);
-									}
-									if(isset($updateData['shopdescriptionmini']) && (strpos($updateData['shopdescriptionmini'], '#'.$attribute['title'].'#') !== false)) {
-										$updateData['shopdescriptionmini'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $updateData['shopdescriptionmini']);
-									}
-									//Search and replace placeholders in image titles
-									if(count($images)) {
-										foreach($images as $id => $image) {
-											if(isset($image['title'])) {
-												if(strpos($image['title'], '#'.$attribute['title'].'#') !== false) {
-													$images[$id]['title'] = str_replace('#'.$attribute['title'].'#', $attribute['value'], $image['title']);
-												}
-											}
-										}
-									}
+									}*/
 								}
 							}
 
 							//Create and update the item
 							if($item = $itemDb->getItemBySKU($datacsv[$map['sku']])) {
-								//error_log(print_r($updateData,true));
+								//Get item attributes
+								$attributes = $itemAttribute->getPositions($item['id'])->toArray();
+
+								//Search and replace placeholders
+								if(isset($updateData['title']) && (strpos($updateData['title'], '#sku#') !== false)) {
+									$updateData['title'] = str_replace('#sku#', $item['sku'], $updateData['title']);
+								}
+								if(isset($updateData['description']) && (strpos($updateData['description'], '#sku#') !== false)) {
+									$updateData['description'] = str_replace('#sku#', $item['sku'], $updateData['description']);
+								}
+								foreach($attributes as $attribute) {
+									if(isset($attribute['title']) && isset($attribute['description'])) {
+										if(isset($updateData['title']) && (strpos($updateData['title'], '#'.$attribute['title'].'#') !== false)) {
+											$updateData['title'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['title']);
+										}
+										/*if(isset($updateData['shoptitle']) && (strpos($updateData['shoptitle'], '#'.$attribute['title'].'#') !== false)) {
+											$updateData['shoptitle'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['shoptitle']);
+										}
+										if(isset($updateData['ebaytitle']) && (strpos($updateData['ebaytitle'], '#'.$attribute['title'].'#') !== false)) {
+											$updateData['ebaytitle'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['ebaytitle']);
+										}*/
+										if(isset($updateData['description']) && (strpos($updateData['description'], '#'.$attribute['title'].'#') !== false)) {
+											$updateData['description'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['description']);
+										}
+										/*if(isset($updateData['shopdescription']) && (strpos($updateData['shopdescription'], '#'.$attribute['title'].'#') !== false)) {
+											$updateData['shopdescription'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['shopdescription']);
+										}
+										if(isset($updateData['shopdescriptionshort']) && (strpos($updateData['shopdescriptionshort'], '#'.$attribute['title'].'#') !== false)) {
+											$updateData['shopdescriptionshort'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['shopdescriptionshort']);
+										}
+										if(isset($updateData['shopdescriptionmini']) && (strpos($updateData['shopdescriptionmini'], '#'.$attribute['title'].'#') !== false)) {
+											$updateData['shopdescriptionmini'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['shopdescriptionmini']);
+										}*/
+										//Search and replace placeholders in image titles
+										if(count($images)) {
+											foreach($images as $id => $image) {
+												if(isset($image['title'])) {
+													if(strpos($image['title'], '#'.$attribute['title'].'#') !== false) {
+														$images[$id]['title'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $image['title']);
+													}
+												}
+											}
+										}
+									}
+								}
+								//print_r($attributes);
+								//print_r($updateData);
+
 								$itemDb->updateItem($item['id'], $updateData);
-								if(isset($map['ebayuserid']) && isset($datacsv[$map['ebayuserid']])) {
+								++$rowsUpdated;
+
+								//error_log(print_r($updateData,true));
+
+								/*if(isset($map['ebayuserid']) && isset($datacsv[$map['ebayuserid']])) {
 									if($datacsv[$map['ebayuserid']] == '0') {
 										$ebayListingDb->deleteListingByItemID($item['id']);
 										echo 'Item deleted from eBay: '.$item['sku'].', itemid: '.$item['id'].'<br>';
@@ -690,8 +705,7 @@ class Items_ItemController extends Zend_Controller_Action
 										$asdasd['shopdescriptionmini'] = '';
 										$itemDb->updateItem($asdasd);
 									}
-								}
-								++$rowsUpdated;
+								}*/
 
 								//Delete existing item attributes
 								//$itemAttribute->deleteItemattributesByItemID($item['id']);
@@ -733,7 +747,7 @@ class Items_ItemController extends Zend_Controller_Action
 								}*/
 
 								//Delete existing item images
-								$itemImage->deleteItemimagesByItemID($item['id']);
+								/*$itemImage->deleteItemimagesByItemID($item['id']);
 
 								//Create and update item images
 								foreach($images as $image) {
@@ -742,7 +756,7 @@ class Items_ItemController extends Zend_Controller_Action
 										//error_log(var_dump($image));
 										$itemImage->addItemimage($image);
 									}
-								}
+								}*/
 							} else {
 								$updateData['sku'] = $datacsv[$map['sku']];
 								if(!isset($updateData['taxid']) || !$updateData['taxid']) {

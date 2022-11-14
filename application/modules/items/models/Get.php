@@ -2,7 +2,7 @@
 
 class Items_Model_Get
 {
-	public function items($params, $options)
+	public function items($params, $options, $row = false)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -36,13 +36,15 @@ class Items_Model_Get
 			);
 		}
 
-		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-		$currency = $currencyHelper->getCurrency();
-		foreach($items as $item) {
-			if(strlen($item->description) > 43) $item->description = substr($item->description, 0, 40).'...';
-			$currency = $currencyHelper->setCurrency($currency, $item->currency, 'USE_SYMBOL');
-			$item->cost = $currency->toCurrency($item->cost);
-			$item->price = $currency->toCurrency($item->price);
+        if($row == false) {
+			$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+			$currency = $currencyHelper->getCurrency();
+			foreach($items as $item) {
+				if(strlen($item->description) > 43) $item->description = substr($item->description, 0, 40).'...';
+				$currency = $currencyHelper->setCurrency($currency, $item->currency, 'USE_SYMBOL');
+				$item->cost = $currency->toCurrency($item->cost);
+				$item->price = $currency->toCurrency($item->price);
+			}
 		}
 
 		return $items;

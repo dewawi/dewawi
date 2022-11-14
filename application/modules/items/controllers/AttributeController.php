@@ -286,8 +286,6 @@ class Items_AttributeController extends Zend_Controller_Action
 					$itemImage = new Items_Model_DbTable_Itemimage();
 					$itemAttribute = new Items_Model_DbTable_Itematr();
 					$itemAttributeSet = new Items_Model_DbTable_Itematrset();
-					$itemOption = new Items_Model_DbTable_Itemopt();
-					$itemOptionSet = new Items_Model_DbTable_Itemoptset();
 
 					//Get
 					if($formData['separator'] == 'comma') $separator = ',';
