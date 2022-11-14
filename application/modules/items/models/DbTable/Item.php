@@ -56,7 +56,9 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 	public function getItemsByCategory($catid)
 	{
 		$catid = (int)$catid;
-		$where = $this->getAdapter()->quoteInto('catid = ?', $catid);
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('catid = ?', $catid);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$row = $this->fetchAll($where);
 		if (!$row) {
 			throw new Exception("Could not find row $catid");
