@@ -40,11 +40,11 @@ class Admin_Model_DbTable_Warehouse extends Zend_Db_Table_Abstract
 	{
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
-        if($clientid) {
-		    $data['clientid'] = $clientid;
-        } else {
-		    $data['clientid'] = $this->_client['id'];
-        }
+		if($clientid) {
+			$data['clientid'] = $clientid;
+		} else {
+			$data['clientid'] = $this->_client['id'];
+		}
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}

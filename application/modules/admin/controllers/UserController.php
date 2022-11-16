@@ -119,7 +119,7 @@ class Admin_UserController extends Zend_Controller_Action
 				$permissionDb->addPermission(array(
 									'default' => '{"index":["view"]}',
 									'contacts' => '{"contact":["add","edit","view","delete"]
-                                                    "email":["add","edit","view","delete"]}',
+													"email":["add","edit","view","delete"]}',
 									'items' => '{"item":["add","edit","view","delete"],
 													"inventory":["add","edit","view","delete"],
 													"pricerule":["add","edit","view","delete"]}',
