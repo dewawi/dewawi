@@ -108,16 +108,16 @@
 						</td>
 						<?php //Display buttons if parent not completed ?>
 						<?php if($this->parent['state'] != '105' || $this->parent['state'] != '106') : ?>
-						<td class="buttons">
-							<?php echo $this->toolbar->deletepos; ?>
-							<?php echo $this->toolbar->copypos; ?>
-							<?php if($i>1) : ?>
-								<?php echo $this->toolbar->sortup; ?>
-							<?php endif; ?>
-							<?php if($i<$length) : ?>
-								<?php echo $this->toolbar->sortdown; ?>
-							<?php endif; ?>
-						</td>
+							<td class="buttons">
+								<?php echo $this->toolbar->deletepos; ?>
+								<?php echo $this->toolbar->copypos; ?>
+								<?php if($i>1) : ?>
+									<?php echo $this->toolbar->sortup; ?>
+								<?php endif; ?>
+								<?php if($i<$length) : ?>
+									<?php echo $this->toolbar->sortdown; ?>
+								<?php endif; ?>
+							</td>
 						<?php endif; ?>
 					</tr>
 					<?php $c = 1; ?>
@@ -130,18 +130,20 @@
 								<td><?php echo $child->sku; ?></td>
 								<td><?php echo $child->title; ?></td>
 								<td><?php echo $child->description; ?></td>
-								<td style="max-width: 200px;"><?php echo $child->price; ?></td>
+								<td style="max-width: 150px;"><?php echo $child->price; ?></td>
+								<td style="max-width: 150px;"><?php echo $child->quantity; ?></td>
+								<td style="max-width: 150px;"><?php echo $child->uom; ?></td>
 								<?php if($this->parent['state'] != '105' || $this->parent['state'] != '106') : ?>
-								<td class="buttons">
-									<?php echo $this->toolbar->deletepos; ?>
-									<?php echo $this->toolbar->copypos; ?>
-									<?php if($c>1) : ?>
-										<?php echo $this->toolbar->sortup; ?>
-									<?php endif; ?>
-									<?php if($c<$childsCount) : ?>
-										<?php echo $this->toolbar->sortdown; ?>
-									<?php endif; ?>
-								</td>
+									<td class="buttons">
+										<?php echo $this->toolbar->deletepos; ?>
+										<?php echo $this->toolbar->copypos; ?>
+										<?php if($c>1) : ?>
+											<?php echo $this->toolbar->sortup; ?>
+										<?php endif; ?>
+										<?php if($c<$childsCount) : ?>
+											<?php echo $this->toolbar->sortdown; ?>
+										<?php endif; ?>
+									</td>
 								<?php endif; ?>
 							</tr>
 						<?php ++$c; ?>

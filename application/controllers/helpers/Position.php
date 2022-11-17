@@ -31,6 +31,10 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 						$dataPosition['possetid'] = $positionSetId;
 					}
 				}
+				if($target == 'process') {
+					$positionData['deliverystatus'] = 'deliveryIsWaiting';
+					$positionData['supplierorderstatus'] = 'supplierNotOrdered';
+				}
 				$dataPosition['parentid'] = $parentid;
 				$dataPosition['created'] = $created;
 				$dataPosition['modified'] = NULL;
@@ -47,6 +51,10 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 			if($dataPosition['masterid']) {
 				if($dataPosition['possetid']) {
 					$dataPosition['possetid'] = $positionSetIndex[$dataPosition['possetid']];
+				}
+				if($target == 'process') {
+					$positionData['deliverystatus'] = 'deliveryIsWaiting';
+					$positionData['supplierorderstatus'] = 'supplierNotOrdered';
 				}
 				$dataPosition['masterid'] = $positionIndex[$dataPosition['masterid']];
 				$dataPosition['parentid'] = $parentid;

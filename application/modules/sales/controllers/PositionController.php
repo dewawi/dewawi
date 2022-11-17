@@ -301,6 +301,7 @@ class Sales_PositionController extends Zend_Controller_Action
 				$data['title'] = $option['title'];
 				$data['description'] = $option['description'];
 				$data['price'] = $option['price'];
+				$data['uom'] = $option['uom'];
 				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid']) + 1;
 			}
 			$positionDb = new $positionClass();
