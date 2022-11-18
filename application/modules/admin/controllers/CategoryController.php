@@ -114,9 +114,6 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 	public function editAction()
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
 
 		$request = $this->getRequest();
 		$id = $this->_getParam('id', 0);
@@ -172,6 +169,16 @@ class Admin_CategoryController extends Zend_Controller_Action
 					echo Zend_Json::encode($categoryDb->getCategory($id));
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+				}
+			} else {
+				if($id > 0) {
+					$form->populate($category);
+
+					//Toolbar
+					$toolbar = new Admin_Form_Toolbar();
+
+					$this->view->form = $form;
+					$this->view->toolbar = $toolbar;
 				}
 			}
 		}

@@ -1,0 +1,49 @@
+<?php 
+$this->title = $this->form->getValue('title');
+$this->headTitle($this->title);
+echo $this->TinyMCE();
+echo $this->FileManager();
+?>
+
+<ul class="tabs">
+	<li><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
+</ul>
+
+<div class="tab_container">
+	<div id="tabOverview" class="tab_content">
+		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-7">
+					<dl class="form">
+						<?php echo $this->form->id; ?>
+						<?php echo $this->form->title; ?>
+						<?php echo $this->form->image; ?>
+						<?php echo $this->form->description; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-5">
+						<?php echo $this->form->footer; ?>
+						<?php echo $this->form->info; ?>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+
+	<!--<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-7">
+					<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?controller=item&lang=de&type=0" width="100%" height="500px"></iframe>
+					<dl class="form">
+						<?php echo $this->form->getElement('image') ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-5">
+					<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+						<p><img id="preview" src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+					<?php } ?>
+				</div>
+			</div>
+		</form>
+	</div>-->

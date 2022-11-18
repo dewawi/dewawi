@@ -30,6 +30,17 @@ class Admin_Form_Category extends Zend_Form
 			->setAttrib('cols', '40')
 			->setAttrib('rows', '20');
 
+		$form['footer'] = new Zend_Form_Element_Textarea('footer');
+		$form['footer']->setLabel('CREDIT_NOTES_FOOTER')
+			->addFilter('StripTags', array(array(
+				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
+				'allowAttribs' => array('style','title','href')
+			)))
+			->addFilter('StringTrim')
+			->setAttrib('cols', '75')
+			->setAttrib('rows', '18')
+			->setAttrib('class', 'editor');
+
 		$form['parentid'] = new Zend_Form_Element_Select('parentid');
 		$form['parentid']->setLabel('ADMIN_MAIN_CATEGORY')
 			->addMultiOption('0', 'ADMIN_MAIN_CATEGORY')
