@@ -19,7 +19,21 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			<?php echo $this->view->toolbar->catid; ?>
 			<input id="type" type="hidden" name="type" value="select"/>
 		<?php elseif($this->view->action == 'index') : ?>
-			<?php if($this->view->controller == 'pricerule') : ?>
+			<?php if($this->view->controller == 'item') : ?>
+				<?php echo $this->view->toolbar->add; ?>
+				<?php echo $this->view->toolbar->edit; ?>
+				<?php echo $this->view->toolbar->copy; ?>
+				<?php echo $this->view->toolbar->delete; ?>
+				<?php echo $this->view->toolbar->keyword; ?>
+				<?php echo $this->view->toolbar->clear; ?>
+				<?php echo $this->view->toolbar->reset; ?>
+				<?php echo $this->view->toolbar->order; ?>
+				<?php echo $this->view->toolbar->sort; ?>
+				<?php //echo $this->view->toolbar->manufacturerid; ?>
+				<?php echo $this->view->toolbar->limit; ?>
+				<?php echo $this->view->toolbar->catid; ?>
+				<?php echo $this->view->toolbar->tagid; ?>
+			<?php elseif($this->view->controller == 'pricerule') : ?>
 				<?php echo $this->view->toolbar->add; ?>
 				<?php echo $this->view->toolbar->edit; ?>
 				<?php echo $this->view->toolbar->copy; ?>
@@ -38,10 +52,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 				<?php echo $this->view->toolbar->reset; ?>
 				<?php echo $this->view->toolbar->order; ?>
 				<?php echo $this->view->toolbar->sort; ?>
-				<?php //echo $this->view->toolbar->manufacturerid; ?>
 				<?php echo $this->view->toolbar->limit; ?>
-				<?php echo $this->view->toolbar->catid; ?>
-				<?php echo $this->view->toolbar->tagid; ?>
 			<?php endif; ?>
 		<?php endif;
 	}

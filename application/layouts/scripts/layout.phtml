@@ -136,7 +136,13 @@ $this->language = str_replace('_', '-', $this->language);
 					<header>
 						<a class="button" href="<?php echo $this->url(array('module'=>'index', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('CONTROL_PANEL'); ?></a>
 						<a class="button<?php if($this->controller == 'contact') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_CONTACTS'); ?></a>
-						<a class="button<?php if($this->controller == 'item') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_ITEMS'); ?></a>
+						<div class="sub">
+							<button<?php if(($this->controller == 'item') || ($this->controller == 'itemlist')) echo ' class="active"'; ?>><?php echo $this->translate('MENU_ITEMS'); ?></button>
+							<div class="sub1">
+								<a class="button" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_ITEMS'); ?></a>
+								<a class="button" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'itemlist', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->translate('MENU_ITEM_LISTS'); ?></a>
+							</div>
+						</div>
 						<a class="button<?php if($this->controller == 'task') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_TASKS'); ?></a>
 						<a class="button<?php if($this->controller == 'process') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PROCESSES'); ?></a>
 						<div class="sub">

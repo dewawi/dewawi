@@ -1,0 +1,46 @@
+<?php
+$this->title = $this->translate('ITEM_LISTS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="title" width="32%">
+				<?php echo $this->translate('ITEMS_TITLE'); ?>
+			</th>
+			<th width="8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->itemlists as $itemlist) : ?>
+			<tr>
+				<td><input class="id" type="checkbox" value="<?php echo $itemlist->id ?>" name="id"/></td>
+				<td data-label="<?php echo $this->translate('ITEMS_TITLE') ?>" class="title">
+					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'itemlist', 'action'=>'edit', 'id'=>$itemlist->id)); ?>">
+						<?php echo $this->escape($itemlist->title); ?>
+					</a><br/>
+					<?php echo $this->escape($itemlist->description); ?>
+				</td>
+				<td class="buttons">
+					<?php echo $this->toolbar->editInline; ?>
+					<?php echo $this->toolbar->copyInline; ?>
+					<?php echo $this->toolbar->deleteInline; ?>
+					<?php echo $this->toolbar->pdfInline; ?>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td>
+				<div class="toolbar bottom">
+					<?php echo $this->ToolbarBottom(); ?>
+				</div>
+			</td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>

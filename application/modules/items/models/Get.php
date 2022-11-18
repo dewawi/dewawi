@@ -36,7 +36,7 @@ class Items_Model_Get
 			);
 		}
 
-        if($row == false) {
+		if($row == false) {
 			$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 			$currency = $currencyHelper->getCurrency();
 			foreach($items as $item) {
@@ -150,5 +150,42 @@ class Items_Model_Get
 		}
 
 		return $tags;
+	}
+
+	public function itemlists($params, $options)
+	{
+		$client = Zend_Registry::get('Client');
+		if($client['parentid']) {
+			$client['id'] = $client['modules']['items'];
+		}
+
+		$itemlistDb = new Items_Model_DbTable_Itemlist();
+
+		$columns = array('title', 'description');
+
+		$query = '';
+		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
+		$query = $queryHelper->getQueryClient($query, $client['id']);
+		$query = $queryHelper->getQueryDeleted($query);
+
+		if($params['tagid']) {
+			$items = $itemlistDb->fetchAll(
+				$itemlistDb->select()
+					->where($query ? $query : 0)
+					->order($params['order'].' '.$params['sort'])
+					->limit($params['limit'])
+			);
+		} else {
+			$items = $itemlistDb->fetchAll(
+				$itemlistDb->select()
+					->where($query ? $query : 0)
+					->order($params['order'].' '.$params['sort'])
+					->limit($params['limit'])
+			);
+		}
+
+		return $items;
 	}
 }
