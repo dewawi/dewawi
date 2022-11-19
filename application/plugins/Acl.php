@@ -37,6 +37,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 					$module = json_decode($permissions[$params['module']], true);
 					if(substr($params['controller'], -3) == 'pos') $params['controller'] = substr($params['controller'], 0, -3);
 					if($params['controller'] == 'position') $params['controller'] = $params['parent'];
+					if($params['controller'] == 'positionset') $params['controller'] = $params['parent'];
 					//TO DO
 					if($params['module'] == 'contacts') $params['controller'] = 'contact';
 					//TO DO
