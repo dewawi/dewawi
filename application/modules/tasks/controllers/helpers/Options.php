@@ -56,6 +56,11 @@ class Tasks_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$currencies = $currencyDb->getCurrencies();
 		$options['currencies'] = $currencies;
 
+		//Get users
+		$userDb = new Users_Model_DbTable_User();
+		$users = $userDb->getUsers();
+		$options['users'] = $users;
+
 		//Set form options
 		$MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
@@ -63,6 +68,7 @@ class Tasks_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		if(isset($form->paymentmethod) && isset($options['paymentmethods'])) $form->paymentmethod->addMultiOptions($options['paymentmethods']);
 		if(isset($form->shippingmethod) && isset($options['shippingmethods'])) $form->shippingmethod->addMultiOptions($options['shippingmethods']);
 		if(isset($form->currency) && isset($options['currencies'])) $form->currency->addMultiOptions($options['currencies']);
+		if(isset($form->responsible) && isset($options['users'])) $form->responsible->addMultiOptions($options['users']);
 
 		return $options;
 	}

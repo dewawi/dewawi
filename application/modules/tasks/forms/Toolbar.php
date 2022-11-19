@@ -170,6 +170,9 @@ class Tasks_Form_Toolbar extends Zend_Form
 			->setAttrib('default', 'all')
 			->setAttrib('class', 'hidden-sm');
 
+		$form['responsible'] = new Zend_Form_Element_Select('responsible');
+		$form['responsible']->setDecorators(array('ViewHelper'));
+
 		$this->addElements($form);
 	}
 }

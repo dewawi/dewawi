@@ -62,7 +62,11 @@ echo $this->ActiveFilter();
 				<?php endif; ?>
 			</td>
 			<td data-label="<?php echo $this->translate('TASKS_RESPONSIBLE_PERSON') ?>" class="responsible">
-				<?php echo $this->escape($task->contactperson);?>
+				<?php if($task->responsible) : ?>
+					<span class="editable" data-name="responsible" data-value="<?php echo $task->responsible; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['users'][$task->responsible])); ?></span>
+				<?php else : ?>
+					<span class="editable" data-name="responsible" data-value="<?php echo $task->responsible; ?>" data-type="select"><?php echo $this->translate('TOOLBAR_NEW') ;?></span>
+				<?php endif; ?>
 			</td>
 			<td data-label="<?php echo $this->translate('TASKS_PRIORITY') ?>" class="priority">
 				Hoch

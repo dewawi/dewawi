@@ -446,6 +446,11 @@ class Tasks_Form_Task extends Zend_Form
 		$form['editpositionsseparately'] = new Zend_Form_Element_Checkbox('editpositionsseparately');
 		$form['editpositionsseparately']->setLabel('TASKS_EDIT_POSITIONS_SEPARATELY');
 
+		$form['responsible'] = new Zend_Form_Element_Select('responsible');
+		$form['responsible']->setLabel('QUOTES_CURRENCY')
+			->setRequired(true)
+			->addValidator('NotEmpty');
+
 		$form['state'] = new Zend_Form_Element_Select('state');
 		$form['state']->setLabel('TASKS_STATE')
 			->addMultiOption('100', 'STATES_CREATED')

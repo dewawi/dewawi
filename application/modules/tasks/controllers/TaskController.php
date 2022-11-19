@@ -38,6 +38,7 @@ class Tasks_TaskController extends Zend_Controller_Action
 		$element = $this->_getParam('element', null);
 		$form = new Tasks_Form_Toolbar();
 		if(isset($form->$element)) {
+			$this->_helper->Options->getOptions($form);
 			$options = $form->$element->getMultiOptions();
 			echo Zend_Json::encode($options);
 		} else {
