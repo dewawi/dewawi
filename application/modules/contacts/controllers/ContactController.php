@@ -531,7 +531,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 								$contactDb->updateContact($id, array('contactid' => $increment));
 								$incrementDb->setIncrement(($increment+1), 'contactid');
 
-                                $address = array();
+								$address = array();
 								$address['street'] = isset($map['street']) ? $datacsv[$map['street']] : NULL;
 								$address['postcode'] = isset($map['postcode']) ? $datacsv[$map['postcode']] : NULL;
 								$address['city'] = isset($map['city']) ? $datacsv[$map['city']] : NULL;

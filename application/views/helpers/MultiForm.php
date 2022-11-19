@@ -36,7 +36,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 						<?php endif; ?>
 					<?php endif; ?>
 					<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\');', '', '', ''); ?>
-                <?php //Create forms for address ?>
+				<?php //Create forms for address ?>
 				<?php elseif(is_array($elements[0])) : ?>
 					<div class="field-group">
 						<?php foreach($elements as $element) : ?>
