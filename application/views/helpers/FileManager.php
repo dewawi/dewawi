@@ -65,6 +65,19 @@ class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
 
 			$defaultNamespace->view_type = '0'; //boxes
 			$defaultNamespace->subfolder = 'items/'.$url;
+
+		} elseif($this->view->module == 'admin') {
+
+			$clientid = $client['id'];
+			$dir1 = substr($clientid, 0, 1);
+			if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+			else $dir2 = '0';
+
+			$url = $dir1.'/'.$dir2.'/'.$clientid.'/';
+
+			$defaultNamespace->view_type = '0'; //boxes
+			$defaultNamespace->subfolder = 'uploads/'.$url;
+
 		}
 		//error_log($url);
 		//if($this->view->id == 39053) print_r($defaultNamespace->subfolder);
