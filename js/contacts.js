@@ -95,7 +95,7 @@ function applyContact(contactID) {
 	//Close the modal window
 	modalWindowClose();
 
-	if(module == 'processes') {
+	if((module == 'processes') || (module == 'tasks')) {
 		data['customerid'] = data['contactid'];
 		delete data.contactid;
 	}

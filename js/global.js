@@ -588,19 +588,19 @@ $(document).ready(function(){
 							if(this.checked) {
 								switch(className) {
 									case 'copyPosition':
-			                            var parent = $(this).closest('div.positionsContainer').data('parent');
-			                            var type = $(this).closest('div.positionsContainer').data('type');
+										var parent = $(this).closest('div.positionsContainer').data('parent');
+										var type = $(this).closest('div.positionsContainer').data('type');
 										copyPosition(parent, type, $(this).val());
 										break;
 									case 'applyPosition':
-			                            var parent = $(this).closest('div.positionsContainer').data('parent');
-			                            var type = $(this).closest('div.positionsContainer').data('type');
+										var parent = $(this).closest('div.positionsContainer').data('parent');
+										var type = $(this).closest('div.positionsContainer').data('type');
 										window.parent.console.log(parent);
 										//applyPosition(parent, type, $(this).val(), window.parent.setid);
 										break;
 									case 'deletePosition':
-			                            var parent = $(this).closest('div.positionsContainer').data('parent');
-			                            var type = $(this).closest('div.positionsContainer').data('type');
+										var parent = $(this).closest('div.positionsContainer').data('parent');
+										var type = $(this).closest('div.positionsContainer').data('type');
 										var setid = $(this).closest('div.set').find('input.setid').val();
 										deletePosition(parent, type, $(this).val(), setid);
 										break;
@@ -617,8 +617,8 @@ $(document).ready(function(){
 							del(id, deleteConfirm);
 						}
 					}
-			        var parent = $(this).closest('div.positionsContainer').data('parent');
-			        var type = $(this).closest('div.positionsContainer').data('type');
+					var parent = $(this).closest('div.positionsContainer').data('parent');
+					var type = $(this).closest('div.positionsContainer').data('type');
 					var setid = $(this).closest('div.set').find('input.setid').val();
 					if(className == 'up') {
 						sort(parent, type, setid, -1, 'up');
@@ -626,31 +626,46 @@ $(document).ready(function(){
 						sort(parent, type, setid, -1, 'down');
 					}
 				} else if(className == 'up') {
-			        var parent = $(this).closest('div.positionsContainer').data('parent');
-			        var type = $(this).closest('div.positionsContainer').data('type');
+					var parent = $(this).closest('div.positionsContainer').data('parent');
+					var type = $(this).closest('div.positionsContainer').data('type');
 					var id = $(this).closest('tr').find('input.id').val();
 					var setid = $(this).closest('div.set').find('input.setid').val();
-					sort(parent, type, id, setid, 'up');
+					if($(this).closest('tr').hasClass('child')) {
+						var masterid = $(this).closest('tr').data('masterid');
+						sort(parent, type, id, setid, 'up', masterid);
+					} else {
+						sort(parent, type, id, setid, 'up');
+					}
 				} else if(className == 'down') {
-			        var parent = $(this).closest('div.positionsContainer').data('parent');
-			        var type = $(this).closest('div.positionsContainer').data('type');
+					var parent = $(this).closest('div.positionsContainer').data('parent');
+					var type = $(this).closest('div.positionsContainer').data('type');
 					var id = $(this).closest('tr').find('input.id').val();
 					var setid = $(this).closest('div.set').find('input.setid').val();
-					sort(parent, type, id, setid, 'down');
+					if($(this).closest('tr').hasClass('child')) {
+						var masterid = $(this).closest('tr').data('masterid');
+						sort(parent, type, id, setid, 'down', masterid);
+					} else {
+						sort(parent, type, id, setid, 'down');
+					}
 				} else if(className == 'copyPosition') {
-			        var parent = $(this).closest('div.positionsContainer').data('parent');
-			        var type = $(this).closest('div.positionsContainer').data('type');
+					var parent = $(this).closest('div.positionsContainer').data('parent');
+					var type = $(this).closest('div.positionsContainer').data('type');
 					var positionID = $(this).closest('tr').find('input.id').val();
 					copyPosition(parent, type, positionID);
 				} else if(className == 'deletePosition') {
 					/*var ids = $('input:checkbox:checked').map(function () {
 						return this.value;
 					}).get();*/
-			        var parent = $(this).closest('div.positionsContainer').data('parent');
-			        var type = $(this).closest('div.positionsContainer').data('type');
+					var parent = $(this).closest('div.positionsContainer').data('parent');
+					var type = $(this).closest('div.positionsContainer').data('type');
 					var positionID = $(this).closest('tr').find('input.id').val();
 					var setid = $(this).closest('div.set').find('input.setid').val();
-					deletePosition(parent, type, positionID, setid);
+					if($(this).closest('tr').hasClass('child')) {
+						var masterid = $(this).closest('tr').data('masterid');
+						deletePosition(parent, type, positionID, setid, masterid);
+					} else {
+						deletePosition(parent, type, positionID, setid);
+					}
 				} else {
 					var cid = $(this).closest('tr').find('input.id').val() || id;
 					if(cid) {
@@ -1063,7 +1078,7 @@ function copy(cid, cmodule, ccontroller){
 		url: baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid,
 		cache: false,
 		success: function(response){
-						//console.log(response);
+			//console.log(response);
 			if(id && response) setLocation(baseUrl+'/'+cmodule+'/'+ccontroller+'/edit/id/'+response);
 			else search();
 		}
@@ -1130,7 +1145,7 @@ function applyPosition(parent, type, itemId, setid) {
 			}
 		}
 	});
-    //console.log(parent);
+	//console.log(parent);
 }
 
 //Edit position
@@ -1187,10 +1202,11 @@ function copyPosition(parent, type, positionID){
 }
 
 //Delete Position
-function deletePosition(parent, type, positionID, setid){
+function deletePosition(parent, type, positionID, setid, masterid){
 	var data = {};
 	data.id = positionID;
 	data.setid = setid;
+	data.masterid = masterid || null;
 	data.parentid = id;
 	data.delete = 'Yes';
 	$.ajax({
@@ -1223,6 +1239,22 @@ function getPositions(parent, type, scrollTo) {
 				window.scrollTo(0, scrollTo);
 			}
 			$('.datePickerLive').datepicker(datePickerOptions);
+		}
+	});
+}
+
+//Add option
+function addOption(parent, type, optionid, setid, masterid) {
+	console.log(setid);
+	$.ajax({
+		type: 'POST',
+		url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id+'/optionid/'+optionid+'/masterid/'+masterid,
+		cache: false,
+		success: function(){
+			$('#status #warning').hide();
+			$('#status #success').show();
+			isDirty = false;
+			getPositions(parent, type, window.pageYOffset);
 		}
 	});
 }
@@ -1370,14 +1402,17 @@ function sendMessage(){
 }
 
 //Ordering
-function sort(parent, type, id, setid, ordering){
+function sort(parent, type, id, setid, ordering, masterid){
 	var data = {};
 	data.id = id;
 	data.ordering = ordering;
+	masterid = masterid || null;
 	var url = baseUrl+'/'+module+'/';
 	if(action == 'edit') {
 		if(setid == -1) {
 			url += 'positionset/sort/id/'+id+'/parent/'+parent+'/type/'+type+'/parentid/'+window.id;
+		} else if(masterid) {
+			url += 'position/sort/id/'+id+'/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+window.id+'/masterid/'+masterid;
 		} else {
 			url += 'position/sort/id/'+id+'/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+window.id;
 		}
