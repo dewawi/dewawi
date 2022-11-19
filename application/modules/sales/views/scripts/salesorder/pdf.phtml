@@ -1,320 +1,211 @@
 <?php
-$this->title = 'Sales order Pdf';
-$this->headTitle($this->title);
-
-//Config
-$client = $this->client;
-
-//Sales order
-$id = $this->salesorder['id'];
-$salesorderid = $this->salesorder['salesorderid'];
-$quoteid = $this->salesorder['quoteid'];
-$contactid = $this->salesorder['contactid'];
-$salesorderdate = $this->salesorder['salesorderdate'];
-if($salesorderdate) $salesorderdate = implode('.', array_reverse(explode('-', $salesorderdate)));
-$quotedate = $this->salesorder['quotedate'];
-if($quotedate) $quotedate = implode('.', array_reverse(explode('-', $quotedate)));
-$orderdate = $this->salesorder['orderdate'];
-if($orderdate) $orderdate = implode('.', array_reverse(explode('-', $orderdate)));
-$deliverydate = $this->salesorder['deliverydate'];
-if($deliverydate) $deliverydate = implode('.', array_reverse(explode('-', $deliverydate)));
-$vatin = $this->salesorder['vatin'];
-$header = $this->salesorder['header'];
-$footer = $this->salesorder['footer'];
-$created = $this->salesorder['created'];
-$filename = $this->salesorder['filename'];
-
-//BillingAddress
-$billingName1 = $this->salesorder['billingname1'];
-$billingName2 = $this->salesorder['billingname2'];
-$billingDepartment = $this->salesorder['billingdepartment'];
-$billingStreet = $this->salesorder['billingstreet'];
-$billingPostcode = $this->salesorder['billingpostcode'];
-$billingCity = $this->salesorder['billingcity'];
-$billingCountry = $this->translate($this->salesorder['billingcountry']);
-
-//ShippingAddress
-$shippingName1 = $this->salesorder['shippingname1'];
-$shippingName2 = $this->salesorder['shippingname2'];
-$shippingDepartment = $this->salesorder['shippingdepartment'];
-$shippingStreet = $this->salesorder['shippingstreet'];
-$shippingPostcode = $this->salesorder['shippingpostcode'];
-$shippingCity = $this->salesorder['shippingcity'];
-$shippingCountry = $this->salesorder['shippingcountry'];
-if($shippingCountry) $shippingCountry = $this->translate($shippingCountry);
-$shippingPhone = $this->salesorder['shippingphone'];
-$shippingAddress = false;
-if($shippingName1 || $shippingStreet) $shippingAddress = true;
-
-//Positions
-$positions = $this->positions;
-
-//TCPDF
-require_once(BASE_PATH.'/library/Tcpdf/config/tcpdf_config.php');
-require_once(BASE_PATH.'/library/Tcpdf/tcpdf.php');
-
-// create new PDF document
-$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-
-// set document information
-$pdf->SetCreator(PDF_CREATOR);
-$pdf->SetAuthor(PDF_AUTHOR);
-if($salesorderid) $pdf->SetTitle($this->translate('SALES_ORDER').' '.$salesorderid.' '.$billingName1);
-else $pdf->SetTitle($this->translate('SALES_ORDER').' '.$this->translate('DOCUMENTS_SAMPLE').' '.$billingName1);
-$pdf->SetSubject($this->translate('SALES_ORDER'));
-
-// remove default header/footer
-$pdf->setPrintHeader(false);
-$pdf->setPrintFooter(false);
-
-// set default header data
-$pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
-
-// set header and footer fonts
-$pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
-$pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
-
-// set default monospaced font
-$pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
-
-//set display mode
-$pdf->SetDisplayMode('real', 'OneColumn');
-
-//set margins
-$pdf->SetMargins(15, 30, 15);
-
-//set auto page breaks
-$pdf->SetAutoPageBreak(true, 30);
-
-//set image scale factor
-$pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
-
-// add a page
-$pdf->AddPage();
-$pageStart = $pdf->getPage();
-
-//Website
-if(isset($this->template) && $this->template['website']) {
-	$website = $this->template['website'];
+if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PATH.'/templates/modules/sales/salesorder/'.$this->template['filename'].'.phtml')) {
+	include BASE_PATH.'/templates/modules/sales/salesorder/'.$this->template['filename'].'.phtml';
 } else {
-	$website = $client['website'];
-}
+	$this->title = 'Sales order Pdf';
+	$this->headTitle($this->title);
 
-//Logo
-if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
-	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
-	$pdf->Image($logo, 145, 10, 50, 0, '', $website);
-}
+	//Config
+	$client = $this->client;
 
-//IMPORTANT INFORMATIONS
-$pdf->SetY(40);
-$pdf->setCellPaddings(0, 0, 0, 0);
-$pdf->SetFont('freesans', '', 9);
-$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_ORDER_ID'), 0, 'L', false, 0, 130);
-if($salesorderid) $pdf->MultiCell(40, 5, $salesorderid, 0, 'L', false, 1, 160);
-else $pdf->MultiCell(40, 5, ' - - - - - ', 0, 'L', false, 1, 160);
-$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_ORDER_DATE'), 0, 'L', false, 0, 130);
-if($salesorderdate) $pdf->MultiCell(28, 5, $salesorderdate, 0, 'L', false, 1, 160);
-else $pdf->MultiCell(28, 5, ' - - - - - ', 0, 'L', false, 1, 160);
-$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_CUSTOMER_ID'), 0, 'L', false, 0, 130);
-$pdf->MultiCell(28, 5, $contactid, 0, 'L', false, 1, 160);
-if($vatin) {
-	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_VATIN'), 0, 'L', false, 0, 130);
-	$pdf->MultiCell(84, 5, $vatin, 0, 'L', false, 1, 160);
-}
-if($orderdate) {
-	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_ORDER_DATE'), 0, 'L', false, 0, 130);
-	$pdf->MultiCell(84, 5, $orderdate, 0, 'L', false, 1, 160);
-}
-if($deliverydate) {
-	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_DELIVERY_DATE'), 0, 'L', false, 0, 130);
-	$pdf->MultiCell(84, 5, $deliverydate, 0, 'L', false, 1, 160);
-}
-$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_PERSON'), 0, 'L', false, 0, 130);
-$pdf->MultiCell(84, 5, $this->salesorder['contactperson'], 0, 'L', false, 1, 160);
-$pdf->ln(8);
-$y = $pdf->GetY();
+	//Sales order
+	$id = $this->salesorder['id'];
+	$salesorderid = $this->salesorder['salesorderid'];
+	$quoteid = $this->salesorder['quoteid'];
+	$contactid = $this->salesorder['contactid'];
+	$salesorderdate = $this->salesorder['salesorderdate'];
+	if($salesorderdate) $salesorderdate = implode('.', array_reverse(explode('-', $salesorderdate)));
+	$quotedate = $this->salesorder['quotedate'];
+	if($quotedate) $quotedate = implode('.', array_reverse(explode('-', $quotedate)));
+	$orderdate = $this->salesorder['orderdate'];
+	if($orderdate) $orderdate = implode('.', array_reverse(explode('-', $orderdate)));
+	$deliverydate = $this->salesorder['deliverydate'];
+	if($deliverydate) $deliverydate = implode('.', array_reverse(explode('-', $deliverydate)));
+	$vatin = $this->salesorder['vatin'];
+	$header = $this->salesorder['header'];
+	$footer = $this->salesorder['footer'];
+	$created = $this->salesorder['created'];
+	$filename = $this->salesorder['filename'];
 
-//Shipping Address
-if($shippingAddress) {
-	$pdf->SetFont('freesansb', 'B', 10);
-	$pdf->MultiCell(70, 0, $this->translate('DOCUMENTS_SHIPPING_ADDRESS'), 0, 'L', false, 1, 130);
-	$pdf->SetFont('freesans', '', 10);
-	$pdf->MultiCell(70, 0, $shippingName1, 0, 'L', false, 1, 130);
-	if($shippingName2) $pdf->MultiCell(70, 0, $shippingName2, 0, 'L', false, 1, 130);
-	if($shippingDepartment) $pdf->MultiCell(70, 0, $shippingDepartment, 0, 'L', false, 1, 130);
-	$pdf->MultiCell(70, 0, $shippingStreet, 0, 'L', false, 1, 130);
-	$shippingPostcodeCity = '';
-	if($shippingPostcode) $shippingPostcodeCity .= $shippingPostcode.' ';
-	if($shippingCity) $shippingPostcodeCity .= $shippingCity;
-	if($shippingPostcodeCity) $pdf->MultiCell(70, 0, $shippingPostcodeCity, 0, 'L', false, 1, 130);
-	if($shippingCountry) $pdf->MultiCell(70, 0, $shippingCountry, 0, 'L', false, 1, 130);
-	if($shippingPhone) $pdf->MultiCell(70, 0, $this->translate('DOCUMENTS_PHONE').' '.$shippingPhone, 0, 'L', false, 1, 130);
-	$pdf->ln(10);
-	$y = $pdf->GetY();
-}
+	//BillingAddress
+	$billingName1 = $this->salesorder['billingname1'];
+	$billingName2 = $this->salesorder['billingname2'];
+	$billingDepartment = $this->salesorder['billingdepartment'];
+	$billingStreet = $this->salesorder['billingstreet'];
+	$billingPostcode = $this->salesorder['billingpostcode'];
+	$billingCity = $this->salesorder['billingcity'];
+	$billingCountry = $this->translate($this->salesorder['billingcountry']);
 
-$pdf->setCellPaddings(0, 0, 0, 0);
-$x = $pdf->GetX()+5;
-$pdf->SetFont('freesansb', 'B', 15);
-$pdf->MultiCell(85, 0, mb_strtoupper($this->translate('SALES_ORDER'), 'UTF-8'), 0, 'L', false, 1, $x, 20);
-$pdf->ln(22);
+	//ShippingAddress
+	$shippingName1 = $this->salesorder['shippingname1'];
+	$shippingName2 = $this->salesorder['shippingname2'];
+	$shippingDepartment = $this->salesorder['shippingdepartment'];
+	$shippingStreet = $this->salesorder['shippingstreet'];
+	$shippingPostcode = $this->salesorder['shippingpostcode'];
+	$shippingCity = $this->salesorder['shippingcity'];
+	$shippingCountry = $this->salesorder['shippingcountry'];
+	if($shippingCountry) $shippingCountry = $this->translate($shippingCountry);
+	$shippingPhone = $this->salesorder['shippingphone'];
+	$shippingAddress = false;
+	if($shippingName1 || $shippingStreet) $shippingAddress = true;
 
-//LETTERHEAD
-$pdf->SetFont('freesans', '', 7);
-if(isset($this->template) && isset($this->template['company']) && $this->template['company']) {
-	$address = $this->template['company'];
-} else {
-	$address = $client['company'];
-	if($client['address']) $address .= ', '.$client['address'];
-	if($client['postcode']) $address .= ', '.$client['postcode'];
-	if($client['city']) $address .= ' '.$client['city'];
-}
-$pdf->MultiCell(70, 4, $address, 'B', 'L', false, 1, $x);
-$pdf->ln(4);
-$pdf->SetFont('freesans', '', 10);
+	//Positions
+	$positions = $this->positions;
 
-//Contact adress
-if($contactid) {
-	$pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, $x);
-	if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, $x);
-	if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, $x);
-	if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, $x);
-	$pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, $x);
-	$pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, $x);
-	$pdf->ln(20);
-	if($y > $pdf->GetY()) $pdf->SetY($y);
-}
+	//TCPDF
+	require_once(BASE_PATH.'/library/Tcpdf/config/tcpdf_config.php');
+	require_once(BASE_PATH.'/library/Tcpdf/tcpdf.php');
 
-//Quote ID
-if($quoteid) {
-	$info = $this->translate('DOCUMENTS_QUOTE_ID_%s_FROM_%s');
-	$info = sprintf($info, $quoteid, $quotedate);
-	$pdf->SetFont('freesansb', 'B', 10);
-	$pdf->MultiCell(175, 0, $info, 0, 'L', false, 1, $x, '', $reseth=true, $stretch=0, $ishtml=true);
-	$pdf->ln(4);
-}
+	// create new PDF document
+	$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
-//HEADER
-if($header) {
-	$pdf->SetFont('freesans', '', 9);
-	$pdf->MultiCell(175, 0, $header, 0, 'L', false, 1, $x, '', $reseth=true, $stretch=0, $ishtml=true);
-	$pdf->ln(4);
-}
+	// set document information
+	$pdf->SetCreator(PDF_CREATOR);
+	$pdf->SetAuthor(PDF_AUTHOR);
+	if($salesorderid) $pdf->SetTitle($this->translate('SALES_ORDER').' '.$salesorderid.' '.$billingName1);
+	else $pdf->SetTitle($this->translate('SALES_ORDER').' '.$this->translate('DOCUMENTS_SAMPLE').' '.$billingName1);
+	$pdf->SetSubject($this->translate('SALES_ORDER'));
 
-if(count($positions)) {
-	$pdf->setCellPaddings(1, 0, 0, 0);
+	// remove default header/footer
+	$pdf->setPrintHeader(false);
+	$pdf->setPrintFooter(false);
 
-	$pdf->SetFont('freesansb', 'B', 8);
+	// set default header data
+	$pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
 
-	//POSITIONS HEADER
-	$pdf->Cell(10, 5, $this->translate('DOCUMENTS_POSITION'), 'LTB');
+	// set header and footer fonts
+	$pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+	$pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+
+	// set default monospaced font
+	$pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+	//set display mode
+	$pdf->SetDisplayMode('real', 'OneColumn');
+
+	//set margins
+	$pdf->SetMargins(15, 30, 15);
+
+	//set auto page breaks
+	$pdf->SetAutoPageBreak(true, 30);
+
+	//set image scale factor
+	$pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+	// add a page
+	$pdf->AddPage();
+	$pageStart = $pdf->getPage();
+
+	//Website
+	if(isset($this->template) && $this->template['website']) {
+		$website = $this->template['website'];
+	} else {
+		$website = $client['website'];
+	}
+
+	//Logo
+	if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
+		$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
+		$pdf->Image($logo, 145, 10, 50, 0, '', $website);
+	}
+
+	//IMPORTANT INFORMATIONS
+	$pdf->SetY(40);
 	$pdf->setCellPaddings(0, 0, 0, 0);
-	$pdf->Cell(98, 5, $this->translate('DOCUMENTS_DESCRIPTION'), 'TB');
-	$pdf->Cell(10, 5, $this->translate('DOCUMENTS_QUANTITY'), 'TB');
-	$pdf->Cell(12, 5, $this->translate('DOCUMENTS_UOM'), 'TB', 0, 'C');
-	$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_SINGLE'), 'TB', 0, 'C');
-	$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_TOTAL'), 'TBR', 0, 'C');
-	$pdf->ln(5);
-
-	//POSITIONS
-	$y = 0;
-	$i = 1;
-	foreach($positions as $position) {
-		$x = $pdf->getX();
-		$pdf->setCellPaddings(0, 2, 0, 0);
-		$pdf->SetFont('freesans', '', 9);
-		$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
-		$pdf->MultiCell(10, 0, $position->quantity, 0, 'C', false, 0, $x+108, '', true, 0);
-		if($position->uom) $pdf->MultiCell(12, 0, $position->uom, 0, 'C', false, 0, $x+118, '', true, 0);
-		$pdf->MultiCell(25, 0, $position->price, 0, 'C', false, 0, $x+130, '', true, 0);
-		$pdf->MultiCell(25, 0, $position->total, 0, 'C', false, 0, $x+155, '', true, 0);
-		$pdf->MultiCell(108, 0, $position->sku, 0, 'L', false, 2, $x+10, '', true, 0);
-		$pdf->setCellPaddings(0, 0, 0, 0);
-		if($position->title) {
-			$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 2, $x+10, '', true, 0);
-		}
-		if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
-			$startPage = $pdf->getPage();
-			$y = $pdf->getY();
-			$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
-			$endPage = $pdf->getPage();
-			if($startPage == $endPage) {
-				$imageHeight = $pdf->getY() - $y;
-			} else {
-				$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
-				$pdf->setPage($startPage);
-			}
-			if($position->description) {
-				$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
-			}
-		} elseif($position->description) {
-			$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+10, '', true, 0);
-		}
-		$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
-		++$i;
-	}
-	$pdf->ln(4);
-
 	$pdf->SetFont('freesans', '', 9);
-
-	//FOOTER
-	$pdf->MultiCell(105, 0, $footer, 0, 'L', false, 0, '', '', $reseth=true, $stretch=0, $ishtml=true);
-
-	$pdf->setCellPaddings(3, 1, 3, 1);
-
-	$pdf->SetFont('freesansb', 'B', 10);
-
-	//TOTAL BOX
-	$x = $pdf->getX();
-	$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_SUBTOTAL'), 'LT', 'L', false, 0 ,$x);
-	$pdf->MultiCell(30, 0, $this->salesorder['subtotal'], 'TR', 'R', false, 1);
-	$pdf->setCellPaddings(3, 0, 3, 1);
-	$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TAXES').' ('.$this->salesorder['taxrate'].'%)', 'L', 'L', false, 0 ,$x);
-	$pdf->MultiCell(30, 0, $this->salesorder['taxes'], 'R', 'R', false, 1);
-	$pdf->setCellPaddings(3, 1, 3, 1);
-	$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TOTAL'), 'LBT', 'L', false, 0 ,$x);
-	$pdf->MultiCell(30, 0, $this->salesorder['total'], 'RBT', 'R', false, 1);
-}
-
-$i = 1;
-$lastPage = $pdf->getNumPages();
-while($i <= $lastPage) {
-	$pdf->setPage($i);
-
-	if(!$salesorderid) {
-		sample($pdf, strtoupper($this->translate('DOCUMENTS_SAMPLE')));
+	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_ORDER_ID'), 0, 'L', false, 0, 130);
+	if($salesorderid) $pdf->MultiCell(40, 5, $salesorderid, 0, 'L', false, 1, 160);
+	else $pdf->MultiCell(40, 5, ' - - - - - ', 0, 'L', false, 1, 160);
+	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_ORDER_DATE'), 0, 'L', false, 0, 130);
+	if($salesorderdate) $pdf->MultiCell(28, 5, $salesorderdate, 0, 'L', false, 1, 160);
+	else $pdf->MultiCell(28, 5, ' - - - - - ', 0, 'L', false, 1, 160);
+	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_CUSTOMER_ID'), 0, 'L', false, 0, 130);
+	$pdf->MultiCell(28, 5, $contactid, 0, 'L', false, 1, 160);
+	if($vatin) {
+		$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_VATIN'), 0, 'L', false, 0, 130);
+		$pdf->MultiCell(84, 5, $vatin, 0, 'L', false, 1, 160);
 	}
-
-	if($this->salesorder['state'] == 7) {
-		cancelled($pdf, strtoupper($this->translate('DOCUMENTS_CANCELLED')));
+	if($orderdate) {
+		$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_ORDER_DATE'), 0, 'L', false, 0, 130);
+		$pdf->MultiCell(84, 5, $orderdate, 0, 'L', false, 1, 160);
 	}
-	if($i > 1) {
-		if(isset($logo)) {
-			$pdf->Image($logo, 155, 10, 40, 0, '', $website);
-		}
+	if($deliverydate) {
+		$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_DELIVERY_DATE'), 0, 'L', false, 0, 130);
+		$pdf->MultiCell(84, 5, $deliverydate, 0, 'L', false, 1, 160);
+	}
+	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_PERSON'), 0, 'L', false, 0, 130);
+	$pdf->MultiCell(84, 5, $this->salesorder['contactperson'], 0, 'L', false, 1, 160);
+	$pdf->ln(8);
+	$y = $pdf->GetY();
 
+	//Shipping Address
+	if($shippingAddress) {
+		$pdf->SetFont('freesansb', 'B', 10);
+		$pdf->MultiCell(70, 0, $this->translate('DOCUMENTS_SHIPPING_ADDRESS'), 0, 'L', false, 1, 130);
+		$pdf->SetFont('freesans', '', 10);
+		$pdf->MultiCell(70, 0, $shippingName1, 0, 'L', false, 1, 130);
+		if($shippingName2) $pdf->MultiCell(70, 0, $shippingName2, 0, 'L', false, 1, 130);
+		if($shippingDepartment) $pdf->MultiCell(70, 0, $shippingDepartment, 0, 'L', false, 1, 130);
+		$pdf->MultiCell(70, 0, $shippingStreet, 0, 'L', false, 1, 130);
+		$shippingPostcodeCity = '';
+		if($shippingPostcode) $shippingPostcodeCity .= $shippingPostcode.' ';
+		if($shippingCity) $shippingPostcodeCity .= $shippingCity;
+		if($shippingPostcodeCity) $pdf->MultiCell(70, 0, $shippingPostcodeCity, 0, 'L', false, 1, 130);
+		if($shippingCountry) $pdf->MultiCell(70, 0, $shippingCountry, 0, 'L', false, 1, 130);
+		if($shippingPhone) $pdf->MultiCell(70, 0, $this->translate('DOCUMENTS_PHONE').' '.$shippingPhone, 0, 'L', false, 1, 130);
+		$pdf->ln(10);
 		$y = $pdf->GetY();
-		$pdf->SetY(20);
+	}
 
-		//New page info box
-		$pdf->setCellPaddings(1, 1, 0, 0);
-		$pdf->SetFont('freesans', '', 8);
-		$pdf->Write(0, $this->translate('DOCUMENTS_SALES_ORDER_ID').' ');
-		$pdf->SetFont('freesansb', 'B', 8);
-		if($salesorderid) $pdf->Write(0, $salesorderid.'   ');
-		else $pdf->Write(0, ' - - - - -  ');
-		$pdf->SetFont('freesans', '', 8);
-		$pdf->Write(0, $this->translate('DOCUMENTS_SALES_ORDER_DATE').' ');
-		$pdf->SetFont('freesansb', 'B', 8);
-		if($salesorderdate) $pdf->Write(0, $salesorderdate.'   ');
-		else $pdf->Write(0, ' - - - - -  ');
-		$pdf->SetFont('freesans', '', 8);
-		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');
-		$pdf->SetFont('freesansb', 'B', 8);
-		$pdf->Write(0, $contactid);
-		$pdf->ln();
+	$pdf->setCellPaddings(0, 0, 0, 0);
+	$x = $pdf->GetX()+5;
+	$pdf->SetFont('freesansb', 'B', 15);
+	$pdf->MultiCell(85, 0, mb_strtoupper($this->translate('SALES_ORDER'), 'UTF-8'), 0, 'L', false, 1, $x, 20);
+	$pdf->ln(22);
 
+	//LETTERHEAD
+	$pdf->SetFont('freesans', '', 7);
+	if(isset($this->template) && isset($this->template['company']) && $this->template['company']) {
+		$address = $this->template['company'];
+	} else {
+		$address = $client['company'];
+		if($client['address']) $address .= ', '.$client['address'];
+		if($client['postcode']) $address .= ', '.$client['postcode'];
+		if($client['city']) $address .= ' '.$client['city'];
+	}
+	$pdf->MultiCell(70, 4, $address, 'B', 'L', false, 1, $x);
+	$pdf->ln(4);
+	$pdf->SetFont('freesans', '', 10);
+
+	//Contact adress
+	if($contactid) {
+		$pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, $x);
+		if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, $x);
+		if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, $x);
+		if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, $x);
+		$pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, $x);
+		$pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, $x);
+		$pdf->ln(20);
+		if($y > $pdf->GetY()) $pdf->SetY($y);
+	}
+
+	//Quote ID
+	if($quoteid) {
+		$info = $this->translate('DOCUMENTS_QUOTE_ID_%s_FROM_%s');
+		$info = sprintf($info, $quoteid, $quotedate);
+		$pdf->SetFont('freesansb', 'B', 10);
+		$pdf->MultiCell(175, 0, $info, 0, 'L', false, 1, $x, '', $reseth=true, $stretch=0, $ishtml=true);
+		$pdf->ln(4);
+	}
+
+	//HEADER
+	if($header) {
+		$pdf->SetFont('freesans', '', 9);
+		$pdf->MultiCell(175, 0, $header, 0, 'L', false, 1, $x, '', $reseth=true, $stretch=0, $ishtml=true);
+		$pdf->ln(4);
+	}
+
+	if(count($positions)) {
 		$pdf->setCellPaddings(1, 0, 0, 0);
 
 		$pdf->SetFont('freesansb', 'B', 8);
@@ -328,31 +219,144 @@ while($i <= $lastPage) {
 		$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_SINGLE'), 'TB', 0, 'C');
 		$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_TOTAL'), 'TBR', 0, 'C');
 		$pdf->ln(5);
+
+		//POSITIONS
+		$y = 0;
+		$i = 1;
+		foreach($positions as $position) {
+			$x = $pdf->getX();
+			$pdf->setCellPaddings(0, 2, 0, 0);
+			$pdf->SetFont('freesans', '', 9);
+			$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
+			$pdf->MultiCell(10, 0, $position->quantity, 0, 'C', false, 0, $x+108, '', true, 0);
+			if($position->uom) $pdf->MultiCell(12, 0, $position->uom, 0, 'C', false, 0, $x+118, '', true, 0);
+			$pdf->MultiCell(25, 0, $position->price, 0, 'C', false, 0, $x+130, '', true, 0);
+			$pdf->MultiCell(25, 0, $position->total, 0, 'C', false, 0, $x+155, '', true, 0);
+			$pdf->MultiCell(108, 0, $position->sku, 0, 'L', false, 2, $x+10, '', true, 0);
+			$pdf->setCellPaddings(0, 0, 0, 0);
+			if($position->title) {
+				$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 2, $x+10, '', true, 0);
+			}
+			if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
+				$startPage = $pdf->getPage();
+				$y = $pdf->getY();
+				$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
+				$endPage = $pdf->getPage();
+				if($startPage == $endPage) {
+					$imageHeight = $pdf->getY() - $y;
+				} else {
+					$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
+					$pdf->setPage($startPage);
+				}
+				if($position->description) {
+					$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
+				}
+			} elseif($position->description) {
+				$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+10, '', true, 0);
+			}
+			$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+			++$i;
+		}
+		$pdf->ln(4);
+
+		$pdf->SetFont('freesans', '', 9);
+
+		//FOOTER
+		$pdf->MultiCell(105, 0, $footer, 0, 'L', false, 0, '', '', $reseth=true, $stretch=0, $ishtml=true);
+
+		$pdf->setCellPaddings(3, 1, 3, 1);
+
+		$pdf->SetFont('freesansb', 'B', 10);
+
+		//TOTAL BOX
+		$x = $pdf->getX();
+		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_SUBTOTAL'), 'LT', 'L', false, 0 ,$x);
+		$pdf->MultiCell(30, 0, $this->salesorder['subtotal'], 'TR', 'R', false, 1);
+		$pdf->setCellPaddings(3, 0, 3, 1);
+		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TAXES').' ('.$this->salesorder['taxrate'].'%)', 'L', 'L', false, 0 ,$x);
+		$pdf->MultiCell(30, 0, $this->salesorder['taxes'], 'R', 'R', false, 1);
+		$pdf->setCellPaddings(3, 1, 3, 1);
+		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TOTAL'), 'LBT', 'L', false, 0 ,$x);
+		$pdf->MultiCell(30, 0, $this->salesorder['total'], 'RBT', 'R', false, 1);
 	}
 
-	$pdf->setCellPaddings(0, 2, 0, 2);
-	$pdf->SetAutoPageBreak(false);
-	$pdf->SetFont('freesans', '', 7);
+	$i = 1;
+	$lastPage = $pdf->getNumPages();
+	while($i <= $lastPage) {
+		$pdf->setPage($i);
 
-	//Footer
-	$x = 12;
-	$pdf->SetY(270);
-	foreach($this->footers as $footer) {
-		$width = $footer->width ? $footer->width : 40;
-		$pdf->MultiCell($width, 3, $footer->text, 0, 'L', false, 0, $x);
-		$x += $width;
+		if(!$salesorderid) {
+			sample($pdf, strtoupper($this->translate('DOCUMENTS_SAMPLE')));
+		}
+
+		if($this->salesorder['state'] == 7) {
+			cancelled($pdf, strtoupper($this->translate('DOCUMENTS_CANCELLED')));
+		}
+		if($i > 1) {
+			if(isset($logo)) {
+				$pdf->Image($logo, 155, 10, 40, 0, '', $website);
+			}
+
+			$y = $pdf->GetY();
+			$pdf->SetY(20);
+
+			//New page info box
+			$pdf->setCellPaddings(1, 1, 0, 0);
+			$pdf->SetFont('freesans', '', 8);
+			$pdf->Write(0, $this->translate('DOCUMENTS_SALES_ORDER_ID').' ');
+			$pdf->SetFont('freesansb', 'B', 8);
+			if($salesorderid) $pdf->Write(0, $salesorderid.'   ');
+			else $pdf->Write(0, ' - - - - -  ');
+			$pdf->SetFont('freesans', '', 8);
+			$pdf->Write(0, $this->translate('DOCUMENTS_SALES_ORDER_DATE').' ');
+			$pdf->SetFont('freesansb', 'B', 8);
+			if($salesorderdate) $pdf->Write(0, $salesorderdate.'   ');
+			else $pdf->Write(0, ' - - - - -  ');
+			$pdf->SetFont('freesans', '', 8);
+			$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');
+			$pdf->SetFont('freesansb', 'B', 8);
+			$pdf->Write(0, $contactid);
+			$pdf->ln();
+
+			$pdf->setCellPaddings(1, 0, 0, 0);
+
+			$pdf->SetFont('freesansb', 'B', 8);
+
+			//POSITIONS HEADER
+			$pdf->Cell(10, 5, $this->translate('DOCUMENTS_POSITION'), 'LTB');
+			$pdf->setCellPaddings(0, 0, 0, 0);
+			$pdf->Cell(98, 5, $this->translate('DOCUMENTS_DESCRIPTION'), 'TB');
+			$pdf->Cell(10, 5, $this->translate('DOCUMENTS_QUANTITY'), 'TB');
+			$pdf->Cell(12, 5, $this->translate('DOCUMENTS_UOM'), 'TB', 0, 'C');
+			$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_SINGLE'), 'TB', 0, 'C');
+			$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_TOTAL'), 'TBR', 0, 'C');
+			$pdf->ln(5);
+		}
+
+		$pdf->setCellPaddings(0, 2, 0, 2);
+		$pdf->SetAutoPageBreak(false);
+		$pdf->SetFont('freesans', '', 7);
+
+		//Footer
+		$x = 12;
+		$pdf->SetY(270);
+		foreach($this->footers as $footer) {
+			$width = $footer->width ? $footer->width : 40;
+			$pdf->MultiCell($width, 3, $footer->text, 0, 'L', false, 0, $x);
+			$x += $width;
+		}
+
+		// Page number
+		$pdf->SetY(284);
+		$pdf->SetFont('helvetica', 'I', 8);
+		$pdf->Cell(0, 10, $this->translate('DOCUMENTS_PAGE').' '.$pdf->getAliasNumPage().'/'.$pdf->getAliasNbPages(), 0, false, 'C', 0, '', 0, false, 'T', 'M');
+		$pdf->SetFont('freesans', '', 8);
+
+		$pdf->SetAutoPageBreak(true, 30);
+
+		$pdf->SetY($y);
+		++$i;
 	}
-
-	// Page number
-	$pdf->SetY(284);
-	$pdf->SetFont('helvetica', 'I', 8);
-	$pdf->Cell(0, 10, $this->translate('DOCUMENTS_PAGE').' '.$pdf->getAliasNumPage().'/'.$pdf->getAliasNbPages(), 0, false, 'C', 0, '', 0, false, 'T', 'M');
-	$pdf->SetFont('freesans', '', 8);
-
-	$pdf->SetAutoPageBreak(true, 30);
-
-	$pdf->SetY($y);
-	++$i;
 }
 
 //Close and output PDF document

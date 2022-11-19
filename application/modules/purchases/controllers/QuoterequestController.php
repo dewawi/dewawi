@@ -475,7 +475,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		if($templateid) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($templateid);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -552,7 +551,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		if($quoterequest['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($quoterequest['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -627,7 +625,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		if($quoterequest['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($quoterequest['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 

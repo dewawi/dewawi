@@ -522,7 +522,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		if($templateid) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($templateid);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -600,7 +599,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		if($creditnote['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($creditnote['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -685,7 +683,6 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		if($creditnote['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($creditnote['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 

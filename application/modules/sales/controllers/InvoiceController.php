@@ -550,7 +550,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		if($templateid) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($templateid);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -631,7 +630,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		if($invoice['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($invoice['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -719,7 +717,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		if($invoice['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($invoice['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 

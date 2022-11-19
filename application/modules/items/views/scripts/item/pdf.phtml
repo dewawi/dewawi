@@ -1,135 +1,139 @@
 <?php
-$this->title = 'Data Sheet';
-$this->headTitle($this->title);
-
-//Config
-$client = $this->client;
-
-//Item
-$id = $this->item['id'];
-$sku = $this->item['sku'];
-$title = $this->item['title'];
-$description = $this->item['description'];
-$created = $this->item['created'];
-
-//Attributes
-$attributes = $this->attributes;
-
-//Images
-$images = $this->images;
-
-//TCPDF
-require_once(BASE_PATH.'/library/Tcpdf/config/tcpdf_config.php');
-require_once(BASE_PATH.'/library/Tcpdf/tcpdf.php');
-
-// create new PDF document
-$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-
-// set document information
-$pdf->SetCreator(PDF_CREATOR);
-$pdf->SetAuthor(PDF_AUTHOR);
-$pdf->SetTitle($this->translate('ITEM').' '.$id);
-$pdf->SetSubject($this->translate('ITEM'));
-
-// remove default header/footer
-$pdf->setPrintHeader(false);
-$pdf->setPrintFooter(false);
-
-// set default header data
-$pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
-
-// set header and footer fonts
-$pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
-$pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
-
-// set default monospaced font
-$pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
-
-//set display mode
-$pdf->SetDisplayMode('real', 'OneColumn');
-
-//set margins
-$pdf->SetMargins(15, 30, 15);
-
-//set auto page breaks
-$pdf->SetAutoPageBreak(true, 30);
-
-//set image scale factor
-$pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
-
-// add a page
-$pdf->AddPage();
-$pageStart = $pdf->getPage();
-
-//Website
-if(isset($this->template) && $this->template['website']) {
-	$website = $this->template['website'];
+if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PATH.'/templates/modules/items/item/'.$this->template['filename'].'.phtml')) {
+	include BASE_PATH.'/templates/modules/items/item/'.$this->template['filename'].'.phtml';
 } else {
-	$website = $client['website'];
-}
+	$this->title = 'Data Sheet';
+	$this->headTitle($this->title);
 
-//Logo
-if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
-	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
-	$pdf->Image($logo, 145, 10, 50, 0, '', $website);
-}
+	//Config
+	$client = $this->client;
 
-$pdf->SetFont('freesansb', 'B', 20);
-$pdf->MultiCell(0, 0, $title, 0, 'C', false, 1, 15, 50);
-$pdf->MultiCell(90, 4, '', array('B' => array('width' => 1, 'color' => array(20, 64, 96))), 'C', false, 1, 60);
+	//Item
+	$id = $this->item['id'];
+	$sku = $this->item['sku'];
+	$title = $this->item['title'];
+	$description = $this->item['description'];
+	$created = $this->item['created'];
 
-//Image
-if(isset($images) && file_exists(BASE_PATH.'/files/images/'.$images['url'])) {
-	$image = BASE_PATH.'/files/images/'.$images['url'];
-	$pdf->Image($image, 60, 90, 90, 0);
-}
+	//Attributes
+	$attributes = $this->attributes;
 
-$pdf->AddPage();
+	//Images
+	$images = $this->images;
 
-//HEADER
-$x = $pdf->GetX()+5;
-$pdf->SetFont('freesansb', 'B', 10);
-$pdf->MultiCell(0, 0, mb_strtoupper($this->translate('ITEMS_DATA_SHEET'), 'UTF-8'), 0, 'L', false, 1, $x, 20);
-$pdf->SetFont('freesansb', 'B', 15);
-$pdf->MultiCell(0, 0, $this->translate('ITEMS_TECHNICAL_DATA'), 0, 'L', false, 1, $x);
-$pdf->MultiCell(70, 4, '', array('B' => array('width' => 1, 'color' => array(20, 64, 96))), 'L', false, 1, $x);
-$pdf->ln(4);
-$pdf->SetFont('freesans', '', 10);
+	//TCPDF
+	require_once(BASE_PATH.'/library/Tcpdf/config/tcpdf_config.php');
+	require_once(BASE_PATH.'/library/Tcpdf/tcpdf.php');
 
-//IMPORTANT INFORMATIONS
-$pdf->SetY(40);
-$pdf->setCellPaddings(0, 0, 0, 0);
-$pdf->SetFont('freesans', '', 9);
-$pdf->MultiCell(40, 5, $sku, 0, 'L', false, 1, 20);
-$pdf->MultiCell(40, 5, $title, 0, 'L', false, 1, 20);
-$pdf->MultiCell(180, 5, $description, 0, 'L', false, 1, 20);
-$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_PERSON'), 0, 'L', false, 1, 20);
-$pdf->ln(8);
-$y = $pdf->GetY();
+	// create new PDF document
+	$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
-//ATTRIBUTES
-if(count($this->attributesByGroup)) {
-	$pdf->setCellPaddings(1, 0, 0, 0);
+	// set document information
+	$pdf->SetCreator(PDF_CREATOR);
+	$pdf->SetAuthor(PDF_AUTHOR);
+	$pdf->SetTitle($this->translate('ITEM').' '.$id);
+	$pdf->SetSubject($this->translate('ITEM'));
 
-	$pdf->SetFont('freesansb', 'B', 8);
+	// remove default header/footer
+	$pdf->setPrintHeader(false);
+	$pdf->setPrintFooter(false);
 
-	$i = 1;
-	foreach($this->attributesByGroup as $attributesByGroup) {
-		$pdf->setCellPaddings(0, 3, 0, 2);
-		$pdf->SetFont('freesansb', 'B', 12);
-		$pdf->MultiCell(0, 0, $attributesByGroup['title'], 0, 'L', false, 1, 20);
-		if($attributesByGroup['description']) $pdf->MultiCell(0, 0, $attributesByGroup['description'], 0, 'L', false, 1, 20);
-		$pdf->setCellPaddings(2, 1, 0, 1);
-		$pdf->SetFont('freesans', '', 9);
-		foreach($attributesByGroup['attributes'] as $attribute) {
-			$pdf->MultiCell(60, 0, $attribute['title'], array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0, 20);
-			$pdf->MultiCell(110, 0, $attribute['description'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 1);
-		}
-		++$i;
+	// set default header data
+	$pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
+
+	// set header and footer fonts
+	$pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+	$pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+
+	// set default monospaced font
+	$pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+	//set display mode
+	$pdf->SetDisplayMode('real', 'OneColumn');
+
+	//set margins
+	$pdf->SetMargins(15, 30, 15);
+
+	//set auto page breaks
+	$pdf->SetAutoPageBreak(true, 30);
+
+	//set image scale factor
+	$pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+	// add a page
+	$pdf->AddPage();
+	$pageStart = $pdf->getPage();
+
+	//Website
+	if(isset($this->template) && $this->template['website']) {
+		$website = $this->template['website'];
+	} else {
+		$website = $client['website'];
 	}
-	$pdf->ln(4);
 
+	//Logo
+	if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
+		$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
+		$pdf->Image($logo, 145, 10, 50, 0, '', $website);
+	}
+
+	$pdf->SetFont('freesansb', 'B', 20);
+	$pdf->MultiCell(0, 0, $title, 0, 'C', false, 1, 15, 50);
+	$pdf->MultiCell(90, 4, '', array('B' => array('width' => 1, 'color' => array(20, 64, 96))), 'C', false, 1, 60);
+
+	//Image
+	if(isset($images) && file_exists(BASE_PATH.'/files/images/'.$images['url'])) {
+		$image = BASE_PATH.'/files/images/'.$images['url'];
+		$pdf->Image($image, 60, 90, 90, 0);
+	}
+
+	$pdf->AddPage();
+
+	//HEADER
+	$x = $pdf->GetX()+5;
+	$pdf->SetFont('freesansb', 'B', 10);
+	$pdf->MultiCell(0, 0, mb_strtoupper($this->translate('ITEMS_DATA_SHEET'), 'UTF-8'), 0, 'L', false, 1, $x, 20);
+	$pdf->SetFont('freesansb', 'B', 15);
+	$pdf->MultiCell(0, 0, $this->translate('ITEMS_TECHNICAL_DATA'), 0, 'L', false, 1, $x);
+	$pdf->MultiCell(70, 4, '', array('B' => array('width' => 1, 'color' => array(20, 64, 96))), 'L', false, 1, $x);
+	$pdf->ln(4);
+	$pdf->SetFont('freesans', '', 10);
+
+	//IMPORTANT INFORMATIONS
+	$pdf->SetY(40);
+	$pdf->setCellPaddings(0, 0, 0, 0);
 	$pdf->SetFont('freesans', '', 9);
+	$pdf->MultiCell(40, 5, $sku, 0, 'L', false, 1, 20);
+	$pdf->MultiCell(40, 5, $title, 0, 'L', false, 1, 20);
+	$pdf->MultiCell(180, 5, $description, 0, 'L', false, 1, 20);
+	$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_PERSON'), 0, 'L', false, 1, 20);
+	$pdf->ln(8);
+	$y = $pdf->GetY();
+
+	//ATTRIBUTES
+	if(count($this->attributesByGroup)) {
+		$pdf->setCellPaddings(1, 0, 0, 0);
+
+		$pdf->SetFont('freesansb', 'B', 8);
+
+		$i = 1;
+		foreach($this->attributesByGroup as $attributesByGroup) {
+			$pdf->setCellPaddings(0, 3, 0, 2);
+			$pdf->SetFont('freesansb', 'B', 12);
+			$pdf->MultiCell(0, 0, $attributesByGroup['title'], 0, 'L', false, 1, 20);
+			if($attributesByGroup['description']) $pdf->MultiCell(0, 0, $attributesByGroup['description'], 0, 'L', false, 1, 20);
+			$pdf->setCellPaddings(2, 1, 0, 1);
+			$pdf->SetFont('freesans', '', 9);
+			foreach($attributesByGroup['attributes'] as $attribute) {
+				$pdf->MultiCell(60, 0, $attribute['title'], array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0, 20);
+				$pdf->MultiCell(110, 0, $attribute['description'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 1);
+			}
+			++$i;
+		}
+		$pdf->ln(4);
+
+		$pdf->SetFont('freesans', '', 9);
+	}
 }
 
 //Close and output PDF document

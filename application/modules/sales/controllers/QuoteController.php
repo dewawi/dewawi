@@ -504,7 +504,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 		if($templateid) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($templateid);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -583,7 +582,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 		if($quote['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($quote['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -668,7 +666,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 		if($quote['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($quote['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 

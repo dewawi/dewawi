@@ -506,7 +506,6 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		if($templateid) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($templateid);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -584,7 +583,6 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		if($deliveryorder['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($deliveryorder['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 
@@ -738,7 +736,6 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		if($deliveryorder['templateid']) {
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($deliveryorder['templateid']);
-			if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 			$this->view->template = $template;
 		}
 

@@ -10,3 +10,5 @@
 !/logs/.gitkeep
 /session/*
 !/session/.gitkeep
+/templates/*
+!/templates/.gitkeep

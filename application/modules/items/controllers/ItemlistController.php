@@ -172,7 +172,6 @@ class Items_ItemlistController extends Zend_Controller_Action
 			if($itemlist['templateid']) {
 				$templateDb = new Application_Model_DbTable_Template();
 				$template = $templateDb->getTemplate($itemlist['templateid']);
-				if($template['filename']) $this->_helper->viewRenderer->setRender($template['filename']);
 				$this->view->template = $template;
 			}
 
