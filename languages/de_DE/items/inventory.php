@@ -1,5 +1,6 @@
 <?php return array(
 	//Inventory
+	'ITEMS_NEW_INVENTORY' => 'Neue Buchung',
 	'ITEMS_INVENTORY' => 'Buchungsverlauf',
 	'ITEMS_INVENTORY_ID' => 'Buchungsnr.',
 	'ITEMS_INVENTORY_DOCUMENT' => 'Beleg',
