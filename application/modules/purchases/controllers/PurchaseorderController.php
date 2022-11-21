@@ -493,21 +493,29 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($purchaseorder['currency'], 'USE_SYMBOL');
 
+		//Get positions
 		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
+			$pricerules = array();
+			$pricerulemaster = array();
 			foreach($positions as $position) {
-				$price = $position->price;
-				if($position->priceruleamount && $position->priceruleaction) {
-					if($position->priceruleaction == 'bypercent')
-						$price = $price*(100-$position->priceruleamount)/100;
-					elseif($position->priceruleaction == 'byfixed')
-						$price = ($price-$position->priceruleamount);
-					elseif($position->priceruleaction == 'topercent')
-						$price = $price*(100+$position->priceruleamount)/100;
-					elseif($position->priceruleaction == 'tofixed')
-						$price = ($price+$position->priceruleamount);
+				//Get price rules and properties
+				if(!$position->masterid) {
+					$pricerules[$position->id] = $this->_helper->PriceRule->getPriceRulePositions('purchases', 'purchaseorderpos', $position->id);
+					$pricerulemaster[$position->id] = $position->pricerulemaster;
 				}
+			}
+			foreach($positions as $position) {
+				//Use price rules
+				if($position->masterid && $pricerulemaster[$position->masterid] && isset($pricerules[$position->masterid])) {
+					$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->masterid], $position->price);
+				} elseif(!$position->masterid && isset($pricerules[$position->id])) {
+					$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->id], $position->price);
+				} else {
+					$price = $position->price;
+				}
+
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
 				$position->total = $currency->toCurrency($price*$position->quantity);
 				$position->price = $currency->toCurrency($price);

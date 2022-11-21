@@ -26,19 +26,27 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			$calculations['row']['subtotal'] = 0;
 			$calculations['row']['taxes'] = array();
 			$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+			$pricerulesHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
 			$currency = $currencyHelper->getCurrency();
+			$pricerules = array();
+			$pricerulemaster = array();
 			foreach($positions as $position) {
-				$price = $position->price;
-				if($position->priceruleamount && $position->priceruleaction) {
-					if($position->priceruleaction == 'bypercent')
-						$price = $price*(100-$position->priceruleamount)/100;
-					elseif($position->priceruleaction == 'byfixed')
-						$price = ($price-$position->priceruleamount);
-					elseif($position->priceruleaction == 'topercent')
-						$price = $price*(100+$position->priceruleamount)/100;
-					elseif($position->priceruleaction == 'tofixed')
-						$price = ($price+$position->priceruleamount);
+				//Get price rules and properties
+				if(!$position->masterid) {
+					$pricerules[$position->id] = $pricerulesHelper->getPriceRulePositions($module, $controller.'pos', $position->id);
+					$pricerulemaster[$position->id] = $position->pricerulemaster;
 				}
+			}
+			foreach($positions as $position) {
+				//Use price rules
+				if($position->masterid && $pricerulemaster[$position->masterid] && isset($pricerules[$position->masterid])) {
+					$price = $pricerulesHelper->usePriceRules($pricerules[$position->masterid], $position->price);
+				} elseif(!$position->masterid && isset($pricerules[$position->id])) {
+					$price = $pricerulesHelper->usePriceRules($pricerules[$position->id], $position->price);
+				} else {
+					$price = $position->price;
+				}
+
 				$calculations['row'][$position->id]['total'] = $price*$position->quantity;
 				$calculations['row']['subtotal'] += $calculations['row'][$position->id]['total'];
 

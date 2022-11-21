@@ -22,5 +22,6 @@
 	'POSITIONS_SUBTOTAL' => 'Nettobetrag',
 	'POSITIONS_TAXES' => 'Umsatzsteuer',
 	'POSITIONS_TOTAL' => 'Gesamtb.',
+	'POSITIONS_PRICE_RULE_MASTER' => 'Auf Optionen Anwenden',
 	'POSITIONS_NONE' => 'keine'
 );

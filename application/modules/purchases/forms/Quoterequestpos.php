@@ -70,6 +70,9 @@ class Purchases_Form_Quoterequestpos extends Zend_Form
 			->setRequired(true)
 			->addValidator('NotEmpty');
 
+		$form['pricerulemaster'] = new Zend_Form_Element_Checkbox('pricerulemaster');
+		$form['pricerulemaster']->setLabel('POSITIONS_PRICE_RULE_MASTER');
+
 		$form['quantity'] = new Zend_Form_Element_Text('quantity');
 		$form['quantity']->setLabel('POSITIONS_QUANTITY')
 			->setRequired(true)

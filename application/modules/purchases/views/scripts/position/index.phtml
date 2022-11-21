@@ -78,20 +78,6 @@
 						<td>
 							<table>
 								<tr>
-									<td class="priceruleamount">
-										<?php echo $position['form']->priceruleamount; ?>
-									</td>
-								</tr>
-								<tr>
-									<td class="priceruleaction">
-										<?php echo $position['form']->priceruleaction; ?>
-									</td>
-								</tr>
-							</table>
-						</td>
-						<td>
-							<table>
-								<tr>
 									<td class="quantity">
 										<?php echo $position['form']->quantity; ?>
 									</td>
@@ -99,6 +85,22 @@
 								<tr>
 									<td class="uom">
 										<?php echo $position['form']->uom; ?>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td>
+							<table>
+								<tr>
+									<td class="pricerules">
+										<div id="pricerulepos" class="multiformContainer" data-parentid="<?php echo $position['form']->getValue('id'); ?>" data-controller="<?php echo $this->parent['type']; ?>pos">
+											<?php echo $this->MultiForm('items', 'pricerulepos', $this->pricerules[$position['form']->getValue('id')], array('amount', 'action'), 'ITEMS_PRICE_RULES'); ?>
+										</div>
+									</td>
+								</tr>
+								<tr>
+									<td class="pricerulemaster">
+										<?php echo $position['form']->pricerulemaster; ?>
 									</td>
 								</tr>
 							</table>

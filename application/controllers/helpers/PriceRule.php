@@ -2,35 +2,63 @@
 
 class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Action_Helper_Abstract
 {
-	public function direct($contactid, $item, $data, $helper) {
+
+	public function getPriceRulePositions($module, $parent, $parentid) {
+		//Get price rule positions
+		$pricerulesDb = new Items_Model_DbTable_Pricerulepos();
+		$positions = $pricerulesDb->getPositions($module, $parent, $parentid);
+		return $positions;
+	}
+
+	public function usePriceRules($pricerules, $price) {
+		//Use price rules
+		foreach($pricerules as $pricerule) {
+			if($pricerule['amount'] && $pricerule['action']) {
+				if($pricerule['action'] == 'bypercent')
+					$price = $price*(100-$pricerule['amount'])/100;
+				elseif($pricerule['action'] == 'byfixed')
+					$price = ($price-$pricerule['amount']);
+				elseif($pricerule['action'] == 'topercent')
+					$price = $price*(100+$pricerule['amount'])/100;
+				elseif($pricerule['action'] == 'tofixed')
+					$price = ($price+$pricerule['amount']);
+			}
+		}
+		return $price;
+	}
+
+	public function getPriceRules($item, $contactid = 0) {
 		//Get contact
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($contactid);
+		if($contactid) {
+			$contactDb = new Contacts_Model_DbTable_Contact();
+			$contact = $contactDb->getContactWithID($contactid);
+		}
 
 		$formula = array();
+		$pricerules = array();
 		$priceruleamount = 0;
 		$price = $item['price'];
 		$formula['bypercent'] = 'return $price*(100-$priceruleamount)/100;';
 		$formula['byfixed'] = 'return $price-$priceruleamount;';
 		$formula['topercent'] = 'return $price*(100+$priceruleamount)/100;';
 		$formula['tofixed'] = 'return $price+$priceruleamount;';
-		$data['priceruleamount'] = 0;
-		$data['priceruleaction'] = '';
+		//$data['priceruleamount'] = 0;
+		//$data['priceruleaction'] = '';
 		//Discard other price rules if price rule in contact is defined
-		if($contact['priceruleamount'] && $contact['priceruleaction']) {
-			$data['priceruleamount'] = $contact['priceruleamount'];
-			$data['priceruleaction'] = $contact['priceruleaction'];
+		if($contactid && $contact['priceruleamount'] && $contact['priceruleaction']) {
+			//$data['priceruleamount'] = $contact['priceruleamount'];
+			//$data['priceruleaction'] = $contact['priceruleaction'];
 		//Check other price rules if no price rule in contact is defined
 		} else {
 			$options = array();
 			if($item['type']) $options['itemtype'] = $item['type'];
 			if($item['manufacturerid']) $options['itemmanufacturer'] = $item['manufacturerid'];
 
+			//Get price rules
 			$priceruleDb = new Items_Model_DbTable_Pricerule();
 			$pricerulesObject = $priceruleDb->getPricerules($options);
 
 			//Select the price rules which are applicable to the item
-			$pricerules = array();
 			if(count($pricerulesObject)) {
 				$categoryDb = new Application_Model_DbTable_Category();
 				$categoriesItem = $categoryDb->getCategories('item');
@@ -42,13 +70,14 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 					} elseif($item['catid'] && ($item['catid'] == $pricerule->itemcatid)) {
 						$pricerules[] = $pricerule;
 					} elseif($item['catid'] && $pricerule->itemsubcat) {
-						$isParent = $helper->Category->isParent($item['catid'], $pricerule->itemcatid, $categoriesItem);
+						$categoryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Category');
+						$isParent = $categoryHelper->isParent($item['catid'], $pricerule->itemcatid, $categoriesItem);
 						if($isParent) $pricerules[] = $pricerule;
 					}
 				}
 			}
 			//Remove price rules which are not applicable to the contact
-			if(count($pricerules)) {
+			if($contactid && count($pricerules)) {
 				$categoriesContact = $categoryDb->getCategories('contact');
 				foreach($pricerules as $id => $pricerule) {
 					if($pricerule->contactcatid && ($contact['catid'] == 0)) {
@@ -56,7 +85,8 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 					} elseif($pricerule->contactcatid == $contact['catid']) {
 						//Contact category is the same keep the rule
 					} elseif($contact['catid'] && $pricerule->contactsubcat) {
-						$isParent = $helper->Category->isParent($contact['catid'], $pricerule->contactcatid, $categoriesContact);
+						$categoryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Category');
+						$isParent = $categoryHelper->isParent($contact['catid'], $pricerule->contactcatid, $categoriesContact);
 						if(!$isParent) unset($pricerules[$id]);
 					}
 				}
@@ -91,27 +121,35 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 					}
 				}
 			}
+		}
+		return $pricerules;
+	}
 
-			//Apply the price rules to the position
-			if(count($pricerules)) {
-				foreach($pricerules as $pricerule) {
-					if($pricerule->amount && $pricerule->action) {
-						$priceruleamount = $pricerule->amount;
-						$price = eval($formula[$pricerule->action]);
-						$price = round($price, 2);
-						if($price < $item['price']) {
-							$data['priceruleamount'] = $item['price'] - $price;
-							$data['priceruleaction'] = 'byfixed';
-						} elseif($price > $item['price']) {
-							$data['priceruleamount'] = $price - $item['price'];
-							$data['priceruleaction'] = 'tofixed';
-						}
-						//Stop the rule if subsequent
-						if($pricerule->subsequent) break;
-					}
+	public function applyPriceRules($module, $controller, $pricerules, $parentid) {
+		//Apply the price rules to the position
+		if(count($pricerules)) {
+			$positionDb = new Items_Model_DbTable_Pricerulepos();
+			foreach($pricerules as $pricerule) {
+				if($pricerule->amount && $pricerule->action) {
+					$positionDataBefore = $positionDb->getPositions($module, $controller, $parentid, 0);
+					$latest = end($positionDataBefore);
+					$positionDb->addPosition(array('module' => $module, 'controller' => $controller, 'parentid' => $parentid, 'amount' => $pricerule->amount, 'action' => $pricerule->action, 'masterid' => 0, 'possetid' => 0, 'ordering' => $latest['ordering']+1));
+
+					/*$priceruleamount = $pricerule->amount;
+					$price = eval($formula[$pricerule->action]);
+					$price = round($price, 2);
+					if($price < $item['price']) {
+						$data['priceruleamount'] = $item['price'] - $price;
+						$data['priceruleaction'] = 'byfixed';
+					} elseif($price > $item['price']) {
+						$data['priceruleamount'] = $price - $item['price'];
+						$data['priceruleaction'] = 'tofixed';
+					}*/
+
+					//Stop the rule if subsequent
+					if($pricerule->subsequent) break;
 				}
 			}
 		}
-		return $data;
 	}
 }

@@ -57,10 +57,6 @@ class Sales_PositionController extends Zend_Controller_Action
 		$uomDb = new Application_Model_DbTable_Uom();
 		$uoms = $uomDb->getUoms();
 
-		//Get price rule actions
-		$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
-		$priceruleactions = $priceruleactionDb->getPriceruleactions();
-
 		//Get tax rates
 		$taxrateDb = new Application_Model_DbTable_Taxrate();
 		$taxrates = $taxrateDb->getTaxrates();
@@ -96,21 +92,27 @@ class Sales_PositionController extends Zend_Controller_Action
 		$forms = array();
 		$childs = array();
 		$options = array();
+		$pricerules = array();
+		$pricerulemaster = array();
 		$optionsDb = new Items_Model_DbTable_Itemopt();
+		foreach($positions as $position) {
+			//Get price rules and properties
+			if(!$position->masterid) {
+				$pricerules[$position->id] = $this->_helper->PriceRule->getPriceRulePositions('sales', $params['parent'].$params['type'], $position->id);
+				$pricerulemaster[$position->id] = $position->pricerulemaster;
+			}
+		}
 		foreach($positions as $position) {
 			if(isset($parent['taxfree']) && !$parent['taxfree'] && array_search($position->taxrate, $taxrates))
 				$taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
 
-			$price = $position->price;
-			if($position->priceruleamount && $position->priceruleaction) {
-				if($position->priceruleaction == 'bypercent')
-					$price = $price*(100-$position->priceruleamount)/100;
-				elseif($position->priceruleaction == 'byfixed')
-					$price = ($price-$position->priceruleamount);
-				elseif($position->priceruleaction == 'topercent')
-					$price = $price*(100+$position->priceruleamount)/100;
-				elseif($position->priceruleaction == 'tofixed')
-					$price = ($price+$position->priceruleamount);
+			//Use price rules
+			if($position->masterid && $pricerulemaster[$position->masterid] && isset($pricerules[$position->masterid])) {
+				$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->masterid], $position->price);
+			} elseif(!$position->masterid && isset($pricerules[$position->id])) {
+				$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->id], $position->price);
+			} else {
+				$price = $position->price;
 			}
 
 			// Set position total with currency symbol
@@ -121,7 +123,6 @@ class Sales_PositionController extends Zend_Controller_Action
 			$currencyHelper->setCurrency($currency, $position->currency, 'NO_SYMBOL');
 			$position->price = $currency->toCurrency($position->price);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-			$position->priceruleamount = $currency->toCurrency($position->priceruleamount);
 
 			$formClass = 'Sales_Form_'.ucfirst($params['parent'].$params['type']);
 			$form = new $formClass();
@@ -131,7 +132,6 @@ class Sales_PositionController extends Zend_Controller_Action
 				$uom = array_search($position->uom, $uoms);
 				if($uom) $form->uom->setValue($uom);
 			}
-			$form->priceruleaction->addMultiOptions($priceruleactions);
 			$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], $position->{$params['type'].'setid'}));
 			$form->taxrate->setValue(array_search($position->taxrate, $taxrates));
 			foreach($taxrates as $id => $value)
@@ -146,6 +146,14 @@ class Sales_PositionController extends Zend_Controller_Action
 			//Get options
 			if($position->itemid) {
 				$options[$position->id] = $optionsDb->getPositions($position->itemid);
+			}
+		}
+		foreach($positions as $position) {
+			// Set price rules without currency symbol
+			if(isset($pricerules[$position->id])) {
+				foreach($pricerules[$position->id] as $key => $value) {
+					$pricerules[$position->id][$key]['amount'] = $value['amount'] = $currency->toCurrency($value['amount']);
+				}
 			}
 		}
 
@@ -164,6 +172,7 @@ class Sales_PositionController extends Zend_Controller_Action
 		$this->view->childs = $childs;
 		$this->view->parent = $parent;
 		$this->view->options = $options;
+		$this->view->pricerules = $pricerules;
 		$this->view->toolbar = new Sales_Form_ToolbarPositions();
 		$this->view->toolbarPositions = new Sales_Form_ToolbarPositions();
 	}
@@ -196,9 +205,6 @@ class Sales_PositionController extends Zend_Controller_Action
 				$parentDb = new $parentClass();
 				$parentMethod = 'get'.$params['parent'];
 				$parent = $parentDb->$parentMethod($params['parentid']);
-
-				//Check price rules
-				$data = $this->_helper->PriceRule($parent['contactid'], $item, $data, $this->_helper);
 
 				//Check currency
 				if($parent['currency'] == $item['currency']) {
@@ -234,7 +240,11 @@ class Sales_PositionController extends Zend_Controller_Action
 				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid']) + 1;
 
 				$positionsDb = new $positionClass();
-				$positionsDb->addPosition($data);
+				$positionid = $positionsDb->addPosition($data);
+
+				//Apply price rules
+				$pricerules = $this->_helper->PriceRule->getPriceRules($item, $parent['contactid']);
+				$this->_helper->PriceRule->applyPriceRules('sales', $params['parent'].$params['type'], $pricerules, $positionid);
 
 				//Calculate
 				$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
@@ -350,7 +360,7 @@ class Sales_PositionController extends Zend_Controller_Action
 				$position = new $modelClass();
 				$position->updatePosition($params['id'], $data);
 
-				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
+				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'pricerulemaster')) {
 					$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
 					echo Zend_Json::encode($calculations['locale']);
 				}
