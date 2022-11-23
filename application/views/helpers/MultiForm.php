@@ -26,6 +26,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 					<?php $form->$element->setAttrib('data-id', $child['id']); ?>
 					<?php $form->$element->setAttrib('data-ordering', $child['ordering']); ?>
 					<?php $form->$element->setAttrib('data-controller', $controller); ?>
+					<?php $form->$element->setAttrib('data-module', $module); ?>
 					<?php $form->$element->setValue($child[$element]); ?>
 					<?php echo $form->getElement($element); ?>
 					<?php if($element == 'email') : ?>
@@ -35,7 +36,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 							<?php echo $this->view->Button('email', 'location.href='."'".'mailto:'.$child['email']."'", '', '', 'display:none'); ?>
 						<?php endif; ?>
 					<?php endif; ?>
-					<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\');', '', '', ''); ?>
+					<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
 				<?php //Create forms for address ?>
 				<?php elseif(is_array($elements[0])) : ?>
 					<div class="field-group">
@@ -52,6 +53,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 										<?php $form->$field->setAttrib('data-id', $child['id']); ?>
 										<?php $form->$field->setAttrib('data-ordering', $child['ordering']); ?>
 										<?php $form->$field->setAttrib('data-controller', $controller); ?>
+										<?php $form->$field->setAttrib('data-module', $module); ?>
 										<?php $form->$field->setValue($child[$field]); ?>
 										<?php if($field == 'country') $form->country->addMultiOptions($this->view->options['countries']); ?>
 										<?php echo $form->getElement($field); ?>
@@ -63,6 +65,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 								<?php $form->$element->setAttrib('data-id', $child['id']); ?>
 								<?php $form->$element->setAttrib('data-ordering', $child['ordering']); ?>
 								<?php $form->$element->setAttrib('data-controller', $controller); ?>
+								<?php $form->$element->setAttrib('data-module', $module); ?>
 								<?php $form->$element->setValue($child[$element]); ?>
 								<?php echo $form->getElement($element); ?>
 							<?php endif; ?>
@@ -70,7 +73,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 						<?php if(($controller == 'address') && isset($element['label'])) : ?>
 							<dt id="<?php echo $controller; ?>-label"></dt>
 						<?php endif; ?>
-						<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\');', '', '', ''); ?>
+						<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
 					</div>
 				<?php elseif(is_array($elements)) : ?>
 					<div class="sub-group">
@@ -79,10 +82,11 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 							<?php $form->$element->setAttrib('data-id', $child['id']); ?>
 							<?php $form->$element->setAttrib('data-ordering', $child['ordering']); ?>
 							<?php $form->$element->setAttrib('data-controller', $controller); ?>
+							<?php $form->$element->setAttrib('data-module', $module); ?>
 							<?php $form->$element->setValue($child[$element]); ?>
 							<?php echo $form->getElement($element); ?>
 						<?php endforeach; ?>
-						<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\');', '', '', ''); ?>
+						<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
 					</div>
 				<?php endif; ?>
 			</div>
@@ -94,7 +98,11 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 			<dt id="<?php echo $controller; ?>-label"></dt>
 		<?php endif; ?>
 		<?php if((isset($label) || is_array($elements[0])) && ($this->view->action != 'add')) : ?>
-			<?php echo $this->view->Button('add', 'add({\'controller\':\''.$controller.'\',\'action\':\'add\',\'type\':\''.$controller.'\'});', '', '', ''); ?>
+			<?php //echo $this->view->Button('add', 'add({\'module\':\''.$module.'\',\'controller\':\''.$controller.'\',\'action\':\'add\',\'type\':\''.$controller.'\'});', '', '', ''); ?>
+			<?php $params = array(); ?>
+			<?php $params['module'] = $module; ?>
+			<?php $params['controller'] = $controller; ?>
+			<?php echo $this->view->Button('addMulti add', $onclick = '', $title = '', $value = '', $style = '', $rel = '', $id = '', $params); ?>
 		<?php endif; ?>
 		<?php if(!isset($data['id'])) : ?>
 			</div>

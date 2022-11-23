@@ -75,10 +75,10 @@ class Contacts_EmailController extends Zend_Controller_Action
 			$data = $request->getPost();
 			if($form->isValid($data) || true) {
 				$emailDb = new Contacts_Model_DbTable_Email();
-				$emailDataBefore = $emailDb->getEmail($data['contactid']);
+				$emailDataBefore = $emailDb->getEmail($data['parentid']);
 				$latest = end($emailDataBefore);
-				$emailDb->addEmail(array('contactid' => $data['contactid'], 'ordering' => $latest['ordering']+1));
-				$emailDataAfter = $emailDb->getEmail($data['contactid']);
+				$emailDb->addEmail(array('contactid' => $data['parentid'], 'ordering' => $latest['ordering']+1));
+				$emailDataAfter = $emailDb->getEmail($data['parentid']);
 				$email = end($emailDataAfter);
 				echo $this->view->MultiForm('contacts', 'email', $email);
 			}

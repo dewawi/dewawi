@@ -13,13 +13,13 @@ class Contacts_BankaccountController extends Zend_Controller_Action
 
 		if($request->isPost()) {
 			$data = $request->getPost();
-			if($data['contactid']) {
+			if($data['parentid']) {
 				if($form->isValid($data) || true) {
 					$bankAccountDb = new Contacts_Model_DbTable_Bankaccount();
-					$bankAccountDataBefore = $bankAccountDb->getBankaccount($data['contactid']);
+					$bankAccountDataBefore = $bankAccountDb->getBankaccount($data['parentid']);
 					$latest = end($bankAccountDataBefore);
-					$bankAccountDb->addBankaccount(array('contactid' => $data['contactid'], 'ordering' => $latest['ordering']+1));
-					$bankAccountDataAfter = $bankAccountDb->getBankaccount($data['contactid']);
+					$bankAccountDb->addBankaccount(array('contactid' => $data['parentid'], 'ordering' => $latest['ordering']+1));
+					$bankAccountDataAfter = $bankAccountDb->getBankaccount($data['parentid']);
 					$bankAccount = end($bankAccountDataAfter);
 					echo $this->view->MultiForm('contacts', 'bankaccount', $bankAccount, array('iban', 'bic'));
 				}

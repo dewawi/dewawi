@@ -34,20 +34,30 @@ echo $this->FileManager();
 						<?php echo $this->form->getElement('name2'); ?>
 						<?php echo $this->form->getElement('department'); ?>
 						<h4>Adressen</h4>
-						<?php echo $this->MultiForm('contacts', 'address', $this->address, array(
+						<div id="address" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="address" data-type="billing">
+							<?php echo $this->MultiForm('contacts', 'address', $this->address, array(
 																			//array('label' => 'CONTACTS_NAME', 'field' => 'name1'),
 																			array('label' => 'CONTACTS_STREET', 'field' => 'street'),
 																			array('label' => 'CONTACTS_POSTCODE_CITY', 'fields' => array('postcode', 'city')),
 																			array('label' => 'CONTACTS_COUNTRY_ADDRESS_TYPE', 'fields' => array('country', 'type'))
 																			)); ?>
+						</div>
 						<h4>Kontaktdetails</h4>
-						<?php echo $this->MultiForm('contacts', 'phone', $this->phone, array('phone', 'type'), 'CONTACTS_PHONE'); ?>
+						<div id="phone" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="contact" data-type="phone">
+							<?php echo $this->MultiForm('contacts', 'phone', $this->phone, array('phone', 'type'), 'CONTACTS_PHONE'); ?>
+						</div>
 						<hr>
-						<?php echo $this->MultiForm('contacts', 'email', $this->email, '', 'CONTACTS_EMAIL'); ?>
+						<div id="email" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="email">
+							<?php echo $this->MultiForm('contacts', 'email', $this->email, '', 'CONTACTS_EMAIL'); ?>
+						</div>
 						<hr>
-						<?php echo $this->MultiForm('contacts', 'internet', $this->internet, 'internet', 'CONTACTS_INTERNET'); ?>
+						<div id="internet" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="internet">
+							<?php echo $this->MultiForm('contacts', 'internet', $this->internet, 'internet', 'CONTACTS_INTERNET'); ?>
+						</div>
 						<hr>
-						<?php echo $this->MultiForm('contacts', 'tag', $this->tags, 'tag', 'TAGS'); ?>
+						<div id="tag" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="tag">
+							<?php echo $this->MultiForm('contacts', 'tag', $this->tags, 'tag', 'TAGS'); ?>
+						</div>
 					</dl>
 				</div>
 				<div class="col-sm-12 col-lg-6">

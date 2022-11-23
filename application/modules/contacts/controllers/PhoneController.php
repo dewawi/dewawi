@@ -13,13 +13,13 @@ class Contacts_PhoneController extends Zend_Controller_Action
 
 		if($request->isPost()) {
 			$data = $request->getPost();
-			if($data['contactid']) {
+			if($data['parentid']) {
 				if($form->isValid($data) || true) {
 					$phoneDb = new Contacts_Model_DbTable_Phone();
-					$phoneDataBefore = $phoneDb->getPhone($data['contactid']);
+					$phoneDataBefore = $phoneDb->getPhone($data['parentid']);
 					$latest = end($phoneDataBefore);
-					$phoneDb->addPhone(array('contactid' => $data['contactid'], 'type' => $data['type'], 'ordering' => $latest['ordering']+1));
-					$phoneDataAfter = $phoneDb->getPhone($data['contactid']);
+					$phoneDb->addPhone(array('contactid' => $data['parentid'], 'type' => $data['type'], 'ordering' => $latest['ordering']+1));
+					$phoneDataAfter = $phoneDb->getPhone($data['parentid']);
 					$phone = end($phoneDataAfter);
 					echo $this->view->MultiForm('contacts', 'phone', $phone, array('phone', 'type'));
 				}

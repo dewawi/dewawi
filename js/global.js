@@ -110,7 +110,18 @@ $(document).ready(function(){
 			params['id'] = $(this).closest('tr.wrap').find('input.id').val();
 			params['parentid'] = id;
 			params['element'] = this.name;
-			data[this.name] = this.value;
+			if(typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
+			if(typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;
+			if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
+			if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
+			if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
+			var value = this.value;
+			//If the element is a checkbox
+			if($(this).is(':checkbox')) {
+				if($(this).is(':checked')) value = 1;
+				else value = 0;
+			}
+			data[this.name] = value;
 			var parent = $(this).closest('div.positionsContainer').data('parent');
 			var type = $(this).closest('div.positionsContainer').data('type');
 			if(this.name == 'ordering') {
@@ -535,6 +546,25 @@ $(document).ready(function(){
 					var url = baseUrl+'/'+module+'/'+controller+'/add';
 					if($('#catid').val() > 0) url += '/catid/'+$('#catid').val();
 					setLocation(url);
+				} else if(className == 'addMulti') {
+					var data = {};
+					var params = {};
+					data['action'] = action;
+					data['module'] = module;
+					if($(this).closest('div.multiformContainer').data('controller')) {
+						data['controller'] = $(this).closest('div.multiformContainer').data('controller');
+					} else {
+						data['controller'] = controller;
+					}
+					if($(this).closest('div.multiformContainer').data('type'))
+						data['type'] = $(this).closest('div.multiformContainer').data('type');
+					data['parentid'] = $(this).closest('div.multiformContainer').data('parentid');
+					if(typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
+					if(typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;
+					if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
+					if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
+					if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
+					add(data, params);
 				} else if(className == 'save') {
 					save();
 				} else if(className == 'addPosition') {
@@ -834,7 +864,8 @@ function save() {
 //Add
 function add(data, params) {
 	params = params || null;
-	//console.log(params);
+	console.log(data);
+	console.log(params);
 	if(params) {
 		var url = baseUrl;
 		params = params || null;
@@ -854,13 +885,17 @@ function add(data, params) {
 			success: function(json){
 				response = json;
 				isDirty = false;
+				//Append new form from response
+				$('div#'+params['controller']+' button.add').before(json);
+				//Focus on new element
+				$('div#'+params['controller']+' div:last input:first').focus().select();
 			}
 		});
 		return response;
 	} else {
-		//console.log(data);
 		data[controller+'id'] = id;
-		var url = baseUrl+'/'+module;
+		if(data['module']) url = baseUrl+'/'+data['module'];
+		else var url = baseUrl+'/'+module;
 		if(data['controller']) url += '/'+data['controller'];
 		else url += '/'+controller;
 		if(data['id']) url += '/add/id/'+data['id'];
@@ -876,7 +911,7 @@ function add(data, params) {
 				$('div#'+data['controller']+' button.add').before(response);
 				//Focus on new element
 				$('div#'+data['controller']+' div:last input:first').focus().select();
-								//console.log(response);
+				//console.log(response);
 				if(action == 'index') search();
 			}
 		});
@@ -1150,9 +1185,13 @@ function applyPosition(parent, type, itemId, setid) {
 
 //Edit position
 function editPosition(parent, type, data, params) {
-	var url = baseUrl+'/'+module+'/position';
-	if(params['id']) url += '/edit/id/'+params['id'];
-	if(params['parentid']) url += '/parent/'+parent+'/type/'+type+'/parentid/'+params['parentid'];
+	if(params['controller'] == 'pricerulepos') {
+		var url = baseUrl+'/'+params['module']+'/'+params['controller']+'/edit/id/'+params['id'];
+	} else {
+		var url = baseUrl+'/'+module+'/position';
+		if(params['id']) url += '/edit/id/'+params['id'];
+		if(params['parentid']) url += '/parent/'+parent+'/type/'+type+'/parentid/'+params['parentid'];
+	}
 	$.ajax({
 		type: 'POST',
 		url: url,
@@ -1167,8 +1206,8 @@ function editPosition(parent, type, data, params) {
 								$.each(response['taxes'], function(key, val) {
 										if(key != 'total') $('td[data-rate="'+key+'"]').text(val);
 								});
-			} else if(params['element'] == 'taxrate') {
-				getPositions(parent, type, $(document).height());
+			} else if((params['element'] == 'taxrate') || (params['controller'] == 'pricerulepos')) {
+				getPositions(parent, type, window.pageYOffset);
 			}
 		}
 	});

@@ -15,10 +15,10 @@ class Contacts_InternetController extends Zend_Controller_Action
 			$data = $request->getPost();
 			if($form->isValid($data) || true) {
 				$internetDb = new Contacts_Model_DbTable_Internet();
-				$internetDataBefore = $internetDb->getInternet($data['contactid']);
+				$internetDataBefore = $internetDb->getInternet($data['parentid']);
 				$latest = end($internetDataBefore);
-				$internetDb->addInternet(array('contactid' => $data['contactid'], 'ordering' => $latest['ordering']+1));
-				$internetDataAfter = $internetDb->getInternet($data['contactid']);
+				$internetDb->addInternet(array('contactid' => $data['parentid'], 'ordering' => $latest['ordering']+1));
+				$internetDataAfter = $internetDb->getInternet($data['parentid']);
 				$internet = end($internetDataAfter);
 				echo $this->view->MultiForm('contacts', 'internet', $internet);
 			}
