@@ -75,7 +75,7 @@ class Contacts_TagController extends Zend_Controller_Action
 			$data = $request->getPost();
 			if($form->isValid($data) || true) {
 				$tagEntityDb = new Application_Model_DbTable_Tagentity();
-				$tagEntityDataBefore = $tagEntityDb->getTagEntities('contacts', 'contact', $data['contactid']);
+				$tagEntityDataBefore = $tagEntityDb->getTagEntities('contacts', 'contact', $data['parentid']);
 				$latest = end($tagEntityDataBefore);
 				if(isset($data['tagid']) && $data['tagid']) {
 					header('Content-type: application/json');
@@ -86,14 +86,14 @@ class Contacts_TagController extends Zend_Controller_Action
 					if(array_search($data['tagid'], $existingTags) !== false) {
 						echo Zend_Json::encode(array('message' => $this->view->translate('TAG_ALREADY_EXISTS')));
 					} else {
-						$tagEntityDb->addTagEntity(array('tagid' => $data['tagid'], 'entityid' => $data['contactid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latest['ordering']+1));
-						$tagEntityDataAfter = $tagEntityDb->getTagEntities('contacts', 'contact', $data['contactid']);
+						$tagEntityDb->addTagEntity(array('tagid' => $data['tagid'], 'entityid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latest['ordering']+1));
+						$tagEntityDataAfter = $tagEntityDb->getTagEntities('contacts', 'contact', $data['parentid']);
 						$tagEntity = end($tagEntityDataAfter);
 						echo Zend_Json::encode($tagEntity);
 					}
 				} else {
-					$tagEntityDb->addTagEntity(array('tagid' => 0, 'entityid' => $data['contactid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latest['ordering']+1));
-					$tagEntityDataAfter = $tagEntityDb->getTagEntities('contacts', 'contact', $data['contactid']);
+					$tagEntityDb->addTagEntity(array('tagid' => 0, 'entityid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latest['ordering']+1));
+					$tagEntityDataAfter = $tagEntityDb->getTagEntities('contacts', 'contact', $data['parentid']);
 					$tagEntity = end($tagEntityDataAfter);
 					echo $this->view->MultiForm('contacts', 'tag', $tagEntity);
 				}
