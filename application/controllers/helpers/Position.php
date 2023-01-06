@@ -42,6 +42,20 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 				unset($dataPosition['id']);
 				$positionId = $positionsDb->addPosition($dataPosition);
 				$positionIndex[$position->id] = $positionId;
+
+				//Copy price rules
+				$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
+				$pricerules = $priceRuleHelper->getPriceRulePositions($module, $target.'pos', $position->id);
+				foreach($pricerules as $pricerule) {
+					$dataPricerule = $pricerule;
+					$dataPricerule['parentid'] = $positionId;
+					$dataPricerule['created'] = $created;
+					$dataPricerule['modified'] = NULL;
+					$dataPricerule['modifiedby'] = 0;
+					unset($dataPricerule['id']);
+					$priceRuleDb = new Items_Model_DbTable_Pricerulepos();
+					$priceRuleDb->addPosition($dataPricerule);
+				}
 			}
 		}
 
