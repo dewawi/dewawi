@@ -108,8 +108,9 @@ echo $this->FileManager();
 					<th style="width:22%"><?php echo $this->translate('POSITIONS_TITLE'); ?></th>
 					<th style="width:55%"><?php echo $this->translate('POSITIONS_DESCRIPTION'); ?></th>
 					<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
-					<th style="width:2%"><?php echo $this->translate('POSITIONS_PRICE_RULE_AMOUNT'); ?></th>
+					<th style="width:8%"><?php echo $this->translate('POSITIONS_PRICE_RULES'); ?></th>
 					<th style="width:2%"><?php echo $this->translate('POSITIONS_QUANTITY'); ?></th>
+					<th style="width:2%"><?php echo $this->translate('POSITIONS_TOTAL'); ?></th>
 					<th style="width:2%"><?php echo $this->translate('POSITIONS_UOM'); ?></th>
 					</tr>
 					</thead>
@@ -121,13 +122,22 @@ echo $this->FileManager();
 						<td id="title"><span><?php echo $position['title']; ?></span></td>
 						<td id="description"><span><?php echo str_replace("\n", "<br>", $position['description']); ?></span></td>
 						<td id="price"><span><?php echo $position['price']; ?></span></td>
-						<td id="price">
-							<span>
-								<?php echo $position['priceruleamount']; ?><br>
-								<?php if($position['priceruleaction']) echo $this->translate($this->priceruleactions[$position['priceruleaction']]); ?>
-							</span>
+						<td id="pricerules">
+							<?php if(isset($this->pricerules[$position['id']])) { ?>
+								<table>
+									<?php foreach ($this->pricerules[$position['id']] as $pricerule) { ?>
+										<tr>
+											<td class="action">
+												<?php if($pricerule['action']) echo $this->translate($this->priceruleactions[$pricerule['action']]); ?>
+											</td>
+											<td class="amount"><span><?php echo $pricerule['amount']; ?></span></td>
+										</tr>
+									<?php } ?>
+								</table>
+							<?php } ?>
 						</td>
 						<td id="quantity"><span><?php echo $position['quantity']; ?></span></td>
+						<td id="total"><span><?php echo $position['total']; ?></span></td>
 						<td id="uom"><span><?php echo $position['uom']; ?></span></td>
 						</tr>
 						<?php ++$i; ?>

@@ -282,6 +282,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$quote = $quoteDb->getQuote($id);
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID($quote['contactid']);
 
@@ -292,10 +293,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quote['currency'], 'USE_SYMBOL');
 
-		//Get price rule actions
-		$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
-		$priceruleactions = $priceruleactionDb->getPriceruleactions();
-
 		//Convert numbers to the display format
 		$quote['taxes'] = $currency->toCurrency($quote['taxes']);
 		$quote['subtotal'] = $currency->toCurrency($quote['subtotal']);
@@ -303,10 +300,41 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 		$positionsDb = new Sales_Model_DbTable_Quotepos();
 		$positions = $positionsDb->getPositions($id);
-		foreach($positions as $position) {
-			$position->description = str_replace("\n", '<br>', $position->description);
-			$position->price = $currency->toCurrency($position->price);
-			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
+		if(count($positions)) {
+			$pricerules = array();
+			$pricerulemaster = array();
+			foreach($positions as $position) {
+				//Get price rules and properties
+				if(!$position->masterid) {
+					$pricerules[$position->id] = $this->_helper->PriceRule->getPriceRulePositions('sales', 'quotepos', $position->id);
+					$pricerulemaster[$position->id] = $position->pricerulemaster;
+				}
+			}
+			foreach($positions as $position) {
+				//Use price rules
+				if($position->masterid && $pricerulemaster[$position->masterid] && isset($pricerules[$position->masterid])) {
+					$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->masterid], $position->price);
+				} elseif(!$position->masterid && isset($pricerules[$position->id])) {
+					$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->id], $position->price);
+				} else {
+					$price = $position->price;
+				}
+				$position->description = str_replace("\n", '<br>', $position->description);
+				$position->total = $currency->toCurrency($price*$position->quantity);
+				$position->price = $currency->toCurrency($position->price);
+				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
+				if(isset($pricerules[$position->id])) {
+					foreach($pricerules[$position->id] as $id => $pricerule) {
+						$pricerules[$position->id][$id]['amount'] = $currency->toCurrency($pricerule['amount']);
+					}
+				}
+			}
+			$this->view->pricerules = $pricerules;
+
+			//Get price rule actions
+			$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
+			$priceruleactions = $priceruleactionDb->getPriceruleactions();
+			$this->view->priceruleactions = $priceruleactions;
 		}
 
 		$toolbar = new Sales_Form_Toolbar();
@@ -358,7 +386,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->view->quote = $quote;
 		$this->view->contact = $contact;
 		$this->view->positions = $positions;
-		$this->view->priceruleactions = $priceruleactions;
 		$this->view->emailForm = $emailForm;
 		$this->view->contactUrl = $contactUrl;
 		$this->view->documentUrl = $documentUrl;
