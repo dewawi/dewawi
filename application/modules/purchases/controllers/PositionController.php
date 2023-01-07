@@ -237,7 +237,7 @@ class Purchases_PositionController extends Zend_Controller_Action
 				} else {
 					$data['uom'] = '';
 				}
-				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['setid']) + 1;
+				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid']) + 1;
 
 				$positionsDb = new $positionClass();
 				$positionid = $positionsDb->addPosition($data);
