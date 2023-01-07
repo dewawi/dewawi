@@ -27,6 +27,32 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 		return $price;
 	}
 
+	public function usePriceRulesOnPositions($positions, $module, $parent) {
+		//Use price rules on all positions
+		$price = array();
+		$price['rules'] = array();
+		$price['master'] = array();
+		$price['calculated'] = array();
+		foreach($positions as $position) {
+			//Get price rules and properties
+			if(!$position->masterid) {
+				$price['rules'][$position->id] = $this->getPriceRulePositions($module, $parent, $position->id);
+				$price['master'][$position->id] = $position->pricerulemaster;
+			}
+		}
+		foreach($positions as $position) {
+			//Use price rules
+			if($position->masterid && $price['master'][$position->masterid] && isset($price['rules'][$position->masterid])) {
+				$price['calculated'][$position->id] = $this->usePriceRules($price['rules'][$position->masterid], $position->price);
+			} elseif(!$position->masterid && isset($price['rules'][$position->id])) {
+				$price['calculated'][$position->id] = $this->usePriceRules($price['rules'][$position->id], $position->price);
+			} else {
+				$price['calculated'][$position->id] = $position->price;
+			}
+		}
+		return $price;
+	}
+
 	public function getPriceRules($item, $contactid = 0) {
 		//Get contact
 		if($contactid) {
