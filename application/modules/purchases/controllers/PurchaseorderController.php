@@ -311,35 +311,20 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
-			$pricerules = array();
-			$pricerulemaster = array();
+			//Use price rules on all positions
+			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'purchases', 'purchaseorderpos');
 			foreach($positions as $position) {
-				//Get price rules and properties
-				if(!$position->masterid) {
-					$pricerules[$position->id] = $this->_helper->PriceRule->getPriceRulePositions('purchases', 'purchaseorderpos', $position->id);
-					$pricerulemaster[$position->id] = $position->pricerulemaster;
-				}
-			}
-			foreach($positions as $position) {
-				//Use price rules
-				if($position->masterid && $pricerulemaster[$position->masterid] && isset($pricerules[$position->masterid])) {
-					$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->masterid], $position->price);
-				} elseif(!$position->masterid && isset($pricerules[$position->id])) {
-					$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->id], $position->price);
-				} else {
-					$price = $position->price;
-				}
 				$position->description = str_replace("\n", '<br>', $position->description);
-				$position->total = $currency->toCurrency($price*$position->quantity);
+				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
 				$position->price = $currency->toCurrency($position->price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-				if(isset($pricerules[$position->id])) {
-					foreach($pricerules[$position->id] as $id => $pricerule) {
-						$pricerules[$position->id][$id]['amount'] = $currency->toCurrency($pricerule['amount']);
+				if(isset($price['rules'][$position->id])) {
+					foreach($price['rules'][$position->id] as $id => $pricerule) {
+						$price['rules'][$position->id][$id]['amount'] = $currency->toCurrency($pricerule['amount']);
 					}
 				}
 			}
-			$this->view->pricerules = $pricerules;
+			$this->view->pricerules = $price['rules'];
 
 			//Get price rule actions
 			$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
@@ -528,28 +513,14 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
-			$pricerules = array();
-			$pricerulemaster = array();
-			foreach($positions as $position) {
-				//Get price rules and properties
-				if(!$position->masterid) {
-					$pricerules[$position->id] = $this->_helper->PriceRule->getPriceRulePositions('purchases', 'purchaseorderpos', $position->id);
-					$pricerulemaster[$position->id] = $position->pricerulemaster;
-				}
-			}
-			foreach($positions as $position) {
-				//Use price rules
-				if($position->masterid && $pricerulemaster[$position->masterid] && isset($pricerules[$position->masterid])) {
-					$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->masterid], $position->price);
-				} elseif(!$position->masterid && isset($pricerules[$position->id])) {
-					$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->id], $position->price);
-				} else {
-					$price = $position->price;
-				}
+			//Use price rules on all positions
+			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'purchases', 'purchaseorderpos');
 
+			//Set precision and currency
+			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price*$position->quantity);
-				$position->price = $currency->toCurrency($price);
+				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
+				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
 			}
 
@@ -620,6 +591,10 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		}
 
 		if(count($positions)) {
+			//Use price rules on all positions
+			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'purchases', 'purchaseorderpos');
+
+			//Set precision and currency
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
 				$position->total = $currency->toCurrency($position->price*$position->quantity);
@@ -679,6 +654,10 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
+			//Use price rules on all positions
+			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'purchases', 'purchaseorderpos');
+
+			//Set precision and currency
 			foreach($positions as $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
 				$position->total = $currency->toCurrency($position->price*$position->quantity);
