@@ -340,7 +340,12 @@ class Sales_ReminderController extends Zend_Controller_Action
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
 				if(isset($price['rules'][$position->id])) {
 					foreach($price['rules'][$position->id] as $id => $pricerule) {
-						$price['rules'][$position->id][$id]['amount'] = $currency->toCurrency($pricerule['amount']);
+						if(($pricerule['action'] == 'byfixed') || ($pricerule['action'] == 'tofixed')) {
+							$price['rules'][$position->id][$id]['amount'] = $currency->toCurrency($pricerule['amount']);
+						} elseif(($pricerule['action'] == 'bypercent') || ($pricerule['action'] == 'topercent')) {
+							$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
+							$price['rules'][$position->id][$id]['amount'] = Zend_Locale_Format::toNumber($pricerule['amount'],array('precision' => $precision,'locale' => $locale)).' %';
+						}
 					}
 				}
 			}
