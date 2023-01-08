@@ -2,11 +2,17 @@
 
 class Application_Controller_Action_Helper_Position extends Zend_Controller_Action_Helper_Abstract
 {
-	public function copyPositions($positions, $parentid, $module, $target, $created)
+	public function copyPositions($positions, $parentid, $module, $controller, $created)
 	{
+		//Set target module and controller if parameter is array
+		if(is_array($module)) list($sourceModule, $targetModule) = $module;
+		else $sourceModule = $targetModule = $module;
+		if(is_array($controller)) list($sourceController, $targetController) = $controller;
+		else $sourceController = $targetController = $controller;
+
 		//Define belonging classes
-		$positionClass = ucfirst($module).'_Model_DbTable_'.ucfirst($target.'pos');
-		$positionSetClass = ucfirst($module).'_Model_DbTable_'.ucfirst($target.'posset');
+		$positionClass = ucfirst($targetModule).'_Model_DbTable_'.ucfirst($targetController.'pos');
+		$positionSetClass = ucfirst($targetModule).'_Model_DbTable_'.ucfirst($targetController.'posset');
 		$positionsDb = new $positionClass();
 		$positionSetsDb = new $positionSetClass();
 
@@ -31,7 +37,7 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 						$dataPosition['possetid'] = $positionSetId;
 					}
 				}
-				if($target == 'process') {
+				if($targetController == 'process') {
 					$positionData['deliverystatus'] = 'deliveryIsWaiting';
 					$positionData['supplierorderstatus'] = 'supplierNotOrdered';
 				}
@@ -45,9 +51,11 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 
 				//Copy price rules
 				$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
-				$pricerules = $priceRuleHelper->getPriceRulePositions($module, $target.'pos', $position->id);
+				$pricerules = $priceRuleHelper->getPriceRulePositions($sourceModule, $sourceController.'pos', $position->id);
 				foreach($pricerules as $pricerule) {
 					$dataPricerule = $pricerule;
+					$dataPricerule['module'] = $targetModule;
+					$dataPricerule['controller'] = $targetController.'pos';
 					$dataPricerule['parentid'] = $positionId;
 					$dataPricerule['created'] = $created;
 					$dataPricerule['modified'] = NULL;
@@ -66,7 +74,7 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 				if($dataPosition['possetid']) {
 					$dataPosition['possetid'] = $positionSetIndex[$dataPosition['possetid']];
 				}
-				if($target == 'process') {
+				if($targetController == 'process') {
 					$positionData['deliverystatus'] = 'deliveryIsWaiting';
 					$positionData['supplierorderstatus'] = 'supplierNotOrdered';
 				}

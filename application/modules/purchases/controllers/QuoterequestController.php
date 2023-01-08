@@ -478,7 +478,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		//Copy positions
 		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
 		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $newid, $module, $target, $this->_date);
+		$this->_helper->Position->copyPositions($positions, $newid, array('purchases', $module), array('quoterequest', $target), $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_DOCUMENT_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
