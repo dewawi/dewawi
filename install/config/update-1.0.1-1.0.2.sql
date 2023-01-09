@@ -311,3 +311,12 @@ ALTER TABLE `salesorderpos` ADD `manufacturersku` varchar(255) DEFAULT NULL AFTE
 ALTER TABLE `quoterequestpos` ADD `manufacturersku` varchar(255) DEFAULT NULL AFTER `manufacturerid`;
 ALTER TABLE `purchaseorderpos` ADD `manufacturersku` varchar(255) DEFAULT NULL AFTER `manufacturerid`;
 ALTER TABLE `processpos` ADD `manufacturersku` varchar(255) DEFAULT NULL AFTER `manufacturerid`;
+ALTER TABLE `creditnotepos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
+ALTER TABLE `deliveryorderpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
+ALTER TABLE `invoicepos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
+ALTER TABLE `quotepos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
+ALTER TABLE `reminderpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
+ALTER TABLE `salesorderpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
+ALTER TABLE `quoterequestpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
+ALTER TABLE `purchaseorderpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
+ALTER TABLE `processpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
