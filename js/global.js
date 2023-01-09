@@ -864,8 +864,8 @@ function save() {
 //Add
 function add(data, params) {
 	params = params || null;
-	console.log(data);
-	console.log(params);
+	//console.log(data);
+	//console.log(params);
 	if(params) {
 		var url = baseUrl;
 		params = params || null;
@@ -886,7 +886,7 @@ function add(data, params) {
 				response = json;
 				isDirty = false;
 				//Append new form from response
-				$('div#'+params['controller']+' button.add').before(json);
+				$('div#'+params['controller']+'[data-parentid="'+data['parentid']+'"] button.add').before(json);
 				//Focus on new element
 				$('div#'+params['controller']+' div:last input:first').focus().select();
 			}
