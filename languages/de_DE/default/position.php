@@ -10,6 +10,7 @@
 	'POSITIONS_SUPPLIER' => 'Lieferant',
 	'POSITIONS_SHIPPING' => 'Lieferung',
 	'POSITIONS_PRICE' => 'Preis',
+	'POSITIONS_PRICE_RULES' => 'Preisregeln',
 	'POSITIONS_PRICE_RULE_AMOUNT' => 'Preisregel',
 	'POSITIONS_PRICE_RULE_APPLY' => 'Anwendung',
 	'POSITIONS_TAX_RATE' => 'Steuersatz',
