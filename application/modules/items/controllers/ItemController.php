@@ -394,8 +394,9 @@ class Items_ItemController extends Zend_Controller_Action
 									$map[$attr] = $pos;
 								}
 							}
+						//if(count($map) > 1) {
+						//SKU is mandatory
 						} elseif(isset($map['sku']) && isset($datacsv[$map['sku']]) && $datacsv[$map['sku']]) {
-							//echo $datacsv[$map['sku']];
 							//print_r($map);
 							$images = array();
 							$attributes = array();
@@ -421,6 +422,8 @@ class Items_ItemController extends Zend_Controller_Action
 										} elseif($attr == 'quantity') {
 											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
 												$updateData[$attr] = $datacsv[$map[$attr]];
+											} else {
+												echo 'Quantity is not numeric for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
 											}
 										} elseif(($attr == 'deliverytime') || ($attr == 'deliverytimeoos')) {
 											if($deliverytimeid = array_search($datacsv[$map[$attr]], $deliverytimes)) {
@@ -480,45 +483,7 @@ class Items_ItemController extends Zend_Controller_Action
 									/*} elseif($attr == 'weightunit') {
 										if($weightuomid = array_search($datacsv[$map['weightunit']], $uoms)) {
 											$updateData['weightuomid'] = $weightuomid;
-										}
-									} elseif(strpos($attr, 'attributetitle') !== FALSE) {
-										if($datacsv[$map[$attr]]) {
-											$attributes[str_replace('attributetitle', '', $attr)]['title'] = $datacsv[$map[$attr]];
-										}
-									} elseif(strpos($attr, 'attributevalue') !== FALSE) {
-										if($datacsv[$map[$attr]]) {
-											$attributes[str_replace('attributevalue', '', $attr)]['value'] = $datacsv[$map[$attr]];
 										}*/
-									} elseif((strpos($attr, 'option') !== FALSE) && (strpos($attr, 'title') !== FALSE)) {
-										if($datacsv[$map[$attr]]) {
-											$optionID = str_replace('option', '', str_replace('title', '', $attr));
-											if(is_numeric($optionID) && $datacsv[$map[$attr]]) {
-												$options[$optionID]['ordering'] = $optionID;
-												$options[$optionID]['title'] = $datacsv[$map[$attr]];
-												$optionRequiredKey = 'option'.$optionID.'required';
-												if(isset($map[$optionRequiredKey])) {
-													$options[$optionID]['required'] = $datacsv[$map[$optionRequiredKey]];
-												}
-												$optionTypeKey = 'option'.$optionID.'type';
-												if(isset($map[$optionTypeKey])) {
-													$options[$optionID]['type'] = $datacsv[$map[$optionTypeKey]];
-												}
-												foreach($map as $key => $value) {
-													//Get option rows
-													if((strpos($key, 'option'.$optionID.'row') === 0) && (strpos($key, 'title') !== FALSE)) {
-														$rowID = str_replace('option'.$optionID.'row', '', str_replace('title', '', $key));
-														if(is_numeric($rowID) && $datacsv[$map[$key]]) {
-															$options[$optionID]['rows'][$rowID]['ordering'] = $rowID;
-															$options[$optionID]['rows'][$rowID]['title'] = $datacsv[$map[$key]];
-															$optionRowKey = 'option'.$optionID.'row'.$rowID.'price';
-															if(isset($map[$optionRowKey]) && $datacsv[$map[$optionRowKey]]) {
-																$options[$optionID]['rows'][$rowID]['price'] = $datacsv[$map[$optionRowKey]];
-															}
-														}
-													}
-												}
-											}
-										}
 									} elseif((strpos($attr, 'image') !== FALSE) && (strpos($attr, 'url') !== FALSE)) {
 										$imageUrl = $datacsv[$map[$attr]];
 										$url = '/media/items/'.$dir1.'/'.$dir2.'/'.$clientid;
@@ -537,214 +502,49 @@ class Items_ItemController extends Zend_Controller_Action
 									} elseif((strpos($attr, 'image') !== FALSE) && (strpos($attr, 'title') !== FALSE)) {
 										$images[str_replace('image', '', str_replace('title', '', $attr))]['title'] = $datacsv[$map[$attr]];
 									}
-									//Add system variables to attributes and placeholders
-									/*if($attr == 'sku') {
-										if($datacsv[$map['sku']]) {
-											$attributes[] = array('title' => 'Artikelnummer', 'value' => $datacsv[$map['sku']]);
-											$placeholders[] = array('title' => 'sku', 'value' => $datacsv[$map['sku']]);
-										}
-									} elseif($attr == 'weight') {
-										if($datacsv[$map['weight']]) {
-											$attributes[] = array('title' => 'Gewicht', 'value' => $datacsv[$map['weight']]);
-											$placeholders[] = array('title' => 'weight', 'value' => $datacsv[$map['weight']]);
-										}
-									} elseif($attr == 'weightunit') {
-										if($datacsv[$map['weightunit']]) {
-											$placeholders[] = array('title' => 'weightunit', 'value' => $datacsv[$map['weightunit']]);
-										}
-									} elseif($attr == 'manufacturer') {
-										if($datacsv[$map['manufacturer']]) {
-											$attributes[] = array('title' => 'Hersteller', 'value' => $datacsv[$map['manufacturer']]);
-											$placeholders[] = array('title' => 'manufacturer', 'value' => $datacsv[$map['manufacturer']]);
-										}
-									}*/
+									//Add system variables to placeholders
+									if($datacsv[$map[$attr]]) {
+										$placeholders[] = array('title' => $attr, 'value' => $datacsv[$map[$attr]]);
+									}
 								}
 							}
 
 							//Create and update the item
 							if($item = $itemDb->getItemBySKU($datacsv[$map['sku']])) {
-								//Get item attributes
+								//Get item attributes and add to placeholders
 								$attributes = $itemAttribute->getPositions($item['id'])->toArray();
+								foreach($attributes as $attribute) {
+									$placeholders[] = array('title' => $attribute['title'], 'value' => $attribute['description']);
+								}
 
 								//Search and replace placeholders
-								if(isset($updateData['title']) && (strpos($updateData['title'], '#sku#') !== false)) {
-									$updateData['title'] = str_replace('#sku#', $item['sku'], $updateData['title']);
-								}
-								if(isset($updateData['description']) && (strpos($updateData['description'], '#sku#') !== false)) {
-									$updateData['description'] = str_replace('#sku#', $item['sku'], $updateData['description']);
-								}
-								foreach($attributes as $attribute) {
-									if(isset($attribute['title']) && isset($attribute['description'])) {
-										if(isset($updateData['title']) && (strpos($updateData['title'], '#'.$attribute['title'].'#') !== false)) {
-											$updateData['title'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['title']);
+								foreach($placeholders as $placeholder) {
+									if($placeholder['title'] && $placeholder['value']) {
+										//Search and replace placeholders in import data
+										foreach($updateData as $key => $value) {
+											if(strpos($value, '#'.$placeholder['title'].'#') !== false) {
+												$updateData[$key] = str_replace('#'.$placeholder['title'].'#', $placeholder['value'], $value);
+											}
 										}
-										/*if(isset($updateData['shoptitle']) && (strpos($updateData['shoptitle'], '#'.$attribute['title'].'#') !== false)) {
-											$updateData['shoptitle'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['shoptitle']);
-										}
-										if(isset($updateData['ebaytitle']) && (strpos($updateData['ebaytitle'], '#'.$attribute['title'].'#') !== false)) {
-											$updateData['ebaytitle'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['ebaytitle']);
-										}*/
-										if(isset($updateData['description']) && (strpos($updateData['description'], '#'.$attribute['title'].'#') !== false)) {
-											$updateData['description'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['description']);
-										}
-										/*if(isset($updateData['shopdescription']) && (strpos($updateData['shopdescription'], '#'.$attribute['title'].'#') !== false)) {
-											$updateData['shopdescription'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['shopdescription']);
-										}
-										if(isset($updateData['shopdescriptionshort']) && (strpos($updateData['shopdescriptionshort'], '#'.$attribute['title'].'#') !== false)) {
-											$updateData['shopdescriptionshort'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['shopdescriptionshort']);
-										}
-										if(isset($updateData['shopdescriptionmini']) && (strpos($updateData['shopdescriptionmini'], '#'.$attribute['title'].'#') !== false)) {
-											$updateData['shopdescriptionmini'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $updateData['shopdescriptionmini']);
-										}*/
 										//Search and replace placeholders in image titles
 										if(count($images)) {
 											foreach($images as $id => $image) {
 												if(isset($image['title'])) {
-													if(strpos($image['title'], '#'.$attribute['title'].'#') !== false) {
-														$images[$id]['title'] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $image['title']);
+													if(strpos($image['title'], '#'.$placeholder['title'].'#') !== false) {
+														$images[$id]['title'] = str_replace('#'.$placeholder['title'].'#', $placeholder['description'], $image['title']);
 													}
 												}
 											}
 										}
 									}
 								}
-								//print_r($attributes);
+								//print_r($placeholders);
 								//print_r($updateData);
 
 								$itemDb->updateItem($item['id'], $updateData);
 								++$rowsUpdated;
 
 								//error_log(print_r($updateData,true));
-
-								/*if(isset($map['ebayuserid']) && isset($datacsv[$map['ebayuserid']])) {
-									if($datacsv[$map['ebayuserid']] == '0') {
-										$ebayListingDb->deleteListingByItemID($item['id']);
-										echo 'Item deleted from eBay: '.$item['sku'].', itemid: '.$item['id'].'<br>';
-									} elseif($datacsv[$map['ebayuserid']]) {
-										$ebayAccount = $ebayAccountDb->getAccountByUserID($datacsv[$map['ebayuserid']]);
-										if($ebayAccount) {
-											$ebayData = array();
-											$ebayData['itemid'] = $item['id'];
-											$ebayData['accountid'] = $ebayAccount['id'];
-											if(isset($map['ebaycategory']) && $datacsv[$map['ebaycategory']]) {
-												$ebayData['category1'] = $datacsv[$map['ebaycategory']];
-											}
-											if(isset($map['ebaycategory1']) && $datacsv[$map['ebaycategory1']]) {
-												$ebayData['category1'] = $datacsv[$map['ebaycategory1']];
-											}
-											if(isset($map['ebaycategory2']) && $datacsv[$map['ebaycategory2']]) {
-												$ebayData['category2'] = $datacsv[$map['ebaycategory2']];
-											}
-											if(isset($map['ebaystorecategory1']) && $datacsv[$map['ebaystorecategory1']]) {
-												$ebayData['ebaystorecategory1'] = $datacsv[$map['ebaystorecategory1']];
-											}
-											if(isset($map['ebaystorecategory2']) && $datacsv[$map['ebaystorecategory2']]) {
-												$ebayData['ebaystorecategory2'] = $datacsv[$map['ebaystorecategory2']];
-											}
-											if(isset($map['ebayshippingpolicy']) && $datacsv[$map['ebayshippingpolicy']]) {
-												$ebayData['shippingpolicy'] = $datacsv[$map['ebayshippingpolicy']];
-											}
-											if(isset($map['paymentpolicy']) && $datacsv[$map['paymentpolicy']]) {
-												$ebayData['paymentpolicy'] = $datacsv[$map['paymentpolicy']];
-											}
-											if(isset($map['returnpolicy']) && $datacsv[$map['returnpolicy']]) {
-												$ebayData['returnpolicy'] = $datacsv[$map['returnpolicy']];
-											}
-											if($ebayListing = $ebayListingDb->getListing($ebayData['itemid'], $ebayData['accountid'])) {
-												$ebayListingDb->updateListing($ebayListing['id'], $ebayData);
-											} else {
-												$ebayListingDb->addListing($ebayData);
-											}
-										}
-									}
-								}
-								if(isset($map['ebiztraderuserid']) && isset($datacsv[$map['ebiztraderuserid']])) {
-									if($datacsv[$map['ebiztraderuserid']] == '0') {
-										$ebiztraderListingDb->deleteListingByItemID($item['id']);
-										echo 'Item deleted from ebiz-trader: '.$item['sku'].', itemid: '.$item['id'].'<br>';
-									} elseif($datacsv[$map['ebiztraderuserid']]) {
-										$ebiztraderAccount = $ebiztraderAccountDb->getAccountByUserID($datacsv[$map['ebiztraderuserid']]);
-										if($ebiztraderAccount) {
-											$ebizTraderData = array();
-											$ebizTraderData['itemid'] = $item['id'];
-											$ebizTraderData['accountid'] = $ebiztraderAccount['id'];
-											if(isset($map['ebiztradercategory']) && $datacsv[$map['ebiztradercategory']]) {
-												$ebizTraderData['category1'] = $datacsv[$map['ebiztradercategory1']];
-											}
-											if(isset($map['ebiztradercategory1']) && $datacsv[$map['ebiztradercategory1']]) {
-												$ebizTraderData['category1'] = $datacsv[$map['ebiztradercategory1']];
-											}
-											if(isset($map['ebiztradercategory2']) && $datacsv[$map['ebiztradercategory2']]) {
-												$ebizTraderData['category2'] = $datacsv[$map['ebiztradercategory2']];
-											}
-											if($ebizTraderItem = $ebiztraderListingDb->getListing($ebizTraderData['itemid'], $ebizTraderData['accountid'])) {
-												$ebiztraderListingDb->updateListing($ebizTraderItem['id'], $ebizTraderData);
-											} else {
-												$ebiztraderListingDb->addListing($ebizTraderData);
-											}
-										}
-									}
-								}
-								if(isset($map['shopid']) && isset($datacsv[$map['shopid']])) {
-									if($datacsv[$map['shopid']] == '0') {
-										$shopItemDb->deleteItemByItemID($item['id']);
-										echo 'Item deleted from shop: '.$item['sku'].', itemid: '.$item['id'].'<br>';
-									} elseif($datacsv[$map['shopid']] && !$shopItemDb->getItem($item['id'], $datacsv[$map['shopid']])) {
-										$shopData['item_id'] = $item['id'];
-										$shopData['shop_id'] = $datacsv[$map['shop_id']];
-										$shopData['title'] = $datacsv[$map['shop_title']] ? $datacsv[$map['shop_title']] : $item['title'];
-										$shopData['price'] = $item['price'];
-										//$shopData['title'] = $datacsv[$map['shopcategory']];
-										$shopData['description'] = $datacsv[$map['shop_description']];
-										$shopData['description_short'] = $datacsv[$map['shop_description_short']];
-										$shopData['description_mini'] = $datacsv[$map['shop_description_mini']];
-										$shopItemDb->addItem($shopData);
-
-										$asdasd['shopdescription'] = '';
-										$asdasd['shopdescriptionshort'] = '';
-										$asdasd['shopdescriptionmini'] = '';
-										$itemDb->updateItem($asdasd);
-									}
-								}*/
-
-								//Delete existing item attributes
-								//$itemAttribute->deleteItemattributesByItemID($item['id']);
-
-								//Create and update item attributes
-								/*$ordering = 1;
-								foreach($attributes as $key => $attribute) {
-									if(isset($attribute['value']) && $attribute['value']) {
-										$attribute['itemid'] = $item['id'];
-										$attribute['ordering'] = $ordering;
-										$itemAttribute->addItemattribute($attribute);
-										++$ordering;
-									}
-								}*/
-
-								//Delete existing item options and rows
-								/*$itemOptionsOld = $itemOption->getItemoptionsByItemID($item['id']);
-								foreach($itemOptionsOld as $optionOld) {
-									$itemOptionRow->deleteItemoptionrowsByOptionID($optionOld['id']);
-								}
-								$itemOption->deleteItemoptionsByItemID($item['id']);
-
-								//Create and update item options
-								foreach($options as $key => $option) {
-									if(isset($option['title']) && $option['title']) {
-										$option['itemid'] = $item['id'];
-										if(isset($option['rows']) && count($option['rows'])) {
-											$optionRows = $option['rows'];
-											unset($option['rows']);
-											$optionid = $itemOption->addItemoption($option);
-											//Create and update item option rows
-											foreach($optionRows as $optionRow) {
-												$optionRow['optionid'] = $optionid;
-												$itemOptionRow->addItemoptionrow($optionRow);
-											}
-											++$ordering;
-										}
-									}
-								}*/
 
 								//Delete existing item images
 								/*$itemImage->deleteItemimagesByItemID($item['id']);
@@ -812,6 +612,8 @@ class Items_ItemController extends Zend_Controller_Action
 									}
 								}*/
 							}
+						} else {
+							echo 'There is no SKU column!'."<br>";
 						}
 						$row++;
 					}
