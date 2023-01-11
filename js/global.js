@@ -1155,6 +1155,9 @@ function del(id, message, type, cmodule){
 				success: function(data){
 					if(action == 'edit') {
 						$('div#'+type+id).remove();
+						//Reload and calculate positions after a price rule is deleted
+						if(type == 'pricerulepos') getPositions(controller, 'pos', window.pageYOffset);
+						//Return to the main page after the entity itself is deleted
 						if(type == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
 					} else if(type == 'attachment') {
 						$('div#'+type+id).remove();
