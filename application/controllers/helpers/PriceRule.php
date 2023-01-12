@@ -161,7 +161,7 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 					$latest = end($positionDataBefore);
 					$positionDb->addPosition(array('module' => $module, 'controller' => $controller, 'parentid' => $parentid, 'amount' => $pricerule->amount, 'action' => $pricerule->action, 'masterid' => 0, 'possetid' => 0, 'ordering' => $latest['ordering']+1));
 
-					/*$priceruleamount = $pricerule->amount;
+					/*$priceruleamount = $->amount;
 					$price = eval($formula[$pricerule->action]);
 					$price = round($price, 2);
 					if($price < $item['price']) {
@@ -177,5 +177,19 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 				}
 			}
 		}
+	}
+
+	public function formatPriceRules($pricerules, $currency, $locale) {
+		if(isset($pricerules)) {
+			foreach($pricerules as $id => $pricerule) {
+				if(($pricerule['action'] == 'byfixed') || ($pricerule['action'] == 'tofixed')) {
+					$pricerules[$id]['amount'] = $currency->toCurrency($pricerule['amount']);
+				} elseif(($pricerule['action'] == 'bypercent') || ($pricerule['action'] == 'topercent')) {
+					$precision = (floor($pricerule['amount']) == $pricerule['amount']) ? 0 : 2;
+					$pricerules[$id]['amount'] = Zend_Locale_Format::toNumber($pricerule['amount'],array('precision' => $precision,'locale' => $locale)).' %';
+				}
+			}
+		}
+		return $pricerules;
 	}
 }
