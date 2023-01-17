@@ -1,5 +1,5 @@
 <?php
-$this->title = $this->translate('CONTACTS');
+$this->title = $this->translate('CONTACTS_EMAILS');
 $this->headTitle($this->title);
 echo $this->Messages();
 //echo $this->ActiveFilter();
@@ -25,6 +25,10 @@ echo $this->Messages();
 				<th class="phone" style="flex-grow: 0.5;">
 					<?php echo $this->translate('CONTACTS_EMAIL_SENT_BY'); ?>
 				</th>
+				<th class="phone" style="flex-grow: 0.5;">
+					<?php echo $this->translate('CONTACTS_EMAIL_ACCESS_TIME'); ?>
+				</th>
+				<th class="phone" style="flex-grow: 1;"></th>
 				<th></th>
 			</tr>
 		</thead>
@@ -45,7 +49,7 @@ echo $this->Messages();
 							<?php foreach($attachments as $attachment) : ?>
 								<?php //$headers = get_headers('https://'.$_SERVER['HTTP_HOST'].'/files/attachments/'.$this->module.'/'.$this->controller.'/'.$this->url.'/'.$attachment); ?>
 								<?php //if(stripos($headers[0], '200 OK')) : ?>
-									<a href="<?php echo $this->baseUrl(); ?>/files/attachments/<?php echo $this->module; ?>/<?php echo $this->controller; ?>/<?php echo $this->url; ?>/<?php echo $attachment; ?>" target="_blank"><?php echo $attachment; ?></a><br>
+									<a href="<?php echo $this->baseUrl(); ?>/files/attachments/<?php echo $emailmessage['module']; ?>/<?php echo $emailmessage['controller']; ?>/<?php echo $emailmessage['url']; ?>/<?php echo $attachment; ?>" target="_blank"><?php echo $attachment; ?></a><br>
 								<?php //else : ?>
 									<?php //echo $attachment; ?>
 								<?php //endif; ?>
@@ -55,8 +59,25 @@ echo $this->Messages();
 					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street" style="flex-grow: 0.5;">
 						<?php echo $this->escape($emailmessage['messagesent']); ?>
 					</td>
-					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street" style="flex-grow: 0.5;">
+					<td data-label="<?php echo $this->translate('CONTACTS_EMAIL_SENT_BY') ?>" class="street" style="flex-grow: 0.5;">
 						<?php echo $this->escape($this->users[$emailmessage['messagesentby']]); ?>
+					</td>
+					<td data-label="<?php echo $this->translate('CONTACTS_EMAIL_ACCESS_TIME') ?>" class="street" style="flex-grow: 0.5;">
+						<?php if($emailmessage['accesstime']) : ?>
+							<?php $accesstimes = explode(',', $emailmessage['accesstime']); ?>
+							<?php foreach($accesstimes as $accesstime) : ?>
+								<p><?php echo $this->escape($accesstime); ?></p>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</td>
+					<td class="street" style="flex-grow: 1;">
+						<?php if($emailmessage['response']) : ?>
+							<div class="error"><?php echo $this->translate('CONTACTS_EMAIL_ERROR') ?></div>
+							<pre><?php echo $this->escape($emailmessage['response']); ?></pre>
+						<?php else : ?>
+							<div class="successful"><?php echo $this->translate('CONTACTS_EMAIL_SUCCESSFUL') ?></div>
+						<?php endif; ?>
+						<button name="send" id="save" type="button" class="send" onclick="resendMessage(<?php echo $emailmessage['id'] ?>)">Erneut Senden</button>
 					</td>
 					<td class="buttons">
 						<?php //echo $this->toolbar->editInline; ?>

@@ -1443,6 +1443,18 @@ function sendMessage(){
 	}
 }
 
+function resendMessage(messageid){
+	var url = baseUrl+'/contacts/email/send/messageid/'+messageid;
+	$.ajax({
+		type: 'POST',
+		url: url,
+		cache: false,
+		success: function(response){
+			getEmailmessages(window.pageYOffset);
+		}
+	});
+}
+
 //Ordering
 function sort(parent, type, id, setid, ordering, masterid){
 	var data = {};

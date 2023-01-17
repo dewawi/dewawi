@@ -170,6 +170,7 @@ $this->language = str_replace('_', '-', $this->language);
 						</div>
 						<a class="button<?php if($this->controller == 'pricerule') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'pricerule', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PRICE_RULES'); ?></a>
 						<a class="button<?php if($this->module == 'statistics') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_STATISTICS'); ?></a>
+						<a class="button<?php if($this->controller == 'email') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'email', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_EMAILS'); ?></a>
 					</header>
 				</div>
 			</div>

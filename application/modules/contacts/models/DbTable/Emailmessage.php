@@ -20,12 +20,12 @@ class Contacts_Model_DbTable_Emailmessage extends Zend_Db_Table_Abstract
 
 	public function getEmailmessage($id)
 	{
-		$contactid = (int)$contactid;
+		$id = (int)$id;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
+		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
+		$data = $this->fetchRow($where);
 		if(!$data) {
 			throw new Exception("Could not find row $contactid");
 		}
@@ -61,8 +61,6 @@ class Contacts_Model_DbTable_Emailmessage extends Zend_Db_Table_Abstract
 	public function updateEmailmessage($id, $data)
 	{
 		$id = (int)$id;
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
 	}

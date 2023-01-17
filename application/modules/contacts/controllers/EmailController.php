@@ -31,34 +31,68 @@ class Contacts_EmailController extends Zend_Controller_Action
 
 	public function indexAction()
 	{
-		$request = $this->getRequest();
-		$contactid = $this->_getParam('contactid', 0);
-		$data = $request->getPost();
-		$module = isset($data['module']) ? $data['module'] : 0;
-		$controller = isset($data['controller']) ? $data['controller'] : 0;
-		$documentid = isset($data['documentid']) ? $data['documentid'] : 0;
-
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->getHelper('layout')->disableLayout();
 
-		//$toolbar = new Contacts_Form_Toolbar();
-		//$options = $this->_helper->Options->getOptions($toolbar);
-		//$params = $this->_helper->Params->getParams($toolbar, $options);
+		$toolbar = new Contacts_Form_Toolbar();
+		$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$request = $this->getRequest();
+		$params['contactid'] = $this->_getParam('contactid', 0);
+		$data = $request->getPost();
+		$params['module'] = isset($data['module']) ? $data['module'] : 0;
+		$params['controller'] = isset($data['controller']) ? $data['controller'] : 0;
+		$params['documentid'] = isset($data['documentid']) ? $data['documentid'] : 0;
 
 		//Get email messages
-		$emailmessagesDb = new Contacts_Model_DbTable_Emailmessage();
-		$emailmessages = $emailmessagesDb->getEmailmessages($contactid, $documentid, $module, $controller);
+		$get = new Contacts_Model_Get();
+		$emailmessages = $get->emailmessages($params, $options);
+		foreach($emailmessages as $id => $emailmessage) {
+			$emailmessages[$id]['url'] = $this->_helper->Directory->getUrl($emailmessage['documentid']);
+		}
 
 		$userDb = new Users_Model_DbTable_User();
 		$users = $userDb->getUsers();
 
-		$this->view->module = $module;
-		$this->view->controller = $controller;
-		$this->view->url = $this->_helper->Directory->getUrl($documentid);
 		$this->view->users = $users;
 		$this->view->emailmessages = $emailmessages;
-		//$this->view->options = $options;
-		//$this->view->toolbar = $toolbar;
+		$this->view->options = $options;
+		$this->view->toolbar = $toolbar;
+		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
+	public function searchAction()
+	{
+		$type = $this->_getParam('type', 'index');
+
+		$this->_helper->viewRenderer->setRender($type);
+		$this->_helper->getHelper('layout')->disableLayout();
+
+		$toolbar = new Contacts_Form_Toolbar();
+		$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$request = $this->getRequest();
+		$params['contactid'] = $this->_getParam('contactid', 0);
+		$data = $request->getPost();
+		$params['module'] = isset($data['module']) ? $data['module'] : 0;
+		$params['controller'] = isset($data['controller']) ? $data['controller'] : 0;
+		$params['documentid'] = isset($data['documentid']) ? $data['documentid'] : 0;
+
+		//Get email messages
+		$get = new Contacts_Model_Get();
+		$emailmessages = $get->emailmessages($params, $options);
+		foreach($emailmessages as $id => $emailmessage) {
+			$emailmessages[$id]['url'] = $this->_helper->Directory->getUrl($emailmessage['documentid']);
+		}
+
+		$userDb = new Users_Model_DbTable_User();
+		$users = $userDb->getUsers();
+
+		$this->view->users = $users;
+		$this->view->emailmessages = $emailmessages;
+		$this->view->options = $options;
+		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -114,6 +148,7 @@ class Contacts_EmailController extends Zend_Controller_Action
 	public function sendAction()
 	{
 		$request = $this->getRequest();
+		$messageid = $this->_getParam('messageid', 0);
 		$contactid = $this->_getParam('contactid', 0);
 		$documentid = $this->_getParam('documentid', 0);
 
@@ -134,6 +169,14 @@ class Contacts_EmailController extends Zend_Controller_Action
 				$userDb = new Users_Model_DbTable_User();
 				$user = $userDb->getUser($this->_user['id']);
 
+				if($messageid) {
+					$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
+					$emailmessage = $emailmessageDb->getEmailmessage($messageid);
+					unset($emailmessage['id'], $emailmessage['messagesent'], $emailmessage['messagesentby'], $emailmessage['response']);
+					$data = $emailmessage;
+					$contactid = $emailmessage['contactid'];
+					$documentid = $emailmessage['documentid'];
+				}
 				if(true) {
 					$mail = new PHPMailer\PHPMailer\PHPMailer();
 
@@ -186,6 +229,21 @@ class Contacts_EmailController extends Zend_Controller_Action
 						}
 					}
 
+					//Save email message to the db
+					$emailmessage = array();
+					$emailmessage['contactid'] = $contactid;
+					$emailmessage['documentid'] = $documentid;
+					$emailmessage['recipient'] = $data['recipient'];
+					$emailmessage['cc'] = $data['cc'];
+					$emailmessage['bcc'] = $data['bcc'];
+					$emailmessage['subject'] = $data['subject'];
+					$emailmessage['body'] = $data['body'];
+					$emailmessage['module'] = $data['module'];
+					$emailmessage['controller'] = $data['controller'];
+					$emailmessage['attachment'] = implode(',', $attachmentsSent);
+					$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
+					$messageid = $emailmessageDb->addEmailmessage($emailmessage);
+
 					//Content
 					$mail->isHTML(true);									// Set email format to HTML
 					$mail->Subject = $data['subject'];
@@ -196,27 +254,11 @@ class Contacts_EmailController extends Zend_Controller_Action
 					$mail->CharSet	= 'UTF-8';
 					$mail->Encoding = 'base64';
 
-					//send the message, check for errors
-					if (!$mail->send()) {
-						echo 'Mailer Error: ' . $mail->ErrorInfo;
-					} else {
-						$emailmessage = array();
-						$emailmessage['contactid'] = $contactid;
-						$emailmessage['documentid'] = $documentid;
-						$emailmessage['recipient'] = $data['recipient'];
-						$emailmessage['cc'] = $data['cc'];
-						$emailmessage['bcc'] = $data['bcc'];
-						$emailmessage['subject'] = $data['subject'];
-						$emailmessage['body'] = $data['body'];
-						$emailmessage['module'] = $data['module'];
-						$emailmessage['controller'] = $data['controller'];
-						$emailmessage['attachment'] = implode(',', $attachmentsSent);
-						$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
-						$emailmessageDb->addEmailmessage($emailmessage);
+					//Send the message, check for errors
+					if(!$mail->send()) {
+						//Save errors to the db
+						$emailmessageDb->updateEmailmessage($messageid, array('response' => $mail->ErrorInfo));
 					}
-				} else {
-					//$emailDb = new Contacts_Model_DbTable_Email();
-					//$emailDb->addEmail($data['contactid'], $data['email'], $data['ordering']);
 				}
 			}
 		}

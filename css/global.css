@@ -718,6 +718,19 @@ span.uncomplete {
     font-size: 0.9rem;
 }
 
+div.successful {
+	background: url("../images/success.png") no-repeat scroll 12px center #D1FFCC;
+	border: 1px solid #D1FFCC;
+	margin: 5px 6px 15px;
+	padding: 10px 35px;
+}
+div.error {
+	background: url("../images/warning.png") no-repeat scroll 12px center #FFF5CC;
+	border: 1px solid #F2DD8C;
+	margin: 5px 6px 15px;
+	padding: 10px 35px;
+}
+
 /* Editable */
 .editableContainer {
 	display: inline-block;

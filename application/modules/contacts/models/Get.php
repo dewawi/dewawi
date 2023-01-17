@@ -100,6 +100,72 @@ class Contacts_Model_Get
 		return $contacts;
 	}
 
+	public function emailmessages($params, $options)
+	{
+		$client = Zend_Registry::get('Client');
+		if($client['parentid']) {
+			$client['id'] = $client['modules']['contacts'];
+		}
+
+		$emailmessagesDb = new Contacts_Model_DbTable_Emailmessage();
+
+		$columns = array('m.subject', 'm.body');
+
+		$query = '';
+		$schema = 'm';
+		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
+		if($params['contactid']) {
+			if($query) {
+				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.contactid = ?', $params['contactid']);
+			} else {
+				$query = $emailmessagesDb->getAdapter()->quoteInto('m.contactid = ?', $params['contactid']);
+			}
+		}
+		if($params['documentid']) {
+			if($query) {
+				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.documentid = ?', $params['documentid']);
+			} else {
+				$query = $emailmessagesDb->getAdapter()->quoteInto('m.documentid = ?', $params['documentid']);
+			}
+		}
+		if($params['module']) {
+			if($query) {
+				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.module = ?', $params['module']);
+			} else {
+				$query = $emailmessagesDb->getAdapter()->quoteInto('m.module = ?', $params['module']);
+			}
+		}
+		if($params['controller']) {
+			if($query) {
+				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.controller = ?', $params['controller']);
+			} else {
+				$query = $emailmessagesDb->getAdapter()->quoteInto('m.controller = ?', $params['controller']);
+			}
+		}
+		if($query) $query .= ' AND ';
+		$query .= $emailmessagesDb->getAdapter()->quoteInto('m.clientid = ?', $client['id']);
+		$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.deleted = ?', 0);
+
+		$data = $emailmessagesDb->fetchAll(
+			$emailmessagesDb->select()
+				->setIntegrityCheck(false)
+				->from(array($schema => 'emailmessage'))
+				->joinLeft(array('t' => 'emailtracking'), 'MD5(m.id) = t.key', array('accesstime' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT t.accesstime)')))
+				->group($schema.'.id')
+				->where($query)
+				->order('id DESC')
+				->limit($params['limit'])
+		);
+//print_r($where);
+
+		//$data = $emailmessagesDb->fetchAll($where, 'id DESC', $limit);
+		if(!$data) {
+			throw new Exception("Could not find row");
+		}
+		return $data->toArray();
+	}
+
 	public function history($contactid) {
 		$currency = Zend_Registry::get('Zend_Currency');
 
