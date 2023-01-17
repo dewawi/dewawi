@@ -407,6 +407,20 @@ class Purchases_PositionController extends Zend_Controller_Action
 				}
 			}
 
+			//Copy price rules
+			$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
+			$pricerules = $priceRuleHelper->getPriceRulePositions('purchases', $params['parent'].$params['type'], $params['id']);
+			foreach($pricerules as $pricerule) {
+				$dataPricerule = $pricerule;
+				$dataPricerule['parentid'] = $id;
+				$dataPricerule['created'] = $this->_date;
+				$dataPricerule['modified'] = NULL;
+				$dataPricerule['modifiedby'] = 0;
+				unset($dataPricerule['id']);
+				$priceRuleDb = new Items_Model_DbTable_Pricerulepos();
+				$priceRuleDb->addPosition($dataPricerule);
+			}
+
 			//Calculate
 			$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
 			echo Zend_Json::encode($calculations['locale']);
