@@ -14,11 +14,11 @@ class Contacts_Form_Emailmessage extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '30');
 
-		$form['recipient'] = new Zend_Form_Element_Text('recipient');
+		$form['recipient'] = new Zend_Form_Element_Select('recipient');
 		$form['recipient']->setLabel('CONTACTS_EMAIL_RECIPIENT')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '30');
+			->setAttrib('class', 'required');
 
 		$form['cc'] = new Zend_Form_Element_Text('cc');
 		$form['cc']->setLabel('CONTACTS_EMAIL_CC')

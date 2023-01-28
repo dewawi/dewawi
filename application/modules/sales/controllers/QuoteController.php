@@ -176,7 +176,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 				//Email
 				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmail($contact['id']);
+				$contact['email'] = $emailDb->getEmails($contact['id']);
 
 				//Internet
 				$internetDb = new Contacts_Model_DbTable_Internet();
@@ -323,11 +323,15 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 		//Get email
 		$emailDb = new Contacts_Model_DbTable_Email();
-		$contact['email'] = $emailDb->getEmail($contact['id']);
+		$contact['email'] = $emailDb->getEmails($contact['id']);
 
 		//Get email form
 		$emailForm = new Contacts_Form_Emailmessage();
-		if(isset($contact['email'][0])) $emailForm->recipient->setValue($contact['email'][0]['email']);
+		if($contact['email']) {
+			foreach($contact['email'] as $option) {
+				$emailForm->recipient->addMultiOption($option['id'], $option['email']);
+			}
+		}
 
 		//Get email templates
 		$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();

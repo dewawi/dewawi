@@ -18,7 +18,15 @@ class Contacts_Model_DbTable_Email extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getEmail($contactid)
+	public function getEmail($id)
+	{
+		$id = (int)$id;
+		$row = $this->fetchRow('id = ' . $id);
+		if(!$row) return false;
+		return $row->toArray();
+	}
+
+	public function getEmails($contactid)
 	{
 		$contactid = (int)$contactid;
 		$where = array();

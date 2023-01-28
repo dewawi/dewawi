@@ -231,7 +231,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 					//Email
 					$emailDb = new Contacts_Model_DbTable_Email();
-					$email = $emailDb->getEmail($id);
+					$email = $emailDb->getEmails($id);
 
 					//Internet
 					$internetDb = new Contacts_Model_DbTable_Internet();
@@ -252,7 +252,11 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 					//Get email form
 					$emailForm = new Contacts_Form_Emailmessage();
-					if(isset($contact['email'][0])) $emailForm->recipient->setValue($contact['email'][0]['email']);
+					if($email) {
+						foreach($email as $option) {
+							$emailForm->recipient->addMultiOption($option['id'], $option['email']);
+						}
+					}
 
 					//Get email templates
 					$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
@@ -371,7 +375,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 		//Email
 		$emailDb = new Contacts_Model_DbTable_Email();
-		$emails = $emailDb->getEmail($id);
+		$emails = $emailDb->getEmails($id);
 		foreach($emails as $email) {
 			$emailDb->addEmail(array('contactid' => $contactid, 'email' => $email['email'], 'ordering' => $email['ordering']));
 		}
@@ -403,7 +407,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 			}
 
 			$emailDb = new Contacts_Model_DbTable_Email();
-			$emails = $emailDb->getEmail($id);
+			$emails = $emailDb->getEmails($id);
 			foreach($emails as $email) {
 				$emailDb->deleteEmail($email['id']);
 			}

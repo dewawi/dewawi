@@ -109,10 +109,10 @@ class Contacts_EmailController extends Zend_Controller_Action
 			$data = $request->getPost();
 			if($form->isValid($data) || true) {
 				$emailDb = new Contacts_Model_DbTable_Email();
-				$emailDataBefore = $emailDb->getEmail($data['parentid']);
+				$emailDataBefore = $emailDb->getEmails($data['parentid']);
 				$latest = end($emailDataBefore);
 				$emailDb->addEmail(array('contactid' => $data['parentid'], 'ordering' => $latest['ordering']+1));
-				$emailDataAfter = $emailDb->getEmail($data['parentid']);
+				$emailDataAfter = $emailDb->getEmails($data['parentid']);
 				$email = end($emailDataAfter);
 				echo $this->view->MultiForm('contacts', 'email', $email);
 			}
@@ -190,10 +190,13 @@ class Contacts_EmailController extends Zend_Controller_Action
 					$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;	// Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
 					$mail->Port		= 465;													// TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
+					//Get email
+					$emailDb = new Contacts_Model_DbTable_Email();
+					$email = $emailDb->getEmail($data['recipient']);
+
 					//Recipients
 					$mail->setFrom($user['smtpuser'], $user['emailsender']);
-					$data['recipient'] = str_replace(' ', '', $data['recipient']);			// Remove spaces
-					$mail->addAddress($data['recipient']);									// Add a recipient
+					$mail->addAddress($email['email']);									// Add a recipient
 					$data['replyto'] = str_replace(' ', '', $data['replyto']);				// Remove spaces
 					if($data['replyto']) $mail->addReplyTo($data['replyto']);				// Add reply to
 					$data['cc'] = str_replace(' ', '', $data['cc']);						// Remove spaces
@@ -233,7 +236,7 @@ class Contacts_EmailController extends Zend_Controller_Action
 					$emailmessage = array();
 					$emailmessage['contactid'] = $contactid;
 					$emailmessage['documentid'] = $documentid;
-					$emailmessage['recipient'] = $data['recipient'];
+					$emailmessage['recipient'] = $email['email'];
 					$emailmessage['cc'] = $data['cc'];
 					$emailmessage['bcc'] = $data['bcc'];
 					$emailmessage['subject'] = $data['subject'];
