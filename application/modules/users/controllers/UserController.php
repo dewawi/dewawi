@@ -105,8 +105,8 @@ class Users_UserController extends Zend_Controller_Action
 					if(isset($data['passwordnew']) && $data['passwordnew']) {
 						if(isset($data['passwordconfirm']) && $data['passwordconfirm']) {
 							if($data['passwordnew'] == $data['passwordconfirm']) {
-								if(md5($data['passwordactual']) == $user['password']) {
-									$userDb->updateUser($id, array('password' => md5($data['passwordnew'])));
+								if(password_verify($data['passwordactual'], $user['password'])) {
+									$userDb->updateUser($id, array('password' => password_hash($data['passwordnew'], PASSWORD_DEFAULT)));
 									echo Zend_Json::encode(array('saved' => true));
 								} else {
 									echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -160,70 +160,78 @@ class Users_UserController extends Zend_Controller_Action
 				if($stayLoggedIn) $authNamespace->setExpirationSeconds(864000);
 				else $authNamespace->setExpirationSeconds(3600);
 
-				$db = Zend_Db_Table::getDefaultAdapter();
-				$authAdapter = new Zend_Auth_Adapter_DbTable($db);
+				$userDb = new Users_Model_DbTable_User();
+				if(filter_var($username, FILTER_VALIDATE_EMAIL)) {
+					$user = $userDb->getUserByEmail($username);
+				} else {
+					$user = $userDb->getUserByUsername($username);
+				}
 
-				$authAdapter->setTableName('user');
-				if(strpos($username, '@')) $authAdapter->setIdentityColumn('email');
-				else $authAdapter->setIdentityColumn('username');
-				$authAdapter->setCredentialColumn('password');
-				$authAdapter->setCredentialTreatment('MD5(?)');
-
-				$authAdapter->setIdentity($username);
-				$authAdapter->setCredential($password);
-
-				//Select only active users
-				//$authAdapter->getDbSelect()->where('deleted = 0');
-
-				$result = $auth->authenticate($authAdapter);
-				if($result->isValid()) {
-					$storage = $auth->getStorage();
-					$userInfo = $authAdapter->getResultRowObject(
-									array(
-										'id',
-										'username',
-										'name',
-										'email',
-										'admin',
-										'clientid',
-										'activated',
-										'deleted'
-									));
-
-					if($userInfo->deleted) {
+				if($user) {
+					if($user->deleted) {
 						$auth->clearIdentity();
 						$this->_flashMessenger->addMessage('Benutzerkonto existiert nicht mehr.');
-					} elseif($userInfo->activated) {
-						//Store user info into session
-						$storage->write($userInfo);
-
-						//Store login time into database
-						$userDb = new Users_Model_DbTable_User();
-						$userDb->updateLoginTime($userInfo->id, $this->_date);
-
-						//Redirect if url is defined
-						if($this->_getParam('url', null)) {
-							$url = explode("|", $this->_getParam('url', null));
-							if(isset($url[3]) && $url[3]) {
-								$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0], array('id' => $url[3]));
-							} else {
-								$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0]);
-							}
-						}
-						$this->_helper->redirector->gotoSimple("index", "index");
 					} else {
-						$auth->clearIdentity();
-						$this->_flashMessenger->addMessage('Benutzerkonto ist nicht aktiviert.');
+						if($user->activated) {
+							if(password_verify($password, $user->password)) {
+								$rehash = password_needs_rehash($user->password, PASSWORD_DEFAULT);
+								$login = true;
+							} elseif($user->password == md5($password)) {
+								$rehash = true;
+								$login = true;
+							} else {
+								$rehash = false;
+								$login = false;
+								$auth->clearIdentity();
+								$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
+							}
+
+							if($rehash) {
+								$userDb->updateUser($user->id, array('password' => password_hash($password, PASSWORD_DEFAULT)), $user->id);
+							}
+
+							if($login) {
+								$storage = $auth->getStorage();
+								$storage->write($user);
+
+								//Store login time into database
+								$userDb = new Users_Model_DbTable_User();
+								$userDb->updateLoginTime($user->id);
+
+								//Get target url
+								$target = $this->_getParam('url', null);
+
+								//Add user tracking into database
+								$userTrackingDb = new Users_Model_DbTable_Usertracking();
+								$userTrackingDb->addUsertracking($user, $target);
+
+								//Redirect if url is defined
+								if($target) {
+									$url = explode("|", $this->_getParam('url', null));
+									if(isset($url[3]) && $url[3]) {
+										$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0], array('id' => $url[3]));
+									} else {
+										$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0]);
+									}
+								}
+								$this->_helper->redirector->gotoSimple("index", "index");
+							}
+						} else {
+							$auth->clearIdentity();
+							$this->_flashMessenger->addMessage('Benutzerkonto ist nicht aktiviert.');
+						}
 					}
 				} else {
 					$auth->clearIdentity();
 					$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
+					$form->populate($formData);
 				}
 			} else {
 				$auth->clearIdentity();
 				$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
 				$form->populate($formData);
 			}
+
 		}
 		$this->view->messages = array_merge(
 						$this->_flashMessenger->getMessages(),

@@ -320,3 +320,5 @@ ALTER TABLE `salesorderpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 
 ALTER TABLE `quoterequestpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
 ALTER TABLE `purchaseorderpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
 ALTER TABLE `processpos` ADD `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0 AFTER `taxrate`;
+
+ALTER TABLE `user` CHANGE `password` `password` VARCHAR(255) NOT NULL;

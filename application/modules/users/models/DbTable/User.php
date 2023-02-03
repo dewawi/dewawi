@@ -43,6 +43,18 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 		return $users;
 	}
 
+	public function getUserByEmail($email)
+	{
+		$row = $this->fetchRow(
+			$this->select()
+				->where('username = ?', $email)
+		);
+		if (!$row) {
+			throw new Exception("Could not find row $email");
+		}
+		return $row;
+	}
+
 	public function getUserByUsername($username)
 	{
 		$row = $this->fetchRow(
@@ -52,22 +64,22 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 		if (!$row) {
 			throw new Exception("Could not find row $username");
 		}
-		return $row->toArray();
+		return $row;
 	}
 
-	public function updateUser($id, $data)
+	public function updateUser($id, $data, $modifiedby = null)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
+		$data['modifiedby'] = $modifiedby ? $modifiedby : $this->_user['id'];
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
 	}
 
-	public function updateLoginTime($id, $date)
+	public function updateLoginTime($id)
 	{
 		$id = (int)$id;
-		$data['logintime'] = $date;
+		$data['logintime'] = $this->_date;
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
 	}
