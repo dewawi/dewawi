@@ -47,7 +47,7 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 	{
 		$row = $this->fetchRow(
 			$this->select()
-				->where('username = ?', $email)
+				->where('email = ?', $email)
 		);
 		if (!$row) {
 			throw new Exception("Could not find row $email");
