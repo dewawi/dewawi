@@ -1395,6 +1395,28 @@ CREATE TABLE `pricerule` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `pricerulepos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
+  `parentid` int(11) NOT NULL,
+  `itemid` int(11) NOT NULL DEFAULT 0,
+  `masterid` int(11) NOT NULL DEFAULT 0,
+  `possetid` int(11) NOT NULL,
+  `sku` varchar(255) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `amount` decimal(12,4) DEFAULT NULL,
+  `action` varchar(255) DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `process` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `quoteid` int(11) NOT NULL DEFAULT 0,
@@ -2446,6 +2468,22 @@ CREATE TABLE IF NOT EXISTS `user` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `usertracking` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `userid` int(11) NOT NULL,
+  `username` varchar(255) DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `admin` tinyint(1) NOT NULL DEFAULT 0,
+  `target` varchar(255) DEFAULT NULL,
+  `accesstime` datetime DEFAULT NULL,
+  `useragent` varchar(255) DEFAULT NULL,
+  `remoteip` varchar(255) DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
