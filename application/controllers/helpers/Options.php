@@ -26,6 +26,11 @@ class Application_Controller_Action_Helper_Options extends Zend_Controller_Actio
 		$languages = $languageDb->getLanguages();
 		$options['languages'] = $languages;
 
+		//Get users
+		$userDb = new Users_Model_DbTable_User();
+		$users = $userDb->getUsers();
+		$options['users'] = $users;
+
 		//Set form options
 		$MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));

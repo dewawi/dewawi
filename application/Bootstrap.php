@@ -23,6 +23,8 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 						'username' => $identity->username,
 						'name' => $identity->name,
 						'email' => $identity->email,
+						'emailsender' => $identity->emailsender,
+						'emailsignature' => $identity->emailsignature,
 						'admin' => $identity->admin,
 						'clientid' => $identity->clientid,
 						'activated' => $identity->activated,
