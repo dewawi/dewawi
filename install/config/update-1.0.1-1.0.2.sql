@@ -487,3 +487,9 @@ CREATE TABLE IF NOT EXISTS `taskposset` (
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `emailmessage` ADD `response` TEXT NULL DEFAULT NULL AFTER `messagesentby`;
+ALTER TABLE `email` ADD `password` varchar(255) NOT NULL AFTER `email`;
+ALTER TABLE `user` ADD `emailsignature` TEXT NULL DEFAULT NULL AFTER `emailsender`;
+ALTER TABLE `client` ADD `token` varchar(255) DEFAULT NULL AFTER `id`;
+UPDATE `client` SET `token` = LEFT(MD5(RAND()), 16) WHERE 1;

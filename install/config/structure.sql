@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS `category` (
 
 CREATE TABLE IF NOT EXISTS `client` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `token` varchar(255) DEFAULT NULL,
   `parentid` int(11) NOT NULL DEFAULT 0,
   `company` varchar(255) DEFAULT NULL,
   `address` text DEFAULT NULL,
@@ -579,6 +580,7 @@ CREATE TABLE IF NOT EXISTS `email` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `contactid` int(11) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
@@ -624,6 +626,7 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `clientid` int(11) NOT NULL,
   `messagesent` datetime DEFAULT NULL,
   `messagesentby` int(11) NOT NULL DEFAULT 0,
+  `response` text DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -2359,6 +2362,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `email` varchar(255) DEFAULT NULL,
   `admin` tinyint(1) NOT NULL DEFAULT 0,
   `emailsender` varchar(255) DEFAULT NULL,
+  `emailsignature` text DEFAULT NULL,
   `smtphost` varchar(255) DEFAULT NULL,
   `smtpauth` varchar(255) DEFAULT NULL,
   `smtpsecure` varchar(255) DEFAULT NULL,
