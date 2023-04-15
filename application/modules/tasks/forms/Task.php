@@ -58,6 +58,46 @@ class Tasks_Form_Task extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '40');
 
+		$form['priority'] = new Zend_Form_Element_Select('priority');
+		$form['priority']->setLabel('TASKS_PRIORITY')
+			->addMultiOption('0', 'TASKS_PRIORITY_NORMAL')
+			->addMultiOption('1', 'TASKS_PRIORITY_LOWEST')
+			->addMultiOption('2', 'TASKS_PRIORITY_LOW')
+			->addMultiOption('3', 'TASKS_PRIORITY_HIGH')
+			->addMultiOption('4', 'TASKS_PRIORITY_HIGHEST')
+			->addFilter('StripTags')
+			->addFilter('StringTrim');
+
+		$form['startdate'] = new Zend_Form_Element_Text('startdate');
+		$form['startdate']->setLabel('TASKS_START_DATE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('class', 'datePicker')
+			->setAttrib('size', '9');
+
+		$form['duedate'] = new Zend_Form_Element_Text('duedate');
+		$form['duedate']->setLabel('TASKS_DUE_DATE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('class', 'datePicker')
+			->setAttrib('size', '9');
+
+		$form['reminder'] = new Zend_Form_Element_Checkbox('reminder');
+		$form['reminder']->setLabel('TASKS_REMINDER');
+
+		$form['remindertype'] = new Zend_Form_Element_Select('remindertype');
+		$form['remindertype']->setLabel('TASKS_REMINDER_TYPE')
+			->addMultiOption('email', 'EMAIL')
+			->addFilter('StripTags')
+			->addFilter('StringTrim');
+
+		$form['description'] = new Zend_Form_Element_Textarea('description');
+		$form['description']->setLabel('TASKS_DESCRIPTION')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('cols', '45')
+			->setAttrib('rows', '6');
+
 		$form['info'] = new Zend_Form_Element_Textarea('info');
 		$form['info']->setLabel('TASKS_INFO')
 			->addFilter('StripTags')
@@ -447,7 +487,7 @@ class Tasks_Form_Task extends Zend_Form
 		$form['editpositionsseparately']->setLabel('TASKS_EDIT_POSITIONS_SEPARATELY');
 
 		$form['responsible'] = new Zend_Form_Element_Select('responsible');
-		$form['responsible']->setLabel('QUOTES_CURRENCY')
+		$form['responsible']->setLabel('TASKS_RESPONSIBLE_PERSON')
 			->setRequired(true)
 			->addValidator('NotEmpty');
 

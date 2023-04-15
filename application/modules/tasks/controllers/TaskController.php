@@ -251,6 +251,22 @@ class Tasks_TaskController extends Zend_Controller_Action
 							$data['creditnotetotal'] = NULL;
 						}
 					}
+					if(isset($data['startdate'])) {
+						if(Zend_Date::isDate($data['startdate'])) {
+							$startdate = new Zend_Date($data['startdate'], Zend_Date::DATES, 'de');
+							$data['startdate'] = $startdate->get('yyyy-MM-dd');
+						} else {
+							$data['startdate'] = NULL;
+						}
+					}
+					if(isset($data['duedate'])) {
+						if(Zend_Date::isDate($data['duedate'])) {
+							$duedate = new Zend_Date($data['duedate'], Zend_Date::DATES, 'de');
+							$data['duedate'] = $duedate->get('yyyy-MM-dd');
+						} else {
+							$data['duedate'] = NULL;
+						}
+					}
 					if(isset($data['paymentdate'])) {
 						if(Zend_Date::isDate($data['paymentdate'])) {
 							$paymentdate = new Zend_Date($data['paymentdate'], Zend_Date::DATES, 'de');
@@ -398,6 +414,10 @@ class Tasks_TaskController extends Zend_Controller_Action
 					if($data['purchaseorderid'] == 0) $data['purchaseorderid'] = NULL;
 					if($data['supplierid'] == 0) $data['supplierid'] = NULL;
 					//Convert dates to the display format
+					$startdate = new Zend_Date($data['startdate']);
+					if($data['startdate']) $data['startdate'] = $startdate->get('dd.MM.yyyy');
+					$duedate = new Zend_Date($data['duedate']);
+					if($data['duedate']) $data['duedate'] = $duedate->get('dd.MM.yyyy');
 					$paymentdate = new Zend_Date($data['paymentdate']);
 					if($data['paymentdate']) $data['paymentdate'] = $paymentdate->get('dd.MM.yyyy');
 					$invoicedate = new Zend_Date($data['invoicedate']);
