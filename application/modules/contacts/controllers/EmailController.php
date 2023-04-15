@@ -111,7 +111,8 @@ class Contacts_EmailController extends Zend_Controller_Action
 				$emailDb = new Contacts_Model_DbTable_Email();
 				$emailDataBefore = $emailDb->getEmails($data['parentid']);
 				$latest = end($emailDataBefore);
-				$emailDb->addEmail(array('contactid' => $data['parentid'], 'ordering' => $latest['ordering']+1));
+				$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
+				$emailDb->addEmail(array('contactid' => $data['parentid'], 'password' => $password, 'ordering' => $latest['ordering']+1));
 				$emailDataAfter = $emailDb->getEmails($data['parentid']);
 				$email = end($emailDataAfter);
 				echo $this->view->MultiForm('contacts', 'email', $email);
@@ -232,6 +233,9 @@ class Contacts_EmailController extends Zend_Controller_Action
 						}
 					}
 
+					//Add email signature
+					$data['body'] = str_replace('[SIGNATURE]', $this->_user['emailsignature'], $data['body']);
+
 					//Save email message to the db
 					$emailmessage = array();
 					$emailmessage['contactid'] = $contactid;
@@ -246,6 +250,20 @@ class Contacts_EmailController extends Zend_Controller_Action
 					$emailmessage['attachment'] = implode(',', $attachmentsSent);
 					$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
 					$messageid = $emailmessageDb->addEmailmessage($emailmessage);
+
+					//Get portal TODO
+					/*$portalDb = new Portals_Model_DbTable_Portal();
+					$portal = $portalDb->getPortal($email['clientid']);
+					if($portal) {
+						$key = hash('sha256', $email['id'].$email['contactid'].$email['clientid'].hash('sha256', $email['password']));
+						$url = $portal->url.'/portals';
+						$link = $url.'/auth/login/target/download/key/'.$key;
+						$html = '<a href="'.$link.'">'.$link.'</a>';
+						$data['body'] = str_replace('[LINK]', $html, $data['body']);
+
+						$hash = hash('sha256', $messageid.$contactid.$email['clientid']);
+						$data['body'] .= '<img src="'.$url.'/email/view/key/'.$hash.'" border="0" width="1" height="1">';
+					}*/
 
 					//Content
 					$mail->isHTML(true);									// Set email format to HTML

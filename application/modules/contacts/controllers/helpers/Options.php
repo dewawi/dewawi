@@ -36,6 +36,11 @@ class Contacts_Controller_Action_Helper_Options extends Zend_Controller_Action_H
 		$tags = $tagDb->getTags('contacts', 'contact');
 		$options['tags'] = $tags;
 
+		//Get download sets
+		$downloadsetDb = new Contacts_Model_DbTable_Downloadset();
+		$downloadsets = $downloadsetDb->getDownloadsets();
+		$options['downloadsets'] = $downloadsets;
+
 		//Set form options
 		$MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
@@ -44,6 +49,7 @@ class Contacts_Controller_Action_Helper_Options extends Zend_Controller_Action_H
 		if(isset($form->currency) && isset($options['currencies'])) $form->currency->addMultiOptions($options['currencies']);
 		if(isset($form->priceruleaction) && isset($options['priceruleactions'])) $form->priceruleaction->addMultiOptions($options['priceruleactions']);
 		if(isset($form->tagid) && isset($options['tags'])) $form->tagid->addMultiOptions($options['tags']);
+		if(isset($form->setid) && isset($options['downloadsets'])) $form->setid->addMultiOptions($options['downloadsets']);
 
 		return $options;
 	}

@@ -154,7 +154,9 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$phoneDb->addPhone(array('contactid' => $id, 'type' => 'phone', 'ordering' => 1));
 
 		$emailDb = new Contacts_Model_DbTable_Email();
-		$emailDb->addEmail(array('contactid' => $id, 'ordering' => 1));
+
+		$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
+		$emailDb->addEmail(array('contactid' => $id, 'ordering' => 1, 'password' => $password));
 
 		$internetDb = new Contacts_Model_DbTable_Internet();
 		$internetDb->addInternet(array('contactid' => $id, 'ordering' => 1));
@@ -267,7 +269,6 @@ class Contacts_ContactController extends Zend_Controller_Action
 						$emailForm->subject->setValue($emailtemplate['subject']);
 						$emailForm->body->setValue($emailtemplate['body']);
 					}
-
 					$this->view->emailForm = $emailForm;
 					$this->view->url = $this->_helper->Directory->getUrl($contact['contactid']);
 
@@ -288,6 +289,19 @@ class Contacts_ContactController extends Zend_Controller_Action
 						}
 					}
 
+					//Downloads
+					$downloadsDb = new Contacts_Model_DbTable_Download();
+					$downloads = $downloadsDb->getDownloads($id);
+
+					//Download tracking
+					$downloadtrackingsDb = new Contacts_Model_DbTable_Downloadtracking();
+					$downloadtrackings = $downloadtrackingsDb->getDownloadtrackings($id);
+
+					$clientid = $this->_user['clientid'];
+					$dir1 = substr($clientid, 0, 1);
+					if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+					else $dir2 = '0';
+
 					//Toolbar
 					$toolbar = new Contacts_Form_Toolbar();
 
@@ -302,6 +316,9 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$this->view->internet = $internet;
 					$this->view->bankAccount = $bankAccount;
 					$this->view->attachments = $attachments;
+					$this->view->downloads = $downloads;
+					$this->view->downloadsurl = $dir1.'/'.$dir2.'/'.$clientid.'/';
+					$this->view->downloadtrackings = $downloadtrackings;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}
@@ -377,7 +394,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$emailDb = new Contacts_Model_DbTable_Email();
 		$emails = $emailDb->getEmails($id);
 		foreach($emails as $email) {
-			$emailDb->addEmail(array('contactid' => $contactid, 'email' => $email['email'], 'ordering' => $email['ordering']));
+			$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
+			$emailDb->addEmail(array('contactid' => $contactid, 'email' => $email['email'], 'ordering' => $email['ordering'], 'password' => $password));
 		}
 
 		//Internet
@@ -431,7 +449,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 			$formData = $request->getPost();
 			if($form->isValid($formData)) {
 
-				$clientid = $this->view->client['id'];
+				$clientid = $this->_user['clientid'];
 				$dir1 = substr($clientid, 0, 1);
 				if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
 				else $dir2 = '0';
@@ -559,7 +577,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 								if(isset($map['email']) && isset($datacsv[$map['email']]) && $datacsv[$map['email']]) {
 									$emailDb = new Contacts_Model_DbTable_Email();
-									$emailDb->addEmail(array('contactid' => $id, 'email' => $datacsv[$map['email']], 'ordering' => 1));
+									$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
+									$emailDb->addEmail(array('contactid' => $id, 'email' => $datacsv[$map['email']], 'ordering' => 1, 'password' => $password));
 								}
 
 								if(isset($map['internet']) && isset($datacsv[$map['internet']]) && $datacsv[$map['internet']]) {

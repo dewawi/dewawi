@@ -17,5 +17,6 @@
 	'TABS_SUPPLIER_DETAILS' => 'Lieferantendetails',
 	'TABS_PAYMENT' => 'Zahlungsinformationen',
 	'TABS_DETAILS' => 'Details',
-	'TABS_INVENTORY' => 'Buchungsverlauf'
+	'TABS_INVENTORY' => 'Buchungsverlauf',
+	'TABS_DOWNLOADS' => 'Downloads'
 );

@@ -13,6 +13,11 @@ class Contacts_Form_Toolbar extends Zend_Form
 			->setDecorators(array('ViewHelper'))
 			->setAttrib('class', 'add');
 
+		$form['addset'] = new Zend_Form_Element_Button('addset');
+		$form['addset']->setLabel('TOOLBAR_NEW_SET')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('class', 'addSet add');
+
 		$form['view'] = new Zend_Form_Element_Button('view');
 		$form['view']->setLabel('TOOLBAR_VIEW')
 			->setDecorators(array('ViewHelper'))
@@ -27,6 +32,11 @@ class Contacts_Form_Toolbar extends Zend_Form
 		$form['editInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
 			->setAttrib('class', 'edit nolabel');
+
+		$form['save'] = new Zend_Form_Element_Button('save');
+		$form['save']->setLabel('TOOLBAR_SAVE')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('class', 'save');
 
 		$form['copy'] = new Zend_Form_Element_Button('copy');
 		$form['copy']->setLabel('TOOLBAR_COPY')
@@ -92,6 +102,21 @@ class Contacts_Form_Toolbar extends Zend_Form
 			->addMultiOption('0', 'TOOLBAR_ALL_COUNTRIES')
 			->setAttrib('default', '0')
 			->setAttrib('class', 'hidden-sm hidden-md');
+
+		$form['controller'] = new Zend_Form_Element_Select('controller');
+		$form['controller']->setDecorators(array('ViewHelper'))
+			->addMultiOption('0', 'TOOLBAR_ALL')
+			->addMultiOption('contact', 'CONTACTS')
+			->addMultiOption('creditnote', 'CREDIT_NOTES')
+			->addMultiOption('deliveryorder', 'DELIVERY_ORDERS')
+			->addMultiOption('invoice', 'INVOICES')
+			->addMultiOption('quote', 'QUOTES')
+			->addMultiOption('reminder', 'REMINDERS')
+			->addMultiOption('salesorder', 'SALES_ORDERS')
+			->addMultiOption('purchaseorder', 'PURCHASE_ORDERS')
+			->addMultiOption('quoterequest', 'QUOTE_REQUESTS')
+			->setAttrib('default', '0')
+			->setAttrib('class', 'hidden-sm');
 
 		$form['limit'] = new Zend_Form_Element_Select('limit');
 		$form['limit']->setDecorators(array('ViewHelper'))

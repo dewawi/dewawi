@@ -36,7 +36,15 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			<?php echo $this->view->toolbar->keyword; ?>
 			<?php echo $this->view->toolbar->clear; ?>
 			<?php echo $this->view->toolbar->reset; ?>
+			<?php echo $this->view->toolbar->controller; ?>
 			<?php echo $this->view->toolbar->limit; ?>
+		<?php elseif(($this->view->controller == 'download') || ($this->view->controller == 'downloadset')) : ?>
+			<?php if($this->view->action == 'add') : ?>
+				<?php echo $this->view->toolbar->save; ?>
+			<?php elseif($this->view->action == 'index') : ?>
+				<?php echo $this->view->toolbar->add; ?>
+				<?php echo $this->view->toolbar->addset; ?>
+			<?php endif; ?>
 		<?php endif;
 	}
 }

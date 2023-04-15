@@ -151,7 +151,7 @@ class Contacts_Model_Get
 			$emailmessagesDb->select()
 				->setIntegrityCheck(false)
 				->from(array($schema => 'emailmessage'))
-				->joinLeft(array('t' => 'emailtracking'), 'MD5(m.id) = t.key', array('accesstime' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT t.accesstime)')))
+				->joinLeft(array('t' => 'emailtracking'), 'm.id = t.emailmessageid', array('accesstime' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT t.accesstime)')))
 				->group($schema.'.id')
 				->where($query)
 				->order('id DESC')

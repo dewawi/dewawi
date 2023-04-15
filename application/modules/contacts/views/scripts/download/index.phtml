@@ -1,0 +1,129 @@
+<?php		 
+$this->title = $this->translate('DOWNLOADS');
+$this->headTitle($this->title);
+echo $this->Messages();
+?>
+
+<div class="row">
+	<div class="col-sm-12 col-md-6">
+		<?php //if(isset($this->downloads) && count($this->downloads)) : ?>
+			<h3><?php echo $this->translate('CONTACTS_AVAILABLE_DOWNLOADS'); ?></h3>
+			<?php foreach($this->downloadSets as $setid => $title) : ?>
+				<h4>
+					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'downloadset', 'action'=>'edit', 'id'=>$setid)); ?>">
+						<?php echo $this->escape($title); ?>
+					</a>
+				</h4>
+				<table id="data">
+					<thead>
+						<tr>
+							<th width="8%"><span>ID</span></th>
+							<th width="8%"><?php echo $this->translate('CONTACTS_FILE_NAME'); ?></th>
+							<th width="8%"><?php echo $this->translate('CONTACTS_FILE_SIZE'); ?></th>
+							<th width="8%"><?php echo $this->translate('CONTACTS_FILE_LANGUAGE'); ?></th>
+							<th width="8%"></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach($this->downloads as $download) : ?>
+							<?php if($download['setid'] == $setid) : ?>
+								<tr>
+									<td>
+										<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'download', 'action'=>'edit', 'id'=>$download['id'])); ?>">
+											<?php echo $this->escape($download['id']); ?>
+										</a>
+									</td>
+									<td>
+										<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'download', 'action'=>'edit', 'id'=>$download['id'])); ?>">
+											<?php echo $this->escape($download['title']); ?>
+										</a>
+									</td>
+									<td><?php echo $this->HumanFileSize($download['filesize']); ?></td>
+									<td><?php echo $download['language']; ?></td>
+									<td></td>
+								</tr>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endforeach; ?>
+			<h4><?php echo $this->translate('CONTACTS_NOT_CATEGORIZED'); ?></h4>
+			<table id="data">
+				<thead>
+					<tr>
+						<th width="8%"><span>ID</span></th>
+						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_NAME'); ?></th>
+						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_SIZE'); ?></th>
+						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_LANGUAGE'); ?></th>
+						<th width="8%"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach($this->downloads as $download) : ?>
+						<?php if($download['setid'] == 0) : ?>
+							<tr>
+								<td>
+									<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'download', 'action'=>'edit', 'id'=>$download['id'])); ?>">
+										<?php echo $this->escape($download['id']); ?>
+									</a>
+</td>
+								<td>
+									<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'download', 'action'=>'edit', 'id'=>$download['id'])); ?>">
+										<?php echo $this->escape($download['title']); ?>
+									</a>
+								</td>
+								<td><?php echo $this->HumanFileSize($download['filesize']); ?></td>
+								<td><?php echo $download['language']; ?></td>
+								<td></td>
+							</tr>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+
+
+
+			<h3><?php echo $this->translate('CONTACTS_ACCESS_LIST'); ?></h3>
+			<table id="data">
+				<thead>
+					<tr>
+						<th width="8%"><span>ID</span></th>
+						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_NAME'); ?></th>
+						<th width="8%"><?php echo $this->translate('CONTACTS_EMAIL'); ?></th>
+						<th width="8%"><?php echo $this->translate('CONTACTS_EMAIL'); ?></th>
+						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_SIZE'); ?></th>
+						<th width="8%"><?php echo $this->translate('CONTACTS_ACCESS_TIME'); ?></th>
+						<th width="8%"><?php echo $this->translate('CONTACTS_USER_AGENT'); ?></th>
+						<th width="8%"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach($this->downloadtrackings as $downloadtracking) : ?>
+						<tr>
+							<td>
+								<a href="<?php echo $this->baseUrl(); ?>/files/downloads/<?php echo $this->downloadsurl.$downloadtracking['id']; ?>" target="_blank">
+									<?php echo $this->escape($downloadtracking['id']); ?>
+								</a>
+</td>
+							<td>
+								<a href="<?php echo $this->baseUrl(); ?>/files/downloads/<?php echo $this->downloadsurl.$downloadtracking['filename']; ?>" target="_blank">
+									<?php echo $this->escape($downloadtracking['title']); ?>
+								</a>
+							</td>
+							<td>
+								<a href="<?php echo $this->baseUrl(); ?>/contacts/contact/edit/id/<?php echo $downloadtracking['contactid']; ?>" target="_blank">
+									<?php echo $this->escape($downloadtracking['contactid']); ?>
+								</a>
+							</td>
+							<td><?php echo $downloadtracking['email']; ?></td>
+							<td><?php echo $this->HumanFileSize($downloadtracking['filesize']); ?></td>
+							<td><?php echo $downloadtracking['accesstime']; ?></td>
+							<td><?php echo $downloadtracking['useragent']; ?></td>
+							<td></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php //endif; ?>
+	</div>
+</div>

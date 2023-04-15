@@ -1,0 +1,26 @@
+<?php
+$this->title = $this->form->getValue('title');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->FileManager();
+?>
+
+<ul class="tabs">
+	<li<?php if($this->activeTab == "#tabOverview") : ?> class="active"<?php endif; ?>>
+		<a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW'); ?></a></li>
+</ul>
+
+<div class="tab_container">
+	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
+		<form id="downloadset" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->getElement('id'); ?>
+						<?php echo $this->form->getElement('title'); ?>
+					</dl>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>

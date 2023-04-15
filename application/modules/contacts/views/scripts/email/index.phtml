@@ -37,7 +37,9 @@ echo $this->Messages();
 				<tr>
 					<td><input class="id" type="checkbox" value="<?php echo $emailmessage['id'] ?>" name="id"/></td>
 					<td data-label="<?php echo $this->translate('CONTACTS_PHONE') ?>" class="phone">
-						<?php echo str_replace(',', '<br>', $this->escape($emailmessage['recipient'])); ?>
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$emailmessage['contactid'])); ?>">
+							<?php echo str_replace(',', '<br>', $this->escape($emailmessage['recipient'])); ?>
+						</a>
 					</td>
 					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street" style="flex-grow: 2;">
 						<p><b><?php echo $this->translate('CONTACTS_EMAIL_SUBJECT'); ?>:</b> <?php echo $this->escape($emailmessage['subject']); ?></p>
