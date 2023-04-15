@@ -229,8 +229,13 @@ class Items_ItemlistController extends Zend_Controller_Action
 			foreach($params as $catid => $data) {
 				$items = $get->items(array('catid' => $catid, 'keyword' => '', 'tagid' => 0, 'order' => 'id', 'sort' => 'asc', 'limit' => 0), $options, true)->toArray();
 				foreach($items as $item) {
+					//Get and use price rules
+					$pricerules = $this->_helper->PriceRule->getPriceRules($item);
+					$item['price'] = $this->_helper->PriceRule->usePriceRules($pricerules, $item['price']);
+
 					$currency = $currencyHelper->setCurrency($currency, $item['currency'], 'USE_SYMBOL');
 					$item['cost'] = $currency->toCurrency($item['cost']);
+					if(true) $item['price'] = floor($item['price']); //TODO
 					$item['price'] = $currency->toCurrency($item['price']);
 					$itemlists[$catid][$item['id']] = $item;
 				}
@@ -252,6 +257,12 @@ class Items_ItemlistController extends Zend_Controller_Action
 				foreach($itemlistObject as $item) {
 					$positions = $optionsDb->getPositions($item['id'])->toArray();
 					foreach($positions as $position) {
+						//Get and use price rules for options
+						if($position['price'] > 0) {
+							$pricerules = $this->_helper->PriceRule->getPriceRules($item);
+							$position['price'] = $this->_helper->PriceRule->usePriceRules($pricerules, $position['price']);
+						}
+
 						$itemOptions[$item['catid']][$item['id']][$position['id']]['sku'] = $position['sku'];
 						$itemOptions[$item['catid']][$item['id']][$position['id']]['title'] = $position['title'];
 						$itemOptions[$item['catid']][$item['id']][$position['id']]['optsetid'] = $position['optsetid'];

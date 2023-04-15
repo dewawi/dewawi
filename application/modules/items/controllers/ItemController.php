@@ -283,11 +283,14 @@ class Items_ItemController extends Zend_Controller_Action
 				$attributesByGroup[$id]['description'] = $attributeSet['description'];
 				$attributesByGroup[$id]['attributes'] = $attributesDb->getPositions($item['id'], $attributeSet['id']);
 			}
-			$attributesByGroup[] = array(
-				'title' => 'Sonstiges',
-				'description' => '',
-				'attributes' => $attributesDb->getPositions($item['id'], 0)
-			);
+			$otherAttributes = $attributesDb->getPositions($item['id'], 0);
+			if(count($otherAttributes)) {
+				$attributesByGroup[] = array(
+					'title' => 'Sonstiges',
+					'description' => '',
+					'attributes' => $otherAttributes
+				);
+			}
 
 			$this->view->item = $item;
 			$this->view->images = $images;
