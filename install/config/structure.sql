@@ -412,6 +412,75 @@ CREATE TABLE IF NOT EXISTS `documentrelation` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `download` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `setid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
+  `itemid` int(11) NOT NULL DEFAULT 0,
+  `contactid` int(11) NOT NULL DEFAULT 0,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
+  `filename` varchar(255) DEFAULT NULL,
+  `filesize` int(11) NOT NULL,
+  `language` varchar(255) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `downloadset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `column` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `header` text DEFAULT NULL,
+  `footer` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `downloadtracking` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `setid` int(11) NOT NULL,
+  `contactid` int(11) NOT NULL,
+  `downloadid` int(11) NOT NULL,
+  `itemid` int(11) NOT NULL DEFAULT 0,
+  `email` varchar(255) DEFAULT NULL,
+  `filename` varchar(255) DEFAULT NULL,
+  `filesize` int(11) DEFAULT NULL,
+  `language` varchar(255) DEFAULT NULL,
+  `sku` varchar(255) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `accesstime` datetime DEFAULT NULL,
+  `useragent` varchar(255) DEFAULT NULL,
+  `remoteip` varchar(255) DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `ebayaccount` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userid` varchar(255) NOT NULL,
