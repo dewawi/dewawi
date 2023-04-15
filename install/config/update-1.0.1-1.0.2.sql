@@ -600,3 +600,64 @@ CREATE TABLE IF NOT EXISTS `usertracking` (
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `emailtracking` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `emailmessageid` int(11) NOT NULL,
+  `contactid` int(11) NOT NULL,
+  `documentid` int(11) NOT NULL,
+  `sender` varchar(255) DEFAULT NULL,
+  `recipient` varchar(255) DEFAULT NULL,
+  `cc` varchar(255) DEFAULT NULL,
+  `bcc` varchar(255) DEFAULT NULL,
+  `replyto` varchar(255) DEFAULT NULL,
+  `subject` varchar(255) DEFAULT NULL,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
+  `accesstime` datetime DEFAULT NULL,
+  `useragent` varchar(255) DEFAULT NULL,
+  `remoteip` varchar(255) DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `portal` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `url` varchar(255) DEFAULT NULL,
+  `timezone` varchar(255) DEFAULT NULL,
+  `language` varchar(255) DEFAULT NULL,
+  `analytics` text DEFAULT NULL,
+  `logo` varchar(255) DEFAULT NULL,
+  `footer` varchar(255) DEFAULT NULL,
+  `emailsender` varchar(255) DEFAULT NULL,
+  `smtphost` varchar(255) DEFAULT NULL,
+  `smtpauth` varchar(255) DEFAULT NULL,
+  `smtpsecure` varchar(255) DEFAULT NULL,
+  `smtpuser` varchar(255) DEFAULT NULL,
+  `smtppass` varchar(32) DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `portaltracking` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `emailid` int(11) NOT NULL,
+  `contactid` int(11) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `target` varchar(255) DEFAULT NULL,
+  `accesstime` datetime DEFAULT NULL,
+  `useragent` varchar(255) DEFAULT NULL,
+  `remoteip` varchar(255) DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
