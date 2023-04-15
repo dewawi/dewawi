@@ -142,8 +142,83 @@ echo $this->Messages();
 	</div>
 </div>
 
+
 <div class="row">
 	<div class="col-sm-12 col-lg-8">
+		<?php if(isset($this->tasks) && count($this->tasks)) : ?>
+			<h3>
+				<?php echo $this->translate('TASKS'); ?>
+				<a href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'index'), null, TRUE); ?>">
+					<span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
+				</a>
+			</h3>
+			<table id="data">
+				<thead>
+					<tr>
+						<th id="id" width="7%">
+							<?php echo $this->translate('TASKS_TASK_ID') ?>
+						</th>
+						<th id="title" width="5%">
+							<?php echo $this->translate('TASKS_TITLE') ?>
+						</th>
+						<th id="responsible" width="5%">
+							<?php echo $this->translate('TASKS_RESPONSIBLE_PERSON') ?>
+						</th>
+						<th id="priority" width="5%">
+							<?php echo $this->translate('TASKS_PRIORITY') ?>
+						</th>
+						<th id="duedate" width="5%">
+							<?php echo $this->translate('TASKS_DUE_DATE') ?>
+						</th>
+						<th width="10%"></th>
+						<th width="10%"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach($this->tasks as $task) : ?>
+					<tr>
+						<td id="id">
+							<input class="id" type="hidden" value="<?php echo $task->id ?>" name="id"/>
+							<input class="controller" type="hidden" value="task" name="controller"/>
+							<input class="module" type="hidden" value="tasks" name="module"/>
+							<a href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'edit', 'id'=>$task->id)); ?>">
+								<?php echo $this->escape($task->id); ?>
+							</a>
+						</td>
+						<td id="task">
+							<a href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'edit', 'id'=>$task->id)); ?>">
+								<?php echo $this->escape($task->title); ?>
+							</a>
+						</td>
+						<td id="responsible">
+							<?php echo $this->translate($this->escape($this->options['users'][$task->responsible])); ?>
+						</td>
+						<td id="priority">
+							<?php if($task->priority == 0) echo $this->translate('TASKS_PRIORITY_NORMAL'); ?>
+							<?php if($task->priority == 1) echo $this->translate('TASKS_PRIORITY_LOWEST'); ?>
+							<?php if($task->priority == 2) echo $this->translate('TASKS_PRIORITY_LOW'); ?>
+							<?php if($task->priority == 3) echo $this->translate('TASKS_PRIORITY_HIGH'); ?>
+							<?php if($task->priority == 4) echo $this->translate('TASKS_PRIORITY_HIGHEST'); ?>
+						</td>
+						<td id="duedate">
+							<?php echo $this->escape($task->duedate); ?>
+						</td>
+						<td id="duedate">
+							<?php if($task->duedate) : ?>
+								<?php if(strtotime($task->duedate) < time()) : ?>
+									<?php echo 'überfällig'; ?>
+								<?php endif; ?>
+							<?php endif; ?>
+						</td>
+						<td class="buttons">
+							<?php echo $this->toolbar->edit; ?>
+						</td>
+					</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+
 		<?php if(isset($this->quotes) && count($this->quotes)) : ?>
 			<h3>
 				<?php echo $this->translate('QUOTES'); ?>

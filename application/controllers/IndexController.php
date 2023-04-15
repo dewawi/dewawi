@@ -71,6 +71,20 @@ class IndexController extends Zend_Controller_Action
 		$inventory = $inventoryDb->getLatestInventorys();
 		$this->view->inventories = $inventory;
 
+		$tasksDb = new Tasks_Model_DbTable_Task();
+		$tasks = $tasksDb->getLatestTasks();
+		foreach($tasks as $task) {
+			if($task->startdate) {
+				$startdate = new Zend_Date($task->startdate, Zend_Date::DATES, 'de');
+				$task->startdate = $startdate->get('dd.MM.yyyy');
+			}
+			if($task->duedate) {
+				$duedate = new Zend_Date($task->duedate, Zend_Date::DATES, 'de');
+				$task->duedate = $duedate->get('dd.MM.yyyy');
+			}
+		}
+		$this->view->tasks = $tasks;
+
 		$this->view->options = $options;
 		$this->view->toolbar = new Application_Form_Toolbar();
 		$this->view->messages = $this->_flashMessenger->getMessages();
