@@ -35,6 +35,9 @@ class Sales_PositionController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 		$locale = Zend_Registry::get('Zend_Locale');
 
+		//Calculate
+		$this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
+
 		//Define belonging classes
 		$parentClass = 'Sales_Model_DbTable_'.ucfirst($params['parent']);
 		$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
@@ -103,9 +106,6 @@ class Sales_PositionController extends Zend_Controller_Action
 			}
 		}
 		foreach($positions as $position) {
-			if(isset($parent['taxfree']) && !$parent['taxfree'] && array_search($position->taxrate, $taxrates))
-				$taxes[$position->taxrate]['value'] += ($position->price*$position->quantity*$position->taxrate/100);
-
 			//Use price rules
 			if($position->masterid && $pricerulemaster[$position->masterid] && isset($pricerules[$position->masterid])) {
 				$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->masterid], $position->price);
@@ -114,6 +114,9 @@ class Sales_PositionController extends Zend_Controller_Action
 			} else {
 				$price = $position->price;
 			}
+
+			if(isset($parent['taxfree']) && !$parent['taxfree'] && array_search($position->taxrate, $taxrates))
+				$taxes[$position->taxrate]['value'] += ($price*$position->quantity*$position->taxrate/100);
 
 			// Set position total with currency symbol
 			$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
