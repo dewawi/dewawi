@@ -532,33 +532,8 @@ class Sales_QuoteController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($quote['currency'], 'USE_SYMBOL');
-
 		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Quotepos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'quotepos');
-
-			//Set precision and currency
-			foreach($positions as $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-
-			$quote['taxes'] = $currency->toCurrency($quote['taxes']);
-			$quote['subtotal'] = $currency->toCurrency($quote['subtotal']);
-			$quote['total'] = $currency->toCurrency($quote['total']);
-			if($quote['taxfree']) {
-				$quote['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$quote['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-		}
+		list($positions, $quote, $options, $optionSets) = $this->_helper->Positions->getPositions($id, $quote, $locale);
 
 		//Get footers
 		$footerDb = new Application_Model_DbTable_Footer();
@@ -566,6 +541,8 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 		$this->view->quote = $quote;
 		$this->view->contact = $contact;
+		$this->view->options = $options;
+		$this->view->optionSets = $optionSets;
 		$this->view->positions = $positions;
 		$this->view->calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $quote['taxfree']);
 		$this->view->footers = $footers;
@@ -597,9 +574,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($quote['currency'], 'USE_SYMBOL');
-
 		//Set new document Id and filename
 		if(!$quote['quoteid']) {
 			//Set new quote Id
@@ -614,29 +588,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		}
 
 		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Quotepos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'quotepos');
-
-			//Set precision and currency
-			foreach($positions as $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-
-			$quote['taxes'] = $currency->toCurrency($quote['taxes']);
-			$quote['subtotal'] = $currency->toCurrency($quote['subtotal']);
-			$quote['total'] = $currency->toCurrency($quote['total']);
-			if($quote['taxfree']) {
-				$quote['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$quote['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-		}
+		list($positions, $quote, $options, $optionSets) = $this->_helper->Positions->getPositions($id, $quote, $locale);
 
 		//Get footers
 		$footerDb = new Application_Model_DbTable_Footer();
@@ -644,7 +596,10 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 		$this->view->quote = $quote;
 		$this->view->contact = $contact;
+		$this->view->options = $options;
+		$this->view->optionSets = $optionSets;
 		$this->view->positions = $positions;
+		$this->view->calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $quote['taxfree']);
 		$this->view->footers = $footers;
 	}
 
@@ -674,33 +629,8 @@ class Sales_QuoteController extends Zend_Controller_Action
 			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($quote['currency'], 'USE_SYMBOL');
-
 		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Quotepos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'quotepos');
-
-			//Set precision and currency
-			foreach($positions as $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-
-			$quote['taxes'] = $currency->toCurrency($quote['taxes']);
-			$quote['subtotal'] = $currency->toCurrency($quote['subtotal']);
-			$quote['total'] = $currency->toCurrency($quote['total']);
-			if($quote['taxfree']) {
-				$quote['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$quote['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-		}
+		list($positions, $quote, $options, $optionSets) = $this->_helper->Positions->getPositions($id, $quote, $locale);
 
 		//Get footers
 		$footerDb = new Application_Model_DbTable_Footer();
@@ -708,7 +638,10 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 		$this->view->quote = $quote;
 		$this->view->contact = $contact;
+		$this->view->options = $options;
+		$this->view->optionSets = $optionSets;
 		$this->view->positions = $positions;
+		$this->view->calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $quote['taxfree']);
 		$this->view->footers = $footers;
 	}
 
