@@ -1,4 +1,6 @@
 <?php return array(
+	//Menu
+	'MENU_INVENTORY' => 'Buchungsverlauf',
 	//Inventory
 	'ITEMS_NEW_INVENTORY' => 'Neue Buchung',
 	'ITEMS_INVENTORY' => 'Buchungsverlauf',
