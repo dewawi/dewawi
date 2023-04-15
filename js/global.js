@@ -70,29 +70,33 @@ $(document).ready(function(){
 		isDirty = true;
 	});
 	$('.edit form').on('change', 'input, textarea, select', function() {
-		isDirty = true;
-		var data = {};
-		var params = {};
-		var value = this.value;
-		//If the element is a checkbox
-		if($(this).is(':checkbox')) {
-			if($(this).is(':checked')) value = 1;
-			else value = 0;
+		if(this.name != 'file[]') {
+			isDirty = true;
+			var data = {};
+			var params = {};
+			var value = this.value;
+			//If the element is a checkbox
+			if($(this).is(':checkbox')) {
+				if($(this).is(':checked')) value = 1;
+				else value = 0;
+			}
+			data[this.name] = value;
+			//Check dataset info on the element
+			if(typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
+			if(typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;
+			if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
+			if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
+			if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
+			edit(data, params);
+			//validate(data, params);
 		}
-		data[this.name] = value;
-		//Check dataset info on the element
-		if(typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
-		if(typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;
-		if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
-		if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
-		if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
-		edit(data, params);
-		//validate(data, params);
 	});
 	$('.edit form input').on('textchange', function() {
-				if (!$(this).hasClass('datePicker')) {
+		if(this.name != 'file[]') {
+			if(!$(this).hasClass('datePicker')) {
 				isDirty = true;
-				}
+			}
+		}
 	});
 	$('.edit form textarea').on('textchange', function() {
 		isDirty = true;
@@ -573,9 +577,15 @@ $(document).ready(function(){
 					var setid = $(this).closest('div.set').find('input.setid').val();
 					addPosition(parent, type, setid);
 				} else if(className == 'addSet') {
-					var parent = $(this).closest('div.positionsContainer').data('parent');
-					var type = $(this).closest('div.positionsContainer').data('type');
-					addSet(parent, type);
+					if(action == 'index') {
+						var url = baseUrl+'/'+module+'/'+controller+'set/add';
+						if($('#catid').val() > 0) url += '/catid/'+$('#catid').val();
+						setLocation(url);
+					} else {
+						var parent = $(this).closest('div.positionsContainer').data('parent');
+						var type = $(this).closest('div.positionsContainer').data('type');
+						addSet(parent, type);
+					}
 				} else if(className == 'copySet') {
 					var parent = $(this).closest('div.positionsContainer').data('parent');
 					var type = $(this).closest('div.positionsContainer').data('type');
@@ -969,6 +979,7 @@ function search() {
 	data.limit = $('#limit').val();
 	data.order = $('#order').val();
 	data.sort = $('#sort').val();
+	data.controller = $('#controller').val();
 	data.clientid = $('#clientid').val();
 	if(typeof window.parent.controller !== 'undefined') data.parent = window.parent.controller;
 	data.paymentstatus = [];
@@ -1195,6 +1206,7 @@ function editPosition(parent, type, data, params) {
 		if(params['id']) url += '/edit/id/'+params['id'];
 		if(params['parentid']) url += '/parent/'+parent+'/type/'+type+'/parentid/'+params['parentid'];
 	}
+	console.log(123);
 	$.ajax({
 		type: 'POST',
 		url: url,
@@ -1377,7 +1389,8 @@ function editPositionSet(data, params) {
 
 //Get Email Messages
 function getEmailmessages(scrollTo) {
-	var contactid = $('#contactid').val();
+	if(module == 'contacts') var contactid = $('#id').val();
+	else var contactid = $('#contactid').val();
 	var data = {};
 	if(controller != 'contact') {;
 		data.documentid = id;
@@ -1423,7 +1436,8 @@ function sendMessage(){
 		if($(this).is(':checked')) data.files[$(this).val()] = $(this).val();
 	});
 
-	var contactid = $('#contactid').val();
+	if(module == 'contacts') var contactid = $('#id').val();
+	else var contactid = $('#contactid').val();
 
 	if((module == 'contacts')) var url = baseUrl+'/contacts/email/send/contactid/'+contactid;
 	else var url = baseUrl+'/contacts/email/send/contactid/'+contactid+'/documentid/'+id;
