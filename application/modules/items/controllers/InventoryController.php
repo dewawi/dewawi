@@ -96,6 +96,11 @@ class Items_InventoryController extends Zend_Controller_Action
 		if($request->isPost()) {
 			$data = $request->getPost();
 			if($form->isValid($data)) {
+				$data['docid'] = 0;
+				$data['doctype'] = '';
+				$data['comment'] = '';
+				$data['language'] = '';
+				$data['warehouseid'] = 0;
 				$item = new Items_Model_DbTable_Inventory();
 				$item->addInventory($data);
 				$this->_helper->redirector('index');

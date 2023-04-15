@@ -182,9 +182,6 @@ class Items_PositionController extends Zend_Controller_Action
 				$parentMethod = 'get'.$params['parent'];
 				$parent = $parentDb->$parentMethod($params['parentid']);
 
-				//Check price rules
-				$data = $this->_helper->PriceRule($parent['contactid'], $item, $data, $this->_helper);
-
 				//Check currency
 				if($parent['currency'] == $item['currency']) {
 					$data['price'] = $item['price'];
@@ -219,7 +216,11 @@ class Items_PositionController extends Zend_Controller_Action
 				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid']) + 1;
 
 				$positionsDb = new $positionClass();
-				$positionsDb->addPosition($data);
+				$positionid = $positionsDb->addPosition($data);
+
+				//Apply price rules
+				$pricerules = $this->_helper->PriceRule->getPriceRules($item, $parent['contactid']);
+				$this->_helper->PriceRule->applyPriceRules('sales', $params['parent'].$params['type'], $pricerules, $positionid);
 			} else {
 				$form->populate($request->getPost());
 			}

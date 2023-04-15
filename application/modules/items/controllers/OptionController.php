@@ -284,6 +284,8 @@ class Items_OptionController extends Zend_Controller_Action
 					$map = array();
 					$itemDb = new Items_Model_DbTable_Item();
 					$itemImage = new Items_Model_DbTable_Itemimage();
+					$itemAttribute = new Items_Model_DbTable_Itematr();
+					$itemAttributeSet = new Items_Model_DbTable_Itematrset();
 					$itemOption = new Items_Model_DbTable_Itemopt();
 					$itemOptionSet = new Items_Model_DbTable_Itemoptset();
 
@@ -349,6 +351,19 @@ class Items_OptionController extends Zend_Controller_Action
 
 							//Create and update the item
 							if($item = $itemDb->getItemBySKU($optionData['parentsku'])) {
+								//Get item attributes and replace placeholders
+								$attributes = $itemAttribute->getPositions($item['id'])->toArray();
+								foreach($attributes as $attribute) {
+									if($attribute['title'] && $attribute['description']) {
+										//Search and replace attributes in import data
+										foreach($optionData as $key => $value) {
+											if(strpos($value, '#'.$attribute['title'].'#') !== false) {
+												$optionData[$key] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $value);
+											}
+										}
+									}
+								}
+
 								//print_r($optionData);
 								if(isset($optionSets[$item['id']])) {
 									$optionSetKey = array_search($optionData['set'], $optionSets[$item['id']]);
