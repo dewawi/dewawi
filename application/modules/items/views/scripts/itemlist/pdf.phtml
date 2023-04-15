@@ -94,8 +94,12 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 	}
 
 	//Image
-	if($itemlist['image'] && file_exists(BASE_PATH.'/files/uploads/1/0/100/'.$itemlist['image'])) {
-		$image = BASE_PATH.'/files/uploads/1/0/100/'.$itemlist['image'];
+	$dir1 = substr($client['id'], 0, 1);
+	if(strlen($client['id']) > 1) $dir2 = substr($client['id'], 1, 1);
+	else $dir2 = '0';
+	$pathUploads = BASE_PATH.'/files/uploads/'.$dir1.'/'.$dir2.'/'.$client['id'].'/';
+	if($itemlist['image'] && file_exists($pathUploads.$itemlist['image'])) {
+		$image = $pathUploads.$itemlist['image'];
 		$pdf->Image($image, 65, 150, 80, 0);
 	}
 
@@ -120,7 +124,7 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 			$x = $pdf->GetX()+5;
 			$pdf->SetFont('freesans', '', 10);
 			if(isset($categories[$catid]['childs'])) {
-				getSubList($categories[$catid]['childs'], $categories, $pdf, $items, $attributes, $options, $optionSets, $params[$catid]['rows']);
+				getSubList($categories[$catid]['childs'], $categories, $pdf, $pathUploads, $items, $attributes, $options, $optionSets, $params[$catid]['rows']);
 			} else {
 				$i = 1;
 				$pdf->setCellPaddings(0, 3, 0, 2);
@@ -246,7 +250,7 @@ if($this->action == 'download') {
 	echo $html;
 }
 
-function getSubList($childs, $categories, $pdf, $items, $attributes, $options, $optionSets, $rows) {
+function getSubList($childs, $categories, $pdf, $pathUploads, $items, $attributes, $options, $optionSets, $rows) {
 	foreach($childs as $child) {
 		$y = $pdf->GetY();
 		if($y>150) {
@@ -257,8 +261,8 @@ function getSubList($childs, $categories, $pdf, $items, $attributes, $options, $
 		$pdf->SetFont('freesansb', 'B', 16);
 		$pdf->MultiCell(0, 0, $categories[$child]['title'], 0, 'L', false, 1, 20);
 		$pdf->SetFont('freesans', '', 8);
-		if($categories[$child]['image'] && file_exists(BASE_PATH.'/files/uploads/1/0/100/'.$categories[$child]['image'])) {
-			$image = BASE_PATH.'/files/uploads/1/0/100/'.$categories[$child]['image'];
+		if($categories[$child]['image'] && file_exists($pathUploads.$categories[$child]['image'])) {
+			$image = $pathUploads.$categories[$child]['image'];
 			$pdf->Image($image, 150, $y, 50, 0);
 		}
 		if($categories[$child]['description']) {
@@ -267,7 +271,7 @@ function getSubList($childs, $categories, $pdf, $items, $attributes, $options, $
 			$pdf->ln(2);
 		}
 		if(isset($categories[$child]['childs'])) {
-			getSubList($categories[$child]['childs'], $categories, $pdf, $items, $attributes, $options, $optionSets, $rows);
+			getSubList($categories[$child]['childs'], $categories, $pdf, $pathUploads, $items, $attributes, $options, $optionSets, $rows);
 		} else {
 			$i = 1;
 			$pdf->setCellPaddings(1, 0, 0, 0);
