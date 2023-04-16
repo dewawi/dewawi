@@ -64,6 +64,13 @@ echo $this->FileManager();
 				</div>
 				<div class="col-sm-12 col-lg-6">
 					<dl class="form">
+						<h4><?php echo $this->translate('COMMENTS'); ?></h4>
+						<div id="comment" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="comment">
+							<?php echo $this->MultiForm('default', 'comment', $this->comments, array(
+																			array('field' => 'comment')
+																			)); ?>
+						</div>
+						<hr>
 						<?php echo $this->form->getElement('info'); ?>
 						<div class="info"><small>Interne Informationen werden nicht auf Angeboten, Rechnungen etc. angezeigt.</small></div>
 					</dl>

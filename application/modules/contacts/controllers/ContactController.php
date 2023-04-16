@@ -247,6 +247,10 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$addressDb = new Contacts_Model_DbTable_Address();
 					$address = $addressDb->getAddress($id);
 
+					//Comments
+					$commentDb = new Application_Model_DbTable_Comment();
+					$comments = $commentDb->getComments($id, 'contacts', 'contact');
+
 					//History and tags
 					$get = new Contacts_Model_Get();
 					$tags = $get->tags('contacts', 'contact', $contact['id']);
@@ -316,6 +320,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$this->view->internet = $internet;
 					$this->view->bankAccount = $bankAccount;
 					$this->view->attachments = $attachments;
+					$this->view->comments = $comments;
 					$this->view->downloads = $downloads;
 					$this->view->downloadsurl = $dir1.'/'.$dir2.'/'.$clientid.'/';
 					$this->view->downloadtrackings = $downloadtrackings;

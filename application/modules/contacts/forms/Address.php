@@ -4,7 +4,7 @@ class Contacts_Form_Address extends Zend_Form
 {
 	public function init()
 	{
-		$this->setName('internet');
+		$this->setName('address');
 
 		$form = array();
 

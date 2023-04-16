@@ -879,8 +879,10 @@ function add(data, params) {
 	if(params) {
 		var url = baseUrl;
 		params = params || null;
-		if(params && params['module']) url += '/'+params['module'];
-		else url += '/'+module;
+		if(params['module'] != 'default') {
+			if(params && params['module']) url += '/'+params['module'];
+			else url += '/'+module;
+		}
 		if(params && params['controller']) url += '/'+params['controller'];
 		else url += '/'+controller;
 		if(params && params['id']) url += '/add/id/'+params['id'];

@@ -5,7 +5,11 @@
 class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 
 	public function MultiForm($module, $controller, $data, $elements = null, $label = null) {
-		$className = ucfirst($module).'_Form_'.ucfirst($controller);
+		if($module == 'default') {
+			$className = 'Application_Form_'.ucfirst($controller);
+		} else {
+			$className = ucfirst($module).'_Form_'.ucfirst($controller);
+		}
 		$form = new $className; ?>
 		<?php if($label) : ?>
 			<dt id="<?php echo $controller; ?>-label">
@@ -70,6 +74,9 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 								<?php echo $form->getElement($element); ?>
 							<?php endif; ?>
 						<?php endforeach; ?>
+						<?php if($controller == 'comment') : ?>
+							<dt><?php echo date("d.m.Y H:i:s", strtotime($child['created'])); ?></dt>
+						<?php endif; ?>
 						<?php if(($controller == 'address') && isset($element['label'])) : ?>
 							<dt id="<?php echo $controller; ?>-label"></dt>
 						<?php endif; ?>
