@@ -35,7 +35,7 @@ class Purchases_Model_Get
 				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order(array('pinned desc', $params['order'].' '.$params['sort']))
 				->limit($params['limit'])
 		);
 		if(!count($quoterequests) && $params['keyword']) {
@@ -49,7 +49,7 @@ class Purchases_Model_Get
 					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}
@@ -106,7 +106,7 @@ class Purchases_Model_Get
 				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order(array('pinned desc', $params['order'].' '.$params['sort']))
 				->limit($params['limit'])
 		);
 		if(!count($purchaseorders) && $params['keyword']) {
@@ -120,7 +120,7 @@ class Purchases_Model_Get
 					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}

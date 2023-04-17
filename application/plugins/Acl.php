@@ -15,7 +15,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 			//Access control
 			$acl = array(
 					'add' => array('add', 'copy', 'generate', 'send', 'upload'),
-					'edit' => array('edit', 'import', 'lock', 'unlock', 'keepalive', 'apply', 'sort', 'save', 'cancel'),
+					'edit' => array('edit', 'import', 'lock', 'unlock', 'keepalive', 'pin', 'apply', 'sort', 'save', 'cancel'),
 					'view' => array('view', 'get', 'index', 'search', 'select', 'export', 'preview', 'download'),
 					'delete' => array('delete')
 					);

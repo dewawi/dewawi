@@ -14,3 +14,16 @@ CREATE TABLE IF NOT EXISTS `comment` (
   PRIMARY KEY (id),
   KEY (parentid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `contact` ADD `pinned` tinyint(1) NOT NULL DEFAULT 0 AFTER `cashdiscountpercent`;
+ALTER TABLE `item` ADD `pinned` tinyint(1) NOT NULL DEFAULT 0 AFTER `packweight`;
+ALTER TABLE `creditnote` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `filename`;
+ALTER TABLE `deliveryorder` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `filename`;
+ALTER TABLE `invoice` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `filename`;
+ALTER TABLE `quote` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `filename`;
+ALTER TABLE `reminder` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `filename`;
+ALTER TABLE `salesorder` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `filename`;
+ALTER TABLE `quoterequest` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `filename`;
+ALTER TABLE `purchaseorder` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `filename`;
+ALTER TABLE `process` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `contactperson`;
+ALTER TABLE `task` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `responsible`;

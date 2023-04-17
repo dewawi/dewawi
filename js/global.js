@@ -828,6 +828,19 @@ function unlock(id) {
 	});
 }
 
+//Pin
+function pin(id) {
+	$.ajax({
+		type: 'POST',
+		async: false,
+		url: baseUrl+'/'+module+'/'+controller+'/pin/id/'+id,
+		cache: false,
+		success: function(json){
+			if(action == 'index') search();
+		}
+	});
+}
+
 //Save
 function save() {
 	var error = false;

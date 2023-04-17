@@ -24,14 +24,14 @@ class Items_Model_Get
 			$items = $itemsDb->fetchAll(
 				$itemsDb->select()
 					->where($query ? $query : 0)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		} else {
 			$items = $itemsDb->fetchAll(
 				$itemsDb->select()
 					->where($query ? $query : 0)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}

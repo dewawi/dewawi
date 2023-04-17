@@ -63,7 +63,7 @@ class Contacts_Model_Get
 					->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($order.' '.$params['sort'])
+					->order(array('pinned desc', $order.' '.$params['sort']))
 					->limit($params['limit'], $params['offset'])
 			);
 			/*$count = $contactsDb->fetchRow(
@@ -92,7 +92,7 @@ class Contacts_Model_Get
 					->joinLeft(array('i' => 'internet'), 'c.id = i.contactid', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($order.' '.$params['sort'])
+					->order(array('pinned desc', $order.' '.$params['sort']))
 					->limit($params['limit'], $params['offset'])
 			);
 		}

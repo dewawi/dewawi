@@ -399,6 +399,9 @@ table#data > tbody > tr.alt {
 table#data > tbody > tr.highlight, #data td.highlight, #data th.highlight {
 	background: url('../images/dropline_bg.png') repeat;
 }
+table#data > tbody > tr.pinned, #data .pinned td {
+	background-color: #e6e6e6;
+}
 table#data > tbody > tr.bottom {
 	background: none;
 }

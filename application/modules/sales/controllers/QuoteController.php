@@ -677,6 +677,12 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
 
+	public function pinAction()
+	{
+		$id = $this->_getParam('id', 0);
+		$this->_helper->Pin->toogle($id);
+	}
+
 	public function lockAction()
 	{
 		$id = $this->_getParam('id', 0);

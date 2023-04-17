@@ -36,7 +36,7 @@ class Processes_Model_Get
 				->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order(array('pinned desc', $params['order'].' '.$params['sort']))
 				->limit($params['limit'])
 		);
 		if(!count($processes) && $params['keyword']) {
@@ -50,7 +50,7 @@ class Processes_Model_Get
 					->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}

@@ -35,12 +35,13 @@ echo $this->ActiveFilter();
 			<th class="state" width="6%">
 				<?php echo $this->translate('REMINDERS_STATE'); ?>
 			</th>
+			<th class="pin" width="8%"></th>
 			<th width="10%"></th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php foreach($this->reminders as $reminder) : ?>
-		<tr class="state<?php echo $reminder->state; ?>">
+		<tr class="state<?php echo $reminder->state; ?><?php echo $reminder->pinned ? ' pinned' : ''; ?>">
 			<td><input class="id" type="checkbox" value="<?php echo $reminder->id ?>" name="id"/></td>
 			<td class="reminderid">
 				<?php if($reminder->reminderid) : ?>
@@ -84,6 +85,13 @@ echo $this->ActiveFilter();
 					<?php echo $this->translate($this->escape($this->options['states'][$reminder->state])); ?>
 				<?php else : ?>
 					<span class="editable" data-name="state" data-value="<?php echo $reminder->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$reminder->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="pin">
+				<?php if($reminder->pinned) : ?>
+					<input type = "button" onclick = "pin(<?php echo $reminder->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
+				<?php else : ?>
+					<input type = "button" onclick = "pin(<?php echo $reminder->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
 				<?php endif; ?>
 			</td>
 			<td class="buttons">

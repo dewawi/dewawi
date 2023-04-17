@@ -35,12 +35,13 @@ echo $this->ActiveFilter();
 			<th class="state" width="6%">
 				<?php echo $this->translate('PURCHASE_ORDERS_STATE'); ?>
 			</th>
+			<th class="pin" width="8%"></th>
 			<th width="10%"></th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php foreach($this->purchaseorders as $purchaseorder) : ?>
-		<tr class="state<?php echo $purchaseorder->state; ?>">
+		<tr class="state<?php echo $purchaseorder->state; ?><?php echo $purchaseorder->pinned ? ' pinned' : ''; ?>">
 			<td><input class="id" type="checkbox" value="<?php echo $purchaseorder->id ?>" name="id"/></td>
 			<td class="purchaseorderid">
 				<?php if($purchaseorder->purchaseorderid) : ?>
@@ -84,6 +85,13 @@ echo $this->ActiveFilter();
 					<?php echo $this->translate($this->escape($this->options['states'][$purchaseorder->state])); ?>
 				<?php else : ?>
 					<span class="editable" data-name="state" data-value="<?php echo $purchaseorder->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$purchaseorder->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="pin">
+				<?php if($purchaseorder->pinned) : ?>
+					<input type = "button" onclick = "pin(<?php echo $purchaseorder->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
+				<?php else : ?>
+					<input type = "button" onclick = "pin(<?php echo $purchaseorder->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
 				<?php endif; ?>
 			</td>
 			<td class="buttons">

@@ -710,6 +710,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 		}
 	}
 
+	public function pinAction()
+	{
+		$id = $this->_getParam('id', 0);
+		$this->_helper->Pin->toogle($id);
+	}
+
 	public function lockAction()
 	{
 		$id = $this->_getParam('id', 0);

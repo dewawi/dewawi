@@ -27,12 +27,13 @@ echo $this->ActiveFilter();
 			<th class="state" style="width:5%">
 				<?php echo $this->translate('TASKS_STATE') ?>
 			</th>
+			<th class="pin" width="8%"></th>
 			<th style="width:8%"></th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php foreach($this->tasks as $task) : ?>
-		<tr class="state<?php echo $task->state; ?> <?php echo $task->paymentstatus; ?> <?php echo $task->deliverystatus; ?> <?php echo $task->supplierorderstatus; ?>">
+		<tr class="state<?php echo $task->state; ?><?php echo $task->pinned ? ' pinned' : ''; ?>">
 			<td><input class="id" type="checkbox" value="<?php echo $task->id; ?>" name="id"/></td>
 			<td data-label="<?php echo $this->translate('TASKS_TITLE') ?>" class="title">
 				<p><a href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'edit', 'id'=>$task->id));?>">
@@ -76,6 +77,13 @@ echo $this->ActiveFilter();
 					<?php echo $this->translate($this->escape($this->options['states'][$task->state])); ?>
 				<?php else : ?>
 					<span class="editable" data-name="state" data-value="<?php echo $task->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$task->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="pin">
+				<?php if($task->pinned) : ?>
+					<input type = "button" onclick = "pin(<?php echo $task->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
+				<?php else : ?>
+					<input type = "button" onclick = "pin(<?php echo $task->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
 				<?php endif; ?>
 			</td>
 			<td class="buttons">

@@ -27,12 +27,13 @@ echo $this->ActiveFilter();
 			<th class="state" style="width:5%">
 				<?php echo $this->translate('PROCESSES_STATE') ?>
 			</th>
+			<th class="pin" width="8%"></th>
 			<th style="width:8%"></th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php foreach($this->processes as $process) : ?>
-		<tr class="state<?php echo $process->state; ?> <?php echo $process->paymentstatus; ?> <?php echo $process->deliverystatus; ?> <?php echo $process->supplierorderstatus; ?>">
+		<tr class="state<?php echo $process->state; ?><?php echo $process->pinned ? ' pinned' : ''; ?> <?php echo $process->paymentstatus; ?> <?php echo $process->deliverystatus; ?> <?php echo $process->supplierorderstatus; ?>">
 			<td><input class="id" type="checkbox" value="<?php echo $process->id; ?>" name="id"/></td>
 			<td data-label="<?php echo $this->translate('PROCESSES_TITLE') ?>" class="title">
 				<p><a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'edit', 'id'=>$process->id));?>">
@@ -122,6 +123,13 @@ echo $this->ActiveFilter();
 					<?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?>
 				<?php else : ?>
 					<span class="editable" data-name="state" data-value="<?php echo $process->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="pin">
+				<?php if($process->pinned) : ?>
+					<input type = "button" onclick = "pin(<?php echo $process->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
+				<?php else : ?>
+					<input type = "button" onclick = "pin(<?php echo $process->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
 				<?php endif; ?>
 			</td>
 			<td class="buttons">

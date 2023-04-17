@@ -38,12 +38,13 @@ echo $this->ActiveFilter();
 			<th class="state" width="6%">
 				<?php echo $this->translate('INVOICES_STATE'); ?>
 			</th>
+			<th class="pin" width="8%"></th>
 			<th width="10%"></th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php foreach($this->invoices as $invoice) : ?>
-		<tr class="state<?php echo $invoice->state; ?>">
+		<tr class="state<?php echo $invoice->state; ?><?php echo $invoice->pinned ? ' pinned' : ''; ?>">
 			<td><input class="id" type="checkbox" value="<?php echo $invoice->id ?>" name="id"/></td>
 			<td class="invoiceid">
 				<?php if($invoice->invoiceid) : ?>
@@ -90,6 +91,13 @@ echo $this->ActiveFilter();
 					<?php echo $this->translate($this->escape($this->options['states'][$invoice->state])); ?>
 				<?php else : ?>
 					<span class="editable" data-name="state" data-value="<?php echo $invoice->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$invoice->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="pin">
+				<?php if($invoice->pinned) : ?>
+					<input type = "button" onclick = "pin(<?php echo $invoice->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
+				<?php else : ?>
+					<input type = "button" onclick = "pin(<?php echo $invoice->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
 				<?php endif; ?>
 			</td>
 			<td class="buttons">

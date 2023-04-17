@@ -35,7 +35,7 @@ class Sales_Model_Get
 				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order(array('pinned desc', $params['order'].' '.$params['sort']))
 				->limit($params['limit'])
 		);
 
@@ -46,7 +46,7 @@ class Sales_Model_Get
 			->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 			->group($schema.'.id')
 			->where($query ? $query : 1)
-			->order($params['order'].' '.$params['sort'])
+			->order(array('pinned desc', $params['order'].' '.$params['sort']))
 			->limit($params['limit']);
 		error_log($select->__toString());*/
 
@@ -62,7 +62,7 @@ class Sales_Model_Get
 					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}
@@ -119,7 +119,7 @@ class Sales_Model_Get
 				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order(array('pinned desc', $params['order'].' '.$params['sort']))
 				->limit($params['limit'])
 		);
 		if(!count($invoices) && $params['keyword']) {
@@ -133,7 +133,7 @@ class Sales_Model_Get
 					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}
@@ -190,7 +190,7 @@ class Sales_Model_Get
 				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order(array('pinned desc', $params['order'].' '.$params['sort']))
 				->limit($params['limit'])
 		);
 		if(!count($salesorders) && $params['keyword']) {
@@ -204,7 +204,7 @@ class Sales_Model_Get
 					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}
@@ -261,7 +261,7 @@ class Sales_Model_Get
 				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order(array('pinned desc', $params['order'].' '.$params['sort']))
 				->limit($params['limit'])
 		);
 		if(!count($deliveryorders) && $params['keyword']) {
@@ -275,7 +275,7 @@ class Sales_Model_Get
 					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}
@@ -332,7 +332,7 @@ class Sales_Model_Get
 				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order(array('pinned desc', $params['order'].' '.$params['sort']))
 				->limit($params['limit'])
 		);
 		if(!count($creditnotes) && $params['keyword']) {
@@ -346,7 +346,7 @@ class Sales_Model_Get
 					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}
@@ -403,7 +403,7 @@ class Sales_Model_Get
 				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order(array('pinned desc', $params['order'].' '.$params['sort']))
 				->limit($params['limit'])
 		);
 		if(!count($reminders) && $params['keyword']) {
@@ -417,7 +417,7 @@ class Sales_Model_Get
 					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order($params['order'].' '.$params['sort'])
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
 					->limit($params['limit'])
 			);
 		}

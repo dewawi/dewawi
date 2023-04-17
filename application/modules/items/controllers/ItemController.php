@@ -779,6 +779,12 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->form = $form;
 	}
 
+	public function pinAction()
+	{
+		$id = $this->_getParam('id', 0);
+		$this->_helper->Pin->toogle($id);
+	}
+
 	public function lockAction()
 	{
 		$id = $this->_getParam('id', 0);

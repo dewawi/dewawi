@@ -48,5 +48,7 @@
 	'VIEW' => 'Anzeigen',
 	'MORE' => 'Mehr',
 	'SHOW_ALL' => 'Alle anzeigen',
-	'COPY' => 'Kopie'
+	'COPY' => 'Kopie',
+	'ATTACH' => 'Anheften',
+	'DETACH' => 'Lösen'
 );

@@ -36,12 +36,13 @@ echo $this->ActiveFilter();
 			<th class="tags" width="12%">
 				<?php echo $this->translate('TAGS'); ?>
 			</th>
+			<th class="pin" width="8%"></th>
 			<th width="8%"></th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php foreach($this->contacts as $contact) : ?>
-			<tr>
+			<?php echo $contact->pinned ? '<tr class="pinned">' : '<tr>'; ?>
 				<td><input class="id" type="checkbox" value="<?php echo $contact->id ?>" name="id"/></td>
 				<td data-label="<?php echo $this->translate('CONTACTS_CONTACT_ID') ?>" class="id">
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
@@ -81,6 +82,13 @@ echo $this->ActiveFilter();
 						<span><?php echo $this->escape($tagEntity['tag']); ?></span>
 					<?php endforeach; ?>
 					<span class="editable" data-name="tagid" data-value="" data-type="select"></span>
+				</td>
+				<td class="pin">
+					<?php if($contact->pinned) : ?>
+						<input type = "button" onclick = "pin(<?php echo $contact->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
+					<?php else : ?>
+						<input type = "button" onclick = "pin(<?php echo $contact->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
+					<?php endif; ?>
 				</td>
 				<td class="buttons">
 					<?php echo $this->toolbar->editInline; ?>
