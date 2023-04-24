@@ -51,6 +51,10 @@ require_once "Zend/Http/Header/HeaderValue.php";
  */
 class Zend_Http_Header_SetCookie
 {
+    /**
+     * @var string
+     */
+    protected $type = 'Cookie';
 
     /**
      * Cookie name
@@ -125,7 +129,7 @@ class Zend_Http_Header_SetCookie
      */
     public static function fromString($headerLine, $bypassHeaderFieldName = false)
     {
-        list($name, $value) = explode(': ', $headerLine, 2);
+        [$name, $value] = explode(': ', $headerLine, 2);
 
         // check to ensure proper header type for this factory
         if (strtolower($name) !== 'set-cookie') {
@@ -133,13 +137,13 @@ class Zend_Http_Header_SetCookie
         }
 
         $multipleHeaders = preg_split('#(?<!Sun|Mon|Tue|Wed|Thu|Fri|Sat),\s*#', $value);
-        $headers = array();
+        $headers = [];
         foreach ($multipleHeaders as $headerLine) {
             $header = new self();
             $keyValuePairs = preg_split('#;\s*#', $headerLine);
             foreach ($keyValuePairs as $keyValue) {
                 if (strpos($keyValue, '=')) {
-                    list($headerKey, $headerValue) = preg_split('#=\s*#', $keyValue, 2);
+                    [$headerKey, $headerValue] = preg_split('#=\s*#', $keyValue, 2);
                 } else {
                     $headerKey = $keyValue;
                     $headerValue = null;
@@ -153,7 +157,7 @@ class Zend_Http_Header_SetCookie
                 }
 
                 // Process the remanining elements
-                switch (str_replace(array('-', '_'), '', strtolower($headerKey))) {
+                switch (str_replace(['-', '_'], '', strtolower($headerKey))) {
                     case 'expires' : $header->setExpires($headerValue); break;
                     case 'domain'  : $header->setDomain($headerValue); break;
                     case 'path'    : $header->setPath($headerValue); break;
@@ -167,13 +171,11 @@ class Zend_Http_Header_SetCookie
             }
             $headers[] = $header;
         }
-        return count($headers) == 1 ? array_pop($headers) : $headers;
+        return count($headers) === 1 ? array_pop($headers) : $headers;
     }
 
     /**
      * Cookie object constructor
-     *
-     * @todo Add validation of each one of the parameters (legal domain, etc.)
      *
      * @param string $name
      * @param string $value
@@ -184,7 +186,9 @@ class Zend_Http_Header_SetCookie
      * @param bool $httponly
      * @param string $maxAge
      * @param int $version
-     * @return SetCookie
+     * @return void
+     * @todo Add validation of each one of the parameters (legal domain, etc.)
+     *
      */
     public function __construct($name = null, $value = null, $expires = null, $path = null, $domain = null, $secure = false, $httponly = false, $maxAge = null, $version = null)
     {
@@ -291,7 +295,7 @@ class Zend_Http_Header_SetCookie
 
     /**
      * @param string $name
-     * @return SetCookie
+     * @return Zend_Http_Header_SetCookie
      */
     public function setName($name)
     {
@@ -377,7 +381,7 @@ class Zend_Http_Header_SetCookie
 
     /**
      * @param int $expires
-     * @return SetCookie
+     * @return Zend_Http_Header_SetCookie
      */
     public function setExpires($expires)
     {
@@ -538,7 +542,7 @@ class Zend_Http_Header_SetCookie
     public function toStringMultipleHeaders(array $headers)
     {
         $headerLine = $this->toString();
-        /* @var $header SetCookie */
+        /* @var SetCookie $header */
         foreach ($headers as $header) {
             if (!$header instanceof Zend_Http_Header_SetCookie) {
                 throw new Zend_Http_Header_Exception_RuntimeException(

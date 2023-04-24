@@ -47,20 +47,20 @@ class Zend_Validate_Between extends Zend_Validate_Abstract
      *
      * @var array
      */
-    protected $_messageTemplates = array(
+    protected $_messageTemplates = [
         self::NOT_BETWEEN        => "'%value%' is not between '%min%' and '%max%', inclusively",
         self::NOT_BETWEEN_STRICT => "'%value%' is not strictly between '%min%' and '%max%'"
-    );
+    ];
 
     /**
      * Additional variables available for validation failure messages
      *
      * @var array
      */
-    protected $_messageVariables = array(
+    protected $_messageVariables = [
         'min' => '_min',
         'max' => '_max'
-    );
+    ];
 
     /**
      * Minimum value
@@ -142,7 +142,7 @@ class Zend_Validate_Between extends Zend_Validate_Abstract
      * Sets the min option
      *
      * @param  mixed $min
-     * @return Zend_Validate_Between Provides a fluent interface
+     * @return $this
      */
     public function setMin($min)
     {
@@ -164,7 +164,7 @@ class Zend_Validate_Between extends Zend_Validate_Abstract
      * Sets the max option
      *
      * @param  mixed $max
-     * @return Zend_Validate_Between Provides a fluent interface
+     * @return $this
      */
     public function setMax($max)
     {
@@ -186,7 +186,7 @@ class Zend_Validate_Between extends Zend_Validate_Abstract
      * Sets the inclusive option
      *
      * @param  boolean $inclusive
-     * @return Zend_Validate_Between Provides a fluent interface
+     * @return $this
      */
     public function setInclusive($inclusive)
     {

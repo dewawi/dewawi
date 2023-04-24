@@ -12,7 +12,7 @@
 	// SERVER REQUIREMENTS
 	$requirements = array();
 	$requirements["phpVersion"] = "5.3";
-	$requirements["extensions"] = array("gd", "mbstring", "mysqli", "openssl", "pcre", "iconv", "intl", "zip", "ssh2", "xml");
+	$requirements["extensions"] = array("gd", "mbstring", "mysqli", "openssl", "pcre", "iconv", "intl", "zip",  "xml");
 
 	// FILE PERMISSIONS
 	// r = readable, w = writable, x = executable

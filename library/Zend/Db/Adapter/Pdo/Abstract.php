@@ -44,6 +44,12 @@ require_once 'Zend/Db/Statement/Pdo.php';
  */
 abstract class Zend_Db_Adapter_Pdo_Abstract extends Zend_Db_Adapter_Abstract
 {
+    /**
+     * PDO type.
+     *
+     * @var string
+     */
+    protected $_pdoType = null;
 
     /**
      * Default class name for a DB statement.
@@ -141,7 +147,17 @@ abstract class Zend_Db_Adapter_Pdo_Abstract extends Zend_Db_Adapter_Abstract
              * @see Zend_Db_Adapter_Exception
              */
             require_once 'Zend/Db/Adapter/Exception.php';
-            throw new Zend_Db_Adapter_Exception($e->getMessage(), $e->getCode(), $e);
+
+            $message = $e->getMessage();
+            if ($e->getPrevious() !== null && preg_match('~^SQLSTATE\[HY000\] \[\d{1,4}\]\s$~', $message)) {
+                // See https://bugs.php.net/bug.php?id=76604
+                $message .= $e->getPrevious()->getMessage();
+            }
+
+            /**
+             * @see Zend_Db_Adapter_Exception
+             */
+            throw new Zend_Db_Adapter_Exception($message, $e->getCode(), $e);
         }
 
     }
@@ -215,10 +231,10 @@ abstract class Zend_Db_Adapter_Pdo_Abstract extends Zend_Db_Adapter_Abstract
      *
      * @param string|Zend_Db_Select $sql The SQL statement with placeholders.
      * @param array $bind An array of data to bind to the placeholders.
-     * @return Zend_Db_Statement_Pdo
+     * @return PDOStatement|Zend_Db_Statement|Zend_Db_Statement_Interface
      * @throws Zend_Db_Adapter_Exception To re-throw PDOException.
      */
-    public function query($sql, $bind = array())
+    public function query($sql, $bind = [])
     {
         if (empty($bind) && $sql instanceof Zend_Db_Select) {
             $bind = $sql->getBind();
@@ -293,7 +309,7 @@ abstract class Zend_Db_Adapter_Pdo_Abstract extends Zend_Db_Adapter_Abstract
             return $value;
         }
         $this->_connect();
-        return $this->_connection->quote($value);
+        return $this->_connection->quote((string) $value);
     }
 
     /**

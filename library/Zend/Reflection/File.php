@@ -40,6 +40,11 @@ class Zend_Reflection_File implements Reflector
     /**
      * @var string
      */
+    protected $_fileName         = null;
+
+    /**
+     * @var string
+     */
     protected $_filepath        = null;
 
     /**
@@ -60,17 +65,17 @@ class Zend_Reflection_File implements Reflector
     /**
      * @var string[]
      */
-    protected $_requiredFiles   = array();
+    protected $_requiredFiles   = [];
 
     /**
      * @var Zend_Reflection_Class[]
      */
-    protected $_classes         = array();
+    protected $_classes         = [];
 
     /**
      * @var Zend_Reflection_Function[]
      */
-    protected $_functions       = array();
+    protected $_functions       = [];
 
     /**
      * @var string
@@ -86,7 +91,7 @@ class Zend_Reflection_File implements Reflector
     public function __construct($file)
     {
         $fileName = $file;
-        
+
         $fileRealpath = realpath($fileName);
         if ($fileRealpath) {
             // realpath() doesn't return false if Suhosin is included
@@ -95,7 +100,7 @@ class Zend_Reflection_File implements Reflector
                 $fileRealpath = false;
             }
         }
-        
+
         if ($fileRealpath === false) {
             $fileRealpath = self::findRealpathInIncludePath($file);
         }
@@ -208,7 +213,7 @@ class Zend_Reflection_File implements Reflector
      */
     public function getClasses($reflectionClass = 'Zend_Reflection_Class')
     {
-        $classes = array();
+        $classes = [];
         foreach ($this->_classes as $class) {
             $instance = new $reflectionClass($class);
             if (!$instance instanceof Zend_Reflection_Class) {
@@ -228,7 +233,7 @@ class Zend_Reflection_File implements Reflector
      */
     public function getFunctions($reflectionClass = 'Zend_Reflection_Function')
     {
-        $functions = array();
+        $functions = [];
         foreach ($this->_functions as $function) {
             $instance = new $reflectionClass($function);
             if (!$instance instanceof Zend_Reflection_Function) {

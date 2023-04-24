@@ -77,7 +77,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
      * @param  string $username The username of the account being authenticated
      * @param  string $password The password of the account being authenticated
      */
-    public function __construct(array $options = array(), $username = null, $password = null)
+    public function __construct(array $options = [], $username = null, $password = null)
     {
         $this->setOptions($options);
         if ($username !== null) {
@@ -103,11 +103,11 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
      * this adapter.
      *
      * @param  array $options The array of arrays of Zend_Ldap options
-     * @return Zend_Auth_Adapter_Ldap Provides a fluent interface
+     * @return $this
      */
     public function setOptions($options)
     {
-        $this->_options = is_array($options) ? $options : array();
+        $this->_options = is_array($options) ? $options : [];
         return $this;
     }
 
@@ -126,7 +126,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
      * Sets the username for binding
      *
      * @param  string $username The username for binding
-     * @return Zend_Auth_Adapter_Ldap Provides a fluent interface
+     * @return $this
      */
     public function setUsername($username)
     {
@@ -149,7 +149,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
      * Sets the passwort for the account
      *
      * @param  string $password The password of the account being authenticated
-     * @return Zend_Auth_Adapter_Ldap Provides a fluent interface
+     * @return $this
      */
     public function setPassword($password)
     {
@@ -165,7 +165,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
      * Closes ZF-6813
      *
      * @param  string $identity
-     * @return Zend_Auth_Adapter_Ldap Provides a fluent interface
+     * @return $this
      */
     public function setIdentity($identity)
     {
@@ -180,7 +180,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
      * Closes ZF-6813
      *
      * @param  string $credential
-     * @return Zend_Auth_Adapter_Ldap Provides a fluent interface
+     * @return $this
      */
     public function setCredential($credential)
     {
@@ -209,13 +209,13 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
      * Set an Ldap connection
      *
      * @param Zend_Ldap $ldap An existing Ldap object
-     * @return Zend_Auth_Adapter_Ldap Provides a fluent interface
+     * @return $this
      */
     public function setLdap(Zend_Ldap $ldap)
     {
         $this->_ldap = $ldap;
 
-        $this->setOptions(array($ldap->getOptions()));
+        $this->setOptions([$ldap->getOptions()]);
 
         return $this;
     }
@@ -248,7 +248,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
          */
         require_once 'Zend/Ldap/Exception.php';
 
-        $messages = array();
+        $messages = [];
         $messages[0] = ''; // reserved
         $messages[1] = ''; // reserved
 
@@ -273,7 +273,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
 
         $code = Zend_Auth_Result::FAILURE;
         $messages[0] = "Authority not found: $username";
-        $failedAuthorities = array();
+        $failedAuthorities = [];
 
         /* Iterate through each server and try to authenticate the supplied
          * credentials against it.
@@ -396,7 +396,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
      */
     protected function _prepareOptions(Zend_Ldap $ldap, array $options)
     {
-        $adapterOptions = array(
+        $adapterOptions = [
             'group'       => null,
             'groupDn'     => $ldap->getBaseDn(),
             'groupScope'  => Zend_Ldap::SEARCH_SCOPE_SUB,
@@ -404,7 +404,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
             'groupFilter' => 'objectClass=groupOfUniqueNames',
             'memberAttr'  => 'uniqueMember',
             'memberIsDn'  => true
-        );
+        ];
         foreach ($adapterOptions as $key => $value) {
             if (array_key_exists($key, $options)) {
                 $value = $options[$key];
@@ -412,14 +412,14 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
                 switch ($key) {
                     case 'groupScope':
                         $value = (int)$value;
-                        if (in_array($value, array(Zend_Ldap::SEARCH_SCOPE_BASE,
-                                Zend_Ldap::SEARCH_SCOPE_ONE, Zend_Ldap::SEARCH_SCOPE_SUB), true)) {
+                        if (in_array($value, [Zend_Ldap::SEARCH_SCOPE_BASE,
+                                Zend_Ldap::SEARCH_SCOPE_ONE, Zend_Ldap::SEARCH_SCOPE_SUB], true)) {
                            $adapterOptions[$key] = $value;
                         }
                         break;
                     case 'memberIsDn':
                         $adapterOptions[$key] = ($value === true ||
-                                $value === '1' || strcasecmp($value, 'true') == 0);
+                                $value === '1' || strcasecmp($value, 'true') === 0);
                         break;
                     default:
                         $adapterOptions[$key] = trim($value);
@@ -468,9 +468,9 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
 
         if ($result === 1) {
             return true;
-        } else {
-            return 'Failed to verify group membership with ' . $group->toString();
         }
+
+        return 'Failed to verify group membership with ' . $group->toString();
     }
 
     /**
@@ -483,7 +483,7 @@ class Zend_Auth_Adapter_Ldap implements Zend_Auth_Adapter_Interface
      * @param  array $omitAttribs
      * @return stdClass|boolean
      */
-    public function getAccountObject(array $returnAttribs = array(), array $omitAttribs = array())
+    public function getAccountObject(array $returnAttribs = [], array $omitAttribs = [])
     {
         if (!$this->_authenticatedDn) {
             return false;

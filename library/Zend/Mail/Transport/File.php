@@ -64,7 +64,7 @@ class Zend_Mail_Transport_File extends Zend_Mail_Transport_Abstract
         if ($options instanceof Zend_Config) {
             $options = $options->toArray();
         } elseif (!is_array($options)) {
-            $options = array();
+            $options = [];
         }
 
         // Making sure we have some defaults to work with
@@ -72,7 +72,7 @@ class Zend_Mail_Transport_File extends Zend_Mail_Transport_Abstract
             $options['path'] = sys_get_temp_dir();
         }
         if (!isset($options['callback'])) {
-            $options['callback'] = array($this, 'defaultCallback');
+            $options['callback'] = [$this, 'defaultCallback'];
         }
 
         $this->setOptions($options);
@@ -124,7 +124,7 @@ class Zend_Mail_Transport_File extends Zend_Mail_Transport_Abstract
     /**
      * Default callback for generating filenames
      *
-     * @param Zend_Mail_Transport_File File transport instance
+     * @param Zend_Mail_Transport_File $transport File transport instance
      * @return string
      */
     public function defaultCallback($transport)

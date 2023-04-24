@@ -35,6 +35,11 @@ require_once 'Zend/Filter/Compress/CompressInterface.php';
 abstract class Zend_Filter_Compress_CompressAbstract implements Zend_Filter_Compress_CompressInterface
 {
     /**
+     * @var mixed|array<string, mixed>
+     */
+    protected $_options;
+
+    /**
      * Class constructor
      *
      * @param array|Zend_Config $options (Optional) Options to set
@@ -73,7 +78,7 @@ abstract class Zend_Filter_Compress_CompressAbstract implements Zend_Filter_Comp
      * Sets all or one option
      *
      * @param  array $options
-     * @return Zend_Filter_Compress_Bz2
+     * @return Zend_Filter_Compress_CompressAbstract
      */
     public function setOptions(array $options)
     {

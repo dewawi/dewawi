@@ -37,6 +37,7 @@ require_once 'Zend/Application/Bootstrap/BootstrapAbstract.php';
  * @copyright  Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
+#[AllowDynamicProperties]
 class Zend_Application_Bootstrap_Bootstrap
     extends Zend_Application_Bootstrap_BootstrapAbstract
 {
@@ -65,11 +66,11 @@ class Zend_Application_Bootstrap_Bootstrap
 
         if ($application->hasOption('resourceloader')) {
             $this->setOptions(
-                array(
+                [
                     'resourceloader' => $application->getOption(
                         'resourceloader'
                     )
-                )
+                ]
             );
         }
         $this->getResourceLoader();
@@ -112,7 +113,7 @@ class Zend_Application_Bootstrap_Bootstrap
      * Set module resource loader
      *
      * @param  Zend_Loader_Autoloader_Resource $loader
-     * @return Zend_Application_Module_Bootstrap
+     * @return Zend_Application_Bootstrap_Bootstrap
      */
     public function setResourceLoader(Zend_Loader_Autoloader_Resource $loader)
     {
@@ -134,10 +135,10 @@ class Zend_Application_Bootstrap_Bootstrap
             $path = $r->getFileName();
             $this->setResourceLoader(
                 new Zend_Application_Module_Autoloader(
-                    array(
+                    [
                         'namespace' => $namespace,
                         'basePath'  => dirname($path),
-                    )
+                    ]
                 )
             );
         }
@@ -157,7 +158,7 @@ class Zend_Application_Bootstrap_Bootstrap
     /**
      * Set application namespace (for module autoloading)
      *
-     * @param  string
+     * @param  string $value
      * @return Zend_Application_Bootstrap_Bootstrap
      */
     public function setAppNamespace($value)

@@ -12,3 +12,5 @@
 !/session/.gitkeep
 /templates/*
 !/templates/.gitkeep
+/library/Tcpdf/.gitattributes
+/library/Tcpdf/.github/
