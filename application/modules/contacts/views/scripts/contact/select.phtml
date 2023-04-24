@@ -45,7 +45,7 @@ $this->headTitle($this->title);
 					<?php echo $this->escape($contact->country);?>
 				</td>
 				<td class="category">
-					<?php if($contact->catid) echo $this->escape($this->categories[$contact->catid]['title']); ?>
+					<?php  if($contact->catid) echo $this->escape($this->options['categories'][$contact->catid]['title']); ?>
 				</td>
 				<td class="buttons">
 					<?php echo $this->Button('apply', 'window.parent.applyContact('.$this->escape($contact->id).')'); ?>
