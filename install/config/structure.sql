@@ -667,7 +667,9 @@ CREATE TABLE IF NOT EXISTS `ebiztraderorder` (
 
 CREATE TABLE IF NOT EXISTS `email` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `contactid` int(11) NOT NULL,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
+  `parentid` int(11) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
   `password` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
@@ -835,7 +837,9 @@ CREATE TABLE IF NOT EXISTS `increment` (
 
 CREATE TABLE IF NOT EXISTS `internet` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `contactid` int(11) NOT NULL,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
+  `parentid` int(11) NOT NULL,
   `internet` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
@@ -1392,7 +1396,9 @@ CREATE TABLE IF NOT EXISTS `permission` (
 
 CREATE TABLE IF NOT EXISTS `phone` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `contactid` int(11) NOT NULL,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
+  `parentid` int(11) NOT NULL,
   `type` varchar(255) DEFAULT NULL,
   `phone` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,

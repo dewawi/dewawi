@@ -18,7 +18,13 @@ class Contacts_PhoneController extends Zend_Controller_Action
 					$phoneDb = new Contacts_Model_DbTable_Phone();
 					$phoneDataBefore = $phoneDb->getPhone($data['parentid']);
 					$latest = end($phoneDataBefore);
-					$phoneDb->addPhone(array('contactid' => $data['parentid'], 'type' => $data['type'], 'ordering' => $latest['ordering']+1));
+					$dataArray = array();
+					$dataArray['module'] = $data['module'];
+					$dataArray['controller'] = $data['controller'];
+					$dataArray['parentid'] = $data['parentid'];
+					$dataArray['type'] = $data['type'];
+					$dataArray['ordering'] = $latest['ordering']+1;
+					$phoneDb->addPhone($dataArray);
 					$phoneDataAfter = $phoneDb->getPhone($data['parentid']);
 					$phone = end($phoneDataAfter);
 					echo $this->view->MultiForm('contacts', 'phone', $phone, array('phone', 'type'));

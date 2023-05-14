@@ -27,3 +27,19 @@ ALTER TABLE `quoterequest` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `fi
 ALTER TABLE `purchaseorder` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `filename`;
 ALTER TABLE `process` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `contactperson`;
 ALTER TABLE `task` ADD `pinned` tinyint(11) NOT NULL DEFAULT 0 AFTER `responsible`;
+
+ALTER TABLE `email` ADD `module` varchar(255) DEFAULT NULL AFTER `id`;
+ALTER TABLE `email` ADD `controller` varchar(255) DEFAULT NULL AFTER `module`;
+ALTER TABLE `email` CHANGE `contactid` `parentid` int(11) NOT NULL;
+ALTER TABLE `phone` ADD `module` varchar(255) DEFAULT NULL AFTER `id`;
+ALTER TABLE `phone` ADD `controller` varchar(255) DEFAULT NULL AFTER `module`;
+ALTER TABLE `phone` CHANGE `contactid` `parentid` int(11) NOT NULL;
+ALTER TABLE `internet` ADD `module` varchar(255) DEFAULT NULL AFTER `id`;
+ALTER TABLE `internet` ADD `controller` varchar(255) DEFAULT NULL AFTER `module`;
+ALTER TABLE `internet` CHANGE `contactid` `parentid` int(11) NOT NULL;
+UPDATE `email` SET `module` = 'contacts';
+UPDATE `email` SET `controller` = 'contact';
+UPDATE `phone` SET `module` = 'contacts';
+UPDATE `phone` SET `controller` = 'contact';
+UPDATE `internet` SET `module` = 'contacts';
+UPDATE `internet` SET `controller` = 'contact';

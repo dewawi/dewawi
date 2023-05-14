@@ -26,16 +26,18 @@ class Contacts_Model_DbTable_Email extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getEmails($contactid)
+	public function getEmails($parentid, $module = 'contacts', $controller = 'contact')
 	{
-		$contactid = (int)$contactid;
+		$parentid = (int)$parentid;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
+		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
+		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
+		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
 		if(!$data) {
-			throw new Exception("Could not find row $contactid");
+			throw new Exception("Could not find row $parentid");
 		}
 		return $data->toArray();
 	}
