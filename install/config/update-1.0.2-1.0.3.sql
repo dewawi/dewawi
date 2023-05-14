@@ -64,3 +64,7 @@ CREATE TABLE IF NOT EXISTS `contactperson` (
   PRIMARY KEY (id),
   KEY (contactid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `emailmessage` ADD `parentid` int(11) NOT NULL AFTER `documentid`;
+ALTER TABLE `emailmessage` CHANGE `module` `module` varchar(255) DEFAULT NULL AFTER `parentid`;
+ALTER TABLE `emailmessage` CHANGE `controller` `controller` varchar(255) DEFAULT NULL AFTER `module`;
