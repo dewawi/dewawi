@@ -151,15 +151,15 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$addressDb->addAddress(array('contactid' => $id, 'type' => 'billing', 'country' => $client['country'], 'ordering' => 1));
 
 		$phoneDb = new Contacts_Model_DbTable_Phone();
-		$phoneDb->addPhone(array('contactid' => $id, 'type' => 'phone', 'ordering' => 1));
+		$phoneDb->addPhone(array('parentid' => $id, 'type' => 'phone', 'ordering' => 1));
 
 		$emailDb = new Contacts_Model_DbTable_Email();
 
 		$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
-		$emailDb->addEmail(array('contactid' => $id, 'ordering' => 1, 'password' => $password));
+		$emailDb->addEmail(array('parentid' => $id, 'ordering' => 1, 'password' => $password));
 
 		$internetDb = new Contacts_Model_DbTable_Internet();
-		$internetDb->addInternet(array('contactid' => $id, 'ordering' => 1));
+		$internetDb->addInternet(array('parentid' => $id, 'ordering' => 1));
 
 		$this->_helper->redirector->gotoSimple('edit', 'contact', null, array('id' => $id));
 	}
@@ -247,6 +247,15 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$addressDb = new Contacts_Model_DbTable_Address();
 					$address = $addressDb->getAddress($id);
 
+					//Contact persons
+					$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+					$contactpersons = $contactpersonDb->getContactpersons($id, 'contacts', 'contact');
+
+					$emailContactPersons = array();
+					foreach($contactpersons as $contactperson) {
+						$emailContactPersons[$contactperson['id']] = $emailDb->getEmails($contactperson['id'], 'contacts', 'contactperson');
+					}
+
 					//Comments
 					$commentDb = new Application_Model_DbTable_Comment();
 					$comments = $commentDb->getComments($id, 'contacts', 'contact');
@@ -320,6 +329,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 					$this->view->internet = $internet;
 					$this->view->bankAccount = $bankAccount;
 					$this->view->attachments = $attachments;
+					$this->view->contactpersons = $contactpersons;
+					$this->view->emailContactPersons = $emailContactPersons;
 					$this->view->comments = $comments;
 					$this->view->downloads = $downloads;
 					$this->view->downloadsurl = $dir1.'/'.$dir2.'/'.$clientid.'/';

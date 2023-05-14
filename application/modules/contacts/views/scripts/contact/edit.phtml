@@ -9,6 +9,8 @@ echo $this->FileManager();
 <ul class="tabs">
 	<li<?php if($this->activeTab == "#tabOverview") : ?> class="active"<?php endif; ?>>
 		<a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabContactperson") : ?> class="active"<?php endif; ?>>
+		<a href="#tabContactperson"><?php echo $this->translate('TABS_CONTACT_PERSONS'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabPayment") : ?> class="active"<?php endif; ?>>
 		<a href="#tabPayment"><?php echo $this->translate('TABS_PAYMENT'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabHistory") : ?> class="active"<?php endif; ?>>
@@ -49,11 +51,11 @@ echo $this->FileManager();
 							<?php echo $this->MultiForm('contacts', 'phone', $this->phone, array('phone', 'type'), 'CONTACTS_PHONE'); ?>
 						</div>
 						<hr>
-						<div id="email" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="email">
+						<div id="email" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="contact">
 							<?php echo $this->MultiForm('contacts', 'email', $this->email, '', 'CONTACTS_EMAIL'); ?>
 						</div>
 						<hr>
-						<div id="internet" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="internet">
+						<div id="internet" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="contact">
 							<?php echo $this->MultiForm('contacts', 'internet', $this->internet, 'internet', 'CONTACTS_INTERNET'); ?>
 						</div>
 						<hr>
@@ -104,6 +106,27 @@ echo $this->FileManager();
 						<?php echo $this->form->getElement('priceruleaction'); ?>
 						<h4>Bankverbindung</h4>
 						<?php echo $this->MultiForm('contacts', 'bankaccount', $this->bankAccount, array('iban', 'bic'), 'CONTACTS_IBAN_BIC'); ?>
+					</dl>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div id="tabContactperson" class="tab_content<?php if($this->activeTab == '#tabContactperson') : ?> active<?php endif; ?>">
+		<form id="contact" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<div id="contactperson" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="contactperson">
+							<?php echo $this->MultiForm('contacts', 'contactperson', $this->contactpersons, array(
+																			//array('label' => 'CONTACT_PERSONS_TITLE', 'field' => 'title'),
+																			array('label' => 'CONTACT_PERSONS_SALUTATION', 'field' => 'salutation'),
+																	        array('label' => 'CONTACT_PERSONS_NAME', 'fields' => array('name1', 'name2')),
+																			array('label' => 'CONTACT_PERSONS_DEPARTMENT', 'field' => 'department')
+																		),
+																		'',
+																		$this->emailContactPersons
+																	); ?>
+						</div>
 					</dl>
 				</div>
 			</div>
