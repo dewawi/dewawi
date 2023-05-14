@@ -377,8 +377,14 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			if($emailtemplate['cc']) $emailForm->cc->setValue($emailtemplate['cc']);
 			if($emailtemplate['bcc']) $emailForm->bcc->setValue($emailtemplate['bcc']);
 			if($emailtemplate['replyto']) $emailForm->replyto->setValue($emailtemplate['replyto']);
-			$emailForm->subject->setValue($emailtemplate['subject']);
-			$emailForm->body->setValue($emailtemplate['body']);
+
+			//Search and replace placeholders
+			$searchArray = array('[DOCID]', '[CONTACTID]');
+			$replaceArray = array($creditnote['creditnoteid'], $creditnote['contactid']);
+			$emailBody = str_replace($searchArray, $replaceArray, $emailtemplate['body']);
+			$emailSubject = str_replace($searchArray, $replaceArray, $emailtemplate['subject']);
+			$emailForm->body->setValue($emailBody);
+			$emailForm->subject->setValue($emailSubject);
 		}
 
 		//Copy file to attachments
@@ -394,7 +400,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 				$data['filename'] = $filename;
 				$data['filetype'] = mime_content_type($documentFilePath.'/'.$filename);
 				$data['filesize'] = filesize($documentFilePath.'/'.$filename);
-				$data['location'] = $documentFilePath.'/'.$filename;
+				$data['location'] = $documentFilePath;
 				$data['module'] = 'sales';
 				$data['controller'] = 'creditnote';
 				$data['ordering'] = 1;
