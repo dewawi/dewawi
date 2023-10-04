@@ -6,6 +6,7 @@
 	'ORDERING_CONTACT' => 'Kontakt',
 	'ORDERING_CUSTOMER_ID' => 'Kundennr.',
 	'ORDERING_CUSTOMER' => 'Kunde',
+	'ORDERING_DOCUMENT_ID' => 'Belegnr.',
 	'ORDERING_SUPPLIER_ID' => 'Lieferantnr.',
 	'ORDERING_SUPPLIER' => 'Lieferant',
 	'ORDERING_POSTCODE' => 'Postleitzahl',

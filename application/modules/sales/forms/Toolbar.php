@@ -107,6 +107,7 @@ class Sales_Form_Toolbar extends Zend_Form
 			->addMultiOption('id', 'ORDERING_CREATION')
 			->addMultiOption('title', 'ORDERING_TITLE')
 			->addMultiOption('contactid', 'ORDERING_CUSTOMER_ID')
+			->addMultiOption('documentid', 'ORDERING_DOCUMENT_ID')
 			->addMultiOption('billingname1', 'ORDERING_CUSTOMER')
 			->addMultiOption('billingpostcode', 'ORDERING_POSTCODE')
 			->addMultiOption('billingcity', 'ORDERING_CITY')

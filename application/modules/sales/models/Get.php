@@ -13,6 +13,8 @@ class Sales_Model_Get
 
 		$columns = array('q.title', 'q.quoteid', 'q.contactid', 'q.billingname1', 'q.billingname2', 'q.billingdepartment', 'q.billingstreet', 'q.billingpostcode', 'q.billingcity', 'q.shippingname1', 'q.shippingname2', 'q.shippingdepartment', 'q.shippingstreet', 'q.shippingpostcode', 'q.shippingcity');
 
+		if(isset($params['order']) && ($params['order'] == 'documentid')) $params['order'] = 'quoteid';
+
 		$query = '';
 		$schema = 'q';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
@@ -97,6 +99,8 @@ class Sales_Model_Get
 
 		$columns = array('i.title', 'i.invoiceid', 'i.contactid', 'i.billingname1', 'i.billingname2', 'i.billingdepartment', 'i.billingstreet', 'i.billingpostcode', 'i.billingcity', 'i.shippingname1', 'i.shippingname2', 'i.shippingdepartment', 'i.shippingstreet', 'i.shippingpostcode', 'i.shippingcity');
 
+		if(isset($params['order']) && ($params['order'] == 'documentid')) $params['order'] = 'invoiceid';
+
 		$query = '';
 		$schema = 'i';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
@@ -167,6 +171,8 @@ class Sales_Model_Get
 		$salesordersDb = new Sales_Model_DbTable_Salesorder();
 
 		$columns = array('s.title', 's.salesorderid', 's.contactid', 's.billingname1', 's.billingname2', 's.billingdepartment', 's.billingstreet', 's.billingpostcode', 's.billingcity', 's.shippingname1', 's.shippingname2', 's.shippingdepartment', 's.shippingstreet', 's.shippingpostcode', 's.shippingcity');
+
+		if(isset($params['order']) && ($params['order'] == 'documentid')) $params['order'] = 'salesorderid';
 
 		$query = '';
 		$schema = 's';
@@ -239,6 +245,8 @@ class Sales_Model_Get
 
 		$columns = array('d.title', 'd.deliveryorderid', 'd.contactid', 'd.billingname1', 'd.billingname2', 'd.billingdepartment', 'd.billingstreet', 'd.billingpostcode', 'd.billingcity', 'd.shippingname1', 'd.shippingname2', 'd.shippingdepartment', 'd.shippingstreet', 'd.shippingpostcode', 'd.shippingcity');
 
+		if(isset($params['order']) && ($params['order'] == 'documentid')) $params['order'] = 'deliveryorderid';
+
 		$query = '';
 		$schema = 'd';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
@@ -310,6 +318,8 @@ class Sales_Model_Get
 
 		$columns = array('cr.title', 'cr.creditnoteid', 'cr.contactid', 'cr.billingname1', 'cr.billingname2', 'cr.billingdepartment', 'cr.billingstreet', 'cr.billingpostcode', 'cr.billingcity', 'cr.shippingname1', 'cr.shippingname2', 'cr.shippingdepartment', 'cr.shippingstreet', 'cr.shippingpostcode', 'cr.shippingcity');
 
+		if(isset($params['order']) && ($params['order'] == 'documentid')) $params['order'] = 'creditnoteid';
+
 		$query = '';
 		$schema = 'cr';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
@@ -380,6 +390,8 @@ class Sales_Model_Get
 		$remindersDb = new Sales_Model_DbTable_Reminder();
 
 		$columns = array('cr.title', 'cr.reminderid', 'cr.contactid', 'cr.billingname1', 'cr.billingname2', 'cr.billingdepartment', 'cr.billingstreet', 'cr.billingpostcode', 'cr.billingcity', 'cr.shippingname1', 'cr.shippingname2', 'cr.shippingdepartment', 'cr.shippingstreet', 'cr.shippingpostcode', 'cr.shippingcity');
+
+		if(isset($params['order']) && ($params['order'] == 'documentid')) $params['order'] = 'reminderid';
 
 		$query = '';
 		$schema = 'cr';
