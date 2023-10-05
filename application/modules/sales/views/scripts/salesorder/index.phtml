@@ -18,16 +18,14 @@ echo $this->ActiveFilter();
 			<th class="contactid" width="5%">
 				<?php echo $this->translate('SALES_ORDERS_CONTACT'); ?>
 			</th>
-			<th class="billingname" width="20%">
+			<th class="billingaddress" width="20%">
+				<?php echo $this->translate('SALES_ORDERS_BILLING_ADDRESS'); ?>
 			</th>
-			<th class="postcode" width="4%">
-				<?php echo $this->translate('SALES_ORDERS_POSTCODE'); ?>
+			<th class="notes" width="15%">
+				<?php echo $this->translate('SALES_ORDERS_NOTES') ?>
 			</th>
-			<th class="city" width="4%">
-				<?php echo $this->translate('SALES_ORDERS_CITY'); ?>
-			</th>
-			<th class="modified" width="8%">
-				<?php echo $this->translate('SALES_ORDERS_MODIFIED'); ?>
+			<th class="salesorderdate" width="8%">
+				<?php echo $this->translate('SALES_ORDERS_SALES_ORDER_DATE'); ?>
 			</th>
 			<th class="total" width="8%">
 				<?php echo $this->translate('SALES_ORDERS_TOTAL'); ?>
@@ -58,24 +56,26 @@ echo $this->ActiveFilter();
 			<td data-label="<?php echo $this->translate('SALES_ORDERS_CONTACT') ?>" class="contactid">
 				<?php if($salesorder->contactid) : ?>
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder->cid)); ?>">
-						<?php echo $this->escape($salesorder->contactid); ?>
+						<?php echo $this->escape($salesorder->contactid); ?><br/>
+						<?php echo $this->escape($salesorder->billingname1); ?>
+						<?php if($salesorder->billingname2) echo "<br/>".$this->escape($salesorder->billingname2); ?>
 					</a>
 				<?php endif; ?>
 			</td>
-			<td class="billingname">
-				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder->cid)); ?>">
-					<?php echo $this->escape($salesorder->billingname1); ?>
-					<?php if($salesorder->billingname2) echo "<br/>".$this->escape($salesorder->billingname2); ?>
-				</a>
-			</td>
-			<td data-label="<?php echo $this->translate('SALES_ORDERS_POSTCODE') ?>" class="billingpostcode">
-				<?php echo $this->escape($salesorder->billingpostcode); ?> 
-			</td>
-			<td data-label="<?php echo $this->translate('SALES_ORDERS_CITY') ?>" class="billingcity">
+			<td data-label="<?php echo $this->translate('SALES_ORDERS_BILLING_ADDRESS') ?>" class="billingaddress">
+				<?php echo $this->escape($salesorder->billingstreet); ?><br/>
+				<?php echo $this->escape($salesorder->billingpostcode); ?><br/>
 				<?php echo $this->escape($salesorder->billingcity); ?>
 			</td>
-			<td data-label="<?php echo $this->translate('SALES_ORDERS_MODIFIED') ?>" class="modified">
-				<?php echo $this->escape(date("d.m.Y", strtotime($salesorder->modified))); ?>
+			<td data-label="<?php echo $this->translate('SALES_ORDERS_NOTES') ?>" class="notes">
+				<?php if($salesorder->notes) : ?>
+					<pre class="editable" data-name="notes" data-value="<?php echo $salesorder->notes; ?>" data-type="textarea"><?php echo $salesorder->notes; ?></pre>
+				<?php else : ?>
+					<pre class="editable" data-name="notes" data-value="<?php echo $salesorder->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+				<?php endif; ?>
+			</td>
+			<td data-label="<?php echo $this->translate('SALES_ORDERS_SALES_ORDER_DATE') ?>" class="salesorderdate">
+				<?php if($salesorder->salesorderdate) echo $this->escape(date("d.m.Y", strtotime($salesorder->salesorderdate))); ?>
 			</td>
 			<td data-label="<?php echo $this->translate('SALES_ORDERS_TOTAL') ?>" class="total">
 				<?php echo $this->escape($salesorder->total); ?>

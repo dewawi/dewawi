@@ -157,7 +157,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 		$purchaseorder = $purchaseorderDb->getPurchaseorder($id);
 
-		if($purchaseorder['purchaseorderid']) {
+		if($purchaseorder['purchaseorderid'] && !$request->isPost()) {
 			$this->_helper->redirector->gotoSimple('view', 'purchaseorder', null, array('id' => $id));
 		} else {
 			$this->_helper->Access->lock($id, $this->_user['id'], $purchaseorder['locked'], $purchaseorder['lockedtime']);

@@ -158,7 +158,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$invoice = $invoiceDb->getInvoice($id);
 
-		if($invoice['invoiceid']) {
+		if($invoice['invoiceid'] && !$request->isPost()) {
 			$this->_helper->redirector->gotoSimple('view', 'invoice', null, array('id' => $id));
 		} else {
 			$this->_helper->Access->lock($id, $this->_user['id'], $invoice['locked'], $invoice['lockedtime']);

@@ -68,3 +68,12 @@ CREATE TABLE IF NOT EXISTS `contactperson` (
 ALTER TABLE `emailmessage` ADD `parentid` int(11) NOT NULL AFTER `documentid`;
 ALTER TABLE `emailmessage` CHANGE `module` `module` varchar(255) DEFAULT NULL AFTER `parentid`;
 ALTER TABLE `emailmessage` CHANGE `controller` `controller` varchar(255) DEFAULT NULL AFTER `module`;
+
+ALTER TABLE `creditnote` ADD `notes` text DEFAULT NULL AFTER `info`;
+ALTER TABLE `deliveryorder` ADD `notes` text DEFAULT NULL AFTER `info`;
+ALTER TABLE `invoice` ADD `notes` text DEFAULT NULL AFTER `info`;
+ALTER TABLE `quote` ADD `notes` text DEFAULT NULL AFTER `info`;
+ALTER TABLE `reminder` ADD `notes` text DEFAULT NULL AFTER `info`;
+ALTER TABLE `salesorder` ADD `notes` text DEFAULT NULL AFTER `info`;
+ALTER TABLE `quoterequest` ADD `notes` text DEFAULT NULL AFTER `info`;
+ALTER TABLE `purchaseorder` ADD `notes` text DEFAULT NULL AFTER `info`;

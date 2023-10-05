@@ -157,7 +157,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
 		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 
-		if($deliveryorder['deliveryorderid']) {
+		if($deliveryorder['deliveryorderid'] && !$request->isPost()) {
 			$this->_helper->redirector->gotoSimple('view', 'deliveryorder', null, array('id' => $id));
 		} else {
 			$this->_helper->Access->lock($id, $this->_user['id'], $deliveryorder['locked'], $deliveryorder['lockedtime']);

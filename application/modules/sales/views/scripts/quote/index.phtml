@@ -18,16 +18,14 @@ echo $this->ActiveFilter();
 			<th class="contactid" width="5%">
 				<?php echo $this->translate('QUOTES_CONTACT'); ?>
 			</th>
-			<th class="billingname" width="20%">
+			<th class="billingaddress" width="20%">
+				<?php echo $this->translate('QUOTES_BILLING_ADDRESS'); ?>
 			</th>
-			<th class="postcode" width="4%">
-				<?php echo $this->translate('QUOTES_POSTCODE'); ?>
+			<th class="notes" width="15%">
+				<?php echo $this->translate('QUOTES_NOTES') ?>
 			</th>
-			<th class="city" width="4%">
-				<?php echo $this->translate('QUOTES_CITY'); ?>
-			</th>
-			<th class="modified" width="8%">
-				<?php echo $this->translate('QUOTES_MODIFIED'); ?>
+			<th class="quotedate" width="8%">
+				<?php echo $this->translate('QUOTES_QUOTE_DATE'); ?>
 			</th>
 			<th class="total" width="8%">
 				<?php echo $this->translate('QUOTES_TOTAL'); ?>
@@ -58,24 +56,26 @@ echo $this->ActiveFilter();
 			<td data-label="<?php echo $this->translate('QUOTES_CONTACT') ?>" class="contactid">
 				<?php if($quote->contactid) : ?>
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->cid)); ?>">
-						<?php echo $this->escape($quote->contactid); ?>
+						<?php echo $this->escape($quote->contactid); ?><br/>
+						<?php echo $this->escape($quote->billingname1); ?>
+						<?php if($quote->billingname2) echo "<br/>".$this->escape($quote->billingname2); ?>
 					</a>
 				<?php endif; ?>
 			</td>
-			<td class="billingname">
-				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->cid)); ?>">
-					<?php echo $this->escape($quote->billingname1); ?>
-					<?php if($quote->billingname2) echo "<br/>".$this->escape($quote->billingname2); ?>
-				</a>
-			</td>
-			<td data-label="<?php echo $this->translate('QUOTES_POSTCODE') ?>" class="billingpostcode">
-				<?php echo $this->escape($quote->billingpostcode); ?> 
-			</td>
-			<td data-label="<?php echo $this->translate('QUOTES_CITY') ?>" class="billingcity">
+			<td data-label="<?php echo $this->translate('QUOTES_BILLING_ADDRESS') ?>" class="billingaddress">
+				<?php echo $this->escape($quote->billingstreet); ?><br/>
+				<?php echo $this->escape($quote->billingpostcode); ?><br/>
 				<?php echo $this->escape($quote->billingcity); ?>
 			</td>
-			<td data-label="<?php echo $this->translate('QUOTES_MODIFIED') ?>" class="modified">
-				<?php echo $this->escape(date("d.m.Y", strtotime($quote->modified))); ?>
+			<td data-label="<?php echo $this->translate('QUOTES_NOTES') ?>" class="notes">
+				<?php if($quote->notes) : ?>
+					<pre class="editable" data-name="notes" data-value="<?php echo $quote->notes; ?>" data-type="textarea"><?php echo $quote->notes; ?></pre>
+				<?php else : ?>
+					<pre class="editable" data-name="notes" data-value="<?php echo $quote->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+				<?php endif; ?>
+			</td>
+			<td data-label="<?php echo $this->translate('QUOTES_QUOTE_DATE') ?>" class="quotedate">
+				<?php if($quote->quotedate) echo $this->escape(date("d.m.Y", strtotime($quote->quotedate))); ?>
 			</td>
 			<td data-label="<?php echo $this->translate('QUOTES_TOTAL') ?>" class="total">
 				<?php echo $this->escape($quote->total); ?>

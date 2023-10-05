@@ -157,7 +157,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 		$creditnote = $creditnoteDb->getCreditnote($id);
 
-		if($creditnote['creditnoteid']) {
+		if($creditnote['creditnoteid'] && !$request->isPost()) {
 			$this->_helper->redirector->gotoSimple('view', 'creditnote', null, array('id' => $id));
 		} else {
 			$this->_helper->Access->lock($id, $this->_user['id'], $creditnote['locked'], $creditnote['lockedtime']);

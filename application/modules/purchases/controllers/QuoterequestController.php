@@ -157,7 +157,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 		$quoterequest = $quoterequestDb->getQuoterequest($id);
 
-		if($quoterequest['quoterequestid']) {
+		if($quoterequest['quoterequestid'] && !$request->isPost()) {
 			$this->_helper->redirector->gotoSimple('view', 'quoterequest', null, array('id' => $id));
 		} else {
 			$this->_helper->Access->lock($id, $this->_user['id'], $quoterequest['locked'], $quoterequest['lockedtime']);

@@ -23,6 +23,7 @@
 	'INVOICES_HEADER' => 'Kopftext',
 	'INVOICES_FOOTER' => 'Fußtext',
 	'INVOICES_INFO' => 'Info',
+	'INVOICES_NOTES' => 'Notizen',
 	'INVOICES_CONTACT_INFO' => 'Kontakt-Info',
 	'INVOICES_SELECT' => 'Auswählen',
 	'INVOICES_POSITIONS' => 'Positionen',

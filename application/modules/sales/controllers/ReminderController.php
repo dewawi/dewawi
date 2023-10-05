@@ -157,7 +157,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$reminderDb = new Sales_Model_DbTable_Reminder();
 		$reminder = $reminderDb->getReminder($id);
 
-		if($reminder['reminderid']) {
+		if($reminder['reminderid'] && !$request->isPost()) {
 			$this->_helper->redirector->gotoSimple('view', 'reminder', null, array('id' => $id));
 		} else {
 			$this->_helper->Access->lock($id, $this->_user['id'], $reminder['locked'], $reminder['lockedtime']);

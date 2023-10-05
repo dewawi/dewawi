@@ -23,6 +23,7 @@
 	'DELIVERY_ORDERS_HEADER' => 'Kopftext',
 	'DELIVERY_ORDERS_FOOTER' => 'Fußtext',
 	'DELIVERY_ORDERS_INFO' => 'Info',
+	'DELIVERY_ORDERS_NOTES' => 'Notizen',
 	'DELIVERY_ORDERS_CONTACT_INFO' => 'Kontakt-Info',
 	'DELIVERY_ORDERS_SELECT' => 'Auswählen',
 	'DELIVERY_ORDERS_POSITIONS' => 'Positionen',

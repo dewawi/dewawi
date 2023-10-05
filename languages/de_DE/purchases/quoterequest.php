@@ -20,6 +20,7 @@
 	'QUOTE_REQUESTS_HEADER' => 'Kopftext',
 	'QUOTE_REQUESTS_FOOTER' => 'Fußtext',
 	'QUOTE_REQUESTS_INFO' => 'Info',
+	'QUOTE_REQUESTS_NOTES' => 'Notizen',
 	'QUOTE_REQUESTS_CONTACT_INFO' => 'Kontakt-Info',
 	'QUOTE_REQUESTS_SELECT' => 'Auswählen',
 	'QUOTE_REQUESTS_POSITIONS' => 'Positionen',

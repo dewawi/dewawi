@@ -20,6 +20,7 @@
 	'QUOTES_HEADER' => 'Kopftext',
 	'QUOTES_FOOTER' => 'Fußtext',
 	'QUOTES_INFO' => 'Info',
+	'QUOTES_NOTES' => 'Notizen',
 	'QUOTES_CONTACT_INFO' => 'Kontakt-Info',
 	'QUOTES_SELECT' => 'Auswählen',
 	'QUOTES_POSITIONS' => 'Positionen',

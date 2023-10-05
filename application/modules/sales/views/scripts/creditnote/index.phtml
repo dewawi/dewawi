@@ -18,16 +18,14 @@ echo $this->ActiveFilter();
 			<th class="contactid" width="5%">
 				<?php echo $this->translate('CREDIT_NOTES_CONTACT'); ?>
 			</th>
-			<th class="billingname" width="20%">
+			<th class="billingaddress" width="20%">
+				<?php echo $this->translate('CREDIT_NOTES_BILLING_ADDRESS'); ?>
 			</th>
-			<th class="postcode" width="4%">
-				<?php echo $this->translate('CREDIT_NOTES_POSTCODE'); ?>
+			<th class="notes" width="15%">
+				<?php echo $this->translate('CREDIT_NOTES_NOTES') ?>
 			</th>
-			<th class="city" width="4%">
-				<?php echo $this->translate('CREDIT_NOTES_CITY'); ?>
-			</th>
-			<th class="modified" width="8%">
-				<?php echo $this->translate('CREDIT_NOTES_MODIFIED'); ?>
+			<th class="creditnotedate" width="8%">
+				<?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_DATE'); ?>
 			</th>
 			<th class="total" width="8%">
 				<?php echo $this->translate('CREDIT_NOTES_TOTAL'); ?>
@@ -58,24 +56,26 @@ echo $this->ActiveFilter();
 			<td data-label="<?php echo $this->translate('CREDIT_NOTES_CONTACT') ?>" class="contactid">
 				<?php if($creditnote->contactid) : ?>
 					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$creditnote->cid)); ?>">
-						<?php echo $this->escape($creditnote->contactid); ?>
+						<?php echo $this->escape($creditnote->contactid); ?><br/>
+						<?php echo $this->escape($creditnote->billingname1); ?>
+						<?php if($creditnote->billingname2) echo "<br/>".$this->escape($creditnote->billingname2); ?>
 					</a>
 				<?php endif; ?>
 			</td>
-			<td class="billingname">
-				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$creditnote->cid)); ?>">
-					<?php echo $this->escape($creditnote->billingname1); ?>
-					<?php if($creditnote->billingname2) echo "<br/>".$this->escape($creditnote->billingname2); ?>
-				</a>
-			</td>
-			<td data-label="<?php echo $this->translate('CREDIT_NOTES_POSTCODE') ?>" class="billingpostcode">
-				<?php echo $this->escape($creditnote->billingpostcode); ?> 
-			</td>
-			<td data-label="<?php echo $this->translate('CREDIT_NOTES_CITY') ?>" class="billingcity">
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_BILLING_ADDRESS') ?>" class="billingaddress">
+				<?php echo $this->escape($creditnote->billingstreet); ?><br/>
+				<?php echo $this->escape($creditnote->billingpostcode); ?><br/>
 				<?php echo $this->escape($creditnote->billingcity); ?>
 			</td>
-			<td data-label="<?php echo $this->translate('CREDIT_NOTES_MODIFIED') ?>" class="modified">
-				<?php echo $this->escape(date("d.m.Y", strtotime($creditnote->modified))); ?>
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_NOTES') ?>" class="notes">
+				<?php if($creditnote->notes) : ?>
+					<pre class="editable" data-name="notes" data-value="<?php echo $creditnote->notes; ?>" data-type="textarea"><?php echo $creditnote->notes; ?></pre>
+				<?php else : ?>
+					<pre class="editable" data-name="notes" data-value="<?php echo $creditnote->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+				<?php endif; ?>
+			</td>
+			<td data-label="<?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_DATE') ?>" class="creditnotedate">
+				<?php if($creditnote->creditnotedate) echo $this->escape(date("d.m.Y", strtotime($creditnote->creditnotedate))); ?>
 			</td>
 			<td data-label="<?php echo $this->translate('CREDIT_NOTES_TOTAL') ?>" class="total">
 				<?php echo $this->escape($creditnote->total); ?>

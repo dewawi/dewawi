@@ -24,6 +24,7 @@
 	'CREDIT_NOTES_HEADER' => 'Kopftext',
 	'CREDIT_NOTES_FOOTER' => 'Fußtext',
 	'CREDIT_NOTES_INFO' => 'Info',
+	'CREDIT_NOTES_NOTES' => 'Notizen',
 	'CREDIT_NOTES_CONTACT_INFO' => 'Kontakt-Info',
 	'CREDIT_NOTES_SELECT' => 'Auswählen',
 	'CREDIT_NOTES_POSITIONS' => 'Positionen',

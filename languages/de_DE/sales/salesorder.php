@@ -23,6 +23,7 @@
 	'SALES_ORDERS_HEADER' => 'Kopftext',
 	'SALES_ORDERS_FOOTER' => 'Fußtext',
 	'SALES_ORDERS_INFO' => 'Info',
+	'SALES_ORDERS_NOTES' => 'Notizen',
 	'SALES_ORDERS_CONTACT_INFO' => 'Kontakt-Info',
 	'SALES_ORDERS_SELECT' => 'Auswählen',
 	'SALES_ORDERS_POSITIONS' => 'Positionen',

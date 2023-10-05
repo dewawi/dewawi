@@ -23,6 +23,7 @@
 	'REMINDERS_HEADER' => 'Kopftext',
 	'REMINDERS_FOOTER' => 'Fußtext',
 	'REMINDERS_INFO' => 'Info',
+	'REMINDERS_NOTES' => 'Notizen',
 	'REMINDERS_CONTACT_INFO' => 'Kontakt-Info',
 	'REMINDERS_SELECT' => 'Auswählen',
 	'REMINDERS_POSITIONS' => 'Positionen',

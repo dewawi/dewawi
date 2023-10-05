@@ -157,7 +157,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 		$salesorder = $salesorderDb->getSalesorder($id);
 
-		if($salesorder['salesorderid']) {
+		if($salesorder['salesorderid'] && !$request->isPost()) {
 			$this->_helper->redirector->gotoSimple('view','salesorder',null,array('id' => $id));
 		} else {
 			$this->_helper->Access->lock($id, $this->_user['id'], $salesorder['locked'], $salesorder['lockedtime']);

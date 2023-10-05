@@ -20,6 +20,7 @@
 	'PURCHASE_ORDERS_HEADER' => 'Kopftext',
 	'PURCHASE_ORDERS_FOOTER' => 'Fußtext',
 	'PURCHASE_ORDERS_INFO' => 'Info',
+	'PURCHASE_ORDERS_NOTES' => 'Notizen',
 	'PURCHASE_ORDERS_CONTACT_INFO' => 'Kontakt-Info',
 	'PURCHASE_ORDERS_SELECT' => 'Auswählen',
 	'PURCHASE_ORDERS_POSITIONS' => 'Positionen',

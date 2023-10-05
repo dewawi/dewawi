@@ -157,7 +157,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$quote = $quoteDb->getQuote($id);
 
-		if($quote['quoteid']) {
+		if($quote['quoteid'] && !$request->isPost()) {
 			$this->_helper->redirector->gotoSimple('view', 'quote', null, array('id' => $id));
 		} else {
 			$this->_helper->Access->lock($id, $this->_user['id'], $quote['locked'], $quote['lockedtime']);
