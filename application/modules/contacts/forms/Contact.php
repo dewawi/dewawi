@@ -138,6 +138,13 @@ class Contacts_Form_Contact extends Zend_Form
 			->setAttrib('cols', '62')
 			->setAttrib('rows', '30');
 
+		$form['notes'] = new Zend_Form_Element_Textarea('notes');
+		$form['notes']->setLabel('CONTACTS_NOTES')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('cols', '45')
+			->setAttrib('rows', '6');
+
 		$form['debitornumber'] = new Zend_Form_Element_Text('debitornumber');
 		$form['debitornumber']->setLabel('CONTACTS_DEBITOR_NUMBER')
 			->addFilter('StripTags')

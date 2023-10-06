@@ -34,6 +34,7 @@
 	'CONTACTS_CONTACT_DATA' => 'Kontaktdaten',
 	'CONTACTS_INFO' => 'Info',
 	'CONTACTS_INFO_INTERNAL' => 'Interne Informationen',
+	'CONTACTS_NOTES' => 'Notizen',
 	'CONTACTS_DEBITOR_NUMBER' => 'Kreditoren/Debitorennr.',
 	'CONTACTS_TAX_NUMBER' => 'Steuernummer',
 	'CONTACTS_VATIN' => 'USt-IdNr.',

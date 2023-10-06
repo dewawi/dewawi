@@ -77,3 +77,4 @@ ALTER TABLE `reminder` ADD `notes` text DEFAULT NULL AFTER `info`;
 ALTER TABLE `salesorder` ADD `notes` text DEFAULT NULL AFTER `info`;
 ALTER TABLE `quoterequest` ADD `notes` text DEFAULT NULL AFTER `info`;
 ALTER TABLE `purchaseorder` ADD `notes` text DEFAULT NULL AFTER `info`;
+ALTER TABLE `contact` ADD `notes` text DEFAULT NULL AFTER `info`;

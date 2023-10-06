@@ -5,6 +5,7 @@ echo $this->Messages();
 echo $this->ActiveFilter();
 ?>
 
+<div style="text-align: right;"><?php echo count($this->contacts); ?></div>
 <table id="data">
 	<thead>
 		<tr>
@@ -29,6 +30,9 @@ echo $this->ActiveFilter();
 			</th>
 			<th class="country" width="10%">
 				<?php echo $this->translate('CONTACTS_COUNTRY'); ?>
+			</th>
+			<th class="notes" width="15%">
+				<?php echo $this->translate('CONTACTS_NOTES') ?>
 			</th>
 			<th class="category" width="12%">
 				<?php echo $this->translate('CONTACTS_CATEGORY'); ?>
@@ -69,6 +73,13 @@ echo $this->ActiveFilter();
 				</td>
 				<td data-label="<?php echo $this->translate('CONTACTS_COUNTRY') ?>" class="country">
 					<?php if($contact->country) echo $this->escape($this->translate($contact->country)); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('CONTACTS_NOTES') ?>" class="notes">
+					<?php if($contact->notes) : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $creditnote->notes; ?>" data-type="textarea"><?php echo $contact->notes; ?></pre>
+					<?php else : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $creditnote->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+					<?php endif; ?>
 				</td>
 				<td data-label="<?php echo $this->translate('CONTACTS_CATEGORY') ?>" class="category">
 					<?php if($contact->catid && isset($this->options['categories'][$contact->catid])) : ?>
