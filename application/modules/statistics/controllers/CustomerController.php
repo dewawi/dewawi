@@ -1,6 +1,6 @@
 <?php
 
-class Statistics_IndexController extends Zend_Controller_Action
+class Statistics_CustomerController extends Zend_Controller_Action
 {
 	protected $_date = null;
 
@@ -37,12 +37,13 @@ class Statistics_IndexController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$chart = new Statistics_Model_Charts();
-		$chart->createCharts($lenght, 1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $params, $options);
+		$chart = new Statistics_Model_Customer();
+		$customerList = $chart->createCharts($lenght, 1000, 600, $this->view->translate("STATISTICS_UNCATEGORIZED"), $params, $options);
 
 		$this->view->lenght = $lenght;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->customerList = $customerList;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -57,7 +58,7 @@ class Statistics_IndexController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$chart = new Statistics_Model_Charts();
+		$chart = new Statistics_Model_Customer();
 		$chart->createCharts($lenght, 1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $params, $options);
 
 		$this->view->lenght = $lenght;

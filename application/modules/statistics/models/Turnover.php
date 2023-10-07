@@ -1,6 +1,6 @@
 <?php
 
-class Statistics_Model_Charts
+class Statistics_Model_Turnover
 {
 	public function createCharts($lenght, $width = 1000, $height = 400, $statisticsUncategorized, $params, $options)
 	{
@@ -65,6 +65,10 @@ class Statistics_Model_Charts
 							$turnoverCategories[$invoice->catid][$y.$ym] += $invoice->subtotal;
 						} else {
 							$turnoverCategories[$invoice->catid][$y.$ym] = $invoice->subtotal;
+						}
+						if($invoice->prepayment) {
+							$turnover[$y.$ym] -= ($invoice->prepayment/1.19); //TODO
+							$turnoverCategories[$invoice->catid][$y.$ym] -= ($invoice->prepayment/1.19); //TODO
 						}
 					}
 

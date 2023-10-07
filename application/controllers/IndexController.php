@@ -36,7 +36,7 @@ class IndexController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$charts = new Statistics_Model_Charts();
+		$charts = new Statistics_Model_Turnover();
 		$charts->createCharts(13, 750, 400, $this->view->translate('STATISTICS_UNCATEGORIZED'), $params, $options);
 
 		$quotesDb = new Sales_Model_DbTable_Quote();

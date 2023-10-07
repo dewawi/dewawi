@@ -3,6 +3,7 @@ $this->title = $this->translate('STATISTICS');
 $this->headTitle($this->title);
 ?>
 
+<?php echo $this->translate('STATISTICS_PERIOD'); ?>: 
 <?php if($this->lenght == 13) : ?>
 	1 Jahr
 <?php else : ?>
@@ -19,7 +20,7 @@ $this->headTitle($this->title);
 	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'lenght'=>'61')); ?>">5 Jahre</a>
 <?php endif; ?>
 
-<h3><?php echo $this->translate('STATISTICS_TURNOVER'); ?></h3>
+<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
 <img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-1000-400.png">
 <h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
 <img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-category-1000-400.png">
