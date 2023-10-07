@@ -13,6 +13,8 @@ class Purchases_Model_Get
 
 		$columns = array('q.title', 'q.quoterequestid', 'q.contactid', 'q.billingname1', 'q.billingname2', 'q.billingdepartment', 'q.billingstreet', 'q.billingpostcode', 'q.billingcity', 'q.shippingname1', 'q.shippingname2', 'q.shippingdepartment', 'q.shippingstreet', 'q.shippingpostcode', 'q.shippingcity');
 
+		if(isset($params['order']) && ($params['order'] == 'documentid')) $params['order'] = 'quoterequestid';
+
 		$query = '';
 		$schema = 'q';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
@@ -83,6 +85,8 @@ class Purchases_Model_Get
 		$purchaseordersDb = new Purchases_Model_DbTable_Purchaseorder();
 
 		$columns = array('p.title', 'p.purchaseorderid', 'p.contactid', 'p.billingname1', 'p.billingname2', 'p.billingdepartment', 'p.billingstreet', 'p.billingpostcode', 'p.billingcity', 'p.shippingname1', 'p.shippingname2', 'p.shippingdepartment', 'p.shippingstreet', 'p.shippingpostcode', 'p.shippingcity');
+
+		if(isset($params['order']) && ($params['order'] == 'documentid')) $params['order'] = 'purchaseorderid';
 
 		$query = '';
 		$schema = 'p';
