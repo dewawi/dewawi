@@ -177,7 +177,13 @@ $this->language = str_replace('_', '-', $this->language);
 							</div>
 						</div>
 						<a class="button<?php if($this->controller == 'pricerule') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'items', 'controller'=>'pricerule', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_PRICE_RULES'); ?></a>
-						<a class="button<?php if($this->module == 'statistics') echo ' active'; ?>" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('MENU_STATISTICS'); ?></a>
+						<div class="sub">
+							<button<?php if($this->module == 'statistics') echo ' class="active"'; ?>><?php echo $this->translate('MENU_STATISTICS'); ?></button>
+							<div class="sub1">
+								<a class="button" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('STATISTICS_TURNOVER'); ?></a>
+								<a class="button" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'customer', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('STATISTICS_CUSTOMER'); ?></a>
+							</div>
+						</div>
 					</header>
 				</div>
 			</div>
