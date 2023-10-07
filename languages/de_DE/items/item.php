@@ -17,6 +17,7 @@
 	'ITEMS_CATEGORY' => 'Kategorie',
 	'ITEMS_INFO' => 'Info',
 	'ITEMS_INFO_INTERNAL' => 'Interne Informationen',
+	'ITEMS_NOTES' => 'Notizen',
 	'ITEMS_COST' => 'Einkaufspreis',
 	'ITEMS_PRICE' => 'Verkaufspreis',
 	'ITEMS_PRICES' => 'Preise',

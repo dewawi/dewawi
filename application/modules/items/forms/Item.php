@@ -71,6 +71,13 @@ class Items_Form_Item extends Zend_Form
 			->setAttrib('cols', '75')
 			->setAttrib('rows', '10');
 
+		$form['notes'] = new Zend_Form_Element_Textarea('notes');
+		$form['notes']->setLabel('ITEMS_NOTES')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('cols', '45')
+			->setAttrib('rows', '6');
+
 		$form['quantity'] = new Zend_Form_Element_Text('quantity');
 		$form['quantity']->setLabel('ITEMS_QUANTITY')
 			->addFilter('StripTags')

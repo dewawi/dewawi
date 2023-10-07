@@ -15,9 +15,6 @@ echo $this->ActiveFilter();
 			<th class="title" width="32%">
 				<?php echo $this->translate('ITEMS_TITLE'); ?>
 			</th>
-			<th class="cost" width="8%">
-				<?php echo $this->translate('ITEMS_COST'); ?>
-			</th>
 			<th class="price" width="8%">
 				<?php echo $this->translate('ITEMS_PRICE'); ?>
 			</th>
@@ -29,6 +26,9 @@ echo $this->ActiveFilter();
 			</th>
 			<th width="8%"><?php echo $this->translate('ITEMS_UOM'); ?></th>
 			<th width="8%"><?php echo $this->translate('ITEMS_MANUFACTURER'); ?></th>
+			<th class="notes" width="8%">
+				<?php echo $this->translate('ITEMS_NOTES') ?>
+			</th>
 			<th width="8%"><?php echo $this->translate('ITEMS_CATEGORY'); ?></th>
 			<th class="tags" width="12%">
 				<?php echo $this->translate('TAGS'); ?>
@@ -51,9 +51,6 @@ echo $this->ActiveFilter();
 					</a><br/>
 					<?php echo $this->escape($item->description); ?>
 				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_COST') ?>" class="cost">
-					<?php echo $this->escape($item->cost); ?>
-				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_PRICE') ?>" class="price">
 					<?php echo $this->escape($item->price); ?>
 				</td>
@@ -68,6 +65,13 @@ echo $this->ActiveFilter();
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_MANUFACTURER') ?>" class="manufacturer">
 					<?php if($item->manufacturerid && isset($this->options['manufacturers'][$item->manufacturerid])) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_NOTES') ?>" class="notes">
+					<?php if($item->notes) : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $item->notes; ?>" data-type="textarea"><?php echo $item->notes; ?></pre>
+					<?php else : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $item->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+					<?php endif; ?>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_CATEGORY') ?>" class="category">
 					<?php if($item->catid && isset($this->options['categories'][$item->catid])) : ?>
