@@ -51,7 +51,7 @@ class Zend_Ldap_Node_Schema extends Zend_Ldap_Node_Abstract
     public static function create(Zend_Ldap $ldap)
     {
         $dn = $ldap->getRootDse()->getSchemaDn();
-        $data = $ldap->getEntry($dn, array('*', '+'), true);
+        $data = $ldap->getEntry($dn, ['*', '+'], true);
         switch ($ldap->getRootDse()->getServerType()) {
             case Zend_Ldap_Node_RootDse::SERVER_TYPE_ACTIVEDIRECTORY:
                 /**
@@ -91,7 +91,7 @@ class Zend_Ldap_Node_Schema extends Zend_Ldap_Node_Abstract
      *
      * @param  Zend_Ldap_Dn $dn
      * @param  Zend_Ldap    $ldap
-     * @return Zend_Ldap_Node_Schema Provides a fluent interface
+     * @return $this
      */
     protected function _parseSchema(Zend_Ldap_Dn $dn, Zend_Ldap $ldap)
     {
@@ -105,7 +105,7 @@ class Zend_Ldap_Node_Schema extends Zend_Ldap_Node_Abstract
      */
     public function getAttributeTypes()
     {
-        return array();
+        return [];
     }
 
     /**
@@ -115,6 +115,6 @@ class Zend_Ldap_Node_Schema extends Zend_Ldap_Node_Abstract
      */
     public function getObjectClasses()
     {
-        return array();
+        return [];
     }
 }

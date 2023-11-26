@@ -43,10 +43,10 @@ class Zend_Validate_PostCode extends Zend_Validate_Abstract
     /**
      * @var array
      */
-    protected $_messageTemplates = array(
+    protected $_messageTemplates = [
         self::INVALID  => "Invalid type given. String or integer expected",
         self::NO_MATCH => "'%value%' does not appear to be a postal code",
-    );
+    ];
 
     /**
      * Locale to use
@@ -58,7 +58,7 @@ class Zend_Validate_PostCode extends Zend_Validate_Abstract
     /**
      * Manual postal code format
      *
-     * @var unknown_type
+     * @var string
      */
     protected $_format;
 
@@ -106,7 +106,7 @@ class Zend_Validate_PostCode extends Zend_Validate_Abstract
     /**
      * Returns the set locale
      *
-     * @return string|Zend_Locale The set locale
+     * @return string The set locale
      */
     public function getLocale()
     {
@@ -119,7 +119,7 @@ class Zend_Validate_PostCode extends Zend_Validate_Abstract
      * @param string|Zend_Locale $locale
      * @throws Zend_Validate_Exception On unrecognised region
      * @throws Zend_Validate_Exception On not detected format
-     * @return Zend_Validate_PostCode  Provides a fluent interface
+     * @return $this
      */
     public function setLocale($locale = null)
     {
@@ -162,7 +162,7 @@ class Zend_Validate_PostCode extends Zend_Validate_Abstract
      *
      * @param string $format
      * @throws Zend_Validate_Exception On empty format
-     * @return Zend_Validate_PostCode  Provides a fluent interface
+     * @return $this
      */
     public function setFormat($format)
     {

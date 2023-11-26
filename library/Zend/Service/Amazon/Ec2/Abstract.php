@@ -86,7 +86,7 @@ abstract class Zend_Service_Amazon_Ec2_Abstract extends Zend_Service_Amazon_Abst
      *
      * @var array
      */
-    protected static $_validEc2Regions = array('eu-west-1', 'us-east-1');
+    protected static $_validEc2Regions = ['eu-west-1', 'us-east-1'];
 
     /**
      * Create Amazon client.
@@ -146,27 +146,27 @@ abstract class Zend_Service_Amazon_Ec2_Abstract extends Zend_Service_Amazon_Abst
      * @return Zend_Service_Amazon_Ec2_Response
      * @throws Zend_Service_Amazon_Ec2_Exception
      */
-    protected function sendRequest(array $params = array())
+    protected function sendRequest(array $params = [])
     {
         $url = 'https://' . $this->_getRegion() . $this->_ec2Endpoint . '/';
 
         $params = $this->addRequiredParameters($params);
 
         try {
-            /* @var $request Zend_Http_Client */
+            /* @var Zend_Http_Client $request */
             $request = self::getHttpClient();
             $request->resetParameters();
 
-            $request->setConfig(array(
+            $request->setConfig([
                 'timeout' => $this->_httpTimeout
-            ));
+            ]);
 
             $request->setUri($url);
             $request->setMethod(Zend_Http_Client::POST);
             $request->setParameterPost($params);
 
             $httpResponse = $request->request();
-            
+
 
         } catch (Zend_Http_Client_Exception $zhce) {
             $message = 'Error in request to AWS service: ' . $zhce->getMessage();
@@ -238,7 +238,7 @@ abstract class Zend_Service_Amazon_Ec2_Abstract extends Zend_Service_Amazon_Abst
         uksort($paramaters, 'strcmp');
         unset($paramaters['Signature']);
 
-        $arrData = array();
+        $arrData = [];
         foreach($paramaters as $key => $value) {
             $arrData[] = $key . '=' . str_replace("%7E", "~", rawurlencode($value));
         }

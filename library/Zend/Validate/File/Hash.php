@@ -44,11 +44,11 @@ class Zend_Validate_File_Hash extends Zend_Validate_Abstract
     /**
      * @var array Error message templates
      */
-    protected $_messageTemplates = array(
+    protected $_messageTemplates = [
         self::DOES_NOT_MATCH => "File '%value%' does not match the given hashes",
         self::NOT_DETECTED   => "A hash could not be evaluated for the given file",
         self::NOT_FOUND      => "File '%value%' is not readable or does not exist"
-    );
+    ];
 
     /**
      * Hash of the file
@@ -68,7 +68,7 @@ class Zend_Validate_File_Hash extends Zend_Validate_Abstract
         if ($options instanceof Zend_Config) {
             $options = $options->toArray();
         } elseif (is_scalar($options)) {
-            $options = array('hash1' => $options);
+            $options = ['hash1' => $options];
         } elseif (!is_array($options)) {
             require_once 'Zend/Validate/Exception.php';
             throw new Zend_Validate_Exception('Invalid options to validator provided');
@@ -84,7 +84,7 @@ class Zend_Validate_File_Hash extends Zend_Validate_Abstract
     /**
      * Returns the set hash values as array, the hash as key and the algorithm the value
      *
-     * @return array
+     * @return string
      */
     public function getHash()
     {
@@ -95,7 +95,7 @@ class Zend_Validate_File_Hash extends Zend_Validate_Abstract
      * Sets the hash for one or multiple files
      *
      * @param  string|array $options
-     * @return Zend_Validate_File_Hash Provides a fluent interface
+     * @return $this
      */
     public function setHash($options)
     {
@@ -110,12 +110,12 @@ class Zend_Validate_File_Hash extends Zend_Validate_Abstract
      *
      * @param  string|array $options
      * @throws Zend_Validate_Exception
-     * @return Zend_Validate_File_Hash Provides a fluent interface
+     * @return $this
      */
     public function addHash($options)
     {
         if (is_string($options)) {
-            $options = array($options);
+            $options = [$options];
         } else if (!is_array($options)) {
             require_once 'Zend/Validate/Exception.php';
             throw new Zend_Validate_Exception("False parameter given");

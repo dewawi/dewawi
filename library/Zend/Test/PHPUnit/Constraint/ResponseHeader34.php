@@ -51,18 +51,18 @@ class Zend_Test_PHPUnit_Constraint_ResponseHeader34 extends PHPUnit_Framework_Co
      * Available assertion types
      * @var array
      */
-    protected $_assertTypes     = array(
+    protected $_assertTypes     = [
         self::ASSERT_RESPONSE_CODE,
         self::ASSERT_HEADER,
         self::ASSERT_HEADER_CONTAINS,
         self::ASSERT_HEADER_REGEX,
-    );
+    ];
 
     /**
      * @var int Response code
      */
     protected $_code              = 200;
-    
+
     /**
      * @var int Actual response code
      */
@@ -108,7 +108,7 @@ class Zend_Test_PHPUnit_Constraint_ResponseHeader34 extends PHPUnit_Framework_Co
      * Evaluate an object to see if it fits the constraints
      *
      * @param  Zend_Controller_Response_Abstract $other String to examine
-     * @param  null|string Assertion type
+     * @param  null|string $assertType Assertion type
      * @return bool
      */
     public function evaluate($other, $assertType = null)

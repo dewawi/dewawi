@@ -39,6 +39,10 @@ require_once 'Zend/Tool/Framework/Provider/Interface.php';
 class Zend_Tool_Framework_System_Provider_Manifest
     implements Zend_Tool_Framework_Provider_Interface, Zend_Tool_Framework_Registry_EnabledInterface
 {
+    /**
+     * @var \Zend_Tool_Framework_Registry_Interface|mixed
+     */
+    protected $_registry;
 
     public function setRegistry(Zend_Tool_Framework_Registry_Interface $registry)
     {
@@ -56,7 +60,7 @@ class Zend_Tool_Framework_System_Provider_Manifest
         $manifestRepository = $this->_registry->getManifestRepository();
         $response           = $this->_registry->getResponse();
 
-        $metadataTree = array();
+        $metadataTree = [];
 
         $longestAttrNameLen = 50;
 
@@ -73,15 +77,15 @@ class Zend_Tool_Framework_System_Provider_Manifest
             }
 
             if (!array_key_exists($metadataType, $metadataTree)) {
-                $metadataTree[$metadataType] = array();
+                $metadataTree[$metadataType] = [];
             }
 
             if (!array_key_exists($metadataName, $metadataTree[$metadataType])) {
-                $metadataTree[$metadataType][$metadataName] = array();
+                $metadataTree[$metadataType][$metadataName] = [];
             }
 
             if (!array_key_exists($metadataAttrs, $metadataTree[$metadataType][$metadataName])) {
-                $metadataTree[$metadataType][$metadataName][$metadataAttrs] = array();
+                $metadataTree[$metadataType][$metadataName][$metadataAttrs] = [];
             }
 
             $longestAttrNameLen = (strlen($metadataAttrs) > $longestAttrNameLen) ? strlen($metadataAttrs) : $longestAttrNameLen;

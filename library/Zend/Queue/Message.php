@@ -36,7 +36,7 @@ class Zend_Queue_Message
      *
      * @var array
      */
-    protected $_data = array();
+    protected $_data = [];
 
      /**
      * Connected is true if we have a reference to a live
@@ -67,7 +67,7 @@ class Zend_Queue_Message
      * @param  array $options
      * @throws Zend_Queue_Exception
      */
-    public function __construct(array $options = array())
+    public function __construct(array $options = [])
     {
         if (isset($options['queue'])) {
             if ($options['queue'] instanceof Zend_Queue) {
@@ -151,7 +151,7 @@ class Zend_Queue_Message
      */
     public function __sleep()
     {
-        return array('_queueClass', '_data');
+        return ['_queueClass', '_data'];
     }
 
     /**
@@ -217,7 +217,7 @@ class Zend_Queue_Message
      * Sets all data in the row from an array.
      *
      * @param  array $data
-     * @return Zend_Queue_Message Provides a fluent interface
+     * @return $this
      */
     public function setFromArray(array $data)
     {

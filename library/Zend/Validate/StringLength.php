@@ -39,19 +39,19 @@ class Zend_Validate_StringLength extends Zend_Validate_Abstract
     /**
      * @var array
      */
-    protected $_messageTemplates = array(
+    protected $_messageTemplates = [
         self::INVALID   => "Invalid type given. String expected",
         self::TOO_SHORT => "'%value%' is less than %min% characters long",
         self::TOO_LONG  => "'%value%' is more than %max% characters long",
-    );
+    ];
 
     /**
      * @var array
      */
-    protected $_messageVariables = array(
+    protected $_messageVariables = [
         'min' => '_min',
         'max' => '_max'
-    );
+    ];
 
     /**
      * Minimum length
@@ -81,7 +81,7 @@ class Zend_Validate_StringLength extends Zend_Validate_Abstract
      *
      * @param integer|array|Zend_Config $options
      */
-    public function __construct($options = array())
+    public function __construct($options = [])
     {
         if ($options instanceof Zend_Config) {
             $options = $options->toArray();
@@ -128,7 +128,7 @@ class Zend_Validate_StringLength extends Zend_Validate_Abstract
      *
      * @param  integer $min
      * @throws Zend_Validate_Exception
-     * @return Zend_Validate_StringLength Provides a fluent interface
+     * @return $this
      */
     public function setMin($min)
     {
@@ -159,7 +159,7 @@ class Zend_Validate_StringLength extends Zend_Validate_Abstract
      *
      * @param  integer|null $max
      * @throws Zend_Validate_Exception
-     * @return Zend_Validate_StringLength Provides a fluent interface
+     * @return $this
      */
     public function setMax($max)
     {

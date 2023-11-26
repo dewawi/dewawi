@@ -140,7 +140,7 @@ class Zend_Amf_Util_BinaryStream
             );
         }
 
-        return ord($this->_stream{$this->_needle++});
+        return ord($this->_stream[$this->_needle++]);
     }
 
     /**
@@ -217,7 +217,7 @@ class Zend_Amf_Util_BinaryStream
      * Write a long UTF string to the buffer
      *
      * @param  string $stream
-     * @return Zend_Amf_Util_BinaryStream
+     * @return void
      */
     public function writeLongUtf($stream)
     {

@@ -31,6 +31,13 @@
  */
 class Zend_Service_Yahoo_Result
 {
+    protected $_namespace;
+
+    /**
+     * @var \Zend_Service_Yahoo_Image|null
+     */
+    public $Thumbnail;
+
     /**
      * The title of the search entry
      *
@@ -83,7 +90,7 @@ class Zend_Service_Yahoo_Result
     public function __construct(DOMElement $result)
     {
         // default fields for all search results:
-        $fields = array('Title', 'Url', 'ClickUrl');
+        $fields = ['Title', 'Url', 'ClickUrl'];
 
         // merge w/ child's fields
         $this->_fields = array_merge($this->_fields, $fields);
@@ -96,6 +103,7 @@ class Zend_Service_Yahoo_Result
         foreach ($this->_fields as $f) {
             $query = "./yh:$f/text()";
             $node = $this->_xpath->query($query, $result);
+
             if ($node->length == 1) {
                 $this->{$f} = $node->item(0)->data;
             }
@@ -113,6 +121,7 @@ class Zend_Service_Yahoo_Result
     protected function _setThumbnail()
     {
         $node = $this->_xpath->query('./yh:Thumbnail', $this->_result);
+
         if ($node->length == 1) {
             /**
              * @see Zend_Service_Yahoo_Image

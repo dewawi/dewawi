@@ -123,7 +123,7 @@ class Zend_Gdata_HttpClient extends Zend_Http_Client
      * @param string $key The private key
      * @param string $passphrase The optional private key passphrase
      * @throws Zend_Gdata_App_InvalidArgumentException
-     * @return Zend_Gdata_HttpClient Provides a fluent interface
+     * @return $this
      */
     public function setAuthSubPrivateKey($key, $passphrase = null) {
         if ($key != null && !function_exists('openssl_pkey_get_private')) {
@@ -140,7 +140,7 @@ class Zend_Gdata_HttpClient extends Zend_Http_Client
     /**
      * Gets the openssl private key id
      *
-     * @return string The private key
+     * @return resource|null The private key
      */
     public function getAuthSubPrivateKeyId() {
         return $this->_authSubPrivateKeyId;
@@ -159,7 +159,7 @@ class Zend_Gdata_HttpClient extends Zend_Http_Client
      * Sets the AuthSub token used for authentication
      *
      * @param string $token The token
-     * @return Zend_Gdata_HttpClient Provides a fluent interface
+     * @return $this
      */
     public function setAuthSubToken($token) {
         $this->_authSubToken = $token;
@@ -179,7 +179,7 @@ class Zend_Gdata_HttpClient extends Zend_Http_Client
      * Sets the ClientLogin token used for authentication
      *
      * @param string $token The token
-     * @return Zend_Gdata_HttpClient Provides a fluent interface
+     * @return $this
      */
     public function setClientLoginToken($token) {
         $this->_clientLoginToken = $token;
@@ -207,7 +207,7 @@ class Zend_Gdata_HttpClient extends Zend_Http_Client
      * @return array The processed values in an associative array,
      *               using the same names as the params
      */
-    public function filterHttpRequest($method, $url, $headers = array(), $body = null, $contentType = null) {
+    public function filterHttpRequest($method, $url, $headers = [], $body = null, $contentType = null) {
         if ($this->getAuthSubToken() != null) {
             // AuthSub authentication
             if ($this->getAuthSubPrivateKeyId() != null) {
@@ -240,7 +240,7 @@ class Zend_Gdata_HttpClient extends Zend_Http_Client
         } elseif ($this->getClientLoginToken() != null) {
             $headers['authorization'] = 'GoogleLogin auth=' . $this->getClientLoginToken();
         }
-        return array('method' => $method, 'url' => $url, 'body' => $body, 'headers' => $headers, 'contentType' => $contentType);
+        return ['method' => $method, 'url' => $url, 'body' => $body, 'headers' => $headers, 'contentType' => $contentType];
     }
 
     /**
@@ -257,7 +257,7 @@ class Zend_Gdata_HttpClient extends Zend_Http_Client
     /**
      * Return the current connection adapter
      *
-     * @return Zend_Http_Client_Adapter_Interface|string $adapter
+     * @return Zend_Http_Client_Adapter_Interface|null $adapter
      */
     public function getAdapter()
     {

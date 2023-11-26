@@ -46,9 +46,9 @@ class Zend_Tag_Cloud_Decorator_HtmlCloud extends Zend_Tag_Cloud_Decorator_Cloud
      *
      * @var array
      */
-    protected $_htmlTags = array(
-        'ul' => array('class' => 'Zend_Tag_Cloud')
-    );
+    protected $_htmlTags = [
+        'ul' => ['class' => 'Zend_Tag_Cloud']
+    ];
 
     /**
      * Separator for the single tags
@@ -70,7 +70,7 @@ class Zend_Tag_Cloud_Decorator_HtmlCloud extends Zend_Tag_Cloud_Decorator_Cloud
     /**
      * Set encoding
      *
-     * @param string
+     * @param string $value
      * @return Zend_Tag_Cloud_Decorator_HtmlCloud
      */
     public function setEncoding($value)
@@ -104,7 +104,7 @@ class Zend_Tag_Cloud_Decorator_HtmlCloud extends Zend_Tag_Cloud_Decorator_Cloud
     /**
      * Set the separator between the single tags
      *
-     * @param  string
+     * @param  string $separator
      * @return Zend_Tag_Cloud_Decorator_HtmlCloud
      */
     public function setSeparator($separator)

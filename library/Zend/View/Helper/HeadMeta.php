@@ -34,17 +34,16 @@ require_once 'Zend/View/Helper/Placeholder/Container/Standalone.php';
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  * @method $this appendHttpEquiv($keyValue, $content, $conditionalHttpEquiv)
  * @method $this appendName($keyValue, $content, $conditionalName)
- * @method $this appendProperty($property, $content, $modifiers)
+ * @method $this appendProperty($property, $content, $modifiers = [])
  * @method $this offsetSetHttpEquiv($index, $keyValue, $content, $conditionalHttpEquiv)
  * @method $this offsetSetName($index, $keyValue, $content, $conditionalName)
- * @method $this offsetSetProperty($index, $property, $content, $modifiers)
+ * @method $this offsetSetProperty($index, $property, $content, $modifiers = [])
  * @method $this prependHttpEquiv($keyValue, $content, $conditionalHttpEquiv)
  * @method $this prependName($keyValue, $content, $conditionalName)
- * @method $this prependProperty($property, $content, $modifiers)
- * @method $this setCharset($charset)
- * @method $this setHttpEquiv($keyValue, $content, $modifiers)
- * @method $this setName($keyValue, $content, $modifiers)
- * @method $this setProperty($property, $content, $modifiers)
+ * @method $this prependProperty($property, $content, $modifiers = [])
+ * @method $this setHttpEquiv($keyValue, $content, $modifiers = [])
+ * @method $this setName($keyValue, $content, $modifiers = [])
+ * @method $this setProperty($property, $content, $modifiers = [])
  */
 class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_Standalone
 {
@@ -52,9 +51,9 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
      * Types of attributes
      * @var array
      */
-    protected $_typeKeys     = array('name', 'http-equiv', 'charset', 'property');
-    protected $_requiredKeys = array('content');
-    protected $_modifierKeys = array('lang', 'scheme');
+    protected $_typeKeys     = ['name', 'http-equiv', 'charset', 'property'];
+    protected $_requiredKeys = ['content'];
+    protected $_modifierKeys = ['lang', 'scheme'];
 
     /**
      * @var string registry key
@@ -84,7 +83,7 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
      * @param  string $placement
      * @return Zend_View_Helper_HeadMeta
      */
-    public function headMeta($content = null, $keyValue = null, $keyType = 'name', $modifiers = array(), $placement = Zend_View_Helper_Placeholder_Container_Abstract::APPEND)
+    public function headMeta($content = null, $keyValue = null, $keyType = 'name', $modifiers = [], $placement = Zend_View_Helper_Placeholder_Container_Abstract::APPEND)
     {
         if ((null !== $content) && (null !== $keyValue)) {
             $item   = $this->createData($keyType, $keyValue, $content, $modifiers);
@@ -165,7 +164,7 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
             }
 
             if (3 > $argc) {
-                $args[] = array();
+                $args[] = [];
             }
 
             $item  = $this->createData($type, $args[0], $args[1], $args[2]);
@@ -187,7 +186,7 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
      * Not valid in a non-HTML5 doctype
      *
      * @param string $charset
-     * @return Zend_View_Helper_HeadMeta Provides a fluent interface
+     * @return $this
      */
     public function setCharset($charset)
     {
@@ -195,7 +194,7 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
         $item->type = 'charset';
         $item->charset = $charset;
         $item->content = null;
-        $item->modifiers = array();
+        $item->modifiers = [];
         $this->set($item);
         return $this;
     }
@@ -222,8 +221,8 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
             return false;
         }
 
-        // <meta property= ... /> is only supported with doctype RDFa
-        if ( !is_null($this->view) && !$this->view->doctype()->isRdfa()
+        // <meta property= ... /> is only supported with doctype RDFa and html5
+        if ( !is_null($this->view) && !$this->view->doctype()->isRdfa() && !$isHtml5
             && $item->type === 'property') {
             return false;
         }
@@ -258,6 +257,7 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
      * @return void
      * @throws Zend_View_Exception
      */
+    #[\ReturnTypeWillChange]
     public function offsetSet($index, $value)
     {
         if (!$this->_isValid($value)) {
@@ -277,6 +277,7 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
      * @return void
      * @throws Zend_View_Exception
      */
+    #[\ReturnTypeWillChange]
     public function offsetUnset($index)
     {
         if (!in_array($index, $this->getContainer()->getKeys())) {
@@ -389,7 +390,7 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
             $this->_escape($item->content),
             $modifiersString
         );
-        
+
         if (isset($item->modifiers['conditional'])
             && !empty($item->modifiers['conditional'])
             && is_string($item->modifiers['conditional']))
@@ -399,7 +400,7 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
             }
             $meta = '<!--[if ' . $this->_escape($item->modifiers['conditional']) . ']>' . $meta . '<![endif]-->';
         }
-        
+
         return $meta;
     }
 
@@ -415,7 +416,7 @@ class Zend_View_Helper_HeadMeta extends Zend_View_Helper_Placeholder_Container_S
                 ? $this->getWhitespace($indent)
                 : $this->getIndent();
 
-        $items = array();
+        $items = [];
         $this->getContainer()->ksort();
         try {
             foreach ($this as $item) {

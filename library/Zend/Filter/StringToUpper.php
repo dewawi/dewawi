@@ -50,7 +50,7 @@ class Zend_Filter_StringToUpper implements Zend_Filter_Interface
             $options = $options->toArray();
         } else if (!is_array($options)) {
             $options = func_get_args();
-            $temp    = array();
+            $temp    = [];
             if (!empty($options)) {
                 $temp['encoding'] = array_shift($options);
             }
@@ -80,7 +80,7 @@ class Zend_Filter_StringToUpper implements Zend_Filter_Interface
      * Set the input encoding for the given string
      *
      * @param  string $encoding
-     * @return Zend_Filter_StringToUpper Provides a fluent interface
+     * @return $this
      * @throws Zend_Filter_Exception
      */
     public function setEncoding($encoding = null)

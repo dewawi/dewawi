@@ -39,7 +39,7 @@ class Zend_Acl_Role_Registry
      *
      * @var array
      */
-    protected $_roles = array();
+    protected $_roles = [];
 
     /**
      * Adds a Role having an identifier unique to the registry
@@ -58,7 +58,7 @@ class Zend_Acl_Role_Registry
      * @param  Zend_Acl_Role_Interface              $role
      * @param  Zend_Acl_Role_Interface|string|array $parents
      * @throws Zend_Acl_Role_Registry_Exception
-     * @return Zend_Acl_Role_Registry Provides a fluent interface
+     * @return $this
      */
     public function add(Zend_Acl_Role_Interface $role, $parents = null)
     {
@@ -72,11 +72,11 @@ class Zend_Acl_Role_Registry
             throw new Zend_Acl_Role_Registry_Exception("Role id '$roleId' already exists in the registry");
         }
 
-        $roleParents = array();
+        $roleParents = [];
 
         if (null !== $parents) {
             if (!is_array($parents)) {
-                $parents = array($parents);
+                $parents = [$parents];
             }
             /**
              * @see Zend_Acl_Role_Registry_Exception
@@ -98,11 +98,11 @@ class Zend_Acl_Role_Registry
             }
         }
 
-        $this->_roles[$roleId] = array(
+        $this->_roles[$roleId] = [
             'instance' => $role,
             'parents'  => $roleParents,
-            'children' => array()
-            );
+            'children' => []
+            ];
 
         return $this;
     }
@@ -225,7 +225,7 @@ class Zend_Acl_Role_Registry
      *
      * @param  Zend_Acl_Role_Interface|string $role
      * @throws Zend_Acl_Role_Registry_Exception
-     * @return Zend_Acl_Role_Registry Provides a fluent interface
+     * @return $this
      */
     public function remove($role)
     {
@@ -254,11 +254,11 @@ class Zend_Acl_Role_Registry
     /**
      * Removes all Roles from the registry
      *
-     * @return Zend_Acl_Role_Registry Provides a fluent interface
+     * @return $this
      */
     public function removeAll()
     {
-        $this->_roles = array();
+        $this->_roles = [];
 
         return $this;
     }

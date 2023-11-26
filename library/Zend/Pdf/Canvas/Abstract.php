@@ -47,6 +47,13 @@ require_once 'Zend/Pdf/Resource/Image.php';
 abstract class Zend_Pdf_Canvas_Abstract implements Zend_Pdf_Canvas_Interface
 {
     /**
+     * Page dictionary (refers to an indirect Zend_Pdf_Element_Dictionary object).
+     *
+     * @var Zend_Pdf_Element_Reference|Zend_Pdf_Element_Object
+     */
+    protected $_dictionary;
+
+    /**
      * Drawing instructions
      *
      * @var string
@@ -221,7 +228,7 @@ abstract class Zend_Pdf_Canvas_Abstract implements Zend_Pdf_Canvas_Interface
 
         require_once 'Zend/Pdf/Page.php';
         if ($pattern === Zend_Pdf_Page::LINE_DASHING_SOLID) {
-            $pattern = array();
+            $pattern = [];
             $phase   = 0;
         }
 
@@ -435,8 +442,13 @@ abstract class Zend_Pdf_Canvas_Abstract implements Zend_Pdf_Canvas_Interface
         $yC = new Zend_Pdf_Element_Numeric($y);
 
         if ($startAngle !== null) {
-            if ($startAngle != 0) { $startAngle = fmod($startAngle, M_PI*2); }
-            if ($endAngle   != 0) { $endAngle   = fmod($endAngle,   M_PI*2); }
+            if ($startAngle != 0) {
+                $startAngle = fmod($startAngle, M_PI*2);
+            }
+
+            if ($endAngle != 0) {
+                $endAngle = fmod($endAngle,   M_PI*2);
+            }
 
             if ($startAngle > $endAngle) {
                 $endAngle += M_PI*2;
@@ -646,8 +658,13 @@ abstract class Zend_Pdf_Canvas_Abstract implements Zend_Pdf_Canvas_Interface
         $yC = new Zend_Pdf_Element_Numeric($y);
 
         if ($startAngle !== null) {
-            if ($startAngle != 0) { $startAngle = fmod($startAngle, M_PI*2); }
-            if ($endAngle   != 0) { $endAngle   = fmod($endAngle,   M_PI*2); }
+            if ($startAngle != 0) {
+                $startAngle = fmod($startAngle, M_PI * 2);
+            }
+
+            if ($endAngle != 0) {
+                $endAngle = fmod($endAngle, M_PI * 2);
+            }
 
             if ($startAngle > $endAngle) {
                 $endAngle += M_PI*2;
@@ -913,7 +930,7 @@ abstract class Zend_Pdf_Canvas_Abstract implements Zend_Pdf_Canvas_Interface
         $this->_addProcSet('PDF');
 
         if(!is_array($radius)) {
-            $radius = array($radius, $radius, $radius, $radius);
+            $radius = [$radius, $radius, $radius, $radius];
         } else {
             for ($i = 0; $i < 4; $i++) {
                 if(!isset($radius[$i])) {

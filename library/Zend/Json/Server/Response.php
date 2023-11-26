@@ -30,6 +30,11 @@
 class Zend_Json_Server_Response
 {
     /**
+     * @var string
+     */
+    protected $_args;
+
+    /**
      * Response error
      * @var null|Zend_Json_Server_Error
      */
@@ -173,15 +178,15 @@ class Zend_Json_Server_Response
     public function toJson()
     {
         if ($this->isError()) {
-            $response = array(
+            $response = [
                 'error'  => $this->getError()->toArray(),
                 'id'     => $this->getId(),
-            );
+            ];
         } else {
-            $response = array(
+            $response = [
                 'result' => $this->getResult(),
                 'id'     => $this->getId(),
-            );
+            ];
         }
 
         if (null !== ($version = $this->getVersion())) {
