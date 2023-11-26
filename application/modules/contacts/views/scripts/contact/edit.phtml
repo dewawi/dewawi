@@ -203,4 +203,41 @@ echo $this->FileManager();
 			</tbody>
 		</table>
 	</div>
+
+	<div id="contactmap">
+		<div id="map"></div>
+	</div>
+
+	<script type="text/javascript">
+	$(document).ready(function(){
+		//Map
+		var map = L.map('map').setView([51.2254018,6.7763137], 5);
+		map.attributionControl.setPrefix('Leaflet')
+		L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			maxZoom: 19,
+			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+		}).addTo(map);
+		var startmarkers = [
+		<?php foreach($this->address as $address) : ?>
+			<?php $url = $this->baseUrl(); ?>
+			<?php if($address['latitude']) : ?>
+				['<?php echo addslashes($this->form->getValue('name1')); ?>', <?php echo $address['latitude']; ?>, <?php echo $address['longitude']; ?>, '<?php echo $url; ?>', '<?php echo $this->form->getValue('contactid'); ?>'],
+			<?php endif; ?>
+		<?php endforeach; ?>
+		];
+		let arrayOfMarkers = [];
+		for (let i = 0; i < startmarkers.length; i++) {
+		  marker = new L.marker([startmarkers[i][1], startmarkers[i][2]])
+			.bindPopup('<a href=\"' + startmarkers[i][3] + '\">' + startmarkers[i][0] + '<br>' + startmarkers[i][4])
+			.addTo(map);
+
+		  arrayOfMarkers.push([startmarkers[i][1], startmarkers[i][2]])
+		}
+		console.log(arrayOfMarkers)
+
+		var bounds = new L.LatLngBounds(arrayOfMarkers);
+		map.fitBounds(bounds);
+		console.log(234);
+	});
+	</script>
 </div>

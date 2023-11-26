@@ -79,3 +79,7 @@ ALTER TABLE `quoterequest` ADD `notes` text DEFAULT NULL AFTER `info`;
 ALTER TABLE `purchaseorder` ADD `notes` text DEFAULT NULL AFTER `info`;
 ALTER TABLE `contact` ADD `notes` text DEFAULT NULL AFTER `info`;
 ALTER TABLE `item` ADD `notes` text DEFAULT NULL AFTER `info`;
+
+ALTER TABLE `address` ADD `latitude` DECIMAL(12,9) DEFAULT NULL AFTER `country`;
+ALTER TABLE `address` ADD `longitude` DECIMAL(12,9) DEFAULT NULL AFTER `latitude`;
+ALTER TABLE `address` ADD `geoupdated` datetime DEFAULT NULL AFTER `longitude`;

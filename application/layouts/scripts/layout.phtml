@@ -15,6 +15,7 @@ $this->language = str_replace('_', '-', $this->language);
 		<link href="<?php echo $this->baseUrl(); ?>/css/global.css" media="screen" rel="stylesheet" type="text/css" />
 		<link href="<?php echo $this->baseUrl(); ?>/library/miniCSS/mini-default.min.css" media="screen" rel="stylesheet" type="text/css"/>
 		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.css" media="screen" rel="stylesheet" type="text/css"/>
+		<link href="<?php echo $this->baseUrl(); ?>/library/Leaflet/leaflet.css" media="screen" rel="stylesheet" type="text/css"/>
 		<script type="text/javascript">
 			var action = "<?php echo $this->action; ?>";
 			<?php if(isset($this->id)) : ?>var id = <?php echo $this->id; ?>;<?php endif; ?>
@@ -36,6 +37,7 @@ $this->language = str_replace('_', '-', $this->language);
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
+		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Leaflet/leaflet.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
 		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
@@ -182,6 +184,7 @@ $this->language = str_replace('_', '-', $this->language);
 							<div class="sub1">
 								<a class="button" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('STATISTICS_TURNOVER'); ?></a>
 								<a class="button" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'customer', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('STATISTICS_CUSTOMER'); ?></a>
+								<a class="button" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'quote', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('STATISTICS_QUOTE'); ?></a>
 							</div>
 						</div>
 					</header>
