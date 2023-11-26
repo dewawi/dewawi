@@ -31,6 +31,13 @@ class Sales_Form_Quote extends Zend_Form
 			->setAttrib('cols', '50')
 			->setAttrib('rows', '10');
 
+		$form['notes'] = new Zend_Form_Element_Textarea('notes');
+		$form['notes']->setLabel('QUOTES_NOTES')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('cols', '45')
+			->setAttrib('rows', '6');
+
 		$form['header'] = new Zend_Form_Element_Textarea('header');
 		$form['header']->setLabel('QUOTES_HEADER')
 			->addFilter('StripTags', array(array(

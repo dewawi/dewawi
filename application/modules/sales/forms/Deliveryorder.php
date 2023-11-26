@@ -34,6 +34,13 @@ class Sales_Form_Deliveryorder extends Zend_Form
 			->setAttrib('cols', '50')
 			->setAttrib('rows', '10');
 
+		$form['notes'] = new Zend_Form_Element_Textarea('notes');
+		$form['notes']->setLabel('DELIVERY_ORDERS_NOTES')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('cols', '45')
+			->setAttrib('rows', '6');
+
 		$form['header'] = new Zend_Form_Element_Textarea('header');
 		$form['header']->setLabel('DELIVERY_ORDERS_HEADER')
 			->addFilter('StripTags', array(array(
