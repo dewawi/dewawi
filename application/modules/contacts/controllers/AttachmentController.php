@@ -38,7 +38,7 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options);
+		list($contacts, $records) = $get->contacts($params, $options);
 
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;

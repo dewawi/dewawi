@@ -62,7 +62,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 		$get = new Contacts_Model_Get();
 		$tags = $get->tags('contacts', 'contact');
-		$contacts = $get->contacts($params, $options);
+		list($contacts, $records) = $get->contacts($params, $options);
 
 		$tagEntites = array();
 		foreach($contacts as $contact) {
@@ -74,6 +74,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -90,7 +91,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 
 		$get = new Contacts_Model_Get();
 		$tags = $get->tags('contacts', 'contact');
-		$contacts = $get->contacts($params, $options);
+		list($contacts, $records) = $get->contacts($params, $options);
 
 		$tagEntites = array();
 		foreach($contacts as $contact) {
@@ -102,6 +103,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -121,11 +123,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 		}
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options);
+		list($contacts, $records) = $get->contacts($params, $options);
 
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -638,7 +641,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$get = new Contacts_Model_Get();
 		$tags = $get->tags('contacts', 'contact');
 		$params['limit'] = 0;
-		$contacts = $get->contacts($params, $options);
+		list($contacts, $records) = $get->contacts($params, $options);
 
 		$tagEntites = array();
 		foreach($contacts as $contact) {
@@ -836,7 +839,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Contacts_Model_Get();
-		$contacts = $get->contacts($params, $options);
+		list($contacts, $records) = $get->contacts($params, $options);
 
 		header('Content-type: application/json');
 		//$suggestions = array("suggestions" => array());

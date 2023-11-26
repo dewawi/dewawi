@@ -20,19 +20,40 @@ class Items_Model_Get
 		$query = $queryHelper->getQueryClient($query, $client['id']);
 		$query = $queryHelper->getQueryDeleted($query);
 
+		// Get total records count
+		if($params['tagid']) {
+			$records = $itemsDb->fetchAll(
+				$itemsDb->select()
+					->where($query ? $query : 0)
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
+			);
+		} else {
+			$records = $itemsDb->fetchAll(
+				$itemsDb->select()
+					->where($query ? $query : 0)
+					->order(array('pinned desc', $params['order'].' '.$params['sort']))
+			);
+		}
+
+		//Pagination
+		$params['offset'] = 0;
+		if($params['limit'] == 0) $params['limit'] = 1000;
+		if($params['page']) $params['offset'] = ($params['page']-1)*$params['limit'];
+
+		// Get records
 		if($params['tagid']) {
 			$items = $itemsDb->fetchAll(
 				$itemsDb->select()
 					->where($query ? $query : 0)
 					->order(array('pinned desc', $params['order'].' '.$params['sort']))
-					->limit($params['limit'])
+					->limit($params['limit'], $params['offset'])
 			);
 		} else {
 			$items = $itemsDb->fetchAll(
 				$itemsDb->select()
 					->where($query ? $query : 0)
 					->order(array('pinned desc', $params['order'].' '.$params['sort']))
-					->limit($params['limit'])
+					->limit($params['limit'], $params['offset'])
 			);
 		}
 
@@ -47,7 +68,7 @@ class Items_Model_Get
 			}
 		}
 
-		return $items;
+		return array($items, count($records));
 	}
 
 	public function inventory($params, $options)

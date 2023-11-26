@@ -45,7 +45,7 @@ class Items_AttributeController extends Zend_Controller_Action
 
 		$get = new Items_Model_Get();
 		$tags = $get->tags('items', 'item');
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$tagEntites = array();
 		foreach($items as $item) {
@@ -73,7 +73,7 @@ class Items_AttributeController extends Zend_Controller_Action
 
 		$get = new Items_Model_Get();
 		$tags = $get->tags('items', 'item');
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$tagEntites = array();
 		foreach($items as $item) {
@@ -438,7 +438,7 @@ class Items_AttributeController extends Zend_Controller_Action
 		$get = new Items_Model_Get();
 		$tags = $get->tags('items', 'item');
 		$params['limit'] = 0;
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$tagEntites = array();
 		foreach($items as $item) {

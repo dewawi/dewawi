@@ -110,9 +110,10 @@ class Items_Form_Toolbar extends Zend_Form
 			->setAttrib('default', '0')
 			->setAttrib('class', 'hidden-sm');
 
-		$form['page'] = new Zend_Form_Element_Text('page');
+		$form['page'] = new Zend_Form_Element_Select('page');
 		$form['page']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
+			->addMultiOption(1, 1)
+			->setAttrib('default', '1');
 
 		$this->addElements($form);
 	}

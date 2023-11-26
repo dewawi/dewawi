@@ -44,7 +44,7 @@ class Shops_ItemController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Shops_Model_Get();
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$this->view->form = $form;
 		$this->view->items = $items;
@@ -66,7 +66,7 @@ class Shops_ItemController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Shops_Model_Get();
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$this->view->form = $form;
 		$this->view->items = $items;
@@ -85,7 +85,7 @@ class Shops_ItemController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Shops_Model_Get();
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$this->view->form = $form;
 		$this->view->items = $items;

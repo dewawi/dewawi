@@ -50,7 +50,7 @@ class Shops_IndexController extends Zend_Controller_Action
 		foreach($accounts as $account) {
 			$params['limit'] = 0;
 			$params['shopid'] = $account['id'];
-			$items[$account['id']] = $get->items($params, $options);
+			list($items[$account['id']], $records) = $get->items($params, $options);
 			$stats[$account['id']]['total'] = count($items[$account['id']]);
 			$stats[$account['id']]['listed'] = 0;
 			foreach($items[$account['id']] as $item) {
@@ -85,7 +85,7 @@ class Shops_IndexController extends Zend_Controller_Action
 		foreach($accounts as $account) {
 			$params['limit'] = 0;
 			$params['shopid'] = $account['id'];
-			$items[$account['id']] = $get->items($params, $options);
+			list($items[$account['id']], $records) = $get->items($params, $options);
 			$stats[$account['id']]['total'] = count($items[$account['id']]);
 			$stats[$account['id']]['listed'] = 0;
 			foreach($items[$account['id']] as $item) {
