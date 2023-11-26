@@ -45,10 +45,6 @@ class Items_TagController extends Zend_Controller_Action
 		//$options = $this->_helper->Options->getOptions($toolbar);
 		//$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		//Get email messages
-		$emailmessagesDb = new Items_Model_DbTable_Emailmessage();
-		$emailmessages = $emailmessagesDb->getEmailmessages($itemid, $documentid, $module, $controller);
-
 		$userDb = new Users_Model_DbTable_User();
 		$users = $userDb->getUsers();
 
@@ -56,7 +52,6 @@ class Items_TagController extends Zend_Controller_Action
 		$this->view->controller = $controller;
 		$this->view->url = $this->_helper->Directory->getUrl($documentid);
 		$this->view->users = $users;
-		$this->view->emailmessages = $emailmessages;
 		//$this->view->options = $options;
 		//$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();

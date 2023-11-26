@@ -122,7 +122,6 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 	if(count($itemlists)) {
 		foreach($itemlists as $catid => $items) {
 			$x = $pdf->GetX()+5;
-			$pdf->SetFont('freesans', '', 10);
 			if(isset($categories[$catid]['childs'])) {
 				getSubList($categories[$catid]['childs'], $categories, $pdf, $pathUploads, $items, $attributes, $options, $optionSets, $params[$catid]['rows']);
 			} else {
@@ -135,18 +134,15 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 					$pdf->MultiCell(120, 0, $categories[$catid]['description'], 0, 'L', false, 1, 20);
 					$pdf->ln(4);
 				}
-				$pdf->setCellPaddings(1, 0, 0, 0);
-				$pdf->SetFont('freesansb', 'B', 8);
-				//POSITIONS HEADER
-				$pdf->setCellPaddings(2, 1, 0, 1);
-				$pdf->MultiCell(30, 0, $this->translate('POSITION'), array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0, 20);
-				$pdf->MultiCell(80, 0, $this->translate('DESCRIPTION'), array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0);
-				$pdf->MultiCell(35, 0, $this->translate('QUANTITY'), array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0);
-				$pdf->MultiCell(30, 0, $this->translate('PRICE'), array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 1);
+				itemsHeader($pdf, $params[$catid]['rows']);
 				foreach($items as $item) {
 					if($item['catid'] == $catid) {
+						if($pdf->GetY() > 240) {
+							$pdf->AddPage();
+							itemsHeader($pdf, $params[$catid]['rows']);
+						}
 						$pdf->setCellPaddings(2, 1, 0, 1);
-						$pdf->SetFont('freesans', '', 9);
+						$pdf->SetFont('freesans', '', 8);
 						$pdf->MultiCell(30, 0, $item['sku'], array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0, 20);
 						$pdf->MultiCell(80, 0, $item['title'], array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0);
 						if(isset($attributes[$item['id']][0])) $pdf->MultiCell(35, 0, $attributes[$item['id']][0]['description'], array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0);
@@ -157,11 +153,7 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 				}
 			}
 		}
-		$pdf->ln(4);
-
-		$pdf->ln(4);
-
-		$pdf->SetFont('freesans', '', 9);
+		$pdf->ln(10);
 	}
 
 	//PAGE HEADER AND FOOTER
@@ -255,48 +247,37 @@ function getSubList($childs, $categories, $pdf, $pathUploads, $items, $attribute
 		$y = $pdf->GetY();
 		if($y>150) {
 			$pdf->AddPage();
-			$y = 30;
 		}
 		$pdf->setCellPaddings(0, 3, 0, 2);
 		$pdf->SetFont('freesansb', 'B', 16);
 		$pdf->MultiCell(0, 0, $categories[$child]['title'], 0, 'L', false, 1, 20);
-		$pdf->SetFont('freesans', '', 8);
 		if($categories[$child]['image'] && file_exists($pathUploads.$categories[$child]['image'])) {
 			$image = $pathUploads.$categories[$child]['image'];
-			$pdf->Image($image, 150, $y, 50, 0);
+			$pdf->SetY($pdf->GetY()-5);
+			$pdf->Image($image, 150, '', 50, 0);
 		}
+		$pdf->SetFont('freesans', '', 8);
 		if($categories[$child]['description']) {
-			$pdf->SetY($pdf->GetY()-2);
-			$pdf->MultiCell(120, 40, $categories[$child]['description'], 0, 'L', false, 1, 20);
+			$pdf->SetY($pdf->GetY()+2);
+			$pdf->MultiCell(120, 50, $categories[$child]['description'], 0, 'L', false, 1, 20);
 			$pdf->ln(2);
 		}
 		if(isset($categories[$child]['childs'])) {
 			getSubList($categories[$child]['childs'], $categories, $pdf, $pathUploads, $items, $attributes, $options, $optionSets, $rows);
 		} else {
 			$i = 1;
-			$pdf->setCellPaddings(1, 0, 0, 0);
-			$pdf->SetFont('freesansb', 'B', 8);
-			//POSITIONS HEADER
-			$pdf->setCellPaddings(2, 1, 0, 1);
-			$p = 1;
-			$c = count($rows);
-			foreach($rows as $row) {
-				if($p==1) {
-					$pdf->MultiCell($row['width'], 0, $row['label'], array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0, 20);
-				} elseif(($p>1) && ($p<$c)) {
-					$pdf->MultiCell($row['width'], 0, $row['label'], array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0);
-				} elseif($p==$c) {
-					$pdf->MultiCell($row['width'], 0, $row['label'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 1);
-				}
-				++$p;
-			}
+			//ITEMS HEADER
+			itemsHeader($pdf, $rows);
 			$countItems = 0;
 			foreach($items as $item) {
 				if($item['catid'] == $child) {
 					$y = $pdf->GetY();
-					//if($y>260) $pdf->AddPage();
+					if($pdf->GetY() > 240) {
+						$pdf->AddPage();
+						itemsHeader($pdf, $rows);
+					}
 					$pdf->setCellPaddings(2, 1, 0, 1);
-					$pdf->SetFont('freesans', '', 8);
+					$pdf->SetFont('freesans', '', 7);
 					$i = 1;
 					$lenght = count($rows);
 					foreach($rows as $row) {
@@ -344,76 +325,127 @@ function getSubList($childs, $categories, $pdf, $pathUploads, $items, $attribute
 				$columnWidth = 112 / $countItems;
 				$pdf->setCellPaddings(1, 0, 1, 0);
 				foreach($optionSets[$child] as $set) {
-					$y = $pdf->GetY();
-					if($y>220) $pdf->AddPage();
+					if($pdf->GetY() > 200) $pdf->AddPage();
 					optionsHeader($pdf, $items, $options, $set, $child, $countItems, $columnWidth);
 					$i = 1;
-					$x = 20;
-					$y = $pdf->GetY();
-					$yOptionStart = $pdf->GetY();
-					$pageOptionStart = $pdf->getPage();
 					foreach($items as $item) {
 						if(isset($options[$item['catid']][$item['id']]) && ($item['catid'] == $child)) {
 							$pdf->SetFont('freesans', '', 8);
+							$yOptionStart = $pdf->GetY();
+							$pageOptionStart = $pdf->getPage();
 							foreach($options[$item['catid']][$item['id']] as $id => $option) {
+								$x = 0;
 								if(array_search($option['optsetid'], $set['ids'])) {
-									if($pdf->GetY() > 262) {
+									$pdf->SetFont('freesans', '', 8);
+									if($columnWidth > 12) $pdf->SetFont('freesans', '', 9);
+									else $pdf->setCellPaddings(0, 0, 0, 0);
+									if($option['price'] == -1) $option['price'] = '-';
+									elseif($option['price'] == -2) $option['price'] = 'auf Anfrage';
+									elseif($option['price'] == 0) $option['price'] = 'STD';
+									else $option['price'] = floor($option['price']);
+									if($i == 1) {
+										if($pdf->GetY() > 250) {
+											$pdf->AddPage();
+											optionsHeader($pdf, $items, $options, $set, $child, $countItems, $columnWidth);
+											$yOptionStartNew = $pdf->GetY();
+											$pageOptionStartNew = $pdf->getPage();
+										}
+										$pdf->SetX(20);
+										$pdf->MultiCell(15, 8, $option['sku'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'C', false, 0, '', '', true, 0, false, true, 8, 'M');
+										$pdf->MultiCell(48, 8, $option['title'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'C', false, 0, '', '', true, 0, false, true, 8, 'M');
+										$pdf->MultiCell($columnWidth, 8, $option['price'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'C', false, 1, '', '', true, 0, false, true, 8, 'M');
+									} else {
+										if($pdf->GetY() > 250) {
+											$pdf->AddPage();
+											$pdf->SetY($yOptionStartNew);
+											$pdf->SetPage($pageOptionStartNew);
+										}
+										$pdf->SetX(83+($i*$columnWidth)-$columnWidth);
+										$pdf->MultiCell($columnWidth, 8, $option['price'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'C', false, 1, '', '', true, 0, false, true, 8, 'M');
+									}
+								}
+							}
+							if($i < $countItems) {
+								$pdf->SetY($yOptionStart);
+								$pdf->SetPage($pageOptionStart);
+							}
+							++$i;
+						}
+					}
+					$pdf->ln(4);
+				}
+			}
+		}
+	}
+}
+							/*foreach($options[$item['catid']][$item['id']] as $id => $option) {
+								$x = 0;
+								if(array_search($option['optsetid'], $set['ids'])) {
+									/*if($pdf->GetY() > 269.5) {
 										//if($i < $countItems) {
 											$pdf->AddPage();
-											//$pdf->SetY(35);
+											$pdf->SetY(30);
 											//optionsHeader($pdf, $items, $options, $set, $child, $countItems, $columnWidth);
 										//}
 										$y = 30;
-									}
+									}*//*
 									$pdf->SetFont('freesans', '', 8);
-									if($i == 1) {
-										$pdf->MultiCell(15, 8, $option['sku'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'C', false, 0, $x, $y+6, true, 0, false, true, 8, 'M');
-										$pdf->MultiCell(48, 8, $option['title'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'C', false, 0, $x+15, $y+6, true, 0, false, true, 8, 'M');
-									}
-									if($columnWidth>12) $pdf->SetFont('freesans', '', 9);
+									$x = $x+75+($i*8);
+									if($columnWidth > 12) $pdf->SetFont('freesans', '', 9);
 									else $pdf->setCellPaddings(0, 0, 0, 0);
 									if($option['price'] == -1) $option['price'] = '-';
 									elseif($option['price'] == 0) $option['price'] = 'STD';
 									else $option['price'] = floor($option['price']);
-									$pdf->MultiCell($columnWidth, 8, $option['price'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'C', false, 1, $x+63, $y+6, true, 0, false, true, 8, 'M');
-									$y = $y+8;
+									$pdf->MultiCell($columnWidth, 8, $x, array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'C', false, 0, $x, '', true, 0, false, true, 8, 'M');
+									//$x = $x+8;
 								}
-							}
-							$yOptionEnd = $pdf->GetY();
+								$pdf->ln();
+							}*/
+							/*$yOptionEnd = $pdf->GetY();
 							$pageOptionEnd = $pdf->getPage();
 							if($i < $countItems) {
 								$pdf->setPage($pageOptionStart);
 								$x = $x + $columnWidth;
 								$y = $yOptionStart;
-							}
-							++$i;
-						}
-					}
+							}*/
 					/*if($pdf->GetY() > 200) {
 						$pdf->AddPage();
 						$y = 20;
 					}*/
-					$pdf->SetY($yOptionEnd);
-					$pdf->setPage($pageOptionEnd);
-					$pdf->ln(10);
-				}
-				if(isset($pageOptionEnd)) {
+					//$pdf->SetY($yOptionEnd);
+					//$pdf->setPage($pageOptionEnd);
+				/*if(isset($pageOptionEnd)) {
 					$pdf->setPage($pageOptionEnd);
 					$y = $yOptionEnd;
-				}
-			}
+				}*/
 			//if($y>220) $pdf->AddPage();
+
+function itemsHeader($pdf, $rows) {
+	//ITEMS HEADER
+	$pdf->SetFont('freesansb', 'B', 8);
+	$pdf->setCellPaddings(2, 1, 0, 1);
+	$p = 1;
+	$c = count($rows);
+	foreach($rows as $row) {
+		if($p==1) {
+			$pdf->MultiCell($row['width'], 0, $row['label'], array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0, 20);
+		} elseif(($p>1) && ($p<$c)) {
+			$pdf->MultiCell($row['width'], 0, $row['label'], array('LTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 0);
+		} elseif($p==$c) {
+			$pdf->MultiCell($row['width'], 0, $row['label'], array('LRTB' => array('width' => 0.1, 'color' => array(0, 0, 0))), 'L', false, 1);
 		}
+		++$p;
 	}
 }
 
 function optionsHeader($pdf, $items, $options, $set, $child, $countItems, $columnWidth) {
+	$pdf->ln(10);
 	$pdf->SetFont('freesans', 'B', 12);
 	$pdf->MultiCell(150, 0, $set['title'], false, 'L', false, 1, 20);
 	$x = 83;
 	$pdf->SetFont('freesans', 'B', 8);
 	if($countItems > 5) {
-		$y = $pdf->GetY() + $columnWidth + 6;
+		$y = $pdf->GetY() + $columnWidth + 18;
 		foreach($items as $item) {
 			if(isset($options[$item['catid']][$item['id']]) && ($item['catid'] == $child)) {
 				$pdf->SetXY($x, $y);
@@ -424,7 +456,7 @@ function optionsHeader($pdf, $items, $options, $set, $child, $countItems, $colum
 				$x += $columnWidth;
 			}
 		}
-		$pdf->SetY($y-6);
+		$pdf->SetY($y-$columnWidth);
 	} else {
 		$y = $pdf->GetY() + 4;
 		foreach($items as $item) {
@@ -434,4 +466,5 @@ function optionsHeader($pdf, $items, $options, $set, $child, $countItems, $colum
 			}
 		}
 	}
+	$pdf->ln();
 }

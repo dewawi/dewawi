@@ -45,7 +45,7 @@ class Items_ItemController extends Zend_Controller_Action
 
 		$get = new Items_Model_Get();
 		$tags = $get->tags('items', 'item');
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$tagEntites = array();
 		foreach($items as $item) {
@@ -57,6 +57,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->items = $items;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -73,7 +74,7 @@ class Items_ItemController extends Zend_Controller_Action
 
 		$get = new Items_Model_Get();
 		$tags = $get->tags('items', 'item');
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$tagEntites = array();
 		foreach($items as $item) {
@@ -86,6 +87,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->parent = $this->_getParam('parent', NULL);
+		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -98,12 +100,13 @@ class Items_ItemController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Items_Model_Get();
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$this->view->items = $items;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->parent = $params['parent'];
+		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -652,7 +655,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$get = new Items_Model_Get();
 		$tags = $get->tags('items', 'item');
 		$params['limit'] = 0;
-		$items = $get->items($params, $options);
+		list($items, $records) = $get->items($params, $options);
 
 		$tagEntites = array();
 		foreach($items as $item) {
