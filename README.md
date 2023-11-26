@@ -20,13 +20,14 @@ http://www.dewawi.com
 
 ## Credits
 
-- [TCPDF (6.2.11)](https://tcpdf.org/)
+- [TCPDF (6.6.5)](https://tcpdf.org/)
 - [jQuery (1.12.4)](https://jquery.com/)
 - [miniCSS (3.0.1)](https://minicss.org/)
 - [TinyMCE (5.2.2)](https://www.tiny.cloud/)
-- [Zend Framework (1.16.1)](https://framework.zend.com/)
-- [ZF1 Future (1.16.1)](https://github.com/Shardj/zf1-future)
+- [Zend Framework (1.22.0)](https://framework.zend.com/)
+- [ZF1 Future (1.22.0)](https://github.com/Shardj/zf1-future)
 - [RESPONSIVE filemanager (9.14.0)](https://www.responsivefilemanager.com/)
 - [PHPMailer (6.1.7)](https://github.com/PHPMailer/PHPMailer)
 - [pChart (2.1.4)](http://www.pchart.net/)
 - [Datejs (1.0)](https://github.com/datejs/Datejs)
+- [Leaflet (1.9.4)](https://leafletjs.com)
