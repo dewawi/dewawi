@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS `address` (
   `postcode` varchar(12) DEFAULT NULL,
   `city` varchar(255) DEFAULT NULL,
   `country` varchar(255) DEFAULT NULL,
+  `latitude` decimal(12,9) DEFAULT NULL,
+  `longitude` decimal(12,9) DEFAULT NULL,
+  `geoupdated` datetime DEFAULT NULL,
   `phone` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
@@ -139,6 +142,7 @@ CREATE TABLE IF NOT EXISTS `contact` (
   `name2` varchar(255) DEFAULT NULL,
   `department` varchar(255) DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `taxnumber` varchar(255) DEFAULT NULL,
   `vatin` varchar(255) DEFAULT NULL,
   `taxfree` tinyint(1) NOT NULL DEFAULT 0,
@@ -207,6 +211,7 @@ CREATE TABLE IF NOT EXISTS `creditnote` (
   `contactid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `vatin` varchar(255) DEFAULT NULL,
@@ -304,7 +309,7 @@ CREATE TABLE IF NOT EXISTS `creditnoteposset` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `currency` (
+CREATE TABLE IF NOT EXISTS `currency` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `code` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -330,6 +335,7 @@ CREATE TABLE IF NOT EXISTS `deliveryorder` (
   `contactid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `vatin` varchar(255) DEFAULT NULL,
@@ -701,7 +707,7 @@ CREATE TABLE IF NOT EXISTS `email` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (contactid)
+  KEY (parentid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `emailattachment` (
@@ -741,7 +747,8 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `messagesentby` int(11) NOT NULL DEFAULT 0,
   `response` text DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (parentid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `emailtemplate` (
@@ -794,7 +801,7 @@ CREATE TABLE IF NOT EXISTS `emailtracking` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `exchangerate` (
+CREATE TABLE IF NOT EXISTS `exchangerate` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `fromcode` varchar(255) NOT NULL,
   `tocode` varchar(255) NOT NULL,
@@ -871,7 +878,7 @@ CREATE TABLE IF NOT EXISTS `internet` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (contactid)
+  KEY (parentid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `inventory` (
@@ -948,6 +955,7 @@ CREATE TABLE IF NOT EXISTS `invoice` (
   `contactid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `vatin` varchar(255) DEFAULT NULL,
@@ -1067,6 +1075,7 @@ CREATE TABLE IF NOT EXISTS `item` (
   `ebaydescription` text DEFAULT NULL,
   `amazondescription` text DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `downloads` text DEFAULT NULL,
   `quantity` decimal(12,4) DEFAULT NULL,
   `minquantity` decimal(12,4) DEFAULT NULL,
@@ -1431,7 +1440,7 @@ CREATE TABLE IF NOT EXISTS `phone` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (contactid)
+  KEY (parentid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `portal` (
@@ -1474,7 +1483,7 @@ CREATE TABLE IF NOT EXISTS `portaltracking` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `pricerule` (
+CREATE TABLE IF NOT EXISTS `pricerule` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) DEFAULT NULL,
   `amount` decimal(12,4) DEFAULT NULL,
@@ -1697,6 +1706,7 @@ CREATE TABLE IF NOT EXISTS `purchaseorder` (
   `contactid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `vatin` varchar(255) DEFAULT NULL,
@@ -1801,6 +1811,7 @@ CREATE TABLE IF NOT EXISTS `quote` (
   `contactid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `vatin` varchar(255) DEFAULT NULL,
@@ -1904,6 +1915,7 @@ CREATE TABLE IF NOT EXISTS `quoterequest` (
   `contactid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `vatin` varchar(255) DEFAULT NULL,
@@ -2008,6 +2020,7 @@ CREATE TABLE IF NOT EXISTS `reminder` (
   `contactid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `vatin` varchar(255) DEFAULT NULL,
@@ -2110,6 +2123,7 @@ CREATE TABLE IF NOT EXISTS `salesorder` (
   `contactid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `info` text DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `vatin` varchar(255) DEFAULT NULL,

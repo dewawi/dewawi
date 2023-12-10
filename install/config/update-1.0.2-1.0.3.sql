@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS `contactperson` (
 ALTER TABLE `emailmessage` ADD `parentid` int(11) NOT NULL AFTER `documentid`;
 ALTER TABLE `emailmessage` CHANGE `module` `module` varchar(255) DEFAULT NULL AFTER `parentid`;
 ALTER TABLE `emailmessage` CHANGE `controller` `controller` varchar(255) DEFAULT NULL AFTER `module`;
+ALTER TABLE `emailmessage` ADD INDEX(`parentid`);
 
 ALTER TABLE `creditnote` ADD `notes` text DEFAULT NULL AFTER `info`;
 ALTER TABLE `deliveryorder` ADD `notes` text DEFAULT NULL AFTER `info`;
