@@ -4,7 +4,7 @@
 */
 class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 
-	public function MultiForm($module, $controller, $data, $elements = null, $label = null) {
+	public function MultiForm($module, $controller, $data, $elements = null, $label = null, $childs = null) {
 		if($module == 'default') {
 			$className = 'Application_Form_'.ucfirst($controller);
 		} else {
@@ -16,6 +16,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 				<label for="<?php echo $controller; ?>"><?php echo $this->view->translate($label) ?></label>
 			</dt>
 		<?php endif; ?>
+		<?php // Check if data array is multidimensional ?>
 		<?php if(!isset($data['id'])) : ?>
 			<div id="<?php echo $controller; ?>" class="multiform">
 			<?php $dataset = $data; ?>
@@ -41,7 +42,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 						<?php endif; ?>
 					<?php endif; ?>
 					<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
-				<?php //Create forms for address ?>
+				<?php //Handle multidimensional elements ?>
 				<?php elseif(is_array($elements[0])) : ?>
 					<div class="field-group">
 						<?php foreach($elements as $element) : ?>
@@ -96,6 +97,11 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 						<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
 					</div>
 				<?php endif; ?>
+				<?php if($childs) : ?>
+					<div id="email" class="multiformContainer" data-parentid="<?php echo $child['id']; ?>" data-controller="contactperson">
+						<?php echo $this->view->MultiForm('contacts', 'email', $childs[$child['id']], '', 'CONTACTS_EMAIL'); ?>
+					</div>
+				<?php endif; ?>
 			</div>
 			<?php if(($controller == 'address')) : ?>
 				<hr>
@@ -104,12 +110,13 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 		<?php if(($controller == 'address') && isset($element['label'])) : ?>
 			<dt id="<?php echo $controller; ?>-label"></dt>
 		<?php endif; ?>
-		<?php if((isset($label) || is_array($elements[0])) && ($this->view->action != 'add')) : ?>
-			<?php //echo $this->view->Button('add', 'add({\'module\':\''.$module.'\',\'controller\':\''.$controller.'\',\'action\':\'add\',\'type\':\''.$controller.'\'});', '', '', ''); ?>
-			<?php $params = array(); ?>
-			<?php $params['module'] = $module; ?>
-			<?php $params['controller'] = $controller; ?>
-			<?php echo $this->view->Button('addMulti add', $onclick = '', $title = '', $value = '', $style = '', $rel = '', $id = '', $params); ?>
+		<?php if(isset($label) || ($elements && is_array($elements[0]))) : ?>
+			<?php if(!$childs || ($this->view->action != 'add')) : ?>
+				<?php $params = array(); ?>
+				<?php $params['module'] = $module; ?>
+				<?php $params['controller'] = $controller; ?>
+				<?php echo $this->view->Button('addMulti add', $onclick = '', $title = '', $value = '', $style = '', $rel = '', $id = '', $params); ?>
+			<?php endif; ?>
 		<?php endif; ?>
 		<?php if(!isset($data['id'])) : ?>
 			</div>
