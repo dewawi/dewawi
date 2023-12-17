@@ -27,8 +27,10 @@ class Contacts_AddressController extends Zend_Controller_Action
 				if($form->isValid($data) || true) {
 					$addressDb = new Contacts_Model_DbTable_Address();
 					$addressDataBefore = $addressDb->getAddress($data['parentid']);
-					$latest = end($addressDataBefore);
-					$addressDb->addAddress(array('contactid' => $data['parentid'], 'type' => $data['type'], 'country' => $client['country'], 'ordering' => $latest['ordering']+1));
+					$latestOrdering = is_array($addressDataBefore) && !empty($addressDataBefore)
+						? end($addressDataBefore)['ordering']
+						: 0;
+					$addressDb->addAddress(array('contactid' => $data['parentid'], 'type' => $data['type'], 'country' => $client['country'], 'ordering' => $latestOrdering+1));
 					$addressDataAfter = $addressDb->getAddress($data['parentid']);
 					$address = end($addressDataAfter);
 					echo $this->view->MultiForm('contacts', 'address', $address, array(

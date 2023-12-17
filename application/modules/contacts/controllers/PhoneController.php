@@ -17,13 +17,15 @@ class Contacts_PhoneController extends Zend_Controller_Action
 				if($form->isValid($data) || true) {
 					$phoneDb = new Contacts_Model_DbTable_Phone();
 					$phoneDataBefore = $phoneDb->getPhone($data['parentid']);
-					$latest = end($phoneDataBefore);
+					$latestOrdering = is_array($phoneDataBefore) && !empty($phoneDataBefore)
+						? end($phoneDataBefore)['ordering']
+						: 0;
 					$dataArray = array();
 					$dataArray['module'] = $data['module'];
 					$dataArray['controller'] = $data['controller'];
 					$dataArray['parentid'] = $data['parentid'];
 					$dataArray['type'] = $data['type'];
-					$dataArray['ordering'] = $latest['ordering']+1;
+					$dataArray['ordering'] = $latestOrdering+1;
 					$phoneDb->addPhone($dataArray);
 					$phoneDataAfter = $phoneDb->getPhone($data['parentid']);
 					$phone = end($phoneDataAfter);

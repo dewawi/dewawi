@@ -45,10 +45,6 @@ class Contacts_TagController extends Zend_Controller_Action
 		//$options = $this->_helper->Options->getOptions($toolbar);
 		//$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		//Get email messages
-		$emailmessagesDb = new Contacts_Model_DbTable_Emailmessage();
-		$emailmessages = $emailmessagesDb->getEmailmessages($contactid, $documentid, $module, $controller);
-
 		$userDb = new Users_Model_DbTable_User();
 		$users = $userDb->getUsers();
 
@@ -56,7 +52,6 @@ class Contacts_TagController extends Zend_Controller_Action
 		$this->view->controller = $controller;
 		$this->view->url = $this->_helper->Directory->getUrl($documentid);
 		$this->view->users = $users;
-		$this->view->emailmessages = $emailmessages;
 		//$this->view->options = $options;
 		//$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
@@ -76,7 +71,9 @@ class Contacts_TagController extends Zend_Controller_Action
 			if($form->isValid($data) || true) {
 				$tagEntityDb = new Application_Model_DbTable_Tagentity();
 				$tagEntityDataBefore = $tagEntityDb->getTagEntities('contacts', 'contact', $data['parentid']);
-				$latest = end($tagEntityDataBefore);
+				$latestOrdering = is_array($tagEntityDataBefore) && !empty($tagEntityDataBefore)
+					? end($tagEntityDataBefore)['ordering']
+					: 0;
 				if(isset($data['tagid']) && $data['tagid']) {
 					header('Content-type: application/json');
 					$existingTags = array();
@@ -86,13 +83,13 @@ class Contacts_TagController extends Zend_Controller_Action
 					if(array_search($data['tagid'], $existingTags) !== false) {
 						echo Zend_Json::encode(array('message' => $this->view->translate('TAG_ALREADY_EXISTS')));
 					} else {
-						$tagEntityDb->addTagEntity(array('tagid' => $data['tagid'], 'entityid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latest['ordering']+1));
+						$tagEntityDb->addTagEntity(array('tagid' => $data['tagid'], 'entityid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latestOrdering+1));
 						$tagEntityDataAfter = $tagEntityDb->getTagEntities('contacts', 'contact', $data['parentid']);
 						$tagEntity = end($tagEntityDataAfter);
 						echo Zend_Json::encode($tagEntity);
 					}
 				} else {
-					$tagEntityDb->addTagEntity(array('tagid' => 0, 'entityid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latest['ordering']+1));
+					$tagEntityDb->addTagEntity(array('tagid' => 0, 'entityid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latestOrdering+1));
 					$tagEntityDataAfter = $tagEntityDb->getTagEntities('contacts', 'contact', $data['parentid']);
 					$tagEntity = end($tagEntityDataAfter);
 					echo $this->view->MultiForm('contacts', 'tag', $tagEntity);

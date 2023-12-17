@@ -16,12 +16,14 @@ class Contacts_InternetController extends Zend_Controller_Action
 			if($form->isValid($data) || true) {
 				$internetDb = new Contacts_Model_DbTable_Internet();
 				$internetDataBefore = $internetDb->getInternet($data['parentid']);
-				$latest = end($internetDataBefore);
+				$latestOrdering = is_array($internetDataBefore) && !empty($internetDataBefore)
+					? end($internetDataBefore)['ordering']
+					: 0;
 				$dataArray = array();
 				$dataArray['module'] = $data['module'];
 				$dataArray['controller'] = $data['controller'];
 				$dataArray['parentid'] = $data['parentid'];
-				$dataArray['ordering'] = $latest['ordering']+1;
+				$dataArray['ordering'] = $latestOrdering+1;
 				$internetDb->addInternet($dataArray);
 				$internetDataAfter = $internetDb->getInternet($data['parentid']);
 				$internet = end($internetDataAfter);

@@ -116,13 +116,15 @@ class Contacts_EmailController extends Zend_Controller_Action
 			if($form->isValid($data) || true) {
 				$emailDb = new Contacts_Model_DbTable_Email();
 				$emailDataBefore = $emailDb->getEmails($data['parentid'], $data['module'], $data['controller']);
-				$latest = end($emailDataBefore);
+				$latestOrdering = is_array($emailDataBefore) && !empty($emailDataBefore)
+					? end($emailDataBefore)['ordering']
+					: 0;
 				$dataArray = array();
 				$dataArray['module'] = $data['module'];
 				$dataArray['controller'] = $data['controller'];
 				$dataArray['parentid'] = $data['parentid'];
 				$dataArray['password'] = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
-				$dataArray['ordering'] = $latest['ordering']+1;
+				$dataArray['ordering'] = $latestOrdering+1;
 				$emailDb->addEmail($dataArray);
 				$emailDataAfter = $emailDb->getEmails($data['parentid'], $data['module'], $data['controller']);
 				$email = end($emailDataAfter);

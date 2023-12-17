@@ -158,8 +158,10 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 			foreach($pricerules as $pricerule) {
 				if($pricerule->amount && $pricerule->action) {
 					$positionDataBefore = $positionDb->getPositions($module, $controller, $parentid, 0);
-					$latest = end($positionDataBefore);
-					$positionDb->addPosition(array('module' => $module, 'controller' => $controller, 'parentid' => $parentid, 'amount' => $pricerule->amount, 'action' => $pricerule->action, 'masterid' => 0, 'possetid' => 0, 'ordering' => $latest['ordering']+1));
+					$latestOrdering = is_array($positionDataBefore) && !empty($positionDataBefore)
+						? end($positionDataBefore)['ordering']
+						: 0;
+					$positionDb->addPosition(array('module' => $module, 'controller' => $controller, 'parentid' => $parentid, 'amount' => $pricerule->amount, 'action' => $pricerule->action, 'masterid' => 0, 'possetid' => 0, 'ordering' => $latestOrdering+1));
 
 					/*$priceruleamount = $->amount;
 					$price = eval($formula[$pricerule->action]);

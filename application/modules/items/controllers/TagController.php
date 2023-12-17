@@ -71,7 +71,9 @@ class Items_TagController extends Zend_Controller_Action
 			if($form->isValid($data) || true) {
 				$tagEntityDb = new Application_Model_DbTable_Tagentity();
 				$tagEntityDataBefore = $tagEntityDb->getTagEntities('items', 'item', $data['itemid']);
-				$latest = end($tagEntityDataBefore);
+				$latestOrdering = is_array($tagEntityDataBefore) && !empty($tagEntityDataBefore)
+					? end($tagEntityDataBefore)['ordering']
+					: 0;
 				if(isset($data['tagid']) && $data['tagid']) {
 					header('Content-type: application/json');
 					$existingTags = array();
@@ -81,7 +83,7 @@ class Items_TagController extends Zend_Controller_Action
 					if(array_search($data['tagid'], $existingTags) !== false) {
 						echo Zend_Json::encode(array('message' => $this->view->translate('TAG_ALREADY_EXISTS')));
 					} else {
-						$tagEntityDb->addTagEntity(array('tagid' => $data['tagid'], 'entityid' => $data['itemid'], 'module' => 'items', 'controller' => 'item', 'ordering' => $latest['ordering']+1));
+						$tagEntityDb->addTagEntity(array('tagid' => $data['tagid'], 'entityid' => $data['itemid'], 'module' => 'items', 'controller' => 'item', 'ordering' => $latestOrdering+1));
 						$tagEntityDataAfter = $tagEntityDb->getTagEntities('items', 'item', $data['itemid']);
 						$tagEntity = end($tagEntityDataAfter);
 						echo Zend_Json::encode($tagEntity);

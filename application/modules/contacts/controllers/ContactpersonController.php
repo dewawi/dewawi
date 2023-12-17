@@ -27,8 +27,10 @@ class Contacts_ContactpersonController extends Zend_Controller_Action
 				if($form->isValid($data) || true) {
 					$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
 					$contactpersonDataBefore = $contactpersonDb->getContactpersons($data['parentid']);
-					$latest = end($contactpersonDataBefore);
-					$contactpersonDb->addContactperson(array('contactid' => $data['parentid'], 'ordering' => $latest['ordering']+1));
+					$latestOrdering = is_array($contactpersonDataBefore) && !empty($contactpersonDataBefore)
+						? end($contactpersonDataBefore)['ordering']
+						: 0;
+					$contactpersonDb->addContactperson(array('contactid' => $data['parentid'], 'ordering' => $latestOrdering+1));
 					$contactpersonDataAfter = $contactpersonDb->getContactpersons($data['parentid']);
 					$contactperson = end($contactpersonDataAfter);
 					echo $this->view->MultiForm('contacts', 'contactperson', $contactperson, array(

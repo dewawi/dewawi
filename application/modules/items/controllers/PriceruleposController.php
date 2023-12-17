@@ -44,8 +44,10 @@ class Items_PriceruleposController extends Zend_Controller_Action
 			if($form->isValid($data) || true) {
 				$positionDb = new Items_Model_DbTable_Pricerulepos();
 				$positionDataBefore = $positionDb->getPositions($data['module'], $data['controller'], $data['parentid'], 0);
-				$latest = end($positionDataBefore);
-				$positionDb->addPosition(array('module' => $data['module'], 'controller' => $data['controller'], 'parentid' => $data['parentid'], 'masterid' => 0, 'possetid' => 0, 'ordering' => $latest['ordering']+1));
+				$latestOrdering = is_array($positionDataBefore) && !empty($positionDataBefore)
+					? end($positionDataBefore)['ordering']
+					: 0;
+				$positionDb->addPosition(array('module' => $data['module'], 'controller' => $data['controller'], 'parentid' => $data['parentid'], 'masterid' => 0, 'possetid' => 0, 'ordering' => $latestOrdering+1));
 				$positionDataAfter = $positionDb->getPositions($data['module'], $data['controller'], $data['parentid'], 0);
 				$position = end($positionDataAfter);
 				echo $this->view->MultiForm($params['module'], $params['controller'], $position, array('amount', 'action'));

@@ -27,8 +27,10 @@ class CommentController extends Zend_Controller_Action
 				if($form->isValid($data) || true) {
 					$commentDb = new Application_Model_DbTable_Comment();
 					$commentDataBefore = $commentDb->getComments($data['parentid'], 'contacts', 'contact');
-					$latest = end($commentDataBefore);
-					$commentDb->addComment(array('parentid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latest['ordering']+1));
+					$latestOrdering = is_array($commentDataBefore) && !empty($commentDataBefore)
+						? end($commentDataBefore)['ordering']
+						: 0;
+					$commentDb->addComment(array('parentid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latestOrdering+1));
 					$commentDataAfter = $commentDb->getComments($data['parentid'], 'contacts', 'contact');
 					$comment = end($commentDataAfter);
 					echo $this->view->MultiForm('default', 'comment', $comment, array(
