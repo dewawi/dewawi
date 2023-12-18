@@ -1,71 +1,74 @@
 <?php   
- /* CAT:Labels */
+/* CAT:Labels */
 
- /* pChart library inclusions */
- include("../class/pData.class.php");
- include("../class/pDraw.class.php");
- include("../class/pImage.class.php");
+/* pChart library inclusions */
+require_once("bootstrap.php");
 
- /* Create and populate the pData object */
- $MyData = new pData(); 
- $MyData->loadPalette("../palettes/autumn.color",TRUE);
- $MyData->addPoints(array(4,12,15,8,5,-5),"Probe 1");
- $MyData->addPoints(array(7,2,4,14,8,3),"Probe 2");
- $MyData->setAxisName(0,"Temperatures");
- $MyData->setAxisUnit(0,"°C");
- $MyData->addPoints(array("Jan","Feb","Mar","Apr","May","Jun"),"Labels");
- $MyData->setSerieDescription("Labels","Months");
- $MyData->setAbscissa("Labels");
+use pChart\pColor;
+use pChart\pDraw;
+use pChart\pCharts;
 
- /* Create the pChart object */
- $myPicture = new pImage(700,230,$MyData);
+/* Create the pChart object */
+$myPicture = new pDraw(700,230);
 
- /* Draw the background */
- $Settings = array("R"=>170, "G"=>183, "B"=>87, "Dash"=>1, "DashR"=>190, "DashG"=>203, "DashB"=>107);
- $myPicture->drawFilledRectangle(0,0,700,230,$Settings);
+$palette_autumn = [
+	[185,106,154,100],
+	[216,137,184,100],
+	[156,192,137,100],
+	[216,243,201,100],
+	[253,232,215,100],
+	[255,255,255,100]
+];
 
- /* Overlay with a gradient */
- $Settings = array("StartR"=>219, "StartG"=>231, "StartB"=>139, "EndR"=>1, "EndG"=>138, "EndB"=>68, "Alpha"=>50);
- $myPicture->drawGradientArea(0,0,700,230,DIRECTION_VERTICAL,$Settings);
- $myPicture->drawGradientArea(0,0,700,20,DIRECTION_VERTICAL,array("StartR"=>0,"StartG"=>0,"StartB"=>0,"EndR"=>50,"EndG"=>50,"EndB"=>50,"Alpha"=>80));
+/* Populate the pData object */
+$myPicture->myData->loadPalette($palette_autumn, $overwrite=TRUE);
+$myPicture->myData->addPoints([4,12,15,8,5,-5],"Probe 1");
+$myPicture->myData->addPoints([7,2,4,14,8,3],"Probe 2");
+$myPicture->myData->setAxisProperties(0, ["Name" => "Temperatures", "Unit" => "°C"]);
+$myPicture->myData->addPoints(["Jan","Feb","Mar","Apr","May","Jun"],"Labels");
+$myPicture->myData->setSerieDescription("Labels","Months");
+$myPicture->myData->setAbscissa("Labels");
 
- /* Add a border to the picture */
- $myPicture->drawRectangle(0,0,699,229,array("R"=>0,"G"=>0,"B"=>0));
- 
- /* Write the picture title */ 
- $myPicture->setFontProperties(array("FontName"=>"../fonts/Silkscreen.ttf","FontSize"=>6));
- $myPicture->drawText(10,13,"drawLabel() - Write labels over your charts",array("R"=>255,"G"=>255,"B"=>255));
+/* Draw the background */
+$myPicture->drawFilledRectangle(0,0,700,230,["Color"=>new pColor(170,183,87), "Dash"=>TRUE, "DashColor"=>new pColor(190,203,107)]);
 
- /* Write the chart title */ 
- $myPicture->setFontProperties(array("FontName"=>"../fonts/Forgotte.ttf","FontSize"=>11));
- $myPicture->drawText(155,55,"Average temperature",array("FontSize"=>20,"Align"=>TEXT_ALIGN_BOTTOMMIDDLE));
+/* Overlay with a gradient */
+$myPicture->drawGradientArea(0,0,700,230,DIRECTION_VERTICAL,["StartColor"=>new pColor(219,231,139,50),"EndColor"=>new pColor(1,138,68,50)]);
+$myPicture->drawGradientArea(0,0,700,20,DIRECTION_VERTICAL, ["StartColor"=>new pColor(0,0,0,80),"EndColor"=>new pColor(50,50,50,80)]);
 
- /* Draw the scale and the 1st chart */
- $myPicture->setGraphArea(60,60,670,190);
- $myPicture->drawFilledRectangle(60,60,670,190,array("R"=>255,"G"=>255,"B"=>255,"Surrounding"=>-200,"Alpha"=>10));
- $myPicture->setFontProperties(array("FontName"=>"../fonts/pf_arma_five.ttf","FontSize"=>6));
- $myPicture->drawScale(array("DrawSubTicks"=>TRUE));
- $myPicture->setShadow(TRUE,array("X"=>1,"Y"=>1,"R"=>0,"G"=>0,"B"=>0,"Alpha"=>10));
- $myPicture->drawBarChart();
- $myPicture->setShadow(FALSE);
+/* Add a border to the picture */
+$myPicture->drawRectangle(0,0,699,229,["Color"=>new pColor(0)]);
 
- /* Write the chart legend */
- $myPicture->drawLegend(600,210,array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL));
+/* Write the picture title */ 
+$myPicture->setFontProperties(["FontName"=>"fonts/PressStart2P-Regular.ttf","FontSize"=>6]);
+$myPicture->drawText(10,15,"drawLabel() - Write labels over your charts",["Color"=>new pColor(255)]);
 
- $myPicture->setShadow(TRUE,array("X"=>1,"Y"=>1,"R"=>0,"G"=>0,"B"=>0,"Alpha"=>10));
- $myPicture->setFontProperties(array("FontName"=>"../fonts/Forgotte.ttf","FontSize"=>11));
+/* Write the chart title */ 
+$myPicture->setFontProperties(["FontName"=>"fonts/Cairo-Regular.ttf","FontSize"=>11]);
+$myPicture->drawText(155,55,"Average temperature",["FontSize"=>20,"Align"=>TEXT_ALIGN_BOTTOMMIDDLE]);
 
- /* Write a label over the chart */
- $myPicture->writeLabel("Probe 1",0);
+/* Draw the scale and the 1st chart */
+$myPicture->setGraphArea(60,60,670,190);
+$myPicture->drawFilledRectangle(60,60,670,190,["Color"=>new pColor(255,255,255,10),"Surrounding"=>-200]);
+$myPicture->setFontProperties(["FontSize"=>7]);
+$myPicture->drawScale(["DrawSubTicks"=>TRUE]);
+$myPicture->setShadow(TRUE,["X"=>1,"Y"=>1,"Color"=>new pColor(0,0,0,10)]);
 
- /* Write a label over the chart */
- $LabelSettings = array("TitleMode"=>LABEL_TITLE_BACKGROUND,"DrawSerieColor"=>FALSE,"TitleR"=>255,"TitleG"=>255,"TitleB"=>255);
- $myPicture->writeLabel("Probe 1",5,$LabelSettings);
+/* Draw the bar chart */
+(new pCharts($myPicture))->drawBarChart();
+$myPicture->setShadow(FALSE);
 
- /* Write a label over the chart */
- $LabelSettings = array("OverrideTitle"=>"Multiple series","DrawVerticalLine"=>TRUE,"TitleMode"=>LABEL_TITLE_BACKGROUND,"TitleR"=>255,"TitleG"=>255,"TitleB"=>255);
- $myPicture->writeLabel(array("Probe 1","Probe 2"),4,$LabelSettings);
+/* Write the chart legend */
+$myPicture->drawLegend(600,210,["Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL]);
 
- /* Render the picture (choose the best way) */
- $myPicture->autoOutput("pictures/example.drawLabel.png");
-?>
+$myPicture->setShadow(TRUE,["X"=>1,"Y"=>1,"Color"=>new pColor(0,0,0,10)]);
+$myPicture->setFontProperties(["FontName"=>"fonts/Cairo-Regular.ttf","FontSize"=>11]);
+
+/* Write a label over the chart */
+$myPicture->writeLabel(["Probe 1"],[0]);
+$myPicture->writeLabel(["Probe 1"],[5],["TitleMode"=>LABEL_TITLE_BACKGROUND,"DrawSerieColor"=>FALSE,"TitleColor"=>new pColor(255)]);
+$myPicture->writeLabel(["Probe 1","Probe 2"],[4],["OverrideTitle"=>"Multiple series","DrawVerticalLine"=>TRUE,"TitleMode"=>LABEL_TITLE_BACKGROUND,"TitleColor"=>new pColor(255)]);
+
+/* Render the picture (choose the best way) */
+$myPicture->autoOutput("temp/example.drawLabel.png");
+

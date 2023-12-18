@@ -1,67 +1,71 @@
 <?php   
- /* CAT:Scatter chart */
+/* CAT:Scatter chart */
 
- /* pChart library inclusions */
- include("../class/pData.class.php");
- include("../class/pDraw.class.php");
- include("../class/pImage.class.php");
- include("../class/pScatter.class.php");
+/* pChart library inclusions */
+require_once("bootstrap.php");
 
- /* Create the pData object */
- $myData = new pData();  
+use pChart\pColor;
+use pChart\pDraw;
+use pChart\pScatter;
 
- /* Create the X axis and the binded series */
- for ($i=0;$i<=10;$i=$i+1) { $myData->addPoints(rand(1,20),"Probe 1"); }
- for ($i=0;$i<=10;$i=$i+1) { $myData->addPoints(rand(1,20),"Probe 2"); }
- $myData->setAxisName(0,"X-Index");
- $myData->setAxisXY(0,AXIS_X);
- $myData->setAxisPosition(0,AXIS_POSITION_TOP);
+/* Create the pChart object */
+$myPicture = new pDraw(400,400);
 
- /* Create the Y axis and the binded series */
- for ($i=0;$i<=10;$i=$i+1) { $myData->addPoints(rand(1,20),"Probe 3"); }
- $myData->setSerieOnAxis("Probe 3",1);
- $myData->setAxisName(1,"Y-Index");
- $myData->setAxisXY(1,AXIS_Y);
- $myData->setAxisPosition(1,AXIS_POSITION_LEFT);
+/* Create the X axis and the binded series */
+$Points_1 = [];
+$Points_2 = [];
+$Points_3 = [];
 
- /* Create the 1st scatter chart binding */
- $myData->setScatterSerie("Probe 1","Probe 3",0);
- $myData->setScatterSerieDescription(0,"This year");
- $myData->setScatterSerieColor(0,array("R"=>0,"G"=>0,"B"=>0));
+for ($i=0;$i<=10;$i=$i+1)
+{
+	$Points_1[] = rand(1,20)+$i;
+	$Points_2[] = rand(1,20)+$i;
+	$Points_3[] = rand(0,20)+$i;
+}
 
- /* Create the 2nd scatter chart binding */
- $myData->setScatterSerie("Probe 2","Probe 3",1);
- $myData->setScatterSerieDescription(1,"Last Year");
+$myPicture->myData->addPoints($Points_1,"Probe 1");
+$myPicture->myData->addPoints($Points_2,"Probe 2");
+$myPicture->myData->addPoints($Points_3,"Probe 3");
 
- /* Create the pChart object */
- $myPicture = new pImage(400,400,$myData);
+$myPicture->myData->setAxisProperties(0, ["Name" => "X-Index", "Identity" => AXIS_X, "Position" => AXIS_POSITION_TOP]);
 
- /* Turn of Anti-aliasing */
- $myPicture->Antialias = FALSE;
+/* Create the Y axis and the binded series */
+$myPicture->myData->setSerieOnAxis("Probe 3",1);
+$myPicture->myData->setAxisProperties(1, ["Name" => "Y-Index", "Identity" => AXIS_Y, "Position" => AXIS_POSITION_LEFT]);
 
- /* Add a border to the picture */
- $myPicture->drawRectangle(0,0,399,399,array("R"=>0,"G"=>0,"B"=>0));
+/* Create the 1st scatter chart binding */
+$myPicture->myData->setScatterSerie("Probe 1","Probe 3",0);
+$myPicture->myData->setScatterSerieProperties(0, ["Description" => "This year", "Color" => new pColor(0)]);
 
- /* Set the default font */
- $myPicture->setFontProperties(array("FontName"=>"../fonts/pf_arma_five.ttf","FontSize"=>6));
- 
- /* Set the graph area */
- $myPicture->setGraphArea(40,40,370,370);
+/* Create the 2nd scatter chart binding */
+$myPicture->myData->setScatterSerie("Probe 2","Probe 3",1);
+$myPicture->myData->setScatterSerieProperties(1, ["Description" => "Last Year"]);
 
- /* Create the Scatter chart object */
- $myScatter = new pScatter($myPicture,$myData);
+/* Turn off Anti-aliasing */
+$myPicture->setAntialias(FALSE);
 
- /* Draw the scale */
- $scaleSettings = array("XMargin"=>15,"YMargin"=>15,"Floating"=>TRUE,"GridR"=>200,"GridG"=>200,"GridB"=>200,"DrawSubTicks"=>TRUE,"CycleBackground"=>TRUE);
- $myScatter->drawScatterScale($scaleSettings);
+/* Add a border to the picture */
+$myPicture->drawRectangle(0,0,399,399,["Color"=>new pColor(0)]);
 
- /* Draw the legend */
- $myScatter->drawScatterLegend(280,380,array("Mode"=>LEGEND_HORIZONTAL,"Style"=>LEGEND_NOBORDER));
+/* Set the default font */
+$myPicture->setFontProperties(["FontName"=>"fonts/Cairo-Regular.ttf","FontSize"=>7]);
 
- /* Draw a scatter plot chart */
- $myPicture->Antialias = TRUE;
- $myScatter->drawScatterPlotChart();
+/* Set the graph area */
+$myPicture->setGraphArea(40,40,370,370);
 
- /* Render the picture (choose the best way) */
- $myPicture->autoOutput("pictures/example.example.drawScatterBestFit.png");
-?>
+/* Create the Scatter chart object */
+$myScatter = new pScatter($myPicture);
+
+/* Draw the scale */
+$myScatter->drawScatterScale(["XMargin"=>15,"YMargin"=>15,"Floating"=>TRUE,"GridColor"=>new pColor(200),"DrawSubTicks"=>TRUE,"CycleBackground"=>TRUE]);
+
+/* Draw the legend */
+$myScatter->drawScatterLegend(280,380,["Mode"=>LEGEND_HORIZONTAL,"Style"=>LEGEND_NOBORDER]);
+
+/* Draw a scatter plot chart */
+$myPicture->setAntialias(TRUE);
+$myScatter->drawScatterPlotChart();
+
+/* Render the picture (choose the best way) */
+$myPicture->autoOutput("temp/example.example.drawScatterBestFit.png");
+

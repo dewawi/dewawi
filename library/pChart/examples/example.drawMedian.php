@@ -1,55 +1,61 @@
 <?php   
- /* CAT:Mathematical */
+/* CAT:Mathematical */
 
- /* pChart library inclusions */
- include("../class/pData.class.php");
- include("../class/pDraw.class.php");
- include("../class/pImage.class.php");
+/* pChart library inclusions */
+require_once("bootstrap.php");
 
- /* Create and populate the pData object */
- $MyData = new pData();  
- for($i=0;$i<=20;$i++) { $MyData->addPoints(rand(10,30)+$i,"Probe 1"); }
- $MyData->setAxisName(0,"Temperatures");
- $MyData->setAbscissaName("Samples");
+use pChart\pColor;
+use pChart\pDraw;
+use pChart\pCharts;
 
- /* Create the pChart object */
- $myPicture = new pImage(700,230,$MyData);
+/* Create the pChart object */
+$myPicture = new pDraw(700,230);
+$myPicture->myData = new Examples\pDataExt();
 
- /* Turn of Antialiasing */
- $myPicture->Antialias = FALSE;
+$Points = [];
+/* Populate the pData object */
+for($i=0;$i<=20;$i++) {
+	$Points[] = rand(10,30)+$i;
+}
+$myPicture->myData->addPoints($Points,"Probe 1");
+$myPicture->myData->setAxisName(0,"Temperatures");
+$myPicture->myData->setAbscissaName("Samples");
 
- /* Add a border to the picture */
- $myPicture->drawRectangle(0,0,699,229,array("R"=>0,"G"=>0,"B"=>0));
- 
- /* Write the chart title */ 
- $myPicture->setFontProperties(array("FontName"=>"../fonts/Forgotte.ttf","FontSize"=>11));
- $myPicture->drawText(150,35,"Average temperature",array("FontSize"=>20,"Align"=>TEXT_ALIGN_BOTTOMMIDDLE));
+/* Turn off Anti-aliasing */
+$myPicture->setAntialias(FALSE);
 
- /* Set the default font */
- $myPicture->setFontProperties(array("FontName"=>"../fonts/pf_arma_five.ttf","FontSize"=>6));
+/* Add a border to the picture */
+$myPicture->drawRectangle(0,0,699,229,["Color"=>new pColor(0)]);
 
- /* Define the chart area */
- $myPicture->setGraphArea(60,40,650,200);
+/* Write the chart title */ 
+$myPicture->setFontProperties(["FontName"=>"fonts/Cairo-Regular.ttf","FontSize"=>11]);
+$myPicture->drawText(150,35,"Average temperature",["FontSize"=>20,"Align"=>TEXT_ALIGN_BOTTOMMIDDLE]);
 
- /* Draw the scale */
- $scaleSettings = array("XMargin"=>10,"YMargin"=>10,"Floating"=>TRUE,"GridR"=>200,"GridG"=>200,"GridB"=>200,"DrawSubTicks"=>TRUE,"CycleBackground"=>TRUE);
- $myPicture->drawScale($scaleSettings);
+/* Set the default font */
+$myPicture->setFontProperties(["FontSize"=>7]);
 
- /* Turn on Antialiasing */
- $myPicture->Antialias = TRUE;
+/* Define the chart area */
+$myPicture->setGraphArea(60,40,650,200);
 
- /* Draw the line of best fit */
- $myPicture->drawThreshold($MyData->getSerieMedian("Probe 1"),array("WriteCaption"=>TRUE,"Caption"=>"Median value"));
+/* Draw the scale */
+$myPicture->drawScale(["XMargin"=>10,"YMargin"=>10,"Floating"=>TRUE,"GridColor"=>new pColor(200),"DrawSubTicks"=>TRUE,"CycleBackground"=>TRUE]);
 
- /* Turn on shadows */
- $myPicture->setShadow(TRUE,array("X"=>1,"Y"=>1,"R"=>0,"G"=>0,"B"=>0,"Alpha"=>10));
+/* Turn on Anti-aliasing */
+$myPicture->setAntialias(TRUE);
 
- /* Draw the line chart */
- $myPicture->drawPlotChart();
+/* Draw the line of best fit */
+$Median = $myPicture->myData->getSerieMedian("Probe 1");
+$myPicture->drawThreshold([$Median],["WriteCaption"=>TRUE,"Caption"=>"Median value"]);
 
- /* Write the chart legend */
- $myPicture->drawLegend(580,20,array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL));
+/* Turn on shadows */
+$myPicture->setShadow(TRUE,["X"=>1,"Y"=>1,"Color"=>new pColor(0,0,0,10)]);
 
- /* Render the picture (choose the best way) */
- $myPicture->autoOutput("pictures/example.median.png");
-?>
+/* Draw the line chart */
+(new pCharts($myPicture))->drawPlotChart();
+
+/* Write the chart legend */
+$myPicture->drawLegend(580,20,["Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL]);
+
+/* Render the picture (choose the best way) */
+$myPicture->autoOutput("temp/example.median.png");
+
