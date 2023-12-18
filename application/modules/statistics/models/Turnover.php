@@ -1,15 +1,30 @@
 <?php
 
+//pChart
+require_once(BASE_PATH.'/library/pChart/pChart/pData.php');
+require_once(BASE_PATH.'/library/pChart/pChart/pColor.php');
+require_once(BASE_PATH.'/library/pChart/pChart/pDraw.php');
+require_once(BASE_PATH.'/library/pChart/pChart/pCharts.php');
+require_once(BASE_PATH.'/library/pChart/pChart/pColorGradient.php');
+require_once(BASE_PATH.'/library/pChart/pChart/pException.php');
+
+use pChart\pData;
+use pChart\pColor;
+use pChart\pDraw;
+use pChart\pCharts;
+use pChart\pColorGradient;
+use pChart\pException;
+
 class Statistics_Model_Turnover
 {
 	public function createCharts($lenght, $width = 1000, $height = 400, $statisticsUncategorized, $params, $options)
 	{
 		//print_r($params);
 		//print_r($options);
-		$year = date('Y');
-		$month = date('m');
-		$y = date('Y', strtotime('-'.($lenght-1).' month'));
-		$m = date('m', strtotime('-'.($lenght-1).' month'));
+		$currentYear = date('Y');
+		$currentMonth = date('m');
+		$startYear = date('Y', strtotime('-'.($lenght-1).' month'));
+		$startMonth = date('m', strtotime('-'.($lenght-1).' month'));
 
 		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');
@@ -20,92 +35,87 @@ class Statistics_Model_Turnover
 		$turnover = array();
 		$turnoverCategories = array();
 
-		while($y <= ($year)) {
-			while($m) {
-				if(($y < $year) || ($m <= $month)) {
+		$turnoverList = array();
+		for($year = $startYear; $year <= $currentYear; $year++) {
+			for($month = $startMonth; $month <= 12; $month++) {
+				if(($year < $currentYear) || ($month <= $currentMonth)) {
+					// Ensure a two-digit representation for the month
+					$ym = str_pad($month, 2, '0', STR_PAD_LEFT);
+
 					//Get invoices
-					$ym = str_pad($m, 2, '0', STR_PAD_LEFT);
-					$query = 'i.state = 105';
-					$query .= " AND (invoicedate BETWEEN '".$y."-".$ym."-"."01' AND '".$y."-".$ym."-"."31')";
-					$query .= ' AND i.clientid = '.$client['id'];
-					$query .= ' AND c.clientid = '.$client['id'];
-					$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
-					if($params['country']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['countries'], 'i');
-					$invoices = $invoicesDb->fetchAll(
-						$invoicesDb->select()
-							->from(array('i' => 'invoice'))
-							->join(array('c' => 'contact'), 'i.contactid = c.contactid', array('catid'))
-							->where($query ? $query : 1)
-							->setIntegrityCheck(false)
-					);
+					$invoices = $this->fetchData($invoicesDb, 'invoice', $year, $month, $ym, $client, $params, $options);
 
 					//Get credit notes
-					$ym = str_pad($m, 2, '0', STR_PAD_LEFT);
-					$query = 'i.state = 105';
-					$query .= " AND (creditnotedate BETWEEN '".$y."-".$ym."-"."01' AND '".$y."-".$ym."-"."31')";
-					$query .= ' AND i.clientid = '.$client['id'];
-					$query .= ' AND c.clientid = '.$client['id'];
-					$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
-					if($params['country']) $query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['countries'], 'i');
-					$creditnotes = $creditnotesDb->fetchAll(
-						$creditnotesDb->select()
-							->from(array('i' => 'creditnote'))
-							->join(array('c' => 'contact'), 'i.contactid = c.contactid', array('catid'))
-							->where($query ? $query : 1)
-							->setIntegrityCheck(false)
-					);
+					$creditnotes = $this->fetchData($creditnotesDb, 'creditnote', $year, $month, $ym, $client, $params, $options);
 
-					$turnover[$y.$ym] = 0;
-					$turnoverCategories[0][$y.$ym] = 0;
+					$turnover[$year.$ym] = 0;
+					$turnoverCategories[0][$year.$ym] = 0;
 
 					//Calculate invoices
 					foreach($invoices as $invoice) {
-						$turnover[$y.$ym] += $invoice->subtotal;
-						if(isset($turnoverCategories[$invoice->catid][$y.$ym])) {
-							$turnoverCategories[$invoice->catid][$y.$ym] += $invoice->subtotal;
+						if(isset($turnoverList[$year.$ym]['invoicesQuantity'])) {
+							$turnoverList[$year.$ym]['invoicesQuantity'] += 1;
+							$turnoverList[$year.$ym]['invoicesSubtotal'] += $invoice->subtotal;
 						} else {
-							$turnoverCategories[$invoice->catid][$y.$ym] = $invoice->subtotal;
+							$turnoverList[$year.$ym]['invoicesQuantity'] = 1;
+							$turnoverList[$year.$ym]['invoicesSubtotal'] = $invoice->subtotal;
+							$turnoverList[$year.$ym]['month'] = $year.'/'.$ym;
+						}
+
+						$turnover[$year.$ym] += $invoice->subtotal;
+						if(isset($turnoverCategories[$invoice->catid][$year.$ym])) {
+							$turnoverCategories[$invoice->catid][$year.$ym] += $invoice->subtotal;
+						} else {
+							$turnoverCategories[$invoice->catid][$year.$ym] = $invoice->subtotal;
 						}
 						if($invoice->prepayment) {
-							$turnover[$y.$ym] -= ($invoice->prepayment/1.19); //TODO
-							$turnoverCategories[$invoice->catid][$y.$ym] -= ($invoice->prepayment/1.19); //TODO
+							$turnover[$year.$ym] -= ($invoice->prepayment/1.19); //TODO
+							$turnoverList[$year.$ym]['invoicesSubtotal'] -= ($invoice->prepayment/1.19); //TODO
+							$turnoverCategories[$invoice->catid][$year.$ym] -= ($invoice->prepayment/1.19); //TODO
 						}
 					}
 
 					//Calculate credit notes
 					foreach($creditnotes as $creditnote) {
-						$turnover[$y.$ym] -= $creditnote->subtotal;
-						if(isset($turnoverCategories[$creditnote->catid][$y.$ym])) {
-							$turnoverCategories[$creditnote->catid][$y.$ym] += $creditnote->subtotal;
+						if(isset($turnoverList[$year.$ym]['creditnotesQuantity'])) {
+							$turnoverList[$year.$ym]['creditnotesQuantity'] += 1;
+							$turnoverList[$year.$ym]['creditnotesSubtotal'] += $creditnote->subtotal;
 						} else {
-							$turnoverCategories[$creditnote->catid][$y.$ym] = $creditnote->subtotal;
+							$turnoverList[$year.$ym]['creditnotesQuantity'] = 1;
+							$turnoverList[$year.$ym]['creditnotesSubtotal'] = 0;
+							$turnoverList[$year.$ym]['month'] = $year.'/'.$ym;
+						}
+
+						$turnover[$year.$ym] -= $creditnote->subtotal;
+						if(isset($turnoverCategories[$creditnote->catid][$year.$ym])) {
+							$turnoverCategories[$creditnote->catid][$year.$ym] += $creditnote->subtotal;
+						} else {
+							$turnoverCategories[$creditnote->catid][$year.$ym] = $creditnote->subtotal;
 						}
 					}
 
 					//Calculate categories
 					foreach($options['categories'] as $id => $category) {
-						if(isset($turnoverCategories[$id][$y.$ym])) {
-							$turnoverCategories[$id][$y.$ym] = round($turnoverCategories[$id][$y.$ym]);
+						if(isset($turnoverCategories[$id][$year.$ym])) {
+							$turnoverCategories[$id][$year.$ym] = round($turnoverCategories[$id][$year.$ym]);
 						} else {
-							$turnoverCategories[$id][$y.$ym] = 0;
+							$turnoverCategories[$id][$year.$ym] = 0;
 						}
 					}
 
-					$turnover[$y.$ym] = round($turnover[$y.$ym]);
-					$turnoverCategories[0][$y.$ym] = round($turnoverCategories[0][$y.$ym]);
+					$turnover[$year.$ym] = round($turnover[$year.$ym]);
+					$turnoverCategories[0][$year.$ym] = round($turnoverCategories[0][$year.$ym]);
 
-					$dataDb = 'total:'.$turnover[$y.$ym].';';
+					$dataDb = 'total:'.$turnover[$year.$ym].';';
 					foreach($turnoverCategories as $key => $value) {
-						if(isset($value[$y.$ym])) $dataDb .= $key.':'.$value[$y.$ym].';';
+						if(isset($value[$year.$ym])) $dataDb .= $key.':'.$value[$year.$ym].';';
 					}
-					//$archiveDb->addArchive($y.$ym, $dataDb, $client['id']);
-					$months[$y.$ym] = $y.'/'.$ym;
+					//$archiveDb->addArchive($year.$ym, $dataDb, $client['id']);
+					$months[$year.$ym] = $year.'/'.$ym;
 				}
-				++$m;
-				if($m > 12) $m = 0;
 			}
-			++$y;
-			$m = 1;
+			//Begin from first month at the end of the year
+			$startMonth = 1;
 		}
 
 		//Merge subcategories to main categories
@@ -129,95 +139,151 @@ class Statistics_Model_Turnover
 			if(!array_sum($values)) unset($turnoverCategories[$key]);
 		}
 
-		require_once(BASE_PATH.'/library/pChart/class/pData.class.php');
-		require_once(BASE_PATH.'/library/pChart/class/pDraw.class.php');
-		require_once(BASE_PATH.'/library/pChart/class/pImage.class.php');
+		if(count($turnoverList)) {
 
-		//Turnover
-		/* Create your dataset object */
-		$turnoverData = new pData();
+			$invoicesTotal = 0;
+			$creditnotesTotal = 0;
+			$invoicesQuantity = 0;
+			$creditnotesQuantity = 0;
+			$currency = Zend_Registry::get('Zend_Currency');
+			foreach($turnoverList as $id => $value) {
+				if(!isset($turnoverList[$id]['invoicesSubtotal'])) $turnoverList[$id]['invoicesSubtotal'] = 0;
+				if(!isset($turnoverList[$id]['creditnotesSubtotal'])) $turnoverList[$id]['creditnotesSubtotal'] = 0;
+				if(!isset($turnoverList[$id]['invoicesQuantity'])) $turnoverList[$id]['invoicesQuantity'] = 0;
+				if(!isset($turnoverList[$id]['creditnotesQuantity'])) $turnoverList[$id]['creditnotesQuantity'] = 0;
+				$invoicesTotal += $turnoverList[$id]['invoicesSubtotal'];
+				$creditnotesTotal += $turnoverList[$id]['creditnotesSubtotal'];
+				$turnoverList[$id]['invoicesTotal'] = $invoicesTotal;
+				$turnoverList[$id]['creditnotesTotal'] = $creditnotesTotal;
+				$turnoverList[$id]['invoicesAvarage'] = $turnoverList[$id]['invoicesQuantity']
+					? $turnoverList[$id]['invoicesSubtotal']/$value['invoicesQuantity']
+					: 0;
+				$turnoverList[$id]['creditnotesAvarage'] = $turnoverList[$id]['creditnotesQuantity']
+					? $turnoverList[$id]['creditnotesSubtotal']/$value['creditnotesQuantity']
+					: 0;
+				$invoicesQuantity += $turnoverList[$id]['invoicesQuantity'];
+				$creditnotesQuantity += $turnoverList[$id]['creditnotesQuantity'];
+				$turnoverList[$id]['invoicesTotalQuantity'] = $invoicesQuantity;
+				$turnoverList[$id]['creditnotesTotalQuantity'] = $creditnotesQuantity;
+			}
+			foreach($turnoverList as $id => $value) {
+				$turnoverList[$id]['invoicesTotal'] = $currency->toCurrency($invoicesTotal);
+				$turnoverList[$id]['creditnotesTotal'] = $currency->toCurrency($creditnotesTotal);
+				$turnoverList[$id]['invoicesSubtotal'] = $currency->toCurrency($value['invoicesSubtotal']);
+				$turnoverList[$id]['creditnotesSubtotal'] = $currency->toCurrency($value['creditnotesSubtotal']);
+				$turnoverList[$id]['invoicesAvarage'] = $currency->toCurrency($value['invoicesAvarage']);
+				$turnoverList[$id]['creditnotesAvarage'] = $currency->toCurrency($value['creditnotesAvarage']);
+				$turnoverList[$id]['invoicesTotalAvarage'] = $currency->toCurrency($invoicesTotal/$invoicesQuantity);
+				$turnoverList[$id]['creditnotesTotalAvarage'] = $currency->toCurrency($creditnotesTotal/$creditnotesQuantity);
+			}
 
-		/* Add data in your dataset */
-		$turnoverData->addPoints($turnover,'Values');
-		$turnoverData->setAxisName(0,'€ / Netto');
+			/* Create the pChart object */
+			$chartTurnover = new pDraw($width, $height);
 
-		/* Create the X serie */
-		$turnoverData->addPoints($months,'Labels');
-		$turnoverData->setSerieDescription('Labels','Months');
-		$turnoverData->setAbscissa('Labels');
+			/* Populate the pData object */
+			$chartTurnover->myData->addPoints($turnover,"Values");
+			$chartTurnover->myData->setSerieProperties("Values",["Ticks" => 5]);
+			$chartTurnover->myData->setAxisName(0,"€ / Netto");
+			$chartTurnover->myData->addPoints($months,"Labels");
+			$chartTurnover->myData->setSerieDescription("Labels","Months");
+			$chartTurnover->myData->setAbscissa("Labels");
 
-		/* Create a pChart object and associate your dataset */
-		$turnover = new pImage($width, $height, $turnoverData, TRUE);
+			/* Write the chart title */
+			$chartTurnover->setFontProperties(["FontName"=>BASE_PATH."/library/pChart/fonts/Cairo-Regular.ttf","FontSize"=>10]);
 
-		/* Turn off AA processing */
-		$turnover->Antialias = FALSE;
+			/* Create the pCharts object */
+			$pCharts = new pCharts($chartTurnover);
 
-		/* Choose a nice font */
-		$turnover->setFontProperties(array('FontName' => BASE_PATH.'/library/pChart/fonts/verdana.ttf','FontSize'=>10));
+			/* Draw the scale and the 1st chart */
+			$chartTurnover->setGraphArea(75, 20, $width-30, $height-60);
+			$chartTurnover->drawFilledRectangle(0,0,$width,$height,["Color"=> new pColor(234,240,200), "Dash"=>TRUE, "DashColor"=>new pColor(190,203,107)]);
+			$chartTurnover->drawScale(["DrawSubTicks"=>TRUE, 'Mode' => SCALE_MODE_START0, 'LabelRotation' => 45]);
+			$chartTurnover->setShadow(TRUE,["X"=>1,"Y"=>1,"Color"=>new pColor(0,0,0,10)]);
+			$chartTurnover->setFontProperties(["FontSize"=>10]);
+			$settings = array('Gradient' => TRUE, 'GradientMode' => GRADIENT_EFFECT_CAN, 'DisplayPos' => LABEL_POS_INSIDE, 'DisplayValues' => TRUE, 'DisplayR' => 0, 'DisplayG' => 0, 'DisplayB' => 0, 'DisplayShadow' => TRUE, 'Surrounding' => 10);
+			$pCharts->drawBarChart($settings);
+			$chartTurnover->setShadow(FALSE);
 
-		/* Define the boundaries of the graph area */
-		$turnover->setGraphArea(75, 20, $width-30, $height-60);
+			// Build the PNG file and send it to the web browser
+			if(!file_exists(BASE_PATH.'/cache/chart/')) {
+				mkdir(BASE_PATH.'/cache/chart/');
+				chmod(BASE_PATH.'/cache/chart/', 0777);
+			}
+			$chartTurnover->Render(BASE_PATH.'/cache/chart/turnover-'.$width.'-'.$height.'.png');
 
-		/* Draw the scale, keep everything automatic */
-		$turnover->drawScale(array('DrawSubTicks' => TRUE, 'Mode' => SCALE_MODE_START0, 'LabelRotation' => 45));
 
-		/* Draw the scale, keep everything automatic */
-		$settings = array('Gradient' => TRUE, 'GradientMode' => GRADIENT_EFFECT_CAN, 'DisplayPos' => LABEL_POS_INSIDE, 'DisplayValues' => TRUE, 'DisplayR' => 0, 'DisplayG' => 0, 'DisplayB' => 0, 'DisplayShadow' => TRUE, 'Surrounding' => 10);
-		$turnover->drawBarChart($settings);
+			/* Create the pChart object */
+			$chartTurnoverCategory = new pDraw($width, $height);
 
-		/* Build the PNG file and send it to the web browser */
-		if(!file_exists(BASE_PATH.'/cache/chart/')) {
-			mkdir(BASE_PATH.'/cache/chart/');
-			chmod(BASE_PATH.'/cache/chart/', 0777);
+			// Add data in your dataset
+			$turnoverCategoriesTotal = array();
+			foreach($turnoverCategories as $key => $value) {
+				$turnoverCategoriesTotal[$key] = array_sum($value);
+			}
+			arsort($turnoverCategoriesTotal);
+			foreach($turnoverCategoriesTotal as $key => $value) {
+				if($key && isset($options['categories'][$key])) $chartTurnoverCategory->myData->addPoints($turnoverCategories[$key], $options['categories'][$key]['title']);
+			}
+			if(isset($turnoverCategories[0])) {
+				$chartTurnoverCategory->myData->addPoints($turnoverCategories[0], $statisticsUncategorized);
+			}
+
+			/* Populate the pData object */
+			//$chartTurnoverCategory->myData->setSerieProperties("Values",["Ticks" => 5]);
+			$chartTurnoverCategory->myData->setAxisName(0,"€ / Netto");
+			$chartTurnoverCategory->myData->addPoints($months,"Labels");
+			$chartTurnoverCategory->myData->setSerieDescription("Labels","Months");
+			$chartTurnoverCategory->myData->setAbscissa("Labels");
+
+			/* Write the chart title */ 
+			$chartTurnoverCategory->setFontProperties(["FontName"=>BASE_PATH."/library/pChart/fonts/Cairo-Regular.ttf","FontSize"=>10]);
+
+			/* Create the pCharts object */
+			$pCharts = new pCharts($chartTurnoverCategory);
+
+			/* Draw the scale and the 1st chart */
+			$chartTurnoverCategory->setGraphArea(75, 20, $width-30, $height-60);
+			$chartTurnoverCategory->drawFilledRectangle(0,0,$width,$height,["Color"=> new pColor(234,240,200), "Dash"=>TRUE, "DashColor"=>new pColor(190,203,107)]);
+			$chartTurnoverCategory->drawScale(array('XMargin' => 2, 'DrawSubTicks' => TRUE, 'Mode' => SCALE_MODE_ADDALL_START0, 'LabelRotation' => 45));
+			$chartTurnoverCategory->setShadow(TRUE,["X"=>1,"Y"=>1,"Color"=>new pColor(0,0,0,10)]);
+			$chartTurnoverCategory->setFontProperties(["FontSize"=>10]);
+
+			$settings = array();
+			$pCharts->drawStackedAreaChart($settings);
+			$chartTurnoverCategory->setShadow(FALSE);
+
+			/* Write the chart legend */
+			$chartTurnoverCategory->drawLegend(100, 20, array('Style' => LEGEND_NOBORDER, 'Mode' => LEGEND_VERTICAL));
+
+			// Build the PNG file and send it to the web browser
+			if(!file_exists(BASE_PATH.'/cache/chart/')) {
+				mkdir(BASE_PATH.'/cache/chart/');
+				chmod(BASE_PATH.'/cache/chart/', 0777);
+			}
+			$chartTurnoverCategory->Render(BASE_PATH.'/cache/chart/turnover-category-'.$width.'-'.$height.'.png');
 		}
-		$turnover->Render(BASE_PATH.'/cache/chart/turnover-'.$width.'-'.$height.'.png');
+		return $turnoverList;
+	}
 
-		//Turnover by categories
-		/* Create your dataset object */
-		$turnoverCategoriesData = new pData();
-
-		/* Add data in your dataset */
-		$turnoverCategoriesTotal = array();
-		foreach($turnoverCategories as $key => $value) {
-			$turnoverCategoriesTotal[$key] = array_sum($value);
+	private function fetchData($db, $type, $year, $month, $ym, $client, $params, $options)
+	{
+		$query = "i.state = 105";
+		$query .= " AND ({$type}date >= '{$year}-{$ym}-01' AND {$type}date <= '{$year}-{$ym}-31')";
+		$query .= " AND i.clientid = {$client['id']}";
+		$query .= " AND c.clientid = {$client['id']}";
+		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
+		if($params['country']) {
+			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['countries'], 'i');
 		}
-		arsort($turnoverCategoriesTotal);
-		foreach($turnoverCategoriesTotal as $key => $value) {
-			if($key && isset($options['categories'][$key])) $turnoverCategoriesData->addPoints($turnoverCategories[$key], $options['categories'][$key]['title']);
-		}
-		if(isset($turnoverCategories[0])) {
-			$turnoverCategoriesData->addPoints($turnoverCategories[0], $statisticsUncategorized);
-		}
-		$turnoverCategoriesData->setAxisName(0, '€ / Netto');
 
-		/* Create the X serie */
-		$turnoverCategoriesData->addPoints($months, 'Labels');
-		$turnoverCategoriesData->setSerieDescription('Labels', 'Months');
-		$turnoverCategoriesData->setAbscissa('Labels');
+		$data = $db->fetchAll(
+			$db->select()
+				->from(array('i' => $type))
+				->join(array('c' => 'contact'), "i.contactid = c.contactid", array('id AS cid', 'catid', 'name1'))
+				->where($query ? $query : 1)
+				->setIntegrityCheck(false)
+		);
 
-		/* Create a pChart object and associate your dataset */
-		$turnoverCategories = new pImage($width, $height, $turnoverCategoriesData, TRUE);
-
-		/* Turn off AA processing */
-		$turnoverCategories->Antialias = FALSE;
-
-		/* Choose a nice font */
-		$turnoverCategories->setFontProperties(array('FontName' => BASE_PATH.'/library/pChart/fonts/verdana.ttf', 'FontSize' => 10));
-
-		/* Define the boundaries of the graph area */
-		$turnoverCategories->setGraphArea(75, 20, $width-30, $height-60);
-
-		/* Draw the scale, keep everything automatic */
-		$turnoverCategories->drawScale(array('XMargin' => 2, 'DrawSubTicks' => TRUE, 'Mode' => SCALE_MODE_ADDALL_START0, 'LabelRotation' => 45));
-
-		/* Draw the scale, keep everything automatic */
-		$settings = array();
-		$turnoverCategories->drawStackedAreaChart($settings);
-
-		/* Write the chart legend */
-		$turnoverCategories->drawLegend(100, 20, array('Style' => LEGEND_NOBORDER, 'Mode' => LEGEND_VERTICAL));
-
-		/* Build the PNG file and send it to the web browser */
-		$turnoverCategories->Render(BASE_PATH.'/cache/chart/turnover-category-'.$width.'-'.$height.'.png');
+		return $data;
 	}
 }

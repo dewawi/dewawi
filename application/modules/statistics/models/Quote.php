@@ -15,7 +15,7 @@ use pChart\pCharts;
 use pChart\pColorGradient;
 use pChart\pException;
 
-class Statistics_Model_Customer
+class Statistics_Model_Quote
 {
 	public function createCharts($lenght, $width = 1000, $height = 600, $statisticsUncategorized, $params, $options)
 	{
@@ -29,8 +29,7 @@ class Statistics_Model_Customer
 		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');
 
-		$invoicesDb = new Sales_Model_DbTable_Invoice();
-		$creditnotesDb = new Sales_Model_DbTable_Creditnote();
+		$quotesDb = new Sales_Model_DbTable_Quote();
 
 		$customerList = array();
 		for($year = $startYear; $year <= $currentYear; $year++) {
@@ -39,54 +38,19 @@ class Statistics_Model_Customer
 					// Ensure a two-digit representation for the month
 					$ym = str_pad($month, 2, '0', STR_PAD_LEFT);
 
-					//Get invoices
-					$invoices = $this->fetchData($invoicesDb, 'invoice', $year, $month, $ym, $client, $params, $options);
+					//Get quotes
+					$quotes = $this->fetchData($quotesDb, 'quote', $year, $month, $ym, $client, $params, $options);
 
-					//Get credit notes
-					$creditnotes = $this->fetchData($creditnotesDb, 'creditnote', $year, $month, $ym, $client, $params, $options);
-
-					//Get categories
-					$categoriesDb = new Application_Model_DbTable_Category();
-					$categories = $categoriesDb->getCategories('contact');
-
-					//Calculate invoices
-					foreach($invoices as $invoice) {
-						if(isset($invoice->name1)) {
-							if(isset($customerList[$invoice->contactid])) {
-								$customerList[$invoice->contactid]['subtotal'] += $invoice->subtotal;
-								array_push($customerList[$invoice->contactid]['invoices'], $invoice->invoiceid);
-							} else {
-								$customerList[$invoice->contactid]['cid'] = $invoice->cid;
-								$customerList[$invoice->contactid]['contactid'] = $invoice->contactid;
-								$customerList[$invoice->contactid]['name1'] = $invoice->name1;
-								$customerList[$invoice->contactid]['subtotal'] = $invoice->subtotal;
-								$customerList[$invoice->contactid]['invoices'] = array($invoice->invoiceid);
-								if($invoice->catid && isset($categories[$invoice->catid]))
-									$customerList[$invoice->contactid]['ctitle'] = $categories[$invoice->catid]['title'];
-							}
-							if($invoice->prepayment) {
-								$customerList[$invoice->contactid]['subtotal'] -= ($invoice->prepayment/1.19); //TODO
-							}
-						}
-					}
-
-					//Calculate credit notes
-					foreach($creditnotes as $creditnote) {
-						if(isset($creditnote->name1)) {
-							if(isset($customerList[$creditnote->contactid])) {
-								$customerList[$creditnote->contactid]['subtotal'] += $creditnote->subtotal;
-								if(isset($customerList[$invoice->contactid]['creditnotes']))
-									array_push($customerList[$invoice->contactid]['creditnotes'], $invoice->invoiceid);
-								else $customerList[$invoice->contactid]['creditnotes'][] = $invoice->invoiceid;
-							} else {
-								$customerList[$creditnote->contactid]['cid'] = $creditnote->cid;
-								$customerList[$creditnote->contactid]['contactid'] = $creditnote->contactid;
-								$customerList[$creditnote->contactid]['name1'] = $creditnote->name1;
-								$customerList[$creditnote->contactid]['subtotal'] = $creditnote->subtotal;
-								$customerList[$creditnote->contactid]['creditnotes'] = array($creditnote->invoiceid);
-								if($creditnote->catid && isset($categories[$creditnote->catid]))
-									$customerList[$creditnote->contactid]['ctitle'] = $categories[$creditnote->catid]['title'];
-							}
+					//Calculate quotes
+					foreach($quotes as $quote) {
+						if(isset($customerList[$quote->contactid])) {
+							$customerList[$quote->contactid]['subtotal'] += $quote->subtotal;
+							$customerList[$quote->contactid]['quantity'] += 1;
+						} else {
+							$customerList[$quote->contactid]['contactid'] = $quote->contactid;
+							$customerList[$quote->contactid]['name1'] = $quote->name1;
+							$customerList[$quote->contactid]['subtotal'] = $quote->subtotal;
+							$customerList[$quote->contactid]['quantity'] = 1;
 						}
 					}
 				}
@@ -115,7 +79,7 @@ class Statistics_Model_Customer
 				$total += $customer['subtotal'];
 				$customerList[$id]['total'] = $total;
 				if($i < 15) {
-					array_push($customerName, substr($customer['name1'], 0, 20));
+					array_push($customerName, substr($customer['name1'], 0, 19));
 					array_push($customerTurnover, round($customer['subtotal']));
 				}
 				$customerList[$id]['total'] += $customer['subtotal'];
@@ -131,38 +95,38 @@ class Statistics_Model_Customer
 			}
 
 			/* Create the pChart object */
-			$chartCustomer = new pDraw($width, $height);
+			$chartQuote = new pDraw($width, $height);
 
 			/* Populate the pData object */
-			$chartCustomer->myData->addPoints($customerTurnover,"Values");
-			$chartCustomer->myData->setSerieProperties("Values",["Ticks" => 5]);
-			$chartCustomer->myData->setAxisName(0,"€ / Netto");
-			$chartCustomer->myData->addPoints($customerName,"Labels");
-			$chartCustomer->myData->setSerieDescription("Labels","Months");
-			$chartCustomer->myData->setAbscissa("Labels");
+			$chartQuote->myData->addPoints($customerTurnover,"Values");
+			$chartQuote->myData->setSerieProperties("Values",["Ticks" => 5]);
+			$chartQuote->myData->setAxisName(0,"€ / Netto");
+			$chartQuote->myData->addPoints($customerName,"Labels");
+			$chartQuote->myData->setSerieDescription("Labels","Months");
+			$chartQuote->myData->setAbscissa("Labels");
 
 			/* Write the chart title */
-			$chartCustomer->setFontProperties(["FontName"=>BASE_PATH."/library/pChart/fonts/Cairo-Regular.ttf","FontSize"=>10]);
+			$chartQuote->setFontProperties(["FontName"=>BASE_PATH."/library/pChart/fonts/Cairo-Regular.ttf","FontSize"=>10]);
 
 			/* Create the pCharts object */
-			$pCharts = new pCharts($chartCustomer);
+			$pCharts = new pCharts($chartQuote);
 
 			/* Draw the scale and the 1st chart */
-			$chartCustomer->setGraphArea(75, 20, $width-30, $height-130);
-			$chartCustomer->drawFilledRectangle(0,0,$width,$height,["Color"=> new pColor(234,240,200), "Dash"=>TRUE, "DashColor"=>new pColor(190,203,107)]);
-			$chartCustomer->drawScale(["DrawSubTicks"=>TRUE, 'Mode' => SCALE_MODE_START0, 'LabelRotation' => 45]);
-			$chartCustomer->setShadow(TRUE,["X"=>1,"Y"=>1,"Color"=>new pColor(0,0,0,10)]);
-			$chartCustomer->setFontProperties(["FontSize"=>10]);
+			$chartQuote->setGraphArea(75, 20, $width-30, $height-130);
+			$chartQuote->drawFilledRectangle(0,0,$width,$height,["Color"=> new pColor(234,240,200), "Dash"=>TRUE, "DashColor"=>new pColor(190,203,107)]);
+			$chartQuote->drawScale(["DrawSubTicks"=>TRUE, 'Mode' => SCALE_MODE_START0, 'LabelRotation' => 45]);
+			$chartQuote->setShadow(TRUE,["X"=>1,"Y"=>1,"Color"=>new pColor(0,0,0,10)]);
+			$chartQuote->setFontProperties(["FontSize"=>10]);
 			$settings = array('Gradient' => TRUE, 'GradientMode' => GRADIENT_EFFECT_CAN, 'DisplayPos' => LABEL_POS_INSIDE, 'DisplayValues' => TRUE, 'DisplayR' => 0, 'DisplayG' => 0, 'DisplayB' => 0, 'DisplayShadow' => TRUE, 'Surrounding' => 10);
 			$pCharts->drawBarChart($settings);
-			$chartCustomer->setShadow(FALSE);
+			$chartQuote->setShadow(FALSE);
 
 			// Build the PNG file and send it to the web browser
 			if(!file_exists(BASE_PATH.'/cache/chart/')) {
 				mkdir(BASE_PATH.'/cache/chart/');
 				chmod(BASE_PATH.'/cache/chart/', 0777);
 			}
-			$chartCustomer->Render(BASE_PATH.'/cache/chart/customer-'.$width.'-'.$height.'.png');
+			$chartQuote->Render(BASE_PATH.'/cache/chart/quote-'.$width.'-'.$height.'.png');
 		}
 		return $customerList;
 	}

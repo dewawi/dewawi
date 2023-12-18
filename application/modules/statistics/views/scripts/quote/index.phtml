@@ -7,22 +7,22 @@ $this->headTitle($this->title);
 <?php if($this->lenght == 12) : ?>
 	1 Jahr
 <?php else : ?>
-	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'customer', 'action'=>'index', 'lenght'=>'12')); ?>">1 Jahr</a>
+	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'quote', 'action'=>'index', 'lenght'=>'12')); ?>">1 Jahr</a>
 <?php endif; ?>
 <?php if($this->lenght == 24) : ?>
 	2 Jahre
 <?php else : ?>
-	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'customer', 'action'=>'index', 'lenght'=>'24')); ?>">2 Jahre</a>
+	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'quote', 'action'=>'index', 'lenght'=>'24')); ?>">2 Jahre</a>
 <?php endif; ?>
 <?php if($this->lenght == 60) : ?>
 	5 Jahre
 <?php else : ?>
-	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'customer', 'action'=>'index', 'lenght'=>'60')); ?>">5 Jahre</a>
+	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'quote', 'action'=>'index', 'lenght'=>'60')); ?>">5 Jahre</a>
 <?php endif; ?>
 
 <?php if($this->customerList) : ?>
 	<h3><?php echo $this->translate('STATISTICS_CUSTOMER_TOP_TEN'); ?></h3>
-	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/customer-1000-600.png">
+	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/quote-1000-600.png">
 
 	<h3><?php echo $this->translate('STATISTICS_CUSTOMER_LIST'); ?></h3>
 	<table id="data">
@@ -31,9 +31,8 @@ $this->headTitle($this->title);
 				<th width="2%"><input type="checkbox" class="checkall" name="checkall"></th>
 				<th class="id" width="5%"><?php echo $this->translate('STATISTICS_CUSTOMER_ID'); ?></th>
 				<th class="name" width="20%"><?php echo $this->translate('STATISTICS_CUSTOMER_NAME'); ?></th>
-				<th class="name" width="20%"><?php echo $this->translate('STATISTICS_CUSTOMER_CATEGORY'); ?></th>
 				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_TURNOVER'); ?></th>
-				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_INVOICE_QUANTITY'); ?></th>
+				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_QUOTE_QUANTITY'); ?></th>
 				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_CUSTOMER_SHARE'); ?></th>
 				<th width="8%"></th>
 			</tr>
@@ -43,22 +42,10 @@ $this->headTitle($this->title);
 		<?php foreach($this->customerList as $customer) : ?>
 			<tr>
 				<td><?php echo $i; ?></td>
-				<td>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$customer['cid'])); ?>">
-						<?php echo $customer['contactid']; ?>
-					</a>
-				</td>
+				<td><?php echo $customer['contactid']; ?></td>
 				<td><?php echo $customer['name1']; ?></td>
-				<td><?php if(isset($customer['ctitle'])) echo $customer['ctitle']; ?></td>
 				<td><?php echo $customer['subtotal']; ?></td>
-				<td>
-					<?php if(isset($customer['invoices'])) : ?>
-						<?php echo $this->translate('STATISTICS_INVOICE'); ?>: <?php echo count($customer['invoices']); ?>
-					<?php endif; ?>
-					<?php if(isset($customer['creditnotes'])) : ?>
-						<?php echo $this->translate('STATISTICS_CREDIT_NOTE'); ?>: <?php echo count($customer['creditnotes']); ?>
-					<?php endif; ?>
-				</td>
+				<td><?php echo $customer['quantity']; ?></td>
 				<td><?php echo $customer['share']; ?>%</td>
 				<td></td>
 			</tr>
@@ -70,6 +57,7 @@ $this->headTitle($this->title);
 			<td></td>
 			<td></td>
 			<td><b><?php echo $total; ?></b></td>
+			<td></td>
 			<td></td>
 			<td></td>
 		</tr>

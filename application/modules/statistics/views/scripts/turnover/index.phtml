@@ -4,23 +4,78 @@ $this->headTitle($this->title);
 ?>
 
 <?php echo $this->translate('STATISTICS_PERIOD'); ?>: 
-<?php if($this->lenght == 13) : ?>
+<?php if($this->lenght == 12) : ?>
 	1 Jahr
 <?php else : ?>
-	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'lenght'=>'13')); ?>">1 Jahr</a>
+	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index', 'lenght'=>'12')); ?>">1 Jahr</a>
 <?php endif; ?>
-<?php if($this->lenght == 25) : ?>
+<?php if($this->lenght == 24) : ?>
 	2 Jahre
 <?php else : ?>
-	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'lenght'=>'25')); ?>">2 Jahre</a>
+	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index', 'lenght'=>'24')); ?>">2 Jahre</a>
 <?php endif; ?>
-<?php if($this->lenght == 61) : ?>
+<?php if($this->lenght == 60) : ?>
 	5 Jahre
 <?php else : ?>
-	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'index', 'action'=>'index', 'lenght'=>'61')); ?>">5 Jahre</a>
+	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index', 'lenght'=>'60')); ?>">5 Jahre</a>
 <?php endif; ?>
 
-<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
-<img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-1000-400.png">
-<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
-<img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-category-1000-400.png">
+<?php if($this->turnoverList) : ?>
+	<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
+	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-1000-400.png">
+	<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
+	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-category-1000-400.png">
+
+	<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
+	<table id="data">
+		<thead>
+			<tr>
+				<th width="2%"><input type="checkbox" class="checkall" name="checkall"></th>
+				<th width="8%"><?php echo $this->translate('STATISTICS_TURNOVER_MONTH'); ?></th>
+				<th width="8%"><?php echo $this->translate('STATISTICS_INVOICE_QUANTITY'); ?></th>
+				<th width="8%"><?php echo $this->translate('STATISTICS_INVOICE_SUBTOTAL'); ?></th>
+				<th width="8%"><?php echo $this->translate('STATISTICS_INVOICE_AVARAGE'); ?></th>
+				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_QUANTITY'); ?></th>
+				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_SUBTOTAL'); ?></th>
+				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_AVARAGE'); ?></th>
+				<th width="8%"></th>
+			</tr>
+		</thead>
+		<?php $i = 1; ?>
+		<?php $invoicesTotal = 0; ?>
+		<?php $creditnotesTotal = 0; ?>
+		<?php $invoicesQuantity = 0; ?>
+		<?php $creditnotesQuantity = 0; ?>
+		<?php $invoicesAvarage = 0; ?>
+		<?php $creditnotesAvarage = 0; ?>
+		<?php foreach($this->turnoverList as $turnover) : ?>
+			<tr>
+				<td><?php echo $i; ?></td>
+				<td>
+					<?php echo $turnover['month']; ?>
+				</td>
+				<td><?php echo $turnover['invoicesQuantity']; ?></td>
+				<td><?php echo $turnover['invoicesSubtotal']; ?></td>
+				<td><?php echo $turnover['invoicesAvarage']; ?></td>
+				<td><?php echo $turnover['creditnotesQuantity']; ?></td>
+				<td><?php echo $turnover['creditnotesAvarage']; ?></td>
+				<td><?php echo $turnover['creditnotesSubtotal']; ?></td>
+				<td></td>
+			</tr>
+			<?php ++$i; ?>
+		<?php endforeach; ?>
+		<tr>
+			<td></td>
+			<td></td>
+			<td><b><?php echo $turnover['invoicesTotalQuantity']; ?></b></td>
+			<td><b><?php echo $turnover['invoicesTotal']; ?></b></td>
+			<td><b><?php echo $turnover['invoicesTotalAvarage']; ?></b></td>
+			<td><b><?php echo $turnover['creditnotesTotalQuantity']; ?></b></td>
+			<td><b><?php echo $turnover['creditnotesTotal']; ?></b></td>
+			<td><b><?php echo $turnover['creditnotesTotalAvarage']; ?></b></td>
+			<td></td>
+		</tr>
+	</table>
+<?php else : ?>
+	<p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
+<?php endif; ?>

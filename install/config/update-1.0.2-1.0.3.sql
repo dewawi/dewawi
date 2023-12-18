@@ -84,3 +84,13 @@ ALTER TABLE `item` ADD `notes` text DEFAULT NULL AFTER `info`;
 ALTER TABLE `address` ADD `latitude` DECIMAL(12,9) DEFAULT NULL AFTER `country`;
 ALTER TABLE `address` ADD `longitude` DECIMAL(12,9) DEFAULT NULL AFTER `latitude`;
 ALTER TABLE `address` ADD `geoupdated` datetime DEFAULT NULL AFTER `longitude`;
+
+ALTER TABLE `contact` ADD INDEX(`catid`);
+ALTER TABLE `creditnote` ADD INDEX(`creditnotedate`);
+ALTER TABLE `deliveryorder` ADD INDEX(`deliveryorderdate`);
+ALTER TABLE `invoice` ADD INDEX(`invoicedate`);
+ALTER TABLE `quote` ADD INDEX(`quotedate`);
+ALTER TABLE `reminder` ADD INDEX(`reminderdate`);
+ALTER TABLE `salesorder` ADD INDEX(`salesorderdate`);
+ALTER TABLE `quoterequest` ADD INDEX(`quoterequestdate`);
+ALTER TABLE `purchaseorder` ADD INDEX(`purchaseorderdate`);
