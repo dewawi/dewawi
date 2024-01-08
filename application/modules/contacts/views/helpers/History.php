@@ -69,7 +69,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($quote->total);?>
 							</td>
 							<td id="state">
-								<?php echo $this->view->translate($this->view->escape($this->view->states[$quote->state]));?>
+								<?php echo $this->view->translate($this->view->escape($this->view->options['states'][$quote->state])); ?>
 							</td>
 							<td class="buttons">
 								<?php if($quote->state == '105' || $quote->state == '106') : ?>
@@ -150,7 +150,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($salesorder->total);?>
 							</td>
 							<td id="state">
-								<?php echo $this->view->translate($this->view->escape($this->view->states[$salesorder->state]));?>
+								<?php echo $this->view->translate($this->view->escape($this->view->options['states'][$salesorder->state])); ?>
 							</td>
 							<td class="buttons">
 								<?php if($salesorder->state == '105' || $salesorder->state == '106') : ?>
@@ -227,7 +227,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($invoice->total);?>
 							</td>
 							<td id="state">
-								<?php echo $this->view->translate($this->view->escape($this->view->states[$invoice->state]));?>
+								<?php echo $this->view->translate($this->view->escape($this->view->options['states'][$invoice->state])); ?>
 							</td>
 							<td class="buttons">
 								<?php if($invoice->state == '105' || $invoice->state == '106') : ?>
@@ -304,7 +304,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($deliveryorder->total);?>
 							</td>
 							<td id="state">
-								<?php echo $this->view->translate($this->view->escape($this->view->states[$deliveryorder->state]));?>
+								<?php echo $this->view->translate($this->view->escape($this->view->options['states'][$deliveryorder->state])); ?>
 							</td>
 							<td class="buttons">
 								<?php if($deliveryorder->state == '105' || $deliveryorder->state == '106') : ?>
@@ -381,7 +381,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($creditnote->total);?>
 							</td>
 							<td id="state">
-								<?php echo $this->view->translate($this->view->escape($this->view->states[$creditnote->state]));?>
+								<?php echo $this->view->translate($this->view->escape($this->view->options['states'][$creditnote->state])); ?>
 							</td>
 							<td class="buttons">
 								<?php if($creditnote->state == '105' || $creditnote->state == '106') : ?>
@@ -458,7 +458,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($quoterequest->total);?>
 							</td>
 							<td id="state">
-								<?php echo $this->view->translate($this->view->escape($this->view->states[$quoterequest->state]));?>
+								<?php echo $this->view->translate($this->view->escape($this->view->options['states'][$quoterequest->state])); ?>
 							</td>
 							<td class="buttons">
 								<?php if($quoterequest->state == '105' || $quoterequest->state == '106') : ?>
@@ -535,7 +535,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($purchaseorder->total);?>
 							</td>
 							<td id="state">
-								<?php echo $this->view->translate($this->view->escape($this->view->states[$purchaseorder->state]));?>
+								<?php echo $this->view->translate($this->view->escape($this->view->options['states'][$purchaseorder->state])); ?>
 							</td>
 							<td class="buttons">
 								<?php if($purchaseorder->state == '105' || $purchaseorder->state == '106') : ?>
@@ -608,7 +608,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($process->total);?>
 							</td>
 							<td id="state">
-								<?php echo $this->view->translate($this->view->escape($this->view->states[$process->state]));?>
+								<?php echo $this->view->translate($this->view->escape($this->view->options['states'][$process->state])); ?>
 							</td>
 							<td class="buttons">
 								<?php if($process->completed || $process->cancelled) : ?>
@@ -684,7 +684,7 @@ class Zend_View_Helper_History extends Zend_View_Helper_Abstract{
 								<?php echo $this->view->escape($reminder->total);?>
 							</td>
 							<td id="state">
-								<?php echo $this->view->translate($this->view->escape($this->view->states[$reminder->state]));?>
+								<?php echo $this->view->translate($this->view->escape($this->view->options['states'][$reminder->state])); ?>
 							</td>
 							<td class="buttons">
 								<?php if($reminder->state == '105' || $reminder->state == '106') : ?>
