@@ -1,0 +1,210 @@
+<?php 
+$this->title = $this->form->getValue('title') ? $this->form->getValue('title') : $this->translate('TASKS_NEW_TASK');
+$this->headTitle($this->title);
+echo $this->TinyMCE();
+echo $this->FileManager();
+?>
+
+<ul class="tabs">
+	<li<?php if($this->activeTab == "#tabOverview") : ?> class="active"<?php endif; ?>>
+		<a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabContacts") : ?> class="active"<?php endif; ?>>
+		<a href="#tabContacts"><?php echo $this->translate('TABS_CONTACTS'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabErrors") : ?> class="active"<?php endif; ?>>
+		<a href="#tabErrors"><?php echo $this->translate('TABS_ERRORS'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabMessages") : ?> class="active"<?php endif; ?>>
+		<a href="#tabMessages" onclick="getEmailmessages()"><?php echo $this->translate('TABS_MESSAGES'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
+		<a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
+</ul>
+
+<div class="tab_container">
+	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>">
+		<form id="task" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->id; ?>
+						<?php echo $this->form->responsible; ?>
+						<?php echo $this->form->title; ?>
+						<?php echo $this->form->contactcatid; ?>
+						<?php echo $this->form->contactsubcat; ?>
+						<?php echo $this->form->priority; ?>
+						<?php echo $this->form->startdate; ?>
+						<?php echo $this->form->duedate; ?>
+						<?php echo $this->form->reminder; ?>
+						<?php echo $this->form->remindertype; ?>
+						<?php echo $this->form->activated; ?>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-6">
+					<dl class="form">
+						<?php echo $this->form->description; ?>
+						<?php echo $this->form->notes; ?>
+						<?php echo $this->form->info; ?>
+					</dl>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div id="tabContacts" class="tab_content<?php if($this->activeTab == '#tabContacts') : ?> active<?php endif; ?>">
+		<form id="task" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-12">
+					Kontakte: <?php echo count($this->contacts); ?>
+					Nachrichten: <?php echo count($this->emailmessages); ?>
+					<table id="data">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>ID</th>
+								<th>ID</th>
+								<th>Name</th>
+								<th></th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach($this->contacts as $contact) : ?>
+								<tr>
+									<td></td>
+									<td><?php echo $contact->id; ?></td>
+									<td><a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id));?>"><?php echo $contact->contactid; ?></a></td>
+									<td><?php echo $contact->name1; ?></td>
+									<td style="flex-grow: 2";>
+										<?php echo str_replace(',', '<br>', $this->escape($contact->emails)); ?>
+									</td>
+									<td style="flex-grow: 5";>
+										<table>
+											<tbody>
+												<?php if(isset($this->emailmessages[$contact->id])) : ?>
+													<?php foreach($this->emailmessages[$contact->id] as $emailmessage) : ?>
+														<tr>
+															<td>
+																<?php echo $emailmessage['recipient']; ?>
+															</td>
+															<td>
+																<?php echo $emailmessage['messagesent']; ?>
+															</td>
+															<td>
+																<?php echo $this->users[$emailmessage['messagesentby']]; ?>
+															</td>
+															<td>
+																<?php if($emailmessage['response']) : ?>
+																	<div class="error"><?php echo $this->translate('CONTACTS_EMAIL_ERROR') ?></div>
+																	<pre><?php echo $this->escape($emailmessage['response']); ?></pre>
+																<?php else : ?>
+																	<div class="successful"><?php echo $this->translate('CONTACTS_EMAIL_SUCCESSFUL') ?></div>
+																<?php endif; ?>
+															</td>
+															<td>
+																<button name="send" id="save" type="button" class="send" onclick="resendMessage(<?php echo $emailmessage['id'] ?>)">Erneut Senden</button>
+															</td>
+															<td></td>
+														</tr>
+													<?php endforeach; ?>
+												<?php endif; ?>
+											</tbody>
+										</table>
+									</td>
+									<td></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div id="tabErrors" class="tab_content<?php if($this->activeTab == '#tabErrors') : ?> active<?php endif; ?>">
+		<form id="task" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-12">
+					Kontakte: <?php echo count($this->contacts); ?>
+					Nachrichten: <?php echo count($this->emailmessages); ?>
+					<table id="data">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>ID</th>
+								<th>ID</th>
+								<th>Name</th>
+								<th></th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach($this->contacts as $contact) : ?>
+								<?php if(isset($this->emailmessages[$contact->id]) && $this->emailmessages[$contact->id][0]['response']) : ?>
+								<tr>
+									<td></td>
+									<td><?php echo $contact->id; ?></td>
+									<td><?php echo $contact->contactid; ?></td>
+									<td><?php echo $contact->name1; ?></td>
+									<td>
+										<?php echo str_replace(',', '<br>', $this->escape($contact->emails)); ?>
+									</td>
+									<td style="flex-grow: 5";>
+										<table>
+											<tbody>
+												<?php if(isset($this->emailmessages[$contact->id])) : ?>
+													<?php foreach($this->emailmessages[$contact->id] as $emailmessage) : ?>
+														<tr>
+															<td>
+																<?php echo $emailmessage['recipient']; ?>
+															</td>
+															<td>
+																<?php echo $emailmessage['messagesent']; ?>
+															</td>
+															<td>
+																<?php echo $this->users[$emailmessage['messagesentby']]; ?>
+															</td>
+															<td>
+																<?php if($emailmessage['response']) : ?>
+																	<div class="error"><?php echo $this->translate('CONTACTS_EMAIL_ERROR') ?></div>
+																	<pre><?php echo $this->escape($emailmessage['response']); ?></pre>
+																<?php else : ?>
+																	<div class="successful"><?php echo $this->translate('CONTACTS_EMAIL_SUCCESSFUL') ?></div>
+																<?php endif; ?>
+															</td>
+															<td>
+																<button name="send" id="save" type="button" class="send" onclick="resendMessage(<?php echo $emailmessage['id'] ?>)">Erneut Senden</button>
+															</td>
+															<td></td>
+														</tr>
+													<?php endforeach; ?>
+												<?php endif; ?>
+											</tbody>
+										</table>
+									</td>
+									<td></td>
+								</tr>
+								<?php endif; ?>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div id="tabMessages" class="tab_content<?php if($this->activeTab == '#tabMessages') : ?> active<?php endif; ?>">
+		<?php echo $this->EmailMessages(); ?>
+	</div>
+	<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+		<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
+	</div>
+</div>
+
+<div id="popup">
+	<div id="addCustomer" class="popup_block">
+		<?php if($this->form->getValue('customerid')) : ?>
+			<iframe src="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'select', 'contactid'=>$this->form->getValue('customerid'), 'parent'=>$this->module.'|'.$this->controller));?>" width="100%" height="100%"></iframe>
+		<?php else : ?>
+			<iframe src="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'select', 'parent'=>$this->module.'|'.$this->controller));?>" width="100%" height="100%"></iframe>
+		<?php endif; ?>
+	</div>
+
+	<div id="selectPosition" class="popup_block">
+		<iframe src="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'select', 'parent'=>$this->module.'|'.$this->controller.'|'.$this->form->getValue('id')));?>" width="100%" height="100%"></iframe>
+	</div>
+</div>

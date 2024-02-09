@@ -67,6 +67,19 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 				$flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
 				return false;
 			}
+		} elseif($type == 'campaign') {
+			//Create campaign folder if does not already exists
+			$dir = 'campaigns/';
+			if(file_exists($path.$dir.$url) && is_dir($path.$dir.$url) && is_writable($path.$dir.$url)) {
+				return true;
+			} elseif(is_writable($path)) {
+				$response = mkdir($path.$dir.$url, 0777, true);
+				if($response === false) $flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+				return $response;
+			} else {
+				$flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
+				return false;
+			}
 		} elseif($type == 'attachment') {
 			//Create cache folder if does not already exists
 			if(!file_exists(BASE_PATH.'/cache/'.$controller.'/')) {
@@ -115,11 +128,15 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 		if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
 		else $dir2 = '0';
 
-		$dir3 = substr($id, 0, 1);
-		if(strlen($id) > 1) $dir4 = substr($id, 1, 1);
-		else $dir4 = '0';
+		$url = $dir1.'/'.$dir2.'/'.$clientid;
 
-		$url = $dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
+		if($id) {
+			$dir3 = substr($id, 0, 1);
+			if(strlen($id) > 1) $dir4 = substr($id, 1, 1);
+			else $dir4 = '0';
+
+			$url .= '/'.$dir3.'/'.$dir4.'/'.$id;
+		}
 
 		return $url;
 	}

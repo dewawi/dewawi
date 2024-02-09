@@ -1,0 +1,143 @@
+<td>
+	<?php echo $this->position['ordering']; ?>
+</td>
+<td>
+	<?php if($this->position['sku']) : ?>
+		<p><?php echo $this->translate('PROCESSES_SKU');?>:<br/>
+		<?php echo $this->position['sku']; ?></p>
+	<?php endif; ?>
+	<?php if($this->position['title']) : ?>
+		<p><?php echo $this->translate('PROCESSES_TITLE');?>:<br/>
+		<?php echo $this->position['title']; ?></p>
+	<?php endif; ?>
+	<?php if($this->position['description']) : ?>
+		<?php echo $this->translate('PROCESSES_DESCRIPTION');?>:<br/>
+		<?php echo $this->position['description']; ?>
+	<?php endif; ?>
+</td>
+<td>
+	<?php if($this->position['itemtype'] == "stockItem") : ?>
+		<div id="stockItemDetails">
+			<p><?php echo $this->translate('PROCESSES_ITEM_TYPE');?>:<br/>
+			<?php echo $this->translate('ITEMS_STOCK_ITEM');?></p>
+		</div>
+	<?php elseif($this->position['itemtype'] == "deliveryItem") : ?>
+		<div id="deliveryItemDetails">
+			<p><?php echo $this->translate('PROCESSES_ITEM_TYPE');?>:<br/>
+			<?php echo $this->translate('ITEMS_DELIVERY_ITEM');?></p>
+			<table>
+				<tr>
+					<td>
+						<?php if($this->position['supplierid']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_ID');?>:<br/>
+							<?php echo $this->escape($this->position['supplierid']);?>
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php if($this->position['suppliername']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_NAME');?>:<br/>
+							<?php echo $this->escape($this->position['suppliername']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php if($this->position['purchaseorderid']) : ?>
+							<?php echo $this->translate('PROCESSES_PURCHASE_ORDER_ID');?>:<br/>
+							<?php echo $this->escape($this->position['purchaseorderid']);?>
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php if($this->position['purchaseorderdate']) : ?>
+							<?php echo $this->translate('PROCESSES_PURCHASE_ORDER_DATE');?>:<br/>
+							<?php echo $this->escape($this->position['purchaseorderdate']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php if($this->position['suppliersalesorderid']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_SALES_ORDER_ID');?>:<br/>
+							<?php echo $this->escape($this->position['suppliersalesorderid']);?>
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php if($this->position['suppliersalesorderdate']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_SALES_ORDER_DATE');?>:<br/>
+							<?php echo $this->escape($this->position['suppliersalesorderdate']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php if($this->position['supplierinvoiceid']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_INVOICE_ID');?>:<br/>
+							<?php echo $this->escape($this->position['supplierinvoiceid']);?>
+						<?php endif; ?>
+								</td>
+								<td>
+						<?php if($this->position['supplierinvoicedate']) : ?>
+							<?php echo $this->translate('PROCESSES_SUPPLIER_INVOICE_DATE');?>:<br/>
+							<?php echo $this->escape($this->position['supplierinvoicedate']);?>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php echo $this->translate('PROCESSES_SUPPLIER_ORDERED');?> 
+						<?php if($this->position['supplierordered']) : ?>
+							<input id="supplierordered" type="checkbox" disabled="disabled" checked="checked" value="1" name="supplierordered">
+						<?php else : ?>
+							<input id="supplierordered" type="checkbox" disabled="disabled" value="0" name="supplierordered">
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php echo $this->translate('PROCESSES_SUPPLIER_PAYED');?> 
+						<?php if($this->position['supplierpayed']) : ?>
+							<input id="supplierpayed" type="checkbox" disabled="disabled" checked="checked" value="1" name="supplierpayed">
+						<?php else : ?>
+							<input id="supplierpayed" type="checkbox" disabled="disabled" value="0" name="supplierpayed">
+						<?php endif; ?>
+					</td>
+				</tr>
+			</table>
+		</div>
+	<?php elseif($this->position['itemtype'] == "service") : ?>
+		<div id="serviceDetails">
+			<p><?php echo $this->translate('PROCESSES_ITEM_TYPE');?>:<br/>
+			<?php echo $this->translate('ITEMS_SERVICE');?></p>
+			<?php if($this->position['servicedate']) : ?>
+				<p><?php echo $this->translate('PROCESSES_SERVICE_DATE');?>:<br/>
+				<?php echo $this->escape($this->position['servicedate']);?></p>
+			<?php endif; ?>
+			<?php echo $this->translate('PROCESSES_SERVICE_COMPLETED');?> 
+			<?php if($this->position['servicecompleted']) : ?>
+				<input id="servicecompleted" type="checkbox" disabled="disabled" checked="checked" value="1" name="servicecompleted">
+			<?php else : ?>
+				<input id="servicecompleted" type="checkbox" disabled="disabled" value="0" name="servicecompleted">
+			<?php endif; ?>
+		</div>
+	<?php endif; ?>
+</td>
+<td>
+	<?php if($this->position['deliverydate']) : ?>
+		<p><?php echo $this->translate('PROCESSES_DELIVERY_DATE');?>:<br/>
+		<?php echo $this->position['deliverydate'] ?></p>
+	<?php endif; ?>
+	<?php if($this->position['shippingmethod']) : ?>
+		<p><?php echo $this->translate('PROCESSES_SHIPPING_METHOD');?>:<br/>
+		<?php echo $this->position['shippingmethod'] ?></p>
+	<?php endif; ?>
+</td>
+<td>
+	<?php echo $this->position['price']; ?>
+</td>
+<td>
+	<?php echo $this->position['quantity']; ?>
+</td>
+<td>
+	<?php echo $this->position['uom']; ?>
+</td>
+<td>
+	<button class="edit" onclick="edit(<?php echo $this->position['id']; ?>, 'inline')" type="button" title="<?php echo $this->translate('TOOLBAR_INLINE_EDIT'); ?>"><span><?php echo $this->translate('TOOLBAR_INLINE_EDIT'); ?></span></button>
+</td>

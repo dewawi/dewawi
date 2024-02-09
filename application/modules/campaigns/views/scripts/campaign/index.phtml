@@ -1,0 +1,102 @@
+<?php
+$this->title = $this->translate('TASKS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->ActiveFilter();
+?>
+
+<table id="data">
+	<thead>
+		<tr>
+			<th style="width:2%"><input type="checkbox" class="checkall" name="checkall"/></th>
+			<th class="title" style="width:18%">
+				<?php echo $this->translate('TASKS_TITLE') ?>
+			</th>
+			<th class="notes" style="width:15%">
+				<?php echo $this->translate('TASKS_NOTES') ?>
+			</th>
+			<th class="responsible" style="width:14%">
+				<?php echo $this->translate('TASKS_RESPONSIBLE_PERSON') ?>
+			</th>
+			<th class="priority" style="width:28%">
+				<?php echo $this->translate('TASKS_PRIORITY') ?>
+			</th>
+			<th class="state" style="width:5%">
+				<?php echo $this->translate('TASKS_STATE') ?>
+			</th>
+			<th class="pin" width="8%"></th>
+			<th style="width:8%"></th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach($this->campaigns as $campaign) : ?>
+		<tr class="state<?php echo $campaign->state; ?><?php echo $campaign->pinned ? ' pinned' : ''; ?>">
+			<td><input class="id" type="checkbox" value="<?php echo $campaign->id; ?>" name="id"/></td>
+			<td data-label="<?php echo $this->translate('TASKS_TITLE') ?>" class="title">
+				<p><a href="<?php echo $this->url(array('module'=>'campaigns', 'controller'=>'campaign', 'action'=>'edit', 'id'=>$campaign->id));?>">
+						<?php echo $campaign->title ? $this->escape($campaign->title) : $this->escape($campaign->id);?>
+				</a></p>
+			</td>
+			<td data-label="<?php echo $this->translate('TASKS_NOTES') ?>" class="notes">
+				<?php if($campaign->state == '105' || $campaign->state == '106') : ?>
+					<?php echo nl2br($campaign->notes); ?>
+				<?php else : ?>
+					<?php if($campaign->notes) : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $campaign->notes; ?>" data-type="textarea"><?php echo $campaign->notes; ?></pre>
+					<?php else : ?>
+						<pre class="editable" data-name="notes" data-value="<?php echo $campaign->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+					<?php endif; ?>
+				<?php endif; ?>
+			</td>
+			<td data-label="<?php echo $this->translate('TASKS_RESPONSIBLE_PERSON') ?>" class="responsible">
+				<?php if($campaign->responsible) : ?>
+					<span class="editable" data-name="responsible" data-value="<?php echo $campaign->responsible; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['users'][$campaign->responsible])); ?></span>
+				<?php else : ?>
+					<span class="editable" data-name="responsible" data-value="<?php echo $campaign->responsible; ?>" data-type="select"><?php echo $this->translate('TOOLBAR_NEW') ;?></span>
+				<?php endif; ?>
+			</td>
+			<td data-label="<?php echo $this->translate('TASKS_PRIORITY') ?>" class="priority">
+				Hoch
+			</td>
+			<td data-label="<?php echo $this->translate('TASKS_TITLE') ?>" class="state">
+				<?php if($campaign->state == '105' || $campaign->state == '106') : ?>
+					<?php echo $this->translate($this->escape($this->options['states'][$campaign->state])); ?>
+				<?php else : ?>
+					<span class="editable" data-name="state" data-value="<?php echo $campaign->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$campaign->state])); ?></span>
+				<?php endif; ?>
+			</td>
+			<td class="pin">
+				<?php if($campaign->pinned) : ?>
+					<input type = "button" onclick = "pin(<?php echo $campaign->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
+				<?php else : ?>
+					<input type = "button" onclick = "pin(<?php echo $campaign->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
+				<?php endif; ?>
+			</td>
+			<td class="buttons">
+				<?php if($campaign->completed || $campaign->cancelled) : ?>
+					<?php echo $this->toolbar->viewInline; ?>
+				<?php else : ?>
+					<?php echo $this->toolbar->editInline; ?>
+				<?php endif; ?>
+				<?php echo $this->toolbar->copyInline; ?>
+			</td>
+		</tr>
+		<tr style="border:none;">
+		</tr>
+		<?php endforeach; ?>
+		<tr class="bottom">
+			<td></td>
+			<td class="toolbar">
+				<?php echo $this->ToolbarBottom(); ?>
+			</td>
+			<td></td>
+			<td></td>
+			<td class="expectedrevenue">
+				<?php echo $this->campaigns->expectedrevenue; ?>
+			</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
