@@ -682,8 +682,8 @@ class Items_ItemController extends Zend_Controller_Action
 			$tagEntites[$item->id] = $get->tags('items', 'item', $item->id);
 		}
 
-		require_once(BASE_PATH.'/library/Dewawi/Directory.php');
-		$Directory = new Dewawi_Directory();
+		require_once(BASE_PATH.'/library/DEEC/Directory.php');
+		$Directory = new DEEC_Directory();
 		$fileUrl = $Directory->getShortUrl($this->_user['clientid']);
 		$filePath = BASE_PATH.'/files/export/'.$fileUrl.'/';
 		$itemsFileCsv = 'items-'.time().'.csv';

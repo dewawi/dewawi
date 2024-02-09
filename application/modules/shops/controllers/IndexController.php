@@ -121,8 +121,8 @@ class Shops_IndexController extends Zend_Controller_Action
 				define('DB_PASSWORD', $config['resources.db.params.password']);
 				define('DB_NAME', $config['resources.db.params.dbname']);
 
-				require_once(BASE_PATH.'/library/Dewawi/Shop.php');
-				$Shops = new Dewawi_Shop(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
+				require_once(BASE_PATH.'/library/DEEC/Shop.php');
+				$Shops = new DEEC_Shop(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
 				$Shops->listItems($shopid);
 
 				$accountDb->updateAccount($shopid, array('updated' => date('Y-m-d H:i:s'), 'updatedby' => $this->_user['id']));

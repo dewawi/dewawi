@@ -43,8 +43,8 @@ class Ebay_IndexController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		require_once(BASE_PATH.'/library/Dewawi/Directory.php');
-		$Directory = new Dewawi_Directory();
+		require_once(BASE_PATH.'/library/DEEC/Directory.php');
+		$Directory = new DEEC_Directory();
 
 		$get = new Ebay_Model_Get();
 		$stats = array();
@@ -129,8 +129,8 @@ class Ebay_IndexController extends Zend_Controller_Action
 				define('DB_PASSWORD', $config['resources.db.params.password']);
 				define('DB_NAME', $config['resources.db.params.dbname']);
 
-				require_once(BASE_PATH.'/library/Dewawi/Ebay.php');
-				$eBay = new Dewawi_eBay(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
+				require_once(BASE_PATH.'/library/DEEC/Ebay.php');
+				$eBay = new DEEC_eBay(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
 				$eBay->listItems($accountid);
 
 				$accountDb->updateAccount($accountid, array('updated' => date('Y-m-d H:i:s'), 'updatedby' => $this->_user['id']));
@@ -162,8 +162,8 @@ class Ebay_IndexController extends Zend_Controller_Action
 				define('DB_PASSWORD', $config['resources.db.params.password']);
 				define('DB_NAME', $config['resources.db.params.dbname']);
 
-				require_once(BASE_PATH.'/library/Dewawi/Ebay.php');
-				$eBay = new Dewawi_eBay(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
+				require_once(BASE_PATH.'/library/DEEC/Ebay.php');
+				$eBay = new DEEC_eBay(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
 				$eBay->uploadFile($accountid);
 
 				$accountDb->updateAccount($accountid, array('uploaded' => date('Y-m-d H:i:s'), 'uploadedby' => $this->_user['id']));
