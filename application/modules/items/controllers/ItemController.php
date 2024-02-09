@@ -537,7 +537,7 @@ class Items_ItemController extends Zend_Controller_Action
 											foreach($images as $id => $image) {
 												if(isset($image['title'])) {
 													if(strpos($image['title'], '#'.$placeholder['title'].'#') !== false) {
-														$images[$id]['title'] = str_replace('#'.$placeholder['title'].'#', $placeholder['description'], $image['title']);
+														$images[$id]['title'] = str_replace('#'.$placeholder['title'].'#', $placeholder['value'], $image['title']);
 													}
 												}
 											}
@@ -547,13 +547,32 @@ class Items_ItemController extends Zend_Controller_Action
 								//print_r($placeholders);
 								//print_r($updateData);
 
+								//Update eBay listing
+								if(isset($map['ebayuserid'])) {
+									if($datacsv[$map['ebayuserid']] == 0) {
+										$ebayListingDb->deleteListingByItemID($item['id']);
+										echo 'Item deleted from eBay: '.$updateData['sku'].', itemid: '.$item['id'].'<br>';
+									} elseif($datacsv[$map['ebayuserid']]) {
+										$ebayListingDb->deleteListingByItemID($item['id']);
+										$ebayAccount = $ebayAccountDb->getAccountByUserID($datacsv[$map['ebayuserid']]);
+										$ebayListingData = array();
+										$ebayListingData['itemid'] = $item['id'];
+										$ebayListingData['accountid'] = $ebayAccount['id'];
+										if(isset($map['ebaycategory1'])) $ebayListingData['category1'] = $datacsv[$map['ebaycategory1']];
+										if(isset($map['ebaycategory2'])) $ebayListingData['category2'] = $datacsv[$map['ebaycategory2']];
+										if(isset($map['ebaystorecategory1'])) $ebayListingData['ebaystorecategory1'] = $datacsv[$map['ebaystorecategory1']];
+										if(isset($map['ebaystorecategory2'])) $ebayListingData['ebaystorecategory2'] = $datacsv[$map['ebaystorecategory2']];
+										$ebayListingDb->addListing($ebayListingData);
+									}
+								}
+
 								$itemDb->updateItem($item['id'], $updateData);
 								++$rowsUpdated;
 
 								//error_log(print_r($updateData,true));
 
 								//Delete existing item images
-								/*$itemImage->deleteItemimagesByItemID($item['id']);
+								$itemImage->deleteItemimagesByItemID($item['id']);
 
 								//Create and update item images
 								foreach($images as $image) {
@@ -562,7 +581,7 @@ class Items_ItemController extends Zend_Controller_Action
 										//error_log(var_dump($image));
 										$itemImage->addItemimage($image);
 									}
-								}*/
+								}
 							} else {
 								$updateData['sku'] = $datacsv[$map['sku']];
 								if(!isset($updateData['taxid']) || !$updateData['taxid']) {
@@ -584,8 +603,9 @@ class Items_ItemController extends Zend_Controller_Action
 									if($datacsv[$map['ebayuserid']] == 0) {
 										$ebayListingDb->deleteListingByItemID($itemid);
 										echo 'Item deleted from eBay: '.$updateData['sku'].', itemid: '.$itemid.'<br>';
-									} else {
-										$ebayListingDb->addListing(array('itemid' => $itemid, 'ebayuserid' => $datacsv[$map['ebayuserid']]));
+									} elseif($datacsv[$map['ebayuserid']]) {
+										$ebayAccount = $ebayAccountDb->getAccountByUserID($datacsv[$map['ebayuserid']]);
+										$ebayListingDb->addListing(array('itemid' => $itemid, 'accountid' => $ebayAccount['id']));
 									}
 								}
 								if(isset($map['shopid'])) {
@@ -705,7 +725,7 @@ class Items_ItemController extends Zend_Controller_Action
 				$csvData[$item->id]['width'] = $item->width;
 				$csvData[$item->id]['height'] = $item->height;
 				$csvData[$item->id]['weight'] = $item->weight;
-				$csvData[$item->id]['category'] = $options['categories'][$item->catid]['title'];
+				if(isset($options['categories'][$item->catid])) $csvData[$item->id]['category'] = $options['categories'][$item->catid]['title'];
 				$tags = '';
 				foreach ($tagEntites[$item->id] as $entity) {
 					$tags .= $entity['tag'];
