@@ -338,7 +338,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
 				$position->price = $currency->toCurrency($position->price);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-				$price['rules'][$position->id] = $this->_helper->PriceRule->formatPriceRules($price['rules'][$position->id], $currency, $locale);
+				if(isset($price['rules'][$position->id])) $price['rules'][$position->id] = $this->_helper->PriceRule->formatPriceRules($price['rules'][$position->id], $currency, $locale);
 			}
 			$this->view->pricerules = $price['rules'];
 
