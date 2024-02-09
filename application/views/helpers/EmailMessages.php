@@ -9,7 +9,9 @@ class Zend_View_Helper_EmailMessages extends Zend_View_Helper_Abstract{
 			<div class="row">
 				<div class="col-sm-12 col-lg-7">
 					<dl class="form">
-						<?php echo $this->view->emailForm->recipient; ?>
+						<?php if($this->view->module != 'campaigns') : ?>
+							<?php echo $this->view->emailForm->recipient; ?>
+						<?php endif; ?>
 						<?php echo $this->view->emailForm->cc; ?>
 						<?php echo $this->view->emailForm->bcc; ?>
 						<?php echo $this->view->emailForm->replyto; ?>
