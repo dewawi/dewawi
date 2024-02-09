@@ -62,7 +62,7 @@ class eBay {
 		$items = $this->getItems($connection, $accountid, $clientid);
 		$productLines = array();
 		if($items) {
-			require_once(BASE_PATH.'/library/Dewawi/PriceRule.php');
+			require_once(BASE_PATH.'/library/DEEC/PriceRule.php');
 			$dir1 = substr($clientid, 0, 1);
 			if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
 			else $dir2 = '0';
@@ -93,7 +93,11 @@ class eBay {
 
 						//Define fields
 						$sku = $item['sku'];
-						$ean = $item['gtin'];
+						if($item['gtin']) {
+							$ean = $item['gtin'];
+						} else {
+							$ean = 'nichtzutreffend';
+						}
 						$title = $item['title'];
 						$eBayTitle = $item['ebaytitle'] ? $item['ebaytitle'] : $item['title'];
 						$eBayCategory1 = $item['category1'];
@@ -122,14 +126,14 @@ class eBay {
 						if($item['manufacturerid'] && isset($manufacturers[$item['manufacturerid']])) {
 							$brand = $manufacturers[$item['manufacturerid']];
 						}
-						if($item['inventory']) {
-							$quantity = $item['quantity'];
-						} else {
+						//if($item['inventory']) {
+						//	$quantity = $item['quantity'];
+						//} else {
 							$quantity = 100;
-						}
+						//}
 
 						//Check if ean is 13 digits long
-						if(preg_match("/^[0-9]{13}$/", $ean)) {
+						//if(preg_match("/^[0-9]{13}$/", $ean)) {
 							if($title && $price && ($price > 0)) {
 								//Set options for price rules
 								$options = array();
@@ -137,7 +141,7 @@ class eBay {
 								if($item['manufacturerid']) $options['itemmanufacturer'] = $item['manufacturerid'];
 
 								//Use price rules
-								$PriceRule = new Dewawi_PriceRule();
+								$PriceRule = new DEEC_PriceRule();
 								$price = $PriceRule->usePricerules($item, $connection, $options, $clientid);
 
 
@@ -164,7 +168,7 @@ class eBay {
 										if($attribute['title'] != 'Zeichnung') {
 											$attributesHtml .= '<tr>';
 											$attributesHtml .= '<td>'.$attribute['title'].'</td>';
-											$attributesHtml .= '<td>'.$attribute['value'].'</td>';
+											$attributesHtml .= '<td>'.$attribute['description'].'</td>';
 											$attributesHtml .= '</tr>';
 										}
 									}
@@ -323,10 +327,10 @@ class eBay {
 								$this->updateItem($connection, $item['id'], 0);
 								$this->log('Error: price or title not set for: '.$item['sku']);
 							}
-						} else {
-							$this->updateItem($connection, $item['id'], 0);
-							$this->log('Error: no valid gtin/ean found for: '.$item['sku']);
-						}
+						//} else {
+						//	$this->updateItem($connection, $item['id'], 0);
+						//	$this->log('Error: no valid gtin/ean found for: '.$item['sku']);
+						//}
 					} else {
 						$this->updateItem($connection, $item['id'], 0);
 						$this->log('Error: longest side of your eBay images must be a minimum of 500 pixels '.$item['sku'].': '.$width.'x'.$height.' px');
@@ -381,7 +385,7 @@ class eBay {
 		    die('Open sftp file connection failed');
 		}
 
-		if($file = file_get_contents($filePath.$filename)) {
+		if($file = file_get_contents($filePath.'/'.$filename)) {
 			$this->log('Get the file contents '.$filename);
 		} else {
 			$this->log('Couldn\'t get the file contents');
@@ -412,7 +416,8 @@ class eBay {
 					i.id = e.itemid
 				WHERE
 					e.accountid = '.$accountid.'
-					AND e.clientid = '.$clientid.';';
+					AND e.clientid = '.$clientid.'
+					AND e.deleted = 0;';
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
 		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
@@ -441,9 +446,10 @@ class eBay {
 	function getAttributes($connection, $itemid) {
 		$query = '
 				SELECT
-					* FROM itemattribute
+					* FROM itematr
 				WHERE
 					itemid = "'.$itemid.'"
+					AND deleted = 0
 				ORDER
 					BY ordering;';
 		$result = mysqli_query($connection, $query);
@@ -460,6 +466,7 @@ class eBay {
 					* FROM itemimage
 				WHERE
 					itemid = "'.$itemid.'"
+					AND deleted = 0
 				ORDER
 					BY ordering;';
 		$result = mysqli_query($connection, $query);

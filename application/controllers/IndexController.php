@@ -87,6 +87,7 @@ class IndexController extends Zend_Controller_Action
 
 		$this->view->options = $options;
 		$this->view->toolbar = new Application_Form_Toolbar();
+		$this->view->subfolder = $this->_helper->Directory->getShortUrl();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 }
