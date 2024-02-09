@@ -648,12 +648,13 @@ class Contacts_ContactController extends Zend_Controller_Action
 			$tagEntites[$contact->id] = $get->tags('contacts', 'contact', $contact->id);
 		}
 
-		require_once(BASE_PATH.'/library/Dewawi/Directory.php');
-		$Directory = new Dewawi_Directory();
+		require_once(BASE_PATH.'/library/DEEC/Directory.php');
+		$Directory = new DEEC_Directory();
 		$fileUrl = $Directory->getShortUrl($this->_user['clientid']);
 		$filePath = BASE_PATH.'/files/export/'.$fileUrl.'/';
 		$contactsFileCsv = 'contacts-'.time().'.csv';
 		$contactsFileZip = 'contacts-'.time().'.zip';
+//print_r($contacts);
 
 		//Get csv data
 		if(count($contacts)) {
@@ -688,7 +689,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 				$csvData[$contact->id]['phone'] = $contact->phones;
 				$csvData[$contact->id]['email'] = $contact->emails;
 				$csvData[$contact->id]['internet'] = $contact->internets;
-				$csvData[$contact->id]['category'] = $options['categories'][$contact->catid]['title'];
+				if(isset($options['categories'][$contact->catid])) $csvData[$contact->id]['category'] = $options['categories'][$contact->catid]['title'];
 				$tags = '';
 				foreach ($tagEntites[$contact->id] as $entity) {
 					$tags .= $entity['tag'];
