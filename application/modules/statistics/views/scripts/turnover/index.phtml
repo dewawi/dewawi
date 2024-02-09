@@ -22,9 +22,9 @@ $this->headTitle($this->title);
 
 <?php if($this->turnoverList) : ?>
 	<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
-	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-1000-400.png">
+	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-1000-400.png">
 	<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
-	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/turnover-category-1000-400.png">
+	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-category-1000-400.png">
 
 	<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
 	<table id="data">

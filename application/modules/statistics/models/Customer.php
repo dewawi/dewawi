@@ -51,8 +51,8 @@ class Statistics_Model_Customer
 
 					//Calculate invoices
 					foreach($invoices as $invoice) {
-						if(isset($invoice->name1)) {
-							if(isset($customerList[$invoice->contactid])) {
+						if(isset($invoice->name1) && $invoice->invoiceid) {
+							if(isset($customerList[$invoice->contactid]) && isset($customerList[$invoice->contactid]['invoices'])) {
 								$customerList[$invoice->contactid]['subtotal'] += $invoice->subtotal;
 								array_push($customerList[$invoice->contactid]['invoices'], $invoice->invoiceid);
 							} else {
@@ -72,18 +72,18 @@ class Statistics_Model_Customer
 
 					//Calculate credit notes
 					foreach($creditnotes as $creditnote) {
-						if(isset($creditnote->name1)) {
-							if(isset($customerList[$creditnote->contactid])) {
+						if(isset($creditnote->name1) && $creditnote->creditnoteid) {
+							if(isset($customerList[$creditnote->contactid]) && isset($customerList[$creditnote->contactid]['creditnotes'])) {
 								$customerList[$creditnote->contactid]['subtotal'] += $creditnote->subtotal;
-								if(isset($customerList[$invoice->contactid]['creditnotes']))
-									array_push($customerList[$invoice->contactid]['creditnotes'], $invoice->invoiceid);
-								else $customerList[$invoice->contactid]['creditnotes'][] = $invoice->invoiceid;
+								if(isset($customerList[$creditnote->contactid]['creditnotes']))
+									array_push($customerList[$creditnote->contactid]['creditnotes'], $creditnote->creditnoteid);
+								else $customerList[$creditnote->contactid]['creditnotes'][] = $creditnote->creditnoteid;
 							} else {
 								$customerList[$creditnote->contactid]['cid'] = $creditnote->cid;
 								$customerList[$creditnote->contactid]['contactid'] = $creditnote->contactid;
 								$customerList[$creditnote->contactid]['name1'] = $creditnote->name1;
 								$customerList[$creditnote->contactid]['subtotal'] = $creditnote->subtotal;
-								$customerList[$creditnote->contactid]['creditnotes'] = array($creditnote->invoiceid);
+								$customerList[$creditnote->contactid]['creditnotes'] = array($creditnote->creditnoteid);
 								if($creditnote->catid && isset($categories[$creditnote->catid]))
 									$customerList[$creditnote->contactid]['ctitle'] = $categories[$creditnote->catid]['title'];
 							}
@@ -158,11 +158,11 @@ class Statistics_Model_Customer
 			$chartCustomer->setShadow(FALSE);
 
 			// Build the PNG file and send it to the web browser
-			if(!file_exists(BASE_PATH.'/cache/chart/')) {
-				mkdir(BASE_PATH.'/cache/chart/');
-				chmod(BASE_PATH.'/cache/chart/', 0777);
+			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
+			if(!file_exists(BASE_PATH.'/cache/chart/'.$url)) {
+				mkdir(BASE_PATH.'/cache/chart/'.$url, 0777, true);
 			}
-			$chartCustomer->Render(BASE_PATH.'/cache/chart/customer-'.$width.'-'.$height.'.png');
+			$chartCustomer->Render(BASE_PATH.'/cache/chart/'.$url.'/customer-'.$width.'-'.$height.'.png');
 		}
 		return $customerList;
 	}

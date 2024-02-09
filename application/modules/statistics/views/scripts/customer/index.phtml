@@ -22,7 +22,7 @@ $this->headTitle($this->title);
 
 <?php if($this->customerList) : ?>
 	<h3><?php echo $this->translate('STATISTICS_CUSTOMER_TOP_TEN'); ?></h3>
-	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/customer-1000-600.png">
+	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/customer-1000-600.png">
 
 	<h3><?php echo $this->translate('STATISTICS_CUSTOMER_LIST'); ?></h3>
 	<table id="data">

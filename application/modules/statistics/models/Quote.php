@@ -122,11 +122,11 @@ class Statistics_Model_Quote
 			$chartQuote->setShadow(FALSE);
 
 			// Build the PNG file and send it to the web browser
-			if(!file_exists(BASE_PATH.'/cache/chart/')) {
-				mkdir(BASE_PATH.'/cache/chart/');
-				chmod(BASE_PATH.'/cache/chart/', 0777);
+			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
+			if(!file_exists(BASE_PATH.'/cache/chart/'.$url)) {
+				mkdir(BASE_PATH.'/cache/chart/'.$url, 0777, true);
 			}
-			$chartQuote->Render(BASE_PATH.'/cache/chart/quote-'.$width.'-'.$height.'.png');
+			$chartQuote->Render(BASE_PATH.'/cache/chart/'.$url.'/quote-'.$width.'-'.$height.'.png');
 		}
 		return $customerList;
 	}

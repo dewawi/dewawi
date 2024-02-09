@@ -44,6 +44,7 @@ class Statistics_CustomerController extends Zend_Controller_Action
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->customerList = $customerList;
+		$this->view->subfolder = $this->_helper->Directory->getShortUrl();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 

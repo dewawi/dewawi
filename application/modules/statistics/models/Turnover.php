@@ -173,8 +173,10 @@ class Statistics_Model_Turnover
 				$turnoverList[$id]['creditnotesSubtotal'] = $currency->toCurrency($value['creditnotesSubtotal']);
 				$turnoverList[$id]['invoicesAvarage'] = $currency->toCurrency($value['invoicesAvarage']);
 				$turnoverList[$id]['creditnotesAvarage'] = $currency->toCurrency($value['creditnotesAvarage']);
-				$turnoverList[$id]['invoicesTotalAvarage'] = $currency->toCurrency($invoicesTotal/$invoicesQuantity);
-				$turnoverList[$id]['creditnotesTotalAvarage'] = $currency->toCurrency($creditnotesTotal/$creditnotesQuantity);
+				if($invoicesTotal && $invoicesQuantity) $turnoverList[$id]['invoicesTotalAvarage'] = $currency->toCurrency($invoicesTotal/$invoicesQuantity);
+				else $turnoverList[$id]['invoicesTotalAvarage'] = $currency->toCurrency(0);
+				if($creditnotesTotal && $creditnotesQuantity)  $turnoverList[$id]['creditnotesTotalAvarage'] = $currency->toCurrency($creditnotesTotal/$creditnotesQuantity);
+				else $turnoverList[$id]['creditnotesTotalAvarage'] = $currency->toCurrency(0);
 			}
 
 			/* Create the pChart object */
@@ -205,12 +207,11 @@ class Statistics_Model_Turnover
 			$chartTurnover->setShadow(FALSE);
 
 			// Build the PNG file and send it to the web browser
-			if(!file_exists(BASE_PATH.'/cache/chart/')) {
-				mkdir(BASE_PATH.'/cache/chart/');
-				chmod(BASE_PATH.'/cache/chart/', 0777);
+			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
+			if(!file_exists(BASE_PATH.'/cache/chart/'.$url)) {
+				mkdir(BASE_PATH.'/cache/chart/'.$url, 0777, true);
 			}
-			$chartTurnover->Render(BASE_PATH.'/cache/chart/turnover-'.$width.'-'.$height.'.png');
-
+			$chartTurnover->Render(BASE_PATH.'/cache/chart/'.$url.'/turnover-'.$width.'-'.$height.'.png');
 
 			/* Create the pChart object */
 			$chartTurnoverCategory = new pDraw($width, $height);
@@ -256,11 +257,11 @@ class Statistics_Model_Turnover
 			$chartTurnoverCategory->drawLegend(100, 20, array('Style' => LEGEND_NOBORDER, 'Mode' => LEGEND_VERTICAL));
 
 			// Build the PNG file and send it to the web browser
-			if(!file_exists(BASE_PATH.'/cache/chart/')) {
-				mkdir(BASE_PATH.'/cache/chart/');
-				chmod(BASE_PATH.'/cache/chart/', 0777);
+			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
+			if(!file_exists(BASE_PATH.'/cache/chart/'.$url)) {
+				mkdir(BASE_PATH.'/cache/chart/'.$url, 0777, true);
 			}
-			$chartTurnoverCategory->Render(BASE_PATH.'/cache/chart/turnover-category-'.$width.'-'.$height.'.png');
+			$chartTurnoverCategory->Render(BASE_PATH.'/cache/chart/'.$url.'/turnover-category-'.$width.'-'.$height.'.png');
 		}
 		return $turnoverList;
 	}
