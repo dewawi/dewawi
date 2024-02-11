@@ -1254,3 +1254,13 @@ font-weight: bold;
 .disabled {
 	display: none!important;
 }
+#map {
+	height: 500px;
+}
+#map .leaflet-marker-icon { 
+	background: none;
+}
+#pagination {
+	text-align: right;
+	font-size: 14px;
+}

@@ -355,7 +355,7 @@ $(document).ready(function(){
 	});
 
 	//Toolbar
-	$('.toolbar').on('change', 'input:not(#keyword), select', function() {
+	$(document).on('change', '.toolbar input:not(#keyword), .toolbar select', function() {
 		var element = this.name;
 		var value = this.value;
 		if(module == 'statistics') {
@@ -386,6 +386,7 @@ $(document).ready(function(){
 				} else {
 					$.cookie(element, this.value, { path: cookiePath });
 				}
+				if(element != 'page') $('#page').val(1);
 				search();
 			}
 		}
@@ -468,6 +469,7 @@ $(document).ready(function(){
 		$(this).addClass('active');
 		$('#catid').val($(this).attr('id'));
 		$.cookie('catid', $('#catid').val(), { path: cookiePath });
+		$('#page').val(1);
 		search();
 	});
 
@@ -635,7 +637,7 @@ $(document).ready(function(){
 									case 'applyPosition':
 										var parent = $(this).closest('div.positionsContainer').data('parent');
 										var type = $(this).closest('div.positionsContainer').data('type');
-										window.parent.console.log(parent);
+										//window.parent.console.log(parent);
 										//applyPosition(parent, type, $(this).val(), window.parent.setid);
 										break;
 									case 'deletePosition':
@@ -951,7 +953,7 @@ function edit(data, params) {
 	else url += '/'+module;
 	if(data['tagid']) {
 		url += '/tag/add/tagid/'+data['tagid'];
-		if(params && params['id']) data[controller+'id'] = params['id'];
+		if(params && params['id']) data['parentid'] = params['id'];
 	} else {
 		if(params && params['controller']) url += '/'+params['controller'];
 		else url += '/'+controller;
@@ -992,6 +994,7 @@ function search() {
 	data.from = $('#from').val();
 	data.to = $('#to').val();
 	data.limit = $('#limit').val();
+	data.page = $('#page').val();
 	data.order = $('#order').val();
 	data.sort = $('#sort').val();
 	data.controller = $('#controller').val();
@@ -1009,6 +1012,9 @@ function search() {
 	$('#filter input[name="supplierorderstatus"]:checked').each(function() {
 		data.supplierorderstatus.push(this.value);
 	});
+
+	//Reset page if search parameters changed
+	$.cookie('page', data.page, { path: cookiePath });
 
 	var url = baseUrl+'/'+module+'/'+controller+'/search';
 	//if(parent.location != window.location) url += '/parent/'+window.parent.module+'|'+window.parent.controller;
@@ -1045,6 +1051,9 @@ function search() {
 					$(this).wrap('<div class="editableContainer"></div>');
 				});
 				$('#loading').hide();
+
+				//Load map
+				if(module == 'contacts') contactsMap();
 			}
 		});
 	}, 500);
@@ -1221,7 +1230,6 @@ function editPosition(parent, type, data, params) {
 		if(params['id']) url += '/edit/id/'+params['id'];
 		if(params['parentid']) url += '/parent/'+parent+'/type/'+type+'/parentid/'+params['parentid'];
 	}
-	console.log(123);
 	$.ajax({
 		type: 'POST',
 		url: url,
@@ -1314,7 +1322,6 @@ function getPositions(parent, type, scrollTo) {
 
 //Add option
 function addOption(parent, type, optionid, setid, masterid) {
-	console.log(setid);
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id+'/optionid/'+optionid+'/masterid/'+masterid,
@@ -1451,13 +1458,18 @@ function sendMessage(){
 		if($(this).is(':checked')) data.files[$(this).val()] = $(this).val();
 	});
 
-	if(module == 'contacts') var contactid = $('#id').val();
-	else var contactid = $('#contactid').val();
+	if(module == 'contacts') {
+		var contactid = $('#id').val();
+		var url = baseUrl+'/contacts/email/send/contactid/'+contactid;
+	} else if(module == 'campaigns') {
+		var campaignid = $('#id').val();
+		var url = baseUrl+'/contacts/email/send/campaignid/'+campaignid;
+	} else {
+		var contactid = $('#contactid').val();
+		var url = baseUrl+'/contacts/email/send/contactid/'+contactid+'/documentid/'+id;
+	}
 
-	if((module == 'contacts')) var url = baseUrl+'/contacts/email/send/contactid/'+contactid;
-	else var url = baseUrl+'/contacts/email/send/contactid/'+contactid+'/documentid/'+id;
-
-	if(contactid > 0) {
+	if((contactid > 0) || (campaignid > 0)) {
 		$.ajax({
 			type: 'POST',
 			url: url,
