@@ -227,7 +227,7 @@ class Items_ItemlistController extends Zend_Controller_Action
 			$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 			$currency = $currencyHelper->getCurrency();
 			foreach($params as $catid => $data) {
-				list($items, $records) = $get->items(array('catid' => $catid, 'keyword' => '', 'tagid' => 0, 'order' => 'id', 'sort' => 'asc', 'limit' => 0), $options, true)->toArray();
+				list($items, $records) = $get->items(array('catid' => $catid, 'keyword' => '', 'tagid' => 0, 'order' => 'id', 'sort' => 'asc', 'limit' => 0), $options, true);
 				foreach($items as $item) {
 					//Get and use price rules
 					$pricerules = $this->_helper->PriceRule->getPriceRules($item);

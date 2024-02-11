@@ -87,6 +87,7 @@ class Items_Model_Get
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
+		$query = $queryHelper->getQueryClient($query, $client['id'], 'i');
 
 		$inventories = $inventoryDb->fetchAll(
 			$inventoryDb->select()
