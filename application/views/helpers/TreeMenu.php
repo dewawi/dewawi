@@ -19,15 +19,17 @@ class Zend_View_Helper_TreeMenu extends Zend_View_Helper_Abstract{
 		$i = 1;
 		if(!$id) $categoryTree = '<ul id="treemenu" class="treeview">';
 		else $categoryTree = '<ul>';
-		$count = count($categories);
-		foreach($categories as $catid => $category) {
-			if($category['parentid'] == $id) {
-				$categoryTree .= '<li><a id="'.$category['id'].'" href="#">'.$category['title'].'</a>';
-				if(isset($category['childs']) && !empty($category['childs'])) {
-					$categoryTree .= $this->getElements($categories, $category['id']);
+		if($categories) {
+			$count = count($categories);
+			foreach($categories as $catid => $category) {
+				if($category['parentid'] == $id) {
+					$categoryTree .= '<li><a id="'.$category['id'].'" href="#">'.$category['title'].'</a>';
+					if(isset($category['childs']) && !empty($category['childs'])) {
+						$categoryTree .= $this->getElements($categories, $category['id']);
+					}
+					$categoryTree .= '</li>';
+					++$i;
 				}
-				$categoryTree .= '</li>';
-				++$i;
 			}
 		}
 		$categoryTree .= '</ul>';
