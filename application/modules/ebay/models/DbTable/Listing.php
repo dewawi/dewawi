@@ -82,4 +82,14 @@ class Ebay_Model_DbTable_Listing extends Zend_Db_Table_Abstract
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
 	}
+
+	public function deleteListingByItemID($itemid)
+	{
+		$itemid = (int)$itemid;
+		$data = array('deleted' => 1);
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$this->update($data, $where);
+	}
 }
