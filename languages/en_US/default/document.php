@@ -34,6 +34,7 @@
 	'DOCUMENTS_SUBTOTAL' => 'Subtotal',
 	'DOCUMENTS_TAXES' => 'Taxes',
 	'DOCUMENTS_TOTAL' => 'Total',
+	'DOCUMENTS_INVOICE_TOTAL' => 'Total',
 	'DOCUMENTS_SAMPLE' => 'Sample',
 	'DOCUMENTS_CANCELLED' => 'Cancelled',
 	'DOCUMENTS_PHONE' => 'Phone:',
