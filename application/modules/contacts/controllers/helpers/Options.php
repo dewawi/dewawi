@@ -16,6 +16,11 @@ class Contacts_Controller_Action_Helper_Options extends Zend_Controller_Action_H
 		$countries = $countryDb->getCountries();
 		$options['countries'] = $countries;
 
+		//Get states
+		$stateDb = new Application_Model_DbTable_State();
+		$states = $stateDb->getStates();
+		$options['states'] = $states;
+
 		//Get payment methods
 		$paymentmethodDb = new Application_Model_DbTable_Paymentmethod();
 		$paymentmethods = $paymentmethodDb->getPaymentmethods();
