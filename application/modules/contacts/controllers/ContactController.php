@@ -588,21 +588,22 @@ class Contacts_ContactController extends Zend_Controller_Action
 														'country' => $address['country'],
 														'ordering' => 1
 													));
+								//print_r($address);
 
 								if(isset($map['phone']) && isset($datacsv[$map['phone']]) && $datacsv[$map['phone']]) {
 									$phoneDb = new Contacts_Model_DbTable_Phone();
-									$phoneDb->addPhone(array('contactid' => $id, 'type' => 'phone', 'phone' => $datacsv[$map['phone']], 'ordering' => 1));
+									$phoneDb->addPhone(array('parentid' => $id, 'type' => 'phone', 'phone' => $datacsv[$map['phone']], 'ordering' => 1));
 								}
 
 								if(isset($map['email']) && isset($datacsv[$map['email']]) && $datacsv[$map['email']]) {
 									$emailDb = new Contacts_Model_DbTable_Email();
 									$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
-									$emailDb->addEmail(array('contactid' => $id, 'email' => $datacsv[$map['email']], 'ordering' => 1, 'password' => $password));
+									$emailDb->addEmail(array('parentid' => $id, 'email' => $datacsv[$map['email']], 'ordering' => 1, 'password' => $password));
 								}
 
 								if(isset($map['internet']) && isset($datacsv[$map['internet']]) && $datacsv[$map['internet']]) {
 									$internetDb = new Contacts_Model_DbTable_Internet();
-									$internetDb->addInternet(array('contactid' => $id, 'internet' => $datacsv[$map['internet']], 'ordering' => 1));
+									$internetDb->addInternet(array('parentid' => $id, 'internet' => $datacsv[$map['internet']], 'ordering' => 1));
 								}
 								++$rowsCreated;
 							}
