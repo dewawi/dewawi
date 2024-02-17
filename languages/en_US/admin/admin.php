@@ -16,7 +16,7 @@
 	'ADMIN_FOOTERS' => 'Footers',
 	'ADMIN_UOMS' => 'UOMS',
 	'ADMIN_USERS' => 'Users',
-    'ADMIN_PERMISSIONS' => 'Permissions',
+	'ADMIN_PERMISSIONS' => 'Permissions',
 	'ADMIN_MODULES' => 'Modules',
 	'ADMIN_INFO' => 'System Info',
 	'ADMIN_ITEMS' => 'Artikel',
@@ -25,6 +25,7 @@
 	'ADMIN_DELIVERY' => 'Lieferung',
 	'ADMIN_PAYMENT' => 'Zahlung',
 	'ADMIN_SYSTEM' => 'System',
+	'ADMIN_EXPORT' => 'Export',
 	//General
 	'ADMIN_ID' => 'ID',
 	'ADMIN_NAME' => 'Name',
@@ -57,9 +58,15 @@
 	'ADMIN_PARENT_CATEGORY' => 'Parent category',
 	'ADMIN_ORDERING' => 'Ordering',
 	'ADMIN_CHILD_COUNT' => 'Child count',
-    'ADMIN_ACTIVATED' => 'Activated',
-    'ADMIN_ADD' => 'Add',
-    'ADMIN_EDIT' => 'Edit',
-    'ADMIN_VIEW' => 'View',
-    'ADMIN_DELETE' => 'Delete'
+	'ADMIN_ACTIVATED' => 'Activated',
+	'ADMIN_ADD' => 'Add',
+	'ADMIN_EDIT' => 'Edit',
+	'ADMIN_VIEW' => 'View',
+	'ADMIN_DELETE' => 'Delete',
+	'ADMIN_CREATE_EXPORT_FILE' => 'Create Export File',
+	'ADMIN_EXPORT_CSV' => 'CSV-Export',
+	'ADMIN_EXPORT_SQL' => 'SQL-Export',
+	'ADMIN_FILE_NAME' => 'File name',
+	'ADMIN_FILE_CREATED' => 'File created',
+	'ADMIN_FILE_SIZE' => 'File size'
 );

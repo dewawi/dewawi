@@ -10,6 +10,7 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'client', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_CLIENTS'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'country', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_COUNTRIES'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'upload', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_UPLOAD'); ?></a></li>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'export', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_EXPORT'); ?></a></li>
 		</ul>
 		<h4><?php echo $this->view->translate('ADMIN_ITEMS'); ?></h4>
 		<ul>

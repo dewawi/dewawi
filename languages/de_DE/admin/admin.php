@@ -26,6 +26,7 @@
 	'ADMIN_DELIVERY' => 'Lieferung',
 	'ADMIN_PAYMENT' => 'Zahlung',
 	'ADMIN_SYSTEM' => 'System',
+	'ADMIN_EXPORT' => 'Export',
 	//General
 	'ADMIN_ID' => 'ID',
 	'ADMIN_NAME' => 'Name',
@@ -64,5 +65,11 @@
 	'ADMIN_ADD' => 'Hinzufügen',
 	'ADMIN_EDIT' => 'Bearbeiten',
 	'ADMIN_VIEW' => 'Ansichten',
-	'ADMIN_DELETE' => 'Löschen'
+	'ADMIN_DELETE' => 'Löschen',
+	'ADMIN_CREATE_EXPORT_FILE' => 'Export-Datei erstellen',
+	'ADMIN_EXPORT_CSV' => 'CSV-Export',
+	'ADMIN_EXPORT_SQL' => 'SQL-Export',
+	'ADMIN_FILE_NAME' => 'Dateiname',
+	'ADMIN_FILE_CREATED' => 'Erstellungsdatum',
+	'ADMIN_FILE_SIZE' => 'Dateigröße'
 );
