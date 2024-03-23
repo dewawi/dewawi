@@ -1,9 +1,9 @@
 <?php
 
-class Items_Model_DbTable_Itemimage extends Zend_Db_Table_Abstract
+class Application_Model_DbTable_Image extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'itemimage';
+	protected $_name = 'images';
 
 	protected $_date = null;
 
@@ -18,7 +18,7 @@ class Items_Model_DbTable_Itemimage extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getItemimage($id)
+	public function getImage($id)
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
@@ -28,18 +28,20 @@ class Items_Model_DbTable_Itemimage extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getItemimageByItemID($itemid)
+	public function getImageByParentID($parentid, $module, $controller)
 	{
-		$itemid = (int)$itemid;
+		$parentid = (int)$parentid;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
+		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
+		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
+		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchRow($where);
 		if($data) $data->toArray();
 		return $data;
 	}
 
-	public function getItemimages($ids)
+	public function getImages($ids)
 	{
 		$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
 		$data = $this->fetchAll($where);
@@ -49,7 +51,7 @@ class Items_Model_DbTable_Itemimage extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function addItemimage($data)
+	public function addImage($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -58,7 +60,7 @@ class Items_Model_DbTable_Itemimage extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateItemimage($id, $data)
+	public function updateImage($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -85,7 +87,7 @@ class Items_Model_DbTable_Itemimage extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deleteItemimage($id)
+	public function deleteImage($id)
 	{
 		$id = (int)$id;
 		$data = array('deleted' => 1);
@@ -93,10 +95,14 @@ class Items_Model_DbTable_Itemimage extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deleteItemimagesByItemID($itemid)
+	public function deleteImagesByParentID($parentid, $module, $controller)
 	{
-		$itemid = (int)$itemid;
-		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
-		$this->delete($where);
+		$parentid = (int)$parentid;
+		$data = array('deleted' => 1);
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
+		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
+		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
+		$this->update($data, $where);
 	}
 }

@@ -75,7 +75,7 @@ class eBay {
 			$manufacturers = $this->getManufacturers($connection, $clientid);
 			$productCount = 0;
 			foreach($items as $item) {
-				$images = $this->getItemimages($connection, $item['itemid']);
+				$images = $this->getImages($connection, $item['itemid'], 'items', 'item');
 				$attributes = $this->getAttributes($connection, $item['itemid']);
 				if($images && count($images) && file_exists($imagePath.$images[0]['url'])) {
 					list($width, $height, $type, $attr) = getimagesize($imagePath.$images[0]['url']);
@@ -460,12 +460,14 @@ class eBay {
 		}
 	}
 
-	public function getItemimages($connection, $itemid) {
+	public function getImages($connection, $parentid, $module, $controller) {
 		$query = '
 				SELECT
-					* FROM itemimage
+					* FROM images
 				WHERE
-					itemid = "'.$itemid.'"
+					parentid = "'.$parentid.'"
+					AND module = "'.$module.'"
+					AND controller = "'.$controller.'"
 					AND deleted = 0
 				ORDER
 					BY ordering;';

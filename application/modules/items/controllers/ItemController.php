@@ -274,8 +274,8 @@ class Items_ItemController extends Zend_Controller_Action
 			$attributes = $attributesDb->getPositions($item['id']);
 
 			//Get images
-			$imagesDb = new Items_Model_DbTable_Itemimage();
-			$images = $imagesDb->getItemimageByItemID($item['id']);
+			$imagesDb = new Application_Model_DbTable_Image();
+			$images = $imagesDb->getImageByParentID($item['id'], 'items', 'item');
 
 			//Attributes
 			$attributesByGroup = array();
@@ -370,15 +370,13 @@ class Items_ItemController extends Zend_Controller_Action
 					$dataTemplate = array();
 					$itemDb = new Items_Model_DbTable_Item();
 					$itemInfo = $itemDb->getInfo();
-					$itemImage = new Items_Model_DbTable_Itemimage();
+					$itemImage = new Application_Model_DbTable_Image();
 					$itemAttribute = new Items_Model_DbTable_Itematr();
 					$itemAttributeSet = new Items_Model_DbTable_Itematrset();
 					$itemOption = new Items_Model_DbTable_Itemopt();
 					$itemOptionSet = new Items_Model_DbTable_Itemoptset();
 					$ebayAccountDb = new Ebay_Model_DbTable_Account();
 					$ebayListingDb = new Ebay_Model_DbTable_Listing();
-					$ebiztraderAccountDb = new Ebiztrader_Model_DbTable_Account();
-					$ebiztraderListingDb = new Ebiztrader_Model_DbTable_Listing();
 					$shopItemDb = new Shops_Model_DbTable_Item();
 
 					//Get categories
@@ -571,15 +569,17 @@ class Items_ItemController extends Zend_Controller_Action
 
 								//error_log(print_r($updateData,true));
 
-								//Delete existing item images
-								$itemImage->deleteItemimagesByItemID($item['id']);
+								//Delete existing images
+								$itemImage->deleteImagesByParentID($item['id'], 'items', 'item');
 
-								//Create and update item images
+								//Create and update images
 								foreach($images as $image) {
 									if(isset($image['url']) && $image['url']) {
 										$image['itemid'] = $item['id'];
+										$image['module'] = 'items';
+										$image['controller'] = 'item';
 										//error_log(var_dump($image));
-										$itemImage->addItemimage($image);
+										$itemImage->addImage($image);
 									}
 								}
 							} else {
@@ -618,12 +618,14 @@ class Items_ItemController extends Zend_Controller_Action
 								}
 								++$rowsCreated;
 
-								//Create item images
+								//Create images
 								foreach($images as $image) {
 									if(isset($image['url']) && $image['url']) {
 										$image['itemid'] = $itemid;
+										$image['module'] = 'items';
+										$image['controller'] = 'item';
 										//error_log(var_dump($image));
-										$itemImage->addItemimage($image);
+										$itemImage->addImage($image);
 									}
 								}
 

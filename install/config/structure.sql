@@ -850,6 +850,25 @@ CREATE TABLE IF NOT EXISTS `footer` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `images` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `url` varchar(255) DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `increment` (
   `clientid` int(11) NOT NULL,
   `contactid` int(11) NOT NULL,
@@ -1216,23 +1235,6 @@ CREATE TABLE IF NOT EXISTS `itemattribute` (
   `itemid` int(11) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `value` varchar(255) DEFAULT NULL,
-  `ordering` int(11) NOT NULL DEFAULT 0,
-  `clientid` int(11) NOT NULL,
-  `created` datetime DEFAULT NULL,
-  `createdby` int(11) NOT NULL DEFAULT 0,
-  `modified` datetime DEFAULT NULL,
-  `modifiedby` int(11) NOT NULL DEFAULT 0,
-  `locked` int(11) NOT NULL DEFAULT 0,
-  `lockedtime` datetime DEFAULT NULL,
-  `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `itemimage` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `itemid` int(11) NOT NULL,
-  `title` varchar(255) DEFAULT NULL,
-  `url` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,

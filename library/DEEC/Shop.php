@@ -79,7 +79,7 @@ class DEEC_Shop {
 						}
 
 						//Get images
-						$images = $this->getImages($item['id']);
+						$images = $this->getImages($item['id'], 'items', 'item');
 
 						//Get options and rows
 						$options = $this->getOptions($item, $priceRuleOptions);
@@ -213,12 +213,15 @@ class DEEC_Shop {
 		}
 	}
 
-	public function getImages($itemid) {
+	public function getImages($parentid, $module, $controller) {
 		$query = '
 				SELECT
-					* FROM itemimage
+					* FROM images
 				WHERE
-					itemid = "'.$itemid.'"
+					parentid = "'.$parentid.'"
+					AND module = "'.$module.'"
+					AND controller = "'.$controller.'"
+					AND deleted = 0
 				ORDER
 					BY ordering;';
 		$result = mysqli_query($this->connection, $query);
