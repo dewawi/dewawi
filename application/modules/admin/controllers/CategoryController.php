@@ -114,7 +114,6 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 	public function editAction()
 	{
-
 		$request = $this->getRequest();
 		$id = $this->_getParam('id', 0);
 		$activeTab = $request->getCookie('tab', null);
@@ -141,6 +140,9 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$categoriesDb = new Admin_Model_DbTable_Category();
 			$categories = $categoriesDb->getCategories($params['type']);
 			if($request->isPost()) {
+				header('Content-type: application/json');
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->getHelper('layout')->disableLayout();
 				$data = $request->getPost();
 				$element = key($data);
 				//if(isset($form->$element) && $form->isValidPartial($data)) { // to do add options for parentid before form validation
