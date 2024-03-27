@@ -636,7 +636,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			$filename = $filenameDb->getFilename('creditnote', $creditnote['language']);
 			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$creditnoteDb->saveCreditnote($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment+1), 'creditnoteid');
+			$incrementDb->setIncrement(($increment), 'creditnoteid');
 			$creditnote = $creditnoteDb->getCreditnote($id);
 		}
 

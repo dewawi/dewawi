@@ -592,7 +592,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$filename = $filenameDb->getFilename('quoterequest', $quoterequest['language']);
 			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$quoterequestDb->saveQuoterequest($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment+1), 'quoterequestid');
+			$incrementDb->setIncrement(($increment), 'quoterequestid');
 			$quoterequest = $quoterequestDb->getQuoterequest($id);
 		}
 

@@ -641,7 +641,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 			$filename = $filenameDb->getFilename('reminder', $reminder['language']);
 			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$reminderDb->saveReminder($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment+1), 'reminderid');
+			$incrementDb->setIncrement(($increment), 'reminderid');
 			$reminder = $reminderDb->getReminder($id);
 		}
 

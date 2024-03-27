@@ -592,7 +592,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			$filename = $filenameDb->getFilename('purchaseorder', $purchaseorder['language']);
 			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$purchaseorderDb->savePurchaseorder($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment+1), 'purchaseorderid');
+			$incrementDb->setIncrement(($increment), 'purchaseorderid');
 			$purchaseorder = $purchaseorderDb->getPurchaseorder($id);
 		}
 

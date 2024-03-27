@@ -589,7 +589,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 			$filename = $filenameDb->getFilename('quote', $quote['language']);
 			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$quoteDb->saveQuote($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment+1), 'quoteid');
+			$incrementDb->setIncrement(($increment), 'quoteid');
 			$quote = $quoteDb->getQuote($id);
 		}
 

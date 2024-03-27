@@ -667,7 +667,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			$filename = $filenameDb->getFilename('invoice', $invoice['language']);
 			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$invoiceDb->saveInvoice($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment+1), 'invoiceid');
+			$incrementDb->setIncrement(($increment), 'invoiceid');
 			$invoice = $invoiceDb->getInvoice($id);
 		}
 

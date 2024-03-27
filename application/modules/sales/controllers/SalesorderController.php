@@ -644,7 +644,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$filename = $filenameDb->getFilename('salesorder', $salesorder['language']);
 			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$salesorderDb->saveSalesorder($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment+1), 'salesorderid');
+			$incrementDb->setIncrement(($increment), 'salesorderid');
 			$salesorder = $salesorderDb->getSalesorder($id);
 		}
 

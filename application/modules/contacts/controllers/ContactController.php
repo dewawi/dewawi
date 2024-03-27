@@ -148,7 +148,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$incrementDb = new Application_Model_DbTable_Increment();
 		$increment = $incrementDb->getIncrement('contactid');
 		$contactDb->updateContact($id, array('contactid' => $increment));
-		$incrementDb->setIncrement(($increment+1), 'contactid');
+		$incrementDb->setIncrement(($increment), 'contactid');
 
 		$addressDb = new Contacts_Model_DbTable_Address();
 		$addressDb->addAddress(array('contactid' => $id, 'type' => 'billing', 'country' => $client['country'], 'ordering' => 1));
@@ -377,7 +377,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		//Set increment value
 		$incrementDb = new Application_Model_DbTable_Increment();
 		$increment = $incrementDb->getIncrement('contactid');
-		$incrementDb->setIncrement(($increment+1), 'contactid');
+		$incrementDb->setIncrement(($increment), 'contactid');
 
 		$data['name1'] = $data['name1'].' 2';
 		$data['modified'] = NULL;
@@ -570,7 +570,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 								$incrementDb = new Application_Model_DbTable_Increment();
 								$increment = $incrementDb->getIncrement('contactid');
 								$contactDb->updateContact($id, array('contactid' => $increment));
-								$incrementDb->setIncrement(($increment+1), 'contactid');
+								$incrementDb->setIncrement(($increment), 'contactid');
 
 								$address = array();
 								$address['street'] = isset($map['street']) ? $datacsv[$map['street']] : NULL;

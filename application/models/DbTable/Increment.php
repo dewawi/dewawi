@@ -29,11 +29,18 @@ class Application_Model_DbTable_Increment extends Zend_Db_Table_Abstract
 		return $data->$type;
 	}
 
-	public function setIncrement($id, $type)
+	public function setIncrement($increment, $type)
 	{
+		// Increment by 3
+		// TODO move increment value to the db
+		$increment += 3;
+
 		$data = array(
-			$type => $id,
+		    $type => $increment,
 		);
-		$this->update($data, 'clientid = '. (int)$this->_client['id']);
+
+		// Update only the specific column for the client
+		$where = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_client['id']);
+		$this->update($data, $where);
 	}
 }

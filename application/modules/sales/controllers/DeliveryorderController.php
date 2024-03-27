@@ -621,7 +621,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$filename = $filenameDb->getFilename('deliveryorder', $deliveryorder['language']);
 			$filename = str_replace('%NUMBER%', $increment, $filename);
 			$deliveryorderDb->saveDeliveryorder($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment+1), 'deliveryorderid');
+			$incrementDb->setIncrement(($increment), 'deliveryorderid');
 			$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 			$updateInventory = true;
 		}
