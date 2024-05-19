@@ -114,27 +114,49 @@ class Admin_UserController extends Zend_Controller_Action
 				$data['password'] = md5($data['password']);
 				$id = $userDb->addUser($data);
 
-				//Add permission row
+				// Add permission row
 				$permissionDb = new Admin_Model_DbTable_Permission();
-				$permissionDb->addPermission(array(
-									'default' => '{"index":["view"]}',
-									'contacts' => '{"contact":["add","edit","view","delete"]
-													"email":["add","edit","view","delete"]}',
-									'items' => '{"item":["add","edit","view","delete"],
-													"inventory":["add","edit","view","delete"],
-													"pricerule":["add","edit","view","delete"]}',
-									'processes' => '{"process":["add","edit","view","delete"]}',
-									'purchases' => '{"quoterequest":["add","edit","view","delete"],
-													"purchaseorder":["add","edit","view","delete"]}',
-									'sales' => '{"quote":["add","edit","view","delete"],
-													"salesorder":["add","edit","view","delete"],
-													"deliveryorder":["add","edit","view","delete"],
-													"invoice":["add","edit","view","delete"],
-													"creditnote":["add","edit","view","delete"],
-													"reminder":["add","edit","view","delete"]}',
-									'statistics' => '{"index":["view"]}',
-									'userid' => $id
-									));
+				$permissions = [
+					'default' => [
+						"index" => ["view"],
+						"comment" => ["add", "edit", "view", "delete"]
+					],
+					'contacts' => [
+						"contact" => ["add", "edit", "view", "delete"],
+						"email" => ["add", "edit", "view", "delete"]
+					],
+					'items' => [
+						"item" => ["add", "edit", "view", "delete"],
+						"inventory" => ["add", "edit", "view", "delete"],
+						"pricerule" => ["add", "edit", "view", "delete"]
+					],
+					'processes' => [
+						"process" => ["add", "edit", "view", "delete"]
+					],
+					'purchases' => [
+						"quoterequest" => ["add", "edit", "view", "delete"],
+						"purchaseorder" => ["add", "edit", "view", "delete"]
+					],
+					'sales' => [
+						"quote" => ["add", "edit", "view", "delete"],
+						"salesorder" => ["add", "edit", "view", "delete"],
+						"deliveryorder" => ["add", "edit", "view", "delete"],
+						"invoice" => ["add", "edit", "view", "delete"],
+						"creditnote" => ["add", "edit", "view", "delete"],
+						"reminder" => ["add", "edit", "view", "delete"]
+					],
+					'statistics' => [
+						"turnover" => ["view"],
+						"customer" => ["view"],
+						"quote" => ["view"]
+					]
+				];
+				$permissionsJson = [];
+				foreach ($permissions as $key => $value) {
+					$permissionsJson[$key] = json_encode($value);
+				}
+				$permissionsJson['userid'] = $id;
+				$permissionDb->addPermission($permissionsJson);
 
 				echo Zend_Json::encode($userDb->getUser($id));
 			} else {
