@@ -348,6 +348,19 @@ class Items_AttributeController extends Zend_Controller_Action
 
 							//Create and update the item
 							if($item = $itemDb->getItemBySKU($attributeData['sku'])) {
+								//Get current item attributes and replace placeholders
+								$currentAttributes = $itemAttribute->getPositions($item['id'])->toArray();
+								foreach($currentAttributes as $currentAttribute) {
+									if($currentAttribute['title'] && $currentAttribute['description']) {
+										//Search and replace attributes in import data
+										foreach($attributeData as $key => $value) {
+											if(strpos($value, '#'.$currentAttribute['title'].'#') !== false) {
+												$attributeData[$key] = str_replace('#'.$currentAttribute['title'].'#', $currentAttribute['description'], $value);
+											}
+										}
+									}
+								}
+
 								//print_r($attributeData);
 								if(isset($attributeSets[$item['id']])) {
 									$attributeSetKey = array_search($attributeData['set'], $attributeSets[$item['id']]);

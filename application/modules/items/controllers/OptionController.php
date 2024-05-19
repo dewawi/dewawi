@@ -351,14 +351,14 @@ class Items_OptionController extends Zend_Controller_Action
 
 							//Create and update the item
 							if($item = $itemDb->getItemBySKU($optionData['parentsku'])) {
-								//Get item attributes and replace placeholders
-								$attributes = $itemAttribute->getPositions($item['id'])->toArray();
-								foreach($attributes as $attribute) {
-									if($attribute['title'] && $attribute['description']) {
+								//Get current item attributes and replace placeholders
+								$currentAttributes = $itemAttribute->getPositions($item['id'])->toArray();
+								foreach($currentAttributes as $currentAttribute) {
+									if($currentAttribute['title'] && $currentAttribute['description']) {
 										//Search and replace attributes in import data
 										foreach($optionData as $key => $value) {
-											if(strpos($value, '#'.$attribute['title'].'#') !== false) {
-												$optionData[$key] = str_replace('#'.$attribute['title'].'#', $attribute['description'], $value);
+											if(strpos($value, '#'.$currentAttribute['title'].'#') !== false) {
+												$optionData[$key] = str_replace('#'.$currentAttribute['title'].'#', $currentAttribute['description'], $value);
 											}
 										}
 									}
