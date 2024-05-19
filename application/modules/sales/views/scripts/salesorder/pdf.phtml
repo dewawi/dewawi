@@ -223,39 +223,53 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 		//POSITIONS
 		$y = 0;
 		$i = 1;
+		$positionsArray = array();
+		$childsArray = array();
 		foreach($positions as $position) {
-			$x = $pdf->getX();
-			$pdf->setCellPaddings(0, 2, 0, 0);
-			$pdf->SetFont('freesans', '', 9);
-			$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
-			$pdf->MultiCell(10, 0, $position->quantity, 0, 'C', false, 0, $x+108, '', true, 0);
-			if($position->uom) $pdf->MultiCell(12, 0, $position->uom, 0, 'C', false, 0, $x+118, '', true, 0);
-			$pdf->MultiCell(25, 0, $position->price, 0, 'C', false, 0, $x+130, '', true, 0);
-			$pdf->MultiCell(25, 0, $position->total, 0, 'C', false, 0, $x+155, '', true, 0);
-			$pdf->MultiCell(108, 0, $position->sku, 0, 'L', false, 2, $x+10, '', true, 0);
-			$pdf->setCellPaddings(0, 0, 0, 0);
-			if($position->title) {
-				$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 2, $x+10, '', true, 0);
-			}
-			if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
-				$startPage = $pdf->getPage();
-				$y = $pdf->getY();
-				$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
-				$endPage = $pdf->getPage();
-				if($startPage == $endPage) {
-					$imageHeight = $pdf->getY() - $y;
-				} else {
-					$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
-					$pdf->setPage($startPage);
+			$positionsArray[$position->id] = $position;
+			$childsArray[$position->masterid][] = $position->id;
+		}
+		foreach($positions as $position) {
+			if($position->masterid == 0) {
+				$x = $pdf->getX();
+				$pdf->setCellPaddings(0, 2, 0, 0);
+				$pdf->SetFont('freesans', '', 9);
+				$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
+				$pdf->MultiCell(10, 0, $position->quantity, 0, 'C', false, 0, $x+108, '', true, 0);
+				if($position->uom) $pdf->MultiCell(12, 0, $position->uom, 0, 'C', false, 0, $x+118, '', true, 0);
+				$pdf->MultiCell(25, 0, $position->price, 0, 'C', false, 0, $x+130, '', true, 0);
+				$pdf->MultiCell(25, 0, $position->total, 0, 'C', false, 0, $x+155, '', true, 0);
+				$pdf->MultiCell(108, 0, $position->sku, 0, 'L', false, 2, $x+10, '', true, 0);
+				$pdf->setCellPaddings(0, 0, 0, 0);
+				if($position->title) {
+					$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 2, $x+10, '', true, 0);
 				}
-				if($position->description) {
-					$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
+				if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
+					$startPage = $pdf->getPage();
+					$y = $pdf->getY();
+					$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
+					$endPage = $pdf->getPage();
+					if($startPage == $endPage) {
+						$imageHeight = $pdf->getY() - $y;
+					} else {
+						$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
+						$pdf->setPage($startPage);
+					}
+					if($position->description) {
+						$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
+					}
+				} elseif($position->description) {
+					$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+10, '', true, 0);
 				}
-			} elseif($position->description) {
-				$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+10, '', true, 0);
+				$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+				++$i;
+				if(isset($childsArray[$position->id])) {
+					foreach($childsArray[$position->id] as $child) {
+						childPositions($positionsArray[$child], $pdf, $i);
+						++$i;
+					}
+				}
 			}
-			$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
-			++$i;
 		}
 		$pdf->ln(4);
 
@@ -363,7 +377,7 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 if($this->action == 'download') {
 	if($salesorderid) $pdf->Output($filename, 'D');
 	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').'_Auftragsbestaetigung_'.$billingName1.'.pdf', 'D');
-} else {
+} elseif($this->contact) {
 	$path = BASE_PATH.'/files/contacts/';
 	$dir1 = substr($client['id'], 0, 1);
 	if(strlen($client['id']) > 1) $dir2 = substr($client['id'], 1, 1);
@@ -378,9 +392,48 @@ if($this->action == 'download') {
 		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$filename.'?'.time().'" width="900px" height="500px">';
 	} else {
 		$pdf->Output(BASE_PATH.'/cache/salesorder/'.$id.'.pdf', 'F');
-		$html = '<iframe src="'.$this->baseUrl().'/cache/salesorder/'.$id.'.pdf?'.time().'" width="900px" height="500px">';
+		$html = '<p><a href="#" onclick="savePdf()">'.$this->translate('SALES_ORDERS_SAVE_AND_BOOK').'></a> |
+		<a href="'.$this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'download', 'id'=>$id)).'" target="_blank">'.$this->translate('SALES_ORDERS_DOWNLOAD_PDF').'</a></p>
+		<iframe src="'.$this->baseUrl().'/cache/salesorder/'.$id.'.pdf?'.time().'" width="900px" height="500px"><br/>';
 	}
 	echo $html;
+} else {
+	echo '<p><strong>'.$this->translate('DOCUMENTS_THERE_IS_NO_CONTACT').'</strong></p><br/>';
+}
+
+function childPositions($position, $pdf, $i) {
+			$x = $pdf->getX();
+			$pdf->setCellPaddings(0, 2, 0, 0);
+			$pdf->SetFont('freesans', '', 9);
+			$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
+			$pdf->MultiCell(10, 0, $position->quantity, 0, 'C', false, 0, $x+108, '', true, 0);
+			if($position->uom) $pdf->MultiCell(12, 0, $position->uom, 0, 'C', false, 0, $x+118, '', true, 0);
+			$pdf->MultiCell(25, 0, $position->price, 0, 'C', false, 0, $x+130, '', true, 0);
+			$pdf->MultiCell(25, 0, $position->total, 0, 'C', false, 0, $x+155, '', true, 0);
+			$pdf->MultiCell(108, 0, $position->sku, 0, 'L', false, 2, $x+10, '', true, 0);
+			$pdf->setCellPaddings(0, 0, 0, 0);
+			if($position->title) {
+				$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 2, $x+10, '', true, 0);
+			}
+			if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
+				$startPage = $pdf->getPage();
+				$y = $pdf->getY();
+				$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
+				$endPage = $pdf->getPage();
+				if($startPage == $endPage) {
+					$imageHeight = $pdf->getY() - $y;
+				} else {
+					$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
+					$pdf->setPage($startPage);
+				}
+				if($position->description) {
+					$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
+				}
+			} elseif($position->description) {
+				$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+10, '', true, 0);
+			}
+			$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+			++$i;
 }
 
 function sample($pdf, $txt) {

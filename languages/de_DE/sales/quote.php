@@ -38,8 +38,6 @@
 	'QUOTES_SAVE_AND_BOOK' => 'Speichern und buchen',
 	'QUOTES_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'QUOTES_PREVIEW' => 'Vorschau:',
-	'QUOTES_THERE_IS_NO_CONTACT' => 'Sie haben keine Kontakt hinzugefügt!',
-	'QUOTES_THERE_ARE_NO_POSITIONS' => 'Sie haben keine Position hinzugefügt!',
 	'QUOTES_STATE' => 'Status',
 	'QUOTES_MODIFIED' => 'le. Änderung',
 	'QUOTES_PAYMENT_METHOD' => 'Zahlart',

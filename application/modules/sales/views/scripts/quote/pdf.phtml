@@ -308,8 +308,9 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 							if(array_search($option->sku, $list) == false) {
 								$pdf->MultiCell(15, 0, $option->sku, 0, 'L', false, 0, '', '', true, 0);
 								$pdf->MultiCell(130, 0, $option->title, 0, 'L', false, 0, '', '', true, 0);
-								if($option->price == 0) $option->price = 'auf Anfrage';
-								if($option->price == -1) $option->price = 'nicht Verfügbar';
+								if($option->price == 0) $option->price = 'bereits enthalten';
+								elseif($option->price == -1) $option->price = 'auf Anfrage';
+								elseif($option->price == -2) $option->price = 'nicht Verfügbar';
 								$pdf->MultiCell(30, 0, $option->price, 0, 'R', false, 1, 160, '', true, 0);
 								if($option->description) $pdf->MultiCell(120, 0, $option->description, 0, 'L', false, 1, 30, '', true, 0);
 							}
@@ -323,7 +324,7 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 
 		//FOOTER
 		$pdf->SetFont('freesans', '', 9);
-		if($pdf->getPage() == $page) {
+		if(($pdf->getPage() == $page) && ($pdf->getY() < 200)) {
 			$pdf->MultiCell(105, 0, $footer, 0, 'L', false, 0, '', '', $reseth=true, $stretch=0, $ishtml=true);
 		} else {
 			$pdf->AddPage();
@@ -414,7 +415,7 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 if($this->action == 'download') {
 	if($quoteid) $pdf->Output($filename, 'D');
 	else $pdf->Output($this->translate('DOCUMENTS_SAMPLE').'_Angebot_'.$billingName1.'.pdf', 'D');
-} else {
+} elseif($this->contact) {
 	$path = BASE_PATH.'/files/contacts/';
 	$dir1 = substr($client['id'], 0, 1);
 	if(strlen($client['id']) > 1) $dir2 = substr($client['id'], 1, 1);
@@ -429,11 +430,14 @@ if($this->action == 'download') {
 		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$filename.'?'.time().'" width="900px" height="500px">';
 	} else {
 		$pdf->Output(BASE_PATH.'/cache/quote/'.$id.'.pdf', 'F');
-		$html = '<iframe src="'.$this->baseUrl().'/cache/quote/'.$id.'.pdf?'.time().'" width="900px" height="500px">';
+		$html = '<p><a href="#" onclick="savePdf()">'.$this->translate('QUOTES_SAVE_AND_BOOK').'></a> |
+		<a href="'.$this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'download', 'id'=>$id)).'" target="_blank">'.$this->translate('QUOTES_DOWNLOAD_PDF').'</a></p>
+		<iframe src="'.$this->baseUrl().'/cache/quote/'.$id.'.pdf?'.time().'" width="900px" height="500px"><br/>';
 	}
 	echo $html;
+} else {
+	echo '<p><strong>'.$this->translate('DOCUMENTS_THERE_IS_NO_CONTACT').'</strong></p><br/>';
 }
-
 
 function childPositions($position, $pdf, $i) {
 			$x = $pdf->getX();

@@ -150,9 +150,6 @@ echo $this->FileManager();
 					</dl>
 				</div>
 				<div class="col-sm-12">
-					<br/>
-					<a href="#" onclick="savePdf()"><?php echo $this->translate('QUOTES_SAVE_AND_BOOK'); ?></a> |
-					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'download', 'id'=>$this->form->getValue('id')));?>" target="_blank"><?php echo $this->translate('QUOTES_DOWNLOAD_PDF'); ?></a>
 					<div id="output"></div>
 				</div>
 			</div>

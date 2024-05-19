@@ -41,8 +41,6 @@
 	'REMINDERS_SAVE_AND_BOOK' => 'Speichern und buchen',
 	'REMINDERS_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'REMINDERS_PREVIEW' => 'Vorschau:',
-	'REMINDERS_THERE_IS_NO_CONTACT' => 'Sie haben keine Kontakt hinzugefügt!',
-	'REMINDERS_THERE_ARE_NO_POSITIONS' => 'Sie haben keine Position hinzugefügt!',
 	'REMINDERS_STATE' => 'Status',
 	'REMINDERS_MODIFIED' => 'le. Änderung',
 	'REMINDERS_PAYMENT_METHOD' => 'Zahlart',

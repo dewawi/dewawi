@@ -48,5 +48,7 @@
 	'DOCUMENTS_PURCHASE_ORDER_ID_%s_FROM_%s' => 'Bestellungsnummer %s vom %s',
 	'DOCUMENTS_REMINDER_ID_%s_FROM_%s' => 'Mahnungsnummer %s vom %s',
 	'DOCUMENTS_QUOTE_REQUEST_ID_%s_FROM_%s' => 'Anfragenummer %s vom %s',
-	'DOCUMENTS_PROCESS_ID_%s_FROM_%s' => 'Vorgangsnummer %s vom %s'
+	'DOCUMENTS_PROCESS_ID_%s_FROM_%s' => 'Vorgangsnummer %s vom %s',
+	'DOCUMENTS_THERE_IS_NO_CONTACT' => 'Sie haben keinen Kontakt hinzugefügt!',
+	'DOCUMENTS_THERE_ARE_NO_POSITIONS' => 'Sie haben keine Positionen hinzugefügt!'
 );

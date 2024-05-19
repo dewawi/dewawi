@@ -41,8 +41,6 @@
 	'INVOICES_SAVE_AND_BOOK' => 'Speichern und buchen',
 	'INVOICES_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'INVOICES_PREVIEW' => 'Vorschau:',
-	'INVOICES_THERE_IS_NO_CONTACT' => 'Sie haben keine Kontakt hinzugefügt!',
-	'INVOICES_THERE_ARE_NO_POSITIONS' => 'Sie haben keine Position hinzugefügt!',
 	'INVOICES_STATE' => 'Status',
 	'INVOICES_MODIFIED' => 'le. Änderung',
 	'INVOICES_PAYMENT_METHOD' => 'Zahlart',

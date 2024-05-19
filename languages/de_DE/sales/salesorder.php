@@ -41,8 +41,6 @@
 	'SALES_ORDERS_SAVE_AND_BOOK' => 'Speichern und buchen',
 	'SALES_ORDERS_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'SALES_ORDERS_PREVIEW' => 'Vorschau:',
-	'SALES_ORDERS_THERE_IS_NO_CONTACT' => 'Sie haben keine Kontakt hinzugefügt!',
-	'SALES_ORDERS_THERE_ARE_NO_POSITIONS' => 'Sie haben keine Position hinzugefügt!',
 	'SALES_ORDERS_STATE' => 'Status',
 	'SALES_ORDERS_MODIFIED' => 'le. Änderung',
 	'SALES_ORDERS_PAYMENT_METHOD' => 'Zahlart',

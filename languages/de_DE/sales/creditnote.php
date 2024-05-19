@@ -42,8 +42,6 @@
 	'CREDIT_NOTES_SAVE_AND_BOOK' => 'Speichern und buchen',
 	'CREDIT_NOTES_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'CREDIT_NOTES_PREVIEW' => 'Vorschau:',
-	'CREDIT_NOTES_THERE_IS_NO_CONTACT' => 'Sie haben keine Kontakt hinzugefügt!',
-	'CREDIT_NOTES_THERE_ARE_NO_POSITIONS' => 'Sie haben keine Position hinzugefügt!',
 	'CREDIT_NOTES_STATE' => 'Status',
 	'CREDIT_NOTES_MODIFIED' => 'le. Änderung',
 	'CREDIT_NOTES_PAYMENT_METHOD' => 'Zahlart',
