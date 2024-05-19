@@ -38,7 +38,7 @@ class Statistics_CustomerController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$chart = new Statistics_Model_Customer();
-		$customerList = $chart->createCharts($lenght, 1000, 600, $this->view->translate("STATISTICS_UNCATEGORIZED"), $params, $options);
+		$customerList = $chart->createCharts($lenght, 1000, 600, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
 
 		$this->view->lenght = $lenght;
 		$this->view->options = $options;
@@ -60,7 +60,7 @@ class Statistics_CustomerController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$chart = new Statistics_Model_Customer();
-		$chart->createCharts($lenght, 1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $params, $options);
+		$chart->createCharts($lenght, 1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
 
 		$this->view->lenght = $lenght;
 		$this->view->options = $options;

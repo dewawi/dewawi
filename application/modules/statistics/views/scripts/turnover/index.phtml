@@ -20,12 +20,12 @@ $this->headTitle($this->title);
 	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index', 'lenght'=>'60')); ?>">5 Jahre</a>
 <?php endif; ?>
 
-<?php if($this->turnoverList) : ?>
-	<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
-	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-1000-400.png">
-	<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
-	<img src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-category-1000-400.png">
+<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
+<img src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-1000-400.png">
+<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
+<img src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-category-1000-400.png">
 
+<?php if($this->turnoverList) : ?>
 	<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
 	<table id="data">
 		<thead>

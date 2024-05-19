@@ -17,7 +17,7 @@ use pChart\pException;
 
 class Statistics_Model_Customer
 {
-	public function createCharts($lenght, $width = 1000, $height = 600, $statisticsUncategorized, $params, $options)
+	public function createCharts($lenght, $width = 1000, $height = 600, $statisticsUncategorized, $statisticsNoData, $params, $options)
 	{
 		//print_r($params);
 		//print_r($options);

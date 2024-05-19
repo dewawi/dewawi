@@ -17,7 +17,7 @@ use pChart\pException;
 
 class Statistics_Model_Turnover
 {
-	public function createCharts($lenght, $width = 1000, $height = 400, $statisticsUncategorized, $params, $options)
+	public function createCharts($lenght, $width = 1000, $height = 400, $statisticsUncategorized, $statisticsNoData, $params, $options)
 	{
 		//print_r($params);
 		//print_r($options);
@@ -262,6 +262,49 @@ class Statistics_Model_Turnover
 				mkdir(BASE_PATH.'/cache/chart/'.$url, 0777, true);
 			}
 			$chartTurnoverCategory->Render(BASE_PATH.'/cache/chart/'.$url.'/turnover-category-'.$width.'-'.$height.'.png');
+		} else {
+			// Create an empty chart with a message
+			$chartTurnover = new pDraw($width, $height);
+			$chartTurnover->drawFilledRectangle(0, 0, $width, $height, [
+				"Color" => new pColor(255, 255, 255), // Set background color to white
+				"Dash" => TRUE,
+				"DashColor" => new pColor(200, 200, 200)
+			]);
+			$chartTurnover->setFontProperties([
+				"FontName" => BASE_PATH . "/library/pChart/fonts/Cairo-Regular.ttf",
+				"FontSize" => 15
+			]);
+			$chartTurnover->drawText($width / 2, $height / 2, $statisticsNoData, [
+				"Align" => TEXT_ALIGN_MIDDLEMIDDLE
+			]);
+
+			// Build the PNG file and send it to the web browser
+			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
+			if (!file_exists(BASE_PATH . '/cache/chart/' . $url)) {
+				mkdir(BASE_PATH . '/cache/chart/' . $url, 0777, true);
+			}
+			$chartTurnover->Render(BASE_PATH . '/cache/chart/' . $url . '/turnover-' . $width . '-' . $height . '.png');
+
+			$chartTurnoverCategory = new pDraw($width, $height);
+			$chartTurnoverCategory->drawFilledRectangle(0, 0, $width, $height, [
+				"Color" => new pColor(255, 255, 255), // Set background color to white
+				"Dash" => TRUE,
+				"DashColor" => new pColor(200, 200, 200)
+			]);
+			$chartTurnoverCategory->setFontProperties([
+				"FontName" => BASE_PATH . "/library/pChart/fonts/Cairo-Regular.ttf",
+				"FontSize" => 15
+			]);
+			$chartTurnoverCategory->drawText($width / 2, $height / 2, $statisticsNoData, [
+				"Align" => TEXT_ALIGN_MIDDLEMIDDLE
+			]);
+
+			// Build the PNG file and send it to the web browser
+			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
+			if (!file_exists(BASE_PATH . '/cache/chart/' . $url)) {
+				mkdir(BASE_PATH . '/cache/chart/' . $url, 0777, true);
+			}
+			$chartTurnoverCategory->Render(BASE_PATH . '/cache/chart/' . $url . '/turnover-category-' . $width . '-' . $height . '.png');
 		}
 		return $turnoverList;
 	}
