@@ -1,6 +1,6 @@
 <?php
 
-class Admin_Form_Category extends Zend_Form
+class Admin_Form_Page extends Zend_Form
 {
 	public function init()
 	{
@@ -23,10 +23,10 @@ class Admin_Form_Category extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
-		$form['description'] = new Zend_Form_Element_Textarea('description');
-		$form['description']->setLabel('ADMIN_CATEGORY_DESCRIPTION')
+		$form['content'] = new Zend_Form_Element_Textarea('content');
+		$form['content']->setLabel('ADMIN_CATEGORY_DESCRIPTION')
 			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
+				'allowTags' => array('a','p','span','img','div','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
 				'allowAttribs' => array('src','style','class','title','href')
 			)))
 			->addFilter('StringTrim')

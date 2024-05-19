@@ -29,11 +29,16 @@ class Zend_View_Helper_Category extends Zend_View_Helper_Abstract{
 					<td class="name">
 						<?php echo $seperator; ?> <span class="editable" data-name="title"><?php echo $categories[$child]['title']; ?></span>
 					</td>
+					<td class="name">
+						<span class="editable" data-name="subtitle"><?php echo $categories[$child]['subtitle']; ?></span>
+					</td>
+					<?php if($categories[$child]['type'] == 'shop') : ?>
+						<td class="slug">
+							<span class="editable" data-name="slug" data-value="0" data-type="input"><?php echo $categories[$child]['slug']; ?></span>
+						</td>
+					<?php endif; ?>
 					<td class="image">
 						<span class="editable" data-name="image" data-value="0" data-type="input"><?php echo $categories[$child]['image']; ?></span>
-					</td>
-					<td class="description">
-						<span class="editable" data-name="description" data-value="0" data-type="textarea"><?php echo $categories[$child]['description']; ?></span>
 					</td>
 					<td class="parentid">
 						<span class="editable" data-name="parentid" data-value="<?php echo $categories[$child]['parentid']; ?>" data-type="select"><?php echo $categories[$categories[$child]['parentid']]['title']; ?></span>

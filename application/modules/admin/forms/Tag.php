@@ -1,10 +1,10 @@
 <?php
 
-class Admin_Form_Category extends Zend_Form
+class Admin_Form_Tag extends Zend_Form
 {
 	public function init()
 	{
-		$this->setName('category');
+		$this->setName('tag');
 
 		$form = array();
 
@@ -18,13 +18,13 @@ class Admin_Form_Category extends Zend_Form
 			->setAttrib('size', '12');
 
 		$form['image'] = new Zend_Form_Element_Text('image');
-		$form['image']->setLabel('ADMIN_CATEGORY_IMAGE')
+		$form['image']->setLabel('ADMIN_TAG_IMAGE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
 		$form['description'] = new Zend_Form_Element_Textarea('description');
-		$form['description']->setLabel('ADMIN_CATEGORY_DESCRIPTION')
+		$form['description']->setLabel('ADMIN_TAG_DESCRIPTION')
 			->addFilter('StripTags', array(array(
 				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
 				'allowAttribs' => array('src','style','class','title','href')
@@ -35,7 +35,7 @@ class Admin_Form_Category extends Zend_Form
 			->setAttrib('class', 'editor');
 
 		$form['shortdescription'] = new Zend_Form_Element_Textarea('shortdescription');
-		$form['shortdescription']->setLabel('ADMIN_CATEGORY_SHORT_DESCRIPTION')
+		$form['shortdescription']->setLabel('ADMIN_TAG_SHORT_DESCRIPTION')
 			->addFilter('StripTags', array(array(
 				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
 				'allowAttribs' => array('src','style','class','title','href')
@@ -46,7 +46,7 @@ class Admin_Form_Category extends Zend_Form
 			->setAttrib('class', 'editor');
 
 		$form['minidescription'] = new Zend_Form_Element_Textarea('minidescription');
-		$form['minidescription']->setLabel('ADMIN_CATEGORY_MINI_DESCRIPTION')
+		$form['minidescription']->setLabel('ADMIN_TAG_MINI_DESCRIPTION')
 			->addFilter('StripTags', array(array(
 				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
 				'allowAttribs' => array('src','style','class','title','href')
@@ -79,8 +79,8 @@ class Admin_Form_Category extends Zend_Form
 			->setAttrib('class', 'editor');
 
 		$form['parentid'] = new Zend_Form_Element_Select('parentid');
-		$form['parentid']->setLabel('ADMIN_MAIN_CATEGORY')
-			->addMultiOption('0', 'ADMIN_MAIN_CATEGORY')
+		$form['parentid']->setLabel('ADMIN_MAIN_TAG')
+			->addMultiOption('0', 'ADMIN_MAIN_TAG')
 			->setAttrib('default', '0');
 
 		$form['type'] = new Zend_Form_Element_Select('type');

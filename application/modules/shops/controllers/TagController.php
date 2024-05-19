@@ -1,6 +1,6 @@
 <?php
 
-class Shops_ItemController extends Zend_Controller_Action
+class Shops_TagController extends Zend_Controller_Action
 {
 	protected $_date = null;
 
@@ -35,34 +35,54 @@ class Shops_ItemController extends Zend_Controller_Action
 	{
 		$shop = Zend_Registry::get('Shop');
 
-		$itemSlug = $this->_getParam('item');
-		$categorySlug = $this->_getParam('category');
+        $tagSlug = $this->_getParam('slug');
 
 		$this->_helper->getHelper('layout')->setLayout('shop');
 
 		$toolbar = new Items_Form_Toolbar();
-		//list($options, $optionSets) = $this->_helper->Options->getOptions();
-		//$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Shops_Model_Get();
-		//$tags = $get->tags('items', 'item');
-		//list($items, $records) = $get->items($params, $options);
+		//$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar);
 
 		/*$tagEntites = array();
 		foreach($items as $item) {
 			$tagEntites[$item->id] = $get->tags('items', 'item', $item->id);
 		}*/
 
-		$itemDb = new Shops_Model_DbTable_Item();
-		$item = $itemDb->getItemBySlug($itemSlug, $shop['id']);
+		$contact = new Shops_Form_Contact();
+		$this->view->contact = $contact;
 
 		$categoryDb = new Shops_Model_DbTable_Category();
 		$categories = $categoryDb->getCategories($shop['id']);
-		$category = $categoryDb->getCategoryBySlug($categorySlug, $shop['id']);
+
+		$tagDb = new Shops_Model_DbTable_Tag();
+		$tag = $tagDb->getTagBySlug('shops', 'category', $tagSlug, $shop['id']);
+		//print_r($tag);
+
+		//$tagsDb = new Shops_Model_DbTable_Tag();
+		//$tags = $tagsDb->getTags('shops', 'tag', $tag['id']);
+		//print_r($tags);
+//echo $tag->id;
+		$tagsEntityDb = new Shops_Model_DbTable_Tagentity();
+		$tagEntities = $tagsEntityDb->getTagEntities('shops', 'category', $tag->id);
+		//print_r($tagEntities);
+
+		$get = new Shops_Model_Get();
+		//$tags = $get->tags('shops', 'tag', $tag['id']);
+		//print_r($tags);
+
+		$tagEntites = array();
+		foreach($categories as $tagy) {
+			$tagEntites[$tagy->id] = $get->tags('shops', 'tag', $tagy->id);
+		}
+
+		$params['catid'] = $tag['id'];
+		//list($items, $records) = $get->items($params, $shop['id']);
+		//print_r($tag);
 
 		$images = array();
 		$imageDb = new Shops_Model_DbTable_Image();
-		$images = $imageDb->getImages($item['id'], 'items', 'item');
+		//$images['items'] = $imageDb->getItemImages($items);
+		$images['categories'] = $imageDb->getCategoryImages($categories);
 		//print_r($images);
 
 		$menuDb = new Shops_Model_DbTable_Menu();
@@ -75,18 +95,27 @@ class Shops_ItemController extends Zend_Controller_Action
 		}
 
 		//$this->view->tags = $tags;
-		//$this->view->tagEntites = $tagEntites;
+		$this->view->tagEntities = $tagEntities;
 		$this->view->shop = $shop;
-		$this->view->item = $item;
+		//$this->view->items = $items;
 		$this->view->images = $images;
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
 		//$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->category = $category;
+		$this->view->tag = $tag;
 		$this->view->categories = $categories;
-		$this->view->attributeSets = $this->_helper->Attributes->getAttributes($item['id']);
-		$this->view->optionSets = $this->_helper->Options->getOptions($item['id']);
+
+		$attributeSets = array();
+		$optionSets = array();
+		if(isset($items)) {
+			foreach($items as $item) {
+				$attributeSets[$item->id] = $this->_helper->Attributes->getAttributes($item->id);
+				$optionSets[$item->id] = $this->_helper->Options->getOptions($item->id);
+			}
+		}
+		$this->view->attributeSets = $attributeSets;
+		$this->view->optionSets = $optionSets;
 		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -100,7 +129,7 @@ class Shops_ItemController extends Zend_Controller_Action
 
 		$form = new Shops_Form_Account();
 		$toolbar = new Shops_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
+		//$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Shops_Model_Get();
@@ -121,7 +150,7 @@ class Shops_ItemController extends Zend_Controller_Action
 		$this->view->form = $form;
 		$this->view->stats = $stats;
 		$this->view->accounts = $accounts;
-		$this->view->options = $options;
+		//$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -140,7 +169,7 @@ class Shops_ItemController extends Zend_Controller_Action
 			if($account) {
 				$config = parse_ini_file(BASE_PATH.'/configs/database.ini');
 
-				// DB Settings
+				// DB Settings 
 				define('DB_SERVER', $config['resources.db.params.host']);
 				define('DB_USER', $config['resources.db.params.username']);
 				define('DB_PASSWORD', $config['resources.db.params.password']);
@@ -161,22 +190,41 @@ class Shops_ItemController extends Zend_Controller_Action
 
 	public function addAction()
 	{
-		header('Content-type: application/json');
+		$request = $this->getRequest();
+
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$request = $this->getRequest();
+		$form = new Shops_Form_Category();
+
 		if($request->isPost()) {
-			$form = new Shops_Form_Account();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
-			if($form->isValid($data)) {
-				$accountDb = new Shops_Model_DbTable_Account();
-				$id = $accountDb->addAccount($data);
-				echo Zend_Json::encode($accountDb->getAccount($id));
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+			if($form->isValid($data) || true) {
+				$tagEntityDb = new Application_Model_DbTable_Tagentity();
+				$tagEntityDataBefore = $tagEntityDb->getTagEntities('shops', 'category', $data['parentid']);
+				$latestOrdering = is_array($tagEntityDataBefore) && !empty($tagEntityDataBefore)
+					? end($tagEntityDataBefore)['ordering']
+					: 0;
+				if(isset($data['tagid']) && $data['tagid']) {
+					header('Content-type: application/json');
+					$existingTags = array();
+					foreach($tagEntityDataBefore as $tagEntity) {
+						$existingTags[$tagEntity['tagid']] = $tagEntity['tagid'];
+					}
+					if(array_search($data['tagid'], $existingTags) !== false) {
+						echo Zend_Json::encode(array('message' => $this->view->translate('TAG_ALREADY_EXISTS')));
+					} else {
+						$tagEntityDb->addTagEntity(array('tagid' => $data['tagid'], 'entityid' => $data['parentid'], 'module' => 'shops', 'controller' => 'category', 'ordering' => $latestOrdering+1));
+						$tagEntityDataAfter = $tagEntityDb->getTagEntities('shops', 'category', $data['parentid']);
+						$tagEntity = end($tagEntityDataAfter);
+						echo Zend_Json::encode($tagEntity);
+					}
+				} else {
+					$tagEntityDb->addTagEntity(array('tagid' => 0, 'entityid' => $data['parentid'], 'module' => 'shops', 'controller' => 'category', 'ordering' => $latestOrdering+1));
+					$tagEntityDataAfter = $tagEntityDb->getTagEntities('shops', 'category', $data['parentid']);
+					$tagEntity = end($tagEntityDataAfter);
+					echo $this->view->MultiForm('shops', 'tag', $tagEntity);
+				}
 			}
 		}
 	}
@@ -185,48 +233,37 @@ class Shops_ItemController extends Zend_Controller_Action
 	{
 		$request = $this->getRequest();
 		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
 
-		$accountDb = new Shops_Model_DbTable_Account();
-		$account = $accountDb->getAccount($id);
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
 
-		if(false) {
-			$this->_helper->redirector->gotoSimple('view', 'account', null, array('id' => $id));
-		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $account['locked'], $account['lockedtime']);
+		$form = new Shops_Form_Category();
 
-			$form = new Shops_Form_Account();
-			$options = $this->_helper->Options->getOptions($form);
+		if($request->isPost()) {
+			$data = $request->getPost();
+			if($form->isValid($data) || true) {
+				$tagDb = new Application_Model_DbTable_Tag();
+				$tags = $tagDb->getTags('shops', 'category');
 
-			if($request->isPost()) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$accountDb->updateAccount($id, $data);
-					echo Zend_Json::encode($accountDb->getAccount($id));
+				$key = array_search($data['tag'], $tags);
+				if(false !== $key) {
+					$data['tagid'] = $key;
 				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+					$data['tagid'] = $tagDb->addTag(array('title' => $data['tag'], 'module' => 'shops', 'controller' => 'category', 'shopid' => '100'));
+				}
+				unset($data['tag']);
+
+				$tagEntityDb = new Application_Model_DbTable_Tagentity();
+				if($id > 0) {
+					$tagEntityDb->updateTagEntity($id, $data);
+					echo Zend_Json::encode($data);
 				}
 			} else {
-				if($id > 0) {
-					$form->populate($account);
-
-					//Toolbar
-					$toolbar = new Shops_Form_Toolbar();
-
-					$this->view->form = $form;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-				}
+				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 			}
 		}
-		$this->view->messages = array_merge(
-			$this->_helper->flashMessenger->getMessages(),
-			$this->_helper->flashMessenger->getCurrentMessages()
-		);
-		$this->_helper->flashMessenger->clearCurrentMessages();
+
+		$this->view->form = $form;
 	}
 
 	public function copyAction()
@@ -255,12 +292,12 @@ class Shops_ItemController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		if ($this->getRequest()->isPost()) {
+		if($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
-			$item = new Shops_Model_DbTable_Item();
-			$item->deleteItem($id);
+			$tagEntityDb = new Application_Model_DbTable_Tagentity();
+			$tagEntityDb->deleteTagEntity($id);
 		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+		//$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
 
 	public function lockAction()

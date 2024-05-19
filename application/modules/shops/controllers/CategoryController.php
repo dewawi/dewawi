@@ -1,6 +1,6 @@
 <?php
 
-class Shops_ItemController extends Zend_Controller_Action
+class Shops_CategoryController extends Zend_Controller_Action
 {
 	protected $_date = null;
 
@@ -35,34 +35,55 @@ class Shops_ItemController extends Zend_Controller_Action
 	{
 		$shop = Zend_Registry::get('Shop');
 
-		$itemSlug = $this->_getParam('item');
-		$categorySlug = $this->_getParam('category');
+        $categorySlug = $this->_getParam('slug');
 
 		$this->_helper->getHelper('layout')->setLayout('shop');
 
 		$toolbar = new Items_Form_Toolbar();
-		//list($options, $optionSets) = $this->_helper->Options->getOptions();
-		//$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Shops_Model_Get();
-		//$tags = $get->tags('items', 'item');
-		//list($items, $records) = $get->items($params, $options);
+		//$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar);
 
 		/*$tagEntites = array();
 		foreach($items as $item) {
 			$tagEntites[$item->id] = $get->tags('items', 'item', $item->id);
 		}*/
 
-		$itemDb = new Shops_Model_DbTable_Item();
-		$item = $itemDb->getItemBySlug($itemSlug, $shop['id']);
+		$contact = new Shops_Form_Contact();
+		$this->view->contact = $contact;
 
 		$categoryDb = new Shops_Model_DbTable_Category();
 		$categories = $categoryDb->getCategories($shop['id']);
 		$category = $categoryDb->getCategoryBySlug($categorySlug, $shop['id']);
+		//print_r($category);
+
+		//$tagsDb = new Shops_Model_DbTable_Tag();
+		//$tags = $tagsDb->getTags('shops', 'category', $category['id']);
+		//print_r($tags);
+
+		//$tagsEntityDb = new Shops_Model_DbTable_Tagentity();
+		//$tagEntities = $tagsEntityDb->getTagEntities('shops', 'category', $category['id']);
+		//print_r($tagEntities);
+
+		$get = new Shops_Model_Get();
+		//$tags = $get->tags('shops', 'category', $category['id']);
+		//print_r($tags);
+
+		//if($category['parentid'] != 0) {
+			$tagEntites = array();
+			foreach($categories as $categoryy) {
+				$tagEntites[$categoryy->id] = $get->tags('shops', 'category', $categoryy->id);
+			}
+			$this->view->tagEntites = $tagEntites;
+		//}
+
+		$params['catid'] = $category['id'];
+		list($items, $records) = $get->items($params, $shop['id']);
+		//print_r($category);
 
 		$images = array();
 		$imageDb = new Shops_Model_DbTable_Image();
-		$images = $imageDb->getImages($item['id'], 'items', 'item');
+		$images['items'] = $imageDb->getItemImages($items);
+		$images['categories'] = $imageDb->getCategoryImages($categories);
 		//print_r($images);
 
 		$menuDb = new Shops_Model_DbTable_Menu();
@@ -75,9 +96,8 @@ class Shops_ItemController extends Zend_Controller_Action
 		}
 
 		//$this->view->tags = $tags;
-		//$this->view->tagEntites = $tagEntites;
 		$this->view->shop = $shop;
-		$this->view->item = $item;
+		$this->view->items = $items;
 		$this->view->images = $images;
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
@@ -85,8 +105,17 @@ class Shops_ItemController extends Zend_Controller_Action
 		$this->view->toolbar = $toolbar;
 		$this->view->category = $category;
 		$this->view->categories = $categories;
-		$this->view->attributeSets = $this->_helper->Attributes->getAttributes($item['id']);
-		$this->view->optionSets = $this->_helper->Options->getOptions($item['id']);
+
+		$attributeSets = array();
+		$optionSets = array();
+		if(isset($items)) {
+			foreach($items as $item) {
+				$attributeSets[$item->id] = $this->_helper->Attributes->getAttributes($item->id);
+				$optionSets[$item->id] = $this->_helper->Options->getOptions($item->id);
+			}
+		}
+		$this->view->attributeSets = $attributeSets;
+		$this->view->optionSets = $optionSets;
 		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -100,7 +129,7 @@ class Shops_ItemController extends Zend_Controller_Action
 
 		$form = new Shops_Form_Account();
 		$toolbar = new Shops_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
+		//$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Shops_Model_Get();
@@ -121,7 +150,7 @@ class Shops_ItemController extends Zend_Controller_Action
 		$this->view->form = $form;
 		$this->view->stats = $stats;
 		$this->view->accounts = $accounts;
-		$this->view->options = $options;
+		//$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -140,7 +169,7 @@ class Shops_ItemController extends Zend_Controller_Action
 			if($account) {
 				$config = parse_ini_file(BASE_PATH.'/configs/database.ini');
 
-				// DB Settings
+				// DB Settings 
 				define('DB_SERVER', $config['resources.db.params.host']);
 				define('DB_USER', $config['resources.db.params.username']);
 				define('DB_PASSWORD', $config['resources.db.params.password']);

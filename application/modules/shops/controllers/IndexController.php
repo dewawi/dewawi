@@ -23,9 +23,6 @@ class Shops_IndexController extends Zend_Controller_Action
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
 
@@ -36,33 +33,46 @@ class Shops_IndexController extends Zend_Controller_Action
 
 	public function indexAction()
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		$shop = Zend_Registry::get('Shop');
 
-		$form = new Shops_Form_Account();
-		$toolbar = new Shops_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
+		$this->_helper->getHelper('layout')->setLayout('shop');
 
-		$get = new Shops_Model_Get();
-		$stats = array();
-		$items = array();
-		$accounts = $get->accounts($params, $options);
-		foreach($accounts as $account) {
-			$params['limit'] = 0;
-			$params['shopid'] = $account['id'];
-			list($items[$account['id']], $records) = $get->items($params, $options);
-			$stats[$account['id']]['total'] = count($items[$account['id']]);
-			$stats[$account['id']]['listed'] = 0;
-			foreach($items[$account['id']] as $item) {
-				if($item->listedby) ++$stats[$account['id']]['listed'];
-			}
+		$toolbar = new Items_Form_Toolbar();
+		//$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar);
+		//print_r($params);
+		//print_r($this->getRequest()->getParams());
+		$contact = new Shops_Form_Contact();
+		$this->view->contact = $contact;
+
+		$categoryDb = new Shops_Model_DbTable_Category();
+		$categories = $categoryDb->getCategories($shop['id']);
+
+		$slideDb = new Shops_Model_DbTable_Slide();
+		$slides = $slideDb->getSlides($shop['id']);
+
+		$menuDb = new Shops_Model_DbTable_Menu();
+		$menus = $menuDb->getMenus($shop['id']);
+
+		$menuitems = array();
+		$menuitemDb = new Shops_Model_DbTable_Menuitem();
+		foreach($menus as $menu) {
+			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
 		}
 
-		$this->view->form = $form;
-		$this->view->stats = $stats;
-		$this->view->accounts = $accounts;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
+		$images = array();
+		$imageDb = new Shops_Model_DbTable_Image();
+		$images['categories'] = $imageDb->getCategoryImages($categories);
+
+		//$this->view->tags = $tags;
+		//$this->view->tagEntites = $tagEntites;
+		$this->view->shop = $shop;
+		$this->view->images = $images;
+		$this->view->slides = $slides;
+		$this->view->menus = $menus;
+		$this->view->menuitems = $menuitems;
+		$this->view->categories = $categories;
+		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -261,7 +271,7 @@ class Shops_IndexController extends Zend_Controller_Action
 		$this->_helper->Validate();
 	}
 
-	public function getProductCategoryIndex() {
+	public function getItemCategoryIndex() {
 		$categoryDb = new Application_Model_DbTable_Category();
 		$categories = $categoryDb->getCategories('item');
 		$categoriesByID = array();

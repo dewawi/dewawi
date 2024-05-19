@@ -2,7 +2,7 @@
 
 class Shops_Controller_Action_Helper_Params extends Zend_Controller_Action_Helper_Abstract
 {
-	public function getParams($toolbar, $options)
+	public function getParams($toolbar)
 	{
 		$request = $this->getRequest();
 

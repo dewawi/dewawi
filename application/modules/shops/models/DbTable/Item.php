@@ -3,7 +3,7 @@
 class Shops_Model_DbTable_Item extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'shopitem';
+	protected $_name = 'item';
 
 	protected $_date = null;
 
@@ -14,8 +14,8 @@ class Shops_Model_DbTable_Item extends Zend_Db_Table_Abstract
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
+		//$this->_user = Zend_Registry::get('User');
+		//$this->_client = Zend_Registry::get('Client');
 	}
 
 	public function getItem($itemid, $shopid)
@@ -24,7 +24,18 @@ class Shops_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
 		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		//$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$data = $this->fetchRow($where);
+		return $data ? $data->toArray() : $data;
+	}
+
+	public function getItemBySlug($slug, $shopid)
+	{
+		$shopid = (int)$shopid;
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('slug = ?', $slug);
+		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
+		//$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchRow($where);
 		return $data ? $data->toArray() : $data;
 	}
@@ -41,44 +52,26 @@ class Shops_Model_DbTable_Item extends Zend_Db_Table_Abstract
 
 	public function addItem($data)
 	{
-		$data['clientid'] = $this->_client['id'];
+		$data['clientid'] = 100;
 		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
+		$data['createdby'] = 1;
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateItem($id, $data)
+	public function deleteItem($id)
 	{
 		$id = (int)$id;
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
+		$data = array('deleted' => 1);
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
 	}
 
-	public function lock($id)
-	{
-		$id = (int)$id;
-		$data = array();
-		$data['locked'] = $this->_user['id'];
-		$data['lockedtime'] = $this->_date;
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
-	}
-
-	public function unlock($id)
-	{
-		$id = (int)$id;
-		$data = array('locked' => 0);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
-	}
-
-	public function deleteItem($itemid)
+	public function deleteItemByItemId($itemid)
 	{
 		$itemid = (int)$itemid;
+		$data = array('deleted' => 1);
 		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
-		$this->delete($where);
+		$this->update($data, $where);
 	}
 }

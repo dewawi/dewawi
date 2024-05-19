@@ -28,6 +28,11 @@ class Admin_Controller_Action_Helper_Params extends Zend_Controller_Action_Helpe
 			$toolbar->type->setValue($params['type']);
 		}
 
+		if(isset($toolbar->shopid)) {
+			$params['shopid'] = $request->getParam('shopid', $request->getCookie('shopid', $toolbar->shopid->getAttrib('default')));
+			$toolbar->shopid->setValue($params['shopid']);
+		}
+
 		return $params;
 	}
 }

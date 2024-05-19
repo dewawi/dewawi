@@ -33,6 +33,11 @@ class Application_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		foreach($data as $category) {
 			if(!$category->parentid) {
 				$categories[$category->id]['id'] = $category->id;
+				if(isset($category->shopid)) {
+					$categories[$category->id]['shopid'] = $category->shopid;
+					//$categories[$category->id]['shopcatid'] = $category->shopcatid;
+				}
+				$categories[$category->id]['type'] = $category->type;
 				$categories[$category->id]['title'] = $category->title;
 				$categories[$category->id]['image'] = $category->image;
 				$categories[$category->id]['description'] = $category->description;
@@ -49,6 +54,11 @@ class Application_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		foreach($data as $category) {
 			if($category->parentid) {
 				$categories[$category->id]['id'] = $category->id;
+				if(isset($category->shopid)) {
+					$categories[$category->id]['shopid'] = $category->shopid;
+					//$categories[$category->id]['shopcatid'] = $category->shopcatid;
+				}
+				$categories[$category->id]['type'] = $category->type;
 				$categories[$category->id]['title'] = $category->title;
 				$categories[$category->id]['image'] = $category->image;
 				$categories[$category->id]['description'] = $category->description;

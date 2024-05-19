@@ -1,6 +1,6 @@
 <?php
 
-class Admin_CategoryController extends Zend_Controller_Action
+class Admin_PageController extends Zend_Controller_Action
 {
 	protected $_date = null;
 
@@ -50,12 +50,12 @@ class Admin_CategoryController extends Zend_Controller_Action
 	{
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Category();
+		$form = new Admin_Form_Page();
 		$toolbar = new Admin_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$categoriesDb = new Admin_Model_DbTable_Category();
+		$pagesDb = new Admin_Model_DbTable_Page();
 
 		if($params['type'] == 'shop') {
 			$shopsDb = new Admin_Model_DbTable_Shop();
@@ -63,15 +63,15 @@ class Admin_CategoryController extends Zend_Controller_Action
 			foreach($shops as $shop) {
 				$toolbar->shopid->addMultiOption($shop->id, $shop->title);
 			}
-			$categories = $categoriesDb->getCategories($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
+			$pages = $pagesDb->getPages($params['type'], null, $params['shopid']);
+			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
 		} else {
-			$categories = $categoriesDb->getCategories($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
+			$pages = $pagesDb->getPages($params['type']);
+			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
 		}
 
 		$this->view->form = $form;
-		$this->view->categories = $categories;
+		$this->view->pages = $pages;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -81,12 +81,12 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Category();
+		$form = new Admin_Form_Page();
 		$toolbar = new Admin_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$categoriesDb = new Admin_Model_DbTable_Category();
+		$pagesDb = new Admin_Model_DbTable_Page();
 
 		if($params['type'] == 'shop') {
 			$shopsDb = new Admin_Model_DbTable_Shop();
@@ -94,15 +94,15 @@ class Admin_CategoryController extends Zend_Controller_Action
 			foreach($shops as $shop) {
 				$toolbar->shopid->addMultiOption($shop->id, $shop->title);
 			}
-			$categories = $categoriesDb->getCategories($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
+			$pages = $pagesDb->getPages($params['type'], null, $params['shopid']);
+			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
 		} else {
-			$categories = $categoriesDb->getCategories($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
+			$pages = $pagesDb->getPages($params['type']);
+			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
 		}
 
 		$this->view->form = $form;
-		$this->view->categories = $categories;
+		$this->view->pages = $pages;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -115,7 +115,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
-			$form = new Admin_Form_Category();
+			$form = new Admin_Form_Page();
 			$options = $this->_helper->Options->getOptions($form);
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
@@ -124,10 +124,10 @@ class Admin_CategoryController extends Zend_Controller_Action
 				if(!isset($data['shopid'])) $data['shopid'] = 0;
 				//$data['parentid'] = $params['parentid'];
 
-				$categoryDb = new Admin_Model_DbTable_Category();
-				$id = $categoryDb->addCategory($data);
+				$pageDb = new Admin_Model_DbTable_Page();
+				$id = $pageDb->addPage($data);
 				//echo Zend_Json::encode($data);
-				echo Zend_Json::encode($categoryDb->getCategory($id));
+				echo Zend_Json::encode($pageDb->getPage($id));
 			//} else {
 			//	echo Zend_Json::encode($data);
 				//echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -141,10 +141,10 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$id = $this->_getParam('id', 0);
 		$activeTab = $request->getCookie('tab', null);
 
-		$categoryDb = new Admin_Model_DbTable_Category();
-		$category = $categoryDb->getCategory($id);
+		$pageDb = new Admin_Model_DbTable_Page();
+		$page = $pageDb->getPage($id);
 
-		if($this->isLocked($category['locked'], $category['lockedtime'])) {
+		if($this->isLocked($page['locked'], $page['lockedtime'])) {
 			if($request->isPost()) {
 				header('Content-type: application/json');
 				$this->_helper->viewRenderer->setNoRender();
@@ -155,13 +155,13 @@ class Admin_CategoryController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$categoryDb->lock($id);
+			$pageDb->lock($id);
 
-			$form = new Admin_Form_Category();
+			$form = new Admin_Form_Page();
 			$options = $this->_helper->Options->getOptions($form);
 			$params = $this->_helper->Params->getParams($form, $options);
-			$categoriesDb = new Admin_Model_DbTable_Category();
-			$categories = $categoriesDb->getCategories($params['type']);
+			$pagesDb = new Admin_Model_DbTable_Page();
+			$pages = $pagesDb->getPages($params['type']);
 			if($request->isPost()) {
 				header('Content-type: application/json');
 				$this->_helper->viewRenderer->setNoRender();
@@ -170,41 +170,41 @@ class Admin_CategoryController extends Zend_Controller_Action
 				$element = key($data);
 				//if(isset($form->$element) && $form->isValidPartial($data)) { // to do add options for parentid before form validation
 				if(true) {
-					$categoryDb = new Admin_Model_DbTable_Category();
+					$pageDb = new Admin_Model_DbTable_Page();
 					if($element == 'parentid') {
 						$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-						$categoryArray = $categoryDb->getCategory($id);
-						$categoryDb->updateCategory($id, $data);
+						$pageArray = $pageDb->getPage($id);
+						$pageDb->updatePage($id, $data);
 
-						//sort old parent category
-						$this->setOrdering($categoryArray['clientid'], $categoryArray['type'], $categoryArray['parentid']);
+						//sort old parent page
+						$this->setOrdering($pageArray['clientid'], $pageArray['type'], $pageArray['parentid']);
 
-						/*$categories = $this->_helper->Categories->getCategories(null, $params['clientid'], $params['type'], $categoryArray['parentid']);
+						/*$pages = $this->_helper->Pages->getPages(null, $params['clientid'], $params['type'], $pageArray['parentid']);
 						$i = 1;
-						foreach($categories as $category) {
-							if(isset($category['id'])) {
-								//if($category['ordering'] != $i)
-								$categoryDb->updateCategory($category['id'], array('ordering' => $i));
+						foreach($pages as $page) {
+							if(isset($page['id'])) {
+								//if($page['ordering'] != $i)
+								$pageDb->updatePage($page['id'], array('ordering' => $i));
 								++$i;
 							}
 						}*/
 					} else {
-						$categoryDb->updateCategory($id, $data);
+						$pageDb->updatePage($id, $data);
 					}
-					echo Zend_Json::encode($categoryDb->getCategory($id));
+					echo Zend_Json::encode($pageDb->getPage($id));
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 				}
 			} else {
 				if($id > 0) {
-					$form->populate($category);
+					$form->populate($page);
 
 					//Toolbar
 					$toolbar = new Admin_Form_Toolbar();
 
 					//Tags
 					$get = new Shops_Model_Get();
-					$tags = $get->tags('shops', 'category', $category['id']);
+					$tags = $get->tags('shops', 'page', $page['id']);
 
 					$this->view->form = $form;
 					$this->view->tags = $tags;
@@ -222,17 +222,17 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$id = $this->_getParam('id', 0);
-		$categoryDb = new Admin_Model_DbTable_Category();
-		$data = $categoryDb->getCategory($id);
+		$pageDb = new Admin_Model_DbTable_Page();
+		$data = $pageDb->getPage($id);
 		unset($data['id']);
 
-		$categoriesDb = new Admin_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories($data['type'], $data['parentid']);
-		foreach($categories as $category) {
-			if(isset($category['ordering'])) {
-				if($category['ordering'] > $data['ordering']) {
-					if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
-					$categoriesDb->sortCategory($category['id'], $category['ordering'] + 1);
+		$pagesDb = new Admin_Model_DbTable_Page();
+		$pages = $pagesDb->getPages($data['type'], $data['parentid']);
+		foreach($pages as $page) {
+			if(isset($page['ordering'])) {
+				if($page['ordering'] > $data['ordering']) {
+					if(!isset($pagesDb)) $pagesDb = new Admin_Model_DbTable_Page();
+					$pagesDb->sortPage($page['id'], $page['ordering'] + 1);
 				}
 			}
 		}
@@ -243,11 +243,11 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
-		$newId = $categoryDb->addCategory($data);
+		$newId = $pageDb->addPage($data);
 		//print_r($data);
 
-		$childCategories = $categoriesDb->getCategories($data['type'], $id);
-		if(isset($childCategories[$id]['childs'])) $this->copyChilds($id, $childCategories, $newId);
+		$childPages = $pagesDb->getPages($data['type'], $id);
+		if(isset($childPages[$id]['childs'])) $this->copyChilds($id, $childPages, $newId);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 
@@ -262,30 +262,30 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$request = $this->getRequest();
 		if($request->isPost()) {
 			$data = $request->getPost();
-			$categoryDb = new Admin_Model_DbTable_Category();
-			$category = $categoryDb->getCategory($data['id']);
-			$orderings = $this->getOrdering($category['clientid'], $category['type'], $category['parentid']);
+			$pageDb = new Admin_Model_DbTable_Page();
+			$page = $pageDb->getPage($data['id']);
+			$orderings = $this->getOrdering($page['clientid'], $page['type'], $page['parentid']);
 			$currentOrdering = array_search($data['id'], $orderings);
 			if(($data['ordering'] == 'down') && (isset($orderings[$currentOrdering+1]))) {
-				$categoryDb->sortCategory($data['id'], $currentOrdering+1);
-				$categoryDb->sortCategory($orderings[$currentOrdering+1], $currentOrdering);
+				$pageDb->sortPage($data['id'], $currentOrdering+1);
+				$pageDb->sortPage($orderings[$currentOrdering+1], $currentOrdering);
 			} elseif(($data['ordering'] == 'up') && (isset($orderings[$currentOrdering-1]))) {
-				$categoryDb->sortCategory($data['id'], $currentOrdering-1);
-				$categoryDb->sortCategory($orderings[$currentOrdering-1], $currentOrdering);
+				$pageDb->sortPage($data['id'], $currentOrdering-1);
+				$pageDb->sortPage($orderings[$currentOrdering-1], $currentOrdering);
 			} elseif($data['ordering'] > 0) {
 				if($data['ordering'] < $currentOrdering) {
-					$categoryDb->sortCategory($data['id'], $data['ordering']);
+					$pageDb->sortPage($data['id'], $data['ordering']);
 					foreach($orderings as $ordering => $id) {
-						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $categoryDb->sortCategory($id, $ordering+1);
+						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $pageDb->sortPage($id, $ordering+1);
 					}
 				} elseif($data['ordering'] > $currentOrdering) {
-					$categoryDb->sortCategory($data['id'], $data['ordering']);
+					$pageDb->sortPage($data['id'], $data['ordering']);
 					foreach($orderings as $ordering => $id) {
-						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $categoryDb->sortCategory($id, $ordering-1);
+						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $pageDb->sortPage($id, $ordering-1);
 					}
 				}
 			}
-			$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
+			$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
 		}
 	}
 
@@ -297,60 +297,60 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 		if($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
-			$categoryDb = new Admin_Model_DbTable_Category();
-			$category = $categoryDb->getCategory($id);
+			$pageDb = new Admin_Model_DbTable_Page();
+			$page = $pageDb->getPage($id);
 
-			if($category['type'] == 'contact') {
+			if($page['type'] == 'contact') {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contacts = $contactDb->getContactsByCategory($id);
+				$contacts = $contactDb->getContactsByPage($id);
 				if(!empty($contacts)) {
-					//Do not delete the category if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
+					//Do not delete the page if it is not empty
+					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
 				} else {
-					$categoriesDb = new Admin_Model_DbTable_Category();
-					$categories = $categoriesDb->getCategories($category['type'], $category['id']);
-					if(!empty($categories)) {
-						//Do not delete the category if it has child categories
-						$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS');
+					$pagesDb = new Admin_Model_DbTable_Page();
+					$pages = $pagesDb->getPages($page['type'], $page['id']);
+					if(!empty($pages)) {
+						//Do not delete the page if it has child pages
+						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
 					} else {
-						$categoryDb->deleteCategory($id);
-						$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
+						$pageDb->deletePage($id);
+						$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
 						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 					}
 				}
-			} elseif($category['type'] == 'item') {
+			} elseif($page['type'] == 'item') {
 				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByCategory($id);
+				$items = $itemDb->getItemsByPage($id);
 				if(!empty($items)) {
-					//Do not delete the category if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
+					//Do not delete the page if it is not empty
+					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
 				} else {
-					$categoriesDb = new Admin_Model_DbTable_Category();
-					$categories = $categoriesDb->getCategories($category['type'], $category['id']);
-					if(!empty($categories)) {
-						//Do not delete the category if it has child categories
-						$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS');
+					$pagesDb = new Admin_Model_DbTable_Page();
+					$pages = $pagesDb->getPages($page['type'], $page['id']);
+					if(!empty($pages)) {
+						//Do not delete the page if it has child pages
+						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
 					} else {
-						$categoryDb->deleteCategory($id);
-						$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
+						$pageDb->deletePage($id);
+						$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
 						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 					}
 				}
-			} elseif($category['type'] == 'shop') {
+			} elseif($page['type'] == 'shop') {
 				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByCategory($id);
+				$items = $itemDb->getItemsByPage($id);
 				if(!empty($items)) {
-					//Do not delete the category if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
+					//Do not delete the page if it is not empty
+					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
 				} else {
-					$categoriesDb = new Admin_Model_DbTable_Category();
-					$categories = $categoriesDb->getCategories($category['type'], $category['id']);
-					if(!empty($categories)) {
-						//Do not delete the category if it has child categories
-						$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS');
+					$pagesDb = new Admin_Model_DbTable_Page();
+					$pages = $pagesDb->getPages($page['type'], $page['id']);
+					if(!empty($pages)) {
+						//Do not delete the page if it has child pages
+						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
 					} else {
-						$categoryDb->deleteCategory($id);
-						$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
+						$pageDb->deletePage($id);
+						$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
 						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 					}
 				}
@@ -365,14 +365,14 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$id = $this->_getParam('id', 0);
-		$categoryDb = new Admin_Model_DbTable_Category();
-		$category = $categoryDb->getCategory($id);
-		if($this->isLocked($category['locked'], $category['lockedtime'])) {
+		$pageDb = new Admin_Model_DbTable_Page();
+		$page = $pageDb->getPage($id);
+		if($this->isLocked($page['locked'], $page['lockedtime'])) {
 			$userDb = new Users_Model_DbTable_User();
-			$user = $userDb->getUser($category['locked']);
+			$user = $userDb->getUser($page['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$categoryDb->lock($id);
+			$pageDb->lock($id);
 		}
 	}
 
@@ -382,8 +382,8 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$id = $this->_getParam('id', 0);
-		$categoryDb = new Admin_Model_DbTable_Category();
-		$categoryDb->unlock($id);
+		$pageDb = new Admin_Model_DbTable_Page();
+		$pageDb->unlock($id);
 	}
 
 	public function keepaliveAction()
@@ -392,8 +392,8 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$categoryDb = new Admin_Model_DbTable_Category();
-		$categoryDb->lock($id);
+		$pageDb = new Admin_Model_DbTable_Page();
+		$pageDb->lock($id);
 	}
 
 
@@ -402,7 +402,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Category();
+		$form = new Admin_Form_Page();
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();
@@ -428,15 +428,15 @@ class Admin_CategoryController extends Zend_Controller_Action
 	protected function setOrdering($clientid, $type, $parentid)
 	{
 		$i = 1;
-		$categoriesDb = new Admin_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories($type, $parentid);
-		foreach($categories as $category) {
-			if(isset($category['ordering'])) {
-				//if($category['ordering'] != $i) {
-					if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
-					//print_r($category);
+		$pagesDb = new Admin_Model_DbTable_Page();
+		$pages = $pagesDb->getPages($type, $parentid);
+		foreach($pages as $page) {
+			if(isset($page['ordering'])) {
+				//if($page['ordering'] != $i) {
+					if(!isset($pagesDb)) $pagesDb = new Admin_Model_DbTable_Page();
+					//print_r($page);
 					//print_r($i);
-					$categoriesDb->sortCategory($category['id'], $i);
+					$pagesDb->sortPage($page['id'], $i);
 					++$i;
 				//}
 			}
@@ -446,12 +446,12 @@ class Admin_CategoryController extends Zend_Controller_Action
 	protected function getOrdering($clientid, $type, $parentid)
 	{
 		$i = 1;
-		$categoriesDb = new Admin_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories($type, $parentid);
+		$pagesDb = new Admin_Model_DbTable_Page();
+		$pages = $pagesDb->getPages($type, $parentid);
 		$orderings = array();
-		foreach($categories as $category) {
-			if(isset($category['id'])) {
-				$orderings[$i] = $category['id'];
+		foreach($pages as $page) {
+			if(isset($page['id'])) {
+				$orderings[$i] = $page['id'];
 				++$i;
 			}
 		}
@@ -465,21 +465,21 @@ class Admin_CategoryController extends Zend_Controller_Action
 		return key($ordering);
 	}
 
-	protected function copyChilds($oldId, $categories, $newId)
+	protected function copyChilds($oldId, $pages, $newId)
 	{
-		foreach($categories[$oldId]['childs'] as $child) {
-			$categoryDb = new Admin_Model_DbTable_Category();
-			$data = $categoryDb->getCategory($child);
+		foreach($pages[$oldId]['childs'] as $child) {
+			$pageDb = new Admin_Model_DbTable_Page();
+			$data = $pageDb->getPage($child);
 			unset($data['id']);
 			$data['parentid'] = $newId;
 			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
 			$data['locked'] = 0;
 			$data['lockedtime'] = NULL;
-			$newChildId = $categoryDb->addCategory($data);
+			$newChildId = $pageDb->addPage($data);
 
-			$childCategories = $categoryDb->getCategories($data['type'], $child);
-			if(isset($childCategories[$child]['childs'])) $this->copyChilds($child, $childCategories, $newChildId);
+			$childPages = $pageDb->getPages($data['type'], $child);
+			if(isset($childPages[$child]['childs'])) $this->copyChilds($child, $childPages, $newChildId);
 		}
 	}
 }
