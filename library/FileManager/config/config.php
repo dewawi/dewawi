@@ -11,8 +11,8 @@ if (session_id() == '') {
 
 $upload_dir = '/files/';
 $current_path = '../../files/';
-$thumbs_base_path = '../../cache/thumbs/';
-$thumbs_upload_dir = '/cache/thumbs/';
+$thumbs_base_path = '../../cache/thumbs/files/';
+$thumbs_upload_dir = '/cache/thumbs/files/';
 //echo $current_path;
 //echo $_SESSION['RF']['subfolder'];
 
