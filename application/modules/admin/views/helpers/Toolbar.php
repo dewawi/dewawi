@@ -9,7 +9,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			<input class="id" type="hidden" value="<?php echo $this->view->id ?>" name="id"/>
 			<?php echo $this->view->toolbar->copy; ?>
 			<?php echo $this->view->toolbar->delete; ?>
-		<?php elseif($this->view->controller != 'index') : ?>
+		<?php elseif(($this->view->controller != 'index') && ($this->view->controller != 'media')) : ?>
 			<?php if($this->view->user['admin']) : ?>
 				<?php echo $this->view->toolbar->copy; ?>
 				<?php echo $this->view->toolbar->delete; ?>

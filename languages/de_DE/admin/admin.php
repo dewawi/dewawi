@@ -6,7 +6,7 @@
 	'ADMIN_CLIENTS' => 'Mandanten',
 	'ADMIN_CATEGORIES' => 'Kategorien',
 	'ADMIN_COUNTRIES' => 'Länder',
-	'ADMIN_UPLOAD' => 'Upload',
+	'ADMIN_MEDIA' => 'Media',
 	'ADMIN_CURRENCIES' => 'Währungen',
 	'ADMIN_MANUFACTURERS' => 'Hersteller',
 	'ADMIN_PAYMENT_METHODS' => 'Zahlungsarten',

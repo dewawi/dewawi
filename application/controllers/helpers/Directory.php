@@ -29,11 +29,10 @@ class Application_Controller_Action_Helper_Directory extends Zend_Controller_Act
 			//Create media folder if does not already exists
 			$url = $this->getShortUrl();
 			$path = BASE_PATH.'/media/';
-			$dir = 'items/';
-			if(file_exists($path.$dir.$url) && is_dir($path.$dir.$url) && is_writable($path.$dir.$url)) {
+			if(file_exists($path.$url) && is_dir($path.$url) && is_writable($path.$url)) {
 				return true;
 			} elseif(is_writable($path)) {
-				$response = mkdir($path.$dir.$url, 0777, true);
+				$response = mkdir($path.$url, 0777, true);
 				if($response === false) $flashMessenger->addMessage('MESSAGES_DIRECTORY_IS_NOT_WRITABLE');
 				return $response;
 			} else {
