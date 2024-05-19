@@ -609,45 +609,63 @@ class Processes_ProcessController extends Zend_Controller_Action
 	protected function getPositions($processIDs)
 	{
 		$positions = array();
-		if(!empty($processIDs)) {
-			$positionsDb = new Processes_Model_DbTable_Processpos();
-			$positionsObject = $positionsDb->getPositions($processIDs);
-
-			foreach($positionsObject as $position) {
-				if(!isset($previous[$position->parentid])) {
-					$previous[$position->parentid] = array();
-					$previous[$position->parentid]['ordering'] = 0;
-					$previous[$position->parentid]['quantity'] = 1;
-					$previous[$position->parentid]['deliverystatus'] = '';
-					$previous[$position->parentid]['deliverydate'] = NULL;
-					$previous[$position->parentid]['supplierorderstatus'] = '';
-				}
-				if($previous[$position->parentid]['ordering'] && ($previous[$position->parentid]['deliverystatus'] == $position->deliverystatus) && ($previous[$position->parentid]['deliverydate'] == $position->deliverydate) && ($previous[$position->parentid]['supplierorderstatus'] == $position->supplierorderstatus)) {
-					$positions[$position->parentid][$position->ordering] = $positions[$position->parentid][$previous[$position->parentid]['ordering']];
-					$positions[$position->parentid][$position->ordering]['quantity'] = ($previous[$position->parentid]['quantity'] + 1);
-					unset($positions[$position->parentid][$previous[$position->parentid]['ordering']]);
-					$previous[$position->parentid]['ordering'] = $position->ordering ? $position->ordering : 0;
-					$previous[$position->parentid]['quantity'] = $positions[$position->parentid][$position->ordering]['quantity'];
-					$previous[$position->parentid]['deliverystatus'] = $position->deliverystatus ? $position->deliverystatus : '';
-					$previous[$position->parentid]['deliverydate'] = $position->deliverydate ? $position->deliverydate : NULL;
-					$previous[$position->parentid]['supplierorderstatus'] = $position->supplierorderstatus ? $position->supplierorderstatus : '';
-				} else {
-					$positions[$position->parentid][$position->ordering]['deliverystatus'] = $position->deliverystatus;
-					if($position->deliverydate)
-						//$deliverydate = new Zend_Date($position->deliverydate);
-						//if($position->deliverydate) $position->deliverydate = $deliverydate->get('dd.MM.yyyy');
-						$positions[$position->parentid][$position->ordering]['deliverydate'] = $position->deliverydate;
-					if($position->itemtype == 'deliveryItem')
-						$positions[$position->parentid][$position->ordering]['supplierorderstatus'] = $position->supplierorderstatus;
-					$previous[$position->parentid] = array();
-					$previous[$position->parentid]['ordering'] = $position->ordering ? $position->ordering : 0;
-					$previous[$position->parentid]['quantity'] = 1;
-					$previous[$position->parentid]['deliverystatus'] = $position->deliverystatus ? $position->deliverystatus : '';
-					$previous[$position->parentid]['deliverydate'] = $position->deliverydate ? $position->deliverydate : NULL;
-					$previous[$position->parentid]['supplierorderstatus'] = $position->supplierorderstatus ? $position->supplierorderstatus : '';
-				}
-			}
+		if(empty($processIDs)) {
+			return $positions;
 		}
+
+		$positionsDb = new Processes_Model_DbTable_Processpos();
+		$positionsObject = $positionsDb->getPositions($processIDs);
+		$previous = array();
+
+		foreach($positionsObject as $position) {
+			$parentId = $position->parentid;
+			$ordering = $position->ordering ? $position->ordering : 0;
+
+			// Initialize the parent array if not already
+			if (!isset($previous[$parentId])) {
+				$previous[$parentId] = [
+					'ordering' => 0,
+					'quantity' => 1,
+					'deliverystatus' => '',
+					'deliverydate' => null,
+					'supplierorderstatus' => '',
+				];
+			}
+
+			// Determine if the current position should be grouped with the previous
+			$shouldMerge = $previous[$parentId]['ordering'] &&
+						   $previous[$parentId]['deliverystatus'] === $position->deliverystatus &&
+						   $previous[$parentId]['deliverydate'] === $position->deliverydate &&
+						   $previous[$parentId]['supplierorderstatus'] === $position->supplierorderstatus;
+
+			if($shouldMerge) {
+				$positions[$parentId][$ordering] = $positions[$parentId][$previous[$parentId]['ordering']];
+				$positions[$parentId][$ordering]['quantity'] = ($previous[$parentId]['quantity'] + 1);
+				unset($positions[$parentId][$previous[$parentId]['ordering']]);
+				$previous[$parentId]['ordering'] = $ordering ? $ordering : 0;
+				$previous[$parentId]['quantity'] = $positions[$parentId][$ordering]['quantity'];
+				$previous[$parentId]['deliverystatus'] = $position->deliverystatus ? $position->deliverystatus : '';
+				$previous[$parentId]['deliverydate'] = $position->deliverydate ? $position->deliverydate : NULL;
+				$previous[$parentId]['supplierorderstatus'] = $position->supplierorderstatus ? $position->supplierorderstatus : '';
+			} else {
+				$positions[$parentId][$ordering]['deliverystatus'] = $position->deliverystatus;
+				if($position->deliverydate)
+					//$deliverydate = new Zend_Date($position->deliverydate);
+					//if($position->deliverydate) $position->deliverydate = $deliverydate->get('dd.MM.yyyy');
+					$positions[$parentId][$ordering]['deliverydate'] = $position->deliverydate;
+				if($position->itemtype == 'deliveryItem')
+					$positions[$parentId][$ordering]['supplierorderstatus'] = $position->supplierorderstatus;
+			}
+
+			// Update the previous information for the current parent
+			$previous[$parentId] = array();
+			$previous[$parentId]['ordering'] = $ordering;
+			$previous[$parentId]['quantity'] = 1;
+			$previous[$parentId]['deliverystatus'] = $position->deliverystatus ? $position->deliverystatus : '';
+			$previous[$parentId]['deliverydate'] = $position->deliverydate ? $position->deliverydate : NULL;
+			$previous[$parentId]['supplierorderstatus'] = $position->supplierorderstatus ? $position->supplierorderstatus : '';
+		}
+
 		return $positions;
 	}
 }
