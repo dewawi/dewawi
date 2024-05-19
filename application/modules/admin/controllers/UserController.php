@@ -111,10 +111,11 @@ class Admin_UserController extends Zend_Controller_Action
 			$data = $request->getPost();
 			if($form->isValid($data)) {
 				$userDb = new Admin_Model_DbTable_User();
-				$data['password'] = md5($data['password']);
+				// Use password_hash instead of md5
+				$data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 				$id = $userDb->addUser($data);
 
-				// Add permission row
+				// Add permissions row
 				$permissionDb = new Admin_Model_DbTable_Permission();
 				$permissions = [
 					'default' => [
