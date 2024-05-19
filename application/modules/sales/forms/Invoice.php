@@ -200,11 +200,8 @@ class Sales_Form_Invoice extends Zend_Form
 
 		$form['prepayment'] = new Zend_Form_Element_Text('prepayment');
 		$form['prepayment']->setLabel('INVOICES_PREPAYMENT')
-			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->addValidator('Float')
-			->addValidator('NotEmpty')
 			->setAttrib('class', 'number')
 			->setAttrib('size', '20');
 

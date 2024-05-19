@@ -235,7 +235,11 @@ class Sales_InvoiceController extends Zend_Controller_Action
 						}
 					}
 					if(($element == 'prepayment'))
-						$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
+						if($data[$element]) {
+							$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
+						} else {
+							$data[$element] = NULL;
+						}
 					if(isset($data['taxfree'])) {
 						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
 						$data['subtotal'] = $calculations['row']['subtotal'];
