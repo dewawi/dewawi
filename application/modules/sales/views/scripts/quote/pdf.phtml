@@ -430,7 +430,7 @@ if($this->action == 'download') {
 		$html = '<iframe src="'.$this->baseUrl().'/files/contacts/'.$url.$filename.'?'.time().'" width="900px" height="500px">';
 	} else {
 		$pdf->Output(BASE_PATH.'/cache/quote/'.$id.'.pdf', 'F');
-		$html = '<p><a href="#" onclick="savePdf()">'.$this->translate('QUOTES_SAVE_AND_BOOK').'></a> |
+		$html = '<p><a href="#" onclick="savePdf()">'.$this->translate('QUOTES_SAVE_AND_BOOK').'</a> |
 		<a href="'.$this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'download', 'id'=>$id)).'" target="_blank">'.$this->translate('QUOTES_DOWNLOAD_PDF').'</a></p>
 		<iframe src="'.$this->baseUrl().'/cache/quote/'.$id.'.pdf?'.time().'" width="900px" height="500px"><br/>';
 	}
