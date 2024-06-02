@@ -42,27 +42,44 @@ class Application_Controller_Action_Helper_Positions extends Zend_Controller_Act
 
 	public function getOptions($positions, $price, $currency)
 	{
+		$options = [];
+		$optionSets = [];
 		$optionsDb = new Items_Model_DbTable_Itemopt();
 		$optionSetsDb = new Items_Model_DbTable_Itemoptset();
 		$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
+
 		foreach($positions as $position) {
 			if($position->itemid && !$position->masterid) {
 				$optionSets[$position->id] = $optionSetsDb->getPositionSets($position->itemid);
-				foreach($optionSets[$position->id] as $key => $optionSet) {
+				foreach($optionSets[$position->id] as $optionSet) {
 					$options[$position->id][$optionSet->id] = $optionsDb->getPositions($position->itemid, $optionSet->id);
 					foreach($options[$position->id][$optionSet->id] as $key => $option) {
-						if($position->pricerulemaster) {
-							//Use price rules on all options
-							$priceRules = $priceRuleHelper->getPriceRulePositions('sales', 'quotepos', $position->id);
-							$price = $priceRuleHelper->usePriceRules($priceRules, $option->price);
-							$options[$position->id][$optionSet->id][$key]->price = $currency->toCurrency($price);
-						} else {
-							$options[$position->id][$optionSet->id][$key]->price = $currency->toCurrency($option->price);
-						}
+						$price = $this->calculatePrice($option, $position, $priceRuleHelper);
+						$options[$position->id][$optionSet->id][$key]->price = $this->formatPrice($option, $price, $currency);
 					}
 				}
 			}
 		}
-		return array($options, $optionSets);
+
+		return [$options, $optionSets];
+	}
+
+	private function calculatePrice($option, $position, $priceRuleHelper)
+	{
+		if($position->pricerulemaster) {
+			$priceRules = $priceRuleHelper->getPriceRulePositions('sales', 'quotepos', $position->id);
+			if(!in_array($option->price, [0, -1, -2])) {
+				return $priceRuleHelper->usePriceRules($priceRules, $option->price);
+			}
+		}
+		return $option->price;
+	}
+
+	private function formatPrice($option, $price, $currency)
+	{
+		if(in_array($option->price, [0, -1, -2])) {
+			return $price;
+		}
+		return $currency->toCurrency($price);
 	}
 }
