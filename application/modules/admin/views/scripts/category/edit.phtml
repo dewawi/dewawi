@@ -6,44 +6,54 @@ echo $this->FileManager();
 ?>
 
 <ul class="tabs">
-	<li><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
+	<li<?php if($this->activeTab == "#tabOverview") : ?> class="active"<?php endif; ?>>
+		<a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
 </ul>
 
 <div class="tab_container">
-	<div id="tabOverview" class="tab_content">
-		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+	<div id="tabOverview" class="tab_content<?php if($this->activeTab == '#tabOverview' || !$this->activeTab) : ?> active<?php endif; ?>"">
+		<form id="category" enctype="application/x-www-form-urlencoded" action="" method="post">
 			<div class="row">
 				<div class="col-sm-12 col-lg-7">
 					<dl class="form">
 						<?php echo $this->form->id; ?>
 						<?php echo $this->form->title; ?>
+						<?php if($this->form->getValue('type') == 'shop') : ?>
+							<?php echo $this->form->slug; ?>
+						<?php endif; ?>
 						<?php echo $this->form->image; ?>
 						<?php echo $this->form->description; ?>
+						<?php echo $this->form->shortdescription; ?>
+						<?php echo $this->form->minidescription; ?>
+						<hr>
+						<div id="tag" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="tag">
+							<?php echo $this->MultiForm('shops', 'tag', $this->tags, 'tag', 'TAGS'); ?>
+						</div>
 					</dl>
 				</div>
 				<div class="col-sm-12 col-lg-5">
+						<?php echo $this->form->header; ?>
 						<?php echo $this->form->footer; ?>
-						<?php echo $this->form->info; ?>
 				</div>
 			</div>
 		</form>
 	</div>
 </div>
 
-	<!--<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
-		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<div class="row">
-				<div class="col-sm-12 col-lg-7">
-					<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?controller=item&lang=de&type=0" width="100%" height="500px"></iframe>
-					<dl class="form">
-						<?php echo $this->form->getElement('image') ?>
-					</dl>
-				</div>
-				<div class="col-sm-12 col-lg-5">
-					<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
-						<p><img id="preview" src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
-					<?php } ?>
-				</div>
+<!--<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+	<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+		<div class="row">
+			<div class="col-sm-12 col-lg-7">
+				<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?controller=item&lang=de&type=0" width="100%" height="500px"></iframe>
+				<dl class="form">
+					<?php echo $this->form->getElement('image') ?>
+				</dl>
 			</div>
-		</form>
-	</div>-->
+			<div class="col-sm-12 col-lg-5">
+				<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+					<p><img id="preview" src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+				<?php } ?>
+			</div>
+		</div>
+	</form>
+</div>-->

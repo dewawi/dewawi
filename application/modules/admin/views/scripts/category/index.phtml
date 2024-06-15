@@ -23,11 +23,15 @@ echo $this->Messages();
 					<th class="name" width="20%">
 						<?php echo $this->translate('ADMIN_TITLE'); ?>
 					</th>
+					<th class="name" width="20%">
+					</th>
+					<?php if($this->toolbar->getValue('type') == 'shop') : ?>
+						<th class="slug" width="20%">
+							<?php echo $this->translate('ADMIN_SLUG'); ?>
+						</th>
+					<?php endif; ?>
 					<th class="image" width="20%">
 						<?php echo $this->translate('ADMIN_CATEGORY_IMAGE'); ?>
-					</th>
-					<th class="description" width="20%">
-						<?php echo $this->translate('ADMIN_CATEGORY_DESCRIPTION'); ?>
 					</th>
 					<th class="parentid" width="20%">
 						<?php echo $this->translate('ADMIN_PARENT_CATEGORY'); ?>
@@ -59,11 +63,16 @@ echo $this->Messages();
 							<td class="name">
 								<span class="editable" data-name="title"><?php echo $this->escape($category['title']); ?></span>
 							</td>
+							<td class="name">
+								<span class="editable" data-name="title"><?php echo $this->escape($category['subtitle']); ?></span>
+							</td>
+							<?php if($category['type'] == 'shop') : ?>
+								<td class="slug">
+									<span class="editable" data-name="slug" data-value="0" data-type="input"><?php echo $this->escape($category['slug']); ?></span>
+								</td>
+							<?php endif; ?>
 							<td class="image">
 								<span class="editable" data-name="image" data-value="0" data-type="input"><?php echo $this->escape($category['image']); ?></span>
-							</td>
-							<td class="description">
-								<span class="editable" data-name="description" data-value="0" data-type="textarea"><?php echo $this->escape($category['description']); ?></span>
 							</td>
 							<td class="parentid">
 								<span class="editable" data-name="parentid" data-value="0" data-type="select"><?php echo $this->translate('ADMIN_MAIN_CATEGORY'); ?></span>
@@ -95,6 +104,9 @@ echo $this->Messages();
 				<?php endforeach; ?>
 				<tr class="add">
 					<td>
+						<?php if($this->toolbar->type->getValue() == 'shop') : ?>
+							<input type="hidden" name="shopid" id="shopid" value="<?php echo $this->toolbar->shopid->getValue(); ?>">
+						<?php endif; ?>
 					</td>
 					<td>
 						<?php echo $this->translate('TOOLBAR_NEW'); ?>

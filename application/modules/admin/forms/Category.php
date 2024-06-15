@@ -17,6 +17,12 @@ class Admin_Form_Category extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
+		$form['slug'] = new Zend_Form_Element_Text('slug');
+		$form['slug']->setLabel('ADMIN_SLUG')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '12');
+
 		$form['image'] = new Zend_Form_Element_Text('image');
 		$form['image']->setLabel('ADMIN_CATEGORY_IMAGE')
 			->addFilter('StripTags')
