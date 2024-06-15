@@ -1,0 +1,116 @@
+<?php
+$this->title = $this->translate('ADMIN_PAGES');
+$this->headTitle($this->title);
+echo $this->Messages();
+?>
+
+<div class="row">
+	<div class="col-sm-4 col-lg-2">
+		<?php echo $this->AdminMenu(); ?>
+	</div>
+	<div class="col-sm-8 col-lg-10">
+		<table id="data">
+			<thead>
+				<tr>
+					<th width="2%">
+						<?php if($this->user['admin']) : ?>
+							<input type="checkbox" class="checkall" name="checkall"/>
+						<?php endif; ?>
+					</th>
+					<th class="id" width="1%">
+						<?php echo $this->translate('ADMIN_ID'); ?>
+					</th>
+					<th class="name" width="20%">
+						<?php echo $this->translate('ADMIN_TITLE'); ?>
+					</th>
+					<?php if($this->toolbar->getValue('type') == 'shop') : ?>
+						<th class="slug" width="20%">
+							<?php echo $this->translate('ADMIN_SLUG'); ?>
+						</th>
+					<?php endif; ?>
+					<th class="image" width="20%">
+						<?php echo $this->translate('ADMIN_CATEGORY_IMAGE'); ?>
+					</th>
+					<th class="parentid" width="20%">
+						<?php echo $this->translate('ADMIN_PARENT_CATEGORY'); ?>
+					</th>
+					<th class="ordering" width="20%">
+						<?php echo $this->translate('ADMIN_ORDERING'); ?>
+					</th>
+					<th width="8%"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php $i0 = 1; ?>
+				<?php $count0 = count($this->pages); ?>
+				<?php foreach($this->pages as $page) : ?>
+					<tr>
+						<td>
+							<?php if($this->user['admin']) : ?>
+								<input class="id" type="checkbox" value="<?php echo $page['id'] ?>" name="id"/>
+							<?php else : ?>
+								<input class="id" type="hidden" value="<?php echo $page['id'] ?>" name="id"/>
+							<?php endif; ?>
+						</td>
+						<td class="id">
+							<a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'page', 'action'=>'edit', 'id'=>$this->escape($page['id'])));?>">
+								<?php echo $this->escape($page['id']); ?>
+							</a>
+						</td>
+						<td class="name">
+							<span class="editable" data-name="title"><?php echo $this->escape($page['title']); ?></span>
+						</td>
+						<?php //if($page['type'] == 'shop') : ?>
+							<td class="slug">
+								<span class="editable" data-name="slug" data-value="0" data-type="input"><?php echo $this->escape($page['slug']); ?></span>
+							</td>
+						<?php //endif; ?>
+						<td class="image">
+							<span class="editable" data-name="image" data-value="0" data-type="input"><?php echo $this->escape($page['image']); ?></span>
+						</td>
+						<td class="parentid">
+							<span class="editable" data-name="parentid" data-value="0" data-type="select"><?php echo $this->translate('ADMIN_MAIN_CATEGORY'); ?></span>
+						</td>
+						<td class="ordering">
+							<?php echo $this->escape($page['ordering']); ?>
+						</td>
+						<td class="buttons">
+						<?php echo $this->Button('copy'); ?>
+						<?php echo $this->Button('delete'); ?>
+							<?php if($i0>1) : ?>
+								<?php echo $this->toolbar->sortup; ?>
+							<?php endif; ?>
+							<?php if($i0<$count0) : ?>
+								<?php echo $this->toolbar->sortdown; ?>
+							<?php endif; ?>
+						</td>
+					</tr>
+					<?php ++$i0; ?>
+				<?php endforeach; ?>
+				<tr class="add">
+					<td>
+						<?php if($this->toolbar->type->getValue() == 'shop') : ?>
+							<input type="hidden" name="shopid" id="shopid" value="<?php echo $this->toolbar->shopid->getValue(); ?>">
+						<?php endif; ?>
+					</td>
+					<td>
+						<?php echo $this->translate('TOOLBAR_NEW'); ?>
+					</td>
+					<td>
+						<?php echo $this->form->title; ?>
+					</td>
+					<td>
+						<?php echo $this->form->parentid; ?>
+					</td>
+					<td>
+						<input type="hidden" name="type" value="<?php echo $this->toolbar->getValue('type'); ?>">
+					</td>
+					<td class="buttons">
+						<?php echo $this->toolbar->save; ?>
+						<?php //echo $this->toolbar->cancel; ?>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
