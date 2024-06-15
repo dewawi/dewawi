@@ -1,52 +1,197 @@
 <?php
-$this->title = $this->translate('SHOPS_ITEMS');
+$this->title = $this->translate('SHOPS_ACCOUNTS');
 $this->headTitle($this->title);
-echo $this->Messages();
-echo $this->ActiveFilter();
+//echo $this->Messages();
+//echo $this->ActiveFilter();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="shopid" width="10%">
-				<?php echo $this->translate('SHOPS_SHOP_ID'); ?>
-			</th>
-			<th class="itemid" width="32%">
-				<?php echo $this->translate('SHOPS_ITEM_ID'); ?>
-			</th>
-			<th width="8%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->items as $item) : ?>
-			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $item->id ?>" name="id"/></td>
-				<td data-label="<?php echo $this->translate('SHOPS_SHOP_ID') ?>" class="shopid">
-					<span class="editable" data-name="shopid"><?php echo $this->escape($item->shopid); ?></span>
-				</td>
-				<td data-label="<?php echo $this->translate('SHOPS_ITEM_ID') ?>" class="itemid">
-					<span class="editable" data-name="itemid"><?php echo $this->escape($item->itemid); ?></span>
-				</td>
-				<td class="buttons">
-					<?php echo $this->Button('copy'); ?>
-					<?php echo $this->Button('delete'); ?>
-				</td>
-			</tr>
-		<?php endforeach; ?>
-		<tr class="add">
-			<td>
-				<?php echo $this->translate('TOOLBAR_NEW'); ?>
-			</td>
-			<td>
-				<?php echo $this->form->shopid; ?>
-			</td>
-			<td>
-				<?php echo $this->form->itemid; ?>
-			</td>
-			<td class="buttons">
-				<?php echo $this->toolbar->save; ?>
-			</td>
-		</tr>
-	</tbody>
-</table>
+<section id="item" class="py-5">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-6 mb-4">
+				<h2><?php echo $this->escape($this->item['title']); ?></h2>
+				<p><?php echo $this->escape($this->item['description']); ?></p>
+			</div>
+			<div class="col-md-6 mb-4">
+				<div class="main-image-wrapper">
+					<?php if(isset($this->images) && isset($this->images[0])) : ?>
+						<img src="<?php echo $this->baseUrl(); ?>/media/item/1/0/100/<?php echo $this->images[0]->url; ?>" id="mainImage" class="img-fluid" alt="Product Image" onclick="openModal()">
+					<?php else : ?>
+						<!-- Default image if no images are available -->
+						<img src="" id="mainImage" class="img-fluid" alt="Product Image">
+					<?php endif; ?>
+				</div>
+				<?php if(isset($this->images) && isset($this->images[0])) : ?>
+					<span class="imagetitle"><?php echo $this->images[0]->title; ?></span>
+					<span class="imagedescription"><?php //echo $this->images[0]->description; ?></span>
+				<?php endif; ?>
+				<div class="row">
+					<?php if(isset($this->images) && count($this->images)) : ?>
+						<?php foreach ($this->images as $index => $image): ?>
+						<div class="col-md-3 mb-2">
+							<div class="thumbnail-wrapper">
+								<img src="<?php echo $this->baseUrl(); ?>/media/item/1/0/100/<?php echo $image->url; ?>" class="img-thumbnail" alt="Product Thumbnail" onclick="changeMainImage(this)">
+								<span class="imagetitle" style="display:none"><?php echo $this->images[0]->title; ?></span>
+								<span class="imagedescription" style="display:none"><?php //echo $this->images[0]->description; ?></span>
+							</div>
+						</div>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section id="attributes" class="py-5">
+	<div class="container">
+		<h2 class="text-center mb-4">Attributes</h2>
+		<?php if (!empty($this->attributeSets)) : ?>
+			<ul class="nav nav-tabs" id="attributesTab" role="tablist">
+				<?php foreach ($this->attributeSets as $id => $set) : ?>
+					<li class="nav-item">
+						<a class="nav-link<?php echo $id === 0 ? ' active' : ''; ?>" id="attributesTab<?php echo $id; ?>" data-toggle="tab" href="#attributesContent<?php echo $id; ?>" role="tab" aria-controls="attributesContent<?php echo $id; ?>" aria-selected="<?php echo $id === 0 ? 'true' : 'false'; ?>"><?php echo $set['title']; ?></a>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+			<div class="tab-content" id="attributesTabContent">
+				<?php foreach ($this->attributeSets as $id => $set) : ?>
+					<div class="tab-pane fade<?php echo $id === 0 ? ' show active' : ''; ?>" id="attributesContent<?php echo $id; ?>" role="tabpanel" aria-labelledby="attributesTab<?php echo $id; ?>">
+						<table class="table">
+							<thead>
+								<tr>
+									<th class="flex50">SKU</th>
+									<th>Title</th>
+									<th>Value</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($set['attributes'] as $attribute) : ?>
+									<tr>
+										<td class="flex50"><?php echo $attribute->sku; ?></td>
+										<td><?php echo $attribute->title; ?></td>
+										<td><?php echo $attribute->description; ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
+	</div>
+</section>
+
+<section id="options" class="py-5">
+	<div class="container">
+		<h2 class="text-center mb-4">Options</h2>
+		<?php if (!empty($this->optionSets)) : ?>
+			<ul class="nav nav-tabs" id="optionsTab" role="tablist">
+				<?php foreach ($this->optionSets as $id => $set) : ?>
+					<li class="nav-item">
+						<a class="nav-link<?php echo $id === 0 ? ' active' : ''; ?>" id="optionsTab<?php echo $id; ?>" data-toggle="tab" href="#optionsContent<?php echo $id; ?>" role="tab" aria-controls="optionsContent<?php echo $id; ?>" aria-selected="<?php echo $id === 0 ? 'true' : 'false'; ?>"><?php echo $set['title']; ?></a>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+			<div class="tab-content" id="optionsTabContent">
+				<?php foreach ($this->optionSets as $id => $set) : ?>
+					<div class="tab-pane fade<?php echo $id === 0 ? ' show active' : ''; ?>" id="optionsContent<?php echo $id; ?>" role="tabpanel" aria-labelledby="optionsTab<?php echo $id; ?>">
+						<table class="table">
+							<thead>
+								<tr>
+									<th class="flex50">SKU</th>
+									<th>Title</th>
+									<th>Value</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($set['options'] as $option) : ?>
+									<tr>
+										<td class="flex50"><?php echo $option->sku; ?></td>
+										<td><?php echo $option->title; ?></td>
+										<td><?php echo $option->description; ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
+	</div>
+</section>
+
+<!-- Modal for larger images -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-body">
+				<div id="carouselExampleControls" class="carousel slide" data-bs-interval="false">
+					<div class="carousel-inner">
+						<?php foreach ($this->images as $index => $image): ?>
+						<div class="carousel-item <?php echo $index == 0 ? 'active' : ''; ?>">
+							<div class="modal-image-wrapper">
+								<img src="<?php echo $this->baseUrl(); ?>/media/item/1/0/100/<?php echo $image->url; ?>" class="d-block w-100" alt="Product Image">
+							</div>
+							<span><?php echo $image->title; ?></span>
+							<span><?php //echo $this->images->description; ?></span>
+						</div>
+						<?php endforeach; ?>
+					</div>
+					<button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+						<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+						<span class="visually-hidden">Previous</span>
+					</button>
+					<button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
+						<span class="carousel-control-next-icon" aria-hidden="true"></span>
+						<span class="visually-hidden">Next</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		var imageModal = document.getElementById('imageModal');
+		var carousel = imageModal.querySelector('.carousel');
+
+		carousel.addEventListener('slid.bs.carousel', function () {
+			var activeImage = carousel.querySelector('.carousel-item.active img');
+			var mainImage = document.getElementById('mainImage');
+			mainImage.src = activeImage.src;
+		});
+	});
+
+	function changeMainImage(thumbnail) {
+		var mainImage = document.getElementById('mainImage');
+		var imageModal = document.getElementById('imageModal');
+		var modalImages = imageModal.querySelectorAll('.carousel-item img');
+
+		// Change the main image
+		mainImage.src = thumbnail.src;
+
+		// Fetch the title and description from the thumbnail
+		var title = thumbnail.nextElementSibling.innerText;
+		var description = thumbnail.nextElementSibling.nextElementSibling.innerText;
+
+		// Update the title and description displayed on the page
+		document.querySelector('.imagetitle').innerText = title;
+		document.querySelector('.imagedescription').innerText = description;
+
+		// Change the active image in the modal carousel
+		modalImages.forEach(function(image) {
+			if (image.src === thumbnail.src) {
+				image.closest('.carousel-item').classList.add('active');
+			} else {
+				image.closest('.carousel-item').classList.remove('active');
+			}
+		});
+	}
+
+	function openModal() {
+		var myModal = new bootstrap.Modal(document.getElementById('imageModal'));
+		myModal.show();
+	}
+</script>

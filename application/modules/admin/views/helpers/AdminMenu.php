@@ -43,7 +43,15 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'template', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_TEMPLATES'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'footer', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_FOOTERS'); ?></a></li>
 		</ul>
-		<?php if($this->view->user['id'] == 100) : ?>
+		<h4><?php echo $this->view->translate('ADMIN_SHOPS'); ?></h4>
+		<ul>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'shop', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_SHOPS'); ?></a></li>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'page', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_PAGES'); ?></a></li>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'tag', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_TAGS'); ?></a></li>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'category', 'action'=>'index', 'type'=>'shop', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_CATEGORIES'); ?></a></li>
+
+		</ul>
+		<?php if($this->view->user['admin']) : ?>
 			<h4><?php echo $this->view->translate('ADMIN_SYSTEM'); ?></h4>
 			<ul>
 				<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'info', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_INFO'); ?></a></li>

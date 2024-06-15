@@ -9,7 +9,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			<input class="id" type="hidden" value="<?php echo $this->view->id ?>" name="id"/>
 			<?php echo $this->view->toolbar->copy; ?>
 			<?php echo $this->view->toolbar->delete; ?>
-		<?php elseif(($this->view->controller != 'index') && ($this->view->controller != 'media')) : ?>
+		<?php elseif(($this->view->controller != 'index') && ($this->view->controller != 'media') && ($this->view->controller != 'export')) : ?>
 			<?php if($this->view->user['admin']) : ?>
 				<?php echo $this->view->toolbar->copy; ?>
 				<?php echo $this->view->toolbar->delete; ?>
@@ -20,6 +20,9 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			<?php endif;*/ ?>
 			<?php if($this->view->controller == 'category') : ?>
 				<?php echo $this->view->toolbar->type; ?>
+				<?php if($this->view->toolbar->type->getValue() == 'shop') : ?>
+					<?php echo $this->view->toolbar->shopid; ?>
+				<?php endif; ?>
 			<?php endif; ?>
 		<?php endif;
 	}
