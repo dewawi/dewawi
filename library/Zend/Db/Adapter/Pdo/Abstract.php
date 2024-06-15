@@ -45,6 +45,19 @@ require_once 'Zend/Db/Statement/Pdo.php';
 abstract class Zend_Db_Adapter_Pdo_Abstract extends Zend_Db_Adapter_Abstract
 {
     /**
+     * Transaction in BC mode for php >= 8 flag
+     * 
+     * Bring back behavior of PDO::rollback()/PDO::commit() 
+     * after an implicit commit like php before ver  8 
+     * (Don't throw PDOException with message 'There is no active transaction' )
+     * 
+     * @see https://github.com/php/php-src/commit/990bb34891c83d12c5129fd781893704f948f2f4
+     */
+    public static $isTransactionInBackwardCompatibleMode = true;
+    public static $isPdoStringifyFetchesBackwardCompatiblePhp8 = true;
+
+
+    /**
      * PDO type.
      *
      * @var string
@@ -327,6 +340,9 @@ abstract class Zend_Db_Adapter_Pdo_Abstract extends Zend_Db_Adapter_Abstract
     protected function _commit()
     {
         $this->_connect();
+        if ( self::$isTransactionInBackwardCompatibleMode && !$this->_connection->inTransaction() ) {
+            return;
+        }
         $this->_connection->commit();
     }
 
@@ -335,6 +351,9 @@ abstract class Zend_Db_Adapter_Pdo_Abstract extends Zend_Db_Adapter_Abstract
      */
     protected function _rollBack() {
         $this->_connect();
+        if ( self::$isTransactionInBackwardCompatibleMode && !$this->_connection->inTransaction() ) {
+            return;
+        }
         $this->_connection->rollBack();
     }
 
