@@ -17,7 +17,7 @@ class Zend_View_Helper_TinyMCE extends Zend_View_Helper_Abstract{
 				language: '<?php echo substr($language, 0, 2) ?>',
 				menubar: false,
 				height: 450,
-				valid_elements: 'a[href|target=_blank],p[style],em,h1,h2,h3,h4,h5,strong/b,br,ul,ol,li,img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name]',
+				valid_elements: 'a[href|target=_blank],p[style],em,div[id|class|style],h1[id|class|style],h2[id|class|style],h3[id|class|style],h4[id|class|style],h5[id|class|style],strong/b,br,ul,ol,li,img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name]',
 				toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright | bullist numlist | link | code',
 				plugins: 'lists link code',
 				contextmenu: '',
