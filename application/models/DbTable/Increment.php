@@ -33,7 +33,7 @@ class Application_Model_DbTable_Increment extends Zend_Db_Table_Abstract
 	{
 		// Increment by 3
 		// TODO move increment value to the db
-		$increment += 3;
+		$increment += 1;
 
 		$data = array(
 		    $type => $increment,
