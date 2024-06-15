@@ -24,7 +24,13 @@ CREATE TABLE IF NOT EXISTS `address` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (contactid)
+  KEY (contactid),
+  KEY (type),
+  KEY (department),
+  KEY (street),
+  KEY (postcode),
+  KEY (city),
+  KEY (country)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `archive` (
@@ -60,10 +66,20 @@ CREATE TABLE IF NOT EXISTS `bankaccount` (
 CREATE TABLE IF NOT EXISTS `category` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `parentid` int(11) NOT NULL,
+  `shopid` int(11) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
+  `subtitle` varchar(255) DEFAULT NULL,
+  `keyword` varchar(255) DEFAULT NULL,
+  `slug` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
-  `description` text DEFAULT NULL,
+  `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `shortdescription` text DEFAULT NULL,
+  `minidescription` text DEFAULT NULL,
+  `metatitle` varchar(255) DEFAULT NULL,
+  `metadescription` varchar(255) DEFAULT NULL,
+  `metakeyword` varchar(255) DEFAULT NULL,
   `type` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
@@ -74,7 +90,13 @@ CREATE TABLE IF NOT EXISTS `category` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (parentid),
+  KEY (slug),
+  KEY (shopid),
+  KEY (type),
+  KEY (clientid),
+  KEY (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `client` (
@@ -163,7 +185,12 @@ CREATE TABLE IF NOT EXISTS `contact` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (contactid),
+  KEY (name1),
+  KEY (name2),
+  KEY (clientid),
+  KEY (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `contactperson` (
@@ -707,7 +734,12 @@ CREATE TABLE IF NOT EXISTS `email` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (parentid)
+  KEY (parentid),
+  KEY (module),
+  KEY (controller),
+  KEY (email),
+  KEY (clientid),
+  KEY (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `emailattachment` (
@@ -866,7 +898,10 @@ CREATE TABLE IF NOT EXISTS `images` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (parentid),
+  KEY (module),
+  KEY (controller)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `increment` (
@@ -897,7 +932,12 @@ CREATE TABLE IF NOT EXISTS `internet` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (parentid)
+  KEY (parentid),
+  KEY (module),
+  KEY (controller),
+  KEY (internet),
+  KEY (clientid),
+  KEY (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `inventory` (
@@ -1077,14 +1117,20 @@ CREATE TABLE IF NOT EXISTS `invoiceposset` (
 CREATE TABLE IF NOT EXISTS `item` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `catid` int(11) NOT NULL,
+  `shopcatid` int(11) NOT NULL DEFAULT 0,
+  `ebaycatid` int(11) NOT NULL DEFAULT 0,
+  `amazoncatid` int(11) NOT NULL DEFAULT 0,
+  `shopid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `gtin` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
-  `shopenabled` tinyint(1) NOT NULL DEFAULT 0,
   `shoptitle` varchar(255) DEFAULT NULL,
-  `shopcategory` varchar(255) DEFAULT NULL,
   `ebaytitle` varchar(255) DEFAULT NULL,
   `amazontitle` varchar(255) DEFAULT NULL,
+  `slug` varchar(255) DEFAULT NULL,
+  `shopenabled` tinyint(1) NOT NULL DEFAULT 0,
+  `ebayenabled` tinyint(1) NOT NULL DEFAULT 0,
+  `amazonenabled` tinyint(1) NOT NULL DEFAULT 0,
   `type` varchar(255) DEFAULT NULL,
   `video` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
@@ -1133,7 +1179,10 @@ CREATE TABLE IF NOT EXISTS `item` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (catid),
+  KEY (sku),
+  KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `itematr` (
@@ -1162,7 +1211,10 @@ CREATE TABLE IF NOT EXISTS `itematr` (
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (itemid),
+  KEY (atrsetid),
+  KEY (ordering)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `itematrset` (
@@ -1209,7 +1261,10 @@ CREATE TABLE IF NOT EXISTS `itemopt` (
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (itemid),
+  KEY (optsetid),
+  KEY (ordering)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `itemoptset` (
@@ -1363,6 +1418,7 @@ CREATE TABLE IF NOT EXISTS `magentouser` (
 CREATE TABLE IF NOT EXISTS `manufacturer` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
@@ -1373,6 +1429,47 @@ CREATE TABLE IF NOT EXISTS `manufacturer` (
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `menu` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shopid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY (shopid),
+  KEY (clientid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `menuitem` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `menuid` int(11) NOT NULL,
+  `pageid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL DEFAULT 0,
+  `title` varchar(255) DEFAULT NULL,
+  `slug` varchar(255) DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY (slug),
+  KEY (menuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `module` (
@@ -1389,6 +1486,34 @@ CREATE TABLE IF NOT EXISTS `module` (
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `page` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shopid` int(11) NOT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `url` varchar(255) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `slug` varchar(255) DEFAULT NULL,
+  `header` text DEFAULT NULL,
+  `footer` text DEFAULT NULL,
+  `content` text DEFAULT NULL,
+  `metatitle` varchar(255) DEFAULT NULL,
+  `metadescription` varchar(255) DEFAULT NULL,
+  `metakeyword` varchar(255) DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY (url),
+  KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `paymentmethod` (
@@ -1442,7 +1567,13 @@ CREATE TABLE IF NOT EXISTS `phone` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (parentid)
+  KEY (parentid),
+  KEY (module),
+  KEY (controller),
+  KEY (type),
+  KEY (phone),
+  KEY (clientid),
+  KEY (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `portal` (
@@ -2243,17 +2374,22 @@ CREATE TABLE IF NOT EXISTS `shippingmethod` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `shopaccount` (
+CREATE TABLE IF NOT EXISTS `shop` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `url` varchar(255) DEFAULT NULL,
+  `timezone` varchar(255) DEFAULT NULL,
+  `language` varchar(255) DEFAULT NULL,
+  `analytics` text DEFAULT NULL,
+  `logo` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
-  `type` varchar(255) NOT NULL,
-  `host` varchar(255) DEFAULT NULL,
-  `username` varchar(255) DEFAULT NULL,
-  `password` varchar(255) DEFAULT NULL,
-  `dbname` varchar(255) DEFAULT NULL,
+  `footer` varchar(255) DEFAULT NULL,
+  `emailsender` varchar(255) DEFAULT NULL,
+  `smtphost` varchar(255) DEFAULT NULL,
+  `smtpauth` varchar(255) DEFAULT NULL,
+  `smtpsecure` varchar(255) DEFAULT NULL,
+  `smtpuser` varchar(255) DEFAULT NULL,
+  `smtppass` varchar(32) DEFAULT NULL,
   `clientid` int(11) NOT NULL,
-  `updated` datetime DEFAULT NULL,
-  `updatedby` int(11) NOT NULL DEFAULT 0,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
@@ -2262,25 +2398,9 @@ CREATE TABLE IF NOT EXISTS `shopaccount` (
   `lockedtime` datetime DEFAULT NULL,
   `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `shopitem` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `shopid` int(11) NOT NULL,
-  `itemid` int(11) NOT NULL,
-  `clientid` int(11) NOT NULL,
-  `listed` datetime DEFAULT NULL,
-  `listedby` int(11) NOT NULL DEFAULT 0,
-  `created` datetime DEFAULT NULL,
-  `createdby` int(11) NOT NULL DEFAULT 0,
-  `modified` datetime DEFAULT NULL,
-  `modifiedby` int(11) NOT NULL DEFAULT 0,
-  `locked` int(11) NOT NULL DEFAULT 0,
-  `lockedtime` datetime DEFAULT NULL,
-  `activated` tinyint(1) NOT NULL DEFAULT 0,
-  `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (url),
+  KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `shoporder` (
@@ -2297,7 +2417,33 @@ CREATE TABLE IF NOT EXISTS `shoporder` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (shopid),
+  KEY (orderid),
+  KEY (contactid),
+  KEY (clientid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `slide` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shopid` int(11) NOT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `url` varchar(255) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY (url),
+  KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `state` (
@@ -2317,9 +2463,15 @@ CREATE TABLE IF NOT EXISTS `state` (
 
 CREATE TABLE IF NOT EXISTS `tag` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shopid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
+  `keyword` varchar(255) DEFAULT NULL,
+  `slug` varchar(255) DEFAULT NULL,
   `module` varchar(255) DEFAULT NULL,
   `controller` varchar(255) DEFAULT NULL,
+  `header` text DEFAULT NULL,
+  `footer` text DEFAULT NULL,
+  `description` text DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
@@ -2343,7 +2495,12 @@ CREATE TABLE IF NOT EXISTS `tagentity` (
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (tagid),
+  KEY (entityid),
+  KEY (module),
+  KEY (controller),
+  KEY (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `task` (
