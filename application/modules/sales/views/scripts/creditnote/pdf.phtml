@@ -49,6 +49,12 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 	$shippingAddress = false;
 	if($shippingName1 || $shippingStreet) $shippingAddress = true;
 
+	//Settings
+	$settings = array();
+	$settings['displayPrices'] = 1;
+	$settings['displayDiscounts'] = 0;
+	$settings['displayOptions'] = 0;
+
 	//Positions
 	$positions = $this->positions;
 
@@ -212,73 +218,28 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 		$pdf->SetFont('freesansb', 'B', 8);
 
 		//POSITIONS HEADER
-		$pdf->Cell(10, 5, $this->translate('DOCUMENTS_POSITION'), 'LTB');
-		$pdf->setCellPaddings(0, 0, 0, 0);
-		$pdf->Cell(98, 5, $this->translate('DOCUMENTS_DESCRIPTION'), 'TB');
-		$pdf->Cell(10, 5, $this->translate('DOCUMENTS_QUANTITY'), 'TB');
-		$pdf->Cell(12, 5, $this->translate('DOCUMENTS_UOM'), 'TB', 0, 'C');
-		$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_SINGLE'), 'TB', 0, 'C');
-		$pdf->Cell(25, 5, $this->translate('DOCUMENTS_PRICE_TOTAL'), 'TBR', 0, 'C');
-		$pdf->ln(5);
+		positionsHeader($settings, $pdf, [$this, 'translate']);
 
 		//POSITIONS
-		$y = 0;
-		$i = 1;
-		foreach($positions as $position) {
-			$x = $pdf->getX();
-			$pdf->setCellPaddings(0, 2, 0, 0);
-			$pdf->SetFont('freesans', '', 9);
-			$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
-			$pdf->MultiCell(10, 0, $position->quantity, 0, 'C', false, 0, $x+108, '', true, 0);
-			if($position->uom) $pdf->MultiCell(12, 0, $position->uom, 0, 'C', false, 0, $x+118, '', true, 0);
-			$pdf->MultiCell(25, 0, $position->price, 0, 'C', false, 0, $x+130, '', true, 0);
-			$pdf->MultiCell(25, 0, $position->total, 0, 'C', false, 0, $x+155, '', true, 0);
-			$pdf->MultiCell(108, 0, $position->sku, 0, 'L', false, 2, $x+10, '', true, 0);
-			$pdf->setCellPaddings(0, 0, 0, 0);
-			if($position->title) {
-				$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 2, $x+10, '', true, 0);
-			}
-			if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
-				$startPage = $pdf->getPage();
-				$y = $pdf->getY();
-				$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
-				$endPage = $pdf->getPage();
-				if($startPage == $endPage) {
-					$imageHeight = $pdf->getY() - $y;
-				} else {
-					$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
-					$pdf->setPage($startPage);
-				}
-				if($position->description) {
-					$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
-				}
-			} elseif($position->description) {
-				$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+10, '', true, 0);
-			}
-			$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
-			++$i;
-		}
-		$pdf->ln(4);
+		positions($positions, $settings, $pdf);
 
-		$pdf->SetFont('freesans', '', 9);
+		//TOTAL BOX
+		if($settings['displayPrices']) {
+			totalBox($pdf, $positions, $settings, $this->creditnote, [$this, 'translate']);
+		}
+
+		//OPTIONS
+		if($settings['displayOptions'] && isset($options)) {
+			options($positions, $options, $optionSets, $settings, $pdf);
+		}
 
 		//FOOTER
+		$pdf->SetFont('freesansb', '', 9);
 		$pdf->MultiCell(105, 0, $footer, 0, 'L', false, 0, '', '', $reseth=true, $stretch=0, $ishtml=true);
 
 		$pdf->setCellPaddings(3, 1, 3, 1);
 
 		$pdf->SetFont('freesansb', 'B', 10);
-
-		//TOTAL BOX
-		$x = $pdf->getX();
-		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_SUBTOTAL'), 'LT', 'L', false, 0 ,$x);
-		$pdf->MultiCell(30, 0, $this->creditnote['subtotal'], 'TR', 'R', false, 1);
-		$pdf->setCellPaddings(3, 0, 3, 1);
-		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TAXES').' ('.$this->creditnote['taxrate'].'%)', 'L', 'L', false, 0 ,$x);
-		$pdf->MultiCell(30, 0, $this->creditnote['taxes'], 'R', 'R', false, 1);
-		$pdf->setCellPaddings(3, 1, 3, 1);
-		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TOTAL'), 'LBT', 'L', false, 0 ,$x);
-		$pdf->MultiCell(30, 0, $this->creditnote['total'], 'RBT', 'R', false, 1);
 	}
 
 	$i = 1;
@@ -386,6 +347,262 @@ if($this->action == 'download') {
 	echo $html;
 } else {
 	echo '<p><strong>'.$this->translate('DOCUMENTS_THERE_IS_NO_CONTACT').'</strong></p><br/>';
+}
+
+function positions($positions, $settings, $pdf) {
+	$y = 0;
+	$i = 1;
+	$positionsArray = array();
+	$childsArray = array();
+	foreach($positions as $position) {
+		$positionsArray[$position->id] = $position;
+		$childsArray[$position->masterid][] = $position->id;
+	}
+	foreach($positions as $position) {
+		if($position->masterid == 0) {
+			if($settings['displayPrices']) {
+				$x = $pdf->getX();
+				$pdf->setCellPaddings(0, 2, 0, 0);
+				$pdf->SetFont('freesans', '', 9);
+				$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
+				$pdf->MultiCell(10, 0, $position->quantity, 0, 'C', false, 0, $x+108, '', true, 0);
+				if($position->uom) $pdf->MultiCell(12, 0, $position->uom, 0, 'C', false, 0, $x+118, '', true, 0);
+				$pdf->MultiCell(25, 0, $position->price, 0, 'C', false, 0, $x+130, '', true, 0);
+				$pdf->MultiCell(25, 0, $position->total, 0, 'C', false, 0, $x+155, '', true, 0);
+				$pdf->MultiCell(108, 0, $position->sku, 0, 'L', false, 2, $x+10, '', true, 0);
+				$pdf->setCellPaddings(0, 0, 0, 0);
+				if($position->title) {
+					$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 2, $x+10, '', true, 0);
+				}
+				if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
+					$startPage = $pdf->getPage();
+					$y = $pdf->getY();
+					$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
+					$endPage = $pdf->getPage();
+					if($startPage == $endPage) {
+						$imageHeight = $pdf->getY() - $y;
+					} else {
+						$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
+						$pdf->setPage($startPage);
+					}
+					if($position->description) {
+						$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
+					}
+				} elseif($position->description) {
+					$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+10, '', true, 0);
+				}
+				$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+				++$i;
+				if(isset($childsArray[$position->id])) {
+					foreach($childsArray[$position->id] as $child) {
+						childPositions($positionsArray[$child], $settings, $pdf, $i);
+						++$i;
+					}
+				}
+			} else {
+				$x = $pdf->getX();
+				$pdf->setCellPaddings(0, 2, 0, 0);
+				$pdf->SetFont('freesans', '', 9);
+				$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
+				$pdf->MultiCell(25, 0, $position->sku, 0, 'C', false, 0, $x+10, '', true, 0);
+				if($position->title) {
+					if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
+						$pdf->MultiCell(95, 0, $position->title, 0, 'L', false, 0, $x+68, '', true, 0);
+					} else {
+						$pdf->MultiCell(95, 0, $position->title, 0, 'L', false, 0, $x+35, '', true, 0);
+					}
+				}
+				$pdf->MultiCell(25, 0, $position->quantity, 0, 'C', false, 0, $x+130, '', true, 0);
+				if($position->uom) $pdf->MultiCell(25, 0, $position->uom, 0, 'C', false, 0, $x+155, '', true, 0);
+				$pdf->setCellPaddings(0, 0, 0, 0);
+				if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
+					$startPage = $pdf->getPage();
+					$y = $pdf->getY() + 2;
+					$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+35, $y, 30, 0, '', '', 'N');
+					$endPage = $pdf->getPage();
+					if($startPage == $endPage) {
+						$imageHeight = $pdf->getY() - $y;
+					} else {
+						$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
+						$pdf->setPage($startPage);
+					}
+					if($position->description) {
+						if($position->title) {
+							$pdf->MultiCell(62, $imageHeight-2, $position->description, 0, 'L', false, 1, $x+68, $y+4, true, 0);
+						} else {
+							$pdf->MultiCell(62, $imageHeight+2, $position->description, 0, 'L', false, 1, $x+68, $y, true, 0);
+						}
+					}
+				} elseif($position->description) {
+					if($position->title) $pdf->ln(4);
+					$pdf->MultiCell(95, 0, $position->description, 0, 'L', false, 1, $x+35, $pdf->getY()+2, true, 0);
+				}
+				$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-4, true, 0);
+				++$i;
+				if(isset($childsArray[$position->id])) {
+					foreach($childsArray[$position->id] as $child) {
+						childPositions($positionsArray[$child], $settings, $pdf, $i);
+						++$i;
+					}
+				}
+			}
+		}
+	}
+	$pdf->ln(4);
+}
+
+function positionsHeader($settings, $pdf, $translate) {
+	if($settings['displayPrices']) {
+		$pdf->Cell(10, 5, $translate('DOCUMENTS_POSITION'), 'LTB');
+		$pdf->setCellPaddings(0, 0, 0, 0);
+		$pdf->Cell(98, 5, $translate('DOCUMENTS_DESCRIPTION'), 'TB');
+		$pdf->Cell(10, 5, $translate('DOCUMENTS_QUANTITY'), 'TB');
+		$pdf->Cell(12, 5, $translate('DOCUMENTS_UOM'), 'TB', 0, 'C');
+		$pdf->Cell(25, 5, $translate('DOCUMENTS_PRICE_SINGLE'), 'TB', 0, 'C');
+		$pdf->Cell(25, 5, $translate('DOCUMENTS_PRICE_TOTAL'), 'TBR', 0, 'C');
+	} else {
+		$pdf->Cell(10, 5, $translate('DOCUMENTS_POSITION'), 'LTB');
+		$pdf->setCellPaddings(0, 0, 0, 0);
+		$pdf->Cell(25, 5, $translate('DOCUMENTS_SKU'), 'TB', 0, 'C');
+		$pdf->Cell(95, 5, $translate('DOCUMENTS_DESCRIPTION'), 'TB', 0, 'L');
+		$pdf->Cell(25, 5, $translate('DOCUMENTS_QUANTITY'), 'TB', 0, 'C');
+		$pdf->Cell(25, 5, $translate('DOCUMENTS_UOM'), 'TBR', 0, 'C');
+	}
+	$pdf->ln(5);
+}
+
+function childPositions($position, $settings, $pdf, $i) {
+	if($settings['displayPrices']) {
+		$x = $pdf->getX();
+		$pdf->setCellPaddings(0, 2, 0, 0);
+		$pdf->SetFont('freesans', '', 9);
+		$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
+		$pdf->MultiCell(10, 0, $position->quantity, 0, 'C', false, 0, $x+108, '', true, 0);
+		if($position->uom) $pdf->MultiCell(12, 0, $position->uom, 0, 'C', false, 0, $x+118, '', true, 0);
+		$pdf->MultiCell(25, 0, $position->price, 0, 'C', false, 0, $x+130, '', true, 0);
+		$pdf->MultiCell(25, 0, $position->total, 0, 'C', false, 0, $x+155, '', true, 0);
+		$pdf->MultiCell(108, 0, $position->sku, 0, 'L', false, 2, $x+10, '', true, 0);
+		$pdf->setCellPaddings(0, 0, 0, 0);
+		if($position->title) {
+			$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 2, $x+10, '', true, 0);
+		}
+		if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
+			$startPage = $pdf->getPage();
+			$y = $pdf->getY();
+			$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
+			$endPage = $pdf->getPage();
+			if($startPage == $endPage) {
+				$imageHeight = $pdf->getY() - $y;
+			} else {
+				$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
+				$pdf->setPage($startPage);
+			}
+			if($position->description) {
+				$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
+			}
+		} elseif($position->description) {
+			$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+10, '', true, 0);
+		}
+		$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+		++$i;
+	} else {
+		$x = $pdf->getX();
+		$pdf->setCellPaddings(0, 2, 0, 0);
+		$pdf->SetFont('freesans', '', 9);
+		$pdf->MultiCell(10, 0, $i, 0, 'C', false, 0, $x, '', true, 0);
+		$pdf->MultiCell(25, 0, $position->quantity, 0, 'C', false, 0, $x+130, '', true, 0);
+		if($position->uom) $pdf->MultiCell(25, 0, $position->uom, 0, 'C', false, 0, $x+155, '', true, 0);
+		$pdf->MultiCell(108, 0, $position->title, 0, 'L', false, 0, $x+35, '', true, 0);
+		$pdf->MultiCell(25, 0, $position->sku, 0, 'C', false, 2, $x+10, '', true, 0);
+		$pdf->setCellPaddings(0, 0, 0, 0);
+		if($position->image && file_exists(BASE_PATH.'/files/images/'.$position->image)) {
+			$startPage = $pdf->getPage();
+			$y = $pdf->getY();
+			$pdf->Image(BASE_PATH.'/files/images/'.$position->image, $x+10, '', 30, 0, '', '', 'N');
+			$endPage = $pdf->getPage();
+			if($startPage == $endPage) {
+				$imageHeight = $pdf->getY() - $y;
+			} else {
+				$imageHeight = $pdf->getY() + $pdf->getPageHeight() - $y - 60;
+				$pdf->setPage($startPage);
+			}
+			if($position->description) {
+				$pdf->MultiCell(65, $imageHeight, $position->description, 0, 'L', false, 1, $x+43, $y, true, 0);
+			}
+		} elseif($position->description) {
+			$pdf->MultiCell(98, 0, $position->description, 0, 'L', false, 1, $x+35, '', true, 0);
+		}
+		$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+		++$i;
+	}
+}
+
+function options($positions, $options, $optionSets, $settings, $pdf) {
+	$y = 0;
+	$list = array();
+	$addPage = true;
+	foreach($positions as $position) {
+		$list[] = $position->sku;
+		if(isset($options[$position->id]) && $addPage) {
+			$pdf->AddPage();
+			$pdf->SetFont('freesans', 'B', 9);
+			$pdf->setCellPaddings(1, 2, 1, 2);
+			$pdf->MultiCell(175, 0, "-------------------------------------------------------------------------------------------------------------------------------------------------------------------", 0, 'L', false, 1, '', '', true, 0);
+			$pdf->MultiCell(175, 0, "Folgende Ausstattungen und Funktionen die nicht im Angebot enthalten sind können je nach Bedarf und Einsatzzweck der Maschine zusätzlich bestellt werden. Die Basismaschine in der Grundausstattung ist einsatzfähig und betriebsbereit.", 0, 'L', false, 1, '', '', true, 0);
+			$pdf->MultiCell(175, 0, "-------------------------------------------------------------------------------------------------------------------------------------------------------------------", 0, 'L', false, 1, '', '', true, 0);
+			$pdf->setCellPaddings(1, 1, 1, 1);
+			$addPage = false;
+		}
+	}
+	foreach($positions as $position) {
+		if(isset($options[$position->id])) {
+			$pdf->SetFont('freesans', 'B', 10);
+			$pdf->MultiCell(175, 0, 'Optionale Ausstattung für '.$position->sku.' '.$position->title, 0, 'L', false, 1, '', '', true, 0);
+			foreach($optionSets[$position->id] as $optionSet) {
+				if($pdf->getY() > 250) $pdf->AddPage();
+				$pdf->SetFont('freesans', 'B', 10);
+				$pdf->MultiCell(145, 0, $optionSet->title, 0, 'L', false, 0, '', '', true, 0);
+				$pdf->MultiCell(30, 0, "- optional -", 0, 'R', false, 1, '', '', true, 0);
+				$pdf->SetFont('freesans', '', 9);
+				foreach($options[$position->id][$optionSet->id] as $option) {
+					if(array_search($option->sku, $list) == false) {
+						$pdf->MultiCell(15, 0, $option->sku, 0, 'L', false, 0, '', '', true, 0);
+						$pdf->MultiCell(130, 0, $option->title, 0, 'L', false, 0, '', '', true, 0);
+						if($option->price == 0) $option->price = 'bereits enthalten';
+						elseif($option->price == -1) $option->price = 'auf Anfrage';
+						elseif($option->price == -2) $option->price = 'nicht Verfügbar';
+						$pdf->MultiCell(30, 0, $option->price, 0, 'R', false, 1, 160, '', true, 0);
+						if($option->description) $pdf->MultiCell(120, 0, $option->description, 0, 'L', false, 1, 30, '', true, 0);
+					}
+				}
+			}
+			$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+			$pdf->setY($pdf->getY()+2);
+		}
+	}
+}
+
+function totalBox($pdf, $positions, $settings, $document, $translate) {
+	$x = 120;
+	$y = $pdf->getY();
+	$pdf->SetFont('freesansb', 'B', 10);
+	$pdf->setCellPaddings(3, 1, 3, 1);
+	$pdf->MultiCell(45, 0, $translate('DOCUMENTS_SUBTOTAL'), 'LT', 'L', false, 0 ,$x);
+	$pdf->MultiCell(30, 0, $document['subtotal'], 'TR', 'R', false, 1);
+	$pdf->setCellPaddings(3, 0, 3, 1);
+	$pdf->MultiCell(45, 0, $translate('DOCUMENTS_TAXES').' ('.$document['taxrate'].'%)', 'L', 'L', false, 0 ,$x);
+	$pdf->MultiCell(30, 0, $document['taxes'], 'R', 'R', false, 1);
+	$pdf->setCellPaddings(3, 1, 3, 1);
+	$pdf->MultiCell(45, 0, $translate('DOCUMENTS_TOTAL'), 'LBT', 'L', false, 0 ,$x);
+	$pdf->MultiCell(30, 0, $document['total'], 'RBT', 'R', false, 1);
+	if(isset($document['prepayment']) && $document['prepayment']) {
+		$pdf->MultiCell(45, 0, $translate('DOCUMENTS_PREPAYMENT'), 'L', 'L', false, 0 ,$x);
+		$pdf->MultiCell(30, 0, '- '.$document['prepayment'], 'R', 'R', false, 1);
+		$pdf->MultiCell(45, 0, $translate('DOCUMENTS_BALANCE'), 'LB', 'L', false, 0 ,$x);
+		$pdf->MultiCell(30, 0, $document['balance'], 'RB', 'R', false, 1);
+	}
+	$page = $pdf->getPage();
+	$pdf->setY($y);
 }
 
 function sample($pdf, $txt) {
