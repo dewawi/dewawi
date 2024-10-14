@@ -24,7 +24,8 @@ class Statistics_Model_Turnover
 		$currentYear = date('Y');
 		$currentMonth = date('m');
 		$startYear = date('Y', strtotime('-'.($lenght-1).' month'));
-		$startMonth = date('m', strtotime('-'.($lenght-1).' month'));
+		//$startMonth = date('m', strtotime('-'.($lenght-1).' month'));
+		$startMonth = 1;
 
 		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');
@@ -145,39 +146,54 @@ class Statistics_Model_Turnover
 			$creditnotesTotal = 0;
 			$invoicesQuantity = 0;
 			$creditnotesQuantity = 0;
-			$currency = Zend_Registry::get('Zend_Currency');
-			foreach($turnoverList as $id => $value) {
-				if(!isset($turnoverList[$id]['invoicesSubtotal'])) $turnoverList[$id]['invoicesSubtotal'] = 0;
-				if(!isset($turnoverList[$id]['creditnotesSubtotal'])) $turnoverList[$id]['creditnotesSubtotal'] = 0;
-				if(!isset($turnoverList[$id]['invoicesQuantity'])) $turnoverList[$id]['invoicesQuantity'] = 0;
-				if(!isset($turnoverList[$id]['creditnotesQuantity'])) $turnoverList[$id]['creditnotesQuantity'] = 0;
-				$invoicesTotal += $turnoverList[$id]['invoicesSubtotal'];
-				$creditnotesTotal += $turnoverList[$id]['creditnotesSubtotal'];
-				$turnoverList[$id]['invoicesTotal'] = $invoicesTotal;
-				$turnoverList[$id]['creditnotesTotal'] = $creditnotesTotal;
-				$turnoverList[$id]['invoicesAvarage'] = $turnoverList[$id]['invoicesQuantity']
-					? $turnoverList[$id]['invoicesSubtotal']/$value['invoicesQuantity']
-					: 0;
-				$turnoverList[$id]['creditnotesAvarage'] = $turnoverList[$id]['creditnotesQuantity']
-					? $turnoverList[$id]['creditnotesSubtotal']/$value['creditnotesQuantity']
-					: 0;
-				$invoicesQuantity += $turnoverList[$id]['invoicesQuantity'];
-				$creditnotesQuantity += $turnoverList[$id]['creditnotesQuantity'];
-				$turnoverList[$id]['invoicesTotalQuantity'] = $invoicesQuantity;
-				$turnoverList[$id]['creditnotesTotalQuantity'] = $creditnotesQuantity;
+
+			$turnoverTotal = [
+				'invoicesTotal' => 0,
+				'creditnotesTotal' => 0,
+				'invoicesTotalQuantity' => 0,
+				'creditnotesTotalQuantity' => 0,
+				'invoicesAverage' => 0,
+				'creditnotesAverage' => 0,
+			];
+
+			foreach ($turnoverList as $id => $value) {
+				// Initialize values with default if not set
+				$value['invoicesSubtotal'] = $value['invoicesSubtotal'] ?? 0;
+				$value['creditnotesSubtotal'] = $value['creditnotesSubtotal'] ?? 0;
+				$value['invoicesQuantity'] = $value['invoicesQuantity'] ?? 0;
+				$value['creditnotesQuantity'] = $value['creditnotesQuantity'] ?? 0;
+
+				// Accumulate totals
+				$invoicesTotal += $value['invoicesSubtotal'];
+				$creditnotesTotal += $value['creditnotesSubtotal'];
+
+				// Calculate averages
+				$value['invoicesAverage'] = $value['invoicesQuantity'] ? $value['invoicesSubtotal'] / $value['invoicesQuantity'] : 0;
+				$value['creditnotesAverage'] = $value['creditnotesQuantity'] ? $value['creditnotesSubtotal'] / $value['creditnotesQuantity'] : 0;
+
+				// Accumulate quantities
+				$invoicesQuantity += $value['invoicesQuantity'];
+				$creditnotesQuantity += $value['creditnotesQuantity'];
+
+				// Update turnover list with calculated totals and averages
+				$value['invoicesTotal'] = $invoicesTotal;
+				$value['creditnotesTotal'] = $creditnotesTotal;
+				$value['invoicesTotalQuantity'] = $invoicesQuantity;
+				$value['creditnotesTotalQuantity'] = $creditnotesQuantity;
+
+				// Assign back the modified value
+				$turnoverList[$id] = $value;
 			}
-			foreach($turnoverList as $id => $value) {
-				$turnoverList[$id]['invoicesTotal'] = $currency->toCurrency($invoicesTotal);
-				$turnoverList[$id]['creditnotesTotal'] = $currency->toCurrency($creditnotesTotal);
-				$turnoverList[$id]['invoicesSubtotal'] = $currency->toCurrency($value['invoicesSubtotal']);
-				$turnoverList[$id]['creditnotesSubtotal'] = $currency->toCurrency($value['creditnotesSubtotal']);
-				$turnoverList[$id]['invoicesAvarage'] = $currency->toCurrency($value['invoicesAvarage']);
-				$turnoverList[$id]['creditnotesAvarage'] = $currency->toCurrency($value['creditnotesAvarage']);
-				if($invoicesTotal && $invoicesQuantity) $turnoverList[$id]['invoicesTotalAvarage'] = $currency->toCurrency($invoicesTotal/$invoicesQuantity);
-				else $turnoverList[$id]['invoicesTotalAvarage'] = $currency->toCurrency(0);
-				if($creditnotesTotal && $creditnotesQuantity)  $turnoverList[$id]['creditnotesTotalAvarage'] = $currency->toCurrency($creditnotesTotal/$creditnotesQuantity);
-				else $turnoverList[$id]['creditnotesTotalAvarage'] = $currency->toCurrency(0);
-			}
+
+			// Store overall totals and averages in turnoverTotal
+			$turnoverTotal['invoicesTotal'] = $invoicesTotal;
+			$turnoverTotal['creditnotesTotal'] = $creditnotesTotal;
+			$turnoverTotal['invoicesTotalQuantity'] = $invoicesQuantity;
+			$turnoverTotal['creditnotesTotalQuantity'] = $creditnotesQuantity;
+
+			// Calculate overall averages if there are any quantities
+			$turnoverTotal['invoicesAverage'] = $invoicesQuantity ? $invoicesTotal / $invoicesQuantity : 0;
+			$turnoverTotal['creditnotesAverage'] = $creditnotesQuantity ? $creditnotesTotal / $creditnotesQuantity : 0;
 
 			/* Create the pChart object */
 			$chartTurnover = new pDraw($width, $height);
@@ -306,7 +322,7 @@ class Statistics_Model_Turnover
 			}
 			$chartTurnoverCategory->Render(BASE_PATH . '/cache/chart/' . $url . '/turnover-category-' . $width . '-' . $height . '.png');
 		}
-		return $turnoverList;
+		return array($turnoverList, $turnoverTotal);
 	}
 
 	private function fetchData($db, $type, $year, $month, $ym, $client, $params, $options)
