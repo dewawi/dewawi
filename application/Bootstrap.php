@@ -141,328 +141,234 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 							);
 	}
 
-	/*protected function _initRoutes()
+	protected function _initShopRoutes()
 	{
 		$frontController = Zend_Controller_Front::getInstance();
 		$router = $frontController->getRouter();
 
-		// Fetch routes from the database
-		$db = Zend_Db_Table::getDefaultAdapter();
-		$routesTable = new Zend_Db_Table('routes');
-		$routes = $routesTable->fetchAll();
+		// Get the current domain from the request (without the scheme)
+		$currentDomain = $_SERVER['HTTP_HOST'];
 
-		// Add each route to the router
-		foreach ($routes as $routeData) {
-			$route = new Zend_Controller_Router_Route(
-				$routeData['pattern'],
-				array(
-					'module'	 => $routeData['module'],
-					'controller' => $routeData['controller'],
-					'action'	 => $routeData['action']
-				)
-			);
-
-			$router->addRoute('custom_' . $routeData['id'], $route);
-		}
-	}*/
-
-	protected function _initRoutes()
-	{
-		$frontController = Zend_Controller_Front::getInstance();
-		$router = $frontController->getRouter();
-
-		// Fetch shops from the database
+		// Fetch all activated shops from the database
 		$shopsTable = new Zend_Db_Table('shop');
 		$shops = $shopsTable->fetchAll(['activated = ?' => 1]);
 
-		// Check if the request domain matches the specific domain
-		foreach($shops as $shop) {
-			// Extract the domain from the URL
-			$parsedUrl = parse_url($shop['url']);
-			$domain = isset($parsedUrl['host']) ? $parsedUrl['host'] : '';
+		$matchedShop = null;
 
-			if($_SERVER['HTTP_HOST'] === $domain) {
-				$shopData = array(
-							'id' => $shop['id'],
-							'url' => $shop['url'],
-							'timezone' => $shop['timezone'],
-							'language' => $shop['language'],
-							'logo' => $shop['logo'],
-							'title' => $shop['title'],
-							'footer' => $shop['footer'],
-							'emailsender' => $shop['emailsender'],
-							'smtphost' => $shop['smtphost'],
-							'smtpuser' => $shop['smtpuser'],
-							'smtppass' => $shop['smtppass']
-							);
+		foreach ($shops as $shop) {
+			// Extract the host part of the URL stored in the database
+			$shopHost = parse_url($shop['url'], PHP_URL_HOST);
 
-				Zend_Registry::set('Shop', $shopData);
-
-				// Route to home
-				$routeHome = new Zend_Controller_Router_Route(
-					'/',
-					array(
-						'module'	 => 'shops',
-						'controller' => 'index',
-						'action'	 => 'index',
-						'testid'	 => $shop['id']
-					)
-				);
-				$router->addRoute('shop', $routeHome);
-
-				$menuDb = new Zend_Db_Table('menu');
-				$menus = $menuDb->fetchAll();
-
-				// Route to pages
-				$menuitemsTable = new Zend_Db_Table('menuitem');
-				$menuitems = $menuitemsTable->fetchAll();
-				foreach($menuitems as $menuitem) {
-					if($menuitem->slug) {
-						$routePage = new Zend_Controller_Router_Route(
-							$menuitem->slug,
-							array(
-								'module'	 => 'shops',
-								'controller' => 'page',
-								'action'	 => 'index',
-								'slug'	 => $menuitem->slug
-							),
-							array(
-								'slug' => '[a-zA-Z0-9-]+' // Regular expression to match category slug
-							)
-						);
-						$router->addRoute($menuitem->slug, $routePage);
-					}
-				}
-
-				// Route to categories
-				$categoryDb = new Zend_Db_Table('category');
-				$categories = $categoryDb->fetchAll(['shopid = ?' => $shop['id']]);
-				foreach($categories as $category) {
-					if($category->slug) {
-						$routeCategory = new Zend_Controller_Router_Route(
-							$category->slug,
-							array(
-								'module'	 => 'shops',
-								'controller' => 'category',
-								'action'	 => 'index',
-								'slug'	 => $category->slug
-							),
-							array(
-								'slug' => '[a-zA-Z0-9-]+' // Regular expression to match category slug
-							)
-						);
-						$router->addRoute($category->slug, $routeCategory);
-					}
-				}
-
-				// Route to items
-				$itemDb = new Zend_Db_Table('item');
-				$items = $itemDb->fetchAll(['shopid = ?' => $shop['id']]);
-				foreach($items as $item) {
-					if($item->slug) {
-						$routeItem = new Zend_Controller_Router_Route(
-							$item->slug,
-							array(
-								'module'	 => 'shops',
-								'controller' => 'category',
-								'action'	 => 'index',
-								'slug'	 => $item->slug
-							),
-							array(
-								'slug' => '[a-zA-Z0-9-]+' // Regular expression to match category slug
-							)
-						);
-						$router->addRoute($item->slug, $routeItem);
-					}
-				}
-
-				// Route to tags
-				$tagDb = new Zend_Db_Table('tag');
-				$tags = $tagDb->fetchAll(['module = ?' => 'shops', 'controller = ?' => 'category', 'shopid = ?' => $shop['id']]);
-				foreach($tags as $tag) {
-					if($tag->slug) {
-						$routeTag = new Zend_Controller_Router_Route(
-							$tag->slug,
-							array(
-								'module'	 => 'shops',
-								'controller' => 'tag',
-								'action'	 => 'index',
-								'slug'	 => $tag->slug
-							),
-							array(
-								'slug' => '[a-zA-Z0-9-]+' // Regular expression to match category slug
-							)
-						);
-						$router->addRoute($tag->slug, $routeTag);
-					}
-				}
-
-				// Route to contact
-				$routeContact = new Zend_Controller_Router_Route(
-					'contact/send',
-					array(
-						'module'	 => 'shops',
-						'controller' => 'contact',
-						'action'	 => 'send'
-					)
-				);
-				$router->addRoute('contact', $routeContact);
-
-				// Route to a specific category
-				/*$routeCategory = new Zend_Controller_Router_Route(
-					':category',
-					array(
-						'module'	 => 'shops',
-						'controller' => 'category',
-						'action'	 => 'index'
-					),
-					array(
-						'category' => '[a-zA-Z0-9-]+' // Regular expression to match category slug
-					)
-				);*/
-
-				/*$routeSubcategory = new Zend_Controller_Router_Route(
-					':category/:subcategory',
-					array(
-						'module'	 => 'shops',
-						'controller' => 'category',
-						'action'	 => 'index'
-					),
-					array(
-						'category' => '[a-zA-Z0-9-]+', // Regular expression to match category slug
-						'subcategory' => '[a-zA-Z0-9-]+' // Regular expression to match subcategory slug
-					)
-				);*/
-
-				/*$routeCategoryItem = new Zend_Controller_Router_Route(
-					':category/:item',
-					array(
-						'module'	 => 'shops',
-						'controller' => 'item',
-						'action'	 => 'index'
-					),
-					array(
-						'category' => '[a-zA-Z0-9-]+', // Regular expression to match category slug
-						'item'  => '[a-zA-Z0-9-]+'  // Regular expression to match item slug
-					)
-				);*/
-
-				/*$routeSubcategoryItem = new Zend_Controller_Router_Route(
-					':category/:subcategory/:item',
-					array(
-						'module'	 => 'shops',
-						'controller' => 'item',
-						'action'	 => 'index'
-					),
-					array(
-						'category' => '[a-zA-Z0-9-]+', // Regular expression to match category slug
-						'subcategory' => '[a-zA-Z0-9-]+', // Regular expression to match subcategory slug
-						'item'  => '[a-zA-Z0-9-]+'  // Regular expression to match item slug
-					)
-				);*/
-
-				// Example of how to generate routes dynamically from menu items
-				/*$menuitemsTable = new Zend_Db_Table('menuitem');
-				$menuitems = $menuitemsTable->fetchAll(['shopid = ?' => $shop['id']]);
-				foreach ($menuitems as $menuitem) {
-					$router->addRoute(
-						'shop_' . $shop['id'] . '_' . $menuitem['slug'],
-						new Zend_Controller_Router_Route(
-							$menuitem['url'],
-							[
-								'module'	 => 'shops',
-								'controller' => 'page',
-								'action'	 => 'index',
-								'page'	   => $menuitem['slug'],
-								'shopid'	=> $shop['id']
-							]
-						)
-					);
-				}*/
-
-				//$router->addRoute('category', $routeCategory);
-				//$router->addRoute('subcategory', $routeSubcategory);
-				//$router->addRoute('categoryitem', $routeCategoryItem);
-				//$router->addRoute('subcategoryitem', $routeSubcategoryItem);
-				//print_r($router->getRoutes());
-
-				// Set up routes for the current shop
-				//$this->_setupShopRoutes($router, $shop);
+			// Normalize and compare the domain to avoid mismatches
+			if ($shopHost === $currentDomain) {
+				$matchedShop = $shop;
+				break; // Stop looping once a match is found
 			}
 		}
-	}
 
-	protected function _setupShopRoutes($router, $shop)
-	{
-		// Route to home
-		/*$router->addRoute(
-			'shop_' . $shop['id'] . '_home',
-			new Zend_Controller_Router_Route(
+		// If shop found, proceed with setting up the shop
+		if ($matchedShop) {
+			// Store shop details in the registry
+			$shopData = array(
+					'id' => $shop['id'],
+					'url' => $shop['url'],
+					'timezone' => $shop['timezone'],
+					'language' => $shop['language'],
+					'logo' => $shop['logo'],
+					'title' => $shop['title'],
+					'footer' => $shop['footer'],
+					'emailsender' => $shop['emailsender'],
+					'smtphost' => $shop['smtphost'],
+					'smtpuser' => $shop['smtpuser'],
+					'smtppass' => $shop['smtppass']
+					);
+
+			Zend_Registry::set('Shop', $shopData);
+
+			// Route to home
+			$routeHome = new Zend_Controller_Router_Route(
 				'/',
-				[
-					'module'	 => 'shops',
+				array(
+					'module' => 'shops',
 					'controller' => 'index',
-					'action'	 => 'index',
-					'shopid'	=> $shop['id']
-				]
-			)
-		);
-
-		// Route to a specific category
-		$router->addRoute(
-			'shop_' . $shop['id'] . '_category',
-			new Zend_Controller_Router_Route(
-				':category',
-				[
-					'module'	 => 'shops',
-					'controller' => 'category',
-					'action'	 => 'index',
-					'shopid'	=> $shop['id']
-				],
-				[
-					'category' => '[a-zA-Z0-9-]+'
-				]
-			)
-		);
-
-		// Route to a specific item within a category
-		$router->addRoute(
-			'shop_' . $shop['id'] . '_category_item',
-			new Zend_Controller_Router_Route(
-				':category/:item',
-				[
-					'module'	 => 'shops',
-					'controller' => 'item',
-					'action'	 => 'index',
-					'shopid'	=> $shop['id']
-				],
-				[
-					'category' => '[a-zA-Z0-9-]+',
-					'item'	 => '[a-zA-Z0-9-]+'
-				]
-			)
-		);
-
-		// Example of how to generate routes dynamically from menu items
-		/*$menuitemsTable = new Zend_Db_Table('menuitem');
-		$menuitems = $menuitemsTable->fetchAll(['shopid = ?' => $shop['id']]);
-		foreach ($menuitems as $menuitem) {
-			$router->addRoute(
-				'shop_' . $shop['id'] . '_' . $menuitem['slug'],
-				new Zend_Controller_Router_Route(
-					$menuitem['url'],
-					[
-						'module'	 => 'shops',
-						'controller' => 'page',
-						'action'	 => 'index',
-						'page'	   => $menuitem['slug'],
-						'shopid'	=> $shop['id']
-					]
+					'action' => 'index',
+					'testid' => $shop['id']
 				)
 			);
-		}*/
-		if($shop['id'] = 100) {
-			//print_r($router->getRoutes());
+			$router->addRoute('shop', $routeHome);
+
+			// Route to all others
+			$routeOthers = new Zend_Controller_Router_Route(
+				'*',
+				array(
+					'module' => 'shops',
+					'controller' => 'index',
+					'action' => 'index',
+					'testid' => $shop['id']
+				)
+			);
+			$router->addRoute('others', $routeOthers);
+
+			// Fetch menu items and categories for the current shop
+			$menuTable = new Zend_Db_Table('menu');
+			$menuItemTable = new Zend_Db_Table('menuitem');
+
+			// Get all menus for the current shop
+			$menus = $menuTable->fetchAll(['shopid = ?' => $shop['id']]);
+			$menuIds = array();
+			foreach ($menus as $menu) {
+				$menuIds[] = $menu['id']; // Collect menu IDs into an array
+			}
+
+			// Fetch menu items only if there are menu IDs
+			if (!empty($menuIds)) {
+				$menuItems = $menuItemTable->fetchAll(
+					$menuItemTable->select()->where('menuid IN (?)', $menuIds)
+				);
+			} else {
+				$menuItems = []; // No menu items if no menu IDs are present
+			}
+
+			// Get all categories for the current shop
+			$categoryTable = new Zend_Db_Table('category');
+			$categories = $categoryTable->fetchAll(['shopid = ?' => $shop['id']]);
+
+			// Helper function to build the full slug path with parent-child hierarchy
+			$getFullSlug = function ($item, $table) {
+				$slug = $item['slug'];
+				while ($item['parentid']) {
+					$parentItem = $table->find($item['parentid'])->current();
+					if ($parentItem) {
+						$slug = $parentItem['slug'] . '/' . $slug;
+						$item = $parentItem;
+					} else {
+						break; // Parent not found, stop.
+					}
+				}
+				return $slug;
+			};
+
+			// Create routes for all menu items
+			foreach ($menuItems as $menuItem) {
+				if (!empty($menuItem['slug'])) { // Ensure slug exists
+					$menuItemSlug = $getFullSlug($menuItem, $menuItemTable); // Get full slug path for the menu item
+					$routeMenuItem = new Zend_Controller_Router_Route(
+						$menuItemSlug,
+						array(
+							'module' => 'shops',
+							'controller' => 'page', // Assuming 'page' controller for all menu items
+							'action' => 'index',
+							'id' => $menuItem['pageid']
+						),
+						array(
+							'slug' => '[a-zA-Z0-9-]+' // Regular expression to match slugs
+						)
+					);
+					$router->addRoute('menuitem_'.$menuItem['id'], $routeMenuItem);
+				}
+			}
+
+			// Create routes for all categories
+			foreach ($categories as $category) {
+				if (!empty($category['slug'])) { // Ensure slug exists
+					$categorySlug = $getFullSlug($category, $categoryTable); // Get full slug path for the category
+					$routeCategory = new Zend_Controller_Router_Route(
+						$categorySlug,
+						array(
+							'module' => 'shops',
+							'controller' => 'category', // Assuming 'category' controller for all categories
+							'action' => 'index',
+							'id' => $category['id']
+						),
+						array(
+							'slug' => '[a-zA-Z0-9-]+' // Regular expression to match slugs
+						)
+					);
+					$router->addRoute('category_'.$category['id'], $routeCategory);
+				}
+			}
+
+			// Route to tags
+			$tagDb = new Zend_Db_Table('tag');
+			$tags = $tagDb->fetchAll(['module = ?' => 'shops', 'controller = ?' => 'category', 'shopid = ?' => $shop['id']]);
+			foreach($tags as $tag) {
+				if($tag->slug) {
+					$routeTag = new Zend_Controller_Router_Route(
+						$tag->slug,
+						array(
+							'module' => 'shops',
+							'controller' => 'tag',
+							'action' => 'index',
+							'id' => $tag->id
+						),
+						array(
+							'slug' => '[a-zA-Z0-9-]+' // Regular expression to match tags
+						)
+					);
+					$router->addRoute('tag_'.$tag->id, $routeTag);
+				}
+			}
+
+			// Route to contact
+			$contactRoutes = [
+				'send' => 'contact',
+				'success' => 'contact_success',
+				'error' => 'contact_error',
+			];
+
+			foreach ($contactRoutes as $action => $routeName) {
+				$router->addRoute($routeName, new Zend_Controller_Router_Route(
+					'contact/' . $action,
+					[
+						'module' => 'shops',
+						'controller' => 'contact',
+						'action' => $action
+					]
+				));
+			}
+
+			// Route to sitemap
+			$routeSitemap = new Zend_Controller_Router_Route(
+				'sitemap.xml',
+				array(
+					'module' => 'shops',
+					'controller' => 'sitemap',
+					'action' => 'index'
+				)
+			);
+			$router->addRoute('sitemap', $routeSitemap);
+
+			// Get all registered routes
+			//$routes = $router->getRoutes();
+
+			//print_r($routes);
+
+			/*// Fetch slugs from the slug table
+			$slugTable = new Zend_Db_Table('slug');
+			$slugs = $slugTable->fetchAll(['shopid = ?' => $shop['id']]);
+
+			// Create routes for each slug in one step using the slug table
+			foreach ($slugs as $slug) {
+				$slugValue = $slug['slug'];
+				$module = $slug['module'];
+				$controller = $slug['controller'];
+				$action = 'index';
+
+				// Create a route for this slug
+				$route = new Zend_Controller_Router_Route(
+					$slugValue,
+					array(
+						'module' => $module,
+						'controller' => $controller,
+						'action' => $action,
+						'slug' => $slugValue
+					),
+					array(
+						'slug' => '[a-zA-Z0-9-]+' // Regular expression to match the slug
+					)
+				);
+				$router->addRoute($slugValue, $route);
+			}*/
 		}
 	}
 }
