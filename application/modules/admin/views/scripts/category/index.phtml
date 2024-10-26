@@ -20,24 +20,25 @@ echo $this->Messages();
 					<th class="id" width="1%">
 						<?php echo $this->translate('ADMIN_ID'); ?>
 					</th>
-					<th class="name" width="20%">
+					<th class="title" width="20%">
 						<?php echo $this->translate('ADMIN_TITLE'); ?>
 					</th>
-					<th class="name" width="20%">
+					<th class="subtitle" width="20%">
+						<?php echo $this->translate('ADMIN_SUBTITLE'); ?>
 					</th>
 					<?php if($this->toolbar->getValue('type') == 'shop') : ?>
 						<th class="slug" width="20%">
 							<?php echo $this->translate('ADMIN_SLUG'); ?>
 						</th>
 					<?php endif; ?>
-					<th class="image" width="20%">
-						<?php echo $this->translate('ADMIN_CATEGORY_IMAGE'); ?>
-					</th>
 					<th class="parentid" width="20%">
 						<?php echo $this->translate('ADMIN_PARENT_CATEGORY'); ?>
 					</th>
-					<th class="ordering" width="20%">
+					<th class="ordering" width="1%">
 						<?php echo $this->translate('ADMIN_ORDERING'); ?>
+					</th>
+					<th class="category" width="1%">
+						<?php echo $this->translate('ADMIN_ACTIVATED'); ?>
 					</th>
 					<th width="8%"></th>
 				</tr>
@@ -60,25 +61,25 @@ echo $this->Messages();
 									<?php echo $this->escape($category['id']); ?>
 								</a>
 							</td>
-							<td class="name">
+							<td class="title">
 								<span class="editable" data-name="title"><?php echo $this->escape($category['title']); ?></span>
 							</td>
-							<td class="name">
-								<span class="editable" data-name="title"><?php echo $this->escape($category['subtitle']); ?></span>
+							<td class="subtitle">
+								<span class="editable" data-name="subtitle"><?php echo $this->escape($category['subtitle']); ?></span>
 							</td>
 							<?php if($category['type'] == 'shop') : ?>
 								<td class="slug">
-									<span class="editable" data-name="slug" data-value="0" data-type="input"><?php echo $this->escape($category['slug']); ?></span>
+									<span class="editable" data-name="slug" data-value="0" data-type="input"><?php echo $this->escape($this->slugs[$category['id']]); ?></span>
 								</td>
 							<?php endif; ?>
-							<td class="image">
-								<span class="editable" data-name="image" data-value="0" data-type="input"><?php echo $this->escape($category['image']); ?></span>
-							</td>
 							<td class="parentid">
 								<span class="editable" data-name="parentid" data-value="0" data-type="select"><?php echo $this->translate('ADMIN_MAIN_CATEGORY'); ?></span>
 							</td>
 							<td class="ordering">
 								<?php echo $this->escape($category['ordering']); ?>
+							</td>
+							<td class="activated">
+								<?php echo $this->forms[$category['id']]->activated; ?>
 							</td>
 							<td class="buttons">
 							<?php echo $this->Button('copy'); ?>
@@ -97,7 +98,7 @@ echo $this->Messages();
 							<?php $buttons['delete'] = $this->Button('delete'); ?>
 							<?php $buttons['sortup'] = $this->toolbar->sortup; ?>
 							<?php $buttons['sortdown'] = $this->toolbar->sortdown; ?>
-							<?php $this->Category()->subCategories($this->categories, $category['id'], $buttons, $this->user['admin']); ?>
+							<?php $this->Category()->subCategories($this->categories, $category['id'], $buttons, $this->user['admin'], $this->forms, $this->slugs); ?>
 						<?php endif; ?>
 					<?php endif; ?>
 					<?php ++$i0; ?>

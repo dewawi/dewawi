@@ -1,6 +1,6 @@
 <?php
 
-class Admin_PageController extends Zend_Controller_Action
+class Admin_MenuitemController extends Zend_Controller_Action
 {
 	protected $_date = null;
 
@@ -50,23 +50,35 @@ class Admin_PageController extends Zend_Controller_Action
 	{
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Page();
+		$form = new Admin_Form_Menuitem();
 		$toolbar = new Admin_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$pagesDb = new Admin_Model_DbTable_Page();
+		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
 
 		if($params['type'] == 'shop') {
-			$pages = $pagesDb->getPages($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
+			$menuItems = $menuItemsDb->getMenuitems($params['type'], null, $params['shopid']);
+			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($menuItems));
 		} else {
-			$pages = $pagesDb->getPages($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
+			$menuItems = $menuItemsDb->getMenuitems($params['type']);
+			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($menuItems));
+		}
+
+		if($params['type'] == 'shop') {
+			$slugs = array();
+			$slugDb = new Admin_Model_DbTable_Slug();
+			$menuDb = new Admin_Model_DbTable_Menu();
+			foreach($menuItems as $menuItem) {
+				$menu = $menuDb->getMenu($menuItem['menuid']);
+				$slug = $slugDb->getSlug('shops', 'page', 120, $menuItem['pageid']);
+				$slugs[$menuItem['id']] = $slug['slug'];
+			}
 		}
 
 		$this->view->form = $form;
-		$this->view->pages = $pages;
+		$this->view->menuItems = $menuItems;
+		$this->view->slugs = $slugs;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -76,23 +88,33 @@ class Admin_PageController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Page();
+		$form = new Admin_Form_Menuitem();
 		$toolbar = new Admin_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$pagesDb = new Admin_Model_DbTable_Page();
+		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
 
 		if($params['type'] == 'shop') {
-			$pages = $pagesDb->getPages($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
+			$menuItems = $menuItemsDb->getMenuitems($params['type'], null, $params['shopid']);
+			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($menuItems));
 		} else {
-			$pages = $pagesDb->getPages($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
+			$menuItems = $menuItemsDb->getMenuitems($params['type']);
+			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($menuItems));
+		}
+
+		$slugs = array();
+		$slugDb = new Admin_Model_DbTable_Slug();
+		$menuDb = new Admin_Model_DbTable_Menu();
+		foreach($menuItems as $menuItem) {
+			$menu = $menuDb->getMenu($menuItem['menuid']);
+			$slug = $slugDb->getSlug('shops', 'page', 120, $menuItem['pageid']);
+			$slugs[$menuItem['id']] = $slug['slug'];
 		}
 
 		$this->view->form = $form;
-		$this->view->pages = $pages;
+		$this->view->menuItems = $menuItems;
+		$this->view->slugs = $slugs;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -105,7 +127,7 @@ class Admin_PageController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		if($request->isPost()) {
-			$form = new Admin_Form_Page();
+			$form = new Admin_Form_Menuitem();
 			$options = $this->_helper->Options->getOptions($form);
 			$params = $this->_helper->Params->getParams($form, $options);
 			$data = $request->getPost();
@@ -114,10 +136,16 @@ class Admin_PageController extends Zend_Controller_Action
 				if(!isset($data['shopid'])) $data['shopid'] = 0;
 				//$data['parentid'] = $params['parentid'];
 
-				$pageDb = new Admin_Model_DbTable_Page();
-				$id = $pageDb->addPage($data);
+				$menuItemDb = new Admin_Model_DbTable_Menuitem();
+				$id = $menuItemDb->addMenuitem($data);
+
+				if($data['shopid']) {
+					$slugDb = new Admin_Model_DbTable_Slug();
+					$slugDb->addSlug('shops', 'page', $data['shopid'], $data['parentid'], $id, $id);
+				}
+
 				//echo Zend_Json::encode($data);
-				echo Zend_Json::encode($pageDb->getPage($id));
+				echo Zend_Json::encode($menuItemDb->getMenuitem($id));
 			//} else {
 			//	echo Zend_Json::encode($data);
 				//echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -125,16 +153,19 @@ class Admin_PageController extends Zend_Controller_Action
 		}
 	}
 
-	public function editAction()
+	public function editAction()index/type/shop
 	{
 		$request = $this->getRequest();
 		$id = $this->_getParam('id', 0);
 		$activeTab = $request->getCookie('tab', null);
 
-		$pageDb = new Admin_Model_DbTable_Page();
-		$page = $pageDb->getPage($id);
+		$menuItemDb = new Admin_Model_DbTable_Menuitem();
+		$menuItem = $menuItemDb->getMenuitem($id);
 
-		if($this->isLocked($page['locked'], $page['lockedtime'])) {
+		$menuDb = new Admin_Model_DbTable_Menu();
+		$menu = $menuDb->getMenu($menuItem['menuid']);
+
+		if($this->isLocked($menuItem['locked'], $menuItem['lockedtime'])) {
 			if($request->isPost()) {
 				header('Content-type: application/json');
 				$this->_helper->viewRenderer->setNoRender();
@@ -145,13 +176,13 @@ class Admin_PageController extends Zend_Controller_Action
 				$this->_helper->redirector('index');
 			}
 		} else {
-			$pageDb->lock($id);
+			$menuItemDb->lock($id);
 
-			$form = new Admin_Form_Page();
+			$form = new Admin_Form_Menuitem();
 			$options = $this->_helper->Options->getOptions($form);
 			$params = $this->_helper->Params->getParams($form, $options);
-			$pagesDb = new Admin_Model_DbTable_Page();
-			$pages = $pagesDb->getPages($params['type']);
+			$menuItemsDb = new Admin_Model_DbTable_Menuitem();
+			$menuItems = $menuItemsDb->getMenuitems($params['type']);
 			if($request->isPost()) {
 				header('Content-type: application/json');
 				$this->_helper->viewRenderer->setNoRender();
@@ -160,41 +191,54 @@ class Admin_PageController extends Zend_Controller_Action
 				$element = key($data);
 				//if(isset($form->$element) && $form->isValidPartial($data)) { // to do add options for parentid before form validation
 				if(true) {
-					$pageDb = new Admin_Model_DbTable_Page();
+					$menuItemDb = new Admin_Model_DbTable_Menuitem();
 					if($element == 'parentid') {
 						$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-						$pageArray = $pageDb->getPage($id);
-						$pageDb->updatePage($id, $data);
+						$menuItemArray = $menuItemDb->getMenuitem($id);
+						$menuItemDb->updateMenuitem($id, $data);
 
-						//sort old parent page
-						$this->setOrdering($pageArray['clientid'], $pageArray['type'], $pageArray['parentid']);
+						//sort old parent menuItem
+						$this->setOrdering($menuItemArray['clientid'], $menuItemArray['type'], $menuItemArray['parentid']);
 
-						/*$pages = $this->_helper->Pages->getPages(null, $params['clientid'], $params['type'], $pageArray['parentid']);
+						$slugDb = new Admin_Model_DbTable_Slug();
+						$slugDb->updateSlug('shops', 'page', $menuItemArray['shopid'], $data['parentid'], $id);
+
+						/*$menuItems = $this->_helper->Menuitems->getMenuitems(null, $params['clientid'], $params['type'], $menuItemArray['parentid']);
 						$i = 1;
-						foreach($pages as $page) {
-							if(isset($page['id'])) {
-								//if($page['ordering'] != $i)
-								$pageDb->updatePage($page['id'], array('ordering' => $i));
+						foreach($menuItems as $menuItem) {
+							if(isset($menuItem['id'])) {
+								//if($menuItem['ordering'] != $i)
+								$menuItemDb->updateMenuitem($menuItem['id'], array('ordering' => $i));
 								++$i;
-							}
+							}index/type/shop
 						}*/
+						echo Zend_Json::encode($menuItemDb->getMenuitem($id));
+					} elseif($element == 'slug') {
+						$slugDb = new Admin_Model_DbTable_Slug();
+						$slugDb->updateSlug('shops', 'page', $menuItem['shopid'], $menuItem['parentid'], $id, $data['slug']);
+						echo Zend_Json::encode(array('slug' => $data['slug']));
 					} else {
-						$pageDb->updatePage($id, $data);
+						$menuItemDb->updateMenuitem($id, $data);
+						echo Zend_Json::encode($menuItemDb->getMenuitem($id));
 					}
-					echo Zend_Json::encode($pageDb->getPage($id));
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 				}
 			} else {
 				if($id > 0) {
-					$form->populate($page);
+					$form->populate($menuItem);
 
 					//Toolbar
 					$toolbar = new Admin_Form_Toolbar();
 
 					//Tags
 					$get = new Shops_Model_Get();
-					$tags = $get->tags('shops', 'page', $page['id']);
+					$tags = $get->tags('shops', 'menuItem', $menuItem['id']);
+
+					//Get slug
+					$slugDb = new Admin_Model_DbTable_Slug();
+					$slug = $slugDb->getSlug('shops', 'page', $menuItem['shopid'], $id);
+					$form->slug->setValue($slug['slug']);
 
 					$this->view->form = $form;
 					$this->view->tags = $tags;
@@ -212,17 +256,17 @@ class Admin_PageController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$id = $this->_getParam('id', 0);
-		$pageDb = new Admin_Model_DbTable_Page();
-		$data = $pageDb->getPage($id);
+		$menuItemDb = new Admin_Model_DbTable_Menuitem();
+		$data = $menuItemDb->getMenuitem($id);
 		unset($data['id']);
 
-		$pagesDb = new Admin_Model_DbTable_Page();
-		$pages = $pagesDb->getPages($data['type'], $data['parentid']);
-		foreach($pages as $page) {
-			if(isset($page['ordering'])) {
-				if($page['ordering'] > $data['ordering']) {
-					if(!isset($pagesDb)) $pagesDb = new Admin_Model_DbTable_Page();
-					$pagesDb->sortPage($page['id'], $page['ordering'] + 1);
+		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
+		$menuItems = $menuItemsDb->getMenuitems($data['type'], $data['parentid']);
+		foreach($menuItems as $menuItem) {
+			if(isset($menuItem['ordering'])) {
+				if($menuItem['ordering'] > $data['ordering']) {
+					if(!isset($menuItemsDb)) $menuItemsDb = new Admin_Model_DbTable_Menuitem();
+					$menuItemsDb->sortMenuitem($menuItem['id'], $menuItem['ordering'] + 1);
 				}
 			}
 		}
@@ -233,11 +277,16 @@ class Admin_PageController extends Zend_Controller_Action
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
-		$newId = $pageDb->addPage($data);
+		$newId = $menuItemDb->addMenuitem($data);
 		//print_r($data);
 
-		$childPages = $pagesDb->getPages($data['type'], $id);
-		if(isset($childPages[$id]['childs'])) $this->copyChilds($id, $childPages, $newId);
+		if($data['shopid']) {
+			$slugDb = new Admin_Model_DbTable_Slug();
+			$slugDb->addSlug('shops', 'page', $data['shopid'], $data['parentid'], $newId, $newId);
+		}
+
+		$childMenuitems = $menuItemsDb->getMenuitems($data['type'], $id);
+		if(isset($childMenuitems[$id]['childs'])) $this->copyChilds($id, $childMenuitems, $newId);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 
@@ -252,30 +301,30 @@ class Admin_PageController extends Zend_Controller_Action
 		$request = $this->getRequest();
 		if($request->isPost()) {
 			$data = $request->getPost();
-			$pageDb = new Admin_Model_DbTable_Page();
-			$page = $pageDb->getPage($data['id']);
-			$orderings = $this->getOrdering($page['clientid'], $page['type'], $page['parentid']);
+			$menuItemDb = new Admin_Model_DbTable_Menuitem();
+			$menuItem = $menuItemDb->getMenuitem($data['id']);
+			$orderings = $this->getOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
 			$currentOrdering = array_search($data['id'], $orderings);
 			if(($data['ordering'] == 'down') && (isset($orderings[$currentOrdering+1]))) {
-				$pageDb->sortPage($data['id'], $currentOrdering+1);
-				$pageDb->sortPage($orderings[$currentOrdering+1], $currentOrdering);
+				$menuItemDb->sortMenuitem($data['id'], $currentOrdering+1);
+				$menuItemDb->sortMenuitem($orderings[$currentOrdering+1], $currentOrdering);
 			} elseif(($data['ordering'] == 'up') && (isset($orderings[$currentOrdering-1]))) {
-				$pageDb->sortPage($data['id'], $currentOrdering-1);
-				$pageDb->sortPage($orderings[$currentOrdering-1], $currentOrdering);
+				$menuItemDb->sortMenuitem($data['id'], $currentOrdering-1);
+				$menuItemDb->sortMenuitem($orderings[$currentOrdering-1], $currentOrdering);
 			} elseif($data['ordering'] > 0) {
 				if($data['ordering'] < $currentOrdering) {
-					$pageDb->sortPage($data['id'], $data['ordering']);
+					$menuItemDb->sortMenuitem($data['id'], $data['ordering']);
 					foreach($orderings as $ordering => $id) {
-						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $pageDb->sortPage($id, $ordering+1);
+						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $menuItemDb->sortMenuitem($id, $ordering+1);
 					}
 				} elseif($data['ordering'] > $currentOrdering) {
-					$pageDb->sortPage($data['id'], $data['ordering']);
+					$menuItemDb->sortMenuitem($data['id'], $data['ordering']);
 					foreach($orderings as $ordering => $id) {
-						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $pageDb->sortPage($id, $ordering-1);
+						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $menuItemDb->sortMenuitem($id, $ordering-1);
 					}
 				}
 			}
-			$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
+			$this->setOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
 		}
 	}
 
@@ -287,60 +336,65 @@ class Admin_PageController extends Zend_Controller_Action
 
 		if($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
-			$pageDb = new Admin_Model_DbTable_Page();
-			$page = $pageDb->getPage($id);
+			$menuItemDb = new Admin_Model_DbTable_Menuitem();
+			$menuItem = $menuItemDb->getMenuitem($id);
 
-			if($page['type'] == 'contact') {
+			if($menuItem['type'] == 'contact') {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contacts = $contactDb->getContactsByPage($id);
+				$contacts = $contactDb->getContactsByMenuitem($id);
 				if(!empty($contacts)) {
-					//Do not delete the page if it is not empty
+					//Do not delete the menuItem if it is not empty
 					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
 				} else {
-					$pagesDb = new Admin_Model_DbTable_Page();
-					$pages = $pagesDb->getPages($page['type'], $page['id']);
-					if(!empty($pages)) {
-						//Do not delete the page if it has child pages
+					$menuItemsDb = new Admin_Model_DbTable_Menuitem();
+					$menuItems = $menuItemsDb->getMenuitems($menuItem['type'], $menuItem['id']);
+					if(!empty($menuItems)) {
+						//Do not delete the menuItem if it has child menuItems
 						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
 					} else {
-						$pageDb->deletePage($id);
-						$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
+						$menuItemDb->deleteMenuitem($id);
+						$this->setOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
 						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 					}
 				}
-			} elseif($page['type'] == 'item') {
+			} elseif($menuItem['type'] == 'item') {
 				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByPage($id);
+				$items = $itemDb->getItemsByMenuitem($id);
 				if(!empty($items)) {
-					//Do not delete the page if it is not empty
+					//Do not delete the menuItem if it is not empty
 					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
 				} else {
-					$pagesDb = new Admin_Model_DbTable_Page();
-					$pages = $pagesDb->getPages($page['type'], $page['id']);
-					if(!empty($pages)) {
-						//Do not delete the page if it has child pages
+					$menuItemsDb = new Admin_Model_DbTable_Menuitem();
+					$menuItems = $menuItemsDb->getMenuitems($menuItem['type'], $menuItem['id']);
+					if(!empty($menuItems)) {
+						//Do not delete the menuItem if it has child menuItems
 						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
 					} else {
-						$pageDb->deletePage($id);
-						$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
+						$menuItemDb->deleteMenuitem($id);
+						$this->setOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
 						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 					}
 				}
-			} elseif($page['type'] == 'shop') {
+			} elseif($menuItem['type'] == 'shop') {
 				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByPage($id);
+				$items = $itemDb->getItemsByMenuitem($id);
 				if(!empty($items)) {
-					//Do not delete the page if it is not empty
+					//Do not delete the menuItem if it is not empty
 					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
 				} else {
-					$pagesDb = new Admin_Model_DbTable_Page();
-					$pages = $pagesDb->getPages($page['type'], $page['id']);
-					if(!empty($pages)) {
-						//Do not delete the page if it has child pages
+					$menuItemsDb = new Admin_Model_DbTable_Menuitem();
+					$menuItems = $menuItemsDb->getMenuitems($menuItem['type'], $menuItem['id']);
+					if(!empty($menuItems)) {
+						//Do not delete the menuItem if it has child menuItems
 						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
 					} else {
-						$pageDb->deletePage($id);
-						$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
+						$menuItemDb->deleteMenuitem($id);
+						$this->setOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
+
+						if($category['shopid']) {
+							$slugDb = new Admin_Model_DbTable_Slug();
+							$slugDb->deleteSlug('shops', 'page', $menuItem['shopid'], $id);
+						}
 						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 					}
 				}
@@ -355,14 +409,14 @@ class Admin_PageController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$id = $this->_getParam('id', 0);
-		$pageDb = new Admin_Model_DbTable_Page();
-		$page = $pageDb->getPage($id);
-		if($this->isLocked($page['locked'], $page['lockedtime'])) {
+		$menuItemDb = new Admin_Model_DbTable_Menuitem();
+		$menuItem = $menuItemDb->getMenuitem($id);
+		if($this->isLocked($menuItem['locked'], $menuItem['lockedtime'])) {
 			$userDb = new Users_Model_DbTable_User();
-			$user = $userDb->getUser($page['locked']);
+			$user = $userDb->getUser($menuItem['locked']);
 			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ACCESS_DENIED_%1$s', $user['name'])));
 		} else {
-			$pageDb->lock($id);
+			$menuItemDb->lock($id);
 		}
 	}
 
@@ -372,8 +426,8 @@ class Admin_PageController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$id = $this->_getParam('id', 0);
-		$pageDb = new Admin_Model_DbTable_Page();
-		$pageDb->unlock($id);
+		$menuItemDb = new Admin_Model_DbTable_Menuitem();
+		$menuItemDb->unlock($id);
 	}
 
 	public function keepaliveAction()
@@ -382,8 +436,8 @@ class Admin_PageController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$pageDb = new Admin_Model_DbTable_Page();
-		$pageDb->lock($id);
+		$menuItemDb = new Admin_Model_DbTable_Menuitem();
+		$menuItemDb->lock($id);
 	}
 
 
@@ -392,7 +446,7 @@ class Admin_PageController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Page();
+		$form = new Admin_Form_Menuitem();
 
 		$form->isValid($this->_getAllParams());
 		$json = $form->getMessages();
@@ -418,15 +472,15 @@ class Admin_PageController extends Zend_Controller_Action
 	protected function setOrdering($clientid, $type, $parentid)
 	{
 		$i = 1;
-		$pagesDb = new Admin_Model_DbTable_Page();
-		$pages = $pagesDb->getPages($type, $parentid);
-		foreach($pages as $page) {
-			if(isset($page['ordering'])) {
-				//if($page['ordering'] != $i) {
-					if(!isset($pagesDb)) $pagesDb = new Admin_Model_DbTable_Page();
-					//print_r($page);
+		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
+		$menuItems = $menuItemsDb->getMenuitems($type, $parentid);
+		foreach($menuItems as $menuItem) {
+			if(isset($menuItem['ordering'])) {
+				//if($menuItem['ordering'] != $i) {
+					if(!isset($menuItemsDb)) $menuItemsDb = new Admin_Model_DbTable_Menuitem();
+					//print_r($menuItem);
 					//print_r($i);
-					$pagesDb->sortPage($page['id'], $i);
+					$menuItemsDb->sortMenuitem($menuItem['id'], $i);
 					++$i;
 				//}
 			}
@@ -436,12 +490,12 @@ class Admin_PageController extends Zend_Controller_Action
 	protected function getOrdering($clientid, $type, $parentid)
 	{
 		$i = 1;
-		$pagesDb = new Admin_Model_DbTable_Page();
-		$pages = $pagesDb->getPages($type, $parentid);
+		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
+		$menuItems = $menuItemsDb->getMenuitems($type, $parentid);
 		$orderings = array();
-		foreach($pages as $page) {
-			if(isset($page['id'])) {
-				$orderings[$i] = $page['id'];
+		foreach($menuItems as $menuItem) {
+			if(isset($menuItem['id'])) {
+				$orderings[$i] = $menuItem['id'];
 				++$i;
 			}
 		}
@@ -455,21 +509,21 @@ class Admin_PageController extends Zend_Controller_Action
 		return key($ordering);
 	}
 
-	protected function copyChilds($oldId, $pages, $newId)
+	protected function copyChilds($oldId, $menuItems, $newId)
 	{
-		foreach($pages[$oldId]['childs'] as $child) {
-			$pageDb = new Admin_Model_DbTable_Page();
-			$data = $pageDb->getPage($child);
+		foreach($menuItems[$oldId]['childs'] as $child) {
+			$menuItemDb = new Admin_Model_DbTable_Menuitem();
+			$data = $menuItemDb->getMenuitem($child);
 			unset($data['id']);
 			$data['parentid'] = $newId;
 			$data['modified'] = NULL;
 			$data['modifiedby'] = 0;
 			$data['locked'] = 0;
 			$data['lockedtime'] = NULL;
-			$newChildId = $pageDb->addPage($data);
+			$newChildId = $menuItemDb->addMenuitem($data);
 
-			$childPages = $pageDb->getPages($data['type'], $child);
-			if(isset($childPages[$child]['childs'])) $this->copyChilds($child, $childPages, $newChildId);
+			$childMenuitems = $menuItemDb->getMenuitems($data['type'], $child);
+			if(isset($childMenuitems[$child]['childs'])) $this->copyChilds($child, $childMenuitems, $newChildId);
 		}
 	}
 }

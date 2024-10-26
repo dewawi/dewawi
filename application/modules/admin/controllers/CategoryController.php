@@ -23,6 +23,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
+		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
@@ -58,11 +59,6 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$categoriesDb = new Admin_Model_DbTable_Category();
 
 		if($params['type'] == 'shop') {
-			$shopsDb = new Admin_Model_DbTable_Shop();
-			$shops = $shopsDb->getShops();
-			foreach($shops as $shop) {
-				$toolbar->shopid->addMultiOption($shop->id, $shop->title);
-			}
 			$categories = $categoriesDb->getCategories($params['type'], null, $params['shopid']);
 			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
 		} else {
@@ -70,7 +66,24 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
 		}
 
+		$forms = array();
+		foreach($categories as $category) {
+			$forms[$category['id']] = new Admin_Form_Category();
+			$forms[$category['id']]->activated->setValue($category['activated']);
+		}
+
+		if($params['type'] == 'shop') {
+			$slugs = array();
+			$slugDb = new Admin_Model_DbTable_Slug();
+			foreach($categories as $category) {
+				$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $category['id']);
+				$slugs[$category['id']] = $slug['slug'];
+			}
+		}
+
 		$this->view->form = $form;
+		$this->view->forms = $forms;
+		$this->view->slugs = $slugs;
 		$this->view->categories = $categories;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
@@ -89,11 +102,6 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$categoriesDb = new Admin_Model_DbTable_Category();
 
 		if($params['type'] == 'shop') {
-			$shopsDb = new Admin_Model_DbTable_Shop();
-			$shops = $shopsDb->getShops();
-			foreach($shops as $shop) {
-				$toolbar->shopid->addMultiOption($shop->id, $shop->title);
-			}
 			$categories = $categoriesDb->getCategories($params['type'], null, $params['shopid']);
 			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
 		} else {
@@ -101,7 +109,20 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
 		}
 
+		$forms = array();
+		$slugs = array();
+		$slugDb = new Admin_Model_DbTable_Slug();
+		foreach($categories as $category) {
+			$forms[$category['id']] = new Admin_Form_Category();
+			$forms[$category['id']]->activated->setValue($category['activated']);
+
+			$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $category['id']);
+			$slugs[$category['id']] = $slug['slug'];
+		}
+
 		$this->view->form = $form;
+		$this->view->forms = $forms;
+		$this->view->slugs = $slugs;
 		$this->view->categories = $categories;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
@@ -126,6 +147,12 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 				$categoryDb = new Admin_Model_DbTable_Category();
 				$id = $categoryDb->addCategory($data);
+
+				if($data['shopid']) {
+					$slugDb = new Admin_Model_DbTable_Slug();
+					$slugDb->addSlug('shops', 'category', $data['shopid'], $data['parentid'], $id, $id);
+				}
+
 				//echo Zend_Json::encode($data);
 				echo Zend_Json::encode($categoryDb->getCategory($id));
 			//} else {
@@ -179,6 +206,9 @@ class Admin_CategoryController extends Zend_Controller_Action
 						//sort old parent category
 						$this->setOrdering($categoryArray['clientid'], $categoryArray['type'], $categoryArray['parentid']);
 
+						$slugDb = new Admin_Model_DbTable_Slug();
+						$slugDb->updateSlug('shops', 'category', $categoryArray['shopid'], $data['parentid'], $id);
+
 						/*$categories = $this->_helper->Categories->getCategories(null, $params['clientid'], $params['type'], $categoryArray['parentid']);
 						$i = 1;
 						foreach($categories as $category) {
@@ -188,10 +218,23 @@ class Admin_CategoryController extends Zend_Controller_Action
 								++$i;
 							}
 						}*/
+						echo Zend_Json::encode($categoryDb->getCategory($id));
+					// Check if the element starts with 'imagetitle'
+					} elseif(strpos($element, 'imagetitle') === 0) {
+						// Extract the ID by getting the substring after 'imagetitle'
+						$mediaId = substr($element, strlen('imagetitle'));
+
+						// Update the media with the extracted ID and the corresponding value
+						$mediaDb = new Application_Model_DbTable_Media();
+						$mediaDb->updateMedia($mediaId, $data[$element]);
+					} elseif($element == 'slug') {
+						$slugDb = new Admin_Model_DbTable_Slug();
+						$slugDb->updateSlug('shops', 'category', $category['shopid'], $category['parentid'], $id, $data['slug']);
+						echo Zend_Json::encode(array('slug' => $data['slug']));
 					} else {
 						$categoryDb->updateCategory($id, $data);
+						echo Zend_Json::encode($categoryDb->getCategory($id));
 					}
-					echo Zend_Json::encode($categoryDb->getCategory($id));
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 				}
@@ -206,8 +249,40 @@ class Admin_CategoryController extends Zend_Controller_Action
 					$get = new Shops_Model_Get();
 					$tags = $get->tags('shops', 'category', $category['id']);
 
+					//Get media
+					$mediaDb = new Application_Model_DbTable_Media();
+					$media = $mediaDb->getMediasByParentID($id, 'shops', 'category');
+
+					//Get images form
+					$imageForms = array();
+					foreach($media as $image) {
+						$imageForms[$image['id']] = new Admin_Form_Image();
+						$imageForms[$image['id']]->title->setValue($image['title']);
+						$imageForms[$image['id']]->title->setName('imagetitle'.$image['id']);
+					}
+
+					//Get media path
+					$clientid = $this->view->client['id'];
+					$dir1 = substr($clientid, 0, 1);
+					if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+					else $dir2 = '0';
+					$mediaPath = $dir1.'/'.$dir2.'/'.$clientid;
+
+					//Get slug
+					$slugDb = new Admin_Model_DbTable_Slug();
+					$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $id);
+					$form->slug->setValue($slug['slug']);
+
+					// Scan subfolders in media/images
+					$this->view->subfolders = array();
+					$this->view->subfolders['category'] = $this->getSubfolders(BASE_PATH . '/media/'.$mediaPath.'/category/');
+					$this->view->subfolders['downloads'] = $this->getSubfolders(BASE_PATH . '/media/'.$mediaPath.'/downloads/');
+
 					$this->view->form = $form;
 					$this->view->tags = $tags;
+					$this->view->media = $media;
+					$this->view->imageForms = $imageForms;
+					$this->view->mediaPath = $mediaPath;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}
@@ -245,6 +320,11 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$data['lockedtime'] = NULL;
 		$newId = $categoryDb->addCategory($data);
 		//print_r($data);
+
+		if($data['shopid']) {
+			$slugDb = new Admin_Model_DbTable_Slug();
+			$slugDb->addSlug('shops', 'category', $data['shopid'], $data['parentid'], $newId, $newId);
+		}
 
 		$childCategories = $categoriesDb->getCategories($data['type'], $id);
 		if(isset($childCategories[$id]['childs'])) $this->copyChilds($id, $childCategories, $newId);
@@ -351,6 +431,11 @@ class Admin_CategoryController extends Zend_Controller_Action
 					} else {
 						$categoryDb->deleteCategory($id);
 						$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
+
+						if($category['shopid']) {
+							$slugDb = new Admin_Model_DbTable_Slug();
+							$slugDb->deleteSlug('shops', 'category', $category['shopid'], $id);
+						}
 						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 					}
 				}
@@ -481,5 +566,19 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$childCategories = $categoryDb->getCategories($data['type'], $child);
 			if(isset($childCategories[$child]['childs'])) $this->copyChilds($child, $childCategories, $newChildId);
 		}
+	}
+
+	protected function getSubfolders($directory)
+	{
+		$subfolders = [];
+		if (is_dir($directory)) {
+			$items = scandir($directory);
+			foreach ($items as $item) {
+				if ($item != '.' && $item != '..' && is_dir($directory . $item)) {
+					$subfolders[] = $item;
+				}
+			}
+		}
+		return $subfolders;
 	}
 }

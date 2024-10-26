@@ -42,7 +42,7 @@ class Admin_Form_Toolbar extends Zend_Form
 			->addMultiOption('contact', 'CONTACTS')
 			->addMultiOption('item', 'ITEMS')
 			->addMultiOption('shop', 'SHOPS')
-    		->setAttrib('style', 'display: none;');
+			->setAttrib('style', 'display: none;');
 
 		$form['shopid'] = new Zend_Form_Element_Select('shopid');
 		$form['shopid']->setDecorators(array('ViewHelper'))

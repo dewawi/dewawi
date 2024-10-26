@@ -23,6 +23,11 @@ echo $this->Messages();
 					<th class="name" width="20%">
 						<?php echo $this->translate('ADMIN_TITLE'); ?>
 					</th>
+					<?php if($this->toolbar->getValue('type') == 'shop') : ?>
+						<th class="slug" width="20%">
+							<?php echo $this->translate('ADMIN_SLUG'); ?>
+						</th>
+					<?php endif; ?>
 					<th class="image" width="20%">
 						<?php echo $this->translate('ADMIN_CATEGORY_IMAGE'); ?>
 					</th>
@@ -37,32 +42,36 @@ echo $this->Messages();
 			</thead>
 			<tbody>
 				<?php $i0 = 1; ?>
-				<?php $count0 = count($this->pages); ?>
-				<?php foreach($this->pages as $page) : ?>
+				<?php $count0 = count($this->menuItems); ?>
+				<?php foreach($this->menuItems as $menuItem) : ?>
 					<tr>
 						<td>
 							<?php if($this->user['admin']) : ?>
-								<input class="id" type="checkbox" value="<?php echo $page['id'] ?>" name="id"/>
+								<input class="id" type="checkbox" value="<?php echo $menuItem['id'] ?>" name="id"/>
 							<?php else : ?>
-								<input class="id" type="hidden" value="<?php echo $page['id'] ?>" name="id"/>
+								<input class="id" type="hidden" value="<?php echo $menuItem['id'] ?>" name="id"/>
 							<?php endif; ?>
 						</td>
 						<td class="id">
-							<a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'page', 'action'=>'edit', 'id'=>$this->escape($page['id'])));?>">
-								<?php echo $this->escape($page['id']); ?>
+							<a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'menuItem', 'action'=>'edit', 'id'=>$this->escape($menuItem['id'])));?>">
+								<?php echo $this->escape($menuItem['id']); ?>
 							</a>
 						</td>
 						<td class="name">
-							<span class="editable" data-name="title"><?php echo $this->escape($page['title']); ?></span>
+							<span class="editable" data-name="title"><?php echo $this->escape($menuItem['title']); ?></span>
 						</td>
+						<?php //if($menuItem['type'] == 'shop') : ?>
+							<td class="slug">
+								<span class="editable" data-name="slug" data-value="0" data-type="input"><?php echo $this->escape($this->slugs[$menuItem['id']]); ?></span>
+							</td>
+						<?php //endif; ?>
 						<td class="image">
-							<span class="editable" data-name="image" data-value="0" data-type="input"><?php echo $this->escape($page['image']); ?></span>
 						</td>
 						<td class="parentid">
 							<span class="editable" data-name="parentid" data-value="0" data-type="select"><?php echo $this->translate('ADMIN_MAIN_CATEGORY'); ?></span>
 						</td>
 						<td class="ordering">
-							<?php echo $this->escape($page['ordering']); ?>
+							<?php echo $this->escape($menuItem['ordering']); ?>
 						</td>
 						<td class="buttons">
 						<?php echo $this->Button('copy'); ?>

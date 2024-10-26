@@ -34,7 +34,6 @@ class Admin_Model_DbTable_Tag extends Zend_Db_Table_Abstract
 		if($parentid !== null) {
 			//$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
 		}
-		$shopid = 100;
 		if($shopid !== null) {
 			$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
 		}
@@ -43,19 +42,17 @@ class Admin_Model_DbTable_Tag extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');
 
-		$categories = array();
+		$tags = array();
 		foreach($data as $tag) {
-			$categories[$tag->id]['id'] = $tag->id;
-			//$categories[$tag->id]['type'] = $tag->type;
-			$categories[$tag->id]['title'] = $tag->title;
-			$categories[$tag->id]['slug'] = $tag->slug;
-			//$categories[$tag->id]['image'] = $tag->image;
-			$categories[$tag->id]['description'] = $tag->description;
-			$categories[$tag->id]['footer'] = $tag->footer;
-			$categories[$tag->id]['ordering'] = $tag->ordering;
+			$tags[$tag->id]['id'] = $tag->id;
+			$tags[$tag->id]['shopid'] = $tag->shopid;
+			$tags[$tag->id]['title'] = $tag->title;
+			$tags[$tag->id]['description'] = $tag->description;
+			$tags[$tag->id]['footer'] = $tag->footer;
+			$tags[$tag->id]['ordering'] = $tag->ordering;
 		}
 
-		return $categories;
+		return $tags;
 	}
 
 	public function addTag($data, $clientid = 0)

@@ -1,6 +1,6 @@
 <?php
 
-class Admin_Form_Category extends Zend_Form
+class Admin_Form_Menuitem extends Zend_Form
 {
 	public function init()
 	{
@@ -17,40 +17,16 @@ class Admin_Form_Category extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
-		$form['subtitle'] = new Zend_Form_Element_Text('subtitle');
-		$form['subtitle']->setLabel('ADMIN_SUBTITLE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['metatitle'] = new Zend_Form_Element_Text('metatitle');
-		$form['metatitle']->setLabel('ADMIN_META_TITLE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['metadescription'] = new Zend_Form_Element_Text('metadescription');
-		$form['metadescription']->setLabel('ADMIN_META_DESCRIPTION')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['slug'] = new Zend_Form_Element_Text('slug');
-		$form['slug']->setLabel('ADMIN_SLUG')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
 		$form['image'] = new Zend_Form_Element_Text('image');
 		$form['image']->setLabel('ADMIN_CATEGORY_IMAGE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
-		$form['description'] = new Zend_Form_Element_Textarea('description');
-		$form['description']->setLabel('ADMIN_CATEGORY_DESCRIPTION')
+		$form['content'] = new Zend_Form_Element_Textarea('content');
+		$form['content']->setLabel('ADMIN_CATEGORY_DESCRIPTION')
 			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
+				'allowTags' => array('a','p','span','img','div','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
 				'allowAttribs' => array('src','style','class','title','href')
 			)))
 			->addFilter('StringTrim')
@@ -120,9 +96,6 @@ class Admin_Form_Category extends Zend_Form
 		$form['clientid'] = new Zend_Form_Element_Select('clientid');
 		$form['clientid']->setDecorators(array('ViewHelper'))
 			->setAttrib('default', '0');
-
-		$form['activated'] = new Zend_Form_Element_Checkbox('activated');
-		$form['activated']->addFilter('Int')->removeDecorator('Label');
 
 		$this->addElements($form);
 	}

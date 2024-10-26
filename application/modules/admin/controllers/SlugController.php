@@ -1,6 +1,6 @@
 <?php
 
-class Admin_PageController extends Zend_Controller_Action
+class Admin_SlugController extends Zend_Controller_Action
 {
 	protected $_date = null;
 
@@ -48,27 +48,83 @@ class Admin_PageController extends Zend_Controller_Action
 
 	public function indexAction()
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Page();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
+		$slugTable = new Zend_Db_Table('slug');
 
-		$pagesDb = new Admin_Model_DbTable_Page();
+		// Fetch menu items and categories for the current shop
+		$menuTable = new Zend_Db_Table('menu');
+		$menuItemTable = new Zend_Db_Table('menuitem');
 
-		if($params['type'] == 'shop') {
-			$pages = $pagesDb->getPages($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
-		} else {
-			$pages = $pagesDb->getPages($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
+		// Get all menus for the current shop
+		$menus = $menuTable->fetchAll(['shopid = ?' => 120]);
+		$menuIds = array();
+		foreach ($menus as $menu) {
+			$menuIds[] = $menu['id']; // Collect menu IDs into an array
 		}
 
-		$this->view->form = $form;
-		$this->view->pages = $pages;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		// Fetch menu items only if there are menu IDs
+		if (!empty($menuIds)) {
+			$menuItems = $menuItemTable->fetchAll(
+				$menuItemTable->select()->where('menuid IN (?)', $menuIds)
+			);
+		} else {
+			$menuItems = []; // No menu items if no menu IDs are present
+		}
+
+		/*foreach ($menuItems as $menuItem) {
+			$data = array();
+			$data['clientid'] = 100;
+			$data['created'] = date('Y-m-d H:i:s');
+			$data['createdby'] = 100;
+			$data['shopid'] = 120;
+			$data['slug'] = $menuItem->slug;
+			$data['parentid'] = $menuItem->parentid;
+			$data['module'] = 'shops';
+			$data['controller'] = 'page';
+			$data['entityid'] = $menuItem->pageid;
+			$slugTable->insert($data);
+		}
+
+		// Get all categories for the current shop
+		$categoryTable = new Zend_Db_Table('category');
+		$categories = $categoryTable->fetchAll(['shopid = ?' => 120]);
+
+		foreach ($categories as $categor) {
+			$data = array();
+			$data['clientid'] = 100;
+			$data['created'] = date('Y-m-d H:i:s');
+			$data['createdby'] = 100;
+			$data['shopid'] = 120;
+			$data['slug'] = $categor->slug;
+			$data['parentid'] = $categor->parentid;
+			$data['module'] = 'shops';
+			$data['controller'] = 'category';
+			$data['entityid'] = $categor->id;
+			$slugTable->insert($data);
+		}
+
+
+		// Route to tags
+		$tagDb = new Zend_Db_Table('tag');
+		$tags = $tagDb->fetchAll(['module = ?' => 'shops', 'controller = ?' => 'category', 'shopid = ?' => 120]);
+
+
+
+		foreach ($tags as $tagg) {
+			$data = array();
+			$data['clientid'] = 100;
+			$data['created'] = date('Y-m-d H:i:s');
+			$data['createdby'] = 100;
+			$data['shopid'] = 120;
+			$data['slug'] = $tagg->slug;
+			$data['parentid'] = 0;
+			$data['module'] = 'shops';
+			$data['controller'] = 'tag';
+			$data['entityid'] = $tagg->id;
+			$slugTable->insert($data);
+		}*/
 	}
 
 	public function searchAction()
@@ -179,6 +235,11 @@ class Admin_PageController extends Zend_Controller_Action
 							}
 						}*/
 					} else {
+						if(isset($page['shopid']) && $data['slug']) {
+							$slugDb = new Admin_Model_DbTable_Slug();
+							$slugDb->deleteSlug('shops', 'page', $page['shopid'], $id);
+							$slugDb->addSlug('shops', 'page', $page['shopid'], $id, $data['slug']);
+						}
 						$pageDb->updatePage($id, $data);
 					}
 					echo Zend_Json::encode($pageDb->getPage($id));

@@ -11,50 +11,32 @@ class Admin_Form_Shop extends Zend_Form
 		$form['id'] = new Zend_Form_Element_Hidden('id');
 		$form['id']->addFilter('Int')->removeDecorator('Label');
 
-		$form['parentid'] = new Zend_Form_Element_Text('parentid');
-		$form['parentid']->setLabel('ADMIN_PARENT_ID')
+		$form['title'] = new Zend_Form_Element_Text('title');
+		$form['title']->setLabel('ADMIN_TITLE')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
-		$form['company'] = new Zend_Form_Element_Text('company');
-		$form['company']->setLabel('ADMIN_COMPANY')
+		$form['url'] = new Zend_Form_Element_Text('url');
+		$form['url']->setLabel('ADMIN_URL')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
-		$form['address'] = new Zend_Form_Element_Text('address');
-		$form['address']->setLabel('ADMIN_ADDRESS')
+		$form['logo'] = new Zend_Form_Element_Text('logo');
+		$form['logo']->setLabel('ADMIN_LOGO')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
-		$form['postcode'] = new Zend_Form_Element_Text('postcode');
-		$form['postcode']->setLabel('ADMIN_POSTCODE')
+		$form['footer'] = new Zend_Form_Element_Text('footer');
+		$form['footer']->setLabel('ADMIN_FOOTER')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');
 
-		$form['city'] = new Zend_Form_Element_Text('city');
-		$form['city']->setLabel('ADMIN_CITY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['country'] = new Zend_Form_Element_Text('country');
-		$form['country']->setLabel('ADMIN_COUNTRY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['email'] = new Zend_Form_Element_Text('email');
-		$form['email']->setLabel('ADMIN_EMAIL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['website'] = new Zend_Form_Element_Text('website');
-		$form['website']->setLabel('ADMIN_WEBSITE')
+		$form['emailsender'] = new Zend_Form_Element_Text('emailsender');
+		$form['emailsender']->setLabel('ADMIN_EMAIL')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->setAttrib('size', '12');

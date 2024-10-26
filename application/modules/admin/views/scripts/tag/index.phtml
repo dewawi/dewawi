@@ -62,7 +62,7 @@ echo $this->Messages();
 						</td>
 						<?php //if($tag['type'] == 'shop') : ?>
 							<td class="slug">
-								<span class="editable" data-name="slug" data-value="0" data-type="input"><?php echo $this->escape($tag['slug']); ?></span>
+								<span class="editable" data-name="slug" data-value="0" data-type="input"><?php echo $this->escape($this->slugs[$tag['id']]); ?></span>
 							</td>
 						<?php //endif; ?>
 						<td class="image">

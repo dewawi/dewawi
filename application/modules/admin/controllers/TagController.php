@@ -58,11 +58,6 @@ class Admin_TagController extends Zend_Controller_Action
 		$tagsDb = new Admin_Model_DbTable_Tag();
 
 		if($params['type'] == 'shop') {
-			$shopsDb = new Admin_Model_DbTable_Shop();
-			$shops = $shopsDb->getShops();
-			foreach($shops as $shop) {
-				$toolbar->shopid->addMultiOption($shop->id, $shop->title);
-			}
 			$tags = $tagsDb->getTags($params['type'], null, $params['shopid']);
 			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($tags));
 		} else {
@@ -70,8 +65,18 @@ class Admin_TagController extends Zend_Controller_Action
 			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($tags));
 		}
 
+		if($params['type'] == 'shop') {
+			$slugs = array();
+			$slugDb = new Admin_Model_DbTable_Slug();
+			foreach($tags as $tag) {
+				$slug = $slugDb->getSlug('shops', 'tag', $tag['shopid'], $tag['id']);
+				$slugs[$tag['id']] = $slug['slug'];
+			}
+		}
+
 		$this->view->form = $form;
 		$this->view->tags = $tags;
+		$this->view->slugs = $slugs;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -88,12 +93,8 @@ class Admin_TagController extends Zend_Controller_Action
 
 		$tagsDb = new Admin_Model_DbTable_Tag();
 
+		echo $params['type'];
 		if($params['type'] == 'shop') {
-			$shopsDb = new Admin_Model_DbTable_Shop();
-			$shops = $shopsDb->getShops();
-			foreach($shops as $shop) {
-				$toolbar->shopid->addMultiOption($shop->id, $shop->title);
-			}
 			$tags = $tagsDb->getTags($params['type'], null, $params['shopid']);
 			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($tags));
 		} else {
@@ -101,8 +102,16 @@ class Admin_TagController extends Zend_Controller_Action
 			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($tags));
 		}
 
+		$slugs = array();
+		$slugDb = new Admin_Model_DbTable_Slug();
+		foreach($tags as $tag) {
+			$slug = $slugDb->getSlug('shops', 'tag', $tag['shopid'], $tag['id']);
+			$slugs[$tag['id']] = $slug['slug'];
+		}
+
 		$this->view->form = $form;
 		$this->view->tags = $tags;
+		$this->view->slugs = $slugs;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -126,6 +135,12 @@ class Admin_TagController extends Zend_Controller_Action
 
 				$tagDb = new Admin_Model_DbTable_Tag();
 				$id = $tagDb->addTag($data);
+
+				if($data['shopid']) {
+					$slugDb = new Admin_Model_DbTable_Slug();
+					$slugDb->addSlug('shops', 'tag', $data['shopid'], $data['parentid'], $id, $id);
+				}
+
 				//echo Zend_Json::encode($data);
 				echo Zend_Json::encode($tagDb->getTag($id));
 			//} else {
@@ -179,6 +194,9 @@ class Admin_TagController extends Zend_Controller_Action
 						//sort old parent tag
 						$this->setOrdering($tagArray['clientid'], $tagArray['type'], $tagArray['parentid']);
 
+						$slugDb = new Admin_Model_DbTable_Slug();
+						$slugDb->updateSlug('shops', 'tag', $tagArray['shopid'], $data['parentid'], $id);
+
 						/*$tags = $this->_helper->Tags->getTags(null, $params['clientid'], $params['type'], $tagArray['parentid']);
 						$i = 1;
 						foreach($tags as $tag) {
@@ -188,10 +206,15 @@ class Admin_TagController extends Zend_Controller_Action
 								++$i;
 							}
 						}*/
+						echo Zend_Json::encode($tagDb->getTag($id));
+					} elseif($element == 'slug') {
+						$slugDb = new Admin_Model_DbTable_Slug();
+						$slugDb->updateSlug('shops', 'tag', $tag['shopid'], $tag['parentid'], $id, $data['slug']);
+						echo Zend_Json::encode(array('slug' => $data['slug']));
 					} else {
 						$tagDb->updateTag($id, $data);
+						echo Zend_Json::encode($tagDb->getTag($id));
 					}
-					echo Zend_Json::encode($tagDb->getTag($id));
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 				}
@@ -205,6 +228,11 @@ class Admin_TagController extends Zend_Controller_Action
 					//Tags
 					$get = new Shops_Model_Get();
 					$tags = $get->tags('shops', 'tag', $tag['id']);
+
+					//Get slug
+					$slugDb = new Admin_Model_DbTable_Slug();
+					$slug = $slugDb->getSlug('shops', 'tag', $tag['shopid'], $id);
+					$form->slug->setValue($slug['slug']);
 
 					$this->view->form = $form;
 					$this->view->tags = $tags;
@@ -245,6 +273,11 @@ class Admin_TagController extends Zend_Controller_Action
 		$data['lockedtime'] = NULL;
 		$newId = $tagDb->addTag($data);
 		//print_r($data);
+
+		if($data['shopid']) {
+			$slugDb = new Admin_Model_DbTable_Slug();
+			$slugDb->addSlug('shops', 'tag', $data['shopid'], $data['parentid'], $newId, $newId);
+		}
 
 		$childTags = $tagsDb->getTags($data['type'], $id);
 		if(isset($childTags[$id]['childs'])) $this->copyChilds($id, $childTags, $newId);
@@ -309,6 +342,11 @@ class Admin_TagController extends Zend_Controller_Action
 				} else {
 					$tagDb->deleteTag($id);
 					//$this->setOrdering($tag['clientid'], $tag['type'], $tag['parentid']);
+
+					if($category['shopid']) {
+						$slugDb = new Admin_Model_DbTable_Slug();
+						$slugDb->deleteSlug('shops', 'tag', $tag['shopid'], $id);
+					}
 					$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 				}
 			}

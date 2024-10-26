@@ -20,31 +20,26 @@ echo $this->Messages();
 					<th class="id" width="5%">
 						<?php echo $this->translate('ADMIN_SHOP_ID'); ?>
 					</th>
-					<?php if($this->user['admin']) : ?>
-						<th class="id" width="5%">
-							<?php echo $this->translate('ADMIN_PARENT_ID'); ?>
-						</th>
-					<?php endif; ?>
-					<th class="name" width="20%">
-						<?php echo $this->translate('ADMIN_COMPANY'); ?>
+					<th class="street" width="12%">
+						<?php echo $this->translate('ADMIN_TITLE'); ?>
+					</th>
+					<th class="url" width="20%">
+						<?php echo $this->translate('ADMIN_URL'); ?>
 					</th>
 					<th class="phone" width="12%">
-						<?php echo $this->translate('ADMIN_ADDRESS'); ?>
-					</th>
-					<th class="street" width="12%">
-						<?php echo $this->translate('ADMIN_POSTCODE'); ?>
+						<?php echo $this->translate('ADMIN_LOGO'); ?>
 					</th>
 					<th class="postcode" width="7%">
-						<?php echo $this->translate('ADMIN_CITY'); ?>
+						<?php echo $this->translate('ADMIN_FOOTER'); ?>
 					</th>
 					<th class="postcode" width="7%">
-						<?php echo $this->translate('ADMIN_COUNTRY'); ?>
-					</th>
-					<th class="city" width="10%">
 						<?php echo $this->translate('ADMIN_EMAIL'); ?>
 					</th>
+					<th class="city" width="10%">
+						<?php echo $this->translate('ADMIN_TIMEZONE'); ?>
+					</th>
 					<th class="country" width="10%">
-						<?php echo $this->translate('ADMIN_WEBSITE'); ?>
+						<?php echo $this->translate('ADMIN_LANGUAGE'); ?>
 					</th>
 					<?php if($this->user['admin']) : ?>
 						<th class="category" width="12%">
@@ -67,31 +62,26 @@ echo $this->Messages();
 						<td class="id">
 							<?php echo $this->escape($shop->id); ?>
 						</td>
-						<?php if($this->user['admin']) : ?>
-							<td class="name">
-								<span class="editable" data-name="company"><?php echo $this->escape($shop->url); ?></span>
-							</td>
-						<?php endif; ?>
 						<td class="name">
-							<span class="editable" data-name="company"><?php echo $this->escape($shop->url); ?></span>
+							<span class="editable" data-name="title"><?php echo $this->escape($shop->title); ?></span>
 						</td>
 						<td class="name">
-							<span class="editable" data-name="address"><?php echo $this->escape($shop->timezone); ?></span>
+							<span class="editable" data-name="url"><?php echo $this->escape($shop->url); ?></span>
 						</td>
 						<td class="name">
-							<span class="editable" data-name="postcode"><?php echo $this->escape($shop->language); ?></span>
+							<span class="editable" data-name="logo"><?php echo $this->escape($shop->logo); ?></span>
 						</td>
 						<td class="name">
-							<span class="editable" data-name="city"><?php echo $this->escape($shop->logo); ?></span>
+							<span class="editable" data-name="footer"><?php echo $this->escape($shop->footer); ?></span>
 						</td>
 						<td class="name">
-							<span class="editable" data-name="country"><?php echo $this->escape($shop->title); ?></span>
+							<span class="editable" data-name="emailsender"><?php echo $this->escape($shop->emailsender); ?></span>
 						</td>
 						<td class="name">
-							<span class="editable" data-name="email"><?php echo $this->escape($shop->footer); ?></span>
+							<span class="editable" data-name="timezone"><?php echo $this->escape($shop->timezone); ?></span>
 						</td>
 						<td class="name">
-							<span class="editable" data-name="website"><?php echo $this->escape($shop->emailsender); ?></span>
+							<span class="editable" data-name="language"><?php echo $this->escape($shop->language); ?></span>
 						</td>
 						<?php if($this->user['admin']) : ?>
 							<td class="activated">
@@ -112,31 +102,25 @@ echo $this->Messages();
 							<?php echo $this->translate('TOOLBAR_NEW'); ?>
 						</td>
 						<td>
-							<?php echo $this->form->parentid; ?>
+							<?php echo $this->form->title; ?>
 						</td>
 						<td>
-							<?php echo $this->form->company; ?>
+							<?php echo $this->form->url; ?>
 						</td>
 						<td>
-							<?php echo $this->form->address; ?>
+							<?php echo $this->form->logo; ?>
 						</td>
 						<td>
-							<?php echo $this->form->postcode; ?>
+							<?php echo $this->form->footer; ?>
 						</td>
 						<td>
-							<?php echo $this->form->city; ?>
+							<?php echo $this->form->emailsender; ?>
 						</td>
 						<td>
-							<?php echo $this->form->country; ?>
 						</td>
 						<td>
-							<?php echo $this->form->email; ?>
 						</td>
 						<td>
-							<?php echo $this->form->website; ?>
-						</td>
-						<td>
-							<?php echo $this->form->activated; ?>
 						</td>
 						<td class="buttons">
 							<?php echo $this->toolbar->save; ?>

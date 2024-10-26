@@ -18,11 +18,11 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 				<?php echo $this->view->toolbar->clientid; ?>
 				<?php //echo $this->view->toolbar->language; ?>
 			<?php endif;*/ ?>
-			<?php if($this->view->controller == 'category') : ?>
+			<?php if(($this->view->controller == 'category') || ($this->view->controller == 'page') || ($this->view->controller == 'tag')) : ?>
 				<?php echo $this->view->toolbar->type; ?>
-				<?php if($this->view->toolbar->type->getValue() == 'shop') : ?>
-					<?php echo $this->view->toolbar->shopid; ?>
-				<?php endif; ?>
+			<?php endif; ?>
+			<?php if($this->view->toolbar->type->getValue() == 'shop') : ?>
+				<?php echo $this->view->toolbar->shopid; ?>
 			<?php endif; ?>
 		<?php endif;
 	}

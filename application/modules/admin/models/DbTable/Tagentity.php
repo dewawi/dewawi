@@ -48,7 +48,6 @@ class Admin_Model_DbTable_Tagentity extends Zend_Db_Table_Abstract
 			$categories[$tagentity->id]['id'] = $tagentity->id;
 			//$categories[$tagentity->id]['type'] = $tagentity->type;
 			$categories[$tagentity->id]['title'] = $tagentity->title;
-			$categories[$tagentity->id]['slug'] = $tagentity->slug;
 			//$categories[$tagentity->id]['image'] = $tagentity->image;
 			$categories[$tagentity->id]['description'] = $tagentity->description;
 			$categories[$tagentity->id]['footer'] = $tagentity->footer;

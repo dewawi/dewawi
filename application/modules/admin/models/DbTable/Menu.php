@@ -1,9 +1,9 @@
 <?php
 
-class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
+class Admin_Model_DbTable_Menu extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'category';
+	protected $_name = 'menu';
 
 	protected $_date = null;
 
@@ -18,7 +18,7 @@ class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getCategory($id)
+	public function getMenu($id)
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
@@ -28,55 +28,34 @@ class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getCategories($type, $parentid = null, $shopid = null)
+	public function getMenus($type, $parentid = null, $shopid = null)
 	{
-		// Prepare the where conditions
-		$where = [];
-		if ($parentid !== null) {
-			$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
+		$where = array();
+		if($parentid !== null) {
+			//$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
 		}
-		if ($shopid !== null) {
+		/*if($shopid !== null) {
 			$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		}
-		$where[] = $this->getAdapter()->quoteInto('type = ?', $type);
+		}*/
+		//$where[] = $this->getAdapter()->quoteInto('type = ?', $type);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-
-		// Fetch the data
 		$data = $this->fetchAll($where, 'ordering');
 
-		// Initialize categories array
-		$categories = [];
-
-		// Iterate through the data
-		foreach ($data as $category) {
-			// Prepare the category array
-			$categories[$category->id] = [
-				'id' => $category->id,
-				'type' => $category->type,
-				'title' => $category->title,
-				'subtitle' => $category->subtitle,
-				'image' => $category->image,
-				'description' => $category->description,
-				'footer' => $category->footer,
-				'parentid' => $category->parentid,
-				'ordering' => $category->ordering,
-				'activated' => $category->activated,
-				'shopid' => isset($category->shopid) ? $category->shopid : null,
-				//'shopcatid' => isset($category->shopcatid) ? $category->shopcatid : null
-			];
-		}
-		// If the category has a parent, add it to the parent's 'childs' array
-		foreach ($data as $category) {
-			if ($category->parentid && isset($categories[$category->parentid])) {
-				$categories[$category->parentid]['childs'][] = $category->id;
-			}
+		$pages = array();
+		foreach($data as $page) {
+			$pages[$page->id]['id'] = $page->id;
+			$pages[$page->id]['shopid'] = $page->shopid;
+			$pages[$page->id]['title'] = $page->title;
+			/*$pages[$page->id]['content'] = $page->content;
+			$pages[$page->id]['footer'] = $page->footer;
+			$pages[$page->id]['ordering'] = $page->ordering;*/
 		}
 
-		return $categories;
+		return $pages;
 	}
 
-	public function addCategory($data, $clientid = 0)
+	public function addMenu($data, $clientid = 0)
 	{
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
@@ -89,14 +68,14 @@ class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateCategory($id, $data)
+	public function updateMenu($id, $data)
 	{
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function sortCategory($id, $ordering)
+	public function sortMenu($id, $ordering)
 	{
 		$data = array();
 		$data['modified'] = $this->_date;
@@ -120,7 +99,7 @@ class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function deleteCategory($id)
+	public function deleteMenu($id)
 	{
 		$data = array();
 		$data['deleted'] = 1;
