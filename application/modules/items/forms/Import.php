@@ -17,14 +17,14 @@ class Items_Form_Import extends Zend_Form
 			->addValidator('Extension', false, 'pdf,jpg,jpeg,png,gif,csv,zip');
 
 		$form['separator'] = new Zend_Form_Element_Select('separator');
-		$form['separator']->setLabel('ITEMS_IMPORT_SEPARATOR')
+		$form['separator']->setLabel('ITEMS_IMPORT_FIELD_DELIMITER')
 			->setRequired(true)
 			->addMultiOption('comma', 'ITEMS_IMPORT_COMMA')
 			->addMultiOption('semicolon', 'ITEMS_IMPORT_SEMICOLON')
 			->addValidator('NotEmpty');
 
 		$form['delimiter'] = new Zend_Form_Element_Select('delimiter');
-		$form['delimiter']->setLabel('ITEMS_IMPORT_DELIMITER')
+		$form['delimiter']->setLabel('ITEMS_IMPORT_STRING_DELIMITER')
 			->setRequired(true)
 			->addMultiOption('double', 'ITEMS_IMPORT_DOUBLE_QUOTES')
 			->addMultiOption('single', 'ITEMS_IMPORT_SINGLE_QUOTES')

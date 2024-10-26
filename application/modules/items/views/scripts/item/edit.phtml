@@ -15,6 +15,8 @@ echo $this->FileManager();
 		<a href="#tabAttributes" onclick="getPositions('item', 'atr')"><?php echo $this->translate('ITEMS_ATTRIBUTES'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabOptions") : ?> class="active"<?php endif; ?>>
 		<a href="#tabOptions" onclick="getPositions('item', 'opt')"><?php echo $this->translate('ITEMS_OPTIONS'); ?></a></li>
+	<li<?php if($this->activeTab == "#tabImages") : ?> class="active"<?php endif; ?>>
+		<a href="#tabImages"><?php echo $this->translate('TABS_IMAGES'); ?></a></li>
 	<?php if($this->dirwritable) : ?>
 		<li<?php if($this->activeTab == "#tabFiles") : ?> class="active"<?php endif; ?>>
 			<a href="#tabFiles"><?php echo $this->translate('TABS_FILES'); ?></a></li>
@@ -101,20 +103,6 @@ echo $this->FileManager();
 			</div>
 		</form>
 	</div>
-	<div id="tabImages" class="tab_content">
-		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<div class="row">
-				<div class="col-sm-12 col-lg-7">
-						<?php echo $this->form->getElement('image') ?>
-				</div>
-				<div class="col-sm-12 col-lg-5">
-					<?php if($this->form->getValue('image') && file_exists(BASE_PATH."/files/images/".$this->form->getValue('image'))) { ?>
-						<p><img src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
-					<?php } ?>
-				</div>
-			</div>
-		</form>
-	</div>
 	<div id="tabAttributes" class="tab_content<?php if($this->activeTab == '#tabAttributes') : ?> active<?php endif; ?>">
 		<div class="positionsContainer" data-parent="item" data-type="atr"></div>
 	</div>
@@ -124,6 +112,49 @@ echo $this->FileManager();
 	<div id="tabInventory" class="tab_content<?php if($this->activeTab == '#tabInventory') : ?> active<?php endif; ?>">
 		<?php echo $this->Inventory(); ?>
 	</div>
+	<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabImages') : ?> active<?php endif; ?>">
+		<h3>Item Images</h3>
+		<div class="image-gallery">
+			<?php $folder = 'images'; ?>
+			<?php if (count($this->images) > 0): ?>
+				<div class="image-grid">
+					<?php foreach ($this->images as $image): ?>
+						<div class="image">
+							<a href="<?php echo $this->baseUrl(); ?>/media/<?php echo $this->escape($this->imagePath); ?>/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>" target="_blank">
+								<img src="<?php echo $this->baseUrl(); ?>/media/<?php echo $this->escape($this->imagePath); ?>/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>" alt="<?php echo $this->escape($image->title); ?>" class="image-thumbnail" />
+							</a>
+							<div class="image-caption">
+								<?php echo $this->escape($image->title); ?>
+							</div>
+							<div class="image-actions">
+								<a href="<?php echo $this->url(array('module'=>'default', 'controller'=>'image', 'action'=>'delete', 'folder'=>$folder, 'parentid'=>$this->id, 'id'=>$image->id, 'url' => $this->module.'|'.$this->controller.'|'.$this->action)); ?>" onclick="return confirm('Are you sure you want to delete this image?');" class="delete-link">Delete</a>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			<?php else: ?>
+				<p>No images available for this item.</p>
+			<?php endif; ?>
+		</div>
+		<form action="<?php echo $this->url(array('module'=>'default', 'controller'=>'image', 'action'=>'upload')); ?>" method="post" enctype="multipart/form-data">
+			<label for="imageUpload">Upload New Image:</label>
+			<input type="file" name="image[]" multiple />
+
+			<label for="subfolder">Select Subfolder:</label>
+			<select name="subfolder" id="subfolder" required>
+				<option value="0">Main Folder</option>
+				<?php foreach ($this->subfolders as $subfolder): ?>
+					<option value="<?php echo $this->escape($subfolder); ?>"><?php echo $this->escape($subfolder); ?></option>
+				<?php endforeach; ?>
+			</select>
+
+			<input type="hidden" name="controller" value="item" />
+			<input type="hidden" name="module" value="items" />
+			<input type="hidden" name="folder" value="<?php echo $folder; ?>" />
+			<input type="hidden" name="item_id" value="<?php echo $this->escape($this->id); ?>" />
+			<button type="submit">Upload</button>
+		</form>
+	</div>
 	<?php if($this->dirwritable) : ?>
 		<div id="tabFiles" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
 			<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700px"></iframe>
@@ -131,20 +162,34 @@ echo $this->FileManager();
 	<?php endif; ?>
 </div>
 
-	<!--<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
-		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<div class="row">
-				<div class="col-sm-12 col-lg-7">
-					<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?controller=item&lang=de&type=0" width="100%" height="500px"></iframe>
-					<dl class="form">
-						<?php echo $this->form->getElement('image') ?>
-					</dl>
-				</div>
-				<div class="col-sm-12 col-lg-5">
-					<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
-						<p><img id="preview" src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
-					<?php } ?>
-				</div>
+<!--<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabFiles') : ?> active<?php endif; ?>">
+	<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+		<div class="row">
+			<div class="col-sm-12 col-lg-7">
+				<iframe src="<?php echo $this->baseUrl(); ?>/library/FileManager/dialog.php?controller=item&lang=de&type=0" width="100%" height="500px"></iframe>
+				<dl class="form">
+					<?php echo $this->form->getElement('image') ?>
+				</dl>
 			</div>
-		</form>
-	</div>-->
+			<div class="col-sm-12 col-lg-5">
+				<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+					<p><img id="preview" src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+				<?php } ?>
+			</div>
+		</div>
+	</form>
+</div>
+<div id="tabImages" class="tab_content">
+	<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+		<div class="row">
+			<div class="col-sm-12 col-lg-7">
+					<?php echo $this->form->getElement('image') ?>
+			</div>
+			<div class="col-sm-12 col-lg-5">
+				<?php if($this->form->getValue('image') && file_exists(BASE_PATH."/files/images/".$this->form->getValue('image'))) { ?>
+					<p><img src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+				<?php } ?>
+			</div>
+		</div>
+	</form>
+</div>-->

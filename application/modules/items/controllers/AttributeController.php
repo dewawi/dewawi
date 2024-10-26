@@ -283,7 +283,7 @@ class Items_AttributeController extends Zend_Controller_Action
 				if($data && ($data !== FALSE)) {
 					$map = array();
 					$itemDb = new Items_Model_DbTable_Item();
-					$itemImage = new Application_Model_DbTable_Image();
+					$itemMedia = new Application_Model_DbTable_Media();
 					$itemAttribute = new Items_Model_DbTable_Itematr();
 					$itemAttributeSet = new Items_Model_DbTable_Itematrset();
 

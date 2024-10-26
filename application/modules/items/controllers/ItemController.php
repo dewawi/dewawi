@@ -215,8 +215,24 @@ class Items_ItemController extends Zend_Controller_Action
 					//Toolbar
 					$toolbar = new Items_Form_Toolbar();
 
+					//Get images
+					$imagesDb = new Application_Model_DbTable_Media();
+					$images = $imagesDb->getMediaByParentID($id, 'items', 'item');
+
+					//Get image path
+					$clientid = $this->view->client['id'];
+					$dir1 = substr($clientid, 0, 1);
+					if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+					else $dir2 = '0';
+					$imagePath = $dir1.'/'.$dir2.'/'.$clientid;
+
+					// Scan subfolders in media/images
+					$this->view->subfolders = $this->getSubfolders(BASE_PATH . '/media/'.$imagePath.'/images/');
+
 					$this->view->form = $form;
 					$this->view->tags = $tags;
+					$this->view->images = $images;
+					$this->view->imagePath = $imagePath;
 					$this->view->inventory = $inventory;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
@@ -274,8 +290,8 @@ class Items_ItemController extends Zend_Controller_Action
 			$attributes = $attributesDb->getPositions($item['id']);
 
 			//Get images
-			$imagesDb = new Application_Model_DbTable_Image();
-			$images = $imagesDb->getImageByParentID($item['id'], 'items', 'item');
+			$imagesDb = new Application_Model_DbTable_Media();
+			$images = $imagesDb->getMediaByParentID($item['id'], 'items', 'item');
 
 			//Attributes
 			$attributesByGroup = array();
@@ -310,6 +326,10 @@ class Items_ItemController extends Zend_Controller_Action
 			$id = $this->_getParam('id', 0);
 			$item = new Items_Model_DbTable_Item();
 			$item->deleteItem($id);
+
+			//Delete eBay listing if exists
+			$ebayListingDb = new Ebay_Model_DbTable_Listing();
+			$ebayListingDb->deleteListingByItemID($id);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
@@ -370,17 +390,21 @@ class Items_ItemController extends Zend_Controller_Action
 					$dataTemplate = array();
 					$itemDb = new Items_Model_DbTable_Item();
 					$itemInfo = $itemDb->getInfo();
-					$itemImage = new Application_Model_DbTable_Image();
+					$itemMedia = new Application_Model_DbTable_Media();
 					$itemAttribute = new Items_Model_DbTable_Itematr();
 					$itemAttributeSet = new Items_Model_DbTable_Itematrset();
 					$itemOption = new Items_Model_DbTable_Itemopt();
 					$itemOptionSet = new Items_Model_DbTable_Itemoptset();
 					$ebayAccountDb = new Ebay_Model_DbTable_Account();
 					$ebayListingDb = new Ebay_Model_DbTable_Listing();
-					$shopItemDb = new Shops_Model_DbTable_Item();
+					//$shopItemDb = new Shops_Model_DbTable_Item();
+					//$shopCategoryDb = new Shops_Model_DbTable_Category();
 
 					//Get categories
-					$categoryIndex = $this->getProductCategoryIndex();
+					$itemCategoryIndex = $this->getProductCategoryIndex('item');
+					$shopCategoryIndex = $this->getProductCategoryIndex('shop');
+
+					//print_r($shopCategoryIndex);
 
 					//Get
 					if($formData['separator'] == 'comma') $separator = ',';
@@ -401,7 +425,7 @@ class Items_ItemController extends Zend_Controller_Action
 						//if(count($map) > 1) {
 						//SKU is mandatory
 						} elseif(isset($map['sku']) && isset($datacsv[$map['sku']]) && $datacsv[$map['sku']]) {
-							//print_r($map);
+							//print_r($itemInfo);
 							$images = array();
 							$attributes = array();
 							$options = array();
@@ -451,11 +475,11 @@ class Items_ItemController extends Zend_Controller_Action
 										}
 									} elseif($attr == 'category') {
 										$updateData['catid'] = 0;
-										$currentCategory = $categoryIndex;
-										$shopCategories = explode(' > ', $datacsv[$map['category']]);
-										foreach($shopCategories as $shopCategory) {
-											if(isset($currentCategory[md5($shopCategory)])) {
-												$currentCategory = $currentCategory[md5($shopCategory)];
+										$currentCategory = $itemCategoryIndex;
+										$itemCategories = explode(' > ', $datacsv[$map['category']]);
+										foreach($itemCategories as $itemCategory) {
+											if(isset($currentCategory[md5($itemCategory)])) {
+												$currentCategory = $currentCategory[md5($itemCategory)];
 												$updateData['catid'] = $currentCategory['id'];
 												if(isset($currentCategory['childs'])) $currentCategory = $currentCategory['childs'];
 											} else {
@@ -466,6 +490,25 @@ class Items_ItemController extends Zend_Controller_Action
 											/* TO DO handle if no category found */
 											echo 'No category found for '.$datacsv[$map['sku']].': '.$datacsv[$map['category']]."<br>";
 										}
+									} elseif($attr == 'shopcategory') {
+										$updateData['shopcatid'] = 0;
+										$currentCategory = $shopCategoryIndex;
+										$shopCategories = explode(' > ', $datacsv[$map['shopcategory']]);
+										//print_r($currentCategory);
+										foreach($shopCategories as $shopCategory) {
+											if(isset($currentCategory[md5($shopCategory)])) {
+												$currentCategory = $currentCategory[md5($shopCategory)];
+												$updateData['shopcatid'] = $currentCategory['id'];
+												if(isset($currentCategory['childs'])) $currentCategory = $currentCategory['childs'];
+											} else {
+												$updateData['shopcatid'] = 0;
+											}
+										}
+										if($updateData['shopcatid'] == 0) {
+											/* TO DO handle if no category found */
+											echo 'No shop category found for '.$datacsv[$map['sku']].': '.$datacsv[$map['shopcategory']]."<br>";
+										}
+										//echo 'Set shop category for '.$datacsv[$map['sku']].': '.$datacsv[$map['shopcategory']].'/'.$updateData['shopcatid']."<br>";
 									} elseif($attr == 'uom') {
 										if($uomid = array_search($datacsv[$map[$attr]], $uoms)) {
 											$updateData['uomid'] = $uomid;
@@ -490,7 +533,7 @@ class Items_ItemController extends Zend_Controller_Action
 										}*/
 									} elseif((strpos($attr, 'image') !== FALSE) && (strpos($attr, 'url') !== FALSE)) {
 										$imageUrl = $datacsv[$map[$attr]];
-										$url = '/media/items/'.$dir1.'/'.$dir2.'/'.$clientid;
+										$url = '/media/'.$dir1.'/'.$dir2.'/'.$clientid.'/images/';
 
 										if(file_exists(BASE_PATH.$url.$imageUrl)) {
 											$imageID = str_replace('image', '', str_replace('url', '', $attr));
@@ -501,7 +544,7 @@ class Items_ItemController extends Zend_Controller_Action
 												$images[$imageID]['ordering'] = $imageID;
 											}
 										} else {
-											echo 'Image file not exists for '.$datacsv[$map['sku']].': '.BASE_PATH.$url.$imageUrl."<br>";
+											echo 'Media file not exists for '.$datacsv[$map['sku']].': '.BASE_PATH.$url.$imageUrl."<br>";
 										}
 									} elseif((strpos($attr, 'image') !== FALSE) && (strpos($attr, 'title') !== FALSE)) {
 										$images[str_replace('image', '', str_replace('title', '', $attr))]['title'] = $datacsv[$map[$attr]];
@@ -564,22 +607,38 @@ class Items_ItemController extends Zend_Controller_Action
 									}
 								}
 
+								//Update shop listing
+								/*if(isset($map['shopid'])) {
+									$shopItemDb->deleteItemByItemId($item['id']);
+									$slug = $this->slugify($item['title']);
+									if(isset($map['shopid']) && ($datacsv[$map['shopid']] > 0) && $shopCategoryId) {
+										$shopItemDb->addItem(array('itemid' => $item['id'], 'slug' => $slug, 'shopid' => $datacsv[$map['shopid']], 'catid' => $shopCategoryId));
+										echo 'Item added to shop: '.$updateData['sku'].', itemid: '.$item['id'].' to '.$datacsv[$map['shopid']].'<br>';
+									}
+								}*/
+
+								//Update slug
+								//if(isset($updateData['title'])) {
+								//	$updateData['slug'] = $this->slugify($item['title']);
+								//}
+
+								//print_r($updateData);
 								$itemDb->updateItem($item['id'], $updateData);
 								++$rowsUpdated;
 
 								//error_log(print_r($updateData,true));
 
 								//Delete existing images
-								$itemImage->deleteImagesByParentID($item['id'], 'items', 'item');
+								$itemMedia->deleteMediaByParentID($item['id'], 'items', 'item');
 
 								//Create and update images
 								foreach($images as $image) {
 									if(isset($image['url']) && $image['url']) {
-										$image['itemid'] = $item['id'];
+										$image['parentid'] = $item['id'];
 										$image['module'] = 'items';
 										$image['controller'] = 'item';
 										//error_log(var_dump($image));
-										$itemImage->addImage($image);
+										$itemMedia->addMedia($image);
 									}
 								}
 							} else {
@@ -608,24 +667,26 @@ class Items_ItemController extends Zend_Controller_Action
 										$ebayListingDb->addListing(array('itemid' => $itemid, 'accountid' => $ebayAccount['id']));
 									}
 								}
-								if(isset($map['shopid'])) {
+								/*if(isset($map['shopid'])) {
+									echo 'Item shopid: '.$map['shopid'].'<br>';
 									if($datacsv[$map['shopid']] == 0) {
-										$shopItemDb->deleteItemByItemID($itemid);
+										$shopItemDb->deleteItem($itemid);
 										echo 'Item deleted from shop: '.$updateData['sku'].', itemid: '.$itemid.'<br>';
 									} elseif($map['shopid']) {
-										$shopItemDb->addItem(array('itemid' => $itemid, 'shopid' => $datacsv[$map['shopid']]));
+										$shopItemDb->addItem(array('itemid' => $itemid, 'shopid' => $datacsv[$map['shopid']], 'catid' => 0));
+										echo 'Item added to shop: '.$updateData['sku'].', itemid: '.$itemid.' to '.$datacsv[$map['shopid']].'<br>';
 									}
-								}
+								}*/
 								++$rowsCreated;
 
 								//Create images
 								foreach($images as $image) {
 									if(isset($image['url']) && $image['url']) {
-										$image['itemid'] = $itemid;
+										$image['parentid'] = $itemid;
 										$image['module'] = 'items';
 										$image['controller'] = 'item';
 										//error_log(var_dump($image));
-										$itemImage->addImage($image);
+										$itemMedia->addMedia($image);
 									}
 								}
 
@@ -763,47 +824,6 @@ class Items_ItemController extends Zend_Controller_Action
 		}
 	}
 
-	protected function uploadAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$form = new Application_Form_Upload();
-		//$form->file->setDestination('/var/www/dewawi/files/');
-
-		if ($this->getRequest()->isPost()) {
-			$formData = $this->getRequest()->getPost();
-			if ($form->isValid($formData)) {
-				$id = $this->_getParam('id', 0);
-				$contactid = $this->_getParam('contactid', 0);
-
-				if(!file_exists(BASE_PATH.'/files/images/')) {
-					mkdir(BASE_PATH.'/files/images/');
-					chmod(BASE_PATH.'/files/images/', 0777);
-				}
-
-				/* Uploading Document File on Server */
-				$upload = new Zend_File_Transfer_Adapter_Http();
-				$upload->setDestination(BASE_PATH.'/files/images/');
-				try {
-					// upload received file(s)
-					$upload->receive();
-					$location = $upload->getFileName();
-					$locationArray = explode('/',$location);
-					$data = array();
-					$data['image'] = end($locationArray);
-					$item = new Items_Model_DbTable_Item();
-					$item->updateItem($id, $data);
-				} catch (Zend_File_Transfer_Exception $e) {
-					$e->getMessage();
-				}
-			} else {
-				$form->populate($formData);
-			}
-		}
-
-		$this->view->form = $form;
-	}
-
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);
@@ -833,12 +853,18 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->_helper->Validate();
 	}
 
-	public function getProductCategoryIndex() {
+	public function getProductCategoryIndex($type) {
 		$categoryDb = new Application_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories('item');
+		$categories = $categoryDb->getCategories($type);
+		//print_r($categories);
 		$categoriesByID = array();
 		foreach($categories as $category) {
-			$categoriesByID[$category['id']] = $category['title'];
+			$categoriesByID[$category['id']] = array();
+			$categoriesByID[$category['id']]['title'] = $category['title'];
+			/*if(isset($category['shopid'])) {
+				$categoriesByID[$category['id']]['shopid'] = $category['shopid'];
+				$categoriesByID[$category['id']]['shopcatid'] = $category['shopcatid'];
+			}*/
 		}
 
 		$childCategories = array();
@@ -855,6 +881,10 @@ class Items_ItemController extends Zend_Controller_Action
 			if($category['parentid'] == 0) {
 				$categoryIndex[md5($category['title'])]['id'] = $category['id'];
 				$categoryIndex[md5($category['title'])]['title'] = $category['title'];
+				/*if(isset($category['shopid'])) {
+					$categoryIndex[md5($category['title'])]['shopid'] = $category['shopid'];
+					$categoryIndex[md5($category['title'])]['shopcatid'] = $category['shopcatid'];
+				}*/
 				if(isset($childCategories[$category['id']])) {
 					$categoryIndex[md5($category['title'])]['childs'] = $this->getSubCategoryIndex($categoriesByID, $childCategories, $category['id']);
 				}
@@ -867,13 +897,17 @@ class Items_ItemController extends Zend_Controller_Action
 		return $categoryIndex;
 	}
 
-	public function getSubCategoryIndex($categories, $childCategories, $id) {
+	public function getSubCategoryIndex($categoriesByID, $childCategories, $id) {
 		$subCategories = array();
 		foreach($childCategories[$id] as $child) {
-			$subCategories[md5($categories[$child])]['id'] = $child;
-			$subCategories[md5($categories[$child])]['title'] = $categories[$child];
+			$subCategories[md5($categoriesByID[$child]['title'])]['id'] = $child;
+			$subCategories[md5($categoriesByID[$child]['title'])]['title'] = $categoriesByID[$child]['title'];
+			/*if(isset($categoriesByID[$child]['shopid'])) {
+				$subCategories[md5($categoriesByID[$child]['title'])]['shopid'] = $categoriesByID[$child]['shopid'];
+				$subCategories[md5($categoriesByID[$child]['title'])]['shopcatid'] = $categoriesByID[$child]['shopcatid'];
+			}*/
 			if(isset($childCategories[$child])) {
-				$subCategories[md5($categories[$child])]['childs'] = $this->getSubCategoryIndex($categories, $childCategories, $child);
+				$subCategories[md5($categoriesByID[$child]['title'])]['childs'] = $this->getSubCategoryIndex($categoriesByID, $childCategories, $child);
 			}
 		}
 		return $subCategories;
@@ -984,5 +1018,42 @@ class Items_ItemController extends Zend_Controller_Action
 				echo "</pre>";
 			}
 		}
+	}
+
+	protected function slugify($string) {
+		// Replace non letter or digits with hyphens
+		$string = preg_replace('~[^\pL\d]+~u', '-', $string);
+
+		// Transliterate
+		$string = iconv('utf-8', 'us-ascii//TRANSLIT', $string);
+
+		// Remove unwanted characters
+		$string = preg_replace('~[^-\w]+~', '', $string);
+
+		// Trim hyphens from beginning and end
+		$string = trim($string, '-');
+
+		// Convert to lowercase
+		$string = strtolower($string);
+
+		if (empty($string)) {
+			return 'n-a';
+		}
+
+		return $string;
+	}
+
+	protected function getSubfolders($directory)
+	{
+		$subfolders = [];
+		if (is_dir($directory)) {
+			$items = scandir($directory);
+			foreach ($items as $item) {
+				if ($item != '.' && $item != '..' && is_dir($directory . $item)) {
+					$subfolders[] = $item;
+				}
+			}
+		}
+		return $subfolders;
 	}
 }

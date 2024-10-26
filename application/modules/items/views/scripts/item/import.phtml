@@ -1,8 +1,20 @@
 <?php
-$this->title = $this->translate('ITEMS');
+$this->title = $this->translate('ITEMS_IMPORT_ITEM');
 $this->headTitle($this->title);
 echo $this->Messages();
 ?>
+
+<p>
+	<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import')); ?>">
+		<strong><?php echo $this->translate('ITEMS_IMPORT_ITEM'); ?></strong>
+	</a> |
+	<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'attribute', 'action'=>'import')); ?>">
+		<?php echo $this->translate('ITEMS_IMPORT_ATTRIBUTE'); ?>
+	</a> |
+	<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'option', 'action'=>'import')); ?>">
+		<?php echo $this->translate('ITEMS_IMPORT_OPTION'); ?>
+	</a>
+</p>
 
 <form id="upload" enctype="multipart/form-data" action="" method="post">
 	<dl class="form">
@@ -14,8 +26,6 @@ echo $this->Messages();
 	<p>Max: <?php echo ini_get('upload_max_filesize'); ?></p>
 </form>
 
-<br>
-<br>
 <br>
 <br>
 <br>
