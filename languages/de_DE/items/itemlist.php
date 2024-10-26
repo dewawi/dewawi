@@ -14,7 +14,7 @@
 	'ITEM_LISTS_COST' => 'Einkaufspreis',
 	'ITEM_LISTS_PRICE' => 'Verkaufspreis',
 	'ITEM_LISTS_PRICES' => 'Preise',
-    'ITEM_LISTS_VIDEO' => 'Video',
+	'ITEM_LISTS_VIDEO' => 'Video',
 	'ITEM_LISTS_DESCRIPTION' => 'Beschreibung',
 	'ITEM_LISTS_APPLY' => 'Übernehmen',
 	'ITEM_LISTS_NONE' => '- keine -',

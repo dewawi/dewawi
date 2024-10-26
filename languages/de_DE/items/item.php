@@ -22,7 +22,7 @@
 	'ITEMS_PRICE' => 'Verkaufspreis',
 	'ITEMS_PRICES' => 'Preise',
 	'ITEMS_MARGIN' => 'Marge',
-    'ITEMS_CURRENCY' => 'Währung',
+	'ITEMS_CURRENCY' => 'Währung',
 	'ITEMS_QUANTITY' => 'Bestand',
 	'ITEMS_MIN_QUANTITY' => 'Min. Bestand',
 	'ITEMS_ORDER_QUANTITY' => 'Min. Bestellmenge',
@@ -36,8 +36,8 @@
 	'ITEMS_MANUFACTURER' => 'Hersteller',
 	'ITEMS_MANUFACTURER_SKU' => 'Herst.-Artnum',
 	'ITEMS_MANUFACTURER_GTIN' => 'Hersteller GTIN',
-    'ITEMS_CUSTOMS' => 'Zoll',
-    'ITEMS_VIDEO' => 'Video',
+	'ITEMS_CUSTOMS' => 'Zoll',
+	'ITEMS_VIDEO' => 'Video',
 	'ITEMS_CTN' => 'Zolltarifnummer',
 	'ITEMS_ORIGIN_COUNTRY' => 'Ursprungsland',
 	'ITEMS_ORIGIN_REGION' => 'Ursprungsregion',
@@ -52,8 +52,8 @@
 	'ITEMS_MODIFIED' => 'le. Änderung',
 	'ITEMS_SAVE' => 'Speichern',
 	'ITEMS_DELETE' => 'Löschen',
-    'ITEMS_PRICE_RULE_BY_PERCENT' => 'Rabatt in Prozent',
-    'ITEMS_PRICE_RULE_BY_FIXED' => 'Festbetrag-Rabatt',
-    'ITEMS_PRICE_RULE_TO_PERCENT' => 'Aufpreis in Prozent',
-    'ITEMS_PRICE_RULE_TO_FIXED' => 'Festbetrag-Aufpreis'
+	'ITEMS_PRICE_RULE_BY_PERCENT' => 'Rabatt in Prozent',
+	'ITEMS_PRICE_RULE_BY_FIXED' => 'Festbetrag-Rabatt',
+	'ITEMS_PRICE_RULE_TO_PERCENT' => 'Aufpreis in Prozent',
+	'ITEMS_PRICE_RULE_TO_FIXED' => 'Festbetrag-Aufpreis'
 );

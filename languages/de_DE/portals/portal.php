@@ -1,0 +1,33 @@
+<?php return array(
+	//Menu
+	'MENU_PORTALS' => 'Portal',
+	//Portal
+	'PORTALS' => 'Portal',
+	'PORTALS_LOGIN_REQUEST' => 'Login-Anfrage',
+	'PORTALS_LOGIN_EMAIL' => 'E-Mail',
+	'PORTALS_LOGIN_SEND_REQUEST' => 'Abschicken',
+	'PORTALS_LOGIN_CONFIRMATION' => 'Vielen Dank, bitte überprüfen Sie Ihr Email-Postfach!',
+	'PORTALS_LOGIN_CONFIRMATION_DESCRIPTION' => 'Wir haben Ihnen eine Bestätigungsmail an die von Ihnen angegebene Email-Adresse gesendet. Bitte prüfen Sie auch Ihren SPAM-Ordner, falls Sie in den nächsten Minuten keine Bestätigung erhalten haben!',
+	'PORTALS_LOGIN_HOW_IT_WORKS' => "So funktioniert's",
+	'PORTALS_LOGIN_HOW_IT_WORKS_DESCRIPTION' => 'Wenn Sie als Kunde im System registriert sind, können Sie sich bequem per Login-Link im System anmelden. Einfach die hinterlegte E-Mail eingeben und abschicken. Sie erhalten von uns einen Login-Link, über den Sie sich einfach anmelden können: klicken, fertig. Über Cookies wird dieser Zugang gespeichert, sodass Sie innerhalb der nächsten 30 Tage automatisch im System angemeldet sind. Sollten Sie Ihre Cookies bereinigen, fordern Sie einfach einen neuen Link an.',
+	'PORTALS_REGISTER' => 'Registrieren',
+	'PORTALS_REGISTER_EMAIL' => 'E-Mail',
+	'PORTALS_REGISTER_COMPANY' => 'Firmenname',
+	'PORTALS_REGISTER_NAME' => 'Kontaktperson',
+	'PORTALS_REGISTER_SECTOR' => 'Branche',
+	'PORTALS_REGISTER_PHONE' => 'Telefonnummer',
+	'PORTALS_REGISTER_STREET' => 'Straße und Hausnummer',
+	'PORTALS_REGISTER_POSTCODE' => 'PLZ',
+	'PORTALS_REGISTER_CITY' => 'Stadt',
+	'PORTALS_REGISTER_COUNTRY' => 'Land',
+	'PORTALS_REGISTER_CUSTOMER_ID' => 'Kundennummer',
+	'PORTALS_REGISTER_MESSAGE' => 'Ihre Nachricht',
+	'PORTALS_REGISTER_SEND_REQUEST' => 'Abschicken',
+	'PORTALS_REGISTER_CONFIRMATION' => 'Vielen Dank für Ihre Registrierung',
+	'PORTALS_REGISTER_CONFIRMATION_DESCRIPTION' => 'Wir werden Ihre Anfrage bearbeiten und uns schnellstmöglich mit Ihnen in Verbindung setzen. Eine Kopie Ihre Nachricht wurde an die angegebene E-Mail-Adresse versandt.',
+	'PORTALS_CUSTOMER' => 'Kunde',
+	'PORTALS_FILE_TYPE' => 'Typ',
+	'PORTALS_FILE_NAME' => 'Dateiname',
+	'PORTALS_FILE_SIZE' => 'Dateigröße',
+	'PORTALS_FILE_LANGUAGE' => 'Dateisprache'
+);

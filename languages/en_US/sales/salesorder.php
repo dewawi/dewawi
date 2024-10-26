@@ -6,7 +6,7 @@
 	'ACTIONS_GENERATE_SALES_ORDER' => 'Generate sales order',
 	//Sales order
 	'SALESORDER' => 'Sales order',
-	'SALES_ORDER' => 'Sales order',
+	'SALES_ORDER' => 'Proforma Invoice/        Order Confirmation',
 	'SALES_ORDERS' => 'Sales orders',
 	'SALES_ORDERS_ID' => 'ID',
 	'SALES_ORDERS_SALES_ORDER_ID' => 'New sales order ID',

@@ -1,5 +1,6 @@
 <?php return array(
 	//Option
+	'OPTION' => 'Optionen',
 	'ITEMS_NEW_OPTION' => 'Neue Option',
 	'ITEMS_OPTIONS' => 'Optionen',
 	'ITEMS_OPTION_ID' => 'ID',

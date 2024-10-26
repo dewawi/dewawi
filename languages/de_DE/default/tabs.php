@@ -16,6 +16,7 @@
 	'TABS_MESSAGES' => 'Nachrichten',
 	'TABS_EMAIL_SETTINGS' => 'E-Mail Einstellungen',
 	'TABS_CATEGORIES' => 'Kategorien',
+	'TABS_IMAGES' => 'Bilder',
 	'TABS_SUPPLIER_DETAILS' => 'Lieferantendetails',
 	'TABS_PAYMENT' => 'Zahlungsinformationen',
 	'TABS_DETAILS' => 'Details',

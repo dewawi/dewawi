@@ -23,5 +23,17 @@
 	'MESSAGES_OWN_CLINET_CAN_NOT_BE_DELETED' => 'Eigene Mandantenkonto kann nicht gelöscht werden!',
 	'MESSAGES_OWN_USER_CAN_NOT_BE_DELETED' => 'Eigene Benutzerkonto kann nicht gelöscht werden!',
 	'MESSAGES_RECORDS_SUCCESFULLY_UPDATED' => 'Datensätze wurden erfolgreich aktualisiert.',
-	'MESSAGES_RECORDS_SUCCESFULLY_UPLOADED' => 'Datensätze wurden erfolgreich hochgeladen.'
+	'MESSAGES_RECORDS_SUCCESFULLY_UPLOADED' => 'Datensätze wurden erfolgreich hochgeladen.',
+	'MESSAGES_EMAIL_SENT_ERROR' => 'Ihre Nachricht konnte nicht versendet werden!',
+	'MESSAGES_EMAIL_SENT_SUCCESS' => 'Ihre Nachricht wurde erfolgreich versendet!',
+	'MESSAGES_THANK_YOU_CONTACTING_US' => 'Vielen Dank für Ihre Kontaktaufnahme',
+	'MESSAGES_HELLO_NAME' => 'Hallo %s,', // %s will be replaced by the user’s name
+	'MESSAGES_RECEIVED_YOUR_MESSAGE' => 'Vielen Dank, dass Sie uns kontaktiert haben. Wir haben Ihre Nachricht erhalten und werden uns schnellstmöglich mit Ihnen in Verbindung setzen.',
+	'MESSAGES_DETAILS_OF_MESSAGE' => 'Details Ihrer Nachricht:',
+	'MESSAGES_SUBJECT' => 'Betreff',
+	'MESSAGES_MESSAGE' => 'Nachricht',
+	'MESSAGES_FURTHER_QUESTIONS' => 'Falls Sie weitere Fragen haben, können Sie uns jederzeit eine Nachricht zukommen lassen oder auf diese E-Mail antworten.',
+	'MESSAGES_VISIT_WEBSITE' => 'Besuchen Sie unsere Webseite',
+	'MESSAGES_BEST_REGARDS' => 'Mit freundlichen Grüßen',
+	'MESSAGES_ALL_RIGHTS_RESERVED' => 'Alle Rechte vorbehalten'
 );

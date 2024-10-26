@@ -5,6 +5,7 @@
 	'STATISTICS' => 'Statistiken',
 	'STATISTICS_PERIOD' => 'Zeitraum',
 	'STATISTICS_TURNOVER' => 'Umsatz',
+	'STATISTICS_TURNOVER_YEAR' => 'Jahr',
 	'STATISTICS_TURNOVER_MONTH' => 'Monat',
 	'STATISTICS_TURNOVER_MONTHS' => 'Monatliche Umsätze',
 	'STATISTICS_TURNOVER_YEARS' => 'Jährliche Umsätze',

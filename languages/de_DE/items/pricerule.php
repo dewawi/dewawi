@@ -16,7 +16,7 @@
 	'PRICE_RULES_ACTIVATED' => 'Aktiviert',
 	'PRICE_RULES_CREATED' => 'Erstellt',
 	'PRICE_RULES_MODIFIED' => 'Bearbeitet',
-    'PRICE_RULES_APPLY_RULES_ON' => 'Regeln übernehmen auf:',
+	'PRICE_RULES_APPLY_RULES_ON' => 'Regeln übernehmen auf:',
 	'PRICE_RULES_ITEM_CATEGORY' => 'Artikelkategorie',
 	'PRICE_RULES_ITEM_APPLY_TO_SUBCATEGORIES' => 'Auf Unterkategorien anwenden',
 	'PRICE_RULES_ITEM_TYPE' => 'Artikeltyp',

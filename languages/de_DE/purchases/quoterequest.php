@@ -48,7 +48,7 @@
 	'QUOTE_REQUESTS_SUBTOTAL' => 'Nettobetrag',
 	'QUOTE_REQUESTS_TAXES' => 'Umsatzsteuer',
 	'QUOTE_REQUESTS_TOTAL' => 'Gesamtbetrag',
-    'QUOTE_REQUESTS_CURRENCY' => 'Währung',
+	'QUOTE_REQUESTS_CURRENCY' => 'Währung',
 	'QUOTE_REQUESTS_DELIVERY_DATE' => 'Liefertermin:',
 	'QUOTE_REQUESTS_TEMPLATE' => 'Vorlage',
 	'QUOTE_REQUESTS_LANGUAGE' => 'Sprache'
