@@ -70,7 +70,6 @@ CREATE TABLE IF NOT EXISTS `category` (
   `title` varchar(255) DEFAULT NULL,
   `subtitle` varchar(255) DEFAULT NULL,
   `keyword` varchar(255) DEFAULT NULL,
-  `slug` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
@@ -80,6 +79,7 @@ CREATE TABLE IF NOT EXISTS `category` (
   `metatitle` varchar(255) DEFAULT NULL,
   `metadescription` varchar(255) DEFAULT NULL,
   `metakeyword` varchar(255) DEFAULT NULL,
+  `downloads` text DEFAULT NULL,
   `type` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
@@ -89,10 +89,10 @@ CREATE TABLE IF NOT EXISTS `category` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY (parentid),
-  KEY (slug),
   KEY (shopid),
   KEY (type),
   KEY (clientid),
@@ -882,11 +882,12 @@ CREATE TABLE IF NOT EXISTS `footer` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `images` (
+CREATE TABLE IF NOT EXISTS `media` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `parentid` int(11) NOT NULL,
   `module` varchar(255) DEFAULT NULL,
   `controller` varchar(255) DEFAULT NULL,
+  `type` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `url` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
@@ -1124,10 +1125,10 @@ CREATE TABLE IF NOT EXISTS `item` (
   `sku` varchar(255) DEFAULT NULL,
   `gtin` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
+  `subtitle` varchar(255) DEFAULT NULL,
   `shoptitle` varchar(255) DEFAULT NULL,
   `ebaytitle` varchar(255) DEFAULT NULL,
   `amazontitle` varchar(255) DEFAULT NULL,
-  `slug` varchar(255) DEFAULT NULL,
   `shopenabled` tinyint(1) NOT NULL DEFAULT 0,
   `ebayenabled` tinyint(1) NOT NULL DEFAULT 0,
   `amazonenabled` tinyint(1) NOT NULL DEFAULT 0,
@@ -1435,6 +1436,7 @@ CREATE TABLE IF NOT EXISTS `menu` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `shopid` int(11) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
+  `position` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
@@ -1456,7 +1458,6 @@ CREATE TABLE IF NOT EXISTS `menuitem` (
   `pageid` int(11) NOT NULL,
   `parentid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
-  `slug` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
@@ -1468,7 +1469,6 @@ CREATE TABLE IF NOT EXISTS `menuitem` (
   `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (slug),
   KEY (menuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1494,7 +1494,6 @@ CREATE TABLE `page` (
   `image` varchar(255) DEFAULT NULL,
   `url` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
-  `slug` varchar(255) DEFAULT NULL,
   `header` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `content` text DEFAULT NULL,
@@ -2446,6 +2445,28 @@ CREATE TABLE IF NOT EXISTS `slide` (
   KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `slug` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL DEFAULT 0,
+  `shopid` int(11) NOT NULL,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
+  `entityid` int(11) NOT NULL,
+  `slug` text DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY (parentid),
+  KEY (shopid),
+  KEY (module),
+  KEY (controller),
+  KEY (entityid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `state` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) DEFAULT NULL,
@@ -2466,7 +2487,6 @@ CREATE TABLE IF NOT EXISTS `tag` (
   `shopid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `keyword` varchar(255) DEFAULT NULL,
-  `slug` varchar(255) DEFAULT NULL,
   `module` varchar(255) DEFAULT NULL,
   `controller` varchar(255) DEFAULT NULL,
   `header` text DEFAULT NULL,
