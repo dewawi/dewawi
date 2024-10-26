@@ -38,7 +38,7 @@ class Statistics_TurnoverController extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$chart = new Statistics_Model_Turnover();
-		list($turnoverList, $turnoverTotal) = $chart->createCharts($lenght, 1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
+		list($turnoverList, $turnoverTotal) = $chart->createCharts($lenght, 1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options, 1);
 
 		// Array to group data by month
 		$monthlyTurnover = [];

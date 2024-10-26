@@ -17,15 +17,14 @@ use pChart\pException;
 
 class Statistics_Model_Turnover
 {
-	public function createCharts($lenght, $width = 1000, $height = 400, $statisticsUncategorized, $statisticsNoData, $params, $options)
+	public function createCharts($lenght, $width = 1000, $height = 400, $statisticsUncategorized, $statisticsNoData, $params, $options, $startMonth = null)
 	{
 		//print_r($params);
 		//print_r($options);
 		$currentYear = date('Y');
 		$currentMonth = date('m');
 		$startYear = date('Y', strtotime('-'.($lenght-1).' month'));
-		//$startMonth = date('m', strtotime('-'.($lenght-1).' month'));
-		$startMonth = 1;
+		if(!$startMonth) $startMonth = date('m', strtotime('-'.($lenght-1).' month'));
 
 		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');
