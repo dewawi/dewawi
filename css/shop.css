@@ -1,0 +1,361 @@
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1320px;
+  }
+}
+.sidebar {
+	background-color: #f0f8ff;
+	border: 1px solid #ccc;
+	padding: 15px;
+}
+
+header {
+    background-color: #fff;
+    padding: 0px;
+}
+
+header.home {
+    background-color: #e9ecef;
+}
+
+.header-text {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.5); /* Adjust transparency as needed */
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+}
+
+.header-text h1 {
+	margin: 10px;
+    font-size: 2em; /* Adjust font size as needed */
+}
+
+/* Messages */
+#messages {
+	border: 1px solid #F2DD8C;
+	margin: 5px 6px 15px;
+	padding: 10px 35px;
+}
+#messages ul {
+    padding-left: 0;
+    margin: 0;
+}
+#messages li {
+    font-size: 1.2rem;
+    list-style: none; /* Remove default list styling */
+}
+#success #messages {
+	background: url("../images/success.png") no-repeat scroll 12px center #D1FFCC;
+}
+#error #messages {
+	background: url("../images/warning.png") no-repeat scroll 12px center #FFF5CC;
+}
+
+.category-text {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.8); /* Adjust transparency as needed */
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.category-text h3 {
+	margin: 0;
+    font-size: 1em; /* Adjust font size as needed */
+}
+
+#subcategories h6 {
+	font-weight: bold;
+	font-style: italic;
+	margin: -5px 0;
+}
+
+.navbar {
+    padding: 0;
+}
+.navbar-brand {
+    padding: 0;
+}
+.nav-item {
+    margin-right: 20px;
+    position: relative; /* Ensure relative positioning for submenu */
+}
+.nav-link {
+    padding: 20px;
+}
+
+/* Submenu styles */
+.submenu {
+    display: none; /* Hide submenu by default */
+    position: absolute;
+    top: 100%; /* Position below the parent menu item */
+    left: 0;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+    z-index: 1000;
+    width: 200px; /* Adjust the width of the submenu */
+    margin-top: 0;
+    padding: 10px 0;
+    white-space: nowrap;
+}
+
+.submenu {
+    display: none; /* Hide submenu by default */
+    position: absolute;
+    background-color: white;
+    min-width: 300px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.nav-item .right-edge .submenu {
+    left: auto;
+    right: 100%;
+}
+
+.nav-item:hover > .submenu,
+.submenu li:hover > .submenu {
+    display: block; /* Display submenu when hovered */
+    opacity: 1;
+}
+
+/* Style submenu items */
+.submenu li {
+    position: relative; /* Allow positioning of nested submenus */
+    list-style: none; /* Remove default list styling */
+}
+
+.submenu a {
+    max-width: 300px;
+    padding: 10px;
+    color: #333;
+    text-decoration: none;
+    display: block;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.submenu a:hover {
+    background-color: #f0f0f0;
+}
+
+/* Nested submenu styles */
+.submenu .submenu {
+    top: 0;
+    left: 100%; /* Position the nested submenu to the right */
+    margin-left: 1px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    left: 100%; /* Nested submenus to the right */
+    top: 0;
+    margin-left: 1px;
+}
+
+.row-menu {
+    display: flex;
+	justify-content: center;
+    list-style: none; /* Remove default list styling */
+    padding: 0; /* Remove default padding */
+}
+#breadcrumb {
+    background-color: #e9ecef;
+	border-bottom: 1px solid #ccc;
+}
+
+ol.breadcrumb {
+    background-color: #e9ecef;
+    padding: 0px;
+}
+
+footer {
+    background-color: #333; /* Dark background color */
+    color: #fff; /* Text color */
+    padding-top: 50px;
+    padding: 20px 0; /* Padding top and bottom */
+    text-align: center; /* Center align text */
+}
+
+.table td, .table th {
+  padding: .25rem;
+  vertical-align: middle;
+}
+
+.carousel-caption a h2,
+.carousel-caption a:hover h2 {
+    color: #fff;
+    text-decoration: none;
+	font-size: 3rem;
+}
+
+.carousel-caption a p {
+    color: #fff;
+    text-decoration: none;
+	font-size: 2rem;
+}
+
+/* Customize the carousel control icons */
+.carousel-control-prev,
+.carousel-control-next {
+    width: 20%!important;
+}
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    width: 200px!important; /* Adjust arrow width */
+    height: 200px!important; /* Adjust arrow height */
+}
+.carousel-control-prev-icon {
+ background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23fff' viewBox='0 0 8 8'%3E%3Cpath d='M5.25 0l-4 4 4 4 1.5-1.5-2.5-2.5 2.5-2.5-1.5-1.5z'/%3E%3C/svg%3E") !important;
+}
+
+.carousel-control-next-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23fff' viewBox='0 0 8 8'%3E%3Cpath d='M2.75 0l-1.5 1.5 2.5 2.5-2.5 2.5 1.5 1.5 4-4-4-4z'/%3E%3C/svg%3E") !important;
+}
+.carousel-caption.align-middle {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 25%;
+    background-color: rgba(0, 0, 0, 0.5); /* Adjust transparency as needed */
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.carousel-caption {
+    left: 5%;
+}
+.carousel-indicators li {
+    height: 10px;
+}
+#subcategories .card-img-top {
+	margin-top: 20px;
+}
+
+.language-flag {
+    display: inline-block;
+	margin-top: 10px;
+    width: 30px;
+    height: 20px;
+    background-image: url('../flags.png');
+    background-size: auto;
+    background-repeat: no-repeat;
+}
+
+.language-flag-en {
+    background-position: 0 -5596px;
+}
+
+.language-flag-de {
+    background-position: 0 -2020px;
+}
+
+.main-image-wrapper {
+    height: 400px; /* Set the desired height for the main image wrapper */
+    width: 100%; /* Ensure the wrapper takes up the full width */
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    overflow: hidden; /* Hide any overflowing content */
+    position: relative;
+}
+
+.main-image-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Ensure the whole image is displayed */
+}
+
+.thumbnail-wrapper {
+    height: 100px; /* Set the desired height for thumbnails */
+    overflow: hidden;
+    position: relative;
+}
+
+.thumbnail-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.modal-image-wrapper {
+    height: 800px; /* Set the desired height for the modal image wrapper */
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    overflow: hidden; /* Hide any overflowing content */
+    position: relative;
+}
+
+.modal-image-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Ensure the whole image is displayed */
+}
+
+#privacy-label {
+	margin-left: 20px;
+}
+#privacy-element {
+	margin-top: -33px;
+	margin-bottom: -15px;
+}
+
+/* Fix the bottom border issue for active tabs */
+.nav-tabs .nav-link.active {
+    border-bottom: 2px solid #007bff; /* Adjust this color to match your theme */
+}
+
+/* Remove the top border from the first card inside the tab content */
+.tab-content .card {
+    border-top: none;
+}
+
+/*Image Gallery*/
+.image-gallery {
+	margin-top: 20px;
+}
+
+.image-gallery .image-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	gap: 10px;
+}
+
+.image-gallery .image {
+	text-align: center;
+}
+
+.image-gallery .image-thumbnail {
+	width: 100%;
+	height: auto;
+	border-radius: 5px;
+	transition: transform 0.2s ease-in-out;
+}
+
+.image-gallery .image-thumbnail:hover {
+	transform: scale(1.05);
+}
+
+.image-gallery .image-caption {
+	margin-top: 5px;
+	font-size: 14px;
+	color: #555;
+}
+
+.image-gallery .image-actions {
+	margin-top: 5px;
+}
+
+.image-gallery .delete-link {
+	color: red;
+	text-decoration: none;
+}
+
+.image-gallery .delete-link:hover {
+	text-decoration: underline;
+}

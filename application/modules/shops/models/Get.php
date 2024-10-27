@@ -64,7 +64,7 @@ class Shops_Model_Get
 				->limit($params['limit'])
 				->where('deleted = ?', 0)
 		);
-		//echo $params['catid'];
+
 		return array($items, count($records));
 	}
 
@@ -128,7 +128,7 @@ class Shops_Model_Get
 				$tagEntityDb->select()
 					->setIntegrityCheck(false)
 					->from(array('t' => 'tagentity'))
-					->join(array('tag' => 'tag'), 't.tagid = tag.id', array('title as tag', 'module', 'controller', 'slug'))
+					->join(array('tag' => 'tag'), 't.tagid = tag.id', array('title as tag', 'module', 'controller'))
 					->group('t.id')
 					//->where('(t.entityid = "'.$id.'") AND (t.module = "'.$module.'") AND (t.controller = "'.$controller.'") AND (t.shopid = "'.$shopid.'") AND (t.deleted = 0)')
 					->where('(t.entityid = "'.$id.'") AND (t.module = "'.$module.'") AND (t.controller = "'.$controller.'") AND (t.deleted = 0)')

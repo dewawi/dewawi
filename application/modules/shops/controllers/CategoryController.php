@@ -35,7 +35,7 @@ class Shops_CategoryController extends Zend_Controller_Action
 	{
 		$shop = Zend_Registry::get('Shop');
 
-        $categorySlug = $this->_getParam('slug');
+		$id = $this->_getParam('id');
 
 		$this->_helper->getHelper('layout')->setLayout('shop');
 
@@ -52,9 +52,8 @@ class Shops_CategoryController extends Zend_Controller_Action
 		$this->view->contact = $contact;
 
 		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories($shop['id']);
-		$category = $categoryDb->getCategoryBySlug($categorySlug, $shop['id']);
-		//print_r($category);
+		$categories = $categoryDb->getCategories('shop', $shop['id']);
+		$category = $categoryDb->getCategory($id, $shop['id']);
 
 		//$tagsDb = new Shops_Model_DbTable_Tag();
 		//$tags = $tagsDb->getTags('shops', 'category', $category['id']);
@@ -71,19 +70,28 @@ class Shops_CategoryController extends Zend_Controller_Action
 		//if($category['parentid'] != 0) {
 			$tagEntites = array();
 			foreach($categories as $categoryy) {
-				$tagEntites[$categoryy->id] = $get->tags('shops', 'category', $categoryy->id);
+				$tagEntites[$categoryy['id']] = $get->tags('shops', 'category', $categoryy['id']);
 			}
 			$this->view->tagEntites = $tagEntites;
 		//}
 
 		$params['catid'] = $category['id'];
 		list($items, $records) = $get->items($params, $shop['id']);
-		//print_r($category);
+
+		$prices = [];
+		foreach($items as $item) {
+			//Get currency
+			$currency = $this->_helper->Currency->getCurrency($item['currency'], 'USE_SYMBOL');
+
+			//Convert numbers to the display format
+			$prices[$item->id]['raw'] = $item['price'];
+			$prices[$item->id]['formatted'] = $currency->toCurrency($item['price']);
+		}
 
 		$images = array();
-		$imageDb = new Shops_Model_DbTable_Image();
-		$images['items'] = $imageDb->getItemImages($items);
-		$images['categories'] = $imageDb->getCategoryImages($categories);
+		$imageDb = new Shops_Model_DbTable_Media();
+		$images['items'] = $imageDb->getItemMedia($items);
+		$images['categories'] = $imageDb->getCategoryMedia($categories);
 		//print_r($images);
 
 		$menuDb = new Shops_Model_DbTable_Menu();
@@ -95,10 +103,23 @@ class Shops_CategoryController extends Zend_Controller_Action
 			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
 		}
 
+		$manufacturersDb = new Shops_Model_DbTable_Manufacturer();
+		$manufacturers = $manufacturersDb->getManufacturers();
+
+		//Get image path
+		$clientid = $shop['clientid'];
+		$dir1 = substr($clientid, 0, 1);
+		if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
+		else $dir2 = '0';
+		$imagePath = $dir1.'/'.$dir2.'/'.$clientid;
+
 		//$this->view->tags = $tags;
 		$this->view->shop = $shop;
 		$this->view->items = $items;
+		$this->view->manufacturers = $manufacturers;
+		$this->view->prices = $prices;
 		$this->view->images = $images;
+		$this->view->imagePath = $imagePath;
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
 		//$this->view->options = $options;
@@ -313,51 +334,5 @@ class Shops_CategoryController extends Zend_Controller_Action
 	public function validateAction()
 	{
 		$this->_helper->Validate();
-	}
-
-	public function getItemCategoryIndex() {
-		$categoryDb = new Application_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories('item');
-		$categoriesByID = array();
-		foreach($categories as $category) {
-			$categoriesByID[$category['id']] = $category['title'];
-		}
-
-		$childCategories = array();
-		foreach($categories as $category) {
-			if(isset($childCategories[$category['parentid']])) {
-				array_push($childCategories[$category['parentid']], $category['id']);
-			} else {
-				$childCategories[$category['parentid']] = array($category['id']);
-			}
-		}
-
-		$categoryIndex = array();
-		foreach($categories as $category) {
-			if($category['parentid'] == 0) {
-				$categoryIndex[md5($category['title'])]['id'] = $category['id'];
-				$categoryIndex[md5($category['title'])]['title'] = $category['title'];
-				if(isset($childCategories[$category['id']])) {
-					$categoryIndex[md5($category['title'])]['childs'] = $this->getSubCategoryIndex($categoriesByID, $childCategories, $category['id']);
-				}
-			}
-		}
-		//var_dump($categoriesByID);
-		//var_dump($childCategories);
-		//var_dump($categoryIndex);
-
-		return $categoryIndex;
-	}
-
-	public function getSubCategoryIndex($categories, $childCategories, $id) {
-		$subCategories = array();
-		foreach($childCategories[$id] as $child) {
-			$subCategories[md5($categories[$child])]['id'] = $child;
-			$subCategories[md5($categories[$child])]['title'] = $categories[$child];
-			if(isset($childCategories[$child])) {
-				$subCategories[md5($categories[$child])]['childs'] = $this->getSubCategoryIndex($categories, $childCategories, $child);
-			}
-		}
-		return $subCategories;
 	}
 }

@@ -18,22 +18,11 @@ class Shops_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		//$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getItem($itemid, $shopid)
+	public function getItem($id, $shopid)
 	{
-		$itemid = (int)$itemid;
+		$id = (int)$id;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		//$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
-	}
-
-	public function getItemBySlug($slug, $shopid)
-	{
-		$shopid = (int)$shopid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('slug = ?', $slug);
+		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
 		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
 		//$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchRow($where);

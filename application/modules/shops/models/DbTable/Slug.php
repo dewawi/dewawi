@@ -1,9 +1,9 @@
 <?php
 
-class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Slug extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'page';
+	protected $_name = 'slug';
 
 	protected $_date = null;
 
@@ -18,7 +18,7 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		//$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getPage($id)
+	public function getSlug($id)
 	{
 		$id = (int)$id;
 		$where = array();
@@ -28,16 +28,7 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		return $data ? $data->toArray() : $data;
 	}
 
-	public function getPageByTitle($title)
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('title = ?', $title);
-		//$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
-	}
-
-	public function getPages($shopid)
+	public function getSlugs($shopid)
 	{
 		$shopid = (int)$shopid;
 
@@ -49,7 +40,7 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		return $data;
 	}
 
-	public function addPage($data)
+	public function addSlug($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -58,7 +49,7 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updatePage($id, $data)
+	public function updateSlug($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -85,7 +76,7 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deletePage($itemid)
+	public function deleteSlug($itemid)
 	{
 		$itemid = (int)$itemid;
 		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);

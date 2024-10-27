@@ -1,9 +1,9 @@
 <?php
 
-class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Manufacturer extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'page';
+	protected $_name = 'manufacturer';
 
 	protected $_date = null;
 
@@ -18,7 +18,7 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		//$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getPage($id)
+	public function getManufacturer($id)
 	{
 		$id = (int)$id;
 		$where = array();
@@ -28,28 +28,21 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		return $data ? $data->toArray() : $data;
 	}
 
-	public function getPageByTitle($title)
+	public function getManufacturers()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('title = ?', $title);
-		//$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
-	}
-
-	public function getPages($shopid)
-	{
-		$shopid = (int)$shopid;
-
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', 100);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'ordering');
+		$data = $this->fetchAll($where);
 
-		return $data;
+		$manufacturers = array();
+		foreach($data as $manufacturer) {
+			$manufacturers[$manufacturer->id] = $manufacturer->name;
+		}
+		return $manufacturers;
 	}
 
-	public function addPage($data)
+	public function addManufacturer($data)
 	{
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
@@ -58,7 +51,7 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updatePage($id, $data)
+	public function updateManufacturer($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -85,7 +78,7 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deletePage($itemid)
+	public function deleteManufacturer($itemid)
 	{
 		$itemid = (int)$itemid;
 		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);

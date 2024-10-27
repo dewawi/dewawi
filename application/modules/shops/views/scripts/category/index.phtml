@@ -1,0 +1,401 @@
+<?php
+$this->title = $this->category['subtitle'] 
+	? $this->category['title'] . " " . $this->category['subtitle'] 
+	: $this->category['title'];
+if($this->category['parentid'] != 0) $this->title .= ' '.$this->categories[$this->category['parentid']]['title'];
+$this->headTitle($this->title);
+if($this->category['metatitle']) $this->headMeta()->setName('title', $this->category['metatitle']);
+if($this->category['metadescription']) $this->headMeta()->setName('description', $this->category['metadescription']);
+//$this->headMeta()->setName('keywords', 'keyword1, keyword2, keyword3');
+//echo $this->Messages();
+//echo $this->ActiveFilter();
+$downloads = false;
+?>
+
+<!-- Display category header if it exists -->
+<?php if($this->category['header']) : ?>
+	<section id="header" style="position: relative;">
+		<?php echo $this->category['header']; ?>
+		<div class="header-text">
+			<h1 class="text-center text-white"><?php echo $this->category['subtitle']; ?></h1>
+		</div>
+	</section>
+<?php endif; ?>
+
+<?php $labelTable = array(); ?>
+<?php $labelTable['qbe'][0] = 'erp2021.png'; ?>
+<?php $labelTable['qbe'][1] = 'industry40.png'; ?>
+<?php $labelTable['i32v5'][0] = 'erp2021.png'; ?>
+<?php $labelTable['i32v5'][1] = 'ehpa.png'; ?>
+<?php $labelTable['i32v5'][2] = 'eurovent.png'; ?>
+
+<div style="display:none">
+<?php //print_r($this->categories); ?>
+</div>
+<!-- Display description if the category is a child category -->
+<?php if($this->category['parentid'] != 0) : ?>
+	<?php if($this->category['shortdescription']) : ?>
+		<section id="description" class="jumbotron jumbotron-fluid py-5">
+			<div class="container">
+				<?php if(!$this->category['header']) : ?>
+					<h2 class="text-center mb-4"><?php echo $this->category['title']; ?></h2>
+				<?php endif; ?>
+				<div class="row">
+					<div class="col-md-6 mb-4" style="padding: 0 50px;">
+						<div class="card">
+							<div id="carousel_<?php echo $this->category['id']; ?>" class="carousel slide" data-ride="carousel">
+								<div class="carousel-inner">
+									<?php $categoryImages = $this->images['categories'][$this->category['id']]; ?>
+									<?php if(count($categoryImages)) : ?>
+										<?php foreach ($categoryImages as $index => $image) : ?>
+											<?php if ($image->type == 'image') : ?>
+												<div class="carousel-item<?php echo $index === 0 ? ' active' : ''; ?>">
+													<a href="<?php //echo $this->url(array('category' => $this->category['slug'], 'item' => $this->items[0]->slug), 'categoryitem'); ?>">
+														<img src="<?php echo $this->baseUrl(); ?>/media/category/<?php echo $image->url; ?>" class="d-block w-100" alt="Item Image">
+													</a>
+												</div>
+											<?php elseif ($image->type == 'download') : ?>
+												<?php $downloads = true; ?>
+											<?php endif; ?>
+										<?php endforeach; ?>
+									<?php endif; ?>
+								</div>
+								<?php if(count($categoryImages) > 1) : ?>
+									<a class="carousel-control-prev" href="#carousel_<?php echo $this->category['id']; ?>" role="button" data-slide="prev">
+										<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+										<span class="sr-only">Previous</span>
+									</a>
+									<a class="carousel-control-next" href="#carousel_<?php echo $this->category['id']; ?>" role="button" data-slide="next">
+										<span class="carousel-control-next-icon" aria-hidden="true"></span>
+										<span class="sr-only">Next</span>
+									</a>
+								<?php endif; ?>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-6 mb-4">
+						<?php echo $this->category['shortdescription']; ?>
+						<?php $i = 1; ?>
+						<?php $tagEntites = count($this->tagEntites[$this->category['id']]); ?>
+						<?php if($tagEntites) : ?>
+							<span>Anwendungs- und Einsatzgebiete:</span>
+							<?php foreach($this->tagEntites[$this->category['id']] as $tagEntity) : ?>
+								<a href="<?php echo $this->url([], 'tag_' . $tagEntity['tagid']); ?>">
+									<?php echo $this->escape($tagEntity['tag']); ?></a>
+									<?php if($i < $tagEntites) echo '|'; ?>
+									<?php ++$i; ?>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</div>
+				</div>
+				<?php /*if(isset($labelTable[$this->category['slug']])) : ?>
+					<div class="row justify-content-center text-center">
+						<?php foreach($labelTable[$this->category['slug']] as $label) : ?>
+							<img src="<?php echo $this->shop['url']; ?>/media/images/label/<?php echo $label ?>" border="0" style="max-height: 100px; width: auto;" />
+						<?php endforeach; ?>
+					</div>
+				<?php endif;*/ ?>
+			</div>
+		</section>
+	<?php endif; ?>
+<?php endif; ?>
+
+<?php
+$hasSubcategories = false;
+foreach ($this->categories as $subcategory) {
+	if ($subcategory['parentid'] == $this->category['id']) {
+		$hasSubcategories = true;
+		break; // Exit loop if a subcategory is found
+	}
+}
+?>
+
+<!-- Display subcategories for parent category -->
+<?php if ($hasSubcategories) : ?>
+	<section id="subcategories" class="py-5">
+		<div class="container">
+			<?php if(!$this->category['header']) : ?>
+				<h2 class="text-center mb-4"><?php echo $this->category['title']; ?></h2>
+			<?php endif; ?>
+			<div class="row">
+				<div class="text-center col-md-12 mb-4">
+					<?php echo $this->category['description']; ?>
+				</div>
+			</div>
+
+			<!-- Render subcategories recursively -->
+			<?php echo $this->RenderCategories($this->categories, $this->category['id']); ?>
+		</div>
+	</section>
+<?php endif; ?>
+
+<!--<section id="video" class="py-5">
+	<div class="container">
+		<div class="row">
+			<iframe width="100%" height="800" src="https://www.youtube.com/embed/2JuK9kqqCOU?si=QEeD0-poX69pw8DD&amp;start=100" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+		</div>
+	</div>
+</section>-->
+
+<!-- Display product list if available -->
+<?php if (count($this->items) > 0): ?>
+	<section id="category" class="py-5">
+		<div class="container">
+			<h2 class="text-center mb-4"><?php echo $this->category['title']; ?></h2>
+
+			<!-- List Overview of Products -->
+			<div class="list-group">
+				<?php foreach($this->items as $item) : ?>
+					<script type="application/ld+json">
+					{
+					  "@context": "https://schema.org/",
+					  "@type": "Product",
+					  "name": "<?php echo $item->title; ?>",
+					  <?php if (count($this->images['items'][$item->id]) > 0): ?>
+						<?php $folder = 'images'; ?>
+						"image": [
+							<?php 
+							$totalImages = count($this->images['items'][$item->id]);
+							$i = 0;
+							foreach ($this->images['items'][$item->id] as $image): 
+								$i++; 
+							?>
+								"<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>"<?php if ($i < $totalImages) echo ','; ?>
+							<?php endforeach; ?>
+						],
+					  <?php endif; ?>
+					  "description": "<?php echo $item->shopdescriptionshort; ?>",
+					  "sku": "<?php echo $item->sku; ?>",
+					  "brand": {
+						"@type": "Brand",
+						"name": "<?php echo $this->manufacturers[$item->manufacturerid]; ?>"
+					  },
+					  "offers": {
+						"@type": "Offer",
+						"url": "<?php echo $this->shop['url'].$this->url([], 'category_' . $this->category['id']); ?>",
+						"priceCurrency": "<?php echo $item->currency; ?>",
+						"price": "<?php echo $this->prices[$item->id]['raw']; ?>",
+						"availability": "https://schema.org/InStock"
+					  }
+					}
+					</script>
+					<?php if($item->title) : ?>
+						<div class="list-group-item">
+							<div class="row d-flex align-items-center"> <!-- Flexbox and vertical alignment -->
+								<div class="col-md-5 d-flex align-items-center">
+									<button class="btn btn-info mr-2" type="button" data-toggle="collapse" data-target="#details_<?php echo $item->id; ?>" aria-expanded="false" aria-controls="details_<?php echo $item->id; ?>">
+										+
+									</button>
+									<div>
+										<strong><?php echo $item->title; ?></strong><br>
+										<span>SKU: <?php echo $item->sku; ?></span>
+									</div>
+								</div>
+								<div class="col-md-2">
+									<p><strong><?php echo $this->translate('SHOPS_PRICE'); ?>:</strong> <?php echo $this->prices[$item->id]['formatted']; ?></p>
+								</div>
+								<div class="col-md-5 d-flex justify-content-between">
+									<!--<button class="btn btn-info" onclick="showTab('<?php echo $item->id; ?>', 'description')">Description</button>-->
+									<!--<button class="btn btn-info" onclick="showTab('<?php echo $item->id; ?>', 'attributes')">Attributes</button>-->
+									<!--<button class="btn btn-info" onclick="showTab('<?php echo $item->id; ?>', 'options')">Options</button>-->
+									<button class="btn btn-info" onclick="showTab('<?php echo $item->id; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
+								</div>
+							</div>
+
+							<!-- Product details with tabs -->
+							<div class="collapse mt-3" id="details_<?php echo $item->id; ?>">
+								<ul class="nav nav-tabs" id="productTab_<?php echo $item->id; ?>" role="tablist">
+									<li class="nav-item">
+										<a class="nav-link active" id="description-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#description_<?php echo $item->id; ?>" role="tab" aria-controls="description_<?php echo $item->id; ?>" aria-selected="true"><?php echo $this->translate('SHOPS_DESCRIPTION'); ?></a>
+									</li>
+									<?php if (!empty($this->attributeSets[$item->id])) : ?>
+									<li class="nav-item">
+										<a class="nav-link" id="attributes-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#attributes_<?php echo $item->id; ?>" role="tab" aria-controls="attributes_<?php echo $item->id; ?>" aria-selected="false"><?php echo $this->translate('SHOPS_ATTRIBUTES'); ?></a>
+									</li>
+									<?php endif; ?>
+									<?php if (!empty($this->optionSets[$item->id])) : ?>
+										<li class="nav-item">
+											<a class="nav-link" id="options-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#options_<?php echo $item->id; ?>" role="tab" aria-controls="options_<?php echo $item->id; ?>" aria-selected="false"><?php echo $this->translate('SHOPS_OPTIONS'); ?></a>
+										</li>
+									<?php endif; ?>
+									<?php if (!empty($item->downloads) || $downloads) : ?>
+										<li class="nav-item">
+											<a class="nav-link" id="downloads-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#downloads_<?php echo $item->id; ?>" role="tab" aria-controls="downloads_<?php echo $item->id; ?>" aria-selected="false">
+												<?php echo $this->translate('SHOPS_DOWNLOADS'); ?>
+											</a>
+										</li>
+									<?php endif; ?>
+									<li class="nav-item">
+										<a class="nav-link" id="inquiry-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#inquiry_<?php echo $item->id; ?>" role="tab" aria-controls="inquiry_<?php echo $item->id; ?>" aria-selected="false"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></a>
+									</li>
+								</ul>
+
+								<div class="tab-content" id="productTabContent_<?php echo $item->id; ?>">
+
+									<!-- Description Tab -->
+									<div class="tab-pane fade show active" id="description_<?php echo $item->id; ?>" role="tabpanel" aria-labelledby="description-tab_<?php echo $item->id; ?>">
+										<div class="card card-body">
+											<div class="row">
+												<!-- Images -->
+												<?php if (count($this->images['items'][$item->id]) > 0): ?>
+													<div class="col-md-4 mb-4">
+														<div class="image-gallery">
+															<?php $folder = 'images'; ?>
+															<div class="image-grid">
+																<?php foreach ($this->images['items'][$item->id] as $image): ?>
+																	<div class="image">
+																		<a href="<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>" target="_blank">
+																			<img src="<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>" alt="<?php //echo $this->escape($image->title); ?>" class="image-thumbnail" />
+																		</a>
+																		<div class="image-caption">
+																			<?php //echo $this->escape($image->title); ?>
+																		</div>
+																	</div>
+																<?php endforeach; ?>
+															</div>
+														</div>
+													</div>
+												<?php endif; ?>
+												<div class="col-md-8 mb-8">
+													<?php if($item->shopdescriptionshort) : ?>
+														<p><?php echo $item->shopdescriptionshort; ?></p>
+													<?php else : ?>
+														<p><?php echo nl2br($item->description); ?></p>
+													<?php endif; ?>
+													<p><?php //echo $item->shopdescription; ?></p>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<!-- Attributes Tab -->
+									<?php if (!empty($this->attributeSets[$item->id])) : ?>
+										<div class="tab-pane fade" id="attributes_<?php echo $item->id; ?>" role="tabpanel" aria-labelledby="attributes-tab_<?php echo $item->id; ?>">
+											<div class="card card-body">
+												<div class="row">
+													<?php foreach ($this->attributeSets[$item->id] as $attributeSet) : ?>
+														<div class="col-md-4 mb-4">
+															<div class="card">
+																<div class="card-header">
+																	<h5 class="mb-0"><?php echo $attributeSet['title']; ?></h5>
+																</div>
+																<div class="card-body">
+																	<ul class="list-unstyled">
+																		<?php foreach ($attributeSet['attributes'] as $attribute) : ?>
+																			<li>
+																				<strong><?php echo $attribute['title']; ?>:</strong> <?php echo $attribute['description']; ?>
+																			</li>
+																		<?php endforeach; ?>
+																	</ul>
+																</div>
+															</div>
+														</div>
+													<?php endforeach; ?>
+												</div>
+											</div>
+										</div>
+									<?php endif; ?>
+
+									<!-- Options Tab -->
+									<?php if (!empty($this->optionSets[$item->id])) : ?>
+										<div class="tab-pane fade" id="options_<?php echo $item->id; ?>" role="tabpanel" aria-labelledby="options-tab_<?php echo $item->id; ?>">
+											<div class="card card-body">
+												<?php foreach ($this->optionSets[$item->id] as $optionSet) : ?>
+													<h5><?php echo $optionSet['title']; ?></h5>
+													<ul>
+														<?php foreach ($optionSet['options'] as $option) : ?>
+															<li><strong><?php echo $option['title']; ?>:</strong>
+																<?php if ($option['description']) : ?>
+																	<?php echo $option['description']; ?>
+																<?php else : ?>
+																	<span>bereits enthalten</span>
+																<?php endif; ?>
+															</li>
+														<?php endforeach; ?>
+													</ul>
+												<?php endforeach; ?>
+											</div>
+										</div>
+									<?php endif; ?>
+
+									<!-- Downloads Tab Content -->
+									<?php if (!empty($item->downloads) || $downloads) : ?>
+										<div class="tab-pane fade" id="downloads_<?php echo $item->id; ?>" role="tabpanel" aria-labelledby="downloads-tab_<?php echo $item->id; ?>">
+											<div class="card card-body">
+												<ul>
+													<?php $categoryImages = $this->images['categories'][$this->category['id']]; ?>
+													<?php foreach ($categoryImages as $file) : ?>
+														<?php if ($file->type == 'download') : ?>
+															<li>
+																<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
+																	<?php echo $this->escape($file->title); ?></a>
+															</li>
+														<?php endif; ?>
+													<?php endforeach; ?>
+													<?php
+													if (!empty($item->downloads)) {
+														// Split the download string into language and file name
+														list($lang, $filePath) = explode('|', $item->downloads);
+														// Extract just the filename from the file path
+														$fileName = basename($filePath);
+
+														// Full server path to the file
+														$serverFilePath = BASE_PATH . '/media/' . $this->escape($this->imagePath) . '/downloads/' . $filePath;
+
+														// Check if the file exists
+														if (file_exists($serverFilePath)) {
+															// Extract just the filename from the file path
+															$fileName = basename($filePath);
+														?>
+															<li>
+																<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($filePath); ?>" target="_blank">
+																	<?php echo $this->escape($fileName); ?></a>
+																(<?php echo strtoupper($lang); ?>)
+															</li>
+														<?php } ?>
+													<?php } ?>
+												</ul>
+											</div>
+										</div>
+									<?php endif; ?>
+
+									<!-- Inquiry Tab -->
+									<div class="tab-pane fade" id="inquiry_<?php echo $item->id; ?>" role="tabpanel" aria-labelledby="inquiry-tab_<?php echo $item->id; ?>">
+										<div class="card card-body">
+											<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$item->title.' '.$item->sku); ?>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					<?php endif; ?>
+				<?php endforeach; ?>
+			</div>
+		</div>
+	</section>
+<?php endif; ?>
+
+<script>
+	// Function to show the accordion and open the relevant tab
+	function showTab(itemId, tabName) {
+		// Open the accordion
+		$('#details_' + itemId).collapse('show');
+
+		// Activate the correct tab
+		$('#productTab_' + itemId + ' a[href="#' + tabName + '_' + itemId + '"]').tab('show');
+	}
+</script>
+
+
+<?php //print_r($this->images); ?>
+
+<!-- Footer section -->
+<section id="footer">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12 mb-4">
+				<?php echo $this->category['footer']; ?>
+			</div>
+		</div>
+	</div>
+</section>

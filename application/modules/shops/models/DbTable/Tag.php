@@ -18,6 +18,18 @@ class Shops_Model_DbTable_Tag extends Zend_Db_Table_Abstract
 		//$this->_client = Zend_Registry::get('Client');
 	}
 
+	public function getTag($id)
+	{
+		$id = (int)$id;
+
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where, 'ordering');
+
+		return $data;
+	}
+
 	public function getTags($module, $controller, $id = null)
 	{
 		$id = (int)$id;
@@ -36,20 +48,5 @@ class Shops_Model_DbTable_Tag extends Zend_Db_Table_Abstract
 			$tags[$tag->id] = $tag;
 		}
 		return $tags;
-	}
-
-	public function getTagBySlug($module, $controller, $slug, $shopid)
-	{
-		$shopid = (int)$shopid;
-
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
-		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
-		$where[] = $this->getAdapter()->quoteInto('slug = ?', $slug);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchRow($where, 'ordering');
-
-		return $data;
 	}
 }

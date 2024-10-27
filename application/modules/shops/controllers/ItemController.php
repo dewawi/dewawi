@@ -35,8 +35,7 @@ class Shops_ItemController extends Zend_Controller_Action
 	{
 		$shop = Zend_Registry::get('Shop');
 
-		$itemSlug = $this->_getParam('item');
-		$categorySlug = $this->_getParam('category');
+		$id = $this->_getParam('id');
 
 		$this->_helper->getHelper('layout')->setLayout('shop');
 
@@ -54,16 +53,14 @@ class Shops_ItemController extends Zend_Controller_Action
 		}*/
 
 		$itemDb = new Shops_Model_DbTable_Item();
-		$item = $itemDb->getItemBySlug($itemSlug, $shop['id']);
+		$item = $itemDb->getItem($id, $shop['id']);
 
 		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories($shop['id']);
-		$category = $categoryDb->getCategoryBySlug($categorySlug, $shop['id']);
+		$categories = $categoryDb->getCategories('shop', $shop['id']);
+		$category = $categoryDb->getCategory($item['catid'], $shop['id']);
 
-		$images = array();
-		$imageDb = new Shops_Model_DbTable_Image();
-		$images = $imageDb->getImages($item['id'], 'items', 'item');
-		//print_r($images);
+		$mediaDb = new Shops_Model_DbTable_Media();
+		$images = $mediaDb->getMedia($id, 'items', 'item');
 
 		$menuDb = new Shops_Model_DbTable_Menu();
 		$menus = $menuDb->getMenus($shop['id']);
@@ -124,6 +121,125 @@ class Shops_ItemController extends Zend_Controller_Action
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
+	public function feedAction()
+	{
+		$shop = Zend_Registry::get('Shop');
+
+		// Disable the view renderer (we're outputting XML directly)
+		$this->_helper->viewRenderer->setNoRender(true);
+		$this->_helper->layout->disableLayout();
+
+		// Set the content type to XML
+		$this->getResponse()->setHeader('Content-Type', 'application/xml');
+
+		// Initialize the base URL
+		$baseUrl = $this->getRequest()->getScheme() . '://' . $this->getRequest()->getHttpHost();
+
+		// Begin XML output
+		echo '<?xml version="1.0" encoding="UTF-8"?>';
+		echo '<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">';
+		echo '<channel>';
+
+		// Get shop details from the registry
+		$shop = Zend_Registry::get('Shop');
+
+		// Store information
+		echo '<title>' . $shop['title'] . '</title>';
+		echo '<link>' . $baseUrl . '/</link>';
+		echo '<description>'.$shop['title'].'</description>';
+
+		// Fetch slugs for the current shop
+		$slugTable = new Zend_Db_Table('slug');
+		$slugs = $slugTable->fetchAll(['shopid = ?' => $shop['id']]);
+
+		// Organize slugs into a dictionary with entityid as the key
+		$slugDict = [];
+		foreach ($slugs as $slug) {
+			$slugDict[$slug['entityid']] = $slug;
+			//echo $slug['entityid']."\n";
+		}
+		//print_r($slugDict);
+
+		// Helper function to build the full slug path using entityid with parent-child hierarchy
+		$getFullSlug = function ($item, $slugDict) {
+			$slug = $item['slug'];
+			
+			// Continue while the item has a parent
+			while ($item['parentid']) {
+				// Find the parent item in the slugDict
+				if (isset($slugDict[$item['parentid']])) {
+					$parentItem = $slugDict[$item['parentid']];
+					// Prepend the parent's slug to the current slug
+					$slug = $parentItem['slug'] . '/' . $slug;
+					$item = $parentItem;
+				} else {
+					break; // Parent not found, stop the loop
+				}
+			}
+			
+			return $slug;
+		};
+
+		// Loop through categories and add to the sitemap
+		foreach ($slugs as $slug) {
+			if (!empty($slug['slug'])) { // Ensure slug exists
+				$fullSlug = $getFullSlug($slug, $slugDict); // Get full slug path
+				$slugUrl = $shop['url'] . '/' . $fullSlug;
+				//echo '<url>';
+				//echo '<loc>' . htmlspecialchars($slugUrl) . '</loc>';
+				//echo '<changefreq>weekly</changefreq>';
+				//echo '<priority>0.6</priority>';
+				//echo '</url>';
+			}
+		}
+
+		// Get items for this shop
+		$itemTable = new Zend_Db_Table('item');
+		$items = $itemTable->fetchAll(['shopid = ?' => $shop['id']]);
+
+		$images = array();
+		$mediaDb = new Shops_Model_DbTable_Media();
+		$images['items'] = $mediaDb->getItemMedia($items);
+
+		// Loop through items and add to the sitemap
+		foreach ($items as $item) {
+			$totalImages = count($images['items'][$item->id]);
+			//echo 'cat:'.$item->shopcatid."\n";
+			if($totalImages && isset($slugDict[$item->shopcatid])) {
+				$fullSlug = $getFullSlug($slugDict[$item->shopcatid], $slugDict); // Get full slug path
+				$slugUrl = $shop['url'] . '/' . $fullSlug;
+				echo '<item>';
+				echo '<g:id>' . $item['sku'] . '</g:id>';
+				echo '<g:title>' . $item['title'] . '</g:title>';
+				echo '<g:description>' . htmlspecialchars($item['description']) . '</g:description>';
+				echo '<g:link>' . htmlspecialchars($slugUrl) . '</g:link>';
+				$i = 0;
+				foreach ($images['items'][$item->id] as $image) {
+					if ($i == 0) {
+						echo '<g:image_link>'.$shop['url'].'/media/images/'.$image->url.'</g:image_link>';
+					} else {
+						echo '<g:additional_image_link>'.$shop['url'].'/media/images/'.$image->url.'</g:additional_image_link>';
+					}
+					$i++;
+				}
+				echo '<g:availability>in_stock</g:availability>';
+				echo '<g:quantity>10</g:quantity>';
+				echo '<g:price>' . $item['price'] . ' ' . $item['currency'] . '</g:price>';
+				echo '<g:brand>'.$shop['title'].'</g:brand>';
+				echo '<g:condition>new</g:condition>';
+				echo '<g:shipping>';
+				echo '<g:country>DE</g:country>';
+				echo '<g:price>39.00 EUR</g:price>';
+				echo '</g:shipping>';
+				echo '</item>';
+			}
+		}
+
+		// Close the XML tags
+		echo '</channel>';
+		echo '</rss>';
 	}
 
 	public function syncAction()
@@ -284,51 +400,5 @@ class Shops_ItemController extends Zend_Controller_Action
 	public function validateAction()
 	{
 		$this->_helper->Validate();
-	}
-
-	public function getItemCategoryIndex() {
-		$categoryDb = new Application_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories('item');
-		$categoriesByID = array();
-		foreach($categories as $category) {
-			$categoriesByID[$category['id']] = $category['title'];
-		}
-
-		$childCategories = array();
-		foreach($categories as $category) {
-			if(isset($childCategories[$category['parentid']])) {
-				array_push($childCategories[$category['parentid']], $category['id']);
-			} else {
-				$childCategories[$category['parentid']] = array($category['id']);
-			}
-		}
-
-		$categoryIndex = array();
-		foreach($categories as $category) {
-			if($category['parentid'] == 0) {
-				$categoryIndex[md5($category['title'])]['id'] = $category['id'];
-				$categoryIndex[md5($category['title'])]['title'] = $category['title'];
-				if(isset($childCategories[$category['id']])) {
-					$categoryIndex[md5($category['title'])]['childs'] = $this->getSubCategoryIndex($categoriesByID, $childCategories, $category['id']);
-				}
-			}
-		}
-		//var_dump($categoriesByID);
-		//var_dump($childCategories);
-		//var_dump($categoryIndex);
-
-		return $categoryIndex;
-	}
-
-	public function getSubCategoryIndex($categories, $childCategories, $id) {
-		$subCategories = array();
-		foreach($childCategories[$id] as $child) {
-			$subCategories[md5($categories[$child])]['id'] = $child;
-			$subCategories[md5($categories[$child])]['title'] = $categories[$child];
-			if(isset($childCategories[$child])) {
-				$subCategories[md5($categories[$child])]['childs'] = $this->getSubCategoryIndex($categories, $childCategories, $child);
-			}
-		}
-		return $subCategories;
 	}
 }

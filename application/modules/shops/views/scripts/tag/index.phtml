@@ -1,0 +1,50 @@
+<?php
+$this->title = $this->translate('SHOPS_ACCOUNTS');
+$this->headTitle($this->title);
+//echo $this->Messages();
+//echo $this->ActiveFilter();
+?>
+
+<?php if($this->tag->header) : ?>
+	<section id="header" style="position: relative;">
+		<?php echo $this->tag->header; ?>
+		<div class="header-text">
+			<h1 class="text-center text-white"><?php echo $this->tag['title']; ?></h1>
+		</div>
+	</section>
+<?php endif; ?>
+
+	<section id="subcategories" class="py-5">
+		<div class="container">
+			<h2 class="text-center mb-4"><?php echo $this->tag['title']; ?></h2>
+			<div class="row">
+				<div class="text-center col-md-12 mb-4">
+					<?php echo $this->tag['description']; ?>
+				</div>
+			</div>
+			<div class="row">
+				<div class="text-center col-md-12 mb-4">
+					<h3 class="text-center mb-4">Relevante Produkte und Lösungen (<?php echo $this->tag['title']; ?>)</h3>
+				</div>
+			</div>
+			<div class="row">
+				<?php if($this->categories) : ?>
+					<?php foreach($this->categories as $category) : ?>
+						<?php foreach($this->tagEntities as $tagentity) : ?>
+							<?php if($tagentity['entityid'] == $category['id']) : ?>
+								<?php echo $this->RenderCategory($category); ?>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</div>
+		</div>
+	</section>
+
+<section id="footer">
+	<div class="container">
+		<div class="row">
+			<?php echo $this->tag['footer']; ?>
+		</div>
+	</div>
+</section>
