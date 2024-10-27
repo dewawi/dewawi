@@ -29,6 +29,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 				//	$flashMessenger->addMessage('MESSAGES_ACCESS_DENIED');
 				//	$redirector->gotoSimple('index', 'index', 'default');
 				//}
+			} elseif($params['controller'] == 'downloads') {
 			} else {
 				//Check for permissions
 				$permissionsDb = new Application_Model_DbTable_Permission();
@@ -58,12 +59,14 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 							//error_log('PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
 						} else {
 							error_log('NO_PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
+							error_log('NO_PERMIT'.$request->getRequestUri());
 							$flashMessenger->addMessage('MESSAGES_ACCESS_DENIED');
 							if(in_array('view', $module[$params['controller']])) $redirector->gotoSimple('index', $params['controller'], $params['module']);
 							else $redirector->gotoSimple('index', 'index', 'index');
 						}
 					} else {
 						error_log('NO_PERMIT/'.$params['module'].'/'.$params['controller'].'/'.$params['action']);
+						error_log('NO_PERMIT'.$request->getRequestUri());
 						$flashMessenger->addMessage('MESSAGES_ACCESS_DENIED');
 						$redirector->gotoSimple('index', 'index', 'default');
 					}
@@ -92,7 +95,8 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 					}
 				}*/
 			}
-		} elseif($params['module'] != 'users' && $params['action'] != 'login') {
+		} elseif(($params['module'] == 'shops')) {
+		} elseif(($params['module'] != 'users') && ($params['action'] != 'login')) {
 			if(isset($params['id']) && $params['id']) {
 				$redirector->gotoSimple('login', 'user', 'users', array('url' => $params['module'].'|'.$params['controller'].'|'.$params['action'].'|'.$params['id']));
 			} else {
