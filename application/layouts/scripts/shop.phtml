@@ -1,0 +1,177 @@
+<?php
+$this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
+$this->headTitle()->setSeparator(' - ');
+$this->headTitle($this->shop['title']);
+echo $this->doctype();
+$home = false;
+if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
+?>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<?php echo $this->headMeta(); ?>
+	<?php echo $this->headTitle(); ?>
+	<?php echo $this->headLink(); ?>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+	<link rel="stylesheet" href="<?php echo $this->baseUrl(); ?>/css/shop.css">
+</head>
+<body>
+	<header <?php if($home) echo 'class="home"' ?>>
+		<nav class="navbar navbar-expand-lg">
+			<div class="container">
+				<a class="navbar-brand" href="<?php echo $this->url(array(), 'shop'); ?>">
+					<img src="<?php echo $this->baseUrl(); ?>/media/header/<?php echo $this->shop['logo']; ?>" alt="<?php echo $this->shop['title']; ?>" height="75">
+				</a>
+				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarNav">
+					<ul class="navbar-nav ml-auto">
+						<?php 
+							$mainCategories = array_filter($this->categories, function($category) {
+								return $category['parentid'] == 0;
+							});
+
+							$firstFiveCategories = array_slice($mainCategories, 0, 5); // First 5 categories
+							$otherCategories = array_slice($mainCategories, 5); // Remaining categories
+						?>
+
+						<!-- Show the first 5 main categories -->
+						<?php foreach($firstFiveCategories as $category) : ?>
+							<li class="nav-item">
+								<a class="nav-link" href="<?php echo $this->url([], 'category_' . $category['id']); ?>"><?php echo $category['title']; ?></a>
+								<ul class="submenu">
+									<?php echo $this->RenderSubCategory($this->categories, $category['id']); ?>
+								</ul>
+							</li>
+						<?php endforeach; ?>
+
+						<!-- Create an "Other items" menu for remaining categories -->
+						<?php if (!empty($otherCategories)) : ?>
+						<?php $router = Zend_Controller_Front::getInstance()->getRouter(); ?>
+							<li class="nav-item">
+								<a class="nav-link" href="#">
+									<?php echo $this->translate('SHOPS_OTHER_CATEGORIES'); ?> <i class="fas fa-angle-down"></i>
+								</a>
+								<ul class="submenu">
+									<?php foreach($otherCategories as $category) : ?>
+										<?php $routeName = 'category_' . $category['id']; ?>
+										<?php if ($router->hasRoute($routeName)) : ?>
+											<li class="right-edge">
+												<a href="<?php echo $this->url([], 'category_' . $category['id']); ?>"><?php echo $category['title']; ?></a>
+												<ul class="submenu">
+													<?php echo $this->RenderSubCategory($this->categories, $category['id']); ?>
+												</ul>
+											</li>
+										<?php endif; ?>
+									<?php endforeach; ?>
+								</ul>
+							</li>
+						<?php endif; ?>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		<?php if(!$home) : ?>
+			<!-- Breadcrumbs -->
+			<section id="breadcrumb" class="">
+				<div class="container">
+					<nav aria-label="breadcrumb">
+						<ol class="breadcrumb mb-0">
+							<li class="breadcrumb-item">
+								<a href="<?php echo $this->url(array(), 'shop'); ?>">Home</a>
+							</li>
+							
+							<?php if ($this->controller === 'category' && isset($this->category)) : ?>
+								<?php
+									// Get the current category and its parent categories
+									$breadcrumbs = $this->CategoryBreadcrumbs($this->category, $this->categories);
+								?>
+								<?php foreach ($breadcrumbs as $breadcrumb) : ?>
+									<li class="breadcrumb-item">
+										<a href="<?php echo $this->url(array('id' => $breadcrumb['id']), 'category_' . $breadcrumb['id']); ?>">
+											<?php echo $breadcrumb['title']; ?>
+										</a>
+									</li>
+								<?php endforeach; ?>
+								<li class="breadcrumb-item active" aria-current="page">
+									<?php echo $this->category['title']; ?>
+								</li>
+							<?php elseif ($this->controller === 'tag' && isset($this->tag)) : ?>
+								<li class="breadcrumb-item active" aria-current="page">
+									<?php echo $this->tag->title; // or other relevant title for non-category pages ?>
+								</li>
+							<?php elseif ($this->controller === 'page' && isset($this->page)) : ?>
+								<li class="breadcrumb-item active" aria-current="page">
+									<?php echo $this->page['title']; // or other relevant title for non-category pages ?>
+								</li>
+							<?php elseif ($this->controller === 'contact') : ?>
+								<li class="breadcrumb-item active" aria-current="page">
+									<?php echo $this->translate('SHOPS_CONTACT_FORM'); // or other relevant title for non-category pages ?>
+								</li>
+							<?php else : ?>
+								<li class="breadcrumb-item active" aria-current="page">
+									<?php echo $this->controller; // or other relevant title for non-category pages ?>
+								</li>
+							<?php endif; ?>
+						</ol>
+					</nav>
+				</div>
+			</section>
+		<?php endif; ?>
+	</header>
+
+	<?php //print_r($this->categories); ?>
+
+	<?php echo $this->layout()->content; ?>
+
+	<?php if($this->controller === 'category') : ?>
+		<section id="contact" class="jumbotron jumbotron-fluid py-5 mb-0">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-6 mx-auto">
+						<!-- Add any relevant introductory text here -->
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-6">
+					</div>
+					<div class="col-md-6">
+						<?php if ($this->controller === 'category' && isset($this->category)) : ?>
+							<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->category['title']); ?>
+						<?php else : ?>
+							<?php echo $this->ContactForm($this->translate('SHOPS_CONTACT_FORM')); ?>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+		</section>
+	<?php endif; ?>
+
+	<footer class="py-4 bg-dark text-white">
+		<div class="container text-center">
+			<ul class="row-menu">
+				<?php foreach($this->menus as $menu) : ?>
+					<?php if($menu->position == 'footer') : ?>
+						<?php foreach($this->menuitems[$menu->id] as $menuitem) : ?>
+							<?php if($menuitem->parentid == 0) : ?>
+								<li class="nav-item">
+									<a class="nav-link" href="<?php echo $this->url([], 'page_' . $menuitem->pageid); ?>"><?php echo $menuitem->title; ?></a>
+								</li>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				<?php endforeach; ?>
+			</ul>
+			<p><?php echo $this->shop['footer']; ?></p>
+			<p><?php echo $this->translate('SHOPS_FOOTER_LEGAL_NOTICE'); ?></p>
+			<p><?php echo $this->translate('SHOPS_FOOTER_COOKIE_NOTICE'); ?></p>
+		</div>
+	</footer>
+
+	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
