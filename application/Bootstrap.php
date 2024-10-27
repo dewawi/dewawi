@@ -180,7 +180,8 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 					'emailsender' => $shop['emailsender'],
 					'smtphost' => $shop['smtphost'],
 					'smtpuser' => $shop['smtpuser'],
-					'smtppass' => $shop['smtppass']
+					'smtppass' => $shop['smtppass'],
+					'clientid' => $shop['clientid']
 					);
 
 			Zend_Registry::set('Shop', $shopData);
@@ -191,8 +192,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 				array(
 					'module' => 'shops',
 					'controller' => 'index',
-					'action' => 'index',
-					'testid' => $shop['id']
+					'action' => 'index'
 				)
 			);
 			$router->addRoute('shop', $routeHome);
@@ -203,109 +203,58 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 				array(
 					'module' => 'shops',
 					'controller' => 'index',
-					'action' => 'index',
-					'testid' => $shop['id']
+					'action' => 'index'
 				)
 			);
 			$router->addRoute('others', $routeOthers);
 
-			// Fetch menu items and categories for the current shop
-			$menuTable = new Zend_Db_Table('menu');
-			$menuItemTable = new Zend_Db_Table('menuitem');
+			// Fetch slugs for the current shop
+			$slugTable = new Zend_Db_Table('slug');
+			$slugs = $slugTable->fetchAll(['shopid = ?' => $shop['id']]);
 
-			// Get all menus for the current shop
-			$menus = $menuTable->fetchAll(['shopid = ?' => $shop['id']]);
-			$menuIds = array();
-			foreach ($menus as $menu) {
-				$menuIds[] = $menu['id']; // Collect menu IDs into an array
+			// Organize slugs into a dictionary with entityid as the key
+			$slugDict = [];
+			foreach ($slugs as $slug) {
+				$slugDict[$slug['entityid']] = $slug;
 			}
 
-			// Fetch menu items only if there are menu IDs
-			if (!empty($menuIds)) {
-				$menuItems = $menuItemTable->fetchAll(
-					$menuItemTable->select()->where('menuid IN (?)', $menuIds)
-				);
-			} else {
-				$menuItems = []; // No menu items if no menu IDs are present
-			}
-
-			// Get all categories for the current shop
-			$categoryTable = new Zend_Db_Table('category');
-			$categories = $categoryTable->fetchAll(['shopid = ?' => $shop['id']]);
-
-			// Helper function to build the full slug path with parent-child hierarchy
-			$getFullSlug = function ($item, $table) {
+			// Helper function to build the full slug path using entityid with parent-child hierarchy
+			$getFullSlug = function ($item, $slugDict) {
 				$slug = $item['slug'];
+				
+				// Continue while the item has a parent
 				while ($item['parentid']) {
-					$parentItem = $table->find($item['parentid'])->current();
-					if ($parentItem) {
+					// Find the parent item in the slugDict
+					if (isset($slugDict[$item['parentid']])) {
+						$parentItem = $slugDict[$item['parentid']];
+						// Prepend the parent's slug to the current slug
 						$slug = $parentItem['slug'] . '/' . $slug;
 						$item = $parentItem;
 					} else {
-						break; // Parent not found, stop.
+						break; // Parent not found, stop the loop
 					}
 				}
+				
 				return $slug;
 			};
 
-			// Create routes for all menu items
-			foreach ($menuItems as $menuItem) {
-				if (!empty($menuItem['slug'])) { // Ensure slug exists
-					$menuItemSlug = $getFullSlug($menuItem, $menuItemTable); // Get full slug path for the menu item
-					$routeMenuItem = new Zend_Controller_Router_Route(
-						$menuItemSlug,
+			// Create routes for all slugs
+			foreach ($slugs as $slug) {
+				if (!empty($slug['slug'])) { // Ensure slug exists
+					$fullSlug = $getFullSlug($slug, $slugDict); // Get full slug path
+					$routeSlug = new Zend_Controller_Router_Route(
+						$fullSlug,
 						array(
-							'module' => 'shops',
-							'controller' => 'page', // Assuming 'page' controller for all menu items
+							'module' => $slug['module'],
+							'controller' => $slug['controller'],
 							'action' => 'index',
-							'id' => $menuItem['pageid']
+							'id' => $slug['entityid']
 						),
 						array(
 							'slug' => '[a-zA-Z0-9-]+' // Regular expression to match slugs
 						)
 					);
-					$router->addRoute('menuitem_'.$menuItem['id'], $routeMenuItem);
-				}
-			}
-
-			// Create routes for all categories
-			foreach ($categories as $category) {
-				if (!empty($category['slug'])) { // Ensure slug exists
-					$categorySlug = $getFullSlug($category, $categoryTable); // Get full slug path for the category
-					$routeCategory = new Zend_Controller_Router_Route(
-						$categorySlug,
-						array(
-							'module' => 'shops',
-							'controller' => 'category', // Assuming 'category' controller for all categories
-							'action' => 'index',
-							'id' => $category['id']
-						),
-						array(
-							'slug' => '[a-zA-Z0-9-]+' // Regular expression to match slugs
-						)
-					);
-					$router->addRoute('category_'.$category['id'], $routeCategory);
-				}
-			}
-
-			// Route to tags
-			$tagDb = new Zend_Db_Table('tag');
-			$tags = $tagDb->fetchAll(['module = ?' => 'shops', 'controller = ?' => 'category', 'shopid = ?' => $shop['id']]);
-			foreach($tags as $tag) {
-				if($tag->slug) {
-					$routeTag = new Zend_Controller_Router_Route(
-						$tag->slug,
-						array(
-							'module' => 'shops',
-							'controller' => 'tag',
-							'action' => 'index',
-							'id' => $tag->id
-						),
-						array(
-							'slug' => '[a-zA-Z0-9-]+' // Regular expression to match tags
-						)
-					);
-					$router->addRoute('tag_'.$tag->id, $routeTag);
+					$router->addRoute($slug['controller'].'_'.$slug['entityid'], $routeSlug);
 				}
 			}
 
@@ -338,37 +287,36 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 			);
 			$router->addRoute('sitemap', $routeSitemap);
 
+			// Route to product feed
+			$routeFeed = new Zend_Controller_Router_Route(
+				'products.xml',
+				array(
+					'module' => 'shops',
+					'controller' => 'item',
+					'action' => 'feed'
+				)
+			);
+			$router->addRoute('feed', $routeFeed);
+
+			// Route to product
+			$routeProduct = new Zend_Controller_Router_Route(
+				'product/:id', // Use :id as a placeholder for the dynamic segment
+				array(
+					'module' => 'shops',
+					'controller' => 'item',
+					'action' => 'index',
+        			'id' => null // Default value for id
+				),
+				array(
+					'id' => '\d+' // Regex to ensure id is numeric
+				)
+			);
+			$router->addRoute('product', $routeProduct);
+
 			// Get all registered routes
 			//$routes = $router->getRoutes();
 
 			//print_r($routes);
-
-			/*// Fetch slugs from the slug table
-			$slugTable = new Zend_Db_Table('slug');
-			$slugs = $slugTable->fetchAll(['shopid = ?' => $shop['id']]);
-
-			// Create routes for each slug in one step using the slug table
-			foreach ($slugs as $slug) {
-				$slugValue = $slug['slug'];
-				$module = $slug['module'];
-				$controller = $slug['controller'];
-				$action = 'index';
-
-				// Create a route for this slug
-				$route = new Zend_Controller_Router_Route(
-					$slugValue,
-					array(
-						'module' => $module,
-						'controller' => $controller,
-						'action' => $action,
-						'slug' => $slugValue
-					),
-					array(
-						'slug' => '[a-zA-Z0-9-]+' // Regular expression to match the slug
-					)
-				);
-				$router->addRoute($slugValue, $route);
-			}*/
 		}
 	}
 }
