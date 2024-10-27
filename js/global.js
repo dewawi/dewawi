@@ -25,7 +25,7 @@ $(document).ready(function(){
 
 	//setInterval(function(){
 	//		console.log(isDirty);
-	//}, 1000); // 6 seconds
+	//}, 1000); // 1 seconds
 
 	//Client switcher
 	$('#clientid').on('change', '', function() {
@@ -70,7 +70,7 @@ $(document).ready(function(){
 		isDirty = true;
 	});
 	$('.edit form').on('change', 'input, textarea, select', function() {
-		if(this.name != 'file[]') {
+		if((this.name != 'file[]') && (this.name != 'media[]') && (this.name != 'subfolder')) {
 			isDirty = true;
 			var data = {};
 			var params = {};
@@ -92,7 +92,7 @@ $(document).ready(function(){
 		}
 	});
 	$('.edit form input').on('textchange', function() {
-		if(this.name != 'file[]') {
+		if((this.name != 'file[]') && (this.name != 'media[]') && (this.name != 'subfolder')) {
 			if(!$(this).hasClass('datePicker')) {
 				isDirty = true;
 			}
@@ -238,31 +238,46 @@ $(document).ready(function(){
 		isDirty = true;
 		var data = {};
 		var params = {};
+
+		// Get the value of the input field with the class "id" in the same row
 		params['id'] = $(this).closest('tr').find('input.id').val();
+
 		var value = this.value;
-		//If the element is a checkbox
+
+		// Handle checkbox value
 		if($(this).is(':checkbox')) {
-			if($(this).is(':checked')) value = 1;
-			else value = 0;
+			value = $(this).is(':checked') ? 1 : 0;
 		}
+
 		data[this.name] = value;
-		//Check dataset info on the element
-		if(typeof this.previousSibling.dataset.id !== 'undefined') params['id'] = this.previousSibling.dataset.id;
-		if(typeof this.previousSibling.dataset.action !== 'undefined') params['action'] = this.previousSibling.dataset.action;
-		if(typeof this.previousSibling.dataset.controller !== 'undefined') params['controller'] = this.previousSibling.dataset.controller;
-		if(typeof this.previousSibling.dataset.module !== 'undefined') params['module'] = this.previousSibling.dataset.module;
-		if(typeof this.previousSibling.dataset.ordering !== 'undefined') data['ordering'] = this.previousSibling.dataset.ordering;
-		if(params['action'] == 'add') {
-			var response = add(data, params);
-			this.dataset.action = '';
-		} else if(params['controller'] == 'positionset') {
-			var response = editPositionSet(data, params);
+
+		// Check dataset information on the current element and previous sibling
+		var elements = [this.previousSibling, this]; // Combine current element and previous sibling for iteration
+		elements.forEach(function(element) {
+			if (element && element.dataset) {
+				params['id'] = element.dataset.id || params['id'];
+				params['action'] = element.dataset.action || params['action'];
+				params['controller'] = element.dataset.controller || params['controller'];
+				params['module'] = element.dataset.module || params['module'];
+				data['ordering'] = element.dataset.ordering || data['ordering'];
+			}
+		});
+
+		// Perform actions based on controller or action
+		var response;
+		if (params['action'] === 'add') {
+			response = add(data, params);
+			this.dataset.action = ''; // Reset action after add
+		} else if (params['controller'] === 'positionset') {
+			response = editPositionSet(data, params);
 		} else {
-			var response = edit(data, params);
+			response = edit(data, params);
 		}
+
 		//validate(data, params);
-		//Check if there is a message
-		if((typeof response !== 'undefined') && (typeof response.message !== 'undefined')) {
+
+		// Handle response and update UI
+		if (response && response.message) {
 			pushMessages(response);
 		} else {
 			//Replace the text with new value
@@ -270,34 +285,41 @@ $(document).ready(function(){
 				if(response['message'] !== undefined) {
 					//Handle error message
 				} else {
-					var value = response[this.name];
+					var newValue = response[this.name];
 					//$(this).parent().hide();
-					if(value.match(/^\d+$/)) { //If value is numeric
+
+					// Update the row classes based on the new value
+					if(newValue.match(/^\d+$/)) { //If value is numeric
 						$(this).closest('tr').removeClass(this.name+previousValue);
-						$(this).closest('tr').addClass(this.name+value);
+						$(this).closest('tr').addClass(this.name+newValue);
 					} else {
 						$(this).closest('tr').removeClass(previousValue);
-						$(this).closest('tr').addClass(value);
+						$(this).closest('tr').addClass(newValue);
 					}
-					var value = $(this).find('option[value="'+response[this.name]+'"]').text();
+
+					// Update the displayed text for the <select> element
+					var displayText = $(this).find('option[value="'+newValue+'"]').text();
 					if(this.name == 'tagid') {
-						$(this).prev('.editable').before('<span>'+value+'</span>');
+						$(this).prev('.editable').before('<span>'+displayText+'</span>');
 						$('.editable').show();
-						//Hide and unlock visible elements
-						$('.editableValue:visible').each(function(index) {
+
+						// Hide visible editable values and unlock rows
+						$('.editableValue:visible').each(function() {
 							$(this).hide();
 							unlock($(this).closest('tr').find('input.id').val());
 						});
 					} else {
-						$(this).prev('.editable').text(value);
-						previousValue = response[this.name];
+						$(this).prev('.editable').text(displayText);
+						previousValue = newValue;
 					}
-					if(this.name == 'parentid') search();
+					if(this.name == 'parentid') search(); // Re-trigger search if parentid change
 				}
 			} else {
+				// For non-SELECT elements, update the previous sibling's text
 				$(this).prev('.editable').text(response[this.name]);
 			}
-			//Unlock
+
+			// Unlock the row
 			unlock(params['id']);
 		}
 	});
@@ -341,15 +363,15 @@ $(document).ready(function(){
 		$('#keyword').focus().select();
 	}
 
-	//Auto search
+	// Auto search with keyword
 	$('.toolbar #keyword').on('textchange', function() {
-		var keyword = this.value;
+		var keyword = this.value || ''; // Fallback to empty string if undefined
 		if(keyword) {
 			var date = new Date();
 			date.setTime(date.getTime() + (5 * 60 * 1000)); // expire after 5 minutes
 			$.cookie('keyword', keyword, { expires: date, path: cookiePath });
 		} else {
-			$.cookie('keyword', '', { path: cookiePath });
+			$.removeCookie('keyword', { path: cookiePath }); // Remove cookie if empty
 		}
 		search();
 	});
@@ -357,9 +379,9 @@ $(document).ready(function(){
 	//Toolbar
 	$(document).on('change', '.toolbar input:not(#keyword), .toolbar select', function() {
 		var element = this.name;
-		var value = this.value;
+		var value = this.value || ''; // Fallback to empty string if undefined
 		if(module == 'statistics') {
-			$.cookie(element, this.value, { path: cookiePath });
+			$.cookie(element, value, { path: cookiePath });
 			location.reload();
 		} else {
 			if(action == 'edit') {
@@ -370,21 +392,21 @@ $(document).ready(function(){
 				if(element == 'states[]') {
 					states = [];
 					$('#state input[type="checkbox"]').each(function() {
-						if($(this).prop('checked')) states.push(this.value);
+						if($(this).prop('checked')) states.push(value);
 					});
 					$.cookie('states', JSON.stringify(states), { path: cookiePath });
 				} else if(element == 'daterange') {
-					if(this.value == 'custom') $('#filter .daterange').show();
+					if(value == 'custom') $('#filter .daterange').show();
 					else $('#filter .daterange').hide();
-					$.cookie(element, this.value, { path: cookiePath });
+					$.cookie(element, value, { path: cookiePath });
 				} else if(element == 'paymentstatus[]') {
 					paymentstatus = [];
 					$('input[type="checkbox"][name="paymentstatus[]"]').each(function() {
-						if($(this).prop('checked')) paymentstatus.push(this.value);
+						if($(this).prop('checked')) paymentstatus.push(value);
 					});
 					$.cookie('paymentstatus', JSON.stringify(paymentstatus), { path: cookiePath });
 				} else {
-					$.cookie(element, this.value, { path: cookiePath });
+					$.cookie(element, value, { path: cookiePath });
 				}
 				if(element != 'page') $('#page').val(1);
 				search();
@@ -408,7 +430,7 @@ $(document).ready(function(){
 		$('input[name="states[]"]').prop('checked', true);
 		states = [];
 		$('#state input:checked').each(function() {
-			states.push(this.value);
+			states.push(this.value || ''); // Fallback to empty string if undefined
 		});
 		$.cookie('states', JSON.stringify(states), { path: cookiePath });
 		search();
@@ -416,7 +438,7 @@ $(document).ready(function(){
 
 	$('#filter').on('click', '.none', function() {
 		$('input[name="states[]"]').prop('checked', false);
-		$.cookie('states', '', { path: cookiePath });
+		$.removeCookie('states', { path: cookiePath }); // Remove cookie if no states are selected
 		search();
 	});
 
@@ -989,6 +1011,7 @@ function search() {
 	data.country = $('#country').val();
 	data.catid = $('#catid').val();
 	data.tagid = $('#tagid').val();
+	data.shopid = $('#shopid').val();
 	data.category = $('#category').val();
 	data.daterange = $('#daterange input:checked').val();
 	data.from = $('#from').val();
@@ -1014,7 +1037,9 @@ function search() {
 	});
 
 	//Reset page if search parameters changed
-	$.cookie('page', data.page, { path: cookiePath });
+	if(typeof data.page !== 'undefined') {
+		$.cookie('page', data.page, { path: cookiePath });
+	}
 
 	var url = baseUrl+'/'+module+'/'+controller+'/search';
 	//if(parent.location != window.location) url += '/parent/'+window.parent.module+'|'+window.parent.controller;
