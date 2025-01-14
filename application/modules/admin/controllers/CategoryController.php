@@ -72,8 +72,8 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$forms[$category['id']]->activated->setValue($category['activated']);
 		}
 
+		$slugs = array();
 		if($params['type'] == 'shop') {
-			$slugs = array();
 			$slugDb = new Admin_Model_DbTable_Slug();
 			foreach($categories as $category) {
 				$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $category['id']);
@@ -110,14 +110,18 @@ class Admin_CategoryController extends Zend_Controller_Action
 		}
 
 		$forms = array();
-		$slugs = array();
-		$slugDb = new Admin_Model_DbTable_Slug();
 		foreach($categories as $category) {
 			$forms[$category['id']] = new Admin_Form_Category();
 			$forms[$category['id']]->activated->setValue($category['activated']);
+		}
 
-			$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $category['id']);
-			$slugs[$category['id']] = $slug['slug'];
+		$slugs = array();
+		if($params['type'] == 'shop') {
+			$slugDb = new Admin_Model_DbTable_Slug();
+			foreach($categories as $category) {
+				$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $category['id']);
+				$slugs[$category['id']] = $slug['slug'];
+			}
 		}
 
 		$this->view->form = $form;
