@@ -285,8 +285,8 @@ class Items_OptionController extends Zend_Controller_Action
 					$itemDb = new Items_Model_DbTable_Item();
 					$itemMedia = new Application_Model_DbTable_Media();
 					$itemAttribute = new Items_Model_DbTable_Itematr();
-					$itemAttributeSet = new Items_Model_DbTable_Itematrset();
 					$itemOption = new Items_Model_DbTable_Itemopt();
+					$itemOptionInfo = $itemOption->getInfo();
 					$itemOptionSet = new Items_Model_DbTable_Itemoptset();
 
 					//Get
@@ -315,41 +315,47 @@ class Items_OptionController extends Zend_Controller_Action
 							$optionData = array();
 							foreach($map as $attr => $pos) {
 								if(isset($datacsv[$map[$attr]])) {
-									if($attr == 'weight') {
-										if(is_numeric($datacsv[$map['weight']])) $optionData['weight'] = $datacsv[$map['weight']];
-									} elseif($attr == 'price') {
-										if(isset($map['dewawidiscount']) && $datacsv[$map['dewawidiscount']]) {
-											$optionData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['dewawidiscount']])/100;
-										} elseif($datacsv[$map[$attr]]) {
-											if(is_numeric($datacsv[$map[$attr]])) {
-												$optionData['price'] = $datacsv[$map[$attr]];
-											} else {
-												echo 'Price is not numeric for '.$datacsv[$map['parentsku']].': '.$datacsv[$map[$attr]]."<br>";
+									if(array_search($attr, $itemOptionInfo)) {
+										if($attr == 'weight') {
+											if(is_numeric($datacsv[$map['weight']])) $optionData['weight'] = $datacsv[$map['weight']];
+										} elseif($attr == 'price') {
+											if(isset($map['dewawidiscount']) && $datacsv[$map['dewawidiscount']]) {
+												$optionData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['dewawidiscount']])/100;
+											} elseif($datacsv[$map[$attr]]) {
+												if(is_numeric($datacsv[$map[$attr]])) {
+													$optionData['price'] = $datacsv[$map[$attr]];
+												} else {
+													echo 'Price is not numeric for '.$datacsv[$map['parentsku']].': '.$datacsv[$map[$attr]]."<br>";
+												}
 											}
-										}
-									} elseif($attr == 'quantity') {
-										if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
-											$optionData[$attr] = $datacsv[$map[$attr]];
-										}
-									} elseif($attr == 'currency') {
-										if($currencyid = array_search($datacsv[$map[$attr]], $currencies)) {
-											$optionData[$attr] = $currencyid;
+										} elseif($attr == 'quantity') {
+											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
+												$optionData[$attr] = $datacsv[$map[$attr]];
+											}
+										} elseif($attr == 'currency') {
+											if($currencyid = array_search($datacsv[$map[$attr]], $currencies)) {
+												$optionData[$attr] = $currencyid;
+											} else {
+												echo 'No currency option found for '.$datacsv[$map['parentsku']].': '.$datacsv[$map[$attr]]."<br>";
+											}
+										} elseif($attr == 'inventory') {
+											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
+												$optionData[$attr] = $datacsv[$map[$attr]];
+											}
 										} else {
-											echo 'No currency option found for '.$datacsv[$map['parentsku']].': '.$datacsv[$map[$attr]]."<br>";
-										}
-									} elseif($attr == 'inventory') {
-										if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
 											$optionData[$attr] = $datacsv[$map[$attr]];
+											//var_dump($attr);
 										}
-									} else {
+									} elseif($attr == 'parentsku') {
 										$optionData[$attr] = $datacsv[$map[$attr]];
-										//var_dump($attr);
+									} elseif($attr == 'set') {
+										$optionData[$attr] = $datacsv[$map[$attr]];
 									}
 								}
 							}
 							//var_dump($optionData);
 
-							//Create and update the item
+							//Create and update the options
 							if($item = $itemDb->getItemBySKU($optionData['parentsku'])) {
 								//Get current item attributes and replace placeholders
 								$currentAttributes = $itemAttribute->getPositions($item['id'])->toArray();
@@ -372,7 +378,7 @@ class Items_OptionController extends Zend_Controller_Action
 									} else {
 										$optionSets[$item['id']][] = $optionData['set'];
 									}
-								} else {
+								} elseif(isset($optionData['set'])) {
 									$optionSets[$item['id']][] = $optionData['set'];
 								}
 								$optionData['optsetid'] = 0;

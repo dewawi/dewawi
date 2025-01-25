@@ -285,6 +285,7 @@ class Items_AttributeController extends Zend_Controller_Action
 					$itemDb = new Items_Model_DbTable_Item();
 					$itemMedia = new Application_Model_DbTable_Media();
 					$itemAttribute = new Items_Model_DbTable_Itematr();
+					$itemAttributeInfo = $itemAttribute->getInfo();
 					$itemAttributeSet = new Items_Model_DbTable_Itematrset();
 
 					//Get
@@ -313,40 +314,44 @@ class Items_AttributeController extends Zend_Controller_Action
 							$attributeData = array();
 							foreach($map as $attr => $pos) {
 								if(isset($datacsv[$map[$attr]])) {
-									if($attr == 'weight') {
-										if(is_numeric($datacsv[$map['weight']])) $attributeData['weight'] = $datacsv[$map['weight']];
-									} elseif($attr == 'price') {
-										if(isset($map['dewawidiscount']) && $datacsv[$map['dewawidiscount']]) {
-											$attributeData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['dewawidiscount']])/100;
-										} elseif($datacsv[$map[$attr]]) {
-											if(is_numeric($datacsv[$map[$attr]])) {
-												$attributeData['price'] = $datacsv[$map[$attr]];
-											} else {
-												echo 'Price is not numeric for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
+									if(array_search($attr, $itemAttributeInfo)) {
+										if($attr == 'weight') {
+											if(is_numeric($datacsv[$map['weight']])) $attributeData['weight'] = $datacsv[$map['weight']];
+										} elseif($attr == 'price') {
+											if(isset($map['dewawidiscount']) && $datacsv[$map['dewawidiscount']]) {
+												$attributeData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['dewawidiscount']])/100;
+											} elseif($datacsv[$map[$attr]]) {
+												if(is_numeric($datacsv[$map[$attr]])) {
+													$attributeData['price'] = $datacsv[$map[$attr]];
+												} else {
+													echo 'Price is not numeric for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
+												}
 											}
-										}
-									} elseif($attr == 'quantity') {
-										if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
-											$attributeData[$attr] = $datacsv[$map[$attr]];
-										}
-									} elseif($attr == 'currency') {
-										if($currencyid = array_search($datacsv[$map[$attr]], $currencies)) {
-											$attributeData[$attr] = $currencyid;
+										} elseif($attr == 'quantity') {
+											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
+												$attributeData[$attr] = $datacsv[$map[$attr]];
+											}
+										} elseif($attr == 'currency') {
+											if($currencyid = array_search($datacsv[$map[$attr]], $currencies)) {
+												$attributeData[$attr] = $currencyid;
+											} else {
+												echo 'No currency option found for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
+											}
+										} elseif($attr == 'inventory') {
+											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
+												$attributeData[$attr] = $datacsv[$map[$attr]];
+											}
 										} else {
-											echo 'No currency option found for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
-										}
-									} elseif($attr == 'inventory') {
-										if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
 											$attributeData[$attr] = $datacsv[$map[$attr]];
+											//var_dump($datacsv[$map[$attr]]);
 										}
-									} else {
+									} elseif($attr == 'set') {
 										$attributeData[$attr] = $datacsv[$map[$attr]];
-										//var_dump($datacsv[$map[$attr]]);
 									}
 								}
 							}
 
-							//Create and update the item
+							//Create and update the attributes
 							if($item = $itemDb->getItemBySKU($attributeData['sku'])) {
 								//Get current item attributes and replace placeholders
 								$currentAttributes = $itemAttribute->getPositions($item['id'])->toArray();
@@ -369,7 +374,7 @@ class Items_AttributeController extends Zend_Controller_Action
 									} else {
 										$attributeSets[$item['id']][] = $attributeData['set'];
 									}
-								} else {
+								} elseif(isset($attributeData['set'])) {
 									$attributeSets[$item['id']][] = $attributeData['set'];
 								}
 								$attributeData['atrsetid'] = 0;

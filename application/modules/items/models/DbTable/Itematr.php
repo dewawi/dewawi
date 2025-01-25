@@ -18,6 +18,11 @@ class Items_Model_DbTable_Itematr extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
+	public function getInfo()
+	{
+		return $this->info(Zend_Db_Table_Abstract::COLS);
+	}
+
 	public function getPosition($id)
 	{
 		$id = (int)$id;
