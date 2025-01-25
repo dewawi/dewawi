@@ -1286,23 +1286,6 @@ CREATE TABLE IF NOT EXISTS `itemoptset` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `itemattribute` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `itemid` int(11) NOT NULL,
-  `title` varchar(255) DEFAULT NULL,
-  `value` varchar(255) DEFAULT NULL,
-  `ordering` int(11) NOT NULL DEFAULT 0,
-  `clientid` int(11) NOT NULL,
-  `created` datetime DEFAULT NULL,
-  `createdby` int(11) NOT NULL DEFAULT 0,
-  `modified` datetime DEFAULT NULL,
-  `modifiedby` int(11) NOT NULL DEFAULT 0,
-  `locked` int(11) NOT NULL DEFAULT 0,
-  `lockedtime` datetime DEFAULT NULL,
-  `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE IF NOT EXISTS `itemlist` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) DEFAULT NULL,
@@ -1314,47 +1297,6 @@ CREATE TABLE IF NOT EXISTS `itemlist` (
   `params` text DEFAULT NULL,
   `templateid` int(11) NOT NULL,
   `language` varchar(255) NOT NULL,
-  `clientid` int(11) NOT NULL,
-  `created` datetime DEFAULT NULL,
-  `createdby` int(11) NOT NULL DEFAULT 0,
-  `modified` datetime DEFAULT NULL,
-  `modifiedby` int(11) NOT NULL DEFAULT 0,
-  `locked` int(11) NOT NULL DEFAULT 0,
-  `lockedtime` datetime DEFAULT NULL,
-  `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `itemoption` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `itemid` int(11) NOT NULL,
-  `title` varchar(255) DEFAULT NULL,
-  `type` varchar(255) DEFAULT NULL,
-  `required` int(11) NOT NULL DEFAULT 0,
-  `ordering` int(11) NOT NULL DEFAULT 0,
-  `clientid` int(11) NOT NULL,
-  `created` datetime DEFAULT NULL,
-  `createdby` int(11) NOT NULL DEFAULT 0,
-  `modified` datetime DEFAULT NULL,
-  `modifiedby` int(11) NOT NULL DEFAULT 0,
-  `locked` int(11) NOT NULL DEFAULT 0,
-  `lockedtime` datetime DEFAULT NULL,
-  `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `itemoptionrow` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `optionid` int(11) NOT NULL DEFAULT 0,
-  `title` varchar(255) DEFAULT NULL,
-  `sku` varchar(255) DEFAULT NULL,
-  `price` decimal(12,4) DEFAULT NULL,
-  `pricetype` varchar(255) DEFAULT NULL,
-  `quantity` decimal(12,4) DEFAULT NULL,
-  `inventory` int(11) NOT NULL DEFAULT 0,
-  `weight` decimal(12,4) DEFAULT NULL,
-  `weighttype` varchar(255) DEFAULT NULL,
-  `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
