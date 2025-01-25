@@ -115,10 +115,10 @@ class Statistics_TurnoverController extends Zend_Controller_Action
 		}
 
 		// Format total values with currency
-		$turnoverTotal['invoicesTotal'] = $currency->toCurrency($turnoverTotal['invoicesTotal']);
-		$turnoverTotal['invoicesAverage'] = $currency->toCurrency($turnoverTotal['invoicesAverage']);
-		$turnoverTotal['creditnotesTotal'] = $currency->toCurrency($turnoverTotal['creditnotesTotal']);
-		$turnoverTotal['creditnotesAverage'] = $currency->toCurrency($turnoverTotal['creditnotesAverage']);
+		if(isset($turnoverTotal['invoicesTotal'])) $turnoverTotal['invoicesTotal'] = $currency->toCurrency($turnoverTotal['invoicesTotal']);
+		if(isset($turnoverTotal['invoicesAverage'])) $turnoverTotal['invoicesAverage'] = $currency->toCurrency($turnoverTotal['invoicesAverage']);
+		if(isset($turnoverTotal['creditnotesTotal'])) $turnoverTotal['creditnotesTotal'] = $currency->toCurrency($turnoverTotal['creditnotesTotal']);
+		if(isset($turnoverTotal['creditnotesAverage'])) $turnoverTotal['creditnotesAverage'] = $currency->toCurrency($turnoverTotal['creditnotesAverage']);
 
 		$this->view->lenght = $lenght;
 		$this->view->options = $options;

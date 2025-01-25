@@ -139,6 +139,7 @@ class Statistics_Model_Turnover
 			if(!array_sum($values)) unset($turnoverCategories[$key]);
 		}
 
+		$turnoverTotal = array();
 		if(count($turnoverList)) {
 
 			$invoicesTotal = 0;
