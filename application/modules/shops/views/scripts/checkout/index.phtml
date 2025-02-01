@@ -1,0 +1,61 @@
+<?php
+//$this->title = $this->translate('SHOPS_ACCOUNTS');
+//$this->headTitle($this->title);
+//echo $this->Messages();
+//echo $this->ActiveFilter();
+?>
+
+<?php
+$checkout = $this->CheckoutForm($this->translate('SHOPS_ORDER_FORM'));
+?>
+
+<section id="checkout" class="py-5">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12 mb-4">
+				<h2><?php echo $this->translate('SHOPS_ORDER_FORM'); ?></h2>
+			</div>
+			<div class="col-md-8 mb-4" >
+				<?php echo $checkout; ?>
+			</div>
+			<div class="col-md-4 mb-4">
+				<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_SHOPPING_CART'); ?></h2>
+				<div class="cart-wrapper">
+					<!-- Cart Container -->
+					<div id="cart-container">
+						<?php if (!empty($this->items)) : ?>
+							<div class="cart-header d-flex justify-content-between align-items-center">
+								<span><?php echo $this->translate('Product'); ?></span>
+								<span><?php echo $this->translate('Price'); ?></span>
+								<span><?php echo $this->translate('Quantity'); ?></span>
+								<span><?php echo $this->translate('Total'); ?></span>
+							</div>
+							<div id="cart-items">
+								<?php foreach ($this->items as $id => $item) : ?>
+									<div class="cart-item d-flex justify-content-between align-items-center" data-id="<?php echo $id; ?>">
+										<div><?php echo $this->escape($item['title']); ?></div>
+										<div><?php echo $this->escape($item['sku']); ?></div>
+										<div><?php echo $item['price']; ?></div>
+										<div>
+											<span><?php echo $item['quantity']; ?></span>
+										</div>
+										<div class="item-total"><?php echo $item['total']; ?></div>
+									</div>
+								<?php endforeach; ?>
+							</div>
+							<div class="cart-summary d-flex justify-content-between align-items-center mt-3">
+								<h4><?php echo $this->translate('Total:'); ?> <span id="cart-total"><?php echo $this->total; ?></span></h4>
+								<button id="edit-btn" class="btn btn-success"><?php echo $this->translate('SHOPS_SHOPPING_CART_EDIT'); ?></button><br>
+							</div>
+							<div class="mt-3">
+								<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'page_842'); ?>" target="_blank">Versandkosten</a></span>
+							</div>
+						<?php else : ?>
+							<p><?php echo $this->translate('SHOPS_SHOPPING_CART_EMPTY'); ?></p>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

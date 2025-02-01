@@ -1,0 +1,67 @@
+<?php
+$this->title = $this->translate('SHOPS_ACCOUNTS');
+$this->headTitle($this->title);
+
+//echo $this->ActiveFilter();
+?>
+
+<section id="error" class="py-5">
+	<div class="container">
+		<div class="row justify-content-center">
+			<div class="col-md-8 text-center">
+				<?php echo $this->Messages(); ?>
+			</div>
+		</div>
+
+		<div class="row justify-content-center">
+			<div class="col-md-8 text-center">
+				<i class="icon-check fas fa-check-circle"></i>
+				<h1>Es ist ein Fehler aufgetreten!</h1>
+				<p>Es gab ein Problem beim Senden Ihrer Nachricht. Bitte überprüfen Sie die Fehler und versuchen Sie es erneut.</p>
+			</div>
+		</div>
+
+		<!-- Accordion to display form data -->
+		<div class="accordion mt-4" id="accordionExample">
+			<?php if (!empty($this->formData)): ?>
+				<div class="card">
+					<div class="card-header" id="headingOne">
+						<h2 class="mb-0">
+							<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+								Ihre Kontaktdaten
+							</button>
+						</h2>
+					</div>
+
+					<div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
+						<div class="card-body">
+							<ul class="list-group">
+								<?php if (isset($this->formData['name'])): ?>
+									<li class="list-group-item">Name: <?php echo $this->escape($this->formData['name']); ?></li>
+								<?php endif; ?>
+								<?php if (isset($this->formData['email'])): ?>
+									<li class="list-group-item">Email: <?php echo $this->escape($this->formData['email']); ?></li>
+								<?php endif; ?>
+								<?php if (isset($this->formData['subject'])): ?>
+									<li class="list-group-item">Betreff: <?php echo $this->escape($this->formData['subject']); ?></li>
+								<?php endif; ?>
+								<?php if (isset($this->formData['message'])): ?>
+									<li class="list-group-item">Nachricht: <?php echo $this->escape($this->formData['message']); ?></li>
+								<?php endif; ?>
+							</ul>
+						</div>
+					</div>
+				</div>
+			<?php else: ?>
+				<p>Keine Kontaktdaten verfügbar.</p>
+			<?php endif; ?>
+		</div>
+
+		<div class="row justify-content-center mt-4">
+			<div class="col-md-8 text-center">
+				<a href="/" class="btn btn-error btn-lg">Zurück zur Startseite</a>
+			</div>
+		</div>
+	</div>
+</section>
+
