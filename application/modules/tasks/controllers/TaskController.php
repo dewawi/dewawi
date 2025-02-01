@@ -545,6 +545,7 @@ class Tasks_TaskController extends Zend_Controller_Action
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
+		$data['pinned'] = 0;
 		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;

@@ -258,6 +258,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$data['quantity'] = 0;
 		$data['inventory'] = 1;
 		$data['title'] = $data['title'].' 2';
+		$data['pinned'] = 0;
 		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;

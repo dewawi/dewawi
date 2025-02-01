@@ -380,6 +380,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$incrementDb->setIncrement(($increment), 'contactid');
 
 		$data['name1'] = $data['name1'].' 2';
+		$data['pinned'] = 0;
 		$data['modified'] = NULL;
 		$data['modifiedby'] = 0;
 		$data['contactid'] = $increment;
