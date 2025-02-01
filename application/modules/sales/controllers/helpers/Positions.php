@@ -18,8 +18,15 @@ class Application_Controller_Action_Helper_Positions extends Zend_Controller_Act
 			$price = $priceRuleHelper->usePriceRulesOnPositions($positions, 'sales', 'quotepos');
 
 			//Set precision and currency
-			foreach($positions as $position) {
+			foreach($positions as $key => $position) {
 				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
+
+				// Calculate raw values
+				$rawTotal = $price['calculated'][$position->id] * $position->quantity;
+				$rawPrice = $price['calculated'][$position->id];
+
+				$position->manufacturerid = $rawPrice;
+
 				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
 				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
 				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));

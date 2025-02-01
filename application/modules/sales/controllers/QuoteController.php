@@ -541,12 +541,64 @@ class Sales_QuoteController extends Zend_Controller_Action
 		//Get positions
 		list($positions, $quote, $options, $optionSets) = $this->_helper->Positions->getPositions($id, $quote, $locale);
 
+		$items = array();
+		$categories = array();
+		$media = array();
+		foreach($positions as $position) {
+			if($position->itemid) {
+				//Get item
+				$itemDb = new Items_Model_DbTable_Item();
+				$items[$position->itemid] = $itemDb->getItem($position->itemid);
+
+				//Get item category
+				if($items[$position->itemid]['catid']) {
+					$categoryDb = new Application_Model_DbTable_Category();
+					$categories[$position->itemid] = $categoryDb->getCategory($items[$position->itemid]['catid']);
+				}
+
+				//Get attribute sets
+				$attributeSetsDb = new Items_Model_DbTable_Itematrset();
+				$attributeSets = $attributeSetsDb->getPositionSets($position->itemid);
+
+				//Get attributes
+				$attributesDb = new Items_Model_DbTable_Itematr();
+				$attributes = $attributesDb->getPositions($position->itemid);
+
+				//Get media
+				$mediaDb = new Application_Model_DbTable_Media();
+				$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
+
+				//Attributes
+				$attributesByGroup = array();
+				$attributesDb = new Items_Model_DbTable_Itematr();
+				foreach($attributeSets as $attributeSetId => $attributeSet) {
+					$attributesByGroup[$position->id][$attributeSetId] = array();
+					$attributesByGroup[$position->id][$attributeSetId]['title'] = $attributeSet['title'];
+					$attributesByGroup[$position->id][$attributeSetId]['description'] = $attributeSet['description'];
+					$attributesByGroup[$position->id][$attributeSetId]['attributes'] = $attributesDb->getPositions($position->itemid, $attributeSet['id']);
+				}
+				$otherAttributes = $attributesDb->getPositions($position->itemid, 0);
+				if(count($otherAttributes)) {
+					$attributesByGroup[$position->id][] = array(
+						'title' => 'Sonstiges',
+						'description' => '',
+						'attributes' => $otherAttributes
+					);
+				}
+
+				$this->view->attributesByGroup = $attributesByGroup;
+			}
+		}
+
 		//Get footers
 		$footerDb = new Application_Model_DbTable_Footer();
 		$footers = $footerDb->getFooters($templateid);
 
 		$this->view->quote = $quote;
 		$this->view->contact = $contact;
+		$this->view->items = $items;
+		$this->view->categories = $categories;
+		$this->view->media = $media;
 		$this->view->options = $options;
 		$this->view->optionSets = $optionSets;
 		$this->view->positions = $positions;
@@ -596,12 +648,64 @@ class Sales_QuoteController extends Zend_Controller_Action
 		//Get positions
 		list($positions, $quote, $options, $optionSets) = $this->_helper->Positions->getPositions($id, $quote, $locale);
 
+		$items = array();
+		$categories = array();
+		$media = array();
+		foreach($positions as $position) {
+			if($position->itemid) {
+				//Get item
+				$itemDb = new Items_Model_DbTable_Item();
+				$items[$position->itemid] = $itemDb->getItem($position->itemid);
+
+				//Get item category
+				if($items[$position->itemid]['catid']) {
+					$categoryDb = new Application_Model_DbTable_Category();
+					$categories[$position->itemid] = $categoryDb->getCategory($items[$position->itemid]['catid']);
+				}
+
+				//Get attribute sets
+				$attributeSetsDb = new Items_Model_DbTable_Itematrset();
+				$attributeSets = $attributeSetsDb->getPositionSets($position->itemid);
+
+				//Get attributes
+				$attributesDb = new Items_Model_DbTable_Itematr();
+				$attributes = $attributesDb->getPositions($position->itemid);
+
+				//Get media
+				$mediaDb = new Application_Model_DbTable_Media();
+				$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
+
+				//Attributes
+				$attributesByGroup = array();
+				$attributesDb = new Items_Model_DbTable_Itematr();
+				foreach($attributeSets as $attributeSetId => $attributeSet) {
+					$attributesByGroup[$position->id][$attributeSetId] = array();
+					$attributesByGroup[$position->id][$attributeSetId]['title'] = $attributeSet['title'];
+					$attributesByGroup[$position->id][$attributeSetId]['description'] = $attributeSet['description'];
+					$attributesByGroup[$position->id][$attributeSetId]['attributes'] = $attributesDb->getPositions($position->itemid, $attributeSet['id']);
+				}
+				$otherAttributes = $attributesDb->getPositions($position->itemid, 0);
+				if(count($otherAttributes)) {
+					$attributesByGroup[$position->id][] = array(
+						'title' => 'Sonstiges',
+						'description' => '',
+						'attributes' => $otherAttributes
+					);
+				}
+
+				$this->view->attributesByGroup = $attributesByGroup;
+			}
+		}
+
 		//Get footers
 		$footerDb = new Application_Model_DbTable_Footer();
 		$footers = $footerDb->getFooters($quote['templateid']);
 
 		$this->view->quote = $quote;
 		$this->view->contact = $contact;
+		$this->view->items = $items;
+		$this->view->categories = $categories;
+		$this->view->media = $media;
 		$this->view->options = $options;
 		$this->view->optionSets = $optionSets;
 		$this->view->positions = $positions;
@@ -638,12 +742,64 @@ class Sales_QuoteController extends Zend_Controller_Action
 		//Get positions
 		list($positions, $quote, $options, $optionSets) = $this->_helper->Positions->getPositions($id, $quote, $locale);
 
+		$items = array();
+		$categories = array();
+		$media = array();
+		foreach($positions as $position) {
+			if($position->itemid) {
+				//Get item
+				$itemDb = new Items_Model_DbTable_Item();
+				$items[$position->itemid] = $itemDb->getItem($position->itemid);
+
+				//Get item category
+				if($items[$position->itemid]['catid']) {
+					$categoryDb = new Application_Model_DbTable_Category();
+					$categories[$position->itemid] = $categoryDb->getCategory($items[$position->itemid]['catid']);
+				}
+
+				//Get attribute sets
+				$attributeSetsDb = new Items_Model_DbTable_Itematrset();
+				$attributeSets = $attributeSetsDb->getPositionSets($position->itemid);
+
+				//Get attributes
+				$attributesDb = new Items_Model_DbTable_Itematr();
+				$attributes = $attributesDb->getPositions($position->itemid);
+
+				//Get media
+				$mediaDb = new Application_Model_DbTable_Media();
+				$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
+
+				//Attributes
+				$attributesByGroup = array();
+				$attributesDb = new Items_Model_DbTable_Itematr();
+				foreach($attributeSets as $attributeSetId => $attributeSet) {
+					$attributesByGroup[$position->id][$attributeSetId] = array();
+					$attributesByGroup[$position->id][$attributeSetId]['title'] = $attributeSet['title'];
+					$attributesByGroup[$position->id][$attributeSetId]['description'] = $attributeSet['description'];
+					$attributesByGroup[$position->id][$attributeSetId]['attributes'] = $attributesDb->getPositions($position->itemid, $attributeSet['id']);
+				}
+				$otherAttributes = $attributesDb->getPositions($position->itemid, 0);
+				if(count($otherAttributes)) {
+					$attributesByGroup[$position->id][] = array(
+						'title' => 'Sonstiges',
+						'description' => '',
+						'attributes' => $otherAttributes
+					);
+				}
+
+				$this->view->attributesByGroup = $attributesByGroup;
+			}
+		}
+
 		//Get footers
 		$footerDb = new Application_Model_DbTable_Footer();
 		$footers = $footerDb->getFooters($quote['templateid']);
 
 		$this->view->quote = $quote;
 		$this->view->contact = $contact;
+		$this->view->items = $items;
+		$this->view->categories = $categories;
+		$this->view->media = $media;
 		$this->view->options = $options;
 		$this->view->optionSets = $optionSets;
 		$this->view->positions = $positions;

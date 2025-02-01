@@ -24,6 +24,20 @@ class Sales_Form_Quote extends Zend_Form
 			->setAttrib('size', '40');
 			//->addValidator('NotEmpty');
 
+		$form['subject'] = new Zend_Form_Element_Text('subject');
+		$form['subject']->setLabel('QUOTES_SUBJECT')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '40');
+			//->addValidator('NotEmpty');
+
+		$form['reference'] = new Zend_Form_Element_Text('reference');
+		$form['reference']->setLabel('QUOTES_REFERENCE')
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->setAttrib('size', '40');
+			//->addValidator('NotEmpty');
+
 		$form['info'] = new Zend_Form_Element_Textarea('info');
 		$form['info']->setLabel('QUOTES_INFO')
 			->addFilter('StripTags')
