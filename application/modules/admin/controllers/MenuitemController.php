@@ -153,7 +153,7 @@ class Admin_MenuitemController extends Zend_Controller_Action
 		}
 	}
 
-	public function editAction()index/type/shop
+	public function editAction()
 	{
 		$request = $this->getRequest();
 		$id = $this->_getParam('id', 0);

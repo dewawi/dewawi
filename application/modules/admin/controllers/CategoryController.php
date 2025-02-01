@@ -246,16 +246,20 @@ class Admin_CategoryController extends Zend_Controller_Action
 				if($id > 0) {
 					$form->populate($category);
 
+					if($category['type'] == 'item') $module = 'items';
+					if($category['type'] == 'contact') $module = 'contacts';
+					if($category['type'] == 'shop') $module = 'shops';
+
 					//Toolbar
 					$toolbar = new Admin_Form_Toolbar();
 
 					//Tags
 					$get = new Shops_Model_Get();
-					$tags = $get->tags('shops', 'category', $category['id']);
+					$tags = $get->tags($module, 'category', $category['id']);
 
 					//Get media
 					$mediaDb = new Application_Model_DbTable_Media();
-					$media = $mediaDb->getMediasByParentID($id, 'shops', 'category');
+					$media = $mediaDb->getMediaByParentID($id, $module, 'category');
 
 					//Get images form
 					$imageForms = array();
@@ -273,9 +277,11 @@ class Admin_CategoryController extends Zend_Controller_Action
 					$mediaPath = $dir1.'/'.$dir2.'/'.$clientid;
 
 					//Get slug
-					$slugDb = new Admin_Model_DbTable_Slug();
-					$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $id);
-					$form->slug->setValue($slug['slug']);
+					if($category['type'] == 'shop') {
+						$slugDb = new Admin_Model_DbTable_Slug();
+						$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $id);
+						$form->slug->setValue($slug['slug']);
+					}
 
 					// Scan subfolders in media/images
 					$this->view->subfolders = array();
