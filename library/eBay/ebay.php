@@ -1,5 +1,10 @@
 <?php
 
+require_once '/usr/share/php/phpseclib/autoload.php';
+require_once '/usr/share/php/phpseclib/Net/SFTP.php';
+
+use phpseclib\Net\SFTP;
+
 class eBay {
 
 	public function getProductIndex() {
@@ -18,6 +23,8 @@ class eBay {
 		$productIndex[10] = 'Weight Major';
 		$productIndex[11] = 'Weight Minor';
 		$productIndex[12] = 'Package Type';
+
+		//Set images index
 		$productIndex[13] = 'Picture URL 1';
 		$productIndex[14] = 'Picture URL 2';
 		$productIndex[15] = 'Picture URL 3';
@@ -30,28 +37,44 @@ class eBay {
 		$productIndex[22] = 'Picture URL 10';
 		$productIndex[23] = 'Picture URL 11';
 		$productIndex[24] = 'Picture URL 12';
+		$productIndex[25] = 'Picture URL 13';
+		$productIndex[26] = 'Picture URL 14';
+		$productIndex[27] = 'Picture URL 15';
+		$productIndex[28] = 'Picture URL 16';
+		$productIndex[29] = 'Picture URL 17';
+		$productIndex[30] = 'Picture URL 18';
+		$productIndex[31] = 'Picture URL 19';
+		$productIndex[32] = 'Picture URL 20';
+		$productIndex[33] = 'Picture URL 21';
+		$productIndex[34] = 'Picture URL 22';
+		$productIndex[35] = 'Picture URL 23';
+		$productIndex[36] = 'Picture URL 24';
+
 		//$productIndex[25] = 'C:Herstellernummer';
 		//$productIndex[26] = 'C:Marke';
 
 		//Set distribution feed index
-		$productIndex[30] = 'Category';
-		$productIndex[31] = 'Store Category Name 1';
-		$productIndex[32] = 'Store Category Name 2';
-		$productIndex[33] = 'Shipping Policy';
-		$productIndex[34] = 'Payment Policy';
-		$productIndex[35] = 'Return Policy';
-		$productIndex[36] = 'List Price';
-		$productIndex[37] = 'Apply Tax';
-		$productIndex[38] = 'VATPercent';
+		$productIndex[40] = 'Category';
+		$productIndex[41] = 'Store Category Name 1';
+		$productIndex[42] = 'Store Category Name 2';
+		$productIndex[43] = 'Shipping Policy';
+		$productIndex[44] = 'Payment Policy';
+		$productIndex[45] = 'Return Policy';
+		$productIndex[46] = 'List Price';
+		$productIndex[47] = 'Apply Tax';
+		$productIndex[48] = 'VATPercent';
 
 		//Set inventory feed index
-		$productIndex[40] = 'Total Ship To Home Quantity';
+		$productIndex[49] = 'Total Ship To Home Quantity';
 
 		//Set attributes
-		$productIndex[50] = 'Attribute Name 1';
-		$productIndex[51] = 'Attribute Value 1';
-		$productIndex[52] = 'Attribute Name 2';
-		$productIndex[53] = 'Attribute Value 2';
+		$maxAttributes = 100;
+		$attributeIndex = 1;
+		while($attributeIndex < $maxAttributes) {
+			$productIndex[($attributeIndex*2)+100] = 'Attribute Name '.$attributeIndex;
+			$productIndex[($attributeIndex*2)+101] = 'Attribute Value '.$attributeIndex;
+			++$attributeIndex;
+		}
 
 		return $productIndex;
 	}
@@ -68,8 +91,8 @@ class eBay {
 			else $dir2 = '0';
 			$url = $this->url();
 			$url = substr($url, 0, strpos($url, 'ebay/index'));
-			$imageUrl = $url.'media/items/'.$dir1.'/'.$dir2.'/'.$clientid;
-			$imagePath = BASE_PATH.'/media/items/'.$dir1.'/'.$dir2.'/'.$clientid;
+			$imageUrl = $url.'media/'.$dir1.'/'.$dir2.'/'.$clientid.'/images/';
+			$imagePath = BASE_PATH.'/media/'.$dir1.'/'.$dir2.'/'.$clientid.'/images/';
 			$template = $this->getTemplate($connection, $accountid, $clientid);
 			$taxRates = $this->getTaxRates($connection, $clientid);
 			$manufacturers = $this->getManufacturers($connection, $clientid);
@@ -77,8 +100,8 @@ class eBay {
 			foreach($items as $item) {
 				$images = $this->getImages($connection, $item['itemid'], 'items', 'item');
 				$attributes = $this->getAttributes($connection, $item['itemid']);
-				if($images && count($images) && file_exists($imagePath.$images[0]['url'])) {
-					list($width, $height, $type, $attr) = getimagesize($imagePath.$images[0]['url']);
+				if($images && count($images) && file_exists($imagePath.'/'.$images[0]['url'])) {
+					list($width, $height, $type, $attr) = getimagesize($imagePath.'/'.$images[0]['url']);
 					if(($width >= 500) || ($height >= 500)) {
 						//Define fields
 						$locale = $account['locale'];
@@ -109,6 +132,7 @@ class eBay {
 						$shopDescription = $item['shopdescription'];
 						$shopDescriptionShort = $item['shopdescriptionshort'];
 						$shopDescriptionMini = $item['shopdescriptionmini'];
+						$manufacturerDescription = $manufacturers[$item['manufacturerid']]['description'];
 						$length = $item['length'];
 						$width = $item['width'];
 						$height = $item['height'];
@@ -123,8 +147,8 @@ class eBay {
 						if($item['taxid'] && isset($taxRates[$item['taxid']])) {
 							$taxRate = $taxRates[$item['taxid']];
 						}
-						if($item['manufacturerid'] && isset($manufacturers[$item['manufacturerid']])) {
-							$brand = $manufacturers[$item['manufacturerid']];
+						if($item['manufacturerid'] && isset($manufacturers[$item['manufacturerid']]['name'])) {
+							$brand = $manufacturers[$item['manufacturerid']]['name'];
 						}
 						//if($item['inventory']) {
 						//	$quantity = $item['quantity'];
@@ -146,12 +170,12 @@ class eBay {
 
 
 
-								$listingPrice = $price * 1.05;
+								$listingPrice = $price;
 								if($taxRate) $listingPrice = $listingPrice + ($listingPrice * $taxRate / 100);
 								$listingPrice = round($listingPrice, 2);
 
 								//Max title length 80 characters
-								if(strlen($eBayTitle) > 80) $eBayTitle = substr($eBayTitle, 0, 80);
+								if(strlen($eBayTitle) > 82) $eBayTitle = substr($eBayTitle, 0, 82);
 
 								//Create description html
 								if(strpos($description, '<p>') === false) {
@@ -252,6 +276,7 @@ class eBay {
 								$templateItem = str_replace('%SHOPDESCRIPTION%', $shopDescription, $templateItem);
 								$templateItem = str_replace('%SHOPDESCRIPTIONSHORT%', $shopDescriptionShort, $templateItem);
 								$templateItem = str_replace('%SHOPDESCRIPTIONMINI%', $shopDescriptionMini, $templateItem);
+								$templateItem = str_replace('%MANUFACTURERDESCRIPTION%', $manufacturerDescription, $templateItem);
 								$templateItem = str_replace('%ADDITIONALDATA%', $additionalData, $templateItem);
 								$templateItem = str_replace('-tt-', '', $templateItem);
 								$templateItem = str_replace("\n", '', $templateItem);
@@ -273,7 +298,7 @@ class eBay {
 								$productLines[$productCount][11] = ''; //Weight Minor
 								$productLines[$productCount][12] = ''; //Package Type
 
-								//Set Picture URLs 1 to 12
+								//Set Picture URLs 1 to 24
 								$productLines[$productCount][13] = $imageUrl.$images[0]['url']; //Picture URL 1
 								$productLines[$productCount][14] = ''; //Picture URL 2
 								$productLines[$productCount][15] = ''; //Picture URL 3
@@ -286,11 +311,23 @@ class eBay {
 								$productLines[$productCount][22] = ''; //Picture URL 10
 								$productLines[$productCount][23] = ''; //Picture URL 11
 								$productLines[$productCount][24] = ''; //Picture URL 12
+								$productLines[$productCount][25] = ''; //Picture URL 13
+								$productLines[$productCount][26] = ''; //Picture URL 14
+								$productLines[$productCount][27] = ''; //Picture URL 15
+								$productLines[$productCount][28] = ''; //Picture URL 16
+								$productLines[$productCount][29] = ''; //Picture URL 17
+								$productLines[$productCount][30] = ''; //Picture URL 18
+								$productLines[$productCount][31] = ''; //Picture URL 19
+								$productLines[$productCount][32] = ''; //Picture URL 20
+								$productLines[$productCount][33] = ''; //Picture URL 21
+								$productLines[$productCount][34] = ''; //Picture URL 22
+								$productLines[$productCount][35] = ''; //Picture URL 23
+								$productLines[$productCount][36] = ''; //Picture URL 24
 								$i = 13;
 								foreach($images as $image) {
-									if($i < 25) {
-										if($image['url'] && file_exists($imagePath.$image['url'])) {
-											list($width, $height, $type, $attr) = getimagesize($imagePath.$image['url']);
+									if($i < 37) {
+										if($image['url'] && file_exists($imagePath.'/'.$image['url'])) {
+											list($width, $height, $type, $attr) = getimagesize($imagePath.'/'.$image['url']);
 											if(($width >= 500) || ($height >= 500)) {
 												$productLines[$productCount][$i] = $imageUrl.$image['url'];
 												++$i;
@@ -300,18 +337,18 @@ class eBay {
 								}
 
 								//Define lines for distribution feed
-								$productLines[$productCount][30] = $eBayCategory1;
-								$productLines[$productCount][31] = $eBayStoreCategory1;
-								$productLines[$productCount][32] = $eBayStoreCategory2;
-								$productLines[$productCount][33] = $shippingPolicy;
-								$productLines[$productCount][34] = $paymentPolicy;
-								$productLines[$productCount][35] = $returnPolicy;
-								$productLines[$productCount][36] = $listingPrice;
-								$productLines[$productCount][37] = $applyTax;
-								$productLines[$productCount][38] = $taxRate;
+								$productLines[$productCount][40] = $eBayCategory1;
+								$productLines[$productCount][41] = $eBayStoreCategory1;
+								$productLines[$productCount][42] = $eBayStoreCategory2;
+								$productLines[$productCount][43] = $shippingPolicy;
+								$productLines[$productCount][44] = $paymentPolicy;
+								$productLines[$productCount][45] = $returnPolicy;
+								$productLines[$productCount][46] = $listingPrice;
+								$productLines[$productCount][47] = $applyTax;
+								$productLines[$productCount][48] = $taxRate;
 
 								//Define lines for inventory feed
-								$productLines[$productCount][40] = $quantity;
+								$productLines[$productCount][49] = $quantity;
 
 								//Set attributes
 								if(isset($brand)) {
@@ -319,6 +356,18 @@ class eBay {
 									$productLines[$productCount][51] = $brand;
 									$productLines[$productCount][52] = 'Herstellernummer';
 									$productLines[$productCount][53] = $sku;
+								}
+
+								$i = 1;
+								//Get attributes
+								if($attributes && count($attributes)) {
+									foreach($attributes as $attribute) {
+										if($attribute['title'] != 'Zeichnung' && strlen($attribute['description']) <= 65) {
+											$productLines[$productCount][$i+100] = $attribute['title'];
+											$productLines[$productCount][$i+101] = $attribute['description'];
+											$i = $i + 2;
+										}
+									}
 								}
 
 								$this->updateItem($connection, $item['id'], 1);
@@ -337,7 +386,7 @@ class eBay {
 					}
 				} else {
 					$this->updateItem($connection, $item['id'], 0);
-					$this->log('Error: there is no image for: '.$item['sku']);
+					$this->log('Error: there is no image for: '.$item['sku'].' ('.$imagePath.'/'.$images[0]['url'].')');
 				}
 			}
 		} else {
@@ -355,53 +404,78 @@ class eBay {
 		$port = $account['ftpport'];
 		$remoteDir = '/store/'.$type.'/';
 
-		// open connection
-		if($connection = ssh2_connect($host, $port)) {
-			$this->log('SSH connection to host initiated');
+		// Create an SFTP object
+		$sftp = new SFTP($host, $port);
+
+		// Connect and authenticate
+		if (!$sftp->login($user, $pass)) {
+			$this->log("SSH login failed");
+			return false; // Return false to indicate failure
 		} else {
-			$this->log('Cannot initiate connection to host');
-		    die('Cannot initiate connection to host');
+			$this->log("SSH login successful");
 		}
 
-		// send access parameters
-		if(ssh2_auth_password($connection, $user, $pass)) {
-			$this->log('SSH login successful');
+		// Upload the file
+		$remoteFilePath = $remoteDir.$filename;
+		$localFilePath = $filePath.'/'.$filename;
+		if ($sftp->put($remoteFilePath, $localFilePath, SFTP::SOURCE_LOCAL_FILE)) {
+			$this->log("Upload successful");
 		} else {
-			$this->log('Cannot login to SSH');
-		    die('Cannot login to SSH');
+			$this->log("Upload failed");
+			return false; // Return false to indicate failure
 		}
 
-		if($sftp = ssh2_sftp($connection)) {
-			$this->log('Sftp connection successful');
-		} else {
-			$this->log('Failed to create a sftp connection');
-		    die('Failed to create a sftp connection');
+		$this->log('Write the contents to the server successful');
+		return true;
+
+		// Attempt to connect
+		/*$connection = ssh2_connect($host, $port);
+		if (!$connection) {
+			$error = error_get_last();
+			$this->log("SSH connection failed: " . $error['message']);
+			return false; // Return false to indicate failure
+		}
+		$this->log("SSH connection established.");
+
+		// Proceed with authentication
+		/*if (!ssh2_auth_password($connection, $user, $pass)) {
+			$this->log("Authentication failed.");
+			ssh2_disconnect($connection);
+			return false;
+		}
+		$this->log("Authentication successful.");
+
+		$sftp = ssh2_sftp($connection);
+		if (!$sftp) {
+			$this->log('Failed to create a SFTP connection');
+			ssh2_disconnect($connection);
+			return false;
 		}
 
-		if($stream = fopen("ssh2.sftp://$sftp$remoteDir$filename", 'w')) {
-			$this->log('Open sftp file connection: ssh2.sftp://'.$sftp.$remoteDir.$filename);
-		} else {
-			$this->log('Open sftp file connection failed');
-		    die('Open sftp file connection failed');
+		$stream = fopen("ssh2.sftp://$sftp$remoteDir$filename", 'w');
+		if (!$stream) {
+			$this->log('Open SFTP file connection failed');
+			ssh2_disconnect($connection);
+			return false;
 		}
 
-		if($file = file_get_contents($filePath.'/'.$filename)) {
-			$this->log('Get the file contents '.$filename);
-		} else {
-			$this->log('Couldn\'t get the file contents');
-		    die('Couldn\'t get the file contents');
+		$file = file_get_contents($filePath.'/'.$filename);
+		if ($file === false) {
+			$this->log("Couldn't get the file contents");
+			fclose($stream);
+			ssh2_disconnect($connection);
+			return false;
 		}
 
-		if(fwrite($stream, $file)) {
-			$this->log('Write the contents to the server successful');
-		} else {
-			$this->log('Couldn\'t write the contents to the server');
-		    die('Couldn\'t write the contents to the server');
+		if(fwrite($stream, $file) === false) {
+			$this->log("Couldn't write the contents to the server");
+			fclose($stream);
+			ssh2_disconnect($connection);
+			return false;
 		}
 
 		fclose($stream);
-
-		return true;
+		ssh2_disconnect($connection);*/
 	}
 
 	public function getItems($connection, $accountid, $clientid) {
@@ -417,12 +491,13 @@ class eBay {
 				WHERE
 					e.accountid = '.$accountid.'
 					AND e.clientid = '.$clientid.'
+					AND i.deleted = 0
 					AND e.deleted = 0;';
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -437,9 +512,9 @@ class eBay {
 		//var_dump($query);
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_array($result);
+			return mysqli_fetch_array($result);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -454,28 +529,29 @@ class eBay {
 					BY ordering;';
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
 	public function getImages($connection, $parentid, $module, $controller) {
 		$query = '
 				SELECT
-					* FROM images
+					* FROM media
 				WHERE
 					parentid = "'.$parentid.'"
 					AND module = "'.$module.'"
 					AND controller = "'.$controller.'"
+					AND type = "image"
 					AND deleted = 0
 				ORDER
 					BY ordering;';
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -490,9 +566,9 @@ class eBay {
 		//var_dump($query);
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_array($result);
+			return mysqli_fetch_array($result);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -509,13 +585,13 @@ class eBay {
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
 			$taxrates = array();
-		    $data = mysqli_fetch_all($result, MYSQLI_ASSOC);
+			$data = mysqli_fetch_all($result, MYSQLI_ASSOC);
 			foreach($data as $taxrate) {
 				$taxrates[$taxrate['id']] = $taxrate['rate'];
 			}
-		    return $taxrates;
+			return $taxrates;
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -532,13 +608,15 @@ class eBay {
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
 			$manufacturers = array();
-		    $data = mysqli_fetch_all($result, MYSQLI_ASSOC);
+			$data = mysqli_fetch_all($result, MYSQLI_ASSOC);
 			foreach($data as $manufacturer) {
-				$manufacturers[$manufacturer['id']] = $manufacturer['name'];
+				$manufacturers[$manufacturer['id']] = array();
+				$manufacturers[$manufacturer['id']]['name'] = $manufacturer['name'];
+				$manufacturers[$manufacturer['id']]['description'] = $manufacturer['description'];
 			}
-		    return $manufacturers;
+			return $manufacturers;
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -570,6 +648,6 @@ class eBay {
 	}
 	public function log($message) {
 		$file = BASE_PATH.'/logs/ebay.log';
-	    error_log(date("Y-m-d H:i:s").' '.$message." \n", 3, $file);
+		error_log(date("Y-m-d H:i:s").' '.$message." \n", 3, $file);
 	}
 }

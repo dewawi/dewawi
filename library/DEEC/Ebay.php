@@ -70,9 +70,14 @@ class DEEC_eBay {
 		$fileUrl = $Directory->getShortUrl($account['clientid']);
 		$filePath = $this->basePath.'/files/ebay/'.$fileUrl;
 		if(file_exists($filePath.'/'.$productFileZip)) {
-			$eBay->uploadFTP($account, $filePath, $productFileZip, 'product');
+			if($eBay->uploadFTP($account, $filePath, $productFileZip, 'product')) {
+				return true;
+			} else {
+				return false; // Return false to indicate failure
+			}
 		} else {
 			$eBay->log('File not found for upload: '.$filePath.$productFileZip);
+			return false; // Return false to indicate failure
 		}
 	}
 
@@ -80,9 +85,9 @@ class DEEC_eBay {
 		$query = 'SELECT * FROM ebayaccount WHERE id = '.$id;
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_array($result, MYSQLI_ASSOC);
+			return mysqli_fetch_array($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -90,9 +95,9 @@ class DEEC_eBay {
 		$query = 'SELECT * FROM ebayaccount';
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 }

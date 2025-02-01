@@ -164,11 +164,12 @@ class Ebay_IndexController extends Zend_Controller_Action
 
 				require_once(BASE_PATH.'/library/DEEC/Ebay.php');
 				$eBay = new DEEC_eBay(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
-				$eBay->uploadFile($accountid);
-
-				$accountDb->updateAccount($accountid, array('uploaded' => date('Y-m-d H:i:s'), 'uploadedby' => $this->_user['id']));
-
-				$this->_flashMessenger->addMessage('MESSAGES_RECORDS_SUCCESFULLY_UPLOADED');
+				if($eBay->uploadFile($accountid)) {
+					$accountDb->updateAccount($accountid, array('uploaded' => date('Y-m-d H:i:s'), 'uploadedby' => $this->_user['id']));
+					$this->_flashMessenger->addMessage('MESSAGES_RECORDS_SUCCESFULLY_UPLOADED');
+				} else {
+					$this->_flashMessenger->addMessage('MESSAGES_RECORDS_ERROR');
+				}
 			}
 		}
 
