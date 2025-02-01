@@ -69,56 +69,22 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 								</ul>
 							</li>
 						<?php endif; ?>
+
+						<!-- Add Cart Icon -->
+						<li class="nav-item">
+							<a class="nav-link" href="<?php echo $this->url(array(), 'cart'); ?>" id="navbar-cart">
+								🛒 <span id="cart-count" class="badge badge-danger">
+									<?php echo $this->cart->getItemCount(); ?>
+								</span>
+							</a>
+						</li>
 					</ul>
 				</div>
 			</div>
 		</nav>
 		<?php if(!$home) : ?>
 			<!-- Breadcrumbs -->
-			<section id="breadcrumb" class="">
-				<div class="container">
-					<nav aria-label="breadcrumb">
-						<ol class="breadcrumb mb-0">
-							<li class="breadcrumb-item">
-								<a href="<?php echo $this->url(array(), 'shop'); ?>">Home</a>
-							</li>
-							
-							<?php if ($this->controller === 'category' && isset($this->category)) : ?>
-								<?php
-									// Get the current category and its parent categories
-									$breadcrumbs = $this->CategoryBreadcrumbs($this->category, $this->categories);
-								?>
-								<?php foreach ($breadcrumbs as $breadcrumb) : ?>
-									<li class="breadcrumb-item">
-										<a href="<?php echo $this->url(array('id' => $breadcrumb['id']), 'category_' . $breadcrumb['id']); ?>">
-											<?php echo $breadcrumb['title']; ?>
-										</a>
-									</li>
-								<?php endforeach; ?>
-								<li class="breadcrumb-item active" aria-current="page">
-									<?php echo $this->category['title']; ?>
-								</li>
-							<?php elseif ($this->controller === 'tag' && isset($this->tag)) : ?>
-								<li class="breadcrumb-item active" aria-current="page">
-									<?php echo $this->tag->title; // or other relevant title for non-category pages ?>
-								</li>
-							<?php elseif ($this->controller === 'page' && isset($this->page)) : ?>
-								<li class="breadcrumb-item active" aria-current="page">
-									<?php echo $this->page['title']; // or other relevant title for non-category pages ?>
-								</li>
-							<?php elseif ($this->controller === 'contact') : ?>
-								<li class="breadcrumb-item active" aria-current="page">
-									<?php echo $this->translate('SHOPS_CONTACT_FORM'); // or other relevant title for non-category pages ?>
-								</li>
-							<?php else : ?>
-								<li class="breadcrumb-item active" aria-current="page">
-									<?php echo $this->controller; // or other relevant title for non-category pages ?>
-								</li>
-							<?php endif; ?>
-						</ol>
-					</nav>
-				</div>
-			</section>
+			<?php echo $this->Breadcrumbs(); ?>
 		<?php endif; ?>
 	</header>
 
@@ -129,14 +95,13 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 	<?php if($this->controller === 'category') : ?>
 		<section id="contact" class="jumbotron jumbotron-fluid py-5 mb-0">
 			<div class="container">
+				<h2 class="text-center mb-4">Wie können wir Ihnen helfen?</h2>
 				<div class="row">
 					<div class="col-md-6 mx-auto">
 						<!-- Add any relevant introductory text here -->
 					</div>
 				</div>
 				<div class="row">
-					<div class="col-md-6">
-					</div>
 					<div class="col-md-6">
 						<?php if ($this->controller === 'category' && isset($this->category)) : ?>
 							<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->category['title']); ?>
@@ -170,8 +135,9 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 		</div>
 	</footer>
 
-	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+	<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/shops.js"></script>
 </body>
 </html>

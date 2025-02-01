@@ -1,16 +1,50 @@
 <?php
-$this->title = $this->translate('SHOPS_ACCOUNTS');
+$this->title = $this->item['title'];
 $this->headTitle($this->title);
 //echo $this->Messages();
 //echo $this->ActiveFilter();
+$downloads = false;
 ?>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": "<?php echo $this->item['title']; ?>",
+  <?php if (count($this->images) > 0): ?>
+	<?php $folder = 'images'; ?>
+	"image": [
+		<?php 
+		$totalImages = count($this->images);
+		$i = 0;
+		foreach ($this->images as $image): 
+			$i++; 
+		?>
+			"<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>"<?php if ($i < $totalImages) echo ','; ?>
+		<?php endforeach; ?>
+	],
+  <?php endif; ?>
+  "description": "<?php echo $this->item['shopdescriptionshort']; ?>",
+  "sku": "<?php echo $this->item['sku']; ?>",
+  "brand": {
+	"@type": "Brand",
+	"name": "<?php echo $this->manufacturers[$this->item['manufacturerid']]; ?>"
+  },
+  "offers": {
+	"@type": "Offer",
+	"url": "<?php echo $this->shop['url'].$this->url([], 'category_' . $this->category['id']); ?>",
+	"priceCurrency": "<?php echo $this->item['currency']; ?>",
+	"price": "<?php echo $this->item['price']*1.19; ?>",
+	"availability": "https://schema.org/InStock"
+  }
+}
+</script>
 
 <section id="item" class="py-5">
 	<div class="container">
 		<div class="row">
-			<div class="col-md-6 mb-4">
+			<div class="col-md-12 mb-4">
 				<h2><?php echo $this->escape($this->item['title']); ?></h2>
-				<p><?php echo $this->escape($this->item['description']); ?></p>
 			</div>
 			<div class="col-md-6 mb-4">
 				<div class="main-image-wrapper">
@@ -39,85 +73,148 @@ $this->headTitle($this->title);
 					<?php endif; ?>
 				</div>
 			</div>
+			<div class="col-md-6 mb-4">
+				<?php if($this->item['shopdescriptionshort']) : ?>
+					<p><?php echo $this->item['shopdescription']; ?></p>
+				<?php else : ?>
+					<p><?php echo nl2br($this->item['description']); ?></p>
+				<?php endif; ?>
+				<p><?php //echo $this->item['shopdescriptionshort']; ?></p>
+
+				<div style="margin-bottom: 10px;">
+					<span><?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $this->item['sku']; ?></span>
+				</div>
+
+				<div style="margin-bottom: 10px;">
+					<p style="margin-bottom: 0;"><strong><?php echo $this->prices['formatted']; ?></strong></p>
+					<?php if($this->prices['rawtax'] > $this->prices['raw']) : ?>
+						<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices['formattedtax']; ?> inkl. MwSt.</p>
+					<?php endif; ?>
+					<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'page_842'); ?>" target="_blank">Versandkosten</a></span>
+				</div>
+
+				<!-- Add to Cart Button -->
+				<div class="">
+					<button 
+						class="btn btn-primary btn-lg add-to-cart" 
+						data-id="<?php echo $this->item['id']; ?>" 
+						data-title="<?php echo $this->item['title']; ?>" 
+						data-sku="<?php echo $this->item['sku']; ?>" 
+						data-price="<?php echo $this->item['price']; ?>">
+						<?php echo $this->translate('SHOPS_ADD_TO_CART'); ?>
+					</button>
+					<button class="btn btn-info btn-lg" onclick="showSection('<?php echo $this->item['id']; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
+				</div>
+			</div>
 		</div>
 	</div>
 </section>
 
+<!-- Attributes -->
 <section id="attributes" class="py-5">
 	<div class="container">
-		<h2 class="text-center mb-4">Attributes</h2>
+		<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_ATTRIBUTES'); ?></h2>
 		<?php if (!empty($this->attributeSets)) : ?>
-			<ul class="nav nav-tabs" id="attributesTab" role="tablist">
-				<?php foreach ($this->attributeSets as $id => $set) : ?>
-					<li class="nav-item">
-						<a class="nav-link<?php echo $id === 0 ? ' active' : ''; ?>" id="attributesTab<?php echo $id; ?>" data-toggle="tab" href="#attributesContent<?php echo $id; ?>" role="tab" aria-controls="attributesContent<?php echo $id; ?>" aria-selected="<?php echo $id === 0 ? 'true' : 'false'; ?>"><?php echo $set['title']; ?></a>
-					</li>
-				<?php endforeach; ?>
-			</ul>
-			<div class="tab-content" id="attributesTabContent">
-				<?php foreach ($this->attributeSets as $id => $set) : ?>
-					<div class="tab-pane fade<?php echo $id === 0 ? ' show active' : ''; ?>" id="attributesContent<?php echo $id; ?>" role="tabpanel" aria-labelledby="attributesTab<?php echo $id; ?>">
-						<table class="table">
-							<thead>
-								<tr>
-									<th class="flex50">SKU</th>
-									<th>Title</th>
-									<th>Value</th>
-								</tr>
-							</thead>
-							<tbody>
-								<?php foreach ($set['attributes'] as $attribute) : ?>
-									<tr>
-										<td class="flex50"><?php echo $attribute['sku']; ?></td>
-										<td><?php echo $attribute['title']; ?></td>
-										<td><?php echo $attribute['description']; ?></td>
-									</tr>
-								<?php endforeach; ?>
-							</tbody>
-						</table>
-					</div>
+			<div class="card card-body">
+				<div class="row">
+					<?php foreach ($this->attributeSets as $attributeSet) : ?>
+						<div class="col-md-4 mb-4">
+							<div class="card">
+								<div class="card-header">
+									<h5 class="mb-0"><?php echo $attributeSet['title']; ?></h5>
+								</div>
+								<div class="card-body">
+									<ul class="list-unstyled">
+										<?php foreach ($attributeSet['attributes'] as $attribute) : ?>
+											<li>
+												<strong><?php echo $attribute['title']; ?>:</strong> <?php echo $attribute['description']; ?>
+											</li>
+										<?php endforeach; ?>
+									</ul>
+								</div>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		<?php endif; ?>
+	</div>
+</section>
+
+<!-- Options -->
+<section id="options" class="py-5">
+	<div class="container">
+		<?php if (!empty($this->optionSets)) : ?>
+			<div class="card card-body">
+				<?php foreach ($this->optionSets as $optionSet) : ?>
+					<h5><?php echo $optionSet['title']; ?></h5>
+					<ul>
+						<?php foreach ($optionSet['options'] as $option) : ?>
+							<li><strong><?php echo $option['title']; ?>:</strong>
+								<?php if ($option['description']) : ?>
+									<?php echo $option['description']; ?>
+								<?php else : ?>
+									<span>bereits enthalten</span>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
 				<?php endforeach; ?>
 			</div>
 		<?php endif; ?>
 	</div>
 </section>
 
-<section id="options" class="py-5">
+<!-- Downloads -->
+<section id="downloads" class="py-5">
 	<div class="container">
-		<h2 class="text-center mb-4">Options</h2>
-		<?php if (!empty($this->optionSets)) : ?>
-			<ul class="nav nav-tabs" id="optionsTab" role="tablist">
-				<?php foreach ($this->optionSets as $id => $set) : ?>
-					<li class="nav-item">
-						<a class="nav-link<?php echo $id === 0 ? ' active' : ''; ?>" id="optionsTab<?php echo $id; ?>" data-toggle="tab" href="#optionsContent<?php echo $id; ?>" role="tab" aria-controls="optionsContent<?php echo $id; ?>" aria-selected="<?php echo $id === 0 ? 'true' : 'false'; ?>"><?php echo $set['title']; ?></a>
-					</li>
-				<?php endforeach; ?>
-			</ul>
-			<div class="tab-content" id="optionsTabContent">
-				<?php foreach ($this->optionSets as $id => $set) : ?>
-					<div class="tab-pane fade<?php echo $id === 0 ? ' show active' : ''; ?>" id="optionsContent<?php echo $id; ?>" role="tabpanel" aria-labelledby="optionsTab<?php echo $id; ?>">
-						<table class="table">
-							<thead>
-								<tr>
-									<th class="flex50">SKU</th>
-									<th>Title</th>
-									<th>Value</th>
-								</tr>
-							</thead>
-							<tbody>
-								<?php foreach ($set['options'] as $option) : ?>
-									<tr>
-										<td class="flex50"><?php echo $option->sku; ?></td>
-										<td><?php echo $option->title; ?></td>
-										<td><?php echo $option->description; ?></td>
-									</tr>
-								<?php endforeach; ?>
-							</tbody>
-						</table>
-					</div>
-				<?php endforeach; ?>
+		<?php if (!empty($this->item['downloads']) || $downloads) : ?>
+			<div class="card card-body">
+				<ul>
+					<?php $categoryImages = $this->images['categories'][$this->category['id']]; ?>
+					<?php foreach ($categoryImages as $file) : ?>
+						<?php if ($file->type == 'download') : ?>
+							<li>
+								<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
+									<?php echo $this->escape($file->title); ?></a>
+							</li>
+						<?php endif; ?>
+					<?php endforeach; ?>
+					<?php
+					if (!empty($this->item['downloads'])) {
+						// Split the download string into language and file name
+						list($lang, $filePath) = explode('|', $this->item['downloads']);
+						// Extract just the filename from the file path
+						$fileName = basename($filePath);
+
+						// Full server path to the file
+						$serverFilePath = BASE_PATH . '/media/' . $this->escape($this->imagePath) . '/downloads/' . $filePath;
+
+						// Check if the file exists
+						if (file_exists($serverFilePath)) {
+							// Extract just the filename from the file path
+							$fileName = basename($filePath);
+						?>
+							<li>
+								<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($filePath); ?>" target="_blank">
+									<?php echo $this->escape($fileName); ?></a>
+								(<?php echo strtoupper($lang); ?>)
+							</li>
+						<?php } ?>
+					<?php } ?>
+				</ul>
 			</div>
 		<?php endif; ?>
+	</div>
+</section>
+
+<!-- Inquiry -->
+<section id="inquiry" class="py-5">
+	<div class="container">
+		<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></h2>
+		<div class="card card-body">
+			<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->item['title'].' '.$this->item['sku']); ?>
+		</div>
 	</div>
 </section>
 
@@ -188,6 +285,34 @@ $this->headTitle($this->title);
 				image.closest('.carousel-item').classList.remove('active');
 			}
 		});
+	}
+
+	// Function to show the accordion and open the relevant tab
+	function showTab(itemId, tabName) {
+		// Open the accordion
+		$('#details_' + itemId).collapse('show');
+
+		// Activate the correct tab
+		$('#productTab_' + itemId + ' a[href="#' + tabName + '_' + itemId + '"]').tab('show');
+	}
+
+	function showSection(itemId, sectionName) {
+		// Find the section by ID
+		const section = document.getElementById(sectionName);
+
+		if (section) {
+			// Scroll to the section smoothly
+			section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+			// Optionally, highlight the section for better visibility
+			section.style.transition = 'background-color 0.5s ease';
+			section.style.backgroundColor = '#f8f9fa';
+
+			// Remove the highlight after a short delay
+			setTimeout(() => {
+				section.style.backgroundColor = '';
+			}, 2000);
+		}
 	}
 
 	function openModal() {
