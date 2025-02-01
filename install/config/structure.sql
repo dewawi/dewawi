@@ -1432,7 +1432,9 @@ CREATE TABLE IF NOT EXISTS `module` (
 
 CREATE TABLE `page` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) NOT NULL DEFAULT 0,
   `shopid` int(11) NOT NULL,
+  `type` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
   `url` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
@@ -2350,6 +2352,30 @@ CREATE TABLE IF NOT EXISTS `shoporder` (
   `orderid` varchar(255) NOT NULL,
   `contactid` int(11) NOT NULL DEFAULT 0,
   `invoiceid` int(11) NOT NULL,
+  `total` decimal(12,4) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY (shopid),
+  KEY (orderid),
+  KEY (contactid),
+  KEY (clientid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `shoporderpos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shopid` varchar(255) NOT NULL,
+  `orderid` varchar(255) NOT NULL,
+  `itemid` int(11) NOT NULL,
+  `total` decimal(12,4) NOT NULL,
+  `quantity` decimal(12,4) DEFAULT NULL,
+  `price` decimal(12,4) DEFAULT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
