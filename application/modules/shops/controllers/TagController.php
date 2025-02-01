@@ -29,6 +29,11 @@ class Shops_TagController extends Zend_Controller_Action
 		//Check if the directory is writable
 		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
 		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
+
+		$this->cart = new Shops_Model_ShoppingCart();
+
+		// Make the cart accessible in all views
+		$this->view->cart = $this->cart;
 	}
 
 	public function indexAction()
@@ -52,7 +57,7 @@ class Shops_TagController extends Zend_Controller_Action
 		$this->view->contact = $contact;
 
 		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories('shop', $shop['id']);
+		$categories = $categoryDb->getCategories();
 
 		$tagDb = new Shops_Model_DbTable_Tag();
 		$tag = $tagDb->getTag($id);

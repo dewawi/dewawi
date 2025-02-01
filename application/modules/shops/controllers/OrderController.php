@@ -32,6 +32,11 @@ class Shops_OrderController extends Zend_Controller_Action
 		//Check if the directory is writable
 		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
 		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
+
+		$this->cart = new Shops_Model_ShoppingCart();
+
+		// Make the cart accessible in all views
+		$this->view->cart = $this->cart;
 	}
 
 	public function indexAction()

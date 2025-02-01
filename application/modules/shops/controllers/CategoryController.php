@@ -29,6 +29,11 @@ class Shops_CategoryController extends Zend_Controller_Action
 		//Check if the directory is writable
 		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
 		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
+
+		$this->cart = new Shops_Model_ShoppingCart();
+
+		// Make the cart accessible in all views
+		$this->view->cart = $this->cart;
 	}
 
 	public function indexAction()
@@ -52,8 +57,12 @@ class Shops_CategoryController extends Zend_Controller_Action
 		$this->view->contact = $contact;
 
 		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories('shop', $shop['id']);
-		$category = $categoryDb->getCategory($id, $shop['id']);
+		$categories = $categoryDb->getCategories();
+		$category = $categoryDb->getCategory($id);
+
+		//Get tax rates
+		$taxratesDb = new Shops_Model_DbTable_Taxrate();
+		$taxrates = $taxratesDb->getTaxRates();
 
 		//$tagsDb = new Shops_Model_DbTable_Tag();
 		//$tags = $tagsDb->getTags('shops', 'category', $category['id']);
@@ -83,9 +92,17 @@ class Shops_CategoryController extends Zend_Controller_Action
 			//Get currency
 			$currency = $this->_helper->Currency->getCurrency($item['currency'], 'USE_SYMBOL');
 
+			// Ensure tax ID exists
+			$taxRate = isset($taxrates[$item['taxid']]) ? $taxrates[$item['taxid']] : 0;
+
+			// Calculate tax-inclusive price
+			$priceWithTax = $item['price'] * ((100 + $taxRate) / 100);
+
 			//Convert numbers to the display format
 			$prices[$item->id]['raw'] = $item['price'];
+			$prices[$item->id]['rawtax'] = $priceWithTax;
 			$prices[$item->id]['formatted'] = $currency->toCurrency($item['price']);
+			$prices[$item->id]['formattedtax'] = $currency->toCurrency($priceWithTax);
 		}
 
 		$images = array();

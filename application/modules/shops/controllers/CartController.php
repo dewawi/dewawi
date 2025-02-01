@@ -41,7 +41,7 @@ class Shops_CartController extends Zend_Controller_Action
 		$this->view->contact = $contact;
 
 		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories('shop', $shop['id']);
+		$categories = $categoryDb->getCategories();
 
 		$slideDb = new Shops_Model_DbTable_Slide();
 		$slides = $slideDb->getSlides($shop['id']);

@@ -9,27 +9,25 @@ class Shops_Model_DbTable_Order extends Zend_Db_Table_Abstract
 
 	protected $_user = null;
 
-	protected $_client = null;
+	protected $_shop = null;
 
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
+		$this->_shop = Zend_Registry::get('Shop');
 	}
 
-	public function getEbayuser($itemid, $ebayuserid)
+	public function getOrder($itemid, $orderid)
 	{
 		$itemid = (int)$itemid;
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
-		$where[] = $this->getAdapter()->quoteInto('ebayuserid = ?', $ebayuserid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('orderid = ?', $orderid);
 		$data = $this->fetchRow($where);
 		return $data ? $data->toArray() : $data;
 	}
 
-	public function getEbayusers($ids)
+	public function getOrders($ids)
 	{
 		$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
 		$data = $this->fetchAll($where);
@@ -39,16 +37,15 @@ class Shops_Model_DbTable_Order extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function addEbayuser($data)
+	public function addOrder($data)
 	{
-		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
+		//$data['createdby'] = $this->_user['id'];
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
 
-	public function updateEbayuser($id, $data)
+	public function updateOrder($id, $data)
 	{
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
@@ -75,7 +72,7 @@ class Shops_Model_DbTable_Order extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
-	public function deleteEbayuser($itemid)
+	public function deleteOrder($itemid)
 	{
 		$itemid = (int)$itemid;
 		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);

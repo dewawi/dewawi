@@ -29,6 +29,11 @@ class Shops_ItemController extends Zend_Controller_Action
 		//Check if the directory is writable
 		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
 		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
+
+		$this->cart = new Shops_Model_ShoppingCart();
+
+		// Make the cart accessible in all views
+		$this->view->cart = $this->cart;
 	}
 
 	public function indexAction()
@@ -52,12 +57,34 @@ class Shops_ItemController extends Zend_Controller_Action
 			$tagEntites[$item->id] = $get->tags('items', 'item', $item->id);
 		}*/
 
+		$contact = new Shops_Form_Contact();
+		$this->view->contact = $contact;
+
 		$itemDb = new Shops_Model_DbTable_Item();
 		$item = $itemDb->getItem($id, $shop['id']);
 
+		//Get currency
+		$currency = $this->_helper->Currency->getCurrency($item['currency'], 'USE_SYMBOL');
+
+		// Calculate tax-inclusive price
+		if($item['taxid']) {
+			$taxrateDb = new Shops_Model_DbTable_Taxrate();
+			$taxrate = $taxrateDb->getTaxRate($item['taxid']);
+			$priceWithTax = $item['price'] * ((100 + $taxrate['rate']) / 100);
+		} else {
+			$priceWithTax = $item['price'];
+		}
+
+		//Convert numbers to the display format
+		$prices = [];
+		$prices['raw'] = $item['price'];
+		$prices['rawtax'] = $priceWithTax;
+		$prices['formatted'] = $currency->toCurrency($item['price']);
+		$prices['formattedtax'] = $currency->toCurrency($priceWithTax);
+
 		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories('shop', $shop['id']);
-		$category = $categoryDb->getCategory($item['catid'], $shop['id']);
+		$categories = $categoryDb->getCategories();
+		$category = $categoryDb->getCategory($item['shopcatid']);
 
 		$mediaDb = new Shops_Model_DbTable_Media();
 		$images = $mediaDb->getMedia($id, 'items', 'item');
@@ -71,13 +98,18 @@ class Shops_ItemController extends Zend_Controller_Action
 			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
 		}
 
+		$manufacturersDb = new Shops_Model_DbTable_Manufacturer();
+		$manufacturers = $manufacturersDb->getManufacturers();
+
 		//$this->view->tags = $tags;
 		//$this->view->tagEntites = $tagEntites;
 		$this->view->shop = $shop;
 		$this->view->item = $item;
 		$this->view->images = $images;
+		$this->view->prices = $prices;
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
+		$this->view->manufacturers = $manufacturers;
 		//$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->category = $category;
@@ -203,13 +235,25 @@ class Shops_ItemController extends Zend_Controller_Action
 		$mediaDb = new Shops_Model_DbTable_Media();
 		$images['items'] = $mediaDb->getItemMedia($items);
 
+		//Get tax rates
+		$taxratesDb = new Shops_Model_DbTable_Taxrate();
+		$taxrates = $taxratesDb->getTaxRates();
+
 		// Loop through items and add to the sitemap
 		foreach ($items as $item) {
 			$totalImages = count($images['items'][$item->id]);
 			//echo 'cat:'.$item->shopcatid."\n";
-			if($totalImages && isset($slugDict[$item->shopcatid])) {
-				$fullSlug = $getFullSlug($slugDict[$item->shopcatid], $slugDict); // Get full slug path
+			if($totalImages && $item->shopcatid && isset($slugDict[$item->id])) {
+				// Get full slug path
+				$fullSlug = $getFullSlug($slugDict[$item->id], $slugDict);
 				$slugUrl = $shop['url'] . '/' . $fullSlug;
+
+				// Ensure tax ID exists
+				$taxRate = isset($taxrates[$item['taxid']]) ? $taxrates[$item['taxid']] : 0;
+
+				// Calculate tax-inclusive price
+				$priceWithTax = $item['price'] * ((100 + $taxRate) / 100);
+
 				echo '<item>';
 				echo '<g:id>' . $item['sku'] . '</g:id>';
 				echo '<g:title>' . $item['title'] . '</g:title>';
@@ -226,12 +270,12 @@ class Shops_ItemController extends Zend_Controller_Action
 				}
 				echo '<g:availability>in_stock</g:availability>';
 				echo '<g:quantity>10</g:quantity>';
-				echo '<g:price>' . $item['price'] . ' ' . $item['currency'] . '</g:price>';
+				echo '<g:price>' . $priceWithTax . ' ' . $item['currency'] . '</g:price>';
 				echo '<g:brand>'.$shop['title'].'</g:brand>';
 				echo '<g:condition>new</g:condition>';
 				echo '<g:shipping>';
 				echo '<g:country>DE</g:country>';
-				echo '<g:price>39.00 EUR</g:price>';
+				echo '<g:price>29.00 EUR</g:price>';
 				echo '</g:shipping>';
 				echo '</item>';
 			}
