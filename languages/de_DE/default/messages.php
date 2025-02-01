@@ -35,5 +35,7 @@
 	'MESSAGES_FURTHER_QUESTIONS' => 'Falls Sie weitere Fragen haben, können Sie uns jederzeit eine Nachricht zukommen lassen oder auf diese E-Mail antworten.',
 	'MESSAGES_VISIT_WEBSITE' => 'Besuchen Sie unsere Webseite',
 	'MESSAGES_BEST_REGARDS' => 'Mit freundlichen Grüßen',
-	'MESSAGES_ALL_RIGHTS_RESERVED' => 'Alle Rechte vorbehalten'
+	'MESSAGES_ALL_RIGHTS_RESERVED' => 'Alle Rechte vorbehalten',
+	'MESSAGES_THANK_YOU_ORDER' => 'Vielen Dank für Ihre Bestellung',
+	'MESSAGES_RECEIVED_YOUR_ORDER' => 'Vielen Dank, dass Sie uns kontaktiert haben. Wir haben Ihre Nachricht erhalten und werden uns schnellstmöglich mit Ihnen in Verbindung setzen.'
 );

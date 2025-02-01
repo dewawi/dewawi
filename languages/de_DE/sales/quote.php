@@ -11,6 +11,8 @@
 	'QUOTES_QUOTE_ID' => 'Belegnr.',
 	'QUOTES_NEW_QUOTE' => 'Neues Angebot',
 	'QUOTES_TITLE' => 'Projekt',
+	'QUOTES_SUBJECT' => 'Betreff',
+	'QUOTES_REFERENCE' => 'Referenz',
 	'QUOTES_CONTACT' => 'Kunde',
 	'QUOTES_CONTACT_ID' => 'Kundennr.',
 	'QUOTES_VATIN' => 'USt-IdNr.',
