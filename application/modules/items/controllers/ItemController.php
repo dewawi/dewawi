@@ -398,8 +398,6 @@ class Items_ItemController extends Zend_Controller_Action
 					$itemOptionSet = new Items_Model_DbTable_Itemoptset();
 					$ebayAccountDb = new Ebay_Model_DbTable_Account();
 					$ebayListingDb = new Ebay_Model_DbTable_Listing();
-					//$shopItemDb = new Shops_Model_DbTable_Item();
-					//$shopCategoryDb = new Shops_Model_DbTable_Category();
 
 					//Get categories
 					$itemCategoryIndex = $this->getProductCategoryIndex('item');
@@ -609,19 +607,18 @@ class Items_ItemController extends Zend_Controller_Action
 								}
 
 								//Update shop listing
-								/*if(isset($map['shopid'])) {
-									$shopItemDb->deleteItemByItemId($item['id']);
+								if(isset($map['shopid'])) {
+									$slugDb = new Admin_Model_DbTable_Slug();
+									$slugDb->deleteSlug('shops', 'item', $updateData['shopid'], $item['id']);
 									$slug = $this->slugify($item['title']);
-									if(isset($map['shopid']) && ($datacsv[$map['shopid']] > 0) && $shopCategoryId) {
-										$shopItemDb->addItem(array('itemid' => $item['id'], 'slug' => $slug, 'shopid' => $datacsv[$map['shopid']], 'catid' => $shopCategoryId));
+									if(isset($datacsv[$map['shopid']]) && is_numeric($datacsv[$map['shopid']]) && $datacsv[$map['shopid']] > 0 && $updateData['shopcatid']) {
+										//Update slug
+										$slugDb->addSlug('shops', 'item', $updateData['shopid'], $updateData['shopcatid'], $item['id'], $this->slugify($item['sku']));
 										echo 'Item added to shop: '.$updateData['sku'].', itemid: '.$item['id'].' to '.$datacsv[$map['shopid']].'<br>';
+									} else {
+										$updateData['shopid'] = 0; // Default to 0 if not valid
 									}
-								}*/
-
-								//Update slug
-								//if(isset($updateData['title'])) {
-								//	$updateData['slug'] = $this->slugify($item['title']);
-								//}
+								}
 
 								//print_r($updateData);
 								$itemDb->updateItem($item['id'], $updateData);
@@ -638,6 +635,7 @@ class Items_ItemController extends Zend_Controller_Action
 										$image['parentid'] = $item['id'];
 										$image['module'] = 'items';
 										$image['controller'] = 'item';
+										$image['type'] = 'image';
 										//error_log(var_dump($image));
 										$itemMedia->addMedia($image);
 									}
@@ -658,7 +656,7 @@ class Items_ItemController extends Zend_Controller_Action
 								if(!isset($updateData['width']) || !$updateData['width']) $updateData['width'] = NULL;
 								if(!isset($updateData['height']) || !$updateData['height']) $updateData['height'] = NULL;
 								if(!isset($updateData['inventory'])) $updateData['inventory'] = 1;
-								$itemid = $itemDb->addItem($updateData);
+
 								if(isset($map['ebayuserid'])) {
 									if($datacsv[$map['ebayuserid']] == 0) {
 										$ebayListingDb->deleteListingByItemID($itemid);
@@ -678,6 +676,19 @@ class Items_ItemController extends Zend_Controller_Action
 										echo 'Item added to shop: '.$updateData['sku'].', itemid: '.$itemid.' to '.$datacsv[$map['shopid']].'<br>';
 									}
 								}*/
+
+								//Create slug
+								if(isset($map['shopid'])) {
+									if(isset($datacsv[$map['shopid']]) && is_numeric($datacsv[$map['shopid']]) && $datacsv[$map['shopid']] > 0) {
+										$slugDb = new Admin_Model_DbTable_Slug();
+										$slugDb->deleteSlug('shops', 'item', $updateData['shopid'], $item['id']);
+										$slugDb->addSlug('shops', 'item', $updateData['shopid'], $updateData['shopcatid'], $item['id'], $this->slugify($item['sku']));
+									} else {
+										$updateData['shopid'] = 0;
+									}
+								}
+
+								$itemid = $itemDb->addItem($updateData);
 								++$rowsCreated;
 
 								//Create images
@@ -686,6 +697,7 @@ class Items_ItemController extends Zend_Controller_Action
 										$image['parentid'] = $itemid;
 										$image['module'] = 'items';
 										$image['controller'] = 'item';
+										$image['type'] = 'image';
 										//error_log(var_dump($image));
 										$itemMedia->addMedia($image);
 									}
