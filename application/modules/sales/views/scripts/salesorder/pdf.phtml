@@ -1,7 +1,7 @@
 <?php
 if (isset($this->template['filename']) && file_exists(BASE_PATH . '/templates/modules/sales/salesorder/' . $this->template['filename'] . '.phtml')) {
-    include BASE_PATH . '/templates/modules/sales/salesorder/' . $this->template['filename'] . '.phtml';
-    return;
+	include BASE_PATH . '/templates/modules/sales/salesorder/' . $this->template['filename'] . '.phtml';
+	return;
 }
 
 // Set default title and metadata
@@ -317,22 +317,22 @@ if($this->action == 'download') {
 
 function formatDate($date)
 {
-    return $date ? implode('.', array_reverse(explode('-', $date))) : null;
+	return $date ? implode('.', array_reverse(explode('-', $date))) : null;
 }
 
 function initializePdf($title)
 {
-    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-    $pdf->SetCreator(PDF_CREATOR);
-    $pdf->SetAuthor(PDF_AUTHOR);
-    $pdf->SetTitle($title);
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
-    $pdf->SetMargins(15, 30, 15);
-    $pdf->SetAutoPageBreak(true, 30);
-    $pdf->SetDisplayMode('real', 'OneColumn');
-    $pdf->AddPage();
-    return $pdf;
+	$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+	$pdf->SetCreator(PDF_CREATOR);
+	$pdf->SetAuthor(PDF_AUTHOR);
+	$pdf->SetTitle($title);
+	$pdf->setPrintHeader(false);
+	$pdf->setPrintFooter(false);
+	$pdf->SetMargins(15, 30, 15);
+	$pdf->SetAutoPageBreak(true, 30);
+	$pdf->SetDisplayMode('real', 'OneColumn');
+	$pdf->AddPage();
+	return $pdf;
 }
 
 function positions($positions, $settings, $pdf) {

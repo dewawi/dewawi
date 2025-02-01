@@ -1,7 +1,7 @@
 <?php
 if (isset($this->template['filename']) && file_exists(BASE_PATH . '/templates/modules/sales/quote/' . $this->template['filename'] . '.phtml')) {
-    include BASE_PATH . '/templates/modules/sales/quote/' . $this->template['filename'] . '.phtml';
-    return;
+	include BASE_PATH . '/templates/modules/sales/quote/' . $this->template['filename'] . '.phtml';
+	return;
 }
 
 // Set default title and metadata
@@ -80,11 +80,167 @@ if(isset($this->template) && $this->template['website']) {
 	$website = $client['website'];
 }
 
-//Logo
-if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
-	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
-	$pdf->Image($logo, 145, 10, 50, 0, '', $website);
+///////////////////////////////////////////////////
+$entryPages = 0;
+
+if($positions->count() > 0) {
+	$positionsArray = $positions->toArray();
+	$firstPosition = reset($positionsArray);
+
+	if(isset($this->items[$firstPosition['itemid']]) && isset($this->items[$firstPosition['itemid']]['shopdescription'])) {
+		$item = $this->items[$firstPosition['itemid']];
+		if(isset($this->media[$firstPosition['itemid']][0]['url'])) $mediaUrl = $this->media[$firstPosition['itemid']][0]['url'];
+
+		//IMPORTANT INFORMATIONS
+		$pdf->SetY(40);
+		$pdf->setCellPaddings(0, 0, 0, 0);
+		$pdf->SetFont('freesans', '', 9);
+		$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_QUOTE_ID'), 0, 'L', false, 0, 130);
+		if($quoteid) $pdf->MultiCell(40, 5, $quoteid, 0, 'L', false, 1, 160);
+		else $pdf->MultiCell(40, 5, ' - - - - - ', 0, 'L', false, 1, 160);
+		$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_QUOTE_DATE'), 0, 'L', false, 0, 130);
+		if($quotedate) $pdf->MultiCell(28, 5, $quotedate, 0, 'L', false, 1, 160);
+		else $pdf->MultiCell(28, 5, ' - - - - - ', 0, 'L', false, 1, 160);
+		$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_CUSTOMER_ID'), 0, 'L', false, 0, 130);
+		$pdf->MultiCell(28, 5, $contactid, 0, 'L', false, 1, 160);
+		if($vatin) {
+			$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_VATIN'), 0, 'L', false, 0, 130);
+			$pdf->MultiCell(84, 5, $vatin, 0, 'L', false, 1, 160);
+		}
+		if($deliverydate) {
+			$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_DELIVERY_DATE'), 0, 'L', false, 0, 130);
+			$pdf->MultiCell(84, 5, $deliverydate, 0, 'L', false, 1, 160);
+		}
+		$pdf->MultiCell(30, 5, $this->translate('DOCUMENTS_SALES_PERSON'), 0, 'L', false, 0, 130);
+		$pdf->MultiCell(84, 5, $this->quote['contactperson'], 0, 'L', false, 1, 160);
+		$pdf->ln(8);
+		$y = $pdf->GetY();
+
+		$pdf->setCellPaddings(0, 0, 0, 0);
+
+		$x = $pdf->GetX()+5;
+		$pdf->SetFont('freesansb', 'B', 15);
+		$pdf->MultiCell(0, 0, mb_strtoupper($this->translate('QUOTE'), 'UTF-8'), 0, 'L', false, 1, $x, 20);
+		$pdf->ln(22);
+
+		//LETTERHEAD
+		$pdf->SetFont('freesans', '', 7);
+		if(isset($this->template) && isset($this->template['company']) && $this->template['company']) {
+			$address = $this->template['company'];
+		} else {
+			$address = $client['company'];
+			if($client['address']) $address .= ', '.$client['address'];
+			if($client['postcode']) $address .= ', '.$client['postcode'];
+			if($client['city']) $address .= ' '.$client['city'];
+		}
+		$pdf->MultiCell(70, 4, $address, 'B', 'L', false, 1, $x);
+		$pdf->ln(4);
+		$pdf->SetFont('freesans', '', 10);
+
+		//Contact adress
+		if($contactid) {
+			$pdf->MultiCell(70, 0, $billingName1, 0, 'L', false, 1, $x);
+			if($billingName2) $pdf->MultiCell(70, 0, $billingName2, 0, 'L', false, 1, $x);
+			if($billingDepartment) $pdf->MultiCell(70, 0, $billingDepartment, 0, 'L', false, 1, $x);
+			if($billingStreet) $pdf->MultiCell(70, 0, $billingStreet, 0, 'L', false, 1, $x);
+			$pdf->MultiCell(70, 0, $billingPostcode.' '.$billingCity, 0, 'L', false, 1, $x);
+			$pdf->MultiCell(70, 0, $billingCountry, 0, 'L', false, 1, $x);
+			$pdf->ln(20);
+			if($y > $pdf->GetY()) $pdf->SetY($y);
+		}
+
+		$pdf->SetFont('freesans', 'B', 12);
+		if($this->quote['subject']) $pdf->MultiCell(165, 0, $this->translate('QUOTES_SUBJECT') . ': ' . $this->quote['subject'], 0, 'L', false, 1, 20, '', true, 0);
+		if($this->quote['reference']) $pdf->MultiCell(165, 0, $this->translate('QUOTES_REFERENCE') . ': ' . $this->quote['reference'], 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->SetFont('freesans', '', 10);
+		$pdf->MultiCell(165, 0, '', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(165, 0, '', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(165, 0, 'Vielen Dank für Ihre Anfrage. Im Anhang finden Sie unser Angebot.', 0, 'L', false, 1, 20, '', true, 0);
+		$y = $pdf->GetY();
+		if(isset($mediaUrl)) $pdf->Image(BASE_PATH.'/media/1/0/100/images/'.$mediaUrl, 120, '', 85, 0, '', '', 'N');
+		$pdf->SetFont('freesans', 'B', 10);
+		$pdf->SetY($y+8);
+		$pdf->MultiCell(100, 0, 'Inhalt des Angebots', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->SetFont('freesans', '', 10);
+		$pdf->MultiCell(45, 0, '1. Produktbeschreibung', 0, 'L', false, 0, 20, '', true, 0);
+		$xIndex1 = $pdf->GetX();
+		$yIndex1 = $pdf->GetY();
+		$pdf->ln();
+		$pdf->MultiCell(45, 0, '2. Verkaufsangebot', 0, 'L', false, 0, 20, '', true, 0);
+		$xIndex2 = $pdf->GetX();
+		$yIndex2 = $pdf->GetY();
+		$pdf->ln();
+		$pdf->MultiCell(45, 0, '3. Verkaufsbedingungen', 0, 'L', false, 0, 20, '', true, 0);
+		$xIndex3 = $pdf->GetX();
+		$yIndex3 = $pdf->GetY();
+		$pdf->ln();
+		$pdf->MultiCell(45, 0, '4. Optionale Ausstattung', 0, 'L', false, 0, 20, '', true, 0);
+		$xIndex4 = $pdf->GetX();
+		$yIndex4 = $pdf->GetY();
+		$pdf->ln();
+		$pdf->MultiCell(45, 0, '5. Bilder und Zeichnungen', 0, 'L', false, 0, 20, '', true, 0);
+		$xIndex5 = $pdf->GetX();
+		$yIndex5 = $pdf->GetY();
+		$pdf->ln();
+		$pdf->MultiCell(100, 0, '', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, '', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, 'Vielen Dank für Ihr Interesse an unseren Produkten. Wir stehen Ihnen bei Rückfragen gerne zur Verfügung.', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, '', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, '', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, 'Mit freundlichen Grüßen', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, $this->quote['contactperson'], 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, '', 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, $client['company'], 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, $client['address'], 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, $client['postcode'] . ' ' . $client['city'], 0, 'L', false, 1, 20, '', true, 0);
+
+		addPage($contactid, $quoteid, $quotedate, $website, $this->template, [$this, 'translate'], $pdf);
+
+		$descriptionStart = $pdf->GetPage();
+
+		$pdf->SetFont('freesansb', 'B', 15);
+		$pdf->MultiCell(0, 0, $item['title'], 0, 'L', false, 1, '', '');
+		$pdf->ln(4);
+		$pdf->SetFont('freesans', '', 9);
+		if($item['shopdescription']) $pdf->MultiCell(180, 0, removeImages($item['shopdescription']), 0, 'L', false, 1, '', '', true, 0, true);
+		$pdf->ln(4);
+		foreach($positions as $position) {
+			if(isset($options[$position->id])) {
+				$pdf->SetFont('freesans', 'B', 10);
+				$pdf->MultiCell(175, 0, 'Eigenschaften und bereits inkludierte Ausstattung für '.$position->sku.' '.$position->title, 0, 'L', false, 1, '', '', true, 0);
+				foreach($optionSets[$position->id] as $optionSet) {
+					if($pdf->getY() > 250) addPage($contactid, $quoteid, $quotedate, $website, $this->template, [$this, 'translate'], $pdf);
+					$pdf->SetFont('freesans', 'B', 10);
+					//$pdf->MultiCell(145, 0, $optionSet->title, 0, 'L', false, 0, '', '', true, 0);
+					//$pdf->MultiCell(30, 0, "", 0, 'R', false, 1, '', '', true, 0);
+					$pdf->SetFont('freesans', '', 9);
+					foreach($options[$position->id][$optionSet->id] as $option) {
+						if($option->price == 0) {
+							$pdf->MultiCell(15, 0, $option->sku, 0, 'L', false, 0, '', '', true, 0);
+							$pdf->SetFont('freesans', 'B', 9);
+							$pdf->MultiCell(130, 0, $option->title, 0, 'L', false, 0, '', '', true, 0);
+							$pdf->SetFont('freesans', '', 9);
+							$pdf->MultiCell(30, 0, 'bereits enthalten', 0, 'R', false, 1, 160, '', true, 0);
+							if($option->description) $pdf->MultiCell(120, 0, $option->description, 0, 'L', false, 1, 30, '', true, 0);
+						}
+					}
+				}
+				$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+				$pdf->setY($pdf->getY()+2);
+			}
+		}
+
+		$entryPages = $pdf->GetPage();
+		$descriptionEnd = $pdf->GetPage();
+
+		$pdf->AddPage();
+	}
 }
+///////////////////////////////////////////////////
+
+
+$offerStart = $pdf->GetPage();
+$offerEnd = $pdf->GetPage();
 
 //IMPORTANT INFORMATIONS
 $pdf->SetY(40);
@@ -179,26 +335,49 @@ if(count($positions)) {
 	positionsHeader($settings, $pdf, [$this, 'translate']);
 
 	//POSITIONS
+	$offerStartPage = $pdf->GetPage();
 	positions($positions, $attributesByGroup, $settings, $pdf);
+	$offerEndPage = $pdf->GetPage();
 
 	//TOTAL BOX
 	if($settings['displayPrices']) {
 		totalBox($pdf, $positions, $settings, $this->quote, [$this, 'translate']);
 	}
+	$offerEnd = $pdf->GetPage();
+
+	//FOOTER
+	$pdf->AddPage();
+	$footerStartPage = $pdf->GetPage();
+	footer($footer, $pdf);
+	$footerEndPage = $pdf->GetPage();
 
 	//OPTIONS
+	$optionsStartPage = $pdf->GetPage()+1;
 	if($settings['displayOptions'] && isset($options)) {
 		options($positions, $options, $optionSets, $settings, $pdf);
 	}
-
-	//FOOTER
-	$pdf->SetFont('freesansb', '', 9);
-	$pdf->MultiCell(105, 0, $footer, 0, 'L', false, 0, '', '', $reseth=true, $stretch=0, $ishtml=true);
-
-	$pdf->setCellPaddings(3, 1, 3, 1);
-
-	$pdf->SetFont('freesansb', 'B', 10);
+	$optionsEndPage = $pdf->GetPage();
 }
+
+$imagesStartPage = $pdf->GetPage()+1;
+if($positions->count() > 0) {
+	$positionsArray = $positions->toArray();
+	$firstPosition = reset($positionsArray);
+	if(isset($this->media[$firstPosition['itemid']])) {
+		foreach($this->media[$firstPosition['itemid']] as $media) {
+			$pdf->AddPage();
+			$pdf->ln(4);
+			$pdf->SetFont('freesansb', 'B', 11);
+			$pdf->MultiCell(108, 0, $media['title'], 0, 'L', false, 1, '', '', true, 0);
+			$pdf->SetFont('freesansb', '', 9);
+			$pdf->MultiCell(108, 0, 'Abbildung ähnlich', 0, 'L', false, 1, '', '', true, 0);
+			$pdf->ln(4);
+			$pdf->Image(BASE_PATH.'/media/1/0/100/images/'.$media['url'], 20, '', 165, 0, '', '', 'N');
+			$pdf->SetFont('freesansb', '', 10);
+		}
+	}
+}
+$imagesEndPage = $pdf->GetPage();
 
 $i = 1;
 $lastPage = $pdf->getNumPages();
@@ -212,9 +391,82 @@ while($i <= $lastPage) {
 	if($this->quote['state'] == 7) {
 		cancelled($pdf, strtoupper($this->translate('DOCUMENTS_CANCELLED')));
 	}
-	if($i > 1 + $entryPages) {
-		if(isset($logo)) {
-			$pdf->Image($logo, 155, 10, 40, 0, '', $website);
+	if($i == 1) {
+		addLogo(145, 10, 50, $website, $this->template, $pdf);
+		$pdf->SetFont('freesans', '', 10);
+		if(isset($xIndex1) && isset($yIndex1)) {
+			if($descriptionEnd > $descriptionStart) {
+				$pdf->MultiCell(30, 0, '(Seite '. $descriptionStart.'-'.$descriptionEnd.')', 0, 'L', false, 0, $xIndex1, $yIndex1-1, true, 0);
+			} else {
+				$pdf->MultiCell(30, 0, '(Seite '. $descriptionStart.')', 0, 'L', false, 0, $xIndex1, $yIndex1-1, true, 0);
+			}
+		} if(isset($xIndex2) && isset($yIndex2)) {
+			if($offerEnd > $offerStart) {
+				$pdf->MultiCell(30, 0, '(Seite '. $offerStart.'-'.$offerEnd.')', 0, 'L', false, 0, $xIndex2, $yIndex2-1, true, 0);
+			} else {
+				$pdf->MultiCell(30, 0, '(Seite '. $offerStart.')', 0, 'L', false, 0, $xIndex2, $yIndex2-1, true, 0);
+			}
+		} if(isset($xIndex3) && isset($yIndex3)) {
+			if($footerEndPage > $footerStartPage) {
+				$pdf->MultiCell(30, 0, '(Seite '. $footerStartPage.'-'.$footerEndPage.')', 0, 'L', false, 0, $xIndex3, $yIndex3-1, true, 0);
+			} else {
+				$pdf->MultiCell(30, 0, '(Seite '. $footerStartPage.')', 0, 'L', false, 0, $xIndex3, $yIndex3-1, true, 0);
+			}
+		} if(isset($xIndex4) && isset($yIndex4)) {
+			if($optionsEndPage > $optionsStartPage) {
+				$pdf->MultiCell(30, 0, '(Seite '. $optionsStartPage.'-'.$optionsEndPage.')', 0, 'L', false, 0, $xIndex4, $yIndex4-1, true, 0);
+			} else {
+				$pdf->MultiCell(30, 0, '(Seite '. $optionsStartPage.')', 0, 'L', false, 0, $xIndex4, $yIndex4-1, true, 0);
+			}
+		} if(isset($xIndex5) && isset($yIndex5)) {
+			if($imagesEndPage > $imagesStartPage) {
+				$pdf->MultiCell(30, 0, '(Seite '. $imagesStartPage.'-'.$imagesEndPage.')', 0, 'L', false, 0, $xIndex5, $yIndex5-1, true, 0);
+			} else {
+				$pdf->MultiCell(30, 0, '(Seite '. $imagesStartPage.')', 0, 'L', false, 0, $xIndex5, $yIndex5-1, true, 0);
+			}
+		}
+	} elseif($i < (1 + $entryPages)) {
+		addLogo(145, 10, 50, $website, $this->template, $pdf);
+
+		$pdf->SetFont('freesansb', 'B', 10);
+		$pdf->MultiCell(0, 0, mb_strtoupper($this->translate('1. Produktbeschreibung'), 'UTF-8'), 0, 'L', false, 1, 16, 10);
+		$pdf->ln(4);
+
+		//New page info box
+		$pdf->setCellPaddings(1, 1, 0, 0);
+		$pdf->SetFont('freesans', '', 8);
+		$pdf->Write(0, $this->translate('DOCUMENTS_QUOTE_ID').' ');
+		$pdf->SetFont('freesansb', 'B', 8);
+		if($quoteid) $pdf->Write(0, $quoteid.'   ');
+		else $pdf->Write(0, ' - - - - -  ');
+		$pdf->SetFont('freesans', '', 8);
+		$pdf->Write(0, $this->translate('DOCUMENTS_QUOTE_DATE').' ');
+		$pdf->SetFont('freesansb', 'B', 8);
+		if($quotedate) $pdf->Write(0, $quotedate.'   ');
+		else $pdf->Write(0, ' - - - - -  ');
+		$pdf->SetFont('freesans', '', 8);
+		$pdf->Write(0, $this->translate('DOCUMENTS_CUSTOMER_ID').' ');
+		$pdf->SetFont('freesansb', 'B', 8);
+		$pdf->Write(0, $contactid);
+		$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY(), true, 0);
+		$pdf->ln();
+	} elseif($i == (1 + $entryPages)) {
+		addLogo(145, 10, 50, $website, $this->template, $pdf);
+	} elseif($i > (1 + $entryPages)) {
+		addLogo(155, 10, 40, $website, $this->template, $pdf);
+
+		if(($i >= $footerStartPage) && ($i <= $footerEndPage)) {
+			$pdf->SetFont('freesansb', 'B', 10);
+			$pdf->MultiCell(0, 0, mb_strtoupper($this->translate('3. Verkaufsbedingungen'), 'UTF-8'), 0, 'L', false, 1, 16, 10);
+			$pdf->ln(4);
+		} elseif(($i >= $optionsStartPage) && ($i <= $optionsEndPage)) {
+			$pdf->SetFont('freesansb', 'B', 10);
+			$pdf->MultiCell(0, 0, mb_strtoupper($this->translate('4. Optionale Ausstattung'), 'UTF-8'), 0, 'L', false, 1, 16, 10);
+			$pdf->ln(4);
+		} elseif(($i >= $imagesStartPage) && ($i <= $imagesEndPage)) {
+			$pdf->SetFont('freesansb', 'B', 10);
+			$pdf->MultiCell(0, 0, mb_strtoupper($this->translate('5. Bilder und Zeichnungen'), 'UTF-8'), 0, 'L', false, 1, 16, 10);
+			$pdf->ln(4);
 		}
 
 		$y = $pdf->GetY();
@@ -312,22 +564,35 @@ if($this->action == 'download') {
 
 function formatDate($date)
 {
-    return $date ? implode('.', array_reverse(explode('-', $date))) : null;
+	return $date ? implode('.', array_reverse(explode('-', $date))) : null;
 }
 
 function initializePdf($title)
 {
-    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-    $pdf->SetCreator(PDF_CREATOR);
-    $pdf->SetAuthor(PDF_AUTHOR);
-    $pdf->SetTitle($title);
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
-    $pdf->SetMargins(15, 30, 15);
-    $pdf->SetAutoPageBreak(true, 30);
-    $pdf->SetDisplayMode('real', 'OneColumn');
-    $pdf->AddPage();
-    return $pdf;
+	$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+	$pdf->SetCreator(PDF_CREATOR);
+	$pdf->SetAuthor(PDF_AUTHOR);
+	$pdf->SetTitle($title);
+	$pdf->setPrintHeader(false);
+	$pdf->setPrintFooter(false);
+	$pdf->SetMargins(15, 30, 15);
+	$pdf->SetAutoPageBreak(true, 30);
+	$pdf->SetDisplayMode('real', 'OneColumn');
+	$pdf->AddPage();
+	return $pdf;
+}
+
+function addPage($contactid, $quoteid, $quotedate, $website, $template, $translate, $pdf)
+{
+	$pdf->AddPage();
+}
+
+function addLogo($x, $y, $width, $website, $template, $pdf)
+{
+	if(isset($template) && $template['logo'] && file_exists(BASE_PATH.'/files/images/'.$template['logo'])) {
+		$logo = BASE_PATH.'/files/images/'.$template['logo'];
+		$pdf->Image($logo, $x, $y, $width, 0, '', $website);
+	}
 }
 
 function positions($positions, $attributesByGroup, $settings, $pdf) {
@@ -535,6 +800,46 @@ function childPositions($position, $settings, $pdf, $i) {
 	}
 }
 
+function removeImages($html) {
+	// Create a new DOMDocument instance
+	$doc = new DOMDocument();
+
+	// Suppress warnings from invalid HTML
+	libxml_use_internal_errors(true);
+
+	// Ensure the HTML is properly encoded
+	$html = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
+
+	// Load the HTML
+	$doc->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+	// Restore error handling
+	libxml_clear_errors();
+
+	// Get all <img> tags
+	$images = $doc->getElementsByTagName('img');
+
+	// Remove all <img> tags
+	while ($images->length > 0) {
+		$img = $images->item(0);
+		$img->parentNode->removeChild($img);
+	}
+
+	// Get the updated HTML
+	$updatedHtml = $doc->saveHTML();
+
+	return $updatedHtml;
+}
+
+function footer($footer, $pdf) {
+	$pdf->SetFont('freesansb', '', 9);
+	$pdf->MultiCell(165, 0, $footer, 0, 'L', false, 0, '', '', $reseth=true, $stretch=0, $ishtml=true);
+
+	$pdf->setCellPaddings(3, 1, 3, 1);
+
+	$pdf->SetFont('freesansb', 'B', 10);
+}
+
 function options($positions, $options, $optionSets, $settings, $pdf) {
 	$y = 0;
 	$list = array();
@@ -563,7 +868,7 @@ function options($positions, $options, $optionSets, $settings, $pdf) {
 				$pdf->MultiCell(30, 0, "- optional -", 0, 'R', false, 1, '', '', true, 0);
 				$pdf->SetFont('freesans', '', 9);
 				foreach($options[$position->id][$optionSet->id] as $option) {
-					if(array_search($option->sku, $list) == false) {
+					if(($option->price != 0) && (array_search($option->sku, $list) == false)) {
 						$pdf->MultiCell(15, 0, $option->sku, 0, 'L', false, 0, '', '', true, 0);
 						$pdf->MultiCell(130, 0, $option->title, 0, 'L', false, 0, '', '', true, 0);
 						if($option->price == 0) $option->price = 'bereits enthalten';
