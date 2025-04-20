@@ -46,7 +46,7 @@ class Admin_Form_Toolbar extends Zend_Form
 
 		$form['shopid'] = new Zend_Form_Element_Select('shopid');
 		$form['shopid']->setDecorators(array('ViewHelper'))
-			->addMultiOption('0', 'ADMIN_NONE');
+			->addMultiOption('0', 'ADMIN_SELECT');
 
 		$form['language'] = new Zend_Form_Element_Select('language');
 		$form['language']->setDecorators(array('ViewHelper'))

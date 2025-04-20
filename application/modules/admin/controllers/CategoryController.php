@@ -254,7 +254,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 					$toolbar = new Admin_Form_Toolbar();
 
 					//Tags
-					$get = new Shops_Model_Get();
+					$get = new Admin_Model_Get();
 					$tags = $get->tags($module, 'category', $category['id']);
 
 					//Get media
@@ -354,7 +354,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 			$data = $request->getPost();
 			$categoryDb = new Admin_Model_DbTable_Category();
 			$category = $categoryDb->getCategory($data['id']);
-			$orderings = $this->getOrdering($category['clientid'], $category['type'], $category['parentid']);
+			$orderings = $this->getOrdering($category['clientid'], $category['type'], $category['parentid'], $category['shopid']);
 			$currentOrdering = array_search($data['id'], $orderings);
 			if(($data['ordering'] == 'down') && (isset($orderings[$currentOrdering+1]))) {
 				$categoryDb->sortCategory($data['id'], $currentOrdering+1);
@@ -538,11 +538,11 @@ class Admin_CategoryController extends Zend_Controller_Action
 		}
 	}
 
-	protected function getOrdering($clientid, $type, $parentid)
+	protected function getOrdering($clientid, $type, $parentid, $shopid = 0)
 	{
 		$i = 1;
 		$categoriesDb = new Admin_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories($type, $parentid);
+		$categories = $categoriesDb->getCategories($type, $parentid, $shopid);
 		$orderings = array();
 		foreach($categories as $category) {
 			if(isset($category['id'])) {

@@ -28,16 +28,14 @@ class Admin_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
-	public function getCategories($type, $parentid = null, $shopid = null)
+	public function getCategories($type, $parentid = null, $shopid = 0)
 	{
 		// Prepare the where conditions
 		$where = [];
 		if ($parentid !== null) {
 			$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
 		}
-		if ($shopid !== null) {
-			$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		}
+		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
 		$where[] = $this->getAdapter()->quoteInto('type = ?', $type);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);

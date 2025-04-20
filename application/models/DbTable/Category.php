@@ -18,6 +18,16 @@ class Application_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
+	public function getCategory($id)
+	{
+		$id = (int)$id;
+		$row = $this->fetchRow('id = ' . $id);
+		if (!$row) {
+			throw new Exception("Could not find row $id");
+		}
+		return $row->toArray();
+	}
+
 	public function getCategories($type, $parentid = null)
 	{
 		// Prepare the where conditions
