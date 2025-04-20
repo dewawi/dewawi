@@ -74,7 +74,7 @@ $downloads = false;
 				</div>
 			</div>
 			<div class="col-md-6 mb-4">
-				<?php if($this->item['shopdescriptionshort']) : ?>
+				<?php if($this->item['shopdescription']) : ?>
 					<p><?php echo $this->item['shopdescription']; ?></p>
 				<?php else : ?>
 					<p><?php echo nl2br($this->item['description']); ?></p>
@@ -86,7 +86,10 @@ $downloads = false;
 				</div>
 
 				<div style="margin-bottom: 10px;">
-					<p style="margin-bottom: 0;"><strong><?php echo $this->prices['formatted']; ?></strong></p>
+					<p style="margin-bottom: 0;">
+						<span style="font-size: 1.3rem;">Listenpreis: <?php echo $this->prices['formatted']; ?></span><br>
+						<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+					</p>
 					<?php if($this->prices['rawtax'] > $this->prices['raw']) : ?>
 						<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices['formattedtax']; ?> inkl. MwSt.</p>
 					<?php endif; ?>
@@ -166,47 +169,49 @@ $downloads = false;
 </section>
 
 <!-- Downloads -->
-<section id="downloads" class="py-5">
-	<div class="container">
-		<?php if (!empty($this->item['downloads']) || $downloads) : ?>
-			<div class="card card-body">
-				<ul>
-					<?php $categoryImages = $this->images['categories'][$this->category['id']]; ?>
-					<?php foreach ($categoryImages as $file) : ?>
-						<?php if ($file->type == 'download') : ?>
-							<li>
-								<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
-									<?php echo $this->escape($file->title); ?></a>
-							</li>
-						<?php endif; ?>
-					<?php endforeach; ?>
-					<?php
-					if (!empty($this->item['downloads'])) {
-						// Split the download string into language and file name
-						list($lang, $filePath) = explode('|', $this->item['downloads']);
-						// Extract just the filename from the file path
-						$fileName = basename($filePath);
-
-						// Full server path to the file
-						$serverFilePath = BASE_PATH . '/media/' . $this->escape($this->imagePath) . '/downloads/' . $filePath;
-
-						// Check if the file exists
-						if (file_exists($serverFilePath)) {
+<?php if(isset($this->images['categories'])) : ?>
+	<section id="downloads" class="py-5">
+		<div class="container">
+			<?php if (!empty($this->item['downloads']) || $downloads) : ?>
+				<div class="card card-body">
+					<ul>
+						<?php $categoryImages = $this->images['categories'][$this->category['id']]; ?>
+						<?php foreach ($categoryImages as $file) : ?>
+							<?php if ($file->type == 'download') : ?>
+								<li>
+									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
+										<?php echo $this->escape($file->title); ?></a>
+								</li>
+							<?php endif; ?>
+						<?php endforeach; ?>
+						<?php
+						if (!empty($this->item['downloads'])) {
+							// Split the download string into language and file name
+							list($lang, $filePath) = explode('|', $this->item['downloads']);
 							// Extract just the filename from the file path
 							$fileName = basename($filePath);
-						?>
-							<li>
-								<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($filePath); ?>" target="_blank">
-									<?php echo $this->escape($fileName); ?></a>
-								(<?php echo strtoupper($lang); ?>)
-							</li>
+
+							// Full server path to the file
+							$serverFilePath = BASE_PATH . '/media/' . $this->escape($this->imagePath) . '/downloads/' . $filePath;
+
+							// Check if the file exists
+							if (file_exists($serverFilePath)) {
+								// Extract just the filename from the file path
+								$fileName = basename($filePath);
+							?>
+								<li>
+									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($filePath); ?>" target="_blank">
+										<?php echo $this->escape($fileName); ?></a>
+									(<?php echo strtoupper($lang); ?>)
+								</li>
+							<?php } ?>
 						<?php } ?>
-					<?php } ?>
-				</ul>
-			</div>
-		<?php endif; ?>
-	</div>
-</section>
+					</ul>
+				</div>
+			<?php endif; ?>
+		</div>
+	</section>
+<?php endif; ?>
 
 <!-- Inquiry -->
 <section id="inquiry" class="py-5">

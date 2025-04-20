@@ -9,16 +9,28 @@ class Zend_View_Helper_RenderCategory extends Zend_View_Helper_Abstract
 		$output .= '<div class="col-md-3 mb-3 px-2 d-flex align-items-stretch">';
 		$output .= '	<div class="card">';
 		$output .= '		<a href="' . $this->view->url([], 'category_' . $category['id']) . '">';
-		if (isset($this->view->images['categories'][$category['id']][0])) {
+		if (isset($this->view->images['categories'][$category['id']][0]) && ($this->view->images['categories'][$category['id']][0]->type == 'image')) {
 			$categoryImage = $this->view->images['categories'][$category['id']][0]->url;
+			$output .= '			<a href="' . $this->view->url([], 'category_' . $category['id']) . '">';
+			$output .= '				<img src="' . $this->view->baseUrl() . '/media/category/' . $categoryImage . '" class="card-img-top" alt="Category Image">';
+			$output .= '			</a>';
+		} elseif (isset($this->view->images['categories'][$category['id']][1]) && ($this->view->images['categories'][$category['id']][1]->type == 'image')) {
+			$categoryImage = $this->view->images['categories'][$category['id']][1]->url;
 			$output .= '			<a href="' . $this->view->url([], 'category_' . $category['id']) . '">';
 			$output .= '				<img src="' . $this->view->baseUrl() . '/media/category/' . $categoryImage . '" class="card-img-top" alt="Category Image">';
 			$output .= '			</a>';
 		}
 		$output .= '		</a>';
-		if (isset($this->view->images['categories'][$category['id']][0])) {
+		if (isset($this->view->images['categories'][$category['id']][0]) && ($this->view->images['categories'][$category['id']][0]->type == 'image')) {
 			if ($this->view->images['categories'][$category['id']][0]->title || $category['subtitle']) {
 				$subtitle = $this->view->images['categories'][$category['id']][0]->title ? $this->view->images['categories'][$category['id']][0]->title : $category['subtitle'];
+				$output .= '		<div class="category-text">';
+				$output .= '			<h3 class="text-right text-white">' . $subtitle . '</h3>';
+				$output .= '		</div>';
+			}
+		} elseif (isset($this->view->images['categories'][$category['id']][1]) && ($this->view->images['categories'][$category['id']][1]->type == 'image')) {
+			if ($this->view->images['categories'][$category['id']][1]->title || $category['subtitle']) {
+				$subtitle = $this->view->images['categories'][$category['id']][1]->title ? $this->view->images['categories'][$category['id']][1]->title : $category['subtitle'];
 				$output .= '		<div class="category-text">';
 				$output .= '			<h3 class="text-right text-white">' . $subtitle . '</h3>';
 				$output .= '		</div>';

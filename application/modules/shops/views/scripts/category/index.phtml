@@ -37,13 +37,15 @@ $downloads = false;
 								<div class="carousel-inner">
 									<?php $categoryImages = $this->images['categories'][$this->category['id']]; ?>
 									<?php if(count($categoryImages)) : ?>
-										<?php foreach ($categoryImages as $index => $image) : ?>
+										<?php $n = 0; ?>
+										<?php foreach ($categoryImages as $image) : ?>
 											<?php if ($image->type == 'image') : ?>
-												<div class="carousel-item<?php echo $index === 0 ? ' active' : ''; ?>">
+												<div class="carousel-item<?php echo $n === 0 ? ' active' : ''; ?>">
 													<a href="<?php //echo $this->url(array('category' => $this->category['slug'], 'item' => $this->items[0]->slug), 'categoryitem'); ?>">
 														<img src="<?php echo $this->baseUrl(); ?>/media/category/<?php echo $image->url; ?>" class="d-block w-100" alt="Item Image">
 													</a>
 												</div>
+												<?php ++$n; ?>
 											<?php elseif ($image->type == 'download') : ?>
 												<?php $downloads = true; ?>
 											<?php endif; ?>
@@ -174,7 +176,23 @@ foreach ($this->categories as $subcategory) {
 					<?php if($item->title) : ?>
 						<div class="list-group-item">
 							<div class="row d-flex align-items-center"> <!-- Flexbox and vertical alignment -->
-								<div class="col-md-5 d-flex align-items-center">
+								<div class="col-md-1 d-flex align-items-center">
+									<!-- Image -->
+									<?php if (count($this->images['items'][$item->id]) > 0): ?>
+										<?php $folder = 'images'; ?>
+										<div class="image-grid" style="width: 100%;">
+											<?php foreach ($this->images['items'][$item->id] as $image): ?>
+												<div class="image">
+													<a href="<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>" target="_blank">
+														<img src="<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>" alt="<?php //echo $this->escape($image->title); ?>" class="image-thumbnail" style="width: 100%;"/>
+													</a>
+												</div>
+				                                <?php break; // show only the first image ?>
+											<?php endforeach; ?>
+										</div>
+									<?php endif; ?>
+								</div>
+								<div class="col-md-4 d-flex align-items-center">
 									<button class="btn btn-info mr-2" type="button" data-toggle="collapse" data-target="#details_<?php echo $item->id; ?>" aria-expanded="false" aria-controls="details_<?php echo $item->id; ?>">
 										+
 									</button>
@@ -191,8 +209,11 @@ foreach ($this->categories as $subcategory) {
 										<span><?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $item->sku; ?></span>
 									</div>
 								</div>
-								<div class="col-md-3">
-									<p style="margin-bottom: 0;"><strong><?php echo $this->prices[$item->id]['formatted']; ?></strong> *</p>
+								<div class="col-md-5">
+									<p style="margin-bottom: 0;">
+										<strong>Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></strong> *<br>
+										<span style="font-size: 0.8rem;"><strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong></span>
+									</p>
 									<?php if($this->prices[$item->id]['rawtax'] > $this->prices[$item->id]['raw']) : ?>
 										<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices[$item->id]['formattedtax']; ?> inkl. MwSt.</p>
 									<?php endif; ?>
@@ -209,7 +230,7 @@ foreach ($this->categories as $subcategory) {
 								</div>
 
 								<!-- Add to Cart Button -->
-								<div class="col-md-2 d-flex justify-content-end">
+								<!-- <div class="col-md-2 d-flex justify-content-end">
 									<button 
 										class="btn btn-info add-to-cart" 
 										data-id="<?php echo $item->id; ?>" 
@@ -218,7 +239,7 @@ foreach ($this->categories as $subcategory) {
 										data-price="<?php echo $this->prices[$item->id]['raw']; ?>">
 										<?php echo $this->translate('SHOPS_ADD_TO_CART'); ?>
 									</button>
-								</div>
+								</div> -->
 							</div>
 
 							<!-- Product details with tabs -->
