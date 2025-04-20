@@ -135,6 +135,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
             if(isset($data['replyto']) && $data['replyto']) {
 			    $data['replyto'] = str_replace(' ', '', $data['replyto']);				// Remove spaces
 			    if($data['replyto']) $mail->addReplyTo($data['replyto']);				// Add reply to
+            }
+            if(isset($data['cc']) && $data['cc']) {
 			    $data['cc'] = str_replace(' ', '', $data['cc']);						// Remove spaces
 			    if($data['cc']) {														// Add copy recipients
 				    if(strpos($data['cc'], ',') !== false) {
