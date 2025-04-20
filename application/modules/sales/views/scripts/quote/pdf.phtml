@@ -61,10 +61,7 @@ $options = $this->options;
 $optionSets = $this->optionSets;
 
 //Attributes
-if($this->template['id'] == 101)
-	$attributesByGroup = $this->attributesByGroup;
-else
-	$attributesByGroup = null;
+$attributesByGroup = $this->attributesByGroup;
 
 // Initialize TCPDF
 require_once(BASE_PATH . '/library/Tcpdf/config/tcpdf_config.php');
@@ -204,29 +201,44 @@ if($positions->count() > 0) {
 		$pdf->SetFont('freesans', '', 9);
 		if($item['shopdescription']) $pdf->MultiCell(180, 0, removeImages($item['shopdescription']), 0, 'L', false, 1, '', '', true, 0, true);
 		$pdf->ln(4);
+		$includedOptions = 0;
 		foreach($positions as $position) {
 			if(isset($options[$position->id])) {
-				$pdf->SetFont('freesans', 'B', 10);
-				$pdf->MultiCell(175, 0, 'Eigenschaften und bereits inkludierte Ausstattung für '.$position->sku.' '.$position->title, 0, 'L', false, 1, '', '', true, 0);
 				foreach($optionSets[$position->id] as $optionSet) {
-					if($pdf->getY() > 250) addPage($contactid, $quoteid, $quotedate, $website, $this->template, [$this, 'translate'], $pdf);
-					$pdf->SetFont('freesans', 'B', 10);
-					//$pdf->MultiCell(145, 0, $optionSet->title, 0, 'L', false, 0, '', '', true, 0);
-					//$pdf->MultiCell(30, 0, "", 0, 'R', false, 1, '', '', true, 0);
-					$pdf->SetFont('freesans', '', 9);
 					foreach($options[$position->id][$optionSet->id] as $option) {
 						if($option->price == 0) {
-							$pdf->MultiCell(15, 0, $option->sku, 0, 'L', false, 0, '', '', true, 0);
-							$pdf->SetFont('freesans', 'B', 9);
-							$pdf->MultiCell(130, 0, $option->title, 0, 'L', false, 0, '', '', true, 0);
-							$pdf->SetFont('freesans', '', 9);
-							$pdf->MultiCell(30, 0, 'bereits enthalten', 0, 'R', false, 1, 160, '', true, 0);
-							if($option->description) $pdf->MultiCell(120, 0, $option->description, 0, 'L', false, 1, 30, '', true, 0);
+							$includedOptions = 1;
+							break;
 						}
 					}
 				}
-				$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
-				$pdf->setY($pdf->getY()+2);
+			}
+		}
+		if($includedOptions) {
+			foreach($positions as $position) {
+				if(isset($options[$position->id])) {
+					$pdf->SetFont('freesans', 'B', 13);
+					$pdf->MultiCell(175, 0, 'Eigenschaften und bereits inkludierte Ausstattung für '.$position->sku.' '.$position->title, 0, 'L', false, 1, '', '', true, 0);
+					foreach($optionSets[$position->id] as $optionSet) {
+						if($pdf->getY() > 250) addPage($contactid, $quoteid, $quotedate, $website, $this->template, [$this, 'translate'], $pdf);
+						$pdf->SetFont('freesans', 'B', 10);
+						//$pdf->MultiCell(145, 0, $optionSet->title, 0, 'L', false, 0, '', '', true, 0);
+						//$pdf->MultiCell(30, 0, "", 0, 'R', false, 1, '', '', true, 0);
+						$pdf->SetFont('freesans', '', 9);
+						foreach($options[$position->id][$optionSet->id] as $option) {
+							if($option->price == 0) {
+								$pdf->MultiCell(15, 0, $option->sku, 0, 'L', false, 0, '', '', true, 0);
+								$pdf->SetFont('freesans', 'B', 9);
+								$pdf->MultiCell(130, 0, $option->title, 0, 'L', false, 0, '', '', true, 0);
+								$pdf->SetFont('freesans', '', 9);
+								$pdf->MultiCell(30, 0, 'bereits enthalten', 0, 'R', false, 1, 160, '', true, 0);
+								if($option->description) $pdf->MultiCell(120, 0, $option->description, 0, 'L', false, 1, 30, '', true, 0);
+							}
+						}
+					}
+					$pdf->MultiCell(0, 5, ' ', 'B', 'L', false, 1, '', $pdf->getY()-2, true, 0);
+					$pdf->setY($pdf->getY()+2);
+				}
 			}
 		}
 
@@ -598,6 +610,7 @@ function addLogo($x, $y, $width, $website, $template, $pdf)
 function positions($positions, $attributesByGroup, $settings, $pdf) {
 	$y = 0;
 	$i = 1;
+	$a = 1;
 	$positionsArray = array();
 	$childsArray = array();
 	foreach($positions as $position) {
@@ -640,16 +653,18 @@ function positions($positions, $attributesByGroup, $settings, $pdf) {
 
 				// Display attributes
 				if (isset($attributesByGroup[$position->id])) {
-					foreach ($attributesByGroup[$position->id] as $attributeSet) {
-						// Add a top margin before each attribute set title
-						$currentY = $pdf->GetY();
-						$margin = 5; // Set your desired margin size
-						$pdf->SetY($currentY + $margin);
-						$pdf->SetFont('freesans', 'B', 9);
-						$pdf->MultiCell(108, 0, $attributeSet['title'], 0, 'L', false, 2, $x + 10, '', true, 0);
-						$pdf->SetFont('freesans', '', 9);
-						foreach ($attributeSet['attributes'] as $attribute) {
-							$pdf->MultiCell(108, 0, $attribute['title'] . ': ' . $attribute['description'], 0, 'L', false, 2, $x + 10, '', true, 0);
+					if (!$position->description) {
+						foreach ($attributesByGroup[$position->id] as $attributeSet) {
+							// Add a top margin before each attribute set title
+							$currentY = $pdf->GetY();
+							$margin = 5; // Set your desired margin size
+							$pdf->SetY($currentY + $margin);
+							$pdf->SetFont('freesans', 'B', 9);
+							$pdf->MultiCell(108, 0, $attributeSet['title'], 0, 'L', false, 2, $x + 10, '', true, 0);
+							$pdf->SetFont('freesans', '', 9);
+							foreach ($attributeSet['attributes'] as $attribute) {
+								$pdf->MultiCell(108, 0, $attribute['title'] . ': ' . $attribute['description'], 0, 'L', false, 2, $x + 10, '', true, 0);
+							}
 						}
 					}
 				}
@@ -710,6 +725,7 @@ function positions($positions, $attributesByGroup, $settings, $pdf) {
 				}
 			}
 		}
+		++$a;
 	}
 	$pdf->ln(4);
 }

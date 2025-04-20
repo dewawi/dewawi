@@ -546,6 +546,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$items = array();
 		$categories = array();
 		$media = array();
+		$attributesByGroup = array();
 		foreach($positions as $position) {
 			if($position->itemid) {
 				//Get item
@@ -571,7 +572,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 				$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
 
 				//Attributes
-				$attributesByGroup = array();
 				$attributesDb = new Items_Model_DbTable_Itematr();
 				foreach($attributeSets as $attributeSetId => $attributeSet) {
 					$attributesByGroup[$position->id][$attributeSetId] = array();
@@ -587,10 +587,9 @@ class Sales_QuoteController extends Zend_Controller_Action
 						'attributes' => $otherAttributes
 					);
 				}
-
-				$this->view->attributesByGroup = $attributesByGroup;
 			}
 		}
+		$this->view->attributesByGroup = $attributesByGroup;
 
 		//Get footers
 		$footerDb = new Application_Model_DbTable_Footer();
@@ -653,6 +652,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$items = array();
 		$categories = array();
 		$media = array();
+		$attributesByGroup = array();
 		foreach($positions as $position) {
 			if($position->itemid) {
 				//Get item
@@ -678,7 +678,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 				$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
 
 				//Attributes
-				$attributesByGroup = array();
 				$attributesDb = new Items_Model_DbTable_Itematr();
 				foreach($attributeSets as $attributeSetId => $attributeSet) {
 					$attributesByGroup[$position->id][$attributeSetId] = array();
@@ -694,10 +693,9 @@ class Sales_QuoteController extends Zend_Controller_Action
 						'attributes' => $otherAttributes
 					);
 				}
-
-				$this->view->attributesByGroup = $attributesByGroup;
 			}
 		}
+		$this->view->attributesByGroup = $attributesByGroup;
 
 		//Get footers
 		$footerDb = new Application_Model_DbTable_Footer();
@@ -747,6 +745,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$items = array();
 		$categories = array();
 		$media = array();
+		$attributesByGroup = array();
 		foreach($positions as $position) {
 			if($position->itemid) {
 				//Get item
@@ -772,7 +771,6 @@ class Sales_QuoteController extends Zend_Controller_Action
 				$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
 
 				//Attributes
-				$attributesByGroup = array();
 				$attributesDb = new Items_Model_DbTable_Itematr();
 				foreach($attributeSets as $attributeSetId => $attributeSet) {
 					$attributesByGroup[$position->id][$attributeSetId] = array();
@@ -788,10 +786,9 @@ class Sales_QuoteController extends Zend_Controller_Action
 						'attributes' => $otherAttributes
 					);
 				}
-
-				$this->view->attributesByGroup = $attributesByGroup;
 			}
 		}
+		$this->view->attributesByGroup = $attributesByGroup;
 
 		//Get footers
 		$footerDb = new Application_Model_DbTable_Footer();
