@@ -25,6 +25,9 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 						'email' => $identity->email,
 						'emailsender' => $identity->emailsender,
 						'emailsignature' => $identity->emailsignature,
+						'smtphost' => $identity->smtphost,
+						'smtpuser' => $identity->smtpuser,
+						'smtppass' => $identity->smtppass,
 						'admin' => $identity->admin,
 						'clientid' => $identity->clientid,
 						'activated' => $identity->activated,
@@ -287,9 +290,97 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 			);
 			$router->addRoute('sitemap', $routeSitemap);
 
+			// Route to shopping cart
+			$routeCart = new Zend_Controller_Router_Route(
+				'cart',
+				array(
+					'module' => 'shops',
+					'controller' => 'cart',
+					'action' => 'index'
+				)
+			);
+			$router->addRoute('cart', $routeCart);
+
+			// Route add to cart
+			$routeAddToCart = new Zend_Controller_Router_Route(
+				'cart/add',
+				array(
+					'module' => 'shops',
+					'controller' => 'cart',
+					'action' => 'add'
+				)
+			);
+			$router->addRoute('addtocart', $routeAddToCart);
+
+			// Route remove from cart
+			$routeRemoveFromCart = new Zend_Controller_Router_Route(
+				'cart/remove',
+				array(
+					'module' => 'shops',
+					'controller' => 'cart',
+					'action' => 'remove'
+				)
+			);
+			$router->addRoute('removefromcart', $routeRemoveFromCart);
+
+			// Route update shopping cart
+			$routeUpdateCart = new Zend_Controller_Router_Route(
+				'cart/update',
+				array(
+					'module' => 'shops',
+					'controller' => 'cart',
+					'action' => 'update'
+				)
+			);
+			$router->addRoute('updatecart', $routeUpdateCart);
+
+			// Route to shopping cart
+			$routeClearCart = new Zend_Controller_Router_Route(
+				'cart/clear',
+				array(
+					'module' => 'shops',
+					'controller' => 'cart',
+					'action' => 'clear'
+				)
+			);
+			$router->addRoute('clearcart', $routeClearCart);
+
+			// Route to checkout
+			$routeCheckout = new Zend_Controller_Router_Route(
+				'checkout',
+				array(
+					'module' => 'shops',
+					'controller' => 'checkout',
+					'action' => 'index'
+				)
+			);
+			$router->addRoute('checkout', $routeCheckout);
+
+			// Route send checkout
+			$routeSendCheckout = new Zend_Controller_Router_Route(
+				'checkout/send',
+				array(
+					'module' => 'shops',
+					'controller' => 'checkout',
+					'action' => 'send'
+				)
+			);
+			$router->addRoute('sendcheckout', $routeSendCheckout);
+
+			// Route success checkout
+			$routeSuccessCheckout = new Zend_Controller_Router_Route(
+				'checkout/success',
+				array(
+					'module' => 'shops',
+					'controller' => 'checkout',
+					'action' => 'success'
+				)
+			);
+			$router->addRoute('successcheckout', $routeSuccessCheckout);
+
 			// Route to product feed
 			$routeFeed = new Zend_Controller_Router_Route(
-				'products.xml',
+				'products-de.xml',
 				array(
 					'module' => 'shops',
 					'controller' => 'item',
@@ -305,7 +396,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 					'module' => 'shops',
 					'controller' => 'item',
 					'action' => 'index',
-        			'id' => null // Default value for id
+					'id' => null // Default value for id
 				),
 				array(
 					'id' => '\d+' // Regex to ensure id is numeric
