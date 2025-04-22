@@ -98,11 +98,17 @@ class Shops_CategoryController extends Zend_Controller_Action
 			// Calculate tax-inclusive price
 			$priceWithTax = $item['price'] * ((100 + $taxRate) / 100);
 
+			// Calculate tax-inclusive special price
+			$specialPriceWithTax = $item['specialprice'] * ((100 + $taxRate) / 100);
+
 			//Convert numbers to the display format
 			$prices[$item->id]['raw'] = $item['price'];
 			$prices[$item->id]['rawtax'] = $priceWithTax;
+			$prices[$item->id]['rawspecialprice'] = $item['specialprice'];
 			$prices[$item->id]['formatted'] = $currency->toCurrency($item['price']);
 			$prices[$item->id]['formattedtax'] = $currency->toCurrency($priceWithTax);
+			$prices[$item->id]['formattedspecialprice'] = $currency->toCurrency($item['specialprice']);
+			$prices[$item->id]['formattedspecialpricetax'] = $currency->toCurrency($specialPriceWithTax);
 		}
 
 		$images = array();

@@ -85,3 +85,5 @@ ALTER TABLE `salesorder` ADD `reference` varchar(255) DEFAULT NULL AFTER `subjec
 ALTER TABLE `quoterequest` ADD `reference` varchar(255) DEFAULT NULL AFTER `subject`;
 ALTER TABLE `purchaseorder` ADD `reference` varchar(255) DEFAULT NULL AFTER `subject`;
 ALTER TABLE `process` ADD `reference` varchar(255) DEFAULT NULL AFTER `subject`;
+
+ALTER TABLE `item` ADD `specialprice` decimal(12,4) DEFAULT NULL AFTER `price`;

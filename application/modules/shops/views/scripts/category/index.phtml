@@ -211,11 +211,20 @@ foreach ($this->categories as $subcategory) {
 								</div>
 								<div class="col-md-5">
 									<p style="margin-bottom: 0;">
-										<strong>Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></strong> *<br>
-										<span style="font-size: 0.8rem;"><strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong></span>
+										<?php if($this->prices[$item->id]['rawspecialprice']) : ?>
+											<strong style="color: #008000;">Sonderpreis: <?php echo $this->prices[$item->id]['formattedspecialprice']; ?></strong> *<br>
+											<span style="text-decoration: line-through;">Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></span> *<br>
+										<?php else : ?>
+											<strong>Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></strong> *<br>
+											<span style="font-size: 0.8rem;"><strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong></span>
+										<?php endif; ?>
 									</p>
 									<?php if($this->prices[$item->id]['rawtax'] > $this->prices[$item->id]['raw']) : ?>
-										<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices[$item->id]['formattedtax']; ?> inkl. MwSt.</p>
+										<?php if($this->prices[$item->id]['rawspecialprice']) : ?>
+											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices[$item->id]['formattedspecialpricetax']; ?> inkl. MwSt.</p>
+										<?php else : ?>
+											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices[$item->id]['formattedtax']; ?> inkl. MwSt.</p>
+										<?php endif; ?>
 									<?php endif; ?>
 									<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'page_842'); ?>" target="_blank">Versandkosten</a></span>
 									<span style="font-size: 0.8rem;">Lieferzeit: Auf Lager</span>

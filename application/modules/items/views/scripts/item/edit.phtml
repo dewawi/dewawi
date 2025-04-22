@@ -1,6 +1,7 @@
 <?php 
 $this->title = $this->form->getValue('title');
 $this->headTitle($this->title);
+echo $this->TinyMCE();
 echo $this->Messages();
 echo $this->FileManager();
 ?>
@@ -9,6 +10,10 @@ echo $this->FileManager();
 	<li><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
 	<li<?php if($this->activeTab == "#tabDetails") : ?> class="active"<?php endif; ?>>
 		<a href="#tabDetails"><?php echo $this->translate('TABS_DETAILS') ?></a></li>
+	<?php if($this->form->getValue('shopid')) : ?>
+		<li<?php if($this->activeTab == "#tabShop") : ?> class="active"<?php endif; ?>>
+			<a href="#tabShop"><?php echo $this->translate('TABS_SHOP') ?></a></li>
+	<?php endif; ?>
 	<li<?php if($this->activeTab == "#tabInventory") : ?> class="active"<?php endif; ?>>
 		<a href="#tabInventory"><?php echo $this->translate('TABS_INVENTORY') ?></a></li>
 	<li<?php if($this->activeTab == "#tabAttributes") : ?> class="active"<?php endif; ?>>
@@ -38,6 +43,7 @@ echo $this->FileManager();
 						<h4><?php echo $this->translate('ITEMS_PRICES') ?></h4>
 						<?php echo $this->form->getElement('cost') ?>
 						<?php echo $this->form->getElement('price') ?>
+						<?php echo $this->form->getElement('specialprice') ?>
 						<?php echo $this->form->getElement('margin') ?>
 						<?php echo $this->form->getElement('taxid') ?>
 						<?php echo $this->form->getElement('currency') ?>
@@ -99,6 +105,19 @@ echo $this->FileManager();
 						<?php echo $this->form->getElement('packlength') ?>
 						<?php echo $this->form->getElement('packheight') ?>
 						<?php echo $this->form->getElement('packweight') ?>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div id="tabShop" class="tab_content<?php if($this->activeTab == '#tabShop') : ?> active<?php endif; ?>">
+		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-6">
+						<?php echo $this->form->getElement('shopdescription') ?>
+				</div>
+				<div class="col-sm-12 col-lg-6">
+						<?php echo $this->form->getElement('shopdescriptionshort') ?>
+						<?php echo $this->form->getElement('shopdescriptionmini') ?>
 				</div>
 			</div>
 		</form>

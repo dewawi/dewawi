@@ -1159,6 +1159,7 @@ CREATE TABLE IF NOT EXISTS `item` (
   `deliverytimeoos` int(11) NOT NULL DEFAULT 0,
   `cost` decimal(12,4) DEFAULT NULL,
   `price` decimal(12,4) DEFAULT NULL,
+  `specialprice` decimal(12,4) DEFAULT NULL,
   `margin` decimal(12,4) DEFAULT NULL,
   `currency` varchar(255) DEFAULT NULL,
   `taxid` int(11) NOT NULL DEFAULT 0,

@@ -20,6 +20,7 @@
 	'ITEMS_NOTES' => 'Notizen',
 	'ITEMS_COST' => 'Einkaufspreis',
 	'ITEMS_PRICE' => 'Verkaufspreis',
+	'ITEMS_SPECIAL_PRICE' => 'Sonderpreis',
 	'ITEMS_PRICES' => 'Preise',
 	'ITEMS_MARGIN' => 'Marge',
 	'ITEMS_CURRENCY' => 'Währung',

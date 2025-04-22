@@ -11,6 +11,9 @@ class Items_Form_Item extends Zend_Form
 		$form['id'] = new Zend_Form_Element_Hidden('id');
 		$form['id']->addFilter('Int');
 
+		$form['shopid'] = new Zend_Form_Element_Select('shopid');
+		$form['shopid']->addFilter('Int');
+
 		$form['sku'] = new Zend_Form_Element_Text('sku');
 		$form['sku']->setLabel('ITEMS_SKU')
 			->setRequired(true)
@@ -63,6 +66,39 @@ class Items_Form_Item extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('cols', '40')
 			->setAttrib('rows', '20');
+
+		$form['shopdescription'] = new Zend_Form_Element_Textarea('shopdescription');
+		$form['shopdescription']->setLabel('ITEMS_SHOP_DESCRIPTION')
+			->addFilter('StripTags', array(array(
+				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
+				'allowAttribs' => array('style','title','href')
+			)))
+			->addFilter('StringTrim')
+			->setAttrib('cols', '75')
+			->setAttrib('rows', '18')
+			->setAttrib('class', 'editor');
+
+		$form['shopdescriptionshort'] = new Zend_Form_Element_Textarea('shopdescriptionshort');
+		$form['shopdescriptionshort']->setLabel('ITEMS_SHOP_DESCRIPTION_SHORT')
+			->addFilter('StripTags', array(array(
+				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
+				'allowAttribs' => array('style','title','href')
+			)))
+			->addFilter('StringTrim')
+			->setAttrib('cols', '75')
+			->setAttrib('rows', '18')
+			->setAttrib('class', 'editor');
+
+		$form['shopdescriptionmini'] = new Zend_Form_Element_Textarea('shopdescriptionmini');
+		$form['shopdescriptionmini']->setLabel('ITEMS_SHOP_DESCRIPTION_MINI')
+			->addFilter('StripTags', array(array(
+				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
+				'allowAttribs' => array('style','title','href')
+			)))
+			->addFilter('StringTrim')
+			->setAttrib('cols', '75')
+			->setAttrib('rows', '18')
+			->setAttrib('class', 'editor');
 
 		$form['info'] = new Zend_Form_Element_Textarea('info');
 		$form['info']->setLabel('ITEMS_INFO_INTERNAL')
@@ -130,6 +166,16 @@ class Items_Form_Item extends Zend_Form
 
 		$form['price'] = new Zend_Form_Element_Text('price');
 		$form['price']->setLabel('ITEMS_PRICE')
+			//->setRequired(true)
+			->addFilter('StripTags')
+			->addFilter('StringTrim')
+			->addValidator('Float')
+			//->addValidator('NotEmpty')
+			->setAttrib('class', 'number')
+			->setAttrib('size', '15');
+
+		$form['specialprice'] = new Zend_Form_Element_Text('specialprice');
+		$form['specialprice']->setLabel('ITEMS_SPECIAL_PRICE')
 			//->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')

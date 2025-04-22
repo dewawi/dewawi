@@ -87,11 +87,21 @@ $downloads = false;
 
 				<div style="margin-bottom: 10px;">
 					<p style="margin-bottom: 0;">
-						<span style="font-size: 1.3rem;">Listenpreis: <?php echo $this->prices['formatted']; ?></span><br>
-						<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+						<?php if($this->prices['rawspecialprice']) : ?>
+							<strong style="color: #008000; font-size: 1.3rem;">Sonderpreis: <?php echo $this->prices['formattedspecialprice']; ?></strong><br>
+							<span style="text-decoration: line-through; font-size: 1.3rem;">Listenpreis: <?php echo $this->prices['formatted']; ?></span><br>
+							<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+						<?php else : ?>
+							<span style="font-size: 1.3rem;">Listenpreis: <?php echo $this->prices['formatted']; ?></span><br>
+							<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+						<?php endif; ?>
 					</p>
 					<?php if($this->prices['rawtax'] > $this->prices['raw']) : ?>
-						<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices['formattedtax']; ?> inkl. MwSt.</p>
+						<?php if($this->prices['rawspecialprice']) : ?>
+							<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices['formattedspecialpricetax']; ?> inkl. MwSt.</p>
+						<?php else : ?>
+							<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices['formattedtax']; ?> inkl. MwSt.</p>
+						<?php endif; ?>
 					<?php endif; ?>
 					<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'page_842'); ?>" target="_blank">Versandkosten</a></span>
 				</div>

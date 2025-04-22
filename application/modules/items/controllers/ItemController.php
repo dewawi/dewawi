@@ -189,6 +189,7 @@ class Items_ItemController extends Zend_Controller_Action
 					$currency = $this->_helper->Currency->getCurrency($item['currency']);
 					$item['cost'] = $currency->toCurrency($item['cost']);
 					$item['price'] = $currency->toCurrency($item['price']);
+					$item['specialprice'] = $currency->toCurrency($item['specialprice']);
 					$item['margin'] = $currency->toCurrency($item['margin']);
 					$locale = Zend_Registry::get('Zend_Locale');
 					$item['quantity'] = ($item['quantity'] != 0) ? $currency->toCurrency($item['quantity'],array('precision' => 2,'locale' => $locale)) : '';
@@ -446,6 +447,14 @@ class Items_ItemController extends Zend_Controller_Action
 													echo 'Price is not numeric for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
 												}
 											}
+										} elseif($attr == 'specialprice') {
+											if($datacsv[$map[$attr]]) {
+												if(is_numeric($datacsv[$map[$attr]])) {
+													$updateData['specialprice'] = $datacsv[$map[$attr]];
+												} else {
+													echo 'Price is not numeric for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
+												}
+											}
 										} elseif($attr == 'quantity') {
 											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
 												$updateData[$attr] = $datacsv[$map[$attr]];
@@ -657,15 +666,6 @@ class Items_ItemController extends Zend_Controller_Action
 								if(!isset($updateData['height']) || !$updateData['height']) $updateData['height'] = NULL;
 								if(!isset($updateData['inventory'])) $updateData['inventory'] = 1;
 
-								if(isset($map['ebayuserid'])) {
-									if($datacsv[$map['ebayuserid']] == 0) {
-										$ebayListingDb->deleteListingByItemID($itemid);
-										echo 'Item deleted from eBay: '.$updateData['sku'].', itemid: '.$itemid.'<br>';
-									} elseif($datacsv[$map['ebayuserid']]) {
-										$ebayAccount = $ebayAccountDb->getAccountByUserID($datacsv[$map['ebayuserid']]);
-										$ebayListingDb->addListing(array('itemid' => $itemid, 'accountid' => $ebayAccount['id']));
-									}
-								}
 								/*if(isset($map['shopid'])) {
 									echo 'Item shopid: '.$map['shopid'].'<br>';
 									if($datacsv[$map['shopid']] == 0) {
@@ -682,7 +682,7 @@ class Items_ItemController extends Zend_Controller_Action
 									if(isset($datacsv[$map['shopid']]) && is_numeric($datacsv[$map['shopid']]) && $datacsv[$map['shopid']] > 0) {
 										$slugDb = new Admin_Model_DbTable_Slug();
 										$slugDb->deleteSlug('shops', 'item', $updateData['shopid'], $item['id']);
-										$slugDb->addSlug('shops', 'item', $updateData['shopid'], $updateData['shopcatid'], $item['id'], $this->slugify($item['sku']));
+										//$slugDb->addSlug('shops', 'item', $updateData['shopid'], $updateData['shopcatid'], $item['id'], $this->slugify($item['sku']));
 									} else {
 										$updateData['shopid'] = 0;
 									}
@@ -690,6 +690,16 @@ class Items_ItemController extends Zend_Controller_Action
 
 								$itemid = $itemDb->addItem($updateData);
 								++$rowsCreated;
+
+								if(isset($map['ebayuserid'])) {
+									if($datacsv[$map['ebayuserid']] == 0) {
+										$ebayListingDb->deleteListingByItemID($itemid);
+										echo 'Item deleted from eBay: '.$updateData['sku'].', itemid: '.$itemid.'<br>';
+									} elseif($datacsv[$map['ebayuserid']]) {
+										$ebayAccount = $ebayAccountDb->getAccountByUserID($datacsv[$map['ebayuserid']]);
+										$ebayListingDb->addListing(array('itemid' => $itemid, 'accountid' => $ebayAccount['id']));
+									}
+								}
 
 								//Create images
 								foreach($images as $image) {

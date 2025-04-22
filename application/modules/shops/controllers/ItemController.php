@@ -71,16 +71,21 @@ class Shops_ItemController extends Zend_Controller_Action
 			$taxrateDb = new Shops_Model_DbTable_Taxrate();
 			$taxrate = $taxrateDb->getTaxRate($item['taxid']);
 			$priceWithTax = $item['price'] * ((100 + $taxrate['rate']) / 100);
+			$specialPriceWithTax = $item['specialprice'] * ((100 + $taxrate['rate']) / 100);
 		} else {
 			$priceWithTax = $item['price'];
+			$specialPriceWithTax = $item['specialprice'];
 		}
 
 		//Convert numbers to the display format
 		$prices = [];
 		$prices['raw'] = $item['price'];
 		$prices['rawtax'] = $priceWithTax;
+		$prices['rawspecialprice'] = $item['specialprice'];
 		$prices['formatted'] = $currency->toCurrency($item['price']);
 		$prices['formattedtax'] = $currency->toCurrency($priceWithTax);
+		$prices['formattedspecialprice'] = $currency->toCurrency($item['specialprice']);
+		$prices['formattedspecialpricetax'] = $currency->toCurrency($specialPriceWithTax);
 
 		$categoryDb = new Shops_Model_DbTable_Category();
 		$categories = $categoryDb->getCategories();
