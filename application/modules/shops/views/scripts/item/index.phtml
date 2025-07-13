@@ -113,7 +113,11 @@ $downloads = false;
 						data-id="<?php echo $this->item['id']; ?>" 
 						data-title="<?php echo $this->item['title']; ?>" 
 						data-sku="<?php echo $this->item['sku']; ?>" 
-						data-price="<?php echo $this->item['price']; ?>">
+						<?php if($this->prices['rawspecialprice']) : ?>
+							data-price="<?php echo $this->prices['rawspecialprice']; ?>">
+						<?php else : ?>
+							data-price="<?php echo $this->prices['raw']; ?>">
+						<?php endif; ?>
 						<?php echo $this->translate('SHOPS_ADD_TO_CART'); ?>
 					</button>
 					<button class="btn btn-info btn-lg" onclick="showSection('<?php echo $this->item['id']; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
@@ -178,15 +182,40 @@ $downloads = false;
 	</div>
 </section>
 
+<?php $categoryImages = $this->categoryImages; ?>
+<?php //if(count($categoryImages)) : ?>
+	<?php foreach ($categoryImages as $image) : ?>
+		<?php if ($image->type == 'download') : ?>
+			<?php $downloads = true; ?>
+		<?php endif; ?>
+	<?php endforeach; ?>
+<?php //endif; ?>
+<?php $parentCategoryImages = $this->parentCategoryImages; ?>
+<?php //if(count($parentCategoryImages)) : ?>
+	<?php foreach ($parentCategoryImages as $image) : ?>
+		<?php if ($image->type == 'download') : ?>
+			<?php $downloads = true; ?>
+		<?php endif; ?>
+	<?php endforeach; ?>
+<?php //endif; ?>
+
 <!-- Downloads -->
-<?php if(isset($this->images['categories'])) : ?>
+<?php if(isset($categoryImages)) : ?>
 	<section id="downloads" class="py-5">
 		<div class="container">
 			<?php if (!empty($this->item['downloads']) || $downloads) : ?>
+			<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_DOWNLOADS'); ?></h2>
 				<div class="card card-body">
 					<ul>
-						<?php $categoryImages = $this->images['categories'][$this->category['id']]; ?>
 						<?php foreach ($categoryImages as $file) : ?>
+							<?php if ($file->type == 'download') : ?>
+								<li>
+									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
+										<?php echo $this->escape($file->title); ?></a>
+								</li>
+							<?php endif; ?>
+						<?php endforeach; ?>
+						<?php foreach ($parentCategoryImages as $file) : ?>
 							<?php if ($file->type == 'download') : ?>
 								<li>
 									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
