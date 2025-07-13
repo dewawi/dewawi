@@ -63,6 +63,14 @@ $optionSets = $this->optionSets;
 //Attributes
 $attributesByGroup = $this->attributesByGroup;
 
+//Media path
+$mediaPath = BASE_PATH.'/media/';
+$mediaDir1 = substr($client['id'], 0, 1);
+if(strlen($client['id']) > 1) $mediaDir2 = substr($client['id'], 1, 1);
+else $mediaDir2 = '0';
+$mediaDir3 = 'images';
+$mediaPath .= $mediaDir1.'/'.$mediaDir2.'/'.$client['id'].'/'.$mediaDir3.'/';
+
 // Initialize TCPDF
 require_once(BASE_PATH . '/library/Tcpdf/config/tcpdf_config.php');
 require_once(BASE_PATH . '/library/Tcpdf/tcpdf.php');
@@ -154,7 +162,7 @@ if($positions->count() > 0) {
 		$pdf->MultiCell(165, 0, '', 0, 'L', false, 1, 20, '', true, 0);
 		$pdf->MultiCell(165, 0, 'Vielen Dank für Ihre Anfrage. Im Anhang finden Sie unser Angebot.', 0, 'L', false, 1, 20, '', true, 0);
 		$y = $pdf->GetY();
-		if(isset($mediaUrl)) $pdf->Image(BASE_PATH.'/media/1/0/100/images/'.$mediaUrl, 120, '', 85, 0, '', '', 'N');
+		if(isset($mediaUrl)) $pdf->Image($mediaPath.$mediaUrl, 120, '', 85, 0, '', '', 'N');
 		$pdf->SetFont('freesans', 'B', 10);
 		$pdf->SetY($y+8);
 		$pdf->MultiCell(100, 0, 'Inhalt des Angebots', 0, 'L', false, 1, 20, '', true, 0);
@@ -374,18 +382,21 @@ if(count($positions)) {
 $imagesStartPage = $pdf->GetPage()+1;
 if($positions->count() > 0) {
 	$positionsArray = $positions->toArray();
-	$firstPosition = reset($positionsArray);
-	if(isset($this->media[$firstPosition['itemid']])) {
-		foreach($this->media[$firstPosition['itemid']] as $media) {
-			$pdf->AddPage();
-			$pdf->ln(4);
-			$pdf->SetFont('freesansb', 'B', 11);
-			$pdf->MultiCell(108, 0, $media['title'], 0, 'L', false, 1, '', '', true, 0);
-			$pdf->SetFont('freesansb', '', 9);
-			$pdf->MultiCell(108, 0, 'Abbildung ähnlich', 0, 'L', false, 1, '', '', true, 0);
-			$pdf->ln(4);
-			$pdf->Image(BASE_PATH.'/media/1/0/100/images/'.$media['url'], 20, '', 165, 0, '', '', 'N');
-			$pdf->SetFont('freesansb', '', 10);
+	foreach($positionsArray as $position) {
+		if($position['masterid'] == 0) {
+			if(isset($this->media[$position['itemid']])) {
+				foreach($this->media[$position['itemid']] as $media) {
+					$pdf->AddPage();
+					$pdf->ln(4);
+					$pdf->SetFont('freesansb', 'B', 11);
+					$pdf->MultiCell(108, 0, $media['title'], 0, 'L', false, 1, '', '', true, 0);
+					$pdf->SetFont('freesansb', '', 9);
+					$pdf->MultiCell(108, 0, $this->translate('DOCUMENTS_ILLUSTRATION_SIMILAR'), 0, 'L', false, 1, '', '', true, 0);
+					$pdf->ln(4);
+					$pdf->Image($mediaPath.$media['url'], 20, '', 165, 0, '', '', 'N');
+					$pdf->SetFont('freesansb', '', 10);
+				}
+			}
 		}
 	}
 }
@@ -653,18 +664,16 @@ function positions($positions, $attributesByGroup, $settings, $pdf) {
 
 				// Display attributes
 				if (isset($attributesByGroup[$position->id])) {
-					if (!$position->description) {
-						foreach ($attributesByGroup[$position->id] as $attributeSet) {
-							// Add a top margin before each attribute set title
-							$currentY = $pdf->GetY();
-							$margin = 5; // Set your desired margin size
-							$pdf->SetY($currentY + $margin);
-							$pdf->SetFont('freesans', 'B', 9);
-							$pdf->MultiCell(108, 0, $attributeSet['title'], 0, 'L', false, 2, $x + 10, '', true, 0);
-							$pdf->SetFont('freesans', '', 9);
-							foreach ($attributeSet['attributes'] as $attribute) {
-								$pdf->MultiCell(108, 0, $attribute['title'] . ': ' . $attribute['description'], 0, 'L', false, 2, $x + 10, '', true, 0);
-							}
+					foreach ($attributesByGroup[$position->id] as $attributeSet) {
+						// Add a top margin before each attribute set title
+						$currentY = $pdf->GetY();
+						$margin = 5; // Set your desired margin size
+						$pdf->SetY($currentY + $margin);
+						$pdf->SetFont('freesans', 'B', 9);
+						$pdf->MultiCell(108, 0, $attributeSet['title'], 0, 'L', false, 2, $x + 10, '', true, 0);
+						$pdf->SetFont('freesans', '', 9);
+						foreach ($attributeSet['attributes'] as $attribute) {
+							$pdf->MultiCell(108, 0, $attribute['title'] . ': ' . $attribute['description'], 0, 'L', false, 2, $x + 10, '', true, 0);
 						}
 					}
 				}
