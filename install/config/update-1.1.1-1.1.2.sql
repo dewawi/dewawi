@@ -87,3 +87,6 @@ ALTER TABLE `purchaseorder` ADD `reference` varchar(255) DEFAULT NULL AFTER `sub
 ALTER TABLE `process` ADD `reference` varchar(255) DEFAULT NULL AFTER `subject`;
 
 ALTER TABLE `item` ADD `specialprice` decimal(12,4) DEFAULT NULL AFTER `price`;
+
+ALTER TABLE `shop` CHANGE `footer` `copyright` varchar(255) DEFAULT NULL;
+ALTER TABLE `shop` ADD `footer` text DEFAULT NULL AFTER `title`;
