@@ -103,6 +103,9 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 				</div>
 				<div class="row">
 					<div class="col-md-6">
+						<?php echo $this->shop['footer']; ?>
+					</div>
+					<div class="col-md-6">
 						<?php if ($this->controller === 'category' && isset($this->category)) : ?>
 							<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->category['title']); ?>
 						<?php else : ?>
@@ -129,7 +132,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 					<?php endif; ?>
 				<?php endforeach; ?>
 			</ul>
-			<p><?php echo $this->shop['footer']; ?></p>
+			<p><?php echo $this->shop['copyright']; ?></p>
 			<p><?php echo $this->translate('SHOPS_FOOTER_LEGAL_NOTICE'); ?></p>
 			<p><?php echo $this->translate('SHOPS_FOOTER_COOKIE_NOTICE'); ?></p>
 		</div>
@@ -139,5 +142,6 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/shops.js"></script>
+	<?php echo $this->shop['analytics']; ?>
 </body>
 </html>
