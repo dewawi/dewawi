@@ -51,6 +51,8 @@
 	'ADMIN_LANGUAGE' => 'Sprache',
 	'ADMIN_TIMEZONE' => 'Zeitzone',
 	'ADMIN_TEMPLATE_ID' => 'Vorlagen ID',
+	'ADMIN_SELECT' => 'Auswählen',
+	'ADMIN_NONE' => 'keine',
 	'ADMIN_COLUMN' => 'Spalte',
 	'ADMIN_TEXT' => 'Text',
 	'ADMIN_WIDTH' => 'Breite',

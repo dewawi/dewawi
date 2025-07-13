@@ -39,6 +39,7 @@
 	'DOCUMENTS_BALANCE' => 'Restbetrag',
 	'DOCUMENTS_SAMPLE' => 'Muster',
 	'DOCUMENTS_CANCELLED' => 'Storniert',
+	'DOCUMENTS_ILLUSTRATION_SIMILAR' => 'Abbildung ähnlich',
 	'DOCUMENTS_PHONE' => 'Tel.:',
 	'DOCUMENTS_QUOTE_ID_%s_FROM_%s' => 'Angebotsnummer %s vom %s',
 	'DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s' => 'Auftragsbestätigungs-Nr %s vom %s',

@@ -35,6 +35,8 @@
 	'DOCUMENTS_TAXES' => 'Taxes',
 	'DOCUMENTS_TOTAL' => 'Total',
 	'DOCUMENTS_INVOICE_TOTAL' => 'Total',
+	'DOCUMENTS_PREPAYMENT' => 'Prepayment',
+	'DOCUMENTS_BALANCE' => 'Balance',
 	'DOCUMENTS_SAMPLE' => 'Sample',
 	'DOCUMENTS_CANCELLED' => 'Cancelled',
 	'DOCUMENTS_PHONE' => 'Phone:',
