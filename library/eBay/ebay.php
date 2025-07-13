@@ -132,7 +132,7 @@ class eBay {
 						$shopDescription = $item['shopdescription'];
 						$shopDescriptionShort = $item['shopdescriptionshort'];
 						$shopDescriptionMini = $item['shopdescriptionmini'];
-						$manufacturerDescription = $manufacturers[$item['manufacturerid']]['description'];
+						if($item['manufacturerid']) $manufacturerDescription = $manufacturers[$item['manufacturerid']]['description'];
 						$length = $item['length'];
 						$width = $item['width'];
 						$height = $item['height'];
@@ -141,7 +141,11 @@ class eBay {
 						$packagingheight = $item['packheight'];
 						$weight = $item['weight'];
 						$packagingweight = $item['packweight'];
-						$price = $item['price'];
+						if($item['specialprice']) {
+							$price = $item['specialprice'];
+						} else {
+							$price = $item['price'];
+						}
 						$condition = 'NEW';
 						$applyTax = 1;
 						if($item['taxid'] && isset($taxRates[$item['taxid']])) {
@@ -166,9 +170,7 @@ class eBay {
 
 								//Use price rules
 								$PriceRule = new DEEC_PriceRule();
-								$price = $PriceRule->usePricerules($item, $connection, $options, $clientid);
-
-
+								if(!$item['specialprice']) $price = $PriceRule->usePricerules($item, $connection, $options, $clientid);
 
 								$listingPrice = $price;
 								if($taxRate) $listingPrice = $listingPrice + ($listingPrice * $taxRate / 100);
