@@ -34,6 +34,11 @@ class Shops_Model_DbTable_Media extends Zend_Db_Table_Abstract
 		return $images;
 	}
 
+	public function getCategoryMediaById($id) {
+		$images = $this->getMedia($id, 'shops', 'category');
+		return $images;
+	}
+
 	public function getMedia($parentid, $module, $controller)
 	{
 		$select = $this->select()

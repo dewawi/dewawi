@@ -51,6 +51,14 @@ $downloads = false;
 											<?php endif; ?>
 										<?php endforeach; ?>
 									<?php endif; ?>
+									<?php $parentCategoryImages = $this->images['categories'][$this->category['parentid']]; ?>
+									<?php if(count($parentCategoryImages)) : ?>
+										<?php foreach ($parentCategoryImages as $image) : ?>
+											<?php if ($image->type == 'download') : ?>
+												<?php $downloads = true; ?>
+											<?php endif; ?>
+										<?php endforeach; ?>
+									<?php endif; ?>
 								</div>
 								<?php if(count($categoryImages) > 1) : ?>
 									<a class="carousel-control-prev" href="#carousel_<?php echo $this->category['id']; ?>" role="button" data-slide="prev">
@@ -447,3 +455,36 @@ foreach ($this->categories as $subcategory) {
 		</div>
 	</div>
 </section>
+
+<?php if($downloads) : ?>
+	<!-- Downloads section -->
+	<section id="downloads">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12 mb-4">
+					<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_DOWNLOADS'); ?></h2>
+					<ul>
+						<?php foreach ($categoryImages as $file) : ?>
+							<?php if ($file->type == 'download') : ?>
+								<li>
+									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
+										<?php echo $this->escape($file->title); ?></a>
+								</li>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					</ul>
+					<ul>
+						<?php foreach ($parentCategoryImages as $file) : ?>
+							<?php if ($file->type == 'download') : ?>
+								<li>
+									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
+										<?php echo $this->escape($file->title); ?></a>
+								</li>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</section>
+<?php endif; ?>
