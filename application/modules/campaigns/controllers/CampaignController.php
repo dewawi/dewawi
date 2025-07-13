@@ -266,7 +266,7 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 					$get = new Contacts_Model_Get();
 					$params['limit'] = 0;
 					$params['catid'] = $data['contactcatid'];
-					list($contacts, $records) = $get->contacts($params, $options);
+					list($contacts, $records) = $get->contacts($params, $options, 1000);
 
 					//Get already sent emails on champaign
 					$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();

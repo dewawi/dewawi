@@ -19,7 +19,7 @@ class Contacts_Model_Get
 		return $contact;
 	}
 
-	public function contacts($params, $options, $limit = 1000)
+	public function contacts($params, $options, $limit = 100)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
@@ -134,18 +134,17 @@ class Contacts_Model_Get
 		$schema = 'm';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['contactid']) {
-			if($query) {
-				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.contactid = ?', $params['contactid']);
-			} else {
-				$query = $emailmessagesDb->getAdapter()->quoteInto('m.contactid = ?', $params['contactid']);
-			}
-		}
 		if($params['documentid']) {
 			if($query) {
 				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.documentid = ?', $params['documentid']);
 			} else {
 				$query = $emailmessagesDb->getAdapter()->quoteInto('m.documentid = ?', $params['documentid']);
+			}
+		} else if($params['contactid']) {
+			if($query) {
+				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.contactid = ?', $params['contactid']);
+			} else {
+				$query = $emailmessagesDb->getAdapter()->quoteInto('m.contactid = ?', $params['contactid']);
 			}
 		}
 		if($params['module']) {
@@ -360,6 +359,7 @@ class Contacts_Model_Get
 			$tagsDb = new Application_Model_DbTable_Tag();
 			$tags = $tagsDb->getTags($module, $controller);
 		}
+		//print_r($tags);
 
 		return $tags;
 	}
