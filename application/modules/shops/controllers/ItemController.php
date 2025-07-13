@@ -93,6 +93,8 @@ class Shops_ItemController extends Zend_Controller_Action
 
 		$mediaDb = new Shops_Model_DbTable_Media();
 		$images = $mediaDb->getMedia($id, 'items', 'item');
+		$categoryImages = $mediaDb->getCategoryMediaById($category->id);
+		$parentCategoryImages = $mediaDb->getCategoryMediaById($category->parentid);
 
 		$menuDb = new Shops_Model_DbTable_Menu();
 		$menus = $menuDb->getMenus($shop['id']);
@@ -111,6 +113,8 @@ class Shops_ItemController extends Zend_Controller_Action
 		$this->view->shop = $shop;
 		$this->view->item = $item;
 		$this->view->images = $images;
+		$this->view->categoryImages = $categoryImages;
+		$this->view->parentCategoryImages = $parentCategoryImages;
 		$this->view->prices = $prices;
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
@@ -257,7 +261,11 @@ class Shops_ItemController extends Zend_Controller_Action
 				$taxRate = isset($taxrates[$item['taxid']]) ? $taxrates[$item['taxid']] : 0;
 
 				// Calculate tax-inclusive price
-				$priceWithTax = $item['price'] * ((100 + $taxRate) / 100);
+				if($item['specialprice']) {
+					$priceWithTax = $item['specialprice'] * ((100 + $taxRate) / 100);
+				} else {
+					$priceWithTax = $item['price'] * ((100 + $taxRate) / 100);
+				}
 
 				echo '<item>';
 				echo '<g:id>' . $item['sku'] . '</g:id>';
