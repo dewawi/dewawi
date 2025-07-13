@@ -474,7 +474,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			unset($data['id'], $data['creditnoteid'], $data['creditnotedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
 			$module = 'sales';
 		} elseif($target == 'invoice') {
-			unset($data['id'], $data['creditnoteid'], $data['creditnotedate'], $data['quoteid'], $data['quotedate'], $data['salesorderid'], $data['salesorderdate'], $data['invoiceid'], $data['invoicedate']);
+			unset($data['id'], $data['invoiceid'], $data['invoicedate']);
 			$module = 'sales';
 		} elseif($target == 'quoterequest') {
 			$data['billingname1'] = '';
