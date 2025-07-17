@@ -428,37 +428,6 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
 
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contactDb->deleteContact($id);
-
-			$phoneDb = new Contacts_Model_DbTable_Phone();
-			$phones = $phoneDb->getPhone($id);
-			foreach($phones as $phone) {
-				$phoneDb->deletePhone($phone['id']);
-			}
-
-			$emailDb = new Contacts_Model_DbTable_Email();
-			$emails = $emailDb->getEmails($id);
-			foreach($emails as $email) {
-				$emailDb->deleteEmail($email['id']);
-			}
-
-			$internetDb = new Contacts_Model_DbTable_Internet();
-			$internets = $internetDb->getInternet($id);
-			foreach($internets as $internet) {
-				$internetDb->deleteInternet($internet['id']);
-			}
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-	}
-
 	public function importAction()
 	{
 		$request = $this->getRequest();

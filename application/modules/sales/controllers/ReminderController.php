@@ -759,25 +759,6 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
 	}
 
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if ($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$reminder = new Sales_Model_DbTable_Reminder();
-			$reminder->deleteReminder($id);
-
-			$positionsDb = new Sales_Model_DbTable_Reminderpos();
-			$positions = $positionsDb->getPositions($id);
-			foreach($positions as $position) {
-				$positionsDb->deletePosition($position->id);
-			}
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-	}
-
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);

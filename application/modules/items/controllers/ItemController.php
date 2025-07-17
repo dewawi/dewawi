@@ -319,23 +319,6 @@ class Items_ItemController extends Zend_Controller_Action
 		}
 	}
 
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if ($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$item = new Items_Model_DbTable_Item();
-			$item->deleteItem($id);
-
-			//Delete eBay listing if exists
-			$ebayListingDb = new Ebay_Model_DbTable_Listing();
-			$ebayListingDb->deleteListingByItemID($id);
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-	}
-
 	public function importAction()
 	{
 		$request = $this->getRequest();

@@ -559,25 +559,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
 	}
 
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$process = new Processes_Model_DbTable_Process();
-			$process->deleteProcess($id);
-
-			$positionsDb = new Processes_Model_DbTable_Processpos();
-			$positions = $positionsDb->getPositions($id);
-			foreach($positions as $position) {
-				$positionsDb->deletePosition($position->id);
-			}
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-	}
-
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);

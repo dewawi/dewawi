@@ -626,27 +626,39 @@ $(document).ready(function(){
 				} else if(className == 'reset') {
 					reset();
 				} else if($(this).parents('.toolbar').length == 1) {
-					$('table#data tr').each(function(){
-						$(this).find('td input.id:checkbox').each(function() {
-							if(this.checked) {
-								switch(className) {
-									case 'edit':
-										var url = baseUrl+'/'+module+'/'+controller+'/edit/id/'+$(this).val();
-										setLocation(url);
-										break;
-									case 'copy':
-										copy($(this).val());
-										break;
-									case 'cancel':
-										cancel($(this).val());
-										break;
-									case 'delete':
-										del($(this).val(), deleteConfirm);
-										break;
-								}
-							}
-						});
+					var ids = [];
+
+					// Collect all selected checkboxes once
+					$('table#data tr input.id:checked').each(function() {
+						ids.push($(this).val());
 					});
+
+					switch(className) {
+						case 'edit':
+							//var url = baseUrl+'/'+module+'/'+controller+'/edit/id/'+$(this).val();
+							//setLocation(url);
+							break;
+						case 'copy':
+							//copy($(this).val());
+							ids.forEach(function(id) {
+								copy(id);
+							});
+							break;
+						case 'cancel':
+							//cancel($(this).val());
+							ids.forEach(function(id) {
+								cancel(id);
+							});
+							break;
+						case 'delete':
+							//trash($(this).val(), deleteConfirm);
+							//ids.forEach(function(id) {
+							//	console.log(id);
+							//});
+							trash(ids, deleteConfirm);
+							break;
+					}
+
 					$('table#positions tr').each(function(){
 						$(this).find('td input.id:checkbox').each(function() {
 							if(this.checked) {
@@ -678,7 +690,7 @@ $(document).ready(function(){
 						if(className == 'copy') {
 							copy(id);
 						} else if(className == 'delete') {
-							del(id, deleteConfirm);
+							trash(id, deleteConfirm);
 						}
 					}
 					var parent = $(this).closest('div.positionsContainer').data('parent');
@@ -744,7 +756,7 @@ $(document).ready(function(){
 						} else if(className == 'copy') {
 							copy(cid, cmodule, ccontroller);
 						} else if(className == 'delete') {
-							del(cid, deleteConfirm);
+							trash(cid, deleteConfirm);
 						} else if(className == 'export') {
 							var ids = $('input:checkbox:checked').map(function () {
 								return this.value;
@@ -1200,33 +1212,57 @@ function cancel(id, message){
 }
 
 //Delete
-function del(id, message, type, cmodule){
-	type = type || controller;
-	cmodule = cmodule || module;
+function trash(ids, message){
+	//console.log(controller);
+	///console.log(module);
+
+	if (!Array.isArray(ids)) {
+		ids = [ids]; // ensure it's an array
+	}
+
+	if (ids.length === 0) return;
+
 	var answer = confirm(message);
-	if (answer == true) {
-		if(action == 'add') {
-			$('div#'+type+id).remove();
-		} else {
-			$.ajax({
-				type: 'POST',
-				url: baseUrl+'/'+cmodule+'/'+type+'/delete/id/'+id,
-				cache: false,
-				success: function(data){
-					if(action == 'edit') {
-						$('div#'+type+id).remove();
-						//Reload and calculate positions after a price rule is deleted
-						if(type == 'pricerulepos') getPositions(controller, 'pos', window.pageYOffset);
-						//Return to the main page after the entity itself is deleted
-						if(type == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
-					} else if(type == 'attachment') {
-						$('div#'+type+id).remove();
-					} else {
-						search();
-					}
+	if (!answer) return;
+
+	if(action == 'add') {
+		//$('div#'+type+id).remove();
+		ids.forEach(function(singleId) {
+			$('div#' + type + singleId).remove();
+		});
+	} else {
+		//console.log(ids);
+		$.ajax({
+			type: 'POST',
+			url: baseUrl+'/trash/add/',
+			contentType: 'application/json',
+			data: JSON.stringify({
+				module: module,
+				controller: controller,
+				id: ids
+			}),
+			cache: false,
+			success: function(data){
+				if(action == 'edit') {
+					//$('div#'+controller+id).remove();
+					ids.forEach(function(singleId) {
+						$('div#' + controller + singleId).remove();
+					});
+					//Reload and calculate positions after a price rule is deleted
+					if(controller == 'pricerulepos') getPositions(controller, 'pos', window.pageYOffset);
+					//Return to the main page after the entity itself is deleted
+					if(controller == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
+				} else if(controller == 'attachment') {
+					//$('div#'+controller+id).remove();
+					ids.forEach(function(singleId) {
+						$('div#' + controller + singleId).remove();
+					});
+				} else {
+					search();
+					console.log('Deleted successfully');
 				}
-			});
-		}
+			}
+		});
 	}
 }
 
