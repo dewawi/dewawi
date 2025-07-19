@@ -53,5 +53,8 @@ $application = new Zend_Application(
 	)
 );
 
-$application->bootstrap()
-		->run();
+/** Cronjobs don't need all the extra's **/
+if(!defined('_CRONJOB_') || _CRONJOB_ == false) {
+	$application->bootstrap()
+			->run();
+}
