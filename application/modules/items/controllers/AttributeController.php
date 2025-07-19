@@ -308,7 +308,7 @@ class Items_AttributeController extends Zend_Controller_Action
 									$map[$attr] = $pos;
 								}
 							}
-						} elseif(isset($map['sku']) && isset($datacsv[$map['sku']]) && $datacsv[$map['sku']]) {
+						} elseif(isset($map['sku']) && isset($datacsv[$map['sku']]) && $datacsv[$map['sku']] && $datacsv[$map['title']]) {
 							//echo $datacsv[$map['sku']];
 							//print_r($map);
 							$attributeData = array();

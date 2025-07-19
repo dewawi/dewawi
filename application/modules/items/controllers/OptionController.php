@@ -309,7 +309,7 @@ class Items_OptionController extends Zend_Controller_Action
 									$map[$attr] = $pos;
 								}
 							}
-						} elseif(isset($map['parentsku']) && isset($datacsv[$map['parentsku']]) && $datacsv[$map['parentsku']]) {
+						} elseif(isset($map['parentsku']) && isset($datacsv[$map['parentsku']]) && $datacsv[$map['parentsku']] && $datacsv[$map['title']]) {
 							//echo $datacsv[$map['parentsku']];
 							//print_r($map);
 							$optionData = array();
