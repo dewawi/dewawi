@@ -20,16 +20,12 @@ class Contacts_Model_DbTable_Emailattachment extends Zend_Db_Table_Abstract
 
 	public function getEmailattachment($id)
 	{
-		$contactid = (int)$contactid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-		if(!$data) {
-			throw new Exception("Could not find row $contactid");
+		$id = (int)$id;
+		$row = $this->fetchRow('id = ' . $id);
+		if (!$row) {
+			throw new Exception("Could not find row $id");
 		}
-		return $data->toArray();
+		return $row->toArray();
 	}
 
 	public function getEmailattachments($documentid, $module, $controller)

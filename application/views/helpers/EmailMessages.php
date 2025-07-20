@@ -30,7 +30,7 @@ class Zend_View_Helper_EmailMessages extends Zend_View_Helper_Abstract{
 											<span class="filename"><?php echo $attachment['filename']; ?></span>
 											<span class="filesize">(<?php echo $this->view->HumanFileSize($attachment['filesize']); ?>)</span>
 										</a>
-										<button type="button" class="delete nolabel" onclick="del('<?php echo $attachment['id']; ?>', deleteConfirm, 'attachment', 'contacts');"></button><br>
+										<button type="button" class="delete nolabel" onclick="deleteAttachment('<?php echo $attachment['id']; ?>', deleteConfirm, 'attachment', 'contacts');"></button><br>
 									</div>
 									<?php //endif; ?>
 								<?php endforeach; ?>

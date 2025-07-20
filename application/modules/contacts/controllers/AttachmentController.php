@@ -112,14 +112,21 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
+			// Get raw POST body and decode JSON input
+			$body = $this->getRequest()->getRawBody();
+			$data = json_decode($body, true);
 
+			// Extract IDs to be deleted
+			$ids = isset($data['id']) ? $data['id'] : [];
 
-			$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
-			$emailattachmentDb->deleteEmailattachment($id);
+			foreach ($ids as $id) {
+				$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
+				$emailattachment = $emailattachmentDb->getEmailattachment($id);
+				$emailattachmentDb->deleteEmailattachment($id);
 
-			/*if($id && ((BASE_PATH.'/files/attachments/'.$module.'/'.$controller.'/'.$url.'/'));
-			unlink('test.html');*/
+				if($id && ($emailattachment['location'].'/'.$emailattachment['filename']));
+				unlink($emailattachment['location'].'/'.$emailattachment['filename']);
+			}
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}

@@ -1211,10 +1211,10 @@ function cancel(id, message){
 	}
 }
 
-//Delete
-function trash(ids, message){
-	//console.log(controller);
-	///console.log(module);
+//Trash
+function trash(ids, message, type, cmodule) {
+	type = type || controller;
+	cmodule = cmodule || module;
 
 	if (!Array.isArray(ids)) {
 		ids = [ids]; // ensure it's an array
@@ -1237,26 +1237,21 @@ function trash(ids, message){
 			url: baseUrl+'/trash/add/',
 			contentType: 'application/json',
 			data: JSON.stringify({
-				module: module,
-				controller: controller,
+				module: cmodule,
+				controller: type,
 				id: ids
 			}),
 			cache: false,
 			success: function(data){
 				if(action == 'edit') {
-					//$('div#'+controller+id).remove();
+					//$('div#'+type+id).remove();
 					ids.forEach(function(singleId) {
-						$('div#' + controller + singleId).remove();
+						$('div#' + type + singleId).remove();
 					});
 					//Reload and calculate positions after a price rule is deleted
-					if(controller == 'pricerulepos') getPositions(controller, 'pos', window.pageYOffset);
+					if(type == 'pricerulepos') getPositions(type, 'pos', window.pageYOffset);
 					//Return to the main page after the entity itself is deleted
-					if(controller == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
-				} else if(controller == 'attachment') {
-					//$('div#'+controller+id).remove();
-					ids.forEach(function(singleId) {
-						$('div#' + controller + singleId).remove();
-					});
+					if(type == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
 				} else {
 					search();
 					console.log('Deleted successfully');
@@ -1264,6 +1259,37 @@ function trash(ids, message){
 			}
 		});
 	}
+}
+
+
+function deleteAttachment(ids, message, type, cmodule) {
+	type = type || controller;
+	cmodule = cmodule || module;
+
+	if (!Array.isArray(ids)) {
+		ids = [ids]; // ensure it's an array
+	}
+
+	if (ids.length === 0) return;
+
+	var answer = confirm(message);
+	if (!answer) return;
+
+	$.ajax({
+		type: 'POST',
+		url: baseUrl+'/'+cmodule+'/'+type+'/delete/',
+		contentType: 'application/json',
+		data: JSON.stringify({
+			id: ids
+		}),
+		cache: false,
+		success: function(data){
+			//$('div#'+type+id).remove();
+			ids.forEach(function(singleId) {
+				$('div#' + type + singleId).remove();
+			});
+		}
+	});
 }
 
 //Apply position
