@@ -41,7 +41,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 							<?php echo $this->view->Button('email', 'location.href='."'".'mailto:'.$child['email']."'", '', '', 'display:none'); ?>
 						<?php endif; ?>
 					<?php endif; ?>
-					<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
+					<?php echo $this->view->Button('delete', 'trash('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
 				<?php //Handle multidimensional elements ?>
 				<?php elseif(is_array($elements[0])) : ?>
 					<div class="field-group">
@@ -81,7 +81,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 						<?php if(($controller == 'address') && isset($element['label'])) : ?>
 							<dt id="<?php echo $controller; ?>-label"></dt>
 						<?php endif; ?>
-						<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
+						<?php echo $this->view->Button('delete', 'trash('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
 					</div>
 				<?php elseif(is_array($elements)) : ?>
 					<div class="sub-group">
@@ -94,7 +94,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract{
 							<?php $form->$element->setValue($child[$element]); ?>
 							<?php echo $form->getElement($element); ?>
 						<?php endforeach; ?>
-						<?php echo $this->view->Button('delete', 'del('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
+						<?php echo $this->view->Button('delete', 'trash('.$child['id'].', deleteConfirm, \''.$controller.'\', \''.$module.'\');', '', '', ''); ?>
 					</div>
 				<?php endif; ?>
 				<?php if($childs) : ?>

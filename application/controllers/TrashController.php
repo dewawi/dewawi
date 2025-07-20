@@ -51,7 +51,7 @@ class TrashController extends Zend_Controller_Action
 			$positionsDb = class_exists($positionClass) ? new $positionClass() : null;
 
 			// Special case: items module - delete eBay listings
-			$isItemModule = strtolower($data['module']) === 'items';
+			$isItemModule = (strtolower($data['module']) === 'items') && (strtolower($data['controller']) === 'item');
 			$ebayListingDb = $isItemModule ? new Ebay_Model_DbTable_Listing() : null;
 
 			// Special case: contacts module - delete phones, emails, internets
@@ -66,10 +66,17 @@ class TrashController extends Zend_Controller_Action
 
 			foreach ($ids as $id) {
 				if (!empty($id)) {
-					// Call a custom delete method if it exists (e.g., deleteQuote), otherwise skip
-					if (method_exists($mainModel, 'delete' . $targetController)) {
-						$method = 'delete' . $targetController;
-						$mainModel->$method($id);
+					// Check if controller name ends with 'pos' (e.g., Pricerulepos)
+					if (substr($targetController, -3) === 'pos') {
+						if (method_exists($mainModel, 'deletePosition')) {
+							$mainModel->deletePosition($id);
+						}
+					} else {
+						// Call a custom delete method if it exists (e.g., deleteQuote), otherwise skip
+						$deleteMethod = 'delete' . $targetController;
+						if (method_exists($mainModel, $deleteMethod)) {
+							$mainModel->$deleteMethod($id);
+						}
 					}
 
 					// If positions model exists, delete associated positions
