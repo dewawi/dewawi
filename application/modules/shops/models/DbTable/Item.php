@@ -27,6 +27,17 @@ class Shops_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		return $data ? $data->toArray() : $data;
 	}
 
+	public function getItemBySku($sku, $shopid)
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
+		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchRow($where);
+		return $data ? $data->toArray() : $data;
+	}
+
+
 	public function getItems($ids)
 	{
 		$where = array();
