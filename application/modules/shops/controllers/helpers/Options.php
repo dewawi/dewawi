@@ -5,10 +5,10 @@ class Shops_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 	public function getOptions($itemId)
 	{
 		$itemOptionsDb = new Shops_Model_DbTable_Itemopt();
-		$itemOptions = $itemOptionsDb->itemOptions($itemId);
+		$itemOptions = $itemOptionsDb->getPositions($itemId);
 
 		$itemOptionSetsDb = new Shops_Model_DbTable_Itemoptset();
-		$itemOptionSets = $itemOptionSetsDb->itemOptionSets($itemId);
+		$itemOptionSets = $itemOptionSetsDb->getPositionSets($itemId);
 
 		$sets = array();
 

@@ -5,10 +5,10 @@ class Shops_Controller_Action_Helper_Attributes extends Zend_Controller_Action_H
 	public function getAttributes($itemId)
 	{
 		$itemAttributesDb = new Shops_Model_DbTable_Itematr();
-		$itemAttributes = $itemAttributesDb->itemAttributes($itemId);
+		$itemAttributes = $itemAttributesDb->getPositions($itemId);
 
 		$itemAttributeSetsDb = new Shops_Model_DbTable_Itematrset();
-		$itemAttributeSets = $itemAttributeSetsDb->itemAttributeSets($itemId);
+		$itemAttributeSets = $itemAttributeSetsDb->getPositionSets($itemId);
 
 		$sets = array();
 
