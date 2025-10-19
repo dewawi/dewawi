@@ -135,7 +135,7 @@ class Shops_ContactController extends Zend_Controller_Action
 		// Send email
 		$this->_helper->Email->sendEmail('shops', 'contact', 'contact');
 
-        $this->_helper->redirector->gotoRoute([], 'contact_success', true);
+		$this->_helper->redirector->gotoRoute([], 'contact_success', true);
 	}
 
 	public function successAction()

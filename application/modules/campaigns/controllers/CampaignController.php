@@ -227,7 +227,7 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 						}
 					}
 					if(isset($data['startdate'])) {
-    					$data['startdate'] = trim($data['startdate']);
+						$data['startdate'] = trim($data['startdate']);
 						if ($data['startdate']) {
 							try {
 								// Accept either date or datetime
@@ -243,7 +243,7 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 						}
 					}
 					if(isset($data['duedate'])) {
-    					$data['duedate'] = trim($data['duedate']);
+						$data['duedate'] = trim($data['duedate']);
 						if ($data['duedate']) {
 							try {
 								$fmt = (strpos($data['duedate'], ':') !== false) ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy';
