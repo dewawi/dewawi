@@ -6,6 +6,8 @@ class Shops_ContactController extends Zend_Controller_Action
 
 	protected $_user = null;
 
+	protected $contactDataSession;
+
 	/**
 	 * FlashMessenger
 	 *
@@ -34,6 +36,8 @@ class Shops_ContactController extends Zend_Controller_Action
 
 		// Make the cart accessible in all views
 		$this->view->cart = $this->cart;
+
+		$this->contactDataSession = new Zend_Session_Namespace('ShopsContact');
 	}
 
 	public function indexAction()
@@ -48,6 +52,11 @@ class Shops_ContactController extends Zend_Controller_Action
 
 		$contact = new Shops_Form_Contact();
 		$this->view->contact = $contact;
+
+		// Falls Werte vorhanden sind, ins Formular laden
+		if (!empty($this->contactDataSession->formData)) {
+			$contact->populate($this->contactDataSession->formData);
+		}
 
 		$categoryDb = new Shops_Model_DbTable_Category();
 		$categories = $categoryDb->getCategories();
@@ -117,15 +126,28 @@ class Shops_ContactController extends Zend_Controller_Action
 
 	public function sendAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$request = $this->getRequest();
+		$data = $request->getPost();
 
-		$this->_helper->Email->sendEmail('shops', 'contact');
+		// Save to session
+		$this->contactDataSession->formData = $data;
+
+		// Send email
+		$this->_helper->Email->sendEmail('shops', 'contact', 'contact');
+
+        $this->_helper->redirector->gotoRoute([], 'contact_success', true);
 	}
 
 	public function successAction()
 	{
+		/*if(empty($this->contactDataSession->formData)) {
+			return $this->_helper->redirector->gotoSimple('index', 'index', 'default');
+		}*/
+
 		$shop = Zend_Registry::get('Shop');
+
+		// Holt die Formulardaten aus der Session
+		$this->view->formData = $this->contactDataSession->formData;
 
 		$this->_helper->getHelper('layout')->setLayout('shop');
 
@@ -154,15 +176,6 @@ class Shops_ContactController extends Zend_Controller_Action
 		foreach($menus as $menu) {
 			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
 		}
-
-		// Retrieve the form data from the forwarded request
-		$name = $this->_getParam('name');
-		$email = $this->_getParam('email');
-		$subject = $this->_getParam('subject');
-		$message = $this->_getParam('message');
-
-		// Pass the data to the view
-		$this->view->formData = compact('name', 'email', 'subject', 'message');
 
 		//$this->view->tags = $tags;
 		//$this->view->tagEntites = $tagEntites;

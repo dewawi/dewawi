@@ -21,6 +21,13 @@ $this->headTitle($this->title);
 			</div>
 		</div>
 
+		<?php if (!empty($this->downloadUrl)): ?>
+		  <div class="alert alert-success">
+			<strong>Ihr Angebot ist fertig.</strong>
+			<a href="<?= $this->escape($this->downloadUrl) ?>" target="_blank" rel="noopener">PDF herunterladen</a>
+		  </div>
+		<?php endif; ?>
+
 		<!-- Accordion to display form data -->
 		<div class="accordion mt-4" id="accordionExample">
 			<?php if (!empty($this->formData)): ?>
