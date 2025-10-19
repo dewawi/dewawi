@@ -14,11 +14,11 @@ class Contacts_Form_Contactperson extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '40');
 
-		$form['salutation'] = new Zend_Form_Element_Select('type');
+		$form['salutation'] = new Zend_Form_Element_Select('salutation');
 		$form['salutation']->removeDecorator('label')
-			->addMultiOption('1', 'Herr')
-			->addMultiOption('2', 'Frau')
-			->addMultiOption('3', 'Dr.');
+			->addMultiOption('0', 'keine')
+			->addMultiOption('Herr', 'Herr')
+			->addMultiOption('Frau', 'Frau');
 
 		$form['name1'] = new Zend_Form_Element_Text('name1');
 		$form['name1']->removeDecorator('label')

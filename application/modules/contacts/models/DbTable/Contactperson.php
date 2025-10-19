@@ -18,6 +18,14 @@ class Contacts_Model_DbTable_Contactperson extends Zend_Db_Table_Abstract
 		$this->_client = Zend_Registry::get('Client');
 	}
 
+	public function getContactperson($id)
+	{
+		$id = (int)$id;
+		$row = $this->fetchRow('id = ' . $id);
+		if(!$row) return false;
+		return $row->toArray();
+	}
+
 	public function getContactpersons($contactid)
 	{
 		$contactid = (int)$contactid;
