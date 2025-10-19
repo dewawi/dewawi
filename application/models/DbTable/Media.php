@@ -28,6 +28,15 @@ class Application_Model_DbTable_Media extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getCategoryMedia($categories) {
+		$images = array();
+		foreach($categories as $key => $category) {
+			$images[$category['id']] = $this->getMedia($category['id']);
+		}
+		//print_r($images);
+		return $images;
+	}
+
 	public function getMediaByParentID($parentid, $module, $controller)
 	{
 		$parentid = (int)$parentid;
