@@ -399,3 +399,50 @@ footer {
 	padding-top: 20px;
 }
 
+/* 50/50 ist via Bootstrap .col-lg-6 gelöst */
+
+/* Form: vertikale Linie, konsistenter Rhythmus */
+#inquiry-form .form-group {
+  display: block;           /* einspaltig */
+  margin-bottom: 12px;      /* gleichmäßiger Abstand */
+}
+
+#inquiry-form .form-group label {
+  display: block;
+  margin-bottom: 6px;       /* dichter an das Feld */
+  font-weight: 600;
+}
+
+#inquiry-form input[type="text"],
+#inquiry-form input[type="email"],
+#inquiry-form input[type="number"],
+#inquiry-form input[type="tel"],
+#inquiry-form input[type="date"],
+#inquiry-form select,
+#inquiry-form textarea {
+  width: 100%;              /* alle Felder gleiche Breite */
+  max-width: 100%;
+  line-height: 1.3;         /* kompakter */
+  padding: .5rem .75rem;
+}
+
+/* Fehlermeldungen dichter ans Feld */
+#inquiry-form .text-danger.small {
+  margin-top: 4px;
+}
+
+/* Sidebar (rechte Spalte) leicht abheben + sticky (siehe inline style top:20px) */
+.sidebar {
+  background-color: #f7fbff;
+  border: 1px solid #e3edf5;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+/* Optional: Buttons an die linke Kante der Inputlinie anpassen */
+#inquiry-form button[type="submit"],
+#inquiry-form .btn {
+  min-width: 160px;
+}
+
+
