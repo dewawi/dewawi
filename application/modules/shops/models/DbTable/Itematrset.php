@@ -17,7 +17,7 @@ class Shops_Model_DbTable_Itematrset extends Zend_Db_Table_Abstract
 		$this->_shop = Zend_Registry::get('Shop');
 	}
 
-	public function itemAttributeSets($parentid)
+	public function getPositionSets($parentid)
 	{
 		$parentid = (int)$parentid;
 		$where = array();
