@@ -380,13 +380,21 @@ class Items_AttributeController extends Zend_Controller_Action
 								$attributeData['atrsetid'] = 0;
 								$attributeData['parentid'] = $item['id'];
 								$attributeData['itemid'] = $item['id'];
-								$attributeData['description'] = $attributeData['description'];
 								$attributes[$item['id']][] = $attributeData;
+							} elseif($attributeData['sku'] == 'FORM_CALC') {
+								//Get current item attributes
+								$currentAttributes = $itemAttribute->getPositionsBySku($attributeData['sku'])->toArray();
+								$attributeData['atrsetid'] = 0;
+								$attributeData['parentid'] = 0;
+								$attributeData['itemid'] = 0;
+								$attributes[0][] = $attributeData;
 							}
 						}
 						$row++;
 
 					}
+					//print_r($attributes);
+					//print_r($attributeSets);
 
 					$attributeSetIds = array();
 					foreach($attributeSets as $itemid => $attributeSet) {
@@ -414,10 +422,13 @@ class Items_AttributeController extends Zend_Controller_Action
 						//Create new item attributes
 						$ordering = 1;
 						foreach($attributeSet as $id => $attribute) {
-							$attribute['atrsetid'] = array_search($attribute['set'], $attributeSetIds[$itemid]);
+							if(isset($attribute['set'])) {
+								$attribute['atrsetid'] = array_search($attribute['set'], $attributeSetIds[$itemid]);
+								unset($attribute['set']);
+							} else {
+								$attribute['atrsetid'] = 0;
+							}
 							$attribute['ordering'] = $ordering;
-							unset($attribute['set']);
-							unset($attribute['value']);
 							$itemAttribute->addPosition($attribute);
 							++$ordering;
 							++$rowsCreated;

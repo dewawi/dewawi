@@ -48,6 +48,20 @@ class Items_Model_DbTable_Itematr extends Zend_Db_Table_Abstract
 		return $data;
 	}
 
+	public function getPositionsBySku($sku, $setid = null)
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
+		if($setid !== null) $where[] = $this->getAdapter()->quoteInto('atrsetid = ?', $setid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$data = $this->fetchAll($where, 'ordering');
+		if (!$data) {
+			throw new Exception("Could not find row $parentid");
+		}
+		return $data;
+	}
+
 	public function addPosition($data)
 	{
 		$data['clientid'] = $this->_client['id'];
