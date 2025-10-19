@@ -195,7 +195,7 @@ foreach ($this->categories as $subcategory) {
 														<img src="<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>" alt="<?php //echo $this->escape($image->title); ?>" class="image-thumbnail" style="width: 100%;"/>
 													</a>
 												</div>
-				                                <?php break; // show only the first image ?>
+												<?php break; // show only the first image ?>
 											<?php endforeach; ?>
 										</div>
 									<?php endif; ?>
@@ -222,6 +222,8 @@ foreach ($this->categories as $subcategory) {
 										<?php if($this->prices[$item->id]['rawspecialprice']) : ?>
 											<strong style="color: #008000;">Sonderpreis: <?php echo $this->prices[$item->id]['formattedspecialprice']; ?></strong> *<br>
 											<span style="text-decoration: line-through;">Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></span> *<br>
+										<?php elseif($this->prices[$item->id]['raw'] == 0) : ?>
+											<span><strong>Auf Anfrage</strong></span>
 										<?php else : ?>
 											<strong>Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></strong> *<br>
 											<span style="font-size: 0.8rem;"><strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong></span>

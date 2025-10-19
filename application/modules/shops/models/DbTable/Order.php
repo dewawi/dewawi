@@ -17,6 +17,14 @@ class Shops_Model_DbTable_Order extends Zend_Db_Table_Abstract
 		$this->_shop = Zend_Registry::get('Shop');
 	}
 
+	public function addOrder($data)
+	{
+		$data['created'] = $this->_date;
+		//$data['createdby'] = $this->_user['id'];
+		$this->insert($data);
+		return $this->getAdapter()->lastInsertId();
+	}
+
 	public function getOrder($itemid, $orderid)
 	{
 		$itemid = (int)$itemid;
@@ -35,14 +43,6 @@ class Shops_Model_DbTable_Order extends Zend_Db_Table_Abstract
 			throw new Exception("Could not find row $ids");
 		}
 		return $row->toArray();
-	}
-
-	public function addOrder($data)
-	{
-		$data['created'] = $this->_date;
-		//$data['createdby'] = $this->_user['id'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
 	}
 
 	public function updateOrder($id, $data)

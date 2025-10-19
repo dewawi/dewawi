@@ -3,6 +3,8 @@ class Shops_CheckoutController extends Zend_Controller_Action
 {
 	private $cart;
 
+	protected $checkoutDataSession;
+
 	public function init()
 	{
 		$params = $this->_getAllParams();
@@ -24,6 +26,8 @@ class Shops_CheckoutController extends Zend_Controller_Action
 
 		// Make the cart accessible in all views
 		$this->view->cart = $this->cart;
+
+		$this->checkoutDataSession = new Zend_Session_Namespace('ShopsCheckout');
 	}
 
 	public function indexAction()
@@ -39,6 +43,11 @@ class Shops_CheckoutController extends Zend_Controller_Action
 		//print_r($this->getRequest()->getParams());
 		$checkout = new Shops_Form_Checkout();
 		$this->view->checkout = $checkout;
+
+		// Falls Werte vorhanden sind, ins Formular laden
+		if (!empty($this->checkoutDataSession->formData)) {
+			$checkout->populate($this->checkoutDataSession->formData);
+		}
 
 		$categoryDb = new Shops_Model_DbTable_Category();
 		$categories = $categoryDb->getCategories();
@@ -107,6 +116,8 @@ class Shops_CheckoutController extends Zend_Controller_Action
 			$this->_helper->viewRenderer->setNoRender();
 			$this->_helper->getHelper('layout')->disableLayout();
 
+ 	 	 	$shop = Zend_Registry::get('Shop');
+
 			// Fetch cart items
 			$cart = $this->cart->getItems();
 			if (empty($cart)) {
@@ -119,35 +130,110 @@ class Shops_CheckoutController extends Zend_Controller_Action
 
 			if ($paymentSuccess) {
 				$data = $request->getPost();
-				/*$data = [
-					'shopid' => 100,
-					'orderid' => 100,
-					'invoiceid' => 0,
-					'total' => 1000,
-					'clientid' => 100
-				];
-				// Save order to database
-				$orderDb = new Shops_Model_DbTable_Order();
-				$orderId = $orderDb->addOrder($data);*/
+
+ 	 	 	 	// Resolve contact by email (adjust to your fields)
+ 	 	 	 	$contactId = 0;
+ 	 	 	 	if (!empty($data['email'])) {
+ 	 	 	 	 	$emailDb = new Shops_Model_DbTable_Email();
+ 	 	 	 	 	$contactId = (int)$emailDb->findContactIdByEmail($data['email']);
+ 	 	 	 	}
+
+ 	 	 	 	// Generate next order number from increment table
+ 	 	 	 	$incrementDb = new Shops_Model_DbTable_Increment();
+ 	 	 	 	$orderNumber = $incrementDb->getIncrement('shoporderid');
+
+ 	 	 	 	// Generate order date
+ 	 	 	 	$orderDate = date('Y-m-d');
+
+ 	 	 	 	// Create order (shoporder)
+ 	 	 	 	$orderDb = new Shops_Model_DbTable_Order();
+ 	 	 	 	$orderRowId = $orderDb->addOrder([
+ 	 	 	 	 	'shopid' => $shop['id'],
+ 	 	 	 	 	'orderid' => $orderNumber,
+ 	 	 	 	 	'contactid' => $contactId,
+ 	 	 	 	 	'invoiceid' => 0,
+ 	 	 	 	 	'orderdate' => $orderDate,
+ 	 	 	 	 	'total' => $total,
+ 	 	 	 	 	'clientid' => $shop['clientid'],
+ 	 	 	 	 	// created/modified are set in the model
+ 	 	 	 	]);
+
+ 	 	 	 	// Create positions
+ 	 	 	 	$orderposDb = new Shops_Model_DbTable_Orderpos();
+ 	 	 	 	$itemDb 	 = new Shops_Model_DbTable_Item();
+
+ 	 	 	 	foreach ($cart as $row) {
+ 	 	 	 	 	// Your cart rows: ['title','sku','price','quantity', ...]
+ 	 	 	 	 	$sku = $row['sku'];
+ 	 	 	 	 	$qty = (float)$row['quantity'];
+ 	 	 	 	 	$price = (float)$row['price'];
+ 	 	 	 	 	$lineTotal = $qty * $price;
+
+ 	 	 	 	 	$item = $itemDb->getItemBySku($sku, $shop['id']);
+ 	 	 	 	 	if (!$item) { continue; } // or log/throw
+
+ 	 	 	 	 	$orderposDb->addOrderpos([
+ 	 	 	 	 	 	'shopid' => $shop['id'],
+ 	 	 	 	 	 	'orderid' => $orderNumber, 	 	 // IMPORTANT: same string as shoporder.orderid
+ 	 	 	 	 	 	'itemid' => (int)$item['id'],
+ 	 	 	 	 	 	'total' => $lineTotal,
+ 	 	 	 	 	 	'quantity' => $qty,
+ 	 	 	 	 	 	'price' => $price,
+ 	 	 	 	 	 	'clientid' => $shop['clientid'],
+ 	 	 	 	 	]);
+ 	 	 	 	}
+
+ 	 	 	 	// Mark increment used
+ 	 	 	 	$incrementDb->setIncrement($orderNumber, 'shoporderid');
 
 				// Clear cart
 				$this->cart->clearCart();
 
-				// Send order confirmation
-				$this->_helper->Email->sendEmail('shops', 'checkout', $cart);
+				// Save to session
+				$this->checkoutDataSession->formData = [
+					'billingname' => $data['billingname'],
+					'billingcompany' => $data['billingcompany'],
+					'billingstreet' => $data['billingstreet'],
+					'billingpostcode' => $data['billingpostcode'],
+					'billingcity' => $data['billingcity'],
+					'billingcountry' => $data['billingcountry'],
+					'billingphone' => $data['billingphone'],
+					'email' => $data['email'],
+					'subject' => 'Bestellbestätigung',
+					'message' => $data['message'],
+					'total' => $total
+				];
 
-				//return $this->_helper->json($data);
+ 	 	 	 	// make them available to the Email helper (it reads $request->getPost())
+ 	 	 	 	$this->getRequest()->setPost(array_merge(
+ 	 	 	 	 	$this->getRequest()->getPost(),
+ 	 	 	 	 	[
+ 	 	 	 	 	 	'orderid' => $orderNumber,
+ 	 	 	 	 	 	'orderdate' => $orderDate,
+ 	 	 	 	 	]
+ 	 	 	 	));
+
+				// Send order confirmation
+				$this->_helper->Email->sendEmail('shops', 'checkout', 'checkout', $cart);
+
+ 	 	 	 	// Respond JSON for AJAX; client will redirect
+ 	 	 	 	$successUrl = $this->view->url(['module'=>'shops','controller'=>'checkout','action'=>'success'], null, true);
+ 	 	 	 	//return $this->_helper->json(['success' => true, 'redirectUrl' => $successUrl, 'orderid' => $orderNumber]);
+ 	 	 	 	$this->_helper->redirector->gotoRoute([], 'successcheckout', true);
 			}
 
 			return $this->_helper->json(['success' => false, 'message' => 'Payment failed']);
 		} else {
-			$redirector->gotoSimple('index', 'index', 'default');
+			$this->_helper->redirector->gotoSimple('index', 'index', 'default');
 		}
 	}
 
 	public function successAction()
 	{
 		$shop = Zend_Registry::get('Shop');
+
+		// Holt die Formulardaten aus der Session
+		$this->view->formData = $this->checkoutDataSession->formData;
 
 		$this->_helper->getHelper('layout')->setLayout('shop');
 
@@ -176,15 +262,6 @@ class Shops_CheckoutController extends Zend_Controller_Action
 		foreach($menus as $menu) {
 			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
 		}
-
-		// Retrieve the form data from the forwarded request
-		$name = $this->_getParam('name');
-		$email = $this->_getParam('email');
-		$subject = $this->_getParam('subject');
-		$message = $this->_getParam('message');
-
-		// Pass the data to the view
-		$this->view->formData = compact('name', 'email', 'subject', 'message');
 
 		//$this->view->tags = $tags;
 		//$this->view->tagEntites = $tagEntites;

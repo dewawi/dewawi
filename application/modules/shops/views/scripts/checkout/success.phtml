@@ -36,17 +36,17 @@ $this->headTitle($this->title);
 					<div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
 						<div class="card-body">
 							<ul class="list-group">
-								<?php if (isset($this->formData['name'])): ?>
-									<li class="list-group-item">Name: <?php echo $this->escape($this->formData['name']); ?></li>
+								<?php if (isset($this->formData['billingname'])): ?>
+									<li class="list-group-item">Name: <?php echo $this->escape($this->formData['billingname']); ?></li>
+								<?php endif; ?>
+								<?php if (isset($this->formData['billingcompany'])): ?>
+									<li class="list-group-item">Firma: <?php echo $this->escape($this->formData['billingcompany']); ?></li>
 								<?php endif; ?>
 								<?php if (isset($this->formData['email'])): ?>
 									<li class="list-group-item">Email: <?php echo $this->escape($this->formData['email']); ?></li>
 								<?php endif; ?>
-								<?php if (isset($this->formData['subject'])): ?>
-									<li class="list-group-item">Betreff: <?php echo $this->escape($this->formData['subject']); ?></li>
-								<?php endif; ?>
-								<?php if (isset($this->formData['message'])): ?>
-									<li class="list-group-item">Nachricht: <?php echo $this->escape($this->formData['message']); ?></li>
+								<?php if (isset($this->formData['billingcountry'])): ?>
+									<li class="list-group-item">Land: <?php echo $this->escape($this->formData['billingcountry']); ?></li>
 								<?php endif; ?>
 							</ul>
 						</div>
