@@ -209,20 +209,52 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 							$data['actualcost'] = NULL;
 						}
 					}
+					// interval
+					if (isset($data['interval'])) {
+						$iv = (int)$data['interval'];
+						$data['interval'] = $iv > 0 ? $iv : 60;
+					}
+					// window_start/window_end as HH:mm
+					foreach (['startwindow','endwindow'] as $k) {
+						if (isset($data[$k])) {
+							$v = trim($data[$k]);
+							if ($v === '') { $data[$k] = null; }
+							else {
+								// simple validation: HH:mm
+								if (!preg_match('/^\d{2}:\d{2}$/', $v)) $data[$k] = null;
+								else $data[$k] = $v . ':00';
+							}
+						}
+					}
 					if(isset($data['startdate'])) {
-						if(Zend_Date::isDate($data['startdate'])) {
-							$startdate = new Zend_Date($data['startdate'], Zend_Date::DATES, 'de');
-							$data['startdate'] = $startdate->get('yyyy-MM-dd');
+    					$data['startdate'] = trim($data['startdate']);
+						if ($data['startdate']) {
+							try {
+								// Accept either date or datetime
+								$fmt = (strpos($data['startdate'], ':') !== false) ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy';
+								$zd = new Zend_Date($data['startdate'], $fmt, 'de');
+								// If only a date was given, we start at 00:00
+								$data['startdate'] = $zd->toString('yyyy-MM-dd') . (strpos($fmt, 'HH') ? ' ' . $zd->toString('HH:mm:00') : ' 00:00:00');
+							} catch (Exception $e) {
+								$data['startdate'] = null;
+							}
 						} else {
-							$data['startdate'] = NULL;
+							$data['startdate'] = null;
 						}
 					}
 					if(isset($data['duedate'])) {
-						if(Zend_Date::isDate($data['duedate'])) {
-							$duedate = new Zend_Date($data['duedate'], Zend_Date::DATES, 'de');
-							$data['duedate'] = $duedate->get('yyyy-MM-dd');
+    					$data['duedate'] = trim($data['duedate']);
+						if ($data['duedate']) {
+							try {
+								$fmt = (strpos($data['duedate'], ':') !== false) ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy';
+								$zd = new Zend_Date($data['duedate'], $fmt, 'de');
+								// If only a date was given, end at 23:59
+								$data['duedate'] = $zd->toString('yyyy-MM-dd') . (strpos($fmt, 'HH') ? ' ' . $zd->toString('HH:mm:00') : ' 23:59:59');
+							} catch (Exception $e) {
+								$data['duedate'] = null;
+							}
 						} else {
-							$data['duedate'] = NULL;
+							$data['duedate'] = null;
 						}
 					}
 					if(isset($data['cc'])) {
@@ -283,11 +315,20 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 					$data['expectedrevenue'] = $currency->toCurrency($data['expectedrevenue']);
 					if($data['budgetedcost']) $data['budgetedcost'] = $currency->toCurrency($data['budgetedcost']);
 					if($data['actualcost']) $data['actualcost'] = $currency->toCurrency($data['actualcost']);
-					//Convert dates to the display format
-					$startdate = new Zend_Date($data['startdate']);
-					if($data['startdate']) $data['startdate'] = $startdate->get('dd.MM.yyyy');
-					$duedate = new Zend_Date($data['duedate']);
-					if($data['duedate']) $data['duedate'] = $duedate->get('dd.MM.yyyy');
+
+					// Convert to display formats
+					if (!empty($data['startdate'])) {
+						$data['startdate'] = date('d.m.Y H:i', strtotime($data['startdate']));
+					}
+					if (!empty($data['duedate'])) {
+						$data['duedate'] = date('d.m.Y H:i', strtotime($data['duedate']));
+					}
+					if (!empty($data['window_start'])) {
+						$data['window_start'] = substr($data['window_start'], 0, 5); // HH:mm
+					}
+					if (!empty($data['window_end'])) {
+						$data['window_end'] = substr($data['window_end'], 0, 5);
+					}
 
 					foreach($contacts as $contact) {
 						//Email

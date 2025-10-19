@@ -78,6 +78,30 @@ class Campaigns_Form_Campaign extends Zend_Form
 			->addFilter('StripTags')
 			->addFilter('StringTrim');
 
+		$form['timezone'] = new Zend_Form_Element_Select('timezone');
+		$form['timezone']->setLabel('CAMPAIGNS_TIMEZONE')
+			->addMultiOption('Europe/Berlin', 'Europe/Berlin')
+			->setValue('Europe/Berlin');
+
+		$form['interval'] = new Zend_Form_Element_Text('interval');
+		$form['interval']->setLabel('TASKS_INTERVAL')
+			->addFilter('StripTags')->addFilter('StringTrim')
+			->addValidator('Digits')
+			->setAttrib('size', '6')
+			->setValue(60);
+
+		$form['startwindow'] = new Zend_Form_Element_Text('startwindow');
+		$form['startwindow']->setLabel('CAMPAIGNS_WINDOW_START')
+			->addFilter('StripTags')->addFilter('StringTrim')
+			->setAttrib('class', 'timePicker')
+			->setAttrib('size', '6');
+
+		$form['endwindow'] = new Zend_Form_Element_Text('endwindow');
+		$form['endwindow']->setLabel('CAMPAIGNS_WINDOW_END')
+			->addFilter('StripTags')->addFilter('StringTrim')
+			->setAttrib('class', 'timePicker')
+			->setAttrib('size', '6');
+
 		$form['startdate'] = new Zend_Form_Element_Text('startdate');
 		$form['startdate']->setLabel('TASKS_START_DATE')
 			->addFilter('StripTags')
