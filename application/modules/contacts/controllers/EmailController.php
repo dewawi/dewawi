@@ -162,7 +162,7 @@ class Contacts_EmailController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$this->_helper->Email->sendEmail('contacts', 'contact');
+		$this->_helper->Email->sendEmail('contacts', 'contact', 'contact');
 	}
 
 	public function deleteAction()

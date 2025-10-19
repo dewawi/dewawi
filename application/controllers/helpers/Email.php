@@ -2,113 +2,109 @@
 
 class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_Helper_Abstract
 {
-	public function sendEmail($module, $controller, $items = null)
+	public function sendEmail($module, $controller, $redirect = false, $items = null)
 	{
 		$request = $this->getRequest();
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if(true) {
-				$messageid = $request->getParam('messageid', 0);
-				$contactid = $request->getParam('contactid', 0);
-				$documentid = $request->getParam('documentid', 0);
-				$campaignid = $request->getParam('campaignid', 0);
+		if (!$request->isPost()) {
+			return ['ok' => false, 'errors' => ['Not a POST']];
+		}
 
-				if($module == 'shops') {
-					if($controller == 'checkout') {
-						$form = new Shops_Form_Checkout();
-					} else {
-						$form = new Shops_Form_Contact();
-					}
+		$data = $request->getPost();
 
-					$emailmessageDb = new Shops_Model_DbTable_Emailmessage();
+		if ($module === 'shops' && ($controller === 'inquiry' || $controller === 'offer')) {
+			$formDataSession = new Zend_Session_Namespace('MultiStepForm');
 
-					$recipients = array();
-					$recipients[0]['email'] = $data['email'];
-					$recipients[0]['contactid'] = 0;
-				} else {
-					$form = new Contacts_Form_Contact();
-
-					$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
-
-					if($messageid) {
-						$emailmessage = $emailmessageDb->getEmailmessage($messageid);
-						unset($emailmessage['id'], $emailmessage['messagesent'], $emailmessage['messagesentby'], $emailmessage['response']);
-						$data = $emailmessage;
-						$contactid = $emailmessage['contactid'];
-						$documentid = $emailmessage['documentid'];
-						$campaignid = $emailmessage['campaignid'];
-					}
-
-					$recipients = array();
-					if($campaignid) {
-						$campaignDb = new Campaigns_Model_DbTable_Campaign();
-						$campaign = $campaignDb->getCampaign($campaignid);
-
-						//Toolbar
-						$toolbar = new Campaigns_Form_Toolbar();
-						$options = $this->_helper->Options->getOptions($toolbar);
-						$params = $this->_helper->Params->getParams($toolbar, $options);
-
-						//Get contacts
-						$get = new Contacts_Model_Get();
-						$params['limit'] = 0;
-						$params['catid'] = $campaign['contactcatid'];
-						list($contacts, $records) = $get->contacts($params, $options);
-
-						//Get already sent emails on champaign
-						$emailmessageArray = $emailmessageDb->getEmailmessages(NULL, $campaignid, 'campaigns', 'campaign');
-						$emailmessages = array();
-						foreach($emailmessageArray as $emailmessage) {
-							$emailmessages[$emailmessage['contactid']] = $emailmessage;
-						}
-
-						$i = 0;
-						$limit = 3;
-						foreach($contacts as $contact) {
-							if(($i < $limit) && !isset($emailmessages[$contact->id])) {
-								if(strpos($contact->emails, ',') !== false) {
-									$recipientEmails = explode(',', $contact->emails);
-									foreach($recipientEmails as $recipientEmail) {
-										$recipients[$i]['email'] = $recipientEmail;
-										$recipients[$i]['contactid'] = $contact->id;
-										++$i;
-									}
-								} elseif($contact->emails) {
-									$recipients[$i]['email'] = $contact->emails;
-									$recipients[$i]['contactid'] = $contact->id;
-									++$i;
-								}
-							}
-						}
-					} else {
-						//Get email
-						$emailDb = new Contacts_Model_DbTable_Email();
-						$emailArray = $emailDb->getEmail($data['recipient']);
-						$recipients[0]['email'] = $emailArray['email'];
-						if($emailArray['controller'] == 'contact') $recipients[0]['contactid'] = $emailArray['parentid'];
+			if (!empty($formDataSession->formData)) {
+				foreach ($formDataSession->formData as $step => $stepData) {
+					if (is_array($stepData)) {
+						$data = array_merge($stepData, $data); // Priorität für aktuelle POST-Daten
 					}
 				}
+			}
+
+			// Optional: Subject und Nachricht aus einem freien Feld ergänzen (z. B. wenn letzte Eingabeseite)
+			if (!isset($data['subject'])) {
+				$data['subject'] = 'Anfrageformular';
+			}
+			if (!isset($data['message'])) {
+				$data['message'] = 'Dies ist eine automatisch generierte Anfrage.';
+			}
+		}
+		if(true) {
+			$messageid = $request->getParam('messageid', 0);
+			$contactid = $request->getParam('contactid', 0);
+			$documentid = $request->getParam('documentid', 0);
+			$campaignid = $request->getParam('campaignid', 0);
+
+			if($module == 'shops') {
+				if($controller == 'checkout') {
+					$form = new Shops_Form_Checkout();
+				} else {
+					$form = new Shops_Form_Contact();
+				}
+
+				$emailmessageDb = new Shops_Model_DbTable_Emailmessage();
+
+				$recipients = array();
+				$recipients[0]['email'] = $data['email'];
+				$recipients[0]['contactid'] = 0;
+			} else {
+				$form = new Contacts_Form_Contact();
+
+				$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
+
+				if($messageid) {
+					$emailmessage = $emailmessageDb->getEmailmessage($messageid);
+					unset($emailmessage['id'], $emailmessage['messagesent'], $emailmessage['messagesentby'], $emailmessage['response']);
+					$data = $emailmessage;
+					$contactid = $emailmessage['contactid'];
+					$documentid = $emailmessage['documentid'];
+					$campaignid = $emailmessage['campaignid'];
+				}
+
+				$recipients = array();
+				//Get email
+				$emailDb = new Contacts_Model_DbTable_Email();
+				$emailArray = $emailDb->getEmail($data['recipient']);
+				$recipients[0]['email'] = $emailArray['email'];
+				if($emailArray['controller'] == 'contact') {
+					$recipients[0]['contactid'] = $emailArray['parentid'];
+				} elseif($emailArray['controller'] == 'contactperson') {
+					$recipients[0]['contactid'] = $emailArray['parentid'];
+
+					//Get contact person
+					$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+					$contactperson = $contactpersonDb->getContactperson($emailArray['parentid']);
+
+					$recipients[0]['salutation'] = $contactperson['salutation'];
+					$recipients[0]['name2'] = $contactperson['name2'];
+				}
+			}
+			//print_r($recipients);
+
+			if($form->isValid($data) || true) {
+				// Get form data
+				if($controller == 'inquiry' || $controller === 'offer') {
+					$formData = $data;
+				} else {
+					$formData = $form->getValues();
+				}
+
+				//PHPMailer
+				require_once(BASE_PATH.'/library/PHPMailer/Exception.php');
+				require_once(BASE_PATH.'/library/PHPMailer/PHPMailer.php');
+				require_once(BASE_PATH.'/library/PHPMailer/SMTP.php');
 
 				if($form->isValid($data) || true) {
-					// Get form data
-					$formData = $form->getValues();
+					// Get SMTP settings
+					list($smtpHost, $smtpUser, $smtpPass, $emailSender) = $this->getSmtpDetails($module);
 
-					//PHPMailer
-					require_once(BASE_PATH.'/library/PHPMailer/Exception.php');
-					require_once(BASE_PATH.'/library/PHPMailer/PHPMailer.php');
-					require_once(BASE_PATH.'/library/PHPMailer/SMTP.php');
-
-					if($form->isValid($data) || true) {
-						// Get SMTP settings
-						list($smtpHost, $smtpUser, $smtpPass, $emailSender) = $this->getSmtpDetails($module);
-
-						$this->sendEmails($module, $controller, $recipients, $smtpHost, $smtpUser, $smtpPass, $emailSender, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items);
-					}
+					$this->sendEmails($module, $controller, $recipients, $smtpHost, $smtpUser, $smtpPass, $emailSender, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items);
 				}
-			} else {
-				$flashMessengerHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
-				$flashMessengerHelper->addMessage('MESSAGES_FORM_INVALID');
 			}
+		} else {
+			$flashMessengerHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
+			$flashMessengerHelper->addMessage('MESSAGES_FORM_INVALID');
 		}
 	}
 
@@ -117,7 +113,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 		$mail = new PHPMailer\PHPMailer\PHPMailer();
 
 		//Server settings
-		$mail->SMTPDebug = PHPMailer\PHPMailer\SMTP::DEBUG_SERVER;				// Enable verbose debug output
+		$mail->SMTPDebug = 0;													// Enable verbose debug output: PHPMailer\PHPMailer\SMTP::DEBUG_SERVER
 		$mail->isSMTP();														// Send using SMTP
 		$mail->Host		= $smtpHost;											// Set the SMTP server to send through
 		$mail->SMTPAuth	= true;													// Enable SMTP authentication
@@ -158,7 +154,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 							$mail->addBCC($bcc);
 						}
 					} else {
-						$mail->addCC($data['bcc']);
+						$mail->addBCC($data['bcc']);
 					}
 				}
 			}
@@ -189,13 +185,16 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			// Get email body and subject
 			list($body, $subject) = $this->getEmailBody($module, $controller, $formData, $data, $items);
 
+			// personalize for this recipient
+			$body = $this->personalizeBody($body, $recipient);
+
 			//Save email message to the db
 			$emailmessage = array();
 			$emailmessage['contactid'] = $recipient['contactid'];
 			$emailmessage['documentid'] = $documentid;
 			$emailmessage['parentid'] = $campaignid;
-			$emailmessage['module'] = $data['module'];
-			$emailmessage['controller'] = $data['controller'];
+			$emailmessage['module'] = $data['module'] ?? $module;
+			$emailmessage['controller'] = $data['controller'] ?? $controller;
 			$emailmessage['recipient'] = $recipient['email'];
 			if(isset($data['cc'])) $emailmessage['cc'] = $data['cc'];
 			if(isset($data['bcc'])) $emailmessage['bcc'] = $data['bcc'];
@@ -218,11 +217,22 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				$data['body'] .= '<img src="'.$url.'/email/view/key/'.$hash.'" border="0" width="1" height="1">';
 			}*/
 
+			// Allow explicit file attachments from callers
+			if (!empty($formData['__attach_paths']) && is_array($formData['__attach_paths'])) {
+				foreach ($formData['__attach_paths'] as $ap) {
+					if ($ap && file_exists($ap)) {
+						$mail->addAttachment($ap);
+					}
+				}
+				// don’t show internal field in the body table
+				unset($formData['__attach_paths']);
+			}
+
 			//Content
 			$mail->isHTML(true);									// Set email format to HTML
 			$mail->Subject = $subject ? $subject : 'Anfrageformular';
 			$mail->Body	= $body;
-			//$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+			$mail->AltBody = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], "\n", $body)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
 			if ($module === 'shops') {
 				$shop = Zend_Registry::get('Shop');
@@ -241,6 +251,9 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$mail->CharSet	= 'UTF-8';
 			$mail->Encoding = 'base64';
 
+			// Optional: Remove PHPMailer signature (recommended)
+			$mail->XMailer = '';
+
 			$flashMessengerHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
 			$redirector = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
 
@@ -249,10 +262,10 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				//Save errors to the db
 				$emailmessageDb->updateEmailmessage($messageid, array('response' => $mail->ErrorInfo));
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_ERROR');
-				$redirector->gotoSimple('error', $controller, 'default');
+				//$redirector->gotoSimple('error', $controller, 'default');
 			} else {
+//print_r($formData);
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
-				$redirector->gotoSimple('success', $controller, 'default');
 				//print_r($formData);
 			}
 		}
@@ -279,6 +292,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$shop = Zend_Registry::get('Shop');
 
 			$viewRenderer = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer');
+
+			if(!isset($data['name'])) $data['name'] = '';
 
 			// Replace dynamic placeholders with values
 			$dynamicPlaceholders = [
@@ -335,8 +350,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					'#MESSAGES_MESSAGE#' => nl2br(htmlspecialchars($formData['message'])),
 					'#MESSAGES_BEST_REGARDS#' => htmlspecialchars($shop['emailsender']) . '<br>' . htmlspecialchars($shop['title']),
 					'#MESSAGES_ALL_RIGHTS_RESERVED#' => date('Y') . ' ' . htmlspecialchars($shop['title']),
-					'#ORDER_NUMBER#' => htmlspecialchars(654836),
-					'#ORDER_DATE#' => htmlspecialchars('24.01.2024'),
+					'#ORDER_NUMBER#' => htmlspecialchars($data['orderid']),
+					'#ORDER_DATE#' => htmlspecialchars($data['orderdate']),
 					'#PAYMENT_METHOD#' => htmlspecialchars('Überweisung'),
 					'#BILLING_COMPANY#' => htmlspecialchars($formData['billingcompany']),
 					'#BILLING_DEPARTMENT#' => htmlspecialchars($formData['billingdepartment']),
@@ -357,7 +372,42 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				];
 			}
 
-			print_r($formData);
+			//print_r($formData);
+
+			// Strip internal/technical fields before rendering
+			$internalKeys = [
+				'csrf', 'csrf_token', '_csrf', 'g-recaptcha-response',
+				'step', 'next', 'back', 'submit', 'controller', 'module', 'action',
+				'subject', 'message'
+			];
+			$internalPrefixes = ['_', '__']; // e.g. __meta, _internal
+
+			$cleanData = [];
+			foreach ($formData as $k => $v) {
+				// skip explicit internal keys
+				if (in_array($k, $internalKeys, true)) continue;
+				// skip keys starting with internal prefixes
+				foreach ($internalPrefixes as $pref) {
+					if (strpos($k, $pref) === 0) { continue 2; }
+				}
+				$cleanData[$k] = $v;
+			}
+
+			// build details table from $cleanData
+			$userDetailsHtml = '<table style="width: 100%; border-collapse: collapse;">';
+			foreach ($cleanData as $key => $value) {
+				// Escape key and value
+				$label = ucfirst(str_replace('_', ' ', htmlspecialchars($key)));
+				$content = nl2br(htmlspecialchars($value));
+
+				$userDetailsHtml .= "<tr>
+					<td style=\"padding: 5px; font-weight: bold; border-bottom: 1px solid #ddd;\">{$label}</td>
+					<td style=\"padding: 5px; border-bottom: 1px solid #ddd;\">{$content}</td>
+				</tr>";
+			}
+			$userDetailsHtml .= '</table>';
+
+			$dynamicPlaceholders['#USER_DETAILS#'] = $userDetailsHtml;
 		
 			// Replace placeholders in the template
 			foreach ($dynamicPlaceholders as $key => $value) {
@@ -383,8 +433,32 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			/*if($campaignid) {
 				$data['body'] = str_replace('[BODY]', $data['body'], $template);
 			}*/
+
 			$subject = $data['subject'];
 			return [$body, $subject];
 		}
+	}
+
+	private function buildSalutation(array $recipient): string {
+		//derive from gender + name
+		$gender = trim($recipient['salutation'] ?? '');
+		$name = trim($recipient['name2'] ?? '');
+
+		if ($gender && $name) {
+			return 'Guten Tag ' . $gender . ' ' . $name . ',';
+		}
+
+		// default fallback
+		return 'Sehr geehrte Damen und Herren,';
+	}
+
+	private function personalizeBody(string $body, array $recipient): string {
+		// only replace if placeholder is present
+		if (strpos($body, '[SALUTATION]') !== false) {
+			$salutation = $this->buildSalutation($recipient);
+			$body = str_replace('[SALUTATION]', $salutation, $body);
+		}
+
+		return $body;
 	}
 }
