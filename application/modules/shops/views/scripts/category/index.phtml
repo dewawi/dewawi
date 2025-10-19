@@ -150,35 +150,35 @@ foreach ($this->categories as $subcategory) {
 				<?php foreach($this->items as $item) : ?>
 					<script type="application/ld+json">
 					{
-					  "@context": "https://schema.org/",
-					  "@type": "Product",
-					  "name": "<?php echo $item->title; ?>",
-					  <?php if (count($this->images['items'][$item->id]) > 0): ?>
-						<?php $folder = 'images'; ?>
-						"image": [
-							<?php 
-							$totalImages = count($this->images['items'][$item->id]);
-							$i = 0;
-							foreach ($this->images['items'][$item->id] as $image): 
-								$i++; 
-							?>
-								"<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>"<?php if ($i < $totalImages) echo ','; ?>
-							<?php endforeach; ?>
-						],
-					  <?php endif; ?>
-					  "description": "<?php echo $item->shopdescriptionshort; ?>",
-					  "sku": "<?php echo $item->sku; ?>",
-					  "brand": {
-						"@type": "Brand",
-						"name": "<?php echo $this->manufacturers[$item->manufacturerid]; ?>"
-					  },
-					  "offers": {
-						"@type": "Offer",
-						"url": "<?php echo $this->shop['url'].$this->url([], 'category_' . $this->category['id']); ?>",
-						"priceCurrency": "<?php echo $item->currency; ?>",
-						"price": "<?php echo $this->prices[$item->id]['rawtax']; ?>",
-						"availability": "https://schema.org/InStock"
-					  }
+						"@context": "https://schema.org/",
+						"@type": "Product",
+						"name": "<?php echo $item->title; ?>",
+						<?php if (count($this->images['items'][$item->id]) > 0): ?>
+							<?php $folder = 'images'; ?>
+							"image": [
+								<?php
+								$totalImages = count($this->images['items'][$item->id]);
+								$i = 0;
+								foreach ($this->images['items'][$item->id] as $image):
+									$i++;
+								?>
+									"<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>"<?php if ($i < $totalImages) echo ','; ?>
+								<?php endforeach; ?>
+							],
+						<?php endif; ?>
+						"description": "<?php echo $item->shopdescriptionshort; ?>",
+						"sku": "<?php echo $item->sku; ?>",
+						"brand": {
+							"@type": "Brand",
+							"name": "<?php echo $this->manufacturers[$item->manufacturerid]; ?>"
+						},
+						"offers": {
+							"@type": "Offer",
+							"url": "<?php echo $this->shop['url'].$this->url([], 'category_' . $this->category['id']); ?>",
+							"priceCurrency": "<?php echo $item->currency; ?>",
+							"price": "<?php echo $this->prices[$item->id]['rawtax']; ?>",
+							"availability": "https://schema.org/InStock"
+						}
 					}
 					</script>
 					<?php if($item->title) : ?>
@@ -217,11 +217,27 @@ foreach ($this->categories as $subcategory) {
 										<span><?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $item->sku; ?></span>
 									</div>
 								</div>
+
+								<?php
+								$hasSpecial = !empty($this->prices[$item->id]['rawspecialprice']);
+								$base = (float)($this->prices[$item->id]['raw'] ?? 0);
+								$special = (float)($this->prices[$item->id]['rawspecialprice'] ?? 0);
+
+								$discountPct = null;
+								if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
+									// e.g. base 1000, special 800 → 20%
+									$discountPct = round((1 - ($special / $base)) * 100);
+								}
+								?>
 								<div class="col-md-5">
 									<p style="margin-bottom: 0;">
-										<?php if($this->prices[$item->id]['rawspecialprice']) : ?>
-											<strong style="color: #008000;">Sonderpreis: <?php echo $this->prices[$item->id]['formattedspecialprice']; ?></strong> *<br>
-											<span style="text-decoration: line-through;">Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></span> *<br>
+										<?php if($hasSpecial) : ?>
+											<strong style="color: #008000;">Sonderpreis: <?php echo $this->prices[$item->id]['formattedspecialprice']; ?>
+												<?php if ($discountPct !== null): ?>
+													<span class="badge bg-danger ms-2" style="color: #ffffff;">-<?= $discountPct; ?>%</span>
+												<?php endif; ?>
+											</strong> *<br>
+											<span style="text-decoration: line-through;">Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></span><br>
 										<?php elseif($this->prices[$item->id]['raw'] == 0) : ?>
 											<span><strong>Auf Anfrage</strong></span>
 										<?php else : ?>

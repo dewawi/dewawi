@@ -6,37 +6,49 @@ $this->headTitle($this->title);
 $downloads = false;
 ?>
 
+<?php
+$hasSpecial = !empty($this->prices['rawspecialprice']);
+$base = (float)($this->prices['raw'] ?? 0);
+$special = (float)($this->prices['rawspecialprice'] ?? 0);
+
+$discountPct = null;
+if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
+	// e.g. base 1000, special 800 → 20%
+	$discountPct = round((1 - ($special / $base)) * 100);
+}
+?>
+
 <script type="application/ld+json">
 {
-  "@context": "https://schema.org/",
-  "@type": "Product",
-  "name": "<?php echo $this->item['title']; ?>",
-  <?php if (count($this->images) > 0): ?>
-	<?php $folder = 'images'; ?>
-	"image": [
-		<?php 
-		$totalImages = count($this->images);
-		$i = 0;
-		foreach ($this->images as $image): 
-			$i++; 
-		?>
-			"<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>"<?php if ($i < $totalImages) echo ','; ?>
-		<?php endforeach; ?>
-	],
-  <?php endif; ?>
-  "description": "<?php echo $this->item['shopdescriptionshort']; ?>",
-  "sku": "<?php echo $this->item['sku']; ?>",
-  "brand": {
-	"@type": "Brand",
-	"name": "<?php echo $this->manufacturers[$this->item['manufacturerid']]; ?>"
-  },
-  "offers": {
-	"@type": "Offer",
-	"url": "<?php echo $this->shop['url'].$this->url([], 'category_' . $this->category['id']); ?>",
-	"priceCurrency": "<?php echo $this->item['currency']; ?>",
-	"price": "<?php echo $this->item['price']*1.19; ?>",
-	"availability": "https://schema.org/InStock"
-  }
+	"@context": "https://schema.org/",
+	"@type": "Product",
+	"name": "<?php echo $this->item['title']; ?>",
+	<?php if (count($this->images) > 0): ?>
+		<?php $folder = 'images'; ?>
+		"image": [
+			<?php
+			$totalImages = count($this->images);
+			$i = 0;
+			foreach ($this->images as $image):
+				$i++;
+			?>
+				"<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>"<?php if ($i < $totalImages) echo ','; ?>
+			<?php endforeach; ?>
+		],
+	<?php endif; ?>
+	"description": "<?php echo $this->item['shopdescriptionshort']; ?>",
+	"sku": "<?php echo $this->item['sku']; ?>",
+	"brand": {
+		"@type": "Brand",
+		"name": "<?php echo $this->manufacturers[$this->item['manufacturerid']]; ?>"
+	},
+	"offers": {
+		"@type": "Offer",
+		"url": "<?php echo $this->shop['url'].$this->url([], 'category_' . $this->category['id']); ?>",
+		"priceCurrency": "<?php echo $this->item['currency']; ?>",
+		"price": "<?php echo $this->item['price']*1.19; ?>",
+		"availability": "https://schema.org/InStock"
+	}
 }
 </script>
 
@@ -87,12 +99,19 @@ $downloads = false;
 
 				<div style="margin-bottom: 10px;">
 					<p style="margin-bottom: 0;">
-						<?php if($this->prices['rawspecialprice']) : ?>
-							<strong style="color: #008000; font-size: 1.3rem;">Sonderpreis: <?php echo $this->prices['formattedspecialprice']; ?></strong><br>
-							<span style="text-decoration: line-through; font-size: 1.3rem;">Listenpreis: <?php echo $this->prices['formatted']; ?></span><br>
+						<?php if($hasSpecial) : ?>
+							<strong style="color: #008000; font-size: 1.3rem;">
+								Sonderpreis: <?php echo $this->prices['formattedspecialprice']; ?>
+								<?php if ($discountPct !== null): ?>
+									<span class="badge bg-danger ms-2" style="color: #ffffff;">-<?= $discountPct; ?>%</span>
+								<?php endif; ?>
+							</strong> *<br>
+							<span style="text-decoration: line-through; font-size: 1.3rem;">
+								Listenpreis: <?php echo $this->prices['formatted']; ?>
+							</span><br>
 							<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
 						<?php else : ?>
-							<span style="font-size: 1.3rem;">Listenpreis: <?php echo $this->prices['formatted']; ?></span><br>
+							<span style="font-size: 1.3rem;">Listenpreis: <?php echo $this->prices['formatted']; ?></span> *<br>
 							<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
 						<?php endif; ?>
 					</p>
