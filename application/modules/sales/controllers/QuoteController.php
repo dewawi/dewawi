@@ -325,11 +325,23 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$emailDb = new Contacts_Model_DbTable_Email();
 		$contact['email'] = $emailDb->getEmails($contact['id']);
 
+		//Get contact persons
+		$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+		$contactpersons = $contactpersonDb->getContactpersons($contact['id']);
+
 		//Get email form
 		$emailForm = new Contacts_Form_Emailmessage();
 		if($contact['email']) {
 			foreach($contact['email'] as $option) {
 				$emailForm->recipient->addMultiOption($option['id'], $option['email']);
+			}
+		}
+		if(count($contactpersons)) {
+			foreach($contactpersons as $contactperson) {
+				$contactperson['email'] = $emailDb->getEmails($contactperson['id'], 'contacts', 'contactperson');
+				foreach($contactperson['email'] as $option) {
+					$emailForm->recipient->addMultiOption($option['id'], $option['email'] . ' (' . $contactperson['name1'] . ' ' . $contactperson['name2'] . ')');
+				}
 			}
 		}
 
