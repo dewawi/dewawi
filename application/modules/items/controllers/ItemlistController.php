@@ -163,8 +163,8 @@ class Items_ItemlistController extends Zend_Controller_Action
 		$id = $this->_getParam('id', 0);
 
 		if($id) {
-			$this->_helper->viewRenderer->setRender('pdf');
-			//$this->_helper->viewRenderer->setNoRender();
+			//$this->_helper->viewRenderer->setRender('pdf');
+			$this->_helper->viewRenderer->setNoRender();
 
 			$itemlistDb = new Items_Model_DbTable_Itemlist();
 			$itemlist = $itemlistDb->getItemlist($id);
@@ -281,6 +281,13 @@ class Items_ItemlistController extends Zend_Controller_Action
 					}
 				}
 			}
+
+			$images = array();
+			$imageDb = new Application_Model_DbTable_Media();
+			//$images['items'] = $imageDb->getItemMedia($items);
+			$images['categories'] = $imageDb->getMediaByParentID($catid, 'items', 'category');
+			//print_r($catid);
+			//print_r($images['categories']);
 
 			$this->view->itemlist = $itemlist;
 			$this->view->itemlists = $itemlists;

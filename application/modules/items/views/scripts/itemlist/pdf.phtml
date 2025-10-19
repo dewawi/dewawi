@@ -131,7 +131,7 @@ if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PAT
 				$pdf->MultiCell(0, 0, $categories[$catid]['title'], 0, 'L', false, 1, 20);
 				$pdf->SetFont('freesans', '', 9);
 				if($categories[$catid]['description']) {
-					$pdf->MultiCell(120, 0, $categories[$catid]['description'], 0, 'L', false, 1, 20);
+					$pdf->writeHTMLCell(120, 0, 20, '', $categories[$catid]['description'], 0, 1, false, true, 'L', true);
 					$pdf->ln(4);
 				}
 				itemsHeader($pdf, $params[$catid]['rows']);
@@ -259,7 +259,7 @@ function getSubList($childs, $categories, $pdf, $pathUploads, $items, $attribute
 		$pdf->SetFont('freesans', '', 8);
 		if($categories[$child]['description']) {
 			$pdf->SetY($pdf->GetY()+2);
-			$pdf->MultiCell(120, 50, $categories[$child]['description'], 0, 'L', false, 1, 20);
+			$pdf->writeHTMLCell(120, 0, 20, '', $categories[$child]['description'], 0, 1, false, true, 'L', true);
 			$pdf->ln(2);
 		}
 		if(isset($categories[$child]['childs'])) {
