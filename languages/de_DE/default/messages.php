@@ -30,6 +30,8 @@
 	'MESSAGES_HELLO_NAME' => 'Hallo %s,', // %s will be replaced by the user’s name
 	'MESSAGES_RECEIVED_YOUR_MESSAGE' => 'Vielen Dank, dass Sie uns kontaktiert haben. Wir haben Ihre Nachricht erhalten und werden uns schnellstmöglich mit Ihnen in Verbindung setzen.',
 	'MESSAGES_DETAILS_OF_MESSAGE' => 'Details Ihrer Nachricht:',
+	'MESSAGES_YOUR_INFORMATION' => 'Ihre Angaben',
+	'MESSAGES_ORDER CONFIRMATION' => 'Bestellbestätigung',
 	'MESSAGES_SUBJECT' => 'Betreff',
 	'MESSAGES_MESSAGE' => 'Nachricht',
 	'MESSAGES_FURTHER_QUESTIONS' => 'Falls Sie weitere Fragen haben, können Sie uns jederzeit eine Nachricht zukommen lassen oder auf diese E-Mail antworten.',
