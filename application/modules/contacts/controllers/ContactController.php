@@ -630,46 +630,127 @@ class Contacts_ContactController extends Zend_Controller_Action
 		//Get csv data
 		if(count($contacts)) {
 			//Create CSV data
-			$csvData = array();
-			$csvData[0]['id'] = 'id';
-			$csvData[0]['name1'] = 'name1';
-			$csvData[0]['name2'] = 'name2';
-			$csvData[0]['department'] = 'department';
-			$csvData[0]['street'] = 'street';
-			$csvData[0]['postcode'] = 'postcode';
-			$csvData[0]['city'] = 'city';
-			$csvData[0]['country'] = 'country';
-			$csvData[0]['taxnumber'] = 'taxnumber';
-			$csvData[0]['vatin'] = 'vatin';
-			$csvData[0]['phone'] = 'phone';
-			$csvData[0]['email'] = 'email';
-			$csvData[0]['internet'] = 'internet';
-			$csvData[0]['$category'] = 'category';
-			$csvData[0]['tags'] = 'tags';
+			$csvRows = array();
+			$csvRows[0]['id'] = 'id';
+			$csvRows[0]['name1'] = 'name1';
+			$csvRows[0]['name2'] = 'name2';
+			$csvRows[0]['department'] = 'department';
+			$csvRows[0]['street'] = 'street';
+			$csvRows[0]['postcode'] = 'postcode';
+			$csvRows[0]['city'] = 'city';
+			$csvRows[0]['country'] = 'country';
+			$csvRows[0]['taxnumber'] = 'taxnumber';
+			$csvRows[0]['vatin'] = 'vatin';
+			$csvRows[0]['phone'] = 'phone';
+			$csvRows[0]['email'] = 'email';
+			$csvRows[0]['contactperson'] = 'contactperson';
+			$csvRows[0]['internet'] = 'internet';
+			$csvRows[0]['category'] = 'category';
+			$csvRows[0]['tags'] = 'tags';
 			foreach($contacts as $contact) {
-				$csvData[$contact->id]['id'] = $contact->id;
-				$csvData[$contact->id]['name1'] = $contact->name1;
-				$csvData[$contact->id]['name2'] = $contact->name2;
-				$csvData[$contact->id]['department'] = $contact->department;
-				$csvData[$contact->id]['street'] = $contact->street;
-				$csvData[$contact->id]['postcode'] = $contact->postcode;
-				$csvData[$contact->id]['city'] = $contact->city;
-				$csvData[$contact->id]['country'] = $contact->country;
-				$csvData[$contact->id]['taxnumber'] = $contact->taxnumber;
-				$csvData[$contact->id]['vatin'] = $contact->vatin;
-				$csvData[$contact->id]['phone'] = $contact->phones;
-				$csvData[$contact->id]['email'] = $contact->emails;
-				$csvData[$contact->id]['internet'] = $contact->internets;
-				if(isset($options['categories'][$contact->catid])) $csvData[$contact->id]['category'] = $options['categories'][$contact->catid]['title'];
+				// Common field data
+				$categoryTitle = isset($options['categories'][$contact->catid])
+					? $options['categories'][$contact->catid]['title']
+					: '';
+
 				$tags = '';
 				foreach ($tagEntites[$contact->id] as $entity) {
 					$tags .= $entity['tag'];
 				}
-				$csvData[$contact->id]['tags'] = $tags;
+
+				// Base row template
+				$base = [
+					$contact->id,
+					$contact->name1,
+					$contact->name2,
+					$contact->department,
+					$contact->street,
+					$contact->postcode,
+					$contact->city,
+					$contact->country,
+					$contact->taxnumber,
+					$contact->vatin,
+					$contact->phones,
+					'', // email placeholder
+					'', // contactperson placeholder
+					$contact->internets,
+					$categoryTitle,
+					$tags
+				];
+
+				// --- company emails ---
+				$companyEmails = preg_split('/[;,]+/', (string)$contact->emails);
+				$companyEmails = array_filter(array_map('trim', $companyEmails));
+
+				// --- collect contact-person emails first ---
+				$personEmails = [];
+				$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+				$emailDb = new Contacts_Model_DbTable_Email();
+				$contactpersons = $contactpersonDb->getContactpersons($contact->id, 'contacts', 'contact');
+
+				foreach ($contactpersons as $cp) {
+					$cpMails = $emailDb->getEmails($cp['id'], 'contacts', 'contactperson');
+					$list = [];
+					foreach ((array)$cpMails as $e) {
+						$list[] = $e['email'];
+					}
+					$list = array_filter(array_map('trim', $list));
+					if (empty($list)) continue;
+
+					$cpName = trim(($cp['salutation'] ?? '') . ' ' . ($cp['name2'] ?? ''));
+					foreach ($list as $mail) {
+						$personEmails[] = ['email' => $mail, 'name' => $cpName];
+					}
+				}
+
+				// --- decide first line ---
+				if (!empty($companyEmails)) {
+					// first row = first company email
+					$row = $base;
+					$row[11] = $companyEmails[0];
+					$csvRows[] = $row;
+
+					// remaining company emails
+					for ($i = 1; $i < count($companyEmails); $i++) {
+						$r = $base;
+						$r[11] = $companyEmails[$i];
+						$csvRows[] = $r;
+					}
+
+					// then all contact-person emails
+					foreach ($personEmails as $pe) {
+						$r = $base;
+						$r[11] = $pe['email'];
+						$r[12] = $pe['name'];
+						$csvRows[] = $r;
+					}
+
+				} else {
+					// NO company email -> use FIRST contact-person email in the FIRST row
+					if (!empty($personEmails)) {
+						// first row from first contact person
+						$first = array_shift($personEmails);
+						$row = $base;
+						$row[11] = $first['email'];
+						$row[12] = $first['name'];
+						$csvRows[] = $row;
+
+						// remaining contact-person emails
+						foreach ($personEmails as $pe) {
+							$r = $base;
+							$r[11] = $pe['email'];
+							$r[12] = $pe['name'];
+							$csvRows[] = $r;
+						}
+					} else {
+						// no emails at all -> single empty email row
+						$csvRows[] = $base;
+					}
+				}
 			}
 			//Save data to contacts.csv
 			$contactsFile = fopen($filePath.$contactsFileCsv, 'w');
-			foreach($csvData as $fields) {
+			foreach($csvRows as $fields) {
 				fputcsv($contactsFile, $fields);
 			}
 			fclose($contactsFile);
@@ -824,8 +905,8 @@ echo '{
 		query: "Unit",
 		suggestions: [
 			{ value: "United Arab Emirates", data: "AE" },
-			{ value: "United Kingdom",	   data: "UK" },
-			{ value: "United States",		data: "US" }
+			{ value: "United Kingdom", data: "UK" },
+			{ value: "United States", data: "US" }
 		]
 	}';
 	//print_r($suggestions);
