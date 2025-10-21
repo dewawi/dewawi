@@ -140,4 +140,11 @@ class DEEC_Campaign {
 
 		return $url;
 	}
+
+	public function touchLastSent($id, DateTime $when) {
+		$id = (int)$id;
+		$ts = $when->format('Y-m-d H:i:s');
+		$sql = "UPDATE campaign SET lastsent = '$ts' WHERE id = $id";
+		mysqli_query($this->connection, $sql);
+	}
 }

@@ -21,6 +21,8 @@ class DEEC_Email {
 		$this->directory = new DEEC_Directory();
 		require_once(BASE_PATH.'/library/DEEC/Contact.php');
 		$this->contact = new DEEC_Contact($basePath, $host, $username, $password, $dbname);
+		require_once(BASE_PATH.'/library/DEEC/Contactperson.php');
+		$this->contactperson = new DEEC_Contactperson($basePath, $host, $username, $password, $dbname);
 		require_once(BASE_PATH.'/library/DEEC/Category.php');
 		$this->category = new DEEC_Category($basePath, $host, $username, $password, $dbname);
 		require_once(BASE_PATH.'/library/DEEC/Emailmessage.php');
@@ -52,7 +54,6 @@ class DEEC_Email {
 			$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;	// Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
 			$mail->Port		= 465;													// TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
-			$emails = array();
 			if($campaign) {
 				//Get contacts
 				$categories = $this->category->getCategories('contact', $campaign['clientid']);
@@ -60,50 +61,92 @@ class DEEC_Email {
 
 				//Get already sent emails on campaign
 				$emailmessageArray = $this->emailmessage->getEmailmessages(NULL, $campaign['id'], 'campaigns', 'campaign', $campaign['clientid']);
-				$emailmessages = array();
-				if($emailmessageArray) {
-					foreach($emailmessageArray as $emailmessage) {
-						$emailmessages[$emailmessage['contactid']] = $emailmessage;
+
+				// set of lowercase recipient emails already sent for this campaign
+				$alreadySent = [];
+				if ($emailmessageArray) {
+					foreach ($emailmessageArray as $em) {
+						if (!empty($em['recipient'])) {
+							$alreadySent[strtolower(trim($em['recipient']))] = true;
+						}
 					}
 				}
-//echo count($emailmessages);
 
 				$i = 0;
-				$limit = 1;
-				$recipients = array();
-//print_r($contacts);
-//echo 1;
-				foreach($contacts as $contact) {
-					if(($i < $limit) && !isset($emailmessages[$contact['id']])) {
-						$emailaddressArray = $this->emailaddress->getEmailaddresses($contact['id'], $contact['clientid']);
-						if($emailaddressArray) {
-							foreach($emailaddressArray as $emailaddress) {
-								if($emailaddress['email']) {
-									$recipients[$i]['email'] = $emailaddress['email'];
-									$recipients[$i]['contactid'] = $contact['id'];
-									++$i;
-								}
+				$limit = 1; // your throttle per cron tick
+				$recipients = [];
+				$seen = []; // dedupe for this run (lowercased)
+
+				// build recipients from contacts + their contact persons
+				foreach ($contacts as $contact) {
+					if ($i >= $limit) break;
+
+					// 1) Contact-level emails (module/controller aren’t filtered in getEmailaddresses,
+					//    so we accept rows where controller == 'contact' OR empty)
+					$contactEmails = $this->emailaddress->getEmailaddresses($contact['id'], $contact['clientid']);
+					if ($contactEmails) {
+						foreach ($contactEmails as $ea) {
+							if ($i >= $limit) break;
+							$em = strtolower(trim($ea['email']));
+							if (!$em) continue;
+
+							// if your email table distinguishes with controller, prefer contact-level here
+							if (isset($ea['controller']) && $ea['controller'] && $ea['controller'] !== 'contact') {
+								// skip non-contact rows in this first pass
+								continue;
 							}
+
+							if (isset($seen[$em])) continue;
+							if (isset($alreadySent[$em])) continue;
+
+							$recipients[] = [
+								'email'     => $ea['email'],
+								'contactid' => $contact['id']
+							];
+							$seen[$em] = true;
+							$i++;
 						}
+					}
 
-						/*if(strpos($contact->emails, ',') !== false) {
-							$recipientEmails = explode(',', $contact->emails);
-							foreach($recipientEmails as $recipientEmail) {
-								$recipients[$i]['email'] = $recipientEmail;
-								$recipients[$i]['contactid'] = $contact->id;
-								++$i;
+					if ($i >= $limit) continue;
+
+					// 2) Contact-person emails (controller should be 'contactperson')
+					//    We’ll reuse your class to fetch persons, then their emails.
+					$persons = $this->contactperson->getContactpersons($contact['id'], $contact['clientid']) ?: [];
+					foreach ($persons as $cp) {
+						if ($i >= $limit) break;
+
+						$cpEmails = $this->emailaddress->getEmailaddresses($cp['id'], $contact['clientid']);
+						if (!$cpEmails) continue;
+
+						foreach ($cpEmails as $ea) {
+							if ($i >= $limit) break;
+							$em = strtolower(trim($ea['email']));
+							if (!$em) continue;
+
+							// only take rows that actually belong to contact persons
+							if (isset($ea['controller']) && $ea['controller'] && $ea['controller'] !== 'contactperson') {
+								continue;
 							}
-						} elseif($contact->emails) {
-							$recipients[$i]['email'] = $contact->emails;
-							$recipients[$i]['contactid'] = $contact->id;
-							++$i;
-						}*/
 
-						/*$recipients[$i]['email'] = 'remzi@bergcold.com';
-						$recipients[$i]['contactid'] = $contact['id'];
-						++$i;*/
+							if (isset($seen[$em])) continue;
+							if (isset($alreadySent[$em])) continue;
+
+							$recipients[] = [
+								'email'     => $ea['email'],
+								'contactid' => $contact['id'],
+								'contactpersonid' => $cp['id'],
+								'salutation' => $cp['salutation'],
+								'name1' => $cp['name1'],
+								'name2' => $cp['name2'],
+								'department' => $cp['department']
+							];
+							$seen[$em] = true;
+							$i++;
+						}
 					}
 				}
+
 				$data = array();
 				$data['cc'] = $campaign['emailcc'];
 				$data['bcc'] = $campaign['emailbcc'];
@@ -119,35 +162,6 @@ class DEEC_Email {
 				//if($emailArray['controller'] == 'contact') $recipients[0]['contactid'] = $emailArray['parentid'];
 			}
 //print_r($recipients);
-/*
-$template = '
-<head>
-<style>
-body, table{
-font-size: 14px;
-line-height: 1.4;
-font-family: sans-serif;
-}
-h2{
-font-size: 20px;
-line-height: 1.3;
-}
-h3{
-font-size: 17px;
-line-height: 1.4;
-}
-img{
-max-width: 100%;
-height: auto;
-}
-</style>
-</head>
-<body width="100%" style="margin: 0; padding: 0;">
-<div style="max-width: 600px; margin: 0; padding: 1em; min-width: 300px; background-color: #ffffff;">
-[BODY]
-</div>
-</body>
-';*/
 
 			//Add email signature
 			$data['body'] = str_replace('[SIGNATURE]', $user['emailsignature'], $data['body']);
@@ -160,8 +174,8 @@ height: auto;
 				//Recipients
 				$mail->clearAllRecipients();											// clear all
 				$mail->setFrom($user['smtpuser'], $user['emailsender']);
-				$mail->addAddress($recipient['email']);												// Add a recipient
-				/*$data['replyto'] = str_replace(' ', '', $data['replyto']);				// Remove spaces
+				$mail->addAddress($recipient['email']);									// Add a recipient
+				/*$data['replyto'] = str_replace(' ', '', $data['replyto']);			// Remove spaces
 				if($data['replyto']) $mail->addReplyTo($data['replyto']);				// Add reply to
 				$data['cc'] = str_replace(' ', '', $data['cc']);						// Remove spaces
 				if($data['cc']) {														// Add copy recipients
@@ -176,6 +190,9 @@ height: auto;
 				}
 				$data['bcc'] = str_replace(' ', '', $data['bcc']);
 				if($data['bcc']) $mail->addBCC($data['bcc']);*/
+
+				// personalize for this recipient
+				$body = $this->personalizeBody($data['body'], $recipient);
 
 				//Get email attachments
 				$emailattachmentArray = $this->emailattachment->getEmailattachments($campaign['id'], 'campaigns', 'campaign', $campaign['clientid']);
@@ -202,7 +219,7 @@ height: auto;
 				$emailmessage['cc'] = $data['cc'];
 				$emailmessage['bcc'] = $data['bcc'];
 				$emailmessage['subject'] = $data['subject'];
-				$emailmessage['body'] = $data['body'];
+				$emailmessage['body'] = $body;
 				$emailmessage['clientid'] = $campaign['clientid'];
 				$emailmessage['messagesent'] = date('Y-m-d H:i:s');
 				$emailmessage['messagesentby'] = $user['id'];
@@ -226,7 +243,7 @@ height: auto;
 				//Content
 				$mail->isHTML(true);									// Set email format to HTML
 				$mail->Subject = $data['subject'];
-				$mail->Body	= $data['body'];
+				$mail->Body	= $body;
 				//$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
 //echo $data['body'];
 				//Content
@@ -240,5 +257,28 @@ height: auto;
 				}
 			}
 		}
+	}
+
+	private function buildSalutation(array $recipient): string {
+		//derive from gender + name
+		$gender = trim($recipient['salutation'] ?? '');
+		$name   = trim($recipient['name2'] ?? '');
+
+		if ($gender && $name) {
+		    return 'Guten Tag ' . $gender . ' ' . $name . ',';
+		}
+
+		// default fallback
+		return 'Sehr geehrte Damen und Herren,';
+	}
+
+	private function personalizeBody(string $body, array $recipient): string {
+		// only replace if placeholder is present
+		if (strpos($body, '[SALUTATION]') !== false) {
+			$salutation = $this->buildSalutation($recipient);
+			$body = str_replace('[SALUTATION]', $salutation, $body);
+		}
+
+		return $body;
 	}
 }
