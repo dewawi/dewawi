@@ -210,8 +210,8 @@ class Items_ItemController extends Zend_Controller_Action
 					$tags = $get->tags('items', 'item', $item['id']);
 
 					//History
-					$inventoryDb = new Items_Model_DbTable_Inventory();
-					$inventory = $inventoryDb->getInventoryBySKU($item['sku']);
+					$ledgerDb = new Items_Model_DbTable_Ledger();
+					$ledger = $ledgerDb->getLedgerBySKU($item['sku']);
 
 					//Toolbar
 					$toolbar = new Items_Form_Toolbar();
@@ -234,7 +234,7 @@ class Items_ItemController extends Zend_Controller_Action
 					$this->view->tags = $tags;
 					$this->view->images = $images;
 					$this->view->imagePath = $imagePath;
-					$this->view->inventory = $inventory;
+					$this->view->ledger = $ledger;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}
@@ -410,6 +410,7 @@ class Items_ItemController extends Zend_Controller_Action
 						} elseif(isset($map['sku']) && isset($datacsv[$map['sku']]) && $datacsv[$map['sku']]) {
 							//print_r($itemInfo);
 							$images = array();
+							$medias = array();
 							$attributes = array();
 							$options = array();
 							$placeholders = array();
@@ -539,6 +540,21 @@ class Items_ItemController extends Zend_Controller_Action
 										}
 									} elseif((strpos($attr, 'image') !== FALSE) && (strpos($attr, 'title') !== FALSE)) {
 										$images[str_replace('image', '', str_replace('title', '', $attr))]['title'] = $datacsv[$map[$attr]];
+									} elseif((strpos($attr, 'media') !== FALSE) && (strpos($attr, 'url') !== FALSE)) {
+										$mediaUrl = $datacsv[$map[$attr]];
+										$url = '/media/'.$dir1.'/'.$dir2.'/'.$clientid.'/downloads/';
+
+										if(file_exists(BASE_PATH.$url.$mediaUrl)) {
+											$mediaID = str_replace('media', '', str_replace('url', '', $attr));
+											$medias[$mediaID]['url'] = $mediaUrl;
+											if(isset($map['media'.$mediaID.'ordering']) && $datacsv[$map['media'.$mediaID.'ordering']]) {
+												$medias[$mediaID]['ordering'] = $datacsv[$map['media'.$mediaID.'ordering']];
+											} else {
+												$medias[$mediaID]['ordering'] = $mediaID;
+											}
+										} else {
+											echo 'Media file not exists for '.$datacsv[$map['sku']].': '.BASE_PATH.$url.$mediaUrl."<br>";
+										}
 									}
 									//Add system variables to placeholders
 									if($datacsv[$map[$attr]]) {
@@ -630,6 +646,16 @@ class Items_ItemController extends Zend_Controller_Action
 										$image['type'] = 'image';
 										//error_log(var_dump($image));
 										$itemMedia->addMedia($image);
+									}
+								}
+								foreach($medias as $media) {
+									if(isset($media['url']) && $media['url']) {
+										$media['parentid'] = $item['id'];
+										$media['module'] = 'items';
+										$media['controller'] = 'item';
+										$media['type'] = 'download';
+										//error_log(var_dump($media));
+										$itemMedia->addMedia($media);
 									}
 								}
 							} else {

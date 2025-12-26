@@ -128,7 +128,7 @@ class Admin_UserController extends Zend_Controller_Action
 					],
 					'items' => [
 						"item" => ["add", "edit", "view", "delete"],
-						"inventory" => ["add", "edit", "view", "delete"],
+						"ledger" => ["add", "edit", "view", "delete"],
 						"pricerule" => ["add", "edit", "view", "delete"]
 					],
 					'processes' => [

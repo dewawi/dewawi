@@ -48,6 +48,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract{
 							<a class="button" href="<?php echo $this->view->url(array('module'=>'items', 'controller'=>'item', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('MENU_ITEMS'); ?></a>
 							<a class="button" href="<?php echo $this->view->url(array('module'=>'items', 'controller'=>'itemlist', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->view->translate('MENU_ITEM_LISTS'); ?></a>
 							<a class="button" href="<?php echo $this->view->url(array('module'=>'items', 'controller'=>'inventory', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->view->translate('MENU_INVENTORY'); ?></a>
+							<a class="button" href="<?php echo $this->view->url(array('module'=>'items', 'controller'=>'ledger', 'action'=>'index', 'id'=>null)); ?>" class="sublink-1"><?php echo $this->view->translate('MENU_LEDGER'); ?></a>
 						</div>
 					</div>
 					<a class="button<?php if($this->view->controller == 'task') echo ' active'; ?>" href="<?php echo $this->view->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->view->translate('MENU_TASKS'); ?></a>

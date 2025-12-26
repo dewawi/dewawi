@@ -187,8 +187,8 @@ class Items_OptionController extends Zend_Controller_Action
 					$tags = $get->tags('items', 'item', $item['id']);
 
 					//History
-					$inventoryDb = new Items_Model_DbTable_Inventory();
-					$inventory = $inventoryDb->getInventoryBySKU($item['sku']);
+					$ledgerDb = new Items_Model_DbTable_Ledger();
+					$ledger = $ledgerDb->getLedgerBySKU($item['sku']);
 
 					//Toolbar
 					$toolbar = new Items_Form_Toolbar();
@@ -198,7 +198,7 @@ class Items_OptionController extends Zend_Controller_Action
 					//$this->view->attributes = $attributes;
 					//$this->view->attributegroups = $attributegroups;
 					//$this->view->attributesByGroup = $attributesByGroup;
-					$this->view->inventory = $inventory;
+					$this->view->ledger = $ledger;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}

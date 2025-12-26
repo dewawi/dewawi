@@ -18,6 +18,7 @@ class Items_Model_Get
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
 		$query = $queryHelper->getQueryClient($query, $client['id']);
+		if(isset($params['quantity']) && $params['quantity']) $query = $queryHelper->getQueryQuantity($query, $params['quantity']);
 		$query = $queryHelper->getQueryDeleted($query);
 
 		// Get total records count
@@ -65,20 +66,33 @@ class Items_Model_Get
 				$currency = $currencyHelper->setCurrency($currency, $item->currency, 'USE_SYMBOL');
 				$item->cost = $currency->toCurrency($item->cost);
 				$item->price = $currency->toCurrency($item->price);
+
+				// format quantity for display
+				$locale = Zend_Registry::get('Zend_Locale');
+				if(isset($item->quantity)) {
+					$locale = Zend_Registry::get('Zend_Locale');
+					$item->quantity = Zend_Locale_Format::toNumber(
+						$item->quantity,
+						array(
+							'precision' => 2,
+							'locale'    => $locale
+						)
+					);
+				}
 			}
 		}
 
 		return array($items, count($records));
 	}
 
-	public function inventory($params, $options)
+	public function ledger($params, $options)
 	{
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['items'];
 		}
 
-		$inventoryDb = new Items_Model_DbTable_Inventory();
+		$ledgerDb = new Items_Model_DbTable_Ledger();
 
 		$columns = array('comment', 'sku', 'contactid');
 
@@ -89,10 +103,10 @@ class Items_Model_Get
 		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
 		$query = $queryHelper->getQueryClient($query, $client['id'], 'i');
 
-		$inventories = $inventoryDb->fetchAll(
-			$inventoryDb->select()
+		$ledgers = $ledgerDb->fetchAll(
+			$ledgerDb->select()
 				->setIntegrityCheck(false)
-				->from(array($schema => 'inventory'))
+				->from(array($schema => 'ledger'))
 				->join(array('i' => 'item'), $schema.'.sku = i.sku', array('catid', 'title'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
@@ -102,14 +116,14 @@ class Items_Model_Get
 
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 		$currency = $currencyHelper->getCurrency();
-		foreach($inventories as $inventory) {
-			if(strlen($inventory->comment) > 43) $inventory->comment = substr($inventory->comment, 0, 40).'...';
-			$currency = $currencyHelper->setCurrency($currency, $inventory->currency, 'USE_SYMBOL');
-			$inventory->price = $currency->toCurrency($inventory->price);
-			$inventory->total = $currency->toCurrency($inventory->total);
+		foreach($ledgers as $ledger) {
+			if(strlen($ledger->comment) > 43) $ledger->comment = substr($ledger->comment, 0, 40).'...';
+			$currency = $currencyHelper->setCurrency($currency, $ledger->currency, 'USE_SYMBOL');
+			$ledger->price = $currency->toCurrency($ledger->price);
+			$ledger->total = $currency->toCurrency($ledger->total);
 		}
 
-		return $inventories;
+		return $ledgers;
 	}
 
 	public function pricerules($params, $options)

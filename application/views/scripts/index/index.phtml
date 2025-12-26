@@ -96,10 +96,10 @@ echo $this->Messages();
 		<?php endif; ?>
 	</div>
 	<div class="col-sm-12 col-md-4">
-		<?php if(isset($this->inventories) && count($this->inventories)) : ?>
+		<?php if(isset($this->ledgers) && count($this->ledgers)) : ?>
 			<h3>
-				<?php echo $this->translate('ITEMS_INVENTORY'); ?>
-				<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'inventory', 'action'=>'index'), null, TRUE); ?>">
+				<?php echo $this->translate('ITEMS_LEDGER'); ?>
+				<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'ledger', 'action'=>'index'), null, TRUE); ?>">
 					<span style="font-size:75%;font-weight:normal;"><?php echo $this->translate('SHOW_ALL'); ?></span>
 				</a>
 			</h3>
@@ -107,28 +107,28 @@ echo $this->Messages();
 				<thead>
 					<tr>
 						<th id="id" width="7%">
-							<?php echo $this->translate('ITEMS_INVENTORY_ID') ?>
+							<?php echo $this->translate('ITEMS_LEDGER_ID') ?>
 						</th>
 						<th id="contactid" width="5%">
-							<?php echo $this->translate('ITEMS_INVENTORY_COMMENT') ?>
+							<?php echo $this->translate('ITEMS_LEDGER_COMMENT') ?>
 						</th>
 						<th width="10%"></th>
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach($this->inventories as $inventory) : ?>
+					<?php foreach($this->ledgers as $ledger) : ?>
 					<tr>
 						<td id="id">
-							<input class="id" type="hidden" value="<?php echo $inventory->id ?>" name="id"/>
-							<input class="controller" type="hidden" value="inventory" name="controller"/>
+							<input class="id" type="hidden" value="<?php echo $ledger->id ?>" name="id"/>
+							<input class="controller" type="hidden" value="ledger" name="controller"/>
 							<input class="module" type="hidden" value="items" name="module"/>
-							<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'inventory', 'action'=>'edit', 'id'=>$inventory->id)); ?>">
-								<?php echo $this->escape($inventory->sku); ?>
+							<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'ledger', 'action'=>'edit', 'id'=>$ledger->id)); ?>">
+								<?php echo $this->escape($ledger->sku); ?>
 							</a>
 						</td>
-						<td id="inventory">
-							<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>$inventory->doctype, 'action'=>'edit', 'id'=>$inventory->docid)); ?>">
-								<?php echo $this->escape($inventory->comment); ?>
+						<td id="ledger">
+							<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>$ledger->doctype, 'action'=>'edit', 'id'=>$ledger->docid)); ?>">
+								<?php echo $this->escape($ledger->comment); ?>
 							</a>
 						</td>
 						<td class="buttons">

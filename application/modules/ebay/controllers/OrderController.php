@@ -191,15 +191,15 @@ class Ebay_OrderController extends Zend_Controller_Action
 					$attributes = $attributesDb->getItemattributesByItemID($item['id']);
 
 					//History
-					$inventoryDb = new Ebay_Model_DbTable_Inventory();
-					$inventory = $inventoryDb->getInventoryBySKU($item['sku']);
+					$ledgerDb = new Ebay_Model_DbTable_Ledger();
+					$ledger = $ledgerDb->getLedgerBySKU($item['sku']);
 
 					//Toolbar
 					$toolbar = new Ebay_Form_Toolbar();
 
 					$this->view->form = $form;
 					$this->view->attributes = $attributes;
-					$this->view->inventory = $inventory;
+					$this->view->ledger = $ledger;
 					$this->view->activeTab = $activeTab;
 					$this->view->toolbar = $toolbar;
 				}

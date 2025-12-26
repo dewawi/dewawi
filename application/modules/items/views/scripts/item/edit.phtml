@@ -14,8 +14,8 @@ echo $this->FileManager();
 		<li<?php if($this->activeTab == "#tabShop") : ?> class="active"<?php endif; ?>>
 			<a href="#tabShop"><?php echo $this->translate('TABS_SHOP') ?></a></li>
 	<?php endif; ?>
-	<li<?php if($this->activeTab == "#tabInventory") : ?> class="active"<?php endif; ?>>
-		<a href="#tabInventory"><?php echo $this->translate('TABS_INVENTORY') ?></a></li>
+	<li<?php if($this->activeTab == "#tabLedger") : ?> class="active"<?php endif; ?>>
+		<a href="#tabLedger"><?php echo $this->translate('TABS_LEDGER') ?></a></li>
 	<li<?php if($this->activeTab == "#tabAttributes") : ?> class="active"<?php endif; ?>>
 		<a href="#tabAttributes" onclick="getPositions('item', 'atr')"><?php echo $this->translate('ITEMS_ATTRIBUTES'); ?></a></li>
 	<li<?php if($this->activeTab == "#tabOptions") : ?> class="active"<?php endif; ?>>
@@ -128,8 +128,8 @@ echo $this->FileManager();
 	<div id="tabOptions" class="tab_content<?php if($this->activeTab == '#tabOptions') : ?> active<?php endif; ?>">
 		<div class="positionsContainer" data-parent="item" data-type="opt"></div>
 	</div>
-	<div id="tabInventory" class="tab_content<?php if($this->activeTab == '#tabInventory') : ?> active<?php endif; ?>">
-		<?php echo $this->Inventory(); ?>
+	<div id="tabLedger" class="tab_content<?php if($this->activeTab == '#tabLedger') : ?> active<?php endif; ?>">
+		<?php echo $this->Ledger(); ?>
 	</div>
 	<div id="tabImages" class="tab_content<?php if($this->activeTab == '#tabImages') : ?> active<?php endif; ?>">
 		<h3>Item Images</h3>

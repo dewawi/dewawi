@@ -614,7 +614,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
 
 		//Set new document Id and filename
-		$updateInventory = false;
+		$updateLedger = false;
 		if(!$deliveryorder['deliveryorderid']) {
 			//Set new deliveryorder Id
 			$incrementDb = new Application_Model_DbTable_Increment();
@@ -625,22 +625,22 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$deliveryorderDb->saveDeliveryorder($id, $increment, $filename);
 			$incrementDb->setIncrement(($increment), 'deliveryorderid');
 			$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
-			$updateInventory = true;
+			$updateLedger = true;
 		}
 
 		//Get positions
 		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
-			//Update item data and inventory
-			if($updateInventory) {
+			//Update item data and ledger
+			if($updateLedger) {
 				$itemsDb = new Items_Model_DbTable_Item();
 				foreach($positions as $position) {
 					$item = $itemsDb->getItemBySKU($position['sku']);
-					if($item && $item['inventory']) {
-						$inventoryDb = new Items_Model_DbTable_Inventory();
+					if($item && $item['ledger']) {
+						$ledgerDb = new Items_Model_DbTable_Ledger();
 						$quantity = $item['quantity'] - $position->quantity;
-						$inventory = array(
+						$ledger = array(
 									'contactid' => $deliveryorder['contactid'],
 									'type' => 'outflow',
 									'docid' => $deliveryorder['id'],
@@ -649,7 +649,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 									'salesorderid' => $deliveryorder['salesorderid'],
 									'invoiceid' => $deliveryorder['invoiceid'],
 									'deliveryorderid' => $deliveryorder['deliveryorderid'],
-									'inventorydate' => $this->_date,
+									'ledgerdate' => $this->_date,
 									'quotedate' => $deliveryorder['quotedate'],
 									'salesorderdate' => $deliveryorder['salesorderdate'],
 									'invoicedate' => $deliveryorder['invoicedate'],
@@ -693,7 +693,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 									'uom' => $position['uom'],
 									'warehouseid' => 1
 									);
-						$inventoryDb->addInventory($inventory);
+						$ledgerDb->addLedger($ledger);
 						$itemsDb->quantityItem($item['id'], $quantity);
 					}
 				}
