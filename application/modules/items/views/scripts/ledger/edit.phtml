@@ -1,0 +1,36 @@
+<?php 
+$this->title = $this->form->getValue('title');
+$this->headTitle($this->title);
+echo $this->Messages();
+?>
+
+<ul class="tabs">
+	<li><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
+</ul>
+
+<div class="tab_container">
+	<div id="tabOverview" class="tab_content">
+		<form id="item" enctype="application/x-www-form-urlencoded" action="" method="post">
+			<div class="row">
+				<div class="col-sm-12 col-lg-7">
+					<dl class="form">
+						<?php echo $this->form->getElement('id') ?>
+						<?php echo $this->form->getElement('sku') ?>
+						<?php echo $this->form->getElement('type') ?>
+						<?php echo $this->form->getElement('quantity') ?>
+						<?php echo $this->form->getElement('comment') ?>
+						<?php echo $this->form->getElement('ledgerdate') ?>
+					</dl>
+					<dl class="form">
+						<dt><label><?php echo $this->translate('ITEMS_CREATED') ?></label></dt>
+						<dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('created')))) ?></label></dd>
+						<dt><label><?php echo $this->translate('ITEMS_MODIFIED') ?></label></dt>
+						<dd><label><?php echo $this->escape(date("d.m.Y", strtotime($this->form->getValue('modified')))) ?></label></dd>
+					</dl>
+				</div>
+				<div class="col-sm-12 col-lg-5">
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
