@@ -157,28 +157,38 @@ class Items_ItemController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					if(array_key_exists('cost', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['cost'] = Zend_Locale_Format::getNumber($data['cost'],array('precision' => 2,'locale' => $locale));
-						$data['margin'] = $item['price'] - $data['cost'];
+					$locale = Zend_Registry::get('Zend_Locale');
+
+					// remove meta fields so they don't get written to DB
+					$format = isset($data['_format']) ? $data['_format'] : null;
+					$precision = isset($data['_precision']) ? (int)$data['_precision'] : 2;
+					unset($data['_format'], $data['_precision']);
+
+					// parse numeric or set NULL if empty
+					if($format === 'number' && array_key_exists($element, $data)) {
+						$value = trim((string)$data[$element]);
+
+						if($value === '') {
+							$data[$element] = null;
+						} else {
+							$data[$element] = Zend_Locale_Format::getNumber(
+								$value,
+								array('precision' => $numFields[$element], 'locale' => $locale)
+							);
+						}
 					}
-					if(array_key_exists('price', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['price'] = Zend_Locale_Format::getNumber($data['price'],array('precision' => 2,'locale' => $locale));
-						$data['margin'] = $data['price'] - $item['cost'];
+
+					// recalc margin only if cost OR price was edited (single-field ajax edit)
+					if($element === 'cost') {
+						$data['margin'] = ($data['cost'] === null || $item['price'] === null)
+							? null
+							: ((float)$item['price'] - (float)$data['cost']);
+					} elseif($element === 'price') {
+						$data['margin'] = ($data['price'] === null || $item['cost'] === null)
+							? null
+							: ((float)$data['price'] - (float)$item['cost']);
 					}
-					if(array_key_exists('quantity', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['quantity'] = Zend_Locale_Format::getNumber($data['quantity'],array('precision' => 2,'locale' => $locale));
-					}
-					if(array_key_exists('margin', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['margin'] = Zend_Locale_Format::getNumber($data['margin'],array('precision' => 2,'locale' => $locale));
-					}
-					if(array_key_exists('weight', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['weight'] = Zend_Locale_Format::getNumber($data['weight'],array('precision' => 4,'locale' => $locale));
-					}
+
 					$itemDb->updateItem($id, $data);
 					echo Zend_Json::encode($itemDb->getItem($id));
 				} else {

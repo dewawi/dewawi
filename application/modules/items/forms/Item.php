@@ -118,19 +118,25 @@ class Items_Form_Item extends Zend_Form
 		$form['quantity']->setLabel('ITEMS_QUANTITY')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['minquantity'] = new Zend_Form_Element_Text('minquantity');
 		$form['minquantity']->setLabel('ITEMS_MIN_QUANTITY')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['orderquantity'] = new Zend_Form_Element_Text('orderquantity');
 		$form['orderquantity']->setLabel('ITEMS_ORDER_QUANTITY')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['inventory'] = new Zend_Form_Element_Checkbox('inventory');
 		$form['inventory']->setLabel('ITEMS_INVENTORY_ACTIVATED');
@@ -161,8 +167,9 @@ class Items_Form_Item extends Zend_Form
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->addValidator('Float')
+			->setAttrib('size', '15')
 			->setAttrib('class', 'number')
-			->setAttrib('size', '15');
+			->setAttrib('data-precision', 2);
 
 		$form['price'] = new Zend_Form_Element_Text('price');
 		$form['price']->setLabel('ITEMS_PRICE')
@@ -171,8 +178,9 @@ class Items_Form_Item extends Zend_Form
 			->addFilter('StringTrim')
 			->addValidator('Float')
 			//->addValidator('NotEmpty')
+			->setAttrib('size', '15')
 			->setAttrib('class', 'number')
-			->setAttrib('size', '15');
+			->setAttrib('data-precision', 2);
 
 		$form['specialprice'] = new Zend_Form_Element_Text('specialprice');
 		$form['specialprice']->setLabel('ITEMS_SPECIAL_PRICE')
@@ -181,16 +189,18 @@ class Items_Form_Item extends Zend_Form
 			->addFilter('StringTrim')
 			->addValidator('Float')
 			//->addValidator('NotEmpty')
+			->setAttrib('size', '15')
 			->setAttrib('class', 'number')
-			->setAttrib('size', '15');
+			->setAttrib('data-precision', 2);
 
 		$form['margin'] = new Zend_Form_Element_Text('margin');
 		$form['margin']->setLabel('ITEMS_MARGIN')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
 			->addValidator('Float')
-			->setAttrib('class', 'number')
 			->setAttrib('size', '15')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2)
 			->setAttrib('readonly', 'readonly');
 
 		$form['taxid'] = new Zend_Form_Element_Select('taxid');
@@ -251,49 +261,65 @@ class Items_Form_Item extends Zend_Form
 		$form['width']->setLabel('ITEMS_WIDTH')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['length'] = new Zend_Form_Element_Text('length');
 		$form['length']->setLabel('ITEMS_LENGTH')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['height'] = new Zend_Form_Element_Text('height');
 		$form['height']->setLabel('ITEMS_HEIGHT')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['weight'] = new Zend_Form_Element_Text('weight');
 		$form['weight']->setLabel('ITEMS_WEIGHT')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['packwidth'] = new Zend_Form_Element_Text('packwidth');
 		$form['packwidth']->setLabel('ITEMS_WIDTH')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['packlength'] = new Zend_Form_Element_Text('packlength');
 		$form['packlength']->setLabel('ITEMS_LENGTH')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['packheight'] = new Zend_Form_Element_Text('packheight');
 		$form['packheight']->setLabel('ITEMS_HEIGHT')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['packweight'] = new Zend_Form_Element_Text('packweight');
 		$form['packweight']->setLabel('ITEMS_WEIGHT')
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
-			->setAttrib('size', '10');
+			->setAttrib('size', '10')
+			->setAttrib('class', 'number')
+			->setAttrib('data-precision', 2);
 
 		$form['modified'] = new Zend_Form_Element_Text('modified');
 		$form['created'] = new Zend_Form_Element_Text('created');
