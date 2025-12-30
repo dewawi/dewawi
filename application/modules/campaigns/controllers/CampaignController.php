@@ -191,12 +191,12 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 					}
 					if(isset($data['expectedrevenue'])) {
 						$locale = Zend_Registry::get('Zend_Locale');
-						$data['expectedrevenue'] =  Zend_Locale_Format::getNumber($data['expectedrevenue'], array('precision' => 2,'locale' => $locale));
+						$data['expectedrevenue'] = Zend_Locale_Format::getNumber($data['expectedrevenue'], array('precision' => 2,'locale' => $locale));
 					}
 					if(isset($data['budgetedcost'])) {
 						if($data['budgetedcost']) {
 							$locale = Zend_Registry::get('Zend_Locale');
-							$data['budgetedcost'] =  Zend_Locale_Format::getNumber($data['budgetedcost'], array('precision' => 2,'locale' => $locale));
+							$data['budgetedcost'] = Zend_Locale_Format::getNumber($data['budgetedcost'], array('precision' => 2,'locale' => $locale));
 						} else {
 							$data['budgetedcost'] = NULL;
 						}
@@ -204,7 +204,7 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 					if(isset($data['actualcost'])) {
 						if($data['actualcost']) {
 							$locale = Zend_Registry::get('Zend_Locale');
-							$data['actualcost'] =  Zend_Locale_Format::getNumber($data['actualcost'], array('precision' => 2,'locale' => $locale));
+							$data['actualcost'] = Zend_Locale_Format::getNumber($data['actualcost'], array('precision' => 2,'locale' => $locale));
 						} else {
 							$data['actualcost'] = NULL;
 						}
@@ -307,6 +307,46 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 					foreach($emailmessageArray as $emailmessage) {
 						$emailmessages[$emailmessage['contactid']][] = $emailmessage;
 					}
+
+					// contact persons and their emails per company
+					$contactPersonsByCompany = [];
+					$cpDb = new Contacts_Model_DbTable_Contactperson();
+					$emailDb = new Contacts_Model_DbTable_Email();
+
+					foreach ($contacts as $c) {
+						$cid = is_array($c) ? $c['id'] : $c->id;
+						// get persons linked to this company/contact
+						$persons = $cpDb->getContactpersons($cid, 'contacts', 'contact'); // expect array of rows
+
+						// enrich each person with a flat comma list of their emails
+						foreach ($persons as &$p) {
+							$pid = is_array($p) ? $p['id'] : $p->id;
+							$emailRows = $emailDb->getEmails($pid, 'contacts', 'contactperson'); // rows with ['email'=>...]
+							$emails = [];
+							foreach ((array)$emailRows as $er) {
+								// handle row/array/object shapes safely
+								$emails[] = is_array($er) ? ($er['email'] ?? '') : ($er->email ?? '');
+							}
+							// fallback if schema also stores a joined list on the person row
+							if (empty(array_filter($emails)) && !empty($p['emails'])) {
+								$emails = preg_split('/[;,]+/', (string)$p['emails']);
+							}
+							// clean & store as single string
+							$emails = array_filter(array_map('trim', $emails));
+							$p['email_list'] = implode(',', $emails);
+
+							// convenience display name
+							$salutation = trim((is_array($p)?($p['salutation']??''):($p->salutation??'')));
+							$name2 = trim((is_array($p)?($p['name2']??''):($p->name2??'')));
+							$p['display_name'] = trim($salutation.' '.$name2);
+						}
+						unset($p);
+
+						$contactPersonsByCompany[$cid] = $persons;
+					}
+
+					$this->view->contactPersonsByCompany = $contactPersonsByCompany;
+
 //print_r($options);
 //print_r($params);
 

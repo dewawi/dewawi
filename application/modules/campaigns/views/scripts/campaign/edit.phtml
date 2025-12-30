@@ -77,6 +77,25 @@ echo $this->FileManager();
 									<td><?php echo $contact->name1; ?></td>
 									<td style="flex-grow: 2";>
 										<?php echo str_replace(',', '<br>', $this->escape($contact->emails)); ?>
+
+										<!-- contact persons (if any) -->
+										<?php if (!empty($this->contactPersonsByCompany[$contact->id])): ?>
+											<div style="margin-top:8px; border-top:1px solid #eee; padding-top:6px;">
+												<strong><?php echo $this->translate('Kontaktpersonen'); ?>:</strong>
+												<ul class="list-unstyled" style="margin:6px 0 0 0;">
+													<?php foreach ($this->contactPersonsByCompany[$contact->id] as $p): ?>
+														<li style="margin-bottom:4px;">
+															<?php echo $this->escape($p['display_name']); ?>
+															<?php if (!empty($p['email_list'])): ?>
+																<div style="font-size:90%;">
+																	<?php echo str_replace(',', '<br>', $this->escape($p['email_list'])); ?>
+																</div>
+															<?php endif; ?>
+														</li>
+													<?php endforeach; ?>
+												</ul>
+											</div>
+										<?php endif; ?>
 									</td>
 									<td style="flex-grow: 5";>
 										<table>
