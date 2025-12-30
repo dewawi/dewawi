@@ -49,7 +49,7 @@ $this->headTitle($this->title);
 					</a>
 				</td>
 				<td><?php echo $customer['name1']; ?></td>
-				<td><?php if(isset($customer['ctitle'])) echo $customer['ctitle']; ?></td>
+				<td><?php if(isset($customer['ctitle'])) echo $customer['cfulltitle']; ?></td>
 				<td><?php echo $customer['subtotal']; ?></td>
 				<td>
 					<?php if(isset($customer['invoices'])) : ?>

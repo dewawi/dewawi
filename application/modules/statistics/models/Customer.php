@@ -61,8 +61,8 @@ class Statistics_Model_Customer
 								$customerList[$invoice->contactid]['name1'] = $invoice->name1;
 								$customerList[$invoice->contactid]['subtotal'] = $invoice->subtotal;
 								$customerList[$invoice->contactid]['invoices'] = array($invoice->invoiceid);
-								if($invoice->catid && isset($categories[$invoice->catid]))
-									$customerList[$invoice->contactid]['ctitle'] = $categories[$invoice->catid]['title'];
+								$customerList[$invoice->contactid]['ctitle'] = $categories[$invoice->catid]['title'];
+								$customerList[$invoice->contactid]['cfulltitle'] = $categories[$invoice->catid]['fulltitle'];
 							}
 							if($invoice->prepayment) {
 								$customerList[$invoice->contactid]['subtotal'] -= ($invoice->prepayment/1.19); //TODO
