@@ -2852,5 +2852,6 @@ CREATE TABLE IF NOT EXISTS `warehouse` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

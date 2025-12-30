@@ -58,3 +58,5 @@ ALTER TABLE `shoporder` ADD `orderdate` date DEFAULT NULL AFTER `invoiceid`;
 
 RENAME TABLE `cloud`.`inventory` TO `cloud`.`ledger`;
 ALTER TABLE `ledger` CHANGE `inventorydate` `ledgerdate` DATE NULL DEFAULT NULL;
+
+ALTER TABLE `warehouse` ADD `deleted` tinyint(1) NOT NULL DEFAULT 0 AFTER `lockedtime`;
