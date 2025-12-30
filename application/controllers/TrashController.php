@@ -60,9 +60,9 @@ class TrashController extends Zend_Controller_Action
 			$emailDb = $isContactModule ? new Contacts_Model_DbTable_Email() : null;
 			$internetDb = $isContactModule ? new Contacts_Model_DbTable_Internet() : null;
 
-			// Special case: deliveryorder controller - delete inventory
+			// Special case: deliveryorder controller - delete ledger
 			$isDeliveryOrder = strtolower($data['controller']) === 'deliveryorder';
-			$inventoryDb = $isDeliveryOrder ? new Items_Model_DbTable_Inventory() : null;
+			$ledgerDb = $isDeliveryOrder ? new Items_Model_DbTable_Ledger() : null;
 
 			foreach ($ids as $id) {
 				if (!empty($id)) {
@@ -94,11 +94,11 @@ class TrashController extends Zend_Controller_Action
 						$ebayListingDb->deleteListingByItemID($id);
 					}
 
-					// Delete inventory if deliveryorder
-					if ($inventoryDb) {
-						$inventories = $inventoryDb->getInventorys($id);
-						foreach ($inventories as $inventory) {
-							$inventoryDb->deleteInventory($inventory->id);
+					// Delete ledger if deliveryorder
+					if ($ledgerDb) {
+						$ledgers = $ledgerDb->getLedgers($id);
+						foreach ($ledgers as $ledger) {
+							$ledgerDb->deleteLedger($ledger->id);
 						}
 					}
 

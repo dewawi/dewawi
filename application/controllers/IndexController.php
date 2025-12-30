@@ -67,9 +67,9 @@ class IndexController extends Zend_Controller_Action
 		$items = $itemsDb->getLatestItems();
 		$this->view->items = $items;
 
-		$inventoryDb = new Items_Model_DbTable_Inventory();
-		$inventory = $inventoryDb->getLatestInventorys();
-		$this->view->inventories = $inventory;
+		$ledgerDb = new Items_Model_DbTable_Ledger();
+		$ledger = $ledgerDb->getLatestLedgers();
+		$this->view->ledgers = $ledger;
 
 		$tasksDb = new Tasks_Model_DbTable_Task();
 		$tasks = $tasksDb->getLatestTasks();
