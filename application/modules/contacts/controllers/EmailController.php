@@ -177,4 +177,19 @@ class Contacts_EmailController extends Zend_Controller_Action
 		}
 		//$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
+
+	/**
+	 * Sanitize input string: removes spaces, line breaks,
+	 * and normalizes case.
+	 */
+	private function sanitizeEmail(string $email): string
+	{
+		// remove all kinds of whitespace (spaces, tabs, newlines, non-breaking spaces)
+		$email = preg_replace('/\s+/u', '', $email);
+		// trim in case of invisible unicode chars
+		$email = trim($email);
+		// normalize to lowercase
+		$email = mb_strtolower($email);
+		return $email;
+	}
 }
