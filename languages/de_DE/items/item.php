@@ -25,6 +25,7 @@
 	'ITEMS_MARGIN' => 'Marge',
 	'ITEMS_CURRENCY' => 'Währung',
 	'ITEMS_QUANTITY' => 'Bestand',
+	'ITEMS_BOOK_INVENTORY' => 'Bestand buchen',
 	'ITEMS_MIN_QUANTITY' => 'Min. Bestand',
 	'ITEMS_ORDER_QUANTITY' => 'Min. Bestellmenge',
 	'ITEMS_QUANTITY_REMINDER' => 'Bestand melden',
