@@ -63,6 +63,21 @@ CREATE TABLE IF NOT EXISTS `bankaccount` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `calendarevent` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) DEFAULT NULL,
+  `start` datetime NOT NULL,
+  `end` datetime NOT NULL,
+  `description` text DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `category` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `parentid` int(11) NOT NULL,
@@ -920,6 +935,7 @@ CREATE TABLE IF NOT EXISTS `increment` (
   `quoterequestid` int(11) NOT NULL,
   `reminderid` int(11) NOT NULL,
   `salesorderid` int(11) NOT NULL,
+  `shoporderid` int(11) NOT NULL,
   PRIMARY KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -945,7 +961,7 @@ CREATE TABLE IF NOT EXISTS `internet` (
   KEY (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `inventory` (
+CREATE TABLE IF NOT EXISTS `ledger` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `itemid` int(11) NOT NULL DEFAULT 0,
   `sku` varchar(255) DEFAULT NULL,
@@ -958,7 +974,7 @@ CREATE TABLE IF NOT EXISTS `inventory` (
   `creditnoteid` int(11) NOT NULL DEFAULT 0,
   `deliveryorderid` int(11) NOT NULL DEFAULT 0,
   `type` varchar(255) NOT NULL,
-  `inventorydate` date DEFAULT NULL,
+  `ledgerdate` date DEFAULT NULL,
   `quotedate` date DEFAULT NULL,
   `salesorderdate` date DEFAULT NULL,
   `invoicedate` date DEFAULT NULL,
@@ -1200,6 +1216,7 @@ CREATE TABLE IF NOT EXISTS `itematr` (
   `atrsetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
+  `value` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `price` decimal(12,4) DEFAULT NULL,
@@ -1250,6 +1267,7 @@ CREATE TABLE IF NOT EXISTS `itemopt` (
   `optsetid` int(11) NOT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
+  `value` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `price` decimal(12,4) DEFAULT NULL,
@@ -1485,6 +1503,7 @@ CREATE TABLE IF NOT EXISTS `permission` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userid` int(11) NOT NULL,
   `default` text DEFAULT NULL,
+  `calendar` text DEFAULT NULL,
   `contacts` text DEFAULT NULL,
   `items` text DEFAULT NULL,
   `processes` text DEFAULT NULL,
@@ -2366,12 +2385,47 @@ CREATE TABLE IF NOT EXISTS `shop` (
   KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `shopinquiryform` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shopid` int(11) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `fields` text DEFAULT NULL,
+  `language` varchar(255) DEFAULT NULL,
+  `quoteheader` text DEFAULT NULL,
+  `quotefooter` text DEFAULT NULL,
+  `quotetemplateid` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `shopinquirydata` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `formid` int(11) NOT NULL,
+  `shopid` int(11) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `data` TEXT NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `shoporder` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `shopid` varchar(255) NOT NULL,
   `orderid` varchar(255) NOT NULL,
   `contactid` int(11) NOT NULL DEFAULT 0,
   `invoiceid` int(11) NOT NULL,
+  `orderdate` date DEFAULT NULL,
   `total` decimal(12,4) NOT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
