@@ -2,222 +2,195 @@
 
 class DEEC_PriceRule {
 
-	public function usePricerules($item, $connection, $options) {
+	public function getPriceRulePositions($module, $parent, $parentid) {
+		//Get price rule positions
+		$pricerulesDb = new Shops_Model_DbTable_Pricerulepos();
+		$positions = $pricerulesDb->getPositions($module, $parent, $parentid);
+		return $positions;
+	}
+
+	public function usePriceRules($pricerules, $price) {
+		//Use price rules
+		foreach($pricerules as $pricerule) {
+			if($pricerule['amount'] && $pricerule['action']) {
+				if($pricerule['action'] == 'bypercent')
+					$price = $price*(100-$pricerule['amount'])/100;
+				elseif($pricerule['action'] == 'byfixed')
+					$price = ($price-$pricerule['amount']);
+				elseif($pricerule['action'] == 'topercent')
+					$price = $price*(100+$pricerule['amount'])/100;
+				elseif($pricerule['action'] == 'tofixed')
+					$price = ($price+$pricerule['amount']);
+			}
+		}
+		return $price;
+	}
+
+	public function usePriceRulesOnPositions($positions, $module, $parent) {
+		//Use price rules on all positions
+		$price = array();
+		$price['rules'] = array();
+		$price['master'] = array();
+		$price['calculated'] = array();
+		foreach($positions as $position) {
+			//Get price rules and properties
+			if(!$position->masterid) {
+				$price['rules'][$position->id] = $this->getPriceRulePositions($module, $parent, $position->id);
+				$price['master'][$position->id] = $position->pricerulemaster;
+			}
+		}
+		foreach($positions as $position) {
+			//Use price rules
+			if($position->masterid && $price['master'][$position->masterid] && isset($price['rules'][$position->masterid])) {
+				$price['calculated'][$position->id] = $this->usePriceRules($price['rules'][$position->masterid], $position->price);
+			} elseif(!$position->masterid && isset($price['rules'][$position->id])) {
+				$price['calculated'][$position->id] = $this->usePriceRules($price['rules'][$position->id], $position->price);
+			} else {
+				$price['calculated'][$position->id] = $position->price;
+			}
+		}
+		return $price;
+	}
+
+	public function getPriceRules($item, $contactid = 0) {
+		//Get contact
+		if($contactid) {
+			$contactDb = new Contacts_Model_DbTable_Contact();
+			$contact = $contactDb->getContactWithID($contactid);
+		}
+
 		$formula = array();
+		$pricerules = array();
 		$priceruleamount = 0;
+		$price = $item['price'];
 		$formula['bypercent'] = 'return $price*(100-$priceruleamount)/100;';
 		$formula['byfixed'] = 'return $price-$priceruleamount;';
 		$formula['topercent'] = 'return $price*(100+$priceruleamount)/100;';
 		$formula['tofixed'] = 'return $price+$priceruleamount;';
-		$data['priceruleamount'] = 0;
-		$data['priceruleaction'] = '';
-		$price = $item['price'];
+		//$data['priceruleamount'] = 0;
+		//$data['priceruleaction'] = '';
+		//Discard other price rules if price rule in contact is defined
+		if($contactid && $contact['priceruleamount'] && $contact['priceruleaction']) {
+			//$data['priceruleamount'] = $contact['priceruleamount'];
+			//$data['priceruleaction'] = $contact['priceruleaction'];
+		//Check other price rules if no price rule in contact is defined
+		} else {
+			$options = array();
+			if($item['type']) $options['itemtype'] = $item['type'];
+			if($item['manufacturerid']) $options['itemmanufacturer'] = $item['manufacturerid'];
 
-		$pricerulesObject = $this->getPricerules($connection, $options, $item['clientid']);
+			//Get price rules
+			$priceruleDb = new Shops_Model_DbTable_Pricerule();
+			$pricerulesObject = $priceruleDb->getPricerules($options);
 
-		//Select the price rules which are applicable to the item
-		$pricerules = array();
-		if($pricerulesObject && count($pricerulesObject)) {
-
-			$categoriesItem = $this->getCategories($connection, 'item', $item['clientid']);
-
-			foreach($pricerulesObject as $pricerule) {
-				$pricerule = (object)$pricerule;
-				if($pricerule->itemcatid == 0) {
-					$pricerules[] = $pricerule;
-				} elseif($pricerule->itemcatid && ($item['catid'] == 0)) {
-					//do nothing
-				} elseif($item['catid'] && ($item['catid'] == $pricerule->itemcatid)) {
-					$pricerules[] = $pricerule;
-				} elseif($item['catid'] && $pricerule->itemsubcat) {
-					$isParent = $this->isParent($item['catid'], $pricerule->itemcatid, $categoriesItem);
-					if($isParent) $pricerules[] = $pricerule;
+			//Select the price rules which are applicable to the item
+			if(count($pricerulesObject)) {
+				$categoryDb = new Application_Model_DbTable_Category();
+				$categoriesItem = $categoryDb->getCategories('item');
+				foreach($pricerulesObject as $pricerule) {
+					if($pricerule->itemcatid == 0) {
+						$pricerules[] = $pricerule;
+					} elseif($pricerule->itemcatid && ($item['catid'] == 0)) {
+						//do nothing
+					} elseif($item['catid'] && ($item['catid'] == $pricerule->itemcatid)) {
+						$pricerules[] = $pricerule;
+					} elseif($item['catid'] && $pricerule->itemsubcat) {
+						$categoryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Category');
+						$isParent = $categoryHelper->isParent($item['catid'], $pricerule->itemcatid, $categoriesItem);
+						if($isParent) $pricerules[] = $pricerule;
+					}
 				}
 			}
-		}
-
-		//Remove price rules which are not applicable to the manufacturer
-		if(count($pricerules)) {
-			foreach($pricerules as $id => $pricerule) {
-				$pricerule = (object)$pricerule;
-				if($pricerule->itemmanufacturer) {
-					if($item['manufacturerid'] != $pricerule->itemmanufacturer) {
+			//Remove price rules which are not applicable to the contact
+			if($contactid && count($pricerules)) {
+				$categoriesContact = $categoryDb->getCategories('contact');
+				foreach($pricerules as $id => $pricerule) {
+					if($pricerule->contactcatid && ($contact['catid'] == 0)) {
 						unset($pricerules[$id]);
+					} elseif($pricerule->contactcatid == $contact['catid']) {
+						//Contact category is the same keep the rule
+					} elseif($contact['catid'] && $pricerule->contactsubcat) {
+						$categoryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Category');
+						$isParent = $categoryHelper->isParent($contact['catid'], $pricerule->contactcatid, $categoriesContact);
+						if(!$isParent) unset($pricerules[$id]);
+					}
+				}
+			}
+			//Remove price rules which are not applicable to the item price
+			if(count($pricerules)) {
+				foreach($pricerules as $id => $pricerule) {
+					if($pricerule->pricefrom) {
+						if($pricerule->pricefrom > $item['price']) {
+							unset($pricerules[$id]);
+						}
+					}
+					if($pricerule->priceto) {
+						if($pricerule->priceto < $item['price']) {
+							unset($pricerules[$id]);
+						}
+					}
+				}
+			}
+			//Remove price rules which are not applicable to the dates
+			if(count($pricerules)) {
+				foreach($pricerules as $id => $pricerule) {
+					if($pricerule->datefrom) {
+						if(strtotime($pricerule->datefrom) > strtotime(date('Y-m-d').' 23:59:59')) {
+							unset($pricerules[$id]);
+						}
+					}
+					if($pricerule->dateto) {
+						if(strtotime($pricerule->dateto) < strtotime(date('Y-m-d').' 00:00:00')) {
+							unset($pricerules[$id]);
+						}
 					}
 				}
 			}
 		}
+		return $pricerules;
+	}
 
-		//Remove price rules which are not applicable to the contact
-		if(count($pricerules)) {
-			$categoriesContact = $this->getCategories($connection, 'contact', $item['clientid']);
-			foreach($pricerules as $id => $pricerule) {
-				$pricerule = (object)$pricerule;
-				if($pricerule->contactcatid) {
-					unset($pricerules[$id]);
-				}
-			}
-		}
-		//Remove price rules which are not applicable to the item price
-		if(count($pricerules)) {
-			foreach($pricerules as $id => $pricerule) {
-				$pricerule = (object)$pricerule;
-				if($pricerule->pricefrom) {
-					if($pricerule->pricefrom > $price) {
-						unset($pricerules[$id]);
-					}
-				}
-				if($pricerule->priceto) {
-					if($pricerule->priceto < $price) {
-						unset($pricerules[$id]);
-					}
-				}
-			}
-		}
-
-		//Remove price rules which are not applicable to the dates
-		if(count($pricerules)) {
-			foreach($pricerules as $id => $pricerule) {
-				$pricerule = (object)$pricerule;
-				if($pricerule->datefrom) {
-					if(strtotime($pricerule->datefrom) > strtotime(date('Y-m-d').' 23:59:59')) {
-						unset($pricerules[$id]);
-					}
-				}
-				if($pricerule->dateto) {
-					if(strtotime($pricerule->dateto) < strtotime(date('Y-m-d').' 00:00:00')) {
-						unset($pricerules[$id]);
-					}
-				}
-			}
-		}
-
+	public function applyPriceRules($module, $controller, $pricerules, $parentid) {
 		//Apply the price rules to the position
 		if(count($pricerules)) {
+			$positionDb = new Shops_Model_DbTable_Pricerulepos();
 			foreach($pricerules as $pricerule) {
-				$pricerule = (object)$pricerule;
 				if($pricerule->amount && $pricerule->action) {
-					$priceruleamount = $pricerule->amount;
-					$priceOld = $price;
+					$positionDataBefore = $positionDb->getPositions($module, $controller, $parentid, 0);
+					$latestOrdering = is_array($positionDataBefore) && !empty($positionDataBefore)
+						? end($positionDataBefore)['ordering']
+						: 0;
+					$positionDb->addPosition(array('module' => $module, 'controller' => $controller, 'parentid' => $parentid, 'amount' => $pricerule->amount, 'action' => $pricerule->action, 'masterid' => 0, 'possetid' => 0, 'ordering' => $latestOrdering+1));
+
+					/*$priceruleamount = $->amount;
 					$price = eval($formula[$pricerule->action]);
 					$price = round($price, 2);
-					if($pricerule->action == 'bypercent') {
-						$priceDifference = $priceOld - $price;
-						if($pricerule->amountmin && ($pricerule->amountmin > $priceDifference)) {
-							$price = $priceOld - $pricerule->amountmin;
-						}
-						if($pricerule->amountmax && ($pricerule->amountmax < $priceDifference)) {
-							$price = $priceOld - $pricerule->amountmax;
-						}
-					}
-					if($pricerule->action == 'topercent') {
-						$priceDifference = $price - $priceOld;
-						if($pricerule->amountmin && ($pricerule->amountmin > $priceDifference)) {
-							$price = $priceOld + $pricerule->amountmin;
-						}
-						if($pricerule->amountmax && ($pricerule->amountmax < $priceDifference)) {
-							$price = $priceOld + $pricerule->amountmax;
-						}
-					}
+					if($price < $item['price']) {
+						$data['priceruleamount'] = $item['price'] - $price;
+						$data['priceruleaction'] = 'byfixed';
+					} elseif($price > $item['price']) {
+						$data['priceruleamount'] = $price - $item['price'];
+						$data['priceruleaction'] = 'tofixed';
+					}*/
+
 					//Stop the rule if subsequent
 					if($pricerule->subsequent) break;
 				}
 			}
 		}
-	    return $price;
 	}
 
-	public function getPricerules($connection, $options, $clientid) {
-		$where = '';
-		foreach($options as $key => $option) {
-			if($where) $where .= ' AND ';
-			$where .= '('.$key.' = "'.$option.'" OR '.$key.' = 0 OR '.$key.' IS NULL)';
-		}
-		if($where) $where .= ' AND ';
-		$where .= 'clientid = '.$clientid;
-		$where .= ' AND activated = 1 ';
-		$where .= ' AND deleted = 0';
-		$query = '
-				SELECT
-					* FROM pricerule
-				WHERE
-					'.$where.'
-				ORDER
-					BY priority;';
-		//echo $query;
-		$result = mysqli_query($connection, $query);
-		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
-		} else {
-		    return false;
-		}
-	}
-
-	public function getCategories($connection, $type, $clientid) {
-		$where = '';
-		$where .= 'type = '.$type.' ';
-		$where .= 'clientid = '.$clientid.' ';
-		$where .= 'deleted = 0';
-		$query = '
-				SELECT
-					* FROM category
-				WHERE
-					'.$where.'
-				ORDER
-					BY ordering;';
-		$result = mysqli_query($connection, $query);
-		if($result && (mysqli_num_rows($result) > 0)) {
-		    $data = mysqli_fetch_object($result);
-			$categories = array();
-			foreach($data as $category) {
-				if(!$category->parentid) {
-					$categories[$category->id]['id'] = $category->id;
-					$categories[$category->id]['title'] = $category->title;
-					$categories[$category->id]['parentid'] = $category->parentid;
-					$categories[$category->id]['ordering'] = $category->ordering;
-					if($category->parentid) {
-						if(!isset($categories[$category->parentid])) $categories[$category->parentid] = array();
-						if(!isset($categories[$category->parentid]['childs'])) $categories[$category->parentid]['childs'] = array();
-						array_push($categories[$category->parentid]['childs'], $category->id);
-					}
+	public function formatPriceRules($pricerules, $currency, $locale) {
+		if(isset($pricerules)) {
+			foreach($pricerules as $id => $pricerule) {
+				if(($pricerule['action'] == 'byfixed') || ($pricerule['action'] == 'tofixed')) {
+					$pricerules[$id]['amount'] = $currency->toCurrency($pricerule['amount']);
+				} elseif(($pricerule['action'] == 'bypercent') || ($pricerule['action'] == 'topercent')) {
+					$precision = (floor($pricerule['amount']) == $pricerule['amount']) ? 0 : 2;
+					$pricerules[$id]['amount'] = Zend_Locale_Format::toNumber($pricerule['amount'],array('precision' => $precision,'locale' => $locale)).' %';
 				}
 			}
-			foreach($data as $category) {
-				if($category->parentid) {
-					$categories[$category->id]['id'] = $category->id;
-					$categories[$category->id]['title'] = $category->title;
-					$categories[$category->id]['parentid'] = $category->parentid;
-					$categories[$category->id]['ordering'] = $category->ordering;
-					if($category->parentid) {
-						if(!isset($categories[$category->parentid])) $categories[$category->parentid] = array();
-						if(!isset($categories[$category->parentid]['childs'])) $categories[$category->parentid]['childs'] = array();
-						array_push($categories[$category->parentid]['childs'], $category->id);
-					}
-				}
-			}
-			return $categories;
-		} else {
-		    return false;
 		}
-	}
-	public function isParent($id, $parentid, $categories) {
-		if(isset($categories[$parentid]['childs'])) {
-			return $this->checkChilds($id, $parentid, $categories);
-		}
-		return false;
-	}
-
-	public function checkChilds($id, $parentid, $categories) {
-		if(isset($categories[$parentid]['childs'])) {
-			if(array_search($id, $categories[$parentid]['childs']) !== false) {
-				return true;
-			} else {
-				foreach($categories[$parentid]['childs'] as $child) {
-					return $this->checkChilds($id, $child, $categories);
-				}
-			}
-		} else {
-			return false;
-		}
+		return $pricerules;
 	}
 }

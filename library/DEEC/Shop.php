@@ -56,7 +56,7 @@ class DEEC_Shop {
 						if($item['manufacturerid']) $priceRuleOptions['itemmanufacturer'] = $item['manufacturerid'];
 
 						//Use price rules
-						$PriceRule = new DEEC_PriceRule();
+						$PriceRule = new DEEC_PriceRuleShop();
 						$price = $PriceRule->usePricerules($item, $this->connection, $priceRuleOptions);
 
 						if(isset($item['video'])) {
@@ -261,7 +261,7 @@ class DEEC_Shop {
 					$rowsData = mysqli_fetch_all($result, MYSQLI_ASSOC);
 					foreach($rowsData as $rowData) {
 						//Use the same price rules as item for the option
-						$PriceRule = new DEEC_PriceRule();
+						$PriceRule = new DEEC_PriceRuleShop();
 						$item['price'] = $rowData['price'];
 						$rowData['price'] = $PriceRule->usePricerules($item, $this->connection, $priceRuleOptions);
 
