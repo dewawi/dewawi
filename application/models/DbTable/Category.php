@@ -48,12 +48,17 @@ class Application_Model_DbTable_Category extends Zend_Db_Table_Abstract
 
 		// Iterate through the data
 		foreach ($data as $category) {
+		    // Get the full category hierarchy
+		    $categoryHierarchy = $this->getCategoryHierarchy($category->id);
+		    $fulltitle = implode(' > ', $categoryHierarchy);  // Join parent categories with '>'
+
 			// Prepare the category array
 			$categories[$category->id] = [
 				'id' => $category->id,
 				'type' => $category->type,
 				'title' => $category->title,
 				'subtitle' => $category->subtitle,
+				'fulltitle' => $fulltitle,
 				'image' => $category->image,
 				'description' => $category->description,
 				'footer' => $category->footer,
@@ -72,4 +77,21 @@ class Application_Model_DbTable_Category extends Zend_Db_Table_Abstract
 
 		return $categories;
 	}
+
+    public function getCategoryHierarchy($categoryId)
+    {
+        $categoryPath = [];
+        $currentCategoryId = $categoryId;
+        while($currentCategoryId) {
+            $category = $this->fetchRow('id = ' . $currentCategoryId);
+            if($category) {
+                array_unshift($categoryPath, $category->title);  // Add category to the start of the path
+                $currentCategoryId = $category->parentid;  // Set to parent category id
+            } else {
+                break;
+            }
+        }
+
+        return $categoryPath;
+    }
 }
