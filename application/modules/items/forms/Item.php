@@ -120,7 +120,8 @@ class Items_Form_Item extends Zend_Form
 			->addFilter('StringTrim')
 			->setAttrib('size', '10')
 			->setAttrib('class', 'number')
-			->setAttrib('data-precision', 2);
+			->setAttrib('data-precision', 2)
+			->setAttrib('readonly', 'readonly');
 
 		$form['minquantity'] = new Zend_Form_Element_Text('minquantity');
 		$form['minquantity']->setLabel('ITEMS_MIN_QUANTITY')
