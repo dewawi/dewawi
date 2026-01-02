@@ -76,7 +76,7 @@ echo $this->Pagination();
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_CATEGORY') ?>" class="category">
 					<?php if($item->catid && isset($this->options['categories'][$item->catid])) : ?>
-						<span class="editable" data-name="catid" data-value="<?php echo $item->catid; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['categories'][$item->catid]['title'])); ?></span>
+						<span class="editable" data-name="catid" data-value="<?php echo $item->catid; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['categories'][$item->catid]['fulltitle'])); ?></span>
 					<?php else : ?>
 						<span class="editable" data-name="catid" data-value="" data-type="select"><?php echo $this->translate('TOOLBAR_NEW') ;?></span>
 					<?php endif; ?>
