@@ -97,11 +97,12 @@ class Items_Model_Get
 		$columns = array('comment', 'sku', 'contactid');
 
 		$query = '';
-		$schema = 'in';
+		$schema = 'le';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
 		$query = $queryHelper->getQueryClient($query, $client['id'], 'i');
+		$query = $queryHelper->getQueryDeleted($query, $schema);
 
 		$ledgers = $ledgerDb->fetchAll(
 			$ledgerDb->select()
