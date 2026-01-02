@@ -74,6 +74,8 @@ echo $this->FileManager();
 				<div class="col-sm-12 col-lg-6">
 						<h4>Lager</h4>
 						<?php echo $this->form->getElement('quantity') ?>
+						<dt></dt>
+						<dd><a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'ledger', 'action'=>'add', 'id'=>null, 'itemid'=>$this->form->getValue('id'))); ?>"><?php echo $this->translate('ITEMS_BOOK_INVENTORY') ?></a></dd>
 						<?php echo $this->form->getElement('inventory') ?>
 						<?php echo $this->form->getElement('minquantity') ?>
 						<?php echo $this->form->getElement('orderquantity') ?>
