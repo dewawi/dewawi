@@ -34,14 +34,17 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 						'deleted' => $identity->deleted
 						);
 
-			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
-
-			$lifetime = $_SESSION['__ZF']['Zend_Auth']['ENT'] - time();
-			if($lifetime < 3600) $authNamespace->setExpirationSeconds(3600);
-			if($lifetime > 3600) $authNamespace->setExpirationSeconds(864000);
-
 			Zend_Registry::set('User', $user);
 		}
+	}
+
+	protected function _initDeecAutoload()
+	{
+		Zend_Loader_Autoloader::getInstance()->registerNamespace('DEEC_');
+
+		set_include_path(
+			get_include_path() . PATH_SEPARATOR . realpath(APPLICATION_PATH . '/../library')
+		);
 	}
 
 	protected function _initDatabase()
@@ -276,6 +279,24 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 					[
 						'module' => 'shops',
 						'controller' => 'contact',
+						'action' => $action
+					]
+				));
+			}
+
+			// Route to inquiry
+			$inquiryRoutes = [
+				'send' => 'inquiry',
+				'success' => 'inquiry_success',
+				'error' => 'inquiry_error',
+			];
+
+			foreach ($inquiryRoutes as $action => $routeName) {
+				$router->addRoute($routeName, new Zend_Controller_Router_Route(
+					'inquiry/' . $action,
+					[
+						'module' => 'shops',
+						'controller' => 'inquiry',
 						'action' => $action
 					]
 				));
