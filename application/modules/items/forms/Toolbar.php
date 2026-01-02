@@ -43,6 +43,11 @@ class Items_Form_Toolbar extends Zend_Form
 			->setDecorators(array('ViewHelper'))
 			->setAttrib('class', 'delete hidden-sm');
 
+		$form['deleteInline'] = new Zend_Form_Element_Button('delete');
+		$form['deleteInline']->setLabel('')
+			->setDecorators(array('ViewHelper'))
+			->setAttrib('class', 'delete nolabel');
+
 		$form['pdfInline'] = new Zend_Form_Element_Button('pdf');
 		$form['pdfInline']->setLabel('')
 			->setDecorators(array('ViewHelper'))
