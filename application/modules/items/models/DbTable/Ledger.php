@@ -33,14 +33,15 @@ class Items_Model_DbTable_Ledger extends Zend_Db_Table_Abstract
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
 		return $data;
 	}
 
-	public function getLedgers($deliveryorderid)
+	public function getLedgers($ledgerid)
 	{
 		//$where = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
-		$where[] = $this->getAdapter()->quoteInto('deliveryorderid = ?', $deliveryorderid);
+		$where[] = $this->getAdapter()->quoteInto('ledgerid = ?', $ledgerid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$data = $this->fetchAll($where);
 		if (!$row) {
@@ -74,6 +75,14 @@ class Items_Model_DbTable_Ledger extends Zend_Db_Table_Abstract
 		$data['modifiedby'] = $this->_user['id'];
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
+	}
+
+	public function updateSkuByItemId($itemId, $newSku)
+	{
+		return $this->update(
+			array('sku' => $newSku),
+			array('itemid = ?' => (int)$itemId)
+		);
 	}
 
 	public function lock($id)
