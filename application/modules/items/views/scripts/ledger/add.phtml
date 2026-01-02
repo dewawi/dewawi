@@ -1,6 +1,7 @@
 <?php 
 $this->title = $this->translate('ITEMS_NEW_LEDGER');
 $this->headTitle($this->title);
+echo $this->Messages();
 ?>
 
 <ul class="tabs">
@@ -17,6 +18,7 @@ $this->headTitle($this->title);
 						<?php echo $this->form->getElement('sku') ?>
 						<?php echo $this->form->getElement('type') ?>
 						<?php echo $this->form->getElement('quantity') ?>
+						<?php echo $this->form->getElement('warehouseid') ?>
 						<?php echo $this->form->getElement('comment') ?>
 						<?php echo $this->form->getElement('ledgerdate') ?>
 					</dl>
