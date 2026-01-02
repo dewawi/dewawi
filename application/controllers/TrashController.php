@@ -54,15 +54,19 @@ class TrashController extends Zend_Controller_Action
 			$isItemModule = (strtolower($data['module']) === 'items') && (strtolower($data['controller']) === 'item');
 			$ebayListingDb = $isItemModule ? new Ebay_Model_DbTable_Listing() : null;
 
+			// Special case: ledger controller - update
+			$isLedgerController = (strtolower($data['module']) === 'items') && (strtolower($data['controller']) === 'ledger');
+			$itemDb = $isLedgerController ? new Items_Model_DbTable_Item() : null;
+
+			// Special case: deliveryorder controller - delete ledger
+			$isDeliveryOrder = strtolower($data['controller']) === 'deliveryorder';
+			$ledgerDb = $isDeliveryOrder ? new Items_Model_DbTable_Ledger() : null;
+
 			// Special case: contacts module - delete phones, emails, internets
 			$isContactModule = strtolower($data['module']) === 'contacts';
 			$phoneDb = $isContactModule ? new Contacts_Model_DbTable_Phone() : null;
 			$emailDb = $isContactModule ? new Contacts_Model_DbTable_Email() : null;
 			$internetDb = $isContactModule ? new Contacts_Model_DbTable_Internet() : null;
-
-			// Special case: deliveryorder controller - delete ledger
-			$isDeliveryOrder = strtolower($data['controller']) === 'deliveryorder';
-			$ledgerDb = $isDeliveryOrder ? new Items_Model_DbTable_Ledger() : null;
 
 			foreach ($ids as $id) {
 				if (!empty($id)) {
@@ -92,6 +96,22 @@ class TrashController extends Zend_Controller_Action
 					// Delete eBay listing
 					if ($ebayListingDb) {
 						$ebayListingDb->deleteListingByItemID($id);
+					}
+
+					// Update item quantity if ledger
+					if ($itemDb) {
+						$ledger = $mainModel->getLedger($id);
+						if($item = $itemDb->getItemBySKU($ledger['sku'])) {
+							// compute signed qty (inflow +, outflow -)
+							$signed = (float)$ledger['quantity'];
+							if($ledger['type'] === 'outflow') $signed = -$signed;
+
+							// reverse effect
+							$delta = -$signed;
+
+							$newQty = ((float)$item['quantity']) + $delta;
+							$itemDb->updateItem($item['id'], array('quantity' => $newQty));
+						}
 					}
 
 					// Delete ledger if deliveryorder
