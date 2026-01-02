@@ -2,92 +2,78 @@
 
 class DEEC_Filter
 {
-    public static function strTrimOrNull($value)
+    public static function trim($v)
     {
-        if ($value === null) return null;
-        $v = trim((string)$value);
-        return ($v === '') ? null : $v;
+        return is_string($v) ? trim($v) : $v;
     }
 
-    public static function strTrim($value)
+    public static function emptyToNull($v)
     {
-        return trim((string)$value);
+        if (is_string($v) && trim($v) === '') return null;
+        return $v;
     }
 
-    public static function bool01($value)
+    public static function number($v, $precision = 2, $locale = null)
     {
-        $v = strtolower(trim((string)$value));
-        return in_array($v, ['1','true','on','yes'], true) ? 1 : 0;
+        $v = self::trim($v);
+        if ($v === '' || $v === null) return null;
+
+        if ($locale === null) $locale = Zend_Registry::get('Zend_Locale');
+
+        return Zend_Locale_Format::getNumber(
+            $v,
+            array('precision' => (int)$precision, 'locale' => $locale)
+        );
     }
 
-    public static function intOrNull($value)
+    public static function date($v, $inputLocale = 'de')
     {
-        $v = self::strTrimOrNull($value);
-        if ($v === null) return null;
-        if (!preg_match('~^-?\d+$~', $v)) return null;
-        return (int)$v;
-    }
+        $v = self::trim($v);
+        if ($v === '' || $v === null) return null;
 
-    // German number: "1.234,50" => 1234.50 (float), "" => null
-    public static function numberDeToFloatOrNull($value, int $precision = 2)
-    {
-        $raw = self::strTrimOrNull($value);
-        if ($raw === null) return null;
-
-        // remove spaces + nbsp
-        $raw = str_replace([' ', "\xC2\xA0"], '', $raw);
-
-        // remove thousand separators and convert decimal comma
-        $raw = str_replace('.', '', $raw);
-        $raw = str_replace(',', '.', $raw);
-
-        if (!is_numeric($raw)) return null;
-
-        return round((float)$raw, $precision);
-    }
-
-    // date: "29.12.2025" => "2025-12-29", "" => null
-    public static function dateDeToIsoOrNull($value)
-    {
-        $raw = self::strTrimOrNull($value);
-        if ($raw === null) return null;
-
-        $dt = DateTime::createFromFormat('d.m.Y', $raw);
-        if (!$dt) return null;
-
-        return $dt->format('Y-m-d');
-    }
-
-    // keep only allowed keys
-    public static function only(array $data, array $allowedKeys)
-    {
-        $out = [];
-        foreach ($allowedKeys as $k) {
-            if (array_key_exists($k, $data)) $out[$k] = $data[$k];
+        try {
+            $d = new Zend_Date($v, Zend_Date::DATES, $inputLocale);
+            return $d->get('yyyy-MM-dd');
+        } catch (Exception $e) {
+            return null;
         }
-        return $out;
     }
 
-    // apply callable filters per field
-    public static function apply(array $data, array $map)
+    // universal single-field ajax normalizer
+    public static function normalizeByFormat(array $data, $element)
     {
-        foreach ($map as $field => $filter) {
-            if (!array_key_exists($field, $data)) continue;
+		// extract meta
+		$format = isset($data['_format']) ? $data['_format'] : null;
+		$precision = isset($data['_precision']) ? (int)$data['_precision'] : 2;
 
-            if (is_callable($filter)) {
-                $data[$field] = $filter($data[$field]);
-                continue;
-            }
+		// remove meta fields so they don't get written to DB
+		unset($data['_format'], $data['_precision']);
 
-            // allow array of callables
-            if (is_array($filter)) {
-                $v = $data[$field];
-                foreach ($filter as $fn) {
-                    if (is_callable($fn)) $v = $fn($v);
-                }
-                $data[$field] = $v;
-            }
+        if (!array_key_exists($element, $data)) return $data;
+
+        // always trim strings
+        $data[$element] = self::trim($data[$element]);
+
+        switch ($format) {
+            case 'number':
+                $data[$element] = self::number($data[$element], $precision);
+                break;
+
+            case 'date':
+                $data[$element] = self::date($data[$element], 'de');
+                break;
+
+            case 'string':
+                // optional empty->null
+                // $data[$element] = self::emptyToNull($data[$element]);
+                break;
+
+            default:
+                // no special conversion
+                break;
         }
+
         return $data;
     }
 }
+
