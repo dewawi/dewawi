@@ -20,6 +20,11 @@ class Items_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$manufacturers = $manufacturerDb->getManufacturers();
 		$options['manufacturers'] = $manufacturers;
 
+		//Get warehouses
+		$warehouseDb = new Application_Model_DbTable_Warehouse();
+		$warehouses = $warehouseDb->getWarehouses();
+		$options['warehouses'] = $warehouses;
+
 		//Get uoms
 		$uomDb = new Application_Model_DbTable_Uom();
 		$uoms = $uomDb->getUoms();
@@ -54,6 +59,7 @@ class Items_Controller_Action_Helper_Options extends Zend_Controller_Action_Help
 		$MenuStructure = Zend_Controller_Action_HelperBroker::getStaticHelper('MenuStructure');
 		if(isset($form->catid) && isset($options['categories'])) $form->catid->addMultiOptions($MenuStructure->getMenuStructure($options['categories']));
 		if(isset($form->manufacturerid) && isset($options['manufacturers'])) $form->manufacturerid->addMultiOptions($options['manufacturers']);
+		if(isset($form->warehouseid) && isset($options['warehouses'])) $form->warehouseid->addMultiOptions($options['warehouses']);
 		if(isset($form->uomid) && isset($options['uoms'])) $form->uomid->addMultiOptions($options['uoms']);
 		if(isset($form->taxid) && isset($options['taxrates'])) $form->taxid->addMultiOptions($options['taxrates']);
 		if(isset($form->currency) && isset($options['currencies'])) $form->currency->addMultiOptions($options['currencies']);

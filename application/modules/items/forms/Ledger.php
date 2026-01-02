@@ -46,6 +46,11 @@ class Items_Form_Ledger extends Zend_Form
 			->setAttrib('size', '10')
 			->setAttrib('class', 'number required');
 
+		$form['warehouseid'] = new Zend_Form_Element_Select('warehouseid');
+		$form['warehouseid']->setLabel('ITEMS_WAREHOUSE')
+			->setRequired(true)
+			->addValidator('NotEmpty');
+
 		$form['comment'] = new Zend_Form_Element_Text('comment');
 		$form['comment']->setLabel('ITEMS_LEDGER_COMMENT')
 			->addFilter('StripTags')
