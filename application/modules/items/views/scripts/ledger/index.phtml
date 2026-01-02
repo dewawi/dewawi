@@ -19,6 +19,9 @@ echo $this->ActiveFilter();
 				<?php echo $this->translate('ITEMS_LEDGER_COMMENT'); ?>
 			</th>
 			<th class="cost" width="8%">
+				<?php echo $this->translate('ITEMS_LEDGER_WAREHOUSE'); ?>
+			</th>
+			<th class="cost" width="8%">
 				<?php echo $this->translate('ITEMS_LEDGER_TYPE'); ?>
 			</th>
 			<th class="price" width="8%">
@@ -37,17 +40,24 @@ echo $this->ActiveFilter();
 			<tr>
 				<td><input class="id" type="checkbox" value="<?php echo $ledger->id ?>" name="id"/></td>
 				<td data-label="<?php echo $this->translate('ITEMS_SKU') ?>" class="sku">
-					<?php echo $this->escape($ledger->sku); ?>
+					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'ledger', 'action'=>'edit', 'id'=>$ledger->id)); ?>">
+					    <?php echo $this->escape($ledger->sku); ?>
+					</a>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_TITLE') ?>" class="title">
-					<?php echo $this->escape($ledger->title); ?>
+					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'ledger', 'action'=>'edit', 'id'=>$ledger->id)); ?>">
+						<?php echo $this->escape($ledger->title); ?>
+					</a>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_LEDGER_COMMENT') ?>" class="comment">
-					<?php //echo $this->escape($ledger->comment); ?>
+					<?php echo $this->escape($ledger->comment); ?>
+				</td>
+				<td data-label="<?php echo $this->translate('ITEMS_LEDGER_WAREHOUSE') ?>" class="comment">
+					<?php echo $this->escape($ledger->warehouseid); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_LEDGER_TYPE') ?>" class="doctype">
-					<?php //if($ledger->type == 'inflow') echo $this->translate('ITEMS_LEDGER_INFLOW'); ?>
-					<?php //if($ledger->type == 'outflow') echo $this->translate('ITEMS_LEDGER_OUTFLOW'); ?>
+					<?php if($ledger->type == 'inflow') echo $this->translate('ITEMS_LEDGER_INFLOW'); ?>
+					<?php if($ledger->type == 'outflow') echo $this->translate('ITEMS_LEDGER_OUTFLOW'); ?>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_LEDGER_DOCUMENT') ?>" class="cost">
 					<?php //if($ledger->doctype == 'invoice') : ?>
