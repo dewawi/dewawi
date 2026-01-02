@@ -11,6 +11,7 @@
 	'ITEMS_LEDGER_TYPE' => 'Zugang/Abgang',
 	'ITEMS_LEDGER_INFLOW' => 'Zugang',
 	'ITEMS_LEDGER_OUTFLOW' => 'Abgang',
+	'ITEMS_LEDGER_WAREHOUSE' => 'Lager',
 	'ITEMS_LEDGER_DATE' => 'Buchungsdatum',
 	'ITEMS_LEDGER_MODIFIED' => 'le. Änderung',
 	'ITEMS_LEDGER_PRICE' => 'Preis',

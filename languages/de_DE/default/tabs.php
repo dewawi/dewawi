@@ -21,6 +21,7 @@
 	'TABS_PAYMENT' => 'Zahlungsinformationen',
 	'TABS_DETAILS' => 'Details',
 	'TABS_SHOP' => 'Shop',
-	'TABS_INVENTORY' => 'Buchungsverlauf',
+	'TABS_INVENTORY' => 'Inventar',
+	'TABS_LEDGER' => 'Buchungsverlauf',
 	'TABS_DOWNLOADS' => 'Downloads'
 );
