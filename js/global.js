@@ -87,6 +87,14 @@ $(document).ready(function(){
 			if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
 			if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
 			if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
+			// if edited field is numeric
+			if($(this).hasClass('number')) {
+				data['_format'] = 'number';
+				data['_precision'] = $(this).data('precision') || 2;
+			}
+			if($(this).hasClass('datePicker')) {
+				data['_format'] = 'date';
+			}
 			edit(data, params);
 			//validate(data, params);
 		}
