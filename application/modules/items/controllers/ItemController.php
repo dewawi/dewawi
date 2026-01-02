@@ -157,24 +157,24 @@ class Items_ItemController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$locale = Zend_Registry::get('Zend_Locale');
 
-					// remove meta fields so they don't get written to DB
-					$format = isset($data['_format']) ? $data['_format'] : null;
-					$precision = isset($data['_precision']) ? (int)$data['_precision'] : 2;
-					unset($data['_format'], $data['_precision']);
+					// normalize (trim + parse)
+					$data = DEEC_Filter::normalizeByFormat($data, $element);
 
-					// parse numeric or set NULL if empty
-					if($format === 'number' && array_key_exists($element, $data)) {
-						$value = trim((string)$data[$element]);
+					// sync ledger sku if sku changed
+					if ($element === 'sku' && array_key_exists('sku', $data)) {
+						$oldSku = (string)$item['sku'];
+						$newSku = trim((string)$data['sku']);
 
-						if($value === '') {
-							$data[$element] = null;
-						} else {
-							$data[$element] = Zend_Locale_Format::getNumber(
-								$value,
-								array('precision' => $numFields[$element], 'locale' => $locale)
-							);
+						if ($newSku !== null && $newSku !== $oldSku) {
+							$ledgerDb = new Items_Model_DbTable_Ledger();
+							$ledgerDb->updateSkuByItemId($id, $newSku);
+						}
+
+						// if empty -> invalid
+						if ($newSku === '') {
+							echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
+							return;
 						}
 					}
 
