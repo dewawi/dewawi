@@ -105,6 +105,30 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		if(isset($config)) {
 			date_default_timezone_set($config['timezone']);
 		}
+
+		//Translate
+		$tr = new DEEC_Translate($language);
+
+		$base = BASE_PATH . '/languages/' . $language;
+
+		// immer default laden
+		$tr->loadDir('default', $base . '/default');
+
+		// aktuelles Modul laden (z.B. items, contacts, sales, ...)
+		$front = Zend_Controller_Front::getInstance();
+		$request = $front->getRequest();
+
+		$module = $request ? (string)$request->getModuleName() : 'items';
+		if ($module !== '' && is_dir($base . '/' . $module)) {
+			$tr->loadDir($module, $base . '/' . $module);
+		}
+
+		// optional: noch "admin" immer laden
+		if (is_dir($base . '/admin')) {
+			$tr->loadDir('admin', $base . '/admin');
+		}
+
+		Zend_Registry::set('DEEC_Translate', $tr);
 	}
 
 	protected function _initSessions() {
