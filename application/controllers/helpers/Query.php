@@ -109,4 +109,10 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 		}
 		return $childCategories;
 	}
+
+	public function getQueryQuantity($query, $quantity, $schema = null)
+	{
+		$this->appendCondition($query, ($schema ? "$schema." : "") . "quantity > 0");
+		return $query;
+	}
 }
