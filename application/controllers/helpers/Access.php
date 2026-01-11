@@ -5,7 +5,13 @@ class Application_Controller_Action_Helper_Access extends Zend_Controller_Action
 	public function lock($id, $userid, $locked = null, $lockedtime = null) {
 		$request = $this->getRequest();
 		$params = $request->getParams();
-		if($request->isPost()) $this->disableView();
+
+		// ajax detection
+		if($isAjax = $request->isXmlHttpRequest()) {
+			$this->disableView();
+			$json = Zend_Controller_Action_HelperBroker::getStaticHelper('json');
+		}
+
 		$class = ucfirst($params['module']).'_Model_DbTable_'.ucfirst($params['controller']);
 		$db = new $class();
 		if(($locked === null) || ($lockedtime === null)) {
@@ -28,14 +34,24 @@ class Application_Controller_Action_Helper_Access extends Zend_Controller_Action
 			$message = $view->translate('MESSAGES_ACCESS_DENIED_%s');
 			$message = sprintf($message, $users[$locked]);
 
-			if($request->isPost()) {
-				echo Zend_Json::encode(array('message' => $message));
+			if ($isAjax) {
+				return $json->sendJson([
+					'ok' => false,
+					'message' => 'locked'
+				]);
 			} else {
 				$flashMessenger->addMessage($message);
 				$redirector->gotoSimple('index', $params['controller'], $params['module']);
 			}
 		} else {
 			$db->lock($id);
+
+			/*if ($isAjax) {
+				return $json->sendJson([
+					'ok' => true,
+					'message' => true
+				]);
+			}*/
 		}
 	}
 
