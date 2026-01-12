@@ -2461,7 +2461,6 @@ CREATE TABLE IF NOT EXISTS `shoporderpos` (
   PRIMARY KEY (id),
   KEY (shopid),
   KEY (orderid),
-  KEY (contactid),
   KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
