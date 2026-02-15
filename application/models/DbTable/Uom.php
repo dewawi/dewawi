@@ -41,4 +41,9 @@ class Application_Model_DbTable_Uom extends Zend_Db_Table_Abstract
 		}
 		return $uoms;
 	}
+
+	public function getSelectOptions(): array
+	{
+		return $this->getUoms();
+	}
 }

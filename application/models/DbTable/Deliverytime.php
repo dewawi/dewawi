@@ -2,6 +2,7 @@
 
 class Application_Model_DbTable_Deliverytime extends Zend_Db_Table_Abstract
 {
+
 	protected $_name = 'deliverytime';
 
 	protected $_date = null;
@@ -39,5 +40,10 @@ class Application_Model_DbTable_Deliverytime extends Zend_Db_Table_Abstract
 			$deliverytimes[$deliverytime->id] = $deliverytime->title;
 		}
 		return $deliverytimes;
+	}
+
+	public function getSelectOptions(): array
+	{
+		return $this->getDeliverytimes();
 	}
 }

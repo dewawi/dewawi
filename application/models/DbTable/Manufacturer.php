@@ -2,6 +2,7 @@
 
 class Application_Model_DbTable_Manufacturer extends Zend_Db_Table_Abstract
 {
+
 	protected $_name = 'manufacturer';
 
 	protected $_date = null;
@@ -39,5 +40,10 @@ class Application_Model_DbTable_Manufacturer extends Zend_Db_Table_Abstract
 			$manufacturers[$manufacturer->id] = $manufacturer->name;
 		}
 		return $manufacturers;
+	}
+
+	public function getSelectOptions(): array
+	{
+		return $this->getManufacturers();
 	}
 }

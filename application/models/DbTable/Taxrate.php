@@ -48,10 +48,14 @@ class Application_Model_DbTable_Taxrate extends Zend_Db_Table_Abstract
 		$data = $this->fetchAll($where);
 
 		$taxrates = array();
-		$locale = Zend_Registry::get('Zend_Locale');
 		foreach($data as $taxrate) {
 			$taxrates[$taxrate->id] = $taxrate->rate;
 		}
 		return $taxrates;
+	}
+
+	public function getSelectOptions(): array
+	{
+		return $this->getTaxrates();
 	}
 }
