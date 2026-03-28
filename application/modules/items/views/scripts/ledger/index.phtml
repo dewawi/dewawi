@@ -41,7 +41,7 @@ echo $this->ActiveFilter();
 				<td><input class="id" type="checkbox" value="<?php echo $ledger->id ?>" name="id"/></td>
 				<td data-label="<?php echo $this->translate('ITEMS_SKU') ?>" class="sku">
 					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'ledger', 'action'=>'edit', 'id'=>$ledger->id)); ?>">
-					    <?php echo $this->escape($ledger->sku); ?>
+						<?php echo $this->escape($ledger->sku); ?>
 					</a>
 				</td>
 				<td data-label="<?php echo $this->translate('ITEMS_TITLE') ?>" class="title">
