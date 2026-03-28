@@ -2,15 +2,11 @@
 
 class Items_Form_Item extends DEEC_Form
 {
-	protected $options = [];
-
 	public function __construct()
 	{
-		// hidden
 		$this->addElement([
 			'type' => 'hidden',
 			'name' => 'id',
-			'format' => ['type' => 'int'],
 			'tab' => 'overview',
 		]);
 
@@ -25,7 +21,6 @@ class Items_Form_Item extends DEEC_Form
 			'col' => 6,
 		]);
 
-		// title
 		$this->addElement([
 			'type' => 'text',
 			'name' => 'title',
@@ -37,7 +32,6 @@ class Items_Form_Item extends DEEC_Form
 			'col' => 6,
 		]);
 
-		// type select
 		$this->addElement([
 			'type' => 'select',
 			'name' => 'type',
@@ -60,7 +54,6 @@ class Items_Form_Item extends DEEC_Form
 			'label' => 'ITEMS_CATEGORY',
 			'options'=> ['0' => 'CATEGORIES_MAIN_CATEGORY'],
 			'source' => 'category:item',
-			'format' => ['type' => 'int'],
 			'tab' => 'overview',
 			'col' => 6,
 		]);
@@ -135,6 +128,7 @@ class Items_Form_Item extends DEEC_Form
 			'options' => [
 				'0' => 'ITEMS_NONE',
 			],
+			'source' => 'currency',
 			'format' => ['type' => 'string'],
 			'tab' => 'prices',
 			'section' => 'ITEMS_PRICES',
@@ -239,6 +233,7 @@ class Items_Form_Item extends DEEC_Form
 			'options' => [
 				'0' => 'ITEMS_NONE',
 			],
+			'source' => 'uom',
 			'format' => ['type' => 'int'],
 			'tab' => 'details',
 			'section' => 'ITEMS_WAREHOUSE',
@@ -253,6 +248,7 @@ class Items_Form_Item extends DEEC_Form
 			'options' => [
 				'0' => 'ITEMS_NONE',
 			],
+			'source' => 'manufacturer',
 			'format' => ['type' => 'int'],
 			'tab' => 'details',
 			'section' => 'ITEMS_MANUFACTURER',
@@ -334,6 +330,7 @@ class Items_Form_Item extends DEEC_Form
 			'options' => [
 				'0' => 'ITEMS_NONE',
 			],
+			'source' => 'deliverytime',
 			'format' => ['type' => 'int'],
 			'tab' => 'details',
 			'section' => 'ITEMS_DELIVERY',
@@ -348,6 +345,7 @@ class Items_Form_Item extends DEEC_Form
 			'options' => [
 				'0' => 'ITEMS_NONE',
 			],
+			'source' => 'deliverytime',
 			'format' => ['type' => 'int'],
 			'tab' => 'details',
 			'section' => 'ITEMS_DELIVERY',
