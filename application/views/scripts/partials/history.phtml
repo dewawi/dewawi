@@ -1,0 +1,713 @@
+<?php
+//print_r($this->options);
+$history = false;
+foreach($this->history as $data) {
+	if(count($data)) $history = true;
+}
+if(!$history) { ?>
+	<div id="messages"><ul><li><?php echo $this->translate('Es sind noch keine Aktivitäten vorhanden.') ?></li></ul></div>
+<?php } else {
+	if(count($this->history['quotes'])) : ?>
+		<h3><?php echo $this->translate('QUOTES') ?></h3>
+		<table id="data">
+			<thead>
+				<tr>
+					<th class="quoteid"><?php echo $this->translate('QUOTES_QUOTE_ID') ?></th>
+					<th class="title"><?php echo $this->translate('QUOTES_TITLE') ?></th>
+					<th class="contactid"><?php echo $this->translate('QUOTES_CONTACT_ID') ?></th>
+					<th class="contact"><?php echo $this->translate('QUOTES_CONTACT') ?></th>
+					<th class="quotedate"><?php echo $this->translate('QUOTES_QUOTE_DATE') ?></th>
+					<th class="notes"><?php echo $this->translate('QUOTES_NOTES') ?></th>
+					<th class="modified"><?php echo $this->translate('QUOTES_MODIFIED') ?></th>
+					<th class="subtotal"><?php echo $this->translate('QUOTES_SUBTOTAL') ?></th>
+					<th class="total"><?php echo $this->translate('QUOTES_TOTAL') ?></th>
+					<th class="state"><?php echo $this->translate('QUOTES_STATE') ?></th>
+					<th class="buttons"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->history['quotes'] as $quote) : ?>
+				<tr>
+					<td class="quoteid">
+						<input class="id" type="hidden" value="<?php echo $quote->id ?>" name="id"/>
+						<input class="controller" type="hidden" value="quote" name="controller"/>
+						<input class="module" type="hidden" value="sales" name="module"/>
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id));?>">
+							<?php echo $this->escape($quote->quoteid) ? $this->escape($quote->quoteid) : $this->translate('QUOTE')." ".$this->escape($quote->id); ?>
+						</a>
+					</td>
+					<td class="title">
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id));?>">
+							<?php echo $quote->title ? $this->escape($quote->title) : $this->escape($quote->id);?>
+						</a>
+					</td>
+					<td class="contactid">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($quote->contactid);?>
+						</a>
+					</td>
+					<td class="contact">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($quote->billingname1);?>
+							<?php if($quote->billingname2) echo "<br/>".$this->escape($quote->billingname2);?>
+						</a>
+					</td>
+					<td class="quotedate">
+						<?php echo $this->escape($quote->quotedate);?>
+					</td>
+					<td class="notes">
+						<?php if($quote->notes) : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="quote" data-id="<?php echo $quote->id; ?>" data-value="<?php echo $quote->notes; ?>" data-type="textarea"><?php echo $quote->notes; ?></pre>
+						<?php else : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="quote" data-id="<?php echo $quote->id; ?>" data-value="<?php echo $quote->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+						<?php endif; ?>
+					</td>
+					<td class="modified">
+						<?php echo $this->escape($quote->modified);?>
+					</td>
+					<td class="subtotal">
+						<?php echo $this->escape($quote->subtotal);?>
+					</td>
+					<td class="total">
+						<?php echo $this->escape($quote->total);?>
+					</td>
+					<td class="state">
+						<?php echo $this->translate($this->escape($this->history['states'][$quote->state])); ?>
+					</td>
+					<td class="buttons">
+    					<?php echo $this->historyToolbar($quote->state, 'quote'); ?>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+	<?php if(count($this->history['salesorders'])) : ?>
+		<h3><?php echo $this->translate('SALES_ORDERS') ?></h3>
+		<table id="data">
+			<thead>
+				<tr>
+					<th class="salesorderid"><?php echo $this->translate('SALES_ORDERS_SALES_ORDER_ID') ?></th>
+					<th class="title"><?php echo $this->translate('SALES_ORDERS_TITLE') ?></th>
+					<th class="contactid"><?php echo $this->translate('SALES_ORDERS_CONTACT_ID') ?></th>
+					<th class="contact"><?php echo $this->translate('SALES_ORDERS_CONTACT') ?></th>
+					<th class="salesorderdate"><?php echo $this->translate('SALES_ORDERS_SALES_ORDER_DATE') ?></th>
+					<th class="notes"><?php echo $this->translate('SALES_ORDERS_NOTES') ?></th>
+					<th class="modified"><?php echo $this->translate('SALES_ORDERS_MODIFIED') ?></th>
+					<th class="deliverydate"><?php echo $this->translate('SALES_ORDERS_DELIVERY_DATE') ?></th>
+					<th class="subtotal"><?php echo $this->translate('SALES_ORDERS_SUBTOTAL') ?></th>
+					<th class="total"><?php echo $this->translate('SALES_ORDERS_TOTAL') ?></th>
+					<th class="state"><?php echo $this->translate('SALES_ORDERS_STATE') ?></th>
+					<th class="buttons"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->history['salesorders'] as $salesorder) : ?>
+				<tr>
+					<td class="salesorderid">
+						<input class="id" type="hidden" value="<?php echo $salesorder->id ?>" name="id"/>
+						<input class="controller" type="hidden" value="salesorder" name="controller"/>
+						<input class="module" type="hidden" value="sales" name="module"/>
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'edit', 'id'=>$salesorder->id));?>">
+							<?php echo $this->escape($salesorder->salesorderid) ? $this->escape($salesorder->salesorderid) : $this->translate('SALES_ORDER')." ".$this->escape($salesorder->id); ?>
+						</a>
+					</td>
+					<td class="title">
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'edit', 'id'=>$salesorder->id));?>">
+							<?php echo $salesorder->title ? $this->escape($salesorder->title) : $this->escape($salesorder->id);?>
+						</a>
+					</td>
+					<td class="contactid">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($salesorder->contactid);?>
+						</a>
+					</td>
+					<td class="contact">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($salesorder->billingname1);?>
+							<?php if($salesorder->billingname2) echo "<br/>".$this->escape($salesorder->billingname2);?>
+						</a>
+					</td>
+					<td class="salesorderdate">
+						<?php echo $this->escape($salesorder->salesorderdate);?>
+					</td>
+					<td class="notes">
+						<?php if($salesorder->notes) : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="salesorder" data-id="<?php echo $salesorder->id; ?>" data-value="<?php echo $salesorder->notes; ?>" data-type="textarea"><?php echo $salesorder->notes; ?></pre>
+						<?php else : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="salesorder" data-id="<?php echo $salesorder->id; ?>" data-value="<?php echo $salesorder->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+						<?php endif; ?>
+					</td>
+					<td class="modified">
+						<?php echo $this->escape($salesorder->modified);?>
+					</td>
+					<td class="deliverydate">
+						<?php if($salesorder->deliverydate) echo $this->escape($salesorder->deliverydate); ?>
+					</td>
+					<td class="subtotal">
+						<?php echo $this->escape($salesorder->subtotal);?>
+					</td>
+					<td class="total">
+						<?php echo $this->escape($salesorder->total);?>
+					</td>
+					<td class="state">
+						<?php echo $this->translate($this->escape($this->history['states'][$salesorder->state])); ?>
+					</td>
+					<td class="buttons">
+    					<?php echo $this->historyToolbar($salesorder->state, 'salesorder'); ?>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+	<?php if(count($this->history['invoices'])) : ?>
+		<h3><?php echo $this->translate('INVOICES') ?></h3>
+		<table id="data">
+			<thead>
+				<tr>
+					<th class="invoiceid"><?php echo $this->translate('INVOICES_INVOICE_ID'); ?></th>
+					<th class="title"><?php echo $this->translate('INVOICES_TITLE') ?></th>
+					<th class="contactid"><?php echo $this->translate('INVOICES_CONTACT_ID') ?></th>
+					<th class="contact"><?php echo $this->translate('INVOICES_CONTACT') ?></th>
+					<th class="invoicedate"><?php echo $this->translate('INVOICES_INVOICE_DATE') ?></th>
+					<th class="notes"><?php echo $this->translate('INVOICES_NOTES') ?></th>
+					<th class="modified"><?php echo $this->translate('INVOICES_MODIFIED') ?></th>
+					<th class="deliverydate"><?php echo $this->translate('INVOICES_DELIVERY_DATE') ?></th>
+					<th class="subtotal"><?php echo $this->translate('INVOICES_SUBTOTAL') ?></th>
+					<th class="total"><?php echo $this->translate('INVOICES_TOTAL') ?></th>
+					<th class="state"><?php echo $this->translate('INVOICES_STATE') ?></th>
+					<th class="buttons"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->history['invoices'] as $invoice) : ?>
+				<tr>
+					<td class="invoiceid">
+						<input class="id" type="hidden" value="<?php echo $invoice->id ?>" name="id"/>
+						<input class="controller" type="hidden" value="invoice" name="controller"/>
+						<input class="module" type="hidden" value="sales" name="module"/>
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id));?>">
+							<?php echo $this->escape($invoice->invoiceid) ? $this->escape($invoice->invoiceid) : $this->translate('INVOICE')." ".$this->escape($invoice->id); ?>
+						</a>
+					</td>
+					<td class="title">
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id));?>">
+							<?php echo $invoice->title ? $this->escape($invoice->title) : $this->translate('INVOICE')." ".$this->escape($invoice->invoiceid);?>
+						</a>
+					</td>
+					<td class="contactid">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($invoice->contactid);?>
+						</a>
+					</td>
+					<td class="contact">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($invoice->billingname1);?>
+							<?php if($invoice->billingname2) echo "<br/>".$this->escape($invoice->billingname2);?>
+						</a>
+					</td>
+					<td class="invoicedate">
+						<?php echo $this->escape($invoice->invoicedate);?>
+					</td>
+					<td class="notes">
+						<?php if($invoice->notes) : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="invoice" data-id="<?php echo $invoice->id; ?>" data-value="<?php echo $invoice->notes; ?>" data-type="textarea"><?php echo $invoice->notes; ?></pre>
+						<?php else : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="invoice" data-id="<?php echo $invoice->id; ?>" data-value="<?php echo $invoice->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+						<?php endif; ?>
+					</td>
+					<td class="modified">
+						<?php echo $this->escape($invoice->modified);?>
+					</td>
+					<td class="deliverydate">
+						<?php if($invoice->deliverydate) echo $this->escape($invoice->deliverydate); ?>
+					</td>
+					<td class="subtotal">
+						<?php echo $this->escape($invoice->subtotal);?>
+					</td>
+					<td class="total">
+						<?php echo $this->escape($invoice->total);?>
+					</td>
+					<td class="state">
+						<?php echo $this->translate($this->escape($this->history['states'][$invoice->state])); ?>
+					</td>
+					<td class="buttons">
+    					<?php echo $this->historyToolbar($invoice->state, 'invoice'); ?>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+	<?php if(count($this->history['deliveryorders'])) : ?>
+		<h3><?php echo $this->translate('DELIVERY_ORDERS') ?></h3>
+		<table id="data">
+			<thead>
+				<tr>
+					<th class="deliveryorderid"><?php echo $this->translate('DELIVERY_ORDERS_DELIVERY_ORDER_ID'); ?></th>
+					<th class="title"><?php echo $this->translate('DELIVERY_ORDERS_TITLE') ?></th>
+					<th class="contactid"><?php echo $this->translate('DELIVERY_ORDERS_CONTACT_ID') ?></th>
+					<th class="contact"><?php echo $this->translate('DELIVERY_ORDERS_CONTACT') ?></th>
+					<th class="deliveryorderdate"><?php echo $this->translate('DELIVERY_ORDERS_DELIVERY_ORDER_DATE') ?></th>
+					<th class="notes"><?php echo $this->translate('DELIVERY_ORDERS_NOTES') ?></th>
+					<th class="modified"><?php echo $this->translate('DELIVERY_ORDERS_MODIFIED') ?></th>
+					<th class="deliverydate"><?php echo $this->translate('DELIVERY_ORDERS_DELIVERY_DATE') ?></th>
+					<th class="subtotal"><?php echo $this->translate('DELIVERY_ORDERS_SUBTOTAL') ?></th>
+					<th class="total"><?php echo $this->translate('DELIVERY_ORDERS_TOTAL') ?></th>
+					<th class="state"><?php echo $this->translate('DELIVERY_ORDERS_STATE') ?></th>
+					<th class="buttons"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->history['deliveryorders'] as $deliveryorder) : ?>
+				<tr>
+					<td class="deliveryorderid">
+						<input class="id" type="hidden" value="<?php echo $deliveryorder->id ?>" name="id"/>
+						<input class="controller" type="hidden" value="deliveryorder" name="controller"/>
+						<input class="module" type="hidden" value="sales" name="module"/>
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'edit', 'id'=>$deliveryorder->id));?>">
+							<?php echo $this->escape($deliveryorder->deliveryorderid) ? $this->escape($deliveryorder->deliveryorderid) : $this->translate('DELIVERY_ORDER')." ".$this->escape($deliveryorder->id); ?>
+						</a>
+					</td>
+					<td class="title">
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'deliveryorder', 'action'=>'edit', 'id'=>$deliveryorder->id));?>">
+							<?php echo $deliveryorder->title ? $this->escape($deliveryorder->title) : $this->translate('DELIVERY_ORDER')." ".$this->escape($deliveryorder->deliveryorderid);?>
+						</a>
+					</td>
+					<td class="contactid">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($deliveryorder->contactid);?>
+						</a>
+					</td>
+					<td class="contact">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($deliveryorder->billingname1);?>
+							<?php if($deliveryorder->billingname2) echo "<br/>".$this->escape($deliveryorder->billingname2);?>
+						</a>
+					</td>
+					<td class="deliveryorderdate">
+						<?php echo $this->escape($deliveryorder->deliveryorderdate);?>
+					</td>
+					<td class="notes">
+						<?php if($deliveryorder->notes) : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="deliveryorder" data-id="<?php echo $deliveryorder->id; ?>" data-value="<?php echo $deliveryorder->notes; ?>" data-type="textarea"><?php echo $deliveryorder->notes; ?></pre>
+						<?php else : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="deliveryorder" data-id="<?php echo $deliveryorder->id; ?>" data-value="<?php echo $deliveryorder->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+						<?php endif; ?>
+					</td>
+					<td class="modified">
+						<?php echo $this->escape($deliveryorder->modified);?>
+					</td>
+					<td class="deliverydate">
+						<?php if($deliveryorder->deliverydate) echo $this->escape($deliveryorder->deliverydate); ?>
+					</td>
+					<td class="subtotal">
+						<?php echo $this->escape($deliveryorder->subtotal);?>
+					</td>
+					<td class="total">
+						<?php echo $this->escape($deliveryorder->total);?>
+					</td>
+					<td class="state">
+						<?php echo $this->translate($this->escape($this->history['states'][$deliveryorder->state])); ?>
+					</td>
+					<td class="buttons">
+    					<?php echo $this->historyToolbar($deliveryorder->state, 'deliveryorder'); ?>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+	<?php if(count($this->history['creditnotes'])) : ?>
+		<h3><?php echo $this->translate('CREDIT_NOTES') ?></h3>
+		<table id="data">
+			<thead>
+				<tr>
+					<th class="creditnoteid"><?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_ID'); ?></th>
+					<th class="title"><?php echo $this->translate('CREDIT_NOTES_TITLE') ?></th>
+					<th class="contactid"><?php echo $this->translate('CREDIT_NOTES_CONTACT_ID') ?></th>
+					<th class="contact"><?php echo $this->translate('CREDIT_NOTES_CONTACT') ?></th>
+					<th class="creditnotedate"><?php echo $this->translate('CREDIT_NOTES_CREDIT_NOTE_DATE') ?></th>
+					<th class="notes"><?php echo $this->translate('CREDIT_NOTES_NOTES') ?></th>
+					<th class="modified"><?php echo $this->translate('CREDIT_NOTES_MODIFIED') ?></th>
+					<th class="deliverydate"><?php echo $this->translate('CREDIT_NOTES_DELIVERY_DATE') ?></th>
+					<th class="subtotal"><?php echo $this->translate('CREDIT_NOTES_SUBTOTAL') ?></th>
+					<th class="total"><?php echo $this->translate('CREDIT_NOTES_TOTAL') ?></th>
+					<th class="state"><?php echo $this->translate('CREDIT_NOTES_STATE') ?></th>
+					<th class="buttons"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->history['creditnotes'] as $creditnote) : ?>
+				<tr>
+					<td class="creditnoteid">
+						<input class="id" type="hidden" value="<?php echo $creditnote->id ?>" name="id"/>
+						<input class="controller" type="hidden" value="creditnote" name="controller"/>
+						<input class="module" type="hidden" value="sales" name="module"/>
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'edit', 'id'=>$creditnote->id));?>">
+							<?php echo $this->escape($creditnote->creditnoteid) ? $this->escape($creditnote->creditnoteid) : $this->translate('CREDIT_NOTE')." ".$this->escape($creditnote->id); ?>
+						</a>
+					</td>
+					<td class="title">
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'creditnote', 'action'=>'edit', 'id'=>$creditnote->id));?>">
+							<?php echo $creditnote->title ? $this->escape($creditnote->title) : $this->translate('CREDIT_NOTE')." ".$this->escape($creditnote->creditnoteid);?>
+						</a>
+					</td>
+					<td class="contactid">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($creditnote->contactid);?>
+						</a>
+					</td>
+					<td class="contact">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($creditnote->billingname1);?>
+							<?php if($creditnote->billingname2) echo "<br/>".$this->escape($creditnote->billingname2);?>
+						</a>
+					</td>
+					<td class="creditnotedate">
+						<?php echo $this->escape($creditnote->creditnotedate);?>
+					</td>
+					<td class="notes">
+						<?php if($creditnote->notes) : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="creditnote" data-id="<?php echo $creditnote->id; ?>" data-value="<?php echo $creditnote->notes; ?>" data-type="textarea"><?php echo $creditnote->notes; ?></pre>
+						<?php else : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="creditnote" data-id="<?php echo $creditnote->id; ?>" data-value="<?php echo $creditnote->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+						<?php endif; ?>
+					</td>
+					<td class="modified">
+						<?php echo $this->escape($creditnote->modified);?>
+					</td>
+					<td class="deliverydate">
+						<?php if($creditnote->deliverydate) echo $this->escape($creditnote->deliverydate); ?>
+					</td>
+					<td class="subtotal">
+						<?php echo $this->escape($creditnote->subtotal);?>
+					</td>
+					<td class="total">
+						<?php echo $this->escape($creditnote->total);?>
+					</td>
+					<td class="state">
+						<?php echo $this->translate($this->escape($this->history['states'][$creditnote->state])); ?>
+					</td>
+					<td class="buttons">
+    					<?php echo $this->historyToolbar($creditnote->state, 'creditnote'); ?>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+	<?php if(count($this->history['quoterequests'])) : ?>
+		<h3><?php echo $this->translate('QUOTE_REQUESTS') ?></h3>
+		<table id="data">
+			<thead>
+				<tr>
+					<th class="quoterequestid"><?php echo $this->translate('QUOTE_REQUESTS_QUOTE_REQUEST_ID'); ?></th>
+					<th class="title"><?php echo $this->translate('QUOTE_REQUESTS_TITLE') ?></th>
+					<th class="contactid"><?php echo $this->translate('QUOTE_REQUESTS_CONTACT_ID') ?></th>
+					<th class="contact"><?php echo $this->translate('QUOTE_REQUESTS_CONTACT') ?></th>
+					<th class="quoterequestdate"><?php echo $this->translate('QUOTE_REQUESTS_QUOTE_REQUEST_DATE') ?></th>
+					<th class="notes"><?php echo $this->translate('QUOTE_REQUESTS_NOTES') ?></th>
+					<th class="modified"><?php echo $this->translate('QUOTE_REQUESTS_MODIFIED') ?></th>
+					<th class="deliverydate"><?php echo $this->translate('QUOTE_REQUESTS_DELIVERY_DATE') ?></th>
+					<th class="subtotal"><?php echo $this->translate('QUOTE_REQUESTS_SUBTOTAL') ?></th>
+					<th class="total"><?php echo $this->translate('QUOTE_REQUESTS_TOTAL') ?></th>
+					<th class="state"><?php echo $this->translate('QUOTE_REQUESTS_STATE') ?></th>
+					<th class="buttons"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->history['quoterequests'] as $quoterequest) : ?>
+				<tr>
+					<td class="quoterequestid">
+						<input class="id" type="hidden" value="<?php echo $quoterequest->id ?>" name="id"/>
+						<input class="controller" type="hidden" value="quoterequest" name="controller"/>
+						<input class="module" type="hidden" value="purchases" name="module"/>
+						<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id));?>">
+							<?php echo $this->escape($quoterequest->quoterequestid) ? $this->escape($quoterequest->quoterequestid) : $this->translate('QUOTE_REQUEST')." ".$this->escape($quoterequest->id); ?>
+						</a>
+					</td>
+					<td class="title">
+						<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id));?>">
+							<?php echo $quoterequest->title ? $this->escape($quoterequest->title) : $this->translate('QUOTE_REQUEST')." ".$this->escape($quoterequest->quoterequestid);?>
+						</a>
+					</td>
+					<td class="contactid">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($quoterequest->contactid);?>
+						</a>
+					</td>
+					<td class="contact">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($quoterequest->billingname1);?>
+							<?php if($quoterequest->billingname2) echo "<br/>".$this->escape($quoterequest->billingname2);?>
+						</a>
+					</td>
+					<td class="quoterequestdate">
+						<?php echo $this->escape($quoterequest->quoterequestdate);?>
+					</td>
+					<td class="notes">
+						<?php if($quoterequest->notes) : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="quoterequest" data-id="<?php echo $quoterequest->id; ?>" data-value="<?php echo $quoterequest->notes; ?>" data-type="textarea"><?php echo $quoterequest->notes; ?></pre>
+						<?php else : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="quoterequest" data-id="<?php echo $quoterequest->id; ?>" data-value="<?php echo $quoterequest->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+						<?php endif; ?>
+					</td>
+					<td class="modified">
+						<?php echo $this->escape($quoterequest->modified);?>
+					</td>
+					<td class="deliverydate">
+						<?php if($quoterequest->deliverydate) echo $this->escape($quoterequest->deliverydate); ?>
+					</td>
+					<td class="subtotal">
+						<?php echo $this->escape($quoterequest->subtotal);?>
+					</td>
+					<td class="total">
+						<?php echo $this->escape($quoterequest->total);?>
+					</td>
+					<td class="state">
+						<?php echo $this->translate($this->escape($this->history['states'][$quoterequest->state])); ?>
+					</td>
+					<td class="buttons">
+    					<?php echo $this->historyToolbar($quoterequest->state, 'quoterequest'); ?>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+	<?php if(count($this->history['purchaseorders'])) : ?>
+		<h3><?php echo $this->translate('PURCHASE_ORDERS') ?></h3>
+		<table id="data">
+			<thead>
+				<tr>
+					<th class="purchaseorderid"><?php echo $this->translate('PURCHASE_ORDERS_PURCHASE_ORDER_ID'); ?></th>
+					<th class="title"><?php echo $this->translate('PURCHASE_ORDERS_TITLE') ?></th>
+					<th class="contactid"><?php echo $this->translate('PURCHASE_ORDERS_CONTACT_ID') ?></th>
+					<th class="contact"><?php echo $this->translate('PURCHASE_ORDERS_CONTACT') ?></th>
+					<th class="purchaseorderdate"><?php echo $this->translate('PURCHASE_ORDERS_PURCHASE_ORDER_DATE') ?></th>
+					<th class="notes"><?php echo $this->translate('PURCHASE_ORDERS_NOTES') ?></th>
+					<th class="modified"><?php echo $this->translate('PURCHASE_ORDERS_MODIFIED') ?></th>
+					<th class="deliverydate"><?php echo $this->translate('PURCHASE_ORDERS_DELIVERY_DATE') ?></th>
+					<th class="subtotal"><?php echo $this->translate('PURCHASE_ORDERS_SUBTOTAL') ?></th>
+					<th class="total"><?php echo $this->translate('PURCHASE_ORDERS_TOTAL') ?></th>
+					<th class="state"><?php echo $this->translate('PURCHASE_ORDERS_STATE') ?></th>
+					<th class="buttons"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->history['purchaseorders'] as $purchaseorder) : ?>
+				<tr>
+					<td class="purchaseorderid">
+						<input class="id" type="hidden" value="<?php echo $purchaseorder->id ?>" name="id"/>
+						<input class="controller" type="hidden" value="purchaseorder" name="controller"/>
+						<input class="module" type="hidden" value="purchases" name="module"/>
+						<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id));?>">
+							<?php echo $this->escape($purchaseorder->purchaseorderid) ? $this->escape($purchaseorder->purchaseorderid) : $this->translate('PURCHASE_ORDER')." ".$this->escape($purchaseorder->id); ?>
+						</a>
+					</td>
+					<td class="title">
+						<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id));?>">
+							<?php echo $purchaseorder->title ? $this->escape($purchaseorder->title) : $this->translate('PURCHASE_ORDER')." ".$this->escape($purchaseorder->purchaseorderid);?>
+						</a>
+					</td>
+					<td class="contactid">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($purchaseorder->contactid);?>
+						</a>
+					</td>
+					<td class="contact">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($purchaseorder->billingname1);?>
+							<?php if($purchaseorder->billingname2) echo "<br/>".$this->escape($purchaseorder->billingname2);?>
+						</a>
+					</td>
+					<td class="purchaseorderdate">
+						<?php echo $this->escape($purchaseorder->purchaseorderdate);?>
+					</td>
+					<td class="notes">
+						<?php if($purchaseorder->notes) : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="purchaseorder" data-id="<?php echo $purchaseorder->id; ?>" data-value="<?php echo $purchaseorder->notes; ?>" data-type="textarea"><?php echo $purchaseorder->notes; ?></pre>
+						<?php else : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="purchaseorder" data-id="<?php echo $purchaseorder->id; ?>" data-value="<?php echo $purchaseorder->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+						<?php endif; ?>
+					</td>
+					<td class="modified">
+						<?php echo $this->escape($purchaseorder->modified);?>
+					</td>
+					<td class="deliverydate">
+						<?php if($purchaseorder->deliverydate) echo $this->escape($purchaseorder->deliverydate); ?>
+					</td>
+					<td class="subtotal">
+						<?php echo $this->escape($purchaseorder->subtotal);?>
+					</td>
+					<td class="total">
+						<?php echo $this->escape($purchaseorder->total);?>
+					</td>
+					<td class="state">
+						<?php echo $this->translate($this->escape($this->history['states'][$purchaseorder->state])); ?>
+					</td>
+					<td class="buttons">
+    					<?php echo $this->historyToolbar($purchaseorder->state, 'purchaseorder'); ?>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+	<?php if(count($this->history['processes'])) : ?>
+		<h3><?php echo $this->translate('PROCESSES') ?></h3>
+		<table id="data">
+			<thead>
+				<tr>
+					<th class="id"><?php echo $this->translate('PROCESSES_ID'); ?></th>
+					<th class="title"><?php echo $this->translate('PROCESSES_TITLE') ?></th>
+					<th class="customerid"><?php echo $this->translate('PROCESSES_CUSTOMER_ID') ?></th>
+					<th class="contact"><?php echo $this->translate('PROCESSES_CUSTOMER') ?></th>
+					<th class="notes"><?php echo $this->translate('PROCESSES_NOTES') ?></th>
+					<th class="modified"><?php echo $this->translate('PROCESSES_MODIFIED') ?></th>
+					<th class="deliverydate"><?php echo $this->translate('PROCESSES_DELIVERY_DATE') ?></th>
+					<th class="subtotal"><?php echo $this->translate('PROCESSES_SUBTOTAL') ?></th>
+					<th class="total"><?php echo $this->translate('PROCESSES_TOTAL') ?></th>
+					<th class="state"><?php echo $this->translate('PROCESSES_STATE') ?></th>
+					<th class="buttons"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->history['processes'] as $process) : ?>
+				<tr>
+					<td class="id">
+						<input class="id" type="hidden" value="<?php echo $process->id ?>" name="id"/>
+						<input class="controller" type="hidden" value="process" name="controller"/>
+						<input class="module" type="hidden" value="processes" name="module"/>
+						<a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'edit', 'id'=>$process->id));?>">
+							<?php echo $this->escape($process->id) ? $this->escape($process->id) : $this->translate('PROCESS')." ".$this->escape($process->id); ?>
+						</a>
+					</td>
+					<td class="title">
+						<a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'edit', 'id'=>$process->id));?>">
+							<?php echo $process->title ? $this->escape($process->title) : $this->translate('PROCESS')." ".$this->escape($process->id);?>
+						</a>
+					</td>
+					<td class="customerid">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($process->customerid);?>
+						</a>
+					</td>
+					<td class="contact">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($process->billingname1);?>
+							<?php if($process->billingname2) echo "<br/>".$this->escape($process->billingname2);?>
+						</a>
+					</td>
+					<td class="notes">
+						<?php if($process->notes) : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="process" data-id="<?php echo $process->id; ?>" data-value="<?php echo $process->notes; ?>" data-type="textarea"><?php echo $process->notes; ?></pre>
+						<?php else : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="process" data-id="<?php echo $process->id; ?>" data-value="<?php echo $process->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+						<?php endif; ?>
+					</td>
+					<td class="modified">
+						<?php echo $this->escape($process->modified);?>
+					</td>
+					<td class="deliverydate">
+						<?php if($process->deliverydate) echo $this->escape($process->deliverydate); ?>
+					</td>
+					<td class="subtotal">
+						<?php echo $this->escape($process->subtotal);?>
+					</td>
+					<td class="total">
+						<?php echo $this->escape($process->total);?>
+					</td>
+					<td class="state">
+						<?php echo $this->translate($this->escape($this->history['states'][$process->state])); ?>
+					</td>
+					<td class="buttons">
+    					<?php echo $this->historyToolbar($process->state, 'process'); ?>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+	<?php if(count($this->history['reminders'])) : ?>
+		<h3><?php echo $this->translate('REMINDERS') ?></h3>
+		<table id="data">
+			<thead>
+				<tr>
+					<th class="reminderid"><?php echo $this->translate('REMINDERS_REMINDER_ID'); ?></th>
+					<th class="title"><?php echo $this->translate('REMINDERS_TITLE') ?></th>
+					<th class="contactid"><?php echo $this->translate('REMINDERS_CONTACT_ID') ?></th>
+					<th class="contact"><?php echo $this->translate('REMINDERS_CONTACT') ?></th>
+					<th class="reminderdate"><?php echo $this->translate('REMINDERS_REMINDER_DATE') ?></th>
+					<th class="notes"><?php echo $this->translate('REMINDERS_NOTES') ?></th>
+					<th class="modified"><?php echo $this->translate('REMINDERS_MODIFIED') ?></th>
+					<th class="deliverydate"><?php echo $this->translate('REMINDERS_DELIVERY_DATE') ?></th>
+					<th class="subtotal"><?php echo $this->translate('REMINDERS_SUBTOTAL') ?></th>
+					<th class="total"><?php echo $this->translate('REMINDERS_TOTAL') ?></th>
+					<th class="state"><?php echo $this->translate('REMINDERS_STATE') ?></th>
+					<th class="buttons"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->history['reminders'] as $reminder) : ?>
+				<tr>
+					<td class="reminderid">
+						<input class="id" type="hidden" value="<?php echo $reminder->id ?>" name="id"/>
+						<input class="controller" type="hidden" value="reminder" name="controller"/>
+						<input class="module" type="hidden" value="sales" name="module"/>
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'edit', 'id'=>$reminder->id));?>">
+							<?php echo $this->escape($reminder->reminderid) ? $this->escape($reminder->reminderid) : $this->translate('REMINDER')." ".$this->escape($reminder->id); ?>
+						</a>
+					</td>
+					<td class="title">
+						<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'reminder', 'action'=>'edit', 'id'=>$reminder->id));?>">
+							<?php echo $reminder->title ? $this->escape($reminder->title) : $this->translate('REMINDER')." ".$this->escape($reminder->reminderid);?>
+						</a>
+					</td>
+					<td class="contactid">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($reminder->contactid);?>
+						</a>
+					</td>
+					<td class="contact">
+						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->id));?>">
+							<?php echo $this->escape($reminder->billingname1);?>
+							<?php if($reminder->billingname2) echo "<br/>".$this->escape($reminder->billingname2);?>
+						</a>
+					</td>
+					<td class="reminderdate">
+						<?php echo $this->escape($reminder->reminderdate);?>
+					</td>
+					<td class="notes">
+						<?php if($reminder->notes) : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="reminder" data-id="<?php echo $reminder->id; ?>" data-value="<?php echo $reminder->notes; ?>" data-type="textarea"><?php echo $reminder->notes; ?></pre>
+						<?php else : ?>
+							<pre class="editable" data-name="notes" data-module="sales" data-controller="reminder" data-id="<?php echo $reminder->id; ?>" data-value="<?php echo $reminder->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
+						<?php endif; ?>
+					</td>
+					<td class="modified">
+						<?php echo $this->escape($reminder->modified);?>
+					</td>
+					<td class="deliverydate">
+						<?php if($reminder->deliverydate) echo $this->escape($reminder->deliverydate); ?>
+					</td>
+					<td class="subtotal">
+						<?php echo $this->escape($reminder->subtotal);?>
+					</td>
+					<td class="total">
+						<?php echo $this->escape($reminder->total);?>
+					</td>
+					<td class="state">
+						<?php echo $this->translate($this->escape($this->history['states'][$reminder->state])); ?>
+					</td>
+					<td class="buttons">
+    					<?php echo $this->historyToolbar($reminder->state, 'reminder'); ?>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif;
+}

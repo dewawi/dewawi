@@ -1,0 +1,52 @@
+<form id="emailmessage" enctype="application/x-www-form-urlencoded" method="post">
+	<div class="row">
+		<div class="col-sm-12 col-lg-7">
+			<dl class="form">
+
+				<?php if ($this->module != 'campaigns') : ?>
+					<?= $this->emailForm->recipient; ?>
+				<?php endif; ?>
+
+				<?= $this->emailForm->cc; ?>
+				<?= $this->emailForm->bcc; ?>
+				<?= $this->emailForm->replyto; ?>
+				<?= $this->emailForm->subject; ?>
+
+				<dt id="attachment-label">
+					<label for="attachment" class="optional">Anhang</label>
+				</dt>
+
+				<dd id="attachment-element">
+					<div id="attachments">
+						<?php foreach ($this->attachments as $attachment) : ?>
+							<div id="attachment<?= $attachment['id']; ?>" class="file" style="clear: left;">
+								<input type="checkbox" value="<?= $attachment['id']; ?>" name="file" style="float: left;"/>
+
+								<a href="<?= $this->baseUrl(); ?>/files/attachments/<?= $attachment['module']; ?>/<?= $attachment['controller']; ?>/<?= $this->documentUrl; ?>/<?= $this->escape($attachment['filename']); ?>" target="_blank">
+									<span class="filename"><?= $this->escape($attachment['filename']); ?></span>
+									<span class="filesize">(<?= $this->HumanFileSize($attachment['filesize']); ?>)</span>
+								</a>
+
+								<button type="button" class="delete nolabel"
+									onclick="deleteAttachment('<?= $attachment['id']; ?>', deleteConfirm, 'attachment', 'contacts');">
+								</button><br>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				</dd>
+
+				<?= $this->emailForm->body; ?>
+
+				<button type="button" class="send" onclick="sendMessage()">Senden</button>
+			</dl>
+		</div>
+
+		<div class="col-sm-12 col-lg-5">
+			<iframe src="<?= $this->baseUrl(); ?>/contacts/attachment/upload/cmodule/<?= $this->module; ?>/ccontroller/<?= $this->controller; ?>/id/<?= $this->id; ?>" width="100%" height="400px"></iframe>
+		</div>
+	</div>
+</form>
+
+<br>
+
+<div id="emailmessages"></div>
