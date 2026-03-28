@@ -35,4 +35,9 @@ class Application_Model_DbTable_Country extends Zend_Db_Table_Abstract
 		$collator->asort($countries);
 		return $countries;
 	}
+
+	public function getSelectOptions(): array
+	{
+		return $this->getCountries();
+	}
 }
