@@ -1,27 +1,25 @@
 <?php
 
-class Contacts_Form_Phone extends Zend_Form
+class Contacts_Form_Phone extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('phone');
+		$this->addElement([
+			'name' => 'phone',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
 
-		$form = array();
-
-		$form['phone'] = new Zend_Form_Element_Text('phone');
-		$form['phone']->setLabel('CONTACTS_PHONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30')
-			->removeDecorator('label');
-
-		$form['type'] = new Zend_Form_Element_Select('type');
-		$form['type']->removeDecorator('label')
-			//->setRequired(true)
-			->addMultiOption('phone', 'CONTACTS_PHONE')
-			->addMultiOption('mobile', 'CONTACTS_MOBILE')
-			->addMultiOption('fax', 'CONTACTS_FAX');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'type',
+			'type' => 'select',
+			'options' => [
+				'phone' => 'CONTACTS_PHONE',
+				'mobile' => 'CONTACTS_MOBILE',
+				'fax' => 'CONTACTS_FAX',
+			],
+			'format' => ['type' => 'string'],
+		]);
 	}
 }

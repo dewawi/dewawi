@@ -1,13 +1,88 @@
 <?php
 
-class Contacts_Form_Address extends Zend_Form
+class Contacts_Form_Address extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('address');
+		/*$this->addElement([
+			'name' => 'name1',
+			'type' => 'text',
+			'required' => true,
+			'attribs' => ['class' => 'required'],
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'name2',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
 
+		$this->addElement([
+			'name' => 'department',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);*/
+
+		$this->addElement([
+			'name' => 'street',
+			'type' => 'textarea',
+			'format' => ['type' => 'string'],
+			'attribs'=> [
+				'cols' => 40,
+				'rows' => 5,
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'postcode',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'city',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'country',
+			'options'=> [
+				'0' => 'TOOLBAR_ALL_COUNTRIES',
+			],
+			'source' => 'country',
+			'default' => '0',
+			'attribs' => ['class' => 'hidden-sm hidden-md'],
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'phone',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'type',
+			'type' => 'select',
+			'options' => [
+				'billing' => 'CONTACTS_BILLING_ADDRESS',
+				'shipping' => 'CONTACTS_SHIPPING_ADDRESS',
+				'other' => 'CONTACTS_OTHER_ADDRESS',
+			],
+			'format' => ['type' => 'string'],
+		]);
+	}
+}
+/*
 		$form['name1'] = new Zend_Form_Element_Text('name1');
 		$form['name1']->removeDecorator('label')
 			->setRequired(true)
@@ -70,4 +145,4 @@ class Contacts_Form_Address extends Zend_Form
 
 		$this->addElements($form);
 	}
-}
+}*/

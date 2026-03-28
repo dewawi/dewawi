@@ -1,39 +1,35 @@
 <?php
 
-class Items_Form_Pricerulepos extends Zend_Form
+class Items_Form_Pricerulepos extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('pricerulepos');
+		$this->addElement([
+			'type' => 'hidden',
+			'name' => 'id',
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'action',
+			'type' => 'select',
+			'label' => 'PRICE_RULES_ACTION',
+			'options' => [
+				'0' => 'PRICE_RULES_NONE',
+				'bypercent' => 'ITEMS_PRICE_RULE_BY_PERCENT',
+				'byfixed' => 'ITEMS_PRICE_RULE_BY_FIXED',
+				'topercent' => 'ITEMS_PRICE_RULE_TO_PERCENT',
+				'tofixed' => 'ITEMS_PRICE_RULE_TO_FIXED',
+			],
+			'format' => ['type' => 'string'],
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int');
-
-		$form['action'] = new Zend_Form_Element_Select('action');
-		$form['action']->setLabel('PRICE_RULES_ACTION')
-			->addMultiOption(0, 'POSITIONS_NONE')
-			->addMultiOption('bypercent', 'ITEMS_PRICE_RULE_BY_PERCENT')
-			->addMultiOption('byfixed', 'ITEMS_PRICE_RULE_BY_FIXED')
-			->addMultiOption('topercent', 'ITEMS_PRICE_RULE_TO_PERCENT')
-			->addMultiOption('tofixed', 'ITEMS_PRICE_RULE_TO_FIXED')
-			->setRequired(true)
-			->addValidator('NotEmpty');
-
-		$form['amount'] = new Zend_Form_Element_Text('amount');
-		$form['amount']->setLabel('PRICE_RULES_AMOUNT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '20');
-
-		$form['modified'] = new Zend_Form_Element_Text('modified');
-		$form['created'] = new Zend_Form_Element_Text('created');
-
-		$form['activated'] = new Zend_Form_Element_Checkbox('activated');
-		$form['activated']->setLabel('PRICE_RULES_ACTIVATED')
-			->addFilter('Int');
-
-		$this->addElements($form);
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'amount',
+			'label' => 'PRICE_RULES_AMOUNT',
+			'format' => ['type' => 'string'],
+		]);
 	}
 }

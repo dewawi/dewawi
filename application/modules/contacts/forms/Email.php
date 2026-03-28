@@ -1,55 +1,22 @@
 <?php
 
-class Contacts_Form_Email extends Zend_Form
+class Contacts_Form_Email extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('email');
+		$this->addElement([
+			'name' => 'email',
+			'label' => 'CONTACTS_EMAIL',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+		]);
 
-		$form = array();
-
-		$form['email'] = new Zend_Form_Element_Text('email');
-		$form['email']->setLabel('CONTACTS_EMAIL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		/*$form['sender'] = new Zend_Form_Element_Text('sender');
-		$form['sender']->setLabel('CONTACTS_EMAIL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['recipient'] = new Zend_Form_Element_Text('recipient');
-		$form['recipient']->setLabel('CONTACTS_EMAIL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['cc'] = new Zend_Form_Element_Text('cc');
-		$form['cc']->setLabel('CONTACTS_EMAIL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['bcc'] = new Zend_Form_Element_Text('bcc');
-		$form['bcc']->setLabel('CONTACTS_EMAIL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['replyto'] = new Zend_Form_Element_Text('replyto');
-		$form['replyto']->setLabel('CONTACTS_EMAIL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');*/
-
-		$form['subject'] = new Zend_Form_Element_Text('subject');
-		$form['subject']->setLabel('CONTACTS_EMAIL_SUBJECT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '40');
-			//->addValidator('NotEmpty');
+		/*$this->addElement([
+			'type' => 'text',
+			'name' => 'subject',
+			'label' => 'CONTACTS_EMAIL_SUBJECT',
+			'format' => ['type' => 'string'],
+		]);
 
 		$form['attachment'] = new Zend_Form_Element_Checkbox('attachment');
 		$form['attachment']->setLabel('CONTACTS_ATTACHMENTS')
@@ -66,6 +33,6 @@ class Contacts_Form_Email extends Zend_Form
 			->setAttrib('rows', '18')
 			->setAttrib('class', 'editor');
 
-		$this->addElements($form);
+		$this->addElements($form);*/
 	}
 }
