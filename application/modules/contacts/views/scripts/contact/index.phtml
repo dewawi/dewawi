@@ -105,8 +105,9 @@ echo $this->Pagination();
 					<?php endif; ?>
 				</td>
 				<td class="buttons">
-					<?php echo $this->toolbar->editInline; ?>
-					<?php echo $this->toolbar->copyInline; ?>
+					<?php echo $this->toolbarInline->renderElement('edit'); ?>
+					<?php echo $this->toolbarInline->renderElement('copy'); ?>
+					<?php echo $this->toolbarInline->renderElement('delete'); ?>
 				</td>
 			</tr>
 		<?php endforeach; ?>
