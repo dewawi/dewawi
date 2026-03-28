@@ -8,17 +8,17 @@ class Shops_Controller_Action_Helper_Params extends Zend_Controller_Action_Helpe
 
 		$params = array();
 
-		$params['keyword'] = $request->getParam('keyword', $request->getCookie('keyword', $toolbar->keyword->getAttrib('default')));
-		$toolbar->keyword->setValue($params['keyword']);
+		$params['keyword'] = $request->getParam('keyword', $request->getCookie('keyword', $toolbar->getDefault('keyword')));
+		$toolbar->setValue('keyword', $params['keyword']);
 
-		$params['limit'] = $request->getParam('limit', $request->getCookie('limit', $toolbar->limit->getAttrib('default')));
-		$toolbar->limit->setValue($params['limit']);
+		$params['limit'] = $request->getParam('limit', $request->getCookie('limit', $toolbar->getDefault('limit')));
+		$toolbar->setValue('limit', $params['limit']);
 
-		$params['order'] = $request->getParam('order', $request->getCookie('order', $toolbar->order->getAttrib('default')));
-		$toolbar->order->setValue($params['order']);
+		$params['order'] = $request->getParam('order', $request->getCookie('order', $toolbar->getDefault('order')));
+		$toolbar->setValue('order', $params['order']);
 
-		$params['sort'] = $request->getParam('sort', $request->getCookie('sort', $toolbar->sort->getAttrib('default')));
-		$toolbar->sort->setValue($params['sort']);
+		$params['sort'] = $request->getParam('sort', $request->getCookie('sort', $toolbar->getDefault('sort')));
+		$toolbar->setValue('sort', $params['sort']);
 
 		return $params;
 	}

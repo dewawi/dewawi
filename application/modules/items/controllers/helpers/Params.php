@@ -5,29 +5,28 @@ class Items_Controller_Action_Helper_Params extends Zend_Controller_Action_Helpe
 	public function getParams($toolbar, $options)
 	{
 		$request = $this->getRequest();
+		$params  = [];
 
-		$params = array();
+		$params['keyword'] = $request->getParam('keyword', $request->getCookie('keyword', $toolbar->getDefault('keyword')));
+		$toolbar->setValue('keyword', $params['keyword']);
 
-		$params['keyword'] = $request->getParam('keyword', $request->getCookie('keyword', $toolbar->keyword->getAttrib('default')));
-		$toolbar->keyword->setValue($params['keyword']);
+		$params['catid'] = $request->getParam('catid', $request->getCookie('catid', $toolbar->getDefault('catid')));
+		$toolbar->setValue('catid', $params['catid']);
 
-		$params['catid'] = $request->getParam('catid', $request->getCookie('catid', $toolbar->catid->getAttrib('default')));
-		$toolbar->catid->setValue($params['catid']);
+		$params['limit'] = $request->getParam('limit', $request->getCookie('limit', $toolbar->getDefault('limit')));
+		$toolbar->setValue('limit', $params['limit']);
 
-		$params['limit'] = $request->getParam('limit', $request->getCookie('limit', $toolbar->limit->getAttrib('default')));
-		$toolbar->limit->setValue($params['limit']);
+		$params['order'] = $request->getParam('order', $request->getCookie('order', $toolbar->getDefault('order')));
+		$toolbar->setValue('order', $params['order']);
 
-		$params['order'] = $request->getParam('order', $request->getCookie('order', $toolbar->order->getAttrib('default')));
-		$toolbar->order->setValue($params['order']);
+		$params['sort'] = $request->getParam('sort', $request->getCookie('sort', $toolbar->getDefault('sort')));
+		$toolbar->setValue('sort', $params['sort']);
 
-		$params['sort'] = $request->getParam('sort', $request->getCookie('sort', $toolbar->sort->getAttrib('default')));
-		$toolbar->sort->setValue($params['sort']);
+		$params['page'] = $request->getParam('page', $request->getCookie('page', $toolbar->getDefault('page')));
+		$toolbar->setValue('page', $params['page']);
 
-		$params['page'] = $request->getParam('page', $request->getCookie('page', $toolbar->page->getAttrib('default')));
-		$toolbar->page->setValue($params['page']);
-
-		$params['tagid'] = $request->getParam('tagid', $request->getCookie('tagid', $toolbar->tagid->getAttrib('default')));
-		$toolbar->tagid->setValue($params['tagid']);
+		$params['tagid'] = $request->getParam('tagid', $request->getCookie('tagid', $toolbar->getDefault('tagid')));
+		$toolbar->setValue('tagid', $params['tagid']);
 
 		$parent = explode('|', $request->getParam('parent'));
 		$params['parent'] = isset($parent[1]) ? $parent[1] : false;
