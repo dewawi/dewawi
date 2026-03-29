@@ -8,6 +8,8 @@
 	'MESSAGES_SUCCESFULLY_CANCELLED' => 'Der Eintrag wurde erfolgreich storniert!',
 	'MESSAGES_FORM_IS_INVALID' => 'Das Formular ist ungültig.',
 	'MESSAGES_NO_ITEM_FOUND' => 'Artikel <b>%s</b> konnte nicht gefunden werden.',
+	'MESSAGES_CONTACT_NOT_FOUND' => 'Kontakt konnte nicht gefunden werden.',
+	'MESSAGES_ITEM_NOT_FOUND' => 'Artikel konnte nicht gefunden werden.',
 	'MESSAGES_QUOTE_SUCCESFULLY_GENERATED' => 'Angebot erfolgreich generiert.',
 	'MESSAGES_SALES_ORDER_SUCCESFULLY_GENERATED' => 'Auftragsbestätigung erfolgreich generiert.',
 	'MESSAGES_INVOICE_SUCCESFULLY_GENERATED' => 'Rechnung erfolgreich generiert.',

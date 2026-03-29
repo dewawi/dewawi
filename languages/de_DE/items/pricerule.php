@@ -7,6 +7,7 @@
 	'PRICE_RULES_AMOUNT_MINIMUM' => 'min. Betrag',
 	'PRICE_RULES_AMOUNT_MAXIMUM' => 'max. Betrag',
 	'PRICE_RULES_ACTION' => 'Aktion',
+	'PRICE_RULES_NONE' => 'keine',
 	'PRICE_RULES_DATE_FROM' => 'vom',
 	'PRICE_RULES_DATE_TO' => 'bis zum',
 	'PRICE_RULES_PRICE_FROM' => 'Preis von',

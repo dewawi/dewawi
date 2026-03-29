@@ -20,8 +20,11 @@
 	'TABS_SUPPLIER_DETAILS' => 'Lieferantendetails',
 	'TABS_PAYMENT' => 'Zahlungsinformationen',
 	'TABS_DETAILS' => 'Details',
+	'TABS_PRICES' => 'Preise',
 	'TABS_SHOP' => 'Shop',
 	'TABS_INVENTORY' => 'Inventar',
+	'TABS_ATTRIBUTES' => 'Eigenschaften',
+	'TABS_OPTIONS' => 'Optionen',
 	'TABS_LEDGER' => 'Buchungsverlauf',
 	'TABS_DOWNLOADS' => 'Downloads'
 );
