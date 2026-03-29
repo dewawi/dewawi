@@ -401,6 +401,11 @@ footer {
 
 /* 50/50 ist via Bootstrap .col-lg-6 gelöst */
 
+form .hidden {
+    position: absolute;
+    left: -9999px;
+}
+
 /* Form: vertikale Linie, konsistenter Rhythmus */
 #inquiry-form .form-group {
   display: block;           /* einspaltig */

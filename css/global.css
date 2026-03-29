@@ -51,204 +51,15 @@ header .sub1 a:hover {
 header .sub1:hover {
     visibility: visible;
 }
-button[rel="addCustomer"] span {
-	padding-left: 20px;
-}
-button.add,
-button.add:hover,
-button.add:focus {
-	background-image: url("../images/add.png");
-}
-button.edit,
-button.edit:hover,
-button.edit:focus {
-	background-image: url("../images/edit.png");
-}
-button.view,
-button.view:hover,
-button.view:focus {
-	background-image: url("../images/view.png");
-}
-button.copy,
-button.copy:hover,
-button.copy:focus {
-	background-image: url("../images/copy.png");
-}
-button.settings,
-button.settings:hover,
-button.settings:focus {
-	background-image: url("../images/settings.png");
-}
-button.delete,
-button.delete:hover,
-button.delete:focus {
-	background-image: url("../images/delete.png");
-}
-button.cancel,
-button.cancel:hover,
-button.cancel:focus {
-	background-image: url("../images/cancel.png");
-}
-button.clear,
-button.clear:hover,
-button.clear:focus {
-	background-image: url("../images/clear.png");
-    min-height: 26px;
-    vertical-align: middle;
-}
-button.reset,
-button.reset:hover,
-button.reset:focus {
-	background-image: url("../images/reset.png");
-}
-button.apply,
-button.apply:hover,
-button.apply:focus {
-	background-image: url("../images/apply.png");
-}
-button.save,
-button.save:hover,
-button.save:focus {
-	background-image: url("../images/save.png");
-}
-button.email,
-button.email:hover,
-button.email:focus {
-	background-image: url("../images/email.png");
-}
-button.close,
-button.close:hover,
-button.close:focus {
-	background-image: url("../images/close.png");
-}
-button.details,
-button.details:hover,
-button.details:focus {
-	background-image: url("../images/details.png");
-}
-button.positions,
-button.positions:hover,
-button.positions:focus {
-	background-image: url("../images/positions.png");
-}
-button.back,
-button.back:hover,
-button.back:focus {
-	background-image: url("../images/back.png");
-}
-button.pdf,
-button.pdf:hover,
-button.pdf:focus {
-	background-image: url("../images/pdf.png");
-}
-button.get,
-button.get:hover,
-button.get:focus {
-	background-image: url("../images/get.png");
-}
-button.daterange,
-button.daterange:hover,
-button.daterange:focus {
-	background-image: url("../images/daterange.png");
-}
-button.select,
-button.select:hover,
-button.select:focus {
-	background-image: url("../images/select.png");
-}
-button.up,
-button.up:hover,
-button.up:focus {
-	background-image: url("../images/up.png");
-}
-button.down,
-button.down:hover,
-button.down:focus {
-	background-image: url("../images/down.png");
-}
-button.filter,
-button.filter:hover,
-button.filter:focus {
-	background-image: url("../images/filter.png");
-}
-button.nolabel[type="button"],
-button.nolabel[type="button"]:hover,
-button.nolabel[type="button"]:focus {
-    font-size: 0.8rem;
-    vertical-align: middle;
-    background-repeat: no-repeat;
-    background-position-y: center;
-    background-position-x: 5px;
-    padding: 8px 2px 15px 25px;
-	border: solid 1px #bcbcbc;
-    margin: 0 3px;
-}
-form button.tox-tbtn[type="button"],
-form button.tox-tbtn[type="button"]:hover,
-form button.tox-tbtn[type="button"]:focus {
-    padding: 0;
-    margin: 2px 1px 3px 1px;
-}
-.toolbar button, .buttons button, button#select,
-.toolbar button:hover, .buttons button:hover, button#select:hover,
-.toolbar button:focus, .buttons button:focus, button#select:focus {
-    font-size: 0.8rem;
-    background-repeat: no-repeat;
-    background-position-y: center;
-    background-position-x: 5px;
-    padding: 3px 3px 3px 25px;
-	border: solid 1px #bcbcbc;
-    margin: 0 3px;
-}
-.toolbar button#keyword {
-    max-width: 45%;
-}
-@media screen and (max-width: 767px) {
-    .toolbar button,
-    .toolbar button:hover,
 
-    .toolbar button:focus {
-        margin: 0;
-    }
-}
-/*td#buttons {
-	text-align:center;
-}
-td button, dd button, form button {
-	margin: 1px 0;
-	padding: 0;
-	border: none;
-	background-color:transparent;
-	cursor: pointer;
-}
-td button {
-	padding-left: 18px;
-}*/
-#breadcrumbs {
-	font-size: 0.8rem;
-    background-color: #efefef;
-    padding: 2px 10px;
-	border-bottom: solid 1px #ddd;
-}
 input.error, textarea.error {
 	border-color:red!important;
 	background-color:#ffe4e4!important;
-}
-textarea {
-	width:95%;
 }
 ul {
 	list-style: none;
 	padding: 0;
 	margin: 0;
-}
-hr {
-	height: 1px;
-	border: 0;
-	border-top: 1px solid #888888;
-}
-#content {
-	padding: 15px 0;
 }
 #footer {
     padding: 15px;
@@ -545,147 +356,20 @@ table#total tr:first-child td {
         border-top: none;
     }
 }
-/*table#details {
-	width: 100%;
+
+
+/* Sidebar (rechte Spalte) leicht abheben + sticky (siehe inline style top:20px) */
+.sidebar {
+  background-color: #f7fbff;
+  border: 1px solid #e3edf5;
+  border-radius: 8px;
+  padding: 16px;
 }
 
-#positions .image img {
-	width: 150px;
-}
-#positions .description span {
-	padding-right: 30px;
-}
-#positions td.taxrate, #positions td.uom {
-	vertical-align: top;
-}
-#positions td, #details td {
-}
-#positions dt, #details dt {
-	margin: 0;
-	width: 100%;
-	float: none;
-}
-#positions dd, #details dd {
-	min-width: 100%;
-	margin: 0;
-	float: none;
-}*/
-form {
-	margin-bottom: 15px;
-}
-form dt {
-	width: 25%;
-	display: inline-block;
-    vertical-align: top;
-	margin: 5px 0;
-}
-form dd {
-	width: 70%;
-	margin-left: 0;
-	margin-right: 2px;
-	display: inline-block;
-}
-form dd input[type="text"] {
-	max-width: 100%;
-	padding: 5px 10px;
-}
-form dd select {
-	padding: 6px 5px;
-}
-form dt label,
-form dd input,
-form dd select,
-form dd option {
-	font-size: 0.9em;
-    width: 100%;
-    display: block;
-}
-form dd textarea {
-	font-size: 0.9em;
-    width: 95%;
-    display: block;
-}
-form .multiform dd textarea {
-    width: 85%;
-}
-form dt#id-label,
-form dd#id-element {
-    display: none;
-}
-form dt#info-label,
-form dt#header-label,
-form dt#footer-label,
-form dt#textblock-label,
-form dt#description-label,
-form dt#minidescription-element,
-form dt#shortdescription-label,
-form dt#contactinfo-label,
-form dt#customerinfo-label {
-	width: 100%;
-}
-form dd#info-element,
-form dd#header-element,
-form dd#footer-element,
-form dd#textblock-element,
-form dd#description-element,
-form dd#minidescription-element,
-form dd#shortdescription-element,
-form dd#contactinfo-element,
-form dd#customerinfo-element {
-	width: 100%;
-}
-form .multiform {
-    display: inline-block;
-}
-form .sub-group {
-	width: 70%;
-    display: inline-block;
-}
-form .multiform .sub-group dd {
-	width: 40%;
-}
-form .multiform dd:first-child {
-	width: 45%;
-}
-#tabPositions form {
-    margin: 0;
-    border: none;
-    background: none;
-}
-#tabPositions form tbody {
-	border-top: solid 1px #bcbcbc;
-}
-@media screen and (max-width: 767px) {
-    ul.tabs li a {
-	    font-size: 0.9em;
-	    padding: 5px 5px;
-    }
-}
 div.info {
     margin: -8px 6px 8px;
 }
 
-/* style view */
-.view dt {
-	width: 175px;
-	display: block;
-	font-weight: bold;
-	float: left;
-	clear: left;
-	margin: 5px 0;
-}
-.view dd {
-	margin-left: 0;
-	float: left;
-	max-width: 350px;
-	margin: 5px 0;
-}
-.view #emailmessage dd {
-	max-width: 600px;
-}
-.clr {
-	clear:left;
-}
 ul.errors {
 	max-width:450px;
 }
@@ -911,62 +595,7 @@ iframe {
     padding: 5px;
     font-size: 0.8rem;
 }
-.toolbar {
-	text-align: right;
-    margin-top: 10px;
-}
-.edit .toolbar,
-.view .toolbar {
-	right: 15%;
-}
-.popup .toolbar {
-	right: 10px;
-}
-.index .toolbar,
-.select .toolbar {
-}
-.upload .toolbar {
-	display: none;
-}
-.toolbar.top {
-	background-color: #fff;
-	width: 100%;
-	top: 0;
-	padding-bottom: 5px;
-	position: fixed;
-	margin-top: 0;
-	text-align: right;
-	z-index: 99;
-}
-.toolbar.positions {
-	text-align: left;
-	margin: 5px;
-	position: relative;
-	right: auto;
-}
-.toolbar div {
-	display:inline-block;
-}
-.toolbar #status img {
-	vertical-align:middle;
-}
-.toolbar #status #success, .toolbar #status #warning {
-	background: #eee;
-	border: 1px solid #ccc;
-	margin-right: 8px;
-	padding: 4px;
-}
-.toolbar #status #success {
-	display:none;
-}
-.toolbar #status #warning {
-	display:none;
-}
-.toolbar input,
-.toolbar select {
-    font-size: 0.8rem;
-    padding: 3px 3px 3px;
-}
+
 #filter tbody {
 	border: 0;
 }
@@ -1069,88 +698,6 @@ div#filter div {
 	background: transparent url('../images/join.gif') no-repeat left center;
 }
 
-/* Tabs */
-ul.tabs {
-	margin: 0;
-	padding: 0;
-	float: left;
-	list-style: none;
-	height: 35px; /*--Set height of tabs--*/
-	border-bottom: 1px solid #999;
-	border-left: 1px solid #999;
-	width: 100%;
-}
-.popup ul.tabs {
-	width: 100%;
-}
-ul.tabs li {
-	float: left;
-	margin: 0;
-	padding: 0;
-    /*max-width: 30%;*/
-	height: 34px; /*--Subtract 1px from the height of the unordered list--*/
-	line-height: 31px; /*--Vertically aligns the text within the tab--*/
-	border: 1px solid #999;
-	border-left: none;
-	margin-bottom: -1px; /*--Pull the list item down 1px--*/
-	overflow: hidden;
-	position: relative;
-	background: #e0e0e0;
-}
-ul.tabs li a {
-	text-decoration: none;
-	color: #000;
-	display: block;
-	font-size: 1em;
-	padding: 5px 20px;
-	border: 1px solid #fff; /*--Gives the bevel look with a 1px white border inside the list item--*/
-	outline: none;
-}
-@media screen and (max-width: 767px) {
-    ul.tabs li a {
-	    font-size: 0.9em;
-	    padding: 5px 5px;
-    }
-}
-ul.tabs li a:hover {
-	background: #ccc;
-}
-html ul.tabs li.active, html ul.tabs li.active a:hover  { /*--Makes sure that the active tab does not listen to the hover properties--*/
-	background: #fff;
-	border-bottom: 1px solid #fff; /*--Makes the active tab look like it's connected with its content--*/
-}
-.tab_container {
-	border: 1px solid #999;
-	border-top: none;
-	overflow: hidden;
-	clear: both;
-	float: left;
-	background: #fff;
-	margin-bottom: 10px;
-	width: 100%;
-}
-.popup .tab_container {
-	width: 100%;
-}
-.tab_container .tab_content {
-	display:none;
-    min-height: 300px;
-}
-.tab_container .tab_content.active {
-	display:block;
-}
-.tab_container .tab_content form {
-	padding: 0;
-}
-#tabFiles {
-    padding: 10px;
-}
-#tabImages iframe {
-    margin-top: 8px;
-}
-#files h3 {
-	padding-left:30px;
-}
 
 table#settings {
 	width: 100%;
