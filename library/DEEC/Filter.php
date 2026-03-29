@@ -2,78 +2,90 @@
 
 class DEEC_Filter
 {
-    public static function trim($v)
+    public static function applyAll(array $values, array $schema, $locale = null): array
     {
-        return is_string($v) ? trim($v) : $v;
-    }
-
-    public static function emptyToNull($v)
-    {
-        if (is_string($v) && trim($v) === '') return null;
-        return $v;
-    }
-
-    public static function number($v, $precision = 2, $locale = null)
-    {
-        $v = self::trim($v);
-        if ($v === '' || $v === null) return null;
-
-        if ($locale === null) $locale = Zend_Registry::get('Zend_Locale');
-
-        return Zend_Locale_Format::getNumber(
-            $v,
-            array('precision' => (int)$precision, 'locale' => $locale)
-        );
-    }
-
-    public static function date($v, $inputLocale = 'de')
-    {
-        $v = self::trim($v);
-        if ($v === '' || $v === null) return null;
-
-        try {
-            $d = new Zend_Date($v, Zend_Date::DATES, $inputLocale);
-            return $d->get('yyyy-MM-dd');
-        } catch (Exception $e) {
-            return null;
+        foreach ($schema as $field => $fmt) {
+            if (!array_key_exists($field, $values)) continue;
+            $values[$field] = self::applyOne($values[$field], $fmt, $locale);
         }
+        return $values;
     }
 
-    // universal single-field ajax normalizer
-    public static function normalizeByFormat(array $data, $element)
+    protected static function applyOne($value, array $fmt, $locale)
     {
-		// extract meta
-		$format = isset($data['_format']) ? $data['_format'] : null;
-		$precision = isset($data['_precision']) ? (int)$data['_precision'] : 2;
+        if ($value === null) return null;
+        if (is_string($value) && trim($value) === '') return null;
 
-		// remove meta fields so they don't get written to DB
-		unset($data['_format'], $data['_precision']);
+        $type = $fmt['type'] ?? null;
 
-        if (!array_key_exists($element, $data)) return $data;
+        switch ($type) {
+            case 'bool':
+                return in_array((string)$value, ['1','on','true'], true) ? 1 : 0;
 
-        // always trim strings
-        $data[$element] = self::trim($data[$element]);
+            case 'int':
+                return is_numeric($value) ? (int)$value : null;
 
-        switch ($format) {
-            case 'number':
-                $data[$element] = self::number($data[$element], $precision);
-                break;
+            case 'decimal':
+                $precision = isset($fmt['precision']) ? (int)$fmt['precision'] : null;
+                $n = self::parseDecimalLocale((string)$value, $locale);
+                if ($n === null) return null;
+                if ($precision !== null) {
+                    $n = round($n, $precision);
+                }
+                if ((float)$n == 0.0) return null;
+                return $n;
 
             case 'date':
-                $data[$element] = self::date($data[$element], 'de');
-                break;
-
-            case 'string':
-                // optional empty->null
-                // $data[$element] = self::emptyToNull($data[$element]);
-                break;
+                // input kann d.m.Y sein, db soll Y-m-d
+                $dbPat  = $fmt['pattern'] ?? 'Y-m-d';
+                $uiPat  = $fmt['displayPattern'] ?? null;
+                return self::normalizeDate((string)$value, $dbPat, $uiPat);
 
             default:
-                // no special conversion
-                break;
+                // string trim als default
+                return is_string($value) ? trim($value) : $value;
+        }
+    }
+
+    protected static function parseDecimalLocale(string $raw, $locale): ?float
+    {
+        $s = trim($raw);
+        if ($s === '') return null;
+
+        // simple locale aware: if de-style "1.234,56" => "1234.56"
+        // keine default-locale setzen. wenn locale fehlt, machen wir nur minimal safe parse.
+        $hasComma = strpos($s, ',') !== false;
+        $hasDot   = strpos($s, '.') !== false;
+
+        if ($hasComma && $hasDot) {
+            // typisch de: tausender '.' entfernen, ',' => '.'
+            $s = str_replace('.', '', $s);
+            $s = str_replace(',', '.', $s);
+        } elseif ($hasComma && !$hasDot) {
+            $s = str_replace(',', '.', $s);
         }
 
-        return $data;
+        // entferne alles außer digits, minus, dot
+        $s = preg_replace('~[^0-9\.\-]~', '', $s);
+        if ($s === '' || $s === '-' || $s === '.' || $s === '-.') return null;
+
+        return is_numeric($s) ? (float)$s : null;
+    }
+
+    protected static function normalizeDate(string $raw, string $dbPat, ?string $uiPat): ?string
+    {
+        $s = trim($raw);
+        if ($s === '') return null;
+
+        // wenn input schon db-like ist
+        $dt = \DateTime::createFromFormat($dbPat, $s);
+        if ($dt instanceof \DateTime) return $dt->format($dbPat);
+
+        if ($uiPat) {
+            $dt = \DateTime::createFromFormat($uiPat, $s);
+            if ($dt instanceof \DateTime) return $dt->format($dbPat);
+        }
+
+        return null;
     }
 }
-

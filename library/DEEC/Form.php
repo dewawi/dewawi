@@ -1,5 +1,76 @@
 <?php
 
+/**
+ * DEEC_Form – Element configuration
+ *
+ * Goal:
+ * - One consistent schema for all forms:
+ *	a) DynamicForm (DB JSON)
+ *	b) Forms built directly in PHP
+ * - `attribs` contains ONLY real HTML attributes (plus data-* / aria-*)
+ * - `unit` / `default` are NOT HTML attributes and must stay top-level
+ *
+ * ------------------------------------------------------------------
+ * A) Allowed top-level keys per element
+ * ------------------------------------------------------------------
+ * Required:
+ * - name (string)		Unique field name
+ * - type (string)		e.g. text, number, email, select, textarea, checkbox, hidden, submit, button
+ *
+ * Optional (meta / rendering):
+ * - label (string|null)		Label key/text (passed through translate())
+ * - description (string)		Help text under the field
+ * - info (string)				Additional info text
+ * - unit (string|null)			Unit shown in label (e.g. "kW") -> NOT an HTML attribute
+ * - default (mixed|null)		Default value (string|int|float|bool) -> NOT an HTML attribute
+ * - value (mixed|null)			Current value (usually set by setValues())
+ * - required (bool)			Mapped internally to attribs['required']
+ * - options (array)			Only for type=select:
+ *								- allowed: ["Label1","Label2"] or ["value"=>"Label"]
+ * - col (int|null)				Bootstrap grid width 1..12 (layout only)
+ * - wrap (bool)				Render wrapper div or not (default true)
+ * - tab (string)				Tab key (default 'overview')
+ * - section (string|null)		Section grouping headline
+ * - order (int)				Sort order in tab/section
+ * - format (array|null)		Filter schema for getFilteredValues()
+ *
+ * Optional (logic / JS):
+ * - depends_on (string)		Mapped internally to attribs['data-depends-on']
+ * - depends_value (string)		Mapped internally to attribs['data-depends-value']
+ *
+ * Optional (HTML attributes):
+ * - attribs (array)			ONLY real HTML attributes:
+ *								- allowlist (see buildAttribs):
+ *								id, class, placeholder, readonly, disabled,
+ *								min, max, step, pattern, minlength, maxlength,
+ *								autocomplete, autofocus, multiple, size,
+ *								rows, cols, accept, inputmode, spellcheck, title,
+ *								checked, tabindex
+ *								- always allowed: data-* and aria-*
+ *
+ * ------------------------------------------------------------------
+ * B) Rules / conventions
+ * ------------------------------------------------------------------
+ * 1) `attribs` must be an array. If not array -> ignored.
+ * 2) `unit` and `default` must NOT be inside `attribs`. They will be removed if found.
+ * 3) `required` is provided as top-level bool and becomes HTML attribute `required`.
+ * 4) min/max/step/pattern belong into `attribs` (real HTML attributes).
+ * 5) depends_on/depends_value become data-* attributes.
+ * 6) Unknown keys are discarded (strict mode) to keep the contract stable.
+ *
+ * Example:
+ * [
+ *	'name' => 'kuehlleistung',
+ *	'type' => 'number',
+ *	'label' => 'Required cooling capacity',
+ *	'unit' => 'kW',
+ *	'default' => 20,
+ *	'required' => true,
+ *	'attribs' => ['min'=>1,'max'=>1500,'step'=>0.1,'placeholder'=>'e.g. 20'],
+ *	'col' => 6,
+ * ]
+ */
+
 class DEEC_Form
 {
 	protected $method = 'post';
@@ -7,6 +78,19 @@ class DEEC_Form
 	protected $elements = [];
 	protected $errors = [];
 	protected $translator = null;
+
+	public function addCsrfToken(string $name = 'csrf_token'): void
+	{
+		// falls schon vorhanden: nicht doppelt
+		if (isset($this->elements[$name])) return;
+
+		$this->addElement([
+			'name' => $name,
+			'type' => 'hidden',
+			'value' => bin2hex(random_bytes(16)),
+			'wrap' => false,
+		]);
+	}
 
 	public function setMethod($method) { $this->method = $method ?: 'post'; }
 
@@ -22,42 +106,132 @@ class DEEC_Form
 
 	public function addElement(array $cfg)
 	{
-		if (empty($cfg['name']) || empty($cfg['type'])) return;
+		$cfg = $this->normalizeElementConfig($cfg);
+		if ($cfg === null) return;
 
 		$name = $cfg['name'];
 
-		$el = [
+		$this->elements[$name] = [
 			'type' => $cfg['type'],
 			'name' => $name,
-			'label' => $cfg['label'] ?? $cfg['name'],
-			'value' => $cfg['value'] ?? null,
-			'default' => $cfg['default'] ?? null,
-			'options' => $cfg['options'] ?? [],
-			'source' => $cfg['source'] ?? null,
-			'description' => $cfg['description'] ?? '',
-			'info' => $cfg['info'] ?? '',
-			'unit' => $cfg['unit'] ?? '',
-			'attribs' => (!empty($cfg['attribs']) && is_array($cfg['attribs'])) ? $cfg['attribs'] : [],
-			'format' => $cfg['format'] ?? null,
-			'col' => isset($cfg['col']) ? (int)$cfg['col'] : null,
-			'tab' => $cfg['tab'] ?? 'overview',
-			'section' => $cfg['section'] ?? null,
-			'order' => isset($cfg['order']) ? (int)$cfg['order'] : 1,
+			'label' => $cfg['label'],
+			'description' => $cfg['description'],
+			'info' => $cfg['info'],
+			'unit' => $cfg['unit'],
+			'value' => $cfg['value'],
+			'default' => $cfg['default'],
+			'options' => $cfg['options'],
+			'attribs' => $cfg['attribs'],
+			'format' => $cfg['format'],
+			'col' => $cfg['col'],
+			'tab' => $cfg['tab'],
+			'section' => $cfg['section'],
+			'order' => $cfg['order'],
+			'wrap' => $cfg['wrap'],
+			'source' => $cfg['source'],
+			'module' => $cfg['module'] ?? '',
+			'controller' => $cfg['controller'] ?? '',
+			'parentid' => $cfg['parentid'] ?? 0,
+			'rows' => $cfg['rows'] ?? [],
+		];
+	}
+
+	/**
+	* Normalisiert strikt auf das erlaubte Schema.
+	* Gibt null zurück, wenn config unbrauchbar ist.
+	*/
+	protected function normalizeElementConfig(array $cfg): ?array
+	{
+		$name = isset($cfg['name']) ? trim((string)$cfg['name']) : '';
+		$type = isset($cfg['type']) ? trim((string)$cfg['type']) : '';
+
+		if ($name === '' || $type === '') return null;
+
+		// allowlist: nur diese top-level keys werden akzeptiert
+		$allowedKeys = [
+			'name','type',
+			'label','description','info','unit',
+			'default','value',
+			'required',
+			'options',
+			'attribs',
+			'depends_on','depends_value',
+			'format',
+			'col','tab','section','order','wrap',
+			'source',
+			'module','controller','parentid','rows',
 		];
 
-		// HTML attributes go into attribs (so the view or renderer can output them)
-		if (!empty($cfg['required'])) $el['attribs']['required'] = 'required';
-		if (isset($cfg['min'])) $el['attribs']['min'] = $cfg['min'];
-		if (isset($cfg['max'])) $el['attribs']['max'] = $cfg['max'];
-		if (isset($cfg['step'])) $el['attribs']['step'] = $cfg['step'];
-		if (!empty($cfg['pattern'])) $el['attribs']['pattern'] = $cfg['pattern'];
-		if (!empty($cfg['class'])) $el['attribs']['class'] = $cfg['class'];
+		$clean = [];
+		foreach ($allowedKeys as $k) {
+			if (array_key_exists($k, $cfg)) {
+				$clean[$k] = $cfg[$k];
+			}
+		}
 
-		// conditional visibility
-		if (!empty($cfg['depends_on'])) $el['attribs']['data-depends-on'] = $cfg['depends_on'];
-		if (!empty($cfg['depends_value'])) $el['attribs']['data-depends-value'] = $cfg['depends_value'];
+		// defaults
+		$clean['label'] = isset($clean['label']) ? (string)$clean['label'] : null;
+		$clean['description'] = isset($clean['description']) ? (string)$clean['description'] : '';
+		$clean['info'] = isset($clean['info']) ? (string)$clean['info'] : '';
+		$clean['unit'] = isset($clean['unit']) ? (string)$clean['unit'] : '';
+		$clean['default'] = array_key_exists('default', $clean) ? $clean['default'] : null;
+		$clean['value'] = array_key_exists('value', $clean) ? $clean['value'] : null;
+		$clean['required'] = !empty($clean['required']);
 
-		$this->elements[$name] = $el;
+		if ($clean['type'] === 'multi') {
+			$clean['rows'] = is_array($clean['rows'] ?? null) ? $clean['rows'] : [];
+			$clean['parentid'] = (int)($clean['parentid'] ?? 0);
+			$clean['module'] = (string)($clean['module'] ?? '');
+			$clean['controller'] = (string)($clean['controller'] ?? '');
+		}
+
+		$clean['col'] = isset($clean['col']) ? (int)$clean['col'] : null;
+		if ($clean['col'] !== null && ($clean['col'] < 1 || $clean['col'] > 12)) {
+			$clean['col'] = null;
+		}
+
+		$clean['tab'] = isset($clean['tab']) ? (string)$clean['tab'] : 'overview';
+		$clean['section'] = isset($clean['section']) ? (string)$clean['section'] : null;
+		$clean['order'] = isset($clean['order']) ? (int)$clean['order'] : 1;
+		$clean['wrap'] = array_key_exists('wrap', $clean) ? (bool)$clean['wrap'] : true;
+		$clean['format'] = (isset($clean['format']) && is_array($clean['format'])) ? $clean['format'] : null;
+		$clean['source'] = isset($clean['source']) ? $clean['source'] : null;
+
+		// options nur für select
+		if (($clean['type'] ?? '') === 'select') {
+			$opts = $clean['options'] ?? [];
+			if (!is_array($opts)) $opts = [];
+			$clean['options'] = $opts;
+		} else {
+			$clean['options'] = [];
+		}
+
+		// attribs strict bauen (nur HTML / data- / aria-)
+		$attribs = $this->buildAttribs($clean['attribs'] ?? []);
+
+		// unit/default gehören nicht in attribs -> sicher entfernen
+		unset($attribs['unit'], $attribs['default']);
+
+		// required mapping -> attribs['required']
+		if ($clean['required']) {
+			$attribs['required'] = 'required';
+		}
+
+		// depends -> data-*
+		if (!empty($clean['depends_on'])) {
+			$attribs['data-depends-on'] = (string)$clean['depends_on'];
+		}
+		if (array_key_exists('depends_value', $clean) && $clean['depends_value'] !== null && $clean['depends_value'] !== '') {
+			$attribs['data-depends-value'] = (string)$clean['depends_value'];
+		}
+
+		$clean['attribs'] = $attribs;
+
+		// final
+		$clean['name'] = $name;
+		$clean['type'] = $type;
+
+		return $clean;
 	}
 
 	public function addOptions(string $elementName, array $options, string $mode = 'merge'): void
@@ -232,6 +406,40 @@ class DEEC_Form
 		return empty($this->errors);
 	}
 
+	// nur echte HTML-Attribute (plus aria-* / data-*)
+	protected function buildAttribs($attribs): array
+	{
+		if (!is_array($attribs)) return [];
+
+		$allowed = [
+			'id','class','placeholder','readonly','disabled',
+			'min','max','step','pattern','minlength','maxlength',
+			'autocomplete','autofocus','multiple','size',
+			'rows','cols','accept','inputmode','spellcheck','title',
+			'checked','tabindex',
+		];
+
+		$out = [];
+
+		foreach ($attribs as $k => $v) {
+			$key = (string)$k;
+
+			if ($key === '') continue;
+
+			// data-* / aria-* immer
+			if (strpos($key, 'data-') === 0 || strpos($key, 'aria-') === 0) {
+				$out[$key] = $v;
+				continue;
+			}
+
+			if (in_array($key, $allowed, true)) {
+				$out[$key] = $v;
+			}
+		}
+
+		return $out;
+	}
+
 	public function getErrors() { return $this->errors; }
 
 	public function getElement(string $name)
@@ -274,6 +482,57 @@ class DEEC_Form
 		}
 	}
 
+	public function setElementData(string $name, array $patch): self
+	{
+		if (!isset($this->elements[$name])) {
+			// silently ignore
+			return $this;
+		}
+
+		if (array_key_exists('rows', $patch)) {
+			$this->elements[$name]['rows'] = is_array($patch['rows']) ? $patch['rows'] : [];
+			unset($patch['rows']);
+		}
+
+		$this->elements[$name] = array_replace_recursive($this->elements[$name], $patch);
+		return $this;
+	}
+
+	public function getDefault(string $name = null)
+	{
+		// 1) wenn element name gegeben ist -> default dieses elements
+		if ($name !== null) {
+			$el = $this->getElement($name);
+			if (!$el) return null;
+
+			// bevorzugt: eigenes default feld
+			if (array_key_exists('default', $el) && $el['default'] !== null && $el['default'] !== '') {
+				return $el['default'];
+			}
+
+			// fallback: attrib default (falls legacy code sowas setzt)
+			if (!empty($el['attribs']) && is_array($el['attribs']) && array_key_exists('default', $el['attribs'])) {
+				$d = $el['attribs']['default'];
+				if ($d !== null && $d !== '') return $d;
+			}
+
+			// optional fallback: bei select erstes option-key
+			if (($el['type'] ?? '') === 'select' && !empty($el['options']) && is_array($el['options'])) {
+				$firstKey = array_key_first($el['options']);
+				return $firstKey !== null ? (string)$firstKey : null;
+			}
+
+			return null;
+		}
+
+		// 2) ohne name: alle defaults als array (praktisch für debug / bulk)
+		$out = [];
+		foreach ($this->elements as $elName => $el) {
+			$out[$elName] = $this->getDefault((string)$elName);
+		}
+		return $out;
+	}
+
 	public function getElementSources(): array
 	{
 		$out = [];
@@ -285,11 +544,11 @@ class DEEC_Form
 
 	public function render()
 	{
-		$h = "<div class=\"row g-3\">\n"; // one grid row for all fields
+		$h = "<div class=\"dw-form-row\">\n";
 		foreach ($this->elements as $el) {
 			$h .= $this->renderElementHtml($el) . "\n";
 		}
-		$h .= "</div>\n"; // close .row
+		$h .= "</div>\n";
 		return $h;
 	}
 
@@ -352,7 +611,7 @@ class DEEC_Form
 		unset($list);*/
 
 		// NAV
-		$nav = '<ul class="tabs">';
+		$nav = '<ul class="dw-tabs">';
 		foreach ($tabs as $key => $t) {
 			$titleKey = $t['title'] ?? $key;
 			$title = htmlspecialchars($this->translate((string)$titleKey));
@@ -365,17 +624,17 @@ class DEEC_Form
 				}
 			}
 
-			$nav .= '<li'.($isActive ? ' class="active"' : '').'>'
-				. '<a href="#tab'.htmlspecialchars($key).'"'.$aAttrs.'>'.$title.'</a>'
+			$nav .= '<li class="dw-tabs__item'.($isActive ? ' is-active' : '').'">'
+				. '<a class="dw-tabs__link" href="#tab'.htmlspecialchars($key).'"'.$aAttrs.'>'.$title.'</a>'
 				. '</li>';
 		}
 		$nav .= '</ul>';
 
 		// CONTENT
-		$content = '<div class="tab_container">';
+		$content = '<div class="dw-tab-panels">';
 		foreach ($tabs as $key => $t) {
 			$isActive = ($key === $activeKey);
-			$content .= '<div id="tab'.htmlspecialchars($key).'" class="tab_content'.($isActive ? ' active' : '').'">';
+			$content .= '<div id="tab'.htmlspecialchars($key).'" class="dw-tab-panel'.($isActive ? ' is-active' : '').'">';
 
 			// Wenn html gesetzt => direkt ausgeben (Attributes/Options/Ledger/Images/Files)
 			if (isset($t['html'])) {
@@ -386,34 +645,22 @@ class DEEC_Form
 
 			// Standard: Form + Felder, die tab == $key haben
 			$content .= '<form id="'.htmlspecialchars($formId).'-form" enctype="application/x-www-form-urlencoded" action="" method="'.htmlspecialchars($this->method).'">';
-			$content .= '<div class="row">';
+			$content .= '<div class="dw-form-layout">';
 
-			// Optional: Spaltenkonfig
-			// tabs['overview']['cols'] = [ ['class'=>'col-lg-7','fields'=>[...] ], ... ]
+			// Spaltenkonfig
 			if (!empty($t['cols']) && is_array($t['cols'])) {
 				foreach ($t['cols'] as $col) {
-					$colClass = $col['class'] ?? 'col-sm-12 col-lg-12';
+					$colClass = $col['class'] ?? 'dw-form-layout__col';
 					$content .= '<div class="'.htmlspecialchars($colClass).'">';
 
-					// dl wrapper wie bisher
-					if (!empty($col['dl'])) {
-						$content .= '<dl class="form">';
-					}
-
-					// explizite fields liste
 					if (!empty($col['fields']) && is_array($col['fields'])) {
 						foreach ($col['fields'] as $item) {
 							$content .= $this->renderTabItem($item);
 						}
 					} else {
-						// fallback: alle Elemente des Tabs in dieser Spalte
 						foreach (($elementsByTab[$key] ?? []) as $el) {
 							$content .= $this->renderElementHtml($el);
 						}
-					}
-
-					if (!empty($col['dl'])) {
-						$content .= '</dl>';
 					}
 
 					$content .= '</div>';
@@ -430,7 +677,7 @@ class DEEC_Form
 					}
 
 					// eigene Row pro Section (sauberes Bootstrap Grid)
-					$content .= '<div class="row g-3">';
+					$content .= '<div class="dw-form-row">';
 
 					foreach ($list as $el) {
 						$content .= $this->renderElementHtml($el);
@@ -479,6 +726,57 @@ class DEEC_Form
 			return $this->renderElement((string)$item['field']);
 		}
 		return '';
+	}
+
+	public function renderElementRow(string $name, array $row = [], array $ctx = []): string
+	{
+		$el = $this->getElement($name);
+		if (!$el) return '';
+
+		// clone element config (no mutation in $this->elements)
+		$tmp = $el;
+
+		// value from row by default
+		if (array_key_exists($name, $row)) {
+			$tmp['value'] = $row[$name];
+		}
+
+		// merge attrib overrides (row-specific)
+		$tmp['attribs'] = is_array($tmp['attribs'] ?? null) ? $tmp['attribs'] : [];
+
+		$rowId = isset($row['id']) ? (string)$row['id'] : '';
+		$controller = (string)($ctx['controller'] ?? '');
+		$module = (string)($ctx['module'] ?? '');
+		$ordering = isset($row['ordering']) ? (string)$row['ordering'] : '';
+
+		// unique id per row + field
+		// example: address_12_city
+		$tmp['attribs']['id'] = ($controller !== '' && $rowId !== '')
+			? ($controller . '_' . $rowId . '_' . $name)
+			: ($tmp['attribs']['id'] ?? $name);
+
+		// data-* used by your JS (trash/save/sort)
+		if ($rowId !== '') $tmp['attribs']['data-id'] = $rowId;
+		if ($ordering !== '') $tmp['attribs']['data-ordering'] = $ordering;
+		if ($controller !== '') $tmp['attribs']['data-controller'] = $controller;
+		if ($module !== '') $tmp['attribs']['data-module'] = $module;
+
+		// render cloned element
+		return $this->renderElementHtml($tmp);
+	}
+
+	/**
+	* convenience: render only a subset in original order
+	*/
+	public function renderElementsRow(array $names, array $row = [], array $ctx = []): string
+	{
+		$h = '';
+		foreach ($names as $n) {
+			$n = (string)$n;
+			if ($n === '') continue;
+			$h .= $this->renderElementRow($n, $row, $ctx);
+		}
+		return $h;
 	}
 
 	protected function groupBySection(array $elements): array
@@ -569,101 +867,433 @@ class DEEC_Form
 	protected function renderElementHtml(array $el)
 	{
 		$nameRaw = (string)$el['name'];
-		$name = htmlspecialchars($nameRaw);
-		$label = htmlspecialchars($this->translate((string)($el['label'] ?? $nameRaw)));
-		$type = $el['type'] ?? 'text';
-		$unit = $el['unit'] ? ' (' . htmlspecialchars($el['unit']) . ')' : '';
+		if ($nameRaw === '') return '';
 
-		$val = isset($el['value']) && $el['value'] !== ''
-			? $el['value']
-			: (isset($el['default']) ? $el['default'] : '');
+		$nameEsc = htmlspecialchars($nameRaw);
+
+		$type = (string)($el['type'] ?? 'text');
+		if ($type === '') $type = 'text';
+
+		if ($type === 'multi') {
+			return $this->renderMultiElementHtml($el);
+		}
+
+		// ------------------------------------------------------------
+		// Value resolution ("0" must NOT fallback to default)
+		// ------------------------------------------------------------
+		$hasExplicitValue = array_key_exists('value', $el) && $el['value'] !== null && $el['value'] !== '';
+		if ($hasExplicitValue) {
+			$val = $el['value'];
+		} else {
+			$hasDefault = array_key_exists('default', $el) && $el['default'] !== null && $el['default'] !== '';
+			$val = $hasDefault ? $el['default'] : '';
+		}
 
 		$hasError = !empty($this->errors[$nameRaw]);
 
-		// attribs + class handling (wichtig: class nicht überschreiben)
-		$base = array_merge(['id' => $nameRaw, 'name' => $nameRaw, 'type' => $type], $el['attribs']);
-
-		$cls = trim((string)($base['class'] ?? ''));
-		if ($type !== 'checkbox') {
-			// bootstrap forms
-			if ($cls === '') $cls = 'form-control';
-			if (strpos($cls, 'form-control') === false && $type !== 'hidden') $cls .= ' form-control';
-			if ($hasError && strpos($cls, 'is-invalid') === false) $cls .= ' is-invalid';
-		} else {
-			if ($hasError && strpos($cls, 'is-invalid') === false) $cls .= ' is-invalid';
+		// ------------------------------------------------------------
+		// Build base attributes
+		// - use attribs ONLY from element (already filtered by addElement/buildAttribs)
+		// - ensure id/name/type exist
+		// ------------------------------------------------------------
+		$attribs = [];
+		if (!empty($el['attribs']) && is_array($el['attribs'])) {
+			$attribs = $el['attribs'];
 		}
-		$base['class'] = trim($cls);
 
+		// enforce correct id/name/type (element contract)
+		$attribs['id'] = $attribs['id'] ?? $nameRaw;
+		$attribs['name'] = $attribs['name'] ?? $nameRaw;
+
+		// for textarea/select we will remove/ignore 'type' later
+		$attribs['type'] = $attribs['type'] ?? $type;
+
+		// CSS class handling
+		$cls = trim((string)($attribs['class'] ?? ''));
+
+		// label optional
+		$labelKey = $el['label'] ?? null;
+		$hasLabel = is_string($labelKey) && trim($labelKey) !== '';
+
+		$labelTxt = $hasLabel ? $this->translate($labelKey) : '';
+		$unitTxt = ($hasLabel && !empty($el['unit'])) ? ' (' . $el['unit'] . ')' : '';
+
+		$forId = htmlspecialchars((string)($attribs['id'] ?? $nameRaw));
+		$labelHtml = $hasLabel
+			? '<label class="dw-label" for="'.$forId.'">'.htmlspecialchars($labelTxt . $unitTxt).'</label>'
+			: '';
+
+		$baseClass = '';
+		if ($type === 'textarea') {
+			$baseClass = 'dw-textarea';
+		} elseif ($type === 'select') {
+			$baseClass = 'dw-select';
+		} elseif (!in_array($type, ['hidden', 'submit', 'button', 'checkbox'], true)) {
+			$baseClass = 'dw-input';
+		}
+
+		if ($baseClass !== '' && strpos($cls, $baseClass) === false) {
+			$cls = trim($cls . ' ' . $baseClass);
+		}
+
+		if ($hasError && strpos($cls, 'is-invalid') === false) {
+			$cls = trim($cls . ' is-invalid');
+		}
+
+		$attribs['class'] = trim($cls);
+
+		// ------------------------------------------------------------
+		// Convert attribs to HTML string
+		// - boolean true => attribute="attribute"
+		// - boolean false => skip attribute
+		// ------------------------------------------------------------
 		$attrs = '';
-		foreach ($base as $k => $v) {
-			if ($v === true) $v = $k;
-			if ($v === false) continue;
-			$attrs .= ' ' . htmlspecialchars($k) . '="' . htmlspecialchars((string)$v) . '"';
+		foreach ($attribs as $k => $v) {
+			if ($v === false || $v === null) continue;
+
+			$key = (string)$k;
+
+			// allow boolean attributes
+			if ($v === true) {
+				$attrs .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars($key) . '"';
+				continue;
+			}
+
+			$attrs .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars((string)$v) . '"';
 		}
 
-		$desc = $el['description'] ? '<small class="form-text text-muted">'.htmlspecialchars($el['description']).'</small>' : '';
-		$info = $el['info'] ? '<div class="form-text">'.htmlspecialchars($el['info']).'</div>' : '';
+		// Description / info / errors
+		$desc = !empty($el['description'])
+			? '<div class="dw-field__description">'.htmlspecialchars((string)$el['description']).'</div>'
+			: '';
+
+		$info = !empty($el['info'])
+			? '<div class="dw-field__info">'.htmlspecialchars((string)$el['info']).'</div>'
+			: '';
 
 		$errorHtml = '';
 		if ($hasError) {
 			$msgs = [];
-			foreach ($this->errors[$nameRaw] as $code) {
+			foreach ((array)$this->errors[$nameRaw] as $code) {
 				$msgs[] = $this->translateError($code);
 			}
-			$errorHtml = '<div class="invalid-feedback d-block">'.htmlspecialchars(implode(' ', $msgs)).'</div>';
-		}
-
-		// wrapper
-		$wrapperClasses = 'form-group';
-		$colClass = ' col-md-12';
-		if (!empty($el['col']) && $el['col'] >= 1 && $el['col'] <= 12) $colClass = ' col-md-' . (int)$el['col'];
-
-		if ($type === 'hidden') {
-			return '<input type="hidden" name="'.$name.'" value="'.htmlspecialchars((string)$val).'">';
-		}
-
-		if ($type === 'textarea') {
-			return '<div class="'.$wrapperClasses.$colClass.'">'.
-				"<label for=\"$name\">$label$unit</label>".
-				"<textarea$attrs>".htmlspecialchars((string)$val)."</textarea>".
-				$errorHtml . $desc . $info .
-				"</div>";
-		}
-
-		if ($type === 'select') {
-			$opts = '';
-			foreach ((array)$el['options'] as $optValue => $optLabel) {
-				$valueEsc = htmlspecialchars((string)$optValue);
-				$labelEsc = htmlspecialchars($this->translate((string)$optLabel));
-				$sel = ((string)$val === (string)$optValue) ? ' selected' : '';
-				$opts .= "<option value=\"$valueEsc\"$sel>$labelEsc</option>";
-			}
-			return '<div class="'.$wrapperClasses.$colClass.'">'.
-				"<label for=\"$name\">$label$unit</label>".
-				"<select$attrs>$opts</select>".
-				$errorHtml . $desc . $info .
-				"</div>";
-		}
-
-		if ($type === 'checkbox') {
-			$isChecked = in_array((string)$el['value'], ['1','on','true'], true)
-				|| in_array((string)($el['default'] ?? ''), ['1','on','true'], true);
-
-			return '<div class="'.$wrapperClasses.$colClass.' form-check" style="margin-left:20px;">'
-				. '<input type="hidden" name="'.$name.'" value="0">'
-				. '<input'.$attrs.' value="1"'.($isChecked ? ' checked' : '').' class="form-check-input">'
-				. '<label class="form-check-label" for="'.$name.'">'.$label.$unit.'</label>'
-				. $errorHtml . $desc . $info
+			$errorHtml = '<div class="dw-field__error">'
+				. htmlspecialchars(implode(' ', $msgs))
 				. '</div>';
 		}
 
-		// text/email/number...
+		// ------------------------------------------------------------
+		// Wrapper handling
+		// ------------------------------------------------------------
+		$wrap = array_key_exists('wrap', $el) ? (bool)$el['wrap'] : true;
+
+		$wrapperClasses = '';
+		$colClass = '';
+
+		$wrapperClasses = '';
+		if ($wrap) {
+			$wrapperClasses = 'dw-field dw-field--col-12';
+			if (!empty($el['col']) && (int)$el['col'] >= 1 && (int)$el['col'] <= 12) {
+				$wrapperClasses = 'dw-field dw-field--col-' . (int)$el['col'];
+			}
+		}
+
+		// ------------------------------------------------------------
+		// Render by type
+		// ------------------------------------------------------------
+		if ($type === 'hidden') {
+			// IMPORTANT: do not reuse $attrs because it contains class/id/type etc.
+			// render minimal hidden input, but keep name/id
+			return '<input type="hidden" name="'.$nameEsc.'" value="'.htmlspecialchars((string)$val).'">';
+		}
+
+		if ($type === 'button') {
+			// remove form-control if it sneaked in
+			$btnAttribs = $attribs;
+			if (!empty($btnAttribs['class'])) {
+				$btnAttribs['class'] = trim(str_replace('form-control', '', (string)$btnAttribs['class']));
+				if ($btnAttribs['class'] === '') unset($btnAttribs['class']);
+			}
+
+			// enforce type
+			$btnAttribs['type'] = 'button';
+
+			$btnAttrs = '';
+			foreach ($btnAttribs as $k => $v) {
+				if ($v === false || $v === null) continue;
+				$key = (string)$k;
+				if ($v === true) $v = $key;
+				$btnAttrs .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars((string)$v) . '"';
+			}
+
+			$btnText = $hasLabel ? htmlspecialchars($labelTxt . $unitTxt) : '';
+
+			// accessibility: if no visible text and no aria-label
+			if ($btnText === '' && empty($btnAttribs['aria-label'])) {
+				$btnAttrs .= ' aria-label="' . htmlspecialchars($nameRaw) . '"';
+			}
+
+			$btn = '<button'.$btnAttrs.'>'.$btnText.'</button>';
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$btn.'</div>' : $btn;
+		}
+
+		if ($type === 'submit') {
+			$btnAttribs = $attribs;
+
+			// remove form-control if it sneaked in
+			if (!empty($btnAttribs['class'])) {
+				$btnAttribs['class'] = trim(str_replace('form-control', '', (string)$btnAttribs['class']));
+				if ($btnAttribs['class'] === '') unset($btnAttribs['class']);
+			}
+
+			$btnAttribs['type'] = 'submit';
+
+			$btnAttrs = '';
+			foreach ($btnAttribs as $k => $v) {
+				if ($v === false || $v === null) continue;
+				$key = (string)$k;
+				if ($v === true) $v = $key;
+				$btnAttrs .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars((string)$v) . '"';
+			}
+
+			$btnText = $hasLabel ? htmlspecialchars($labelTxt . $unitTxt) : 'Submit';
+
+			$btn = '<button'.$btnAttrs.'>'.$btnText.'</button>';
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$btn.'</div>' : $btn;
+		}
+
+		if ($type === 'textarea') {
+			// textarea must not have type=""
+			// rebuild attrs without type
+			$taAttribs = $attribs;
+			unset($taAttribs['type']);
+
+			$taAttrs = '';
+			foreach ($taAttribs as $k => $v) {
+				if ($v === false || $v === null) continue;
+				$key = (string)$k;
+				if ($v === true) $v = $key;
+				$taAttrs .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars((string)$v) . '"';
+			}
+
+			$field = $labelHtml
+				. "<textarea$taAttrs>".htmlspecialchars((string)$val)."</textarea>"
+				. $errorHtml . $desc . $info;
+
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+		}
+
+		if ($type === 'select') {
+			// select must not have type=""
+			$selAttribs = $attribs;
+			unset($selAttribs['type']);
+
+			$selAttrs = '';
+			foreach ($selAttribs as $k => $v) {
+				if ($v === false || $v === null) continue;
+				$key = (string)$k;
+				if ($v === true) $v = $key;
+				$selAttrs .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars((string)$v) . '"';
+			}
+
+			$opts = '';
+			foreach ((array)($el['options'] ?? []) as $optValue => $optLabel) {
+				// allow list-style options: ["A","B"] -> values 0/1; or associative
+				$ov = (string)$optValue;
+				$ol = is_string($optLabel) ? $optLabel : (string)$optLabel;
+
+				$valueEsc = htmlspecialchars($ov);
+				$labelEsc = htmlspecialchars($this->translate($ol));
+
+				$sel = ((string)$val === (string)$ov) ? ' selected' : '';
+				$opts .= "<option value=\"$valueEsc\"$sel>$labelEsc</option>";
+			}
+
+			$field = $labelHtml
+				. "<select$selAttrs>$opts</select>"
+				. $errorHtml . $desc . $info;
+
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+		}
+
+		if ($type === 'checkbox') {
+			$raw = $hasExplicitValue ? $el['value'] : ($el['default'] ?? null);
+			$isChecked = in_array((string)$raw, ['1','on','true'], true);
+
+			$cbAttribs = $attribs;
+			$cbAttribs['type'] = 'checkbox';
+
+			$cbCls = trim((string)($cbAttribs['class'] ?? ''));
+			if ($cbCls === '') {
+				$cbAttribs['class'] = '';
+			}
+
+			$cbAttrs = '';
+			foreach ($cbAttribs as $k => $v) {
+				if ($v === false || $v === null) continue;
+				$key = (string)$k;
+				if ($v === true) $v = $key;
+				$cbAttrs .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars((string)$v) . '"';
+			}
+
+			$checkbox = '<input type="hidden" name="'.$nameEsc.'" value="0">';
+			$checkbox .= '<label class="dw-checkbox">';
+			$checkbox .= '<input'.$cbAttrs.' value="1"'.($isChecked ? ' checked' : '').'>';
+			if ($hasLabel) {
+				$checkbox .= '<span class="dw-checkbox__label">'.htmlspecialchars($labelTxt . $unitTxt).'</span>';
+			}
+			$checkbox .= '</label>';
+			$checkbox .= $errorHtml . $desc . $info;
+
+			return $wrap ? '<div class="'.$wrapperClasses.'">'.$checkbox.'</div>' : $checkbox;
+		}
+
+		// ------------------------------------------------------------
+		// Default: text/email/number/etc.
+		// ------------------------------------------------------------
 		$valueAttr = ' value="'.htmlspecialchars((string)$val).'"';
-		return '<div class="'.$wrapperClasses.$colClass.'">'.
-			"<label for=\"$name\">$label$unit</label>".
-			"<input$attrs$valueAttr>".
-			$errorHtml . $desc . $info .
-			"</div>";
+
+		$field = $labelHtml
+			. "<input$attrs$valueAttr>"
+			. $errorHtml . $desc . $info;
+
+		return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+	}
+
+	public function getMultiElements(): array
+	{
+		$out = [];
+		foreach ($this->elements as $name => $el) {
+			if (($el['type'] ?? '') === 'multi') {
+				$out[$name] = $el;
+			}
+		}
+		return $out;
+	}
+
+	protected function renderMultiElementHtml(array $el): string
+	{
+		$name = (string)$el['name'];			// z.B. address
+		$labelKey = (string)($el['label'] ?? '');
+		$module = (string)($el['module'] ?? '');
+		$controller = (string)($el['controller'] ?? '');
+		$parentid = (int)($el['parentid'] ?? 0);
+		$rows = is_array($el['rows'] ?? null) ? $el['rows'] : [];
+
+		// Überschrift wie bisher
+		$html = '';
+		if ($labelKey !== '') {
+			$html .= '<h4>' . htmlspecialchars($this->translate($labelKey)) . '</h4>';
+		}
+
+		// Container
+		$html .= '<div id="' . htmlspecialchars($name) . '-container" class="multiformContainer dw-multiform"'
+				. ' data-parentid="' . htmlspecialchars((string)$parentid) . '"'
+				. ' data-controller="' . htmlspecialchars($controller) . '"'
+				. '>';
+
+		$html .= '<div id="' . htmlspecialchars($name) . '" class="multiform dw-multiform__list">';
+
+		// Row-Form automatisch aus module/controller erzeugen: Contacts_Form_Address
+		$rowForm = $this->makeRowFormForMulti($module, $controller);
+
+		$this->applyOptionsIfAvailable($rowForm);
+
+		// Felder der Row-Form
+		$subElements = method_exists($rowForm, 'getElements') ? $rowForm->getElements() : [];
+		$fieldNames = array_keys($subElements);
+
+		$ctx = [
+			'module' => $module,
+			'controller' => $controller,
+		];
+
+		$cnt = count($rows);
+		foreach ($rows as $row) {
+			if (!is_array($row) || empty($row['id'])) {
+				continue;
+			}
+
+			$rowId = (string)$row['id'];
+
+			$html .= '<div id="' . htmlspecialchars($name . $rowId) . '" class="dw-multiform__item dw-card">';
+			$html .= '<div class="dw-form-row">';
+
+			foreach ($fieldNames as $field) {
+				// renderElementRow kommt aus DEEC_Form und setzt id + data-* + value korrekt
+				if (method_exists($rowForm, 'renderElementRow')) {
+					$html .= $rowForm->renderElementRow($field, $row, $ctx);
+				} else {
+					// fallback: falls renderElementRow nicht existiert, müsst ihr es im RowForm bereitstellen
+					$html .= $this->renderMultiFallbackField($rowForm, $field, $row, $ctx, $name);
+				}
+			}
+
+			$html .= '</div>';
+
+			// delete button
+			$html .= '<div class="dw-multiform__actions">';
+			$html .= '<button type="button" class="delete nolabel"'
+					. ' onclick="trash(' . (int)$rowId . ', deleteConfirm, \'' . htmlspecialchars($controller) . '\', \'' . htmlspecialchars($module) . '\');"></button>';
+			$html .= '</div>';
+			$html .= '</div>';
+		}
+
+		// add button wie bisher, global.js click handler greift hier
+		$html .= '<button type="button" class="addMulti add nolabel"'
+				. ' data-module="' . htmlspecialchars($module) . '"'
+				. ' data-controller="' . htmlspecialchars($controller) . '"></button>';
+
+		$html .= '</div></div>';
+
+		// col wrapper wie bei normalen elemente
+		$html = $this->wrapByColIfNeeded($html, $el);
+
+		return $html;
+	}
+
+	protected function makeRowFormForMulti(string $module, string $controller): DEEC_Form
+	{
+		$class = DEEC_Util::formClassFromModuleController($module, $controller);
+
+		if (!class_exists($class)) {
+			throw new RuntimeException('Multi row form class not found: ' . $class);
+		}
+
+		$form = new $class();
+
+		if (!$form instanceof DEEC_Form) {
+			throw new RuntimeException('Multi row form must extend DEEC_Form: ' . $class);
+		}
+
+		return $form;
+	}
+
+	protected function applyOptionsIfAvailable(DEEC_Form $form): void
+	{
+		// Zend Helper "Options" verfügbar?
+		if (!class_exists('Zend_Controller_Action_HelperBroker')) return;
+
+		try {
+			$helper = Zend_Controller_Action_HelperBroker::getStaticHelper('Options');
+		} catch (Exception $e) {
+			return;
+		}
+
+		if ($helper && method_exists($helper, 'applyFormOptions')) {
+			$helper->applyFormOptions($form);
+		}
+	}
+
+	protected function wrapByColIfNeeded(string $html, array $el): string
+	{
+		$col = (int)($el['col'] ?? 0);
+
+		if ($col > 0) {
+			return '<div class="dw-field dw-field--col-' . (int)$col . '">' . $html . '</div>';
+		}
+
+		return '<div class="dw-field dw-field--col-12">' . $html . '</div>';
 	}
 
 	public function getTranslator()
