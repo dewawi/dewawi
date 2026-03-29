@@ -13,7 +13,7 @@ $(document).ready(function(){
 	setInterval(function(){
 		if(action == 'edit') {
 			$.get(baseUrl+'/'+module+'/'+controller+'/keepalive/id/'+id);
-		} else if(action = 'index') {
+		} else if(action == 'index') {
 			//Keep alive editable elements
 			$('.editableValue:visible').each(function(e) {
 				if(action == 'index') {
@@ -22,6 +22,8 @@ $(document).ready(function(){
 			});
 		}
 	}, 60000); // 60 seconds
+
+    //pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
 
 	//setInterval(function(){
 	//		console.log(isDirty);
@@ -77,8 +79,7 @@ $(document).ready(function(){
 			var value = this.value;
 			//If the element is a checkbox
 			if($(this).is(':checkbox')) {
-				if($(this).is(':checked')) value = 1;
-				else value = 0;
+                value = $(this).is(':checked') ? 1 : 0;
 			}
 			data[this.name] = value;
 			//Check dataset info on the element
@@ -87,14 +88,6 @@ $(document).ready(function(){
 			if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
 			if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
 			if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
-			// if edited field is numeric
-			if($(this).hasClass('number')) {
-				data['_format'] = 'number';
-				data['_precision'] = $(this).data('precision') || 2;
-			}
-			if($(this).hasClass('datePicker')) {
-				data['_format'] = 'date';
-			}
 			edit(data, params);
 			//validate(data, params);
 		}
@@ -175,12 +168,13 @@ $(document).ready(function(){
 			}
 		});
 		//Lock
-		if(action == 'index') {
-			var lockMessage = lock(id);
-		}
+		//if(action == 'index') {
+			var lockResp = lock(id);
+		//}
 		//Check if there is a message
-		if(typeof lockMessage !== 'undefined') {
-			pushMessages(lockMessage);
+		if (lockResp && lockResp.ok === false && lockResp.message) {
+		  pushMessages(lockResp.message);
+		  return;
 		} else {
 			$(this).hide();
 			if(!$(this).next(type).length) {
@@ -282,10 +276,57 @@ $(document).ready(function(){
 			response = edit(data, params);
 		}
 
-		//validate(data, params);
+        // NEU: Fehler sauber behandeln
+        if (!response) {
+            pushMessages(['Speichern fehlgeschlagen.']);
+            return;
+        }
+
+        // SELECT update
+          if(this.nodeName == 'SELECT') {
+            var newValueRaw = (response.values && response.values[this.name] !== undefined)
+              ? response.values[this.name]
+              : (response[this.name] !== undefined ? response[this.name] : this.value);
+
+            // row class update bleibt
+            if(String(newValueRaw).match(/^\d+$/)) {
+              $(this).closest('tr').removeClass(this.name+previousValue);
+              $(this).closest('tr').addClass(this.name+newValueRaw);
+            } else {
+              $(this).closest('tr').removeClass(previousValue);
+              $(this).closest('tr').addClass(newValueRaw);
+            }
+
+            // display text
+            var shown = getDisplayValue(response, this.name);
+
+            // fallback: option text wenn display leer
+            if(!shown) shown = $(this).find('option[value="'+newValueRaw+'"]').text();
+
+            if(this.name == 'tagid') {
+              $(this).prev('.editable').before('<span>'+shown+'</span>');
+              $('.editable').show();
+              $('.editableValue:visible').each(function() {
+                $(this).hide();
+                unlock($(this).closest('tr').find('input.id').val());
+              });
+            } else {
+              $(this).prev('.editable').text(shown);
+              previousValue = newValueRaw;
+            }
+
+            if(this.name == 'parentid') search();
+          } else {
+            // input/textarea
+            var shown = getDisplayValue(response, this.name);
+            $(this).prev('.editable').text(shown);
+          }
+
+          unlock(params['id']);
+
 
 		// Handle response and update UI
-		if (response && response.message) {
+		/*if (response && response.message) {
 			pushMessages(response);
 		} else {
 			//Replace the text with new value
@@ -329,7 +370,7 @@ $(document).ready(function(){
 
 			// Unlock the row
 			unlock(params['id']);
-		}
+		}*/
 	});
 	$('#data').on('change', '#activated', function() {
 		//console.log($('#activated').is(':checked'));
@@ -497,8 +538,9 @@ $(document).ready(function(){
 		event.preventDefault();
 		$('#treemenu li a').removeClass('active');
 		$(this).addClass('active');
-		$('#catid').val($(this).attr('id'));
-		$.cookie('catid', $('#catid').val(), { path: cookiePath });
+        const id = $(this).data('id');
+        $('#catid').val(id);
+        $.cookie('catid', id, { path: cookiePath });
 		$('#page').val(1);
 		search();
 	});
@@ -520,41 +562,6 @@ $(document).ready(function(){
 		.ajaxStop(function() {
 			$('#loading').hide();
 	});*/
-
-	//Tabs
-	//$('.tab_content').hide(); //Hide all content
-	$('ul.tabs:not(:has(li.active))').children('li:first-child').addClass('active').show();
-	//$('ul.tabs li:first').addClass('active').show(); //Activate first tab
-	$('.tab_container:not(:has(.tab_content.active))').children(':first-child').addClass('active').show();
-	//$('.tab_content:first').show(); //Show first tab content
-	$('ul.tabs').on('click', 'li', function(event) {
-		$('ul.tabs li').removeClass('active'); //Remove any 'active' class
-		$(this).addClass('active'); //Add 'active' class to selected tab
-			//$('.datepicker-container').addClass('datepicker-hide').off('click.datepicker', $('.datePicker').click); //Hide date picker
-		$('.tab_content').hide(); //Hide all tab content
-
-		if(($(this).find('a').attr('href') == '#tabFinish') || ($(this).find('a').attr('href') == '#tabDocument') || ($(this).find('a').attr('href') == '#tabFiles')) {
-			$.cookie('tab', '#tabOverview', { path: cookiePath+'/'+action });
-		} else {
-			$.cookie('tab', $(this).find('a').attr('href'), { path: cookiePath+'/'+action });
-		}
-
-		var activeTab = $(this).find('a').attr('href'); //Find the href attribute value to identify the active tab + content
-		$(activeTab).fadeIn(); //Fade in the active ID content
-		if(activeTab == '#tabFiles' || activeTab == '#tabImages') {
-			//$('#tabFiles').html('<div id="elfinder"></div>');
-			//elfinder();
-		}
-		//return false;
-				event.preventDefault();
-	});
-	//if($.cookie('tab') == '#tabPositions') {
-		$('div.positionsContainer').each(function() {
-			var parent = $(this).closest('div.positionsContainer').data('parent');
-			var type = $(this).closest('div.positionsContainer').data('type');
-			getPositions(parent, type);
-		});
-	//}
 
 	//Prices and quantities
 	$('.number').on('blur, change', function() {
@@ -855,9 +862,13 @@ function lock(id) {
 		async: false,
 		url: baseUrl+'/'+module+'/'+controller+'/lock/id/'+id,
 		cache: false,
+        dataType: 'json',
 		success: function(json){
 			response = json;
-		}
+		},
+        error: function(){
+            response = { ok: false, message: 'network_error' };
+        }
 	});
 	return response;
 }
@@ -884,6 +895,84 @@ function pin(id) {
 		}
 	});
 }
+
+//Tabs
+function getDwTabPanels($tabs) {
+	var hrefs = [];
+
+	$tabs.find('.dw-tabs__link').each(function () {
+		var href = $(this).attr('href');
+		if (href && href.charAt(0) === '#') {
+			hrefs.push(href);
+		}
+	});
+
+	return hrefs.length ? $(hrefs.join(',')) : $();
+}
+
+function activateDwTab($link, saveCookie) {
+	if (!$link || !$link.length) return;
+
+	var target = $link.attr('href');
+	if (!target || target.charAt(0) !== '#') return;
+
+	var $tabs = $link.closest('.dw-tabs');
+	if (!$tabs.length) return;
+
+	var $items = $tabs.find('.dw-tabs__item');
+	var $panels = getDwTabPanels($tabs);
+
+	$items.removeClass('is-active');
+	$link.closest('.dw-tabs__item').addClass('is-active');
+
+	$panels.removeClass('is-active').hide();
+	$(target).addClass('is-active').show();
+
+	if (saveCookie) {
+		if (target === '#tabFinish' || target === '#tabDocument' || target === '#tabFiles') {
+			$.cookie('tab', '#tabOverview', { path: cookiePath + '/' + action });
+		} else {
+			$.cookie('tab', target, { path: cookiePath + '/' + action });
+		}
+	}
+}
+
+function initDwTabs(scope) {
+	var $scope = scope ? $(scope) : $(document);
+
+	$scope.find('.dw-tabs').each(function () {
+		var $tabs = $(this);
+		var $links = $tabs.find('.dw-tabs__link');
+
+		if (!$links.length) return;
+
+		var cookieTab = $.cookie('tab');
+		var $activeLink = $();
+
+		if (cookieTab) {
+			$activeLink = $links.filter('[href="' + cookieTab + '"]').first();
+		}
+
+		if (!$activeLink.length) {
+			$activeLink = $tabs.find('.dw-tabs__item.is-active .dw-tabs__link').first();
+		}
+
+		if (!$activeLink.length) {
+			$activeLink = $links.first();
+		}
+
+		activateDwTab($activeLink, false);
+	});
+}
+
+$(document).on('click', '.dw-tabs__link', function (event) {
+	event.preventDefault();
+	activateDwTab($(this), true);
+});
+
+$(function () {
+	initDwTabs();
+});
 
 //Save
 function save() {
@@ -955,7 +1044,7 @@ function add(data, params) {
 				response = json;
 				isDirty = false;
 				//Append new form from response
-				$('div#'+params['controller']+'[data-parentid="'+data['parentid']+'"] button.add').before(json);
+                $('.multiformContainer[data-controller="'+params['controller']+'"][data-parentid="'+data['parentid']+'"] button.add').before(json);
 				//Focus on new element
 				$('div#'+params['controller']+' div:last input:first').focus().select();
 			}
@@ -1002,20 +1091,35 @@ function edit(data, params) {
 		if(params && params['id']) url += '/edit/id/'+params['id'];
 		else url += '/edit/id/'+id;
 	}
-	var response;
+    var response = null;
 	$.ajax({
 		type: 'POST',
 		async: false,
 		url: url,
 		data: data,
 		cache: false,
+        dataType: 'json',
 		success: function(json){
 			response = json;
-			isDirty = false;
-		}
+            if (response && response.ok === false) {
+                for (var field in data) {
+                  if (!data.hasOwnProperty(field)) continue;
+                  $('form #'+field).addClass('error');
+	              //console.log('form #'+field);
+                }
+                if (response.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
+                else if (response.message === 'not_found') pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
+                else pushMessages([response.message]);
+		    } else {
+			    isDirty = false;
+            }
+		},
+        error: function(xhr){
+            pushMessages(['Speichern fehlgeschlagen.']);
+        }
 	});
 	//console.log(data);
-	//console.log(response);
+	//console.log(params);
 	return response;
 }
 
@@ -1075,9 +1179,7 @@ function search() {
 			success: function(response){
 				$('#content').html(response);
 				if(action == 'select') {
-					$('.tab_content').hide();
-					$('ul.tabs li:first').addClass('active').show();
-					$('.tab_content:first').show();
+	                initDwTabs('#content');
 				}
 				$('#data tbody tr:nth-child(2n+1)').addClass('alt');
 				$('#data').on('mouseover mouseout', 'tbody tr', function(event) {
@@ -1591,6 +1693,14 @@ function resendMessage(messageid){
 	});
 }
 
+// helper: display bevorzugen
+function getDisplayValue(resp, field) {
+  if(resp && resp.display && resp.display[field] !== undefined) return resp.display[field];
+  if(resp && resp[field] !== undefined) return resp[field];
+  if(resp && resp.values && resp.values[field] !== undefined) return resp.values[field];
+  return '';
+}
+
 //Ordering
 function sort(parent, type, id, setid, ordering, masterid){
 	var data = {};
@@ -1625,10 +1735,59 @@ function sort(parent, type, id, setid, ordering, masterid){
 }
 
 function pushMessages(messages){
+  // normalize to array of strings
+  if (messages == null) return;
+
+  if (typeof messages === 'string') {
+    messages = [messages];
+  } else if (Array.isArray(messages)) {
+    // ok
+  } else if (typeof messages === 'object') {
+    // support {message:".."} or {messages:[..]}
+    if (messages.messages) messages = messages.messages;
+    else if (messages.message) messages = [messages.message];
+    else return;
+  } else {
+    messages = [String(messages)];
+  }
+
 	$.each(messages, function(key, value) {
-		$('td#content').prepend('<div id="messages"><ul><li>'+value+'</li></ul></div>');
+		$('div#content').prepend('<div id="messages"><ul><li>'+value+'</li></ul></div>');
 	});
 	removeMessages();
+}
+
+function handleEditError(resp, params) {
+  // 1) not_found -> Meldung + optional redirect
+  if (resp && resp.message === 'not_found') {
+    pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
+    // optional: sofort zurück zur Liste
+    // setLocation(baseUrl+'/'+module+'/'+controller);
+    unlock(params['id']);
+    return true;
+  }
+
+  // 2) errors (Validierung)
+  if (resp && resp.errors) {
+    // hier werden alle Fehlertexte gesammelt und angezeigt
+    pushMessages({ errors: resp.errors });
+    unlock(params['id']);
+    return true;
+  }
+
+  // 3) message (save_failed etc.)
+  if (resp && resp.message) {
+    // du kannst hier übersetzen, wenn du willst
+    if (resp.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
+    else pushMessages([resp.message]);
+    unlock(params['id']);
+    return true;
+  }
+
+  // 4) unbekannt
+  pushMessages(['Speichern nicht möglich.']);
+  unlock(params['id']);
+  return true;
 }
 
 function removeMessages(){
@@ -1668,9 +1827,7 @@ function savePdf(){
 					$('#output').html(data);
 					if(action != 'view') {
 						window.location = baseUrl+'/'+module+'/'+controller+'/view/id/'+id;
-						$('ul.tabs li').removeClass('active');
 						$(this).addClass('active');
-						$('.tab_content').hide();
 						var activeTab = $(this).find('a').attr('href');
 					}
 				}
