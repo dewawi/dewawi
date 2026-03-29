@@ -3,7 +3,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE IF NOT EXISTS `address` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `contactid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `type` varchar(255) DEFAULT NULL,
   `name1` varchar(255) DEFAULT NULL,
   `name2` varchar(255) DEFAULT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `address` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (contactid),
+  KEY (parentid),
   KEY (type),
   KEY (department),
   KEY (street),
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `archive` (
 
 CREATE TABLE IF NOT EXISTS `bankaccount` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `contactid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `iban` varchar(255) DEFAULT NULL,
   `bic` varchar(255) DEFAULT NULL,
@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS `bankaccount` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY (parentid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `calendarevent` (
@@ -210,7 +211,7 @@ CREATE TABLE IF NOT EXISTS `contact` (
 
 CREATE TABLE IF NOT EXISTS `contactperson` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `contactid` int(11) NOT NULL,
+  `parentid` int(11) NOT NULL,
   `type` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `gender` varchar(255) DEFAULT NULL,
@@ -226,7 +227,7 @@ CREATE TABLE IF NOT EXISTS `contactperson` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (contactid)
+  KEY (parentid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `country` (

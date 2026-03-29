@@ -60,3 +60,15 @@ RENAME TABLE `cloud`.`inventory` TO `cloud`.`ledger`;
 ALTER TABLE `ledger` CHANGE `inventorydate` `ledgerdate` DATE NULL DEFAULT NULL;
 
 ALTER TABLE `warehouse` ADD `deleted` tinyint(1) NOT NULL DEFAULT 0 AFTER `lockedtime`;
+
+ALTER TABLE `address` CHANGE `contactid` `parentid` INT(11) NOT NULL;
+ALTER TABLE `address` DROP INDEX `contactid`;
+ALTER TABLE `address` ADD INDEX `parentid` (`parentid`);
+
+ALTER TABLE `bankaccount` CHANGE `contactid` `parentid` INT(11) NOT NULL;
+ALTER TABLE `bankaccount` ADD INDEX `parentid` (`parentid`);
+
+ALTER TABLE `contactperson` CHANGE `contactid` `parentid` INT(11) NOT NULL;
+ALTER TABLE `contactperson` DROP INDEX `contactid`;
+ALTER TABLE `contactperson` ADD INDEX `parentid` (`parentid`);
+
