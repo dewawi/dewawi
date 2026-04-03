@@ -16,7 +16,7 @@ class Items_Model_Get
 		$query = '';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['catid']);
 		$query = $queryHelper->getQueryClient($query, $client['id']);
 		if(isset($params['quantity']) && $params['quantity']) $query = $queryHelper->getQueryQuantity($query, $params['quantity']);
 		$query = $queryHelper->getQueryDeleted($query);
@@ -57,7 +57,9 @@ class Items_Model_Get
 					->limit($params['limit'], $params['offset'])
 			);
 		}
-
+//echo $query."/";
+//echo $params['limit']."/";
+//echo $params['offset'];
 		if($row == false) {
 			$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 			$currency = $currencyHelper->getCurrency();
@@ -75,7 +77,7 @@ class Items_Model_Get
 						$item->quantity,
 						array(
 							'precision' => 2,
-							'locale'    => $locale
+							'locale' => $locale
 						)
 					);
 				}
@@ -100,7 +102,7 @@ class Items_Model_Get
 		$schema = 'le';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['catid']);
 		$query = $queryHelper->getQueryClient($query, $client['id'], 'i');
 		$query = $queryHelper->getQueryDeleted($query, $schema);
 
@@ -141,7 +143,7 @@ class Items_Model_Get
 		$query = '';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['catid']);
 		$query = $queryHelper->getQueryClient($query, $client['id']);
 		$query = $queryHelper->getQueryDeleted($query);
 
@@ -203,7 +205,7 @@ class Items_Model_Get
 		$query = '';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories']);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['catid']);
 		$query = $queryHelper->getQueryClient($query, $client['id']);
 		$query = $queryHelper->getQueryDeleted($query);
 

@@ -11,13 +11,13 @@ class Processes_Model_Get
 
 		$processesDb = new Processes_Model_DbTable_Process();
 
-		$columns = array('p.title', 'p.customerid', 'p.billingname1', 'p.billingname2', 'p.billingdepartment', 'p.billingstreet', 'p.billingpostcode', 'p.billingcity', 'p.shippingname1', 'p.shippingname2', 'p.shippingdepartment', 'p.shippingstreet', 'p.shippingpostcode', 'p.shippingcity');
+		$columns = array('p.title', 'p.contactid', 'p.billingname1', 'p.billingname2', 'p.billingdepartment', 'p.billingstreet', 'p.billingpostcode', 'p.billingcity', 'p.shippingname1', 'p.shippingname2', 'p.shippingdepartment', 'p.shippingstreet', 'p.shippingpostcode', 'p.shippingcity');
 
 		$query = '';
 		$schema = 'p';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['catid'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
 		if($params['paymentstatus']) $query = $queryHelper->getQueryPaymentstatus($query, $params['paymentstatus'], $schema);
@@ -33,7 +33,7 @@ class Processes_Model_Get
 			$processesDb->select()
 				->setIntegrityCheck(false)
 				->from(array('p' => 'process'))
-				->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->join(array('c' => 'contact'), 'p.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
 				->order(array('pinned desc', $params['order'].' '.$params['sort']))
@@ -47,7 +47,7 @@ class Processes_Model_Get
 				$processesDb->select()
 					->setIntegrityCheck(false)
 					->from(array('p' => 'process'))
-					->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
+					->join(array('c' => 'contact'), 'p.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
 					->order(array('pinned desc', $params['order'].' '.$params['sort']))

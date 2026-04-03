@@ -8,7 +8,7 @@ class Contacts_Model_Get
 		$contact = $contactDb->fetchRow(
 			$contactDb->select()
 				->from(array('c' => 'contact'))
-				->join(array('a' => 'address'), 'c.id = a.contactid AND a.deleted = 0', array('street', 'postcode', 'city', 'country'))
+				->join(array('a' => 'address'), 'c.id = a.parentid AND a.deleted = 0', array('street', 'postcode', 'city', 'country'))
 				->joinLeft(array('p' => 'phone'), 'c.id = p.parentid AND p.deleted = 0', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
 				->joinLeft(array('e' => 'email'), 'c.id = e.parentid AND e.deleted = 0', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
 				->joinLeft(array('i' => 'internet'), 'c.id = i.parentid AND i.deleted = 0', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
@@ -34,7 +34,7 @@ class Contacts_Model_Get
 		$schema = 'c';
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], $schema);
+		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['catid'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountryC($query, $params['country'], $options['countries'], 'a');
 		if($query) {
 			$query .= ' AND c.clientid = '.$client['id'];
@@ -52,7 +52,7 @@ class Contacts_Model_Get
 					->from(array($schema => 'contact'))
 					//->columns(array('TotalRecords' => new Zend_Db_Expr('COUNT(t.id)')))
 					->join(array('t' => 'tagentity'), '(c.id = t.entityid) AND (t.tagid = '.$params['tagid'].') AND (t.deleted = 0)', array('tagid', 'entityid'))
-					->joinLeft(array('a' => 'address'), '(c.id = a.contactid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
+					->joinLeft(array('a' => 'address'), '(c.id = a.parentid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
 					->joinLeft(array('p' => 'phone'), 'c.id = p.parentid AND p.deleted = 0', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
 					->joinLeft(array('e' => 'email'), 'c.id = e.parentid AND e.deleted = 0', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
 					->joinLeft(array('i' => 'internet'), 'c.id = i.parentid AND i.deleted = 0', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
@@ -64,7 +64,7 @@ class Contacts_Model_Get
 				$contactsDb->select()
 					->setIntegrityCheck(false)
 					->from(array($schema => 'contact'), array('id', 'contactid', 'catid', 'name1', 'name2', 'notes', 'taxnumber', 'vatin', 'pinned', 'cashdiscountpercent'))
-					->joinLeft(array('a' => 'address'), '(c.id = a.contactid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
+					->joinLeft(array('a' => 'address'), '(c.id = a.parentid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
 					->joinLeft(array('p' => 'phone'), 'c.id = p.parentid AND p.deleted = 0', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
 					->joinLeft(array('e' => 'email'), 'c.id = e.parentid AND e.deleted = 0', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
 					->joinLeft(array('i' => 'internet'), 'c.id = i.parentid AND i.deleted = 0', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
@@ -91,7 +91,7 @@ class Contacts_Model_Get
 					->from(array($schema => 'contact'))
 					//->columns(array('TotalRecords' => new Zend_Db_Expr('COUNT(t.id)')))
 					->join(array('t' => 'tagentity'), '(c.id = t.entityid) AND (t.tagid = '.$params['tagid'].') AND (t.deleted = 0)', array('tagid', 'entityid'))
-					->joinLeft(array('a' => 'address'), '(c.id = a.contactid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
+					->joinLeft(array('a' => 'address'), '(c.id = a.parentid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
 					->joinLeft(array('p' => 'phone'), 'c.id = p.parentid AND p.deleted = 0', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
 					->joinLeft(array('e' => 'email'), 'c.id = e.parentid AND e.deleted = 0', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
 					->joinLeft(array('i' => 'internet'), 'c.id = i.parentid AND i.deleted = 0', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
@@ -105,7 +105,7 @@ class Contacts_Model_Get
 				$contactsDb->select()
 					->setIntegrityCheck(false)
 					->from(array($schema => 'contact'), array('id', 'contactid', 'catid', 'name1', 'name2', 'notes', 'taxnumber', 'vatin', 'pinned', 'cashdiscountpercent'))
-					->joinLeft(array('a' => 'address'), '(c.id = a.contactid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
+					->joinLeft(array('a' => 'address'), '(c.id = a.parentid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
 					->joinLeft(array('p' => 'phone'), 'c.id = p.parentid AND p.deleted = 0', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
 					->joinLeft(array('e' => 'email'), 'c.id = e.parentid AND e.deleted = 0', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
 					->joinLeft(array('i' => 'internet'), 'c.id = i.parentid AND i.deleted = 0', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
@@ -115,7 +115,6 @@ class Contacts_Model_Get
 					->limit($params['limit'], $params['offset'])
 			);
 		}
-
 		return array($contacts, count($records));
 	}
 
@@ -318,6 +317,11 @@ class Contacts_Model_Get
 				$client = Zend_Registry::set('Client', $client);
 			}
 		}
+
+		//Get states
+		$stateDb = new Application_Model_DbTable_State();
+		$states = $stateDb->getStates();
+		$history['states'] = $states;
 
 		return $history;
 	}
