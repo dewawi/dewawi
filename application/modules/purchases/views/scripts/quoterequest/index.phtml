@@ -1,126 +1,166 @@
-<?php		 
+<?php
 $this->title = $this->translate('QUOTE_REQUESTS');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="quoterequestid" width="5%">
-				<?php echo $this->translate('QUOTE_REQUESTS_QUOTE_REQUEST_ID'); ?>
-			</th>
-			<th class="title" width="28%">
-				<?php echo $this->translate('QUOTE_REQUESTS_TITLE'); ?>
-			</th>
-			<th class="contactid" width="5%">
-				<?php echo $this->translate('QUOTE_REQUESTS_CONTACT'); ?>
-			</th>
-			<th class="billingaddress" width="20%">
-				<?php echo $this->translate('QUOTE_REQUESTS_BILLING_ADDRESS'); ?>
-			</th>
-			<th class="notes" width="15%">
-				<?php echo $this->translate('QUOTE_REQUESTS_NOTES') ?>
-			</th>
-			<th class="quoterequestdate" width="8%">
-				<?php echo $this->translate('QUOTE_REQUESTS_QUOTE_REQUEST_DATE'); ?>
-			</th>
-			<th class="total" width="8%">
-				<?php echo $this->translate('QUOTE_REQUESTS_TOTAL'); ?>
-			</th>
-			<th class="state" width="6%">
-				<?php echo $this->translate('QUOTE_REQUESTS_STATE'); ?>
-			</th>
-			<th class="pin" width="8%"></th>
-			<th width="10%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->quoterequests as $quoterequest) : ?>
-		<tr class="state<?php echo $quoterequest->state; ?><?php echo $quoterequest->pinned ? ' pinned' : ''; ?>">
-			<td><input class="id" type="checkbox" value="<?php echo $quoterequest->id ?>" name="id"/></td>
-			<td class="quoterequestid">
-				<?php if($quoterequest->quoterequestid) : ?>
-					<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
-						<?php echo $this->escape($quoterequest->quoterequestid); ?>
-					</a>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_TITLE') ?>" class="title">
-				<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
-					<?php echo $quoterequest->title ? $this->escape($quoterequest->title) : $this->escape($quoterequest->id); ?>
-				</a>
-			</td>
-			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_CONTACT') ?>" class="contactid">
-				<?php if($quoterequest->contactid) : ?>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->cid)); ?>">
-						<?php echo $this->escape($quoterequest->contactid); ?><br/>
-						<?php echo $this->escape($quoterequest->billingname1); ?>
-						<?php if($quoterequest->billingname2) echo "<br/>".$this->escape($quoterequest->billingname2); ?>
-					</a>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_BILLING_ADDRESS') ?>" class="billingaddress">
-				<?php echo $this->escape($quoterequest->billingstreet); ?><br/>
-				<?php echo $this->escape($quoterequest->billingpostcode); ?><br/>
-				<?php echo $this->escape($quoterequest->billingcity); ?>
-			</td>
-			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_NOTES') ?>" class="notes">
-				<?php if($quoterequest->notes) : ?>
-					<pre class="editable" data-name="notes" data-value="<?php echo $quoterequest->notes; ?>" data-type="textarea"><?php echo $quoterequest->notes; ?></pre>
-				<?php else : ?>
-					<pre class="editable" data-name="notes" data-value="<?php echo $quoterequest->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_QUOTE_REQUEST_DATE') ?>" class="quoterequestdate">
-				<?php if($quoterequest->quoterequestdate) echo $this->escape(date("d.m.Y", strtotime($quoterequest->quoterequestdate))); ?>
-			</td>
-			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_TOTAL') ?>" class="total">
-				<?php echo $this->escape($quoterequest->total); ?>
-			</td>
-			<td data-label="<?php echo $this->translate('QUOTE_REQUESTS_STATE') ?>" class="state">
-				<?php if($quoterequest->state == '105' || $quoterequest->state == '106') : ?>
-					<?php echo $this->translate($this->escape($this->options['states'][$quoterequest->state])); ?>
-				<?php else : ?>
-					<span class="editable" data-name="state" data-value="<?php echo $quoterequest->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$quoterequest->state])); ?></span>
-				<?php endif; ?>
-			</td>
-			<td class="pin">
-				<?php if($quoterequest->pinned) : ?>
-					<input type = "button" onclick = "pin(<?php echo $quoterequest->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
-				<?php else : ?>
-					<input type = "button" onclick = "pin(<?php echo $quoterequest->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
-				<?php endif; ?>
-			</td>
-			<td class="buttons">
-				<?php if($quoterequest->state == '105' || $quoterequest->state == '106') : ?>
-					<?php echo $this->toolbar->viewInline; ?>
-				<?php else : ?>
-					<?php echo $this->toolbar->editInline; ?>
-				<?php endif; ?>
-				<?php echo $this->toolbar->copyInline; ?>
-				<?php echo $this->toolbar->pdfInline; ?>
-			</td>
-		</tr>
-		<?php endforeach; ?>
-		<tr class="bottom">
-			<td></td>
-			<td></td>
-			<td class="toolbar">
-				<?php echo $this->ToolbarBottom(); ?>
-			</td>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td class="total">
-				<?php echo $this->quoterequests->total; ?>
-			</td>
-			<td></td>
-			<td></td>
-		</tr>
-	</tbody>
-</table>
+<div class="dw-list-page">
+	<div class="dw-table-wrap">
+		<table class="dw-table dw-table--quoterequests">
+			<thead>
+				<tr>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+					<th class="dw-col-id"><?php echo $this->translate('QUOTES_QUOTE_ID'); ?></th>
+					<th class="dw-col-title"><?php echo $this->translate('QUOTES_TITLE'); ?></th>
+					<th class="dw-col-contact"><?php echo $this->translate('QUOTES_CONTACT'); ?></th>
+					<th class="dw-col-address"><?php echo $this->translate('QUOTES_BILLING_ADDRESS'); ?></th>
+					<th class="dw-col-notes"><?php echo $this->translate('QUOTES_NOTES'); ?></th>
+					<th class="dw-col-date"><?php echo $this->translate('QUOTES_QUOTE_DATE'); ?></th>
+					<th class="dw-col-total"><?php echo $this->translate('QUOTES_TOTAL'); ?></th>
+					<th class="dw-col-state"><?php echo $this->translate('QUOTES_STATE'); ?></th>
+					<th class="dw-col-pin"></th>
+					<th class="dw-col-actions"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->quoterequests as $quoterequest) : ?>
+					<?php
+					$stateClass = 'dw-badge--info';
+					if ($quoterequest->state == '101') $stateClass = 'dw-badge--warning';
+					if ($quoterequest->state == '103') $stateClass = 'dw-badge--danger';
+					if ($quoterequest->state == '104' || $quoterequest->state == '105' || $quoterequest->state == '106') $stateClass = 'dw-badge--success';
+					?>
+					<tr class="dw-row<?php echo $quoterequest->pinned ? ' is-pinned' : ''; ?>">
+						<td class="dw-col-check">
+							<input class="check-id" type="checkbox" value="<?php echo (int)$quoterequest->id; ?>" name="id" />
+							<input class="id" type="hidden" value="<?php echo (int)$quoterequest->id; ?>" name="id" />
+							<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+							<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+						</td>
+
+						<td class="dw-col-id" data-label="<?php echo $this->translate('QUOTES_QUOTE_ID'); ?>">
+							<?php if ($quoterequest->quoterequestid) : ?>
+								<a href="<?php echo $this->url(array('module'=>$this->module, 'controller'=>$this->controller, 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
+									<?php echo $this->escape($quoterequest->quoterequestid); ?>
+								</a>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-title" data-label="<?php echo $this->translate('QUOTES_TITLE'); ?>">
+							<a href="<?php echo $this->url(array('module'=>$this->module, 'controller'=>$this->controller, 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
+								<?php echo $quoterequest->title ? $this->escape($quoterequest->title) : $this->escape($quoterequest->id); ?>
+							</a>
+						</td>
+
+						<td class="dw-col-contact" data-label="<?php echo $this->translate('QUOTES_CONTACT'); ?>">
+							<?php if ($quoterequest->contactid) : ?>
+								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->cid)); ?>">
+									<div><?php echo $this->escape($quoterequest->contactid); ?></div>
+									<div><?php echo $this->escape($quoterequest->billingname1); ?></div>
+									<?php if ($quoterequest->billingname2) : ?>
+										<div><?php echo $this->escape($quoterequest->billingname2); ?></div>
+									<?php endif; ?>
+								</a>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-address" data-label="<?php echo $this->translate('QUOTES_BILLING_ADDRESS'); ?>">
+							<div><?php echo $this->escape($quoterequest->billingstreet); ?></div>
+							<div><?php echo $this->escape($quoterequest->billingpostcode); ?></div>
+							<div><?php echo $this->escape($quoterequest->billingcity); ?></div>
+						</td>
+
+						<td class="dw-col-notes notes" data-label="<?php echo $this->translate('QUOTES_NOTES'); ?>">
+							<div class="editableContainer">
+								<?php if ($quoterequest->notes) : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$quoterequest->id; ?>"
+										data-value="<?php echo $this->escape($quoterequest->notes); ?>"
+										data-type="textarea"
+									><?php echo $this->escape($quoterequest->notes); ?></pre>
+								<?php else : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$quoterequest->id; ?>"
+										data-value=""
+										data-type="textarea"
+										data-empty="true"
+									><?php echo $this->translate('TOOLBAR_NEW'); ?></pre>
+								<?php endif; ?>
+							</div>
+						</td>
+
+						<td class="dw-col-date" data-label="<?php echo $this->translate('QUOTES_QUOTE_DATE'); ?>">
+							<?php if ($quoterequest->quoterequestdate) : ?>
+								<?php echo $this->escape(date('d.m.Y', strtotime($quoterequest->quoterequestdate))); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-total" data-label="<?php echo $this->translate('QUOTES_TOTAL'); ?>">
+							<?php echo $this->escape($quoterequest->total); ?>
+						</td>
+
+						<td class="dw-col-state state" data-label="<?php echo $this->translate('QUOTES_STATE'); ?>">
+							<?php if ($quoterequest->state == '105' || $quoterequest->state == '106') : ?>
+								<span class="dw-badge <?php echo $stateClass; ?>">
+									<?php echo $this->translate($this->escape($this->options['states'][$quoterequest->state])); ?>
+								</span>
+							<?php else : ?>
+								<div class="editableContainer">
+									<span
+										class="editable dw-badge <?php echo $stateClass; ?>"
+										data-name="state"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$quoterequest->id; ?>"
+										data-value="<?php echo $this->escape($quoterequest->state); ?>"
+										data-type="select"
+									><?php echo $this->translate($this->escape($this->options['states'][$quoterequest->state])); ?></span>
+								</div>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-pin">
+							<button type="button" class="dw-btn dw-btn--secondary" onclick="pin(<?php echo (int)$quoterequest->id; ?>)">
+								<?php echo $quoterequest->pinned ? $this->translate('DETACH') : $this->translate('ATTACH'); ?>
+							</button>
+						</td>
+
+						<td class="dw-col-actions">
+							<div class="dw-row-actions">
+								<?php if ($quoterequest->state == '105' || $quoterequest->state == '106') : ?>
+									<?php echo $this->toolbarInline->renderElement('view'); ?>
+								<?php else : ?>
+									<?php echo $this->toolbarInline->renderElement('edit'); ?>
+								<?php endif; ?>
+								<?php echo $this->toolbarInline->renderElement('copy'); ?>
+								<?php echo $this->toolbarInline->renderElement('delete'); ?>
+								<?php echo $this->toolbarInline->renderElement('pdf'); ?>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php echo $this->quoterequests->total; ?>
+		</div>
+	</div>
+</div>

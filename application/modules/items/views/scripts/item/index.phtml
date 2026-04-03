@@ -1,107 +1,188 @@
 <?php
 $this->title = $this->translate('ITEMS');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
 echo $this->Pagination();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="sku" width="10%">
-				<?php echo $this->translate('ITEMS_SKU'); ?>
-			</th>
-			<th class="title" width="32%">
-				<?php echo $this->translate('ITEMS_TITLE'); ?>
-			</th>
-			<th class="price" width="8%">
-				<?php echo $this->translate('ITEMS_PRICE'); ?>
-			</th>
-			<th class="price" width="8%">
-				<?php echo $this->translate('ITEMS_CURRENCY'); ?>
-			</th>
-			<th class="quantity" width="8%">
-				<?php echo $this->translate('ITEMS_QUANTITY'); ?>
-			</th>
-			<th width="8%"><?php echo $this->translate('ITEMS_UOM'); ?></th>
-			<th width="8%"><?php echo $this->translate('ITEMS_MANUFACTURER'); ?></th>
-			<th class="notes" width="8%">
-				<?php echo $this->translate('ITEMS_NOTES') ?>
-			</th>
-			<th width="8%"><?php echo $this->translate('ITEMS_CATEGORY'); ?></th>
-			<th class="tags" width="12%">
-				<?php echo $this->translate('TAGS'); ?>
-			</th>
-			<th width="8%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->items as $item) : ?>
-			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $item->id ?>" name="id"/></td>
-				<td data-label="<?php echo $this->translate('ITEMS_SKU') ?>" class="sku">
-					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'edit', 'id'=>$item->id)); ?>">
-						<?php echo $this->escape($item->sku); ?>
-					</a>
-				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_TITLE') ?>" class="title">
-					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'edit', 'id'=>$item->id)); ?>">
-						<?php echo $this->escape($item->title); ?>
-					</a><br/>
-					<?php echo $this->escape($item->description); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_PRICE') ?>" class="price">
-					<?php echo $this->escape($item->price); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_CURRENCY') ?>" class="price">
-					<?php echo $this->escape($item->currency); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_QUANTITY') ?>" class="quantity">
-					<?php echo $this->escape($item->quantity); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_UOM') ?>" class="uomid">
-					<?php if($item->uomid && isset($this->options['uoms'][$item->uomid])) echo $this->escape($this->options['uoms'][$item->uomid]); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_MANUFACTURER') ?>" class="manufacturer">
-					<?php if($item->manufacturerid && isset($this->options['manufacturers'][$item->manufacturerid])) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_NOTES') ?>" class="notes">
-					<?php if($item->notes) : ?>
-						<pre class="editable" data-name="notes" data-value="<?php echo $item->notes; ?>" data-type="textarea"><?php echo $item->notes; ?></pre>
-					<?php else : ?>
-						<pre class="editable" data-name="notes" data-value="<?php echo $item->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
-					<?php endif; ?>
-				</td>
-				<td data-label="<?php echo $this->translate('ITEMS_CATEGORY') ?>" class="category">
-					<?php if($item->catid && isset($this->options['categories'][$item->catid])) : ?>
-						<span class="editable" data-name="catid" data-value="<?php echo $item->catid; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['categories'][$item->catid]['breadcrumb'])); ?></span>
-					<?php else : ?>
-						<span class="editable" data-name="catid" data-value="" data-type="select"><?php echo $this->translate('TOOLBAR_NEW') ;?></span>
-					<?php endif; ?>
-				</td>
-				<td data-label="<?php echo $this->translate('TAGS') ?>" class="tags">
-					<?php foreach($this->tagEntites[$item->id] as $tagEntity) : ?>
-						<span><?php echo $this->escape($tagEntity['tag']); ?></span>
-					<?php endforeach; ?>
-					<span class="editable" data-name="tagid" data-value="" data-type="select"></span>
-				</td>
-				<td class="buttons">
-					<?php echo $this->toolbarInline->renderElement('edit'); ?>
-					<?php echo $this->toolbarInline->renderElement('copy'); ?>
-					<?php echo $this->toolbarInline->renderElement('delete'); ?>
-				</td>
-			</tr>
-		<?php endforeach; ?>
-		<tr class="bottom">
-			<td></td>
-			<td>
-				<div class="toolbar bottom">
-					<?php echo $this->ToolbarBottom(); ?>
-				</div>
-			</td>
-			<td></td>
-		</tr>
-	</tbody>
-</table>
+<div class="dw-list-page">
+	<div class="dw-table-wrap">
+		<table class="dw-table dw-table--items" id="data">
+			<thead>
+				<tr>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+					<th class="dw-col-sku"><?php echo $this->translate('ITEMS_SKU'); ?></th>
+					<th class="dw-col-title"><?php echo $this->translate('ITEMS_TITLE'); ?></th>
+					<th class="dw-col-price"><?php echo $this->translate('ITEMS_PRICE'); ?></th>
+					<th class="dw-col-currency"><?php echo $this->translate('ITEMS_CURRENCY'); ?></th>
+					<th class="dw-col-quantity"><?php echo $this->translate('ITEMS_QUANTITY'); ?></th>
+					<th class="dw-col-uom"><?php echo $this->translate('ITEMS_UOM'); ?></th>
+					<th class="dw-col-manufacturer"><?php echo $this->translate('ITEMS_MANUFACTURER'); ?></th>
+					<th class="dw-col-notes"><?php echo $this->translate('ITEMS_NOTES'); ?></th>
+					<th class="dw-col-category"><?php echo $this->translate('ITEMS_CATEGORY'); ?></th>
+					<th class="dw-col-tags"><?php echo $this->translate('TAGS'); ?></th>
+					<th class="dw-col-actions"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->items as $item) : ?>
+					<tr class="dw-row">
+						<td class="dw-col-check">
+							<input class="check-id" type="checkbox" value="<?php echo (int)$item->id; ?>" name="id" />
+							<input class="id" type="hidden" value="<?php echo (int)$item->id; ?>" name="id" />
+							<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+							<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+						</td>
+
+						<td class="dw-col-sku" data-label="<?php echo $this->translate('ITEMS_SKU'); ?>">
+							<a href="<?php echo $this->url(array(
+								'module' => 'items',
+								'controller' => 'item',
+								'action' => 'edit',
+								'id' => $item->id
+							)); ?>">
+								<?php echo $this->escape($item->sku); ?>
+							</a>
+						</td>
+
+						<td class="dw-col-title" data-label="<?php echo $this->translate('ITEMS_TITLE'); ?>">
+							<a href="<?php echo $this->url(array(
+								'module' => 'items',
+								'controller' => 'item',
+								'action' => 'edit',
+								'id' => $item->id
+							)); ?>">
+								<div><?php echo $this->escape($item->title); ?></div>
+							</a>
+							<?php if ($item->description) : ?>
+								<div class="dw-item-description"><?php echo $this->escape($item->description); ?></div>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-price" data-label="<?php echo $this->translate('ITEMS_PRICE'); ?>">
+							<?php echo $this->escape($item->price); ?>
+						</td>
+
+						<td class="dw-col-currency" data-label="<?php echo $this->translate('ITEMS_CURRENCY'); ?>">
+							<?php echo $this->escape($item->currency); ?>
+						</td>
+
+						<td class="dw-col-quantity" data-label="<?php echo $this->translate('ITEMS_QUANTITY'); ?>">
+							<?php echo $this->escape($item->quantity); ?>
+						</td>
+
+						<td class="dw-col-uom" data-label="<?php echo $this->translate('ITEMS_UOM'); ?>">
+							<?php if ($item->uomid && isset($this->options['uoms'][$item->uomid])) : ?>
+								<?php echo $this->escape($this->options['uoms'][$item->uomid]); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-manufacturer" data-label="<?php echo $this->translate('ITEMS_MANUFACTURER'); ?>">
+							<?php if ($item->manufacturerid && isset($this->options['manufacturers'][$item->manufacturerid])) : ?>
+								<?php echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-notes notes" data-label="<?php echo $this->translate('ITEMS_NOTES'); ?>">
+							<div class="editableContainer">
+								<?php if ($item->notes) : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$item->id; ?>"
+										data-value="<?php echo $this->escape($item->notes); ?>"
+										data-type="textarea"
+									><?php echo $this->escape($item->notes); ?></pre>
+								<?php else : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$item->id; ?>"
+										data-value=""
+										data-type="textarea"
+										data-empty="true"
+									><?php echo $this->translate('TOOLBAR_NEW'); ?></pre>
+								<?php endif; ?>
+							</div>
+						</td>
+
+						<td class="dw-col-category category" data-label="<?php echo $this->translate('ITEMS_CATEGORY'); ?>">
+							<div class="editableContainer">
+								<?php if ($item->catid && isset($this->options['categories'][$item->catid])) : ?>
+									<span
+										class="editable"
+										data-name="catid"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$item->id; ?>"
+										data-value="<?php echo $this->escape($item->catid); ?>"
+										data-type="select"
+									><?php echo $this->translate($this->escape($this->options['categories'][$item->catid]['breadcrumb'])); ?></span>
+								<?php else : ?>
+									<span
+										class="editable"
+										data-name="catid"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$item->id; ?>"
+										data-value=""
+										data-type="select"
+										data-empty="true"
+									><?php echo $this->translate('TOOLBAR_NEW'); ?></span>
+								<?php endif; ?>
+							</div>
+						</td>
+
+						<td class="dw-col-tags tags" data-label="<?php echo $this->translate('TAGS'); ?>">
+							<div class="dw-tags-list">
+								<?php if (!empty($this->tagEntites[$item->id])) : ?>
+									<?php foreach ($this->tagEntites[$item->id] as $tagEntity) : ?>
+										<span class="dw-tag"><?php echo $this->escape($tagEntity['tag']); ?></span>
+									<?php endforeach; ?>
+								<?php endif; ?>
+							</div>
+
+							<div class="editableContainer">
+								<span
+									class="editable"
+									data-name="tagid"
+									data-module="<?php echo $this->module; ?>"
+									data-controller="<?php echo $this->controller; ?>"
+									data-id="<?php echo (int)$item->id; ?>"
+									data-value=""
+									data-type="select"
+									data-empty="true"
+								></span>
+							</div>
+						</td>
+
+						<td class="dw-col-actions">
+							<div class="dw-row-actions">
+								<?php echo $this->toolbarInline->renderElement('edit'); ?>
+								<?php echo $this->toolbarInline->renderElement('copy'); ?>
+								<?php echo $this->toolbarInline->renderElement('delete'); ?>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php if (isset($this->items->total)) echo $this->items->total; ?>
+		</div>
+	</div>
+</div>

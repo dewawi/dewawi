@@ -1,46 +1,70 @@
 <?php
 $this->title = $this->translate('ITEM_LISTS');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="title" width="32%">
-				<?php echo $this->translate('ITEMS_TITLE'); ?>
-			</th>
-			<th width="8%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->itemlists as $itemlist) : ?>
-			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $itemlist->id ?>" name="id"/></td>
-				<td data-label="<?php echo $this->translate('ITEMS_TITLE') ?>" class="title">
-					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'itemlist', 'action'=>'edit', 'id'=>$itemlist->id)); ?>">
-						<?php echo $this->escape($itemlist->title); ?>
-					</a><br/>
-					<?php echo $this->escape($itemlist->description); ?>
-				</td>
-				<td class="buttons">
-					<?php echo $this->toolbar->editInline; ?>
-					<?php echo $this->toolbar->copyInline; ?>
-					<?php echo $this->toolbar->deleteInline; ?>
-					<?php echo $this->toolbar->pdfInline; ?>
-				</td>
-			</tr>
-		<?php endforeach; ?>
-		<tr class="bottom">
-			<td></td>
-			<td>
-				<div class="toolbar bottom">
-					<?php echo $this->ToolbarBottom(); ?>
-				</div>
-			</td>
-			<td></td>
-		</tr>
-	</tbody>
-</table>
+<div class="dw-list-page">
+	<div class="dw-table-wrap">
+		<table class="dw-table dw-table--item-lists" id="data">
+			<thead>
+				<tr>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+					<th class="dw-col-title"><?php echo $this->translate('ITEMS_TITLE'); ?></th>
+					<th class="dw-col-actions"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->itemlists as $itemlist) : ?>
+					<tr class="dw-row">
+						<td class="dw-col-check">
+							<input class="check-id" type="checkbox" value="<?php echo (int)$itemlist->id; ?>" name="id" />
+							<input class="id" type="hidden" value="<?php echo (int)$itemlist->id; ?>" name="id" />
+							<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+							<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+						</td>
+
+						<td class="dw-col-title" data-label="<?php echo $this->translate('ITEMS_TITLE'); ?>">
+							<a href="<?php echo $this->url(array(
+								'module' => 'items',
+								'controller' => 'itemlist',
+								'action' => 'edit',
+								'id' => $itemlist->id
+							)); ?>">
+								<div><?php echo $this->escape($itemlist->title); ?></div>
+							</a>
+
+							<?php if ($itemlist->description) : ?>
+								<div class="dw-itemlist-description">
+									<?php echo $this->escape($itemlist->description); ?>
+								</div>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-actions">
+							<div class="dw-row-actions">
+								<?php echo $this->toolbar->editInline; ?>
+								<?php echo $this->toolbar->copyInline; ?>
+								<?php echo $this->toolbar->deleteInline; ?>
+								<?php echo $this->toolbar->pdfInline; ?>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php if (isset($this->itemlists->total)) echo $this->itemlists->total; ?>
+		</div>
+	</div>
+</div>

@@ -1,62 +1,104 @@
 <?php
 $this->title = $this->translate('ITEMS');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
 echo $this->Pagination();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="sku"><?php echo $this->translate('ITEMS_SKU'); ?></th>
-			<th class="title"><?php echo $this->translate('ITEMS_TITLE'); ?></th>
-			<th class="cost"><?php echo $this->translate('ITEMS_COST'); ?></th>
-			<th class="price"><?php echo $this->translate('ITEMS_PRICE'); ?></th>
-			<th class="price"><?php echo $this->translate('ITEMS_CURRENCY'); ?></th>
-			<th class="quantity"><?php echo $this->translate('ITEMS_QUANTITY'); ?></th>
-			<th class="uomid"><?php echo $this->translate('ITEMS_UOM'); ?></th>
-			<th class="manufacturer"><?php echo $this->translate('ITEMS_MANUFACTURER'); ?></th>
-			<th class="category"><?php echo $this->translate('ITEMS_CATEGORY'); ?></th>
-			<th></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->items as $item) : ?>
-			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $item->id ?>" name="id"/></span></td>
-				<td class="sku">
-					<?php echo $this->escape($item->sku);?>
-				</td>
-				<td class="title">
-					<?php echo $this->escape($item->title);?>
-				</td>
-				<td class="cost">
-					<?php echo $this->escape($item->cost);?>
-				</td>
-				<td class="price">
-					<?php echo $this->escape($item->price);?>
-				</td>
-				<td class="currency">
-					<?php echo $this->escape($item->currency);?>
-				</td>
-				<td class="quantity">
-					<?php if($item->quantity) echo $this->escape($item->quantity);?>
-				</td>
-				<td class="uomid">
-					<?php if($item->uomid && isset($this->options['uoms'][$item->uomid])) echo $this->escape($this->options['uoms'][$item->uomid]); ?>
-				</td>
-				<td class="manufacturer">
-					<?php if($item->manufacturerid && isset($this->options['manufacturers'][$item->manufacturerid])) echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
-				</td>
-				<td class="category">
-					<?php if($item->catid && isset($this->options['categories'][$item->catid])) echo $this->escape($this->options['categories'][$item->catid]['title']); ?>
-				</td>
-				<td class="buttons">
-					<?php echo $this->Button('apply', 'applyPosition(\''.$this->parent.'\', \'pos\', '.$this->escape($item->id).', window.parent.setid)'); ?>
-				</td>
-			</tr>
-		<?php endforeach; ?>
-	</tbody>
-</table>
+<div class="dw-list-page">
+	<div class="dw-table-wrap">
+		<table class="dw-table dw-table--items-picker" id="data">
+			<thead>
+				<tr>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+					<th class="dw-col-sku"><?php echo $this->translate('ITEMS_SKU'); ?></th>
+					<th class="dw-col-title"><?php echo $this->translate('ITEMS_TITLE'); ?></th>
+					<th class="dw-col-cost"><?php echo $this->translate('ITEMS_COST'); ?></th>
+					<th class="dw-col-price"><?php echo $this->translate('ITEMS_PRICE'); ?></th>
+					<th class="dw-col-currency"><?php echo $this->translate('ITEMS_CURRENCY'); ?></th>
+					<th class="dw-col-quantity"><?php echo $this->translate('ITEMS_QUANTITY'); ?></th>
+					<th class="dw-col-uom"><?php echo $this->translate('ITEMS_UOM'); ?></th>
+					<th class="dw-col-manufacturer"><?php echo $this->translate('ITEMS_MANUFACTURER'); ?></th>
+					<th class="dw-col-category"><?php echo $this->translate('ITEMS_CATEGORY'); ?></th>
+					<th class="dw-col-actions"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->items as $item) : ?>
+					<tr class="dw-row">
+						<td class="dw-col-check">
+							<input class="check-id" type="checkbox" value="<?php echo (int)$item->id; ?>" name="id" />
+							<input class="id" type="hidden" value="<?php echo (int)$item->id; ?>" name="id" />
+							<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+							<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+						</td>
+
+						<td class="dw-col-sku" data-label="<?php echo $this->translate('ITEMS_SKU'); ?>">
+							<?php echo $this->escape($item->sku); ?>
+						</td>
+
+						<td class="dw-col-title" data-label="<?php echo $this->translate('ITEMS_TITLE'); ?>">
+							<?php echo $this->escape($item->title); ?>
+						</td>
+
+						<td class="dw-col-cost" data-label="<?php echo $this->translate('ITEMS_COST'); ?>">
+							<?php echo $this->escape($item->cost); ?>
+						</td>
+
+						<td class="dw-col-price" data-label="<?php echo $this->translate('ITEMS_PRICE'); ?>">
+							<?php echo $this->escape($item->price); ?>
+						</td>
+
+						<td class="dw-col-currency" data-label="<?php echo $this->translate('ITEMS_CURRENCY'); ?>">
+							<?php echo $this->escape($item->currency); ?>
+						</td>
+
+						<td class="dw-col-quantity" data-label="<?php echo $this->translate('ITEMS_QUANTITY'); ?>">
+							<?php if ($item->quantity) : ?>
+								<?php echo $this->escape($item->quantity); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-uom" data-label="<?php echo $this->translate('ITEMS_UOM'); ?>">
+							<?php if ($item->uomid && isset($this->options['uoms'][$item->uomid])) : ?>
+								<?php echo $this->escape($this->options['uoms'][$item->uomid]); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-manufacturer" data-label="<?php echo $this->translate('ITEMS_MANUFACTURER'); ?>">
+							<?php if ($item->manufacturerid && isset($this->options['manufacturers'][$item->manufacturerid])) : ?>
+								<?php echo $this->escape($this->options['manufacturers'][$item->manufacturerid]); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-category" data-label="<?php echo $this->translate('ITEMS_CATEGORY'); ?>">
+							<?php if ($item->catid && isset($this->options['categories'][$item->catid])) : ?>
+								<?php echo $this->escape($this->options['categories'][$item->catid]['title']); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-actions">
+							<div class="dw-row-actions">
+								<?php echo $this->Button(
+									'apply',
+									'applyPosition(\'' . $this->escape($this->parent) . '\', \'pos\', ' . (int)$item->id . ', ' . (int)$this->setid . ')'
+								); ?>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions"></div>
+		<div class="dw-list-footer__total">
+			<?php if (isset($this->items->total)) echo $this->items->total; ?>
+		</div>
+	</div>
+</div>

@@ -19,24 +19,3 @@ echo $this->FileManager();
 		'downloads' => ['title' => 'TABS_DOWNLOADS', 'html' => $this->Downloads()],
 	]
 ]); ?>
-
-
-		<form id="contact" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<div class="row">
-				<div class="col-sm-12 col-lg-6">
-					<dl class="form">
-						<div id="tag" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="tag">
-							<?php echo $this->MultiForm('contacts', 'tag', $this->tags, 'tag', 'TAGS'); ?>
-						</div>
-					</dl>
-				</div>
-				<div class="col-sm-12 col-lg-6">
-					<dl class="form">
-						<h4><?php echo $this->translate('COMMENTS'); ?></h4>
-						<div id="comment" class="multiformContainer" data-parentid="<?php echo $this->form->getValue('id'); ?>" data-controller="comment">
-							<?php echo $this->MultiForm('default', 'comment', $this->comments); ?>
-						</div>
-					</dl>
-				</div>
-			</div>
-		</form>

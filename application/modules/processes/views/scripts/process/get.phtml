@@ -5,11 +5,11 @@
 			<?php echo $this->process['title'] ? $this->escape($this->process['title']) : $this->escape($this->process['id']);?>
 	</a></p>
 	<p><?php echo $this->translate('PROCESSES_CUSTOMER_ID') ;?>:
-	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->process['customerid']));?>">
-		<?php echo $this->escape($this->process['customerid']);?>
+	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->process['contactid']));?>">
+		<?php echo $this->escape($this->process['contactid']);?>
 	</a>
 	<?php if($this->process['billingname1']) : ?><br/>
-	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->process['customerid']));?>">
+	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->process['contactid']));?>">
 		<?php echo $this->escape($this->process['billingname1']);?>
 		<?php //if($this->process['billingname2']) echo "<br/>".$this->escape($this->process['billingname2']);?>
 	</a>

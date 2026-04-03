@@ -1,129 +1,202 @@
 <?php
 $this->title = $this->translate('CONTACTS');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
 echo $this->Pagination();
 ?>
 
-<div style="display:none">
-<?php print_r($this->options['categories']); ?>
-</div>
-<table id="data">
-	<thead>
-		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="id" width="5%">
-				<?php echo $this->translate('CONTACTS_CONTACT_ID'); ?>
-			</th>
-			<th class="name" width="20%">
-				<?php echo $this->translate('CONTACTS_NAME'); ?>
-			</th>
-			<th class="phone" width="12%">
-				<?php echo $this->translate('CONTACTS_PHONE'); ?>
-			</th>
-			<th class="street" width="12%">
-				<?php echo $this->translate('CONTACTS_STREET'); ?>
-			</th>
-			<th class="postcode" width="7%">
-				<?php echo $this->translate('CONTACTS_POSTCODE'); ?>
-			</th>
-			<th class="city" width="10%">
-				<?php echo $this->translate('CONTACTS_CITY'); ?>
-			</th>
-			<th class="country" width="10%">
-				<?php echo $this->translate('CONTACTS_COUNTRY'); ?>
-			</th>
-			<th class="notes" width="15%">
-				<?php echo $this->translate('CONTACTS_NOTES') ?>
-			</th>
-			<th class="category" width="12%">
-				<?php echo $this->translate('CONTACTS_CATEGORY'); ?>
-			</th>
-			<th class="tags" width="12%">
-				<?php echo $this->translate('TAGS'); ?>
-			</th>
-			<th class="pin" width="8%"></th>
-			<th width="8%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->contacts as $contact) : ?>
-			<?php echo $contact->pinned ? '<tr class="pinned">' : '<tr>'; ?>
-				<td><input class="id" type="checkbox" value="<?php echo $contact->id ?>" name="id"/></td>
-				<td data-label="<?php echo $this->translate('CONTACTS_CONTACT_ID') ?>" class="id">
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
-						<?php echo $this->escape($contact->contactid); ?>
-					</a>
-				</td>
-				<td data-label="<?php echo $this->translate('CONTACTS_NAME') ?>" class="name">
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$contact->id)); ?>">
-						<?php echo $this->escape($contact->name1); ?>
-						<?php if($contact->name2) echo "<br/>".$this->escape($contact->name2); ?>
-					</a>
-				</td>
-				<td data-label="<?php echo $this->translate('CONTACTS_PHONE') ?>" class="phone">
-					<?php echo str_replace(',', '<br>', $this->escape($contact->phones)); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street">
-					<?php echo $this->escape($contact->street); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('CONTACTS_POSTCODE') ?>" class="postcode">
-					<?php echo $this->escape($contact->postcode); ?>
-				</td>
-				<td  data-label="<?php echo $this->translate('CONTACTS_CITY') ?>" class="city">
-					<?php echo $this->escape($contact->city); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('CONTACTS_COUNTRY') ?>" class="country">
-					<?php if($contact->country) echo $this->escape($this->translate($contact->country)); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('CONTACTS_NOTES') ?>" class="notes">
-					<?php if($contact->notes) : ?>
-						<pre class="editable" data-name="notes" data-value="<?php echo $contact->notes; ?>" data-type="textarea"><?php echo $contact->notes; ?></pre>
-					<?php else : ?>
-						<pre class="editable" data-name="notes" data-value="<?php echo $contact->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
-					<?php endif; ?>
-				</td>
-				<td data-label="<?php echo $this->translate('CONTACTS_CATEGORY') ?>" class="category">
-					<?php if($contact->catid && isset($this->options['categories'][$contact->catid])) : ?>
-						<span class="editable" data-name="catid" data-value="<?php echo $contact->catid; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['categories'][$contact->catid]['title'])); ?></span>
-					<?php else : ?>
-						<span class="editable" data-name="catid" data-value="" data-type="select"><?php echo $this->translate('TOOLBAR_NEW') ;?></span>
-					<?php endif; ?>
-				</td>
-				<td data-label="<?php echo $this->translate('TAGS') ?>" class="tags">
-					<?php foreach($this->tagEntites[$contact->id] as $tagEntity) : ?>
-						<span><?php echo $this->escape($tagEntity['tag']); ?></span>
-					<?php endforeach; ?>
-					<span class="editable" data-name="tagid" data-value="" data-type="select"></span>
-				</td>
-				<td class="pin">
-					<?php if($contact->pinned) : ?>
-						<input type = "button" onclick = "pin(<?php echo $contact->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
-					<?php else : ?>
-						<input type = "button" onclick = "pin(<?php echo $contact->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
-					<?php endif; ?>
-				</td>
-				<td class="buttons">
-					<?php echo $this->toolbarInline->renderElement('edit'); ?>
-					<?php echo $this->toolbarInline->renderElement('copy'); ?>
-					<?php echo $this->toolbarInline->renderElement('delete'); ?>
-				</td>
-			</tr>
-		<?php endforeach; ?>
-		<tr class="bottom">
-			<td></td>
-			<td>
-				<div class="toolbar bottom">
-					<?php echo $this->ToolbarBottom(); ?>
-				</div>
-			</td>
-			<td></td>
-		</tr>
-	</tbody>
-</table>
+<div class="dw-list-page">
+	<div class="dw-table-wrap">
+		<table class="dw-table dw-table--contacts" id="data">
+			<thead>
+				<tr>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+					<th class="dw-col-id"><?php echo $this->translate('CONTACTS_CONTACT_ID'); ?></th>
+					<th class="dw-col-name"><?php echo $this->translate('CONTACTS_NAME'); ?></th>
+					<th class="dw-col-phone"><?php echo $this->translate('CONTACTS_PHONE'); ?></th>
+					<th class="dw-col-street"><?php echo $this->translate('CONTACTS_STREET'); ?></th>
+					<th class="dw-col-postcode"><?php echo $this->translate('CONTACTS_POSTCODE'); ?></th>
+					<th class="dw-col-city"><?php echo $this->translate('CONTACTS_CITY'); ?></th>
+					<th class="dw-col-country"><?php echo $this->translate('CONTACTS_COUNTRY'); ?></th>
+					<th class="dw-col-notes"><?php echo $this->translate('CONTACTS_NOTES'); ?></th>
+					<th class="dw-col-category"><?php echo $this->translate('CONTACTS_CATEGORY'); ?></th>
+					<th class="dw-col-tags"><?php echo $this->translate('TAGS'); ?></th>
+					<th class="dw-col-pin"></th>
+					<th class="dw-col-actions"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->contacts as $contact) : ?>
+					<tr class="dw-row<?php echo $contact->pinned ? ' is-pinned' : ''; ?>">
+						<td class="dw-col-check">
+							<input class="check-id" type="checkbox" value="<?php echo (int)$contact->id; ?>" name="id" />
+							<input class="id" type="hidden" value="<?php echo (int)$contact->id; ?>" name="id" />
+							<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+							<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+						</td>
 
-<div id="contactsmap">
+						<td class="dw-col-id" data-label="<?php echo $this->translate('CONTACTS_CONTACT_ID'); ?>">
+							<a href="<?php echo $this->url(array(
+								'module' => 'contacts',
+								'controller' => 'contact',
+								'action' => 'edit',
+								'id' => $contact->id
+							)); ?>">
+								<?php echo $this->escape($contact->contactid); ?>
+							</a>
+						</td>
+
+						<td class="dw-col-name" data-label="<?php echo $this->translate('CONTACTS_NAME'); ?>">
+							<a href="<?php echo $this->url(array(
+								'module' => 'contacts',
+								'controller' => 'contact',
+								'action' => 'edit',
+								'id' => $contact->id
+							)); ?>">
+								<div><?php echo $this->escape($contact->name1); ?></div>
+								<?php if ($contact->name2) : ?>
+									<div><?php echo $this->escape($contact->name2); ?></div>
+								<?php endif; ?>
+							</a>
+						</td>
+
+						<td class="dw-col-phone" data-label="<?php echo $this->translate('CONTACTS_PHONE'); ?>">
+							<?php if (!empty($contact->phones)) : ?>
+								<?php foreach (explode(',', $contact->phones) as $phone) : ?>
+									<div><?php echo $this->escape(trim($phone)); ?></div>
+								<?php endforeach; ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-street" data-label="<?php echo $this->translate('CONTACTS_STREET'); ?>">
+							<?php echo $this->escape($contact->street); ?>
+						</td>
+
+						<td class="dw-col-postcode" data-label="<?php echo $this->translate('CONTACTS_POSTCODE'); ?>">
+							<?php echo $this->escape($contact->postcode); ?>
+						</td>
+
+						<td class="dw-col-city" data-label="<?php echo $this->translate('CONTACTS_CITY'); ?>">
+							<?php echo $this->escape($contact->city); ?>
+						</td>
+
+						<td class="dw-col-country" data-label="<?php echo $this->translate('CONTACTS_COUNTRY'); ?>">
+							<?php if ($contact->country) : ?>
+								<?php echo $this->escape($this->translate($contact->country)); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-notes notes" data-label="<?php echo $this->translate('CONTACTS_NOTES'); ?>">
+							<div class="editableContainer">
+								<?php if ($contact->notes) : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$contact->id; ?>"
+										data-value="<?php echo $this->escape($contact->notes); ?>"
+										data-type="textarea"
+									><?php echo $this->escape($contact->notes); ?></pre>
+								<?php else : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$contact->id; ?>"
+										data-value=""
+										data-type="textarea"
+										data-empty="true"
+									><?php echo $this->translate('TOOLBAR_NEW'); ?></pre>
+								<?php endif; ?>
+							</div>
+						</td>
+
+						<td class="dw-col-category category" data-label="<?php echo $this->translate('CONTACTS_CATEGORY'); ?>">
+							<div class="editableContainer">
+								<?php if ($contact->catid && isset($this->options['categories'][$contact->catid])) : ?>
+									<span
+										class="editable"
+										data-name="catid"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$contact->id; ?>"
+										data-value="<?php echo $this->escape($contact->catid); ?>"
+										data-type="select"
+									><?php echo $this->translate($this->escape($this->options['categories'][$contact->catid]['title'])); ?></span>
+								<?php else : ?>
+									<span
+										class="editable"
+										data-name="catid"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$contact->id; ?>"
+										data-value=""
+										data-type="select"
+										data-empty="true"
+									><?php echo $this->translate('TOOLBAR_NEW'); ?></span>
+								<?php endif; ?>
+							</div>
+						</td>
+
+						<td class="dw-col-tags tags" data-label="<?php echo $this->translate('TAGS'); ?>">
+							<div class="dw-tags-list">
+								<?php if (!empty($this->tagEntites[$contact->id])) : ?>
+									<?php foreach ($this->tagEntites[$contact->id] as $tagEntity) : ?>
+										<span class="dw-tag"><?php echo $this->escape($tagEntity['tag']); ?></span>
+									<?php endforeach; ?>
+								<?php endif; ?>
+							</div>
+
+							<div class="editableContainer">
+								<span
+									class="editable"
+									data-name="tagid"
+									data-module="<?php echo $this->module; ?>"
+									data-controller="<?php echo $this->controller; ?>"
+									data-id="<?php echo (int)$contact->id; ?>"
+									data-value=""
+									data-type="select"
+									data-empty="true"
+								></span>
+							</div>
+						</td>
+
+						<td class="dw-col-pin">
+							<button type="button" class="dw-btn dw-btn--secondary" onclick="pin(<?php echo (int)$contact->id; ?>)">
+								<?php echo $contact->pinned ? $this->translate('DETACH') : $this->translate('ATTACH'); ?>
+							</button>
+						</td>
+
+						<td class="dw-col-actions">
+							<div class="dw-row-actions">
+								<?php echo $this->toolbarInline->renderElement('edit'); ?>
+								<?php echo $this->toolbarInline->renderElement('copy'); ?>
+								<?php echo $this->toolbarInline->renderElement('delete'); ?>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php if (isset($this->contacts->total)) echo $this->contacts->total; ?>
+		</div>
+	</div>
+</div>
+
+<div class="dw-map-section" id="contactsmap">
 	<div id="map"></div>
 </div>
 

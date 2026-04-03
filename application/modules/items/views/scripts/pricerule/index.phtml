@@ -1,95 +1,121 @@
 <?php
 $this->title = $this->translate('ITEMS_PRICE_RULES');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="title" width="32%">
-				<?php echo $this->translate('PRICE_RULES_TITLE'); ?>
-			</th>
-			<th class="cost" width="8%">
-				<?php echo $this->translate('PRICE_RULES_AMOUNT'); ?>
-			</th>
-			<th class="cost" width="8%">
-				<?php echo $this->translate('PRICE_RULES_ACTION'); ?>
-			</th>
-			<th class="price" width="8%">
-				<?php echo $this->translate('PRICE_RULES_DATE_FROM'); ?>
-			</th>
-			<th class="quantity" width="8%">
-				<?php echo $this->translate('PRICE_RULES_DATE_TO'); ?>
-			</th>
-			<th class="quantity" width="8%">
-				<?php echo $this->translate('PRICE_RULES_PRIORITY'); ?>
-			</th>
-			<th class="quantity" width="8%">
-				<?php echo $this->translate('PRICE_RULES_ITEM_CATEGORY'); ?>
-			</th>
-			<th class="quantity" width="8%">
-				<?php echo $this->translate('PRICE_RULES_CONTACT_CATEGORY'); ?>
-			</th>
-			<th class="activated" width="8%">
-				<?php echo $this->translate('PRICE_RULES_ACTIVATED'); ?>
-			</th>
-			<th width="8%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->pricerules as $pricerule) : ?>
-			<tr>
-				<td><input class="id" type="checkbox" value="<?php echo $pricerule->id ?>" name="id"/></td>
-				<td data-label="<?php echo $this->translate('PRICE_RULES_TITLE') ?>" class="title">
-					<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'pricerule', 'action'=>'edit', 'id'=>$pricerule->id)); ?>">
-						<?php echo $this->escape($pricerule->title); ?>
-					</a>
-				</td>
-				<td data-label="<?php echo $this->translate('PRICE_RULES_AMOUNT') ?>" class="price">
-					<?php echo $this->escape($pricerule->amount); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('PRICE_RULES_ACTION') ?>" class="price">
-					<?php if($pricerule->action == 'bypercent') echo $this->translate('ITEMS_PRICE_RULE_BY_PERCENT'); ?>
-					<?php if($pricerule->action == 'byfixed') echo $this->translate('ITEMS_PRICE_RULE_BY_FIXED'); ?>
-					<?php if($pricerule->action == 'topercent') echo $this->translate('ITEMS_PRICE_RULE_TO_PERCENT'); ?>
-					<?php if($pricerule->action == 'tofixed') echo $this->translate('ITEMS_PRICE_RULE_TO_FIXED'); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('PRICE_RULES_FROM') ?>" class="price">
-					<?php echo $this->escape($pricerule->datefrom); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('PRICE_RULES_TO') ?>" class="price">
-					<?php echo $this->escape($pricerule->dateto); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('PRICE_RULES_PRIORITY') ?>" class="price">
-					<?php echo $this->escape($pricerule->priority); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('PRICE_RULES_ITEM_CATEGORY') ?>" class="category">
-					<?php if($pricerule->contactcatid && isset($this->options['categories'][$pricerule->itemcatid])) echo $this->escape($this->options['categories'][$pricerule->itemcatid]['title']); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('PRICE_RULES_CONTACT_CATEGORY') ?>" class="category">
-					<?php if($pricerule->contactcatid && isset($this->options['contactCategories'][$pricerule->contactcatid])) echo $this->escape($this->options['contactCategories'][$pricerule->contactcatid]['title']); ?>
-				</td>
-				<td data-label="<?php echo $this->translate('PRICE_RULES_AMOUNT') ?>" class="price">
-					<?php echo $this->escape($pricerule->activated); ?>
-				</td>
-				<td class="buttons">
-					<?php echo $this->toolbar->editInline; ?>
-					<?php echo $this->toolbar->copyInline; ?>
-					<?php echo $this->toolbar->deleteInline; ?>
-				</td>
-			</tr>
-		<?php endforeach; ?>
-		<tr class="bottom">
-			<td></td>
-			<td>
-				<div class="toolbar bottom">
-					<?php echo $this->ToolbarBottom(); ?>
-				</div>
-			</td>
-			<td></td>
-		</tr>
-	</tbody>
-</table>
+<div class="dw-list-page">
+	<div class="dw-table-wrap">
+		<table class="dw-table dw-table--price-rules" id="data">
+			<thead>
+				<tr>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+					<th class="dw-col-title"><?php echo $this->translate('PRICE_RULES_TITLE'); ?></th>
+					<th class="dw-col-amount"><?php echo $this->translate('PRICE_RULES_AMOUNT'); ?></th>
+					<th class="dw-col-action"><?php echo $this->translate('PRICE_RULES_ACTION'); ?></th>
+					<th class="dw-col-date-from"><?php echo $this->translate('PRICE_RULES_DATE_FROM'); ?></th>
+					<th class="dw-col-date-to"><?php echo $this->translate('PRICE_RULES_DATE_TO'); ?></th>
+					<th class="dw-col-priority"><?php echo $this->translate('PRICE_RULES_PRIORITY'); ?></th>
+					<th class="dw-col-item-category"><?php echo $this->translate('PRICE_RULES_ITEM_CATEGORY'); ?></th>
+					<th class="dw-col-contact-category"><?php echo $this->translate('PRICE_RULES_CONTACT_CATEGORY'); ?></th>
+					<th class="dw-col-activated"><?php echo $this->translate('PRICE_RULES_ACTIVATED'); ?></th>
+					<th class="dw-col-actions"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->pricerules as $pricerule) : ?>
+					<tr class="dw-row">
+						<td class="dw-col-check">
+							<input class="check-id" type="checkbox" value="<?php echo (int)$pricerule->id; ?>" name="id" />
+							<input class="id" type="hidden" value="<?php echo (int)$pricerule->id; ?>" name="id" />
+							<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+							<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+						</td>
+
+						<td class="dw-col-title" data-label="<?php echo $this->translate('PRICE_RULES_TITLE'); ?>">
+							<a href="<?php echo $this->url(array(
+								'module' => 'items',
+								'controller' => 'pricerule',
+								'action' => 'edit',
+								'id' => $pricerule->id
+							)); ?>">
+								<?php echo $this->escape($pricerule->title); ?>
+							</a>
+						</td>
+
+						<td class="dw-col-amount" data-label="<?php echo $this->translate('PRICE_RULES_AMOUNT'); ?>">
+							<?php echo $this->escape($pricerule->amount); ?>
+						</td>
+
+						<td class="dw-col-action" data-label="<?php echo $this->translate('PRICE_RULES_ACTION'); ?>">
+							<?php if ($pricerule->action == 'bypercent') : ?>
+								<?php echo $this->translate('ITEMS_PRICE_RULE_BY_PERCENT'); ?>
+							<?php endif; ?>
+
+							<?php if ($pricerule->action == 'byfixed') : ?>
+								<?php echo $this->translate('ITEMS_PRICE_RULE_BY_FIXED'); ?>
+							<?php endif; ?>
+
+							<?php if ($pricerule->action == 'topercent') : ?>
+								<?php echo $this->translate('ITEMS_PRICE_RULE_TO_PERCENT'); ?>
+							<?php endif; ?>
+
+							<?php if ($pricerule->action == 'tofixed') : ?>
+								<?php echo $this->translate('ITEMS_PRICE_RULE_TO_FIXED'); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-date-from" data-label="<?php echo $this->translate('PRICE_RULES_DATE_FROM'); ?>">
+							<?php echo $this->escape($pricerule->datefrom); ?>
+						</td>
+
+						<td class="dw-col-date-to" data-label="<?php echo $this->translate('PRICE_RULES_DATE_TO'); ?>">
+							<?php echo $this->escape($pricerule->dateto); ?>
+						</td>
+
+						<td class="dw-col-priority" data-label="<?php echo $this->translate('PRICE_RULES_PRIORITY'); ?>">
+							<?php echo $this->escape($pricerule->priority); ?>
+						</td>
+
+						<td class="dw-col-item-category" data-label="<?php echo $this->translate('PRICE_RULES_ITEM_CATEGORY'); ?>">
+							<?php if ($pricerule->itemcatid && isset($this->options['categories'][$pricerule->itemcatid])) : ?>
+								<?php echo $this->escape($this->options['categories'][$pricerule->itemcatid]['title']); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-contact-category" data-label="<?php echo $this->translate('PRICE_RULES_CONTACT_CATEGORY'); ?>">
+							<?php if ($pricerule->contactcatid && isset($this->options['contactCategories'][$pricerule->contactcatid])) : ?>
+								<?php echo $this->escape($this->options['contactCategories'][$pricerule->contactcatid]['title']); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-activated" data-label="<?php echo $this->translate('PRICE_RULES_ACTIVATED'); ?>">
+							<?php echo $this->escape($pricerule->activated); ?>
+						</td>
+
+						<td class="dw-col-actions">
+							<div class="dw-row-actions">
+								<?php echo $this->toolbar->editInline; ?>
+								<?php echo $this->toolbar->copyInline; ?>
+								<?php echo $this->toolbar->deleteInline; ?>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php if (isset($this->pricerules->total)) echo $this->pricerules->total; ?>
+		</div>
+	</div>
+</div>

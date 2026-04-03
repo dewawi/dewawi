@@ -1,129 +1,220 @@
-<?php		 
+<?php
 $this->title = $this->translate('DOWNLOADS');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 ?>
 
-<div class="row">
-	<div class="col-sm-12 col-md-6">
-		<?php //if(isset($this->downloads) && count($this->downloads)) : ?>
-			<h3><?php echo $this->translate('CONTACTS_AVAILABLE_DOWNLOADS'); ?></h3>
-			<?php foreach($this->downloadSets as $setid => $title) : ?>
+<div class="dw-page-section">
+	<div class="dw-section-header">
+		<h3><?php echo $this->translate('CONTACTS_AVAILABLE_DOWNLOADS'); ?></h3>
+	</div>
+
+	<?php foreach ($this->downloadSets as $setid => $title) : ?>
+		<div class="dw-list-page dw-list-page--downloads">
+			<div class="dw-section-subheader">
 				<h4>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'downloadset', 'action'=>'edit', 'id'=>$setid)); ?>">
+					<a href="<?php echo $this->url(array(
+						'module' => 'contacts',
+						'controller' => 'downloadset',
+						'action' => 'edit',
+						'id' => $setid
+					)); ?>">
 						<?php echo $this->escape($title); ?>
 					</a>
 				</h4>
-				<table id="data">
+			</div>
+
+			<div class="dw-table-wrap">
+				<table class="dw-table dw-table--downloads" id="data">
 					<thead>
 						<tr>
-							<th width="8%"><span>ID</span></th>
-							<th width="8%"><?php echo $this->translate('CONTACTS_FILE_NAME'); ?></th>
-							<th width="8%"><?php echo $this->translate('CONTACTS_FILE_SIZE'); ?></th>
-							<th width="8%"><?php echo $this->translate('CONTACTS_FILE_LANGUAGE'); ?></th>
-							<th width="8%"></th>
+							<th class="dw-col-id">ID</th>
+							<th class="dw-col-title"><?php echo $this->translate('CONTACTS_FILE_NAME'); ?></th>
+							<th class="dw-col-size"><?php echo $this->translate('CONTACTS_FILE_SIZE'); ?></th>
+							<th class="dw-col-language"><?php echo $this->translate('CONTACTS_FILE_LANGUAGE'); ?></th>
+							<th class="dw-col-actions"></th>
 						</tr>
 					</thead>
 					<tbody>
-						<?php foreach($this->downloads as $download) : ?>
-							<?php if($download['setid'] == $setid) : ?>
-								<tr>
-									<td>
-										<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'download', 'action'=>'edit', 'id'=>$download['id'])); ?>">
+						<?php foreach ($this->downloads as $download) : ?>
+							<?php if ($download['setid'] == $setid) : ?>
+								<tr class="dw-row">
+									<td class="dw-col-id" data-label="ID">
+										<a href="<?php echo $this->url(array(
+											'module' => 'contacts',
+											'controller' => 'download',
+											'action' => 'edit',
+											'id' => $download['id']
+										)); ?>">
 											<?php echo $this->escape($download['id']); ?>
 										</a>
 									</td>
-									<td>
-										<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'download', 'action'=>'edit', 'id'=>$download['id'])); ?>">
+
+									<td class="dw-col-title" data-label="<?php echo $this->translate('CONTACTS_FILE_NAME'); ?>">
+										<a href="<?php echo $this->url(array(
+											'module' => 'contacts',
+											'controller' => 'download',
+											'action' => 'edit',
+											'id' => $download['id']
+										)); ?>">
 											<?php echo $this->escape($download['title']); ?>
 										</a>
 									</td>
-									<td><?php echo $this->HumanFileSize($download['filesize']); ?></td>
-									<td><?php echo $download['language']; ?></td>
-									<td></td>
+
+									<td class="dw-col-size" data-label="<?php echo $this->translate('CONTACTS_FILE_SIZE'); ?>">
+										<?php echo $this->HumanFileSize($download['filesize']); ?>
+									</td>
+
+									<td class="dw-col-language" data-label="<?php echo $this->translate('CONTACTS_FILE_LANGUAGE'); ?>">
+										<?php echo $this->escape($download['language']); ?>
+									</td>
+
+									<td class="dw-col-actions">
+										<div class="dw-row-actions"></div>
+									</td>
 								</tr>
 							<?php endif; ?>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
-			<?php endforeach; ?>
+			</div>
+		</div>
+	<?php endforeach; ?>
+
+	<div class="dw-list-page dw-list-page--downloads">
+		<div class="dw-section-subheader">
 			<h4><?php echo $this->translate('CONTACTS_NOT_CATEGORIZED'); ?></h4>
-			<table id="data">
+		</div>
+
+		<div class="dw-table-wrap">
+			<table class="dw-table dw-table--downloads" id="data">
 				<thead>
 					<tr>
-						<th width="8%"><span>ID</span></th>
-						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_NAME'); ?></th>
-						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_SIZE'); ?></th>
-						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_LANGUAGE'); ?></th>
-						<th width="8%"></th>
+						<th class="dw-col-id">ID</th>
+						<th class="dw-col-title"><?php echo $this->translate('CONTACTS_FILE_NAME'); ?></th>
+						<th class="dw-col-size"><?php echo $this->translate('CONTACTS_FILE_SIZE'); ?></th>
+						<th class="dw-col-language"><?php echo $this->translate('CONTACTS_FILE_LANGUAGE'); ?></th>
+						<th class="dw-col-actions"></th>
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach($this->downloads as $download) : ?>
-						<?php if($download['setid'] == 0) : ?>
-							<tr>
-								<td>
-									<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'download', 'action'=>'edit', 'id'=>$download['id'])); ?>">
+					<?php foreach ($this->downloads as $download) : ?>
+						<?php if ($download['setid'] == 0) : ?>
+							<tr class="dw-row">
+								<td class="dw-col-id" data-label="ID">
+									<a href="<?php echo $this->url(array(
+										'module' => 'contacts',
+										'controller' => 'download',
+										'action' => 'edit',
+										'id' => $download['id']
+									)); ?>">
 										<?php echo $this->escape($download['id']); ?>
 									</a>
-</td>
-								<td>
-									<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'download', 'action'=>'edit', 'id'=>$download['id'])); ?>">
+								</td>
+
+								<td class="dw-col-title" data-label="<?php echo $this->translate('CONTACTS_FILE_NAME'); ?>">
+									<a href="<?php echo $this->url(array(
+										'module' => 'contacts',
+										'controller' => 'download',
+										'action' => 'edit',
+										'id' => $download['id']
+									)); ?>">
 										<?php echo $this->escape($download['title']); ?>
 									</a>
 								</td>
-								<td><?php echo $this->HumanFileSize($download['filesize']); ?></td>
-								<td><?php echo $download['language']; ?></td>
-								<td></td>
+
+								<td class="dw-col-size" data-label="<?php echo $this->translate('CONTACTS_FILE_SIZE'); ?>">
+									<?php echo $this->HumanFileSize($download['filesize']); ?>
+								</td>
+
+								<td class="dw-col-language" data-label="<?php echo $this->translate('CONTACTS_FILE_LANGUAGE'); ?>">
+									<?php echo $this->escape($download['language']); ?>
+								</td>
+
+								<td class="dw-col-actions">
+									<div class="dw-row-actions"></div>
+								</td>
 							</tr>
 						<?php endif; ?>
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+		</div>
+	</div>
+</div>
 
+<div class="dw-page-section">
+	<div class="dw-section-header">
+		<h3><?php echo $this->translate('CONTACTS_ACCESS_LIST'); ?></h3>
+	</div>
 
-
-			<h3><?php echo $this->translate('CONTACTS_ACCESS_LIST'); ?></h3>
-			<table id="data">
+	<div class="dw-list-page dw-list-page--download-tracking">
+		<div class="dw-table-wrap">
+			<table class="dw-table dw-table--download-tracking" id="data">
 				<thead>
 					<tr>
-						<th width="8%"><span>ID</span></th>
-						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_NAME'); ?></th>
-						<th width="8%"><?php echo $this->translate('CONTACTS_EMAIL'); ?></th>
-						<th width="8%"><?php echo $this->translate('CONTACTS_EMAIL'); ?></th>
-						<th width="8%"><?php echo $this->translate('CONTACTS_FILE_SIZE'); ?></th>
-						<th width="8%"><?php echo $this->translate('CONTACTS_ACCESS_TIME'); ?></th>
-						<th width="8%"><?php echo $this->translate('CONTACTS_USER_AGENT'); ?></th>
-						<th width="8%"></th>
+						<th class="dw-col-id">ID</th>
+						<th class="dw-col-title"><?php echo $this->translate('CONTACTS_FILE_NAME'); ?></th>
+						<th class="dw-col-contact-id"><?php echo $this->translate('CONTACTS_CONTACT_ID'); ?></th>
+						<th class="dw-col-email"><?php echo $this->translate('CONTACTS_EMAIL'); ?></th>
+						<th class="dw-col-size"><?php echo $this->translate('CONTACTS_FILE_SIZE'); ?></th>
+						<th class="dw-col-access-time"><?php echo $this->translate('CONTACTS_ACCESS_TIME'); ?></th>
+						<th class="dw-col-user-agent"><?php echo $this->translate('CONTACTS_USER_AGENT'); ?></th>
+						<th class="dw-col-actions"></th>
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach($this->downloadtrackings as $downloadtracking) : ?>
-						<tr>
-							<td>
-								<a href="<?php echo $this->baseUrl(); ?>/files/downloads/<?php echo $this->downloadsurl.$downloadtracking['id']; ?>" target="_blank">
+					<?php foreach ($this->downloadtrackings as $downloadtracking) : ?>
+						<tr class="dw-row">
+							<td class="dw-col-id" data-label="ID">
+								<a href="<?php echo $this->baseUrl(); ?>/files/downloads/<?php echo $this->downloadsurl . $downloadtracking['id']; ?>" target="_blank">
 									<?php echo $this->escape($downloadtracking['id']); ?>
 								</a>
-</td>
-							<td>
-								<a href="<?php echo $this->baseUrl(); ?>/files/downloads/<?php echo $this->downloadsurl.$downloadtracking['filename']; ?>" target="_blank">
+							</td>
+
+							<td class="dw-col-title" data-label="<?php echo $this->translate('CONTACTS_FILE_NAME'); ?>">
+								<a href="<?php echo $this->baseUrl(); ?>/files/downloads/<?php echo $this->downloadsurl . $downloadtracking['filename']; ?>" target="_blank">
 									<?php echo $this->escape($downloadtracking['title']); ?>
 								</a>
 							</td>
-							<td>
-								<a href="<?php echo $this->baseUrl(); ?>/contacts/contact/edit/id/<?php echo $downloadtracking['contactid']; ?>" target="_blank">
+
+							<td class="dw-col-contact-id" data-label="<?php echo $this->translate('CONTACTS_CONTACT_ID'); ?>">
+								<a href="<?php echo $this->baseUrl(); ?>/contacts/contact/edit/id/<?php echo (int)$downloadtracking['contactid']; ?>" target="_blank">
 									<?php echo $this->escape($downloadtracking['contactid']); ?>
 								</a>
 							</td>
-							<td><?php echo $downloadtracking['email']; ?></td>
-							<td><?php echo $this->HumanFileSize($downloadtracking['filesize']); ?></td>
-							<td><?php echo $downloadtracking['accesstime']; ?></td>
-							<td><?php echo $downloadtracking['useragent']; ?></td>
-							<td></td>
+
+							<td class="dw-col-email" data-label="<?php echo $this->translate('CONTACTS_EMAIL'); ?>">
+								<?php echo $this->escape($downloadtracking['email']); ?>
+							</td>
+
+							<td class="dw-col-size" data-label="<?php echo $this->translate('CONTACTS_FILE_SIZE'); ?>">
+								<?php echo $this->HumanFileSize($downloadtracking['filesize']); ?>
+							</td>
+
+							<td class="dw-col-access-time" data-label="<?php echo $this->translate('CONTACTS_ACCESS_TIME'); ?>">
+								<?php echo $this->escape($downloadtracking['accesstime']); ?>
+							</td>
+
+							<td class="dw-col-user-agent" data-label="<?php echo $this->translate('CONTACTS_USER_AGENT'); ?>">
+								<?php echo $this->escape($downloadtracking['useragent']); ?>
+							</td>
+
+							<td class="dw-col-actions">
+								<div class="dw-row-actions"></div>
+							</td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
 			</table>
-		<?php //endif; ?>
+		</div>
+
+		<div class="dw-list-footer">
+			<div class="dw-list-footer__actions"></div>
+			<div class="dw-list-footer__total">
+				<?php if (isset($this->downloadtrackings) && is_array($this->downloadtrackings)) echo count($this->downloadtrackings); ?>
+			</div>
+		</div>
 	</div>
 </div>

@@ -1,162 +1,166 @@
 <?php
 $this->title = $this->translate('PROCESSES');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th style="width:2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="title" style="width:18%">
-				<?php echo $this->translate('PROCESSES_TITLE') ?>
-			</th>
-			<th class="customer" style="width:10%">
-				<?php echo $this->translate('PROCESSES_CUSTOMER') ?>
-			</th>
-			<th class="notes" style="width:15%">
-				<?php echo $this->translate('PROCESSES_NOTES') ?>
-			</th>
-			<th class="payment" style="width:14%">
-				<?php echo $this->translate('PROCESSES_PAYMENT') ?>
-			</th>
-			<th class="delivery" style="width:28%">
-				<?php echo $this->translate('PROCESSES_SHIPPING') ?>
-			</th>
-			<th class="state" style="width:5%">
-				<?php echo $this->translate('PROCESSES_STATE') ?>
-			</th>
-			<th class="pin" width="8%"></th>
-			<th style="width:8%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->processes as $process) : ?>
-		<tr class="state<?php echo $process->state; ?><?php echo $process->pinned ? ' pinned' : ''; ?> <?php echo $process->paymentstatus; ?> <?php echo $process->deliverystatus; ?> <?php echo $process->supplierorderstatus; ?>">
-			<td><input class="id" type="checkbox" value="<?php echo $process->id; ?>" name="id"/></td>
-			<td data-label="<?php echo $this->translate('PROCESSES_TITLE') ?>" class="title">
-				<p><a href="<?php echo $this->url(array('module'=>'processes', 'controller'=>'process', 'action'=>'edit', 'id'=>$process->id));?>">
-						<?php echo $process->title ? $this->escape($process->title) : $this->escape($process->id);?>
-				</a></p>
-			</td>
-			<td data-label="<?php echo $this->translate('PROCESSES_CUSTOMER') ?>" class="customer">
-				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->cid));?>">
-					<?php echo $this->escape($process->customerid);?>
-				</a>
-				<?php if($process->billingname1) : ?><br/>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->cid));?>">
-						<?php echo $this->escape($process->billingname1);?>
-						<?php //if($process->billingname2) echo "<br/>".$this->escape($process->billingname2);?>
-					</a>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('PROCESSES_NOTES') ?>" class="notes">
-				<?php if($process->state == '105' || $process->state == '106') : ?>
-					<?php echo nl2br($process->notes); ?>
-				<?php else : ?>
-					<?php if($process->notes) : ?>
-						<pre class="editable" data-name="notes" data-value="<?php echo $process->notes; ?>" data-type="textarea"><?php echo $process->notes; ?></pre>
-					<?php else : ?>
-						<pre class="editable" data-name="notes" data-value="<?php echo $process->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
-					<?php endif; ?>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('PROCESSES_PAYMENT') ?>" class="payment">
-				<dt><?php echo $this->translate('PROCESSES_TOTAL') ;?>:</dt>
-				<span><?php echo $this->escape($process->total);?></span>
-				<?php if($process->prepaymenttotal) : ?>
-					<dt><?php echo $this->translate('PROCESSES_PREPAYMENT_TOTAL');?>:</dt>
-					<?php echo $this->escape($process->prepaymenttotal);?>
-				<?php endif; ?>
-				<?php if($process->creditnotetotal) : ?>
-					<dt><?php echo $this->translate('PROCESSES_CREDIT_NOTE_TOTAL');?>:</dt>
-					<?php echo $this->escape($process->creditnotetotal);?>
-				<?php endif; ?>
-				<?php if($process->paymentmethod) : ?>
-					<dt><?php echo $this->translate('PROCESSES_PAYMENT_METHOD') ;?>:</dt>
-					<?php echo $this->escape($process->paymentmethod);?>
-				<?php endif; ?>
-				<p class="paymentstatus">
-					<?php if($process->state == '105' || $process->state == '106') : ?>
-						<span class="<?php echo $process->paymentstatus; ?>">
-							<?php echo $this->translate($this->options['paymentstatus'][$process->paymentstatus]); ?>
-						</span>
-					<?php else : ?>
-						<span class="editable" data-name="paymentstatus" data-value="<?php echo $process->paymentstatus; ?>" data-type="select"><?php echo $this->translate($this->options['paymentstatus'][$process->paymentstatus]); ?></span>
-					<?php endif; ?>
-				</p>
-			</td>
-			<td data-label="<?php echo $this->translate('PROCESSES_SHIPPING') ?>" class="delivery">
-				<?php if(!$process->editpositionsseparately) : ?>
-					<p class="deliverystatus">
-						<?php if($process->state == '105' || $process->state == '106') : ?>
-							<?php echo $this->translate($this->options['deliverystatus'][$process->deliverystatus]); ?>
-						<?php else : ?>
-							<span class="editable" data-name="deliverystatus" data-value="<?php echo $process->deliverystatus; ?>" data-type="select"><?php echo $this->translate($this->options['deliverystatus'][$process->deliverystatus]); ?></span>
-						<?php endif; ?>
-					</p>
-					<p class="deliverydate">
-						<span><?php echo $this->escape($process->deliverydate); ?></span>
-					</p>
-				<?php elseif(isset($this->positions[$process->id])) : ?>
-					<?php foreach($this->positions[$process->id] as $id => $position) : ?>
-						<p class="positions">
-							<?php if(isset($position['quantity'])) : ?>
-								<span><?php echo $position['quantity']; ?> x </span>
+<div class="dw-list-page">
+	<div class="dw-table-wrap">
+		<table class="dw-table dw-table--processes">
+			<thead>
+				<tr>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+					<th class="dw-col-id"><?php echo $this->translate('PROCESSES_PROCESS_ID'); ?></th>
+					<th class="dw-col-title"><?php echo $this->translate('PROCESSES_TITLE'); ?></th>
+					<th class="dw-col-contact"><?php echo $this->translate('PROCESSES_CONTACT'); ?></th>
+					<th class="dw-col-address"><?php echo $this->translate('PROCESSES_BILLING_ADDRESS'); ?></th>
+					<th class="dw-col-notes"><?php echo $this->translate('PROCESSES_NOTES'); ?></th>
+					<th class="dw-col-date"><?php echo $this->translate('PROCESSES_PROCESS_DATE'); ?></th>
+					<th class="dw-col-total"><?php echo $this->translate('PROCESSES_TOTAL'); ?></th>
+					<th class="dw-col-state"><?php echo $this->translate('PROCESSES_STATE'); ?></th>
+					<th class="dw-col-pin"></th>
+					<th class="dw-col-actions"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->processes as $process) : ?>
+					<?php
+					$stateClass = 'dw-badge--info';
+					if ($process->state == '101') $stateClass = 'dw-badge--warning';
+					if ($process->state == '103') $stateClass = 'dw-badge--danger';
+					if ($process->state == '104' || $process->state == '105' || $process->state == '106') $stateClass = 'dw-badge--success';
+					?>
+					<tr class="dw-row<?php echo $process->pinned ? ' is-pinned' : ''; ?>">
+						<td class="dw-col-check">
+							<input class="check-id" type="checkbox" value="<?php echo (int)$process->id; ?>" name="id" />
+							<input class="id" type="hidden" value="<?php echo (int)$process->id; ?>" name="id" />
+							<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+							<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+						</td>
+
+						<td class="dw-col-id" data-label="<?php echo $this->translate('PROCESSES_PROCESS_ID'); ?>">
+							<?php if ($process->id) : ?>
+								<a href="<?php echo $this->url(array('module'=>$this->module, 'controller'=>$this->controller, 'action'=>'edit', 'id'=>$process->id)); ?>">
+									<?php echo $this->escape($process->id); ?>
+								</a>
 							<?php endif; ?>
-							<?php if(isset($position['supplierorderstatus'])) : ?>
-								<span class="<?php echo $position['supplierorderstatus']; ?>">
-									<?php echo $this->translate($this->options['supplierorderstatus'][$position['supplierorderstatus']]); ?>
+						</td>
+
+						<td class="dw-col-title" data-label="<?php echo $this->translate('PROCESSES_TITLE'); ?>">
+							<a href="<?php echo $this->url(array('module'=>$this->module, 'controller'=>$this->controller, 'action'=>'edit', 'id'=>$process->id)); ?>">
+								<?php echo $process->title ? $this->escape($process->title) : $this->escape($process->id); ?>
+							</a>
+						</td>
+
+						<td class="dw-col-contact" data-label="<?php echo $this->translate('PROCESSES_CONTACT'); ?>">
+							<?php if ($process->contactid) : ?>
+								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$process->cid)); ?>">
+									<div><?php echo $this->escape($process->contactid); ?></div>
+									<div><?php echo $this->escape($process->billingname1); ?></div>
+									<?php if ($process->billingname2) : ?>
+										<div><?php echo $this->escape($process->billingname2); ?></div>
+									<?php endif; ?>
+								</a>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-address" data-label="<?php echo $this->translate('PROCESSES_BILLING_ADDRESS'); ?>">
+							<div><?php echo $this->escape($process->billingstreet); ?></div>
+							<div><?php echo $this->escape($process->billingpostcode); ?></div>
+							<div><?php echo $this->escape($process->billingcity); ?></div>
+						</td>
+
+						<td class="dw-col-notes notes" data-label="<?php echo $this->translate('PROCESSES_NOTES'); ?>">
+							<div class="editableContainer">
+								<?php if ($process->notes) : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$process->id; ?>"
+										data-value="<?php echo $this->escape($process->notes); ?>"
+										data-type="textarea"
+									><?php echo $this->escape($process->notes); ?></pre>
+								<?php else : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$process->id; ?>"
+										data-value=""
+										data-type="textarea"
+										data-empty="true"
+									><?php echo $this->translate('TOOLBAR_NEW'); ?></pre>
+								<?php endif; ?>
+							</div>
+						</td>
+
+						<td class="dw-col-date" data-label="<?php echo $this->translate('PROCESSES_PROCESS_DATE'); ?>">
+							<?php if ($process->processdate) : ?>
+								<?php echo $this->escape(date('d.m.Y', strtotime($process->processdate))); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-total" data-label="<?php echo $this->translate('PROCESSES_TOTAL'); ?>">
+							<?php echo $this->escape($process->total); ?>
+						</td>
+
+						<td class="dw-col-state state" data-label="<?php echo $this->translate('PROCESSES_STATE'); ?>">
+							<?php if ($process->state == '105' || $process->state == '106') : ?>
+								<span class="dw-badge <?php echo $stateClass; ?>">
+									<?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?>
 								</span>
+							<?php else : ?>
+								<div class="editableContainer">
+									<span
+										class="editable dw-badge <?php echo $stateClass; ?>"
+										data-name="state"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$process->id; ?>"
+										data-value="<?php echo $this->escape($process->state); ?>"
+										data-type="select"
+									><?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?></span>
+								</div>
 							<?php endif; ?>
-							<span class="<?php echo $position['deliverystatus']; ?>">
-								<?php if(isset($position['deliverystatus'])) echo $this->translate($this->options['deliverystatus'][$position['deliverystatus']]); ?>
-								<?php if(isset($position['deliverydate'])) echo '('.$position['deliverydate'].')'; ?>
-							</span>
-						</p>
-					<?php endforeach; ?>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('PROCESSES_TITLE') ?>" class="state">
-				<?php if($process->state == '105' || $process->state == '106') : ?>
-					<?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?>
-				<?php else : ?>
-					<span class="editable" data-name="state" data-value="<?php echo $process->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?></span>
-				<?php endif; ?>
-			</td>
-			<td class="pin">
-				<?php if($process->pinned) : ?>
-					<input type = "button" onclick = "pin(<?php echo $process->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
-				<?php else : ?>
-					<input type = "button" onclick = "pin(<?php echo $process->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
-				<?php endif; ?>
-			</td>
-			<td class="buttons">
-				<?php if($process->completed || $process->cancelled) : ?>
-					<?php echo $this->toolbar->viewInline; ?>
-				<?php else : ?>
-					<?php echo $this->toolbar->editInline; ?>
-				<?php endif; ?>
-				<?php echo $this->toolbar->copyInline; ?>
-			</td>
-		</tr>
-		<tr style="border:none;">
-		</tr>
-		<?php endforeach; ?>
-		<tr class="bottom">
-			<td></td>
-			<td class="toolbar">
-				<?php echo $this->ToolbarBottom(); ?>
-			</td>
-			<td></td>
-			<td></td>
-			<td class="total">
-				<?php echo $this->processes->total; ?>
-			</td>
-			<td></td>
-			<td></td>
-			<td></td>
-		</tr>
-	</tbody>
-</table>
+						</td>
+
+						<td class="dw-col-pin">
+							<button type="button" class="dw-btn dw-btn--secondary" onclick="pin(<?php echo (int)$process->id; ?>)">
+								<?php echo $process->pinned ? $this->translate('DETACH') : $this->translate('ATTACH'); ?>
+							</button>
+						</td>
+
+						<td class="dw-col-actions">
+							<div class="dw-row-actions">
+								<?php if ($process->state == '105' || $process->state == '106') : ?>
+									<?php echo $this->toolbarInline->renderElement('view'); ?>
+								<?php else : ?>
+									<?php echo $this->toolbarInline->renderElement('edit'); ?>
+								<?php endif; ?>
+								<?php echo $this->toolbarInline->renderElement('copy'); ?>
+								<?php echo $this->toolbarInline->renderElement('delete'); ?>
+								<?php echo $this->toolbarInline->renderElement('pdf'); ?>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php echo $this->processes->total; ?>
+		</div>
+	</div>
+</div>

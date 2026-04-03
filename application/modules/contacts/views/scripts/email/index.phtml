@@ -1,101 +1,140 @@
 <?php
 $this->title = $this->translate('CONTACTS_EMAILS');
 $this->headTitle($this->title);
+
 echo $this->Messages();
-//echo $this->ActiveFilter();
+// echo $this->ActiveFilter();
 ?>
 
-<?php if(count($this->emailmessages)) : ?>
-	<table id="data">
-		<thead>
-			<tr>
-				<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-				<th class="id">
-					<?php echo $this->translate('CONTACTS_EMAIL_RECIPIENT'); ?>
-				</th>
-				<th class="phone" style="flex-grow: 2;">
-					<?php echo $this->translate('CONTACTS_EMAIL_BODY'); ?>
-				</th>
-				<th class="phone">
-					<?php echo $this->translate('CONTACTS_ATTACHMENTS'); ?>
-				</th>
-				<th class="phone" style="flex-grow: 0.5;">
-					<?php echo $this->translate('CONTACTS_EMAIL_SENT'); ?>
-				</th>
-				<th class="phone" style="flex-grow: 0.5;">
-					<?php echo $this->translate('CONTACTS_EMAIL_SENT_BY'); ?>
-				</th>
-				<th class="phone" style="flex-grow: 0.5;">
-					<?php echo $this->translate('CONTACTS_EMAIL_ACCESS_TIME'); ?>
-				</th>
-				<th class="phone" style="flex-grow: 1;"></th>
-				<th></th>
-			</tr>
-		</thead>
-		<tbody>
-			<?php foreach($this->emailmessages as $emailmessage) : ?>
-				<tr>
-					<td><input class="id" type="checkbox" value="<?php echo $emailmessage['id'] ?>" name="id"/></td>
-					<td data-label="<?php echo $this->translate('CONTACTS_PHONE') ?>" class="phone">
-						<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$emailmessage['contactid'])); ?>">
-							<?php echo str_replace(',', '<br>', $this->escape($emailmessage['recipient'])); ?>
-						</a>
-					</td>
-					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street" style="flex-grow: 2;">
-						<p><b><?php echo $this->translate('CONTACTS_EMAIL_SUBJECT'); ?>:</b> <?php echo $this->escape($emailmessage['subject']); ?></p>
-						<?php echo $emailmessage['body']; ?>
-					</td>
-					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street">
-						<?php if($emailmessage['attachment']): ?>
-							<?php $attachments = explode(',', $emailmessage['attachment']); ?>
-							<?php foreach($attachments as $attachment) : ?>
-								<?php //$headers = get_headers('https://'.$_SERVER['HTTP_HOST'].'/files/attachments/'.$this->module.'/'.$this->controller.'/'.$this->url.'/'.$attachment); ?>
-								<?php //if(stripos($headers[0], '200 OK')) : ?>
-									<a href="<?php echo $this->baseUrl(); ?>/files/attachments/<?php echo $emailmessage['module']; ?>/<?php echo $emailmessage['controller']; ?>/<?php echo $emailmessage['url']; ?>/<?php echo $attachment; ?>" target="_blank"><?php echo $attachment; ?></a><br>
-								<?php //else : ?>
-									<?php //echo $attachment; ?>
-								<?php //endif; ?>
-							<?php endforeach; ?>
-						<?php endif; ?>
-					</td>
-					<td data-label="<?php echo $this->translate('CONTACTS_STREET') ?>" class="street" style="flex-grow: 0.5;">
-						<?php echo $this->escape($emailmessage['messagesent']); ?>
-					</td>
-					<td data-label="<?php echo $this->translate('CONTACTS_EMAIL_SENT_BY') ?>" class="street" style="flex-grow: 0.5;">
-						<?php echo $this->escape($this->users[$emailmessage['messagesentby']]); ?>
-					</td>
-					<td data-label="<?php echo $this->translate('CONTACTS_EMAIL_ACCESS_TIME') ?>" class="street" style="flex-grow: 0.5;">
-						<?php if($emailmessage['accesstime']) : ?>
-							<?php $accesstimes = explode(',', $emailmessage['accesstime']); ?>
-							<?php foreach($accesstimes as $accesstime) : ?>
-								<p><?php echo $this->escape($accesstime); ?></p>
-							<?php endforeach; ?>
-						<?php endif; ?>
-					</td>
-					<td class="street" style="flex-grow: 1;">
-						<?php if($emailmessage['response']) : ?>
-							<div class="error"><?php echo $this->translate('CONTACTS_EMAIL_ERROR') ?></div>
-							<pre><?php echo $this->escape($emailmessage['response']); ?></pre>
-						<?php else : ?>
-							<div class="successful"><?php echo $this->translate('CONTACTS_EMAIL_SUCCESSFUL') ?></div>
-						<?php endif; ?>
-						<button name="send" id="save" type="button" class="send" onclick="resendMessage(<?php echo $emailmessage['id'] ?>)">Erneut Senden</button>
-					</td>
-					<td class="buttons">
-						<?php //echo $this->toolbar->editInline; ?>
-						<?php //echo $this->toolbar->copyInline; ?>
-					</td>
-				</tr>
-			<?php endforeach; ?>
-			<tr class="bottom">
-				<td></td>
-				<td>
-					<div class="toolbar bottom">
-						<?php //echo $this->ToolbarBottom(); ?>
-					</div>
-				</td>
-				<td></td>
-			</tr>
-		</tbody>
-	</table>
+<?php if (count($this->emailmessages)) : ?>
+	<div class="dw-list-page">
+		<div class="dw-table-wrap">
+			<table class="dw-table dw-table--contact-emails" id="data">
+				<thead>
+					<tr>
+						<th class="dw-col-check">
+							<input type="checkbox" class="checkall" name="checkall" />
+						</th>
+						<th class="dw-col-recipient"><?php echo $this->translate('CONTACTS_EMAIL_RECIPIENT'); ?></th>
+						<th class="dw-col-body"><?php echo $this->translate('CONTACTS_EMAIL_BODY'); ?></th>
+						<th class="dw-col-attachments"><?php echo $this->translate('CONTACTS_ATTACHMENTS'); ?></th>
+						<th class="dw-col-sent"><?php echo $this->translate('CONTACTS_EMAIL_SENT'); ?></th>
+						<th class="dw-col-sent-by"><?php echo $this->translate('CONTACTS_EMAIL_SENT_BY'); ?></th>
+						<th class="dw-col-access-time"><?php echo $this->translate('CONTACTS_EMAIL_ACCESS_TIME'); ?></th>
+						<th class="dw-col-status"></th>
+						<th class="dw-col-actions"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($this->emailmessages as $emailmessage) : ?>
+						<tr class="dw-row">
+							<td class="dw-col-check">
+								<input class="check-id" type="checkbox" value="<?php echo (int)$emailmessage['id']; ?>" name="id" />
+								<input class="id" type="hidden" value="<?php echo (int)$emailmessage['id']; ?>" name="id" />
+								<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+								<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+							</td>
+
+							<td class="dw-col-recipient" data-label="<?php echo $this->translate('CONTACTS_EMAIL_RECIPIENT'); ?>">
+								<a href="<?php echo $this->url(array(
+									'module' => 'contacts',
+									'controller' => 'contact',
+									'action' => 'edit',
+									'id' => $emailmessage['contactid']
+								)); ?>">
+									<?php foreach (explode(',', $emailmessage['recipient']) as $recipient) : ?>
+										<div><?php echo $this->escape(trim($recipient)); ?></div>
+									<?php endforeach; ?>
+								</a>
+							</td>
+
+							<td class="dw-col-body" data-label="<?php echo $this->translate('CONTACTS_EMAIL_BODY'); ?>">
+								<div class="dw-email-subject">
+									<span class="dw-email-subject__label"><?php echo $this->translate('CONTACTS_EMAIL_SUBJECT'); ?>:</span>
+									<span class="dw-email-subject__value"><?php echo $this->escape($emailmessage['subject']); ?></span>
+								</div>
+
+								<div class="dw-email-body">
+									<?php echo $emailmessage['body']; ?>
+								</div>
+							</td>
+
+							<td class="dw-col-attachments" data-label="<?php echo $this->translate('CONTACTS_ATTACHMENTS'); ?>">
+								<?php if ($emailmessage['attachment']) : ?>
+									<?php $attachments = explode(',', $emailmessage['attachment']); ?>
+									<div class="dw-attachment-list">
+										<?php foreach ($attachments as $attachment) : ?>
+											<div class="dw-attachment-item">
+												<a
+													href="<?php echo $this->baseUrl(); ?>/files/attachments/<?php echo $emailmessage['module']; ?>/<?php echo $emailmessage['controller']; ?>/<?php echo $emailmessage['url']; ?>/<?php echo $attachment; ?>"
+													target="_blank"
+												><?php echo $this->escape($attachment); ?></a>
+											</div>
+										<?php endforeach; ?>
+									</div>
+								<?php endif; ?>
+							</td>
+
+							<td class="dw-col-sent" data-label="<?php echo $this->translate('CONTACTS_EMAIL_SENT'); ?>">
+								<?php echo $this->escape($emailmessage['messagesent']); ?>
+							</td>
+
+							<td class="dw-col-sent-by" data-label="<?php echo $this->translate('CONTACTS_EMAIL_SENT_BY'); ?>">
+								<?php if (isset($this->users[$emailmessage['messagesentby']])) : ?>
+									<?php echo $this->escape($this->users[$emailmessage['messagesentby']]); ?>
+								<?php endif; ?>
+							</td>
+
+							<td class="dw-col-access-time" data-label="<?php echo $this->translate('CONTACTS_EMAIL_ACCESS_TIME'); ?>">
+								<?php if ($emailmessage['accesstime']) : ?>
+									<?php $accesstimes = explode(',', $emailmessage['accesstime']); ?>
+									<?php foreach ($accesstimes as $accesstime) : ?>
+										<div><?php echo $this->escape(trim($accesstime)); ?></div>
+									<?php endforeach; ?>
+								<?php endif; ?>
+							</td>
+
+							<td class="dw-col-status" data-label="Status">
+								<?php if ($emailmessage['response']) : ?>
+									<div class="dw-status-message dw-status-message--error">
+										<?php echo $this->translate('CONTACTS_EMAIL_ERROR'); ?>
+									</div>
+									<pre class="dw-status-response"><?php echo $this->escape($emailmessage['response']); ?></pre>
+								<?php else : ?>
+									<div class="dw-status-message dw-status-message--success">
+										<?php echo $this->translate('CONTACTS_EMAIL_SUCCESSFUL'); ?>
+									</div>
+								<?php endif; ?>
+
+								<button
+									name="send"
+									type="button"
+									class="dw-btn dw-btn--secondary send"
+									onclick="resendMessage(<?php echo (int)$emailmessage['id']; ?>)"
+								>
+									Erneut Senden
+								</button>
+							</td>
+
+							<td class="dw-col-actions">
+								<div class="dw-row-actions">
+									<?php // echo $this->toolbar->editInline; ?>
+									<?php // echo $this->toolbar->copyInline; ?>
+								</div>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+
+		<div class="dw-list-footer">
+			<div class="dw-list-footer__actions">
+				<?php // echo $this->ToolbarBottom(); ?>
+			</div>
+			<div class="dw-list-footer__total">
+				<?php echo count($this->emailmessages); ?>
+			</div>
+		</div>
+	</div>
 <?php endif; ?>

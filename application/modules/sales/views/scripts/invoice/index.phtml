@@ -1,133 +1,166 @@
-<?php		 
+<?php
 $this->title = $this->translate('INVOICES');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th width="2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="invoiceid" width="5%">
-				<?php echo $this->translate('INVOICES_INVOICE_ID'); ?>
-			</th>
-			<th class="title" width="24%">
-				<?php echo $this->translate('INVOICES_TITLE'); ?>
-			</th>
-			<th class="contactid" width="5%">
-				<?php echo $this->translate('INVOICES_CONTACT'); ?>
-			</th>
-			<th class="billingaddress" width="20%">
-				<?php echo $this->translate('INVOICES_BILLING_ADDRESS'); ?>
-			</th>
-			<th class="notes" width="15%">
-				<?php echo $this->translate('INVOICES_NOTES') ?>
-			</th>
-			<th class="invoicedate" width="8%">
-				<?php echo $this->translate('INVOICES_INVOICE_DATE'); ?>
-			</th>
-			<th class="deliverydate" width="8%">
-				<?php echo $this->translate('INVOICES_DELIVERY_DATE'); ?>
-			</th>
-			<th class="total" width="8%">
-				<?php echo $this->translate('INVOICES_TOTAL'); ?>
-			</th>
-			<th class="state" width="6%">
-				<?php echo $this->translate('INVOICES_STATE'); ?>
-			</th>
-			<th class="pin" width="8%"></th>
-			<th width="10%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->invoices as $invoice) : ?>
-		<tr class="state<?php echo $invoice->state; ?><?php echo $invoice->pinned ? ' pinned' : ''; ?>">
-			<td><input class="id" type="checkbox" value="<?php echo $invoice->id ?>" name="id"/></td>
-			<td class="invoiceid">
-				<?php if($invoice->invoiceid) : ?>
-					<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id)); ?>">
-						<?php echo $this->escape($invoice->invoiceid); ?>
-					</a>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('INVOICES_TITLE') ?>" class="title">
-				<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id)); ?>">
-					<?php echo $invoice->title ? $this->escape($invoice->title) : $this->translate('INVOICE')." ".$this->escape($invoice->invoiceid); ?>
-				</a>
-			</td>
-			<td data-label="<?php echo $this->translate('INVOICES_CONTACT') ?>" class="contactid">
-				<?php if($invoice->contactid) : ?>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->cid)); ?>">
-						<?php echo $this->escape($invoice->contactid); ?><br/>
-						<?php echo $this->escape($invoice->billingname1); ?>
-						<?php if($invoice->billingname2) echo "<br/>".$this->escape($invoice->billingname2); ?>
-					</a>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('INVOICES_BILLING_ADDRESS') ?>" class="billingaddress">
-				<?php echo $this->escape($invoice->billingstreet); ?><br/>
-				<?php echo $this->escape($invoice->billingpostcode); ?><br/>
-				<?php echo $this->escape($invoice->billingcity); ?>
-			</td>
-			<td data-label="<?php echo $this->translate('INVOICES_NOTES') ?>" class="notes">
-				<?php if($invoice->notes) : ?>
-					<pre class="editable" data-name="notes" data-value="<?php echo $invoice->notes; ?>" data-type="textarea"><?php echo $invoice->notes; ?></pre>
-				<?php else : ?>
-					<pre class="editable" data-name="notes" data-value="<?php echo $invoice->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('INVOICES_INVOICE_DATE') ?>" class="invoicedate">
-				<?php if($invoice->invoicedate) echo $this->escape(date("d.m.Y", strtotime($invoice->invoicedate))); ?>
-			</td>
-			<td data-label="<?php echo $this->translate('INVOICES_DELIVERY_DATE') ?>" class="deliverydate">
-				<?php if($invoice->deliverydate) echo $this->escape(date("d.m.Y", strtotime($invoice->deliverydate))); ?>
-			</td>
-			<td data-label="<?php echo $this->translate('INVOICES_TOTAL') ?>" class="total">
-				<?php echo $this->escape($invoice->total); ?>
-			</td>
-			<td data-label="<?php echo $this->translate('INVOICES_STATE') ?>" class="state">
-				<?php if($invoice->state == '105' || $invoice->state == '106') : ?>
-					<?php echo $this->translate($this->escape($this->options['states'][$invoice->state])); ?>
-				<?php else : ?>
-					<span class="editable" data-name="state" data-value="<?php echo $invoice->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$invoice->state])); ?></span>
-				<?php endif; ?>
-			</td>
-			<td class="pin">
-				<?php if($invoice->pinned) : ?>
-					<input type = "button" onclick = "pin(<?php echo $invoice->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
-				<?php else : ?>
-					<input type = "button" onclick = "pin(<?php echo $invoice->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
-				<?php endif; ?>
-			</td>
-			<td class="buttons">
-				<?php if($invoice->state == '105' || $invoice->state == '106') : ?>
-					<?php echo $this->toolbar->viewInline; ?>
-				<?php else : ?>
-					<?php echo $this->toolbar->editInline; ?>
-				<?php endif; ?>
-				<?php echo $this->toolbar->copyInline; ?>
-				<?php echo $this->toolbar->pdfInline; ?>
-			</td>
-		</tr>
-		<?php endforeach; ?>
-		<tr class="bottom">
-			<td></td>
-			<td></td>
-			<td class="toolbar">
-				<?php echo $this->ToolbarBottom(); ?>
-			</td>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td class="total">
-				<?php echo $this->invoices->total; ?>
-			</td>
-			<td></td>
-			<td></td>
-		</tr>
-	</tbody>
-</table>
+<div class="dw-list-page">
+	<div class="dw-table-wrap">
+		<table class="dw-table dw-table--invoices">
+			<thead>
+				<tr>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+					<th class="dw-col-id"><?php echo $this->translate('INVOICES_INVOICE_ID'); ?></th>
+					<th class="dw-col-title"><?php echo $this->translate('INVOICES_TITLE'); ?></th>
+					<th class="dw-col-contact"><?php echo $this->translate('INVOICES_CONTACT'); ?></th>
+					<th class="dw-col-address"><?php echo $this->translate('INVOICES_BILLING_ADDRESS'); ?></th>
+					<th class="dw-col-notes"><?php echo $this->translate('INVOICES_NOTES'); ?></th>
+					<th class="dw-col-date"><?php echo $this->translate('INVOICES_INVOICE_DATE'); ?></th>
+					<th class="dw-col-total"><?php echo $this->translate('INVOICES_TOTAL'); ?></th>
+					<th class="dw-col-state"><?php echo $this->translate('INVOICES_STATE'); ?></th>
+					<th class="dw-col-pin"></th>
+					<th class="dw-col-actions"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->invoices as $invoice) : ?>
+					<?php
+					$stateClass = 'dw-badge--info';
+					if ($invoice->state == '101') $stateClass = 'dw-badge--warning';
+					if ($invoice->state == '103') $stateClass = 'dw-badge--danger';
+					if ($invoice->state == '104' || $invoice->state == '105' || $invoice->state == '106') $stateClass = 'dw-badge--success';
+					?>
+					<tr class="dw-row<?php echo $invoice->pinned ? ' is-pinned' : ''; ?>">
+						<td class="dw-col-check">
+							<input class="check-id" type="checkbox" value="<?php echo (int)$invoice->id; ?>" name="id" />
+							<input class="id" type="hidden" value="<?php echo (int)$invoice->id; ?>" name="id" />
+							<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+							<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+						</td>
+
+						<td class="dw-col-id" data-label="<?php echo $this->translate('INVOICES_INVOICE_ID'); ?>">
+							<?php if ($invoice->invoiceid) : ?>
+								<a href="<?php echo $this->url(array('module'=>$this->module, 'controller'=>$this->controller, 'action'=>'edit', 'id'=>$invoice->id)); ?>">
+									<?php echo $this->escape($invoice->invoiceid); ?>
+								</a>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-title" data-label="<?php echo $this->translate('INVOICES_TITLE'); ?>">
+							<a href="<?php echo $this->url(array('module'=>$this->module, 'controller'=>$this->controller, 'action'=>'edit', 'id'=>$invoice->id)); ?>">
+								<?php echo $invoice->title ? $this->escape($invoice->title) : $this->escape($invoice->id); ?>
+							</a>
+						</td>
+
+						<td class="dw-col-contact" data-label="<?php echo $this->translate('INVOICES_CONTACT'); ?>">
+							<?php if ($invoice->contactid) : ?>
+								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->cid)); ?>">
+									<div><?php echo $this->escape($invoice->contactid); ?></div>
+									<div><?php echo $this->escape($invoice->billingname1); ?></div>
+									<?php if ($invoice->billingname2) : ?>
+										<div><?php echo $this->escape($invoice->billingname2); ?></div>
+									<?php endif; ?>
+								</a>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-address" data-label="<?php echo $this->translate('INVOICES_BILLING_ADDRESS'); ?>">
+							<div><?php echo $this->escape($invoice->billingstreet); ?></div>
+							<div><?php echo $this->escape($invoice->billingpostcode); ?></div>
+							<div><?php echo $this->escape($invoice->billingcity); ?></div>
+						</td>
+
+						<td class="dw-col-notes notes" data-label="<?php echo $this->translate('INVOICES_NOTES'); ?>">
+							<div class="editableContainer">
+								<?php if ($invoice->notes) : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$invoice->id; ?>"
+										data-value="<?php echo $this->escape($invoice->notes); ?>"
+										data-type="textarea"
+									><?php echo $this->escape($invoice->notes); ?></pre>
+								<?php else : ?>
+									<pre
+										class="editable dw-editable-note"
+										data-name="notes"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$invoice->id; ?>"
+										data-value=""
+										data-type="textarea"
+										data-empty="true"
+									><?php echo $this->translate('TOOLBAR_NEW'); ?></pre>
+								<?php endif; ?>
+							</div>
+						</td>
+
+						<td class="dw-col-date" data-label="<?php echo $this->translate('INVOICES_INVOICE_DATE'); ?>">
+							<?php if ($invoice->invoicedate) : ?>
+								<?php echo $this->escape(date('d.m.Y', strtotime($invoice->invoicedate))); ?>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-total" data-label="<?php echo $this->translate('INVOICES_TOTAL'); ?>">
+							<?php echo $this->escape($invoice->total); ?>
+						</td>
+
+						<td class="dw-col-state state" data-label="<?php echo $this->translate('INVOICES_STATE'); ?>">
+							<?php if ($invoice->state == '105' || $invoice->state == '106') : ?>
+								<span class="dw-badge <?php echo $stateClass; ?>">
+									<?php echo $this->translate($this->escape($this->options['states'][$invoice->state])); ?>
+								</span>
+							<?php else : ?>
+								<div class="editableContainer">
+									<span
+										class="editable dw-badge <?php echo $stateClass; ?>"
+										data-name="state"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$invoice->id; ?>"
+										data-value="<?php echo $this->escape($invoice->state); ?>"
+										data-type="select"
+									><?php echo $this->translate($this->escape($this->options['states'][$invoice->state])); ?></span>
+								</div>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-pin">
+							<button type="button" class="dw-btn dw-btn--secondary" onclick="pin(<?php echo (int)$invoice->id; ?>)">
+								<?php echo $invoice->pinned ? $this->translate('DETACH') : $this->translate('ATTACH'); ?>
+							</button>
+						</td>
+
+						<td class="dw-col-actions">
+							<div class="dw-row-actions">
+								<?php if ($invoice->state == '105' || $invoice->state == '106') : ?>
+									<?php echo $this->toolbarInline->renderElement('view'); ?>
+								<?php else : ?>
+									<?php echo $this->toolbarInline->renderElement('edit'); ?>
+								<?php endif; ?>
+								<?php echo $this->toolbarInline->renderElement('copy'); ?>
+								<?php echo $this->toolbarInline->renderElement('delete'); ?>
+								<?php echo $this->toolbarInline->renderElement('pdf'); ?>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php echo $this->invoices->total; ?>
+		</div>
+	</div>
+</div>

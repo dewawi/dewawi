@@ -5,6 +5,21 @@ echo $this->TinyMCE();
 echo $this->FileManager();
 ?>
 
+<?php echo $this->form->renderForm([
+	'id' => 'creditnote',
+	'activeTab' => $this->activeTab,
+	'tabs' => [
+		'overview' => ['title' => 'TABS_OVERVIEW'],
+		'positions' => ['title' => 'TABS_POSITIONS', 'html' => $this->Positions('process'), 'a_attrs' => ['onclick'=>"getPositions('process', 'pos')"]],
+		'customer' => ['title' => 'TABS_CUSTOMER'],
+		'shipping' => ['title' => 'TABS_SHIPPING_ADDRESS'],
+		'files' => ['title' => 'TABS_FILES', 'html' => $this->Files()],
+		'finish' => ['title' => 'TABS_FINISH', 'html' => $this->Finish(), 'a_attrs' => ['onclick'=>"previewPdf()"]],
+	],
+]); ?>
+<?php echo $this->Popup(); ?>
+
+<?php /*
 <ul class="tabs">
 	<li<?php if($this->activeTab == "#tabOverview") : ?> class="active"<?php endif; ?>>
 		<a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW'); ?></a></li>
@@ -28,10 +43,10 @@ echo $this->FileManager();
 					<dl class="form">
 						<?php echo $this->form->id; ?>
 						<?php echo $this->form->title; ?>
-						<dt id="customerid-label"><label><?php echo $this->translate('PROCESSES_CUSTOMER'); ?></label></dt>
+						<dt id="contactid-label"><label><?php echo $this->translate('PROCESSES_CUSTOMER'); ?></label></dt>
 						<dd>
 							<?php echo $this->toolbar->select; ?>
-							<input id="customerid" type="text" value="<?php echo $this->form->getValue('customerid'); ?>" size="3" readonly="readonly" name="customerid"/>
+							<input id="contactid" type="text" value="<?php echo $this->form->getValue('contactid'); ?>" size="3" readonly="readonly" name="contactid"/>
 							<input id="billingname1" type="text" value="<?php echo $this->form->getValue('billingname1'); ?>" size="20" readonly="readonly" name="billingname1"/>
 						</dd>
 						<?php echo $this->form->notes; ?>
@@ -135,7 +150,7 @@ echo $this->FileManager();
 						<dd>
 							<?php echo $this->toolbar->select; ?>
 						</dd>
-						<?php echo $this->form->customerid; ?>
+						<?php echo $this->form->contactid; ?>
 						<?php echo $this->form->billingname1; ?>
 						<?php echo $this->form->billingname2; ?>
 						<?php echo $this->form->billingdepartment; ?>
@@ -253,8 +268,8 @@ echo $this->FileManager();
 
 <div id="popup">
 	<div id="addCustomer" class="popup_block">
-		<?php if($this->form->getValue('customerid')) : ?>
-			<iframe src="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'select', 'contactid'=>$this->form->getValue('customerid'), 'parent'=>$this->module.'|'.$this->controller));?>" width="100%" height="100%"></iframe>
+		<?php if($this->form->getValue('contactid')) : ?>
+			<iframe src="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'select', 'contactid'=>$this->form->getValue('contactid'), 'parent'=>$this->module.'|'.$this->controller));?>" width="100%" height="100%"></iframe>
 		<?php else : ?>
 			<iframe src="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'select', 'parent'=>$this->module.'|'.$this->controller));?>" width="100%" height="100%"></iframe>
 		<?php endif; ?>
@@ -263,4 +278,4 @@ echo $this->FileManager();
 	<div id="selectPosition" class="popup_block">
 		<iframe src="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'select', 'parent'=>$this->module.'|'.$this->controller.'|'.$this->form->getValue('id')));?>" width="100%" height="100%"></iframe>
 	</div>
-</div>
+</div> */?>
