@@ -3,227 +3,225 @@ $this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
 $this->headTitle()->setSeparator(' - ');
 $this->headTitle('DEWAWI');
 echo $this->doctype();
+
 $this->language = str_replace('_', '-', $this->language);
+
+$isDetailPage = in_array($this->action, ['edit', 'view'], true);
+$isContactsIndex = ($this->action === 'index' && $this->controller === 'contact' && $this->module === 'contacts');
+$isItemsIndex = ($this->action === 'index' && $this->controller === 'item' && $this->module === 'items');
+
+$date = new Zend_Date();
+$currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
+	. $date->get(Zend_Date::DAY) . ' '
+	. $date->get(Zend_Date::MONTH_NAME) . ' '
+	. $date->get(Zend_Date::YEAR);
 ?>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-	<head>
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico"/>
-		<?php echo $this->headMeta(); ?>
-		<?php echo $this->headTitle(); ?>
-		<?php echo $this->headLink(); ?>
-		<link href="<?php echo $this->baseUrl(); ?>/css/global.css" media="screen" rel="stylesheet" type="text/css" />
-		<link href="<?php echo $this->baseUrl(); ?>/library/miniCSS/mini-default.min.css" media="screen" rel="stylesheet" type="text/css"/>
-		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.css" media="screen" rel="stylesheet" type="text/css"/>
-		<link href="<?php echo $this->baseUrl(); ?>/library/Leaflet/leaflet.css" media="screen" rel="stylesheet" type="text/css"/>
-		<script type="text/javascript">
-			var action = "<?php echo $this->action; ?>";
-			<?php if(isset($this->id)) : ?>var id = <?php echo $this->id; ?>;<?php endif; ?>
-			var controller = "<?php echo $this->controller; ?>";
-			var module = "<?php echo $this->module; ?>";
-			var baseUrl = "<?php echo $this->baseUrl(); ?>";
-			var language = "<?php echo $this->language; ?>";
-			var deleteConfirm = "<?php echo $this->translate('MESSAGES_DELETE_CONFIRM'); ?>";
-			//Cookie path
-			var cookiePath = baseUrl;
-			if(module != 'default') cookiePath += "/"+module;
-			if(controller != 'index') cookiePath += "/"+controller;
-		</script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.12.4.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/formatCurrency/jquery.formatCurrency-1.4.0.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/formatCurrency/i18n/jquery.formatCurrency.<?php echo $this->language; ?>.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/i18n/datepicker.<?php echo $this->language; ?>.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Leaflet/leaflet.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/processes.js"></script>
-		<?php echo $this->headScript(); ?>
-	</head>
-	<body>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php echo $this->escape($this->language); ?>" lang="<?php echo $this->escape($this->language); ?>">
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico"/>
+	<?php echo $this->headMeta(); ?>
+	<?php echo $this->headTitle(); ?>
+	<?php echo $this->headLink(); ?>
 
-	<div class="container">
+	<link href="<?php echo $this->baseUrl(); ?>/css/ui.css" media="screen" rel="stylesheet" type="text/css" />
+	<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.css" media="screen" rel="stylesheet" type="text/css"/>
+	<link href="<?php echo $this->baseUrl(); ?>/library/Leaflet/leaflet.css" media="screen" rel="stylesheet" type="text/css"/>
 
-		<div class="<?php echo $this->module; ?> <?php echo $this->action; ?>">
+	<script type="text/javascript">
+		var action = "<?php echo $this->action; ?>";
+		<?php if (isset($this->id)) : ?>var id = <?php echo (int)$this->id; ?>;<?php endif; ?>
+		var controller = "<?php echo $this->controller; ?>";
+		var module = "<?php echo $this->module; ?>";
+		var baseUrl = "<?php echo $this->baseUrl(); ?>";
+		var language = "<?php echo $this->language; ?>";
+		var deleteConfirm = "<?php echo $this->translate('MESSAGES_DELETE_CONFIRM'); ?>";
 
-			<div class="row">
-				<div class="col-sm-12 hidden-lg">
-					<div id="userinfo">
-						<?php if(isset($this->user)) : ?>
-							<?php if($this->user['name']) : ?>
-								<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>"><?php echo $this->user['name']; ?></a> |
-							<?php else : ?>
-								<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>"><?php echo $this->user['email']; ?></a> |
-							<?php endif; ?>
-							<?php
-								$date = new Zend_Date();
-								echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
-							?> |
-							<?php //if($this->user['admin']) : ?>
-								<a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
-							<?php //endif; ?>
-							<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
-						<?php endif; ?>
-					</div>
-				</div>
+		var cookiePath = baseUrl;
+		if (module != 'default') cookiePath += "/" + module;
+		if (controller != 'index') cookiePath += "/" + controller;
+	</script>
+
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/formatCurrency/jquery.formatCurrency-1.4.0.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/formatCurrency/i18n/jquery.formatCurrency.<?php echo $this->language; ?>.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/i18n/datepicker.<?php echo $this->language; ?>.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Leaflet/leaflet.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/processes.js"></script>
+	<?php echo $this->headScript(); ?>
+</head>
+<body>
+
+<div class="dw-app-shell">
+	<div class="dw-app-shell__inner <?php echo $this->module; ?> <?php echo $this->action; ?>">
+
+		<header class="dw-app-header">
+			<div class="dw-app-header__brand">
+				<h1 class="dw-app-logo">
+					<a href="<?php echo $this->url(array('module'=>'default', 'controller'=>'index', 'action'=>'index', 'id'=>null), null, true); ?>">
+						<img height="50" width="200" src="<?php echo $this->baseUrl(); ?>/images/dewawi.png" alt="DEWAWI">
+					</a>
+				</h1>
 			</div>
 
-			<div class="row">
-				<div class="col-sm-6">
-					<h1><a href="<?php echo $this->url(array('module'=>'default', 'controller'=>'index', 'action'=>'index', 'id'=>null), null, TRUE); ?>">
-						<img height="50" width="200" src="<?php echo $this->baseUrl(); ?>/images/dewawi.png" alt="DEWAWI">
-					</a></h1>
-				</div>
-				<div class="col-sm-6 hidden-sm hidden-md">
-					<div id="userinfo">
-						<?php if(isset($this->user)) : ?>
-							<?php if($this->user['name']) : ?>
-								<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>"><?php echo $this->user['name']; ?></a> |
+			<?php if (isset($this->user)) : ?>
+				<div class="dw-app-header__meta">
+					<div class="dw-userbar">
+						<div class="dw-userbar__main">
+							<?php if (!empty($this->user['name'])) : ?>
+								<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>">
+									<?php echo $this->escape($this->user['name']); ?>
+								</a>
 							<?php else : ?>
-								<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>"><?php echo $this->user['email']; ?></a> |
+								<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'edit', 'id'=>null)); ?>">
+									<?php echo $this->escape($this->user['email']); ?>
+								</a>
 							<?php endif; ?>
-							<?php
-								$date = new Zend_Date();
-								echo $date->get(Zend_date::WEEKDAY).', '.$date->get(Zend_date::DAY).' '.$date->get(Zend_date::MONTH_NAME).' '.$date->get(Zend_Date::YEAR);
-							?> |
-							<?php //if($this->user['admin']) : ?>
-								<a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>"><?php echo $this->translate('SETTINGS'); ?></a> |
-							<?php //endif; ?>
-							<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>"><?php echo $this->translate('USERS_LOGOUT'); ?></a>
-							<?php if($this->action == 'index') : ?>
+
+							<span class="dw-userbar__separator">|</span>
+							<span><?php echo $this->escape($currentDate); ?></span>
+							<span class="dw-userbar__separator">|</span>
+
+							<a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'id'=>null)); ?>">
+								<?php echo $this->translate('SETTINGS'); ?>
+							</a>
+
+							<span class="dw-userbar__separator">|</span>
+
+							<a href="<?php echo $this->url(array('module'=>'users', 'controller'=>'user', 'action'=>'logout', 'id'=>null)); ?>">
+								<?php echo $this->translate('USERS_LOGOUT'); ?>
+							</a>
+						</div>
+
+						<?php if ($this->action === 'index') : ?>
+							<div class="dw-userbar__switchers">
 								<?php echo $this->clientSwitcher; ?>
 								<?php echo $this->languageSwitcher; ?>
-							<?php endif; ?>
+							</div>
 						<?php endif; ?>
 					</div>
 				</div>
-				<div class="col-sm-6 hidden-lg" style="text-align: right;">
-					<label for="doc-drawer-checkbox" class="button drawer-toggle col-sm"></label>
+			<?php endif; ?>
+		</header>
+
+		<?php if (isset($this->user)) : ?>
+			<?php echo $this->MainMenu(); ?>
+
+			<div class="dw-page-meta">
+				<div class="dw-breadcrumbs" id="breadcrumbs">
+					<?php echo $this->Breadcrumbs(); ?>
 				</div>
 			</div>
+		<?php endif; ?>
 
-			<?php if(isset($this->user)) : ?>
-				<?php echo $this->MainMenu(); ?>
-
-				<div class="row">
-					<div class="col-sm-12 col-md-12">
-						<div id="breadcrumbs">
-							<?php echo $this->Breadcrumbs(); ?>
-						</div>
-					</div>
-				</div>
-			<?php endif; ?>
-
-			<?php if($this->action == "edit" || $this->action == "view") : ?>
-				<div class="row">
-					<div class="col-sm-12 col-md-6">
-						<h2><?php echo $this->escape($this->title); ?></h2>
-					</div>
-					<div class="col-sm-12 col-md-6">
-						<div class="toolbar">
-							<?php echo $this->Toolbar(); ?>
-						</div>
-					</div>
-				</div>
-			<?php else : ?>
-				<div class="row">
-					<div class="col-sm-12 col-md-2">
-						<h2><?php echo $this->escape($this->title); ?></h2>
-					</div>
-					<div class="col-sm-12 col-md-10">
-						<div class="toolbar">
-							<?php echo $this->Toolbar(); ?>
-						</div>
-					</div>
-				</div>
-			<?php endif; ?>
-
-			<div class="row">
-			<?php if($this->action == "edit" || $this->action == "view") : ?>
-				<div class="col-sm-12 col-lg-10">
-					<div id="content">
-						<?php echo $this->layout()->content; ?>
-					</div>
-				</div>
-				<div class="col-sm-12 col-lg-2">
-					<div id="actions">
-						<?php echo $this->Actions(); ?>
-					</div>
-				</div>
-			<?php else : ?>
-				<?php if($this->action == 'index' && $this->controller == 'contact' && $this->module == 'contacts') : ?>
-					<div class="hidden-sm hidden-md col-lg-2">
-						<div id="categories">
-							<?php echo $this->TreeMenu($this->options['categories']); ?>
-							<p>
-								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'import', 'id'=>null)); ?>"><?php echo $this->translate('Import'); ?></a> |
-								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'export', 'id'=>null)); ?>"><?php echo $this->translate('Export'); ?></a>
-							</p>
-							<?php if($this->tags) echo $this->Tags($this->tags, 'contacts', 'contact'); ?>
-						</div>
-					</div>
-					<div class="col-sm-12 col-lg-10">
-						<div id="content">
-							<?php echo $this->layout()->content; ?>
-						</div>
-					</div>
-				<?php elseif($this->action == 'index' && $this->controller == 'item' && $this->module == 'items') : ?>
-					<div class="hidden-sm hidden-md col-lg-2">
-						<div id="categories">
-							<?php echo $this->TreeMenu($this->options['categories']); ?><br>
-							<p>
-								<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import', 'id'=>null)); ?>"><?php echo $this->translate('Import'); ?></a> |
-								<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'export', 'id'=>null)); ?>"><?php echo $this->translate('Export'); ?></a>
-							</p>
-							<?php if($this->tags) echo $this->Tags($this->tags, 'items', 'item'); ?>
-						</div>
-					</div>
-					<div class="col-sm-12 col-lg-10">
-						<div id="content">
-							<?php echo $this->layout()->content; ?>
-						</div>
-					</div>
-				<?php else : ?>
-					<div class="col-sm-12">
-						<div id="content">
-							<?php echo $this->layout()->content; ?>
-						</div>
-					</div>
-				<?php endif; ?>
-				</div>
-			<?php endif; ?>
+		<div class="dw-page-header">
+			<div class="dw-page-header__title">
+				<h2><?php echo $this->escape($this->title); ?></h2>
 			</div>
 
-			<div class="row">
-				<div class="col-sm-12 col-md-12">
-					<div id="footer">
-						<span>
-							<p>
-								<a href="https://www.dewawi.com/" target="_blank">DEWAWI Open Source Warenwirtschaftssystem</a>
-							</p>
-							<?php if($this->module == 'admin') : ?>
-								<p>
-									<span>Version 1.1.2</span>
-								</p>
-							<?php endif; ?>
-						</span>
-					</div>
-				</div>
+			<div class="dw-page-header__toolbar toolbar dw-toolbar">
+				<?php echo $this->Toolbar(); ?>
 			</div>
 		</div>
+
+		<?php if ($isDetailPage) : ?>
+			<div class="dw-page-layout dw-page-layout--detail">
+				<main class="dw-page-main">
+					<div id="content" class="dw-page-content">
+						<?php echo $this->layout()->content; ?>
+					</div>
+				</main>
+
+				<aside class="dw-page-aside">
+					<div id="actions" class="dw-actions-card">
+						<?php echo $this->Actions(); ?>
+					</div>
+				</aside>
+			</div>
+
+		<?php elseif ($isContactsIndex || $isItemsIndex) : ?>
+			<div class="dw-page-layout dw-page-layout--with-sidebar">
+				<aside class="dw-page-sidebar">
+					<div id="categories" class="dw-sidebar-card">
+						<?php echo $this->TreeMenu(); ?>
+
+						<p class="dw-sidebar-links">
+							<?php if ($isContactsIndex) : ?>
+								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'import', 'id'=>null)); ?>">
+									<?php echo $this->translate('Import'); ?>
+								</a>
+								|
+								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'export', 'id'=>null)); ?>">
+									<?php echo $this->translate('Export'); ?>
+								</a>
+							<?php elseif ($isItemsIndex) : ?>
+								<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import', 'id'=>null)); ?>">
+									<?php echo $this->translate('Import'); ?>
+								</a>
+								|
+								<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'export', 'id'=>null)); ?>">
+									<?php echo $this->translate('Export'); ?>
+								</a>
+							<?php endif; ?>
+						</p>
+
+						<?php if (!empty($this->tags)) : ?>
+							<?php
+							if ($isContactsIndex) {
+								echo $this->Tags($this->tags, 'contacts', 'contact');
+							} elseif ($isItemsIndex) {
+								echo $this->Tags($this->tags, 'items', 'item');
+							}
+							?>
+						<?php endif; ?>
+					</div>
+				</aside>
+
+				<main class="dw-page-main">
+					<div id="content" class="dw-page-content">
+						<?php echo $this->layout()->content; ?>
+					</div>
+				</main>
+			</div>
+
+		<?php else : ?>
+			<div class="dw-page-layout">
+				<main class="dw-page-main dw-page-main--full">
+					<div id="content" class="dw-page-content">
+						<?php echo $this->layout()->content; ?>
+					</div>
+				</main>
+			</div>
+		<?php endif; ?>
+
+		<footer class="dw-footer" id="footer">
+			<div class="dw-footer__inner">
+				<p>
+					<a href="https://www.dewawi.com/" target="_blank">DEWAWI Open Source Warenwirtschaftssystem</a>
+				</p>
+
+				<?php if ($this->module == 'admin') : ?>
+					<p>Version 1.1.2</p>
+				<?php endif; ?>
+			</div>
+		</footer>
 	</div>
+</div>
 
-	<div id="loading">
-		<div id="opacity"></div>
-		<div id="img"></div>
-	</div>
+<div id="loading">
+	<div id="opacity"></div>
+	<div id="img"></div>
+</div>
 
-	<?php echo $this->analytics; ?>
+<?php echo $this->analytics; ?>
 
-	</body>
+</body>
 </html>
