@@ -35,39 +35,70 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 
 	public function getAction()
 	{
-		header('Content-type: application/json');
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$element = $this->_getParam('element', null);
+		$elementName = (string)$this->_getParam('element', '');
 		$form = new Sales_Form_Toolbar();
-		if(isset($form->$element)) {
-			$options = $form->$element->getMultiOptions();
-			echo Zend_Json::encode($options);
-		} else {
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS')));
+
+		$el = $form->getElement($elementName);
+
+		if (!$el) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS'),
+			]);
 		}
+
+		$options = $el['options'] ?? [];
+
+		return $this->_helper->json($options);
+	}
+
+	protected function requireDeliveryorder(int $id, bool $silent = false): ?array
+	{
+		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
+		$deliveryorder = $deliveryorderDb->getDeliveryorderForEdit($id);
+
+		if ($deliveryorder) {
+			return $deliveryorder;
+		}
+
+		$request = $this->getRequest();
+
+		// AJAX
+		if ($request->isXmlHttpRequest()) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			$this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+
+			return null;
+		}
+
+		// Silent mode (PDF etc.)
+		if ($silent) {
+			$this->_helper->viewRenderer->setNoRender();
+			return null;
+		}
+
+		// Default redirect
+		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
+		$this->_helper->redirector->gotoSimple('index', 'deliveryorder');
+
+		return null;
 	}
 
 	public function indexAction()
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		if ($this->getRequest()->isPost()) {
+			$this->_helper->getHelper('layout')->disableLayout();
+		}
 
-		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Sales_Model_Get();
-		$deliveryorders = $get->deliveryorders($params, $options, $this->_flashMessenger);
-
-		$this->view->deliveryorders = $deliveryorders;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
-		$this->_flashMessenger->clearCurrentMessages();
+		$this->buildIndexView();
 	}
 
 	public function searchAction()
@@ -75,7 +106,13 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
+		$this->buildIndexView();
+	}
+
+	protected function buildIndexView(): void
+	{
 		$toolbar = new Sales_Form_Toolbar();
+		$toolbarInline = new Sales_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
@@ -85,332 +122,148 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->view->deliveryorders = $deliveryorders;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
+			$this->_flashMessenger->getMessages(),
+			$this->_flashMessenger->getCurrentMessages()
+		);
 		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()
 	{
-		$contactid = $this->_getParam('contactid', 0);
+		$contactId = (int)$this->_getParam('contactid', 0);
+		$controller = $this->getRequest()->getControllerName();
 
-		//Get primary currency
-		$currencies = new Application_Model_DbTable_Currency();
-		$currency = $currencies->getPrimaryCurrency();
-
-		//Get primary language
-		$languages = new Application_Model_DbTable_Language();
-		$language = $languages->getPrimaryLanguage();
-
-		//Get primary template
-		$templates = new Application_Model_DbTable_Template();
-		$template = $templates->getPrimaryTemplate();
-
-		$data = array();
-		$data['title'] = $this->view->translate('DELIVERY_ORDERS_NEW_DELIVERY_ORDER');
-		$data['currency'] = $currency['code'];
-		$data['templateid'] = $template['id'];
-		$data['language'] = $language['code'];
-		$data['state'] = 100;
-
-		//Get contact data
-		if($contactid) {
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContact($contactid);
-
-			//Get basic data
-			$data['contactid'] = $contact['contactid'];
-			$data['billingname1'] = $contact['name1'];
-			$data['billingname2'] = $contact['name2'];
-			$data['billingdepartment'] = $contact['department'];
-
-			//Get addresses
-			$addressDb = new Contacts_Model_DbTable_Address();
-			$addresses = $addressDb->getAddress($contact['id']);
-			if(count($addresses)) {
-				$data['billingstreet'] = $addresses[0]['street'];
-				$data['billingpostcode'] = $addresses[0]['postcode'];
-				$data['billingcity'] = $addresses[0]['city'];
-				$data['billingcountry'] = $addresses[0]['country'];
-			}
-
-			//Get additonal data
-			if($contact['vatin']) $data['vatin'] = $contact['vatin'];
-			if($contact['currency']) $data['currency'] = $contact['currency'];
-			if($contact['taxfree']) $data['taxfree'] = $contact['taxfree'];
-		}
+		$factory = new Sales_Service_CreateDataFactory();
+		$data = $factory->build($controller, $contactId);
 
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
 		$id = $deliveryorderDb->addDeliveryorder($data);
 
-		$this->_helper->redirector->gotoSimple('edit', 'deliveryorder', null, array('id' => $id));
+		return $this->_helper->redirector->gotoSimple('edit', 'deliveryorder', null, ['id' => $id]);
 	}
 
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
+		$id = (int)$this->_getParam('id', 0);
+		$isAjax = $request->isXmlHttpRequest();
+
+		$deliveryorder = $this->requireDeliveryorder($id);
+		if (!$deliveryorder) return;
 
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
 
-		if($deliveryorder['deliveryorderid'] && !$request->isPost()) {
-			$this->_helper->redirector->gotoSimple('view', 'deliveryorder', null, array('id' => $id));
-		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $deliveryorder['locked'], $deliveryorder['lockedtime']);
+		$this->_helper->Access->lock($id, $this->_user['id'], $deliveryorder['locked'] ?? 0, $deliveryorder['lockedtime'] ?? null);
 
-			$form = new Sales_Form_Deliveryorder();
-			$options = $this->_helper->Options->getOptions($form);
+		$formFactory = new Sales_Service_EditFormFactory();
+		$formData = $formFactory->create('Sales_Form_Deliveryorder');
+		$form = $formData['form'];
+		$options = $formData['options'];
+		$toolbar = new Sales_Form_Toolbar();
 
-			//Get contact
-			if($deliveryorder['contactid']) {
-				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContactWithID($deliveryorder['contactid']);
-
-				//Phone
-				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($contact['id']);
-
-				//Email
-				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmails($contact['id']);
-
-				//Internet
-				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($contact['id']);
-
-				$this->view->contact = $contact;
-			}
-
+		if ($request->isPost()) {
 			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $deliveryorder['taxfree']);
-			if($request->isPost()) {
-				header('Content-type: application/json');
+
+			if ($isAjax) {
 				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if(($element == 'textblockheader' || $element == 'textblockfooter')) {
-					$textblockDb = new Sales_Model_DbTable_Textblock();
-					if(strpos($element, 'header') !== false) {
-						$data['text'] = $data['textblockheader'];
-						unset($data['textblockheader']);
-						$textblockDb->updateTextblock($data, 'deliveryorder', 'header');
-					} elseif(strpos($element, 'footer') !== false) {
-						$data['text'] = $data['textblockfooter'];
-						unset($data['textblockfooter']);
-						$textblockDb->updateTextblock($data, 'deliveryorder', 'footer');
-					}
-				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['contactperson'] = $this->_user['name'];
-					if(isset($data['currency'])) {
-						$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
-						$positions = $positionsDb->getPositions($id);
-						foreach($positions as $position) {
-							$positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
-						}
-						//$this->_helper->Currency->convert($id, 'creditnote');
-					}
-					if(isset($data['salesorderid'])) {
-						if($data['salesorderid']) {
-							$data['salesorderid'] = str_replace(['+', '-'], '', filter_var($data['salesorderid'], FILTER_SANITIZE_NUMBER_INT));
-						} else {
-							$data['salesorderid'] = 0;
-						}
-					}
-					if(isset($data['taxfree'])) {
-						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
-						$data['subtotal'] = $calculations['row']['subtotal'];
-						$data['taxes'] = $calculations['row']['taxes']['total'];
-						$data['total'] = $calculations['row']['total'];
-					}
-					if(isset($data['orderdate'])) {
-						if(Zend_Date::isDate($data['orderdate'])) {
-							$orderdate = new Zend_Date($data['orderdate'], Zend_Date::DATES, 'de');
-							$data['orderdate'] = $orderdate->get('yyyy-MM-dd');
-						} else {
-							$data['orderdate'] = NULL;
-						}
-					}
-					if(isset($data['deliverydate'])) {
-						if(Zend_Date::isDate($data['deliverydate'])) {
-							$deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
-							$data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
-						} else {
-							$data['deliverydate'] = NULL;
-						}
-					}
+				$this->_helper->layout->disableLayout();
 
-					//Update file manager subfolder if contact is changed
-					if(isset($data['contactid']) && $data['contactid']) {
-						$contactUrl = $this->_helper->Directory->getUrl($data['contactid']);
-						$defaultNamespace = new Zend_Session_Namespace('RF');
-						$defaultNamespace->view_type = '1'; //detailed list
-						$defaultNamespace->subfolder = 'contacts/'.$contactUrl;
-					}
+				$ajaxSaveService = new Sales_Service_EditAjaxSaveService();
 
-					$deliveryorderDb->updateDeliveryorder($id, $data);
-					echo Zend_Json::encode($deliveryorderDb->getDeliveryorder($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			} else {
-				if($id > 0) {
-					$data = $deliveryorder;
-					if($deliveryorder['contactid']) {
-						$data['contactinfo'] = $contact['info'];
-						$form->contactinfo->setAttrib('data-id', $contact['id']);
-						$form->contactinfo->setAttrib('data-controller', 'contact');
-						$form->contactinfo->setAttrib('data-module', 'contacts');
-						$form->contactinfo->setAttrib('readonly', null);
-					}
-					if(!$data['salesorderid']) $data['salesorderid'] = NULL;
-
-					//Convert dates to the display format
-					$salesorderdate = new Zend_Date($data['salesorderdate']);
-					if($data['salesorderdate']) $data['salesorderdate'] = $salesorderdate->get('dd.MM.yyyy');
-					$orderdate = new Zend_Date($data['orderdate']);
-					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
-					$deliverydate = new Zend_Date($data['deliverydate']);
-					if($data['deliverydate']) $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
-
-					$form->populate($data);
-
-					//Toolbar
-					$toolbar = new Sales_Form_Toolbar();
-					$toolbar->state->setValue($data['state']);
-
-					//Get text blocks
-					$textblocksDb = new Sales_Model_DbTable_Textblock();
-					$textblocks = $textblocksDb->getTextblocks('deliveryorder');
-
-					$this->view->form = $form;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-					$this->view->textblocks = $textblocks;
-				}
+				return $this->_helper->json($ajaxSaveService->save([
+					'form' => $form,
+					'post' => (array)$request->getPost(),
+					'id' => $id,
+					'db' => $deliveryorderDb,
+					'loadMethod' => 'getDeliveryorderForEdit',
+					'updateMethod' => 'updateDeliveryorder',
+				]));
 			}
+
+			$post = (array)$request->getPost();
+
+			if (!$form->isValid($post)) {
+				$form->setValues($post);
+			} else {
+				$values = $form->getFilteredValues();
+
+				if (isset($values['currency'])) {
+					$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
+					$positions = $positionsDb->getPositions($id);
+
+					foreach ($positions as $position) {
+						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
+					}
+				}
+
+				if (isset($values['taxfree'])) {
+					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
+					$values['subtotal'] = $calculations['row']['subtotal'];
+					$values['taxes'] = $calculations['row']['taxes']['total'];
+					$values['total'] = $calculations['row']['total'];
+				}
+
+				$deliveryorderDb->updateDeliveryorder($id, $values);
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
+				return $this->_helper->redirector->gotoSimple('edit', 'deliveryorder', null, ['id' => $id]);
+			}
+		} else {
+			$formFactory->populate($form, $deliveryorder, $id, 'deliveryorders', 'deliveryorder');
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+
+		$vmService = new Sales_Service_DeliveryorderEditViewModel();
+		$vm = $vmService->build($id, (array)$this->_user, (array)$deliveryorder);
+
+		$this->view->assign(array_merge($vm, [
+			'id' => $id,
+			'form' => $form,
+			'toolbar' => $toolbar,
+			'options' => $options,
+			'activeTab' => $request->getCookie('tab', null),
+		]));
+
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function viewAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
+		$controller = $this->getRequest()->getControllerName();
 
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
+		$deliveryorder = $this->requireDeliveryorder($id);
+		if (!$deliveryorder) return;
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($deliveryorder['contactid']);
+		$contact = $contactDb->getContactWithID((int)$deliveryorder['contactid']);
 
-		//Convert dates to the display format
-		if($deliveryorder['deliveryorderdate']) $deliveryorder['deliveryorderdate'] = date("d.m.Y", strtotime($deliveryorder['deliveryorderdate']));
-		if($deliveryorder['orderdate']) $deliveryorder['orderdate'] = date("d.m.Y", strtotime($deliveryorder['orderdate']));
-		if($deliveryorder['deliverydate']) $deliveryorder['deliverydate'] = date("d.m.Y", strtotime($deliveryorder['deliverydate']));
+		$emailFormFactory = new Sales_Service_EmailFormFactory();
+		$attachmentService = new Sales_Service_AttachmentService();
+		$readonlyFormFactory = new Sales_Service_ReadonlyFormFactory();
 
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
+		$this->view->assign([
+			'deliveryorder' => $deliveryorder,
+			'contact' => $contact,
+			'emailForm' => $emailFormFactory->build($deliveryorder, $contact, $controller),
+			'form' => $readonlyFormFactory->build('Sales_Form_Deliveryorder', $deliveryorder, Zend_Registry::get('Zend_Locale')),
+			'toolbar' => new Sales_Form_Toolbar(),
+		] + $attachmentService->sync($deliveryorder, $contact, $controller));
 
-		//Convert numbers to the display format
-		$deliveryorder['taxes'] = $currency->toCurrency($deliveryorder['taxes']);
-		$deliveryorder['subtotal'] = $currency->toCurrency($deliveryorder['subtotal']);
-		$deliveryorder['total'] = $currency->toCurrency($deliveryorder['total']);
-
-		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'deliveryorderpos');
-			foreach($positions as $position) {
-				$position->description = str_replace("\n", '<br>', $position->description);
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($position->price);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-				if(isset($price['rules'][$position->id])) $price['rules'][$position->id] = $this->_helper->PriceRule->formatPriceRules($price['rules'][$position->id], $currency, $locale);
-			}
-			$this->view->pricerules = $price['rules'];
-
-			//Get price rule actions
-			$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
-			$priceruleactions = $priceruleactionDb->getPriceruleactions();
-			$this->view->priceruleactions = $priceruleactions;
-		}
-
-		$toolbar = new Sales_Form_Toolbar();
-		$this->view->toolbar = $toolbar;
-
-		//Get email
-		$emailDb = new Contacts_Model_DbTable_Email();
-		$contact['email'] = $emailDb->getEmails($contact['id']);
-
-		//Get email form
-		$emailForm = new Contacts_Form_Emailmessage();
-		if($contact['email']) {
-			foreach($contact['email'] as $option) {
-				$emailForm->recipient->addMultiOption($option['id'], $option['email']);
-			}
-		}
-
-		//Get email templates
-		$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
-		if($emailtemplate = $emailtemplateDb->getEmailtemplate('sales', 'deliveryorder')) {
-			if($emailtemplate['cc']) $emailForm->cc->setValue($emailtemplate['cc']);
-			if($emailtemplate['bcc']) $emailForm->bcc->setValue($emailtemplate['bcc']);
-			if($emailtemplate['replyto']) $emailForm->replyto->setValue($emailtemplate['replyto']);
-
-			//Search and replace placeholders
-			$searchArray = array('[DOCID]', '[CONTACTID]');
-			$replaceArray = array($deliveryorder['deliveryorderid'], $deliveryorder['contactid']);
-			$emailBody = str_replace($searchArray, $replaceArray, $emailtemplate['body']);
-			$emailSubject = str_replace($searchArray, $replaceArray, $emailtemplate['subject']);
-			$emailForm->body->setValue($emailBody);
-			$emailForm->subject->setValue($emailSubject);
-		}
-
-		//Copy file to attachments
-		$filename = $deliveryorder['filename'];
-		$contactUrl = $this->_helper->Directory->getUrl($contact['id']);
-		$contactFilePath = BASE_PATH.'/files/contacts/'.$contactUrl.'/'.$filename;
-		$documentUrl = $this->_helper->Directory->getUrl($deliveryorder['id']);
-		$documentFilePath = BASE_PATH.'/files/attachments/sales/deliveryorder/'.$documentUrl;
-		if(file_exists($documentFilePath) && !file_exists($documentFilePath.'/'.$filename)) {
-			if(copy($contactFilePath, $documentFilePath.'/'.$filename)) {
-				$data = array();
-				$data['documentid'] = $id;
-				$data['filename'] = $filename;
-				$data['filetype'] = mime_content_type($documentFilePath.'/'.$filename);
-				$data['filesize'] = filesize($documentFilePath.'/'.$filename);
-				$data['location'] = $documentFilePath;
-				$data['module'] = 'sales';
-				$data['controller'] = 'deliveryorder';
-				$data['ordering'] = 1;
-			}
-		}
-
-		//Get email attachments
-		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
-		if(isset($data)) $emailattachmentDb->addEmailattachment($data);
-		$attachments = $emailattachmentDb->getEmailattachments($id, 'sales', 'deliveryorder');
-
-		$this->view->deliveryorder = $deliveryorder;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->emailForm = $emailForm;
-		$this->view->contactUrl = $contactUrl;
-		$this->view->documentUrl = $documentUrl;
-		$this->view->attachments = $attachments;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
 	public function copyAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$data = $deliveryorderDb->getDeliveryorder($id);
+
+		$data = $this->requireDeliveryorder($id);
+		if (!$data) return;
 
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
@@ -427,8 +280,8 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
 
-		$deliveryorder = new Sales_Model_DbTable_Deliveryorder();
-		echo $deliveryorderid = $deliveryorder->addDeliveryorder($data);
+		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
+		$deliveryorderid = $deliveryorderDb->addDeliveryorder($data);
 
 		//Copy positions
 		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
@@ -524,64 +377,18 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 		$this->_helper->viewRenderer->setRender('pdf');
 
-		$id = $this->_getParam('id', 0);
-		$templateid = $this->_getParam('templateid', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
+		$templateId = (int)$this->_getParam('templateid', 0);
 
-		if($templateid) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($templateid);
-			$this->view->template = $template;
-		}
+		$deliveryorder = $this->requireDeliveryorder($id);
+		if (!$deliveryorder) return;
 
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
+		$service = new Sales_Service_PdfDataService();
+		$data = $service->build($deliveryorder, 'deliveryorder', [
+			'templateid' => $templateId,
+		]);
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($deliveryorder['contactid']);
-
-		//Set language
-		if($deliveryorder['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$deliveryorder['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
-
-		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'deliveryorderpos');
-
-			//Set precision and currency
-			foreach($positions as $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-
-			$deliveryorder['taxes'] = $currency->toCurrency($deliveryorder['taxes']);
-			$deliveryorder['subtotal'] = $currency->toCurrency($deliveryorder['subtotal']);
-			$deliveryorder['total'] = $currency->toCurrency($deliveryorder['total']);
-			if($deliveryorder['taxfree']) {
-				$deliveryorder['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$deliveryorder['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-		}
-
-		//Get footers
-		$footerDb = new Application_Model_DbTable_Footer();
-		$footers = $footerDb->getFooters($templateid);
-
-		$this->view->deliveryorder = $deliveryorder;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->footers = $footers;
+		$this->view->assign($data);
 	}
 
 	public function saveAction()
@@ -589,145 +396,17 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 		$this->_helper->viewRenderer->setRender('pdf');
 
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
 
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
+		$deliveryorder = $this->requireDeliveryorder($id);
+		if (!$deliveryorder) return;
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($deliveryorder['contactid']);
+		$service = new Sales_Service_PdfDataService();
+		$data = $service->build($deliveryorder, 'deliveryorder', [
+			'ensureDocumentId' => true,
+		]);
 
-		if($deliveryorder['templateid']) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($deliveryorder['templateid']);
-			$this->view->template = $template;
-		}
-
-		//Set language
-		if($deliveryorder['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$deliveryorder['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
-
-		//Set new document Id and filename
-		$updateLedger = false;
-		if(!$deliveryorder['deliveryorderid']) {
-			//Set new deliveryorder Id
-			$incrementDb = new Application_Model_DbTable_Increment();
-			$increment = $incrementDb->getIncrement('deliveryorderid');
-			$filenameDb = new Application_Model_DbTable_Filename();
-			$filename = $filenameDb->getFilename('deliveryorder', $deliveryorder['language']);
-			$filename = str_replace('%NUMBER%', $increment, $filename);
-			$deliveryorderDb->saveDeliveryorder($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment), 'deliveryorderid');
-			$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
-			$updateLedger = true;
-		}
-
-		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Update item data and ledger
-			if($updateLedger) {
-				$itemsDb = new Items_Model_DbTable_Item();
-				foreach($positions as $position) {
-					$item = $itemsDb->getItemBySKU($position['sku']);
-					if($item && $item['ledger']) {
-						$ledgerDb = new Items_Model_DbTable_Ledger();
-						$quantity = $item['quantity'] - $position->quantity;
-						$ledger = array(
-									'contactid' => $deliveryorder['contactid'],
-									'type' => 'outflow',
-									'docid' => $deliveryorder['id'],
-									'doctype' => 'deliveryorder',
-									'quoteid' => $deliveryorder['quoteid'],
-									'salesorderid' => $deliveryorder['salesorderid'],
-									'invoiceid' => $deliveryorder['invoiceid'],
-									'deliveryorderid' => $deliveryorder['deliveryorderid'],
-									'ledgerdate' => $this->_date,
-									'quotedate' => $deliveryorder['quotedate'],
-									'salesorderdate' => $deliveryorder['salesorderdate'],
-									'invoicedate' => $deliveryorder['invoicedate'],
-									'deliveryorderdate' => $deliveryorder['deliveryorderdate'],
-									'orderdate' => $deliveryorder['orderdate'],
-									'deliverydate' => $deliveryorder['deliverydate'],
-									'comment' => 'Lieferschein '.$deliveryorder['deliveryorderid'].' vom '.date("d.m.Y", strtotime($deliveryorder['deliveryorderdate'])),
-									'vatin' => $deliveryorder['vatin'],
-									'paymentmethod' => $deliveryorder['paymentmethod'],
-									'shippingmethod' => $deliveryorder['shippingmethod'],
-									'billingname1' => $deliveryorder['billingname1'],
-									'billingname2' => $deliveryorder['billingname2'],
-									'billingdepartment' => $deliveryorder['billingdepartment'],
-									'billingstreet' => $deliveryorder['billingstreet'],
-									'billingpostcode' => $deliveryorder['billingpostcode'],
-									'billingcity' => $deliveryorder['billingcity'],
-									'billingcountry' => $deliveryorder['billingcountry'],
-									'shippingname1' => $deliveryorder['shippingname1'],
-									'shippingname2' => $deliveryorder['shippingname2'],
-									'shippingdepartment' => $deliveryorder['shippingdepartment'],
-									'shippingstreet' => $deliveryorder['shippingstreet'],
-									'shippingpostcode' => $deliveryorder['shippingpostcode'],
-									'shippingcity' => $deliveryorder['shippingcity'],
-									'shippingcountry' => $deliveryorder['shippingcountry'],
-									'shippingphone' => $deliveryorder['shippingphone'],
-									'contactperson' => $deliveryorder['contactperson'],
-									'language' => $deliveryorder['language'],
-									'taxfree' => $deliveryorder['taxfree'],
-									'sku' => $position['sku'],
-									'itemid' => $position['itemid'],
-									'title' => $position['title'],
-									'image' => $position['image'],
-									'description' => $position['description'],
-									'price' => $position['price'],
-									'taxrate' => $position['taxrate'],
-									'priceruleamount' => $position['priceruleamount'],
-									'priceruleaction' => $position['priceruleaction'],
-									'quantity' => $position['quantity'],
-									'total' => $position['total'],
-									'currency' => $position['currency'],
-									'uom' => $position['uom'],
-									'warehouseid' => 1
-									);
-						$ledgerDb->addLedger($ledger);
-						$itemsDb->quantityItem($item['id'], $quantity);
-					}
-				}
-			}
-
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'deliveryorderpos');
-
-			//Set precision and currency
-			foreach($positions as $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-
-			$deliveryorder['taxes'] = $currency->toCurrency($deliveryorder['taxes']);
-			$deliveryorder['subtotal'] = $currency->toCurrency($deliveryorder['subtotal']);
-			$deliveryorder['total'] = $currency->toCurrency($deliveryorder['total']);
-			if($deliveryorder['taxfree']) {
-				$deliveryorder['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$deliveryorder['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-		}
-
-		//Get footers
-		$footerDb = new Application_Model_DbTable_Footer();
-		$footers = $footerDb->getFooters($deliveryorder['templateid']);
-
-		$this->view->deliveryorder = $deliveryorder;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->footers = $footers;
+		$this->view->assign($data);
 	}
 
 	public function downloadAction()
@@ -735,63 +414,15 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 		$this->_helper->viewRenderer->setRender('pdf');
 
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
 
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorder = $deliveryorderDb->getDeliveryorder($id);
+		$deliveryorder = $this->requireDeliveryorder($id);
+		if (!$deliveryorder) return;
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($deliveryorder['contactid']);
+		$service = new Sales_Service_PdfDataService();
+		$data = $service->build($deliveryorder, 'deliveryorder');
 
-		if($deliveryorder['templateid']) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($deliveryorder['templateid']);
-			$this->view->template = $template;
-		}
-
-		//Set language
-		if($deliveryorder['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$deliveryorder['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($deliveryorder['currency'], 'USE_SYMBOL');
-
-		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'deliveryorderpos');
-
-			//Set precision and currency
-			foreach($positions as $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-
-			$deliveryorder['taxes'] = $currency->toCurrency($deliveryorder['taxes']);
-			$deliveryorder['subtotal'] = $currency->toCurrency($deliveryorder['subtotal']);
-			$deliveryorder['total'] = $currency->toCurrency($deliveryorder['total']);
-			if($deliveryorder['taxfree']) {
-				$deliveryorder['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$deliveryorder['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-		}
-
-		//Get footers
-		$footerDb = new Application_Model_DbTable_Footer();
-		$footers = $footerDb->getFooters($deliveryorder['templateid']);
-
-		$this->view->deliveryorder = $deliveryorder;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->footers = $footers;
+		$this->view->assign($data);
 	}
 
 	public function cancelAction()
@@ -801,6 +432,10 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
+
+			$deliveryorder = $this->requireDeliveryorder($id);
+			if (!$deliveryorder) return;
+
 			$deliveryorder = new Sales_Model_DbTable_Deliveryorder();
 			$deliveryorder->setState($id, 106);
 		}
@@ -810,19 +445,27 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toogle($id);
+		$this->_helper->Pin->toggle($id);
 	}
 
 	public function lockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->lock($id, $this->_user['id']);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function unlockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->unlock($id);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function keepaliveAction()

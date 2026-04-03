@@ -1,6 +1,6 @@
 <?php
 
-class Sales_PositionController extends Zend_Controller_Action
+class Sales_PositionController extends DEEC_Controller_Action
 {
 	protected $_date = null;
 
@@ -128,17 +128,19 @@ class Sales_PositionController extends Zend_Controller_Action
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
 
 			$formClass = 'Sales_Form_'.ucfirst($params['parent'].$params['type']);
-			$form = new $formClass();
-			$form->populate($position->toArray());
-			$form->uom->addMultiOptions($uoms);
-			if($position->uom) {
-				$uom = array_search($position->uom, $uoms);
-				if($uom) $form->uom->setValue($uom);
-			}
-			$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], $position->{$params['type'].'setid'}));
-			$form->taxrate->setValue(array_search($position->taxrate, $taxrates));
-			foreach($taxrates as $id => $value)
-				$form->taxrate->addMultiOption($id, Zend_Locale_Format::toNumber($value,array('precision' => 1,'locale' => $locale)).' %');
+			$form = $this->buildPositionForm(
+				$formClass,
+				$position,
+				$uoms,
+				$taxrates,
+				$this->_helper->Ordering->getOrdering(
+					$params['parent'],
+					$params['type'],
+					$params['parentid'],
+					$position->{$params['type'] . 'setid'}
+				),
+				$locale
+			);
 
 			if($position->masterid) {
 				$childs[$position->masterid][] = $form;
@@ -151,6 +153,7 @@ class Sales_PositionController extends Zend_Controller_Action
 				$options[$position->id] = $optionsDb->getPositions($position->itemid);
 			}
 		}
+
 		foreach($positions as $position) {
 			// Set price rules without currency symbol
 			if(isset($pricerules[$position->id])) {
@@ -186,82 +189,78 @@ class Sales_PositionController extends Zend_Controller_Action
 
 		$request = $this->getRequest();
 		$params = $this->_getAllParams();
-		$locale = Zend_Registry::get('Zend_Locale');
 
-		$form = new Items_Form_Item();
-
-		if($request->isPost()) {
-			header('Content-type: application/json');
+		if ($request->isPost()) {
 			$this->_helper->viewRenderer->setNoRender();
 			$this->_helper->getHelper('layout')->disableLayout();
-			$data = array();
-			if($params['itemid'] && $params['parentid']) {
-				//Get item
-				$item = new Items_Model_DbTable_Item();
-				$item = $item->getItem($params['itemid']);
 
-				//Define belonging classes
-				$parentClass = 'Sales_Model_DbTable_'.ucfirst($params['parent']);
-				$positionClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+			if ($params['itemid'] && $params['parentid']) {
+				$itemDb = new Items_Model_DbTable_Item();
+				$item = $itemDb->getItem($params['itemid']);
 
-				//Get parent data
+				$parentClass = 'Sales_Model_DbTable_' . ucfirst($params['parent']);
+				$positionClass = 'Sales_Model_DbTable_' . ucfirst($params['parent'] . $params['type']);
+
 				$parentDb = new $parentClass();
-				$parentMethod = 'get'.$params['parent'];
+				$parentMethod = 'get' . $params['parent'];
 				$parent = $parentDb->$parentMethod($params['parentid']);
 
-				//Check currency
-				if($parent['currency'] == $item['currency']) {
-					$data['price'] = $item['price'];
+				if ($parent['currency'] == $item['currency']) {
+					$price = $item['price'];
 				} else {
-					$data['price'] = $this->_helper->Currency($item['currency'], $parent['currency'], $item['price'], $this->_helper);
+					$price = $this->_helper->Currency($item['currency'], $parent['currency'], $item['price'], $this->_helper);
 				}
-				$data['currency'] = $parent['currency'];
 
-				$data['parentid'] = $params['parentid'];
-				$data[$params['type'].'setid'] = $params['setid'];
-				$data['itemid'] = $params['itemid'];
-				$data['sku'] = $item['sku'];
-				$data['title'] = $item['title'];
-				//$data['image'] = $item['image'];
-				$data['description'] = $item['description'];
-				if($item['taxid']) {
+				$taxrate = 0;
+				if ($item['taxid']) {
 					$taxrateDb = new Application_Model_DbTable_Taxrate();
-					$taxrate = $taxrateDb->getTaxrate($item['taxid']);
-					$data['taxrate'] = $taxrate['rate'];
-				} else {
-					$data['taxrate'] = 0;
+					$taxrateRow = $taxrateDb->getTaxrate($item['taxid']);
+					$taxrate = $taxrateRow['rate'];
 				}
-				$data['quantity'] = 1;
-				$data['total'] = $data['price']*$data['quantity'];
-				if($item['uomid']) {
+
+				$uom = '';
+				if ($item['uomid']) {
 					$uomDb = new Application_Model_DbTable_Uom();
-					$uom = $uomDb->getUom($item['uomid']);
-					$data['uom'] = $uom['title'];
-				} else {
-					$data['uom'] = '';
+					$uomRow = $uomDb->getUom($item['uomid']);
+					$uom = $uomRow['title'];
 				}
-				$data['ordering'] = $this->_helper->Ordering->getLatestOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid']) + 1;
 
-				$positionsDb = new $positionClass();
-				$positionid = $positionsDb->addPosition($data);
+				$data = [
+					'parentid' => $params['parentid'],
+					$params['type'] . 'setid' => $params['setid'],
+					'itemid' => $params['itemid'],
+					'sku' => $item['sku'],
+					'title' => $item['title'],
+					'description' => $item['description'],
+					'price' => $price,
+					'taxrate' => $taxrate,
+					'quantity' => 1,
+					'total' => $price,
+					'currency' => $parent['currency'],
+					'uom' => $uom,
+					'ordering' => $this->_helper->Ordering->getLatestOrdering(
+						$params['parent'],
+						$params['type'],
+						$params['parentid'],
+						$params['setid']
+					) + 1,
+				];
 
-				//Apply price rules
+				$positionDb = new $positionClass();
+				$positionid = $positionDb->addPosition($data);
+
 				$pricerules = $this->_helper->PriceRule->getPriceRules($item, $parent['contactid']);
-				$this->_helper->PriceRule->applyPriceRules('sales', $params['parent'].$params['type'], $pricerules, $positionid);
+				$this->_helper->PriceRule->applyPriceRules('sales', $params['parent'] . $params['type'], $pricerules, $positionid);
 
-				//Calculate
 				$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
-				echo Zend_Json::encode($calculations['locale']);
-			} else {
-				$form->populate($request->getPost());
+				return $this->_helper->json($calculations['locale']);
 			}
-		} else {
-			if($params['itemid'] > 0) {
-				$item = new Items_Model_DbTable_Item();
-				$form->populate($item->getItem($params['itemid']));
-			}
+
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
 		}
-		$this->view->form = $form;
 	}
 
 	public function addAction()
@@ -331,45 +330,71 @@ class Sales_PositionController extends Zend_Controller_Action
 		$params = $this->_getAllParams();
 		$locale = Zend_Registry::get('Zend_Locale');
 
-		//Get uoms
-		$uomDb = new Application_Model_DbTable_Uom();
-		$uoms = $uomDb->getUoms();
+		$formClass = 'Sales_Form_' . ucfirst($params['parent'] . $params['type']);
+		$modelClass = 'Sales_Model_DbTable_' . ucfirst($params['parent'] . $params['type']);
 
-		//Get tax rates
+		/** @var DEEC_Form $form */
+		$form = $this->buildPositionFormForRequest($formClass, $params, $locale);
+
+		// Get tax rates
 		$taxrateDb = new Application_Model_DbTable_Taxrate();
 		$taxrates = $taxrateDb->getTaxrates();
 
-		//Define belonging classes
-		$formClass = 'Sales_Form_'.ucfirst($params['parent'].$params['type']);
-		$modelClass = 'Sales_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+		// Get uoms
+		$uomDb = new Application_Model_DbTable_Uom();
+		$uoms = $uomDb->getUoms();
 
-		$form = new $formClass();
-		$form->uom->addMultiOptions($uoms);
-		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], 0));
-		$form->taxrate->addMultiOptions($taxrates);
+		if ($request->isPost()) {
+			$post = (array)$request->getPost();
 
-		if($request->isPost()) {
-			header('Content-type: application/json');
-			$data = $request->getPost();
-			$element = key($data);
-			if(isset($form->$element) && $form->isValidPartial($data)) {
-				if(($element == 'taxrate') && ($data[$element] != 0))
-					$data['taxrate'] = $taxrates[$data['taxrate']];
-				if(($element == 'price') || ($element == 'quantity') || ($element == 'priceruleamount'))
-					$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
-				if(($element == 'uom') && ($data[$element] != 0))
-					$data['uom'] = $uoms[$data[$element]];
-
-				$position = new $modelClass();
-				$position->updatePosition($params['id'], $data);
-
-				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'pricerulemaster')) {
-					$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
-					echo Zend_Json::encode($calculations['locale']);
-				}
-			} else {
-				throw new Exception('Form is invalid');
+			if (!$form->isValidPartial($post)) {
+				return $this->_helper->json([
+					'ok' => false,
+					'errors' => $this->toErrorMessages($form->getErrors(), $form),
+				]);
 			}
+
+			$values = $form->getFilteredValuesPartial($post);
+			$element = key($post);
+
+			if (($element === 'taxrate') && isset($values['taxrate']) && $values['taxrate'] != 0) {
+				$values['taxrate'] = $taxrates[$values['taxrate']] ?? 0;
+			}
+
+			if (($element === 'price') || ($element === 'quantity') || ($element === 'priceruleamount')) {
+				if (isset($values[$element])) {
+					$values[$element] = Zend_Locale_Format::getNumber($post[$element], [
+						'precision' => 2,
+						'locale' => $locale,
+					]);
+				}
+			}
+
+			if (($element === 'uom') && isset($values['uom']) && $values['uom'] != 0) {
+				$values['uom'] = $uoms[$values['uom']] ?? '';
+			}
+
+			$positionDb = new $modelClass();
+
+			try {
+				$positionDb->updatePosition($params['id'], $values);
+			} catch (Exception $e) {
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'save_failed',
+				]);
+			}
+
+			if (($element === 'price') || ($element === 'quantity') || ($element === 'taxrate') || ($element === 'pricerulemaster')) {
+				$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
+				return $this->_helper->json($calculations['locale']);
+			}
+
+			return $this->_helper->json([
+				'ok' => true,
+				'id' => (int)$params['id'],
+				'values' => $values,
+			]);
 		}
 	}
 
@@ -481,34 +506,78 @@ class Sales_PositionController extends Zend_Controller_Action
 		}
 	}
 
-	public function validateAction()
+	protected function buildPositionForm($formClass, $position, array $uoms, array $taxrates, array $orderingOptions, $locale)
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$form = new $formClass();
+		$form->setValues($position->toArray());
 
-		$params = $this->_getAllParams();
-		$locale = Zend_Registry::get('Zend_Locale');
+		$form->addOptions('uom', $uoms, 'replace');
 
-		$formClass = 'Sales_Form_'.ucfirst($params['parent'].$params['type']);
+		if ($position->uom) {
+			$uomId = array_search($position->uom, $uoms, true);
+			if ($uomId !== false) {
+				$form->setValue('uom', $uomId);
+			}
+		}
+
+		$form->addOptions('ordering', $orderingOptions, 'replace');
+
+		$taxrateOptions = [];
+		foreach ($taxrates as $taxrateId => $value) {
+			$taxrateOptions[$taxrateId] = Zend_Locale_Format::toNumber($value, [
+				'precision' => 1,
+				'locale' => $locale
+			]) . ' %';
+		}
+
+		$form->addOptions('taxrate', $taxrateOptions, 'replace');
+
+		$taxrateId = array_search($position->taxrate, $taxrates, true);
+		if ($taxrateId !== false) {
+			$form->setValue('taxrate', $taxrateId);
+		}
+
+		return $form;
+	}
+
+	protected function buildPositionFormForRequest(string $formClass, array $params, $locale): DEEC_Form
+	{
 		$form = new $formClass();
 
-		//Get uoms
+		// Get uoms
 		$uomDb = new Application_Model_DbTable_Uom();
 		$uoms = $uomDb->getUoms();
 
-		//Get tax rates
+		// Get tax rates
 		$taxrateDb = new Application_Model_DbTable_Taxrate();
 		$taxrates = $taxrateDb->getTaxrates();
 
-		$form->uom->addMultiOptions($uoms);
-		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], 0));
-		$form->taxrate->addMultiOptions($taxrates);
+		// UOM options
+		$form->addOptions('uom', $uoms, 'replace');
 
-		$data = $this->getRequest()->getPost();
-		$form->$data['element']->isValid($data[$data['element']]);
+		// Ordering options
+		$form->addOptions(
+			'ordering',
+			$this->_helper->Ordering->getOrdering(
+				$params['parent'],
+				$params['type'],
+				$params['parentid'],
+				0
+			),
+			'replace'
+		);
 
-		$json = $form->getMessages();
-		header('Content-type: application/json');
-		echo Zend_Json::encode($json);
+		// Tax rate options
+		$taxrateOptions = [];
+		foreach ($taxrates as $taxrateId => $value) {
+			$taxrateOptions[$taxrateId] = Zend_Locale_Format::toNumber($value, [
+				'precision' => 1,
+				'locale' => $locale,
+			]) . ' %';
+		}
+
+		$form->addOptions('taxrate', $taxrateOptions, 'replace');
+
+		return $form;
 	}
 }

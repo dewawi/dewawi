@@ -1,6 +1,6 @@
 <?php
 
-class Sales_QuoteController extends Zend_Controller_Action
+class Sales_QuoteController extends DEEC_Controller_Action
 {
 	protected $_date = null;
 
@@ -35,39 +35,70 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 	public function getAction()
 	{
-		header('Content-type: application/json');
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$element = $this->_getParam('element', null);
+		$elementName = (string)$this->_getParam('element', '');
 		$form = new Sales_Form_Toolbar();
-		if(isset($form->$element)) {
-			$options = $form->$element->getMultiOptions();
-			echo Zend_Json::encode($options);
-		} else {
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS')));
+
+		$el = $form->getElement($elementName);
+
+		if (!$el) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS'),
+			]);
 		}
+
+		$options = $el['options'] ?? [];
+
+		return $this->_helper->json($options);
+	}
+
+	protected function requireQuote(int $id, bool $silent = false): ?array
+	{
+		$quoteDb = new Sales_Model_DbTable_Quote();
+		$quote = $quoteDb->getQuoteForEdit($id);
+
+		if ($quote) {
+			return $quote;
+		}
+
+		$request = $this->getRequest();
+
+		// AJAX
+		if ($request->isXmlHttpRequest()) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			$this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+
+			return null;
+		}
+
+		// Silent mode (PDF etc.)
+		if ($silent) {
+			$this->_helper->viewRenderer->setNoRender();
+			return null;
+		}
+
+		// Default redirect
+		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
+		$this->_helper->redirector->gotoSimple('index', 'quote');
+
+		return null;
 	}
 
 	public function indexAction()
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		if ($this->getRequest()->isPost()) {
+			$this->_helper->getHelper('layout')->disableLayout();
+		}
 
-		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Sales_Model_Get();
-		$quotes = $get->quotes($params, $options, $this->_flashMessenger);
-
-		$this->view->quotes = $quotes;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
-		$this->_flashMessenger->clearCurrentMessages();
+		$this->buildIndexView();
 	}
 
 	public function searchAction()
@@ -75,7 +106,13 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
+		$this->buildIndexView();
+	}
+
+	protected function buildIndexView(): void
+	{
 		$toolbar = new Sales_Form_Toolbar();
+		$toolbarInline = new Sales_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
@@ -85,322 +122,148 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
+			$this->_flashMessenger->getMessages(),
+			$this->_flashMessenger->getCurrentMessages()
+		);
 		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()
 	{
-		$contactid = $this->_getParam('contactid', 0);
+		$contactId = (int)$this->_getParam('contactid', 0);
+		$controller = $this->getRequest()->getControllerName();
 
-		//Get primary currency
-		$currencies = new Application_Model_DbTable_Currency();
-		$currency = $currencies->getPrimaryCurrency();
-
-		//Get primary language
-		$languages = new Application_Model_DbTable_Language();
-		$language = $languages->getPrimaryLanguage();
-
-		//Get primary template
-		$templates = new Application_Model_DbTable_Template();
-		$template = $templates->getPrimaryTemplate();
-
-		$data = array();
-		$data['title'] = $this->view->translate('QUOTES_NEW_QUOTE');
-		$data['currency'] = $currency['code'];
-		$data['templateid'] = $template['id'];
-		$data['language'] = $language['code'];
-		$data['state'] = 100;
-
-		//Get contact data
-		if($contactid) {
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContact($contactid);
-
-			//Get basic data
-			$data['contactid'] = $contact['contactid'];
-			$data['billingname1'] = $contact['name1'];
-			$data['billingname2'] = $contact['name2'];
-			$data['billingdepartment'] = $contact['department'];
-
-			//Get addresses
-			$addressDb = new Contacts_Model_DbTable_Address();
-			$addresses = $addressDb->getAddress($contact['id']);
-			if(count($addresses)) {
-				$data['billingstreet'] = $addresses[0]['street'];
-				$data['billingpostcode'] = $addresses[0]['postcode'];
-				$data['billingcity'] = $addresses[0]['city'];
-				$data['billingcountry'] = $addresses[0]['country'];
-			}
-
-			//Get additonal data
-			if($contact['vatin']) $data['vatin'] = $contact['vatin'];
-			if($contact['currency']) $data['currency'] = $contact['currency'];
-			if($contact['taxfree']) $data['taxfree'] = $contact['taxfree'];
-		}
+		$factory = new Sales_Service_CreateDataFactory();
+		$data = $factory->build($controller, $contactId);
 
 		$quoteDb = new Sales_Model_DbTable_Quote();
 		$id = $quoteDb->addQuote($data);
 
-		$this->_helper->redirector->gotoSimple('edit', 'quote', null, array('id' => $id));
+		return $this->_helper->redirector->gotoSimple('edit', 'quote', null, ['id' => $id]);
 	}
 
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
+		$id = (int)$this->_getParam('id', 0);
+		$isAjax = $request->isXmlHttpRequest();
+
+		$quote = $this->requireQuote($id);
+		if (!$quote) return;
 
 		$quoteDb = new Sales_Model_DbTable_Quote();
-		$quote = $quoteDb->getQuote($id);
 
-		if($quote['quoteid'] && !$request->isPost()) {
-			$this->_helper->redirector->gotoSimple('view', 'quote', null, array('id' => $id));
-		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $quote['locked'], $quote['lockedtime']);
+		$this->_helper->Access->lock($id, $this->_user['id'], $quote['locked'] ?? 0, $quote['lockedtime'] ?? null);
 
-			$form = new Sales_Form_Quote();
-			$options = $this->_helper->Options->getOptions($form);
+		$formFactory = new Sales_Service_EditFormFactory();
+		$formData = $formFactory->create('Sales_Form_Quote');
+		$form = $formData['form'];
+		$options = $formData['options'];
+		$toolbar = new Sales_Form_Toolbar();
 
-			//Get contact
-			if($quote['contactid']) {
-				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContactWithID($quote['contactid']);
-
-				//Phone
-				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($contact['id']);
-
-				//Email
-				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmails($contact['id']);
-
-				//Internet
-				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($contact['id']);
-
-				$this->view->contact = $contact;
-			}
-
+		if ($request->isPost()) {
 			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $quote['taxfree']);
-			if($request->isPost()) {
-				header('Content-type: application/json');
+
+			if ($isAjax) {
 				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if(($element == 'textblockheader' || $element == 'textblockfooter')) {
-					$textblockDb = new Sales_Model_DbTable_Textblock();
-					if(strpos($element, 'header') !== false) {
-						$data['text'] = $data['textblockheader'];
-						unset($data['textblockheader']);
-						$textblockDb->updateTextblock($data, 'quote', 'header');
-					} elseif(strpos($element, 'footer') !== false) {
-						$data['text'] = $data['textblockfooter'];
-						unset($data['textblockfooter']);
-						$textblockDb->updateTextblock($data, 'quote', 'footer');
-					}
-				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['contactperson'] = $this->_user['name'];
-					if(isset($data['currency'])) {
-						$positionsDb = new Sales_Model_DbTable_Quotepos();
-						$positions = $positionsDb->getPositions($id);
-						foreach($positions as $position) {
-							$positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
-						}
-						//$this->_helper->Currency->convert($id, 'creditnote');
-					}
-					if(isset($data['taxfree'])) {
-						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
-						$data['subtotal'] = $calculations['row']['subtotal'];
-						$data['taxes'] = $calculations['row']['taxes']['total'];
-						$data['total'] = $calculations['row']['total'];
-					}
-					if(isset($data['deliverydate'])) {
-						if(Zend_Date::isDate($data['deliverydate'])) {
-							$deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
-							$data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
-						} else {
-							$data['deliverydate'] = NULL;
-						}
-					}
+				$this->_helper->layout->disableLayout();
 
-					//Update file manager subfolder if contact is changed
-					if(isset($data['contactid']) && $data['contactid']) {
-						$contactUrl = $this->_helper->Directory->getUrl($data['contactid']);
-						$defaultNamespace = new Zend_Session_Namespace('RF');
-						$defaultNamespace->view_type = '1'; //detailed list
-						$defaultNamespace->subfolder = 'contacts/'.$contactUrl;
-					}
+				$ajaxSaveService = new Sales_Service_EditAjaxSaveService();
 
-					$quoteDb->updateQuote($id, $data);
-					echo Zend_Json::encode($quoteDb->getQuote($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			} else {
-				if($id > 0) {
-					$data = $quote;
-					if($quote['contactid']) {
-						$data['contactinfo'] = $contact['info'];
-						$form->contactinfo->setAttrib('data-id', $contact['id']);
-						$form->contactinfo->setAttrib('data-controller', 'contact');
-						$form->contactinfo->setAttrib('data-module', 'contacts');
-						$form->contactinfo->setAttrib('readonly', null);
-					}
-					//Convert dates to the display format
-					$deliverydate = new Zend_Date($data['deliverydate']);
-					if($data['deliverydate']) $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
-
-					$form->populate($data);
-
-					//Toolbar
-					$toolbar = new Sales_Form_Toolbar();
-					$toolbar->state->setValue($data['state']);
-
-					//Get text blocks
-					$textblocksDb = new Sales_Model_DbTable_Textblock();
-					$textblocks = $textblocksDb->getTextblocks('quote');
-
-					$this->view->form = $form;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-					$this->view->textblocks = $textblocks;
-				}
+				return $this->_helper->json($ajaxSaveService->save([
+					'form' => $form,
+					'post' => (array)$request->getPost(),
+					'id' => $id,
+					'db' => $quoteDb,
+					'loadMethod' => 'getQuoteForEdit',
+					'updateMethod' => 'updateQuote',
+				]));
 			}
+
+			$post = (array)$request->getPost();
+
+			if (!$form->isValid($post)) {
+				$form->setValues($post);
+			} else {
+				$values = $form->getFilteredValues();
+
+				if (isset($values['currency'])) {
+					$positionsDb = new Sales_Model_DbTable_Quotepos();
+					$positions = $positionsDb->getPositions($id);
+
+					foreach ($positions as $position) {
+						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
+					}
+				}
+
+				if (isset($values['taxfree'])) {
+					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
+					$values['subtotal'] = $calculations['row']['subtotal'];
+					$values['taxes'] = $calculations['row']['taxes']['total'];
+					$values['total'] = $calculations['row']['total'];
+				}
+
+				$quoteDb->updateQuote($id, $values);
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
+				return $this->_helper->redirector->gotoSimple('edit', 'quote', null, ['id' => $id]);
+			}
+		} else {
+			$formFactory->populate($form, $quote, $id, 'quotes', 'quote');
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+
+		$vmService = new Sales_Service_QuoteEditViewModel();
+		$vm = $vmService->build($id, (array)$this->_user, (array)$quote);
+
+		$this->view->assign(array_merge($vm, [
+			'id' => $id,
+			'form' => $form,
+			'toolbar' => $toolbar,
+			'options' => $options,
+			'activeTab' => $request->getCookie('tab', null),
+		]));
+
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function viewAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
+		$controller = $this->getRequest()->getControllerName();
 
-		$quoteDb = new Sales_Model_DbTable_Quote();
-		$quote = $quoteDb->getQuote($id);
+		$quote = $this->requireQuote($id);
+		if (!$quote) return;
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($quote['contactid']);
+		$contact = $contactDb->getContactWithID((int)$quote['contactid']);
 
-		//Convert dates to the display format
-		if($quote['quotedate']) $quote['quotedate'] = date("d.m.Y", strtotime($quote['quotedate']));
-		if($quote['deliverydate']) $quote['deliverydate'] = date("d.m.Y", strtotime($quote['deliverydate']));
+		$emailFormFactory = new Sales_Service_EmailFormFactory();
+		$attachmentService = new Sales_Service_AttachmentService();
+		$readonlyFormFactory = new Sales_Service_ReadonlyFormFactory();
 
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($quote['currency'], 'USE_SYMBOL');
+		$this->view->assign([
+			'quote' => $quote,
+			'contact' => $contact,
+			'emailForm' => $emailFormFactory->build($quote, $contact, $controller),
+			'form' => $readonlyFormFactory->build('Sales_Form_Quote', $quote, Zend_Registry::get('Zend_Locale')),
+			'toolbar' => new Sales_Form_Toolbar(),
+		] + $attachmentService->sync($quote, $contact, $controller));
 
-		//Convert numbers to the display format
-		$quote['taxes'] = $currency->toCurrency($quote['taxes']);
-		$quote['subtotal'] = $currency->toCurrency($quote['subtotal']);
-		$quote['total'] = $currency->toCurrency($quote['total']);
-
-		$positionsDb = new Sales_Model_DbTable_Quotepos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'quotepos');
-			foreach($positions as $position) {
-				$position->description = str_replace("\n", '<br>', $position->description);
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($position->price);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-				if(isset($price['rules'][$position->id])) $price['rules'][$position->id] = $this->_helper->PriceRule->formatPriceRules($price['rules'][$position->id], $currency, $locale);
-			}
-			$this->view->pricerules = $price['rules'];
-
-			//Get price rule actions
-			$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
-			$priceruleactions = $priceruleactionDb->getPriceruleactions();
-			$this->view->priceruleactions = $priceruleactions;
-		}
-
-		$toolbar = new Sales_Form_Toolbar();
-		$this->view->toolbar = $toolbar;
-
-		//Get email
-		$emailDb = new Contacts_Model_DbTable_Email();
-		$contact['email'] = $emailDb->getEmails($contact['id']);
-
-		//Get contact persons
-		$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
-		$contactpersons = $contactpersonDb->getContactpersons($contact['id']);
-
-		//Get email form
-		$emailForm = new Contacts_Form_Emailmessage();
-		if($contact['email']) {
-			foreach($contact['email'] as $option) {
-				$emailForm->recipient->addMultiOption($option['id'], $option['email']);
-			}
-		}
-		if(count($contactpersons)) {
-			foreach($contactpersons as $contactperson) {
-				$contactperson['email'] = $emailDb->getEmails($contactperson['id'], 'contacts', 'contactperson');
-				foreach($contactperson['email'] as $option) {
-					$emailForm->recipient->addMultiOption($option['id'], $option['email'] . ' (' . $contactperson['name1'] . ' ' . $contactperson['name2'] . ')');
-				}
-			}
-		}
-
-		//Get email templates
-		$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
-		if($emailtemplate = $emailtemplateDb->getEmailtemplate('sales', 'quote')) {
-			if($emailtemplate['cc']) $emailForm->cc->setValue($emailtemplate['cc']);
-			if($emailtemplate['bcc']) $emailForm->bcc->setValue($emailtemplate['bcc']);
-			if($emailtemplate['replyto']) $emailForm->replyto->setValue($emailtemplate['replyto']);
-
-			//Search and replace placeholders
-			$searchArray = array('[DOCID]', '[CONTACTID]');
-			$replaceArray = array($quote['quoteid'], $quote['contactid']);
-			$emailBody = str_replace($searchArray, $replaceArray, $emailtemplate['body']);
-			$emailSubject = str_replace($searchArray, $replaceArray, $emailtemplate['subject']);
-			$emailForm->body->setValue($emailBody);
-			$emailForm->subject->setValue($emailSubject);
-		}
-
-		//Copy file to attachments
-		$filename = $quote['filename'];
-		$contactUrl = $this->_helper->Directory->getUrl($contact['id']);
-		$contactFilePath = BASE_PATH.'/files/contacts/'.$contactUrl.'/'.$filename;
-		$documentUrl = $this->_helper->Directory->getUrl($quote['id']);
-		$documentFilePath = BASE_PATH.'/files/attachments/sales/quote/'.$documentUrl;
-		if(file_exists($documentFilePath) && !file_exists($documentFilePath.'/'.$filename)) {
-			if(copy($contactFilePath, $documentFilePath.'/'.$filename)) {
-				$data = array();
-				$data['documentid'] = $id;
-				$data['filename'] = $filename;
-				$data['filetype'] = mime_content_type($documentFilePath.'/'.$filename);
-				$data['filesize'] = filesize($documentFilePath.'/'.$filename);
-				$data['location'] = $documentFilePath;
-				$data['module'] = 'sales';
-				$data['controller'] = 'quote';
-				$data['ordering'] = 1;
-			}
-		}
-
-		//Get email attachments
-		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
-		if(isset($data)) $emailattachmentDb->addEmailattachment($data);
-		$attachments = $emailattachmentDb->getEmailattachments($id, 'sales', 'quote');
-
-		$this->view->quote = $quote;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->emailForm = $emailForm;
-		$this->view->contactUrl = $contactUrl;
-		$this->view->documentUrl = $documentUrl;
-		$this->view->attachments = $attachments;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
 	public function copyAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$quoteDb = new Sales_Model_DbTable_Quote();
-		$data = $quoteDb->getQuote($id);
+
+		$data = $this->requireQuote($id);
+		if (!$data) return;
 
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
@@ -417,8 +280,8 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
 
-		$quote = new Sales_Model_DbTable_Quote();
-		echo $quoteid = $quote->addQuote($data);
+		$quoteDb = new Sales_Model_DbTable_Quote();
+		$quoteid = $quoteDb->addQuote($data);
 
 		//Copy positions
 		$positionsDb = new Sales_Model_DbTable_Quotepos();
@@ -432,8 +295,9 @@ class Sales_QuoteController extends Zend_Controller_Action
 	{
 		$id = $this->_getParam('id', 0);
 		$target = $this->_getParam('target', 0);
-		$quoteDb = new Sales_Model_DbTable_Quote();
-		$data = $quoteDb->getQuote($id);
+
+		$data = $this->requireQuote($id);
+		if (!$data) return;
 
 		$data['state'] = 100;
 		$data['completed'] = 0;
@@ -500,7 +364,7 @@ class Sales_QuoteController extends Zend_Controller_Action
 				if(isset($invoice[$key])) $data[$key] = $invoice[$key];
 			}*/
 			//$data['prepaymenttotal'] = $data['prepayment'];
-			$data['customerid'] = $data['contactid'];
+			$data['contactid'] = $data['contactid'];
 			$data['deliverystatus'] = 'deliveryIsWaiting';
 			$data['supplierorderstatus'] = 'supplierNotOrdered';
 			$data['paymentstatus'] = 'waitingForPayment';
@@ -530,93 +394,18 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 		$this->_helper->viewRenderer->setRender('pdf');
 
-		$id = $this->_getParam('id', 0);
-		$templateid = $this->_getParam('templateid', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
+		$templateId = (int)$this->_getParam('templateid', 0);
 
-		if($templateid) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($templateid);
-			$this->view->template = $template;
-		}
+		$quote = $this->requireQuote($id);
+		if (!$quote) return;
 
-		$quoteDb = new Sales_Model_DbTable_Quote();
-		$quote = $quoteDb->getQuote($id);
+		$service = new Sales_Service_PdfDataService();
+		$data = $service->build($quote, 'quote', [
+			'templateid' => $templateId,
+		]);
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($quote['contactid']);
-
-		//Set language
-		if($quote['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quote['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
-		//Get positions
-		list($positions, $quote, $options, $optionSets) = $this->_helper->Positions->getPositions($id, $quote, $locale);
-
-		$items = array();
-		$categories = array();
-		$media = array();
-		$attributesByGroup = array();
-		foreach($positions as $position) {
-			if($position->itemid) {
-				//Get item
-				$itemDb = new Items_Model_DbTable_Item();
-				$items[$position->itemid] = $itemDb->getItem($position->itemid);
-
-				//Get item category
-				if($items[$position->itemid]['catid']) {
-					$categoryDb = new Application_Model_DbTable_Category();
-					$categories[$position->itemid] = $categoryDb->getCategory($items[$position->itemid]['catid']);
-				}
-
-				//Get attribute sets
-				$attributeSetsDb = new Items_Model_DbTable_Itematrset();
-				$attributeSets = $attributeSetsDb->getPositionSets($position->itemid);
-
-				//Get attributes
-				$attributesDb = new Items_Model_DbTable_Itematr();
-				$attributes = $attributesDb->getPositions($position->itemid);
-
-				//Get media
-				$mediaDb = new Application_Model_DbTable_Media();
-				$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
-
-				//Attributes
-				$attributesDb = new Items_Model_DbTable_Itematr();
-				foreach($attributeSets as $attributeSetId => $attributeSet) {
-					$attributesByGroup[$position->id][$attributeSetId] = array();
-					$attributesByGroup[$position->id][$attributeSetId]['title'] = $attributeSet['title'];
-					$attributesByGroup[$position->id][$attributeSetId]['description'] = $attributeSet['description'];
-					$attributesByGroup[$position->id][$attributeSetId]['attributes'] = $attributesDb->getPositions($position->itemid, $attributeSet['id']);
-				}
-				$otherAttributes = $attributesDb->getPositions($position->itemid, 0);
-				if(count($otherAttributes)) {
-					$attributesByGroup[$position->id][] = array(
-						'title' => 'Sonstiges',
-						'description' => '',
-						'attributes' => $otherAttributes
-					);
-				}
-			}
-		}
-		$this->view->attributesByGroup = $attributesByGroup;
-
-		//Get footers
-		$footerDb = new Application_Model_DbTable_Footer();
-		$footers = $footerDb->getFooters($templateid);
-
-		$this->view->quote = $quote;
-		$this->view->contact = $contact;
-		$this->view->items = $items;
-		$this->view->categories = $categories;
-		$this->view->media = $media;
-		$this->view->options = $options;
-		$this->view->optionSets = $optionSets;
-		$this->view->positions = $positions;
-		$this->view->calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $quote['taxfree']);
-		$this->view->footers = $footers;
+		$this->view->assign($data);
 	}
 
 	public function saveAction()
@@ -624,105 +413,17 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 		$this->_helper->viewRenderer->setRender('pdf');
 
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
 
-		$quoteDb = new Sales_Model_DbTable_Quote();
-		$quote = $quoteDb->getQuote($id);
+		$quote = $this->requireQuote($id);
+		if (!$quote) return;
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($quote['contactid']);
+		$service = new Sales_Service_PdfDataService();
+		$data = $service->build($quote, 'quote', [
+			'ensureDocumentId' => true,
+		]);
 
-		if($quote['templateid']) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($quote['templateid']);
-			$this->view->template = $template;
-		}
-
-		//Set language
-		if($quote['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quote['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
-		//Set new document Id and filename
-		if(!$quote['quoteid']) {
-			//Set new quote Id
-			$incrementDb = new Application_Model_DbTable_Increment();
-			$increment = $incrementDb->getIncrement('quoteid');
-			$filenameDb = new Application_Model_DbTable_Filename();
-			$filename = $filenameDb->getFilename('quote', $quote['language']);
-			$filename = str_replace('%NUMBER%', $increment, $filename);
-			$quoteDb->saveQuote($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment), 'quoteid');
-			$quote = $quoteDb->getQuote($id);
-		}
-
-		//Get positions
-		list($positions, $quote, $options, $optionSets) = $this->_helper->Positions->getPositions($id, $quote, $locale);
-
-		$items = array();
-		$categories = array();
-		$media = array();
-		$attributesByGroup = array();
-		foreach($positions as $position) {
-			if($position->itemid) {
-				//Get item
-				$itemDb = new Items_Model_DbTable_Item();
-				$items[$position->itemid] = $itemDb->getItem($position->itemid);
-
-				//Get item category
-				if($items[$position->itemid]['catid']) {
-					$categoryDb = new Application_Model_DbTable_Category();
-					$categories[$position->itemid] = $categoryDb->getCategory($items[$position->itemid]['catid']);
-				}
-
-				//Get attribute sets
-				$attributeSetsDb = new Items_Model_DbTable_Itematrset();
-				$attributeSets = $attributeSetsDb->getPositionSets($position->itemid);
-
-				//Get attributes
-				$attributesDb = new Items_Model_DbTable_Itematr();
-				$attributes = $attributesDb->getPositions($position->itemid);
-
-				//Get media
-				$mediaDb = new Application_Model_DbTable_Media();
-				$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
-
-				//Attributes
-				$attributesDb = new Items_Model_DbTable_Itematr();
-				foreach($attributeSets as $attributeSetId => $attributeSet) {
-					$attributesByGroup[$position->id][$attributeSetId] = array();
-					$attributesByGroup[$position->id][$attributeSetId]['title'] = $attributeSet['title'];
-					$attributesByGroup[$position->id][$attributeSetId]['description'] = $attributeSet['description'];
-					$attributesByGroup[$position->id][$attributeSetId]['attributes'] = $attributesDb->getPositions($position->itemid, $attributeSet['id']);
-				}
-				$otherAttributes = $attributesDb->getPositions($position->itemid, 0);
-				if(count($otherAttributes)) {
-					$attributesByGroup[$position->id][] = array(
-						'title' => 'Sonstiges',
-						'description' => '',
-						'attributes' => $otherAttributes
-					);
-				}
-			}
-		}
-		$this->view->attributesByGroup = $attributesByGroup;
-
-		//Get footers
-		$footerDb = new Application_Model_DbTable_Footer();
-		$footers = $footerDb->getFooters($quote['templateid']);
-
-		$this->view->quote = $quote;
-		$this->view->contact = $contact;
-		$this->view->items = $items;
-		$this->view->categories = $categories;
-		$this->view->media = $media;
-		$this->view->options = $options;
-		$this->view->optionSets = $optionSets;
-		$this->view->positions = $positions;
-		$this->view->calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $quote['taxfree']);
-		$this->view->footers = $footers;
+		$this->view->assign($data);
 	}
 
 	public function downloadAction()
@@ -730,92 +431,15 @@ class Sales_QuoteController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 		$this->_helper->viewRenderer->setRender('pdf');
 
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
 
-		$quoteDb = new Sales_Model_DbTable_Quote();
-		$quote = $quoteDb->getQuote($id);
+		$quote = $this->requireQuote($id);
+		if (!$quote) return;
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($quote['contactid']);
+		$service = new Sales_Service_PdfDataService();
+		$data = $service->build($quote, 'quote');
 
-		if($quote['templateid']) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($quote['templateid']);
-			$this->view->template = $template;
-		}
-
-		//Set language
-		if($quote['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quote['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
-		//Get positions
-		list($positions, $quote, $options, $optionSets) = $this->_helper->Positions->getPositions($id, $quote, $locale);
-
-		$items = array();
-		$categories = array();
-		$media = array();
-		$attributesByGroup = array();
-		foreach($positions as $position) {
-			if($position->itemid) {
-				//Get item
-				$itemDb = new Items_Model_DbTable_Item();
-				$items[$position->itemid] = $itemDb->getItem($position->itemid);
-
-				//Get item category
-				if($items[$position->itemid]['catid']) {
-					$categoryDb = new Application_Model_DbTable_Category();
-					$categories[$position->itemid] = $categoryDb->getCategory($items[$position->itemid]['catid']);
-				}
-
-				//Get attribute sets
-				$attributeSetsDb = new Items_Model_DbTable_Itematrset();
-				$attributeSets = $attributeSetsDb->getPositionSets($position->itemid);
-
-				//Get attributes
-				$attributesDb = new Items_Model_DbTable_Itematr();
-				$attributes = $attributesDb->getPositions($position->itemid);
-
-				//Get media
-				$mediaDb = new Application_Model_DbTable_Media();
-				$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
-
-				//Attributes
-				$attributesDb = new Items_Model_DbTable_Itematr();
-				foreach($attributeSets as $attributeSetId => $attributeSet) {
-					$attributesByGroup[$position->id][$attributeSetId] = array();
-					$attributesByGroup[$position->id][$attributeSetId]['title'] = $attributeSet['title'];
-					$attributesByGroup[$position->id][$attributeSetId]['description'] = $attributeSet['description'];
-					$attributesByGroup[$position->id][$attributeSetId]['attributes'] = $attributesDb->getPositions($position->itemid, $attributeSet['id']);
-				}
-				$otherAttributes = $attributesDb->getPositions($position->itemid, 0);
-				if(count($otherAttributes)) {
-					$attributesByGroup[$position->id][] = array(
-						'title' => 'Sonstiges',
-						'description' => '',
-						'attributes' => $otherAttributes
-					);
-				}
-			}
-		}
-		$this->view->attributesByGroup = $attributesByGroup;
-
-		//Get footers
-		$footerDb = new Application_Model_DbTable_Footer();
-		$footers = $footerDb->getFooters($quote['templateid']);
-
-		$this->view->quote = $quote;
-		$this->view->contact = $contact;
-		$this->view->items = $items;
-		$this->view->categories = $categories;
-		$this->view->media = $media;
-		$this->view->options = $options;
-		$this->view->optionSets = $optionSets;
-		$this->view->positions = $positions;
-		$this->view->calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $quote['taxfree']);
-		$this->view->footers = $footers;
+		$this->view->assign($data);
 	}
 
 	public function cancelAction()
@@ -825,6 +449,10 @@ class Sales_QuoteController extends Zend_Controller_Action
 
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
+
+			$quote = $this->requireQuote($id);
+			if (!$quote) return;
+
 			$quote = new Sales_Model_DbTable_Quote();
 			$quote->setState($id, 106);
 		}
@@ -834,19 +462,27 @@ class Sales_QuoteController extends Zend_Controller_Action
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toogle($id);
+		$this->_helper->Pin->toggle($id);
 	}
 
 	public function lockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->lock($id, $this->_user['id']);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function unlockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->unlock($id);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function keepaliveAction()

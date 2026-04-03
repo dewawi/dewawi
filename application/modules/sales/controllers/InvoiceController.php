@@ -35,39 +35,70 @@ class Sales_InvoiceController extends Zend_Controller_Action
 
 	public function getAction()
 	{
-		header('Content-type: application/json');
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$element = $this->_getParam('element', null);
+		$elementName = (string)$this->_getParam('element', '');
 		$form = new Sales_Form_Toolbar();
-		if(isset($form->$element)) {
-			$options = $form->$element->getMultiOptions();
-			echo Zend_Json::encode($options);
-		} else {
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS')));
+
+		$el = $form->getElement($elementName);
+
+		if (!$el) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS'),
+			]);
 		}
+
+		$options = $el['options'] ?? [];
+
+		return $this->_helper->json($options);
+	}
+
+	protected function requireInvoice(int $id, bool $silent = false): ?array
+	{
+		$invoiceDb = new Sales_Model_DbTable_Invoice();
+		$invoice = $invoiceDb->getInvoiceForEdit($id);
+
+		if ($invoice) {
+			return $invoice;
+		}
+
+		$request = $this->getRequest();
+
+		// AJAX
+		if ($request->isXmlHttpRequest()) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			$this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+
+			return null;
+		}
+
+		// Silent mode (PDF etc.)
+		if ($silent) {
+			$this->_helper->viewRenderer->setNoRender();
+			return null;
+		}
+
+		// Default redirect
+		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
+		$this->_helper->redirector->gotoSimple('index', 'invoice');
+
+		return null;
 	}
 
 	public function indexAction()
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		if ($this->getRequest()->isPost()) {
+			$this->_helper->getHelper('layout')->disableLayout();
+		}
 
-		$toolbar = new Sales_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Sales_Model_Get();
-		$invoices = $get->invoices($params, $options, $this->_flashMessenger);
-
-		$this->view->invoices = $invoices;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
-		$this->_flashMessenger->clearCurrentMessages();
+		$this->buildIndexView();
 	}
 
 	public function searchAction()
@@ -75,7 +106,13 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
+		$this->buildIndexView();
+	}
+
+	protected function buildIndexView(): void
+	{
 		$toolbar = new Sales_Form_Toolbar();
+		$toolbarInline = new Sales_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
@@ -85,361 +122,148 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$this->view->invoices = $invoices;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
+			$this->_flashMessenger->getMessages(),
+			$this->_flashMessenger->getCurrentMessages()
+		);
 		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()
 	{
-		$contactid = $this->_getParam('contactid', 0);
+		$contactId = (int)$this->_getParam('contactid', 0);
+		$controller = $this->getRequest()->getControllerName();
 
-		//Get primary currency
-		$currencies = new Application_Model_DbTable_Currency();
-		$currency = $currencies->getPrimaryCurrency();
-
-		//Get primary language
-		$languages = new Application_Model_DbTable_Language();
-		$language = $languages->getPrimaryLanguage();
-
-		//Get primary template
-		$templates = new Application_Model_DbTable_Template();
-		$template = $templates->getPrimaryTemplate();
-
-		$data = array();
-		$data['title'] = $this->view->translate('INVOICES_NEW_INVOICE');
-		$data['currency'] = $currency['code'];
-		$data['templateid'] = $template['id'];
-		$data['language'] = $language['code'];
-		$data['state'] = 100;
-
-		//Get contact data
-		if($contactid) {
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContact($contactid);
-
-			//Get basic data
-			$data['contactid'] = $contact['contactid'];
-			$data['billingname1'] = $contact['name1'];
-			$data['billingname2'] = $contact['name2'];
-			$data['billingdepartment'] = $contact['department'];
-
-			//Get addresses
-			$addressDb = new Contacts_Model_DbTable_Address();
-			$addresses = $addressDb->getAddress($contact['id']);
-			if(count($addresses)) {
-				$data['billingstreet'] = $addresses[0]['street'];
-				$data['billingpostcode'] = $addresses[0]['postcode'];
-				$data['billingcity'] = $addresses[0]['city'];
-				$data['billingcountry'] = $addresses[0]['country'];
-			}
-
-			//Get additonal data
-			if($contact['vatin']) $data['vatin'] = $contact['vatin'];
-			if($contact['currency']) $data['currency'] = $contact['currency'];
-			if($contact['taxfree']) $data['taxfree'] = $contact['taxfree'];
-		}
+		$factory = new Sales_Service_CreateDataFactory();
+		$data = $factory->build($controller, $contactId);
 
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 		$id = $invoiceDb->addInvoice($data);
 
-		$this->_helper->redirector->gotoSimple('edit', 'invoice', null, array('id' => $id));
+		return $this->_helper->redirector->gotoSimple('edit', 'invoice', null, ['id' => $id]);
 	}
 
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$locale = Zend_Registry::get('Zend_Locale');
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
+		$id = (int)$this->_getParam('id', 0);
+		$isAjax = $request->isXmlHttpRequest();
+
+		$invoice = $this->requireInvoice($id);
+		if (!$invoice) return;
 
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$invoice = $invoiceDb->getInvoice($id);
 
-		if($invoice['invoiceid'] && !$request->isPost()) {
-			$this->_helper->redirector->gotoSimple('view', 'invoice', null, array('id' => $id));
-		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $invoice['locked'], $invoice['lockedtime']);
+		$this->_helper->Access->lock($id, $this->_user['id'], $invoice['locked'] ?? 0, $invoice['lockedtime'] ?? null);
 
-			$form = new Sales_Form_Invoice();
-			$options = $this->_helper->Options->getOptions($form);
+		$formFactory = new Sales_Service_EditFormFactory();
+		$formData = $formFactory->create('Sales_Form_Invoice');
+		$form = $formData['form'];
+		$options = $formData['options'];
+		$toolbar = new Sales_Form_Toolbar();
 
-			//Get contact
-			if($invoice['contactid']) {
-				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContactWithID($invoice['contactid']);
-
-				//Phone
-				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($contact['id']);
-
-				//Email
-				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmails($contact['id']);
-
-				//Internet
-				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($contact['id']);
-
-				$this->view->contact = $contact;
-			}
-
-			//Get currency
-			$currencyHelper = $this->_helper->Currency;
-			$currency = $currencyHelper->getCurrency();
-			$currencyHelper->setCurrency($currency, $invoice['currency'], 'NO_SYMBOL');
-
+		if ($request->isPost()) {
 			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $invoice['taxfree']);
-			if($request->isPost()) {
-				header('Content-type: application/json');
+
+			if ($isAjax) {
 				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if(($element == 'textblockheader' || $element == 'textblockfooter')) {
-					$textblockDb = new Sales_Model_DbTable_Textblock();
-					if(strpos($element, 'header') !== false) {
-						$data['text'] = $data['textblockheader'];
-						unset($data['textblockheader']);
-						$textblockDb->updateTextblock($data, 'invoice', 'header');
-					} elseif(strpos($element, 'footer') !== false) {
-						$data['text'] = $data['textblockfooter'];
-						unset($data['textblockfooter']);
-						$textblockDb->updateTextblock($data, 'invoice', 'footer');
-					}
-				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['contactperson'] = $this->_user['name'];
-					if(isset($data['currency'])) {
-						$positionsDb = new Sales_Model_DbTable_Invoicepos();
-						$positions = $positionsDb->getPositions($id);
-						foreach($positions as $position) {
-							$positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
-						}
-						//$this->_helper->Currency->convert($id, 'creditnote');
-					}
-					if(isset($data['salesorderid'])) {
-						if($data['salesorderid']) {
-							$data['salesorderid'] = str_replace(['+', '-'], '', filter_var($data['salesorderid'], FILTER_SANITIZE_NUMBER_INT));
-						} else {
-							$data['salesorderid'] = 0;
-						}
-					}
-					if(isset($data['salesorderdate'])) {
-						if(Zend_Date::isDate($data['salesorderdate'])) {
-							$salesorderdate = new Zend_Date($data['salesorderdate'], Zend_Date::DATES, 'de');
-							$data['salesorderdate'] = $salesorderdate->get('yyyy-MM-dd');
-						} else {
-							$data['salesorderdate'] = NULL;
-						}
-					}
-					if(($element == 'prepayment'))
-						if($data[$element]) {
-							$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
-						} else {
-							$data[$element] = NULL;
-						}
-					if(isset($data['taxfree'])) {
-						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
-						$data['subtotal'] = $calculations['row']['subtotal'];
-						$data['taxes'] = $calculations['row']['taxes']['total'];
-						$data['total'] = $calculations['row']['total'];
-					}
-					if(isset($data['salesorderid'])) {
-						if($data['salesorderid']) {
-							$data['salesorderid'] = str_replace(['+', '-'], '', filter_var($data['salesorderid'], FILTER_SANITIZE_NUMBER_INT));
-						} else {
-							$data['salesorderid'] = 0;
-						}
-					}
-					if(isset($data['orderdate'])) {
-						if(Zend_Date::isDate($data['orderdate'])) {
-							$orderdate = new Zend_Date($data['orderdate'], Zend_Date::DATES, 'de');
-							$data['orderdate'] = $orderdate->get('yyyy-MM-dd');
-						} else {
-							$data['orderdate'] = NULL;
-						}
-					}
-					if(isset($data['deliverydate'])) {
-						if(Zend_Date::isDate($data['deliverydate'])) {
-							$deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
-							$data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
-						} else {
-							$data['deliverydate'] = NULL;
-						}
-					}
+				$this->_helper->layout->disableLayout();
 
-					//Update file manager subfolder if contact is changed
-					if(isset($data['contactid']) && $data['contactid']) {
-						$contactUrl = $this->_helper->Directory->getUrl($data['contactid']);
-						$defaultNamespace = new Zend_Session_Namespace('RF');
-						$defaultNamespace->view_type = '1'; //detailed list
-						$defaultNamespace->subfolder = 'contacts/'.$contactUrl;
-					}
+				$ajaxSaveService = new Sales_Service_EditAjaxSaveService();
 
-					$invoiceDb->updateInvoice($id, $data);
-					echo Zend_Json::encode($invoiceDb->getInvoice($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			} else {
-				if($id > 0) {
-					$data = $invoice;
-					if($invoice['contactid']) {
-						$data['contactinfo'] = $contact['info'];
-						$form->contactinfo->setAttrib('data-id', $contact['id']);
-						$form->contactinfo->setAttrib('data-controller', 'contact');
-						$form->contactinfo->setAttrib('data-module', 'contacts');
-						$form->contactinfo->setAttrib('readonly', null);
-					}
-					if(!$data['salesorderid']) $data['salesorderid'] = NULL;
-
-					//Convert dates to the display format
-					$salesorderdate = new Zend_Date($data['salesorderdate']);
-					if($data['salesorderdate']) $data['salesorderdate'] = $salesorderdate->get('dd.MM.yyyy');
-					$orderdate = new Zend_Date($data['orderdate']);
-					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
-					$deliverydate = new Zend_Date($data['deliverydate']);
-					if($data['deliverydate']) $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
-
-					$data['prepayment'] = $currency->toCurrency($data['prepayment']);
-
-					$form->populate($data);
-
-					//Toolbar
-					$toolbar = new Sales_Form_Toolbar();
-					$toolbar->state->setValue($data['state']);
-
-					//Get text blocks
-					$textblocksDb = new Sales_Model_DbTable_Textblock();
-					$textblocks = $textblocksDb->getTextblocks('invoice');
-
-					$this->view->form = $form;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-					$this->view->textblocks = $textblocks;
-				}
+				return $this->_helper->json($ajaxSaveService->save([
+					'form' => $form,
+					'post' => (array)$request->getPost(),
+					'id' => $id,
+					'db' => $invoiceDb,
+					'loadMethod' => 'getInvoiceForEdit',
+					'updateMethod' => 'updateInvoice',
+				]));
 			}
+
+			$post = (array)$request->getPost();
+
+			if (!$form->isValid($post)) {
+				$form->setValues($post);
+			} else {
+				$values = $form->getFilteredValues();
+
+				if (isset($values['currency'])) {
+					$positionsDb = new Sales_Model_DbTable_Invoicepos();
+					$positions = $positionsDb->getPositions($id);
+
+					foreach ($positions as $position) {
+						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
+					}
+				}
+
+				if (isset($values['taxfree'])) {
+					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
+					$values['subtotal'] = $calculations['row']['subtotal'];
+					$values['taxes'] = $calculations['row']['taxes']['total'];
+					$values['total'] = $calculations['row']['total'];
+				}
+
+				$invoiceDb->updateInvoice($id, $values);
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
+				return $this->_helper->redirector->gotoSimple('edit', 'invoice', null, ['id' => $id]);
+			}
+		} else {
+			$formFactory->populate($form, $invoice, $id, 'invoices', 'invoice');
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+
+		$vmService = new Sales_Service_InvoiceEditViewModel();
+		$vm = $vmService->build($id, (array)$this->_user, (array)$invoice);
+
+		$this->view->assign(array_merge($vm, [
+			'id' => $id,
+			'form' => $form,
+			'toolbar' => $toolbar,
+			'options' => $options,
+			'activeTab' => $request->getCookie('tab', null),
+		]));
+
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function viewAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
+		$controller = $this->getRequest()->getControllerName();
 
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$invoice = $invoiceDb->getInvoice($id);
+		$invoice = $this->requireInvoice($id);
+		if (!$invoice) return;
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($invoice['contactid']);
+		$contact = $contactDb->getContactWithID((int)$invoice['contactid']);
 
-		//Convert dates to the display format
-		if($invoice['invoicedate']) $invoice['invoicedate'] = date("d.m.Y", strtotime($invoice['invoicedate']));
-		if($invoice['orderdate']) $invoice['orderdate'] = date("d.m.Y", strtotime($invoice['orderdate']));
-		if($invoice['deliverydate']) $invoice['deliverydate'] = date("d.m.Y", strtotime($invoice['deliverydate']));
+		$emailFormFactory = new Sales_Service_EmailFormFactory();
+		$attachmentService = new Sales_Service_AttachmentService();
+		$readonlyFormFactory = new Sales_Service_ReadonlyFormFactory();
 
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
+		$this->view->assign([
+			'invoice' => $invoice,
+			'contact' => $contact,
+			'emailForm' => $emailFormFactory->build($invoice, $contact, $controller),
+			'form' => $readonlyFormFactory->build('Sales_Form_Invoice', $invoice, Zend_Registry::get('Zend_Locale')),
+			'toolbar' => new Sales_Form_Toolbar(),
+		] + $attachmentService->sync($invoice, $contact, $controller));
 
-		//Convert numbers to the display format
-		$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
-		$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
-		$invoice['total'] = $currency->toCurrency($invoice['total']);
-
-		$positionsDb = new Sales_Model_DbTable_Invoicepos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'invoicepos');
-			foreach($positions as $position) {
-				$position->description = str_replace("\n", '<br>', $position->description);
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($position->price);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-				if(isset($price['rules'][$position->id])) $price['rules'][$position->id] = $this->_helper->PriceRule->formatPriceRules($price['rules'][$position->id], $currency, $locale);
-			}
-			$this->view->pricerules = $price['rules'];
-
-			//Get price rule actions
-			$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
-			$priceruleactions = $priceruleactionDb->getPriceruleactions();
-			$this->view->priceruleactions = $priceruleactions;
-		}
-
-		$toolbar = new Sales_Form_Toolbar();
-		$this->view->toolbar = $toolbar;
-
-		//Get email
-		$emailDb = new Contacts_Model_DbTable_Email();
-		$contact['email'] = $emailDb->getEmails($contact['id']);
-
-		//Get email form
-		$emailForm = new Contacts_Form_Emailmessage();
-		if($contact['email']) {
-			foreach($contact['email'] as $option) {
-				$emailForm->recipient->addMultiOption($option['id'], $option['email']);
-			}
-		}
-
-		//Get email templates
-		$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
-		if($emailtemplate = $emailtemplateDb->getEmailtemplate('sales', 'invoice')) {
-			if($emailtemplate['cc']) $emailForm->cc->setValue($emailtemplate['cc']);
-			if($emailtemplate['bcc']) $emailForm->bcc->setValue($emailtemplate['bcc']);
-			if($emailtemplate['replyto']) $emailForm->replyto->setValue($emailtemplate['replyto']);
-
-			//Search and replace placeholders
-			$searchArray = array('[DOCID]', '[CONTACTID]');
-			$replaceArray = array($invoice['invoiceid'], $invoice['contactid']);
-			$emailBody = str_replace($searchArray, $replaceArray, $emailtemplate['body']);
-			$emailSubject = str_replace($searchArray, $replaceArray, $emailtemplate['subject']);
-			$emailForm->body->setValue($emailBody);
-			$emailForm->subject->setValue($emailSubject);
-		}
-
-		//Copy file to attachments
-		$filename = $invoice['filename'];
-		$contactUrl = $this->_helper->Directory->getUrl($contact['id']);
-		$contactFilePath = BASE_PATH.'/files/contacts/'.$contactUrl.'/'.$filename;
-		$documentUrl = $this->_helper->Directory->getUrl($invoice['id']);
-		$documentFilePath = BASE_PATH.'/files/attachments/sales/invoice/'.$documentUrl;
-		if(file_exists($documentFilePath) && !file_exists($documentFilePath.'/'.$filename)) {
-			if(copy($contactFilePath, $documentFilePath.'/'.$filename)) {
-				$data = array();
-				$data['documentid'] = $id;
-				$data['filename'] = $filename;
-				$data['filetype'] = mime_content_type($documentFilePath.'/'.$filename);
-				$data['filesize'] = filesize($documentFilePath.'/'.$filename);
-				$data['location'] = $documentFilePath;
-				$data['module'] = 'sales';
-				$data['controller'] = 'invoice';
-				$data['ordering'] = 1;
-			}
-		}
-
-		//Get email attachments
-		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
-		if(isset($data)) $emailattachmentDb->addEmailattachment($data);
-		$attachments = $emailattachmentDb->getEmailattachments($id, 'sales', 'invoice');
-
-		$this->view->invoice = $invoice;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->emailForm = $emailForm;
-		$this->view->contactUrl = $contactUrl;
-		$this->view->documentUrl = $documentUrl;
-		$this->view->attachments = $attachments;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
 	public function copyAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$data = $invoiceDb->getInvoice($id);
+
+		$data = $this->requireInvoice($id);
+		if (!$data) return;
 
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
@@ -456,8 +280,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
 
-		$invoice = new Sales_Model_DbTable_Invoice();
-		echo $invoiceid = $invoice->addInvoice($data);
+		$invoiceDb = new Sales_Model_DbTable_Invoice();
+		$invoiceid = $invoiceDb->addInvoice($data);
 
 		//Copy positions
 		$positionsDb = new Sales_Model_DbTable_Invoicepos();
@@ -542,7 +366,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 				if(isset($invoice[$key])) $data[$key] = $invoice[$key];
 			}*/
 			$data['prepaymenttotal'] = $data['prepayment'];
-			$data['customerid'] = $data['contactid'];
+			$data['contactid'] = $data['contactid'];
 			$data['deliverystatus'] = 'deliveryIsWaiting';
 			$data['supplierorderstatus'] = 'supplierNotOrdered';
 			$data['paymentstatus'] = 'waitingForPayment';
@@ -635,84 +459,41 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$this->view->footers = $footers;
 	}
 
+	public function previewAction()
+	{
+		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->viewRenderer->setRender('pdf');
+
+		$id = (int)$this->_getParam('id', 0);
+		$templateId = (int)$this->_getParam('templateid', 0);
+
+		$invoice = $this->requireInvoice($id);
+		if (!$invoice) return;
+
+		$service = new Sales_Service_PdfDataService();
+		$data = $service->build($invoice, 'invoice', [
+			'templateid' => $templateId,
+		]);
+
+		$this->view->assign($data);
+	}
+
 	public function saveAction()
 	{
 		$this->_helper->getHelper('layout')->disableLayout();
 		$this->_helper->viewRenderer->setRender('pdf');
 
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
 
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$invoice = $invoiceDb->getInvoice($id);
+		$invoice = $this->requireInvoice($id);
+		if (!$invoice) return;
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($invoice['contactid']);
+		$service = new Sales_Service_PdfDataService();
+		$data = $service->build($invoice, 'invoice', [
+			'ensureDocumentId' => true,
+		]);
 
-		if($invoice['templateid']) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($invoice['templateid']);
-			$this->view->template = $template;
-		}
-
-		//Set language
-		if($invoice['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$invoice['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
-
-		//Set new document Id and filename
-		if(!$invoice['invoiceid']) {
-			//Set new invoice Id
-			$incrementDb = new Application_Model_DbTable_Increment();
-			$increment = $incrementDb->getIncrement('invoiceid');
-			$filenameDb = new Application_Model_DbTable_Filename();
-			$filename = $filenameDb->getFilename('invoice', $invoice['language']);
-			$filename = str_replace('%NUMBER%', $increment, $filename);
-			$invoiceDb->saveInvoice($id, $increment, $filename);
-			$incrementDb->setIncrement(($increment), 'invoiceid');
-			$invoice = $invoiceDb->getInvoice($id);
-		}
-
-		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Invoicepos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'invoicepos');
-
-			//Set precision and currency
-			foreach($positions as $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-			if($invoice['prepayment']) {
-				$invoice['balance'] = $currency->toCurrency($invoice['total']-$invoice['prepayment']);
-				$invoice['prepayment'] = $currency->toCurrency($invoice['prepayment']);
-			}
-			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
-			$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
-			$invoice['total'] = $currency->toCurrency($invoice['total']);
-			if($invoice['taxfree']) {
-				$invoice['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$invoice['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-		}
-
-		//Get footers
-		$footerDb = new Application_Model_DbTable_Footer();
-		$footers = $footerDb->getFooters($invoice['templateid']);
-
-		$this->view->invoice = $invoice;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->footers = $footers;
+		$this->view->assign($data);
 	}
 
 	public function downloadAction()
@@ -720,66 +501,15 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 		$this->_helper->viewRenderer->setRender('pdf');
 
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
 
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$invoice = $invoiceDb->getInvoice($id);
+		$invoice = $this->requireInvoice($id);
+		if (!$invoice) return;
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($invoice['contactid']);
+		$service = new Sales_Service_PdfDataService();
+		$data = $service->build($invoice, 'invoice');
 
-		if($invoice['templateid']) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($invoice['templateid']);
-			$this->view->template = $template;
-		}
-
-		//Set language
-		if($invoice['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$invoice['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
-
-		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Invoicepos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'invoicepos');
-
-			//Set precision and currency
-			foreach($positions as $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-			if($invoice['prepayment']) {
-				$invoice['balance'] = $currency->toCurrency($invoice['total']-$invoice['prepayment']);
-				$invoice['prepayment'] = $currency->toCurrency($invoice['prepayment']);
-			}
-			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
-			$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
-			$invoice['total'] = $currency->toCurrency($invoice['total']);
-			if($invoice['taxfree']) {
-				$invoice['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$invoice['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-		}
-
-		//Get footers
-		$footerDb = new Application_Model_DbTable_Footer();
-		$footers = $footerDb->getFooters($invoice['templateid']);
-
-		$this->view->invoice = $invoice;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->footers = $footers;
+		$this->view->assign($data);
 	}
 
 	public function cancelAction()
@@ -789,6 +519,10 @@ class Sales_InvoiceController extends Zend_Controller_Action
 
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
+
+			$invoice = $this->requireInvoice($id);
+			if (!$invoice) return;
+
 			$invoice = new Sales_Model_DbTable_Invoice();
 			$invoice->setState($id, 106);
 		}
@@ -798,19 +532,27 @@ class Sales_InvoiceController extends Zend_Controller_Action
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toogle($id);
+		$this->_helper->Pin->toggle($id);
 	}
 
 	public function lockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->lock($id, $this->_user['id']);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function unlockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->unlock($id);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function keepaliveAction()
