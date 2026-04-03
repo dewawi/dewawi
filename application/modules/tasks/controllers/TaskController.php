@@ -110,7 +110,7 @@ class Tasks_TaskController extends Zend_Controller_Action
 
 	public function addAction()
 	{
-		$customerid = $this->_getParam('customerid', 0);
+		$contactid = $this->_getParam('contactid', 0);
 
 		//Get primary currency
 		$currencies = new Application_Model_DbTable_Currency();
@@ -124,12 +124,12 @@ class Tasks_TaskController extends Zend_Controller_Action
 		$data['state'] = 100;
 
 		//Get contact data
-		if($customerid) {
+		if($contactid) {
 			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContact($customerid);
+			$contact = $contactDb->getContact($contactid);
 
 			//Get basic data
-			$data['customerid'] = $contact['contactid'];
+			$data['contactid'] = $contact['contactid'];
 			$data['billingname1'] = $contact['name1'];
 			$data['billingname2'] = $contact['name2'];
 			$data['billingdepartment'] = $contact['department'];
@@ -175,9 +175,9 @@ class Tasks_TaskController extends Zend_Controller_Action
 			$options = $this->_helper->Options->getOptions($form);
 
 			//Get contact
-			if($task['customerid']) {
+			if($task['contactid']) {
 				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContactWithID($task['customerid']);
+				$contact = $contactDb->getContactWithID($task['contactid']);
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
@@ -357,12 +357,12 @@ class Tasks_TaskController extends Zend_Controller_Action
 					}
 
 					//Update file manager subfolder if contact is changed
-					if(isset($data['customerid']) && $data['customerid']) {
-						$dir1 = substr($data['customerid'], 0, 1).'/';
-						if(strlen($data['customerid']) > 1) $dir2 = substr($data['customerid'], 1, 1).'/';
+					if(isset($data['contactid']) && $data['contactid']) {
+						$dir1 = substr($data['contactid'], 0, 1).'/';
+						if(strlen($data['contactid']) > 1) $dir2 = substr($data['contactid'], 1, 1).'/';
 						else $dir2 = '0/';
 						$defaultNamespace = new Zend_Session_Namespace('RF');
-						$defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['customerid'].'/';
+						$defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['contactid'].'/';
 					}
 
 					$taskDb->updateTask($id, $data);
@@ -373,7 +373,7 @@ class Tasks_TaskController extends Zend_Controller_Action
 			} else {
 				if($id > 0) {
 					$data = $task;
-					if($task['customerid']) {
+					if($task['contactid']) {
 						$data['customerinfo'] = $contact['info'];
 						$form->customerinfo->setAttrib('data-id', $contact['id']);
 						$form->customerinfo->setAttrib('data-controller', 'contact');
@@ -466,7 +466,7 @@ class Tasks_TaskController extends Zend_Controller_Action
 		$taskDb = new Tasks_Model_DbTable_Task();
 		$task = $taskDb->getTask($id);
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($task['customerid']);
+		$contact = $contactDb->getContactWithID($task['contactid']);
 
 		//Convert dates to the display format
 		if($task['taskdate']) $task['taskdate'] = date('d.m.Y', strtotime($task['taskdate']));

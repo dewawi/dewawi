@@ -5,11 +5,11 @@
 			<?php echo $this->task['title'] ? $this->escape($this->task['title']) : $this->escape($this->task['id']);?>
 	</a></p>
 	<p><?php echo $this->translate('TASKS_CUSTOMER_ID') ;?>:
-	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->task['customerid']));?>">
-		<?php echo $this->escape($this->task['customerid']);?>
+	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->task['contactid']));?>">
+		<?php echo $this->escape($this->task['contactid']);?>
 	</a>
 	<?php if($this->task['billingname1']) : ?><br/>
-	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->task['customerid']));?>">
+	<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$this->task['contactid']));?>">
 		<?php echo $this->escape($this->task['billingname1']);?>
 		<?php //if($this->task['billingname2']) echo "<br/>".$this->escape($this->task['billingname2']);?>
 	</a>

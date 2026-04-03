@@ -11,7 +11,7 @@ class Tasks_Model_Get
 
 		$tasksDb = new Tasks_Model_DbTable_Task();
 
-		$columns = array('p.title', 'p.customerid', 'p.billingname1', 'p.billingname2', 'p.billingdepartment', 'p.billingstreet', 'p.billingpostcode', 'p.billingcity', 'p.shippingname1', 'p.shippingname2', 'p.shippingdepartment', 'p.shippingstreet', 'p.shippingpostcode', 'p.shippingcity');
+		$columns = array('p.title', 'p.contactid', 'p.billingname1', 'p.billingname2', 'p.billingdepartment', 'p.billingstreet', 'p.billingpostcode', 'p.billingcity', 'p.shippingname1', 'p.shippingname2', 'p.shippingdepartment', 'p.shippingstreet', 'p.shippingpostcode', 'p.shippingcity');
 
 		$query = '';
 		$schema = 'p';
@@ -33,7 +33,7 @@ class Tasks_Model_Get
 			$tasksDb->select()
 				->setIntegrityCheck(false)
 				->from(array('p' => 'task'))
-				->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->join(array('c' => 'contact'), 'p.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
 				->order(array('pinned desc', $params['order'].' '.$params['sort']))
@@ -47,7 +47,7 @@ class Tasks_Model_Get
 				$tasksDb->select()
 					->setIntegrityCheck(false)
 					->from(array('p' => 'task'))
-					->join(array('c' => 'contact'), 'p.customerid = c.contactid', array('catid AS catid', 'id AS cid'))
+					->join(array('c' => 'contact'), 'p.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
 					->order(array('pinned desc', $params['order'].' '.$params['sort']))

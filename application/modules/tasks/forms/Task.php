@@ -41,8 +41,8 @@ class Tasks_Form_Task extends Zend_Form
 			->addFilter('Int')
 			->setAttrib('size', '10');
 
-		$form['customerid'] = new Zend_Form_Element_Text('customerid');
-		$form['customerid']->setLabel('TASKS_CUSTOMER_ID')
+		$form['contactid'] = new Zend_Form_Element_Text('contactid');
+		$form['contactid']->setLabel('TASKS_CUSTOMER_ID')
 			->addFilter('Int')
 			->setAttrib('size', '5')
 			->setAttrib('readonly', 'readonly');

@@ -1,116 +1,187 @@
 <?php
 $this->title = $this->translate('TASKS');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
 ?>
 
-<table id="data">
-	<thead>
-		<tr>
-			<th style="width:2%"><input type="checkbox" class="checkall" name="checkall"/></th>
-			<th class="title" style="width:18%">
-				<?php echo $this->translate('TASKS_TITLE') ?>
-			</th>
-			<th class="customer" style="width:10%">
-				<?php echo $this->translate('TASKS_CUSTOMER') ?>
-			</th>
-			<th class="notes" style="width:15%">
-				<?php echo $this->translate('TASKS_NOTES') ?>
-			</th>
-			<th class="responsible" style="width:14%">
-				<?php echo $this->translate('TASKS_RESPONSIBLE_PERSON') ?>
-			</th>
-			<th class="priority" style="width:28%">
-				<?php echo $this->translate('TASKS_PRIORITY') ?>
-			</th>
-			<th class="state" style="width:5%">
-				<?php echo $this->translate('TASKS_STATE') ?>
-			</th>
-			<th class="pin" width="8%"></th>
-			<th style="width:8%"></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach($this->tasks as $task) : ?>
-		<tr class="state<?php echo $task->state; ?><?php echo $task->pinned ? ' pinned' : ''; ?>">
-			<td><input class="id" type="checkbox" value="<?php echo $task->id; ?>" name="id"/></td>
-			<td data-label="<?php echo $this->translate('TASKS_TITLE') ?>" class="title">
-				<p><a href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'edit', 'id'=>$task->id));?>">
-						<?php echo $task->title ? $this->escape($task->title) : $this->escape($task->id);?>
-				</a></p>
-			</td>
-			<td data-label="<?php echo $this->translate('TASKS_CUSTOMER') ?>" class="customer">
-				<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$task->cid));?>">
-					<?php echo $this->escape($task->customerid);?>
-				</a>
-				<?php if($task->billingname1) : ?><br/>
-					<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$task->cid));?>">
-						<?php echo $this->escape($task->billingname1);?>
-						<?php //if($task->billingname2) echo "<br/>".$this->escape($task->billingname2);?>
-					</a>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('TASKS_NOTES') ?>" class="notes">
-				<?php if($task->state == '105' || $task->state == '106') : ?>
-					<?php echo nl2br($task->notes); ?>
-				<?php else : ?>
-					<?php if($task->notes) : ?>
-						<pre class="editable" data-name="notes" data-value="<?php echo $task->notes; ?>" data-type="textarea"><?php echo $task->notes; ?></pre>
-					<?php else : ?>
-						<pre class="editable" data-name="notes" data-value="<?php echo $task->notes; ?>" data-type="textarea" data-empty="true"><?php echo $this->translate('TOOLBAR_NEW') ;?></pre>
-					<?php endif; ?>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('TASKS_RESPONSIBLE_PERSON') ?>" class="responsible">
-				<?php if($task->responsible) : ?>
-					<span class="editable" data-name="responsible" data-value="<?php echo $task->responsible; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['users'][$task->responsible])); ?></span>
-				<?php else : ?>
-					<span class="editable" data-name="responsible" data-value="<?php echo $task->responsible; ?>" data-type="select"><?php echo $this->translate('TOOLBAR_NEW') ;?></span>
-				<?php endif; ?>
-			</td>
-			<td data-label="<?php echo $this->translate('TASKS_PRIORITY') ?>" class="priority">
-				Hoch
-			</td>
-			<td data-label="<?php echo $this->translate('TASKS_TITLE') ?>" class="state">
-				<?php if($task->state == '105' || $task->state == '106') : ?>
-					<?php echo $this->translate($this->escape($this->options['states'][$task->state])); ?>
-				<?php else : ?>
-					<span class="editable" data-name="state" data-value="<?php echo $task->state; ?>" data-type="select"><?php echo $this->translate($this->escape($this->options['states'][$task->state])); ?></span>
-				<?php endif; ?>
-			</td>
-			<td class="pin">
-				<?php if($task->pinned) : ?>
-					<input type = "button" onclick = "pin(<?php echo $task->id ?>)" value = "<?php echo $this->translate('DETACH') ?>">
-				<?php else : ?>
-					<input type = "button" onclick = "pin(<?php echo $task->id ?>)" value = "<?php echo $this->translate('ATTACH') ?>">
-				<?php endif; ?>
-			</td>
-			<td class="buttons">
-				<?php if($task->completed || $task->cancelled) : ?>
-					<?php echo $this->toolbar->viewInline; ?>
-				<?php else : ?>
-					<?php echo $this->toolbar->editInline; ?>
-				<?php endif; ?>
-				<?php echo $this->toolbar->copyInline; ?>
-			</td>
-		</tr>
-		<tr style="border:none;">
-		</tr>
-		<?php endforeach; ?>
-		<tr class="bottom">
-			<td></td>
-			<td class="toolbar">
-				<?php echo $this->ToolbarBottom(); ?>
-			</td>
-			<td></td>
-			<td></td>
-			<td class="total">
-				<?php echo $this->tasks->total; ?>
-			</td>
-			<td></td>
-			<td></td>
-			<td></td>
-		</tr>
-	</tbody>
-</table>
+<div class="dw-list-page">
+	<div class="dw-table-wrap">
+		<table class="dw-table dw-table--tasks" id="data">
+			<thead>
+				<tr>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+					<th class="dw-col-title"><?php echo $this->translate('TASKS_TITLE'); ?></th>
+					<th class="dw-col-customer"><?php echo $this->translate('TASKS_CUSTOMER'); ?></th>
+					<th class="dw-col-notes"><?php echo $this->translate('TASKS_NOTES'); ?></th>
+					<th class="dw-col-responsible"><?php echo $this->translate('TASKS_RESPONSIBLE_PERSON'); ?></th>
+					<th class="dw-col-priority"><?php echo $this->translate('TASKS_PRIORITY'); ?></th>
+					<th class="dw-col-state"><?php echo $this->translate('TASKS_STATE'); ?></th>
+					<th class="dw-col-pin"></th>
+					<th class="dw-col-actions"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->tasks as $task) : ?>
+					<?php
+					$stateClass = 'dw-badge--info';
+					if ($task->state == '101') $stateClass = 'dw-badge--warning';
+					if ($task->state == '103') $stateClass = 'dw-badge--danger';
+					if ($task->state == '104' || $task->state == '105' || $task->state == '106') $stateClass = 'dw-badge--success';
+					?>
+					<tr class="dw-row state<?php echo (int)$task->state; ?><?php echo $task->pinned ? ' is-pinned' : ''; ?>">
+						<td class="dw-col-check">
+							<input class="check-id" type="checkbox" value="<?php echo (int)$task->id; ?>" name="id" />
+							<input class="id" type="hidden" value="<?php echo (int)$task->id; ?>" name="id" />
+							<input class="controller" type="hidden" value="<?php echo $this->controller; ?>" name="controller" />
+							<input class="module" type="hidden" value="<?php echo $this->module; ?>" name="module" />
+						</td>
+
+						<td class="dw-col-title" data-label="<?php echo $this->translate('TASKS_TITLE'); ?>">
+							<a href="<?php echo $this->url(array(
+								'module' => 'tasks',
+								'controller' => 'task',
+								'action' => 'edit',
+								'id' => $task->id
+							)); ?>">
+								<?php echo $task->title ? $this->escape($task->title) : $this->escape($task->id); ?>
+							</a>
+						</td>
+
+						<td class="dw-col-customer" data-label="<?php echo $this->translate('TASKS_CUSTOMER'); ?>">
+							<?php if ($task->cid) : ?>
+								<a href="<?php echo $this->url(array(
+									'module' => 'contacts',
+									'controller' => 'contact',
+									'action' => 'edit',
+									'id' => $task->cid
+								)); ?>">
+									<?php if ($task->contactid) : ?>
+										<div><?php echo $this->escape($task->contactid); ?></div>
+									<?php endif; ?>
+
+									<?php if ($task->billingname1) : ?>
+										<div><?php echo $this->escape($task->billingname1); ?></div>
+									<?php endif; ?>
+								</a>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-notes notes" data-label="<?php echo $this->translate('TASKS_NOTES'); ?>">
+							<?php if ($task->state == '105' || $task->state == '106') : ?>
+								<div class="dw-readonly-text">
+									<?php echo nl2br($this->escape($task->notes)); ?>
+								</div>
+							<?php else : ?>
+								<div class="editableContainer">
+									<?php if ($task->notes) : ?>
+										<pre
+											class="editable dw-editable-note"
+											data-name="notes"
+											data-module="<?php echo $this->module; ?>"
+											data-controller="<?php echo $this->controller; ?>"
+											data-id="<?php echo (int)$task->id; ?>"
+											data-value="<?php echo $this->escape($task->notes); ?>"
+											data-type="textarea"
+										><?php echo $this->escape($task->notes); ?></pre>
+									<?php else : ?>
+										<pre
+											class="editable dw-editable-note"
+											data-name="notes"
+											data-module="<?php echo $this->module; ?>"
+											data-controller="<?php echo $this->controller; ?>"
+											data-id="<?php echo (int)$task->id; ?>"
+											data-value=""
+											data-type="textarea"
+											data-empty="true"
+										><?php echo $this->translate('TOOLBAR_NEW'); ?></pre>
+									<?php endif; ?>
+								</div>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-responsible responsible" data-label="<?php echo $this->translate('TASKS_RESPONSIBLE_PERSON'); ?>">
+							<div class="editableContainer">
+								<?php if ($task->responsible) : ?>
+									<span
+										class="editable"
+										data-name="responsible"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$task->id; ?>"
+										data-value="<?php echo $this->escape($task->responsible); ?>"
+										data-type="select"
+									><?php echo $this->translate($this->escape($this->options['users'][$task->responsible])); ?></span>
+								<?php else : ?>
+									<span
+										class="editable"
+										data-name="responsible"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$task->id; ?>"
+										data-value=""
+										data-type="select"
+										data-empty="true"
+									><?php echo $this->translate('TOOLBAR_NEW'); ?></span>
+								<?php endif; ?>
+							</div>
+						</td>
+
+						<td class="dw-col-priority" data-label="<?php echo $this->translate('TASKS_PRIORITY'); ?>">
+							Hoch
+						</td>
+
+						<td class="dw-col-state state" data-label="<?php echo $this->translate('TASKS_STATE'); ?>">
+							<?php if ($task->state == '105' || $task->state == '106') : ?>
+								<span class="dw-badge <?php echo $stateClass; ?>">
+									<?php echo $this->translate($this->escape($this->options['states'][$task->state])); ?>
+								</span>
+							<?php else : ?>
+								<div class="editableContainer">
+									<span
+										class="editable dw-badge <?php echo $stateClass; ?>"
+										data-name="state"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$task->id; ?>"
+										data-value="<?php echo $this->escape($task->state); ?>"
+										data-type="select"
+									><?php echo $this->translate($this->escape($this->options['states'][$task->state])); ?></span>
+								</div>
+							<?php endif; ?>
+						</td>
+
+						<td class="dw-col-pin">
+							<button type="button" class="dw-btn dw-btn--secondary" onclick="pin(<?php echo (int)$task->id; ?>)">
+								<?php echo $task->pinned ? $this->translate('DETACH') : $this->translate('ATTACH'); ?>
+							</button>
+						</td>
+
+						<td class="dw-col-actions">
+							<div class="dw-row-actions">
+								<?php if ($task->completed || $task->cancelled) : ?>
+									<?php echo $this->toolbar->viewInline; ?>
+								<?php else : ?>
+									<?php echo $this->toolbar->editInline; ?>
+								<?php endif; ?>
+								<?php echo $this->toolbar->copyInline; ?>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php if (isset($this->tasks->total)) echo $this->tasks->total; ?>
+		</div>
+	</div>
+</div>

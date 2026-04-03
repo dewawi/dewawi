@@ -32,7 +32,7 @@ class Tasks_Model_DbTable_Task extends Zend_Db_Table_Abstract
 	{
 		$contactid = (int)$contactid;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('customerid = ?', $contactid);
+		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
