@@ -1,6 +1,6 @@
 <?php
 
-class Items_Model_DbTable_Itemopt extends Zend_Db_Table_Abstract
+class Items_Model_DbTable_Itemopt extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'itemopt';

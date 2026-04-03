@@ -1,6 +1,6 @@
 <?php
 
-class Contacts_Model_DbTable_Emailtemplate extends Zend_Db_Table_Abstract
+class Contacts_Model_DbTable_Emailtemplate extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'emailtemplate';

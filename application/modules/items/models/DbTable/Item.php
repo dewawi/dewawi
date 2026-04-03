@@ -1,6 +1,6 @@
 <?php
 
-class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
+class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'item';
@@ -27,10 +27,22 @@ class Items_Model_DbTable_Item extends Zend_Db_Table_Abstract
 	{
 		$id = (int)$id;
 		$row = $this->fetchRow('id = ' . $id);
-		if (!$row) {
-			throw new Exception("Could not find row $id");
-		}
-		return $row->toArray();
+
+		return $row ? $row->toArray() : null;
+	}
+
+	public function getItemForEdit($id)
+	{
+		$id = (int)$id;
+
+		$where = [];
+		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+
+		$row = $this->fetchRow($where);
+
+		return $row ? $row->toArray() : null;
 	}
 
 	public function getItemBySKU($sku)

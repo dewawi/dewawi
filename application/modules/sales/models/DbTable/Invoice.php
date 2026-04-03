@@ -1,6 +1,6 @@
 <?php
 
-class Sales_Model_DbTable_Invoice extends Zend_Db_Table_Abstract
+class Sales_Model_DbTable_Invoice extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'invoice';
@@ -24,6 +24,20 @@ class Sales_Model_DbTable_Invoice extends Zend_Db_Table_Abstract
 		$row = $this->fetchRow('id = ' . $id);
 		if(!$row) return false;
 		return $row->toArray();
+	}
+
+	public function getInvoiceForEdit($id)
+	{
+		$id = (int)$id;
+
+		$where = [];
+		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+
+		$row = $this->fetchRow($where);
+
+		return $row ? $row->toArray() : null;
 	}
 
 	public function getInvoices($contactid)

@@ -1,6 +1,6 @@
 <?php
 
-class Items_Model_DbTable_Itemlist extends Zend_Db_Table_Abstract
+class Items_Model_DbTable_Itemlist extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'itemlist';

@@ -1,6 +1,6 @@
 <?php
 
-class Application_Model_DbTable_Increment extends Zend_Db_Table_Abstract
+class Application_Model_DbTable_Increment extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'increment';
@@ -36,7 +36,7 @@ class Application_Model_DbTable_Increment extends Zend_Db_Table_Abstract
 		$increment += 1;
 
 		$data = array(
-		    $type => $increment,
+			$type => $increment,
 		);
 
 		// Update only the specific column for the client

@@ -1,6 +1,6 @@
 <?php
 
-class Application_Model_DbTable_Daterange extends Zend_Db_Table_Abstract
+class Application_Model_DbTable_Daterange extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'daterange';

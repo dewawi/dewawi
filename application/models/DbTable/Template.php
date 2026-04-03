@@ -72,4 +72,9 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 		}
 		return $templates;
 	}
+
+	public function getSelectOptions(): array
+	{
+		return $this->getTemplates();
+	}
 }

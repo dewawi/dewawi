@@ -1,6 +1,6 @@
 <?php
 
-class Application_Model_DbTable_Deliverytime extends Zend_Db_Table_Abstract
+class Application_Model_DbTable_Deliverytime extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'deliverytime';

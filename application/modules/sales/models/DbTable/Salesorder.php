@@ -1,6 +1,6 @@
 <?php
 
-class Sales_Model_DbTable_Salesorder extends Zend_Db_Table_Abstract
+class Sales_Model_DbTable_Salesorder extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'salesorder';
@@ -26,6 +26,20 @@ class Sales_Model_DbTable_Salesorder extends Zend_Db_Table_Abstract
 			throw new Exception("Could not find row $id");
 		}
 		return $row->toArray();
+	}
+
+	public function getSalesorderForEdit($id)
+	{
+		$id = (int)$id;
+
+		$where = [];
+		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+
+		$row = $this->fetchRow($where);
+
+		return $row ? $row->toArray() : null;
 	}
 
 	public function getSalesorders($contactid)

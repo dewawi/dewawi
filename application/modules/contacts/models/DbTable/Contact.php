@@ -1,6 +1,6 @@
 <?php
 
-class Contacts_Model_DbTable_Contact extends Zend_Db_Table_Abstract
+class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'contact';
@@ -29,6 +29,20 @@ class Contacts_Model_DbTable_Contact extends Zend_Db_Table_Abstract
 		$row = $this->fetchRow('id = ' . $id);
 		if(!$row) return false;
 		return $row->toArray();
+	}
+
+	public function getContactForEdit($id)
+	{
+		$id = (int)$id;
+
+		$where = [];
+		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+
+		$row = $this->fetchRow($where);
+
+		return $row ? $row->toArray() : null;
 	}
 
 	public function getContactWithID($contactid)

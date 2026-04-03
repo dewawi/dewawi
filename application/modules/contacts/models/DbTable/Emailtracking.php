@@ -1,6 +1,6 @@
 <?php
 
-class Contacts_Model_DbTable_Emailtracking extends Zend_Db_Table_Abstract
+class Contacts_Model_DbTable_Emailtracking extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'emailtracking';

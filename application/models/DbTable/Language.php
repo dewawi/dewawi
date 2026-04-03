@@ -43,4 +43,9 @@ class Application_Model_DbTable_Language extends Zend_Db_Table_Abstract
 		}
 		return $languages;
 	}
+
+	public function getSelectOptions(): array
+	{
+		return $this->getLanguages();
+	}
 }

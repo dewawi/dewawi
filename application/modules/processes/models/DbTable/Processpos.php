@@ -1,6 +1,6 @@
 <?php
 
-class Processes_Model_DbTable_Processpos extends Zend_Db_Table_Abstract
+class Processes_Model_DbTable_Processpos extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'processpos';

@@ -1,6 +1,6 @@
 <?php
 
-class Contacts_Model_DbTable_Emailattachment extends Zend_Db_Table_Abstract
+class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'emailattachment';

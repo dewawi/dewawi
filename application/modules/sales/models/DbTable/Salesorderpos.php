@@ -1,6 +1,6 @@
 <?php
 
-class Sales_Model_DbTable_Salesorderpos extends Zend_Db_Table_Abstract
+class Sales_Model_DbTable_Salesorderpos extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'salesorderpos';

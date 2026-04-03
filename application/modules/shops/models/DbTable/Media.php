@@ -55,22 +55,21 @@ class Shops_Model_DbTable_Media extends Zend_Db_Table_Abstract
 	public function getMedia($parentid, $module, $controller)
 	{
 		$select = $this->select()
-			//->from($this->_name)
 			->where('parentid = ?', $parentid)
 			->where('module = ?', $module)
 			->where('controller = ?', $controller)
 			->where('deleted = ?', 0);
+
 		$imagesData = $this->fetchAll($select);
 
 		$images = [];
-		foreach ($imagesData as $imageData) {
-			$image = new stdClass();
-			$image->url = $imageData['url'];
-			$image->title = $imageData['title'];
-			$image->type = $imageData['type'];
-			$images[] = $image;
+		foreach ($imagesData as $row) {
+			$images[] = [
+				'url'   => $row['url'],
+				'title' => $row['title'],
+				'type'  => $row['type'],
+			];
 		}
-
 		return $images;
 	}
 

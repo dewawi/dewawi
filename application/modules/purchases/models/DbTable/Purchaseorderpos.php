@@ -1,6 +1,6 @@
 <?php
 
-class Purchases_Model_DbTable_Purchaseorderpos extends Zend_Db_Table_Abstract
+class Purchases_Model_DbTable_Purchaseorderpos extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'purchaseorderpos';

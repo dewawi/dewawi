@@ -1,6 +1,6 @@
 <?php
 
-class Contacts_Model_DbTable_Downloadset extends Zend_Db_Table_Abstract
+class Contacts_Model_DbTable_Downloadset extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'downloadset';
