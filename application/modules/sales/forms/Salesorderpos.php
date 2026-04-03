@@ -1,111 +1,150 @@
 <?php
 
-class Sales_Form_Salesorderpos extends Zend_Form
+class Sales_Form_Salesorderpos extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('salesorderpos');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'sku',
+			'type' => 'text',
+			'label' => 'POSITIONS_SKU',
+			'required' => true,
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'col' => 3,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int');
+		$this->addElement([
+			'name' => 'title',
+			'type' => 'text',
+			'label' => 'POSITIONS_TITLE',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'col' => 9,
+		]);
 
-		$form['sku'] = new Zend_Form_Element_Text('sku');
-		$form['sku']->setLabel('POSITIONS_SKU')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '20');
+		$this->addElement([
+			'name' => 'image',
+			'type' => 'text',
+			'label' => 'POSITIONS_IMAGE',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'col' => 3,
+		]);
 
-		$form['title'] = new Zend_Form_Element_Text('title');
-		$form['title']->setLabel('POSITIONS_TITLE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
+		$this->addElement([
+			'name' => 'description',
+			'type' => 'textarea',
+			'label' => 'POSITIONS_DESCRIPTION',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'rows' => 3,
+				'cols' => 75,
+			],
+			'col' => 12,
+		]);
 
-		$form['image'] = new Zend_Form_Element_Text('image');
-		$form['image']->setLabel('POSITIONS_IMAGE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '20');
+		$this->addElement([
+			'name' => 'price',
+			'type' => 'text',
+			'label' => 'POSITIONS_PRICE',
+			'required' => true,
+			'format' => ['type' => 'float'],
+			'attribs' => [
+				'class' => 'number',
+			],
+			'col' => 3,
+		]);
 
-		$form['description'] = new Zend_Form_Element_Textarea('description');
-		$form['description']->setLabel('POSITIONS_DESCRIPTION')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '3');
+		$this->addElement([
+			'name' => 'taxrate',
+			'type' => 'select',
+			'label' => 'POSITIONS_TAX_RATE',
+			'required' => true,
+			'options' => [
+				'0' => 'POSITIONS_NONE',
+			],
+			'col' => 3,
+		]);
 
-		$form['price'] = new Zend_Form_Element_Text('price');
-		$form['price']->setLabel('POSITIONS_PRICE')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('Float')
-			->addValidator('NotEmpty')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '20');
+		$this->addElement([
+			'name' => 'quantity',
+			'type' => 'text',
+			'label' => 'POSITIONS_QUANTITY',
+			'required' => true,
+			'format' => ['type' => 'float'],
+			'attribs' => [
+				'class' => 'number',
+			],
+			'col' => 3,
+		]);
 
-		$form['taxrate'] = new Zend_Form_Element_Select('taxrate');
-		$form['taxrate']->setLabel('POSITIONS_TAX_RATE')
-			->addMultiOption(0, 'POSITIONS_NONE')
-			->setRequired(true)
-			->addValidator('NotEmpty');
+		$this->addElement([
+			'name' => 'uom',
+			'type' => 'select',
+			'label' => 'POSITIONS_UOM',
+			'required' => true,
+			'options' => [
+				'0' => 'POSITIONS_NONE',
+			],
+			'col' => 3,
+		]);
 
-		$form['priceruleamount'] = new Zend_Form_Element_Text('priceruleamount');
-		$form['priceruleamount']->setLabel('POSITIONS_PRICE_RULE_AMOUNT')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('Float')
-			->addValidator('NotEmpty')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '20');
+		$this->addElement([
+			'name' => 'total',
+			'type' => 'text',
+			'format' => ['type' => 'float'],
+			'attribs' => [
+				'class' => 'number',
+				'readonly' => 'readonly',
+			],
+			'col' => 3,
+		]);
 
-		$form['priceruleaction'] = new Zend_Form_Element_Select('priceruleaction');
-		$form['priceruleaction']->setLabel('POSITIONS_PRICE_RULE_APPLY')
-			->addMultiOption(0, 'POSITIONS_NONE')
-			->setRequired(true)
-			->addValidator('NotEmpty');
+		$this->addElement([
+			'name' => 'priceruleamount',
+			'type' => 'text',
+			'label' => 'POSITIONS_PRICE_RULE_AMOUNT',
+			'required' => true,
+			'format' => ['type' => 'float'],
+			'attribs' => [
+				'class' => 'number',
+			],
+			'col' => 3,
+		]);
 
-		$form['pricerulemaster'] = new Zend_Form_Element_Checkbox('pricerulemaster');
-		$form['pricerulemaster']->setLabel('POSITIONS_PRICE_RULE_MASTER');
+		$this->addElement([
+			'name' => 'priceruleaction',
+			'type' => 'select',
+			'label' => 'POSITIONS_PRICE_RULE_APPLY',
+			'required' => true,
+			'options' => [
+				'0' => 'POSITIONS_NONE',
+			],
+			'col' => 3,
+		]);
 
-		$form['quantity'] = new Zend_Form_Element_Text('quantity');
-		$form['quantity']->setLabel('POSITIONS_QUANTITY')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('Float')
-			->addValidator('NotEmpty')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '20');
+		$this->addElement([
+			'name' => 'pricerulemaster',
+			'type' => 'checkbox',
+			'label' => 'POSITIONS_PRICE_RULE_MASTER',
+			'format' => ['type' => 'int'],
+			'col' => 3,
+		]);
 
-		$form['total'] = new Zend_Form_Element_Text('total');
-		$form['total']->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('Float')
-			->addValidator('NotEmpty')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '20')
-			->setDecorators(array('ViewHelper'));
-
-		$form['uom'] = new Zend_Form_Element_Select('uom');
-		$form['uom']->setLabel('POSITIONS_UOM')
-			->addMultiOption(0, 'POSITIONS_NONE')
-			->setRequired(true)
-			->addValidator('NotEmpty');
-
-		$form['ordering'] = new Zend_Form_Element_Select('ordering');
-		$form['ordering']->addFilter('Int')
-			->setRequired(true)
-			->addValidator('NotEmpty')
-			->setDecorators(array('ViewHelper'));
-
-		$this->addElements($form);
-		//$this->setElementDecorators(array('ViewHelper'));
+		$this->addElement([
+			'name' => 'ordering',
+			'type' => 'select',
+			'required' => true,
+			'options' => [],
+			'col' => 3,
+		]);
 	}
 }

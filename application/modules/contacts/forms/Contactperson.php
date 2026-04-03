@@ -1,46 +1,57 @@
 <?php
 
-class Contacts_Form_Contactperson extends Zend_Form
+class Contacts_Form_Contactperson extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('contactperson');
+		$this->addElement([
+			'name' => 'title',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 40,
+			],
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'salutation',
+			'type' => 'select',
+			'options' => [
+				'0' => 'keine',
+				'Herr' => 'Herr',
+				'Frau' => 'Frau',
+			],
+			'default' => '0',
+			'format' => ['type' => 'string'],
+		]);
 
-		$form['title'] = new Zend_Form_Element_Text('title');
-		$form['title']->removeDecorator('label')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '40');
+		$this->addElement([
+			'name' => 'name1',
+			'type' => 'text',
+			'required' => true,
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 40,
+				'class' => 'required',
+			],
+		]);
 
-		$form['salutation'] = new Zend_Form_Element_Select('salutation');
-		$form['salutation']->removeDecorator('label')
-			->addMultiOption('0', 'keine')
-			->addMultiOption('Herr', 'Herr')
-			->addMultiOption('Frau', 'Frau');
+		$this->addElement([
+			'name' => 'name2',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 40,
+			],
+		]);
 
-		$form['name1'] = new Zend_Form_Element_Text('name1');
-		$form['name1']->removeDecorator('label')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '40')
-			->setAttrib('class', 'required');	
-
-		$form['name2'] = new Zend_Form_Element_Text('name2');
-		$form['name2']->removeDecorator('label')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '40');
-
-		$form['department'] = new Zend_Form_Element_Text('department');
-		$form['department']->removeDecorator('label')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '40');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'department',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 40,
+			],
+		]);
 	}
 }

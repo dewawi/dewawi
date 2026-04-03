@@ -55,77 +55,77 @@ class Contacts_Form_Contact extends DEEC_Form
 			'tab' => 'overview'
 		]);
 
-        $this->addElement([
-            'type' => 'multi',
-            'name' => 'address',
-            'label' => 'CONTACTS_ADDRESS',
-            'tab' => 'overview',
-            'col' => 6,
-            'module' => 'contacts',
-            'controller' => 'address',
-            'parentid' => 0,
-            'rows' => [],
-        ]);
+		$this->addElement([
+			'type' => 'multi',
+			'name' => 'address',
+			'label' => 'CONTACTS_ADDRESS',
+			'tab' => 'overview',
+			'col' => 6,
+			'module' => 'contacts',
+			'controller' => 'address',
+			'parentid' => 0,
+			'rows' => [],
+		]);
 
-        $this->addElement([
-            'type' => 'multi',
-            'name' => 'phone',
-            'label' => 'CONTACTS_PHONE',
-            'tab' => 'overview',
-            'col' => 6,
-            'module' => 'contacts',
-            'controller' => 'phone',
-            'parentid' => 0,
-            'rows' => [],
-        ]);
+		$this->addElement([
+			'type' => 'multi',
+			'name' => 'phone',
+			'label' => 'CONTACTS_PHONE',
+			'tab' => 'overview',
+			'col' => 6,
+			'module' => 'contacts',
+			'controller' => 'phone',
+			'parentid' => 0,
+			'rows' => [],
+		]);
 
-        $this->addElement([
-            'type' => 'multi',
-            'name' => 'email',
-            'label' => 'CONTACTS_EMAIL',
-            'tab' => 'overview',
-            'col' => 6,
-            'module' => 'contacts',
-            'controller' => 'email',
-            'parentid' => 0,
-            'rows' => [],
-        ]);
+		$this->addElement([
+			'type' => 'multi',
+			'name' => 'email',
+			'label' => 'CONTACTS_EMAIL',
+			'tab' => 'overview',
+			'col' => 6,
+			'module' => 'contacts',
+			'controller' => 'email',
+			'parentid' => 0,
+			'rows' => [],
+		]);
 
-        $this->addElement([
-            'type' => 'multi',
-            'name' => 'internet',
-            'label' => 'CONTACTS_INTERNET',
-            'tab' => 'overview',
-            'col' => 6,
-            'module' => 'contacts',
-            'controller' => 'internet',
-            'parentid' => 0,
-            'rows' => [],
-        ]);
+		$this->addElement([
+			'type' => 'multi',
+			'name' => 'internet',
+			'label' => 'CONTACTS_INTERNET',
+			'tab' => 'overview',
+			'col' => 6,
+			'module' => 'contacts',
+			'controller' => 'internet',
+			'parentid' => 0,
+			'rows' => [],
+		]);
 
-        /*$this->addElement([
-            'type' => 'multi',
-            'name' => 'tags',
-            'label' => 'CONTACTS_TAGS',
-            'tab' => 'overview',
-            'col' => 6,
-            'module' => 'contacts',
-            'controller' => 'tags',
-            'parentid' => 0,
-            'rows' => [],
-        ]);*/
+		$this->addElement([
+			'type' => 'multi',
+			'name' => 'tags',
+			'label' => 'CONTACTS_TAGS',
+			'tab' => 'overview',
+			'col' => 6,
+			'module' => 'contacts',
+			'controller' => 'tag',
+			'parentid' => 0,
+			'rows' => [],
+		]);
 
-        /*$this->addElement([
-            'type' => 'multi',
-            'name' => 'comments',
-            'label' => 'CONTACTS_COMMENTS',
-            'tab' => 'overview',
-            'col' => 6,
-            'module' => 'contacts',
-            'controller' => 'comments',
-            'parentid' => 0,
-            'rows' => [],
-        ]);*/
+		$this->addElement([
+			'type' => 'multi',
+			'name' => 'comments',
+			'label' => 'CONTACTS_COMMENTS',
+			'tab' => 'overview',
+			'col' => 6,
+			'module' => 'contacts',
+			'controller' => 'comment',
+			'parentid' => 0,
+			'rows' => [],
+		]);
 
 		$this->addElement([
 			'name' => 'info',
@@ -140,110 +140,145 @@ class Contacts_Form_Contact extends DEEC_Form
 			'tab' => 'overview',
 		]);
 
+		$this->addElement([
+			'type' => 'multi',
+			'name' => 'comments',
+			'label' => 'CONTACTS_CONTACT_PERSONS',
+			'tab' => 'contactperson',
+			'col' => 6,
+			'module' => 'contacts',
+			'controller' => 'contactperson',
+			'parentid' => 0,
+			'rows' => [],
+		]);
+
+		$this->addElement([
+			'name' => 'debitornumber',
+			'type' => 'text',
+			'label' => 'CONTACTS_DEBITOR_NUMBER',
+			'tab' => 'payment',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 30,
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'taxnumber',
+			'type' => 'text',
+			'label' => 'CONTACTS_TAX_NUMBER',
+			'tab' => 'payment',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 30,
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'vatin',
+			'type' => 'text',
+			'label' => 'CONTACTS_VATIN',
+			'tab' => 'payment',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 30,
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'taxfree',
+			'type' => 'checkbox',
+			'label' => 'CONTACTS_TAX_FREE',
+			'tab' => 'payment',
+		]);
+
+		$this->addElement([
+			'name' => 'priceruleamount',
+			'type' => 'text',
+			'label' => 'CONTACTS_PRICE_RULE_AMOUNT',
+			'tab' => 'payment',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'class' => 'number',
+				'size' => 30,
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'priceruleaction',
+			'type' => 'select',
+			'label' => 'CONTACTS_PRICE_RULE_APPLY',
+			'tab' => 'payment',
+			'options' => [
+				'' => 'CONTACTS_NONE',
+			],
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'paymentmethod',
+			'type' => 'select',
+			'label' => 'CONTACTS_PAYMENT_METHOD',
+			'tab' => 'payment',
+			'options' => [
+				'' => 'CONTACTS_NONE',
+			],
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'paymentterm',
+			'type' => 'text',
+			'label' => 'CONTACTS_PAYMENT_TERM',
+			'tab' => 'payment',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 30,
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'currency',
+			'type' => 'select',
+			'label' => 'CONTACTS_CURRENCY',
+			'tab' => 'payment',
+			'required' => true,
+			'options' => [
+				'0' => 'CONTACTS_NONE',
+			],
+			'default' => '0',
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'cashdiscountdays',
+			'type' => 'text',
+			'label' => 'CONTACTS_CASH_DISCOUNT_DAYS',
+			'tab' => 'payment',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 30,
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'cashdiscountpercent',
+			'type' => 'text',
+			'label' => 'CONTACTS_CASH_DISCOUNT_DAYS_PERCENT',
+			'tab' => 'payment',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'class' => 'number',
+				'size' => 30,
+			],
+		]);
+
 	}
 }
 
 /*
 
 
-		$form['debitornumber'] = new Zend_Form_Element_Text('debitornumber');
-		$form['debitornumber']->setLabel('CONTACTS_DEBITOR_NUMBER')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['taxnumber'] = new Zend_Form_Element_Text('taxnumber');
-		$form['taxnumber']->setLabel('CONTACTS_TAX_NUMBER')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['vatin'] = new Zend_Form_Element_Text('vatin');
-		$form['vatin']->setLabel('CONTACTS_VATIN')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['taxfree'] = new Zend_Form_Element_Checkbox('taxfree');
-		$form['taxfree']->setLabel('CONTACTS_TAX_FREE');
-
-		$form['priceruleamount'] = new Zend_Form_Element_Text('priceruleamount');
-		$form['priceruleamount']->setLabel('CONTACTS_PRICE_RULE_AMOUNT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '30');
-
-		$form['priceruleaction'] = new Zend_Form_Element_Select('priceruleaction');
-		$form['priceruleaction']->setLabel('CONTACTS_PRICE_RULE_APPLY')
-			->addMultiOption('', 'CONTACTS_NONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['paymentmethod'] = new Zend_Form_Element_Select('paymentmethod');
-		$form['paymentmethod']->setLabel('CONTACTS_PAYMENT_METHOD')
-			->addMultiOption('', 'CONTACTS_NONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['paymentterm'] = new Zend_Form_Element_Text('paymentterm');
-		$form['paymentterm']->setLabel('CONTACTS_PAYMENT_TERM')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['currency'] = new Zend_Form_Element_Select('currency');
-		$form['currency']->setLabel('CONTACTS_CURRENCY')
-			->addMultiOption(0, 'CONTACTS_NONE')
-			->setRequired(true)
-			->addValidator('NotEmpty');
-
-		$form['cashdiscountdays'] = new Zend_Form_Element_Text('cashdiscountdays');
-		$form['cashdiscountdays']->setLabel('CONTACTS_CASH_DISCOUNT_DAYS')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['cashdiscountpercent'] = new Zend_Form_Element_Text('cashdiscountpercent');
-		$form['cashdiscountpercent']->setLabel('CONTACTS_CASH_DISCOUNT_DAYS_PERCENT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '30');
-
-		$this->addElements($form);
-	}
-}
-
-
-
-
-		$form['name1'] = new Zend_Form_Element_Text('name1');
-		$form['name1']->setLabel('CONTACTS_NAME_ORGANISATION')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '40')
-			->setAttrib('class', 'required');	
-
-		$form['name2'] = new Zend_Form_Element_Text('name2');
-		$form['name2']->setLabel('CONTACTS_NAME_AFFIX')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '40');
-
-		$form['department'] = new Zend_Form_Element_Text('department');
-		$form['department']->setLabel('CONTACTS_DEPARTMENT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '40');
-
-
-
-
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int');
 
 		$form['contactid'] = new Zend_Form_Element_Text('contactid');
 		$form['contactid']->setLabel('CONTACTS_CONTACT_ID')
@@ -278,97 +313,6 @@ class Contacts_Form_Contact extends DEEC_Form
 		]);
 
 
-
-
-		$form['phone'] = new Zend_Form_Element_Text('phone');
-		$form['phone']->setLabel('CONTACTS_PHONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['street'] = new Zend_Form_Element_Textarea('street');
-		$form['street']->setLabel('CONTACTS_STREET')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '30')
-			->setAttrib('rows', '3');
-
-		$form['postcode'] = new Zend_Form_Element_Text('postcode');
-		$form['postcode']->setLabel('CONTACTS_POSTCODE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['city'] = new Zend_Form_Element_Text('city');
-		$form['city']->setLabel('CONTACTS_CITY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['country'] = new Zend_Form_Element_Select('country');
-		$form['country']->setLabel('CONTACTS_COUNTRY')
-			->setRequired(true)
-			->addValidator('NotEmpty')
-			->setAttrib('class', 'required');
-
-		$form['shippingname1'] = new Zend_Form_Element_Text('shippingname1');
-		$form['shippingname1']->setLabel('CONTACTS_NAME')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
-
-		$form['shippingname2'] = new Zend_Form_Element_Text('shippingname2');
-		$form['shippingname2']->setLabel('')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
-
-		$form['shippingdepartment'] = new Zend_Form_Element_Text('shippingdepartment');
-		$form['shippingdepartment']->setLabel('CONTACTS_DEPARTMENT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
-
-		$form['shippingstreet'] = new Zend_Form_Element_Textarea('shippingstreet');
-		$form['shippingstreet']->setLabel('CONTACTS_STREET')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '30')
-			->setAttrib('rows', '3');
-
-		$form['shippingpostcode'] = new Zend_Form_Element_Text('shippingpostcode');
-		$form['shippingpostcode']->setLabel('CONTACTS_POSTCODE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['shippingcity'] = new Zend_Form_Element_Text('shippingcity');
-		$form['shippingcity']->setLabel('CONTACTS_CITY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['shippingcountry'] = new Zend_Form_Element_Text('shippingcountry');
-		$form['shippingcountry']->setLabel('CONTACTS_COUNTRY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['shippingphone'] = new Zend_Form_Element_Text('shippingphone');
-		$form['shippingphone']->setLabel('CONTACTS_PHONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-
-
-
-		$form['info'] = new Zend_Form_Element_Textarea('info');
-		$form['info']->setLabel('CONTACTS_INFO_INTERNAL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '62')
-			->setAttrib('rows', '30');
 
 		$form['notes'] = new Zend_Form_Element_Textarea('notes');
 		$form['notes']->setLabel('CONTACTS_NOTES')

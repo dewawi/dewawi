@@ -1,175 +1,253 @@
 <?php
 
-class Processes_Form_Toolbar extends Zend_Form
+class Processes_Form_Toolbar extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('toolbar');
+		$this->addElement([
+			'name' => 'add',
+			'type' => 'button',
+			'label' => 'TOOLBAR_NEW',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'add',
+			],
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'view',
+			'type' => 'button',
+			'label' => 'TOOLBAR_VIEW',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'view',
+			],
+		]);
 
-		$form['add'] = new Zend_Form_Element_Button('add');
-		$form['add']->setLabel('TOOLBAR_NEW')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'add');
+		$this->addElement([
+			'name' => 'edit',
+			'type' => 'button',
+			'label' => 'TOOLBAR_EDIT',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'edit hidden-sm',
+			],
+		]);
 
-		$form['view'] = new Zend_Form_Element_Button('view');
-		$form['view']->setLabel('TOOLBAR_VIEW')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'view');
+		$this->addElement([
+			'name' => 'select',
+			'type' => 'button',
+			'label' => 'TOOLBAR_SELECT',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'select poplight',
+				'rel' => 'addCustomer',
+			],
+		]);
 
-		$form['viewInline'] = new Zend_Form_Element_Button('view');
-		$form['viewInline']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'view nolabel');
+		$this->addElement([
+			'name' => 'copy',
+			'type' => 'button',
+			'label' => 'TOOLBAR_COPY',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'copy hidden-sm',
+			],
+		]);
 
-		$form['edit'] = new Zend_Form_Element_Button('edit');
-		$form['edit']->setLabel('TOOLBAR_EDIT')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'edit hidden-sm');
+		$this->addElement([
+			'name' => 'pdf',
+			'type' => 'button',
+			'label' => 'TOOLBAR_PDF',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'pdf',
+			],
+		]);
 
-		$form['editInline'] = new Zend_Form_Element_Button('edit');
-		$form['editInline']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'edit nolabel');
+		$this->addElement([
+			'name' => 'delete',
+			'type' => 'button',
+			'label' => 'TOOLBAR_DELETE',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'delete hidden-sm',
+			],
+		]);
 
-		$form['select'] = new Zend_Form_Element_Button('select');
-		$form['select']->setLabel('TOOLBAR_SELECT')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'select poplight')
-			->setAttrib('rel', 'addCustomer');
+		$this->addElement([
+			'name' => 'keyword',
+			'type' => 'text',
+			'wrap' => false,
+			'default' => '',
+			'attribs' => [
+			],
+		]);
 
-		$form['copy'] = new Zend_Form_Element_Button('copy');
-		$form['copy']->setLabel('TOOLBAR_COPY')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy hidden-sm');
+		$this->addElement([
+			'name' => 'clear',
+			'type' => 'button',
+			'label' => '',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'clear nolabel',
+				'rel' => 'keyword',
+			],
+		]);
 
-		$form['copyInline'] = new Zend_Form_Element_Button('copy');
-		$form['copyInline']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy nolabel');
+		$this->addElement([
+			'name' => 'filter',
+			'type' => 'button',
+			'label' => 'TOOLBAR_FILTER',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'filter hidden-sm',
+			],
+		]);
 
-		$form['delete'] = new Zend_Form_Element_Button('delete');
-		$form['delete']->setLabel('TOOLBAR_DELETE')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'delete hidden-sm');
+		$this->addElement([
+			'name' => 'reset',
+			'type' => 'button',
+			'label' => 'TOOLBAR_RESET',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'reset hidden-sm',
+			],
+		]);
 
-		$form['keyword'] = new Zend_Form_Element_Text('keyword');
-		$form['keyword']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
+		$this->addElement([
+			'name' => 'state',
+			'type' => 'select',
+			'wrap' => false,
+			'options' => [
+				'100' => 'STATES_CREATED',
+				'101' => 'STATES_IN_PROCESS',
+				'102' => 'STATES_PLEASE_CHECK',
+				'103' => 'STATES_PLEASE_DELETE',
+				'104' => 'STATES_RELEASED',
+			],
+		]);
 
-		$form['clear'] = new Zend_Form_Element_Button('clear');
-		$form['clear']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'clear nolabel')
-			->setAttrib('rel', 'keyword');
+		$this->addElement([
+			'name' => 'states',
+			'type' => 'multicheckbox',
+			'wrap' => false,
+			'options' => [
+				'100' => 'STATES_CREATED',
+				'101' => 'STATES_IN_PROCESS',
+				'102' => 'STATES_PLEASE_CHECK',
+				'103' => 'STATES_PLEASE_DELETE',
+				'104' => 'STATES_RELEASED',
+				'105' => 'STATES_COMPLETED',
+				'106' => 'STATES_CANCELLED',
+			],
+			'default' => ['100', '101', '102', '103', '104'],
+		]);
 
-		$form['filter'] = new Zend_Form_Element_Button('TOOLBAR_FILTER');
-		$form['filter']->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'filter hidden-sm');
+		$this->addElement([
+			'name' => 'order',
+			'type' => 'select',
+			'wrap' => false,
+			'options' => [
+				'id' => 'ORDERING_CREATION',
+				'title' => 'ORDERING_TITLE',
+				'contactid' => 'ORDERING_CUSTOMER_ID',
+				'documentid' => 'ORDERING_DOCUMENT_ID',
+				'billingname1' => 'ORDERING_CUSTOMER',
+				'billingpostcode' => 'ORDERING_POSTCODE',
+				'billingcity' => 'ORDERING_CITY',
+				'modified' => 'ORDERING_MODIFIED',
+				'total' => 'ORDERING_TOTAL',
+				'state' => 'ORDERING_STATE',
+			],
+			'default' => 'id',
+		]);
 
-		$form['reset'] = new Zend_Form_Element_Button('reset');
-		$form['reset']->setLabel('TOOLBAR_RESET')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'reset hidden-sm');
+		$this->addElement([
+			'name' => 'sort',
+			'type' => 'select',
+			'wrap' => false,
+			'options' => [
+				'asc' => 'ORDERING_ASC',
+				'desc' => 'ORDERING_DESC',
+			],
+			'default' => 'asc',
+		]);
 
-		$form['state'] = new Zend_Form_Element_Select('state');
-		$form['state']->setDecorators(array('ViewHelper'))
-			->addMultiOption('100', 'STATES_CREATED')
-			->addMultiOption('101', 'STATES_IN_PROCESS')
-			->addMultiOption('102', 'STATES_PLEASE_CHECK')
-			->addMultiOption('103', 'STATES_PLEASE_DELETE')
-			->addMultiOption('104', 'STATES_RELEASED')
-			->addMultiOption('105', 'STATES_COMPLETED')
-			->addMultiOption('106', 'STATES_CANCELLED');
+		$this->addElement([
+			'name' => 'country',
+			'type' => 'select',
+			'wrap' => false,
+			'options' => [
+				'0' => 'TOOLBAR_ALL_COUNTRIES',
+			],
+			'source' => 'country',
+			'default' => '0',
+			'attribs' => [
+				'class' => 'hidden-sm',
+			],
+		]);
 
-		$form['states'] = new Zend_Form_Element_MultiCheckbox('states');
-		$form['states']->setDecorators(array('ViewHelper'))
-			->addMultiOption('100', 'STATES_CREATED')
-			->addMultiOption('101', 'STATES_IN_PROCESS')
-			->addMultiOption('102', 'STATES_PLEASE_CHECK')
-			->addMultiOption('103', 'STATES_PLEASE_DELETE')
-			->addMultiOption('104', 'STATES_RELEASED')
-			->addMultiOption('105', 'STATES_COMPLETED')
-			->addMultiOption('106', 'STATES_CANCELLED')
-			->setAttrib('default', array('100', '101', '102', '103', '104'));
+		$this->addElement([
+			'name' => 'from',
+			'type' => 'text',
+			'wrap' => false,
+		]);
 
-		$form['order'] = new Zend_Form_Element_Select('order');
-		$form['order']->setDecorators(array('ViewHelper'))
-			->addMultiOption('id', 'ORDERING_CREATION')
-			->addMultiOption('title', 'ORDERING_TITLE')
-			->addMultiOption('contactid', 'ORDERING_CUSTOMER_ID')
-			->addMultiOption('billingname1', 'ORDERING_CUSTOMER')
-			->addMultiOption('billingpostcode', 'ORDERING_POSTCODE')
-			->addMultiOption('billingcity', 'ORDERING_CITY')
-			->addMultiOption('modified', 'ORDERING_MODIFIED')
-			->addMultiOption('total', 'ORDERING_TOTAL')
-			->addMultiOption('state', 'ORDERING_STATE')
-			->setAttrib('default', 'id');
+		$this->addElement([
+			'name' => 'to',
+			'type' => 'text',
+			'wrap' => false,
+		]);
 
-		$form['sort'] = new Zend_Form_Element_Select('sort');
-		$form['sort']->setDecorators(array('ViewHelper'))
-			->addMultiOption('asc', 'ORDERING_ASC')
-			->addMultiOption('desc', 'ORDERING_DESC')
-			->setAttrib('default', 'desc');
+		$this->addElement([
+			'name' => 'daterange',
+			'type' => 'radio',
+			'wrap' => false,
+			'options' => [
+				'0' => 'TOOLBAR_ALL',
+				'today' => 'TOOLBAR_TODAY',
+				'yesterday' => 'TOOLBAR_YESTERDAY',
+				'last7days' => 'TOOLBAR_LAST_7_DAYS',
+				'last14days' => 'TOOLBAR_LAST_14_DAYS',
+				'last30days' => 'TOOLBAR_LAST_30_DAYS',
+				'thisMonth' => 'TOOLBAR_THIS_MONTH',
+				'lastMonth' => 'TOOLBAR_LAST_MONTH',
+				'thisYear' => 'TOOLBAR_THIS_YEAR',
+				'lastYear' => 'TOOLBAR_LAST_YEAR',
+				'custom' => 'TOOLBAR_CUSTOM',
+			],
+			'default' => '0',
+		]);
 
-		$form['country'] = new Zend_Form_Element_Select('country');
-		$form['country']->setDecorators(array('ViewHelper'))
-			->addMultiOption('0', 'TOOLBAR_ALL_COUNTRIES')
-			->setAttrib('default', '0');
+		$this->addElement([
+			'name' => 'limit',
+			'type' => 'select',
+			'wrap' => false,
+			'options' => [
+				'50' => '50',
+				'100' => '100',
+				'250' => '250',
+				'500' => '500',
+				'0' => 'TOOLBAR_ALL',
+			],
+			'default' => '50',
+			'attribs' => [
+				'class' => 'hidden-sm',
+			],
+		]);
 
-		$form['paymentstatus'] = new Zend_Form_Element_MultiCheckbox('paymentstatus');
-		$form['paymentstatus']->setDecorators(array('ViewHelper'))
-			->addMultiOption('waitingForPayment', 'PROCESSES_WAITING_FOR_PAYMENT')
-			->addMultiOption('prepaymentReceived', 'PROCESSES_PREPAYMENT_RECEIVED')
-			->addMultiOption('paymentCompleted', 'PROCESSES_PAYMENT_COMPLETED')
-			->setAttrib('default', array('waitingForPayment', 'prepaymentReceived', 'paymentCompleted'));
-
-		$form['deliverystatus'] = new Zend_Form_Element_Select('deliverystatus');
-		$form['deliverystatus']->setLabel('PROCESSES_DELIVERY_STATUS')
-			->addMultiOption('deliveryIsWaiting', 'PROCESSES_DELIVERY_IS_WAITING')
-			->addMultiOption('partialDelivered', 'PROCESSES_PARTIAL_DElIVERED')
-			->addMultiOption('deliveryCompleted', 'PROCESSES_DELIVERY_COMPLETED')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['from'] = new Zend_Form_Element_Text('from');
-		$form['from']->setDecorators(array('ViewHelper'));
-
-		$form['to'] = new Zend_Form_Element_Text('to');
-		$form['to']->setDecorators(array('ViewHelper'));
-
-		$form['daterange'] = new Zend_Form_Element_Radio('daterange');
-		$form['daterange']->setDecorators(array('ViewHelper'))
-			->addMultiOption('0', 'TOOLBAR_ALL')
-			->addMultiOption('today', 'TOOLBAR_TODAY')
-			->addMultiOption('yesterday', 'TOOLBAR_YESTERDAY')
-			->addMultiOption('last7days', 'TOOLBAR_LAST_7_DAYS')
-			->addMultiOption('last14days', 'TOOLBAR_LAST_14_DAYS')
-			->addMultiOption('last30days', 'TOOLBAR_LAST_30_DAYS')
-			->addMultiOption('thisMonth', 'TOOLBAR_THIS_MONTH')
-			->addMultiOption('lastMonth', 'TOOLBAR_LAST_MONTH')
-			->addMultiOption('thisYear', 'TOOLBAR_THIS_YEAR')
-			->addMultiOption('lastYear', 'TOOLBAR_LAST_YEAR')
-			->addMultiOption('custom', 'TOOLBAR_CUSTOM')
-			->setAttrib('default', '0');
-
-		$form['limit'] = new Zend_Form_Element_Select('limit');
-		$form['limit']->setDecorators(array('ViewHelper'))
-			->addMultiOption('50', '50')
-			->addMultiOption('100', '100')
-			->addMultiOption('250', '250')
-			->addMultiOption('500', '500')
-			->addMultiOption('0', 'TOOLBAR_ALL')
-			->setAttrib('default', '50')
-			->setAttrib('class', 'hidden-sm');
-
-		$form['catid'] = new Zend_Form_Element_Select('catid');
-		$form['catid']->setDecorators(array('ViewHelper'))
-			->addMultiOption('all', 'CATEGORIES_ALL')
-			->setAttrib('default', 'all')
-			->setAttrib('class', 'hidden-sm');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'catid',
+			'type' => 'select',
+			'wrap' => false,
+			'options' => [
+				'all' => 'CATEGORIES_ALL',
+			],
+			'default' => 'all',
+			'attribs' => [
+				'class' => 'hidden-sm',
+			],
+		]);
 	}
 }

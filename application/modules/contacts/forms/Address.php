@@ -30,6 +30,7 @@ class Contacts_Form_Address extends DEEC_Form
 		$this->addElement([
 			'name' => 'street',
 			'type' => 'textarea',
+			'required' => true,
 			'format' => ['type' => 'string'],
 			'attribs'=> [
 				'cols' => 40,

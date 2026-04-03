@@ -1,240 +1,395 @@
 <?php
 
-class Sales_Form_Creditnote extends Zend_Form
+class Sales_Form_Creditnote extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('creditnote');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'creditnoteid',
+			'type' => 'text',
+			'label' => 'CREDIT_NOTES_CREDIT_NOTE_ID',
+			'format' => ['type' => 'int'],
+			'attribs' => [
+				'readonly' => 'readonly',
+				'size' => 5,
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'salesorderid',
+			'type' => 'text',
+			'label' => 'CREDIT_NOTES_SALES_ORDER_ID',
+			'format' => ['type' => 'int'],
+			'attribs' => [
+				'readonly' => 'readonly',
+				'size' => 5,
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
 
-		$form['creditnoteid'] = new Zend_Form_Element_Text('creditnoteid');
-		$form['creditnoteid']->setLabel('CREDIT_NOTES_CREDIT_NOTE_ID')
-			->addFilter('Int')
-			->setAttrib('size', '5')
-			->setAttrib('readonly', 'readonly');
+		$this->addElement([
+			'name' => 'invoiceid',
+			'type' => 'text',
+			'label' => 'CREDIT_NOTES_INVOICE_ID',
+			'format' => ['type' => 'int'],
+			'attribs' => [
+				'readonly' => 'readonly',
+				'size' => 5,
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
 
-		$form['salesorderid'] = new Zend_Form_Element_Text('salesorderid');
-		$form['salesorderid']->setLabel('CREDIT_NOTES_SALES_ORDER_ID')
-			->setAttrib('size', '5');
+		$this->addElement([
+			'name' => 'title',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_TITLE',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'overview',
+			'col' => 9,
+		]);
 
-		$form['invoiceid'] = new Zend_Form_Element_Text('invoiceid');
-		$form['invoiceid']->setLabel('CREDIT_NOTES_INVOICE_ID')
-			->setAttrib('size', '5');
+		$this->addElement([
+			'name' => 'subject',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_SUBJECT',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
 
-		$form['title'] = new Zend_Form_Element_Text('title');
-		$form['title']->setLabel('CREDIT_NOTES_TITLE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '40');
+		$this->addElement([
+			'name' => 'reference',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_REFERENCE',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
 
-		$form['info'] = new Zend_Form_Element_Textarea('info');
-		$form['info']->setLabel('CREDIT_NOTES_INFO')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '50')
-			->setAttrib('rows', '10');
+		$this->addElement([
+			'name' => 'quotedate',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_QUOTE_DATE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'class' => 'datePicker',
+				'size' => 9,
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
 
-		$form['notes'] = new Zend_Form_Element_Textarea('notes');
-		$form['notes']->setLabel('CREDIT_NOTES_NOTES')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '45')
-			->setAttrib('rows', '6');
+		$this->addElement([
+			'name' => 'deliverydate',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_DELIVERY_DATE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'class' => 'datePicker',
+				'size' => 9,
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
 
-		$form['header'] = new Zend_Form_Element_Textarea('header');
-		$form['header']->setLabel('CREDIT_NOTES_HEADER')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('style','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'currency',
+			'type' => 'select',
+			'label' => 'DELIVERY_ORDERS_CURRENCY',
+			'required' => true,
+			'options' => [],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
 
-		$form['footer'] = new Zend_Form_Element_Textarea('footer');
-		$form['footer']->setLabel('CREDIT_NOTES_FOOTER')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('style','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'taxfree',
+			'type' => 'checkbox',
+			'label' => 'CONTACTS_TAX_FREE',
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
 
-		$form['vatin'] = new Zend_Form_Element_Text('vatin');
-		$form['vatin']->setLabel('CREDIT_NOTES_VATIN')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'paymentmethod',
+			'type' => 'select',
+			'label' => 'DELIVERY_ORDERS_PAYMENT_METHOD',
+			'options' => ['' => 'DELIVERY_ORDERS_NONE'],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
 
-		$form['creditnotedate'] = new Zend_Form_Element_Text('creditnotedate');
-		$form['creditnotedate']->setLabel('CREDIT_NOTES_CREDIT_NOTE_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
+		$this->addElement([
+			'name' => 'shippingmethod',
+			'type' => 'select',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_METHOD',
+			'options' => ['' => 'DELIVERY_ORDERS_NONE'],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
 
-		$form['invoicedate'] = new Zend_Form_Element_Text('invoicedate');
-		$form['invoicedate']->setLabel('CREDIT_NOTES_INVOICE_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
+		$this->addElement([
+			'name' => 'info',
+			'type' => 'textarea',
+			'label' => 'DELIVERY_ORDERS_INFO',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'cols' => 50,
+				'rows' => 10,
+			],
+			'tab' => 'overview',
+			'col' => 12,
+		]);
 
-		$form['orderdate'] = new Zend_Form_Element_Text('orderdate');
-		$form['orderdate']->setLabel('CREDIT_NOTES_ORDER_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
+		$this->addElement([
+			'name' => 'notes',
+			'type' => 'textarea',
+			'label' => 'DELIVERY_ORDERS_NOTES',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'cols' => 45,
+				'rows' => 6,
+			],
+			'tab' => 'overview',
+			'col' => 12,
+		]);
 
-		$form['deliverydate'] = new Zend_Form_Element_Text('deliverydate');
-		$form['deliverydate']->setLabel('CREDIT_NOTES_DELIVERY_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
+		$this->addElement([
+			'name' => 'header',
+			'type' => 'textarea',
+			'label' => 'DELIVERY_ORDERS_HEADER',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'tab' => 'overview',
+			'col' => 12,
+		]);
 
-		$form['paymentmethod'] = new Zend_Form_Element_Select('paymentmethod');
-		$form['paymentmethod']->setLabel('CREDIT_NOTES_PAYMENT_METHOD')
-			->addMultiOption('', 'CREDIT_NOTES_NONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
+		$this->addElement([
+			'name' => 'footer',
+			'type' => 'textarea',
+			'label' => 'DELIVERY_ORDERS_FOOTER',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'tab' => 'overview',
+			'col' => 12,
+		]);
 
-		$form['shippingmethod'] = new Zend_Form_Element_Select('shippingmethod');
-		$form['shippingmethod']->setLabel('CREDIT_NOTES_SHIPPING_METHOD')
-			->addMultiOption('', 'CREDIT_NOTES_NONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
+		$this->addElement([
+			'name' => 'select',
+			'type' => 'button',
+			'label' => 'TOOLBAR_SELECT',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'select poplight',
+				'rel' => 'addCustomer',
+			],
+			'tab' => 'customer',
+		]);
 
-		$form['contactid'] = new Zend_Form_Element_Text('contactid');
-		$form['contactid']->setLabel('CONTACTS_CONTACT_ID')
-			->addFilter('Int')
-			->setAttrib('readonly', 'readonly');
+		$this->addElement([
+			'name' => 'contactid',
+			'type' => 'text',
+			'label' => 'CONTACTS_CONTACT_ID',
+			'format' => ['type' => 'int'],
+			'attribs' => [
+				'readonly' => 'readonly',
+			],
+			'tab' => 'customer',
+			'col' => 3,
+		]);
 
-		$form['billingname1'] = new Zend_Form_Element_Text('billingname1');
-		$form['billingname1']->setLabel('CONTACTS_NAME')
-			->setAttrib('size', '40')
-			->setAttrib('readonly', 'readonly');
+		$this->addElement([
+			'name' => 'billingname1',
+			'type' => 'text',
+			'label' => 'CONTACTS_NAME',
+			'format' => ['type' => 'string'],
+			'tab' => 'customer',
+			'col' => 6,
+		]);
 
-		$form['billingname2'] = new Zend_Form_Element_Text('billingname2');
-		$form['billingname2']->setLabel('')
-			->setAttrib('size', '40')
-			->setAttrib('readonly', 'readonly');
+		$this->addElement([
+			'name' => 'billingname2',
+			'type' => 'text',
+			'label' => '',
+			'format' => ['type' => 'string'],
+			'tab' => 'customer',
+			'col' => 6,
+		]);
 
-		$form['billingdepartment'] = new Zend_Form_Element_Text('billingdepartment');
-		$form['billingdepartment']->setLabel('CONTACTS_DEPARTMENT')
-			->setAttrib('size', '40')
-			->setAttrib('readonly', 'readonly');
+		$this->addElement([
+			'name' => 'billingdepartment',
+			'type' => 'text',
+			'label' => 'CONTACTS_DEPARTMENT',
+			'format' => ['type' => 'string'],
+			'tab' => 'customer',
+			'col' => 6,
+		]);
 
-		$form['billingstreet'] = new Zend_Form_Element_Textarea('billingstreet');
-		$form['billingstreet']->setLabel('CONTACTS_STREET')
-			->setAttrib('cols', '30')
-			->setAttrib('rows', '3')
-			->setAttrib('readonly', 'readonly');
+		$this->addElement([
+			'name' => 'billingstreet',
+			'type' => 'textarea',
+			'label' => 'CONTACTS_STREET',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'cols' => 30,
+				'rows' => 3,
+			],
+			'tab' => 'customer',
+			'col' => 12,
+		]);
 
-		$form['billingpostcode'] = new Zend_Form_Element_Text('billingpostcode');
-		$form['billingpostcode']->setLabel('CONTACTS_POSTCODE')
-			->setAttrib('size', '30')
-			->setAttrib('readonly', 'readonly');
+		$this->addElement([
+			'name' => 'billingpostcode',
+			'type' => 'text',
+			'label' => 'CONTACTS_POSTCODE',
+			'format' => ['type' => 'string'],
+			'tab' => 'customer',
+			'col' => 3,
+		]);
 
-		$form['billingcity'] = new Zend_Form_Element_Text('billingcity');
-		$form['billingcity']->setLabel('CONTACTS_CITY')
-			->setAttrib('size', '30')
-			->setAttrib('readonly', 'readonly');
+		$this->addElement([
+			'name' => 'billingcity',
+			'type' => 'text',
+			'label' => 'CONTACTS_CITY',
+			'format' => ['type' => 'string'],
+			'tab' => 'customer',
+			'col' => 5,
+		]);
 
-		$form['billingcountry'] = new Zend_Form_Element_Text('billingcountry');
-		$form['billingcountry']->setLabel('CONTACTS_COUNTRY')
-			->setAttrib('size', '30')
-			->setAttrib('readonly', 'readonly');
+		$this->addElement([
+			'name' => 'billingcountry',
+			'type' => 'text',
+			'label' => 'CONTACTS_COUNTRY',
+			'format' => ['type' => 'string'],
+			'tab' => 'customer',
+			'col' => 4,
+		]);
 
-		$form['shippingname1'] = new Zend_Form_Element_Text('shippingname1');
-		$form['shippingname1']->setLabel('CREDIT_NOTES_SHIPPING_NAME')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
+		$this->addElement([
+			'name' => 'shippingname1',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_NAME',
+			'format' => ['type' => 'string'],
+			'tab' => 'shipping',
+			'col' => 6,
+		]);
 
-		$form['shippingname2'] = new Zend_Form_Element_Text('shippingname2');
-		$form['shippingname2']->setLabel('')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
+		$this->addElement([
+			'name' => 'shippingname2',
+			'type' => 'text',
+			'label' => '',
+			'format' => ['type' => 'string'],
+			'tab' => 'shipping',
+			'col' => 6,
+		]);
 
-		$form['shippingdepartment'] = new Zend_Form_Element_Text('shippingdepartment');
-		$form['shippingdepartment']->setLabel('CREDIT_NOTES_SHIPPING_DEPARTMENT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
+		$this->addElement([
+			'name' => 'shippingdepartment',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_DEPARTMENT',
+			'format' => ['type' => 'string'],
+			'tab' => 'shipping',
+			'col' => 6,
+		]);
 
-		$form['shippingstreet'] = new Zend_Form_Element_Textarea('shippingstreet');
-		$form['shippingstreet']->setLabel('CREDIT_NOTES_SHIPPING_STREET')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '30')
-			->setAttrib('rows', '3');
+		$this->addElement([
+			'name' => 'shippingstreet',
+			'type' => 'textarea',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_STREET',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'cols' => 30,
+				'rows' => 3,
+			],
+			'tab' => 'shipping',
+			'col' => 12,
+		]);
 
-		$form['shippingpostcode'] = new Zend_Form_Element_Text('shippingpostcode');
-		$form['shippingpostcode']->setLabel('CREDIT_NOTES_SHIPPING_POSTCODE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
+		$this->addElement([
+			'name' => 'shippingpostcode',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_POSTCODE',
+			'format' => ['type' => 'string'],
+			'tab' => 'shipping',
+			'col' => 3,
+		]);
 
-		$form['shippingcity'] = new Zend_Form_Element_Text('shippingcity');
-		$form['shippingcity']->setLabel('CREDIT_NOTES_SHIPPING_CITY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
+		$this->addElement([
+			'name' => 'shippingcity',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_CITY',
+			'format' => ['type' => 'string'],
+			'tab' => 'shipping',
+			'col' => 5,
+		]);
 
-		$form['shippingcountry'] = new Zend_Form_Element_Text('shippingcountry');
-		$form['shippingcountry']->setLabel('CREDIT_NOTES_SHIPPING_COUNTRY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
+		$this->addElement([
+			'name' => 'shippingcountry',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_COUNTRY',
+			'format' => ['type' => 'string'],
+			'tab' => 'shipping',
+			'col' => 4,
+		]);
 
-		$form['shippingphone'] = new Zend_Form_Element_Text('shippingphone');
-		$form['shippingphone']->setLabel('CREDIT_NOTES_SHIPPING_PHONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
+		$this->addElement([
+			'name' => 'shippingphone',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_PHONE',
+			'format' => ['type' => 'string'],
+			'tab' => 'shipping',
+			'col' => 4,
+		]);
 
-		$form['currency'] = new Zend_Form_Element_Select('currency');
-		$form['currency']->setLabel('CREDIT_NOTES_CURRENCY')
-			->setRequired(true)
-			->addValidator('NotEmpty');
+		$this->addElement([
+			'name' => 'templateid',
+			'type' => 'select',
+			'label' => 'DELIVERY_ORDERS_TEMPLATE',
+			'options' => [],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
 
-		$form['taxfree'] = new Zend_Form_Element_Checkbox('taxfree');
-		$form['taxfree']->setLabel('CONTACTS_TAX_FREE');
+		$this->addElement([
+			'name' => 'language',
+			'type' => 'select',
+			'label' => 'DELIVERY_ORDERS_LANGUAGE',
+			'options' => [],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
 
-		$form['contactinfo'] = new Zend_Form_Element_Textarea('contactinfo');
-		$form['contactinfo']->setLabel('CREDIT_NOTES_CONTACT_INFO')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '62')
-			->setAttrib('rows', '30')
-			->setAttrib('readonly', 'readonly');
-
-		$form['templateid'] = new Zend_Form_Element_Select('templateid');
-		$form['templateid']->setLabel('CREDIT_NOTES_TEMPLATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['language'] = new Zend_Form_Element_Select('language');
-		$form['language']->setLabel('CREDIT_NOTES_LANGUAGE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['state'] = new Zend_Form_Element_Text('state');
-		$form['state']->setLabel('CREDIT_NOTES_STATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'state',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_STATE',
+			'source' => 'state',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
 	}
 }

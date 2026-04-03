@@ -8,7 +8,7 @@ class Contacts_Form_Phone extends DEEC_Form
 			'name' => 'phone',
 			'type' => 'text',
 			'format' => ['type' => 'string'],
-			'col' => 6,
+			'col' => 8,
 		]);
 
 		$this->addElement([
@@ -20,6 +20,7 @@ class Contacts_Form_Phone extends DEEC_Form
 				'fax' => 'CONTACTS_FAX',
 			],
 			'format' => ['type' => 'string'],
+			'col' => 4,
 		]);
 	}
 }

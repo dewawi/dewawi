@@ -1,54 +1,118 @@
 <?php
 
-class Processes_Form_ToolbarPositions extends Zend_Form
+class Processes_Form_ToolbarPositions extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('toolbarpositions');
+		$this->addElement([
+			'name' => 'add',
+			'type' => 'button',
+			'label' => 'TOOLBAR_NEW',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'addPosition add',
+			],
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'addset',
+			'type' => 'button',
+			'label' => 'TOOLBAR_NEW_SET',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'addSet add',
+			],
+		]);
 
-		$form['add'] = new Zend_Form_Element_Button('add');
-		$form['add']->setLabel('TOOLBAR_NEW')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'addPosition add');
+		$this->addElement([
+			'name' => 'copyset',
+			'type' => 'button',
+			'label' => 'TOOLBAR_COPY_SET',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'copySet copy',
+			],
+		]);
 
-		$form['select'] = new Zend_Form_Element_Button('select');
-		$form['select']->setLabel('TOOLBAR_SELECT')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'select poplight')
-			->setAttrib('rel', 'selectPosition');
+		$this->addElement([
+			'name' => 'deleteset',
+			'type' => 'button',
+			'label' => 'TOOLBAR_DELETE_SET',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'deleteSet delete',
+			],
+		]);
 
-		$form['copy'] = new Zend_Form_Element_Button('copy');
-		$form['copy']->setLabel('TOOLBAR_COPY')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copyPosition copy');
+		$this->addElement([
+			'name' => 'select',
+			'type' => 'button',
+			'label' => 'TOOLBAR_SELECT',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'select poplight',
+				'rel' => 'selectPosition',
+			],
+		]);
 
-		$form['copypos'] = new Zend_Form_Element_Button('copypos');
-		$form['copypos']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copyPosition copy nolabel');
+		$this->addElement([
+			'name' => 'copy',
+			'type' => 'button',
+			'label' => 'TOOLBAR_COPY',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'copyPosition copy',
+			],
+		]);
 
-		$form['delete'] = new Zend_Form_Element_Button('delete');
-		$form['delete']->setLabel('TOOLBAR_DELETE')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'deletePosition delete');
+		$this->addElement([
+			'name' => 'copypos',
+			'type' => 'button',
+			'label' => '',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'copyPosition copy nolabel',
+			],
+		]);
 
-		$form['deletepos'] = new Zend_Form_Element_Button('deletepos');
-		$form['deletepos']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'deletePosition delete nolabel');
+		$this->addElement([
+			'name' => 'delete',
+			'type' => 'button',
+			'label' => 'TOOLBAR_DELETE',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'deletePosition delete',
+			],
+		]);
 
-		$form['sortup'] = new Zend_Form_Element_Button('sortup');
-		$form['sortup']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'up nolabel');
+		$this->addElement([
+			'name' => 'deletepos',
+			'type' => 'button',
+			'label' => '',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'deletePosition delete nolabel',
+			],
+		]);
 
-		$form['sortdown'] = new Zend_Form_Element_Button('sortdown');
-		$form['sortdown']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'down nolabel');
+		$this->addElement([
+			'name' => 'sortup',
+			'type' => 'button',
+			'label' => '',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'up nolabel',
+			],
+		]);
 
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'sortdown',
+			'type' => 'button',
+			'label' => '',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'down nolabel',
+			],
+		]);
 	}
 }
