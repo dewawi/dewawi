@@ -62,7 +62,7 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 					$dataPricerule['modifiedby'] = 0;
 					unset($dataPricerule['id']);
 					$priceRuleDb = new Items_Model_DbTable_Pricerulepos();
-					$priceRuleDb->addPosition($dataPricerule);
+					$priceRuleDb->create($dataPricerule);
 				}
 			}
 		}

@@ -2,7 +2,7 @@
 
 class Application_Controller_Action_Helper_Pin extends Zend_Controller_Action_Helper_Abstract
 {
-	public function toogle($id) {
+	public function toggle($id) {
 		$request = $this->getRequest();
 		$params = $request->getParams();
 		if($request->isPost()) $this->disableView();

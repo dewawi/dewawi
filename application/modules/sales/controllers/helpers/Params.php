@@ -5,46 +5,45 @@ class Sales_Controller_Action_Helper_Params extends Zend_Controller_Action_Helpe
 	public function getParams($toolbar, $options)
 	{
 		$request = $this->getRequest();
+		$params  = [];
 
-		$params = array();
+		$params['keyword'] = $request->getParam('keyword', $request->getCookie('keyword', $toolbar->getDefault('keyword')));
+		$toolbar->setValue('keyword', $params['keyword']);
 
-		$params['keyword'] = $request->getParam('keyword', $request->getCookie('keyword', $toolbar->keyword->getAttrib('default')));
-		$toolbar->keyword->setValue($params['keyword']);
+		$params['catid'] = $request->getParam('catid', $request->getCookie('catid', $toolbar->getDefault('catid')));
+		$toolbar->setValue('catid', $params['catid']);
 
-		$params['catid'] = $request->getParam('catid', $request->getCookie('catid', $toolbar->catid->getAttrib('default')));
-		$toolbar->catid->setValue($params['catid']);
+		$params['limit'] = $request->getParam('limit', $request->getCookie('limit', $toolbar->getDefault('limit')));
+		$toolbar->setValue('limit', $params['limit']);
 
-		$params['limit'] = $request->getParam('limit', $request->getCookie('limit', $toolbar->limit->getAttrib('default')));
-		$toolbar->limit->setValue($params['limit']);
+		$params['order'] = $request->getParam('order', $request->getCookie('order', $toolbar->getDefault('order')));
+		$toolbar->setValue('order', $params['order']);
 
-		$params['order'] = $request->getParam('order', $request->getCookie('order', $toolbar->order->getAttrib('default')));
-		$toolbar->order->setValue($params['order']);
+		$params['sort'] = $request->getParam('sort', $request->getCookie('sort', $toolbar->getDefault('sort')));
+		$toolbar->setValue('sort', $params['sort']);
 
-		$params['sort'] = $request->getParam('sort', $request->getCookie('sort', $toolbar->sort->getAttrib('default')));
-		$toolbar->sort->setValue($params['sort']);
+		$params['country'] = $request->getParam('country', $request->getCookie('country', $toolbar->getDefault('country')));
+		$toolbar->setValue('country', $params['country']);
 
-		$params['country'] = $request->getParam('country', $request->getCookie('country', $toolbar->country->getAttrib('default')));
-		$toolbar->country->setValue($params['country']);
-
-		$params['states'] = $request->getParam('states', $request->getCookie('states', $toolbar->states->getAttrib('default')));
+		$params['states'] = $request->getParam('states', $request->getCookie('states', $toolbar->getDefault('states')));
 		if(!is_array($params['states'])) $params['states'] = Zend_Json::decode($params['states']);
-		$toolbar->states->setValue($params['states']);
+		$toolbar->setValue('states', $params['states']);
 
 		$params['from'] = $request->getParam('from', $request->getCookie('from', date('Y-m-d', strtotime('-1 month'))));
 		$params['from'] = date("d.m.Y", strtotime($params['from']));
-		$toolbar->from->setValue($params['from']);
+		$toolbar->setValue('from', $params['from']);
 
 		$params['to'] = $request->getParam('to', $request->getCookie('to', date('Y-m-d', strtotime('now'))));
 		$params['to'] = date("d.m.Y", strtotime($params['to']));
-		$toolbar->to->setValue($params['to']);
+		$toolbar->setValue('to', $params['to']);
 
-		$params['daterange'] = $request->getParam('daterange', $request->getCookie('daterange', $toolbar->daterange->getAttrib('default')));
+		$params['daterange'] = $request->getParam('daterange', $request->getCookie('daterange', $toolbar->getDefault('daterange')));
 		if($params['daterange'] && ($params['daterange'] != 'custom')) {
 			$dateRange = $this->getDateRange($params['daterange']);
 			$params['from'] = $dateRange['from'];
 			$params['to'] = $dateRange['to'];
 		}
-		$toolbar->daterange->setValue($params['daterange']);
+		$toolbar->setValue('daterange', $params['daterange']);
 
 		return $params;
 	}

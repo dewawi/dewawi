@@ -8,13 +8,9 @@ class Application_Controller_Action_Helper_Options extends Zend_Controller_Actio
 	{
 		$options = [];
 
-		// 1) element options (select lists)
 		if ($form && method_exists($form, 'getElements') && method_exists($form, 'addOptions')) {
 			$options = $this->applyFormOptions($form);
 		}
-
-		// 2) layout options (full rows, trees, tags, etc.)
-		//$layout = $this->getLayoutOptions();
 
 		return $options;
 	}
@@ -24,80 +20,33 @@ class Application_Controller_Action_Helper_Options extends Zend_Controller_Actio
 		$options = [];
 
 		foreach ($form->getElements() as $el) {
-			$name = $el['name'] ?? null;
-			$source = $el['source'] ?? null;
+			$name = isset($el['name']) ? (string)$el['name'] : '';
+			if ($name === '') {
+				continue;
+			}
 
-			if (!$name || !$source) continue;
+			$staticOptions = [];
+			if (!empty($el['options']) && is_array($el['options'])) {
+				foreach ($el['options'] as $k => $v) {
+					$staticOptions[(string)$k] = $v;
+				}
+			}
 
-			$opts = $this->loadBySource((string)$source);
-			if (!$opts) continue;
+			$sourceOptions = [];
+			$source = isset($el['source']) ? trim((string)$el['source']) : '';
+			if ($source !== '') {
+				$sourceOptions = $this->loadBySource($source);
+			}
 
-			$form->addOptions((string)$name, $opts);
-			$options[(string)$name] = $opts;
+			$finalOptions = $staticOptions + $sourceOptions;
+
+			if (!empty($finalOptions)) {
+				$form->addOptions($name, $finalOptions, 'replace');
+				$options[$name] = $finalOptions;
+			}
 		}
 
 		return $options;
-	}
-
-	public function getLayoutOptions(): array
-	{
-		$out = [];
-
-		// full category data for menu
-		//$out['itemcategories'] = $this->loadCategoriesFull('item');
-		//$out['categories'] = $this->loadCategoriesFull('contact');
-
-		/*//Get countries
-		$countryDb = new Application_Model_DbTable_Country();
-		$countries = $countryDb->getCountries();
-		$out['countries'] = $countries;
-
-		//Get states
-		$stateDb = new Application_Model_DbTable_State();
-		$states = $stateDb->getStates();
-		$out['states'] = $states;
-
-		//Get payment methods
-		$paymentmethodDb = new Application_Model_DbTable_Paymentmethod();
-		$paymentmethods = $paymentmethodDb->getPaymentmethods();
-		$out['paymentmethods'] = $paymentmethods;
-
-		//Get currencies
-		$currencyDb = new Application_Model_DbTable_Currency();
-		$currencies = $currencyDb->getCurrencies();
-		$out['currencies'] = $currencies;
-
-		//Get price rule actions
-		$priceruleactionDb = new Application_Model_DbTable_Priceruleaction();
-		$priceruleactions = $priceruleactionDb->getPriceruleactions();
-		$out['priceruleactions'] = $priceruleactions;
-
-		//Get tags
-		$tagDb = new Application_Model_DbTable_Tag();
-		$tags = $tagDb->getTags('contacts', 'contact');
-		$out['tags'] = $tags;
-
-		//Get download sets
-		$downloadsetDb = new Contacts_Model_DbTable_Downloadset();
-		$downloadsets = $downloadsetDb->getDownloadsets();
-		$out['downloadsets'] = $downloadsets;
-
-		//Get templates
-		$templateDb = new Application_Model_DbTable_Template();
-		$templates = $templateDb->getTemplates();
-		$out['templates'] = $templates;
-
-		//Get languages
-		$languageDb = new Application_Model_DbTable_Language();
-		$languages = $languageDb->getLanguages();
-		$out['languages'] = $languages;
-
-		//Get users
-		$userDb = new Users_Model_DbTable_User();
-		$users = $userDb->getUsers();
-		$out['users'] = $users;*/
-
-		return $out;
 	}
 
 	protected function loadCategoriesFull(string $type): array

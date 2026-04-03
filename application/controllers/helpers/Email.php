@@ -74,7 +74,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 					//Get contact person
 					$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
-					$contactperson = $contactpersonDb->getContactperson($emailArray['parentid']);
+					$contactperson = $contactpersonDb->getById($emailArray['parentid']);
 
 					$recipients[0]['salutation'] = $contactperson['salutation'];
 					$recipients[0]['name2'] = $contactperson['name2'];

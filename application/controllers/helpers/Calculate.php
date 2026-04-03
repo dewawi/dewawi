@@ -47,8 +47,8 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 					$price = $position->price;
 				}
 
-				$calculations['row'][$position->id]['total'] = $price*$position->quantity;
-				$calculations['row']['subtotal'] += $calculations['row'][$position->id]['total'];
+				$calculations['row'][$position->id]['total'] = round($price*$position->quantity, 2);
+				$calculations['row']['subtotal'] += round($calculations['row'][$position->id]['total'], 2);
 
 				if(isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] += $calculations['row'][$position->id]['total']*$position->taxrate/100;
 				else $calculations['row']['taxes']['total'] = $calculations['row'][$position->id]['total']*$position->taxrate/100;

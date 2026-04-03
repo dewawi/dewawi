@@ -6,7 +6,7 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 	public function getPriceRulePositions($module, $parent, $parentid) {
 		//Get price rule positions
 		$pricerulesDb = new Items_Model_DbTable_Pricerulepos();
-		$positions = $pricerulesDb->getPositions($module, $parent, $parentid);
+		$positions = $pricerulesDb->getByParentId($parentid, $module, $parent);
 		return $positions;
 	}
 
@@ -157,7 +157,7 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 			$positionDb = new Items_Model_DbTable_Pricerulepos();
 			foreach($pricerules as $pricerule) {
 				if($pricerule->amount && $pricerule->action) {
-					$positionDataBefore = $positionDb->getPositions($module, $controller, $parentid, 0);
+					$positionDataBefore = $positionDb->getByParentId($parentid, $module, $controller);
 					$latestOrdering = is_array($positionDataBefore) && !empty($positionDataBefore)
 						? end($positionDataBefore)['ordering']
 						: 0;

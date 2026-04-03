@@ -2,28 +2,38 @@
 
 class Application_Controller_Action_Helper_Access extends Zend_Controller_Action_Helper_Abstract
 {
-	public function lock($id, $userid, $locked = null, $lockedtime = null) {
+	public function lock($id, $userid, $locked = null, $lockedtime = null)
+	{
 		$request = $this->getRequest();
 		$params = $request->getParams();
+		$isAjax = $request->isXmlHttpRequest();
 
-		// ajax detection
-		if($isAjax = $request->isXmlHttpRequest()) {
+		if ($isAjax) {
 			$this->disableView();
-			$json = Zend_Controller_Action_HelperBroker::getStaticHelper('json');
 		}
 
-		$class = ucfirst($params['module']).'_Model_DbTable_'.ucfirst($params['controller']);
+		$class = ucfirst($params['module']) . '_Model_DbTable_' . ucfirst($params['controller']);
 		$db = new $class();
-		if(($locked === null) || ($lockedtime === null)) {
-			$function = 'get'.ucfirst($params['controller']);
+
+		if (($locked === null) || ($lockedtime === null)) {
+			$function = 'get' . ucfirst($params['controller']);
 			$data = $db->$function($id);
-			$locked = $data['locked'];
-			$lockedtime = $data['lockedtime'];
+
+			$locked = $data['locked'] ?? 0;
+			$lockedtime = $data['lockedtime'] ?? null;
 		}
-		if($this->isLocked($locked, $lockedtime, $userid)) {
+
+		if ($this->isLocked($locked, $lockedtime, $userid)) {
+			if ($isAjax) {
+				return [
+					'ok' => false,
+					'message' => 'locked',
+				];
+			}
+
 			$view = Zend_Controller_Front::getInstance()
-							->getParam('bootstrap')
-							->getResource('view');
+				->getParam('bootstrap')
+				->getResource('view');
 
 			$redirector = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
 			$flashMessenger = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
@@ -32,66 +42,83 @@ class Application_Controller_Action_Helper_Access extends Zend_Controller_Action
 			$users = $userDb->getUsers();
 
 			$message = $view->translate('MESSAGES_ACCESS_DENIED_%s');
-			$message = sprintf($message, $users[$locked]);
+			$message = sprintf($message, $users[$locked] ?? $locked);
 
-			if ($isAjax) {
-				return $json->sendJson([
-					'ok' => false,
-					'message' => 'locked'
-				]);
-			} else {
-				$flashMessenger->addMessage($message);
-				$redirector->gotoSimple('index', $params['controller'], $params['module']);
-			}
-		} else {
-			$db->lock($id);
+			$flashMessenger->addMessage($message);
+			$redirector->gotoSimple('index', $params['controller'], $params['module']);
 
-			/*if ($isAjax) {
-				return $json->sendJson([
-					'ok' => true,
-					'message' => true
-				]);
-			}*/
+			return null;
 		}
+
+		$db->lock($id);
+
+		if ($isAjax) {
+			return [
+				'ok' => true,
+				'message' => 'locked',
+			];
+		}
+
+		return null;
 	}
 
-	public function unlock($id) {
-		$this->disableView();
+	public function unlock($id)
+	{
 		$request = $this->getRequest();
 		$params = $request->getParams();
-		$class = ucfirst($params['module']).'_Model_DbTable_'.ucfirst($params['controller']);
+		$isAjax = $request->isXmlHttpRequest();
+
+		if ($isAjax) {
+			$this->disableView();
+		}
+
+		$class = ucfirst($params['module']) . '_Model_DbTable_' . ucfirst($params['controller']);
 		$db = new $class();
 		$db->unlock($id);
+
+		if ($isAjax) {
+			return [
+				'ok' => true,
+			];
+		}
+
+		return null;
 	}
 
-	public function keepalive($id) {
-		$this->disableView();
+	public function keepalive($id)
+	{
 		$request = $this->getRequest();
 		$params = $request->getParams();
-		$class = ucfirst($params['module']).'_Model_DbTable_'.ucfirst($params['controller']);
+
+		$this->disableView();
+
+		$class = ucfirst($params['module']) . '_Model_DbTable_' . ucfirst($params['controller']);
 		$db = new $class();
 		$db->lock($id);
+
+		return [
+			'ok' => true,
+		];
 	}
 
-	public function disableView() {
+	public function disableView()
+	{
 		$viewRenderer = Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer');
 		$layout = Zend_Controller_Action_HelperBroker::getStaticHelper('layout');
-		header('Content-type: application/json');
+
 		$viewRenderer->setNoRender();
 		$layout->disableLayout();
 	}
 
-	public function isLocked($locked, $lockedtime, $userid) {
-		if($locked && ($locked != $userid)) {
-			$timeout = strtotime($lockedtime) + 300; // 5 minutes
+	public function isLocked($locked, $lockedtime, $userid)
+	{
+		if ($locked && ($locked != $userid)) {
+			$timeout = strtotime($lockedtime) + 300;
 			$timestamp = strtotime(date('Y-m-d H:i:s'));
-			if($timeout < $timestamp) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			return false;
+
+			return !($timeout < $timestamp);
 		}
+
+		return false;
 	}
 }
