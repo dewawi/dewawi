@@ -1,97 +1,120 @@
 <?php
 
-class Contacts_ContactpersonController extends Zend_Controller_Action
+class Contacts_ContactpersonController extends DEEC_Controller_Action
 {
-	public function init()
-	{
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-	}
-
 	public function addAction()
 	{
 		$request = $this->getRequest();
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$form = new Contacts_Form_Contact();
-		$options = $this->_helper->Options->getOptions($form);
-		$this->view->options = $options;
-		$this->view->action = 'add';
+		if (!$request->isPost()) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'invalid_request',
+			]);
+		}
+
+		$post = (array)$request->getPost();
+
+		$parentid = (int)$this->_getParam('parent_id', 0);
+
+		if ($parentid <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'missing_parent',
+			]);
+		}
+
+		$parentModule = !empty($post['parent_module']) ? (string)$post['parent_module'] : 'contacts';
+		$parentController = !empty($post['parent_controller']) ? (string)$post['parent_controller'] : 'contact';
 
 		$client = Zend_Registry::get('Client');
 
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($data['parentid']) {
-				if($form->isValid($data) || true) {
-					$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
-					$contactpersonDataBefore = $contactpersonDb->getContactpersons($data['parentid']);
-					$latestOrdering = is_array($contactpersonDataBefore) && !empty($contactpersonDataBefore)
-						? end($contactpersonDataBefore)['ordering']
-						: 0;
-					$contactpersonDb->addContactperson(array('contactid' => $data['parentid'], 'ordering' => $latestOrdering+1));
-					$contactpersonDataAfter = $contactpersonDb->getContactpersons($data['parentid']);
-					$contactperson = end($contactpersonDataAfter);
-					echo $this->view->MultiForm('contacts', 'contactperson', $contactperson, array(
-																		//array('label' => 'CONTACT_PERSONS_TITLE', 'field' => 'title'),
-																		array('label' => 'CONTACT_PERSONS_SALUTATION', 'field' => 'salutation'),
-																		array('label' => 'CONTACT_PERSONS_NAME', 'fields' => array('name1', 'name2')),
-																		array('label' => 'CONTACT_PERSONS_DEPARTMENT', 'field' => 'department')
-																		),
-																		'',
-																		array($contactperson['id'] => array())
-																	);
-				}
-			} else {
-				$timestamp = time();
-				$contactperson = array('id' => $timestamp, 'ordering' => $timestamp, 'type' => 'contactperson', 'address' => '');
-				echo $this->view->MultiForm('contacts', 'contactperson', $contactperson, array(
-																	//array('label' => 'CONTACT_PERSONS_TITLE', 'field' => 'street'),
-																	array('label' => 'CONTACT_PERSONS_SALUTATION', 'field' => 'salutation'),
-																	array('label' => 'CONTACT_PERSONS_NAME', 'fields' => array('name1', 'name2')),
-																	array('label' => 'CONTACT_PERSONS_DEPARTMENT', 'field' => 'department')
-																	));
-			}
+		$data = [
+			'type' => !empty($post['type']) ? (string)$post['type'] : 'billing',
+			'country' => $client['country'] ?? '0',
+		];
+
+		$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+		$newId = $contactpersonDb->createForParent($parentid, $parentModule, $parentController, $data);
+
+		$row = $contactpersonDb->getById($newId);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
 		}
+
+		$rowForm = new Contacts_Form_Contactperson();
+		$this->_helper->Options->applyFormOptions($rowForm);
+
+		$ctx = [
+			'module' => 'contacts',
+			'controller' => 'contactperson',
+		];
+
+		echo $rowForm->renderMultiItem('contactperson', $row, $ctx);
 	}
 
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
+		$id = (int)$this->_getParam('id', 0);
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$form = new Contacts_Form_Contact();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
-				if($id > 0) {
-					$contactpersonDb->updateContactperson($id, $data);
-					echo Zend_Json::encode($data);
-				}
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
+		if (!$request->isPost() || $id <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
 		}
 
-		$this->view->form = $form;
-	}
+		$form = new Contacts_Form_Contactperson();
+		$this->_helper->Options->applyFormOptions($form);
 
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$post = (array)$request->getPost();
 
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
-			$contactpersonDb->deleteContactperson($id);
+		if (!$form->isValidPartial($post)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'errors' => $this->toErrorMessages($form->getErrors(), $form),
+			]);
 		}
-		//$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+
+		$values = $form->getFilteredValuesPartial($post);
+
+		$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+
+		try {
+			$contactpersonDb->updateById($id, $values);
+		} catch (Exception $e) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
+		}
+
+		$row = $contactpersonDb->getById($id);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+		}
+
+		$changedFields = array_keys($values);
+		$display = DEEC_Display::fromRow($form, $row, $changedFields);
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'values' => array_intersect_key($row, array_flip($changedFields)),
+			'display' => $display,
+		]);
 	}
 }

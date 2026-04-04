@@ -1,73 +1,117 @@
 <?php
 
-class Contacts_InternetController extends Zend_Controller_Action
+class Contacts_InternetController extends DEEC_Controller_Action
 {
 	public function addAction()
 	{
 		$request = $this->getRequest();
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$form = new Contacts_Form_Contact();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$internetDb = new Contacts_Model_DbTable_Internet();
-				$internetDataBefore = $internetDb->getInternet($data['parentid']);
-				$latestOrdering = is_array($internetDataBefore) && !empty($internetDataBefore)
-					? end($internetDataBefore)['ordering']
-					: 0;
-				$dataArray = array();
-				$dataArray['module'] = $data['module'];
-				$dataArray['controller'] = $data['controller'];
-				$dataArray['parentid'] = $data['parentid'];
-				$dataArray['ordering'] = $latestOrdering+1;
-				$internetDb->addInternet($dataArray);
-				$internetDataAfter = $internetDb->getInternet($data['parentid']);
-				$internet = end($internetDataAfter);
-				echo $this->view->MultiForm('contacts', 'internet', $internet);
-			}
+		if (!$request->isPost()) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'invalid_request',
+			]);
 		}
+
+		$post = (array)$request->getPost();
+
+		$parentid = (int)$this->_getParam('parent_id', 0);
+
+		if ($parentid <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'missing_parent',
+			]);
+		}
+
+		$parentModule = !empty($post['parent_module']) ? (string)$post['parent_module'] : 'contacts';
+		$parentController = !empty($post['parent_controller']) ? (string)$post['parent_controller'] : 'contact';
+
+		$client = Zend_Registry::get('Client');
+
+		$data = [];
+
+		$internetDb = new Contacts_Model_DbTable_Internet();
+		$newId = $internetDb->createForParent($parentid, $parentModule, $parentController, $data);
+
+		$row = $internetDb->getById($newId);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
+		}
+
+		$rowForm = new Contacts_Form_Internet();
+		$this->_helper->Options->applyFormOptions($rowForm);
+
+		$ctx = [
+			'module' => 'contacts',
+			'controller' => 'internet',
+		];
+
+		echo $rowForm->renderMultiItem('internet', $row, $ctx);
 	}
 
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
+		$id = (int)$this->_getParam('id', 0);
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$form = new Contacts_Form_Contact();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$internetDb = new Contacts_Model_DbTable_Internet();
-				if($id > 0) {
-					$internetDb->updateInternet($id, $data);
-					echo Zend_Json::encode($data);
-				}
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
+		if (!$request->isPost() || $id <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
 		}
 
-		$this->view->form = $form;
-	}
+		$form = new Contacts_Form_Internet();
+		$this->_helper->Options->applyFormOptions($form);
 
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$post = (array)$request->getPost();
 
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$internetDb = new Contacts_Model_DbTable_Internet();
-			$internetDb->deleteInternet($id);
+		if (!$form->isValidPartial($post)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'errors' => $this->toErrorMessages($form->getErrors(), $form),
+			]);
 		}
-		//$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+
+		$values = $form->getFilteredValuesPartial($post);
+
+		$internetDb = new Contacts_Model_DbTable_Internet();
+
+		try {
+			$internetDb->updateById($id, $values);
+		} catch (Exception $e) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
+		}
+
+		$row = $internetDb->getById($id);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+		}
+
+		$changedFields = array_keys($values);
+		$display = DEEC_Display::fromRow($form, $row, $changedFields);
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'values' => array_intersect_key($row, array_flip($changedFields)),
+			'display' => $display,
+		]);
 	}
 }

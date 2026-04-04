@@ -1,80 +1,119 @@
 <?php
 
-class Contacts_PhoneController extends Zend_Controller_Action
+class Contacts_PhoneController extends DEEC_Controller_Action
 {
 	public function addAction()
 	{
 		$request = $this->getRequest();
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$form = new Contacts_Form_Phone();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($data['parentid']) {
-				if($form->isValid($data) || true) {
-					$phoneDb = new Contacts_Model_DbTable_Phone();
-					$phoneDataBefore = $phoneDb->getPhone($data['parentid']);
-					$latestOrdering = is_array($phoneDataBefore) && !empty($phoneDataBefore)
-						? end($phoneDataBefore)['ordering']
-						: 0;
-					$dataArray = array();
-					$dataArray['module'] = $data['module'];
-					$dataArray['controller'] = $data['controller'];
-					$dataArray['parentid'] = $data['parentid'];
-					$dataArray['type'] = $data['type'];
-					$dataArray['ordering'] = $latestOrdering+1;
-					$phoneDb->addPhone($dataArray);
-					$phoneDataAfter = $phoneDb->getPhone($data['parentid']);
-					$phone = end($phoneDataAfter);
-					echo $this->view->MultiForm('contacts', 'phone', $phone, array('phone', 'type'));
-				}
-			} else {
-				$timestamp = time();
-				$phone = array('id' => $timestamp, 'ordering' => $timestamp, 'type' => 'phone', 'phone' => '');
-				echo $this->view->MultiForm('contacts', 'phone', $phone, array('phone', 'type'));
-			}
+		if (!$request->isPost()) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'invalid_request',
+			]);
 		}
+
+		$post = (array)$request->getPost();
+
+		$parentid = (int)$this->_getParam('parent_id', 0);
+
+		if ($parentid <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'missing_parent',
+			]);
+		}
+
+		$parentModule = !empty($post['parent_module']) ? (string)$post['parent_module'] : 'contacts';
+		$parentController = !empty($post['parent_controller']) ? (string)$post['parent_controller'] : 'contact';
+
+		$client = Zend_Registry::get('Client');
+
+		$data = [
+			'type' => !empty($post['type']) ? (string)$post['type'] : 'phone',
+		];
+
+		$phoneDb = new Contacts_Model_DbTable_Phone();
+		$newId = $phoneDb->createForParent($parentid, $parentModule, $parentController, $data);
+
+		$row = $phoneDb->getById($newId);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
+		}
+
+		$rowForm = new Contacts_Form_Phone();
+		$this->_helper->Options->applyFormOptions($rowForm);
+
+		$ctx = [
+			'module' => 'contacts',
+			'controller' => 'phone',
+		];
+
+		echo $rowForm->renderMultiItem('phone', $row, $ctx);
 	}
 
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
+		$id = (int)$this->_getParam('id', 0);
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
+
+		if (!$request->isPost() || $id <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+		}
 
 		$form = new Contacts_Form_Phone();
+		$this->_helper->Options->applyFormOptions($form);
 
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$phoneDb = new Contacts_Model_DbTable_Phone();
-				if($id > 0) {
-					$phoneDb->updatePhone($id, $data);
-					echo Zend_Json::encode($data);
-				}
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
+		$post = (array)$request->getPost();
+
+		if (!$form->isValidPartial($post)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'errors' => $this->toErrorMessages($form->getErrors(), $form),
+			]);
 		}
 
-		$this->view->form = $form;
-	}
+		$values = $form->getFilteredValuesPartial($post);
 
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$phoneDb = new Contacts_Model_DbTable_Phone();
 
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$phoneDb = new Contacts_Model_DbTable_Phone();
-			$phoneDb->deletePhone($id);
+		try {
+			$phoneDb->updateById($id, $values);
+		} catch (Exception $e) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
 		}
-		//$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+
+		$row = $phoneDb->getById($id);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+		}
+
+		$changedFields = array_keys($values);
+		$display = DEEC_Display::fromRow($form, $row, $changedFields);
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'values' => array_intersect_key($row, array_flip($changedFields)),
+			'display' => $display,
+		]);
 	}
 }

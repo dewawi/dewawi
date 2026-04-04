@@ -1,6 +1,6 @@
 <?php
 
-class Contacts_ContactController extends Zend_Controller_Action
+class Contacts_ContactController extends DEEC_Controller_Action
 {
 	protected $_date = null;
 
@@ -57,8 +57,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Contacts_Form_Toolbar();
+		$toolbarInline = new Contacts_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$categoriesDb = new Application_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories('contact');
 
 		$get = new Contacts_Model_Get();
 		$tags = $get->tags('contacts', 'contact');
@@ -73,8 +77,10 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->view->tagEntites = $tagEntites;
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
+		$this->view->categories = $categories;
 		$this->view->toolbar = $toolbar;
-		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
+		$this->view->toolbarInline = $toolbarInline;
+		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -86,8 +92,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Contacts_Form_Toolbar();
+		$toolbarInline = new Contacts_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$categoriesDb = new Application_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories('contact');
 
 		$get = new Contacts_Model_Get();
 		$tags = $get->tags('contacts', 'contact');
@@ -103,7 +113,8 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
+		$this->view->toolbarInline = $toolbarInline;
+		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -117,9 +128,12 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
+		$categoriesDb = new Application_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories('contact');
+
 		if($contactid) {
 			$params['keyword'] = $contactid;
-			$toolbar->keyword->setValue($params['keyword']);
+			//$toolbar->keyword->setValue($params['keyword']);
 		}
 
 		$get = new Contacts_Model_Get();
@@ -128,7 +142,7 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$this->view->contacts = $contacts;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
+		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -136,8 +150,9 @@ class Contacts_ContactController extends Zend_Controller_Action
 	{
 		$catid = $this->_getParam('catid', 0);
 
-		$data = array();
-		$data['catid'] = $catid;
+		$data = [
+			'catid' => $catid,
+		];
 
 		$client = Zend_Registry::get('Client');
 
@@ -148,21 +163,28 @@ class Contacts_ContactController extends Zend_Controller_Action
 		$incrementDb = new Application_Model_DbTable_Increment();
 		$increment = $incrementDb->getIncrement('contactid');
 		$contactDb->updateContact($id, array('contactid' => $increment));
-		$incrementDb->setIncrement(($increment), 'contactid');
+		$incrementDb->setIncrement($increment, 'contactid');
 
 		$addressDb = new Contacts_Model_DbTable_Address();
-		$addressDb->addAddress(array('contactid' => $id, 'type' => 'billing', 'country' => $client['country'], 'ordering' => 1));
+		$addressDb->createForParent($id, 'contacts', 'contact', [
+			'type' => 'billing',
+			'country' => $client['country'] ?? '0',
+		]);
 
 		$phoneDb = new Contacts_Model_DbTable_Phone();
-		$phoneDb->addPhone(array('parentid' => $id, 'type' => 'phone', 'ordering' => 1));
+		$phoneDb->createForParent($id, 'contacts', 'contact', [
+			'type' => 'phone',
+		]);
 
 		$emailDb = new Contacts_Model_DbTable_Email();
 
 		$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
-		$emailDb->addEmail(array('parentid' => $id, 'ordering' => 1, 'password' => $password));
+		$emailDb->createForParent($id, 'contacts', 'contact', [
+			'password' => $password,
+		]);
 
 		$internetDb = new Contacts_Model_DbTable_Internet();
-		$internetDb->addInternet(array('parentid' => $id, 'ordering' => 1));
+		$internetDb->createForParent($id, 'contacts', 'contact');
 
 		$this->_helper->redirector->gotoSimple('edit', 'contact', null, array('id' => $id));
 	}
@@ -170,179 +192,129 @@ class Contacts_ContactController extends Zend_Controller_Action
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
+		$id = (int)$this->_getParam('id', 0);
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		if($id) $contact = $contactDb->getContact($id);
+		$isAjax = $request->isXmlHttpRequest();
 
-		//Redirect to index if there is no data
-		if(!$contact) {
-			$this->_helper->redirector->gotoSimple('index', 'contact');
-			$this->_flashMessenger->addMessage('MESSAGES_NOT_FOUND');
-		}
+		$form = new Contacts_Form_Contact();
+		$options = $this->_helper->Options->applyFormOptions($form);
 
-		if(false) {
-			$this->_helper->redirector->gotoSimple('view', 'contact', null, array('id' => $id));
-		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $contact['locked'], $contact['lockedtime']);
+		$toolbar = new Contacts_Form_Toolbar();
+		$contactDb  = new Contacts_Model_DbTable_Contact();
 
-			$form = new Contacts_Form_Contact();
-			$options = $this->_helper->Options->getOptions($form);
+		// Load contact
+		$contact = $contactDb->getContactForEdit($id);
 
-			if($request->isPost()) {
+		// Not found / not usable
+		if (!$contact) {
+			if ($isAjax) {
 				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if($element == 'contactinfo') {
-					$data['info'] = $data['contactinfo'];
-					unset($data['contactinfo']);
-					$element = 'info';
-				}
-				if($element == 'customerinfo') {
-					$data['info'] = $data['customerinfo'];
-					unset($data['customerinfo']);
-					$element = 'info';
-				}
-				if(isset($form->$element) && $form->isValidPartial($data)) {
-					if(array_key_exists('priceruleamount', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['priceruleamount'] = Zend_Locale_Format::getNumber($data['priceruleamount'],array('precision' => 2,'locale' => $locale));
-					}
-					if(array_key_exists('cashdiscountpercent', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['cashdiscountpercent'] = Zend_Locale_Format::getNumber($data['cashdiscountpercent'],array('precision' => 2,'locale' => $locale));
-					}
-					$contactDb->updateContact($id, $data);
-					echo Zend_Json::encode($contactDb->getContact($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			} else {
-				if($id > 0) {
-					$data = $contact;
-					$currency = $this->_helper->Currency->getCurrency();
-					if($data['priceruleamount'] == '0.0000') $data['priceruleamount'] = '';
-					else $data['priceruleamount'] = $currency->toCurrency($data['priceruleamount']);
-					if($data['cashdiscountdays'] == '0') $data['cashdiscountdays'] = '';
-					if($data['cashdiscountpercent'] == '0.0000') $data['cashdiscountpercent'] = '';
-					else $data['cashdiscountpercent'] = $currency->toCurrency($data['cashdiscountpercent']);
-					$form->populate($data);
+				$this->_helper->layout->disableLayout();
 
-					//Phone
-					$phoneDb = new Contacts_Model_DbTable_Phone();
-					$phone = $phoneDb->getPhone($id);
-
-					//Email
-					$emailDb = new Contacts_Model_DbTable_Email();
-					$email = $emailDb->getEmails($id);
-
-					//Internet
-					$internetDb = new Contacts_Model_DbTable_Internet();
-					$internet = $internetDb->getInternet($id);
-
-					//Bank account
-					$bankAccountDb = new Contacts_Model_DbTable_Bankaccount();
-					$bankAccount = $bankAccountDb->getBankaccount($id);
-
-					//Addresses
-					$addressDb = new Contacts_Model_DbTable_Address();
-					$address = $addressDb->getAddress($id);
-
-					//Contact persons
-					$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
-					$contactpersons = $contactpersonDb->getContactpersons($id, 'contacts', 'contact');
-
-					$emailContactPersons = array();
-					foreach($contactpersons as $contactperson) {
-						$emailContactPersons[$contactperson['id']] = $emailDb->getEmails($contactperson['id'], 'contacts', 'contactperson');
-					}
-
-					//Comments
-					$commentDb = new Application_Model_DbTable_Comment();
-					$comments = $commentDb->getComments($id, 'contacts', 'contact');
-
-					//History and tags
-					$get = new Contacts_Model_Get();
-					$tags = $get->tags('contacts', 'contact', $contact['id']);
-					$history = $get->history($contact['contactid']);
-
-					//Get email form
-					$emailForm = new Contacts_Form_Emailmessage();
-					if($email) {
-						foreach($email as $option) {
-							$emailForm->recipient->addMultiOption($option['id'], $option['email']);
-						}
-					}
-
-					//Get email templates
-					$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
-					if($emailtemplate = $emailtemplateDb->getEmailtemplate('contacts', 'contact')) {
-						if($emailtemplate['cc']) $emailForm->cc->setValue($emailtemplate['cc']);
-						if($emailtemplate['bcc']) $emailForm->bcc->setValue($emailtemplate['bcc']);
-						if($emailtemplate['replyto']) $emailForm->replyto->setValue($emailtemplate['replyto']);
-						$emailForm->subject->setValue($emailtemplate['subject']);
-						$emailForm->body->setValue($emailtemplate['body']);
-					}
-					$this->view->emailForm = $emailForm;
-					$this->view->url = $this->_helper->Directory->getUrl($contact['contactid']);
-
-					//Get email attachments
-					$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
-					$attachments = $emailattachmentDb->getEmailattachments($id, 'contacts', 'contact');
-
-					//Files
-					$files = array();
-					$path = BASE_PATH.'/files/contacts/';
-					if(file_exists($path.$id) && is_dir($path.$id)) {
-						if($handle = opendir($path.$id)) {
-							$files['contactSpecific'] = array();
-							while (false !== ($entry = readdir($handle))) {
-								if(substr($entry, 0, strlen('.')) !== '.') array_push($files['contactSpecific'], $entry);
-							}
-							closedir($handle);
-						}
-					}
-
-					//Downloads
-					$downloadsDb = new Contacts_Model_DbTable_Download();
-					$downloads = $downloadsDb->getDownloads($id);
-
-					//Download tracking
-					$downloadtrackingsDb = new Contacts_Model_DbTable_Downloadtracking();
-					$downloadtrackings = $downloadtrackingsDb->getDownloadtrackings($id);
-
-					$clientid = $this->_user['clientid'];
-					$dir1 = substr($clientid, 0, 1);
-					if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
-					else $dir2 = '0';
-
-					//Toolbar
-					$toolbar = new Contacts_Form_Toolbar();
-
-					$this->view->form = $form;
-					$this->view->options = $options;
-					$this->view->tags = $tags;
-					$this->view->history = $history;
-					$this->view->files = $files;
-					$this->view->address = $address;
-					$this->view->phone = $phone;
-					$this->view->email = $email;
-					$this->view->internet = $internet;
-					$this->view->bankAccount = $bankAccount;
-					$this->view->attachments = $attachments;
-					$this->view->contactpersons = $contactpersons;
-					$this->view->emailContactPersons = $emailContactPersons;
-					$this->view->comments = $comments;
-					$this->view->downloads = $downloads;
-					$this->view->downloadsurl = $dir1.'/'.$dir2.'/'.$clientid.'/';
-					$this->view->downloadtrackings = $downloadtrackings;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-				}
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'not_found'
+				]);
 			}
+
+			$this->_flashMessenger->addMessage('MESSAGES_CONTACT_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'contact');
 		}
+
+		// LOCK
+		$this->_helper->Access->lock($id, $this->_user['id'], $contact['locked'] ?? 0, $contact['lockedtime'] ?? null);
+
+		// POST: ajax save single field
+		if ($request->isPost()) {
+			// Edit via ajax -> JSON
+			if ($isAjax) {
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->layout->disableLayout();
+
+				$post = (array)$request->getPost();
+
+				// Validate only posted subset
+				if (!$form->isValidPartial($post)) {
+					return $this->_helper->json([
+						'ok' => false,
+						'errors' => $this->toErrorMessages($form->getErrors(), $form),
+					]);
+				}
+
+				// Filter/normalize only posted subset for DB
+				$values = $form->getFilteredValuesPartial($post);
+
+				// Save
+				try {
+					$contactDb->updateContact($id, $values);
+				} catch (Exception $e) {
+					return $this->_helper->json([
+						'ok' => false,
+						'message' => 'save_failed'
+					]);
+				}
+
+				// Reload for derived values
+				$contactNew = $contactDb->getContactForEdit($id);
+
+				// Return only changed fields for display
+				$changedFields = array_keys($values);
+
+				$display = DEEC_Display::fromRow($form, $contactNew, $changedFields);
+
+				return $this->_helper->json([
+					'ok' => true,
+					'id' => $id,
+
+					// Raw DB values for JS logic
+					'values' => array_intersect_key($contactNew, array_flip($changedFields)),
+
+					// Formatted for UI
+					'display' => $display,
+
+					// Optional meta: if later derived values set server-side
+					'meta' => [
+						'recalc' => [],
+					],
+				]);
+			}
+
+			// NON-AJAX POST
+			$post = (array)$request->getPost();
+
+			if (!$form->isValid($post)) {
+				// Keep form with submitted values and errors
+				$form->setValues($post);
+			} else {
+				$values = $form->getFilteredValues();
+
+				$contactDb->updateContact($id, $values);
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+				return $this->_helper->redirector->gotoSimple('edit', 'contact', null, ['id' => $id]);
+			}
+		} else {
+			// GET: populate form with display values from DB
+			$locale = Zend_Registry::get('Zend_Locale'); // for now, later replaced
+			$contactDisplay = DEEC_Display::rowToFormValues($form, $contact, $locale);
+
+			$form->setValues($contactDisplay);
+
+			$this->_helper->MultiEntityLoader->populate($form, $id, 'contacts', 'contact');
+		}
+
+		// build view model once and assign in one shot
+		$vmService = new Contacts_Service_ContactEditViewModel();
+		$vm = $vmService->build($id, (array)$this->_user, (array)$contact);
+
+		$this->view->assign(array_merge($vm, [
+			'id' => $id,
+			'form' => $form,
+			'toolbar' => $toolbar,
+			'options' => $options,
+			'activeTab' => $request->getCookie('tab', null),
+		]));
+
+		// Messages
 		$this->view->messages = array_merge(
 			$this->_helper->flashMessenger->getMessages(),
 			$this->_helper->flashMessenger->getCurrentMessages()
@@ -780,19 +752,27 @@ class Contacts_ContactController extends Zend_Controller_Action
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toogle($id);
+		$this->_helper->Pin->toggle($id);
 	}
 
 	public function lockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->lock($id, $this->_user['id']);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function unlockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->unlock($id);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function keepaliveAction()

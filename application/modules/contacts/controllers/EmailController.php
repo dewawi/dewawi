@@ -1,6 +1,6 @@
 <?php
 
-class Contacts_EmailController extends Zend_Controller_Action
+class Contacts_EmailController extends DEEC_Controller_Action
 {
 	protected $_date = null;
 
@@ -105,56 +105,114 @@ class Contacts_EmailController extends Zend_Controller_Action
 		$request = $this->getRequest();
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$form = new Contacts_Form_Contact();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$emailDb = new Contacts_Model_DbTable_Email();
-				$emailDataBefore = $emailDb->getEmails($data['parentid'], $data['module'], $data['controller']);
-				$latestOrdering = is_array($emailDataBefore) && !empty($emailDataBefore)
-					? end($emailDataBefore)['ordering']
-					: 0;
-				$dataArray = array();
-				$dataArray['module'] = $data['module'];
-				$dataArray['controller'] = $data['controller'];
-				$dataArray['parentid'] = $data['parentid'];
-				$dataArray['password'] = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
-				$dataArray['ordering'] = $latestOrdering+1;
-				$emailDb->addEmail($dataArray);
-				$emailDataAfter = $emailDb->getEmails($data['parentid'], $data['module'], $data['controller']);
-				$email = end($emailDataAfter);
-				echo $this->view->MultiForm('contacts', 'email', $email);
-			}
+		if (!$request->isPost()) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'invalid_request',
+			]);
 		}
+
+		$post = (array)$request->getPost();
+
+		$parentid = (int)$this->_getParam('parent_id', 0);
+
+		if ($parentid <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'missing_parent',
+			]);
+		}
+
+		$parentModule = !empty($post['parent_module']) ? (string)$post['parent_module'] : 'contacts';
+		$parentController = !empty($post['parent_controller']) ? (string)$post['parent_controller'] : 'contact';
+
+		$client = Zend_Registry::get('Client');
+
+		$data = [
+			'password' => password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT),
+		];
+
+		$emailDb = new Contacts_Model_DbTable_Email();
+		$newId = $emailDb->createForParent($parentid, $parentModule, $parentController, $data);
+
+		$row = $emailDb->getById($newId);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
+		}
+
+		$rowForm = new Contacts_Form_Email();
+		$this->_helper->Options->applyFormOptions($rowForm);
+
+		$ctx = [
+			'module' => 'contacts',
+			'controller' => 'email',
+		];
+
+		echo $rowForm->renderMultiItem('email', $row, $ctx);
 	}
 
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
+		$id = (int)$this->_getParam('id', 0);
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$form = new Contacts_Form_Contact();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$emailDb = new Contacts_Model_DbTable_Email();
-				if($id > 0) {
-					$emailDb->updateEmail($id, $data);
-					echo Zend_Json::encode($data);
-				}
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
+		if (!$request->isPost() || $id <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
 		}
 
-		$this->view->form = $form;
+		$form = new Contacts_Form_Email();
+		$this->_helper->Options->applyFormOptions($form);
+
+		$post = (array)$request->getPost();
+
+		if (!$form->isValidPartial($post)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'errors' => $this->toErrorMessages($form->getErrors(), $form),
+			]);
+		}
+
+		$values = $form->getFilteredValuesPartial($post);
+
+		$emailDb = new Contacts_Model_DbTable_Email();
+
+		try {
+			$emailDb->updateById($id, $values);
+		} catch (Exception $e) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
+		}
+
+		$row = $emailDb->getById($id);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+		}
+
+		$changedFields = array_keys($values);
+		$display = DEEC_Display::fromRow($form, $row, $changedFields);
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'values' => array_intersect_key($row, array_flip($changedFields)),
+			'display' => $display,
+		]);
 	}
 
 	public function sendAction()
