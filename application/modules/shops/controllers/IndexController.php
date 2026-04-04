@@ -42,9 +42,9 @@ class Shops_IndexController extends Zend_Controller_Action
 
 		$this->_helper->getHelper('layout')->setLayout('shop');
 
-		$toolbar = new Items_Form_Toolbar();
+		$toolbar = new Shops_Form_Toolbar();
 		//$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar);
+		//$params = $this->_helper->Params->getParams($toolbar);
 		//print_r($params);
 		//print_r($this->getRequest()->getParams());
 		$contact = new Shops_Form_Contact();
@@ -94,8 +94,8 @@ class Shops_IndexController extends Zend_Controller_Action
 
 		$form = new Shops_Form_Account();
 		$toolbar = new Shops_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
+		//$options = $this->_helper->Options->getOptions($toolbar);
+		//$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Shops_Model_Get();
 		$stats = array();

@@ -32,7 +32,7 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 			foreach ($this->images as $image):
 				$i++;
 			?>
-				"<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image->url); ?>"<?php if ($i < $totalImages) echo ','; ?>
+				"<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image['url']); ?>"<?php if ($i < $totalImages) echo ','; ?>
 			<?php endforeach; ?>
 		],
 	<?php endif; ?>
@@ -61,14 +61,14 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 			<div class="col-md-6 mb-4">
 				<div class="main-image-wrapper">
 					<?php if(isset($this->images) && isset($this->images[0])) : ?>
-						<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->images[0]->url; ?>" id="mainImage" class="img-fluid" alt="Product Image" onclick="openModal()">
+						<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->images[0]['url']; ?>" id="mainImage" class="img-fluid" alt="Product Image" onclick="openModal()">
 					<?php else : ?>
 						<!-- Default image if no images are available -->
 						<img src="" id="mainImage" class="img-fluid" alt="Product Image">
 					<?php endif; ?>
 				</div>
 				<?php if(isset($this->images) && isset($this->images[0])) : ?>
-					<span class="imagetitle"><?php echo $this->images[0]->title; ?></span>
+					<span class="imagetitle"><?php echo $this->images[0]['title']; ?></span>
 					<span class="imagedescription"><?php //echo $this->images[0]->description; ?></span>
 				<?php endif; ?>
 				<div class="row">
@@ -76,8 +76,8 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 						<?php foreach ($this->images as $index => $image): ?>
 						<div class="col-md-3 mb-2">
 							<div class="thumbnail-wrapper">
-								<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $image->url; ?>" class="img-thumbnail" alt="Product Thumbnail" onclick="changeMainImage(this)">
-								<span class="imagetitle" style="display:none"><?php echo $this->images[0]->title; ?></span>
+								<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $image['url']; ?>" class="img-thumbnail" alt="Product Thumbnail" onclick="changeMainImage(this)">
+								<span class="imagetitle" style="display:none"><?php echo $this->images[0]['title']; ?></span>
 								<span class="imagedescription" style="display:none"><?php //echo $this->images[0]->description; ?></span>
 							</div>
 						</div>
@@ -204,7 +204,7 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 <?php $categoryImages = $this->categoryImages; ?>
 <?php //if(count($categoryImages)) : ?>
 	<?php foreach ($categoryImages as $image) : ?>
-		<?php if ($image->type == 'download') : ?>
+		<?php if ($image['type'] == 'download') : ?>
 			<?php $downloads = true; ?>
 		<?php endif; ?>
 	<?php endforeach; ?>
@@ -212,7 +212,7 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 <?php $parentCategoryImages = $this->parentCategoryImages; ?>
 <?php //if(count($parentCategoryImages)) : ?>
 	<?php foreach ($parentCategoryImages as $image) : ?>
-		<?php if ($image->type == 'download') : ?>
+		<?php if ($image['type'] == 'download') : ?>
 			<?php $downloads = true; ?>
 		<?php endif; ?>
 	<?php endforeach; ?>
@@ -227,18 +227,18 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 				<div class="card card-body">
 					<ul>
 						<?php foreach ($categoryImages as $file) : ?>
-							<?php if ($file->type == 'download') : ?>
+							<?php if (($file['type'] ?? null) === 'download') : ?>
 								<li>
-									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
-										<?php echo $this->escape($file->title); ?></a>
+									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file['url']); ?>" target="_blank">
+										<?php echo $this->escape($file['title']); ?></a>
 								</li>
 							<?php endif; ?>
 						<?php endforeach; ?>
 						<?php foreach ($parentCategoryImages as $file) : ?>
-							<?php if ($file->type == 'download') : ?>
+							<?php if (($file['type'] ?? null) === 'download') : ?>
 								<li>
-									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file->url); ?>" target="_blank">
-										<?php echo $this->escape($file->title); ?></a>
+									<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file['url']); ?>" target="_blank">
+										<?php echo $this->escape($file['title']); ?></a>
 								</li>
 							<?php endif; ?>
 						<?php endforeach; ?>
@@ -291,9 +291,9 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 						<?php foreach ($this->images as $index => $image): ?>
 						<div class="carousel-item <?php echo $index == 0 ? 'active' : ''; ?>">
 							<div class="modal-image-wrapper">
-								<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $image->url; ?>" class="d-block w-100" alt="Product Image">
+								<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $image['url']; ?>" class="d-block w-100" alt="Product Image">
 							</div>
-							<span><?php echo $image->title; ?></span>
+							<span><?php echo $image['title']; ?></span>
 							<span><?php //echo $this->images->description; ?></span>
 						</div>
 						<?php endforeach; ?>

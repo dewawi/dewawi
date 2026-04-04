@@ -21,19 +21,19 @@ class Shops_Controller_Action_Helper_Attributes extends Zend_Controller_Action_H
 		} else {
 			// Loop through item attribute sets
 			foreach ($itemAttributeSets as $itemAttributeSet) {
-				if($itemAttributeSet->title) {
+				if($itemAttributeSet['title']) {
 					$attributes = array();
 
 					// Loop through item attributes and add them to the attributes array if they belong to the current item attribute set
 					foreach ($itemAttributes as $itemAttribute) {
-						if ($itemAttributeSet->id == $itemAttribute->atrsetid) {
+						if ($itemAttributeSet['id'] == $itemAttribute['atrsetid']) {
 							$attributes[$itemAttribute->id] = $itemAttribute->toArray();
 						}
 					}
 
 					// Add the item attribute set with its associated attributes to the sets array
 					$sets[] = array(
-						'title' => $itemAttributeSet->title,
+						'title' => $itemAttributeSet['title'],
 						'attributes' => $attributes
 					);
 				}

@@ -129,8 +129,19 @@ class Shops_ContactController extends Zend_Controller_Action
 		$request = $this->getRequest();
 		$data = $request->getPost();
 
+		// Nur POST zulassen
+		if (!$request->isPost()) {
+			return $this->_helper->redirector->gotoSimple('index', 'index', 'shops');
+		}
+
 		// Save to session
 		$this->contactDataSession->formData = $data;
+
+		// 1) Honeypot: wenn ausgefüllt → Bot, tue so als wäre alles ok, aber sende nichts
+		if (!empty($data['fax_number'])) {
+			// Bot erkannt – stillschweigend auf Erfolg leiten
+			return $this->_helper->redirector->gotoRoute([], 'contact_success', true);
+		}
 
 		// Send email
 		$this->_helper->Email->sendEmail('shops', 'contact', 'contact');

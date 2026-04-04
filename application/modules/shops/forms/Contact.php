@@ -12,6 +12,14 @@ class Shops_Form_Contact extends Zend_Form
 		$csrf->setTimeout(600); // Token expires in 10 minutes
 		$this->addElement($csrf);
 
+		// Honeypot field (must stay empty)
+		$honeypot = new Zend_Form_Element_Text('fax_number');
+		$honeypot->removeDecorator('Label')
+			->setAttrib('class', 'hidden') // per CSS ausblenden
+			->setAttrib('autocomplete', 'off')
+			->setRequired(false);
+		$this->addElement($honeypot);
+
 		// Hidden field for subject
 		$subject = new Zend_Form_Element_Hidden('subject');
 		$subject->removeDecorator('Label')
