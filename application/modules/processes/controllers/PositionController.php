@@ -32,72 +32,155 @@ class Processes_PositionController extends Zend_Controller_Action
 	{
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$parentid = $this->_getParam('parentid', 0);
+		$params = $this->_getAllParams();
 		$locale = Zend_Registry::get('Zend_Locale');
 
-		//Get process
-		$processDb = new Processes_Model_DbTable_Process();
-		$process = $processDb->getProcess($parentid);
+		//Calculate
+		$this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
+
+		//Define belonging classes
+		$parentClass = 'Processes_Model_DbTable_'.ucfirst($params['parent']);
+		$positionClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+		$positionSetClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
+
+		//Get parent data
+		$parentDb = new $parentClass();
+		$parentMethod = 'get'.$params['parent'];
+		$parent = $parentDb->$parentMethod($params['parentid']);
 
 		//Get positions
-		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positions = $positionsDb->getPositions($parentid);
+		$positionsDb = new $positionClass();
+		$positions = $positionsDb->getPositions($params['parentid']);
+
+		//Get position sets
+		$positionSetDb = new $positionSetClass();
+		$positionSets = $positionSetDb->getPositionSets($params['parentid']);
 
 		//Get uoms
 		$uomDb = new Application_Model_DbTable_Uom();
 		$uoms = $uomDb->getUoms();
 
-		//Get shipping methods
-		$shippingmethodDb = new Application_Model_DbTable_Shippingmethod();
-		$shippingmethods = $shippingmethodDb->getShippingmethods();
+		//Get tax rates
+		$taxrateDb = new Application_Model_DbTable_Taxrate();
+		$taxrates = $taxrateDb->getTaxrates();
 
 		//Get currency
 		$currencyHelper = $this->_helper->Currency;
 		$currency = $currencyHelper->getCurrency();
 
+		$taxes = array();
+		if(isset($parent['taxfree']) && $parent['taxfree']) {
+			$taxes[] = array('value' => 0, 'title' => 0);
+		} else {
+			foreach($positions as $position) {
+				if(!isset($taxes[$position->taxrate]) && array_search($position->taxrate, $taxrates)) {
+					$taxes[$position->taxrate] = array();
+					$taxes[$position->taxrate]['value'] = 0;
+					$taxes[$position->taxrate]['title'] = Zend_Locale_Format::toNumber($position->taxrate,array('precision' => 1,'locale' => $locale)).' %';
+				}
+			}
+		}
+		if(!count($positionSets)) {
+			$positionSets = array();
+			$object = new stdClass();
+			$object->id = 0;
+			$object->title = '';
+			$object->ordering = 0;
+			$positionSets[0] = $object;
+		}
+		$sets = array();
+		foreach($positionSets as $positionSet) {
+			$sets[$positionSet->id]['title'] = $positionSet->title;
+		}
 		$forms = array();
-		$orderings = array();
+		$childs = array();
+		$options = array();
+		$pricerules = array();
+		$pricerulemaster = array();
+		$optionsDb = new Items_Model_DbTable_Itemopt();
 		foreach($positions as $position) {
-			$orderings[$position->ordering] = $position->ordering;
+			//Get price rules and properties
+			if(!$position->masterid) {
+				$pricerules[$position->id] = $this->_helper->PriceRule->getPriceRulePositions('processes', $params['parent'].$params['type'], $position->id);
+				$pricerulemaster[$position->id] = $position->pricerulemaster;
+			}
 		}
 		foreach($positions as $position) {
+			//Use price rules
+			if($position->masterid && $pricerulemaster[$position->masterid] && isset($pricerules[$position->masterid])) {
+				$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->masterid], $position->price);
+			} elseif(!$position->masterid && isset($pricerules[$position->id])) {
+				$price = $this->_helper->PriceRule->usePriceRules($pricerules[$position->id], $position->price);
+			} else {
+				$price = $position->price;
+			}
+
+			if(isset($parent['taxfree']) && !$parent['taxfree'] && array_search($position->taxrate, $taxrates))
+				$taxes[$position->taxrate]['value'] += ($price*$position->quantity*$position->taxrate/100);
+
+			// Set position total with currency symbol
+			$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
+			$position->total = $currency->toCurrency($price*$position->quantity);
+
 			// Set editable values without currency symbol
 			$currencyHelper->setCurrency($currency, $position->currency, 'NO_SYMBOL');
 			$position->price = $currency->toCurrency($position->price);
-			$position->supplierinvoicetotal = $currency->toCurrency($position->supplierinvoicetotal);
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
 
-			//Convert dates to the display format
-			$deliverydate = new Zend_Date($position->deliverydate);
-			if($position->deliverydate) $position->deliverydate = $deliverydate->get('dd.MM.yyyy');
-			$deliveryorderdate = new Zend_Date($position->deliveryorderdate);
-			if($position->deliveryorderdate) $position->deliveryorderdate = $deliveryorderdate->get('dd.MM.yyyy');
-			$purchaseorderdate = new Zend_Date($position->purchaseorderdate);
-			if($position->purchaseorderdate) $position->purchaseorderdate = $purchaseorderdate->get('dd.MM.yyyy');
-			$suppliersalesorderdate = new Zend_Date($position->suppliersalesorderdate);
-			if($position->suppliersalesorderdate) $position->suppliersalesorderdate = $suppliersalesorderdate->get('dd.MM.yyyy');
-			$supplierinvoicedate = new Zend_Date($position->supplierinvoicedate);
-			if($position->supplierinvoicedate) $position->supplierinvoicedate = $supplierinvoicedate->get('dd.MM.yyyy');
-			$supplierpaymentdate = new Zend_Date($position->supplierpaymentdate);
-			if($position->supplierpaymentdate) $position->supplierpaymentdate = $supplierpaymentdate->get('dd.MM.yyyy');
+			$formClass = 'Processes_Form_'.ucfirst($params['parent'].$params['type']);
+			$form = $this->buildPositionForm(
+				$formClass,
+				$position,
+				$uoms,
+				$taxrates,
+				$this->_helper->Ordering->getOrdering(
+					$params['parent'],
+					$params['type'],
+					$params['parentid'],
+					$position->{$params['type'] . 'setid'}
+				),
+				$locale
+			);
 
-			$form = new Processes_Form_Processpos();
-			$forms[$position->id] = $form->populate($position->toArray());
-			$forms[$position->id]->uom->addMultiOptions($uoms);
-			if($position->uom) {
-				$uom = array_search($position->uom, $uoms);
-				if($uom) $forms[$position->id]->uom->setValue($uom);
+			if($position->masterid) {
+				$childs[$position->masterid][] = $form;
+			} else {
+				$forms[$position->{$params['type'].'setid'}][$position->id]['form'] = $form;
 			}
-			$forms[$position->id]->ordering->addMultiOptions($orderings);
-			$forms[$position->id]->shippingmethod->addMultiOptions($shippingmethods);
-			foreach($forms[$position->id] as $element) {
-				$id = $element->getId();
-				$forms[$position->id]->$id->setAttrib('id', $id.$position->id);
-				if(!$process['editpositionsseparately']) $element->setAttrib('disabled', 'disabled');
+
+			//Get options
+			if($position->itemid) {
+				$options[$position->id] = $optionsDb->getPositions($position->itemid);
 			}
 		}
+
+		foreach($positions as $position) {
+			// Set price rules without currency symbol
+			if(isset($pricerules[$position->id])) {
+				foreach($pricerules[$position->id] as $key => $value) {
+					$pricerules[$position->id][$key]['amount'] = $value['amount'] = $currency->toCurrency($value['amount']);
+				}
+			}
+		}
+
+		// Set grand total with currency symbol
+		$currencyHelper->setCurrency($currency, $parent['currency'], 'USE_SYMBOL');
+		if(isset($parent['subtotal'])) $parent['subtotal'] = $currency->toCurrency($parent['subtotal']);
+		if(isset($parent['total'])) $parent['total'] = $currency->toCurrency($parent['total']);
+		foreach($taxes as $rate => $data) {
+			$taxes[$rate]['value'] = $currency->toCurrency($data['value']);
+		}
+		$parent['taxes'] = $taxes;
+		$parent['type'] = $params['parent'];
+
+		$this->view->sets = $sets;
 		$this->view->forms = $forms;
+		$this->view->childs = $childs;
+		$this->view->parent = $parent;
+		$this->view->options = $options;
+		$this->view->pricerules = $pricerules;
 		$this->view->toolbar = new Processes_Form_ToolbarPositions();
+		$this->view->toolbarPositions = new Processes_Form_ToolbarPositions();
 	}
 
 	public function applyAction()
@@ -435,5 +518,80 @@ class Processes_PositionController extends Zend_Controller_Action
 		$json = $form->getMessages();
 		header('Content-type: application/json');
 		echo Zend_Json::encode($json);
+	}
+
+	protected function buildPositionForm($formClass, $position, array $uoms, array $taxrates, array $orderingOptions, $locale)
+	{
+		$form = new $formClass();
+		$form->setValues($position->toArray());
+
+		$form->addOptions('uom', $uoms, 'replace');
+
+		if ($position->uom) {
+			$uomId = array_search($position->uom, $uoms, true);
+			if ($uomId !== false) {
+				$form->setValue('uom', $uomId);
+			}
+		}
+
+		$form->addOptions('ordering', $orderingOptions, 'replace');
+
+		$taxrateOptions = [];
+		foreach ($taxrates as $taxrateId => $value) {
+			$taxrateOptions[$taxrateId] = Zend_Locale_Format::toNumber($value, [
+				'precision' => 1,
+				'locale' => $locale
+			]) . ' %';
+		}
+
+		$form->addOptions('taxrate', $taxrateOptions, 'replace');
+
+		$taxrateId = array_search($position->taxrate, $taxrates, true);
+		if ($taxrateId !== false) {
+			$form->setValue('taxrate', $taxrateId);
+		}
+
+		return $form;
+	}
+
+	protected function buildPositionFormForRequest(string $formClass, array $params, $locale): DEEC_Form
+	{
+		$form = new $formClass();
+
+		// Get uoms
+		$uomDb = new Application_Model_DbTable_Uom();
+		$uoms = $uomDb->getUoms();
+
+		// Get tax rates
+		$taxrateDb = new Application_Model_DbTable_Taxrate();
+		$taxrates = $taxrateDb->getTaxrates();
+
+		// UOM options
+		$form->addOptions('uom', $uoms, 'replace');
+
+		// Ordering options
+		$form->addOptions(
+			'ordering',
+			$this->_helper->Ordering->getOrdering(
+				$params['parent'],
+				$params['type'],
+				$params['parentid'],
+				0
+			),
+			'replace'
+		);
+
+		// Tax rate options
+		$taxrateOptions = [];
+		foreach ($taxrates as $taxrateId => $value) {
+			$taxrateOptions[$taxrateId] = Zend_Locale_Format::toNumber($value, [
+				'precision' => 1,
+				'locale' => $locale,
+			]) . ' %';
+		}
+
+		$form->addOptions('taxrate', $taxrateOptions, 'replace');
+
+		return $form;
 	}
 }

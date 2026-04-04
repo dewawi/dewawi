@@ -31,18 +31,24 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 	public function getAction()
 	{
-		header('Content-type: application/json');
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$element = $this->_getParam('element', null);
+		$elementName = (string)$this->_getParam('element', '');
 		$form = new Processes_Form_Toolbar();
-		if(isset($form->$element)) {
-			$options = $form->$element->getMultiOptions();
-			echo Zend_Json::encode($options);
-		} else {
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS')));
+
+		$el = $form->getElement($elementName);
+
+		if (!$el) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS'),
+			]);
 		}
+
+		$options = $el['options'] ?? [];
+
+		return $this->_helper->json($options);
 	}
 
 	public function indexAction()
@@ -50,6 +56,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Processes_Form_Toolbar();
+		$toolbarInline = new Sales_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
@@ -70,6 +77,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->view->processes = $processes;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->positions = $this->getPositions($processIDs);
 		$this->view->messages = array_merge(
 						$this->_flashMessenger->getMessages(),
@@ -84,6 +92,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Processes_Form_Toolbar();
+		$toolbarInline = new Sales_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
@@ -99,6 +108,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->view->processes = $processes;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->positions = $this->getPositions($processIDs);
 		$this->view->messages = array_merge(
 						$this->_flashMessenger->getMessages(),
@@ -109,7 +119,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 	public function addAction()
 	{
-		$customerid = $this->_getParam('customerid', 0);
+		$contactid = $this->_getParam('contactid', 0);
 
 		//Get primary currency
 		$currencies = new Application_Model_DbTable_Currency();
@@ -123,12 +133,12 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$data['state'] = 100;
 
 		//Get contact data
-		if($customerid) {
+		if($contactid) {
 			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContact($customerid);
+			$contact = $contactDb->getContact($contactid);
 
 			//Get basic data
-			$data['customerid'] = $contact['contactid'];
+			$data['contactid'] = $contact['contactid'];
 			$data['billingname1'] = $contact['name1'];
 			$data['billingname2'] = $contact['name2'];
 			$data['billingdepartment'] = $contact['department'];
@@ -158,283 +168,152 @@ class Processes_ProcessController extends Zend_Controller_Action
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		//$element = $this->_getParam('element', null);
-		$activeTab = $request->getCookie('tab', null);
+		$id = (int)$this->_getParam('id', 0);
 
-		$processDb = new Processes_Model_DbTable_Process();
-		$process = $processDb->getProcess($id);
+		$isAjax = $request->isXmlHttpRequest();
 
-		if($process['completed'] || $process['cancelled']) {
-			$this->_helper->redirector->gotoSimple('view', 'process', null, array('id' => $id));
-		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $process['locked'], $process['lockedtime']);
+		$form = new Processes_Form_Process();
+		$options = $this->_helper->Options->applyFormOptions($form);
 
-			$form = new Processes_Form_Process();
-			$options = $this->_helper->Options->getOptions($form);
+		$toolbar = new Processes_Form_Toolbar();
+		$processDb  = new Processes_Model_DbTable_Process();
 
-			//Get contact
-			if($process['customerid']) {
-				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContactWithID($process['customerid']);
+		// Load process
+		$process = $processDb->getProcessForEdit($id);
 
-				//Phone
-				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($contact['id']);
-
-				//Email
-				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmails($contact['id']);
-
-				//Internet
-				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($contact['id']);
-
-				$this->view->contact = $contact;
-			}
-
-			if($request->isPost()) {
-				header('Content-type: application/json');
+		// Not found / not usable
+		if (!$process) {
+			if ($isAjax) {
 				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['contactperson'] = $this->_user['name'];
-					if(isset($data['currency'])) {
-						$positionsDb = new Processes_Model_DbTable_Processpos();
-						$positions = $positionsDb->getPositions($id);
-						foreach($positions as $position) {
-							$positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
-						}
-						//$this->_helper->Currency->convert($id, 'creditnote');
-					}
-					if(isset($data['taxfree'])) {
-						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
-						$data['subtotal'] = $calculations['row']['subtotal'];
-						$data['taxes'] = $calculations['row']['taxes']['total'];
-						$data['total'] = $calculations['row']['total'];
-					}
-					if(isset($data['salesorderid']) && !$data['salesorderid']) $data['salesorderid'] = 0;
-					if(isset($data['invoiceid']) && !$data['invoiceid']) $data['invoiceid'] = 0;
-					if(isset($data['prepaymentinvoiceid']) && !$data['prepaymentinvoiceid']) $data['prepaymentinvoiceid'] = 0;
-					if(isset($data['deliveryorderid']) && !$data['deliveryorderid']) $data['deliveryorderid'] = 0;
-					if(isset($data['creditnoteid']) && !$data['creditnoteid']) $data['creditnoteid'] = 0;
-					if(isset($data['purchaseorderid']) && !$data['purchaseorderid']) $data['purchaseorderid'] = 0;
-					if(isset($data['supplierid']) && !$data['supplierid']) $data['supplierid'] = 0;
-					if(isset($data['total'])) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['total'] =  Zend_Locale_Format::getNumber($data['total'], array('precision' => 2,'locale' => $locale));
-					}
-					if(isset($data['supplierinvoicetotal'])) {
-						if($data['supplierinvoicetotal']) {
-							$locale = Zend_Registry::get('Zend_Locale');
-							$data['supplierinvoicetotal'] =  Zend_Locale_Format::getNumber($data['supplierinvoicetotal'], array('precision' => 2,'locale' => $locale));
-						} else {
-							$data['supplierinvoicetotal'] = NULL;
-						}
-					}
-					if(isset($data['prepaymenttotal'])) {
-						if($data['prepaymenttotal']) {
-							$locale = Zend_Registry::get('Zend_Locale');
-							$data['prepaymenttotal'] =  Zend_Locale_Format::getNumber($data['prepaymenttotal'], array('precision' => 2,'locale' => $locale));
-						} else {
-							$data['prepaymenttotal'] = NULL;
-						}
-					}
-					if(isset($data['creditnotetotal'])) {
-						if($data['creditnotetotal']) {
-							$locale = Zend_Registry::get('Zend_Locale');
-							$data['creditnotetotal'] =  Zend_Locale_Format::getNumber($data['creditnotetotal'], array('precision' => 2,'locale' => $locale));
-						} else {
-							$data['creditnotetotal'] = NULL;
-						}
-					}
-					if(isset($data['paymentdate'])) {
-						if(Zend_Date::isDate($data['paymentdate'])) {
-							$paymentdate = new Zend_Date($data['paymentdate'], Zend_Date::DATES, 'de');
-							$data['paymentdate'] = $paymentdate->get('yyyy-MM-dd');
-						} else {
-							$data['paymentdate'] = NULL;
-						}
-					}
-					if(isset($data['invoicedate'])) {
-						if(Zend_Date::isDate($data['invoicedate'])) {
-							$invoicedate = new Zend_Date($data['invoicedate'], Zend_Date::DATES, 'de');
-							$data['invoicedate'] = $invoicedate->get('yyyy-MM-dd');
-						} else {
-							$data['invoicedate'] = NULL;
-						}
-					}
-					if(isset($data['prepaymentdate'])) {
-						if(Zend_Date::isDate($data['prepaymentdate'])) {
-							$prepaymentdate = new Zend_Date($data['prepaymentdate'], Zend_Date::DATES, 'de');
-							$data['prepaymentdate'] = $prepaymentdate->get('yyyy-MM-dd');
-						} else {
-							$data['prepaymentdate'] = NULL;
-						}
-					}
-					if(isset($data['prepaymentinvoicedate'])) {
-						if(Zend_Date::isDate($data['prepaymentinvoicedate'])) {
-							$prepaymentinvoicedate = new Zend_Date($data['prepaymentinvoicedate'], Zend_Date::DATES, 'de');
-							$data['prepaymentinvoicedate'] = $prepaymentinvoicedate->get('yyyy-MM-dd');
-						} else {
-							$data['prepaymentinvoicedate'] = NULL;
-						}
-					}
-					if(isset($data['creditnotedate'])) {
-						if(Zend_Date::isDate($data['creditnotedate'])) {
-							$creditnotedate = new Zend_Date($data['creditnotedate'], Zend_Date::DATES, 'de');
-							$data['creditnotedate'] = $creditnotedate->get('yyyy-MM-dd');
-						} else {
-							$data['creditnotedate'] = NULL;
-						}
-					}
-					if(isset($data['deliverydate'])) {
-						if(Zend_Date::isDate($data['deliverydate'])) {
-							$deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
-							$data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
-						} else {
-							$data['deliverydate'] = NULL;
-						}
-					}
-					if(isset($data['deliveryorderdate'])) {
-						if(Zend_Date::isDate($data['deliveryorderdate'])) {
-							$deliveryorderdate = new Zend_Date($data['deliveryorderdate'], Zend_Date::DATES, 'de');
-							$data['deliveryorderdate'] = $deliveryorderdate->get('yyyy-MM-dd');
-						} else {
-							$data['deliveryorderdate'] = NULL;
-						}
-					}
-					if(isset($data['purchaseorderdate'])) {
-						if(Zend_Date::isDate($data['purchaseorderdate'])) {
-							$purchaseorderdate = new Zend_Date($data['purchaseorderdate'], Zend_Date::DATES, 'de');
-							$data['purchaseorderdate'] = $purchaseorderdate->get('yyyy-MM-dd');
-						} else {
-							$data['purchaseorderdate'] = NULL;
-						}
-					}
-					if(isset($data['suppliersalesorderdate'])) {
-						if(Zend_Date::isDate($data['suppliersalesorderdate'])) {
-							$suppliersalesorderdate = new Zend_Date($data['suppliersalesorderdate'], Zend_Date::DATES, 'de');
-							$data['suppliersalesorderdate'] = $suppliersalesorderdate->get('yyyy-MM-dd');
-						} else {
-							$data['suppliersalesorderdate'] = NULL;
-						}
-					}
-					if(isset($data['supplierinvoicedate'])) {
-						if(Zend_Date::isDate($data['supplierinvoicedate'])) {
-							$supplierinvoicedate = new Zend_Date($data['supplierinvoicedate'], Zend_Date::DATES, 'de');
-							$data['supplierinvoicedate'] = $supplierinvoicedate->get('yyyy-MM-dd');
-						} else {
-							$data['supplierinvoicedate'] = NULL;
-						}
-					}
-					if(isset($data['supplierpaymentdate'])) {
-						if(Zend_Date::isDate($data['supplierpaymentdate'])) {
-							$supplierpaymentdate = new Zend_Date($data['supplierpaymentdate'], Zend_Date::DATES, 'de');
-							$data['supplierpaymentdate'] = $supplierpaymentdate->get('yyyy-MM-dd');
-						} else {
-							$data['supplierpaymentdate'] = NULL;
-						}
-					}
+				$this->_helper->layout->disableLayout();
 
-					//Update file manager subfolder if contact is changed
-					if(isset($data['customerid']) && $data['customerid']) {
-						$dir1 = substr($data['customerid'], 0, 1).'/';
-						if(strlen($data['customerid']) > 1) $dir2 = substr($data['customerid'], 1, 1).'/';
-						else $dir2 = '0/';
-						$defaultNamespace = new Zend_Session_Namespace('RF');
-						$defaultNamespace->subfolder = 'contacts/'.$dir1.$dir2.$data['customerid'].'/';
-					}
-
-					$processDb->updateProcess($id, $data);
-					echo Zend_Json::encode($processDb->getProcess($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			} else {
-				if($id > 0) {
-					$data = $process;
-					if($process['customerid']) {
-						$data['customerinfo'] = $contact['info'];
-						$form->customerinfo->setAttrib('data-id', $contact['id']);
-						$form->customerinfo->setAttrib('data-controller', 'contact');
-						$form->customerinfo->setAttrib('data-module', 'contacts');
-						$form->customerinfo->setAttrib('readonly', null);
-					}
-					//Get currency
-					$currency = $this->_helper->Currency->getCurrency($data['currency']);
-					$data['total'] = $currency->toCurrency($data['total']);
-					if($data['prepaymenttotal']) $data['prepaymenttotal'] = $currency->toCurrency($data['prepaymenttotal']);
-					if($data['creditnotetotal']) $data['creditnotetotal'] = $currency->toCurrency($data['creditnotetotal']);
-					if($data['supplierinvoicetotal']) $data['supplierinvoicetotal'] = $currency->toCurrency($data['supplierinvoicetotal']);
-					if($process['editpositionsseparately']) {
-						$form->deliverystatus->setAttrib('disabled', 'disabled');
-						$form->shippingmethod->setAttrib('disabled', 'disabled');
-						$form->deliverydate->setAttrib('disabled', 'disabled');
-						$form->shipmentdate->setAttrib('disabled', 'disabled');
-						$form->shipmentnumber->setAttrib('disabled', 'disabled');
-						$form->deliveryorderid->setAttrib('disabled', 'disabled');
-						$form->deliveryorderdate->setAttrib('disabled', 'disabled');
-						$form->supplierid->setAttrib('disabled', 'disabled');
-						$form->purchaseorderid->setAttrib('disabled', 'disabled');
-						$form->suppliersalesorderid->setAttrib('disabled', 'disabled');
-						$form->supplierinvoiceid->setAttrib('disabled', 'disabled');
-						$form->supplierinvoicetotal->setAttrib('disabled', 'disabled');
-						$form->supplierorderstatus->setAttrib('disabled', 'disabled');
-						$form->suppliername->setAttrib('disabled', 'disabled');
-						$form->purchaseorderdate->setAttrib('disabled', 'disabled');
-						$form->suppliersalesorderdate->setAttrib('disabled', 'disabled');
-						$form->supplierinvoicedate->setAttrib('disabled', 'disabled');
-						$form->supplierpaymentdate->setAttrib('disabled', 'disabled');
-					}
-					if($data['salesorderid'] == 0) $data['salesorderid'] = NULL;
-					if($data['invoiceid'] == 0) $data['invoiceid'] = NULL;
-					if($data['prepaymentinvoiceid'] == 0) $data['prepaymentinvoiceid'] = NULL;
-					if($data['deliveryorderid'] == 0) $data['deliveryorderid'] = NULL;
-					if($data['creditnoteid'] == 0) $data['creditnoteid'] = NULL;
-					if($data['purchaseorderid'] == 0) $data['purchaseorderid'] = NULL;
-					if($data['supplierid'] == 0) $data['supplierid'] = NULL;
-					//Convert dates to the display format
-					$paymentdate = new Zend_Date($data['paymentdate']);
-					if($data['paymentdate']) $data['paymentdate'] = $paymentdate->get('dd.MM.yyyy');
-					$invoicedate = new Zend_Date($data['invoicedate']);
-					if($data['invoicedate']) $data['invoicedate'] = $invoicedate->get('dd.MM.yyyy');
-					$prepaymentdate = new Zend_Date($data['prepaymentdate']);
-					if($data['prepaymentdate']) $data['prepaymentdate'] = $prepaymentdate->get('dd.MM.yyyy');
-					$prepaymentinvoicedate = new Zend_Date($data['prepaymentinvoicedate']);
-					if($data['prepaymentinvoicedate']) $data['prepaymentinvoicedate'] = $prepaymentinvoicedate->get('dd.MM.yyyy');
-					$creditnotedate = new Zend_Date($data['creditnotedate']);
-					if($data['creditnotedate']) $data['creditnotedate'] = $creditnotedate->get('dd.MM.yyyy');
-					$deliverydate = new Zend_Date($data['deliverydate']);
-					if($data['deliverydate']) $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
-					$deliveryorderdate = new Zend_Date($data['deliveryorderdate']);
-					if($data['deliveryorderdate']) $data['deliveryorderdate'] = $deliveryorderdate->get('dd.MM.yyyy');
-					$purchaseorderdate = new Zend_Date($data['purchaseorderdate']);
-					if($data['purchaseorderdate']) $data['purchaseorderdate'] = $purchaseorderdate->get('dd.MM.yyyy');
-					$suppliersalesorderdate = new Zend_Date($data['suppliersalesorderdate']);
-					if($data['suppliersalesorderdate']) $data['suppliersalesorderdate'] = $suppliersalesorderdate->get('dd.MM.yyyy');
-					$supplierinvoicedate = new Zend_Date($data['supplierinvoicedate']);
-					if($data['supplierinvoicedate']) $data['supplierinvoicedate'] = $supplierinvoicedate->get('dd.MM.yyyy');
-					$supplierpaymentdate = new Zend_Date($data['supplierpaymentdate']);
-					if($data['supplierpaymentdate']) $data['supplierpaymentdate'] = $supplierpaymentdate->get('dd.MM.yyyy');
-
-					$form->populate($data);
-
-					//Toolbar
-					$toolbar = new Processes_Form_Toolbar();
-					$toolbar->state->setValue($data['state']);
-					$toolbarPositions = new Processes_Form_ToolbarPositions();
-
-					$this->view->form = $form;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-					$this->view->toolbarPositions = $toolbarPositions;
-				}
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'not_found'
+				]);
 			}
+
+			$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'process');
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+
+		// LOCK
+		$this->_helper->Access->lock($id, $this->_user['id'], $process['locked'] ?? 0, $process['lockedtime'] ?? null);
+
+		// POST: ajax save single field
+		if ($request->isPost()) {
+			// Calculate
+			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $process['taxfree']);
+			// Edit via ajax -> JSON
+			if ($isAjax) {
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->layout->disableLayout();
+
+				$post = (array)$request->getPost();
+
+				// Validate only posted subset
+				if (!$form->isValidPartial($post)) {
+					return $this->_helper->json([
+						'ok' => false,
+						'errors' => $this->toErrorMessages($form->getErrors(), $form),
+					]);
+				}
+
+				// Filter/normalize only posted subset for DB
+				$values = $form->getFilteredValuesPartial($post);
+
+				// Save
+				try {
+					$processDb->updateProcess($id, $values);
+				} catch (Exception $e) {
+					return $this->_helper->json([
+						'ok' => false,
+						'message' => 'save_failed'
+					]);
+				}
+
+				// Reload for derived values
+				$processNew = $processDb->getProcessForEdit($id);
+
+				// Return only changed fields for display
+				$changedFields = array_keys($values);
+
+				$display = DEEC_Display::fromRow($form, $processNew, $changedFields);
+
+				return $this->_helper->json([
+					'ok' => true,
+					'id' => $id,
+
+					// Raw DB values for JS logic
+					'values' => array_intersect_key($processNew, array_flip($changedFields)),
+
+					// Formatted for UI
+					'display' => $display,
+
+					// Optional meta: if later derived values set server-side
+					'meta' => [
+						'recalc' => [],
+					],
+				]);
+			}
+
+			// NON-AJAX POST
+			$post = (array)$request->getPost();
+
+			if (!$form->isValid($post)) {
+				// Keep form with submitted values and errors
+				$form->setValues($post);
+			} else {
+				$values = $form->getFilteredValues();
+
+				// special side effects
+				if (isset($values['currency'])) {
+					$positionsDb = new Processes_Model_DbTable_Processpos();
+					$positions = $positionsDb->getPositions($id);
+					foreach ($positions as $position) {
+						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
+					}
+				}
+
+				if (isset($values['taxfree'])) {
+					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
+					$values['subtotal'] = $calculations['row']['subtotal'];
+					$values['taxes'] = $calculations['row']['taxes']['total'];
+					$values['total'] = $calculations['row']['total'];
+				}
+
+				$processDb->updateProcess($id, $values);
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+				return $this->_helper->redirector->gotoSimple('edit', 'process', null, ['id' => $id]);
+			}
+		} else {
+			// GET: populate form with display values from DB
+			$locale = Zend_Registry::get('Zend_Locale'); // for now, later replaced
+			$processDisplay = DEEC_Display::rowToFormValues($form, $process, $locale);
+
+			$form->setValues($processDisplay);
+
+			$this->_helper->MultiEntityLoader->populate($form, $id, 'processs', 'process');
+		}
+
+		// build view model once and assign in one shot
+		$vmService = new Processes_Service_ProcessEditViewModel();
+		$vm = $vmService->build($id, (array)$this->_user, (array)$process);
+
+		$this->view->assign(array_merge($vm, [
+			'id' => $id,
+			'form' => $form,
+			'toolbar' => $toolbar,
+			'options' => $options,
+			'activeTab' => $request->getCookie('tab', null),
+		]));
+
+		// Messages
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function viewAction()
@@ -445,7 +324,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$processDb = new Processes_Model_DbTable_Process();
 		$process = $processDb->getProcess($id);
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($process['customerid']);
+		$contact = $contactDb->getContactWithID($process['contactid']);
 
 		//Convert dates to the display format
 		if($process['processdate']) $process['processdate'] = date('d.m.Y', strtotime($process['processdate']));
@@ -470,7 +349,7 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 		//Get email
 		$emailDb = new Contacts_Model_DbTable_Email();
-		$contact['email'] = $emailDb->getEmails($contact['id']);
+		$contact['email'] = $emailDb->getByParentId($contact['id'], 'contacts', 'contact');
 
 		//Get email form
 		$emailForm = new Contacts_Form_Emailmessage();
@@ -562,19 +441,27 @@ class Processes_ProcessController extends Zend_Controller_Action
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toogle($id);
+		$this->_helper->Pin->toggle($id);
 	}
 
 	public function lockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->lock($id, $this->_user['id']);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function unlockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->unlock($id);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function keepaliveAction()
