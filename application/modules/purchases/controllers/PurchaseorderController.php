@@ -35,18 +35,24 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 
 	public function getAction()
 	{
-		header('Content-type: application/json');
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$element = $this->_getParam('element', null);
+		$elementName = (string)$this->_getParam('element', '');
 		$form = new Purchases_Form_Toolbar();
-		if(isset($form->$element)) {
-			$options = $form->$element->getMultiOptions();
-			echo Zend_Json::encode($options);
-		} else {
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS')));
+
+		$el = $form->getElement($elementName);
+
+		if (!$el) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS'),
+			]);
 		}
+
+		$options = $el['options'] ?? [];
+
+		return $this->_helper->json($options);
 	}
 
 	public function indexAction()
@@ -54,6 +60,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Purchases_Form_Toolbar();
+		$toolbarInline = new Sales_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
@@ -63,6 +70,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->messages = array_merge(
 						$this->_flashMessenger->getMessages(),
 						$this->_flashMessenger->getCurrentMessages()
@@ -76,6 +84,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Purchases_Form_Toolbar();
+		$toolbarInline = new Sales_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
@@ -85,6 +94,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$this->view->purchaseorders = $purchaseorders;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->messages = array_merge(
 						$this->_flashMessenger->getMessages(),
 						$this->_flashMessenger->getCurrentMessages()
@@ -151,137 +161,152 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
+		$id = (int)$this->_getParam('id', 0);
 
-		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
-		$purchaseorder = $purchaseorderDb->getPurchaseorder($id);
+		$isAjax = $request->isXmlHttpRequest();
 
-		if($purchaseorder['purchaseorderid'] && !$request->isPost()) {
-			$this->_helper->redirector->gotoSimple('view', 'purchaseorder', null, array('id' => $id));
-		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $purchaseorder['locked'], $purchaseorder['lockedtime']);
+		$form = new Purchases_Form_Purchaseorder();
+		$options = $this->_helper->Options->applyFormOptions($form);
 
-			$form = new Purchases_Form_Purchaseorder();
-			$options = $this->_helper->Options->getOptions($form);
+		$toolbar = new Purchases_Form_Toolbar();
+		$purchaseorderDb  = new Purchases_Model_DbTable_Purchaseorder();
 
-			//Get contact
-			if($purchaseorder['contactid']) {
-				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contact = $contactDb->getContactWithID($purchaseorder['contactid']);
+		// Load purchaseorder
+		$purchaseorder = $purchaseorderDb->getPurchaseorderForEdit($id);
 
-				//Phone
-				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($contact['id']);
-
-				//Email
-				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmails($contact['id']);
-
-				//Internet
-				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($contact['id']);
-
-				$this->view->contact = $contact;
-			}
-
-			if($request->isPost()) {
-				header('Content-type: application/json');
+		// Not found / not usable
+		if (!$purchaseorder) {
+			if ($isAjax) {
 				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if(($element == 'textblockheader' || $element == 'textblockfooter')) {
-					$textblockDb = new Purchases_Model_DbTable_Textblock();
-					if(strpos($element, 'header') !== false) {
-						$data['text'] = $data['textblockheader'];
-						unset($data['textblockheader']);
-						$textblockDb->updateTextblock($data, 'purchaseorder', 'header');
-					} elseif(strpos($element, 'footer') !== false) {
-						$data['text'] = $data['textblockfooter'];
-						unset($data['textblockfooter']);
-						$textblockDb->updateTextblock($data, 'purchaseorder', 'footer');
-					}
-				} elseif(isset($form->$element) && $form->isValidPartial($data)) {
-					$data['contactperson'] = $this->_user['name'];
-					if(isset($data['currency'])) {
-						$positionsDb = new Sales_Model_DbTable_Purchaseorderpos();
-						$positions = $positionsDb->getPositions($id);
-						foreach($positions as $position) {
-							$positionsDb->updatePosition($position->id, array('currency' => $data['currency']));
-						}
-						//$this->_helper->Currency->convert($id, 'creditnote');
-					}
-					if(isset($data['taxfree'])) {
-						$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $data['taxfree']);
-						$data['subtotal'] = $calculations['row']['subtotal'];
-						$data['taxes'] = $calculations['row']['taxes']['total'];
-						$data['total'] = $calculations['row']['total'];
-					}
-					if(isset($data['orderdate'])) {
-						if(Zend_Date::isDate($data['orderdate'])) {
-							$orderdate = new Zend_Date($data['orderdate'], Zend_Date::DATES, 'de');
-							$data['orderdate'] = $orderdate->get('yyyy-MM-dd');
-						} else {
-							$data['orderdate'] = NULL;
-						}
-					}
-					if(isset($data['deliverydate'])) {
-						if(Zend_Date::isDate($data['deliverydate'])) {
-							$deliverydate = new Zend_Date($data['deliverydate'], Zend_Date::DATES, 'de');
-							$data['deliverydate'] = $deliverydate->get('yyyy-MM-dd');
-						} else {
-							$data['deliverydate'] = NULL;
-						}
-					}
+				$this->_helper->layout->disableLayout();
 
-					//Update file manager subfolder if contact is changed
-					if(isset($data['contactid']) && $data['contactid']) {
-						$contactUrl = $this->_helper->Directory->getUrl($data['contactid']);
-						$defaultNamespace = new Zend_Session_Namespace('RF');
-						$defaultNamespace->view_type = '1'; //detailed list
-						$defaultNamespace->subfolder = 'contacts/'.$contactUrl;
-					}
-
-					$purchaseorderDb->updatePurchaseorder($id, $data);
-					echo Zend_Json::encode($purchaseorderDb->getPurchaseorder($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			} else {
-				if($id > 0) {
-					$data = $purchaseorder;
-					if($purchaseorder['contactid']) {
-						$data['contactinfo'] = $contact['info'];
-						$form->contactinfo->setAttrib('data-id', $contact['id']);
-						$form->contactinfo->setAttrib('data-controller', 'contact');
-						$form->contactinfo->setAttrib('data-module', 'contacts');
-						$form->contactinfo->setAttrib('readonly', null);
-					}
-					//Convert dates to the display format
-					$orderdate = new Zend_Date($data['orderdate']);
-					if($data['orderdate']) $data['orderdate'] = $orderdate->get('dd.MM.yyyy');
-					$deliverydate = new Zend_Date($data['deliverydate']);
-					if($data['deliverydate']) $data['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
-
-					$form->populate($data);
-
-					//Toolbar
-					$toolbar = new Purchases_Form_Toolbar();
-					$toolbar->state->setValue($data['state']);
-
-					//Get text blocks
-					$textblocksDb = new Purchases_Model_DbTable_Textblock();
-					$textblocks = $textblocksDb->getTextblocks('purchaseorder');
-
-					$this->view->form = $form;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-					$this->view->textblocks = $textblocks;
-				}
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'not_found'
+				]);
 			}
+
+			$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'purchaseorder');
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+
+		// LOCK
+		$this->_helper->Access->lock($id, $this->_user['id'], $purchaseorder['locked'] ?? 0, $purchaseorder['lockedtime'] ?? null);
+
+		// POST: ajax save single field
+		if ($request->isPost()) {
+			// Calculate
+			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $purchaseorder['taxfree']);
+			// Edit via ajax -> JSON
+			if ($isAjax) {
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->layout->disableLayout();
+
+				$post = (array)$request->getPost();
+
+				// Validate only posted subset
+				if (!$form->isValidPartial($post)) {
+					return $this->_helper->json([
+						'ok' => false,
+						'errors' => $this->toErrorMessages($form->getErrors(), $form),
+					]);
+				}
+
+				// Filter/normalize only posted subset for DB
+				$values = $form->getFilteredValuesPartial($post);
+
+				// Save
+				try {
+					$purchaseorderDb->updatePurchaseorder($id, $values);
+				} catch (Exception $e) {
+					return $this->_helper->json([
+						'ok' => false,
+						'message' => 'save_failed'
+					]);
+				}
+
+				// Reload for derived values
+				$purchaseorderNew = $purchaseorderDb->getPurchaseorderForEdit($id);
+
+				// Return only changed fields for display
+				$changedFields = array_keys($values);
+
+				$display = DEEC_Display::fromRow($form, $purchaseorderNew, $changedFields);
+
+				return $this->_helper->json([
+					'ok' => true,
+					'id' => $id,
+
+					// Raw DB values for JS logic
+					'values' => array_intersect_key($purchaseorderNew, array_flip($changedFields)),
+
+					// Formatted for UI
+					'display' => $display,
+
+					// Optional meta: if later derived values set server-side
+					'meta' => [
+						'recalc' => [],
+					],
+				]);
+			}
+
+			// NON-AJAX POST
+			$post = (array)$request->getPost();
+
+			if (!$form->isValid($post)) {
+				// Keep form with submitted values and errors
+				$form->setValues($post);
+			} else {
+				$values = $form->getFilteredValues();
+
+				// special side effects
+				if (isset($values['currency'])) {
+					$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+					$positions = $positionsDb->getPositions($id);
+					foreach ($positions as $position) {
+						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
+					}
+				}
+
+				if (isset($values['taxfree'])) {
+					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
+					$values['subtotal'] = $calculations['row']['subtotal'];
+					$values['taxes'] = $calculations['row']['taxes']['total'];
+					$values['total'] = $calculations['row']['total'];
+				}
+
+				$purchaseorderDb->updatePurchaseorder($id, $values);
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+				return $this->_helper->redirector->gotoSimple('edit', 'purchaseorder', null, ['id' => $id]);
+			}
+		} else {
+			// GET: populate form with display values from DB
+			$locale = Zend_Registry::get('Zend_Locale'); // for now, later replaced
+			$purchaseorderDisplay = DEEC_Display::rowToFormValues($form, $purchaseorder, $locale);
+
+			$form->setValues($purchaseorderDisplay);
+
+			$this->_helper->MultiEntityLoader->populate($form, $id, 'purchaseorders', 'purchaseorder');
+		}
+
+		// build view model once and assign in one shot
+		$vmService = new Purchases_Service_PurchaseorderEditViewModel();
+		$vm = $vmService->build($id, (array)$this->_user, (array)$purchaseorder);
+
+		$this->view->assign(array_merge($vm, [
+			'id' => $id,
+			'form' => $form,
+			'toolbar' => $toolbar,
+			'options' => $options,
+			'activeTab' => $request->getCookie('tab', null),
+		]));
+
+		// Messages
+		$this->view->messages = array_merge(
+			$this->_helper->flashMessenger->getMessages(),
+			$this->_helper->flashMessenger->getCurrentMessages()
+		);
+		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
 	public function viewAction()
@@ -333,7 +358,7 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 
 		//Get email
 		$emailDb = new Contacts_Model_DbTable_Email();
-		$contact['email'] = $emailDb->getEmails($contact['id']);
+		$contact['email'] = $emailDb->getByParentId($contact['id'], 'contacts', 'contact');
 
 		//Get email form
 		$emailForm = new Contacts_Form_Emailmessage();
@@ -709,19 +734,27 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toogle($id);
+		$this->_helper->Pin->toggle($id);
 	}
 
 	public function lockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->lock($id, $this->_user['id']);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function unlockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->unlock($id);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function keepaliveAction()
