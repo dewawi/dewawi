@@ -1,0 +1,27 @@
+<?php return array(
+	'SALES' => 'Verkauf',
+	//Menu
+	'MENU_SALES' => 'Verkauf',
+	'MENU_QUOTES' => 'Angebote',
+	'MENU_SALES_ORDERS' => 'Auftragsbestätigungen',
+	'MENU_INVOICES' => 'Rechnungen',
+	'MENU_DELIVERY_ORDERS' => 'Lieferscheine',
+	'MENU_CREDIT_NOTES' => 'Gutschriften',
+	'MENU_REMINDERS' => 'Mahnungen',
+	'MENU_PURCHASES' => 'Einkauf',
+	'MENU_QUOTE_REQUESTS' => 'Anfragen',
+	'MENU_PURCHASE_ORDERS' => 'Bestellungen',
+	//Actions
+	'ACTIONS_CREATE_QUOTE' => 'Angebot erstellen',
+	'ACTIONS_GENERATE_QUOTE' => 'Angebot generieren',
+	'ACTIONS_CREATE_CREDIT_NOTE' => 'Gutschrift erstellen',
+	'ACTIONS_GENERATE_CREDIT_NOTE' => 'Gutschrift generieren',
+	'ACTIONS_CREATE_DELIVERY_ORDER' => 'Lieferschein erstellen',
+	'ACTIONS_GENERATE_DELIVERY_ORDER' => 'Lieferschein generieren',
+	'ACTIONS_CREATE_INVOICE' => 'Rechnung erstellen',
+	'ACTIONS_GENERATE_INVOICE' => 'Rechnung generieren',
+	'ACTIONS_CREATE_REMINDER' => 'Mahnung erstellen',
+	'ACTIONS_GENERATE_REMINDER' => 'Mahnung generieren',
+	'ACTIONS_CREATE_SALES_ORDER' => 'Auftragsbestätigung erstellen',
+	'ACTIONS_GENERATE_SALES_ORDER' => 'Auftragsbestätigung generieren',
+);

@@ -1,7 +1,4 @@
 <?php return array(
-	//Actions
-	'ACTIONS_CREATE_PURCHASE_ORDER' => 'Bestellung erstellen',
-	'ACTIONS_GENERATE_PURCHASE_ORDER' => 'Bestellung generieren',
 	//Purchase order
 	'PURCHASEORDER' => 'Bestellung',
 	'PURCHASE_ORDER' => 'Bestellung',

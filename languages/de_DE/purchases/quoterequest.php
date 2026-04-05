@@ -1,7 +1,4 @@
 <?php return array(
-	//Actions
-	'ACTIONS_CREATE_QUOTE_REQUEST' => 'Anfrage erstellen',
-	'ACTIONS_GENERATE_QUOTE_REQUEST' => 'Anfrage generieren',
 	//Quote request
 	'QUOTEREQUEST' => 'Anfrage',
 	'QUOTE_REQUEST' => 'Anfrage',

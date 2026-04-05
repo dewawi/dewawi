@@ -1,7 +1,4 @@
 <?php return array(
-	//Actions
-	'ACTIONS_CREATE_QUOTE' => 'Angebot erstellen',
-	'ACTIONS_GENERATE_QUOTE' => 'Angebot generieren',
 	//Quote
 	'QUOTE' => 'Angebot',
 	'QUOTES' => 'Angebote',
@@ -13,8 +10,14 @@
 	'QUOTES_REFERENCE' => 'Referenz',
 	'QUOTES_CONTACT' => 'Kunde',
 	'QUOTES_CONTACT_ID' => 'Kundennr.',
+	'QUOTES_CONTACT_NAME' => 'Name',
+	'QUOTES_CONTACT_DEPARTMENT' => 'Abteilung',
+	'QUOTES_CONTACT_STREET' => 'Straße',
+	'QUOTES_CONTACT_POSTCODE' => 'PLZ',
+	'QUOTES_CONTACT_CITY' => 'Ort',
+	'QUOTES_CONTACT_COUNTRY' => 'Land',
 	'QUOTES_VATIN' => 'USt-IdNr.',
-	'QUOTES_QUOTE_DATE' => 'Angebotsdat.',
+	'QUOTES_QUOTE_DATE' => 'Belegdatum',
 	'QUOTES_ORDER_DATE' => 'Bestelldatum',
 	'QUOTES_DELIVERY_DATE' => 'Lieferdatum',
 	'QUOTES_HEADER' => 'Kopftext',
@@ -45,8 +48,15 @@
 	'QUOTES_NONE' => 'keine',
 	'QUOTES_SUBTOTAL' => 'Nettobetrag',
 	'QUOTES_TAXES' => 'Umsatzsteuer',
+	'QUOTES_TAX_FREE' => 'Umsatzsteuer frei',
 	'QUOTES_CURRENCY' => 'Währung',
 	'QUOTES_TOTAL' => 'Gesamtbetrag',
+	'QUOTES_PREPAYMENT' => 'Erhaltene Anzahlung',
 	'QUOTES_TEMPLATE' => 'Vorlage',
-	'QUOTES_LANGUAGE' => 'Sprache'
+	'QUOTES_LANGUAGE' => 'Sprache',
+	'QUOTES_PDF_SHOW_PRICES' => 'Preise anzeigen',
+	'QUOTES_PDF_SHOW_DISCOUNTS' => 'Rabatte anzeigen',
+	'QUOTES_PDF_SHOW_OPTIONS' => 'Optionen anzeigen',
+	'QUOTES_PDF_SHOW_ATTRIBUTES' => 'Attribute anzeigen',
+	'QUOTES_PDF_SHOW_COVER' => 'Deckblatt anzeigen',
 );
