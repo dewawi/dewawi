@@ -87,25 +87,25 @@ class Sales_Service_CreateDataFactory
 		return $map[$controller] ?? strtoupper($controller) . ' NEW';
 	}
 
-    protected function getTranslator(): ?DEEC_Translate
-    {
-	    if (Zend_Registry::isRegistered('DEEC_Translate')) {
-		    $translator = Zend_Registry::get('DEEC_Translate');
-		    if ($translator instanceof DEEC_Translate) {
-			    return $translator;
-		    }
-	    }
+	protected function getTranslator(): ?DEEC_Translate
+	{
+		if (Zend_Registry::isRegistered('DEEC_Translate')) {
+			$translator = Zend_Registry::get('DEEC_Translate');
+			if ($translator instanceof DEEC_Translate) {
+				return $translator;
+			}
+		}
 
-	    return null;
-    }
+		return null;
+	}
 
-    protected function translate(string $key): string
-    {
-	    $translator = $this->getTranslator();
-	    if ($translator) {
-		    return $translator->t($key);
-	    }
+	protected function translate(string $key): string
+	{
+		$translator = $this->getTranslator();
+		if ($translator) {
+			return $translator->t($key);
+		}
 
-	    return $key;
-    }
+		return $key;
+	}
 }

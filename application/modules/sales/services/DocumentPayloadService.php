@@ -19,7 +19,17 @@ class Sales_Service_DocumentPayloadService
 			$template = null;
 		}
 
-		list($positions, $document, $optionsList, $optionSets) = $this->getPositions($document, $locale);
+		$calculations = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')
+				->direct($document['id'], date('Y-m-d H:i:s'), Zend_Registry::get('User')['id'], $document['taxfree']);
+
+		$payment = $this->buildPaymentData($document, $calculations);
+
+		$document['prepayment'] = $payment['prepayment_formatted'];
+		$document['prepayment_raw'] = $payment['prepayment_raw'];
+		$document['balance'] = $payment['balance_formatted'];
+		$document['balance_raw'] = $payment['balance_raw'];
+
+		list($positions, $document, $optionsList, $optionSets) = $this->getPositions($document, $locale, $controller);
 
 		$itemData = $this->getItemData($positions);
 
@@ -41,15 +51,15 @@ class Sales_Service_DocumentPayloadService
 			'optionSets' => $optionSets,
 			'positions' => $positions,
 			'footers' => $footers,
-			'calculations' => Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')
-				->direct($document['id'], date('Y-m-d H:i:s'), Zend_Registry::get('User')['id'], $document['taxfree']),
+			'calculations' => $calculations,
+			'pdfSettings' => $this->buildPdfSettings($document, $controller),
 		];
 	}
 
-	protected function getPositions(array $document, $locale): array
+	protected function getPositions(array $document, $locale, $controller): array
 	{
 		$positionsHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Positions');
-		return $positionsHelper->getPositions($document['id'], $document, $locale);
+		return $positionsHelper->getPositions($document['id'], $document, $locale, $controller);
 	}
 
 	protected function getItemData($positions): array
@@ -106,14 +116,62 @@ class Sales_Service_DocumentPayloadService
 		];
 	}
 
-	protected function getDocumentIdField(string $controller): string
+	protected function buildPaymentData(array $document, array $calculations): array
 	{
-		return $controller . 'id';
+		$locale = Zend_Registry::get('Zend_Locale');
+
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$currencyObj = $currencyHelper->getCurrency($document['currency'], 'USE_SYMBOL');
+
+		$prepayment = (float)($document['prepayment'] ?? 0);
+		$total = (float)($calculations['row']['total'] ?? $document['total'] ?? 0);
+		$balance = max(0, $total - $prepayment);
+
+		return [
+			'prepayment_raw' => $prepayment,
+			'balance_raw' => $balance,
+			'prepayment_formatted' => $currencyObj->toCurrency($prepayment),
+			'balance_formatted' => $currencyObj->toCurrency($balance),
+		];
 	}
 
-	protected function getDocumentDb(string $controller)
+	protected function buildPdfSettings(array $document, string $controller): array
 	{
-		$class = 'Sales_Model_DbTable_' . ucfirst($controller);
-		return new $class();
+		$defaults = [
+			'showPrices' => 1,
+			'showDiscounts' => 0,
+			'showOptions' => 1,
+			'showIncludedOptions' => 1,
+			'showAttributes' => 1,
+			'showTotals' => 1,
+			'showFooter' => 1,
+			'showHeader' => 1,
+			'showToc' => 1,
+			'showCoverImage' => 1,
+			'showShopdescription' => 1,
+		];
+
+		if ($controller === 'invoice') {
+			$defaults['showOptions'] = 0;
+			$defaults['showIncludedOptions'] = 0;
+			$defaults['showAttributes'] = 0;
+			$defaults['showToc'] = 0;
+			$defaults['showCoverImage'] = 0;
+			$defaults['showShopdescription'] = 0;
+		}
+
+		return [
+			'showPrices' => isset($document['pdf_show_prices']) ? (int)$document['pdf_show_prices'] : $defaults['showPrices'],
+			'showDiscounts' => isset($document['pdf_show_discounts']) ? (int)$document['pdf_show_discounts'] : $defaults['showDiscounts'],
+			'showOptions' => isset($document['pdf_show_options']) ? (int)$document['pdf_show_options'] : $defaults['showOptions'],
+			'showIncludedOptions' => isset($document['pdf_show_included_options']) ? (int)$document['pdf_show_included_options'] : $defaults['showIncludedOptions'],
+			'showAttributes' => isset($document['pdf_show_attributes']) ? (int)$document['pdf_show_attributes'] : $defaults['showAttributes'],
+			'showTotals' => isset($document['pdf_show_totals']) ? (int)$document['pdf_show_totals'] : $defaults['showTotals'],
+			'showFooter' => isset($document['pdf_show_footer']) ? (int)$document['pdf_show_footer'] : $defaults['showFooter'],
+			'showHeader' => isset($document['pdf_show_header']) ? (int)$document['pdf_show_header'] : $defaults['showHeader'],
+			'showToc' => isset($document['pdf_show_toc']) ? (int)$document['pdf_show_toc'] : $defaults['showToc'],
+			'showCoverImage' => isset($document['pdf_show_cover_image']) ? (int)$document['pdf_show_cover_image'] : $defaults['showCoverImage'],
+			'showShopdescription' => isset($document['pdf_show_shopdescription']) ? (int)$document['pdf_show_shopdescription'] : $defaults['showShopdescription'],
+		];
 	}
 }
