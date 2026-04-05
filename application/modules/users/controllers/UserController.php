@@ -50,21 +50,34 @@ class Users_UserController extends Zend_Controller_Action
 			if($request->isPost()) {
 				$this->_helper->viewRenderer->setNoRender();
 				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$userDb->updateUser($id, $data);
-					echo Zend_Json::encode(array('saved' => true));
-				} else {
-					throw new Exception('Form is invalid');
+
+				$data = (array)$request->getPost();
+				$element = (string)key($data);
+
+				if (isset($data['password']) && $data['password'] === 'xxxxxxxxxx') {
+					unset($data['password']);
 				}
+
+				if (isset($data['smtppass']) && $data['smtppass'] === 'xxxxxxxxxx') {
+					unset($data['smtppass']);
+				}
+
+				if ($form->getElement($element) && $form->isValidPartial($data)) {
+					$userDb->updateUser($id, $data);
+					echo Zend_Json::encode(['saved' => true]);
+				} else {
+					echo Zend_Json::encode([
+						'saved' => false,
+						'message' => 'Form is invalid',
+						'errors' => $form->getErrors(),
+					]);
+				}
+				return;
 			} else {
 				if($id > 0) {
-					$form->populate($user);
-					$form->password->setValue('xxxxxxxxxx');
-					$form->password->renderPassword = true;
-					$form->smtppass->setValue('xxxxxxxxxx');
-					$form->smtppass->renderPassword = true;
+					$form->setValues($user);
+					$form->setValue('password', 'xxxxxxxxxx');
+					$form->setValue('smtppass', 'xxxxxxxxxx');
 
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
@@ -145,8 +158,6 @@ class Users_UserController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$form = new Users_Form_Login();
-		$form->submit->setLabel('USERS_LOGIN');
-		$form->id->removeDecorator('Label');
 		$this->view->form = $form;
 
 		if($this->getRequest()->isPost()) {
@@ -154,17 +165,43 @@ class Users_UserController extends Zend_Controller_Action
 			if($form->isValid($formData)) {
 				$username = $formData['username'];
 				$password = $formData['password'];
-				$stayLoggedIn = $formData['stayLoggedIn'];
+				$stayLoggedIn = !empty($formData['stayLoggedIn']) ? 1 : 0;
 
-				$authNamespace = new Zend_Session_Namespace('Zend_Auth');
-				if($stayLoggedIn) $authNamespace->setExpirationSeconds(864000);
-				else $authNamespace->setExpirationSeconds(3600);
+				//$authNamespace = new Zend_Session_Namespace('Zend_Auth');
+				//if($stayLoggedIn) $authNamespace->setExpirationSeconds(864000);
+				//else $authNamespace->setExpirationSeconds(3600);
+
+				// Persist cookie for 90 days if requested, otherwise session cookie
+				if (!empty($stayLoggedIn)) {
+					$seconds = 60*60*24*90; // 90 days
+
+					// 1) Persistent cookie (survives browser restarts)
+					Zend_Session::rememberMe($seconds);
+
+					// 2) Keep server-side session data around long enough
+					Zend_Session::setOptions(['gc_maxlifetime' => $seconds]);
+
+					// 3) Optional: add a hard time limit for the Zend_Auth namespace
+					$authNs = new Zend_Session_Namespace('Zend_Auth');
+					$authNs->setExpirationSeconds($seconds); // per-namespace timeout
+				} else {
+					// Session cookie only (dies when browser closes)
+					Zend_Session::forgetMe();
+					Zend_Session::setOptions([
+						'cookie_lifetime' => 0,
+						'gc_maxlifetime'  => 60*60, // e.g. 1 hour
+					]);
+				}
 
 				$userDb = new Users_Model_DbTable_User();
-				if(filter_var($username, FILTER_VALIDATE_EMAIL)) {
-					$user = $userDb->getUserByEmail($username);
-				} else {
-					$user = $userDb->getUserByUsername($username);
+				try {
+					if (filter_var($username, FILTER_VALIDATE_EMAIL)) {
+						$user = $userDb->getUserByEmail($username);
+					} else {
+						$user = $userDb->getUserByUsername($username);
+					}
+				} catch (Exception $e) {
+					$user = null;
 				}
 
 				if($user) {
@@ -214,7 +251,7 @@ class Users_UserController extends Zend_Controller_Action
 										$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0]);
 									}
 								}
-								$this->_helper->redirector->gotoSimple("index", "index");
+								$this->_helper->redirector->gotoSimple('index', 'index', 'index');
 							}
 						} else {
 							$auth->clearIdentity();
@@ -224,12 +261,12 @@ class Users_UserController extends Zend_Controller_Action
 				} else {
 					$auth->clearIdentity();
 					$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
-					$form->populate($formData);
+					$form->setValues($formData);
 				}
 			} else {
 				$auth->clearIdentity();
 				$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
-				$form->populate($formData);
+				$form->setValues($formData);
 			}
 
 		}

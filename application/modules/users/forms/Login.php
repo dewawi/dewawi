@@ -1,38 +1,54 @@
 <?php
 
-class Users_Form_Login extends Zend_Form
+class Users_Form_Login extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('user');
+		$this->setMethod('post');
 
-		$form = array();
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int');
+		$this->addElement([
+			'name' => 'username',
+			'type' => 'text',
+			'label' => 'USERS_USERNAME',
+			'required' => true,
+			'attribs' => [
+				'size' => 50,
+				'autocomplete' => 'username',
+			],
+		]);
 
-		$form['username'] = new Zend_Form_Element_Text('username');
-		$form['username']->setLabel('USERS_USERNAME')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '50');
+		$this->addElement([
+			'name' => 'password',
+			'type' => 'password',
+			'label' => 'USERS_PASSWORD',
+			'required' => true,
+			'attribs' => [
+				'size' => 50,
+				'autocomplete' => 'current-password',
+			],
+		]);
 
-		$form['password'] = new Zend_Form_Element_Password('password');
-		$form['password']->setLabel('USERS_PASSWORD')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '50');
+		$this->addElement([
+			'name' => 'stayLoggedIn',
+			'type' => 'checkbox',
+			'label' => 'USERS_STAY_LOGGED_IN',
+			'default' => 0,
+		]);
 
-		$form['stayLoggedIn'] = new Zend_Form_Element_Checkbox('stayLoggedIn');
-		$form['stayLoggedIn']->setLabel('USERS_STAY_LOGGED_IN');
-
-		$form['submit'] = new Zend_Form_Element_Submit('submit');
-		$form['submit']->setAttrib('id', 'submitbutton');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'submit',
+			'type' => 'submit',
+			'label' => 'USERS_LOGIN',
+			'attribs' => [
+				'id' => 'submitbutton',
+			],
+		]);
 	}
 }

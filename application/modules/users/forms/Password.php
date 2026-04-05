@@ -1,40 +1,58 @@
 <?php
 
-class Users_Form_Password extends Zend_Form
+class Users_Form_Password extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('password');
+		$this->setMethod('post');
 
-		$form = array();
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int');
+		$this->addElement([
+			'name' => 'passwordactual',
+			'type' => 'password',
+			'label' => 'USERS_PASSWORD_ACTUAL',
+			'required' => true,
+			'attribs' => [
+				'size' => 50,
+				'autocomplete' => 'current-password',
+			],
+		]);
 
-		$form['passwordactual'] = new Zend_Form_Element_Password('passwordactual');
-		$form['passwordactual']->setLabel('USERS_PASSWORD_ACTUAL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '50');
+		$this->addElement([
+			'name' => 'passwordnew',
+			'type' => 'password',
+			'label' => 'USERS_PASSWORD_NEW',
+			'required' => true,
+			'attribs' => [
+				'size' => 50,
+				'autocomplete' => 'new-password',
+			],
+		]);
 
-		$form['passwordnew'] = new Zend_Form_Element_Password('passwordnew');
-		$form['passwordnew']->setLabel('USERS_PASSWORD_NEW')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '50');
+		$this->addElement([
+			'name' => 'passwordconfirm',
+			'type' => 'password',
+			'label' => 'USERS_PASSWORD_CONFIRM',
+			'required' => true,
+			'attribs' => [
+				'size' => 50,
+				'autocomplete' => 'new-password',
+			],
+		]);
 
-		$form['passwordconfirm'] = new Zend_Form_Element_Password('passwordconfirm');
-		$form['passwordconfirm']->setLabel('USERS_PASSWORD_CONFIRM')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '50');
-
-		$form['submit'] = new Zend_Form_Element_Submit('submit');
-		$form['submit']->setAttrib('id', 'submitbutton');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'submit',
+			'type' => 'submit',
+			'label' => 'SAVE',
+			'attribs' => [
+				'id' => 'submitbutton',
+			],
+		]);
 	}
 }

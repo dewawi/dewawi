@@ -43,29 +43,19 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 		return $users;
 	}
 
-	public function getUserByEmail($email)
-	{
-		$row = $this->fetchRow(
-			$this->select()
-				->where('email = ?', $email)
-		);
-		if (!$row) {
-			throw new Exception("Could not find row $email");
-		}
-		return $row;
-	}
+    public function getUserByEmail($email)
+    {
+	    return $this->fetchRow(
+		    $this->select()->where('email = ?', $email)
+	    );
+    }
 
-	public function getUserByUsername($username)
-	{
-		$row = $this->fetchRow(
-			$this->select()
-				->where('username = ?', $username)
-		);
-		if (!$row) {
-			throw new Exception("Could not find row $username");
-		}
-		return $row;
-	}
+    public function getUserByUsername($username)
+    {
+	    return $this->fetchRow(
+		    $this->select()->where('username = ?', $username)
+	    );
+    }
 
 	public function updateUser($id, $data, $modifiedby = null)
 	{
