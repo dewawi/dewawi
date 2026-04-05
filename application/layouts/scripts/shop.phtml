@@ -28,7 +28,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 				</button>
 				<div class="collapse navbar-collapse" id="navbarNav">
 					<ul class="navbar-nav ml-auto">
-						<?php 
+						<?php
 							$mainCategories = array_filter($this->categories, function($category) {
 								return $category['parentid'] == 0;
 							});

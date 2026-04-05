@@ -2,68 +2,75 @@
 $this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
 $this->headTitle()->setSeparator(' - ');
 $this->headTitle('DEWAWI');
+
 echo $this->doctype();
+
 $this->language = str_replace('_', '-', $this->language);
 ?>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
-	<head>
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico"/>
-		<?php echo $this->headMeta(); ?>
-		<?php echo $this->headTitle(); ?>
-		<?php echo $this->headLink(); ?>
-		<link href="<?php echo $this->baseUrl(); ?>/css/ui.css" media="screen" rel="stylesheet" type="text/css" />
-		<link href="<?php echo $this->baseUrl(); ?>/library/miniCSS/mini-default.min.css" media="screen" rel="stylesheet" type="text/css"/>
-		<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.css" media="screen" rel="stylesheet" type="text/css"/>
-		<script type="text/javascript">
-			var action = "<?php echo $this->action; ?>";
-			<?php if(isset($this->id)) : ?>var id = <?php echo $this->id; ?>;<?php endif; ?>
-			var controller = "<?php echo $this->controller; ?>";
-			var module = "<?php echo $this->module; ?>";
-			var baseUrl = "<?php echo $this->baseUrl(); ?>";
-			var language = "<?php echo $this->language; ?>";
-			var deleteConfirm = "<?php echo $this->translate('MESSAGES_DELETE_CONFIRM'); ?>";
-			//Cookie path
-			var cookiePath = baseUrl;
-			if(module != 'default') cookiePath += "/"+module;
-			if(controller != 'index') cookiePath += "/"+controller;
-		</script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.12.4.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/i18n/datepicker.<?php echo $this->language; ?>.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
-		<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/settings.js"></script>
-		<?php echo $this->headScript(); ?>
-	</head>
-	<body>
-		<div class="<?php echo $this->action; ?> popup">
-			<div class="container">
-				<div class="row">
-					<div class="col-sm-12">
-						<h2><?php echo $this->escape($this->title); ?></h2>
-						<div class="toolbar">
-							<?php echo $this->Toolbar(); ?>
-						</div>
-					</div>
-				</div>
-				<div class="row">
-					<div class="col-sm-12">
-						<div id="content">
-							<?php echo $this->layout()->content; ?>
-						</div>
-					</div>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php echo $this->escape($this->language); ?>" lang="<?php echo $this->escape($this->language); ?>">
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico" />
+
+	<?php echo $this->headMeta(); ?>
+	<?php echo $this->headTitle(); ?>
+	<?php echo $this->headLink(); ?>
+
+	<link href="<?php echo $this->baseUrl(); ?>/css/ui.css" media="screen" rel="stylesheet" type="text/css" />
+	<link href="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.css" media="screen" rel="stylesheet" type="text/css" />
+
+	<script type="text/javascript">
+		var action = "<?php echo $this->escape($this->action); ?>";
+		<?php if (isset($this->id)) : ?>
+		var id = <?php echo (int)$this->id; ?>;
+		<?php endif; ?>
+		var controller = "<?php echo $this->escape($this->controller); ?>";
+		var module = "<?php echo $this->escape($this->module); ?>";
+		var baseUrl = "<?php echo $this->baseUrl(); ?>";
+		var language = "<?php echo $this->escape($this->language); ?>";
+		var deleteConfirm = "<?php echo $this->escape($this->translate('MESSAGES_DELETE_CONFIRM')); ?>";
+
+		var cookiePath = baseUrl;
+		if (module != 'default') cookiePath += "/" + module;
+		if (controller != 'index') cookiePath += "/" + controller;
+	</script>
+
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/datepicker.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/datepicker/i18n/datepicker.<?php echo $this->escape($this->language); ?>.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.textchange.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.cookie.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/jQuery/jquery.autosize.min.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/library/Datejs/date.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
+	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/settings.js"></script>
+
+	<?php echo $this->headScript(); ?>
+</head>
+<body class="dw-popup-page">
+	<div class="dw-popup-shell dw-popup-shell--<?php echo $this->escape($this->module); ?> dw-popup-shell--<?php echo $this->escape($this->controller); ?> dw-popup-shell--<?php echo $this->escape($this->action); ?>">
+		<header class="dw-popup-header">
+			<div class="dw-popup-header__title">
+				<h1><?php echo $this->escape($this->title); ?></h1>
+			</div>
+
+			<div class="dw-popup-header__toolbar">
+				<div class="dw-toolbar">
+					<?php echo $this->Toolbar(); ?>
 				</div>
 			</div>
-		</div>
-		<div id="loading">
-			<div id="opacity"></div>
-			<div id="img"></div>
-		</div>
-	</body>
+		</header>
+
+		<main class="dw-popup-content" id="content">
+			<?php echo $this->layout()->content; ?>
+		</main>
+	</div>
+
+	<div id="loading">
+		<div id="opacity"></div>
+		<div id="img"></div>
+	</div>
+</body>
 </html>

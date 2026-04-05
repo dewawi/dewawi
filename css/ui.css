@@ -52,6 +52,13 @@ h4 {
 a {
   color: #069;
 }
+iframe {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--dw-color-border);
+  border-radius: var(--dw-radius-md);
+  background: #fff;
+}
 
 #content {
   padding: 0;
