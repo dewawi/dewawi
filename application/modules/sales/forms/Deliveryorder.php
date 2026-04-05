@@ -104,15 +104,6 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'taxfree',
-			'type' => 'checkbox',
-			'label' => 'CONTACTS_TAX_FREE',
-			'format' => ['type' => 'int'],
-			'tab' => 'overview',
-			'col' => 3,
-		]);
-
-		$this->addElement([
 			'name' => 'paymentmethod',
 			'type' => 'select',
 			'label' => 'DELIVERY_ORDERS_PAYMENT_METHOD',
@@ -199,7 +190,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'contactid',
 			'type' => 'text',
-			'label' => 'CONTACTS_CONTACT_ID',
+			'label' => 'DELIVERY_ORDERS_CONTACT_ID',
 			'format' => ['type' => 'int'],
 			'attribs' => [
 				'readonly' => 'readonly',
@@ -211,7 +202,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname1',
 			'type' => 'text',
-			'label' => 'CONTACTS_NAME',
+			'label' => 'DELIVERY_ORDERS_CONTACT_NAME',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -220,7 +211,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname2',
 			'type' => 'text',
-			'label' => '',
+			'label' => 'DELIVERY_ORDERS_CONTACT_NAME',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -229,7 +220,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingdepartment',
 			'type' => 'text',
-			'label' => 'CONTACTS_DEPARTMENT',
+			'label' => 'DELIVERY_ORDERS_CONTACT_DEPARTMENT',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -238,7 +229,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingstreet',
 			'type' => 'textarea',
-			'label' => 'CONTACTS_STREET',
+			'label' => 'DELIVERY_ORDERS_CONTACT_STREET',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 30,
@@ -251,7 +242,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingpostcode',
 			'type' => 'text',
-			'label' => 'CONTACTS_POSTCODE',
+			'label' => 'DELIVERY_ORDERS_CONTACT_POSTCODE',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
@@ -260,7 +251,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingcity',
 			'type' => 'text',
-			'label' => 'CONTACTS_CITY',
+			'label' => 'DELIVERY_ORDERS_CONTACT_CITY',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 5,
@@ -269,10 +260,29 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingcountry',
 			'type' => 'text',
-			'label' => 'CONTACTS_COUNTRY',
+			'label' => 'DELIVERY_ORDERS_CONTACT_COUNTRY',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 4,
+		]);
+
+		$this->addElement([
+			'name' => 'vatin',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_VATIN',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'customer',
+			'col' => 4,
+		]);
+
+		$this->addElement([
+			'name' => 'taxfree',
+			'type' => 'checkbox',
+			'label' => 'DELIVERY_ORDERS_TAX_FREE',
+			'format' => ['type' => 'int'],
+			'tab' => 'customer',
+			'col' => 3,
 		]);
 
 		$this->addElement([
@@ -287,7 +297,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingname2',
 			'type' => 'text',
-			'label' => '',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_NAME',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,
@@ -355,17 +365,64 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 			'name' => 'templateid',
 			'type' => 'select',
 			'label' => 'DELIVERY_ORDERS_TEMPLATE',
+			'source' => 'template',
 			'options' => [],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_prices',
+			'type' => 'checkbox',
+			'label' => 'DELIVERY_ORDERS_PDF_SHOW_PRICES',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_discounts',
+			'type' => 'checkbox',
+			'label' => 'DELIVERY_ORDERS_PDF_SHOW_DISCOUNTS',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_options',
+			'type' => 'checkbox',
+			'label' => 'DELIVERY_ORDERS_PDF_SHOW_OPTIONS',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_attributes',
+			'type' => 'checkbox',
+			'label' => 'DELIVERY_ORDERS_PDF_SHOW_ATTRIBUTES',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_cover',
+			'type' => 'checkbox',
+			'label' => 'DELIVERY_ORDERS_PDF_SHOW_COVER',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
 		]);
 
 		$this->addElement([
 			'name' => 'language',
 			'type' => 'select',
 			'label' => 'DELIVERY_ORDERS_LANGUAGE',
+			'source' => 'language',
 			'options' => [],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 6,
 		]);
 
@@ -375,7 +432,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 			'label' => 'DELIVERY_ORDERS_STATE',
 			'source' => 'state',
 			'format' => ['type' => 'string'],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 3,
 		]);
 	}

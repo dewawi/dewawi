@@ -38,9 +38,9 @@ class Sales_Form_Creditnote extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'invoiceid',
+			'name' => 'CREDIT_NOTEid',
 			'type' => 'text',
-			'label' => 'CREDIT_NOTES_INVOICE_ID',
+			'label' => 'CREDIT_NOTES_CREDIT_NOTE_ID',
 			'format' => ['type' => 'int'],
 			'attribs' => [
 				'readonly' => 'readonly',
@@ -53,7 +53,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_TITLE',
+			'label' => 'CREDIT_NOTES_TITLE',
 			'format' => ['type' => 'string'],
 			'attribs' => ['maxlength' => 255],
 			'tab' => 'overview',
@@ -63,7 +63,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'subject',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SUBJECT',
+			'label' => 'CREDIT_NOTES_SUBJECT',
 			'format' => ['type' => 'string'],
 			'attribs' => ['maxlength' => 255],
 			'tab' => 'overview',
@@ -73,7 +73,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'reference',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_REFERENCE',
+			'label' => 'CREDIT_NOTES_REFERENCE',
 			'format' => ['type' => 'string'],
 			'attribs' => ['maxlength' => 255],
 			'tab' => 'overview',
@@ -83,7 +83,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'quotedate',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_QUOTE_DATE',
+			'label' => 'CREDIT_NOTES_QUOTE_DATE',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'class' => 'datePicker',
@@ -96,7 +96,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'deliverydate',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_DELIVERY_DATE',
+			'label' => 'CREDIT_NOTES_DELIVERY_DATE',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'class' => 'datePicker',
@@ -109,7 +109,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'currency',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_CURRENCY',
+			'label' => 'CREDIT_NOTES_CURRENCY',
 			'required' => true,
 			'options' => [],
 			'tab' => 'overview',
@@ -117,19 +117,10 @@ class Sales_Form_Creditnote extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'taxfree',
-			'type' => 'checkbox',
-			'label' => 'CONTACTS_TAX_FREE',
-			'format' => ['type' => 'int'],
-			'tab' => 'overview',
-			'col' => 3,
-		]);
-
-		$this->addElement([
 			'name' => 'paymentmethod',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_PAYMENT_METHOD',
-			'options' => ['' => 'DELIVERY_ORDERS_NONE'],
+			'label' => 'CREDIT_NOTES_PAYMENT_METHOD',
+			'options' => ['' => 'CREDIT_NOTES_NONE'],
 			'tab' => 'overview',
 			'col' => 6,
 		]);
@@ -137,8 +128,8 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingmethod',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_METHOD',
-			'options' => ['' => 'DELIVERY_ORDERS_NONE'],
+			'label' => 'CREDIT_NOTES_SHIPPING_METHOD',
+			'options' => ['' => 'CREDIT_NOTES_NONE'],
 			'tab' => 'overview',
 			'col' => 6,
 		]);
@@ -146,7 +137,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'info',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_INFO',
+			'label' => 'CREDIT_NOTES_INFO',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 50,
@@ -159,7 +150,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'notes',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_NOTES',
+			'label' => 'CREDIT_NOTES_NOTES',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 45,
@@ -172,7 +163,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'header',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_HEADER',
+			'label' => 'CREDIT_NOTES_HEADER',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 75,
@@ -186,7 +177,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'footer',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_FOOTER',
+			'label' => 'CREDIT_NOTES_FOOTER',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 75,
@@ -212,7 +203,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'contactid',
 			'type' => 'text',
-			'label' => 'CONTACTS_CONTACT_ID',
+			'label' => 'CREDIT_NOTES_CONTACT_ID',
 			'format' => ['type' => 'int'],
 			'attribs' => [
 				'readonly' => 'readonly',
@@ -224,7 +215,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname1',
 			'type' => 'text',
-			'label' => 'CONTACTS_NAME',
+			'label' => 'CREDIT_NOTES_CONTACT_NAME',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -233,7 +224,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname2',
 			'type' => 'text',
-			'label' => '',
+			'label' => 'CREDIT_NOTES_CONTACT_NAME',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -242,7 +233,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingdepartment',
 			'type' => 'text',
-			'label' => 'CONTACTS_DEPARTMENT',
+			'label' => 'CREDIT_NOTES_CONTACT_DEPARTMENT',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -251,7 +242,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingstreet',
 			'type' => 'textarea',
-			'label' => 'CONTACTS_STREET',
+			'label' => 'CREDIT_NOTES_CONTACT_STREET',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 30,
@@ -264,7 +255,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingpostcode',
 			'type' => 'text',
-			'label' => 'CONTACTS_POSTCODE',
+			'label' => 'CREDIT_NOTES_CONTACTS_POSTCODE',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
@@ -273,7 +264,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingcity',
 			'type' => 'text',
-			'label' => 'CONTACTS_CITY',
+			'label' => 'CREDIT_NOTES_CONTACTS_CITY',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 5,
@@ -282,16 +273,35 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingcountry',
 			'type' => 'text',
-			'label' => 'CONTACTS_COUNTRY',
+			'label' => 'CREDIT_NOTES_CONTACT_COUNTRY',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 4,
 		]);
 
 		$this->addElement([
+			'name' => 'vatin',
+			'type' => 'text',
+			'label' => 'CREDIT_NOTES_VATIN',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'customer',
+			'col' => 4,
+		]);
+
+		$this->addElement([
+			'name' => 'taxfree',
+			'type' => 'checkbox',
+			'label' => 'CREDIT_NOTES_TAX_FREE',
+			'format' => ['type' => 'int'],
+			'tab' => 'customer',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'shippingname1',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_NAME',
+			'label' => 'CREDIT_NOTES_SHIPPING_NAME',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,
@@ -300,7 +310,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingname2',
 			'type' => 'text',
-			'label' => '',
+			'label' => 'CREDIT_NOTES_SHIPPING_NAME',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,
@@ -309,7 +319,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingdepartment',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_DEPARTMENT',
+			'label' => 'CREDIT_NOTES_SHIPPING_DEPARTMENT',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,
@@ -318,7 +328,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingstreet',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_STREET',
+			'label' => 'CREDIT_NOTES_SHIPPING_STREET',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 30,
@@ -331,7 +341,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingpostcode',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_POSTCODE',
+			'label' => 'CREDIT_NOTES_SHIPPING_POSTCODE',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 3,
@@ -340,7 +350,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingcity',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_CITY',
+			'label' => 'CREDIT_NOTES_SHIPPING_CITY',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 5,
@@ -349,7 +359,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingcountry',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_COUNTRY',
+			'label' => 'CREDIT_NOTES_SHIPPING_COUNTRY',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 4,
@@ -358,7 +368,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingphone',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_PHONE',
+			'label' => 'CREDIT_NOTES_SHIPPING_PHONE',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 4,
@@ -367,28 +377,75 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'templateid',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_TEMPLATE',
+			'label' => 'CREDIT_NOTES_TEMPLATE',
+			'source' => 'template',
 			'options' => [],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_prices',
+			'type' => 'checkbox',
+			'label' => 'CREDIT_NOTES_PDF_SHOW_PRICES',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_discounts',
+			'type' => 'checkbox',
+			'label' => 'CREDIT_NOTES_PDF_SHOW_DISCOUNTS',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_options',
+			'type' => 'checkbox',
+			'label' => 'CREDIT_NOTES_PDF_SHOW_OPTIONS',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_attributes',
+			'type' => 'checkbox',
+			'label' => 'CREDIT_NOTES_PDF_SHOW_ATTRIBUTES',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdf_show_cover',
+			'type' => 'checkbox',
+			'label' => 'CREDIT_NOTES_PDF_SHOW_COVER',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'col' => 3,
 		]);
 
 		$this->addElement([
 			'name' => 'language',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_LANGUAGE',
+			'label' => 'CREDIT_NOTES_LANGUAGE',
+			'source' => 'language',
 			'options' => [],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 6,
 		]);
 
 		$this->addElement([
 			'name' => 'state',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_STATE',
+			'label' => 'CREDIT_NOTES_STATE',
 			'source' => 'state',
 			'format' => ['type' => 'string'],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 3,
 		]);
 	}
