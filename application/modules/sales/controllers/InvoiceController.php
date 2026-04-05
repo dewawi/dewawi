@@ -86,7 +86,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		}
 
 		// Default redirect
-		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
+		$this->_flashMessenger->addMessage('MESSAGES_INVOICE_NOT_FOUND');
 		$this->_helper->redirector->gotoSimple('index', 'invoice');
 
 		return null;
@@ -295,8 +295,9 @@ class Sales_InvoiceController extends Zend_Controller_Action
 	{
 		$id = $this->_getParam('id', 0);
 		$target = $this->_getParam('target', 0);
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$data = $invoiceDb->getInvoice($id);
+
+		$data = $this->requireInvoice($id);
+		if (!$data) return;
 
 		$data['state'] = 100;
 		$data['completed'] = 0;
@@ -391,119 +392,131 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
 
-	public function previewAction()
-	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
 
-		$id = $this->_getParam('id', 0);
-		$templateid = $this->_getParam('templateid', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
-
-		if($templateid) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate($templateid);
-			$this->view->template = $template;
-		}
-
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$invoice = $invoiceDb->getInvoice($id);
-
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($invoice['contactid']);
-
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
-
-		//Get positions
-		$positionsDb = new Sales_Model_DbTable_Invoicepos();
-		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$price = $this->_helper->PriceRule->usePriceRulesOnPositions($positions, 'sales', 'invoicepos');
-
-			//Set precision and currency
-			foreach($positions as $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-			if($invoice['prepayment']) {
-				$invoice['balance'] = $currency->toCurrency($invoice['total']-$invoice['prepayment']);
-				$invoice['prepayment'] = $currency->toCurrency($invoice['prepayment']);
-			}
-			$invoice['taxes'] = $currency->toCurrency($invoice['taxes']);
-			$invoice['subtotal'] = $currency->toCurrency($invoice['subtotal']);
-			$invoice['total'] = $currency->toCurrency($invoice['total']);
-			if($invoice['taxfree']) {
-				$invoice['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$invoice['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-		}
-
-		//Get footers
-		$footerDb = new Application_Model_DbTable_Footer();
-		$footers = $footerDb->getFooters($templateid);
-
-		$this->view->invoice = $invoice;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->footers = $footers;
-	}
 
 	public function previewAction()
 	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
-
 		$id = (int)$this->_getParam('id', 0);
 		$templateId = (int)$this->_getParam('templateid', 0);
+		$isAjax = $this->getRequest()->isXmlHttpRequest();
 
-		$invoice = $this->requireInvoice($id);
-		if (!$invoice) return;
+		try {
+			$result = $this->generatePdfDocument($id, [
+				'output' => $isAjax ? 'file' : 'inline',
+				'templateid' => $templateId ?: null,
+			]);
+		} catch (RuntimeException $e) {
+			if ($isAjax) {
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->layout->disableLayout();
 
-		$service = new Sales_Service_PdfDataService();
-		$data = $service->build($invoice, 'invoice', [
-			'templateid' => $templateId,
-		]);
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'not_found',
+				]);
+			}
 
-		$this->view->assign($data);
+			$this->_flashMessenger->addMessage('MESSAGES_INVOICE_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'invoice');
+		}
+
+		if ($isAjax) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			return $this->_helper->json([
+				'ok' => true,
+				'url' => $result['url'] ?? null,
+				'filename' => $result['filename'] ?? null,
+			]);
+		}
+
+		return $this->sendPdfResponse($result);
 	}
 
 	public function saveAction()
 	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
-
 		$id = (int)$this->_getParam('id', 0);
 
-		$invoice = $this->requireInvoice($id);
-		if (!$invoice) return;
+		try {
+			$this->generatePdfDocument($id, [
+				'finalize' => true,
+				'output' => 'file',
+			]);
+		} catch (RuntimeException $e) {
+			$this->_flashMessenger->addMessage('MESSAGES_INVOICE_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'invoice');
+		}
 
-		$service = new Sales_Service_PdfDataService();
-		$data = $service->build($invoice, 'invoice', [
-			'ensureDocumentId' => true,
-		]);
-
-		$this->view->assign($data);
+		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+		return $this->_helper->redirector->gotoSimple('edit', 'invoice', null, ['id' => $id]);
 	}
 
 	public function downloadAction()
 	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
-
 		$id = (int)$this->_getParam('id', 0);
 
-		$invoice = $this->requireInvoice($id);
-		if (!$invoice) return;
+		try {
+			$result = $this->generatePdfDocument($id, [
+				'finalize' => true,
+				'output' => 'download',
+			]);
+		} catch (RuntimeException $e) {
+			$this->_flashMessenger->addMessage('MESSAGES_INVOICE_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'invoice');
+		}
 
-		$service = new Sales_Service_PdfDataService();
-		$data = $service->build($invoice, 'invoice');
+		return $this->sendPdfResponse($result);
+	}
 
-		$this->view->assign($data);
+	protected function generatePdfDocument(int $id, array $options = []): array
+	{
+		$invoice = $this->requireInvoice($id, true);
+		if (!$invoice) {
+			throw new RuntimeException('Invoice not found');
+		}
+
+		if (!empty($options['finalize'])) {
+			$finalizeService = new Sales_Service_DocumentFinalizeService();
+			$invoice = $finalizeService->finalize($invoice, 'invoice');
+		}
+
+		$pdf = new DEEC_Pdf();
+
+		return $pdf->generate([
+			'module' => 'sales',
+			'controller' => 'invoice',
+			'documentId' => (int)$invoice['id'],
+			'output' => $options['output'] ?? 'file',
+			'templateid' => $options['templateid'] ?? null,
+		]);
+	}
+
+	protected function sendPdfResponse(array $result)
+	{
+		if (empty($result['path']) || !is_file($result['path'])) {
+			throw new RuntimeException('PDF file not found');
+		}
+
+		$mode = $result['output'] ?? 'inline';
+		$filename = $result['filename'] ?? basename($result['path']);
+
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->layout->disableLayout();
+
+		$response = $this->getResponse();
+		$response->clearHeaders();
+		$response->setHeader('Content-Type', 'application/pdf', true);
+		$response->setHeader(
+			'Content-Disposition',
+			($mode === 'download' ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
+			true
+		);
+		$response->setHeader('Content-Length', (string)filesize($result['path']), true);
+		$response->sendHeaders();
+
+		readfile($result['path']);
+		exit;
 	}
 
 	public function cancelAction()

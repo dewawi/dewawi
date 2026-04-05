@@ -86,7 +86,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		}
 
 		// Default redirect
-		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
+		$this->_flashMessenger->addMessage('MESSAGES_DELIVERY_ORDER_NOT_FOUND');
 		$this->_helper->redirector->gotoSimple('index', 'deliveryorder');
 
 		return null;
@@ -295,8 +295,9 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 	{
 		$id = $this->_getParam('id', 0);
 		$target = $this->_getParam('target', 0);
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$data = $deliveryorderDb->getDeliveryorder($id);
+
+		$data = $this->requireDeliveryorder($id);
+		if (!$data) return;
 
 		$data['state'] = 100;
 		$data['completed'] = 0;
@@ -372,57 +373,131 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
 
+
+
 	public function previewAction()
 	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
-
 		$id = (int)$this->_getParam('id', 0);
 		$templateId = (int)$this->_getParam('templateid', 0);
+		$isAjax = $this->getRequest()->isXmlHttpRequest();
 
-		$deliveryorder = $this->requireDeliveryorder($id);
-		if (!$deliveryorder) return;
+		try {
+			$result = $this->generatePdfDocument($id, [
+				'output' => $isAjax ? 'file' : 'inline',
+				'templateid' => $templateId ?: null,
+			]);
+		} catch (RuntimeException $e) {
+			if ($isAjax) {
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->layout->disableLayout();
 
-		$service = new Sales_Service_PdfDataService();
-		$data = $service->build($deliveryorder, 'deliveryorder', [
-			'templateid' => $templateId,
-		]);
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'not_found',
+				]);
+			}
 
-		$this->view->assign($data);
+			$this->_flashMessenger->addMessage('MESSAGES_DELIVERY_ORDER_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'deliveryorder');
+		}
+
+		if ($isAjax) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			return $this->_helper->json([
+				'ok' => true,
+				'url' => $result['url'] ?? null,
+				'filename' => $result['filename'] ?? null,
+			]);
+		}
+
+		return $this->sendPdfResponse($result);
 	}
 
 	public function saveAction()
 	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
-
 		$id = (int)$this->_getParam('id', 0);
 
-		$deliveryorder = $this->requireDeliveryorder($id);
-		if (!$deliveryorder) return;
+		try {
+			$this->generatePdfDocument($id, [
+				'finalize' => true,
+				'output' => 'file',
+			]);
+		} catch (RuntimeException $e) {
+			$this->_flashMessenger->addMessage('MESSAGES_DELIVERY_ORDER_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'deliveryorder');
+		}
 
-		$service = new Sales_Service_PdfDataService();
-		$data = $service->build($deliveryorder, 'deliveryorder', [
-			'ensureDocumentId' => true,
-		]);
-
-		$this->view->assign($data);
+		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+		return $this->_helper->redirector->gotoSimple('edit', 'deliveryorder', null, ['id' => $id]);
 	}
 
 	public function downloadAction()
 	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
-
 		$id = (int)$this->_getParam('id', 0);
 
-		$deliveryorder = $this->requireDeliveryorder($id);
-		if (!$deliveryorder) return;
+		try {
+			$result = $this->generatePdfDocument($id, [
+				'finalize' => true,
+				'output' => 'download',
+			]);
+		} catch (RuntimeException $e) {
+			$this->_flashMessenger->addMessage('MESSAGES_DELIVERY_ORDER_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'deliveryorder');
+		}
 
-		$service = new Sales_Service_PdfDataService();
-		$data = $service->build($deliveryorder, 'deliveryorder');
+		return $this->sendPdfResponse($result);
+	}
 
-		$this->view->assign($data);
+	protected function generatePdfDocument(int $id, array $options = []): array
+	{
+		$deliveryorder = $this->requireDeliveryorder($id, true);
+		if (!$deliveryorder) {
+			throw new RuntimeException('Deliveryorder not found');
+		}
+
+		if (!empty($options['finalize'])) {
+			$finalizeService = new Sales_Service_DocumentFinalizeService();
+			$deliveryorder = $finalizeService->finalize($deliveryorder, 'deliveryorder');
+		}
+
+		$pdf = new DEEC_Pdf();
+
+		return $pdf->generate([
+			'module' => 'sales',
+			'controller' => 'deliveryorder',
+			'documentId' => (int)$deliveryorder['id'],
+			'output' => $options['output'] ?? 'file',
+			'templateid' => $options['templateid'] ?? null,
+		]);
+	}
+
+	protected function sendPdfResponse(array $result)
+	{
+		if (empty($result['path']) || !is_file($result['path'])) {
+			throw new RuntimeException('PDF file not found');
+		}
+
+		$mode = $result['output'] ?? 'inline';
+		$filename = $result['filename'] ?? basename($result['path']);
+
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->layout->disableLayout();
+
+		$response = $this->getResponse();
+		$response->clearHeaders();
+		$response->setHeader('Content-Type', 'application/pdf', true);
+		$response->setHeader(
+			'Content-Disposition',
+			($mode === 'download' ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
+			true
+		);
+		$response->setHeader('Content-Length', (string)filesize($result['path']), true);
+		$response->sendHeaders();
+
+		readfile($result['path']);
+		exit;
 	}
 
 	public function cancelAction()

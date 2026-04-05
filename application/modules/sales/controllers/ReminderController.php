@@ -86,7 +86,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		}
 
 		// Default redirect
-		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
+		$this->_flashMessenger->addMessage('MESSAGES_REMINDER_NOT_FOUND');
 		$this->_helper->redirector->gotoSimple('index', 'reminder');
 
 		return null;
@@ -295,8 +295,9 @@ class Sales_ReminderController extends Zend_Controller_Action
 	{
 		$id = $this->_getParam('id', 0);
 		$target = $this->_getParam('target', 0);
-		$reminderDb = new Sales_Model_DbTable_Reminder();
-		$data = $reminderDb->getReminder($id);
+
+		$data = $this->requireReminder($id);
+		if (!$data) return;
 
 		$data['state'] = 100;
 		$data['completed'] = 0;
@@ -385,57 +386,131 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
 
+
+
 	public function previewAction()
 	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
-
 		$id = (int)$this->_getParam('id', 0);
 		$templateId = (int)$this->_getParam('templateid', 0);
+		$isAjax = $this->getRequest()->isXmlHttpRequest();
 
-		$reminder = $this->requireReminder($id);
-		if (!$reminder) return;
+		try {
+			$result = $this->generatePdfDocument($id, [
+				'output' => $isAjax ? 'file' : 'inline',
+				'templateid' => $templateId ?: null,
+			]);
+		} catch (RuntimeException $e) {
+			if ($isAjax) {
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->layout->disableLayout();
 
-		$service = new Sales_Service_PdfDataService();
-		$data = $service->build($reminder, 'reminder', [
-			'templateid' => $templateId,
-		]);
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'not_found',
+				]);
+			}
 
-		$this->view->assign($data);
+			$this->_flashMessenger->addMessage('MESSAGES_REMINDER_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'reminder');
+		}
+
+		if ($isAjax) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			return $this->_helper->json([
+				'ok' => true,
+				'url' => $result['url'] ?? null,
+				'filename' => $result['filename'] ?? null,
+			]);
+		}
+
+		return $this->sendPdfResponse($result);
 	}
 
 	public function saveAction()
 	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
-
 		$id = (int)$this->_getParam('id', 0);
 
-		$reminder = $this->requireReminder($id);
-		if (!$reminder) return;
+		try {
+			$this->generatePdfDocument($id, [
+				'finalize' => true,
+				'output' => 'file',
+			]);
+		} catch (RuntimeException $e) {
+			$this->_flashMessenger->addMessage('MESSAGES_REMINDER_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'reminder');
+		}
 
-		$service = new Sales_Service_PdfDataService();
-		$data = $service->build($reminder, 'reminder', [
-			'ensureDocumentId' => true,
-		]);
-
-		$this->view->assign($data);
+		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+		return $this->_helper->redirector->gotoSimple('edit', 'reminder', null, ['id' => $id]);
 	}
 
 	public function downloadAction()
 	{
-		$this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->viewRenderer->setRender('pdf');
-
 		$id = (int)$this->_getParam('id', 0);
 
-		$reminder = $this->requireReminder($id);
-		if (!$reminder) return;
+		try {
+			$result = $this->generatePdfDocument($id, [
+				'finalize' => true,
+				'output' => 'download',
+			]);
+		} catch (RuntimeException $e) {
+			$this->_flashMessenger->addMessage('MESSAGES_REMINDER_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'reminder');
+		}
 
-		$service = new Sales_Service_PdfDataService();
-		$data = $service->build($reminder, 'reminder');
+		return $this->sendPdfResponse($result);
+	}
 
-		$this->view->assign($data);
+	protected function generatePdfDocument(int $id, array $options = []): array
+	{
+		$reminder = $this->requireReminder($id, true);
+		if (!$reminder) {
+			throw new RuntimeException('Reminder not found');
+		}
+
+		if (!empty($options['finalize'])) {
+			$finalizeService = new Sales_Service_DocumentFinalizeService();
+			$reminder = $finalizeService->finalize($reminder, 'reminder');
+		}
+
+		$pdf = new DEEC_Pdf();
+
+		return $pdf->generate([
+			'module' => 'sales',
+			'controller' => 'reminder',
+			'documentId' => (int)$reminder['id'],
+			'output' => $options['output'] ?? 'file',
+			'templateid' => $options['templateid'] ?? null,
+		]);
+	}
+
+	protected function sendPdfResponse(array $result)
+	{
+		if (empty($result['path']) || !is_file($result['path'])) {
+			throw new RuntimeException('PDF file not found');
+		}
+
+		$mode = $result['output'] ?? 'inline';
+		$filename = $result['filename'] ?? basename($result['path']);
+
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->layout->disableLayout();
+
+		$response = $this->getResponse();
+		$response->clearHeaders();
+		$response->setHeader('Content-Type', 'application/pdf', true);
+		$response->setHeader(
+			'Content-Disposition',
+			($mode === 'download' ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
+			true
+		);
+		$response->setHeader('Content-Length', (string)filesize($result['path']), true);
+		$response->sendHeaders();
+
+		readfile($result['path']);
+		exit;
 	}
 
 	public function cancelAction()
