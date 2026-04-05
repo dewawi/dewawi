@@ -2,15 +2,20 @@
 	//Language
 	'LANGUAGES_DE_DE' => 'Deutsch',
 	'LANGUAGES_EN_US' => 'Englisch',
-	//Menu
-	'CONTROL_PANEL' => 'Übersicht',
-	'MENU_EXTENSIONS' => 'Erweiterungen',
-	'MENU_CATEGORIES' => 'Kategorien',
 	//Actions
 	'ACTIONS_OPEN_MAILBOX' => 'Postfach öffnen',
 	'ACTIONS_NEW_EMAIL' => 'E-Mail schreiben',
 	'ACTIONS_REFRESH' => 'Aktualisieren',
 	'ACTIONS_UPLOAD' => 'Hochladen',
+	//Users
+	'USERS_USERNAME' => 'Benutzername',
+	'USERS_PASSWORD' => 'Passwort',
+	'USERS_PASSWORD_ACTUAL' => 'Aktuelles Passwort',
+	'USERS_PASSWORD_NEW' => 'Neues Passwort',
+	'USERS_PASSWORD_CONFIRM' => 'Passwort bestätigen',
+	'USERS_LOGIN' => 'Einloggen',
+	'USERS_LOGOUT' => 'Ausloggen',
+	'USERS_STAY_LOGGED_IN' => 'Eingeloggt bleiben',
 	//E-Mail
 	'EMAIL' => 'E-Mail',
 	'EMAIL_SUBJECT' => 'Betreff',

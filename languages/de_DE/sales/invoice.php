@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_INVOICES' => 'Rechnungen',
 	//Actions
 	'ACTIONS_CREATE_INVOICE' => 'Rechnung erstellen',
 	'ACTIONS_GENERATE_INVOICE' => 'Rechnung generieren',

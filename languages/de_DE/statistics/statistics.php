@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_STATISTICS' => 'Statistiken',
 	//Statistiken
 	'STATISTICS' => 'Statistiken',
 	'STATISTICS_PERIOD' => 'Zeitraum',

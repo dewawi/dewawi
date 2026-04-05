@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_LEDGER' => 'Buchungsverlauf',
 	//LEDGER
 	'ITEMS_NEW_LEDGER' => 'Neue Buchung',
 	'ITEMS_LEDGER' => 'Buchungsverlauf',

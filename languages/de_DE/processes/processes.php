@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_PROCESSES' => 'Vorgänge',
 	//Actions
 	'ACTIONS_CREATE_PROCESS' => 'Vorgang erstellen',
 	'ACTIONS_GENERATE_PROCESS' => 'Vorgang generieren',

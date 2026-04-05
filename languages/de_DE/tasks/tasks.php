@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_TASKS' => 'Aufgaben',
 	//Actions
 	'ACTIONS_CREATE_TASK' => 'Aufgabe erstellen',
 	'ACTIONS_GENERATE_TASK' => 'Aufgabe generieren',

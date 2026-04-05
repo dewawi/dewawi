@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_EMAILS' => 'Nachrichten',
 	//E-Mails
 	'CONTACTS_EMAIL' => 'E-Mail',
 	'CONTACTS_EMAILS' => 'Nachrichten',

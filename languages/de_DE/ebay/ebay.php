@@ -1,7 +1,5 @@
 <?php return array(
 	'EBAY' => 'eBay',
-	//Menu
-	'MENU_EBAY' => 'eBay',
 	//eBay
 	'EBAY_OVERVIEW' => 'Übersicht',
 	'EBAY_LISTINGS' => 'Angebote',

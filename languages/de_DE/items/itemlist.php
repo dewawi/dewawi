@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_ITEM_LISTS' => 'Artikellisten',
 	//Item lists
 	'ITEMLIST' => 'Artikelliste',
 	'ITEM_LISTS' => 'Artikellisten',

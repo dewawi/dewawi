@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_QUOTE_REQUESTS' => 'Anfragen',
 	//Actions
 	'ACTIONS_CREATE_QUOTE_REQUEST' => 'Anfrage erstellen',
 	'ACTIONS_GENERATE_QUOTE_REQUEST' => 'Anfrage generieren',

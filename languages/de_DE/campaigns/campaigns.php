@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_CAMPAIGNS' => 'Kampagnen',
 	//Actions
 	'ACTIONS_CREATE_CAMPAIGN' => 'Kampagne erstellen',
 	'ACTIONS_GENERATE_CAMPAIGN' => 'Kampagne generieren',

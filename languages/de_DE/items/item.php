@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_ITEMS' => 'Artikel',
 	//Items
 	'ITEM' => 'Artikel',
 	'ITEMS' => 'Artikel',

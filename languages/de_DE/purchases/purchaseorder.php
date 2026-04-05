@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_PURCHASE_ORDERS' => 'Bestellungen',
 	//Actions
 	'ACTIONS_CREATE_PURCHASE_ORDER' => 'Bestellung erstellen',
 	'ACTIONS_GENERATE_PURCHASE_ORDER' => 'Bestellung generieren',

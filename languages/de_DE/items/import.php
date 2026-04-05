@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_IMPORT' => 'Import',
 	//Items
 	'IMPORT' => 'Import',
 	'ITEMS_IMPORT_ITEM' => 'Artikelimport',

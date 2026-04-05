@@ -1,5 +1,4 @@
 <?php return array(
-	'MENU_PRICE_RULES' => 'Preisregeln',
 	//Price rules
 	'ITEMS_PRICE_RULES' => 'Preisregeln',
 	'PRICE_RULES_TITLE' => 'Titel',

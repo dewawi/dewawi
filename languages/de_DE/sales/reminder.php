@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_REMINDERS' => 'Mahnungen',
 	//Actions
 	'ACTIONS_CREATE_REMINDER' => 'Mahnung erstellen',
 	'ACTIONS_GENERATE_REMINDER' => 'Mahnung generieren',

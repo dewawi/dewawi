@@ -1,11 +1,6 @@
 <?php return array(
-	'MAGENTO' => 'Magento',
-	//Menu
-	'MENU_MAGENTO' => 'Magento',
-	'MENU_MAGENTO_ORDERS' => 'Bestellungen',
-	'MENU_MAGENTO_ITEMS' => 'Artikel',
-	'MENU_MAGENTO_CUSTOMERS' => 'Kunden',
 	//Magento
+	'MAGENTO' => 'Magento',
 	'MAGENTO_BUYER_USER_ID' => 'Benutzername',
 	'MAGENTO_ORDER_ID' => 'Bestellnummer',
 	'MAGENTO_CUSTOMER_ID' => 'Kundennummer',

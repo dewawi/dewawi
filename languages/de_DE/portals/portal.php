@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_PORTALS' => 'Portal',
 	//Portal
 	'PORTALS' => 'Portal',
 	'PORTALS_LOGIN_REQUEST' => 'Login-Anfrage',

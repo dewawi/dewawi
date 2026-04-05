@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_DOWNLOADS' => 'Downloads',
 	//E-Mails
 	'CONTACTS_DOWNLOAD' => 'Download',
 	'CONTACTS_NEW_DOWNLOAD' => 'Neue Datei',

@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_QUOTES' => 'Angebote',
 	//Actions
 	'ACTIONS_CREATE_QUOTE' => 'Angebot erstellen',
 	'ACTIONS_GENERATE_QUOTE' => 'Angebot generieren',

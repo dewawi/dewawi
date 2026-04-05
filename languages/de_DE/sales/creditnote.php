@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_CREDIT_NOTES' => 'Gutschriften',
 	//Actions
 	'ACTIONS_CREATE_CREDIT_NOTE' => 'Gutschrift erstellen',
 	'ACTIONS_GENERATE_CREDIT_NOTE' => 'Gutschrift generieren',

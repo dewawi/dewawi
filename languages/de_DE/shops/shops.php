@@ -1,7 +1,5 @@
 <?php return array(
 	'SHOPS' => 'Shops',
-	//Menu
-	'MENU_SHOPS' => 'Shops',
 	//Shops
 	'SHOPS_OVERVIEW' => 'Übersicht',
 	'SHOPS_ID' => 'ID',

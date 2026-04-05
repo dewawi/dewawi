@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_CONTACT_PERSONS' => 'Kontaktpersonen',
 	//Contacts
 	'CONTACT_PERSON' => 'Kontaktperson',
 	'CONTACT_PERSONS' => 'Kontaktpersonen',

@@ -1,6 +1,4 @@
 <?php return array(
-	//Menu
-	'MENU_SALES_ORDERS' => 'Auftragsbestätigungen',
 	//Actions
 	'ACTIONS_CREATE_SALES_ORDER' => 'Auftragsbestätigung erstellen',
 	'ACTIONS_GENERATE_SALES_ORDER' => 'Auftragsbestätigung generieren',
