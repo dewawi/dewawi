@@ -24,9 +24,9 @@ class Shops_Model_DbTable_Country extends Zend_Db_Table_Abstract
 		$data = $this->fetchAll($where, 'name');
 
 		$countries = array();
-		$translate = Zend_Registry::get('Zend_Translate');
+		$translate = Zend_Registry::get('DEEC_Translate');
 		foreach($data as $country) {
-			$countries[$country->code] = $translate->translate($country->code);
+			$countries[$country->code] = $translate->t($country->code);
 		}
 		//Sort countries with current locale
 		$language = Zend_Registry::get('Zend_Locale');

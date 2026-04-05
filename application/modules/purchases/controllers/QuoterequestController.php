@@ -533,12 +533,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID($quoterequest['contactid']);
 
-		//Set language
-		if($quoterequest['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quoterequest['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($quoterequest['currency'], 'USE_SYMBOL');
 
@@ -595,12 +589,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($quoterequest['templateid']);
 			$this->view->template = $template;
-		}
-
-		//Set language
-		if($quoterequest['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quoterequest['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
 		//Get currency
@@ -673,12 +661,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			$templateDb = new Application_Model_DbTable_Template();
 			$template = $templateDb->getTemplate($quoterequest['templateid']);
 			$this->view->template = $template;
-		}
-
-		//Set language
-		if($quoterequest['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$quoterequest['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
 		}
 
 		//Get currency

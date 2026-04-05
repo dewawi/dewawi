@@ -412,12 +412,6 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID($invoice['contactid']);
 
-		//Set language
-		if($invoice['language']) {
-			$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$invoice['language']);
-			Zend_Registry::set('Zend_Translate', $translate);
-		}
-
 		//Get currency
 		$currency = $this->_helper->Currency->getCurrency($invoice['currency'], 'USE_SYMBOL');
 

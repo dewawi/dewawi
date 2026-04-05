@@ -175,12 +175,6 @@ class Items_ItemlistController extends Zend_Controller_Action
 				$this->view->template = $template;
 			}
 
-			//Set language
-			if($itemlist['language']) {
-				$translate = new Zend_Translate('array', BASE_PATH.'/languages/'.$itemlist['language']);
-				Zend_Registry::set('Zend_Translate', $translate);
-			}
-
 			//Get footers
 			$footerDb = new Application_Model_DbTable_Footer();
 			$footers = $footerDb->getFooters($itemlist['templateid']);

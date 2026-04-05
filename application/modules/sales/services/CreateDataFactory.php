@@ -76,14 +76,36 @@ class Sales_Service_CreateDataFactory
 	protected function getDefaultTitle(string $controller): string
 	{
 		$map = [
-			'quote' => Zend_Registry::get('Zend_Translate')->translate('QUOTES_NEW_QUOTE'),
-			'salesorder' => Zend_Registry::get('Zend_Translate')->translate('SALES_ORDERS_NEW_SALES_ORDER'),
-			'invoice' => Zend_Registry::get('Zend_Translate')->translate('INVOICES_NEW_INVOICE'),
-			'deliveryorder' => Zend_Registry::get('Zend_Translate')->translate('DELIVERY_ORDERS_NEW_DELIVERY_ORDER'),
-			'creditnote' => Zend_Registry::get('Zend_Translate')->translate('CREDIT_NOTES_NEW_CREDIT_NOTE'),
-			'reminder' => Zend_Registry::get('Zend_Translate')->translate('REMINDERS_NEW_REMINDER'),
+			'quote' => $this->translate('QUOTES_NEW_QUOTE'),
+			'salesorder' => $this->translate('SALES_ORDERS_NEW_SALES_ORDER'),
+			'invoice' => $this->translate('INVOICES_NEW_INVOICE'),
+			'deliveryorder' => $this->translate('DELIVERY_ORDERS_NEW_DELIVERY_ORDER'),
+			'creditnote' => $this->translate('CREDIT_NOTES_NEW_CREDIT_NOTE'),
+			'reminder' => $this->translate('REMINDERS_NEW_REMINDER'),
 		];
 
 		return $map[$controller] ?? strtoupper($controller) . ' NEW';
 	}
+
+    protected function getTranslator(): ?DEEC_Translate
+    {
+	    if (Zend_Registry::isRegistered('DEEC_Translate')) {
+		    $translator = Zend_Registry::get('DEEC_Translate');
+		    if ($translator instanceof DEEC_Translate) {
+			    return $translator;
+		    }
+	    }
+
+	    return null;
+    }
+
+    protected function translate(string $key): string
+    {
+	    $translator = $this->getTranslator();
+	    if ($translator) {
+		    return $translator->t($key);
+	    }
+
+	    return $key;
+    }
 }
