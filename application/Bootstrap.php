@@ -9,6 +9,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 	{
 		$this->bootstrap('view');
 		$view = $this->getResource('view');
+		$view->addScriptPath(APPLICATION_PATH . '/views/scripts');
 		$view->doctype('XHTML1_STRICT');
 	}
 
@@ -106,26 +107,15 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 			date_default_timezone_set($config['timezone']);
 		}
 
-		//Translate
-		$tr = new DEEC_Translate($language);
+		// Translate
+		$localeCode = (string)$language;
+		$tr = new DEEC_Translate($localeCode);
 
-		$base = BASE_PATH . '/languages/' . $language;
+		$base = BASE_PATH . '/languages/' . $localeCode;
 
-		// immer default laden
-		$tr->loadDir('default', $base . '/default');
-
-		// aktuelles Modul laden (z.B. items, contacts, sales, ...)
-		$front = Zend_Controller_Front::getInstance();
-		$request = $front->getRequest();
-
-		$module = $request ? (string)$request->getModuleName() : 'items';
-		if ($module !== '' && is_dir($base . '/' . $module)) {
-			$tr->loadDir($module, $base . '/' . $module);
-		}
-
-		// optional: noch "admin" immer laden
-		if (is_dir($base . '/admin')) {
-			$tr->loadDir('admin', $base . '/admin');
+		// Always load shared keys
+		if (is_dir($base . '/default')) {
+			$tr->loadDir('default', $base . '/default');
 		}
 
 		Zend_Registry::set('DEEC_Translate', $tr);
@@ -159,6 +149,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 	protected function _initPlugins() {
 		$front = Zend_Controller_Front::getInstance();
 		$front->registerPlugin(new Application_Plugin_Acl());
+		$front->registerPlugin(new Application_Plugin_State());
 		$front->registerPlugin(new Application_Plugin_Analytics());
 		$front->registerPlugin(new Application_Plugin_Client());
 		$front->registerPlugin(new Application_Plugin_Translate());
