@@ -200,7 +200,7 @@ class Statistics_Model_Turnover
 
 			/* Populate the pData object */
 			$chartTurnover->myData->addPoints($turnover,"Values");
-			$chartTurnover->myData->setSerieProperties("Values",["Ticks" => 5]);
+			//$chartTurnover->myData->setSerieProperties("Values",["Ticks" => 5]);
 			$chartTurnover->myData->setAxisName(0,"€ / Netto");
 			$chartTurnover->myData->addPoints($months,"Labels");
 			$chartTurnover->myData->setSerieDescription("Labels","Months");
@@ -231,7 +231,7 @@ class Statistics_Model_Turnover
 
 			/* Create the pChart object */
 			$chartTurnoverCategory = new pDraw($width, $height);
-
+//print_r($turnoverCategories);
 			// Add data in your dataset
 			$turnoverCategoriesTotal = array();
 			foreach($turnoverCategories as $key => $value) {
@@ -239,11 +239,17 @@ class Statistics_Model_Turnover
 			}
 			arsort($turnoverCategoriesTotal);
 			foreach($turnoverCategoriesTotal as $key => $value) {
-				if($key && isset($options['categories'][$key])) $chartTurnoverCategory->myData->addPoints($turnoverCategories[$key], $options['categories'][$key]['title']);
+				if($key && isset($options['categories'][$key])) {
+					$chartTurnoverCategory->myData->addPoints($turnoverCategories[$key], $options['categories'][$key]['title']);
+					//print_r($turnoverCategories[$key]);
+					//print_r($options['categories'][$key]['title']);
+				}
 			}
 			if(isset($turnoverCategories[0])) {
 				$chartTurnoverCategory->myData->addPoints($turnoverCategories[0], $statisticsUncategorized);
 			}
+//print_r($turnoverCategoriesTotal);
+//print_r($options['categories']);
 
 			/* Populate the pData object */
 			//$chartTurnoverCategory->myData->setSerieProperties("Values",["Ticks" => 5]);
@@ -270,7 +276,7 @@ class Statistics_Model_Turnover
 			$chartTurnoverCategory->setShadow(FALSE);
 
 			/* Write the chart legend */
-			$chartTurnoverCategory->drawLegend(100, 20, array('Style' => LEGEND_NOBORDER, 'Mode' => LEGEND_VERTICAL));
+			//$chartTurnoverCategory->drawLegend(100, 20, array('Style' => LEGEND_NOBORDER, 'Mode' => LEGEND_VERTICAL));
 
 			// Build the PNG file and send it to the web browser
 			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
