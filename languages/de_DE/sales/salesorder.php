@@ -41,8 +41,6 @@
 	'SALES_ORDERS_SHIPPING_CITY' => 'Ort',
 	'SALES_ORDERS_SHIPPING_COUNTRY' => 'Land',
 	'SALES_ORDERS_SHIPPING_PHONE' => 'Telefon',
-	'SALES_ORDERS_SAVE_AND_BOOK' => 'Speichern und buchen',
-	'SALES_ORDERS_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'SALES_ORDERS_PREVIEW' => 'Vorschau:',
 	'SALES_ORDERS_STATE' => 'Status',
 	'SALES_ORDERS_MODIFIED' => 'le. Änderung',

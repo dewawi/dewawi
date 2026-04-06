@@ -40,8 +40,6 @@
 	'REMINDERS_SHIPPING_CITY' => 'Ort',
 	'REMINDERS_SHIPPING_COUNTRY' => 'Land',
 	'REMINDERS_SHIPPING_PHONE' => 'Telefon',
-	'REMINDERS_SAVE_AND_BOOK' => 'Speichern und buchen',
-	'REMINDERS_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'REMINDERS_PREVIEW' => 'Vorschau:',
 	'REMINDERS_STATE' => 'Status',
 	'REMINDERS_MODIFIED' => 'le. Änderung',

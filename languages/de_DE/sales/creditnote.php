@@ -41,8 +41,6 @@
 	'CREDIT_NOTES_SHIPPING_CITY' => 'Ort',
 	'CREDIT_NOTES_SHIPPING_COUNTRY' => 'Land',
 	'CREDIT_NOTES_SHIPPING_PHONE' => 'Telefon',
-	'CREDIT_NOTES_SAVE_AND_BOOK' => 'Speichern und buchen',
-	'CREDIT_NOTES_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'CREDIT_NOTES_PREVIEW' => 'Vorschau:',
 	'CREDIT_NOTES_STATE' => 'Status',
 	'CREDIT_NOTES_MODIFIED' => 'le. Änderung',

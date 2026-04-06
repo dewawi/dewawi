@@ -40,8 +40,6 @@
 	'INVOICES_SHIPPING_CITY' => 'Ort',
 	'INVOICES_SHIPPING_COUNTRY' => 'Land',
 	'INVOICES_SHIPPING_PHONE' => 'Telefon',
-	'INVOICES_SAVE_AND_BOOK' => 'Speichern und buchen',
-	'INVOICES_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'INVOICES_PREVIEW' => 'Vorschau:',
 	'INVOICES_STATE' => 'Status',
 	'INVOICES_MODIFIED' => 'le. Änderung',

@@ -40,8 +40,6 @@
 	'QUOTES_SHIPPING_CITY' => 'Ort',
 	'QUOTES_SHIPPING_COUNTRY' => 'Land',
 	'QUOTES_SHIPPING_PHONE' => 'Telefon',
-	'QUOTES_SAVE_AND_BOOK' => 'Speichern und buchen',
-	'QUOTES_DOWNLOAD_PDF' => 'PDF herunterladen',
 	'QUOTES_PREVIEW' => 'Vorschau:',
 	'QUOTES_STATE' => 'Status',
 	'QUOTES_MODIFIED' => 'le. Änderung',
