@@ -3,6 +3,8 @@ SET time_zone = "+00:00";
 
 CREATE TABLE IF NOT EXISTS `address` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
   `parentid` int(11) NOT NULL,
   `type` varchar(255) DEFAULT NULL,
   `name1` varchar(255) DEFAULT NULL,
@@ -24,6 +26,8 @@ CREATE TABLE IF NOT EXISTS `address` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
+  KEY (module),
+  KEY (controller),
   KEY (parentid),
   KEY (type),
   KEY (department),
@@ -44,6 +48,8 @@ CREATE TABLE IF NOT EXISTS `archive` (
 
 CREATE TABLE IF NOT EXISTS `bankaccount` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
   `parentid` int(11) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `iban` varchar(255) DEFAULT NULL,
@@ -61,7 +67,9 @@ CREATE TABLE IF NOT EXISTS `bankaccount` (
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (parentid)
+  KEY (parentid),
+  KEY (module),
+  KEY (controller)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `calendarevent` (
@@ -211,6 +219,8 @@ CREATE TABLE IF NOT EXISTS `contact` (
 
 CREATE TABLE IF NOT EXISTS `contactperson` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `module` varchar(255) DEFAULT NULL,
+  `controller` varchar(255) DEFAULT NULL,
   `parentid` int(11) NOT NULL,
   `type` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
@@ -227,6 +237,8 @@ CREATE TABLE IF NOT EXISTS `contactperson` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
+  KEY (module),
+  KEY (controller),
   KEY (parentid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1649,7 +1661,7 @@ CREATE TABLE IF NOT EXISTS `process` (
   `deliveryorderid` int(11) NOT NULL DEFAULT 0,
   `creditnoteid` int(11) NOT NULL DEFAULT 0,
   `purchaseorderid` int(11) NOT NULL DEFAULT 0,
-  `customerid` int(11) NOT NULL DEFAULT 0,
+  `contactid` int(11) NOT NULL DEFAULT 0,
   `supplierid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `subject` varchar(255) DEFAULT NULL,
@@ -2574,7 +2586,7 @@ CREATE TABLE IF NOT EXISTS `task` (
   `deliveryorderid` int(11) NOT NULL DEFAULT 0,
   `creditnoteid` int(11) NOT NULL DEFAULT 0,
   `purchaseorderid` int(11) NOT NULL DEFAULT 0,
-  `customerid` int(11) NOT NULL DEFAULT 0,
+  `contactid` int(11) NOT NULL DEFAULT 0,
   `supplierid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `priority` int(11) NOT NULL DEFAULT 0,

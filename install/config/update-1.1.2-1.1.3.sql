@@ -72,3 +72,25 @@ ALTER TABLE `contactperson` CHANGE `contactid` `parentid` INT(11) NOT NULL;
 ALTER TABLE `contactperson` DROP INDEX `contactid`;
 ALTER TABLE `contactperson` ADD INDEX `parentid` (`parentid`);
 
+ALTER TABLE `address` ADD COLUMN `module` VARCHAR(255) NULL AFTER `id`;
+ALTER TABLE `address` ADD COLUMN `controller` VARCHAR(255) NULL AFTER `module`;
+ALTER TABLE `address` ADD INDEX `module` (`module`);
+ALTER TABLE `address` ADD INDEX `controller` (`controller`);
+
+ALTER TABLE `contactperson` ADD COLUMN `module` VARCHAR(255) NULL AFTER `id`;
+ALTER TABLE `contactperson` ADD COLUMN `controller` VARCHAR(255) NULL AFTER `module`;
+ALTER TABLE `contactperson` ADD INDEX `module` (`module`);
+ALTER TABLE `contactperson` ADD INDEX `controller` (`controller`);
+
+ALTER TABLE `bankaccount` ADD COLUMN `module` VARCHAR(255) NULL AFTER `id`;
+ALTER TABLE `bankaccount` ADD COLUMN `controller` VARCHAR(255) NULL AFTER `module`;
+ALTER TABLE `bankaccount` ADD INDEX `module` (`module`);
+ALTER TABLE `bankaccount` ADD INDEX `controller` (`controller`);
+
+UPDATE `address` SET `module` = 'contacts', `controller` = 'contact' WHERE `module` IS NULL OR `controller` IS NULL;
+UPDATE `contactperson` SET `module` = 'contacts', `controller` = 'contact' WHERE `module` IS NULL OR `controller` IS NULL;
+UPDATE `bankaccount` SET `module` = 'contacts', `controller` = 'contact' WHERE `module` IS NULL OR `controller` IS NULL;
+UPDATE `phone` SET `module` = 'contacts', `controller` = 'contact' WHERE `module` IS NULL OR `controller` IS NULL;
+
+ALTER TABLE `process` CHANGE `customerid` `contactid` int(11) NOT NULL DEFAULT 0;
+ALTER TABLE `task` CHANGE `customerid` `contactid` int(11) NOT NULL DEFAULT 0;
