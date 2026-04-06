@@ -19,7 +19,7 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 
 		$this->_date = date('Y-m-d H:i:s');
 
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
+		$this->view->id = isset($params['id']) ? (int) $params['id'] : 0;
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
@@ -31,7 +31,9 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 
 	public function indexAction()
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		if ($this->getRequest()->isPost()) {
+			$this->_helper->getHelper('layout')->disableLayout();
+		}
 
 		$toolbar = new Contacts_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
@@ -46,64 +48,89 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
-	protected function uploadAction()
+	public function uploadAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$module = $this->_getParam('cmodule', 0);
-		$controller = $this->_getParam('ccontroller', 0);
+		$id = (int) $this->_getParam('id', 0);
+		$module = (string) $this->_getParam('cmodule', '');
+		$controller = (string) $this->_getParam('ccontroller', '');
 
 		$this->_helper->getHelper('layout')->setLayout('plain');
 
 		$form = new Application_Form_Upload();
 
-		if($this->getRequest()->isPost()) {
-			$formData = $this->getRequest()->getPost();
-			if($form->isValid($formData)) {
-				$documentUrl = $this->_helper->Directory->getUrl($id);
-				$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
+		$this->view->form = $form;
+		$this->view->uploads = [];
+		$this->view->documentUrl = '';
 
-				/* Uploading Document File on Server */
-				$upload = new Zend_File_Transfer_Adapter_Http();
-				$upload->setDestination(BASE_PATH.'/files/attachments/'.$module.'/'.$controller.'/'.$documentUrl.'/');
-				try {
-					// upload received file(s)
-					$uploads = array();
-					$files  = $upload->getFileInfo();
-					foreach($files as $file => $fileInfo) {
-						if($upload->isUploaded($file)) {
-							if($upload->isValid($file)) {
-								if($upload->receive($file)) {
-									$info = $upload->getFileInfo($file);
-									if(!$info[$file]['error'] && $info[$file]['validated']) {
-										//Add the file to the database
-										$data = array();
-										$data['documentid'] = $id;
-										$data['filename'] = $info[$file]['name'];
-										$data['filetype'] = $info[$file]['type'];
-										$data['filesize'] = $info[$file]['size'];
-										$data['location'] = $info[$file]['destination'];
-										$data['module'] = $module;
-										$data['controller'] = $controller;
-										$data['ordering'] = $this->getLatestOrdering($id, $module, $controller) + 1;
-										$data['id'] = $emailattachmentDb->addEmailattachment($data);
-
-										$uploads[$data['id']]  = $data;
-									}
-								}
-							}
-						}
-					}
-					$this->view->uploads = $uploads;
-					$this->view->documentUrl = $documentUrl;
-				} catch (Zend_File_Transfer_Exception $e) {
-					$e->getMessage();
-				}
-			} else {
-				$form->populate($formData);
-			}
+		if (!$this->getRequest()->isPost()) {
+			return;
 		}
 
-		$this->view->form = $form;
+		if ($id <= 0 || $module === '' || $controller === '') {
+			return;
+		}
+
+		$documentUrl = $this->_helper->Directory->getUrl($id);
+		$destination = BASE_PATH . '/files/attachments/' . $module . '/' . $controller . '/' . $documentUrl . '/';
+
+		if (!is_dir($destination) && !mkdir($destination, 0775, true) && !is_dir($destination)) {
+			return;
+		}
+
+		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
+		$upload = new Zend_File_Transfer_Adapter_Http();
+
+		$upload->setDestination($destination);
+		$upload->addValidator('Count', false, 10);
+		$upload->addValidator('Size', false, 10240000);
+		$upload->addValidator('Extension', false, 'pdf,jpg,jpeg,png,gif,csv,zip');
+
+		try {
+			$uploads = [];
+			$files = $upload->getFileInfo();
+
+			foreach ($files as $file => $fileInfo) {
+				if (!$upload->isUploaded($file)) {
+					continue;
+				}
+
+				if (!$upload->isValid($file)) {
+					continue;
+				}
+
+				if (!$upload->receive($file)) {
+					continue;
+				}
+
+				$info = $upload->getFileInfo($file);
+
+				if (!isset($info[$file])) {
+					continue;
+				}
+
+				if (!empty($info[$file]['error']) || empty($info[$file]['validated'])) {
+					continue;
+				}
+
+				$data = [];
+				$data['documentid'] = $id;
+				$data['filename'] = $info[$file]['name'];
+				$data['filetype'] = $info[$file]['type'];
+				$data['filesize'] = $info[$file]['size'];
+				$data['location'] = rtrim($info[$file]['destination'], '/');
+				$data['module'] = $module;
+				$data['controller'] = $controller;
+				$data['ordering'] = $this->getLatestOrdering($id, $module, $controller) + 1;
+				$data['id'] = $emailattachmentDb->addEmailattachment($data);
+
+				$uploads[$data['id']] = $data;
+			}
+
+			$this->view->uploads = $uploads;
+			$this->view->documentUrl = $documentUrl;
+		} catch (Zend_File_Transfer_Exception $e) {
+			// Keep response quiet in iframe context
+		}
 	}
 
 	public function deleteAction()
@@ -111,41 +138,59 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		if($this->getRequest()->isPost()) {
-			// Get raw POST body and decode JSON input
-			$body = $this->getRequest()->getRawBody();
-			$data = json_decode($body, true);
+		if (!$this->getRequest()->isPost()) {
+			return;
+		}
 
-			// Extract IDs to be deleted
-			$ids = isset($data['id']) ? $data['id'] : [];
+		$body = $this->getRequest()->getRawBody();
+		$data = json_decode($body, true);
 
-			foreach ($ids as $id) {
-				$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
-				$emailattachment = $emailattachmentDb->getEmailattachment($id);
-				$emailattachmentDb->deleteEmailattachment($id);
+		$ids = isset($data['id']) && is_array($data['id']) ? $data['id'] : [];
 
-				if($id && ($emailattachment['location'].'/'.$emailattachment['filename']));
-				unlink($emailattachment['location'].'/'.$emailattachment['filename']);
+		if (empty($ids)) {
+			return;
+		}
+
+		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
+
+		foreach ($ids as $id) {
+			$id = (int) $id;
+			if ($id <= 0) {
+				continue;
+			}
+
+			$emailattachment = $emailattachmentDb->getEmailattachment($id);
+			if (!$emailattachment) {
+				continue;
+			}
+
+			$file = rtrim((string) $emailattachment['location'], '/') . '/' . (string) $emailattachment['filename'];
+
+			$emailattachmentDb->deleteEmailattachment($id);
+
+			if (is_file($file)) {
+				unlink($file);
 			}
 		}
+
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
 
 	public function lockAction()
 	{
-		$id = $this->_getParam('id', 0);
+		$id = (int) $this->_getParam('id', 0);
 		$this->_helper->Access->lock($id, $this->_user['id']);
 	}
 
 	public function unlockAction()
 	{
-		$id = $this->_getParam('id', 0);
+		$id = (int) $this->_getParam('id', 0);
 		$this->_helper->Access->unlock($id);
 	}
 
 	public function keepaliveAction()
 	{
-		$id = $this->_getParam('id', 0);
+		$id = (int) $this->_getParam('id', 0);
 		$this->_helper->Access->keepalive($id);
 	}
 
@@ -159,9 +204,10 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 		$i = 1;
 		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
 		$emailattachments = $emailattachmentDb->getEmailattachments($documentid);
-		foreach($emailattachments as $emailattachment) {
-			if($emailattachment->ordering != $i) {
-				//$positionsDb->sortPosition($position->id, $i);
+
+		foreach ($emailattachments as $emailattachment) {
+			if ($emailattachment->ordering != $i) {
+				// Keep placeholder for future reorder logic
 			}
 			++$i;
 		}
@@ -172,11 +218,13 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 		$i = 1;
 		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
 		$emailattachments = $emailattachmentDb->getEmailattachments($documentid, $module, $controller);
-		$orderings = array();
-		foreach($emailattachments as $emailattachment) {
+
+		$orderings = [];
+		foreach ($emailattachments as $emailattachment) {
 			$orderings[$i] = $emailattachment['id'];
 			++$i;
 		}
+
 		return $orderings;
 	}
 
@@ -184,6 +232,8 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 	{
 		$ordering = $this->getOrdering($documentid, $module, $controller);
 		end($ordering);
-		return key($ordering);
+
+		$key = key($ordering);
+		return $key !== null ? (int) $key : 0;
 	}
 }

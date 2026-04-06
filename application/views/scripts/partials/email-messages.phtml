@@ -5,6 +5,8 @@ $uploadUrl = $this->baseUrl()
 	. '/id/' . (int) $this->id;
 ?>
 
+<div id="output" class="dw-alert dw-alert--danger" style="display:none;"></div>
+
 <div class="dw-email-composer">
 	<form id="emailmessage" class="dw-email-composer__form" enctype="application/x-www-form-urlencoded" method="post">
 		<div class="dw-form-row">
@@ -35,7 +37,7 @@ $uploadUrl = $this->baseUrl()
 										$attachmentUrl = $this->baseUrl()
 											. '/files/attachments/' . rawurlencode((string) $attachment['module'])
 											. '/' . rawurlencode((string) $attachment['controller'])
-											. '/' . rawurlencode((string) $this->documentUrl)
+											. '/' . ltrim((string) $this->documentUrl, '/')
 											. '/' . rawurlencode($filename);
 										?>
 										<div id="attachment<?= $attachmentId; ?>" class="dw-attachment-item">
@@ -46,16 +48,13 @@ $uploadUrl = $this->baseUrl()
 
 											<a class="dw-attachment-item__link" href="<?= $attachmentUrl; ?>" target="_blank" rel="noopener">
 												<span class="dw-attachment-item__name"><?= $this->escape($filename); ?></span>
-												<span class="dw-attachment-item__meta">
-													(<?= $this->HumanFileSize($attachment['filesize']); ?>)
-												</span>
+												<span class="dw-attachment-item__meta">(<?= $this->HumanFileSize($attachment['filesize']); ?>)</span>
 											</a>
 
 											<button
 												type="button"
 												class="delete nolabel"
-												onclick="deleteAttachment('<?= $attachmentId; ?>', deleteConfirm, 'attachment', 'contacts');"
-											>
+												onclick="deleteAttachment('<?= $attachmentId; ?>', deleteConfirm, 'attachment', 'contacts');">
 												Delete
 											</button>
 										</div>
