@@ -73,11 +73,103 @@
 
 class DEEC_Form
 {
+	protected $mode = 'edit';
 	protected $method = 'post';
 	protected $locale = null;
 	protected $elements = [];
 	protected $errors = [];
 	protected $translator = null;
+
+	public function setMode(string $mode): self
+	{
+		$this->mode = ($mode === 'readonly') ? 'readonly' : 'edit';
+		return $this;
+	}
+
+	public function getMode(): string
+	{
+		return $this->mode;
+	}
+
+	public function isReadonly(): bool
+	{
+		return $this->mode === 'readonly';
+	}
+
+	protected function applyModeToAttribs(array $el, array $attribs): array
+	{
+		if (!$this->isReadonly()) {
+			return $attribs;
+		}
+
+		$type = (string)($el['type'] ?? 'text');
+
+		// hidden niemals sperren
+		if ($type === 'hidden') {
+			return $attribs;
+		}
+
+		// Buttons in readonly nicht aktiv
+		if (in_array($type, ['button', 'submit'], true)) {
+			$attribs['disabled'] = 'disabled';
+			return $attribs;
+		}
+
+		// textartige Felder
+		if (in_array($type, ['text', 'email', 'number', 'date', 'textarea'], true)) {
+			$attribs['readonly'] = 'readonly';
+			return $attribs;
+		}
+
+		// select / checkbox / radio / multicheckbox
+		$attribs['disabled'] = 'disabled';
+		return $attribs;
+	}
+
+	public function getTranslator()
+	{
+		if ($this->translator) return $this->translator;
+		if (class_exists('Zend_Registry') && Zend_Registry::isRegistered('DEEC_Translate')) {
+			$this->translator = Zend_Registry::get('DEEC_Translate');
+		}
+
+		return $this->translator;
+	}
+
+	public function setTranslator(DEEC_Translate $translator): self
+	{
+		$this->translator = $translator;
+		return $this;
+	}
+
+	public function translate(string $key, array $args = []): string
+	{
+		$t = $this->getTranslator();
+		if ($t && method_exists($t, 't')) {
+			return $t->t($key, $args);
+		}
+		return $key;
+	}
+
+	protected function translateError($code): string
+	{
+		switch ((string)$code) {
+			case 'required':
+				return $this->translate('VALIDATION_REQUIRED');
+			case 'email':
+				return $this->translate('VALIDATION_EMAIL');
+			case 'number':
+				return $this->translate('VALIDATION_NUMBER');
+			case 'min':
+				return $this->translate('VALIDATION_MIN');
+			case 'max':
+				return $this->translate('VALIDATION_MAX');
+			case 'pattern':
+				return $this->translate('VALIDATION_PATTERN');
+			default:
+				return $this->translate('VALIDATION_INVALID');
+		}
+	}
 
 	public function addCsrfToken(string $name = 'csrf_token'): void
 	{
@@ -197,8 +289,8 @@ class DEEC_Form
 		$clean['format'] = (isset($clean['format']) && is_array($clean['format'])) ? $clean['format'] : null;
 		$clean['source'] = isset($clean['source']) ? $clean['source'] : null;
 
-		// options nur für select
-		if (($clean['type'] ?? '') === 'select') {
+		// options für Auswahl-Elemente
+		if (in_array(($clean['type'] ?? ''), ['select', 'radio', 'multicheckbox'], true)) {
 			$opts = $clean['options'] ?? [];
 			if (!is_array($opts)) $opts = [];
 			$clean['options'] = $opts;
@@ -416,7 +508,7 @@ class DEEC_Form
 			'min','max','step','pattern','minlength','maxlength',
 			'autocomplete','autofocus','multiple','size',
 			'rows','cols','accept','inputmode','spellcheck','title',
-			'checked','tabindex',
+			'checked','tabindex','rel',
 		];
 
 		$out = [];
@@ -940,6 +1032,8 @@ class DEEC_Form
 			$cls = trim($cls . ' is-invalid');
 		}
 
+		$attribs = $this->applyModeToAttribs($el, $attribs);
+
 		$attribs['class'] = trim($cls);
 
 		// ------------------------------------------------------------
@@ -1148,6 +1242,64 @@ class DEEC_Form
 			return $wrap ? '<div class="'.$wrapperClasses.'">'.$checkbox.'</div>' : $checkbox;
 		}
 
+		if ($type === 'radio') {
+			$selected = ($val === null || $val === '') ? ($el['default'] ?? '') : $val;
+
+			$field = $labelHtml;
+			$field .= '<div class="dw-choice-group dw-choice-group--radio">';
+
+			foreach ((array)($el['options'] ?? []) as $optValue => $optLabel) {
+				$checked = ((string)$selected === (string)$optValue);
+
+				$field .= '<label class="dw-choice">';
+				$field .= '<input type="radio"'
+					. ' name="'.$nameEsc.'"'
+					. ' value="'.htmlspecialchars((string)$optValue).'"'
+					. ($checked ? ' checked' : '')
+					. '>';
+				$field .= '<span>'.htmlspecialchars($this->translate((string)$optLabel)).'</span>';
+				$field .= '</label>';
+			}
+
+			$field .= '</div>';
+			$field .= $errorHtml . $desc . $info;
+
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+		}
+
+		if ($type === 'multicheckbox') {
+			$selected = is_array($val) ? $val : [];
+			if (empty($selected) && !empty($el['default']) && is_array($el['default'])) {
+				$selected = $el['default'];
+			}
+
+			$selectedMap = [];
+			foreach ($selected as $selectedValue) {
+				$selectedMap[(string)$selectedValue] = true;
+			}
+
+			$field = $labelHtml;
+			$field .= '<div class="dw-choice-group dw-choice-group--checkbox">';
+
+			foreach ((array)($el['options'] ?? []) as $optValue => $optLabel) {
+				$checked = isset($selectedMap[(string)$optValue]);
+
+				$field .= '<label class="dw-choice">';
+				$field .= '<input type="checkbox"'
+					. ' name="'.$nameEsc.'[]"'
+					. ' value="'.htmlspecialchars((string)$optValue).'"'
+					. ($checked ? ' checked' : '')
+					. '>';
+				$field .= '<span>'.htmlspecialchars($this->translate((string)$optLabel)).'</span>';
+				$field .= '</label>';
+			}
+
+			$field .= '</div>';
+			$field .= $errorHtml . $desc . $info;
+
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+		}
+
 		// ------------------------------------------------------------
 		// Default: text/email/number/etc.
 		// ------------------------------------------------------------
@@ -1186,10 +1338,14 @@ class DEEC_Form
 			$html .= '<h4>' . htmlspecialchars($this->translate($labelKey)) . '</h4>';
 		}
 
+		$parentModule = (string)($el['parent_module'] ?? '');
+		$parentController = (string)($el['parent_controller'] ?? '');
+
 		// Container
 		$html .= '<div id="' . htmlspecialchars($name) . '-container" class="multiformContainer dw-multiform"'
 				. ' data-parentid="' . htmlspecialchars((string)$parentid) . '"'
-				. ' data-controller="' . htmlspecialchars($controller) . '"'
+				. ' data-parent-module="' . htmlspecialchars($parentModule) . '"'
+				. ' data-parent-controller="' . htmlspecialchars($parentController) . '"'
 				. '>';
 
 		$html .= '<div id="' . htmlspecialchars($name) . '" class="multiform dw-multiform__list">';
@@ -1214,29 +1370,7 @@ class DEEC_Form
 				continue;
 			}
 
-			$rowId = (string)$row['id'];
-
-			$html .= '<div id="' . htmlspecialchars($name . $rowId) . '" class="dw-multiform__item dw-card">';
-			$html .= '<div class="dw-form-row">';
-
-			foreach ($fieldNames as $field) {
-				// renderElementRow kommt aus DEEC_Form und setzt id + data-* + value korrekt
-				if (method_exists($rowForm, 'renderElementRow')) {
-					$html .= $rowForm->renderElementRow($field, $row, $ctx);
-				} else {
-					// fallback: falls renderElementRow nicht existiert, müsst ihr es im RowForm bereitstellen
-					$html .= $this->renderMultiFallbackField($rowForm, $field, $row, $ctx, $name);
-				}
-			}
-
-			$html .= '</div>';
-
-			// delete button
-			$html .= '<div class="dw-multiform__actions">';
-			$html .= '<button type="button" class="delete nolabel"'
-					. ' onclick="trash(' . (int)$rowId . ', deleteConfirm, \'' . htmlspecialchars($controller) . '\', \'' . htmlspecialchars($module) . '\');"></button>';
-			$html .= '</div>';
-			$html .= '</div>';
+			$html .= $rowForm->renderMultiItem($name, $row, $ctx);
 		}
 
 		// add button wie bisher, global.js click handler greift hier
@@ -1269,6 +1403,35 @@ class DEEC_Form
 		return $form;
 	}
 
+	public function renderMultiItem(string $name, array $row, array $ctx = []): string
+	{
+		if (empty($row['id'])) {
+			return '';
+		}
+
+		$rowId = (string)$row['id'];
+		$fields = array_keys($this->getElements());
+
+		$module = (string)($ctx['module'] ?? '');
+		$controller = (string)($ctx['controller'] ?? '');
+
+		$html = '<div id="' . htmlspecialchars($name . $rowId) . '" class="dw-multiform__item dw-card">';
+		$html .= '<div class="dw-form-row">';
+
+		foreach ($fields as $field) {
+			$html .= $this->renderElementRow($field, $row, $ctx);
+		}
+
+		$html .= '</div>';
+		$html .= '<div class="dw-multiform__actions">';
+		$html .= '<button type="button" class="delete nolabel"'
+				. ' onclick="trash(' . (int)$rowId . ', deleteConfirm, \'' . htmlspecialchars($controller) . '\', \'' . htmlspecialchars($module) . '\');"></button>';
+		$html .= '</div>';
+		$html .= '</div>';
+
+		return $html;
+	}
+
 	protected function applyOptionsIfAvailable(DEEC_Form $form): void
 	{
 		// Zend Helper "Options" verfügbar?
@@ -1294,37 +1457,5 @@ class DEEC_Form
 		}
 
 		return '<div class="dw-field dw-field--col-12">' . $html . '</div>';
-	}
-
-	public function getTranslator()
-	{
-		if ($this->translator) return $this->translator;
-		if (class_exists('Zend_Registry') && Zend_Registry::isRegistered('DEEC_Translate')) {
-			$this->translator = Zend_Registry::get('DEEC_Translate');
-		}
-
-		return $this->translator;
-	}
-
-	public function translate(string $key, array $args = []): string
-	{
-		$t = $this->getTranslator();
-		if ($t && method_exists($t, 't')) {
-			return $t->t($key, $args);
-		}
-		return $key;
-	}
-
-	protected function translateError($code)
-	{
-		switch ($code) {
-			case 'required': return 'Dieses Feld ist erforderlich.';
-			case 'email': return 'Bitte geben Sie eine gültige E-Mail-Adresse ein.';
-			case 'number': return 'Bitte geben Sie eine Zahl ein.';
-			case 'min': return 'Der eingegebene Wert ist zu klein.';
-			case 'max': return 'Der eingegebene Wert ist zu groß.';
-			case 'pattern': return 'Das Format ist ungültig.';
-			default: return 'Ungültige Eingabe.';
-		}
 	}
 }
