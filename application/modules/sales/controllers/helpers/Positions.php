@@ -2,7 +2,7 @@
 
 class Application_Controller_Action_Helper_Positions extends Zend_Controller_Action_Helper_Abstract
 {
-	public function getPositions($id, $quote, $locale)
+	public function getPositions($id, $quote, $locale, $controller)
 	{
 		//Get currency
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
@@ -10,7 +10,7 @@ class Application_Controller_Action_Helper_Positions extends Zend_Controller_Act
 
 		$options = array();
 		$optionSets = array();
-		$positionsDb = new Sales_Model_DbTable_Quotepos();
+		$positionsDb = $this->getDocumentDb($controller);
 		$positions = $positionsDb->getPositions($id);
 		if(count($positions)) {
 			//Use price rules on all positions
@@ -88,5 +88,11 @@ class Application_Controller_Action_Helper_Positions extends Zend_Controller_Act
 			return $price;
 		}
 		return $currency->toCurrency($price);
+	}
+
+	protected function getDocumentDb(string $controller)
+	{
+		$class = 'Sales_Model_DbTable_' . ucfirst($controller) . 'pos';
+		return new $class();
 	}
 }
