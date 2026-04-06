@@ -52,7 +52,7 @@ class Sales_Service_DocumentPayloadService
 			'positions' => $positions,
 			'footers' => $footers,
 			'calculations' => $calculations,
-			'pdfSettings' => $this->buildPdfSettings($document, $controller),
+			'settings' => $this->buildPdfSettings($document, $controller),
 		];
 	}
 
@@ -146,32 +146,35 @@ class Sales_Service_DocumentPayloadService
 			'showTotals' => 1,
 			'showFooter' => 1,
 			'showHeader' => 1,
-			'showToc' => 1,
-			'showCoverImage' => 1,
-			'showShopdescription' => 1,
+			'showCover' => 1,
 		];
 
 		if ($controller === 'invoice') {
 			$defaults['showOptions'] = 0;
 			$defaults['showIncludedOptions'] = 0;
 			$defaults['showAttributes'] = 0;
-			$defaults['showToc'] = 0;
-			$defaults['showCoverImage'] = 0;
-			$defaults['showShopdescription'] = 0;
+			$defaults['showCover'] = 0;
+		}
+
+		if ($controller === 'deliveryorder') {
+			$defaults['showPrices'] = 0;
+			$defaults['showDiscounts'] = 0;
+			$defaults['showOptions'] = 0;
+			$defaults['showIncludedOptions'] = 0;
+			$defaults['showAttributes'] = 0;
+			$defaults['showCover'] = 0;
 		}
 
 		return [
-			'showPrices' => isset($document['pdf_show_prices']) ? (int)$document['pdf_show_prices'] : $defaults['showPrices'],
-			'showDiscounts' => isset($document['pdf_show_discounts']) ? (int)$document['pdf_show_discounts'] : $defaults['showDiscounts'],
-			'showOptions' => isset($document['pdf_show_options']) ? (int)$document['pdf_show_options'] : $defaults['showOptions'],
-			'showIncludedOptions' => isset($document['pdf_show_included_options']) ? (int)$document['pdf_show_included_options'] : $defaults['showIncludedOptions'],
-			'showAttributes' => isset($document['pdf_show_attributes']) ? (int)$document['pdf_show_attributes'] : $defaults['showAttributes'],
-			'showTotals' => isset($document['pdf_show_totals']) ? (int)$document['pdf_show_totals'] : $defaults['showTotals'],
-			'showFooter' => isset($document['pdf_show_footer']) ? (int)$document['pdf_show_footer'] : $defaults['showFooter'],
-			'showHeader' => isset($document['pdf_show_header']) ? (int)$document['pdf_show_header'] : $defaults['showHeader'],
-			'showToc' => isset($document['pdf_show_toc']) ? (int)$document['pdf_show_toc'] : $defaults['showToc'],
-			'showCoverImage' => isset($document['pdf_show_cover_image']) ? (int)$document['pdf_show_cover_image'] : $defaults['showCoverImage'],
-			'showShopdescription' => isset($document['pdf_show_shopdescription']) ? (int)$document['pdf_show_shopdescription'] : $defaults['showShopdescription'],
+			'showPrices' => isset($document['pdfshowprices']) ? (int)$document['pdfshowprices'] : $defaults['showPrices'],
+			'showDiscounts' => isset($document['pdfshowdiscounts']) ? (int)$document['pdfshowdiscounts'] : $defaults['showDiscounts'],
+			'showOptions' => isset($document['pdfshowoptions']) ? (int)$document['pdfshowoptions'] : $defaults['showOptions'],
+			'showIncludedOptions' => isset($document['pdfshowoptions']) ? (int)$document['pdfshowoptions'] : $defaults['showIncludedOptions'],
+			'showAttributes' => isset($document['pdfshowattributes']) ? (int)$document['pdfshowattributes'] : $defaults['showAttributes'],
+			'showTotals' => 1,
+			'showFooter' => 1,
+			'showHeader' => 1,
+			'showCover' => isset($document['pdfshowcover']) ? (int)$document['pdfshowcover'] : $defaults['showCover'],
 		];
 	}
 }
