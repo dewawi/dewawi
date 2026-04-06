@@ -1,6 +1,6 @@
 <?php
 
-class Items_ItemController extends Zend_Controller_Action
+class Items_ItemController extends DEEC_Controller_Action
 {
 	protected $_date = null;
 
@@ -40,8 +40,12 @@ class Items_ItemController extends Zend_Controller_Action
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Items_Form_Toolbar();
+		$toolbarInline = new Items_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$categoriesDb = new Application_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories('item');
 
 		$get = new Items_Model_Get();
 		$tags = $get->tags('items', 'item');
@@ -56,7 +60,9 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->tagEntites = $tagEntites;
 		$this->view->items = $items;
 		$this->view->options = $options;
+		$this->view->categories = $categories;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -69,8 +75,12 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$toolbar = new Items_Form_Toolbar();
+		$toolbarInline = new Items_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$categoriesDb = new Application_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories('item');
 
 		$get = new Items_Model_Get();
 		$tags = $get->tags('items', 'item');
@@ -86,7 +96,9 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->items = $items;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->parent = $this->_getParam('parent', NULL);
+		$this->view->setid = (int)$this->_getParam('setid', 0);
 		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -99,6 +111,9 @@ class Items_ItemController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
+		$categoriesDb = new Application_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories('item');
+
 		$get = new Items_Model_Get();
 		list($items, $records) = $get->items($params, $options);
 
@@ -106,6 +121,7 @@ class Items_ItemController extends Zend_Controller_Action
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->parent = $params['parent'];
+		$this->view->setid = (int)$this->_getParam('setid', 0);
 		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
@@ -137,119 +153,129 @@ class Items_ItemController extends Zend_Controller_Action
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
+		$id = (int)$this->_getParam('id', 0);
 
-		$itemDb = new Items_Model_DbTable_Item();
-		$item = $itemDb->getItem($id);
+		$isAjax = $request->isXmlHttpRequest();
 
-		if(false) {
-			$this->_helper->redirector->gotoSimple('view', 'item', null, array('id' => $id));
-		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $item['locked'], $item['lockedtime']);
+		$form = new Items_Form_Item();
+		$options = $this->_helper->Options->applyFormOptions($form);
 
-			$form = new Items_Form_Item();
-			$options = $this->_helper->Options->getOptions($form);
+		$toolbar = new Items_Form_Toolbar();
+		$itemDb  = new Items_Model_DbTable_Item();
 
-			if($request->isPost()) {
+		// Load item
+		$item = $itemDb->getItemForEdit($id);
+
+		// Not found / not usable
+		if (!$item) {
+			if ($isAjax) {
 				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
+				$this->_helper->layout->disableLayout();
 
-					// normalize (trim + parse)
-					$data = DEEC_Filter::normalizeByFormat($data, $element);
-
-					// sync ledger sku if sku changed
-					if ($element === 'sku' && array_key_exists('sku', $data)) {
-						$oldSku = (string)$item['sku'];
-						$newSku = trim((string)$data['sku']);
-
-						if ($newSku !== null && $newSku !== $oldSku) {
-							$ledgerDb = new Items_Model_DbTable_Ledger();
-							$ledgerDb->updateSkuByItemId($id, $newSku);
-						}
-
-						// if empty -> invalid
-						if ($newSku === '') {
-							echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-							return;
-						}
-					}
-
-					// recalc margin only if cost OR price was edited (single-field ajax edit)
-					if($element === 'cost') {
-						$data['margin'] = ($data['cost'] === null || $item['price'] === null)
-							? null
-							: ((float)$item['price'] - (float)$data['cost']);
-					} elseif($element === 'price') {
-						$data['margin'] = ($data['price'] === null || $item['cost'] === null)
-							? null
-							: ((float)$data['price'] - (float)$item['cost']);
-					}
-
-					$itemDb->updateItem($id, $data);
-					echo Zend_Json::encode($itemDb->getItem($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			} else {
-				if($id > 0) {
-					$currency = $this->_helper->Currency->getCurrency($item['currency']);
-					$item['cost'] = $currency->toCurrency($item['cost']);
-					$item['price'] = $currency->toCurrency($item['price']);
-					$item['specialprice'] = $currency->toCurrency($item['specialprice']);
-					$item['margin'] = $currency->toCurrency($item['margin']);
-					$locale = Zend_Registry::get('Zend_Locale');
-					$item['quantity'] = ($item['quantity'] != 0) ? $currency->toCurrency($item['quantity'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['minquantity'] = ($item['minquantity'] != 0) ? $currency->toCurrency($item['minquantity'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['orderquantity'] = ($item['orderquantity'] != 0) ? $currency->toCurrency($item['orderquantity'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['width'] = ($item['width'] != 0) ? $currency->toCurrency($item['width'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['length'] = ($item['length'] != 0) ? $currency->toCurrency($item['length'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['height'] = ($item['height'] != 0) ? $currency->toCurrency($item['height'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['weight'] = ($item['weight'] != 0) ? $currency->toCurrency($item['weight'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packwidth'] = ($item['packwidth'] != 0) ? $currency->toCurrency($item['packwidth'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packlength'] = ($item['packlength'] != 0) ? $currency->toCurrency($item['packlength'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packheight'] = ($item['packheight'] != 0) ? $currency->toCurrency($item['packheight'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packweight'] = ($item['packweight'] != 0) ? $currency->toCurrency($item['packweight'],array('precision' => 2,'locale' => $locale)) : '';
-					$form->populate($item);
-
-					//Tags
-					$get = new Items_Model_Get();
-					$tags = $get->tags('items', 'item', $item['id']);
-
-					//History
-					$ledgerDb = new Items_Model_DbTable_Ledger();
-					$ledger = $ledgerDb->getLedgerBySKU($item['sku']);
-
-					//Toolbar
-					$toolbar = new Items_Form_Toolbar();
-
-					//Get images
-					$imagesDb = new Application_Model_DbTable_Media();
-					$images = $imagesDb->getMediaByParentID($id, 'items', 'item');
-
-					//Get image path
-					$clientid = $this->view->client['id'];
-					$dir1 = substr($clientid, 0, 1);
-					if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
-					else $dir2 = '0';
-					$imagePath = $dir1.'/'.$dir2.'/'.$clientid;
-
-					// Scan subfolders in media/images
-					$this->view->subfolders = $this->getSubfolders(BASE_PATH . '/media/'.$imagePath.'/images/');
-
-					$this->view->form = $form;
-					$this->view->tags = $tags;
-					$this->view->images = $images;
-					$this->view->imagePath = $imagePath;
-					$this->view->ledger = $ledger;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-				}
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'not_found'
+				]);
 			}
+
+			$this->_flashMessenger->addMessage('MESSAGES_ITEM_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'item');
 		}
+
+		// LOCK
+		$this->_helper->Access->lock($id, $this->_user['id'], $item['locked'] ?? 0, $item['lockedtime'] ?? null);
+
+		// POST: ajax save single field
+		if ($request->isPost()) {
+			// Edit via ajax -> JSON
+			if ($isAjax) {
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->layout->disableLayout();
+
+				$post = (array)$request->getPost();
+
+				// Validate only posted subset
+				if (!$form->isValidPartial($post)) {
+					return $this->_helper->json([
+						'ok' => false,
+						'errors' => $this->toErrorMessages($form->getErrors(), $form),
+					]);
+				}
+
+				// Filter/normalize only posted subset for DB
+				$values = $form->getFilteredValuesPartial($post);
+
+				// Save
+				try {
+					$itemDb->updateItem($id, $values);
+				} catch (Exception $e) {
+					return $this->_helper->json([
+						'ok' => false,
+						'message' => 'save_failed'
+					]);
+				}
+
+				// Reload for derived values
+				$itemNew = $itemDb->getItemForEdit($id);
+
+				// Return only changed fields for display
+				$changedFields = array_keys($values);
+
+				$display = DEEC_Display::fromRow($form, $itemNew, $changedFields);
+
+				return $this->_helper->json([
+					'ok' => true,
+					'id' => $id,
+
+					// Raw DB values for JS logic
+					'values' => array_intersect_key($itemNew, array_flip($changedFields)),
+
+					// Formatted for UI
+					'display' => $display,
+
+					// Optional meta: if later derived values set server-side
+					'meta' => [
+						'recalc' => [],
+					],
+				]);
+			}
+
+			// NON-AJAX POST
+			$post = (array)$request->getPost();
+
+			if (!$form->isValid($post)) {
+				// Keep form with submitted values and errors
+				$form->setValues($post);
+			} else {
+				$values = $form->getFilteredValues();
+
+				$itemDb->updateItem($id, $values);
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+				return $this->_helper->redirector->gotoSimple('edit', 'item', null, ['id' => $id]);
+			}
+		} else {
+			// GET: populate form with display values from DB
+			$locale = Zend_Registry::get('Zend_Locale'); // for now, later replaced
+			$itemDisplay = DEEC_Display::rowToFormValues($form, $item, $locale);
+
+			$form->setValues($itemDisplay);
+
+			$this->_helper->MultiEntityLoader->populate($form, $id, 'items', 'item');
+		}
+
+		// build view model once and assign in one shot
+		$vmService = new Items_Service_ItemEditViewModel();
+		$vm = $vmService->build($id, (array)$this->_user, (array)$item);
+
+		$this->view->assign(array_merge($vm, [
+			'id' => $id,
+			'form' => $form,
+			'toolbar' => $toolbar,
+			'options' => $options,
+			'activeTab' => $request->getCookie('tab', null),
+		]));
+
+		// Messages
 		$this->view->messages = array_merge(
 			$this->_helper->flashMessenger->getMessages(),
 			$this->_helper->flashMessenger->getCurrentMessages()
@@ -869,19 +895,27 @@ class Items_ItemController extends Zend_Controller_Action
 	public function pinAction()
 	{
 		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toogle($id);
+		$this->_helper->Pin->toggle($id);
 	}
 
 	public function lockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->lock($id, $this->_user['id']);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function unlockAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->unlock($id);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
 	}
 
 	public function keepaliveAction()
