@@ -430,7 +430,7 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-		return $this->_helper->redirector->gotoSimple('edit', 'creditnote', null, ['id' => $id]);
+		return $this->_helper->redirector->gotoSimple('view', 'creditnote', null, ['id' => $id]);
 	}
 
 	public function downloadAction()

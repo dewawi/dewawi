@@ -449,7 +449,7 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-		return $this->_helper->redirector->gotoSimple('edit', 'invoice', null, ['id' => $id]);
+		return $this->_helper->redirector->gotoSimple('view', 'invoice', null, ['id' => $id]);
 	}
 
 	public function downloadAction()

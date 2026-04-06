@@ -430,7 +430,7 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-		return $this->_helper->redirector->gotoSimple('edit', 'deliveryorder', null, ['id' => $id]);
+		return $this->_helper->redirector->gotoSimple('view', 'deliveryorder', null, ['id' => $id]);
 	}
 
 	public function downloadAction()

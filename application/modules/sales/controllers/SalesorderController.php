@@ -446,7 +446,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-		return $this->_helper->redirector->gotoSimple('edit', 'salesorder', null, ['id' => $id]);
+		return $this->_helper->redirector->gotoSimple('view', 'salesorder', null, ['id' => $id]);
 	}
 
 	public function downloadAction()

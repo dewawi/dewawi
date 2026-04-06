@@ -444,7 +444,7 @@ class Sales_QuoteController extends DEEC_Controller_Action
 		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-		return $this->_helper->redirector->gotoSimple('edit', 'quote', null, ['id' => $id]);
+		return $this->_helper->redirector->gotoSimple('view', 'quote', null, ['id' => $id]);
 	}
 
 	public function downloadAction()

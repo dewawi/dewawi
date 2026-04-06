@@ -443,7 +443,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-		return $this->_helper->redirector->gotoSimple('edit', 'reminder', null, ['id' => $id]);
+		return $this->_helper->redirector->gotoSimple('view', 'reminder', null, ['id' => $id]);
 	}
 
 	public function downloadAction()
