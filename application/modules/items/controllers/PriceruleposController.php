@@ -1,99 +1,121 @@
 <?php
 
-class Items_PriceruleposController extends Zend_Controller_Action
+class Items_PriceruleposController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
-	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-	}
-
 	public function addAction()
 	{
 		$request = $this->getRequest();
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
 
-		$form = new Items_Form_Pricerulepos();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			$params = $this->_getAllParams();
-			if($form->isValid($data) || true) {
-				$positionDb = new Items_Model_DbTable_Pricerulepos();
-				$positionDataBefore = $positionDb->getPositions($data['module'], $data['controller'], $data['parentid'], 0);
-				$latestOrdering = is_array($positionDataBefore) && !empty($positionDataBefore)
-					? end($positionDataBefore)['ordering']
-					: 0;
-				$positionDb->addPosition(array('module' => $data['module'], 'controller' => $data['controller'], 'parentid' => $data['parentid'], 'masterid' => 0, 'possetid' => 0, 'ordering' => $latestOrdering+1));
-				$positionDataAfter = $positionDb->getPositions($data['module'], $data['controller'], $data['parentid'], 0);
-				$position = end($positionDataAfter);
-				echo $this->view->MultiForm($params['module'], $params['controller'], $position, array('amount', 'action'));
-			}
+		if (!$request->isPost()) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'invalid_request',
+			]);
 		}
+
+		$post = (array)$request->getPost();
+
+		$parentid = (int)$this->_getParam('parent_id', 0);
+
+		if ($parentid <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'missing_parent',
+			]);
+		}
+
+		$parentModule = !empty($post['parent_module']) ? (string)$post['parent_module'] : 'contacts';
+		$parentController = !empty($post['parent_controller']) ? (string)$post['parent_controller'] : 'contact';
+
+		$client = Zend_Registry::get('Client');
+
+		$data = [
+			'action' => !empty($post['type']) ? (string)$post['type'] : 'bypercent',
+			'masterid' => 0,
+			'possetid' => 0,
+		];
+
+		$priceruleposDb = new Items_Model_DbTable_Pricerulepos();
+		$newId = $priceruleposDb->createForParent($parentid, $parentModule, $parentController, $data);
+
+		$row = $priceruleposDb->getById($newId);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
+		}
+
+		$rowForm = new Items_Form_Pricerulepos();
+		$this->_helper->Options->applyFormOptions($rowForm);
+
+		$ctx = [
+			'module' => 'items',
+			'controller' => 'pricerulepos',
+		];
+
+		echo $rowForm->renderMultiItem('pricerulepos', $row, $ctx);
 	}
 
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
 
 		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->_helper->layout->disableLayout();
+
+		if (!$request->isPost() || $id <= 0) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+		}
 
 		$form = new Items_Form_Pricerulepos();
+		$this->_helper->Options->applyFormOptions($form);
 
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$positionDb = new Items_Model_DbTable_Pricerulepos();
-				if($id > 0) {
-					if((isset($data['amount'])) && $data['amount'])
-						$data['amount'] = Zend_Locale_Format::getNumber($data['amount'],array('precision' => 2,'locale' => $locale));
-					$positionDb->updatePosition($id, $data);
-					echo Zend_Json::encode($data);
-				}
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
+		$post = (array)$request->getPost();
+
+		if (!$form->isValidPartial($post)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'errors' => $this->toErrorMessages($form->getErrors(), $form),
+			]);
 		}
 
-		$this->view->form = $form;
-	}
+		$values = $form->getFilteredValuesPartial($post);
 
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$priceruleposDb = new Items_Model_DbTable_Pricerulepos();
 
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$positionDb = new Items_Model_DbTable_Pricerulepos();
-			$positionDb->deletePosition($id);
+		try {
+			$priceruleposDb->updateById($id, $values);
+		} catch (Exception $e) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
 		}
-		//$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+
+		$row = $priceruleposDb->getById($id);
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+		}
+
+		$changedFields = array_keys($values);
+		$display = DEEC_Display::fromRow($form, $row, $changedFields);
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'values' => array_intersect_key($row, array_flip($changedFields)),
+			'display' => $display,
+		]);
 	}
 }
