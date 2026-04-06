@@ -27,7 +27,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_TITLE',
+			'label' => 'PURCHASE_ORDERS_TITLE',
 			'format' => ['type' => 'string'],
 			'attribs' => ['maxlength' => 255],
 			'tab' => 'overview',
@@ -37,7 +37,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'subject',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SUBJECT',
+			'label' => 'PURCHASE_ORDERS_SUBJECT',
 			'format' => ['type' => 'string'],
 			'attribs' => ['maxlength' => 255],
 			'tab' => 'overview',
@@ -47,7 +47,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'reference',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_REFERENCE',
+			'label' => 'PURCHASE_ORDERS_REFERENCE',
 			'format' => ['type' => 'string'],
 			'attribs' => ['maxlength' => 255],
 			'tab' => 'overview',
@@ -57,7 +57,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'quotedate',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_QUOTE_DATE',
+			'label' => 'PURCHASE_ORDERS_QUOTE_DATE',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'class' => 'datePicker',
@@ -70,7 +70,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'deliverydate',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_DELIVERY_DATE',
+			'label' => 'PURCHASE_ORDERS_DELIVERY_DATE',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'class' => 'datePicker',
@@ -83,7 +83,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'currency',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_CURRENCY',
+			'label' => 'PURCHASE_ORDERS_CURRENCY',
 			'required' => true,
 			'options' => [],
 			'tab' => 'overview',
@@ -91,19 +91,10 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'taxfree',
-			'type' => 'checkbox',
-			'label' => 'CONTACTS_TAX_FREE',
-			'format' => ['type' => 'int'],
-			'tab' => 'overview',
-			'col' => 3,
-		]);
-
-		$this->addElement([
 			'name' => 'paymentmethod',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_PAYMENT_METHOD',
-			'options' => ['' => 'DELIVERY_ORDERS_NONE'],
+			'label' => 'PURCHASE_ORDERS_PAYMENT_METHOD',
+			'options' => ['' => 'PURCHASE_ORDERS_NONE'],
 			'tab' => 'overview',
 			'col' => 6,
 		]);
@@ -111,8 +102,8 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingmethod',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_METHOD',
-			'options' => ['' => 'DELIVERY_ORDERS_NONE'],
+			'label' => 'PURCHASE_ORDERS_SHIPPING_METHOD',
+			'options' => ['' => 'PURCHASE_ORDERS_NONE'],
 			'tab' => 'overview',
 			'col' => 6,
 		]);
@@ -120,7 +111,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'info',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_INFO',
+			'label' => 'PURCHASE_ORDERS_INFO',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 50,
@@ -133,7 +124,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'notes',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_NOTES',
+			'label' => 'PURCHASE_ORDERS_NOTES',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 45,
@@ -146,7 +137,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'header',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_HEADER',
+			'label' => 'PURCHASE_ORDERS_HEADER',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 75,
@@ -160,7 +151,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'footer',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_FOOTER',
+			'label' => 'PURCHASE_ORDERS_FOOTER',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 75,
@@ -186,8 +177,8 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'contactid',
 			'type' => 'text',
-			'label' => 'CONTACTS_CONTACT_ID',
-			//'format' => ['type' => 'int'],
+			'label' => 'PURCHASE_ORDERS_CONTACT_ID',
+			'format' => ['type' => 'int'],
 			'attribs' => [
 				'readonly' => 'readonly',
 			],
@@ -198,7 +189,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname1',
 			'type' => 'text',
-			'label' => 'CONTACTS_NAME',
+			'label' => 'PURCHASE_ORDERS_CONTACT_NAME',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -207,7 +198,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname2',
 			'type' => 'text',
-			'label' => '',
+			'label' => 'PURCHASE_ORDERS_CONTACT_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -216,7 +207,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingdepartment',
 			'type' => 'text',
-			'label' => 'CONTACTS_DEPARTMENT',
+			'label' => 'PURCHASE_ORDERS_CONTACT_DEPARTMENT',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -225,7 +216,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingstreet',
 			'type' => 'textarea',
-			'label' => 'CONTACTS_STREET',
+			'label' => 'PURCHASE_ORDERS_CONTACT_STREET',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 30,
@@ -238,7 +229,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingpostcode',
 			'type' => 'text',
-			'label' => 'CONTACTS_POSTCODE',
+			'label' => 'PURCHASE_ORDERS_CONTACT_POSTCODE',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
@@ -247,7 +238,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingcity',
 			'type' => 'text',
-			'label' => 'CONTACTS_CITY',
+			'label' => 'PURCHASE_ORDERS_CONTACT_CITY',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 5,
@@ -256,16 +247,35 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingcountry',
 			'type' => 'text',
-			'label' => 'CONTACTS_COUNTRY',
+			'label' => 'PURCHASE_ORDERS_CONTACTS_COUNTRY',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 4,
 		]);
 
 		$this->addElement([
+			'name' => 'vatin',
+			'type' => 'text',
+			'label' => 'PURCHASE_ORDERS_VATIN',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'customer',
+			'col' => 4,
+		]);
+
+		$this->addElement([
+			'name' => 'taxfree',
+			'type' => 'checkbox',
+			'label' => 'PURCHASE_ORDERS_TAX_FREE',
+			'format' => ['type' => 'int'],
+			'tab' => 'customer',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'shippingname1',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_NAME',
+			'label' => 'PURCHASE_ORDERS_SHIPPING_NAME',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,
@@ -274,7 +284,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingname2',
 			'type' => 'text',
-			'label' => '',
+			'label' => 'PURCHASE_ORDERS_SHIPPING_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,
@@ -283,7 +293,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingdepartment',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_DEPARTMENT',
+			'label' => 'PURCHASE_ORDERS_SHIPPING_DEPARTMENT',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,
@@ -292,7 +302,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingstreet',
 			'type' => 'textarea',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_STREET',
+			'label' => 'PURCHASE_ORDERS_SHIPPING_STREET',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'cols' => 30,
@@ -305,7 +315,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingpostcode',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_POSTCODE',
+			'label' => 'PURCHASE_ORDERS_SHIPPING_POSTCODE',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 3,
@@ -314,7 +324,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingcity',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_CITY',
+			'label' => 'PURCHASE_ORDERS_SHIPPING_CITY',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 5,
@@ -323,7 +333,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingcountry',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_COUNTRY',
+			'label' => 'PURCHASE_ORDERS_SHIPPING_COUNTRY',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 4,
@@ -332,7 +342,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingphone',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_PHONE',
+			'label' => 'PURCHASE_ORDERS_SHIPPING_PHONE',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 4,
@@ -341,30 +351,80 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'templateid',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_TEMPLATE',
+			'label' => 'PURCHASE_ORDERS_TEMPLATE',
 			'source' => 'template',
 			'options' => [],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'pdfshowprices',
+			'type' => 'checkbox',
+			'label' => 'PURCHASE_ORDERS_PDF_SHOW_PRICES',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'default' => 1,
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdfshowdiscounts',
+			'type' => 'checkbox',
+			'label' => 'PURCHASE_ORDERS_PDF_SHOW_DISCOUNTS',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'default' => 0,
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdfshowoptions',
+			'type' => 'checkbox',
+			'label' => 'PURCHASE_ORDERS_PDF_SHOW_OPTIONS',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'default' => 0,
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdfshowattributes',
+			'type' => 'checkbox',
+			'label' => 'PURCHASE_ORDERS_PDF_SHOW_ATTRIBUTES',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'default' => 0,
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdfshowcover',
+			'type' => 'checkbox',
+			'label' => 'PURCHASE_ORDERS_PDF_SHOW_COVER',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'default' => 0,
+			'col' => 3,
 		]);
 
 		$this->addElement([
 			'name' => 'language',
 			'type' => 'select',
-			'label' => 'DELIVERY_ORDERS_LANGUAGE',
+			'label' => 'PURCHASE_ORDERS_LANGUAGE',
 			'source' => 'language',
 			'options' => [],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 6,
 		]);
 
 		$this->addElement([
 			'name' => 'state',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_STATE',
+			'label' => 'PURCHASE_ORDERS_STATE',
 			'source' => 'state',
 			'format' => ['type' => 'string'],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 3,
 		]);
 	}
