@@ -382,54 +382,54 @@ button.daterange {
 
 /* Table list */
 
-.dw-table--quotes .dw-col-check {
+.dw-table .dw-col-check {
   width: 40px;
   text-align: center;
 }
 
-.dw-table--quotes .dw-col-id {
+.dw-table .dw-col-id {
   width: 90px;
   white-space: nowrap;
 }
 
-.dw-table--quotes .dw-col-title {
+.dw-table .dw-col-title {
   min-width: 260px;
 }
 
-.dw-table--quotes .dw-col-contact {
+.dw-table .dw-col-contact {
   min-width: 180px;
 }
 
-.dw-table--quotes .dw-col-address {
+.dw-table .dw-col-address {
   min-width: 180px;
 }
 
-.dw-table--quotes .dw-col-notes {
+.dw-table .dw-col-notes {
   min-width: 200px;
 }
 
-.dw-table--quotes .dw-col-date {
+.dw-table .dw-col-date {
   width: 110px;
   white-space: nowrap;
 }
 
-.dw-table--quotes .dw-col-total {
+.dw-table .dw-col-total {
   width: 120px;
   text-align: right;
   white-space: nowrap;
 }
 
-.dw-table--quotes .dw-col-state {
+.dw-table .dw-col-state {
   width: 140px;
   white-space: nowrap;
 }
 
-.dw-table--quotes .dw-col-pin {
+.dw-table .dw-col-pin {
   width: 120px;
   white-space: nowrap;
 }
 
-.dw-table--quotes .dw-col-actions {
+.dw-table .dw-col-actions {
   width: 170px;
 }
 
@@ -1325,7 +1325,7 @@ cursor: default;
   bottom: 10%;
   left: 50%;
   z-index: 99999;
-  width: 1000px;
+  width: 1300px;
   /*--CSS3 Box Shadows--*/
   -webkit-box-shadow: 0px 0px 20px #000;
   -moz-box-shadow: 0px 0px 20px #000;
