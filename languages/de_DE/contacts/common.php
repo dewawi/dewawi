@@ -3,6 +3,7 @@
 	'CONTACTS_EMAIL' => 'E-Mail',
 	'CONTACTS_EMAILS' => 'Nachrichten',
 	'CONTACTS_ATTACHMENTS' => 'Anhang',
+	'CONTACTS_NO_ATTACHMENTS' => 'Keine Anhänge vorhanden',
 	'CONTACTS_EMAIL_SENDER' => 'Absender',
 	'CONTACTS_EMAIL_RECIPIENT' => 'Empfänger',
 	'CONTACTS_EMAIL_CC' => 'CC',

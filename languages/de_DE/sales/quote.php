@@ -1,7 +1,4 @@
 <?php return array(
-	//Quote
-	'QUOTE' => 'Angebot',
-	'QUOTES' => 'Angebote',
 	'QUOTES_ID' => 'ID',
 	'QUOTES_QUOTE_ID' => 'Belegnr.',
 	'QUOTES_NEW_QUOTE' => 'Neues Angebot',

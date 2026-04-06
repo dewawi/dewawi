@@ -1,8 +1,4 @@
 <?php return array(
-	//Purchase order
-	'PURCHASEORDER' => 'Bestellung',
-	'PURCHASE_ORDER' => 'Bestellung',
-	'PURCHASE_ORDERS' => 'Bestellungen',
 	'PURCHASE_ORDERS_ID' => 'ID',
 	'PURCHASE_ORDERS_PURCHASE_ORDER_ID' => 'Belegnr.',
 	'PURCHASE_ORDERS_NEW_PURCHASE_ORDER' => 'Neue Bestellung',

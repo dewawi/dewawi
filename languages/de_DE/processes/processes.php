@@ -1,7 +1,4 @@
 <?php return array(
-	//Processes
-	'PROCESS' => 'Vorgang',
-	'PROCESSES' => 'Vorgänge',
 	'PROCESSES_ID' => 'ID',
 	'PROCESSES_NEW_PROCESS' => 'Neues Vorgang',
 	'PROCESSES_TITLE' => 'Title',

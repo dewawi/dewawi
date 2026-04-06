@@ -1,7 +1,4 @@
 <?php return array(
-	//Invoices
-	'INVOICE' => 'Rechnung',
-	'INVOICES' => 'Rechnungen',
 	'INVOICES_ID' => 'ID',
 	'INVOICES_INVOICE_ID' => 'Belegnr.',
 	'INVOICES_NEW_INVOICE' => 'Neue Rechnung',

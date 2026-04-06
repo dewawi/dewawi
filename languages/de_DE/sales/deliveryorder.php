@@ -1,8 +1,4 @@
 <?php return array(
-	//Delivery order
-	'DELIVERYORDER' => 'Lieferschein',
-	'DELIVERY_ORDER' => 'Lieferschein',
-	'DELIVERY_ORDERS' => 'Lieferscheine',
 	'DELIVERY_ORDERS_ID' => 'ID',
 	'DELIVERY_ORDERS_DELIVERY_ORDER_ID' => 'Belegnr.',
 	'DELIVERY_ORDERS_NEW_DELIVERY_ORDER' => 'Neuer Lieferschein',

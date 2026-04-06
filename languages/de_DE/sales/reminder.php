@@ -1,7 +1,4 @@
 <?php return array(
-	//Credit note
-	'REMINDER' => 'Mahnung',
-	'REMINDERS' => 'Mahnungen',
 	'REMINDERS_ID' => 'ID',
 	'REMINDERS_REMINDER_ID' => 'Belegnr.',
 	'REMINDERS_NEW_REMINDER' => 'Neue Mahnung',

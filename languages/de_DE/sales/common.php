@@ -1,5 +1,26 @@
 <?php return array(
 	'SALES' => 'Verkauf',
+	//Quote
+	'QUOTE' => 'Angebot',
+	'QUOTES' => 'Angebote',
+	//Credit note
+	'CREDITNOTE' => 'Gutschrift',
+	'CREDIT_NOTE' => 'Gutschrift',
+	'CREDIT_NOTES' => 'Gutschriften',
+	//Delivery order
+	'DELIVERYORDER' => 'Lieferschein',
+	'DELIVERY_ORDER' => 'Lieferschein',
+	'DELIVERY_ORDERS' => 'Lieferscheine',
+	//Invoices
+	'INVOICE' => 'Rechnung',
+	'INVOICES' => 'Rechnungen',
+	//Credit note
+	'REMINDER' => 'Mahnung',
+	'REMINDERS' => 'Mahnungen',
+	//Sales order
+	'SALESORDER' => 'Auftragsbestätigung',
+	'SALES_ORDER' => 'Auftragsbestätigung/ Proformarechnung',
+	'SALES_ORDERS' => 'Auftragsbestätigungen',
 	//Menu
 	'MENU_SALES' => 'Verkauf',
 	'MENU_QUOTES' => 'Angebote',

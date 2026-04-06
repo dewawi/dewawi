@@ -1,8 +1,4 @@
 <?php return array(
-	//Sales order
-	'SALESORDER' => 'Auftragsbestätigung',
-	'SALES_ORDER' => 'Auftragsbestätigung/ Proformarechnung',
-	'SALES_ORDERS' => 'Auftragsbestätigungen',
 	'SALES_ORDERS_ID' => 'ID',
 	'SALES_ORDERS_SALES_ORDER_ID' => 'Belegnr.',
 	'SALES_ORDERS_NEW_SALES_ORDER' => 'Neues Auftragsbestätigung',

@@ -1,8 +1,4 @@
 <?php return array(
-	//Quote request
-	'QUOTEREQUEST' => 'Anfrage',
-	'QUOTE_REQUEST' => 'Anfrage',
-	'QUOTE_REQUESTS' => 'Anfragen',
 	'QUOTE_REQUESTS_ID' => 'ID',
 	'QUOTE_REQUESTS_QUOTE_REQUEST_ID' => 'Belegnr.',
 	'QUOTE_REQUESTS_NEW_QUOTE_REQUEST' => 'Neue Anfrage',

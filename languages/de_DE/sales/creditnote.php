@@ -1,8 +1,4 @@
 <?php return array(
-	//Credit note
-	'CREDITNOTE' => 'Gutschrift',
-	'CREDIT_NOTE' => 'Gutschrift',
-	'CREDIT_NOTES' => 'Gutschriften',
 	'CREDIT_NOTES_ID' => 'ID',
 	'CREDIT_NOTES_CREDIT_NOTE_ID' => 'Belegnr.',
 	'CREDIT_NOTES_NEW_CREDIT_NOTE' => 'Neue Gutschrift',
