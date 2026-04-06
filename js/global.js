@@ -253,8 +253,8 @@ $(document).ready(function(){
 		//}
 		//Check if there is a message
 		if (lockResp && lockResp.ok === false && lockResp.message) {
-		  pushMessages(lockResp.message);
-		  return;
+			pushMessages(lockResp.message);
+			return;
 		} else {
 			$(this).hide();
 			if (!$editable.next(type).length) {
@@ -398,18 +398,18 @@ $(document).ready(function(){
 		}
 
 		// SELECT update
-		  if(this.nodeName == 'SELECT') {
+		if(this.nodeName == 'SELECT') {
 			var newValueRaw = (response.values && response.values[this.name] !== undefined)
-			  ? response.values[this.name]
-			  : (response[this.name] !== undefined ? response[this.name] : this.value);
+				? response.values[this.name]
+				: (response[this.name] !== undefined ? response[this.name] : this.value);
 
 			// row class update bleibt
 			if(String(newValueRaw).match(/^\d+$/)) {
-			  $(this).closest('tr').removeClass(this.name+previousValue);
-			  $(this).closest('tr').addClass(this.name+newValueRaw);
+				$(this).closest('tr').removeClass(this.name+previousValue);
+				$(this).closest('tr').addClass(this.name+newValueRaw);
 			} else {
-			  $(this).closest('tr').removeClass(previousValue);
-			  $(this).closest('tr').addClass(newValueRaw);
+				$(this).closest('tr').removeClass(previousValue);
+				$(this).closest('tr').addClass(newValueRaw);
 			}
 
 			// display text
@@ -419,25 +419,25 @@ $(document).ready(function(){
 			if(!shown) shown = $(this).find('option[value="'+newValueRaw+'"]').text();
 
 			if(this.name == 'tagid') {
-			  $(this).prev('.editable').before('<span>'+shown+'</span>');
-			  $('.editable').show();
-			  $('.editableValue:visible').each(function() {
+				$(this).prev('.editable').before('<span>'+shown+'</span>');
+				$('.editable').show();
+				$('.editableValue:visible').each(function() {
 				$(this).hide();
 				unlock($(this).closest('tr').find('input.id').val());
-			  });
+			});
 			} else {
-			  $(this).prev('.editable').text(shown);
-			  previousValue = newValueRaw;
+				$(this).prev('.editable').text(shown);
+				previousValue = newValueRaw;
 			}
 
 			if(this.name == 'parentid') search();
-		  } else {
+		} else {
 			// input/textarea
 			var shown = getDisplayValue(response, this.name);
 			$(this).prev('.editable').text(shown);
-		  }
+		}
 
-		  unlock(params['id']);
+		unlock(params['id']);
 	});
 	$('#data').on('change', '#activated', function() {
 		//console.log($('#activated').is(':checked'));
@@ -1066,7 +1066,7 @@ function activateDwTab($link, saveCookie) {
 	$(target).addClass('is-active').show();
 
 	if (saveCookie) {
-		if (target === '#tabFinish' || target === '#tabDocument' || target === '#tabFiles') {
+		if (target === '#tabfinish' || target === '#tabdocument' || target === '#tabfiles' || target === '#tabmessages') {
 			$.cookie('tab', '#tabOverview', { path: cookiePath + '/' + action });
 		} else {
 			$.cookie('tab', target, { path: cookiePath + '/' + action });
@@ -1279,9 +1279,9 @@ function edit(data, params) {
 			response = json;
 			if (response && response.ok === false) {
 				for (var field in data) {
-				  if (!data.hasOwnProperty(field)) continue;
-				  $('form #'+field).addClass('error');
-				  //console.log('form #'+field);
+					if (!data.hasOwnProperty(field)) continue;
+					$('form #'+field).addClass('error');
+					//console.log('form #'+field);
 				}
 				if (response.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
 				else if (response.message === 'not_found') pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
@@ -1816,47 +1816,64 @@ function getEmailmessages(scrollTo) {
 	});
 }
 
-function sendMessage(){
-	var data = {};
-	data.recipient = $('#recipient').val();
-	data.cc = $('#cc').val();
-	data.bcc = $('#bcc').val();
-	data.replyto = $('#replyto').val();
-	data.subject = $('#subject').val();
-	data.body = tinymce.get('body').getContent();
-	data.module = module;
-	data.controller = controller;
+function sendMessage() {
+	var editor = tinymce.get('body');
+	var contactid = 0;
+	var campaignid = 0;
+	var url = '';
 
-	data.files = {};
+	$('#output').hide().html('');
 
-	$('#attachments .file input[type="checkbox"]').each(function(index, element) {
-		if($(this).is(':checked')) data.files[$(this).val()] = $(this).val();
+	var data = {
+		recipient: $('#recipient').val() || '',
+		cc: $('#cc').val() || '',
+		bcc: $('#bcc').val() || '',
+		replyto: $('#replyto').val() || '',
+		subject: $('#subject').val() || '',
+		body: editor ? editor.getContent() : ($('#body').val() || ''),
+		module: module,
+		controller: controller,
+		files: {}
+	};
+
+	$('#attachments input[type="checkbox"][name="file[]"]:checked').each(function () {
+		data.files[$(this).val()] = $(this).val();
 	});
 
-	if(module == 'contacts') {
-		var contactid = $('#id').val();
-		var url = baseUrl+'/contacts/email/send/contactid/'+contactid;
-	} else if(module == 'campaigns') {
-		var campaignid = $('#id').val();
-		var url = baseUrl+'/contacts/email/send/campaignid/'+campaignid;
+	if (module === 'contacts') {
+		contactid = Number(id) || 0;
+		url = baseUrl + '/contacts/email/send/contactid/' + contactid;
+	} else if (module === 'campaigns') {
+		campaignid = Number(id) || 0;
+		url = baseUrl + '/contacts/email/send/campaignid/' + campaignid;
 	} else {
-		var contactid = $('#contactid').val();
-		var url = baseUrl+'/contacts/email/send/contactid/'+contactid+'/documentid/'+id;
+		contactid = Number($('#contactid').val()) || 0;
+		url = baseUrl + '/contacts/email/send/contactid/' + contactid + '/documentid/' + id;
 	}
 
-	if((contactid > 0) || (campaignid > 0)) {
-		$.ajax({
-			type: 'POST',
-			url: url,
-			cache: false,
-			data: data,
-			success: function(response){
-				getEmailmessages(window.pageYOffset);
-			}
-		});
-	} else {
-		$('#output').html('<b>Bitte vor dem speichern dem Beleg einen Kontakt zuweisen.</b>');
+	if (contactid <= 0 && campaignid <= 0) {
+		$('#output')
+			.html('Nachricht konnte nicht gesendet werden.')
+			.show();
+		return;
 	}
+
+	$.ajax({
+		type: 'POST',
+		url: url,
+		cache: false,
+		data: data,
+		success: function () {
+			getEmailmessages(window.pageYOffset);
+		},
+		error: function (xhr) {
+			$('#output')
+				.html('Nachricht konnte nicht gesendet werden.')
+				.show();
+
+			console.log('sendMessage error', xhr.responseText);
+		}
+	});
 }
 
 function resendMessage(messageid){
@@ -1873,10 +1890,10 @@ function resendMessage(messageid){
 
 // helper: display bevorzugen
 function getDisplayValue(resp, field) {
-  if(resp && resp.display && resp.display[field] !== undefined) return resp.display[field];
-  if(resp && resp[field] !== undefined) return resp[field];
-  if(resp && resp.values && resp.values[field] !== undefined) return resp.values[field];
-  return '';
+	if(resp && resp.display && resp.display[field] !== undefined) return resp.display[field];
+	if(resp && resp[field] !== undefined) return resp[field];
+	if(resp && resp.values && resp.values[field] !== undefined) return resp.values[field];
+	return '';
 }
 
 //Ordering
@@ -1913,21 +1930,21 @@ function sort(parent, type, id, setid, ordering, masterid){
 }
 
 function pushMessages(messages){
-  // normalize to array of strings
-  if (messages == null) return;
+	// normalize to array of strings
+	if (messages == null) return;
 
-  if (typeof messages === 'string') {
-	messages = [messages];
-  } else if (Array.isArray(messages)) {
+	if (typeof messages === 'string') {
+		messages = [messages];
+	} else if (Array.isArray(messages)) {
 	// ok
-  } else if (typeof messages === 'object') {
-	// support {message:".."} or {messages:[..]}
-	if (messages.messages) messages = messages.messages;
-	else if (messages.message) messages = [messages.message];
-	else return;
-  } else {
-	messages = [String(messages)];
-  }
+	} else if (typeof messages === 'object') {
+		// support {message:".."} or {messages:[..]}
+		if (messages.messages) messages = messages.messages;
+		else if (messages.message) messages = [messages.message];
+		else return;
+	} else {
+		messages = [String(messages)];
+	}
 
 	$.each(messages, function(key, value) {
 		$('div#content').prepend('<div id="messages"><ul><li>'+value+'</li></ul></div>');
@@ -1936,36 +1953,36 @@ function pushMessages(messages){
 }
 
 function handleEditError(resp, params) {
-  // 1) not_found -> Meldung + optional redirect
-  if (resp && resp.message === 'not_found') {
-	pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
-	// optional: sofort zurück zur Liste
-	// setLocation(baseUrl+'/'+module+'/'+controller);
+	// 1) not_found -> Meldung + optional redirect
+	if (resp && resp.message === 'not_found') {
+		pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
+		// optional: sofort zurück zur Liste
+		// setLocation(baseUrl+'/'+module+'/'+controller);
+		unlock(params['id']);
+		return true;
+	}
+
+	// 2) errors (Validierung)
+	if (resp && resp.errors) {
+		// hier werden alle Fehlertexte gesammelt und angezeigt
+		pushMessages({ errors: resp.errors });
+		unlock(params['id']);
+		return true;
+	}
+
+	// 3) message (save_failed etc.)
+	if (resp && resp.message) {
+		// du kannst hier übersetzen, wenn du willst
+		if (resp.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
+		else pushMessages([resp.message]);
+		unlock(params['id']);
+		return true;
+	}
+
+	// 4) unbekannt
+	pushMessages(['Speichern nicht möglich.']);
 	unlock(params['id']);
 	return true;
-  }
-
-  // 2) errors (Validierung)
-  if (resp && resp.errors) {
-	// hier werden alle Fehlertexte gesammelt und angezeigt
-	pushMessages({ errors: resp.errors });
-	unlock(params['id']);
-	return true;
-  }
-
-  // 3) message (save_failed etc.)
-  if (resp && resp.message) {
-	// du kannst hier übersetzen, wenn du willst
-	if (resp.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
-	else pushMessages([resp.message]);
-	unlock(params['id']);
-	return true;
-  }
-
-  // 4) unbekannt
-  pushMessages(['Speichern nicht möglich.']);
-  unlock(params['id']);
-  return true;
 }
 
 function removeMessages(){
