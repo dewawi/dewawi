@@ -211,7 +211,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname2',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_CONTACT_NAME',
+			'label' => 'DELIVERY_ORDERS_CONTACT_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -297,7 +297,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingname2',
 			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SHIPPING_NAME',
+			'label' => 'DELIVERY_ORDERS_SHIPPING_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,

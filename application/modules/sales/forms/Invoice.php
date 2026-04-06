@@ -221,7 +221,7 @@ class Sales_Form_Invoice extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname2',
 			'type' => 'text',
-			'label' => 'INVOICES_CONTACT_NAME',
+			'label' => 'INVOICES_CONTACT_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -307,7 +307,7 @@ class Sales_Form_Invoice extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingname2',
 			'type' => 'text',
-			'label' => 'INVOICES_SHIPPING_NAME',
+			'label' => 'INVOICES_SHIPPING_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,

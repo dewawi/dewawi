@@ -211,7 +211,7 @@ class Sales_Form_Salesorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname2',
 			'type' => 'text',
-			'label' => 'SALES_ORDERS_CONTACT_NAME',
+			'label' => 'SALES_ORDERS_CONTACT_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -267,6 +267,25 @@ class Sales_Form_Salesorder extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'vatin',
+			'type' => 'text',
+			'label' => 'SALES_ORDERS_VATIN',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'customer',
+			'col' => 4,
+		]);
+
+		$this->addElement([
+			'name' => 'taxfree',
+			'type' => 'checkbox',
+			'label' => 'SALES_ORDERS_TAX_FREE',
+			'format' => ['type' => 'int'],
+			'tab' => 'customer',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'shippingname1',
 			'type' => 'text',
 			'label' => 'SALES_ORDERS_SHIPPING_NAME',
@@ -278,7 +297,7 @@ class Sales_Form_Salesorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingname2',
 			'type' => 'text',
-			'label' => '',
+			'label' => 'SALES_ORDERS_SHIPPING_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,
@@ -331,25 +350,6 @@ class Sales_Form_Salesorder extends DEEC_Form
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 4,
-		]);
-
-		$this->addElement([
-			'name' => 'vatin',
-			'type' => 'text',
-			'label' => 'SALES_ORDERS_VATIN',
-			'format' => ['type' => 'string'],
-			'attribs' => ['maxlength' => 255],
-			'tab' => 'customer',
-			'col' => 4,
-		]);
-
-		$this->addElement([
-			'name' => 'taxfree',
-			'type' => 'checkbox',
-			'label' => 'SALES_ORDERS_TAX_FREE',
-			'format' => ['type' => 'int'],
-			'tab' => 'customer',
-			'col' => 3,
 		]);
 
 		$this->addElement([

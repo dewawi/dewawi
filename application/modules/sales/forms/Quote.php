@@ -178,9 +178,9 @@ class Sales_Form_Quote extends DEEC_Form
 			'name' => 'contactid',
 			'type' => 'text',
 			'label' => 'QUOTES_CONTACT_ID',
-			//'format' => ['type' => 'int'],
+			'format' => ['type' => 'int'],
 			'attribs' => [
-				//'readonly' => 'readonly',
+				'readonly' => 'readonly',
 			],
 			'tab' => 'customer',
 			'col' => 3,
@@ -198,7 +198,7 @@ class Sales_Form_Quote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname2',
 			'type' => 'text',
-			'label' => 'QUOTES_CONTACT_NAME',
+			'label' => 'QUOTES_CONTACT_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -284,7 +284,7 @@ class Sales_Form_Quote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingname2',
 			'type' => 'text',
-			'label' => 'QUOTES_SHIPPING_NAME',
+			'label' => 'QUOTES_SHIPPING_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,

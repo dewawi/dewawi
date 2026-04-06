@@ -224,7 +224,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingname2',
 			'type' => 'text',
-			'label' => 'CREDIT_NOTES_CONTACT_NAME',
+			'label' => 'CREDIT_NOTES_CONTACT_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 6,
@@ -310,7 +310,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'shippingname2',
 			'type' => 'text',
-			'label' => 'CREDIT_NOTES_SHIPPING_NAME',
+			'label' => 'CREDIT_NOTES_SHIPPING_NAME2',
 			'format' => ['type' => 'string'],
 			'tab' => 'shipping',
 			'col' => 6,
