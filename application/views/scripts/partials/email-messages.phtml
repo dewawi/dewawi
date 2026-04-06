@@ -1,52 +1,102 @@
-<form id="emailmessage" enctype="application/x-www-form-urlencoded" method="post">
-	<div class="row">
-		<div class="col-sm-12 col-lg-7">
-			<dl class="form">
+<?php
+$uploadUrl = $this->baseUrl()
+	. '/contacts/attachment/upload/cmodule/' . urlencode((string) $this->module)
+	. '/ccontroller/' . urlencode((string) $this->controller)
+	. '/id/' . (int) $this->id;
+?>
 
-				<?php if ($this->module != 'campaigns') : ?>
-					<?= $this->emailForm->recipient; ?>
-				<?php endif; ?>
+<div class="dw-email-composer">
+	<form id="emailmessage" class="dw-email-composer__form" enctype="application/x-www-form-urlencoded" method="post">
+		<div class="dw-form-row">
+			<div class="dw-field dw-field--col-8">
+				<div class="dw-email-card">
+					<div class="dw-form-row">
+						<?php if ($this->module !== 'campaigns') : ?>
+							<?= $this->emailForm->renderElement('recipient'); ?>
+						<?php endif; ?>
 
-				<?= $this->emailForm->cc; ?>
-				<?= $this->emailForm->bcc; ?>
-				<?= $this->emailForm->replyto; ?>
-				<?= $this->emailForm->subject; ?>
+						<?= $this->emailForm->renderElement('cc'); ?>
+						<?= $this->emailForm->renderElement('bcc'); ?>
+						<?= $this->emailForm->renderElement('replyto'); ?>
+						<?= $this->emailForm->renderElement('subject'); ?>
 
-				<dt id="attachment-label">
-					<label for="attachment" class="optional">Anhang</label>
-				</dt>
+						<div class="dw-field dw-field--col-12">
+							<label class="dw-label" for="attachments">
+								<?= $this->translate('CONTACTS_ATTACHMENTS'); ?>
+							</label>
 
-				<dd id="attachment-element">
-					<div id="attachments">
-						<?php foreach ($this->attachments as $attachment) : ?>
-							<div id="attachment<?= $attachment['id']; ?>" class="file" style="clear: left;">
-								<input type="checkbox" value="<?= $attachment['id']; ?>" name="file" style="float: left;"/>
+							<div id="attachments" class="dw-attachment-list">
+								<?php if (!empty($this->attachments)) : ?>
+									<?php foreach ($this->attachments as $attachment) : ?>
+										<?php
+										$attachmentId = (int) $attachment['id'];
+										$filename = (string) $attachment['filename'];
 
-								<a href="<?= $this->baseUrl(); ?>/files/attachments/<?= $attachment['module']; ?>/<?= $attachment['controller']; ?>/<?= $this->documentUrl; ?>/<?= $this->escape($attachment['filename']); ?>" target="_blank">
-									<span class="filename"><?= $this->escape($attachment['filename']); ?></span>
-									<span class="filesize">(<?= $this->HumanFileSize($attachment['filesize']); ?>)</span>
-								</a>
+										$attachmentUrl = $this->baseUrl()
+											. '/files/attachments/' . rawurlencode((string) $attachment['module'])
+											. '/' . rawurlencode((string) $attachment['controller'])
+											. '/' . rawurlencode((string) $this->documentUrl)
+											. '/' . rawurlencode($filename);
+										?>
+										<div id="attachment<?= $attachmentId; ?>" class="dw-attachment-item">
+											<label class="dw-attachment-item__select">
+												<input type="checkbox" value="<?= $attachmentId; ?>" name="file[]">
+												<span></span>
+											</label>
 
-								<button type="button" class="delete nolabel"
-									onclick="deleteAttachment('<?= $attachment['id']; ?>', deleteConfirm, 'attachment', 'contacts');">
-								</button><br>
+											<a class="dw-attachment-item__link" href="<?= $attachmentUrl; ?>" target="_blank" rel="noopener">
+												<span class="dw-attachment-item__name"><?= $this->escape($filename); ?></span>
+												<span class="dw-attachment-item__meta">
+													(<?= $this->HumanFileSize($attachment['filesize']); ?>)
+												</span>
+											</a>
+
+											<button
+												type="button"
+												class="delete nolabel"
+												onclick="deleteAttachment('<?= $attachmentId; ?>', deleteConfirm, 'attachment', 'contacts');"
+											>
+												Delete
+											</button>
+										</div>
+									<?php endforeach; ?>
+								<?php else : ?>
+									<div class="dw-attachment-list__empty">
+										<?= $this->translate('CONTACTS_NO_ATTACHMENTS'); ?>
+									</div>
+								<?php endif; ?>
 							</div>
-						<?php endforeach; ?>
+						</div>
+
+						<?= $this->emailForm->renderElement('body'); ?>
+
+						<div class="dw-field dw-field--col-12">
+							<div class="dw-email-composer__actions">
+								<button type="button" class="send dw-btn dw-btn--primary" onclick="sendMessage()">
+									<?= $this->translate('SEND'); ?>
+								</button>
+							</div>
+						</div>
 					</div>
-				</dd>
+				</div>
+			</div>
 
-				<?= $this->emailForm->body; ?>
+			<div class="dw-field dw-field--col-4">
+				<div class="dw-email-card">
+					<h4 class="dw-email-card__title">
+						<?= $this->translate('CONTACTS_ATTACHMENTS'); ?>
+					</h4>
 
-				<button type="button" class="send" onclick="sendMessage()">Senden</button>
-			</dl>
+					<iframe
+						src="<?= $uploadUrl; ?>"
+						class="dw-email-upload-frame"
+						title="Attachment upload"
+						height="420"
+					></iframe>
+				</div>
+			</div>
 		</div>
+	</form>
 
-		<div class="col-sm-12 col-lg-5">
-			<iframe src="<?= $this->baseUrl(); ?>/contacts/attachment/upload/cmodule/<?= $this->module; ?>/ccontroller/<?= $this->controller; ?>/id/<?= $this->id; ?>" width="100%" height="400px"></iframe>
-		</div>
-	</div>
-</form>
-
-<br>
-
-<div id="emailmessages"></div>
+	<div id="emailmessages" class="dw-email-history"></div>
+</div>
