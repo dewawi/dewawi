@@ -23,7 +23,7 @@ $(document).ready(function(){
 		}
 	}, 60000); // 60 seconds
 
-    //pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
+	//pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
 
 	//setInterval(function(){
 	//		console.log(isDirty);
@@ -72,6 +72,9 @@ $(document).ready(function(){
 		isDirty = true;
 	});
 	$('.edit form').on('change', 'input, textarea, select', function() {
+		if ($(this).closest('.dw-multiform__item').length) {
+			return;
+		}
 		if((this.name != 'file[]') && (this.name != 'media[]') && (this.name != 'subfolder')) {
 			isDirty = true;
 			var data = {};
@@ -79,7 +82,7 @@ $(document).ready(function(){
 			var value = this.value;
 			//If the element is a checkbox
 			if($(this).is(':checkbox')) {
-                value = $(this).is(':checked') ? 1 : 0;
+				value = $(this).is(':checked') ? 1 : 0;
 			}
 			data[this.name] = value;
 			//Check dataset info on the element
@@ -91,6 +94,76 @@ $(document).ready(function(){
 			edit(data, params);
 			//validate(data, params);
 		}
+	});
+	$('.edit form').on('change', '.dw-multiform__item input, .dw-multiform__item textarea, .dw-multiform__item select', function() {
+		if ((this.name === 'file[]') || (this.name === 'media[]') || (this.name === 'subfolder')) {
+			return;
+		}
+
+		var $field = $(this);
+
+		var entityId = $field.data('id');
+		var entityModule = $field.data('module');
+		var entityController = $field.data('controller');
+
+		if (!entityId || !entityModule || !entityController) {
+			return;
+		}
+
+		var payload = {};
+		var value = this.value;
+
+		if ($field.is(':checkbox')) {
+			value = $field.is(':checked') ? 1 : 0;
+		}
+
+		payload[this.name] = value;
+
+		if (typeof this.dataset.ordering !== 'undefined') {
+			payload.ordering = this.dataset.ordering;
+		}
+
+		var target = {
+			module: entityModule,
+			controller: entityController,
+			action: 'edit',
+			id: entityId
+		};
+
+		var $container = $field.closest('.multiformContainer');
+
+		var context = {
+			parentModule: $container.data('parent-module'),
+			parentController: $container.data('parent-controller'),
+			parentId: $container.data('parentid')
+		};
+
+		if (!context.parentModule || !context.parentController || !context.parentId) {
+			markFieldError($field, ['Parent-Kontext fehlt.']);
+			return;
+		}
+
+		clearFieldState($field);
+
+		var response = saveEntity(payload, target, context);
+
+		if (!response) {
+			markFieldError($field, ['Speichern fehlgeschlagen.']);
+			return;
+		}
+
+		if (response.ok === false) {
+			if (response.errors && response.errors[this.name]) {
+				markFieldError($field, response.errors[this.name]);
+			} else if (response.message) {
+				markFieldError($field, [response.message]);
+			} else {
+				markFieldError($field, ['Speichern fehlgeschlagen.']);
+			}
+			return;
+		}
+
+		markFieldSaved($field);
 	});
 	$('.edit form input').on('textchange', function() {
 		if((this.name != 'file[]') && (this.name != 'media[]') && (this.name != 'subfolder')) {
@@ -108,57 +181,64 @@ $(document).ready(function(){
 
 	//Handle sub entities
 	$('.positionsContainer').on('change', 'input:not(.id), textarea, select', function() {
-		if(!$(this).hasClass('editableValue')) {
-			if($(this).hasClass('number')) $(this).formatCurrency({ region: language });
-			var data = {};
-			var params = {};
-			params['id'] = $(this).closest('tr.wrap').find('input.id').val();
-			params['parentid'] = id;
-			params['element'] = this.name;
-			if(typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
-			if(typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;
-			if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
-			if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
-			if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
-			var value = this.value;
-			//If the element is a checkbox
-			if($(this).is(':checkbox')) {
-				if($(this).is(':checked')) value = 1;
-				else value = 0;
-			}
-			data[this.name] = value;
-			var parent = $(this).closest('div.positionsContainer').data('parent');
-			var type = $(this).closest('div.positionsContainer').data('type');
-			if(this.name == 'ordering') {
-				var setid = $(this).closest('div.set').find('input.setid').val();
-				sort(parent, type, params['id'], setid, this.value);
-			}
-			else editPosition(parent, type, data, params);
+		if ($(this).hasClass('editableValue')) {
+			return;
+		}
+
+		if ($(this).hasClass('number')) {
+			$(this).formatCurrency({ region: language });
+		}
+
+		var $field = $(this);
+		var $card = $field.closest('.dw-position-card.wrap');
+		var $container = $field.closest('.positionsContainer');
+		var $set = $field.closest('.dw-position-set');
+
+		var data = {};
+		var params = {};
+
+		params['id'] = $card.find('input.position-id[type="hidden"]').first().val();
+		params['parentid'] = id;
+		params['element'] = this.name;
+
+		if (typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
+		if (typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;
+		if (typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
+		if (typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
+		if (typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
+
+		var value = this.value;
+
+		if ($field.is(':checkbox')) {
+			value = $field.is(':checked') ? 1 : 0;
+		}
+
+		data[this.name] = value;
+
+		var parent = $container.data('parent');
+		var type = $container.data('type');
+
+		if (this.name === 'ordering') {
+			var setid = $set.find('input.setid').first().val();
+			sort(parent, type, params['id'], setid, this.value);
+		} else {
+			editPosition(parent, type, data, params);
 		}
 	});
 
 	//Editable
 	var previousValue;
-	//if(action == 'index') {
-		$('#data .editable').each(function() {
-			$(this).wrap('<div class="editableContainer"></div>');
-			if(!$(this).text()) {
-				$(this).html('&nbsp;');
-				$(this).attr('data-empty', 'true');
-			}
-
-		});
-	//}
 	$('#content').on('click', '.editable', function() {
+		var $editable = $(this);
 		if(typeof id === 'undefined') {
 			var id = $(this).closest('tr').find('input.id').val();
 		}
 		var type = $(this).data('type') || 'input';
 		//Close and unlock all other elements
-		var editableValue = $(this).next('.editableValue');
+		var $editableValue = $(this).next('.editableValue');
 		$('.editable').not(this).show();
 		$('.editableValue:visible').each(function(e) {
-			if($(this)[0] != editableValue[0]) {
+			if($(this)[0] != $editableValue[0]) {
 				$(this).hide();
 				if(action == 'index') {
 					if(id != $(this).closest('tr').find('input.id').val()) {
@@ -177,64 +257,99 @@ $(document).ready(function(){
 		  return;
 		} else {
 			$(this).hide();
-			if(!$(this).next(type).length) {
-				//Create a new input with attributes
-				if(type == 'input') {
-					if($(this).data('name') == 'password') {
-						$(this).after('<input type="password">');
+			if (!$editable.next(type).length) {
+				var $input;
+
+				if (type === 'input') {
+					if ($editable.data('name') === 'password') {
+						$editable.after('<input type="password">');
 					} else {
-						$(this).after('<input type="text">');
+						$editable.after('<input type="text">');
 					}
-					var input = $(this).next(type);
-					if(!$(this).data('empty') && (input.data('action') != 'add')) input.val($(this).text());
-				} else if(type == 'select') {
-					$(this).after('<select></select>');
-					var input = $(this).next(type);
-					//Get dropdown options from page if it exists
-					if($('select#'+$(this).data('name')).length && $('select#'+$(this).data('name')).html()) {
-						input.html($('select#'+$(this).data('name')).html());
+
+					$input = $editable.next(type);
+
+					if (!$editable.data('empty')) {
+						$input.val($editable.text());
+					}
+
+				} else if (type === 'select') {
+					$editable.after('<select></select>');
+					$input = $editable.next(type);
+
+					var pageSelect = $('select#' + $editable.data('name'));
+					if (pageSelect.length && pageSelect.html()) {
+						$input.html(pageSelect.html());
 					} else {
 						var response = {};
+
 						$.ajax({
 							type: 'POST',
 							async: false,
-							url: baseUrl+'/'+module+'/'+controller+'/get/element/'+$(this).data('name'),
+							url: baseUrl + '/' + module + '/' + controller + '/get/element/' + $editable.data('name'),
 							cache: false,
-							success: function(json){
+							dataType: 'json',
+							success: function(json) {
 								response = json;
+							},
+							error: function() {
+								response = { ok: false, message: 'network_error' };
 							}
 						});
-						//Add options to dropdown
+
+						if (response.ok === false) {
+							pushMessages(response.message || 'network_error');
+							$editable.show();
+							$editable.next(type).remove();
+							return;
+						}
+
 						$.each(response, function(key, value) {
-							input.append(
+							$input.append(
 								$('<option></option>').val(key).html(value)
 							);
 						});
 					}
-					input.val($(this).data('value'));
-				} else if(type == 'textarea') {
-					$(this).after('<textarea style="height:'+$(this).height()+'px;"></textarea>');
-					var input = $(this).next(type);
-					if(!$(this).data('empty') && (input.data('action') != 'add')) input.val($(this).text());
+
+					$input.val($editable.data('value'));
+
+				} else if (type === 'textarea') {
+					$editable.after('<textarea style="height:' + $editable.height() + 'px;"></textarea>');
+					$input = $editable.next(type);
+
+					if (!$editable.data('empty')) {
+						$input.val($editable.text());
+					}
 				}
-				input.attr('class', 'editableValue');
-				input.attr('name', $(this).data('name'));
-				previousValue = input.val();
+
+				$input.attr('class', 'editableValue');
+				$input.attr('name', $editable.data('name'));
+				$input.show();
+
+				previousValue = $input.val();
+				$input.focus();
 			} else {
-				editableValue.show();
+				$editableValue.show();
+				$editableValue.focus();
 			}
-			$(this).next(type).focus();
 		}
 	});
-	$(document).on('click', 'html', function(e) {
-		if((e.target.className != 'editableValue') && (e.target.className != 'editable') && ($(e.target).parent().attr('class') != 'editableValue')) {
-			$('.editable').show();
-			//Hide and unlock visible elements
-			$('.editableValue:visible').each(function(index) {
-				$(this).hide();
-				unlock($(this).closest('tr').find('input.id').val());
-			});
+	$(document).on('click', function(e) {
+		var $target = $(e.target);
+
+		if (
+			$target.closest('.editableContainer').length ||
+			$target.closest('.editableValue').length
+		) {
+			return;
 		}
+
+		$('.editable').show();
+
+		$('.editableValue:visible').each(function() {
+			$(this).hide();
+			unlock($(this).closest('tr').find('input.id[type="hidden"]').val() || $(this).closest('tr').find('input.id').not(':checkbox').val());
+		});
 	});
 	$('#content').on('change', '.editableValue', function() {
 		isDirty = true;
@@ -276,101 +391,53 @@ $(document).ready(function(){
 			response = edit(data, params);
 		}
 
-        // NEU: Fehler sauber behandeln
-        if (!response) {
-            pushMessages(['Speichern fehlgeschlagen.']);
-            return;
-        }
+		// NEU: Fehler sauber behandeln
+		if (!response) {
+			pushMessages(['Speichern fehlgeschlagen.']);
+			return;
+		}
 
-        // SELECT update
-          if(this.nodeName == 'SELECT') {
-            var newValueRaw = (response.values && response.values[this.name] !== undefined)
-              ? response.values[this.name]
-              : (response[this.name] !== undefined ? response[this.name] : this.value);
+		// SELECT update
+		  if(this.nodeName == 'SELECT') {
+			var newValueRaw = (response.values && response.values[this.name] !== undefined)
+			  ? response.values[this.name]
+			  : (response[this.name] !== undefined ? response[this.name] : this.value);
 
-            // row class update bleibt
-            if(String(newValueRaw).match(/^\d+$/)) {
-              $(this).closest('tr').removeClass(this.name+previousValue);
-              $(this).closest('tr').addClass(this.name+newValueRaw);
-            } else {
-              $(this).closest('tr').removeClass(previousValue);
-              $(this).closest('tr').addClass(newValueRaw);
-            }
-
-            // display text
-            var shown = getDisplayValue(response, this.name);
-
-            // fallback: option text wenn display leer
-            if(!shown) shown = $(this).find('option[value="'+newValueRaw+'"]').text();
-
-            if(this.name == 'tagid') {
-              $(this).prev('.editable').before('<span>'+shown+'</span>');
-              $('.editable').show();
-              $('.editableValue:visible').each(function() {
-                $(this).hide();
-                unlock($(this).closest('tr').find('input.id').val());
-              });
-            } else {
-              $(this).prev('.editable').text(shown);
-              previousValue = newValueRaw;
-            }
-
-            if(this.name == 'parentid') search();
-          } else {
-            // input/textarea
-            var shown = getDisplayValue(response, this.name);
-            $(this).prev('.editable').text(shown);
-          }
-
-          unlock(params['id']);
-
-
-		// Handle response and update UI
-		/*if (response && response.message) {
-			pushMessages(response);
-		} else {
-			//Replace the text with new value
-			if(this.nodeName == 'SELECT') {
-				if(response['message'] !== undefined) {
-					//Handle error message
-				} else {
-					var newValue = response[this.name];
-					//$(this).parent().hide();
-
-					// Update the row classes based on the new value
-					if(newValue.match(/^\d+$/)) { //If value is numeric
-						$(this).closest('tr').removeClass(this.name+previousValue);
-						$(this).closest('tr').addClass(this.name+newValue);
-					} else {
-						$(this).closest('tr').removeClass(previousValue);
-						$(this).closest('tr').addClass(newValue);
-					}
-
-					// Update the displayed text for the <select> element
-					var displayText = $(this).find('option[value="'+newValue+'"]').text();
-					if(this.name == 'tagid') {
-						$(this).prev('.editable').before('<span>'+displayText+'</span>');
-						$('.editable').show();
-
-						// Hide visible editable values and unlock rows
-						$('.editableValue:visible').each(function() {
-							$(this).hide();
-							unlock($(this).closest('tr').find('input.id').val());
-						});
-					} else {
-						$(this).prev('.editable').text(displayText);
-						previousValue = newValue;
-					}
-					if(this.name == 'parentid') search(); // Re-trigger search if parentid change
-				}
+			// row class update bleibt
+			if(String(newValueRaw).match(/^\d+$/)) {
+			  $(this).closest('tr').removeClass(this.name+previousValue);
+			  $(this).closest('tr').addClass(this.name+newValueRaw);
 			} else {
-				// For non-SELECT elements, update the previous sibling's text
-				$(this).prev('.editable').text(response[this.name]);
+			  $(this).closest('tr').removeClass(previousValue);
+			  $(this).closest('tr').addClass(newValueRaw);
 			}
 
-			// Unlock the row
-			unlock(params['id']);
-		}*/
+			// display text
+			var shown = getDisplayValue(response, this.name);
+
+			// fallback: option text wenn display leer
+			if(!shown) shown = $(this).find('option[value="'+newValueRaw+'"]').text();
+
+			if(this.name == 'tagid') {
+			  $(this).prev('.editable').before('<span>'+shown+'</span>');
+			  $('.editable').show();
+			  $('.editableValue:visible').each(function() {
+				$(this).hide();
+				unlock($(this).closest('tr').find('input.id').val());
+			  });
+			} else {
+			  $(this).prev('.editable').text(shown);
+			  previousValue = newValueRaw;
+			}
+
+			if(this.name == 'parentid') search();
+		  } else {
+			// input/textarea
+			var shown = getDisplayValue(response, this.name);
+			$(this).prev('.editable').text(shown);
+		  }
+
+		  unlock(params['id']);
 	});
 	$('#data').on('change', '#activated', function() {
 		//console.log($('#activated').is(':checked'));
@@ -413,7 +480,7 @@ $(document).ready(function(){
 	}
 
 	// Auto search with keyword
-	$('.toolbar #keyword').on('textchange', function() {
+	$('.dw-toolbar #keyword').on('textchange', function() {
 		var keyword = this.value || ''; // Fallback to empty string if undefined
 		if(keyword) {
 			var date = new Date();
@@ -538,9 +605,9 @@ $(document).ready(function(){
 		event.preventDefault();
 		$('#treemenu li a').removeClass('active');
 		$(this).addClass('active');
-        const id = $(this).data('id');
-        $('#catid').val(id);
-        $.cookie('catid', id, { path: cookiePath });
+		const id = $(this).data('id');
+		$('#catid').val(id);
+		$.cookie('catid', id, { path: cookiePath });
 		$('#page').val(1);
 		search();
 	});
@@ -562,6 +629,41 @@ $(document).ready(function(){
 		.ajaxStop(function() {
 			$('#loading').hide();
 	});*/
+
+	//Tabs
+	//$('.tab_content').hide(); //Hide all content
+	$('ul.tabs:not(:has(li.active))').children('li:first-child').addClass('active').show();
+	//$('ul.tabs li:first').addClass('active').show(); //Activate first tab
+	$('.tab_container:not(:has(.tab_content.active))').children(':first-child').addClass('active').show();
+	//$('.tab_content:first').show(); //Show first tab content
+	$('ul.tabs').on('click', 'li', function(event) {
+		$('ul.tabs li').removeClass('active'); //Remove any 'active' class
+		$(this).addClass('active'); //Add 'active' class to selected tab
+			//$('.datepicker-container').addClass('datepicker-hide').off('click.datepicker', $('.datePicker').click); //Hide date picker
+		$('.tab_content').hide(); //Hide all tab content
+
+		if(($(this).find('a').attr('href') == '#tabFinish') || ($(this).find('a').attr('href') == '#tabDocument') || ($(this).find('a').attr('href') == '#tabFiles')) {
+			$.cookie('tab', '#tabOverview', { path: cookiePath+'/'+action });
+		} else {
+			$.cookie('tab', $(this).find('a').attr('href'), { path: cookiePath+'/'+action });
+		}
+
+		var activeTab = $(this).find('a').attr('href'); //Find the href attribute value to identify the active tab + content
+		$(activeTab).fadeIn(); //Fade in the active ID content
+		if(activeTab == '#tabFiles' || activeTab == '#tabImages') {
+			//$('#tabFiles').html('<div id="elfinder"></div>');
+			//elfinder();
+		}
+		//return false;
+				event.preventDefault();
+	});
+	//if($.cookie('tab') == '#tabPositions') {
+		$('div.positionsContainer').each(function() {
+			var parent = $(this).closest('div.positionsContainer').data('parent');
+			var type = $(this).closest('div.positionsContainer').data('type');
+			getPositions(parent, type);
+		});
+	//}
 
 	//Prices and quantities
 	$('.number').on('blur, change', function() {
@@ -589,25 +691,33 @@ $(document).ready(function(){
 					var url = baseUrl+'/'+module+'/'+controller+'/add';
 					if($('#catid').val() > 0) url += '/catid/'+$('#catid').val();
 					setLocation(url);
-				} else if(className == 'addMulti') {
-					var data = {};
-					var params = {};
-					data['action'] = action;
-					data['module'] = module;
-					if($(this).closest('div.multiformContainer').data('controller')) {
-						data['controller'] = $(this).closest('div.multiformContainer').data('controller');
-					} else {
-						data['controller'] = controller;
+				} else if (className == 'addMulti') {
+					var $container = $(this).closest('div.multiformContainer');
+
+					var payload = {};
+					if ($container.data('type')) {
+						payload.type = $container.data('type');
 					}
-					if($(this).closest('div.multiformContainer').data('type'))
-						data['type'] = $(this).closest('div.multiformContainer').data('type');
-					data['parentid'] = $(this).closest('div.multiformContainer').data('parentid');
-					if(typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
-					if(typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;
-					if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
-					if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
-					if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
-					add(data, params);
+
+					var target = {
+						module: $(this).data('module'),
+						controller: $(this).data('controller'),
+						action: 'add',
+						id: $container.data('parentid')
+					};
+
+					var context = {
+						parentModule: $container.data('parent-module'),
+						parentController: $container.data('parent-controller'),
+						parentId: $container.data('parentid')
+					};
+
+					if (!context.parentModule || !context.parentController || !context.parentId) {
+						pushMessages(['Parent-Kontext fehlt.']);
+						return;
+					}
+
+					createEntity(payload, target, context, $container);
 				} else if(className == 'save') {
 					save();
 				} else if(className == 'addPosition') {
@@ -716,24 +826,45 @@ $(document).ready(function(){
 					} else if(className == 'down') {
 						sort(parent, type, setid, -1, 'down');
 					}
-				} else if(className == 'up') {
-					var parent = $(this).closest('div.positionsContainer').data('parent');
-					var type = $(this).closest('div.positionsContainer').data('type');
-					var id = $(this).closest('tr').find('input.id').val();
-					var setid = $(this).closest('div.set').find('input.setid').val();
-					if($(this).closest('tr').hasClass('child')) {
-						var masterid = $(this).closest('tr').data('masterid');
+				} else if (className == 'up') {
+					var $container = $(this).closest('.positionsContainer');
+					var $card = $(this).closest('.dw-position-card');
+					var $set = $(this).closest('.set');
+
+					var parent = $container.data('parent');
+					var type = $container.data('type');
+					var id = $card.find('input[type="hidden"].position-id:first').val();
+					var setid = $set.find('input.setid').val() || null;
+
+					if (!id) {
+						console.warn('sort up: id not found');
+						return;
+					}
+
+					if ($card.hasClass('is-child')) {
+						var masterid = $card.data('masterid');
 						sort(parent, type, id, setid, 'up', masterid);
 					} else {
 						sort(parent, type, id, setid, 'up');
 					}
-				} else if(className == 'down') {
-					var parent = $(this).closest('div.positionsContainer').data('parent');
-					var type = $(this).closest('div.positionsContainer').data('type');
-					var id = $(this).closest('tr').find('input.id').val();
-					var setid = $(this).closest('div.set').find('input.setid').val();
-					if($(this).closest('tr').hasClass('child')) {
-						var masterid = $(this).closest('tr').data('masterid');
+
+				} else if (className == 'down') {
+					var $container = $(this).closest('.positionsContainer');
+					var $card = $(this).closest('.dw-position-card');
+					var $set = $(this).closest('.set');
+
+					var parent = $container.data('parent');
+					var type = $container.data('type');
+					var id = $card.find('input[type="hidden"].position-id:first').val();
+					var setid = $set.find('input.setid').val() || null;
+
+					if (!id) {
+						console.warn('sort down: id not found');
+						return;
+					}
+
+					if ($card.hasClass('is-child')) {
+						var masterid = $card.data('masterid');
 						sort(parent, type, id, setid, 'down', masterid);
 					} else {
 						sort(parent, type, id, setid, 'down');
@@ -744,16 +875,22 @@ $(document).ready(function(){
 					var positionID = $(this).closest('tr').find('input.id').val();
 					copyPosition(parent, type, positionID);
 				} else if(className == 'deletePosition') {
-					/*var ids = $('input:checkbox:checked').map(function () {
-						return this.value;
-					}).get();*/
-					var parent = $(this).closest('div.positionsContainer').data('parent');
-					var type = $(this).closest('div.positionsContainer').data('type');
-					var positionID = $(this).closest('tr').find('input.id').val();
-					var setid = $(this).closest('div.set').find('input.setid').val();
-					if($(this).closest('tr').hasClass('child')) {
-						var masterid = $(this).closest('tr').data('masterid');
-						deletePosition(parent, type, positionID, setid, masterid);
+					var $container = $(this).closest('.positionsContainer');
+					var $card = $(this).closest('.dw-position-card');
+					var $set = $(this).closest('.set');
+
+					var parent = $container.data('parent');
+					var type = $container.data('type');
+					var positionID = $card.find('.position-id:first').val();
+					var setid = $set.find('input.setid').val() || null;
+
+					if (!positionID) {
+						console.warn('deletePosition: no hidden position id found');
+						return;
+					}
+
+					if ($card.hasClass('is-child')) {
+						deletePosition(parent, type, positionID, setid, $card.data('masterid'));
 					} else {
 						deletePosition(parent, type, positionID, setid);
 					}
@@ -862,13 +999,13 @@ function lock(id) {
 		async: false,
 		url: baseUrl+'/'+module+'/'+controller+'/lock/id/'+id,
 		cache: false,
-        dataType: 'json',
+		dataType: 'json',
 		success: function(json){
 			response = json;
 		},
-        error: function(){
-            response = { ok: false, message: 'network_error' };
-        }
+		error: function(){
+			response = { ok: false, message: 'network_error' };
+		}
 	});
 	return response;
 }
@@ -1020,60 +1157,99 @@ function save() {
 //Add
 function add(data, params) {
 	params = params || null;
-	//console.log(data);
-	//console.log(params);
-	if(params) {
+
+	if (params) {
 		var url = baseUrl;
-		params = params || null;
-		if(params['module'] != 'default') {
-			if(params && params['module']) url += '/'+params['module'];
-			else url += '/'+module;
+
+		if (params['module'] && params['module'] !== 'default') {
+			url += '/' + params['module'];
+		} else {
+			url += '/' + module;
 		}
-		if(params && params['controller']) url += '/'+params['controller'];
-		else url += '/'+controller;
-		if(params && params['id']) url += '/add/id/'+params['id'];
-		else url += '/add/id/'+id;
-		var response;
+
+		if (params['controller']) {
+			url += '/' + params['controller'];
+		} else {
+			url += '/' + controller;
+		}
+
+		if (params['id']) {
+			url += '/add/id/' + params['id'];
+		} else {
+			url += '/add/id/' + id;
+		}
+
+		var response = null;
+
 		$.ajax({
 			type: 'POST',
 			async: false,
 			url: url,
 			data: data,
 			cache: false,
-			success: function(json){
-				response = json;
+			success: function(resp){
+				response = resp;
 				isDirty = false;
-				//Append new form from response
-                $('.multiformContainer[data-controller="'+params['controller']+'"][data-parentid="'+data['parentid']+'"] button.add').before(json);
-				//Focus on new element
-				$('div#'+params['controller']+' div:last input:first').focus().select();
+
+				// JSON error response
+				if (typeof resp === 'object' && resp !== null && resp.ok === false) {
+					if (resp.message) pushMessages([resp.message]);
+					else pushMessages(['Speichern fehlgeschlagen.']);
+					return;
+				}
+
+				// Try to detect JSON returned as text
+				if (typeof resp === 'string' && resp.length && resp.charAt(0) === '{') {
+					try {
+						var json = JSON.parse(resp);
+						if (json && json.ok === false) {
+							if (json.message) pushMessages([json.message]);
+							else pushMessages(['Speichern fehlgeschlagen.']);
+							return;
+						}
+					} catch (e) {
+						// not JSON, continue as HTML
+					}
+				}
+
+				var parentId = data.parent_id || data.parentid || params['id'] || id;
+				var $container = $('.multiformContainer[data-controller="' + params['controller'] + '"][data-parentid="' + parentId + '"]');
+
+				if ($container.length) {
+					$container.find('button.addMulti').before(resp);
+					$container.find('.dw-multiform__item:last input:first, .dw-multiform__item:last textarea:first, .dw-multiform__item:last select:first').focus();
+				}
+
+				if (action == 'index') search();
+			},
+			error: function(){
+				pushMessages(['Speichern fehlgeschlagen.']);
 			}
 		});
+
 		return response;
-	} else {
-		data[controller+'id'] = id;
-		if(data['module']) url = baseUrl+'/'+data['module'];
-		else var url = baseUrl+'/'+module;
-		if(data['controller']) url += '/'+data['controller'];
-		else url += '/'+controller;
-		if(data['id']) url += '/add/id/'+data['id'];
-		else url += '/add/id/'+id;
-		$.ajax({
-			type: 'POST',
-			url: url,
-			data: data,
-			cache: false,
-			success: function(response){
-				isDirty = false;
-				//Append new form from response
-				$('div#'+data['controller']+' button.add').before(response);
-				//Focus on new element
-				$('div#'+data['controller']+' div:last input:first').focus().select();
-				//console.log(response);
-				if(action == 'index') search();
-			}
-		});
 	}
+
+	// legacy branch unchanged for now
+	data[controller+'id'] = id;
+	if(data['module']) url = baseUrl+'/'+data['module'];
+	else var url = baseUrl+'/'+module;
+	if(data['controller']) url += '/'+data['controller'];
+	else url += '/'+controller;
+	if(data['id']) url += '/add/id/'+data['id'];
+	else url += '/add/id/'+id;
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: data,
+		cache: false,
+		success: function(response){
+			isDirty = false;
+			$('div#'+data['controller']+' button.add').before(response);
+			$('div#'+data['controller']+' div:last input:first').focus().select();
+			if(action == 'index') search();
+		}
+	});
 }
 
 //Edit
@@ -1091,32 +1267,32 @@ function edit(data, params) {
 		if(params && params['id']) url += '/edit/id/'+params['id'];
 		else url += '/edit/id/'+id;
 	}
-    var response = null;
+	var response = null;
 	$.ajax({
 		type: 'POST',
 		async: false,
 		url: url,
 		data: data,
 		cache: false,
-        dataType: 'json',
+		dataType: 'json',
 		success: function(json){
 			response = json;
-            if (response && response.ok === false) {
-                for (var field in data) {
-                  if (!data.hasOwnProperty(field)) continue;
-                  $('form #'+field).addClass('error');
-	              //console.log('form #'+field);
-                }
-                if (response.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
-                else if (response.message === 'not_found') pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
-                else pushMessages([response.message]);
-		    } else {
-			    isDirty = false;
-            }
+			if (response && response.ok === false) {
+				for (var field in data) {
+				  if (!data.hasOwnProperty(field)) continue;
+				  $('form #'+field).addClass('error');
+				  //console.log('form #'+field);
+				}
+				if (response.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
+				else if (response.message === 'not_found') pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
+				else pushMessages([response.message]);
+			} else {
+				isDirty = false;
+			}
 		},
-        error: function(xhr){
-            pushMessages(['Speichern fehlgeschlagen.']);
-        }
+		error: function(xhr){
+			pushMessages(['Speichern fehlgeschlagen.']);
+		}
 	});
 	//console.log(data);
 	//console.log(params);
@@ -1179,7 +1355,7 @@ function search() {
 			success: function(response){
 				$('#content').html(response);
 				if(action == 'select') {
-	                initDwTabs('#content');
+					initDwTabs('#content');
 				}
 				$('#data tbody tr:nth-child(2n+1)').addClass('alt');
 				$('#data').on('mouseover mouseout', 'tbody tr', function(event) {
@@ -1197,6 +1373,8 @@ function search() {
 				$('#data .editable').each(function() {
 					$(this).wrap('<div class="editableContainer"></div>');
 				});
+
+				//Hide loading
 				$('#loading').hide();
 
 				//Load map
@@ -1739,16 +1917,16 @@ function pushMessages(messages){
   if (messages == null) return;
 
   if (typeof messages === 'string') {
-    messages = [messages];
+	messages = [messages];
   } else if (Array.isArray(messages)) {
-    // ok
+	// ok
   } else if (typeof messages === 'object') {
-    // support {message:".."} or {messages:[..]}
-    if (messages.messages) messages = messages.messages;
-    else if (messages.message) messages = [messages.message];
-    else return;
+	// support {message:".."} or {messages:[..]}
+	if (messages.messages) messages = messages.messages;
+	else if (messages.message) messages = [messages.message];
+	else return;
   } else {
-    messages = [String(messages)];
+	messages = [String(messages)];
   }
 
 	$.each(messages, function(key, value) {
@@ -1760,28 +1938,28 @@ function pushMessages(messages){
 function handleEditError(resp, params) {
   // 1) not_found -> Meldung + optional redirect
   if (resp && resp.message === 'not_found') {
-    pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
-    // optional: sofort zurück zur Liste
-    // setLocation(baseUrl+'/'+module+'/'+controller);
-    unlock(params['id']);
-    return true;
+	pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
+	// optional: sofort zurück zur Liste
+	// setLocation(baseUrl+'/'+module+'/'+controller);
+	unlock(params['id']);
+	return true;
   }
 
   // 2) errors (Validierung)
   if (resp && resp.errors) {
-    // hier werden alle Fehlertexte gesammelt und angezeigt
-    pushMessages({ errors: resp.errors });
-    unlock(params['id']);
-    return true;
+	// hier werden alle Fehlertexte gesammelt und angezeigt
+	pushMessages({ errors: resp.errors });
+	unlock(params['id']);
+	return true;
   }
 
   // 3) message (save_failed etc.)
   if (resp && resp.message) {
-    // du kannst hier übersetzen, wenn du willst
-    if (resp.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
-    else pushMessages([resp.message]);
-    unlock(params['id']);
-    return true;
+	// du kannst hier übersetzen, wenn du willst
+	if (resp.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
+	else pushMessages([resp.message]);
+	unlock(params['id']);
+	return true;
   }
 
   // 4) unbekannt
@@ -1801,16 +1979,19 @@ function removeMessages(){
 }
 
 //Make PDF
-function previewPdf(){
-	$('#output').html('');
-	var url = baseUrl+'/'+module+'/'+controller+'/preview/id/'+id;
-	if($('#templateid').val()) url += '/templateid/'+$('#templateid').val();
+function previewPdf() {
 	$.ajax({
 		type: 'POST',
-		url: url,
-		cache: false,
-		success: function(data){
-			$('#output').html(data);
+		url: baseUrl + '/' + module + '/' + controller + '/preview/id/' + id + '/templateid/' + $('#templateid').val(),
+		dataType: 'json',
+		success: function(response) {
+			if (!response.ok || !response.url) {
+				return;
+			}
+
+			$('#output').html(
+				'<iframe src="' + response.url + '" width="100%" height="700"></iframe>'
+			);
 		}
 	});
 }
@@ -1899,110 +2080,168 @@ function modalWindowClose() {
 	return false;
 }
 
-//Validate
-function validate(formElementId, params){
-	$('#status #success').hide();
-	$('#status #warning').show();
-	if($('form [name='+formElementId+']').hasClass('number')) {
-		$('form [name='+formElementId+']').formatCurrency({ region: language });
+//Set location
+function setLocation(location){
+	window.location = location;
+}
+
+function saveEntity(payload, target, context) {
+	payload = payload || {};
+	target = target || {};
+	context = context || {};
+
+	var requestPayload = $.extend({}, payload);
+
+	if (context.parentModule) requestPayload.parent_module = context.parentModule;
+	if (context.parentController) requestPayload.parent_controller = context.parentController;
+	if (context.parentId) requestPayload.parent_id = context.parentId;
+
+	var params = {};
+
+	if (target.id !== undefined && target.id !== null && target.id !== '') {
+		params.id = target.id;
 	}
-	var data={};
-	data['element'] = formElementId;
-	data[formElementId] = $('form [name='+formElementId+']').val();
-	var url = baseUrl+'/'+module+'/'+controller+'/validate/id/'+id;
+
+	if (target.action) {
+		params.action = target.action;
+	} else {
+		params.action = 'edit';
+	}
+
+	if (target.module) {
+		params.module = target.module;
+	}
+
+	if (target.controller) {
+		params.controller = target.controller;
+	}
+
+	return edit(requestPayload, params);
+}
+
+function createEntity(payload, target, context, $container) {
+	payload = payload || {};
+	target = target || {};
+	context = context || {};
+
+	var requestPayload = $.extend({}, payload);
+
+	if (context.parentModule) requestPayload.parent_module = context.parentModule;
+	if (context.parentController) requestPayload.parent_controller = context.parentController;
+	if (context.parentId) requestPayload.parent_id = context.parentId;
+
+	var url = baseUrl;
+
+	if (target.module) url += '/' + target.module;
+	else url += '/' + module;
+
+	if (target.controller) url += '/' + target.controller;
+	else url += '/' + controller;
+
+	if (target.id !== undefined && target.id !== null && target.id !== '') {
+		url += '/add/id/' + target.id;
+	} else {
+		url += '/add/id/' + id;
+	}
+
 	$.ajax({
 		type: 'POST',
 		url: url,
-		data: data,
+		data: requestPayload,
 		cache: false,
-		success: function(resp){
-			$('form #'+formElementId).parent().find('.errors').remove();
-			$('form #'+formElementId).removeClass('error');
-			$('form#'+controller+' button').removeAttr('disabled');
-			if(typeof resp[formElementId] !== 'undefined') {
-				$('form #'+formElementId).parent().append(getErrorHtml(resp[formElementId], formElementId));
-				$('form #'+formElementId).addClass('error');
-				$('form#'+controller+' button').attr('disabled', 'disabled');
-			} else {
-				edit(data, params);
+		success: function(response) {
+			isDirty = false;
+
+			if ($container && $container.length) {
+				var $target = $container.find('> .multiform');
+				if (!$target.length) {
+					$target = $container.find('.multiform').first();
+				}
+
+				if ($target.length) {
+					var $addButton = $target.find('button.addMulti').first();
+					$(response).insertBefore($addButton);
+
+					var $newItem = $addButton.prev();
+					$newItem.find('input, textarea, select').filter(':visible').first().focus().select();
+				}
 			}
+
+			if (action == 'index') search();
+		},
+		error: function() {
+			pushMessages(['Speichern fehlgeschlagen.']);
 		}
 	});
 }
 
-function validateForm(formElementId, positionID){
-	$('#status #success').hide();
-	$('#status #warning').show();
-	var url = baseUrl+'/'+module+'/'+controller+'/validate';
-	var data = {};
-	positionID = positionID || null;
-	if(positionID) {
-		url = baseUrl+'/'+window.parent.module+'/'+controller+'pos/validate';
-		data['id'] = positionID;
-		data['element'] = formElementId;
-		data[formElementId] = $('.position'+positionID+' [name='+formElementId+']').val();
-		$.ajax({
-			type: 'POST',
-			url: url,
-			data: data,
-			cache: false,
-			success: function(resp){
-				$('.position'+positionID).find('.errors').remove();
-				$('.position'+positionID+' #'+formElementId).removeClass('error');
-				if(typeof resp[formElementId] !== 'undefined') {
-					var error = '<ul id="errors-'+formElementId+'" class="errors">';
-					var label = $('.position'+positionID+' #'+formElementId+'-label label').text();
-					for(errorKey in resp[formElementId])
-					{
-						error += '<li>' + label + ': ' + resp[formElementId][errorKey] + '</li>';
-					}
-					error += '</ul>';
-					$('.position'+positionID+' #'+formElementId).append(error);
-					$('.position'+positionID+' #'+formElementId).addClass('error');
-				} else {
-					savePosition(positionID, formElementId);
-				}
-			}
-		});
-	} else {
-		$('form input').each(function()
-		{
-			data[$(this).attr('name')] = $(this).val();
-		});
-		$('form select').each(function()
-		{
-			data[$(this).attr('name')] = $(this).val();
-		});
-		$.post(url,data,function(resp)
-		{
-			$('form #'+formElementId).parent().find('.errors').remove();
-			$('form #'+formElementId).removeClass('error');
-			$('form#'+controller+' button').removeAttr('disabled');
-			if(typeof resp[formElementId] !== 'undefined') {
-				$('form #'+formElementId).parent().append(getErrorHtml(resp[formElementId], formElementId));
-				$('form #'+formElementId).addClass('error');
-				$('form#'+controller+' button').attr('disabled', 'disabled');
-			}
-			//$('#datacheck').find('.errors').remove();
-			//$('#datacheck').append(getErrorHtml(resp[formElementId], formElementId));
-			//$('#status').text('Draft');
-			//if(action != 'add' && action != 'select') save();
-		},'json');
+function deleteEntity(ids, target, context) {
+	target = target || {};
+	context = context || {};
+
+	if (!Array.isArray(ids)) {
+		ids = [ids];
 	}
+
+	ids = ids.filter(function(singleId) {
+		return singleId !== undefined && singleId !== null && singleId !== '';
+	});
+
+	if (!ids.length) {
+		return;
+	}
+
+	var requestTarget = {
+		module: target.module || module,
+		controller: target.controller || controller,
+		parent_module: context.parentModule || null,
+		parent_controller: context.parentController || null,
+		parent_id: context.parentId || null
+	};
+
+	return trash(
+		ids,
+		deleteConfirm,
+		requestTarget.controller,
+		requestTarget.module
+	);
 }
 
-function getErrorHtml(formErrors , formElementId){
-	var error = '<ul id="errors-'+formElementId+'" class="errors">';
-	var label = $('#'+formElementId+'-label label').text();
-	for(errorKey in formErrors)
-	{
-		error += '<li>' + label + ': ' + formErrors[errorKey] + '</li>';
-	}
-	error += '</ul>';
-	return error;
+function clearFieldState($field) {
+	if (!$field || !$field.length) return;
+
+	$field.removeClass('is-invalid is-valid');
+	$field.next('.dw-field-error').remove();
 }
 
-//Set location
-function setLocation(location){
-	window.location = location;
+function markFieldError($field, messages) {
+	if (!$field || !$field.length) return;
+
+	clearFieldState($field);
+	$field.addClass('is-invalid');
+
+	if (!Array.isArray(messages)) {
+		messages = messages ? [messages] : [];
+	}
+
+	if (!messages.length) return;
+
+	var html = '<div class="dw-field-error">';
+	for (var i = 0; i < messages.length; i++) {
+		html += '<div>' + messages[i] + '</div>';
+	}
+	html += '</div>';
+
+	$field.after(html);
+}
+
+function markFieldSaved($field) {
+	if (!$field || !$field.length) return;
+
+	clearFieldState($field);
+	$field.addClass('is-valid');
+
+	window.setTimeout(function() {
+		$field.removeClass('is-valid');
+	}, 1200);
 }
