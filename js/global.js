@@ -1996,40 +1996,6 @@ function previewPdf() {
 	});
 }
 
-function savePdf(){
-	$('#output').html('');
-		var contactid = $('#contactid').val();
-		if(contactid > 0) {
-			$.ajax({
-				type: 'POST',
-				url: baseUrl+'/'+module+'/'+controller+'/save/id/'+id,
-				cache: false,
-				success: function(data){
-					$('#output').html(data);
-					if(action != 'view') {
-						window.location = baseUrl+'/'+module+'/'+controller+'/view/id/'+id;
-						$(this).addClass('active');
-						var activeTab = $(this).find('a').attr('href');
-					}
-				}
-			});
-	} else {
-		$('#output').html('<b>Bitte vor dem speichern dem Beleg einen Kontakt zuweisen.</b>');
-	}
-}
-
-function downloadPdf(){
-	$('#output').html('');
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+module+'/'+controller+'/download/id/'+id,
-		cache: false,
-		success: function(data){
-			$('#output').html(data);
-		}
-	});
-}
-
 //Modal Window
 function modalWindow(popID, setid) {
 	//var popURL = $(this).attr('href');
