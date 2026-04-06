@@ -155,8 +155,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 			],
 			[
 				'type' => 'group',
-				'label' => 'MENU_INVOICES',
-				'title' => 'Abrechnung',
+				'label' => 'MENU_BILLING',
 				'active' => function () {
 					return in_array($this->view->controller, ['invoice', 'creditnote', 'reminder'], true);
 				},
@@ -199,19 +198,19 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 				},
 				'children' => [
 					[
-						'label' => 'STATISTICS_TURNOVER',
+						'label' => 'MENU_STATISTICS_TURNOVER',
 						'module' => 'statistics',
 						'controller' => 'turnover',
 						'action' => 'index',
 					],
 					[
-						'label' => 'STATISTICS_CUSTOMER',
+						'label' => 'MENU_STATISTICS_CUSTOMER',
 						'module' => 'statistics',
 						'controller' => 'customer',
 						'action' => 'index',
 					],
 					[
-						'label' => 'STATISTICS_QUOTE',
+						'label' => 'MENU_STATISTICS_QUOTE',
 						'module' => 'statistics',
 						'controller' => 'quote',
 						'action' => 'index',
@@ -236,18 +235,13 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 		]);
 	}
 
-	protected function t(string $key): string
-	{
-		return $this->view->translate($key);
-	}
-
 	protected function getItemTitle(array $item): string
 	{
 		if (!empty($item['title'])) {
 			return (string)$item['title'];
 		}
 
-		return $this->t((string)$item['label']);
+		return $this->view->translate((string)$item['label']);
 	}
 
 	protected function isItemActive(array $item): bool
@@ -293,7 +287,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 			foreach (($item['children'] ?? []) as $child) {
 				$isActive = $this->isActive((string)$child['module'], (string)$child['controller']);
 				$html .= '<a class="dw-drawer__sublink'.($isActive ? ' is-active' : '').'" href="'.$this->url($child).'">';
-				$html .= htmlspecialchars($this->t((string)$child['label']));
+				$html .= htmlspecialchars($this->view->translate((string)$child['label']));
 				$html .= '</a>';
 			}
 
@@ -331,7 +325,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 			foreach (($item['children'] ?? []) as $child) {
 				$isActive = $this->isActive((string)$child['module'], (string)$child['controller']);
 				$html .= '<a class="dw-nav-dropdown__link'.($isActive ? ' is-active' : '').'" href="'.$this->url($child).'">';
-				$html .= htmlspecialchars($this->t((string)$child['label']));
+				$html .= htmlspecialchars($this->view->translate((string)$child['label']));
 				$html .= '</a>';
 			}
 
