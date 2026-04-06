@@ -377,6 +377,7 @@ class Sales_Form_Reminder extends DEEC_Form
 			'label' => 'REMINDERS_PDF_SHOW_PRICES',
 			'format' => ['type' => 'int'],
 			'tab' => 'finish',
+			'default' => 1,
 			'col' => 3,
 		]);
 
@@ -386,6 +387,7 @@ class Sales_Form_Reminder extends DEEC_Form
 			'label' => 'REMINDERS_PDF_SHOW_DISCOUNTS',
 			'format' => ['type' => 'int'],
 			'tab' => 'finish',
+			'default' => 0,
 			'col' => 3,
 		]);
 
@@ -395,6 +397,7 @@ class Sales_Form_Reminder extends DEEC_Form
 			'label' => 'REMINDERS_PDF_SHOW_OPTIONS',
 			'format' => ['type' => 'int'],
 			'tab' => 'finish',
+			'default' => 0,
 			'col' => 3,
 		]);
 
@@ -404,6 +407,7 @@ class Sales_Form_Reminder extends DEEC_Form
 			'label' => 'REMINDERS_PDF_SHOW_ATTRIBUTES',
 			'format' => ['type' => 'int'],
 			'tab' => 'finish',
+			'default' => 0,
 			'col' => 3,
 		]);
 
@@ -413,6 +417,7 @@ class Sales_Form_Reminder extends DEEC_Form
 			'label' => 'REMINDERS_PDF_SHOW_COVER',
 			'format' => ['type' => 'int'],
 			'tab' => 'finish',
+			'default' => 0,
 			'col' => 3,
 		]);
 
