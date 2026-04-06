@@ -382,7 +382,7 @@ class Sales_Form_Invoice extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'pdf_show_prices',
+			'name' => 'pdfshowprices',
 			'type' => 'checkbox',
 			'label' => 'INVOICES_PDF_SHOW_PRICES',
 			'format' => ['type' => 'int'],
@@ -391,7 +391,7 @@ class Sales_Form_Invoice extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'pdf_show_discounts',
+			'name' => 'pdfshowdiscounts',
 			'type' => 'checkbox',
 			'label' => 'INVOICES_PDF_SHOW_DISCOUNTS',
 			'format' => ['type' => 'int'],
@@ -400,7 +400,7 @@ class Sales_Form_Invoice extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'pdf_show_options',
+			'name' => 'pdfshowoptions',
 			'type' => 'checkbox',
 			'label' => 'INVOICES_PDF_SHOW_OPTIONS',
 			'format' => ['type' => 'int'],
@@ -409,7 +409,7 @@ class Sales_Form_Invoice extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'pdf_show_attributes',
+			'name' => 'pdfshowattributes',
 			'type' => 'checkbox',
 			'label' => 'INVOICES_PDF_SHOW_ATTRIBUTES',
 			'format' => ['type' => 'int'],
@@ -418,7 +418,7 @@ class Sales_Form_Invoice extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'pdf_show_cover',
+			'name' => 'pdfshowcover',
 			'type' => 'checkbox',
 			'label' => 'INVOICES_PDF_SHOW_COVER',
 			'format' => ['type' => 'int'],
