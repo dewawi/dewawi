@@ -19,25 +19,25 @@ class DEEC_Emailmessage {
 		$columns = implode(", ", array_keys($data));
 		$escaped_values = array_map(array($this->connection, 'real_escape_string'), array_values($data));
 
-		$values  = implode("', '", $escaped_values);
+		$values = implode("', '", $escaped_values);
 		$query = "INSERT INTO `emailmessage`($columns) VALUES ('$values')";
 
 		//echo $query;
 		if(mysqli_query($this->connection, $query)) {
-		    return mysqli_insert_id($this->connection);
+			return mysqli_insert_id($this->connection);
 		} else{
-		    return false;
+			return false;
 		}
 	}
 
 	public function updateEmailmessage($id, $data) {
-    	$query = 'UPDATE emailmessage SET response = "'.$data['response'].'" WHERE id = "'.$id.'";';
+		$query = 'UPDATE emailmessage SET response = "'.$data['response'].'" WHERE id = "'.$id.'";';
 
 		//echo $query;
 		if(mysqli_query($this->connection, $query)) {
-		    return true;
+			return true;
 		} else{
-		    return false;
+			return false;
 		}
 	}
 
@@ -53,9 +53,9 @@ class DEEC_Emailmessage {
 		//echo $query;
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -78,9 +78,9 @@ class DEEC_Emailmessage {
 		//echo $query;
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 }

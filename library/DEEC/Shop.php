@@ -155,9 +155,9 @@ class DEEC_Shop {
 		$query = 'SELECT * FROM shopaccount WHERE id = '.$id;
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_array($result, MYSQLI_ASSOC);
+			return mysqli_fetch_array($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -165,9 +165,9 @@ class DEEC_Shop {
 		$query = 'SELECT * FROM shopaccount';
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -186,9 +186,9 @@ class DEEC_Shop {
 					AND s.clientid = '.$clientid.';';
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -202,14 +202,14 @@ class DEEC_Shop {
 					BY ordering;';
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    $data = mysqli_fetch_all($result, MYSQLI_ASSOC);
+			$data = mysqli_fetch_all($result, MYSQLI_ASSOC);
 			$deliveryTimes = array();
 			foreach($data as $value) {
 				$deliveryTimes[$value['id']] = $value['title'];
 			}
-		    return $deliveryTimes;
+			return $deliveryTimes;
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -226,9 +226,9 @@ class DEEC_Shop {
 					BY ordering;';
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -243,7 +243,7 @@ class DEEC_Shop {
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
 			$options = array();
-		    $optionsData = mysqli_fetch_all($result, MYSQLI_ASSOC);
+			$optionsData = mysqli_fetch_all($result, MYSQLI_ASSOC);
 			foreach($optionsData as $optionData) {
 				$options[$optionData['id']]['title'] = $optionData['title'];
 				$options[$optionData['id']]['type'] = $optionData['type'];
@@ -271,9 +271,9 @@ class DEEC_Shop {
 					}
 				}
 			}
-		    return $options;
+			return $options;
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -287,9 +287,9 @@ class DEEC_Shop {
 					BY ordering;';
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -303,9 +303,9 @@ class DEEC_Shop {
 					BY ordering;';
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 

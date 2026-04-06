@@ -23,9 +23,9 @@ class DEEC_Address {
 		//echo $query;
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_assoc($result);
+			return mysqli_fetch_assoc($result);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -42,20 +42,20 @@ class DEEC_Address {
 		//echo $query;
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_assoc($result);
+			return mysqli_fetch_assoc($result);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
 	public function updateAddress($id, $data) {
-    	$query = 'UPDATE address SET latitude = '.$data['latitude'].', longitude = '.$data['longitude'].', geoupdated = "'.$data['geoupdated'].'" WHERE id = "'.$id.'";';
+		$query = 'UPDATE address SET latitude = '.$data['latitude'].', longitude = '.$data['longitude'].', geoupdated = "'.$data['geoupdated'].'" WHERE id = "'.$id.'";';
 
 		//echo $query;
 		if(mysqli_query($this->connection, $query)) {
-		    return true;
+			return true;
 		} else{
-		    return false;
+			return false;
 		}
 	}
 }

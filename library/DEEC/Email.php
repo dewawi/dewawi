@@ -82,7 +82,7 @@ class DEEC_Email {
 					if ($i >= $limit) break;
 
 					// 1) Contact-level emails (module/controller aren’t filtered in getEmailaddresses,
-					//    so we accept rows where controller == 'contact' OR empty)
+					// so we accept rows where controller == 'contact' OR empty)
 					$contactEmails = $this->emailaddress->getEmailaddresses($contact['id'], $contact['clientid']);
 					if ($contactEmails) {
 						foreach ($contactEmails as $ea) {
@@ -100,7 +100,7 @@ class DEEC_Email {
 							if (isset($alreadySent[$em])) continue;
 
 							$recipients[] = [
-								'email'     => $ea['email'],
+								'email' => $ea['email'],
 								'contactid' => $contact['id']
 							];
 							$seen[$em] = true;
@@ -111,7 +111,7 @@ class DEEC_Email {
 					if ($i >= $limit) continue;
 
 					// 2) Contact-person emails (controller should be 'contactperson')
-					//    We’ll reuse your class to fetch persons, then their emails.
+					// We’ll reuse your class to fetch persons, then their emails.
 					$persons = $this->contactperson->getContactpersons($contact['id'], $contact['clientid']) ?: [];
 					foreach ($persons as $cp) {
 						if ($i >= $limit) break;
@@ -133,7 +133,7 @@ class DEEC_Email {
 							if (isset($alreadySent[$em])) continue;
 
 							$recipients[] = [
-								'email'     => $ea['email'],
+								'email' => $ea['email'],
 								'contactid' => $contact['id'],
 								'contactpersonid' => $cp['id'],
 								'salutation' => $cp['salutation'],
@@ -262,10 +262,10 @@ class DEEC_Email {
 	private function buildSalutation(array $recipient): string {
 		//derive from gender + name
 		$gender = trim($recipient['salutation'] ?? '');
-		$name   = trim($recipient['name2'] ?? '');
+		$name = trim($recipient['name2'] ?? '');
 
 		if ($gender && $name) {
-		    return 'Guten Tag ' . $gender . ' ' . $name . ',';
+			return 'Guten Tag ' . $gender . ' ' . $name . ',';
 		}
 
 		// default fallback

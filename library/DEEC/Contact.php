@@ -27,9 +27,9 @@ class DEEC_Contact {
 		//echo $query;
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -53,9 +53,9 @@ class DEEC_Contact {
 		//echo $query;
 		$result = mysqli_query($this->connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 }

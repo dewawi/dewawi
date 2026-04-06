@@ -124,7 +124,7 @@ class DEEC_PriceRuleShop {
 				}
 			}
 		}
-	    return $price;
+		return $price;
 	}
 
 	public function getPricerules($connection, $options, $clientid) {
@@ -147,9 +147,9 @@ class DEEC_PriceRuleShop {
 		//echo $query;
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		} else {
-		    return false;
+			return false;
 		}
 	}
 
@@ -167,7 +167,7 @@ class DEEC_PriceRuleShop {
 					BY ordering;';
 		$result = mysqli_query($connection, $query);
 		if($result && (mysqli_num_rows($result) > 0)) {
-		    $data = mysqli_fetch_object($result);
+			$data = mysqli_fetch_object($result);
 			$categories = array();
 			foreach($data as $category) {
 				if(!$category->parentid) {
@@ -197,7 +197,7 @@ class DEEC_PriceRuleShop {
 			}
 			return $categories;
 		} else {
-		    return false;
+			return false;
 		}
 	}
 	public function isParent($id, $parentid, $categories) {

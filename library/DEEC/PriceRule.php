@@ -4,8 +4,8 @@ class DEEC_PriceRule {
 
 	public function getPriceRulePositions($module, $parent, $parentid) {
 		//Get price rule positions
-		$pricerulesDb = new Shops_Model_DbTable_Pricerulepos();
-		$positions = $pricerulesDb->getPositions($module, $parent, $parentid);
+		$pricerulesDb = new Items_Model_DbTable_Pricerulepos();
+		$positions = $pricerulesDb->getByParentId($parentid, $module, $parent);
 		return $positions;
 	}
 
@@ -80,7 +80,7 @@ class DEEC_PriceRule {
 			if($item['manufacturerid']) $options['itemmanufacturer'] = $item['manufacturerid'];
 
 			//Get price rules
-			$priceruleDb = new Shops_Model_DbTable_Pricerule();
+			$priceruleDb = new Items_Model_DbTable_Pricerule();
 			$pricerulesObject = $priceruleDb->getPricerules($options);
 
 			//Select the price rules which are applicable to the item
@@ -153,10 +153,10 @@ class DEEC_PriceRule {
 	public function applyPriceRules($module, $controller, $pricerules, $parentid) {
 		//Apply the price rules to the position
 		if(count($pricerules)) {
-			$positionDb = new Shops_Model_DbTable_Pricerulepos();
+			$positionDb = new Items_Model_DbTable_Pricerulepos();
 			foreach($pricerules as $pricerule) {
 				if($pricerule->amount && $pricerule->action) {
-					$positionDataBefore = $positionDb->getPositions($module, $controller, $parentid, 0);
+					$positionDataBefore = $positionDb->getByParentId($parentid, $module, $controller);
 					$latestOrdering = is_array($positionDataBefore) && !empty($positionDataBefore)
 						? end($positionDataBefore)['ordering']
 						: 0;
