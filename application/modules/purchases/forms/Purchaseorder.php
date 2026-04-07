@@ -15,10 +15,9 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 			'name' => 'purchaseorderid',
 			'type' => 'text',
 			'label' => 'PURCHASE_ORDERS_PURCHASE_ORDER_ID',
-			'format' => ['type' => 'int'],
+			'format' => ['type' => 'string'],
 			'attribs' => [
 				'readonly' => 'readonly',
-				'size' => 5,
 			],
 			'tab' => 'overview',
 			'col' => 3,

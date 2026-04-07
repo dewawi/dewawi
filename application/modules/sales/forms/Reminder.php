@@ -15,24 +15,19 @@ class Sales_Form_Reminder extends DEEC_Form
 			'name' => 'reminderid',
 			'type' => 'text',
 			'label' => 'REMINDERS_REMINDER_ID',
-			'format' => ['type' => 'int'],
+			'format' => ['type' => 'string'],
 			'attribs' => [
 				'readonly' => 'readonly',
-				'size' => 5,
 			],
 			'tab' => 'overview',
 			'col' => 3,
 		]);
 
 		$this->addElement([
-			'name' => 'REMINDERid',
+			'name' => 'invoiceid',
 			'type' => 'text',
-			'label' => 'REMINDERS_REMINDER_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-				'size' => 5,
-			],
+			'label' => 'REMINDERS_INVOICE_ID',
+			'format' => ['type' => 'string'],
 			'tab' => 'overview',
 			'col' => 3,
 		]);

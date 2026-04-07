@@ -15,10 +15,9 @@ class Sales_Form_Invoice extends DEEC_Form
 			'name' => 'invoiceid',
 			'type' => 'text',
 			'label' => 'INVOICES_INVOICE_ID',
-			'format' => ['type' => 'int'],
+			'format' => ['type' => 'string'],
 			'attribs' => [
 				'readonly' => 'readonly',
-				'size' => 5,
 			],
 			'tab' => 'overview',
 			'col' => 3,
@@ -28,11 +27,7 @@ class Sales_Form_Invoice extends DEEC_Form
 			'name' => 'salesorderid',
 			'type' => 'text',
 			'label' => 'INVOICES_SALES_ORDER_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-				'size' => 5,
-			],
+			'format' => ['type' => 'string'],
 			'tab' => 'overview',
 			'col' => 3,
 		]);

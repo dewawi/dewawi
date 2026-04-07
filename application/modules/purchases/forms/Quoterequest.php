@@ -15,10 +15,9 @@ class Purchases_Form_Quoterequest extends DEEC_Form
 			'name' => 'quoterequestid',
 			'type' => 'text',
 			'label' => 'QUOTE_REQUESTS_QUOTE_REQUEST_ID',
-			'format' => ['type' => 'int'],
+			'format' => ['type' => 'string'],
 			'attribs' => [
 				'readonly' => 'readonly',
-				'size' => 5,
 			],
 			'tab' => 'overview',
 			'col' => 3,

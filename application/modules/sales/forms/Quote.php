@@ -15,10 +15,9 @@ class Sales_Form_Quote extends DEEC_Form
 			'name' => 'quoteid',
 			'type' => 'text',
 			'label' => 'QUOTES_QUOTE_ID',
-			'format' => ['type' => 'int'],
+			'format' => ['type' => 'string'],
 			'attribs' => [
 				'readonly' => 'readonly',
-				'size' => 5,
 			],
 			'tab' => 'overview',
 			'col' => 3,

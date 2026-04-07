@@ -15,10 +15,9 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 			'name' => 'deliveryorderid',
 			'type' => 'text',
 			'label' => 'DELIVERY_ORDERS_DELIVERY_ORDER_ID',
-			'format' => ['type' => 'int'],
+			'format' => ['type' => 'string'],
 			'attribs' => [
 				'readonly' => 'readonly',
-				'size' => 5,
 			],
 			'tab' => 'overview',
 			'col' => 3,
@@ -28,11 +27,7 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 			'name' => 'salesorderid',
 			'type' => 'text',
 			'label' => 'DELIVERY_ORDERS_SALES_ORDER_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-				'size' => 5,
-			],
+			'format' => ['type' => 'string'],
 			'tab' => 'overview',
 			'col' => 3,
 		]);

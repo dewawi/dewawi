@@ -15,10 +15,9 @@ class Sales_Form_Creditnote extends DEEC_Form
 			'name' => 'creditnoteid',
 			'type' => 'text',
 			'label' => 'CREDIT_NOTES_CREDIT_NOTE_ID',
-			'format' => ['type' => 'int'],
+			'format' => ['type' => 'string'],
 			'attribs' => [
 				'readonly' => 'readonly',
-				'size' => 5,
 			],
 			'tab' => 'overview',
 			'col' => 3,
@@ -28,24 +27,16 @@ class Sales_Form_Creditnote extends DEEC_Form
 			'name' => 'salesorderid',
 			'type' => 'text',
 			'label' => 'CREDIT_NOTES_SALES_ORDER_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-				'size' => 5,
-			],
+			'format' => ['type' => 'string'],
 			'tab' => 'overview',
 			'col' => 3,
 		]);
 
 		$this->addElement([
-			'name' => 'CREDIT_NOTEid',
+			'name' => 'invoiceid',
 			'type' => 'text',
-			'label' => 'CREDIT_NOTES_CREDIT_NOTE_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-				'size' => 5,
-			],
+			'label' => 'CREDIT_NOTES_INVOICE_ID',
+			'format' => ['type' => 'string'],
 			'tab' => 'overview',
 			'col' => 3,
 		]);
