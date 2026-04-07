@@ -188,7 +188,8 @@ class Admin_ClientController extends Zend_Controller_Action
 									'quoteid' => 10000,
 									'quoterequestid' => 10000,
 									'reminderid' => 10000,
-									'salesorderid' => 10000
+									'salesorderid' => 10000,
+									'shoporderid' => 10000
 									), $id);
 
 				//Add language row
