@@ -240,6 +240,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$invoice = $this->requireInvoice($id);
 		if (!$invoice) return;
 
+		$this->ensurePdfDocumentExists($id);
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID((int)$invoice['contactid']);
 
@@ -497,6 +499,35 @@ class Sales_InvoiceController extends Zend_Controller_Action
 			'storage' => $options['storage'] ?? 'cache',
 			'overwrite' => !empty($options['overwrite']),
 		]);
+	}
+
+	protected function ensurePdfDocumentExists(int $id): void
+	{
+		$invoice = $this->requireInvoice($id, true);
+		if (!$invoice) {
+			return;
+		}
+
+		if (empty($invoice['id']) || empty($invoice['contactid']) || empty($invoice['clientid'])) {
+			return;
+		}
+
+		$docIdField = 'invoiceid';
+
+		// Do not generate contact PDF before document is finalized
+		if (empty($invoice[$docIdField]) || empty($invoice['filename'])) {
+			return;
+		}
+
+		try {
+			$this->generatePdfDocument($id, [
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			// Keep view page working even if PDF generation fails
+		}
 	}
 
 	protected function sendPdfResponse(array $result)

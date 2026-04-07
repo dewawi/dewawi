@@ -240,6 +240,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$reminder = $this->requireReminder($id);
 		if (!$reminder) return;
 
+		$this->ensurePdfDocumentExists($id);
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID((int)$reminder['contactid']);
 
@@ -491,6 +493,35 @@ class Sales_ReminderController extends Zend_Controller_Action
 			'storage' => $options['storage'] ?? 'cache',
 			'overwrite' => !empty($options['overwrite']),
 		]);
+	}
+
+	protected function ensurePdfDocumentExists(int $id): void
+	{
+		$reminder = $this->requireReminder($id, true);
+		if (!$reminder) {
+			return;
+		}
+
+		if (empty($reminder['id']) || empty($reminder['contactid']) || empty($reminder['clientid'])) {
+			return;
+		}
+
+		$docIdField = 'reminderid';
+
+		// Do not generate contact PDF before document is finalized
+		if (empty($reminder[$docIdField]) || empty($reminder['filename'])) {
+			return;
+		}
+
+		try {
+			$this->generatePdfDocument($id, [
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			// Keep view page working even if PDF generation fails
+		}
 	}
 
 	protected function sendPdfResponse(array $result)

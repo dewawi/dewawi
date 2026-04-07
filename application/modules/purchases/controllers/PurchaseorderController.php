@@ -240,6 +240,8 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 		$purchaseorder = $this->requirePurchaseorder($id);
 		if (!$purchaseorder) return;
 
+		$this->ensurePdfDocumentExists($id);
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID((int)$purchaseorder['contactid']);
 
@@ -457,6 +459,35 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 			'storage' => $options['storage'] ?? 'cache',
 			'overwrite' => !empty($options['overwrite']),
 		]);
+	}
+
+	protected function ensurePdfDocumentExists(int $id): void
+	{
+		$purchaseorder = $this->requirePurchaseorder($id, true);
+		if (!$purchaseorder) {
+			return;
+		}
+
+		if (empty($purchaseorder['id']) || empty($purchaseorder['contactid']) || empty($purchaseorder['clientid'])) {
+			return;
+		}
+
+		$docIdField = 'purchaseorderid';
+
+		// Do not generate contact PDF before document is finalized
+		if (empty($purchaseorder[$docIdField]) || empty($purchaseorder['filename'])) {
+			return;
+		}
+
+		try {
+			$this->generatePdfDocument($id, [
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			// Keep view page working even if PDF generation fails
+		}
 	}
 
 	protected function sendPdfResponse(array $result)

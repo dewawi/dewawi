@@ -240,6 +240,8 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$quoterequest = $this->requireQuoterequest($id);
 		if (!$quoterequest) return;
 
+		$this->ensurePdfDocumentExists($id);
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID((int)$quoterequest['contactid']);
 
@@ -457,6 +459,35 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 			'storage' => $options['storage'] ?? 'cache',
 			'overwrite' => !empty($options['overwrite']),
 		]);
+	}
+
+	protected function ensurePdfDocumentExists(int $id): void
+	{
+		$quoterequest = $this->requireQuoterequest($id, true);
+		if (!$quoterequest) {
+			return;
+		}
+
+		if (empty($quoterequest['id']) || empty($quoterequest['contactid']) || empty($quoterequest['clientid'])) {
+			return;
+		}
+
+		$docIdField = 'quoterequestid';
+
+		// Do not generate contact PDF before document is finalized
+		if (empty($quoterequest[$docIdField]) || empty($quoterequest['filename'])) {
+			return;
+		}
+
+		try {
+			$this->generatePdfDocument($id, [
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			// Keep view page working even if PDF generation fails
+		}
 	}
 
 	protected function sendPdfResponse(array $result)

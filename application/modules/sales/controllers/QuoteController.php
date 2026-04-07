@@ -240,6 +240,8 @@ class Sales_QuoteController extends DEEC_Controller_Action
 		$quote = $this->requireQuote($id);
 		if (!$quote) return;
 
+		$this->ensurePdfDocumentExists($id);
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID((int)$quote['contactid']);
 
@@ -494,6 +496,35 @@ class Sales_QuoteController extends DEEC_Controller_Action
 			'storage' => $options['storage'] ?? 'cache',
 			'overwrite' => !empty($options['overwrite']),
 		]);
+	}
+
+	protected function ensurePdfDocumentExists(int $id): void
+	{
+		$quote = $this->requireQuote($id, true);
+		if (!$quote) {
+			return;
+		}
+
+		if (empty($quote['id']) || empty($quote['contactid']) || empty($quote['clientid'])) {
+			return;
+		}
+
+		$docIdField = 'quoteid';
+
+		// Do not generate contact PDF before document is finalized
+		if (empty($quote[$docIdField]) || empty($quote['filename'])) {
+			return;
+		}
+
+		try {
+			$this->generatePdfDocument($id, [
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			// Keep view page working even if PDF generation fails
+		}
 	}
 
 	protected function sendPdfResponse(array $result)

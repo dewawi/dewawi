@@ -240,6 +240,8 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$deliveryorder = $this->requireDeliveryorder($id);
 		if (!$deliveryorder) return;
 
+		$this->ensurePdfDocumentExists($id);
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID((int)$deliveryorder['contactid']);
 
@@ -478,6 +480,35 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			'storage' => $options['storage'] ?? 'cache',
 			'overwrite' => !empty($options['overwrite']),
 		]);
+	}
+
+	protected function ensurePdfDocumentExists(int $id): void
+	{
+		$deliveryorder = $this->requireDeliveryorder($id, true);
+		if (!$deliveryorder) {
+			return;
+		}
+
+		if (empty($deliveryorder['id']) || empty($deliveryorder['contactid']) || empty($deliveryorder['clientid'])) {
+			return;
+		}
+
+		$docIdField = 'deliveryorderid';
+
+		// Do not generate contact PDF before document is finalized
+		if (empty($deliveryorder[$docIdField]) || empty($deliveryorder['filename'])) {
+			return;
+		}
+
+		try {
+			$this->generatePdfDocument($id, [
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			// Keep view page working even if PDF generation fails
+		}
 	}
 
 	protected function sendPdfResponse(array $result)

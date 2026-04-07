@@ -240,6 +240,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$creditnote = $this->requireCreditnote($id);
 		if (!$creditnote) return;
 
+		$this->ensurePdfDocumentExists($id);
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID((int)$creditnote['contactid']);
 
@@ -478,6 +480,35 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 			'storage' => $options['storage'] ?? 'cache',
 			'overwrite' => !empty($options['overwrite']),
 		]);
+	}
+
+	protected function ensurePdfDocumentExists(int $id): void
+	{
+		$creditnote = $this->requireCreditnote($id, true);
+		if (!$creditnote) {
+			return;
+		}
+
+		if (empty($creditnote['id']) || empty($creditnote['contactid']) || empty($creditnote['clientid'])) {
+			return;
+		}
+
+		$docIdField = 'creditnoteid';
+
+		// Do not generate contact PDF before document is finalized
+		if (empty($creditnote[$docIdField]) || empty($creditnote['filename'])) {
+			return;
+		}
+
+		try {
+			$this->generatePdfDocument($id, [
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			// Keep view page working even if PDF generation fails
+		}
 	}
 
 	protected function sendPdfResponse(array $result)
