@@ -289,6 +289,8 @@ class Sales_QuoteController extends DEEC_Controller_Action
 		$this->_helper->Position->copyPositions($positions, $quoteid, 'sales', 'quote', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+
+		echo (int)$quoteid;
 	}
 
 	public function generateAction()

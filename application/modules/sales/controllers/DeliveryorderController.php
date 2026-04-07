@@ -289,6 +289,8 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->_helper->Position->copyPositions($positions, $deliveryorderid, 'sales', 'deliveryorder', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+
+		echo (int)$deliveryorderid;
 	}
 
 	public function generateAction()

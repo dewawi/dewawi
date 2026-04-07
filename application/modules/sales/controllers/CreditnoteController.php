@@ -289,6 +289,8 @@ class Sales_CreditnoteController extends Zend_Controller_Action
 		$this->_helper->Position->copyPositions($positions, $creditnoteid, 'sales', 'creditnote', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+
+		echo (int)$creditnoteid;
 	}
 
 	public function generateAction()

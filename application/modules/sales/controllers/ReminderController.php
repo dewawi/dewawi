@@ -289,6 +289,8 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$this->_helper->Position->copyPositions($positions, $reminderid, 'sales', 'reminder', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+
+		echo (int)$reminderid;
 	}
 
 	public function generateAction()

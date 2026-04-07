@@ -289,6 +289,8 @@ class Sales_InvoiceController extends Zend_Controller_Action
 		$this->_helper->Position->copyPositions($positions, $invoiceid, 'sales', 'invoice', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+
+		echo (int)$invoiceid;
 	}
 
 	public function generateAction()
