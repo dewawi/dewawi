@@ -2,35 +2,56 @@
 
 class Zend_View_Helper_HistoryToolbar extends Zend_View_Helper_Abstract
 {
-	public function historyToolbar($state, ?string $type = null, array $opts = []): string
-	{
-		$actions = $this->resolveActions((string)$state, $type, $opts);
+	public function historyToolbar(
+		$state,
+		?string $controller = null,
+		int $id = 0,
+		string $module = '',
+		bool $completed = false,
+		bool $cancelled = false
+	): string {
+		$actions = $this->resolveActions(
+			(string) $state,
+			$controller,
+			$completed,
+			$cancelled
+		);
 
 		if (empty($actions)) {
 			return '';
 		}
 
+		$controller = (string) $controller;
+
 		$html = '';
 
 		foreach ($actions as $action) {
-			$action = trim((string)$action);
+			$action = trim((string) $action);
 			if ($action === '') {
 				continue;
 			}
 
-			$html .= '<button type="button" class="'
-				. htmlspecialchars($action, ENT_QUOTES, 'UTF-8')
-				. ' nolabel"></button>';
+			$html .= '<button'
+				. ' type="button"'
+				. ' class="' . htmlspecialchars($action . ' nolabel js-' . $action, ENT_QUOTES, 'UTF-8') . '"'
+				. ' data-id="' . htmlspecialchars((string) $id, ENT_QUOTES, 'UTF-8') . '"'
+				. ' data-module="' . htmlspecialchars($module, ENT_QUOTES, 'UTF-8') . '"'
+				. ' data-controller="' . htmlspecialchars($controller, ENT_QUOTES, 'UTF-8') . '"'
+				. '></button>';
 		}
 
 		return $html;
 	}
 
-	protected function resolveActions(string $state, ?string $type = null, array $opts = []): array
-	{
-		switch ((string)$type) {
+	protected function resolveActions(
+		string $state,
+		?string $controller = null,
+		bool $completed = false,
+		bool $cancelled = false
+	): array {
+		switch ((string) $controller) {
 			case 'process':
-				if (!empty($opts['completed']) || !empty($opts['cancelled'])) {
+				if ($completed || $cancelled) {
 					return ['view', 'copy'];
 				}
 				return ['edit', 'copy'];
