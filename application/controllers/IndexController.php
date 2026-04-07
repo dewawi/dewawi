@@ -85,6 +85,16 @@ class IndexController extends Zend_Controller_Action
 		}
 		$this->view->tasks = $tasks;
 
+		//Get states
+		$stateDb = new Application_Model_DbTable_State();
+		$states = $stateDb->getStates();
+		$this->view->states = $states;
+
+		//Get users
+		$userDb = new Users_Model_DbTable_User();
+		$users = $userDb->getUsers();
+		$this->view->users = $users;
+
 		$this->view->options = $options;
 		$this->view->toolbar = new Application_Form_Toolbar();
 		$this->view->subfolder = $this->_helper->Directory->getShortUrl();
