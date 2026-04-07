@@ -256,15 +256,9 @@ foreach ($visibleSections as $historyKey => $section) {
 										?>
 										<tr class="dw-row">
 											<td class="dw-col-id" data-label="<?php echo $this->translate($section['docIdLabel']); ?>">
-												<input class="id" type="hidden" value="<?php echo (int)$row->id; ?>" name="id" />
-												<input class="controller" type="hidden" value="<?php echo $this->escape($section['controller']); ?>" name="controller" />
-												<input class="module" type="hidden" value="<?php echo $this->escape($section['module']); ?>" name="module" />
-
 												<a href="<?php echo $editUrl; ?>">
 													<?php if ($docIdValue) : ?>
 														<?php echo $this->escape($docIdValue); ?>
-													<?php else : ?>
-														<?php echo $this->translate($section['fallbackDoc']) . ' ' . $this->escape($row->id); ?>
 													<?php endif; ?>
 												</a>
 											</td>
@@ -345,7 +339,14 @@ foreach ($visibleSections as $historyKey => $section) {
 
 											<td class="dw-col-actions">
 												<div class="dw-row-actions">
-													<?php echo $this->historyToolbar($stateValue, $section['controller']); ?>
+													<?php echo $this->historyToolbar(
+														$stateValue,
+														$section['controller'],
+														(int)$row['id'],
+														$section['module'],
+														!empty($row['completed']),
+														!empty($row['cancelled'])
+													); ?>
 												</div>
 											</td>
 										</tr>
