@@ -75,10 +75,13 @@ class Sales_Form_Creditnote extends DEEC_Form
 			'name' => 'quotedate',
 			'type' => 'text',
 			'label' => 'CREDIT_NOTES_QUOTE_DATE',
-			'format' => ['type' => 'string'],
+			'format' => [
+				'type' => 'date',
+				'pattern' => 'Y-m-d',
+				'displayPattern' => 'd.m.Y',
+			],
 			'attribs' => [
 				'class' => 'datePicker',
-				'size' => 9,
 			],
 			'tab' => 'overview',
 			'col' => 3,
@@ -88,10 +91,13 @@ class Sales_Form_Creditnote extends DEEC_Form
 			'name' => 'deliverydate',
 			'type' => 'text',
 			'label' => 'CREDIT_NOTES_DELIVERY_DATE',
-			'format' => ['type' => 'string'],
+			'format' => [
+				'type' => 'date',
+				'pattern' => 'Y-m-d',
+				'displayPattern' => 'd.m.Y',
+			],
 			'attribs' => [
 				'class' => 'datePicker',
-				'size' => 9,
 			],
 			'tab' => 'overview',
 			'col' => 3,

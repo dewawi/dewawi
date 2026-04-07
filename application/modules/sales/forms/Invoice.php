@@ -66,10 +66,13 @@ class Sales_Form_Invoice extends DEEC_Form
 			'name' => 'quotedate',
 			'type' => 'text',
 			'label' => 'INVOICES_QUOTE_DATE',
-			'format' => ['type' => 'string'],
+			'format' => [
+				'type' => 'date',
+				'pattern' => 'Y-m-d',
+				'displayPattern' => 'd.m.Y',
+			],
 			'attribs' => [
 				'class' => 'datePicker',
-				'size' => 9,
 			],
 			'tab' => 'overview',
 			'col' => 3,
@@ -79,10 +82,13 @@ class Sales_Form_Invoice extends DEEC_Form
 			'name' => 'deliverydate',
 			'type' => 'text',
 			'label' => 'INVOICES_DELIVERY_DATE',
-			'format' => ['type' => 'string'],
+			'format' => [
+				'type' => 'date',
+				'pattern' => 'Y-m-d',
+				'displayPattern' => 'd.m.Y',
+			],
 			'attribs' => [
 				'class' => 'datePicker',
-				'size' => 9,
 			],
 			'tab' => 'overview',
 			'col' => 3,
@@ -92,7 +98,10 @@ class Sales_Form_Invoice extends DEEC_Form
 			'name' => 'prepayment',
 			'type' => 'text',
 			'label' => 'INVOICES_PREPAYMENT',
-			'format' => ['type' => 'int'],
+			'format' => [
+				'type' => 'decimal',
+				'precision' => 2,
+			],
 			'attribs' => ['maxlength' => 255],
 			'tab' => 'overview',
 			'col' => 3,
