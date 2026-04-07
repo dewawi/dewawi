@@ -178,10 +178,7 @@ class Sales_Form_Quote extends DEEC_Form
 			'name' => 'contactid',
 			'type' => 'text',
 			'label' => 'QUOTES_CONTACT_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-			],
+			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
 		]);

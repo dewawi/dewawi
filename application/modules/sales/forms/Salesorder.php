@@ -191,10 +191,7 @@ class Sales_Form_Salesorder extends DEEC_Form
 			'name' => 'contactid',
 			'type' => 'text',
 			'label' => 'SALES_ORDERS_CONTACT_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-			],
+			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
 		]);

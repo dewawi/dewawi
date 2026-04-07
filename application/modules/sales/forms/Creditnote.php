@@ -204,10 +204,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 			'name' => 'contactid',
 			'type' => 'text',
 			'label' => 'CREDIT_NOTES_CONTACT_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-			],
+			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
 		]);

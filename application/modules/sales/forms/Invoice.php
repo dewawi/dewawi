@@ -201,10 +201,7 @@ class Sales_Form_Invoice extends DEEC_Form
 			'name' => 'contactid',
 			'type' => 'text',
 			'label' => 'INVOICES_CONTACT_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-			],
+			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
 		]);
