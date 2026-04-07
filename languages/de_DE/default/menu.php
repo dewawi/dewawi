@@ -1,6 +1,5 @@
 <?php return array(
 	//Menu
-	'CONTROL_PANEL' => 'Übersicht',
 	'MENU_CONTACTS' => 'Kontakte',
 	'MENU_EXTENSIONS' => 'Erweiterungen',
 	'MENU_CATEGORIES' => 'Kategorien',

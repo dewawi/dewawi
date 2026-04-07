@@ -1,7 +1,5 @@
 <?php return array(
-	//LEDGER
 	'ITEMS_NEW_LEDGER' => 'Neue Buchung',
-	'ITEMS_LEDGER' => 'Buchungsverlauf',
 	'ITEMS_LEDGER_ID' => 'Buchungsnr.',
 	'ITEMS_LEDGER_DOCUMENT' => 'Beleg',
 	'ITEMS_LEDGER_COMMENT' => 'Kommentar',

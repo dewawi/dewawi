@@ -1,7 +1,4 @@
 <?php return array(
-	//Items
-	'ITEM' => 'Artikel',
-	'ITEMS' => 'Artikel',
 	'ITEMS_NEW_ITEM' => 'Neuer Artikel',
 	'ITEMS_SKU' => 'Art.-Nr.',
 	'ITEMS_BARCODE' => 'Barcode/EAN',

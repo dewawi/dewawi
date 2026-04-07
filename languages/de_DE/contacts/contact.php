@@ -1,7 +1,4 @@
 <?php return array(
-	//Contacts
-	'CONTACT' => 'Kontakt',
-	'CONTACTS' => 'Kontakte',
 	'CONTACTS_NEW_CONTACT' => 'Neuer Kontakt',
 	'CONTACTS_CONTACT' => 'Kontakt',
 	'CONTACTS_CONTACT_ID' => 'Kontaktnr.',
