@@ -388,20 +388,20 @@ button.daterange {
 }
 
 .dw-table .dw-col-id {
-  width: 90px;
+  width: 75px;
   white-space: nowrap;
 }
 
 .dw-table .dw-col-title {
-  min-width: 260px;
+  min-width: 150px;
 }
 
 .dw-table .dw-col-contact {
-  min-width: 180px;
+  min-width: 120px;
 }
 
 .dw-table .dw-col-address {
-  min-width: 180px;
+  min-width: 100px;
 }
 
 .dw-table .dw-col-notes {
@@ -409,28 +409,28 @@ button.daterange {
 }
 
 .dw-table .dw-col-date {
-  width: 110px;
+  width: 80px;
   white-space: nowrap;
 }
 
 .dw-table .dw-col-total {
-  width: 120px;
+  width: 100px;
   text-align: right;
   white-space: nowrap;
 }
 
 .dw-table .dw-col-state {
-  width: 140px;
+  width: 100px;
   white-space: nowrap;
 }
 
 .dw-table .dw-col-pin {
-  width: 120px;
+  width: 50px;
   white-space: nowrap;
 }
 
 .dw-table .dw-col-actions {
-  width: 170px;
+  width: 150px;
 }
 
 .dw-row.is-pinned td {
@@ -943,6 +943,96 @@ button.nolabel.filter {
 .dw-badge--danger {
   background: var(--dw-color-danger);
   color: var(--dw-color-danger-text);
+}
+
+/* Email */
+
+.dw-email-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dw-space-4);
+}
+
+.dw-email-composer__form {
+  margin: 0;
+}
+
+.dw-email-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dw-space-4);
+  padding: var(--dw-space-4);
+  background: #fff;
+  border: 1px solid var(--dw-color-border);
+  border-radius: var(--dw-radius-md);
+}
+
+.dw-email-card__title {
+  margin: 0;
+}
+
+.dw-email-composer__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--dw-space-2);
+}
+
+.dw-email-upload-frame {
+  width: 100%;
+  min-height: 420px;
+}
+
+.dw-attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dw-space-2);
+}
+
+.dw-attachment-list__empty {
+  padding: var(--dw-space-3);
+  border: 1px dashed var(--dw-color-border);
+  border-radius: var(--dw-radius-sm);
+  color: var(--dw-color-text-muted);
+  background: #fafbfd;
+}
+
+.dw-attachment-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: var(--dw-space-3);
+  padding: var(--dw-space-3);
+  border: 1px solid var(--dw-color-border);
+  border-radius: var(--dw-radius-sm);
+  background: #fff;
+}
+
+.dw-attachment-item__select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+.dw-attachment-item__link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.dw-attachment-item__name {
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.dw-attachment-item__meta {
+  color: var(--dw-color-text-muted);
+}
+
+.dw-email-history {
+  margin-top: var(--dw-space-4);
 }
 
 /* Editable */
