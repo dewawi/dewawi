@@ -373,8 +373,6 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
 
-
-
 	public function previewAction()
 	{
 		$id = (int)$this->_getParam('id', 0);
@@ -385,6 +383,8 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$result = $this->generatePdfDocument($id, [
 				'output' => $isAjax ? 'file' : 'inline',
 				'templateid' => $templateId ?: null,
+				'storage' => 'cache',
+				'overwrite' => true,
 			]);
 		} catch (RuntimeException $e) {
 			if ($isAjax) {
@@ -423,6 +423,8 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			$this->generatePdfDocument($id, [
 				'finalize' => true,
 				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
 			]);
 		} catch (RuntimeException $e) {
 			$this->_flashMessenger->addMessage('MESSAGES_DELIVERY_ORDER_NOT_FOUND');
@@ -439,8 +441,9 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 
 		try {
 			$result = $this->generatePdfDocument($id, [
-				'finalize' => true,
 				'output' => 'download',
+				'storage' => 'cache',
+				'overwrite' => true,
 			]);
 		} catch (RuntimeException $e) {
 			$this->_flashMessenger->addMessage('MESSAGES_DELIVERY_ORDER_NOT_FOUND');
@@ -470,6 +473,8 @@ class Sales_DeliveryorderController extends Zend_Controller_Action
 			'documentId' => (int)$deliveryorder['id'],
 			'output' => $options['output'] ?? 'file',
 			'templateid' => $options['templateid'] ?? null,
+			'storage' => $options['storage'] ?? 'cache',
+			'overwrite' => !empty($options['overwrite']),
 		]);
 	}
 

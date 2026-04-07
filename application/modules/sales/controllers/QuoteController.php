@@ -399,6 +399,8 @@ class Sales_QuoteController extends DEEC_Controller_Action
 			$result = $this->generatePdfDocument($id, [
 				'output' => $isAjax ? 'file' : 'inline',
 				'templateid' => $templateId ?: null,
+				'storage' => 'cache',
+				'overwrite' => true,
 			]);
 		} catch (RuntimeException $e) {
 			if ($isAjax) {
@@ -437,6 +439,8 @@ class Sales_QuoteController extends DEEC_Controller_Action
 			$this->generatePdfDocument($id, [
 				'finalize' => true,
 				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
 			]);
 		} catch (RuntimeException $e) {
 			$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
@@ -453,8 +457,9 @@ class Sales_QuoteController extends DEEC_Controller_Action
 
 		try {
 			$result = $this->generatePdfDocument($id, [
-				'finalize' => true,
 				'output' => 'download',
+				'storage' => 'cache',
+				'overwrite' => true,
 			]);
 		} catch (RuntimeException $e) {
 			$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
@@ -484,6 +489,8 @@ class Sales_QuoteController extends DEEC_Controller_Action
 			'documentId' => (int)$quote['id'],
 			'output' => $options['output'] ?? 'file',
 			'templateid' => $options['templateid'] ?? null,
+			'storage' => $options['storage'] ?? 'cache',
+			'overwrite' => !empty($options['overwrite']),
 		]);
 	}
 

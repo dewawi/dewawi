@@ -5,7 +5,7 @@ class Sales_Service_AttachmentService
 	public function sync(array $document, array $contact, string $controller): array
 	{
 		$documentId = (int)($document['id'] ?? 0);
-		$contactId = (int)($contact['id'] ?? 0);
+		$contactId = (int)($document['contactid'] ?? '');
 		$filename = trim((string)($document['filename'] ?? ''));
 
 		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
