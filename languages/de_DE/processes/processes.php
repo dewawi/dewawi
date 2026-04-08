@@ -1,8 +1,9 @@
 <?php return array(
-	'PROCESSES_ID' => 'ID',
+	'PROCESSES_PROCESS_ID' => 'ID',
 	'PROCESSES_NEW_PROCESS' => 'Neues Vorgang',
 	'PROCESSES_TITLE' => 'Title',
 	'PROCESSES_OVERVIEW' => 'Übersicht',
+	'PROCESSES_CONTACT' => 'Kontakt',
 	'PROCESSES_CUSTOMER' => 'Kunde',
 	'PROCESSES_CUSTOMER_ID' => 'Kundennr.',
 	'PROCESSES_SUPPLIER_ID' => 'Lieferantennr.',

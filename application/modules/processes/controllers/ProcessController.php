@@ -1,6 +1,6 @@
 <?php
 
-class Processes_ProcessController extends Zend_Controller_Action
+class Processes_ProcessController extends DEEC_Controller_Action
 {
 	protected $_date = null;
 
@@ -23,10 +23,14 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->view->action = $params['action'];
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
+		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
+
+		//Check if the directory is writable
+		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'attachment', $this->_flashMessenger);
 	}
 
 	public function getAction()
@@ -51,39 +55,50 @@ class Processes_ProcessController extends Zend_Controller_Action
 		return $this->_helper->json($options);
 	}
 
-	public function indexAction()
+	protected function requireProcess(int $id, bool $silent = false): ?array
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		$processDb = new Processes_Model_DbTable_Process();
+		$process = $processDb->getProcessForEdit($id);
 
-		$toolbar = new Processes_Form_Toolbar();
-		$toolbarInline = new Sales_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options, $this->_flashMessenger);
-
-		//Get positions
-		$processIDs = array();
-		foreach($processes as $process) {
-			array_push($processIDs, $process['id']);
-
-			if($process['deliverydate']) {
-				$deliverydate = new Zend_Date($process['deliverydate']);
-							$process['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
-						}
+		if ($process) {
+			return $process;
 		}
 
-		$this->view->processes = $processes;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->positions = $this->getPositions($processIDs);
-		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
-		$this->_flashMessenger->clearCurrentMessages();
+		$request = $this->getRequest();
+
+		// AJAX
+		if ($request->isXmlHttpRequest()) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			$this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+
+			return null;
+		}
+
+		// Silent mode (PDF etc.)
+		if ($silent) {
+			$this->_helper->viewRenderer->setNoRender();
+			return null;
+		}
+
+		// Default redirect
+		$this->_flashMessenger->addMessage('MESSAGES_PROCESS_NOT_FOUND');
+		$this->_helper->redirector->gotoSimple('index', 'process');
+
+		return null;
+	}
+
+	public function indexAction()
+	{
+		if ($this->getRequest()->isPost()) {
+			$this->_helper->getHelper('layout')->disableLayout();
+		}
+
+		$this->buildIndexView();
 	}
 
 	public function searchAction()
@@ -91,185 +106,93 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
+		$this->buildIndexView();
+	}
+
+	protected function buildIndexView(): void
+	{
 		$toolbar = new Processes_Form_Toolbar();
-		$toolbarInline = new Sales_Form_ToolbarInline();
+		$toolbarInline = new Processes_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Processes_Model_Get();
 		$processes = $get->processes($params, $options, $this->_flashMessenger);
 
-		//Get positions
-		$processIDs = array();
-		foreach($processes as $process) {
-			array_push($processIDs, $process['id']);
-		}
-
 		$this->view->processes = $processes;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->toolbarInline = $toolbarInline;
-		$this->view->positions = $this->getPositions($processIDs);
 		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
+			$this->_flashMessenger->getMessages(),
+			$this->_flashMessenger->getCurrentMessages()
+		);
 		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()
 	{
-		$contactid = $this->_getParam('contactid', 0);
+		$contactId = (int)$this->_getParam('contactid', 0);
+		$controller = $this->getRequest()->getControllerName();
 
-		//Get primary currency
-		$currencies = new Application_Model_DbTable_Currency();
-		$currency = $currencies->getPrimaryCurrency();
-
-		$data = array();
-		$data['title'] = $this->view->translate('PROCESSES_NEW_PROCESS');
-		$data['deliverystatus'] = 'deliveryIsWaiting';
-		$data['paymentstatus'] = 'waitingForPayment';
-		$data['currency'] = $currency['code'];
-		$data['state'] = 100;
-
-		//Get contact data
-		if($contactid) {
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContact($contactid);
-
-			//Get basic data
-			$data['contactid'] = $contact['contactid'];
-			$data['billingname1'] = $contact['name1'];
-			$data['billingname2'] = $contact['name2'];
-			$data['billingdepartment'] = $contact['department'];
-
-			//Get addresses
-			$addressDb = new Contacts_Model_DbTable_Address();
-			$addresses = $addressDb->getAddress($contact['id']);
-			if(count($addresses)) {
-				$data['billingstreet'] = $addresses[0]['street'];
-				$data['billingpostcode'] = $addresses[0]['postcode'];
-				$data['billingcity'] = $addresses[0]['city'];
-				$data['billingcountry'] = $addresses[0]['country'];
-			}
-
-			//Get additonal data
-			if($contact['vatin']) $data['vatin'] = $contact['vatin'];
-			if($contact['currency']) $data['currency'] = $contact['currency'];
-			if($contact['taxfree']) $data['taxfree'] = $contact['taxfree'];
-		}
+		$factory = new Processes_Service_CreateDataFactory();
+		$data = $factory->build($controller, $contactId);
 
 		$processDb = new Processes_Model_DbTable_Process();
 		$id = $processDb->addProcess($data);
 
-		$this->_helper->redirector->gotoSimple('edit', 'process', null, array('id' => $id));
+		return $this->_helper->redirector->gotoSimple('edit', 'process', null, ['id' => $id]);
 	}
 
 	public function editAction()
 	{
 		$request = $this->getRequest();
 		$id = (int)$this->_getParam('id', 0);
-
 		$isAjax = $request->isXmlHttpRequest();
 
-		$form = new Processes_Form_Process();
-		$options = $this->_helper->Options->applyFormOptions($form);
+		$process = $this->requireProcess($id);
+		if (!$process) return;
 
-		$toolbar = new Processes_Form_Toolbar();
-		$processDb  = new Processes_Model_DbTable_Process();
+		$processDb = new Processes_Model_DbTable_Process();
 
-		// Load process
-		$process = $processDb->getProcessForEdit($id);
-
-		// Not found / not usable
-		if (!$process) {
-			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
-
-				return $this->_helper->json([
-					'ok' => false,
-					'message' => 'not_found'
-				]);
-			}
-
-			$this->_flashMessenger->addMessage('MESSAGES_QUOTE_NOT_FOUND');
-			return $this->_helper->redirector->gotoSimple('index', 'process');
-		}
-
-		// LOCK
 		$this->_helper->Access->lock($id, $this->_user['id'], $process['locked'] ?? 0, $process['lockedtime'] ?? null);
 
-		// POST: ajax save single field
+		$formFactory = new Processes_Service_EditFormFactory();
+		$formData = $formFactory->create('Processes_Form_Process');
+		$form = $formData['form'];
+		$options = $formData['options'];
+		$toolbar = new Processes_Form_Toolbar();
+
 		if ($request->isPost()) {
-			// Calculate
 			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $process['taxfree']);
-			// Edit via ajax -> JSON
+
 			if ($isAjax) {
 				$this->_helper->viewRenderer->setNoRender();
 				$this->_helper->layout->disableLayout();
 
-				$post = (array)$request->getPost();
+				$ajaxSaveService = new Processes_Service_EditAjaxSaveService();
 
-				// Validate only posted subset
-				if (!$form->isValidPartial($post)) {
-					return $this->_helper->json([
-						'ok' => false,
-						'errors' => $this->toErrorMessages($form->getErrors(), $form),
-					]);
-				}
-
-				// Filter/normalize only posted subset for DB
-				$values = $form->getFilteredValuesPartial($post);
-
-				// Save
-				try {
-					$processDb->updateProcess($id, $values);
-				} catch (Exception $e) {
-					return $this->_helper->json([
-						'ok' => false,
-						'message' => 'save_failed'
-					]);
-				}
-
-				// Reload for derived values
-				$processNew = $processDb->getProcessForEdit($id);
-
-				// Return only changed fields for display
-				$changedFields = array_keys($values);
-
-				$display = DEEC_Display::fromRow($form, $processNew, $changedFields);
-
-				return $this->_helper->json([
-					'ok' => true,
+				return $this->_helper->json($ajaxSaveService->save([
+					'form' => $form,
+					'post' => (array)$request->getPost(),
 					'id' => $id,
-
-					// Raw DB values for JS logic
-					'values' => array_intersect_key($processNew, array_flip($changedFields)),
-
-					// Formatted for UI
-					'display' => $display,
-
-					// Optional meta: if later derived values set server-side
-					'meta' => [
-						'recalc' => [],
-					],
-				]);
+					'db' => $processDb,
+					'loadMethod' => 'getProcessForEdit',
+					'updateMethod' => 'updateProcess',
+				]));
 			}
 
-			// NON-AJAX POST
 			$post = (array)$request->getPost();
 
 			if (!$form->isValid($post)) {
-				// Keep form with submitted values and errors
 				$form->setValues($post);
 			} else {
 				$values = $form->getFilteredValues();
 
-				// special side effects
 				if (isset($values['currency'])) {
 					$positionsDb = new Processes_Model_DbTable_Processpos();
 					$positions = $positionsDb->getPositions($id);
+
 					foreach ($positions as $position) {
 						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
 					}
@@ -284,19 +207,13 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 				$processDb->updateProcess($id, $values);
 				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
 				return $this->_helper->redirector->gotoSimple('edit', 'process', null, ['id' => $id]);
 			}
 		} else {
-			// GET: populate form with display values from DB
-			$locale = Zend_Registry::get('Zend_Locale'); // for now, later replaced
-			$processDisplay = DEEC_Display::rowToFormValues($form, $process, $locale);
-
-			$form->setValues($processDisplay);
-
-			$this->_helper->MultiEntityLoader->populate($form, $id, 'processs', 'process');
+			$formFactory->populate($form, $process, $id, 'processes', 'process');
 		}
 
-		// build view model once and assign in one shot
 		$vmService = new Processes_Service_ProcessEditViewModel();
 		$vm = $vmService->build($id, (array)$this->_user, (array)$process);
 
@@ -308,7 +225,6 @@ class Processes_ProcessController extends Zend_Controller_Action
 			'activeTab' => $request->getCookie('tab', null),
 		]));
 
-		// Messages
 		$this->view->messages = array_merge(
 			$this->_helper->flashMessenger->getMessages(),
 			$this->_helper->flashMessenger->getCurrentMessages()
@@ -318,88 +234,45 @@ class Processes_ProcessController extends Zend_Controller_Action
 
 	public function viewAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$locale = Zend_Registry::get('Zend_Locale');
+		$id = (int)$this->_getParam('id', 0);
+		$controller = $this->getRequest()->getControllerName();
 
-		$processDb = new Processes_Model_DbTable_Process();
-		$process = $processDb->getProcess($id);
+		$process = $this->requireProcess($id);
+		if (!$process) return;
+
+		$this->ensurePdfDocumentExists($id);
+
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID($process['contactid']);
+		$contact = $contactDb->getContactWithID((int)$process['contactid']);
 
-		//Convert dates to the display format
-		if($process['processdate']) $process['processdate'] = date('d.m.Y', strtotime($process['processdate']));
+		$emailFormFactory = new Processes_Service_EmailFormFactory();
+		$attachmentService = new Processes_Service_AttachmentService();
+		$readonlyFormFactory = new Processes_Service_ReadonlyFormFactory();
 
-		//Get currency
-		$currency = $this->_helper->Currency->getCurrency($process['currency'], 'USE_SYMBOL');
+		$this->view->assign([
+			'process' => $process,
+			'contact' => $contact,
+			'emailForm' => $emailFormFactory->build($process, $contact, $controller),
+			'form' => $readonlyFormFactory->build('Processes_Form_Process', $process, Zend_Registry::get('Zend_Locale')),
+			'toolbar' => new Processes_Form_Toolbar(),
+		] + $attachmentService->sync($process, $contact, $controller));
 
-		//Convert numbers to the display format
-		$process['taxes'] = $currency->toCurrency($process['taxes']);
-		$process['subtotal'] = $currency->toCurrency($process['subtotal']);
-		$process['total'] = $currency->toCurrency($process['total']);
-
-		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positions = $positionsDb->getPositions($id);
-		foreach($positions as $position) {
-			$position->price = $currency->toCurrency($position->price);
-			$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => 2,'locale' => $locale));
-		}
-
-		$toolbar = new Processes_Form_Toolbar();
-		$this->view->toolbar = $toolbar;
-
-		//Get email
-		$emailDb = new Contacts_Model_DbTable_Email();
-		$contact['email'] = $emailDb->getByParentId($contact['id'], 'contacts', 'contact');
-
-		//Get email form
-		$emailForm = new Contacts_Form_Emailmessage();
-		if($contact['email']) {
-			foreach($contact['email'] as $option) {
-				$emailForm->recipient->addMultiOption($option['id'], $option['email']);
-			}
-		}
-
-		//Get email templates
-		$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
-		if($emailtemplate = $emailtemplateDb->getEmailtemplate('processes', 'process')) {
-			if($emailtemplate['cc']) $emailForm->cc->setValue($emailtemplate['cc']);
-			if($emailtemplate['bcc']) $emailForm->bcc->setValue($emailtemplate['bcc']);
-			if($emailtemplate['replyto']) $emailForm->replyto->setValue($emailtemplate['replyto']);
-			$emailForm->subject->setValue($emailtemplate['subject']);
-			$emailForm->body->setValue($emailtemplate['body']);
-		}
-
-		//Copy file to attachments
-		$contactUrl = $this->_helper->Directory->getUrl($contact['id']);
-		$documentUrl = $this->_helper->Directory->getUrl($process['id']);
-
-		//Get email attachments
-		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
-		if(isset($data)) $emailattachmentDb->addEmailattachment($data);
-		$attachments = $emailattachmentDb->getEmailattachments($id, 'processes', 'process');
-
-		$this->view->process = $process;
-		$this->view->contact = $contact;
-		$this->view->positions = $positions;
-		$this->view->emailForm = $emailForm;
-		$this->view->contactUrl = $contactUrl;
-		$this->view->documentUrl = $documentUrl;
-		$this->view->attachments = $attachments;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
 	public function copyAction()
 	{
+		$id = $this->_getParam('id', 0);
+
+		$data = $this->requireProcess($id);
+		if (!$data) return;
+
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$id = $this->_getParam('id', 0);
-		$processDb = new Processes_Model_DbTable_Process();
-		$process = $processDb->getProcess($id);
-
-		$data = $process;
 		unset($data['id'], $data['processid']);
-		$data['title'] = $process['title'].' 2';
+		$data['title'] = $data['title'].' 2';
+		$data['processdate'] = NULL;
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
@@ -409,20 +282,178 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$data['locked'] = 0;
 		$data['lockedtime'] = NULL;
 
-		echo $newID = $processDb->addProcess($data);
+		$processDb = new Processes_Model_DbTable_Process();
+		$processid = $processDb->addProcess($data);
 
+		//Copy positions
 		$positionsDb = new Processes_Model_DbTable_Processpos();
 		$positions = $positionsDb->getPositions($id);
-		foreach($positions as $position) {
-			$positionData = $position->toArray();
-			unset($positionData['id']);
-			$positionData['parentid'] = $newID;
-			$positionData['modified'] = NULL;
-			$positionData['modifiedby'] = 0;
-			$positionsDb->addPosition($positionData);
-		}
+		$this->_helper->Position->copyPositions($positions, $processid, 'processes', 'process', $this->_date);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+
+		echo (int)$processid;
+	}
+
+	public function previewAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+		$templateId = (int)$this->_getParam('templateid', 0);
+		$isAjax = $this->getRequest()->isXmlHttpRequest();
+
+		try {
+			$result = $this->generatePdfDocument($id, [
+				'output' => $isAjax ? 'file' : 'inline',
+				'templateid' => $templateId ?: null,
+				'storage' => 'cache',
+				'overwrite' => true,
+			]);
+		} catch (RuntimeException $e) {
+			if ($isAjax) {
+				$this->_helper->viewRenderer->setNoRender();
+				$this->_helper->layout->disableLayout();
+
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'not_found',
+				]);
+			}
+
+			$this->_flashMessenger->addMessage('MESSAGES_PROCESS_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'process');
+		}
+
+		if ($isAjax) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			return $this->_helper->json([
+				'ok' => true,
+				'url' => $result['url'] ?? null,
+				'filename' => $result['filename'] ?? null,
+			]);
+		}
+
+		return $this->sendPdfResponse($result);
+	}
+
+	public function saveAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+
+		try {
+			$this->generatePdfDocument($id, [
+				'finalize' => true,
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			$this->_flashMessenger->addMessage('MESSAGES_PROCESS_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'process');
+		}
+
+		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+		return $this->_helper->redirector->gotoSimple('view', 'process', null, ['id' => $id]);
+	}
+
+	public function downloadAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+
+		try {
+			$result = $this->generatePdfDocument($id, [
+				'output' => 'download',
+				'storage' => 'cache',
+				'overwrite' => true,
+			]);
+		} catch (RuntimeException $e) {
+			$this->_flashMessenger->addMessage('MESSAGES_PROCESS_NOT_FOUND');
+			return $this->_helper->redirector->gotoSimple('index', 'process');
+		}
+
+		return $this->sendPdfResponse($result);
+	}
+
+	protected function generatePdfDocument(int $id, array $options = []): array
+	{
+		$process = $this->requireProcess($id, true);
+		if (!$process) {
+			throw new RuntimeException('Process not found');
+		}
+
+		if (!empty($options['finalize'])) {
+			$finalizeService = new Processes_Service_DocumentFinalizeService();
+			$process = $finalizeService->finalize($process, 'process');
+		}
+
+		$pdf = new DEEC_Pdf();
+
+		return $pdf->generate([
+			'module' => 'processes',
+			'controller' => 'process',
+			'documentId' => (int)$process['id'],
+			'output' => $options['output'] ?? 'file',
+			'templateid' => $options['templateid'] ?? null,
+			'storage' => $options['storage'] ?? 'cache',
+			'overwrite' => !empty($options['overwrite']),
+		]);
+	}
+
+	protected function ensurePdfDocumentExists(int $id): void
+	{
+		$process = $this->requireProcess($id, true);
+		if (!$process) {
+			return;
+		}
+
+		if (empty($process['id']) || empty($process['contactid']) || empty($process['clientid'])) {
+			return;
+		}
+
+		$docIdField = 'processid';
+
+		// Do not generate contact PDF before document is finalized
+		if (empty($process[$docIdField]) || empty($process['filename'])) {
+			return;
+		}
+
+		try {
+			$this->generatePdfDocument($id, [
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			// Keep view page working even if PDF generation fails
+		}
+	}
+
+	protected function sendPdfResponse(array $result)
+	{
+		if (empty($result['path']) || !is_file($result['path'])) {
+			throw new RuntimeException('PDF file not found');
+		}
+
+		$mode = $result['output'] ?? 'inline';
+		$filename = $result['filename'] ?? basename($result['path']);
+
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->layout->disableLayout();
+
+		$response = $this->getResponse();
+		$response->clearHeaders();
+		$response->setHeader('Content-Type', 'application/pdf', true);
+		$response->setHeader(
+			'Content-Disposition',
+			($mode === 'download' ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
+			true
+		);
+		$response->setHeader('Content-Length', (string)filesize($result['path']), true);
+		$response->sendHeaders();
+
+		readfile($result['path']);
+		exit;
 	}
 
 	public function cancelAction()
@@ -430,10 +461,14 @@ class Processes_ProcessController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		if($this->getRequest()->isPost()) {
+		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
+
+			$process = $this->requireProcess($id);
+			if (!$process) return;
+
 			$process = new Processes_Model_DbTable_Process();
-			$process->setState($id, 7);
+			$process->setState($id, 106);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
 	}
@@ -473,68 +508,5 @@ class Processes_ProcessController extends Zend_Controller_Action
 	public function validateAction()
 	{
 		$this->_helper->Validate();
-	}
-
-	protected function getPositions($processIDs)
-	{
-		$positions = array();
-		if(empty($processIDs)) {
-			return $positions;
-		}
-
-		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positionsObject = $positionsDb->getPositions($processIDs);
-		$previous = array();
-
-		foreach($positionsObject as $position) {
-			$parentId = $position->parentid;
-			$ordering = $position->ordering ? $position->ordering : 0;
-
-			// Initialize the parent array if not already
-			if (!isset($previous[$parentId])) {
-				$previous[$parentId] = [
-					'ordering' => 0,
-					'quantity' => 1,
-					'deliverystatus' => '',
-					'deliverydate' => null,
-					'supplierorderstatus' => '',
-				];
-			}
-
-			// Determine if the current position should be grouped with the previous
-			$shouldMerge = $previous[$parentId]['ordering'] &&
-						   $previous[$parentId]['deliverystatus'] === $position->deliverystatus &&
-						   $previous[$parentId]['deliverydate'] === $position->deliverydate &&
-						   $previous[$parentId]['supplierorderstatus'] === $position->supplierorderstatus;
-
-			if($shouldMerge) {
-				$positions[$parentId][$ordering] = $positions[$parentId][$previous[$parentId]['ordering']];
-				$positions[$parentId][$ordering]['quantity'] = ($previous[$parentId]['quantity'] + 1);
-				unset($positions[$parentId][$previous[$parentId]['ordering']]);
-				$previous[$parentId]['ordering'] = $ordering ? $ordering : 0;
-				$previous[$parentId]['quantity'] = $positions[$parentId][$ordering]['quantity'];
-				$previous[$parentId]['deliverystatus'] = $position->deliverystatus ? $position->deliverystatus : '';
-				$previous[$parentId]['deliverydate'] = $position->deliverydate ? $position->deliverydate : NULL;
-				$previous[$parentId]['supplierorderstatus'] = $position->supplierorderstatus ? $position->supplierorderstatus : '';
-			} else {
-				$positions[$parentId][$ordering]['deliverystatus'] = $position->deliverystatus;
-				if($position->deliverydate)
-					//$deliverydate = new Zend_Date($position->deliverydate);
-					//if($position->deliverydate) $position->deliverydate = $deliverydate->get('dd.MM.yyyy');
-					$positions[$parentId][$ordering]['deliverydate'] = $position->deliverydate;
-				if($position->itemtype == 'deliveryItem')
-					$positions[$parentId][$ordering]['supplierorderstatus'] = $position->supplierorderstatus;
-			}
-
-			// Update the previous information for the current parent
-			$previous[$parentId] = array();
-			$previous[$parentId]['ordering'] = $ordering;
-			$previous[$parentId]['quantity'] = 1;
-			$previous[$parentId]['deliverystatus'] = $position->deliverystatus ? $position->deliverystatus : '';
-			$previous[$parentId]['deliverydate'] = $position->deliverydate ? $position->deliverydate : NULL;
-			$previous[$parentId]['supplierorderstatus'] = $position->supplierorderstatus ? $position->supplierorderstatus : '';
-		}
-
-		return $positions;
 	}
 }
