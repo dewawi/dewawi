@@ -530,9 +530,9 @@ $(document).ready(function(){
 		}
 	});
 
-	$('.toolbar').on('click', 'button.filter', function() {
+	/*$('.toolbar').on('click', 'button.filter', function() {
 		$('#filter').show();
-	});
+	});*/
 
 	$(document).mouseup(function (e) {
 		var container = $("#filter");
@@ -682,6 +682,244 @@ $(document).ready(function(){
 	});
 
 	//Buttons
+	/*(function ($, window, document) {
+		console.log('test1');
+		'use strict';
+
+		var Dewawi = {
+		    init: function () {
+		        this.bindActions();
+		        this.bindTabs();
+		        this.bindFilter();
+		    },
+
+		    bindActions: function () {
+		        var self = this;
+
+		        $(document).on('click', '[data-action]', function (e) {
+					console.log('test2');
+		            var $button = $(this);
+		            var action = String($button.data('action') || '');
+
+		            if (!action) {
+		                return;
+		            }
+
+		            e.preventDefault();
+
+		            if (!self.actions[action]) {
+		                console.log('Unknown action:', action, $button.get(0));
+		                return;
+		            }
+
+		            self.actions[action].call(self, $button, e);
+		        });
+		    },
+
+		    bindTabs: function () {
+		        $(document).on('click', '[data-tab-target]', function (e) {
+		            e.preventDefault();
+
+		            var $link = $(this);
+		            var targetId = String($link.data('tab-target') || '');
+		            var $tabs = $link.closest('.dw-tabs');
+		            var $panels = $tabs.next('.dw-tab-panels');
+
+		            if (!targetId || !$panels.length) {
+		                return;
+		            }
+
+		            $tabs.find('.dw-tabs__item').removeClass('is-active');
+		            $link.closest('.dw-tabs__item').addClass('is-active');
+
+		            $panels.find('.dw-tab-panel').removeClass('is-active').hide();
+		            $('#' + targetId).addClass('is-active').show();
+		        });
+		    },
+
+		    bindFilter: function () {
+		        $(document).on('change', '#daterange input[type="radio"], input[name="daterange"]', function () {
+		            var value = String($(this).val() || '');
+		            var visible = value === 'custom';
+
+		            $('.daterange')[visible ? 'show' : 'hide']();
+		        });
+		    },
+
+		    actions: {
+		        view: function ($button) {
+		            var data = this.getRowData($button);
+		            window.location.href = this.buildUrl(data.module, data.controller, 'edit', data.id);
+		        },
+
+		        edit: function ($button) {
+		            var data = this.getRowData($button);
+		            window.location.href = this.buildUrl(data.module, data.controller, 'edit', data.id);
+		        },
+
+		        copy: function ($button) {
+		            var data = this.getRowData($button);
+		            window.location.href = this.buildUrl(data.module, data.controller, 'copy', data.id);
+		        },
+
+		        pdf: function ($button) {
+		            var data = this.getRowData($button);
+		            window.open(this.buildUrl(data.module, data.controller, 'download', data.id), '_blank');
+		        },
+
+		        add: function () {
+		            window.location.href = this.buildUrl(module, controller, 'add');
+		        },
+
+		        'copy-current': function () {
+		            var currentId = this.getCurrentId();
+		            window.location.href = this.buildUrl(module, controller, 'copy', currentId);
+		        },
+
+		        'delete-current': function () {
+		            var currentId = this.getCurrentId();
+		            trash(currentId, deleteConfirm, controller, module);
+		        },
+
+		        clear: function ($button) {
+		            var rel = String($button.attr('rel') || '');
+		            if (!rel) {
+		                return;
+		            }
+
+		            $('#' + rel).val('').trigger('change').trigger('keyup');
+		        },
+
+		        reset: function () {
+		            window.location.href = this.buildUrl(module, controller, 'index');
+		        },
+
+		        filter: function () {
+		            $('#filter').toggle();
+		        },
+
+		        'multi-add': function ($button) {
+		            var $container = $button.closest('.multiformContainer');
+		            var parentId = Number($container.data('parentid')) || 0;
+		            var parentModule = String($container.data('parent-module') || '');
+		            var parentController = String($container.data('parent-controller') || '');
+		            var rowModule = String($button.data('module') || '');
+		            var rowController = String($button.data('controller') || '');
+
+		            if (!parentId || !rowModule || !rowController) {
+		                console.log('Missing multi-add data');
+		                return;
+		            }
+
+		            $.ajax({
+		                type: 'POST',
+		                url: baseUrl + '/' + rowModule + '/' + rowController + '/add/parent_id/' + parentId,
+		                data: {
+		                    parent_module: parentModule,
+		                    parent_controller: parentController
+		                },
+		                cache: false,
+		                success: function (html) {
+		                    $button.before(html);
+		                },
+		                error: function (xhr) {
+		                    console.log('multi-add failed', xhr.responseText);
+		                }
+		            });
+		        },
+
+		        'position-add': function () {
+		            if (typeof addPosition === 'function') {
+		                addPosition();
+		            }
+		        },
+
+		        'position-copy': function () {
+		            if (typeof copyPosition === 'function') {
+		                copyPosition();
+		            }
+		        },
+
+		        'position-delete': function () {
+		            if (typeof deletePosition === 'function') {
+		                deletePosition();
+		            }
+		        },
+
+		        'set-add': function () {
+		            if (typeof addSet === 'function') {
+		                addSet();
+		            }
+		        },
+
+		        'set-copy': function () {
+		            if (typeof copySet === 'function') {
+		                copySet();
+		            }
+		        },
+
+		        'set-delete': function () {
+		            if (typeof deleteSet === 'function') {
+		                deleteSet();
+		            }
+		        },
+
+		        'set-sort-up': function ($button) {
+		            if (typeof sortSetUp === 'function') {
+		                sortSetUp($button);
+		            }
+		        },
+
+		        'set-sort-down': function ($button) {
+		            if (typeof sortSetDown === 'function') {
+		                sortSetDown($button);
+		            }
+		        }
+		    },
+
+		    getRowData: function ($button) {
+		        var id = Number($button.data('id')) || 0;
+		        var rowModule = String($button.data('module') || '');
+		        var rowController = String($button.data('controller') || '');
+
+		        if (!id || !rowModule || !rowController) {
+		            throw new Error('Missing row action data');
+		        }
+
+		        return {
+		            id: id,
+		            module: rowModule,
+		            controller: rowController
+		        };
+		    },
+
+		    getCurrentId: function () {
+		        var value = $('input[name="id"]').first().val();
+		        var currentId = Number(value) || Number(window.id) || 0;
+
+		        if (!currentId) {
+		            throw new Error('Missing current id');
+		        }
+
+		        return currentId;
+		    },
+
+		    buildUrl: function (moduleName, controllerName, actionName, id) {
+		        var url = baseUrl + '/' + moduleName + '/' + controllerName + '/' + actionName;
+
+		        if (typeof id !== 'undefined' && id !== null && id !== '') {
+		            url += '/id/' + id;
+		        }
+
+		        return url;
+		    }
+		};
+
+		$(function () {
+		    Dewawi.init();
+		    window.Dewawi = Dewawi;
+		});
+	})(jQuery, window, document);*/
 	$(document).on('click', 'button', function() {
 		if(!$(this).attr('onclick')) {
 			var classes = $(this).attr('class');
@@ -1461,21 +1699,24 @@ function reset() {
 }
 
 //Copy
-function copy(cid, cmodule, ccontroller){
+function copy(cid, cmodule, ccontroller) {
 	cid = cid || id;
-		//console.log(cid);
-		//console.log(cmodule);
-		//console.log(baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid);
 	cmodule = cmodule || module;
 	ccontroller = ccontroller || controller;
+
 	$.ajax({
 		type: 'POST',
-		url: baseUrl+'/'+cmodule+'/'+ccontroller+'/copy/id/'+cid,
+		url: baseUrl + '/' + cmodule + '/' + ccontroller + '/copy/id/' + cid,
 		cache: false,
-		success: function(response){
-			//console.log(response);
-			if(id && response) setLocation(baseUrl+'/'+cmodule+'/'+ccontroller+'/edit/id/'+response);
-			else search();
+		success: function(response) {
+			var newId = parseInt($.trim(response), 10);
+
+			if (newId > 0) {
+				setLocation(baseUrl + '/' + cmodule + '/' + ccontroller + '/edit/id/' + newId);
+				return;
+			}
+
+			search();
 		}
 	});
 }
@@ -1817,6 +2058,7 @@ function getEmailmessages(scrollTo) {
 }
 
 function sendMessage() {
+	var $form = $('#emailmessage');
 	var editor = tinymce.get('body');
 	var contactid = 0;
 	var campaignid = 0;
@@ -1825,12 +2067,12 @@ function sendMessage() {
 	$('#output').hide().html('');
 
 	var data = {
-		recipient: $('#recipient').val() || '',
-		cc: $('#cc').val() || '',
-		bcc: $('#bcc').val() || '',
-		replyto: $('#replyto').val() || '',
-		subject: $('#subject').val() || '',
-		body: editor ? editor.getContent() : ($('#body').val() || ''),
+		recipient: $form.find('[name="recipient"]').val() || '',
+		cc: $form.find('[name="cc"]').val() || '',
+		bcc: $form.find('[name="bcc"]').val() || '',
+		replyto: $form.find('[name="replyto"]').val() || '',
+		subject: $form.find('[name="subject"]').val() || '',
+		body: editor ? editor.getContent() : ($form.find('[name="body"]').val() || ''),
 		module: module,
 		controller: controller,
 		files: {}
