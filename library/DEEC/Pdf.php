@@ -128,7 +128,17 @@ class DEEC_Pdf
 			throw new InvalidArgumentException('Invalid PDF request');
 		}
 
-		return $this->buildDocumentPayload($documentId, $module, $controller, $output, $templateId ?: null);
+		return $this->buildDocumentPayload(
+			$documentId,
+			$module,
+			$controller,
+			$output,
+			$templateId ?: null,
+			[
+				'storage' => (string)($request['storage'] ?? 'cache'),
+				'overwrite' => !empty($request['overwrite']),
+			]
+		);
 	}
 
 	protected function buildPdfTitle(array $payload): string
@@ -142,7 +152,7 @@ class DEEC_Pdf
 		return $title . ' ' . ($document[$docIdField] ?? $document['id'] ?? '');
 	}
 
-	protected function buildDocumentPayload(int $documentId, string $module, string $controller, string $output, ?int $templateId = null): array
+	protected function buildDocumentPayload(int $documentId, string $module, string $controller, string $output, ?int $templateId = null, array $options = []): array
 	{
 		$view = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer')->view;
 
@@ -166,6 +176,8 @@ class DEEC_Pdf
 				'controller' => $controller,
 				'documentId' => $documentId,
 				'output' => $output,
+				'storage' => $options['storage'] ?? 'cache',
+				'overwrite' => !empty($options['overwrite']),
 				'baseUrl' => $view->baseUrl(),
 			],
 			'document' => $resolvedDocument,
@@ -280,31 +292,51 @@ class DEEC_Pdf
 	protected function outputPdf(TCPDF $pdf, array $payload): array
 	{
 		$output = $payload['meta']['output'] ?? 'file';
+		$storage = $payload['meta']['storage'] ?? 'cache';
+		$overwrite = !empty($payload['meta']['overwrite']);
 		$document = $payload['document'];
 		$baseUrl = $payload['meta']['baseUrl'] ?? '';
 		$module = $payload['meta']['module'] ?? 'document';
 		$controller = $payload['meta']['controller'] ?? 'document';
+		$clientId = (int)($payload['clientId'] ?? 0);
+		$contactId = (int)($document['contactid'] ?? 0);
 
 		$filename = !empty($document['filename'])
 			? $document['filename']
 			: ($controller . '_' . $document['id'] . '.pdf');
 
-		$safeModule = preg_replace('/[^a-z0-9_-]+/i', '_', $module);
-		$safeController = preg_replace('/[^a-z0-9_-]+/i', '_', $controller);
+		$relativeDir = '';
+		$dirAbs = '';
+		$dirUrl = '';
 
-		$dirAbs = BASE_PATH . '/cache/document/' . $safeModule . '/' . $safeController . '/';
+		if ($storage === 'contact' && $clientId > 0 && $contactId > 0) {
+			$relativeDir = $this->contactUrl((string)$contactId, (string)$clientId);
+			$dirAbs = BASE_PATH . '/files/contacts/' . $relativeDir;
+			$dirUrl = $baseUrl . '/files/contacts/' . $relativeDir;
+		} else {
+			$safeModule = preg_replace('/[^a-z0-9_-]+/i', '_', $module);
+			$safeController = preg_replace('/[^a-z0-9_-]+/i', '_', $controller);
+			$relativeDir = $safeModule . '/' . $safeController . '/';
+			$dirAbs = BASE_PATH . '/cache/document/' . $relativeDir;
+			$dirUrl = $baseUrl . '/cache/document/' . $relativeDir;
+		}
+
 		$this->mkdirp($dirAbs);
 
-		$fileAbs = $dirAbs . $document['id'] . '_' . $filename;
-		$fileUrl = $baseUrl . '/cache/document/' . $safeModule . '/' . $safeController . '/' . $document['id'] . '_' . $filename;
+		$fileAbs = $dirAbs . $filename;
+		$fileUrl = $dirUrl . $filename;
 
-		$pdf->Output($fileAbs, 'F');
+		if ($overwrite || !is_file($fileAbs)) {
+			$pdf->Output($fileAbs, 'F');
+		}
 
 		return [
 			'path' => $fileAbs,
 			'url' => $fileUrl,
 			'filename' => $filename,
 			'output' => $output,
+			'storage' => $storage,
+			'exists' => is_file($fileAbs),
 		];
 	}
 
@@ -568,7 +600,7 @@ class DEEC_Pdf
 		$intro = !empty($template['intro'])
 				? $template['intro']
 				: 'Vielen Dank für Ihre Anfrage. Im Anhang finden Sie unser Angebot.';
-		$pdf->MultiCell(165, 0, $intro, 0, 'L', false, 1, 20, '', true, 0);
+		$pdf->MultiCell(100, 0, $intro, 0, 'L', false, 1, 20, '', true, 0);
 		$pdf->ln(2);
 
 		// Optional cover logo
@@ -942,8 +974,10 @@ class DEEC_Pdf
 	 */
 	private function renderTotalsAndFooter(TCPDF $pdf, array $document, $positions, array $template, array $settings = [])
 	{
-		$this->ensureSpaceForTotalBox($pdf, $document);
-		$yAfterBox = $this->totalBox($pdf, $document);
+		if (!empty($settings['showPrices'])) {
+		    $this->ensureSpaceForTotalBox($pdf, $document);
+		    $yAfterBox = $this->totalBox($pdf, $document);
+		}
 
 		//$pdf->SetY($yAfterBox + 5);
 
