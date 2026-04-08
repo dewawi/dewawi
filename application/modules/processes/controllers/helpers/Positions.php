@@ -16,7 +16,7 @@ class Application_Controller_Action_Helper_Positions extends Zend_Controller_Act
 			//Use price rules on all positions
 			$positionTable = $controller . 'pos';
 			$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
-			$price = $priceRuleHelper->usePriceRulesOnPositions($positions, 'sales', $positionTable);
+			$price = $priceRuleHelper->usePriceRulesOnPositions($positions, 'processes', $positionTable);
 
 			//Set precision and currency
 			foreach($positions as $key => $position) {
@@ -75,7 +75,7 @@ class Application_Controller_Action_Helper_Positions extends Zend_Controller_Act
 	private function calculatePrice($option, $position, $priceRuleHelper, $positionTable)
 	{
 		if($position->pricerulemaster) {
-			$priceRules = $priceRuleHelper->getPriceRulePositions('sales', $positionTable, $position->id);
+			$priceRules = $priceRuleHelper->getPriceRulePositions('processes', $positionTable, $position->id);
 			if(!in_array($option->price, [0, -1, -2])) {
 				return $priceRuleHelper->usePriceRules($priceRules, $option->price);
 			}
@@ -93,7 +93,7 @@ class Application_Controller_Action_Helper_Positions extends Zend_Controller_Act
 
 	protected function getDocumentDb(string $controller)
 	{
-		$class = 'Sales_Model_DbTable_' . ucfirst($controller) . 'pos';
+		$class = 'Processes_Model_DbTable_' . ucfirst($controller) . 'pos';
 		return new $class();
 	}
 }
