@@ -19,7 +19,7 @@ echo $this->ActiveFilter();
 					<th class="dw-col-contact"><?php echo $this->translate('PROCESSES_CONTACT'); ?></th>
 					<th class="dw-col-address"><?php echo $this->translate('PROCESSES_BILLING_ADDRESS'); ?></th>
 					<th class="dw-col-notes"><?php echo $this->translate('PROCESSES_NOTES'); ?></th>
-					<th class="dw-col-date"><?php echo $this->translate('PROCESSES_PROCESS_DATE'); ?></th>
+					<th class="dw-col-date"><?php echo $this->translate('PROCESSES_DELIVERY_DATE'); ?></th>
 					<th class="dw-col-total"><?php echo $this->translate('PROCESSES_TOTAL'); ?></th>
 					<th class="dw-col-state"><?php echo $this->translate('PROCESSES_STATE'); ?></th>
 					<th class="dw-col-pin"></th>
@@ -101,9 +101,9 @@ echo $this->ActiveFilter();
 							</div>
 						</td>
 
-						<td class="dw-col-date" data-label="<?php echo $this->translate('PROCESSES_PROCESS_DATE'); ?>">
-							<?php if ($process->processdate) : ?>
-								<?php echo $this->escape(date('d.m.Y', strtotime($process->processdate))); ?>
+						<td class="dw-col-date" data-label="<?php echo $this->translate('PROCESSES_DELIVERY_DATE'); ?>">
+							<?php if ($process->deliverydate) : ?>
+								<?php echo $this->escape(date('d.m.Y', strtotime($process->deliverydate))); ?>
 							<?php endif; ?>
 						</td>
 

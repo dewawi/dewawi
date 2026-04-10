@@ -6,10 +6,12 @@ echo $this->FileManager();
 ?>
 
 <?php echo $this->form->renderForm([
-	'id' => 'creditnote',
+	'id' => 'process',
 	'activeTab' => $this->activeTab,
 	'tabs' => [
 		'overview' => ['title' => 'TABS_OVERVIEW'],
+		'billing' => ['title' => 'TABS_BILLING'],
+		'supplier' => ['title' => 'TABS_SUPPLIER'],
 		'positions' => ['title' => 'TABS_POSITIONS', 'html' => $this->Positions('process'), 'a_attrs' => ['onclick'=>"getPositions('process', 'pos')"]],
 		'customer' => ['title' => 'TABS_CUSTOMER'],
 		'shipping' => ['title' => 'TABS_SHIPPING_ADDRESS'],
