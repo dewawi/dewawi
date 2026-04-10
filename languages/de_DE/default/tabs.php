@@ -8,6 +8,7 @@
 	'TABS_SHIPPING_ADDRESS' => 'Lieferanschrift',
 	'TABS_SHIPPING_ADDRESSES' => 'Lieferanschriften',
 	'TABS_CONTACT_PERSONS' => 'Kontaktpersonen',
+	'TABS_BILLING' => 'Abrechnung',
 	'TABS_FINISH' => 'Fertigstellen',
 	'TABS_HISTORY' => 'Historie',
 	'TABS_DOCUMENT' => 'Beleg',
