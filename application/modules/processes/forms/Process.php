@@ -132,7 +132,7 @@ class Processes_Form_Process extends DEEC_Form
 				'105' => 'STATES_COMPLETED',
 				'106' => 'STATES_CANCELLED',
 			],
-			'tab' => 'overview',
+			'tab' => 'finish',
 			'col' => 4,
 		]);
 
