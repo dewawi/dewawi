@@ -146,8 +146,15 @@ class Sales_Service_DocumentPayloadService
 			'showTotals' => 1,
 			'showFooter' => 1,
 			'showHeader' => 1,
-			'showCover' => 1,
+			'showCover' => 0,
 		];
+
+		if ($controller === 'quote') {
+			$defaults['showOptions'] = 1;
+			$defaults['showIncludedOptions'] = 1;
+			$defaults['showAttributes'] = 1;
+			$defaults['showCover'] = 1;
+		}
 
 		if ($controller === 'invoice') {
 			$defaults['showOptions'] = 0;
