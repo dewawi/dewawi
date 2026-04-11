@@ -32,9 +32,14 @@ class IndexController extends Zend_Controller_Action
 
 	public function indexAction()
 	{
-		$toolbar = new Statistics_Form_Toolbar();
+		$toolbar = new Application_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		//Get categories
+		$categoriesDb = new Application_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories('contact');
+		$options['categories'] = $categories;
 
 		$charts = new Statistics_Model_Turnover();
 		$charts->createCharts(12, 750, 400, $this->view->translate('STATISTICS_UNCATEGORIZED'), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);

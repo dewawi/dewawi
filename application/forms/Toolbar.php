@@ -1,33 +1,42 @@
 <?php
 
-class Application_Form_Toolbar extends Zend_Form
+class Application_Form_Toolbar extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('toolbar');
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'view',
+			'attribs'=> ['class' => 'view nolabel'],
+			'wrap'=> false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'edit',
+			'attribs'=> ['class' => 'edit nolabel'],
+			'wrap'=> false,
+		]);
 
-		$form['view'] = new Zend_Form_Element_Button('view');
-		$form['view']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'view nolabel');
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'copy',
+			'attribs'=> ['class' => 'copy nolabel'],
+			'wrap'=> false,
+		]);
 
-		$form['edit'] = new Zend_Form_Element_Button('edit');
-		$form['edit']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'edit nolabel');
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'delete',
+			'attribs'=> ['class' => 'delete nolabel'],
+			'wrap'=> false,
+		]);
 
-		$form['copy'] = new Zend_Form_Element_Button('copy');
-		$form['copy']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy nolabel');
-
-		$form['pdf'] = new Zend_Form_Element_Button('pdf');
-		$form['pdf']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'pdf nolabel');
-
-		$this->addElements($form);
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'pdf',
+			'attribs'=> ['class' => 'pdf nolabel'],
+			'wrap'=> false,
+		]);
 	}
 }
