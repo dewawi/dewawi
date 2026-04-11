@@ -95,50 +95,59 @@ UPDATE `phone` SET `module` = 'contacts', `controller` = 'contact' WHERE `module
 ALTER TABLE `process` CHANGE `customerid` `contactid` int(11) NOT NULL DEFAULT 0;
 ALTER TABLE `task` CHANGE `customerid` `contactid` int(11) NOT NULL DEFAULT 0;
 
-ALTER TABLE `creditnote` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`,
-ALTER TABLE `creditnote` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`,
-ALTER TABLE `creditnote` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`,
-ALTER TABLE `creditnote` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`,
+ALTER TABLE `creditnote` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`;
+ALTER TABLE `creditnote` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`;
+ALTER TABLE `creditnote` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`;
+ALTER TABLE `creditnote` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`;
 ALTER TABLE `creditnote` ADD COLUMN `pdfshowcover` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowattributes`;
 
-ALTER TABLE `deliveryorder` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`,
-ALTER TABLE `deliveryorder` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`,
-ALTER TABLE `deliveryorder` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`,
-ALTER TABLE `deliveryorder` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`,
+ALTER TABLE `deliveryorder` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`;
+ALTER TABLE `deliveryorder` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`;
+ALTER TABLE `deliveryorder` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`;
+ALTER TABLE `deliveryorder` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`;
 ALTER TABLE `deliveryorder` ADD COLUMN `pdfshowcover` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowattributes`;
 
-ALTER TABLE `invoice` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`,
-ALTER TABLE `invoice` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`,
-ALTER TABLE `invoice` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`,
-ALTER TABLE `invoice` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`,
+ALTER TABLE `invoice` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`;
+ALTER TABLE `invoice` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`;
+ALTER TABLE `invoice` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`;
+ALTER TABLE `invoice` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`;
 ALTER TABLE `invoice` ADD COLUMN `pdfshowcover` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowattributes`;
 
-ALTER TABLE `quote` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`,
-ALTER TABLE `quote` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`,
-ALTER TABLE `quote` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`,
-ALTER TABLE `quote` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`,
+ALTER TABLE `quote` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`;
+ALTER TABLE `quote` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`;
+ALTER TABLE `quote` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`;
+ALTER TABLE `quote` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`;
 ALTER TABLE `quote` ADD COLUMN `pdfshowcover` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowattributes`;
 
-ALTER TABLE `reminder` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`,
-ALTER TABLE `reminder` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`,
-ALTER TABLE `reminder` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`,
-ALTER TABLE `reminder` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`,
+ALTER TABLE `reminder` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`;
+ALTER TABLE `reminder` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`;
+ALTER TABLE `reminder` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`;
+ALTER TABLE `reminder` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`;
 ALTER TABLE `reminder` ADD COLUMN `pdfshowcover` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowattributes`;
 
-ALTER TABLE `salesorder` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`,
-ALTER TABLE `salesorder` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`,
-ALTER TABLE `salesorder` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`,
-ALTER TABLE `salesorder` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`,
+ALTER TABLE `salesorder` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`;
+ALTER TABLE `salesorder` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`;
+ALTER TABLE `salesorder` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`;
+ALTER TABLE `salesorder` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`;
 ALTER TABLE `salesorder` ADD COLUMN `pdfshowcover` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowattributes`;
 
-ALTER TABLE `quoterequest` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`,
-ALTER TABLE `quoterequest` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`,
-ALTER TABLE `quoterequest` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`,
-ALTER TABLE `quoterequest` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`,
+ALTER TABLE `quoterequest` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`;
+ALTER TABLE `quoterequest` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`;
+ALTER TABLE `quoterequest` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`;
+ALTER TABLE `quoterequest` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`;
 ALTER TABLE `quoterequest` ADD COLUMN `pdfshowcover` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowattributes`;
 
-ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`,
-ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`,
-ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`,
-ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`,
+ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowprices` TINYINT(1) NOT NULL DEFAULT 0 AFTER `templateid`;
+ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowdiscounts` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowprices`;
+ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowoptions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowdiscounts`;
+ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowattributes` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowoptions`;
 ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowcover` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowattributes`;
+
+UPDATE `invoice` SET `pdfshowprices` = 1 WHERE `pdfshowprices` = 0;
+UPDATE `quote` SET `pdfshowprices` = 1 WHERE `pdfshowprices` = 0;
+UPDATE `quote` SET `pdfshowoptions` = 1 WHERE `pdfshowoptions` = 0;
+UPDATE `quote` SET `pdfshowattributes` = 1 WHERE `pdfshowattributes` = 0;
+UPDATE `quote` SET `pdfshowcover` = 1 WHERE `pdfshowcover` = 0;
+UPDATE `reminder` SET `pdfshowprices` = 1 WHERE `pdfshowprices` = 0;
+UPDATE `salesorder` SET `pdfshowprices` = 1 WHERE `pdfshowprices` = 0;
+UPDATE `purchaseorder` SET `pdfshowprices` = 1 WHERE `pdfshowprices` = 0;
