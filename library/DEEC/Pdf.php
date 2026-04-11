@@ -263,7 +263,7 @@ class DEEC_Pdf
 			$this->renderImages($pdf, $positions, $mediaPath);
 			$pages['images_end'] = $pdf->getPage();
 
-			$this->renderTableOfContentsOnCover($pdf, $document, $template, $coverY, $pages);
+			$this->renderTableOfContentsOnCover($pdf, $document, $template, $coverY, $pages, $settings);
 			$this->renderCoverImage($pdf, $positions, $mediaPath);
 		}
 
@@ -1068,7 +1068,7 @@ class DEEC_Pdf
 		}
 	}
 
-	private function renderTableOfContentsOnCover(TCPDF $pdf, array $document, array $template, $yStart, array $pages)
+	private function renderTableOfContentsOnCover(TCPDF $pdf, array $document, array $template, $yStart, array $pages, $settings)
 	{
 		// Compute page numbers (defaults if a section wasn’t added)
 		$pProduct = $pages['product_start'] ?? 2;
@@ -1093,7 +1093,9 @@ class DEEC_Pdf
 		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_PRODUCT_DESCRIPTION'), $pProduct);
 		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_SALES_OFFER'), ($pOfferS == $pOfferE) ? $pOfferS : "{$pOfferS}-{$pOfferE}");
 		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_TERMS'), $pTerms);
-		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_OPTIONS'), ($pOptS == $pOptE) ? $pOptS : "{$pOptS}-{$pOptE}");
+		if (!empty($settings['showOptions'])) {
+			$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_OPTIONS'), ($pOptS == $pOptE) ? $pOptS : "{$pOptS}-{$pOptE}");
+		}
 		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_IMAGES'), ($pImgS == $pImgE) ? $pImgS : "{$pImgS}-{$pImgE}");
 	}
 
