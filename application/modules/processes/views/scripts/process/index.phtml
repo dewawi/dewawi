@@ -20,6 +20,7 @@ echo $this->ActiveFilter();
 					<th class="dw-col-address"><?php echo $this->translate('PROCESSES_BILLING_ADDRESS'); ?></th>
 					<th class="dw-col-notes"><?php echo $this->translate('PROCESSES_NOTES'); ?></th>
 					<th class="dw-col-date"><?php echo $this->translate('PROCESSES_DELIVERY_DATE'); ?></th>
+					<th class="dw-col-date"><?php echo $this->translate('PROCESSES_PAYMENT_STATUS'); ?></th>
 					<th class="dw-col-total"><?php echo $this->translate('PROCESSES_TOTAL'); ?></th>
 					<th class="dw-col-state"><?php echo $this->translate('PROCESSES_STATE'); ?></th>
 					<th class="dw-col-pin"></th>
@@ -29,10 +30,14 @@ echo $this->ActiveFilter();
 			<tbody>
 				<?php foreach ($this->processes as $process) : ?>
 					<?php
-					$stateClass = 'dw-badge--info';
-					if ($process->state == '101') $stateClass = 'dw-badge--warning';
-					if ($process->state == '103') $stateClass = 'dw-badge--danger';
-					if ($process->state == '104' || $process->state == '105' || $process->state == '106') $stateClass = 'dw-badge--success';
+					$processStateClass = 'dw-badge--info';
+					if ($process->state == '101') $processStateClass = 'dw-badge--warning';
+					if ($process->state == '103') $processStateClass = 'dw-badge--danger';
+					if ($process->state == '104' || $process->state == '105' || $process->state == '106') $processStateClass = 'dw-badge--success';
+
+					$paymentStatusClass = 'dw-badge--warning';
+					if ($process->paymentstatus === 'prepaymentReceived') $paymentStatusClass = 'dw-badge--info';
+					if ($process->paymentstatus === 'paymentCompleted') $paymentStatusClass = 'dw-badge--success';
 					?>
 					<tr class="dw-row<?php echo $process->pinned ? ' is-pinned' : ''; ?>">
 						<td class="dw-col-check">
@@ -107,19 +112,39 @@ echo $this->ActiveFilter();
 							<?php endif; ?>
 						</td>
 
+						<td class="dw-col-date" data-label="<?php echo $this->translate('PROCESSES_PAYMENT_STATUS'); ?>">
+							<?php if ($process->state == '105' || $process->state == '106') : ?>
+								<span class="dw-badge <?php echo $paymentStatusClass; ?>">
+									<?php echo $this->translate($this->escape($this->options['paymentstatus'][$process->paymentstatus])); ?>
+								</span>
+							<?php else : ?>
+								<div class="editableContainer">
+									<span
+										class="editable dw-badge <?php echo $paymentStatusClass; ?>"
+										data-name="state"
+										data-module="<?php echo $this->module; ?>"
+										data-controller="<?php echo $this->controller; ?>"
+										data-id="<?php echo (int)$process->id; ?>"
+										data-value="<?php echo $this->escape($process->paymentstatus); ?>"
+										data-type="select"
+									><?php echo $this->translate($this->escape($this->options['paymentstatus'][$process->paymentstatus])); ?></span>
+								</div>
+							<?php endif; ?>
+						</td>
+
 						<td class="dw-col-total" data-label="<?php echo $this->translate('PROCESSES_TOTAL'); ?>">
 							<?php echo $this->escape($process->total); ?>
 						</td>
 
 						<td class="dw-col-state state" data-label="<?php echo $this->translate('PROCESSES_STATE'); ?>">
 							<?php if ($process->state == '105' || $process->state == '106') : ?>
-								<span class="dw-badge <?php echo $stateClass; ?>">
+								<span class="dw-badge <?php echo $processStateClass; ?>">
 									<?php echo $this->translate($this->escape($this->options['states'][$process->state])); ?>
 								</span>
 							<?php else : ?>
 								<div class="editableContainer">
 									<span
-										class="editable dw-badge <?php echo $stateClass; ?>"
+										class="editable dw-badge <?php echo $processStateClass; ?>"
 										data-name="state"
 										data-module="<?php echo $this->module; ?>"
 										data-controller="<?php echo $this->controller; ?>"

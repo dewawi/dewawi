@@ -201,6 +201,18 @@ class Processes_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'paymentstatus',
+			'type' => 'select',
+			'label' => 'PROCESSES_PAYMENT_STATUS',
+			'options' => [
+				'waitingForPayment' => 'PROCESSES_WAITING_FOR_PAYMENT',
+				'prepaymentReceived' => 'PROCESSES_PREPAYMENT_RECEIVED',
+				'paymentCompleted' => 'PROCESSES_PAYMENT_COMPLETED',
+			],
+			'default' => '0',
+		]);
+
+		$this->addElement([
 			'name' => 'daterange',
 			'type' => 'radio',
 			'wrap' => false,
