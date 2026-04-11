@@ -103,7 +103,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 				</div>
 				<div class="row">
 					<div class="col-md-6">
-						<?php echo $this->shop['footer']; ?>
+						<?php echo $this->shop['contact']; ?>
 					</div>
 					<div class="col-md-6">
 						<?php if ($this->controller === 'category' && isset($this->category)) : ?>
@@ -133,6 +133,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 				<?php endforeach; ?>
 			</ul>
 			<p><?php echo $this->shop['copyright']; ?></p>
+			<p><?php echo $this->shop['footer']; ?></p>
 			<p><?php echo $this->translate('SHOPS_FOOTER_LEGAL_NOTICE'); ?></p>
 			<p><?php echo $this->translate('SHOPS_FOOTER_COOKIE_NOTICE'); ?></p>
 		</div>

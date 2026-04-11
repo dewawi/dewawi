@@ -198,6 +198,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 					'analytics' => $shop['analytics'],
 					'logo' => $shop['logo'],
 					'title' => $shop['title'],
+					'contact' => $shop['contact'],
 					'footer' => $shop['footer'],
 					'copyright' => $shop['copyright'],
 					'emailsender' => $shop['emailsender'],

@@ -151,3 +151,5 @@ UPDATE `quote` SET `pdfshowcover` = 1 WHERE `pdfshowcover` = 0;
 UPDATE `reminder` SET `pdfshowprices` = 1 WHERE `pdfshowprices` = 0;
 UPDATE `salesorder` SET `pdfshowprices` = 1 WHERE `pdfshowprices` = 0;
 UPDATE `purchaseorder` SET `pdfshowprices` = 1 WHERE `pdfshowprices` = 0;
+
+ALTER TABLE `shop` ADD `contact` text DEFAULT NULL AFTER `title`;

@@ -2416,6 +2416,7 @@ CREATE TABLE IF NOT EXISTS `shop` (
   `analytics` text DEFAULT NULL,
   `logo` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
+  `contact` text DEFAULT NULL,
   `footer` text DEFAULT NULL,
   `copyright` varchar(255) DEFAULT NULL,
   `emailsender` varchar(255) DEFAULT NULL,
