@@ -18,6 +18,7 @@
 	'DOCUMENTS_TOC_TERMS' => 'Verkaufsbedingungen',
 	'DOCUMENTS_TOC_OPTIONS' => 'Optionale Ausstattung',
 	'DOCUMENTS_TOC_IMAGES' => 'Bilder und Zeichnungen',
+	'DOCUMENTS_OPTION_ON_REQUEST' => 'auf Anfrage',
 	'DOCUMENTS_QUOTE_ID' => 'Angebotsnummer:',
 	'DOCUMENTS_SALESORDER_ID' => 'Belegnummer:',
 	'DOCUMENTS_INVOICE_ID' => 'Rechnungsnummer:',
