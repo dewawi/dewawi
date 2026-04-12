@@ -1,0 +1,156 @@
+<?php
+//$this->title = $this->translate('SHOPS_ACCOUNTS');
+//$this->headTitle($this->title);
+//echo $this->Messages();
+//echo $this->ActiveFilter();
+?>
+
+<?php
+// Fetch data
+$tags = $this->{'tags'};
+$categories = $this->{'categories'};
+//$contact = $this->ContactForm($this->translate('SHOPS_CONTACT_FORM'));
+?>
+
+<section id="about" class="py-5">
+	<div class="container">
+		<h2><?= htmlspecialchars(($this->formRow['title'] ?? 'Anfrage')) ?></h2>
+		<div class="row g-4">
+			<div class="col-12 col-lg-6">
+				<div id="form-container">
+					<div class="form-step">
+						<form method="post" id="inquiry-form" onsubmit="return submitStep(this, <?= $this->step ?>);">
+							<p><?= htmlspecialchars(($this->formRow['description'] ?? '')) ?></p>
+
+							<?php if (!empty($this->errors)): ?>
+								<div class="alert alert-danger">
+									Bitte prüfen Sie Ihre Eingaben. Es sind Fehler aufgetreten.
+								</div>
+							<?php endif; ?>
+
+							<?php if (($this->step == '2') && !empty($this->requestValues)): ?>
+							<div class="alert alert-info">
+								<h5>Ihre Angaben:</h5>
+								<ul>
+									<?php foreach ($this->requestValues as $key => $val): ?>
+										<li><strong><?= htmlspecialchars($key) ?>:</strong> <?= htmlspecialchars($val) ?></li>
+									<?php endforeach; ?>
+								</ul>
+							</div>
+							<?php endif; ?>
+
+							<?php if (($this->step == '2') && !empty($this->suggestions)): ?>
+								<div class="alert alert-info">
+									<h5>Geräteempfehlung basierend auf Ihrer Berechnung:</h5>
+									<div class="row">
+										<?php foreach ($this->suggestedItems as $item): ?>
+											<?php
+											$hasSpecial = !empty($item['item']['specialprice']);
+											$base = (float)($item['item']['price'] ?? 0);
+											$special = (float)($item['item']['specialprice'] ?? 0);
+
+											$discountPct = null;
+											if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
+												// e.g. base 1000, special 800 → 20%
+												$discountPct = round((1 - ($special / $base)) * 100);
+											}
+											?>
+											<?php if ($item): ?>
+												<div class="col-md-6 mb-3">
+													<div class="card h-100">
+														<div class="card-body">
+															<h4 class="card-sku"><?= $this->escape($item['item']['sku']); ?></h4>
+														</div>
+														<?php if(isset($item['images'][0]['url'])): ?>
+															<img src="<?= $this->baseUrl(); ?>/media/images/<?= $this->escape($item['images'][0]['url']); ?>" alt="" class="card-img-top" style="object-fit: cover; height: 200px;">
+														<?php endif; ?>
+														<div class="card-body">
+															<h5 class="card-title"><?= $this->escape($item['item']['title']); ?></h5>
+															<p class="card-text"><?= $this->escape($item['item']['description']); ?></p>
+															<p class="text-muted">
+																Anforderung: <?= number_format($this->requestValues['kuehlleistung'], 2, ',', '.') ?> kW
+															</p>
+															<p>
+																<strong>Berechneter Wert: <?= number_format($item['value'], 2, ',', '.') ?> kW (<?= number_format($this->escape($item['percent']), 2, ',', '.') ?> %)</strong>
+															</p>
+															<?php if ($hasSpecial): ?>
+																<p class="fw-bold"><strong style="color:#008000;font-size:1.3rem;">Sonderpreis: <?= number_format($special, 2, ',', '.') ?> €</strong>
+																<?php if ($discountPct !== null): ?>
+																	<span class="badge bg-danger ms-2" style="color: #ffffff;">-<?= $discountPct; ?>%</span>
+																<?php endif; ?>
+																</p>
+																<p class="fw-bold">Listenpreis: <?= number_format($base, 2, ',', '.') ?> €</p>
+															<?php else: ?>
+																<p class="fw-bold"><span style="text-decoration:line-through;font-size:1.3rem;">Listenpreis: <?= number_format($base, 2, ',', '.') ?> €</span></p>
+															<?php endif; ?>
+															<button type="button" class="btn btn-outline-primary mt-2 select-suggestion"
+																	data-sku="<?= $this->escape($item['item']['sku']) ?>"
+																	data-title="<?= $this->escape($item['item']['title']) ?>">
+																Dieses Gerät auswählen
+															</button>
+														</div>
+													</div>
+												</div>
+											<?php endif; ?>
+										<?php endforeach; ?>
+									</div>
+								</div>
+							<?php endif; ?>
+
+							<?= $this->form->render() ?>
+
+						</form>
+					</div>
+				</div>
+			</div>
+
+			<?php if ($this->step == 1): ?>
+				<div class="col-12 col-lg-6">
+					<aside class="sidebar sticky-lg-top" style="top: 20px;">
+						<h5 class="mb-3">Weiterführende Informationen zur technischen Auslegung</h5>
+
+						<p>Um eine passende und effiziente Lösung für Ihre Anwendung zu ermitteln, benötigen wir möglichst vollständige und genaue Angaben. Die folgenden Hinweise helfen Ihnen, die technischen Anforderungen optimal zu beschreiben:</p>
+						
+						<h5>1. Einsatzbereich und Umgebung</h5>
+						<ul>
+							<li>Art der Anwendung (z. B. Prozesskühlung, Raumkühlung, Maschinenkühlung)</li>
+							<li>Umgebungsbedingungen am Aufstellort (Temperaturbereich, Innen-/Außenaufstellung, Witterungseinflüsse)</li>
+						</ul>
+
+						<h5>2. Leistungsdaten</h5>
+						<ul>
+							<li>Erforderliche Kälteleistung in kW</li>
+							<li>Vor- und Rücklauftemperaturen des Mediums</li>
+							<li>Gewünschte Temperaturkonstanz / Regelgenauigkeit</li>
+						</ul>
+
+						<h5>3. Medium</h5>
+						<ul>
+							<li>Art des Kühlmediums (z. B. Wasser, Wasser-Glykol-Gemisch, Spezialflüssigkeit)</li>
+							<li>Besonderheiten (z. B. Korrosionsschutz, Viskosität)</li>
+						</ul>
+
+						<h5>4. Anschluss- und Installationsbedingungen</h5>
+						<ul>
+							<li>Verfügbare Stromversorgung (Spannung, Frequenz, Phasen)</li>
+							<li>Platzverhältnisse und Zugänglichkeit am Aufstellort</li>
+							<li>Lage und Dimensionierung der Rohrleitungen</li>
+						</ul>
+
+						<h5>5. Zusatzausstattung und Optionen</h5>
+						<ul>
+							<li>Integrierte Pumpen, Pufferspeicher oder Filter</li>
+							<li>Schallschutzmaßnahmen</li>
+							<li>Fernüberwachung oder spezielle Steuerungen</li>
+						</ul>
+
+						<div style="background-color: #f8f9fa; border-left: 4px solid #007bff; padding: 10px; margin-top: 15px;">
+							<strong>Tipp:</strong> Je detaillierter Ihre Angaben, desto schneller können wir ein technisch und wirtschaftlich optimales Angebot erstellen. Falls Ihnen einzelne Werte nicht vorliegen, geben Sie bitte eine Schätzung oder den geplanten Einsatzrahmen an.
+						</div>
+					</aside>
+				</div>
+			<?php endif; ?>
+		</div>
+	</div>
+</section>
+
