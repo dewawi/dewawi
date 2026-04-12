@@ -143,6 +143,7 @@ class Items_ItemController extends DEEC_Controller_Action
 		$data['taxid'] = $taxrate['id'];
 		$data['currency'] = $currency['code'];
 		$data['inventory'] = 1;
+		$data['shopid'] = 0;
 
 		$item = new Items_Model_DbTable_Item();
 		$id = $item->addItem($data);
