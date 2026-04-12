@@ -135,7 +135,7 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 
 			//Get addresses
 			$addressDb = new Contacts_Model_DbTable_Address();
-			$addresses = $addressDb->getAddress($contact['id']);
+			$addresses = $addressDb->getByParentId($contact['id'], 'contacts', 'contact');
 			if(count($addresses)) {
 				$data['billingstreet'] = $addresses[0]['street'];
 				$data['billingpostcode'] = $addresses[0]['postcode'];

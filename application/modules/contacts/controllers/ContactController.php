@@ -361,10 +361,9 @@ class Contacts_ContactController extends DEEC_Controller_Action
 
 		//Copy addresses
 		$addressDb = new Contacts_Model_DbTable_Address();
-		$addresses = $addressDb->getAddress($id);
+		$addresses = $addressDb->getByParentId($id, 'contacts', 'contact');
 		foreach($addresses as $address) {
 			$data = array(
-				'contactid' => $contactid,
 				'type' => $address['type'],
 				'street' => $address['street'],
 				'postcode' => $address['postcode'],
@@ -372,7 +371,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 				'country' => $address['country'],
 				'ordering' => $address['ordering']
 			);
-			$addressDb->addAddress($data);
+			$addressDb->createForParent($contactid, 'contacts', 'contact', $data);
 		}
 
 		//Phone
@@ -521,16 +520,15 @@ class Contacts_ContactController extends DEEC_Controller_Action
 								$address['country'] = isset($map['country']) ? $datacsv[$map['country']] : NULL;
 
 								$addressDb = new Contacts_Model_DbTable_Address();
-								$addressDb->addAddress(array(
-														'contactid' => $id,
-														'type' => 'billing',
-														'street' => $address['street'],
-														'postcode' => $address['postcode'],
-														'city' => $address['city'],
-														'country' => $address['country'],
-														'ordering' => 1
-													));
-								//print_r($address);
+								$data = array(
+									'type' => 'billing',
+									'street' => $address['street'],
+									'postcode' => $address['postcode'],
+									'city' => $address['city'],
+									'country' => $address['country'],
+									'ordering' => 1
+								);
+								$addressDb->createForParent($id, 'contacts', 'contact', $data);
 
 								if(isset($map['phone']) && isset($datacsv[$map['phone']]) && $datacsv[$map['phone']]) {
 									$phoneDb = new Contacts_Model_DbTable_Phone();

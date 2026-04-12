@@ -49,7 +49,7 @@ class Sales_Service_CreateDataFactory
 		$data['billingdepartment'] = $contact['department'];
 
 		$addressDb = new Contacts_Model_DbTable_Address();
-		$addresses = $addressDb->getAddress($contact['id']);
+		$addresses = $addressDb->getByParentId($contact['id'], 'contacts', 'contact');
 
 		if (count($addresses)) {
 			$data['billingstreet'] = $addresses[0]['street'];
