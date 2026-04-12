@@ -4,6 +4,8 @@ class Sales_Service_InvoiceEditViewModel
 {
 	public function build(int $invoiceId, array $user, array $invoiceRow): array
 	{
+		$contact = [];
+
 		//Get contact
 		if($invoiceRow['contactid']) {
 			$contactDb = new Contacts_Model_DbTable_Contact();

@@ -4,6 +4,8 @@ class Sales_Service_SalesorderEditViewModel
 {
 	public function build(int $salesorderId, array $user, array $salesorderRow): array
 	{
+		$contact = [];
+
 		//Get contact
 		if($salesorderRow['contactid']) {
 			$contactDb = new Contacts_Model_DbTable_Contact();

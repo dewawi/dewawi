@@ -4,6 +4,8 @@ class Processes_Service_ProcessEditViewModel
 {
 	public function build(int $processId, array $user, array $processRow): array
 	{
+		$contact = [];
+
 		//Get contact
 		if($processRow['contactid']) {
 			$contactDb = new Contacts_Model_DbTable_Contact();

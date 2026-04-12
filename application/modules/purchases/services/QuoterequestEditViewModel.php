@@ -4,6 +4,8 @@ class Purchases_Service_QuoterequestEditViewModel
 {
 	public function build(int $quoterequestId, array $user, array $quoterequestRow): array
 	{
+		$contact = [];
+
 		//Get contact
 		if($quoterequestRow['contactid']) {
 			$contactDb = new Contacts_Model_DbTable_Contact();

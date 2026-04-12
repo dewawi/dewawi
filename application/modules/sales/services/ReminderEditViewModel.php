@@ -4,6 +4,8 @@ class Sales_Service_ReminderEditViewModel
 {
 	public function build(int $reminderId, array $user, array $reminderRow): array
 	{
+		$contact = [];
+
 		//Get contact
 		if($reminderRow['contactid']) {
 			$contactDb = new Contacts_Model_DbTable_Contact();

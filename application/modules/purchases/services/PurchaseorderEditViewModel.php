@@ -4,6 +4,8 @@ class Purchases_Service_PurchaseorderEditViewModel
 {
 	public function build(int $purchaseorderId, array $user, array $purchaseorderRow): array
 	{
+		$contact = [];
+
 		//Get contact
 		if($purchaseorderRow['contactid']) {
 			$contactDb = new Contacts_Model_DbTable_Contact();

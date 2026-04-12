@@ -4,6 +4,8 @@ class Sales_Service_CreditnoteEditViewModel
 {
 	public function build(int $creditnoteId, array $user, array $creditnoteRow): array
 	{
+		$contact = [];
+
 		//Get contact
 		if($creditnoteRow['contactid']) {
 			$contactDb = new Contacts_Model_DbTable_Contact();

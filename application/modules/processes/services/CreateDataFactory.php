@@ -16,18 +16,12 @@ class Processes_Service_CreateDataFactory
 	protected function getDefaults(string $controller): array
 	{
 		$currencies = new Application_Model_DbTable_Currency();
-		$languages = new Application_Model_DbTable_Language();
-		$templates = new Application_Model_DbTable_Template();
 
 		$currency = $currencies->getPrimaryCurrency();
-		$language = $languages->getPrimaryLanguage();
-		$template = $templates->getPrimaryTemplate();
 
 		return [
 			'title' => $this->getDefaultTitle($controller),
 			'currency' => $currency['code'],
-			'templateid' => $template['id'],
-			'language' => $language['code'],
 			'state' => 100,
 		];
 	}
