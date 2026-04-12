@@ -68,12 +68,6 @@ class Items_Model_DbTable_Pricerule extends DEEC_Model_DbTable_Entity
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
-		$data['module'] = $data['parent_module'];
-		unset($data['parent_module']);
-		$data['controller'] = $data['parent_controller'];
-		unset($data['parent_controller']);
-		$data['parentid'] = $data['parent_id'];
-		unset($data['parent_id']);
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
