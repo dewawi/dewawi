@@ -376,24 +376,38 @@ class Contacts_ContactController extends DEEC_Controller_Action
 
 		//Phone
 		$phoneDb = new Contacts_Model_DbTable_Phone();
-		$phones = $phoneDb->getPhone($id);
+		$phones = $phoneDb->getByParentId($id, 'contacts', 'contact');
 		foreach($phones as $phone) {
-			$phoneDb->addPhone(array('contactid' => $contactid, 'type' => $phone['type'], 'phone' => $phone['phone'], 'ordering' => $phone['ordering']));
+			$data = array(
+				'type' => $phone['type'],
+				'phone' => $phone['phone'],
+				'ordering' => $phone['ordering']
+			);
+			$phoneDb->createForParent($contactid, 'contacts', 'contact', $data);
 		}
 
 		//Email
 		$emailDb = new Contacts_Model_DbTable_Email();
-		$emails = $emailDb->getEmails($id);
+		$emails = $emailDb->getByParentId($id, 'contacts', 'contact');
 		foreach($emails as $email) {
 			$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
-			$emailDb->addEmail(array('contactid' => $contactid, 'email' => $email['email'], 'ordering' => $email['ordering'], 'password' => $password));
+			$data = array(
+				'email' => $email['email'],
+				'ordering' => $email['ordering'],
+				'password' => $password
+			);
+			$emailDb->createForParent($contactid, 'contacts', 'contact', $data);
 		}
 
 		//Internet
 		$internetDb = new Contacts_Model_DbTable_Internet();
-		$internets = $internetDb->getInternet($id);
+		$internets = $internetDb->getByParentId($id, 'contacts', 'contact');
 		foreach($internets as $internet) {
-			$internetDb->addInternet(array('contactid' => $contactid, 'internet' => $internet['internet'], 'ordering' => $internet['ordering']));
+			$data = array(
+				'internet' => $internet['internet'],
+				'ordering' => $internet['ordering']
+			);
+			$internetDb->createForParent($contactid, 'contacts', 'contact', $data);
 		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');

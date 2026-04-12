@@ -181,15 +181,15 @@ class Tasks_TaskController extends Zend_Controller_Action
 
 				//Phone
 				$phoneDb = new Contacts_Model_DbTable_Phone();
-				$contact['phone'] = $phoneDb->getPhone($contact['id']);
+				$contact['phone'] = $phoneDb->getByParentId($contact['id'], 'contacts', 'contact');
 
 				//Email
 				$emailDb = new Contacts_Model_DbTable_Email();
-				$contact['email'] = $emailDb->getEmails($contact['id']);
+				$contact['email'] = $emailDb->getByParentId($contact['id'], 'contacts', 'contact');
 
 				//Internet
 				$internetDb = new Contacts_Model_DbTable_Internet();
-				$contact['internet'] = $internetDb->getInternet($contact['id']);
+				$contact['internet'] = $internetDb->getByParentId($contact['id'], 'contacts', 'contact');
 
 				$this->view->contact = $contact;
 			}
