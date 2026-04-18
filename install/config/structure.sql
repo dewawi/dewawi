@@ -2413,6 +2413,7 @@ CREATE TABLE IF NOT EXISTS `shop` (
   `url` varchar(255) DEFAULT NULL,
   `timezone` varchar(255) DEFAULT NULL,
   `language` varchar(255) DEFAULT NULL,
+  `theme` varchar(100) NOT NULL DEFAULT 'default',
   `analytics` text DEFAULT NULL,
   `logo` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
