@@ -12,7 +12,7 @@ class Zend_View_Helper_RenderSubCategory extends Zend_View_Helper_Abstract
 		foreach ($categories as $subcategory) {
 			if ($subcategory['parentid'] == $parentId) {
 				// Construct the route name
-				$routeName = 'category_' . $subcategory['id'];
+				$routeName = 'slug_category_' . $subcategory['id'];
 
 				// Check if the route exists
 				if ($router->hasRoute($routeName)) {

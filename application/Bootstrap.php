@@ -169,17 +169,17 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		$siteContext = $resolver->resolveByHost($host);
 
 		if ($siteContext) {
-		    Zend_Registry::set('SiteContext', $siteContext);
+			Zend_Registry::set('SiteContext', $siteContext);
 
-		    // Legacy compatibility
-		    Zend_Registry::set('Shop', $siteContext->getSite());
+			// Legacy compatibility
+			Zend_Registry::set('Shop', $siteContext->getSite());
 		}
 	}
 
 	protected function _initSiteRoutes()
 	{
 		if (!Zend_Registry::isRegistered('SiteContext')) {
-		    return;
+			return;
 		}
 
 		$siteContext = Zend_Registry::get('SiteContext');

@@ -80,7 +80,7 @@ $downloads = false;
 						<?php if($tagEntites) : ?>
 							<span>Anwendungs- und Einsatzgebiete:</span>
 							<?php foreach($this->tagEntites[$this->category['id']] as $tagEntity) : ?>
-								<a href="<?php echo $this->url([], 'tag_' . $tagEntity['tagid']); ?>">
+								<a href="<?php echo $this->url([], 'slug_tag_' . $tagEntity['tagid']); ?>">
 									<?php echo $this->escape($tagEntity['tag']); ?></a>
 									<?php if($i < $tagEntites) echo '|'; ?>
 									<?php ++$i; ?>
@@ -174,7 +174,7 @@ foreach ($this->categories as $subcategory) {
 						},
 						"offers": {
 							"@type": "Offer",
-							"url": "<?php echo $this->shop['url'].$this->url([], 'category_' . $this->category['id']); ?>",
+							"url": "<?php echo $this->shop['url'].$this->url([], 'slug_category_' . $this->category['id']); ?>",
 							"priceCurrency": "<?php echo $item->currency; ?>",
 							"price": "<?php echo $this->prices[$item->id]['rawtax']; ?>",
 							"availability": "https://schema.org/InStock"
@@ -206,8 +206,8 @@ foreach ($this->categories as $subcategory) {
 									</button>
 									<div>
 										<?php $router = Zend_Controller_Front::getInstance()->getRouter(); ?>
-										<?php if($router->hasRoute('item_' . $item->id)) : ?>
-											<a href="<?php echo $this->url([], 'item_' . $item->id); ?>">
+										<?php if($router->hasRoute('slug_item_' . $item->id)) : ?>
+											<a href="<?php echo $this->url([], 'slug_item_' . $item->id); ?>">
 												<strong><?php echo $item->title; ?></strong>
 											</a>
 										<?php else : ?>
@@ -252,7 +252,7 @@ foreach ($this->categories as $subcategory) {
 											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices[$item->id]['formattedtax']; ?> inkl. MwSt.</p>
 										<?php endif; ?>
 									<?php endif; ?>
-									<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'page_842'); ?>" target="_blank">Versandkosten</a></span>
+									<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'slug_page_842'); ?>" target="_blank">Versandkosten</a></span>
 									<span style="font-size: 0.8rem;">Lieferzeit: Auf Lager</span>
 
 

@@ -17,8 +17,8 @@
 							<div class="cart-item d-flex justify-content-between align-items-center" data-id="<?php echo $id; ?>">
 								<div class="product-details" style="flex: 2; display: flex; flex-direction: column; justify-content: center;">
 									<?php $router = Zend_Controller_Front::getInstance()->getRouter(); ?>
-									<?php if ($router->hasRoute('item_' . $id)) : ?>
-										<a href="<?php echo $this->url([], 'item_' . $id); ?>">
+									<?php if ($router->hasRoute('slug_item_' . $id)) : ?>
+										<a href="<?php echo $this->url([], 'slug_item_' . $id); ?>">
 											<strong class="product-title"><?php echo $this->escape($item['title']); ?></strong>
 										</a>
 									<?php else : ?>
@@ -41,7 +41,7 @@
 					</div>
 					<div class="cart-summary d-flex justify-content-between align-items-center mt-3">
 						<h4><?php echo $this->translate('Total:'); ?> <span id="cart-total"><?php echo $this->total; ?></span></h4>
-						<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'page_842'); ?>" target="_blank">Versandkosten</a></span>
+						<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'slug_page_842'); ?>" target="_blank">Versandkosten</a></span>
 						<button class="btn btn-warning" id="clear-cart"><?php echo $this->translate('SHOPS_SHOPPING_CART_CLEAR'); ?></button>
 						<button id="checkout-btn" class="btn btn-success"><?php echo $this->translate('SHOPS_CHECKOUT'); ?></button>
 					</div>

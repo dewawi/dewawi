@@ -44,7 +44,7 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 	},
 	"offers": {
 		"@type": "Offer",
-		"url": "<?php echo $this->shop['url'].$this->url([], 'category_' . $this->category['id']); ?>",
+		"url": "<?php echo $this->shop['url'].$this->url([], 'slug_category_' . $this->category['id']); ?>",
 		"priceCurrency": "<?php echo $this->item['currency']; ?>",
 		"price": "<?php echo $this->item['price']*1.19; ?>",
 		"availability": "https://schema.org/InStock"
@@ -122,7 +122,7 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 							<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices['formattedtax']; ?> inkl. MwSt.</p>
 						<?php endif; ?>
 					<?php endif; ?>
-					<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'page_842'); ?>" target="_blank">Versandkosten</a></span>
+					<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'slug_page_842'); ?>" target="_blank">Versandkosten</a></span>
 				</div>
 
 				<!-- Add to Cart Button -->

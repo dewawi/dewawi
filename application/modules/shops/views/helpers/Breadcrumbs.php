@@ -13,7 +13,7 @@ class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract{
 
 		// Add the Home link
 		$html .= '<li class="breadcrumb-item">
-					  <a href="' . $this->view->url([], 'shop') . '">' . $this->view->translate('SHOPS_HOME') . '</a>
+					  <a href="' . $this->view->url([], 'shop_home') . '">' . $this->view->translate('SHOPS_HOME') . '</a>
 				  </li>';
 
 		// Check for different controllers and build the breadcrumbs dynamically
@@ -23,7 +23,7 @@ class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract{
 
 			foreach ($breadcrumbs as $breadcrumb) {
 				$html .= '<li class="breadcrumb-item">
-							  <a href="' . $this->view->url(['id' => $breadcrumb['id']], 'category_' . $breadcrumb['id']) . '">'
+							  <a href="' . $this->view->url(['id' => $breadcrumb['id']], 'slug_category_' . $breadcrumb['id']) . '">'
 							  . $this->view->escape($breadcrumb['title']) . '</a>
 						  </li>';
 			}
@@ -38,12 +38,12 @@ class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract{
 
 			foreach ($breadcrumbs as $breadcrumb) {
 				$html .= '<li class="breadcrumb-item">
-							  <a href="' . $this->view->url(['id' => $breadcrumb['id']], 'category_' . $breadcrumb['id']) . '">'
+							  <a href="' . $this->view->url(['id' => $breadcrumb['id']], 'slug_category_' . $breadcrumb['id']) . '">'
 							  . $this->view->escape($breadcrumb['title']) . '</a>
 						  </li>';
 			}
 			$html .= '<li class="breadcrumb-item">
-						  <a href="' . $this->view->url(['id' => $breadcrumb['id']], 'category_' . $this->view->category['id']) . '">'
+						  <a href="' . $this->view->url(['id' => $breadcrumb['id']], 'slug_category_' . $this->view->category['id']) . '">'
 						  . $this->view->escape($this->view->category['title']) . '</a>
 					  </li>';
 			$html .= '<li class="breadcrumb-item active" aria-current="page">'
