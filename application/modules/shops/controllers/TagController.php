@@ -42,7 +42,7 @@ class Shops_TagController extends Zend_Controller_Action
 
 		$id = $this->_getParam('id');
 
-		$this->_helper->getHelper('layout')->setLayout('shop');
+		$this->_helper->getHelper('layout')->setLayout('site');
 
 		$toolbar = new Items_Form_Toolbar();
 		//$options = $this->_helper->Options->getOptions($toolbar);

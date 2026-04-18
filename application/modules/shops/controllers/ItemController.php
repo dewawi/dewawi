@@ -42,7 +42,7 @@ class Shops_ItemController extends Zend_Controller_Action
 
 		$id = $this->_getParam('id');
 
-		$this->_helper->getHelper('layout')->setLayout('shop');
+		$this->_helper->getHelper('layout')->setLayout('site');
 
 		$toolbar = new Items_Form_Toolbar();
 		//list($options, $optionSets) = $this->_helper->Options->getOptions();

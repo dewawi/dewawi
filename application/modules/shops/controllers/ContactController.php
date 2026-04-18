@@ -44,7 +44,7 @@ class Shops_ContactController extends Zend_Controller_Action
 	{
 		$shop = Zend_Registry::get('Shop');
 
-		$this->_helper->getHelper('layout')->setLayout('shop');
+		$this->_helper->getHelper('layout')->setLayout('site');
 
 		$toolbar = new Items_Form_Toolbar();
 		//$options = $this->_helper->Options->getOptions($toolbar);
@@ -160,7 +160,7 @@ class Shops_ContactController extends Zend_Controller_Action
 		// Holt die Formulardaten aus der Session
 		$this->view->formData = $this->contactDataSession->formData;
 
-		$this->_helper->getHelper('layout')->setLayout('shop');
+		$this->_helper->getHelper('layout')->setLayout('site');
 
 		$toolbar = new Items_Form_Toolbar();
 		//$options = $this->_helper->Options->getOptions($toolbar);
@@ -205,7 +205,7 @@ class Shops_ContactController extends Zend_Controller_Action
 	{
 		$shop = Zend_Registry::get('Shop');
 
-		$this->_helper->getHelper('layout')->setLayout('shop');
+		$this->_helper->getHelper('layout')->setLayout('site');
 
 		$toolbar = new Items_Form_Toolbar();
 		//$options = $this->_helper->Options->getOptions($toolbar);

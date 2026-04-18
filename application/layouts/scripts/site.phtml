@@ -20,7 +20,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 	<header <?php if($home) echo 'class="home"' ?>>
 		<nav class="navbar navbar-expand-lg">
 			<div class="container">
-				<a class="navbar-brand" href="<?php echo $this->url(array(), 'shop'); ?>">
+				<a class="navbar-brand" href="<?php echo $this->url(array(), 'shop_home'); ?>">
 					<img src="<?php echo $this->baseUrl(); ?>/media/header/<?php echo $this->shop['logo']; ?>" alt="<?php echo $this->shop['title']; ?>" height="75">
 				</a>
 				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 						<!-- Show the first 5 main categories -->
 						<?php foreach($firstFiveCategories as $category) : ?>
 							<li class="nav-item">
-								<a class="nav-link" href="<?php echo $this->url([], 'category_' . $category['id']); ?>"><?php echo $category['title']; ?></a>
+								<a class="nav-link" href="<?php echo $this->url([], 'slug_category_' . $category['id']); ?>"><?php echo $category['title']; ?></a>
 								<ul class="submenu">
 									<?php echo $this->RenderSubCategory($this->categories, $category['id']); ?>
 								</ul>
@@ -125,7 +125,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 						<?php foreach($this->menuitems[$menu->id] as $menuitem) : ?>
 							<?php if($menuitem->parentid == 0) : ?>
 								<li class="nav-item">
-									<a class="nav-link" href="<?php echo $this->url([], 'page_' . $menuitem->pageid); ?>"><?php echo $menuitem->title; ?></a>
+									<a class="nav-link" href="<?php echo $this->url([], 'slug_page_' . $menuitem->pageid); ?>"><?php echo $menuitem->title; ?></a>
 								</li>
 							<?php endif; ?>
 						<?php endforeach; ?>
