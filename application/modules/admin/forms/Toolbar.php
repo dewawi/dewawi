@@ -1,68 +1,116 @@
 <?php
 
-class Admin_Form_Toolbar extends Zend_Form
+class Admin_Form_Toolbar extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('toolbar');
+		$this->addElement([
+			'name' => 'save',
+			'type' => 'button',
+			'label' => 'TOOLBAR_SAVE',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'save',
+			],
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'cancel',
+			'type' => 'button',
+			'label' => 'TOOLBAR_CANCEL',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'cancel',
+			],
+		]);
 
-		$form['save'] = new Zend_Form_Element_Button('save');
-		$form['save']->setLabel('TOOLBAR_SAVE')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'save');
+		$this->addElement([
+			'name' => 'copy',
+			'type' => 'button',
+			'label' => 'TOOLBAR_COPY',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'copy',
+			],
+		]);
 
-		$form['cancel'] = new Zend_Form_Element_Button('cancel');
-		$form['cancel']->setLabel('TOOLBAR_CANCEL')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'cancel');
+		$this->addElement([
+			'name' => 'delete',
+			'type' => 'button',
+			'label' => 'TOOLBAR_DELETE',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'delete',
+			],
+		]);
 
-		$form['copy'] = new Zend_Form_Element_Button('copy');
-		$form['copy']->setLabel('TOOLBAR_COPY')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy');
+		$this->addElement([
+			'name' => 'clientid',
+			'type' => 'select',
+			'options' => [],
+			'default' => '0',
+			'wrap' => false,
+		]);
 
-		$form['delete'] = new Zend_Form_Element_Button('delete');
-		$form['delete']->setLabel('TOOLBAR_DELETE')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'delete');
+		$this->addElement([
+			'name' => 'parentid',
+			'type' => 'select',
+			'options' => [
+				'0' => 'ADMIN_MAIN_CATEGORY',
+			],
+			'default' => '0',
+			'wrap' => false,
+		]);
 
-		$form['clientid'] = new Zend_Form_Element_Select('clientid');
-		$form['clientid']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '0');
+		$this->addElement([
+			'name' => 'type',
+			'type' => 'select',
+			'options' => [
+				'contact' => 'CONTACTS',
+				'item' => 'ITEMS',
+				'shop' => 'SHOPS',
+			],
+			'wrap' => false,
+			'attribs' => [
+				'style' => 'display: none;',
+			],
+		]);
 
-		$form['parentid'] = new Zend_Form_Element_Select('parentid');
-		$form['parentid']->setDecorators(array('ViewHelper'))
-			->addMultiOption('0', 'ADMIN_MAIN_CATEGORY')
-			->setAttrib('default', '0');
+		$this->addElement([
+			'name' => 'shopid',
+			'type' => 'select',
+			'options' => [
+				'0' => 'ADMIN_SELECT',
+			],
+			'wrap' => false,
+		]);
 
-		$form['type'] = new Zend_Form_Element_Select('type');
-		$form['type']->setDecorators(array('ViewHelper'))
-			->addMultiOption('contact', 'CONTACTS')
-			->addMultiOption('item', 'ITEMS')
-			->addMultiOption('shop', 'SHOPS')
-			->setAttrib('style', 'display: none;');
+		$this->addElement([
+			'name' => 'language',
+			'type' => 'select',
+			'options' => [],
+			'default' => '',
+			'wrap' => false,
+		]);
 
-		$form['shopid'] = new Zend_Form_Element_Select('shopid');
-		$form['shopid']->setDecorators(array('ViewHelper'))
-			->addMultiOption('0', 'ADMIN_SELECT');
+		$this->addElement([
+			'name' => 'sortup',
+			'type' => 'button',
+			'label' => '',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'up nolabel',
+			],
+		]);
 
-		$form['language'] = new Zend_Form_Element_Select('language');
-		$form['language']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
-
-		$form['sortup'] = new Zend_Form_Element_Button('sortup');
-		$form['sortup']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'up nolabel');
-
-		$form['sortdown'] = new Zend_Form_Element_Button('sortdown');
-		$form['sortdown']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'down nolabel')
-			->setAttrib('default', '');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'sortdown',
+			'type' => 'button',
+			'label' => '',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'down nolabel',
+			],
+		]);
 	}
 }

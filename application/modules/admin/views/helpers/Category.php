@@ -44,7 +44,7 @@ class Zend_View_Helper_Category extends Zend_View_Helper_Abstract{
 						<?php echo $categories[$child]['ordering']; ?>
 					</td>
 					<td class="activated">
-						<?php echo $forms[$categories[$child]['id']]->activated; ?>
+						<?php echo $forms[$categories[$child]['id']]->renderElement('activated'); ?>
 					</td>
 					<td class="buttons">
 						<?php echo $buttons['copy']; ?>

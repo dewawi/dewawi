@@ -1,129 +1,239 @@
 <?php
 
-class Admin_Form_Category extends Zend_Form
+class Admin_Form_Category extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('category');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'title',
+			'type' => 'text',
+			'label' => 'ADMIN_TITLE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
+				'maxlength' => 255,
+			],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'subtitle',
+			'type' => 'text',
+			'label' => 'ADMIN_SUBTITLE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
+				'maxlength' => 255,
+			],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
 
-		$form['title'] = new Zend_Form_Element_Text('title');
-		$form['title']->setLabel('ADMIN_TITLE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'metatitle',
+			'type' => 'text',
+			'label' => 'ADMIN_META_TITLE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
+				'maxlength' => 255,
+			],
+			'tab' => 'seo',
+			'col' => 12,
+		]);
 
-		$form['subtitle'] = new Zend_Form_Element_Text('subtitle');
-		$form['subtitle']->setLabel('ADMIN_SUBTITLE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'metadescription',
+			'type' => 'textarea',
+			'label' => 'ADMIN_META_DESCRIPTION',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'rows' => 4,
+				'cols' => 75,
+				'maxlength' => 1000,
+			],
+			'tab' => 'seo',
+			'col' => 12,
+		]);
 
-		$form['metatitle'] = new Zend_Form_Element_Text('metatitle');
-		$form['metatitle']->setLabel('ADMIN_META_TITLE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'slug',
+			'type' => 'text',
+			'label' => 'ADMIN_SLUG',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
+				'maxlength' => 255,
+			],
+			'tab' => 'seo',
+			'col' => 6,
+		]);
 
-		$form['metadescription'] = new Zend_Form_Element_Text('metadescription');
-		$form['metadescription']->setLabel('ADMIN_META_DESCRIPTION')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'image',
+			'type' => 'text',
+			'label' => 'ADMIN_CATEGORY_IMAGE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
+				'maxlength' => 255,
+			],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
 
-		$form['slug'] = new Zend_Form_Element_Text('slug');
-		$form['slug']->setLabel('ADMIN_SLUG')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'description',
+			'type' => 'textarea',
+			'label' => 'ADMIN_CATEGORY_DESCRIPTION',
+			'format' => [
+				'type' => 'html',
+				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+			],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'tab' => 'content',
+			'col' => 12,
+		]);
 
-		$form['image'] = new Zend_Form_Element_Text('image');
-		$form['image']->setLabel('ADMIN_CATEGORY_IMAGE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'shortdescription',
+			'type' => 'textarea',
+			'label' => 'ADMIN_CATEGORY_SHORT_DESCRIPTION',
+			'format' => [
+				'type' => 'html',
+				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+			],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'tab' => 'content',
+			'col' => 12,
+		]);
 
-		$form['description'] = new Zend_Form_Element_Textarea('description');
-		$form['description']->setLabel('ADMIN_CATEGORY_DESCRIPTION')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'minidescription',
+			'type' => 'textarea',
+			'label' => 'ADMIN_CATEGORY_MINI_DESCRIPTION',
+			'format' => [
+				'type' => 'html',
+				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+			],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'tab' => 'content',
+			'col' => 12,
+		]);
 
-		$form['shortdescription'] = new Zend_Form_Element_Textarea('shortdescription');
-		$form['shortdescription']->setLabel('ADMIN_CATEGORY_SHORT_DESCRIPTION')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'header',
+			'type' => 'textarea',
+			'label' => 'ADMIN_CATEGORY_HEADER',
+			'format' => [
+				'type' => 'html',
+				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+			],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'tab' => 'content',
+			'col' => 12,
+		]);
 
-		$form['minidescription'] = new Zend_Form_Element_Textarea('minidescription');
-		$form['minidescription']->setLabel('ADMIN_CATEGORY_MINI_DESCRIPTION')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'footer',
+			'type' => 'textarea',
+			'label' => 'ADMIN_CATEGORY_FOOTER',
+			'format' => [
+				'type' => 'html',
+				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+			],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'tab' => 'content',
+			'col' => 12,
+		]);
 
-		$form['header'] = new Zend_Form_Element_Textarea('header');
-		$form['header']->setLabel('CREDIT_NOTES_HEADER')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'parentid',
+			'type' => 'select',
+			'label' => 'ADMIN_MAIN_CATEGORY',
+			'options' => [
+				'0' => 'ADMIN_MAIN_CATEGORY',
+			],
+			'default' => '0',
+			'tab' => 'settings',
+			'col' => 6,
+		]);
 
-		$form['footer'] = new Zend_Form_Element_Textarea('footer');
-		$form['footer']->setLabel('CREDIT_NOTES_FOOTER')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'type',
+			'type' => 'select',
+			'label' => 'ADMIN_TYPE',
+			'options' => [
+				'contact' => 'CONTACT',
+				'item' => 'ITEM',
+			],
+			'default' => 'contact',
+			'tab' => 'settings',
+			'col' => 3,
+		]);
 
-		$form['parentid'] = new Zend_Form_Element_Select('parentid');
-		$form['parentid']->setLabel('ADMIN_MAIN_CATEGORY')
-			->addMultiOption('0', 'ADMIN_MAIN_CATEGORY')
-			->setAttrib('default', '0');
+		$this->addElement([
+			'name' => 'language',
+			'type' => 'select',
+			'label' => 'ADMIN_LANGUAGE',
+			'options' => [],
+			'source' => 'language',
+			'default' => '',
+			'tab' => 'settings',
+			'col' => 3,
+		]);
 
-		$form['type'] = new Zend_Form_Element_Select('type');
-		$form['type']->setDecorators(array('ViewHelper'))
-			->addMultiOption('contact', 'CONTACT')
-			->addMultiOption('item', 'ITEM')
-			->setAttrib('default', 'contact');
+		$this->addElement([
+			'name' => 'clientid',
+			'type' => 'select',
+			'label' => 'ADMIN_CLIENT',
+			'options' => [],
+			'default' => '0',
+			'tab' => 'settings',
+			'col' => 6,
+		]);
 
-		$form['language'] = new Zend_Form_Element_Select('language');
-		$form['language']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
-
-		$form['clientid'] = new Zend_Form_Element_Select('clientid');
-		$form['clientid']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '0');
-
-		$form['activated'] = new Zend_Form_Element_Checkbox('activated');
-		$form['activated']->addFilter('Int')->removeDecorator('Label');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'activated',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_ACTIVATED',
+			'format' => ['type' => 'int'],
+			'default' => 0,
+			'tab' => 'settings',
+			'col' => 3,
+		]);
 	}
 }

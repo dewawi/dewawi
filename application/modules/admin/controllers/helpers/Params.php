@@ -5,33 +5,22 @@ class Admin_Controller_Action_Helper_Params extends Zend_Controller_Action_Helpe
 	public function getParams($toolbar, $options)
 	{
 		$request = $this->getRequest();
+		$params  = [];
 
-		$params = array();
+		/*$params['clientid'] = $request->getParam('clientid', $request->getCookie('clientid', key($options['clients'])));
+		$toolbar->setValue('clientid', $params['clientid']);*/
 
-		if(isset($toolbar->clientid)) {
-			$params['clientid'] = $request->getParam('clientid', $request->getCookie('clientid', key($options['clients'])));
-			$toolbar->clientid->setValue($params['clientid']);
-		}
+		$params['parentid'] = $request->getParam('parentid', $request->getCookie('parentid', $toolbar->getDefault('parentid')));
+		$toolbar->setValue('parentid', $params['parentid']);
 
-		if(isset($toolbar->parentid)) {
-			$params['parentid'] = $request->getParam('parentid', $request->getCookie('parentid', $toolbar->parentid->getAttrib('default')));
-			$toolbar->parentid->setValue($params['parentid']);
-		}
+		$params['language'] = $request->getParam('language', $request->getCookie('language', $toolbar->getDefault('language')));
+		$toolbar->setValue('language', $params['language']);
 
-		if(isset($toolbar->language)) {
-			$params['language'] = $request->getParam('language', $request->getCookie('language', $toolbar->language->getAttrib('default')));
-			$toolbar->language->setValue($params['language']);
-		}
+		$params['type'] = $request->getParam('type', $request->getCookie('type', $toolbar->getDefault('type')));
+		$toolbar->setValue('type', $params['type']);
 
-		if(isset($toolbar->type)) {
-			$params['type'] = $request->getParam('type', $request->getCookie('type', $toolbar->type->getAttrib('default')));
-			$toolbar->type->setValue($params['type']);
-		}
-
-		if(isset($toolbar->shopid)) {
-			$params['shopid'] = $request->getParam('shopid', $request->getCookie('shopid', $toolbar->shopid->getAttrib('default')));
-			$toolbar->shopid->setValue($params['shopid']);
-		}
+		$params['shopid'] = $request->getParam('shopid', $request->getCookie('shopid', $toolbar->getDefault('shopid')));
+		$toolbar->setValue('shopid', $params['shopid']);
 
 		return $params;
 	}

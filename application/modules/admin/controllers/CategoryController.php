@@ -60,16 +60,14 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 		if($params['type'] == 'shop') {
 			$categories = $categoriesDb->getCategories($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
 		} else {
 			$categories = $categoriesDb->getCategories($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
 		}
 
 		$forms = array();
 		foreach($categories as $category) {
 			$forms[$category['id']] = new Admin_Form_Category();
-			$forms[$category['id']]->activated->setValue($category['activated']);
+			$forms[$category['id']]->setValue('activated', $category['activated']);
 		}
 
 		$slugs = array();
