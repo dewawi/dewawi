@@ -373,6 +373,7 @@ class Sales_SalesorderController extends Zend_Controller_Action
 			$data['supplierorderstatus'] = 'supplierNotOrdered';
 			$data['paymentstatus'] = 'waitingForPayment';
 			unset($data['id'], $data['quotedate'], $data['orderdate'], $data['templateid'], $data['language'], $data['filename']);
+			unset($data['pdfshowprices'], $data['pdfshowdiscounts'], $data['pdfshowoptions'], $data['pdfshowattributes'], $data['pdfshowcover']);
 			$module = 'processes';
 		}
 

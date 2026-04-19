@@ -373,6 +373,7 @@ class Sales_QuoteController extends DEEC_Controller_Action
 			$data['supplierorderstatus'] = 'supplierNotOrdered';
 			$data['paymentstatus'] = 'waitingForPayment';
 			unset($data['id']);
+			unset($data['pdfshowprices'], $data['pdfshowdiscounts'], $data['pdfshowoptions'], $data['pdfshowattributes'], $data['pdfshowcover']);
 			$module = 'processes';
 		}
 

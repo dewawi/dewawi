@@ -370,6 +370,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 			$data['supplierorderstatus'] = 'supplierNotOrdered';
 			$data['paymentstatus'] = 'waitingForPayment';
 			unset($data['id']);
+			unset($data['pdfshowprices'], $data['pdfshowdiscounts'], $data['pdfshowoptions'], $data['pdfshowattributes'], $data['pdfshowcover']);
 			$module = 'processes';
 		}
 
