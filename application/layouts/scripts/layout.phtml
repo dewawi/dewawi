@@ -9,6 +9,7 @@ $this->language = str_replace('_', '-', $this->language);
 $isDetailPage = in_array($this->action, ['edit', 'view'], true);
 $isContactsIndex = ($this->action === 'index' && $this->controller === 'contact' && $this->module === 'contacts');
 $isItemsIndex = ($this->action === 'index' && $this->controller === 'item' && $this->module === 'items');
+$isAdminIndex = ($this->action === 'index' && $this->module === 'admin');
 
 $date = new Zend_Date();
 $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
@@ -147,11 +148,15 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 				</aside>
 			</div>
 
-		<?php elseif ($isContactsIndex || $isItemsIndex) : ?>
+		<?php elseif ($isContactsIndex || $isItemsIndex || $isAdminIndex) : ?>
 			<div class="dw-page-layout dw-page-layout--with-sidebar">
 				<aside class="dw-page-sidebar">
 					<div id="categories" class="dw-sidebar-card">
-						<?php echo $this->TreeMenu(); ?>
+						<?php if ($isAdminIndex) : ?>
+							<?php echo $this->AdminMenu(); ?>
+						<?php else : ?>
+							<?php echo $this->TreeMenu(); ?>
+						<?php endif; ?>
 
 						<p class="dw-sidebar-links">
 							<?php if ($isContactsIndex) : ?>

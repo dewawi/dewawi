@@ -53,6 +53,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 		$form = new Admin_Form_Category();
 		$toolbar = new Admin_Form_Toolbar();
+		$toolbarInline = new Admin_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
@@ -84,6 +85,7 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->view->slugs = $slugs;
 		$this->view->categories = $categories;
 		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 

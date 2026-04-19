@@ -5,16 +5,6 @@ class Admin_Form_Toolbar extends DEEC_Form
 	public function __construct()
 	{
 		$this->addElement([
-			'name' => 'save',
-			'type' => 'button',
-			'label' => 'TOOLBAR_SAVE',
-			'wrap' => false,
-			'attribs' => [
-				'class' => 'save',
-			],
-		]);
-
-		$this->addElement([
 			'name' => 'cancel',
 			'type' => 'button',
 			'label' => 'TOOLBAR_CANCEL',
@@ -91,26 +81,6 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'options' => [],
 			'default' => '',
 			'wrap' => false,
-		]);
-
-		$this->addElement([
-			'name' => 'sortup',
-			'type' => 'button',
-			'label' => '',
-			'wrap' => false,
-			'attribs' => [
-				'class' => 'up nolabel',
-			],
-		]);
-
-		$this->addElement([
-			'name' => 'sortdown',
-			'type' => 'button',
-			'label' => '',
-			'wrap' => false,
-			'attribs' => [
-				'class' => 'down nolabel',
-			],
 		]);
 	}
 }

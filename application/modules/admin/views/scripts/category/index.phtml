@@ -8,178 +8,149 @@ $isAdmin = !empty($this->user['admin']);
 $isShopType = ($this->toolbar->getValue('type') === 'shop');
 ?>
 
-<div class="dw-page-layout dw-page-layout--with-sidebar">
-	<aside class="dw-page-aside">
-		<?php echo $this->AdminMenu(); ?>
-	</aside>
-
-	<main class="dw-page-main">
-		<div class="dw-page-content">
-			<div class="dw-table-wrap">
-				<table id="data" class="dw-table dw-table--categories">
-					<thead>
-						<tr>
-							<th class="dw-col-check">
-								<?php if ($isAdmin) : ?>
-									<input type="checkbox" class="checkall" name="checkall" />
-								<?php endif; ?>
-							</th>
-							<th class="id dw-col-id">
-								<?php echo $this->translate('ADMIN_ID'); ?>
-							</th>
-							<th class="title dw-col-title">
-								<?php echo $this->translate('ADMIN_TITLE'); ?>
-							</th>
-							<th class="subtitle dw-col-subtitle">
-								<?php echo $this->translate('ADMIN_SUBTITLE'); ?>
-							</th>
-							<?php if ($isShopType) : ?>
-								<th class="slug dw-col-slug">
-									<?php echo $this->translate('ADMIN_SLUG'); ?>
-								</th>
+<main class="dw-page-main">
+	<div class="dw-page-content">
+		<div class="dw-table-wrap">
+			<table id="data" class="dw-table dw-table--categories">
+				<thead>
+					<tr>
+						<th class="dw-col-check">
+							<?php if ($isAdmin) : ?>
+								<input type="checkbox" class="checkall" name="checkall" />
 							<?php endif; ?>
-							<th class="parentid dw-col-parent">
-								<?php echo $this->translate('ADMIN_PARENT_CATEGORY'); ?>
+						</th>
+						<th class="id dw-col-id">
+							<?php echo $this->translate('ADMIN_ID'); ?>
+						</th>
+						<th class="title dw-col-title">
+							<?php echo $this->translate('ADMIN_TITLE'); ?>
+						</th>
+						<th class="subtitle dw-col-subtitle">
+							<?php echo $this->translate('ADMIN_SUBTITLE'); ?>
+						</th>
+						<?php if ($isShopType) : ?>
+							<th class="slug dw-col-slug">
+								<?php echo $this->translate('ADMIN_SLUG'); ?>
 							</th>
-							<th class="ordering dw-col-ordering">
-								<?php echo $this->translate('ADMIN_ORDERING'); ?>
-							</th>
-							<th class="activated dw-col-status">
-								<?php echo $this->translate('ADMIN_ACTIVATED'); ?>
-							</th>
-							<th class="buttons dw-col-actions"></th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php $i0 = 1; ?>
-						<?php $count0 = count($this->categories); ?>
+						<?php endif; ?>
+						<th class="parentid dw-col-parent">
+							<?php echo $this->translate('ADMIN_PARENT_CATEGORY'); ?>
+						</th>
+						<th class="ordering dw-col-ordering">
+							<?php echo $this->translate('ADMIN_ORDERING'); ?>
+						</th>
+						<th class="activated dw-col-status">
+							<?php echo $this->translate('ADMIN_ACTIVATED'); ?>
+						</th>
+						<th class="buttons dw-col-actions"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php $i0 = 1; ?>
+					<?php $count0 = count($this->categories); ?>
 
-						<?php foreach ($this->categories as $category) : ?>
-							<?php if ((int) $category['parentid'] === 0) : ?>
-								<tr>
-									<td class="dw-col-check">
-										<?php if ($isAdmin) : ?>
-											<input class="id" type="checkbox" value="<?php echo $this->escape($category['id']); ?>" name="id" />
-										<?php else : ?>
-											<input class="id" type="hidden" value="<?php echo $this->escape($category['id']); ?>" name="id" />
-										<?php endif; ?>
-									</td>
+					<?php foreach ($this->categories as $category) : ?>
+						<?php if ((int) $category['parentid'] === 0) : ?>
+							<tr>
+								<td class="dw-col-check">
+									<?php if ($isAdmin) : ?>
+										<input class="id" type="checkbox" value="<?php echo $this->escape($category['id']); ?>" name="id" />
+									<?php else : ?>
+										<input class="id" type="hidden" value="<?php echo $this->escape($category['id']); ?>" name="id" />
+									<?php endif; ?>
+								</td>
 
-									<td class="id dw-col-id">
-										<a href="<?php echo $this->url([
-											'module' => 'admin',
-											'controller' => 'category',
-											'action' => 'edit',
-											'id' => $this->escape($category['id']),
-										]); ?>">
-											<?php echo $this->escape($category['id']); ?>
-										</a>
-									</td>
+								<td class="id dw-col-id">
+									<a href="<?php echo $this->url([
+										'module' => 'admin',
+										'controller' => 'category',
+										'action' => 'edit',
+										'id' => $this->escape($category['id']),
+									]); ?>">
+										<?php echo $this->escape($category['id']); ?>
+									</a>
+								</td>
 
-									<td class="title dw-col-title">
-										<span class="editable" data-name="title">
-											<?php echo $this->escape($category['title']); ?>
+								<td class="title dw-col-title">
+									<span class="editable" data-name="title">
+										<?php echo $this->escape($category['title']); ?>
+									</span>
+								</td>
+
+								<td class="subtitle dw-col-subtitle">
+									<span class="editable" data-name="subtitle">
+										<?php echo $this->escape($category['subtitle']); ?>
+									</span>
+								</td>
+
+								<?php if ($isShopType) : ?>
+									<td class="slug dw-col-slug">
+										<span class="editable" data-name="slug" data-value="0" data-type="input">
+											<?php echo $this->escape($this->slugs[$category['id']] ?? ''); ?>
 										</span>
 									</td>
+								<?php endif; ?>
 
-									<td class="subtitle dw-col-subtitle">
-										<span class="editable" data-name="subtitle">
-											<?php echo $this->escape($category['subtitle']); ?>
-										</span>
-									</td>
+								<td class="parentid dw-col-parent">
+									<span class="editable" data-name="parentid" data-value="0" data-type="select">
+										<?php echo $this->translate('ADMIN_MAIN_CATEGORY'); ?>
+									</span>
+								</td>
 
-									<?php if ($isShopType) : ?>
-										<td class="slug dw-col-slug">
-											<span class="editable" data-name="slug" data-value="0" data-type="input">
-												<?php echo $this->escape($this->slugs[$category['id']] ?? ''); ?>
-											</span>
-										</td>
+								<td class="ordering dw-col-ordering">
+									<?php echo $this->escape($category['ordering']); ?>
+								</td>
+
+								<td class="activated dw-col-status">
+									<?php echo $this->forms[$category['id']]->renderElement('activated'); ?>
+								</td>
+
+								<td class="buttons dw-col-actions">
+									<?php echo $this->Button('copy'); ?>
+									<?php echo $this->Button('delete'); ?>
+
+									<?php if ($i0 > 1) : ?>
+										<?php echo $this->toolbarInline->renderElement('sortup'); ?>
 									<?php endif; ?>
 
-									<td class="parentid dw-col-parent">
-										<span class="editable" data-name="parentid" data-value="0" data-type="select">
-											<?php echo $this->translate('ADMIN_MAIN_CATEGORY'); ?>
-										</span>
-									</td>
+									<?php if ($i0 < $count0) : ?>
+										<?php echo $this->toolbarInline->renderElement('sortdown'); ?>
+									<?php endif; ?>
+								</td>
+							</tr>
 
-									<td class="ordering dw-col-ordering">
-										<?php echo $this->escape($category['ordering']); ?>
-									</td>
+							<?php if (isset($this->categories[$category['id']]['childs'])) : ?>
+								<?php $buttons = []; ?>
+								<?php $buttons['copy'] = $this->Button('copy'); ?>
+								<?php $buttons['delete'] = $this->Button('delete'); ?>
+								<?php $buttons['sortup'] = $this->toolbar->renderElement('sortup'); ?>
+								<?php $buttons['sortdown'] = $this->toolbar->renderElement('sortdown'); ?>
 
-									<td class="activated dw-col-status">
-										<?php echo $this->forms[$category['id']]->renderElement('activated'); ?>
-									</td>
-
-									<td class="buttons dw-col-actions">
-										<?php echo $this->Button('copy'); ?>
-										<?php echo $this->Button('delete'); ?>
-
-										<?php if ($i0 > 1) : ?>
-											<?php echo $this->toolbar->renderElement('sortup'); ?>
-										<?php endif; ?>
-
-										<?php if ($i0 < $count0) : ?>
-											<?php echo $this->toolbar->renderElement('sortdown'); ?>
-										<?php endif; ?>
-									</td>
-								</tr>
-
-								<?php if (isset($this->categories[$category['id']]['childs'])) : ?>
-									<?php $buttons = []; ?>
-									<?php $buttons['copy'] = $this->Button('copy'); ?>
-									<?php $buttons['delete'] = $this->Button('delete'); ?>
-									<?php $buttons['sortup'] = $this->toolbar->renderElement('sortup'); ?>
-									<?php $buttons['sortdown'] = $this->toolbar->renderElement('sortdown'); ?>
-
-									<?php $this->Category()->subCategories(
-										$this->categories,
-										$category['id'],
-										$buttons,
-										$isAdmin,
-										$this->forms,
-										$this->slugs
-									); ?>
-								<?php endif; ?>
+								<?php $this->Category()->subCategories(
+									$this->categories,
+									$category['id'],
+									$buttons,
+									$isAdmin,
+									$this->forms,
+									$this->slugs
+								); ?>
 							<?php endif; ?>
+						<?php endif; ?>
 
-							<?php ++$i0; ?>
-						<?php endforeach; ?>
+						<?php ++$i0; ?>
+					<?php endforeach; ?>
 
-						<?php if ($isShopType) : ?>
-							<?php if ($this->toolbar->getValue('shopid')) : ?>
-								<tr class="add">
-									<td>
-										<input
-											type="hidden"
-											name="shopid"
-											id="shopid"
-											value="<?php echo $this->escape($this->toolbar->getValue('shopid')); ?>"
-										>
-									</td>
-									<td>
-										<?php echo $this->translate('TOOLBAR_NEW'); ?>
-									</td>
-									<td>
-										<?php echo $this->form->renderElement('title'); ?>
-									</td>
-									<td>
-										<?php echo $this->form->renderElement('parentid'); ?>
-									</td>
-									<td>
-										<input
-											type="hidden"
-											name="type"
-											value="<?php echo $this->escape($this->toolbar->getValue('type')); ?>"
-										>
-									</td>
-									<td class="buttons dw-col-actions">
-										<?php echo $this->toolbar->renderElement('save'); ?>
-									</td>
-								</tr>
-							<?php endif; ?>
-						<?php else : ?>
+					<?php if ($isShopType) : ?>
+						<?php if ($this->toolbar->getValue('shopid')) : ?>
 							<tr class="add">
-								<td></td>
+								<td>
+									<input
+										type="hidden"
+										name="shopid"
+										id="shopid"
+										value="<?php echo $this->escape($this->toolbar->getValue('shopid')); ?>"
+									>
+								</td>
 								<td>
 									<?php echo $this->translate('TOOLBAR_NEW'); ?>
 								</td>
@@ -201,9 +172,32 @@ $isShopType = ($this->toolbar->getValue('type') === 'shop');
 								</td>
 							</tr>
 						<?php endif; ?>
-					</tbody>
-				</table>
-			</div>
+					<?php else : ?>
+						<tr class="add">
+							<td></td>
+							<td>
+								<?php echo $this->translate('TOOLBAR_NEW'); ?>
+							</td>
+							<td>
+								<?php echo $this->form->renderElement('title'); ?>
+							</td>
+							<td>
+								<?php echo $this->form->renderElement('parentid'); ?>
+							</td>
+							<td>
+								<input
+									type="hidden"
+									name="type"
+									value="<?php echo $this->escape($this->toolbar->getValue('type')); ?>"
+								>
+							</td>
+							<td class="buttons dw-col-actions">
+								<?php echo $this->toolbar->renderElement('save'); ?>
+							</td>
+						</tr>
+					<?php endif; ?>
+				</tbody>
+			</table>
 		</div>
-	</main>
-</div>
+	</div>
+</main>
