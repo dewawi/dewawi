@@ -178,21 +178,23 @@ foreach ($visibleSections as $historyKey => $section) {
 	</div>
 <?php else : ?>
 	<div class="dw-history-page">
-		<ul class="dw-tabs dw-tabs--history">
-			<?php foreach ($visibleSections as $historyKey => $section) : ?>
-				<?php $count = count($this->history[$historyKey]); ?>
-				<li class="dw-tabs__item<?php echo $historyKey === $firstTabKey ? ' is-active' : ''; ?>">
-					<a
-						class="dw-tabs__link"
-						href="#tab-history-<?php echo $this->escape($historyKey); ?>"
-						data-tab-target="tab-history-<?php echo $this->escape($historyKey); ?>"
-					>
-						<?php echo $this->translate($section['title']); ?>
-						<span class="dw-history-tab-count">(<?php echo (int)$count; ?>)</span>
-					</a>
-				</li>
-			<?php endforeach; ?>
-		</ul>
+		<div class="dw-tabs dw-tabs--history">
+			<ul class="dw-tabs__nav">
+				<?php foreach ($visibleSections as $historyKey => $section) : ?>
+					<?php $count = count($this->history[$historyKey]); ?>
+					<li class="dw-tabs__item<?php echo $historyKey === $firstTabKey ? ' is-active' : ''; ?>">
+						<a
+							class="dw-tabs__link"
+							href="#tab-history-<?php echo $this->escape($historyKey); ?>"
+							data-tab-target="tab-history-<?php echo $this->escape($historyKey); ?>"
+						>
+							<?php echo $this->translate($section['title']); ?>
+							<span class="dw-history-tab-count">(<?php echo (int)$count; ?>)</span>
+						</a>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		</div>
 
 		<div class="dw-tab-panels dw-tab-panels--history">
 			<?php foreach ($visibleSections as $historyKey => $section) : ?>

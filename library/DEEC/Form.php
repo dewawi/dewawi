@@ -703,7 +703,8 @@ class DEEC_Form
 		unset($list);*/
 
 		// NAV
-		$nav = '<ul class="dw-tabs">';
+		$nav = '<div class="dw-tabs">';
+		$nav .= '<ul class="dw-tabs__nav">';
 		foreach ($tabs as $key => $t) {
 			$titleKey = $t['title'] ?? $key;
 			$title = htmlspecialchars($this->translate((string)$titleKey));
@@ -721,6 +722,7 @@ class DEEC_Form
 				. '</li>';
 		}
 		$nav .= '</ul>';
+		$nav .= '</div>';
 
 		// CONTENT
 		$content = '<div class="dw-tab-panels">';
