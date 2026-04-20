@@ -1,3 +1,19 @@
+/* Dewawi UI CSS
+ * Shared frontend base aligned with docs/frontend-standard.md.
+ * dw-* classes are the primary system. Legacy selectors remain only as migration aliases.
+ *
+ * File order:
+ * 1. Tokens
+ * 2. Base
+ * 3. Layout
+ * 4. Shared components
+ * 5. Legacy compatibility blocks
+ */
+
+/* -------------------------------------------------------------------------- */
+/* 1. Tokens                                                                  */
+/* -------------------------------------------------------------------------- */
+
 :root {
   --dw-color-primary: #1f4e79;
   --dw-color-primary-hover: #173a5a;
@@ -36,6 +52,10 @@
   --dw-shadow-md: 0 6px 20px rgba(15,23,42,0.08);
 }
 
+/* -------------------------------------------------------------------------- */
+/* 2. Base                                                                    */
+/* -------------------------------------------------------------------------- */
+
 body {
   background: var(--dw-color-bg);
   color: var(--dw-color-text);
@@ -47,10 +67,11 @@ h1,
 h2,
 h3,
 h4 {
-  color: #069;
+  color: var(--dw-color-primary);
 }
+
 a {
-  color: #069;
+  color: var(--dw-color-primary);
 }
 iframe {
   display: block;
@@ -63,6 +84,10 @@ iframe {
 #content {
   padding: 10px 20px;
 }
+
+/* -------------------------------------------------------------------------- */
+/* 3. Layout                                                                  */
+/* -------------------------------------------------------------------------- */
 
 .dw-app-shell {
   min-height: 100vh;
@@ -191,6 +216,13 @@ iframe {
   width: 100%;
 }
 
+@media (max-width: 1199px) {
+  .dw-page-layout--detail,
+  .dw-page-layout--with-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .dw-page-content,
 .dw-sidebar-card,
 .dw-actions-card {
@@ -226,10 +258,43 @@ iframe {
   margin-top: 8px;
 }
 
+.dw-card,
+.dw-filter-card {
+  background: var(--dw-color-surface);
+  border: 1px solid var(--dw-color-border);
+  border-radius: var(--dw-radius-md);
+  box-shadow: var(--dw-shadow-sm);
+}
+
+.dw-card {
+  padding: var(--dw-space-4);
+}
+
+.dw-card__title,
+.dw-filter-card__title {
+  margin: 0 0 var(--dw-space-3);
+}
+
+.dw-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--dw-space-3);
+}
+
+.dw-filter-card {
+  padding: var(--dw-space-4);
+}
+
+.dw-filter-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dw-space-3);
+}
+
 /* Toolbar */
 
-.toolbar,
-.dw-toolbar {
+.dw-toolbar,
+.toolbar {
   display: flex;
   align-items: center;
   gap: var(--dw-space-2);
@@ -238,16 +303,45 @@ iframe {
   margin: 0 0 var(--dw-space-3);
 }
 
-.toolbar > *,
-.dw-toolbar > * {
+.dw-toolbar > *,
+.toolbar > * {
   flex: 0 0 auto;
 }
 
-.dw-toolbar__group {
+.dw-toolbar__group,
+.dw-toolbar__primary,
+.dw-toolbar__secondary {
   display: flex;
   align-items: center;
   gap: var(--dw-space-2);
   flex-wrap: wrap;
+}
+
+.dw-toolbar__spacer {
+  flex: 1 1 auto;
+}
+
+.dw-toolbar__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--dw-space-2);
+  margin-left: auto;
+  min-width: 0;
+}
+
+.dw-toolbar__filters {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dw-space-3);
+}
+
+.dw-toolbar--bottom {
+  margin-top: var(--dw-space-3);
+}
+
+.dw-toolbar--compact {
+  margin-bottom: var(--dw-space-2);
 }
 
 .dw-toolbar .dw-input,
@@ -905,6 +999,7 @@ button.nolabel.filter {
   background: #fff;
   border: 1px solid var(--dw-color-border);
   border-radius: var(--dw-radius-md);
+  box-shadow: var(--dw-shadow-sm);
   overflow: hidden;
 }
 
@@ -1089,12 +1184,21 @@ span.editable {
 
 .dw-tabs {
   display: flex;
+  flex-direction: column;
+  gap: var(--dw-space-3);
+  margin: 0 0 var(--dw-space-4);
+}
+
+.dw-tabs__nav {
+  display: flex;
   gap: var(--dw-space-2);
   flex-wrap: wrap;
-  margin: 0 0 var(--dw-space-4);
   padding: 0;
-  list-style: none;
-  margin: 10px;
+  margin: 0;
+}
+
+.dw-tabs__item {
+  display: flex;
 }
 
 .dw-tabs__link {
@@ -1117,20 +1221,25 @@ span.editable {
   color: #fff;
 }
 
+.dw-tabs__panes,
 .dw-tab-panels {
   margin-top: var(--dw-space-2);
-  padding: 10px;
+  padding: var(--dw-space-4);
   background: #fff;
+  border: 1px solid var(--dw-color-border);
+  border-radius: var(--dw-radius-md);
 }
 
+.dw-tabs__pane,
 .dw-tab-panel {
   display: none;
-  padding: var(--dw-space-4) 0 0;
+  padding: 0;
   background: transparent;
   border: 0;
   border-radius: 0;
 }
 
+.dw-tabs__pane.is-active,
 .dw-tab-panel.is-active {
   display: block;
 }
@@ -1288,13 +1397,18 @@ a.dw-nav-link {
     overflow-x: auto;
   }
 
-  .toolbar,
-  .dw-toolbar {
+  .dw-toolbar,
+  .toolbar {
     align-items: flex-start;
   }
 }
 
-/*Image Gallery*/
+/* -------------------------------------------------------------------------- */
+/* 5. Legacy compatibility blocks                                             */
+/* Keep only until matching views/helpers are migrated to dw-* structures.    */
+/* -------------------------------------------------------------------------- */
+
+/* Image Gallery */
 
 .image-gallery {
   margin-top: 20px;
