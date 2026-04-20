@@ -8,6 +8,10 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		$toolbar = $view->toolbar;
 		$html = '';
 
+		if (!$toolbar || !is_object($toolbar) || !method_exists($toolbar, 'renderElement')) {
+			return '';
+		}
+
 		if ($view->action === 'edit') {
 
 			$html .= '<input class="id" type="hidden" value="' . (int)$view->id . '" name="id"/>';

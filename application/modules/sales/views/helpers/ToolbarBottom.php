@@ -6,6 +6,10 @@ class Zend_View_Helper_ToolbarBottom extends Zend_View_Helper_Abstract
 	{
 		$toolbar = $this->view->toolbar;
 
+		if (!$toolbar || !is_object($toolbar) || !method_exists($toolbar, 'renderElement')) {
+			return '';
+		}
+
 		$html = '';
 		$html .= $toolbar->renderElement('add');
 		$html .= $toolbar->renderElement('edit');

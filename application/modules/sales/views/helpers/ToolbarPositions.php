@@ -7,6 +7,10 @@ class Zend_View_Helper_ToolbarPositions extends Zend_View_Helper_Abstract
 		$view = $this->view;
 		$toolbar = $view->toolbarPositions;
 
+		if (!$toolbar || !is_object($toolbar) || !method_exists($toolbar, 'renderElement')) {
+			return '';
+		}
+
 		$classes = 'toolbar positions';
 		if (!empty($class)) {
 			$classes .= ' ' . $class;
