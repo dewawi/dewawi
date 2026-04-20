@@ -117,7 +117,17 @@ class Sales_QuoteController extends DEEC_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$get = new Sales_Model_Get();
-		$quotes = $get->quotes($params, $options, $this->_flashMessenger);
+		$items = $get->quotes($params, $options, $this->_flashMessenger);
+
+		$quotes = new Sales_Model_List_Quotes();
+		$quotes->configure(
+			$items,
+			$options,
+			$toolbarInline,
+			$this->view,
+			$this->getRequest()->getModuleName(),
+			$this->getRequest()->getControllerName()
+		);
 
 		$this->view->quotes = $quotes;
 		$this->view->options = $options;
