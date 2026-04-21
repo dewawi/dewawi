@@ -24,15 +24,6 @@ class Sales_Form_Invoice extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'salesorderid',
-			'type' => 'text',
-			'label' => 'INVOICES_SALES_ORDER_ID',
-			'format' => ['type' => 'string'],
-			'tab' => 'overview',
-			'col' => 3,
-		]);
-
-		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
 			'label' => 'INVOICES_TITLE',
@@ -63,9 +54,43 @@ class Sales_Form_Invoice extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'quoteid',
+			'type' => 'text',
+			'label' => 'INVOICES_QUOTE_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'quotedate',
 			'type' => 'text',
 			'label' => 'INVOICES_QUOTE_DATE',
+			'format' => [
+				'type' => 'date',
+				'pattern' => 'Y-m-d',
+				'displayPattern' => 'd.m.Y',
+			],
+			'attribs' => [
+				'class' => 'datePicker',
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'salesorderid',
+			'type' => 'text',
+			'label' => 'INVOICES_SALES_ORDER_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'salesorderdate',
+			'type' => 'text',
+			'label' => 'INVOICES_SALES_ORDER_DATE',
 			'format' => [
 				'type' => 'date',
 				'pattern' => 'Y-m-d',
