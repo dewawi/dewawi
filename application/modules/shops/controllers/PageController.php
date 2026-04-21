@@ -66,7 +66,7 @@ class Shops_PageController extends Zend_Controller_Action
 		$menus = $menuDb->getMenus($shop['id']);
 
 		$pageDb = new Shops_Model_DbTable_Page();
-		$page = $pageDb->getPage($id);
+		$page = $pageDb->getPage($id, $shop['id']);
 
 		$menuDb = new Shops_Model_DbTable_Menu();
 		$menus = $menuDb->getMenus($shop['id']);

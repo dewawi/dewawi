@@ -7,7 +7,11 @@ $this->headTitle($this->title);
 
 <?php
 
-$content = $this->page['content'];
+if(isset($this->page)) :
+	$content = $this->page['content'];
+else :
+	$content = '';
+endif;
 
 // Fetch data
 $tags = $this->{'tags'};

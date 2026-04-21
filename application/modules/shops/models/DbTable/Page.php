@@ -17,22 +17,30 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		$this->_shop = Zend_Registry::get('Shop');
 	}
 
-	public function getPage($id)
+	public function getPage($id, $shopid)
 	{
-		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
+		$select = $this->select()
+			->where('id = ?', $id)
+			->where('shopid = ?', $shopid)
+			->where('deleted = ?', 0)
+			->limit(1);
+
+		$row = $this->fetchRow($select);
+
+		return $row ? $row->toArray() : null;
 	}
 
-	public function getPageByTitle($title)
+	public function getPageByType($type, $shopid)
 	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('title = ?', $title);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
+		$select = $this->select()
+			->where('type = ?', $type)
+			->where('shopid = ?', $shopid)
+			->where('deleted = ?', 0)
+			->limit(1);
+
+		$row = $this->fetchRow($select);
+
+		return $row ? $row->toArray() : null;
 	}
 
 	public function getPages($shopid)

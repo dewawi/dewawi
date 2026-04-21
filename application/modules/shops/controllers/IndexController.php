@@ -40,7 +40,7 @@ class Shops_IndexController extends Zend_Controller_Action
 	{
 		$shop = Zend_Registry::get('Shop');
 
-		$this->_helper->getHelper('layout')->setLayout('shop');
+		$this->_helper->getHelper('layout')->setLayout('site');
 
 		$toolbar = new Shops_Form_Toolbar();
 		//$options = $this->_helper->Options->getOptions($toolbar);
@@ -70,7 +70,7 @@ class Shops_IndexController extends Zend_Controller_Action
 		$images['categories'] = $imageDb->getCategoryMedia($categories);
 
 		$pageDb = new Shops_Model_DbTable_Page();
-		$page = $pageDb->getPageByTitle('Home');
+		$page = $pageDb->getPageByType('home', $shop['id']);
 
 		//$this->view->tags = $tags;
 		//$this->view->tagEntites = $tagEntites;
