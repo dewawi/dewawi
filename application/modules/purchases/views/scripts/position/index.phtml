@@ -158,6 +158,7 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 										class="dw-position-card is-child position<?php echo $child->getValue('id'); ?> wrap child"
 										data-masterid="<?php echo $positionId; ?>"
 									>
+										<input class="position-id" type="hidden" value="<?php echo $child->getValue('id'); ?>" name="id">
 										<div class="dw-position-card__head">
 											<div class="dw-position-card__meta">
 												<label class="dw-check">
