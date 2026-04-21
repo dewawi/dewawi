@@ -183,10 +183,7 @@ class Purchases_Form_Quoterequest extends DEEC_Form
 			'name' => 'contactid',
 			'type' => 'text',
 			'label' => 'QUOTE_REQUESTS_CONTACT_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-			],
+			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
 		]);

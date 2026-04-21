@@ -183,10 +183,7 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 			'name' => 'contactid',
 			'type' => 'text',
 			'label' => 'PURCHASE_ORDERS_CONTACT_ID',
-			'format' => ['type' => 'int'],
-			'attribs' => [
-				'readonly' => 'readonly',
-			],
+			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
 		]);
