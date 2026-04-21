@@ -975,8 +975,8 @@ class DEEC_Pdf
 	private function renderTotalsAndFooter(TCPDF $pdf, array $document, $positions, array $template, array $settings = [])
 	{
 		if (!empty($settings['showPrices'])) {
-		    $this->ensureSpaceForTotalBox($pdf, $document);
-		    $yAfterBox = $this->totalBox($pdf, $document);
+			$this->ensureSpaceForTotalBox($pdf, $document);
+			$yAfterBox = $this->totalBox($pdf, $document);
 		}
 
 		//$pdf->SetY($yAfterBox + 5);
