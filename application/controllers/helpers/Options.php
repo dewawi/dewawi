@@ -105,19 +105,49 @@ class Application_Controller_Action_Helper_Options extends Zend_Controller_Actio
 
 	protected function resolveModelClass(string $alias): ?string
 	{
-		if ($alias === '') return null;
-
-		// singularize minimal:
-		// categories -> category, taxrates -> taxrate, uoms -> uom
-		if (substr($alias, -3) === 'ies') {
-			$alias = substr($alias, 0, -3) . 'y';
-		} elseif (substr($alias, -1) === 's') {
-			$alias = substr($alias, 0, -1);
+		if ($alias === '') {
+			return null;
 		}
 
-		// studly
+		$alias = $this->normalizeAlias($alias);
+
 		$studly = str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $alias)));
 
-		return 'Application_Model_DbTable_' . $studly;
+		$request = $this->getRequest();
+		$module = $request ? (string)$request->getModuleName() : '';
+		$module = ucfirst(strtolower($module));
+
+		// 1. Try module model first
+		if ($module !== '' && strtolower($module) !== 'default') {
+			$class = $module . '_Model_DbTable_' . $studly;
+			if (class_exists($class)) {
+				return $class;
+			}
+		}
+
+		// 2. Fallback to application
+		$class = 'Application_Model_DbTable_' . $studly;
+		if (class_exists($class)) {
+			return $class;
+		}
+
+		return null;
+	}
+
+	protected function normalizeAlias(string $alias): string
+	{
+		$alias = strtolower(trim($alias));
+
+		// categories -> category
+		if (substr($alias, -3) === 'ies') {
+			return substr($alias, 0, -3) . 'y';
+		}
+
+		// taxrates -> taxrate, uoms -> uom
+		if (substr($alias, -1) === 's') {
+			return substr($alias, 0, -1);
+		}
+
+		return $alias;
 	}
 }
