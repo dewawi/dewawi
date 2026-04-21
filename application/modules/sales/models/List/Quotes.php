@@ -2,23 +2,20 @@
 
 class Sales_Model_List_Quotes extends DEEC_List
 {
-	public function configure($items, array $options, $toolbarInline, $view, $module, $controller)
+	public function __construct()
 	{
-		$this->setView($view)
-			->setId('quotes')
-			->setModule($module)
-			->setController($controller)
-			->setItems($items)
-			->setOptions($options)
-			->setToolbarInline($toolbarInline)
-			->setSelectable(true)
-			->setTableClass('dw-table dw-table--quotes')
-			->setRowClassCallback(function ($quote) {
-				return !empty($quote->pinned) ? 'is-pinned' : '';
-			})
-			->setColumns($this->buildColumns());
+		$this->init();
+	}
 
-		return $this;
+	public function init(): void
+	{
+		$this->setId('quotes');
+
+		$this->setRowClassCallback(function ($item) {
+			return !empty($item->pinned) ? 'is-pinned' : '';
+		});
+
+		$this->setColumns($this->buildColumns());
 	}
 
 	protected function buildColumns()
