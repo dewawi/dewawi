@@ -10,13 +10,89 @@ class DEEC_List
 	protected $columns = [];
 	protected $items = [];
 	protected $options = [];
+	protected $context = [];
 	protected $toolbarInline = null;
-	protected $selectable = false;
-	protected $tableClass = 'dw-table';
+	protected $selectable = true;
+	protected $tableClass = '';
 	protected $total = null;
 	protected $rowClassCallback = null;
 	protected $partial = 'list/list.phtml';
 	protected $emptyText = 'NO_ENTRIES_FOUND';
+
+	public function configure(array $config)
+	{
+		if (array_key_exists('id', $config)) {
+			$this->setId($config['id']);
+		}
+
+		if (array_key_exists('items', $config)) {
+			$this->setItems($config['items']);
+		}
+
+		if (array_key_exists('options', $config)) {
+			$this->setOptions($config['options']);
+		}
+
+		if (array_key_exists('view', $config)) {
+			$this->setView($config['view']);
+		}
+
+		if (array_key_exists('module', $config)) {
+			$this->setModule($config['module']);
+		}
+
+		if (array_key_exists('controller', $config)) {
+			$this->setController($config['controller']);
+		}
+
+		if (array_key_exists('toolbarInline', $config)) {
+			$this->setToolbarInline($config['toolbarInline']);
+		}
+
+		if (array_key_exists('context', $config)) {
+			$this->setContext($config['context']);
+		}
+
+		if (array_key_exists('selectable', $config)) {
+			$this->selectable = (bool)$config['selectable'];
+		}
+
+		if (isset($config['rowClassCallback'])) {
+			$this->rowClassCallback = $config['rowClassCallback'];
+		}
+
+		if (isset($config['columns'])) {
+			$this->columns = $config['columns'];
+		}
+
+		return $this;
+	}
+
+	public function setContext(array $context)
+	{
+		$this->context = $context;
+		return $this;
+	}
+
+	public function getContext($key = null, $default = null)
+	{
+		if ($key === null) {
+			return $this->context;
+		}
+
+		return array_key_exists($key, $this->context) ? $this->context[$key] : $default;
+	}
+
+	public function hasPermission(string $key): bool
+	{
+		$user = $this->getContext('user', []);
+
+		if ($key === 'admin') {
+			return !empty($user['admin']);
+		}
+
+		return false;
+	}
 
 	public function setView($view)
 	{
@@ -163,7 +239,11 @@ class DEEC_List
 
 	public function getTableClass()
 	{
-		return $this->tableClass;
+		if ($this->tableClass !== '') {
+			return $this->tableClass;
+		}
+
+		return 'dw-table dw-table--' . $this->id;
 	}
 
 	public function setTotal($total)
