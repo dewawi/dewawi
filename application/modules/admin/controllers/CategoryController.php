@@ -49,44 +49,11 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 	public function indexAction()
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Category();
-		$toolbar = new Admin_Form_Toolbar();
-		$toolbarInline = new Admin_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$categoriesDb = new Admin_Model_DbTable_Category();
-
-		if($params['type'] == 'shop') {
-			$categories = $categoriesDb->getCategories($params['type'], null, $params['shopid']);
-		} else {
-			$categories = $categoriesDb->getCategories($params['type']);
+		if ($this->getRequest()->isPost()) {
+			$this->_helper->getHelper('layout')->disableLayout();
 		}
 
-		$forms = array();
-		foreach($categories as $category) {
-			$forms[$category['id']] = new Admin_Form_Category();
-			$forms[$category['id']]->setValue('activated', $category['activated']);
-		}
-
-		$slugs = array();
-		if($params['type'] == 'shop') {
-			$slugDb = new Admin_Model_DbTable_Slug();
-			foreach($categories as $category) {
-				$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $category['id']);
-				$slugs[$category['id']] = $slug['slug'];
-			}
-		}
-
-		$this->view->form = $form;
-		$this->view->forms = $forms;
-		$this->view->slugs = $slugs;
-		$this->view->categories = $categories;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildIndexView();
 	}
 
 	public function searchAction()
@@ -94,42 +61,45 @@ class Admin_CategoryController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Category();
+		$this->buildIndexView();
+	}
+
+	protected function buildIndexView(): void
+	{
 		$toolbar = new Admin_Form_Toolbar();
+		$toolbarInline = new Admin_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$categoriesDb = new Admin_Model_DbTable_Category();
-
 		if($params['type'] == 'shop') {
-			$categories = $categoriesDb->getCategories($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
+			$items = $categoriesDb->getCategories($params['type'], null, $params['shopid']);
 		} else {
-			$categories = $categoriesDb->getCategories($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($categories));
+			$items = $categoriesDb->getCategories($params['type']);
 		}
 
-		$forms = array();
-		foreach($categories as $category) {
-			$forms[$category['id']] = new Admin_Form_Category();
-			$forms[$category['id']]->activated->setValue($category['activated']);
-		}
+		$categories = new Admin_Model_List_Categories();
+		$categories->configure([
+	        'items' => $items,
+	        'options' => $options,
+	        'view' => $this->view,
+	        'module' => $this->getRequest()->getModuleName(),
+	        'controller' => $this->getRequest()->getControllerName(),
+	        'toolbarInline' => $toolbarInline,
+	        'context' => [
+		        'user' => $this->_user,
+	        ],
+		]);
 
-		$slugs = array();
-		if($params['type'] == 'shop') {
-			$slugDb = new Admin_Model_DbTable_Slug();
-			foreach($categories as $category) {
-				$slug = $slugDb->getSlug('shops', 'category', $category['shopid'], $category['id']);
-				$slugs[$category['id']] = $slug['slug'];
-			}
-		}
-
-		$this->view->form = $form;
-		$this->view->forms = $forms;
-		$this->view->slugs = $slugs;
 		$this->view->categories = $categories;
+		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->view->toolbarInline = $toolbarInline;
+		$this->view->messages = array_merge(
+			$this->_flashMessenger->getMessages(),
+			$this->_flashMessenger->getCurrentMessages()
+		);
+		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()
