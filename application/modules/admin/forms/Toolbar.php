@@ -72,6 +72,17 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'options' => [
 				'0' => 'ADMIN_SELECT',
 			],
+			'source' => 'shop',
+			'wrap' => false,
+		]);
+
+		$this->addElement([
+			'name' => 'menuid',
+			'type' => 'select',
+			'options' => [
+				'0' => 'ADMIN_SELECT',
+			],
+			'source' => 'menu',
 			'wrap' => false,
 		]);
 
@@ -79,6 +90,7 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'name' => 'language',
 			'type' => 'select',
 			'options' => [],
+			//'source' => 'language',
 			'default' => '',
 			'wrap' => false,
 		]);
