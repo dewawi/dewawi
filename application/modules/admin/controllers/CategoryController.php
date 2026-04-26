@@ -80,15 +80,15 @@ class Admin_CategoryController extends Zend_Controller_Action
 
 		$categories = new Admin_Model_List_Categories();
 		$categories->configure([
-	        'items' => $items,
-	        'options' => $options,
-	        'view' => $this->view,
-	        'module' => $this->getRequest()->getModuleName(),
-	        'controller' => $this->getRequest()->getControllerName(),
-	        'toolbarInline' => $toolbarInline,
-	        'context' => [
-		        'user' => $this->_user,
-	        ],
+			'items' => $items,
+			'options' => $options,
+			'view' => $this->view,
+			'module' => $this->getRequest()->getModuleName(),
+			'controller' => $this->getRequest()->getControllerName(),
+			'toolbarInline' => $toolbarInline,
+			'context' => [
+				'user' => $this->_user,
+			],
 		]);
 
 		$this->view->categories = $categories;

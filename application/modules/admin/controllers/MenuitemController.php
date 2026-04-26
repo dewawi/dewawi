@@ -46,41 +46,50 @@ class Admin_MenuitemController extends Zend_Controller_Action
 		}
 	}
 
+	protected function requireMenuitem(int $id, bool $silent = false): ?array
+	{
+		$menuitemDb = new Admin_Model_DbTable_Menuitem();
+		$menuitem = $menuitemDb->getMenuitem($id);
+
+		if ($menuitem) {
+			return $menuitem;
+		}
+
+		$request = $this->getRequest();
+
+		// AJAX
+		if ($request->isXmlHttpRequest()) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			$this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+
+			return null;
+		}
+
+		// Silent mode (PDF etc.)
+		if ($silent) {
+			$this->_helper->viewRenderer->setNoRender();
+			return null;
+		}
+
+		// Default redirect
+		$this->_flashMessenger->addMessage('MESSAGES_MENU_ITEM_NOT_FOUND');
+		$this->_helper->redirector->gotoSimple('index', 'menuitem');
+
+		return null;
+	}
+
 	public function indexAction()
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Menuitem();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
-
-		if($params['type'] == 'shop') {
-			$menuItems = $menuItemsDb->getMenuitems($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($menuItems));
-		} else {
-			$menuItems = $menuItemsDb->getMenuitems($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($menuItems));
+		if ($this->getRequest()->isPost()) {
+			$this->_helper->getHelper('layout')->disableLayout();
 		}
 
-		if($params['type'] == 'shop') {
-			$slugs = array();
-			$slugDb = new Admin_Model_DbTable_Slug();
-			$menuDb = new Admin_Model_DbTable_Menu();
-			foreach($menuItems as $menuItem) {
-				$menu = $menuDb->getMenu($menuItem['menuid']);
-				$slug = $slugDb->getSlug('shops', 'page', 120, $menuItem['pageid']);
-				$slugs[$menuItem['id']] = $slug['slug'];
-			}
-		}
-
-		$this->view->form = $form;
-		$this->view->menuItems = $menuItems;
-		$this->view->slugs = $slugs;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildIndexView();
 	}
 
 	public function searchAction()
@@ -88,35 +97,56 @@ class Admin_MenuitemController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Menuitem();
+		$this->buildIndexView();
+	}
+
+	protected function buildIndexView(): void
+	{
 		$toolbar = new Admin_Form_Toolbar();
+		$toolbarInline = new Admin_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
+		$menuitemsDb = new Admin_Model_DbTable_Menuitem();
+		if($params['type'] == 'shop') {
+			$items = $menuitemsDb->getMenuitems($params['type'], null, $params['shopid']);
+		} else {
+			$items = $menuitemsDb->getMenuitems($params['type']);
+		}
 
 		if($params['type'] == 'shop') {
-			$menuItems = $menuItemsDb->getMenuitems($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($menuItems));
-		} else {
-			$menuItems = $menuItemsDb->getMenuitems($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($menuItems));
+			$slugs = array();
+			$slugDb = new Admin_Model_DbTable_Slug();
+			$menuDb = new Admin_Model_DbTable_Menu();
+			foreach($items as $menuItem) {
+				$menu = $menuDb->getMenu($menuItem['menuid']);
+				$slug = $slugDb->getSlug('shops', 'page', 120, $menuItem['pageid']);
+				$slugs[$menuItem['id']] = $slug['slug'];
+			}
 		}
 
-		$slugs = array();
-		$slugDb = new Admin_Model_DbTable_Slug();
-		$menuDb = new Admin_Model_DbTable_Menu();
-		foreach($menuItems as $menuItem) {
-			$menu = $menuDb->getMenu($menuItem['menuid']);
-			$slug = $slugDb->getSlug('shops', 'page', 120, $menuItem['pageid']);
-			$slugs[$menuItem['id']] = $slug['slug'];
-		}
+		$menuitems = new Admin_Model_List_Menuitems();
+		$menuitems->configure([
+			'items' => $items,
+			'options' => $options,
+			'view' => $this->view,
+			'module' => $this->getRequest()->getModuleName(),
+			'controller' => $this->getRequest()->getControllerName(),
+			'toolbarInline' => $toolbarInline,
+			'context' => [
+				'user' => $this->_user,
+			],
+		]);
 
-		$this->view->form = $form;
-		$this->view->menuItems = $menuItems;
-		$this->view->slugs = $slugs;
+		$this->view->menuitems = $menuitems;
+		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->view->toolbarInline = $toolbarInline;
+		$this->view->messages = array_merge(
+			$this->_flashMessenger->getMessages(),
+			$this->_flashMessenger->getCurrentMessages()
+		);
+		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()

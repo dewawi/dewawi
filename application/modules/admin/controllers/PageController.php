@@ -46,29 +46,50 @@ class Admin_PageController extends Zend_Controller_Action
 		}
 	}
 
-	public function indexAction()
+	protected function requirePage(int $id, bool $silent = false): ?array
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		$pageDb = new Admin_Model_DbTable_Page();
+		$page = $pageDb->getPage($id);
 
-		$form = new Admin_Form_Page();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$pagesDb = new Admin_Model_DbTable_Page();
-
-		if($params['type'] == 'shop') {
-			$pages = $pagesDb->getPages($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
-		} else {
-			$pages = $pagesDb->getPages($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
+		if ($page) {
+			return $page;
 		}
 
-		$this->view->form = $form;
-		$this->view->pages = $pages;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$request = $this->getRequest();
+
+		// AJAX
+		if ($request->isXmlHttpRequest()) {
+			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->layout->disableLayout();
+
+			$this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+
+			return null;
+		}
+
+		// Silent mode (PDF etc.)
+		if ($silent) {
+			$this->_helper->viewRenderer->setNoRender();
+			return null;
+		}
+
+		// Default redirect
+		$this->_flashMessenger->addMessage('MESSAGES_PAGE_NOT_FOUND');
+		$this->_helper->redirector->gotoSimple('index', 'page');
+
+		return null;
+	}
+
+	public function indexAction()
+	{
+		if ($this->getRequest()->isPost()) {
+			$this->_helper->getHelper('layout')->disableLayout();
+		}
+
+		$this->buildIndexView();
 	}
 
 	public function searchAction()
@@ -76,25 +97,45 @@ class Admin_PageController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Admin_Form_Page();
+		$this->buildIndexView();
+	}
+
+	protected function buildIndexView(): void
+	{
 		$toolbar = new Admin_Form_Toolbar();
+		$toolbarInline = new Admin_Form_ToolbarInline();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$pagesDb = new Admin_Model_DbTable_Page();
-
 		if($params['type'] == 'shop') {
-			$pages = $pagesDb->getPages($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
+			$items = $pagesDb->getPages($params['type'], null, $params['shopid']);
 		} else {
-			$pages = $pagesDb->getPages($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($pages));
+			$items = $pagesDb->getPages($params['type']);
 		}
 
-		$this->view->form = $form;
+		$pages = new Admin_Model_List_Pages();
+		$pages->configure([
+			'items' => $items,
+			'options' => $options,
+			'view' => $this->view,
+			'module' => $this->getRequest()->getModuleName(),
+			'controller' => $this->getRequest()->getControllerName(),
+			'toolbarInline' => $toolbarInline,
+			'context' => [
+				'user' => $this->_user,
+			],
+		]);
+
 		$this->view->pages = $pages;
+		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->view->toolbarInline = $toolbarInline;
+		$this->view->messages = array_merge(
+			$this->_flashMessenger->getMessages(),
+			$this->_flashMessenger->getCurrentMessages()
+		);
+		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()
@@ -128,82 +169,78 @@ class Admin_PageController extends Zend_Controller_Action
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
+		$id = (int)$this->_getParam('id', 0);
+		$isAjax = $request->isXmlHttpRequest();
+
+		$page = $this->requirePage($id);
+		if (!$page) return;
 
 		$pageDb = new Admin_Model_DbTable_Page();
-		$page = $pageDb->getPage($id);
 
-		if($this->isLocked($page['locked'], $page['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
+		$this->_helper->Access->lock($id, $this->_user['id'], $page['locked'] ?? 0, $page['lockedtime'] ?? null);
+
+		$formFactory = new Admin_Service_EditFormFactory();
+		$formData = $formFactory->create('Admin_Form_Page');
+		$form = $formData['form'];
+		$options = $formData['options'];
+		$toolbar = new Admin_Form_Toolbar();
+
+		if ($request->isPost()) {
+			if ($isAjax) {
 				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
+				$this->_helper->layout->disableLayout();
+
+				$post = (array)$request->getPost();
+
+				return $this->_helper->json($this->savePageAjax($form, $pageDb, $id, $page, $post));
+			}
+
+			$post = (array)$request->getPost();
+
+			if (!$form->isValid($post)) {
+				$form->setValues($post);
 			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
+				$values = $form->getFilteredValues();
+
+				if (isset($values['parentid']) && (string)$values['parentid'] !== (string)$page['parentid']) {
+					$values['ordering'] = $this->getLatestOrdering(
+						$values['clientid'] ?? $page['clientid'],
+						$values['type'] ?? $page['type'],
+						$values['parentid']
+					) + 1;
+				}
+
+				$pageDb->updatePage($id, $values);
+
+				if (isset($values['parentid']) && (string)$values['parentid'] !== (string)$page['parentid']) {
+					$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
+				}
+
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
+				return $this->_helper->redirector->gotoSimple('edit', 'page', null, ['id' => $id]);
 			}
 		} else {
-			$pageDb->lock($id);
-
-			$form = new Admin_Form_Page();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			$pagesDb = new Admin_Model_DbTable_Page();
-			$pages = $pagesDb->getPages($params['type']);
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				//if(isset($form->$element) && $form->isValidPartial($data)) { // to do add options for parentid before form validation
-				if(true) {
-					$pageDb = new Admin_Model_DbTable_Page();
-					if($element == 'parentid') {
-						$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-						$pageArray = $pageDb->getPage($id);
-						$pageDb->updatePage($id, $data);
-
-						//sort old parent page
-						$this->setOrdering($pageArray['clientid'], $pageArray['type'], $pageArray['parentid']);
-
-						/*$pages = $this->_helper->Pages->getPages(null, $params['clientid'], $params['type'], $pageArray['parentid']);
-						$i = 1;
-						foreach($pages as $page) {
-							if(isset($page['id'])) {
-								//if($page['ordering'] != $i)
-								$pageDb->updatePage($page['id'], array('ordering' => $i));
-								++$i;
-							}
-						}*/
-					} else {
-						$pageDb->updatePage($id, $data);
-					}
-					echo Zend_Json::encode($pageDb->getPage($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			} else {
-				if($id > 0) {
-					$form->populate($page);
-
-					//Toolbar
-					$toolbar = new Admin_Form_Toolbar();
-
-					//Tags
-					$get = new Shops_Model_Get();
-					$tags = $get->tags('shops', 'page', $page['id']);
-
-					$this->view->form = $form;
-					$this->view->tags = $tags;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-				}
-			}
+			$formFactory->populate($form, $page, $id, 'shops', 'page');
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+
+		//$get = new Shops_Model_Get();
+		//$tags = $get->tags('shops', 'page', $id);
+
+		$this->view->assign([
+			'id' => $id,
+			'form' => $form,
+			'toolbar' => $toolbar,
+			'options' => $options,
+			//'tags' => $tags,
+			'activeTab' => $request->getCookie('tab', null),
+		]);
+
+		$this->view->messages = array_merge(
+			$this->_flashMessenger->getMessages(),
+			$this->_flashMessenger->getCurrentMessages()
+		);
+		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function copyAction()
@@ -346,6 +383,95 @@ class Admin_PageController extends Zend_Controller_Action
 				}
 			}
 		}
+	}
+
+	protected function savePageAjax(DEEC_Form $form, Admin_Model_DbTable_Page $pageDb, int $id, array $page, array $post): array
+	{
+		if (!$form->isValidPartial($post)) {
+			return [
+				'ok' => false,
+				'errors' => $this->toAjaxErrorMessages($form->getErrors()),
+			];
+		}
+
+		$values = $form->getFilteredValuesPartial($post);
+
+		try {
+			if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$page['parentid']) {
+				$targetClientId = $values['clientid'] ?? $page['clientid'];
+				$targetType = $values['type'] ?? $page['type'];
+
+				$values['ordering'] = $this->getLatestOrdering(
+					$targetClientId,
+					$targetType,
+					$values['parentid']
+				) + 1;
+
+				$pageDb->updatePage($id, $values);
+
+				$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
+			} else {
+				$pageDb->updatePage($id, $values);
+			}
+		} catch (Exception $e) {
+			return [
+				'ok' => false,
+				'message' => 'save_failed',
+			];
+		}
+
+		$row = $pageDb->getPage($id);
+		$changedFields = array_keys($values);
+		$display = DEEC_Display::fromRow($form, $row, $changedFields);
+
+		return [
+			'ok' => true,
+			'id' => $id,
+			'values' => array_intersect_key($row, array_flip($changedFields)),
+			'display' => $display,
+			'meta' => [
+				'recalc' => [],
+			],
+		];
+	}
+
+	protected function toAjaxErrorMessages(array $errors): array
+	{
+		$out = [];
+
+		foreach ($errors as $field => $codes) {
+			$messages = [];
+
+			foreach ($codes as $code) {
+				switch ($code) {
+					case 'required':
+						$messages[] = 'This field is required.';
+						break;
+					case 'email':
+						$messages[] = 'Please enter a valid email address.';
+						break;
+					case 'number':
+						$messages[] = 'Please enter a number.';
+						break;
+					case 'min':
+						$messages[] = 'The value is too small.';
+						break;
+					case 'max':
+						$messages[] = 'The value is too large.';
+						break;
+					case 'pattern':
+						$messages[] = 'The format is invalid.';
+						break;
+					default:
+						$messages[] = 'Invalid value.';
+						break;
+				}
+			}
+
+			$out[$field] = implode(' ', $messages);
+		}
+
+		return $out;
 	}
 
 	public function lockAction()
