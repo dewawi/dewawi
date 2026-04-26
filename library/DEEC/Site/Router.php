@@ -9,9 +9,9 @@ class DEEC_Site_Router
 
 		$site = $siteContext->getSite();
 
-		$this->registerBaseRoutes($router, $siteContext);
 		$this->registerFallbackRoute($router);
 		$this->registerSlugRoutes($router, $site['id']);
+		$this->registerBaseRoutes($router, $siteContext);
 	}
 
 	protected function registerBaseRoutes(Zend_Controller_Router_Rewrite $router, DEEC_Site_Context $siteContext)
