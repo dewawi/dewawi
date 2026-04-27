@@ -68,40 +68,503 @@ class Admin_ExportController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		$type = $this->_getParam('type', 'csv');
-
-		// Fetch all table names from the database
-		$tableNames = $this->getAllTableNames($type);
+		$from = $this->_getParam('from', null);
+		$to = $this->_getParam('to', null);
 
 		require_once(BASE_PATH.'/library/DEEC/Directory.php');
+
 		$Directory = new DEEC_Directory();
 		$fileUrl = $Directory->getShortUrl($this->_user['clientid']);
 		$filePath = BASE_PATH.'/files/export/'.$fileUrl.'/';
 
-		// Export each table into separate CSV files
+		if (!is_dir($filePath)) {
+			mkdir($filePath, 0755, true);
+		}
+
+		if ($type === 'gobd') {
+			$this->exportGobd($filePath, $from, $to);
+		} elseif ($type === 'csv' || $type === 'sql') {
+			$this->exportDatabase($filePath, $type);
+		} else {
+			$this->_flashMessenger->addMessage('Invalid export type.');
+			$this->_helper->redirector->gotoSimple('index');
+			return;
+		}
+
+		$this->_flashMessenger->addMessage('Export created successfully.');
+		$this->_helper->redirector->gotoSimple('index');
+	}
+
+	protected function exportDatabase(string $filePath, string $type): void
+	{
+		$tableNames = $this->getAllTableNames($type);
+		$files = [];
+
 		foreach ($tableNames as $tableName) {
 			$data = $this->fetchDataFromTable($tableName);
-			if($type == 'csv') {
-				$csvContent = $this->generateCsv($data);
 
-				// Write CSV content to a file
-				$filename = "export_$tableName.csv";
-				file_put_contents($filePath.$filename, $csvContent);
-			} elseif($type == 'sql') {
-				$sqlContent = $this->generateSql($tableName, $data);
+			if ($type === 'csv') {
+				$filename = 'export_' . $tableName . '.csv';
+				$this->writeCsvFile($filePath . $filename, $data);
+			} else {
+				$filename = 'export_' . $tableName . '.sql';
+				$this->writeSqlFile($filePath . $filename, $tableName, $data);
+			}
 
-				// Write SQL content to a file
-				$sqlFilename = "export_$tableName.sql";
-				file_put_contents($filePath.$sqlFilename, $sqlContent);
+			$files[] = $filename;
+		}
+
+		$this->createZipArchiveFromFiles($filePath, $files, 'export-' . date('Ymd-His') . '-' . $type . '.zip');
+	}
+
+	protected function exportGobd(string $filePath, ?string $from, ?string $to): void
+	{
+		$profile = $this->getGobdExportProfile();
+		$files = [];
+
+		foreach ($profile as $exportName => $config) {
+			$data = $this->fetchGobdData($config, $from, $to);
+
+			$filename = $exportName . '.csv';
+			$columns = $this->filterExistingColumns($config['table'], $config['columns']);
+			$this->writeCsvFile($filePath . $filename, $data, $columns);
+			$files[] = $filename;
+		}
+
+		$metadataFile = 'metadata.json';
+		$this->writeGobdMetadata($filePath . $metadataFile, $profile, $from, $to);
+		$files[] = $metadataFile;
+
+		$readmeFile = 'readme.txt';
+		$this->writeGobdReadme($filePath . $readmeFile, $from, $to);
+		$files[] = $readmeFile;
+
+		$zipFileName = $this->buildGobdZipFileName($from, $to);
+		$this->createZipArchiveFromFiles($filePath, $files, $zipFileName);
+	}
+
+	protected function getGobdExportProfile(): array
+	{
+		return [
+			'customers' => [
+				'table' => 'contact',
+				'dateField' => null,
+				'columns' => [
+					'id',
+					'contactid',
+					'clientid',
+					'type',
+					'name1',
+					'name2',
+					'department',
+					'taxnumber',
+					'vatin',
+					'taxfree',
+					'currency',
+					'debitornumber',
+					'paymentmethod',
+					'paymentterm',
+					'cashdiscountdays',
+					'cashdiscountpercent',
+					'created',
+					'modified',
+					'deleted',
+				],
+			],
+
+			'customer_addresses' => [
+				'table' => 'address',
+				'dateField' => null,
+				'columns' => [
+					'id',
+					'module',
+					'controller',
+					'parentid',
+					'type',
+					'name1',
+					'name2',
+					'department',
+					'street',
+					'postcode',
+					'city',
+					'country',
+					'phone',
+					'ordering',
+					'clientid',
+					'created',
+					'deleted',
+				],
+			],
+
+			'invoices' => [
+				'table' => 'invoice',
+				'dateField' => 'invoicedate',
+				'columns' => [
+					'id',
+					'invoiceid',
+					'quoteid',
+					'salesorderid',
+					'deliveryorderid',
+					'contactid',
+					'clientid',
+					'reference',
+					'vatin',
+					'invoicedate',
+					'orderdate',
+					'deliverydate',
+					'paymentmethod',
+					'shippingmethod',
+					'billingname1',
+					'billingname2',
+					'billingstreet',
+					'billingpostcode',
+					'billingcity',
+					'billingcountry',
+					'shippingname1',
+					'shippingname2',
+					'shippingstreet',
+					'shippingpostcode',
+					'shippingcity',
+					'shippingcountry',
+					'subtotal',
+					'taxes',
+					'total',
+					'prepayment',
+					'currency',
+					'taxfree',
+					'state',
+					'completed',
+					'cancelled',
+					'filename',
+					'created',
+					'deleted',
+				],
+			],
+
+			'invoice_positions' => [
+				'table' => 'invoicepos',
+				'dateField' => null,
+				'parentTable' => 'invoice',
+				'parentKey' => 'parentid',
+				'parentDateField' => 'invoicedate',
+				'columns' => [
+					'id',
+					'parentid',
+					'itemid',
+					'masterid',
+					'possetid',
+					'clientid',
+					'sku',
+					'title',
+					'description',
+					'price',
+					'taxrate',
+					'quantity',
+					'total',
+					'currency',
+					'uom',
+					'manufacturerid',
+					'manufacturersku',
+					'ordering',
+					'created',
+					'deleted',
+				],
+			],
+
+			'creditnotes' => [
+				'table' => 'creditnote',
+				'dateField' => 'creditnotedate',
+				'columns' => [
+					'id',
+					'creditnoteid',
+					'quoteid',
+					'salesorderid',
+					'invoiceid',
+					'contactid',
+					'clientid',
+					'reference',
+					'vatin',
+					'creditnotedate',
+					'invoicedate',
+					'orderdate',
+					'deliverydate',
+					'paymentmethod',
+					'shippingmethod',
+					'billingname1',
+					'billingname2',
+					'billingstreet',
+					'billingpostcode',
+					'billingcity',
+					'billingcountry',
+					'shippingname1',
+					'shippingname2',
+					'shippingstreet',
+					'shippingpostcode',
+					'shippingcity',
+					'shippingcountry',
+					'subtotal',
+					'taxes',
+					'total',
+					'currency',
+					'taxfree',
+					'state',
+					'completed',
+					'cancelled',
+					'filename',
+					'created',
+					'deleted',
+				],
+			],
+
+			'creditnote_positions' => [
+				'table' => 'creditnotepos',
+				'dateField' => null,
+				'parentTable' => 'creditnote',
+				'parentKey' => 'parentid',
+				'parentDateField' => 'creditnotedate',
+				'columns' => [
+					'id',
+					'parentid',
+					'itemid',
+					'masterid',
+					'possetid',
+					'clientid',
+					'sku',
+					'title',
+					'description',
+					'price',
+					'taxrate',
+					'quantity',
+					'total',
+					'currency',
+					'uom',
+					'manufacturerid',
+					'manufacturersku',
+					'ordering',
+					'created',
+					'deleted',
+				],
+			],
+
+			'items' => [
+				'table' => 'item',
+				'dateField' => null,
+				'columns' => [
+					'id',
+					'clientid',
+					'catid',
+					'sku',
+					'gtin',
+					'title',
+					'subtitle',
+					'type',
+					'description',
+					'quantity',
+					'inventory',
+					'cost',
+					'price',
+					'specialprice',
+					'margin',
+					'currency',
+					'taxid',
+					'uomid',
+					'manufacturerid',
+					'manufacturersku',
+					'manufacturergtin',
+					'origincountry',
+					'created',
+					'modified',
+					'deleted',
+				],
+			],
+
+			'taxrates' => [
+				'table' => 'taxrate',
+				'dateField' => null,
+				'columns' => [
+					'id',
+					'clientid',
+					'name',
+					'rate',
+					'ordering',
+					'created',
+					'modified',
+					'deleted',
+				],
+			],
+
+			'payment_methods' => [
+				'table' => 'paymentmethod',
+				'dateField' => null,
+				'columns' => [
+					'id',
+					'clientid',
+					'title',
+					'ordering',
+					'created',
+					'modified',
+					'deleted',
+				],
+			],
+
+			'shipping_methods' => [
+				'table' => 'shippingmethod',
+				'dateField' => null,
+				'columns' => [
+					'id',
+					'clientid',
+					'title',
+					'ordering',
+					'created',
+					'modified',
+					'deleted',
+				],
+			],
+		];
+	}
+
+	protected function buildGobdZipFileName(?string $from, ?string $to): string
+	{
+		$fromPart = $this->formatDateForFilename($from);
+		$toPart = $this->formatDateForFilename($to);
+
+		return 'gobd-export-' . $fromPart . '-' . $toPart . '-' . date('Ymd-His') . '.zip';
+	}
+
+	protected function formatDateForFilename(?string $date): string
+	{
+		if (!$date) {
+			return 'unknown';
+		}
+
+		$timestamp = strtotime($date);
+
+		if (!$timestamp) {
+			return 'unknown';
+		}
+
+		return date('Ymd', $timestamp);
+	}
+
+	protected function fetchGobdData(array $config, ?string $from, ?string $to): array
+	{
+		$db = Zend_Db_Table::getDefaultAdapter();
+
+		$table = $config['table'];
+		$dateField = $config['dateField'] ?? null;
+		$columns = $this->filterExistingColumns($table, $config['columns']);
+
+		if (empty($columns)) {
+			return [];
+		}
+
+		$select = $db->select();
+
+		if (!empty($config['parentTable']) && $from && $to) {
+			$parentTable = $config['parentTable'];
+			$parentKey = $config['parentKey'];
+			$parentDateField = $config['parentDateField'];
+
+			$columnMap = [];
+
+			foreach ($columns as $column) {
+				$columnMap[$column] = 't.' . $column;
+			}
+
+			$select
+				->from(['t' => $table], $columnMap)
+				->joinInner(
+					['p' => $parentTable],
+					'p.id = t.' . $parentKey,
+					[]
+				)
+				->where('t.clientid = ?', $this->_user['clientid'])
+				->where('p.clientid = ?', $this->_user['clientid'])
+				->where('p.' . $parentDateField . ' >= ?', $from)
+				->where('p.' . $parentDateField . ' <= ?', $to);
+
+			if (in_array('id', $columns, true)) {
+				$select->order('t.id ASC');
+			}
+		} else {
+			$select
+				->from($table, $columns)
+				->where('clientid = ?', $this->_user['clientid']);
+
+			if ($dateField && $from && $to) {
+				$select->where($dateField . ' >= ?', $from);
+				$select->where($dateField . ' <= ?', $to);
+			}
+
+			if (in_array('id', $columns, true)) {
+				$select->order('id ASC');
 			}
 		}
 
-		// Create a zip archive containing all files
-		$this->createZipArchive($filePath, $tableNames, $type);
+		return $db->fetchAll($select);
+	}
 
-		// Respond with a success message or perform any further actions
-		$this->view->message = 'All tables exported successfully.';
+	protected function writeGobdMetadata(string $filename, array $profile, ?string $from, ?string $to): void
+	{
+		$metadata = [
+			'system' => 'Dewawi',
+			'exportType' => 'GoBD',
+			'createdAt' => date('c'),
+			'clientId' => (int)$this->_user['clientid'],
+			'userId' => isset($this->_user['id']) ? (int)$this->_user['id'] : null,
+			'from' => $from,
+			'to' => $to,
+			'encoding' => 'UTF-8',
+			'delimiter' => ';',
+			'decimalFormat' => '1234.56',
+			'dateFormat' => 'YYYY-MM-DD',
+			'tables' => [],
+		];
 
-		$this->_helper->redirector->gotoSimple('index');
+		foreach ($profile as $exportName => $config) {
+			$metadata['tables'][$exportName] = [
+				'table' => $config['table'],
+				'dateField' => $config['dateField'],
+				'parentTable' => $config['parentTable'] ?? null,
+				'parentKey' => $config['parentKey'] ?? null,
+				'parentDateField' => $config['parentDateField'] ?? null,
+				'columns' => $config['columns'],
+			];
+		}
+
+		file_put_contents(
+			$filename,
+			json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+		);
+	}
+
+	protected function writeGobdReadme(string $filename, ?string $from, ?string $to): void
+	{
+		$content = [];
+		$content[] = 'Dewawi GoBD Export';
+		$content[] = 'Created: ' . date('Y-m-d H:i:s');
+		$content[] = 'Client ID: ' . $this->_user['clientid'];
+		$content[] = 'From: ' . ($from ?: '-');
+		$content[] = 'To: ' . ($to ?: '-');
+		$content[] = '';
+		$content[] = 'Format: CSV';
+		$content[] = 'Encoding: UTF-8';
+		$content[] = 'Delimiter: semicolon';
+		$content[] = 'Decimal format: 1234.56';
+		$content[] = '';
+		$content[] = 'This export contains tax-relevant business data from Dewawi.';
+		$content[] = 'Rows marked with deleted = 1 are included to preserve audit trail and document history.';
+		$content[] = 'Billing address fields in invoices and creditnotes represent the document address at the time of document creation.';
+		$content[] = 'Shipping address fields are included because they may be relevant for delivery and tax review.';
+		$content[] = 'Customer addresses are exported separately from the address table because one contact can have multiple addresses.';
+
+		file_put_contents($filename, implode("\n", $content));
+	}
+
+	protected function writeSqlFile(string $filename, string $tableName, array $data): void
+	{
+		$content = $this->generateSql($tableName, $data);
+		file_put_contents($filename, $content);
 	}
 
 	public function deleteAction()
@@ -159,15 +622,116 @@ class Admin_ExportController extends Zend_Controller_Action
 		return $clientidTables;
 	}
 
-	// Fetch data from a specific table
 	protected function fetchDataFromTable($tableName)
 	{
 		$db = Zend_Db_Table::getDefaultAdapter();
-		$select = $db->select()->from($tableName)->where('clientid = ?', $this->_user['clientid']);
+
+		$select = $db->select()
+			->from($tableName)
+			->where('clientid = ?', $this->_user['clientid']);
+
+		$columns = $db->describeTable($tableName);
+
+		if (array_key_exists('id', $columns)) {
+			$select->order('id ASC');
+		}
+
 		return $db->fetchAll($select);
 	}
 
-	// Generate CSV content
+	protected function filterExistingColumns(string $table, array $columns): array
+	{
+		$db = Zend_Db_Table::getDefaultAdapter();
+		$description = $db->describeTable($table);
+
+		$existing = [];
+
+		foreach ($columns as $column) {
+			if (array_key_exists($column, $description)) {
+				$existing[] = $column;
+			}
+		}
+
+		return $existing;
+	}
+
+	protected function writeCsvFile(string $filename, array $data, array $columns = []): void
+	{
+		$handle = fopen($filename, 'w');
+
+		if (!$handle) {
+			throw new RuntimeException('Could not create CSV file: ' . $filename);
+		}
+
+		if (!empty($columns)) {
+			fputcsv($handle, $columns, ';');
+		} elseif (!empty($data)) {
+			fputcsv($handle, array_keys($data[0]), ';');
+		}
+
+		foreach ($data as $row) {
+			$cleanRow = [];
+
+			if (!empty($columns)) {
+				foreach ($columns as $column) {
+					$cleanRow[] = $this->normalizeExportValue($row[$column] ?? null);
+				}
+			} else {
+				foreach ($row as $value) {
+					$cleanRow[] = $this->normalizeExportValue($value);
+				}
+			}
+
+			fputcsv($handle, $cleanRow, ';');
+		}
+
+		fclose($handle);
+	}
+
+	protected function createZipArchiveFromFiles(string $filePath, array $files, string $zipFileName): void
+	{
+		$zip = new ZipArchive();
+
+		if ($zip->open($filePath . $zipFileName, ZipArchive::CREATE) !== true) {
+			throw new RuntimeException('Could not create ZIP archive.');
+		}
+
+		foreach ($files as $file) {
+			$fullPath = $filePath . $file;
+
+			if (file_exists($fullPath)) {
+				$zip->addFile($fullPath, $file);
+			}
+		}
+
+		$zip->close();
+
+		foreach ($files as $file) {
+			$fullPath = $filePath . $file;
+
+			if (file_exists($fullPath)) {
+				unlink($fullPath);
+			}
+		}
+	}
+
+	protected function normalizeExportValue($value)
+	{
+		if ($value === null) {
+			return '';
+		}
+
+		if ($value instanceof DateTime) {
+			return $value->format('Y-m-d H:i:s');
+		}
+
+		if (is_bool($value)) {
+			return $value ? '1' : '0';
+		}
+
+		return trim((string)$value);
+	}
+
 	protected function generateCsv($data)
 	{
 		// Initialize CSV content with an empty string
@@ -207,20 +771,30 @@ class Admin_ExportController extends Zend_Controller_Action
 	// Generate SQL content
 	protected function generateSql($tableName, $data)
 	{
-		// Initialize SQL content with an empty string
+		if (empty($data)) {
+			return '';
+		}
+
+		$db = Zend_Db_Table::getDefaultAdapter();
 		$sql = '';
 
-		// Check if data is not empty
-		if (!empty($data)) {
-			// Generate INSERT INTO statements for each row
-			foreach ($data as $row) {
-				$columns = array_keys($row);
-				$values = array_map(function($value) {
-					// Escape single quotes in values
-					return "'" . str_replace("'", "''", $value) . "'";
-				}, $row);
-				$sql .= "INSERT INTO $tableName (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ");\n";
+		foreach ($data as $row) {
+			$columns = [];
+			$values = [];
+
+			foreach ($row as $column => $value) {
+				$columns[] = $db->quoteIdentifier($column);
+
+				if ($value === null) {
+					$values[] = 'NULL';
+				} else {
+					$values[] = $db->quote((string)$value);
+				}
 			}
+
+			$sql .= 'INSERT INTO ' . $db->quoteIdentifier($tableName)
+				. ' (' . implode(', ', $columns) . ') VALUES ('
+				. implode(', ', $values) . ");\n";
 		}
 
 		return $sql;
