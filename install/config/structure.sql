@@ -103,7 +103,6 @@ CREATE TABLE IF NOT EXISTS `category` (
   `metatitle` varchar(255) DEFAULT NULL,
   `metadescription` varchar(255) DEFAULT NULL,
   `metakeyword` varchar(255) DEFAULT NULL,
-  `downloads` text DEFAULT NULL,
   `type` varchar(255) DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
@@ -517,17 +516,6 @@ CREATE TABLE IF NOT EXISTS `deliverytime` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `documentrelation` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `contactid` int(11) NOT NULL DEFAULT 0,
-  `documentid` int(11) NOT NULL,
-  `module` varchar(255) NOT NULL,
-  `controller` varchar(255) NOT NULL,
-  `created` datetime DEFAULT NULL,
-  `createdby` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE IF NOT EXISTS `download` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `setid` int(11) NOT NULL,
@@ -767,7 +755,7 @@ CREATE TABLE IF NOT EXISTS `email` (
   `controller` varchar(255) DEFAULT NULL,
   `parentid` int(11) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
-  `password` varchar(255) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
@@ -1192,7 +1180,6 @@ CREATE TABLE IF NOT EXISTS `item` (
   `amazondescription` text DEFAULT NULL,
   `info` text DEFAULT NULL,
   `notes` text DEFAULT NULL,
-  `downloads` text DEFAULT NULL,
   `quantity` decimal(12,4) DEFAULT NULL,
   `minquantity` decimal(12,4) DEFAULT NULL,
   `orderquantity` decimal(12,4) DEFAULT NULL,
