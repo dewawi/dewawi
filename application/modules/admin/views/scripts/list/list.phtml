@@ -1,0 +1,50 @@
+<?php
+/** @var DEEC_List $this->table */
+?>
+<div class="dw-table-wrap" data-list-id="<?php echo $this->escape($this->table->getId()); ?>">
+	<table class="<?php echo $this->escape($this->table->getTableClass()); ?>">
+		<thead>
+			<tr>
+				<?php if ($this->table->isSelectable()) : ?>
+					<th class="dw-col-check">
+						<input type="checkbox" class="checkall" name="checkall" />
+					</th>
+				<?php endif; ?>
+
+				<?php foreach ($this->table->getColumns() as $column) : ?>
+					<th class="<?php echo $this->escape($this->table->getCellClass($column)); ?>">
+						<?php echo $this->escape($this->table->getColumnLabel($column)); ?>
+					</th>
+				<?php endforeach; ?>
+			</tr>
+		</thead>
+		<tbody>
+			<?php if (!$this->table->hasItems()) : ?>
+				<tr class="dw-row dw-row--empty">
+					<td colspan="<?php echo (int)$this->table->getHeaderColspan(); ?>" class="dw-table-empty">
+						<?php echo $this->escape($this->table->translate($this->table->getEmptyText())); ?>
+					</td>
+				</tr>
+			<?php else : ?>
+				<?php foreach ($this->table->getItems() as $item) : ?>
+					<tr class="<?php echo $this->escape($this->table->getRowClass($item)); ?>">
+						<?php if ($this->table->isSelectable()) : ?>
+							<td class="dw-col-check">
+								<input class="check-id" type="checkbox" value="<?php echo (int)$this->table->getFieldValue($item, 'id'); ?>" name="id" />
+								<input class="id" type="hidden" value="<?php echo (int)$this->table->getFieldValue($item, 'id'); ?>" name="id" />
+								<input class="controller" type="hidden" value="<?php echo $this->escape($this->table->getController()); ?>" name="controller" />
+								<input class="module" type="hidden" value="<?php echo $this->escape($this->table->getModule()); ?>" name="module" />
+							</td>
+						<?php endif; ?>
+
+						<?php foreach ($this->table->getColumns() as $column) : ?>
+							<td class="<?php echo $this->escape($this->table->getCellClass($column)); ?>" data-label="<?php echo $this->escape($this->table->getColumnDataLabel($column)); ?>">
+								<?php echo $this->table->renderCell($item, $column); ?>
+							</td>
+						<?php endforeach; ?>
+					</tr>
+				<?php endforeach; ?>
+			<?php endif; ?>
+		</tbody>
+	</table>
+</div>
