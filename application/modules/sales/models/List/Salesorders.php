@@ -2,22 +2,6 @@
 
 class Sales_Model_List_Salesorders extends DEEC_List
 {
-	public function __construct()
-	{
-		$this->init();
-	}
-
-	public function init(): void
-	{
-		$this->setId('salesorders');
-
-		$this->setRowClassCallback(function ($item) {
-			return !empty($item->pinned) ? 'is-pinned' : '';
-		});
-
-		$this->setColumns($this->buildColumns());
-	}
-
 	protected function buildColumns()
 	{
 		return [

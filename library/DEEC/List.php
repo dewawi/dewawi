@@ -4,7 +4,7 @@ class DEEC_List
 {
 	protected $view = null;
 	protected $translator = null;
-	protected $id = 'list';
+	protected $id = null;
 	protected $module = '';
 	protected $controller = '';
 	protected $columns = [];
@@ -18,6 +18,15 @@ class DEEC_List
 	protected $rowClassCallback = null;
 	protected $partial = 'list/list.phtml';
 	protected $emptyText = 'NO_ENTRIES_FOUND';
+
+	public function __construct(array $config = [])
+	{
+		$this->setColumns($this->buildColumns());
+
+		if ($config) {
+			$this->configure($config);
+		}
+	}
 
 	public function configure(array $config)
 	{
@@ -130,15 +139,26 @@ class DEEC_List
 		return $key;
 	}
 
-	public function setId($id)
+	public function getId(): string
 	{
-		$this->id = (string)$id;
-		return $this;
+		if ($this->id) {
+			return $this->id;
+		}
+
+		$module = $this->getModule();
+		$controller = $this->getController();
+
+		if ($module && $controller) {
+			return $module . '-' . $controller;
+		}
+
+		return 'list';
 	}
 
-	public function getId()
+	public function setId(string $id)
 	{
-		return $this->id;
+		$this->id = $id;
+		return $this;
 	}
 
 	public function setModule($module)
@@ -243,7 +263,7 @@ class DEEC_List
 			return $this->tableClass;
 		}
 
-		return 'dw-table dw-table--' . $this->id;
+		return 'dw-table dw-table--' . $this->getId();
 	}
 
 	public function setTotal($total)

@@ -2,22 +2,6 @@
 
 class Sales_Model_List_Creditnotes extends DEEC_List
 {
-	public function __construct()
-	{
-		$this->init();
-	}
-
-	public function init(): void
-	{
-		$this->setId('creditnotes');
-
-		$this->setRowClassCallback(function ($item) {
-			return !empty($item->pinned) ? 'is-pinned' : '';
-		});
-
-		$this->setColumns($this->buildColumns());
-	}
-
 	protected function buildColumns()
 	{
 		return [
