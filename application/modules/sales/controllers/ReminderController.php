@@ -1,133 +1,18 @@
 <?php
 
-class Sales_ReminderController extends Zend_Controller_Action
+class Sales_ReminderController extends DEEC_Controller_DocumentAction
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
-	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'attachment', $this->_flashMessenger);
-	}
-
-	public function getAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->layout->disableLayout();
-
-		$elementName = (string)$this->_getParam('element', '');
-		$form = new Sales_Form_Toolbar();
-
-		$el = $form->getElement($elementName);
-
-		if (!$el) {
-			return $this->_helper->json([
-				'ok' => false,
-				'message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS'),
-			]);
-		}
-
-		$options = $el['options'] ?? [];
-
-		return $this->_helper->json($options);
-	}
-
-	protected function requireReminder(int $id, bool $silent = false): ?array
-	{
-		$reminderDb = new Sales_Model_DbTable_Reminder();
-		$reminder = $reminderDb->getReminderForEdit($id);
-
-		if ($reminder) {
-			return $reminder;
-		}
-
-		$request = $this->getRequest();
-
-		// AJAX
-		if ($request->isXmlHttpRequest()) {
-			$this->_helper->viewRenderer->setNoRender();
-			$this->_helper->layout->disableLayout();
-
-			$this->_helper->json([
-				'ok' => false,
-				'message' => 'not_found',
-			]);
-
-			return null;
-		}
-
-		// Silent mode (PDF etc.)
-		if ($silent) {
-			$this->_helper->viewRenderer->setNoRender();
-			return null;
-		}
-
-		// Default redirect
-		$this->_flashMessenger->addMessage('MESSAGES_REMINDER_NOT_FOUND');
-		$this->_helper->redirector->gotoSimple('index', 'reminder');
-
-		return null;
-	}
-
-	public function indexAction()
-	{
-		if ($this->getRequest()->isPost()) {
-			$this->_helper->getHelper('layout')->disableLayout();
-		}
-
-		$this->buildIndexView();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$this->buildIndexView();
-	}
-
 	protected function buildIndexView(): void
 	{
-		$toolbar = new Sales_Form_Toolbar();
-		$toolbarInline = new Sales_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
 		$get = new Sales_Model_Get();
-		$reminders = $get->reminders($params, $options, $this->_flashMessenger);
 
-		$this->view->reminders = $reminders;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->messages = array_merge(
-			$this->_flashMessenger->getMessages(),
-			$this->_flashMessenger->getCurrentMessages()
-		);
-		$this->_flashMessenger->clearCurrentMessages();
+		$this->buildListView([
+			'viewKey' => 'reminders',
+			'list' => 'Sales_Model_List_Reminders',
+			'items' => function ($params, $options) use ($get) {
+				return $get->reminders($params, $options, $this->_flashMessenger);
+			},
+		]);
 	}
 
 	public function addAction()
@@ -150,8 +35,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 		$isAjax = $request->isXmlHttpRequest();
 
-		$reminder = $this->requireReminder($id);
-		if (!$reminder) return;
+		$reminder = $this->requireRow($id);
 
 		$reminderDb = new Sales_Model_DbTable_Reminder();
 
@@ -167,8 +51,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $reminder['taxfree']);
 
 			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
+				$this->disableView();
 
 				$ajaxSaveService = new Sales_Service_EditAjaxSaveService();
 
@@ -225,11 +108,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 			'activeTab' => $request->getCookie('tab', null),
 		]));
 
-		$this->view->messages = array_merge(
-			$this->_helper->flashMessenger->getMessages(),
-			$this->_helper->flashMessenger->getCurrentMessages()
-		);
-		$this->_helper->flashMessenger->clearCurrentMessages();
+		$this->assignMessages();
 	}
 
 	public function viewAction()
@@ -237,8 +116,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 		$controller = $this->getRequest()->getControllerName();
 
-		$reminder = $this->requireReminder($id);
-		if (!$reminder) return;
+		$reminder = $this->requireRow($id);
 
 		$this->ensurePdfDocumentExists($id);
 
@@ -264,11 +142,9 @@ class Sales_ReminderController extends Zend_Controller_Action
 	{
 		$id = $this->_getParam('id', 0);
 
-		$data = $this->requireReminder($id);
-		if (!$data) return;
+		$data = $this->requireRow($id);
 
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->disableView();
 
 		unset($data['id'], $data['reminderid']);
 		$data['title'] = $data['title'].' 2';
@@ -300,8 +176,7 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$id = $this->_getParam('id', 0);
 		$target = $this->_getParam('target', 0);
 
-		$data = $this->requireReminder($id);
-		if (!$data) return;
+		$data = $this->requireRow($id);
 
 		$data['state'] = 100;
 		$data['completed'] = 0;
@@ -391,48 +266,6 @@ class Sales_ReminderController extends Zend_Controller_Action
 		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
 
-	public function previewAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-		$templateId = (int)$this->_getParam('templateid', 0);
-		$isAjax = $this->getRequest()->isXmlHttpRequest();
-
-		try {
-			$result = $this->generatePdfDocument($id, [
-				'output' => $isAjax ? 'file' : 'inline',
-				'templateid' => $templateId ?: null,
-				'storage' => 'cache',
-				'overwrite' => true,
-			]);
-		} catch (RuntimeException $e) {
-			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
-
-				return $this->_helper->json([
-					'ok' => false,
-					'message' => 'not_found',
-				]);
-			}
-
-			$this->_flashMessenger->addMessage('MESSAGES_REMINDER_NOT_FOUND');
-			return $this->_helper->redirector->gotoSimple('index', 'reminder');
-		}
-
-		if ($isAjax) {
-			$this->_helper->viewRenderer->setNoRender();
-			$this->_helper->layout->disableLayout();
-
-			return $this->_helper->json([
-				'ok' => true,
-				'url' => $result['url'] ?? null,
-				'filename' => $result['filename'] ?? null,
-			]);
-		}
-
-		return $this->sendPdfResponse($result);
-	}
-
 	public function saveAction()
 	{
 		$id = (int)$this->_getParam('id', 0);
@@ -453,156 +286,18 @@ class Sales_ReminderController extends Zend_Controller_Action
 		return $this->_helper->redirector->gotoSimple('view', 'reminder', null, ['id' => $id]);
 	}
 
-	public function downloadAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-
-		try {
-			$result = $this->generatePdfDocument($id, [
-				'output' => 'download',
-				'storage' => 'cache',
-				'overwrite' => true,
-			]);
-		} catch (RuntimeException $e) {
-			$this->_flashMessenger->addMessage('MESSAGES_REMINDER_NOT_FOUND');
-			return $this->_helper->redirector->gotoSimple('index', 'reminder');
-		}
-
-		return $this->sendPdfResponse($result);
-	}
-
-	protected function generatePdfDocument(int $id, array $options = []): array
-	{
-		$reminder = $this->requireReminder($id, true);
-		if (!$reminder) {
-			throw new RuntimeException('Reminder not found');
-		}
-
-		if (!empty($options['finalize'])) {
-			$finalizeService = new Sales_Service_DocumentFinalizeService();
-			$reminder = $finalizeService->finalize($reminder, 'reminder');
-		}
-
-		$pdf = new DEEC_Pdf();
-
-		return $pdf->generate([
-			'module' => 'sales',
-			'controller' => 'reminder',
-			'documentId' => (int)$reminder['id'],
-			'output' => $options['output'] ?? 'file',
-			'templateid' => $options['templateid'] ?? null,
-			'storage' => $options['storage'] ?? 'cache',
-			'overwrite' => !empty($options['overwrite']),
-		]);
-	}
-
-	protected function ensurePdfDocumentExists(int $id): void
-	{
-		$reminder = $this->requireReminder($id, true);
-		if (!$reminder) {
-			return;
-		}
-
-		if (empty($reminder['id']) || empty($reminder['contactid']) || empty($reminder['clientid'])) {
-			return;
-		}
-
-		$docIdField = 'reminderid';
-
-		// Do not generate contact PDF before document is finalized
-		if (empty($reminder[$docIdField]) || empty($reminder['filename'])) {
-			return;
-		}
-
-		try {
-			$this->generatePdfDocument($id, [
-				'output' => 'file',
-				'storage' => 'contact',
-				'overwrite' => false,
-			]);
-		} catch (RuntimeException $e) {
-			// Keep view page working even if PDF generation fails
-		}
-	}
-
-	protected function sendPdfResponse(array $result)
-	{
-		if (empty($result['path']) || !is_file($result['path'])) {
-			throw new RuntimeException('PDF file not found');
-		}
-
-		$mode = $result['output'] ?? 'inline';
-		$filename = $result['filename'] ?? basename($result['path']);
-
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->layout->disableLayout();
-
-		$response = $this->getResponse();
-		$response->clearHeaders();
-		$response->setHeader('Content-Type', 'application/pdf', true);
-		$response->setHeader(
-			'Content-Disposition',
-			($mode === 'download' ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
-			true
-		);
-		$response->setHeader('Content-Length', (string)filesize($result['path']), true);
-		$response->sendHeaders();
-
-		readfile($result['path']);
-		exit;
-	}
-
 	public function cancelAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->disableView();
 
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 
-			$reminder = $this->requireReminder($id);
-			if (!$reminder) return;
+			$data = $this->requireRow($id);
 
 			$reminder = new Sales_Model_DbTable_Reminder();
 			$reminder->setState($id, 106);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
-	}
-
-	public function pinAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toggle($id);
-	}
-
-	public function lockAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-		$result = $this->_helper->Access->lock($id, $this->_user['id']);
-
-		if (is_array($result)) {
-			return $this->_helper->json($result);
-		}
-	}
-
-	public function unlockAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-		$result = $this->_helper->Access->unlock($id);
-
-		if (is_array($result)) {
-			return $this->_helper->json($result);
-		}
-	}
-
-	public function keepaliveAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->keepalive($id);
-	}
-
-	public function validateAction()
-	{
-		$this->_helper->Validate();
 	}
 }
