@@ -288,8 +288,43 @@ class DEEC_List
 
 	public function setColumns(array $columns)
 	{
-		$this->columns = $columns;
+		$this->columns = [];
+
+		foreach ($columns as $column) {
+			$this->columns[] = $this->normalizeColumn($column);
+		}
+
 		return $this;
+	}
+
+	protected function normalizeColumn(array $column): array
+	{
+		$name = isset($column['name']) ? (string)$column['name'] : '';
+
+		if (!isset($column['type'])) {
+			$column['type'] = 'text';
+		}
+
+		if (!isset($column['field']) && $name !== '' && !in_array($column['type'], ['actions', 'pin'], true)) {
+			$column['field'] = $name;
+		}
+
+		if (!isset($column['class']) && $name !== '') {
+			$column['class'] = 'dw-col-' . str_replace('_', '-', $name);
+		}
+
+		if (!isset($column['editable_name']) && isset($column['field'])) {
+			$column['editable_name'] = $column['field'];
+		}
+
+		if ($column['type'] === 'link' && !isset($column['url'])) {
+			$column['url'] = [
+				'action' => 'edit',
+				'id_field' => 'id',
+			];
+		}
+
+		return $column;
 	}
 
 	public function addColumn(array $column)
