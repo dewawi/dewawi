@@ -52,10 +52,26 @@ class Contacts_Model_Get
 					->from(array($schema => 'contact'))
 					//->columns(array('TotalRecords' => new Zend_Db_Expr('COUNT(t.id)')))
 					->join(array('t' => 'tagentity'), '(c.id = t.entityid) AND (t.tagid = '.$params['tagid'].') AND (t.deleted = 0)', array('tagid', 'entityid'))
-					->joinLeft(array('a' => 'address'), '(c.id = a.parentid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
-					->joinLeft(array('p' => 'phone'), 'c.id = p.parentid AND p.deleted = 0', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
-					->joinLeft(array('e' => 'email'), 'c.id = e.parentid AND e.deleted = 0', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
-					->joinLeft(array('i' => 'internet'), 'c.id = i.parentid AND i.deleted = 0', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
+					->joinLeft(
+						array('a' => 'address'),
+						"c.id = a.parentid AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing' AND a.deleted = 0",
+						array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude')
+					)
+					->joinLeft(
+						array('p' => 'phone'),
+						"c.id = p.parentid AND p.module = 'contacts' AND p.controller = 'contact' AND p.deleted = 0",
+						array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)'))
+					)
+					->joinLeft(
+						array('e' => 'email'),
+						"c.id = e.parentid AND e.module = 'contacts' AND e.controller = 'contact' AND e.deleted = 0",
+						array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)'))
+					)
+					->joinLeft(
+						array('i' => 'internet'),
+						"c.id = i.parentid AND i.module = 'contacts' AND i.controller = 'contact' AND i.deleted = 0",
+						array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)'))
+					)
 					->group($schema.'.id')
 					->where($query ? $query : 1)
 			);
@@ -64,10 +80,26 @@ class Contacts_Model_Get
 				$contactsDb->select()
 					->setIntegrityCheck(false)
 					->from(array($schema => 'contact'), array('id', 'contactid', 'catid', 'name1', 'name2', 'notes', 'taxnumber', 'vatin', 'pinned', 'cashdiscountpercent'))
-					->joinLeft(array('a' => 'address'), '(c.id = a.parentid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
-					->joinLeft(array('p' => 'phone'), 'c.id = p.parentid AND p.deleted = 0', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
-					->joinLeft(array('e' => 'email'), 'c.id = e.parentid AND e.deleted = 0', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
-					->joinLeft(array('i' => 'internet'), 'c.id = i.parentid AND i.deleted = 0', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
+					->joinLeft(
+						array('a' => 'address'),
+						"c.id = a.parentid AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing' AND a.deleted = 0",
+						array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude')
+					)
+					->joinLeft(
+						array('p' => 'phone'),
+						"c.id = p.parentid AND p.module = 'contacts' AND p.controller = 'contact' AND p.deleted = 0",
+						array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)'))
+					)
+					->joinLeft(
+						array('e' => 'email'),
+						"c.id = e.parentid AND e.module = 'contacts' AND e.controller = 'contact' AND e.deleted = 0",
+						array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)'))
+					)
+					->joinLeft(
+						array('i' => 'internet'),
+						"c.id = i.parentid AND i.module = 'contacts' AND i.controller = 'contact' AND i.deleted = 0",
+						array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)'))
+					)
 					->group($schema.'.id')
 					->where($query ? $query : 1)
 			);
@@ -91,10 +123,26 @@ class Contacts_Model_Get
 					->from(array($schema => 'contact'))
 					//->columns(array('TotalRecords' => new Zend_Db_Expr('COUNT(t.id)')))
 					->join(array('t' => 'tagentity'), '(c.id = t.entityid) AND (t.tagid = '.$params['tagid'].') AND (t.deleted = 0)', array('tagid', 'entityid'))
-					->joinLeft(array('a' => 'address'), '(c.id = a.parentid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
-					->joinLeft(array('p' => 'phone'), 'c.id = p.parentid AND p.deleted = 0', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
-					->joinLeft(array('e' => 'email'), 'c.id = e.parentid AND e.deleted = 0', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
-					->joinLeft(array('i' => 'internet'), 'c.id = i.parentid AND i.deleted = 0', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
+					->joinLeft(
+						array('a' => 'address'),
+						"c.id = a.parentid AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing' AND a.deleted = 0",
+						array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude')
+					)
+					->joinLeft(
+						array('p' => 'phone'),
+						"c.id = p.parentid AND p.module = 'contacts' AND p.controller = 'contact' AND p.deleted = 0",
+						array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)'))
+					)
+					->joinLeft(
+						array('e' => 'email'),
+						"c.id = e.parentid AND e.module = 'contacts' AND e.controller = 'contact' AND e.deleted = 0",
+						array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)'))
+					)
+					->joinLeft(
+						array('i' => 'internet'),
+						"c.id = i.parentid AND i.module = 'contacts' AND i.controller = 'contact' AND i.deleted = 0",
+						array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)'))
+					)
 					->group($schema.'.id')
 					->where($query ? $query : 1)
 					->order(array('pinned desc', $order.' '.$params['sort']))
@@ -105,10 +153,26 @@ class Contacts_Model_Get
 				$contactsDb->select()
 					->setIntegrityCheck(false)
 					->from(array($schema => 'contact'), array('id', 'contactid', 'catid', 'name1', 'name2', 'notes', 'taxnumber', 'vatin', 'pinned', 'cashdiscountpercent'))
-					->joinLeft(array('a' => 'address'), '(c.id = a.parentid) AND (a.type = '."'billing'".') AND a.deleted = 0', array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude'))
-					->joinLeft(array('p' => 'phone'), 'c.id = p.parentid AND p.deleted = 0', array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)')))
-					->joinLeft(array('e' => 'email'), 'c.id = e.parentid AND e.deleted = 0', array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)')))
-					->joinLeft(array('i' => 'internet'), 'c.id = i.parentid AND i.deleted = 0', array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)')))
+					->joinLeft(
+						array('a' => 'address'),
+						"c.id = a.parentid AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing' AND a.deleted = 0",
+						array('street', 'department', 'postcode', 'city', 'country', 'latitude', 'longitude')
+					)
+					->joinLeft(
+						array('p' => 'phone'),
+						"c.id = p.parentid AND p.module = 'contacts' AND p.controller = 'contact' AND p.deleted = 0",
+						array('phones' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT p.phone)'))
+					)
+					->joinLeft(
+						array('e' => 'email'),
+						"c.id = e.parentid AND e.module = 'contacts' AND e.controller = 'contact' AND e.deleted = 0",
+						array('emails' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT e.email)'))
+					)
+					->joinLeft(
+						array('i' => 'internet'),
+						"c.id = i.parentid AND i.module = 'contacts' AND i.controller = 'contact' AND i.deleted = 0",
+						array('internets' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT i.internet)'))
+					)
 					->group($schema.'.id')
 					->where($query ? $query : 1)
 					->order(array('pinned desc', $order.' '.$params['sort']))
