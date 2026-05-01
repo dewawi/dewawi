@@ -2,6 +2,232 @@
 
 abstract class DEEC_Controller_Action extends Zend_Controller_Action
 {
+	protected $_date = null;
+	protected $_user = null;
+	protected $_flashMessenger = null;
+
+	public function init()
+	{
+		$params = $this->_getAllParams();
+
+		$this->_date = date('Y-m-d H:i:s');
+		$this->_user = Zend_Registry::get('User');
+		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
+
+		$this->view->id = isset($params['id']) ? (int)$params['id'] : 0;
+		$this->view->action = $params['action'] ?? '';
+		$this->view->controller = $params['controller'] ?? '';
+		$this->view->module = $params['module'] ?? '';
+		$this->view->client = Zend_Registry::get('Client');
+		$this->view->user = $this->_user;
+		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
+
+		if ($this->view->id) {
+			$this->view->dirwritable = $this->_helper->Directory->isWritable(
+				$this->view->id,
+				'attachment',
+				$this->_flashMessenger
+			);
+		}
+	}
+
+	protected function disableView(): void
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->layout->disableLayout();
+	}
+
+	protected function getModuleClassPrefix(): string
+	{
+		return ucfirst($this->getRequest()->getModuleName());
+	}
+
+	protected function getControllerClassName(): string
+	{
+		return ucfirst($this->getRequest()->getControllerName());
+	}
+
+	protected function getToolbarClass(): string
+	{
+		return $this->getModuleClassPrefix() . '_Form_Toolbar';
+	}
+
+	protected function getToolbarInlineClass(): string
+	{
+		return $this->getModuleClassPrefix() . '_Form_ToolbarInline';
+	}
+
+	protected function getDbTableClass(): string
+	{
+		return $this->getModuleClassPrefix()
+			. '_Model_DbTable_'
+			. $this->getControllerClassName();
+	}
+
+	protected function getRowLoadMethod(): string
+	{
+		return 'get' . $this->getControllerClassName() . 'ForEdit';
+	}
+
+	protected function getNotFoundMessage(): string
+	{
+		return 'MESSAGES_' . strtoupper($this->getRequest()->getControllerName()) . '_NOT_FOUND';
+	}
+
+	protected function requireRow(int $id, bool $silent = false): ?array
+	{
+		$dbClass = $this->getDbTableClass();
+		$method = $this->getRowLoadMethod();
+
+		if (!class_exists($dbClass)) {
+			throw new RuntimeException('DbTable class not found: ' . $dbClass);
+		}
+
+		$db = new $dbClass();
+
+		if (!method_exists($db, $method)) {
+			throw new RuntimeException('Load method not found: ' . $dbClass . '::' . $method);
+		}
+
+		$row = $db->$method($id);
+
+		if ($row) {
+			return (array)$row;
+		}
+
+		if ($this->getRequest()->isXmlHttpRequest()) {
+			$this->disableView();
+
+			$this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+
+			return null;
+		}
+
+		if ($silent) {
+			$this->_helper->viewRenderer->setNoRender();
+			return null;
+		}
+
+		$this->_flashMessenger->addMessage($this->getNotFoundMessage());
+		$this->_helper->redirector->gotoSimple('index', $this->getRequest()->getControllerName());
+
+		return null;
+	}
+
+	public function getAction()
+	{
+		$this->disableView();
+
+		$formClass = $this->getToolbarClass();
+
+		if (!class_exists($formClass)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'toolbar_not_found',
+			]);
+		}
+
+		$elementName = (string)$this->_getParam('element', '');
+		$form = new $formClass();
+
+		$el = $form->getElement($elementName);
+
+		if (!$el) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS'),
+			]);
+		}
+
+		return $this->_helper->json($el['options'] ?? []);
+	}
+
+	public function pinAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+		$this->disableView();
+		$this->_helper->Pin->toggle($id);
+	}
+
+	public function lockAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->lock($id, $this->_user['id']);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
+	}
+
+	public function unlockAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+		$result = $this->_helper->Access->unlock($id);
+
+		if (is_array($result)) {
+			return $this->_helper->json($result);
+		}
+	}
+
+	public function keepaliveAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+		$this->disableView();
+		$this->_helper->Access->keepalive($id);
+	}
+
+	public function validateAction()
+	{
+		$this->disableView();
+		$this->_helper->Validate();
+	}
+
+	protected function buildListView(array $config): DEEC_List
+	{
+		$toolbar = new $config['toolbar']();
+		$toolbarInline = new $config['toolbarInline']();
+
+		$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$items = call_user_func($config['items'], $params, $options);
+
+		$list = new $config['list']();
+		$list->configure([
+			'items' => $items,
+			'options' => $options,
+			'view' => $this->view,
+			'module' => $this->getRequest()->getModuleName(),
+			'controller' => $this->getRequest()->getControllerName(),
+			'toolbarInline' => $toolbarInline,
+			'context' => [
+				'user' => $this->_user,
+			],
+		]);
+
+		$this->view->{$config['viewKey']} = $list;
+		$this->view->options = $options;
+		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
+
+		$this->assignMessages();
+
+		return $list;
+	}
+
+	protected function assignMessages(): void
+	{
+		$this->view->messages = array_merge(
+			$this->_flashMessenger->getMessages(),
+			$this->_flashMessenger->getCurrentMessages()
+		);
+
+		$this->_flashMessenger->clearCurrentMessages();
+	}
+
 	protected function toErrorMessages(array $errors, DEEC_Form $form): array
 	{
 		$out = [];

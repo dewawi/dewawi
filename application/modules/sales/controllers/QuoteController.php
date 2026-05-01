@@ -2,59 +2,6 @@
 
 class Sales_QuoteController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
-	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'attachment', $this->_flashMessenger);
-	}
-
-	public function getAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->layout->disableLayout();
-
-		$elementName = (string)$this->_getParam('element', '');
-		$form = new Sales_Form_Toolbar();
-
-		$el = $form->getElement($elementName);
-
-		if (!$el) {
-			return $this->_helper->json([
-				'ok' => false,
-				'message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS'),
-			]);
-		}
-
-		$options = $el['options'] ?? [];
-
-		return $this->_helper->json($options);
-	}
-
 	protected function requireQuote(int $id, bool $silent = false): ?array
 	{
 		$quoteDb = new Sales_Model_DbTable_Quote();
@@ -111,36 +58,17 @@ class Sales_QuoteController extends DEEC_Controller_Action
 
 	protected function buildIndexView(): void
 	{
-		$toolbar = new Sales_Form_Toolbar();
-		$toolbarInline = new Sales_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
 		$get = new Sales_Model_Get();
-		$items = $get->quotes($params, $options, $this->_flashMessenger);
 
-		$quotes = new Sales_Model_List_Quotes();
-		$quotes->configure([
-			'items' => $items,
-			'options' => $options,
-			'view' => $this->view,
-			'module' => $this->getRequest()->getModuleName(),
-			'controller' => $this->getRequest()->getControllerName(),
-			'toolbarInline' => $toolbarInline,
-			'context' => [
-				'user' => $this->_user,
-			],
+		$this->buildListView([
+			'viewKey' => 'quotes',
+			'list' => 'Sales_Model_List_Quotes',
+			'toolbar' => 'Sales_Form_Toolbar',
+			'toolbarInline' => 'Sales_Form_ToolbarInline',
+			'items' => function ($params, $options) use ($get) {
+				return $get->quotes($params, $options, $this->_flashMessenger);
+			},
 		]);
-
-		$this->view->quotes = $quotes;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->messages = array_merge(
-			$this->_flashMessenger->getMessages(),
-			$this->_flashMessenger->getCurrentMessages()
-		);
-		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()
@@ -163,7 +91,7 @@ class Sales_QuoteController extends DEEC_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 		$isAjax = $request->isXmlHttpRequest();
 
-		$quote = $this->requireQuote($id);
+		$quote = $this->requireRow($id);
 		if (!$quote) return;
 
 		$quoteDb = new Sales_Model_DbTable_Quote();
@@ -576,11 +504,11 @@ class Sales_QuoteController extends DEEC_Controller_Action
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 
-			$quote = $this->requireQuote($id);
-			if (!$quote) return;
+			$data = $this->requireQuote($id);
+			if (!$data) return;
 
-			$quote = new Sales_Model_DbTable_Quote();
-			$quote->setState($id, 106);
+			$quoteDb = new Sales_Model_DbTable_Quote();
+			$quoteDb->setState($id, 106);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
 	}
