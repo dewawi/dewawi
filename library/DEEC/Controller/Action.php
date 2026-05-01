@@ -31,9 +31,31 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		}
 	}
 
+	public function indexAction()
+	{
+		if ($this->getRequest()->isPost()) {
+			$this->disableLayout();
+		}
+
+		$this->buildIndexView();
+	}
+
+	public function searchAction()
+	{
+		$this->_helper->viewRenderer->setRender('index');
+		$this->disableLayout();
+
+		$this->buildIndexView();
+	}
+
 	protected function disableView(): void
 	{
 		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->layout->disableLayout();
+	}
+
+	protected function disableLayout(): void
+	{
 		$this->_helper->layout->disableLayout();
 	}
 
@@ -74,22 +96,20 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		return 'MESSAGES_' . strtoupper($this->getRequest()->getControllerName()) . '_NOT_FOUND';
 	}
 
-	protected function requireRow(int $id, bool $silent = false): ?array
+	protected function loadRow(int $id): ?array
 	{
 		$dbClass = $this->getDbTableClass();
 		$method = $this->getRowLoadMethod();
 
-		if (!class_exists($dbClass)) {
-			throw new RuntimeException('DbTable class not found: ' . $dbClass);
-		}
-
 		$db = new $dbClass();
-
-		if (!method_exists($db, $method)) {
-			throw new RuntimeException('Load method not found: ' . $dbClass . '::' . $method);
-		}
-
 		$row = $db->$method($id);
+
+		return $row ? (array)$row : null;
+	}
+
+	protected function requireRow(int $id): array
+	{
+		$row = $this->loadRow($id);
 
 		if ($row) {
 			return (array)$row;
@@ -102,19 +122,16 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 				'ok' => false,
 				'message' => 'not_found',
 			]);
-
-			return null;
-		}
-
-		if ($silent) {
-			$this->_helper->viewRenderer->setNoRender();
-			return null;
 		}
 
 		$this->_flashMessenger->addMessage($this->getNotFoundMessage());
-		$this->_helper->redirector->gotoSimple('index', $this->getRequest()->getControllerName());
 
-		return null;
+		$this->_helper->redirector->gotoSimple(
+			'index',
+			$this->getRequest()->getControllerName()
+		);
+
+		exit;
 	}
 
 	public function getAction()
@@ -187,8 +204,11 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 	protected function buildListView(array $config): DEEC_List
 	{
-		$toolbar = new $config['toolbar']();
-		$toolbarInline = new $config['toolbarInline']();
+		$toolbarClass = $config['toolbar'] ?? $this->getToolbarClass();
+		$toolbarInlineClass = $config['toolbarInline'] ?? $this->getToolbarInlineClass();
+
+		$toolbar = new $toolbarClass();
+		$toolbarInline = new $toolbarInlineClass();
 
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
