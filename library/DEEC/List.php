@@ -62,7 +62,7 @@ class DEEC_List
 		}
 
 		if (isset($config['columns'])) {
-			$this->columns = $config['columns'];
+			$this->setColumns($config['columns']);
 		}
 
 		return $this;
@@ -291,33 +291,38 @@ class DEEC_List
 		$this->columns = [];
 
 		foreach ($columns as $column) {
-			$this->columns[] = $this->normalizeColumn($column);
+			$this->addColumn($column);
 		}
 
+		return $this;
+	}
+
+	public function addColumn(array $column)
+	{
+		$this->columns[] = $this->normalizeColumn($column);
 		return $this;
 	}
 
 	protected function normalizeColumn(array $column): array
 	{
 		$name = isset($column['name']) ? (string)$column['name'] : '';
+		$type = isset($column['type']) ? (string)$column['type'] : 'text';
 
-		if (!isset($column['type'])) {
-			$column['type'] = 'text';
-		}
+		$column['type'] = $type;
 
-		if (!isset($column['field']) && $name !== '' && !in_array($column['type'], ['actions', 'pin'], true)) {
+		if (!isset($column['field']) && $name !== '' && !in_array($type, ['actions', 'address', 'contact', 'pin'], true)) {
 			$column['field'] = $name;
-		}
-
-		if (!isset($column['class']) && $name !== '') {
-			$column['class'] = 'dw-col-' . str_replace('_', '-', $name);
 		}
 
 		if (!isset($column['editable_name']) && isset($column['field'])) {
 			$column['editable_name'] = $column['field'];
 		}
 
-		if ($column['type'] === 'link' && !isset($column['url'])) {
+		if (!isset($column['class']) && $name !== '') {
+			$column['class'] = 'dw-col-' . str_replace('_', '-', $name);
+		}
+
+		if ($type === 'link' && !isset($column['url'])) {
 			$column['url'] = [
 				'action' => 'edit',
 				'id_field' => 'id',
@@ -325,12 +330,6 @@ class DEEC_List
 		}
 
 		return $column;
-	}
-
-	public function addColumn(array $column)
-	{
-		$this->columns[] = $column;
-		return $this;
 	}
 
 	public function getColumns()
