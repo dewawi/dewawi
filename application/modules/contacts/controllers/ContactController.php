@@ -2,57 +2,78 @@
 
 class Contacts_ContactController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
 	public function init()
 	{
-		$params = $this->_getAllParams();
+		parent::init();
 
-		$this->_date = date('Y-m-d H:i:s');
+		$this->view->contactid = (int)$this->_getParam('contactid', 0);
 
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->contactid = isset($params['contactid']) ? $params['contactid'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
+		$id = $this->view->contactid ?: $this->view->id;
 
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		$id = 0;
-		if($this->view->contactid) $id = $this->view->contactid;
-		elseif($this->view->id) $id = $this->view->id;
-		if($id) $this->view->dirwritable = $this->_helper->Directory->isWritable($id, 'contact', $this->_flashMessenger);
-		if($id) $this->view->dirwritable = $this->_helper->Directory->isWritable($id, 'attachment', $this->_flashMessenger);
+		if ($id) {
+			$this->view->dirwritable = $this->_helper->Directory->isWritable(
+				$id,
+				'contact',
+				$this->_flashMessenger
+			);
+			$this->view->dirwritable = $this->_helper->Directory->isWritable(
+				$id,
+				'attachment',
+				$this->_flashMessenger
+			);
+		}
 	}
 
-	public function getAction()
+	protected function buildIndexView(): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$toolbar = new Contacts_Form_Toolbar();
+		$toolbarInline = new Contacts_Form_ToolbarInline();
 
-		//$contactDb = new Contacts_Model_DbTable_Contact();
-		//$contact = $contactDb->getContact($this->_getParam('id', 0));
+		$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$categoriesDb = new Application_Model_DbTable_Category();
+		$categories = $categoriesDb->getCategories('contact');
 
 		$get = new Contacts_Model_Get();
-		$contact = $get->contact($this->_getParam('id', 0));
 
-		header('Content-type: application/json');
-		echo Zend_Json::encode($contact);
+		$tags = $get->tags('contacts', 'contact');
+		list($items, $records) = $get->contacts($params, $options);
+
+		$tagEntities = [];
+
+		foreach ($items as $contact) {
+			$tagEntities[$contact->id] = $get->tags('contacts', 'contact', $contact->id);
+		}
+
+		$contacts = new Contacts_Model_List_Contacts();
+		$contacts->configure([
+			'items' => $items,
+			'options' => array_merge($options, [
+				'tagEntities' => $tagEntities,
+			]),
+			'view' => $this->view,
+			'module' => $this->getRequest()->getModuleName(),
+			'controller' => $this->getRequest()->getControllerName(),
+			'toolbarInline' => $toolbarInline,
+			'context' => [
+				'user' => $this->_user,
+			],
+		]);
+
+		$this->view->contacts = $contacts;
+		$this->view->contactItems = $items;
+		$this->view->tags = $tags;
+		$this->view->tagEntities = $tagEntities;
+		$this->view->categories = $categories;
+		$this->view->options = $options;
+		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
+
+		$this->assignMessages();
 	}
 
-	public function indexAction()
+	/*public function indexAction()
 	{
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
 
@@ -116,7 +137,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		$this->view->toolbarInline = $toolbarInline;
 		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
 		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
+	}*/
 
 	public function selectAction()
 	{
@@ -759,43 +780,6 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		} else {
 			$this->_helper->redirector->gotoSimple('index', 'contact');
 		}
-	}
-
-	public function pinAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toggle($id);
-	}
-
-	public function lockAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-		$result = $this->_helper->Access->lock($id, $this->_user['id']);
-
-		if (is_array($result)) {
-			return $this->_helper->json($result);
-		}
-	}
-
-	public function unlockAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-		$result = $this->_helper->Access->unlock($id);
-
-		if (is_array($result)) {
-			return $this->_helper->json($result);
-		}
-	}
-
-	public function keepaliveAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->keepalive($id);
-	}
-
-	public function validateAction()
-	{
-		$this->_helper->Validate();
 	}
 
 	public function getProductCategoryIndex() {
