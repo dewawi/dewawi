@@ -962,6 +962,10 @@ $(document).ready(function(){
 					var parent = $(this).closest('div.positionsContainer').data('parent');
 					var type = $(this).closest('div.positionsContainer').data('type');
 					var setid = $(this).closest('div.set').find('input.setid').val();
+					var setid = $(this).closest('div.set').find('input.setid').first().val();
+					if (typeof setid === 'undefined' || setid === null || setid === '') {
+						setid = 0;
+					}
 					addPosition(parent, type, setid);
 				} else if(className == 'addSet') {
 					if(action == 'index') {
@@ -1108,10 +1112,18 @@ $(document).ready(function(){
 						sort(parent, type, id, setid, 'down');
 					}
 				} else if(className == 'copyPosition') {
-					var parent = $(this).closest('div.positionsContainer').data('parent');
-					var type = $(this).closest('div.positionsContainer').data('type');
-					var positionID = $(this).closest('tr').find('input.id').val();
-					copyPosition(parent, type, positionID);
+					var $card = $(this).closest('.dw-position-card');
+					var $container = $(this).closest('.positionsContainer');
+
+					var parent = $container.data('parent');
+					var type = $container.data('type');
+					var positionId = $card.find('input.position-id').first().val();
+
+					if (typeof positionId === 'undefined' || positionId === null || positionId === '') {
+						return false;
+					}
+
+					copyPosition(parent, type, positionId);
 				} else if(className == 'deletePosition') {
 					var $container = $(this).closest('.positionsContainer');
 					var $card = $(this).closest('.dw-position-card');
@@ -1869,6 +1881,9 @@ function editPosition(parent, type, data, params) {
 
 //Add position
 function addPosition(parent, type, setid) {
+	if (typeof setid === 'undefined' || setid === null || setid === '') {
+		setid = 0;
+	}
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id,
@@ -1884,6 +1899,9 @@ function addPosition(parent, type, setid) {
 
 //Copy Position
 function copyPosition(parent, type, positionID){
+	if (typeof setid === 'undefined' || setid === null || setid === '') {
+		setid = 0;
+	}
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+window.parent.module+'/position/copy/parent/'+parent+'/type/'+type+'/id/'+positionID+'/parentid/'+id,

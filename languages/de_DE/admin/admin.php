@@ -28,6 +28,7 @@
 	'ADMIN_SYSTEM' => 'System',
 	'ADMIN_EXPORT' => 'Export',
 	'ADMIN_MENUS' => 'Menüs',
+	'ADMIN_MENU_ITEMS' => 'Menüs',
 	'ADMIN_SHOPS' => 'Shops',
 	'ADMIN_PAGES' => 'Seiten',
 	'ADMIN_TAGS' => 'Tags',

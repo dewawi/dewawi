@@ -63,6 +63,15 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'quoteid',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_QUOTE_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'quotedate',
 			'type' => 'text',
 			'label' => 'DELIVERY_ORDERS_QUOTE_DATE',

@@ -41,6 +41,10 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			if ($toolbar->getValue('type') === 'shop') {
 				$html .= $toolbar->renderElement('shopid');
 			}
+
+			if ($view->controller === 'menuitem') {
+				$html .= $toolbar->renderElement('menuid');
+			}
 		}
 
 		return $html;

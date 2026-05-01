@@ -74,4 +74,15 @@ class Admin_Model_DbTable_Shop extends Zend_Db_Table_Abstract
 		$data['deleted'] = 1;
 		$this->update($data, 'id =' . (int)$id);
 	}
+
+	public function getSelectOptions(): array
+	{
+		$options = [];
+
+		foreach ($this->getShops() as $shop) {
+			$options[$shop->id] = $shop->title;
+		}
+
+		return $options;
+	}
 }
