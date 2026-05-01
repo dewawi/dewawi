@@ -4,13 +4,109 @@ $this->headTitle($this->title);
 echo $this->Messages();
 ?>
 
+<div class="dw-toolbar">
+	<div class="dw-toolbar__left">
+		<h3 class="dw-toolbar__title">
+			<?php echo $this->translate('ADMIN_CREATE_EXPORT_FILE'); ?>
+		</h3>
+	</div>
+</div>
+
+<div class="dw-card">
+	<div class="dw-card__content">
+
+		<div class="dw-export-list">
+			<div class="dw-export-list__item">
+				<a class="dw-button dw-button--primary"
+					href="<?php echo $this->url([
+						'module' => 'admin',
+						'controller' => 'export',
+						'action' => 'export',
+						'type' => 'csv',
+						'id' => null,
+					]); ?>">
+					<?php echo $this->translate('ADMIN_EXPORT_CSV'); ?>
+				</a>
+
+				<div class="dw-export-list__description">
+					<?php echo $this->translate('ADMIN_EXPORT_CSV_DESCRIPTION'); ?>
+				</div>
+			</div>
+
+			<div class="dw-export-list__item">
+				<a class="dw-button dw-button--primary"
+					href="<?php echo $this->url([
+						'module' => 'admin',
+						'controller' => 'export',
+						'action' => 'export',
+						'type' => 'sql',
+						'id' => null,
+					]); ?>">
+					<?php echo $this->translate('ADMIN_EXPORT_SQL'); ?>
+				</a>
+
+				<div class="dw-export-list__description">
+					<?php echo $this->translate('ADMIN_EXPORT_SQL_DESCRIPTION'); ?>
+				</div>
+			</div>
+		</div>
+
+		<hr class="dw-divider"/>
+
+		<form class="dw-form"
+				method="get"
+				action="<?php echo $this->url([
+					'module' => 'admin',
+					'controller' => 'export',
+					'action' => 'export',
+					'id' => null,
+				]); ?>">
+
+			<input type="hidden" name="type" value="gobd"/>
+
+			<div class="dw-form__row">
+
+				<div class="dw-form__col">
+					<label class="dw-label">
+						<?php echo $this->translate('ADMIN_FROM'); ?>
+					</label>
+
+					<input class="dw-input"
+							type="date"
+							name="from"
+							value="<?php echo date('Y-01-01'); ?>"
+							required />
+				</div>
+
+				<div class="dw-form__col">
+					<label class="dw-label">
+						<?php echo $this->translate('ADMIN_TO'); ?>
+					</label>
+
+					<input class="dw-input"
+							type="date"
+							name="to"
+							value="<?php echo date('Y-12-31'); ?>"
+							required />
+				</div>
+
+			</div>
+
+			<div class="dw-form__actions">
+				<button type="submit" class="dw-button dw-button--success">
+					<?php echo $this->translate('ADMIN_EXPORT_GOBD'); ?>
+				</button>
+			</div>
+
+			<div class="dw-form__hint">
+				<?php echo $this->translate('ADMIN_EXPORT_GOBD_DESCRIPTION'); ?>
+			</div>
+		</form>
+	</div>
+</div>
+
 <div class="row">
 	<div class="col-sm-8 col-lg-10">
-		<h3><?php echo $this->translate('ADMIN_CREATE_EXPORT_FILE'); ?></h3>
-		<ul>
-			<li><a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'export', 'action'=>'export', 'type'=>'csv', 'id'=>null)); ?>"><?php echo $this->translate('ADMIN_EXPORT_CSV'); ?></a></li>
-			<li><a href="<?php echo $this->url(array('module'=>'admin', 'controller'=>'export', 'action'=>'export', 'type'=>'sql', 'id'=>null)); ?>"><?php echo $this->translate('ADMIN_EXPORT_SQL'); ?></a></li>
-		</ul>
 		<table id="data">
 			<thead>
 				<tr>
