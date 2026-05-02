@@ -16,7 +16,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 			$acl = array(
 					'add' => array('add', 'copy', 'generate', 'send', 'upload'),
 					'edit' => array('edit', 'import', 'lock', 'unlock', 'keepalive', 'pin', 'apply', 'sort', 'save', 'cancel'),
-					'view' => array('view', 'get', 'index', 'search', 'select', 'export', 'preview', 'download'),
+					'view' => array('view', 'get', 'index', 'search', 'select', 'suggest', 'export', 'preview', 'download'),
 					'delete' => array('delete')
 					);
 			if($params['controller'] == 'error') {
