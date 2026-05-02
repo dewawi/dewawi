@@ -533,7 +533,7 @@ button.daterange {
 }
 
 .dw-table .dw-col-pin {
-  width: 50px;
+  width: 75px;
   white-space: nowrap;
 }
 
@@ -1008,6 +1008,14 @@ button.nolabel.filter {
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
+  table-layout: fixed;
+}
+
+.dw-table th,
+.dw-table td {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .dw-table thead th {
