@@ -18,30 +18,6 @@ class Sales_Model_DbTable_Salesorder extends DEEC_Model_DbTable_Entity
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getSalesorder($id)
-	{
-		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
-		if (!$row) {
-			throw new Exception("Could not find row $id");
-		}
-		return $row->toArray();
-	}
-
-	public function getSalesorderForEdit($id)
-	{
-		$id = (int)$id;
-
-		$where = [];
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-
-		$row = $this->fetchRow($where);
-
-		return $row ? $row->toArray() : null;
-	}
-
 	public function getSalesorders($contactid)
 	{
 		$contactid = (int)$contactid;

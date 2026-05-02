@@ -18,30 +18,6 @@ class Purchases_Model_DbTable_Purchaseorder extends DEEC_Model_DbTable_Entity
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getPurchaseorder($id)
-	{
-		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
-		if (!$row) {
-			throw new Exception("Could not find row $id");
-		}
-		return $row->toArray();
-	}
-
-	public function getPurchaseorderForEdit($id)
-	{
-		$id = (int)$id;
-
-		$where = [];
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-
-		$row = $this->fetchRow($where);
-
-		return $row ? $row->toArray() : null;
-	}
-
 	public function getPurchaseorders($contactid)
 	{
 		$contactid = (int)$contactid;
