@@ -24,148 +24,23 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		}
 	}
 
-	protected function buildIndexView(): void
+	protected function buildIndexView(array $extraParams = []): void
 	{
-		$toolbar = new Contacts_Form_Toolbar();
-		$toolbarInline = new Contacts_Form_ToolbarInline();
-
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$categoriesDb = new Application_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories('contact');
-
 		$get = new Contacts_Model_Get();
 
-		$tags = $get->tags('contacts', 'contact');
-		list($items, $records) = $get->contacts($params, $options);
+		$this->buildListView([
+			'viewKey' => 'contacts',
+			'list' => 'Contacts_Model_List_Contacts',
+			'items' => function ($params, $options) use ($get, $extraParams) {
+				if (!empty($extraParams['contactid'])) {
+					$params['keyword'] = $extraParams['contactid'];
+				}
 
-		$tagEntities = [];
+				list($items, $records) = $get->contacts($params, $options);
 
-		foreach ($items as $contact) {
-			$tagEntities[$contact->id] = $get->tags('contacts', 'contact', $contact->id);
-		}
-
-		$contacts = new Contacts_Model_List_Contacts();
-		$contacts->configure([
-			'items' => $items,
-			'options' => array_merge($options, [
-				'tagEntities' => $tagEntities,
-			]),
-			'view' => $this->view,
-			'module' => $this->getRequest()->getModuleName(),
-			'controller' => $this->getRequest()->getControllerName(),
-			'toolbarInline' => $toolbarInline,
-			'context' => [
-				'user' => $this->_user,
-				'action' => $this->getRequest()->getActionName(),
-			],
+				return $items;
+			},
 		]);
-
-		$this->view->contacts = $contacts;
-		$this->view->contactItems = $items;
-		$this->view->tags = $tags;
-		$this->view->tagEntities = $tagEntities;
-		$this->view->categories = $categories;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-
-		$this->assignMessages();
-	}
-
-	/*public function indexAction()
-	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$toolbar = new Contacts_Form_Toolbar();
-		$toolbarInline = new Contacts_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$categoriesDb = new Application_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories('contact');
-
-		$get = new Contacts_Model_Get();
-		$tags = $get->tags('contacts', 'contact');
-		list($contacts, $records) = $get->contacts($params, $options);
-
-		$tagEntites = array();
-		foreach($contacts as $contact) {
-			$tagEntites[$contact->id] = $get->tags('contacts', 'contact', $contact->id);
-		}
-
-		$this->view->tags = $tags;
-		$this->view->tagEntites = $tagEntites;
-		$this->view->contacts = $contacts;
-		$this->view->options = $options;
-		$this->view->categories = $categories;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$type = $this->_getParam('type', 'index');
-
-		$this->_helper->viewRenderer->setRender($type);
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$toolbar = new Contacts_Form_Toolbar();
-		$toolbarInline = new Contacts_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$categoriesDb = new Application_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories('contact');
-
-		$get = new Contacts_Model_Get();
-		$tags = $get->tags('contacts', 'contact');
-		list($contacts, $records) = $get->contacts($params, $options);
-
-		$tagEntites = array();
-		foreach($contacts as $contact) {
-			$tagEntites[$contact->id] = $get->tags('contacts', 'contact', $contact->id);
-		}
-
-		$this->view->tags = $tags;
-		$this->view->tagEntites = $tagEntites;
-		$this->view->contacts = $contacts;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}*/
-
-	public function selectAction()
-	{
-		$contactid = $this->_getParam('contactid', 0);
-
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$toolbar = new Contacts_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$categoriesDb = new Application_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories('contact');
-
-		if($contactid) {
-			$params['keyword'] = $contactid;
-			//$toolbar->keyword->setValue($params['keyword']);
-		}
-
-		$get = new Contacts_Model_Get();
-		list($contacts, $records) = $get->contacts($params, $options);
-
-		$this->view->contacts = $contacts;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($contacts));
-		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
 	public function addAction()
