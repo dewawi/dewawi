@@ -12,12 +12,12 @@ class Zend_View_Helper_TreeMenu extends Zend_View_Helper_Abstract
 	 * - selectedId: mark active category (optional)
 	 * - includeControls: show expand/collapse links (default true)
 	 */
-	public function TreeMenu(): string
+	public function TreeMenu(string $type): string
 	{
 		$categories = $this->view->categories ?? null;
 
 		if (empty($categories)) {
-			$categories = $this->loadCategories();
+			$categories = $this->loadCategories($type);
 		}
 
 		if (empty($categories)) {
@@ -60,14 +60,8 @@ class Zend_View_Helper_TreeMenu extends Zend_View_Helper_Abstract
 		return $html;
 	}
 
-	private function loadCategories(): array
+	private function loadCategories(string $type): array
 	{
-		$type = $this->getCategoryType();
-
-		if ($type === '') {
-			return [];
-		}
-
 		$categoryDb = new Application_Model_DbTable_Category();
 		$categories = $categoryDb->getCategories($type);
 
@@ -78,22 +72,6 @@ class Zend_View_Helper_TreeMenu extends Zend_View_Helper_Abstract
 		$this->view->categories = $categories;
 
 		return $categories;
-	}
-
-	private function getCategoryType(): string
-	{
-		$module = (string)($this->view->module ?? '');
-		$controller = (string)($this->view->controller ?? '');
-
-		if ($module === 'contacts' && $controller === 'contact') {
-			return 'contact';
-		}
-
-		if ($module === 'items' && $controller === 'item') {
-			return 'item';
-		}
-
-		return '';
 	}
 
 	private function renderBranch(array $byParent, int $parentId, array $cfg): string

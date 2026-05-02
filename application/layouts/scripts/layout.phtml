@@ -155,7 +155,11 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 						<?php if ($isAdminIndex) : ?>
 							<?php echo $this->AdminMenu(); ?>
 						<?php else : ?>
-							<?php echo $this->TreeMenu(); ?>
+							<?php if ($isContactsIndex) : ?>
+								<?php echo $this->TreeMenu('contact'); ?>
+							<?php elseif ($isItemsIndex) : ?>
+								<?php echo $this->TreeMenu('item'); ?>
+							<?php endif; ?>
 						<?php endif; ?>
 
 						<p class="dw-sidebar-links">
@@ -178,14 +182,10 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 							<?php endif; ?>
 						</p>
 
-						<?php if (!empty($this->tags)) : ?>
-							<?php
-							if ($isContactsIndex) {
-								echo $this->Tags($this->tags, 'contacts', 'contact');
-							} elseif ($isItemsIndex) {
-								echo $this->Tags($this->tags, 'items', 'item');
-							}
-							?>
+						<?php if ($isContactsIndex) : ?>
+							<?php echo $this->Tags('contacts', 'contact'); ?>
+						<?php elseif ($isItemsIndex) : ?>
+							<?php echo $this->Tags('items', 'item'); ?>
 						<?php endif; ?>
 					</div>
 				</aside>
