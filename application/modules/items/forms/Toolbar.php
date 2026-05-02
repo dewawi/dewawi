@@ -81,7 +81,6 @@ class Items_Form_Toolbar extends DEEC_Form
 			'type' => 'select',
 			'name' => 'catid',
 			'wrap' => false,
-			'label' => 'ITEMS_CATEGORY',
 			'options' => ['all' => 'CATEGORIES_ALL'],
 			'source' => 'category:item',
 			'format' => ['type' => 'int'],
@@ -91,7 +90,6 @@ class Items_Form_Toolbar extends DEEC_Form
 			'type' => 'select',
 			'name' => 'order',
 			'wrap' => false,
-			'label' => 'TOOLBAR_ORDERING',
 			'options' => [
 				'id' => 'ORDERING_CREATION',
 				'sku' => 'ORDERING_SKU',
@@ -109,7 +107,6 @@ class Items_Form_Toolbar extends DEEC_Form
 			'type' => 'select',
 			'name' => 'sort',
 			'wrap' => false,
-			'label' => 'TOOLBAR_ORDERING',
 			'options' => [
 				'asc' => 'ORDERING_ASC',
 				'desc' => 'ORDERING_DESC',

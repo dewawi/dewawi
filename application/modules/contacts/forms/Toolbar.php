@@ -94,7 +94,6 @@ class Contacts_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'name' => 'order',
 			'type' => 'select',
-			'label' => 'TOOLBAR_ORDERING',
 			'wrap' => false,
 			'options' => [
 				'id' => 'ORDERING_CREATION',
@@ -112,7 +111,6 @@ class Contacts_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'name' => 'sort',
 			'type' => 'select',
-			'label' => 'TOOLBAR_ORDERING',
 			'wrap' => false,
 			'options' => [
 				'asc' => 'ORDERING_ASC',
