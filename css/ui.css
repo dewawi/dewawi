@@ -488,6 +488,11 @@ button.daterange {
   padding-left: 34px;
 }
 
+.dw-field button.select {
+  height: 100%;
+  font-size: var(--dw-font-size-md);
+}
+
 /* Table list */
 
 .dw-table .dw-col-check {

@@ -1104,11 +1104,11 @@ class DEEC_Form
 		}
 
 		if ($type === 'button') {
-			// remove form-control if it sneaked in
 			$btnAttribs = $attribs;
 			if (!empty($btnAttribs['class'])) {
-				$btnAttribs['class'] = trim(str_replace('form-control', '', (string)$btnAttribs['class']));
-				if ($btnAttribs['class'] === '') unset($btnAttribs['class']);
+				$btnAttribs['class'] = trim(
+					'dw-btn ' . ($btnAttribs['class'] ?? '')
+				);
 			}
 
 			// enforce type
@@ -1136,10 +1136,10 @@ class DEEC_Form
 		if ($type === 'submit') {
 			$btnAttribs = $attribs;
 
-			// remove form-control if it sneaked in
 			if (!empty($btnAttribs['class'])) {
-				$btnAttribs['class'] = trim(str_replace('form-control', '', (string)$btnAttribs['class']));
-				if ($btnAttribs['class'] === '') unset($btnAttribs['class']);
+				$btnAttribs['class'] = trim(
+					'dw-btn ' . ($btnAttribs['class'] ?? '')
+				);
 			}
 
 			$btnAttribs['type'] = 'submit';

@@ -189,12 +189,12 @@ class Sales_Form_Creditnote extends DEEC_Form
 			'name' => 'select',
 			'type' => 'button',
 			'label' => 'TOOLBAR_SELECT',
-			'wrap' => false,
 			'attribs' => [
 				'class' => 'select poplight',
 				'rel' => 'addCustomer',
 			],
 			'tab' => 'customer',
+			'col' => 3,
 		]);
 
 		$this->addElement([
