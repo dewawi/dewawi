@@ -2517,8 +2517,8 @@ function markFieldSaved($field) {
 		var id = $item.data('id');
 		var apply = $item.closest('.autocomplete__list').data('apply');
 
-		if (apply === 'contact' && typeof applyContact === 'function') {
-			applyContact(id);
+		if (apply === 'contact') {
+			applyAutocompleteContact(id, $item);
 		}
 
 		$('.autocomplete__list').remove();
@@ -2599,8 +2599,13 @@ function markFieldSaved($field) {
 			data: { id: id },
 			dataType: 'json',
 			cache: false,
-			success: function (contact) {
-				fillContactFields(contact);
+			success: function (response) {
+				if (!response.ok || !response.item) {
+					console.log('contact apply failed', response);
+					return;
+				}
+
+				fillContactFields(response.item);
 				saveSelectedContact();
 			},
 			error: function (xhr) {
