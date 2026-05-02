@@ -16,6 +16,7 @@ class DEEC_List
 	protected $tableClass = '';
 	protected $total = null;
 	protected $rowClassCallback = null;
+	protected $readonlyStates = ['105', '106'];
 	protected $partial = 'list/list.phtml';
 	protected $emptyText = 'NO_ENTRIES_FOUND';
 
@@ -211,6 +212,13 @@ class DEEC_List
 		}
 
 		return false;
+	}
+
+	public function isReadonly($item, string $field = 'state'): bool
+	{
+		$value = (string)$this->getFieldValue($item, $field);
+
+		return in_array($value, $this->readonlyStates, true);
 	}
 
 	public function setOptions(array $options)

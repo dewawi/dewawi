@@ -58,6 +58,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 			'toolbarInline' => $toolbarInline,
 			'context' => [
 				'user' => $this->_user,
+				'action' => $this->getRequest()->getActionName(),
 			],
 		]);
 

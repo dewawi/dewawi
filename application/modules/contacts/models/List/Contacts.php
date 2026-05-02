@@ -24,14 +24,6 @@ class Contacts_Model_List_Contacts extends DEEC_List
 				'class' => 'dw-col-title',
 			],
 			[
-				'name' => 'name2',
-				'label' => 'CONTACTS_NAME2',
-			],
-			[
-				'name' => 'department',
-				'label' => 'CONTACTS_DEPARTMENT',
-			],
-			[
 				'name' => 'address',
 				'label' => 'CONTACTS_ADDRESS',
 				'type' => 'address',
@@ -65,10 +57,36 @@ class Contacts_Model_List_Contacts extends DEEC_List
 				'label' => '',
 				'type' => 'actions',
 				'elements' => [
-					['name' => 'view'],
-					['name' => 'edit'],
-					['name' => 'copy'],
-					['name' => 'delete'],
+					[
+						'name' => 'apply',
+						'show' => function ($item, $element, $list) {
+							return $list->getContext('action') === 'select';
+						},
+					],
+					[
+						'name' => 'view',
+						'show' => function ($item, $element, $list) {
+							return $list->getContext('action') !== 'select';
+						},
+					],
+					[
+						'name' => 'edit',
+						'show' => function ($item, $element, $list) {
+							return $list->getContext('action') !== 'select';
+						},
+					],
+					[
+						'name' => 'copy',
+						'show' => function ($item, $element, $list) {
+							return $list->getContext('action') !== 'select';
+						},
+					],
+					[
+						'name' => 'delete',
+						'show' => function ($item, $element, $list) {
+							return $list->getContext('action') !== 'select';
+						},
+					],
 				],
 			],
 		];

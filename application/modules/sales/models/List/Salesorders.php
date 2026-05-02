@@ -61,8 +61,8 @@ class Sales_Model_List_Salesorders extends DEEC_List
 				'type' => 'state_badge',
 				'option_key' => 'states',
 				'class' => 'dw-col-state state',
-				'editable' => function ($salesorder) {
-					return !in_array((string)$salesorder->state, ['105', '106'], true);
+				'editable' => function ($item, $element, $list) {
+					return !$list->isReadonly($item);
 				},
 				'badge_map' => [
 					'101' => 'dw-badge--warning',
@@ -84,14 +84,14 @@ class Sales_Model_List_Salesorders extends DEEC_List
 				'elements' => [
 					[
 						'name' => 'view',
-						'show' => function ($salesorder) {
-							return in_array((string)$salesorder->state, ['105', '106'], true);
+						'show' => function ($item, $element, $list) {
+							return $list->isReadonly($item);
 						},
 					],
 					[
 						'name' => 'edit',
-						'show' => function ($salesorder) {
-							return !in_array((string)$salesorder->state, ['105', '106'], true);
+						'show' => function ($item, $element, $list) {
+							return !$list->isReadonly($item);
 						},
 					],
 					['name' => 'copy'],

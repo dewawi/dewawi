@@ -61,8 +61,8 @@ class Sales_Model_List_Reminders extends DEEC_List
 				'type' => 'state_badge',
 				'option_key' => 'states',
 				'class' => 'dw-col-state state',
-				'editable' => function ($reminder) {
-					return !in_array((string)$reminder->state, ['105', '106'], true);
+				'editable' => function ($item, $element, $list) {
+					return !$list->isReadonly($item);
 				},
 				'badge_map' => [
 					'101' => 'dw-badge--warning',
@@ -84,14 +84,14 @@ class Sales_Model_List_Reminders extends DEEC_List
 				'elements' => [
 					[
 						'name' => 'view',
-						'show' => function ($reminder) {
-							return in_array((string)$reminder->state, ['105', '106'], true);
+						'show' => function ($item, $element, $list) {
+							return $list->isReadonly($item);
 						},
 					],
 					[
 						'name' => 'edit',
-						'show' => function ($reminder) {
-							return !in_array((string)$reminder->state, ['105', '106'], true);
+						'show' => function ($item, $element, $list) {
+							return !$list->isReadonly($item);
 						},
 					],
 					['name' => 'copy'],
