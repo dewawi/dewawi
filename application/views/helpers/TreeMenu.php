@@ -12,15 +12,21 @@ class Zend_View_Helper_TreeMenu extends Zend_View_Helper_Abstract
 	 * - selectedId: mark active category (optional)
 	 * - includeControls: show expand/collapse links (default true)
 	 */
-	public function TreeMenu(array $cfg = []): string
+	public function TreeMenu(): string
 	{
-		if (empty($categories = $this->view->categories)) {
+		$categories = $this->view->categories ?? null;
+
+		if (empty($categories)) {
+			$categories = $this->loadCategories();
+		}
+
+		if (empty($categories)) {
 			return '';
 		}
 
-		$menuId = $cfg['id'] ?? 'treemenu';
-		$menuCls = $cfg['class'] ?? 'treeview';
-		$controls = array_key_exists('includeControls', $cfg) ? (bool)$cfg['includeControls'] : true;
+		$menuId = 'treemenu';
+		$menuCls = 'treeview';
+		$controls = true;
 
 		// group once (O(n))
 		$byParent = $this->groupByParent($categories);
@@ -41,9 +47,9 @@ class Zend_View_Helper_TreeMenu extends Zend_View_Helper_Abstract
 		$html .= $this->renderBranch($byParent, 0, [
 			'menuId' => $menuId,
 			'menuCls' => $menuCls,
-			'linkBase' => $cfg['linkBase'] ?? '#',
-			'linkParam' => $cfg['linkParam'] ?? 'catid',
-			'selectedId' => isset($cfg['selectedId']) ? (int)$cfg['selectedId'] : null,
+			'linkBase' => '#',
+			'linkParam' => 'catid',
+			'selectedId' => null,
 			'isRoot' => true,
 		]);
 
@@ -52,6 +58,42 @@ class Zend_View_Helper_TreeMenu extends Zend_View_Helper_Abstract
 			. '", true);</script>';
 
 		return $html;
+	}
+
+	private function loadCategories(): array
+	{
+		$type = $this->getCategoryType();
+
+		if ($type === '') {
+			return [];
+		}
+
+		$categoryDb = new Application_Model_DbTable_Category();
+		$categories = $categoryDb->getCategories($type);
+
+		if (!is_array($categories)) {
+			return [];
+		}
+
+		$this->view->categories = $categories;
+
+		return $categories;
+	}
+
+	private function getCategoryType(): string
+	{
+		$module = (string)($this->view->module ?? '');
+		$controller = (string)($this->view->controller ?? '');
+
+		if ($module === 'contacts' && $controller === 'contact') {
+			return 'contact';
+		}
+
+		if ($module === 'items' && $controller === 'item') {
+			return 'item';
+		}
+
+		return '';
 	}
 
 	private function renderBranch(array $byParent, int $parentId, array $cfg): string
