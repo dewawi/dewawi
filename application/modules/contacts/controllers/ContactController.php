@@ -704,63 +704,24 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		return $subCategories;
 	}
 
-	public function autocompleteAction()
+	public function suggestAction()
 	{
-		$request = $this->getRequest();
-		$order = $this->_getParam('order', null) ? $this->_getParam('order', 'id') : $request->getCookie('order', 'id');
-		$sort = $this->_getParam('sort', null) ? $this->_getParam('sort', 'desc') : $request->getCookie('sort', 'desc');
-		$keyword = $this->_getParam('keyword', null);
+		$this->disableView();
 
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$keyword = trim((string)$this->_getParam('q', ''));
 
-		$keyword = trim($keyword);
-		$columns = array('id', 'name1', 'name2');
-		if($keyword) {
-			$keywordArray = explode(" ", $keyword);
+		if (mb_strlen($keyword) < 2) {
+			return $this->_helper->json([
+				'ok' => true,
+				'items' => [],
+			]);
 		}
 
-		$query = "";
-		foreach($columns as $column) {
-			if($query) $query .= " OR ";
-			$query .= "(";
-			//Keyword
-			if(isset($keywordArray)) {
-				$query .= "(";
-				$count = count($keywordArray);
-				foreach($keywordArray as $key => $value) {
-					$query .= $column." LIKE '%".$value."%'";
-					if($count > ($key+1)) $query .= " AND ";
-				}
-				$query .= ") AND ";
-			} elseif($keyword) {
-				$query .= $column." LIKE '%".$keyword."%' AND ";
-			}
-			$query .= "clientid = ".$this->_client['id'].")";
-		}
+		$contactDb = new Contacts_Model_DbTable_Contact();
 
-		$toolbar = new Contacts_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Contacts_Model_Get();
-		list($contacts, $records) = $get->contacts($params, $options);
-
-		header('Content-type: application/json');
-		//$suggestions = array("suggestions" => array());
-		//foreach($contacts as $contact) {
-		//	array_push($suggestions["suggestions"], array("id" => $contact->id, "name1" => $contact->name1));
-		//}
-		//echo Zend_Json::encode($suggestions);
-echo '{
-		// Query is not required as of version 1.2.5
-		query: "Unit",
-		suggestions: [
-			{ value: "United Arab Emirates", data: "AE" },
-			{ value: "United Kingdom", data: "UK" },
-			{ value: "United States", data: "US" }
-		]
-	}';
-	//print_r($suggestions);
+		return $this->_helper->json([
+			'ok' => true,
+			'items' => $contactDb->suggestContacts($keyword, (int)$this->_user['clientid']),
+		]);
 	}
 }

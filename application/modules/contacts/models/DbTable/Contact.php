@@ -119,4 +119,75 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
 	}
+
+	public function suggestContacts(string $keyword, int $clientId, int $limit = 10): array
+	{
+		$db = $this->getAdapter();
+
+		$select = $this->select()
+			->setIntegrityCheck(false)
+			->from(['c' => 'contact'], [
+				'id',
+				'contactid',
+				'name1',
+				'name2',
+			])
+			->joinLeft(
+				['a' => 'address'],
+				"a.parentid = c.id
+					AND a.module = 'contacts'
+					AND a.controller = 'contact'
+					AND a.type = 'billing'",
+				[
+					'street',
+					'postcode',
+					'city',
+					'country',
+				]
+			)
+			->where('c.clientid = ?', $clientId)
+			->where('c.deleted = ?', 0)
+			->order('c.name1 ASC')
+			->limit($limit);
+
+		$words = preg_split('/\s+/', trim($keyword));
+
+		foreach ($words as $word) {
+			if ($word === '') {
+				continue;
+			}
+
+			$like = '%' . $word . '%';
+
+			$select->where(
+				'(
+					c.id LIKE ' . $db->quote($like) . '
+					OR c.contactid LIKE ' . $db->quote($like) . '
+					OR c.name1 LIKE ' . $db->quote($like) . '
+					OR c.name2 LIKE ' . $db->quote($like) . '
+					OR a.street LIKE ' . $db->quote($like) . '
+					OR a.postcode LIKE ' . $db->quote($like) . '
+					OR a.city LIKE ' . $db->quote($like) . '
+				)'
+			);
+		}
+
+		$rows = $this->fetchAll($select);
+
+		$items = [];
+
+		foreach ($rows as $row) {
+			$address = trim($row->street . ', ' . $row->postcode . ' ' . $row->city);
+			$label = trim($row->contactid . ' · ' . $row->name1 . ' ' . $row->name2);
+
+			$items[] = [
+				'id' => (int)$row->id,
+				'contactid' => (string)$row->contactid,
+				'label' => $label,
+				'subtitle' => $address,
+			];
+		}
+
+		return $items;
+	}
 }

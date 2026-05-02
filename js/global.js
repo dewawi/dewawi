@@ -75,6 +75,9 @@ $(document).ready(function(){
 		if ($(this).closest('.dw-multiform__item').length) {
 			return;
 		}
+		if ($(this).data('autocomplete-skip-autosave')) {
+			return;
+		}
 		if((this.name != 'file[]') && (this.name != 'media[]') && (this.name != 'subfolder')) {
 			isDirty = true;
 			var data = {};
@@ -2488,3 +2491,173 @@ function markFieldSaved($field) {
 		$field.removeClass('is-valid');
 	}, 1200);
 }
+
+(function () {
+	var timers = {};
+
+	$(document).on('input', '.autocomplete', function () {
+		var $input = $(this);
+		var query = $.trim($input.val());
+		var minLength = Number($input.data('autocomplete-min-length')) || 2;
+
+		clearTimeout(timers[$input.attr('id')]);
+
+		if (query.length < minLength) {
+			closeAutocomplete($input);
+			return;
+		}
+
+		timers[$input.attr('id')] = setTimeout(function () {
+			loadAutocomplete($input, query);
+		}, 250);
+	});
+
+	$(document).on('click', '.autocomplete__item', function () {
+		var $item = $(this);
+		var id = $item.data('id');
+		var apply = $item.closest('.autocomplete__list').data('apply');
+
+		if (apply === 'contact' && typeof applyContact === 'function') {
+			applyContact(id);
+		}
+
+		$('.autocomplete__list').remove();
+	});
+
+	$(document).on('click', function (event) {
+		if (!$(event.target).closest('.autocomplete, .autocomplete__list').length) {
+			$('.autocomplete__list').remove();
+		}
+	});
+
+	function loadAutocomplete($input, query) {
+		var source = String($input.data('autocomplete-source') || '');
+		var apply = String($input.data('autocomplete-apply') || '');
+
+		if (!source) {
+			return;
+		}
+
+		$.ajax({
+			type: 'GET',
+			url: baseUrl + source,
+			data: { q: query },
+			dataType: 'json',
+			cache: false,
+			success: function (response) {
+				renderAutocomplete($input, response.items || [], apply);
+			},
+			error: function (xhr) {
+				console.log('autocomplete failed', xhr.responseText);
+			}
+		});
+	}
+
+	function renderAutocomplete($input, items, apply) {
+		closeAutocomplete($input);
+
+		if (!items.length) {
+			return;
+		}
+
+		var offset = $input.offset();
+		var html = '<div class="autocomplete__list" data-apply="' + escapeHtml(apply) + '">';
+
+		for (var i = 0; i < items.length; i++) {
+			html += '<div class="autocomplete__item" data-id="' + Number(items[i].id) + '">';
+			html += '<div class="autocomplete__label">' + escapeHtml(items[i].label || '') + '</div>';
+
+			if (items[i].subtitle) {
+				html += '<div class="autocomplete__subtitle">' + escapeHtml(items[i].subtitle) + '</div>';
+			}
+
+			html += '</div>';
+		}
+
+		html += '</div>';
+
+		var $list = $(html).appendTo('body');
+		$list.data('input', $input);
+
+		$list.css({
+			position: 'absolute',
+			top: offset.top + $input.outerHeight(),
+			left: offset.left,
+			width: $input.outerWidth(),
+			zIndex: 9999
+		});
+	}
+
+	function applyAutocompleteContact(id, $item) {
+		var $list = $item.closest('.autocomplete__list');
+		var $input = $list.data('input');
+		var applyUrl = String($input.data('autocomplete-apply-url') || '/contacts/contact/get');
+
+		$.ajax({
+			type: 'GET',
+			url: baseUrl + applyUrl,
+			data: { id: id },
+			dataType: 'json',
+			cache: false,
+			success: function (contact) {
+				fillContactFields(contact);
+				saveSelectedContact();
+			},
+			error: function (xhr) {
+				console.log('contact apply failed', xhr.responseText);
+			}
+		});
+	}
+
+	function fillContactFields(contact) {
+		setFieldValue('contactid', contact.contactid);
+		setFieldValue('billingname1', contact.name1);
+		setFieldValue('billingname2', contact.name2);
+		setFieldValue('billingdepartment', contact.department);
+		setFieldValue('billingstreet', contact.street);
+		setFieldValue('billingpostcode', contact.postcode);
+		setFieldValue('billingcity', contact.city);
+		setFieldValue('billingcountry', contact.country);
+		setFieldValue('vatin', contact.vatin);
+
+		if (contact.taxfree !== undefined) {
+			$('#taxfree').prop('checked', Number(contact.taxfree) === 1);
+		}
+	}
+
+	function saveSelectedContact() {
+		if (typeof edit !== 'function') {
+			return;
+		}
+
+		edit({
+			contactid: $('#contactid').val(),
+			billingname1: $('#billingname1').val(),
+			billingname2: $('#billingname2').val(),
+			billingdepartment: $('#billingdepartment').val(),
+			billingstreet: $('#billingstreet').val(),
+			billingpostcode: $('#billingpostcode').val(),
+			billingcity: $('#billingcity').val(),
+			billingcountry: $('#billingcountry').val(),
+			vatin: $('#vatin').val(),
+			taxfree: $('#taxfree').is(':checked') ? 1 : 0
+		});
+	}
+
+	function setFieldValue(name, value) {
+		$('[name="' + name + '"]').val(value || '');
+	}
+
+	function closeAutocomplete($input) {
+		$('.autocomplete__list').remove();
+	}
+
+	function escapeHtml(value) {
+		return String(value)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#039;');
+	}
+})();
