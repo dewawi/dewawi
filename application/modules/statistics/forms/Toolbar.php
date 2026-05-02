@@ -1,67 +1,105 @@
 <?php
 
-class Statistics_Form_Toolbar extends Zend_Form
+class Statistics_Form_Toolbar extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('toolbar');
+		$this->addElement([
+			'name' => 'keyword',
+			'type' => 'text',
+			'default' => '',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'keyword'],
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'clear',
+			'type' => 'button',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'clear nolabel',
+				'rel' => 'keyword',
+			],
+		]);
 
-		$form['keyword'] = new Zend_Form_Element_Text('keyword');
-		$form['keyword']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
+		$this->addElement([
+			'name' => 'reset',
+			'type' => 'button',
+			'label' => 'TOOLBAR_RESET',
+			'wrap' => false,
+			'attribs' => ['class' => 'reset'],
+		]);
 
-		$form['clear'] = new Zend_Form_Element_Button('clear');
-		$form['clear']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'clear nolabel')
-			->setAttrib('rel', 'keyword');
+		$this->addElement([
+			'name' => 'country',
+			'type' => 'select',
+			'wrap' => false,
+			'options' => [
+				'0' => 'TOOLBAR_ALL_COUNTRIES',
+			],
+			'source' => 'country',
+			'default' => '0',
+		]);
 
-		$form['reset'] = new Zend_Form_Element_Button('reset');
-		$form['reset']->setLabel('TOOLBAR_RESET')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'reset');
+		$this->addElement([
+			'name' => 'from',
+			'type' => 'text',
+			'wrap' => false,
+			'format' => ['type' => 'date'],
+		]);
 
-		$form['country'] = new Zend_Form_Element_Select('country');
-		$form['country']->setDecorators(array('ViewHelper'))
-			->addMultiOption('0', 'TOOLBAR_ALL_COUNTRIES')
-			->setAttrib('default', '0');
+		$this->addElement([
+			'name' => 'to',
+			'type' => 'text',
+			'wrap' => false,
+			'format' => ['type' => 'date'],
+		]);
 
-		$form['from'] = new Zend_Form_Element_Text('from');
-		$form['from']->setDecorators(array('ViewHelper'));
+		$this->addElement([
+			'name' => 'daterange',
+			'type' => 'radio',
+			'wrap' => false,
+			'options' => [
+				'0' => 'TOOLBAR_ALL',
+				'today' => 'TOOLBAR_TODAY',
+				'yesterday' => 'TOOLBAR_YESTERDAY',
+				'last7days' => 'TOOLBAR_LAST_7_DAYS',
+				'last14days' => 'TOOLBAR_LAST_14_DAYS',
+				'last30days' => 'TOOLBAR_LAST_30_DAYS',
+				'thisMonth' => 'TOOLBAR_THIS_MONTH',
+				'lastMonth' => 'TOOLBAR_LAST_MONTH',
+				'thisYear' => 'TOOLBAR_THIS_YEAR',
+				'lastYear' => 'TOOLBAR_LAST_YEAR',
+				'custom' => 'TOOLBAR_CUSTOM',
+			],
+			'default' => '0',
+		]);
 
-		$form['to'] = new Zend_Form_Element_Text('to');
-		$form['to']->setDecorators(array('ViewHelper'));
+		$this->addElement([
+			'name' => 'catid',
+			'type' => 'select',
+			'wrap' => false,
+			'options' => [
+				'all' => 'CATEGORIES_ALL',
+			],
+			'default' => 'all',
+		]);
 
-		$form['daterange'] = new Zend_Form_Element_Radio('daterange');
-		$form['daterange']->setDecorators(array('ViewHelper'))
-			->addMultiOption('0', 'TOOLBAR_ALL')
-			->addMultiOption('today', 'TOOLBAR_TODAY')
-			->addMultiOption('yesterday', 'TOOLBAR_YESTERDAY')
-			->addMultiOption('last7days', 'TOOLBAR_LAST_7_DAYS')
-			->addMultiOption('last14days', 'TOOLBAR_LAST_14_DAYS')
-			->addMultiOption('last30days', 'TOOLBAR_LAST_30_DAYS')
-			->addMultiOption('thisMonth', 'TOOLBAR_THIS_MONTH')
-			->addMultiOption('lastMonth', 'TOOLBAR_LAST_MONTH')
-			->addMultiOption('thisYear', 'TOOLBAR_THIS_YEAR')
-			->addMultiOption('lastYear', 'TOOLBAR_LAST_YEAR')
-			->addMultiOption('custom', 'TOOLBAR_CUSTOM')
-			->setAttrib('default', '0');
+		$this->addElement([
+			'name' => 'width',
+			'type' => 'text',
+			'default' => '1000',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
 
-		$form['catid'] = new Zend_Form_Element_Select('catid');
-		$form['catid']->setDecorators(array('ViewHelper'))
-			->addMultiOption('all', 'CATEGORIES_ALL')
-			->setAttrib('default', 'all');
-
-		$form['width'] = new Zend_Form_Element_Text('width');
-		$form['width']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '1000');
-
-		$form['height'] = new Zend_Form_Element_Text('height');
-		$form['height']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '400');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'height',
+			'type' => 'text',
+			'default' => '400',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
 	}
 }

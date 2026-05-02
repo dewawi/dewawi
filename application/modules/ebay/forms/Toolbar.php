@@ -1,93 +1,119 @@
 <?php
 
-class Ebay_Form_Toolbar extends Zend_Form
+class Ebay_Form_Toolbar extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('toolbar');
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'add',
+			'label' => 'TOOLBAR_NEW',
+			'wrap' => false,
+			'attribs' => ['class' => 'add'],
+		]);
 
-		$form = array();
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'edit',
+			'label' => 'TOOLBAR_EDIT',
+			'wrap' => false,
+			'attribs' => ['class' => 'edit hidden-sm'],
+		]);
 
-		$form['add'] = new Zend_Form_Element_Button('add');
-		$form['add']->setLabel('TOOLBAR_NEW')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'add');
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'save',
+			'label' => 'TOOLBAR_SAVE',
+			'wrap' => false,
+			'attribs' => ['class' => 'save'],
+		]);
 
-		$form['edit'] = new Zend_Form_Element_Button('edit');
-		$form['edit']->setLabel('TOOLBAR_EDIT')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'edit hidden-sm');
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'copy',
+			'label' => 'TOOLBAR_COPY',
+			'wrap' => false,
+			'attribs' => ['class' => 'copy hidden-sm'],
+		]);
 
-		$form['editInline'] = new Zend_Form_Element_Button('edit');
-		$form['editInline']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'edit nolabel');
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'delete',
+			'label' => 'TOOLBAR_DELETE',
+			'wrap' => false,
+			'attribs' => ['class' => 'delete hidden-sm'],
+		]);
 
-		$form['save'] = new Zend_Form_Element_Button('save');
-		$form['save']->setLabel('TOOLBAR_SAVE')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'save');
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'keyword',
+			'default' => '',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'keyword'],
+		]);
 
-		$form['copy'] = new Zend_Form_Element_Button('copy');
-		$form['copy']->setLabel('TOOLBAR_COPY')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy hidden-sm');
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'clear',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'clear nolabel',
+				'rel' => 'keyword',
+			],
+		]);
 
-		$form['copyInline'] = new Zend_Form_Element_Button('copy');
-		$form['copyInline']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'copy nolabel');
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'reset',
+			'label' => 'TOOLBAR_RESET',
+			'wrap' => false,
+			'attribs' => ['class' => 'reset hidden-sm'],
+		]);
 
-		$form['delete'] = new Zend_Form_Element_Button('delete');
-		$form['delete']->setLabel('TOOLBAR_DELETE')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'delete hidden-sm');
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'order',
+			'wrap' => false,
+			'options' => [
+				'id' => 'ORDERING_CREATION',
+				'sku' => 'ORDERING_SKU',
+				'price' => 'ORDERING_PRICE',
+				'cost' => 'ORDERING_COST',
+				'margin' => 'ORDERING_MARGIN',
+				'quantity' => 'ORDERING_QUANTITY',
+				'catid' => 'ORDERING_CATEGORY',
+				'modified' => 'ORDERING_MODIFIED',
+			],
+			'default' => 'id',
+			'attribs' => ['class' => 'hidden-sm'],
+		]);
 
-		$form['keyword'] = new Zend_Form_Element_Text('keyword');
-		$form['keyword']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'sort',
+			'wrap' => false,
+			'options' => [
+				'asc' => 'ORDERING_ASC',
+				'desc' => 'ORDERING_DESC',
+			],
+			'default' => 'asc',
+			'attribs' => ['class' => 'hidden-sm'],
+		]);
 
-		$form['clear'] = new Zend_Form_Element_Button('clear');
-		$form['clear']->setLabel('')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'clear nolabel')
-			->setAttrib('rel', 'keyword');
-
-		$form['reset'] = new Zend_Form_Element_Button('reset');
-		$form['reset']->setLabel('TOOLBAR_RESET')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('class', 'reset hidden-sm');
-
-		$form['order'] = new Zend_Form_Element_Select('order');
-		$form['order']->setDecorators(array('ViewHelper'))
-			->addMultiOption('id', 'ORDERING_CREATION')
-			->addMultiOption('sku', 'ORDERING_SKU')
-			->addMultiOption('price', 'ORDERING_PRICE')
-			->addMultiOption('cost', 'ORDERING_COST')
-			->addMultiOption('margin', 'ORDERING_MARGIN')
-			->addMultiOption('quantity', 'ORDERING_QUANTITY')
-			->addMultiOption('catid', 'ORDERING_CATEGORY')
-			->addMultiOption('modified', 'ORDERING_MODIFIED')
-			->setAttrib('default', 'id')
-			->setAttrib('class', 'hidden-sm');
-
-		$form['sort'] = new Zend_Form_Element_Select('sort');
-		$form['sort']->setDecorators(array('ViewHelper'))
-			->addMultiOption('asc', 'ORDERING_ASC')
-			->addMultiOption('desc', 'ORDERING_DESC')
-			->setAttrib('default', 'asc')
-			->setAttrib('class', 'hidden-sm');
-
-		$form['limit'] = new Zend_Form_Element_Select('limit');
-		$form['limit']->setDecorators(array('ViewHelper'))
-			->addMultiOption('50', '50')
-			->addMultiOption('100', '100')
-			->addMultiOption('250', '250')
-			->addMultiOption('500', '500')
-			->addMultiOption('0', 'TOOLBAR_ALL')
-			->setAttrib('default', '50')
-			->setAttrib('class', 'hidden-sm');
-
-		$this->addElements($form);
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'limit',
+			'wrap' => false,
+			'options' => [
+				'50' => '50',
+				'100' => '100',
+				'250' => '250',
+				'500' => '500',
+				'0' => 'TOOLBAR_ALL',
+			],
+			'default' => '50',
+			'attribs' => ['class' => 'hidden-sm'],
+		]);
 	}
 }

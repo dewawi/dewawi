@@ -7,36 +7,36 @@ class Application_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'view',
-			'attribs'=> ['class' => 'view nolabel'],
-			'wrap'=> false,
+			'attribs' => ['class' => 'view nolabel'],
+			'wrap' => false,
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'edit',
-			'attribs'=> ['class' => 'edit nolabel'],
-			'wrap'=> false,
+			'attribs' => ['class' => 'edit nolabel'],
+			'wrap' => false,
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'copy',
-			'attribs'=> ['class' => 'copy nolabel'],
-			'wrap'=> false,
+			'attribs' => ['class' => 'copy nolabel'],
+			'wrap' => false,
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'delete',
-			'attribs'=> ['class' => 'delete nolabel'],
-			'wrap'=> false,
+			'attribs' => ['class' => 'delete nolabel'],
+			'wrap' => false,
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'pdf',
-			'attribs'=> ['class' => 'pdf nolabel'],
-			'wrap'=> false,
+			'attribs' => ['class' => 'pdf nolabel'],
+			'wrap' => false,
 		]);
 	}
 }

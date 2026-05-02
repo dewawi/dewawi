@@ -8,41 +8,47 @@ class Shops_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'name' => 'add',
 			'label' => 'TOOLBAR_NEW',
-			'attribs'=> ['class' => 'add'],
+			'wrap' => false,
+			'attribs' => ['class' => 'add'],
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'edit',
 			'label' => 'TOOLBAR_EDIT',
-			'attribs'=> ['class' => 'edit hidden-sm'],
+			'wrap' => false,
+			'attribs' => ['class' => 'edit hidden-sm'],
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'save',
 			'label' => 'TOOLBAR_SAVE',
-			'attribs'=> ['class' => 'save'],
+			'wrap' => false,
+			'attribs' => ['class' => 'save'],
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'copy',
 			'label' => 'TOOLBAR_COPY',
-			'attribs'=> ['class' => 'copy hidden-sm'],
+			'wrap' => false,
+			'attribs' => ['class' => 'copy hidden-sm'],
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'delete',
 			'label' => 'TOOLBAR_DELETE',
-			'attribs'=> ['class' => 'delete hidden-sm'],
+			'wrap' => false,
+			'attribs' => ['class' => 'delete hidden-sm'],
 		]);
 
 		$this->addElement([
 			'type' => 'text',
 			'name' => 'sku',
 			'label' => 'ITEMS_SKU',
+			'wrap' => false,
 			'required' => true,
 			'attribs' => ['class' => 'required'],
 			'format' => ['type' => 'string'],
@@ -51,28 +57,32 @@ class Shops_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'type' => 'text',
 			'name' => 'keyword',
+			'wrap' => false,
 			'format' => ['type' => 'string'],
-			'attribs'=> ['class' => 'keyword'],
+			'attribs' => ['class' => 'keyword'],
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'clear',
-			'attribs'=> ['class' => 'clear'],
+			'wrap' => false,
+			'attribs' => ['class' => 'clear'],
 		]);
 
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'reset',
 			'label' => 'TOOLBAR_RESET',
-			'attribs'=> ['class' => 'reset hidden-sm'],
+			'wrap' => false,
+			'attribs' => ['class' => 'reset hidden-sm'],
 		]);
 
 		$this->addElement([
 			'type' => 'select',
 			'name' => 'catid',
 			'label' => 'ITEMS_CATEGORY',
-			'options'=> ['all' => 'CATEGORIES_ALL'],
+			'wrap' => false,
+			'options' => ['all' => 'CATEGORIES_ALL'],
 			'source' => 'category:item',
 			'format' => ['type' => 'int'],
 		]);
@@ -81,7 +91,8 @@ class Shops_Form_Toolbar extends DEEC_Form
 			'type' => 'select',
 			'name' => 'order',
 			'label' => 'TOOLBAR_ORDERING',
-			'options'=> [
+			'wrap' => false,
+			'options' => [
 				'id' => 'ORDERING_CREATION',
 				'sku' => 'ORDERING_SKU',
 				'price' => 'ORDERING_PRICE',
@@ -98,7 +109,8 @@ class Shops_Form_Toolbar extends DEEC_Form
 			'type' => 'select',
 			'name' => 'sort',
 			'label' => 'TOOLBAR_ORDERING',
-			'options'=> [
+			'wrap' => false,
+			'options' => [
 				'asc' => 'ORDERING_ASC',
 				'desc' => 'ORDERING_DESC',
 			],
@@ -109,7 +121,8 @@ class Shops_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'type' => 'select',
 			'name' => 'limit',
-			'options'=> [
+			'wrap' => false,
+			'options' => [
 				'50' => '50',
 				'100' => '100',
 				'250' => '250',
@@ -123,7 +136,8 @@ class Shops_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'type' => 'select',
 			'name' => 'manufacturerid',
-			'options'=> [
+			'wrap' => false,
+			'options' => [
 				'0' => 'TOOLBAR_ALL',
 			],
 			'default' => '0',
@@ -133,7 +147,8 @@ class Shops_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'type' => 'select',
 			'name' => 'tagid',
-			'options'=> [
+			'wrap' => false,
+			'options' => [
 				'0' => 'TAGS_ALL',
 			],
 			'default' => '0',
@@ -143,7 +158,8 @@ class Shops_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'type' => 'select',
 			'name' => 'page',
-			'options'=> [
+			'wrap' => false,
+			'options' => [
 				'1' => '1',
 			],
 			'default' => '1',

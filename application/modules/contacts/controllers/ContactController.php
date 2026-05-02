@@ -221,12 +221,12 @@ class Contacts_ContactController extends DEEC_Controller_Action
 
 	public function copyAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
 		$id = $this->_getParam('id', 0);
-		$contact = new Contacts_Model_DbTable_Contact();
-		$data = $contact->getContact($id);
+
+		$data = $this->requireRow($id);
+
+		$this->disableView();
+
 		unset($data['id']);
 		unset(
 			$data['street'],

@@ -69,6 +69,60 @@
  *	'attribs' => ['min'=>1,'max'=>1500,'step'=>0.1,'placeholder'=>'e.g. 20'],
  *	'col' => 6,
  * ]
+ * ------------------------------------------------------------------
+ * C) Recommended key order
+ * ------------------------------------------------------------------
+ * Use the same key order in all form classes to keep diffs readable.
+ *
+ * Recommended order:
+ * 1) name
+ * 2) type
+ * 3) label
+ * 4) default
+ * 5) options
+ * 6) source
+ * 7) col
+ * 8) wrap
+ * 9) required
+ * 10) format
+ * 11) attribs
+ *
+ * Examples:
+ *
+ * Toolbar button:
+ * [
+ *	'name' => 'add',
+ *	'type' => 'button',
+ *	'label' => 'TOOLBAR_NEW',
+ *	'wrap' => false,
+ *	'attribs' => ['class' => 'add'],
+ * ]
+ *
+ * Toolbar keyword input:
+ * [
+ *	'name' => 'keyword',
+ *	'type' => 'text',
+ *	'default' => '',
+ *	'wrap' => false,
+ *	'format' => ['type' => 'string'],
+ *	'attribs' => ['class' => 'keyword'],
+ * ]
+ *
+ * Toolbar clear button:
+ * [
+ *	'name' => 'clear',
+ *	'type' => 'button',
+ *	'wrap' => false,
+ *	'attribs' => [
+ *		'class' => 'clear nolabel',
+ *		'rel' => 'keyword',
+ *	],
+ * ]
+ *
+ * Toolbar elements should normally use `wrap => false`.
+ * Form fields should normally keep the default `wrap => true`.
+ * Do not use empty labels for icon-only buttons. Omit `label` and use
+ * `nolabel` plus a meaningful icon/action class instead.
  */
 
 class DEEC_Form

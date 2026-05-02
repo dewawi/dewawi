@@ -9,9 +9,7 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_CANCEL',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'cancel',
-			],
+			'attribs' => ['class' => 'cancel'],
 		]);
 
 		$this->addElement([
@@ -19,9 +17,7 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'copy',
-			],
+			'attribs' => ['class' => 'copy'],
 		]);
 
 		$this->addElement([
@@ -29,9 +25,7 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'delete',
-			],
+			'attribs' => ['class' => 'delete'],
 		]);
 
 		$this->addElement([
@@ -61,9 +55,7 @@ class Admin_Form_Toolbar extends DEEC_Form
 				'shop' => 'SHOPS',
 			],
 			'wrap' => false,
-			'attribs' => [
-				'style' => 'display: none;',
-			],
+			'attribs' => ['class' => 'hidden'],
 		]);
 
 		$this->addElement([

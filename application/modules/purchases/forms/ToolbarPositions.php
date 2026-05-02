@@ -9,9 +9,7 @@ class Purchases_Form_ToolbarPositions extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'addPosition add',
-			],
+			'attribs' => ['class' => 'addPosition add'],
 		]);
 
 		$this->addElement([
@@ -19,9 +17,7 @@ class Purchases_Form_ToolbarPositions extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW_SET',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'addSet add',
-			],
+			'attribs' => ['class' => 'addSet add'],
 		]);
 
 		$this->addElement([
@@ -29,9 +25,7 @@ class Purchases_Form_ToolbarPositions extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY_SET',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'copySet copy',
-			],
+			'attribs' => ['class' => 'copySet copy'],
 		]);
 
 		$this->addElement([
@@ -39,9 +33,7 @@ class Purchases_Form_ToolbarPositions extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE_SET',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'deleteSet delete',
-			],
+			'attribs' => ['class' => 'deleteSet delete'],
 		]);
 
 		$this->addElement([
@@ -60,19 +52,14 @@ class Purchases_Form_ToolbarPositions extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'copyPosition copy',
-			],
+			'attribs' => ['class' => 'copyPosition copy'],
 		]);
 
 		$this->addElement([
 			'name' => 'copypos',
 			'type' => 'button',
-			'label' => '',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'copyPosition copy nolabel',
-			],
+			'attribs' => ['class' => 'copyPosition copy nolabel'],
 		]);
 
 		$this->addElement([
@@ -80,39 +67,28 @@ class Purchases_Form_ToolbarPositions extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'deletePosition delete',
-			],
+			'attribs' => ['class' => 'deletePosition delete'],
 		]);
 
 		$this->addElement([
 			'name' => 'deletepos',
 			'type' => 'button',
-			'label' => '',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'deletePosition delete nolabel',
-			],
+			'attribs' => ['class' => 'deletePosition delete nolabel'],
 		]);
 
 		$this->addElement([
 			'name' => 'sortup',
 			'type' => 'button',
-			'label' => '',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'up nolabel',
-			],
+			'attribs' => ['class' => 'up nolabel'],
 		]);
 
 		$this->addElement([
 			'name' => 'sortdown',
 			'type' => 'button',
-			'label' => '',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'down nolabel',
-			],
+			'attribs' => ['class' => 'down nolabel'],
 		]);
 	}
 }
