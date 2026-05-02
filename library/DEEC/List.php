@@ -516,7 +516,29 @@ class DEEC_List
 	protected function renderTextCell($item, array $column)
 	{
 		$value = $this->getDisplayValue($item, $column);
+
+		if (is_array($value)) {
+			return $this->renderArrayValue($value);
+		}
+
 		return $this->escape((string)$value);
+	}
+
+	protected function renderArrayValue(array $values): string
+	{
+		$html = [];
+
+		foreach ($values as $value) {
+			$value = trim((string)$value);
+
+			if ($value === '') {
+				continue;
+			}
+
+			$html[] = '<div class="dw-list-value">' . $this->escape($value) . '</div>';
+		}
+
+		return implode('', $html);
 	}
 
 	protected function renderLinkCell($item, array $column)

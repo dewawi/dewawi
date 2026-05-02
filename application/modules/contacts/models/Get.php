@@ -179,7 +179,8 @@ class Contacts_Model_Get
 					->limit($params['limit'], $params['offset'])
 			);
 		}
-		return array($contacts, count($records));
+
+		return array($this->normalizeContactListValues($contacts), count($records));
 	}
 
 	public function emailmessages($params, $options)
@@ -430,5 +431,31 @@ class Contacts_Model_Get
 		//print_r($tags);
 
 		return $tags;
+	}
+
+	protected function normalizeContactListValues($contacts)
+	{
+		foreach ($contacts as $contact) {
+			$contact->phones = $this->splitListValue($contact->phones ?? '');
+			$contact->emails = $this->splitListValue($contact->emails ?? '');
+			$contact->internets = $this->splitListValue($contact->internets ?? '');
+		}
+
+		return $contacts;
+	}
+
+	protected function splitListValue($value): array
+	{
+		if (is_array($value)) {
+			return $value;
+		}
+
+		$value = trim((string)$value);
+
+		if ($value === '') {
+			return [];
+		}
+
+		return array_values(array_filter(array_map('trim', explode(',', $value))));
 	}
 }
