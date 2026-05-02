@@ -60,8 +60,6 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 					'post' => (array)$request->getPost(),
 					'id' => $id,
 					'db' => $quoteDb,
-					'loadMethod' => 'getQuoteForEdit',
-					'updateMethod' => 'updateQuote',
 				]));
 			}
 

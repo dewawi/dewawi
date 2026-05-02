@@ -177,8 +177,6 @@ class Purchases_PurchaseorderController extends Zend_Controller_Action
 					'post' => (array)$request->getPost(),
 					'id' => $id,
 					'db' => $purchaseorderDb,
-					'loadMethod' => 'getPurchaseorderForEdit',
-					'updateMethod' => 'updatePurchaseorder',
 				]));
 			}
 

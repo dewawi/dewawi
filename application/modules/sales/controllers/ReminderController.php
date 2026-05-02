@@ -60,8 +60,6 @@ class Sales_ReminderController extends DEEC_Controller_DocumentAction
 					'post' => (array)$request->getPost(),
 					'id' => $id,
 					'db' => $reminderDb,
-					'loadMethod' => 'getReminderForEdit',
-					'updateMethod' => 'updateReminder',
 				]));
 			}
 

@@ -177,8 +177,6 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 					'post' => (array)$request->getPost(),
 					'id' => $id,
 					'db' => $quoterequestDb,
-					'loadMethod' => 'getQuoterequestForEdit',
-					'updateMethod' => 'updateQuoterequest',
 				]));
 			}
 

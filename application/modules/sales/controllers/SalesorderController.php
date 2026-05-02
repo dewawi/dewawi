@@ -60,8 +60,6 @@ class Sales_SalesorderController extends DEEC_Controller_DocumentAction
 					'post' => (array)$request->getPost(),
 					'id' => $id,
 					'db' => $salesorderDb,
-					'loadMethod' => 'getSalesorderForEdit',
-					'updateMethod' => 'updateSalesorder',
 				]));
 			}
 

@@ -177,8 +177,6 @@ class Processes_ProcessController extends DEEC_Controller_Action
 					'post' => (array)$request->getPost(),
 					'id' => $id,
 					'db' => $processDb,
-					'loadMethod' => 'getProcessForEdit',
-					'updateMethod' => 'updateProcess',
 				]));
 			}
 

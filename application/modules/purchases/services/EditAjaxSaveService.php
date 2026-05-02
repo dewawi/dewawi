@@ -9,8 +9,6 @@ class Purchases_Service_EditAjaxSaveService
 		$post = (array)$cfg['post'];
 		$id = (int)$cfg['id'];
 		$db = $cfg['db'];
-		$loadMethod = (string)$cfg['loadMethod'];
-		$updateMethod = (string)$cfg['updateMethod'];
 
 		if (!$form->isValidPartial($post)) {
 			return [
@@ -22,7 +20,7 @@ class Purchases_Service_EditAjaxSaveService
 		$values = $form->getFilteredValuesPartial($post);
 
 		try {
-			$db->$updateMethod($id, $values);
+			$db->updateById($id, $values);
 		} catch (Exception $e) {
 			return [
 				'ok' => false,
@@ -30,7 +28,7 @@ class Purchases_Service_EditAjaxSaveService
 			];
 		}
 
-		$row = $db->$loadMethod($id);
+		$row = $db->getById($id);
 		$changedFields = array_keys($values);
 		$display = DEEC_Display::fromRow($form, $row, $changedFields);
 

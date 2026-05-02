@@ -60,8 +60,6 @@ class Sales_DeliveryorderController extends DEEC_Controller_DocumentAction
 					'post' => (array)$request->getPost(),
 					'id' => $id,
 					'db' => $deliveryorderDb,
-					'loadMethod' => 'getDeliveryorderForEdit',
-					'updateMethod' => 'updateDeliveryorder',
 				]));
 			}
 

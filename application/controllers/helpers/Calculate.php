@@ -10,11 +10,10 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 		if(substr($controller, -3) == 'pos') $controller = substr($controller, 0, -3);
 		$class = ucfirst($module).'_Model_DbTable_'.ucfirst($controller);
 		$classPos = $class.'pos';
-		$function = 'get'.ucfirst($controller);
 		if(class_exists($class) || class_exists($classPos)) {
 			//Get object
 			$objectDb = new $class();
-			$object = $objectDb->$function($id);
+			$object = $objectDb->getById($id);
 
 			//Get positions
 			$positionsDb = new $classPos();

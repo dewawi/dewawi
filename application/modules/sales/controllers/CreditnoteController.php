@@ -60,8 +60,6 @@ class Sales_CreditnoteController extends DEEC_Controller_DocumentAction
 					'post' => (array)$request->getPost(),
 					'id' => $id,
 					'db' => $creditnoteDb,
-					'loadMethod' => 'getCreditnoteForEdit',
-					'updateMethod' => 'updateCreditnote',
 				]));
 			}
 

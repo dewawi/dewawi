@@ -60,8 +60,6 @@ class Sales_InvoiceController extends DEEC_Controller_DocumentAction
 					'post' => (array)$request->getPost(),
 					'id' => $id,
 					'db' => $invoiceDb,
-					'loadMethod' => 'getInvoiceForEdit',
-					'updateMethod' => 'updateInvoice',
 				]));
 			}
 
