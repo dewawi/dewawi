@@ -93,11 +93,6 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			. $this->getControllerClassName();
 	}
 
-	protected function getRowLoadMethod(): string
-	{
-		return 'get' . $this->getControllerClassName() . 'ForEdit';
-	}
-
 	protected function getNotFoundMessage(): string
 	{
 		return 'MESSAGES_' . strtoupper($this->getRequest()->getControllerName()) . '_NOT_FOUND';
@@ -106,10 +101,9 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	protected function loadRow(int $id): ?array
 	{
 		$dbClass = $this->getDbTableClass();
-		$method = $this->getRowLoadMethod();
 
 		$db = new $dbClass();
-		$row = $db->$method($id);
+		$row = $db->getById($id);
 
 		return $row ? (array)$row : null;
 	}
@@ -145,6 +139,26 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	{
 		$this->disableView();
 
+		$elementName = (string)$this->_getParam('element', '');
+
+		if ($elementName !== '') {
+			return $this->getElementOptions($elementName);
+		}
+
+		$id = (int)$this->_getParam('id', 0);
+
+		if ($id > 0) {
+			return $this->getRowData($id);
+		}
+
+		return $this->_helper->json([
+			'ok' => false,
+			'message' => 'missing_parameter',
+		]);
+	}
+
+	protected function getElementOptions(string $elementName)
+	{
 		$formClass = $this->getToolbarClass();
 
 		if (!class_exists($formClass)) {
@@ -154,9 +168,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			]);
 		}
 
-		$elementName = (string)$this->_getParam('element', '');
 		$form = new $formClass();
-
 		$el = $form->getElement($elementName);
 
 		if (!$el) {
@@ -167,6 +179,23 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		}
 
 		return $this->_helper->json($el['options'] ?? []);
+	}
+
+	protected function getRowData(int $id)
+	{
+		$row = $this->loadRow($id);
+
+		if (!$row) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
+		}
+
+		return $this->_helper->json([
+			'ok' => true,
+			'item' => $row,
+		]);
 	}
 
 	public function pinAction()
