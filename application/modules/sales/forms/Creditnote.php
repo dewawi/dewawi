@@ -202,6 +202,14 @@ class Sales_Form_Creditnote extends DEEC_Form
 			'type' => 'text',
 			'label' => 'CREDIT_NOTES_CONTACT_ID',
 			'format' => ['type' => 'string'],
+			'attribs' => [
+				'class' => 'autocomplete',
+				'data-autocomplete-source' => '/contacts/contact/suggest',
+				'data-autocomplete-apply' => 'contact',
+				'data-autocomplete-apply-url' => '/contacts/contact/get',
+				'data-autocomplete-min-length' => 2,
+				'data-autocomplete-skip-autosave' => 1,
+			],
 			'tab' => 'customer',
 			'col' => 3,
 		]);
@@ -211,6 +219,14 @@ class Sales_Form_Creditnote extends DEEC_Form
 			'type' => 'text',
 			'label' => 'CREDIT_NOTES_CONTACT_NAME',
 			'format' => ['type' => 'string'],
+			'attribs' => [
+				'class' => 'autocomplete',
+				'data-autocomplete-source' => '/contacts/contact/suggest',
+				'data-autocomplete-apply' => 'contact',
+				'data-autocomplete-apply-url' => '/contacts/contact/get',
+				'data-autocomplete-min-length' => 2,
+				'data-autocomplete-skip-autosave' => 1,
+			],
 			'tab' => 'customer',
 			'col' => 6,
 		]);
