@@ -2053,11 +2053,27 @@ function markFieldSaved($field) {
 	}
 })();
 
-//Toolbar
+// Toolbar
 (function ($) {
 	'use strict';
 
 	var DewawiToolbar = {
+		actionConfig: {
+			add: { selection: 'none' },
+			'multi-add': { selection: 'none' },
+			filter: { selection: 'none' },
+			reset: { selection: 'none' },
+			clear: { selection: 'none' },
+			'clear-filter': { selection: 'none' },
+
+			edit: { selection: 'single' },
+			view: { selection: 'single' },
+			pdf: { selection: 'single' },
+
+			copy: { selection: 'multiple' },
+			delete: { selection: 'multiple' }
+		},
+
 		init: function () {
 			this.bindActions();
 			this.bindFilters();
@@ -2066,15 +2082,151 @@ function markFieldSaved($field) {
 
 		bindActions: function () {
 			$(document).on('click', '[data-action]', function (event) {
-				var actionName = String($(this).data('action') || '');
+				var $button = $(this);
+				var actionName = String($button.data('action') || '');
 
-				if (!actionName || !DewawiToolbar.actions[actionName]) {
+				if (!actionName) {
 					return;
 				}
 
 				event.preventDefault();
-				DewawiToolbar.actions[actionName]($(this));
+				DewawiToolbar.runAction(actionName, $button);
 			});
+		},
+
+		runAction: function (actionName, $button) {
+			var config = this.actionConfig[actionName];
+			var handler = this.actions[actionName];
+
+			if (!config || !handler) {
+				return;
+			}
+
+			var selection = this.resolveSelection($button);
+
+			if (!this.validateSelection(config.selection, selection)) {
+				return;
+			}
+
+			handler.call(this, selection, $button);
+		},
+
+		resolveSelection: function ($button) {
+			var row = this.getButtonTarget($button);
+
+			if (row.id) {
+				return {
+					type: 'row',
+					ids: [row.id],
+					module: row.module,
+					controller: row.controller
+				};
+			}
+
+			return {
+				type: 'bulk',
+				ids: this.getSelectedIds(),
+				module: module,
+				controller: controller
+			};
+		},
+
+		validateSelection: function (mode, selection) {
+			var count = selection.ids.length;
+
+			if (mode === 'none') {
+				return true;
+			}
+
+			if (mode === 'single') {
+				return count === 1;
+			}
+
+			if (mode === 'multiple') {
+				return count >= 1;
+			}
+
+			return false;
+		},
+
+		actions: {
+			add: function () {
+				var url = Dewawi.url(module, controller, 'add');
+
+				if ($('#catid').val() > 0) {
+					url += '/catid/' + $('#catid').val();
+				}
+
+				setLocation(url);
+			},
+
+			'multi-add': function (selection, $button) {
+				var $container = $button.closest('.multiformContainer');
+
+				createEntity(
+					{},
+					{
+						module: $button.data('module'),
+						controller: $button.data('controller'),
+						action: 'add',
+						id: $container.data('parentid')
+					},
+					{
+						parentModule: $container.data('parent-module'),
+						parentController: $container.data('parent-controller'),
+						parentId: $container.data('parentid')
+					},
+					$container
+				);
+			},
+
+			filter: function () {
+				$('.dw-filter-panel').toggleClass('is-open');
+			},
+
+			reset: function () {
+				this.resetAll();
+				search();
+			},
+
+			clear: function (selection, $button) {
+				this.resetField($button.attr('rel'));
+				search();
+			},
+
+			'clear-filter': function (selection, $button) {
+				this.resetField($button.data('filter'));
+				search();
+			},
+
+			edit: function (selection) {
+				setLocation(
+					Dewawi.url(selection.module, selection.controller, 'edit', selection.ids[0])
+				);
+			},
+
+			view: function (selection) {
+				setLocation(
+					Dewawi.url(selection.module, selection.controller, 'view', selection.ids[0])
+				);
+			},
+
+			copy: function (selection) {
+				selection.ids.forEach(function (id) {
+					copy(id, selection.module, selection.controller);
+				});
+			},
+
+			delete: function (selection) {
+				trash(selection.ids, deleteConfirm, selection.controller, selection.module);
+			},
+
+			pdf: function (selection) {
+				window.open(
+					Dewawi.url(selection.module, selection.controller, 'download', selection.ids[0]),
+					'_blank'
+				);
+			}
 		},
 
 		bindFilters: function () {
@@ -2091,30 +2243,17 @@ function markFieldSaved($field) {
 					$('#page').val(1);
 				}
 
-				if (typeof search === 'function') {
-					search();
-				}
-			});
-
-			$(document).on('click', '.dw-filter-card__actions .all', function (event) {
-				event.preventDefault();
-
-				var $card = $(this).closest('.dw-filter-card');
-				var $boxes = $card.find('input[type="checkbox"]');
-
-				$boxes.prop('checked', true);
-				DewawiToolbar.persistField($boxes.first());
-				$('#page').val(1);
 				search();
 			});
 
-			$(document).on('click', '.dw-filter-card__actions .none', function (event) {
+			$(document).on('click', '.dw-filter-card__actions .all, .dw-filter-card__actions .none', function (event) {
 				event.preventDefault();
 
+				var checked = $(this).hasClass('all');
 				var $card = $(this).closest('.dw-filter-card');
 				var $boxes = $card.find('input[type="checkbox"]');
 
-				$boxes.prop('checked', false);
+				$boxes.prop('checked', checked);
 				DewawiToolbar.persistField($boxes.first());
 				$('#page').val(1);
 				search();
@@ -2124,11 +2263,26 @@ function markFieldSaved($field) {
 		bindKeyword: function () {
 			$(document).on('textchange', '.dw-toolbar #keyword, .dw-toolbar [name="keyword"]', function () {
 				DewawiToolbar.persistField($(this));
-
-				if (typeof search === 'function') {
-					search();
-				}
+				search();
 			});
+		},
+
+		getSelectedIds: function () {
+			var ids = [];
+
+			$('.dw-row [data-select-id]:checked, .dw-row .check-id:checked').each(function () {
+				ids.push(String($(this).val()));
+			});
+
+			return ids;
+		},
+
+		getButtonTarget: function ($button) {
+			return {
+				id: String($button.data('id') || ''),
+				module: String($button.data('module') || module),
+				controller: String($button.data('controller') || controller)
+			};
 		},
 
 		persistField: function ($field) {
@@ -2155,127 +2309,6 @@ function markFieldSaved($field) {
 			}
 
 			$.cookie(name, $field.val(), { path: cookiePath });
-		},
-
-		toggleDateRange: function (value) {
-			var isCustom = value === 'custom';
-			$('.dw-filter-card.daterange').toggleClass('is-hidden', !isCustom);
-		},
-
-		actions: {
-			add: function () {
-				var url = baseUrl + '/' + module + '/' + controller + '/add';
-
-				if ($('#catid').val() > 0) {
-					url += '/catid/' + $('#catid').val();
-				}
-
-				setLocation(url);
-			},
-
-			'multi-add': function ($button) {
-				var $container = $button.closest('.multiformContainer');
-
-				createEntity(
-					{},
-					{
-						module: $button.data('module'),
-						controller: $button.data('controller'),
-						action: 'add',
-						id: $container.data('parentid')
-					},
-					{
-						parentModule: $container.data('parent-module'),
-						parentController: $container.data('parent-controller'),
-						parentId: $container.data('parentid')
-					},
-					$container
-				);
-			},
-
-			filter: function () {
-				$('.dw-filter-panel').toggleClass('is-open');
-			},
-
-			reset: function () {
-				DewawiToolbar.resetAll();
-				search();
-			},
-
-			clear: function ($button) {
-				DewawiToolbar.resetField($button.attr('rel'));
-				search();
-			},
-
-			'clear-filter': function ($button) {
-				DewawiToolbar.resetField($button.data('filter'));
-				search();
-			},
-
-			copy: function ($button) {
-				var row = DewawiToolbar.getButtonTarget($button);
-
-				if (row.id) {
-					copy(row.id, row.module, row.controller);
-					return;
-				}
-
-				var ids = DewawiToolbar.getSelectedIds();
-
-				if (ids.length) {
-					ids.forEach(function (id) {
-						copy(id);
-					});
-					return;
-				}
-
-				copy();
-			},
-
-			delete: function () {
-				var ids = DewawiToolbar.getSelectedIds();
-
-				if (ids.length) {
-					trash(ids, deleteConfirm);
-					return;
-				}
-
-				var currentId = $('.toolbar input.id, .dw-toolbar input.id').first().val() || id;
-				if (currentId) {
-					trash(currentId, deleteConfirm);
-				}
-			},
-
-			edit: function ($button) {
-				var row = DewawiToolbar.getButtonTarget($button);
-
-				if (row.id) {
-					setLocation(Dewawi.url(row.module, row.controller, 'edit', row.id));
-					return;
-				}
-
-				var ids = DewawiToolbar.getSelectedIds();
-
-				if (ids.length === 1) {
-					setLocation(Dewawi.url(module, controller, 'edit', ids[0]));
-				}
-			},
-
-			view: function ($button) {
-				var row = DewawiToolbar.getButtonTarget($button);
-
-				if (row.id) {
-					setLocation(DewawiToolbar.buildUrl(row.module, row.controller, 'view', row.id));
-				}
-			},
-
-			pdf: function ($button) {
-				var row = DewawiToolbar.getButtonTarget($button);
-
-				if (row.id) {
-					window.open(DewawiToolbar.buildUrl(row.module, row.controller, 'download', row.id), '_blank');
-				}
-			},
 		},
 
 		resetField: function (name) {
@@ -2337,11 +2370,7 @@ function markFieldSaved($field) {
 				value = $field.attr('default');
 			}
 
-			if (value === undefined) {
-				value = '';
-			}
-
-			return String(value);
+			return String(value === undefined ? '' : value);
 		},
 
 		getDefaultArray: function ($field) {
@@ -2358,6 +2387,7 @@ function markFieldSaved($field) {
 			if (typeof value === 'string' && value.length) {
 				try {
 					var decoded = JSON.parse(value);
+
 					if ($.isArray(decoded)) {
 						return decoded.map(String);
 					}
@@ -2369,22 +2399,8 @@ function markFieldSaved($field) {
 			return [];
 		},
 
-		getSelectedIds: function () {
-			var ids = [];
-
-			$('table#data tr input.id:checked').each(function () {
-				ids.push($(this).val());
-			});
-
-			return ids;
-		},
-
-		getButtonTarget: function ($button) {
-			return {
-				id: $button.data('id'),
-				module: $button.data('module') || module,
-				controller: $button.data('controller') || controller
-			};
+		toggleDateRange: function (value) {
+			$('.dw-filter-card.daterange').toggleClass('is-hidden', value !== 'custom');
 		}
 	};
 

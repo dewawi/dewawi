@@ -197,10 +197,6 @@ echo $this->Messages();
 										<?php foreach ($this->tasks as $task) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<input class="id" type="hidden" value="<?php echo (int)$task->id; ?>" name="id" />
-													<input class="controller" type="hidden" value="task" name="controller" />
-													<input class="module" type="hidden" value="tasks" name="module" />
-
 													<a href="<?php echo $this->url(array('module'=>'tasks', 'controller'=>'task', 'action'=>'edit', 'id'=>$task->id)); ?>">
 														<?php echo $this->escape($task->id); ?>
 													</a>
@@ -269,10 +265,6 @@ echo $this->Messages();
 										<?php foreach ($this->quotes as $quote) : ?>
 											<tr class="dw-row state<?php echo (int)$quote->state; ?>">
 												<td class="dw-col-id">
-													<input class="id" type="hidden" value="<?php echo (int)$quote->id; ?>" name="id" />
-													<input class="controller" type="hidden" value="quote" name="controller" />
-													<input class="module" type="hidden" value="sales" name="module" />
-
 													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id)); ?>">
 														<?php echo $this->escape($quote->id); ?>
 													</a>
@@ -342,10 +334,6 @@ echo $this->Messages();
 										<?php foreach ($this->salesorders as $salesorder) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<input class="id" type="hidden" value="<?php echo (int)$salesorder->id; ?>" name="id" />
-													<input class="controller" type="hidden" value="salesorder" name="controller" />
-													<input class="module" type="hidden" value="sales" name="module" />
-
 													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'edit', 'id'=>$salesorder->id)); ?>">
 														<?php echo $this->escape($salesorder->id); ?>
 													</a>
@@ -415,10 +403,6 @@ echo $this->Messages();
 										<?php foreach ($this->invoices as $invoice) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<input class="id" type="hidden" value="<?php echo (int)$invoice->id; ?>" name="id" />
-													<input class="controller" type="hidden" value="invoice" name="controller" />
-													<input class="module" type="hidden" value="sales" name="module" />
-
 													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id)); ?>">
 														<?php echo $this->escape($invoice->id); ?>
 													</a>
@@ -488,10 +472,6 @@ echo $this->Messages();
 										<?php foreach ($this->quoterequests as $quoterequest) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<input class="id" type="hidden" value="<?php echo (int)$quoterequest->id; ?>" name="id" />
-													<input class="controller" type="hidden" value="quoterequest" name="controller" />
-													<input class="module" type="hidden" value="purchases" name="module" />
-
 													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
 														<?php echo $this->escape($quoterequest->id); ?>
 													</a>
@@ -561,10 +541,6 @@ echo $this->Messages();
 										<?php foreach ($this->purchaseorders as $purchaseorder) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<input class="id" type="hidden" value="<?php echo (int)$purchaseorder->id; ?>" name="id" />
-													<input class="controller" type="hidden" value="purchaseorder" name="controller" />
-													<input class="module" type="hidden" value="purchases" name="module" />
-
 													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id)); ?>">
 														<?php echo $this->escape($purchaseorder->id); ?>
 													</a>
