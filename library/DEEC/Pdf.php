@@ -647,7 +647,6 @@ class DEEC_Pdf
 	{
 		if (!count($positions)) return;
 
-		// find first top-level position
 		$first = null;
 		foreach ($positions as $p) {
 			if ((int)$p->masterid === 0) {
@@ -655,23 +654,30 @@ class DEEC_Pdf
 				break;
 			}
 		}
-		if (!$first->itemid) return;
+
+		if (!$first || empty($first->itemid)) return;
 
 		$itemDb = new Items_Model_DbTable_Item();
-		$item = $itemDb->getById($first->itemid);
+		$item = $itemDb->getById((int)$first->itemid);
 
-		if (!$item['shopdescription']) return;
+		if (!$item || empty($item['shopdescription'])) {
+			return;
+		}
 
 		$pdf->AddPage();
 		$pdf->SetFont('freesansb', 'B', 15);
-		$title = trim(($first->title ?? ''));
-		if ($first->sku) $title = $first->sku.' '.$title;
+
+		$title = trim((string)($first->title ?? ''));
+		if (!empty($first->sku)) {
+			$title = $first->sku . ' ' . $title;
+		}
+
 		$pdf->MultiCell(0, 0, ($title ?: 'Produkt'), 0, 'L', false, 1, '', '');
 		$pdf->ln(4);
 
 		$pdf->SetFont('freesans', '', 9);
-		// Use the position description as “Produktbeschreibung” (adapt if you pull item->shopdescription elsewhere)
-		$desc = trim((string)($item['shopdescription'] ?? ''));
+
+		$desc = trim((string)$item['shopdescription']);
 		if ($desc !== '') {
 			$pdf->MultiCell(180, 0, $desc, 0, 'L', false, 1, '', '', true, 0, true);
 		}
