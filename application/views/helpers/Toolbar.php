@@ -5,6 +5,11 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 	public function toolbar()
 	{
 		$view = $this->view;
+
+		if (empty($view->toolbar)) {
+			return '';
+		}
+
 		$toolbar = $view->toolbar;
 		$html = '';
 
@@ -40,15 +45,21 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 
 	protected function renderIndexToolbar($toolbar): string
 	{
+		if (!$toolbar) {
+			return '';
+		}
+
 		$html = '';
 
+		$html .= '<div class="dw-toolbar__main">';
 		$html .= $this->renderToolbarArea($toolbar, 'actions');
 		$html .= $this->renderToolbarArea($toolbar, 'search');
 		$html .= $this->renderToolbarArea($toolbar, 'meta');
-
-		$html .= $this->renderFilterBlock($toolbar);
-
 		$html .= $this->renderToolbarArea($toolbar, 'category');
+		$html .= '</div>';
+
+		$html .= $this->renderActiveFilters($toolbar);
+		$html .= $this->renderFilterBlock($toolbar);
 
 		return $html;
 	}
@@ -105,10 +116,6 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 
 		$html = '<div class="' . implode(' ', $classes) . '">';
 
-		if ($label) {
-			$html .= '<h4 class="dw-filter-card__title">' . $view->translate($label) . '</h4>';
-		}
-
 		if ($type === 'multicheckbox') {
 			$html .= '<div class="dw-filter-card__actions">';
 			$html .= '<a class="all">' . $view->translate('TOOLBAR_ALL') . '</a> | ';
@@ -131,5 +138,39 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		$html .= '</div>';
 
 		return $html;
+	}
+
+	protected function renderActiveFilters($toolbar): string
+	{
+		$filters = $toolbar->getToolbarElements('filters');
+		$html = '';
+
+		foreach ($filters as $name => $element) {
+			$value = $toolbar->getValue($name);
+			$default = $toolbar->getDefault($name);
+
+			if ($value === null || $value === '' || $value === '0' || $value == $default) {
+				continue;
+			}
+
+			if (is_array($value) && $value == $default) {
+				continue;
+			}
+
+			$label = $element['label'] ?? strtoupper($name);
+
+			$html .= '<button type="button" class="dw-filter-chip"'
+				. ' data-action="clear-filter"'
+				. ' data-filter="' . htmlspecialchars($name) . '">'
+				. htmlspecialchars($this->view->translate($label))
+				. '<span aria-hidden="true"> ×</span>'
+				. '</button>';
+		}
+
+		if ($html === '') {
+			return '';
+		}
+
+		return '<div class="dw-active-filters">' . $html . '</div>';
 	}
 }

@@ -293,6 +293,14 @@ iframe {
 
 /* Toolbar */
 
+.dw-toolbar__main {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--dw-space-2);
+	width: 100%;
+}
+
 .dw-toolbar,
 .toolbar {
   display: flex;
@@ -1025,12 +1033,43 @@ button.nolabel.filter {
 
 .dw-filter-panel {
 	display: none;
+	flex: 1 1 100%;
 	width: 100%;
 	margin-top: var(--dw-space-3);
 }
 
 .dw-filter-panel.is-open {
 	display: block;
+}
+
+.dw-filter-card.is-hidden {
+	display: none;
+}
+
+.dw-filter-card__actions {
+	margin-bottom: var(--dw-space-2);
+	font-size: 13px;
+}
+
+.dw-filter-card__actions a {
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.dw-active-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--dw-space-2);
+	width: 100%;
+	margin-top: var(--dw-space-2);
+}
+
+.dw-filter-chip {
+	border: 1px solid var(--dw-border-color);
+	border-radius: 999px;
+	background: var(--dw-bg-muted);
+	padding: 4px 10px;
+	cursor: pointer;
 }
 
 /* Table */

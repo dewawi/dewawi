@@ -226,12 +226,25 @@ class Processes_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'catid',
-			'type' => 'hidden',
+			'type' => 'select',
 			'default' => 'all',
 			'wrap' => false,
 			'toolbar' => 'category',
 			'filter' => true,
 			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'catid',
+			'type' => 'select',
+			'wrap' => false,
+			'options' => [
+				'all' => 'CATEGORIES_ALL',
+			],
+			'source' => 'category:contact',
+			'toolbar' => 'category',
+			'default' => 'all',
+			'attribs' => ['class' => 'hidden-sm'],
 		]);
 
 		$this->addElement([
