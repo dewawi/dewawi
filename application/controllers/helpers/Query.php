@@ -41,7 +41,19 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 
 	public function getQueryStates($query, $states, $schema)
 	{
+		if (!is_array($states) || empty($states)) {
+			return $query;
+		}
+
+		$states = array_map('intval', $states);
+		$states = array_filter($states);
+
+		if (!$states) {
+			return $query;
+		}
+
 		$this->appendCondition($query, "$schema.state IN (" . implode(',', $states) . ")");
+
 		return $query;
 	}
 
@@ -69,7 +81,16 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 
 	public function getQueryPaymentstatus($query, $paymentstatus, $schema)
 	{
-		$this->appendCondition($query, "$schema.paymentstatus IN ('" . implode("','", $paymentstatus) . "')");
+		$paymentstatus = trim((string)$paymentstatus);
+
+		if ($paymentstatus === '' || $paymentstatus === '0') {
+			return $query;
+		}
+
+		$paymentstatus = addslashes($paymentstatus);
+
+		$this->appendCondition($query, "$schema.paymentstatus = '$paymentstatus'");
+
 		return $query;
 	}
 
