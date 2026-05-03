@@ -1023,8 +1023,14 @@ button.nolabel.filter {
 
 /* Filter */
 
-#filter {
-    display: none;
+.dw-filter-panel {
+	display: none;
+	width: 100%;
+	margin-top: var(--dw-space-3);
+}
+
+.dw-filter-panel.is-open {
+	display: block;
 }
 
 /* Table */

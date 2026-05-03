@@ -314,6 +314,8 @@ class DEEC_Form
 			'controller' => $cfg['controller'] ?? '',
 			'parentid' => $cfg['parentid'] ?? 0,
 			'rows' => $cfg['rows'] ?? [],
+			'parent_module' => $cfg['parent_module'] ?? '',
+			'parent_controller' => $cfg['parent_controller'] ?? '',
 		];
 	}
 
@@ -342,6 +344,7 @@ class DEEC_Form
 			'source',
 			'filter','toolbar',
 			'module','controller','parentid','rows',
+			'parent_module','parent_controller',
 		];
 
 		$clean = [];
@@ -1133,7 +1136,9 @@ class DEEC_Form
 		}
 
 		// enforce correct id/name/type (element contract)
-		$attribs['id'] = $attribs['id'] ?? $nameRaw;
+		if ($type !== 'button') {
+			$attribs['id'] = $attribs['id'] ?? $nameRaw;
+		}
 		$attribs['name'] = $attribs['name'] ?? $nameRaw;
 
 		// for textarea/select we will remove/ignore 'type' later
@@ -1242,10 +1247,17 @@ class DEEC_Form
 
 		if ($type === 'button') {
 			$btnAttribs = $attribs;
+
+			if (!empty($el['toolbar']) && empty($btnAttribs['data-action'])) {
+				$btnAttribs['data-action'] = $nameRaw;
+			}
+
+			if (!empty($el['toolbar']) && empty($btnAttribs['id'])) {
+				unset($btnAttribs['id']);
+			}
+
 			if (!empty($btnAttribs['class'])) {
-				$btnAttribs['class'] = trim(
-					'dw-btn ' . ($btnAttribs['class'] ?? '')
-				);
+				$btnAttribs['class'] = trim('dw-btn ' . $btnAttribs['class']);
 			}
 
 			// enforce type

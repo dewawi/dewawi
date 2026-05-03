@@ -72,8 +72,8 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			return '';
 		}
 
-		$html = '<div id="filter">';
-		$html .= '<form>';
+		$html = '<div class="dw-filter-panel" data-role="filter-panel">';
+		$html .= '<form class="dw-filter-form">';
 		$html .= '<div class="dw-filter-grid">';
 
 		foreach ($filters as $name => $element) {

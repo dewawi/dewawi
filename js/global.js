@@ -496,7 +496,38 @@ $(document).ready(function(){
 	});
 
 	//Toolbar
-	$(document).on('change', '.toolbar input:not(#keyword), .toolbar select', function() {
+	$(document).on('change', '.dw-toolbar input, .dw-toolbar select', function () {
+		var $field = $(this);
+
+		if (!$field.attr('name')) {
+			return;
+		}
+
+		persistToolbarField($field);
+		$('#page').val(1);
+		search();
+	});
+
+	function persistToolbarField($field) {
+		var name = String($field.attr('name') || '').replace('[]', '');
+
+		if (!name) {
+			return;
+		}
+
+		if ($field.is(':checkbox')) {
+			var values = $('input[name="' + name + '[]"]:checked').map(function () {
+				return this.value;
+			}).get();
+
+			$.cookie(name, JSON.stringify(values), { path: cookiePath });
+			return;
+		}
+
+		$.cookie(name, $field.val() || '', { path: cookiePath });
+	}
+
+	/*$(document).on('change', '.toolbar input:not(#keyword), .toolbar select', function() {
 		var element = this.name;
 		var value = this.value || ''; // Fallback to empty string if undefined
 		if(module == 'statistics') {
@@ -531,7 +562,7 @@ $(document).ready(function(){
 				search();
 			}
 		}
-	});
+	});*/
 
 	/*$('.toolbar').on('click', 'button.filter', function() {
 		$('#filter').show();
@@ -923,7 +954,9 @@ $(document).ready(function(){
 		    window.Dewawi = Dewawi;
 		});
 	})(jQuery, window, document);*/
-	$(document).on('click', 'button', function() {
+
+
+/*	$(document).on('click', 'button', function() {
 		if(!$(this).attr('onclick')) {
 			var classes = $(this).attr('class');
 			if(classes) {
@@ -1172,7 +1205,7 @@ $(document).ready(function(){
 				}
 			}
 		}
-	});
+	});*/
 
 	//Date picker
 	$('.datePicker').datepicker(datePickerOptions);
@@ -1554,6 +1587,59 @@ function edit(data, params) {
 
 //Search
 function search() {
+	var data = collectToolbarData();
+
+	clearTimeout(timeout);
+
+	timeout = setTimeout(function () {
+		$('#loading').show();
+
+		$.ajax({
+			type: 'POST',
+			url: baseUrl + '/' + module + '/' + controller + '/search',
+			data: data,
+			cache: false,
+			success: function (response) {
+				$('#content').html(response);
+				initDwTabs('#content');
+				$('#loading').hide();
+			}
+		});
+	}, 300);
+}
+
+function collectToolbarData() {
+	var data = {};
+
+	$('.dw-toolbar input, .dw-toolbar select, #filter input, #filter select').each(function () {
+		var $field = $(this);
+		var name = String($field.attr('name') || '');
+
+		if (!name) {
+			return;
+		}
+
+		if (name.slice(-2) === '[]') {
+			name = name.slice(0, -2);
+
+			if (!data[name]) {
+				data[name] = [];
+			}
+
+			if ($field.is(':checked')) {
+				data[name].push($field.val());
+			}
+
+			return;
+		}
+
+		data[name] = $field.val();
+	});
+
+	return data;
+}
+
+/*function search() {
 	data = {};
 	data.states = [];
 	$('#state input:checked').each(function() {
@@ -1635,7 +1721,7 @@ function search() {
 			}
 		});
 	}, 500);
-}
+}*/
 
 //Clear
 function clear(element) {
@@ -2666,3 +2752,140 @@ function markFieldSaved($field) {
 			.replace(/'/g, '&#039;');
 	}
 })();
+
+(function ($, window) {
+	'use strict';
+
+	var Dewawi = window.Dewawi || {};
+
+	Dewawi.actions = {
+		add: function () {
+			var url = baseUrl + '/' + module + '/' + controller + '/add';
+
+			if ($('#catid').length && $('#catid').val() && $('#catid').val() !== 'all') {
+				url += '/catid/' + encodeURIComponent($('#catid').val());
+			}
+
+			window.location.href = url;
+		},
+
+		edit: function ($button) {
+			var data = getRowContext($button);
+			window.location.href = buildUrl(data.module, data.controller, 'edit', data.id);
+		},
+
+		view: function ($button) {
+			var data = getRowContext($button);
+			window.location.href = buildUrl(data.module, data.controller, 'view', data.id);
+		},
+
+		copy: function ($button) {
+			var data = getRowContext($button);
+			copy(data.id, data.module, data.controller);
+		},
+
+		delete: function ($button) {
+			var data = getSelectedOrRowContext($button);
+			trash(data.ids, deleteConfirm, data.controller, data.module);
+		},
+
+		reset: function () {
+			resetToolbar();
+			search();
+		},
+
+		filter: function () {
+			toggleFilters();
+		},
+
+		clear: function ($button) {
+			var target = String($button.data('target') || '');
+
+			if (!target) {
+				return;
+			}
+
+			$('#' + target).val('');
+			$.removeCookie(target, { path: cookiePath });
+			search();
+		},
+
+		save: function () {
+			save();
+		},
+
+		'add-multi': function ($button) {
+			var $container = $button.closest('.multiformContainer');
+
+			createEntity({}, {
+				module: $button.data('module'),
+				controller: $button.data('controller'),
+				action: 'add',
+				id: $container.data('parentid')
+			}, {
+				parentModule: $container.data('parent-module'),
+				parentController: $container.data('parent-controller'),
+				parentId: $container.data('parentid')
+			}, $container);
+		}
+	};
+
+	$(document).on('click', '[data-action]', function (event) {
+		var $button = $(this);
+		var action = String($button.data('action') || '');
+
+		if (!action || !Dewawi.actions[action]) {
+			return;
+		}
+
+		event.preventDefault();
+		Dewawi.actions[action]($button);
+	});
+
+	function buildUrl(moduleName, controllerName, actionName, rowId) {
+		var url = baseUrl + '/' + moduleName + '/' + controllerName + '/' + actionName;
+
+		if (rowId) {
+			url += '/id/' + rowId;
+		}
+
+		return url;
+	}
+
+	function getRowContext($button) {
+		var $row = $button.closest('tr');
+
+		return {
+			id: Number($button.data('id') || $row.find('input.id').val() || window.id || 0),
+			module: String($button.data('module') || $row.find('input.module').val() || module),
+			controller: String($button.data('controller') || $row.find('input.controller').val() || controller)
+		};
+	}
+
+	function getSelectedOrRowContext($button) {
+		var selected = $('table#data input.id:checked').map(function () {
+			return this.value;
+		}).get();
+
+		var ctx = getRowContext($button);
+
+		return {
+			ids: selected.length ? selected : [ctx.id],
+			module: ctx.module,
+			controller: ctx.controller
+		};
+	}
+
+	function toggleFilters() {
+		var $filter = $('#filter');
+
+		if (!$filter.length) {
+			return;
+		}
+
+		$filter.toggleClass('is-open');
+	}
+
+	window.Dewawi = Dewawi;
+
+})(jQuery, window);
