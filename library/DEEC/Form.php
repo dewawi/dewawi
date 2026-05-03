@@ -275,6 +275,8 @@ class DEEC_Form
 			'order' => $cfg['order'],
 			'wrap' => $cfg['wrap'],
 			'source' => $cfg['source'],
+			'filter' => $cfg['filter'],
+			'toolbar' => $cfg['toolbar'],
 			'module' => $cfg['module'] ?? '',
 			'controller' => $cfg['controller'] ?? '',
 			'parentid' => $cfg['parentid'] ?? 0,
@@ -305,6 +307,7 @@ class DEEC_Form
 			'format',
 			'col','tab','section','order','wrap',
 			'source',
+			'filter','toolbar',
 			'module','controller','parentid','rows',
 		];
 
@@ -342,6 +345,8 @@ class DEEC_Form
 		$clean['wrap'] = array_key_exists('wrap', $clean) ? (bool)$clean['wrap'] : true;
 		$clean['format'] = (isset($clean['format']) && is_array($clean['format'])) ? $clean['format'] : null;
 		$clean['source'] = isset($clean['source']) ? $clean['source'] : null;
+		$clean['filter'] = !empty($clean['filter']);
+		$clean['toolbar'] = isset($clean['toolbar']) ? (string)$clean['toolbar'] : '';
 
 		// options für Auswahl-Elemente
 		if (in_array(($clean['type'] ?? ''), ['select', 'radio', 'multicheckbox'], true)) {
@@ -1003,6 +1008,51 @@ class DEEC_Form
 			if (isset($this->elements[$k])) $names[] = $k;
 		}
 		return $names;
+	}
+
+	public function getFilterElements(): array
+	{
+		$out = [];
+
+		foreach ($this->elements as $name => $el) {
+			if (!empty($el['filter'])) {
+				$out[$name] = $el;
+			}
+		}
+
+		return $out;
+	}
+
+	public function getToolbarElements(string $area): array
+	{
+		$out = [];
+
+		foreach ($this->elements as $name => $el) {
+			if (($el['toolbar'] ?? '') === $area) {
+				$out[$name] = $el;
+			}
+		}
+
+		return $out;
+	}
+
+	public function getParamElements(): array
+	{
+		$out = [];
+
+		foreach ($this->elements as $name => $el) {
+			if (in_array($el['type'] ?? '', ['button', 'submit'], true)) {
+				continue;
+			}
+
+			if ($name === 'csrf_token') {
+				continue;
+			}
+
+			$out[$name] = $el;
+		}
+
+		return $out;
 	}
 
 	public function renderElement(string $name): string

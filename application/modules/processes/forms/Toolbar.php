@@ -142,6 +142,7 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'106' => 'STATES_CANCELLED',
 			],
 			'default' => ['100', '101', '102', '103', '104'],
+			'filter' => true,
 		]);
 
 		$this->addElement([
@@ -186,18 +187,21 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'attribs' => [
 				'class' => 'hidden-sm',
 			],
+			'filter' => true,
 		]);
 
 		$this->addElement([
 			'name' => 'from',
 			'type' => 'text',
 			'wrap' => false,
+			'filter' => true,
 		]);
 
 		$this->addElement([
 			'name' => 'to',
 			'type' => 'text',
 			'wrap' => false,
+			'filter' => true,
 		]);
 
 		$this->addElement([
@@ -205,11 +209,14 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'select',
 			'label' => 'PROCESSES_PAYMENT_STATUS',
 			'options' => [
+				'0' => 'TOOLBAR_ALL',
 				'waitingForPayment' => 'PROCESSES_WAITING_FOR_PAYMENT',
 				'prepaymentReceived' => 'PROCESSES_PREPAYMENT_RECEIVED',
 				'paymentCompleted' => 'PROCESSES_PAYMENT_COMPLETED',
 			],
+			'filter' => true,
 			'default' => '0',
+			'wrap' => false,
 		]);
 
 		$this->addElement([
@@ -230,6 +237,7 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'custom' => 'TOOLBAR_CUSTOM',
 			],
 			'default' => '0',
+			'filter' => true,
 		]);
 
 		$this->addElement([
@@ -260,6 +268,7 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'attribs' => [
 				'class' => 'hidden-sm',
 			],
+			'filter' => true,
 		]);
 	}
 }
