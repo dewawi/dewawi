@@ -2245,6 +2245,16 @@ function markFieldSaved($field) {
 				if (ids.length === 1) {
 					setLocation(baseUrl + '/' + module + '/' + controller + '/edit/id/' + ids[0]);
 				}
+			},
+
+			view: function ($button) {
+				var row = DewawiToolbar.getButtonTarget($button);
+				setLocation(baseUrl + '/' + row.module + '/' + row.controller + '/view/id/' + row.id);
+			},
+
+			pdf: function ($button) {
+				var row = DewawiToolbar.getButtonTarget($button);
+				window.open(baseUrl + '/' + row.module + '/' + row.controller + '/download/id/' + row.id, '_blank');
 			}
 		},
 
@@ -2347,6 +2357,14 @@ function markFieldSaved($field) {
 			});
 
 			return ids;
+		},
+
+		getButtonTarget: function ($button) {
+			return {
+				id: $button.data('id'),
+				module: $button.data('module') || module,
+				controller: $button.data('controller') || controller
+			};
 		}
 	};
 

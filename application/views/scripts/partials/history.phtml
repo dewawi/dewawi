@@ -1,176 +1,119 @@
 <?php
-$hasHistory = false;
-foreach ($this->history as $data) {
-	if (is_array($data) || $data instanceof Countable) {
-		if (count($data)) {
-			$hasHistory = true;
-			break;
-		}
-	}
-}
-
-$sections = array(
-	'quotes' => array(
+$sections = [
+	'quotes' => [
 		'title' => 'QUOTES',
 		'module' => 'sales',
 		'controller' => 'quote',
 		'docIdField' => 'quoteid',
-		'docIdLabel' => 'CONTACTS_DOCUMENT_ID',
-		'fallbackDoc' => 'QUOTE',
-		'titleLabel' => 'CONTACTS_DOCUMENT_TITLE',
-		'contactLabel' => 'CONTACTS_CONTACT',
 		'dateField' => 'quotedate',
-		'dateLabel' => 'CONTACTS_DOCUMENT_DATE',
-		'notesLabel' => 'CONTACTS_NOTES',
-		'modifiedLabel' => 'CONTACTS_DOCUMENT_MODIFIED',
-		'totalLabel' => 'CONTACTS_DOCUMENT_TOTAL',
-		'stateLabel' => 'CONTACTS_DOCUMENT_STATE',
-	),
-	'salesorders' => array(
+	],
+	'salesorders' => [
 		'title' => 'SALES_ORDERS',
 		'module' => 'sales',
 		'controller' => 'salesorder',
 		'docIdField' => 'salesorderid',
-		'docIdLabel' => 'CONTACTS_DOCUMENT_ID',
-		'fallbackDoc' => 'SALES_ORDER',
-		'titleLabel' => 'CONTACTS_DOCUMENT_TITLE',
-		'contactLabel' => 'CONTACTS_CONTACT',
 		'dateField' => 'salesorderdate',
-		'dateLabel' => 'CONTACTS_DOCUMENT_DATE',
-		'notesLabel' => 'CONTACTS_NOTES',
-		'modifiedLabel' => 'CONTACTS_DOCUMENT_MODIFIED',
-		'totalLabel' => 'CONTACTS_DOCUMENT_TOTAL',
-		'stateLabel' => 'CONTACTS_DOCUMENT_STATE',
-	),
-	'invoices' => array(
+	],
+	'invoices' => [
 		'title' => 'INVOICES',
 		'module' => 'sales',
 		'controller' => 'invoice',
 		'docIdField' => 'invoiceid',
-		'docIdLabel' => 'CONTACTS_DOCUMENT_ID',
-		'fallbackDoc' => 'INVOICE',
-		'titleLabel' => 'CONTACTS_DOCUMENT_TITLE',
-		'contactLabel' => 'CONTACTS_CONTACT',
 		'dateField' => 'invoicedate',
-		'dateLabel' => 'CONTACTS_DOCUMENT_DATE',
-		'notesLabel' => 'CONTACTS_NOTES',
-		'modifiedLabel' => 'CONTACTS_DOCUMENT_MODIFIED',
-		'totalLabel' => 'CONTACTS_DOCUMENT_TOTAL',
-		'stateLabel' => 'CONTACTS_DOCUMENT_STATE',
-	),
-	'deliveryorders' => array(
+	],
+	'deliveryorders' => [
 		'title' => 'DELIVERY_ORDERS',
 		'module' => 'sales',
 		'controller' => 'deliveryorder',
 		'docIdField' => 'deliveryorderid',
-		'docIdLabel' => 'CONTACTS_DOCUMENT_ID',
-		'fallbackDoc' => 'DELIVERY_ORDER',
-		'titleLabel' => 'CONTACTS_DOCUMENT_TITLE',
-		'contactLabel' => 'CONTACTS_CONTACT',
 		'dateField' => 'deliveryorderdate',
-		'dateLabel' => 'CONTACTS_DOCUMENT_DATE',
-		'notesLabel' => 'CONTACTS_NOTES',
-		'modifiedLabel' => 'CONTACTS_DOCUMENT_MODIFIED',
-		'totalLabel' => 'CONTACTS_DOCUMENT_TOTAL',
-		'stateLabel' => 'CONTACTS_DOCUMENT_STATE',
-	),
-	'creditnotes' => array(
+	],
+	'creditnotes' => [
 		'title' => 'CREDIT_NOTES',
 		'module' => 'sales',
 		'controller' => 'creditnote',
 		'docIdField' => 'creditnoteid',
-		'docIdLabel' => 'CONTACTS_DOCUMENT_ID',
-		'fallbackDoc' => 'CREDIT_NOTE',
-		'titleLabel' => 'CONTACTS_DOCUMENT_TITLE',
-		'contactLabel' => 'CONTACTS_CONTACT',
 		'dateField' => 'creditnotedate',
-		'dateLabel' => 'CONTACTS_DOCUMENT_DATE',
-		'notesLabel' => 'CONTACTS_NOTES',
-		'modifiedLabel' => 'CONTACTS_DOCUMENT_MODIFIED',
-		'totalLabel' => 'CONTACTS_DOCUMENT_TOTAL',
-		'stateLabel' => 'CONTACTS_DOCUMENT_STATE',
-	),
-	'quoterequests' => array(
+	],
+	'quoterequests' => [
 		'title' => 'QUOTE_REQUESTS',
 		'module' => 'purchases',
 		'controller' => 'quoterequest',
 		'docIdField' => 'quoterequestid',
-		'docIdLabel' => 'CONTACTS_DOCUMENT_ID',
-		'fallbackDoc' => 'QUOTE_REQUEST',
-		'titleLabel' => 'CONTACTS_DOCUMENT_TITLE',
-		'contactLabel' => 'CONTACTS_CONTACT',
 		'dateField' => 'quoterequestdate',
-		'dateLabel' => 'CONTACTS_DOCUMENT_DATE',
-		'notesLabel' => 'CONTACTS_NOTES',
-		'modifiedLabel' => 'CONTACTS_DOCUMENT_MODIFIED',
-		'totalLabel' => 'CONTACTS_DOCUMENT_TOTAL',
-		'stateLabel' => 'CONTACTS_DOCUMENT_STATE',
-	),
-	'purchaseorders' => array(
+	],
+	'purchaseorders' => [
 		'title' => 'PURCHASE_ORDERS',
 		'module' => 'purchases',
 		'controller' => 'purchaseorder',
 		'docIdField' => 'purchaseorderid',
-		'docIdLabel' => 'CONTACTS_DOCUMENT_ID',
-		'fallbackDoc' => 'PURCHASE_ORDER',
-		'titleLabel' => 'CONTACTS_DOCUMENT_TITLE',
-		'contactLabel' => 'CONTACTS_CONTACT',
 		'dateField' => 'purchaseorderdate',
-		'dateLabel' => 'CONTACTS_DOCUMENT_DATE',
-		'notesLabel' => 'CONTACTS_NOTES',
-		'modifiedLabel' => 'CONTACTS_DOCUMENT_MODIFIED',
-		'totalLabel' => 'CONTACTS_DOCUMENT_TOTAL',
-		'stateLabel' => 'CONTACTS_DOCUMENT_STATE',
-	),
-	'processes' => array(
+	],
+	'processes' => [
 		'title' => 'PROCESSES',
 		'module' => 'processes',
 		'controller' => 'process',
 		'docIdField' => 'id',
-		'docIdLabel' => 'CONTACTS_DOCUMENT_ID',
-		'fallbackDoc' => 'PROCESS',
-		'titleLabel' => 'CONTACTS_DOCUMENT_TITLE',
-		'contactLabel' => 'CONTACTS_CONTACT',
 		'dateField' => null,
-		'dateLabel' => null,
-		'notesLabel' => 'CONTACTS_NOTES',
-		'modifiedLabel' => 'CONTACTS_DOCUMENT_MODIFIED',
-		'totalLabel' => 'CONTACTS_DOCUMENT_TOTAL',
-		'stateLabel' => 'CONTACTS_DOCUMENT_STATE',
-	),
-	'reminders' => array(
+	],
+	'reminders' => [
 		'title' => 'REMINDERS',
 		'module' => 'sales',
 		'controller' => 'reminder',
 		'docIdField' => 'reminderid',
-		'docIdLabel' => 'CONTACTS_DOCUMENT_ID',
-		'fallbackDoc' => 'REMINDER',
-		'titleLabel' => 'CONTACTS_DOCUMENT_TITLE',
-		'contactLabel' => 'CONTACTS_CONTACT',
 		'dateField' => 'reminderdate',
-		'dateLabel' => 'CONTACTS_DOCUMENT_DATE',
-		'notesLabel' => 'CONTACTS_NOTES',
-		'modifiedLabel' => 'CONTACTS_DOCUMENT_MODIFIED',
-		'totalLabel' => 'CONTACTS_DOCUMENT_TOTAL',
-		'stateLabel' => 'CONTACTS_DOCUMENT_STATE',
-	),
-);
+	],
+];
 
-$visibleSections = array();
+$visibleSections = [];
+
 foreach ($sections as $historyKey => $section) {
 	if (!empty($this->history[$historyKey]) && count($this->history[$historyKey])) {
 		$visibleSections[$historyKey] = $section;
 	}
 }
 
-$firstTabKey = null;
-foreach ($visibleSections as $historyKey => $section) {
-	$firstTabKey = $historyKey;
-	break;
+$firstTabKey = array_key_first($visibleSections);
+
+function normalizeHistoryRows($rows, array $section): array
+{
+	$out = [];
+
+	foreach ($rows as $row) {
+		if ($row instanceof Zend_Db_Table_Row_Abstract) {
+			$data = $row->toArray();
+		} elseif (is_object($row) && method_exists($row, 'toArray')) {
+			$data = $row->toArray();
+		} else {
+			$data = (array)$row;
+		}
+
+		$item = new stdClass();
+
+		foreach ($data as $key => $value) {
+			if (strpos((string)$key, "\0") !== false) {
+				continue;
+			}
+
+			$item->{$key} = $value;
+		}
+
+		$docIdField = $section['docIdField'];
+		$dateField = $section['dateField'];
+
+		$item->module = $section['module'];
+		$item->controller = $section['controller'];
+		$item->document_number = $data[$docIdField] ?? $data['id'] ?? '';
+		$item->document_date = $dateField ? ($data[$dateField] ?? '') : '';
+
+		$out[] = $item;
+	}
+
+	return $out;
 }
 ?>
 
-<?php if (!$hasHistory) : ?>
+<?php if (!$visibleSections) : ?>
 	<div id="messages">
 		<ul>
 			<li><?php echo $this->translate('Es sind noch keine Aktivitäten vorhanden.'); ?></li>
@@ -181,15 +124,10 @@ foreach ($visibleSections as $historyKey => $section) {
 		<div class="dw-tabs dw-tabs--history">
 			<ul class="dw-tabs__nav">
 				<?php foreach ($visibleSections as $historyKey => $section) : ?>
-					<?php $count = count($this->history[$historyKey]); ?>
 					<li class="dw-tabs__item<?php echo $historyKey === $firstTabKey ? ' is-active' : ''; ?>">
-						<a
-							class="dw-tabs__link"
-							href="#tab-history-<?php echo $this->escape($historyKey); ?>"
-							data-tab-target="tab-history-<?php echo $this->escape($historyKey); ?>"
-						>
+						<a class="dw-tabs__link" href="#tab-history-<?php echo $this->escape($historyKey); ?>">
 							<?php echo $this->translate($section['title']); ?>
-							<span class="dw-history-tab-count">(<?php echo (int)$count; ?>)</span>
+							<span class="dw-history-tab-count">(<?php echo count($this->history[$historyKey]); ?>)</span>
 						</a>
 					</li>
 				<?php endforeach; ?>
@@ -198,165 +136,33 @@ foreach ($visibleSections as $historyKey => $section) {
 
 		<div class="dw-tab-panels dw-tab-panels--history">
 			<?php foreach ($visibleSections as $historyKey => $section) : ?>
-				<div
-					id="tab-history-<?php echo $this->escape($historyKey); ?>"
-					class="dw-tab-panel<?php echo $historyKey === $firstTabKey ? ' is-active' : ''; ?>"
-				>
-					<div class="dw-list-page dw-history-section">
-						<div class="dw-history-section__header">
-							<h3>
-								<?php echo $this->translate($section['title']); ?>
-								<span class="dw-history-section__count">(<?php echo count($this->history[$historyKey]); ?>)</span>
-							</h3>
-						</div>
+				<div id="tab-history-<?php echo $this->escape($historyKey); ?>"
+					 class="dw-tab-panel<?php echo $historyKey === $firstTabKey ? ' is-active' : ''; ?>">
 
-						<div class="dw-table-wrap">
-							<table class="dw-table dw-table--history dw-table--history-<?php echo $this->escape($historyKey); ?>">
-								<thead>
-									<tr>
-										<th class="dw-col-id"><?php echo $this->translate($section['docIdLabel']); ?></th>
-										<th class="dw-col-title"><?php echo $this->translate($section['titleLabel']); ?></th>
-										<th class="dw-col-contact"><?php echo $this->translate($section['contactLabel']); ?></th>
-
-										<?php if ($section['dateField']) : ?>
-											<th class="dw-col-date"><?php echo $this->translate($section['dateLabel']); ?></th>
-										<?php endif; ?>
-
-										<th class="dw-col-notes"><?php echo $this->translate($section['notesLabel']); ?></th>
-										<th class="dw-col-modified"><?php echo $this->translate($section['modifiedLabel']); ?></th>
-
-										<th class="dw-col-total"><?php echo $this->translate($section['totalLabel']); ?></th>
-										<th class="dw-col-state"><?php echo $this->translate($section['stateLabel']); ?></th>
-										<th class="dw-col-actions"></th>
-									</tr>
-								</thead>
-								<tbody>
-									<?php foreach ($this->history[$historyKey] as $row) : ?>
-										<?php
-										$docIdField = $section['docIdField'];
-										$docIdValue = isset($row->$docIdField) ? $row->$docIdField : null;
-										$titleValue = isset($row->title) ? $row->title : null;
-										$contactIdValue = isset($row->contactid) ? $row->contactid : null;
-										$contactName1 = isset($row->billingname1) ? $row->billingname1 : '';
-										$contactName2 = isset($row->billingname2) ? $row->billingname2 : '';
-										$stateValue = isset($row->state) ? $row->state : '';
-										$editableValue = isset($row->notes) ? $row->notes : '';
-
-										$editUrl = $this->url(array(
-											'module' => $section['module'],
-											'controller' => $section['controller'],
-											'action' => 'edit',
-											'id' => $row->id,
-										));
-
-										$contactUrl = $this->url(array(
-											'module' => 'contacts',
-											'controller' => 'contact',
-											'action' => 'edit',
-											'id' => $this->id,
-										));
-										?>
-										<tr class="dw-row">
-											<td class="dw-col-id" data-label="<?php echo $this->translate($section['docIdLabel']); ?>">
-												<a href="<?php echo $editUrl; ?>">
-													<?php if ($docIdValue) : ?>
-														<?php echo $this->escape($docIdValue); ?>
-													<?php endif; ?>
-												</a>
-											</td>
-
-											<td class="dw-col-title" data-label="<?php echo $this->translate($section['titleLabel']); ?>">
-												<a href="<?php echo $editUrl; ?>">
-													<?php if ($titleValue) : ?>
-														<?php echo $this->escape($titleValue); ?>
-													<?php else : ?>
-														<?php if ($docIdValue && $section['docIdField'] !== 'id') : ?>
-															<?php echo $this->translate($section['fallbackDoc']) . ' ' . $this->escape($docIdValue); ?>
-														<?php else : ?>
-															<?php echo $this->translate($section['fallbackDoc']) . ' ' . $this->escape($row->id); ?>
-														<?php endif; ?>
-													<?php endif; ?>
-												</a>
-											</td>
-
-											<td class="dw-col-contact" data-label="<?php echo $this->translate($section['contactLabel']); ?>">
-												<a href="<?php echo $contactUrl; ?>">
-													<?php echo $this->escape($contactIdValue); ?>
-												</a>
-												<a href="<?php echo $contactUrl; ?>">
-													<div><?php echo $this->escape($contactName1); ?></div>
-													<?php if ($contactName2) : ?>
-														<div><?php echo $this->escape($contactName2); ?></div>
-													<?php endif; ?>
-												</a>
-											</td>
-
-											<?php if ($section['dateField']) : ?>
-												<td class="dw-col-date" data-label="<?php echo $this->translate($section['dateLabel']); ?>">
-													<?php echo $this->escape($row->{$section['dateField']}); ?>
-												</td>
-											<?php endif; ?>
-
-											<td class="dw-col-notes notes" data-label="<?php echo $this->translate($section['notesLabel']); ?>">
-												<div class="editableContainer">
-													<?php if ($editableValue) : ?>
-														<pre
-															class="editable dw-editable-note"
-															data-name="notes"
-															data-module="<?php echo $this->escape($section['module']); ?>"
-															data-controller="<?php echo $this->escape($section['controller']); ?>"
-															data-id="<?php echo (int)$row->id; ?>"
-															data-value="<?php echo $this->escape($editableValue); ?>"
-															data-type="textarea"
-														><?php echo $this->escape($editableValue); ?></pre>
-													<?php else : ?>
-														<pre
-															class="editable dw-editable-note"
-															data-name="notes"
-															data-module="<?php echo $this->escape($section['module']); ?>"
-															data-controller="<?php echo $this->escape($section['controller']); ?>"
-															data-id="<?php echo (int)$row->id; ?>"
-															data-value=""
-															data-type="textarea"
-															data-empty="true"
-														><?php echo $this->translate('TOOLBAR_NEW'); ?></pre>
-													<?php endif; ?>
-												</div>
-											</td>
-
-											<td class="dw-col-modified" data-label="<?php echo $this->translate($section['modifiedLabel']); ?>">
-												<?php echo $this->escape($row->modified); ?>
-											</td>
-
-											<td class="dw-col-total" data-label="<?php echo $this->translate($section['totalLabel']); ?>">
-												<?php echo $this->escape($row->total); ?><br>
-												(<?php echo $this->escape($row->subtotal); ?>)
-											</td>
-
-											<td class="dw-col-state" data-label="<?php echo $this->translate($section['stateLabel']); ?>">
-												<?php if (isset($this->history['states'][$stateValue])) : ?>
-													<?php echo $this->translate($this->escape($this->history['states'][$stateValue])); ?>
-												<?php endif; ?>
-											</td>
-
-											<td class="dw-col-actions">
-												<div class="dw-row-actions">
-													<?php echo $this->historyToolbar(
-														$stateValue,
-														$section['controller'],
-														(int)$row['id'],
-														$section['module'],
-														!empty($row['completed']),
-														!empty($row['cancelled'])
-													); ?>
-												</div>
-											</td>
-										</tr>
-									<?php endforeach; ?>
-								</tbody>
-							</table>
-						</div>
+					<div class="dw-history-section__header">
+						<h3>
+							<?php echo $this->translate($section['title']); ?>
+							<span class="dw-history-section__count">(<?php echo count($this->history[$historyKey]); ?>)</span>
+						</h3>
 					</div>
+
+					<?php
+					$list = new Contacts_Model_List_History([
+						'id' => 'history-' . $historyKey,
+						'items' => normalizeHistoryRows($this->history[$historyKey], $section),
+						'view' => $this,
+						'module' => $section['module'],
+						'controller' => $section['controller'],
+						'options' => [
+							'states' => $this->history['states'] ?? [],
+						],
+						'selectable' => false,
+					]);
+
+					$list->setTableClass('dw-table dw-table--history dw-table--history-' . $historyKey);
+
+					echo $list->render();
+					?>
 				</div>
 			<?php endforeach; ?>
 		</div>
