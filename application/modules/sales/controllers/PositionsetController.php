@@ -16,8 +16,7 @@ class Sales_PositionsetController extends DEEC_Controller_Action
 
 		//Get parent data
 		$parentDb = new $parentClass();
-		$parentMethod = 'get'.$params['parent'];
-		$parent = $parentDb->$parentMethod($params['parentid']);
+		$parent = $parentDb->getById($params['parentid']);
 
 		if($this->getRequest()->isPost()) {
 			//Get existing position sets

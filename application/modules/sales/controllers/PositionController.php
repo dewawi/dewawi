@@ -19,8 +19,7 @@ class Sales_PositionController extends DEEC_Controller_Action
 
 		//Get parent data
 		$parentDb = new $parentClass();
-		$parentMethod = 'get'.$params['parent'];
-		$parent = $parentDb->$parentMethod($params['parentid']);
+		$parent = $parentDb->getById($params['parentid']);
 
 		//Get positions
 		$positionsDb = new $positionClass();
@@ -176,8 +175,7 @@ class Sales_PositionController extends DEEC_Controller_Action
 				$positionClass = 'Sales_Model_DbTable_' . ucfirst($params['parent'] . $params['type']);
 
 				$parentDb = new $parentClass();
-				$parentMethod = 'get' . $params['parent'];
-				$parent = $parentDb->$parentMethod($params['parentid']);
+				$parent = $parentDb->getById($params['parentid']);
 
 				if ($parent['currency'] == $item['currency']) {
 					$price = $item['price'];
@@ -250,8 +248,7 @@ class Sales_PositionController extends DEEC_Controller_Action
 
 		//Get parent data
 		$parentDb = new $parentClass();
-		$parentMethod = 'get'.$params['parent'];
-		$parent = $parentDb->$parentMethod($params['parentid']);
+		$parent = $parentDb->getById($params['parentid']);
 
 		//Get option data
 		$params['optionid'] = isset($params['optionid']) ? $params['optionid'] : 0;

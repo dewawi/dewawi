@@ -42,8 +42,7 @@ class Items_PositionController extends Zend_Controller_Action
 
 		//Get parent data
 		$parentDb = new $parentClass();
-		$parentMethod = 'get'.$params['parent'];
-		$parent = $parentDb->$parentMethod($params['parentid']);
+		$parent = $parentDb->getById($params['parentid']);
 
 		//Get positions
 		$positionsDb = new $positionClass();
@@ -179,8 +178,7 @@ class Items_PositionController extends Zend_Controller_Action
 
 				//Get parent data
 				$parentDb = new $parentClass();
-				$parentMethod = 'get'.$params['parent'];
-				$parent = $parentDb->$parentMethod($params['parentid']);
+				$parent = $parentDb->getById($params['parentid']);
 
 				//Check currency
 				if($parent['currency'] == $item['currency']) {
@@ -246,8 +244,7 @@ class Items_PositionController extends Zend_Controller_Action
 
 		//Get parent data
 		$parentDb = new $parentClass();
-		$parentMethod = 'get'.$params['parent'];
-		$parent = $parentDb->$parentMethod($params['parentid']);
+		$parent = $parentDb->getById($params['parentid']);
 
 		//Get primary tax rate
 		$taxrates = new Application_Model_DbTable_Taxrate();

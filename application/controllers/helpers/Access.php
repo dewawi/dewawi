@@ -16,8 +16,7 @@ class Application_Controller_Action_Helper_Access extends Zend_Controller_Action
 		$db = new $class();
 
 		if (($locked === null) || ($lockedtime === null)) {
-			$function = 'get' . ucfirst($params['controller']);
-			$data = $db->$function($id);
+			$data = $db->getById($id);
 
 			$locked = $data['locked'] ?? 0;
 			$lockedtime = $data['lockedtime'] ?? null;

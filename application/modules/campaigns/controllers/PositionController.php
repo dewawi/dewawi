@@ -173,8 +173,7 @@ class Campaigns_PositionController extends Zend_Controller_Action
 
 		//Get parent data
 		$parentDb = new $parentClass();
-		$parentMethod = 'get'.$params['parent'];
-		$parent = $parentDb->$parentMethod($params['parentid']);
+		$parent = $parentDb->getById($params['parentid']);
 
 		//Get option data
 		$params['optionid'] = isset($params['optionid']) ? $params['optionid'] : 0;
