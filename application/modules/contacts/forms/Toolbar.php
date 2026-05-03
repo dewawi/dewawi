@@ -8,69 +8,61 @@ class Contacts_Form_Toolbar extends DEEC_Form
 			'name' => 'add',
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'add'],
-		]);
-
-		$this->addElement([
-			'name' => 'addset',
-			'type' => 'button',
-			'label' => 'TOOLBAR_NEW_SET',
-			'wrap' => false,
-			'attribs' => ['class' => 'add addSet'],
-		]);
-
-		$this->addElement([
-			'name' => 'view',
-			'type' => 'button',
-			'label' => 'TOOLBAR_VIEW',
-			'wrap' => false,
-			'attribs' => ['class' => 'view'],
 		]);
 
 		$this->addElement([
 			'name' => 'edit',
 			'type' => 'button',
 			'label' => 'TOOLBAR_EDIT',
+			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => ['class' => 'edit hidden-sm'],
-		]);
-
-		$this->addElement([
-			'name' => 'save',
-			'type' => 'button',
-			'label' => 'TOOLBAR_SAVE',
-			'wrap' => false,
-			'attribs' => ['class' => 'save'],
+			'attribs' => ['class' => 'edit'],
 		]);
 
 		$this->addElement([
 			'name' => 'copy',
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY',
+			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => ['class' => 'copy hidden-sm'],
-		]);
-
-		$this->addElement([
-			'name' => 'pdf',
-			'type' => 'button',
-			'label' => 'TOOLBAR_PDF',
-			'wrap' => false,
-			'attribs' => ['class' => 'pdf'],
+			'attribs' => ['class' => 'copy'],
 		]);
 
 		$this->addElement([
 			'name' => 'delete',
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
+			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => ['class' => 'delete hidden-sm'],
+			'attribs' => ['class' => 'delete'],
+		]);
+
+		$this->addElement([
+			'name' => 'filter',
+			'type' => 'button',
+			'label' => 'TOOLBAR_FILTER',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'filter'],
+		]);
+
+		$this->addElement([
+			'name' => 'reset',
+			'type' => 'button',
+			'label' => 'TOOLBAR_RESET',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'reset'],
 		]);
 
 		$this->addElement([
 			'name' => 'keyword',
 			'type' => 'text',
+			'default' => '',
+			'toolbar' => 'search',
 			'wrap' => false,
 			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'keyword'],
@@ -79,134 +71,89 @@ class Contacts_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'name' => 'clear',
 			'type' => 'button',
+			'toolbar' => 'search',
 			'wrap' => false,
-			'attribs' => ['class' => 'clear'],
-		]);
-
-		$this->addElement([
-			'name' => 'reset',
-			'type' => 'button',
-			'label' => 'TOOLBAR_RESET',
-			'wrap' => false,
-			'attribs' => ['class' => 'reset hidden-sm'],
-		]);
-
-		$this->addElement([
-			'name' => 'order',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'id' => 'ORDERING_CREATION',
-				'sku' => 'ORDERING_SKU',
-				'price' => 'ORDERING_PRICE',
-				'cost' => 'ORDERING_COST',
-				'margin' => 'ORDERING_MARGIN',
-				'quantity' => 'ORDERING_QUANTITY',
-				'catid' => 'ORDERING_CATEGORY',
-				'modified' => 'ORDERING_MODIFIED',
+			'attribs' => [
+				'class' => 'clear nolabel',
+				'rel' => 'keyword',
 			],
-			'attribs' => ['class' => 'hidden-sm'],
-		]);
-
-		$this->addElement([
-			'name' => 'sort',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'asc' => 'ORDERING_ASC',
-				'desc' => 'ORDERING_DESC',
-			],
-			'default' => 'asc',
-			'attribs' => ['class' => 'hidden-sm'],
-		]);
-
-		$this->addElement([
-			'name' => 'country',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'0' => 'TOOLBAR_ALL_COUNTRIES',
-			],
-			'source' => 'country',
-			'default' => '0',
-			'attribs' => ['class' => 'hidden-sm hidden-md'],
-		]);
-
-		$this->addElement([
-			'name' => 'states',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'0' => 'TOOLBAR_ALL_COUNTRIES',
-			],
-			'source' => 'state',
-			'default' => '0',
-			'attribs' => ['class' => 'hidden-sm hidden-md'],
-		]);
-
-		$this->addElement([
-			'name' => 'controller',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'0' => 'TOOLBAR_ALL',
-				'contact' => 'CONTACTS',
-				'creditnote' => 'CREDIT_NOTES',
-				'deliveryorder' => 'DELIVERY_ORDERS',
-				'invoice' => 'INVOICES',
-				'quote' => 'QUOTES',
-				'reminder' => 'REMINDERS',
-				'salesorder' => 'SALES_ORDERS',
-				'purchaseorder' => 'PURCHASE_ORDERS',
-				'quoterequest' => 'QUOTE_REQUESTS',
-			],
-			'default' => '0',
-			'attribs' => ['class' => 'hidden-sm'],
 		]);
 
 		$this->addElement([
 			'name' => 'limit',
 			'type' => 'select',
-			'wrap' => false,
+			'default' => '25',
 			'options' => [
+				'10' => '10',
+				'25' => '25',
 				'50' => '50',
 				'100' => '100',
-				'250' => '250',
-				'500' => '500',
-				'0' => 'TOOLBAR_ALL',
 			],
-			'default' => '50',
-			'attribs' => ['class' => 'hidden-sm'],
+			'toolbar' => 'meta',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
+
+		$this->addElement([
+			'name' => 'order',
+			'type' => 'select',
+			'label' => 'TOOLBAR_ORDER',
+			'default' => 'modified',
+			'options' => [
+				'modified' => 'TOOLBAR_MODIFIED',
+				'created' => 'TOOLBAR_CREATED',
+				'processid' => 'PROCESSES_PROCESS_ID',
+				'name1' => 'CONTACTS_NAME',
+			],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'sort',
+			'type' => 'select',
+			'label' => 'TOOLBAR_SORT',
+			'default' => 'DESC',
+			'options' => [
+				'ASC' => 'TOOLBAR_ASC',
+				'DESC' => 'TOOLBAR_DESC',
+			],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'country',
+			'type' => 'select',
+			'label' => 'TOOLBAR_COUNTRY',
+			'default' => '0',
+			'options' => [
+				'0' => 'TOOLBAR_ALL_COUNTRIES',
+			],
+			'source' => 'country',
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
 			'name' => 'catid',
 			'type' => 'select',
-			'wrap' => false,
-			'options' => ['all' => 'CATEGORIES_ALL'],
+			'default' => 'all',
+			'options' => [
+				'all' => 'CATEGORIES_ALL',
+			],
 			'source' => 'category:contact',
-			'format' => ['type' => 'int'],
-		]);
-
-		$this->addElement([
-			'name' => 'tagid',
-			'type' => 'select',
+			'filter' => true,
+			'toolbar' => 'category',
 			'wrap' => false,
-			'options' => [
-				'0' => 'TAGS_ALL',
-			],
-			'default' => '0',
+			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'hidden-sm'],
-		]);
-
-		$this->addElement([
-			'name' => 'page',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'1' => '1',
-			],
-			'default' => '1',
 		]);
 	}
 }

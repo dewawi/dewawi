@@ -5,161 +5,155 @@ class Items_Form_Toolbar extends DEEC_Form
 	public function __construct()
 	{
 		$this->addElement([
-			'type' => 'button',
 			'name' => 'add',
+			'type' => 'button',
 			'label' => 'TOOLBAR_NEW',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'add'],
 		]);
 
 		$this->addElement([
-			'type' => 'button',
 			'name' => 'edit',
+			'type' => 'button',
 			'label' => 'TOOLBAR_EDIT',
+			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => ['class' => 'edit hidden-sm'],
+			'attribs' => ['class' => 'edit'],
 		]);
 
 		$this->addElement([
-			'type' => 'button',
-			'name' => 'save',
-			'label' => 'TOOLBAR_SAVE',
-			'wrap' => false,
-			'attribs' => ['class' => 'save'],
-		]);
-
-		$this->addElement([
-			'type' => 'button',
 			'name' => 'copy',
-			'label' => 'TOOLBAR_COPY',
-			'wrap' => false,
-			'attribs' => ['class' => 'copy hidden-sm'],
-		]);
-
-		$this->addElement([
 			'type' => 'button',
+			'label' => 'TOOLBAR_COPY',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'copy'],
+		]);
+
+		$this->addElement([
 			'name' => 'delete',
+			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
+			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => ['class' => 'delete hidden-sm'],
+			'attribs' => ['class' => 'delete'],
 		]);
 
 		$this->addElement([
-			'type' => 'text',
-			'name' => 'sku',
-			'label' => 'ITEMS_SKU',
+			'name' => 'filter',
+			'type' => 'button',
+			'label' => 'TOOLBAR_FILTER',
+			'toolbar' => 'actions',
 			'wrap' => false,
-			'required' => true,
-			'attribs' => ['class' => 'required'],
-			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'filter'],
 		]);
 
 		$this->addElement([
-			'type' => 'text',
+			'name' => 'reset',
+			'type' => 'button',
+			'label' => 'TOOLBAR_RESET',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'reset'],
+		]);
+
+		$this->addElement([
 			'name' => 'keyword',
+			'type' => 'text',
+			'default' => '',
+			'toolbar' => 'search',
 			'wrap' => false,
 			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'keyword'],
 		]);
 
 		$this->addElement([
-			'type' => 'button',
 			'name' => 'clear',
-			'wrap' => false,
-			'attribs' => ['class' => 'clear'],
-		]);
-
-		$this->addElement([
 			'type' => 'button',
-			'name' => 'reset',
+			'toolbar' => 'search',
 			'wrap' => false,
-			'label' => 'TOOLBAR_RESET',
-			'attribs' => ['class' => 'reset hidden-sm'],
+			'attribs' => [
+				'class' => 'clear nolabel',
+				'rel' => 'keyword',
+			],
 		]);
 
 		$this->addElement([
+			'name' => 'limit',
 			'type' => 'select',
-			'name' => 'catid',
+			'default' => '25',
+			'options' => [
+				'10' => '10',
+				'25' => '25',
+				'50' => '50',
+				'100' => '100',
+			],
+			'toolbar' => 'meta',
 			'wrap' => false,
-			'options' => ['all' => 'CATEGORIES_ALL'],
-			'source' => 'category:item',
 			'format' => ['type' => 'int'],
 		]);
 
 		$this->addElement([
-			'type' => 'select',
 			'name' => 'order',
-			'wrap' => false,
+			'type' => 'select',
+			'label' => 'TOOLBAR_ORDER',
+			'default' => 'modified',
 			'options' => [
-				'id' => 'ORDERING_CREATION',
-				'sku' => 'ORDERING_SKU',
-				'price' => 'ORDERING_PRICE',
-				'cost' => 'ORDERING_COST',
-				'margin' => 'ORDERING_MARGIN',
-				'quantity' => 'ORDERING_QUANTITY',
-				'catid' => 'ORDERING_CATEGORY',
-				'modified' => 'ORDERING_MODIFIED',
+				'modified' => 'TOOLBAR_MODIFIED',
+				'created' => 'TOOLBAR_CREATED',
+				'processid' => 'PROCESSES_PROCESS_ID',
+				'name1' => 'CONTACTS_NAME',
 			],
-			'attribs' => ['class' => 'hidden-sm'],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
-			'type' => 'select',
 			'name' => 'sort',
-			'wrap' => false,
+			'type' => 'select',
+			'label' => 'TOOLBAR_SORT',
+			'default' => 'DESC',
 			'options' => [
-				'asc' => 'ORDERING_ASC',
-				'desc' => 'ORDERING_DESC',
+				'ASC' => 'TOOLBAR_ASC',
+				'DESC' => 'TOOLBAR_DESC',
 			],
-			'default' => 'asc',
-			'attribs' => ['class' => 'hidden-sm'],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
+			'name' => 'country',
 			'type' => 'select',
-			'name' => 'limit',
-			'wrap' => false,
-			'options' => [
-				'50' => '50',
-				'100' => '100',
-				'250' => '250',
-				'500' => '500',
-				'0' => 'TOOLBAR_ALL',
-			],
-			'default' => '50',
-			'attribs' => ['class' => 'hidden-sm'],
-		]);
-
-		$this->addElement([
-			'type' => 'select',
-			'name' => 'manufacturerid',
-			'wrap' => false,
-			'options' => [
-				'0' => 'TOOLBAR_ALL',
-			],
+			'label' => 'TOOLBAR_COUNTRY',
 			'default' => '0',
-			'attribs' => ['class' => 'hidden-sm'],
+			'options' => [
+				'0' => 'TOOLBAR_ALL_COUNTRIES',
+			],
+			'source' => 'country',
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
+			'name' => 'catid',
 			'type' => 'select',
-			'name' => 'tagid',
-			'wrap' => false,
+			'default' => 'all',
 			'options' => [
-				'0' => 'TAGS_ALL',
+				'all' => 'CATEGORIES_ALL',
 			],
-			'default' => '0',
+			'source' => 'category:item',
+			'filter' => true,
+			'toolbar' => 'category',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'hidden-sm'],
-		]);
-
-		$this->addElement([
-			'type' => 'select',
-			'name' => 'page',
-			'wrap' => false,
-			'options' => [
-				'1' => '1',
-			],
-			'default' => '1',
 		]);
 	}
 }

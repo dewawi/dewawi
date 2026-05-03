@@ -8,8 +8,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'name' => 'add',
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW',
-			'wrap' => false,
 			'toolbar' => 'actions',
+			'wrap' => false,
 			'attribs' => ['class' => 'add'],
 		]);
 
@@ -17,8 +17,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'name' => 'edit',
 			'type' => 'button',
 			'label' => 'TOOLBAR_EDIT',
-			'wrap' => false,
 			'toolbar' => 'actions',
+			'wrap' => false,
 			'attribs' => ['class' => 'edit'],
 		]);
 
@@ -26,8 +26,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'name' => 'copy',
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY',
-			'wrap' => false,
 			'toolbar' => 'actions',
+			'wrap' => false,
 			'attribs' => ['class' => 'copy'],
 		]);
 
@@ -35,8 +35,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'name' => 'delete',
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
-			'wrap' => false,
 			'toolbar' => 'actions',
+			'wrap' => false,
 			'attribs' => ['class' => 'delete'],
 		]);
 
@@ -44,8 +44,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'name' => 'filter',
 			'type' => 'button',
 			'label' => 'TOOLBAR_FILTER',
-			'wrap' => false,
 			'toolbar' => 'actions',
+			'wrap' => false,
 			'attribs' => ['class' => 'filter'],
 		]);
 
@@ -53,8 +53,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'name' => 'reset',
 			'type' => 'button',
 			'label' => 'TOOLBAR_RESET',
-			'wrap' => false,
 			'toolbar' => 'actions',
+			'wrap' => false,
 			'attribs' => ['class' => 'reset'],
 		]);
 
@@ -62,8 +62,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'name' => 'keyword',
 			'type' => 'text',
 			'default' => '',
-			'wrap' => false,
 			'toolbar' => 'search',
+			'wrap' => false,
 			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'keyword'],
 		]);
@@ -71,8 +71,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'name' => 'clear',
 			'type' => 'button',
-			'wrap' => false,
 			'toolbar' => 'search',
+			'wrap' => false,
 			'attribs' => [
 				'class' => 'clear nolabel',
 				'rel' => 'keyword',
@@ -89,8 +89,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'50' => '50',
 				'100' => '100',
 			],
-			'wrap' => false,
 			'toolbar' => 'meta',
+			'wrap' => false,
 			'format' => ['type' => 'int'],
 		]);
 
@@ -105,9 +105,9 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'processid' => 'PROCESSES_PROCESS_ID',
 				'name1' => 'CONTACTS_NAME',
 			],
-			'wrap' => false,
-			'toolbar' => 'filters',
 			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
 			'format' => ['type' => 'string'],
 		]);
 
@@ -120,9 +120,27 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'ASC' => 'TOOLBAR_ASC',
 				'DESC' => 'TOOLBAR_DESC',
 			],
-			'wrap' => false,
-			'toolbar' => 'filters',
 			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'state',
+			'type' => 'select',
+			'label' => 'TOOLBAR_STATE',
+			'default' => '100',
+			'options' => [
+				'100' => 'STATES_CREATED',
+				'101' => 'STATES_IN_PROCESS',
+				'102' => 'STATES_PLEASE_CHECK',
+				'103' => 'STATES_PLEASE_DELETE',
+				'104' => 'STATES_RELEASED',
+				'105' => 'STATES_COMPLETED',
+				'106' => 'STATES_CANCELLED',
+			],
+			'wrap' => false,
 			'format' => ['type' => 'string'],
 		]);
 
@@ -140,9 +158,9 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'105' => 'STATES_COMPLETED',
 				'106' => 'STATES_CANCELLED',
 			],
-			'wrap' => false,
-			'toolbar' => 'filters',
 			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
 		]);
 
 		$this->addElement([
@@ -154,9 +172,9 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'0' => 'TOOLBAR_ALL_COUNTRIES',
 			],
 			'source' => 'country',
-			'wrap' => false,
-			'toolbar' => 'filters',
 			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
 			'format' => ['type' => 'string'],
 		]);
 
@@ -171,9 +189,9 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'prepaymentReceived' => 'PROCESSES_PREPAYMENT_RECEIVED',
 				'paymentCompleted' => 'PROCESSES_PAYMENT_COMPLETED',
 			],
-			'wrap' => false,
-			'toolbar' => 'filters',
 			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
 			'format' => ['type' => 'string'],
 		]);
 
@@ -194,9 +212,9 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'lastYear' => 'TOOLBAR_LAST_YEAR',
 				'custom' => 'TOOLBAR_CUSTOM',
 			],
-			'wrap' => false,
-			'toolbar' => 'filters',
 			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
 			'format' => ['type' => 'string'],
 		]);
 
@@ -205,9 +223,9 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'text',
 			'label' => 'TOOLBAR_FROM',
 			'default' => date('Y-m-d', strtotime('-1 month')),
-			'wrap' => false,
-			'toolbar' => 'filters',
 			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
 			'format' => ['type' => 'date'],
 			'attribs' => ['class' => 'datePicker'],
 		]);
@@ -217,9 +235,9 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'text',
 			'label' => 'TOOLBAR_TO',
 			'default' => date('Y-m-d'),
-			'wrap' => false,
-			'toolbar' => 'filters',
 			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
 			'format' => ['type' => 'date'],
 			'attribs' => ['class' => 'datePicker'],
 		]);
@@ -228,41 +246,15 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'name' => 'catid',
 			'type' => 'select',
 			'default' => 'all',
-			'wrap' => false,
-			'toolbar' => 'category',
-			'filter' => true,
-			'format' => ['type' => 'string'],
-		]);
-
-		$this->addElement([
-			'name' => 'catid',
-			'type' => 'select',
-			'wrap' => false,
 			'options' => [
 				'all' => 'CATEGORIES_ALL',
 			],
 			'source' => 'category:contact',
+			'filter' => true,
 			'toolbar' => 'category',
-			'default' => 'all',
-			'attribs' => ['class' => 'hidden-sm'],
-		]);
-
-		$this->addElement([
-			'name' => 'state',
-			'type' => 'select',
-			'label' => 'TOOLBAR_STATE',
-			'default' => '100',
-			'options' => [
-				'100' => 'STATES_CREATED',
-				'101' => 'STATES_IN_PROCESS',
-				'102' => 'STATES_PLEASE_CHECK',
-				'103' => 'STATES_PLEASE_DELETE',
-				'104' => 'STATES_RELEASED',
-				'105' => 'STATES_COMPLETED',
-				'106' => 'STATES_CANCELLED',
-			],
 			'wrap' => false,
 			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'hidden-sm'],
 		]);
 	}
 }
