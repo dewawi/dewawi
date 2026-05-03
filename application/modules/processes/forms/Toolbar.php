@@ -9,19 +9,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'add',
-			],
-		]);
-
-		$this->addElement([
-			'name' => 'view',
-			'type' => 'button',
-			'label' => 'TOOLBAR_VIEW',
-			'wrap' => false,
-			'attribs' => [
-				'class' => 'view',
-			],
+			'toolbar' => 'actions',
+			'attribs' => ['class' => 'add'],
 		]);
 
 		$this->addElement([
@@ -29,20 +18,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_EDIT',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'edit hidden-sm',
-			],
-		]);
-
-		$this->addElement([
-			'name' => 'select',
-			'type' => 'button',
-			'label' => 'TOOLBAR_SELECT',
-			'wrap' => false,
-			'attribs' => [
-				'class' => 'select poplight',
-				'rel' => 'addCustomer',
-			],
+			'toolbar' => 'actions',
+			'attribs' => ['class' => 'edit'],
 		]);
 
 		$this->addElement([
@@ -50,19 +27,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'copy hidden-sm',
-			],
-		]);
-
-		$this->addElement([
-			'name' => 'pdf',
-			'type' => 'button',
-			'label' => 'TOOLBAR_PDF',
-			'wrap' => false,
-			'attribs' => [
-				'class' => 'pdf',
-			],
+			'toolbar' => 'actions',
+			'attribs' => ['class' => 'copy'],
 		]);
 
 		$this->addElement([
@@ -70,29 +36,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'delete hidden-sm',
-			],
-		]);
-
-		$this->addElement([
-			'name' => 'keyword',
-			'type' => 'text',
-			'wrap' => false,
-			'default' => '',
-			'attribs' => [
-			],
-		]);
-
-		$this->addElement([
-			'name' => 'clear',
-			'type' => 'button',
-			'label' => '',
-			'wrap' => false,
-			'attribs' => [
-				'class' => 'clear nolabel',
-				'rel' => 'keyword',
-			],
+			'toolbar' => 'actions',
+			'attribs' => ['class' => 'delete'],
 		]);
 
 		$this->addElement([
@@ -100,9 +45,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_FILTER',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'filter hidden-sm',
-			],
+			'toolbar' => 'actions',
+			'attribs' => ['class' => 'filter'],
 		]);
 
 		$this->addElement([
@@ -110,28 +54,83 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'button',
 			'label' => 'TOOLBAR_RESET',
 			'wrap' => false,
+			'toolbar' => 'actions',
+			'attribs' => ['class' => 'reset'],
+		]);
+
+		$this->addElement([
+			'name' => 'keyword',
+			'type' => 'text',
+			'default' => '',
+			'wrap' => false,
+			'toolbar' => 'search',
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'keyword'],
+		]);
+
+		$this->addElement([
+			'name' => 'clear',
+			'type' => 'button',
+			'wrap' => false,
+			'toolbar' => 'search',
 			'attribs' => [
-				'class' => 'reset hidden-sm',
+				'class' => 'clear nolabel',
+				'rel' => 'keyword',
 			],
 		]);
 
 		$this->addElement([
-			'name' => 'state',
+			'name' => 'limit',
 			'type' => 'select',
-			'wrap' => false,
+			'default' => '25',
 			'options' => [
-				'100' => 'STATES_CREATED',
-				'101' => 'STATES_IN_PROCESS',
-				'102' => 'STATES_PLEASE_CHECK',
-				'103' => 'STATES_PLEASE_DELETE',
-				'104' => 'STATES_RELEASED',
+				'10' => '10',
+				'25' => '25',
+				'50' => '50',
+				'100' => '100',
 			],
+			'wrap' => false,
+			'toolbar' => 'meta',
+			'format' => ['type' => 'int'],
+		]);
+
+		$this->addElement([
+			'name' => 'order',
+			'type' => 'select',
+			'label' => 'TOOLBAR_ORDER',
+			'default' => 'modified',
+			'options' => [
+				'modified' => 'TOOLBAR_MODIFIED',
+				'created' => 'TOOLBAR_CREATED',
+				'processid' => 'PROCESSES_PROCESS_ID',
+				'name1' => 'CONTACTS_NAME',
+			],
+			'wrap' => false,
+			'toolbar' => 'filters',
+			'filter' => true,
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'sort',
+			'type' => 'select',
+			'label' => 'TOOLBAR_SORT',
+			'default' => 'DESC',
+			'options' => [
+				'ASC' => 'TOOLBAR_ASC',
+				'DESC' => 'TOOLBAR_DESC',
+			],
+			'wrap' => false,
+			'toolbar' => 'filters',
+			'filter' => true,
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
 			'name' => 'states',
 			'type' => 'multicheckbox',
-			'wrap' => false,
+			'label' => 'TOOLBAR_STATE',
+			'default' => ['100', '101', '102', '103', '104'],
 			'options' => [
 				'100' => 'STATES_CREATED',
 				'101' => 'STATES_IN_PROCESS',
@@ -141,90 +140,49 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'105' => 'STATES_COMPLETED',
 				'106' => 'STATES_CANCELLED',
 			],
-			'default' => ['100', '101', '102', '103', '104'],
+			'wrap' => false,
+			'toolbar' => 'filters',
 			'filter' => true,
-		]);
-
-		$this->addElement([
-			'name' => 'order',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'id' => 'ORDERING_CREATION',
-				'title' => 'ORDERING_TITLE',
-				'contactid' => 'ORDERING_CUSTOMER_ID',
-				'documentid' => 'ORDERING_DOCUMENT_ID',
-				'billingname1' => 'ORDERING_CUSTOMER',
-				'billingpostcode' => 'ORDERING_POSTCODE',
-				'billingcity' => 'ORDERING_CITY',
-				'modified' => 'ORDERING_MODIFIED',
-				'total' => 'ORDERING_TOTAL',
-				'state' => 'ORDERING_STATE',
-			],
-			'default' => 'id',
-		]);
-
-		$this->addElement([
-			'name' => 'sort',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'asc' => 'ORDERING_ASC',
-				'desc' => 'ORDERING_DESC',
-			],
-			'default' => 'asc',
 		]);
 
 		$this->addElement([
 			'name' => 'country',
 			'type' => 'select',
-			'wrap' => false,
+			'label' => 'TOOLBAR_COUNTRY',
+			'default' => '0',
 			'options' => [
 				'0' => 'TOOLBAR_ALL_COUNTRIES',
 			],
 			'source' => 'country',
-			'default' => '0',
-			'attribs' => [
-				'class' => 'hidden-sm',
-			],
-			'filter' => true,
-		]);
-
-		$this->addElement([
-			'name' => 'from',
-			'type' => 'text',
 			'wrap' => false,
+			'toolbar' => 'filters',
 			'filter' => true,
-		]);
-
-		$this->addElement([
-			'name' => 'to',
-			'type' => 'text',
-			'wrap' => false,
-			'filter' => true,
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
 			'name' => 'paymentstatus',
 			'type' => 'select',
 			'label' => 'PROCESSES_PAYMENT_STATUS',
+			'default' => '0',
 			'options' => [
 				'0' => 'TOOLBAR_ALL',
 				'waitingForPayment' => 'PROCESSES_WAITING_FOR_PAYMENT',
 				'prepaymentReceived' => 'PROCESSES_PREPAYMENT_RECEIVED',
 				'paymentCompleted' => 'PROCESSES_PAYMENT_COMPLETED',
 			],
-			'filter' => true,
-			'default' => '0',
 			'wrap' => false,
+			'toolbar' => 'filters',
+			'filter' => true,
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
 			'name' => 'daterange',
-			'type' => 'radio',
-			'wrap' => false,
+			'type' => 'select',
+			'label' => 'TOOLBAR_DATE_RANGE',
+			'default' => 'last30days',
 			'options' => [
-				'0' => 'TOOLBAR_ALL',
 				'today' => 'TOOLBAR_TODAY',
 				'yesterday' => 'TOOLBAR_YESTERDAY',
 				'last7days' => 'TOOLBAR_LAST_7_DAYS',
@@ -236,39 +194,62 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'lastYear' => 'TOOLBAR_LAST_YEAR',
 				'custom' => 'TOOLBAR_CUSTOM',
 			],
-			'default' => '0',
+			'wrap' => false,
+			'toolbar' => 'filters',
 			'filter' => true,
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
-			'name' => 'limit',
-			'type' => 'select',
+			'name' => 'from',
+			'type' => 'text',
+			'label' => 'TOOLBAR_FROM',
+			'default' => date('Y-m-d', strtotime('-1 month')),
 			'wrap' => false,
-			'options' => [
-				'50' => '50',
-				'100' => '100',
-				'250' => '250',
-				'500' => '500',
-				'0' => 'TOOLBAR_ALL',
-			],
-			'default' => '50',
-			'attribs' => [
-				'class' => 'hidden-sm',
-			],
+			'toolbar' => 'filters',
+			'filter' => true,
+			'format' => ['type' => 'date'],
+			'attribs' => ['class' => 'datePicker'],
+		]);
+
+		$this->addElement([
+			'name' => 'to',
+			'type' => 'text',
+			'label' => 'TOOLBAR_TO',
+			'default' => date('Y-m-d'),
+			'wrap' => false,
+			'toolbar' => 'filters',
+			'filter' => true,
+			'format' => ['type' => 'date'],
+			'attribs' => ['class' => 'datePicker'],
 		]);
 
 		$this->addElement([
 			'name' => 'catid',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'all' => 'CATEGORIES_ALL',
-			],
+			'type' => 'hidden',
 			'default' => 'all',
-			'attribs' => [
-				'class' => 'hidden-sm',
-			],
+			'wrap' => false,
+			'toolbar' => 'category',
 			'filter' => true,
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'state',
+			'type' => 'select',
+			'label' => 'TOOLBAR_STATE',
+			'default' => '100',
+			'options' => [
+				'100' => 'STATES_CREATED',
+				'101' => 'STATES_IN_PROCESS',
+				'102' => 'STATES_PLEASE_CHECK',
+				'103' => 'STATES_PLEASE_DELETE',
+				'104' => 'STATES_RELEASED',
+				'105' => 'STATES_COMPLETED',
+				'106' => 'STATES_CANCELLED',
+			],
+			'wrap' => false,
+			'format' => ['type' => 'string'],
 		]);
 	}
 }

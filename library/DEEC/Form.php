@@ -18,21 +18,31 @@
  * - type (string)		e.g. text, number, email, select, textarea, checkbox, hidden, submit, button
  *
  * Optional (meta / rendering):
- * - label (string|null)		Label key/text (passed through translate())
- * - description (string)		Help text under the field
- * - info (string)				Additional info text
- * - unit (string|null)			Unit shown in label (e.g. "kW") -> NOT an HTML attribute
- * - default (mixed|null)		Default value (string|int|float|bool) -> NOT an HTML attribute
- * - value (mixed|null)			Current value (usually set by setValues())
- * - required (bool)			Mapped internally to attribs['required']
- * - options (array)			Only for type=select:
- *								- allowed: ["Label1","Label2"] or ["value"=>"Label"]
- * - col (int|null)				Bootstrap grid width 1..12 (layout only)
- * - wrap (bool)				Render wrapper div or not (default true)
- * - tab (string)				Tab key (default 'overview')
- * - section (string|null)		Section grouping headline
- * - order (int)				Sort order in tab/section
- * - format (array|null)		Filter schema for getFilteredValues()
+ * - label (string|null)        Label key/text (passed through translate())
+ * - description (string)       Help text under the field
+ * - info (string)              Additional info text
+ * - unit (string|null)         Unit shown in label (e.g. "kW") -> NOT an HTML attribute
+ * - default (mixed|null)       Default value -> NOT an HTML attribute
+ * - value (mixed|null)         Current value (usually set by setValues())
+ * - required (bool)            Mapped internally to attribs['required']
+ * - options (array)            For select/radio/multicheckbox
+ * - source (string|null)       Option source key for Options helper, e.g. "country"
+ * - filter (bool)              Marks element as list/filter parameter
+ * - toolbar (string)           Toolbar area: actions, search, meta, filters, category
+ * - col (int|null)             Grid width 1..12
+ * - wrap (bool)                Render wrapper div or not
+ * - tab (string)               Tab key
+ * - section (string|null)      Section grouping headline
+ * - order (int)                Sort order
+ * - format (array|null)        Filter schema for getFilteredValues()
+ *
+ * Optional (multi / child rows):
+ * - module (string)            Module for multi row form/entity
+ * - controller (string)        Controller/entity for multi row form/entity
+ * - parentid (int)             Parent entity id
+ * - parent_module (string)     Parent module context
+ * - parent_controller (string) Parent controller context
+ * - rows (array)               Existing child rows
  *
  * Optional (logic / JS):
  * - depends_on (string)		Mapped internally to attribs['data-depends-on']
@@ -45,7 +55,7 @@
  *								min, max, step, pattern, minlength, maxlength,
  *								autocomplete, autofocus, multiple, size,
  *								rows, cols, accept, inputmode, spellcheck, title,
- *								checked, tabindex
+ *								checked, tabindex, rel
  *								- always allowed: data-* and aria-*
  *
  * ------------------------------------------------------------------
@@ -57,6 +67,10 @@
  * 4) min/max/step/pattern belong into `attribs` (real HTML attributes).
  * 5) depends_on/depends_value become data-* attributes.
  * 6) Unknown keys are discarded (strict mode) to keep the contract stable.
+ * 7) `source` is used by the Options helper to load options dynamically.
+ * 8) `filter => true` marks fields for list/filter usage.
+ * 9) `toolbar` groups elements for toolbar rendering.
+ * 10) Multi elements may use module/controller/parentid/rows plus parent_module/parent_controller.
  *
  * Example:
  * [
@@ -81,11 +95,13 @@
  * 4) default
  * 5) options
  * 6) source
- * 7) col
- * 8) wrap
- * 9) required
- * 10) format
- * 11) attribs
+ * 7) filter
+ * 8) toolbar
+ * 9) col
+ * 10) wrap
+ * 11) required
+ * 12) format
+ * 13) attribs
  *
  * Examples:
  *
@@ -117,6 +133,23 @@
  *		'class' => 'clear nolabel',
  *		'rel' => 'keyword',
  *	],
+ * ]
+ *
+ * Toolbar filter:
+ * [
+ *     'name' => 'paymentstatus',
+ *     'type' => 'select',
+ *     'label' => 'PROCESSES_PAYMENT_STATUS',
+ *     'default' => '0',
+ *     'options' => [
+ *         '0' => 'TOOLBAR_ALL',
+ *         'waitingForPayment' => 'PROCESSES_WAITING_FOR_PAYMENT',
+ *         'paymentCompleted' => 'PROCESSES_PAYMENT_COMPLETED',
+ *     ],
+ *     'filter' => true,
+ *     'toolbar' => 'filters',
+ *     'wrap' => false,
+ *     'format' => ['type' => 'string'],
  * ]
  *
  * Toolbar elements should normally use `wrap => false`.
