@@ -527,83 +527,6 @@ $(document).ready(function(){
 		$.cookie(name, $field.val() || '', { path: cookiePath });
 	}
 
-	/*$(document).on('change', '.toolbar input:not(#keyword), .toolbar select', function() {
-		var element = this.name;
-		var value = this.value || ''; // Fallback to empty string if undefined
-		if(module == 'statistics') {
-			$.cookie(element, value, { path: cookiePath });
-			location.reload();
-		} else {
-			if(action == 'edit') {
-				data = {};
-				data[element] = value;
-				edit(data);
-			} else {
-				if(element == 'states[]') {
-					states = [];
-					$('#state input[type="checkbox"]').each(function() {
-						if($(this).prop('checked')) states.push(value);
-					});
-					$.cookie('states', JSON.stringify(states), { path: cookiePath });
-				} else if(element == 'daterange') {
-					if(value == 'custom') $('#filter .daterange').show();
-					else $('#filter .daterange').hide();
-					$.cookie(element, value, { path: cookiePath });
-				} else if(element == 'paymentstatus[]') {
-					paymentstatus = [];
-					$('input[type="checkbox"][name="paymentstatus[]"]').each(function() {
-						if($(this).prop('checked')) paymentstatus.push(value);
-					});
-					$.cookie('paymentstatus', JSON.stringify(paymentstatus), { path: cookiePath });
-				} else {
-					$.cookie(element, value, { path: cookiePath });
-				}
-				if(element != 'page') $('#page').val(1);
-				search();
-			}
-		}
-	});*/
-
-	/*$('.toolbar').on('click', 'button.filter', function() {
-		$('#filter').show();
-	});*/
-
-	$(document).mouseup(function (e) {
-		var container = $("#filter");
-		if(!container.is(e.target) // if the target of the click isn't the container...
-		&& container.has(e.target).length === 0) { // ... nor a descendant of the container
-			container.hide();
-		}
-	});
-
-	$('#filter').on('click', '.all', function() {
-		$('input[name="states[]"]').prop('checked', true);
-		states = [];
-		$('#state input:checked').each(function() {
-			states.push(this.value || ''); // Fallback to empty string if undefined
-		});
-		$.cookie('states', JSON.stringify(states), { path: cookiePath });
-		search();
-	});
-
-	$('#filter').on('click', '.none', function() {
-		$('input[name="states[]"]').prop('checked', false);
-		$.removeCookie('states', { path: cookiePath }); // Remove cookie if no states are selected
-		search();
-	});
-
-	$('#filter #state label').each(function(){
-		$(this).contents().last().wrap('<span class="only" />');
-	});
-	$('#filter').on('click', '.only', function() {
-		$('input[name="states[]"]').prop('checked', false);
-		$(this).prop('checked', true);
-		states = [];
-		states[0] = $(this).val();
-		$.cookie('states', JSON.stringify(states), { path: cookiePath });
-		search();
-	});
-
 	//Select template or language
 	$('.edit form').on('change', '#templateid, #language', function() {
 		previewPdf();
@@ -721,237 +644,237 @@ $(document).ready(function(){
 		'use strict';
 
 		var Dewawi = {
-		    init: function () {
-		        this.bindActions();
-		        this.bindTabs();
-		        this.bindFilter();
-		    },
+			init: function () {
+				this.bindActions();
+				this.bindTabs();
+				this.bindFilter();
+			},
 
-		    bindActions: function () {
-		        var self = this;
+			bindActions: function () {
+				var self = this;
 
-		        $(document).on('click', '[data-action]', function (e) {
+				$(document).on('click', '[data-action]', function (e) {
 					console.log('test2');
-		            var $button = $(this);
-		            var action = String($button.data('action') || '');
+					var $button = $(this);
+					var action = String($button.data('action') || '');
 
-		            if (!action) {
-		                return;
-		            }
+					if (!action) {
+						return;
+					}
 
-		            e.preventDefault();
+					e.preventDefault();
 
-		            if (!self.actions[action]) {
-		                console.log('Unknown action:', action, $button.get(0));
-		                return;
-		            }
+					if (!self.actions[action]) {
+						console.log('Unknown action:', action, $button.get(0));
+						return;
+					}
 
-		            self.actions[action].call(self, $button, e);
-		        });
-		    },
+					self.actions[action].call(self, $button, e);
+				});
+			},
 
-		    bindTabs: function () {
-		        $(document).on('click', '[data-tab-target]', function (e) {
-		            e.preventDefault();
+			bindTabs: function () {
+				$(document).on('click', '[data-tab-target]', function (e) {
+					e.preventDefault();
 
-		            var $link = $(this);
-		            var targetId = String($link.data('tab-target') || '');
-		            var $tabs = $link.closest('.dw-tabs');
-		            var $panels = $tabs.next('.dw-tab-panels');
+					var $link = $(this);
+					var targetId = String($link.data('tab-target') || '');
+					var $tabs = $link.closest('.dw-tabs');
+					var $panels = $tabs.next('.dw-tab-panels');
 
-		            if (!targetId || !$panels.length) {
-		                return;
-		            }
+					if (!targetId || !$panels.length) {
+						return;
+					}
 
-		            $tabs.find('.dw-tabs__item').removeClass('is-active');
-		            $link.closest('.dw-tabs__item').addClass('is-active');
+					$tabs.find('.dw-tabs__item').removeClass('is-active');
+					$link.closest('.dw-tabs__item').addClass('is-active');
 
-		            $panels.find('.dw-tab-panel').removeClass('is-active').hide();
-		            $('#' + targetId).addClass('is-active').show();
-		        });
-		    },
+					$panels.find('.dw-tab-panel').removeClass('is-active').hide();
+					$('#' + targetId).addClass('is-active').show();
+				});
+			},
 
-		    bindFilter: function () {
-		        $(document).on('change', '#daterange input[type="radio"], input[name="daterange"]', function () {
-		            var value = String($(this).val() || '');
-		            var visible = value === 'custom';
+			bindFilter: function () {
+				$(document).on('change', '#daterange input[type="radio"], input[name="daterange"]', function () {
+					var value = String($(this).val() || '');
+					var visible = value === 'custom';
 
-		            $('.daterange')[visible ? 'show' : 'hide']();
-		        });
-		    },
+					$('.daterange')[visible ? 'show' : 'hide']();
+				});
+			},
 
-		    actions: {
-		        view: function ($button) {
-		            var data = this.getRowData($button);
-		            window.location.href = this.buildUrl(data.module, data.controller, 'edit', data.id);
-		        },
+			actions: {
+				view: function ($button) {
+					var data = this.getRowData($button);
+					window.location.href = this.buildUrl(data.module, data.controller, 'edit', data.id);
+				},
 
-		        edit: function ($button) {
-		            var data = this.getRowData($button);
-		            window.location.href = this.buildUrl(data.module, data.controller, 'edit', data.id);
-		        },
+				edit: function ($button) {
+					var data = this.getRowData($button);
+					window.location.href = this.buildUrl(data.module, data.controller, 'edit', data.id);
+				},
 
-		        copy: function ($button) {
-		            var data = this.getRowData($button);
-		            window.location.href = this.buildUrl(data.module, data.controller, 'copy', data.id);
-		        },
+				copy: function ($button) {
+					var data = this.getRowData($button);
+					window.location.href = this.buildUrl(data.module, data.controller, 'copy', data.id);
+				},
 
-		        pdf: function ($button) {
-		            var data = this.getRowData($button);
-		            window.open(this.buildUrl(data.module, data.controller, 'download', data.id), '_blank');
-		        },
+				pdf: function ($button) {
+					var data = this.getRowData($button);
+					window.open(this.buildUrl(data.module, data.controller, 'download', data.id), '_blank');
+				},
 
-		        add: function () {
-		            window.location.href = this.buildUrl(module, controller, 'add');
-		        },
+				add: function () {
+					window.location.href = this.buildUrl(module, controller, 'add');
+				},
 
-		        'copy-current': function () {
-		            var currentId = this.getCurrentId();
-		            window.location.href = this.buildUrl(module, controller, 'copy', currentId);
-		        },
+				'copy-current': function () {
+					var currentId = this.getCurrentId();
+					window.location.href = this.buildUrl(module, controller, 'copy', currentId);
+				},
 
-		        'delete-current': function () {
-		            var currentId = this.getCurrentId();
-		            trash(currentId, deleteConfirm, controller, module);
-		        },
+				'delete-current': function () {
+					var currentId = this.getCurrentId();
+					trash(currentId, deleteConfirm, controller, module);
+				},
 
-		        clear: function ($button) {
-		            var rel = String($button.attr('rel') || '');
-		            if (!rel) {
-		                return;
-		            }
+				clear: function ($button) {
+					var rel = String($button.attr('rel') || '');
+					if (!rel) {
+						return;
+					}
 
-		            $('#' + rel).val('').trigger('change').trigger('keyup');
-		        },
+					$('#' + rel).val('').trigger('change').trigger('keyup');
+				},
 
-		        reset: function () {
-		            window.location.href = this.buildUrl(module, controller, 'index');
-		        },
+				reset: function () {
+					window.location.href = this.buildUrl(module, controller, 'index');
+				},
 
-		        filter: function () {
-		            $('#filter').toggle();
-		        },
+				filter: function () {
+					$('#filter').toggle();
+				},
 
-		        'multi-add': function ($button) {
-		            var $container = $button.closest('.multiformContainer');
-		            var parentId = Number($container.data('parentid')) || 0;
-		            var parentModule = String($container.data('parent-module') || '');
-		            var parentController = String($container.data('parent-controller') || '');
-		            var rowModule = String($button.data('module') || '');
-		            var rowController = String($button.data('controller') || '');
+				'multi-add': function ($button) {
+					var $container = $button.closest('.multiformContainer');
+					var parentId = Number($container.data('parentid')) || 0;
+					var parentModule = String($container.data('parent-module') || '');
+					var parentController = String($container.data('parent-controller') || '');
+					var rowModule = String($button.data('module') || '');
+					var rowController = String($button.data('controller') || '');
 
-		            if (!parentId || !rowModule || !rowController) {
-		                console.log('Missing multi-add data');
-		                return;
-		            }
+					if (!parentId || !rowModule || !rowController) {
+						console.log('Missing multi-add data');
+						return;
+					}
 
-		            $.ajax({
-		                type: 'POST',
-		                url: baseUrl + '/' + rowModule + '/' + rowController + '/add/parent_id/' + parentId,
-		                data: {
-		                    parent_module: parentModule,
-		                    parent_controller: parentController
-		                },
-		                cache: false,
-		                success: function (html) {
-		                    $button.before(html);
-		                },
-		                error: function (xhr) {
-		                    console.log('multi-add failed', xhr.responseText);
-		                }
-		            });
-		        },
+					$.ajax({
+						type: 'POST',
+						url: baseUrl + '/' + rowModule + '/' + rowController + '/add/parent_id/' + parentId,
+						data: {
+							parent_module: parentModule,
+							parent_controller: parentController
+						},
+						cache: false,
+						success: function (html) {
+							$button.before(html);
+						},
+						error: function (xhr) {
+							console.log('multi-add failed', xhr.responseText);
+						}
+					});
+				},
 
-		        'position-add': function () {
-		            if (typeof addPosition === 'function') {
-		                addPosition();
-		            }
-		        },
+				'position-add': function () {
+					if (typeof addPosition === 'function') {
+						addPosition();
+					}
+				},
 
-		        'position-copy': function () {
-		            if (typeof copyPosition === 'function') {
-		                copyPosition();
-		            }
-		        },
+				'position-copy': function () {
+					if (typeof copyPosition === 'function') {
+						copyPosition();
+					}
+				},
 
-		        'position-delete': function () {
-		            if (typeof deletePosition === 'function') {
-		                deletePosition();
-		            }
-		        },
+				'position-delete': function () {
+					if (typeof deletePosition === 'function') {
+						deletePosition();
+					}
+				},
 
-		        'set-add': function () {
-		            if (typeof addSet === 'function') {
-		                addSet();
-		            }
-		        },
+				'set-add': function () {
+					if (typeof addSet === 'function') {
+						addSet();
+					}
+				},
 
-		        'set-copy': function () {
-		            if (typeof copySet === 'function') {
-		                copySet();
-		            }
-		        },
+				'set-copy': function () {
+					if (typeof copySet === 'function') {
+						copySet();
+					}
+				},
 
-		        'set-delete': function () {
-		            if (typeof deleteSet === 'function') {
-		                deleteSet();
-		            }
-		        },
+				'set-delete': function () {
+					if (typeof deleteSet === 'function') {
+						deleteSet();
+					}
+				},
 
-		        'set-sort-up': function ($button) {
-		            if (typeof sortSetUp === 'function') {
-		                sortSetUp($button);
-		            }
-		        },
+				'set-sort-up': function ($button) {
+					if (typeof sortSetUp === 'function') {
+						sortSetUp($button);
+					}
+				},
 
-		        'set-sort-down': function ($button) {
-		            if (typeof sortSetDown === 'function') {
-		                sortSetDown($button);
-		            }
-		        }
-		    },
+				'set-sort-down': function ($button) {
+					if (typeof sortSetDown === 'function') {
+						sortSetDown($button);
+					}
+				}
+			},
 
-		    getRowData: function ($button) {
-		        var id = Number($button.data('id')) || 0;
-		        var rowModule = String($button.data('module') || '');
-		        var rowController = String($button.data('controller') || '');
+			getRowData: function ($button) {
+				var id = Number($button.data('id')) || 0;
+				var rowModule = String($button.data('module') || '');
+				var rowController = String($button.data('controller') || '');
 
-		        if (!id || !rowModule || !rowController) {
-		            throw new Error('Missing row action data');
-		        }
+				if (!id || !rowModule || !rowController) {
+					throw new Error('Missing row action data');
+				}
 
-		        return {
-		            id: id,
-		            module: rowModule,
-		            controller: rowController
-		        };
-		    },
+				return {
+					id: id,
+					module: rowModule,
+					controller: rowController
+				};
+			},
 
-		    getCurrentId: function () {
-		        var value = $('input[name="id"]').first().val();
-		        var currentId = Number(value) || Number(window.id) || 0;
+			getCurrentId: function () {
+				var value = $('input[name="id"]').first().val();
+				var currentId = Number(value) || Number(window.id) || 0;
 
-		        if (!currentId) {
-		            throw new Error('Missing current id');
-		        }
+				if (!currentId) {
+					throw new Error('Missing current id');
+				}
 
-		        return currentId;
-		    },
+				return currentId;
+			},
 
-		    buildUrl: function (moduleName, controllerName, actionName, id) {
-		        var url = baseUrl + '/' + moduleName + '/' + controllerName + '/' + actionName;
+			buildUrl: function (moduleName, controllerName, actionName, id) {
+				var url = baseUrl + '/' + moduleName + '/' + controllerName + '/' + actionName;
 
-		        if (typeof id !== 'undefined' && id !== null && id !== '') {
-		            url += '/id/' + id;
-		        }
+				if (typeof id !== 'undefined' && id !== null && id !== '') {
+					url += '/id/' + id;
+				}
 
-		        return url;
-		    }
+				return url;
+			}
 		};
 
 		$(function () {
-		    Dewawi.init();
-		    window.Dewawi = Dewawi;
+			Dewawi.init();
+			window.Dewawi = Dewawi;
 		});
 	})(jQuery, window, document);*/
 
@@ -2753,139 +2676,176 @@ function markFieldSaved($field) {
 	}
 })();
 
-(function ($, window) {
+(function ($) {
 	'use strict';
 
-	var Dewawi = window.Dewawi || {};
-
-	Dewawi.actions = {
-		add: function () {
-			var url = baseUrl + '/' + module + '/' + controller + '/add';
-
-			if ($('#catid').length && $('#catid').val() && $('#catid').val() !== 'all') {
-				url += '/catid/' + encodeURIComponent($('#catid').val());
-			}
-
-			window.location.href = url;
+	var DewawiToolbar = {
+		init: function () {
+			this.bindActions();
+			this.bindFilters();
+			this.bindKeyword();
 		},
 
-		edit: function ($button) {
-			var data = getRowContext($button);
-			window.location.href = buildUrl(data.module, data.controller, 'edit', data.id);
+		bindActions: function () {
+			$(document).on('click', '[data-action]', function (event) {
+				var actionName = String($(this).data('action') || '');
+
+				if (!actionName || !DewawiToolbar.actions[actionName]) {
+					return;
+				}
+
+				event.preventDefault();
+				DewawiToolbar.actions[actionName]($(this));
+			});
 		},
 
-		view: function ($button) {
-			var data = getRowContext($button);
-			window.location.href = buildUrl(data.module, data.controller, 'view', data.id);
+		bindFilters: function () {
+			$(document).on('change', '.dw-toolbar input, .dw-toolbar select, .dw-filter-panel input, .dw-filter-panel select', function () {
+				var $field = $(this);
+
+				DewawiToolbar.persistField($field);
+
+				if ($field.attr('name') === 'daterange') {
+					DewawiToolbar.toggleDateRange($field.val());
+				}
+
+				if ($field.attr('name') !== 'page') {
+					$('#page').val(1);
+				}
+
+				if (typeof search === 'function') {
+					search();
+				}
+			});
+
+			$(document).on('click', '.dw-filter-card__actions .all', function (event) {
+				event.preventDefault();
+
+				var $card = $(this).closest('.dw-filter-card');
+				$card.find('input[type="checkbox"]').prop('checked', true).trigger('change');
+			});
+
+			$(document).on('click', '.dw-filter-card__actions .none', function (event) {
+				event.preventDefault();
+
+				var $card = $(this).closest('.dw-filter-card');
+				$card.find('input[type="checkbox"]').prop('checked', false).trigger('change');
+			});
 		},
 
-		copy: function ($button) {
-			var data = getRowContext($button);
-			copy(data.id, data.module, data.controller);
+		bindKeyword: function () {
+			$(document).on('textchange', '.dw-toolbar #keyword, .dw-toolbar [name="keyword"]', function () {
+				DewawiToolbar.persistField($(this));
+
+				if (typeof search === 'function') {
+					search();
+				}
+			});
 		},
 
-		delete: function ($button) {
-			var data = getSelectedOrRowContext($button);
-			trash(data.ids, deleteConfirm, data.controller, data.module);
-		},
+		persistField: function ($field) {
+			var name = String($field.attr('name') || '').replace('[]', '');
 
-		reset: function () {
-			resetToolbar();
-			search();
-		},
-
-		filter: function () {
-			toggleFilters();
-		},
-
-		clear: function ($button) {
-			var target = String($button.data('target') || '');
-
-			if (!target) {
+			if (!name) {
 				return;
 			}
 
-			$('#' + target).val('');
-			$.removeCookie(target, { path: cookiePath });
-			search();
+			if ($field.is(':checkbox')) {
+				var values = [];
+
+				$('input[name="' + name + '[]"]:checked').each(function () {
+					values.push(this.value);
+				});
+
+				$.cookie(name, JSON.stringify(values), { path: cookiePath });
+				return;
+			}
+
+			if ($field.val() === '') {
+				$.removeCookie(name, { path: cookiePath });
+				return;
+			}
+
+			$.cookie(name, $field.val(), { path: cookiePath });
 		},
 
-		save: function () {
-			save();
+		toggleDateRange: function (value) {
+			var isCustom = value === 'custom';
+			$('.dw-filter-card.daterange').toggleClass('is-hidden', !isCustom);
 		},
 
-		'add-multi': function ($button) {
-			var $container = $button.closest('.multiformContainer');
+		actions: {
+			add: function () {
+				var url = baseUrl + '/' + module + '/' + controller + '/add';
 
-			createEntity({}, {
-				module: $button.data('module'),
-				controller: $button.data('controller'),
-				action: 'add',
-				id: $container.data('parentid')
-			}, {
-				parentModule: $container.data('parent-module'),
-				parentController: $container.data('parent-controller'),
-				parentId: $container.data('parentid')
-			}, $container);
+				if ($('#catid').val() > 0) {
+					url += '/catid/' + $('#catid').val();
+				}
+
+				setLocation(url);
+			},
+
+			filter: function () {
+				$('.dw-filter-panel').toggleClass('is-open');
+			},
+
+			reset: function () {
+				reset();
+			},
+
+			clear: function ($button) {
+				clear($button.attr('rel'));
+			},
+
+			copy: function () {
+				var ids = DewawiToolbar.getSelectedIds();
+
+				if (ids.length) {
+					ids.forEach(function (id) {
+						copy(id);
+					});
+					return;
+				}
+
+				copy();
+			},
+
+			delete: function () {
+				var ids = DewawiToolbar.getSelectedIds();
+
+				if (ids.length) {
+					trash(ids, deleteConfirm);
+					return;
+				}
+
+				var currentId = $('.toolbar input.id, .dw-toolbar input.id').first().val() || id;
+				if (currentId) {
+					trash(currentId, deleteConfirm);
+				}
+			},
+
+			edit: function () {
+				var ids = DewawiToolbar.getSelectedIds();
+
+				if (ids.length === 1) {
+					setLocation(baseUrl + '/' + module + '/' + controller + '/edit/id/' + ids[0]);
+				}
+			}
+		},
+
+		getSelectedIds: function () {
+			var ids = [];
+
+			$('table#data tr input.id:checked').each(function () {
+				ids.push($(this).val());
+			});
+
+			return ids;
 		}
 	};
 
-	$(document).on('click', '[data-action]', function (event) {
-		var $button = $(this);
-		var action = String($button.data('action') || '');
-
-		if (!action || !Dewawi.actions[action]) {
-			return;
-		}
-
-		event.preventDefault();
-		Dewawi.actions[action]($button);
+	$(function () {
+		DewawiToolbar.init();
+		window.DewawiToolbar = DewawiToolbar;
 	});
-
-	function buildUrl(moduleName, controllerName, actionName, rowId) {
-		var url = baseUrl + '/' + moduleName + '/' + controllerName + '/' + actionName;
-
-		if (rowId) {
-			url += '/id/' + rowId;
-		}
-
-		return url;
-	}
-
-	function getRowContext($button) {
-		var $row = $button.closest('tr');
-
-		return {
-			id: Number($button.data('id') || $row.find('input.id').val() || window.id || 0),
-			module: String($button.data('module') || $row.find('input.module').val() || module),
-			controller: String($button.data('controller') || $row.find('input.controller').val() || controller)
-		};
-	}
-
-	function getSelectedOrRowContext($button) {
-		var selected = $('table#data input.id:checked').map(function () {
-			return this.value;
-		}).get();
-
-		var ctx = getRowContext($button);
-
-		return {
-			ids: selected.length ? selected : [ctx.id],
-			module: ctx.module,
-			controller: ctx.controller
-		};
-	}
-
-	function toggleFilters() {
-		var $filter = $('#filter');
-
-		if (!$filter.length) {
-			return;
-		}
-
-		$filter.toggleClass('is-open');
-	}
-
-	window.Dewawi = Dewawi;
-
-})(jQuery, window);
+})(jQuery);
