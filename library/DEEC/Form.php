@@ -1141,6 +1141,12 @@ class DEEC_Form
 		}
 		$attribs['name'] = $attribs['name'] ?? $nameRaw;
 
+		if (!empty($el['toolbar']) && array_key_exists('default', $el) && $el['default'] !== null) {
+			$attribs['data-default'] = is_array($el['default'])
+				? Zend_Json::encode(array_values($el['default']))
+				: (string)$el['default'];
+		}
+
 		// for textarea/select we will remove/ignore 'type' later
 		$attribs['type'] = $attribs['type'] ?? $type;
 
@@ -1524,8 +1530,8 @@ class DEEC_Form
 			$html .= $rowForm->renderMultiItem($name, $row, $ctx);
 		}
 
-		// add button wie bisher, global.js click handler greift hier
 		$html .= '<button type="button" class="addMulti add nolabel"'
+				. ' data-action="multi-add"'
 				. ' data-module="' . htmlspecialchars($module) . '"'
 				. ' data-controller="' . htmlspecialchars($controller) . '"></button>';
 

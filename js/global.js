@@ -59,7 +59,7 @@ $(document).ready(function(){
 				cache: false,
 				success: function(json){
 					//response = json;
-					//isDirty = false;
+					//Dewawi.setDirty(false);
 								//console.log(isDirty);
 								location.reload();
 				}
@@ -76,7 +76,7 @@ $(document).ready(function(){
 				cache: false,
 				success: function(json){
 					//response = json;
-					//isDirty = false;
+					//Dewawi.setDirty(false);
 								//console.log(isDirty);
 								location.reload();
 				}
@@ -89,7 +89,7 @@ $(document).ready(function(){
 		else $(this).removeClass('error');
 	});
 	$('.add form').on('change', 'input, textarea, select', function() {
-		isDirty = true;
+		Dewawi.setDirty(true);
 	});
 	$('.edit form').on('change', 'input, textarea, select', function() {
 		if ($(this).closest('.dw-multiform__item').length) {
@@ -99,7 +99,7 @@ $(document).ready(function(){
 			return;
 		}
 		if((this.name != 'file[]') && (this.name != 'media[]') && (this.name != 'subfolder')) {
-			isDirty = true;
+			Dewawi.setDirty(true);
 			var data = {};
 			var params = {};
 			var value = this.value;
@@ -191,15 +191,15 @@ $(document).ready(function(){
 	$('.edit form input').on('textchange', function() {
 		if((this.name != 'file[]') && (this.name != 'media[]') && (this.name != 'subfolder')) {
 			if(!$(this).hasClass('datePicker')) {
-				isDirty = true;
+				Dewawi.setDirty(true);
 			}
 		}
 	});
 	$('.edit form textarea').on('textchange', function() {
-		isDirty = true;
+		Dewawi.setDirty(true);
 	});
 	//$('.edit form select').on('textchange', function() {
-	//	isDirty = true;
+	//	Dewawi.setDirty(true);
 	//});
 
 	//Handle sub entities
@@ -375,7 +375,7 @@ $(document).ready(function(){
 		});
 	});
 	$('#content').on('change', '.editableValue', function() {
-		isDirty = true;
+		Dewawi.setDirty(true);
 		var data = {};
 		var params = {};
 
@@ -562,41 +562,6 @@ $(document).ready(function(){
 			$('#loading').hide();
 	});*/
 
-	//Tabs
-	//$('.tab_content').hide(); //Hide all content
-	$('ul.tabs:not(:has(li.active))').children('li:first-child').addClass('active').show();
-	//$('ul.tabs li:first').addClass('active').show(); //Activate first tab
-	$('.tab_container:not(:has(.tab_content.active))').children(':first-child').addClass('active').show();
-	//$('.tab_content:first').show(); //Show first tab content
-	$('ul.tabs').on('click', 'li', function(event) {
-		$('ul.tabs li').removeClass('active'); //Remove any 'active' class
-		$(this).addClass('active'); //Add 'active' class to selected tab
-			//$('.datepicker-container').addClass('datepicker-hide').off('click.datepicker', $('.datePicker').click); //Hide date picker
-		$('.tab_content').hide(); //Hide all tab content
-
-		if(($(this).find('a').attr('href') == '#tabFinish') || ($(this).find('a').attr('href') == '#tabDocument') || ($(this).find('a').attr('href') == '#tabFiles')) {
-			$.cookie('tab', '#tabOverview', { path: cookiePath+'/'+action });
-		} else {
-			$.cookie('tab', $(this).find('a').attr('href'), { path: cookiePath+'/'+action });
-		}
-
-		var activeTab = $(this).find('a').attr('href'); //Find the href attribute value to identify the active tab + content
-		$(activeTab).fadeIn(); //Fade in the active ID content
-		if(activeTab == '#tabFiles' || activeTab == '#tabImages') {
-			//$('#tabFiles').html('<div id="elfinder"></div>');
-			//elfinder();
-		}
-		//return false;
-				event.preventDefault();
-	});
-	//if($.cookie('tab') == '#tabPositions') {
-		$('div.positionsContainer').each(function() {
-			var parent = $(this).closest('div.positionsContainer').data('parent');
-			var type = $(this).closest('div.positionsContainer').data('type');
-			getPositions(parent, type);
-		});
-	//}
-
 	//Prices and quantities
 	$('.number').on('blur, change', function() {
 		$(this).formatCurrency({ region: language });
@@ -612,498 +577,6 @@ $(document).ready(function(){
 			$('input#margin').val(null);
 		}
 	});
-
-	//Buttons
-	/*(function ($, window, document) {
-		console.log('test1');
-		'use strict';
-
-		var Dewawi = {
-			init: function () {
-				this.bindActions();
-				this.bindTabs();
-				this.bindFilter();
-			},
-
-			bindActions: function () {
-				var self = this;
-
-				$(document).on('click', '[data-action]', function (e) {
-					console.log('test2');
-					var $button = $(this);
-					var action = String($button.data('action') || '');
-
-					if (!action) {
-						return;
-					}
-
-					e.preventDefault();
-
-					if (!self.actions[action]) {
-						console.log('Unknown action:', action, $button.get(0));
-						return;
-					}
-
-					self.actions[action].call(self, $button, e);
-				});
-			},
-
-			bindTabs: function () {
-				$(document).on('click', '[data-tab-target]', function (e) {
-					e.preventDefault();
-
-					var $link = $(this);
-					var targetId = String($link.data('tab-target') || '');
-					var $tabs = $link.closest('.dw-tabs');
-					var $panels = $tabs.next('.dw-tab-panels');
-
-					if (!targetId || !$panels.length) {
-						return;
-					}
-
-					$tabs.find('.dw-tabs__item').removeClass('is-active');
-					$link.closest('.dw-tabs__item').addClass('is-active');
-
-					$panels.find('.dw-tab-panel').removeClass('is-active').hide();
-					$('#' + targetId).addClass('is-active').show();
-				});
-			},
-
-			bindFilter: function () {
-				$(document).on('change', '#daterange input[type="radio"], input[name="daterange"]', function () {
-					var value = String($(this).val() || '');
-					var visible = value === 'custom';
-
-					$('.daterange')[visible ? 'show' : 'hide']();
-				});
-			},
-
-			actions: {
-				view: function ($button) {
-					var data = this.getRowData($button);
-					window.location.href = this.buildUrl(data.module, data.controller, 'edit', data.id);
-				},
-
-				edit: function ($button) {
-					var data = this.getRowData($button);
-					window.location.href = this.buildUrl(data.module, data.controller, 'edit', data.id);
-				},
-
-				copy: function ($button) {
-					var data = this.getRowData($button);
-					window.location.href = this.buildUrl(data.module, data.controller, 'copy', data.id);
-				},
-
-				pdf: function ($button) {
-					var data = this.getRowData($button);
-					window.open(this.buildUrl(data.module, data.controller, 'download', data.id), '_blank');
-				},
-
-				add: function () {
-					window.location.href = this.buildUrl(module, controller, 'add');
-				},
-
-				'copy-current': function () {
-					var currentId = this.getCurrentId();
-					window.location.href = this.buildUrl(module, controller, 'copy', currentId);
-				},
-
-				'delete-current': function () {
-					var currentId = this.getCurrentId();
-					trash(currentId, deleteConfirm, controller, module);
-				},
-
-				clear: function ($button) {
-					var rel = String($button.attr('rel') || '');
-					if (!rel) {
-						return;
-					}
-
-					$('#' + rel).val('').trigger('change').trigger('keyup');
-				},
-
-				reset: function () {
-					window.location.href = this.buildUrl(module, controller, 'index');
-				},
-
-				filter: function () {
-					$('#filter').toggle();
-				},
-
-				'multi-add': function ($button) {
-					var $container = $button.closest('.multiformContainer');
-					var parentId = Number($container.data('parentid')) || 0;
-					var parentModule = String($container.data('parent-module') || '');
-					var parentController = String($container.data('parent-controller') || '');
-					var rowModule = String($button.data('module') || '');
-					var rowController = String($button.data('controller') || '');
-
-					if (!parentId || !rowModule || !rowController) {
-						console.log('Missing multi-add data');
-						return;
-					}
-
-					$.ajax({
-						type: 'POST',
-						url: baseUrl + '/' + rowModule + '/' + rowController + '/add/parent_id/' + parentId,
-						data: {
-							parent_module: parentModule,
-							parent_controller: parentController
-						},
-						cache: false,
-						success: function (html) {
-							$button.before(html);
-						},
-						error: function (xhr) {
-							console.log('multi-add failed', xhr.responseText);
-						}
-					});
-				},
-
-				'position-add': function () {
-					if (typeof addPosition === 'function') {
-						addPosition();
-					}
-				},
-
-				'position-copy': function () {
-					if (typeof copyPosition === 'function') {
-						copyPosition();
-					}
-				},
-
-				'position-delete': function () {
-					if (typeof deletePosition === 'function') {
-						deletePosition();
-					}
-				},
-
-				'set-add': function () {
-					if (typeof addSet === 'function') {
-						addSet();
-					}
-				},
-
-				'set-copy': function () {
-					if (typeof copySet === 'function') {
-						copySet();
-					}
-				},
-
-				'set-delete': function () {
-					if (typeof deleteSet === 'function') {
-						deleteSet();
-					}
-				},
-
-				'set-sort-up': function ($button) {
-					if (typeof sortSetUp === 'function') {
-						sortSetUp($button);
-					}
-				},
-
-				'set-sort-down': function ($button) {
-					if (typeof sortSetDown === 'function') {
-						sortSetDown($button);
-					}
-				}
-			},
-
-			getRowData: function ($button) {
-				var id = Number($button.data('id')) || 0;
-				var rowModule = String($button.data('module') || '');
-				var rowController = String($button.data('controller') || '');
-
-				if (!id || !rowModule || !rowController) {
-					throw new Error('Missing row action data');
-				}
-
-				return {
-					id: id,
-					module: rowModule,
-					controller: rowController
-				};
-			},
-
-			getCurrentId: function () {
-				var value = $('input[name="id"]').first().val();
-				var currentId = Number(value) || Number(window.id) || 0;
-
-				if (!currentId) {
-					throw new Error('Missing current id');
-				}
-
-				return currentId;
-			},
-
-			buildUrl: function (moduleName, controllerName, actionName, id) {
-				var url = baseUrl + '/' + moduleName + '/' + controllerName + '/' + actionName;
-
-				if (typeof id !== 'undefined' && id !== null && id !== '') {
-					url += '/id/' + id;
-				}
-
-				return url;
-			}
-		};
-
-		$(function () {
-			Dewawi.init();
-			window.Dewawi = Dewawi;
-		});
-	})(jQuery, window, document);*/
-
-
-/*	$(document).on('click', 'button', function() {
-		if(!$(this).attr('onclick')) {
-			var classes = $(this).attr('class');
-			if(classes) {
-				var className = classes.split(' ')[0];
-				if(className == 'add') {
-					var url = baseUrl+'/'+module+'/'+controller+'/add';
-					if($('#catid').val() > 0) url += '/catid/'+$('#catid').val();
-					setLocation(url);
-				} else if (className == 'addMulti') {
-					var $container = $(this).closest('div.multiformContainer');
-
-					var payload = {};
-					if ($container.data('type')) {
-						payload.type = $container.data('type');
-					}
-
-					var target = {
-						module: $(this).data('module'),
-						controller: $(this).data('controller'),
-						action: 'add',
-						id: $container.data('parentid')
-					};
-
-					var context = {
-						parentModule: $container.data('parent-module'),
-						parentController: $container.data('parent-controller'),
-						parentId: $container.data('parentid')
-					};
-
-					if (!context.parentModule || !context.parentController || !context.parentId) {
-						pushMessages(['Parent-Kontext fehlt.']);
-						return;
-					}
-
-					createEntity(payload, target, context, $container);
-				} else if(className == 'save') {
-					save();
-				} else if(className == 'addPosition') {
-					var parent = $(this).closest('div.positionsContainer').data('parent');
-					var type = $(this).closest('div.positionsContainer').data('type');
-					var setid = $(this).closest('div.set').find('input.setid').val();
-					var setid = $(this).closest('div.set').find('input.setid').first().val();
-					if (typeof setid === 'undefined' || setid === null || setid === '') {
-						setid = 0;
-					}
-					addPosition(parent, type, setid);
-				} else if(className == 'addSet') {
-					if(action == 'index') {
-						var url = baseUrl+'/'+module+'/'+controller+'set/add';
-						if($('#catid').val() > 0) url += '/catid/'+$('#catid').val();
-						setLocation(url);
-					} else {
-						var parent = $(this).closest('div.positionsContainer').data('parent');
-						var type = $(this).closest('div.positionsContainer').data('type');
-						addSet(parent, type);
-					}
-				} else if(className == 'copySet') {
-					var parent = $(this).closest('div.positionsContainer').data('parent');
-					var type = $(this).closest('div.positionsContainer').data('type');
-					var setid = $(this).closest('div.set').find('input.setid').val();
-					if(setid != "0") copySet(parent, type, setid);
-				} else if(className == 'deleteSet') {
-					var parent = $(this).closest('div.positionsContainer').data('parent');
-					var type = $(this).closest('div.positionsContainer').data('type');
-					var setid = $(this).closest('div.set').find('input.setid').val();
-					if(setid != "0") deleteSet(parent, type, setid);
-				} else if(className == 'clear') {
-					var element = $(this).attr('rel');
-					clear(element);
-				} else if(className == 'reset') {
-					reset();
-				} else if($(this).parents('.toolbar').length == 1) {
-					var ids = [];
-
-					// Collect all selected checkboxes once
-					$('table#data tr input.id:checked').each(function() {
-						ids.push($(this).val());
-					});
-
-					switch(className) {
-						case 'edit':
-							//var url = baseUrl+'/'+module+'/'+controller+'/edit/id/'+$(this).val();
-							//setLocation(url);
-							break;
-						case 'copy':
-							//copy($(this).val());
-							ids.forEach(function(id) {
-								copy(id);
-							});
-							break;
-						case 'cancel':
-							//cancel($(this).val());
-							ids.forEach(function(id) {
-								cancel(id);
-							});
-							break;
-						case 'delete':
-							//trash($(this).val(), deleteConfirm);
-							//ids.forEach(function(id) {
-							//	console.log(id);
-							//});
-							trash(ids, deleteConfirm);
-							break;
-					}
-
-					$('table#positions tr').each(function(){
-						$(this).find('td input.id:checkbox').each(function() {
-							if(this.checked) {
-								switch(className) {
-									case 'copyPosition':
-										var parent = $(this).closest('div.positionsContainer').data('parent');
-										var type = $(this).closest('div.positionsContainer').data('type');
-										copyPosition(parent, type, $(this).val());
-										break;
-									case 'applyPosition':
-										var parent = $(this).closest('div.positionsContainer').data('parent');
-										var type = $(this).closest('div.positionsContainer').data('type');
-										//window.parent.console.log(parent);
-										//applyPosition(parent, type, $(this).val(), window.parent.setid);
-										break;
-									case 'deletePosition':
-										var parent = $(this).closest('div.positionsContainer').data('parent');
-										var type = $(this).closest('div.positionsContainer').data('type');
-										var setid = $(this).closest('div.set').find('input.setid').val();
-										deletePosition(parent, type, $(this).val(), setid);
-										break;
-								}
-							}
-						});
-					});
-					//copy and delete function on edit page
-					var id = $(this).closest('.toolbar').find('input.id').val();
-					if(id) {
-						if(className == 'copy') {
-							copy(id);
-						} else if(className == 'delete') {
-							trash(id, deleteConfirm);
-						}
-					}
-					var parent = $(this).closest('div.positionsContainer').data('parent');
-					var type = $(this).closest('div.positionsContainer').data('type');
-					var setid = $(this).closest('div.set').find('input.setid').val();
-					if(className == 'up') {
-						sort(parent, type, setid, -1, 'up');
-					} else if(className == 'down') {
-						sort(parent, type, setid, -1, 'down');
-					}
-				} else if (className == 'up') {
-					var $container = $(this).closest('.positionsContainer');
-					var $card = $(this).closest('.dw-position-card');
-					var $set = $(this).closest('.set');
-
-					var parent = $container.data('parent');
-					var type = $container.data('type');
-					var id = $card.find('input[type="hidden"].position-id:first').val();
-					var setid = $set.find('input.setid').val() || null;
-
-					if (!id) {
-						console.warn('sort up: id not found');
-						return;
-					}
-
-					if ($card.hasClass('is-child')) {
-						var masterid = $card.data('masterid');
-						sort(parent, type, id, setid, 'up', masterid);
-					} else {
-						sort(parent, type, id, setid, 'up');
-					}
-
-				} else if (className == 'down') {
-					var $container = $(this).closest('.positionsContainer');
-					var $card = $(this).closest('.dw-position-card');
-					var $set = $(this).closest('.set');
-
-					var parent = $container.data('parent');
-					var type = $container.data('type');
-					var id = $card.find('input[type="hidden"].position-id:first').val();
-					var setid = $set.find('input.setid').val() || null;
-
-					if (!id) {
-						console.warn('sort down: id not found');
-						return;
-					}
-
-					if ($card.hasClass('is-child')) {
-						var masterid = $card.data('masterid');
-						sort(parent, type, id, setid, 'down', masterid);
-					} else {
-						sort(parent, type, id, setid, 'down');
-					}
-				} else if(className == 'copyPosition') {
-					var $card = $(this).closest('.dw-position-card');
-					var $container = $(this).closest('.positionsContainer');
-
-					var parent = $container.data('parent');
-					var type = $container.data('type');
-					var positionId = $card.find('input.position-id').first().val();
-
-					if (typeof positionId === 'undefined' || positionId === null || positionId === '') {
-						return false;
-					}
-
-					copyPosition(parent, type, positionId);
-				} else if(className == 'deletePosition') {
-					var $container = $(this).closest('.positionsContainer');
-					var $card = $(this).closest('.dw-position-card');
-					var $set = $(this).closest('.set');
-
-					var parent = $container.data('parent');
-					var type = $container.data('type');
-					var positionID = $card.find('.position-id:first').val();
-					var setid = $set.find('input.setid').val() || null;
-
-					if (!positionID) {
-						console.warn('deletePosition: no hidden position id found');
-						return;
-					}
-
-					if ($card.hasClass('is-child')) {
-						deletePosition(parent, type, positionID, setid, $card.data('masterid'));
-					} else {
-						deletePosition(parent, type, positionID, setid);
-					}
-				} else {
-					var cid = $(this).closest('tr').find('input.id').val() || id;
-					if(cid) {
-						var cmodule = $(this).closest('tr').find('input.module').val() || module;
-						var ccontroller = $(this).closest('tr').find('input.controller').val() || controller;
-						if(className == 'edit') {
-							setLocation(baseUrl+'/'+cmodule+'/'+ccontroller+'/edit/id/'+cid);
-						} else if(className == 'view') {
-							setLocation(baseUrl+'/'+cmodule+'/'+ccontroller+'/view/id/'+cid);
-						} else if(className == 'pdf') {
-							setLocation(baseUrl+'/'+cmodule+'/'+ccontroller+'/download/id/'+cid);
-						} else if(className == 'copy') {
-							copy(cid, cmodule, ccontroller);
-						} else if(className == 'delete') {
-							trash(cid, deleteConfirm);
-						} else if(className == 'export') {
-							var ids = $('input:checkbox:checked').map(function () {
-								return this.value;
-							}).get();
-							exportData(ids);
-						}
-					}
-				}
-			}
-		}
-	});*/
 
 	//Date picker
 	$('.datePicker').datepicker(datePickerOptions);
@@ -1307,7 +780,7 @@ function save() {
 			else $(this).removeClass('error');
 		});
 		if(!error) {
-			isDirty = false;
+			Dewawi.setDirty(false);
 			document.getElementById(controller).submit();
 		}
 	} else if(action == 'password') {
@@ -1324,7 +797,7 @@ function save() {
 			cache: false,
 			success: function(json){
 				response = json;
-				isDirty = false;
+				Dewawi.setDirty(false);
 				//Close the modal window
 				window.parent.modalWindowClose();
 			}
@@ -1373,7 +846,7 @@ function add(data, params) {
 			cache: false,
 			success: function(resp){
 				response = resp;
-				isDirty = false;
+				Dewawi.setDirty(false);
 
 				// JSON error response
 				if (typeof resp === 'object' && resp !== null && resp.ok === false) {
@@ -1428,7 +901,7 @@ function add(data, params) {
 		data: data,
 		cache: false,
 		success: function(response){
-			isDirty = false;
+			Dewawi.setDirty(false);
 			$('div#'+data['controller']+' button.add').before(response);
 			$('div#'+data['controller']+' div:last input:first').focus().select();
 			if(action == 'index') search();
@@ -1471,7 +944,7 @@ function edit(data, params) {
 				else if (response.message === 'not_found') pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
 				else pushMessages([response.message]);
 			} else {
-				isDirty = false;
+				Dewawi.setDirty(false);
 			}
 		},
 		error: function(xhr){
@@ -1780,7 +1253,7 @@ function editPosition(parent, type, data, params) {
 		data: data,
 		cache: false,
 		success: function(response){
-			isDirty = false;
+			Dewawi.setDirty(false);
 			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleaction')) {
 				$('table#total #subtotal').text(response['subtotal']);
 				$('table#total #total').text(response['total']);
@@ -1807,7 +1280,7 @@ function addPosition(parent, type, setid) {
 		success: function(){
 			$('#status #warning').hide();
 			$('#status #success').show();
-			isDirty = false;
+			Dewawi.setDirty(false);
 			getPositions(parent, type, $(document).height());
 		}
 	});
@@ -1879,7 +1352,7 @@ function addOption(parent, type, optionid, setid, masterid) {
 		success: function(){
 			$('#status #warning').hide();
 			$('#status #success').show();
-			isDirty = false;
+			Dewawi.setDirty(false);
 			getPositions(parent, type, window.pageYOffset);
 		}
 	});
@@ -1894,7 +1367,7 @@ function addSet(parent, type) {
 		success: function(){
 			$('#status #warning').hide();
 			$('#status #success').show();
-			isDirty = false;
+			Dewawi.setDirty(false);
 			getPositions(parent, type, $(document).height());
 		}
 	});
@@ -1942,7 +1415,7 @@ function editPositionSet(data, params) {
 		data: data,
 		cache: false,
 		success: function(json){
-			isDirty = false;
+			Dewawi.setDirty(false);
 			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleaction')) {
 				$('table#total #subtotal').text(json['subtotal']);
 				$('table#total #total').text(json['total']);
@@ -2309,7 +1782,7 @@ function createEntity(payload, target, context, $container) {
 		data: requestPayload,
 		cache: false,
 		success: function(response) {
-			isDirty = false;
+			Dewawi.setDirty(false);
 
 			if ($container && $container.length) {
 				var $target = $container.find('> .multiform');
@@ -2700,6 +2173,26 @@ function markFieldSaved($field) {
 				setLocation(url);
 			},
 
+			'multi-add': function ($button) {
+				var $container = $button.closest('.multiformContainer');
+
+				createEntity(
+					{},
+					{
+						module: $button.data('module'),
+						controller: $button.data('controller'),
+						action: 'add',
+						id: $container.data('parentid')
+					},
+					{
+						parentModule: $container.data('parent-module'),
+						parentController: $container.data('parent-controller'),
+						parentId: $container.data('parentid')
+					},
+					$container
+				);
+			},
+
 			filter: function () {
 				$('.dw-filter-panel').toggleClass('is-open');
 			},
@@ -2862,3 +2355,79 @@ function markFieldSaved($field) {
 		window.DewawiToolbar = DewawiToolbar;
 	});
 })(jQuery);
+
+//Tabs
+function activateDwTab($link, saveCookie) {
+	if (!$link.length) return;
+
+	var target = $link.data('tab-target') || $link.attr('href');
+	if (!target) return;
+
+	if (String(target).charAt(0) !== '#') {
+		target = '#' + target;
+	}
+
+	var $tabs = $link.closest('.dw-tabs');
+	var $panels = $tabs.next('.dw-tab-panels');
+
+	if (!$panels.length) return;
+
+	var $targetPanel = $panels.find(target).first();
+	if (!$targetPanel.length) return;
+
+	$tabs.find('> .dw-tabs__nav > .dw-tabs__item').removeClass('is-active');
+	$link.closest('.dw-tabs__item').addClass('is-active');
+
+	$panels.find('> .dw-tab-panel').removeClass('is-active').hide();
+	$targetPanel.addClass('is-active').show();
+
+	if (saveCookie && !$tabs.hasClass('dw-tabs--history')) {
+		$.cookie('tab', target, { path: cookiePath + '/' + action });
+	}
+}
+
+function initDwTabs(scope) {
+	var $scope = scope ? $(scope) : $(document);
+
+	$scope.find('.dw-tabs').each(function () {
+		var $tabs = $(this);
+		var $panels = $tabs.next('.dw-tab-panels');
+
+		if (!$panels.length) return;
+
+		var $links = $tabs.find('> .dw-tabs__nav > .dw-tabs__item > .dw-tabs__link');
+		var cookieTab = !$tabs.hasClass('dw-tabs--history') ? $.cookie('tab') : null;
+		var $activeLink = $();
+
+		if (cookieTab) {
+			$activeLink = $links.filter('[href="' + cookieTab + '"]').first();
+		}
+
+		if (!$activeLink.length) {
+			$activeLink = $links.filter(function () {
+				return $(this).closest('.dw-tabs__item').hasClass('is-active');
+			}).first();
+		}
+
+		if (!$activeLink.length) {
+			$activeLink = $links.first();
+		}
+
+		activateDwTab($activeLink, false);
+	});
+}
+
+$(document).on('click', '.dw-tabs__link', function (event) {
+	event.preventDefault();
+
+	var $link = $(this);
+	activateDwTab($link, true);
+
+	if ($link.attr('href') === '#tabmessages' && typeof getEmailmessages === 'function') {
+		getEmailmessages();
+	}
+});
+
+$(function () {
+	initDwTabs();
+});
