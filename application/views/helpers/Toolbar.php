@@ -26,10 +26,11 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 
 	protected function renderEditToolbar($toolbar, int $id): string
 	{
-		$html = '<input class="id" type="hidden" value="' . $id . '" name="id"/>';
+		$target = $this->getCurrentTarget($id);
 
-		$html .= $toolbar->renderElement('copy');
-		$html .= $toolbar->renderElement('delete');
+		$html = '';
+		$html .= $toolbar->renderElementWithAttribs('copy', $target);
+		$html .= $toolbar->renderElementWithAttribs('delete', $target);
 		$html .= $toolbar->renderElement('state');
 
 		return $html;
@@ -37,10 +38,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 
 	protected function renderViewToolbar($toolbar, int $id): string
 	{
-		$html = '<input class="id" type="hidden" value="' . $id . '" name="id"/>';
-		$html .= $toolbar->renderElement('copy');
-
-		return $html;
+		return $toolbar->renderElementWithAttribs('copy', $this->getCurrentTarget($id));
 	}
 
 	protected function renderIndexToolbar($toolbar): string
@@ -172,5 +170,14 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		}
 
 		return '<div class="dw-active-filters">' . $html . '</div>';
+	}
+
+	protected function getCurrentTarget(int $id): array
+	{
+		return [
+			'data-id' => $id,
+			'data-module' => $this->view->module,
+			'data-controller' => $this->view->controller,
+		];
 	}
 }

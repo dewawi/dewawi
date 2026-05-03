@@ -954,6 +954,20 @@ class DEEC_Form
 		return $this->renderElementHtml($tmp);
 	}
 
+	public function renderElementWithAttribs(string $name, array $attribs = []): string
+	{
+		$el = $this->getElement($name);
+
+		if (!$el) {
+			return '';
+		}
+
+		$tmp = $el;
+		$tmp['attribs'] = array_merge($tmp['attribs'] ?? [], $this->buildAttribs($attribs));
+
+		return $this->renderElementHtml($tmp);
+	}
+
 	/**
 	* convenience: render only a subset in original order
 	*/
