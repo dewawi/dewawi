@@ -8,6 +8,26 @@ var datePickerOptions = {
 	language: language
 };
 
+var Dewawi = {
+	isDirty: false,
+	searchTimeout: 0,
+
+	url: function (moduleName, controllerName, actionName, id) {
+		var url = baseUrl + '/' + moduleName + '/' + controllerName + '/' + actionName;
+
+		if (id !== undefined && id !== null && id !== '') {
+			url += '/id/' + id;
+		}
+
+		return url;
+	},
+
+	setDirty: function (dirty) {
+		isDirty = !!dirty;
+		this.isDirty = !!dirty;
+	}
+};
+
 $(document).ready(function(){
 	//Keep alive
 	setInterval(function(){
@@ -480,51 +500,6 @@ $(document).ready(function(){
 	//Focus on keyword
 	if(action == 'index') {
 		$('#keyword').focus().select();
-	}
-
-	// Auto search with keyword
-	$('.dw-toolbar #keyword').on('textchange', function() {
-		var keyword = this.value || ''; // Fallback to empty string if undefined
-		if(keyword) {
-			var date = new Date();
-			date.setTime(date.getTime() + (5 * 60 * 1000)); // expire after 5 minutes
-			$.cookie('keyword', keyword, { expires: date, path: cookiePath });
-		} else {
-			$.removeCookie('keyword', { path: cookiePath }); // Remove cookie if empty
-		}
-		search();
-	});
-
-	//Toolbar
-	$(document).on('change', '.dw-toolbar input, .dw-toolbar select', function () {
-		var $field = $(this);
-
-		if (!$field.attr('name')) {
-			return;
-		}
-
-		persistToolbarField($field);
-		$('#page').val(1);
-		search();
-	});
-
-	function persistToolbarField($field) {
-		var name = String($field.attr('name') || '').replace('[]', '');
-
-		if (!name) {
-			return;
-		}
-
-		if ($field.is(':checkbox')) {
-			var values = $('input[name="' + name + '[]"]:checked').map(function () {
-				return this.value;
-			}).get();
-
-			$.cookie(name, JSON.stringify(values), { path: cookiePath });
-			return;
-		}
-
-		$.cookie(name, $field.val() || '', { path: cookiePath });
 	}
 
 	//Select template or language
@@ -1534,7 +1509,7 @@ function search() {
 function collectToolbarData() {
 	var data = {};
 
-	$('.dw-toolbar input, .dw-toolbar select, #filter input, #filter select').each(function () {
+	$('.dw-toolbar input, .dw-toolbar select, .dw-filter-panel input, .dw-filter-panel select').each(function () {
 		var $field = $(this);
 		var name = String($field.attr('name') || '');
 
@@ -1553,6 +1528,11 @@ function collectToolbarData() {
 				data[name].push($field.val());
 			}
 
+			return;
+		}
+
+		if ($field.is(':checkbox')) {
+			data[name] = $field.is(':checked') ? 1 : 0;
 			return;
 		}
 
@@ -1645,82 +1625,6 @@ function collectToolbarData() {
 		});
 	}, 500);
 }*/
-
-//Clear
-function clear(element) {
-	if(element == 'keyword') {
-		$('#keyword').val('');
-		$.cookie('keyword', '', { path: cookiePath });
-		search();
-	} else if(element == 'catid') {
-		$('#catid').val('all');
-		$.cookie('catid', 'all', { path: cookiePath });
-		search();
-	} else if(element == 'tagid') {
-		$('#tagid').val(0);
-		$.cookie('tagid', 0, { path: cookiePath });
-		search();
-	} else if(element == 'country') {
-		$('#country').val(0);
-		$.cookie('country', 0, { path: cookiePath });
-		search();
-	} else if(element == 'order') {
-		$('#order option[default="default"]').prop('selected', true);
-		$.cookie('order', $('#order option[default="default"]').val(), { path: cookiePath });
-		search();
-	} else if(element == 'sort') {
-		$('#sort option[default="default"]').prop('selected', true);
-		$.cookie('sort', $('#sort option[default="default"]').val(), { path: cookiePath });
-		search();
-	} else if(element == 'states') {
-		$('#state input[type="checkbox"]').prop('checked', false);
-		$('#state input[type="checkbox"][default="default"]').prop('checked', true);
-		states = [];
-		$('#state input[type="checkbox"]').each(function() {
-			if($(this).prop('checked')) states.push(this.value);
-		});
-		$.cookie(element, JSON.stringify(states), { path: cookiePath });
-		search();
-	} else if(element == 'daterange') {
-		$('#daterange input[value=0]').prop('checked', true);
-		$.cookie('daterange', 0, { path: cookiePath });
-		$('#filter .daterange').hide();
-		search();
-	}
-}
-
-//Reset
-function reset() {
-	$('#keyword').val('');
-	$.cookie('keyword', '', { path: cookiePath });
-	$('.toolbar select').each(function(){
-		if(this.name) {
-			$(this).val($(this).attr('default'));
-			$.cookie(this.name, $(this).attr('default'), { path: cookiePath });
-		}
-	});
-	$('.toolbar input[type="radio"]').each(function(){
-		if(this.name) {
-			//console.log($(this).attr('default'));
-			if($(this).attr('default') == $(this).val()) $(this).prop('checked', true);
-			//else $(this).prop('checked', false);
-			$.cookie(this.name, $(this).attr('default'), { path: cookiePath });
-		}
-	});
-	$('.toolbar input[type="checkbox"]').each(function(){
-		if(this.name) {
-			var elements = $(this).attr('default');
-			var elementsArray = elements.split(' ');
-			//console.log(elementsArray);
-			//console.log($(this).val());
-			//console.log(elementsArray.indexOf($(this).val()));
-			if(elementsArray.indexOf($(this).val()) != -1) $(this).prop('checked', true);
-			else $(this).prop('checked', false);
-			$.cookie(this.name.replace('[]', ''), JSON.stringify(elementsArray), { path: cookiePath });
-		}
-	});
-	search();
-}
 
 //Copy
 function copy(cid, cmodule, ccontroller) {
@@ -2676,6 +2580,7 @@ function markFieldSaved($field) {
 	}
 })();
 
+//Toolbar
 (function ($) {
 	'use strict';
 
@@ -2722,14 +2627,24 @@ function markFieldSaved($field) {
 				event.preventDefault();
 
 				var $card = $(this).closest('.dw-filter-card');
-				$card.find('input[type="checkbox"]').prop('checked', true).trigger('change');
+				var $boxes = $card.find('input[type="checkbox"]');
+
+				$boxes.prop('checked', true);
+				DewawiToolbar.persistField($boxes.first());
+				$('#page').val(1);
+				search();
 			});
 
 			$(document).on('click', '.dw-filter-card__actions .none', function (event) {
 				event.preventDefault();
 
 				var $card = $(this).closest('.dw-filter-card');
-				$card.find('input[type="checkbox"]').prop('checked', false).trigger('change');
+				var $boxes = $card.find('input[type="checkbox"]');
+
+				$boxes.prop('checked', false);
+				DewawiToolbar.persistField($boxes.first());
+				$('#page').val(1);
+				search();
 			});
 		},
 
@@ -2790,11 +2705,18 @@ function markFieldSaved($field) {
 			},
 
 			reset: function () {
-				reset();
+				DewawiToolbar.resetAll();
+				search();
 			},
 
 			clear: function ($button) {
-				clear($button.attr('rel'));
+				DewawiToolbar.resetField($button.attr('rel'));
+				search();
+			},
+
+			'clear-filter': function ($button) {
+				DewawiToolbar.resetField($button.data('filter'));
+				search();
 			},
 
 			copy: function () {
@@ -2831,6 +2753,97 @@ function markFieldSaved($field) {
 					setLocation(baseUrl + '/' + module + '/' + controller + '/edit/id/' + ids[0]);
 				}
 			}
+		},
+
+		resetField: function (name) {
+			name = String(name || '').replace('[]', '');
+
+			if (!name) {
+				return;
+			}
+
+			var $fields = $('[name="' + name + '"], [name="' + name + '[]"]');
+
+			if (!$fields.length) {
+				$.removeCookie(name, { path: cookiePath });
+				return;
+			}
+
+			if ($fields.first().is(':checkbox')) {
+				var defaultValues = this.getDefaultArray($fields.first());
+
+				$fields.each(function () {
+					$(this).prop('checked', defaultValues.indexOf(String(this.value)) !== -1);
+				});
+
+				$.cookie(name, JSON.stringify(defaultValues), { path: cookiePath });
+				return;
+			}
+
+			var defaultValue = this.getDefaultValue($fields.first());
+
+			$fields.val(defaultValue);
+
+			if (defaultValue === '') {
+				$.removeCookie(name, { path: cookiePath });
+			} else {
+				$.cookie(name, defaultValue, { path: cookiePath });
+			}
+
+			if (name === 'daterange') {
+				this.toggleDateRange(defaultValue);
+			}
+		},
+
+		resetAll: function () {
+			$('.dw-toolbar input, .dw-toolbar select, .dw-filter-panel input, .dw-filter-panel select').each(function () {
+				var name = String($(this).attr('name') || '').replace('[]', '');
+
+				if (name) {
+					DewawiToolbar.resetField(name);
+				}
+			});
+
+			$('#page').val(1);
+		},
+
+		getDefaultValue: function ($field) {
+			var value = $field.data('default');
+
+			if (value === undefined) {
+				value = $field.attr('default');
+			}
+
+			if (value === undefined) {
+				value = '';
+			}
+
+			return String(value);
+		},
+
+		getDefaultArray: function ($field) {
+			var value = $field.data('default');
+
+			if (value === undefined) {
+				value = $field.attr('default');
+			}
+
+			if ($.isArray(value)) {
+				return value.map(String);
+			}
+
+			if (typeof value === 'string' && value.length) {
+				try {
+					var decoded = JSON.parse(value);
+					if ($.isArray(decoded)) {
+						return decoded.map(String);
+					}
+				} catch (e) {}
+
+				return value.split(' ').map(String);
+			}
+
+			return [];
 		},
 
 		getSelectedIds: function () {
