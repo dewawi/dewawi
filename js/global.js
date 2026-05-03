@@ -2212,7 +2212,14 @@ function markFieldSaved($field) {
 				search();
 			},
 
-			copy: function () {
+			copy: function ($button) {
+				var row = DewawiToolbar.getButtonTarget($button);
+
+				if (row.id) {
+					copy(row.id, row.module, row.controller);
+					return;
+				}
+
 				var ids = DewawiToolbar.getSelectedIds();
 
 				if (ids.length) {
@@ -2239,23 +2246,36 @@ function markFieldSaved($field) {
 				}
 			},
 
-			edit: function () {
+			edit: function ($button) {
+				var row = DewawiToolbar.getButtonTarget($button);
+
+				if (row.id) {
+					setLocation(Dewawi.url(row.module, row.controller, 'edit', row.id));
+					return;
+				}
+
 				var ids = DewawiToolbar.getSelectedIds();
 
 				if (ids.length === 1) {
-					setLocation(baseUrl + '/' + module + '/' + controller + '/edit/id/' + ids[0]);
+					setLocation(Dewawi.url(module, controller, 'edit', ids[0]));
 				}
 			},
 
 			view: function ($button) {
 				var row = DewawiToolbar.getButtonTarget($button);
-				setLocation(baseUrl + '/' + row.module + '/' + row.controller + '/view/id/' + row.id);
+
+				if (row.id) {
+					setLocation(DewawiToolbar.buildUrl(row.module, row.controller, 'view', row.id));
+				}
 			},
 
 			pdf: function ($button) {
 				var row = DewawiToolbar.getButtonTarget($button);
-				window.open(baseUrl + '/' + row.module + '/' + row.controller + '/download/id/' + row.id, '_blank');
-			}
+
+				if (row.id) {
+					window.open(DewawiToolbar.buildUrl(row.module, row.controller, 'download', row.id), '_blank');
+				}
+			},
 		},
 
 		resetField: function (name) {

@@ -701,11 +701,13 @@ class DEEC_List
 
 		foreach ($elements as $element) {
 			$name = isset($element['name']) ? (string)$element['name'] : '';
+
 			if ($name === '') {
 				continue;
 			}
 
 			$show = true;
+
 			if (isset($element['show']) && is_callable($element['show'])) {
 				$show = (bool)call_user_func($element['show'], $item, $element, $this);
 			}
@@ -715,7 +717,23 @@ class DEEC_List
 			}
 
 			if ($toolbarInline && method_exists($toolbarInline, 'renderElement')) {
-				$html[] = (string)$toolbarInline->renderElement($name);
+				$button = (string)$toolbarInline->renderElement($name);
+
+				$attrs = [
+					'data-action' => $name,
+					'data-id' => $this->getFieldValue($item, $element['id_field'] ?? $column['id_field'] ?? 'id'),
+					'data-module' => $this->getFieldValue($item, $element['module_field'] ?? $column['module_field'] ?? '', $this->getModule()),
+					'data-controller' => $this->getFieldValue($item, $element['controller_field'] ?? $column['controller_field'] ?? '', $this->getController()),
+				];
+
+				$button = preg_replace(
+					'/<button\b/',
+					'<button' . $this->renderAttributes($attrs),
+					$button,
+					1
+				);
+
+				$html[] = $button;
 			}
 		}
 

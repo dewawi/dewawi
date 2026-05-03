@@ -147,12 +147,14 @@ function normalizeHistoryRows($rows, array $section): array
 					</div>
 
 					<?php
+					$toolbarInline = new Contacts_Form_ToolbarInline();
 					$list = new Contacts_Model_List_History([
 						'id' => 'history-' . $historyKey,
 						'items' => normalizeHistoryRows($this->history[$historyKey], $section),
 						'view' => $this,
 						'module' => $section['module'],
 						'controller' => $section['controller'],
+						'toolbarInline' => $toolbarInline,
 						'options' => [
 							'states' => $this->history['states'] ?? [],
 						],

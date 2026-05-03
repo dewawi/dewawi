@@ -6,6 +6,13 @@ class Contacts_Form_ToolbarInline extends DEEC_Form
 	{
 		$this->addElement([
 			'type' => 'button',
+			'name' => 'view',
+			'attribs' => ['class' => 'view nolabel'],
+			'wrap' => false,
+		]);
+
+		$this->addElement([
+			'type' => 'button',
 			'name' => 'edit',
 			'attribs' => ['class' => 'edit nolabel'],
 			'wrap' => false,

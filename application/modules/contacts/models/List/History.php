@@ -67,19 +67,27 @@ class Contacts_Model_List_History extends DEEC_List
 			],
 			[
 				'name' => 'actions',
-				'type' => 'callback',
+				'type' => 'actions',
 				'label' => '',
-				'callback' => function ($row, $column, $list) {
-					$id = (int)$row->id;
-					$module = $list->escapeAttr($row->module);
-					$controller = $list->escapeAttr($row->controller);
-
-					return '<div class="dw-row-actions">'
-						. '<button type="button" class="view nolabel" data-action="view" data-id="'.$id.'" data-module="'.$module.'" data-controller="'.$controller.'"></button>'
-						. '<button type="button" class="copy nolabel" data-action="copy" data-id="'.$id.'" data-module="'.$module.'" data-controller="'.$controller.'"></button>'
-						. '<button type="button" class="pdf nolabel" data-action="pdf" data-id="'.$id.'" data-module="'.$module.'" data-controller="'.$controller.'"></button>'
-						. '</div>';
-				},
+				'module_field' => 'module',
+				'controller_field' => 'controller',
+				'id_field' => 'id',
+				'elements' => [
+					[
+						'name' => 'view',
+						'show' => function ($item, $element, $list) {
+							return $list->isReadonly($item);
+						},
+					],
+					[
+						'name' => 'edit',
+						'show' => function ($item, $element, $list) {
+							return !$list->isReadonly($item);
+						},
+					],
+					['name' => 'copy'],
+					['name' => 'pdf'],
+				],
 			],
 		];
 	}
