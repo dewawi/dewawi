@@ -2,37 +2,19 @@
 
 class Items_ItemController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
+	protected function buildIndexView(): void
 	{
-		$params = $this->_getAllParams();
+		$get = new Items_Model_Get();
 
-		$this->_date = date('Y-m-d H:i:s');
+		$this->buildListView([
+			'viewKey' => 'items',
+			'list' => 'Items_Model_List_Items',
+			'items' => function ($params, $options) use ($get) {
+				list($items, $records) = $get->items($params, $options);
 
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'export', $this->_flashMessenger);
+				return $items;
+			},
+		]);
 	}
 
 	public function indexAction()
@@ -98,29 +80,6 @@ class Items_ItemController extends DEEC_Controller_Action
 		$this->view->toolbar = $toolbar;
 		$this->view->toolbarInline = $toolbarInline;
 		$this->view->parent = $this->_getParam('parent', NULL);
-		$this->view->setid = (int)$this->_getParam('setid', 0);
-		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function selectAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$toolbar = new Items_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$categoriesDb = new Application_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories('item');
-
-		$get = new Items_Model_Get();
-		list($items, $records) = $get->items($params, $options);
-
-		$this->view->items = $items;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->parent = $params['parent'];
 		$this->view->setid = (int)$this->_getParam('setid', 0);
 		$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
 		$this->view->messages = $this->_flashMessenger->getMessages();
