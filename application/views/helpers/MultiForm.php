@@ -44,7 +44,13 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract
 
 			$rowId = (string)$row['id'];
 
-			$html .= '<div id="' . $this->escAttr((string)$controller . $rowId) . '">';
+			$html .= '<div'
+				. ' id="' . $this->escAttr((string)$controller . $rowId) . '"'
+				. ' class="dw-multiform__item"'
+				. ' data-id="' . $this->escAttr($rowId) . '"'
+				. ' data-module="' . $this->escAttr((string)$module) . '"'
+				. ' data-controller="' . $this->escAttr((string)$controller) . '"'
+				. '>';
 
 			// let DEEC_Form do col/wrap/labels
 			$html .= '<div class="row g-3">';
@@ -69,10 +75,17 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract
 			// delete button
 			$html .= $this->view->Button(
 				'delete',
-				'trash(' . (int)$row['id'] . ', deleteConfirm, \'' . $controller . '\', \'' . $module . '\');',
 				'',
 				'',
-				''
+				'',
+				'',
+				'',
+				$rowId,
+				[
+					'action' => 'delete',
+					'module' => $module,
+					'controller' => $controller,
+				]
 			);
 
 			// childs block (emails under contactperson etc.)
@@ -94,7 +107,12 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract
 
 		// add button (same logic as before, but simpler)
 		if (!$childs || ($this->view->action !== 'add')) {
-			$params = ['module' => $module, 'controller' => $controller];
+			$params = [
+				'action' => 'multi-add',
+				'module' => $module,
+				'controller' => $controller,
+			];
+
 			$html .= $this->view->Button('addMulti add', '', '', '', '', '', '', $params);
 		}
 

@@ -125,9 +125,11 @@ $(document).ready(function(){
 
 		var $field = $(this);
 
-		var entityId = $field.data('id');
-		var entityModule = $field.data('module');
-		var entityController = $field.data('controller');
+		var $item = $field.closest('.dw-multiform__item');
+
+		var entityId = $field.data('id') || $item.data('id');
+		var entityModule = $field.data('module') || $item.data('module');
+		var entityController = $field.data('controller') || $item.data('controller');
 
 		if (!entityId || !entityModule || !entityController) {
 			return;
