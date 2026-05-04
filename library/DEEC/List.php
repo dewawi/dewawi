@@ -436,6 +436,21 @@ class DEEC_List
 	public function getRowClass($item)
 	{
 		$classes = ['dw-row'];
+
+		foreach ($this->getColumns() as $column) {
+			if (($column['type'] ?? '') !== 'state_badge') {
+				continue;
+			}
+
+			$field = (string)($column['field'] ?? 'state');
+			$value = (string)$this->getFieldValue($item, $field, '');
+			$stateMap = isset($column['state_map']) && is_array($column['state_map']) ? $column['state_map'] : [];
+
+			if (isset($stateMap[$value])) {
+				$classes[] = 'dw-row--' . $this->sanitizeStateClass($stateMap[$value]);
+			}
+		}
+
 		$callback = $this->getRowClassCallback();
 
 		if (is_callable($callback)) {
@@ -445,7 +460,16 @@ class DEEC_List
 			}
 		}
 
-		return implode(' ', $classes);
+		return implode(' ', array_unique($classes));
+	}
+
+	protected function sanitizeStateClass(string $value): string
+	{
+		$value = strtolower(trim($value));
+		$value = preg_replace('/[^a-z0-9_-]+/', '-', $value);
+		$value = trim($value, '-');
+
+		return $value !== '' ? $value : 'default';
 	}
 
 	public function getCellClass(array $column)
@@ -650,12 +674,12 @@ class DEEC_List
 		}
 
 		$label = $stateLabelKey !== '' ? $this->translate($stateLabelKey) : $value;
-		$badgeClass = 'dw-badge--info';
-		$badgeMap = isset($column['badge_map']) && is_array($column['badge_map']) ? $column['badge_map'] : [];
 
-		if (isset($badgeMap[$value])) {
-			$badgeClass = (string)$badgeMap[$value];
-		}
+		$stateMap = isset($column['state_map']) && is_array($column['state_map']) ? $column['state_map'] : [];
+		$stateClass = isset($stateMap[$value]) ? $this->sanitizeStateClass((string)$stateMap[$value]) : 'default';
+
+		$badgeClass = 'dw-badge--' . $stateClass;
+		$rowClass = 'dw-row--' . $stateClass;
 
 		$editable = true;
 		if (isset($column['editable']) && is_callable($column['editable'])) {
@@ -674,6 +698,9 @@ class DEEC_List
 			'data-id' => (string)((int)$this->getFieldValue($item, 'id')),
 			'data-value' => $value,
 			'data-type' => 'select',
+			'data-row-class' => $rowClass,
+			'data-row-class' => $rowClass,
+			'data-state-map' => json_encode($stateMap),
 		];
 
 		return '<div class="editableContainer"><span' . $this->renderAttributes($attrs) . '>'

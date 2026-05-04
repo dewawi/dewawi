@@ -23,14 +23,14 @@
   --dw-color-text: #1f2937;
   --dw-color-text-muted: #6b7280;
 
-  --dw-color-success: #dff6e8;
-  --dw-color-success-text: #166534;
-  --dw-color-warning: #fff4d6;
-  --dw-color-warning-text: #92400e;
-  --dw-color-danger: #fde2e2;
-  --dw-color-danger-text: #991b1b;
-  --dw-color-info: #e6f0fb;
-  --dw-color-info-text: #1d4ed8;
+  --dw-color-success: #eefaf2;
+  --dw-color-success-text: #4f9a65;
+  --dw-color-warning: #fffaf0;
+  --dw-color-warning-text: #c48a1c;
+  --dw-color-danger: #fff3f3;
+  --dw-color-danger-text: #c96a6a;
+  --dw-color-info: #f2f7fd;
+  --dw-color-info-text: #5d8fc7;
 
   --dw-radius-sm: 6px;
   --dw-radius-md: 10px;
@@ -1124,21 +1124,78 @@ button.nolabel.filter {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
+  color: #fff;
 }
 
-.dw-badge--success {
-  background: var(--dw-color-success);
-  color: var(--dw-color-success-text);
+/* Light row backgrounds */
+
+.dw-table tbody tr.dw-row--created td {
+  background: var(--dw-color-info);
+  color: var(--dw-color-text);
 }
 
-.dw-badge--warning {
+.dw-table tbody tr.dw-row--in-process td,
+.dw-table tbody tr.dw-row--check td {
   background: var(--dw-color-warning);
-  color: var(--dw-color-warning-text);
+  color: var(--dw-color-text);
 }
 
-.dw-badge--danger {
+.dw-table tbody tr.dw-row--delete td,
+.dw-table tbody tr.dw-row--cancelled td {
   background: var(--dw-color-danger);
-  color: var(--dw-color-danger-text);
+  color: var(--dw-color-text);
+}
+
+.dw-table tbody tr.dw-row--released td,
+.dw-table tbody tr.dw-row--completed td {
+  background: var(--dw-color-success);
+  color: var(--dw-color-text);
+}
+
+/* Dark badge colors */
+
+.dw-badge--created {
+  background: var(--dw-color-info-text);
+  color: #fff;
+}
+
+.dw-badge--in-process,
+.dw-badge--check {
+  background: var(--dw-color-warning-text);
+  color: #fff;
+}
+
+.dw-badge--delete,
+.dw-badge--cancelled {
+  background: var(--dw-color-danger-text);
+  color: #fff;
+}
+
+.dw-badge--released,
+.dw-badge--completed {
+  background: var(--dw-color-success-text);
+  color: #fff;
+}
+
+/* Row marker */
+
+.dw-table tbody tr.dw-row--created td:first-child {
+  box-shadow: inset 4px 0 0 var(--dw-color-info-text);
+}
+
+.dw-table tbody tr.dw-row--in-process td:first-child,
+.dw-table tbody tr.dw-row--check td:first-child {
+  box-shadow: inset 4px 0 0 var(--dw-color-warning-text);
+}
+
+.dw-table tbody tr.dw-row--delete td:first-child,
+.dw-table tbody tr.dw-row--cancelled td:first-child {
+  box-shadow: inset 4px 0 0 var(--dw-color-danger-text);
+}
+
+.dw-table tbody tr.dw-row--released td:first-child,
+.dw-table tbody tr.dw-row--completed td:first-child {
+  box-shadow: inset 4px 0 0 var(--dw-color-success-text);
 }
 
 /* Email */
