@@ -220,7 +220,7 @@ $(document).ready(function(){
 		var data = {};
 		var params = {};
 
-		params['id'] = $card.find('input.position-id[type="hidden"]').first().val();
+		params['id'] = $card.data('id');
 		params['parentid'] = id;
 		params['element'] = this.name;
 
@@ -624,7 +624,9 @@ $(document).ready(function(){
 
 	//Check all
 	$('#content, .positionsContainer').on('click', '.checkall', function() {
-		$(this).parents('div').find('input.id:checkbox').prop('checked', this.checked);
+		$(this).closest('.positionsContainer, #content')
+			.find('input.position-check, input.check-id, [data-select-id]')
+			.prop('checked', this.checked);
 	});
 
 	//Auto size textarea
@@ -1240,28 +1242,45 @@ function applyPosition(parent, type, itemId, setid) {
 
 //Edit position
 function editPosition(parent, type, data, params) {
-	if(params['controller'] == 'pricerulepos') {
-		var url = baseUrl+'/'+params['module']+'/'+params['controller']+'/edit/id/'+params['id'];
+	var url;
+
+	if (params.controller === 'pricerulepos') {
+		url = baseUrl + '/' + params.module + '/' + params.controller + '/edit/id/' + params.id;
 	} else {
-		var url = baseUrl+'/'+module+'/position';
-		if(params['id']) url += '/edit/id/'+params['id'];
-		if(params['parentid']) url += '/parent/'+parent+'/type/'+type+'/parentid/'+params['parentid'];
+		url = baseUrl + '/' + module + '/position/edit';
+
+		if (params.id) {
+			url += '/id/' + params.id;
+		}
+
+		url += '/parent/' + parent + '/type/' + type + '/parentid/' + params.parentid;
 	}
+
 	$.ajax({
 		type: 'POST',
 		url: url,
 		data: data,
 		cache: false,
-		success: function(response){
+		dataType: 'json',
+		success: function(response) {
 			Dewawi.setDirty(false);
-			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleaction')) {
-				$('table#total #subtotal').text(response['subtotal']);
-				$('table#total #total').text(response['total']);
-				$('tr.position'+params['id']+'.wrap').find('.total').text(response[params['id']]['total']);
-								$.each(response['taxes'], function(key, val) {
-										if(key != 'total') $('td[data-rate="'+key+'"]').text(val);
-								});
-			} else if((params['element'] == 'taxrate') || (params['controller'] == 'pricerulepos')) {
+
+			if (
+				params.element === 'price' ||
+				params.element === 'quantity' ||
+				params.element === 'priceruleamount' ||
+				params.element === 'priceruleaction'
+			) {
+				$('#subtotal').text(response.subtotal);
+				$('#total').text(response.total);
+				$('.position' + params.id).find('.total').text(response[params.id].total);
+
+				$.each(response.taxes, function(key, val) {
+					if (key !== 'total') {
+						$('[data-rate="' + key + '"]').text(val);
+					}
+				});
+			} else if (params.element === 'taxrate' || params.controller === 'pricerulepos') {
 				getPositions(parent, type, window.pageYOffset);
 			}
 		}
@@ -2071,7 +2090,13 @@ function markFieldSaved($field) {
 			pdf: { selection: 'single' },
 
 			copy: { selection: 'multiple' },
-			delete: { selection: 'multiple' }
+			delete: { selection: 'multiple' },
+
+			'delete-position': { selection: 'position' },
+			'copy-position': { selection: 'position' },
+			'add-option': { selection: 'none' },
+			'sort-position-up': { selection: 'position' },
+			'sort-position-down': { selection: 'position' }
 		},
 
 		init: function () {
@@ -2097,12 +2122,24 @@ function markFieldSaved($field) {
 		runAction: function (actionName, $button) {
 			var config = this.actionConfig[actionName];
 			var handler = this.actions[actionName];
+			var selection;
 
 			if (!config || !handler) {
 				return;
 			}
 
-			var selection = this.resolveSelection($button);
+			if (config.selection === 'position') {
+				selection = this.resolvePosition($button);
+
+				if (!selection.id) {
+					return;
+				}
+
+				handler.call(this, selection, $button);
+				return;
+			}
+
+			selection = this.resolveSelection($button);
 
 			if (!this.validateSelection(config.selection, selection)) {
 				return;
@@ -2147,6 +2184,18 @@ function markFieldSaved($field) {
 			}
 
 			return false;
+		},
+
+		resolvePosition: function ($button) {
+			var $card = $button.closest('.dw-position-card');
+
+			return {
+				id: String($card.data('id') || ''),
+				parent: String($card.data('parent') || controller),
+				type: String($card.data('type') || 'pos'),
+				setid: String($card.data('setid') || '0'),
+				masterid: String($card.data('masterid') || '')
+			};
 		},
 
 		actions: {
@@ -2226,6 +2275,56 @@ function markFieldSaved($field) {
 					Dewawi.url(selection.module, selection.controller, 'download', selection.ids[0]),
 					'_blank'
 				);
+			},
+
+			'delete-position': function (selection) {
+				deletePosition(
+					selection.parent,
+					selection.type,
+					selection.id,
+					selection.setid,
+					selection.masterid
+				);
+			},
+
+			'copy-position': function (selection) {
+				copyPosition(
+					selection.parent,
+					selection.type,
+					selection.id
+				);
+			},
+
+			'add-option': function (selection, $button) {
+				addOption(
+					String($button.data('parent')),
+					String($button.data('type') || 'pos'),
+					Number($button.data('option-id')),
+					Number($button.data('setid') || 0),
+					Number($button.data('masterid') || 0)
+				);
+			},
+
+			'sort-position-up': function (selection, $button) {
+				sort(
+					selection.parent,
+					selection.type,
+					selection.id,
+					selection.setid,
+					$button.data('ordering'),
+					selection.masterid
+				);
+			},
+
+			'sort-position-down': function (selection, $button) {
+				sort(
+					selection.parent,
+					selection.type,
+					selection.id,
+					selection.setid,
+					$button.data('ordering'),
+					selection.masterid
+				);
 			}
 		},
 
@@ -2261,8 +2360,9 @@ function markFieldSaved($field) {
 		},
 
 		bindKeyword: function () {
-			$(document).on('textchange', '.dw-toolbar #keyword, .dw-toolbar [name="keyword"]', function () {
+			$(document).on('input', '.dw-toolbar #keyword, .dw-toolbar [name="keyword"]', function () {
 				DewawiToolbar.persistField($(this));
+				$('#page').val(1);
 				search();
 			});
 		},
