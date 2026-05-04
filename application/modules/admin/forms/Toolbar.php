@@ -5,17 +5,28 @@ class Admin_Form_Toolbar extends DEEC_Form
 	public function __construct()
 	{
 		$this->addElement([
-			'name' => 'cancel',
+			'name' => 'add',
 			'type' => 'button',
-			'label' => 'TOOLBAR_CANCEL',
+			'label' => 'TOOLBAR_NEW',
+			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => ['class' => 'cancel'],
+			'attribs' => ['class' => 'add'],
+		]);
+
+		$this->addElement([
+			'name' => 'edit',
+			'type' => 'button',
+			'label' => 'TOOLBAR_EDIT',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'edit'],
 		]);
 
 		$this->addElement([
 			'name' => 'copy',
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'copy'],
 		]);
@@ -24,6 +35,7 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'name' => 'delete',
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'delete'],
 		]);
@@ -31,60 +43,93 @@ class Admin_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'name' => 'clientid',
 			'type' => 'select',
-			'options' => [],
-			'default' => '0',
+			'default' => 'all',
+			'options' => [
+				'0' => 'CLIENTS_ALL',
+			],
+			'source' => 'client',
+			'filter' => true,
+			'toolbar' => 'category',
 			'wrap' => false,
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'hidden-sm'],
 		]);
 
 		$this->addElement([
 			'name' => 'parentid',
 			'type' => 'select',
+			'default' => 'all',
 			'options' => [
 				'0' => 'ADMIN_MAIN_CATEGORY',
 			],
-			'default' => '0',
+			'source' => 'category',
+			'filter' => true,
+			'toolbar' => 'category',
 			'wrap' => false,
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'hidden-sm'],
 		]);
 
 		$this->addElement([
 			'name' => 'type',
 			'type' => 'select',
+			'default' => 'all',
 			'options' => [
 				'contact' => 'CONTACTS',
 				'item' => 'ITEMS',
 				'shop' => 'SHOPS',
 			],
+			'source' => 'client',
+			'filter' => true,
+			'toolbar' => 'category',
 			'wrap' => false,
-			'attribs' => ['class' => 'hidden'],
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'hidden-sm'],
 		]);
 
 		$this->addElement([
 			'name' => 'shopid',
 			'type' => 'select',
+			'default' => 'all',
 			'options' => [
 				'0' => 'ADMIN_SELECT',
 			],
 			'source' => 'shop',
+			'filter' => true,
+			'toolbar' => 'category',
 			'wrap' => false,
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'hidden-sm'],
 		]);
 
 		$this->addElement([
 			'name' => 'menuid',
 			'type' => 'select',
+			'default' => 'all',
 			'options' => [
 				'0' => 'ADMIN_SELECT',
 			],
 			'source' => 'menu',
+			'filter' => true,
+			'toolbar' => 'category',
 			'wrap' => false,
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'hidden-sm'],
 		]);
 
 		$this->addElement([
 			'name' => 'language',
 			'type' => 'select',
-			'options' => [],
-			//'source' => 'language',
-			'default' => '',
+			'default' => 'all',
+			'options' => [
+				'0' => 'ADMIN_SELECT',
+			],
+			'source' => 'language',
+			'filter' => true,
+			'toolbar' => 'category',
 			'wrap' => false,
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'hidden-sm'],
 		]);
 	}
 }
