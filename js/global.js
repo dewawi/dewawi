@@ -1033,7 +1033,6 @@ function trash(ids, message, type, cmodule) {
 	}
 }
 
-
 function deleteAttachment(ids, message, type, cmodule) {
 	type = type || controller;
 	cmodule = cmodule || module;
@@ -1066,18 +1065,26 @@ function deleteAttachment(ids, message, type, cmodule) {
 
 //Apply position
 function applyPosition(parent, type, itemId, setid) {
+	setid = setid || 0;
+
 	$.ajax({
 		type: 'POST',
-		url: window.parent.baseUrl+'/'+window.parent.module+'/position/apply/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+window.parent.id+'/itemid/'+itemId,
+		url: window.parent.baseUrl
+			+ '/' + window.parent.module
+			+ '/position/apply/setid/' + setid
+			+ '/parent/' + parent
+			+ '/type/' + type
+			+ '/parentid/' + window.parent.id
+			+ '/itemid/' + itemId,
 		cache: false,
-		success: function(){
-			window.parent.getPositions(parent, type, $(parent.document).height());
-			if(action == 'apply') {
-				history.go(-1);
+		success: function () {
+			window.parent.getPositions(parent, type, window.parent.pageYOffset);
+
+			if (typeof window.parent.modalWindowClose === 'function') {
+				window.parent.modalWindowClose();
 			}
 		}
 	});
-	//console.log(parent);
 }
 
 //Edit position
@@ -1928,6 +1935,7 @@ function markFieldSaved($field) {
 			edit: { selection: 'single' },
 			view: { selection: 'single' },
 			pdf: { selection: 'single' },
+			apply: { selection: 'single' },
 
 			copy: { selection: 'multiple' },
 			delete: { selection: 'multiple' },
@@ -2114,6 +2122,24 @@ function markFieldSaved($field) {
 				window.open(
 					Dewawi.url(selection.module, selection.controller, 'download', selection.ids[0]),
 					'_blank'
+				);
+			},
+
+			apply: function (selection) {
+				var context = this.getSelectContext();
+
+				if (selection.module === 'contacts' && selection.controller === 'contact') {
+					if (window.parent && typeof window.parent.applyContact === 'function') {
+						window.parent.applyContact(selection.ids[0]);
+					}
+					return;
+				}
+
+				applyPosition(
+					context.parent,
+					'pos',
+					selection.ids[0],
+					context.setid
 				);
 			},
 
@@ -2337,6 +2363,36 @@ function markFieldSaved($field) {
 			}
 
 			return [];
+		},
+
+		getSelectContext: function () {
+			var parentValue = this.getUrlParam('parent') || '';
+			var setid = Number(this.getUrlParam('setid') || 0);
+			var parts = parentValue.split('|');
+
+			return {
+				module: parts[0] || '',
+				parent: parts[1] || controller,
+				parentid: parts[2] || id,
+				setid: setid
+			};
+		},
+
+		getUrlParam: function (name) {
+			var regex = new RegExp('[?&]' + name + '=([^&#]*)');
+			var match = regex.exec(window.location.search);
+
+			if (match) {
+				return decodeURIComponent(match[1].replace(/\+/g, ' '));
+			}
+
+			var pathMatch = new RegExp('/' + name + '/([^/]+)').exec(window.location.pathname);
+
+			if (pathMatch) {
+				return decodeURIComponent(pathMatch[1]);
+			}
+
+			return '';
 		},
 
 		toggleDateRange: function (value) {

@@ -38,5 +38,12 @@ class Contacts_Form_ToolbarInline extends DEEC_Form
 			'attribs' => ['class' => 'pdf nolabel'],
 			'wrap' => false,
 		]);
+
+		$this->addElement([
+			'type' => 'button',
+			'name' => 'apply',
+			'attribs' => ['class' => 'apply nolabel'],
+			'wrap' => false,
+		]);
 	}
 }

@@ -3,6 +3,167 @@ function applyContact(contactID) {
 	var data = {};
 
 	if (!contact) {
+		pushMessages(['Kontakt konnte nicht geladen werden.']);
+		return;
+	}
+
+	setValue('#taboverview #contactid, #tabcustomer #contactid, #contactid', contact.contactid);
+	setValue('#taboverview #customerid, #tabcustomer #customerid, #customerid', contact.contactid);
+
+	setValue('#taboverview #billingname1, #tabcustomer #billingname1, #billingname1', contact.name1);
+	setValue('#taboverview #billingname2, #tabcustomer #billingname2, #billingname2', contact.name2);
+	setValue('#taboverview #billingdepartment, #tabcustomer #billingdepartment, #billingdepartment', contact.department);
+	setValue('#taboverview #billingstreet, #tabcustomer #billingstreet, #billingstreet', contact.street);
+	setValue('#taboverview #billingpostcode, #tabcustomer #billingpostcode, #billingpostcode', contact.postcode);
+	setValue('#taboverview #billingcity, #tabcustomer #billingcity, #billingcity', contact.city);
+	setValue('#taboverview #billingcountry, #tabcustomer #billingcountry, #billingcountry', contact.country);
+	setValue('#taboverview #vatin, #tabcustomer #vatin, #vatin', contact.vatin);
+
+	setCheckbox('#taboverview #taxfree, #tabcustomer #taxfree, #taxfree', contact.taxfree);
+	setValue('#contactinfo', contact.info);
+
+	data.contactid = contact.contactid;
+	data.billingname1 = contact.name1;
+	data.billingname2 = contact.name2;
+	data.billingdepartment = contact.department;
+	data.billingstreet = contact.street;
+	data.billingpostcode = contact.postcode;
+	data.billingcity = contact.city;
+	data.billingcountry = contact.country;
+	data.vatin = contact.vatin;
+	data.taxfree = Number(contact.taxfree) === 1 ? 1 : 0;
+
+	if (contact.shippingname1) {
+		setValue('#shippingname1', contact.shippingname1);
+		setValue('#shippingname2', contact.shippingname2);
+		setValue('#shippingdepartment', contact.shippingdepartment);
+		setValue('#shippingstreet', contact.shippingstreet);
+		setValue('#shippingpostcode', contact.shippingpostcode);
+		setValue('#shippingcity', contact.shippingcity);
+		setValue('#shippingcountry', contact.shippingcountry);
+		setValue('#shippingphone', contact.shippingphone);
+
+		data.shippingname1 = contact.shippingname1;
+		data.shippingname2 = contact.shippingname2;
+		data.shippingdepartment = contact.shippingdepartment;
+		data.shippingstreet = contact.shippingstreet;
+		data.shippingpostcode = contact.shippingpostcode;
+		data.shippingcity = contact.shippingcity;
+		data.shippingcountry = contact.shippingcountry;
+		data.shippingphone = contact.shippingphone;
+	} else if (controller === 'deliveryorder') {
+		setValue('#shippingname1', contact.name1);
+		setValue('#shippingname2', contact.name2);
+		setValue('#shippingdepartment', contact.department);
+		setValue('#shippingstreet', contact.street);
+		setValue('#shippingpostcode', contact.postcode);
+		setValue('#shippingcity', contact.city);
+		setValue('#shippingcountry', contact.country);
+
+		data.shippingname1 = contact.name1;
+		data.shippingname2 = contact.name2;
+		data.shippingdepartment = contact.department;
+		data.shippingstreet = contact.street;
+		data.shippingpostcode = contact.postcode;
+		data.shippingcity = contact.city;
+		data.shippingcountry = contact.country;
+	}
+
+	refreshContactInfoList('#phones', contact.phones);
+	refreshContactInfoList('#emails', contact.emails);
+	refreshContactInfoList('#internets', contact.internets);
+
+	if (module === 'processes' || module === 'tasks') {
+		data.customerid = data.contactid;
+		delete data.contactid;
+	}
+
+	Dewawi.setDirty(true);
+
+	var response = edit(data);
+
+	if (response && response.ok === false) {
+		pushMessages([response.message || 'Kontakt konnte nicht gespeichert werden.']);
+		return;
+	}
+
+	modalWindowClose();
+
+	$('#tabfiles iframe').each(function () {
+		$(this).attr('src', $(this).attr('src'));
+	});
+
+	$('#tabfiles #messages').hide();
+	$('#tabfiles iframe').show();
+}
+
+function getContact(contactID) {
+	var contact = null;
+
+	$.ajax({
+		type: 'GET',
+		async: false,
+		url: baseUrl + '/contacts/contact/get/id/' + contactID,
+		dataType: 'json',
+		cache: false,
+		success: function (response) {
+			if (!response || !response.ok || !response.item) {
+				return;
+			}
+
+			// Support current nested response: { ok:true, item:{ ok:true, item:{...} } }
+			if (response.item.item) {
+				contact = response.item.item;
+				return;
+			}
+
+			// Support desired response: { ok:true, item:{...} }
+			contact = response.item;
+		},
+		error: function () {
+			contact = null;
+		}
+	});
+
+	return contact;
+}
+
+function setValue(selector, value) {
+	$(selector).val(value != null ? value : '');
+}
+
+function setCheckbox(selector, value) {
+	$(selector).prop('checked', Number(value) === 1);
+}
+
+function refreshContactInfoList(selector, items) {
+	var $target = $(selector);
+
+	if (!$target.length) {
+		return;
+	}
+
+	$target.empty();
+
+	if (!items || !items.length) {
+		return;
+	}
+
+	$.each(items, function (index, item) {
+		var value = item.value || item.phone || item.email || item.internet || item;
+
+		if (value) {
+			$target.append('<div class="dw-list-value">' + value + '</div>');
+		}
+	});
+}
+
+
+/*function applyContact(contactID) {
+	var contact = getContact(contactID);
+	var data = {};
+
+	if (!contact) {
 		return;
 	}
 
@@ -137,4 +298,4 @@ function getContact(contactID) {
 	});
 
 	return data;
-}
+}*/

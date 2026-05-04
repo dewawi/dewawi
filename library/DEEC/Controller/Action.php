@@ -261,6 +261,9 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			'toolbarInline' => $toolbarInline,
 			'context' => [
 				'user' => $this->_user,
+				'action' => $this->getRequest()->getActionName(),
+				'parent' => $this->_getParam('parent', null),
+				'setid' => (int)$this->_getParam('setid', 0),
 			],
 		]);
 
