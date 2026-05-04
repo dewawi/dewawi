@@ -145,6 +145,12 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			return $this->getElementOptions($elementName);
 		}
 
+		$parentId = (int)$this->_getParam('parentid', 0);
+
+		if ($parentId > 0) {
+			return $this->getRowsByParentId($parentId);
+		}
+
 		$id = (int)$this->_getParam('id', 0);
 
 		if ($id > 0) {
@@ -195,6 +201,29 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		return $this->_helper->json([
 			'ok' => true,
 			'item' => $row,
+		]);
+	}
+
+	protected function getRowsByParentId(int $parentId)
+	{
+		$dbClass = $this->getDbTableClass();
+		$db = new $dbClass();
+
+		if (!method_exists($db, 'getByParentId')) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'method_not_found',
+			]);
+		}
+
+		$parentModule = (string)$this->_getParam('parent_module', $this->getRequest()->getModuleName());
+		$parentController = (string)$this->_getParam('parent_controller', $this->getRequest()->getControllerName());
+
+		$items = $db->getByParentId($parentId, $parentModule, $parentController);
+
+		return $this->_helper->json([
+			'ok' => true,
+			'items' => $items,
 		]);
 	}
 

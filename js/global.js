@@ -2476,8 +2476,33 @@ $(document).on('click', '.dw-tabs__link', function (event) {
 	if ($link.attr('href') === '#tabmessages' && typeof getEmailmessages === 'function') {
 		getEmailmessages();
 	}
+
+	if ($link.attr('href') === '#tabfiles') {
+		refreshFilesTabIfNeeded();
+	}
 });
 
 $(function () {
 	initDwTabs();
 });
+
+function refreshFilesTabIfNeeded() {
+	var $tab = $('#tabfiles');
+
+	if (!$tab.data('needs-refresh')) {
+		return;
+	}
+
+	$tab.find('iframe').each(function () {
+		var src = $(this).attr('src');
+
+		if (src) {
+			$(this).attr('src', src);
+		}
+	});
+
+	$tab.find('#messages').hide();
+	$tab.find('iframe').show();
+
+	$tab.data('needs-refresh', 0);
+}

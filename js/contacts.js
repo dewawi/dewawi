@@ -7,17 +7,30 @@ function applyContact(contactID) {
 		return;
 	}
 
+	var addresses = getRowsByParent('contacts', 'address', contact.id, 'contacts', 'contact');
+	var billingAddress = findFirstByType(addresses, 'billing') || addresses[0] || null;
+	var shippingAddress = findFirstByType(addresses, 'shipping') || null;
+
 	setValue('#taboverview #contactid, #tabcustomer #contactid, #contactid', contact.contactid);
 	setValue('#taboverview #customerid, #tabcustomer #customerid, #customerid', contact.contactid);
 
-	setValue('#taboverview #billingname1, #tabcustomer #billingname1, #billingname1', contact.name1);
-	setValue('#taboverview #billingname2, #tabcustomer #billingname2, #billingname2', contact.name2);
-	setValue('#taboverview #billingdepartment, #tabcustomer #billingdepartment, #billingdepartment', contact.department);
-	setValue('#taboverview #billingstreet, #tabcustomer #billingstreet, #billingstreet', contact.street);
-	setValue('#taboverview #billingpostcode, #tabcustomer #billingpostcode, #billingpostcode', contact.postcode);
-	setValue('#taboverview #billingcity, #tabcustomer #billingcity, #billingcity', contact.city);
-	setValue('#taboverview #billingcountry, #tabcustomer #billingcountry, #billingcountry', contact.country);
-	setValue('#taboverview #vatin, #tabcustomer #vatin, #vatin', contact.vatin);
+	if (billingAddress) {
+		setValue('#billingname1', billingAddress.name1 || contact.name1);
+		setValue('#billingname2', billingAddress.name2 || contact.name2);
+		setValue('#billingdepartment', billingAddress.department || contact.department);
+		setValue('#billingstreet', billingAddress.street);
+		setValue('#billingpostcode', billingAddress.postcode);
+		setValue('#billingcity', billingAddress.city);
+		setValue('#billingcountry', billingAddress.country);
+
+		data.billingname1 = billingAddress.name1 || contact.name1;
+		data.billingname2 = billingAddress.name2 || contact.name2;
+		data.billingdepartment = billingAddress.department || contact.department;
+		data.billingstreet = billingAddress.street;
+		data.billingpostcode = billingAddress.postcode;
+		data.billingcity = billingAddress.city;
+		data.billingcountry = billingAddress.country;
+	}
 
 	setCheckbox('#taboverview #taxfree, #tabcustomer #taxfree, #taxfree', contact.taxfree);
 	setValue('#contactinfo', contact.info);
@@ -33,40 +46,22 @@ function applyContact(contactID) {
 	data.vatin = contact.vatin;
 	data.taxfree = Number(contact.taxfree) === 1 ? 1 : 0;
 
-	if (contact.shippingname1) {
-		setValue('#shippingname1', contact.shippingname1);
-		setValue('#shippingname2', contact.shippingname2);
-		setValue('#shippingdepartment', contact.shippingdepartment);
-		setValue('#shippingstreet', contact.shippingstreet);
-		setValue('#shippingpostcode', contact.shippingpostcode);
-		setValue('#shippingcity', contact.shippingcity);
-		setValue('#shippingcountry', contact.shippingcountry);
-		setValue('#shippingphone', contact.shippingphone);
+	data.contactid = contact.contactid;
+	data.vatin = contact.vatin;
+	data.taxfree = Number(contact.taxfree) === 1 ? 1 : 0;
 
-		data.shippingname1 = contact.shippingname1;
-		data.shippingname2 = contact.shippingname2;
-		data.shippingdepartment = contact.shippingdepartment;
-		data.shippingstreet = contact.shippingstreet;
-		data.shippingpostcode = contact.shippingpostcode;
-		data.shippingcity = contact.shippingcity;
-		data.shippingcountry = contact.shippingcountry;
-		data.shippingphone = contact.shippingphone;
-	} else if (controller === 'deliveryorder') {
-		setValue('#shippingname1', contact.name1);
-		setValue('#shippingname2', contact.name2);
-		setValue('#shippingdepartment', contact.department);
-		setValue('#shippingstreet', contact.street);
-		setValue('#shippingpostcode', contact.postcode);
-		setValue('#shippingcity', contact.city);
-		setValue('#shippingcountry', contact.country);
-
-		data.shippingname1 = contact.name1;
-		data.shippingname2 = contact.name2;
-		data.shippingdepartment = contact.department;
-		data.shippingstreet = contact.street;
-		data.shippingpostcode = contact.postcode;
-		data.shippingcity = contact.city;
-		data.shippingcountry = contact.country;
+	if (billingAddress) {
+		data.billingname1 = billingAddress.name1 || contact.name1;
+		data.billingname2 = billingAddress.name2 || contact.name2;
+		data.billingdepartment = billingAddress.department || contact.department;
+		data.billingstreet = billingAddress.street;
+		data.billingpostcode = billingAddress.postcode;
+		data.billingcity = billingAddress.city;
+		data.billingcountry = billingAddress.country;
+	} else {
+		data.billingname1 = contact.name1;
+		data.billingname2 = contact.name2;
+		data.billingdepartment = contact.department;
 	}
 
 	refreshContactInfoList('#phones', contact.phones);
@@ -89,12 +84,7 @@ function applyContact(contactID) {
 
 	modalWindowClose();
 
-	$('#tabfiles iframe').each(function () {
-		$(this).attr('src', $(this).attr('src'));
-	});
-
-	$('#tabfiles #messages').hide();
-	$('#tabfiles iframe').show();
+	$('#tabfiles').data('needs-refresh', 1);
 }
 
 function getContact(contactID) {
@@ -158,144 +148,35 @@ function refreshContactInfoList(selector, items) {
 	});
 }
 
-
-/*function applyContact(contactID) {
-	var contact = getContact(contactID);
-	var data = {};
-
-	if (!contact) {
-		return;
-	}
-
-	setValue('#taboverview #contactid, #tabcustomer #contactid', contact.contactid);
-	setValue('#taboverview #customerid, #tabcustomer #customerid', contact.contactid);
-
-	setValue('#taboverview #billingname1, #tabcustomer #billingname1', contact.name1);
-	setValue('#taboverview #billingname2, #tabcustomer #billingname2', contact.name2);
-	setValue('#taboverview #billingstreet, #tabcustomer #billingstreet', contact.street);
-	setValue('#taboverview #billingdepartment, #tabcustomer #billingdepartment', contact.department);
-	setValue('#taboverview #billingpostcode, #tabcustomer #billingpostcode', contact.postcode);
-	setValue('#taboverview #billingcity, #tabcustomer #billingcity', contact.city);
-	setValue('#taboverview #billingcountry, #tabcustomer #billingcountry', contact.country);
-	setCheckbox('#taboverview #taxfree, #tabcustomer #taxfree', contact.taxfree);
-	setValue('#contactinfo', contact.info);
-
-	data.contactid = contact.contactid;
-	data.billingname1 = contact.name1;
-	data.billingname2 = contact.name2;
-	data.billingstreet = contact.street;
-	data.billingdepartment = contact.department;
-	data.billingpostcode = contact.postcode;
-	data.billingcity = contact.city;
-	data.billingcountry = contact.country;
-	data.taxfree = contact.taxfree ? 1 : 0;
-
-	if (contact.shippingname1) {
-		setValue('#shippingname1', contact.shippingname1);
-		setValue('#shippingname2', contact.shippingname2);
-		setValue('#shippingdepartment', contact.shippingdepartment);
-		setValue('#shippingstreet', contact.shippingstreet);
-		setValue('#shippingpostcode', contact.shippingpostcode);
-		setValue('#shippingcity', contact.shippingcity);
-		setValue('#shippingcountry', contact.shippingcountry);
-		setValue('#shippingphone', contact.shippingphone);
-
-		data.shippingname1 = contact.shippingname1;
-		data.shippingname2 = contact.shippingname2;
-		data.shippingdepartment = contact.shippingdepartment;
-		data.shippingstreet = contact.shippingstreet;
-		data.shippingpostcode = contact.shippingpostcode;
-		data.shippingcity = contact.shippingcity;
-		data.shippingcountry = contact.shippingcountry;
-		data.shippingphone = contact.shippingphone;
-	} else if (controller === 'deliveryorder') {
-		setValue('#shippingname1', contact.name1);
-		setValue('#shippingname2', contact.name2);
-		setValue('#shippingdepartment', contact.department);
-		setValue('#shippingstreet', contact.street);
-		setValue('#shippingpostcode', contact.postcode);
-		setValue('#shippingcity', contact.city);
-		setValue('#shippingcountry', contact.country);
-
-		data.shippingname1 = contact.name1;
-		data.shippingname2 = contact.name2;
-		data.shippingdepartment = contact.department;
-		data.shippingstreet = contact.street;
-		data.shippingpostcode = contact.postcode;
-		data.shippingcity = contact.city;
-		data.shippingcountry = contact.country;
-	}
-
-	refreshContactInfoList('#phones', contact.phones);
-	refreshContactInfoList('#emails', contact.emails);
-	refreshContactInfoList('#internets', contact.internets);
-
-	modalWindowClose();
-
-	if (module === 'processes' || module === 'tasks') {
-		data.customerid = data.contactid;
-		delete data.contactid;
-	}
-
-	isDirty = true;
-	edit(data);
-
-	$('#tabfiles iframe').each(function () {
-		$(this).attr('src', $(this).attr('src'));
-	});
-
-	$('#tabfiles #messages').hide();
-	$('#tabfiles iframe').show();
-}
-
-function setValue(selector, value) {
-	$(selector).val(value != null ? value : '');
-}
-
-function setCheckbox(selector, value) {
-	$(selector).prop('checked', Number(value) === 1);
-}
-
-function refreshContactInfoList(selector, value) {
-	var $target = $(selector);
-
-	if (!$target.length) {
-		return;
-	}
-
-	$target.empty();
-
-	if (!value) {
-		return;
-	}
-
-	var items = String(value).split(',');
-
-	for (var i = 0; i < items.length; i++) {
-		var item = $.trim(items[i]);
-
-		if (item !== '') {
-			$target.append('<label>' + item + '</label><br>');
-		}
-	}
-}
-
-function getContact(contactID) {
-	var data = null;
+function getRowsByParent(moduleName, controllerName, parentId, parentModule, parentController) {
+	var items = [];
 
 	$.ajax({
-		type: 'POST',
+		type: 'GET',
 		async: false,
-		url: baseUrl + '/contacts/contact/get/id/' + contactID,
-		cache: false,
-		dataType: 'json',
-		success: function (response) {
-			data = response;
+		url: baseUrl + '/' + moduleName + '/' + controllerName + '/get/parentid/' + parentId,
+		data: {
+			parent_module: parentModule,
+			parent_controller: parentController
 		},
-		error: function (xhr) {
-			console.log('getContact failed', xhr.responseText);
+		dataType: 'json',
+		cache: false,
+		success: function (response) {
+			if (response && response.ok && response.items) {
+				items = response.items;
+			}
 		}
 	});
 
-	return data;
-}*/
+	return items;
+}
+
+function findFirstByType(items, type) {
+	for (var i = 0; i < items.length; i++) {
+		if (String(items[i].type || '') === type) {
+			return items[i];
+		}
+	}
+
+	return null;
+}
