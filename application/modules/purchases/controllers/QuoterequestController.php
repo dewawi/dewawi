@@ -1,114 +1,7 @@
 <?php
 
-class Purchases_QuoterequestController extends Zend_Controller_Action
+class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
-	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'attachment', $this->_flashMessenger);
-	}
-
-	public function getAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->layout->disableLayout();
-
-		$elementName = (string)$this->_getParam('element', '');
-		$form = new Purchases_Form_Toolbar();
-
-		$el = $form->getElement($elementName);
-
-		if (!$el) {
-			return $this->_helper->json([
-				'ok' => false,
-				'message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS'),
-			]);
-		}
-
-		$options = $el['options'] ?? [];
-
-		return $this->_helper->json($options);
-	}
-
-	protected function requireQuoterequest(int $id, bool $silent = false): ?array
-	{
-		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
-		$quoterequest = $quoterequestDb->getQuoterequestForEdit($id);
-
-		if ($quoterequest) {
-			return $quoterequest;
-		}
-
-		$request = $this->getRequest();
-
-		// AJAX
-		if ($request->isXmlHttpRequest()) {
-			$this->_helper->viewRenderer->setNoRender();
-			$this->_helper->layout->disableLayout();
-
-			$this->_helper->json([
-				'ok' => false,
-				'message' => 'not_found',
-			]);
-
-			return null;
-		}
-
-		// Silent mode (PDF etc.)
-		if ($silent) {
-			$this->_helper->viewRenderer->setNoRender();
-			return null;
-		}
-
-		// Default redirect
-		$this->_flashMessenger->addMessage('MESSAGES_QUOTE_REQUEST_NOT_FOUND');
-		$this->_helper->redirector->gotoSimple('index', 'quoterequest');
-
-		return null;
-	}
-
-	public function indexAction()
-	{
-		if ($this->getRequest()->isPost()) {
-			$this->_helper->getHelper('layout')->disableLayout();
-		}
-
-		$this->buildIndexView();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$this->buildIndexView();
-	}
-
 	protected function buildIndexView(): void
 	{
 		$toolbar = new Purchases_Form_Toolbar();
@@ -150,7 +43,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 		$isAjax = $request->isXmlHttpRequest();
 
-		$quoterequest = $this->requireQuoterequest($id);
+		$quoterequest = $this->requireRow($id);
 		if (!$quoterequest) return;
 
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
@@ -235,7 +128,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 		$controller = $this->getRequest()->getControllerName();
 
-		$quoterequest = $this->requireQuoterequest($id);
+		$quoterequest = $this->requireRow($id);
 		if (!$quoterequest) return;
 
 		$this->ensurePdfDocumentExists($id);
@@ -262,7 +155,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 	{
 		$id = $this->_getParam('id', 0);
 
-		$data = $this->requireQuoterequest($id);
+		$data = $this->requireRow($id);
 		if (!$data) return;
 
 		$this->_helper->viewRenderer->setNoRender();
@@ -436,7 +329,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 
 	protected function generatePdfDocument(int $id, array $options = []): array
 	{
-		$quoterequest = $this->requireQuoterequest($id, true);
+		$quoterequest = $this->requireRow($id, true);
 		if (!$quoterequest) {
 			throw new RuntimeException('Quoterequest not found');
 		}
@@ -461,7 +354,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 
 	protected function ensurePdfDocumentExists(int $id): void
 	{
-		$quoterequest = $this->requireQuoterequest($id, true);
+		$quoterequest = $this->requireRow($id, true);
 		if (!$quoterequest) {
 			return;
 		}
@@ -523,7 +416,7 @@ class Purchases_QuoterequestController extends Zend_Controller_Action
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 
-			$quoterequest = $this->requireQuoterequest($id);
+			$quoterequest = $this->requireRow($id);
 			if (!$quoterequest) return;
 
 			$quoterequest = new Purchases_Model_DbTable_Quoterequest();
