@@ -541,7 +541,7 @@ button.daterange {
 }
 
 .dw-table .dw-col-state {
-  width: 100px;
+  width: 75px;
   white-space: nowrap;
 }
 
@@ -551,7 +551,7 @@ button.daterange {
 }
 
 .dw-table .dw-col-actions {
-  width: 150px;
+  width: 85px;
 }
 
 .dw-row.is-pinned td {
