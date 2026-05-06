@@ -14,7 +14,13 @@ echo $this->FileManager();
 		'contactperson' => ['title' => 'TABS_CONTACT_PERSONS'],
 		'payment' => ['title' => 'TABS_PAYMENT'],
 		'history' => ['title' => 'TABS_HISTORY', 'html' => $this->History()],
-		'messages' => ['title' => 'TABS_MESSAGES', 'html' => $this->EmailMessages(), 'a_attrs' => ['onclick'=>"getEmailmessages()"]],
+		'messages' => [
+			'title' => 'TABS_MESSAGES',
+			'html' => $this->EmailMessages(),
+			'a_attrs' => [
+				'data-tab-load' => 'getEmailmessages',
+			],
+		],
 		'files' => ['title' => 'TABS_FILES', 'html' => $this->Files(), 'show' => (bool)$this->dirwritable],
 		'downloads' => ['title' => 'TABS_DOWNLOADS', 'html' => $this->Downloads()],
 	]

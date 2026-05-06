@@ -1196,8 +1196,8 @@ function getPositions(parent, type, scrollTo) {
 		success: function(data){
 			$('.positionsContainer[data-parent="'+parent+'"]').html(data);
 			autosize($('.positionsContainer').find('textarea'));
-			if(data) $('#tabPositions .toolbar.positions.bottom').show();
-			else $('#tabPositions .toolbar.positions.bottom').hide();
+			if(data) $('#tabpositions .toolbar.positions.bottom').show();
+			else $('#tabpositions .toolbar.positions.bottom').hide();
 			if(scrollTo) {
 				/*$('html, body').animate({
 					scrollTop: $('#position'+scrollTo).offset().top
@@ -1317,8 +1317,8 @@ function getEmailmessages(scrollTo) {
 		success: function(data){
 			$('#emailmessages').html(data);
 			autosize($('#emailmessages').find('textarea'));
-			if(data) $('#tabPositions .toolbar.emailmessages.bottom').show();
-			else $('#tabPositions .toolbar.emailmessages.bottom').hide();
+			if(data) $('#tabpositions .toolbar.emailmessages.bottom').show();
+			else $('#tabpositions .toolbar.emailmessages.bottom').hide();
 			if(scrollTo) {
 				/*$('html, body').animate({
 					scrollTop: $('#position'+scrollTo).offset().top
@@ -2464,14 +2464,51 @@ function initDwTabs(scope) {
 		}
 
 		activateDwTab($activeLink, false);
+		runDwTabAction($activeLink, false);
 	});
+}
+
+function runDwTabAction($link, force) {
+	if (!$link.length) return;
+
+	var fnName = $link.data('tab-load');
+	if (!fnName) return;
+
+	var fn = window[fnName];
+	if (typeof fn !== 'function') return;
+
+	var parent = $link.data('parent');
+	var type = $link.data('type');
+
+	// container detection for lazy load
+	var $container = $('.positionsContainer[data-parent="' + parent + '"][data-type="' + type + '"]');
+
+	// prevent double load
+	if (!force && $container.length && $container.data('loaded')) {
+		return;
+	}
+
+	// call function
+	if (parent && type) {
+		fn(parent, type);
+	} else if (parent) {
+		fn(parent);
+	} else {
+		fn();
+	}
+
+	if ($container.length) {
+		$container.data('loaded', 1);
+	}
 }
 
 $(document).on('click', '.dw-tabs__link', function (event) {
 	event.preventDefault();
 
 	var $link = $(this);
+
 	activateDwTab($link, true);
+	runDwTabAction($link, true);
 
 	if ($link.attr('href') === '#tabmessages' && typeof getEmailmessages === 'function') {
 		getEmailmessages();
