@@ -1770,7 +1770,7 @@ function markFieldSaved($field) {
 		var apply = $item.closest('.autocomplete__list').data('apply');
 
 		if (apply === 'contact') {
-			applyAutocompleteContact(id, $item);
+			applyContact(id);
 		}
 
 		$('.autocomplete__list').remove();
@@ -1838,71 +1838,6 @@ function markFieldSaved($field) {
 			width: $input.outerWidth(),
 			zIndex: 9999
 		});
-	}
-
-	function applyAutocompleteContact(id, $item) {
-		var $list = $item.closest('.autocomplete__list');
-		var $input = $list.data('input');
-		var applyUrl = String($input.data('autocomplete-apply-url') || '/contacts/contact/get');
-
-		$.ajax({
-			type: 'GET',
-			url: baseUrl + applyUrl,
-			data: { id: id },
-			dataType: 'json',
-			cache: false,
-			success: function (response) {
-				if (!response.ok || !response.item) {
-					console.log('contact apply failed', response);
-					return;
-				}
-
-				fillContactFields(response.item);
-				saveSelectedContact();
-			},
-			error: function (xhr) {
-				console.log('contact apply failed', xhr.responseText);
-			}
-		});
-	}
-
-	function fillContactFields(contact) {
-		setFieldValue('contactid', contact.contactid);
-		setFieldValue('billingname1', contact.name1);
-		setFieldValue('billingname2', contact.name2);
-		setFieldValue('billingdepartment', contact.department);
-		setFieldValue('billingstreet', contact.street);
-		setFieldValue('billingpostcode', contact.postcode);
-		setFieldValue('billingcity', contact.city);
-		setFieldValue('billingcountry', contact.country);
-		setFieldValue('vatin', contact.vatin);
-
-		if (contact.taxfree !== undefined) {
-			$('#taxfree').prop('checked', Number(contact.taxfree) === 1);
-		}
-	}
-
-	function saveSelectedContact() {
-		if (typeof edit !== 'function') {
-			return;
-		}
-
-		edit({
-			contactid: $('#contactid').val(),
-			billingname1: $('#billingname1').val(),
-			billingname2: $('#billingname2').val(),
-			billingdepartment: $('#billingdepartment').val(),
-			billingstreet: $('#billingstreet').val(),
-			billingpostcode: $('#billingpostcode').val(),
-			billingcity: $('#billingcity').val(),
-			billingcountry: $('#billingcountry').val(),
-			vatin: $('#vatin').val(),
-			taxfree: $('#taxfree').is(':checked') ? 1 : 0
-		});
-	}
-
-	function setFieldValue(name, value) {
-		$('[name="' + name + '"]').val(value || '');
 	}
 
 	function closeAutocomplete($input) {
