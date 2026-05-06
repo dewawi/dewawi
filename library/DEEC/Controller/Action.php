@@ -45,6 +45,10 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setRender('index');
 		$this->disableLayout();
 
+		if ($this->_getParam('parent', '') !== '') {
+			$this->getRequest()->setParam('context_action', 'select');
+		}
+
 		$this->buildIndexView();
 	}
 
@@ -290,7 +294,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			'toolbarInline' => $toolbarInline,
 			'context' => [
 				'user' => $this->_user,
-				'action' => $this->getRequest()->getActionName(),
+				'action' => $this->_getParam('context_action', $this->getRequest()->getActionName()),
 				'parent' => $this->_getParam('parent', null),
 				'setid' => (int)$this->_getParam('setid', 0),
 			],

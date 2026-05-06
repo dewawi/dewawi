@@ -886,6 +886,11 @@ function edit(data, params) {
 function search() {
 	var data = collectToolbarData();
 
+	if (action === 'select') {
+		data.parent = DewawiToolbar.getUrlParam('parent');
+		data.setid = DewawiToolbar.getUrlParam('setid');
+	}
+
 	clearTimeout(timeout);
 
 	timeout = setTimeout(function () {
