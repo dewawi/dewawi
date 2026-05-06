@@ -1,41 +1,20 @@
 function applyContact(contactID) {
 	var contact = getContact(contactID);
-	var data = {};
 
 	if (!contact) {
-		pushMessages(['Kontakt konnte nicht geladen werden.']);
+		pushMessages(['Contact could not be loaded.']);
 		return;
 	}
 
+	var data = {};
 	var addresses = getRowsByParent('contacts', 'address', contact.id, 'contacts', 'contact');
 	var billingAddress = findFirstByType(addresses, 'billing') || addresses[0] || null;
 	var shippingAddress = findFirstByType(addresses, 'shipping') || null;
 
-	setValue('#taboverview #contactid, #tabcustomer #contactid, #contactid', contact.contactid);
-	setValue('#taboverview #customerid, #tabcustomer #customerid, #customerid', contact.contactid);
-
-	if (billingAddress) {
-		setValue('#billingname1', billingAddress.name1 || contact.name1);
-		setValue('#billingname2', billingAddress.name2 || contact.name2);
-		setValue('#billingdepartment', billingAddress.department || contact.department);
-		setValue('#billingstreet', billingAddress.street);
-		setValue('#billingpostcode', billingAddress.postcode);
-		setValue('#billingcity', billingAddress.city);
-		setValue('#billingcountry', billingAddress.country);
-
-		data.billingname1 = billingAddress.name1 || contact.name1;
-		data.billingname2 = billingAddress.name2 || contact.name2;
-		data.billingdepartment = billingAddress.department || contact.department;
-		data.billingstreet = billingAddress.street;
-		data.billingpostcode = billingAddress.postcode;
-		data.billingcity = billingAddress.city;
-		data.billingcountry = billingAddress.country;
-	}
-
-	setCheckbox('#taboverview #taxfree, #tabcustomer #taxfree, #taxfree', contact.taxfree);
-	setValue('#contactinfo', contact.info);
-
 	data.contactid = contact.contactid;
+	data.vatin = contact.vatin;
+	data.taxfree = Number(contact.taxfree) === 1 ? 1 : 0;
+
 	data.billingname1 = contact.name1;
 	data.billingname2 = contact.name2;
 	data.billingdepartment = contact.department;
@@ -43,12 +22,6 @@ function applyContact(contactID) {
 	data.billingpostcode = contact.postcode;
 	data.billingcity = contact.city;
 	data.billingcountry = contact.country;
-	data.vatin = contact.vatin;
-	data.taxfree = Number(contact.taxfree) === 1 ? 1 : 0;
-
-	data.contactid = contact.contactid;
-	data.vatin = contact.vatin;
-	data.taxfree = Number(contact.taxfree) === 1 ? 1 : 0;
 
 	if (billingAddress) {
 		data.billingname1 = billingAddress.name1 || contact.name1;
@@ -58,33 +31,58 @@ function applyContact(contactID) {
 		data.billingpostcode = billingAddress.postcode;
 		data.billingcity = billingAddress.city;
 		data.billingcountry = billingAddress.country;
-	} else {
-		data.billingname1 = contact.name1;
-		data.billingname2 = contact.name2;
-		data.billingdepartment = contact.department;
 	}
 
-	refreshContactInfoList('#phones', contact.phones);
-	refreshContactInfoList('#emails', contact.emails);
-	refreshContactInfoList('#internets', contact.internets);
+	if (shippingAddress) {
+		data.shippingname1 = shippingAddress.name1 || contact.name1;
+		data.shippingname2 = shippingAddress.name2 || contact.name2;
+		data.shippingdepartment = shippingAddress.department || contact.department;
+		data.shippingstreet = shippingAddress.street;
+		data.shippingpostcode = shippingAddress.postcode;
+		data.shippingcity = shippingAddress.city;
+		data.shippingcountry = shippingAddress.country;
+		data.shippingphone = shippingAddress.phone || '';
+	}
 
 	if (module === 'processes' || module === 'tasks') {
 		data.customerid = data.contactid;
 		delete data.contactid;
 	}
 
+	applyContactDataToForm(data);
+	refreshContactInfoList('#phones', contact.phones);
+	refreshContactInfoList('#emails', contact.emails);
+	refreshContactInfoList('#internets', contact.internets);
+
 	Dewawi.setDirty(true);
 
 	var response = edit(data);
 
 	if (response && response.ok === false) {
-		pushMessages([response.message || 'Kontakt konnte nicht gespeichert werden.']);
+		pushMessages([response.message || 'Contact could not be saved.']);
 		return;
 	}
 
 	modalWindowClose();
 
 	$('#tabfiles').data('needs-refresh', 1);
+}
+
+function applyContactDataToForm(data) {
+	$.each(data, function (name, value) {
+		var $fields = $('[name="' + name + '"]');
+
+		if (!$fields.length) {
+			return;
+		}
+
+		if ($fields.is(':checkbox')) {
+			$fields.prop('checked', Number(value) === 1);
+			return;
+		}
+
+		$fields.val(value != null ? value : '');
+	});
 }
 
 function getContact(contactID) {
