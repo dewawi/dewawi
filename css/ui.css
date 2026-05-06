@@ -509,16 +509,16 @@ button.daterange {
 }
 
 .dw-table .dw-col-id {
-  width: 75px;
+  width: 50px;
   white-space: nowrap;
 }
 
 .dw-table .dw-col-title {
-  min-width: 150px;
+  min-width: 100px;
 }
 
 .dw-table .dw-col-contact {
-  min-width: 120px;
+  min-width: 100px;
 }
 
 .dw-table .dw-col-address {
@@ -526,11 +526,11 @@ button.daterange {
 }
 
 .dw-table .dw-col-notes {
-  min-width: 200px;
+  min-width: 250px;
 }
 
 .dw-table .dw-col-date {
-  width: 80px;
+  width: 50px;
   white-space: nowrap;
 }
 

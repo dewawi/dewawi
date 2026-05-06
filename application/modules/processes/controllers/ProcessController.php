@@ -4,23 +4,15 @@ class Processes_ProcessController extends DEEC_Controller_Action
 {
 	protected function buildIndexView(): void
 	{
-		$toolbar = new Processes_Form_Toolbar();
-		$toolbarInline = new Processes_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
 		$get = new Processes_Model_Get();
-		$processes = $get->processes($params, $options, $this->_flashMessenger);
 
-		$this->view->processes = $processes;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->messages = array_merge(
-			$this->_flashMessenger->getMessages(),
-			$this->_flashMessenger->getCurrentMessages()
-		);
-		$this->_flashMessenger->clearCurrentMessages();
+		$this->buildListView([
+			'viewKey' => 'processes',
+			'list' => 'Processes_Model_List_Processes',
+			'items' => function ($params, $options) use ($get) {
+				return $get->processes($params, $options, $this->_flashMessenger);
+			},
+		]);
 	}
 
 	public function addAction()
