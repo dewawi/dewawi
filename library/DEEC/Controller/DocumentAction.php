@@ -155,4 +155,9 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	{
 		return $this->getRequest()->getControllerName() . 'id';
 	}
+
+	protected function isReadonlyState(array $row): bool
+	{
+		return in_array((int)($row['state'] ?? 0), [105, 106], true);
+	}
 }

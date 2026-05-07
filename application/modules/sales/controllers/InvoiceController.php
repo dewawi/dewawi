@@ -37,6 +37,10 @@ class Sales_InvoiceController extends DEEC_Controller_DocumentAction
 
 		$invoice = $this->requireRow($id);
 
+		if ($this->isReadonlyState($invoice)) {
+			return $this->_helper->redirector->gotoSimple('view', 'invoice', null, ['id' => $id]);
+		}
+
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
 
 		$this->_helper->Access->lock($id, $this->_user['id'], $invoice['locked'] ?? 0, $invoice['lockedtime'] ?? null);

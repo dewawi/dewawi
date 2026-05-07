@@ -37,6 +37,10 @@ class Sales_CreditnoteController extends DEEC_Controller_DocumentAction
 
 		$creditnote = $this->requireRow($id);
 
+		if ($this->isReadonlyState($creditnote)) {
+			return $this->_helper->redirector->gotoSimple('view', 'creditnote', null, ['id' => $id]);
+		}
+
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
 
 		$this->_helper->Access->lock($id, $this->_user['id'], $creditnote['locked'] ?? 0, $creditnote['lockedtime'] ?? null);

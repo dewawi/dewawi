@@ -37,6 +37,10 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 
 		$quote = $this->requireRow($id);
 
+		if ($this->isReadonlyState($quote)) {
+			return $this->_helper->redirector->gotoSimple('view', 'quote', null, ['id' => $id]);
+		}
+
 		$quoteDb = new Sales_Model_DbTable_Quote();
 
 		$this->_helper->Access->lock($id, $this->_user['id'], $quote['locked'] ?? 0, $quote['lockedtime'] ?? null);

@@ -37,6 +37,10 @@ class Sales_SalesorderController extends DEEC_Controller_DocumentAction
 
 		$salesorder = $this->requireRow($id);
 
+		if ($this->isReadonlyState($salesorder)) {
+			return $this->_helper->redirector->gotoSimple('view', 'salesorder', null, ['id' => $id]);
+		}
+
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
 
 		$this->_helper->Access->lock($id, $this->_user['id'], $salesorder['locked'] ?? 0, $salesorder['lockedtime'] ?? null);

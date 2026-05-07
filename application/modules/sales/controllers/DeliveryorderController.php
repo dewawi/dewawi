@@ -37,6 +37,10 @@ class Sales_DeliveryorderController extends DEEC_Controller_DocumentAction
 
 		$deliveryorder = $this->requireRow($id);
 
+		if ($this->isReadonlyState($deliveryorder)) {
+			return $this->_helper->redirector->gotoSimple('view', 'deliveryorder', null, ['id' => $id]);
+		}
+
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
 
 		$this->_helper->Access->lock($id, $this->_user['id'], $deliveryorder['locked'] ?? 0, $deliveryorder['lockedtime'] ?? null);

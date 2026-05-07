@@ -37,6 +37,10 @@ class Sales_ReminderController extends DEEC_Controller_DocumentAction
 
 		$reminder = $this->requireRow($id);
 
+		if ($this->isReadonlyState($reminder)) {
+			return $this->_helper->redirector->gotoSimple('view', 'reminder', null, ['id' => $id]);
+		}
+
 		$reminderDb = new Sales_Model_DbTable_Reminder();
 
 		$this->_helper->Access->lock($id, $this->_user['id'], $reminder['locked'] ?? 0, $reminder['lockedtime'] ?? null);
