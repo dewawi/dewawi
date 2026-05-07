@@ -64,12 +64,14 @@ class Sales_Model_List_Invoices extends DEEC_List
 				'editable' => function ($item, $element, $list) {
 					return !$list->isReadonly($item);
 				},
-				'badge_map' => [
-					'101' => 'dw-badge--warning',
-					'103' => 'dw-badge--danger',
-					'104' => 'dw-badge--success',
-					'105' => 'dw-badge--success',
-					'106' => 'dw-badge--success',
+				'state_map' => [
+					'100' => 'created',
+					'101' => 'in-process',
+					'102' => 'check',
+					'103' => 'delete',
+					'104' => 'released',
+					'105' => 'completed',
+					'106' => 'cancelled',
 				],
 			],
 			[
