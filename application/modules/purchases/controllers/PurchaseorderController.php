@@ -37,6 +37,10 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 
 		$purchaseorder = $this->requireRow($id);
 
+		if ($this->isReadonlyState($purchaseorder)) {
+			return $this->_helper->redirector->gotoSimple('view', 'purchaseorder', null, ['id' => $id]);
+		}
+
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
 
 		$this->_helper->Access->lock($id, $this->_user['id'], $purchaseorder['locked'] ?? 0, $purchaseorder['lockedtime'] ?? null);
@@ -51,8 +55,7 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $purchaseorder['taxfree']);
 
 			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
+				$this->disableView();
 
 				$ajaxSaveService = new Purchases_Service_EditAjaxSaveService();
 
@@ -107,11 +110,7 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 			'activeTab' => $request->getCookie('tab', null),
 		]));
 
-		$this->view->messages = array_merge(
-			$this->_helper->flashMessenger->getMessages(),
-			$this->_helper->flashMessenger->getCurrentMessages()
-		);
-		$this->_helper->flashMessenger->clearCurrentMessages();
+		$this->assignMessages();
 	}
 
 	public function viewAction()
@@ -138,7 +137,7 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 			'toolbar' => new Purchases_Form_Toolbar(),
 		] + $attachmentService->sync($purchaseorder, $contact, $controller));
 
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->assignMessages();
 	}
 
 	public function copyAction()
@@ -147,8 +146,7 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 
 		$data = $this->requireRow($id);
 
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->disableView();
 
 		unset($data['id'], $data['purchaseorderid']);
 		$data['title'] = $data['title'].' 2';
@@ -179,8 +177,8 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 	{
 		$id = $this->_getParam('id', 0);
 		$target = $this->_getParam('target', 0);
-		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
-		$data = $purchaseorderDb->getPurchaseorder($id);
+
+		$data = $this->requireRow($id);
 
 		$data['state'] = 100;
 		$data['completed'] = 0;
@@ -248,7 +246,7 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 				'overwrite' => false,
 			]);
 		} catch (RuntimeException $e) {
-			$this->_flashMessenger->addMessage('MESSAGES_PURCHASE_ORDER_NOT_FOUND');
+			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
 			return $this->_helper->redirector->gotoSimple('index', 'purchaseorder');
 		}
 
@@ -258,14 +256,12 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 
 	public function cancelAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->disableView();
 
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 
 			$purchaseorder = $this->requireRow($id);
-			if (!$purchaseorder) return;
 
 			$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
 			$purchaseorder->setState($id, 106);

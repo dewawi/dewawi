@@ -37,6 +37,10 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 
 		$quoterequest = $this->requireRow($id);
 
+		if ($this->isReadonlyState($quoterequest)) {
+			return $this->_helper->redirector->gotoSimple('view', 'quoterequest', null, ['id' => $id]);
+		}
+
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
 
 		$this->_helper->Access->lock($id, $this->_user['id'], $quoterequest['locked'] ?? 0, $quoterequest['lockedtime'] ?? null);
@@ -51,8 +55,7 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $quoterequest['taxfree']);
 
 			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
+				$this->disableView();
 
 				$ajaxSaveService = new Purchases_Service_EditAjaxSaveService();
 
@@ -107,11 +110,7 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 			'activeTab' => $request->getCookie('tab', null),
 		]));
 
-		$this->view->messages = array_merge(
-			$this->_helper->flashMessenger->getMessages(),
-			$this->_helper->flashMessenger->getCurrentMessages()
-		);
-		$this->_helper->flashMessenger->clearCurrentMessages();
+		$this->assignMessages();
 	}
 
 	public function viewAction()
@@ -138,7 +137,7 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 			'toolbar' => new Purchases_Form_Toolbar(),
 		] + $attachmentService->sync($quoterequest, $contact, $controller));
 
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->assignMessages();
 	}
 
 	public function copyAction()
@@ -147,8 +146,7 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 
 		$data = $this->requireRow($id);
 
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->disableView();
 
 		unset($data['id'], $data['quoterequestid']);
 		$data['title'] = $data['title'].' 2';
@@ -179,8 +177,8 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 	{
 		$id = $this->_getParam('id', 0);
 		$target = $this->_getParam('target', 0);
-		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
-		$data = $quoterequestDb->getQuoterequest($id);
+
+		$data = $this->requireRow($id);
 
 		$data['state'] = 100;
 		$data['completed'] = 0;
@@ -248,7 +246,7 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 				'overwrite' => false,
 			]);
 		} catch (RuntimeException $e) {
-			$this->_flashMessenger->addMessage('MESSAGES_QUOTE_REQUEST_NOT_FOUND');
+			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
 			return $this->_helper->redirector->gotoSimple('index', 'quoterequest');
 		}
 
@@ -258,14 +256,12 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 
 	public function cancelAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->disableView();
 
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
 
 			$quoterequest = $this->requireRow($id);
-			if (!$quoterequest) return;
 
 			$quoterequest = new Purchases_Model_DbTable_Quoterequest();
 			$quoterequest->setState($id, 106);
