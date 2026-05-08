@@ -58,8 +58,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		}
 
 		if (!empty($options['finalize'])) {
-			$finalizeService = new Sales_Service_DocumentFinalizeService();
-			$row = $finalizeService->finalize($row, $this->getRequest()->getControllerName());
+			$row = $this->finalizeDocument($row);
 		}
 
 		$pdf = new DEEC_Pdf();
@@ -159,5 +158,46 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	protected function isReadonlyState(array $row): bool
 	{
 		return in_array((int)($row['state'] ?? 0), [105, 106], true);
+	}
+
+	protected function finalizeDocument(array $row): array
+	{
+		$service = $this->getDocumentFinalizeService();
+
+		if (!$service) {
+			throw new RuntimeException('Document finalize service not available');
+		}
+
+		return $service->finalize(
+			$row,
+			$this->getRequest()->getControllerName()
+		);
+	}
+
+	protected function getDocumentFinalizeService()
+	{
+		$className = $this->getDocumentFinalizeServiceClass();
+
+		if (!$className) {
+			$module = ucfirst($this->getRequest()->getModuleName());
+			$className = $module . '_Service_DocumentFinalizeService';
+		}
+
+		if (!class_exists($className)) {
+			return null;
+		}
+
+		$service = new $className();
+
+		if (!method_exists($service, 'finalize')) {
+			throw new RuntimeException($className . ' must provide finalize()');
+		}
+
+		return $service;
+	}
+
+	protected function getDocumentFinalizeServiceClass(): ?string
+	{
+		return null;
 	}
 }
