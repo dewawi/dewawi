@@ -51,9 +51,8 @@ class Processes_Model_List_Processes extends DEEC_List
 					return !$list->isReadonly($item);
 				},
 				'state_map' => [
-					'prepaymentRequested' => 'warning',
+					'waitingForPayment' => 'warning',
 					'prepaymentReceived' => 'info',
-					'paymentOpen' => 'warning',
 					'paymentCompleted' => 'completed',
 				],
 			],

@@ -1154,11 +1154,13 @@ button.nolabel.filter {
 
 /* Dark badge colors */
 
+.dw-badge--info,
 .dw-badge--created {
   background: var(--dw-color-info-text);
   color: #fff;
 }
 
+.dw-badge--warning,
 .dw-badge--in-process,
 .dw-badge--check {
   background: var(--dw-color-warning-text);
@@ -1174,6 +1176,11 @@ button.nolabel.filter {
 .dw-badge--released,
 .dw-badge--completed {
   background: var(--dw-color-success-text);
+  color: #fff;
+}
+
+.dw-badge--default {
+  background: var(--dw-color-muted-text);
   color: #fff;
 }
 
