@@ -4,23 +4,15 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$toolbar = new Purchases_Form_Toolbar();
-		$toolbarInline = new Purchases_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
 		$get = new Purchases_Model_Get();
-		$quoterequests = $get->quoterequests($params, $options, $this->_flashMessenger);
 
-		$this->view->quoterequests = $quoterequests;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->messages = array_merge(
-			$this->_flashMessenger->getMessages(),
-			$this->_flashMessenger->getCurrentMessages()
-		);
-		$this->_flashMessenger->clearCurrentMessages();
+		$this->buildListView([
+			'viewKey' => 'quoterequests',
+			'list' => 'Purchases_Model_List_Quoterequests',
+			'items' => function ($params, $options) use ($get) {
+				return $get->quoterequests($params, $options, $this->_flashMessenger);
+			},
+		]);
 	}
 
 	public function addAction()

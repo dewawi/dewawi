@@ -4,23 +4,15 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$toolbar = new Purchases_Form_Toolbar();
-		$toolbarInline = new Purchases_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
 		$get = new Purchases_Model_Get();
-		$purchaseorders = $get->purchaseorders($params, $options, $this->_flashMessenger);
 
-		$this->view->purchaseorders = $purchaseorders;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->messages = array_merge(
-			$this->_flashMessenger->getMessages(),
-			$this->_flashMessenger->getCurrentMessages()
-		);
-		$this->_flashMessenger->clearCurrentMessages();
+		$this->buildListView([
+			'viewKey' => 'purchaseorders',
+			'list' => 'Purchases_Model_List_Purchaseorders',
+			'items' => function ($params, $options) use ($get) {
+				return $get->purchaseorders($params, $options, $this->_flashMessenger);
+			},
+		]);
 	}
 
 	public function addAction()
