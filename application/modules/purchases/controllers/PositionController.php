@@ -20,6 +20,7 @@ class Purchases_PositionController extends DEEC_Controller_Action
 		//Get parent data
 		$parentDb = new $parentClass();
 		$parent = $parentDb->getById($params['parentid']);
+		$parentLocked = in_array((int)$parent['state'], [105, 106], true);
 
 		//Get positions
 		$positionsDb = new $positionClass();
@@ -112,7 +113,8 @@ class Purchases_PositionController extends DEEC_Controller_Action
 					$params['parentid'],
 					$position->{$params['type'] . 'setid'}
 				),
-				$locale
+				$locale,
+				$parentLocked
 			);
 
 			if($position->masterid) {
@@ -477,7 +479,7 @@ class Purchases_PositionController extends DEEC_Controller_Action
 		}
 	}
 
-	protected function buildPositionForm($formClass, $position, array $uoms, array $taxrates, array $orderingOptions, $locale)
+	protected function buildPositionForm($formClass, $position, array $uoms, array $taxrates, array $orderingOptions, $locale, bool $readonly = false)
 	{
 		$form = new $formClass();
 		$form->setValues($position->toArray());
@@ -506,6 +508,10 @@ class Purchases_PositionController extends DEEC_Controller_Action
 		$taxrateId = array_search($position->taxrate, $taxrates, true);
 		if ($taxrateId !== false) {
 			$form->setValue('taxrate', $taxrateId);
+		}
+
+		if ($readonly) {
+			$form->setMode('readonly');
 		}
 
 		return $form;

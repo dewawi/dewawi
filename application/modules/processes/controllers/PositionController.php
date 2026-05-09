@@ -2,32 +2,6 @@
 
 class Processes_PositionController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
-	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-	}
-
 	public function indexAction()
 	{
 		$this->_helper->getHelper('layout')->disableLayout();
@@ -46,6 +20,7 @@ class Processes_PositionController extends DEEC_Controller_Action
 		//Get parent data
 		$parentDb = new $parentClass();
 		$parent = $parentDb->getById($params['parentid']);
+		$parentLocked = in_array((int)$parent['state'], [105, 106], true);
 
 		//Get positions
 		$positionsDb = new $positionClass();
@@ -138,7 +113,8 @@ class Processes_PositionController extends DEEC_Controller_Action
 					$params['parentid'],
 					$position->{$params['type'] . 'setid'}
 				),
-				$locale
+				$locale,
+				$parentLocked
 			);
 
 			if($position->masterid) {
@@ -503,7 +479,7 @@ class Processes_PositionController extends DEEC_Controller_Action
 		}
 	}
 
-	protected function buildPositionForm($formClass, $position, array $uoms, array $taxrates, array $orderingOptions, $locale)
+	protected function buildPositionForm($formClass, $position, array $uoms, array $taxrates, array $orderingOptions, $locale, bool $readonly = false)
 	{
 		$form = new $formClass();
 		$form->setValues($position->toArray());
@@ -532,6 +508,10 @@ class Processes_PositionController extends DEEC_Controller_Action
 		$taxrateId = array_search($position->taxrate, $taxrates, true);
 		if ($taxrateId !== false) {
 			$form->setValue('taxrate', $taxrateId);
+		}
+
+		if ($readonly) {
+			$form->setMode('readonly');
 		}
 
 		return $form;
