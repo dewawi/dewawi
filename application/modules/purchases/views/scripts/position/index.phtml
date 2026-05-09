@@ -165,23 +165,26 @@ $button = function ($action, $class, array $data = array(), $label = '') {
 
 								<div class="dw-position-grid__rules">
 									<div class="dw-position-field dw-position-field--rules">
-										<div
-											class="multiformContainer"
-											data-controller="pricerulepos"
-											data-parentid="<?php echo $positionId; ?>"
-											data-parent-module="<?php echo $this->escape($this->module); ?>"
-											data-parent-controller="<?php echo $this->escape($parentType); ?>pos"
-										>
-											<?php
-											echo $this->MultiForm(
-												'items',
-												'pricerulepos',
-												$this->pricerules[$positionId],
-												array('amount', 'action'),
-												'ITEMS_PRICE_RULES'
-											);
-											?>
-										</div>
+										<?php if (!$parentLocked) : ?>
+											<div
+												class="multiformContainer"
+												data-controller="pricerulepos"
+												data-parentid="<?php echo $positionId; ?>"
+												data-parent-module="<?php echo $this->escape($this->module); ?>"
+												data-parent-controller="<?php echo $this->escape($parentType); ?>pos"
+											>
+												<?php echo $this->MultiForm(...); ?>
+											</div>
+										<?php else : ?>
+											<div class="dw-readonly-pricerules">
+												<?php foreach ($this->pricerules[$positionId] as $rule) : ?>
+													<div>
+														<?php echo $this->escape($rule['amount']); ?>
+														<?php echo $this->escape($rule['action']); ?>
+													</div>
+												<?php endforeach; ?>
+											</div>
+										<?php endif; ?>
 									</div>
 
 									<div class="dw-position-field">
