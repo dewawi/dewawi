@@ -284,6 +284,8 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 		$items = call_user_func($config['items'], $params, $options);
 
+		$contextAction = $this->_getParam('context_action', $this->getRequest()->getActionName());
+
 		$list = new $config['list']();
 		$list->configure([
 			'items' => $items,
@@ -294,13 +296,14 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			'toolbarInline' => $toolbarInline,
 			'context' => [
 				'user' => $this->_user,
-				'action' => $this->_getParam('context_action', $this->getRequest()->getActionName()),
+				'action' => $contextAction,
 				'parent' => $this->_getParam('parent', null),
 				'setid' => (int)$this->_getParam('setid', 0),
 			],
 		]);
 
 		$this->view->{$config['viewKey']} = $list;
+		$this->view->contextAction = $contextAction;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->toolbarInline = $toolbarInline;

@@ -17,44 +17,46 @@ echo $this->Pagination();
 	</div>
 </div>
 
-<div class="dw-map-section" id="contactsmap">
-	<div id="map"></div>
-</div>
+<?php if ($this->contextAction !== 'select') : ?>
+	<div class="dw-map-section" id="contactsmap">
+		<div id="map"></div>
+	</div>
 
-<script type="text/javascript">
-	$(document).ready(function(){
-		contactsMap();
-	});
-	function contactsMap() {
-		document.getElementById('contactsmap').innerHTML = '<div id="map"></div>';
-		var map = L.map('map').setView([51.2254018,6.7763137], 5);
-		map.attributionControl.setPrefix('Leaflet')
-		L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			maxZoom: 19,
-			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-		}).addTo(map);
-		var startmarkers = [
-		<?php foreach($this->contacts as $contact) : ?>
-			<?php $url = $this->baseUrl().'contact/edit/id/'.$contact->id; ?>
-			<?php if($contact->latitude) : ?>
-				['<?php echo addslashes($contact->name1); ?>', <?php echo $contact->latitude; ?>, <?php echo $contact->longitude; ?>, '<?php echo $url; ?>', '<?php echo $contact->contactid; ?>'],
-			<?php endif; ?>
-		<?php endforeach; ?>
-		];
-		let arrayOfMarkers = [];
-		for (let i = 0; i < startmarkers.length; i++) {
-		  marker = new L.marker([startmarkers[i][1], startmarkers[i][2]])
-			.bindPopup('<a href=\"' + startmarkers[i][3] + '\">' + startmarkers[i][0] + '<br>' + startmarkers[i][4])
-			.addTo(map);
+	<script type="text/javascript">
+		$(document).ready(function(){
+			contactsMap();
+		});
+		function contactsMap() {
+			document.getElementById('contactsmap').innerHTML = '<div id="map"></div>';
+			var map = L.map('map').setView([51.2254018,6.7763137], 5);
+			map.attributionControl.setPrefix('Leaflet')
+			L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				maxZoom: 19,
+				attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+			}).addTo(map);
+			var startmarkers = [
+			<?php foreach($this->contacts as $contact) : ?>
+				<?php $url = $this->baseUrl().'contact/edit/id/'.$contact->id; ?>
+				<?php if($contact->latitude) : ?>
+					['<?php echo addslashes($contact->name1); ?>', <?php echo $contact->latitude; ?>, <?php echo $contact->longitude; ?>, '<?php echo $url; ?>', '<?php echo $contact->contactid; ?>'],
+				<?php endif; ?>
+			<?php endforeach; ?>
+			];
+			let arrayOfMarkers = [];
+			for (let i = 0; i < startmarkers.length; i++) {
+			  marker = new L.marker([startmarkers[i][1], startmarkers[i][2]])
+				.bindPopup('<a href=\"' + startmarkers[i][3] + '\">' + startmarkers[i][0] + '<br>' + startmarkers[i][4])
+				.addTo(map);
 
-		  arrayOfMarkers.push([startmarkers[i][1], startmarkers[i][2]])
+			  arrayOfMarkers.push([startmarkers[i][1], startmarkers[i][2]])
+			}
+
+			if(arrayOfMarkers.length) {
+				console.log(arrayOfMarkers);
+				var bounds = new L.LatLngBounds(arrayOfMarkers);
+				map.fitBounds(bounds);
+				console.log(234);
+			}
 		}
-
-		if(arrayOfMarkers.length) {
-			console.log(arrayOfMarkers);
-			var bounds = new L.LatLngBounds(arrayOfMarkers);
-			map.fitBounds(bounds);
-			console.log(234);
-		}
-	}
-</script>
+	</script>
+<?php endif; ?>
