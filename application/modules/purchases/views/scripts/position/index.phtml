@@ -70,14 +70,18 @@ $button = function ($action, $class, array $data = array(), $label = '') {
 				</h3>
 			</div>
 
-			<div class="dw-position-set__actions">
-				<?php echo $this->ToolbarPositionSets($sets, $s); ?>
-			</div>
+			<?php if (!$parentLocked) : ?>
+				<div class="dw-position-set__actions">
+					<?php echo $this->ToolbarPositionSets($sets, $s); ?>
+				</div>
+			<?php endif; ?>
 		</div>
 
-		<div class="dw-position-set__toolbar">
-			<?php echo $this->ToolbarPositions(); ?>
-		</div>
+		<?php if (!$parentLocked) : ?>
+			<div class="dw-position-set__toolbar">
+				<?php echo $this->ToolbarPositions(); ?>
+			</div>
+		<?php endif; ?>
 
 		<?php if (isset($this->forms[$setid]) && ($length = count($this->forms[$setid]))) : ?>
 			<div class="dw-position-list">
@@ -268,21 +272,23 @@ $button = function ($action, $class, array $data = array(), $label = '') {
 												<?php echo $this->escape($option->price); ?>
 											</div>
 
-											<div class="dw-option-row__action">
-												<?php
-												echo $button(
-													'add-option',
-													'add nolabel',
-													array(
-														'parent' => $parentType,
-														'type' => 'pos',
-														'option-id' => (int)$option->id,
-														'setid' => (int)$setid,
-														'masterid' => $positionId,
-													)
-												);
-												?>
-											</div>
+											<?php if (!$parentLocked) : ?>
+												<div class="dw-option-row__action">
+													<?php
+													echo $button(
+														'add-option',
+														'add nolabel',
+														array(
+															'parent' => $parentType,
+															'type' => 'pos',
+															'option-id' => (int)$option->id,
+															'setid' => (int)$setid,
+															'masterid' => $positionId,
+														)
+													);
+													?>
+												</div>
+											<?php endif; ?>
 										</div>
 									<?php endforeach; ?>
 								</div>

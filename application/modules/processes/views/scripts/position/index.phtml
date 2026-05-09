@@ -1,13 +1,45 @@
 <?php
 $s = 1;
 $sets = count($this->sets);
+$parentType = (string)$this->parent['type'];
 $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '106');
+
+$button = function ($action, $class, array $data = array(), $label = '') {
+	$attrs = array(
+		'type' => 'button',
+		'class' => trim('dw-btn ' . $class),
+		'data-action' => $action,
+		'aria-label' => $action,
+	);
+
+	foreach ($data as $key => $value) {
+		if ($value === null || $value === '') {
+			continue;
+		}
+
+		$attrs['data-' . $key] = $value;
+	}
+
+	$html = '<button';
+
+	foreach ($attrs as $key => $value) {
+		$html .= ' ' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '="' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '"';
+	}
+
+	$html .= '>';
+
+	if ($label !== '') {
+		$html .= '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
+	}
+
+	$html .= '</button>';
+
+	return $html;
+};
 ?>
 
 <?php if ($sets == 0) : ?>
-	<input type="hidden" class="setid" name="setid" value="0">
-
-	<div class="dw-position-set dw-position-set--empty">
+	<div class="dw-position-set dw-position-set--empty" data-setid="0">
 		<div class="dw-position-set__header">
 			<div class="dw-position-set__title">
 				<h3><?php echo $this->translate('POSITIONS_SET'); ?></h3>
@@ -21,9 +53,7 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 <?php endif; ?>
 
 <?php foreach ($this->sets as $setid => $set) : ?>
-	<section class="dw-position-set">
-		<input type="hidden" class="setid" name="setid" value="<?php echo $setid; ?>">
-
+	<section class="dw-position-set" data-setid="<?php echo (int)$setid; ?>">
 		<div class="dw-position-set__header">
 			<div class="dw-position-set__title">
 				<h3>
@@ -32,7 +62,7 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 						data-name="title"
 						data-value="<?php echo $this->escape($set['title']); ?>"
 						data-type="input"
-						data-id="<?php echo $setid; ?>"
+						data-id="<?php echo (int)$setid; ?>"
 						data-controller="positionset"
 					>
 						<?php echo $this->escape($set['title']); ?>
@@ -40,32 +70,47 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 				</h3>
 			</div>
 
-			<div class="dw-position-set__actions">
-				<?php echo $this->ToolbarPositionSets($sets, $s); ?>
-			</div>
+			<?php if (!$parentLocked) : ?>
+				<div class="dw-position-set__actions">
+					<?php echo $this->ToolbarPositionSets($sets, $s); ?>
+				</div>
+			<?php endif; ?>
 		</div>
 
-		<div class="dw-position-set__toolbar">
-			<?php echo $this->ToolbarPositions(); ?>
-		</div>
+		<?php if (!$parentLocked) : ?>
+			<div class="dw-position-set__toolbar">
+				<?php echo $this->ToolbarPositions(); ?>
+			</div>
+		<?php endif; ?>
 
 		<?php if (isset($this->forms[$setid]) && ($length = count($this->forms[$setid]))) : ?>
 			<div class="dw-position-list">
 				<?php $i = 1; ?>
 				<?php foreach ($this->forms[$setid] as $position) : ?>
 					<?php
-					$positionId = $position['form']->getValue('id');
-					$childs = isset($this->childs[$positionId]) ? $this->childs[$positionId] : [];
+					$positionId = (int)$position['form']->getValue('id');
+					$childs = isset($this->childs[$positionId]) ? $this->childs[$positionId] : array();
 					$childsCount = count($childs);
-					$options = isset($this->options[$positionId]) ? $this->options[$positionId] : [];
+					$options = isset($this->options[$positionId]) ? $this->options[$positionId] : array();
 					?>
 
-					<article class="dw-position-card is-master position<?php echo $positionId; ?> wrap master">
-						<input class="position-id" type="hidden" value="<?php echo $positionId; ?>" name="id">
+					<article
+						class="dw-position-card is-master position<?php echo $positionId; ?> wrap master"
+						data-id="<?php echo $positionId; ?>"
+						data-parent="<?php echo $this->escape($parentType); ?>"
+						data-type="pos"
+						data-setid="<?php echo (int)$setid; ?>"
+					>
 						<div class="dw-position-card__head">
 							<div class="dw-position-card__meta">
 								<label class="dw-check">
-									<input class="position-check" type="checkbox" value="<?php echo $positionId; ?>" name="ids[]">
+									<input
+										class="position-check"
+										type="checkbox"
+										value="<?php echo $positionId; ?>"
+										name="ids[]"
+										data-select-id="<?php echo $positionId; ?>"
+									>
 								</label>
 
 								<div class="dw-position-order">
@@ -75,13 +120,15 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 
 							<?php if (!$parentLocked) : ?>
 								<div class="dw-position-card__actions">
-									<?php echo $this->toolbar->renderElement('deletepos'); ?>
-									<?php echo $this->toolbar->renderElement('copypos'); ?>
+									<?php echo $button('delete-position', 'delete nolabel'); ?>
+									<?php echo $button('copy-position', 'copy nolabel'); ?>
+
 									<?php if ($i > 1) : ?>
-										<?php echo $this->toolbar->renderElement('sortup'); ?>
+										<?php echo $button('sort-position-up', 'sortup nolabel', array('ordering' => $i - 1)); ?>
 									<?php endif; ?>
+
 									<?php if ($i < $length) : ?>
-										<?php echo $this->toolbar->renderElement('sortdown'); ?>
+										<?php echo $button('sort-position-down', 'sortdown nolabel', array('ordering' => $i + 1)); ?>
 									<?php endif; ?>
 								</div>
 							<?php endif; ?>
@@ -119,11 +166,11 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 								<div class="dw-position-grid__rules">
 									<div class="dw-position-field dw-position-field--rules">
 										<div
-											id="pricerulepos"
 											class="multiformContainer"
+											data-controller="pricerulepos"
 											data-parentid="<?php echo $positionId; ?>"
-											data-parent-module="<?php echo $this->module; ?>"
-											data-parent-controller="<?php echo $this->parent['type']; ?>pos"
+											data-parent-module="<?php echo $this->escape($this->module); ?>"
+											data-parent-controller="<?php echo $this->escape($parentType); ?>pos"
 										>
 											<?php
 											echo $this->MultiForm(
@@ -143,7 +190,7 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 								</div>
 
 								<div class="dw-position-grid__total">
-									<div class="dw-position-total">
+									<div class="dw-position-total total">
 										<?php echo $position['form']->getValue('total'); ?>
 									</div>
 								</div>
@@ -154,26 +201,40 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 							<div class="dw-position-children">
 								<?php $c = 1; ?>
 								<?php foreach ($childs as $child) : ?>
+									<?php $childId = (int)$child->getValue('id'); ?>
+
 									<div
-										class="dw-position-card is-child position<?php echo $child->getValue('id'); ?> wrap child"
+										class="dw-position-card is-child position<?php echo $childId; ?> wrap child"
+										data-id="<?php echo $childId; ?>"
 										data-masterid="<?php echo $positionId; ?>"
+										data-parent="<?php echo $this->escape($parentType); ?>"
+										data-type="pos"
+										data-setid="<?php echo (int)$setid; ?>"
 									>
 										<div class="dw-position-card__head">
 											<div class="dw-position-card__meta">
 												<label class="dw-check">
-													<input class="id" type="checkbox" value="<?php echo $child->getValue('id'); ?>" name="id"/>
+													<input
+														class="position-check"
+														type="checkbox"
+														value="<?php echo $childId; ?>"
+														name="ids[]"
+														data-select-id="<?php echo $childId; ?>"
+													>
 												</label>
 											</div>
 
 											<?php if (!$parentLocked) : ?>
 												<div class="dw-position-card__actions">
-													<?php echo $this->toolbar->renderElement('deletepos'); ?>
-													<?php echo $this->toolbar->renderElement('copypos'); ?>
+													<?php echo $button('delete-position', 'delete nolabel'); ?>
+													<?php echo $button('copy-position', 'copy nolabel'); ?>
+
 													<?php if ($c > 1) : ?>
-														<?php echo $this->toolbar->renderElement('sortup'); ?>
+														<?php echo $button('sort-position-up', 'sortup nolabel', array('ordering' => $c - 1)); ?>
 													<?php endif; ?>
+
 													<?php if ($c < $childsCount) : ?>
-														<?php echo $this->toolbar->renderElement('sortdown'); ?>
+														<?php echo $button('sort-position-down', 'sortdown nolabel', array('ordering' => $c + 1)); ?>
 													<?php endif; ?>
 												</div>
 											<?php endif; ?>
@@ -188,6 +249,7 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 											<div><?php echo $child->renderElement('uom'); ?></div>
 										</div>
 									</div>
+
 									<?php ++$c; ?>
 								<?php endforeach; ?>
 							</div>
@@ -210,14 +272,23 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 												<?php echo $this->escape($option->price); ?>
 											</div>
 
-											<div class="dw-option-row__action">
-												<?php
-												echo $this->Button(
-													'add',
-													'addOption(\'' . $this->parent['type'] . '\', \'pos\', ' . $this->escape($option->id) . ', ' . $this->escape($setid) . ', ' . $positionId . ')'
-												);
-												?>
-											</div>
+											<?php if (!$parentLocked) : ?>
+												<div class="dw-option-row__action">
+													<?php
+													echo $button(
+														'add-option',
+														'add nolabel',
+														array(
+															'parent' => $parentType,
+															'type' => 'pos',
+															'option-id' => (int)$option->id,
+															'setid' => (int)$setid,
+															'masterid' => $positionId,
+														)
+													);
+													?>
+												</div>
+											<?php endif; ?>
 										</div>
 									<?php endforeach; ?>
 								</div>
@@ -258,3 +329,4 @@ $parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '1
 
 	<?php ++$s; ?>
 <?php endforeach; ?>
+
