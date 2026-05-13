@@ -20,7 +20,7 @@ class Campaigns_Model_Get
 		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
 		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['country'], $schema);
-		if($params['daterange']) {
+		if($params['daterange'] && $params['daterange'] !== 'all') {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
 			$params['to'] = date('Y-m-d', strtotime($params['to']));
 			$query = $queryHelper->getQueryDaterange($query, $params['from'], $params['to'], $schema);
