@@ -199,8 +199,8 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'name' => 'daterange',
 			'type' => 'select',
 			'label' => 'TOOLBAR_DATE_RANGE',
-			'default' => 'last30days',
 			'options' => [
+				'all' => 'TOOLBAR_ALL',
 				'today' => 'TOOLBAR_TODAY',
 				'yesterday' => 'TOOLBAR_YESTERDAY',
 				'last7days' => 'TOOLBAR_LAST_7_DAYS',
@@ -212,6 +212,7 @@ class Processes_Form_Toolbar extends DEEC_Form
 				'lastYear' => 'TOOLBAR_LAST_YEAR',
 				'custom' => 'TOOLBAR_CUSTOM',
 			],
+			'default' => 'all',
 			'filter' => true,
 			'toolbar' => 'filters',
 			'wrap' => false,

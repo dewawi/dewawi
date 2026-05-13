@@ -58,10 +58,10 @@ class Statistics_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'daterange',
-			'type' => 'radio',
-			'wrap' => false,
+			'type' => 'select',
+			'label' => 'TOOLBAR_DATE_RANGE',
 			'options' => [
-				'0' => 'TOOLBAR_ALL',
+				'all' => 'TOOLBAR_ALL',
 				'today' => 'TOOLBAR_TODAY',
 				'yesterday' => 'TOOLBAR_YESTERDAY',
 				'last7days' => 'TOOLBAR_LAST_7_DAYS',
@@ -73,7 +73,11 @@ class Statistics_Form_Toolbar extends DEEC_Form
 				'lastYear' => 'TOOLBAR_LAST_YEAR',
 				'custom' => 'TOOLBAR_CUSTOM',
 			],
-			'default' => '0',
+			'default' => 'all',
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
