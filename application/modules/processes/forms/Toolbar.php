@@ -95,6 +95,18 @@ class Processes_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'page',
+			'type' => 'select',
+			'default' => '1',
+			'options' => [
+				'1' => '1',
+			],
+			'toolbar' => 'meta',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
+
+		$this->addElement([
 			'name' => 'order',
 			'type' => 'select',
 			'label' => 'TOOLBAR_ORDER',

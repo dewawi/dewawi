@@ -213,16 +213,28 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'name' => 'limit',
 			'type' => 'select',
-			'wrap' => false,
+			'default' => '25',
 			'options' => [
+				'10' => '10',
+				'25' => '25',
 				'50' => '50',
 				'100' => '100',
-				'250' => '250',
-				'500' => '500',
-				'0' => 'TOOLBAR_ALL',
 			],
-			'default' => '50',
-			'attribs' => ['class' => 'hidden-sm'],
+			'toolbar' => 'meta',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
+
+		$this->addElement([
+			'name' => 'page',
+			'type' => 'select',
+			'default' => '1',
+			'options' => [
+				'1' => '1',
+			],
+			'toolbar' => 'meta',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
 		]);
 
 		$this->addElement([
