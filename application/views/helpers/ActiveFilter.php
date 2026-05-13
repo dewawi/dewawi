@@ -40,10 +40,10 @@ class Zend_View_Helper_ActiveFilter extends Zend_View_Helper_Abstract{
 							<?php echo $this->view->Button('clear', '', '', '', '', 'tagid'); ?>
 						</li>
 					<?php endif; ?>
-					<?php if(isset($filters['country']) && isset($options['countries']) && isset($options['countries'][$filters['country']])) : ?>
+					<?php if(isset($filters['country']) && isset($options['country']) && isset($options['country'][$filters['country']])) : ?>
 						<li>
 							<b><?php echo $this->view->translate('TOOLBAR_COUNTRY').':'; ?></b>
-							<?php echo $options['countries'][$filters['country']]; ?>
+							<?php echo $options['country'][$filters['country']]; ?>
 							<?php echo $this->view->Button('clear', '', '', '', '', 'country'); ?>
 						</li>
 					<?php endif; ?>

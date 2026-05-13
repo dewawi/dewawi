@@ -339,7 +339,7 @@ class Statistics_Model_Turnover
 		$query .= " AND c.clientid = {$client['id']}";
 		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
 		if($params['country']) {
-			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['countries'], 'i');
+			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['country'], 'i');
 		}
 
 		$data = $db->fetchAll(

@@ -35,7 +35,7 @@ class Contacts_Model_Get
 		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['catid'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountryC($query, $params['country'], $options['countries'], 'a');
+		if($params['country']) $query = $queryHelper->getQueryCountryC($query, $params['country'], $options['country'], 'a');
 		if($query) {
 			$query .= ' AND c.clientid = '.$client['id'];
 			$query .= ' AND c.deleted = 0';

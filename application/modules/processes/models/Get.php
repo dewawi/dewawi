@@ -19,7 +19,7 @@ class Processes_Model_Get
 		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
 		$query = $queryHelper->getQueryCategory($query, $params['catid'], $options['catid'], 'c');
 		if($params['states']) $query = $queryHelper->getQueryStates($query, $params['states'], $schema);
-		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['countries'], $schema);
+		if($params['country']) $query = $queryHelper->getQueryCountry($query, $params['country'], $options['country'], $schema);
 		if($params['paymentstatus']) $query = $queryHelper->getQueryPaymentstatus($query, $params['paymentstatus'], $schema);
 		if($params['daterange']) {
 			$params['from'] = date('Y-m-d', strtotime($params['from']));
