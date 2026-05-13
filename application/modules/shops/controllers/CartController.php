@@ -59,12 +59,8 @@ class Shops_CartController extends Zend_Controller_Action
 		$imageDb = new Shops_Model_DbTable_Media();
 		$images['categories'] = $imageDb->getCategoryMedia($categories);
 
-		$pageDb = new Shops_Model_DbTable_Page();
-		$page = $pageDb->getPageByTitle('Home');
-
 		//$this->view->tags = $tags;
 		//$this->view->tagEntites = $tagEntites;
-		$this->view->page = $page;
 		$this->view->shop = $shop;
 		$this->view->images = $images;
 		$this->view->slides = $slides;
