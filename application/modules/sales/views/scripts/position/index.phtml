@@ -173,7 +173,15 @@ $button = function ($action, $class, array $data = array(), $label = '') {
 												data-parent-module="<?php echo $this->escape($this->module); ?>"
 												data-parent-controller="<?php echo $this->escape($parentType); ?>pos"
 											>
-												<?php echo $this->MultiForm(...); ?>
+												<?php
+												echo $this->MultiForm(
+													'items',
+													'pricerulepos',
+													$this->pricerules[$positionId],
+													array('amount', 'action'),
+													'ITEMS_PRICE_RULES'
+												);
+												?>
 											</div>
 										<?php else : ?>
 											<div class="dw-readonly-pricerules">
