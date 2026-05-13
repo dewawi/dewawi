@@ -30,6 +30,15 @@ class Sales_Model_Get
 		$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
 		$query = $queryHelper->getQueryDeleted($query, $schema);
 
+		$db = $quotesDb->getAdapter();
+		$records = (int)$db->fetchOne(
+			$quotesDb->select()
+				->setIntegrityCheck(false)
+				->from(array($schema => 'quote'), array('records' => new Zend_Db_Expr('COUNT(DISTINCT '.$schema.'.id)')))
+				->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array())
+				->where($query ? $query : 1)
+		);
+
 		$quotes = $quotesDb->fetchAll(
 			$quotesDb->select()
 				->setIntegrityCheck(false)
@@ -38,25 +47,22 @@ class Sales_Model_Get
 				->group($schema.'.id')
 				->where($query ? $query : 1)
 				->order(array('pinned desc', $params['order'].' '.$params['sort']))
-				->limit($params['limit'])
+				->limit($params['limit'], $params['offset'])
 		);
-
-
-		/*$select = $quotesDb->select()
-			->setIntegrityCheck(false)
-			->from(array($schema => 'quote'))
-			->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
-			->group($schema.'.id')
-			->where($query ? $query : 1)
-			->order(array('pinned desc', $params['order'].' '.$params['sort']))
-			->limit($params['limit']);
-		error_log($select->__toString());*/
-
 
 		if(!count($quotes) && $params['keyword']) {
 			$query = $queryHelper->getQueryKeyword('', $params['keyword'], $columns);
 			$query = $queryHelper->getQueryClient($query, $client['id'], $schema);
 			$query = $queryHelper->getQueryDeleted($query, $schema);
+
+			$records = (int)$db->fetchOne(
+				$quotesDb->select()
+					->setIntegrityCheck(false)
+					->from(array($schema => 'quote'), array('records' => new Zend_Db_Expr('COUNT(DISTINCT '.$schema.'.id)')))
+					->join(array('c' => 'contact'), $schema.'.contactid = c.contactid', array())
+					->where($query ? $query : 1)
+			);
+
 			$quotes = $quotesDb->fetchAll(
 				$quotesDb->select()
 					->setIntegrityCheck(false)
@@ -84,10 +90,8 @@ class Sales_Model_Get
 		}
 		$quotes->subtotal = $currency->toCurrency($quotes->subtotal);
 		$quotes->total = $currency->toCurrency($quotes->total);
-		//echo $query;
-		//print_r($params);
-		//print_r($options);
-		return $quotes;
+
+		return [$quotes, $records];
 	}
 
 	public function invoices($params, $options, $flashMessenger)
