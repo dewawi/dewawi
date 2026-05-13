@@ -16,6 +16,7 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 		}
 
 		$this->applyDateRange($params, $toolbar);
+		$this->applyPagination($params);
 
 		return $params;
 	}
@@ -82,21 +83,6 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 		return [];
 	}
 
-	protected function applyDateRange(array &$params, $toolbar): void
-	{
-		if (empty($params['daterange']) || $params['daterange'] === 'custom') {
-			return;
-		}
-
-		$dateRange = $this->getDateRange($params['daterange']);
-
-		$params['from'] = $dateRange['from'];
-		$params['to'] = $dateRange['to'];
-
-		$toolbar->setValue('from', $params['from']);
-		$toolbar->setValue('to', $params['to']);
-	}
-
 	public function getDateRange($dateRange)
 	{
 		switch ($dateRange) {
@@ -145,5 +131,41 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 			'from' => $from,
 			'to' => $to,
 		];
+	}
+
+	protected function applyDateRange(array &$params, $toolbar): void
+	{
+		if (empty($params['daterange']) || $params['daterange'] === 'custom' || $params['daterange'] === 'all') {
+			return;
+		}
+
+		$dateRange = $this->getDateRange($params['daterange']);
+
+		$params['from'] = $dateRange['from'];
+		$params['to'] = $dateRange['to'];
+
+		$toolbar->setValue('from', $params['from']);
+		$toolbar->setValue('to', $params['to']);
+	}
+
+	protected function applyPagination(array &$params): void
+	{
+		$params['page'] = isset($params['page']) ? (int)$params['page'] : 1;
+
+		if ($params['page'] <= 0) {
+			$params['page'] = 1;
+		}
+
+		$params['limit'] = isset($params['limit']) ? (int)$params['limit'] : 25;
+
+		if ($params['limit'] <= 0) {
+			$params['limit'] = 25;
+		}
+
+		if ($params['limit'] > 100) {
+			$params['limit'] = 100;
+		}
+
+		$params['offset'] = ($params['page'] - 1) * $params['limit'];
 	}
 }
