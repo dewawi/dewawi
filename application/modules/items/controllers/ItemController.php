@@ -10,9 +10,7 @@ class Items_ItemController extends DEEC_Controller_Action
 			'viewKey' => 'items',
 			'list' => 'Items_Model_List_Items',
 			'items' => function ($params, $options) use ($get) {
-				list($items, $records) = $get->items($params, $options);
-
-				return $items;
+				return $get->items($params, $options);
 			},
 		]);
 	}

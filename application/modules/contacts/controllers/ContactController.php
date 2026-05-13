@@ -36,9 +36,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 					$params['keyword'] = $extraParams['contactid'];
 				}
 
-				list($items, $records) = $get->contacts($params, $options);
-
-				return $items;
+				return $get->contacts($params, $options);
 			},
 		]);
 	}

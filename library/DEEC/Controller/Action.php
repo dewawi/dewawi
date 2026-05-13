@@ -283,7 +283,18 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$items = call_user_func($config['items'], $params, $options);
+		$result = call_user_func($config['items'], $params, $options);
+
+		$records = null;
+
+		if (is_array($result) && array_key_exists(0, $result) && array_key_exists(1, $result)) {
+			$items = $result[0];
+			$records = (int)$result[1];
+		} else {
+			$items = $result;
+		}
+
+		$this->assignPagination($params, $records, $items);
 
 		$contextAction = $this->_getParam('context_action', $this->getRequest()->getActionName());
 
@@ -313,6 +324,39 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$this->assignMessages();
 
 		return $list;
+	}
+
+	protected function assignPagination(array $params, $records, $items): void
+	{
+		if ($records === null) {
+		    return;
+		}
+
+		$limit = (int)($params['limit'] ?? 25);
+		$page = (int)($params['page'] ?? 1);
+
+		if ($limit <= 0) {
+		    $limit = $records > 0 ? $records : 1;
+		}
+
+		if ($page <= 0) {
+		    $page = 1;
+		}
+
+		$count = is_countable($items) ? count($items) : 0;
+		$start = $records > 0 ? (($page - 1) * $limit) + 1 : 0;
+		$end = $records > 0 ? min($start + $count - 1, $records) : 0;
+		$pages = $limit > 0 ? (int)ceil($records / $limit) : 1;
+
+		$this->view->pagination = [
+		    'count' => $count,
+		    'start' => $start,
+		    'end' => $end,
+		    'records' => $records,
+		    'page' => $page,
+		    'limit' => $limit,
+		    'pages' => $pages,
+		];
 	}
 
 	protected function assignMessages(): void
