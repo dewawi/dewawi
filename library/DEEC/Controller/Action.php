@@ -294,7 +294,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			$items = $result;
 		}
 
-		$this->assignPagination($params, $records, $items);
+		$this->assignPagination($params, $records, $items, $toolbar);
 
 		$contextAction = $this->_getParam('context_action', $this->getRequest()->getActionName());
 
@@ -326,7 +326,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		return $list;
 	}
 
-	protected function assignPagination(array $params, $records, $items): void
+	protected function assignPagination(array $params, $records, $items, $toolbar): void
 	{
 		if ($records === null) {
 		    return;
@@ -357,6 +357,17 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		    'limit' => $limit,
 		    'pages' => $pages,
 		];
+
+		if ($toolbar->getElement('page')) {
+			$pageOptions = [];
+
+			for ($i = 1; $i <= $pages; $i++) {
+				$pageOptions[(string)$i] = (string)$i;
+			}
+
+			$toolbar->addOptions('page', $pageOptions, 'replace');
+			$toolbar->setValue('page', (string)$page);
+		}
 	}
 
 	protected function assignMessages(): void
