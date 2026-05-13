@@ -16,6 +16,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 		$this->view->id = isset($params['id']) ? (int)$params['id'] : 0;
 		$this->view->action = $params['action'] ?? '';
+		$this->view->contextAction = $params['context_action'] ?? ($params['action'] ?? '');
 		$this->view->controller = $params['controller'] ?? '';
 		$this->view->module = $params['module'] ?? '';
 		$this->view->client = Zend_Registry::get('Client');
@@ -303,6 +304,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		]);
 
 		$this->view->{$config['viewKey']} = $list;
+		$this->view->{$config['viewKey'] . 'Items'} = $items;
 		$this->view->contextAction = $contextAction;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
