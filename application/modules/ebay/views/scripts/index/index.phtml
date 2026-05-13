@@ -1,8 +1,10 @@
 <?php
 $this->title = $this->translate('EBAY_OVERVIEW');
 $this->headTitle($this->title);
+
 echo $this->Messages();
 echo $this->ActiveFilter();
+echo $this->Pagination();
 ?>
 
 <table id="data">
