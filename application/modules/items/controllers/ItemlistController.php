@@ -1,92 +1,14 @@
 <?php
 
-class Items_ItemlistController extends Zend_Controller_Action
+class Items_ItemlistController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
+	protected function buildIndexView(): void
 	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'export', $this->_flashMessenger);
-	}
-
-	public function indexAction()
-	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$toolbar = new Items_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Items_Model_Get();
-		$params['order'] = 'id';
-		$itemlists = $get->itemlists($params, $options);
-
-		$this->view->itemlists = $itemlists;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$type = $this->_getParam('type', 'index');
-
-		$this->_helper->viewRenderer->setRender($type);
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$toolbar = new Items_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Items_Model_Get();
-		$params['order'] = 'id';
-		$itemlists = $get->itemlists($params, $options);
-
-		$this->view->itemlists = $itemlists;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function addAction()
-	{
-		$catid = $this->_getParam('catid', 0);
-
-		$data = array();
-		$data['title'] = $this->view->translate('ITEM_LISTS_NEW_ITEM_LIST');
-		$data['templateid'] = 0;
-		$data['language'] = '';
-
-		$itemlist = new Items_Model_DbTable_Itemlist();
-		$id = $itemlist->addItemlist($data);
-
-		$this->_helper->redirector->gotoSimple('edit', 'itemlist', null, array('id' => $id));
+		$this->buildListView([
+			'viewKey' => 'items',
+			'list' => 'Items_Model_List_Items',
+			'entity' => Items_Model_Entity_Item::listConfig(),
+		]);
 	}
 
 	public function editAction()
@@ -184,38 +106,6 @@ class Items_ItemlistController extends Zend_Controller_Action
 			$toolbar = new Items_Form_Toolbar();
 			$options = $this->_helper->Options->getOptions($toolbar);
 
-			/*$items = array();
-			$table = array();
-			$attributes = array();
-			$get = new Items_Model_Get();
-			$attributesDb = new Items_Model_DbTable_Itematr();
-			foreach($params as $catid => $data) {
-				$items = $get->items(array('catid' => $catid, 'keyword' => '', 'tagid' => 0, 'order' => 'sku', 'sort' => 'asc', 'limit' => 0), $options)->toArray();
-				$table[$catid]['title'] = $options['categories'][$catid]['title'];
-				$table[$catid]['description'] = $options['categories'][$catid]['description'];
-				foreach($items as $item) {
-					foreach($data->rows as $row) {
-						$table[$item['catid']]['title'] = $options['categories'][$item['catid']]['title'];
-						$table[$item['catid']]['description'] = $options['categories'][$item['catid']]['description'];
-						$table[$item['catid']][$item['id']][$row->name] = $item[$row->name];
-					}
-					$attributes[$item['id']] = $attributesDb->getPositions($item['id'])->toArray();
-					if(isset($attributes[$item['id']]) && count($attributes[$item['id']])) {
-						foreach($data->attributes as $attribute) {
-							foreach($attributes[$item['id']] as $test) {
-								if($test['title'] == $attribute->name) {
-									$table[$item['catid']][$item['id']]['attributes'] = array($test['title'] => $test['description']);
-								}
-							}
-						}
-					}
-				}
-			}*/
-
-			//print_r($attributes);
-			//print_r($table);
-			//print_r($options['categories']);
-
 			$itemlists = array();
 			$get = new Items_Model_Get();
 			$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
@@ -306,28 +196,5 @@ class Items_ItemlistController extends Zend_Controller_Action
 			$item->deleteItem($id);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-	}
-
-	public function lockAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
-	}
-
-	public function unlockAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
-	}
-
-	public function keepaliveAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->keepalive($id);
-	}
-
-	public function validateAction()
-	{
-		$this->_helper->Validate();
 	}
 }
