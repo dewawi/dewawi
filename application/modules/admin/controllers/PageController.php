@@ -1,6 +1,6 @@
 <?php
 
-class Admin_PageController extends DEEC_Controller_Action
+class Admin_PageController extends DEEC_Controller_AdminAction
 {
 	protected function requirePage(int $id, bool $silent = false): ?array
 	{
@@ -237,42 +237,6 @@ class Admin_PageController extends DEEC_Controller_Action
 
 	}
 
-	public function sortAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$data = $request->getPost();
-			$pageDb = new Admin_Model_DbTable_Page();
-			$page = $pageDb->getPage($data['id']);
-			$orderings = $this->getOrdering($page['clientid'], $page['type'], $page['parentid']);
-			$currentOrdering = array_search($data['id'], $orderings);
-			if(($data['ordering'] == 'down') && (isset($orderings[$currentOrdering+1]))) {
-				$pageDb->sortPage($data['id'], $currentOrdering+1);
-				$pageDb->sortPage($orderings[$currentOrdering+1], $currentOrdering);
-			} elseif(($data['ordering'] == 'up') && (isset($orderings[$currentOrdering-1]))) {
-				$pageDb->sortPage($data['id'], $currentOrdering-1);
-				$pageDb->sortPage($orderings[$currentOrdering-1], $currentOrdering);
-			} elseif($data['ordering'] > 0) {
-				if($data['ordering'] < $currentOrdering) {
-					$pageDb->sortPage($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $id) {
-						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $pageDb->sortPage($id, $ordering+1);
-					}
-				} elseif($data['ordering'] > $currentOrdering) {
-					$pageDb->sortPage($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $id) {
-						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $pageDb->sortPage($id, $ordering-1);
-					}
-				}
-			}
-			$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
-		}
-	}
-
-
 	public function deleteAction()
 	{
 		$this->_helper->viewRenderer->setNoRender();
@@ -428,63 +392,5 @@ class Admin_PageController extends DEEC_Controller_Action
 		}
 
 		return $out;
-	}
-
-	protected function setOrdering($clientid, $type, $parentid)
-	{
-		$i = 1;
-		$pagesDb = new Admin_Model_DbTable_Page();
-		$pages = $pagesDb->getPages($type, $parentid);
-		foreach($pages as $page) {
-			if(isset($page['ordering'])) {
-				//if($page['ordering'] != $i) {
-					if(!isset($pagesDb)) $pagesDb = new Admin_Model_DbTable_Page();
-					//print_r($page);
-					//print_r($i);
-					$pagesDb->sortPage($page['id'], $i);
-					++$i;
-				//}
-			}
-		}
-	}
-
-	protected function getOrdering($clientid, $type, $parentid)
-	{
-		$i = 1;
-		$pagesDb = new Admin_Model_DbTable_Page();
-		$pages = $pagesDb->getPages($type, $parentid);
-		$orderings = array();
-		foreach($pages as $page) {
-			if(isset($page['id'])) {
-				$orderings[$i] = $page['id'];
-				++$i;
-			}
-		}
-		return $orderings;
-	}
-
-	protected function getLatestOrdering($clientid, $type, $parentid)
-	{
-		$ordering = $this->getOrdering($clientid, $type, $parentid);
-		end($ordering);
-		return key($ordering);
-	}
-
-	protected function copyChilds($oldId, $pages, $newId)
-	{
-		foreach($pages[$oldId]['childs'] as $child) {
-			$pageDb = new Admin_Model_DbTable_Page();
-			$data = $pageDb->getPage($child);
-			unset($data['id']);
-			$data['parentid'] = $newId;
-			$data['modified'] = NULL;
-			$data['modifiedby'] = 0;
-			$data['locked'] = 0;
-			$data['lockedtime'] = NULL;
-			$newChildId = $pageDb->addPage($data);
-
-			$childPages = $pageDb->getPages($data['type'], $child);
-			if(isset($childPages[$child]['childs'])) $this->copyChilds($child, $childPages, $newChildId);
-		}
 	}
 }

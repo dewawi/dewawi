@@ -1,6 +1,6 @@
 <?php
 
-class Admin_CategoryController extends DEEC_Controller_Action
+class Admin_CategoryController extends DEEC_Controller_AdminAction
 {
 	public function indexAction()
 	{
@@ -265,45 +265,7 @@ class Admin_CategoryController extends DEEC_Controller_Action
 		if(isset($childCategories[$id]['childs'])) $this->copyChilds($id, $childCategories, $newId);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-
 	}
-
-	public function sortAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$data = $request->getPost();
-			$categoryDb = new Admin_Model_DbTable_Category();
-			$category = $categoryDb->getCategory($data['id']);
-			$orderings = $this->getOrdering($category['clientid'], $category['type'], $category['parentid'], $category['shopid']);
-			$currentOrdering = array_search($data['id'], $orderings);
-			if(($data['ordering'] == 'down') && (isset($orderings[$currentOrdering+1]))) {
-				$categoryDb->sortCategory($data['id'], $currentOrdering+1);
-				$categoryDb->sortCategory($orderings[$currentOrdering+1], $currentOrdering);
-			} elseif(($data['ordering'] == 'up') && (isset($orderings[$currentOrdering-1]))) {
-				$categoryDb->sortCategory($data['id'], $currentOrdering-1);
-				$categoryDb->sortCategory($orderings[$currentOrdering-1], $currentOrdering);
-			} elseif($data['ordering'] > 0) {
-				if($data['ordering'] < $currentOrdering) {
-					$categoryDb->sortCategory($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $id) {
-						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $categoryDb->sortCategory($id, $ordering+1);
-					}
-				} elseif($data['ordering'] > $currentOrdering) {
-					$categoryDb->sortCategory($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $id) {
-						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $categoryDb->sortCategory($id, $ordering-1);
-					}
-				}
-			}
-			$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
-		}
-	}
-
 
 	public function deleteAction()
 	{
@@ -376,77 +338,5 @@ class Admin_CategoryController extends DEEC_Controller_Action
 				}
 			}
 		}
-	}
-
-	protected function setOrdering($clientid, $type, $parentid)
-	{
-		$i = 1;
-		$categoriesDb = new Admin_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories($type, $parentid);
-		foreach($categories as $category) {
-			if(isset($category['ordering'])) {
-				//if($category['ordering'] != $i) {
-					if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
-					//print_r($category);
-					//print_r($i);
-					$categoriesDb->sortCategory($category['id'], $i);
-					++$i;
-				//}
-			}
-		}
-	}
-
-	protected function getOrdering($clientid, $type, $parentid, $shopid = 0)
-	{
-		$i = 1;
-		$categoriesDb = new Admin_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories($type, $parentid, $shopid);
-		$orderings = array();
-		foreach($categories as $category) {
-			if(isset($category['id'])) {
-				$orderings[$i] = $category['id'];
-				++$i;
-			}
-		}
-		return $orderings;
-	}
-
-	protected function getLatestOrdering($clientid, $type, $parentid)
-	{
-		$ordering = $this->getOrdering($clientid, $type, $parentid);
-		end($ordering);
-		return key($ordering);
-	}
-
-	protected function copyChilds($oldId, $categories, $newId)
-	{
-		foreach($categories[$oldId]['childs'] as $child) {
-			$categoryDb = new Admin_Model_DbTable_Category();
-			$data = $categoryDb->getCategory($child);
-			unset($data['id']);
-			$data['parentid'] = $newId;
-			$data['modified'] = NULL;
-			$data['modifiedby'] = 0;
-			$data['locked'] = 0;
-			$data['lockedtime'] = NULL;
-			$newChildId = $categoryDb->addCategory($data);
-
-			$childCategories = $categoryDb->getCategories($data['type'], $child);
-			if(isset($childCategories[$child]['childs'])) $this->copyChilds($child, $childCategories, $newChildId);
-		}
-	}
-
-	protected function getSubfolders($directory)
-	{
-		$subfolders = [];
-		if (is_dir($directory)) {
-			$items = scandir($directory);
-			foreach ($items as $item) {
-				if ($item != '.' && $item != '..' && is_dir($directory . $item)) {
-					$subfolders[] = $item;
-				}
-			}
-		}
-		return $subfolders;
 	}
 }

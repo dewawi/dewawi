@@ -1,6 +1,6 @@
 <?php
 
-class Admin_MenuitemController extends DEEC_Controller_Action
+class Admin_MenuitemController extends DEEC_Controller_AdminAction
 {
 	protected function requireMenuitem(int $id, bool $silent = false): ?array
 	{
@@ -275,45 +275,7 @@ class Admin_MenuitemController extends DEEC_Controller_Action
 		if(isset($childMenuitems[$id]['childs'])) $this->copyChilds($id, $childMenuitems, $newId);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-
 	}
-
-	public function sortAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$data = $request->getPost();
-			$menuItemDb = new Admin_Model_DbTable_Menuitem();
-			$menuItem = $menuItemDb->getMenuitem($data['id']);
-			$orderings = $this->getOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
-			$currentOrdering = array_search($data['id'], $orderings);
-			if(($data['ordering'] == 'down') && (isset($orderings[$currentOrdering+1]))) {
-				$menuItemDb->sortMenuitem($data['id'], $currentOrdering+1);
-				$menuItemDb->sortMenuitem($orderings[$currentOrdering+1], $currentOrdering);
-			} elseif(($data['ordering'] == 'up') && (isset($orderings[$currentOrdering-1]))) {
-				$menuItemDb->sortMenuitem($data['id'], $currentOrdering-1);
-				$menuItemDb->sortMenuitem($orderings[$currentOrdering-1], $currentOrdering);
-			} elseif($data['ordering'] > 0) {
-				if($data['ordering'] < $currentOrdering) {
-					$menuItemDb->sortMenuitem($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $id) {
-						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $menuItemDb->sortMenuitem($id, $ordering+1);
-					}
-				} elseif($data['ordering'] > $currentOrdering) {
-					$menuItemDb->sortMenuitem($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $id) {
-						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $menuItemDb->sortMenuitem($id, $ordering-1);
-					}
-				}
-			}
-			$this->setOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
-		}
-	}
-
 
 	public function deleteAction()
 	{
@@ -385,64 +347,6 @@ class Admin_MenuitemController extends DEEC_Controller_Action
 					}
 				}
 			}
-		}
-	}
-
-	protected function setOrdering($clientid, $type, $parentid)
-	{
-		$i = 1;
-		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
-		$menuItems = $menuItemsDb->getMenuitems($type, $parentid);
-		foreach($menuItems as $menuItem) {
-			if(isset($menuItem['ordering'])) {
-				//if($menuItem['ordering'] != $i) {
-					if(!isset($menuItemsDb)) $menuItemsDb = new Admin_Model_DbTable_Menuitem();
-					//print_r($menuItem);
-					//print_r($i);
-					$menuItemsDb->sortMenuitem($menuItem['id'], $i);
-					++$i;
-				//}
-			}
-		}
-	}
-
-	protected function getOrdering($clientid, $type, $parentid)
-	{
-		$i = 1;
-		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
-		$menuItems = $menuItemsDb->getMenuitems($type, $parentid);
-		$orderings = array();
-		foreach($menuItems as $menuItem) {
-			if(isset($menuItem['id'])) {
-				$orderings[$i] = $menuItem['id'];
-				++$i;
-			}
-		}
-		return $orderings;
-	}
-
-	protected function getLatestOrdering($clientid, $type, $parentid)
-	{
-		$ordering = $this->getOrdering($clientid, $type, $parentid);
-		end($ordering);
-		return key($ordering);
-	}
-
-	protected function copyChilds($oldId, $menuItems, $newId)
-	{
-		foreach($menuItems[$oldId]['childs'] as $child) {
-			$menuItemDb = new Admin_Model_DbTable_Menuitem();
-			$data = $menuItemDb->getMenuitem($child);
-			unset($data['id']);
-			$data['parentid'] = $newId;
-			$data['modified'] = NULL;
-			$data['modifiedby'] = 0;
-			$data['locked'] = 0;
-			$data['lockedtime'] = NULL;
-			$newChildId = $menuItemDb->addMenuitem($data);
-
-			$childMenuitems = $menuItemDb->getMenuitems($data['type'], $child);
-			if(isset($childMenuitems[$child]['childs'])) $this->copyChilds($child, $childMenuitems, $newChildId);
 		}
 	}
 }

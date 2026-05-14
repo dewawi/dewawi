@@ -1,6 +1,6 @@
 <?php
 
-class Admin_FooterController extends DEEC_Controller_Action
+class Admin_FooterController extends DEEC_Controller_AdminAction
 {
 	public function indexAction()
 	{

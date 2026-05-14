@@ -1,6 +1,6 @@
 <?php
 
-class Admin_TagController extends DEEC_Controller_Action
+class Admin_TagController extends DEEC_Controller_AdminAction
 {
 	public function indexAction()
 	{
@@ -239,45 +239,7 @@ class Admin_TagController extends DEEC_Controller_Action
 		if(isset($childTags[$id]['childs'])) $this->copyChilds($id, $childTags, $newId);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-
 	}
-
-	public function sortAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$data = $request->getPost();
-			$tagDb = new Admin_Model_DbTable_Tag();
-			$tag = $tagDb->getTag($data['id']);
-			$orderings = $this->getOrdering($tag['clientid'], $tag['type'], $tag['parentid']);
-			$currentOrdering = array_search($data['id'], $orderings);
-			if(($data['ordering'] == 'down') && (isset($orderings[$currentOrdering+1]))) {
-				$tagDb->sortTag($data['id'], $currentOrdering+1);
-				$tagDb->sortTag($orderings[$currentOrdering+1], $currentOrdering);
-			} elseif(($data['ordering'] == 'up') && (isset($orderings[$currentOrdering-1]))) {
-				$tagDb->sortTag($data['id'], $currentOrdering-1);
-				$tagDb->sortTag($orderings[$currentOrdering-1], $currentOrdering);
-			} elseif($data['ordering'] > 0) {
-				if($data['ordering'] < $currentOrdering) {
-					$tagDb->sortTag($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $id) {
-						if(($ordering < $currentOrdering) && ($ordering >= $data['ordering'])) $tagDb->sortTag($id, $ordering+1);
-					}
-				} elseif($data['ordering'] > $currentOrdering) {
-					$tagDb->sortTag($data['id'], $data['ordering']);
-					foreach($orderings as $ordering => $id) {
-						if(($ordering > $currentOrdering) && ($ordering <= $data['ordering'])) $tagDb->sortTag($id, $ordering-1);
-					}
-				}
-			}
-			$this->setOrdering($tag['clientid'], $tag['type'], $tag['parentid']);
-		}
-	}
-
 
 	public function deleteAction()
 	{
@@ -306,64 +268,6 @@ class Admin_TagController extends DEEC_Controller_Action
 					$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 				}
 			}
-		}
-	}
-
-	protected function setOrdering($clientid, $type, $parentid)
-	{
-		$i = 1;
-		$tagsDb = new Admin_Model_DbTable_Tag();
-		$tags = $tagsDb->getTags($type, $parentid);
-		foreach($tags as $tag) {
-			if(isset($tag['ordering'])) {
-				//if($tag['ordering'] != $i) {
-					if(!isset($tagsDb)) $tagsDb = new Admin_Model_DbTable_Tag();
-					//print_r($tag);
-					//print_r($i);
-					$tagsDb->sortTag($tag['id'], $i);
-					++$i;
-				//}
-			}
-		}
-	}
-
-	protected function getOrdering($clientid, $type, $parentid)
-	{
-		$i = 1;
-		$tagsDb = new Admin_Model_DbTable_Tag();
-		$tags = $tagsDb->getTags($type, $parentid);
-		$orderings = array();
-		foreach($tags as $tag) {
-			if(isset($tag['id'])) {
-				$orderings[$i] = $tag['id'];
-				++$i;
-			}
-		}
-		return $orderings;
-	}
-
-	protected function getLatestOrdering($clientid, $type, $parentid)
-	{
-		$ordering = $this->getOrdering($clientid, $type, $parentid);
-		end($ordering);
-		return key($ordering);
-	}
-
-	protected function copyChilds($oldId, $tags, $newId)
-	{
-		foreach($tags[$oldId]['childs'] as $child) {
-			$tagDb = new Admin_Model_DbTable_Tag();
-			$data = $tagDb->getTag($child);
-			unset($data['id']);
-			$data['parentid'] = $newId;
-			$data['modified'] = NULL;
-			$data['modifiedby'] = 0;
-			$data['locked'] = 0;
-			$data['lockedtime'] = NULL;
-			$newChildId = $tagDb->addTag($data);
-
-			$childTags = $tagDb->getTags($data['type'], $child);
-			if(isset($childTags[$child]['childs'])) $this->copyChilds($child, $childTags, $newChildId);
 		}
 	}
 }
