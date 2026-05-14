@@ -54,6 +54,7 @@ class Purchases_Model_List_Purchaseorders extends DEEC_List
 			[
 				'name' => 'total',
 				'label' => 'QUOTES_TOTAL',
+				'type' => 'currency',
 			],
 			[
 				'name' => 'state',

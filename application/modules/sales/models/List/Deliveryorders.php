@@ -54,6 +54,7 @@ class Sales_Model_List_Deliveryorders extends DEEC_List
 			[
 				'name' => 'total',
 				'label' => 'DELIVERY_ORDERS_TOTAL',
+				'type' => 'currency',
 			],
 			[
 				'name' => 'state',

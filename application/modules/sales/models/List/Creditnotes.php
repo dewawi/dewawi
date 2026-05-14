@@ -54,6 +54,7 @@ class Sales_Model_List_Creditnotes extends DEEC_List
 			[
 				'name' => 'total',
 				'label' => 'CREDIT_NOTES_TOTAL',
+				'type' => 'currency',
 			],
 			[
 				'name' => 'state',

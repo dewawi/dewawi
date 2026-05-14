@@ -54,6 +54,7 @@ class Sales_Model_List_Reminders extends DEEC_List
 			[
 				'name' => 'total',
 				'label' => 'REMINDERS_TOTAL',
+				'type' => 'currency',
 			],
 			[
 				'name' => 'state',

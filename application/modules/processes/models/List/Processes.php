@@ -60,6 +60,7 @@ class Processes_Model_List_Processes extends DEEC_List
 				'name' => 'total',
 				'label' => 'PROCESSES_TOTAL',
 				'class' => 'dw-col-total',
+				'type' => 'currency',
 			],
 			[
 				'name' => 'state',

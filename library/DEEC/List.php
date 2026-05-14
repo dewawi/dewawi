@@ -529,6 +529,8 @@ class DEEC_List
 				return $this->renderPinCell($item, $column);
 			case 'actions':
 				return $this->renderActionsCell($item, $column);
+			case 'currency':
+				return $this->renderCurrencyCell($item, $column);
 			case 'callback':
 				return $this->renderCallbackCell($item, $column);
 			case 'text':
@@ -765,6 +767,27 @@ class DEEC_List
 		}
 
 		return '<div class="dw-row-actions">' . implode('', $html) . '</div>';
+	}
+
+	protected function renderCurrencyCell($item, array $column)
+	{
+		$field = isset($column['field']) ? (string)$column['field'] : (string)($column['name'] ?? '');
+		$value = $this->getFieldValue($item, $field);
+
+		if ($value === null || $value === '') {
+			return '';
+		}
+
+		$currencyCode = $this->getFieldValue($item, $column['currency_field'] ?? 'currency');
+
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$currency = $currencyHelper->getCurrency();
+
+		if ($currencyCode) {
+			$currency = $currencyHelper->setCurrency($currency, $currencyCode, 'USE_SYMBOL');
+		}
+
+		return $this->escape($currency->toCurrency($value));
 	}
 
 	protected function renderCallbackCell($item, array $column)
