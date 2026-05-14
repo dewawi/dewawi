@@ -1,8 +1,9 @@
 <?php
 $s = 1;
 $sets = count($this->sets);
-$parentType = (string)$this->parent['type'];
-$parentLocked = ($this->parent['state'] == '105' || $this->parent['state'] == '106');
+$parentType = isset($this->parent['type']) ? (string)$this->parent['type'] : '';
+$parentState = isset($this->parent['state']) ? (string)$this->parent['state'] : '';
+$parentLocked = in_array($parentState, ['105', '106'], true);
 
 $button = function ($action, $class, array $data = array(), $label = '') {
 	$attrs = array(

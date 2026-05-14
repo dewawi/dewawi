@@ -1,111 +1,344 @@
-<?php $s = 1; ?>
-<?php $sets = count($this->sets); ?>
-<?php if($sets == 0) : ?>
-	<input type="hidden" class="setid" name="setid" value="0">
-	<div class="toolbar positionsets" style="float:right;">
-		<?php echo $this->toolbarPositions->addset; ?>
+<?php
+$s = 1;
+$sets = count($this->sets);
+$parentType = isset($this->parent['type']) ? (string)$this->parent['type'] : '';
+$parentState = isset($this->parent['state']) ? (string)$this->parent['state'] : '';
+$parentLocked = in_array($parentState, ['105', '106'], true);
+
+$button = function ($action, $class, array $data = array(), $label = '') {
+	$attrs = array(
+		'type' => 'button',
+		'class' => trim('dw-btn ' . $class),
+		'data-action' => $action,
+		'aria-label' => $action,
+	);
+
+	foreach ($data as $key => $value) {
+		if ($value === null || $value === '') {
+			continue;
+		}
+
+		$attrs['data-' . $key] = $value;
+	}
+
+	$html = '<button';
+
+	foreach ($attrs as $key => $value) {
+		$html .= ' ' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '="' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '"';
+	}
+
+	$html .= '>';
+
+	if ($label !== '') {
+		$html .= '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
+	}
+
+	$html .= '</button>';
+
+	return $html;
+};
+?>
+
+<?php if ($sets == 0) : ?>
+	<div class="dw-position-set dw-position-set--empty" data-setid="0">
+		<div class="dw-position-set__header">
+			<div class="dw-position-set__title">
+				<h3><?php echo $this->translate('POSITIONS_SET'); ?></h3>
+			</div>
+
+			<div class="dw-position-set__actions">
+				<?php echo $this->toolbarPositions->addset; ?>
+			</div>
+		</div>
 	</div>
 <?php endif; ?>
-<?php foreach($this->sets as $id => $set) : ?>
-	<div class="set">
-		<input type="hidden" class="setid" name="setid" value="<?php echo $id; ?>">
-		<?php echo $this->ToolbarPositionSets($sets, $s); ?>
-		<h3><span class="editable" data-name="title" data-value="<?php echo $set['title']; ?>" data-type="input" data-id="<?php echo $id; ?>" data-controller="positionset"><?php echo $set['title']; ?></span></h3>
-		<?php echo $this->ToolbarPositions(); ?>
-		<table id="positions">
-			<thead>
-				<tr>
-					<th><input type="checkbox" class="checkall" name="checkall"/></th>
-					<th><?php echo $this->translate('POSITION'); ?></th>
-					<th class="flex50"><?php echo $this->translate('POSITIONS_ITEM'); ?></th>
-					<th><?php echo $this->translate('POSITIONS_TOTAL'); ?></th>
-					<th></th>
-					<th></th>
-				</tr>
-			</thead>
-			<tbody>
+
+<?php foreach ($this->sets as $setid => $set) : ?>
+	<section class="dw-position-set" data-setid="<?php echo (int)$setid; ?>">
+		<div class="dw-position-set__header">
+			<div class="dw-position-set__title">
+				<h3>
+					<span
+						class="editable"
+						data-name="title"
+						data-value="<?php echo $this->escape($set['title']); ?>"
+						data-type="input"
+						data-id="<?php echo (int)$setid; ?>"
+						data-controller="positionset"
+					>
+						<?php echo $this->escape($set['title']); ?>
+					</span>
+				</h3>
+			</div>
+
+			<?php if (!$parentLocked) : ?>
+				<div class="dw-position-set__actions">
+					<?php echo $this->ToolbarPositionSets($sets, $s); ?>
+				</div>
+			<?php endif; ?>
+		</div>
+
+		<?php if (!$parentLocked) : ?>
+			<div class="dw-position-set__toolbar">
+				<?php echo $this->ToolbarPositions(); ?>
+			</div>
+		<?php endif; ?>
+
+		<?php if (isset($this->forms[$setid]) && ($length = count($this->forms[$setid]))) : ?>
+			<div class="dw-position-list">
 				<?php $i = 1; ?>
-				<?php if($length = count($set['forms'])) : ?>
-				<?php foreach($set['forms'] as $form) : ?>
-					<tr class="position<?php echo $form->getValue('id'); ?> wrap">
-						<td class="id">
-							<input class="id" type="checkbox" value="<?php echo $form->getValue('id'); ?>" name="id"/>
-						</td>
-						<td class="position">
-							<span><?php echo $form->getValue('ordering'); ?></span>
-							<?php echo $form->ordering; ?>
-						</td>
-						<td class="flex50">
-							<table>
-								<tr>
-									<td class="sku">
-										<?php echo $form->sku; ?>
-									</td>
-									<td class="title">
-										<?php echo $form->title; ?>
-									</td>
-								</tr>
-								<tr>
-									<td class="description">
-										<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
-										<?php echo $form->description; ?>
-									</td>
-								</tr>
-								<tr>
-									<td class="image">
-										<input class="id" type="hidden" value="<?php echo $form->getValue('id'); ?>" name="id"/>
-										<?php echo $form->image; ?>
-									</td>
-								</tr>
-							</table>
-						</td>
-						<td>
-							<table>
-								<tr>
-									<td class="price">
-										<?php echo $form->price; ?>
-									</td>
-								</tr>
-								<tr>
-									<td class="taxrate">
-										<?php echo $form->taxrate; ?>
-									</td>
-								</tr>
-							</table>
-						</td>
-						<td>
-							<table>
-								<tr>
-									<td class="priceruleamount">
-										<?php echo $form->priceruleamount; ?>
-									</td>
-								</tr>
-								<tr>
-									<td class="priceruleaction">
-										<?php echo $form->priceruleaction; ?>
-									</td>
-								</tr>
-							</table>
-						</td>
-						<td class="buttons">
-							<?php echo $this->toolbar->deletepos; ?>
-							<?php echo $this->toolbar->copypos; ?>
-							<?php if($i>1) : ?>
-								<?php echo $this->toolbar->sortup; ?>
+				<?php foreach ($this->forms[$setid] as $position) : ?>
+					<?php
+					$positionId = (int)$position['form']->getValue('id');
+					$childs = isset($this->childs[$positionId]) ? $this->childs[$positionId] : array();
+					$childsCount = count($childs);
+					$options = isset($this->options[$positionId]) ? $this->options[$positionId] : array();
+					?>
+
+					<article
+						class="dw-position-card is-master position<?php echo $positionId; ?> wrap master"
+						data-id="<?php echo $positionId; ?>"
+						data-parent="<?php echo $this->escape($parentType); ?>"
+						data-type="pos"
+						data-setid="<?php echo (int)$setid; ?>"
+					>
+						<div class="dw-position-card__head">
+							<div class="dw-position-card__meta">
+								<label class="dw-check">
+									<input
+										class="position-check"
+										type="checkbox"
+										value="<?php echo $positionId; ?>"
+										name="ids[]"
+										data-select-id="<?php echo $positionId; ?>"
+									>
+								</label>
+
+								<div class="dw-position-order">
+									<?php echo $position['form']->renderElement('ordering'); ?>
+								</div>
+							</div>
+
+							<?php if (!$parentLocked) : ?>
+								<div class="dw-position-card__actions">
+									<?php echo $button('delete-position', 'delete nolabel'); ?>
+									<?php echo $button('copy-position', 'copy nolabel'); ?>
+
+									<?php if ($i > 1) : ?>
+										<?php echo $button('sort-position-up', 'sortup nolabel', array('ordering' => $i - 1)); ?>
+									<?php endif; ?>
+
+									<?php if ($i < $length) : ?>
+										<?php echo $button('sort-position-down', 'sortdown nolabel', array('ordering' => $i + 1)); ?>
+									<?php endif; ?>
+								</div>
 							<?php endif; ?>
-							<?php if($i<$length) : ?>
-								<?php echo $this->toolbar->sortdown; ?>
-							<?php endif; ?>
-						</td>
-					</tr>
+						</div>
+
+						<div class="dw-position-card__body">
+							<div class="dw-position-grid">
+								<div class="dw-position-grid__main">
+									<div class="dw-position-grid__row">
+										<div class="dw-position-field dw-position-field--sku">
+											<?php echo $position['form']->renderElement('sku'); ?>
+										</div>
+
+										<div class="dw-position-field dw-position-field--title">
+											<?php echo $position['form']->renderElement('title'); ?>
+										</div>
+									</div>
+
+									<div class="dw-position-field dw-position-field--description">
+										<?php echo $position['form']->renderElement('description'); ?>
+									</div>
+
+									<div class="dw-position-field dw-position-field--image">
+										<?php echo $position['form']->renderElement('image'); ?>
+									</div>
+								</div>
+
+								<div class="dw-position-grid__side">
+									<div class="dw-position-field"><?php echo $position['form']->renderElement('price'); ?></div>
+									<div class="dw-position-field"><?php echo $position['form']->renderElement('taxrate'); ?></div>
+									<div class="dw-position-field"><?php echo $position['form']->renderElement('quantity'); ?></div>
+									<div class="dw-position-field"><?php echo $position['form']->renderElement('uom'); ?></div>
+								</div>
+
+								<div class="dw-position-grid__rules">
+									<div class="dw-position-field dw-position-field--rules">
+										<?php if (!$parentLocked) : ?>
+											<div
+												class="multiformContainer"
+												data-controller="pricerulepos"
+												data-parentid="<?php echo $positionId; ?>"
+												data-parent-module="<?php echo $this->escape($this->module); ?>"
+												data-parent-controller="<?php echo $this->escape($parentType); ?>pos"
+											>
+												<?php
+												echo $this->MultiForm(
+													'items',
+													'pricerulepos',
+													$this->pricerules[$positionId],
+													array('amount', 'action'),
+													'ITEMS_PRICE_RULES'
+												);
+												?>
+											</div>
+										<?php else : ?>
+											<div class="dw-readonly-pricerules">
+												<?php foreach ($this->pricerules[$positionId] as $rule) : ?>
+													<div>
+														<?php echo $this->escape($rule['amount']); ?>
+														<?php echo $this->escape($rule['action']); ?>
+													</div>
+												<?php endforeach; ?>
+											</div>
+										<?php endif; ?>
+									</div>
+
+									<div class="dw-position-field">
+										<?php echo $position['form']->renderElement('pricerulemaster'); ?>
+									</div>
+								</div>
+
+								<div class="dw-position-grid__total">
+									<div class="dw-position-total total">
+										<?php echo $position['form']->getValue('total'); ?>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<?php if ($childsCount) : ?>
+							<div class="dw-position-children">
+								<?php $c = 1; ?>
+								<?php foreach ($childs as $child) : ?>
+									<?php $childId = (int)$child->getValue('id'); ?>
+
+									<div
+										class="dw-position-card is-child position<?php echo $childId; ?> wrap child"
+										data-id="<?php echo $childId; ?>"
+										data-masterid="<?php echo $positionId; ?>"
+										data-parent="<?php echo $this->escape($parentType); ?>"
+										data-type="pos"
+										data-setid="<?php echo (int)$setid; ?>"
+									>
+										<div class="dw-position-card__head">
+											<div class="dw-position-card__meta">
+												<label class="dw-check">
+													<input
+														class="position-check"
+														type="checkbox"
+														value="<?php echo $childId; ?>"
+														name="ids[]"
+														data-select-id="<?php echo $childId; ?>"
+													>
+												</label>
+											</div>
+
+											<?php if (!$parentLocked) : ?>
+												<div class="dw-position-card__actions">
+													<?php echo $button('delete-position', 'delete nolabel'); ?>
+													<?php echo $button('copy-position', 'copy nolabel'); ?>
+
+													<?php if ($c > 1) : ?>
+														<?php echo $button('sort-position-up', 'sortup nolabel', array('ordering' => $c - 1)); ?>
+													<?php endif; ?>
+
+													<?php if ($c < $childsCount) : ?>
+														<?php echo $button('sort-position-down', 'sortdown nolabel', array('ordering' => $c + 1)); ?>
+													<?php endif; ?>
+												</div>
+											<?php endif; ?>
+										</div>
+
+										<div class="dw-position-grid dw-position-grid--child">
+											<div><?php echo $child->renderElement('sku'); ?></div>
+											<div><?php echo $child->renderElement('title'); ?></div>
+											<div><?php echo $child->renderElement('description'); ?></div>
+											<div><?php echo $child->renderElement('price'); ?></div>
+											<div><?php echo $child->renderElement('quantity'); ?></div>
+											<div><?php echo $child->renderElement('uom'); ?></div>
+										</div>
+									</div>
+
+									<?php ++$c; ?>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
+
+						<?php if (count($options)) : ?>
+							<div class="dw-position-options">
+								<h4><?php echo $this->translate('OPTIONS'); ?></h4>
+
+								<div class="dw-option-list">
+									<?php foreach ($options as $option) : ?>
+										<div class="dw-option-row">
+											<div class="dw-option-row__main">
+												<div class="dw-option-row__sku"><?php echo $this->escape($option->sku); ?></div>
+												<div class="dw-option-row__title"><?php echo $this->escape($option->title); ?></div>
+												<div class="dw-option-row__description"><?php echo $this->escape($option->description); ?></div>
+											</div>
+
+											<div class="dw-option-row__price">
+												<?php echo $this->escape($option->price); ?>
+											</div>
+
+											<?php if (!$parentLocked) : ?>
+												<div class="dw-option-row__action">
+													<?php
+													echo $button(
+														'add-option',
+														'add nolabel',
+														array(
+															'parent' => $parentType,
+															'type' => 'pos',
+															'option-id' => (int)$option->id,
+															'setid' => (int)$setid,
+															'masterid' => $positionId,
+														)
+													);
+													?>
+												</div>
+											<?php endif; ?>
+										</div>
+									<?php endforeach; ?>
+								</div>
+							</div>
+						<?php endif; ?>
+					</article>
+
 					<?php ++$i; ?>
 				<?php endforeach; ?>
-			</tbody>
-		</table>
-		<?php echo $this->ToolbarPositions('bottom'); ?>
-		<div style="height:150px"></div>
+			</div>
+
+			<div class="dw-position-summary">
+				<div class="dw-summary-card">
+					<div class="dw-summary-row">
+						<span><?php echo $this->translate('POSITIONS_SUBTOTAL'); ?></span>
+						<strong id="subtotal"><?php echo $this->parent['subtotal']; ?></strong>
+					</div>
+
+					<?php foreach ($this->parent['taxes'] as $rate => $tax) : ?>
+						<div class="dw-summary-row">
+							<span><?php echo $this->translate('POSITIONS_TAXES') . ' (' . $tax['title'] . ')'; ?></span>
+							<strong id="taxes" data-rate="<?php echo $rate; ?>"><?php echo $tax['value']; ?></strong>
+						</div>
+					<?php endforeach; ?>
+
+					<div class="dw-summary-row is-total">
+						<span><?php echo $this->translate('POSITIONS_TOTAL'); ?></span>
+						<strong id="total"><?php echo $this->parent['total']; ?></strong>
+					</div>
+				</div>
+			</div>
+
+			<div class="dw-position-set__footer">
+				<?php echo $this->ToolbarPositions('bottom'); ?>
+			</div>
 		<?php endif; ?>
-	</div>
+	</section>
+
 	<?php ++$s; ?>
-	<hr>
 <?php endforeach; ?>
+
