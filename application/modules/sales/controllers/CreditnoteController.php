@@ -4,14 +4,10 @@ class Sales_CreditnoteController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Sales_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'creditnotes',
 			'list' => 'Sales_Model_List_Creditnotes',
-			'items' => function ($params, $options) use ($get) {
-				return $get->creditnotes($params, $options, $this->_flashMessenger);
-			},
+			'entity' => Sales_Model_Entity_Creditnote::listConfig(),
 		]);
 	}
 

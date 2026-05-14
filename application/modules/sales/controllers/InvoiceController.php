@@ -4,14 +4,10 @@ class Sales_InvoiceController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Sales_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'invoices',
 			'list' => 'Sales_Model_List_Invoices',
-			'items' => function ($params, $options) use ($get) {
-				return $get->invoices($params, $options, $this->_flashMessenger);
-			},
+			'entity' => Sales_Model_Entity_Invoice::listConfig(),
 		]);
 	}
 

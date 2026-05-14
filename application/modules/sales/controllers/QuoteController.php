@@ -4,14 +4,10 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Sales_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'quotes',
 			'list' => 'Sales_Model_List_Quotes',
-			'items' => function ($params, $options) use ($get) {
-				return $get->quotes($params, $options, $this->_flashMessenger);
-			},
+			'entity' => Sales_Model_Entity_Quote::listConfig(),
 		]);
 	}
 

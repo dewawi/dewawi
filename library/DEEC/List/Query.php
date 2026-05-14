@@ -71,7 +71,7 @@ class DEEC_List_Query
 	protected function buildBaseSelect($dbTable, array $config, bool $countOnly)
 	{
 		$alias = $config['alias'];
-		$table = $config['table'];
+		$table = $dbTable->info('name');
 
 		$columns = $countOnly
 			? [new Zend_Db_Expr('COUNT(DISTINCT '.$alias.'.id)')]

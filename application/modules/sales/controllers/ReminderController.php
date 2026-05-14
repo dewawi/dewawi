@@ -4,14 +4,10 @@ class Sales_ReminderController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Sales_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'reminders',
 			'list' => 'Sales_Model_List_Reminders',
-			'items' => function ($params, $options) use ($get) {
-				return $get->reminders($params, $options, $this->_flashMessenger);
-			},
+			'entity' => Sales_Model_Entity_Reminder::listConfig(),
 		]);
 	}
 

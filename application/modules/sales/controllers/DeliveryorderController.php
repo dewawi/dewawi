@@ -4,14 +4,10 @@ class Sales_DeliveryorderController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Sales_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'deliveryorders',
 			'list' => 'Sales_Model_List_Deliveryorders',
-			'items' => function ($params, $options) use ($get) {
-				return $get->deliveryorders($params, $options, $this->_flashMessenger);
-			},
+			'entity' => Sales_Model_Entity_Deliveryorder::listConfig(),
 		]);
 	}
 

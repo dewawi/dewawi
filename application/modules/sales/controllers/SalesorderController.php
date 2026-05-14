@@ -4,14 +4,10 @@ class Sales_SalesorderController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Sales_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'salesorders',
 			'list' => 'Sales_Model_List_Salesorders',
-			'items' => function ($params, $options) use ($get) {
-				return $get->salesorders($params, $options, $this->_flashMessenger);
-			},
+			'entity' => Sales_Model_Entity_Salesorder::listConfig(),
 		]);
 	}
 

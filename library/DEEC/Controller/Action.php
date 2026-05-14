@@ -283,7 +283,12 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
-		$result = call_user_func($config['items'], $params, $options);
+		if (isset($config['entity'])) {
+			$listQuery = new DEEC_List_Query();
+			$result = $listQuery->fetch($params, $options, $config['entity']);
+		} else {
+			$result = call_user_func($config['items'], $params, $options);
+		}
 
 		$records = null;
 
