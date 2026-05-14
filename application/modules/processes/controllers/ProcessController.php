@@ -4,14 +4,10 @@ class Processes_ProcessController extends DEEC_Controller_Action
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Processes_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'processes',
 			'list' => 'Processes_Model_List_Processes',
-			'items' => function ($params, $options) use ($get) {
-				return $get->processes($params, $options, $this->_flashMessenger);
-			},
+			'entity' => Processes_Model_Entity_Process::listConfig(),
 		]);
 	}
 
