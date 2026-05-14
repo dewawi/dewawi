@@ -1,53 +1,7 @@
 <?php
 
-class Contacts_AttachmentController extends Zend_Controller_Action
+class Contacts_AttachmentController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
-	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? (int) $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-	}
-
-	public function indexAction()
-	{
-		if ($this->getRequest()->isPost()) {
-			$this->_helper->getHelper('layout')->disableLayout();
-		}
-
-		$toolbar = new Contacts_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Contacts_Model_Get();
-		list($contacts, $records) = $get->contacts($params, $options);
-
-		$this->view->contacts = $contacts;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
 	public function uploadAction()
 	{
 		$id = (int) $this->_getParam('id', 0);
@@ -174,29 +128,6 @@ class Contacts_AttachmentController extends Zend_Controller_Action
 		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-	}
-
-	public function lockAction()
-	{
-		$id = (int) $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
-	}
-
-	public function unlockAction()
-	{
-		$id = (int) $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
-	}
-
-	public function keepaliveAction()
-	{
-		$id = (int) $this->_getParam('id', 0);
-		$this->_helper->Access->keepalive($id);
-	}
-
-	public function validateAction()
-	{
-		$this->_helper->Validate();
 	}
 
 	protected function setOrdering($documentid)

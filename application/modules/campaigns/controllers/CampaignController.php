@@ -1,113 +1,14 @@
 <?php
 
-class Campaigns_CampaignController extends Zend_Controller_Action
+class Campaigns_CampaignController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
+	protected function buildIndexView(): void
 	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		$id = 0;
-		if($this->view->contactid) $id = $this->view->contactid;
-		elseif($this->view->id) $id = $this->view->id;
-		if($id) $this->view->dirwritable = $this->_helper->Directory->isWritable($id, 'campaign', $this->_flashMessenger);
-		if($id) $this->view->dirwritable = $this->_helper->Directory->isWritable($id, 'attachment', $this->_flashMessenger);
-	}
-
-	public function getAction()
-	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$element = $this->_getParam('element', null);
-		$form = new Campaigns_Form_Toolbar();
-		if(isset($form->$element)) {
-			$this->_helper->Options->getOptions($form);
-			$options = $form->$element->getMultiOptions();
-			echo Zend_Json::encode($options);
-		} else {
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS')));
-		}
-	}
-
-	public function indexAction()
-	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$toolbar = new Campaigns_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Campaigns_Model_Get();
-		$campaigns = $get->campaigns($params, $options, $this->_flashMessenger);
-
-		//Get positions
-		$campaignIDs = array();
-		foreach($campaigns as $campaign) {
-			array_push($campaignIDs, $campaign['id']);
-		}
-
-		$this->view->campaigns = $campaigns;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		//$this->view->positions = $this->getPositions($campaignIDs);
-		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
-		$this->_flashMessenger->clearCurrentMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$toolbar = new Campaigns_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Campaigns_Model_Get();
-		$campaigns = $get->campaigns($params, $options, $this->_flashMessenger);
-
-		//Get positions
-		$campaignIDs = array();
-		foreach($campaigns as $campaign) {
-			array_push($campaignIDs, $campaign['id']);
-		}
-
-		$this->view->campaigns = $campaigns;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->positions = $this->getPositions($campaignIDs);
-		$this->view->messages = array_merge(
-						$this->_flashMessenger->getMessages(),
-						$this->_flashMessenger->getCurrentMessages()
-						);
-		$this->_flashMessenger->clearCurrentMessages();
+		$this->buildListView([
+			'viewKey' => 'campaigns',
+			'list' => 'Campaigns_Model_List_Campaigns',
+			'entity' => Campaigns_Model_Entity_Campaign::listConfig(),
+		]);
 	}
 
 	public function addAction()
@@ -560,35 +461,6 @@ class Campaigns_CampaignController extends Zend_Controller_Action
 			}
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-	}
-
-	public function pinAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Pin->toggle($id);
-	}
-
-	public function lockAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
-	}
-
-	public function unlockAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
-	}
-
-	public function keepaliveAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->keepalive($id);
-	}
-
-	public function validateAction()
-	{
-		$this->_helper->Validate();
 	}
 
 	protected function getPositions($campaignIDs)
