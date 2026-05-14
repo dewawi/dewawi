@@ -195,12 +195,6 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 					$toolbar->state->setValue($data['state']);
 					$toolbarPositions = new Campaigns_Form_ToolbarPositions();
 
-					//Get contacts
-					$get = new Contacts_Model_Get();
-					$params['limit'] = 0;
-					$params['catid'] = $data['contactcatid'];
-					list($contacts, $records) = $get->contacts($params, $options, 1000);
-
 					//Get already sent emails on champaign
 					$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
 					$emailmessageArray = $emailmessageDb->getEmailmessages(NULL, $id, 'campaigns', 'campaign');
@@ -209,47 +203,18 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 						$emailmessages[$emailmessage['contactid']][] = $emailmessage;
 					}
 
-					// contact persons and their emails per company
-					$contactPersonsByCompany = [];
-					$cpDb = new Contacts_Model_DbTable_Contactperson();
-					$emailDb = new Contacts_Model_DbTable_Email();
+					//Get contacts
+					$recipientService = new Campaigns_Service_CampaignRecipientService();
 
-					foreach ($contacts as $c) {
-						$cid = is_array($c) ? $c['id'] : $c->id;
-						// get persons linked to this company/contact
-						$persons = $cpDb->getContactpersons($cid, 'contacts', 'contact'); // expect array of rows
+					$recipientData = $recipientService->getRecipients(
+						$params,
+						$options,
+						(int)$data['contactcatid']
+					);
 
-						// enrich each person with a flat comma list of their emails
-						foreach ($persons as &$p) {
-							$pid = is_array($p) ? $p['id'] : $p->id;
-							$emailRows = $emailDb->getEmails($pid, 'contacts', 'contactperson'); // rows with ['email'=>...]
-							$emails = [];
-							foreach ((array)$emailRows as $er) {
-								// handle row/array/object shapes safely
-								$emails[] = is_array($er) ? ($er['email'] ?? '') : ($er->email ?? '');
-							}
-							// fallback if schema also stores a joined list on the person row
-							if (empty(array_filter($emails)) && !empty($p['emails'])) {
-								$emails = preg_split('/[;,]+/', (string)$p['emails']);
-							}
-							// clean & store as single string
-							$emails = array_filter(array_map('trim', $emails));
-							$p['email_list'] = implode(',', $emails);
+					$contacts = $recipientData['contacts'];
 
-							// convenience display name
-							$salutation = trim((is_array($p)?($p['salutation']??''):($p->salutation??'')));
-							$name2 = trim((is_array($p)?($p['name2']??''):($p->name2??'')));
-							$p['display_name'] = trim($salutation.' '.$name2);
-						}
-						unset($p);
-
-						$contactPersonsByCompany[$cid] = $persons;
-					}
-
-					$this->view->contactPersonsByCompany = $contactPersonsByCompany;
-
-//print_r($options);
-//print_r($params);
+					$this->view->contactPersonsByCompany = $recipientData['contactPersonsByCompany'];
 
 					//Get currency
 					$currency = $this->_helper->Currency->getCurrency($data['currency']);
@@ -269,12 +234,6 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 					}
 					if (!empty($data['window_end'])) {
 						$data['window_end'] = substr($data['window_end'], 0, 5);
-					}
-
-					foreach($contacts as $contact) {
-						//Email
-						$emailDb = new Contacts_Model_DbTable_Email();
-						$email = $emailDb->getEmails($contact['id']);
 					}
 
 					//Get email form
