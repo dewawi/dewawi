@@ -1,6 +1,6 @@
 <?php
 
-class Application_Model_DbTable_Tag extends Zend_Db_Table_Abstract
+class Application_Model_DbTable_Tag extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'tag';

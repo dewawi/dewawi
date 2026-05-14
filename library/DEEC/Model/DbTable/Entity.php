@@ -93,6 +93,25 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return $rows ? $rows->toArray() : [];
 	}
 
+	public function getByModuleController(string $module, string $controller): array
+	{
+		$select = $this->select()
+			->where('module = ?', $module)
+			->where('controller = ?', $controller)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0);
+
+		if ($this->orderingField !== null) {
+			$select->order($this->orderingField . ' ASC');
+		}
+
+		$select->order('id ASC');
+
+		$rows = $this->fetchAll($select);
+
+		return $rows ? $rows->toArray() : [];
+	}
+
 	public function create(array $data): int
 	{
 		$data = $this->prepareCreateData($data);
@@ -212,6 +231,29 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		$data['modifiedby'] = $this->getUserId();
 
 		return $data;
+	}
+
+	public function toSelectOptions($rows, string $valueField = 'id', string $labelField = 'title'): array
+	{
+		$options = [];
+
+		foreach ($rows as $row) {
+			if (is_array($row)) {
+				$value = $row[$valueField] ?? null;
+				$label = $row[$labelField] ?? null;
+			} else {
+				$value = $row->{$valueField} ?? null;
+				$label = $row->{$labelField} ?? null;
+			}
+
+			if ($value === null) {
+				continue;
+			}
+
+			$options[(string)$value] = (string)$label;
+		}
+
+		return $options;
 	}
 
 	public function getParentField(): string
