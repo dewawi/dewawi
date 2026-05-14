@@ -4,14 +4,10 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Purchases_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'purchaseorders',
 			'list' => 'Purchases_Model_List_Purchaseorders',
-			'items' => function ($params, $options) use ($get) {
-				return $get->purchaseorders($params, $options, $this->_flashMessenger);
-			},
+			'entity' => Purchases_Model_Entity_Purchaseorder::listConfig(),
 		]);
 	}
 

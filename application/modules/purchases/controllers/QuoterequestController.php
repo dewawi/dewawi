@@ -4,14 +4,10 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Purchases_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'quoterequests',
 			'list' => 'Purchases_Model_List_Quoterequests',
-			'items' => function ($params, $options) use ($get) {
-				return $get->quoterequests($params, $options, $this->_flashMessenger);
-			},
+			'entity' => Purchases_Model_Entity_Quoterequest::listConfig(),
 		]);
 	}
 
