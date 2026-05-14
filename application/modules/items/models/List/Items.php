@@ -18,6 +18,17 @@ class Items_Model_List_Items extends DEEC_List
 				'class' => 'dw-col-sku',
 			],
 			[
+				'name' => 'title',
+				'label' => 'ITEMS_TITLE',
+				'type' => 'link',
+				'class' => 'dw-col-title',
+			],
+			[
+				'name' => 'price',
+				'label' => 'ITEMS_PRICE',
+				'type' => 'currency',
+			],
+			[
 				'name' => 'currency',
 				'label' => 'ITEMS_CURRENCY',
 				'type' => 'text',
