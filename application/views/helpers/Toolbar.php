@@ -140,37 +140,193 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 
 	protected function renderActiveFilters($toolbar): string
 	{
-		$filters = $toolbar->getToolbarElements('filters');
-		$html = '';
+		$filters = $this->getActiveFilters($toolbar);
 
-		foreach ($filters as $name => $element) {
-			$value = $toolbar->getValue($name);
-			$default = $toolbar->getDefault($name);
+		if (!$filters) {
+			return '';
+		}
 
-			if ($value === null || $value === '' || $value === '0' || $value == $default) {
-				continue;
-			}
+		$html = '<div class="dw-active-filters">';
+		$html .= '<span class="dw-active-filters__label">'
+			. $this->escape($this->view->translate('TOOLBAR_SELECTED_FILTER'))
+			. ':</span>';
 
-			if (is_array($value) && $value == $default) {
-				continue;
-			}
-
-			$label = $element['label'] ?? strtoupper($name);
-
+		foreach ($filters as $filter) {
 			$html .= '<button type="button" class="dw-filter-chip"'
 				. ' data-action="clear-filter"'
-				. ' data-filter="' . htmlspecialchars($name) . '">'
-				. htmlspecialchars($this->view->translate($label))
+				. ' data-filter="' . $this->escapeAttr($filter['name']) . '">'
+				. '<strong>' . $this->escape($filter['label']) . ':</strong> '
+				. $this->escape($filter['value'])
 				. '<span aria-hidden="true"> ×</span>'
 				. '</button>';
 		}
 
-		if ($html === '') {
-			return '';
+		$html .= '</div>';
+
+		return $html;
+	}
+
+	protected function getActiveFilters($toolbar): array
+	{
+		$out = [];
+		$options = isset($this->view->options) && is_array($this->view->options)
+			? $this->view->options
+			: [];
+
+		foreach ($toolbar->getToolbarElements('filters') as $name => $element) {
+			if (in_array($name, ['from', 'to'], true)) {
+				continue;
+			}
+
+			$value = $toolbar->getValue($name);
+			$default = $toolbar->getDefault($name);
+
+			if (!$this->isActiveFilterValue($value, $default)) {
+				continue;
+			}
+
+			$displayValue = $this->getFilterDisplayValue($toolbar, $name, $value, $options);
+
+			if ($displayValue === '') {
+				continue;
+			}
+
+			$out[] = [
+				'name' => $name,
+				'label' => $this->getFilterLabel($name, $element),
+				'value' => $displayValue,
+			];
 		}
 
-		return '<div class="dw-active-filters">' . $html . '</div>';
+		return $out;
 	}
+
+	protected function isActiveFilterValue($value, $default): bool
+	{
+		$value = $this->normalizeFilterValue($value);
+		$default = $this->normalizeFilterValue($default);
+
+		if ($value === null || $value === '' || $value === [] || $value === '0' || $value === 'all') {
+			return false;
+		}
+
+		return $value != $default;
+	}
+
+	protected function normalizeFilterValue($value)
+	{
+		if (is_array($value)) {
+			$value = array_values(array_filter($value, static function ($item) {
+				return $item !== null && $item !== '';
+			}));
+
+			sort($value);
+		}
+
+		return $value;
+	}
+
+	protected function getFilterDisplayValue($toolbar, string $name, $value, array $options): string
+	{
+		if ($name === 'daterange') {
+			return $this->getDateRangeDisplayValue($toolbar, $value, $options);
+		}
+
+		$optionSet = $this->getOptionSet($name, $options);
+
+		if (is_array($value)) {
+			$labels = [];
+
+			foreach ($value as $item) {
+				$labels[] = $this->resolveOptionLabel($item, $optionSet);
+			}
+
+			return implode(', ', array_filter($labels));
+		}
+
+		return $this->resolveOptionLabel($value, $optionSet);
+	}
+
+	protected function getDateRangeDisplayValue($toolbar, $value, array $options): string
+	{
+		if ($value === 'custom') {
+			$from = (string)$toolbar->getValue('from');
+			$to = (string)$toolbar->getValue('to');
+
+			return trim($from . ' - ' . $to);
+		}
+
+		$optionSet = $this->getOptionSet('daterange', $options);
+
+		return $this->resolveOptionLabel($value, $optionSet);
+	}
+
+	protected function getOptionSet(string $name, array $options): array
+	{
+		if (isset($options[$name]) && is_array($options[$name])) {
+			return $options[$name];
+		}
+
+		$legacyMap = [
+			'catid' => 'categories',
+			'tagid' => 'tags',
+			'country' => 'countries',
+		];
+
+		if (isset($legacyMap[$name]) && isset($options[$legacyMap[$name]]) && is_array($options[$legacyMap[$name]])) {
+			return $options[$legacyMap[$name]];
+		}
+
+		return [];
+	}
+
+	protected function resolveOptionLabel($value, array $optionSet): string
+	{
+		if (isset($optionSet[$value])) {
+			$label = $optionSet[$value];
+
+			if (is_array($label) && isset($label['title'])) {
+				return (string)$label['title'];
+			}
+
+			if (is_string($label)) {
+				return (string)$this->view->translate($label);
+			}
+
+			return (string)$label;
+		}
+
+		return (string)$value;
+	}
+
+	protected function getFilterLabel(string $name, array $element): string
+	{
+		if (!empty($element['label'])) {
+			return (string)$this->view->translate($element['label']);
+		}
+
+		$labels = [
+			'keyword' => 'TOOLBAR_KEYWORD',
+			'catid' => 'TOOLBAR_CATEGORY',
+			'tagid' => 'TOOLBAR_TAG',
+			'country' => 'TOOLBAR_COUNTRY',
+			'states' => 'TOOLBAR_STATE',
+			'daterange' => 'TOOLBAR_DATE_RANGE',
+			'paymentstatus' => 'PROCESSES_PAYMENT_STATUS',
+		];
+
+		return (string)$this->view->translate($labels[$name] ?? strtoupper($name));
+	}
+
+	protected function escape($value): string
+	{
+		return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+	}
+
+	protected function escapeAttr($value): string
+	{
+		return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
 
 	protected function getCurrentTarget(int $id): array
 	{

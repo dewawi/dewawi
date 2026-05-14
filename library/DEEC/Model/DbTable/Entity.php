@@ -233,29 +233,6 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return $data;
 	}
 
-	public function toSelectOptions($rows, string $valueField = 'id', string $labelField = 'title'): array
-	{
-		$options = [];
-
-		foreach ($rows as $row) {
-			if (is_array($row)) {
-				$value = $row[$valueField] ?? null;
-				$label = $row[$labelField] ?? null;
-			} else {
-				$value = $row->{$valueField} ?? null;
-				$label = $row->{$labelField} ?? null;
-			}
-
-			if ($value === null) {
-				continue;
-			}
-
-			$options[(string)$value] = (string)$label;
-		}
-
-		return $options;
-	}
-
 	public function getParentField(): string
 	{
 		return $this->parentField;
