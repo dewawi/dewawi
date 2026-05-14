@@ -67,7 +67,8 @@ class Admin_ExportController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$type = $this->_getParam('type', 'csv');
+		$type = (string)$this->_getParam('type', 'csv');
+		$target = (string)$this->_getParam('target', '');
 		$from = $this->_getParam('from', null);
 		$to = $this->_getParam('to', null);
 
@@ -81,7 +82,9 @@ class Admin_ExportController extends Zend_Controller_Action
 			mkdir($filePath, 0755, true);
 		}
 
-		if ($type === 'gobd') {
+		if ($type === 'list') {
+			$this->exportList($filePath, $target);
+		} elseif ($type === 'gobd') {
 			require_once(BASE_PATH . '/library/DEEC/Export/Gobd.php');
 
 			$db = Zend_Db_Table::getDefaultAdapter();
@@ -98,12 +101,41 @@ class Admin_ExportController extends Zend_Controller_Action
 			$this->exportDatabase($filePath, $type);
 		} else {
 			$this->_flashMessenger->addMessage('Invalid export type.');
-			$this->_helper->redirector->gotoSimple('index');
-			return;
+			return $this->_helper->redirector->gotoSimple('index');
 		}
 
 		$this->_flashMessenger->addMessage('Export created successfully.');
-		$this->_helper->redirector->gotoSimple('index');
+		return $this->_helper->redirector->gotoSimple('index');
+	}
+
+	protected function exportList(string $filePath, string $target): void
+	{
+		$config = $this->getListExportConfig($target);
+
+		if (!$config) {
+			throw new RuntimeException('Invalid list export target.');
+		}
+
+		$toolbar = new $config['toolbar']();
+		$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $this->_helper->Params->getParams($toolbar, $options);
+
+		$params['_export'] = true;
+
+		$query = new DEEC_List_Query();
+
+		list($items, $records) = $query->fetch(
+			$params,
+			$options,
+			call_user_func([$config['entity'], 'listConfig'])
+		);
+
+		$service = new $config['service']();
+
+		$service->export($filePath, $items, [
+			'options' => $options,
+			'user' => $this->_user,
+		]);
 	}
 
 	protected function exportDatabase(string $filePath, string $type): void
@@ -132,6 +164,26 @@ class Admin_ExportController extends Zend_Controller_Action
 	{
 		$content = $this->generateSql($tableName, $data);
 		file_put_contents($filename, $content);
+	}
+
+	protected function getListExportConfig(string $target): ?array
+	{
+		$map = [
+			'contacts' => [
+				'label' => 'CONTACTS',
+				'toolbar' => 'Contacts_Form_Toolbar',
+				'entity' => 'Contacts_Model_Entity_Contact',
+				'service' => 'Contacts_Service_ContactExportService',
+			],
+			'items' => [
+				'label' => 'ITEMS',
+				'toolbar' => 'Items_Form_Toolbar',
+				'entity' => 'Items_Model_Entity_Item',
+				'service' => 'Items_Service_ItemExportService',
+			],
+		];
+
+		return $map[$target] ?? null;
 	}
 
 	public function deleteAction()

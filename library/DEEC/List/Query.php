@@ -25,13 +25,15 @@ class DEEC_List_Query
 		$this->applyLimit($select, $params);
 
 		$items = $dbTable->fetchAll($select);
-		$items = $this->applyNormalizers($items, $config);
+		$items = $this->applyNormalizers($items, $config, $params);
 
 		return [$items, $records];
 	}
 
 	protected function normalizeParams(array $params): array
 	{
+		$params['_export'] = !empty($params['_export']);
+
 		$params['page'] = isset($params['page']) ? (int)$params['page'] : 1;
 		$params['limit'] = isset($params['limit']) ? (int)$params['limit'] : 25;
 		$params['tagid'] = isset($params['tagid']) ? (int)$params['tagid'] : 0;
@@ -40,17 +42,22 @@ class DEEC_List_Query
 			$params['page'] = 1;
 		}
 
-		if ($params['limit'] <= 0) {
-			$params['limit'] = 25;
-		}
+		if ($params['_export']) {
+			$params['limit'] = 0;
+			$params['offset'] = 0;
+		} else {
+			if ($params['limit'] <= 0) {
+				$params['limit'] = 25;
+			}
 
-		if ($params['limit'] > 100) {
-			$params['limit'] = 100;
-		}
+			if ($params['limit'] > 100) {
+				$params['limit'] = 100;
+			}
 
-		$params['offset'] = isset($params['offset'])
-			? (int)$params['offset']
-			: (($params['page'] - 1) * $params['limit']);
+			$params['offset'] = isset($params['offset'])
+				? (int)$params['offset']
+				: (($params['page'] - 1) * $params['limit']);
+		}
 
 		$params['keyword'] = $params['keyword'] ?? '';
 		$params['catid'] = $params['catid'] ?? 'all';
@@ -409,7 +416,7 @@ class DEEC_List_Query
 		$select->limit($limit, (int)($params['offset'] ?? 0));
 	}
 
-	protected function applyNormalizers($items, array $config)
+	protected function applyNormalizers($items, array $config, array $params = [])
 	{
 		foreach (($config['normalizers'] ?? []) as $field => $normalizer) {
 			if ($normalizer === 'csv') {
@@ -420,6 +427,10 @@ class DEEC_List_Query
 			}
 
 			if (is_array($normalizer) && ($normalizer['type'] ?? '') === 'truncate') {
+				if (!empty($params['_export'])) {
+					continue;
+				}
+
 				$length = (int)($normalizer['length'] ?? 43);
 
 				foreach ($items as $item) {

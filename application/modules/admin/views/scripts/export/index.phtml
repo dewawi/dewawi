@@ -102,6 +102,47 @@ echo $this->Messages();
 				<?php echo $this->translate('ADMIN_EXPORT_GOBD_DESCRIPTION'); ?>
 			</div>
 		</form>
+
+		<hr class="dw-divider"/>
+
+		<form class="dw-form"
+			method="get"
+			action="<?php echo $this->url([
+				'module' => 'admin',
+				'controller' => 'export',
+				'action' => 'export',
+				'id' => null,
+			]); ?>">
+
+			<input type="hidden" name="type" value="list"/>
+
+			<div class="dw-form__row">
+				<div class="dw-form__col">
+					<label class="dw-label">
+						<?php echo $this->translate('ADMIN_EXPORT_LIST_TYPE'); ?>
+					</label>
+
+					<select class="dw-select" name="target" required>
+						<option value="contacts">
+							<?php echo $this->translate('CONTACTS'); ?>
+						</option>
+						<option value="items">
+							<?php echo $this->translate('ITEMS'); ?>
+						</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="dw-form__actions">
+				<button type="submit" class="dw-button dw-button--primary">
+					<?php echo $this->translate('ADMIN_EXPORT_LIST'); ?>
+				</button>
+			</div>
+
+			<div class="dw-form__hint">
+				<?php echo $this->translate('ADMIN_EXPORT_LIST_DESCRIPTION'); ?>
+			</div>
+		</form>
 	</div>
 </div>
 
