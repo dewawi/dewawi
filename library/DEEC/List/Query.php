@@ -175,6 +175,10 @@ class DEEC_List_Query
 					$this->applyCategoryFilter($select, $value, $options[$name] ?? [], $filter, $config);
 					break;
 
+				case 'quantity':
+					$this->applyQuantityFilter($select, $value, $filter, $config);
+					break;
+
 				case 'states':
 					$this->applyStatesFilter($select, $value, $filter, $config);
 					break;
@@ -248,6 +252,18 @@ class DEEC_List_Query
 		if ($ids) {
 			$select->where($column.' IN (?)', $ids);
 		}
+	}
+
+	protected function applyQuantityFilter($select, $value, array $filter, array $config): void
+	{
+		if (!$value) {
+			return;
+		}
+
+		$alias = $filter['alias'] ?? $config['alias'];
+		$column = $filter['column'] ?? 'quantity';
+
+		$select->where($alias . '.' . $column . ' > ?', 0);
 	}
 
 	protected function applyStatesFilter($select, $states, array $filter, array $config): void
@@ -395,10 +411,23 @@ class DEEC_List_Query
 
 	protected function applyNormalizers($items, array $config)
 	{
-		foreach (($config['normalizers'] ?? []) as $field => $type) {
-			if ($type === 'csv') {
+		foreach (($config['normalizers'] ?? []) as $field => $normalizer) {
+			if ($normalizer === 'csv') {
 				foreach ($items as $item) {
 					$item->{$field} = $this->splitCsv($item->{$field} ?? '');
+				}
+				continue;
+			}
+
+			if (is_array($normalizer) && ($normalizer['type'] ?? '') === 'truncate') {
+				$length = (int)($normalizer['length'] ?? 43);
+
+				foreach ($items as $item) {
+					$value = (string)($item->{$field} ?? '');
+
+					if (strlen($value) > $length) {
+						$item->{$field} = substr($value, 0, max(0, $length - 3)) . '...';
+					}
 				}
 			}
 		}
