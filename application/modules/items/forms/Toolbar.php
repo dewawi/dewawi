@@ -142,6 +142,21 @@ class Items_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'tagid',
+			'type' => 'select',
+			'label' => 'TOOLBAR_TAGS',
+			'default' => '0',
+			'options' => [
+				'0' => 'TOOLBAR_ALL',
+			],
+			'source' => 'tag',
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
+
+		$this->addElement([
 			'name' => 'catid',
 			'type' => 'select',
 			'default' => 'all',

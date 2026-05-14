@@ -42,4 +42,16 @@ class Application_Model_DbTable_Tag extends Zend_Db_Table_Abstract
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
 	}
+
+	public function getSelectOptions(string $module = '', string $controller = ''): array
+	{
+		if ($module === '' || $controller === '') {
+			$request = Zend_Controller_Front::getInstance()->getRequest();
+
+			$module = $module ?: $request->getModuleName();
+			$controller = $controller ?: $request->getControllerName();
+		}
+
+		return $this->getTags($module, $controller);
+	}
 }

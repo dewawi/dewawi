@@ -34,6 +34,7 @@ class DEEC_List_Query
 	{
 		$params['page'] = isset($params['page']) ? (int)$params['page'] : 1;
 		$params['limit'] = isset($params['limit']) ? (int)$params['limit'] : 25;
+		$params['tagid'] = isset($params['tagid']) ? (int)$params['tagid'] : 0;
 
 		if ($params['page'] <= 0) {
 			$params['page'] = 1;
@@ -116,6 +117,7 @@ class DEEC_List_Query
 
 		$this->applyKeywordFilter($select, $params, $config);
 		$this->applyConfiguredFilters($select, $params, $options, $config);
+		$this->applyTagFilter($select, $params, $config);
 
 		$clientId = $this->getClientId($config);
 		$select->where($alias.'.clientid = ?', $clientId);
@@ -190,6 +192,41 @@ class DEEC_List_Query
 					break;
 			}
 		}
+	}
+
+	protected function applyTagFilter($select, array $params, array $config): void
+	{
+		$tagid = (int)($params['tagid'] ?? 0);
+
+		if ($tagid <= 0) {
+			return;
+		}
+
+		if (isset($config['tags']) && $config['tags'] === false) {
+			return;
+		}
+
+		$request = Zend_Controller_Front::getInstance()->getRequest();
+
+		$module = $config['module'] ?? $request->getModuleName();
+		$controller = $config['controller'] ?? $request->getControllerName();
+
+		$alias = $config['alias'];
+		$entityIdColumn = $config['entityIdColumn'] ?? 'id';
+		$clientId = $this->getClientId($config);
+
+		$db = $select->getAdapter();
+
+		$select->join(
+			['tag_filter' => 'tagentity'],
+			$alias.'.'.$entityIdColumn.' = tag_filter.entityid'
+			. ' AND tag_filter.tagid = '.(int)$tagid
+			. ' AND tag_filter.module = '.$db->quote($module)
+			. ' AND tag_filter.controller = '.$db->quote($controller)
+			. ' AND tag_filter.clientid = '.(int)$clientId
+			. ' AND tag_filter.deleted = 0',
+			[]
+		);
 	}
 
 	protected function applyCategoryFilter($select, $catid, array $categories, array $filter, array $config): void
