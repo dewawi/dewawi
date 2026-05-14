@@ -1,18 +1,7 @@
 <?php
 
-class Admin_MediaController extends Zend_Controller_Action
+class Admin_MediaController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
 	public function init()
 	{
 		$params = $this->_getAllParams();

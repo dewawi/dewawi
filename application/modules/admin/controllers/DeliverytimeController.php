@@ -1,51 +1,7 @@
 <?php
 
-class Admin_DeliverytimeController extends Zend_Controller_Action
+class Admin_DeliverytimeController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
-	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-	}
-
-	public function getAction()
-	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$element = $this->_getParam('element', null);
-		$form = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($form);
-		if(isset($form->$element)) {
-			$options = $form->$element->getMultiOptions();
-			echo Zend_Json::encode($options);
-		} else {
-			echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_ELEMENT_DOES_NOT_EXISTS')));
-		}
-	}
-
 	public function indexAction()
 	{
 		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
