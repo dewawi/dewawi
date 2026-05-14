@@ -4,14 +4,10 @@ class Items_ItemController extends DEEC_Controller_Action
 {
 	protected function buildIndexView(): void
 	{
-		$get = new Items_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'items',
 			'list' => 'Items_Model_List_Items',
-			'items' => function ($params, $options) use ($get) {
-				return $get->items($params, $options);
-			},
+			'entity' => Items_Model_Entity_Item::listConfig(),
 		]);
 	}
 
