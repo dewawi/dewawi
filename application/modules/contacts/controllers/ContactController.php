@@ -24,20 +24,12 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		}
 	}
 
-	protected function buildIndexView(array $extraParams = []): void
+	protected function buildIndexView(): void
 	{
-		$get = new Contacts_Model_Get();
-
 		$this->buildListView([
 			'viewKey' => 'contacts',
 			'list' => 'Contacts_Model_List_Contacts',
-			'items' => function ($params, $options) use ($get, $extraParams) {
-				if (!empty($extraParams['contactid'])) {
-					$params['keyword'] = $extraParams['contactid'];
-				}
-
-				return $get->contacts($params, $options);
-			},
+			'entity' => Contacts_Model_Entity_Contact::listConfig(),
 		]);
 	}
 
