@@ -167,17 +167,9 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'import', 'id'=>null)); ?>">
 									<?php echo $this->translate('Import'); ?>
 								</a>
-								|
-								<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'export', 'id'=>null)); ?>">
-									<?php echo $this->translate('Export'); ?>
-								</a>
 							<?php elseif ($isItemsIndex) : ?>
 								<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import', 'id'=>null)); ?>">
 									<?php echo $this->translate('Import'); ?>
-								</a>
-								|
-								<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'export', 'id'=>null)); ?>">
-									<?php echo $this->translate('Export'); ?>
 								</a>
 							<?php endif; ?>
 						</p>
