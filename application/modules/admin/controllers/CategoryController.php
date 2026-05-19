@@ -2,59 +2,13 @@
 
 class Admin_CategoryController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
-	{
-		if ($this->getRequest()->isPost()) {
-			$this->_helper->getHelper('layout')->disableLayout();
-		}
-
-		$this->buildIndexView();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$this->buildIndexView();
-	}
-
 	protected function buildIndexView(): void
 	{
-		$toolbar = new Admin_Form_Toolbar();
-		$toolbarInline = new Admin_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$categoriesDb = new Admin_Model_DbTable_Category();
-		if($params['type'] == 'shop') {
-			$items = $categoriesDb->getCategories($params['type'], null, $params['shopid']);
-		} else {
-			$items = $categoriesDb->getCategories($params['type']);
-		}
-
-		$categories = new Admin_Model_List_Categories();
-		$categories->configure([
-			'items' => $items,
-			'options' => $options,
-			'view' => $this->view,
-			'module' => $this->getRequest()->getModuleName(),
-			'controller' => $this->getRequest()->getControllerName(),
-			'toolbarInline' => $toolbarInline,
-			'context' => [
-				'user' => $this->_user,
-			],
+		$this->buildListView([
+			'viewKey' => 'invoices',
+			'list' => 'Admin_Model_List_Categories',
+			'entity' => Admin_Model_Entity_Category::listConfig(),
 		]);
-
-		$this->view->categories = $categories;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->messages = array_merge(
-			$this->_flashMessenger->getMessages(),
-			$this->_flashMessenger->getCurrentMessages()
-		);
-		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()

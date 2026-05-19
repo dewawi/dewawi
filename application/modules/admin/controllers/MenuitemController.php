@@ -39,23 +39,6 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 		return null;
 	}
 
-	public function indexAction()
-	{
-		if ($this->getRequest()->isPost()) {
-			$this->_helper->getHelper('layout')->disableLayout();
-		}
-
-		$this->buildIndexView();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$this->buildIndexView();
-	}
-
 	protected function buildIndexView(): void
 	{
 		$toolbar = new Admin_Form_Toolbar();

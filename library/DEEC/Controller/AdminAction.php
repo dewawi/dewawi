@@ -19,8 +19,6 @@ abstract class DEEC_Controller_AdminAction extends DEEC_Controller_Action
 		return $db;
 	}
 
-	abstract protected function getAdminDbClass(): string;
-
 	public function sortAction()
 	{
 		$this->disableView();

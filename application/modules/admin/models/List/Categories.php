@@ -48,19 +48,6 @@ class Admin_Model_List_Categories extends DEEC_List
 				'class' => 'dw-col-title',
 			],
 			[
-				'name' => 'subtitle',
-				'label' => 'ADMIN_SUBTITLE',
-				'data_label' => 'ADMIN_SUBTITLE',
-				'type' => 'link',
-				'field' => 'subtitle',
-				'fallback_field' => 'id',
-				'url' => [
-					'action' => 'edit',
-					'id_field' => 'id',
-				],
-				'class' => 'dw-col-subtitle',
-			],
-			[
 				'name' => 'parentid',
 				'label' => 'ADMIN_MAIN_CATEGORY',
 				'data_label' => 'ADMIN_MAIN_CATEGORY',
