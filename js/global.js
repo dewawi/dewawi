@@ -549,7 +549,7 @@ $(document).ready(function(){
 	//Modal window
 	$(document).on('click', 'button.poplight', function() {
 		var popID = $(this).attr('rel');
-		setid = $(this).closest('div.set').find('input.setid').val();
+		setid = $(this).closest('.dw-position-set').data('setid') || 0;
 		modalWindow(popID, setid);
 	});
 	$(document).on('click', 'a.close, #fade', modalWindowClose);
