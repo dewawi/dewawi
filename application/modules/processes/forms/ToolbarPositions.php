@@ -8,6 +8,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 			'name' => 'add',
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'addPosition add'],
 		]);
@@ -16,6 +17,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 			'name' => 'addset',
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW_SET',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'addSet add'],
 		]);
@@ -24,6 +26,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 			'name' => 'copyset',
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY_SET',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'copySet copy'],
 		]);
@@ -32,6 +35,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 			'name' => 'deleteset',
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE_SET',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'deleteSet delete'],
 		]);
@@ -40,6 +44,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 			'name' => 'select',
 			'type' => 'button',
 			'label' => 'TOOLBAR_SELECT',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => [
 				'class' => 'select poplight',
@@ -51,6 +56,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 			'name' => 'copy',
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'copyPosition copy'],
 		]);
@@ -58,6 +64,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 		$this->addElement([
 			'name' => 'copypos',
 			'type' => 'button',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'copyPosition copy nolabel'],
 		]);
@@ -66,6 +73,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 			'name' => 'delete',
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'deletePosition delete'],
 		]);
@@ -73,6 +81,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 		$this->addElement([
 			'name' => 'deletepos',
 			'type' => 'button',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'deletePosition delete nolabel'],
 		]);
@@ -80,6 +89,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 		$this->addElement([
 			'name' => 'sortup',
 			'type' => 'button',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'up nolabel'],
 		]);
@@ -87,6 +97,7 @@ class Processes_Form_ToolbarPositions extends DEEC_Form
 		$this->addElement([
 			'name' => 'sortdown',
 			'type' => 'button',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'down nolabel'],
 		]);
