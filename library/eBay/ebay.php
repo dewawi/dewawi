@@ -85,7 +85,7 @@ class eBay {
 		$items = $this->getItems($connection, $accountid, $clientid);
 		$productLines = array();
 		if($items) {
-			require_once(BASE_PATH.'/library/DEEC/PriceRule.php');
+			require_once(BASE_PATH.'/library/DEEC/PriceRuleShop.php');
 			$dir1 = substr($clientid, 0, 1);
 			if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
 			else $dir2 = '0';
@@ -169,8 +169,8 @@ class eBay {
 								if($item['manufacturerid']) $options['itemmanufacturer'] = $item['manufacturerid'];
 
 								//Use price rules
-								$PriceRule = new DEEC_PriceRule();
-								if(!$item['specialprice']) $price = $PriceRule->usePricerules($item, $connection, $options, $clientid);
+								$PriceRule = new DEEC_PriceRuleShop();
+								if(!$item['specialprice']) $price = $PriceRule->usePricerules($item, $connection, $options);
 
 								$listingPrice = $price;
 								if($taxRate) $listingPrice = $listingPrice + ($listingPrice * $taxRate / 100);
