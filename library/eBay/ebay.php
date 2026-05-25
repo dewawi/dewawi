@@ -192,9 +192,24 @@ class eBay {
 									$attributesHtml .= '<table id="attributes">';
 									foreach($attributes as $attribute) {
 										if($attribute['title'] != 'Zeichnung') {
+
+											$value = trim((string)$attribute['description']);
+
+											if(strpos($value, '|') !== false) {
+												$listItems = array_filter(array_map('trim', explode('|', $value)));
+
+												$value = '<ul style="margin:0;padding-left:18px;">';
+
+												foreach($listItems as $listItem) {
+													$value .= '<li>'.$listItem.'</li>';
+												}
+
+												$value .= '</ul>';
+											}
+
 											$attributesHtml .= '<tr>';
 											$attributesHtml .= '<td>'.$attribute['title'].'</td>';
-											$attributesHtml .= '<td>'.$attribute['description'].'</td>';
+											$attributesHtml .= '<td>'.$value.'</td>';
 											$attributesHtml .= '</tr>';
 										}
 									}
