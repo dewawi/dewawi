@@ -875,9 +875,27 @@ class DEEC_Pdf
 			if ($attrs) {
 				$pdf->SetFont('freesans', '', 9);
 				foreach ($attrs as $a) {
-					$line = trim(($a['title'] ?? '').($a['description'] ? ': '.$a['description'] : ''));
-					if ($line !== '') {
-						// bullet-like flow inside description column
+					$title = trim((string)($a['title'] ?? ''));
+					$value = trim((string)($a['description'] ?? ''));
+
+					if ($value === '') {
+						continue;
+					}
+
+					if (strpos($value, '|') !== false) {
+						$listItems = array_filter(array_map('trim', explode('|', $value)));
+
+						$pdf->SetFont('freesansb', 'B', 9);
+						$pdf->MultiCell($width, 4, $title.':', 0, 'L', false, 1, $xLeft, '', true, 0);
+
+						$pdf->SetFont('freesans', '', 9);
+
+						foreach ($listItems as $listItem) {
+							$pdf->MultiCell($width - 5, 4, '• '.$listItem, 0, 'L', false, 1, $xLeft + 5, '', true, 0);
+						}
+					} else {
+						$line = $title.': '.$value;
+
 						$pdf->MultiCell($width, 4, '– '.$line, 0, 'L', false, 1, $xLeft, '', true, 0);
 					}
 				}
