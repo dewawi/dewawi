@@ -411,15 +411,17 @@ class Purchases_PositionController extends DEEC_Controller_Action
 			//Copy price rules
 			$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
 			$pricerules = $priceRuleHelper->getPriceRulePositions('purchases', $params['parent'].$params['type'], $params['id']);
-			foreach($pricerules as $pricerule) {
+
+			$priceRuleDb = new Items_Model_DbTable_Pricerulepos();
+
+			foreach ($pricerules as $pricerule) {
 				$dataPricerule = $pricerule;
-				$dataPricerule['parentid'] = $id;
-				$dataPricerule['created'] = $this->_date;
-				$dataPricerule['modified'] = NULL;
-				$dataPricerule['modifiedby'] = 0;
+
 				unset($dataPricerule['id']);
-				$priceRuleDb = new Items_Model_DbTable_Pricerulepos();
-				$priceRuleDb->addPosition($dataPricerule);
+
+				$dataPricerule['parentid'] = $id;
+
+				$priceRuleDb->create($dataPricerule);
 			}
 
 			//Calculate
