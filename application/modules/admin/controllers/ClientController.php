@@ -233,44 +233,45 @@ class Admin_ClientController extends DEEC_Controller_AdminAction
 
 	public function editAction()
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->disableView();
 
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
+		$id = (int)$this->_getParam('id', 0);
 
 		$clientDb = new Admin_Model_DbTable_Client();
-		$client = $clientDb->getClient($id);
+		$client = $clientDb->getById($id);
 
-		if($this->isLocked($client['locked'], $client['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
-		} else {
-			$clientDb->lock($id);
-
-			$form = new Admin_Form_Client();
-			if($request->isPost()) {
-				$data = $request->getPost();
-				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$clientDb = new Admin_Model_DbTable_Client();
-					$clientDb->updateClient($id, $data);
-					echo Zend_Json::encode($clientDb->getClient($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			}
+		if (!$client) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_found',
+			]);
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+
+		$lockResult = $this->_helper->Access->lock(
+			$id,
+			$this->_user['id'],
+			$client['locked'] ?? 0,
+			$client['lockedtime'] ?? null
+		);
+
+		if (is_array($lockResult) && isset($lockResult['ok']) && $lockResult['ok'] === false) {
+			return $this->_helper->json($lockResult);
+		}
+
+		if (!$request->isPost()) {
+			return $this->_helper->json([
+				'ok' => true,
+				'item' => $client,
+			]);
+		}
+
+		$form = new Admin_Form_Client();
+		$this->_helper->Options->applyFormOptions($form);
+
+		return $this->_helper->json(
+			$this->saveFormAjax($form, $clientDb, $id)
+		);
 	}
 
 	public function copyAction()

@@ -2,96 +2,13 @@
 
 class Admin_PageController extends DEEC_Controller_AdminAction
 {
-	protected function requirePage(int $id, bool $silent = false): ?array
-	{
-		$pageDb = new Admin_Model_DbTable_Page();
-		$page = $pageDb->getPage($id);
-
-		if ($page) {
-			return $page;
-		}
-
-		$request = $this->getRequest();
-
-		// AJAX
-		if ($request->isXmlHttpRequest()) {
-			$this->_helper->viewRenderer->setNoRender();
-			$this->_helper->layout->disableLayout();
-
-			$this->_helper->json([
-				'ok' => false,
-				'message' => 'not_found',
-			]);
-
-			return null;
-		}
-
-		// Silent mode (PDF etc.)
-		if ($silent) {
-			$this->_helper->viewRenderer->setNoRender();
-			return null;
-		}
-
-		// Default redirect
-		$this->_flashMessenger->addMessage('MESSAGES_PAGE_NOT_FOUND');
-		$this->_helper->redirector->gotoSimple('index', 'page');
-
-		return null;
-	}
-
-	public function indexAction()
-	{
-		if ($this->getRequest()->isPost()) {
-			$this->_helper->getHelper('layout')->disableLayout();
-		}
-
-		$this->buildIndexView();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$this->buildIndexView();
-	}
-
 	protected function buildIndexView(): void
 	{
-		$toolbar = new Admin_Form_Toolbar();
-		$toolbarInline = new Admin_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$pagesDb = new Admin_Model_DbTable_Page();
-		if($params['type'] == 'shop') {
-			$items = $pagesDb->getPages($params['type'], null, $params['shopid']);
-		} else {
-			$items = $pagesDb->getPages($params['type']);
-		}
-
-		$pages = new Admin_Model_List_Pages();
-		$pages->configure([
-			'items' => $items,
-			'options' => $options,
-			'view' => $this->view,
-			'module' => $this->getRequest()->getModuleName(),
-			'controller' => $this->getRequest()->getControllerName(),
-			'toolbarInline' => $toolbarInline,
-			'context' => [
-				'user' => $this->_user,
-			],
+		$this->buildListView([
+			'viewKey' => 'pages',
+			'list' => 'Admin_Model_List_Pages',
+			'entity' => Admin_Model_Entity_Page::listConfig(),
 		]);
-
-		$this->view->pages = $pages;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->messages = array_merge(
-			$this->_flashMessenger->getMessages(),
-			$this->_flashMessenger->getCurrentMessages()
-		);
-		$this->_flashMessenger->clearCurrentMessages();
 	}
 
 	public function addAction()
@@ -128,8 +45,7 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 		$id = (int)$this->_getParam('id', 0);
 		$isAjax = $request->isXmlHttpRequest();
 
-		$page = $this->requirePage($id);
-		if (!$page) return;
+		$page = $this->requireRow($id);
 
 		$pageDb = new Admin_Model_DbTable_Page();
 
