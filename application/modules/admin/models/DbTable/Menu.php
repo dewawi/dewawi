@@ -1,6 +1,6 @@
 <?php
 
-class Admin_Model_DbTable_Menu extends Zend_Db_Table_Abstract
+class Admin_Model_DbTable_Menu extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'menu';

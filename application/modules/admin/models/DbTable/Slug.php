@@ -1,6 +1,6 @@
 <?php
 
-class Admin_Model_DbTable_Slug extends Zend_Db_Table_Abstract
+class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'slug';
