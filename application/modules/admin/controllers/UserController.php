@@ -2,55 +2,13 @@
 
 class Admin_UserController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_User();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$usersDb = new Admin_Model_DbTable_User();
-		$users = $usersDb->getUsers();
-
-		$forms = array();
-		foreach($users as $user) {
-			$forms[$user->id] = new Admin_Form_User();
-			$forms[$user->id]->activated->setValue($user->activated);
-		}
-
-		$this->view->form = $form;
-		$this->view->forms = $forms;
-		$this->view->users = $users;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_User();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$usersDb = new Admin_Model_DbTable_User();
-		$users = $usersDb->getUsers();
-
-		$forms = array();
-		foreach($users as $user) {
-			$forms[$user->id] = new Admin_Form_User();
-			$forms[$user->id]->activated->setValue($user->activated);
-		}
-
-		$this->view->form = $form;
-		$this->view->forms = $forms;
-		$this->view->users = $users;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'users',
+			'list' => 'Admin_Model_List_Users',
+			'entity' => Admin_Model_Entity_User::listConfig(),
+		]);
 	}
 
 	public function addAction()

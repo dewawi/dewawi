@@ -435,6 +435,20 @@ class DEEC_List_Query
 				continue;
 			}
 
+			if ($normalizer === 'json') {
+				foreach ($items as $item) {
+					$value = $item->{$field} ?? '';
+
+					if (is_array($value)) {
+						continue;
+					}
+
+					$decoded = json_decode((string)$value, true);
+					$item->{$field} = is_array($decoded) ? $decoded : [];
+				}
+				continue;
+			}
+
 			if (is_array($normalizer) && ($normalizer['type'] ?? '') === 'truncate') {
 				if (!empty($params['_export'])) {
 					continue;

@@ -2,57 +2,35 @@
 
 class Admin_PermissionController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		$modules = $this->getPermissionModules();
 
-		$form = new Admin_Form_Permission();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
+		$list = $this->buildListView([
+			'viewKey' => 'permissions',
+			'list' => 'Admin_Model_List_Permissions',
+			'entity' => Admin_Model_Entity_Permission::listConfig(),
+		]);
 
-		$permissionsDb = new Admin_Model_DbTable_Permission();
-		$permissions = $permissionsDb->getPermissions();
+		$list->configure([
+			'context' => array_merge($list->getContext(), [
+				'modules' => $modules,
+			]),
+		]);
 
-		$forms = array();
-		$modules = array('contacts', 'items', 'processes', 'purchases', 'sales', 'statistics');
-		foreach($permissions as $permission) {
-			foreach($modules as $module) {
-				if($permission[$module]) {
-					foreach($permission[$module] as $controller => $actions) {
-						$forms[$permission['id']][$module][$controller] = new Admin_Form_Permission();
-						foreach($actions as $action) {
-							$forms[$permission['id']][$module][$controller]->$action->setValue(1);
-						}
-					}
-				}
-			}
-		}
-
-		$this->view->forms = $forms;
 		$this->view->modules = $modules;
-		$this->view->permissions = $permissions;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
-	public function searchAction()
+	protected function getPermissionModules(): array
 	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Permission();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$permissionsDb = new Admin_Model_DbTable_Permission();
-		$permissions = $permissionsDb->getPermissions();
-
-		$this->view->form = $form;
-		$this->view->permissions = $permissions;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		return [
+			'contacts',
+			'items',
+			'processes',
+			'purchases',
+			'sales',
+			'statistics',
+		];
 	}
 
 	public function addAction()
