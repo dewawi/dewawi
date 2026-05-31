@@ -2,41 +2,13 @@
 
 class Admin_DeliverytimeController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Deliverytime();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$deliverytimesDb = new Admin_Model_DbTable_Deliverytime();
-		$deliverytimes = $deliverytimesDb->getDeliverytimes();
-
-		$this->view->form = $form;
-		$this->view->deliverytimes = $deliverytimes;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Deliverytime();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$deliverytimesDb = new Admin_Model_DbTable_Deliverytime();
-		$deliverytimes = $deliverytimesDb->getDeliverytimes();
-
-		$this->view->form = $form;
-		$this->view->deliverytimes = $deliverytimes;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'deliverytimes',
+			'list' => 'Admin_Model_List_Deliverytimes',
+			'entity' => Admin_Model_Entity_Deliverytime::listConfig(),
+		]);
 	}
 
 	public function addAction()

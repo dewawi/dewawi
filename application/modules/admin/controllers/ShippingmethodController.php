@@ -2,41 +2,13 @@
 
 class Admin_ShippingmethodController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Shippingmethod();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$shippingmethodsDb = new Admin_Model_DbTable_Shippingmethod();
-		$shippingmethods = $shippingmethodsDb->getShippingmethods();
-
-		$this->view->form = $form;
-		$this->view->shippingmethods = $shippingmethods;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Shippingmethod();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$shippingmethodsDb = new Admin_Model_DbTable_Shippingmethod();
-		$shippingmethods = $shippingmethodsDb->getShippingmethods();
-
-		$this->view->form = $form;
-		$this->view->shippingmethods = $shippingmethods;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'shippingmethods',
+			'list' => 'Admin_Model_List_Shippingmethods',
+			'entity' => Admin_Model_Entity_Shippingmethod::listConfig(),
+		]);
 	}
 
 	public function addAction()
