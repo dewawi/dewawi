@@ -40,27 +40,23 @@ class Items_ItemController extends DEEC_Controller_Action
 	{
 		$request = $this->getRequest();
 		$id = (int)$this->_getParam('id', 0);
-
 		$isAjax = $request->isXmlHttpRequest();
 
 		$form = new Items_Form_Item();
 		$options = $this->_helper->Options->applyFormOptions($form);
 
 		$toolbar = new Items_Form_Toolbar();
-		$itemDb  = new Items_Model_DbTable_Item();
+		$itemDb = new Items_Model_DbTable_Item();
 
-		// Load item
-		$item = $itemDb->getItemForEdit($id);
+		$item = $itemDb->getById($id);
 
-		// Not found / not usable
 		if (!$item) {
 			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
+				$this->disableView();
 
 				return $this->_helper->json([
 					'ok' => false,
-					'message' => 'not_found'
+					'message' => 'not_found',
 				]);
 			}
 
@@ -68,80 +64,32 @@ class Items_ItemController extends DEEC_Controller_Action
 			return $this->_helper->redirector->gotoSimple('index', 'item');
 		}
 
-		// LOCK
 		$this->_helper->Access->lock($id, $this->_user['id'], $item['locked'] ?? 0, $item['lockedtime'] ?? null);
 
-		// POST: ajax save single field
 		if ($request->isPost()) {
-			// Edit via ajax -> JSON
 			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
+				$this->disableView();
 
-				$post = (array)$request->getPost();
-
-				// Validate only posted subset
-				if (!$form->isValidPartial($post)) {
-					return $this->_helper->json([
-						'ok' => false,
-						'errors' => $this->toErrorMessages($form->getErrors(), $form),
-					]);
-				}
-
-				// Filter/normalize only posted subset for DB
-				$values = $form->getFilteredValuesPartial($post);
-
-				// Save
-				try {
-					$itemDb->updateItem($id, $values);
-				} catch (Exception $e) {
-					return $this->_helper->json([
-						'ok' => false,
-						'message' => 'save_failed'
-					]);
-				}
-
-				// Reload for derived values
-				$itemNew = $itemDb->getItemForEdit($id);
-
-				// Return only changed fields for display
-				$changedFields = array_keys($values);
-
-				$display = DEEC_Display::fromRow($form, $itemNew, $changedFields);
-
-				return $this->_helper->json([
-					'ok' => true,
-					'id' => $id,
-
-					// Raw DB values for JS logic
-					'values' => array_intersect_key($itemNew, array_flip($changedFields)),
-
-					// Formatted for UI
-					'display' => $display,
-
-					// Optional meta: if later derived values set server-side
-					'meta' => [
-						'recalc' => [],
-					],
-				]);
+				return $this->_helper->json(
+					$this->saveFormAjax($form, $itemDb, $id)
+				);
 			}
 
-			// NON-AJAX POST
 			$post = (array)$request->getPost();
 
 			if (!$form->isValid($post)) {
-				// Keep form with submitted values and errors
 				$form->setValues($post);
 			} else {
 				$values = $form->getFilteredValues();
 
-				$itemDb->updateItem($id, $values);
+				$itemDb->updateById($id, $values);
+
 				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
 				return $this->_helper->redirector->gotoSimple('edit', 'item', null, ['id' => $id]);
 			}
 		} else {
-			// GET: populate form with display values from DB
-			$locale = Zend_Registry::get('Zend_Locale'); // for now, later replaced
+			$locale = Zend_Registry::get('Zend_Locale');
 			$itemDisplay = DEEC_Display::rowToFormValues($form, $item, $locale);
 
 			$form->setValues($itemDisplay);
@@ -149,7 +97,6 @@ class Items_ItemController extends DEEC_Controller_Action
 			$this->_helper->MultiEntityLoader->populate($form, $id, 'items', 'item');
 		}
 
-		// build view model once and assign in one shot
 		$vmService = new Items_Service_ItemEditViewModel();
 		$vm = $vmService->build($id, (array)$this->_user, (array)$item);
 
@@ -161,12 +108,7 @@ class Items_ItemController extends DEEC_Controller_Action
 			'activeTab' => $request->getCookie('tab', null),
 		]));
 
-		// Messages
-		$this->view->messages = array_merge(
-			$this->_helper->flashMessenger->getMessages(),
-			$this->_helper->flashMessenger->getCurrentMessages()
-		);
-		$this->_helper->flashMessenger->clearCurrentMessages();
+		$this->assignMessages();
 	}
 
 	public function copyAction()
