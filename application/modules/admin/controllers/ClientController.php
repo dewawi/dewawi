@@ -2,51 +2,13 @@
 
 class Admin_ClientController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Client();
-		$toolbar = new Admin_Form_Toolbar();
-
-		$clientsDb = new Admin_Model_DbTable_Client();
-		$clients = $clientsDb->getClients();
-
-		$forms = array();
-		foreach($clients as $client) {
-			$forms[$client->id] = new Admin_Form_Client();
-			$forms[$client->id]->activated->setValue($client->activated);
-		}
-
-		$this->view->form = $form;
-		$this->view->forms = $forms;
-		$this->view->clients = $clients;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Client();
-		$toolbar = new Admin_Form_Toolbar();
-
-		$clientsDb = new Admin_Model_DbTable_Client();
-		$clients = $clientsDb->getClients();
-
-		$forms = array();
-		foreach($clients as $client) {
-			$forms[$client->id] = new Admin_Form_Client();
-			$forms[$client->id]->activated->setValue($client->activated);
-		}
-
-		$this->view->form = $form;
-		$this->view->forms = $forms;
-		$this->view->clients = $clients;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'clients',
+			'list' => 'Admin_Model_List_Clients',
+			'entity' => Admin_Model_Entity_Client::listConfig(),
+		]);
 	}
 
 	public function addAction()

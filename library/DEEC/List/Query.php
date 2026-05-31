@@ -126,8 +126,10 @@ class DEEC_List_Query
 		$this->applyConfiguredFilters($select, $params, $options, $config);
 		$this->applyTagFilter($select, $params, $config);
 
-		$clientId = $this->getClientId($config);
-		$select->where($alias.'.clientid = ?', $clientId);
+		if (($config['clientFilter'] ?? true) === true) {
+			$clientId = $this->getClientId($config);
+			$select->where($alias . '.clientid = ?', $clientId);
+		}
 		$select->where($alias.'.deleted = ?', 0);
 	}
 
