@@ -2,73 +2,58 @@
 
 class Admin_TagController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
 		$form = new Admin_Form_Tag();
 		$toolbar = new Admin_Form_Toolbar();
+		$toolbarInline = new Admin_Form_ToolbarInline();
+
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$tagsDb = new Admin_Model_DbTable_Tag();
 
-		if($params['type'] == 'shop') {
+		if ($params['type'] == 'shop') {
 			$tags = $tagsDb->getTags($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($tags));
 		} else {
 			$tags = $tagsDb->getTags($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($tags));
 		}
 
-		if($params['type'] == 'shop') {
-			$slugs = array();
+		$slugs = [];
+
+		if ($params['type'] == 'shop') {
 			$slugDb = new Admin_Model_DbTable_Slug();
-			foreach($tags as $tag) {
-				$slug = $slugDb->getSlug('shops', 'tag', $tag['shopid'], $tag['id']);
-				$slugs[$tag['id']] = $slug['slug'];
+
+			foreach ($tags as $tag) {
+				try {
+					$slug = $slugDb->getSlug('shops', 'tag', $tag['shopid'], $tag['id']);
+					$slugs[$tag['id']] = $slug['slug'] ?? '';
+				} catch (Exception $e) {
+					$slugs[$tag['id']] = '';
+				}
 			}
 		}
 
+		$list = new Admin_Model_List_Tags();
+
+		$list->configure([
+			'items' => $tags,
+			'options' => $options,
+			'view' => $this->view,
+			'module' => 'admin',
+			'controller' => 'tag',
+			'toolbarInline' => $toolbarInline,
+			'context' => [
+				'user' => $this->_user,
+				'slugs' => $slugs,
+				'type' => $params['type'],
+			],
+		]);
+
+		$this->view->tags = $list;
 		$this->view->form = $form;
-		$this->view->tags = $tags;
-		$this->view->slugs = $slugs;
 		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Tag();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$tagsDb = new Admin_Model_DbTable_Tag();
-
-		echo $params['type'];
-		if($params['type'] == 'shop') {
-			$tags = $tagsDb->getTags($params['type'], null, $params['shopid']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($tags));
-		} else {
-			$tags = $tagsDb->getTags($params['type']);
-			$form->parentid->addMultiOptions($this->_helper->MenuStructure->getMenuStructure($tags));
-		}
-
-		$slugs = array();
-		$slugDb = new Admin_Model_DbTable_Slug();
-		foreach($tags as $tag) {
-			$slug = $slugDb->getSlug('shops', 'tag', $tag['shopid'], $tag['id']);
-			$slugs[$tag['id']] = $slug['slug'];
-		}
-
-		$this->view->form = $form;
-		$this->view->tags = $tags;
-		$this->view->slugs = $slugs;
-		$this->view->toolbar = $toolbar;
+		$this->view->toolbarInline = $toolbarInline;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 

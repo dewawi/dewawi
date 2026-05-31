@@ -1,6 +1,6 @@
 <?php
 
-class Admin_Model_List_Pages extends DEEC_List
+class Admin_Model_List_Modules extends DEEC_List
 {
 	protected function buildColumns()
 	{
@@ -13,29 +13,31 @@ class Admin_Model_List_Pages extends DEEC_List
 				'empty_hide' => true,
 			],
 			[
-				'name' => 'title',
-				'label' => 'ADMIN_TITLE',
-				'type' => 'link',
+				'name' => 'name',
+				'label' => 'ADMIN_NAME',
+				'type' => 'text',
 				'class' => 'dw-col-title',
-				'fallback_field' => 'id',
 			],
 			[
-				'name' => 'image',
-				'label' => 'ADMIN_CATEGORY_IMAGE',
-				'type' => 'text',
-				'class' => 'dw-col-image',
-			],
-			[
-				'name' => 'parentid',
-				'label' => 'ADMIN_PARENT_CATEGORY',
-				'type' => 'text',
-				'class' => 'dw-col-parentid',
+				'name' => 'menu',
+				'label' => 'ADMIN_MENU',
+				'type' => 'editable_note',
+				'field' => 'menu',
+				'editable_name' => 'menu',
+				'empty_label' => 'TOOLBAR_NEW',
+				'class' => 'dw-col-menu',
 			],
 			[
 				'name' => 'ordering',
 				'label' => 'ADMIN_ORDERING',
 				'type' => 'text',
 				'class' => 'dw-col-ordering',
+			],
+			[
+				'name' => 'active',
+				'label' => 'ADMIN_ACTIVE',
+				'type' => 'text',
+				'class' => 'dw-col-active',
 			],
 			[
 				'name' => 'actions',
@@ -45,8 +47,6 @@ class Admin_Model_List_Pages extends DEEC_List
 				'elements' => [
 					['name' => 'copy'],
 					['name' => 'delete'],
-					['name' => 'sortup'],
-					['name' => 'sortdown'],
 				],
 			],
 		];

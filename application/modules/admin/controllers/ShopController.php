@@ -2,55 +2,13 @@
 
 class Admin_ShopController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Shop();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$shopsDb = new Admin_Model_DbTable_Shop();
-		$shops = $shopsDb->getShops();
-
-		$forms = array();
-		foreach($shops as $shop) {
-			$forms[$shop->id] = new Admin_Form_Shop();
-			$forms[$shop->id]->activated->setValue($shop->activated);
-		}
-
-		$this->view->form = $form;
-		$this->view->forms = $forms;
-		$this->view->shops = $shops;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Shop();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$shopsDb = new Admin_Model_DbTable_Shop();
-		$shops = $shopsDb->getShops();
-
-		$forms = array();
-		foreach($shops as $shop) {
-			$forms[$shop->id] = new Admin_Form_Shop();
-			$forms[$shop->id]->activated->setValue($shop->activated);
-		}
-
-		$this->view->form = $form;
-		$this->view->forms = $forms;
-		$this->view->shops = $shops;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'shops',
+			'list' => 'Admin_Model_List_Shops',
+			'entity' => Admin_Model_Entity_Shop::listConfig(),
+		]);
 	}
 
 	public function addAction()
