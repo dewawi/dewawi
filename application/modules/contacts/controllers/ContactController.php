@@ -80,27 +80,23 @@ class Contacts_ContactController extends DEEC_Controller_Action
 	{
 		$request = $this->getRequest();
 		$id = (int)$this->_getParam('id', 0);
-
 		$isAjax = $request->isXmlHttpRequest();
 
 		$form = new Contacts_Form_Contact();
 		$options = $this->_helper->Options->applyFormOptions($form);
 
 		$toolbar = new Contacts_Form_Toolbar();
-		$contactDb  = new Contacts_Model_DbTable_Contact();
+		$contactDb = new Contacts_Model_DbTable_Contact();
 
-		// Load contact
-		$contact = $contactDb->getContactForEdit($id);
+		$contact = $contactDb->getById($id);
 
-		// Not found / not usable
 		if (!$contact) {
 			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
+				$this->disableView();
 
 				return $this->_helper->json([
 					'ok' => false,
-					'message' => 'not_found'
+					'message' => 'not_found',
 				]);
 			}
 
@@ -108,80 +104,32 @@ class Contacts_ContactController extends DEEC_Controller_Action
 			return $this->_helper->redirector->gotoSimple('index', 'contact');
 		}
 
-		// LOCK
 		$this->_helper->Access->lock($id, $this->_user['id'], $contact['locked'] ?? 0, $contact['lockedtime'] ?? null);
 
-		// POST: ajax save single field
 		if ($request->isPost()) {
-			// Edit via ajax -> JSON
 			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
+				$this->disableView();
 
-				$post = (array)$request->getPost();
-
-				// Validate only posted subset
-				if (!$form->isValidPartial($post)) {
-					return $this->_helper->json([
-						'ok' => false,
-						'errors' => $this->toErrorMessages($form->getErrors(), $form),
-					]);
-				}
-
-				// Filter/normalize only posted subset for DB
-				$values = $form->getFilteredValuesPartial($post);
-
-				// Save
-				try {
-					$contactDb->updateContact($id, $values);
-				} catch (Exception $e) {
-					return $this->_helper->json([
-						'ok' => false,
-						'message' => 'save_failed'
-					]);
-				}
-
-				// Reload for derived values
-				$contactNew = $contactDb->getContactForEdit($id);
-
-				// Return only changed fields for display
-				$changedFields = array_keys($values);
-
-				$display = DEEC_Display::fromRow($form, $contactNew, $changedFields);
-
-				return $this->_helper->json([
-					'ok' => true,
-					'id' => $id,
-
-					// Raw DB values for JS logic
-					'values' => array_intersect_key($contactNew, array_flip($changedFields)),
-
-					// Formatted for UI
-					'display' => $display,
-
-					// Optional meta: if later derived values set server-side
-					'meta' => [
-						'recalc' => [],
-					],
-				]);
+				return $this->_helper->json(
+					$this->saveFormAjax($form, $contactDb, $id)
+				);
 			}
 
-			// NON-AJAX POST
 			$post = (array)$request->getPost();
 
 			if (!$form->isValid($post)) {
-				// Keep form with submitted values and errors
 				$form->setValues($post);
 			} else {
 				$values = $form->getFilteredValues();
 
-				$contactDb->updateContact($id, $values);
+				$contactDb->updateById($id, $values);
+
 				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
 				return $this->_helper->redirector->gotoSimple('edit', 'contact', null, ['id' => $id]);
 			}
 		} else {
-			// GET: populate form with display values from DB
-			$locale = Zend_Registry::get('Zend_Locale'); // for now, later replaced
+			$locale = Zend_Registry::get('Zend_Locale');
 			$contactDisplay = DEEC_Display::rowToFormValues($form, $contact, $locale);
 
 			$form->setValues($contactDisplay);
@@ -189,7 +137,6 @@ class Contacts_ContactController extends DEEC_Controller_Action
 			$this->_helper->MultiEntityLoader->populate($form, $id, 'contacts', 'contact');
 		}
 
-		// build view model once and assign in one shot
 		$vmService = new Contacts_Service_ContactEditViewModel();
 		$vm = $vmService->build($id, (array)$this->_user, (array)$contact);
 
@@ -201,12 +148,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 			'activeTab' => $request->getCookie('tab', null),
 		]));
 
-		// Messages
-		$this->view->messages = array_merge(
-			$this->_helper->flashMessenger->getMessages(),
-			$this->_helper->flashMessenger->getCurrentMessages()
-		);
-		$this->_helper->flashMessenger->clearCurrentMessages();
+		$this->assignMessages();
 	}
 
 	public function copyAction()
