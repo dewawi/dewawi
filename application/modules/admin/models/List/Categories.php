@@ -2,22 +2,6 @@
 
 class Admin_Model_List_Categories extends DEEC_List
 {
-	public function __construct()
-	{
-		$this->init();
-	}
-
-	public function init(): void
-	{
-		$this->setId('categories');
-
-		$this->setRowClassCallback(function ($item) {
-			return !empty($item->pinned) ? 'is-pinned' : '';
-		});
-
-		$this->setColumns($this->buildColumns());
-	}
-
 	protected function buildColumns()
 	{
 		return [

@@ -10,25 +10,14 @@ class Admin_Model_Entity_Category
 
 			'search' => [
 				'title',
-				'sku',
-				'manufacturersku',
+				'subtitle',
 				'description',
-			],
-
-			'filters' => [
-				'catid' => [
-					'type' => 'category',
-				],
-				'quantity' => [
-					'type' => 'quantity',
-					'column' => 'quantity',
-				],
 			],
 
 			'orders' => [
 				'title',
-				'sku',
-				'manufacturersku',
+				'parentid',
+				'ordering',
 				'created',
 				'modified',
 			],
