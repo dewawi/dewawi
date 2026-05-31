@@ -8,6 +8,8 @@ class Sales_Model_Entity_Salesorder
 			'tableClass' => 'Sales_Model_DbTable_Salesorder',
 			'alias' => 's',
 
+			'pinned' => true,
+
 			'joins' => [
 				[
 					'table' => 'contact',

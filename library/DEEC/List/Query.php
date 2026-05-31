@@ -399,10 +399,15 @@ class DEEC_List_Query
 
 		$orderColumn = $this->column($orderColumn, $alias);
 
-		$select->order([
-			$alias.'.pinned DESC',
-			$orderColumn.' '.$sort,
-		]);
+		$ordering = [];
+
+		if (!empty($config['pinned'])) {
+			$ordering[] = $alias . '.pinned DESC';
+		}
+
+		$ordering[] = $orderColumn . ' ' . $sort;
+
+		$select->order($ordering);
 	}
 
 	protected function applyLimit($select, array $params): void

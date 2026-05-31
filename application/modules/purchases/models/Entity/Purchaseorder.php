@@ -8,6 +8,8 @@ class Purchases_Model_Entity_Purchaseorder
 			'tableClass' => 'Purchases_Model_DbTable_Purchaseorder',
 			'alias' => 'p',
 
+			'pinned' => true,
+
 			'joins' => [
 				[
 					'table' => 'contact',

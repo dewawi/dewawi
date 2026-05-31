@@ -8,6 +8,8 @@ class Contacts_Model_Entity_Contact
 			'tableClass' => 'Contacts_Model_DbTable_Contact',
 			'alias' => 'c',
 
+			'pinned' => true,
+
 			'columns' => [
 				'id',
 				'contactid',

@@ -8,6 +8,8 @@ class Processes_Model_Entity_Process
 			'tableClass' => 'Processes_Model_DbTable_Process',
 			'alias' => 'p',
 
+			'pinned' => true,
+
 			'joins' => [
 				[
 					'table' => 'contact',

@@ -8,6 +8,8 @@ class Sales_Model_Entity_Reminder
 			'tableClass' => 'Sales_Model_DbTable_Reminder',
 			'alias' => 'r',
 
+			'pinned' => true,
+
 			'joins' => [
 				[
 					'table' => 'contact',

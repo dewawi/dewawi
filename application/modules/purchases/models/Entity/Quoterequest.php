@@ -8,6 +8,8 @@ class Purchases_Model_Entity_Quoterequest
 			'tableClass' => 'Purchases_Model_DbTable_Quoterequest',
 			'alias' => 'q',
 
+			'pinned' => true,
+
 			'joins' => [
 				[
 					'table' => 'contact',

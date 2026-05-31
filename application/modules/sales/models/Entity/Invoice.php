@@ -8,6 +8,8 @@ class Sales_Model_Entity_Invoice
 			'tableClass' => 'Sales_Model_DbTable_Invoice',
 			'alias' => 'i',
 
+			'pinned' => true,
+
 			'joins' => [
 				[
 					'table' => 'contact',

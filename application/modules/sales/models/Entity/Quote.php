@@ -8,6 +8,8 @@ class Sales_Model_Entity_Quote
 			'tableClass' => 'Sales_Model_DbTable_Quote',
 			'alias' => 'q',
 
+			'pinned' => true,
+
 			'joins' => [
 				[
 					'table' => 'contact',

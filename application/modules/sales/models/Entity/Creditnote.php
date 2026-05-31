@@ -8,6 +8,8 @@ class Sales_Model_Entity_Creditnote
 			'tableClass' => 'Sales_Model_DbTable_Creditnote',
 			'alias' => 'cr',
 
+			'pinned' => true,
+
 			'joins' => [
 				[
 					'table' => 'contact',

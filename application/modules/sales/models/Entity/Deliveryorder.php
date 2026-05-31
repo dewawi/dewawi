@@ -8,6 +8,8 @@ class Sales_Model_Entity_Deliveryorder
 			'tableClass' => 'Sales_Model_DbTable_Deliveryorder',
 			'alias' => 'd',
 
+			'pinned' => true,
+
 			'joins' => [
 				[
 					'table' => 'contact',

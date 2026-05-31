@@ -8,6 +8,8 @@ class Items_Model_Entity_Item
 			'tableClass' => 'Items_Model_DbTable_Item',
 			'alias' => 'i',
 
+			'pinned' => true,
+
 			'search' => [
 				'title',
 				'sku',
