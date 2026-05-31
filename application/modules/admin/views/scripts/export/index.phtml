@@ -148,59 +148,6 @@ echo $this->Messages();
 
 <div class="row">
 	<div class="col-sm-8 col-lg-10">
-		<table id="data">
-			<thead>
-				<tr>
-					<th width="2%">
-						<?php if($this->user['admin']) : ?>
-							<input type="checkbox" class="checkall" name="checkall"/>
-						<?php endif; ?>
-					</th>
-					<th class="id" width="5%">
-						<?php echo $this->translate('ADMIN_ID'); ?>
-					</th>
-					<th class="name" width="20%">
-						<?php echo $this->translate('ADMIN_FILE_NAME'); ?>
-					</th>
-					<th class="name" width="20%">
-						<?php echo $this->translate('ADMIN_FILE_CREATED'); ?>
-					</th>
-					<th class="name" width="20%">
-						<?php echo $this->translate('ADMIN_FILE_SIZE'); ?>
-					</th>
-					<th width="8%"></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php foreach($this->exportedFiles as $id => $file) : ?>
-					<tr>
-						<td>
-							<?php if($this->user['admin']) : ?>
-								<input class="id" type="checkbox" value="<?php echo $id ?>" name="id"/>
-							<?php else : ?>
-								<input class="id" type="hidden" value="<?php echo $id ?>" name="id"/>
-							<?php endif; ?>
-						</td>
-						<td class="id">
-							<?php echo $this->escape($id); ?>
-						</td>
-						<td class="name">
-							<a href="<?php echo $this->baseUrl('/files/export/' . $file['url'] . '/' . $file['name']); ?>" download="<?php echo $file['name']; ?>">
-								<?php echo $this->escape($file['name']); ?>
-							</a>
-						</td>
-						<td class="created">
-							<?php echo $this->escape($file['created_datetime']); ?>
-						</td>
-						<td class="size">
-							<?php echo $this->escape($file['size']); ?>
-						</td>
-						<td class="buttons">
-							<?php echo $this->Button('delete'); ?>
-						</td>
-					</tr>
-				<?php endforeach; ?>
-			</tbody>
-		</table>
+		<?php echo $this->exports->render(); ?>
 	</div>
 </div>

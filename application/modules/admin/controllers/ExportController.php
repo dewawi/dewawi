@@ -4,17 +4,13 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 {
 	public function indexAction()
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
+		if ($this->getRequest()->isPost()) {
+			$this->_helper->getHelper('layout')->disableLayout();
+		}
 
-		require_once(BASE_PATH.'/library/DEEC/Directory.php');
-		$Directory = new DEEC_Directory();
-		$fileUrl = $Directory->getShortUrl($this->_user['clientid']);
-		$filePath = BASE_PATH.'/files/export/'.$fileUrl.'/';
+		$exportedFiles = $this->getExportedFilesForCurrentClient();
 
-		// Fetch a list of exported files
-		$exportedFiles = $this->getExportedFiles($fileUrl, $filePath);
-
-		$this->view->exportedFiles = $exportedFiles;
+		$this->assignExportList($exportedFiles);
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -23,16 +19,43 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		require_once(BASE_PATH.'/library/DEEC/Directory.php');
-		$Directory = new DEEC_Directory();
-		$fileUrl = $Directory->getShortUrl($this->_user['clientid']);
-		$filePath = BASE_PATH.'/files/export/'.$fileUrl.'/';
+		$exportedFiles = $this->getExportedFilesForCurrentClient();
 
-		// Fetch a list of exported files
-		$exportedFiles = $this->getExportedFiles($fileUrl, $filePath);
-
-		$this->view->exportedFiles = $exportedFiles;
+		$this->assignExportList($exportedFiles);
 		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
+	protected function getExportedFilesForCurrentClient(): array
+	{
+		require_once(BASE_PATH . '/library/DEEC/Directory.php');
+
+		$directory = new DEEC_Directory();
+		$fileUrl = $directory->getShortUrl($this->_user['clientid']);
+		$filePath = BASE_PATH . '/files/export/' . $fileUrl . '/';
+
+		return $this->getExportedFiles($fileUrl, $filePath);
+	}
+
+	protected function assignExportList(array $exportedFiles): void
+	{
+		$toolbarInlineClass = $this->getToolbarInlineClass();
+		$toolbarInline = new $toolbarInlineClass();
+
+		$list = new Admin_Model_List_Exports();
+
+		$list->configure([
+			'items' => $exportedFiles,
+			'view' => $this->view,
+			'module' => 'admin',
+			'controller' => 'export',
+			'toolbarInline' => $toolbarInline,
+			'context' => [
+				'user' => $this->_user,
+				'action' => $this->getRequest()->getActionName(),
+			],
+		]);
+
+		$this->view->exports = $list;
 	}
 
 	public function exportAction()
