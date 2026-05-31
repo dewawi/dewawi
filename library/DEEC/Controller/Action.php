@@ -232,6 +232,19 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		]);
 	}
 
+	protected function saveFormAjax(DEEC_Form $form, DEEC_Model_DbTable_Entity $db, int $id): array
+	{
+		$service = new DEEC_Service_FormSaveService();
+
+		return $service->save(
+			$form,
+			$db,
+			$id,
+			(array)$this->getRequest()->getPost(),
+			true
+		);
+	}
+
 	public function pinAction()
 	{
 		$id = (int)$this->_getParam('id', 0);
@@ -334,18 +347,18 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	protected function assignPagination(array $params, $records, $items, $toolbar): void
 	{
 		if ($records === null) {
-		    return;
+			return;
 		}
 
 		$limit = (int)($params['limit'] ?? 25);
 		$page = (int)($params['page'] ?? 1);
 
 		if ($limit <= 0) {
-		    $limit = $records > 0 ? $records : 1;
+			$limit = $records > 0 ? $records : 1;
 		}
 
 		if ($page <= 0) {
-		    $page = 1;
+			$page = 1;
 		}
 
 		$count = is_countable($items) ? count($items) : 0;
@@ -354,13 +367,13 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$pages = $limit > 0 ? (int)ceil($records / $limit) : 1;
 
 		$this->view->pagination = [
-		    'count' => $count,
-		    'start' => $start,
-		    'end' => $end,
-		    'records' => $records,
-		    'page' => $page,
-		    'limit' => $limit,
-		    'pages' => $pages,
+			'count' => $count,
+			'start' => $start,
+			'end' => $end,
+			'records' => $records,
+			'page' => $page,
+			'limit' => $limit,
+			'pages' => $pages,
 		];
 
 		if ($toolbar->getElement('page')) {
