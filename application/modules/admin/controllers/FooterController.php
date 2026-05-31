@@ -2,41 +2,13 @@
 
 class Admin_FooterController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Footer();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$footersDb = new Admin_Model_DbTable_Footer();
-		$footers = $footersDb->getFooters();
-
-		$this->view->form = $form;
-		$this->view->footers = $footers;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Footer();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$footersDb = new Admin_Model_DbTable_Footer();
-		$footers = $footersDb->getFooters();
-
-		$this->view->form = $form;
-		$this->view->footers = $footers;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'footers',
+			'list' => 'Admin_Model_List_Footers',
+			'entity' => Admin_Model_Entity_Footer::listConfig(),
+		]);
 	}
 
 	public function addAction()
