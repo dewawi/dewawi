@@ -130,7 +130,9 @@ class DEEC_List_Query
 			$clientId = $this->getClientId($config);
 			$select->where($alias . '.clientid = ?', $clientId);
 		}
-		$select->where($alias.'.deleted = ?', 0);
+		if (($config['deletedFilter'] ?? true) === true) {
+			$select->where($alias . '.deleted = ?', 0);
+		}
 	}
 
 	protected function applyKeywordFilter($select, array $params, array $config): void
