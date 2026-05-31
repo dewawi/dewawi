@@ -2,41 +2,13 @@
 
 class Admin_TaxrateController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Taxrate();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$taxratesDb = new Admin_Model_DbTable_Taxrate();
-		$taxrates = $taxratesDb->getTaxrates();
-
-		$this->view->form = $form;
-		$this->view->taxrates = $taxrates;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Taxrate();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$taxratesDb = new Admin_Model_DbTable_Taxrate();
-		$taxrates = $taxratesDb->getTaxrates();
-
-		$this->view->form = $form;
-		$this->view->taxrates = $taxrates;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'taxrates',
+			'list' => 'Admin_Model_List_Taxrates',
+			'entity' => Admin_Model_Entity_Taxrate::listConfig(),
+		]);
 	}
 
 	public function addAction()

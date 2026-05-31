@@ -2,41 +2,13 @@
 
 class Admin_UomController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Uom();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$uomsDb = new Admin_Model_DbTable_Uom();
-		$uoms = $uomsDb->getUoms();
-
-		$this->view->form = $form;
-		$this->view->uoms = $uoms;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Uom();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$uomsDb = new Admin_Model_DbTable_Uom();
-		$uoms = $uomsDb->getUoms();
-
-		$this->view->form = $form;
-		$this->view->uoms = $uoms;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'uoms',
+			'list' => 'Admin_Model_List_Uoms',
+			'entity' => Admin_Model_Entity_Uom::listConfig(),
+		]);
 	}
 
 	public function addAction()
