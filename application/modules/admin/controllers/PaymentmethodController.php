@@ -2,41 +2,13 @@
 
 class Admin_PaymentmethodController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Paymentmethod();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$paymentmethodsDb = new Admin_Model_DbTable_Paymentmethod();
-		$paymentmethods = $paymentmethodsDb->getPaymentmethods();
-
-		$this->view->form = $form;
-		$this->view->paymentmethods = $paymentmethods;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Paymentmethod();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$paymentmethodsDb = new Admin_Model_DbTable_Paymentmethod();
-		$paymentmethods = $paymentmethodsDb->getPaymentmethods();
-
-		$this->view->form = $form;
-		$this->view->paymentmethods = $paymentmethods;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'paymentmethods',
+			'list' => 'Admin_Model_List_Paymentmethods',
+			'entity' => Admin_Model_Entity_Paymentmethod::listConfig(),
+		]);
 	}
 
 	public function addAction()

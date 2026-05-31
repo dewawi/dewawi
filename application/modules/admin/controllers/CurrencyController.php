@@ -2,41 +2,13 @@
 
 class Admin_CurrencyController extends DEEC_Controller_AdminAction
 {
-	public function indexAction()
+	protected function buildIndexView(): void
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Currency();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$currenciesDb = new Admin_Model_DbTable_Currency();
-		$currencies = $currenciesDb->getCurrencies();
-
-		$this->view->form = $form;
-		$this->view->currencies = $currencies;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function searchAction()
-	{
-		$this->_helper->viewRenderer->setRender('index');
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Admin_Form_Currency();
-		$toolbar = new Admin_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$currenciesDb = new Admin_Model_DbTable_Currency();
-		$currencies = $currenciesDb->getCurrencies();
-
-		$this->view->form = $form;
-		$this->view->currencies = $currencies;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->buildListView([
+			'viewKey' => 'currencies',
+			'list' => 'Admin_Model_List_Currencies',
+			'entity' => Admin_Model_Entity_Currency::listConfig(),
+		]);
 	}
 
 	public function addAction()
