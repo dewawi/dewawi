@@ -5,7 +5,7 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 	protected function buildIndexView(): void
 	{
 		$this->buildListView([
-			'viewKey' => 'invoices',
+			'viewKey' => 'categories',
 			'list' => 'Admin_Model_List_Categories',
 			'entity' => Admin_Model_Entity_Category::listConfig(),
 		]);
