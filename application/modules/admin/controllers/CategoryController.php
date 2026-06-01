@@ -11,6 +11,63 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		]);
 	}
 
+	protected function getEditViewModelConfig(array $row): array
+	{
+		return [
+			'tags' => true,
+			'media' => true,
+			'slug' => true,
+			'controller' => 'category',
+		];
+	}
+
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$row['parentid']) {
+			$values['ordering'] = $this->getLatestOrdering(
+				(int)$values['parentid'],
+				(string)($row['type'] ?? ''),
+				'category'
+			) + 1;
+		}
+
+		return $values;
+	}
+
+	protected function afterEditSave(int $id, array $values, array $oldRow): void
+	{
+		if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$oldRow['parentid']) {
+			$this->setOrdering(
+				(int)$oldRow['parentid'],
+				(string)($oldRow['type'] ?? ''),
+				'category'
+			);
+
+			if (!empty($oldRow['shopid'])) {
+				$slugDb = new Admin_Model_DbTable_Slug();
+				$slugDb->updateSlug(
+					'shops',
+					'category',
+					(int)$oldRow['shopid'],
+					(int)$values['parentid'],
+					$id
+				);
+			}
+		}
+
+		if (array_key_exists('slug', $values) && !empty($oldRow['shopid'])) {
+			$slugDb = new Admin_Model_DbTable_Slug();
+			$slugDb->updateSlug(
+				'shops',
+				'category',
+				(int)$oldRow['shopid'],
+				(int)$oldRow['parentid'],
+				$id,
+				(string)$values['slug']
+			);
+		}
+	}
+
 	public function addAction()
 	{
 		header('Content-type: application/json');
@@ -43,81 +100,6 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 				//echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 			//}
 		}
-	}
-
-	public function editAction()
-	{
-		$request = $this->getRequest();
-		$id = (int)$this->_getParam('id', 0);
-		$isAjax = $request->isXmlHttpRequest();
-
-		$form = new Admin_Form_Category();
-		$options = $this->_helper->Options->applyFormOptions($form);
-
-		$toolbar = new Admin_Form_Toolbar();
-		$categoryDb = new Admin_Model_DbTable_Category();
-
-		$category = $categoryDb->getById($id);
-
-		if (!$category) {
-			if ($isAjax) {
-				$this->disableView();
-
-				return $this->_helper->json([
-					'ok' => false,
-					'message' => 'not_found',
-				]);
-			}
-
-			$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_NOT_FOUND');
-			return $this->_helper->redirector->gotoSimple('index', 'category');
-		}
-
-		$this->_helper->Access->lock($id, $this->_user['id'], $category['locked'] ?? 0, $category['lockedtime'] ?? null);
-
-		if ($request->isPost()) {
-			if ($isAjax) {
-				$this->disableView();
-
-				return $this->_helper->json(
-					$this->saveFormAjax($form, $categoryDb, $id)
-				);
-			}
-
-			$post = (array)$request->getPost();
-
-			if (!$form->isValid($post)) {
-				$form->setValues($post);
-			} else {
-				$values = $form->getFilteredValues();
-
-				$categoryDb->updateById($id, $values);
-
-				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-
-				return $this->_helper->redirector->gotoSimple('edit', 'category', null, ['id' => $id]);
-			}
-		} else {
-			$locale = Zend_Registry::get('Zend_Locale');
-			$categoryDisplay = DEEC_Display::rowToFormValues($form, $category, $locale);
-
-			$form->setValues($categoryDisplay);
-
-			$this->_helper->MultiEntityLoader->populate($form, $id, 'admin', 'category');
-		}
-
-		$vmService = new Admin_Service_CategoryEditViewModel();
-		$vm = $vmService->build($id, (array)$this->_user, (array)$category);
-
-		$this->view->assign(array_merge($vm, [
-			'id' => $id,
-			'form' => $form,
-			'toolbar' => $toolbar,
-			'options' => $options,
-			'activeTab' => $request->getCookie('tab', null),
-		]));
-
-		$this->assignMessages();
 	}
 
 	public function copyAction()

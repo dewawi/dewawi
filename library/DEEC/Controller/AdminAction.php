@@ -2,23 +2,6 @@
 
 abstract class DEEC_Controller_AdminAction extends DEEC_Controller_Action
 {
-	protected function getAdminDb(): DEEC_Model_DbTable_Entity
-	{
-		$class = $this->getAdminDbClass();
-
-		if (!class_exists($class)) {
-			throw new RuntimeException('Admin DB class not found: ' . $class);
-		}
-
-		$db = new $class();
-
-		if (!$db instanceof DEEC_Model_DbTable_Entity) {
-			throw new RuntimeException($class . ' must extend DEEC_Model_DbTable_Entity');
-		}
-
-		return $db;
-	}
-
 	public function sortAction()
 	{
 		$this->disableView();
@@ -30,7 +13,7 @@ abstract class DEEC_Controller_AdminAction extends DEEC_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 		$targetOrdering = $this->_getParam('ordering', '');
 
-		$db = $this->getAdminDb();
+		$db = $this->getDb();
 		$row = $db->getById($id);
 
 		if (!$row) {
@@ -74,7 +57,7 @@ abstract class DEEC_Controller_AdminAction extends DEEC_Controller_Action
 			return;
 		}
 
-		$db = $this->getAdminDb();
+		$db = $this->getDb();
 		$orderingField = $db->getOrderingField();
 
 		if ($orderingField === null) {
@@ -100,7 +83,7 @@ abstract class DEEC_Controller_AdminAction extends DEEC_Controller_Action
 
 	protected function setOrdering(int $parentId, string $module, string $controller): void
 	{
-		$db = $this->getAdminDb();
+		$db = $this->getDb();
 		$orderingField = $db->getOrderingField();
 
 		if ($orderingField === null) {
@@ -121,7 +104,7 @@ abstract class DEEC_Controller_AdminAction extends DEEC_Controller_Action
 
 	protected function getOrdering(int $parentId, string $module, string $controller): array
 	{
-		$db = $this->getAdminDb();
+		$db = $this->getDb();
 		$items = $db->getByParentId($parentId, $module, $controller);
 
 		$orderings = [];
@@ -152,7 +135,7 @@ abstract class DEEC_Controller_AdminAction extends DEEC_Controller_Action
 
 	protected function copyChilds(int $oldId, int $newId, string $module, string $controller): void
 	{
-		$db = $this->getAdminDb();
+		$db = $this->getDb();
 		$parentField = $db->getParentField();
 
 		$children = $db->getByParentId($oldId, $module, $controller);

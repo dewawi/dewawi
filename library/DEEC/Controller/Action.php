@@ -60,6 +60,103 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$this->buildIndexView();
 	}
 
+	public function editAction()
+	{
+		$request = $this->getRequest();
+		$id = (int)$this->_getParam('id', 0);
+		$isAjax = $request->isXmlHttpRequest();
+
+		$db = $this->getDb();
+		$row = $db->getById($id);
+
+		if (!$row) {
+			if ($isAjax) {
+				$this->disableView();
+
+				return $this->_helper->json([
+					'ok' => false,
+					'message' => 'not_found',
+				]);
+			}
+
+			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
+			return $this->_helper->redirector->gotoSimple('index', $this->getRequest()->getControllerName());
+		}
+
+		$this->_helper->Access->lock($id, $this->_user['id'], $row['locked'] ?? 0, $row['lockedtime'] ?? null);
+
+		$formData = $this->getEditForm();
+		$form = $formData['form'];
+		$options = $formData['options'];
+		$toolbar = $this->getEditToolbar();
+
+		if ($request->isPost()) {
+			if ($isAjax) {
+				return $this->handleEditAjaxSave($form, $db, $id, $row);
+			}
+
+			$post = (array)$request->getPost();
+
+			if (!$form->isValid($post)) {
+				$form->setValues($post);
+			} else {
+				$values = $form->getFilteredValues();
+				$values = $this->beforeEditSave($values, $row);
+
+				$db->updateById($id, $values);
+				$this->afterEditSave($id, $values, $row);
+
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
+				return $this->_helper->redirector->gotoSimple(
+					'edit',
+					$this->getRequest()->getControllerName(),
+					null,
+					['id' => $id]
+				);
+			}
+		} else {
+			$locale = Zend_Registry::get('Zend_Locale');
+			$form->setValues(DEEC_Display::rowToFormValues($form, $row, $locale));
+
+			$this->_helper->MultiEntityLoader->populate(
+				$form,
+				$id,
+				$this->getRequest()->getModuleName(),
+				$this->getRequest()->getControllerName()
+			);
+		}
+
+		$vm = $this->buildEditViewModel($id, (array)$row);
+
+		$this->view->assign(array_merge($vm, [
+			'id' => $id,
+			'form' => $form,
+			'toolbar' => $toolbar,
+			'options' => $options,
+			'activeTab' => $request->getCookie('tab', null),
+		]));
+
+		$this->assignMessages();
+	}
+
+	protected function getDb(): DEEC_Model_DbTable_Entity
+	{
+		$class = $this->getDbTableClass();
+
+		if (!class_exists($class)) {
+			throw new RuntimeException('DB class not found: ' . $class);
+		}
+
+		$db = new $class();
+
+		if (!$db instanceof DEEC_Model_DbTable_Entity) {
+			throw new RuntimeException($class . ' must extend DEEC_Model_DbTable_Entity');
+		}
+
+		return $db;
+	}
+
 	protected function disableView(): void
 	{
 		$this->_helper->viewRenderer->setNoRender();
@@ -69,6 +166,92 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	protected function disableLayout(): void
 	{
 		$this->_helper->layout->disableLayout();
+	}
+
+	protected function getFormClass(): string
+	{
+		return $this->getModuleClassPrefix()
+			. '_Form_'
+			. $this->getControllerClassName();
+	}
+
+	protected function getEditForm(): array
+	{
+		$formClass = $this->getFormClass();
+
+		$form = new $formClass();
+		$options = $this->_helper->Options->applyFormOptions($form);
+
+		return [
+			'form' => $form,
+			'options' => $options,
+		];
+	}
+
+	protected function getEditViewModelConfig(array $row): array
+	{
+		return [];
+	}
+
+	protected function buildEditViewModel(int $id, array $row): array
+	{
+		$service = $this->getEditViewModelService();
+
+		return $service->build(
+			$id,
+			(array)$this->_user,
+			$row,
+			$this->getEditViewModelConfig($row)
+		);
+	}
+
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		return $values;
+	}
+
+	protected function afterEditSave(int $id, array $values, array $oldRow): void
+	{
+	}
+
+	protected function handleEditAjaxSave(DEEC_Form $form, DEEC_Model_DbTable_Entity $db, int $id, array $row)
+	{
+		$this->disableView();
+
+		$post = (array)$this->getRequest()->getPost();
+
+		if (!$form->isValidPartial($post)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'errors' => $this->toErrorMessages($form->getErrors(), $form),
+			]);
+		}
+
+		$values = $form->getFilteredValuesPartial($post);
+		$values = $this->beforeEditSave($values, $row);
+
+		try {
+			$db->updateById($id, $values);
+			$this->afterEditSave($id, $values, $row);
+		} catch (Exception $e) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
+		}
+
+		$newRow = $db->getById($id);
+		$changedFields = array_keys($values);
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'values' => array_intersect_key($newRow, array_flip($changedFields)),
+			'display' => DEEC_Display::fromRow($form, $newRow, $changedFields),
+			'meta' => [
+				'recalc' => [],
+			],
+		]);
 	}
 
 	protected function getModuleClassPrefix(): string
@@ -98,6 +281,32 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			. $this->getControllerClassName();
 	}
 
+	protected function getEditToolbar()
+	{
+		$class = $this->getToolbarClass();
+
+		if (!class_exists($class)) {
+			return null;
+		}
+
+		return new $class();
+	}
+
+	protected function getEditViewModelService()
+	{
+		$class = $this->getModuleClassPrefix() . '_Service_EditViewModel';
+
+		if (class_exists($class)) {
+			return new $class();
+		}
+
+		if (class_exists('DEEC_Service_EditViewModel')) {
+			return new DEEC_Service_EditViewModel();
+		}
+
+		return null;
+	}
+
 	protected function getNotFoundMessage(): string
 	{
 		return 'MESSAGES_' . strtoupper($this->getRequest()->getControllerName()) . '_NOT_FOUND';
@@ -105,10 +314,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 	protected function loadRow(int $id): ?array
 	{
-		$dbClass = $this->getDbTableClass();
-
-		$db = new $dbClass();
-		$row = $db->getById($id);
+		$row = $this->getDb()->getById($id);
 
 		return $row ? (array)$row : null;
 	}
@@ -211,8 +417,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 	protected function getRowsByParentId(int $parentId)
 	{
-		$dbClass = $this->getDbTableClass();
-		$db = new $dbClass();
+		$db = $this->getDb();
 
 		if (!method_exists($db, 'getByParentId')) {
 			return $this->_helper->json([
