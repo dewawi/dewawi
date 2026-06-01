@@ -46,7 +46,7 @@ class Admin_Form_Category extends DEEC_Form
 				'size' => 12,
 				'maxlength' => 255,
 			],
-			'tab' => 'seo',
+			'tab' => 'overview',
 			'col' => 12,
 		]);
 
@@ -60,7 +60,7 @@ class Admin_Form_Category extends DEEC_Form
 				'cols' => 75,
 				'maxlength' => 1000,
 			],
-			'tab' => 'seo',
+			'tab' => 'overview',
 			'col' => 12,
 		]);
 
@@ -73,7 +73,7 @@ class Admin_Form_Category extends DEEC_Form
 				'size' => 12,
 				'maxlength' => 255,
 			],
-			'tab' => 'seo',
+			'tab' => 'overview',
 			'col' => 6,
 		]);
 
@@ -104,7 +104,7 @@ class Admin_Form_Category extends DEEC_Form
 				'rows' => 18,
 				'class' => 'editor',
 			],
-			'tab' => 'content',
+			'tab' => 'overview',
 			'col' => 12,
 		]);
 
@@ -122,7 +122,7 @@ class Admin_Form_Category extends DEEC_Form
 				'rows' => 18,
 				'class' => 'editor',
 			],
-			'tab' => 'content',
+			'tab' => 'overview',
 			'col' => 12,
 		]);
 
@@ -140,7 +140,7 @@ class Admin_Form_Category extends DEEC_Form
 				'rows' => 18,
 				'class' => 'editor',
 			],
-			'tab' => 'content',
+			'tab' => 'overview',
 			'col' => 12,
 		]);
 
@@ -158,7 +158,7 @@ class Admin_Form_Category extends DEEC_Form
 				'rows' => 18,
 				'class' => 'editor',
 			],
-			'tab' => 'content',
+			'tab' => 'overview',
 			'col' => 12,
 		]);
 
@@ -176,7 +176,7 @@ class Admin_Form_Category extends DEEC_Form
 				'rows' => 18,
 				'class' => 'editor',
 			],
-			'tab' => 'content',
+			'tab' => 'overview',
 			'col' => 12,
 		]);
 
@@ -201,7 +201,7 @@ class Admin_Form_Category extends DEEC_Form
 				'item' => 'ITEM',
 			],
 			'default' => 'contact',
-			'tab' => 'settings',
+			'tab' => 'overview',
 			'col' => 3,
 		]);
 
@@ -212,7 +212,17 @@ class Admin_Form_Category extends DEEC_Form
 			'options' => [],
 			'source' => 'language',
 			'default' => '',
-			'tab' => 'settings',
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'activated',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_ACTIVATED',
+			'format' => ['type' => 'int'],
+			'default' => 0,
+			'tab' => 'overview',
 			'col' => 3,
 		]);
 
@@ -222,18 +232,7 @@ class Admin_Form_Category extends DEEC_Form
 			'label' => 'ADMIN_CLIENT',
 			'options' => [],
 			'default' => '0',
-			'tab' => 'settings',
 			'col' => 6,
-		]);
-
-		$this->addElement([
-			'name' => 'activated',
-			'type' => 'checkbox',
-			'label' => 'ADMIN_ACTIVATED',
-			'format' => ['type' => 'int'],
-			'default' => 0,
-			'tab' => 'settings',
-			'col' => 3,
 		]);
 	}
 }

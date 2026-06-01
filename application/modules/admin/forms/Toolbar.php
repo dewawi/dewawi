@@ -41,21 +41,6 @@ class Admin_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'clientid',
-			'type' => 'select',
-			'default' => 'all',
-			'options' => [
-				'0' => 'CLIENTS_ALL',
-			],
-			'source' => 'client',
-			'filter' => true,
-			'toolbar' => 'category',
-			'wrap' => false,
-			'format' => ['type' => 'string'],
-			'attribs' => ['class' => 'hidden-sm'],
-		]);
-
-		$this->addElement([
 			'name' => 'parentid',
 			'type' => 'select',
 			'default' => 'all',
@@ -75,11 +60,10 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'type' => 'select',
 			'default' => 'all',
 			'options' => [
+				'0' => 'ADMIN_SELECT',
 				'contact' => 'CONTACTS',
 				'item' => 'ITEMS',
-				'shop' => 'SHOPS',
 			],
-			'source' => 'client',
 			'filter' => true,
 			'toolbar' => 'category',
 			'wrap' => false,

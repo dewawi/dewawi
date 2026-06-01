@@ -159,15 +159,5 @@ class Admin_Form_Page extends DEEC_Form
 			'tab' => 'settings',
 			'col' => 3,
 		]);
-
-		$this->addElement([
-			'name' => 'clientid',
-			'type' => 'select',
-			'label' => 'ADMIN_CLIENT',
-			'options' => [],
-			'default' => '0',
-			'tab' => 'settings',
-			'col' => 6,
-		]);
 	}
 }
