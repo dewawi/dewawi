@@ -158,9 +158,8 @@ abstract class DEEC_Controller_AdminAction extends DEEC_Controller_Action
 		$children = $db->getByParentId($oldId, $module, $controller);
 
 		foreach ($children as $child) {
-			unset($child['id']);
-
 			$oldChildId = (int)$child['id'];
+			unset($child['id']);
 
 			$child[$parentField] = $newId;
 			$child['modified'] = null;
