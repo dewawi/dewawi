@@ -210,6 +210,8 @@ class DEEC_Site_Router
 		foreach ($slugs as $slug) {
 			$slugData = $slug->toArray();
 			$slugDict[$slugData['entityid']] = $slugData;
+			$key = $this->getSlugKey($slugData);
+			$slugDict[$key] = $slugData;
 		}
 
 		foreach ($slugs as $slug) {
@@ -222,7 +224,7 @@ class DEEC_Site_Router
 			$fullSlug = $this->buildFullSlug($slugData, $slugDict);
 
 			$router->addRoute(
-				'slug_' . $slugData['controller'] . '_' . $slugData['entityid'],
+				$this->getRouteName($slugData),
 				new Zend_Controller_Router_Route(
 					$fullSlug,
 					array(
@@ -246,5 +248,15 @@ class DEEC_Site_Router
 		}
 
 		return $slug;
+	}
+
+	protected function getSlugKey(array $slugData)
+	{
+		return $slugData['module'] . ':' . $slugData['controller'] . ':' . $slugData['entityid'];
+	}
+
+	protected function getRouteName(array $slugData)
+	{
+		return 'slug_' . $slugData['controller'] . '_' . $slugData['entityid'];
 	}
 }

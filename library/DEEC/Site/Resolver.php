@@ -4,7 +4,7 @@ class DEEC_Site_Resolver
 {
 	public function resolveByHost($host)
 	{
-		$host = strtolower(trim((string) $host));
+		$host = $this->normalizeHost($host);
 
 		if ($host === '') {
 			return null;
@@ -15,7 +15,7 @@ class DEEC_Site_Resolver
 
 		foreach ($shops as $shop) {
 			$shopData = $shop->toArray();
-			$shopHost = strtolower((string) parse_url($shopData['url'], PHP_URL_HOST));
+			$shopHost = $this->normalizeHost(parse_url($shopData['url'], PHP_URL_HOST));
 
 			if ($shopHost !== '' && $shopHost === $host) {
 				$shopData['checkoutenabled'] = true;
@@ -42,5 +42,14 @@ class DEEC_Site_Resolver
 		}
 
 		return array_values(array_unique($features));
+	}
+
+	protected function normalizeHost($host)
+	{
+		$host = strtolower(trim((string) $host));
+		$host = preg_replace('/:\d+$/', '', $host);
+		$host = preg_replace('/^www\./', '', $host);
+
+		return $host;
 	}
 }
