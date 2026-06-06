@@ -52,21 +52,6 @@ class Admin_Model_DbTable_Country extends DEEC_Model_DbTable_Entity
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function lock($id)
-	{
-		$data = array();
-		$data['locked'] = $this->_user['id'];
-		$data['lockedtime'] = $this->_date;
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function unlock($id)
-	{
-		$data = array();
-		$data['locked'] = 0;
-		$this->update($data, 'id = '. (int)$id);
-	}
-
 	public function deleteCountry($id)
 	{
 		$this->delete('id =' . (int)$id);

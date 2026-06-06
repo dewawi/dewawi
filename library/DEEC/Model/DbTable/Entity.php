@@ -242,4 +242,36 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 	{
 		return $this->orderingField;
 	}
+
+	public function lock(int $id): void
+	{
+		$data = [
+			'locked' => $this->getUserId(),
+			'lockedtime' => $this->_date,
+		];
+
+		$where = [
+			$this->getAdapter()->quoteInto('id = ?', $id),
+			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
+			$this->getAdapter()->quoteInto('deleted = ?', 0),
+		];
+
+		$this->update($data, $where);
+	}
+
+	public function unlock(int $id): void
+	{
+		$data = [
+			'locked' => 0,
+			'lockedtime' => null,
+		];
+
+		$where = [
+			$this->getAdapter()->quoteInto('id = ?', $id),
+			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
+			$this->getAdapter()->quoteInto('deleted = ?', 0),
+		];
+
+		$this->update($data, $where);
+	}
 }

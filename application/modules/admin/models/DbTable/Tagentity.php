@@ -96,21 +96,6 @@ class Admin_Model_DbTable_Tagentity extends DEEC_Model_DbTable_Entity
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function lock($id)
-	{
-		$data = array();
-		$data['locked'] = $this->_user['id'];
-		$data['lockedtime'] = $this->_date;
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function unlock($id)
-	{
-		$data = array();
-		$data['locked'] = 0;
-		$this->update($data, 'id = '. (int)$id);
-	}
-
 	public function deleteTagentity($id)
 	{
 		$data = array();
