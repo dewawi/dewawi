@@ -1,6 +1,6 @@
 <?php
 
-class Campaigns_Model_DbTable_Campaign extends Zend_Db_Table_Abstract
+class Campaigns_Model_DbTable_Campaign extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'campaign';
@@ -94,23 +94,6 @@ class Campaigns_Model_DbTable_Campaign extends Zend_Db_Table_Abstract
 			'state' => $state,
 			'modified' => $this->_date,
 			'modifiedby' => $this->_user['id']
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function lock($id)
-	{
-		$data = array(
-			'locked' => $this->_user['id'],
-			'lockedtime' => $this->_date
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function unlock($id)
-	{
-		$data = array(
-			'locked' => 0
 		);
 		$this->update($data, 'id = '. (int)$id);
 	}

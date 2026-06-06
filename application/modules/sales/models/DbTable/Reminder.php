@@ -101,23 +101,6 @@ class Sales_Model_DbTable_Reminder extends DEEC_Model_DbTable_Entity
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function lock($id)
-	{
-		$data = array(
-			'locked' => $this->_user['id'],
-			'lockedtime' => $this->_date
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function unlock($id)
-	{
-		$data = array(
-			'locked' => 0
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
 	public function deleteReminder($id)
 	{
 		$data = array(

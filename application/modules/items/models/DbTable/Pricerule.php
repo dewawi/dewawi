@@ -92,24 +92,6 @@ class Items_Model_DbTable_Pricerule extends DEEC_Model_DbTable_Entity
 		$this->update($data, $where);
 	}
 
-	public function lock($id)
-	{
-		$id = (int)$id;
-		$data = array();
-		$data['locked'] = $this->_user['id'];
-		$data['lockedtime'] = $this->_date;
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
-	}
-
-	public function unlock($id)
-	{
-		$id = (int)$id;
-		$data = array('locked' => 0);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
-	}
-
 	public function deletePricerule($id)
 	{
 		$id = (int)$id;
