@@ -3,7 +3,7 @@
 class Shops_Model_DbTable_Slide extends Zend_Db_Table_Abstract
 {
 
-	protected $_name = 'slide';
+	protected $_name = 'media';
 
 	protected $_date = null;
 
@@ -31,7 +31,8 @@ class Shops_Model_DbTable_Slide extends Zend_Db_Table_Abstract
 		$shopid = (int)$shopid;
 
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
+		$where[] = $this->getAdapter()->quoteInto('module = ?', 'shops');
+		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $shopid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');

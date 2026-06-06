@@ -62,7 +62,7 @@ $content = str_replace('{contact}', $contact, $content);
 			<?php foreach($this->slides as $index => $slide) : ?>
 				<div class="carousel-item<?php echo $index === 0 ? ' active' : ''; ?>">
 					<a href="<?php echo $slide->url; ?>">
-						<img src="<?php echo $this->baseUrl(); ?>/media/slide/<?php echo $slide->image; ?>" class="d-block w-100" alt="...">
+						<img src="<?php echo $this->baseUrl(); ?>/media/slide/<?php echo $slide->url; ?>" class="d-block w-100" alt="...">
 					</a>
 					<div class="carousel-caption d-md-block text-left align-middle">
 						<a href="<?php echo $slide->url; ?>">

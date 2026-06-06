@@ -33,8 +33,10 @@ class Admin_Service_EditViewModel
 			$vm['media'] = $mediaRows;
 			$vm['imageForms'] = $this->buildImageForms($mediaRows);
 			$vm['mediaPath'] = $this->buildClientMediaPath((int)($user['clientid'] ?? 0));
+echo $vm['mediaPath'];
 			$vm['subfolders'] = [
 				'category' => $this->getSubfolders(BASE_PATH . '/media/' . $vm['mediaPath'] . '/category/'),
+				'slide' => $this->getSubfolders(BASE_PATH . '/media/' . $vm['mediaPath'] . '/slide/'),
 				'downloads' => $this->getSubfolders(BASE_PATH . '/media/' . $vm['mediaPath'] . '/downloads/'),
 			];
 		}
@@ -80,8 +82,7 @@ class Admin_Service_EditViewModel
 			}
 
 			$imageForms[$imageId] = new Admin_Form_Image();
-			$imageForms[$imageId]->title->setValue((string)($mediaRow['title'] ?? ''));
-			$imageForms[$imageId]->title->setName('imagetitle' . $imageId);
+			$imageForms[$imageId]->setValue((string)($mediaRow['title'] ?? ''), 'title');
 		}
 
 		return $imageForms;

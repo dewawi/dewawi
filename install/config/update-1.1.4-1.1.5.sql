@@ -14,7 +14,7 @@ INSERT INTO media (
 	clientid
 )
 SELECT
-	id,
+	shopid,
 	'shops',
 	'slide',
 	'slide',
