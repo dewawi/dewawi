@@ -1,36 +1,37 @@
 <?php
 
-class Admin_Form_Manufacturer extends Zend_Form
+class Admin_Form_Manufacturer extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('manufacturer');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'name',
+			'type' => 'text',
+			'label' => 'ADMIN_NAME',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'language',
+			'type' => 'select',
+			'options' => [],
+			'col' => 6,
+		]);
 
-		$form['name'] = new Zend_Form_Element_Text('name');
-		$form['name']->setLabel('ADMIN_NAME')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['name'] = new Zend_Form_Element_Text('name');
-		$form['name']->setLabel('ADMIN_NAME')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['language'] = new Zend_Form_Element_Select('language');
-		$form['language']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
-
-		$form['clientid'] = new Zend_Form_Element_Select('clientid');
-		$form['clientid']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '0');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'clientid',
+			'type' => 'select',
+			'options' => [],
+			'default' => 0,
+			'col' => 6,
+		]);
 	}
 }

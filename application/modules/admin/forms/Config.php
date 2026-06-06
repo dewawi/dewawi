@@ -1,43 +1,58 @@
 <?php
 
-class Admin_Form_Config extends Zend_Form
+class Admin_Form_Config extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('config');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'timezone',
+			'type' => 'text',
+			'label' => 'ADMIN_TIMEZONE',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'language',
+			'type' => 'text',
+			'label' => 'ADMIN_LANGUAGE',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);
 
-		$form['timezone'] = new Zend_Form_Element_Text('timezone');
-		$form['timezone']->setLabel('ADMIN_TIMEZONE')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
+		$this->addElement([
+			'name' => 'analytics',
+			'type' => 'textarea',
+			'label' => 'ADMIN_ANALYTICS',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'cols' => 62,
+				'rows' => 30,
+			],
+			'col' => 12,
+		]);
 
-		$form['language'] = new Zend_Form_Element_Text('language');
-		$form['language']->setLabel('ADMIN_LANGUAGE')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
+		$this->addElement([
+			'name' => 'logo',
+			'type' => 'text',
+			'label' => 'ADMIN_LOGO',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);
 
-		$form['analytics'] = new Zend_Form_Element_Textarea('analytics');
-		$form['analytics']->setLabel('ADMIN_ANALYTICS')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('cols', '62')
-			->setAttrib('rows', '30')
-			->setAttrib('default', '');
-
-		$form['logo'] = new Zend_Form_Element_Text('logo');
-		$form['logo']->setLabel('ADMIN_LOGO')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
-
-		$form['footer'] = new Zend_Form_Element_Text('footer');
-		$form['footer']->setLabel('ADMIN_FOOTER')
-			->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'footer',
+			'type' => 'text',
+			'label' => 'ADMIN_FOOTER',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);
 	}
 }

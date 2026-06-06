@@ -1,45 +1,60 @@
 <?php
 
-class Admin_Form_Template extends Zend_Form
+class Admin_Form_Template extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('template');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'description',
+			'type' => 'text',
+			'label' => 'ADMIN_NAME',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'logo',
+			'type' => 'text',
+			'label' => 'ADMIN_LOGO',
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
 
-		$form['description'] = new Zend_Form_Element_Text('description');
-		$form['description']->setLabel('ADMIN_NAME')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'website',
+			'type' => 'text',
+			'label' => 'ADMIN_WEBSITE',
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
 
-		$form['logo'] = new Zend_Form_Element_Text('logo');
-		$form['logo']->setLabel('ADMIN_LOGO')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'language',
+			'type' => 'select',
+			'options' => [],
+			'col' => 6,
+		]);
 
-		$form['website'] = new Zend_Form_Element_Text('website');
-		$form['website']->setLabel('ADMIN_WEBSITE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'clientid',
+			'type' => 'select',
+			'options' => [],
+			'default' => 0,
+			'col' => 6,
+		]);
 
-		$form['language'] = new Zend_Form_Element_Select('language');
-		$form['language']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
-
-		$form['clientid'] = new Zend_Form_Element_Select('clientid');
-		$form['clientid']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '0');
-
-		$form['activated'] = new Zend_Form_Element_Checkbox('activated');
-		$form['activated']->addFilter('Int')->removeDecorator('Label');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'activated',
+			'type' => 'checkbox',
+			'format' => ['type' => 'int'],
+			'col' => 12,
+		]);
 	}
 }

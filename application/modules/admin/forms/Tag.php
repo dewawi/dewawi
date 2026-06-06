@@ -1,102 +1,135 @@
 <?php
 
-class Admin_Form_Tag extends Zend_Form
+class Admin_Form_Tag extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('tag');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'title',
+			'type' => 'text',
+			'label' => 'ADMIN_TITLE',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'image',
+			'type' => 'text',
+			'label' => 'ADMIN_TAG_IMAGE',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);
 
-		$form['title'] = new Zend_Form_Element_Text('title');
-		$form['title']->setLabel('ADMIN_TITLE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'description',
+			'type' => 'textarea',
+			'label' => 'ADMIN_TAG_DESCRIPTION',
+			'format' => ['type' => 'html'],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'col' => 12,
+		]);
 
-		$form['image'] = new Zend_Form_Element_Text('image');
-		$form['image']->setLabel('ADMIN_TAG_IMAGE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'shortdescription',
+			'type' => 'textarea',
+			'label' => 'ADMIN_TAG_SHORT_DESCRIPTION',
+			'format' => ['type' => 'html'],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'col' => 12,
+		]);
 
-		$form['description'] = new Zend_Form_Element_Textarea('description');
-		$form['description']->setLabel('ADMIN_TAG_DESCRIPTION')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'minidescription',
+			'type' => 'textarea',
+			'label' => 'ADMIN_TAG_MINI_DESCRIPTION',
+			'format' => ['type' => 'html'],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'col' => 12,
+		]);
 
-		$form['shortdescription'] = new Zend_Form_Element_Textarea('shortdescription');
-		$form['shortdescription']->setLabel('ADMIN_TAG_SHORT_DESCRIPTION')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'header',
+			'type' => 'textarea',
+			'label' => 'CREDIT_NOTES_HEADER',
+			'format' => ['type' => 'html'],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'col' => 12,
+		]);
 
-		$form['minidescription'] = new Zend_Form_Element_Textarea('minidescription');
-		$form['minidescription']->setLabel('ADMIN_TAG_MINI_DESCRIPTION')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'footer',
+			'type' => 'textarea',
+			'label' => 'CREDIT_NOTES_FOOTER',
+			'format' => ['type' => 'html'],
+			'attribs' => [
+				'cols' => 75,
+				'rows' => 18,
+				'class' => 'editor',
+			],
+			'col' => 12,
+		]);
 
-		$form['header'] = new Zend_Form_Element_Textarea('header');
-		$form['header']->setLabel('CREDIT_NOTES_HEADER')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'parentid',
+			'type' => 'select',
+			'label' => 'ADMIN_MAIN_TAG',
+			'format' => ['type' => 'int'],
+			'options' => [
+				0 => 'ADMIN_MAIN_TAG',
+			],
+			'default' => 0,
+			'col' => 6,
+		]);
 
-		$form['footer'] = new Zend_Form_Element_Textarea('footer');
-		$form['footer']->setLabel('CREDIT_NOTES_FOOTER')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','img','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('src','style','class','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
+		$this->addElement([
+			'name' => 'type',
+			'type' => 'select',
+			'format' => ['type' => 'string'],
+			'options' => [
+				'contact' => 'CONTACT',
+				'item' => 'ITEM',
+			],
+			'default' => 'contact',
+			'col' => 6,
+		]);
 
-		$form['parentid'] = new Zend_Form_Element_Select('parentid');
-		$form['parentid']->setLabel('ADMIN_MAIN_TAG')
-			->addMultiOption('0', 'ADMIN_MAIN_TAG')
-			->setAttrib('default', '0');
+		$this->addElement([
+			'name' => 'language',
+			'type' => 'select',
+			'options' => [],
+			'col' => 6,
+		]);
 
-		$form['type'] = new Zend_Form_Element_Select('type');
-		$form['type']->setDecorators(array('ViewHelper'))
-			->addMultiOption('contact', 'CONTACT')
-			->addMultiOption('item', 'ITEM')
-			->setAttrib('default', 'contact');
-
-		$form['language'] = new Zend_Form_Element_Select('language');
-		$form['language']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
-
-		$form['clientid'] = new Zend_Form_Element_Select('clientid');
-		$form['clientid']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '0');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'clientid',
+			'type' => 'select',
+			'format' => ['type' => 'int'],
+			'options' => [],
+			'default' => 0,
+			'col' => 6,
+		]);
 	}
 }

@@ -1,36 +1,53 @@
 <?php
 
-class Admin_Form_Country extends Zend_Form
+class Admin_Form_Country extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('country');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'code',
+			'type' => 'text',
+			'label' => 'ADMIN_COUNTRY_CODE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'maxlength' => 10,
+			],
+			'col' => 6,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'name',
+			'type' => 'text',
+			'label' => 'ADMIN_COUNTRY',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'maxlength' => 255,
+			],
+			'col' => 6,
+		]);
 
-		$form['code'] = new Zend_Form_Element_Text('code');
-		$form['code']->setLabel('ADMIN_COUNTRY_CODE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'language',
+			'type' => 'select',
+			'label' => 'ADMIN_LANGUAGE',
+			'options' => [],
+			'col' => 6,
+		]);
 
-		$form['name'] = new Zend_Form_Element_Text('name');
-		$form['name']->setLabel('ADMIN_COUNTRY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['language'] = new Zend_Form_Element_Select('language');
-		$form['language']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '');
-
-		$form['clientid'] = new Zend_Form_Element_Select('clientid');
-		$form['clientid']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '0');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'clientid',
+			'type' => 'select',
+			'label' => 'ADMIN_CLIENT',
+			'options' => [],
+			'default' => 0,
+			'col' => 6,
+		]);
 	}
 }

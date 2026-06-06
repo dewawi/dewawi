@@ -1,38 +1,47 @@
 <?php
 
-class Admin_Form_Currency extends Zend_Form
+class Admin_Form_Currency extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('currency');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'code',
+			'type' => 'text',
+			'label' => 'ADMIN_CURRENCY_CODE',
+			'format' => ['type' => 'string'],
+			'col' => 4,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'name',
+			'type' => 'text',
+			'label' => 'ADMIN_NAME',
+			'format' => ['type' => 'string'],
+			'col' => 4,
+		]);
 
-		$form['code'] = new Zend_Form_Element_Text('code');
-		$form['code']->setLabel('ADMIN_CURRENCY_CODE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'symbol',
+			'type' => 'text',
+			'label' => 'ADMIN_CURRENCY_SYMBOL',
+			'format' => ['type' => 'string'],
+			'col' => 4,
+		]);
 
-		$form['name'] = new Zend_Form_Element_Text('name');
-		$form['name']->setLabel('ADMIN_NAME')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['symbol'] = new Zend_Form_Element_Text('symbol');
-		$form['symbol']->setLabel('ADMIN_CURRENCY_SYMBOL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['clientid'] = new Zend_Form_Element_Select('clientid');
-		$form['clientid']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '0');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'clientid',
+			'type' => 'select',
+			'label' => 'ADMIN_CLIENT',
+			'options' => [],
+			'default' => 0,
+			'col' => 12,
+		]);
 	}
 }

@@ -1,44 +1,59 @@
 <?php
 
-class Admin_Form_Footer extends Zend_Form
+class Admin_Form_Footer extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('footer');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'templateid',
+			'type' => 'text',
+			'label' => 'ADMIN_TEMPLATE_ID',
+			'format' => ['type' => 'int'],
+			'col' => 6,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'column',
+			'type' => 'text',
+			'label' => 'ADMIN_COLUMN',
+			'format' => ['type' => 'int'],
+			'col' => 6,
+		]);
 
-		$form['templateid'] = new Zend_Form_Element_Text('templateid');
-		$form['templateid']->setLabel('ADMIN_TEMPLATE_ID')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'text',
+			'type' => 'textarea',
+			'label' => 'ADMIN_TEXT',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'cols' => 62,
+				'rows' => 5,
+			],
+			'col' => 12,
+		]);
 
-		$form['column'] = new Zend_Form_Element_Text('column');
-		$form['column']->setLabel('ADMIN_COLUMN')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
+		$this->addElement([
+			'name' => 'width',
+			'type' => 'text',
+			'label' => 'ADMIN_WIDTH',
+			'format' => ['type' => 'int'],
+			'col' => 6,
+		]);
 
-		$form['text'] = new Zend_Form_Element_Textarea('text');
-		$form['text']->setLabel('ADMIN_TEXT')
-			->setAttrib('cols', '62')
-			->setAttrib('rows', '5')
-			->setAttrib('default', '');
-
-		$form['width'] = new Zend_Form_Element_Text('width');
-		$form['width']->setLabel('ADMIN_WIDTH')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['clientid'] = new Zend_Form_Element_Select('clientid');
-		$form['clientid']->setDecorators(array('ViewHelper'))
-			->setAttrib('default', '0');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'clientid',
+			'type' => 'select',
+			'label' => 'ADMIN_CLIENT',
+			'options' => [],
+			'default' => 0,
+			'col' => 6,
+		]);
 	}
 }

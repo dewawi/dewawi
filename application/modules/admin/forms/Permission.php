@@ -1,28 +1,46 @@
 <?php
 
-class Admin_Form_Permission extends Zend_Form
+class Admin_Form_Permission extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('permission');
+		$this->addElement([
+			'name' => 'id',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
 
-		$form = array();
+		$this->addElement([
+			'name' => 'add',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_ADD',
+			'format' => ['type' => 'int'],
+			'col' => 3,
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
+		$this->addElement([
+			'name' => 'edit',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_EDIT',
+			'format' => ['type' => 'int'],
+			'col' => 3,
+		]);
 
-		$form['add'] = new Zend_Form_Element_Checkbox('add');
-		$form['add']->addFilter('Int')->setLabel('ADMIN_ADD');
+		$this->addElement([
+			'name' => 'view',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_VIEW',
+			'format' => ['type' => 'int'],
+			'col' => 3,
+		]);
 
-		$form['edit'] = new Zend_Form_Element_Checkbox('edit');
-		$form['edit']->addFilter('Int')->setLabel('ADMIN_EDIT');
-
-		$form['view'] = new Zend_Form_Element_Checkbox('view');
-		$form['view']->addFilter('Int')->setLabel('ADMIN_VIEW');
-
-		$form['delete'] = new Zend_Form_Element_Checkbox('delete');
-		$form['delete']->addFilter('Int')->setLabel('ADMIN_DELETE');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'delete',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_DELETE',
+			'format' => ['type' => 'int'],
+			'col' => 3,
+		]);
 	}
 }
