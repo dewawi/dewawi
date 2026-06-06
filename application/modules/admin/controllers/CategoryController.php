@@ -11,16 +11,6 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		]);
 	}
 
-	protected function getEditViewModelConfig(array $row): array
-	{
-		return [
-			'tags' => true,
-			'media' => true,
-			'slug' => true,
-			'controller' => 'category',
-		];
-	}
-
 	protected function beforeEditSave(array $values, array $row): array
 	{
 		if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$row['parentid']) {

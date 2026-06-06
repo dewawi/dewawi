@@ -2,22 +2,22 @@
 
 class Admin_Service_EditViewModel
 {
-	public function build(int $id, array $user, array $row, array $config = []): array
+	public function build(int $id, array $user, array $row): array
 	{
 		$vm = [];
 
-		if (!empty($config['tags'])) {
-			$module = $config['module'] ?? $this->resolveModule((string)($row['type'] ?? ''));
-			$controller = $config['controller'] ?? 'category';
+		if ($this->hasTags($row)) {
+			$module = $this->resolveModule((string)($row['type'] ?? ''));
+			$controller = 'category';
 
 			$get = new Admin_Model_Get();
 			$vm['tags'] = $get->tags($module, $controller, $id);
 			$vm['module'] = $module;
 		}
 
-		if (!empty($config['media'])) {
-			$module = $config['module'] ?? $this->resolveModule((string)($row['type'] ?? ''));
-			$controller = $config['controller'] ?? 'category';
+		if ($this->hasMedia($row)) {
+			$module = $this->resolveModule((string)($row['type'] ?? ''));
+			$controller = 'category';
 
 			$mediaDb = new Application_Model_DbTable_Media();
 			$mediaRows = $mediaDb->getMediaByParentID($id, $module, $controller);
@@ -39,18 +39,33 @@ class Admin_Service_EditViewModel
 			];
 		}
 
-		if (!empty($config['slug']) && ($row['type'] ?? '') === 'shop') {
+		if ($this->hasSlug($row)) {
 			$slugDb = new Admin_Model_DbTable_Slug();
 
 			$vm['slug'] = $slugDb->getSlug(
 				'shops',
-				$config['controller'] ?? 'category',
+				'category',
 				(int)($row['shopid'] ?? 0),
 				$id
 			);
 		}
 
 		return $vm;
+	}
+
+	protected function hasTags(array $row): bool
+	{
+		return ($row['type'] ?? '') !== '';
+	}
+
+	protected function hasMedia(array $row): bool
+	{
+		return ($row['type'] ?? '') !== '';
+	}
+
+	protected function hasSlug(array $row): bool
+	{
+		return ($row['type'] ?? '') === 'shop';
 	}
 
 	protected function buildImageForms(array $mediaRows): array
