@@ -1,13 +1,14 @@
 <?php
 
-class Zend_View_Helper_CategoryImages extends Zend_View_Helper_Abstract
+class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 {
-	public function CategoryImages()
+	public function Images(array $config = [])
 	{
 		$v = $this->view;
 
-		$type = 'image';
-		$folder = 'category';
+		$type = $config['type'] ?? 'image';
+		$folder = $config['folder'] ?? $v->controller;
+		$parentId = $config['parentid'] ?? $v->id;
 
 		ob_start();
 		?>
