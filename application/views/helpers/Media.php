@@ -2,7 +2,7 @@
 
 class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 {
-	public function Images(array $config = [])
+	public function Media(array $config = [])
 	{
 		$v = $this->view;
 

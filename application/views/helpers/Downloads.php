@@ -1,8 +1,8 @@
 <?php
 
-class Zend_View_Helper_CategoryDownloads extends Zend_View_Helper_Abstract
+class Zend_View_Helper_Downloads extends Zend_View_Helper_Abstract
 {
-	public function CategoryDownloads()
+	public function Downloads()
 	{
 		$v = $this->view;
 
