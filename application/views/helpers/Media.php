@@ -12,6 +12,20 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 		$parentId = (int)($config['parentid'] ?? $v->id ?? 0);
 
 		$media = is_array($v->media ?? null) ? $v->media : [];
+
+		if (empty($media) && isset($v->form)) {
+			$image = (string)$v->form->getValue('image');
+
+			if ($image !== '') {
+				$media[] = [
+					'id' => $parentId,
+					'type' => $type,
+					'url' => $image,
+					'title' => (string)$v->form->getValue('title'),
+				];
+			}
+		}
+
 		$subfolders = is_array($v->subfolders[$folder] ?? null) ? $v->subfolders[$folder] : [];
 
 		ob_start();
