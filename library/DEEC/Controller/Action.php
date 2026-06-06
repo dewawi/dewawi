@@ -83,6 +83,12 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			return $this->_helper->redirector->gotoSimple('index', $this->getRequest()->getControllerName());
 		}
 
+		$beforeEditResult = $this->beforeEdit((array)$row);
+
+		if ($beforeEditResult !== null) {
+			return $beforeEditResult;
+		}
+
 		$this->_helper->Access->lock($id, $this->_user['id'], $row['locked'] ?? 0, $row['lockedtime'] ?? null);
 
 		$formData = $this->getEditForm();
@@ -188,21 +194,24 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		];
 	}
 
-	protected function getEditViewModelConfig(array $row): array
-	{
-		return [];
-	}
-
 	protected function buildEditViewModel(int $id, array $row): array
 	{
 		$service = $this->getEditViewModelService();
 
+		if (!$service) {
+			return [];
+		}
+
 		return $service->build(
 			$id,
 			(array)$this->_user,
-			$row,
-			$this->getEditViewModelConfig($row)
+			$row
 		);
+	}
+
+	protected function beforeEdit(array $row)
+	{
+		return null;
 	}
 
 	protected function beforeEditSave(array $values, array $row): array
@@ -294,6 +303,18 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 	protected function getEditViewModelService()
 	{
+		$class = $this->getEditViewModelServiceClass();
+
+		if ($class && class_exists($class)) {
+			return new $class();
+		}
+
+		$class = $this->getModuleClassPrefix() . '_Service_' . $this->getControllerClassName() . 'EditViewModel';
+
+		if (class_exists($class)) {
+			return new $class();
+		}
+
 		$class = $this->getModuleClassPrefix() . '_Service_EditViewModel';
 
 		if (class_exists($class)) {
@@ -304,6 +325,11 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			return new DEEC_Service_EditViewModel();
 		}
 
+		return null;
+	}
+
+	protected function getEditViewModelServiceClass(): ?string
+	{
 		return null;
 	}
 
