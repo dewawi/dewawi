@@ -50,6 +50,7 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'tag', 'action'=>'index', 'type'=>'shop', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_TAGS'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'menuitem', 'action'=>'index', 'type'=>'shop', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_MENUS'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'category', 'action'=>'index', 'type'=>'shop', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_CATEGORIES'); ?></a></li>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'slide', 'action'=>'index', 'type'=>'null', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_SLIDES'); ?></a></li>
 
 		</ul>
 		<?php if($this->view->user['admin']) : ?>
