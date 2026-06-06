@@ -1559,57 +1559,57 @@ a.dw-nav-link {
 /* Keep only until matching views/helpers are migrated to dw-* structures.    */
 /* -------------------------------------------------------------------------- */
 
-/* Image Gallery */
+/* Media Gallery */
 
-.image-gallery {
+.media-gallery {
   margin-top: 20px;
 }
 
-.image-gallery .image-grid {
+.media-gallery .image-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
   margin: 10px;
 }
 
-.image-gallery .image {
+.media-gallery .image {
   text-align: center;
 }
 
-.image-gallery .image-thumbnail {
+.media-gallery .image-thumbnail {
   width: 100%;
   height: auto;
   border-radius: 5px;
   transition: transform 0.2s ease-in-out;
 }
 
-.image-gallery .image-thumbnail:hover {
+.media-gallery .image-thumbnail:hover {
   transform: scale(1.05);
 }
 
-.image-gallery .image-caption {
+.media-gallery .image-caption {
   margin-top: 5px;
   font-size: 14px;
   color: #555;
 }
 
-.image-gallery .image-actions {
+.media-gallery .image-actions {
   margin-top: 5px;
 }
 
-.image-gallery .delete-link {
+.media-gallery .delete-link {
   color: red;
   text-decoration: none;
 }
 
-.image-gallery .delete-link:hover {
+.media-gallery .delete-link:hover {
   text-decoration: underline;
 }
-.image-gallery form dd {
+.media-gallery form dd {
   margin-left: 0;
   width: 100%;
 }
-.image-gallery form dd input {
+.media-gallery form dd input {
   margin: 0;
 }
  /* Map */

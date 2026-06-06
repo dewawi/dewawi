@@ -8,56 +8,55 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 
 		$type = $config['type'] ?? 'image';
 		$folder = $config['folder'] ?? $v->controller;
-		$parentId = $config['parentid'] ?? $v->id;
+		$controller = $config['controller'] ?? $v->controller;
+		$parentId = (int)($config['parentid'] ?? $v->id ?? 0);
+
+		$media = is_array($v->media ?? null) ? $v->media : [];
+		$subfolders = is_array($v->subfolders[$folder] ?? null) ? $v->subfolders[$folder] : [];
 
 		ob_start();
 		?>
-		<h3>Category Images</h3>
 
-		<div class="image-gallery">
-			<?php if (count($v->media) > 0): ?>
-				<form id="image" enctype="application/x-www-form-urlencoded" action="" method="post">
-					<div class="image-grid">
-						<?php foreach ($v->media as $file): ?>
-							<?php if (($file['type'] ?? '') != 'image') continue; ?>
+		<div class="media-gallery">
+			<?php if (count($media) > 0): ?>
+				<div class="image-grid">
+					<?php foreach ($media as $file): ?>
+						<?php if (($file['type'] ?? '') !== $type) continue; ?>
 
-							<div class="image">
-								<a href="<?php echo $this->mediaUrl($v, $folder, $file); ?>" target="_blank">
-									<img src="<?php echo $this->mediaUrl($v, $folder, $file); ?>"
-										 alt="<?php echo $v->escape($file['title'] ?? ''); ?>"
-										 class="image-thumbnail" />
-								</a>
+						<div class="image">
+							<a href="<?php echo $this->mediaUrl($v, $folder, $file); ?>" target="_blank">
+								<img src="<?php echo $this->mediaUrl($v, $folder, $file); ?>"
+									 alt="<?php echo $v->escape($file['title'] ?? ''); ?>"
+									 class="image-thumbnail" />
+							</a>
 
-								<div class="image-caption">
-									<?php echo $v->imageForms[$file['id']]->title; ?>
-									(<?php echo $v->escape($file['url']); ?>)
-								</div>
-
-								<div class="image-actions">
-									<a href="<?php echo $this->deleteUrl($v, $folder, $file); ?>"
-									   onclick="return confirm('Are you sure you want to delete this image?');"
-									   class="delete-link">Delete</a>
-								</div>
+							<div class="image-caption">
+								<?php echo $v->escape($file['title'] ?? ''); ?>
+								(<?php echo $v->escape($file['url'] ?? ''); ?>)
 							</div>
-						<?php endforeach; ?>
-					</div>
-				</form>
+
+							<div class="image-actions">
+								<a href="<?php echo $this->deleteUrl($v, $folder, $parentId, $file); ?>"
+								   onclick="return confirm('Are you sure you want to delete this file?');"
+								   class="delete-link">Delete</a>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
 			<?php else: ?>
-				<p>No images available for this category.</p>
+				<p>No media available.</p>
 			<?php endif; ?>
 		</div>
 
-		<form action="<?php echo $v->url(array('module' => 'default', 'controller' => 'media', 'action' => 'upload')); ?>"
+		<form action="<?php echo $v->url(['module' => 'default', 'controller' => 'media', 'action' => 'upload']); ?>"
 			  method="post"
 			  enctype="multipart/form-data">
 
-			<label for="imageUpload">Upload New Image:</label>
 			<input type="file" name="media[]" multiple />
 
-			<label for="subfolder">Select Subfolder:</label>
-			<select name="subfolder" id="subfolder" required>
+			<select name="subfolder">
 				<option value="0">Main Folder</option>
-				<?php foreach ($v->subfolders[$folder] as $subfolder): ?>
+				<?php foreach ($subfolders as $subfolder): ?>
 					<option value="<?php echo $v->escape($subfolder); ?>">
 						<?php echo $v->escape($subfolder); ?>
 					</option>
@@ -65,20 +64,20 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 			</select>
 
 			<input type="hidden" name="admin" value="1" />
-			<input type="hidden" name="type" value="<?php echo $type; ?>" />
-			<input type="hidden" name="controller" value="category" />
+			<input type="hidden" name="type" value="<?php echo $v->escape($type); ?>" />
 			<input type="hidden" name="module" value="<?php echo $v->escape($v->module); ?>" />
-			<input type="hidden" name="folder" value="<?php echo $folder; ?>" />
-			<input type="hidden" name="category_id" value="<?php echo $v->escape($v->id); ?>" />
+			<input type="hidden" name="controller" value="<?php echo $v->escape($controller); ?>" />
+			<input type="hidden" name="folder" value="<?php echo $v->escape($folder); ?>" />
+			<input type="hidden" name="parentid" value="<?php echo $parentId; ?>" />
 
 			<button type="submit">Upload</button>
 		</form>
-		<?php
 
+		<?php
 		return ob_get_clean();
 	}
 
-	protected function mediaUrl($v, $folder, array $file)
+	protected function mediaUrl($v, string $folder, array $file): string
 	{
 		return $v->baseUrl()
 			. '/media/'
@@ -86,19 +85,19 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 			. '/'
 			. $folder
 			. '/'
-			. $v->escape($file['url']);
+			. $v->escape($file['url'] ?? '');
 	}
 
-	protected function deleteUrl($v, $folder, array $file)
+	protected function deleteUrl($v, string $folder, int $parentId, array $file): string
 	{
-		return $v->url(array(
+		return $v->url([
 			'module' => 'default',
 			'controller' => 'media',
 			'action' => 'delete',
 			'folder' => $folder,
-			'parentid' => $v->id,
-			'id' => $file['id'],
+			'parentid' => $parentId,
+			'id' => $file['id'] ?? 0,
 			'url' => $v->module . '|' . $v->controller . '|' . $v->action,
-		));
+		]);
 	}
 }
