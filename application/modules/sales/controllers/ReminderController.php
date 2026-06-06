@@ -25,88 +25,49 @@ class Sales_ReminderController extends DEEC_Controller_DocumentAction
 		return $this->_helper->redirector->gotoSimple('edit', 'reminder', null, ['id' => $id]);
 	}
 
-	public function editAction()
+	protected function beforeEdit(array $row)
 	{
-		$request = $this->getRequest();
-		$id = (int)$this->_getParam('id', 0);
-		$isAjax = $request->isXmlHttpRequest();
-
-		$reminder = $this->requireRow($id);
-
-		if ($this->isReadonlyState($reminder)) {
-			return $this->_helper->redirector->gotoSimple('view', 'reminder', null, ['id' => $id]);
+		if ($this->isReadonlyState($row)) {
+			return $this->_helper->redirector->gotoSimple(
+				'view',
+				'reminder',
+				null,
+				['id' => (int)$row['id']]
+			);
 		}
 
-		$reminderDb = new Sales_Model_DbTable_Reminder();
+		return null;
+	}
 
-		$this->_helper->Access->lock($id, $this->_user['id'], $reminder['locked'] ?? 0, $reminder['lockedtime'] ?? null);
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		$id = (int)$row['id'];
 
-		$formFactory = new Sales_Service_EditFormFactory();
-		$formData = $formFactory->create('Sales_Form_Reminder');
-		$form = $formData['form'];
-		$options = $formData['options'];
-		$toolbar = new Sales_Form_Toolbar();
+		if (isset($values['currency'])) {
+			$positionsDb = new Sales_Model_DbTable_Reminderpos();
+			$positions = $positionsDb->getPositions($id);
 
-		if ($request->isPost()) {
-			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $reminder['taxfree']);
-
-			if ($isAjax) {
-				$this->disableView();
-
-				$ajaxSaveService = new Sales_Service_EditAjaxSaveService();
-
-				return $this->_helper->json($ajaxSaveService->save([
-					'form' => $form,
-					'post' => (array)$request->getPost(),
-					'id' => $id,
-					'db' => $reminderDb,
-				]));
+			foreach ($positions as $position) {
+				$positionsDb->updatePosition($position->id, [
+					'currency' => $values['currency'],
+				]);
 			}
-
-			$post = (array)$request->getPost();
-
-			if (!$form->isValid($post)) {
-				$form->setValues($post);
-			} else {
-				$values = $form->getFilteredValues();
-
-				if (isset($values['currency'])) {
-					$positionsDb = new Sales_Model_DbTable_Reminderpos();
-					$positions = $positionsDb->getPositions($id);
-
-					foreach ($positions as $position) {
-						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
-					}
-				}
-
-				if (isset($values['taxfree'])) {
-					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
-					$values['subtotal'] = $calculations['row']['subtotal'];
-					$values['taxes'] = $calculations['row']['taxes']['total'];
-					$values['total'] = $calculations['row']['total'];
-				}
-
-				$reminderDb->updateReminder($id, $values);
-				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-
-				return $this->_helper->redirector->gotoSimple('edit', 'reminder', null, ['id' => $id]);
-			}
-		} else {
-			$formFactory->populate($form, $reminder, $id, 'reminders', 'reminder');
 		}
 
-		$vmService = new Sales_Service_ReminderEditViewModel();
-		$vm = $vmService->build($id, (array)$this->_user, (array)$reminder);
+		if (isset($values['taxfree'])) {
+			$calculations = $this->_helper->Calculate(
+				$id,
+				$this->_date,
+				$this->_user['id'],
+				$values['taxfree']
+			);
 
-		$this->view->assign(array_merge($vm, [
-			'id' => $id,
-			'form' => $form,
-			'toolbar' => $toolbar,
-			'options' => $options,
-			'activeTab' => $request->getCookie('tab', null),
-		]));
+			$values['subtotal'] = $calculations['row']['subtotal'];
+			$values['taxes'] = $calculations['row']['taxes']['total'];
+			$values['total'] = $calculations['row']['total'];
+		}
 
-		$this->assignMessages();
+		return $values;
 	}
 
 	public function viewAction()

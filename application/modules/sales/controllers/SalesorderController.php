@@ -25,88 +25,49 @@ class Sales_SalesorderController extends DEEC_Controller_DocumentAction
 		return $this->_helper->redirector->gotoSimple('edit', 'salesorder', null, ['id' => $id]);
 	}
 
-	public function editAction()
+	protected function beforeEdit(array $row)
 	{
-		$request = $this->getRequest();
-		$id = (int)$this->_getParam('id', 0);
-		$isAjax = $request->isXmlHttpRequest();
-
-		$salesorder = $this->requireRow($id);
-
-		if ($this->isReadonlyState($salesorder)) {
-			return $this->_helper->redirector->gotoSimple('view', 'salesorder', null, ['id' => $id]);
+		if ($this->isReadonlyState($row)) {
+			return $this->_helper->redirector->gotoSimple(
+				'view',
+				'salesorder',
+				null,
+				['id' => (int)$row['id']]
+			);
 		}
 
-		$salesorderDb = new Sales_Model_DbTable_Salesorder();
+		return null;
+	}
 
-		$this->_helper->Access->lock($id, $this->_user['id'], $salesorder['locked'] ?? 0, $salesorder['lockedtime'] ?? null);
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		$id = (int)$row['id'];
 
-		$formFactory = new Sales_Service_EditFormFactory();
-		$formData = $formFactory->create('Sales_Form_Salesorder');
-		$form = $formData['form'];
-		$options = $formData['options'];
-		$toolbar = new Sales_Form_Toolbar();
+		if (isset($values['currency'])) {
+			$positionsDb = new Sales_Model_DbTable_Salesorderpos();
+			$positions = $positionsDb->getPositions($id);
 
-		if ($request->isPost()) {
-			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $salesorder['taxfree']);
-
-			if ($isAjax) {
-				$this->disableView();
-
-				$ajaxSaveService = new Sales_Service_EditAjaxSaveService();
-
-				return $this->_helper->json($ajaxSaveService->save([
-					'form' => $form,
-					'post' => (array)$request->getPost(),
-					'id' => $id,
-					'db' => $salesorderDb,
-				]));
+			foreach ($positions as $position) {
+				$positionsDb->updatePosition($position->id, [
+					'currency' => $values['currency'],
+				]);
 			}
-
-			$post = (array)$request->getPost();
-
-			if (!$form->isValid($post)) {
-				$form->setValues($post);
-			} else {
-				$values = $form->getFilteredValues();
-
-				if (isset($values['currency'])) {
-					$positionsDb = new Sales_Model_DbTable_Salesorderpos();
-					$positions = $positionsDb->getPositions($id);
-
-					foreach ($positions as $position) {
-						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
-					}
-				}
-
-				if (isset($values['taxfree'])) {
-					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
-					$values['subtotal'] = $calculations['row']['subtotal'];
-					$values['taxes'] = $calculations['row']['taxes']['total'];
-					$values['total'] = $calculations['row']['total'];
-				}
-
-				$salesorderDb->updateSalesorder($id, $values);
-				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-
-				return $this->_helper->redirector->gotoSimple('edit', 'salesorder', null, ['id' => $id]);
-			}
-		} else {
-			$formFactory->populate($form, $salesorder, $id, 'salesorders', 'salesorder');
 		}
 
-		$vmService = new Sales_Service_SalesorderEditViewModel();
-		$vm = $vmService->build($id, (array)$this->_user, (array)$salesorder);
+		if (isset($values['taxfree'])) {
+			$calculations = $this->_helper->Calculate(
+				$id,
+				$this->_date,
+				$this->_user['id'],
+				$values['taxfree']
+			);
 
-		$this->view->assign(array_merge($vm, [
-			'id' => $id,
-			'form' => $form,
-			'toolbar' => $toolbar,
-			'options' => $options,
-			'activeTab' => $request->getCookie('tab', null),
-		]));
+			$values['subtotal'] = $calculations['row']['subtotal'];
+			$values['taxes'] = $calculations['row']['taxes']['total'];
+			$values['total'] = $calculations['row']['total'];
+		}
 
-		$this->assignMessages();
+		return $values;
 	}
 
 	public function viewAction()
