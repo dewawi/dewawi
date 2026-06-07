@@ -50,6 +50,39 @@ class Application_Model_DbTable_Media extends DEEC_Model_DbTable_Entity
 		return $data;
 	}
 
+	public function getMediaByContext(string $module, string $controller, int $parentId, ?string $type = null): array
+	{
+		$select = $this->select()
+			->where('module = ?', $module)
+			->where('controller = ?', $controller)
+			->where('parentid = ?', $parentId)
+			->where('clientid = ?', $this->_client['id'])
+			->where('deleted = ?', 0)
+			->order('ordering ASC');
+
+		if ($type !== null && $type !== '') {
+			$select->where('type = ?', $type);
+		}
+
+		return $this->fetchAll($select)->toArray();
+	}
+
+	public function getMaxOrderingByContext(string $module, string $controller, int $parentId, string $type): int
+	{
+		$select = $this->select()
+			->from($this, ['max_ordering' => new Zend_Db_Expr('MAX(ordering)')])
+			->where('module = ?', $module)
+			->where('controller = ?', $controller)
+			->where('parentid = ?', $parentId)
+			->where('type = ?', $type)
+			->where('clientid = ?', $this->_client['id'])
+			->where('deleted = ?', 0);
+
+		$row = $this->fetchRow($select);
+
+		return $row ? (int)$row->max_ordering : 0;
+	}
+
 	public function addMedia($data)
 	{
 		$data['clientid'] = $this->_client['id'];

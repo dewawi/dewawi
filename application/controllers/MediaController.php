@@ -3,146 +3,281 @@
 class MediaController extends Zend_Controller_Action
 {
 	protected $_date = null;
-
 	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
 	protected $_flashMessenger = null;
 
 	public function init()
 	{
-		$params = $this->_getAllParams();
-
 		$this->_date = date('Y-m-d H:i:s');
 
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
 		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
-		if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'export', $this->_flashMessenger);
 	}
 
 	public function uploadAction()
 	{
-		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$this->disableView();
 
-		if ($request->isPost()) {
-			$data = $request->getPost();
-			$type = $data['type'];
-			$folder = $data['folder'];
-			$subfolder = $data['subfolder'];
-
-			// Get media path
-			$clientid = $this->view->client['id'];
-			$dir1 = substr($clientid, 0, 1);
-			if (strlen($clientid) > 1) {
-				$dir2 = substr($clientid, 1, 1);
-			} else {
-				$dir2 = '0';
-			}
-			$mediaPath = $dir1 . '/' . $dir2 . '/' . $clientid;
-
-			// Check if files are uploaded and the necessary data is provided
-			if (!empty($_FILES['media']['name'][0]) && $data['controller'] && $data['module']) {
-				foreach ($_FILES['media']['name'] as $key => $mediaName) {
-					if (!empty($mediaName)) {
-						// Determine the directory to upload to
-						if (empty($subfolder)) {
-							$uploadDir = BASE_PATH . '/media/' . $mediaPath . '/' . $folder . '/';
-							$mediaUrl = $mediaName; // Media URL without subfolder
-						} else {
-							$uploadDir = BASE_PATH . '/media/' . $mediaPath . '/' . $folder . '/' . $subfolder . '/';
-							$mediaUrl = $subfolder . '/' . $mediaName; // Media URL with subfolder
-						}
-
-						$uploadFile = $uploadDir . basename($mediaName);
-
-						// Attempt to move the uploaded file
-						if (move_uploaded_file($_FILES['media']['tmp_name'][$key], $uploadFile)) {
-							$mediaModel = new Application_Model_DbTable_Media();
-							// Determine the new ordering value
-							$maxOrdering = $mediaModel->getMaxOrdering($id, $type);
-							$newOrdering = $maxOrdering + 1;
-
-							// Save to database
-							$media = array();
-							$media['parentid'] = $id;
-							$media['module'] = $data['module'];
-							$media['controller'] = $data['controller'];
-							$media['type'] = $type;
-							$media['title'] = $mediaName;
-							$media['url'] = $mediaUrl;
-							$media['ordering'] = $newOrdering;
-							$mediaModel->addMedia($media);
-						} else {
-							$this->_helper->flashMessenger->addMessage('Failed to upload media: ' . $mediaName);
-						}
-					}
-				}
-
-				$this->_helper->flashMessenger->addMessage('Media uploaded successfully.');
-			} else {
-				$this->_helper->flashMessenger->addMessage('No media selected for upload.');
-			}
-
-			// Redirect after uploading
-			$module = isset($data['admin']) ? 'admin' : $data['module'];
-			$this->_helper->redirector->gotoSimple('edit', $data['controller'], $module, array('id' => $id));
+		if (!$this->getRequest()->isPost()) {
+			return;
 		}
+
+		$data = $this->getRequest()->getPost();
+
+		$module = trim((string)($data['module'] ?? ''));
+		$controller = trim((string)($data['controller'] ?? ''));
+		$parentId = (int)($data['parentid'] ?? 0);
+		$type = trim((string)($data['type'] ?? 'image'));
+		$path = trim((string)($data['path'] ?? $type), '/');
+		$subfolder = trim((string)($data['subfolder'] ?? ''), '/');
+
+		if ($module === '' || $controller === '' || $parentId <= 0 || $type === '' || $path === '') {
+			$this->_flashMessenger->addMessage('Invalid media context.');
+			return $this->redirectBack($data, $parentId);
+		}
+
+		if (empty($_FILES['media']['name'][0])) {
+			$this->_flashMessenger->addMessage('No media selected for upload.');
+			return $this->redirectBack($data, $parentId);
+		}
+
+		$mediaPath = $this->buildClientMediaPath();
+		$targetPath = $path;
+
+		if ($subfolder !== '' && $subfolder !== '0') {
+			$targetPath .= '/' . $subfolder;
+		}
+
+		$uploadDir = BASE_PATH . '/media/' . $mediaPath . '/' . $targetPath . '/';
+
+		if (!is_dir($uploadDir)) {
+			mkdir($uploadDir, 0775, true);
+		}
+
+		if (!is_writable($uploadDir)) {
+			$this->_flashMessenger->addMessage('Upload directory is not writable.');
+			return $this->redirectBack($data, $parentId);
+		}
+
+		$mediaModel = new Application_Model_DbTable_Media();
+		$uploaded = 0;
+
+		foreach ($_FILES['media']['name'] as $key => $originalName) {
+			if ((string)$originalName === '') {
+				continue;
+			}
+
+			if ((int)($_FILES['media']['error'][$key] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+				$this->_flashMessenger->addMessage('Failed to upload media: ' . $originalName);
+				continue;
+			}
+
+			$fileName = $this->sanitizeFileName($originalName);
+			$fileName = $this->makeUniqueFileName($uploadDir, $fileName);
+
+			$uploadFile = $uploadDir . $fileName;
+			$mediaUrl = $fileName;
+
+			if ($subfolder !== '' && $subfolder !== '0') {
+				$mediaUrl = $subfolder . '/' . $fileName;
+			}
+
+			if (!move_uploaded_file($_FILES['media']['tmp_name'][$key], $uploadFile)) {
+				$this->_flashMessenger->addMessage('Failed to upload media: ' . $originalName);
+				continue;
+			}
+
+			$ordering = $mediaModel->getMaxOrderingByContext($module, $controller, $parentId, $type) + 1;
+
+			$mediaModel->addMedia([
+				'parentid' => $parentId,
+				'module' => $module,
+				'controller' => $controller,
+				'type' => $type,
+				'title' => $originalName,
+				'url' => $mediaUrl,
+				'ordering' => $ordering,
+			]);
+
+			$uploaded++;
+		}
+
+		$this->_flashMessenger->addMessage(
+			$uploaded > 0 ? 'Media uploaded successfully.' : 'No media uploaded.'
+		);
+
+		return $this->redirectBack($data, $parentId);
 	}
 
 	public function deleteAction()
 	{
-		$id = $this->_getParam('id', 0);
-		$folder = $this->_getParam('folder');
-		$parentid = $this->_getParam('parentid', 0);
+		$this->disableView();
+
+		$id = (int)$this->_getParam('id', 0);
+		$parentId = (int)$this->_getParam('parentid', 0);
+
+		$mediaModel = new Application_Model_DbTable_Media();
+		$media = $mediaModel->fetchRow(
+			$mediaModel->getAdapter()->quoteInto('id = ?', $id)
+		);
+
+		if (!$media || (int)$media->clientid !== (int)$this->view->client['id']) {
+			$this->_flashMessenger->addMessage('Media not found.');
+			return $this->redirectFromTarget($parentId);
+		}
+
+		$filePath = BASE_PATH
+			. '/media/'
+			. $this->buildClientMediaPath()
+			. '/'
+			. ltrim((string)$media->url, '/');
+
+		if (is_file($filePath)) {
+			unlink($filePath);
+		}
+
+		$mediaModel->deleteMedia($id);
+		$this->reorderMedia($mediaModel, (array)$media->toArray());
+
+		$this->_flashMessenger->addMessage('Media deleted successfully.');
+
+		return $this->redirectFromTarget($parentId);
+	}
+
+	public function sortAction()
+	{
+		$this->disableView();
+
+		if (!$this->getRequest()->isPost()) {
+			return;
+		}
+
+		$order = $this->_getParam('order', []);
+
+		if (!is_array($order)) {
+			return;
+		}
+
 		$mediaModel = new Application_Model_DbTable_Media();
 
-		// Fetch the media data
-		$media = $mediaModel->fetchRow('id = ' . (int)$id);
-		if ($media) {
-			// Construct the full path to the media
-			$clientid = $this->view->client['id'];
-			$dir1 = substr($clientid, 0, 1);
-			$dir2 = strlen($clientid) > 1 ? substr($clientid, 1, 1) : '0';
-			$mediaPath = BASE_PATH . '/media/' . $dir1 . '/' . $dir2 . '/' . $clientid . '/' . $folder . '/' . $media->url;
+		foreach ($order as $index => $id) {
+			$mediaModel->update(
+				[
+					'ordering' => (int)$index + 1,
+					'modified' => $this->_date,
+					'modifiedby' => (int)$this->_user['id'],
+				],
+				[
+					$mediaModel->getAdapter()->quoteInto('id = ?', (int)$id),
+					$mediaModel->getAdapter()->quoteInto('clientid = ?', (int)$this->view->client['id']),
+				]
+			);
+		}
+	}
 
-			// Delete the media file
-			if (file_exists($mediaPath)) {
-				unlink($mediaPath);
-			}
+	protected function disableView(): void
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+	}
 
-			// Remove the record from the database
-			$mediaModel->deleteMedia($id);
+	protected function buildClientMediaPath(): string
+	{
+		$clientId = (int)$this->view->client['id'];
+		$client = (string)$clientId;
 
-			$this->_helper->flashMessenger->addMessage('Media deleted successfully.');
-		} else {
-			$this->_helper->flashMessenger->addMessage('Media not found.');
+		$dir1 = substr($client, 0, 1);
+		$dir2 = strlen($client) > 1 ? substr($client, 1, 1) : '0';
+
+		return $dir1 . '/' . $dir2 . '/' . $client;
+	}
+
+	protected function sanitizeFileName(string $fileName): string
+	{
+		$fileName = basename($fileName);
+		$fileName = str_replace(['ä', 'ö', 'ü', 'Ä', 'Ö', 'Ü', 'ß'], ['ae', 'oe', 'ue', 'Ae', 'Oe', 'Ue', 'ss'], $fileName);
+		$fileName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $fileName);
+		$fileName = trim($fileName, '-');
+
+		return $fileName !== '' ? $fileName : 'media';
+	}
+
+	protected function makeUniqueFileName(string $uploadDir, string $fileName): string
+	{
+		$pathInfo = pathinfo($fileName);
+		$name = $pathInfo['filename'] ?? 'media';
+		$extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
+
+		$uniqueName = $name . $extension;
+		$counter = 1;
+
+		while (file_exists($uploadDir . $uniqueName)) {
+			$uniqueName = $name . '-' . $counter . $extension;
+			$counter++;
 		}
 
-		//Get target url
+		return $uniqueName;
+	}
+
+	protected function reorderMedia(Application_Model_DbTable_Media $mediaModel, array $media): void
+	{
+		if (
+			empty($media['module'])
+			|| empty($media['controller'])
+			|| empty($media['type'])
+			|| empty($media['parentid'])
+		) {
+			return;
+		}
+
+		$rows = $mediaModel->getMediaByContext(
+			(string)$media['module'],
+			(string)$media['controller'],
+			(int)$media['parentid'],
+			(string)$media['type']
+		);
+
+		foreach ($rows as $index => $row) {
+			$mediaModel->update(
+				['ordering' => $index + 1],
+				$mediaModel->getAdapter()->quoteInto('id = ?', (int)$row['id'])
+			);
+		}
+	}
+
+	protected function redirectBack(array $data, int $parentId)
+	{
+		$targetModule = isset($data['admin']) ? 'admin' : ($data['module'] ?? 'default');
+		$targetController = $data['redirect_controller'] ?? $data['controller'] ?? 'index';
+		$targetAction = $data['redirect_action'] ?? 'edit';
+
+		return $this->_helper->redirector->gotoSimple(
+			$targetAction,
+			$targetController,
+			$targetModule,
+			['id' => $parentId]
+		);
+	}
+
+	protected function redirectFromTarget(int $parentId)
+	{
 		$target = $this->_getParam('url', null);
 
-		//Redirect if url is defined
-		if($target) {
-			$url = explode("|", $this->_getParam('url', null));
-			$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0], array('id' => $parentid));
+		if ($target) {
+			$url = explode('|', $target);
+
+			if (count($url) === 3) {
+				return $this->_helper->redirector->gotoSimple(
+					$url[2],
+					$url[1],
+					$url[0],
+					['id' => $parentId]
+				);
+			}
 		}
+
+		return $this->_helper->redirector->gotoSimple('index', 'index', 'default');
 	}
 }

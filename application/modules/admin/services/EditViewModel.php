@@ -33,7 +33,7 @@ class Admin_Service_EditViewModel
 			$vm['media'] = $mediaRows;
 			$vm['imageForms'] = $this->buildImageForms($mediaRows);
 			$vm['mediaPath'] = $this->buildClientMediaPath((int)($user['clientid'] ?? 0));
-echo $vm['mediaPath'];
+
 			$vm['subfolders'] = [
 				'category' => $this->getSubfolders(BASE_PATH . '/media/' . $vm['mediaPath'] . '/category/'),
 				'slide' => $this->getSubfolders(BASE_PATH . '/media/' . $vm['mediaPath'] . '/slide/'),

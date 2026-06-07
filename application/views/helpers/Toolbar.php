@@ -18,7 +18,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		} elseif ($view->action === 'view') {
 			$html .= $this->renderViewToolbar($toolbar, (int)$view->id);
 		} elseif ($view->action === 'index' || $view->action === 'select') {
-			$html .= $this->renderIndexToolbar($toolbar);
+			$html .= $this->renderIndexToolbar($toolbar, $view->controller);
 		}
 
 		return $html;
@@ -41,7 +41,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		return $toolbar->renderElementWithAttribs('copy', $this->getCurrentTarget($id));
 	}
 
-	protected function renderIndexToolbar($toolbar): string
+	protected function renderIndexToolbar($toolbar, $controller): string
 	{
 		if (!$toolbar) {
 			return '';
@@ -53,7 +53,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		$html .= $this->renderToolbarArea($toolbar, 'actions');
 		$html .= $this->renderToolbarArea($toolbar, 'search');
 		$html .= $this->renderToolbarArea($toolbar, 'meta');
-		$html .= $this->renderToolbarArea($toolbar, 'category');
+		$html .= $this->renderToolbarArea($toolbar, $controller);
 		$html .= '</div>';
 
 		$html .= $this->renderActiveFilters($toolbar);
