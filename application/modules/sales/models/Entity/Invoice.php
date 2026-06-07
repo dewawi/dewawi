@@ -24,7 +24,7 @@ class Sales_Model_Entity_Invoice
 
 			'search' => [
 				'title',
-				'quoteid',
+				'invoiceid',
 				'contactid',
 				'billingname1',
 				'billingname2',
@@ -51,7 +51,7 @@ class Sales_Model_Entity_Invoice
 			],
 
 			'orders' => [
-				'documentid' => 'quoteid',
+				'documentid' => 'invoiceid',
 				'name1' => 'c.name1',
 			],
 		];

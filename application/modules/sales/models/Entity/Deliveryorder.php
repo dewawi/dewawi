@@ -24,7 +24,7 @@ class Sales_Model_Entity_Deliveryorder
 
 			'search' => [
 				'title',
-				'quoteid',
+				'deliveryorderid',
 				'contactid',
 				'billingname1',
 				'billingname2',
@@ -51,7 +51,7 @@ class Sales_Model_Entity_Deliveryorder
 			],
 
 			'orders' => [
-				'documentid' => 'quoteid',
+				'documentid' => 'deliveryorderid',
 				'name1' => 'c.name1',
 			],
 		];

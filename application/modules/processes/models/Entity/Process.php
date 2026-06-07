@@ -24,7 +24,7 @@ class Processes_Model_Entity_Process
 
 			'search' => [
 				'title',
-				'quoteid',
+				'processid',
 				'contactid',
 				'billingname1',
 				'billingname2',
@@ -51,7 +51,7 @@ class Processes_Model_Entity_Process
 			],
 
 			'orders' => [
-				'documentid' => 'quoteid',
+				'documentid' => 'processid',
 				'name1' => 'c.name1',
 			],
 		];

@@ -24,7 +24,7 @@ class Sales_Model_Entity_Reminder
 
 			'search' => [
 				'title',
-				'quoteid',
+				'reminderid',
 				'contactid',
 				'billingname1',
 				'billingname2',
@@ -51,7 +51,7 @@ class Sales_Model_Entity_Reminder
 			],
 
 			'orders' => [
-				'documentid' => 'quoteid',
+				'documentid' => 'reminderid',
 				'name1' => 'c.name1',
 			],
 		];

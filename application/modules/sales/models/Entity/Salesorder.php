@@ -24,7 +24,7 @@ class Sales_Model_Entity_Salesorder
 
 			'search' => [
 				'title',
-				'quoteid',
+				'salesorderid',
 				'contactid',
 				'billingname1',
 				'billingname2',
@@ -51,7 +51,7 @@ class Sales_Model_Entity_Salesorder
 			],
 
 			'orders' => [
-				'documentid' => 'quoteid',
+				'documentid' => 'salesorderid',
 				'name1' => 'c.name1',
 			],
 		];

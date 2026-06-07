@@ -24,7 +24,7 @@ class Purchases_Model_Entity_Quoterequest
 
 			'search' => [
 				'title',
-				'quoteid',
+				'quoterequestid',
 				'contactid',
 				'billingname1',
 				'billingname2',
@@ -51,7 +51,7 @@ class Purchases_Model_Entity_Quoterequest
 			],
 
 			'orders' => [
-				'documentid' => 'quoteid',
+				'documentid' => 'quoterequestid',
 				'name1' => 'c.name1',
 			],
 		];

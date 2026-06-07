@@ -24,7 +24,7 @@ class Purchases_Model_Entity_Purchaseorder
 
 			'search' => [
 				'title',
-				'quoteid',
+				'purchaseorderid',
 				'contactid',
 				'billingname1',
 				'billingname2',
@@ -51,7 +51,7 @@ class Purchases_Model_Entity_Purchaseorder
 			],
 
 			'orders' => [
-				'documentid' => 'quoteid',
+				'documentid' => 'purchaseorderid',
 				'name1' => 'c.name1',
 			],
 		];

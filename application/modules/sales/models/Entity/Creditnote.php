@@ -24,7 +24,7 @@ class Sales_Model_Entity_Creditnote
 
 			'search' => [
 				'title',
-				'quoteid',
+				'creditnoteid',
 				'contactid',
 				'billingname1',
 				'billingname2',
@@ -51,7 +51,7 @@ class Sales_Model_Entity_Creditnote
 			],
 
 			'orders' => [
-				'documentid' => 'quoteid',
+				'documentid' => 'creditnoteid',
 				'name1' => 'c.name1',
 			],
 		];
