@@ -44,7 +44,7 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 							</div>
 
 							<div class="image-actions">
-								<a href="<?php echo $this->deleteUrl($v, $parentId, $file); ?>"
+								<a href="<?php echo $this->deleteUrl($v, $parentId, $file, $path); ?>"
 								   onclick="return confirm('Are you sure you want to delete this file?');"
 								   class="delete-link">Delete</a>
 							</div>
@@ -130,7 +130,7 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 		return $dir1 . '/' . $dir2 . '/' . $client;
 	}
 
-	protected function deleteUrl($v, int $parentId, array $file): string
+	protected function deleteUrl($v, int $parentId, array $file, string $path): string
 	{
 		return $v->url([
 			'module' => 'default',
@@ -138,6 +138,7 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 			'action' => 'delete',
 			'parentid' => $parentId,
 			'id' => $file['id'] ?? 0,
+			'path' => $path,
 			'url' => $v->module . '|' . $v->controller . '|' . $v->action,
 		]);
 	}

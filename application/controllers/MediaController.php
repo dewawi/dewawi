@@ -117,6 +117,7 @@ class MediaController extends Zend_Controller_Action
 
 		$id = (int)$this->_getParam('id', 0);
 		$parentId = (int)$this->_getParam('parentid', 0);
+		$path = trim((string)$this->_getParam('path', ''), '/');
 
 		$mediaModel = new Application_Model_DbTable_Media();
 		$media = $mediaModel->fetchRow(
@@ -128,9 +129,15 @@ class MediaController extends Zend_Controller_Action
 			return $this->redirectFromTarget($parentId);
 		}
 
+		if ($path === '') {
+			$path = trim((string)$media->controller, '/');
+		}
+
 		$filePath = BASE_PATH
 			. '/media/'
 			. $this->buildClientMediaPath()
+			. '/'
+			. $path
 			. '/'
 			. ltrim((string)$media->url, '/');
 
