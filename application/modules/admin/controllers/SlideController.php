@@ -11,26 +11,11 @@ class Admin_SlideController extends DEEC_Controller_AdminAction
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if (!$this->getRequest()->isPost()) {
-			return;
-		}
-
-		$data = $this->getRequest()->getPost();
-
-		$shopId = (int)($data['shopid'] ?? 0);
-		$data['shopid'] = $shopId;
-		$data['ordering'] = $this->getLatestOrdering($shopId, '', 'slide') + 1;
-
-		$slideDb = new Admin_Model_DbTable_Slide();
-		$id = $slideDb->addSlide($data);
-
-		echo Zend_Json::encode($slideDb->getSlide($id));
+		return [
+			'shopid' => (int)$this->_getParam('shopid', 0),
+		];
 	}
 
 	public function copyAction()

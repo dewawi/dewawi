@@ -78,7 +78,7 @@ class Admin_Form_Toolbar extends DEEC_Form
 			],
 			'source' => 'shop',
 			'filter' => true,
-			'toolbar' => 'page',
+			'toolbar' => 'slide',
 			'wrap' => false,
 			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'hidden-sm'],

@@ -14,16 +14,19 @@ class Admin_Form_Slide extends DEEC_Form
 		$this->addElement([
 			'name' => 'shopid',
 			'type' => 'select',
+			'options' => [
+				'0' => 'ADMIN_SELECT',
+			],
 			'label' => 'ADMIN_SHOP',
 			'format' => ['type' => 'int'],
-			'db' => 'Admin_Model_DbTable_Shop',
+			'source' => 'shop',
 			'col' => 6,
 		]);
 
 		$this->addElement([
-			'name' => 'image',
+			'name' => 'target',
 			'type' => 'text',
-			'label' => 'ADMIN_IMAGE',
+			'label' => 'ADMIN_TARGET',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'maxlength' => 255,
@@ -32,9 +35,9 @@ class Admin_Form_Slide extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'url',
+			'name' => 'position',
 			'type' => 'text',
-			'label' => 'ADMIN_URL',
+			'label' => 'ADMIN_POSITION',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'maxlength' => 255,
