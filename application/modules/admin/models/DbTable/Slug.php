@@ -27,10 +27,8 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
 
 		$row = $this->fetchRow($where);
-		if (!$row) {
-			throw new Exception("Could not find row $id");
-		}
-		return $row->toArray();
+
+		return $row ? $row->toArray() : [];
 	}
 
 	public function addSlug($module, $controller, $shopid, $parentid, $entityid, $slug)

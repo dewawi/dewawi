@@ -2,72 +2,76 @@
 
 class Admin_Service_EditViewModel
 {
-	public function build(int $id, array $user, array $row): array
+	public function build(int $id, array $user, array $row, array $context = []): array
 	{
+		$module = (string)($context['module'] ?? '');
+		$controller = (string)($context['controller'] ?? '');
+
+		if ($module === '' || $controller === '') {
+			return [];
+		}
+
 		$vm = [];
 
-		if ($this->hasTags($row)) {
-			$module = $this->resolveModule((string)($row['type'] ?? ''));
-			$controller = 'category';
-
-			$get = new Admin_Model_Get();
-			$vm['tags'] = $get->tags($module, $controller, $id);
-			$vm['module'] = $module;
-		}
-
-		if ($this->hasMedia($row)) {
-			$module = $this->resolveModule((string)($row['type'] ?? ''));
-			$controller = 'category';
-
-			$mediaDb = new Application_Model_DbTable_Media();
-			$mediaRows = $mediaDb->getMediaByParentID($id, $module, $controller);
-
-			if ($mediaRows instanceof Zend_Db_Table_Rowset_Abstract) {
-				$mediaRows = $mediaRows->toArray();
-			}
-
-			if (!is_array($mediaRows)) {
-				$mediaRows = [];
-			}
-
-			$vm['media'] = $mediaRows;
-			$vm['imageForms'] = $this->buildImageForms($mediaRows);
-			$vm['mediaPath'] = $this->buildClientMediaPath((int)($user['clientid'] ?? 0));
-
-			$vm['subfolders'] = [
-				'category' => $this->getSubfolders(BASE_PATH . '/media/' . $vm['mediaPath'] . '/category/'),
-				'slide' => $this->getSubfolders(BASE_PATH . '/media/' . $vm['mediaPath'] . '/slide/'),
-				'downloads' => $this->getSubfolders(BASE_PATH . '/media/' . $vm['mediaPath'] . '/downloads/'),
-			];
-		}
-
-		if ($this->hasSlug($row)) {
-			$slugDb = new Admin_Model_DbTable_Slug();
-
-			$vm['slug'] = $slugDb->getSlug(
-				'shops',
-				'category',
-				(int)($row['shopid'] ?? 0),
-				$id
-			);
-		}
+		$this->appendTags($vm, $id, $module, $controller);
+		$this->appendMedia($vm, $id, $user, $module, $controller);
+		$this->appendSlug($vm, $id, $row, $module, $controller);
 
 		return $vm;
 	}
 
-	protected function hasTags(array $row): bool
+	protected function appendTags(array &$vm, int $id, string $module, string $controller): void
 	{
-		return ($row['type'] ?? '') !== '';
+		$get = new Admin_Model_Get();
+		$tags = $get->tags($module, $controller, $id);
+
+		if ($tags instanceof Zend_Db_Table_Rowset_Abstract) {
+			$tags = $tags->toArray();
+		}
+
+		if (!is_array($tags) || count($tags) === 0) {
+			return;
+		}
+
+		$vm['tags'] = $tags;
+		$vm['module'] = $module;
 	}
 
-	protected function hasMedia(array $row): bool
+	protected function appendMedia(array &$vm, int $id, array $user, string $module, string $controller): void
 	{
-		return ($row['type'] ?? '') !== '';
+		$mediaDb = new Application_Model_DbTable_Media();
+		$mediaRows = $mediaDb->getMediaByParentID($id, $module, $controller);
+
+		if ($mediaRows instanceof Zend_Db_Table_Rowset_Abstract) {
+			$mediaRows = $mediaRows->toArray();
+		}
+
+		if (!is_array($mediaRows) || count($mediaRows) === 0) {
+			return;
+		}
+
+		$mediaPath = $this->buildClientMediaPath((int)($user['clientid'] ?? 0));
+
+		$vm['media'] = $mediaRows;
+		$vm['imageForms'] = $this->buildImageForms($mediaRows);
+		$vm['mediaPath'] = $mediaPath;
+		$vm['subfolders'] = $this->buildSubfolders($mediaPath);
 	}
 
-	protected function hasSlug(array $row): bool
+	protected function appendSlug(array &$vm, int $id, array $row, string $module, string $controller): void
 	{
-		return ($row['type'] ?? '') === 'shop';
+		if ((int)($row['shopid'] ?? 0) <= 0) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+		$slug = $slugDb->getSlug($module, $controller, (int)$row['shopid'], $id);
+
+		if (!$slug) {
+			return;
+		}
+
+		$vm['slug'] = $slug;
 	}
 
 	protected function buildImageForms(array $mediaRows): array
@@ -88,20 +92,6 @@ class Admin_Service_EditViewModel
 		return $imageForms;
 	}
 
-	protected function resolveModule(string $type): string
-	{
-		switch ($type) {
-			case 'item':
-				return 'items';
-			case 'contact':
-				return 'contacts';
-			case 'shop':
-				return 'shops';
-			default:
-				return 'admin';
-		}
-	}
-
 	protected function buildClientMediaPath(int $clientId): string
 	{
 		$clientIdString = (string)$clientId;
@@ -109,6 +99,20 @@ class Admin_Service_EditViewModel
 		$dir2 = strlen($clientIdString) > 1 ? substr($clientIdString, 1, 1) : '0';
 
 		return $dir1 . '/' . $dir2 . '/' . $clientIdString;
+	}
+
+	protected function buildSubfolders(string $mediaPath): array
+	{
+		$paths = ['category', 'slide', 'downloads'];
+		$subfolders = [];
+
+		foreach ($paths as $path) {
+			$subfolders[$path] = $this->getSubfolders(
+				BASE_PATH . '/media/' . $mediaPath . '/' . $path . '/'
+			);
+		}
+
+		return $subfolders;
 	}
 
 	protected function getSubfolders(string $path): array

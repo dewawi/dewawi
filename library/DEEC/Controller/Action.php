@@ -238,8 +238,17 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		return $service->build(
 			$id,
 			(array)$this->_user,
-			$row
+			$row,
+			$this->getEntityContext($row)
 		);
+	}
+
+	protected function getEntityContext(array $row): array
+	{
+		return [
+			'module' => $this->getRequest()->getModuleName(),
+			'controller' => $this->getRequest()->getControllerName(),
+		];
 	}
 
 	protected function beforeEdit(array $row)

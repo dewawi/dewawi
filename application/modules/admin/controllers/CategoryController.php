@@ -11,6 +11,28 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		]);
 	}
 
+	protected function getEntityContext(array $row): array
+	{
+		$module = 'admin';
+
+		if (($row['type'] ?? '') === 'shop') {
+			$module = 'shops';
+		}
+
+		if (($row['type'] ?? '') === 'item') {
+			$module = 'items';
+		}
+
+		if (($row['type'] ?? '') === 'contact') {
+			$module = 'contacts';
+		}
+
+		return [
+			'module' => $module,
+			'controller' => 'category',
+		];
+	}
+
 	protected function beforeEditSave(array $values, array $row): array
 	{
 		if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$row['parentid']) {

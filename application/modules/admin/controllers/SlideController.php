@@ -18,6 +18,14 @@ class Admin_SlideController extends DEEC_Controller_AdminAction
 		];
 	}
 
+	protected function getEntityContext(array $row): array
+	{
+		return [
+			'module' => 'shops',
+			'controller' => 'slide',
+		];
+	}
+
 	public function copyAction()
 	{
 		$this->_helper->viewRenderer->setNoRender();
