@@ -1883,6 +1883,8 @@ function markFieldSaved($field) {
 			'delete-position': { selection: 'position' },
 			'copy-position': { selection: 'position' },
 			'add-option': { selection: 'none' },
+			'sort-up': { selection: 'single' },
+			'sort-down': { selection: 'single' },
 			'sort-position-up': { selection: 'position' },
 			'sort-position-down': { selection: 'position' }
 		},
@@ -2111,6 +2113,14 @@ function markFieldSaved($field) {
 				);
 			},
 
+			'sort-up': function (selection, $button) {
+				this.sortEntity(selection, $button);
+			},
+
+			'sort-down': function (selection, $button) {
+				this.sortEntity(selection, $button);
+			},
+
 			'sort-position-up': function (selection, $button) {
 				sort(
 					selection.parent,
@@ -2267,6 +2277,35 @@ function markFieldSaved($field) {
 			});
 
 			$('#page').val(1);
+		},
+
+		sortEntity: function (selection, $button) {
+			$.ajax({
+				type: 'POST',
+				url: Dewawi.url(selection.module, selection.controller, 'sort', selection.ids[0]),
+				data: {
+					id: selection.ids[0],
+					ordering: $button.data('ordering')
+				},
+				dataType: 'json',
+				cache: false,
+				success: function (response) {
+					if (!response || response.ok === false) {
+						pushMessages(response && response.message ? response.message : 'Sortierung fehlgeschlagen.');
+						return;
+					}
+
+					if (action === 'edit') {
+						location.reload();
+						return;
+					}
+
+					search();
+				},
+				error: function () {
+					pushMessages(['Sortierung fehlgeschlagen.']);
+				}
+			});
 		},
 
 		getDefaultValue: function ($field) {

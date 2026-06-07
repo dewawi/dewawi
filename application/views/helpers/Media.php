@@ -17,6 +17,8 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 
 		$subfolders = is_array($v->subfolders[$path] ?? null) ? $v->subfolders[$path] : [];
 
+		$toolbarInline = new Admin_Form_ToolbarInline();
+
 		ob_start();
 		?>
 
@@ -72,6 +74,9 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 									   value="<?php echo (int)($file['ordering'] ?? 0); ?>"
 									   placeholder="Ordering"
 									   class="media-input js-media-field" />
+
+								<?php echo $toolbarInline->renderElement('sortup'); ?>
+								<?php echo $toolbarInline->renderElement('sortdown'); ?>
 							</div>
 						</div>
 					<?php endforeach; ?>
