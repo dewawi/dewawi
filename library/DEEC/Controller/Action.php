@@ -60,6 +60,39 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$this->buildIndexView();
 	}
 
+	public function addAction()
+	{
+		$db = $this->getDb();
+
+		$data = $this->getCreateData();
+		$data = $this->beforeCreate($data);
+
+		$id = $db->create($data);
+
+		$this->afterCreate($id, $data);
+
+		return $this->_helper->redirector->gotoSimple(
+			'edit',
+			$this->getRequest()->getControllerName(),
+			null,
+			['id' => $id]
+		);
+	}
+
+	protected function getCreateData(): array
+	{
+		return [];
+	}
+
+	protected function beforeCreate(array $data): array
+	{
+		return $data;
+	}
+
+	protected function afterCreate(int $id, array $data): void
+	{
+	}
+
 	public function editAction()
 	{
 		$request = $this->getRequest();

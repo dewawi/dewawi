@@ -33,6 +33,35 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		]);
 	}
 
+	protected function getCreateData(): array
+	{
+		return [
+			'catid' => (int)$this->_getParam('catid', 0),
+		];
+	}
+
+	protected function afterCreate(int $id, array $data): void
+	{
+		$client = Zend_Registry::get('Client');
+
+		$addressDb = new Contacts_Model_DbTable_Address();
+		$addressDb->createForParent($id, 'contacts', 'contact', [
+			'type' => 'billing',
+			'country' => $client['country'] ?? '0',
+		]);
+
+		$phoneDb = new Contacts_Model_DbTable_Phone();
+		$phoneDb->createForParent($id, 'contacts', 'contact', [
+			'type' => 'phone',
+		]);
+
+		$emailDb = new Contacts_Model_DbTable_Email();
+		$emailDb->createForParent($id, 'contacts', 'contact');
+
+		$internetDb = new Contacts_Model_DbTable_Internet();
+		$internetDb->createForParent($id, 'contacts', 'contact');
+	}
+
 	public function addAction()
 	{
 		$catid = $this->_getParam('catid', 0);
