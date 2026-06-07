@@ -2511,8 +2511,8 @@ CREATE TABLE IF NOT EXISTS `shoporderpos` (
 CREATE TABLE IF NOT EXISTS `slide` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `shopid` int(11) NOT NULL,
-  `image` varchar(255) DEFAULT NULL,
-  `url` varchar(255) DEFAULT NULL,
+  `target` varchar(1024) DEFAULT NULL,
+  `position` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
@@ -2526,8 +2526,9 @@ CREATE TABLE IF NOT EXISTS `slide` (
   `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (url),
-  KEY (clientid)
+  KEY (shopid),
+  KEY (clientid),
+  KEY (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `slug` (

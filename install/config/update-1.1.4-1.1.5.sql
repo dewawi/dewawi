@@ -25,3 +25,11 @@ SELECT
 	ordering,
 	clientid
 FROM slide;
+
+ALTER TABLE `slide` DROP COLUMN `image`;
+ALTER TABLE `slide` CHANGE COLUMN `url` `target` varchar(1024) DEFAULT NULL;
+ALTER TABLE `slide` ADD COLUMN `position` varchar(255) DEFAULT NULL AFTER `target`;
+
+ALTER TABLE `slide` DROP INDEX `url`;
+ALTER TABLE `slide` ADD KEY `shopid` (`shopid`);
+ALTER TABLE `slide` ADD KEY `deleted` (`deleted`);
