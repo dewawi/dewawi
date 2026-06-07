@@ -16,6 +16,55 @@ class MediaController extends Zend_Controller_Action
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
 	}
 
+	public function editAction()
+	{
+		$this->disableView();
+
+		if (!$this->getRequest()->isXmlHttpRequest() || !$this->getRequest()->isPost()) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'Invalid request.',
+			]);
+		}
+
+		$id = (int)$this->_getParam('id', 0);
+
+		$mediaModel = new Application_Model_DbTable_Media();
+		$media = $mediaModel->fetchRow(
+			$mediaModel->getAdapter()->quoteInto('id = ?', $id)
+		);
+
+		if (!$media || (int)$media->clientid !== (int)$this->view->client['id']) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'Media not found.',
+			]);
+		}
+
+		$data = [
+			'title' => trim((string)$this->_getParam('title', '')),
+			'description' => trim((string)$this->_getParam('description', '')),
+			'target' => trim((string)$this->_getParam('target', '')),
+			'ordering' => (int)$this->_getParam('ordering', 0),
+			'modified' => $this->_date,
+			'modifiedby' => (int)$this->_user['id'],
+		];
+
+		$mediaModel->update(
+			$data,
+			[
+				$mediaModel->getAdapter()->quoteInto('id = ?', $id),
+				$mediaModel->getAdapter()->quoteInto('clientid = ?', (int)$this->view->client['id']),
+			]
+		);
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'values' => $data,
+		]);
+	}
+
 	public function uploadAction()
 	{
 		$this->disableView();

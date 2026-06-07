@@ -1691,6 +1691,20 @@ a.dw-nav-link {
   }
 }
 
+.media-edit {
+	margin-top: 8px;
+}
+
+.media-input {
+	width: 100%;
+	margin-bottom: 6px;
+	font-size: 13px;
+}
+
+.media-edit textarea {
+	min-height: 60px;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 5. Legacy compatibility blocks                                             */
 /* Keep only until matching views/helpers are migrated to dw-* structures.    */

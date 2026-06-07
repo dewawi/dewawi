@@ -2511,3 +2511,32 @@ $(document).on('click', '.js-media-delete', function (e) {
 		}
 	});
 });
+
+$(document).on('change blur', '.js-media-field', function () {
+	var $field = $(this);
+	var $box = $field.closest('.media-edit');
+	var id = $box.data('id');
+
+	var data = {
+		id: id,
+		title: $box.find('[name="title"]').val(),
+		description: $box.find('[name="description"]').val(),
+		target: $box.find('[name="target"]').val(),
+		ordering: $box.find('[name="ordering"]').val()
+	};
+
+	$.ajax({
+		url: '/media/edit',
+		type: 'POST',
+		dataType: 'json',
+		data: data,
+		success: function (response) {
+			if (!response || !response.ok) {
+				alert(response && response.message ? response.message : 'Save failed.');
+			}
+		},
+		error: function () {
+			alert('Save failed.');
+		}
+	});
+});

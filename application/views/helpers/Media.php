@@ -49,6 +49,30 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 									Delete
 								</a>
 							</div>
+
+							<div class="media-edit" data-id="<?php echo (int)($file['id'] ?? 0); ?>">
+								<input type="text"
+									   name="title"
+									   value="<?php echo $v->escape($file['title'] ?? ''); ?>"
+									   placeholder="Title"
+									   class="media-input js-media-field" />
+
+								<textarea name="description"
+										  placeholder="Description"
+										  class="media-input js-media-field"><?php echo $v->escape($file['description'] ?? ''); ?></textarea>
+
+								<input type="text"
+									   name="target"
+									   value="<?php echo $v->escape($file['target'] ?? ''); ?>"
+									   placeholder="Target URL"
+									   class="media-input js-media-field" />
+
+								<input type="number"
+									   name="ordering"
+									   value="<?php echo (int)($file['ordering'] ?? 0); ?>"
+									   placeholder="Ordering"
+									   class="media-input js-media-field" />
+							</div>
 						</div>
 					<?php endforeach; ?>
 				</div>
