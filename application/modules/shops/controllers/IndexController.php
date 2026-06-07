@@ -54,7 +54,17 @@ class Shops_IndexController extends Zend_Controller_Action
 		$categories = $categoryDb->getCategories();
 
 		$slideDb = new Shops_Model_DbTable_Slide();
-		$slides = $slideDb->getSlides($shop['id']);
+		$slide = $slideDb->getByPosition('home', (int)$shop['id']);
+
+		$slides = [];
+
+		if ($slide) {
+			$mediaDb = new Shops_Model_DbTable_Media();
+			$slides = $mediaDb->getSlideImages((int)$slide['id']);
+		}
+
+		$this->view->slide = $slide;
+		$this->view->slides = $slides;
 
 		$menuDb = new Shops_Model_DbTable_Menu();
 		$menus = $menuDb->getMenus($shop['id']);

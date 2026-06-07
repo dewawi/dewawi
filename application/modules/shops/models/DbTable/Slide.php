@@ -2,41 +2,28 @@
 
 class Shops_Model_DbTable_Slide extends Zend_Db_Table_Abstract
 {
-
-	protected $_name = 'media';
-
-	protected $_date = null;
-
-	protected $_user = null;
+	protected $_name = 'slide';
 
 	protected $_shop = null;
 
 	public function init()
 	{
-		$this->_date = date('Y-m-d H:i:s');
 		$this->_shop = Zend_Registry::get('Shop');
 	}
 
-	public function getSlide($id)
+	public function getByPosition(string $position, int $shopid): ?array
 	{
-		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
-	}
+		$select = $this->select()
+			->where('shopid = ?', $shopid)
+			->where('position = ?', $position)
+			->where('clientid = ?', (int)$this->_shop['clientid'])
+			->where('deleted = ?', 0)
+			->where('activated = ?', 1)
+			->order('ordering ASC')
+			->limit(1);
 
-	public function getSlides($shopid)
-	{
-		$shopid = (int)$shopid;
+		$row = $this->fetchRow($select);
 
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('module = ?', 'shops');
-		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $shopid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'ordering');
-
-		return $data;
+		return $row ? $row->toArray() : null;
 	}
 }

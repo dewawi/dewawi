@@ -50,33 +50,54 @@ $content = str_replace('{categories}', $categoryHtml, $content);
 $content = str_replace('{contact}', $contact, $content);
 ?>
 
-<?php if(isset($this->slides)) : ?>
-	<!-- Carousel Section -->
-	<section id="carousel" class="carousel slide" data-ride="carousel" data-interval="5000"><!-- Set interval to 5000 milliseconds (5 seconds) -->
+<?php if (!empty($this->slides)) : ?>
+	<section id="carousel" class="carousel slide" data-ride="carousel" data-interval="5000">
 		<ol class="carousel-indicators">
-			<?php foreach($this->slides as $index => $slide) : ?>
-				<li data-target="#carousel" data-slide-to="<?php echo $index; ?>" <?php echo $index === 0 ? 'class="active"' : ''; ?>></li>
+			<?php foreach ($this->slides as $index => $slideImage) : ?>
+				<li data-target="#carousel"
+					data-slide-to="<?php echo $index; ?>"
+					<?php echo $index === 0 ? 'class="active"' : ''; ?>></li>
 			<?php endforeach; ?>
 		</ol>
+
 		<div class="carousel-inner">
-			<?php foreach($this->slides as $index => $slide) : ?>
+			<?php foreach ($this->slides as $index => $slideImage) : ?>
+				<?php
+				$imageUrl = $this->baseUrl()
+					. '/media/slide/'
+					. ltrim((string)$slideImage['url'], '/');
+
+				$target = trim((string)($slideImage['target'] ?? ''));
+				?>
+
 				<div class="carousel-item<?php echo $index === 0 ? ' active' : ''; ?>">
-					<a href="<?php echo $slide->url; ?>">
-						<img src="<?php echo $this->baseUrl(); ?>/media/slide/<?php echo $slide->url; ?>" class="d-block w-100" alt="...">
-					</a>
+					<?php if ($target !== '') : ?>
+						<a href="<?php echo $this->escape($target); ?>">
+					<?php endif; ?>
+
+					<img src="<?php echo $this->escape($imageUrl); ?>"
+						 class="d-block w-100"
+						 alt="<?php echo $this->escape($slideImage['title'] ?? ''); ?>">
+
+					<?php if ($target !== '') : ?>
+						</a>
+					<?php endif; ?>
+
 					<div class="carousel-caption d-md-block text-left align-middle">
-						<a href="<?php echo $slide->url; ?>">
-							<h2><?php echo $slide->title; ?></h2>
-						</a>
-						<a href="<?php echo $slide->url; ?>">
-							<p><?php echo $slide->description; ?></p>
-						</a>
+						<?php if (!empty($slideImage['title'])) : ?>
+							<h2><?php echo $this->escape($slideImage['title']); ?></h2>
+						<?php endif; ?>
+
+						<?php if (!empty($slideImage['description'])) : ?>
+							<p><?php echo $this->escape($slideImage['description']); ?></p>
+						<?php endif; ?>
 					</div>
 				</div>
 			<?php endforeach; ?>
 		</div>
 	</section>
 <?php endif; ?>
+
 <section id="about" class="py-5">
 	<div class="container">
 		<?php echo $content; ?>

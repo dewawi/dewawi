@@ -73,6 +73,20 @@ class Shops_Model_DbTable_Media extends Zend_Db_Table_Abstract
 		return $images;
 	}
 
+	public function getSlideImages(int $slideid): array
+	{
+		$select = $this->select()
+			->where('parentid = ?', $slideid)
+			->where('module = ?', 'shops')
+			->where('controller = ?', 'slide')
+			->where('type = ?', 'image')
+			->where('clientid = ?', (int)$this->_shop['clientid'])
+			->where('deleted = ?', 0)
+			->order('ordering ASC');
+
+		return $this->fetchAll($select)->toArray();
+	}
+
 	public function getItem($itemid, $shopid)
 	{
 		$itemid = (int)$itemid;
