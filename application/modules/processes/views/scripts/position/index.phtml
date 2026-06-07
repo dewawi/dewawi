@@ -125,11 +125,11 @@ $button = function ($action, $class, array $data = array(), $label = '') {
 									<?php echo $button('copy-position', 'copy nolabel'); ?>
 
 									<?php if ($i > 1) : ?>
-										<?php echo $button('sort-position-up', 'sortup nolabel', array('ordering' => $i - 1)); ?>
+										<?php echo $button('sort-position-up', 'up nolabel', array('ordering' => $i - 1)); ?>
 									<?php endif; ?>
 
 									<?php if ($i < $length) : ?>
-										<?php echo $button('sort-position-down', 'sortdown nolabel', array('ordering' => $i + 1)); ?>
+										<?php echo $button('sort-position-down', 'down nolabel', array('ordering' => $i + 1)); ?>
 									<?php endif; ?>
 								</div>
 							<?php endif; ?>
@@ -242,11 +242,11 @@ $button = function ($action, $class, array $data = array(), $label = '') {
 													<?php echo $button('copy-position', 'copy nolabel'); ?>
 
 													<?php if ($c > 1) : ?>
-														<?php echo $button('sort-position-up', 'sortup nolabel', array('ordering' => $c - 1)); ?>
+														<?php echo $button('sort-position-up', 'up nolabel', array('ordering' => $c - 1)); ?>
 													<?php endif; ?>
 
 													<?php if ($c < $childsCount) : ?>
-														<?php echo $button('sort-position-down', 'sortdown nolabel', array('ordering' => $c + 1)); ?>
+														<?php echo $button('sort-position-down', 'down nolabel', array('ordering' => $c + 1)); ?>
 													<?php endif; ?>
 												</div>
 											<?php endif; ?>
