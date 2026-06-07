@@ -1554,64 +1554,148 @@ a.dw-nav-link {
   }
 }
 
+/* Media Gallery */
+
+.media-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dw-space-4);
+  margin-top: var(--dw-space-4);
+}
+
+.media-gallery .image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--dw-space-4);
+  margin: 0;
+}
+
+.media-gallery .image {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dw-space-2);
+  padding: var(--dw-space-3);
+  background: #fff;
+  border: 1px solid var(--dw-color-border);
+  border-radius: var(--dw-radius-md);
+  box-shadow: var(--dw-shadow-sm);
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.media-gallery .image:hover {
+  border-color: #b8c4d1;
+  box-shadow: var(--dw-shadow-md);
+  transform: translateY(-1px);
+}
+
+.media-gallery .image a {
+  display: block;
+  text-decoration: none;
+}
+
+.media-gallery .image-thumbnail {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: var(--dw-radius-sm);
+  padding: var(--dw-space-2);
+  box-sizing: border-box;
+}
+
+.media-gallery .image-caption {
+  min-height: 38px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--dw-color-text-muted);
+  word-break: break-word;
+}
+
+.media-gallery .image-caption strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--dw-color-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.media-gallery .image-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--dw-space-2);
+  margin-top: auto;
+  padding-top: var(--dw-space-2);
+  border-top: 1px solid #eef2f7;
+}
+
+.media-gallery .delete-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #f0b8b8;
+  border-radius: var(--dw-radius-sm);
+  background: var(--dw-color-danger);
+  color: var(--dw-color-danger-text);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.media-gallery .delete-link:hover {
+  background: #ffe8e8;
+  border-color: #e49a9a;
+  text-decoration: none;
+}
+
+.media-upload-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dw-space-3);
+  margin-top: var(--dw-space-4);
+  padding: var(--dw-space-4);
+  background: #fff;
+  border: 1px dashed var(--dw-color-border);
+  border-radius: var(--dw-radius-md);
+}
+
+.media-upload-form input[type="file"],
+.media-upload-form select {
+  min-height: 38px;
+}
+
+.media-upload-form button {
+  margin-left: auto;
+}
+
+@media (max-width: 767px) {
+  .media-gallery .image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .media-upload-form {
+    align-items: stretch;
+  }
+
+  .media-upload-form input,
+  .media-upload-form select,
+  .media-upload-form button {
+    width: 100%;
+  }
+
+  .media-upload-form button {
+    margin-left: 0;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* 5. Legacy compatibility blocks                                             */
 /* Keep only until matching views/helpers are migrated to dw-* structures.    */
 /* -------------------------------------------------------------------------- */
 
-/* Media Gallery */
-
-.media-gallery {
-  margin-top: 20px;
-}
-
-.media-gallery .image-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-  margin: 10px;
-}
-
-.media-gallery .image {
-  text-align: center;
-}
-
-.media-gallery .image-thumbnail {
-  width: 100%;
-  height: auto;
-  border-radius: 5px;
-  transition: transform 0.2s ease-in-out;
-}
-
-.media-gallery .image-thumbnail:hover {
-  transform: scale(1.05);
-}
-
-.media-gallery .image-caption {
-  margin-top: 5px;
-  font-size: 14px;
-  color: #555;
-}
-
-.media-gallery .image-actions {
-  margin-top: 5px;
-}
-
-.media-gallery .delete-link {
-  color: red;
-  text-decoration: none;
-}
-
-.media-gallery .delete-link:hover {
-  text-decoration: underline;
-}
-.media-gallery form dd {
-  margin-left: 0;
-  width: 100%;
-}
-.media-gallery form dd input {
-  margin: 0;
-}
  /* Map */
 #map {
   height: 500px;
