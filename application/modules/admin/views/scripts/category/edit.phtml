@@ -10,7 +10,7 @@ echo $this->FileManager();
 	'activeTab' => $this->activeTab,
 	'tabs' => [
 		'overview' => ['title' => 'TABS_OVERVIEW'],
-		'images' => ['title' => 'TABS_IMAGES', 'html' => $this->Media(['folder' => 'category', 'type' => 'image', 'parentid' => $this->id])],
-		//'downloads' => ['title' => 'TABS_DOWNLOADS', 'html' => $this->Downloads()],
+		'images' => ['title' => 'TABS_IMAGES', 'html' => $this->Media(['module' => 'shops', 'controller' => 'category', 'parentid' => $this->id, 'type' => 'image', 'path' => 'category'])],
+		'downloads' => ['title' => 'TABS_DOWNLOADS', 'html' => $this->Media(['module' => 'shops', 'controller' => 'category', 'parentid' => $this->id, 'type' => 'download', 'path' => 'download'])]
 	]
 ]); ?>

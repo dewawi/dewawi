@@ -10,6 +10,6 @@ echo $this->FileManager();
 	'activeTab' => $this->activeTab,
 	'tabs' => [
 		'overview' => ['title' => 'TABS_OVERVIEW'],
-		'images' => ['title' => 'TABS_IMAGES', 'html' => $this->Media(['folder' => 'slide', 'type' => 'image', 'parentid' => $this->id])]
+		'images' => ['title' => 'TABS_IMAGES', 'html' => $this->Media(['module' => 'shops', 'controller' => 'slide', 'parentid' => $this->id, 'type' => 'image', 'path' => 'slide'])]
 	]
 ]); ?>

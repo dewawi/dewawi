@@ -14,6 +14,13 @@ class Admin_Model_Entity_Category
 				'description',
 			],
 
+			'filters' => [
+				'type' => [
+					'type' => 'equals',
+					'column' => 'type',
+				],
+			],
+
 			'orders' => [
 				'title',
 				'parentid',
