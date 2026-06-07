@@ -518,6 +518,34 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		);
 	}
 
+	public function sortAction()
+	{
+		$this->disableView();
+
+		if (!$this->getRequest()->isXmlHttpRequest() || !$this->getRequest()->isPost()) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'invalid_request',
+			]);
+		}
+
+		$id = (int)$this->_getParam('id', 0);
+		$direction = (string)$this->_getParam('ordering', '');
+
+		$db = $this->getDb();
+
+		if (!$db->moveOrdering($id, $direction)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'not_sorted',
+			]);
+		}
+
+		return $this->_helper->json([
+			'ok' => true,
+		]);
+	}
+
 	public function pinAction()
 	{
 		$id = (int)$this->_getParam('id', 0);

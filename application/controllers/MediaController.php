@@ -1,19 +1,10 @@
 <?php
 
-class MediaController extends Zend_Controller_Action
+class MediaController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-	protected $_user = null;
-	protected $_flashMessenger = null;
-
-	public function init()
+	protected function getDbTableClass(): string
 	{
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->client = Zend_Registry::get('Client');
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
+		return Application_Model_DbTable_Media::class;
 	}
 
 	public function editAction()

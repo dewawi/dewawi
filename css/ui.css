@@ -821,8 +821,8 @@ button.pdf { background-image: url("../images/pdf.png"); }
 button.get { background-image: url("../images/get.png"); }
 button.daterange { background-image: url("../images/daterange.png"); }
 button.select { background-image: url("../images/select.png"); }
-button.up { background-image: url("../images/up.png"); }
-button.down { background-image: url("../images/down.png"); }
+button.sortup { background-image: url("../images/up.png"); }
+button.sortdown { background-image: url("../images/down.png"); }
 button.filter { background-image: url("../images/filter.png"); }
 
 /* Icon-only buttons */

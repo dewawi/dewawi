@@ -195,6 +195,108 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return array_values(array_unique($ids));
 	}
 
+	public function moveOrdering(int $id, string $direction): bool
+	{
+		if ($this->orderingField === null) {
+			return false;
+		}
+
+		$row = $this->getById($id);
+
+		if (!$row) {
+			return false;
+		}
+
+		$items = $this->getOrderingGroup($row);
+		$currentIndex = null;
+
+		foreach ($items as $index => $item) {
+			if ((int)$item['id'] === $id) {
+				$currentIndex = $index;
+				break;
+			}
+		}
+
+		if ($currentIndex === null) {
+			return false;
+		}
+
+		$targetIndex = $currentIndex;
+
+		if ($direction === 'up') {
+			$targetIndex = max(0, $currentIndex - 1);
+		}
+
+		if ($direction === 'down') {
+			$targetIndex = min(count($items) - 1, $currentIndex + 1);
+		}
+
+		if ($targetIndex === $currentIndex) {
+			$this->normalizeOrdering($items);
+			return true;
+		}
+
+		$item = $items[$currentIndex];
+		array_splice($items, $currentIndex, 1);
+		array_splice($items, $targetIndex, 0, [$item]);
+
+		$this->normalizeOrdering($items);
+
+		return true;
+	}
+
+	protected function getOrderingGroup(array $row): array
+	{
+		$select = $this->select()
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->order($this->orderingField . ' ASC')
+			->order('id ASC');
+
+		if (isset($row[$this->parentField])) {
+			$select->where($this->parentField . ' = ?', (int)$row[$this->parentField]);
+		}
+
+		if (isset($row['module'])) {
+			$select->where('module = ?', (string)$row['module']);
+		}
+
+		if (isset($row['controller'])) {
+			$select->where('controller = ?', (string)$row['controller']);
+		}
+
+		if (isset($row['type'])) {
+			$select->where('type = ?', (string)$row['type']);
+		}
+
+		if (isset($row['shopid'])) {
+			$select->where('shopid = ?', (int)$row['shopid']);
+		}
+
+		if (isset($row['position'])) {
+			$select->where('position = ?', (string)$row['position']);
+		}
+
+		return $this->fetchAll($select)->toArray();
+	}
+
+	protected function normalizeOrdering(array $items): void
+	{
+		$ordering = 1;
+
+		foreach ($items as $item) {
+			if (empty($item['id'])) {
+				continue;
+			}
+
+			$this->updateById((int)$item['id'], [
+				$this->orderingField => $ordering,
+			]);
+
+			$ordering++;
+		}
+	}
+
 	protected function getNextOrdering(int $parentid, string $module, string $controller): int
 	{
 		if ($this->orderingField === null) {
