@@ -2483,3 +2483,31 @@ function refreshFilesTabIfNeeded() {
 
 	$tab.data('needs-refresh', 0);
 }
+
+$(document).on('click', '.js-media-delete', function (e) {
+	e.preventDefault();
+
+	if (!confirm('Are you sure you want to delete this file?')) {
+		return;
+	}
+
+	var $link = $(this);
+	var $image = $link.closest('.image');
+
+	$.ajax({
+		url: $link.attr('href'),
+		type: 'POST',
+		dataType: 'json',
+		success: function (response) {
+			if (!response || !response.ok) {
+				alert(response && response.message ? response.message : 'Delete failed.');
+				return;
+			}
+
+			$image.remove();
+		},
+		error: function () {
+			alert('Delete failed.');
+		}
+	});
+});

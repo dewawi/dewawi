@@ -45,8 +45,9 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 
 							<div class="image-actions">
 								<a href="<?php echo $this->deleteUrl($v, $parentId, $file, $path); ?>"
-								   onclick="return confirm('Are you sure you want to delete this file?');"
-								   class="delete-link">Delete</a>
+								   class="delete-link js-media-delete">
+									Delete
+								</a>
 							</div>
 						</div>
 					<?php endforeach; ?>

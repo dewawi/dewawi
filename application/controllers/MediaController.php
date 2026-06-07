@@ -115,8 +115,14 @@ class MediaController extends Zend_Controller_Action
 	{
 		$this->disableView();
 
+		if (!$this->getRequest()->isXmlHttpRequest() || !$this->getRequest()->isPost()) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'Invalid request.',
+			]);
+		}
+
 		$id = (int)$this->_getParam('id', 0);
-		$parentId = (int)$this->_getParam('parentid', 0);
 		$path = trim((string)$this->_getParam('path', ''), '/');
 
 		$mediaModel = new Application_Model_DbTable_Media();
@@ -125,8 +131,10 @@ class MediaController extends Zend_Controller_Action
 		);
 
 		if (!$media || (int)$media->clientid !== (int)$this->view->client['id']) {
-			$this->_flashMessenger->addMessage('Media not found.');
-			return $this->redirectFromTarget($parentId);
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'Media not found.',
+			]);
 		}
 
 		if ($path === '') {
@@ -145,12 +153,15 @@ class MediaController extends Zend_Controller_Action
 			unlink($filePath);
 		}
 
+		$mediaData = $media->toArray();
+
 		$mediaModel->deleteMedia($id);
-		$this->reorderMedia($mediaModel, (array)$media->toArray());
+		$this->reorderMedia($mediaModel, $mediaData);
 
-		$this->_flashMessenger->addMessage('Media deleted successfully.');
-
-		return $this->redirectFromTarget($parentId);
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+		]);
 	}
 
 	public function sortAction()
