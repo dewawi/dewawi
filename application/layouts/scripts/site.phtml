@@ -1,7 +1,13 @@
 <?php
+
+$shop = is_array($this->shop ?? null) ? $this->shop : [];
+$categories = is_array($this->categories ?? null) ? $this->categories : [];
+$menus = is_iterable($this->menus ?? null) ? $this->menus : [];
+$menuitems = is_array($this->menuitems ?? null) ? $this->menuitems : [];
+
 $this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
 $this->headTitle()->setSeparator(' - ');
-$this->headTitle($this->shop['title']);
+$this->headTitle($shop['title'] ?? '');
 echo $this->doctype();
 $home = false;
 if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
@@ -21,7 +27,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 		<nav class="navbar navbar-expand-lg">
 			<div class="container">
 				<a class="navbar-brand" href="<?php echo $this->url(array(), 'shop_home'); ?>">
-					<img src="<?php echo $this->baseUrl(); ?>/media/header/<?php echo $this->shop['logo']; ?>" alt="<?php echo $this->shop['title']; ?>" height="75">
+					<img src="<?php echo $this->baseUrl(); ?>/media/header/<?php echo $shop['logo'] ?? ''; ?>" alt="<?php echo $shop['title'] ?? ''; ?>" height="75">
 				</a>
 				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
 					<span class="navbar-toggler-icon"></span>
@@ -29,7 +35,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 				<div class="collapse navbar-collapse" id="navbarNav">
 					<ul class="navbar-nav ml-auto">
 						<?php
-							$mainCategories = array_filter($this->categories, function($category) {
+							$mainCategories = array_filter($categories, function($category) {
 								return $category['parentid'] == 0;
 							});
 
@@ -42,7 +48,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 							<li class="nav-item">
 								<a class="nav-link" href="<?php echo $this->url([], 'slug_category_' . $category['id']); ?>"><?php echo $category['title']; ?></a>
 								<ul class="submenu">
-									<?php echo $this->RenderSubCategory($this->categories, $category['id']); ?>
+									<?php echo $this->RenderSubCategory($categories, $category['id']); ?>
 								</ul>
 							</li>
 						<?php endforeach; ?>
@@ -61,7 +67,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 											<li class="right-edge">
 												<a href="<?php echo $this->url([], 'category_' . $category['id']); ?>"><?php echo $category['title']; ?></a>
 												<ul class="submenu">
-													<?php echo $this->RenderSubCategory($this->categories, $category['id']); ?>
+													<?php echo $this->RenderSubCategory($categories, $category['id']); ?>
 												</ul>
 											</li>
 										<?php endif; ?>
@@ -88,7 +94,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 		<?php endif; ?>
 	</header>
 
-	<?php //print_r($this->categories); ?>
+	<?php //print_r($categories); ?>
 
 	<?php echo $this->layout()->content; ?>
 
@@ -120,9 +126,9 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 	<footer class="py-4 bg-dark text-white">
 		<div class="container text-center">
 			<ul class="row-menu">
-				<?php foreach($this->menus as $menu) : ?>
+				<?php foreach($menus as $menu) : ?>
 					<?php if($menu->position == 'footer') : ?>
-						<?php foreach($this->menuitems[$menu->id] as $menuitem) : ?>
+						<?php foreach($menuitems[$menu->id] as $menuitem) : ?>
 							<?php if($menuitem->parentid == 0) : ?>
 								<li class="nav-item">
 									<a class="nav-link" href="<?php echo $this->url([], 'slug_page_' . $menuitem->pageid); ?>"><?php echo $menuitem->title; ?></a>
