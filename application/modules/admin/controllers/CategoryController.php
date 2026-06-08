@@ -37,9 +37,10 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 	{
 		if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$row['parentid']) {
 			$values['ordering'] = $this->getLatestOrdering(
-				(int)$values['parentid'],
-				(string)($row['type'] ?? ''),
-				'category'
+				Admin_Model_DbTable_Category::class,
+				'getCategories',
+				'sortCategory',
+				[(string)($row['type'] ?? ''), (int)$values['parentid']]
 			) + 1;
 		}
 
@@ -49,10 +50,11 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 	protected function afterEditSave(int $id, array $values, array $oldRow): void
 	{
 		if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$oldRow['parentid']) {
-			$this->setOrdering(
-				(int)$oldRow['parentid'],
-				(string)($oldRow['type'] ?? ''),
-				'category'
+			$this->resetOrdering(
+				Admin_Model_DbTable_Category::class,
+				'getCategories',
+				'sortCategory',
+				[(string)($oldRow['type'] ?? ''), (int)$oldRow['parentid']]
 			);
 
 			if (!empty($oldRow['shopid'])) {
@@ -80,38 +82,46 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		}
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		return [
+			'parentid' => (int)$this->_getParam('parentid', 0),
+			'shopid' => (int)$this->_getParam('shopid', 0),
+			'type' => (string)$this->_getParam('type', ''),
+		];
+	}
 
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$form = new Admin_Form_Category();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			$data = $request->getPost();
-			//if($form->isValid($data)) {
-				$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-				if(!isset($data['shopid'])) $data['shopid'] = 0;
-				//$data['parentid'] = $params['parentid'];
+	protected function beforeCreate(array $data): array
+	{
+		$data['type'] = (string)($data['type'] ?? '');
+		$data['parentid'] = (int)($data['parentid'] ?? 0);
+		$data['shopid'] = (int)($data['shopid'] ?? 0);
 
-				$categoryDb = new Admin_Model_DbTable_Category();
-				$id = $categoryDb->addCategory($data);
+		$data['ordering'] = $this->getLatestOrdering(
+			Admin_Model_DbTable_Category::class,
+			'getCategories',
+			'sortCategory',
+			[$data['type'], $data['parentid']]
+		) + 1;
 
-				if($data['shopid']) {
-					$slugDb = new Admin_Model_DbTable_Slug();
-					$slugDb->addSlug('shops', 'category', $data['shopid'], $data['parentid'], $id, $id);
-				}
+		return $data;
+	}
 
-				//echo Zend_Json::encode($data);
-				echo Zend_Json::encode($categoryDb->getCategory($id));
-			//} else {
-			//	echo Zend_Json::encode($data);
-				//echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			//}
+	protected function afterCreate(int $id, array $data): void
+	{
+		if (empty($data['shopid'])) {
+			return;
 		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+		$slugDb->addSlug(
+			'shops',
+			'category',
+			(int)$data['shopid'],
+			(int)$data['parentid'],
+			$id,
+			$id
+		);
 	}
 
 	public function copyAction()

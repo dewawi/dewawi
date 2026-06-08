@@ -689,6 +689,43 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		}
 	}
 
+	protected function getLatestOrdering(string $dbClass, string $fetchMethod, string $sortMethod, array $args): int
+	{
+		$db = new $dbClass();
+		$rows = call_user_func_array([$db, $fetchMethod], $args);
+
+		$latest = 0;
+
+		foreach ($rows as $row) {
+			$ordering = (int)($row['ordering'] ?? $row->ordering ?? 0);
+
+			if ($ordering > $latest) {
+				$latest = $ordering;
+			}
+		}
+
+		return $latest;
+	}
+
+	protected function resetOrdering(string $dbClass, string $fetchMethod, string $sortMethod, array $args): void
+	{
+		$db = new $dbClass();
+		$rows = call_user_func_array([$db, $fetchMethod], $args);
+
+		$i = 1;
+
+		foreach ($rows as $row) {
+			$id = (int)($row['id'] ?? $row->id ?? 0);
+			$ordering = (int)($row['ordering'] ?? $row->ordering ?? 0);
+
+			if ($id > 0 && $ordering !== $i) {
+				$db->$sortMethod($id, $i);
+			}
+
+			$i++;
+		}
+	}
+
 	protected function assignMessages(): void
 	{
 		$this->view->messages = array_merge(

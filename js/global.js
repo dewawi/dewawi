@@ -1993,9 +1993,18 @@ function markFieldSaved($field) {
 			add: function () {
 				var url = Dewawi.url(module, controller, 'add');
 
-				if ($('#catid').val() > 0) {
-					url += '/catid/' + $('#catid').val();
-				}
+				[
+					'type',
+					'catid',
+					'parentid',
+					'shopid'
+				].forEach(function (key) {
+					var value = Dewawi.getParam(key);
+
+					if (value && value !== '0') {
+						url += '/' + key + '/' + encodeURIComponent(value);
+					}
+				});
 
 				setLocation(url);
 			},
@@ -2421,6 +2430,18 @@ function markFieldSaved($field) {
 		window.DewawiToolbar = DewawiToolbar;
 	});
 })(jQuery);
+
+Dewawi.getParam = function (name) {
+	var parts = window.location.pathname.split('/');
+
+	for (var i = 0; i < parts.length; i++) {
+		if (parts[i] === name) {
+			return parts[i + 1] || '';
+		}
+	}
+
+	return '';
+};
 
 //Tabs
 function activateDwTab($link, saveCookie) {
