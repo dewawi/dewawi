@@ -24,7 +24,6 @@ class Processes_Model_Entity_Process
 
 			'search' => [
 				'title',
-				'processid',
 				'contactid',
 				'billingname1',
 				'billingname2',
