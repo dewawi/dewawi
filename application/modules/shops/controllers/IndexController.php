@@ -60,11 +60,11 @@ class Shops_IndexController extends Zend_Controller_Action
 
 		if ($slide) {
 			$mediaDb = new Shops_Model_DbTable_Media();
-			$slides = $mediaDb->getSlideImages((int)$slide['id']);
+			$slideImages = $mediaDb->getSlideImages((int)$slide['id']);
 		}
 
 		$this->view->slide = $slide;
-		$this->view->slides = $slides;
+		$this->view->slideImages = $slideImages;
 
 		$menuDb = new Shops_Model_DbTable_Menu();
 		$menus = $menuDb->getMenus($shop['id']);

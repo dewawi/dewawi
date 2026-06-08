@@ -391,9 +391,6 @@ class Shops_InquiryController extends Zend_Controller_Action
 		$categoryDb = new Shops_Model_DbTable_Category();
 		$categories = $categoryDb->getCategories();
 
-		$slideDb = new Shops_Model_DbTable_Slide();
-		$slides = $slideDb->getSlides($shop['id']);
-
 		$images = array();
 		$imageDb = new Shops_Model_DbTable_Media();
 		$images['categories'] = $imageDb->getCategoryMedia($categories);
@@ -412,7 +409,6 @@ class Shops_InquiryController extends Zend_Controller_Action
 		$this->view->shop = $shop;
 		$this->view->menus = $menus;
 		$this->view->images = $images;
-		$this->view->slides = $slides;
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
 		$this->view->categories = $categories;

@@ -59,9 +59,6 @@ class Shops_PageController extends Zend_Controller_Action
 		$tags = $get->tags('shops', 'category');
 		//print_r($tags);
 
-		$slideDb = new Shops_Model_DbTable_Slide();
-		$slides = $slideDb->getSlides($shop['id']);
-
 		$menuDb = new Shops_Model_DbTable_Menu();
 		$menus = $menuDb->getMenus($shop['id']);
 
@@ -86,7 +83,6 @@ class Shops_PageController extends Zend_Controller_Action
 		$this->view->page = $page;
 		$this->view->shop = $shop;
 		$this->view->images = $images;
-		$this->view->slides = $slides;
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
 		$this->view->categories = $categories;
