@@ -204,37 +204,6 @@ class MediaController extends DEEC_Controller_Action
 		]);
 	}
 
-	public function sortAction()
-	{
-		$this->disableView();
-
-		if (!$this->getRequest()->isPost()) {
-			return;
-		}
-
-		$order = $this->_getParam('order', []);
-
-		if (!is_array($order)) {
-			return;
-		}
-
-		$mediaModel = new Application_Model_DbTable_Media();
-
-		foreach ($order as $index => $id) {
-			$mediaModel->update(
-				[
-					'ordering' => (int)$index + 1,
-					'modified' => $this->_date,
-					'modifiedby' => (int)$this->_user['id'],
-				],
-				[
-					$mediaModel->getAdapter()->quoteInto('id = ?', (int)$id),
-					$mediaModel->getAdapter()->quoteInto('clientid = ?', (int)$this->view->client['id']),
-				]
-			);
-		}
-	}
-
 	protected function disableView(): void
 	{
 		$this->_helper->viewRenderer->setNoRender();

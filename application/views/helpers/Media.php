@@ -14,6 +14,7 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 
 		$media = is_array($v->media ?? null) ? $v->media : [];
 		$media = $this->filterMedia($media, $module, $controller, $type, $parentId);
+		$mediaCount = count($media);
 
 		$subfolders = is_array($v->subfolders[$path] ?? null) ? $v->subfolders[$path] : [];
 
@@ -30,7 +31,7 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 						 'controller' => 'media',
 						 'action' => 'sort',
 					 ]); ?>">
-					<?php foreach ($media as $file): ?>
+					<?php foreach ($media as $index => $file): ?>
 						<?php $url = $this->mediaUrl($v, $path, $file); ?>
 
 						<div class="image" data-id="<?php echo (int)($file['id'] ?? 0); ?>">
@@ -43,13 +44,6 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 							<div class="image-caption">
 								<strong><?php echo $v->escape($file['title'] ?? ''); ?></strong>
 								<?php echo $v->escape($file['url'] ?? ''); ?>
-							</div>
-
-							<div class="image-actions">
-								<a href="<?php echo $this->deleteUrl($v, $parentId, $file, $path); ?>"
-								   class="delete-link js-media-delete">
-									Delete
-								</a>
 							</div>
 
 							<div class="media-edit" data-id="<?php echo (int)($file['id'] ?? 0); ?>">
@@ -75,8 +69,29 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 									   placeholder="Ordering"
 									   class="media-input js-media-field" />
 
-								<?php echo $toolbarInline->renderElement('sortup'); ?>
-								<?php echo $toolbarInline->renderElement('sortdown'); ?>
+							</div>
+
+							<div class="image-actions">
+								<?php echo $toolbarInline->renderElementWithAttribs('delete', [
+										'data-id' => (int)$file['id'],
+										'data-url' => $this->deleteUrl($v, $parentId, $file, $path),
+									]); ?>
+
+								<?php if ($index > 0): ?>
+									<?php echo $toolbarInline->renderElementWithAttribs('sortup', [
+											'data-id' => (int)($file['id'] ?? 0),
+											'data-module' => 'default',
+											'data-controller' => 'media',
+										]); ?>
+								<?php endif; ?>
+
+								<?php if ($index < $mediaCount - 1): ?>
+									<?php echo $toolbarInline->renderElementWithAttribs('sortdown', [
+											'data-id' => (int)($file['id'] ?? 0),
+											'data-module' => 'default',
+											'data-controller' => 'media',
+										]); ?>
+								<?php endif; ?>
 							</div>
 						</div>
 					<?php endforeach; ?>

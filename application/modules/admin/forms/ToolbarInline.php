@@ -33,24 +33,38 @@ class Admin_Form_ToolbarInline extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'type' => 'button',
 			'name' => 'delete',
-			'attribs' => ['class' => 'delete nolabel'],
+			'type' => 'button',
+			'toolbar' => 'actions',
 			'wrap' => false,
+			'attribs' => [
+				'class' => 'delete nolabel',
+				'data-action' => 'media-delete',
+			],
 		]);
 
 		$this->addElement([
-			'type' => 'button',
 			'name' => 'sortup',
-			'attribs' => ['class' => 'up nolabel'],
+			'type' => 'button',
+			'toolbar' => 'actions',
 			'wrap' => false,
+			'attribs' => [
+				'class' => 'up nolabel',
+				'data-action' => 'sort-up',
+				'data-ordering' => 'up',
+			],
 		]);
 
 		$this->addElement([
-			'type' => 'button',
 			'name' => 'sortdown',
-			'attribs' => ['class' => 'down nolabel'],
+			'type' => 'button',
+			'toolbar' => 'actions',
 			'wrap' => false,
+			'attribs' => [
+				'class' => 'down nolabel',
+				'data-action' => 'sort-down',
+				'data-ordering' => 'down',
+			],
 		]);
 	}
 }

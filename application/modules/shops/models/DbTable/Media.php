@@ -36,15 +36,16 @@ class Shops_Model_DbTable_Media extends Zend_Db_Table_Abstract
 
 	public function getMediaByParentID($parentid, $module, $controller)
 	{
-		$parentid = (int)$parentid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
-		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
-		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-		return $data;
+		$select = $this->select()
+			->where('parentid = ?', (int)$parentid)
+			->where('module = ?', $module)
+			->where('controller = ?', $controller)
+			->where('clientid = ?', $this->_client['id'])
+			->where('deleted = ?', 0)
+			->order('ordering ASC')
+			->order('id ASC');
+
+		return $this->fetchAll($select);
 	}
 
 	public function getCategoryMediaById($id) {

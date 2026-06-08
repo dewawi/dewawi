@@ -1880,6 +1880,7 @@ function markFieldSaved($field) {
 			copy: { selection: 'multiple' },
 			delete: { selection: 'multiple' },
 
+			'media-delete': { selection: 'single' },
 			'delete-position': { selection: 'position' },
 			'copy-position': { selection: 'position' },
 			'add-option': { selection: 'none' },
@@ -2083,6 +2084,10 @@ function markFieldSaved($field) {
 					selection.ids[0],
 					context.setid
 				);
+			},
+
+			'media-delete': function (selection, $button) {
+				this.deleteMedia(selection, $button);
 			},
 
 			'delete-position': function (selection) {
@@ -2308,6 +2313,38 @@ function markFieldSaved($field) {
 			});
 		},
 
+		deleteMedia: function (selection, $button) {
+			if (!confirm('Are you sure you want to delete this file?')) {
+				return;
+			}
+
+			var $image = $button.closest('.image');
+			var url = $button.data('url');
+
+			if (!url) {
+				pushMessages(['Delete URL fehlt.']);
+				return;
+			}
+
+			$.ajax({
+				url: url,
+				type: 'POST',
+				dataType: 'json',
+				cache: false,
+				success: function (response) {
+					if (!response || response.ok === false) {
+						pushMessages([response && response.message ? response.message : 'Delete failed.']);
+						return;
+					}
+
+					$image.remove();
+				},
+				error: function () {
+					pushMessages(['Delete failed.']);
+				}
+			});
+		},
+
 		getDefaultValue: function ($field) {
 			var value = $field.data('default');
 
@@ -2522,34 +2559,6 @@ function refreshFilesTabIfNeeded() {
 
 	$tab.data('needs-refresh', 0);
 }
-
-$(document).on('click', '.js-media-delete', function (e) {
-	e.preventDefault();
-
-	if (!confirm('Are you sure you want to delete this file?')) {
-		return;
-	}
-
-	var $link = $(this);
-	var $image = $link.closest('.image');
-
-	$.ajax({
-		url: $link.attr('href'),
-		type: 'POST',
-		dataType: 'json',
-		success: function (response) {
-			if (!response || !response.ok) {
-				alert(response && response.message ? response.message : 'Delete failed.');
-				return;
-			}
-
-			$image.remove();
-		},
-		error: function () {
-			alert('Delete failed.');
-		}
-	});
-});
 
 $(document).on('change blur', '.js-media-field', function () {
 	var $field = $(this);
