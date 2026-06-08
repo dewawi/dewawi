@@ -127,7 +127,11 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		$data['controller'] = $controller;
 
 		if ($this->orderingField !== null && !array_key_exists($this->orderingField, $data)) {
-			$data[$this->orderingField] = $this->getNextOrdering($parentid, $module, $controller);
+			$data[$this->orderingField] = $this->getNextOrdering([
+				$this->parentField => $parentid,
+				'module' => $module,
+				'controller' => $controller,
+			]);
 		}
 
 		return $this->create($data);
@@ -297,7 +301,7 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		}
 	}
 
-	protected function getNextOrdering(int $parentid, string $module, string $controller): int
+	public function getNextOrdering(array $context = []): int
 	{
 		if ($this->orderingField === null) {
 			return 1;
@@ -305,13 +309,14 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 
 		$select = $this->select()
 			->from($this->_name, [$this->orderingField])
-			->where($this->parentField . ' = ?', $parentid)
-			->where('module = ?', $module)
-			->where('controller = ?', $controller)
 			->where('clientid = ?', $this->getClientId())
 			->where('deleted = ?', 0)
 			->order($this->orderingField . ' DESC')
 			->limit(1);
+
+		foreach ($context as $field => $value) {
+			$select->where($field . ' = ?', $value);
+		}
 
 		$row = $this->fetchRow($select);
 

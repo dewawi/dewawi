@@ -97,12 +97,12 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		$data['parentid'] = (int)($data['parentid'] ?? 0);
 		$data['shopid'] = (int)($data['shopid'] ?? 0);
 
-		$data['ordering'] = $this->getLatestOrdering(
-			Admin_Model_DbTable_Category::class,
-			'getCategories',
-			'sortCategory',
-			[$data['type'], $data['parentid']]
-		) + 1;
+		$db = new Admin_Model_DbTable_Category();
+
+		$data['ordering'] = $db->getNextOrdering([
+			'parentid' => $data['parentid'],
+			'type' => $data['type'],
+		]);
 
 		return $data;
 	}
