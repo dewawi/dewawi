@@ -526,12 +526,28 @@ button.daterange {
 }
 
 .dw-table .dw-col-notes {
+  width: 300px;
   min-width: 250px;
 }
 
 .dw-table .dw-col-date {
   width: 50px;
   white-space: nowrap;
+}
+
+.dw-table .dw-col-delivery {
+  width: 120px;
+}
+
+.dw-table .dw-col-payment {
+  width: 120px;
+}
+
+.dw-delivery-date,
+.dw-payment-total {
+	margin-top: 10px;
+	font-size: 13px;
+	line-height: 1.4;
 }
 
 .dw-table .dw-col-total {
@@ -1125,6 +1141,9 @@ button.nolabel.filter {
   font-size: 12px;
   font-weight: 600;
   color: #fff;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 /* Light row backgrounds */

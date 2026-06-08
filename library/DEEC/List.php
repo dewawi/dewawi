@@ -519,6 +519,10 @@ class DEEC_List
 				return $this->renderContactCell($item, $column);
 			case 'address':
 				return $this->renderAddressCell($item, $column);
+			case 'delivery':
+				return $this->renderDeliveryCell($item, $column);
+			case 'payment':
+				return $this->renderPaymentCell($item, $column);
 			case 'editable_note':
 				return $this->renderEditableNoteCell($item, $column);
 			case 'date':
@@ -616,6 +620,59 @@ class DEEC_List
 		}
 
 		return implode('', $lines);
+	}
+
+	protected function renderDeliveryCell($item, array $column)
+	{
+		$parts = [];
+
+		$statusColumn = $column;
+		$statusColumn['type'] = 'state_badge';
+		$statusColumn['field'] = $column['deliverystatus_field'] ?? 'deliverystatus';
+		$statusColumn['option_key'] = $column['option_key'] ?? 'deliverystatus';
+
+		$parts[] = $this->renderStateBadgeCell($item, $statusColumn);
+
+		$dateColumn = $column;
+		$dateColumn['type'] = 'date';
+		$dateColumn['field'] = $column['deliverydate_field'] ?? 'deliverydate';
+		$dateColumn['format'] = $column['format'] ?? 'd.m.Y';
+
+		$date = $this->renderDateCell($item, $dateColumn);
+
+		if ($date !== '') {
+			$date = $this->translate('PROCESSES_DELIVERY_DATE') . ': ' . $date;
+		}
+
+		$parts[] = '<div class="dw-delivery-date">' . $date . '</div>';
+
+		return '<div class="dw-delivery-cell">' . implode('', $parts) . '</div>';
+	}
+
+	protected function renderPaymentCell($item, array $column)
+	{
+		$parts = [];
+
+		$paymentColumn = $column;
+		$paymentColumn['type'] = 'state_badge';
+		$paymentColumn['field'] = $column['paymentstatus_field'] ?? 'paymentstatus';
+		$paymentColumn['option_key'] = $column['option_key'] ?? 'paymentstatus';
+
+		$parts[] = $this->renderStateBadgeCell($item, $paymentColumn);
+
+		$totalColumn = $column;
+		$totalColumn['type'] = 'currency';
+		$totalColumn['field'] = $column['total_field'] ?? 'total';
+
+		$total = $this->renderCurrencyCell($item, $totalColumn);
+
+		if ($total !== '') {
+			$total = $this->translate('PROCESSES_TOTAL') . ': ' . $total;
+		}
+
+		$parts[] = '<div class="dw-payment-total">' . $total . '</div>';
+
+		return '<div class="dw-payment-cell">' . implode('', $parts) . '</div>';
 	}
 
 	protected function renderEditableNoteCell($item, array $column)

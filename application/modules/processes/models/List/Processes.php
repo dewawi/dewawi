@@ -36,17 +36,27 @@ class Processes_Model_List_Processes extends DEEC_List
 				'empty_label' => 'TOOLBAR_NEW',
 			],
 			[
-				'name' => 'deliverydate',
-				'label' => 'PROCESSES_DELIVERY_DATE',
-				'type' => 'date',
+				'name' => 'delivery',
+				'label' => 'PROCESSES_DELIVERY',
+				'type' => 'delivery',
+				'class' => 'dw-col-delivery',
+				'option_key' => 'deliverystatus',
 				'format' => 'd.m.Y',
+				'editable' => function ($item, $element, $list) {
+					return !$list->isReadonly($item);
+				},
+				'state_map' => [
+					'deliveryIsWaiting' => 'warning',
+					'partialDelivered' => 'info',
+					'deliveryCompleted' => 'completed',
+				],
 			],
 			[
-				'name' => 'paymentstatus',
-				'label' => 'PROCESSES_PAYMENT_STATUS',
-				'type' => 'state_badge',
+				'name' => 'payment',
+				'label' => 'PROCESSES_PAYMENT',
+				'type' => 'payment',
+				'class' => 'dw-col-payment',
 				'option_key' => 'paymentstatus',
-				'class' => 'dw-col-date',
 				'editable' => function ($item, $element, $list) {
 					return !$list->isReadonly($item);
 				},
@@ -55,12 +65,6 @@ class Processes_Model_List_Processes extends DEEC_List
 					'prepaymentReceived' => 'info',
 					'paymentCompleted' => 'completed',
 				],
-			],
-			[
-				'name' => 'total',
-				'label' => 'PROCESSES_TOTAL',
-				'class' => 'dw-col-total',
-				'type' => 'currency',
 			],
 			[
 				'name' => 'state',
