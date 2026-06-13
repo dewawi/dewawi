@@ -1866,6 +1866,15 @@ function markFieldSaved($field) {
 	var DewawiToolbar = {
 		actionConfig: {
 			add: { selection: 'none' },
+			'add-position': { selection: 'none' },
+			'add-position-set': { selection: 'none' },
+			'copy-position': { selection: 'position' },
+			'delete-position': { selection: 'position' },
+			'copy-selected-position': { selection: 'none' },
+			'delete-selected-position': { selection: 'none' },
+			'copy-position-set': { selection: 'position-set' },
+			'delete-position-set': { selection: 'position-set' },
+
 			'multi-add': { selection: 'none' },
 			filter: { selection: 'none' },
 			reset: { selection: 'none' },
@@ -1881,8 +1890,6 @@ function markFieldSaved($field) {
 			delete: { selection: 'multiple' },
 
 			'media-delete': { selection: 'single' },
-			'delete-position': { selection: 'position' },
-			'copy-position': { selection: 'position' },
 			'add-option': { selection: 'none' },
 			'sort-up': { selection: 'single' },
 			'sort-down': { selection: 'single' },
@@ -1923,6 +1930,17 @@ function markFieldSaved($field) {
 				selection = this.resolvePosition($button);
 
 				if (!selection.id) {
+					return;
+				}
+
+				handler.call(this, selection, $button);
+				return;
+			}
+
+			if (config.selection === 'position-set') {
+				selection = this.resolvePositionSet($button);
+
+				if (!selection.setid && actionName !== 'add-position-set') {
 					return;
 				}
 
@@ -1980,12 +1998,53 @@ function markFieldSaved($field) {
 		resolvePosition: function ($button) {
 			var $card = $button.closest('.dw-position-card');
 
+			if (!$card.length) {
+				var $checked = $button
+					.closest('.dw-position-set')
+					.find('.position-check:checked')
+					.first();
+
+				$card = $checked.closest('.dw-position-card');
+			}
+
 			return {
 				id: String($card.data('id') || ''),
 				parent: String($card.data('parent') || controller),
 				type: String($card.data('type') || 'pos'),
 				setid: String($card.data('setid') || '0'),
 				masterid: String($card.data('masterid') || '')
+			};
+		},
+
+		resolvePositions: function ($button) {
+			var positions = [];
+
+			$button
+				.closest('.dw-position-set')
+				.find('.position-check:checked')
+				.each(function () {
+					var $card = $(this).closest('.dw-position-card');
+
+					positions.push({
+						id: String($card.data('id') || this.value || ''),
+						parent: String($card.data('parent') || controller),
+						type: String($card.data('type') || 'pos'),
+						setid: String($card.data('setid') || '0'),
+						masterid: String($card.data('masterid') || '')
+					});
+				});
+
+			return positions;
+		},
+
+		resolvePositionSet: function ($button) {
+			var $container = $button.closest('.positionsContainer');
+			var $set = $button.closest('.dw-position-set');
+
+			return {
+				parent: String($container.data('parent') || controller),
+				type: String($container.data('type') || 'pos'),
+				setid: String($set.data('setid') || '0')
 			};
 		},
 
@@ -2007,6 +2066,76 @@ function markFieldSaved($field) {
 				});
 
 				setLocation(url);
+			},
+
+			'add-position': function (selection, $button) {
+				var $container = $button.closest('.positionsContainer');
+				var $set = $button.closest('.dw-position-set');
+
+				addPosition(
+					String($container.data('parent') || controller),
+					String($container.data('type') || 'pos'),
+					String($set.data('setid') || 0)
+				);
+			},
+
+			'delete-position': function (selection) {
+				deletePosition(
+					selection.parent,
+					selection.type,
+					selection.id,
+					selection.setid,
+					selection.masterid
+				);
+			},
+
+			'copy-position': function (selection) {
+				copyPosition(
+					selection.parent,
+					selection.type,
+					selection.id
+				);
+			},
+
+			'copy-selected-position': function (selection, $button) {
+				this.resolvePositions($button).forEach(function (position) {
+					copyPosition(position.parent, position.type, position.id);
+				});
+			},
+
+			'delete-selected-position': function (selection, $button) {
+				var positions = this.resolvePositions($button);
+
+				if (!positions.length) {
+					return;
+				}
+
+				positions.forEach(function (position) {
+					deletePosition(
+						position.parent,
+						position.type,
+						position.id,
+						position.setid,
+						position.masterid
+					);
+				});
+			},
+
+			'add-position-set': function (selection, $button) {
+				var $container = $button.closest('.positionsContainer');
+
+				addSet(
+					String($container.data('parent') || controller),
+					String($container.data('type') || 'pos')
+				);
+			},
+
+			'copy-position-set': function (selection) {
+				copySet(selection.parent, selection.type, selection.setid);
+			},
+
+			'delete-position-set': function (selection) {
+				deleteSet(selection.parent, selection.type, selection.setid);
 			},
 
 			'multi-add': function (selection, $button) {
@@ -2097,24 +2226,6 @@ function markFieldSaved($field) {
 
 			'media-delete': function (selection, $button) {
 				this.deleteMedia(selection, $button);
-			},
-
-			'delete-position': function (selection) {
-				deletePosition(
-					selection.parent,
-					selection.type,
-					selection.id,
-					selection.setid,
-					selection.masterid
-				);
-			},
-
-			'copy-position': function (selection) {
-				copyPosition(
-					selection.parent,
-					selection.type,
-					selection.id
-				);
 			},
 
 			'add-option': function (selection, $button) {
