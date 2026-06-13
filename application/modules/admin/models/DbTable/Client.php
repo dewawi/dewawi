@@ -2,69 +2,83 @@
 
 class Admin_Model_DbTable_Client extends DEEC_Model_DbTable_Entity
 {
-
 	protected $_name = 'client';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_client = null;
-
-	public function init()
+	protected function prepareCreateData(array $data): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
-	}
+		$data['created'] = $this->_date;
+		$data['createdby'] = $this->getUserId();
 
-	public function getClient($id)
-	{
-		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
-		if (!$row) {
-			throw new Exception("Could not find row $id");
-		}
-		return $row->toArray();
-	}
-
-	public function getClients()
-	{
-		if($this->_user['admin']) {
-			$where = array();
-			$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-			$data = $this->fetchAll($where);
-		} else {
-			$data = $this->fetchAll(
-				$this->select()
-					->where('id = ?', $this->_client['id'])
-					->where('deleted = ?', 0)
-					->orWhere('parentid = ?', $this->_client['id'])
-					->where('deleted = ?', 0)
-				);
-		}
 		return $data;
 	}
 
-	public function addClient($data)
+	public function getById(int $id): ?array
 	{
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
+		$select = $this->select()
+			->where('id = ?', $id)
+			->where('deleted = ?', 0)
+			->limit(1);
+
+		$row = $this->fetchRow($select);
+
+		return $row ? $row->toArray() : null;
 	}
 
-	public function updateClient($id, $data)
+	public function updateById(int $id, array $data): void
 	{
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
-		$this->update($data, 'id = '. (int)$id);
+		$data = $this->prepareUpdateData($data);
+
+		$where = [
+			$this->getAdapter()->quoteInto('id = ?', $id),
+			$this->getAdapter()->quoteInto('deleted = ?', 0),
+		];
+
+		$this->update($data, $where);
 	}
 
-	public function deleteClient($id)
+	public function deleteById(int $id): void
 	{
-		$data = array();
-		$data['deleted'] = 1;
-		$this->update($data, 'id =' . (int)$id);
+		$data = [
+			'deleted' => 1,
+			'modified' => $this->_date,
+			'modifiedby' => $this->getUserId(),
+		];
+
+		$where = [
+			$this->getAdapter()->quoteInto('id = ?', $id),
+			$this->getAdapter()->quoteInto('deleted = ?', 0),
+		];
+
+		$this->update($data, $where);
+	}
+
+	public function lock(int $id): void
+	{
+		$data = [
+			'locked' => $this->getUserId(),
+			'lockedtime' => $this->_date,
+		];
+
+		$where = [
+			$this->getAdapter()->quoteInto('id = ?', $id),
+			$this->getAdapter()->quoteInto('deleted = ?', 0),
+		];
+
+		$this->update($data, $where);
+	}
+
+	public function unlock(int $id): void
+	{
+		$data = [
+			'locked' => 0,
+			'lockedtime' => null,
+		];
+
+		$where = [
+			$this->getAdapter()->quoteInto('id = ?', $id),
+			$this->getAdapter()->quoteInto('deleted = ?', 0),
+		];
+
+		$this->update($data, $where);
 	}
 }
