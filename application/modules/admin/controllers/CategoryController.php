@@ -125,117 +125,34 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		}
 	}
 
-	public function copyAction()
+	protected function canDeleteRow(array $row): bool
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$id = $this->_getParam('id', 0);
-		$categoryDb = new Admin_Model_DbTable_Category();
-		$data = $categoryDb->getCategory($id);
-		unset($data['id']);
-
-		$categoriesDb = new Admin_Model_DbTable_Category();
-		$categories = $categoriesDb->getCategories($data['type'], $data['parentid']);
-		foreach($categories as $category) {
-			if(isset($category['ordering'])) {
-				if($category['ordering'] > $data['ordering']) {
-					if(!isset($categoriesDb)) $categoriesDb = new Admin_Model_DbTable_Category();
-					$categoriesDb->sortCategory($category['id'], $category['ordering'] + 1);
-				}
-			}
+		if (($row['type'] ?? '') === 'contact') {
+			$db = new Contacts_Model_DbTable_Contact();
+			return empty($db->getContactsByCategory((int)$row['id']));
 		}
 
-		$data['title'] = $data['title'].' 2';
-		$data['ordering'] = $data['ordering'] + 1;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-		$newId = $categoryDb->addCategory($data);
-		//print_r($data);
-
-		if($data['shopid']) {
-			$slugDb = new Admin_Model_DbTable_Slug();
-			$slugDb->addSlug('shops', 'category', $data['shopid'], $data['parentid'], $newId, $newId);
+		if (($row['type'] ?? '') === 'item' || ($row['type'] ?? '') === 'shop') {
+			$db = new Items_Model_DbTable_Item();
+			return empty($db->getItemsByCategory((int)$row['id']));
 		}
 
-		$childCategories = $categoriesDb->getCategories($data['type'], $id);
-		if(isset($childCategories[$id]['childs'])) $this->copyChilds($id, $childCategories, $newId);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+		return true;
 	}
 
-	public function deleteAction()
+	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		if (!empty($newRow['shopid'])) {
+			$slugDb = new Admin_Model_DbTable_Slug();
+			$slugDb->addSlug('shops', 'category', (int)$newRow['shopid'], (int)$newRow['parentid'], $newId, $newId);
+		}
+	}
 
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$categoryDb = new Admin_Model_DbTable_Category();
-			$category = $categoryDb->getCategory($id);
-
-			if($category['type'] == 'contact') {
-				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contacts = $contactDb->getContactsByCategory($id);
-				if(!empty($contacts)) {
-					//Do not delete the category if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$categoriesDb = new Admin_Model_DbTable_Category();
-					$categories = $categoriesDb->getCategories($category['type'], $category['id']);
-					if(!empty($categories)) {
-						//Do not delete the category if it has child categories
-						$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS');
-					} else {
-						$categoryDb->deleteCategory($id);
-						$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
-						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-					}
-				}
-			} elseif($category['type'] == 'item') {
-				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByCategory($id);
-				if(!empty($items)) {
-					//Do not delete the category if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$categoriesDb = new Admin_Model_DbTable_Category();
-					$categories = $categoriesDb->getCategories($category['type'], $category['id']);
-					if(!empty($categories)) {
-						//Do not delete the category if it has child categories
-						$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS');
-					} else {
-						$categoryDb->deleteCategory($id);
-						$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
-						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-					}
-				}
-			} elseif($category['type'] == 'shop') {
-				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByCategory($id);
-				if(!empty($items)) {
-					//Do not delete the category if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$categoriesDb = new Admin_Model_DbTable_Category();
-					$categories = $categoriesDb->getCategories($category['type'], $category['id']);
-					if(!empty($categories)) {
-						//Do not delete the category if it has child categories
-						$this->_flashMessenger->addMessage('MESSAGES_CATEGORY_CANNOT_BE_DELETED_HAS_CHILDS');
-					} else {
-						$categoryDb->deleteCategory($id);
-						$this->setOrdering($category['clientid'], $category['type'], $category['parentid']);
-
-						if($category['shopid']) {
-							$slugDb = new Admin_Model_DbTable_Slug();
-							$slugDb->deleteSlug('shops', 'category', $category['shopid'], $id);
-						}
-						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-					}
-				}
-			}
+	protected function afterDelete(int $id, array $row): void
+	{
+		if (!empty($row['shopid'])) {
+			$slugDb = new Admin_Model_DbTable_Slug();
+			$slugDb->deleteSlug('shops', 'category', (int)$row['shopid'], $id);
 		}
 	}
 }

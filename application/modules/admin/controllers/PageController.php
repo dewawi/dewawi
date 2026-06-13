@@ -13,13 +13,29 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 
 	protected function getCreateData(): array
 	{
-		$db = new Admin_Model_DbTable_Manufacturer();
-
 		return [
 			'shopid' => (int)$this->_getParam('shopid', 0),
+			'parentid' => (int)$this->_getParam('parentid', 0),
+			'type' => (string)$this->_getParam('type', ''),
 			'title' => $this->view->translate('NEW_PAGE'),
-			'ordering' => $db->getNextOrdering(),
 		];
+	}
+
+	protected function beforeCreate(array $data): array
+	{
+		$data['shopid'] = (int)($data['shopid'] ?? 0);
+		$data['parentid'] = (int)($data['parentid'] ?? 0);
+		$data['type'] = (string)($data['type'] ?? '');
+
+		$db = new Admin_Model_DbTable_Page();
+
+		$data['ordering'] = $db->getNextOrdering([
+			'parentid' => $data['parentid'],
+			'type' => $data['type'],
+			'shopid' => $data['shopid'],
+		]);
+
+		return $data;
 	}
 
 	public function copyAction()
@@ -126,94 +142,5 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 				}
 			}
 		}
-	}
-
-	protected function savePageAjax(DEEC_Form $form, Admin_Model_DbTable_Page $pageDb, int $id, array $page, array $post): array
-	{
-		if (!$form->isValidPartial($post)) {
-			return [
-				'ok' => false,
-				'errors' => $this->toAjaxErrorMessages($form->getErrors()),
-			];
-		}
-
-		$values = $form->getFilteredValuesPartial($post);
-
-		try {
-			if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$page['parentid']) {
-				$targetClientId = $values['clientid'] ?? $page['clientid'];
-				$targetType = $values['type'] ?? $page['type'];
-
-				$values['ordering'] = $this->getLatestOrdering(
-					$targetClientId,
-					$targetType,
-					$values['parentid']
-				) + 1;
-
-				$pageDb->updatePage($id, $values);
-
-				$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
-			} else {
-				$pageDb->updatePage($id, $values);
-			}
-		} catch (Exception $e) {
-			return [
-				'ok' => false,
-				'message' => 'save_failed',
-			];
-		}
-
-		$row = $pageDb->getPage($id);
-		$changedFields = array_keys($values);
-		$display = DEEC_Display::fromRow($form, $row, $changedFields);
-
-		return [
-			'ok' => true,
-			'id' => $id,
-			'values' => array_intersect_key($row, array_flip($changedFields)),
-			'display' => $display,
-			'meta' => [
-				'recalc' => [],
-			],
-		];
-	}
-
-	protected function toAjaxErrorMessages(array $errors): array
-	{
-		$out = [];
-
-		foreach ($errors as $field => $codes) {
-			$messages = [];
-
-			foreach ($codes as $code) {
-				switch ($code) {
-					case 'required':
-						$messages[] = 'This field is required.';
-						break;
-					case 'email':
-						$messages[] = 'Please enter a valid email address.';
-						break;
-					case 'number':
-						$messages[] = 'Please enter a number.';
-						break;
-					case 'min':
-						$messages[] = 'The value is too small.';
-						break;
-					case 'max':
-						$messages[] = 'The value is too large.';
-						break;
-					case 'pattern':
-						$messages[] = 'The format is invalid.';
-						break;
-					default:
-						$messages[] = 'Invalid value.';
-						break;
-				}
-			}
-
-			$out[$field] = implode(' ', $messages);
-		}
-
-		return $out;
 	}
 }

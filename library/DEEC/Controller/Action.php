@@ -530,7 +530,17 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		}
 
 		$db = $this->getDb();
+		$row = $db->getById($id);
+
+		if (!$row) {
+			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
+			return $this->_helper->redirector->gotoSimple('index');
+		}
+
 		$newId = $db->copyById($id);
+		$newRow = $db->getById($newId);
+
+		$this->afterCopy($id, $newId, $row, $newRow ?: []);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 
@@ -542,43 +552,70 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		);
 	}
 
+	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
+	{
+	}
+
 	public function deleteAction()
 	{
 		$this->disableView();
 
 		if (!$this->getRequest()->isPost()) {
 			$this->_flashMessenger->addMessage('MESSAGES_INVALID_REQUEST');
-
-			return $this->_helper->redirector->gotoSimple(
-				'index',
-				$this->getRequest()->getControllerName()
-			);
+			return $this->_helper->redirector->gotoSimple('index');
 		}
 
 		$ids = $this->getDeleteIds();
 
 		if (!$ids) {
 			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
-
-			return $this->_helper->redirector->gotoSimple(
-				'index',
-				$this->getRequest()->getControllerName()
-			);
+			return $this->_helper->redirector->gotoSimple('index');
 		}
 
 		$db = $this->getDb();
-		$deleted = $db->deleteByIds($ids);
 
-		if ($deleted > 0) {
-			$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-		} else {
-			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
+		foreach ($ids as $id) {
+			$row = $db->getById((int)$id);
+
+			if (!$row) {
+				continue;
+			}
+
+			if (!$this->canDeleteRow($row)) {
+				continue;
+			}
+
+			if ($db->hasChildren((int)$id, $row)) {
+				$this->_flashMessenger->addMessage($this->getDeleteHasChildrenMessage());
+				continue;
+			}
+
+			$db->deleteById((int)$id);
+			$db->normalizeOrderingByRow($row);
+
+			$this->afterDelete((int)$id, $row);
 		}
+
+		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 
 		return $this->_helper->redirector->gotoSimple(
 			'index',
 			$this->getRequest()->getControllerName()
 		);
+	}
+
+	protected function canDeleteRow(array $row): bool
+	{
+		return true;
+	}
+
+	protected function afterDelete(int $id, array $row): void
+	{
+	}
+
+	protected function getDeleteHasChildrenMessage(): string
+	{
+		return 'MESSAGES_' . strtoupper($this->getRequest()->getControllerName()) . '_CANNOT_BE_DELETED_HAS_CHILDS';
 	}
 
 	protected function getDeleteIds(): array

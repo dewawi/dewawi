@@ -158,9 +158,50 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 			throw new RuntimeException('Record not found');
 		}
 
+		$this->shiftOrderingForCopy($row);
+
 		$data = $this->prepareCopyData($row);
 
 		return $this->create($data);
+	}
+
+	protected function shiftOrderingForCopy(array $row): void
+	{
+		if ($this->orderingField === null || !isset($row[$this->orderingField])) {
+			return;
+		}
+
+		$ordering = (int)$row[$this->orderingField];
+
+		$where = [
+			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
+			$this->getAdapter()->quoteInto('deleted = ?', 0),
+			$this->getAdapter()->quoteInto($this->orderingField . ' > ?', $ordering),
+		];
+
+		foreach ($this->getOrderingContextFields($row) as $field) {
+			if (array_key_exists($field, $row)) {
+				$where[] = $this->getAdapter()->quoteInto($field . ' = ?', $row[$field]);
+			}
+		}
+
+		$this->update(
+			[$this->orderingField => new Zend_Db_Expr($this->orderingField . ' + 1')],
+			$where
+		);
+	}
+
+	protected function getOrderingContextFields(array $row): array
+	{
+		$fields = [];
+
+		foreach ([$this->parentField, 'module', 'controller', 'type', 'shopid', 'position'] as $field) {
+			if (array_key_exists($field, $row)) {
+				$fields[] = $field;
+			}
+		}
+
+		return $fields;
 	}
 
 	protected function prepareCopyData(array $data): array
@@ -173,6 +214,10 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 
 		if (!empty($data['title'])) {
 			$data['title'] .= ' 2';
+		}
+
+		if ($this->orderingField !== null && isset($data[$this->orderingField])) {
+			$data[$this->orderingField] = (int)$data[$this->orderingField] + 1;
 		}
 
 		unset(
@@ -218,6 +263,51 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		];
 
 		return $this->update($data, $where);
+	}
+
+	public function hasChildren(int $id, array $row = []): bool
+	{
+		if (!$this->parentField) {
+			return false;
+		}
+
+		$select = $this->select()
+			->from($this->_name, ['id'])
+			->where($this->parentField . ' = ?', $id)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->limit(1);
+
+		foreach ($this->getHierarchyContextFields($row) as $field) {
+			if (array_key_exists($field, $row)) {
+				$select->where($field . ' = ?', $row[$field]);
+			}
+		}
+
+		return (bool)$this->fetchRow($select);
+	}
+
+	protected function getHierarchyContextFields(array $row): array
+	{
+		$fields = [];
+
+		foreach (['type', 'shopid', 'module', 'controller'] as $field) {
+			if (array_key_exists($field, $row)) {
+				$fields[] = $field;
+			}
+		}
+
+		return $fields;
+	}
+
+	public function normalizeOrderingByRow(array $row): void
+	{
+		if ($this->orderingField === null) {
+			return;
+		}
+
+		$items = $this->getOrderingGroup($row);
+		$this->normalizeOrdering($items);
 	}
 
 	protected function normalizeIds(array $ids): array
