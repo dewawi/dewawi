@@ -951,29 +951,6 @@ function collectToolbarData() {
 	return data;
 }
 
-//Copy
-function copy(cid, cmodule, ccontroller) {
-	cid = cid || id;
-	cmodule = cmodule || module;
-	ccontroller = ccontroller || controller;
-
-	$.ajax({
-		type: 'POST',
-		url: baseUrl + '/' + cmodule + '/' + ccontroller + '/copy/id/' + cid,
-		cache: false,
-		success: function(response) {
-			var newId = parseInt($.trim(response), 10);
-
-			if (newId > 0) {
-				setLocation(baseUrl + '/' + cmodule + '/' + ccontroller + '/edit/id/' + newId);
-				return;
-			}
-
-			search();
-		}
-	});
-}
-
 //Cancel
 function cancel(id, message){
 	var answer = confirm(message);
@@ -2077,6 +2054,10 @@ function markFieldSaved($field) {
 				setLocation(url);
 			},
 
+			copy: function (selection) {
+				this.copyEntities(selection);
+			},
+
 			'add-position': function (selection, $button) {
 				var $container = $button.closest('.positionsContainer');
 				var $set = $button.closest('.dw-position-set');
@@ -2196,12 +2177,6 @@ function markFieldSaved($field) {
 				setLocation(
 					Dewawi.url(selection.module, selection.controller, 'view', selection.ids[0])
 				);
-			},
-
-			copy: function (selection) {
-				selection.ids.forEach(function (id) {
-					copy(id, selection.module, selection.controller);
-				});
 			},
 
 			delete: function (selection) {
@@ -2411,6 +2386,58 @@ function markFieldSaved($field) {
 			});
 
 			$('#page').val(1);
+		},
+
+		copyEntity: function (id, moduleName, controllerName) {
+			return $.ajax({
+				type: 'POST',
+				url: Dewawi.url(moduleName, controllerName, 'copy', id),
+				dataType: 'json',
+				cache: false
+			});
+		},
+
+		copyEntities: function (selection) {
+			var self = this;
+			var requests = selection.ids.map(function (id) {
+				return self.copyEntity(id, selection.module, selection.controller);
+			});
+
+			$.when.apply($, requests)
+				.done(function () {
+					self.afterCopy(selection, arguments);
+				})
+				.fail(function () {
+					pushMessages(['Kopieren fehlgeschlagen.']);
+				});
+		},
+
+		afterCopy: function (selection, responses) {
+			var newId = this.getCopiedId(responses);
+
+			if (action === 'edit' && selection.ids.length === 1 && newId > 0) {
+				setLocation(Dewawi.url(selection.module, selection.controller, 'edit', newId));
+				return;
+			}
+
+			if (typeof search === 'function') {
+				search();
+				return;
+			}
+
+			location.reload();
+		},
+
+		getCopiedId: function (responses) {
+			var response = responses;
+
+			if ($.isArray(responses) && $.isArray(responses[0])) {
+				response = responses[0][0];
+			}
+
+			return Number(
+				(response && (response.id || response.newid || response.newId)) || 0
+			);
 		},
 
 		sortEntity: function (selection, $button) {
