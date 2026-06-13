@@ -12,6 +12,19 @@ class Admin_Form_Menu extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'shopid',
+			'type' => 'select',
+			'label' => 'ADMIN_SHOP',
+			'options' => [
+				'0' => 'ADMIN_SHOP',
+			],
+			'source' => 'shop',
+			'default' => '0',
+			'tab' => 'settings',
+			'col' => 6,
+		]);
+
+		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
 			'label' => 'ADMIN_TITLE',
@@ -24,28 +37,15 @@ class Admin_Form_Menu extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'shopid',
-			'type' => 'select',
-			'label' => 'ADMIN_MAIN_CATEGORY',
-			'options' => [
-				'0' => 'ADMIN_MAIN_CATEGORY',
+			'name' => 'position',
+			'type' => 'text',
+			'label' => 'ADMIN_POSITION',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
 			],
-			'default' => '0',
-			'tab' => 'settings',
+			'tab' => 'overview',
 			'col' => 6,
-		]);
-
-		$this->addElement([
-			'name' => 'type',
-			'type' => 'select',
-			'label' => 'ADMIN_TYPE',
-			'options' => [
-				'contact' => 'CONTACT',
-				'item' => 'ITEM',
-			],
-			'default' => 'contact',
-			'tab' => 'settings',
-			'col' => 3,
 		]);
 
 		$this->addElement([
@@ -53,8 +53,19 @@ class Admin_Form_Menu extends DEEC_Form
 			'type' => 'select',
 			'label' => 'ADMIN_LANGUAGE',
 			'options' => [],
+			'source' => 'language',
 			'default' => '',
 			'tab' => 'settings',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'activated',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_ACTIVATED',
+			'format' => ['type' => 'int'],
+			'default' => 0,
+			'tab' => 'overview',
 			'col' => 3,
 		]);
 	}

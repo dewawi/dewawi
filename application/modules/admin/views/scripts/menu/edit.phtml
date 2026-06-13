@@ -3,5 +3,13 @@ $this->title = $this->form->getValue('title');
 $this->headTitle($this->title);
 echo $this->TinyMCE();
 echo $this->FileManager();
-echo $this->form->renderForm();
 ?>
+
+<?php echo $this->form->renderForm([
+	'id' => 'menu',
+	'activeTab' => $this->activeTab,
+	'tabs' => [
+		'overview' => ['title' => 'TABS_OVERVIEW'],
+		'items' => ['title' => 'TABS_MENU_ITEMS', 'html' => $this->Menuitems(['menuid' => $this->id])]
+	]
+]); ?>

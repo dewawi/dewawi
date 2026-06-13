@@ -31,6 +31,17 @@ class Admin_MenuController extends DEEC_Controller_AdminAction
 		return $data;
 	}
 
+	protected function afterEditLoad(array $row): void
+	{
+		$menuitemList = new Admin_Model_List_Menuitems();
+
+		$menuitemList->setData([
+			'menuid' => (int)$row['id'],
+		]);
+
+		$this->view->menuitems = $menuitemList;
+	}
+
 	protected function canDeleteRow(array $row): bool
 	{
 		$menuitemDb = new Admin_Model_DbTable_Menuitem();
