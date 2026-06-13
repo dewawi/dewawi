@@ -542,6 +542,73 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		);
 	}
 
+	public function deleteAction()
+	{
+		$this->disableView();
+
+		if (!$this->getRequest()->isPost()) {
+			$this->_flashMessenger->addMessage('MESSAGES_INVALID_REQUEST');
+
+			return $this->_helper->redirector->gotoSimple(
+				'index',
+				$this->getRequest()->getControllerName()
+			);
+		}
+
+		$ids = $this->getDeleteIds();
+
+		if (!$ids) {
+			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
+
+			return $this->_helper->redirector->gotoSimple(
+				'index',
+				$this->getRequest()->getControllerName()
+			);
+		}
+
+		$db = $this->getDb();
+		$deleted = $db->deleteByIds($ids);
+
+		if ($deleted > 0) {
+			$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+		} else {
+			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
+		}
+
+		return $this->_helper->redirector->gotoSimple(
+			'index',
+			$this->getRequest()->getControllerName()
+		);
+	}
+
+	protected function getDeleteIds(): array
+	{
+		$ids = (array)$this->_getParam('ids', []);
+
+		if (!$ids) {
+			$selected = $this->_getParam('selected', []);
+
+			if (is_array($selected)) {
+				$ids = $selected;
+			}
+		}
+
+		if (!$ids) {
+			$id = (int)$this->_getParam('id', 0);
+
+			if ($id > 0) {
+				$ids = [$id];
+			}
+		}
+
+		$ids = array_map('intval', $ids);
+		$ids = array_filter($ids, static function ($id) {
+			return $id > 0;
+		});
+
+		return array_values(array_unique($ids));
+	}
+
 	public function sortAction()
 	{
 		$this->disableView();

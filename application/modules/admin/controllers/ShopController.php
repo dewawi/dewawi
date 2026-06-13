@@ -47,22 +47,4 @@ class Admin_ShopController extends DEEC_Controller_AdminAction
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
-
-
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			if($id == $this->_user['shopid']) {
-				$this->_flashMessenger->addMessage('MESSAGES_OWN_CLINET_CAN_NOT_BE_DELETED');
-			} else {
-				$shopDb = new Admin_Model_DbTable_Shop();
-				$shopDb->deleteShop($id);
-				$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-			}
-		}
-	}
 }
