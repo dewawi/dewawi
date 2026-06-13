@@ -1,0 +1,19 @@
+<?php
+$this->title = $this->translate('ADMIN_MENUS');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->Pagination();
+?>
+
+<div class="dw-list-page">
+	<?php echo $this->menus->render(); ?>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php echo $this->menus->getTotal(); ?>
+		</div>
+	</div>
+</div>

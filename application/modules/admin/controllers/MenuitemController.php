@@ -2,334 +2,92 @@
 
 class Admin_MenuitemController extends DEEC_Controller_AdminAction
 {
-	protected function requireMenuitem(int $id, bool $silent = false): ?array
-	{
-		$menuitemDb = new Admin_Model_DbTable_Menuitem();
-		$menuitem = $menuitemDb->getMenuitem($id);
-
-		if ($menuitem) {
-			return $menuitem;
-		}
-
-		$request = $this->getRequest();
-
-		// AJAX
-		if ($request->isXmlHttpRequest()) {
-			$this->_helper->viewRenderer->setNoRender();
-			$this->_helper->layout->disableLayout();
-
-			$this->_helper->json([
-				'ok' => false,
-				'message' => 'not_found',
-			]);
-
-			return null;
-		}
-
-		// Silent mode (PDF etc.)
-		if ($silent) {
-			$this->_helper->viewRenderer->setNoRender();
-			return null;
-		}
-
-		// Default redirect
-		$this->_flashMessenger->addMessage('MESSAGES_MENU_ITEM_NOT_FOUND');
-		$this->_helper->redirector->gotoSimple('index', 'menuitem');
-
-		return null;
-	}
-
 	protected function buildIndexView(): void
 	{
-		$toolbar = new Admin_Form_Toolbar();
-		$toolbarInline = new Admin_Form_ToolbarInline();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
+		$this->buildListView([
+			'viewKey' => 'menuitems',
+			'list' => 'Admin_Model_List_Menuitems',
+			'entity' => Admin_Model_Entity_Menuitem::listConfig(),
+		]);
+	}
 
-		$menuitemsDb = new Admin_Model_DbTable_Menuitem();
-		if($params['type'] == 'shop') {
-			$items = $menuitemsDb->getMenuitems($params['type'], null, $params['shopid']);
-		} else {
-			$items = $menuitemsDb->getMenuitems($params['type']);
-		}
+	protected function getCreateData(): array
+	{
+		return [
+			'menuid' => (int)$this->_getParam('menuid', 0),
+			'pageid' => (int)$this->_getParam('pageid', 0),
+			'parentid' => (int)$this->_getParam('parentid', 0),
+		];
+	}
 
-		if($params['type'] == 'shop') {
-			$slugs = array();
-			$slugDb = new Admin_Model_DbTable_Slug();
-			$menuDb = new Admin_Model_DbTable_Menu();
-			foreach($items as $menuItem) {
-				$menu = $menuDb->getMenu($menuItem['menuid']);
-				$slug = $slugDb->getSlug('shops', 'page', 120, $menuItem['pageid']);
-				$slugs[$menuItem['id']] = $slug['slug'];
-			}
-		}
+	protected function beforeCreate(array $data): array
+	{
+		$db = new Admin_Model_DbTable_Menuitem();
 
-		$menuitems = new Admin_Model_List_Menuitems();
-		$menuitems->configure([
-			'items' => $items,
-			'options' => $options,
-			'view' => $this->view,
-			'module' => $this->getRequest()->getModuleName(),
-			'controller' => $this->getRequest()->getControllerName(),
-			'toolbarInline' => $toolbarInline,
-			'context' => [
-				'user' => $this->_user,
-			],
+		$data['menuid'] = (int)($data['menuid'] ?? 0);
+		$data['parentid'] = (int)($data['parentid'] ?? 0);
+
+		$data['ordering'] = $db->getNextOrdering([
+			'menuid' => $data['menuid'],
+			'parentid' => $data['parentid'],
 		]);
 
-		$this->view->menuitems = $menuitems;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->toolbarInline = $toolbarInline;
-		$this->view->messages = array_merge(
-			$this->_flashMessenger->getMessages(),
-			$this->_flashMessenger->getCurrentMessages()
-		);
-		$this->_flashMessenger->clearCurrentMessages();
+		return $data;
 	}
 
-	public function addAction()
+	protected function beforeEditSave(array $values, array $row): array
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		if (array_key_exists('parentid', $values) && (int)$values['parentid'] !== (int)$row['parentid']) {
+			$db = new Admin_Model_DbTable_Menuitem();
 
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$form = new Admin_Form_Menuitem();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			$data = $request->getPost();
-			//if($form->isValid($data)) {
-				$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-				if(!isset($data['shopid'])) $data['shopid'] = 0;
-				//$data['parentid'] = $params['parentid'];
+			$values['ordering'] = $db->getNextOrdering([
+				'menuid' => (int)$row['menuid'],
+				'parentid' => (int)$values['parentid'],
+			]);
+		}
 
-				$menuItemDb = new Admin_Model_DbTable_Menuitem();
-				$id = $menuItemDb->addMenuitem($data);
+		return $values;
+	}
 
-				if($data['shopid']) {
-					$slugDb = new Admin_Model_DbTable_Slug();
-					$slugDb->addSlug('shops', 'page', $data['shopid'], $data['parentid'], $id, $id);
-				}
-
-				//echo Zend_Json::encode($data);
-				echo Zend_Json::encode($menuItemDb->getMenuitem($id));
-			//} else {
-			//	echo Zend_Json::encode($data);
-				//echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			//}
+	protected function afterEditSave(int $id, array $values, array $oldRow): void
+	{
+		if (array_key_exists('parentid', $values) && (int)$values['parentid'] !== (int)$oldRow['parentid']) {
+			$db = new Admin_Model_DbTable_Menuitem();
+			$db->normalizeOrderingByRow($oldRow);
 		}
 	}
 
-	public function editAction()
+	protected function canDeleteRow(array $row): bool
 	{
-		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
-
-		$menuItemDb = new Admin_Model_DbTable_Menuitem();
-		$menuItem = $menuItemDb->getMenuitem($id);
-
-		$menuDb = new Admin_Model_DbTable_Menu();
-		$menu = $menuDb->getMenu($menuItem['menuid']);
-
-		if($this->isLocked($menuItem['locked'], $menuItem['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
-		} else {
-			$menuItemDb->lock($id);
-
-			$form = new Admin_Form_Menuitem();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			$menuItemsDb = new Admin_Model_DbTable_Menuitem();
-			$menuItems = $menuItemsDb->getMenuitems($params['type']);
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				//if(isset($form->$element) && $form->isValidPartial($data)) { // to do add options for parentid before form validation
-				if(true) {
-					$menuItemDb = new Admin_Model_DbTable_Menuitem();
-					if($element == 'parentid') {
-						$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-						$menuItemArray = $menuItemDb->getMenuitem($id);
-						$menuItemDb->updateMenuitem($id, $data);
-
-						//sort old parent menuItem
-						$this->setOrdering($menuItemArray['clientid'], $menuItemArray['type'], $menuItemArray['parentid']);
-
-						$slugDb = new Admin_Model_DbTable_Slug();
-						$slugDb->updateSlug('shops', 'page', $menuItemArray['shopid'], $data['parentid'], $id);
-
-						/*$menuItems = $this->_helper->Menuitems->getMenuitems(null, $params['clientid'], $params['type'], $menuItemArray['parentid']);
-						$i = 1;
-						foreach($menuItems as $menuItem) {
-							if(isset($menuItem['id'])) {
-								//if($menuItem['ordering'] != $i)
-								$menuItemDb->updateMenuitem($menuItem['id'], array('ordering' => $i));
-								++$i;
-							}index/type/shop
-						}*/
-						echo Zend_Json::encode($menuItemDb->getMenuitem($id));
-					} elseif($element == 'slug') {
-						$slugDb = new Admin_Model_DbTable_Slug();
-						$slugDb->updateSlug('shops', 'page', $menuItem['shopid'], $menuItem['parentid'], $id, $data['slug']);
-						echo Zend_Json::encode(array('slug' => $data['slug']));
-					} else {
-						$menuItemDb->updateMenuitem($id, $data);
-						echo Zend_Json::encode($menuItemDb->getMenuitem($id));
-					}
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			} else {
-				if($id > 0) {
-					$form->populate($menuItem);
-
-					//Toolbar
-					$toolbar = new Admin_Form_Toolbar();
-
-					//Tags
-					$get = new Shops_Model_Get();
-					$tags = $get->tags('shops', 'menuItem', $menuItem['id']);
-
-					//Get slug
-					$slugDb = new Admin_Model_DbTable_Slug();
-					$slug = $slugDb->getSlug('shops', 'page', $menuItem['shopid'], $id);
-					$form->slug->setValue($slug['slug']);
-
-					$this->view->form = $form;
-					$this->view->tags = $tags;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-				}
-			}
-		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		return true;
 	}
 
-	public function copyAction()
+	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$id = $this->_getParam('id', 0);
-		$menuItemDb = new Admin_Model_DbTable_Menuitem();
-		$data = $menuItemDb->getMenuitem($id);
-		unset($data['id']);
-
-		$menuItemsDb = new Admin_Model_DbTable_Menuitem();
-		$menuItems = $menuItemsDb->getMenuitems($data['type'], $data['parentid']);
-		foreach($menuItems as $menuItem) {
-			if(isset($menuItem['ordering'])) {
-				if($menuItem['ordering'] > $data['ordering']) {
-					if(!isset($menuItemsDb)) $menuItemsDb = new Admin_Model_DbTable_Menuitem();
-					$menuItemsDb->sortMenuitem($menuItem['id'], $menuItem['ordering'] + 1);
-				}
-			}
-		}
-
-		$data['title'] = $data['title'].' 2';
-		$data['ordering'] = $data['ordering'] + 1;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-		$newId = $menuItemDb->addMenuitem($data);
-		//print_r($data);
-
-		if($data['shopid']) {
-			$slugDb = new Admin_Model_DbTable_Slug();
-			$slugDb->addSlug('shops', 'page', $data['shopid'], $data['parentid'], $newId, $newId);
-		}
-
-		$childMenuitems = $menuItemsDb->getMenuitems($data['type'], $id);
-		if(isset($childMenuitems[$id]['childs'])) $this->copyChilds($id, $childMenuitems, $newId);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+		$this->copyMenuitemChildren($oldId, $newId);
 	}
 
-	public function deleteAction()
+	protected function copyMenuitemChildren(int $oldParentId, int $newParentId): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$db = new Admin_Model_DbTable_Menuitem();
+		$children = $db->getChildren($oldParentId);
 
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$menuItemDb = new Admin_Model_DbTable_Menuitem();
-			$menuItem = $menuItemDb->getMenuitem($id);
+		foreach ($children as $child) {
+			$oldChildId = (int)$child['id'];
 
-			if($menuItem['type'] == 'contact') {
-				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contacts = $contactDb->getContactsByMenuitem($id);
-				if(!empty($contacts)) {
-					//Do not delete the menuItem if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$menuItemsDb = new Admin_Model_DbTable_Menuitem();
-					$menuItems = $menuItemsDb->getMenuitems($menuItem['type'], $menuItem['id']);
-					if(!empty($menuItems)) {
-						//Do not delete the menuItem if it has child menuItems
-						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
-					} else {
-						$menuItemDb->deleteMenuitem($id);
-						$this->setOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
-						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-					}
-				}
-			} elseif($menuItem['type'] == 'item') {
-				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByMenuitem($id);
-				if(!empty($items)) {
-					//Do not delete the menuItem if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$menuItemsDb = new Admin_Model_DbTable_Menuitem();
-					$menuItems = $menuItemsDb->getMenuitems($menuItem['type'], $menuItem['id']);
-					if(!empty($menuItems)) {
-						//Do not delete the menuItem if it has child menuItems
-						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
-					} else {
-						$menuItemDb->deleteMenuitem($id);
-						$this->setOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
-						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-					}
-				}
-			} elseif($menuItem['type'] == 'shop') {
-				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByMenuitem($id);
-				if(!empty($items)) {
-					//Do not delete the menuItem if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$menuItemsDb = new Admin_Model_DbTable_Menuitem();
-					$menuItems = $menuItemsDb->getMenuitems($menuItem['type'], $menuItem['id']);
-					if(!empty($menuItems)) {
-						//Do not delete the menuItem if it has child menuItems
-						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
-					} else {
-						$menuItemDb->deleteMenuitem($id);
-						$this->setOrdering($menuItem['clientid'], $menuItem['type'], $menuItem['parentid']);
+			unset($child['id']);
 
-						if($category['shopid']) {
-							$slugDb = new Admin_Model_DbTable_Slug();
-							$slugDb->deleteSlug('shops', 'page', $menuItem['shopid'], $id);
-						}
-						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-					}
-				}
-			}
+			$child['parentid'] = $newParentId;
+			$child['locked'] = 0;
+			$child['lockedtime'] = null;
+			$child['created'] = null;
+			$child['createdby'] = 0;
+			$child['modified'] = null;
+			$child['modifiedby'] = 0;
+
+			$newChildId = $db->create($child);
+
+			$this->copyMenuitemChildren($oldChildId, $newChildId);
 		}
 	}
 }
