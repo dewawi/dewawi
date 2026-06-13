@@ -13,13 +13,10 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 
 	protected function getCreateData(): array
 	{
-		$db = new Admin_Model_DbTable_Category();
-
 		return [
 			'parentid' => (int)$this->_getParam('parentid', 0),
 			'shopid' => (int)$this->_getParam('shopid', 0),
 			'type' => (string)$this->_getParam('type', ''),
-			'ordering' => $db->getNextOrdering(),
 		];
 	}
 
@@ -34,6 +31,7 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		$data['ordering'] = $db->getNextOrdering([
 			'parentid' => $data['parentid'],
 			'type' => $data['type'],
+			'shopid' => $data['shopid'],
 		]);
 
 		return $data;
