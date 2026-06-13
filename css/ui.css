@@ -366,6 +366,17 @@ iframe {
   font-size: var(--dw-font-size-md);
 }
 
+
+/* Pagination */
+
+.dw-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
 /* Buttons */
 
 .dw-btn,

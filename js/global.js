@@ -547,7 +547,7 @@ $(document).ready(function(){
 		const id = $(this).data('id');
 		$('#catid').val(id);
 		$.cookie('catid', id, { path: cookiePath });
-		$('#page').val(1);
+		$('#pagination-page').val(1);
 		search();
 	});
 
@@ -918,7 +918,7 @@ function search() {
 function collectToolbarData() {
 	var data = {};
 
-	$('.dw-toolbar input, .dw-toolbar select, .dw-filter-panel input, .dw-filter-panel select').each(function () {
+	$('.dw-toolbar input, .dw-toolbar select, .dw-filter-panel input, .dw-filter-panel select, .dw-pagination input, .dw-pagination select').each(function () {
 		var $field = $(this);
 		var name = String($field.attr('name') || '');
 
@@ -2264,7 +2264,20 @@ function markFieldSaved($field) {
 				}
 
 				if ($field.attr('name') !== 'page') {
-					$('#page').val(1);
+					$('#pagination-page').val(1);
+				}
+
+				search();
+			});
+
+			$(document).on('change', '.dw-pagination select', function () {
+				var $field = $(this);
+
+				DewawiToolbar.persistField($field);
+
+				if ($field.attr('name') === 'limit') {
+					$('#pagination-page').val(1);
+					$.cookie('page', 1, { path: cookiePath });
 				}
 
 				search();
@@ -2279,7 +2292,7 @@ function markFieldSaved($field) {
 
 				$boxes.prop('checked', checked);
 				DewawiToolbar.persistField($boxes.first());
-				$('#page').val(1);
+				$('#pagination-page').val(1);
 				search();
 			});
 		},
@@ -2287,7 +2300,7 @@ function markFieldSaved($field) {
 		bindKeyword: function () {
 			$(document).on('input', '.dw-toolbar #keyword, .dw-toolbar [name="keyword"]', function () {
 				DewawiToolbar.persistField($(this));
-				$('#page').val(1);
+				$('#pagination-page').val(1);
 				search();
 			});
 		},
@@ -2385,7 +2398,7 @@ function markFieldSaved($field) {
 				}
 			});
 
-			$('#page').val(1);
+			$('#pagination-page').val(1);
 		},
 
 		copyEntity: function (id, moduleName, controllerName) {
