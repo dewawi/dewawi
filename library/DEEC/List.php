@@ -543,6 +543,27 @@ class DEEC_List
 		}
 	}
 
+	public function renderSelectCheckbox($item): string
+	{
+		$id = (string)$this->getFieldValue($item, 'id', '');
+
+		if ($id === '') {
+			return '';
+		}
+
+		return '<input type="checkbox"'
+			. ' class="dw-select-id check-id"'
+			. ' name="ids[]"'
+			. ' value="' . $this->escapeAttr($id) . '"'
+			. ' data-select-id="' . $this->escapeAttr($id) . '">';
+	}
+
+	public function renderSelectAllCheckbox(): string
+	{
+		return '<input type="checkbox"'
+			. ' class="checkall">';
+}
+
 	protected function renderTextCell($item, array $column)
 	{
 		$value = $this->getDisplayValue($item, $column);

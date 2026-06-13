@@ -205,16 +205,21 @@ $(document).ready(function(){
 	//});
 
 	//Handle sub entities
-	$('.positionsContainer').on('change', 'input:not(.id), textarea, select', function() {
-		if ($(this).hasClass('editableValue')) {
+	$('.positionsContainer').on('change', 'input, textarea, select', function() {
+		var $field = $(this);
+
+		if (isSelectionField($field)) {
 			return;
 		}
 
-		if ($(this).hasClass('number')) {
-			$(this).formatCurrency({ region: language });
+		if ($field.hasClass('editableValue')) {
+			return;
 		}
 
-		var $field = $(this);
+		if ($field.hasClass('number')) {
+			$field.formatCurrency({ region: language });
+		}
+
 		var $card = $field.closest('.dw-position-card.wrap');
 		var $container = $field.closest('.positionsContainer');
 		var $set = $field.closest('.dw-position-set');
@@ -1503,6 +1508,10 @@ function handleEditError(resp, params) {
 	pushMessages(['Speichern nicht möglich.']);
 	unlock(params['id']);
 	return true;
+}
+
+function isSelectionField($field) {
+	return $field.is('.checkall') || $field.attr('name') === 'ids[]';
 }
 
 function removeMessages(){

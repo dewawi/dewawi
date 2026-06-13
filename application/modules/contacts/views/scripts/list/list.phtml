@@ -7,7 +7,7 @@
 			<tr>
 				<?php if ($this->table->isSelectable()) : ?>
 					<th class="dw-col-check">
-						<input type="checkbox" class="checkall" name="checkall" />
+						<?php echo $this->table->renderSelectAllCheckbox(); ?>
 					</th>
 				<?php endif; ?>
 
@@ -30,7 +30,7 @@
 					<tr class="<?php echo $this->escape($this->table->getRowClass($item)); ?>">
 						<?php if ($this->table->isSelectable()) : ?>
 							<td class="dw-col-check">
-								<input class="check-id" type="checkbox" value="<?php echo (int)$this->table->getFieldValue($item, 'id'); ?>" name="id" />
+								<?php echo $this->table->renderSelectCheckbox($item); ?>
 								<input class="id" type="hidden" value="<?php echo (int)$this->table->getFieldValue($item, 'id'); ?>" name="id" />
 								<input class="controller" type="hidden" value="<?php echo $this->escape($this->table->getController()); ?>" name="controller" />
 								<input class="module" type="hidden" value="<?php echo $this->escape($this->table->getModule()); ?>" name="module" />
