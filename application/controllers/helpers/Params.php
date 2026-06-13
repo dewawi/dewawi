@@ -15,6 +15,9 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 			$toolbar->setValue($name, $value);
 		}
 
+		$params['limit'] = $request->getParam('limit', $request->getCookie('limit', 25));
+		$params['page'] = $request->getParam('page', $request->getCookie('page', 1));
+
 		$this->applyDateRange($params, $toolbar);
 		$this->applyPagination($params);
 
