@@ -10,16 +10,26 @@ class Zend_View_Helper_Menuitems extends Zend_View_Helper_Abstract
 			return '<div class="dw-empty">Menü zuerst speichern.</div>';
 		}
 
-		$menuitemDb = new Admin_Model_DbTable_Menuitem();
-		$items = $menuitemDb->getItemsByMenuId($menuId);
+		$db = new Admin_Model_DbTable_Menuitem();
+		$items = $db->getItemsByMenuId($menuId);
+
+		$toolbarInline = $this->view->toolbarInline ?? null;
+
+		if (!$toolbarInline && class_exists('Admin_Form_ToolbarInline')) {
+			$toolbarInline = new Admin_Form_ToolbarInline();
+		}
 
 		$list = new Admin_Model_List_Menuitems();
 		$list->configure([
+			'id' => 'menuitems',
 			'items' => $items,
 			'view' => $this->view,
 			'module' => 'admin',
 			'controller' => 'menuitem',
+			'toolbarInline' => $toolbarInline,
 			'context' => [
+				'user' => $this->view->user,
+				'action' => 'index',
 				'menuid' => $menuId,
 			],
 		]);
@@ -27,6 +37,7 @@ class Zend_View_Helper_Menuitems extends Zend_View_Helper_Abstract
 		ob_start();
 		?>
 		<div class="dw-child-list"
+			 data-list-id="menuitems"
 			 data-controller="menuitem"
 			 data-menuid="<?php echo $this->view->escape($menuId); ?>">
 
@@ -45,6 +56,7 @@ class Zend_View_Helper_Menuitems extends Zend_View_Helper_Abstract
 			<?php echo $list->render(); ?>
 		</div>
 		<?php
+
 		return ob_get_clean();
 	}
 }
