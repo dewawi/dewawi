@@ -33,3 +33,5 @@ ALTER TABLE `slide` ADD COLUMN `position` varchar(255) DEFAULT NULL AFTER `targe
 ALTER TABLE `slide` DROP INDEX `url`;
 ALTER TABLE `slide` ADD KEY `shopid` (`shopid`);
 ALTER TABLE `slide` ADD KEY `deleted` (`deleted`);
+
+ALTER TABLE `country` ADD `deleted` tinyint(1) NOT NULL DEFAULT 0 AFTER `lockedtime`;
