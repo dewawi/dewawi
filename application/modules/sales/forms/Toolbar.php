@@ -80,33 +80,6 @@ class Sales_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'limit',
-			'type' => 'select',
-			'default' => '25',
-			'options' => [
-				'10' => '10',
-				'25' => '25',
-				'50' => '50',
-				'100' => '100',
-			],
-			'toolbar' => 'meta',
-			'wrap' => false,
-			'format' => ['type' => 'int'],
-		]);
-
-		$this->addElement([
-			'name' => 'page',
-			'type' => 'select',
-			'default' => '1',
-			'options' => [
-				'1' => '1',
-			],
-			'toolbar' => 'meta',
-			'wrap' => false,
-			'format' => ['type' => 'int'],
-		]);
-
-		$this->addElement([
 			'name' => 'order',
 			'type' => 'select',
 			'label' => 'TOOLBAR_ORDER',

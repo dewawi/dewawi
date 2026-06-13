@@ -41,6 +41,77 @@ class Admin_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'filter',
+			'type' => 'button',
+			'label' => 'TOOLBAR_FILTER',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'filter'],
+		]);
+
+		$this->addElement([
+			'name' => 'reset',
+			'type' => 'button',
+			'label' => 'TOOLBAR_RESET',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'reset'],
+		]);
+
+		$this->addElement([
+			'name' => 'keyword',
+			'type' => 'text',
+			'default' => '',
+			'toolbar' => 'search',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'keyword'],
+		]);
+
+		$this->addElement([
+			'name' => 'clear',
+			'type' => 'button',
+			'toolbar' => 'search',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'clear nolabel',
+				'rel' => 'keyword',
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'order',
+			'type' => 'select',
+			'label' => 'TOOLBAR_ORDER',
+			'default' => 'modified',
+			'options' => [
+				'modified' => 'TOOLBAR_MODIFIED',
+				'created' => 'TOOLBAR_CREATED',
+				'processid' => 'PROCESSES_PROCESS_ID',
+				'name1' => 'CONTACTS_NAME',
+			],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'sort',
+			'type' => 'select',
+			'label' => 'TOOLBAR_SORT',
+			'default' => 'DESC',
+			'options' => [
+				'ASC' => 'TOOLBAR_ASC',
+				'DESC' => 'TOOLBAR_DESC',
+			],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
 			'name' => 'parentid',
 			'type' => 'select',
 			'default' => 'all',

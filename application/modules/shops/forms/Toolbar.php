@@ -120,21 +120,6 @@ class Shops_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'type' => 'select',
-			'name' => 'limit',
-			'wrap' => false,
-			'options' => [
-				'50' => '50',
-				'100' => '100',
-				'250' => '250',
-				'500' => '500',
-				'0' => 'TOOLBAR_ALL',
-			],
-			'default' => '50',
-			'attribs' => ['class' => 'hidden-sm'],
-		]);
-
-		$this->addElement([
-			'type' => 'select',
 			'name' => 'manufacturerid',
 			'wrap' => false,
 			'options' => [
@@ -153,16 +138,6 @@ class Shops_Form_Toolbar extends DEEC_Form
 			],
 			'default' => '0',
 			'attribs' => ['class' => 'hidden-sm'],
-		]);
-
-		$this->addElement([
-			'type' => 'select',
-			'name' => 'page',
-			'wrap' => false,
-			'options' => [
-				'1' => '1',
-			],
-			'default' => '1',
 		]);
 	}
 }

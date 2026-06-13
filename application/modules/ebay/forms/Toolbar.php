@@ -100,20 +100,5 @@ class Ebay_Form_Toolbar extends DEEC_Form
 			'default' => 'asc',
 			'attribs' => ['class' => 'hidden-sm'],
 		]);
-
-		$this->addElement([
-			'type' => 'select',
-			'name' => 'limit',
-			'wrap' => false,
-			'options' => [
-				'50' => '50',
-				'100' => '100',
-				'250' => '250',
-				'500' => '500',
-				'0' => 'TOOLBAR_ALL',
-			],
-			'default' => '50',
-			'attribs' => ['class' => 'hidden-sm'],
-		]);
 	}
 }
