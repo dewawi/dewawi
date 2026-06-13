@@ -518,6 +518,30 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		);
 	}
 
+	public function copyAction()
+	{
+		$this->disableView();
+
+		$id = (int)$this->_getParam('id', 0);
+
+		if ($id <= 0) {
+			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
+			return $this->_helper->redirector->gotoSimple('index');
+		}
+
+		$db = $this->getDb();
+		$newId = $db->copyById($id);
+
+		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+
+		return $this->_helper->redirector->gotoSimple(
+			'edit',
+			$this->getRequest()->getControllerName(),
+			null,
+			['id' => $newId]
+		);
+	}
+
 	public function sortAction()
 	{
 		$this->disableView();

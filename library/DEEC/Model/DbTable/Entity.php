@@ -150,20 +150,51 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		$this->update($data, $where);
 	}
 
+	public function copyById(int $id): int
+	{
+		$row = $this->getById($id);
+
+		if (!$row) {
+			throw new RuntimeException('Record not found');
+		}
+
+		$data = $this->prepareCopyData($row);
+
+		return $this->create($data);
+	}
+
+	protected function prepareCopyData(array $data): array
+	{
+		unset($data['id']);
+
+		if (!empty($data['name'])) {
+			$data['name'] .= ' 2';
+		}
+
+		if (!empty($data['title'])) {
+			$data['title'] .= ' 2';
+		}
+
+		unset(
+			$data['created'],
+			$data['createdby'],
+			$data['modified'],
+			$data['modifiedby']
+		);
+
+		$data['locked'] = 0;
+		$data['lockedtime'] = null;
+
+		if (array_key_exists('deleted', $data)) {
+			$data['deleted'] = 0;
+		}
+
+		return $data;
+	}
+
 	public function deleteById(int $id): void
 	{
-		$data = [
-			'deleted' => 1,
-			'modified' => $this->_date,
-			'modifiedby' => $this->getUserId(),
-		];
-
-		$where = [
-			$this->getAdapter()->quoteInto('id = ?', $id),
-			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
-		];
-
-		$this->update($data, $where);
+		$this->deleteByIds([$id]);
 	}
 
 	public function deleteByIds(array $ids): int
