@@ -5,43 +5,16 @@ class Purchases_Form_ToolbarPositions extends DEEC_Form
 	public function __construct()
 	{
 		$this->addElement([
-			'name' => 'add',
+			'name' => 'add-position',
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW',
 			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => ['class' => 'addPosition add'],
+			'attribs' => ['class' => 'add'],
 		]);
 
 		$this->addElement([
-			'name' => 'addset',
-			'type' => 'button',
-			'label' => 'TOOLBAR_NEW_SET',
-			'toolbar' => 'actions',
-			'wrap' => false,
-			'attribs' => ['class' => 'addSet add'],
-		]);
-
-		$this->addElement([
-			'name' => 'copyset',
-			'type' => 'button',
-			'label' => 'TOOLBAR_COPY_SET',
-			'toolbar' => 'actions',
-			'wrap' => false,
-			'attribs' => ['class' => 'copySet copy'],
-		]);
-
-		$this->addElement([
-			'name' => 'deleteset',
-			'type' => 'button',
-			'label' => 'TOOLBAR_DELETE_SET',
-			'toolbar' => 'actions',
-			'wrap' => false,
-			'attribs' => ['class' => 'deleteSet delete'],
-		]);
-
-		$this->addElement([
-			'name' => 'select',
+			'name' => 'select-position',
 			'type' => 'button',
 			'label' => 'TOOLBAR_SELECT',
 			'toolbar' => 'actions',
@@ -53,37 +26,48 @@ class Purchases_Form_ToolbarPositions extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'copy',
+			'name' => 'copy-selected-position',
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY',
 			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => ['class' => 'copyPosition copy'],
+			'attribs' => ['class' => 'copy'],
 		]);
 
 		$this->addElement([
-			'name' => 'copypos',
-			'type' => 'button',
-			'toolbar' => 'actions',
-			'wrap' => false,
-			'attribs' => ['class' => 'copyPosition copy nolabel'],
-		]);
-
-		$this->addElement([
-			'name' => 'delete',
+			'name' => 'delete-selected-position',
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
 			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => ['class' => 'deletePosition delete'],
+			'attribs' => ['class' => 'delete'],
 		]);
 
 		$this->addElement([
-			'name' => 'deletepos',
+			'name' => 'add-position-set',
 			'type' => 'button',
-			'toolbar' => 'actions',
+			'label' => 'TOOLBAR_NEW_SET',
+			'toolbar' => 'positionsets',
 			'wrap' => false,
-			'attribs' => ['class' => 'deletePosition delete nolabel'],
+			'attribs' => ['class' => 'add'],
+		]);
+
+		$this->addElement([
+			'name' => 'copy-position-set',
+			'type' => 'button',
+			'label' => 'TOOLBAR_COPY_SET',
+			'toolbar' => 'positionsets',
+			'wrap' => false,
+			'attribs' => ['class' => 'copy'],
+		]);
+
+		$this->addElement([
+			'name' => 'delete-position-set',
+			'type' => 'button',
+			'label' => 'TOOLBAR_DELETE_SET',
+			'toolbar' => 'positionsets',
+			'wrap' => false,
+			'attribs' => ['class' => 'delete'],
 		]);
 
 		$this->addElement([
