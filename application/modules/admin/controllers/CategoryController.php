@@ -11,6 +11,51 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		]);
 	}
 
+	protected function getCreateData(): array
+	{
+		$db = new Admin_Model_DbTable_Category();
+
+		return [
+			'parentid' => (int)$this->_getParam('parentid', 0),
+			'shopid' => (int)$this->_getParam('shopid', 0),
+			'type' => (string)$this->_getParam('type', ''),
+			'ordering' => $db->getNextOrdering(),
+		];
+	}
+
+	protected function beforeCreate(array $data): array
+	{
+		$data['type'] = (string)($data['type'] ?? '');
+		$data['parentid'] = (int)($data['parentid'] ?? 0);
+		$data['shopid'] = (int)($data['shopid'] ?? 0);
+
+		$db = new Admin_Model_DbTable_Category();
+
+		$data['ordering'] = $db->getNextOrdering([
+			'parentid' => $data['parentid'],
+			'type' => $data['type'],
+		]);
+
+		return $data;
+	}
+
+	protected function afterCreate(int $id, array $data): void
+	{
+		if (empty($data['shopid'])) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+		$slugDb->addSlug(
+			'shops',
+			'category',
+			(int)$data['shopid'],
+			(int)$data['parentid'],
+			$id,
+			$id
+		);
+	}
+
 	protected function getEntityContext(array $row): array
 	{
 		$module = 'admin';
@@ -80,48 +125,6 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 				(string)$values['slug']
 			);
 		}
-	}
-
-	protected function getCreateData(): array
-	{
-		return [
-			'parentid' => (int)$this->_getParam('parentid', 0),
-			'shopid' => (int)$this->_getParam('shopid', 0),
-			'type' => (string)$this->_getParam('type', ''),
-		];
-	}
-
-	protected function beforeCreate(array $data): array
-	{
-		$data['type'] = (string)($data['type'] ?? '');
-		$data['parentid'] = (int)($data['parentid'] ?? 0);
-		$data['shopid'] = (int)($data['shopid'] ?? 0);
-
-		$db = new Admin_Model_DbTable_Category();
-
-		$data['ordering'] = $db->getNextOrdering([
-			'parentid' => $data['parentid'],
-			'type' => $data['type'],
-		]);
-
-		return $data;
-	}
-
-	protected function afterCreate(int $id, array $data): void
-	{
-		if (empty($data['shopid'])) {
-			return;
-		}
-
-		$slugDb = new Admin_Model_DbTable_Slug();
-		$slugDb->addSlug(
-			'shops',
-			'category',
-			(int)$data['shopid'],
-			(int)$data['parentid'],
-			$id,
-			$id
-		);
 	}
 
 	public function copyAction()

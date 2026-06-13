@@ -11,70 +11,16 @@ class Admin_CurrencyController extends DEEC_Controller_AdminAction
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$db = new Admin_Model_DbTable_Currency();
 
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$form = new Admin_Form_Currency();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			$data = $request->getPost();
-			if($form->isValid($data)) {
-				$currencyDb = new Admin_Model_DbTable_Currency();
-				$id = $currencyDb->addCurrency($data);
-				echo Zend_Json::encode($currencyDb->getCurrency($id));
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
-		}
-	}
-
-	public function editAction()
-	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
-
-		$currencyDb = new Admin_Model_DbTable_Currency();
-		$currency = $currencyDb->getCurrency($id);
-
-		if($this->isLocked($currency['locked'], $currency['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
-		} else {
-			$currencyDb->lock($id);
-
-			$form = new Admin_Form_Currency();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			if($request->isPost()) {
-				$data = $request->getPost();
-				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$currencyDb = new Admin_Model_DbTable_Currency();
-					$currencyDb->updateCurrency($id, $data);
-					echo Zend_Json::encode($currencyDb->getCurrency($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			}
-		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		return [
+			'code' => '---',
+			'name' => $this->view->translate('NEW_CURRENCY'),
+			'symbol' => '',
+			'ordering' => $db->getNextOrdering(),
+		];
 	}
 
 	public function copyAction()

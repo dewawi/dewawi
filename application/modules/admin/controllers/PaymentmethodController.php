@@ -11,70 +11,14 @@ class Admin_PaymentmethodController extends DEEC_Controller_AdminAction
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$db = new Admin_Model_DbTable_Paymentmethod();
 
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$form = new Admin_Form_Paymentmethod();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			$data = $request->getPost();
-			if($form->isValid($data)) {
-				$paymentmethodDb = new Admin_Model_DbTable_Paymentmethod();
-				$id = $paymentmethodDb->addPaymentmethod($data);
-				echo Zend_Json::encode($paymentmethodDb->getPaymentmethod($id));
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
-		}
-	}
-
-	public function editAction()
-	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
-
-		$paymentmethodDb = new Admin_Model_DbTable_Paymentmethod();
-		$paymentmethod = $paymentmethodDb->getPaymentmethod($id);
-
-		if($this->isLocked($paymentmethod['locked'], $paymentmethod['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
-			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
-		} else {
-			$paymentmethodDb->lock($id);
-
-			$form = new Admin_Form_Paymentmethod();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			if($request->isPost()) {
-				$data = $request->getPost();
-				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$paymentmethodDb = new Admin_Model_DbTable_Paymentmethod();
-					$paymentmethodDb->updatePaymentmethod($id, $data);
-					echo Zend_Json::encode($paymentmethodDb->getPaymentmethod($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
-			}
-		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		return [
+			'title' => $this->view->translate('NEW_PAYMENT_METHOD'),
+			'ordering' => $db->getNextOrdering(),
+		];
 	}
 
 	public function copyAction()

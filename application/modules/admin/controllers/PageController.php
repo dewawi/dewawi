@@ -11,32 +11,15 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$db = new Admin_Model_DbTable_Manufacturer();
 
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$form = new Admin_Form_Page();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			$data = $request->getPost();
-			//if($form->isValid($data)) {
-				$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-				if(!isset($data['shopid'])) $data['shopid'] = 0;
-				//$data['parentid'] = $params['parentid'];
-
-				$pageDb = new Admin_Model_DbTable_Page();
-				$id = $pageDb->addPage($data);
-				//echo Zend_Json::encode($data);
-				echo Zend_Json::encode($pageDb->getPage($id));
-			//} else {
-			//	echo Zend_Json::encode($data);
-				//echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			//}
-		}
+		return [
+			'shopid' => (int)$this->_getParam('shopid', 0),
+			'title' => $this->view->translate('NEW_PAGE'),
+			'ordering' => $db->getNextOrdering(),
+		];
 	}
 
 	public function copyAction()
