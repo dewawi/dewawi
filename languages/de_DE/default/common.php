@@ -34,6 +34,8 @@
 	'EMAIL_REFRESH' => 'Aktualisieren',
 	'EMAIL_REPLY' => 'Antworten',
 	'EMAIL_MESSAGE_SUCCESFULLY_SENT' => 'Nachricht erfolgreich gesendet!',
+	//List
+	'LIST_NO_ENTRIES_FOUND' => 'Keine Einträge gefunden',
 	//Upload
 	'UPLOAD' => 'Datei hochladen',
 	'UPLOAD_SUBMIT' => 'Hochladen',

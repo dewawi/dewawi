@@ -18,7 +18,7 @@ class DEEC_List
 	protected $rowClassCallback = null;
 	protected $readonlyStates = ['105', '106'];
 	protected $partial = 'list/list.phtml';
-	protected $emptyText = 'NO_ENTRIES_FOUND';
+	protected $emptyText = 'LIST_NO_ENTRIES_FOUND';
 
 	public function __construct(array $config = [])
 	{
