@@ -30,6 +30,20 @@ class Admin_Form_Menuitem extends DEEC_Form
 			'options' => [
 				'0' => 'ADMIN_NO_MENU',
 			],
+			'source' => 'menu',
+			'default' => '0',
+			'tab' => 'settings',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'pageid',
+			'type' => 'select',
+			'label' => 'ADMIN_MENU_PAGE',
+			'options' => [
+				'0' => 'ADMIN_MENU_NO_PAGE',
+			],
+			'source' => 'page',
 			'default' => '0',
 			'tab' => 'settings',
 			'col' => 6,
@@ -52,6 +66,7 @@ class Admin_Form_Menuitem extends DEEC_Form
 			'type' => 'select',
 			'label' => 'ADMIN_LANGUAGE',
 			'options' => [],
+			'source' => 'language',
 			'default' => '',
 			'tab' => 'settings',
 			'col' => 3,

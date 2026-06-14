@@ -39,7 +39,7 @@ class Admin_Form_Menu extends DEEC_Form
 		$this->addElement([
 			'name' => 'position',
 			'type' => 'text',
-			'label' => 'ADMIN_POSITION',
+			'label' => 'ADMIN_MENU_POSITION',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'size' => 12,
