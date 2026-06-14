@@ -14,6 +14,7 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 	protected function getCreateData(): array
 	{
 		return [
+			'title' => $this->view->translate('ADMIN_NEW_MENU_ITEM'),
 			'menuid' => (int)$this->_getParam('menuid', 0),
 			'pageid' => (int)$this->_getParam('pageid', 0),
 			'parentid' => (int)$this->_getParam('parentid', 0),

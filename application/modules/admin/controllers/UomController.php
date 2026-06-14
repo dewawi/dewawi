@@ -14,7 +14,7 @@ class Admin_UomController extends DEEC_Controller_AdminAction
 	protected function getCreateData(): array
 	{
 		return [
-			'title' => $this->view->translate('NEW_UOM'),
+			'title' => $this->view->translate('ADMIN_NEW_UOM'),
 		];
 	}
 }

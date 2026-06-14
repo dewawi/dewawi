@@ -14,6 +14,7 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 	protected function getCreateData(): array
 	{
 		return [
+			'title' => $this->view->translate('ADMIN_NEW_CATEGORY'),
 			'parentid' => (int)$this->_getParam('parentid', 0),
 			'shopid' => (int)$this->_getParam('shopid', 0),
 			'type' => (string)$this->_getParam('type', ''),

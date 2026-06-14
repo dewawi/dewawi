@@ -16,7 +16,7 @@ class Admin_TaxrateController extends DEEC_Controller_AdminAction
 		$db = new Admin_Model_DbTable_Taxrate();
 
 		return [
-			'name' => $this->view->translate('NEW_TAX_RATE'),
+			'name' => $this->view->translate('ADMIN_NEW_TAX_RATE'),
 			'rate' => 0,
 			'ordering' => $db->getNextOrdering(),
 		];

@@ -15,7 +15,7 @@ class Admin_CountryController extends DEEC_Controller_AdminAction
 	{
 		return [
 			'code' => '--',
-			'name' => $this->view->translate('NEW_COUNTRY'),
+			'name' => $this->view->translate('ADMIN_NEW_COUNTRY'),
 			'language' => (string) Zend_Registry::get('Zend_Locale'),
 		];
 	}

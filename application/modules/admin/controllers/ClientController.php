@@ -14,7 +14,7 @@ class Admin_ClientController extends DEEC_Controller_AdminAction
 	protected function getCreateData(): array
 	{
 		return [
-			'company' => $this->view->translate('NEW_CLIENT'),
+			'company' => $this->view->translate('ADMIN_NEW_CLIENT'),
 		];
 	}
 

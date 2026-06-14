@@ -14,7 +14,7 @@ class Admin_ShopController extends DEEC_Controller_AdminAction
 	protected function getCreateData(): array
 	{
 		return [
-			'title' => $this->view->translate('NEW_SHOP'),
+			'title' => $this->view->translate('ADMIN_NEW_SHOP'),
 		];
 	}
 

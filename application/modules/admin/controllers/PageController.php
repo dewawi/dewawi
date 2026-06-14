@@ -14,10 +14,10 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 	protected function getCreateData(): array
 	{
 		return [
+			'title' => $this->view->translate('ADMIN_NEW_PAGE'),
 			'shopid' => (int)$this->_getParam('shopid', 0),
 			'parentid' => (int)$this->_getParam('parentid', 0),
 			'type' => (string)$this->_getParam('type', ''),
-			'title' => $this->view->translate('NEW_PAGE'),
 		];
 	}
 

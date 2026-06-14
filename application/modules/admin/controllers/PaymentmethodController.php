@@ -16,7 +16,7 @@ class Admin_PaymentmethodController extends DEEC_Controller_AdminAction
 		$db = new Admin_Model_DbTable_Paymentmethod();
 
 		return [
-			'title' => $this->view->translate('NEW_PAYMENT_METHOD'),
+			'title' => $this->view->translate('ADMIN_NEW_PAYMENT_METHOD'),
 			'ordering' => $db->getNextOrdering(),
 		];
 	}

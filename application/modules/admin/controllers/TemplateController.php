@@ -14,7 +14,7 @@ class Admin_TemplateController extends DEEC_Controller_AdminAction
 	protected function getCreateData(): array
 	{
 		return [
-			'description' => $this->view->translate('NEW_TEMPLATE'),
+			'description' => $this->view->translate('ADMIN_NEW_TEMPLATE'),
 		];
 	}
 }

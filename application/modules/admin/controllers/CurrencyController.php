@@ -17,7 +17,7 @@ class Admin_CurrencyController extends DEEC_Controller_AdminAction
 
 		return [
 			'code' => '---',
-			'name' => $this->view->translate('NEW_CURRENCY'),
+			'name' => $this->view->translate('ADMIN_NEW_CURRENCY'),
 			'symbol' => '',
 			'ordering' => $db->getNextOrdering(),
 		];

@@ -14,6 +14,7 @@ class Admin_SlideController extends DEEC_Controller_AdminAction
 	protected function getCreateData(): array
 	{
 		return [
+			'title' => $this->view->translate('ADMIN_NEW_SLIDE'),
 			'shopid' => (int)$this->_getParam('shopid', 0),
 		];
 	}

@@ -3,6 +3,7 @@
 	'CLIENT' => 'Mandant',
 	//Menu
 	'ADMIN_OVERVIEW' => 'Übersicht',
+	'ADMIN_CLIENT' => 'Mandant',
 	'ADMIN_CLIENTS' => 'Mandanten',
 	'ADMIN_CATEGORY_ID' => 'ID',
 	'ADMIN_CATEGORIES' => 'Kategorien',
@@ -45,6 +46,7 @@
 	'ADMIN_PAGES' => 'Seiten',
 	'ADMIN_TAGS' => 'Tags',
 	//New
+	'ADMIN_NEW_CLIENT' => 'Neuer Mandant',
 	'ADMIN_NEW_MANUFACTURER' => 'Neuer Hersteller',
 	'ADMIN_NEW_CATEGORY' => 'Neue Kategorie',
 	'ADMIN_NEW_PAYMENT_METHOD' => 'Neue Zahlungsart',

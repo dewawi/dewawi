@@ -14,6 +14,7 @@ class Admin_MenuController extends DEEC_Controller_AdminAction
 	protected function getCreateData(): array
 	{
 		return [
+			'title' => $this->view->translate('ADMIN_NEW_MENU'),
 			'shopid' => (int)$this->_getParam('shopid', 0),
 			'position' => (string)$this->_getParam('position', ''),
 		];

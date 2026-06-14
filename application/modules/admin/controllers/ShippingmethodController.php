@@ -16,7 +16,7 @@ class Admin_ShippingmethodController extends DEEC_Controller_AdminAction
 		$db = new Admin_Model_DbTable_Shippingmethod();
 
 		return [
-			'title' => $this->view->translate('NEW_SHIPPING_METHOD'),
+			'title' => $this->view->translate('ADMIN_NEW_SHIPPING_METHOD'),
 			'ordering' => $db->getNextOrdering(),
 		];
 	}

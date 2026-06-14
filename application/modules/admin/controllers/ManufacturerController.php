@@ -16,7 +16,7 @@ class Admin_ManufacturerController extends DEEC_Controller_AdminAction
 		$db = new Admin_Model_DbTable_Manufacturer();
 
 		return [
-			'name' => $this->view->translate('NEW_MANUFACTURER'),
+			'name' => $this->view->translate('ADMIN_NEW_MANUFACTURER'),
 			'ordering' => $db->getNextOrdering(),
 		];
 	}

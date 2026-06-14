@@ -16,7 +16,7 @@ class Admin_DeliverytimeController extends DEEC_Controller_AdminAction
 		$db = new Admin_Model_DbTable_Deliverytime();
 
 		return [
-			'title' => $this->view->translate('NEW_DELIVERY_TIME'),
+			'title' => $this->view->translate('ADMIN_NEW_DELIVERY_TIME'),
 			'ordering' => $db->getNextOrdering(),
 		];
 	}
