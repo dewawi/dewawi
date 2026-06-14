@@ -12,7 +12,7 @@ echo $this->FileManager();
 	   'action' => 'edit',
 	   'id' => $this->form->getValue('menuid'),
    ], null, true); ?>">
-	Zurück zum Menü
+	<?php echo $this->translate('ADMIN_BACK_TO_MENU'); ?>
 </a>
 
 <?php echo $this->form->renderForm(); ?>

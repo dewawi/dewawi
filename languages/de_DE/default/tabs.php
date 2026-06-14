@@ -27,5 +27,6 @@
 	'TABS_ATTRIBUTES' => 'Eigenschaften',
 	'TABS_OPTIONS' => 'Optionen',
 	'TABS_LEDGER' => 'Buchungsverlauf',
-	'TABS_DOWNLOADS' => 'Downloads'
+	'TABS_DOWNLOADS' => 'Downloads',
+	'TABS_MENU_ITEMS' => 'Menüpunkte'
 );
