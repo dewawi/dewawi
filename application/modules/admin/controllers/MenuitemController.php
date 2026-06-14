@@ -2,13 +2,13 @@
 
 class Admin_MenuitemController extends DEEC_Controller_AdminAction
 {
-	protected function buildIndexView(): void
+	public function indexAction()
 	{
-		$this->buildListView([
-			'viewKey' => 'menuitems',
-			'list' => 'Admin_Model_List_Menuitems',
-			'entity' => Admin_Model_Entity_Menuitem::listConfig(),
-		]);
+		return $this->_helper->redirector->gotoSimple(
+			'index',
+			'menu',
+			'admin'
+		);
 	}
 
 	protected function getCreateData(): array
