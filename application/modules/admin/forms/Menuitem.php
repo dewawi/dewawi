@@ -24,113 +24,11 @@ class Admin_Form_Menuitem extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'image',
-			'type' => 'text',
-			'label' => 'ADMIN_CATEGORY_IMAGE',
-			'format' => ['type' => 'string'],
-			'attribs' => [
-				'size' => 12,
-			],
-			'tab' => 'overview',
-			'col' => 6,
-		]);
-
-		$this->addElement([
-			'name' => 'content',
-			'type' => 'textarea',
-			'label' => 'ADMIN_CATEGORY_DESCRIPTION',
-			'format' => [
-				'type' => 'html',
-				'allowTags' => ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
-			],
-			'attribs' => [
-				'cols' => 75,
-				'rows' => 18,
-				'class' => 'editor',
-			],
-			'tab' => 'content',
-			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'shortdescription',
-			'type' => 'textarea',
-			'label' => 'ADMIN_CATEGORY_SHORT_DESCRIPTION',
-			'format' => [
-				'type' => 'html',
-				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
-			],
-			'attribs' => [
-				'cols' => 75,
-				'rows' => 18,
-				'class' => 'editor',
-			],
-			'tab' => 'content',
-			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'minidescription',
-			'type' => 'textarea',
-			'label' => 'ADMIN_CATEGORY_MINI_DESCRIPTION',
-			'format' => [
-				'type' => 'html',
-				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
-			],
-			'attribs' => [
-				'cols' => 75,
-				'rows' => 18,
-				'class' => 'editor',
-			],
-			'tab' => 'content',
-			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'header',
-			'type' => 'textarea',
-			'label' => 'ADMIN_HEADER',
-			'format' => [
-				'type' => 'html',
-				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
-			],
-			'attribs' => [
-				'cols' => 75,
-				'rows' => 18,
-				'class' => 'editor',
-			],
-			'tab' => 'content',
-			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'footer',
-			'type' => 'textarea',
-			'label' => 'ADMIN_FOOTER',
-			'format' => [
-				'type' => 'html',
-				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
-			],
-			'attribs' => [
-				'cols' => 75,
-				'rows' => 18,
-				'class' => 'editor',
-			],
-			'tab' => 'content',
-			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'parentid',
+			'name' => 'menuid',
 			'type' => 'select',
-			'label' => 'ADMIN_MAIN_CATEGORY',
+			'label' => 'ADMIN_MENU',
 			'options' => [
-				'0' => 'ADMIN_MAIN_CATEGORY',
+				'0' => 'ADMIN_NO_MENU',
 			],
 			'default' => '0',
 			'tab' => 'settings',
@@ -138,16 +36,15 @@ class Admin_Form_Menuitem extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'type',
+			'name' => 'parentid',
 			'type' => 'select',
-			'label' => 'ADMIN_TYPE',
+			'label' => 'ADMIN_PARENT_MENU_ITEM',
 			'options' => [
-				'contact' => 'CONTACT',
-				'item' => 'ITEM',
+				'0' => 'ADMIN_MAIN_MENU_ITEM',
 			],
-			'default' => 'contact',
+			'default' => '0',
 			'tab' => 'settings',
-			'col' => 3,
+			'col' => 6,
 		]);
 
 		$this->addElement([
