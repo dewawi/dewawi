@@ -11,6 +11,7 @@ $this->headTitle($shop['title'] ?? '');
 echo $this->doctype();
 $home = false;
 if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
+$router = Zend_Controller_Front::getInstance()->getRouter();
 ?>
 <html lang="en">
 <head>
@@ -45,27 +46,33 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 
 						<!-- Show the first 5 main categories -->
 						<?php foreach($firstFiveCategories as $category) : ?>
-							<li class="nav-item">
-								<a class="nav-link" href="<?php echo $this->url([], 'slug_category_' . $category['id']); ?>"><?php echo $category['title']; ?></a>
-								<ul class="submenu">
-									<?php echo $this->RenderSubCategory($categories, $category['id']); ?>
-								</ul>
-							</li>
+							<?php $routeName = 'slug_category_' . (int)$category['id']; ?>
+							<?php if((int)$category['id'] > 0 && $router->hasRoute($routeName)) : ?>
+								<li class="nav-item">
+									<a class="nav-link" href="<?php echo $this->url([], $routeName); ?>">
+										<?php echo $this->escape($category['title']); ?>
+									</a>
+									<ul class="submenu">
+										<?php echo $this->RenderSubCategory($categories, $category['id']); ?>
+									</ul>
+								</li>
+							<?php endif; ?>
 						<?php endforeach; ?>
 
 						<!-- Create an "Other items" menu for remaining categories -->
 						<?php if (!empty($otherCategories)) : ?>
-						<?php $router = Zend_Controller_Front::getInstance()->getRouter(); ?>
 							<li class="nav-item">
 								<a class="nav-link" href="#">
 									<?php echo $this->translate('SHOPS_OTHER_CATEGORIES'); ?> <i class="fas fa-angle-down"></i>
 								</a>
 								<ul class="submenu">
 									<?php foreach($otherCategories as $category) : ?>
-										<?php $routeName = 'category_' . $category['id']; ?>
-										<?php if ($router->hasRoute($routeName)) : ?>
+										<?php $routeName = 'slug_category_' . (int)$category['id']; ?>
+										<?php if((int)$category['id'] > 0 && $router->hasRoute($routeName)) : ?>
 											<li class="right-edge">
-												<a href="<?php echo $this->url([], 'category_' . $category['id']); ?>"><?php echo $category['title']; ?></a>
+												<a href="<?php echo $this->url([], $routeName); ?>">
+													<?php echo $this->escape($category['title']); ?>
+												</a>
 												<ul class="submenu">
 													<?php echo $this->RenderSubCategory($categories, $category['id']); ?>
 												</ul>
@@ -128,11 +135,16 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 			<ul class="row-menu">
 				<?php foreach($menus as $menu) : ?>
 					<?php if($menu->position == 'footer') : ?>
-						<?php foreach($menuitems[$menu->id] as $menuitem) : ?>
-							<?php if($menuitem->parentid == 0) : ?>
-								<li class="nav-item">
-									<a class="nav-link" href="<?php echo $this->url([], 'slug_page_' . $menuitem->pageid); ?>"><?php echo $menuitem->title; ?></a>
-								</li>
+						<?php foreach($menuitems[$menu->id] ?? [] as $menuitem) : ?>
+							<?php if((int)$menuitem->parentid === 0 && (int)$menuitem->pageid > 0) : ?>
+								<?php $routeName = 'slug_page_' . (int)$menuitem->pageid; ?>
+								<?php if($router->hasRoute($routeName)) : ?>
+									<li class="nav-item">
+										<a class="nav-link" href="<?php echo $this->url([], $routeName); ?>">
+											<?php echo $this->escape($menuitem->title); ?>
+										</a>
+									</li>
+								<?php endif; ?>
 							<?php endif; ?>
 						<?php endforeach; ?>
 					<?php endif; ?>
