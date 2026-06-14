@@ -13,10 +13,11 @@ class Admin_Model_List_Pages extends DEEC_List
 				'empty_hide' => true,
 			],
 			[
-				'name' => 'shopid',
+				'name' => 'shop',
 				'label' => 'ADMIN_SHOP',
 				'type' => 'text',
-				'class' => 'dw-col-shopid',
+				'field' => 'shoptitle',
+				'class' => 'dw-col-shop',
 			],
 			[
 				'name' => 'title',

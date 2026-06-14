@@ -8,6 +8,21 @@ class Admin_Model_Entity_Page
 			'tableClass' => 'Admin_Model_DbTable_Page',
 			'alias' => 'p',
 
+			'columns' => [
+				'p.*',
+				'shoptitle' => 's.title',
+			],
+
+			'joins' => [
+				[
+					'type' => 'left',
+					'table' => 'shop',
+					'alias' => 's',
+					'on' => 'p.shopid = s.id',
+					'columns' => [],
+				],
+			],
+
 			'search' => [
 				'title',
 				'subtitle',
