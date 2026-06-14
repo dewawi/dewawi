@@ -185,74 +185,127 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
-	public function copyAction()
+	protected function afterCreate(int $id, array $data): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$id = $this->_getParam('id', 0);
-		$tagDb = new Admin_Model_DbTable_Tag();
-		$data = $tagDb->getTag($id);
-		unset($data['id']);
-
-		$tagsDb = new Admin_Model_DbTable_Tag();
-		$tags = $tagsDb->getTags($data['type'], $data['parentid']);
-		foreach($tags as $tag) {
-			if(isset($tag['ordering'])) {
-				if($tag['ordering'] > $data['ordering']) {
-					if(!isset($tagsDb)) $tagsDb = new Admin_Model_DbTable_Tag();
-					$tagsDb->sortTag($tag['id'], $tag['ordering'] + 1);
-				}
-			}
+		if (empty($data['shopid'])) {
+			return;
 		}
 
-		$data['title'] = $data['title'].' 2';
-		$data['ordering'] = $data['ordering'] + 1;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-		$newId = $tagDb->addTag($data);
-		//print_r($data);
+		$slugDb = new Admin_Model_DbTable_Slug();
 
-		if($data['shopid']) {
-			$slugDb = new Admin_Model_DbTable_Slug();
-			$slugDb->addSlug('shops', 'tag', $data['shopid'], $data['parentid'], $newId, $newId);
-		}
-
-		$childTags = $tagsDb->getTags($data['type'], $id);
-		if(isset($childTags[$id]['childs'])) $this->copyChilds($id, $childTags, $newId);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+		$slugDb->addSlug(
+			'shops',
+			'tag',
+			(int)$data['shopid'],
+			(int)($data['parentid'] ?? 0),
+			$id,
+			$id
+		);
 	}
 
-	public function deleteAction()
+	protected function prepareEditRow(array $row): array
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$tagDb = new Admin_Model_DbTable_Tag();
-			$tag = $tagDb->getTag($id);
-
-			if(true) {
-				$tagEntityDb = new Admin_Model_DbTable_Tagentity();
-				$tagentities = $tagEntityDb->getTagentitiesByTag($id);
-				if(!empty($tagentities)) {
-					//Do not delete the tag if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_TAG_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$tagDb->deleteTag($id);
-					//$this->setOrdering($tag['clientid'], $tag['type'], $tag['parentid']);
-
-					if($category['shopid']) {
-						$slugDb = new Admin_Model_DbTable_Slug();
-						$slugDb->deleteSlug('shops', 'tag', $tag['shopid'], $id);
-					}
-					$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-				}
-			}
+		if (empty($row['shopid']) || empty($row['id'])) {
+			$row['slug'] = '';
+			return $row;
 		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		$slug = $slugDb->getSlug(
+			'shops',
+			'tag',
+			(int)$row['shopid'],
+			(int)$row['id']
+		);
+
+		$row['slug'] = $slug['slug'] ?? '';
+
+		return $row;
+	}
+
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		if (
+			array_key_exists('parentid', $values)
+			&& (int)$values['parentid'] !== (int)$row['parentid']
+		) {
+			$db = new Admin_Model_DbTable_Tag();
+
+			$values['ordering'] = $db->getNextOrdering([
+				'shopid' => (int)$row['shopid'],
+				'parentid' => (int)$values['parentid'],
+			]);
+		}
+
+		return $values;
+	}
+
+	protected function afterEditSave(int $id, array $values, array $oldRow): void
+	{
+		if (array_key_exists('parentid', $values) && (int)$values['parentid'] !== (int)$oldRow['parentid']) {
+			$db = new Admin_Model_DbTable_Tag();
+			$db->normalizeOrderingByRow($oldRow);
+		}
+
+		if (empty($oldRow['shopid'])) {
+			return;
+		}
+
+		if (!array_key_exists('slug', $values) && !array_key_exists('parentid', $values)) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		$slugDb->saveSlug(
+			'shops',
+			'tag',
+			(int)$oldRow['shopid'],
+			(int)($values['parentid'] ?? $oldRow['parentid']),
+			$id,
+			(string)($values['slug'] ?? '')
+		);
+	}
+
+	protected function canDeleteRow(array $row): bool
+	{
+		$tagEntityDb = new Admin_Model_DbTable_Tagentity();
+		$tagentities = $tagEntityDb->getTagentitiesByTag((int)$row['id']);
+
+		if (!empty($tagentities)) {
+			$this->_flashMessenger->addMessage('MESSAGES_TAG_CANNOT_BE_DELETED_NOT_EMPTY');
+			return false;
+		}
+
+		return true;
+	}
+
+	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
+	{
+		if (!empty($newRow['shopid'])) {
+			$slugDb = new Admin_Model_DbTable_Slug();
+
+			$slugDb->addSlug(
+				'shops',
+				'tag',
+				(int)$newRow['shopid'],
+				(int)($newRow['parentid'] ?? 0),
+				$newId,
+				$newId
+			);
+		}
+
+		$this->copyChilds($oldId, $newId, 'shops', 'tag');
+	}
+
+	protected function afterDelete(int $id, array $row): void
+	{
+		if (empty($row['shopid'])) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+		$slugDb->deleteSlug('shops', 'tag', (int)$row['shopid'], $id);
 	}
 }

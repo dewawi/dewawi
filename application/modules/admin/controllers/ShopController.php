@@ -18,33 +18,23 @@ class Admin_ShopController extends DEEC_Controller_AdminAction
 		];
 	}
 
-	public function copyAction()
+	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$id = $this->_getParam('id', 0);
-		$shopDb = new Admin_Model_DbTable_Shop();
-		$data = $shopDb->getShop($id);
-		unset($data['id']);
-		$data['company'] = $data['company'].' 2';
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-		$shopid = $shopDb->addShop($data);
-
-		//Copy config row
 		$configDb = new Admin_Model_DbTable_Config();
-		$config = $configDb->getConfigByShopID($id);
+		$config = $configDb->getConfigByShopID($oldId);
+
+		if (!$config) {
+			return;
+		}
+
 		unset($config['id']);
-		$config['shopid'] = $shopid;
-		$config['modified'] = NULL;
+
+		$config['shopid'] = $newId;
+		$config['modified'] = null;
 		$config['modifiedby'] = 0;
 		$config['locked'] = 0;
-		$config['lockedtime'] = NULL;
-		$configDb->addConfig($config);
+		$config['lockedtime'] = null;
 
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+		$configDb->addConfig($config);
 	}
 }

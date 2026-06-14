@@ -27,52 +27,14 @@ class Admin_SlideController extends DEEC_Controller_AdminAction
 		];
 	}
 
-	public function copyAction()
+	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$id = (int)$this->_getParam('id', 0);
-
-		$slideDb = new Admin_Model_DbTable_Slide();
-		$data = $slideDb->getSlide($id);
-
-		unset($data['id']);
-
-		$data['title'] = trim((string)($data['title'] ?? '')) . ' 2';
-		$data['ordering'] = ((int)($data['ordering'] ?? 0)) + 1;
-		$data['modified'] = null;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = null;
-
-		$newId = $slideDb->addSlide($data);
-
-		$this->copyMedia($id, $newId);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+		$this->copyMedia($oldId, $newId);
 	}
 
-	public function deleteAction()
+	protected function afterDelete(int $id, array $row): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if (!$this->getRequest()->isPost()) {
-			return;
-		}
-
-		$id = (int)$this->_getParam('id', 0);
-
-		$slideDb = new Admin_Model_DbTable_Slide();
-		$slide = $slideDb->getSlide($id);
-
-		$slideDb->deleteSlide($id);
-
 		$this->deleteMedia($id);
-		$this->setOrdering((int)$slide['shopid'], '', 'slide');
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}
 
 	protected function copyMedia(int $oldId, int $newId): void

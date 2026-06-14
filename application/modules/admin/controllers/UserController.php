@@ -129,52 +129,29 @@ class Admin_UserController extends DEEC_Controller_AdminAction
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
-	public function copyAction()
+	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$id = $this->_getParam('id', 0);
-		$userDb = new Admin_Model_DbTable_User();
-		$data = $userDb->getUser($id);
-		unset($data['id']);
-		$data['username'] = $data['username'].'2';
-		$data['email'] = $data['email'].'2';
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-		$userid = $userDb->addUser($data);
-
-		//Copy user permissions
 		$permissionDb = new Admin_Model_DbTable_Permission();
-		$permissions = $permissionDb->getPermissionByUserID($id);
+		$permissions = $permissionDb->getPermissionByUserID($oldId);
+
 		unset($permissions['id']);
-		$permissions['userid'] = $userid;
-		$permissions['modified'] = NULL;
+
+		$permissions['userid'] = $newId;
+		$permissions['modified'] = null;
 		$permissions['modifiedby'] = 0;
 		$permissions['locked'] = 0;
-		$permissions['lockedtime'] = NULL;
-		$permissionDb->addPermission($permissions);
+		$permissions['lockedtime'] = null;
 
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+		$permissionDb->addPermission($permissions);
 	}
 
-
-	public function deleteAction()
+	protected function canDeleteRow(array $row): bool
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			if($id == $this->_user['id']) {
-				$this->_flashMessenger->addMessage('MESSAGES_OWN_USER_CAN_NOT_BE_DELETED');
-			} else {
-				$userDb = new Admin_Model_DbTable_User();
-				$userDb->deleteUser($id);
-				$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-			}
+		if ((int)$row['id'] === (int)$this->_user['id']) {
+			$this->_flashMessenger->addMessage('MESSAGES_OWN_USER_CAN_NOT_BE_DELETED');
+			return false;
 		}
+
+		return true;
 	}
 }
