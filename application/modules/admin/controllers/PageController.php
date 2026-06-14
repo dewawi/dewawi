@@ -38,109 +38,73 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 		return $data;
 	}
 
-	public function copyAction()
+	protected function prepareEditRow(array $row): array
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$id = $this->_getParam('id', 0);
-		$pageDb = new Admin_Model_DbTable_Page();
-		$data = $pageDb->getPage($id);
-		unset($data['id']);
-
-		$pagesDb = new Admin_Model_DbTable_Page();
-		$pages = $pagesDb->getPages($data['type'], $data['parentid']);
-		foreach($pages as $page) {
-			if(isset($page['ordering'])) {
-				if($page['ordering'] > $data['ordering']) {
-					if(!isset($pagesDb)) $pagesDb = new Admin_Model_DbTable_Page();
-					$pagesDb->sortPage($page['id'], $page['ordering'] + 1);
-				}
-			}
+		if (empty($row['shopid']) || empty($row['id'])) {
+			$row['slug'] = '';
+			return $row;
 		}
 
-		$data['title'] = $data['title'].' 2';
-		$data['ordering'] = $data['ordering'] + 1;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-		$newId = $pageDb->addPage($data);
-		//print_r($data);
+		$slugDb = new Admin_Model_DbTable_Slug();
 
-		$childPages = $pagesDb->getPages($data['type'], $id);
-		if(isset($childPages[$id]['childs'])) $this->copyChilds($id, $childPages, $newId);
+		$slug = $slugDb->getSlug(
+			'shops',
+			'page',
+			(int)$row['shopid'],
+			(int)$row['id']
+		);
 
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+		$row['slug'] = $slug['slug'] ?? '';
 
-
+		return $row;
 	}
 
-	public function deleteAction()
+	protected function afterCreate(int $id, array $data): void
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$pageDb = new Admin_Model_DbTable_Page();
-			$page = $pageDb->getPage($id);
-
-			if($page['type'] == 'contact') {
-				$contactDb = new Contacts_Model_DbTable_Contact();
-				$contacts = $contactDb->getContactsByPage($id);
-				if(!empty($contacts)) {
-					//Do not delete the page if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$pagesDb = new Admin_Model_DbTable_Page();
-					$pages = $pagesDb->getPages($page['type'], $page['id']);
-					if(!empty($pages)) {
-						//Do not delete the page if it has child pages
-						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
-					} else {
-						$pageDb->deletePage($id);
-						$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
-						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-					}
-				}
-			} elseif($page['type'] == 'item') {
-				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByPage($id);
-				if(!empty($items)) {
-					//Do not delete the page if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$pagesDb = new Admin_Model_DbTable_Page();
-					$pages = $pagesDb->getPages($page['type'], $page['id']);
-					if(!empty($pages)) {
-						//Do not delete the page if it has child pages
-						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
-					} else {
-						$pageDb->deletePage($id);
-						$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
-						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-					}
-				}
-			} elseif($page['type'] == 'shop') {
-				$itemDb = new Items_Model_DbTable_Item();
-				$items = $itemDb->getItemsByPage($id);
-				if(!empty($items)) {
-					//Do not delete the page if it is not empty
-					$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_NOT_EMPTY');
-				} else {
-					$pagesDb = new Admin_Model_DbTable_Page();
-					$pages = $pagesDb->getPages($page['type'], $page['id']);
-					if(!empty($pages)) {
-						//Do not delete the page if it has child pages
-						$this->_flashMessenger->addMessage('MESSAGES_PAGE_CANNOT_BE_DELETED_HAS_CHILDS');
-					} else {
-						$pageDb->deletePage($id);
-						$this->setOrdering($page['clientid'], $page['type'], $page['parentid']);
-						$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-					}
-				}
-			}
+		if (empty($data['shopid'])) {
+			return;
 		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+		$slugDb->addSlug(
+			'shops',
+			'page',
+			(int)$data['shopid'],
+			(int)$data['parentid'],
+			$id,
+			$id
+		);
+	}
+
+	protected function afterEditSave(int $id, array $values, array $oldRow): void
+	{
+		if (empty($oldRow['shopid'])) {
+			return;
+		}
+
+		if (!array_key_exists('slug', $values) && !array_key_exists('parentid', $values)) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		$slugDb->saveSlug(
+			'shops',
+			'page',
+			(int)$oldRow['shopid'],
+			(int)($values['parentid'] ?? $oldRow['parentid']),
+			$id,
+			(string)($values['slug'] ?? '')
+		);
+	}
+
+	protected function afterDelete(int $id, array $row): void
+	{
+		if (empty($row['shopid'])) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+		$slugDb->deleteSlug('shops', 'page', (int)$row['shopid'], $id);
 	}
 }

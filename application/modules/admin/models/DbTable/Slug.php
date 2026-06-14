@@ -65,6 +65,18 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$this->update($data, $where);
 	}
 
+	public function saveSlug($module, $controller, $shopid, $parentid, $entityid, $slug)
+	{
+		$existing = $this->getSlug($module, $controller, $shopid, $entityid);
+
+		if (!empty($existing)) {
+			$this->updateSlug($module, $controller, $shopid, $parentid, $entityid, $slug);
+			return (int)$existing['id'];
+		}
+
+		return $this->addSlug($module, $controller, $shopid, $parentid, $entityid, $slug);
+	}
+
 	public function sortSlug($id, $ordering)
 	{
 		$data = array();

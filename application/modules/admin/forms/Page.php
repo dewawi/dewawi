@@ -20,7 +20,7 @@ class Admin_Form_Page extends DEEC_Form
 			],
 			'source' => 'shop',
 			'default' => '0',
-			'tab' => 'settings',
+			'tab' => 'overview',
 			'col' => 6,
 		]);
 
@@ -33,7 +33,7 @@ class Admin_Form_Page extends DEEC_Form
 			],
 			'source' => 'page',
 			'default' => '0',
-			'tab' => 'settings',
+			'tab' => 'overview',
 			'col' => 6,
 		]);
 
@@ -41,6 +41,18 @@ class Admin_Form_Page extends DEEC_Form
 			'name' => 'title',
 			'type' => 'text',
 			'label' => 'ADMIN_TITLE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
+			],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'slug',
+			'type' => 'text',
+			'label' => 'ADMIN_SLUG',
 			'format' => ['type' => 'string'],
 			'attribs' => [
 				'size' => 12,

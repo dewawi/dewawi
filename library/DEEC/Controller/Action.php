@@ -122,6 +122,8 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			return $beforeEditResult;
 		}
 
+		$row = $this->prepareEditRow((array)$row);
+
 		$this->_helper->Access->lock($id, $this->_user['id'], $row['locked'] ?? 0, $row['lockedtime'] ?? null);
 
 		$formData = $this->getEditForm();
@@ -251,6 +253,11 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		];
 	}
 
+	protected function prepareEditRow(array $row): array
+	{
+		return $row;
+	}
+
 	protected function beforeEdit(array $row)
 	{
 		return null;
@@ -281,8 +288,14 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$values = $form->getFilteredValuesPartial($post);
 		$values = $this->beforeEditSave($values, $row);
 
+		$splitValues = $this->splitEditValues($values);
+		$mainValues = $splitValues['main'];
+		$externalValues = $splitValues['external'];
+
 		try {
-			$db->updateById($id, $values);
+			if (!empty($mainValues)) {
+				$db->updateById($id, $mainValues);
+			}
 			$this->afterEditSave($id, $values, $row);
 		} catch (Exception $e) {
 			return $this->_helper->json([
@@ -303,6 +316,21 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 				'recalc' => [],
 			],
 		]);
+	}
+
+	protected function getExternalSaveFields(): array
+	{
+		return ['slug'];
+	}
+
+	protected function splitEditValues(array $values): array
+	{
+		$externalFields = array_flip($this->getExternalSaveFields());
+
+		return [
+			'main' => array_diff_key($values, $externalFields),
+			'external' => array_intersect_key($values, $externalFields),
+		];
 	}
 
 	protected function getModuleClassPrefix(): string

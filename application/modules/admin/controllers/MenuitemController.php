@@ -23,10 +23,10 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 
 	protected function beforeCreate(array $data): array
 	{
-		$db = new Admin_Model_DbTable_Menuitem();
-
 		$data['menuid'] = (int)($data['menuid'] ?? 0);
 		$data['parentid'] = (int)($data['parentid'] ?? 0);
+
+		$db = new Admin_Model_DbTable_Menuitem();
 
 		$data['ordering'] = $db->getNextOrdering([
 			'menuid' => $data['menuid'],
@@ -34,6 +34,49 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 		]);
 
 		return $data;
+	}
+
+	protected function prepareEditRow(array $row): array
+	{
+		$shopId = $this->getShopIdByMenuId((int)($row['menuid'] ?? 0));
+
+		if ($shopId <= 0 || empty($row['id'])) {
+			$row['slug'] = '';
+			return $row;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		$slug = $slugDb->getSlug(
+			'shops',
+			'menuitem',
+			$shopId,
+			(int)$row['id']
+		);
+
+		$row['slug'] = $slug['slug'] ?? '';
+
+		return $row;
+	}
+
+	protected function afterCreate(int $id, array $data): void
+	{
+		$shopId = $this->getShopIdByMenuId((int)($data['menuid'] ?? 0));
+
+		if ($shopId <= 0) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		$slugDb->addSlug(
+			'shops',
+			'menuitem',
+			$shopId,
+			(int)($data['parentid'] ?? 0),
+			$id,
+			$id
+		);
 	}
 
 	protected function beforeEditSave(array $values, array $row): array
@@ -56,11 +99,45 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 			$db = new Admin_Model_DbTable_Menuitem();
 			$db->normalizeOrderingByRow($oldRow);
 		}
+
+		if (!array_key_exists('slug', $values) && !array_key_exists('parentid', $values)) {
+			return;
+		}
+
+		$menuId = (int)($values['menuid'] ?? $oldRow['menuid']);
+		$shopId = $this->getShopIdByMenuId($menuId);
+
+		if ($shopId <= 0) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		$slugDb->saveSlug(
+			'shops',
+			'menuitem',
+			$shopId,
+			(int)($values['parentid'] ?? $oldRow['parentid']),
+			$id,
+			(string)($values['slug'] ?? '')
+		);
 	}
 
 	protected function canDeleteRow(array $row): bool
 	{
 		return true;
+	}
+
+	protected function afterDelete(int $id, array $row): void
+	{
+		$shopId = $this->getShopIdByMenuId((int)($row['menuid'] ?? 0));
+
+		if ($shopId <= 0) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+		$slugDb->deleteSlug('shops', 'menuitem', $shopId, $id);
 	}
 
 	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
@@ -90,5 +167,17 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 
 			$this->copyMenuitemChildren($oldChildId, $newChildId);
 		}
+	}
+
+	protected function getShopIdByMenuId(int $menuId): int
+	{
+		if ($menuId <= 0) {
+			return 0;
+		}
+
+		$menuDb = new Admin_Model_DbTable_Menu();
+		$menu = $menuDb->getById($menuId);
+
+		return (int)($menu['shopid'] ?? 0);
 	}
 }

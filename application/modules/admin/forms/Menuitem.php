@@ -12,18 +12,6 @@ class Admin_Form_Menuitem extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'title',
-			'type' => 'text',
-			'label' => 'ADMIN_TITLE',
-			'format' => ['type' => 'string'],
-			'attribs' => [
-				'size' => 12,
-			],
-			'tab' => 'overview',
-			'col' => 6,
-		]);
-
-		$this->addElement([
 			'name' => 'menuid',
 			'type' => 'select',
 			'label' => 'ADMIN_MENU',
@@ -59,6 +47,30 @@ class Admin_Form_Menuitem extends DEEC_Form
 			'source' => 'menuitem',
 			'default' => '0',
 			'tab' => 'settings',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'title',
+			'type' => 'text',
+			'label' => 'ADMIN_TITLE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
+			],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'slug',
+			'type' => 'text',
+			'label' => 'ADMIN_SLUG',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
+			],
+			'tab' => 'overview',
 			'col' => 6,
 		]);
 
