@@ -12,6 +12,32 @@ class Admin_Form_Page extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'shopid',
+			'type' => 'select',
+			'label' => 'ADMIN_SHOP',
+			'options' => [
+				'0' => 'ADMIN_SHOP',
+			],
+			'source' => 'shop',
+			'default' => '0',
+			'tab' => 'settings',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'parentid',
+			'type' => 'select',
+			'label' => 'ADMIN_PARENT_PAGE',
+			'options' => [
+				'0' => 'ADMIN_MAIN_PAGE',
+			],
+			'source' => 'page',
+			'default' => '0',
+			'tab' => 'settings',
+			'col' => 6,
+		]);
+
+		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
 			'label' => 'ADMIN_TITLE',
@@ -123,18 +149,6 @@ class Admin_Form_Page extends DEEC_Form
 			],
 			'tab' => 'content',
 			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'parentid',
-			'type' => 'select',
-			'label' => 'ADMIN_MAIN_CATEGORY',
-			'options' => [
-				'0' => 'ADMIN_MAIN_CATEGORY',
-			],
-			'default' => '0',
-			'tab' => 'settings',
-			'col' => 6,
 		]);
 
 		$this->addElement([
