@@ -553,31 +553,32 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 
 		if ($id <= 0) {
-			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
-			return $this->_helper->redirector->gotoSimple('index');
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->getNotFoundMessage(),
+			]);
 		}
 
 		$db = $this->getDb();
 		$row = $db->getById($id);
 
 		if (!$row) {
-			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
-			return $this->_helper->redirector->gotoSimple('index');
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->getNotFoundMessage(),
+			]);
 		}
 
 		$newId = $db->copyById($id);
 		$newRow = $db->getById($newId);
 
-		$this->afterCopy($id, $newId, $row, $newRow ?: []);
+		$this->afterCopy($id, $newId, (array)$row, $newRow ? (array)$newRow : []);
 
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-		return $this->_helper->redirector->gotoSimple(
-			'edit',
-			$this->getRequest()->getControllerName(),
-			null,
-			['id' => $newId]
-		);
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $newId,
+			'message' => 'MESSAGES_SUCCESFULLY_COPIED',
+		]);
 	}
 
 	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
