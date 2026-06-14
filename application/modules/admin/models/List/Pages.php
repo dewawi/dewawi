@@ -13,17 +13,17 @@ class Admin_Model_List_Pages extends DEEC_List
 				'empty_hide' => true,
 			],
 			[
+				'name' => 'shopid',
+				'label' => 'ADMIN_SHOP',
+				'type' => 'text',
+				'class' => 'dw-col-shopid',
+			],
+			[
 				'name' => 'title',
 				'label' => 'ADMIN_TITLE',
 				'type' => 'link',
 				'class' => 'dw-col-title',
 				'fallback_field' => 'id',
-			],
-			[
-				'name' => 'image',
-				'label' => 'ADMIN_CATEGORY_IMAGE',
-				'type' => 'text',
-				'class' => 'dw-col-image',
 			],
 			[
 				'name' => 'parentid',

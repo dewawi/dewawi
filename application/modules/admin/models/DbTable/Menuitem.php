@@ -40,4 +40,27 @@ class Admin_Model_DbTable_Menuitem extends DEEC_Model_DbTable_Entity
 
 		return $this->fetchAll($select)->toArray();
 	}
+
+	public function getSelectOptions(int $shopId = 0): array
+	{
+		$select = $this->select()
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0);
+
+		if ($shopId > 0) {
+			$select->where('shopid = ?', $shopId);
+		}
+
+		$select
+			->order('ordering ASC')
+			->order('title ASC');
+
+		$options = [];
+
+		foreach ($this->fetchAll($select)->toArray() as $row) {
+			$options[(string)$row['id']] = $row['menuid'].':'.(string)$row['title'];
+		}
+
+		return $options;
+	}
 }

@@ -56,6 +56,7 @@ class Admin_Form_Menuitem extends DEEC_Form
 			'options' => [
 				'0' => 'ADMIN_MAIN_MENU_ITEM',
 			],
+			'source' => 'menuitem',
 			'default' => '0',
 			'tab' => 'settings',
 			'col' => 6,
