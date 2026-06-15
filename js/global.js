@@ -1877,8 +1877,8 @@ function markFieldSaved($field) {
 
 			'media-delete': { selection: 'single' },
 			'add-option': { selection: 'none' },
-			'sort-up': { selection: 'single' },
-			'sort-down': { selection: 'single' },
+			'sortup': { selection: 'single' },
+			'sortdown': { selection: 'single' },
 			'sort-position-up': { selection: 'position' },
 			'sort-position-down': { selection: 'position' }
 		},
@@ -2222,11 +2222,11 @@ function markFieldSaved($field) {
 				);
 			},
 
-			'sort-up': function (selection, $button) {
+			'sortup': function (selection, $button) {
 				this.sortEntity(selection, $button);
 			},
 
-			'sort-down': function (selection, $button) {
+			'sortdown': function (selection, $button) {
 				this.sortEntity(selection, $button);
 			},
 

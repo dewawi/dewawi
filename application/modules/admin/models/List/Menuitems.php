@@ -93,7 +93,18 @@ class Admin_Model_List_Menuitems extends DEEC_List
 							return $this->hasPermission('admin');
 						},
 					],
-					['name' => 'view'],
+					[
+						'name' => 'sortup',
+						'show' => function ($menuitem) {
+							return $this->hasPermission('admin');
+						},
+					],
+					[
+						'name' => 'sortdown',
+						'show' => function ($menuitem) {
+							return $this->hasPermission('admin');
+						},
+					],
 				],
 			],
 		];

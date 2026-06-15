@@ -50,7 +50,6 @@ class Admin_Form_ToolbarInline extends DEEC_Form
 			'wrap' => false,
 			'attribs' => [
 				'class' => 'up nolabel',
-				'data-action' => 'sort-up',
 				'data-ordering' => 'up',
 			],
 		]);
@@ -62,7 +61,6 @@ class Admin_Form_ToolbarInline extends DEEC_Form
 			'wrap' => false,
 			'attribs' => [
 				'class' => 'down nolabel',
-				'data-action' => 'sort-down',
 				'data-ordering' => 'down',
 			],
 		]);
