@@ -1,55 +1,111 @@
 <?php
-$this->title = $this->translate('ADMIN');
+$this->title = $this->translate('ADMIN_DASHBOARD');
 $this->headTitle($this->title);
 echo $this->Messages();
+
+$cards = [
+	[
+		'title' => 'ADMIN_SYSTEM_SETTINGS',
+		'text' => 'ADMIN_DASHBOARD_INTRO',
+		'links' => [
+			['label' => 'ADMIN_CONFIG', 'controller' => 'config'],
+			['label' => 'ADMIN_CLIENTS', 'controller' => 'client'],
+			['label' => 'ADMIN_COUNTRIES', 'controller' => 'country'],
+			['label' => 'ADMIN_MEDIA', 'controller' => 'media'],
+			['label' => 'ADMIN_EXPORT', 'controller' => 'export'],
+		],
+	],
+	[
+		'title' => 'ADMIN_MASTER_DATA',
+		'text' => 'Artikel, Kontakte, Zahlungsarten, Lieferarten und weitere Stammdaten verwalten.',
+		'links' => [
+			['label' => 'ADMIN_CATEGORIES', 'controller' => 'category', 'params' => ['type' => 'item']],
+			['label' => 'ADMIN_TAX_RATES', 'controller' => 'taxrate'],
+			['label' => 'ADMIN_UOMS', 'controller' => 'uom'],
+			['label' => 'ADMIN_MANUFACTURERS', 'controller' => 'manufacturer'],
+		],
+	],
+	[
+		'title' => 'ADMIN_SHOP_SETTINGS',
+		'text' => 'Shops, Seiten, Menüs, Kategorien, Tags und Slides verwalten.',
+		'links' => [
+			['label' => 'ADMIN_SHOPS', 'controller' => 'shop'],
+			['label' => 'ADMIN_PAGES', 'controller' => 'page'],
+			['label' => 'ADMIN_MENUS', 'controller' => 'menu', 'params' => ['type' => 'null']],
+			['label' => 'ADMIN_SLIDES', 'controller' => 'slide', 'params' => ['type' => 'null']],
+		],
+	],
+	[
+		'title' => 'ADMIN_USER_SETTINGS',
+		'text' => 'Benutzer und Zugriffsrechte verwalten.',
+		'links' => [
+			['label' => 'ADMIN_USERS', 'controller' => 'user'],
+			['label' => 'ADMIN_PERMISSIONS', 'controller' => 'permission'],
+		],
+	],
+	[
+		'title' => 'ADMIN_DESIGN',
+		'text' => 'Vorlagen und Fußzeilen verwalten.',
+		'links' => [
+			['label' => 'ADMIN_TEMPLATES', 'controller' => 'template'],
+			['label' => 'ADMIN_FOOTERS', 'controller' => 'footer'],
+		],
+	],
+	[
+		'title' => 'ADMIN_SYSTEM',
+		'text' => 'Systeminformationen und installierte Module verwalten.',
+		'links' => [
+			['label' => 'ADMIN_INFO', 'controller' => 'info'],
+			['label' => 'ADMIN_MODULES', 'controller' => 'module'],
+		],
+	],
+];
 ?>
 
-<div class="row">
-	<div class="col-sm-8 col-lg-10">
-		<table id="data">
-			<thead>
-				<tr>
-					<th width="2%">
-						<?php if($this->user['admin']) : ?>
-							<input type="checkbox" class="checkall" name="checkall"/>
-						<?php endif; ?>
-					</th>
-					<th class="timezone" width="12%">
-						<?php echo $this->translate('ADMIN_TIMEZONE'); ?>
-					</th>
-					<th class="category" width="12%">
-						<?php echo $this->translate('ADMIN_LANGUAGE'); ?>
-					</th>
-					<th class="analytics" width="12%">
-						<?php echo $this->translate('ADMIN_ANALYTICS'); ?>
-					</th>
-					<th width="8%"></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php foreach($this->config as $config) : ?>
-					<tr>
-						<td>
-							<?php if($this->user['admin']) : ?>
-								<input class="id" type="checkbox" value="<?php echo $config->id ?>" name="id"/>
-							<?php else : ?>
-								<input class="id" type="hidden" value="<?php echo $config->id ?>" name="id"/>
-							<?php endif; ?>
-						</td>
-						<td class="timezone">
-							<span<?php if($this->user['admin']) : ?> class="editable" data-name="timezone"<?php endif; ?>><?php echo $this->escape($config->timezone); ?></span>
-						</td>
-						<td class="languagename">
-							<span<?php if($this->user['admin']) : ?> class="editable" data-name="language"<?php endif; ?>><?php echo $this->escape($config->language); ?></span>
-						</td>
-						<td class="analytics">
-							<pre<?php if($this->user['admin']) : ?> class="editable" data-name="analytics" data-type="textarea"<?php endif; ?>><?php echo $this->escape($config->analytics); ?></pre>
-						</td>
-						<td class="buttons">
-						</td>
-					</tr>
-				<?php endforeach; ?>
-			</tbody>
-		</table>
+<section class="dw-dashboard">
+	<div class="dw-form-row">
+		<div class="dw-field dw-field--col-12">
+			<section class="dw-dashboard-card">
+				<div class="dw-dashboard-card__header">
+					<h3><?php echo $this->translate('ADMIN_DASHBOARD'); ?></h3>
+				</div>
+
+				<p><?php echo $this->translate('ADMIN_DASHBOARD_INTRO'); ?></p>
+			</section>
+		</div>
+
+		<?php foreach ($cards as $card) : ?>
+			<div class="dw-field dw-field--col-6">
+				<section class="dw-dashboard-card">
+					<div class="dw-dashboard-card__header">
+						<h3><?php echo $this->translate($card['title']); ?></h3>
+					</div>
+
+					<p><?php echo $this->translate($card['text']); ?></p>
+
+					<ul class="dw-dashboard-links">
+						<?php foreach ($card['links'] as $link) : ?>
+							<?php
+							$params = [
+								'module' => 'admin',
+								'controller' => $link['controller'],
+								'action' => 'index',
+							];
+
+							if (!empty($link['params'])) {
+								$params = array_merge($params, $link['params']);
+							}
+							?>
+
+							<li>
+								<a href="<?php echo $this->url($params, null, true); ?>">
+									<?php echo $this->translate($link['label']); ?>
+								</a>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				</section>
+			</div>
+		<?php endforeach; ?>
 	</div>
-</div>
+</section>

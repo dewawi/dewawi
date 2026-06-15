@@ -6,7 +6,11 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 {
 	public function AdminMenu() { ?>
 		<ul>
-			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_OVERVIEW'); ?></a></li>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'index', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_DASHBOARD'); ?></a></li>
+		</ul>
+		<h4><?php echo $this->view->translate('ADMIN_SYSTEM_SETTINGS'); ?></h4>
+		<ul>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'config', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_CONFIG'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'client', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_CLIENTS'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'country', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_COUNTRIES'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'media', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_MEDIA'); ?></a></li>
