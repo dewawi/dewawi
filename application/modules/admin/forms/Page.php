@@ -50,6 +50,18 @@ class Admin_Form_Page extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'type',
+			'type' => 'text',
+			'label' => 'ADMIN_TYPE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'size' => 12,
+			],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		$this->addElement([
 			'name' => 'slug',
 			'type' => 'text',
 			'label' => 'ADMIN_SLUG',
@@ -161,19 +173,6 @@ class Admin_Form_Page extends DEEC_Form
 			],
 			'tab' => 'content',
 			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'type',
-			'type' => 'select',
-			'label' => 'ADMIN_TYPE',
-			'options' => [
-				'contact' => 'CONTACT',
-				'item' => 'ITEM',
-			],
-			'default' => 'contact',
-			'tab' => 'settings',
-			'col' => 3,
 		]);
 
 		$this->addElement([

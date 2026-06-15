@@ -25,7 +25,6 @@ class Admin_Model_Entity_Page
 
 			'search' => [
 				'title',
-				'subtitle',
 				'content',
 				'image',
 			],

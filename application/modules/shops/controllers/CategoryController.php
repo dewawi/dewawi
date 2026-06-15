@@ -129,6 +129,9 @@ class Shops_CategoryController extends Zend_Controller_Action
 		$manufacturersDb = new Shops_Model_DbTable_Manufacturer();
 		$manufacturers = $manufacturersDb->getManufacturers();
 
+		$pageDb = new Shops_Model_DbTable_Page();
+		$pages = $pageDb->getPages($shop['id']);
+
 		//Get image path
 		$clientid = $shop['clientid'];
 		$dir1 = substr($clientid, 0, 1);
@@ -140,6 +143,7 @@ class Shops_CategoryController extends Zend_Controller_Action
 		$this->view->shop = $shop;
 		$this->view->items = $items;
 		$this->view->manufacturers = $manufacturers;
+		$this->view->pages = $pages;
 		$this->view->prices = $prices;
 		$this->view->images = $images;
 		$this->view->imagePath = $imagePath;

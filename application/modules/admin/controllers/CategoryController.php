@@ -38,6 +38,27 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		return $data;
 	}
 
+	protected function prepareEditRow(array $row): array
+	{
+		if (empty($row['shopid']) || empty($row['id'])) {
+			$row['slug'] = '';
+			return $row;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		$slug = $slugDb->getSlug(
+			'shops',
+			'category',
+			(int)$row['shopid'],
+			(int)$row['id']
+		);
+
+		$row['slug'] = $slug['slug'] ?? '';
+
+		return $row;
+	}
+
 	protected function afterCreate(int $id, array $data): void
 	{
 		if (empty($data['shopid'])) {
@@ -100,30 +121,26 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 				'sortCategory',
 				[(string)($oldRow['type'] ?? ''), (int)$oldRow['parentid'], (int)($oldRow['shopid'] ?? 0)]
 			);
-
-			if (!empty($oldRow['shopid'])) {
-				$slugDb = new Admin_Model_DbTable_Slug();
-				$slugDb->updateSlug(
-					'shops',
-					'category',
-					(int)$oldRow['shopid'],
-					(int)$values['parentid'],
-					$id
-				);
-			}
 		}
 
-		if (array_key_exists('slug', $values) && !empty($oldRow['shopid'])) {
-			$slugDb = new Admin_Model_DbTable_Slug();
-			$slugDb->updateSlug(
-				'shops',
-				'category',
-				(int)$oldRow['shopid'],
-				(int)$oldRow['parentid'],
-				$id,
-				(string)$values['slug']
-			);
+		if (empty($oldRow['shopid'])) {
+			return;
 		}
+
+		if (!array_key_exists('slug', $values) && !array_key_exists('parentid', $values)) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		$result = $slugDb->saveSlug(
+			'shops',
+			'category',
+			(int)$oldRow['shopid'],
+			(int)($values['parentid'] ?? $oldRow['parentid']),
+			$id,
+			(string)($values['slug'] ?? '')
+		);
 	}
 
 	protected function canDeleteRow(array $row): bool

@@ -251,7 +251,13 @@ foreach ($this->categories as $subcategory) {
 											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices[$item->id]['formattedtax']; ?> inkl. MwSt.</p>
 										<?php endif; ?>
 									<?php endif; ?>
-									<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'slug_page_842'); ?>" target="_blank">Versandkosten</a></span>
+									<?php $shippingPage = $this->PageByType('shipping'); ?>
+
+									<?php if ($shippingPage) : ?>
+										<a href="<?php echo $this->url([], 'slug_page_' . $shippingPage['id']); ?>" target="_blank">
+											Versandkosten
+										</a>
+									<?php endif; ?>
 									<span style="font-size: 0.8rem;">Lieferzeit: Auf Lager</span>
 
 
