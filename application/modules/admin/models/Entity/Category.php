@@ -19,6 +19,14 @@ class Admin_Model_Entity_Category
 					'type' => 'equals',
 					'column' => 'type',
 				],
+				'shopid' => [
+					'type' => 'equals',
+					'column' => 'shopid',
+				],
+				'parentid' => [
+					'type' => 'equals',
+					'column' => 'parentid',
+				],
 			],
 
 			'orders' => [

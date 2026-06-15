@@ -25,7 +25,7 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 		</ul>
 		<h4><?php echo $this->view->translate('ADMIN_CONTACTS'); ?></h4>
 		<ul>
-			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'category', 'action'=>'index', 'type'=>null, 'type'=>'contact', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_CATEGORIES'); ?></a></li>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'category', 'action'=>'index', 'type'=>'contact', 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_CATEGORIES'); ?></a></li>
 		</ul>
 		<h4><?php echo $this->view->translate('ADMIN_PAYMENT'); ?></h4>
 		<ul>

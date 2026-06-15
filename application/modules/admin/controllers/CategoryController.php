@@ -84,7 +84,7 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 				Admin_Model_DbTable_Category::class,
 				'getCategories',
 				'sortCategory',
-				[(string)($row['type'] ?? ''), (int)$values['parentid']]
+				[(string)($row['type'] ?? ''), (int)$values['parentid'], (int)($row['shopid'] ?? 0)]
 			) + 1;
 		}
 
@@ -98,7 +98,7 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 				Admin_Model_DbTable_Category::class,
 				'getCategories',
 				'sortCategory',
-				[(string)($oldRow['type'] ?? ''), (int)$oldRow['parentid']]
+				[(string)($oldRow['type'] ?? ''), (int)$oldRow['parentid'], (int)($oldRow['shopid'] ?? 0)]
 			);
 
 			if (!empty($oldRow['shopid'])) {

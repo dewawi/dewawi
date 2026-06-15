@@ -199,6 +199,7 @@ class Admin_Form_Category extends DEEC_Form
 			'options' => [
 				'contact' => 'CONTACT',
 				'item' => 'ITEM',
+				'shop' => 'ADMIN_SHOPS',
 			],
 			'default' => 'contact',
 			'tab' => 'overview',

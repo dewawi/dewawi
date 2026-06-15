@@ -35,7 +35,9 @@ class Admin_Model_DbTable_Category extends DEEC_Model_DbTable_Entity
 		if ($parentid !== null) {
 			$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
 		}
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
+		if ($shopid !== null) {
+			$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$shopid);
+		}
 		$where[] = $this->getAdapter()->quoteInto('type = ?', $type);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
