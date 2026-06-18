@@ -234,7 +234,7 @@ class DEEC_Pdf
 			$pages['product_start'] = $pdf->getPage();
 			$this->renderProductDescription($pdf, $positions);
 
-			if (!empty($settings['showIncludedOptions'])) {
+			if (true) {
 				$pages['features_start'] = $pdf->getPage();
 				$this->renderIncludedOptions($pdf, $positions, $options, $optionSets);
 			}
@@ -820,6 +820,17 @@ class DEEC_Pdf
 				$this->renderAttributesForPosition($pdf, $attributesByGroup[$p->id], $descX, $descWidth);
 			}
 
+			if (!empty($settings['showOptions'])) {
+				$this->renderIncludedOptionsForPosition(
+					$pdf,
+					$p,
+					$options,
+					$optionSets,
+					$descX,
+					$descWidth
+				);
+			}
+
 			$childIndex = 1;
 			if (!empty($children[$p->id])) {
 				foreach ($children[$p->id] as $childId) {
@@ -903,6 +914,68 @@ class DEEC_Pdf
 
 			// small gap to next set
 			$pdf->SetY($pdf->GetY() + $lineGap);
+		}
+	}
+
+	private function renderIncludedOptionsForPosition(TCPDF $pdf, $position, $options, $optionSets, $xLeft, $width): void
+	{
+		$positionId = $position->id ?? null;
+
+		if (!$positionId || empty($options[$positionId]) || empty($optionSets[$positionId])) {
+			return;
+		}
+
+		$hasIncludedOptions = false;
+
+		foreach ($optionSets[$positionId] as $set) {
+			if (empty($options[$positionId][$set->id])) {
+				continue;
+			}
+
+			foreach ($options[$positionId][$set->id] as $opt) {
+				if ($this->isIncludedOption($opt)) {
+					$hasIncludedOptions = true;
+					break 2;
+				}
+			}
+		}
+
+		if (!$hasIncludedOptions) {
+			return;
+		}
+
+		$pdf->SetY($pdf->GetY() + 2);
+		$pdf->SetFont('freesansb', 'B', 9);
+		$pdf->MultiCell($width, 4, $this->translate('DOCUMENTS_OPTION_INCLUDED') . ':', 0, 'L', false, 1, $xLeft, '', true, 0);
+
+		foreach ($optionSets[$positionId] as $set) {
+			if (empty($options[$positionId][$set->id])) {
+				continue;
+			}
+
+			foreach ($options[$positionId][$set->id] as $opt) {
+				if (!$this->isIncludedOption($opt)) {
+					continue;
+				}
+
+				$sku = trim((string)($opt->sku ?? ''));
+				$title = trim((string)($opt->title ?? ''));
+				$description = trim((string)($opt->description ?? ''));
+
+				$line = trim($sku . ' ' . $title);
+
+				if ($line === '') {
+					continue;
+				}
+
+				$pdf->SetFont('freesans', '', 9);
+				$pdf->MultiCell($width, 4, '– ' . $line, 0, 'L', false, 1, $xLeft, '', true, 0);
+
+				if ($description !== '') {
+					$pdf->SetFont('freesans', '', 8);
+					$pdf->MultiCell($width - 5, 4, $description, 0, 'L', false, 1, $xLeft + 5, '', true, 0);
+				}
+			}
 		}
 	}
 
@@ -1422,15 +1495,23 @@ class DEEC_Pdf
 
 	private function isIncludedOption($opt): bool
 	{
-		// In your pipeline, option->price is either:
-		// - float 0/-1/-2, or
-		// - a formatted currency string for positive prices.
-		if (!isset($opt->price)) return false;
-		if (is_numeric($opt->price)) return ((float)$opt->price === 0.0);
-		// just in case someone already mapped label “bereits enthalten”
-		$val = trim((string)$opt->price);
-		$includedLabel = $this->translate('DOCUMENTS_OPTION_INCLUDED');
-		return ($val === '0' || mb_stripos($val, $includedLabel) !== false);
+		$price = null;
+
+		if (is_array($opt)) {
+			$price = $opt['price'] ?? null;
+		} else {
+			$price = $opt->price ?? null;
+		}
+
+		if ($price === null) {
+			return true;
+		}
+
+		if ($price === '') {
+			return false;
+		}
+
+		return is_numeric($price) && (float)$price === 0.0;
 	}
 
 	private function isSkuInList($sku, array $list): bool
@@ -1440,14 +1521,26 @@ class DEEC_Pdf
 
 	private function renderableOptionPrice($val): string
 	{
-		// Map special codes
+		if ($val === null) {
+			return $this->translate('DOCUMENTS_OPTION_INCLUDED');
+		}
+
 		if (is_numeric($val)) {
 			$f = (float)$val;
-			if ($f === 0.0) return $this->translate('DOCUMENTS_OPTION_INCLUDED');
-			if ($f === -1.0) return $this->translate('DOCUMENTS_OPTION_ON_REQUEST');
-			if ($f === -2.0) return $this->translate('DOCUMENTS_OPTION_UNAVAILABLE');
+
+			if ($f === 0.0) {
+				return $this->translate('DOCUMENTS_OPTION_INCLUDED');
+			}
+
+			if ($f === -1.0) {
+				return $this->translate('DOCUMENTS_OPTION_ON_REQUEST');
+			}
+
+			if ($f === -2.0) {
+				return $this->translate('DOCUMENTS_OPTION_UNAVAILABLE');
+			}
 		}
-		// Already formatted currency string → return as-is
+
 		return (string)$val;
 	}
 
