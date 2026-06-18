@@ -136,39 +136,6 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 		$this->assignMessages();
 	}
 
-	public function copyAction()
-	{
-		$id = $this->_getParam('id', 0);
-
-		$data = $this->requireRow($id);
-
-		$this->disableView();
-
-		unset($data['id'], $data['quoterequestid']);
-		$data['title'] = $data['title'].' 2';
-		$data['quoterequestdate'] = NULL;
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['pinned'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
-		$quoterequestid = $quoterequestDb->addQuoterequest($data);
-
-		//Copy positions
-		$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $quoterequestid, 'purchases', 'quoterequest', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-		echo (int)$quoterequestid;
-	}
-
 	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);

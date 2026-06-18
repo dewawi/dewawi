@@ -136,39 +136,6 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 		$this->assignMessages();
 	}
 
-	public function copyAction()
-	{
-		$id = $this->_getParam('id', 0);
-
-		$data = $this->requireRow($id);
-
-		$this->disableView();
-
-		unset($data['id'], $data['purchaseorderid']);
-		$data['title'] = $data['title'].' 2';
-		$data['purchaseorderdate'] = NULL;
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['pinned'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
-		$purchaseorderid = $purchaseorderDb->addPurchaseorder($data);
-
-		//Copy positions
-		$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $purchaseorderid, 'purchases', 'purchaseorder', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-		echo (int)$purchaseorderid;
-	}
-
 	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);

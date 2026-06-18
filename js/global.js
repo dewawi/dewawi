@@ -2428,7 +2428,7 @@ function markFieldSaved($field) {
 		afterCopy: function (selection, responses) {
 			var newId = this.getCopiedId(responses);
 
-			if (action === 'edit' && selection.ids.length === 1 && newId > 0) {
+			if ((action === 'edit' || action === 'view') && selection.ids.length === 1 && newId > 0) {
 				setLocation(Dewawi.url(selection.module, selection.controller, 'edit', newId));
 				return;
 			}
@@ -2442,15 +2442,17 @@ function markFieldSaved($field) {
 		},
 
 		getCopiedId: function (responses) {
-			var response = responses;
-
-			if ($.isArray(responses) && $.isArray(responses[0])) {
-				response = responses[0][0];
+			if (!responses || !responses.length) {
+				return 0;
 			}
 
-			return Number(
-				(response && (response.id || response.newid || response.newId)) || 0
-			);
+			var response = responses[0];
+
+			if (response && response.ok === true && response.id) {
+				return parseInt(response.id, 10);
+			}
+
+			return 0;
 		},
 
 		sortEntity: function (selection, $button) {
