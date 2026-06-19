@@ -108,4 +108,23 @@ class Sales_Model_DbTable_Salesorder extends DEEC_Model_DbTable_Entity
 		);
 		$this->update($data, 'id =' . (int)$id);
 	}
+
+	protected function prepareCopyData(array $data): array
+	{
+		$data = parent::prepareCopyData($data);
+
+		unset($data['salesorderid']);
+
+		$data['salesorderdate'] = null;
+		$data['state'] = 100;
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['pinned'] = 0;
+		$data['modified'] = null;
+		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = null;
+
+		return $data;
+	}
 }

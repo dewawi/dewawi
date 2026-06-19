@@ -97,39 +97,6 @@ class Sales_DeliveryorderController extends DEEC_Controller_DocumentAction
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
-	public function copyAction()
-	{
-		$id = $this->_getParam('id', 0);
-
-		$data = $this->requireRow($id);
-
-		$this->disableView();
-
-		unset($data['id'], $data['deliveryorderid']);
-		$data['title'] = $data['title'].' 2';
-		$data['deliveryorderdate'] = NULL;
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['pinned'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$deliveryorderid = $deliveryorderDb->addDeliveryorder($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Deliveryorderpos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $deliveryorderid, 'sales', 'deliveryorder', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-		echo (int)$deliveryorderid;
-	}
-
 	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);

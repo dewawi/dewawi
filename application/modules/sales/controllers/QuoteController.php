@@ -97,39 +97,6 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 		$this->assignMessages();
 	}
 
-	public function copyAction()
-	{
-		$id = $this->_getParam('id', 0);
-
-		$data = $this->requireRow($id);
-
-		$this->disableView();
-
-		unset($data['id'], $data['quoteid']);
-		$data['title'] = $data['title'].' 2';
-		$data['quotedate'] = NULL;
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['pinned'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$quoteDb = new Sales_Model_DbTable_Quote();
-		$quoteid = $quoteDb->addQuote($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Quotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $quoteid, 'sales', 'quote', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-		echo (int)$quoteid;
-	}
-
 	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);

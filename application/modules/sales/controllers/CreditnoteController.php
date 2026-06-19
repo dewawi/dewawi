@@ -97,39 +97,6 @@ class Sales_CreditnoteController extends DEEC_Controller_DocumentAction
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
-	public function copyAction()
-	{
-		$id = $this->_getParam('id', 0);
-
-		$data = $this->requireRow($id);
-
-		$this->disableView();
-
-		unset($data['id'], $data['creditnoteid']);
-		$data['title'] = $data['title'].' 2';
-		$data['creditnotedate'] = NULL;
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['pinned'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
-		$creditnoteid = $creditnoteDb->addCreditnote($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Creditnotepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $creditnoteid, 'sales', 'creditnote', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-		echo (int)$creditnoteid;
-	}
-
 	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);

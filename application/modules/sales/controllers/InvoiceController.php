@@ -97,39 +97,6 @@ class Sales_InvoiceController extends DEEC_Controller_DocumentAction
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
-	public function copyAction()
-	{
-		$id = $this->_getParam('id', 0);
-
-		$data = $this->requireRow($id);
-
-		$this->disableView();
-
-		unset($data['id'], $data['invoiceid']);
-		$data['title'] = $data['title'].' 2';
-		$data['invoicedate'] = NULL;
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['pinned'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$invoiceid = $invoiceDb->addInvoice($data);
-
-		//Copy positions
-		$positionsDb = new Sales_Model_DbTable_Invoicepos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $invoiceid, 'sales', 'invoice', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-		echo (int)$invoiceid;
-	}
-
 	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);
