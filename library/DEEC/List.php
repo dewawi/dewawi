@@ -562,7 +562,7 @@ class DEEC_List
 	{
 		return '<input type="checkbox"'
 			. ' class="checkall">';
-}
+	}
 
 	protected function renderTextCell($item, array $column)
 	{

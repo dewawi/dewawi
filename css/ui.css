@@ -1083,6 +1083,11 @@ button.nolabel.filter {
 	text-decoration: none;
 }
 
+.dw-filter-card .dw-choice-group--checkbox .dw-choice {
+    display: flex;
+    align-items: center;
+}
+
 .dw-active-filters {
 	display: flex;
 	flex-wrap: wrap;

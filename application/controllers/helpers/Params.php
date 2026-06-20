@@ -19,6 +19,7 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 		$params['page'] = $request->getParam('page', $request->getCookie('page', 1));
 
 		$this->applyDateRange($params, $toolbar);
+		$this->expandStatesForKeywordSearch($params, $toolbar);
 		$this->applyPagination($params);
 
 		return $params;
@@ -170,5 +171,32 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 		}
 
 		$params['offset'] = ($params['page'] - 1) * $params['limit'];
+	}
+
+	protected function expandStatesForKeywordSearch(array &$params, $toolbar): void
+	{
+		if (trim((string)($params['keyword'] ?? '')) === '') {
+			return;
+		}
+
+		if (!isset($params['states']) || !is_array($params['states'])) {
+			return;
+		}
+
+		$default = $toolbar->getDefault('states');
+
+		if (!is_array($default)) {
+			return;
+		}
+
+		sort($params['states']);
+		sort($default);
+
+		if ($params['states'] !== $default) {
+			return;
+		}
+
+		$params['states'] = ['100', '101', '102', '103', '104', '105', '106'];
+		$toolbar->setValue('states', $params['states']);
 	}
 }
