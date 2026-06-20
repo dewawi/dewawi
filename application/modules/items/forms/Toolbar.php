@@ -80,6 +80,21 @@ class Items_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'catid',
+			'type' => 'select',
+			'default' => 'all',
+			'options' => [
+				'all' => 'CATEGORIES_ALL',
+			],
+			'source' => 'category:item',
+			'filter' => true,
+			'toolbar' => 'search',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+			'attribs' => ['class' => 'hidden-sm'],
+		]);
+
+		$this->addElement([
 			'name' => 'order',
 			'type' => 'radio',
 			'label' => 'TOOLBAR_ORDER',
@@ -138,21 +153,6 @@ class Items_Form_Toolbar extends DEEC_Form
 			'toolbar' => 'filters',
 			'wrap' => false,
 			'format' => ['type' => 'int'],
-		]);
-
-		$this->addElement([
-			'name' => 'catid',
-			'type' => 'select',
-			'default' => 'all',
-			'options' => [
-				'all' => 'CATEGORIES_ALL',
-			],
-			'source' => 'category:item',
-			'filter' => true,
-			'toolbar' => 'category',
-			'wrap' => false,
-			'format' => ['type' => 'string'],
-			'attribs' => ['class' => 'hidden-sm'],
 		]);
 	}
 }
