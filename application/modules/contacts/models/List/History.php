@@ -87,6 +87,7 @@ class Contacts_Model_List_History extends DEEC_List
 					],
 					['name' => 'copy'],
 					['name' => 'pdf'],
+					['name' => 'delete'],
 				],
 			],
 		];

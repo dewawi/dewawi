@@ -1007,6 +1007,12 @@ function trash(ids, message, type, cmodule) {
 					ids.forEach(function(singleId) {
 						$('div#' + type + singleId).remove();
 					});
+					if (module === 'contacts'
+						&& controller === 'contact'
+						&& $('#tabhistory').hasClass('is-active')) {
+						reloadHistory();
+						return;
+					}
 					//Reload and calculate positions after a price rule is deleted
 					if(type == 'pricerulepos') getPositions(type, 'pos', window.pageYOffset);
 					//Return to the main page after the entity itself is deleted
