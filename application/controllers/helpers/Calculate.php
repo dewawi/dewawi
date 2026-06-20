@@ -68,7 +68,11 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			if(!isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] = 0;
 			$calculations['row']['total'] = $calculations['row']['subtotal'] + $calculations['row']['taxes']['total'];
 
-			$objectDb->updateTotal($id, $calculations['row']['subtotal'], $calculations['row']['taxes']['total'], $calculations['row']['total']);
+			$objectDb->updateById($id, [
+				'subtotal' => $calculations['row']['subtotal'],
+				'taxes'    => $calculations['row']['taxes']['total'],
+				'total'    => $calculations['row']['total'],
+			]);
 
 			$calculations['locale']['subtotal'] = $currency->toCurrency($calculations['row']['subtotal']);
 			$calculations['locale']['total'] = $currency->toCurrency($calculations['row']['subtotal']+$calculations['row']['taxes']['total']);

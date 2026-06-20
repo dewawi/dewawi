@@ -76,18 +76,6 @@ class Shops_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '.(int)$id);
 	}
 
-	public function updateTotal($id, $subtotal, $taxes, $total)
-	{
-		$data = array(
-			'subtotal' => $subtotal,
-			'taxes' => $taxes,
-			'total' => $total,
-			'modified' => $this->_date,
-			//'modifiedby' => $this->_user['id']
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
 	public function saveQuote($id, $quoteid, $filename)
 	{
 		$data = array();
