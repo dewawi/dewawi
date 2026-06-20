@@ -65,18 +65,18 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 						'controller' => 'item',
 						'action' => 'index',
 					],
-					[
+					/*[
 						'label' => 'MENU_ITEM_LISTS',
 						'module' => 'items',
 						'controller' => 'itemlist',
 						'action' => 'index',
-					],
-					[
+					],*/
+					/*[
 						'label' => 'MENU_INVENTORY',
 						'module' => 'items',
 						'controller' => 'inventory',
 						'action' => 'index',
-					],
+					],*/
 					[
 						'label' => 'MENU_LEDGER',
 						'module' => 'items',
