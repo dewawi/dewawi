@@ -81,7 +81,7 @@ class Items_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'order',
-			'type' => 'select',
+			'type' => 'radio',
 			'label' => 'TOOLBAR_ORDER',
 			'default' => 'modified',
 			'options' => [
@@ -97,7 +97,7 @@ class Items_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'sort',
-			'type' => 'select',
+			'type' => 'radio',
 			'label' => 'TOOLBAR_SORT',
 			'default' => 'DESC',
 			'options' => [

@@ -107,7 +107,8 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'order',
-			'type' => 'select',
+			'type' => 'radio',
+			'label' => 'TOOLBAR_ORDER',
 			'wrap' => false,
 			'options' => [
 				'id' => 'ORDERING_CREATION',
@@ -125,7 +126,7 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'sort',
-			'type' => 'select',
+			'type' => 'radio',
 			'wrap' => false,
 			'options' => [
 				'asc' => 'ORDERING_ASC',

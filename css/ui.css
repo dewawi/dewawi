@@ -1083,7 +1083,12 @@ button.nolabel.filter {
 	text-decoration: none;
 }
 
-.dw-filter-card .dw-choice-group--checkbox .dw-choice {
+.dw-filter-card__body .dw-choice-group {
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.dw-filter-card .dw-choice {
     display: flex;
     align-items: center;
 }

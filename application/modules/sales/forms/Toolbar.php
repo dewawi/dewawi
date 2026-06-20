@@ -81,7 +81,7 @@ class Sales_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'order',
-			'type' => 'select',
+			'type' => 'radio',
 			'label' => 'TOOLBAR_ORDER',
 			'default' => 'modified',
 			'options' => [
@@ -98,7 +98,7 @@ class Sales_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'sort',
-			'type' => 'select',
+			'type' => 'radio',
 			'label' => 'TOOLBAR_SORT',
 			'default' => 'DESC',
 			'options' => [
@@ -165,7 +165,7 @@ class Sales_Form_Toolbar extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'daterange',
-			'type' => 'select',
+			'type' => 'radio',
 			'label' => 'TOOLBAR_DATE_RANGE',
 			'options' => [
 				'all' => 'TOOLBAR_ALL',
