@@ -29,6 +29,7 @@
 	'TOOLBAR_CREATED' => 'Erstellt am',
 	'TOOLBAR_MODIFIED' => 'Geändert am',
 	'TOOLBAR_NAME' => 'Name',
+	'TOOLBAR_TITLE' => 'Titel',
 	'TOOLBAR_DOCUMENT_ID' => 'Belegnummer',
 	'TOOLBAR_TAGS' => 'Tags',
 	'TOOLBAR_PDF' => 'PDF',

@@ -87,7 +87,7 @@ class Items_Form_Toolbar extends DEEC_Form
 			'options' => [
 				'modified' => 'TOOLBAR_MODIFIED',
 				'created' => 'TOOLBAR_CREATED',
-				'name1' => 'TOOLBAR_NAME',
+				'title' => 'TOOLBAR_TITLE',
 			],
 			'filter' => true,
 			'toolbar' => 'filters',
