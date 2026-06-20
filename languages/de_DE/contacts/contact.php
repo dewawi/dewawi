@@ -1,4 +1,5 @@
 <?php return array(
+	'CONTACTS_ID' => 'ID',
 	'CONTACTS_NEW_CONTACT' => 'Neuer Kontakt',
 	'CONTACTS_CONTACT' => 'Kontakt',
 	'CONTACTS_CONTACT_ID' => 'Kontaktnr.',
@@ -43,6 +44,7 @@
 	'CONTACTS_CASH_DISCOUNT_DAYS' => 'Skonto Tage',
 	'CONTACTS_CASH_DISCOUNT_DAYS_PERCENT' => 'Skonto Prozent',
 	'CONTACTS_TYPE' => 'Kontakttyp',
+	'CONTACTS_TAGS' => 'Tags',
 	'CONTACTS_AVAILABLE_DOWNLOADS' => 'Verfügbare Downloads',
 	'CONTACTS_ACCESS_LIST' => 'Zugriffsliste',
 	'CONTACTS_FILE_NAME' => 'Dateiname',

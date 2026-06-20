@@ -19,7 +19,7 @@ class Contacts_Model_List_Contacts extends DEEC_List
 			],
 			[
 				'name' => 'name1',
-				'label' => 'CONTACTS_NAME1',
+				'label' => 'CONTACTS_NAME',
 				'type' => 'link',
 				'class' => 'dw-col-title',
 			],

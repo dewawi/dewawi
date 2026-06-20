@@ -7,20 +7,20 @@ class Purchases_Model_List_Purchaseorders extends DEEC_List
 		return [
 			[
 				'name' => 'quoteid',
-				'label' => 'QUOTES_QUOTE_ID',
+				'label' => 'PURCHASE_ORDERS_PURCHASE_ORDER_ID',
 				'type' => 'link',
 				'class' => 'dw-col-id',
 				'empty_hide' => true,
 			],
 			[
 				'name' => 'title',
-				'label' => 'QUOTES_TITLE',
+				'label' => 'PURCHASE_ORDERS_TITLE',
 				'type' => 'link',
 				'fallback_field' => 'id',
 			],
 			[
 				'name' => 'contact',
-				'label' => 'QUOTES_CONTACT',
+				'label' => 'PURCHASE_ORDERS_CONTACT',
 				'type' => 'contact',
 				'url' => [
 					'module' => 'contacts',
@@ -31,7 +31,7 @@ class Purchases_Model_List_Purchaseorders extends DEEC_List
 			],
 			[
 				'name' => 'billing_address',
-				'label' => 'QUOTES_BILLING_ADDRESS',
+				'label' => 'PURCHASE_ORDERS_BILLING_ADDRESS',
 				'type' => 'address',
 				'fields' => [
 					'billingstreet',
@@ -41,24 +41,24 @@ class Purchases_Model_List_Purchaseorders extends DEEC_List
 			],
 			[
 				'name' => 'notes',
-				'label' => 'QUOTES_NOTES',
+				'label' => 'PURCHASE_ORDERS_NOTES',
 				'type' => 'editable_note',
 				'empty_label' => 'TOOLBAR_NEW',
 			],
 			[
 				'name' => 'quotedate',
-				'label' => 'QUOTES_QUOTE_DATE',
+				'label' => 'PURCHASE_ORDERS_PURCHASE_ORDER_DATE',
 				'type' => 'date',
 				'format' => 'd.m.Y',
 			],
 			[
 				'name' => 'total',
-				'label' => 'QUOTES_TOTAL',
+				'label' => 'PURCHASE_ORDERS_TOTAL',
 				'type' => 'currency',
 			],
 			[
 				'name' => 'state',
-				'label' => 'QUOTES_STATE',
+				'label' => 'PURCHASE_ORDERS_STATE',
 				'type' => 'state_badge',
 				'option_key' => 'states',
 				'class' => 'dw-col-state state',
