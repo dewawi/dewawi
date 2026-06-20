@@ -11,126 +11,24 @@ class Items_ItemController extends DEEC_Controller_Action
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
-		$catid = $this->_getParam('catid', 0);
+		$catid = (int)$this->_getParam('catid', 0);
 
-		//Get primary tax rate
 		$taxrates = new Application_Model_DbTable_Taxrate();
 		$taxrate = $taxrates->getPrimaryTaxrate();
 
-		//Get primary currency
 		$currencies = new Application_Model_DbTable_Currency();
 		$currency = $currencies->getPrimaryCurrency();
 
-		$data = array();
-		$data['catid'] = $catid;
-		$data['taxid'] = $taxrate['id'];
-		$data['currency'] = $currency['code'];
-		$data['inventory'] = 1;
-		$data['shopid'] = 0;
-
-		$item = new Items_Model_DbTable_Item();
-		$id = $item->addItem($data);
-
-		$this->_helper->redirector->gotoSimple('edit', 'item', null, array('id' => $id));
-	}
-
-	public function editAction()
-	{
-		$request = $this->getRequest();
-		$id = (int)$this->_getParam('id', 0);
-		$isAjax = $request->isXmlHttpRequest();
-
-		$form = new Items_Form_Item();
-		$options = $this->_helper->Options->applyFormOptions($form);
-
-		$toolbar = new Items_Form_Toolbar();
-		$itemDb = new Items_Model_DbTable_Item();
-
-		$item = $itemDb->getById($id);
-
-		if (!$item) {
-			if ($isAjax) {
-				$this->disableView();
-
-				return $this->_helper->json([
-					'ok' => false,
-					'message' => 'not_found',
-				]);
-			}
-
-			$this->_flashMessenger->addMessage('MESSAGES_ITEM_NOT_FOUND');
-			return $this->_helper->redirector->gotoSimple('index', 'item');
-		}
-
-		$this->_helper->Access->lock($id, $this->_user['id'], $item['locked'] ?? 0, $item['lockedtime'] ?? null);
-
-		if ($request->isPost()) {
-			if ($isAjax) {
-				$this->disableView();
-
-				return $this->_helper->json(
-					$this->saveFormAjax($form, $itemDb, $id)
-				);
-			}
-
-			$post = (array)$request->getPost();
-
-			if (!$form->isValid($post)) {
-				$form->setValues($post);
-			} else {
-				$values = $form->getFilteredValues();
-
-				$itemDb->updateById($id, $values);
-
-				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-
-				return $this->_helper->redirector->gotoSimple('edit', 'item', null, ['id' => $id]);
-			}
-		} else {
-			$locale = Zend_Registry::get('Zend_Locale');
-			$itemDisplay = DEEC_Display::rowToFormValues($form, $item, $locale);
-
-			$form->setValues($itemDisplay);
-
-			$this->_helper->MultiEntityLoader->populate($form, $id, 'items', 'item');
-		}
-
-		$vmService = new Items_Service_ItemEditViewModel();
-		$vm = $vmService->build($id, (array)$this->_user, (array)$item);
-
-		$this->view->assign(array_merge($vm, [
-			'id' => $id,
-			'form' => $form,
-			'toolbar' => $toolbar,
-			'options' => $options,
-			'activeTab' => $request->getCookie('tab', null),
-		]));
-
-		$this->assignMessages();
-	}
-
-	public function copyAction()
-	{
-		$id = $this->_getParam('id', 0);
-
-		$data = $this->requireRow($id);
-
-		$this->disableView();
-
-		unset($data['id']);
-		$data['quantity'] = 0;
-		$data['inventory'] = 1;
-		$data['title'] = $data['title'].' 2';
-		$data['pinned'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-		echo $itemid = $item->addItem($data);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
+		return [
+			'catid' => $catid,
+			'taxid' => (int)$taxrate['id'],
+			'currency' => $currency['code'],
+			'inventory' => 1,
+			'shopid' => 0,
+			'quantity' => 0,
+		];
 	}
 
 	public function downloadAction()

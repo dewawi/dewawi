@@ -116,6 +116,26 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 		$this->update($data, $where);
 	}
 
+	protected function prepareCopyData(array $data): array
+	{
+		$data = parent::prepareCopyData($data);
+
+		$data['quantity'] = 0;
+		$data['inventory'] = 1;
+		$data['pinned'] = 0;
+
+		return $data;
+	}
+
+	public function changeQuantity(int $id, float $delta): void
+	{
+		$this->updateById($id, [
+			'quantity' => new Zend_Db_Expr(
+				$this->getAdapter()->quoteInto('IFNULL(quantity, 0) + ?', $delta)
+			),
+		]);
+	}
+
 	public function deleteItem($id)
 	{
 		$id = (int)$id;
