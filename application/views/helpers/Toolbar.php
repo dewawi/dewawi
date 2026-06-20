@@ -130,20 +130,6 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		$html .= '<div class="dw-filter-card__body">';
 		$html .= $toolbar->renderElement($name);
 
-		if ($type === 'multicheckbox') {
-			$html .= '<script>
-				document.querySelectorAll(".dw-filter-card input[name=\'' . $this->escapeAttr($name) . '[]\']").forEach(function(input) {
-					var link = document.createElement("a");
-					link.href = "#";
-					link.className = "dw-choice-only";
-					link.dataset.action = "filter-check-only";
-					link.dataset.value = input.value;
-					link.textContent = "nur";
-					input.closest("label").appendChild(link);
-				});
-			</script>';
-		}
-
 		if ($name === 'from') {
 			$html .= '<div id="fromDatePicker"></div>';
 		}

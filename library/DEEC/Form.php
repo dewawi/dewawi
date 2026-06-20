@@ -1462,6 +1462,13 @@ class DEEC_Form
 					. ($checked ? ' checked' : '')
 					. '>';
 				$field .= '<span>'.htmlspecialchars($this->translate((string)$optLabel)).'</span>';
+				if (!empty($el['toolbar']) && !empty($el['filter'])) {
+					$field .= '<a href="#" class="dw-choice-only"'
+						. ' data-action="filter-check-only"'
+						. ' data-value="'.htmlspecialchars((string)$optValue).'">'
+						. htmlspecialchars($this->translate('TOOLBAR_ONLY'))
+						. '</a>';
+				}
 				$field .= '</label>';
 			}
 
