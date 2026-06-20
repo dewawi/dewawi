@@ -2428,6 +2428,11 @@ function markFieldSaved($field) {
 		afterCopy: function (selection, responses) {
 			var newId = this.getCopiedId(responses);
 
+			if (this.isHistoryContext(selection) && newId > 0) {
+				this.afterHistoryCopy(selection, newId);
+				return;
+			}
+
 			if ((action === 'edit' || action === 'view') && selection.ids.length === 1 && newId > 0) {
 				setLocation(Dewawi.url(selection.module, selection.controller, 'edit', newId));
 				return;
@@ -2439,6 +2444,24 @@ function markFieldSaved($field) {
 			}
 
 			location.reload();
+		},
+
+		isHistoryContext: function (selection) {
+			return module === 'contacts'
+				&& controller === 'contact'
+				&& action === 'edit'
+				&& selection.type === 'row'
+				&& $('#tabhistory').hasClass('is-active');
+		},
+
+		afterHistoryCopy: function (selection, newId) {
+			var url = Dewawi.url(selection.module, selection.controller, 'edit', newId);
+
+			reloadHistory();
+
+			pushMessages([
+				'Kopie wurde erstellt. <a href="' + url + '">Kopie öffnen</a>'
+			]);
 		},
 
 		getCopiedId: function (responses) {
@@ -2633,6 +2656,25 @@ function activateDwTab($link, saveCookie) {
 	if (saveCookie && !$tabs.hasClass('dw-tabs--history')) {
 		$.cookie('tab', target, { path: cookiePath + '/' + action });
 	}
+}
+
+function reloadHistory() {
+	if (module !== 'contacts' || controller !== 'contact' || action !== 'edit') {
+		return;
+	}
+
+	$.ajax({
+		type: 'GET',
+		url: Dewawi.url('contacts', 'contact', 'history', id),
+		cache: false,
+		success: function (html) {
+			$('#tabhistory').html(html);
+			initDwTabs('#tabhistory');
+		},
+		error: function () {
+			pushMessages(['Historie konnte nicht aktualisiert werden.']);
+		}
+	});
 }
 
 function initDwTabs(scope) {

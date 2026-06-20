@@ -180,6 +180,24 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		$this->assignMessages();
 	}
 
+	public function historyAction()
+	{
+		$this->disableView();
+
+		$id = (int)$this->_getParam('id', 0);
+		$contact = $this->requireRow($id);
+
+		$get = new Contacts_Model_Get();
+
+		echo $this->view->partial('partials/history.phtml', [
+			'history' => $get->history((int)$contact['contactid']),
+			'options' => [],
+			'contactId' => $id,
+			'id' => $id,
+			'toolbar' => new Contacts_Form_Toolbar(),
+		]);
+	}
+
 	public function copyAction()
 	{
 		$id = $this->_getParam('id', 0);
