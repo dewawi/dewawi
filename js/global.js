@@ -2289,14 +2289,46 @@ function markFieldSaved($field) {
 				search();
 			});
 
-			$(document).on('click', '.dw-filter-card__actions .all, .dw-filter-card__actions .none', function (event) {
+			$(document).on('click', '[data-action="filter-check-all"]', function (event) {
 				event.preventDefault();
 
-				var checked = $(this).hasClass('all');
 				var $card = $(this).closest('.dw-filter-card');
 				var $boxes = $card.find('input[type="checkbox"]');
 
-				$boxes.prop('checked', checked);
+				$boxes.prop('checked', true);
+				DewawiToolbar.persistField($boxes.first());
+				$('#pagination-page').val(1);
+				search();
+			});
+
+			$(document).on('click', '[data-action="filter-check-values"]', function (event) {
+				event.preventDefault();
+
+				var $card = $(this).closest('.dw-filter-card');
+				var values = String($(this).data('values') || '').split(',');
+				var $boxes = $card.find('input[type="checkbox"]');
+
+				$boxes.each(function () {
+					this.checked = values.indexOf(String(this.value)) !== -1;
+				});
+
+				DewawiToolbar.persistField($boxes.first());
+				$('#pagination-page').val(1);
+				search();
+			});
+
+			$(document).on('click', '[data-action="filter-check-only"]', function (event) {
+				event.preventDefault();
+				event.stopPropagation();
+
+				var $card = $(this).closest('.dw-filter-card');
+				var value = String($(this).data('value'));
+				var $boxes = $card.find('input[type="checkbox"]');
+
+				$boxes.each(function () {
+					this.checked = String(this.value) === value;
+				});
+
 				DewawiToolbar.persistField($boxes.first());
 				$('#pagination-page').val(1);
 				search();

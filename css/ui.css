@@ -1088,6 +1088,17 @@ button.nolabel.filter {
     align-items: center;
 }
 
+.dw-filter-card .dw-choice-only {
+	margin-left: 8px;
+	font-size: 12px;
+	color: var(--dw-color-text-muted);
+	text-decoration: none;
+}
+
+.dw-filter-card .dw-choice-only:hover {
+	color: var(--dw-color-primary);
+}
+
 .dw-active-filters {
 	display: flex;
 	flex-wrap: wrap;
