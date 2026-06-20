@@ -181,6 +181,22 @@ class Processes_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'deliverystatus',
+			'type' => 'select',
+			'label' => 'PROCESSES_DELIVERY_STATUS',
+			'default' => '0',
+			'options' => [
+				'deliveryIsWaiting' => 'PROCESSES_DELIVERY_IS_WAITING',
+				'partialDelivered' => 'PROCESSES_PARTIAL_DELIVERED',
+				'deliveryCompleted' => 'PROCESSES_DELIVERY_COMPLETED',
+			],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
 			'name' => 'daterange',
 			'type' => 'select',
 			'label' => 'TOOLBAR_DATE_RANGE',

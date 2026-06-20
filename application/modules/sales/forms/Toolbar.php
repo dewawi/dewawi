@@ -164,23 +164,6 @@ class Sales_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'paymentstatus',
-			'type' => 'select',
-			'label' => 'PROCESSES_PAYMENT_STATUS',
-			'default' => '0',
-			'options' => [
-				'0' => 'TOOLBAR_ALL',
-				'waitingForPayment' => 'PROCESSES_WAITING_FOR_PAYMENT',
-				'prepaymentReceived' => 'PROCESSES_PREPAYMENT_RECEIVED',
-				'paymentCompleted' => 'PROCESSES_PAYMENT_COMPLETED',
-			],
-			'filter' => true,
-			'toolbar' => 'filters',
-			'wrap' => false,
-			'format' => ['type' => 'string'],
-		]);
-
-		$this->addElement([
 			'name' => 'daterange',
 			'type' => 'select',
 			'label' => 'TOOLBAR_DATE_RANGE',

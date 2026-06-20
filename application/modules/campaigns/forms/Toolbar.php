@@ -146,33 +146,6 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'paymentstatus',
-			'type' => 'multicheckbox',
-			'wrap' => false,
-			'options' => [
-				'waitingForPayment' => 'PROCESSES_WAITING_FOR_PAYMENT',
-				'prepaymentReceived' => 'PROCESSES_PREPAYMENT_RECEIVED',
-				'paymentCompleted' => 'PROCESSES_PAYMENT_COMPLETED',
-			],
-			'default' => [
-				'waitingForPayment',
-				'prepaymentReceived',
-				'paymentCompleted',
-			],
-		]);
-
-		$this->addElement([
-			'name' => 'deliverystatus',
-			'type' => 'select',
-			'wrap' => false,
-			'options' => [
-				'deliveryIsWaiting' => 'PROCESSES_DELIVERY_IS_WAITING',
-				'partialDelivered' => 'PROCESSES_PARTIAL_DELIVERED',
-				'deliveryCompleted' => 'PROCESSES_DELIVERY_COMPLETED',
-			],
-		]);
-
-		$this->addElement([
 			'name' => 'from',
 			'type' => 'text',
 			'wrap' => false,

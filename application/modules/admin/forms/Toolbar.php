@@ -87,8 +87,6 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'options' => [
 				'modified' => 'TOOLBAR_MODIFIED',
 				'created' => 'TOOLBAR_CREATED',
-				'processid' => 'PROCESSES_PROCESS_ID',
-				'name1' => 'TOOLBAR_NAME',
 			],
 			'filter' => true,
 			'toolbar' => 'filters',

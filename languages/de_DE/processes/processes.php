@@ -66,7 +66,7 @@
 	'PROCESSES_SHIPMENT_DATE' => 'Sendungsdat.',
 	'PROCESSES_DELIVERY_STATUS' => 'Lieferstatus',
 	'PROCESSES_DELIVERY_IS_WAITING' => 'Lieferung wartet',
-	'PROCESSES_PARTIAL_DElIVERED' => 'Teillieferung erfolgt',
+	'PROCESSES_PARTIAL_DELIVERED' => 'Teillieferung erfolgt',
 	'PROCESSES_DELIVERY_COMPLETED' => 'Lieferung abgeschlossen',
 	'PROCESSES_INFO' => 'Info',
 	'PROCESSES_CONTACT_INFO' => 'Kontakt-Info',
