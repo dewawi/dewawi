@@ -1,6 +1,6 @@
 <?php
 
-abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
+abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_PositionAction
 {
 	public function previewAction()
 	{
@@ -199,43 +199,5 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	protected function getDocumentFinalizeServiceClass(): ?string
 	{
 		return null;
-	}
-
-	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
-	{
-		$this->copyDocumentPositions($oldId, $newId);
-	}
-
-	protected function copyDocumentPositions(int $oldId, int $newId): void
-	{
-		$positionsDbClass = $this->getDocumentPositionsDbTableClass();
-
-		if (!class_exists($positionsDbClass)) {
-			return;
-		}
-
-		$positionsDb = new $positionsDbClass();
-
-		if (!method_exists($positionsDb, 'getPositions')) {
-			return;
-		}
-
-		$positions = $positionsDb->getPositions($oldId);
-
-		$this->_helper->Position->copyPositions(
-			$positions,
-			$newId,
-			$this->getRequest()->getModuleName(),
-			$this->getRequest()->getControllerName(),
-			$this->_date
-		);
-	}
-
-	protected function getDocumentPositionsDbTableClass(): string
-	{
-		return $this->getModuleClassPrefix()
-			. '_Model_DbTable_'
-			. $this->getControllerClassName()
-			. 'pos';
 	}
 }
