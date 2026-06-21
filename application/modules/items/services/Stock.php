@@ -3,126 +3,13 @@
 class Items_Service_Stock
 {
 	protected Items_Model_DbTable_Item $_itemDb;
-	protected Items_Model_DbTable_Ledger $_ledgerDb;
 
 	public function __construct()
 	{
 		$this->_itemDb = new Items_Model_DbTable_Item();
-		$this->_ledgerDb = new Items_Model_DbTable_Ledger();
 	}
 
-	public function createLedger(array $data): int
-	{
-		$adapter = $this->_ledgerDb->getAdapter();
-
-		try {
-			$adapter->beginTransaction();
-
-			$data = $this->prepareLedgerData($data);
-
-			$id = $this->_ledgerDb->create($data);
-			$ledger = $this->_ledgerDb->getById($id);
-
-			if (!$ledger) {
-				throw new Exception('MESSAGES_LEDGER_NOT_FOUND');
-			}
-
-			$this->apply($ledger);
-
-			$adapter->commit();
-
-			return $id;
-		} catch (Exception $e) {
-			$adapter->rollBack();
-			throw $e;
-		}
-	}
-
-	public function updateLedger(int $id, array $data): array
-	{
-		$adapter = $this->_ledgerDb->getAdapter();
-
-		try {
-			$adapter->beginTransaction();
-
-			$oldLedger = $this->_ledgerDb->getById($id);
-
-			if (!$oldLedger) {
-				throw new Exception('MESSAGES_LEDGER_NOT_FOUND');
-			}
-
-			$data = $this->prepareLedgerData(array_merge($oldLedger, $data));
-			$data = array_intersect_key($data, $data);
-
-			$this->_ledgerDb->updateById($id, $data);
-
-			$newLedger = $this->_ledgerDb->getById($id);
-
-			if (!$newLedger) {
-				throw new Exception('MESSAGES_LEDGER_NOT_FOUND');
-			}
-
-			$this->revert($oldLedger);
-			$this->apply($newLedger);
-
-			$adapter->commit();
-
-			return $newLedger;
-		} catch (Exception $e) {
-			$adapter->rollBack();
-			throw $e;
-		}
-	}
-
-	public function deleteLedger(int $id): void
-	{
-		$adapter = $this->_ledgerDb->getAdapter();
-
-		try {
-			$adapter->beginTransaction();
-
-			$ledger = $this->_ledgerDb->getById($id);
-
-			if (!$ledger) {
-				throw new Exception('MESSAGES_LEDGER_NOT_FOUND');
-			}
-
-			$this->revert($ledger);
-			$this->_ledgerDb->deleteById($id);
-
-			$adapter->commit();
-		} catch (Exception $e) {
-			$adapter->rollBack();
-			throw $e;
-		}
-	}
-
-	public function copyLedger(int $id): int
-	{
-		$adapter = $this->_ledgerDb->getAdapter();
-
-		try {
-			$adapter->beginTransaction();
-
-			$newId = $this->_ledgerDb->copyById($id);
-			$newLedger = $this->_ledgerDb->getById($newId);
-
-			if (!$newLedger) {
-				throw new Exception('MESSAGES_LEDGER_NOT_FOUND');
-			}
-
-			$this->apply($newLedger);
-
-			$adapter->commit();
-
-			return $newId;
-		} catch (Exception $e) {
-			$adapter->rollBack();
-			throw $e;
-		}
-	}
-
-	public function prepareLedgerData(array $data): array
+	public function prepareCreateData(array $data): array
 	{
 		$item = $this->findItem($data);
 

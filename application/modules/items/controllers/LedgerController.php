@@ -47,10 +47,12 @@ class Items_LedgerController extends DEEC_Controller_Action
 	{
 		$ledger = $this->getDb()->getById($id);
 
-		if ($ledger) {
-			$stock = new Items_Service_Stock();
-			$stock->apply($ledger);
+		if (!$ledger) {
+			throw new Exception('MESSAGES_LEDGER_NOT_FOUND');
 		}
+
+		$stock = new Items_Service_Stock();
+		$stock->apply($ledger);
 	}
 
 	protected function beforeEditSave(array $values, array $row): array
@@ -92,5 +94,11 @@ class Items_LedgerController extends DEEC_Controller_Action
 
 		$stock = new Items_Service_Stock();
 		$stock->apply($newRow);
+	}
+
+	protected function afterDelete(int $id, array $row): void
+	{
+		$stock = new Items_Service_Stock();
+		$stock->revert($row);
 	}
 }
