@@ -19,6 +19,8 @@ class Items_LedgerController extends DEEC_Controller_Action
 			'docid' => 0,
 			'doctype' => '',
 			'language' => '',
+			'type' => 'inflow',
+			'warehouseid' => 0,
 			'comment' => 'Booking ' . date('d.m.Y'),
 			'ledgerdate' => date('Y-m-d'),
 		];
@@ -32,6 +34,10 @@ class Items_LedgerController extends DEEC_Controller_Action
 
 	protected function beforeCreate(array $data): array
 	{
+		if (empty($data['itemid']) && empty($data['sku'])) {
+			return $data;
+		}
+
 		$stock = new Items_Service_Stock();
 
 		return $stock->prepareCreateData($data);

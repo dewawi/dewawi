@@ -1,76 +1,165 @@
 <?php
 
-class Items_Form_Ledger extends Zend_Form
+class Items_Form_Ledger extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('item');
+		$this->addElement([
+			'type' => 'hidden',
+			'name' => 'id',
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+		]);
 
-		$form = array();
+		$this->addElement([
+			'type' => 'hidden',
+			'name' => 'itemid',
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+		]);
 
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int');
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'sku',
+			'label' => 'ITEMS_SKU',
+			'required' => true,
+			'attribs' => [
+				'size' => 20,
+				'class' => 'required',
+			],
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'section' => 'ITEMS_LEDGER_ITEM',
+			'col' => 6,
+		]);
 
-		$form['sku'] = new Zend_Form_Element_Text('sku');
-		$form['sku']->setLabel('ITEMS_SKU')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '20')
-			->setAttrib('class', 'required');
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'title',
+			'label' => 'ITEMS_TITLE',
+			'attribs' => [
+				'size' => 40,
+				'readonly' => 'readonly',
+			],
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'section' => 'ITEMS_LEDGER_ITEM',
+			'col' => 6,
+		]);
 
-		$form['title'] = new Zend_Form_Element_Text('title');
-		$form['title']->setLabel('ITEMS_TITLE')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '40')
-			->setAttrib('class', 'required');
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'type',
+			'label' => 'ITEMS_LEDGER_TYPE',
+			'required' => true,
+			'options' => [
+				'inflow' => 'ITEMS_LEDGER_INFLOW',
+				'outflow' => 'ITEMS_LEDGER_OUTFLOW',
+			],
+			'attribs' => ['class' => 'required'],
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'section' => 'ITEMS_LEDGER_BOOKING',
+			'col' => 6,
+		]);
 
-		$form['type'] = new Zend_Form_Element_Select('type');
-		$form['type']->setLabel('ITEMS_LEDGER_TYPE')
-			->addMultiOption("inflow", 'ITEMS_LEDGER_INFLOW')
-			->addMultiOption("outflow", 'ITEMS_LEDGER_OUTFLOW')
-			->setRequired(true)
-			->addValidator('NotEmpty')
-			->setAttrib('class', 'required');
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'quantity',
+			'label' => 'ITEMS_LEDGER_QUANTITY',
+			'required' => true,
+			'attribs' => [
+				'size' => 10,
+				'class' => 'number required',
+				'data-precision' => 2,
+			],
+			'format' => [
+				'type' => 'decimal',
+				'precision' => 2,
+			],
+			'tab' => 'overview',
+			'section' => 'ITEMS_LEDGER_BOOKING',
+			'col' => 6,
+		]);
 
-		$form['quantity'] = new Zend_Form_Element_Text('quantity');
-		$form['quantity']->setLabel('ITEMS_LEDGER_QUANTITY')
-			->setRequired(true)
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('NotEmpty')
-			->setAttrib('size', '10')
-			->setAttrib('class', 'number required');
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'warehouseid',
+			'label' => 'ITEMS_WAREHOUSE',
+			'required' => true,
+			'source' => 'warehouse',
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'section' => 'ITEMS_LEDGER_BOOKING',
+			'col' => 6,
+		]);
 
-		$form['warehouseid'] = new Zend_Form_Element_Select('warehouseid');
-		$form['warehouseid']->setLabel('ITEMS_WAREHOUSE')
-			->setRequired(true)
-			->addValidator('NotEmpty');
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'ledgerdate',
+			'label' => 'ITEMS_LEDGER_DATE',
+			'attribs' => [
+				'class' => 'datePicker',
+				'size' => 9,
+			],
+			'format' => ['type' => 'date'],
+			'tab' => 'overview',
+			'section' => 'ITEMS_LEDGER_BOOKING',
+			'col' => 6,
+		]);
 
-		$form['comment'] = new Zend_Form_Element_Text('comment');
-		$form['comment']->setLabel('ITEMS_LEDGER_COMMENT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '40');
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'comment',
+			'label' => 'ITEMS_LEDGER_COMMENT',
+			'attribs' => ['size' => 40],
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'section' => 'ITEMS_LEDGER_BOOKING',
+			'col' => 12,
+		]);
 
-		$form['ledgerdate'] = new Zend_Form_Element_Text('ledgerdate');
-		$form['ledgerdate']->setLabel('ITEMS_LEDGER_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
+		$this->addElement([
+			'type' => 'hidden',
+			'name' => 'docid',
+			'format' => ['type' => 'int'],
+			'tab' => 'details',
+		]);
 
-		$form['modified'] = new Zend_Form_Element_Text('modified');
-		$form['created'] = new Zend_Form_Element_Text('created');
+		$this->addElement([
+			'type' => 'hidden',
+			'name' => 'doctype',
+			'format' => ['type' => 'string'],
+			'tab' => 'details',
+		]);
 
-		$form['submit'] = new Zend_Form_Element_Submit('submit');
-		$form['submit']->setAttrib('id', 'submitbutton')
-				->setLabel('ITEMS_SAVE');
+		$this->addElement([
+			'type' => 'hidden',
+			'name' => 'language',
+			'format' => ['type' => 'string'],
+			'tab' => 'details',
+		]);
 
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'modified',
+			'type' => 'text',
+			'label' => 'ITEMS_MODIFIED',
+			'attribs' => ['readonly' => 'readonly'],
+			'format' => ['type' => 'date'],
+			'tab' => 'details',
+			'section' => 'ITEMS_OTHER',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'created',
+			'type' => 'text',
+			'label' => 'ITEMS_CREATED',
+			'attribs' => ['readonly' => 'readonly'],
+			'format' => ['type' => 'date'],
+			'tab' => 'details',
+			'section' => 'ITEMS_OTHER',
+			'col' => 6,
+		]);
 	}
 }
