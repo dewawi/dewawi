@@ -951,25 +951,6 @@ function collectToolbarData() {
 	return data;
 }
 
-//Cancel
-function cancel(id, message){
-	var answer = confirm(message);
-	if (answer == true) {
-		$.ajax({
-			type: 'POST',
-			url: baseUrl+'/'+module+'/'+controller+'/cancel/id/'+id,
-			cache: false,
-			success: function(data){
-				if(action == 'edit') {
-					window.location = baseUrl+'/'+module+'/'+controller;
-				} else {
-					search();
-				}
-			}
-		});
-	}
-}
-
 //Trash
 function trash(ids, message, type, cmodule) {
 	type = type || controller;
@@ -1876,6 +1857,7 @@ function markFieldSaved($field) {
 			edit: { selection: 'single' },
 			view: { selection: 'single' },
 			pdf: { selection: 'single' },
+			cancel: { selection: 'single' },
 			apply: { selection: 'single' },
 
 			copy: { selection: 'multiple' },
@@ -2183,6 +2165,35 @@ function markFieldSaved($field) {
 				setLocation(
 					Dewawi.url(selection.module, selection.controller, 'view', selection.ids[0])
 				);
+			},
+
+			cancel: function (selection, $button) {
+				if (!confirm($button.data('message') || 'Wirklich stornieren?')) {
+					return;
+				}
+
+				$.ajax({
+					type: 'POST',
+					url: Dewawi.url(selection.module, selection.controller, 'cancel', selection.ids[0]),
+					dataType: 'json',
+					cache: false,
+					success: function (response) {
+						if (!response || response.ok === false) {
+							pushMessages([response && response.message ? response.message : 'Stornieren fehlgeschlagen.']);
+							return;
+						}
+
+						if (action === 'view' || action === 'edit') {
+							location.reload();
+							return;
+						}
+
+						search();
+					},
+					error: function () {
+						pushMessages(['Stornieren fehlgeschlagen.']);
+					}
+				});
 			},
 
 			delete: function (selection) {

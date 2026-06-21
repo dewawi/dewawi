@@ -353,10 +353,13 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 
 	protected function isCancellableView(): bool
 	{
-		if(empty($this->view->row) || !is_array($this->view->row)) {
+		if (
+			empty($this->view->form)
+			|| !method_exists($this->view->form, 'getValue')
+		) {
 			return false;
 		}
 
-		return (int)($this->view->row['state'] ?? 0) === 105;
+		return (int)$this->view->form->getValue('state') === 105;
 	}
 }
