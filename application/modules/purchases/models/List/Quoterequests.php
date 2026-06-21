@@ -98,6 +98,12 @@ class Purchases_Model_List_Quoterequests extends DEEC_List
 						},
 					],
 					['name' => 'copy'],
+					[
+						'name' => 'cancel',
+						'show' => function ($item, $element, $list) {
+							return (int)($item['state'] ?? 0) === 105;
+						},
+					],
 					['name' => 'delete'],
 					['name' => 'pdf'],
 				],

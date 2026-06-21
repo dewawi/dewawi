@@ -32,6 +32,15 @@ class Sales_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'cancel',
+			'type' => 'button',
+			'label' => 'TOOLBAR_CANCEL',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'cancel'],
+		]);
+
+		$this->addElement([
 			'name' => 'delete',
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',

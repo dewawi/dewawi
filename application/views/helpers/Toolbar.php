@@ -38,7 +38,13 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 
 	protected function renderViewToolbar($toolbar, int $id): string
 	{
-		return $toolbar->renderElementWithAttribs('copy', $this->getCurrentTarget($id));
+		$target = $this->getCurrentTarget($id);
+
+		$html = '';
+		$html .= $toolbar->renderElementWithAttribs('copy', $target);
+		$html .= $toolbar->renderElementWithAttribs('cancel', $target);
+
+		return $html;
 	}
 
 	protected function renderIndexToolbar($toolbar, $controller): string

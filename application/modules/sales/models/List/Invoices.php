@@ -98,6 +98,12 @@ class Sales_Model_List_Invoices extends DEEC_List
 						},
 					],
 					['name' => 'copy'],
+					[
+						'name' => 'cancel',
+						'show' => function ($item, $element, $list) {
+							return (int)($item['state'] ?? 0) === 105;
+						},
+					],
 					['name' => 'delete'],
 					['name' => 'pdf'],
 				],
