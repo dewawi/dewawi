@@ -5,19 +5,6 @@ class Items_Model_DbTable_Ledger extends DEEC_Model_DbTable_Entity
 
 	protected $_name = 'ledger';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_client = null;
-
-	public function init()
-	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
-	}
-
 	public function getLedger($id)
 	{
 		$id = (int)$id;
@@ -57,39 +44,5 @@ class Items_Model_DbTable_Ledger extends DEEC_Model_DbTable_Entity
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC', 5);
 		return $data;
-	}
-
-	public function addLedger($data)
-	{
-		$data['clientid'] = $this->_client['id'];
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
-	}
-
-	public function updateLedger($id, $data)
-	{
-		$id = (int)$id;
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
-	}
-
-	public function updateSkuByItemId($itemId, $newSku)
-	{
-		return $this->update(
-			array('sku' => $newSku),
-			array('itemid = ?' => (int)$itemId)
-		);
-	}
-
-	public function deleteLedger($id)
-	{
-		$id = (int)$id;
-		$data = array('deleted' => 1);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
 	}
 }
