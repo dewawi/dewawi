@@ -11,18 +11,14 @@ class Sales_CreditnoteController extends DEEC_Controller_DocumentAction
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
 		$contactId = (int)$this->_getParam('contactid', 0);
 		$controller = $this->getRequest()->getControllerName();
 
 		$factory = new Sales_Service_CreateDataFactory();
-		$data = $factory->build($controller, $contactId);
 
-		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
-		$id = $creditnoteDb->addCreditnote($data);
-
-		return $this->_helper->redirector->gotoSimple('edit', 'creditnote', null, ['id' => $id]);
+		return $factory->build($controller, $contactId);
 	}
 
 	protected function beforeEdit(array $row)

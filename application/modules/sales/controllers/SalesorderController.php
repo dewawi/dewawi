@@ -11,18 +11,14 @@ class Sales_SalesorderController extends DEEC_Controller_DocumentAction
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
 		$contactId = (int)$this->_getParam('contactid', 0);
 		$controller = $this->getRequest()->getControllerName();
 
 		$factory = new Sales_Service_CreateDataFactory();
-		$data = $factory->build($controller, $contactId);
 
-		$salesorderDb = new Sales_Model_DbTable_Salesorder();
-		$id = $salesorderDb->addSalesorder($data);
-
-		return $this->_helper->redirector->gotoSimple('edit', 'salesorder', null, ['id' => $id]);
+		return $factory->build($controller, $contactId);
 	}
 
 	protected function beforeEdit(array $row)

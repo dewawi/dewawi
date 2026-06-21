@@ -11,18 +11,14 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
 		$contactId = (int)$this->_getParam('contactid', 0);
 		$controller = $this->getRequest()->getControllerName();
 
 		$factory = new Purchases_Service_CreateDataFactory();
-		$data = $factory->build($controller, $contactId);
 
-		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
-		$id = $purchaseorderDb->addPurchaseorder($data);
-
-		return $this->_helper->redirector->gotoSimple('edit', 'purchaseorder', null, ['id' => $id]);
+		return $factory->build($controller, $contactId);
 	}
 
 	public function editAction()

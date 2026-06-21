@@ -11,18 +11,14 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
 		$contactId = (int)$this->_getParam('contactid', 0);
 		$controller = $this->getRequest()->getControllerName();
 
 		$factory = new Purchases_Service_CreateDataFactory();
-		$data = $factory->build($controller, $contactId);
 
-		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
-		$id = $quoterequestDb->addQuoterequest($data);
-
-		return $this->_helper->redirector->gotoSimple('edit', 'quoterequest', null, ['id' => $id]);
+		return $factory->build($controller, $contactId);
 	}
 
 	public function editAction()
