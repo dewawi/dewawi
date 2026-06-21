@@ -5,19 +5,6 @@ class Campaigns_Model_DbTable_Campaign extends DEEC_Model_DbTable_Entity
 
 	protected $_name = 'campaign';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_client = null;
-
-	public function init()
-	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
-	}
-
 	public function getCampaign($id)
 	{
 		$id = (int)$id;
@@ -46,51 +33,5 @@ class Campaigns_Model_DbTable_Campaign extends DEEC_Model_DbTable_Entity
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC', 5);
 		return $data;
-	}
-
-	public function addCampaign($data)
-	{
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_client['id'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
-	}
-
-	public function updateCampaign($id, $data)
-	{
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
-		$this->update($data, 'id = '.(int)$id);
-	}
-
-	public function saveCampaign($id, $campaignid, $campaigndate, $state)
-	{
-		$data = array(
-			'campaignid' => $campaignid,
-			'campaigndate' => $campaigndate,
-			'state' => $state,
-			'modified' => $this->_date,
-			'modifiedby' => $this->_user['id']
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function setState($id, $state)
-	{
-		$data = array(
-			'state' => $state,
-			'modified' => $this->_date,
-			'modifiedby' => $this->_user['id']
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function deleteCampaign($id)
-	{
-		$data = array(
-			'deleted' => 1
-		);
-		$this->update($data, 'id =' . (int)$id);
 	}
 }

@@ -88,16 +88,6 @@ class Shops_Model_DbTable_Quote extends Zend_Db_Table_Abstract
 		$this->update($data, 'id = '. (int)$id);
 	}
 
-	public function setState($id, $state)
-	{
-		$data = array(
-			'state' => $state,
-			'modified' => $this->_date,
-			//'modifiedby' => $this->_user['id']
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
 	public function lock($id)
 	{
 		$data = array(

@@ -5,19 +5,6 @@ class Processes_Model_DbTable_Process extends DEEC_Model_DbTable_Entity
 
 	protected $_name = 'process';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_client = null;
-
-	public function init()
-	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
-	}
-
 	public function getProcess($id)
 	{
 		$id = (int)$id;
@@ -51,51 +38,5 @@ class Processes_Model_DbTable_Process extends DEEC_Model_DbTable_Entity
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where);
 		return $data;
-	}
-
-	public function addProcess($data)
-	{
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_client['id'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
-	}
-
-	public function updateProcess($id, $data)
-	{
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
-		$this->update($data, 'id = '.(int)$id);
-	}
-
-	public function saveProcess($id, $processid, $processdate, $state)
-	{
-		$data = array(
-			'processid' => $processid,
-			'processdate' => $processdate,
-			'state' => $state,
-			'modified' => $this->_date,
-			'modifiedby' => $this->_user['id']
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function setState($id, $state)
-	{
-		$data = array(
-			'state' => $state,
-			'modified' => $this->_date,
-			'modifiedby' => $this->_user['id']
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function deleteProcess($id)
-	{
-		$data = array(
-			'deleted' => 1
-		);
-		$this->update($data, 'id =' . (int)$id);
 	}
 }
