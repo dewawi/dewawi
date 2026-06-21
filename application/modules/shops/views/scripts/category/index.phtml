@@ -128,6 +128,12 @@ foreach ($this->categories as $subcategory) {
 			<?php echo $this->RenderCategories($this->categories, $this->category['id']); ?>
 		</div>
 	</section>
+<?php elseif ($this->category['description']) : ?>
+<section id="description" class="py-5">
+    <div class="container">
+        <?php echo $this->category['description']; ?>
+    </div>
+</section>
 <?php endif; ?>
 
 <!--<section id="video" class="py-5">
