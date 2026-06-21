@@ -62,6 +62,30 @@ class Items_LedgerController extends DEEC_Controller_Action
 			$values['ledgerdate'] = $date->get('yyyy-MM-dd');
 		}
 
+		if (isset($values['quantity'])) {
+			$locale = Zend_Registry::get('Zend_Locale');
+			$values['quantity'] = Zend_Locale_Format::getNumber(
+				$values['quantity'],
+				[
+					'precision' => 4,
+					'locale' => $locale,
+				]
+			);
+		}
+
+		$stockFields = [
+			'itemid' => true,
+			'sku' => true,
+			'warehouseid' => true,
+			'type' => true,
+			'quantity' => true,
+			'ledgerdate' => true,
+		];
+
+		if (!array_intersect_key($values, $stockFields)) {
+			return $values;
+		}
+
 		$stock = new Items_Service_Stock();
 		$prepared = $stock->prepareCreateData(array_merge($row, $values));
 

@@ -47,16 +47,16 @@ class Items_Service_Stock
 
 	protected function findItem(array $data): array
 	{
-		if (!empty($data['itemid'])) {
-			$item = $this->_itemDb->getById((int)$data['itemid']);
+		if (!empty($data['sku'])) {
+			$item = $this->_itemDb->getItemBySKU($data['sku']);
 
 			if ($item) {
 				return $item;
 			}
 		}
 
-		if (!empty($data['sku'])) {
-			$item = $this->_itemDb->getItemBySKU($data['sku']);
+		if (!empty($data['itemid'])) {
+			$item = $this->_itemDb->getById((int)$data['itemid']);
 
 			if ($item) {
 				return $item;
