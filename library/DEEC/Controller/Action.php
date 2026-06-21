@@ -63,13 +63,23 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	public function addAction()
 	{
 		$db = $this->getDb();
+		$adapter = $db->getAdapter();
 
-		$data = $this->getCreateData();
-		$data = $this->beforeCreate($data);
+		try {
+			$adapter->beginTransaction();
 
-		$id = $db->create($data);
+			$data = $this->getCreateData();
+			$data = $this->beforeCreate($data);
 
-		$this->afterCreate($id, $data);
+			$id = $db->create($data);
+
+			$this->afterCreate($id, $data);
+
+			$adapter->commit();
+		} catch (Exception $e) {
+			$adapter->rollBack();
+			throw $e;
+		}
 
 		return $this->_helper->redirector->gotoSimple(
 			'edit',
@@ -144,8 +154,19 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 				$values = $form->getFilteredValues();
 				$values = $this->beforeEditSave($values, $row);
 
-				$db->updateById($id, $values);
-				$this->afterEditSave($id, $values, $row);
+				$adapter = $db->getAdapter();
+
+				try {
+					$adapter->beginTransaction();
+
+					$db->updateById($id, $values);
+					$this->afterEditSave($id, $values, $row);
+
+					$adapter->commit();
+				} catch (Exception $e) {
+					$adapter->rollBack();
+					throw $e;
+				}
 
 				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
 
@@ -292,12 +313,21 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$mainValues = $splitValues['main'];
 		$externalValues = $splitValues['external'];
 
+		$adapter = $db->getAdapter();
+
 		try {
+			$adapter->beginTransaction();
+
 			if (!empty($mainValues)) {
 				$db->updateById($id, $mainValues);
 			}
+
 			$this->afterEditSave($id, $values, $row);
+
+			$adapter->commit();
 		} catch (Exception $e) {
+			$adapter->rollBack();
+
 			return $this->_helper->json([
 				'ok' => false,
 				'message' => 'save_failed',
@@ -619,10 +649,21 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			]);
 		}
 
-		$newId = $db->copyById($id);
-		$newRow = $db->getById($newId);
+		$adapter = $db->getAdapter();
 
-		$this->afterCopy($id, $newId, (array)$row, $newRow ? (array)$newRow : []);
+		try {
+			$adapter->beginTransaction();
+
+			$newId = $db->copyById($id);
+			$newRow = $db->getById($newId);
+
+			$this->afterCopy($id, $newId, (array)$row, $newRow ? (array)$newRow : []);
+
+			$adapter->commit();
+		} catch (Exception $e) {
+			$adapter->rollBack();
+			throw $e;
+		}
 
 		return $this->_helper->json([
 			'ok' => true,
@@ -669,10 +710,21 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 				continue;
 			}
 
-			$db->deleteById((int)$id);
-			$db->normalizeOrderingByRow($row);
+			$adapter = $db->getAdapter();
 
-			$this->afterDelete((int)$id, $row);
+			try {
+				$adapter->beginTransaction();
+
+				$db->deleteById((int)$id);
+				$db->normalizeOrderingByRow($row);
+
+				$this->afterDelete((int)$id, $row);
+
+				$adapter->commit();
+			} catch (Exception $e) {
+				$adapter->rollBack();
+				throw $e;
+			}
 		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
@@ -774,7 +826,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			]);
 		}
 
-		$db = $this->getDbTable();
+		$db = $this->getDb();
 		$db->setState($id, $this->getCancelledState());
 
 		return $this->_helper->json([
