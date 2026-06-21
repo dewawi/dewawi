@@ -100,12 +100,21 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 
 	protected function beforeEditSave(array $values, array $row): array
 	{
-		if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$row['parentid']) {
+		$type = (string)($values['type'] ?? $row['type'] ?? '');
+		$parentId = (int)($values['parentid'] ?? $row['parentid'] ?? 0);
+		$shopId = (int)($values['shopid'] ?? $row['shopid'] ?? 0);
+
+		$groupChanged =
+			(array_key_exists('parentid', $values) && (int)$values['parentid'] !== (int)$row['parentid'])
+			|| (array_key_exists('shopid', $values) && (int)$values['shopid'] !== (int)$row['shopid'])
+			|| (array_key_exists('type', $values) && (string)$values['type'] !== (string)$row['type']);
+
+		if ($groupChanged) {
 			$values['ordering'] = $this->getLatestOrdering(
 				Admin_Model_DbTable_Category::class,
 				'getCategories',
 				'sortCategory',
-				[(string)($row['type'] ?? ''), (int)$values['parentid'], (int)($row['shopid'] ?? 0)]
+				[$type, $parentId, $shopId]
 			) + 1;
 		}
 

@@ -78,6 +78,18 @@ class Admin_Model_List_Categories extends DEEC_List
 						},
 					],
 					['name' => 'view'],
+					[
+						'name' => 'sortup',
+						'show' => function ($category) {
+							return $this->hasPermission('admin');
+						},
+					],
+					[
+						'name' => 'sortdown',
+						'show' => function ($category) {
+							return $this->hasPermission('admin');
+						},
+					],
 				],
 			],
 		];
