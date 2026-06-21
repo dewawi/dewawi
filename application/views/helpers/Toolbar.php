@@ -42,7 +42,9 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 
 		$html = '';
 		$html .= $toolbar->renderElementWithAttribs('copy', $target);
-		$html .= $toolbar->renderElementWithAttribs('cancel', $target);
+		if($this->isCancellableView()) {
+			$html .= $toolbar->renderElementWithAttribs('cancel', $target);
+		}
 
 		return $html;
 	}
@@ -347,5 +349,14 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			'data-module' => $this->view->module,
 			'data-controller' => $this->view->controller,
 		];
+	}
+
+	protected function isCancellableView(): bool
+	{
+		if(empty($this->view->row) || !is_array($this->view->row)) {
+			return false;
+		}
+
+		return (int)($this->view->row['state'] ?? 0) === 105;
 	}
 }

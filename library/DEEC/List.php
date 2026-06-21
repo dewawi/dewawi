@@ -221,6 +221,11 @@ class DEEC_List
 		return in_array($value, $this->readonlyStates, true);
 	}
 
+	public function isCancellable($item, string $field = 'state'): bool
+	{
+		return (int)$this->getFieldValue($item, $field) === 105;
+	}
+
 	public function setOptions(array $options)
 	{
 		$this->options = $options;

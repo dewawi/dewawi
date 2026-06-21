@@ -707,21 +707,32 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	{
 		$this->disableView();
 
-		if($this->getRequest()->isPost()) {
-			$id = (int)$this->_getParam('id', 0);
-
-			$this->requireRow($id);
-
-			$db = $this->getDbTable();
-
-			if(!method_exists($db, 'setState')) {
-				throw new RuntimeException(get_class($db) . ' must provide setState()');
-			}
-
-			$db->setState($id, $this->getCancelledState());
+		if(!$this->getRequest()->isPost()) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'MESSAGES_INVALID_REQUEST',
+			]);
 		}
 
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
+		$id = (int)$this->_getParam('id', 0);
+		$row = $this->requireRow($id);
+
+		if((int)($row['state'] ?? 0) === 106) {
+			return $this->_helper->json([
+				'ok' => true,
+				'message' => 'MESSAGES_ALREADY_CANCELLED',
+			]);
+		}
+
+		$db = $this->getDbTable();
+		$db->setState($id, $this->getCancelledState());
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'state' => $this->getCancelledState(),
+			'message' => 'MESSAGES_SUCCESFULLY_CANCELLED',
+		]);
 	}
 
 	protected function getCancelledState(): int

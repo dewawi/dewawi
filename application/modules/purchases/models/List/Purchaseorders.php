@@ -101,7 +101,7 @@ class Purchases_Model_List_Purchaseorders extends DEEC_List
 					[
 						'name' => 'cancel',
 						'show' => function ($item, $element, $list) {
-							return (int)($item['state'] ?? 0) === 105;
+							return $list->isCancellable($item);
 						},
 					],
 					['name' => 'delete'],
