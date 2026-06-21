@@ -703,6 +703,32 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		]);
 	}
 
+	public function cancelAction()
+	{
+		$this->disableView();
+
+		if($this->getRequest()->isPost()) {
+			$id = (int)$this->_getParam('id', 0);
+
+			$this->requireRow($id);
+
+			$db = $this->getDbTable();
+
+			if(!method_exists($db, 'setState')) {
+				throw new RuntimeException(get_class($db) . ' must provide setState()');
+			}
+
+			$db->setState($id, $this->getCancelledState());
+		}
+
+		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
+	}
+
+	protected function getCancelledState(): int
+	{
+		return 106;
+	}
+
 	public function pinAction()
 	{
 		$id = (int)$this->_getParam('id', 0);

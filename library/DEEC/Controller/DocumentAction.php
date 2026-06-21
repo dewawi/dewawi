@@ -200,4 +200,35 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_PositionAc
 	{
 		return null;
 	}
+
+	public function saveAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+
+		try {
+			$this->generatePdfDocument($id, [
+				'finalize' => true,
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (RuntimeException $e) {
+			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
+
+			return $this->_helper->redirector->gotoSimple(
+				'index',
+				$this->getRequest()->getControllerName(),
+				$this->getRequest()->getModuleName()
+			);
+		}
+
+		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
+		return $this->_helper->redirector->gotoSimple(
+			'view',
+			$this->getRequest()->getControllerName(),
+			$this->getRequest()->getModuleName(),
+			['id' => $id]
+		);
+	}
 }
