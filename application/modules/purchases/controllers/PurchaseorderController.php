@@ -21,88 +21,49 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 		return $factory->build($controller, $contactId);
 	}
 
-	public function editAction()
+	protected function beforeEdit(array $row)
 	{
-		$request = $this->getRequest();
-		$id = (int)$this->_getParam('id', 0);
-		$isAjax = $request->isXmlHttpRequest();
-
-		$purchaseorder = $this->requireRow($id);
-
-		if ($this->isReadonlyState($purchaseorder)) {
-			return $this->_helper->redirector->gotoSimple('view', 'purchaseorder', null, ['id' => $id]);
+		if ($this->isReadonlyState($row)) {
+			return $this->_helper->redirector->gotoSimple(
+				'view',
+				'purchaseorder',
+				null,
+				['id' => (int)$row['id']]
+			);
 		}
 
-		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
+		return null;
+	}
 
-		$this->_helper->Access->lock($id, $this->_user['id'], $purchaseorder['locked'] ?? 0, $purchaseorder['lockedtime'] ?? null);
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		$id = (int)$row['id'];
 
-		$formFactory = new Purchases_Service_EditFormFactory();
-		$formData = $formFactory->create('Purchases_Form_Purchaseorder');
-		$form = $formData['form'];
-		$options = $formData['options'];
-		$toolbar = new Purchases_Form_Toolbar();
+		if (isset($values['currency'])) {
+			$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
+			$positions = $positionsDb->getPositions($id);
 
-		if ($request->isPost()) {
-			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $purchaseorder['taxfree']);
-
-			if ($isAjax) {
-				$this->disableView();
-
-				$ajaxSaveService = new Purchases_Service_EditAjaxSaveService();
-
-				return $this->_helper->json($ajaxSaveService->save([
-					'form' => $form,
-					'post' => (array)$request->getPost(),
-					'id' => $id,
-					'db' => $purchaseorderDb,
-				]));
+			foreach ($positions as $position) {
+				$positionsDb->updatePosition($position->id, [
+					'currency' => $values['currency'],
+				]);
 			}
-
-			$post = (array)$request->getPost();
-
-			if (!$form->isValid($post)) {
-				$form->setValues($post);
-			} else {
-				$values = $form->getFilteredValues();
-
-				if (isset($values['currency'])) {
-					$positionsDb = new Purchases_Model_DbTable_Purchaseorderpos();
-					$positions = $positionsDb->getPositions($id);
-
-					foreach ($positions as $position) {
-						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
-					}
-				}
-
-				if (isset($values['taxfree'])) {
-					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
-					$values['subtotal'] = $calculations['row']['subtotal'];
-					$values['taxes'] = $calculations['row']['taxes']['total'];
-					$values['total'] = $calculations['row']['total'];
-				}
-
-				$purchaseorderDb->updatePurchaseorder($id, $values);
-				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-
-				return $this->_helper->redirector->gotoSimple('edit', 'purchaseorder', null, ['id' => $id]);
-			}
-		} else {
-			$formFactory->populate($form, $purchaseorder, $id, 'purchaseorders', 'purchaseorder');
 		}
 
-		$vmService = new Purchases_Service_PurchaseorderEditViewModel();
-		$vm = $vmService->build($id, (array)$this->_user, (array)$purchaseorder);
+		if (isset($values['taxfree'])) {
+			$calculations = $this->_helper->Calculate(
+				$id,
+				$this->_date,
+				$this->_user['id'],
+				$values['taxfree']
+			);
 
-		$this->view->assign(array_merge($vm, [
-			'id' => $id,
-			'form' => $form,
-			'toolbar' => $toolbar,
-			'options' => $options,
-			'activeTab' => $request->getCookie('tab', null),
-		]));
+			$values['subtotal'] = $calculations['row']['subtotal'];
+			$values['taxes'] = $calculations['row']['taxes']['total'];
+			$values['total'] = $calculations['row']['total'];
+		}
 
-		$this->assignMessages();
+		return $values;
 	}
 
 	public function generateAction()

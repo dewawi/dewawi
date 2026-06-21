@@ -21,88 +21,49 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 		return $factory->build($controller, $contactId);
 	}
 
-	public function editAction()
+	protected function beforeEdit(array $row)
 	{
-		$request = $this->getRequest();
-		$id = (int)$this->_getParam('id', 0);
-		$isAjax = $request->isXmlHttpRequest();
-
-		$quoterequest = $this->requireRow($id);
-
-		if ($this->isReadonlyState($quoterequest)) {
-			return $this->_helper->redirector->gotoSimple('view', 'quoterequest', null, ['id' => $id]);
+		if ($this->isReadonlyState($row)) {
+			return $this->_helper->redirector->gotoSimple(
+				'view',
+				'quoterequest',
+				null,
+				['id' => (int)$row['id']]
+			);
 		}
 
-		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
+		return null;
+	}
 
-		$this->_helper->Access->lock($id, $this->_user['id'], $quoterequest['locked'] ?? 0, $quoterequest['lockedtime'] ?? null);
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		$id = (int)$row['id'];
 
-		$formFactory = new Purchases_Service_EditFormFactory();
-		$formData = $formFactory->create('Purchases_Form_Quoterequest');
-		$form = $formData['form'];
-		$options = $formData['options'];
-		$toolbar = new Purchases_Form_Toolbar();
+		if (isset($values['currency'])) {
+			$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
+			$positions = $positionsDb->getPositions($id);
 
-		if ($request->isPost()) {
-			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $quoterequest['taxfree']);
-
-			if ($isAjax) {
-				$this->disableView();
-
-				$ajaxSaveService = new Purchases_Service_EditAjaxSaveService();
-
-				return $this->_helper->json($ajaxSaveService->save([
-					'form' => $form,
-					'post' => (array)$request->getPost(),
-					'id' => $id,
-					'db' => $quoterequestDb,
-				]));
+			foreach ($positions as $position) {
+				$positionsDb->updatePosition($position->id, [
+					'currency' => $values['currency'],
+				]);
 			}
-
-			$post = (array)$request->getPost();
-
-			if (!$form->isValid($post)) {
-				$form->setValues($post);
-			} else {
-				$values = $form->getFilteredValues();
-
-				if (isset($values['currency'])) {
-					$positionsDb = new Purchases_Model_DbTable_Quoterequestpos();
-					$positions = $positionsDb->getPositions($id);
-
-					foreach ($positions as $position) {
-						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
-					}
-				}
-
-				if (isset($values['taxfree'])) {
-					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
-					$values['subtotal'] = $calculations['row']['subtotal'];
-					$values['taxes'] = $calculations['row']['taxes']['total'];
-					$values['total'] = $calculations['row']['total'];
-				}
-
-				$quoterequestDb->updateQuoterequest($id, $values);
-				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-
-				return $this->_helper->redirector->gotoSimple('edit', 'quoterequest', null, ['id' => $id]);
-			}
-		} else {
-			$formFactory->populate($form, $quoterequest, $id, 'quoterequests', 'quoterequest');
 		}
 
-		$vmService = new Purchases_Service_QuoterequestEditViewModel();
-		$vm = $vmService->build($id, (array)$this->_user, (array)$quoterequest);
+		if (isset($values['taxfree'])) {
+			$calculations = $this->_helper->Calculate(
+				$id,
+				$this->_date,
+				$this->_user['id'],
+				$values['taxfree']
+			);
 
-		$this->view->assign(array_merge($vm, [
-			'id' => $id,
-			'form' => $form,
-			'toolbar' => $toolbar,
-			'options' => $options,
-			'activeTab' => $request->getCookie('tab', null),
-		]));
+			$values['subtotal'] = $calculations['row']['subtotal'];
+			$values['taxes'] = $calculations['row']['taxes']['total'];
+			$values['total'] = $calculations['row']['total'];
+		}
 
-		$this->assignMessages();
+		return $values;
 	}
 
 	public function generateAction()
