@@ -6,8 +6,9 @@ class Processes_Service_CreateDataFactory
 	{
 		$data = $this->getDefaults($controller);
 
-		if ($contactId > 0) {
-			$data = array_merge($data, $this->getContactData($contactId));
+		if($contactId > 0) {
+			$contactDataFactory = new Contacts_Service_ContactDataFactory();
+			$data = array_merge($data, $contactDataFactory->getContactData($contactId));
 		}
 
 		return $data;
@@ -24,47 +25,6 @@ class Processes_Service_CreateDataFactory
 			'currency' => $currency['code'],
 			'state' => 100,
 		];
-	}
-
-	protected function getContactData(int $contactId): array
-	{
-		$data = [];
-
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($contactId);
-
-		if (!$contact) {
-			return $data;
-		}
-
-		$data['contactid'] = $contact['contactid'];
-		$data['billingname1'] = $contact['name1'];
-		$data['billingname2'] = $contact['name2'];
-		$data['billingdepartment'] = $contact['department'];
-
-		$addressDb = new Contacts_Model_DbTable_Address();
-		$addresses = $addressDb->getByParentId($contact['id'], 'contacts', 'contact');
-
-		if (count($addresses)) {
-			$data['billingstreet'] = $addresses[0]['street'];
-			$data['billingpostcode'] = $addresses[0]['postcode'];
-			$data['billingcity'] = $addresses[0]['city'];
-			$data['billingcountry'] = $addresses[0]['country'];
-		}
-
-		if (!empty($contact['vatin'])) {
-			$data['vatin'] = $contact['vatin'];
-		}
-
-		if (!empty($contact['currency'])) {
-			$data['currency'] = $contact['currency'];
-		}
-
-		if (!empty($contact['taxfree'])) {
-			$data['taxfree'] = $contact['taxfree'];
-		}
-
-		return $data;
 	}
 
 	protected function getDefaultTitle(string $controller): string

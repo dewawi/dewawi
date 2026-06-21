@@ -28,7 +28,7 @@ class Tasks_TaskController extends DEEC_Controller_Action
 
 	protected function getCreateData(): array
 	{
-		$contactid = (int)$this->_getParam('contactid', 0);
+		$contactId = (int)$this->_getParam('contactid', 0);
 
 		$currencies = new Application_Model_DbTable_Currency();
 		$currency = $currencies->getPrimaryCurrency();
@@ -41,36 +41,9 @@ class Tasks_TaskController extends DEEC_Controller_Action
 			'state' => 100,
 		];
 
-		if($contactid) {
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContact($contactid);
-
-			$data['contactid'] = $contact['contactid'];
-			$data['billingname1'] = $contact['name1'];
-			$data['billingname2'] = $contact['name2'];
-			$data['billingdepartment'] = $contact['department'];
-
-			$addressDb = new Contacts_Model_DbTable_Address();
-			$addresses = $addressDb->getByParentId($contact['id'], 'contacts', 'contact');
-
-			if(count($addresses)) {
-				$data['billingstreet'] = $addresses[0]['street'];
-				$data['billingpostcode'] = $addresses[0]['postcode'];
-				$data['billingcity'] = $addresses[0]['city'];
-				$data['billingcountry'] = $addresses[0]['country'];
-			}
-
-			if($contact['vatin']) {
-				$data['vatin'] = $contact['vatin'];
-			}
-
-			if($contact['currency']) {
-				$data['currency'] = $contact['currency'];
-			}
-
-			if($contact['taxfree']) {
-				$data['taxfree'] = $contact['taxfree'];
-			}
+		if($contactId > 0) {
+			$contactDataFactory = new Contacts_Service_ContactDataFactory();
+			$data = array_merge($data, $contactDataFactory->getContactData($contactId));
 		}
 
 		return $data;
