@@ -41,6 +41,19 @@ class Admin_Model_List_Categories extends DEEC_List
 				'class' => 'dw-col-parentid',
 			],
 			[
+				'name' => 'shop',
+				'label' => 'ADMIN_SHOP',
+				'type' => 'text',
+				'field' => 'shoptitle',
+				'class' => 'dw-col-shop',
+			],
+			[
+				'name' => 'ordering',
+				'label' => 'ADMIN_ORDERING',
+				'type' => 'text',
+				'class' => 'dw-col-ordering',
+			],
+			[
 				'name' => 'actions',
 				'label' => '',
 				'type' => 'actions',

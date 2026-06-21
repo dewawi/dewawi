@@ -8,6 +8,21 @@ class Admin_Model_Entity_Category
 			'tableClass' => 'Admin_Model_DbTable_Category',
 			'alias' => 'c',
 
+			'columns' => [
+				'c.*',
+				'shoptitle' => 's.title',
+			],
+
+			'joins' => [
+				[
+					'type' => 'left',
+					'table' => 'shop',
+					'alias' => 's',
+					'on' => 'c.shopid = s.id',
+					'columns' => [],
+				],
+			],
+
 			'search' => [
 				'title',
 				'subtitle',

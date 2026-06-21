@@ -13,13 +13,6 @@ class Admin_Model_List_Pages extends DEEC_List
 				'empty_hide' => true,
 			],
 			[
-				'name' => 'shop',
-				'label' => 'ADMIN_SHOP',
-				'type' => 'text',
-				'field' => 'shoptitle',
-				'class' => 'dw-col-shop',
-			],
-			[
 				'name' => 'title',
 				'label' => 'ADMIN_TITLE',
 				'type' => 'link',
@@ -31,6 +24,13 @@ class Admin_Model_List_Pages extends DEEC_List
 				'label' => 'ADMIN_PARENT_CATEGORY',
 				'type' => 'text',
 				'class' => 'dw-col-parentid',
+			],
+			[
+				'name' => 'shop',
+				'label' => 'ADMIN_SHOP',
+				'type' => 'text',
+				'field' => 'shoptitle',
+				'class' => 'dw-col-shop',
 			],
 			[
 				'name' => 'ordering',
