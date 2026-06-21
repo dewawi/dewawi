@@ -1,22 +1,9 @@
 <?php
 
-class Tasks_Model_DbTable_Task extends Zend_Db_Table_Abstract
+class Tasks_Model_DbTable_Task extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'task';
-
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_client = null;
-
-	public function init()
-	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
-	}
 
 	public function getTask($id)
 	{
@@ -84,30 +71,5 @@ class Tasks_Model_DbTable_Task extends Zend_Db_Table_Abstract
 			'modifiedby' => $this->_user['id']
 		);
 		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function lock($id)
-	{
-		$data = array(
-			'locked' => $this->_user['id'],
-			'lockedtime' => $this->_date
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function unlock($id)
-	{
-		$data = array(
-			'locked' => 0
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function deleteTask($id)
-	{
-		$data = array(
-			'deleted' => 1
-		);
-		$this->update($data, 'id =' . (int)$id);
 	}
 }

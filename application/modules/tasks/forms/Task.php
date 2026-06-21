@@ -1,508 +1,536 @@
 <?php
 
-class Tasks_Form_Task extends Zend_Form
+class Tasks_Form_Task extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('task');
-
-		$form = array();
-
-		$form['id'] = new Zend_Form_Element_Hidden('id');
-		$form['id']->addFilter('Int')->removeDecorator('Label');
-
-		$form['salesorderid'] = new Zend_Form_Element_Text('salesorderid');
-		$form['salesorderid']->setLabel('TASKS_SALES_ORDER_ID')
-			//->addFilter('Int')
-			->setAttrib('size', '5');
-
-		$form['invoiceid'] = new Zend_Form_Element_Text('invoiceid');
-		$form['invoiceid']->setLabel('TASKS_INVOICE_ID')
-			//->addFilter('Int')
-			->setAttrib('size', '5');
-
-		$form['prepaymentinvoiceid'] = new Zend_Form_Element_Text('prepaymentinvoiceid');
-		$form['prepaymentinvoiceid']->setLabel('TASKS_PREPAYMENT_INVOICE_ID')
-			//->addFilter('Int')
-			->setAttrib('size', '5');
-
-		$form['deliveryorderid'] = new Zend_Form_Element_Text('deliveryorderid');
-		$form['deliveryorderid']->setLabel('TASKS_DELIVERY_ORDER_ID')
-			//->addFilter('Int')
-			->setAttrib('size', '5');
-
-		$form['creditnoteid'] = new Zend_Form_Element_Text('creditnoteid');
-		$form['creditnoteid']->setLabel('TASKS_CREDIT_NOTE_ID')
-			//->addFilter('Int')
-			->setAttrib('size', '5');
-
-		$form['purchaseorderid'] = new Zend_Form_Element_Text('purchaseorderid');
-		$form['purchaseorderid']->setLabel('TASKS_PURCHASE_ORDER_ID')
-			->addFilter('Int')
-			->setAttrib('size', '10');
-
-		$form['contactid'] = new Zend_Form_Element_Text('contactid');
-		$form['contactid']->setLabel('TASKS_CUSTOMER_ID')
-			->addFilter('Int')
-			->setAttrib('size', '5')
-			->setAttrib('readonly', 'readonly');
-
-		$form['supplierid'] = new Zend_Form_Element_Text('supplierid');
-		$form['supplierid']->setLabel('TASKS_SUPPLIER_ID')
-			->addFilter('Int')
-			->setAttrib('size', '5');
-
-		$form['title'] = new Zend_Form_Element_Text('title');
-		$form['title']->setLabel('TASKS_TITLE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '40');
-
-		$form['priority'] = new Zend_Form_Element_Select('priority');
-		$form['priority']->setLabel('TASKS_PRIORITY')
-			->addMultiOption('0', 'TASKS_PRIORITY_NORMAL')
-			->addMultiOption('1', 'TASKS_PRIORITY_LOWEST')
-			->addMultiOption('2', 'TASKS_PRIORITY_LOW')
-			->addMultiOption('3', 'TASKS_PRIORITY_HIGH')
-			->addMultiOption('4', 'TASKS_PRIORITY_HIGHEST')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['startdate'] = new Zend_Form_Element_Text('startdate');
-		$form['startdate']->setLabel('TASKS_START_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['duedate'] = new Zend_Form_Element_Text('duedate');
-		$form['duedate']->setLabel('TASKS_DUE_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['reminder'] = new Zend_Form_Element_Checkbox('reminder');
-		$form['reminder']->setLabel('TASKS_REMINDER');
-
-		$form['remindertype'] = new Zend_Form_Element_Select('remindertype');
-		$form['remindertype']->setLabel('TASKS_REMINDER_TYPE')
-			->addMultiOption('email', 'EMAIL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['description'] = new Zend_Form_Element_Textarea('description');
-		$form['description']->setLabel('TASKS_DESCRIPTION')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '45')
-			->setAttrib('rows', '6');
-
-		$form['info'] = new Zend_Form_Element_Textarea('info');
-		$form['info']->setLabel('TASKS_INFO')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '45')
-			->setAttrib('rows', '15');
-
-		$form['notes'] = new Zend_Form_Element_Textarea('notes');
-		$form['notes']->setLabel('TASKS_NOTES')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '45')
-			->setAttrib('rows', '6');
-
-		$form['header'] = new Zend_Form_Element_Textarea('header');
-		$form['header']->setLabel('TASKS_HEADER')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('style','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
-
-		$form['footer'] = new Zend_Form_Element_Textarea('footer');
-		$form['footer']->setLabel('TASKS_FOOTER')
-			->addFilter('StripTags', array(array(
-				'allowTags' => array('a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'),
-				'allowAttribs' => array('style','title','href')
-			)))
-			->addFilter('StringTrim')
-			->setAttrib('cols', '75')
-			->setAttrib('rows', '18')
-			->setAttrib('class', 'editor');
-
-		$form['vatin'] = new Zend_Form_Element_Text('vatin');
-		$form['vatin']->setLabel('TASKS_VATIN')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '12');
-
-		$form['taskdate'] = new Zend_Form_Element_Text('taskdate');
-		$form['taskdate']->setLabel('TASKS_QUOTE_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['salesorderdate'] = new Zend_Form_Element_Text('salesorderdate');
-		$form['salesorderdate']->setLabel('TASKS_SALES_ORDER_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['invoicedate'] = new Zend_Form_Element_Text('invoicedate');
-		$form['invoicedate']->setLabel('TASKS_INVOICE_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['invoicetotal'] = new Zend_Form_Element_Text('invoicetotal');
-		$form['invoicetotal']->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('Float')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '10');
-
-		$form['prepaymentinvoicedate'] = new Zend_Form_Element_Text('prepaymentinvoicedate');
-		$form['prepaymentinvoicedate']->setLabel('TASKS_PREPAYMENT_INVOICE_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['deliveryorderdate'] = new Zend_Form_Element_Text('deliveryorderdate');
-		$form['deliveryorderdate']->setLabel('TASKS_DELIVERY_ORDER_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['creditnotedate'] = new Zend_Form_Element_Text('creditnotedate');
-		$form['creditnotedate']->setLabel('TASKS_CREDIT_NOTE_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['purchaseorderdate'] = new Zend_Form_Element_Text('purchaseorderdate');
-		$form['purchaseorderdate']->setLabel('TASKS_PURCHASE_ORDER_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['paymentmethod'] = new Zend_Form_Element_Select('paymentmethod');
-		$form['paymentmethod']->setLabel('TASKS_PAYMENT_METHOD')
-			->addMultiOption('', 'TASKS_NONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['shippingmethod'] = new Zend_Form_Element_Select('shippingmethod');
-		$form['shippingmethod']->setLabel('TASKS_SHIPPING_METHOD')
-			->addMultiOption('', 'TASKS_NONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['shipmentnumber'] = new Zend_Form_Element_Text('shipmentnumber');
-		$form['shipmentnumber']->setLabel('TASKS_SHIPMENT_NUMBER')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '10');
-
-		$form['shipmentdate'] = new Zend_Form_Element_Text('shipmentdate');
-		$form['shipmentdate']->setLabel('TASKS_SHIPMENT_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['deliverydate'] = new Zend_Form_Element_Text('deliverydate');
-		$form['deliverydate']->setLabel('TASKS_DELIVERY_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['deliverystatus'] = new Zend_Form_Element_Select('deliverystatus');
-		$form['deliverystatus']->setLabel('TASKS_DELIVERY_STATUS')
-			->addMultiOption('deliveryIsWaiting', 'TASKS_DELIVERY_IS_WAITING')
-			->addMultiOption('partialDelivered', 'TASKS_PARTIAL_DElIVERED')
-			->addMultiOption('deliveryCompleted', 'TASKS_DELIVERY_COMPLETED')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['itemtype'] = new Zend_Form_Element_Select('itemtype');
-		$form['itemtype']->setLabel('TASKS_ITEM_TYPE')
-			->addMultiOption('', 'ITEMS_NONE')
-			->addMultiOption('stockItem', 'ITEMS_STOCK_ITEM')
-			->addMultiOption('deliveryItem', 'ITEMS_DELIVERY_ITEM')
-			->addMultiOption('service', 'ITEMS_SERVICE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['suppliername'] = new Zend_Form_Element_Text('suppliername');
-		$form['suppliername']->setLabel('TASKS_SUPPLIER_NAME')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '10');
-
-		$form['supplierordered'] = new Zend_Form_Element_Checkbox('supplierordered');
-		$form['supplierordered']->setLabel('TASKS_SUPPLIER_ORDERED');
-
-		$form['suppliersalesorderid'] = new Zend_Form_Element_Text('suppliersalesorderid');
-		$form['suppliersalesorderid']->setLabel('TASKS_SUPPLIER_SALES_ORDER_ID')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '10');
-
-		$form['suppliersalesorderdate'] = new Zend_Form_Element_Text('suppliersalesorderdate');
-		$form['suppliersalesorderdate']->setLabel('TASKS_SUPPLIER_SALES_ORDER_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['supplierinvoiceid'] = new Zend_Form_Element_Text('supplierinvoiceid');
-		$form['supplierinvoiceid']->setLabel('TASKS_SUPPLIER_INVOICE_ID')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '10');
-
-		$form['supplierinvoicedate'] = new Zend_Form_Element_Text('supplierinvoicedate');
-		$form['supplierinvoicedate']->setLabel('TASKS_SUPPLIER_INVOICE_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['supplierinvoicetotal'] = new Zend_Form_Element_Text('supplierinvoicetotal');
-		$form['supplierinvoicetotal']->setLabel('TASKS_SUPPLIER_INVOICE_TOTAL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('Float')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '10');
-
-		$form['supplierpaymentdate'] = new Zend_Form_Element_Text('supplierpaymentdate');
-		$form['supplierpaymentdate']->setLabel('TASKS_SUPPLIER_PAYMENT_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['supplierdeliverydate'] = new Zend_Form_Element_Text('supplierdeliverydate');
-		$form['supplierdeliverydate']->setLabel('TASKS_SUPPLIER_DELIVERY_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['supplierorderstatus'] = new Zend_Form_Element_Select('supplierorderstatus');
-		$form['supplierorderstatus']->setLabel('TASKS_SUPPLIER_ORDER_STATUS')
-			->addMultiOption('supplierNotOrdered', 'TASKS_SUPPLIER_NOT_ORDERED')
-			->addMultiOption('supplierOrdered', 'TASKS_SUPPLIER_ORDERED')
-			->addMultiOption('supplierPayed', 'TASKS_SUPPLIER_PAYED')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'supplierOrderStatus');
-
-		$form['servicedate'] = new Zend_Form_Element_Text('servicedate');
-		$form['servicedate']->setLabel('TASKS_SERVICE_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['servicecompleted'] = new Zend_Form_Element_Checkbox('servicecompleted');
-		$form['servicecompleted']->setLabel('TASKS_SERVICE_COMPLETED');
-
-		$form['billingname1'] = new Zend_Form_Element_Text('billingname1');
-		$form['billingname1']->setLabel('CONTACTS_NAME')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['billingname2'] = new Zend_Form_Element_Text('billingname2');
-		$form['billingname2']->setLabel('')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['billingdepartment'] = new Zend_Form_Element_Text('billingdepartment');
-		$form['billingdepartment']->setLabel('CONTACTS_DEPARTMENT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['billingstreet'] = new Zend_Form_Element_Textarea('billingstreet');
-		$form['billingstreet']->setLabel('CONTACTS_STREET')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '30')
-			->setAttrib('rows', '3');
-
-		$form['billingpostcode'] = new Zend_Form_Element_Text('billingpostcode');
-		$form['billingpostcode']->setLabel('CONTACTS_POSTCODE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['billingcity'] = new Zend_Form_Element_Text('billingcity');
-		$form['billingcity']->setLabel('CONTACTS_CITY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['billingcountry'] = new Zend_Form_Element_Text('billingcountry');
-		$form['billingcountry']->setLabel('CONTACTS_COUNTRY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['currency'] = new Zend_Form_Element_Select('currency');
-		$form['currency']->setLabel('QUOTES_CURRENCY')
-			->setRequired(true)
-			->addValidator('NotEmpty');
-
-		$form['taxfree'] = new Zend_Form_Element_Checkbox('taxfree');
-		$form['taxfree']->setLabel('CONTACTS_TAX_FREE');
-
-		$form['customerinfo'] = new Zend_Form_Element_Textarea('customerinfo');
-		$form['customerinfo']->setLabel('TASKS_CONTACT_INFO')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '62')
-			->setAttrib('rows', '30')
-			->setAttrib('readonly', 'readonly');
-
-		$form['shippingname1'] = new Zend_Form_Element_Text('shippingname1');
-		$form['shippingname1']->setLabel('TASKS_SHIPPING_NAME')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
-
-		$form['shippingname2'] = new Zend_Form_Element_Text('shippingname2');
-		$form['shippingname2']->setLabel('')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
-
-		$form['shippingdepartment'] = new Zend_Form_Element_Text('shippingdepartment');
-		$form['shippingdepartment']->setLabel('TASKS_SHIPPING_DEPARTMENT')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '50');
-
-		$form['shippingstreet'] = new Zend_Form_Element_Textarea('shippingstreet');
-		$form['shippingstreet']->setLabel('TASKS_SHIPPING_STREET')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('cols', '30')
-			->setAttrib('rows', '3');
-
-		$form['shippingpostcode'] = new Zend_Form_Element_Text('shippingpostcode');
-		$form['shippingpostcode']->setLabel('TASKS_SHIPPING_POSTCODE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['shippingcity'] = new Zend_Form_Element_Text('shippingcity');
-		$form['shippingcity']->setLabel('TASKS_SHIPPING_CITY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['shippingcountry'] = new Zend_Form_Element_Text('shippingcountry');
-		$form['shippingcountry']->setLabel('TASKS_SHIPPING_COUNTRY')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['shippingphone'] = new Zend_Form_Element_Text('shippingphone');
-		$form['shippingphone']->setLabel('TASKS_SHIPPING_PHONE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30');
-
-		$form['total'] = new Zend_Form_Element_Text('total');
-		$form['total']->setLabel('TASKS_TOTAL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('Float')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '10');
-
-		$form['paymentdate'] = new Zend_Form_Element_Text('paymentdate');
-		$form['paymentdate']->setLabel('TASKS_PAYMENT_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['prepayment'] = new Zend_Form_Element_Checkbox('prepayment');
-		$form['prepayment']->setLabel('TASKS_PREPAYMENT')
-			->setDecorators(array('Label', 'ViewHelper'));
-
-		$form['prepaymenttotal'] = new Zend_Form_Element_Text('prepaymenttotal');
-		$form['prepaymenttotal']->setLabel('TASKS_PREPAYMENT_TOTAL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('Float')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '10');
-
-		$form['prepaymentdate'] = new Zend_Form_Element_Text('prepaymentdate');
-		$form['prepaymentdate']->setLabel('TASKS_PREPAYMENT_DATE')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('class', 'datePicker')
-			->setAttrib('size', '9');
-
-		$form['paymentstatus'] = new Zend_Form_Element_Select('paymentstatus');
-		$form['paymentstatus']->setLabel('TASKS_PAYMENT_STATUS')
-			->addMultiOption('waitingForPayment', 'TASKS_WAITING_FOR_PAYMENT')
-			->addMultiOption('prepaymentReceived', 'TASKS_PREPAYMENT_RECEIVED')
-			->addMultiOption('paymentCompleted', 'TASKS_PAYMENT_COMPLETED')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$form['creditnote'] = new Zend_Form_Element_Checkbox('creditnote');
-		$form['creditnote']->setLabel('TASKS_CREDIT_NOTE')
-			->setDecorators(array('Label', 'ViewHelper'));
-
-		$form['creditnotetotal'] = new Zend_Form_Element_Text('creditnotetotal');
-		$form['creditnotetotal']->setLabel('TASKS_CREDIT_NOTE_TOTAL')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->addValidator('Float')
-			->setAttrib('class', 'number')
-			->setAttrib('size', '10');
-
-		$form['editpositionsseparately'] = new Zend_Form_Element_Checkbox('editpositionsseparately');
-		$form['editpositionsseparately']->setLabel('TASKS_EDIT_POSITIONS_SEPARATELY');
-
-		$form['responsible'] = new Zend_Form_Element_Select('responsible');
-		$form['responsible']->setLabel('TASKS_RESPONSIBLE_PERSON')
-			->setRequired(true)
-			->addValidator('NotEmpty');
-
-		$form['state'] = new Zend_Form_Element_Select('state');
-		$form['state']->setLabel('TASKS_STATE')
-			->addMultiOption('100', 'STATES_CREATED')
-			->addMultiOption('101', 'STATES_IN_TASK')
-			->addMultiOption('102', 'STATES_PLEASE_CHECK')
-			->addMultiOption('103', 'STATES_PLEASE_DELETE')
-			->addMultiOption('104', 'STATES_RELEASED')
-			->addMultiOption('105', 'STATES_COMPLETED')
-			->addMultiOption('106', 'STATES_CANCELLED')
-			->addFilter('StripTags')
-			->addFilter('StringTrim');
-
-		$this->addElements($form);
+		$this->addElement([
+			'type' => 'hidden',
+			'name' => 'id',
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+		]);
+
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'title',
+			'label' => 'TASKS_TITLE',
+			'format' => ['type' => 'string'],
+			'attribs' => ['size' => 40],
+			'tab' => 'overview',
+			'col' => 12,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'priority',
+			'label' => 'TASKS_PRIORITY',
+			'options' => [
+				'0' => 'TASKS_PRIORITY_NORMAL',
+				'1' => 'TASKS_PRIORITY_LOWEST',
+				'2' => 'TASKS_PRIORITY_LOW',
+				'3' => 'TASKS_PRIORITY_HIGH',
+				'4' => 'TASKS_PRIORITY_HIGHEST',
+			],
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'state',
+			'label' => 'TASKS_STATE',
+			'options' => [
+				'100' => 'STATES_CREATED',
+				'101' => 'STATES_IN_TASK',
+				'102' => 'STATES_PLEASE_CHECK',
+				'103' => 'STATES_PLEASE_DELETE',
+				'104' => 'STATES_RELEASED',
+				'105' => 'STATES_COMPLETED',
+				'106' => 'STATES_CANCELLED',
+			],
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		foreach([
+			'startdate' => 'TASKS_START_DATE',
+			'duedate' => 'TASKS_DUE_DATE',
+			'taskdate' => 'TASKS_QUOTE_DATE',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $label,
+				'attribs' => ['class' => 'datePicker', 'size' => 9],
+				'format' => ['type' => 'date'],
+				'tab' => 'overview',
+				'col' => 6,
+			]);
+		}
+
+		$this->addElement([
+			'type' => 'checkbox',
+			'name' => 'reminder',
+			'label' => 'TASKS_REMINDER',
+			'format' => ['type' => 'bool'],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'remindertype',
+			'label' => 'TASKS_REMINDER_TYPE',
+			'options' => [
+				'email' => 'EMAIL',
+			],
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		foreach([
+			'description' => ['TASKS_DESCRIPTION', 45, 6],
+			'notes' => ['TASKS_NOTES', 45, 6],
+			'info' => ['TASKS_INFO', 45, 15],
+		] as $name => $cfg) {
+			$this->addElement([
+				'type' => 'textarea',
+				'name' => $name,
+				'label' => $cfg[0],
+				'format' => ['type' => 'string'],
+				'attribs' => ['cols' => $cfg[1], 'rows' => $cfg[2]],
+				'tab' => 'overview',
+			]);
+		}
+
+		foreach([
+			'header' => 'TASKS_HEADER',
+			'footer' => 'TASKS_FOOTER',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'textarea',
+				'name' => $name,
+				'label' => $label,
+				'format' => [
+					'type' => 'html',
+					'allowTags' => ['a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'],
+					'allowAttribs' => ['style','title','href'],
+				],
+				'attribs' => ['cols' => 75, 'rows' => 18, 'class' => 'editor'],
+				'tab' => 'texts',
+			]);
+		}
+
+		$this->addCustomerFields();
+		$this->addShippingFields();
+		$this->addDocumentFields();
+		$this->addPaymentFields();
+		$this->addDeliveryFields();
+		$this->addSupplierFields();
+		$this->addServiceFields();
+	}
+
+	protected function addCustomerFields(): void
+	{
+		foreach([
+			'contactid' => ['TASKS_CUSTOMER_ID', 'int', ['size' => 5, 'readonly' => 'readonly']],
+			'billingname1' => ['CONTACTS_NAME', 'string', ['size' => 30]],
+			'billingname2' => ['', 'string', ['size' => 30]],
+			'billingdepartment' => ['CONTACTS_DEPARTMENT', 'string', ['size' => 30]],
+			'billingpostcode' => ['CONTACTS_POSTCODE', 'string', ['size' => 30]],
+			'billingcity' => ['CONTACTS_CITY', 'string', ['size' => 30]],
+			'billingcountry' => ['CONTACTS_COUNTRY', 'string', ['size' => 30]],
+			'vatin' => ['TASKS_VATIN', 'string', ['size' => 12]],
+		] as $name => $cfg) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $cfg[0],
+				'format' => ['type' => $cfg[1]],
+				'attribs' => $cfg[2],
+				'tab' => 'customer',
+				'section' => 'CONTACTS_CUSTOMER',
+				'col' => 6,
+			]);
+		}
+
+		$this->addElement([
+			'type' => 'textarea',
+			'name' => 'billingstreet',
+			'label' => 'CONTACTS_STREET',
+			'format' => ['type' => 'string'],
+			'attribs' => ['cols' => 30, 'rows' => 3],
+			'tab' => 'customer',
+			'section' => 'CONTACTS_CUSTOMER',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'currency',
+			'label' => 'QUOTES_CURRENCY',
+			'required' => true,
+			'source' => 'currency',
+			'format' => ['type' => 'string'],
+			'tab' => 'customer',
+			'section' => 'CONTACTS_CUSTOMER',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'checkbox',
+			'name' => 'taxfree',
+			'label' => 'CONTACTS_TAX_FREE',
+			'format' => ['type' => 'bool'],
+			'tab' => 'customer',
+			'section' => 'CONTACTS_CUSTOMER',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'textarea',
+			'name' => 'customerinfo',
+			'label' => 'TASKS_CONTACT_INFO',
+			'format' => ['type' => 'string'],
+			'attribs' => ['cols' => 62, 'rows' => 30, 'readonly' => 'readonly'],
+			'tab' => 'customer',
+		]);
+	}
+
+	protected function addShippingFields(): void
+	{
+		foreach([
+			'shippingname1' => 'TASKS_SHIPPING_NAME',
+			'shippingname2' => '',
+			'shippingdepartment' => 'TASKS_SHIPPING_DEPARTMENT',
+			'shippingpostcode' => 'TASKS_SHIPPING_POSTCODE',
+			'shippingcity' => 'TASKS_SHIPPING_CITY',
+			'shippingcountry' => 'TASKS_SHIPPING_COUNTRY',
+			'shippingphone' => 'TASKS_SHIPPING_PHONE',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $label,
+				'format' => ['type' => 'string'],
+				'attribs' => ['size' => 30],
+				'tab' => 'shipping',
+				'col' => 6,
+			]);
+		}
+
+		$this->addElement([
+			'type' => 'textarea',
+			'name' => 'shippingstreet',
+			'label' => 'TASKS_SHIPPING_STREET',
+			'format' => ['type' => 'string'],
+			'attribs' => ['cols' => 30, 'rows' => 3],
+			'tab' => 'shipping',
+			'col' => 6,
+		]);
+	}
+
+	protected function addDocumentFields(): void
+	{
+		foreach([
+			'salesorderid' => 'TASKS_SALES_ORDER_ID',
+			'invoiceid' => 'TASKS_INVOICE_ID',
+			'prepaymentinvoiceid' => 'TASKS_PREPAYMENT_INVOICE_ID',
+			'deliveryorderid' => 'TASKS_DELIVERY_ORDER_ID',
+			'creditnoteid' => 'TASKS_CREDIT_NOTE_ID',
+			'purchaseorderid' => 'TASKS_PURCHASE_ORDER_ID',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $label,
+				'format' => ['type' => 'int'],
+				'attribs' => ['size' => 10],
+				'tab' => 'documents',
+				'col' => 6,
+			]);
+		}
+
+		foreach([
+			'salesorderdate' => 'TASKS_SALES_ORDER_DATE',
+			'invoicedate' => 'TASKS_INVOICE_DATE',
+			'prepaymentinvoicedate' => 'TASKS_PREPAYMENT_INVOICE_DATE',
+			'deliveryorderdate' => 'TASKS_DELIVERY_ORDER_DATE',
+			'creditnotedate' => 'TASKS_CREDIT_NOTE_DATE',
+			'purchaseorderdate' => 'TASKS_PURCHASE_ORDER_DATE',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $label,
+				'attribs' => ['class' => 'datePicker', 'size' => 9],
+				'format' => ['type' => 'date'],
+				'tab' => 'documents',
+				'col' => 6,
+			]);
+		}
+	}
+
+	protected function addPaymentFields(): void
+	{
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'paymentmethod',
+			'label' => 'TASKS_PAYMENT_METHOD',
+			'options' => ['' => 'TASKS_NONE'],
+			'source' => 'paymentmethod',
+			'format' => ['type' => 'string'],
+			'tab' => 'payment',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'paymentstatus',
+			'label' => 'TASKS_PAYMENT_STATUS',
+			'options' => [
+				'waitingForPayment' => 'TASKS_WAITING_FOR_PAYMENT',
+				'prepaymentReceived' => 'TASKS_PREPAYMENT_RECEIVED',
+				'paymentCompleted' => 'TASKS_PAYMENT_COMPLETED',
+			],
+			'format' => ['type' => 'string'],
+			'tab' => 'payment',
+			'col' => 6,
+		]);
+
+		foreach([
+			'total' => 'TASKS_TOTAL',
+			'invoicetotal' => 'TASKS_INVOICE_TOTAL',
+			'prepaymenttotal' => 'TASKS_PREPAYMENT_TOTAL',
+			'creditnotetotal' => 'TASKS_CREDIT_NOTE_TOTAL',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $label,
+				'attribs' => ['class' => 'number', 'size' => 10],
+				'format' => ['type' => 'decimal', 'precision' => 2],
+				'tab' => 'payment',
+				'col' => 6,
+			]);
+		}
+
+		foreach([
+			'paymentdate' => 'TASKS_PAYMENT_DATE',
+			'prepaymentdate' => 'TASKS_PREPAYMENT_DATE',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $label,
+				'attribs' => ['class' => 'datePicker', 'size' => 9],
+				'format' => ['type' => 'date'],
+				'tab' => 'payment',
+				'col' => 6,
+			]);
+		}
+
+		foreach([
+			'prepayment' => 'TASKS_PREPAYMENT',
+			'creditnote' => 'TASKS_CREDIT_NOTE',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'checkbox',
+				'name' => $name,
+				'label' => $label,
+				'format' => ['type' => 'bool'],
+				'tab' => 'payment',
+				'col' => 6,
+			]);
+		}
+	}
+
+	protected function addDeliveryFields(): void
+	{
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'shippingmethod',
+			'label' => 'TASKS_SHIPPING_METHOD',
+			'options' => ['' => 'TASKS_NONE'],
+			'source' => 'shippingmethod',
+			'format' => ['type' => 'string'],
+			'tab' => 'delivery',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'deliverystatus',
+			'label' => 'TASKS_DELIVERY_STATUS',
+			'options' => [
+				'deliveryIsWaiting' => 'TASKS_DELIVERY_IS_WAITING',
+				'partialDelivered' => 'TASKS_PARTIAL_DElIVERED',
+				'deliveryCompleted' => 'TASKS_DELIVERY_COMPLETED',
+			],
+			'format' => ['type' => 'string'],
+			'tab' => 'delivery',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'itemtype',
+			'label' => 'TASKS_ITEM_TYPE',
+			'options' => [
+				'' => 'ITEMS_NONE',
+				'stockItem' => 'ITEMS_STOCK_ITEM',
+				'deliveryItem' => 'ITEMS_DELIVERY_ITEM',
+				'service' => 'ITEMS_SERVICE',
+			],
+			'format' => ['type' => 'string'],
+			'tab' => 'delivery',
+			'col' => 6,
+		]);
+
+		foreach([
+			'shipmentnumber' => 'TASKS_SHIPMENT_NUMBER',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $label,
+				'format' => ['type' => 'string'],
+				'attribs' => ['size' => 10],
+				'tab' => 'delivery',
+				'col' => 6,
+			]);
+		}
+
+		foreach([
+			'shipmentdate' => 'TASKS_SHIPMENT_DATE',
+			'deliverydate' => 'TASKS_DELIVERY_DATE',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $label,
+				'attribs' => ['class' => 'datePicker', 'size' => 9],
+				'format' => ['type' => 'date'],
+				'tab' => 'delivery',
+				'col' => 6,
+			]);
+		}
+
+		$this->addElement([
+			'type' => 'checkbox',
+			'name' => 'editpositionsseparately',
+			'label' => 'TASKS_EDIT_POSITIONS_SEPARATELY',
+			'format' => ['type' => 'bool'],
+			'tab' => 'delivery',
+			'col' => 6,
+		]);
+	}
+
+	protected function addSupplierFields(): void
+	{
+		foreach([
+			'supplierid' => ['TASKS_SUPPLIER_ID', 'int'],
+			'suppliername' => ['TASKS_SUPPLIER_NAME', 'string'],
+			'suppliersalesorderid' => ['TASKS_SUPPLIER_SALES_ORDER_ID', 'string'],
+			'supplierinvoiceid' => ['TASKS_SUPPLIER_INVOICE_ID', 'string'],
+		] as $name => $cfg) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $cfg[0],
+				'format' => ['type' => $cfg[1]],
+				'attribs' => ['size' => 10],
+				'tab' => 'supplier',
+				'col' => 6,
+			]);
+		}
+
+		$this->addElement([
+			'type' => 'checkbox',
+			'name' => 'supplierordered',
+			'label' => 'TASKS_SUPPLIER_ORDERED',
+			'format' => ['type' => 'bool'],
+			'tab' => 'supplier',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'supplierorderstatus',
+			'label' => 'TASKS_SUPPLIER_ORDER_STATUS',
+			'options' => [
+				'supplierNotOrdered' => 'TASKS_SUPPLIER_NOT_ORDERED',
+				'supplierOrdered' => 'TASKS_SUPPLIER_ORDERED',
+				'supplierPayed' => 'TASKS_SUPPLIER_PAYED',
+			],
+			'attribs' => ['class' => 'supplierOrderStatus'],
+			'format' => ['type' => 'string'],
+			'tab' => 'supplier',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'supplierinvoicetotal',
+			'label' => 'TASKS_SUPPLIER_INVOICE_TOTAL',
+			'attribs' => ['class' => 'number', 'size' => 10],
+			'format' => ['type' => 'decimal', 'precision' => 2],
+			'tab' => 'supplier',
+			'col' => 6,
+		]);
+
+		foreach([
+			'suppliersalesorderdate' => 'TASKS_SUPPLIER_SALES_ORDER_DATE',
+			'supplierinvoicedate' => 'TASKS_SUPPLIER_INVOICE_DATE',
+			'supplierpaymentdate' => 'TASKS_SUPPLIER_PAYMENT_DATE',
+			'supplierdeliverydate' => 'TASKS_SUPPLIER_DELIVERY_DATE',
+		] as $name => $label) {
+			$this->addElement([
+				'type' => 'text',
+				'name' => $name,
+				'label' => $label,
+				'attribs' => ['class' => 'datePicker', 'size' => 9],
+				'format' => ['type' => 'date'],
+				'tab' => 'supplier',
+				'col' => 6,
+			]);
+		}
+	}
+
+	protected function addServiceFields(): void
+	{
+		$this->addElement([
+			'type' => 'text',
+			'name' => 'servicedate',
+			'label' => 'TASKS_SERVICE_DATE',
+			'attribs' => ['class' => 'datePicker', 'size' => 9],
+			'format' => ['type' => 'date'],
+			'tab' => 'service',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'checkbox',
+			'name' => 'servicecompleted',
+			'label' => 'TASKS_SERVICE_COMPLETED',
+			'format' => ['type' => 'bool'],
+			'tab' => 'service',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'responsible',
+			'label' => 'TASKS_RESPONSIBLE_PERSON',
+			'required' => true,
+			'source' => 'user',
+			'format' => ['type' => 'int'],
+			'tab' => 'service',
+			'col' => 6,
+		]);
 	}
 }
