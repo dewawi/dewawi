@@ -192,39 +192,4 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 		$this->_flashMessenger->addMessage('MESSAGES_DOCUMENT_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
-
-	public function saveAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-
-		try {
-			$this->generatePdfDocument($id, [
-				'finalize' => true,
-				'output' => 'file',
-				'storage' => 'contact',
-				'overwrite' => false,
-			]);
-		} catch (RuntimeException $e) {
-			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
-			return $this->_helper->redirector->gotoSimple('index', 'quoterequest');
-		}
-
-		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-		return $this->_helper->redirector->gotoSimple('view', 'quoterequest', null, ['id' => $id]);
-	}
-
-	public function cancelAction()
-	{
-		$this->disableView();
-
-		if ($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-
-			$quoterequest = $this->requireRow($id);
-
-			$quoterequest = new Purchases_Model_DbTable_Quoterequest();
-			$quoterequest->setState($id, 106);
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
-	}
 }

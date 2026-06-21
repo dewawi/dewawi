@@ -170,20 +170,4 @@ class Processes_ProcessController extends DEEC_Controller_Action
 
 		echo (int)$processid;
 	}
-
-	public function cancelAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if ($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-
-			$process = $this->requireRow($id);
-
-			$process = new Processes_Model_DbTable_Process();
-			$process->setState($id, 106);
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
-	}
 }

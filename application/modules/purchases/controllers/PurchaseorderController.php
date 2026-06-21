@@ -192,39 +192,4 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 		$this->_flashMessenger->addMessage('MESSAGES_DOCUMENT_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
-
-	public function saveAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-
-		try {
-			$this->generatePdfDocument($id, [
-				'finalize' => true,
-				'output' => 'file',
-				'storage' => 'contact',
-				'overwrite' => false,
-			]);
-		} catch (RuntimeException $e) {
-			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
-			return $this->_helper->redirector->gotoSimple('index', 'purchaseorder');
-		}
-
-		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-		return $this->_helper->redirector->gotoSimple('view', 'purchaseorder', null, ['id' => $id]);
-	}
-
-	public function cancelAction()
-	{
-		$this->disableView();
-
-		if ($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-
-			$purchaseorder = $this->requireRow($id);
-
-			$purchaseorder = new Purchases_Model_DbTable_Purchaseorder();
-			$purchaseorder->setState($id, 106);
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
-	}
 }

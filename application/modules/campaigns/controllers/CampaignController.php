@@ -390,38 +390,6 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
 	}
 
-	public function cancelAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$campaign = new Campaigns_Model_DbTable_Campaign();
-			$campaign->setState($id, 7);
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
-	}
-
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$campaign = new Campaigns_Model_DbTable_Campaign();
-			$campaign->deleteCampaign($id);
-
-			$positionsDb = new Campaigns_Model_DbTable_Campaignpos();
-			$positions = $positionsDb->getPositions($id);
-			foreach($positions as $position) {
-				$positionsDb->deletePosition($position->id);
-			}
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-	}
-
 	protected function getPositions($campaignIDs)
 	{
 		$positions = array();

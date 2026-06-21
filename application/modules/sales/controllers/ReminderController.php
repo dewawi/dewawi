@@ -187,39 +187,4 @@ class Sales_ReminderController extends DEEC_Controller_DocumentAction
 		$this->_flashMessenger->addMessage('MESSAGES_DOCUMENT_SUCCESFULLY_GENERATED');
 		$this->_helper->redirector->gotoSimple('edit', $target, $module, array('id' => $newid));
 	}
-
-	public function saveAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-
-		try {
-			$this->generatePdfDocument($id, [
-				'finalize' => true,
-				'output' => 'file',
-				'storage' => 'contact',
-				'overwrite' => false,
-			]);
-		} catch (RuntimeException $e) {
-			$this->_flashMessenger->addMessage('MESSAGES_REMINDER_NOT_FOUND');
-			return $this->_helper->redirector->gotoSimple('index', 'reminder');
-		}
-
-		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-		return $this->_helper->redirector->gotoSimple('view', 'reminder', null, ['id' => $id]);
-	}
-
-	public function cancelAction()
-	{
-		$this->disableView();
-
-		if ($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-
-			$data = $this->requireRow($id);
-
-			$reminder = new Sales_Model_DbTable_Reminder();
-			$reminder->setState($id, 106);
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
-	}
 }

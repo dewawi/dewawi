@@ -69,21 +69,6 @@ class Tasks_TaskController extends DEEC_Controller_Action
 		}
 	}
 
-	public function cancelAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if($this->getRequest()->isPost()) {
-			$id = (int)$this->_getParam('id', 0);
-
-			$taskDb = new Tasks_Model_DbTable_Task();
-			$taskDb->setState($id, 7);
-		}
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_CANCELLED');
-	}
-
 	protected function getPositions($taskIDs)
 	{
 		$positions = [];
