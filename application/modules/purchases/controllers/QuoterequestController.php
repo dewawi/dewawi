@@ -105,33 +105,6 @@ class Purchases_QuoterequestController extends DEEC_Controller_DocumentAction
 		$this->assignMessages();
 	}
 
-	public function viewAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-		$controller = $this->getRequest()->getControllerName();
-
-		$quoterequest = $this->requireRow($id);
-
-		$this->ensurePdfDocumentExists($id);
-
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID((int)$quoterequest['contactid']);
-
-		$emailFormFactory = new Purchases_Service_EmailFormFactory();
-		$attachmentService = new Purchases_Service_AttachmentService();
-		$readonlyFormFactory = new Purchases_Service_ReadonlyFormFactory();
-
-		$this->view->assign([
-			'quoterequest' => $quoterequest,
-			'contact' => $contact,
-			'emailForm' => $emailFormFactory->build($quoterequest, $contact, $controller),
-			'form' => $readonlyFormFactory->build('Purchases_Form_Quoterequest', $quoterequest, Zend_Registry::get('Zend_Locale')),
-			'toolbar' => new Purchases_Form_Toolbar(),
-		] + $attachmentService->sync($quoterequest, $contact, $controller));
-
-		$this->assignMessages();
-	}
-
 	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);

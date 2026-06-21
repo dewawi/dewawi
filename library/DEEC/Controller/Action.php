@@ -343,6 +343,11 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		return ucfirst($this->getRequest()->getControllerName());
 	}
 
+	protected function getControllerViewKey(): string
+	{
+		return $this->getRequest()->getControllerName();
+	}
+
 	protected function getToolbarClass(): string
 	{
 		return $this->getModuleClassPrefix() . '_Form_Toolbar';
@@ -468,6 +473,51 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			'ok' => false,
 			'message' => 'missing_parameter',
 		]);
+	}
+
+	public function viewAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+		$row = $this->requireRow($id);
+
+		$this->beforeView($row);
+
+		$form = $this->buildViewForm($row);
+
+		$assign = [
+			$this->getControllerViewKey() => $row,
+			'state' => (int)($row['state'] ?? 0),
+			'form' => $form,
+			'toolbar' => $this->getEditToolbar(),
+			'messages' => $this->_flashMessenger->getMessages(),
+		];
+
+		$assign = array_merge($assign, $this->getViewAssigns($row, $form));
+
+		$this->view->assign($assign);
+
+		$this->afterView($row, $form);
+	}
+
+	protected function beforeView(array $row): void
+	{
+	}
+
+	protected function afterView(array $row, $form): void
+	{
+	}
+
+	protected function buildViewForm(array $row)
+	{
+		$form = $this->getEditForm();
+		$form->populate($row);
+
+		return $form;
+	}
+
+	protected function getViewAssigns(array $row, $form): array
+	{
+		return [];
 	}
 
 	protected function getElementOptions(string $elementName)

@@ -2,6 +2,93 @@
 
 abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_PositionAction
 {
+	protected function beforeView(array $row): void
+	{
+		$this->ensurePdfDocumentExists((int)$row['id']);
+	}
+
+	protected function buildViewForm(array $row)
+	{
+		$factoryClass = $this->getReadonlyFormFactoryClass();
+
+		if(!$factoryClass || !class_exists($factoryClass)) {
+			return parent::buildViewForm($row);
+		}
+
+		$factory = new $factoryClass();
+
+		return $factory->build(
+			$this->getFormClass(),
+			$row,
+			Zend_Registry::get('Zend_Locale')
+		);
+	}
+
+	protected function getViewAssigns(array $row, $form): array
+	{
+		$controller = $this->getRequest()->getControllerName();
+		$contact = $this->getViewContact($row);
+
+		$assign = [
+			'contact' => $contact,
+		];
+
+		$emailFactory = $this->getEmailFormFactory();
+		if($emailFactory) {
+			$assign['emailForm'] = $emailFactory->build($row, $contact, $controller);
+		}
+
+		$attachmentService = $this->getAttachmentService();
+		if($attachmentService) {
+			$assign = array_merge(
+				$assign,
+				$attachmentService->sync($row, $contact, $controller)
+			);
+		}
+
+		return $assign;
+	}
+
+	protected function getViewContact(array $row): array
+	{
+		if(empty($row['contactid'])) {
+			return [];
+		}
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+
+		return $contactDb->getContactWithID((int)$row['contactid']);
+	}
+
+	protected function getReadonlyFormFactoryClass(): ?string
+	{
+		$module = ucfirst($this->getRequest()->getModuleName());
+
+		return $module . '_Service_ReadonlyFormFactory';
+	}
+
+	protected function getEmailFormFactory()
+	{
+		$className = ucfirst($this->getRequest()->getModuleName()) . '_Service_EmailFormFactory';
+
+		if(!class_exists($className)) {
+			return null;
+		}
+
+		return new $className();
+	}
+
+	protected function getAttachmentService()
+	{
+		$className = ucfirst($this->getRequest()->getModuleName()) . '_Service_AttachmentService';
+
+		if(!class_exists($className)) {
+			return null;
+		}
+
+		return new $className();
+	}
+
 	public function previewAction()
 	{
 		$id = (int)$this->_getParam('id', 0);

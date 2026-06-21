@@ -66,33 +66,6 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 		return $values;
 	}
 
-	public function viewAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-		$controller = $this->getRequest()->getControllerName();
-
-		$quote = $this->requireRow($id);
-
-		$this->ensurePdfDocumentExists($id);
-
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID((int)$quote['contactid']);
-
-		$emailFormFactory = new Sales_Service_EmailFormFactory();
-		$attachmentService = new Sales_Service_AttachmentService();
-		$readonlyFormFactory = new Sales_Service_ReadonlyFormFactory();
-
-		$this->view->assign([
-			'quote' => $quote,
-			'contact' => $contact,
-			'emailForm' => $emailFormFactory->build($quote, $contact, $controller),
-			'form' => $readonlyFormFactory->build('Sales_Form_Quote', $quote, Zend_Registry::get('Zend_Locale')),
-			'toolbar' => new Sales_Form_Toolbar(),
-		] + $attachmentService->sync($quote, $contact, $controller));
-
-		$this->assignMessages();
-	}
-
 	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);

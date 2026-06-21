@@ -105,33 +105,6 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 		$this->assignMessages();
 	}
 
-	public function viewAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-		$controller = $this->getRequest()->getControllerName();
-
-		$purchaseorder = $this->requireRow($id);
-
-		$this->ensurePdfDocumentExists($id);
-
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID((int)$purchaseorder['contactid']);
-
-		$emailFormFactory = new Purchases_Service_EmailFormFactory();
-		$attachmentService = new Purchases_Service_AttachmentService();
-		$readonlyFormFactory = new Purchases_Service_ReadonlyFormFactory();
-
-		$this->view->assign([
-			'purchaseorder' => $purchaseorder,
-			'contact' => $contact,
-			'emailForm' => $emailFormFactory->build($purchaseorder, $contact, $controller),
-			'form' => $readonlyFormFactory->build('Purchases_Form_Purchaseorder', $purchaseorder, Zend_Registry::get('Zend_Locale')),
-			'toolbar' => new Purchases_Form_Toolbar(),
-		] + $attachmentService->sync($purchaseorder, $contact, $controller));
-
-		$this->assignMessages();
-	}
-
 	public function generateAction()
 	{
 		$id = $this->_getParam('id', 0);

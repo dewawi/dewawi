@@ -110,33 +110,6 @@ class Processes_ProcessController extends DEEC_Controller_Action
 		$this->_helper->flashMessenger->clearCurrentMessages();
 	}
 
-	public function viewAction()
-	{
-		$id = (int)$this->_getParam('id', 0);
-		$controller = $this->getRequest()->getControllerName();
-
-		$process = $this->requireRow($id);
-
-		$this->ensurePdfDocumentExists($id);
-
-		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContactWithID((int)$process['contactid']);
-
-		$emailFormFactory = new Processes_Service_EmailFormFactory();
-		$attachmentService = new Processes_Service_AttachmentService();
-		$readonlyFormFactory = new Processes_Service_ReadonlyFormFactory();
-
-		$this->view->assign([
-			'process' => $process,
-			'contact' => $contact,
-			'emailForm' => $emailFormFactory->build($process, $contact, $controller),
-			'form' => $readonlyFormFactory->build('Processes_Form_Process', $process, Zend_Registry::get('Zend_Locale')),
-			'toolbar' => new Processes_Form_Toolbar(),
-		] + $attachmentService->sync($process, $contact, $controller));
-
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
 	public function copyAction()
 	{
 		$id = $this->_getParam('id', 0);
