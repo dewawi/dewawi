@@ -30,7 +30,7 @@ class Processes_Service_CreateDataFactory
 	protected function getDefaultTitle(string $controller): string
 	{
 		$map = [
-			'process' => $this->translate('QUOTES_NEW_PROCESS'),
+			'process' => $this->translate('PROCESSES_NEW_PROCESS'),
 		];
 
 		return $map[$controller] ?? strtoupper($controller) . ' NEW';

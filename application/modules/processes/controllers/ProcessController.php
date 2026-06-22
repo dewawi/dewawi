@@ -11,136 +11,44 @@ class Processes_ProcessController extends DEEC_Controller_Action
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
 		$contactId = (int)$this->_getParam('contactid', 0);
 		$controller = $this->getRequest()->getControllerName();
 
 		$factory = new Processes_Service_CreateDataFactory();
-		$data = $factory->build($controller, $contactId);
 
-		$processDb = new Processes_Model_DbTable_Process();
-		$id = $processDb->addProcess($data);
-
-		return $this->_helper->redirector->gotoSimple('edit', 'process', null, ['id' => $id]);
+		return $factory->build($controller, $contactId);
 	}
 
-	public function editAction()
+	protected function beforeEditSave(array $values, array $row): array
 	{
-		$request = $this->getRequest();
-		$id = (int)$this->_getParam('id', 0);
-		$isAjax = $request->isXmlHttpRequest();
+		$id = (int)$row['id'];
 
-		$process = $this->requireRow($id);
+		if (isset($values['currency'])) {
+			$positionsDb = new Processes_Model_DbTable_Processpos();
+			$positions = $positionsDb->getPositions($id);
 
-		$processDb = new Processes_Model_DbTable_Process();
-
-		$this->_helper->Access->lock($id, $this->_user['id'], $process['locked'] ?? 0, $process['lockedtime'] ?? null);
-
-		$formFactory = new Processes_Service_EditFormFactory();
-		$formData = $formFactory->create('Processes_Form_Process');
-		$form = $formData['form'];
-		$options = $formData['options'];
-		$toolbar = new Processes_Form_Toolbar();
-
-		if ($request->isPost()) {
-			$this->_helper->Calculate($id, $this->_date, $this->_user['id'], $process['taxfree']);
-
-			if ($isAjax) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->layout->disableLayout();
-
-				$ajaxSaveService = new Processes_Service_EditAjaxSaveService();
-
-				return $this->_helper->json($ajaxSaveService->save([
-					'form' => $form,
-					'post' => (array)$request->getPost(),
-					'id' => $id,
-					'db' => $processDb,
-				]));
+			foreach ($positions as $position) {
+				$positionsDb->updatePosition($position->id, [
+					'currency' => $values['currency'],
+				]);
 			}
-
-			$post = (array)$request->getPost();
-
-			if (!$form->isValid($post)) {
-				$form->setValues($post);
-			} else {
-				$values = $form->getFilteredValues();
-
-				if (isset($values['currency'])) {
-					$positionsDb = new Processes_Model_DbTable_Processpos();
-					$positions = $positionsDb->getPositions($id);
-
-					foreach ($positions as $position) {
-						$positionsDb->updatePosition($position->id, ['currency' => $values['currency']]);
-					}
-				}
-
-				if (isset($values['taxfree'])) {
-					$calculations = $this->_helper->Calculate($id, $this->_date, $this->_user['id'], $values['taxfree']);
-					$values['subtotal'] = $calculations['row']['subtotal'];
-					$values['taxes'] = $calculations['row']['taxes']['total'];
-					$values['total'] = $calculations['row']['total'];
-				}
-
-				$processDb->updateProcess($id, $values);
-				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-
-				return $this->_helper->redirector->gotoSimple('edit', 'process', null, ['id' => $id]);
-			}
-		} else {
-			$formFactory->populate($form, $process, $id, 'processes', 'process');
 		}
 
-		$vmService = new Processes_Service_ProcessEditViewModel();
-		$vm = $vmService->build($id, (array)$this->_user, (array)$process);
+		if (isset($values['taxfree'])) {
+			$calculations = $this->_helper->Calculate(
+				$id,
+				$this->_date,
+				$this->_user['id'],
+				$values['taxfree']
+			);
 
-		$this->view->assign(array_merge($vm, [
-			'id' => $id,
-			'form' => $form,
-			'toolbar' => $toolbar,
-			'options' => $options,
-			'activeTab' => $request->getCookie('tab', null),
-		]));
+			$values['subtotal'] = $calculations['row']['subtotal'];
+			$values['taxes'] = $calculations['row']['taxes']['total'];
+			$values['total'] = $calculations['row']['total'];
+		}
 
-		$this->view->messages = array_merge(
-			$this->_helper->flashMessenger->getMessages(),
-			$this->_helper->flashMessenger->getCurrentMessages()
-		);
-		$this->_helper->flashMessenger->clearCurrentMessages();
-	}
-
-	public function copyAction()
-	{
-		$id = $this->_getParam('id', 0);
-
-		$data = $this->requireRow($id);
-
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		unset($data['id'], $data['processid']);
-		$data['title'] = $data['title'].' 2';
-		$data['processdate'] = NULL;
-		$data['state'] = 100;
-		$data['completed'] = 0;
-		$data['cancelled'] = 0;
-		$data['pinned'] = 0;
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-
-		$processDb = new Processes_Model_DbTable_Process();
-		$processid = $processDb->addProcess($data);
-
-		//Copy positions
-		$positionsDb = new Processes_Model_DbTable_Processpos();
-		$positions = $positionsDb->getPositions($id);
-		$this->_helper->Position->copyPositions($positions, $processid, 'processes', 'process', $this->_date);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-
-		echo (int)$processid;
+		return $values;
 	}
 }
