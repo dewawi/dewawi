@@ -365,6 +365,24 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_PositionAc
 
 	protected function getDocumentGenerateConfig(string $source, string $target): ?array
 	{
+		$fullSalesReset = [
+			'invoiceid', 'invoicedate',
+			'deliveryorderid', 'deliveryorderdate',
+			'quoteid', 'quotedate',
+			'salesorderid', 'salesorderdate',
+			'deliverydate',
+			'prepayment',
+			'ebayorderid',
+		];
+
+		$purchaseToSalesReset = [
+			'purchaseorderid', 'purchaseorderdate',
+			'quoterequestid', 'quoterequestdate',
+			'quoteid', 'quotedate',
+			'salesorderid', 'salesorderdate',
+			'invoiceid', 'invoicedate',
+		];
+
 		$map = [
 			'quote' => [
 				'salesorder' => ['module' => 'sales'],
@@ -374,22 +392,118 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_PositionAc
 				'purchaseorder' => ['module' => 'purchases', 'clearBilling' => true],
 				'process' => ['module' => 'processes', 'processDefaults' => true],
 			],
+
 			'salesorder' => [
 				'quote' => ['module' => 'sales', 'unset' => ['salesorderid', 'salesorderdate', 'quoteid', 'quotedate']],
 				'invoice' => ['module' => 'sales'],
 				'deliveryorder' => ['module' => 'sales'],
 				'quoterequest' => ['module' => 'purchases', 'clearBilling' => true],
 				'purchaseorder' => ['module' => 'purchases', 'clearBilling' => true],
-				'process' => ['module' => 'processes', 'processDefaults' => true, 'unset' => ['quotedate', 'orderdate', 'templateid', 'language', 'filename']],
+				'process' => [
+					'module' => 'processes',
+					'processDefaults' => true,
+					'unset' => ['quotedate', 'orderdate', 'templateid', 'language', 'filename'],
+				],
 			],
+
 			'invoice' => [
-				'quote' => ['module' => 'sales', 'resetDocumentRefs' => true],
-				'salesorder' => ['module' => 'sales', 'resetDocumentRefs' => true],
-				'deliveryorder' => ['module' => 'sales'],
-				'creditnote' => ['module' => 'sales'],
-				'quoterequest' => ['module' => 'purchases', 'clearBilling' => true],
-				'purchaseorder' => ['module' => 'purchases', 'clearBilling' => true],
+				'quote' => ['module' => 'sales', 'unset' => $fullSalesReset],
+				'salesorder' => ['module' => 'sales', 'unset' => $fullSalesReset],
+				'deliveryorder' => ['module' => 'sales', 'unset' => ['deliveryorderid', 'deliveryorderdate', 'prepayment', 'ebayorderid']],
+				'creditnote' => ['module' => 'sales', 'unset' => ['deliveryorderid', 'deliveryorderdate', 'prepayment', 'ebayorderid']],
+				'quoterequest' => [
+					'module' => 'purchases',
+					'clearBilling' => true,
+					'unset' => ['deliveryorderid', 'deliveryorderdate', 'prepayment', 'ebayorderid'],
+				],
+				'purchaseorder' => [
+					'module' => 'purchases',
+					'clearBilling' => true,
+					'unset' => ['deliveryorderid', 'deliveryorderdate', 'prepayment', 'ebayorderid'],
+				],
+				'process' => [
+					'module' => 'processes',
+					'processDefaults' => true,
+					'copy' => ['prepaymenttotal' => 'prepayment'],
+					'unset' => ['quotedate', 'orderdate', 'prepayment', 'ebayorderid', 'templateid', 'language', 'filename'],
+				],
+			],
+
+			'deliveryorder' => [
+				'salesorder' => [
+					'module' => 'sales',
+					'unset' => [
+						'deliveryorderid', 'deliveryorderdate',
+						'quoteid', 'quotedate',
+						'salesorderid', 'salesorderdate',
+						'invoiceid', 'invoicedate',
+					],
+				],
+				'invoice' => ['module' => 'sales'],
+				'quoterequest' => ['module' => 'purchases', 'clearBilling' => true, 'unset' => ['deliveryorderid', 'deliveryorderdate']],
+				'purchaseorder' => ['module' => 'purchases', 'clearBilling' => true, 'unset' => ['deliveryorderid', 'deliveryorderdate']],
+			],
+
+			'creditnote' => [
+				'salesorder' => [
+					'module' => 'sales',
+					'unset' => [
+						'creditnoteid', 'creditnotedate',
+						'quoteid', 'quotedate',
+						'salesorderid', 'salesorderdate',
+						'invoiceid', 'invoicedate',
+					],
+				],
+				'invoice' => ['module' => 'sales', 'unset' => ['invoiceid', 'invoicedate']],
+				'quoterequest' => [
+					'module' => 'purchases',
+					'clearBilling' => true,
+					'unset' => [
+						'creditnoteid', 'creditnotedate',
+						'quoteid', 'quotedate',
+						'salesorderid', 'salesorderdate',
+						'invoiceid', 'invoicedate',
+					],
+				],
+				'purchaseorder' => [
+					'module' => 'purchases',
+					'clearBilling' => true,
+					'unset' => [
+						'creditnoteid', 'creditnotedate',
+						'quoteid', 'quotedate',
+						'salesorderid', 'salesorderdate',
+						'invoiceid', 'invoicedate',
+					],
+				],
+			],
+
+			'reminder' => [
+				'salesorder' => ['module' => 'sales', 'unset' => ['reminderid', 'reminderdate']],
+				'invoice' => ['module' => 'sales', 'unset' => ['reminderid', 'reminderdate']],
+				'quoterequest' => ['module' => 'purchases', 'clearBilling' => true, 'unset' => ['reminderid', 'reminderdate']],
+				'purchaseorder' => ['module' => 'purchases', 'clearBilling' => true, 'unset' => ['reminderid', 'reminderdate']],
 				'process' => ['module' => 'processes', 'processDefaults' => true],
+			],
+
+			'quoterequest' => [
+				'salesorder' => ['module' => 'sales', 'unset' => ['quoterequestid', 'quoterequestdate', 'quoteid', 'quotedate', 'salesorderid', 'salesorderdate', 'invoiceid', 'invoicedate']],
+				'invoice' => ['module' => 'sales', 'unset' => ['quoterequestid', 'quoterequestdate', 'quoteid', 'quotedate', 'salesorderid', 'salesorderdate', 'invoiceid', 'invoicedate']],
+				'purchaseorder' => ['module' => 'purchases', 'clearBilling' => true],
+			],
+
+			'purchaseorder' => [
+				'salesorder' => ['module' => 'sales', 'unset' => $purchaseToSalesReset],
+				'invoice' => ['module' => 'sales', 'unset' => $purchaseToSalesReset],
+				'quoterequest' => [
+					'module' => 'purchases',
+					'clearBilling' => true,
+					'unset' => [
+						'purchaseorderid', 'purchaseorderdate',
+						'quoteid', 'quotedate',
+						'salesorderid', 'salesorderdate',
+						'invoiceid', 'invoicedate',
+					],
+				],
 			],
 		];
 
@@ -407,26 +521,14 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_PositionAc
 		$data['locked'] = 0;
 		$data['lockedtime'] = null;
 
+		foreach (($config['copy'] ?? []) as $targetField => $sourceField) {
+			$data[$targetField] = $data[$sourceField] ?? null;
+		}
+
 		unset($data['id']);
 
 		foreach (($config['unset'] ?? []) as $field) {
 			unset($data[$field]);
-		}
-
-		if (!empty($config['resetDocumentRefs'])) {
-			unset(
-				$data['invoiceid'],
-				$data['invoicedate'],
-				$data['deliveryorderid'],
-				$data['deliveryorderdate'],
-				$data['quoteid'],
-				$data['quotedate'],
-				$data['salesorderid'],
-				$data['salesorderdate'],
-				$data['deliverydate'],
-				$data['prepayment'],
-				$data['ebayorderid']
-			);
 		}
 
 		if (!empty($config['clearBilling'])) {
@@ -459,6 +561,17 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_PositionAc
 		$data['billingpostcode'] = '';
 		$data['billingcity'] = '';
 		$data['billingcountry'] = '';
+
+		if (empty($data['shippingname1'])) {
+			$data['shippingname1'] = $data['billingname1'];
+			$data['shippingname2'] = $data['billingname2'];
+			$data['shippingdepartment'] = $data['billingdepartment'];
+			$data['shippingstreet'] = $data['billingstreet'];
+			$data['shippingpostcode'] = $data['billingpostcode'];
+			$data['shippingcity'] = $data['billingcity'];
+			$data['shippingcountry'] = $data['billingcountry'];
+			$data['shippingphone'] = '';
+		}
 
 		return $data;
 	}
