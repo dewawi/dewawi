@@ -318,4 +318,148 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_PositionAc
 			['id' => $id]
 		);
 	}
+
+	public function generateAction()
+	{
+		$id = (int)$this->_getParam('id', 0);
+		$target = (string)$this->_getParam('target', '');
+
+		$sourceModule = $this->getRequest()->getModuleName();
+		$sourceController = $this->getRequest()->getControllerName();
+
+		$row = $this->requireRow($id);
+		$config = $this->getDocumentGenerateConfig($sourceController, $target);
+
+		if (!$config) {
+			throw new RuntimeException('Invalid generate target');
+		}
+
+		$data = $this->prepareGeneratedDocumentData($row, $sourceController, $target, $config);
+
+		$targetDbClass = ucfirst($config['module']) . '_Model_DbTable_' . ucfirst($target);
+		$targetDb = new $targetDbClass();
+
+		$newId = $targetDb->create($data);
+
+		$positionsDbClass = $this->getPositionsDbTableClass();
+		$positionsDb = new $positionsDbClass();
+		$positions = $positionsDb->getPositions($id);
+
+		$this->_helper->Position->copyPositions(
+			$positions,
+			$newId,
+			[$sourceModule, $config['module']],
+			[$sourceController, $target],
+			$this->_date
+		);
+
+		$this->_flashMessenger->addMessage('MESSAGES_DOCUMENT_SUCCESFULLY_GENERATED');
+
+		return $this->_helper->redirector->gotoSimple(
+			'edit',
+			$target,
+			$config['module'],
+			['id' => $newId]
+		);
+	}
+
+	protected function getDocumentGenerateConfig(string $source, string $target): ?array
+	{
+		$map = [
+			'quote' => [
+				'salesorder' => ['module' => 'sales'],
+				'invoice' => ['module' => 'sales'],
+				'deliveryorder' => ['module' => 'sales'],
+				'quoterequest' => ['module' => 'purchases', 'clearBilling' => true],
+				'purchaseorder' => ['module' => 'purchases', 'clearBilling' => true],
+				'process' => ['module' => 'processes', 'processDefaults' => true],
+			],
+			'salesorder' => [
+				'quote' => ['module' => 'sales', 'unset' => ['salesorderid', 'salesorderdate', 'quoteid', 'quotedate']],
+				'invoice' => ['module' => 'sales'],
+				'deliveryorder' => ['module' => 'sales'],
+				'quoterequest' => ['module' => 'purchases', 'clearBilling' => true],
+				'purchaseorder' => ['module' => 'purchases', 'clearBilling' => true],
+				'process' => ['module' => 'processes', 'processDefaults' => true, 'unset' => ['quotedate', 'orderdate', 'templateid', 'language', 'filename']],
+			],
+			'invoice' => [
+				'quote' => ['module' => 'sales', 'resetDocumentRefs' => true],
+				'salesorder' => ['module' => 'sales', 'resetDocumentRefs' => true],
+				'deliveryorder' => ['module' => 'sales'],
+				'creditnote' => ['module' => 'sales'],
+				'quoterequest' => ['module' => 'purchases', 'clearBilling' => true],
+				'purchaseorder' => ['module' => 'purchases', 'clearBilling' => true],
+				'process' => ['module' => 'processes', 'processDefaults' => true],
+			],
+		];
+
+		return $map[$source][$target] ?? null;
+	}
+
+	protected function prepareGeneratedDocumentData(array $data, string $source, string $target, array $config): array
+	{
+		$data['state'] = 100;
+		$data['completed'] = 0;
+		$data['cancelled'] = 0;
+		$data['pinned'] = 0;
+		$data['modified'] = null;
+		$data['modifiedby'] = 0;
+		$data['locked'] = 0;
+		$data['lockedtime'] = null;
+
+		unset($data['id']);
+
+		foreach (($config['unset'] ?? []) as $field) {
+			unset($data[$field]);
+		}
+
+		if (!empty($config['resetDocumentRefs'])) {
+			unset(
+				$data['invoiceid'],
+				$data['invoicedate'],
+				$data['deliveryorderid'],
+				$data['deliveryorderdate'],
+				$data['quoteid'],
+				$data['quotedate'],
+				$data['salesorderid'],
+				$data['salesorderdate'],
+				$data['deliverydate'],
+				$data['prepayment'],
+				$data['ebayorderid']
+			);
+		}
+
+		if (!empty($config['clearBilling'])) {
+			$data = $this->clearBillingDataForPurchaseDocument($data);
+		}
+
+		if (!empty($config['processDefaults'])) {
+			$data['deliverystatus'] = 'deliveryIsWaiting';
+			$data['supplierorderstatus'] = 'supplierNotOrdered';
+			$data['paymentstatus'] = 'waitingForPayment';
+
+			unset(
+				$data['pdfshowprices'],
+				$data['pdfshowdiscounts'],
+				$data['pdfshowoptions'],
+				$data['pdfshowattributes'],
+				$data['pdfshowcover']
+			);
+		}
+
+		return $data;
+	}
+
+	protected function clearBillingDataForPurchaseDocument(array $data): array
+	{
+		$data['billingname1'] = '';
+		$data['billingname2'] = '';
+		$data['billingdepartment'] = '';
+		$data['billingstreet'] = '';
+		$data['billingpostcode'] = '';
+		$data['billingcity'] = '';
+		$data['billingcountry'] = '';
+
+		return $data;
+	}
 }
