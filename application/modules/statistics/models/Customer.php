@@ -61,8 +61,12 @@ class Statistics_Model_Customer
 								$customerList[$invoice->contactid]['name1'] = $invoice->name1;
 								$customerList[$invoice->contactid]['subtotal'] = $invoice->subtotal;
 								$customerList[$invoice->contactid]['invoices'] = array($invoice->invoiceid);
-								$customerList[$invoice->contactid]['ctitle'] = $categories[$invoice->catid]['title'];
-								$customerList[$invoice->contactid]['cfulltitle'] = $categories[$invoice->catid]['fulltitle'];
+								$category = ($invoice->catid && isset($categories[$invoice->catid]))
+									? $categories[$invoice->catid]
+									: array();
+
+								$customerList[$invoice->contactid]['ctitle'] = isset($category['title']) ? $category['title'] : '';
+								$customerList[$invoice->contactid]['cfulltitle'] = isset($category['fulltitle']) ? $category['fulltitle'] : $customerList[$invoice->contactid]['ctitle'];
 							}
 							if($invoice->prepayment) {
 								$customerList[$invoice->contactid]['subtotal'] -= ($invoice->prepayment/1.19); //TODO
@@ -84,8 +88,12 @@ class Statistics_Model_Customer
 								$customerList[$creditnote->contactid]['name1'] = $creditnote->name1;
 								$customerList[$creditnote->contactid]['subtotal'] = $creditnote->subtotal;
 								$customerList[$creditnote->contactid]['creditnotes'] = array($creditnote->creditnoteid);
-								if($creditnote->catid && isset($categories[$creditnote->catid]))
-									$customerList[$creditnote->contactid]['ctitle'] = $categories[$creditnote->catid]['title'];
+								$category = ($creditnote->catid && isset($categories[$creditnote->catid]))
+									? $categories[$creditnote->catid]
+									: array();
+
+								$customerList[$creditnote->contactid]['ctitle'] = isset($category['title']) ? $category['title'] : '';
+								$customerList[$creditnote->contactid]['cfulltitle'] = isset($category['fulltitle']) ? $category['fulltitle'] : $customerList[$creditnote->contactid]['ctitle'];
 							}
 						}
 					}
@@ -118,7 +126,6 @@ class Statistics_Model_Customer
 					array_push($customerName, substr($customer['name1'], 0, 20));
 					array_push($customerTurnover, round($customer['subtotal']));
 				}
-				$customerList[$id]['total'] += $customer['subtotal'];
 				++$i;
 			}
 
@@ -169,13 +176,20 @@ class Statistics_Model_Customer
 
 	private function fetchData($db, $type, $year, $month, $ym, $client, $params, $options)
 	{
+		$categoryOptions = isset($options['categories']) ? $options['categories'] : array();
+		$countryOptions = isset($options['country']) ? $options['country'] : array();
+
+		$catid = isset($params['catid']) ? $params['catid'] : null;
+		$country = isset($params['country']) ? $params['country'] : null;
+
 		$query = "i.state = 105";
 		$query .= " AND ({$type}date >= '{$year}-{$ym}-01' AND {$type}date <= '{$year}-{$ym}-31')";
 		$query .= " AND i.clientid = {$client['id']}";
 		$query .= " AND c.clientid = {$client['id']}";
-		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
-		if($params['country']) {
-			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['country'], 'i');
+		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $catid, $categoryOptions, 'c');
+
+		if($country) {
+			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $country, $countryOptions, 'i');
 		}
 
 		$data = $db->fetchAll(

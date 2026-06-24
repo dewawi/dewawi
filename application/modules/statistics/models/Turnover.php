@@ -35,6 +35,9 @@ class Statistics_Model_Turnover
 		$turnover = array();
 		$turnoverCategories = array();
 
+		$categoryOptions = isset($options['categories']) && is_array($options['categories']) ? $options['categories'] : array();
+		$catid = isset($params['catid']) ? $params['catid'] : null;
+
 		$turnoverList = array();
 		for($year = $startYear; $year <= $currentYear; $year++) {
 			for($month = $startMonth; $month <= 12; $month++) {
@@ -95,7 +98,7 @@ class Statistics_Model_Turnover
 					}
 
 					//Calculate categories
-					foreach($options['categories'] as $id => $category) {
+					foreach($categoryOptions as $id => $category) {
 						if(isset($turnoverCategories[$id][$year.$ym])) {
 							$turnoverCategories[$id][$year.$ym] = round($turnoverCategories[$id][$year.$ym]);
 						} else {
@@ -120,8 +123,11 @@ class Statistics_Model_Turnover
 
 		//Merge subcategories to main categories
 		foreach($turnoverCategories as $id => $values) {
-			if(isset($options['categories'][$id]['childs']) && ($id != $params['catid'])) {
-				foreach($options['categories'][$id]['childs'] as $childId) {
+			if(isset($categoryOptions[$id]['childs']) && ($id != $catid)) {
+				foreach($categoryOptions[$id]['childs'] as $childId) {
+					if(!isset($turnoverCategories[$childId])) {
+						continue;
+					}
 					foreach($values as $month => $value) {
 						if(isset($turnoverCategories[$id][$month])) {
 							$turnoverCategories[$id][$month] += $turnoverCategories[$childId][$month];
@@ -239,8 +245,8 @@ class Statistics_Model_Turnover
 			}
 			arsort($turnoverCategoriesTotal);
 			foreach($turnoverCategoriesTotal as $key => $value) {
-				if($key && isset($options['categories'][$key])) {
-					$chartTurnoverCategory->myData->addPoints($turnoverCategories[$key], $options['categories'][$key]['title']);
+				if($key && isset($categoryOptions[$key])) {
+					$chartTurnoverCategory->myData->addPoints($turnoverCategories[$key], $categoryOptions[$key]['title']);
 					//print_r($turnoverCategories[$key]);
 					//print_r($options['categories'][$key]['title']);
 				}
@@ -333,13 +339,20 @@ class Statistics_Model_Turnover
 
 	private function fetchData($db, $type, $year, $month, $ym, $client, $params, $options)
 	{
+		$categoryOptions = isset($options['categories']) && is_array($options['categories']) ? $options['categories'] : array();
+		$countryOptions = isset($options['country']) && is_array($options['country']) ? $options['country'] : array();
+
+		$catid = isset($params['catid']) ? $params['catid'] : null;
+		$country = isset($params['country']) ? $params['country'] : null;
+
 		$query = "i.state = 105";
 		$query .= " AND ({$type}date >= '{$year}-{$ym}-01' AND {$type}date <= '{$year}-{$ym}-31')";
 		$query .= " AND i.clientid = {$client['id']}";
 		$query .= " AND c.clientid = {$client['id']}";
-		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
-		if($params['country']) {
-			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['country'], 'i');
+		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $catid, $categoryOptions, 'c');
+
+		if($country) {
+			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $country, $countryOptions, 'i');
 		}
 
 		$data = $db->fetchAll(

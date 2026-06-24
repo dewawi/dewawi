@@ -82,7 +82,6 @@ class Statistics_Model_Quote
 					array_push($customerName, substr($customer['name1'], 0, 19));
 					array_push($customerTurnover, round($customer['subtotal']));
 				}
-				$customerList[$id]['total'] += $customer['subtotal'];
 				++$i;
 			}
 
@@ -133,13 +132,20 @@ class Statistics_Model_Quote
 
 	private function fetchData($db, $type, $year, $month, $ym, $client, $params, $options)
 	{
+		$categoryOptions = isset($options['categories']) && is_array($options['categories']) ? $options['categories'] : array();
+		$countryOptions = isset($options['country']) && is_array($options['country']) ? $options['country'] : array();
+
+		$catid = isset($params['catid']) ? $params['catid'] : null;
+		$country = isset($params['country']) ? $params['country'] : null;
+
 		$query = "i.state = 105";
 		$query .= " AND ({$type}date >= '{$year}-{$ym}-01' AND {$type}date <= '{$year}-{$ym}-31')";
 		$query .= " AND i.clientid = {$client['id']}";
 		$query .= " AND c.clientid = {$client['id']}";
-		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $params['catid'], $options['categories'], 'c');
-		if($params['country']) {
-			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $params['country'], $options['country'], 'i');
+		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $catid, $categoryOptions, 'c');
+
+		if($country) {
+			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $country, $countryOptions, 'i');
 		}
 
 		$data = $db->fetchAll(
