@@ -15,7 +15,7 @@ use pChart\pCharts;
 use pChart\pColorGradient;
 use pChart\pException;
 
-class Statistics_Model_Turnover
+class Statistics_Model_Turnover extends Statistics_Model_Abstract
 {
 	public function createCharts($lenght, $width = 1000, $height = 400, $statisticsUncategorized, $statisticsNoData, $params, $options, $startMonth = null)
 	{
@@ -335,34 +335,5 @@ class Statistics_Model_Turnover
 			$chartTurnoverCategory->Render(BASE_PATH . '/cache/chart/' . $url . '/turnover-category-' . $width . '-' . $height . '.png');
 		}
 		return array($turnoverList, $turnoverTotal);
-	}
-
-	private function fetchData($db, $type, $year, $month, $ym, $client, $params, $options)
-	{
-		$categoryOptions = isset($options['categories']) && is_array($options['categories']) ? $options['categories'] : array();
-		$countryOptions = isset($options['country']) && is_array($options['country']) ? $options['country'] : array();
-
-		$catid = isset($params['catid']) ? $params['catid'] : null;
-		$country = isset($params['country']) ? $params['country'] : null;
-
-		$query = "i.state = 105";
-		$query .= " AND ({$type}date >= '{$year}-{$ym}-01' AND {$type}date <= '{$year}-{$ym}-31')";
-		$query .= " AND i.clientid = {$client['id']}";
-		$query .= " AND c.clientid = {$client['id']}";
-		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $catid, $categoryOptions, 'c');
-
-		if($country) {
-			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $country, $countryOptions, 'i');
-		}
-
-		$data = $db->fetchAll(
-			$db->select()
-				->from(array('i' => $type))
-				->join(array('c' => 'contact'), "i.contactid = c.contactid", array('id AS cid', 'catid', 'name1'))
-				->where($query ? $query : 1)
-				->setIntegrityCheck(false)
-		);
-
-		return $data;
 	}
 }
