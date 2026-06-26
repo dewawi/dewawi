@@ -12,6 +12,13 @@ class Items_Form_Pricerulepos extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'type' => 'text',
+			'name' => 'amount',
+			'label' => 'ITEMS_PRICE_RULES_AMOUNT',
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
 			'name' => 'action',
 			'type' => 'select',
 			'label' => 'ITEMS_PRICE_RULES_ACTION',
@@ -22,13 +29,6 @@ class Items_Form_Pricerulepos extends DEEC_Form
 				'topercent' => 'ITEMS_PRICE_RULES_TO_PERCENT',
 				'tofixed' => 'ITEMS_PRICE_RULES_TO_FIXED',
 			],
-			'format' => ['type' => 'string'],
-		]);
-
-		$this->addElement([
-			'type' => 'text',
-			'name' => 'amount',
-			'label' => 'ITEMS_PRICE_RULES_AMOUNT',
 			'format' => ['type' => 'string'],
 		]);
 	}

@@ -18,31 +18,31 @@
  * - type (string)		e.g. text, number, email, select, textarea, checkbox, hidden, submit, button
  *
  * Optional (meta / rendering):
- * - label (string|null)        Label key/text (passed through translate())
- * - description (string)       Help text under the field
- * - info (string)              Additional info text
- * - unit (string|null)         Unit shown in label (e.g. "kW") -> NOT an HTML attribute
- * - default (mixed|null)       Default value -> NOT an HTML attribute
- * - value (mixed|null)         Current value (usually set by setValues())
- * - required (bool)            Mapped internally to attribs['required']
- * - options (array)            For select/radio/multicheckbox
- * - source (string|null)       Option source key for Options helper, e.g. "country"
- * - filter (bool)              Marks element as list/filter parameter
- * - toolbar (string)           Toolbar area: actions, search, meta, filters, category
- * - col (int|null)             Grid width 1..12
- * - wrap (bool)                Render wrapper div or not
- * - tab (string)               Tab key
- * - section (string|null)      Section grouping headline
- * - order (int)                Sort order
- * - format (array|null)        Filter schema for getFilteredValues()
+ * - label (string|null)		Label key/text (passed through translate())
+ * - description (string)	   Help text under the field
+ * - info (string)			  Additional info text
+ * - unit (string|null)		 Unit shown in label (e.g. "kW") -> NOT an HTML attribute
+ * - default (mixed|null)	   Default value -> NOT an HTML attribute
+ * - value (mixed|null)		 Current value (usually set by setValues())
+ * - required (bool)			Mapped internally to attribs['required']
+ * - options (array)			For select/radio/multicheckbox
+ * - source (string|null)	   Option source key for Options helper, e.g. "country"
+ * - filter (bool)			  Marks element as list/filter parameter
+ * - toolbar (string)		   Toolbar area: actions, search, meta, filters, category
+ * - col (int|null)			 Grid width 1..12
+ * - wrap (bool)				Render wrapper div or not
+ * - tab (string)			   Tab key
+ * - section (string|null)	  Section grouping headline
+ * - order (int)				Sort order
+ * - format (array|null)		Filter schema for getFilteredValues()
  *
  * Optional (multi / child rows):
- * - module (string)            Module for multi row form/entity
- * - controller (string)        Controller/entity for multi row form/entity
- * - parentid (int)             Parent entity id
- * - parent_module (string)     Parent module context
+ * - module (string)			Module for multi row form/entity
+ * - controller (string)		Controller/entity for multi row form/entity
+ * - parentid (int)			 Parent entity id
+ * - parent_module (string)	 Parent module context
  * - parent_controller (string) Parent controller context
- * - rows (array)               Existing child rows
+ * - rows (array)			   Existing child rows
  *
  * Optional (logic / JS):
  * - depends_on (string)		Mapped internally to attribs['data-depends-on']
@@ -137,19 +137,19 @@
  *
  * Toolbar filter:
  * [
- *     'name' => 'paymentstatus',
- *     'type' => 'select',
- *     'label' => 'PROCESSES_PAYMENT_STATUS',
- *     'default' => '0',
- *     'options' => [
- *         '0' => 'TOOLBAR_ALL',
- *         'waitingForPayment' => 'PROCESSES_WAITING_FOR_PAYMENT',
- *         'paymentCompleted' => 'PROCESSES_PAYMENT_COMPLETED',
- *     ],
- *     'filter' => true,
- *     'toolbar' => 'filters',
- *     'wrap' => false,
- *     'format' => ['type' => 'string'],
+ *	 'name' => 'paymentstatus',
+ *	 'type' => 'select',
+ *	 'label' => 'PROCESSES_PAYMENT_STATUS',
+ *	 'default' => '0',
+ *	 'options' => [
+ *		 '0' => 'TOOLBAR_ALL',
+ *		 'waitingForPayment' => 'PROCESSES_WAITING_FOR_PAYMENT',
+ *		 'paymentCompleted' => 'PROCESSES_PAYMENT_COMPLETED',
+ *	 ],
+ *	 'filter' => true,
+ *	 'toolbar' => 'filters',
+ *	 'wrap' => false,
+ *	 'format' => ['type' => 'string'],
  * ]
  *
  * Toolbar elements should normally use `wrap => false`.
@@ -1593,18 +1593,28 @@ class DEEC_Form
 		$module = (string)($ctx['module'] ?? '');
 		$controller = (string)($ctx['controller'] ?? '');
 
-		$html = '<div id="' . htmlspecialchars($name . $rowId) . '" class="dw-multiform__item dw-card">';
-		$html .= '<div class="dw-form-row">';
+		$html = '<div'
+			. ' id="' . htmlspecialchars($name . $rowId) . '"'
+			. ' class="dw-multiform__item"'
+			. ' data-id="' . htmlspecialchars($rowId) . '"'
+			. ' data-module="' . htmlspecialchars($module) . '"'
+			. ' data-controller="' . htmlspecialchars($controller) . '"'
+			. '>';
+
+		$html .= '<div class="row g-3">';
 
 		foreach ($fields as $field) {
 			$html .= $this->renderElementRow($field, $row, $ctx);
 		}
 
 		$html .= '</div>';
-		$html .= '<div class="dw-multiform__actions">';
+
 		$html .= '<button type="button" class="delete nolabel"'
-				. ' onclick="trash(' . (int)$rowId . ', deleteConfirm, \'' . htmlspecialchars($controller) . '\', \'' . htmlspecialchars($module) . '\');"></button>';
-		$html .= '</div>';
+			. ' data-id="' . htmlspecialchars($rowId) . '"'
+			. ' data-action="delete"'
+			. ' data-module="' . htmlspecialchars($module) . '"'
+			. ' data-controller="' . htmlspecialchars($controller) . '"></button>';
+
 		$html .= '</div>';
 
 		return $html;
