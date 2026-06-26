@@ -195,7 +195,7 @@ class Contacts_Form_Contact extends DEEC_Form
 		$this->addElement([
 			'name' => 'priceruleamount',
 			'type' => 'text',
-			'label' => 'CONTACTS_PRICE_RULE_AMOUNT',
+			'label' => 'ITEMS_PRICE_RULES_AMOUNT',
 			'tab' => 'payment',
 			'format' => ['type' => 'string'],
 			'attribs' => [
@@ -207,7 +207,7 @@ class Contacts_Form_Contact extends DEEC_Form
 		$this->addElement([
 			'name' => 'priceruleaction',
 			'type' => 'select',
-			'label' => 'CONTACTS_PRICE_RULE_APPLY',
+			'label' => 'ITEMS_PRICE_RULES_APPLY',
 			'tab' => 'payment',
 			'options' => [
 				'' => 'CONTACTS_NONE',

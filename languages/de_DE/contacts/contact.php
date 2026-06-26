@@ -37,8 +37,6 @@
 	'CONTACTS_VATIN' => 'USt-IdNr.',
 	'CONTACTS_TAX_FREE' => 'Umsatzsteuer frei',
 	'CONTACTS_CURRENCY' => 'Währung',
-	'CONTACTS_PRICE_RULE_AMOUNT' => 'Betrag',
-	'CONTACTS_PRICE_RULE_APPLY' => 'Anwendung',
 	'CONTACTS_PAYMENT_METHOD' => 'Zahlart',
 	'CONTACTS_PAYMENT_TERM' => 'Zahlungsziel',
 	'CONTACTS_CASH_DISCOUNT_DAYS' => 'Skonto Tage',

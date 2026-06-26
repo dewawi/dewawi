@@ -55,7 +55,7 @@ class Items_Form_Itemopt extends Zend_Form
 			->addValidator('NotEmpty');
 
 		$form['priceruleamount'] = new Zend_Form_Element_Text('priceruleamount');
-		$form['priceruleamount']->setLabel('POSITIONS_PRICE_RULE_AMOUNT')
+		$form['priceruleamount']->setLabel('ITEMS_PRICE_RULES_AMOUNT')
 			->setRequired(true)
 			->addFilter('StripTags')
 			->addFilter('StringTrim')
@@ -65,7 +65,7 @@ class Items_Form_Itemopt extends Zend_Form
 			->setAttrib('size', '20');
 
 		$form['priceruleaction'] = new Zend_Form_Element_Select('priceruleaction');
-		$form['priceruleaction']->setLabel('POSITIONS_PRICE_RULE_APPLY')
+		$form['priceruleaction']->setLabel('ITEMS_PRICE_RULES_APPLY')
 			->addMultiOption(0, 'POSITIONS_NONE')
 			->setRequired(true)
 			->addValidator('NotEmpty');

@@ -55,8 +55,4 @@
 	'ITEMS_MODIFIED' => 'le. Änderung',
 	'ITEMS_SAVE' => 'Speichern',
 	'ITEMS_DELETE' => 'Löschen',
-	'ITEMS_PRICE_RULE_BY_PERCENT' => 'Rabatt in Prozent',
-	'ITEMS_PRICE_RULE_BY_FIXED' => 'Festbetrag-Rabatt',
-	'ITEMS_PRICE_RULE_TO_PERCENT' => 'Aufpreis in Prozent',
-	'ITEMS_PRICE_RULE_TO_FIXED' => 'Festbetrag-Aufpreis'
 );

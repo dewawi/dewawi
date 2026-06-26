@@ -21,10 +21,10 @@ class Application_Model_DbTable_Priceruleaction extends Zend_Db_Table_Abstract
 	public function getPriceruleactions()
 	{
 		$priceruleaction = array(
-				'bypercent' => 'ITEMS_PRICE_RULE_BY_PERCENT',
-				'byfixed' => 'ITEMS_PRICE_RULE_BY_FIXED',
-				'topercent' => 'ITEMS_PRICE_RULE_TO_PERCENT',
-				'tofixed' => 'ITEMS_PRICE_RULE_TO_FIXED'
+				'bypercent' => 'ITEMS_PRICE_RULES_BY_PERCENT',
+				'byfixed' => 'ITEMS_PRICE_RULES_BY_FIXED',
+				'topercent' => 'ITEMS_PRICE_RULES_TO_PERCENT',
+				'tofixed' => 'ITEMS_PRICE_RULES_TO_FIXED'
 				);
 		return $priceruleaction;
 	}

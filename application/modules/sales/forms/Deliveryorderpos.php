@@ -111,7 +111,7 @@ class Sales_Form_Deliveryorderpos extends DEEC_Form
 		$this->addElement([
 			'name' => 'priceruleamount',
 			'type' => 'text',
-			'label' => 'POSITIONS_PRICE_RULE_AMOUNT',
+			'label' => 'ITEMS_PRICE_RULES_AMOUNT',
 			'required' => true,
 			'format' => ['type' => 'float'],
 			'attribs' => [
@@ -123,7 +123,7 @@ class Sales_Form_Deliveryorderpos extends DEEC_Form
 		$this->addElement([
 			'name' => 'priceruleaction',
 			'type' => 'select',
-			'label' => 'POSITIONS_PRICE_RULE_APPLY',
+			'label' => 'ITEMS_PRICE_RULES_APPLY',
 			'required' => true,
 			'options' => [
 				'0' => 'POSITIONS_NONE',
@@ -134,7 +134,7 @@ class Sales_Form_Deliveryorderpos extends DEEC_Form
 		$this->addElement([
 			'name' => 'pricerulemaster',
 			'type' => 'checkbox',
-			'label' => 'POSITIONS_PRICE_RULE_MASTER',
+			'label' => 'ITEMS_PRICE_RULES_MASTER',
 			'format' => ['type' => 'int'],
 			'col' => 3,
 		]);

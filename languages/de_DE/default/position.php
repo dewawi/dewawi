@@ -10,9 +10,6 @@
 	'POSITIONS_SUPPLIER' => 'Lieferant',
 	'POSITIONS_SHIPPING' => 'Lieferung',
 	'POSITIONS_PRICE' => 'Preis',
-	'POSITIONS_PRICE_RULES' => 'Preisregeln',
-	'POSITIONS_PRICE_RULE_AMOUNT' => 'Preisregel',
-	'POSITIONS_PRICE_RULE_APPLY' => 'Anwendung',
 	'POSITIONS_TAX_RATE' => 'Steuersatz',
 	'POSITIONS_QUANTITY' => 'Menge',
 	'POSITIONS_UOM' => 'ME',
@@ -23,6 +20,5 @@
 	'POSITIONS_SUBTOTAL' => 'Nettobetrag',
 	'POSITIONS_TAXES' => 'Umsatzsteuer',
 	'POSITIONS_TOTAL' => 'Gesamtb.',
-	'POSITIONS_PRICE_RULE_MASTER' => 'Auf Optionen Anwenden',
 	'POSITIONS_NONE' => 'keine'
 );
