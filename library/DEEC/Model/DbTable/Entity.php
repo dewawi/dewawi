@@ -93,6 +93,17 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return $rows ? $rows->toArray() : [];
 	}
 
+	public function getByContactId(int $contactId, string $order = 'id DESC')
+	{
+		$select = $this->select()
+			->where('contactid = ?', $contactId)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->order($order);
+
+		return $this->fetchAll($select);
+	}
+
 	public function getByModuleController(string $module, string $controller): array
 	{
 		$select = $this->select()
@@ -110,6 +121,18 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		$rows = $this->fetchAll($select);
 
 		return $rows ? $rows->toArray() : [];
+	}
+
+	public function getLatestUnfinished(string $numberField, int $limit = 5)
+	{
+		$select = $this->select()
+			->where($numberField . ' IS NULL')
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->order('id DESC')
+			->limit($limit);
+
+		return $this->fetchAll($select);
 	}
 
 	public function create(array $data): int

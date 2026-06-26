@@ -4,27 +4,6 @@ class Purchases_Model_DbTable_Purchaseorder extends DEEC_Model_DbTable_Entity
 {
 	protected $_name = 'purchaseorder';
 
-	public function getPurchaseorders($contactid)
-	{
-		$contactid = (int)$contactid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-		return $data;
-	}
-
-	public function getLatestPurchaseorders()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('purchaseorderid = ?', 0);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'id DESC', 5);
-		return $data;
-	}
-
 	public function addPurchaseorder($data)
 	{
 		$data['created'] = $this->_date;

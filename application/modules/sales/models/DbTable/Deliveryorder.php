@@ -4,27 +4,6 @@ class Sales_Model_DbTable_Deliveryorder extends DEEC_Model_DbTable_Entity
 {
 	protected $_name = 'deliveryorder';
 
-	public function getDeliveryorders($contactid)
-	{
-		$contactid = (int)$contactid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-		return $data;
-	}
-
-	public function getLatestDeliveryorders()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('deliveryorderid = ?', 0);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'id DESC', 5);
-		return $data;
-	}
-
 	public function addDeliveryorder($data)
 	{
 		$data['created'] = $this->_date;

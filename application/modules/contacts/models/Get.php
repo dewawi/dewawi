@@ -98,7 +98,7 @@ class Contacts_Model_Get
 
 		//Quotes
 		$quoteDb = new Sales_Model_DbTable_Quote();
-		$history['quotes'] = $quoteDb->getQuotes($contactid);
+		$history['quotes'] = $quoteDb->getByContactId($contactid);
 
 		foreach($history['quotes'] as $quote) {
 			$quote->subtotal = $currency->toCurrency($quote->subtotal);
@@ -111,7 +111,7 @@ class Contacts_Model_Get
 
 		//Sales orders
 		$salesorderDb = new Sales_Model_DbTable_Salesorder();
-		$history['salesorders'] = $salesorderDb->getSalesorders($contactid);
+		$history['salesorders'] = $salesorderDb->getByContactId($contactid);
 
 		foreach($history['salesorders'] as $salesorder) {
 			$salesorder->subtotal = $currency->toCurrency($salesorder->subtotal);
@@ -124,7 +124,7 @@ class Contacts_Model_Get
 
 		//Invoices
 		$invoiceDb = new Sales_Model_DbTable_Invoice();
-		$history['invoices'] = $invoiceDb->getInvoices($contactid);
+		$history['invoices'] = $invoiceDb->getByContactId($contactid);
 
 		foreach($history['invoices'] as $invoice) {
 			$invoice->subtotal = $currency->toCurrency($invoice->subtotal);
@@ -137,7 +137,7 @@ class Contacts_Model_Get
 
 		//Delivery orders
 		$deliveryorderDb = new Sales_Model_DbTable_Deliveryorder();
-		$history['deliveryorders'] = $deliveryorderDb->getDeliveryorders($contactid);
+		$history['deliveryorders'] = $deliveryorderDb->getByContactId($contactid);
 
 		foreach($history['deliveryorders'] as $deliveryorder) {
 			$deliveryorder->subtotal = $currency->toCurrency($deliveryorder->subtotal);
@@ -150,7 +150,7 @@ class Contacts_Model_Get
 
 		//Reminders
 		$reminderDb = new Sales_Model_DbTable_Reminder();
-		$history['reminders'] = $reminderDb->getReminders($contactid);
+		$history['reminders'] = $reminderDb->getByContactId($contactid);
 
 		foreach($history['reminders'] as $reminder) {
 			$reminder->subtotal = $currency->toCurrency($reminder->subtotal);
@@ -163,7 +163,7 @@ class Contacts_Model_Get
 
 		//Credit notes
 		$creditnoteDb = new Sales_Model_DbTable_Creditnote();
-		$history['creditnotes'] = $creditnoteDb->getCreditnotes($contactid);
+		$history['creditnotes'] = $creditnoteDb->getByContactId($contactid);
 
 		foreach($history['creditnotes'] as $creditnote) {
 			$creditnote->subtotal = $currency->toCurrency($creditnote->subtotal);
@@ -176,7 +176,7 @@ class Contacts_Model_Get
 
 		//Quote requests
 		$quoterequestDb = new Purchases_Model_DbTable_Quoterequest();
-		$history['quoterequests'] = $quoterequestDb->getQuoterequests($contactid);
+		$history['quoterequests'] = $quoterequestDb->getByContactId($contactid);
 
 		// Set client for purchases module
 		$client = Zend_Registry::get('Client');
@@ -198,7 +198,7 @@ class Contacts_Model_Get
 
 		//Purchase orders
 		$purchaseorderDb = new Purchases_Model_DbTable_Purchaseorder();
-		$history['purchaseorders'] = $purchaseorderDb->getPurchaseorders($contactid);
+		$history['purchaseorders'] = $purchaseorderDb->getByContactId($contactid);
 
 		foreach($history['purchaseorders'] as $purchaseorder) {
 			$purchaseorder->subtotal = $currency->toCurrency($purchaseorder->subtotal);
@@ -208,7 +208,7 @@ class Contacts_Model_Get
 
 		//Processes
 		$processesDb = new Processes_Model_DbTable_Process();
-		$history['processes'] = $processesDb->getProcesses($contactid);
+		$history['processes'] = $processesDb->getByContactId($contactid);
 
 		// Set client back for contacts module
 		$client = Zend_Registry::get('Client');

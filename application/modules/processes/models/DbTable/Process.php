@@ -28,15 +28,4 @@ class Processes_Model_DbTable_Process extends DEEC_Model_DbTable_Entity
 
 		return $row ? $row->toArray() : null;
 	}
-
-	public function getProcesses($contactid)
-	{
-		$contactid = (int)$contactid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-		return $data;
-	}
 }

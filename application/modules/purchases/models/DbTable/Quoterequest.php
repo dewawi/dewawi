@@ -4,27 +4,6 @@ class Purchases_Model_DbTable_Quoterequest extends DEEC_Model_DbTable_Entity
 {
 	protected $_name = 'quoterequest';
 
-	public function getQuoterequests($contactid)
-	{
-		$contactid = (int)$contactid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-		return $data;
-	}
-
-	public function getLatestQuoterequests()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('quoterequestid = ?', 0);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'id DESC', 5);
-		return $data;
-	}
-
 	public function addQuoterequest($data)
 	{
 		$data['created'] = $this->_date;
