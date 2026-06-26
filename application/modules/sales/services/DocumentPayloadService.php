@@ -9,15 +9,22 @@ class Sales_Service_DocumentPayloadService
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$contact = $contactDb->getContactWithID($document['contactid']);
 
-		if (!empty($options['templateid'])) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate((int)$options['templateid']);
-		} elseif (!empty($document['templateid'])) {
-			$templateDb = new Application_Model_DbTable_Template();
-			$template = $templateDb->getTemplate((int)$document['templateid']);
-		} else {
-			$template = null;
+		$templateDb = new Application_Model_DbTable_Template();
+		$templateId = !empty($options['templateid'])
+			? (int)$options['templateid']
+			: (int)($document['templateid'] ?? 0);
+
+		try {
+			if ($templateId > 0) {
+				$template = $templateDb->getTemplate($templateId);
+			} else {
+				$template = $templateDb->getPrimaryTemplate();
+			}
+		} catch (Exception $e) {
+			$template = $templateDb->getPrimaryTemplate();
 		}
+
+		$document['templateid'] = (int)$template['id'];
 
 		$calculations = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')
 				->direct($document['id'], date('Y-m-d H:i:s'), Zend_Registry::get('User')['id'], $document['taxfree']);
@@ -34,10 +41,7 @@ class Sales_Service_DocumentPayloadService
 		$itemData = $this->getItemData($positions);
 
 		$footerDb = new Application_Model_DbTable_Footer();
-		$footerTemplateId = !empty($options['templateid'])
-			? (int)$options['templateid']
-			: (int)$document['templateid'];
-		$footers = $footerDb->getFooters($footerTemplateId);
+		$footers = $footerDb->getFooters((int)$document['templateid']);
 
 		return [
 			'template' => $template,
