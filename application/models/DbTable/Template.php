@@ -35,13 +35,23 @@ class Application_Model_DbTable_Template extends Zend_Db_Table_Abstract
 
 	public function getPrimaryTemplate()
 	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchRow($where, 'ordering');
-		if(!$data) {
-			throw new Exception("Could not find template");
+		$template = $this->getDefaultTemplate();
+
+		if ($template) {
+		    return $template;
 		}
+
+		$where = [];
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+
+		$data = $this->fetchRow($where, 'ordering ASC');
+
+		if (!$data) {
+		    throw new Exception('Could not find template');
+		}
+
 		return $data->toArray();
 	}
 
