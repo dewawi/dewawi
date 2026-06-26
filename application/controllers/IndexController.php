@@ -45,23 +45,23 @@ class IndexController extends Zend_Controller_Action
 		$charts->createCharts(12, 750, 400, $this->view->translate('STATISTICS_UNCATEGORIZED'), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
 
 		$quotesDb = new Sales_Model_DbTable_Quote();
-		$quotes = $quotesDb->getLatestQuotes();
+		$quotes = $quotesDb->getLatestDrafts();
 		$this->view->quotes = $quotes;
 
 		$salesordersDb = new Sales_Model_DbTable_Salesorder();
-		$salesorders = $salesordersDb->getLatestSalesorders();
+		$salesorders = $salesordersDb->getLatestDrafts();
 		$this->view->salesorders = $salesorders;
 
 		$invoicesDb = new Sales_Model_DbTable_Invoice();
-		$invoices = $invoicesDb->getLatestInvoices();
+		$invoices = $invoicesDb->getLatestDrafts();
 		$this->view->invoices = $invoices;
 
 		$quoterequestsDb = new Purchases_Model_DbTable_Quoterequest();
-		$quoterequests = $quoterequestsDb->getLatestQuoterequests();
+		$quoterequests = $quoterequestsDb->getLatestDrafts();
 		$this->view->quoterequests = $quoterequests;
 
 		$purchaseordersDb = new Purchases_Model_DbTable_Purchaseorder();
-		$purchaseorders = $purchaseordersDb->getLatestPurchaseorders();
+		$purchaseorders = $purchaseordersDb->getLatestDrafts();
 		$this->view->purchaseorders = $purchaseorders;
 
 		$contactsDb = new Contacts_Model_DbTable_Contact();

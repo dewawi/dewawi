@@ -123,16 +123,29 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return $rows ? $rows->toArray() : [];
 	}
 
-	public function getLatestUnfinished(string $numberField, int $limit = 5)
+	public function getLatest(int $limit = 5, string $orderField = 'id'): array
 	{
 		$select = $this->select()
-			->where($numberField . ' IS NULL')
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->order($orderField . ' DESC')
+			->limit($limit);
+
+		return $this->fetchAll($select)->toArray();
+	}
+
+	public function getLatestDrafts(int $limit = 5): array
+	{
+		$field = $this->getDocumentNumberField();
+
+		$select = $this->select()
+			->where($field . ' IS NULL')
 			->where('clientid = ?', $this->getClientId())
 			->where('deleted = ?', 0)
 			->order('id DESC')
 			->limit($limit);
 
-		return $this->fetchAll($select);
+		return $this->fetchAll($select)->toArray();
 	}
 
 	public function create(array $data): int
@@ -511,6 +524,11 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 	public function getOrderingField(): ?string
 	{
 		return $this->orderingField;
+	}
+
+	protected function getDocumentNumberField(): string
+	{
+		return $this->_name . 'id';
 	}
 
 	public function lock(int $id): void
