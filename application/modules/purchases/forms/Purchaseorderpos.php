@@ -109,6 +109,14 @@ class Purchases_Form_Purchaseorderpos extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'pricerulemaster',
+			'type' => 'checkbox',
+			'label' => 'ITEMS_PRICE_RULES_MASTER',
+			'format' => ['type' => 'int'],
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'ordering',
 			'type' => 'select',
 			'required' => true,

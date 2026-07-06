@@ -109,29 +109,6 @@ class Purchases_Form_Quoterequestpos extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'priceruleamount',
-			'type' => 'text',
-			'label' => 'ITEMS_PRICE_RULES_AMOUNT',
-			'required' => true,
-			'format' => ['type' => 'float'],
-			'attribs' => [
-				'class' => 'number',
-			],
-			'col' => 3,
-		]);
-
-		$this->addElement([
-			'name' => 'priceruleaction',
-			'type' => 'select',
-			'label' => 'ITEMS_PRICE_RULES_APPLY',
-			'required' => true,
-			'options' => [
-				'0' => 'POSITIONS_NONE',
-			],
-			'col' => 3,
-		]);
-
-		$this->addElement([
 			'name' => 'pricerulemaster',
 			'type' => 'checkbox',
 			'label' => 'ITEMS_PRICE_RULES_MASTER',
