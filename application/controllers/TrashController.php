@@ -23,7 +23,10 @@ class TrashController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		if (!$this->getRequest()->isPost()) {
-			return;
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'MESSAGES_INVALID_REQUEST',
+			]);
 		}
 
 		$body = $this->getRequest()->getRawBody();
@@ -40,7 +43,10 @@ class TrashController extends Zend_Controller_Action
 		$controller = strtolower((string)($data['controller'] ?? ''));
 
 		if ($module === '' || $controller === '') {
-			throw new Zend_Controller_Exception('Module or controller not specified.');
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'MESSAGES_INVALID_REQUEST',
+			]);
 		}
 
 		$targetModule = ucfirst($module);
@@ -83,14 +89,23 @@ class TrashController extends Zend_Controller_Action
 		$commentDb = $isContactController ? new Application_Model_DbTable_Comment() : null;
 		$tagModel = $isContactController ? new Contacts_Model_Get() : null;
 
+		$deletedIds = [];
+		$blockedIds = [];
+
 		foreach ($ids as $id) {
 			if ($id <= 0) {
 				continue;
 			}
 
-			// Delete main record
-			if (!method_exists($mainModel, 'deleteById')) {
-				throw new Zend_Controller_Exception("Model {$modelClass} must implement deleteById().");
+			$row = $mainModel->getById($id);
+
+			if (!$row) {
+				continue;
+			}
+
+			if (!$mainModel->canDelete($row)) {
+				$blockedIds[] = $id;
+				continue;
 			}
 
 			$mainModel->deleteById($id);
@@ -177,8 +192,29 @@ class TrashController extends Zend_Controller_Action
 					$tagModel->deleteTags('contacts', 'contact', $id);
 				}
 			}
+
+			$deletedIds[] = $id;
 		}
 
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+		if ($blockedIds) {
+			$this->_flashMessenger->addMessage(
+				'MESSAGES_' . strtoupper($controller) . '_CANNOT_BE_DELETED'
+			);
+		}
+
+		if ($deletedIds) {
+			$this->_flashMessenger->addMessage(
+				'MESSAGES_SUCCESFULLY_DELETED'
+			);
+		}
+
+		return $this->_helper->json([
+			'ok' => !$blockedIds,
+			'deletedIds' => $deletedIds,
+			'blockedIds' => $blockedIds,
+			'message' => $blockedIds
+				? 'MESSAGES_' . strtoupper($controller) . '_CANNOT_BE_DELETED'
+				: 'MESSAGES_SUCCESFULLY_DELETED',
+		]);
 	}
 }

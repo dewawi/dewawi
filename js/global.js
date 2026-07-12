@@ -966,7 +966,6 @@ function trash(ids, message, type, cmodule) {
 	if (!answer) return;
 
 	if(action == 'add') {
-		//$('div#'+type+id).remove();
 		ids.forEach(function(singleId) {
 			$('div#' + type + singleId).remove();
 		});
@@ -984,7 +983,6 @@ function trash(ids, message, type, cmodule) {
 			cache: false,
 			success: function(data){
 				if(action == 'edit') {
-					//$('div#'+type+id).remove();
 					ids.forEach(function(singleId) {
 						$('div#' + type + singleId).remove();
 					});
@@ -1000,7 +998,6 @@ function trash(ids, message, type, cmodule) {
 					if(type == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
 				} else {
 					search();
-					console.log('Deleted successfully');
 				}
 			}
 		});
@@ -1029,7 +1026,6 @@ function deleteAttachment(ids, message, type, cmodule) {
 		}),
 		cache: false,
 		success: function(data){
-			//$('div#'+type+id).remove();
 			ids.forEach(function(singleId) {
 				$('div#' + type + singleId).remove();
 			});

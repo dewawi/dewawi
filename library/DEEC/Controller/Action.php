@@ -702,6 +702,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			}
 
 			if (!$this->canDeleteRow($row)) {
+				$this->_flashMessenger->addMessage($this->getDeleteNotAllowedMessage());
 				continue;
 			}
 
@@ -737,11 +738,18 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 	protected function canDeleteRow(array $row): bool
 	{
-		return true;
+		return $this->getDb()->canDelete($row);
 	}
 
 	protected function afterDelete(int $id, array $row): void
 	{
+	}
+
+	protected function getDeleteNotAllowedMessage(): string
+	{
+		return 'MESSAGES_'
+			. strtoupper($this->getRequest()->getControllerName())
+			. '_CANNOT_BE_DELETED';
 	}
 
 	protected function getDeleteHasChildrenMessage(): string

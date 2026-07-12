@@ -292,6 +292,16 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return $data;
 	}
 
+	public function isDraft(array $row): bool
+	{
+		return empty($row[$this->getDocumentNumberField()]);
+	}
+
+	public function canDelete(array $row): bool
+	{
+		return $this->isDraft($row);
+	}
+
 	public function deleteById(int $id): void
 	{
 		$this->deleteByIds([$id]);
