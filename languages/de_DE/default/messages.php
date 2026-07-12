@@ -6,6 +6,7 @@
 	'MESSAGES_SUCCESFULLY_COPIED' => 'Der Eintrag wurde erfolgreich kopiert!',
 	'MESSAGES_SUCCESFULLY_DELETED' => 'Der Eintrag wurde erfolgreich gelöscht!',
 	'MESSAGES_SUCCESFULLY_CANCELLED' => 'Der Eintrag wurde erfolgreich storniert!',
+	'MESSAGES_CANNOT_BE_DELETED' => 'Dieser Datensatz kann nicht gelöscht werden.',
 	'MESSAGES_FORM_IS_INVALID' => 'Das Formular ist ungültig.',
 	'MESSAGES_NO_ITEM_FOUND' => 'Artikel <b>%s</b> konnte nicht gefunden werden.',
 	'MESSAGES_CONTACT_NOT_FOUND' => 'Kontakt konnte nicht gefunden werden.',

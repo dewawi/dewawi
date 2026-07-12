@@ -197,15 +197,11 @@ class TrashController extends Zend_Controller_Action
 		}
 
 		if ($blockedIds) {
-			$this->_flashMessenger->addMessage(
-				'MESSAGES_' . strtoupper($controller) . '_CANNOT_BE_DELETED'
-			);
+			$this->_flashMessenger->addMessage('MESSAGES_CANNOT_BE_DELETED');
 		}
 
 		if ($deletedIds) {
-			$this->_flashMessenger->addMessage(
-				'MESSAGES_SUCCESFULLY_DELETED'
-			);
+			$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 		}
 
 		return $this->_helper->json([
@@ -213,7 +209,7 @@ class TrashController extends Zend_Controller_Action
 			'deletedIds' => $deletedIds,
 			'blockedIds' => $blockedIds,
 			'message' => $blockedIds
-				? 'MESSAGES_' . strtoupper($controller) . '_CANNOT_BE_DELETED'
+				? 'MESSAGES_CANNOT_BE_DELETED'
 				: 'MESSAGES_SUCCESFULLY_DELETED',
 		]);
 	}
