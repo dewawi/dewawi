@@ -448,12 +448,12 @@ class Items_ItemController extends DEEC_Controller_Action
 									}
 								}*/
 
-								//Create slug
-								if(isset($map['shopid'])) {
-									if(isset($datacsv[$map['shopid']]) && is_numeric($datacsv[$map['shopid']]) && $datacsv[$map['shopid']] > 0) {
-										$slugDb = new Admin_Model_DbTable_Slug();
-										$slugDb->deleteSlug('shops', 'item', $updateData['shopid'], $item['id']);
-										//$slugDb->addSlug('shops', 'item', $updateData['shopid'], $updateData['shopcatid'], $item['id'], $this->slugify($item['sku']));
+								// Create slug
+								$createShopSlug = false;
+
+								if (isset($map['shopid'])) {
+									if (isset($datacsv[$map['shopid']]) && is_numeric($datacsv[$map['shopid']]) && $datacsv[$map['shopid']] > 0 && !empty($updateData['shopcatid'])) {
+										$createShopSlug = true;
 									} else {
 										$updateData['shopid'] = 0;
 									}
@@ -461,6 +461,11 @@ class Items_ItemController extends DEEC_Controller_Action
 
 								$itemid = $itemDb->addItem($updateData);
 								++$rowsCreated;
+
+								if ($createShopSlug) {
+									$slugDb = new Admin_Model_DbTable_Slug();
+									$slugDb->addSlug('shops', 'item', $updateData['shopid'], $updateData['shopcatid'], $itemid, $this->slugify($updateData['sku']));
+								}
 
 								if(isset($map['ebayuserid'])) {
 									if($datacsv[$map['ebayuserid']] == 0) {
