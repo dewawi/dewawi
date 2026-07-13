@@ -73,6 +73,19 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return $row ? $row->toArray() : null;
 	}
 
+	public function getByUserId(int $userId): ?array
+	{
+		$select = $this->select()
+			->where('userid = ?', $userId)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->limit(1);
+
+		$row = $this->fetchRow($select);
+
+		return $row ? $row->toArray() : null;
+	}
+
 	public function getByParentId(int $parentid, string $module, string $controller): array
 	{
 		$select = $this->select()

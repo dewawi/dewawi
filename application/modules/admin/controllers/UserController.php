@@ -11,138 +11,77 @@ class Admin_UserController extends DEEC_Controller_AdminAction
 		]);
 	}
 
-	public function addAction()
+	protected function getCreateData(): array
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$form = new Admin_Form_User();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			$data = $request->getPost();
-			if($form->isValid($data)) {
-				$userDb = new Admin_Model_DbTable_User();
-				// Use password_hash instead of md5
-				$data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-				$id = $userDb->addUser($data);
-
-				// Add permissions row
-				$permissionDb = new Admin_Model_DbTable_Permission();
-				$permissions = [
-					'default' => [
-						"index" => ["view"],
-						"comment" => ["add", "edit", "view", "delete"]
-					],
-					'contacts' => [
-						"contact" => ["add", "edit", "view", "delete"],
-						"email" => ["add", "edit", "view", "delete"]
-					],
-					'items' => [
-						"item" => ["add", "edit", "view", "delete"],
-						"ledger" => ["add", "edit", "view", "delete"],
-						"pricerule" => ["add", "edit", "view", "delete"]
-					],
-					'processes' => [
-						"process" => ["add", "edit", "view", "delete"]
-					],
-					'purchases' => [
-						"quoterequest" => ["add", "edit", "view", "delete"],
-						"purchaseorder" => ["add", "edit", "view", "delete"]
-					],
-					'sales' => [
-						"quote" => ["add", "edit", "view", "delete"],
-						"salesorder" => ["add", "edit", "view", "delete"],
-						"deliveryorder" => ["add", "edit", "view", "delete"],
-						"invoice" => ["add", "edit", "view", "delete"],
-						"creditnote" => ["add", "edit", "view", "delete"],
-						"reminder" => ["add", "edit", "view", "delete"]
-					],
-					'statistics' => [
-						"turnover" => ["view"],
-						"customer" => ["view"],
-						"quote" => ["view"]
-					]
-				];
-				$permissionsJson = [];
-				foreach ($permissions as $key => $value) {
-					$permissionsJson[$key] = json_encode($value);
-				}
-				$permissionsJson['userid'] = $id;
-				$permissionDb->addPermission($permissionsJson);
-
-				echo Zend_Json::encode($userDb->getUser($id));
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
-		}
+		return [
+			'username' => 'new-user-' . date('YmdHis'),
+			'password' => password_hash(
+				bin2hex(random_bytes(16)),
+				PASSWORD_DEFAULT
+			),
+			'email' => '',
+			//'language' => (string)($this->_user['language'] ?? 'de'),
+			'activated' => 0,
+		];
 	}
 
-	public function editAction()
+	protected function afterCreate(int $id, array $data): void
 	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+		$permissions = [
+			'userid' => $id,
+		];
 
-		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
+		foreach ($this->getDefaultPermissions() as $module => $controllers) {
+			$permissions[$module] = json_encode($controllers);
+		}
 
-		$userDb = new Admin_Model_DbTable_User();
-		$user = $userDb->getUser($id);
+		$permissionDb = new Admin_Model_DbTable_Permission();
+		$permissionDb->create($permissions);
+	}
 
-		if($this->isLocked($user['locked'], $user['lockedtime'])) {
-			if($request->isPost()) {
-				header('Content-type: application/json');
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_LOCKED')));
+	protected function prepareEditRow(array $row): array
+	{
+		$row['password'] = '';
+
+		return $row;
+	}
+
+	protected function beforeEditSave(array $values, array $row): array {
+		if (array_key_exists('password', $values)) {
+			$password = trim((string)$values['password']);
+
+			if ($password === '') {
+				unset($values['password']);
 			} else {
-				$this->_flashMessenger->addMessage('MESSAGES_LOCKED');
-				$this->_helper->redirector('index');
-			}
-		} else {
-			$userDb->lock($id);
-
-			$form = new Admin_Form_User();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			if($request->isPost()) {
-				$data = $request->getPost();
-				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
-					if(isset($data['password']) && $data['password']) {
-						$data['password'] = md5($data['password']);
-					}
-					$userDb = new Admin_Model_DbTable_User();
-					$userDb->updateUser($id, $data);
-					$response = $userDb->getUser($id);
-					$response['password'] = '******';
-					echo Zend_Json::encode($response);
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
+				$values['password'] = password_hash(
+					$password,
+					PASSWORD_DEFAULT
+				);
 			}
 		}
-		$this->view->messages = $this->_flashMessenger->getMessages();
+
+		return $values;
 	}
 
 	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
 	{
 		$permissionDb = new Admin_Model_DbTable_Permission();
-		$permissions = $permissionDb->getPermissionByUserID($oldId);
+		$permission = $permissionDb->getByUserId($oldId);
 
-		unset($permissions['id']);
+		if (!$permission) {
+			return;
+		}
 
-		$permissions['userid'] = $newId;
-		$permissions['modified'] = null;
-		$permissions['modifiedby'] = 0;
-		$permissions['locked'] = 0;
-		$permissions['lockedtime'] = null;
+		$newPermissionId = $permissionDb->copyById(
+			(int)$permission['id']
+		);
 
-		$permissionDb->addPermission($permissions);
+		$permissionDb->updateById(
+			$newPermissionId,
+			[
+				'userid' => $newId,
+			]
+		);
 	}
 
 	protected function canDeleteRow(array $row): bool
@@ -153,5 +92,58 @@ class Admin_UserController extends DEEC_Controller_AdminAction
 		}
 
 		return true;
+	}
+
+	protected function afterDelete(int $id, array $row): void
+	{
+		$permissionDb = new Admin_Model_DbTable_Permission();
+		$permission = $permissionDb->getByUserId($id);
+
+		if (!$permission) {
+			return;
+		}
+
+		$permissionDb->deleteById(
+			(int)$permission['id']
+		);
+	}
+
+	private function getDefaultPermissions(): array
+	{
+		return [
+			'default' => [
+				'index' => ['view'],
+				'comment' => ['add', 'edit', 'view', 'delete'],
+			],
+			'contacts' => [
+				'contact' => ['add', 'edit', 'view', 'delete'],
+				'email' => ['add', 'edit', 'view', 'delete'],
+			],
+			'items' => [
+				'item' => ['add', 'edit', 'view', 'delete'],
+				'ledger' => ['add', 'edit', 'view', 'delete'],
+				'pricerule' => ['add', 'edit', 'view', 'delete'],
+			],
+			'processes' => [
+				'process' => ['add', 'edit', 'view', 'delete'],
+			],
+			'purchases' => [
+				'quoterequest' => ['add', 'edit', 'view', 'delete'],
+				'purchaseorder' => ['add', 'edit', 'view', 'delete'],
+			],
+			'sales' => [
+				'quote' => ['add', 'edit', 'view', 'delete'],
+				'salesorder' => ['add', 'edit', 'view', 'delete'],
+				'deliveryorder' => ['add', 'edit', 'view', 'delete'],
+				'invoice' => ['add', 'edit', 'view', 'delete'],
+				'creditnote' => ['add', 'edit', 'view', 'delete'],
+				'reminder' => ['add', 'edit', 'view', 'delete'],
+			],
+			'statistics' => [
+				'turnover' => ['view'],
+				'customer' => ['view'],
+				'quote' => ['view'],
+			],
+		];
 	}
 }

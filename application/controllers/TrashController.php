@@ -89,6 +89,10 @@ class TrashController extends Zend_Controller_Action
 		$commentDb = $isContactController ? new Application_Model_DbTable_Comment() : null;
 		$tagModel = $isContactController ? new Contacts_Model_Get() : null;
 
+		// Permissions delete
+		$isUserController = ($module === 'admin' && $controller === 'user');
+		$permissionDb = $isUserController ? new Admin_Model_DbTable_Permission() : null;
+
 		$deletedIds = [];
 		$blockedIds = [];
 
@@ -190,6 +194,16 @@ class TrashController extends Zend_Controller_Action
 				// Tags: adjust to your actual tag deletion API
 				if ($tagModel && method_exists($tagModel, 'deleteTags')) {
 					$tagModel->deleteTags('contacts', 'contact', $id);
+				}
+			}
+
+			if ($permissionDb) {
+				$permission = $permissionDb->getByUserId($id);
+
+				if ($permission) {
+					$permissionDb->deleteById(
+						(int)$permission['id']
+					);
 				}
 			}
 
