@@ -263,35 +263,35 @@ echo $this->Messages();
 									</thead>
 									<tbody>
 										<?php foreach ($this->quotes as $quote) : ?>
-											<tr class="dw-row state<?php echo (int)$quote->state; ?>">
+											<tr class="dw-row state<?php echo (int)$quote['state']; ?>">
 												<td class="dw-col-id">
-													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id)); ?>">
-														<?php echo $this->escape($quote->id); ?>
+													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote['id'])); ?>">
+														<?php echo $this->escape($quote['id']); ?>
 													</a>
 												</td>
 												<td class="dw-col-title">
-													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote->id)); ?>">
-														<?php echo $quote->title ? $this->escape($quote->title) : $this->escape($quote->id); ?>
+													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'quote', 'action'=>'edit', 'id'=>$quote['id'])); ?>">
+														<?php echo $quote['title'] ? $this->escape($quote['title']) : $this->escape($quote['id']); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact-id">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid)); ?>">
-														<?php echo $this->escape($quote->contactid); ?>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote['contactid'])); ?>">
+														<?php echo $this->escape($quote['contactid']); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote->contactid)); ?>">
-														<div><?php echo $this->escape($quote->billingname1); ?></div>
-														<?php if ($quote->billingname2) : ?>
-															<div><?php echo $this->escape($quote->billingname2); ?></div>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quote['contactid'])); ?>">
+														<div><?php echo $this->escape($quote['billingname1']); ?></div>
+														<?php if ($quote['billingname2']) : ?>
+															<div><?php echo $this->escape($quote['billingname2']); ?></div>
 														<?php endif; ?>
 													</a>
 												</td>
 												<td class="dw-col-date">
-													<?php echo $this->escape(date('d.m.Y', strtotime($quote->modified))); ?>
+													<?php echo $this->escape(date('d.m.Y', strtotime($quote['modified']))); ?>
 												</td>
 												<td class="dw-col-state">
-													<?php echo $this->translate($this->escape($this->states[$quote->state])); ?>
+													<?php echo $this->translate($this->escape($this->states[$quote['state']])); ?>
 												</td>
 												<td class="dw-col-actions">
 													<div class="dw-row-actions">
@@ -334,33 +334,33 @@ echo $this->Messages();
 										<?php foreach ($this->salesorders as $salesorder) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'edit', 'id'=>$salesorder->id)); ?>">
-														<?php echo $this->escape($salesorder->id); ?>
+													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'edit', 'id'=>$salesorder['id'])); ?>">
+														<?php echo $this->escape($salesorder['id']); ?>
 													</a>
 												</td>
 												<td class="dw-col-title">
-													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'edit', 'id'=>$salesorder->id)); ?>">
-														<?php echo $salesorder->title ? $this->escape($salesorder->title) : $this->escape($salesorder->id); ?>
+													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'salesorder', 'action'=>'edit', 'id'=>$salesorder['id'])); ?>">
+														<?php echo $salesorder['title'] ? $this->escape($salesorder['title']) : $this->escape($salesorder['id']); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact-id">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder->contactid)); ?>">
-														<?php echo $this->escape($salesorder->contactid); ?>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder['contactid'])); ?>">
+														<?php echo $this->escape($salesorder['contactid']); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder->contactid)); ?>">
-														<div><?php echo $this->escape($salesorder->billingname1); ?></div>
-														<?php if ($salesorder->billingname2) : ?>
-															<div><?php echo $this->escape($salesorder->billingname2); ?></div>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$salesorder['contactid'])); ?>">
+														<div><?php echo $this->escape($salesorder['billingname1']); ?></div>
+														<?php if ($salesorder['billingname2']) : ?>
+															<div><?php echo $this->escape($salesorder['billingname2']); ?></div>
 														<?php endif; ?>
 													</a>
 												</td>
 												<td class="dw-col-date">
-													<?php echo $this->escape(date('d.m.Y', strtotime($salesorder->modified))); ?>
+													<?php echo $this->escape(date('d.m.Y', strtotime($salesorder['modified']))); ?>
 												</td>
 												<td class="dw-col-state">
-													<?php echo $this->translate($this->escape($this->states[$salesorder->state])); ?>
+													<?php echo $this->translate($this->escape($this->states[$salesorder['state']])); ?>
 												</td>
 												<td class="dw-col-actions">
 													<div class="dw-row-actions">
@@ -403,33 +403,33 @@ echo $this->Messages();
 										<?php foreach ($this->invoices as $invoice) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id)); ?>">
-														<?php echo $this->escape($invoice->id); ?>
+													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice['id'])); ?>">
+														<?php echo $this->escape($invoice['id']); ?>
 													</a>
 												</td>
 												<td class="dw-col-title">
-													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice->id)); ?>">
-														<?php echo $invoice->title ? $this->escape($invoice->title) : $this->translate('INVOICE') . ' ' . $this->escape($invoice->invoiceid); ?>
+													<a href="<?php echo $this->url(array('module'=>'sales', 'controller'=>'invoice', 'action'=>'edit', 'id'=>$invoice['id'])); ?>">
+														<?php echo $invoice['title'] ? $this->escape($invoice['title']) : $this->translate('INVOICE') . ' ' . $this->escape($invoice->invoiceid); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact-id">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->contactid)); ?>">
-														<?php echo $this->escape($invoice->contactid); ?>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice['contactid'])); ?>">
+														<?php echo $this->escape($invoice['contactid']); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice->contactid)); ?>">
-														<div><?php echo $this->escape($invoice->billingname1); ?></div>
-														<?php if ($invoice->billingname2) : ?>
-															<div><?php echo $this->escape($invoice->billingname2); ?></div>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$invoice['contactid'])); ?>">
+														<div><?php echo $this->escape($invoice['billingname1']); ?></div>
+														<?php if ($invoice['billingname2']) : ?>
+															<div><?php echo $this->escape($invoice['billingname2']); ?></div>
 														<?php endif; ?>
 													</a>
 												</td>
 												<td class="dw-col-date">
-													<?php echo $this->escape(date('d.m.Y', strtotime($invoice->modified))); ?>
+													<?php echo $this->escape(date('d.m.Y', strtotime($invoice['modified']))); ?>
 												</td>
 												<td class="dw-col-state">
-													<?php echo $this->translate($this->escape($this->states[$invoice->state])); ?>
+													<?php echo $this->translate($this->escape($this->states[$invoice['state']])); ?>
 												</td>
 												<td class="dw-col-actions">
 													<div class="dw-row-actions">
@@ -472,33 +472,33 @@ echo $this->Messages();
 										<?php foreach ($this->quoterequests as $quoterequest) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
-														<?php echo $this->escape($quoterequest->id); ?>
+													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest['id'])); ?>">
+														<?php echo $this->escape($quoterequest['id']); ?>
 													</a>
 												</td>
 												<td class="dw-col-title">
-													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest->id)); ?>">
-														<?php echo $quoterequest->title ? $this->escape($quoterequest->title) : $this->escape($quoterequest->id); ?>
+													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'quoterequest', 'action'=>'edit', 'id'=>$quoterequest['id'])); ?>">
+														<?php echo $quoterequest['title'] ? $this->escape($quoterequest['title']) : $this->escape($quoterequest['id']); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact-id">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->contactid)); ?>">
-														<?php echo $this->escape($quoterequest->contactid); ?>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest['contactid'])); ?>">
+														<?php echo $this->escape($quoterequest['contactid']); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest->contactid)); ?>">
-														<div><?php echo $this->escape($quoterequest->billingname1); ?></div>
-														<?php if ($quoterequest->billingname2) : ?>
-															<div><?php echo $this->escape($quoterequest->billingname2); ?></div>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$quoterequest['contactid'])); ?>">
+														<div><?php echo $this->escape($quoterequest['billingname1']); ?></div>
+														<?php if ($quoterequest['billingname2']) : ?>
+															<div><?php echo $this->escape($quoterequest['billingname2']); ?></div>
 														<?php endif; ?>
 													</a>
 												</td>
 												<td class="dw-col-date">
-													<?php echo $this->escape(date('d.m.Y', strtotime($quoterequest->modified))); ?>
+													<?php echo $this->escape(date('d.m.Y', strtotime($quoterequest['modified']))); ?>
 												</td>
 												<td class="dw-col-state">
-													<?php echo $this->translate($this->escape($this->states[$quoterequest->state])); ?>
+													<?php echo $this->translate($this->escape($this->states[$quoterequest['state']])); ?>
 												</td>
 												<td class="dw-col-actions">
 													<div class="dw-row-actions">
@@ -541,33 +541,33 @@ echo $this->Messages();
 										<?php foreach ($this->purchaseorders as $purchaseorder) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id)); ?>">
-														<?php echo $this->escape($purchaseorder->id); ?>
+													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder['id'])); ?>">
+														<?php echo $this->escape($purchaseorder['id']); ?>
 													</a>
 												</td>
 												<td class="dw-col-title">
-													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder->id)); ?>">
-														<?php echo $purchaseorder->title ? $this->escape($purchaseorder->title) : $this->escape($purchaseorder->id); ?>
+													<a href="<?php echo $this->url(array('module'=>'purchases', 'controller'=>'purchaseorder', 'action'=>'edit', 'id'=>$purchaseorder['id'])); ?>">
+														<?php echo $purchaseorder['title'] ? $this->escape($purchaseorder['title']) : $this->escape($purchaseorder['id']); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact-id">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder->contactid)); ?>">
-														<?php echo $this->escape($purchaseorder->contactid); ?>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder['contactid'])); ?>">
+														<?php echo $this->escape($purchaseorder['contactid']); ?>
 													</a>
 												</td>
 												<td class="dw-col-contact">
-													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder->contactid)); ?>">
-														<div><?php echo $this->escape($purchaseorder->billingname1); ?></div>
-														<?php if ($purchaseorder->billingname2) : ?>
-															<div><?php echo $this->escape($purchaseorder->billingname2); ?></div>
+													<a href="<?php echo $this->url(array('module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$purchaseorder['contactid'])); ?>">
+														<div><?php echo $this->escape($purchaseorder['billingname1']); ?></div>
+														<?php if ($purchaseorder['billingname2']) : ?>
+															<div><?php echo $this->escape($purchaseorder['billingname2']); ?></div>
 														<?php endif; ?>
 													</a>
 												</td>
 												<td class="dw-col-date">
-													<?php echo $this->escape(date('d.m.Y', strtotime($purchaseorder->modified))); ?>
+													<?php echo $this->escape(date('d.m.Y', strtotime($purchaseorder['modified']))); ?>
 												</td>
 												<td class="dw-col-state">
-													<?php echo $this->translate($this->escape($this->states[$purchaseorder->state])); ?>
+													<?php echo $this->translate($this->escape($this->states[$purchaseorder['state']])); ?>
 												</td>
 												<td class="dw-col-actions">
 													<div class="dw-row-actions">
