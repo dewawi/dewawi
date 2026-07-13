@@ -2,25 +2,6 @@
 
 class Admin_PermissionController extends DEEC_Controller_AdminAction
 {
-	protected function buildIndexView(): void
-	{
-		$modules = $this->getPermissionModules();
-
-		$list = $this->buildListView([
-			'viewKey' => 'permissions',
-			'list' => 'Admin_Model_List_Permissions',
-			'entity' => Admin_Model_Entity_Permission::listConfig(),
-		]);
-
-		$list->configure([
-			'context' => array_merge($list->getContext(), [
-				'modules' => $modules,
-			]),
-		]);
-
-		$this->view->modules = $modules;
-	}
-
 	protected function beforeEditSave(array $values, array $row): array {
 		$request = $this->getRequest();
 

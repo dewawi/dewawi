@@ -11,6 +11,26 @@ class Admin_UserController extends DEEC_Controller_AdminAction
 		]);
 	}
 
+	protected function prepareEditRow(array $row): array
+	{
+		$row['password'] = '';
+
+		return $row;
+	}
+
+	protected function buildEditViewModel(int $id, array $row): array
+	{
+		$permissionDb = new Admin_Model_DbTable_Permission();
+		$permission = $permissionDb->getByUserId($id);
+
+		return [
+			'permission' => $permission
+				? $this->decodePermissions($permission)
+				: null,
+			'permissionModules' => $this->getPermissionModules(),
+		];
+	}
+
 	protected function getCreateData(): array
 	{
 		return [
@@ -37,13 +57,6 @@ class Admin_UserController extends DEEC_Controller_AdminAction
 
 		$permissionDb = new Admin_Model_DbTable_Permission();
 		$permissionDb->create($permissions);
-	}
-
-	protected function prepareEditRow(array $row): array
-	{
-		$row['password'] = '';
-
-		return $row;
 	}
 
 	protected function beforeEditSave(array $values, array $row): array {
@@ -144,6 +157,36 @@ class Admin_UserController extends DEEC_Controller_AdminAction
 				'customer' => ['view'],
 				'quote' => ['view'],
 			],
+		];
+	}
+
+	private function decodePermissions(array $permission): array
+	{
+		foreach ($this->getPermissionModules() as $module) {
+			$decoded = json_decode(
+				(string)($permission[$module] ?? ''),
+				true
+			);
+
+			$permission[$module] = is_array($decoded)
+				? $decoded
+				: [];
+		}
+
+		return $permission;
+	}
+
+	private function getPermissionModules(): array
+	{
+		return [
+			'default',
+			'calendar',
+			'contacts',
+			'items',
+			'processes',
+			'purchases',
+			'sales',
+			'statistics',
 		];
 	}
 }

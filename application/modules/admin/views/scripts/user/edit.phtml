@@ -1,0 +1,32 @@
+<?php
+
+$this->title = $this->form->getValue('username');
+$this->headTitle($this->title);
+echo $this->TinyMCE();
+echo $this->FileManager();
+
+$permissionHtml = '';
+
+if ($this->permission) {
+	$permissionHtml = $this->partial(
+		'user/permissions.phtml',
+		[
+			'permission' => $this->permission,
+			'modules' => $this->permissionModules,
+		]
+	);
+}
+
+echo $this->form->renderForm([
+	'id' => 'user',
+	'activeTab' => $this->activeTab,
+	'tabs' => [
+		'overview' => [
+			'title' => 'TABS_OVERVIEW',
+		],
+		'permissions' => [
+			'title' => 'ADMIN_PERMISSIONS',
+			'html' => $permissionHtml,
+		],
+	],
+]);

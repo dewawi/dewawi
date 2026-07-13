@@ -40,7 +40,6 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 		<h4><?php echo $this->view->translate('ADMIN_USERS'); ?></h4>
 		<ul>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'user', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_USERS'); ?></a></li>
-			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'permission', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_PERMISSIONS'); ?></a></li>
 		</ul>
 		<h4><?php echo $this->view->translate('ADMIN_DESIGN'); ?></h4>
 		<ul>
