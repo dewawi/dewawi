@@ -5,39 +5,6 @@ class Admin_Model_DbTable_Permission extends DEEC_Model_DbTable_Entity
 
 	protected $_name = 'permission';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_client = null;
-
-	public function init()
-	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
-	}
-
-	public function getPermission($id)
-	{
-		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
-		if (!$row) {
-			throw new Exception("Could not find row $id");
-		}
-		return $row->toArray();
-	}
-
-	public function getPermissionByUserID($userid)
-	{
-		$userid = (int)$userid;
-		$row = $this->fetchRow('userid = ' . $userid);
-		if (!$row) {
-			throw new Exception("Could not find row $userid");
-		}
-		return $row->toArray();
-	}
-
 	public function getPermissions()
 	{
 		$where = array();
@@ -56,28 +23,5 @@ class Admin_Model_DbTable_Permission extends DEEC_Model_DbTable_Entity
 			$permissions[$id] = $permission;
 		}
 		return $permissions;
-	}
-
-	public function addPermission($data)
-	{
-		$data['created'] = $this->_date;
-		$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_client['id'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
-	}
-
-	public function updatePermission($id, $data)
-	{
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function deletePermission($id)
-	{
-		$data = array();
-		$data['deleted'] = 1;
-		$this->update($data, 'id =' . (int)$id);
 	}
 }
