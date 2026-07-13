@@ -7,70 +7,93 @@ $actions = [
 	'delete' => 'ADMIN_DELETE',
 ];
 
-$permissionId = (int)$this->permission['id'];
+$permissionId = (int)($this->permission['id'] ?? 0);
 ?>
 
-<div class="dw-permissions">
-	<?php foreach ($this->modules as $module): ?>
-		<?php
-		$controllers = $this->permission[$module] ?? [];
+<form id="permission-form" method="post">
+	<div class="dw-permissions">
+		<?php foreach ($this->modules as $module): ?>
+			<?php
+			$controllers = $this->permission[$module] ?? [];
 
-		if (!is_array($controllers) || !$controllers) {
-			continue;
-		}
-		?>
+			if (!is_array($controllers) || !$controllers) {
+				continue;
+			}
+			?>
 
-		<section class="dw-permission-module">
-			<h3><?php echo $this->escape(strtoupper($module)); ?></h3>
+			<section class="dw-card dw-permission-module">
+				<h3 class="dw-card__title">
+					<?php echo $this->escape(strtoupper($module)); ?>
+				</h3>
 
-			<div class="dw-permission-table">
-				<div class="dw-permission-row dw-permission-header">
-					<div class="dw-permission-controller">
-						<?php echo $this->translate('ADMIN_CONTROLLER'); ?>
-					</div>
+				<div class="dw-table-wrap">
+					<table class="dw-table dw-permission-table">
+						<thead>
+							<tr>
+								<th class="dw-permission-controller">
+									<?php echo $this->translate('ADMIN_CONTROLLER'); ?>
+								</th>
 
-					<?php foreach ($actions as $label): ?>
-						<div class="dw-permission-action">
-							<?php echo $this->translate($label); ?>
-						</div>
-					<?php endforeach; ?>
+								<th class="dw-permission-action">
+									<?php echo $this->translate('ADMIN_ADD'); ?>
+								</th>
+
+								<th class="dw-permission-action">
+									<?php echo $this->translate('ADMIN_EDIT'); ?>
+								</th>
+
+								<th class="dw-permission-action">
+									<?php echo $this->translate('ADMIN_VIEW'); ?>
+								</th>
+
+								<th class="dw-permission-action">
+									<?php echo $this->translate('ADMIN_DELETE'); ?>
+								</th>
+							</tr>
+						</thead>
+
+						<tbody>
+							<?php foreach ($controllers as $controller => $enabledActions): ?>
+								<tr>
+									<td class="dw-permission-controller">
+										<?php echo $this->escape($controller); ?>
+									</td>
+
+									<?php foreach (['add', 'edit', 'view', 'delete'] as $action): ?>
+										<?php
+										$checked = in_array(
+											$action,
+											(array)$enabledActions,
+											true
+										);
+
+										$name = implode('__', [
+											$module,
+											$controller,
+											$action,
+										]);
+										?>
+
+										<td class="dw-permission-action">
+											<label class="dw-checkbox dw-permission-checkbox">
+												<input
+													type="checkbox"
+													name="<?php echo $this->escape($name); ?>"
+													data-module="admin"
+													data-controller="permission"
+													data-id="<?php echo (int)$this->permission['id']; ?>"
+													value="1"
+													<?php echo $checked ? 'checked="checked"' : ''; ?>
+												>
+											</label>
+										</td>
+									<?php endforeach; ?>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
 				</div>
-
-				<?php foreach ($controllers as $controller => $enabledActions): ?>
-					<div class="dw-permission-row">
-						<div class="dw-permission-controller">
-							<?php echo $this->escape($controller); ?>
-						</div>
-
-						<?php foreach ($actions as $action => $label): ?>
-							<?php
-							$checked = in_array(
-								$action,
-								(array)$enabledActions,
-								true
-							);
-							?>
-
-							<div class="dw-permission-action">
-								<input
-									type="checkbox"
-									class="editable"
-									name="<?php echo $this->escape($action); ?>"
-									data-name="<?php echo $this->escape($action); ?>"
-									data-module="admin"
-									data-controller="permission"
-									data-id="<?php echo $permissionId; ?>"
-									data-element="<?php echo $this->escape($action); ?>"
-									data-permission-module="<?php echo $this->escape($module); ?>"
-									data-permission-controller="<?php echo $this->escape($controller); ?>"
-									value="1"
-									<?php echo $checked ? 'checked="checked"' : ''; ?>
-								>
-							</div>
-						<?php endforeach; ?>
-					</div>
-				<?php endforeach; ?>
-			</div>
-		</section>
-	<?php endforeach; ?>
-</div>
+			</section>
+		<?php endforeach; ?>
+	</div>
+</form>

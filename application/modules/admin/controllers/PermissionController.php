@@ -2,12 +2,26 @@
 
 class Admin_PermissionController extends DEEC_Controller_AdminAction
 {
-	protected function beforeEditSave(array $values, array $row): array {
-		$request = $this->getRequest();
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		if (count($values) !== 1) {
+			throw new InvalidArgumentException(
+				'Invalid permission request'
+			);
+		}
 
-		$module = (string)$request->getPost('module', '');
-		$controller = (string)$request->getPost('controller', '');
-		$permission = (string)$request->getPost('element', '');
+		$field = (string)array_key_first($values);
+		$enabled = !empty($values[$field]);
+
+		$parts = explode('__', $field, 3);
+
+		if (count($parts) !== 3) {
+			throw new InvalidArgumentException(
+				'Invalid permission field'
+			);
+		}
+
+		[$module, $controller, $permission] = $parts;
 
 		if (
 			!in_array($module, $this->getPermissionModules(), true)
@@ -39,10 +53,9 @@ class Admin_PermissionController extends DEEC_Controller_AdminAction
 			$controllerPermissions = [];
 		}
 
-		$enabled = !empty($values[$permission]);
-
 		if ($enabled) {
 			$controllerPermissions[] = $permission;
+
 			$controllerPermissions = array_values(
 				array_unique($controllerPermissions)
 			);
@@ -66,6 +79,8 @@ class Admin_PermissionController extends DEEC_Controller_AdminAction
 	protected function getPermissionModules(): array
 	{
 		return [
+			'default',
+			'calendar',
 			'contacts',
 			'items',
 			'processes',
