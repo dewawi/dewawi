@@ -956,6 +956,14 @@ function collectToolbarData() {
 			return;
 		}
 
+		if ($field.is(':radio')) {
+			if ($field.is(':checked')) {
+				data[name] = $field.val();
+			}
+
+			return;
+		}
+
 		if ($field.is(':checkbox')) {
 			data[name] = $field.is(':checked') ? 1 : 0;
 			return;

@@ -15,11 +15,15 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 			$toolbar->setValue($name, $value);
 		}
 
-		$params['limit'] = $request->getParam('limit', $request->getCookie('limit', 25));
-		$params['page'] = $request->getParam('page', $request->getCookie('page', 1));
+		$params['limit'] = $request->isPost()
+			? $request->getPost('limit', 25)
+			: $request->getCookie('limit', 25);
+
+		$params['page'] = $request->isPost()
+			? $request->getPost('page', 1)
+			: 1;
 
 		$this->applyDateRange($params, $toolbar);
-		$this->expandStatesForKeywordSearch($params, $toolbar);
 		$this->applyPagination($params);
 
 		return $params;
@@ -37,10 +41,15 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 			$default = date('Y-m-d');
 		}
 
-		return $request->getParam(
-			$name,
-			$request->getCookie($name, $default)
-		);
+		if ($request->isPost()) {
+			if (($element['type'] ?? '') === 'multicheckbox') {
+				return $request->getPost($name, []);
+			}
+
+			return $request->getPost($name, $default);
+		}
+
+		return $request->getCookie($name, $default);
 	}
 
 	protected function normalizeValue($value, array $element)
@@ -171,32 +180,5 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 		}
 
 		$params['offset'] = ($params['page'] - 1) * $params['limit'];
-	}
-
-	protected function expandStatesForKeywordSearch(array &$params, $toolbar): void
-	{
-		if (trim((string)($params['keyword'] ?? '')) === '') {
-			return;
-		}
-
-		if (!isset($params['states']) || !is_array($params['states'])) {
-			return;
-		}
-
-		$default = $toolbar->getDefault('states');
-
-		if (!is_array($default)) {
-			return;
-		}
-
-		sort($params['states']);
-		sort($default);
-
-		if ($params['states'] !== $default) {
-			return;
-		}
-
-		$params['states'] = ['100', '101', '102', '103', '104', '105', '106'];
-		$toolbar->setValue('states', $params['states']);
 	}
 }

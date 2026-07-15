@@ -28,8 +28,13 @@ class Processes_Model_Entity_Process
 				'billingname1',
 				'billingname2',
 				'billingcity',
+				'billingstreet',
+				'billingpostcode',
 				'shippingname1',
+				'shippingname2',
 				'shippingcity',
+				'shippingstreet',
+				'shippingpostcode',
 			],
 
 			'filters' => [

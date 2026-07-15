@@ -6,6 +6,21 @@ class DEEC_List_Query
 	{
 		$params = $this->normalizeParams($params);
 
+		$result = $this->fetchResult($params, $options, $config);
+
+		if ($this->shouldExpandStateSearch($params, $config, $result['records'])) {
+			$params['states'] = $this->getExpandedSearchStates($config);
+			$result = $this->fetchResult($params, $options, $config);
+		}
+
+		return [
+			$result['items'],
+			$result['records'],
+		];
+	}
+
+	protected function fetchResult(array $params, array $options, array $config): array
+	{
 		$tableClass = $config['tableClass'];
 		$dbTable = new $tableClass();
 		$db = $dbTable->getAdapter();
@@ -27,7 +42,10 @@ class DEEC_List_Query
 		$items = $dbTable->fetchAll($select);
 		$items = $this->applyNormalizers($items, $config, $params);
 
-		return [$items, $records];
+		return [
+			'items' => $items,
+			'records' => $records,
+		];
 	}
 
 	protected function normalizeParams(array $params): array
@@ -74,6 +92,49 @@ class DEEC_List_Query
 		}
 
 		return $params;
+	}
+
+	protected function shouldExpandStateSearch(array $params, array $config, int $records): bool
+	{
+		$keyword = trim((string)($params['keyword'] ?? ''));
+
+		if ($keyword === '') {
+			return false;
+		}
+
+		$threshold = 5;
+
+		if ($records >= $threshold) {
+			return false;
+		}
+
+		$currentStates = $this->normalizeStateValues($params['states'] ?? []);
+		$defaultStates = $this->normalizeStateValues(['100', '101', '102', '103', '104']);
+
+		if (!$currentStates || !$defaultStates) {
+			return false;
+		}
+
+		return $currentStates === $defaultStates;
+	}
+
+	protected function normalizeStateValues($states): array
+	{
+		if (!is_array($states)) {
+			return [];
+		}
+
+		$states = array_values(array_unique(array_map('intval', $states)));
+		sort($states);
+
+		return $states;
+	}
+
+	protected function getExpandedSearchStates(array $config): array
+	{
+		$states = ['100', '101', '102', '103', '104', '105', '106'];
+
+		return array_map('strval', $states);
 	}
 
 	protected function buildBaseSelect($dbTable, array $config, bool $countOnly)
