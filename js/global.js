@@ -896,19 +896,35 @@ function search() {
 		data.setid = DewawiToolbar.getUrlParam('setid');
 	}
 
-	clearTimeout(timeout);
+	clearTimeout(Dewawi.searchTimeout);
 
-	timeout = setTimeout(function () {
+	if (Dewawi.searchRequest) {
+		Dewawi.searchRequest.abort();
+		Dewawi.searchRequest = null;
+	}
+
+	Dewawi.searchTimeout = setTimeout(function () {
 		$('#loading').show();
 
-		$.ajax({
+		Dewawi.searchRequest = $.ajax({
 			type: 'POST',
 			url: baseUrl + '/' + module + '/' + controller + '/search',
 			data: data,
 			cache: false,
+
 			success: function (response) {
 				$('#content').html(response);
 				initDwTabs('#content');
+			},
+
+			error: function (xhr, status) {
+				if (status !== 'abort') {
+					pushMessages(['Suche konnte nicht ausgeführt werden.']);
+				}
+			},
+
+			complete: function () {
+				Dewawi.searchRequest = null;
 				$('#loading').hide();
 			}
 		});
@@ -2267,7 +2283,7 @@ function markFieldSaved($field) {
 		},
 
 		bindFilters: function () {
-			$(document).on('change', '.dw-toolbar input, .dw-toolbar select, .dw-filter-panel input, .dw-filter-panel select', function () {
+			$(document).on('change', '.dw-toolbar select, .dw-filter-panel select', function () {
 				var $field = $(this);
 
 				DewawiToolbar.persistField($field);
