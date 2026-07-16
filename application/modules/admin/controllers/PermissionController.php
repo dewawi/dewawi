@@ -4,14 +4,16 @@ class Admin_PermissionController extends DEEC_Controller_AdminAction
 {
 	protected function beforeEditSave(array $values, array $row): array
 	{
-		if (count($values) !== 1) {
+		$post = (array)$this->getRequest()->getPost();
+
+		if (count($post) !== 1) {
 			throw new InvalidArgumentException(
 				'Invalid permission request'
 			);
 		}
 
-		$field = (string)array_key_first($values);
-		$enabled = !empty($values[$field]);
+		$field = (string)array_key_first($post);
+		$enabled = !empty($post[$field]);
 
 		$parts = explode('__', $field, 3);
 
@@ -25,7 +27,7 @@ class Admin_PermissionController extends DEEC_Controller_AdminAction
 
 		if (
 			!in_array($module, $this->getPermissionModules(), true)
-			|| $controller === ''
+			|| !$this->isValidPermissionController($controller)
 			|| !in_array(
 				$permission,
 				['add', 'edit', 'view', 'delete'],
@@ -55,7 +57,6 @@ class Admin_PermissionController extends DEEC_Controller_AdminAction
 
 		if ($enabled) {
 			$controllerPermissions[] = $permission;
-
 			$controllerPermissions = array_values(
 				array_unique($controllerPermissions)
 			);
@@ -68,12 +69,25 @@ class Admin_PermissionController extends DEEC_Controller_AdminAction
 			);
 		}
 
-		$modulePermissions[$controller] =
-			$controllerPermissions;
+		if ($controllerPermissions) {
+			$modulePermissions[$controller] =
+				$controllerPermissions;
+		} else {
+			unset($modulePermissions[$controller]);
+		}
 
 		return [
 			$module => json_encode($modulePermissions),
 		];
+	}
+
+	protected function isValidPermissionController(string $controller): bool
+	{
+		return $controller !== ''
+			&& preg_match(
+				'/^[a-z][a-z0-9_-]*$/',
+				$controller
+			) === 1;
 	}
 
 	protected function getPermissionModules(): array
