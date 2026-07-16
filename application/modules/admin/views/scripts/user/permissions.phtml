@@ -34,21 +34,22 @@ $permissionId = (int)($this->permission['id'] ?? 0);
 									<?php echo $this->translate('ADMIN_CONTROLLER'); ?>
 								</th>
 
-								<th class="dw-permission-action">
-									<?php echo $this->translate('ADMIN_ADD'); ?>
-								</th>
+								<?php foreach ($actions as $action => $label): ?>
+									<th class="dw-permission-action">
+										<label class="dw-checkbox">
+											<input
+												type="checkbox"
+												class="dw-permission-all"
+												data-permission-module="<?php echo $this->escape($module); ?>"
+												data-permission-action="<?php echo $this->escape($action); ?>"
+											>
 
-								<th class="dw-permission-action">
-									<?php echo $this->translate('ADMIN_EDIT'); ?>
-								</th>
-
-								<th class="dw-permission-action">
-									<?php echo $this->translate('ADMIN_VIEW'); ?>
-								</th>
-
-								<th class="dw-permission-action">
-									<?php echo $this->translate('ADMIN_DELETE'); ?>
-								</th>
+											<span>
+												<?php echo $this->translate($label); ?>
+											</span>
+										</label>
+									</th>
+								<?php endforeach; ?>
 							</tr>
 						</thead>
 
@@ -78,10 +79,13 @@ $permissionId = (int)($this->permission['id'] ?? 0);
 											<label class="dw-checkbox dw-permission-checkbox">
 												<input
 													type="checkbox"
+													class="dw-permission-item"
 													name="<?php echo $this->escape($name); ?>"
+													data-permission-module="<?php echo $this->escape($module); ?>"
+													data-permission-action="<?php echo $this->escape($action); ?>"
 													data-module="admin"
 													data-controller="permission"
-													data-id="<?php echo (int)$this->permission['id']; ?>"
+													data-id="<?php echo $permissionId; ?>"
 													value="1"
 													<?php echo $checked ? 'checked="checked"' : ''; ?>
 												>

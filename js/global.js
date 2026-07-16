@@ -92,6 +92,9 @@ $(document).ready(function(){
 		Dewawi.setDirty(true);
 	});
 	$('.edit form').on('change', 'input, textarea, select', function() {
+		if ($(this).hasClass('dw-permission-all')) {
+			return;
+		}
 		if ($(this).closest('.dw-multiform__item').length) {
 			return;
 		}
@@ -254,6 +257,62 @@ $(document).ready(function(){
 		} else {
 			editPosition(parent, type, data, params);
 		}
+	});
+	$('.edit form').on('change', '.dw-permission-all', function() {
+		var $all = $(this);
+		var moduleName = $all.data('permission-module');
+		var actionName = $all.data('permission-action');
+		var checked = $all.is(':checked');
+
+		var $items = $(
+			'.dw-permission-item'
+			+ '[data-permission-module="' + moduleName + '"]'
+			+ '[data-permission-action="' + actionName + '"]'
+		);
+
+		var items = $items.filter(function() {
+			return $(this).is(':checked') !== checked;
+		}).toArray();
+
+		function saveNext() {
+			var element = items.shift();
+
+			if (!element) {
+				$all.prop('disabled', false);
+				return;
+			}
+
+			var $element = $(element);
+			var data = {};
+
+			data[element.name] = checked ? 1 : 0;
+
+			$element.prop('checked', checked);
+
+			$.ajax({
+				type: 'POST',
+				url: Dewawi.url(
+					$element.data('module'),
+					$element.data('controller'),
+					'edit',
+					$element.data('id')
+				),
+				data: data,
+				dataType: 'json',
+				cache: false
+			}).done(function(response) {
+				if (response && response.ok === false) {
+					$element.prop('checked', !checked);
+				}
+			}).fail(function() {
+				$element.prop('checked', !checked);
+			}).always(function() {
+				saveNext();
+			});
+		}
+
+		$all.prop('disabled', true);
+		saveNext();
 	});
 
 	//Editable
