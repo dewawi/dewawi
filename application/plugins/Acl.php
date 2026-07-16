@@ -145,20 +145,30 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 			);
 
 		if ($canViewController && $resolvedController !== null) {
+			if (
+				$request->getActionName() === 'edit'
+				&& (int)$request->getParam('id', 0) > 0
+			) {
+				$redirector->gotoSimple(
+					'view',
+					$request->getControllerName(),
+					$request->getModuleName(),
+					[
+						'id' => (int)$request->getParam('id'),
+					]
+				);
+
+				return;
+			}
+
 			$redirector->gotoSimple(
 				'index',
-				$resolvedController,
+				$request->getControllerName(),
 				$request->getModuleName()
 			);
 
 			return;
 		}
-
-		$redirector->gotoSimple(
-			'index',
-			'index',
-			'default'
-		);
 	}
 
 	private function logPermit(
