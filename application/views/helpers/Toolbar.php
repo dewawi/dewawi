@@ -2,6 +2,8 @@
 
 class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 {
+	protected $permission = null;
+
 	public function toolbar()
 	{
 		$view = $this->view;
@@ -332,6 +334,43 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		return (string)$this->view->translate($labels[$name] ?? strtoupper($name));
 	}
 
+	protected function getPermission(): DEEC_Permission
+	{
+		if ($this->permission === null) {
+			$this->permission = new DEEC_Permission(
+				(array)$this->view->user
+			);
+		}
+
+		return $this->permission;
+	}
+
+	protected function getElementPermission(string $name): ?string
+	{
+		return $this->getPermission()->getPermissionForAction($name);
+	}
+
+	protected function canRenderElement(string $name): bool
+	{
+		$permission = $this->getElementPermission($name);
+
+		if ($permission === null) {
+			return true;
+		}
+
+		return $this->can($permission);
+	}
+
+	protected function can(string $permission): bool
+	{
+		$permissions = isset($this->view->permissions)
+			&& is_array($this->view->permissions)
+				? $this->view->permissions
+				: [];
+
+		return !empty($permissions[$permission]);
+	}
+
 	protected function escape($value): string
 	{
 		return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -340,7 +379,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 	protected function escapeAttr($value): string
 	{
 		return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-}
+	}
 
 	protected function getCurrentTarget(int $id): array
 	{

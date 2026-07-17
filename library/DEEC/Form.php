@@ -166,6 +166,7 @@ class DEEC_Form
 	protected $elements = [];
 	protected $errors = [];
 	protected $translator = null;
+	protected $permission = null;
 
 	public function setMode(string $mode): self
 	{
@@ -181,6 +182,122 @@ class DEEC_Form
 	public function isReadonly(): bool
 	{
 		return $this->mode === 'readonly';
+	}
+
+	protected function getPermission(): DEEC_Permission
+	{
+		if ($this->permission === null) {
+			$user = Zend_Registry::isRegistered('User')
+				? (array)Zend_Registry::get('User')
+				: [];
+
+			$this->permission = new DEEC_Permission($user);
+		}
+
+		return $this->permission;
+	}
+
+	protected function getCurrentRequest(): ?Zend_Controller_Request_Abstract
+	{
+		if (!class_exists('Zend_Controller_Front')) {
+			return null;
+		}
+
+		$request = Zend_Controller_Front::getInstance()->getRequest();
+
+		return $request instanceof Zend_Controller_Request_Abstract
+			? $request
+			: null;
+	}
+
+	protected function canRenderElement(array $el): bool
+	{
+		if (!$this->isPermissionElement($el)) {
+			return true;
+		}
+
+		$action = $this->getElementAction($el);
+
+		if ($action === '') {
+			return true;
+		}
+
+		$attribs = is_array($el['attribs'] ?? null)
+			? $el['attribs']
+			: [];
+
+		return $this->canRenderAction(
+			$action,
+			(string)($attribs['data-module'] ?? ''),
+			(string)($attribs['data-controller'] ?? '')
+		);
+	}
+
+	protected function isPermissionElement(array $el): bool
+	{
+		$type = (string)($el['type'] ?? '');
+		$attribs = is_array($el['attribs'] ?? null)
+			? $el['attribs']
+			: [];
+
+		if (in_array($type, ['button', 'submit'], true)) {
+			return true;
+		}
+
+		if (!empty($attribs['data-action'])) {
+			return true;
+		}
+
+		return !empty($el['toolbar']);
+	}
+
+	protected function canRenderAction(
+		string $action,
+		string $module = '',
+		string $controller = ''
+	): bool {
+		if ($action === '') {
+			return true;
+		}
+
+		$permission = $this->getPermission();
+
+		if ($permission->getPermissionForAction($action) === null) {
+			return true;
+		}
+
+		$request = $this->getCurrentRequest();
+
+		if (!$request) {
+			return true;
+		}
+
+		if ($module === '') {
+			$module = $request->getModuleName();
+		}
+
+		if ($controller === '') {
+			$controller = $permission->resolveController($request);
+		}
+
+		return $permission->hasElementPermission(
+			$module,
+			$controller,
+			$action
+		);
+	}
+
+	protected function getElementAction(array $el): string
+	{
+		$attribs = is_array($el['attribs'] ?? null)
+			? $el['attribs']
+			: [];
+
+		if (!empty($attribs['data-action'])) {
+			return (string)$attribs['data-action'];
+		}
+
+		return (string)($el['name'] ?? '');
 	}
 
 	protected function applyModeToAttribs(array $el, array $attribs): array
@@ -1115,7 +1232,14 @@ class DEEC_Form
 	protected function renderElementHtml(array $el)
 	{
 		$nameRaw = (string)$el['name'];
-		if ($nameRaw === '') return '';
+
+		if ($nameRaw === '') {
+			return '';
+		}
+
+		if (!$this->canRenderElement($el)) {
+			return '';
+		}
 
 		$nameEsc = htmlspecialchars($nameRaw);
 

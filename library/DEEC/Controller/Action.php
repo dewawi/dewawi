@@ -22,6 +22,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$this->view->client = Zend_Registry::get('Client');
 		$this->view->user = $this->_user;
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
+		$this->view->permissions = $this->getCurrentPermissions();
 
 		if ($this->view->id) {
 			$this->view->dirwritable = $this->_helper->Directory->isWritable(
@@ -346,6 +347,24 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 				'recalc' => [],
 			],
 		]);
+	}
+
+	protected function getCurrentPermissions(): array
+	{
+		$permission = new DEEC_Permission(
+			(array)$this->_user
+		);
+
+		$request = $this->getRequest();
+		$module = $request->getModuleName();
+		$controller = $permission->resolveController($request);
+
+		return [
+			'add' => $permission->hasPermission($module, $controller, 'add'),
+			'edit' => $permission->hasPermission($module, $controller, 'edit'),
+			'view' => $permission->hasPermission($module, $controller, 'view'),
+			'delete' => $permission->hasPermission($module, $controller, 'delete'),
+		];
 	}
 
 	protected function getExternalSaveFields(): array

@@ -21,6 +21,7 @@ class DEEC_Permission
 			'sort',
 			'save',
 			'cancel',
+			'state',
 		],
 		'view' => [
 			'view',
@@ -94,6 +95,24 @@ class DEEC_Permission
 			$permission,
 			$controllerPermissions,
 			true
+		);
+	}
+
+	public function hasElementPermission(
+		string $module,
+		string $controller,
+		string $action
+	): bool {
+		$requiredPermission = $this->getPermissionForAction($action);
+
+		if ($requiredPermission === null) {
+			return true;
+		}
+
+		return $this->hasPermission(
+			$module,
+			$controller,
+			$requiredPermission
 		);
 	}
 

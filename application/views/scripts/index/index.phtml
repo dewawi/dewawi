@@ -143,7 +143,7 @@ echo $this->Messages();
 													</a>
 												</td>
 												<td class="dw-col-title">
-													<a href="<?php echo $this->url(['module' => 'sales', 'controller' => $ledger->doctype, 'action' => 'edit', 'id' => $ledger->docid]); ?>">
+													<a href="<?php echo $this->url(['module' => 'items', 'controller' => 'ledger', 'action' => 'edit', 'id' => $ledger->id]); ?>">
 														<?php echo $this->escape($ledger->comment); ?>
 													</a>
 												</td>
