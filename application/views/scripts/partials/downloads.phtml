@@ -1,3 +1,13 @@
+<?php
+if (!$this->emailForm) {
+	return;
+}
+
+$attachments = is_array($this->attachments) || $this->attachments instanceof Traversable
+	? $this->attachments
+	: [];
+?>
+
 <form id="emailmessage" enctype="application/x-www-form-urlencoded" method="post">
 	<div class="row">
 		<div class="col-sm-12 col-lg-7">
@@ -18,7 +28,7 @@
 
 				<dd id="attachment-element">
 					<div id="attachments">
-						<?php foreach ($this->attachments as $attachment) : ?>
+						<?php foreach ($attachments as $attachment) : ?>
 							<div id="attachment<?= $attachment['id']; ?>" class="file" style="clear: left;">
 								<input type="checkbox" value="<?= $attachment['id']; ?>" name="file" style="float: left;"/>
 
