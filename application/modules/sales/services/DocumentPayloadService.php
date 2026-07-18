@@ -80,29 +80,35 @@ class Sales_Service_DocumentPayloadService
 		$mediaDb = new Application_Model_DbTable_Media();
 
 		foreach ($positions as $position) {
-			if (!$position->itemid) {
+			$itemId = (int)$position->itemid;
+			if ($itemId <= 0) {
 				continue;
 			}
 
-			$items[$position->itemid] = $itemDb->getItem($position->itemid);
-
-			if (!empty($items[$position->itemid]['catid'])) {
-				$categories[$position->itemid] = $categoryDb->getCategory($items[$position->itemid]['catid']);
+			$item = $itemDb->getItem($itemId);
+			if (!is_array($item) || empty($item['id'])) {
+				continue;
 			}
 
-			$media[$position->itemid] = $mediaDb->getMediaByParentID($items[$position->itemid]['id'], 'items', 'item');
+			$items[$itemId] = $item;
 
-			$attributeSets = $attributeSetsDb->getPositionSets($position->itemid);
+			if (!empty($item['catid'])) {
+				$categories[$itemId] = $categoryDb->getCategory((int)$item['catid']);
+			}
+
+			$media[$itemId] = $mediaDb->getMediaByParentID((int)$item['id'], 'items', 'item');
+
+			$attributeSets = $attributeSetsDb->getPositionSets($itemId);
 
 			foreach ($attributeSets as $attributeSetId => $attributeSet) {
 				$attributesByGroup[$position->id][$attributeSetId] = [
 					'title' => $attributeSet['title'],
 					'description' => $attributeSet['description'],
-					'attributes' => $attributesDb->getPositions($position->itemid, $attributeSet['id']),
+					'attributes' => $attributesDb->getPositions($itemId, $attributeSet['id']),
 				];
 			}
 
-			$otherAttributes = $attributesDb->getPositions($position->itemid, 0);
+			$otherAttributes = $attributesDb->getPositions($itemId, 0);
 			if (count($otherAttributes)) {
 				$attributesByGroup[$position->id][] = [
 					'title' => 'Sonstiges',
