@@ -56,7 +56,7 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 	protected function renderSelectToolbar($toolbar, string $controller): string
 	{
 		if (!$toolbar) {
-		    return '';
+			return '';
 		}
 
 		$html = '';

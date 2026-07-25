@@ -608,7 +608,7 @@ class DEEC_List
 		$label = $this->escape((string)$value);
 
 		if ($this->getContext('action') === 'select') {
-		    return $label;
+			return $label;
 		}
 
 		$url = $this->buildUrl($item, $column['url'] ?? []);

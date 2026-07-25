@@ -1117,27 +1117,46 @@ function deleteAttachment(ids, message, type, cmodule) {
 }
 
 //Apply position
-function applyPosition(parent, type, itemId, setid) {
+function applyPosition(parent, type, itemIds, setid) {
+	var ids = Array.isArray(itemIds) ? itemIds.slice() : [itemIds];
+
 	setid = setid || 0;
 
-	$.ajax({
-		type: 'POST',
-		url: window.parent.baseUrl
-			+ '/' + window.parent.module
-			+ '/position/apply/setid/' + setid
-			+ '/parent/' + parent
-			+ '/type/' + type
-			+ '/parentid/' + window.parent.id
-			+ '/itemid/' + itemId,
-		cache: false,
-		success: function () {
-			window.parent.getPositions(parent, type, window.parent.pageYOffset);
+	function applyNext() {
+		var itemId = ids.shift();
+
+		if (!itemId) {
+			window.parent.getPositions(
+				parent,
+				type,
+				window.parent.pageYOffset
+			);
 
 			if (typeof window.parent.modalWindowClose === 'function') {
 				window.parent.modalWindowClose();
 			}
+
+			return;
 		}
-	});
+
+		$.ajax({
+			type: 'POST',
+			url: window.parent.baseUrl
+				+ '/' + window.parent.module
+				+ '/position/apply/setid/' + setid
+				+ '/parent/' + parent
+				+ '/type/' + type
+				+ '/parentid/' + window.parent.id
+				+ '/itemid/' + itemId,
+			cache: false,
+			success: applyNext,
+			error: function () {
+				pushMessages(['Position konnte nicht hinzugefügt werden.']);
+			}
+		});
+	}
+
+	applyNext();
 }
 
 //Edit position
@@ -1937,8 +1956,8 @@ function markFieldSaved($field) {
 			view: { selection: 'single' },
 			pdf: { selection: 'single' },
 			cancel: { selection: 'single' },
-			apply: { selection: 'single' },
 
+			apply: { selection: 'multiple' },
 			copy: { selection: 'multiple' },
 			delete: { selection: 'multiple' },
 
@@ -2293,13 +2312,14 @@ function markFieldSaved($field) {
 					if (window.parent && typeof window.parent.applyContact === 'function') {
 						window.parent.applyContact(selection.ids[0]);
 					}
+
 					return;
 				}
 
 				applyPosition(
 					context.parent,
 					'pos',
-					selection.ids[0],
+					selection.ids,
 					context.setid
 				);
 			},
