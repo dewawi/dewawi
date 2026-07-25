@@ -57,6 +57,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	public function selectAction()
 	{
 		$this->_helper->getHelper('layout')->setLayout('plain');
+		$this->_helper->viewRenderer->setRender('index');
 
 		$this->buildIndexView();
 	}
