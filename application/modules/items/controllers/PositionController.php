@@ -1,6 +1,6 @@
 <?php
 
-class Items_PositionController extends Zend_Controller_Action
+class Items_PositionController extends DEEC_Controller_PositionAction
 {
 	protected $_date = null;
 
@@ -351,32 +351,6 @@ class Items_PositionController extends Zend_Controller_Action
 		if($request->isPost()) {
 			$data = $request->getPost();
 			$this->_helper->Ordering->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $params['setid'], $data['ordering']);
-		}
-	}
-
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		$params = $this->_getAllParams();
-
-		if($request->isPost()) {
-			header('Content-type: application/json');
-			$data = $request->getPost();
-			if($data['delete'] == 'Yes') {
-				if(!is_array($data['id'])) {
-					$data['id'] = array($data['id']);
-				}
-				$positionClass = 'Items_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
-				$positionDb = new $positionClass();
-				$positionDb->deletePositions($data['id']);
-
-				//Reorder
-				$this->_helper->Ordering->setOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid']);
-				echo Zend_Json::encode($data);
-			}
 		}
 	}
 

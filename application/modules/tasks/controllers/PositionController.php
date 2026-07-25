@@ -1,6 +1,6 @@
 <?php
 
-class Tasks_PositionController extends Zend_Controller_Action
+class Tasks_PositionController extends DEEC_Controller_PositionAction
 {
 	protected $_date = null;
 
@@ -366,42 +366,6 @@ class Tasks_PositionController extends Zend_Controller_Action
 			$data = $request->getPost();
 			if(!isset($params['masterid'])) $params['masterid'] = 0;
 			$this->_helper->Ordering->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid'], $data['ordering']);
-		}
-	}
-
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		$params = $this->_getAllParams();
-
-		if($request->isPost()) {
-			header('Content-type: application/json');
-			$data = $request->getPost();
-			if($data['delete'] == 'Yes') {
-				if(!is_array($data['id'])) {
-					$data['id'] = array($data['id']);
-				}
-				$positionClass = 'Tasks_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
-				$positionDb = new $positionClass();
-				$positionDb->deletePositions($data['id']);
-
-				//Delete child positions
-				$positions = $positionDb->getPositions($params['parentid'], $params['setid'], $data['id']);
-				if($positions && count($positions)) {
-					foreach($positions as $position) {
-						$positionDb->deletePositions($position->id);
-					}
-				}
-
-				//Reorder and calculate
-				if(!isset($params['masterid'])) $params['masterid'] = 0;
-				$this->_helper->Ordering->setOrdering($params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid']);
-				//$calculations = $this->_helper->Calculate($data['parentid'], $this->_date, $this->_user['id']);
-				echo Zend_Json::encode(true);
-			}
 		}
 	}
 
