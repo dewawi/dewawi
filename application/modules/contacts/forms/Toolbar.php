@@ -41,6 +41,15 @@ class Contacts_Form_Toolbar extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'apply',
+			'type' => 'button',
+			'label' => 'TOOLBAR_APPLY',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'apply'],
+		]);
+
+		$this->addElement([
 			'name' => 'filter',
 			'type' => 'button',
 			'label' => 'TOOLBAR_FILTER',

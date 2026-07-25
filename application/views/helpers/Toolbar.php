@@ -19,7 +19,9 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			$html .= $this->renderEditToolbar($toolbar, (int)$view->id);
 		} elseif ($view->action === 'view') {
 			$html .= $this->renderViewToolbar($toolbar, (int)$view->id);
-		} elseif ($view->action === 'index' || $view->action === 'select') {
+		} elseif ($view->action === 'select') {
+			$html .= $this->renderSelectToolbar($toolbar, $view->controller);
+		} elseif ($view->action === 'index') {
 			$html .= $this->renderIndexToolbar($toolbar, $view->controller);
 		}
 
@@ -47,6 +49,27 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		if($this->isCancellableView()) {
 			$html .= $toolbar->renderElementWithAttribs('cancel', $target);
 		}
+
+		return $html;
+	}
+
+	protected function renderSelectToolbar($toolbar, string $controller): string
+	{
+		if (!$toolbar) {
+		    return '';
+		}
+
+		$html = '';
+
+		$html .= '<div class="dw-toolbar__main">';
+		$html .= $toolbar->renderElement('apply');
+		$html .= $this->renderToolbarArea($toolbar, 'search');
+		$html .= $this->renderToolbarArea($toolbar, 'meta');
+		$html .= $this->renderToolbarArea($toolbar, $controller);
+		$html .= '</div>';
+
+		$html .= $this->renderActiveFilters($toolbar);
+		$html .= $this->renderFilterBlock($toolbar);
 
 		return $html;
 	}
