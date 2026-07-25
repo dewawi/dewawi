@@ -605,8 +605,13 @@ class DEEC_List
 			return '';
 		}
 
-		$url = $this->buildUrl($item, $column['url'] ?? []);
 		$label = $this->escape((string)$value);
+
+		if ($this->getContext('action') === 'select') {
+		    return $label;
+		}
+
+		$url = $this->buildUrl($item, $column['url'] ?? []);
 
 		return '<a href="' . $this->escapeAttr($url) . '">' . $label . '</a>';
 	}
