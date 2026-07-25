@@ -154,6 +154,69 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 		}
 	}
 
+	public function moveToOrdering(
+		int $id,
+		int $targetOrdering
+	): bool {
+		$row = $this->getById($id);
+
+		if (!$row) {
+			return false;
+		}
+
+		$items = $this->getOrderingGroup($row);
+
+		if (!$items) {
+			return false;
+		}
+
+		$currentIndex = null;
+
+		foreach ($items as $index => $item) {
+			if ((int)$item['id'] === $id) {
+				$currentIndex = $index;
+				break;
+			}
+		}
+
+		if ($currentIndex === null) {
+			return false;
+		}
+
+		$targetIndex = max(
+			0,
+			min(
+				count($items) - 1,
+				$targetOrdering - 1
+			)
+		);
+
+		if ($currentIndex === $targetIndex) {
+			$this->normalizeOrdering($items);
+
+			return true;
+		}
+
+		$item = $items[$currentIndex];
+
+		array_splice(
+			$items,
+			$currentIndex,
+			1
+		);
+
+		array_splice(
+			$items,
+			$targetIndex,
+			0,
+			[$item]
+		);
+
+		$this->normalizeOrdering($items);
+
+		return true;
+	}
+
 	public function getNextPositionOrdering(
 		int $parentId,
 		int $setId = 0,

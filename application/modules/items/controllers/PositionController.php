@@ -340,20 +340,6 @@ class Items_PositionController extends DEEC_Controller_PositionAction
 		}
 	}
 
-	public function sortAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		$params = $this->_getAllParams();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			$this->_helper->Ordering->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $params['setid'], $data['ordering']);
-		}
-	}
-
 	public function validateAction()
 	{
 		$this->_helper->viewRenderer->setNoRender();

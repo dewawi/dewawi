@@ -430,21 +430,6 @@ class Sales_PositionController extends DEEC_Controller_PositionAction
 		}
 	}
 
-	public function sortAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		$params = $this->_getAllParams();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if(!isset($params['masterid'])) $params['masterid'] = 0;
-			$this->_helper->Ordering->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $params['setid'], $params['masterid'], $data['ordering']);
-		}
-	}
-
 	protected function buildPositionForm($formClass, $position, array $uoms, array $taxrates, array $orderingOptions, $locale, bool $readonly = false)
 	{
 		$form = new $formClass();

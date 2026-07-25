@@ -252,8 +252,35 @@ $(document).ready(function(){
 		var type = $container.data('type');
 
 		if (this.name === 'ordering') {
-			var setid = $set.find('input.setid').first().val();
-			sort(parent, type, params['id'], setid, this.value);
+			var ordering = parseInt(this.value, 10);
+			var positionId = parseInt(params.id, 10);
+
+			if (!positionId || !ordering) {
+				return;
+			}
+
+			sortEntity({
+				url: getSortUrl(
+					'position',
+					positionId,
+					{
+						parent: parent,
+						type: type,
+						parentid: window.id
+					}
+				),
+				id: positionId,
+				ordering: ordering,
+				success: function () {
+					getPositions(
+						parent,
+						type,
+						window.pageYOffset
+					);
+				}
+			});
+
+			return;
 		} else {
 			editPosition(parent, type, data, params);
 		}
@@ -1484,36 +1511,104 @@ function getDisplayValue(resp, field) {
 }
 
 //Ordering
-function sort(parent, type, id, setid, ordering, masterid){
-	var data = {};
-	data.id = id;
-	data.ordering = ordering;
-	masterid = masterid || null;
-	var url = baseUrl+'/'+module+'/';
-	if(action == 'edit') {
-		if(setid == -1) {
-			url += 'positionset/sort/id/'+id+'/parent/'+parent+'/type/'+type+'/parentid/'+window.id;
-		} else if(masterid) {
-			url += 'position/sort/id/'+id+'/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+window.id+'/masterid/'+masterid;
-		} else {
-			url += 'position/sort/id/'+id+'/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+window.id;
-		}
-	} else {
-		url += controller+'/sort/id/'+id;
+var sortRequestPending = false;
+
+function sortEntity(options) {
+	if (sortRequestPending) {
+		return;
 	}
+
+	if (!options || !options.url || !options.id) {
+		pushMessages([
+			'Sortierparameter fehlen.'
+		]);
+		return;
+	}
+
+	var data = {
+		id: options.id
+	};
+
+	if (
+		options.direction === 'up'
+		|| options.direction === 'down'
+	) {
+		data.direction = options.direction;
+	} else if (parseInt(options.ordering, 10) > 0) {
+		data.ordering = parseInt(
+			options.ordering,
+			10
+		);
+	} else {
+		pushMessages([
+			'Ungültiges Sortierziel.'
+		]);
+		return;
+	}
+
+	sortRequestPending = true;
+
 	$.ajax({
 		type: 'POST',
-		url: url,
-		cache: false,
+		url: options.url,
 		data: data,
-		success: function(response){
-			if(action == 'edit') {
-				getPositions(parent, type, window.pageYOffset);
-			} else {
-				search();
+		dataType: 'json',
+		cache: false,
+		success: function (response) {
+			if (!response || response.ok !== true) {
+				pushMessages([
+					response && response.message
+						? response.message
+						: 'Sortierung fehlgeschlagen.'
+				]);
+
+				return;
 			}
+
+			if (typeof options.success === 'function') {
+				options.success(response);
+			}
+		},
+		error: function (xhr) {
+			pushMessages([
+				'Sortierung fehlgeschlagen.'
+			]);
+
+			console.log(
+				'sortEntity error',
+				xhr.responseText
+			);
+		},
+		complete: function () {
+			sortRequestPending = false;
 		}
 	});
+}
+
+function getSortUrl(controller, id, params) {
+	var url = Dewawi.url(
+		module,
+		controller,
+		'sort',
+		id
+	);
+
+	$.each(params || {}, function (name, value) {
+		if (
+			value === undefined
+			|| value === null
+			|| value === ''
+		) {
+			return;
+		}
+
+		url += '/'
+			+ encodeURIComponent(name)
+			+ '/'
+			+ encodeURIComponent(value);
+	});
+
+	return url;
 }
 
 function pushMessages(messages){
@@ -1966,7 +2061,9 @@ function markFieldSaved($field) {
 			'sortup': { selection: 'single' },
 			'sortdown': { selection: 'single' },
 			'sort-position-up': { selection: 'position' },
-			'sort-position-down': { selection: 'position' }
+			'sort-position-down': { selection: 'position' },
+			'sort-position-set-up': { selection: 'position-set' },
+			'sort-position-set-down': { selection: 'position-set' }
 		},
 
 		init: function () {
@@ -2110,13 +2207,27 @@ function markFieldSaved($field) {
 		},
 
 		resolvePositionSet: function ($button) {
-			var $container = $button.closest('.positionsContainer');
-			var $set = $button.closest('.dw-position-set');
+			var $container = $button.closest(
+				'.positionsContainer'
+			);
+			var $set = $button.closest(
+				'.dw-position-set'
+			);
+			var setId = String(
+				$set.data('setid') || ''
+			);
 
 			return {
-				parent: String($container.data('parent') || controller),
-				type: String($container.data('type') || 'pos'),
-				setid: String($set.data('setid') || '0')
+				id: setId,
+				setid: setId,
+				parent: String(
+					$container.data('parent')
+					|| controller
+				),
+				type: String(
+					$container.data('type')
+					|| 'pos'
+				)
 			};
 		},
 
@@ -2338,33 +2449,61 @@ function markFieldSaved($field) {
 				);
 			},
 
-			'sortup': function (selection, $button) {
-				this.sortEntity(selection, $button);
-			},
-
-			'sortdown': function (selection, $button) {
-				this.sortEntity(selection, $button);
-			},
-
-			'sort-position-up': function (selection, $button) {
-				sort(
-					selection.parent,
-					selection.type,
-					selection.id,
-					selection.setid,
-					$button.data('ordering'),
-					selection.masterid
+			sortup: function (selection) {
+				this.sortEntitySelection(
+					selection,
+					{
+						direction: 'up'
+					}
 				);
 			},
 
-			'sort-position-down': function (selection, $button) {
-				sort(
-					selection.parent,
-					selection.type,
-					selection.id,
-					selection.setid,
-					$button.data('ordering'),
-					selection.masterid
+			sortdown: function (selection) {
+				this.sortEntitySelection(
+					selection,
+					{
+						direction: 'down'
+					}
+				);
+			},
+
+			'sort-position-up': function (selection) {
+				this.sortPositionSelection(
+					selection,
+					'position',
+					{
+						direction: 'up'
+					}
+				);
+			},
+
+			'sort-position-down': function (selection) {
+				this.sortPositionSelection(
+					selection,
+					'position',
+					{
+						direction: 'down'
+					}
+				);
+			},
+
+			'sort-position-set-up': function (selection) {
+				this.sortPositionSelection(
+					selection,
+					'positionset',
+					{
+						direction: 'up'
+					}
+				);
+			},
+
+			'sort-position-set-down': function (selection) {
+				this.sortPositionSelection(
+					selection,
+					'positionset',
+					{
+						direction: 'down'
+					}
 				);
 			}
 		},
@@ -2626,31 +2765,51 @@ function markFieldSaved($field) {
 			return 0;
 		},
 
-		sortEntity: function (selection, $button) {
-			$.ajax({
-				type: 'POST',
-				url: Dewawi.url(selection.module, selection.controller, 'sort', selection.ids[0]),
-				data: {
-					id: selection.ids[0],
-					ordering: $button.data('ordering')
-				},
-				dataType: 'json',
-				cache: false,
-				success: function (response) {
-					if (!response || response.ok === false) {
-						pushMessages(response && response.message ? response.message : 'Sortierung fehlgeschlagen.');
-						return;
-					}
-
-					if (action === 'edit') {
+		sortEntitySelection: function (selection, sort) {
+			sortEntity({
+				url: Dewawi.url(
+					selection.module,
+					selection.controller,
+					'sort',
+					selection.ids[0]
+				),
+				id: selection.ids[0],
+				direction: sort.direction,
+				ordering: sort.ordering,
+				success: function () {
+					if (
+						action === 'edit'
+						|| action === 'view'
+					) {
 						location.reload();
 						return;
 					}
 
 					search();
-				},
-				error: function () {
-					pushMessages(['Sortierung fehlgeschlagen.']);
+				}
+			});
+		},
+
+		sortPositionSelection: function (selection, controllerName, sort) {
+			sortEntity({
+				url: getSortUrl(
+					controllerName,
+					selection.id,
+					{
+						parent: selection.parent,
+						type: selection.type,
+						parentid: window.id
+					}
+				),
+				id: selection.id,
+				direction: sort.direction,
+				ordering: sort.ordering,
+				success: function () {
+					getPositions(
+						selection.parent,
+						selection.type,
+						window.pageYOffset
+					);
 				}
 			});
 		},

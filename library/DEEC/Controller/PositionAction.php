@@ -114,6 +114,74 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		);
 	}
 
+	public function sortAction()
+	{
+		$this->disablePositionRendering();
+
+		if (!$this->getRequest()->isPost()) {
+			return $this->sendSortResponse(
+				false,
+				'Invalid request method'
+			);
+		}
+
+		$id = (int)$this->_getParam('id', 0);
+		$direction = (string)$this->_getParam(
+			'direction',
+			''
+		);
+		$ordering = (int)$this->_getParam(
+			'ordering',
+			0
+		);
+
+		if ($id < 1) {
+			return $this->sendSortResponse(
+				false,
+				'Position ID is missing'
+			);
+		}
+
+		$positionDb = $this->getPositionDb();
+
+		if (
+			$direction === 'up'
+			|| $direction === 'down'
+		) {
+			$sorted = $positionDb->moveOrdering(
+				$id,
+				$direction
+			);
+		} elseif ($ordering > 0) {
+			$sorted = $positionDb->moveToOrdering(
+				$id,
+				$ordering
+			);
+		} else {
+			return $this->sendSortResponse(
+				false,
+				'Invalid sort target'
+			);
+		}
+
+		return $this->sendSortResponse(
+			$sorted,
+			$sorted
+				? null
+				: 'Position could not be sorted'
+		);
+	}
+
+	protected function sendSortResponse(
+		bool $success,
+		?string $message = null
+	) {
+		return $this->_helper->json([
+			'ok' => $success,
+			'message' => $message,
+		]);
+	}
+
 	public function deleteAction()
 	{
 		$this->disablePositionRendering();

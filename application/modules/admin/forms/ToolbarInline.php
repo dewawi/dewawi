@@ -48,10 +48,7 @@ class Admin_Form_ToolbarInline extends DEEC_Form
 			'type' => 'button',
 			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'up nolabel',
-				'data-ordering' => 'up',
-			],
+			'attribs' => ['class' => 'up nolabel'],
 		]);
 
 		$this->addElement([
@@ -59,10 +56,7 @@ class Admin_Form_ToolbarInline extends DEEC_Form
 			'type' => 'button',
 			'toolbar' => 'actions',
 			'wrap' => false,
-			'attribs' => [
-				'class' => 'down nolabel',
-				'data-ordering' => 'down',
-			],
+			'attribs' => ['class' => 'down nolabel'],
 		]);
 	}
 }
