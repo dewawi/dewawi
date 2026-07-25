@@ -492,9 +492,14 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 				continue;
 			}
 
-			$this->updateById((int)$item['id'], [
-				$this->orderingField => $ordering,
-			]);
+			if ((int)$item[$this->orderingField] !== $ordering) {
+				$this->updateById(
+					(int)$item['id'],
+					[
+						$this->orderingField => $ordering,
+					]
+				);
+			}
 
 			$ordering++;
 		}

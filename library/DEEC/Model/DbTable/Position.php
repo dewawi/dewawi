@@ -51,17 +51,14 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 	{
 		$data = $this->preparePositionData($data);
 
-		if (
-			!array_key_exists($this->orderingField, $data)
-			|| (int)$data[$this->orderingField] < 1
-		) {
-			$data[$this->orderingField] =
-				$this->getNextPositionOrdering(
-					(int)$data[$this->parentField],
-					(int)$data[$this->setField],
-					$data[$this->masterField]
-				);
-		}
+		$this->normalizeOrderingByRow($data);
+
+		$data[$this->orderingField] =
+			$this->getNextPositionOrdering(
+				(int)$data[$this->parentField],
+				(int)$data[$this->setField],
+				$data[$this->masterField]
+			);
 
 		return $this->create($data);
 	}
