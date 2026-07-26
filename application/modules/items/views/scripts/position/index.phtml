@@ -121,15 +121,15 @@ $button = function ($action, $class, array $data = array(), $label = '') {
 
 							<?php if (!$parentLocked) : ?>
 								<div class="dw-position-card__actions">
-									<?php echo $button('delete-position', 'delete nolabel'); ?>
-									<?php echo $button('copy-position', 'copy nolabel'); ?>
+									<?php echo $this->toolbarPositions->renderElement('delete-position'); ?>
+									<?php echo $this->toolbarPositions->renderElement('copy-position'); ?>
 
 									<?php if ($i > 1) : ?>
-										<?php echo $button('sort-position-up', 'up nolabel', array('ordering' => $i - 1)); ?>
+										<?php echo $this->toolbarPositions->renderElement('sort-position-up'); ?>
 									<?php endif; ?>
 
 									<?php if ($i < $length) : ?>
-										<?php echo $button('sort-position-down', 'down nolabel', array('ordering' => $i + 1)); ?>
+										<?php echo $this->toolbarPositions->renderElement('sort-position-down'); ?>
 									<?php endif; ?>
 								</div>
 							<?php endif; ?>
@@ -238,15 +238,15 @@ $button = function ($action, $class, array $data = array(), $label = '') {
 
 											<?php if (!$parentLocked) : ?>
 												<div class="dw-position-card__actions">
-													<?php echo $button('delete-position', 'delete nolabel'); ?>
-													<?php echo $button('copy-position', 'copy nolabel'); ?>
+													<?php echo $this->toolbarPositions->renderElement('delete-position'); ?>
+													<?php echo $this->toolbarPositions->renderElement('copy-position'); ?>
 
 													<?php if ($c > 1) : ?>
-														<?php echo $button('sort-position-up', 'up nolabel', array('ordering' => $c - 1)); ?>
+														<?php echo $this->toolbarPositions->renderElement('sort-position-up'); ?>
 													<?php endif; ?>
 
 													<?php if ($c < $childsCount) : ?>
-														<?php echo $button('sort-position-down', 'down nolabel', array('ordering' => $c + 1)); ?>
+														<?php echo $this->toolbarPositions->renderElement('sort-position-down'); ?>
 													<?php endif; ?>
 												</div>
 											<?php endif; ?>
