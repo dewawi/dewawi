@@ -1,6 +1,6 @@
 <?php
 
-class Tasks_Model_DbTable_Taskpos extends Zend_Db_Table_Abstract
+class Tasks_Model_DbTable_Taskpos extends DEEC_Model_DbTable_Position
 {
 	protected $_name = 'taskpos';
 }
