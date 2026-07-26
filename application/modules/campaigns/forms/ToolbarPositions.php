@@ -44,6 +44,46 @@ class Campaigns_Form_ToolbarPositions extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'delete-position',
+			'type' => 'button',
+			'toolbar' => 'position',
+			'wrap' => false,
+			'attribs' => ['class' => 'delete nolabel'],
+		]);
+
+		$this->addElement([
+			'name' => 'copy-position',
+			'type' => 'button',
+			'toolbar' => 'position',
+			'wrap' => false,
+			'attribs' => ['class' => 'copy nolabel'],
+		]);
+
+		$this->addElement([
+			'name' => 'sort-position-up',
+			'type' => 'button',
+			'toolbar' => 'position',
+			'wrap' => false,
+			'attribs' => ['class' => 'up nolabel'],
+		]);
+
+		$this->addElement([
+			'name' => 'sort-position-down',
+			'type' => 'button',
+			'toolbar' => 'position',
+			'wrap' => false,
+			'attribs' => ['class' => 'down nolabel'],
+		]);
+
+		$this->addElement([
+			'name' => 'add-option',
+			'type' => 'button',
+			'toolbar' => 'position-option',
+			'wrap' => false,
+			'attribs' => ['class' => 'add nolabel'],
+		]);
+
+		$this->addElement([
 			'name' => 'add-position-set',
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW_SET',
@@ -71,17 +111,17 @@ class Campaigns_Form_ToolbarPositions extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'sortup',
+			'name' => 'sort-position-set-up',
 			'type' => 'button',
-			'toolbar' => 'actions',
+			'toolbar' => 'positionsets',
 			'wrap' => false,
 			'attribs' => ['class' => 'up nolabel'],
 		]);
 
 		$this->addElement([
-			'name' => 'sortdown',
+			'name' => 'sort-position-set-down',
 			'type' => 'button',
-			'toolbar' => 'actions',
+			'toolbar' => 'positionsets',
 			'wrap' => false,
 			'attribs' => ['class' => 'down nolabel'],
 		]);
