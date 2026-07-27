@@ -10,10 +10,14 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 		if(substr($controller, -3) == 'pos') $controller = substr($controller, 0, -3);
 		$class = ucfirst($module).'_Model_DbTable_'.ucfirst($controller);
 		$classPos = $class.'pos';
-		if(class_exists($class) || class_exists($classPos)) {
+		if(class_exists($class) && class_exists($classPos)) {
 			//Get object
 			$objectDb = new $class();
 			$object = $objectDb->getById($id);
+
+			if ($object === null) {
+				return null;
+			}
 
 			//Get positions
 			$positionsDb = new $classPos();
@@ -65,8 +69,7 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 				$calculations['locale'][$position->id]['price'] = $currency->toCurrency($price);
 				$calculations['locale'][$position->id]['total'] = $currency->toCurrency($calculations['row'][$position->id]['total']);
 
-				$objectPosDb = new $classPos();
-				$objectPosDb->updatePosition($position->id, array('total' => ($price*$position->quantity*(1+$position->taxrate/100))));
+				$positionsDb->updatePosition($position->id, array('total' => ($price*$position->quantity*(1+$position->taxrate/100))));
 			}
 
 			if($taxfree === null) $taxfree = $object['taxfree'];
