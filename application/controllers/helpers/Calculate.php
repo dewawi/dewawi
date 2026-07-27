@@ -37,11 +37,18 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 				}
 			}
 			foreach($positions as $position) {
-				//Use price rules
-				if($position->masterid && $pricerulemaster[$position->masterid] && isset($pricerules[$position->masterid])) {
-					$price = $pricerulesHelper->usePriceRules($pricerules[$position->masterid], $position->price);
-				} elseif(!$position->masterid && isset($pricerules[$position->id])) {
-					$price = $pricerulesHelper->usePriceRules($pricerules[$position->id], $position->price);
+				$masterId = (int)$position->masterid;
+
+				if ($masterId > 0 && !empty($pricerulemaster[$masterId]) && isset($pricerules[$masterId])) {
+					$price = $pricerulesHelper->usePriceRules(
+						$pricerules[$masterId],
+						$position->price
+					);
+				} elseif ($masterId === 0 && isset($pricerules[$position->id])) {
+					$price = $pricerulesHelper->usePriceRules(
+						$pricerules[$position->id],
+						$position->price
+					);
 				} else {
 					$price = $position->price;
 				}
