@@ -136,6 +136,7 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 		}
 
 		$groups = [];
+		$deleteIds = $ids;
 
 		foreach ($ids as $id) {
 			$row = $this->getById($id);
@@ -145,9 +146,25 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 			}
 
 			$groups[$this->getOrderingGroupKey($row)] = $row;
+
+			if (!empty($row[$this->masterField])) {
+				continue;
+			}
+
+			$children = $this->getPositions(
+				(int)$row[$this->parentField],
+				(int)$row[$this->setField],
+				(int)$row['id']
+			);
+
+			foreach ($children as $child) {
+				$deleteIds[] = (int)$child->id;
+			}
 		}
 
-		$this->deleteByIds($ids);
+		$this->deleteByIds(
+			array_values(array_unique($deleteIds))
+		);
 
 		foreach ($groups as $row) {
 			$this->normalizeOrderingByRow($row);
