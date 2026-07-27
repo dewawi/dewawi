@@ -121,10 +121,7 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 
 	public function deletePosition(int $id): void
 	{
-		$row = $this->getPosition($id);
-
-		$this->deleteById($id);
-		$this->normalizeOrderingByRow($row);
+		$this->deletePositions([$id]);
 	}
 
 	public function deletePositions(array $ids): void
@@ -162,12 +159,24 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 			}
 		}
 
-		$this->deleteByIds(
-			array_values(array_unique($deleteIds))
+		$deleteIds = array_values(
+			array_unique($deleteIds)
 		);
 
-		foreach ($groups as $row) {
-			$this->normalizeOrderingByRow($row);
+		$adapter = $this->getAdapter();
+		$adapter->beginTransaction();
+
+		try {
+			$this->deleteByIds($deleteIds);
+
+			foreach ($groups as $row) {
+				$this->normalizeOrderingByRow($row);
+			}
+
+			$adapter->commit();
+		} catch (Throwable $exception) {
+			$adapter->rollBack();
+			throw $exception;
 		}
 	}
 
