@@ -271,52 +271,6 @@ class Items_PositionController extends DEEC_Controller_PositionAction
 		}
 	}
 
-	public function editAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		$params = $this->_getAllParams();
-		$locale = Zend_Registry::get('Zend_Locale');
-
-		//Get uoms
-		$uomDb = new Application_Model_DbTable_Uom();
-		$uoms = $uomDb->getUoms();
-
-		//Get tax rates
-		$taxrateDb = new Application_Model_DbTable_Taxrate();
-		$taxrates = $taxrateDb->getTaxrates();
-
-		//Define belonging classes
-		$formClass = 'Items_Form_'.ucfirst($params['parent'].$params['type']);
-		$modelClass = 'Items_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
-
-		$form = new $formClass();
-		$form->uom->addMultiOptions($uoms);
-		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], 0));
-		$form->taxrate->addMultiOptions($taxrates);
-
-		if($request->isPost()) {
-			header('Content-type: application/json');
-			$data = $request->getPost();
-			$element = key($data);
-			if(isset($form->$element) && $form->isValidPartial($data)) {
-				if(($element == 'taxrate') && ($data[$element] != 0))
-					$data['taxrate'] = $taxrates[$data['taxrate']];
-				if(($element == 'price') || ($element == 'quantity') || ($element == 'priceruleamount'))
-					$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
-				if(($element == 'uom') && ($data[$element] != 0))
-					$data['uom'] = $uoms[$data[$element]];
-
-				$position = new $modelClass();
-				$position->updatePosition($params['id'], $data);
-			} else {
-				throw new Exception('Form is invalid');
-			}
-		}
-	}
-
 	public function copyAction()
 	{
 		$this->_helper->viewRenderer->setNoRender();
