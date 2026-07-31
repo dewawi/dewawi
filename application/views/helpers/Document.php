@@ -1,7 +1,5 @@
 <?php
-/**
-* Class inserts neccery code for Toolbar
-*/
+
 class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 {
 	public function Document()
@@ -26,7 +24,7 @@ class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 
 		$html  = '<p>';
 		$html .= '<a href="' . $url . '" target="_blank">';
-		$html .= $this->view->translate('QUOTES_DOWNLOAD_PDF');
+		$html .= $this->view->translate('DOCUMENTS_DOWNLOAD_PDF');
 		$html .= '</a>';
 		$html .= '</p>';
 
