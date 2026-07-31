@@ -24,15 +24,6 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'salesorderid',
-			'type' => 'text',
-			'label' => 'DELIVERY_ORDERS_SALES_ORDER_ID',
-			'format' => ['type' => 'string'],
-			'tab' => 'overview',
-			'col' => 3,
-		]);
-
-		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
 			'label' => 'DELIVERY_ORDERS_TITLE',
@@ -75,6 +66,31 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 			'name' => 'quotedate',
 			'type' => 'text',
 			'label' => 'DELIVERY_ORDERS_QUOTE_DATE',
+			'format' => [
+				'type' => 'date',
+				'pattern' => 'Y-m-d',
+				'displayPattern' => 'd.m.Y',
+			],
+			'attribs' => [
+				'class' => 'datePicker',
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'salesorderid',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_SALES_ORDER_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'salesorderdate',
+			'type' => 'text',
+			'label' => 'DELIVERY_ORDERS_SALES_ORDER_DATE',
 			'format' => [
 				'type' => 'date',
 				'pattern' => 'Y-m-d',

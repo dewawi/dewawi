@@ -24,15 +24,6 @@ class Sales_Form_Salesorder extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'quoteid',
-			'type' => 'text',
-			'label' => 'SALES_ORDERS_QUOTE_ID',
-			'format' => ['type' => 'string'],
-			'tab' => 'overview',
-			'col' => 3,
-		]);
-
-		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
 			'label' => 'SALES_ORDERS_TITLE',
@@ -60,6 +51,15 @@ class Sales_Form_Salesorder extends DEEC_Form
 			'attribs' => ['maxlength' => 255],
 			'tab' => 'overview',
 			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'quoteid',
+			'type' => 'text',
+			'label' => 'SALES_ORDERS_QUOTE_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
 		]);
 
 		$this->addElement([
