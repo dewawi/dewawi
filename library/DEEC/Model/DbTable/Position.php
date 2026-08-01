@@ -119,6 +119,126 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 		}
 	}
 
+	public function copyPosition(int $id): int
+	{
+		$row = $this->getPosition($id);
+		$children = [];
+
+		if (empty($row[$this->masterField])) {
+			$children = $this->getPositions(
+				(int)$row[$this->parentField],
+				(int)$row[$this->setField],
+				$id
+			);
+		}
+
+		$adapter = $this->getAdapter();
+		$adapter->beginTransaction();
+
+		try {
+			$this->shiftPositionOrderingForCopy($row);
+
+			$data = $this->preparePositionCopyData(
+				$row
+			);
+
+			$newId = $this->create($data);
+
+			foreach ($children as $child) {
+				$childData =
+					$this->preparePositionCopyData(
+						$child->toArray()
+					);
+
+				$childData[$this->masterField] =
+					$newId;
+
+				$this->addPosition($childData);
+			}
+
+			$adapter->commit();
+
+			return $newId;
+		} catch (Throwable $exception) {
+			$adapter->rollBack();
+			throw $exception;
+		}
+	}
+
+	protected function preparePositionCopyData(
+		array $data
+	): array {
+		unset(
+			$data['id'],
+			$data['created'],
+			$data['createdby'],
+			$data['modified'],
+			$data['modifiedby']
+		);
+
+		$data['locked'] = 0;
+		$data['lockedtime'] = null;
+
+		if (array_key_exists('deleted', $data)) {
+			$data['deleted'] = 0;
+		}
+
+		return $data;
+	}
+
+	protected function shiftPositionOrderingForCopy(
+		array $row
+	): void {
+		$ordering = (int)$row[$this->orderingField];
+
+		$where = [
+			$this->getAdapter()->quoteInto(
+				'clientid = ?',
+				$this->getClientId()
+			),
+			$this->getAdapter()->quoteInto(
+				'deleted = ?',
+				0
+			),
+			$this->getAdapter()->quoteInto(
+				$this->parentField . ' = ?',
+				(int)$row[$this->parentField]
+			),
+			$this->getAdapter()->quoteInto(
+				$this->setField . ' = ?',
+				(int)$row[$this->setField]
+			),
+			$this->getAdapter()->quoteInto(
+				$this->orderingField . ' > ?',
+				$ordering
+			),
+		];
+
+		$masterId = $this->normalizeMasterId(
+			$row[$this->masterField] ?? null
+		);
+
+		if ($masterId === null) {
+			$where[] = $this->masterField
+				. ' IS NULL';
+		} else {
+			$where[] = $this->getAdapter()->quoteInto(
+				$this->masterField . ' = ?',
+				$masterId
+			);
+		}
+
+		$this->update(
+			[
+				$this->orderingField =>
+					new Zend_Db_Expr(
+						$this->orderingField . ' + 1'
+					),
+			],
+			$where
+		);
+	}
+
 	public function deletePosition(int $id): void
 	{
 		$this->deletePositions([$id]);
