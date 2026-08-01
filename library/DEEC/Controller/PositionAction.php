@@ -9,10 +9,6 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		$params = $this->getPositionParams();
 		$this->validatePositionParams($params);
 
-		$this->beforeBuildPositionIndex(
-			$params
-		);
-
 		$parent = $this->getParentDb()->getById(
 			$params['parentid']
 		);
@@ -22,6 +18,10 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 				'Position parent was not found'
 			);
 		}
+
+		$this->beforeBuildPositionIndex(
+			$params
+		);
 
 		$positionsDb = $this->getPositionDb();
 
@@ -149,8 +149,7 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			'childs' => $childs,
 			'parent' => $parent,
 			'options' => $options,
-			'pricerules' =>
-				$context['priceRules'] ?? [],
+			'pricerules' => $context['priceRules'] ?? [],
 			'toolbar' =>
 				$this->getPositionToolbar(),
 			'toolbarPositions' =>
@@ -790,11 +789,50 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		array $params,
 		array $parent
 	): array {
-		return [
+		$taxrate = $this->getPrimaryPositionTaxrate();
+
+		$data = [
 			'parentid' => $params['parentid'],
-			$params['type'] . 'setid' => $params['setid'],
+			$params['type'] . 'setid' =>
+				$params['setid'],
 			'masterid' => $params['masterid'],
+			'itemid' => 0,
+			'sku' => '',
+			'title' => '',
+			'image' => '',
+			'description' => '',
+			'price' => 0,
+			'taxrate' => $taxrate['rate'],
+			'quantity' => 1,
+			'total' => 0,
+			'currency' => $parent['currency'],
+			'uom' => '',
 		];
+
+		$optionId = (int)$this->_getParam(
+			'optionid',
+			0
+		);
+
+		if ($optionId < 1) {
+			return $data;
+		}
+
+		$optionDb = new Items_Model_DbTable_Itemopt();
+		$option = $optionDb->getPosition($optionId);
+
+		if (!$option) {
+			return $data;
+		}
+
+		$data['itemid'] = (int)$option['itemid'];
+		$data['sku'] = $option['sku'];
+		$data['title'] = $option['title'];
+		$data['description'] = $option['description'];
+		$data['price'] = $option['price'];
+		$data['uom'] = $option['uom'];
+
+		return $data;
 	}
 
 	protected function afterPositionAdd(
@@ -803,6 +841,143 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		array $params,
 		array $parent
 	): void {
+	}
+
+	public function editAction()
+	{
+		$this->disableView();
+
+		/*if (!$this->getRequest()->isPost()) {
+			return $this->sendPositionError(
+				'Invalid request method'
+			);
+		}*/
+
+		$params = $this->getPositionParams();
+		//$this->validatePositionParams($params);
+
+		if ($params['id'] < 1) {
+			return $this->sendPositionError(
+				'Position ID is missing'
+			);
+		}
+
+		$locale = Zend_Registry::get(
+			'Zend_Locale'
+		);
+
+		$uoms = $this->getPositionUoms();
+		$taxrates = $this->getPositionTaxrates();
+
+		$form = $this->buildPositionFormForRequest(
+			$params,
+			$uoms,
+			$taxrates,
+			$locale
+		);
+
+		$post = (array)$request->getPost();
+
+		if (!$form->isValidPartial($post)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'errors' => $this->toErrorMessages(
+					$form->getErrors(),
+					$form
+				),
+			]);
+		}
+
+		$values = $form->getFilteredValuesPartial(
+			$post
+		);
+
+		$values = $this->preparePositionEditValues(
+			$values,
+			$post,
+			$uoms,
+			$taxrates,
+			$locale
+		);
+
+		try {
+			$this->getPositionDb()->updatePosition(
+				$params['id'],
+				$values
+			);
+		} catch (Throwable $exception) {
+			return $this->sendPositionError(
+				'save_failed'
+			);
+		}
+
+		if ($this->affectsPositionCalculation($values)) {
+			$calculations =
+				$this->calculatePositionsParent(
+					$params
+				);
+
+			return $this->_helper->json(
+				$calculations['locale']
+			);
+		}
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $params['id'],
+			'values' => $values,
+		]);
+	}
+
+	protected function buildPositionFormForRequest(
+		array $params,
+		array $uoms,
+		array $taxrates,
+		$locale
+	): DEEC_Form {
+		$form = $this->createPositionForm();
+
+		$form->addOptions(
+			'uom',
+			$uoms,
+			'replace'
+		);
+
+		$form->addOptions(
+			'ordering',
+			$this->getPositionDb()
+				->getPositionOrderings(
+					$params['parentid'],
+					$params['setid'],
+					$params['masterid']
+				),
+			'replace'
+		);
+
+		$form->addOptions(
+			'taxrate',
+			$this->buildPositionTaxrateOptions(
+				$taxrates,
+				$locale
+			),
+			'replace'
+		);
+
+		return $form;
+	}
+
+	protected function affectsPositionCalculation(
+		array $values
+	): bool {
+		return (bool)array_intersect(
+			array_keys($values),
+			[
+				'price',
+				'quantity',
+				'taxrate',
+				'pricerulemaster',
+			]
+		);
 	}
 
 	public function sortAction()
@@ -946,6 +1121,16 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		}
 	}
 
+	protected function calculatePositionsParent(
+		array $params
+	): array {
+		return $this->_helper->Calculate(
+			$params['parentid'],
+			$this->_date,
+			$this->_user['id']
+		);
+	}
+
 	public function deleteAction()
 	{
 		$this->disableView();
@@ -971,10 +1156,8 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 
 		$params = $this->getPositionParams();
 
-		$calculations = $this->_helper->Calculate(
-			$params['parentid'],
-			$this->_date,
-			$this->_user['id']
+		$calculations = $this->calculatePositionsParent(
+			$params
 		);
 
 		return $this->_helper->json(
