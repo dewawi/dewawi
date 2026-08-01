@@ -291,6 +291,68 @@ iframe {
   gap: var(--dw-space-3);
 }
 
+/* Form controls */
+
+.dw-input,
+.dw-select,
+.dw-textarea {
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	min-height: 40px;
+	padding: 9px 12px;
+	border: 1px solid var(--dw-color-border);
+	border-radius: var(--dw-radius-sm);
+	background: var(--dw-color-surface);
+	color: var(--dw-color-text);
+	font: inherit;
+	line-height: 1.35;
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease,
+		background-color 0.15s ease;
+}
+
+.dw-textarea {
+	min-height: 88px;
+	resize: vertical;
+}
+
+.dw-select {
+	appearance: auto;
+}
+
+.dw-input:hover,
+.dw-select:hover,
+.dw-textarea:hover {
+	border-color: #b8c4d1;
+}
+
+.dw-input:focus,
+.dw-select:focus,
+.dw-textarea:focus {
+	outline: none;
+	border-color: var(--dw-color-primary);
+	box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.12);
+}
+
+.dw-input:disabled,
+.dw-select:disabled,
+.dw-textarea:disabled,
+.dw-input[readonly],
+.dw-textarea[readonly] {
+	background: #f3f5f7;
+	color: var(--dw-color-text-muted);
+	cursor: not-allowed;
+}
+
+.dw-input.is-invalid,
+.dw-select.is-invalid,
+.dw-textarea.is-invalid {
+	border-color: var(--dw-color-danger-text);
+}
+
 /* Toolbar */
 
 .dw-toolbar__main {
@@ -355,17 +417,15 @@ iframe {
 .dw-toolbar .dw-input,
 .dw-toolbar .dw-select,
 .dw-toolbar .dw-textarea {
-  box-sizing: border-box;
-  max-width: 100%;
-  min-height: 40px;
-  padding: 9px 12px;
-  border: 1px solid var(--dw-color-border);
-  border-radius: var(--dw-radius-sm);
-  background: #fff;
-  color: var(--dw-color-text);
-  font-size: var(--dw-font-size-md);
+	width: auto;
+	min-height: 36px;
+	padding-block: 7px;
 }
 
+.dw-toolbar .dw-input.autocomplete {
+	flex: 1 1 280px;
+	width: clamp(240px, 32vw, 420px);
+}
 
 /* Pagination */
 
@@ -1054,10 +1114,6 @@ button.nolabel.filter {
 	font-size: 12px;
 	color: #777;
 	margin-top: 2px;
-}
-
-.autocomplete--position {
-	min-width: 320px;
 }
 
 /* Filter */

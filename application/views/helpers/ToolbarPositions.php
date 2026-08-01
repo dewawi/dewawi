@@ -11,7 +11,7 @@ class Zend_View_Helper_ToolbarPositions extends Zend_View_Helper_Abstract
 			return '';
 		}
 
-		$classes = 'toolbar positions';
+		$classes = 'dw-toolbar dw-toolbar--positions toolbar positions';
 		if (!empty($class)) {
 			$classes .= ' ' . $class;
 		}
