@@ -847,14 +847,14 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 	{
 		$this->disableView();
 
-		/*if (!$this->getRequest()->isPost()) {
+		if (!$this->getRequest()->isPost()) {
 			return $this->sendPositionError(
 				'Invalid request method'
 			);
-		}*/
+		}
 
 		$params = $this->getPositionParams();
-		//$this->validatePositionParams($params);
+		$this->validatePositionParams($params);
 
 		if ($params['id'] < 1) {
 			return $this->sendPositionError(
