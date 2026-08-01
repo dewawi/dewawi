@@ -116,10 +116,14 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 			])
 			->joinLeft(
 				['a' => 'address'],
-				"a.parentid = c.id
-					AND a.module = 'contacts'
-					AND a.controller = 'contact'
-					AND a.type = 'billing'",
+				"a.id = (
+					SELECT MIN(a2.id)
+					FROM address AS a2
+					WHERE a2.parentid = c.id
+						AND a2.module = 'contacts'
+						AND a2.controller = 'contact'
+						AND a2.type = 'billing'
+				)",
 				[
 					'street',
 					'postcode',
