@@ -143,4 +143,73 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
 	}
+
+	public function suggestItems(string $keyword, int $clientId, int $limit = 10): array {
+		$db = $this->getAdapter();
+
+		$select = $this->select()
+			->from(
+				['i' => $this->_name],
+				[
+					'id',
+					'sku',
+					'title',
+					'manufacturersku',
+					'price',
+					'quantity',
+				]
+			)
+			->where('i.clientid = ?', $clientId)
+			->where('i.deleted = ?', 0)
+			->order('i.title ASC')
+			->limit($limit);
+
+		$words = preg_split('/\s+/', trim($keyword));
+
+		foreach ($words as $word) {
+			if ($word === '') {
+				continue;
+			}
+
+			$like = '%' . $word . '%';
+
+			$select->where(
+				'(
+					i.id LIKE ' . $db->quote($like) . '
+					OR i.sku LIKE ' . $db->quote($like) . '
+					OR i.manufacturersku LIKE ' . $db->quote($like) . '
+					OR i.title LIKE ' . $db->quote($like) . '
+					OR i.description LIKE ' . $db->quote($like) . '
+				)'
+			);
+		}
+
+		$rows = $this->fetchAll($select);
+		$items = [];
+
+		foreach ($rows as $row) {
+			$label = trim(
+				(string)$row->sku
+				. ' · '
+				. (string)$row->title
+			);
+
+			$subtitle = [];
+
+			if ((string)$row->manufacturersku !== '') {
+				$subtitle[] = (string)$row->manufacturersku;
+			}
+
+			$subtitle[] = (string)$row->price;
+			$subtitle[] = 'Bestand: ' . (string)$row->quantity;
+
+			$items[] = [
+				'id' => (int)$row->id,
+				'label' => $label,
+				'subtitle' => implode(' · ', $subtitle),
+			];
+		}
+
+		return $items;
+	}
 }

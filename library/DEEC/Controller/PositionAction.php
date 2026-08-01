@@ -809,6 +809,46 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			'uom' => '',
 		];
 
+		$itemId = (int)$this->_getParam(
+			'itemid',
+			0
+		);
+
+		if ($itemId > 0) {
+			$itemDb = new Items_Model_DbTable_Item();
+			$item = $itemDb->getItemForEdit($itemId);
+
+			if (!$item) {
+				return $data;
+			}
+
+			$taxrates = $this->getPositionTaxrates();
+			$uoms = $this->getPositionUoms();
+
+			$data['itemid'] = (int)$item['id'];
+			$data['sku'] = (string)$item['sku'];
+			$data['title'] = (string)$item['title'];
+			$data['description'] =
+				(string)$item['description'];
+			$data['price'] = (float)$item['price'];
+			$data['currency'] =
+				(string)($item['currency'] ?: $parent['currency']);
+
+			$taxId = (int)($item['taxid'] ?? 0);
+
+			if (isset($taxrates[$taxId])) {
+				$data['taxrate'] = $taxrates[$taxId];
+			}
+
+			$uomId = (int)($item['uomid'] ?? 0);
+
+			if (isset($uoms[$uomId])) {
+				$data['uom'] = $uoms[$uomId];
+			}
+
+			return $data;
+		}
+
 		$optionId = (int)$this->_getParam(
 			'optionid',
 			0

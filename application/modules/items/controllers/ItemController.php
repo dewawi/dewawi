@@ -728,4 +728,25 @@ class Items_ItemController extends DEEC_Controller_Action
 		}
 		return $subfolders;
 	}
+
+	public function suggestAction()
+	{
+		$this->disableView();
+
+		$keyword = trim((string)$this->_getParam('q', ''));
+
+		if (mb_strlen($keyword) < 2) {
+			return $this->_helper->json([
+				'ok' => true,
+				'items' => [],
+			]);
+		}
+
+		$itemDb = new Items_Model_DbTable_Item();
+
+		return $this->_helper->json([
+			'ok' => true,
+			'items' => $itemDb->suggestItems($keyword, (int)$this->_user['clientid']),
+		]);
+	}
 }
