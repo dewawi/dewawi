@@ -1,0 +1,19 @@
+<?php
+$this->title = $this->translate('ADMIN_WAREHOUSES');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->Pagination();
+?>
+
+<div class="dw-list-page">
+	<?php echo $this->warehouses->render(); ?>
+
+	<div class="dw-list-footer">
+		<div class="dw-list-footer__actions">
+			<?php echo $this->ToolbarBottom(); ?>
+		</div>
+		<div class="dw-list-footer__total">
+			<?php echo $this->warehouses->getTotal(); ?>
+		</div>
+	</div>
+</div>

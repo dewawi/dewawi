@@ -22,6 +22,7 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'taxrate', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_TAX_RATES'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'uom', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_UOMS'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'manufacturer', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_MANUFACTURERS'); ?></a></li>
+			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'warehouse', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_WAREHOUSES'); ?></a></li>
 		</ul>
 		<h4><?php echo $this->view->translate('ADMIN_CONTACTS'); ?></h4>
 		<ul>

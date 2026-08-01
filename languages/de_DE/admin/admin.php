@@ -20,6 +20,7 @@
 	'ADMIN_MEDIA' => 'Medien',
 	'ADMIN_CURRENCIES' => 'Währungen',
 	'ADMIN_MANUFACTURERS' => 'Hersteller',
+	'ADMIN_WAREHOUSES' => 'Lager',
 	'ADMIN_PAYMENT_METHODS' => 'Zahlungsarten',
 	'ADMIN_SHIPPING_METHODS' => 'Versandarten',
 	'ADMIN_DELIVERY_TIMES' => 'Lieferzeiten',
