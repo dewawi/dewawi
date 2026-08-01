@@ -18,6 +18,7 @@ class Zend_View_Helper_ToolbarPositions extends Zend_View_Helper_Abstract
 
 		$html = '<div class="' . $classes . '">';
 		$html .= $toolbar->renderElement('add-position');
+		$html .= $toolbar->renderElement('search-position');
 		$html .= $toolbar->renderElement('select-position');
 		$html .= $toolbar->renderElement('copy-selected-position');
 		$html .= $toolbar->renderElement('delete-selected-position');
