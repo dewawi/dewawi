@@ -1170,15 +1170,27 @@ function applyPosition(parent, type, itemIds, setid) {
 			type: 'POST',
 			url: window.parent.baseUrl
 				+ '/' + window.parent.module
-				+ '/position/apply/setid/' + setid
+				+ '/position/add/setid/' + setid
 				+ '/parent/' + parent
 				+ '/type/' + type
 				+ '/parentid/' + window.parent.id
 				+ '/itemid/' + itemId,
+			dataType: 'json',
 			cache: false,
-			success: applyNext,
+			success: function (response) {
+				if (!response || !response.ok) {
+					pushMessages([
+						'Position konnte nicht hinzugefügt werden.'
+					]);
+					return;
+				}
+
+				applyNext();
+			},
 			error: function () {
-				pushMessages(['Position konnte nicht hinzugefügt werden.']);
+				pushMessages([
+					'Position konnte nicht hinzugefügt werden.'
+				]);
 			}
 		});
 	}
@@ -1916,32 +1928,53 @@ function markFieldSaved($field) {
 }
 
 (function () {
-	var timers = {};
-
 	$(document).on('input', '.autocomplete', function () {
 		var $input = $(this);
 		var query = $.trim($input.val());
-		var minLength = Number($input.data('autocomplete-min-length')) || 2;
+		var minLength =
+			Number(
+				$input.data('autocomplete-min-length')
+			) || 2;
 
-		clearTimeout(timers[$input.attr('id')]);
+		var timer = $input.data('autocomplete-timer');
+
+		if (timer) {
+			clearTimeout(timer);
+		}
 
 		if (query.length < minLength) {
 			closeAutocomplete($input);
 			return;
 		}
 
-		timers[$input.attr('id')] = setTimeout(function () {
+		timer = setTimeout(function () {
 			loadAutocomplete($input, query);
 		}, 250);
+
+		$input.data(
+			'autocomplete-timer',
+			timer
+		);
 	});
 
 	$(document).on('click', '.autocomplete__item', function () {
 		var $item = $(this);
-		var id = $item.data('id');
-		var apply = $item.closest('.autocomplete__list').data('apply');
+		var $list = $item.closest('.autocomplete__list');
+
+		var id = Number($item.data('id'));
+		var apply = String($list.data('apply') || '');
 
 		if (apply === 'contact') {
 			applyContact(id);
+		}
+
+		if (apply === 'position') {
+			applyPosition(
+				String($list.data('parent')),
+				String($list.data('type') || 'pos'),
+				id,
+				Number($list.data('setid') || 0)
+			);
 		}
 
 		$('.autocomplete__list').remove();
@@ -1984,14 +2017,34 @@ function markFieldSaved($field) {
 		}
 
 		var offset = $input.offset();
-		var html = '<div class="autocomplete__list" data-apply="' + escapeHtml(apply) + '">';
+		var inputWidth = $input.outerWidth();
+
+		var html = '<div'
+			+ ' class="autocomplete__list"'
+			+ ' data-apply="' + escapeHtml(apply) + '"'
+			+ '>';
 
 		for (var i = 0; i < items.length; i++) {
-			html += '<div class="autocomplete__item" data-id="' + Number(items[i].id) + '">';
-			html += '<div class="autocomplete__label">' + escapeHtml(items[i].label || '') + '</div>';
+			var item = items[i] || {};
+			var itemId = Number(item.id);
 
-			if (items[i].subtitle) {
-				html += '<div class="autocomplete__subtitle">' + escapeHtml(items[i].subtitle) + '</div>';
+			if (!itemId) {
+				continue;
+			}
+
+			html += '<div'
+				+ ' class="autocomplete__item"'
+				+ ' data-id="' + itemId + '"'
+				+ '>';
+
+			html += '<div class="autocomplete__label">'
+				+ escapeHtml(item.label || '')
+				+ '</div>';
+
+			if (item.subtitle) {
+				html += '<div class="autocomplete__subtitle">'
+					+ escapeHtml(item.subtitle)
+					+ '</div>';
 			}
 
 			html += '</div>';
@@ -2000,13 +2053,14 @@ function markFieldSaved($field) {
 		html += '</div>';
 
 		var $list = $(html).appendTo('body');
+
 		$list.data('input', $input);
 
 		$list.css({
 			position: 'absolute',
 			top: offset.top + $input.outerHeight(),
 			left: offset.left,
-			width: $input.outerWidth(),
+			width: inputWidth,
 			zIndex: 9999
 		});
 	}
