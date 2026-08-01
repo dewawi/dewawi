@@ -5,6 +5,22 @@ class Tasks_Form_ToolbarPositions extends DEEC_Form
 	public function __construct()
 	{
 		$this->addElement([
+			'name' => 'search-position',
+			'type' => 'text',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'autocomplete autocomplete--position',
+				'placeholder' => 'Artikelnummer oder Bezeichnung',
+				'autocomplete' => 'off',
+				'data-autocomplete-source' => '/items/item/suggest',
+				'data-autocomplete-apply' => 'position',
+				'data-autocomplete-min-length' => 2,
+				'data-autocomplete-skip-autosave' => 1,
+			],
+		]);
+
+		$this->addElement([
 			'name' => 'add-position',
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW',

@@ -10,7 +10,7 @@ class Sales_Form_ToolbarPositions extends DEEC_Form
 			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => [
-				'class' => 'autocomplete',
+				'class' => 'autocomplete autocomplete--position',
 				'placeholder' => 'Artikelnummer oder Bezeichnung',
 				'autocomplete' => 'off',
 				'data-autocomplete-source' => '/items/item/suggest',
