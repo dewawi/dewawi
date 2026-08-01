@@ -7,7 +7,12 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 ?>
 
 <?php if ($sets == 0) : ?>
-	<div class="dw-position-set dw-position-set--empty" data-setid="0">
+	<div
+		class="dw-position-set dw-position-set--empty"
+		data-setid="0"
+		data-parent="<?php echo $this->escape($parentType); ?>"
+		data-type="pos"
+	>
 		<div class="dw-position-set__header">
 			<div class="dw-position-set__title">
 				<h3><?php echo $this->translate('POSITIONS_SET'); ?></h3>
@@ -21,7 +26,12 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 <?php endif; ?>
 
 <?php foreach ($this->sets as $setid => $set) : ?>
-	<section class="dw-position-set" data-setid="<?php echo (int)$setid; ?>">
+	<section
+		class="dw-position-set"
+		data-setid="<?php echo (int)$setid; ?>"
+		data-parent="<?php echo $this->escape($parentType); ?>"
+		data-type="pos"
+	>
 		<div class="dw-position-set__header">
 			<div class="dw-position-set__title">
 				<h3>

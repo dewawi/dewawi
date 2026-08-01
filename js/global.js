@@ -1960,24 +1960,55 @@ function markFieldSaved($field) {
 	$(document).on('click', '.autocomplete__item', function () {
 		var $item = $(this);
 		var $list = $item.closest('.autocomplete__list');
+		var $input = $list.data('input');
 
 		var id = Number($item.data('id'));
 		var apply = String($list.data('apply') || '');
+
+		if (!id) {
+			$list.remove();
+			return;
+		}
 
 		if (apply === 'contact') {
 			applyContact(id);
 		}
 
-		if (apply === 'position') {
-			applyPosition(
-				String($list.data('parent')),
-				String($list.data('type') || 'pos'),
-				id,
-				Number($list.data('setid') || 0)
+		if (apply === 'position' && $input && $input.length) {
+			var $positionSet = $input.closest('.dw-position-set');
+
+			var parent = String(
+				$positionSet.data('parent') || ''
 			);
+
+			var type = String(
+				$positionSet.data('type') || 'pos'
+			);
+
+			var setId = Number(
+				$positionSet.data('setid')
+			) || 0;
+
+			if (!parent) {
+				console.log(
+					'position autocomplete parent is missing'
+				);
+
+				$list.remove();
+				return;
+			}
+
+			applyPosition(
+				parent,
+				type,
+				id,
+				setId
+			);
+
+			$input.val('');
 		}
 
-		$('.autocomplete__list').remove();
+		$list.remove();
 	});
 
 	$(document).on('click', function (event) {
