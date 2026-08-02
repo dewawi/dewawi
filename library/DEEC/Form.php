@@ -1758,21 +1758,40 @@ class DEEC_Form
 		return $this->wrapByColIfNeeded($html, $el);
 	}
 
-	protected function makeRowFormForMulti(string $module, string $controller): DEEC_Form
-	{
-		$class = DEEC_Util::formClassFromModuleController($module, $controller);
+	public static function createRowForm(
+		string $module,
+		string $controller
+	): DEEC_Form {
+		$className = DEEC_Util::formClassFromModuleController(
+			$module,
+			$controller
+		);
 
-		if (!class_exists($class)) {
-			throw new RuntimeException('Multi row form class not found: ' . $class);
+		if (!class_exists($className)) {
+			throw new RuntimeException(
+				'Multi row form class not found: ' . $className
+			);
 		}
 
-		$form = new $class();
+		$form = new $className();
 
 		if (!$form instanceof DEEC_Form) {
-			throw new RuntimeException('Multi row form must extend DEEC_Form: ' . $class);
+			throw new RuntimeException(
+				'Multi row form must extend DEEC_Form: ' . $className
+			);
 		}
 
 		return $form;
+	}
+
+	protected function makeRowFormForMulti(
+		string $module,
+		string $controller
+	): DEEC_Form {
+		return self::createRowForm(
+			$module,
+			$controller
+		);
 	}
 
 	public function renderMultiItem(
@@ -1788,6 +1807,11 @@ class DEEC_Form
 		$module = (string)($ctx['module'] ?? '');
 		$controller = (string)($ctx['controller'] ?? '');
 
+		$fields = is_array($ctx['fields'] ?? null)
+			&& $ctx['fields']
+				? $ctx['fields']
+				: array_keys($this->getElements());
+
 		$html = '<div'
 			. ' id="' . $this->escapeHtmlId($name . '-' . $rowId) . '"'
 			. ' class="dw-multiform__item"'
@@ -1798,7 +1822,13 @@ class DEEC_Form
 
 		$html .= '<div class="dw-multiform__fields">';
 
-		foreach (array_keys($this->getElements()) as $fieldName) {
+		foreach ($fields as $fieldName) {
+			$fieldName = (string)$fieldName;
+
+			if (!$this->getElement($fieldName)) {
+				continue;
+			}
+
 			$html .= $this->renderElementRow(
 				$fieldName,
 				$row,
@@ -1820,7 +1850,7 @@ class DEEC_Form
 			$html .= '<a'
 				. ' class="dw-btn dw-btn--icon email"'
 				. ' href="mailto:' . htmlspecialchars((string)$row['email'], ENT_QUOTES, 'UTF-8') . '"'
-				. ' aria-label="' . htmlspecialchars($this->translate('EMAIL'), ENT_QUOTES, 'UTF-8') . '"'
+				. ' aria-label="E-Mail"'
 				. '></a>';
 		}
 
@@ -2003,6 +2033,13 @@ class DEEC_Form
 		return $this->normalizeHtmlId(
 			implode('-', $parts)
 		);
+	}
+
+	public function applyAvailableOptions(): self
+	{
+		$this->applyOptionsIfAvailable($this);
+
+		return $this;
 	}
 
 	protected function applyOptionsIfAvailable(DEEC_Form $form): void
