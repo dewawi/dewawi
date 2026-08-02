@@ -56,75 +56,69 @@ class Contacts_Form_Contact extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'type' => 'multi',
 			'name' => 'address',
+			'type' => 'multi',
 			'label' => 'CONTACTS_ADDRESS',
-			'tab' => 'overview',
-			'col' => 6,
 			'module' => 'contacts',
 			'controller' => 'address',
-			'parentid' => 0,
 			'rows' => [],
+			'tab' => 'overview',
+			'col' => 6,
 		]);
 
 		$this->addElement([
-			'type' => 'multi',
 			'name' => 'phone',
+			'type' => 'multi',
 			'label' => 'CONTACTS_PHONE',
-			'tab' => 'overview',
-			'col' => 6,
 			'module' => 'contacts',
 			'controller' => 'phone',
-			'parentid' => 0,
 			'rows' => [],
+			'tab' => 'overview',
+			'col' => 6,
 		]);
 
 		$this->addElement([
-			'type' => 'multi',
 			'name' => 'email',
+			'type' => 'multi',
 			'label' => 'CONTACTS_EMAIL',
-			'tab' => 'overview',
-			'col' => 6,
 			'module' => 'contacts',
 			'controller' => 'email',
-			'parentid' => 0,
 			'rows' => [],
+			'tab' => 'overview',
+			'col' => 6,
 		]);
 
 		$this->addElement([
-			'type' => 'multi',
 			'name' => 'internet',
+			'type' => 'multi',
 			'label' => 'CONTACTS_INTERNET',
-			'tab' => 'overview',
-			'col' => 6,
 			'module' => 'contacts',
 			'controller' => 'internet',
-			'parentid' => 0,
 			'rows' => [],
+			'tab' => 'overview',
+			'col' => 6,
 		]);
 
 		$this->addElement([
+			'name' => 'tag',
 			'type' => 'multi',
-			'name' => 'tags',
 			'label' => 'CONTACTS_TAGS',
-			'tab' => 'overview',
-			'col' => 6,
 			'module' => 'contacts',
 			'controller' => 'tag',
-			'parentid' => 0,
 			'rows' => [],
+			'tab' => 'overview',
+			'col' => 6,
 		]);
 
 		$this->addElement([
+			'name' => 'comment',
 			'type' => 'multi',
-			'name' => 'comments',
 			'label' => 'CONTACTS_COMMENTS',
+			'module' => 'default',
+			'controller' => 'comment',
+			'rows' => [],
 			'tab' => 'overview',
 			'col' => 6,
-			'module' => 'contacts',
-			'controller' => 'comment',
-			'parentid' => 0,
-			'rows' => [],
 		]);
 
 		$this->addElement([
@@ -141,15 +135,25 @@ class Contacts_Form_Contact extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'contactperson',
 			'type' => 'multi',
-			'name' => 'comments',
 			'label' => 'CONTACTS_CONTACT_PERSONS',
-			'tab' => 'contactperson',
-			'col' => 6,
 			'module' => 'contacts',
 			'controller' => 'contactperson',
-			'parentid' => 0,
 			'rows' => [],
+			'tab' => 'contactperson',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'multi',
+			'name' => 'bankaccount',
+			'label' => 'CONTACTS_BANK_ACCOUNTS',
+			'module' => 'contacts',
+			'controller' => 'bankaccount',
+			'rows' => [],
+			'tab' => 'payment',
+			'col' => 6,
 		]);
 
 		$this->addElement([
@@ -272,7 +276,6 @@ class Contacts_Form_Contact extends DEEC_Form
 				'size' => 30,
 			],
 		]);
-
 	}
 }
 

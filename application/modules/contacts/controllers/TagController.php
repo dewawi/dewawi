@@ -1,150 +1,98 @@
 <?php
 
-class Contacts_TagController extends Zend_Controller_Action
+class Contacts_TagController extends DEEC_Controller_MultiEntityAction
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
+	protected function getParentFormClass(): string
 	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
+		return Contacts_Form_Contact::class;
 	}
 
-	public function indexAction()
-	{
-		$request = $this->getRequest();
-		$contactid = $this->_getParam('contactid', 0);
-		$data = $request->getPost();
-		$module = isset($data['module']) ? $data['module'] : 0;
-		$controller = isset($data['controller']) ? $data['controller'] : 0;
-		$documentid = isset($data['documentid']) ? $data['documentid'] : 0;
-
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		//$toolbar = new Contacts_Form_Toolbar();
-		//$options = $this->_helper->Options->getOptions($toolbar);
-		//$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$userDb = new Users_Model_DbTable_User();
-		$users = $userDb->getUsers();
-
-		$this->view->module = $module;
-		$this->view->controller = $controller;
-		$this->view->url = $this->_helper->Directory->getUrl($documentid);
-		$this->view->users = $users;
-		//$this->view->options = $options;
-		//$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+	protected function getCreateDefaults(
+		array $post
+	): array {
+		return [
+			'tagid' => 0,
+		];
 	}
 
-	public function addAction()
-	{
-		$request = $this->getRequest();
-
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Contacts_Form_Contact();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$tagEntityDb = new Application_Model_DbTable_Tagentity();
-				$tagEntityDataBefore = $tagEntityDb->getTagEntities('contacts', 'contact', $data['parentid']);
-				$latestOrdering = is_array($tagEntityDataBefore) && !empty($tagEntityDataBefore)
-					? end($tagEntityDataBefore)['ordering']
-					: 0;
-				if(isset($data['tagid']) && $data['tagid']) {
-					header('Content-type: application/json');
-					$existingTags = array();
-					foreach($tagEntityDataBefore as $tagEntity) {
-						$existingTags[$tagEntity['tagid']] = $tagEntity['tagid'];
-					}
-					if(array_search($data['tagid'], $existingTags) !== false) {
-						echo Zend_Json::encode(array('message' => $this->view->translate('TAG_ALREADY_EXISTS')));
-					} else {
-						$tagEntityDb->addTagEntity(array('tagid' => $data['tagid'], 'entityid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latestOrdering+1));
-						$tagEntityDataAfter = $tagEntityDb->getTagEntities('contacts', 'contact', $data['parentid']);
-						$tagEntity = end($tagEntityDataAfter);
-						echo Zend_Json::encode($tagEntity);
-					}
-				} else {
-					$tagEntityDb->addTagEntity(array('tagid' => 0, 'entityid' => $data['parentid'], 'module' => 'contacts', 'controller' => 'contact', 'ordering' => $latestOrdering+1));
-					$tagEntityDataAfter = $tagEntityDb->getTagEntities('contacts', 'contact', $data['parentid']);
-					$tagEntity = end($tagEntityDataAfter);
-					echo $this->view->MultiForm('contacts', 'tag', $tagEntity);
-				}
-			}
-		}
-	}
-
-	public function editAction()
-	{
-		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Contacts_Form_Contact();
-
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$tagDb = new Application_Model_DbTable_Tag();
-				$tags = $tagDb->getTags('contacts', 'contact');
-
-				$key = array_search($data['tag'], $tags);
-				if(false !== $key) {
-					$data['tagid'] = $key;
-				} else {
-					$data['tagid'] = $tagDb->addTag(array('title' => $data['tag'], 'module' => 'contacts', 'controller' => 'contact'));
-				}
-				unset($data['tag']);
-
-				$tagEntityDb = new Application_Model_DbTable_Tagentity();
-				if($id > 0) {
-					$tagEntityDb->updateTagEntity($id, $data);
-					echo Zend_Json::encode($data);
-				}
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
+	protected function beforeMultiUpdate(
+		array $values,
+		array $row,
+		array $post
+	): array {
+		if (!array_key_exists('tag', $values)) {
+			return $values;
 		}
 
-		$this->view->form = $form;
+		$title = trim(
+			(string)$values['tag']
+		);
+
+		unset($values['tag']);
+
+		if ($title === '') {
+			$values['tagid'] = 0;
+
+			return $values;
+		}
+
+		$tagDb = new Application_Model_DbTable_Tag();
+
+		$values['tagid'] = $tagDb->findOrCreate(
+			$title,
+			'contacts',
+			'contact'
+		);
+
+		return $values;
 	}
 
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
+	protected function validateMultiUpdate(
+		int $id,
+		array $values,
+		array $row,
+		array $post
+	): ?string {
+		$tagId = (int)(
+			$values['tagid']
+			?? $row['tagid']
+			?? 0
+		);
 
-		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$tagEntityDb = new Application_Model_DbTable_Tagentity();
-			$tagEntityDb->deleteTagEntity($id);
+		if ($tagId <= 0) {
+			return null;
 		}
-		//$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+
+		$tagEntityDb = $this->getDb();
+
+		if (!$tagEntityDb instanceof Contacts_Model_DbTable_Tag) {
+			return 'save_failed';
+		}
+
+		$parentId = (int)(
+			$row['entityid'] ?? 0
+		);
+
+		$module = (string)(
+			$row['module'] ?? ''
+		);
+
+		$controller = (string)(
+			$row['controller'] ?? ''
+		);
+
+		if (
+			$tagEntityDb->existsForParent(
+				$parentId,
+				$module,
+				$controller,
+				$tagId,
+				$id
+			)
+		) {
+			return 'TAG_ALREADY_EXISTS';
+		}
+
+		return null;
 	}
 }
