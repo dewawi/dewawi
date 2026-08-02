@@ -949,8 +949,14 @@ class DEEC_Form
 				continue;
 			}
 
-			// Standard: Form + Felder, die tab == $key haben
-			$content .= '<form id="'.htmlspecialchars($formId).'-form" enctype="application/x-www-form-urlencoded" action="" method="'.htmlspecialchars($this->method).'">';
+			$tabFormId = $formId . '-' . $key . '-form';
+
+			$content .= '<form'
+				. ' id="' . htmlspecialchars($tabFormId) . '"'
+				. ' enctype="application/x-www-form-urlencoded"'
+				. ' action=""'
+				. ' method="' . htmlspecialchars($this->method) . '"'
+				. '>';
 			$content .= '<div class="dw-form-layout">';
 
 			// Spaltenkonfig
@@ -1037,37 +1043,56 @@ class DEEC_Form
 	public function renderElementRow(string $name, array $row = [], array $ctx = []): string
 	{
 		$el = $this->getElement($name);
-		if (!$el) return '';
 
-		// clone element config (no mutation in $this->elements)
+		if (!$el) {
+			return '';
+		}
+
 		$tmp = $el;
 
-		// value from row by default
 		if (array_key_exists($name, $row)) {
 			$tmp['value'] = $row[$name];
 		}
 
-		// merge attrib overrides (row-specific)
-		$tmp['attribs'] = is_array($tmp['attribs'] ?? null) ? $tmp['attribs'] : [];
+		$tmp['attribs'] = is_array($tmp['attribs'] ?? null)
+			? $tmp['attribs']
+			: [];
 
-		$rowId = isset($row['id']) ? (string)$row['id'] : '';
-		$controller = (string)($ctx['controller'] ?? '');
+		$rowId = isset($row['id'])
+			? (string)$row['id']
+			: '';
+
 		$module = (string)($ctx['module'] ?? '');
-		$ordering = isset($row['ordering']) ? (string)$row['ordering'] : '';
+		$controller = (string)($ctx['controller'] ?? '');
+		$idPrefix = (string)($ctx['id_prefix'] ?? '');
+		$ordering = isset($row['ordering'])
+			? (string)$row['ordering']
+			: '';
 
-		// unique id per row + field
-		// example: address_12_city
-		$tmp['attribs']['id'] = ($controller !== '' && $rowId !== '')
-			? ($controller . '_' . $rowId . '_' . $name)
-			: ($tmp['attribs']['id'] ?? $name);
+		if ($idPrefix !== '') {
+			$tmp['attribs']['id'] = $idPrefix . $name;
+		} elseif ($controller !== '' && $rowId !== '') {
+			$tmp['attribs']['id'] = $controller . '_' . $rowId . '_' . $name;
+		} else {
+			$tmp['attribs']['id'] = $tmp['attribs']['id'] ?? $name;
+		}
 
-		// data-* used by your JS (trash/save/sort)
-		if ($rowId !== '') $tmp['attribs']['data-id'] = $rowId;
-		if ($ordering !== '') $tmp['attribs']['data-ordering'] = $ordering;
-		if ($controller !== '') $tmp['attribs']['data-controller'] = $controller;
-		if ($module !== '') $tmp['attribs']['data-module'] = $module;
+		if ($rowId !== '') {
+			$tmp['attribs']['data-id'] = $rowId;
+		}
 
-		// render cloned element
+		if ($ordering !== '') {
+			$tmp['attribs']['data-ordering'] = $ordering;
+		}
+
+		if ($controller !== '') {
+			$tmp['attribs']['data-controller'] = $controller;
+		}
+
+		if ($module !== '') {
+			$tmp['attribs']['data-module'] = $module;
+		}
+
 		return $this->renderElementHtml($tmp);
 	}
 
@@ -1383,10 +1408,16 @@ class DEEC_Form
 		// ------------------------------------------------------------
 		// Render by type
 		// ------------------------------------------------------------
+
 		if ($type === 'hidden') {
-			// IMPORTANT: do not reuse $attrs because it contains class/id/type etc.
-			// render minimal hidden input, but keep name/id
-			return '<input type="hidden" name="'.$nameEsc.'" value="'.htmlspecialchars((string)$val).'">';
+			$hiddenAttribs = $attribs;
+			$hiddenAttribs['type'] = 'hidden';
+			$hiddenAttribs['name'] = $nameRaw;
+			$hiddenAttribs['value'] = (string)$val;
+
+			unset($hiddenAttribs['class']);
+
+			return '<input' . $this->renderHtmlAttribs($hiddenAttribs) . '>';
 		}
 
 		if ($type === 'button') {
@@ -1400,20 +1431,13 @@ class DEEC_Form
 				unset($btnAttribs['id']);
 			}
 
-			if (!empty($btnAttribs['class'])) {
-				$btnAttribs['class'] = trim('dw-btn ' . $btnAttribs['class']);
-			}
+			$btnAttribs['class'] = trim(
+				'dw-btn ' . (string)($btnAttribs['class'] ?? '')
+			);
 
-			// enforce type
 			$btnAttribs['type'] = 'button';
 
-			$btnAttrs = '';
-			foreach ($btnAttribs as $k => $v) {
-				if ($v === false || $v === null) continue;
-				$key = (string)$k;
-				if ($v === true) $v = $key;
-				$btnAttrs .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars((string)$v) . '"';
-			}
+			$btnAttrs = $this->renderHtmlAttribs($btnAttribs);
 
 			$btnText = $hasLabel ? htmlspecialchars($labelTxt . $unitTxt) : '';
 
@@ -1429,21 +1453,13 @@ class DEEC_Form
 		if ($type === 'submit') {
 			$btnAttribs = $attribs;
 
-			if (!empty($btnAttribs['class'])) {
-				$btnAttribs['class'] = trim(
-					'dw-btn ' . ($btnAttribs['class'] ?? '')
-				);
-			}
+			$btnAttribs['class'] = trim(
+				'dw-btn ' . (string)($btnAttribs['class'] ?? '')
+			);
 
 			$btnAttribs['type'] = 'submit';
 
-			$btnAttrs = '';
-			foreach ($btnAttribs as $k => $v) {
-				if ($v === false || $v === null) continue;
-				$key = (string)$k;
-				if ($v === true) $v = $key;
-				$btnAttrs .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars((string)$v) . '"';
-			}
+			$btnAttrs = $this->renderHtmlAttribs($btnAttribs);
 
 			$btnText = $hasLabel ? htmlspecialchars($labelTxt . $unitTxt) : 'Submit';
 
@@ -1740,6 +1756,31 @@ class DEEC_Form
 			. ' data-controller="' . htmlspecialchars($controller) . '"></button>';
 
 		$html .= '</div>';
+
+		return $html;
+	}
+
+	protected function renderHtmlAttribs(array $attribs): string
+	{
+		$html = '';
+
+		foreach ($attribs as $key => $value) {
+			if ($value === false || $value === null) {
+				continue;
+			}
+
+			$key = (string)$key;
+
+			if ($value === true) {
+				$value = $key;
+			}
+
+			$html .= ' '
+				. htmlspecialchars($key, ENT_QUOTES, 'UTF-8')
+				. '="'
+				. htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8')
+				. '"';
+		}
 
 		return $html;
 	}
