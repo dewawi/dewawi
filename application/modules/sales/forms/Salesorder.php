@@ -274,7 +274,7 @@ class Sales_Form_Salesorder extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingcountry',
 			'type' => 'text',
-			'label' => 'SALES_ORDERS_CONTACTS_COUNTRY',
+			'label' => 'SALES_ORDERS_CONTACT_COUNTRY',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 4,

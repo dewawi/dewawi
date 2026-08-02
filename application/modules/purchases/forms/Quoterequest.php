@@ -54,6 +54,15 @@ class Purchases_Form_Quoterequest extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'quoteid',
+			'type' => 'text',
+			'label' => 'QUOTE_REQUESTS_QUOTE_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'quotedate',
 			'type' => 'text',
 			'label' => 'QUOTE_REQUESTS_QUOTE_DATE',
@@ -265,7 +274,7 @@ class Purchases_Form_Quoterequest extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingcountry',
 			'type' => 'text',
-			'label' => 'QUOTE_REQUESTS_CONTACTS_COUNTRY',
+			'label' => 'QUOTE_REQUESTS_CONTACT_COUNTRY',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 4,

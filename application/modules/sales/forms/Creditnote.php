@@ -24,24 +24,6 @@ class Sales_Form_Creditnote extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'salesorderid',
-			'type' => 'text',
-			'label' => 'CREDIT_NOTES_SALES_ORDER_ID',
-			'format' => ['type' => 'string'],
-			'tab' => 'overview',
-			'col' => 3,
-		]);
-
-		$this->addElement([
-			'name' => 'invoiceid',
-			'type' => 'text',
-			'label' => 'CREDIT_NOTES_INVOICE_ID',
-			'format' => ['type' => 'string'],
-			'tab' => 'overview',
-			'col' => 3,
-		]);
-
-		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
 			'label' => 'CREDIT_NOTES_TITLE',
@@ -72,9 +54,68 @@ class Sales_Form_Creditnote extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'quoteid',
+			'type' => 'text',
+			'label' => 'CREDIT_NOTES_QUOTE_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'quotedate',
 			'type' => 'text',
 			'label' => 'CREDIT_NOTES_QUOTE_DATE',
+			'format' => [
+				'type' => 'date',
+				'pattern' => 'Y-m-d',
+				'displayPattern' => 'd.m.Y',
+			],
+			'attribs' => [
+				'class' => 'datePicker',
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'salesorderid',
+			'type' => 'text',
+			'label' => 'CREDIT_NOTES_SALES_ORDER_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'salesorderdate',
+			'type' => 'text',
+			'label' => 'CREDIT_NOTES_SALES_ORDER_DATE',
+			'format' => [
+				'type' => 'date',
+				'pattern' => 'Y-m-d',
+				'displayPattern' => 'd.m.Y',
+			],
+			'attribs' => [
+				'class' => 'datePicker',
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'invoiceid',
+			'type' => 'text',
+			'label' => 'CREDIT_NOTES_INVOICE_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'invoicedate',
+			'type' => 'text',
+			'label' => 'CREDIT_NOTES_INVOICE_DATE',
 			'format' => [
 				'type' => 'date',
 				'pattern' => 'Y-m-d',
@@ -265,7 +306,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingpostcode',
 			'type' => 'text',
-			'label' => 'CREDIT_NOTES_CONTACTS_POSTCODE',
+			'label' => 'CREDIT_NOTES_CONTACT_POSTCODE',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 3,
@@ -274,7 +315,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'billingcity',
 			'type' => 'text',
-			'label' => 'CREDIT_NOTES_CONTACTS_CITY',
+			'label' => 'CREDIT_NOTES_CONTACT_CITY',
 			'format' => ['type' => 'string'],
 			'tab' => 'customer',
 			'col' => 5,

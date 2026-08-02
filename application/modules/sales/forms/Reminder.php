@@ -24,15 +24,6 @@ class Sales_Form_Reminder extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'invoiceid',
-			'type' => 'text',
-			'label' => 'REMINDERS_INVOICE_ID',
-			'format' => ['type' => 'string'],
-			'tab' => 'overview',
-			'col' => 3,
-		]);
-
-		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
 			'label' => 'REMINDERS_TITLE',
@@ -63,9 +54,43 @@ class Sales_Form_Reminder extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'quoteid',
+			'type' => 'text',
+			'label' => 'REMINDERS_QUOTE_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'quotedate',
 			'type' => 'text',
 			'label' => 'REMINDERS_QUOTE_DATE',
+			'format' => [
+				'type' => 'date',
+				'pattern' => 'Y-m-d',
+				'displayPattern' => 'd.m.Y',
+			],
+			'attribs' => [
+				'class' => 'datePicker',
+			],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'invoiceid',
+			'type' => 'text',
+			'label' => 'REMINDERS_INVOICE_ID',
+			'format' => ['type' => 'string'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'invoicedate',
+			'type' => 'text',
+			'label' => 'REMINDERS_INVOICE_DATE',
 			'format' => [
 				'type' => 'date',
 				'pattern' => 'Y-m-d',
