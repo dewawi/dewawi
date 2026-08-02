@@ -73,12 +73,15 @@ h4 {
 a {
   color: var(--dw-color-primary);
 }
-iframe {
-  display: block;
-  width: 100%;
-  border: 1px solid var(--dw-color-border);
-  border-radius: var(--dw-radius-md);
-  background: #fff;
+
+.dw-frame,
+.dw-file-manager-frame,
+.dw-email-upload-frame {
+	display: block;
+	width: 100%;
+	border: 1px solid var(--dw-color-border);
+	border-radius: var(--dw-radius-md);
+	background: var(--dw-color-surface);
 }
 
 #content {
@@ -296,8 +299,8 @@ iframe {
 .dw-input,
 .dw-select,
 .dw-textarea {
-	box-sizing: border-box;
 	display: block;
+	box-sizing: border-box;
 	width: 100%;
 	max-width: 100%;
 	min-height: 40px;
@@ -307,6 +310,7 @@ iframe {
 	background: var(--dw-color-surface);
 	color: var(--dw-color-text);
 	font: inherit;
+	font-size: var(--dw-font-size-md);
 	line-height: 1.35;
 	transition:
 		border-color 0.15s ease,
@@ -315,7 +319,7 @@ iframe {
 }
 
 .dw-textarea {
-	min-height: 88px;
+	min-height: 110px;
 	resize: vertical;
 }
 
@@ -351,6 +355,38 @@ iframe {
 .dw-select.is-invalid,
 .dw-textarea.is-invalid {
 	border-color: var(--dw-color-danger-text);
+}
+
+.dw-input.is-valid,
+.dw-select.is-valid,
+.dw-textarea.is-valid {
+	border-color: var(--dw-color-success-text);
+}
+
+.dw-field {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	gap: 6px;
+}
+
+.dw-label {
+	font-size: var(--dw-font-size-sm);
+	font-weight: 600;
+	color: var(--dw-color-text);
+}
+
+.dw-field__description,
+.dw-field__info {
+	font-size: 12px;
+	color: var(--dw-color-text-muted);
+}
+
+.dw-field__error,
+.dw-field-error {
+	margin-top: 2px;
+	font-size: 12px;
+	color: var(--dw-color-danger-text);
 }
 
 /* Toolbar */
@@ -442,7 +478,7 @@ iframe {
 .dw-btn,
 .toolbar button,
 .buttons button,
-button {
+.multiformContainer button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -465,7 +501,7 @@ button {
 .dw-btn:hover,
 .toolbar button:hover,
 .buttons button:hover,
-button:hover {
+.multiformContainer button:hover {
   background-color: #f8fafc;
   border-color: #b8c4d1;
 }
@@ -473,7 +509,7 @@ button:hover {
 .dw-btn:focus,
 .toolbar button:focus,
 .buttons button:focus,
-button:focus {
+.multiformContainer button:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.12);
 }
@@ -982,34 +1018,6 @@ button.nolabel.filter {
   color: var(--dw-color-text);
 }
 
-.dw-form-row .dw-input,
-.dw-form-row .dw-select,
-.dw-form-row .dw-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  max-width: 100%;
-  min-height: 40px;
-  padding: 9px 12px;
-  border: 1px solid var(--dw-color-border);
-  border-radius: var(--dw-radius-sm);
-  background: #fff;
-  color: var(--dw-color-text);
-  font-size: var(--dw-font-size-md);
-}
-
-.dw-textarea {
-  min-height: 110px;
-  resize: vertical;
-}
-
-.dw-input:focus,
-.dw-select:focus,
-.dw-textarea:focus {
-  outline: none;
-  border-color: #7aa7d6;
-  box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.12);
-}
-
 .dw-field__description,
 .dw-field__info {
   font-size: 12px;
@@ -1036,14 +1044,6 @@ button.nolabel.filter {
 
 .dw-checkbox__label {
   color: var(--dw-color-text);
-}
-
-.is-invalid {
-  border-color: #dc3545;
-}
-
-.is-valid {
-  border-color: #198754;
 }
 
 .dw-field-error {
@@ -1173,9 +1173,9 @@ button.nolabel.filter {
 }
 
 .dw-filter-chip {
-	border: 1px solid var(--dw-border-color);
+	border: 1px solid var(--dw-color-border);
 	border-radius: 999px;
-	background: var(--dw-bg-muted);
+	background: var(--dw-color-bg);
 	padding: 4px 10px;
 	cursor: pointer;
 }
@@ -1291,7 +1291,7 @@ button.nolabel.filter {
 }
 
 .dw-badge--default {
-  background: var(--dw-color-muted-text);
+  background: var(--dw-color-text-muted);
   color: #fff;
 }
 
