@@ -127,9 +127,13 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 				<h2><?php echo $this->escape($this->title); ?></h2>
 			</div>
 
-			<div class="dw-page-header__toolbar toolbar dw-toolbar">
-				<?php echo $this->Toolbar(); ?>
-			</div>
+			<?php $toolbarHtml = $this->Toolbar(); ?>
+
+			<?php if ($toolbarHtml !== '') : ?>
+				<div class="dw-page-header__toolbar">
+					<?php echo $toolbarHtml; ?>
+				</div>
+			<?php endif; ?>
 		</div>
 
 		<?php if ($isDetailPage) : ?>

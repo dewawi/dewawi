@@ -4,51 +4,113 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 {
 	protected $permission = null;
 
-	public function toolbar()
+	public function toolbar(): string
 	{
-		$view = $this->view;
+		$toolbar = $this->view->toolbar ?? null;
 
-		if (empty($view->toolbar)) {
+		if (
+			!is_object($toolbar)
+			|| !method_exists($toolbar, 'renderElement')
+		) {
 			return '';
 		}
 
-		$toolbar = $view->toolbar;
-		$html = '';
+		$content = $this->renderToolbarContent($toolbar);
 
-		if ($view->action === 'edit') {
-			$html .= $this->renderEditToolbar($toolbar, (int)$view->id);
-		} elseif ($view->action === 'view') {
-			$html .= $this->renderViewToolbar($toolbar, (int)$view->id);
-		} elseif ($view->action === 'select') {
-			$html .= $this->renderSelectToolbar($toolbar, $view->controller);
-		} elseif ($view->action === 'index') {
-			$html .= $this->renderIndexToolbar($toolbar, $view->controller);
+		if ($content === '') {
+			return '';
 		}
+
+		return '<div class="dw-toolbar">'
+			. $content
+			. '</div>';
+	}
+
+	protected function renderToolbarContent($toolbar): string
+	{
+		$action = (string)($this->view->action ?? '');
+
+		switch ($action) {
+			case 'edit':
+				return $this->renderEditToolbar(
+					$toolbar,
+					(int)$this->view->id
+				);
+
+			case 'view':
+				return $this->renderViewToolbar(
+					$toolbar,
+					(int)$this->view->id
+				);
+
+			case 'select':
+				return $this->renderSelectToolbar(
+					$toolbar,
+					(string)$this->view->controller
+				);
+
+			case 'index':
+				return $this->renderIndexToolbar(
+					$toolbar,
+					(string)$this->view->controller
+				);
+		}
+
+		return '';
+	}
+
+	protected function renderEditToolbar(
+		$toolbar,
+		int $id
+	): string {
+		$target = $this->getCurrentTarget($id);
+
+		$html = '<div class="dw-toolbar__main">';
+
+		$html .= $toolbar->renderElementWithAttribs(
+			'copy',
+			$target
+		);
+
+		$html .= $toolbar->renderElementWithAttribs(
+			'delete',
+			$target
+		);
+
+		$state = $toolbar->getElement('state');
+
+		if ($state) {
+			$html .= '<div class="dw-toolbar__field">';
+			$html .= $toolbar->renderElement('state');
+			$html .= '</div>';
+		}
+
+		$html .= '</div>';
 
 		return $html;
 	}
 
-	protected function renderEditToolbar($toolbar, int $id): string
-	{
+	protected function renderViewToolbar(
+		$toolbar,
+		int $id
+	): string {
 		$target = $this->getCurrentTarget($id);
 
-		$html = '';
-		$html .= $toolbar->renderElementWithAttribs('copy', $target);
-		$html .= $toolbar->renderElementWithAttribs('delete', $target);
-		$html .= $toolbar->renderElement('state');
+		$html = '<div class="dw-toolbar__main">';
 
-		return $html;
-	}
+		$html .= $toolbar->renderElementWithAttribs(
+			'copy',
+			$target
+		);
 
-	protected function renderViewToolbar($toolbar, int $id): string
-	{
-		$target = $this->getCurrentTarget($id);
-
-		$html = '';
-		$html .= $toolbar->renderElementWithAttribs('copy', $target);
-		if($this->isCancellableView()) {
-			$html .= $toolbar->renderElementWithAttribs('cancel', $target);
+		if ($this->isCancellableView()) {
+			$html .= $toolbar->renderElementWithAttribs(
+				'cancel',
+				$target
+			);
 		}
+
+		$html .= '</div>';
 
 		return $html;
 	}

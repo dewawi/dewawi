@@ -25,6 +25,8 @@ class Zend_View_Helper_ToolbarPositions extends Zend_View_Helper_Abstract
 			. ' data-location="' . $this->escape($location) . '"'
 			. '>';
 
+		$html .= '<div class="dw-toolbar__main">';
+
 		$html .= $toolbar->renderElement('add-position');
 
 		$html .= $toolbar->renderElementWithAttribs(
@@ -38,6 +40,7 @@ class Zend_View_Helper_ToolbarPositions extends Zend_View_Helper_Abstract
 		$html .= $toolbar->renderElement('copy-selected-position');
 		$html .= $toolbar->renderElement('delete-selected-position');
 
+		$html .= '</div>';
 		$html .= '</div>';
 
 		return $html;
