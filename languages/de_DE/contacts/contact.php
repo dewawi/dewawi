@@ -14,8 +14,6 @@
 	'CONTACTS_MOBILE' => 'Mobil',
 	'CONTACTS_EMAIL' => 'E-Mail',
 	'CONTACTS_INTERNET' => 'Internet',
-	'CONTACTS_BANK_ACCOUNT' => 'Bankverbindung',
-	'CONTACTS_IBAN_BIC' => 'IBAN/BIC',
 	'CONTACTS_STREET' => 'Straße',
 	'CONTACTS_POSTCODE' => 'PLZ',
 	'CONTACTS_CITY' => 'Ort',

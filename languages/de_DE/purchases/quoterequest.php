@@ -5,6 +5,8 @@
 	'QUOTE_REQUESTS_TITLE' => 'Projekt',
 	'QUOTE_REQUESTS_SUBJECT' => 'Betreff',
 	'QUOTE_REQUESTS_REFERENCE' => 'Referenz',
+	'QUOTE_REQUESTS_QUOTE_ID' => 'Angebotsnummer',
+	'QUOTE_REQUESTS_QUOTE_DATE' => 'Angebotsdatum',
 	'QUOTE_REQUESTS_CONTACT' => 'Kunde',
 	'QUOTE_REQUESTS_CONTACT_ID' => 'Kundennr.',
 	'QUOTE_REQUESTS_CONTACT_NAME' => 'Name',
