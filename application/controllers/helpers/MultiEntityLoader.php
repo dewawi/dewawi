@@ -2,65 +2,71 @@
 
 class Application_Controller_Action_Helper_MultiEntityLoader extends Zend_Controller_Action_Helper_Abstract
 {
-	public function populate(DEEC_Form $form, int $parentid, string $parentModule, string $parentController): void
-	{
-		if ($parentid <= 0) {
-			return;
-		}
+	public function populate(
+		DEEC_Form $form,
+		int $parentId,
+		string $parentModule,
+		string $parentController
+	): void {
+		$form->setMultiContext(
+			$parentId,
+			$parentModule,
+			$parentController
+		);
 
-		foreach ($form->getMultiElements() as $name => $el) {
-			$module = (string)($el['module'] ?? '');
-			$controller = (string)($el['controller'] ?? $name);
+		foreach ($form->getMultiElements() as $name => $element) {
+			$module = (string)($element['module'] ?? '');
+			$controller = (string)($element['controller'] ?? '');
 
 			if ($module === '' || $controller === '') {
 				continue;
 			}
 
-			$db = $this->createDbTable($module, $controller);
+			$db = $this->createDbTable(
+				$module,
+				$controller
+			);
+
 			if (!$db) {
 				continue;
 			}
 
-			$rows = $db->getByParentId($parentid, $parentModule, $parentController);
+			$rows = $db->getByParentId(
+				$parentId,
+				$parentModule,
+				$parentController
+			);
 
-			$form->setElementData($name, [
-				'parentid' => $parentid,
-				'parent_module' => $parentModule,
-				'parent_controller' => $parentController,
-				'module' => $module,
-				'controller' => $controller,
-				'rows' => is_array($rows) ? $rows : [],
-			]);
+			$form->setElementData(
+				$name,
+				[
+					'rows' => is_array($rows)
+						? $rows
+						: [],
+				]
+			);
 		}
 	}
 
-	protected function createDbTable(string $module, string $controller)
-	{
-		$class = $this->dbTableClassFromModuleController($module, $controller);
+	protected function createDbTable(
+		string $module,
+		string $controller
+	) {
+		$className = DEEC_Util::dbTableClassFromModuleController(
+			$module,
+			$controller
+		);
 
-		if (!class_exists($class)) {
+		if (!class_exists($className)) {
 			return null;
 		}
 
-		$db = new $class();
+		$db = new $className();
 
-		if (!method_exists($db, 'getByParentId')) {
+		if (!$db instanceof DEEC_Model_DbTable_Entity) {
 			return null;
 		}
 
 		return $db;
-	}
-
-	protected function dbTableClassFromModuleController(string $module, string $controller): string
-	{
-		return $this->camelize($module) . '_Model_DbTable_' . $this->camelize($controller);
-	}
-
-	protected function camelize(string $str): string
-	{
-		$str = str_replace(['-', '_'], ' ', strtolower($str));
-		$str = ucwords($str);
-
-		return str_replace(' ', '', $str);
 	}
 }

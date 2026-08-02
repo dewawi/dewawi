@@ -232,13 +232,6 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$this->_helper->layout->disableLayout();
 	}
 
-	protected function getFormClass(): string
-	{
-		return $this->getModuleClassPrefix()
-			. '_Form_'
-			. $this->getControllerClassName();
-	}
-
 	protected function getEditForm(): array
 	{
 		$formClass = $this->getFormClass();
@@ -385,12 +378,16 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 	protected function getModuleClassPrefix(): string
 	{
-		return ucfirst($this->getRequest()->getModuleName());
+		return DEEC_Util::moduleClassPrefix(
+			$this->getRequest()->getModuleName()
+		);
 	}
 
 	protected function getControllerClassName(): string
 	{
-		return ucfirst($this->getRequest()->getControllerName());
+		return DEEC_Util::camelize(
+			$this->getRequest()->getControllerName()
+		);
 	}
 
 	protected function getControllerViewKey(): string
@@ -410,9 +407,18 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 	protected function getDbTableClass(): string
 	{
-		return $this->getModuleClassPrefix()
-			. '_Model_DbTable_'
-			. $this->getControllerClassName();
+		return DEEC_Util::dbTableClassFromModuleController(
+			$this->getRequest()->getModuleName(),
+			$this->getRequest()->getControllerName()
+		);
+	}
+
+	protected function getFormClass(): string
+	{
+		return DEEC_Util::formClassFromModuleController(
+			$this->getRequest()->getModuleName(),
+			$this->getRequest()->getControllerName()
+		);
 	}
 
 	protected function getEditToolbar()
