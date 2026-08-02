@@ -1064,18 +1064,11 @@ class DEEC_Form
 
 		$module = (string)($ctx['module'] ?? '');
 		$controller = (string)($ctx['controller'] ?? '');
-		$idPrefix = (string)($ctx['id_prefix'] ?? '');
 		$ordering = isset($row['ordering'])
 			? (string)$row['ordering']
 			: '';
 
-		if ($idPrefix !== '') {
-			$tmp['attribs']['id'] = $idPrefix . $name;
-		} elseif ($controller !== '' && $rowId !== '') {
-			$tmp['attribs']['id'] = $controller . '_' . $rowId . '_' . $name;
-		} else {
-			$tmp['attribs']['id'] = $tmp['attribs']['id'] ?? $name;
-		}
+		$tmp['attribs']['id'] = $this->buildRowElementHtmlId($module, $controller, $rowId, $name);
 
 		if ($rowId !== '') {
 			$tmp['attribs']['data-id'] = $rowId;
@@ -1300,7 +1293,7 @@ class DEEC_Form
 
 		// enforce correct id/name/type (element contract)
 		if ($type !== 'button') {
-			$attribs['id'] = $attribs['id'] ?? $nameRaw;
+			$attribs['id'] = $this->getElementHtmlId($el);
 		}
 		$attribs['name'] = $attribs['name'] ?? $nameRaw;
 
@@ -1783,6 +1776,94 @@ class DEEC_Form
 		}
 
 		return $html;
+	}
+
+	protected function getElementHtmlId(array $el): string
+	{
+		$attribs = is_array($el['attribs'] ?? null)
+			? $el['attribs']
+			: [];
+
+		if (!empty($attribs['id'])) {
+			return (string)$attribs['id'];
+		}
+
+		$name = (string)($el['name'] ?? '');
+
+		if ($name === '') {
+			return '';
+		}
+
+		$scope = $this->getRenderScope();
+
+		if ($scope === '') {
+			return $name;
+		}
+
+		return $scope . '-' . $name;
+	}
+
+	protected function getRenderScope(): string
+	{
+		$className = get_class($this);
+		$classScope = $this->normalizeHtmlId($className);
+
+		$recordId = $this->getRecordId();
+
+		if ($recordId === '') {
+			return $classScope;
+		}
+
+		return $classScope . '-' . $recordId;
+	}
+
+	protected function getRecordId(): string
+	{
+		if (!isset($this->elements['id'])) {
+			return '';
+		}
+
+		$value = $this->elements['id']['value'] ?? null;
+
+		if ($value === null || $value === '') {
+			return '';
+		}
+
+		return $this->normalizeHtmlId((string)$value);
+	}
+
+	protected function normalizeHtmlId(string $value): string
+	{
+		$value = preg_replace(
+			'/[^a-zA-Z0-9_-]+/',
+			'-',
+			$value
+		);
+
+		return strtolower(trim((string)$value, '-'));
+	}
+
+	protected function buildRowElementHtmlId(
+		string $module,
+		string $controller,
+		string $rowId,
+		string $fieldName
+	): string {
+		$parts = array_filter(
+			[
+				$module,
+				$controller,
+				$rowId,
+				$fieldName,
+			],
+			static function ($value): bool {
+				return $value !== '';
+			}
+		);
+
+		return $this->normalizeHtmlId(
+			implode('-', $parts)
+		);
 	}
 
 	protected function applyOptionsIfAvailable(DEEC_Form $form): void
