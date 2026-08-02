@@ -1418,66 +1418,80 @@ class DEEC_Form
 				$btnAttribs['data-action'] = $nameRaw;
 			}
 
-			if (!empty($el['toolbar']) && empty($btnAttribs['id'])) {
-				unset($btnAttribs['id']);
-			}
-
-			$btnAttribs['class'] = trim(
-				'dw-btn ' . (string)($btnAttribs['class'] ?? '')
-			);
-
-			$btnAttribs['type'] = 'button';
-
-			$btnAttrs = $this->renderHtmlAttribs($btnAttribs);
+			unset($btnAttribs['id']);
 
 			$btnText = $hasLabel
 				? htmlspecialchars($labelTxt . $unitTxt)
 				: '';
 
-			$classes = preg_split(
-				'/\s+/',
-				trim((string)($btnAttribs['class'] ?? '')),
-				-1,
-				PREG_SPLIT_NO_EMPTY
-			);
-
-			$classes = array_filter(
-				$classes,
-				static function (string $class): bool {
-					return $class !== 'nolabel';
-				}
+			$classes = $this->normalizeCssClasses(
+				(string)($btnAttribs['class'] ?? '')
 			);
 
 			$classes[] = 'dw-btn';
 
 			if ($btnText === '') {
 				$classes[] = 'dw-btn--icon';
+			} else {
+				$classes[] = 'dw-btn--action';
 			}
 
 			$btnAttribs['class'] = implode(
 				' ',
-				array_unique($classes)
+				array_values(array_unique($classes))
 			);
 
-			$btn = '<button'.$btnAttrs.'>'.$btnText.'</button>';
-			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$btn.'</div>' : $btn;
+			$btnAttribs['type'] = 'button';
+
+			if ($btnText === '' && empty($btnAttribs['aria-label'])) {
+				$btnAttribs['aria-label'] = $this->translate(
+					(string)($el['label'] ?: strtoupper($nameRaw))
+				);
+			}
+
+			$btnAttrs = $this->renderHtmlAttribs($btnAttribs);
+
+			$button = '<button' . $btnAttrs . '>'
+				. $btnText
+				. '</button>';
+
+			return $wrap
+				? '<div class="' . $wrapperClasses . '">' . $button . '</div>'
+				: $button;
 		}
 
 		if ($type === 'submit') {
 			$btnAttribs = $attribs;
 
-			$btnAttribs['class'] = trim(
-				'dw-btn ' . (string)($btnAttribs['class'] ?? '')
+			unset($btnAttribs['id']);
+
+			$btnText = $hasLabel
+				? htmlspecialchars($labelTxt . $unitTxt)
+				: $this->translate('SUBMIT');
+
+			$classes = $this->normalizeCssClasses(
+				(string)($btnAttribs['class'] ?? '')
+			);
+
+			$classes[] = 'dw-btn';
+			$classes[] = 'dw-btn--action';
+
+			$btnAttribs['class'] = implode(
+				' ',
+				array_values(array_unique($classes))
 			);
 
 			$btnAttribs['type'] = 'submit';
 
-			$btnAttrs = $this->renderHtmlAttribs($btnAttribs);
+			$button = '<button'
+				. $this->renderHtmlAttribs($btnAttribs)
+				. '>'
+				. htmlspecialchars($btnText)
+				. '</button>';
 
-			$btnText = $hasLabel ? htmlspecialchars($labelTxt . $unitTxt) : 'Submit';
-
-			$btn = '<button'.$btnAttrs.'>'.$btnText.'</button>';
-			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$btn.'</div>' : $btn;
+			return $wrap
+				? '<div class="' . $wrapperClasses . '">' . $button . '</div>'
+				: $button;
 		}
 
 		if ($type === 'textarea') {
@@ -1656,65 +1670,92 @@ class DEEC_Form
 
 	protected function renderMultiElementHtml(array $el): string
 	{
-		$name = (string)$el['name'];			// z.B. address
+		$name = (string)$el['name'];
 		$labelKey = (string)($el['label'] ?? '');
 		$module = (string)($el['module'] ?? '');
 		$controller = (string)($el['controller'] ?? '');
-		$parentid = (int)($el['parentid'] ?? 0);
-		$rows = is_array($el['rows'] ?? null) ? $el['rows'] : [];
-
-		// Überschrift wie bisher
-		$html = '';
-		if ($labelKey !== '') {
-			$html .= '<h4>' . htmlspecialchars($this->translate($labelKey)) . '</h4>';
-		}
-
+		$parentId = (int)($el['parentid'] ?? 0);
 		$parentModule = (string)($el['parent_module'] ?? '');
 		$parentController = (string)($el['parent_controller'] ?? '');
+		$rows = is_array($el['rows'] ?? null)
+			? $el['rows']
+			: [];
 
-		// Container
-		$html .= '<div id="' . htmlspecialchars($name) . '-container" class="dw-multiform-context dw-multiform"'
-				. ' data-parentid="' . htmlspecialchars((string)$parentid) . '"'
-				. ' data-parent-module="' . htmlspecialchars($parentModule) . '"'
-				. ' data-parent-controller="' . htmlspecialchars($parentController) . '"'
-				. '>';
+		if ($module === '' || $controller === '') {
+			return '';
+		}
 
-		$html .= '<div id="' . htmlspecialchars($name) . '" class="multiform dw-multiform__list">';
-
-		// Row-Form automatisch aus module/controller erzeugen: Contacts_Form_Address
-		$rowForm = $this->makeRowFormForMulti($module, $controller);
+		$rowForm = $this->makeRowFormForMulti(
+			$module,
+			$controller
+		);
 
 		$this->applyOptionsIfAvailable($rowForm);
 
-		// Felder der Row-Form
-		$subElements = method_exists($rowForm, 'getElements') ? $rowForm->getElements() : [];
-		$fieldNames = array_keys($subElements);
+		$html = '';
 
-		$ctx = [
-			'module' => $module,
-			'controller' => $controller,
-		];
+		if ($labelKey !== '') {
+			$html .= '<h4>'
+				. htmlspecialchars(
+					$this->translate($labelKey),
+					ENT_QUOTES,
+					'UTF-8'
+				)
+				. '</h4>';
+		}
 
-		$cnt = count($rows);
+		$html .= '<div'
+			. ' id="' . $this->escapeHtmlId($name . '-container') . '"'
+			. ' class="dw-multiform-context"'
+			. ' data-parentid="' . $parentId . '"'
+			. ' data-parent-module="' . htmlspecialchars($parentModule, ENT_QUOTES, 'UTF-8') . '"'
+			. ' data-parent-controller="' . htmlspecialchars($parentController, ENT_QUOTES, 'UTF-8') . '"'
+			. '>';
+
+		$html .= '<div'
+			. ' class="dw-multiform"'
+			. ' data-module="' . htmlspecialchars($module, ENT_QUOTES, 'UTF-8') . '"'
+			. ' data-controller="' . htmlspecialchars($controller, ENT_QUOTES, 'UTF-8') . '"'
+			. '>';
+
+		$html .= '<div'
+			. ' id="' . $this->escapeHtmlId($name) . '"'
+			. ' class="dw-multiform__list"'
+			. '>';
+
 		foreach ($rows as $row) {
 			if (!is_array($row) || empty($row['id'])) {
 				continue;
 			}
 
-			$html .= $rowForm->renderMultiItem($name, $row, $ctx);
+			$html .= $rowForm->renderMultiItem(
+				$name,
+				$row,
+				[
+					'module' => $module,
+					'controller' => $controller,
+				]
+			);
 		}
 
-		$html .= '<button type="button" class="addMulti add"'
-				. ' data-action="multi-add"'
-				. ' data-module="' . htmlspecialchars($module) . '"'
-				. ' data-controller="' . htmlspecialchars($controller) . '"></button>';
+		$html .= '</div>';
 
-		$html .= '</div></div>';
+		$html .= '<div class="dw-multiform__footer">';
+		$html .= $this->renderMultiActionButton(
+			'add',
+			'multi-add',
+			[
+				'data-module' => $module,
+				'data-controller' => $controller,
+				'aria-label' => $this->translate('TOOLBAR_ADD'),
+			]
+		);
+		$html .= '</div>';
 
-		// col wrapper wie bei normalen elemente
-		$html = $this->wrapByColIfNeeded($html, $el);
+		$html .= '</div>';
+		$html .= '</div>';
 
-		return $html;
+		return $this->wrapByColIfNeeded($html, $el);
 	}
 
 	protected function makeRowFormForMulti(string $module, string $controller): DEEC_Form
@@ -1734,40 +1775,67 @@ class DEEC_Form
 		return $form;
 	}
 
-	public function renderMultiItem(string $name, array $row, array $ctx = []): string
-	{
+	public function renderMultiItem(
+		string $name,
+		array $row,
+		array $ctx = []
+	): string {
 		if (empty($row['id'])) {
 			return '';
 		}
 
 		$rowId = (string)$row['id'];
-		$fields = array_keys($this->getElements());
-
 		$module = (string)($ctx['module'] ?? '');
 		$controller = (string)($ctx['controller'] ?? '');
 
 		$html = '<div'
-			. ' id="' . htmlspecialchars($name . $rowId) . '"'
+			. ' id="' . $this->escapeHtmlId($name . '-' . $rowId) . '"'
 			. ' class="dw-multiform__item"'
-			. ' data-id="' . htmlspecialchars($rowId) . '"'
-			. ' data-module="' . htmlspecialchars($module) . '"'
-			. ' data-controller="' . htmlspecialchars($controller) . '"'
+			. ' data-id="' . htmlspecialchars($rowId, ENT_QUOTES, 'UTF-8') . '"'
+			. ' data-module="' . htmlspecialchars($module, ENT_QUOTES, 'UTF-8') . '"'
+			. ' data-controller="' . htmlspecialchars($controller, ENT_QUOTES, 'UTF-8') . '"'
 			. '>';
 
-		$html .= '<div class="row g-3">';
+		$html .= '<div class="dw-multiform__fields">';
 
-		foreach ($fields as $field) {
-			$html .= $this->renderElementRow($field, $row, $ctx);
+		foreach (array_keys($this->getElements()) as $fieldName) {
+			$html .= $this->renderElementRow(
+				$fieldName,
+				$row,
+				[
+					'module' => $module,
+					'controller' => $controller,
+				]
+			);
 		}
 
 		$html .= '</div>';
 
-		$html .= '<button type="button" class="delete"'
-			. ' data-id="' . htmlspecialchars($rowId) . '"'
-			. ' data-action="delete"'
-			. ' data-module="' . htmlspecialchars($module) . '"'
-			. ' data-controller="' . htmlspecialchars($controller) . '"></button>';
+		$html .= '<div class="dw-multiform__actions">';
 
+		if (
+			$this->getElement('email')
+			&& !empty($row['email'])
+		) {
+			$html .= '<a'
+				. ' class="dw-btn dw-btn--icon email"'
+				. ' href="mailto:' . htmlspecialchars((string)$row['email'], ENT_QUOTES, 'UTF-8') . '"'
+				. ' aria-label="' . htmlspecialchars($this->translate('EMAIL'), ENT_QUOTES, 'UTF-8') . '"'
+				. '></a>';
+		}
+
+		$html .= $this->renderMultiActionButton(
+			'delete',
+			'delete',
+			[
+				'data-id' => $rowId,
+				'data-module' => $module,
+				'data-controller' => $controller,
+				'aria-label' => $this->translate('TOOLBAR_DELETE'),
+			]
+		);
+
+		$html .= '</div>';
 		$html .= '</div>';
 
 		return $html;
@@ -1861,6 +1929,57 @@ class DEEC_Form
 		);
 
 		return strtolower(trim((string)$value, '-'));
+	}
+
+	protected function normalizeCssClasses(string $classes): array
+	{
+		$items = preg_split(
+			'/\s+/',
+			trim($classes),
+			-1,
+			PREG_SPLIT_NO_EMPTY
+		);
+
+		if (!$items) {
+			return [];
+		}
+
+		return array_values(
+			array_filter(
+				$items,
+				static function (string $class): bool {
+					return $class !== 'nolabel';
+				}
+			)
+		);
+	}
+
+	protected function escapeHtmlId(string $value): string
+	{
+		return htmlspecialchars(
+			$this->normalizeHtmlId($value),
+			ENT_QUOTES,
+			'UTF-8'
+		);
+	}
+
+	protected function renderMultiActionButton(
+		string $iconClass,
+		string $action,
+		array $attribs = []
+	): string {
+		$attribs = array_merge(
+			[
+				'type' => 'button',
+				'class' => 'dw-btn dw-btn--icon ' . $iconClass,
+				'data-action' => $action,
+			],
+			$attribs
+		);
+
+		return '<button'
+			. $this->renderHtmlAttribs($attribs)
+			. '></button>';
 	}
 
 	protected function buildRowElementHtmlId(
