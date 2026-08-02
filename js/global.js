@@ -2413,19 +2413,41 @@ function markFieldSaved($field) {
 			'multi-add': function (selection, $button) {
 				var $container = $button.closest('.dw-multiform-context');
 
+				var target = {
+					module: $button.data('module'),
+					controller: $button.data('controller'),
+					action: 'add',
+					id: $container.data('parentid')
+				};
+
+				var context = {
+					parentModule: $container.data('parent-module'),
+					parentController: $container.data('parent-controller'),
+					parentId: $container.data('parentid')
+				};
+
+				if (
+					!target.module
+					|| !target.controller
+					|| !context.parentModule
+					|| !context.parentController
+					|| !context.parentId
+				) {
+					console.error(
+						'MultiForm context is incomplete.',
+						{
+							target: target,
+							context: context
+						}
+					);
+
+					return;
+				}
+
 				createEntity(
 					{},
-					{
-						module: $button.data('module'),
-						controller: $button.data('controller'),
-						action: 'add',
-						id: $container.data('parentid')
-					},
-					{
-						parentModule: $container.data('parent-module'),
-						parentController: $container.data('parent-controller'),
-						parentId: $container.data('parentid')
-					},
+					target,
+					context,
 					$container
 				);
 			},
