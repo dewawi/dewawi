@@ -1653,7 +1653,7 @@ class DEEC_Form
 		$parentController = (string)($el['parent_controller'] ?? '');
 
 		// Container
-		$html .= '<div id="' . htmlspecialchars($name) . '-container" class="multiformContainer dw-multiform"'
+		$html .= '<div id="' . htmlspecialchars($name) . '-container" class="dw-multiform-context dw-multiform"'
 				. ' data-parentid="' . htmlspecialchars((string)$parentid) . '"'
 				. ' data-parent-module="' . htmlspecialchars($parentModule) . '"'
 				. ' data-parent-controller="' . htmlspecialchars($parentController) . '"'

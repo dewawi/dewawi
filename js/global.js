@@ -158,7 +158,7 @@ $(document).ready(function(){
 			id: entityId
 		};
 
-		var $container = $field.closest('.multiformContainer');
+		var $container = $field.closest('.dw-multiform-context');
 
 		var context = {
 			parentModule: $container.data('parent-module'),
@@ -887,7 +887,7 @@ function add(data, params) {
 				}
 
 				var parentId = data.parent_id || data.parentid || params['id'] || id;
-				var $container = $('.multiformContainer[data-controller="' + params['controller'] + '"][data-parentid="' + parentId + '"]');
+				var $container = $('.dw-multiform-context[data-controller="' + params['controller'] + '"][data-parentid="' + parentId + '"]');
 
 				if ($container.length) {
 					$container.find('button.addMulti').before(resp);
@@ -2411,7 +2411,7 @@ function markFieldSaved($field) {
 			},
 
 			'multi-add': function (selection, $button) {
-				var $container = $button.closest('.multiformContainer');
+				var $container = $button.closest('.dw-multiform-context');
 
 				createEntity(
 					{},

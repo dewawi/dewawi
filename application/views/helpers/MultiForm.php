@@ -209,7 +209,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract
 		array $childs
 	): string {
 		return '<div'
-			. ' class="dw-multiform__children multiformContainer"'
+			. ' class="dw-multiform__children dw-multiform-context"'
 			. ' data-parentid="' . $this->escape($parentId) . '"'
 			. ' data-controller="contactperson"'
 			. '>'
