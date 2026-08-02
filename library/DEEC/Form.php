@@ -39,9 +39,7 @@
  * Optional (multi / child rows):
  * - module (string)			Module for multi row form/entity
  * - controller (string)		Controller/entity for multi row form/entity
- * - parentid (int)			 Parent entity id
- * - parent_module (string)	 Parent module context
- * - parent_controller (string) Parent controller context
+ * - fields (array)			   Optional field names rendered for each row
  * - rows (array)			   Existing child rows
  *
  * Optional (logic / JS):
@@ -70,7 +68,7 @@
  * 7) `source` is used by the Options helper to load options dynamically.
  * 8) `filter => true` marks fields for list/filter usage.
  * 9) `toolbar` groups elements for toolbar rendering.
- * 10) Multi elements may use module/controller/parentid/rows plus parent_module/parent_controller.
+ * 10) Multi elements may use module/controller/fields/rows.
  *
  * Example:
  * [
@@ -165,6 +163,12 @@ class DEEC_Form
 	protected $errors = [];
 	protected $translator = null;
 	protected $permission = null;
+
+	protected $multiContext = [
+		'id' => 0,
+		'module' => '',
+		'controller' => '',
+	];
 
 	public function setMode(string $mode): self
 	{
@@ -398,6 +402,25 @@ class DEEC_Form
 		return $this->locale;
 	}
 
+	public function setMultiContext(
+		int $id,
+		string $module,
+		string $controller
+	): self {
+		$this->multiContext = [
+			'id' => max(0, $id),
+			'module' => trim($module),
+			'controller' => trim($controller),
+		];
+
+		return $this;
+	}
+
+	public function getMultiContext(): array
+	{
+		return $this->multiContext;
+	}
+
 	public function addElement(array $cfg)
 	{
 		$cfg = $this->normalizeElementConfig($cfg);
@@ -427,10 +450,8 @@ class DEEC_Form
 			'toolbar' => $cfg['toolbar'],
 			'module' => $cfg['module'] ?? '',
 			'controller' => $cfg['controller'] ?? '',
-			'parentid' => $cfg['parentid'] ?? 0,
 			'rows' => $cfg['rows'] ?? [],
-			'parent_module' => $cfg['parent_module'] ?? '',
-			'parent_controller' => $cfg['parent_controller'] ?? '',
+			'fields' => $cfg['fields'] ?? [],
 		];
 	}
 
@@ -458,8 +479,7 @@ class DEEC_Form
 			'col','tab','section','order','wrap',
 			'source',
 			'filter','toolbar',
-			'module','controller','parentid','rows',
-			'parent_module','parent_controller',
+			'module','controller','rows','fields',
 		];
 
 		$clean = [];
@@ -480,9 +500,24 @@ class DEEC_Form
 
 		if ($clean['type'] === 'multi') {
 			$clean['rows'] = is_array($clean['rows'] ?? null) ? $clean['rows'] : [];
-			$clean['parentid'] = (int)($clean['parentid'] ?? 0);
-			$clean['module'] = (string)($clean['module'] ?? '');
-			$clean['controller'] = (string)($clean['controller'] ?? '');
+			$clean['fields'] = is_array($clean['fields'] ?? null)
+				? array_values(
+					array_filter(
+						$clean['fields'],
+						static function ($field): bool {
+							return is_string($field)
+								&& trim($field) !== '';
+						}
+					)
+				)
+				: [];
+			$clean['module'] = trim(
+				(string)($clean['module'] ?? '')
+			);
+
+			$clean['controller'] = trim(
+				(string)($clean['controller'] ?? '')
+			);
 		}
 
 		$clean['col'] = isset($clean['col']) ? (int)$clean['col'] : null;
@@ -1674,9 +1709,6 @@ class DEEC_Form
 		$labelKey = (string)($el['label'] ?? '');
 		$module = (string)($el['module'] ?? '');
 		$controller = (string)($el['controller'] ?? '');
-		$parentId = (int)($el['parentid'] ?? 0);
-		$parentModule = (string)($el['parent_module'] ?? '');
-		$parentController = (string)($el['parent_controller'] ?? '');
 		$rows = is_array($el['rows'] ?? null)
 			? $el['rows']
 			: [];
@@ -1684,6 +1716,12 @@ class DEEC_Form
 		if ($module === '' || $controller === '') {
 			return '';
 		}
+
+		$multiContext = $this->getMultiContext();
+
+		$parentId = (int)$multiContext['id'];
+		$parentModule = (string)$multiContext['module'];
+		$parentController = (string)$multiContext['controller'];
 
 		$rowForm = $this->makeRowFormForMulti(
 			$module,
@@ -1734,6 +1772,7 @@ class DEEC_Form
 				[
 					'module' => $module,
 					'controller' => $controller,
+					'fields' => $el['fields'] ?? [],
 				]
 			);
 		}
@@ -1741,15 +1780,23 @@ class DEEC_Form
 		$html .= '</div>';
 
 		$html .= '<div class="dw-multiform__footer">';
-		$html .= $this->renderMultiActionButton(
-			'add',
-			'multi-add',
-			[
-				'data-module' => $module,
-				'data-controller' => $controller,
-				'aria-label' => $this->translate('TOOLBAR_ADD'),
-			]
-		);
+
+		if (
+			$parentId > 0
+			&& $parentModule !== ''
+			&& $parentController !== ''
+		) {
+			$html .= $this->renderMultiActionButton(
+				'add',
+				'multi-add',
+				[
+					'data-module' => $module,
+					'data-controller' => $controller,
+					'aria-label' => $this->translate('TOOLBAR_ADD'),
+				]
+			);
+		}
+
 		$html .= '</div>';
 
 		$html .= '</div>';
@@ -1758,7 +1805,7 @@ class DEEC_Form
 		return $this->wrapByColIfNeeded($html, $el);
 	}
 
-	public static function createRowForm(
+	protected function makeRowFormForMulti(
 		string $module,
 		string $controller
 	): DEEC_Form {
@@ -1784,13 +1831,47 @@ class DEEC_Form
 		return $form;
 	}
 
-	protected function makeRowFormForMulti(
-		string $module,
-		string $controller
-	): DEEC_Form {
-		return self::createRowForm(
+	public function renderMultiRow(
+		string $elementName,
+		array $row
+	): string {
+		$element = $this->getElement($elementName);
+
+		if (
+			!$element
+			|| ($element['type'] ?? '') !== 'multi'
+			|| empty($row['id'])
+		) {
+			return '';
+		}
+
+		$module = (string)(
+			$element['module'] ?? ''
+		);
+
+		$controller = (string)(
+			$element['controller'] ?? ''
+		);
+
+		if ($module === '' || $controller === '') {
+			return '';
+		}
+
+		$rowForm = $this->makeRowFormForMulti(
 			$module,
 			$controller
+		);
+
+		$this->applyOptionsIfAvailable($rowForm);
+
+		return $rowForm->renderMultiItem(
+			$elementName,
+			$row,
+			[
+				'module' => $module,
+				'controller' => $controller,
+				'fields' => $element['fields'] ?? [],
+			]
 		);
 	}
 
@@ -2033,13 +2114,6 @@ class DEEC_Form
 		return $this->normalizeHtmlId(
 			implode('-', $parts)
 		);
-	}
-
-	public function applyAvailableOptions(): self
-	{
-		$this->applyOptionsIfAvailable($this);
-
-		return $this;
 	}
 
 	protected function applyOptionsIfAvailable(DEEC_Form $form): void
