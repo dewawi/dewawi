@@ -57,7 +57,7 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 
 		<?php if (!$parentLocked) : ?>
 			<div class="dw-position-set__toolbar">
-				<?php echo $this->ToolbarPositions(); ?>
+				<?php echo $this->ToolbarPositions('top', (int)$setid); ?>
 			</div>
 		<?php endif; ?>
 
@@ -310,7 +310,7 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 			</div>
 
 			<div class="dw-position-set__footer">
-				<?php echo $this->ToolbarPositions('bottom'); ?>
+				<?php echo $this->ToolbarPositions('bottom', (int)$setid); ?>
 			</div>
 		<?php endif; ?>
 	</section>
