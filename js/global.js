@@ -223,7 +223,7 @@ $(document).ready(function(){
 			$field.formatCurrency({ region: language });
 		}
 
-		var $card = $field.closest('.dw-position-card.wrap');
+		var $card = $field.closest('.dw-position-card');
 		var $container = $field.closest('.positionsContainer');
 		var $set = $field.closest('.dw-position-set');
 

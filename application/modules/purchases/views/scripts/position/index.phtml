@@ -73,7 +73,7 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 					?>
 
 					<article
-						class="dw-position-card is-master position<?php echo $positionId; ?> wrap master"
+						class="dw-position-card is-master"
 						data-id="<?php echo $positionId; ?>"
 						data-parent="<?php echo $this->escape($parentType); ?>"
 						data-type="pos"
@@ -193,7 +193,7 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 									<?php $childId = (int)$child->getValue('id'); ?>
 
 									<div
-										class="dw-position-card is-child position<?php echo $childId; ?> wrap child"
+										class="dw-position-card is-child"
 										data-id="<?php echo $childId; ?>"
 										data-masterid="<?php echo $positionId; ?>"
 										data-parent="<?php echo $this->escape($parentType); ?>"
