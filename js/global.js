@@ -208,7 +208,7 @@ $(document).ready(function(){
 	//});
 
 	//Handle sub entities
-	$('.positionsContainer').on('change', 'input, textarea, select', function() {
+	$('.dw-positions').on('change', 'input, textarea, select', function() {
 		var $field = $(this);
 
 		if (isSelectionField($field)) {
@@ -224,7 +224,7 @@ $(document).ready(function(){
 		}
 
 		var $card = $field.closest('.dw-position-card');
-		var $container = $field.closest('.positionsContainer');
+		var $container = $field.closest('.dw-positions');
 		var $set = $field.closest('.dw-position-set');
 
 		var data = {};
@@ -716,8 +716,8 @@ $(document).ready(function(){
 	removeMessages();
 
 	//Check all
-	$('#content, .positionsContainer').on('click', '.checkall', function() {
-		$(this).closest('.positionsContainer, #content')
+	$('#content, .dw-positions').on('click', '.checkall', function() {
+		$(this).closest('.dw-positions, #content')
 			.find('input.position-check, input.check-id, [data-select-id]')
 			.prop('checked', this.checked);
 	});
@@ -1305,8 +1305,8 @@ function getPositions(parent, type, scrollTo) {
 		url: baseUrl+'/'+window.parent.module+'/position/index/parent/'+parent+'/type/'+type+'/parentid/'+id,
 		cache: false,
 		success: function(data){
-			$('.positionsContainer[data-parent="'+parent+'"]').html(data);
-			autosize($('.positionsContainer').find('textarea'));
+			$('.dw-positions[data-parent="'+parent+'"]').html(data);
+			autosize($('.dw-positions').find('textarea'));
 			if(data) $('#tabpositions .toolbar.positions.bottom').show();
 			else $('#tabpositions .toolbar.positions.bottom').hide();
 			if(scrollTo) {
@@ -2293,7 +2293,7 @@ function markFieldSaved($field) {
 
 		resolvePositionSet: function ($button) {
 			var $container = $button.closest(
-				'.positionsContainer'
+				'.dw-positions'
 			);
 			var $set = $button.closest(
 				'.dw-position-set'
@@ -2341,7 +2341,7 @@ function markFieldSaved($field) {
 			},
 
 			'add-position': function (selection, $button) {
-				var $container = $button.closest('.positionsContainer');
+				var $container = $button.closest('.dw-positions');
 				var $set = $button.closest('.dw-position-set');
 
 				addPosition(
@@ -2394,7 +2394,7 @@ function markFieldSaved($field) {
 			},
 
 			'add-position-set': function (selection, $button) {
-				var $container = $button.closest('.positionsContainer');
+				var $container = $button.closest('.dw-positions');
 
 				addSet(
 					String($container.data('parent') || controller),
@@ -3114,7 +3114,7 @@ function runDwTabAction($link, force) {
 	var type = $link.data('type');
 
 	// container detection for lazy load
-	var $container = $('.positionsContainer[data-parent="' + parent + '"][data-type="' + type + '"]');
+	var $container = $('.dw-positions[data-parent="' + parent + '"][data-type="' + type + '"]');
 
 	// prevent double load
 	if (!force && $container.length && $container.data('loaded')) {
