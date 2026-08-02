@@ -158,22 +158,9 @@ $(document).ready(function(){
 			id: entityId
 		};
 
-		var $container = $field.closest('.dw-multiform-context');
-
-		var context = {
-			parentModule: $container.data('parent-module'),
-			parentController: $container.data('parent-controller'),
-			parentId: $container.data('parentid')
-		};
-
-		if (!context.parentModule || !context.parentController || !context.parentId) {
-			markFieldError($field, ['Parent-Kontext fehlt.']);
-			return;
-		}
-
 		clearFieldState($field);
 
-		var response = saveEntity(payload, target, context);
+		var response = saveEntity(payload, target);
 
 		if (!response) {
 			markFieldError($field, ['Speichern fehlgeschlagen.']);
@@ -1766,16 +1753,11 @@ function setLocation(location){
 	window.location = location;
 }
 
-function saveEntity(payload, target, context) {
+function saveEntity(payload, target) {
 	payload = payload || {};
 	target = target || {};
-	context = context || {};
 
 	var requestPayload = $.extend({}, payload);
-
-	if (context.parentModule) requestPayload.parent_module = context.parentModule;
-	if (context.parentController) requestPayload.parent_controller = context.parentController;
-	if (context.parentId) requestPayload.parent_id = context.parentId;
 
 	var params = {};
 
@@ -1809,20 +1791,33 @@ function createEntity(payload, target, context, $container) {
 
 	if (context.parentModule) requestPayload.parent_module = context.parentModule;
 	if (context.parentController) requestPayload.parent_controller = context.parentController;
-	if (context.parentId) requestPayload.parent_id = context.parentId;
+	if (context.parentId) requestPayload.parentid = context.parentId;
 
 	var url = baseUrl;
 
-	if (target.module) url += '/' + target.module;
-	else url += '/' + module;
+	if (
+		target.module
+		&& target.module !== 'default'
+	) {
+		url += '/'
+			+ encodeURIComponent(target.module);
+	}
 
-	if (target.controller) url += '/' + target.controller;
-	else url += '/' + controller;
+	url += '/'
+		+ encodeURIComponent(target.controller);
 
-	if (target.id !== undefined && target.id !== null && target.id !== '') {
-		url += '/add/id/' + target.id;
-	} else {
-		url += '/add/id/' + id;
+	url += '/'
+		+ encodeURIComponent(
+			target.action || 'add'
+		);
+
+	if (
+		target.id !== undefined
+		&& target.id !== null
+		&& target.id !== ''
+	) {
+		url += '/id/'
+			+ encodeURIComponent(target.id);
 	}
 
 	$.ajax({
@@ -1833,22 +1828,76 @@ function createEntity(payload, target, context, $container) {
 		success: function(response) {
 			Dewawi.setDirty(false);
 
-			if ($container && $container.length) {
-				var $target = $container.find('> .multiform');
-				if (!$target.length) {
-					$target = $container.find('.multiform').first();
-				}
+			if (
+				response
+				&& typeof response === 'object'
+				&& response.ok === false
+			) {
+				pushMessages([
+					response.message || 'Speichern fehlgeschlagen.'
+				]);
 
-				if ($target.length) {
-					var $addButton = $target.find('button.addMulti').first();
-					$(response).insertBefore($addButton);
+				return;
+			}
 
-					var $newItem = $addButton.prev();
-					$newItem.find('input, textarea, select').filter(':visible').first().focus().select();
+			if (
+				typeof response === 'string'
+				&& response.charAt(0) === '{'
+			) {
+				try {
+					var json = JSON.parse(response);
+
+					if (json && json.ok === false) {
+						pushMessages([
+							json.message
+								|| 'Speichern fehlgeschlagen.'
+						]);
+
+						return;
+					}
+				} catch (e) {
+					// Response is HTML.
 				}
 			}
 
-			if (action == 'index') search();
+			if (!$container || !$container.length) {
+				return;
+			}
+
+			var $list = $container.find(
+				'> .dw-multiform > .dw-multiform__list'
+			).first();
+
+			if (!$list.length) {
+				pushMessages([
+					'MultiForm-Liste wurde nicht gefunden.'
+				]);
+
+				return;
+			}
+
+			var $newItem = $(response);
+
+			if (!$newItem.hasClass('dw-multiform__item')) {
+				pushMessages([
+					'Ungültige MultiForm-Antwort.'
+				]);
+
+				return;
+			}
+
+			$list.append($newItem);
+
+			$newItem
+				.find('input, textarea, select')
+				.filter(':visible')
+				.first()
+				.focus()
+				.select();
+
+			if (action === 'index') {
+				search();
+			}
 		},
 		error: function() {
 			pushMessages(['Speichern fehlgeschlagen.']);
@@ -2416,8 +2465,7 @@ function markFieldSaved($field) {
 				var target = {
 					module: $button.data('module'),
 					controller: $button.data('controller'),
-					action: 'add',
-					id: $container.data('parentid')
+					action: 'add'
 				};
 
 				var context = {
