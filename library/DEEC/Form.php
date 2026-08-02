@@ -130,7 +130,7 @@
  *	'type' => 'button',
  *	'wrap' => false,
  *	'attribs' => [
- *		'class' => 'clear nolabel',
+ *		'class' => 'clear',
  *		'rel' => 'keyword',
  *	],
  * ]
@@ -154,8 +154,6 @@
  *
  * Toolbar elements should normally use `wrap => false`.
  * Form fields should normally keep the default `wrap => true`.
- * Do not use empty labels for icon-only buttons. Omit `label` and use
- * `nolabel` plus a meaningful icon/action class instead.
  */
 
 class DEEC_Form
@@ -1432,12 +1430,34 @@ class DEEC_Form
 
 			$btnAttrs = $this->renderHtmlAttribs($btnAttribs);
 
-			$btnText = $hasLabel ? htmlspecialchars($labelTxt . $unitTxt) : '';
+			$btnText = $hasLabel
+				? htmlspecialchars($labelTxt . $unitTxt)
+				: '';
 
-			// accessibility: if no visible text and no aria-label
-			if ($btnText === '' && empty($btnAttribs['aria-label'])) {
-				$btnAttrs .= ' aria-label="' . htmlspecialchars($nameRaw) . '"';
+			$classes = preg_split(
+				'/\s+/',
+				trim((string)($btnAttribs['class'] ?? '')),
+				-1,
+				PREG_SPLIT_NO_EMPTY
+			);
+
+			$classes = array_filter(
+				$classes,
+				static function (string $class): bool {
+					return $class !== 'nolabel';
+				}
+			);
+
+			$classes[] = 'dw-btn';
+
+			if ($btnText === '') {
+				$classes[] = 'dw-btn--icon';
 			}
+
+			$btnAttribs['class'] = implode(
+				' ',
+				array_unique($classes)
+			);
 
 			$btn = '<button'.$btnAttrs.'>'.$btnText.'</button>';
 			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$btn.'</div>' : $btn;
@@ -1684,7 +1704,7 @@ class DEEC_Form
 			$html .= $rowForm->renderMultiItem($name, $row, $ctx);
 		}
 
-		$html .= '<button type="button" class="addMulti add nolabel"'
+		$html .= '<button type="button" class="addMulti add"'
 				. ' data-action="multi-add"'
 				. ' data-module="' . htmlspecialchars($module) . '"'
 				. ' data-controller="' . htmlspecialchars($controller) . '"></button>';
@@ -1742,7 +1762,7 @@ class DEEC_Form
 
 		$html .= '</div>';
 
-		$html .= '<button type="button" class="delete nolabel"'
+		$html .= '<button type="button" class="delete"'
 			. ' data-id="' . htmlspecialchars($rowId) . '"'
 			. ' data-action="delete"'
 			. ' data-module="' . htmlspecialchars($module) . '"'
