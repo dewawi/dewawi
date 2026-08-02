@@ -45,11 +45,12 @@ echo $this->Messages();
 													<div class="dw-row-actions">
 														<button
 															type="button"
-															class="edit nolabel"
+															class="dw-btn dw-btn--icon edit"
 															data-action="edit"
-															data-id="<?php echo (int) $contact->id; ?>"
+															data-id="<?php echo (int)$contact->id; ?>"
 															data-module="contacts"
 															data-controller="contact"
+															aria-label="<?php echo $this->escape($this->translate('TOOLBAR_EDIT')); ?>"
 														></button>
 													</div>
 												</td>
@@ -98,11 +99,12 @@ echo $this->Messages();
 													<div class="dw-row-actions">
 														<button
 															type="button"
-															class="edit nolabel"
+															class="dw-btn dw-btn--icon edit"
 															data-action="edit"
-															data-id="<?php echo (int) $item->id; ?>"
+															data-id="<?php echo (int)$item->id; ?>"
 															data-module="items"
 															data-controller="item"
+															aria-label="<?php echo $this->escape($this->translate('TOOLBAR_EDIT')); ?>"
 														></button>
 													</div>
 												</td>
@@ -151,11 +153,12 @@ echo $this->Messages();
 													<div class="dw-row-actions">
 														<button
 															type="button"
-															class="edit nolabel"
+															class="dw-btn dw-btn--icon edit"
 															data-action="edit"
-															data-id="<?php echo (int) $ledger->id; ?>"
+															data-id="<?php echo (int)$ledger->id; ?>"
 															data-module="items"
 															data-controller="ledger"
+															aria-label="<?php echo $this->escape($this->translate('TOOLBAR_EDIT')); ?>"
 														></button>
 													</div>
 												</td>
