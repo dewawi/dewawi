@@ -916,7 +916,7 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			$locale
 		);
 
-		$post = (array)$request->getPost();
+		$post = (array)$this->getRequest()->getPost();
 
 		if (!$form->isValidPartial($post)) {
 			return $this->_helper->json([
