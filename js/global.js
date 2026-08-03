@@ -1398,39 +1398,71 @@ function editPositionSet(data, params) {
 
 //Get Email Messages
 function getEmailmessages(scrollTo) {
-	if(module == 'contacts') var contactid = $('#id').val();
-	else var contactid = $('#contactid').val();
+	var contactid = 0;
+
+	if (module === 'contacts') {
+		contactid = Number(id) || 0;
+	} else {
+		contactid = Number(
+			$('[name="contactid"]').first().val()
+		) || 0;
+	}
+
+	if (contactid <= 0) {
+		$('#emailmessages').html('');
+		return;
+	}
+
 	var data = {};
-	if(controller != 'contact') {;
+
+	if (controller !== 'contact') {
 		data.documentid = id;
 		data.module = module;
-		data.controller = controller
+		data.controller = controller;
 	}
+
 	scrollTo = scrollTo || null;
+
 	$.ajax({
 		type: 'POST',
-		url: baseUrl+'/contacts/email/index/contactid/'+contactid,
-		cache: false,
+		url: baseUrl
+			+ '/contacts/email/index/contactid/'
+			+ contactid,
 		data: data,
-		success: function(data){
-			$('#emailmessages').html(data);
-			autosize($('#emailmessages').find('textarea'));
-			if(data) $('#tabpositions .toolbar.emailmessages.bottom').show();
-			else $('#tabpositions .toolbar.emailmessages.bottom').hide();
-			if(scrollTo) {
-				/*$('html, body').animate({
-					scrollTop: $('#position'+scrollTo).offset().top
-				}, 2000);*/
+		cache: false,
+		success: function (response) {
+			$('#emailmessages').html(response);
+
+			autosize(
+				$('#emailmessages').find('textarea')
+			);
+
+			if (response) {
+				$('#tabpositions .toolbar.emailmessages.bottom')
+					.show();
+			} else {
+				$('#tabpositions .toolbar.emailmessages.bottom')
+					.hide();
+			}
+
+			if (scrollTo) {
 				window.scrollTo(0, scrollTo);
 			}
-			//$('.datePickerLive').datepicker(datePickerOptions);
 		}
 	});
 }
 
 function sendMessage() {
 	var $form = $('#emailmessage');
-	var editor = tinymce.get('body');
+
+	var bodyElement = $form
+		.find('[name="body"]')
+		.get(0);
+
+	var editor = bodyElement
+		? tinymce.get(bodyElement.id)
+		: null;
+
 	var contactid = 0;
 	var campaignid = 0;
 	var url = '';
@@ -1438,53 +1470,107 @@ function sendMessage() {
 	$('#output').hide().html('');
 
 	var data = {
-		recipient: $form.find('[name="recipient"]').val() || '',
-		cc: $form.find('[name="cc"]').val() || '',
-		bcc: $form.find('[name="bcc"]').val() || '',
-		replyto: $form.find('[name="replyto"]').val() || '',
-		subject: $form.find('[name="subject"]').val() || '',
-		body: editor ? editor.getContent() : ($form.find('[name="body"]').val() || ''),
+		recipient:
+			$form.find('[name="recipient"]').val() || '',
+		cc:
+			$form.find('[name="cc"]').val() || '',
+		bcc:
+			$form.find('[name="bcc"]').val() || '',
+		replyto:
+			$form.find('[name="replyto"]').val() || '',
+		subject:
+			$form.find('[name="subject"]').val() || '',
+		body: editor
+			? editor.getContent()
+			: (
+				$form.find('[name="body"]').val()
+				|| ''
+			),
 		module: module,
 		controller: controller,
 		files: {}
 	};
 
-	$('#attachments input[type="checkbox"][name="file[]"]:checked').each(function () {
-		data.files[$(this).val()] = $(this).val();
-	});
+	$form
+		.find(
+			'#attachments input[type="checkbox"]'
+			+ '[name="file[]"]:checked'
+		)
+		.each(function () {
+			data.files[this.value] = this.value;
+		});
 
 	if (module === 'contacts') {
 		contactid = Number(id) || 0;
-		url = baseUrl + '/contacts/email/send/contactid/' + contactid;
+
+		url = baseUrl
+			+ '/contacts/email/send/contactid/'
+			+ contactid;
 	} else if (module === 'campaigns') {
 		campaignid = Number(id) || 0;
-		url = baseUrl + '/contacts/email/send/campaignid/' + campaignid;
+
+		url = baseUrl
+			+ '/contacts/email/send/campaignid/'
+			+ campaignid;
 	} else {
-		contactid = Number($('#contactid').val()) || 0;
-		url = baseUrl + '/contacts/email/send/contactid/' + contactid + '/documentid/' + id;
+		contactid = Number(
+			$('[name="contactid"]').first().val()
+		) || 0;
+
+		url = baseUrl
+			+ '/contacts/email/send/contactid/'
+			+ contactid
+			+ '/documentid/'
+			+ id;
 	}
 
 	if (contactid <= 0 && campaignid <= 0) {
 		$('#output')
-			.html('Nachricht konnte nicht gesendet werden.')
+			.html(
+				'Nachricht konnte nicht gesendet werden: '
+				+ 'Kontakt fehlt.'
+			)
 			.show();
+
 		return;
 	}
 
 	$.ajax({
 		type: 'POST',
 		url: url,
-		cache: false,
 		data: data,
-		success: function () {
-			getEmailmessages(window.pageYOffset);
+		dataType: 'json',
+		cache: false,
+		success: function (response) {
+			if (
+				response
+				&& response.ok === false
+			) {
+				$('#output')
+					.html(
+						response.message
+						|| 'Nachricht konnte nicht gesendet werden.'
+					)
+					.show();
+
+				return;
+			}
+
+			getEmailmessages(
+				window.pageYOffset
+			);
 		},
 		error: function (xhr) {
 			$('#output')
-				.html('Nachricht konnte nicht gesendet werden.')
+				.html(
+					'Nachricht konnte nicht gesendet werden.'
+				)
 				.show();
 
-			console.log('sendMessage error', xhr.responseText);
+			console.log(
+				'sendMessage error',
+				xhr.responseText
+			);
 		}
 	});
 }

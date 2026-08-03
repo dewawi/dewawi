@@ -145,10 +145,21 @@ class Contacts_EmailController
 	{
 		$this->disableView();
 
-		$this->_helper->Email->sendEmail(
-			'contacts',
-			'contact',
-			'contact'
-		);
+		try {
+			$this->_helper->Email->sendEmail(
+				'contacts',
+				'contact',
+				'contact'
+			);
+		} catch (Exception $e) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'send_failed',
+			]);
+		}
+
+		return $this->_helper->json([
+			'ok' => true,
+		]);
 	}
 }
