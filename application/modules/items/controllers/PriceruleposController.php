@@ -18,30 +18,69 @@ class Items_PriceruleposController extends DEEC_Controller_Action
 
 		$post = (array)$request->getPost();
 
-		$parentid = (int)$this->_getParam('parent_id', 0);
+		$parentId = (int)$this->_getParam(
+			'parentid',
+			0
+		);
 
-		if ($parentid <= 0) {
+		$parentModule = trim(
+			(string)$this->_getParam(
+				'parent_module',
+				''
+			)
+		);
+
+		$parentController = trim(
+			(string)$this->_getParam(
+				'parent_controller',
+				''
+			)
+		);
+
+		if ($parentId <= 0) {
 			return $this->_helper->json([
 				'ok' => false,
 				'message' => 'missing_parent',
 			]);
 		}
 
-		$parentModule = !empty($post['parent_module']) ? (string)$post['parent_module'] : 'contacts';
-		$parentController = !empty($post['parent_controller']) ? (string)$post['parent_controller'] : 'contact';
-
-		$client = Zend_Registry::get('Client');
+		if (
+			$parentModule === ''
+			|| $parentController === ''
+		) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'missing_parent_context',
+			]);
+		}
 
 		$data = [
-			'action' => !empty($post['type']) ? (string)$post['type'] : 'bypercent',
+			'action' => !empty($post['type'])
+				? (string)$post['type']
+				: 'bypercent',
 			'masterid' => 0,
 			'possetid' => 0,
 		];
 
-		$priceruleposDb = new Items_Model_DbTable_Pricerulepos();
-		$newId = $priceruleposDb->createForParent($parentid, $parentModule, $parentController, $data);
+		$priceruleposDb =
+			new Items_Model_DbTable_Pricerulepos();
+
+		try {
+			$newId = $priceruleposDb->createForParent(
+				$parentId,
+				$parentModule,
+				$parentController,
+				$data
+			);
+		} catch (Exception $e) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => 'save_failed',
+			]);
+		}
 
 		$row = $priceruleposDb->getById($newId);
+
 		if (!$row) {
 			return $this->_helper->json([
 				'ok' => false,
@@ -50,14 +89,19 @@ class Items_PriceruleposController extends DEEC_Controller_Action
 		}
 
 		$rowForm = new Items_Form_Pricerulepos();
-		$this->_helper->Options->applyFormOptions($rowForm);
 
-		$ctx = [
-			'module' => 'items',
-			'controller' => 'pricerulepos',
-		];
+		$this->_helper->Options->applyFormOptions(
+			$rowForm
+		);
 
-		echo $rowForm->renderMultiItem('pricerulepos', $row, $ctx);
+		echo $rowForm->renderMultiItem(
+			'pricerulepos',
+			$row,
+			[
+				'module' => 'items',
+				'controller' => 'pricerulepos',
+			]
+		);
 	}
 
 	public function editAction()
