@@ -10,6 +10,8 @@ class Contacts_Model_List_History extends DEEC_List
 				'type' => 'link',
 				'label' => 'CONTACTS_DOCUMENT_ID',
 				'field' => 'document_number',
+				'class' => 'dw-col-id',
+				'empty_hide' => true,
 				'url' => [
 					'module_field' => 'module',
 					'controller_field' => 'controller',
@@ -22,6 +24,7 @@ class Contacts_Model_List_History extends DEEC_List
 				'type' => 'link',
 				'label' => 'CONTACTS_DOCUMENT_TITLE',
 				'field' => 'title',
+				'fallback_field' => 'id',
 				'url' => [
 					'module_field' => 'module',
 					'controller_field' => 'controller',
@@ -30,22 +33,18 @@ class Contacts_Model_List_History extends DEEC_List
 				],
 			],
 			[
-				'name' => 'date',
-				'type' => 'date',
-				'label' => 'CONTACTS_DOCUMENT_DATE',
-				'field' => 'document_date',
-			],
-			[
 				'name' => 'notes',
 				'type' => 'editable_note',
 				'label' => 'CONTACTS_NOTES',
 				'field' => 'notes',
+				'empty_label' => 'TOOLBAR_NEW',
 			],
 			[
-				'name' => 'modified',
+				'name' => 'date',
 				'type' => 'date',
-				'label' => 'CONTACTS_DOCUMENT_MODIFIED',
-				'field' => 'modified',
+				'label' => 'CONTACTS_DOCUMENT_DATE',
+				'field' => 'document_date',
+				'format' => 'd.m.Y',
 			],
 			[
 				'name' => 'total',
@@ -61,6 +60,7 @@ class Contacts_Model_List_History extends DEEC_List
 				'label' => 'CONTACTS_DOCUMENT_STATE',
 				'field' => 'state',
 				'option_key' => 'states',
+				'class' => 'dw-col-state state',
 				'editable' => function () {
 					return false;
 				},
@@ -95,8 +95,15 @@ class Contacts_Model_List_History extends DEEC_List
 						},
 					],
 					['name' => 'copy'],
-					['name' => 'pdf'],
+					[
+						'name' => 'cancel',
+						'show' => function ($item, $element, $list) {
+							return $list->isCancellable($item)
+								&& $list->getController() !== 'process';
+						},
+					],
 					['name' => 'delete'],
+					['name' => 'pdf'],
 				],
 			],
 		];
