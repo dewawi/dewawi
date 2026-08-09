@@ -48,11 +48,9 @@ class Contacts_Model_List_History extends DEEC_List
 			],
 			[
 				'name' => 'total',
-				'type' => 'callback',
 				'label' => 'CONTACTS_DOCUMENT_TOTAL',
-				'callback' => function ($row, $column, $list) {
-					return $list->escape($row->total) . '<br>(' . $list->escape($row->subtotal) . ')';
-				},
+				'type' => 'currency',
+				'secondary_field' => 'subtotal',
 			],
 			[
 				'name' => 'state',

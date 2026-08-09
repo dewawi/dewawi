@@ -862,12 +862,9 @@ class DEEC_List
 		$field = isset($column['field']) ? (string)$column['field'] : (string)($column['name'] ?? '');
 		$value = $this->getFieldValue($item, $field);
 
-		if ($value === null || $value === '') {
-			return '';
-		}
+		if ($value === null || $value === '') return '';
 
 		$currencyCode = $this->getFieldValue($item, $column['currency_field'] ?? 'currency');
-
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 		$currency = $currencyHelper->getCurrency();
 
@@ -875,7 +872,17 @@ class DEEC_List
 			$currency = $currencyHelper->setCurrency($currency, $currencyCode, 'USE_SYMBOL');
 		}
 
-		return $this->escape($currency->toCurrency($value));
+		$html = $this->escape($currency->toCurrency($value));
+
+		if (!empty($column['secondary_field'])) {
+			$secondaryValue = $this->getFieldValue($item, $column['secondary_field']);
+
+			if ($secondaryValue !== null && $secondaryValue !== '') {
+				$html .= '<br>(' . $this->escape($currency->toCurrency($secondaryValue)) . ')';
+			}
+		}
+
+		return $html;
 	}
 
 	protected function renderCallbackCell($item, array $column)

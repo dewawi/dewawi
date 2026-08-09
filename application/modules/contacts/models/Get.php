@@ -101,9 +101,6 @@ class Contacts_Model_Get
 		$history['quotes'] = $quoteDb->getByContactId($contactid);
 
 		foreach($history['quotes'] as $quote) {
-			$quote->subtotal = $currency->toCurrency($quote->subtotal);
-			$quote->taxes = $currency->toCurrency($quote->taxes);
-			$quote->total = $currency->toCurrency($quote->total);
 			if($quote->quotedate) $quote->quotedate = date('d.m.Y', strtotime($quote->quotedate));
 			if($quote->modified) $quote->modified = date('d.m.Y', strtotime($quote->modified));
 			if($quote->deliverydate) $quote->deliverydate = date('d.m.Y', strtotime($quote->deliverydate));
@@ -114,9 +111,6 @@ class Contacts_Model_Get
 		$history['salesorders'] = $salesorderDb->getByContactId($contactid);
 
 		foreach($history['salesorders'] as $salesorder) {
-			$salesorder->subtotal = $currency->toCurrency($salesorder->subtotal);
-			$salesorder->taxes = $currency->toCurrency($salesorder->taxes);
-			$salesorder->total = $currency->toCurrency($salesorder->total);
 			if($salesorder->salesorderdate) $salesorder->salesorderdate = date('d.m.Y', strtotime($salesorder->salesorderdate));
 			if($salesorder->modified) $salesorder->modified = date('d.m.Y', strtotime($salesorder->modified));
 			if($salesorder->deliverydate) $salesorder->deliverydate = date('d.m.Y', strtotime($salesorder->deliverydate));
@@ -127,9 +121,6 @@ class Contacts_Model_Get
 		$history['invoices'] = $invoiceDb->getByContactId($contactid);
 
 		foreach($history['invoices'] as $invoice) {
-			$invoice->subtotal = $currency->toCurrency($invoice->subtotal);
-			$invoice->taxes = $currency->toCurrency($invoice->taxes);
-			$invoice->total = $currency->toCurrency($invoice->total);
 			if($invoice->invoicedate) $invoice->invoicedate = date('d.m.Y', strtotime($invoice->invoicedate));
 			if($invoice->modified) $invoice->modified = date('d.m.Y', strtotime($invoice->modified));
 			if($invoice->deliverydate) $invoice->deliverydate = date('d.m.Y', strtotime($invoice->deliverydate));
@@ -140,9 +131,6 @@ class Contacts_Model_Get
 		$history['deliveryorders'] = $deliveryorderDb->getByContactId($contactid);
 
 		foreach($history['deliveryorders'] as $deliveryorder) {
-			$deliveryorder->subtotal = $currency->toCurrency($deliveryorder->subtotal);
-			$deliveryorder->taxes = $currency->toCurrency($deliveryorder->taxes);
-			$deliveryorder->total = $currency->toCurrency($deliveryorder->total);
 			if($deliveryorder->deliveryorderdate) $deliveryorder->deliveryorderdate = date('d.m.Y', strtotime($deliveryorder->deliveryorderdate));
 			if($deliveryorder->modified) $deliveryorder->modified = date('d.m.Y', strtotime($deliveryorder->modified));
 			if($deliveryorder->deliverydate) $deliveryorder->deliverydate = date('d.m.Y', strtotime($deliveryorder->deliverydate));
@@ -153,9 +141,6 @@ class Contacts_Model_Get
 		$history['reminders'] = $reminderDb->getByContactId($contactid);
 
 		foreach($history['reminders'] as $reminder) {
-			$reminder->subtotal = $currency->toCurrency($reminder->subtotal);
-			$reminder->taxes = $currency->toCurrency($reminder->taxes);
-			$reminder->total = $currency->toCurrency($reminder->total);
 			if($reminder->reminderdate) $reminder->reminderdate = date('d.m.Y', strtotime($reminder->reminderdate));
 			if($reminder->modified) $reminder->modified = date('d.m.Y', strtotime($reminder->modified));
 			if($reminder->deliverydate) $reminder->deliverydate = date('d.m.Y', strtotime($reminder->deliverydate));
@@ -166,9 +151,6 @@ class Contacts_Model_Get
 		$history['creditnotes'] = $creditnoteDb->getByContactId($contactid);
 
 		foreach($history['creditnotes'] as $creditnote) {
-			$creditnote->subtotal = $currency->toCurrency($creditnote->subtotal);
-			$creditnote->taxes = $currency->toCurrency($creditnote->taxes);
-			$creditnote->total = $currency->toCurrency($creditnote->total);
 			if($creditnote->creditnotedate) $creditnote->creditnotedate = date('d.m.Y', strtotime($creditnote->creditnotedate));
 			if($creditnote->modified) $creditnote->modified = date('d.m.Y', strtotime($creditnote->modified));
 			if($creditnote->deliverydate) $creditnote->deliverydate = date('d.m.Y', strtotime($creditnote->deliverydate));
@@ -188,9 +170,6 @@ class Contacts_Model_Get
 		}
 
 		foreach($history['quoterequests'] as $quoterequest) {
-			$quoterequest->subtotal = $currency->toCurrency($quoterequest->subtotal);
-			$quoterequest->taxes = $currency->toCurrency($quoterequest->taxes);
-			$quoterequest->total = $currency->toCurrency($quoterequest->total);
 			if($quoterequest->quoterequestdate) $quoterequest->quoterequestdate = date('d.m.Y', strtotime($quoterequest->quoterequestdate));
 			if($quoterequest->modified) $quoterequest->modified = date('d.m.Y', strtotime($quoterequest->modified));
 			if($quoterequest->deliverydate) $quoterequest->deliverydate = date('d.m.Y', strtotime($quoterequest->deliverydate));
@@ -201,9 +180,9 @@ class Contacts_Model_Get
 		$history['purchaseorders'] = $purchaseorderDb->getByContactId($contactid);
 
 		foreach($history['purchaseorders'] as $purchaseorder) {
-			$purchaseorder->subtotal = $currency->toCurrency($purchaseorder->subtotal);
-			$purchaseorder->taxes = $currency->toCurrency($purchaseorder->taxes);
-			$purchaseorder->total = $currency->toCurrency($purchaseorder->total);
+			if($purchaseorder->purchaseorderdate) $purchaseorder->purchaseorderdate = date('d.m.Y', strtotime($purchaseorder->purchaseorderdate));
+			if($purchaseorder->modified) $purchaseorder->modified = date('d.m.Y', strtotime($purchaseorder->modified));
+			if($purchaseorder->deliverydate) $purchaseorder->deliverydate = date('d.m.Y', strtotime($purchaseorder->deliverydate));
 		}
 
 		//Processes
