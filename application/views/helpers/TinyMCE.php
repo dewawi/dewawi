@@ -26,6 +26,13 @@ class Zend_View_Helper_TinyMCE extends Zend_View_Helper_Abstract
 			setup: function(editor) {
 				editor.on('init', function() {
 					contentCache[editor.id] = editor.getContent();
+
+					if(editor.targetElm.readOnly || editor.targetElm.disabled) {
+						editor.mode.set('readonly');
+						editor.getContainer().classList.add('dw-tinymce-readonly');
+						editor.getBody().style.backgroundColor = '#f3f5f7';
+						editor.getBody().style.color = '#6b7280';
+					}
 				});
 
 				editor.on('input change', function() {
@@ -45,6 +52,7 @@ class Zend_View_Helper_TinyMCE extends Zend_View_Helper_Abstract
 		function saveEditor(editor) {
 			var $field = $(editor.targetElm);
 
+			if(editor.mode.isReadOnly()) return;
 			if($field.closest('form').is('[data-autosave="false"]')) return;
 
 			var value = editor.getContent();

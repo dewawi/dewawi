@@ -389,6 +389,11 @@ a {
 	color: var(--dw-color-danger-text);
 }
 
+/* TinyMCE */
+.dw-tinymce-readonly .tox-editor-header {
+	display: none;
+}
+
 /* Toolbar */
 
 .dw-toolbar {
