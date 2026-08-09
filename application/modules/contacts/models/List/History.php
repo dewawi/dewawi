@@ -64,6 +64,15 @@ class Contacts_Model_List_History extends DEEC_List
 				'editable' => function () {
 					return false;
 				},
+				'state_map' => [
+					'100' => 'created',
+					'101' => 'in-process',
+					'102' => 'check',
+					'103' => 'delete',
+					'104' => 'released',
+					'105' => 'completed',
+					'106' => 'cancelled',
+				],
 			],
 			[
 				'name' => 'actions',
