@@ -673,8 +673,11 @@ $(document).ready(function(){
 	});
 
 	//Date picker
-	$('.datePicker').datepicker(datePickerOptions);
+	$('.datePicker:not([readonly]):not(:disabled)').datepicker(datePickerOptions);
+
 	$(document).on('click', '.datePickerLive', function() {
+		if(this.readOnly || this.disabled) return;
+
 		$(this).datepicker(datePickerOptions);
 	});
 
