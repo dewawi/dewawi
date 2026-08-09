@@ -175,6 +175,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 			'toolbar' => $toolbar,
 			'options' => $options,
 			'activeTab' => $request->getCookie('tab', null),
+			'activeTabHistory' => $request->getCookie('tab-history', null),
 		]));
 
 		$this->assignMessages();
@@ -191,6 +192,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 
 		echo $this->view->partial('partials/history.phtml', [
 			'history' => $get->history((int)$contact['contactid']),
+			'activeTabHistory' => $this->getRequest()->getCookie('tab-history', null),
 			'options' => [],
 			'contactId' => $id,
 			'id' => $id,

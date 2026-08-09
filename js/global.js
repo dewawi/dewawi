@@ -3177,23 +3177,38 @@ Dewawi.getParam = function (name) {
 };
 
 //Tabs
+function initDwTabs(scope) {
+	var $scope = scope ? $(scope) : $(document);
+
+	$scope.find('.dw-tabs').each(function() {
+		var $tabs = $(this);
+
+		var $activeLink = $tabs.find('> .dw-tabs__nav > .dw-tabs__item.is-active > .dw-tabs__link').first();
+
+		if(!$activeLink.length) {
+			$activeLink = $tabs.find('> .dw-tabs__nav > .dw-tabs__item > .dw-tabs__link').first();
+		}
+
+		if(!$activeLink.length) return;
+
+		activateDwTab($activeLink, false);
+		runDwTabAction($activeLink, false);
+	});
+}
+
 function activateDwTab($link, saveCookie) {
-	if (!$link.length) return;
+	if(!$link.length) return;
 
 	var target = $link.data('tab-target') || $link.attr('href');
-	if (!target) return;
-
-	if (String(target).charAt(0) !== '#') {
-		target = '#' + target;
-	}
+	if(!target) return;
+	if(String(target).charAt(0) !== '#') target = '#' + target;
 
 	var $tabs = $link.closest('.dw-tabs');
 	var $panels = $tabs.next('.dw-tab-panels');
-
-	if (!$panels.length) return;
+	if(!$panels.length) return;
 
 	var $targetPanel = $panels.find(target).first();
-	if (!$targetPanel.length) return;
+	if(!$targetPanel.length) return;
 
 	$tabs.find('> .dw-tabs__nav > .dw-tabs__item').removeClass('is-active');
 	$link.closest('.dw-tabs__item').addClass('is-active');
@@ -3201,60 +3216,17 @@ function activateDwTab($link, saveCookie) {
 	$panels.find('> .dw-tab-panel').removeClass('is-active').hide();
 	$targetPanel.addClass('is-active').show();
 
-	if (saveCookie && !$tabs.hasClass('dw-tabs--history')) {
-		$.cookie('tab', target, { path: cookiePath + '/' + action });
+	if(saveCookie) {
+		$.cookie(getDwTabCookieName($tabs), target, {
+			path: cookiePath + '/' + action
+		});
 	}
 }
 
-function reloadHistory() {
-	if (module !== 'contacts' || controller !== 'contact' || action !== 'edit') {
-		return;
-	}
-
-	$.ajax({
-		type: 'GET',
-		url: Dewawi.url('contacts', 'contact', 'history', id),
-		cache: false,
-		success: function (html) {
-			$('#tabhistory').html(html);
-			initDwTabs('#tabhistory');
-		},
-		error: function () {
-			pushMessages(['Historie konnte nicht aktualisiert werden.']);
-		}
-	});
-}
-
-function initDwTabs(scope) {
-	var $scope = scope ? $(scope) : $(document);
-
-	$scope.find('.dw-tabs').each(function () {
-		var $tabs = $(this);
-		var $panels = $tabs.next('.dw-tab-panels');
-
-		if (!$panels.length) return;
-
-		var $links = $tabs.find('> .dw-tabs__nav > .dw-tabs__item > .dw-tabs__link');
-		var cookieTab = !$tabs.hasClass('dw-tabs--history') ? $.cookie('tab') : null;
-		var $activeLink = $();
-
-		if (cookieTab) {
-			$activeLink = $links.filter('[href="' + cookieTab + '"]').first();
-		}
-
-		if (!$activeLink.length) {
-			$activeLink = $links.filter(function () {
-				return $(this).closest('.dw-tabs__item').hasClass('is-active');
-			}).first();
-		}
-
-		if (!$activeLink.length) {
-			$activeLink = $links.first();
-		}
-
-		activateDwTab($activeLink, false);
-		runDwTabAction($activeLink, false);
-	});
+function getDwTabCookieName($tabs) {
+	return $tabs.hasClass('dw-tabs--history')
+		? 'tab-history'
+		: 'tab';
 }
 
 function runDwTabAction($link, force) {
@@ -3289,6 +3261,25 @@ function runDwTabAction($link, force) {
 	if ($container.length) {
 		$container.data('loaded', 1);
 	}
+}
+
+function reloadHistory() {
+	if (module !== 'contacts' || controller !== 'contact' || action !== 'edit') {
+		return;
+	}
+
+	$.ajax({
+		type: 'GET',
+		url: Dewawi.url('contacts', 'contact', 'history', id),
+		cache: false,
+		success: function (html) {
+			$('#tabhistory').html(html);
+			initDwTabs('#tabhistory');
+		},
+		error: function () {
+			pushMessages(['Historie konnte nicht aktualisiert werden.']);
+		}
+	});
 }
 
 $(document).on('click', '.dw-tabs__link', function (event) {
