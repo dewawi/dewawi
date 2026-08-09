@@ -570,16 +570,16 @@ $(document).ready(function(){
 			}
 	});
 
-	//Change title
-	if(controller != 'category') {
-		$('form #title').blur(function() {
-			if(this.value) $('h2').text(this.value);
+	// Change page title
+	if (controller !== 'category') {
+		$('.edit form').on('input', '[name="title"]', function () {
+			$('.dw-page-header__title h2').text(this.value);
 		});
 	}
 
 	//Focus on keyword
 	if(action == 'index') {
-		$('#keyword').focus().select();
+		$('.dw-toolbar [name="keyword"]').first().focus().select();
 	}
 
 	//Select template or language
