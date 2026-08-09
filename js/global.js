@@ -88,39 +88,53 @@ $(document).ready(function(){
 		if(!$(this).val()) $(this).addClass('error');
 		else $(this).removeClass('error');
 	});
+
 	$('.add form').on('change', 'input, textarea, select', function() {
 		Dewawi.setDirty(true);
 	});
+
 	$('.edit form').on('change', 'input, textarea, select', function() {
-		if ($(this).hasClass('dw-permission-all')) {
+		var $field = $(this);
+
+		if($field.closest('form').is('[data-autosave="false"]')) {
 			return;
 		}
-		if ($(this).closest('.dw-multiform__item').length) {
+
+		if($field.hasClass('dw-permission-all')) {
 			return;
 		}
-		if ($(this).data('autocomplete-skip-autosave')) {
+
+		if($field.closest('.dw-multiform__item').length) {
 			return;
 		}
+
+		if($field.data('autocomplete-skip-autosave')) {
+			return;
+		}
+
 		if((this.name != 'file[]') && (this.name != 'media[]') && (this.name != 'subfolder')) {
 			Dewawi.setDirty(true);
+
 			var data = {};
 			var params = {};
 			var value = this.value;
-			//If the element is a checkbox
-			if($(this).is(':checkbox')) {
-				value = $(this).is(':checked') ? 1 : 0;
+
+			if($field.is(':checkbox')) {
+				value = $field.is(':checked') ? 1 : 0;
 			}
+
 			data[this.name] = value;
-			//Check dataset info on the element
+
 			if(typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
 			if(typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;
 			if(typeof this.dataset.controller !== 'undefined') params['controller'] = this.dataset.controller;
 			if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
 			if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
+
 			edit(data, params);
-			//validate(data, params);
 		}
 	});
+
 	$('.edit form').on('change', '.dw-multiform__item input, .dw-multiform__item textarea, .dw-multiform__item select', function() {
 		if ((this.name === 'file[]') || (this.name === 'media[]') || (this.name === 'subfolder')) {
 			return;
