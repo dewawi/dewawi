@@ -55,6 +55,7 @@ class Sales_Model_List_Quotes extends DEEC_List
 				'name' => 'total',
 				'label' => 'QUOTES_TOTAL',
 				'type' => 'currency',
+				'secondary_field' => 'subtotal',
 			],
 			[
 				'name' => 'state',

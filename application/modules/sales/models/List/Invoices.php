@@ -55,6 +55,7 @@ class Sales_Model_List_Invoices extends DEEC_List
 				'name' => 'total',
 				'label' => 'INVOICES_TOTAL',
 				'type' => 'currency',
+				'secondary_field' => 'subtotal',
 			],
 			[
 				'name' => 'state',

@@ -55,6 +55,7 @@ class Purchases_Model_List_Quoterequests extends DEEC_List
 				'name' => 'total',
 				'label' => 'QUOTE_REQUESTS_TOTAL',
 				'type' => 'currency',
+				'secondary_field' => 'subtotal',
 			],
 			[
 				'name' => 'state',
