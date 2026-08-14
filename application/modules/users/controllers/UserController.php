@@ -289,6 +289,26 @@ class Users_UserController extends Zend_Controller_Action
 		$this->_helper->redirector->gotoSimple('index', 'index', 'index');
 	}
 
+    public function sessionAction(): void
+    {
+	    $this->_helper->viewRenderer->setNoRender();
+	    $this->_helper->getHelper('layout')->disableLayout();
+
+	    $this->getResponse()
+		    ->setHttpResponseCode(401)
+		    ->setHeader(
+			    'Content-Type',
+			    'application/json; charset=UTF-8',
+			    true
+		    )
+		    ->setBody(
+			    Zend_Json::encode([
+				    'ok' => false,
+				    'message' => 'session_expired',
+			    ])
+		    );
+    }
+
 	public function clientAction()
 	{
 		$this->_helper->viewRenderer->setNoRender();

@@ -72,19 +72,36 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 		);
 	}
 
-	private function handleGuestRequest(
-		Zend_Controller_Request_Abstract $request
-	): void {
-		if ($request->getModuleName() === 'shops') {
-			return;
-		}
+    private function handleGuestRequest(
+	    Zend_Controller_Request_Abstract $request
+    ): void {
+	    if ($request->getModuleName() === 'shops') {
+		    return;
+	    }
 
-		if ($this->isLoginRequest($request)) {
-			return;
-		}
+	    if ($this->isLoginRequest($request)) {
+		    return;
+	    }
 
-		$this->redirectToLogin($request);
-	}
+	    if (
+		    $request instanceof Zend_Controller_Request_Http
+		    && $request->isXmlHttpRequest()
+	    ) {
+		    $this->forwardToSessionExpired($request);
+		    return;
+	    }
+
+	    $this->redirectToLogin($request);
+    }
+
+    private function forwardToSessionExpired(
+	    Zend_Controller_Request_Abstract $request
+    ): void {
+	    $request
+		    ->setModuleName('users')
+		    ->setControllerName('user')
+		    ->setActionName('session');
+    }
 
 	private function isLoginRequest(
 		Zend_Controller_Request_Abstract $request

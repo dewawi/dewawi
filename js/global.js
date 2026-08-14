@@ -11,6 +11,7 @@ var datePickerOptions = {
 var Dewawi = {
 	isDirty: false,
 	searchTimeout: 0,
+	sessionExpired: false,
 
 	url: function (moduleName, controllerName, actionName, id) {
 		var url = baseUrl + '/' + moduleName + '/' + controllerName + '/' + actionName;
@@ -25,8 +26,27 @@ var Dewawi = {
 	setDirty: function (dirty) {
 		isDirty = !!dirty;
 		this.isDirty = !!dirty;
+	},
+
+	handleSessionExpired: function () {
+		if (this.sessionExpired) {
+			return;
+		}
+
+		this.sessionExpired = true;
+		this.setDirty(false);
+
+		window.location.reload();
 	}
 };
+
+$.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+	jqXHR.statusCode({
+		401: function () {
+			Dewawi.handleSessionExpired();
+		}
+	});
+});
 
 $(document).ready(function(){
 	//Keep alive
@@ -1008,9 +1028,13 @@ function search() {
 			},
 
 			error: function (xhr, status) {
-				if (status !== 'abort') {
-					pushMessages(['Suche konnte nicht ausgeführt werden.']);
+				if (status === 'abort' || xhr.status === 401) {
+					return;
 				}
+
+				pushMessages([
+					'Suche konnte nicht ausgeführt werden.'
+				]);
 			},
 
 			complete: function () {
