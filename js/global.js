@@ -2087,23 +2087,20 @@ function createEntity(payload, target, context, $container) {
 			}
 
 			if (
-				typeof response === 'string'
-				&& response.charAt(0) === '{'
+				response
+				&& response.ok === true
+				&& response.reloadPositions
 			) {
-				try {
-					var json = JSON.parse(response);
+				var $positions = $container.closest('.dw-positions');
 
-					if (json && json.ok === false) {
-						pushMessages([
-							json.message
-								|| 'Speichern fehlgeschlagen.'
-						]);
+				applySaveResponse(
+					response,
+					$positions.data('parent'),
+					$positions.data('type'),
+					window.pageYOffset
+				);
 
-						return;
-					}
-				} catch (e) {
-					// Response is HTML.
-				}
+				return;
 			}
 
 			if (!$container || !$container.length) {

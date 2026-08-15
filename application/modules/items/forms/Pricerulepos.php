@@ -15,7 +15,11 @@ class Items_Form_Pricerulepos extends DEEC_Form
 			'type' => 'text',
 			'name' => 'amount',
 			'label' => 'ITEMS_PRICE_RULES_AMOUNT',
-			'format' => ['type' => 'string'],
+			'attribs'=> ['class' => 'number'],
+			'format' => [
+			  'type' => 'decimal',
+			  'precision' => 2,
+			],
 		]);
 
 		$this->addElement([
