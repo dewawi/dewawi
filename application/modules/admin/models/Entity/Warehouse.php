@@ -25,3 +25,4 @@ class Admin_Model_Entity_Warehouse
 			],
 		];
 	}
+}

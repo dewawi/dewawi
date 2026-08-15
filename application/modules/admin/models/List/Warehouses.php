@@ -14,7 +14,7 @@ class Admin_Model_List_Warehouses extends DEEC_List
 			],
 			[
 				'name' => 'code',
-				'label' => 'ADMIN_WAREHOUSE_CODE',
+				'label' => 'ADMIN_CODE',
 				'type' => 'text',
 			],
 			[
@@ -30,7 +30,7 @@ class Admin_Model_List_Warehouses extends DEEC_List
 			],
 			[
 				'name' => 'isdefault',
-				'label' => 'ADMIN_WAREHOUSE_DEFAULT',
+				'label' => 'ADMIN_DEFAULT',
 				'type' => 'checkbox',
 			],
 			[

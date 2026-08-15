@@ -14,7 +14,7 @@ class Admin_Form_Warehouse extends DEEC_Form
 		$this->addElement([
 			'name' => 'code',
 			'type' => 'text',
-			'label' => 'ADMIN_WAREHOUSE_CODE',
+			'label' => 'ADMIN_CODE',
 			'required' => true,
 			'format' => ['type' => 'string'],
 			'attribs' => [
@@ -58,7 +58,7 @@ class Admin_Form_Warehouse extends DEEC_Form
 		$this->addElement([
 			'name' => 'default',
 			'type' => 'checkbox',
-			'label' => 'ADMIN_WAREHOUSE_DEFAULT',
+			'label' => 'ADMIN_DEFAULT',
 			'format' => ['type' => 'int'],
 			'default' => 0,
 			'col' => 3,
