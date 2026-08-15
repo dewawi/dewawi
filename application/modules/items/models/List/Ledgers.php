@@ -12,102 +12,67 @@ class Items_Model_List_Ledgers extends DEEC_List
 				'class' => 'dw-col-id',
 			],
 			[
+				'name' => 'ledgerdate',
+				'label' => 'ITEMS_LEDGER_DATE',
+				'type' => 'text',
+			],
+			[
 				'name' => 'sku',
 				'label' => 'ITEMS_SKU',
-				'type' => 'link',
+				'type' => 'text',
 				'class' => 'dw-col-sku',
 			],
 			[
-				'name' => 'title',
+				'name' => 'itemtitle',
 				'label' => 'ITEMS_TITLE',
-				'type' => 'link',
+				'type' => 'text',
 				'class' => 'dw-col-title',
 			],
 			[
-				'name' => 'price',
-				'label' => 'ITEMS_PRICE',
-				'type' => 'currency',
-			],
-			[
-				'name' => 'currency',
-				'label' => 'ITEMS_CURRENCY',
+				'name' => 'warehousetitle',
+				'label' => 'ITEMS_WAREHOUSE',
 				'type' => 'text',
-				'class' => 'dw-col-currency',
 			],
 			[
-				'name' => 'tags',
-				'label' => 'ITEMS_TAGS',
-				'type' => 'callback',
-				'callback' => [$this, 'renderTags'],
+				'name' => 'type',
+				'label' => 'ITEMS_LEDGER_TYPE',
+				'type' => 'text',
 			],
 			[
-				'name' => 'pin',
-				'label' => '',
-				'type' => 'pin',
+				'name' => 'reason',
+				'label' => 'ITEMS_LEDGER_REASON',
+				'type' => 'text',
+			],
+			[
+				'name' => 'quantity',
+				'label' => 'ITEMS_LEDGER_QUANTITY',
+				'type' => 'text',
+			],
+			[
+				'name' => 'comment',
+				'label' => 'ITEMS_LEDGER_COMMENT',
+				'type' => 'text',
 			],
 			[
 				'name' => 'actions',
 				'label' => '',
 				'type' => 'actions',
+				'class' => 'dw-col-actions',
 				'elements' => [
 					[
-						'name' => 'apply',
-						'show' => function ($item, $element, $list) {
-							return $list->getContext('action') === 'select';
-						},
-					],
-					[
 						'name' => 'view',
-						'show' => function ($item, $element, $list) {
-							return $list->getContext('action') !== 'select';
-						},
 					],
 					[
 						'name' => 'edit',
-						'show' => function ($item, $element, $list) {
-							return $list->getContext('action') !== 'select';
-						},
 					],
 					[
 						'name' => 'copy',
-						'show' => function ($item, $element, $list) {
-							return $list->getContext('action') !== 'select';
-						},
 					],
 					[
 						'name' => 'delete',
-						'show' => function ($item, $element, $list) {
-							return $list->getContext('action') !== 'select';
-						},
 					],
 				],
 			],
 		];
-	}
-
-	public function renderTags($item): string
-	{
-		$tagEntities = (array)$this->getOption('tagEntities', []);
-		$id = (int)$this->getFieldValue($item, 'id');
-
-		if (empty($tagEntities[$id])) {
-			return '';
-		}
-
-		$html = [];
-
-		foreach ($tagEntities[$id] as $tag) {
-			$label = is_array($tag) ? ($tag['tag'] ?? '') : (string)$tag;
-
-			if ($label === '') {
-				continue;
-			}
-
-			$html[] = '<span class="dw-badge dw-badge--info">'
-				. $this->escape($label)
-				. '</span>';
-		}
-
-		return implode(' ', $html);
 	}
 }
