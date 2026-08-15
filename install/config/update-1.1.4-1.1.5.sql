@@ -280,3 +280,100 @@ UPDATE `taskpos` SET `purchaseorderid` = NULL WHERE `purchaseorderid` = 0;
 UPDATE `taskpos` SET `supplierid` = NULL WHERE `supplierid` = 0;
 UPDATE `taskpos` SET `itemid` = NULL WHERE `itemid` = 0;
 UPDATE `taskpos` SET `masterid` = NULL WHERE `masterid` = 0;
+
+CREATE TABLE `itemstock` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `itemid` int(11) NOT NULL,
+  `warehouseid` int(11) NOT NULL,
+  `quantity` decimal(12,4) DEFAULT NULL,
+  `reserved` decimal(12,4) DEFAULT NULL,
+  `incoming` decimal(12,4) DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY (itemid),
+  KEY (warehouseid),
+  KEY (clientid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `warehouse` ADD `code` varchar(50) NOT NULL AFTER `id`;
+ALTER TABLE `warehouse` MODIFY `title` varchar(255) NOT NULL;
+ALTER TABLE `warehouse` ADD `active` tinyint(1) NOT NULL DEFAULT 1 AFTER `description`;
+ALTER TABLE `warehouse` ADD `isdefault` tinyint(1) NOT NULL DEFAULT 0 AFTER `active`;
+ALTER TABLE `warehouse` ADD KEY (clientid);
+ALTER TABLE `warehouse` ADD KEY (code);
+ALTER TABLE `warehouse` ADD KEY (active);
+ALTER TABLE `warehouse` ADD KEY (deleted);
+
+ALTER TABLE `ledger` DROP `sku`;
+ALTER TABLE `ledger` DROP `contactid`;
+ALTER TABLE `ledger` DROP `docid`;
+ALTER TABLE `ledger` DROP `doctype`;
+ALTER TABLE `ledger` DROP `quoteid`;
+ALTER TABLE `ledger` DROP `salesorderid`;
+ALTER TABLE `ledger` DROP `invoiceid`;
+ALTER TABLE `ledger` DROP `creditnoteid`;
+ALTER TABLE `ledger` DROP `deliveryorderid`;
+ALTER TABLE `ledger` DROP `quotedate`;
+ALTER TABLE `ledger` DROP `salesorderdate`;
+ALTER TABLE `ledger` DROP `invoicedate`;
+ALTER TABLE `ledger` DROP `deliveryorderdate`;
+ALTER TABLE `ledger` DROP `orderdate`;
+ALTER TABLE `ledger` DROP `deliverydate`;
+ALTER TABLE `ledger` DROP `vatin`;
+ALTER TABLE `ledger` DROP `paymentmethod`;
+ALTER TABLE `ledger` DROP `shippingmethod`;
+ALTER TABLE `ledger` DROP `billingname1`;
+ALTER TABLE `ledger` DROP `billingname2`;
+ALTER TABLE `ledger` DROP `billingdepartment`;
+ALTER TABLE `ledger` DROP `billingstreet`;
+ALTER TABLE `ledger` DROP `billingpostcode`;
+ALTER TABLE `ledger` DROP `billingcity`;
+ALTER TABLE `ledger` DROP `billingcountry`;
+ALTER TABLE `ledger` DROP `shippingname1`;
+ALTER TABLE `ledger` DROP `shippingname2`;
+ALTER TABLE `ledger` DROP `shippingdepartment`;
+ALTER TABLE `ledger` DROP `shippingstreet`;
+ALTER TABLE `ledger` DROP `shippingpostcode`;
+ALTER TABLE `ledger` DROP `shippingcity`;
+ALTER TABLE `ledger` DROP `shippingcountry`;
+ALTER TABLE `ledger` DROP `shippingphone`;
+ALTER TABLE `ledger` DROP `contactperson`;
+ALTER TABLE `ledger` DROP `language`;
+ALTER TABLE `ledger` DROP `taxfree`;
+ALTER TABLE `ledger` DROP `title`;
+ALTER TABLE `ledger` DROP `image`;
+ALTER TABLE `ledger` DROP `description`;
+ALTER TABLE `ledger` DROP `price`;
+ALTER TABLE `ledger` DROP `taxrate`;
+ALTER TABLE `ledger` DROP `priceruleamount`;
+ALTER TABLE `ledger` DROP `priceruleaction`;
+ALTER TABLE `ledger` DROP `currency`;
+ALTER TABLE `ledger` DROP `total`;
+ALTER TABLE `ledger` DROP `uom`;
+ALTER TABLE `ledger` MODIFY `itemid` int(11) NOT NULL;
+ALTER TABLE `ledger` MODIFY `type` varchar(20) NOT NULL;
+ALTER TABLE `ledger` ADD `reason` varchar(50) NOT NULL AFTER `type`;
+ALTER TABLE `ledger` MODIFY `quantity` decimal(12,4) NOT NULL;
+ALTER TABLE `ledger` MODIFY `ledgerdate` datetime NOT NULL;
+ALTER TABLE `ledger` ADD `referencemodule` varchar(50) DEFAULT NULL AFTER `ledgerdate`;
+ALTER TABLE `ledger` ADD `referencetype` varchar(50) DEFAULT NULL AFTER `referencemodule`;
+ALTER TABLE `ledger` ADD `referenceid` int(11) DEFAULT NULL AFTER `referencetype`;
+ALTER TABLE `ledger` ADD `referencepositionid` int(11) DEFAULT NULL AFTER `referenceid`;
+ALTER TABLE `ledger` ADD `reversalid` int(11) DEFAULT NULL AFTER `referencepositionid`;
+ALTER TABLE `ledger` MODIFY `comment` text DEFAULT NULL;
+ALTER TABLE `ledger` ADD KEY (itemid);
+ALTER TABLE `ledger` ADD KEY (warehouseid);
+ALTER TABLE `ledger` ADD KEY (clientid);
+ALTER TABLE `ledger` ADD KEY (ledgerdate);
+ALTER TABLE `ledger` ADD KEY (referencemodule);
+ALTER TABLE `ledger` ADD KEY (referencetype);
+ALTER TABLE `ledger` ADD KEY (referenceid);
+ALTER TABLE `ledger` ADD KEY (referencepositionid);
+ALTER TABLE `ledger` ADD KEY (reversalid);
