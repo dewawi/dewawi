@@ -3,12 +3,8 @@ $this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
 $this->headTitle()->setSeparator(' - ');
 $this->headTitle('DEWAWI');
 echo $this->doctype();
-
-$javascripts = array('global.js', 'contacts.js');
-if (($this->module != 'contacts') && file_exists(BASE_PATH . '/js/' . $this->module . '.js')) {
-	$javascripts[] = $this->module . '.js';
-}
 ?>
+
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -135,7 +131,6 @@ if (($this->module != 'contacts') && file_exists(BASE_PATH . '/js/' . $this->mod
 		</style>
 	</head>
 	<body>
-
 		<?php
 		$this->title = $this->translate('USERS_LOGIN');
 		$this->headTitle($this->title);
@@ -158,11 +153,5 @@ if (($this->module != 'contacts') && file_exists(BASE_PATH . '/js/' . $this->mod
 				</form>
 			</div>
 		</div>
-
-		<script type="text/javascript">
-		$(document).ready(function () {
-		});
-		</script>
-
 	</body>
 </html>
