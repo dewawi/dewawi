@@ -217,13 +217,12 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			);
 	}
 
-	protected function beforeBuildPositionIndex(
-		array $params
-	): void {
+	protected function beforeBuildPositionIndex(array $params): void
+	{
 		$this->_helper->Calculate(
 			$params['parentid'],
-			$this->_date,
-			$this->_user['id']
+			$this->getPositionModule(),
+			$params['parent']
 		);
 	}
 

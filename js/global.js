@@ -1134,9 +1134,6 @@ function trash(ids, message, type, cmodule) {
 						reloadHistory();
 						return;
 					}
-					//Reload and calculate positions after a price rule is deleted
-					if(type == 'pricerulepos') getPositions(type, 'pos', window.pageYOffset);
-					//Return to the main page after the entity itself is deleted
 					if(type == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
 				} else {
 					search();
@@ -1510,6 +1507,53 @@ function editPositionSet(data, params) {
 		}
 	});
 	return response;
+}
+
+function addPriceRule(parent, type, positionId) {
+	$.ajax({
+		type: 'POST',
+		url: Dewawi.url('items', 'pricerulepos', 'add'),
+		data: {
+			parentid: positionId,
+			parent_module: module,
+			parent_controller: parent + type
+		},
+		dataType: 'json',
+		cache: false,
+		success: function(response) {
+			if (!response || response.ok !== true) {
+				pushMessages([
+					response && response.message
+						? response.message
+						: 'Preisregel konnte nicht hinzugefügt werden.'
+				]);
+				return;
+			}
+
+			applySaveResponse(response, parent, type, window.pageYOffset);
+		}
+	});
+}
+
+function deletePriceRule(parent, type, priceRuleId) {
+	$.ajax({
+		type: 'POST',
+		url: Dewawi.url('items', 'pricerulepos', 'delete', priceRuleId),
+		dataType: 'json',
+		cache: false,
+		success: function(response) {
+			if (!response || response.ok !== true) {
+				pushMessages([
+					response && response.message
+						? response.message
+						: 'Preisregel konnte nicht gelöscht werden.'
+				]);
+				return;
+			}
+
+			applySaveResponse(response, parent, type, window.pageYOffset);
+		}
+	});
 }
 
 //Get Email Messages
