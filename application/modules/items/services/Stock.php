@@ -3,10 +3,12 @@
 class Items_Service_Stock
 {
 	protected Items_Model_DbTable_Item $_itemDb;
+	protected Items_Model_DbTable_Itemstock $_stockDb;
 
 	public function __construct()
 	{
 		$this->_itemDb = new Items_Model_DbTable_Item();
+		$this->_stockDb = new Items_Model_DbTable_Itemstock();
 	}
 
 	public function prepareCreateData(array $data): array
@@ -14,14 +16,11 @@ class Items_Service_Stock
 		$item = $this->findItem($data);
 
 		$data['itemid'] = (int)$item['id'];
-		$data['sku'] = $item['sku'];
 
-		if (empty($data['warehouseid'])) {
-			$data['warehouseid'] = (int)$item['warehouseid'];
-		}
+		unset($data['sku']);
 
-		if (empty($data['ledgerdate'])) {
-			$data['ledgerdate'] = date('Y-m-d');
+		if(empty($data['ledgerdate'])) {
+			$data['ledgerdate'] = date('Y-m-d H:i:s');
 		}
 
 		$this->validate($data);
@@ -31,34 +30,54 @@ class Items_Service_Stock
 
 	public function apply(array $ledger): void
 	{
+		$quantity = $this->getSignedQuantity($ledger);
+
+		$this->_stockDb->changeQuantity(
+			(int)$ledger['itemid'],
+			(int)$ledger['warehouseid'],
+			$quantity
+		);
+
 		$this->_itemDb->changeQuantity(
 			(int)$ledger['itemid'],
-			$this->getSignedQuantity($ledger)
+			$quantity
 		);
 	}
 
 	public function revert(array $ledger): void
 	{
+		$quantity = -$this->getSignedQuantity($ledger);
+
+		$this->_stockDb->changeQuantity(
+			(int)$ledger['itemid'],
+			(int)$ledger['warehouseid'],
+			$quantity
+		);
+
 		$this->_itemDb->changeQuantity(
 			(int)$ledger['itemid'],
-			-$this->getSignedQuantity($ledger)
+			$quantity
 		);
 	}
 
 	protected function findItem(array $data): array
 	{
-		if (!empty($data['sku'])) {
-			$item = $this->_itemDb->getItemBySKU($data['sku']);
+		if(!empty($data['sku'])) {
+			$item = $this->_itemDb->getItemBySKU(
+				$data['sku']
+			);
 
-			if ($item) {
+			if($item) {
 				return $item;
 			}
 		}
 
-		if (!empty($data['itemid'])) {
-			$item = $this->_itemDb->getById((int)$data['itemid']);
+		if(!empty($data['itemid'])) {
+			$item = $this->_itemDb->getById(
+				(int)$data['itemid']
+			);
 
-			if ($item) {
+			if($item) {
 				return $item;
 			}
 		}
@@ -68,12 +87,38 @@ class Items_Service_Stock
 
 	protected function validate(array $data): void
 	{
-		if (empty($data['type']) || !in_array($data['type'], ['inflow', 'outflow'], true)) {
-			throw new Exception('MESSAGES_INVALID_LEDGER_TYPE');
+		if(
+			empty($data['type'])
+			|| !in_array(
+				$data['type'],
+				['inflow', 'outflow'],
+				true
+			)
+		) {
+			throw new Exception(
+				'MESSAGES_INVALID_LEDGER_TYPE'
+			);
 		}
 
-		if (empty($data['quantity']) || (float)$data['quantity'] <= 0) {
-			throw new Exception('MESSAGES_INVALID_LEDGER_QUANTITY');
+		if(
+			empty($data['quantity'])
+			|| (float)$data['quantity'] <= 0
+		) {
+			throw new Exception(
+				'MESSAGES_INVALID_LEDGER_QUANTITY'
+			);
+		}
+
+		if(empty($data['warehouseid'])) {
+			throw new Exception(
+				'MESSAGES_WAREHOUSE_REQUIRED'
+			);
+		}
+
+		if(empty($data['reason'])) {
+			throw new Exception(
+				'MESSAGES_LEDGER_REASON_REQUIRED'
+			);
 		}
 	}
 
