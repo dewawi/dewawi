@@ -1,0 +1,13 @@
+<?php
+
+$this->title = $this->translate('ITEMS_STOCK');
+$this->headTitle($this->title);
+
+echo $this->Messages();
+echo $this->Pagination();
+
+?>
+
+<div class="dw-list-page">
+	<?php echo $this->stocks->render(); ?>
+</div>

@@ -83,6 +83,12 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 						'controller' => 'ledger',
 						'action' => 'index',
 					],
+					[
+						'label' => 'MENU_STOCK',
+						'module' => 'items',
+						'controller' => 'stock',
+						'action' => 'index',
+					],
 				],
 			],
 			[

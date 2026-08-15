@@ -14,6 +14,7 @@
 	'MENU_ITEMS' => 'Artikel',
 	'MENU_ITEM_LISTS' => 'Artikellisten',
 	'MENU_LEDGER' => 'Buchungsverlauf',
+	'MENU_STOCK' => 'Lagerbestand',
 	'MENU_PRICE_RULES' => 'Preisregeln',
 	'MENU_PORTALS' => 'Portal',
 	'MENU_MAGENTO' => 'Magento',
