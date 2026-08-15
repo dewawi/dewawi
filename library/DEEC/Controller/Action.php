@@ -300,7 +300,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$this->_reloadPositions = true;
 	}
 
-	protected function sendSaveResponse(int $id, array $values = [], array $display = [])
+	protected function sendSaveResponse(?int $id = null, array $values = [], array $display = [])
 	{
 		return $this->_helper->json([
 			'ok' => true,

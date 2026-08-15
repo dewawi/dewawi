@@ -1306,10 +1306,19 @@ function addPosition(parent, type, setid) {
 		type: 'POST',
 		url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id,
 		cache: false,
-		success: function(){
-			$('#status #warning').hide();
-			$('#status #success').show();
+		success: function(response) {
+			if (!response || response.ok !== true) {
+				pushMessages([
+					response && response.message
+						? response.message
+						: 'Position konnte nicht hinzugefügt werden.'
+				]);
+				return;
+			}
+
 			Dewawi.setDirty(false);
+
+			applyCalculation(response.calculation);
 			getPositions(parent, type, $(document).height());
 		}
 	});

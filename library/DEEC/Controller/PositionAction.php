@@ -779,10 +779,9 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			$parent
 		);
 
-		return $this->_helper->json([
-			'ok' => true,
-			'id' => $id,
-		]);
+		$this->calculateAndReloadPositions($params);
+
+		return $this->sendSaveResponse($id);
 	}
 
 	protected function getNewPositionData(
@@ -1116,13 +1115,9 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			);
 		}
 
-		$calculations = $this->calculatePositionsParent(
-			$params
-		);
+		$this->calculateAndReloadPositions($params);
 
-		return $this->_helper->json(
-			$calculations['locale']
-		);
+		return $this->sendSaveResponse($newId);
 	}
 
 	protected function afterPositionCopy(
@@ -1153,9 +1148,16 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		}
 	}
 
-	protected function calculatePositionsParent(
-		array $params
-	): array {
+	protected function calculateAndReloadPositions(array $params): void
+	{
+		$calculations = $this->calculatePositionsParent($params);
+
+		$this->setSaveCalculation($calculations['locale']);
+		$this->reloadPositionsAfterSave();
+	}
+
+	protected function calculatePositionsParent(array $params): array
+	{
 		return $this->_helper->Calculate(
 			$params['parentid'],
 			$this->_date,
@@ -1168,13 +1170,13 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		$this->disableView();
 
 		if (!$this->getRequest()->isPost()) {
-			return;
+			return $this->sendPositionError('Invalid request method');
 		}
 
 		$data = $this->getRequest()->getPost();
 
 		if (($data['delete'] ?? null) !== 'Yes') {
-			return;
+			return $this->sendPositionError('Delete confirmation is missing');
 		}
 
 		$ids = $data['id'] ?? [];
@@ -1183,18 +1185,21 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			$ids = [$ids];
 		}
 
-		$positionDb = $this->getPositionDb();
-		$positionDb->deletePositions($ids);
+		if (!$ids) {
+			return $this->sendPositionError('Position ID is missing');
+		}
+
+		try {
+			$this->getPositionDb()->deletePositions($ids);
+		} catch (Throwable $exception) {
+			return $this->sendPositionError('delete_failed');
+		}
 
 		$params = $this->getPositionParams();
 
-		$calculations = $this->calculatePositionsParent(
-			$params
-		);
+		$this->calculateAndReloadPositions($params);
 
-		return $this->_helper->json(
-			$calculations['locale']
-		);
+		return $this->sendSaveResponse();
 	}
 
 	protected function sendPositionError(
