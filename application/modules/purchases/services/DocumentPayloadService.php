@@ -26,10 +26,7 @@ class Purchases_Service_DocumentPayloadService
 
 		$document['templateid'] = (int)$template['id'];
 
-		$calculations = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')
-				->direct($document['id'], date('Y-m-d H:i:s'), Zend_Registry::get('User')['id'], $document['taxfree']);
-
-		$payment = $this->buildPaymentData($document, $calculations);
+		$payment = $this->buildPaymentData($document);
 
 		$document['prepayment'] = $payment['prepayment_formatted'];
 		$document['prepayment_raw'] = $payment['prepayment_raw'];
@@ -55,7 +52,6 @@ class Purchases_Service_DocumentPayloadService
 			'optionSets' => $optionSets,
 			'positions' => $positions,
 			'footers' => $footers,
-			'calculations' => $calculations,
 			'settings' => $this->buildPdfSettings($document, $controller),
 		];
 	}
@@ -126,22 +122,20 @@ class Purchases_Service_DocumentPayloadService
 		];
 	}
 
-	protected function buildPaymentData(array $document, array $calculations): array
+	protected function buildPaymentData(array $document): array
 	{
-		$locale = Zend_Registry::get('Zend_Locale');
-
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-		$currencyObj = $currencyHelper->getCurrency($document['currency'], 'USE_SYMBOL');
+		$currency = $currencyHelper->getCurrency($document['currency'], 'USE_SYMBOL');
 
 		$prepayment = (float)($document['prepayment'] ?? 0);
-		$total = (float)($calculations['row']['total'] ?? $document['total'] ?? 0);
+		$total = (float)($document['total'] ?? 0);
 		$balance = max(0, $total - $prepayment);
 
 		return [
 			'prepayment_raw' => $prepayment,
 			'balance_raw' => $balance,
-			'prepayment_formatted' => $currencyObj->toCurrency($prepayment),
-			'balance_formatted' => $currencyObj->toCurrency($balance),
+			'prepayment_formatted' => $currency->toCurrency($prepayment),
+			'balance_formatted' => $currency->toCurrency($balance),
 		];
 	}
 
