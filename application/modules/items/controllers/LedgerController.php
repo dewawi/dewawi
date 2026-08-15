@@ -13,20 +13,17 @@ class Items_LedgerController extends DEEC_Controller_Action
 
 	protected function getCreateData(): array
 	{
-		$itemid = (int)$this->_getParam('itemid', 0);
-
 		$data = [
-			'docid' => 0,
-			'doctype' => '',
-			'language' => '',
 			'type' => 'inflow',
+			'reason' => 'correction',
 			'warehouseid' => 0,
-			'comment' => 'Booking ' . date('d.m.Y'),
-			'ledgerdate' => date('Y-m-d'),
+			'ledgerdate' => date('Y-m-d H:i:s'),
 		];
 
-		if ($itemid > 0) {
-			$data['itemid'] = $itemid;
+		$itemId = (int)$this->_getParam('itemid', 0);
+
+		if($itemId > 0) {
+			$data['itemid'] = $itemId;
 		}
 
 		return $data;
@@ -34,95 +31,107 @@ class Items_LedgerController extends DEEC_Controller_Action
 
 	protected function beforeCreate(array $data): array
 	{
-		if (empty($data['itemid']) && empty($data['sku'])) {
+		if(
+			empty($data['itemid'])
+			&& empty($data['sku'])
+		) {
 			return $data;
 		}
 
-		$stock = new Items_Service_Stock();
-
-		return $stock->prepareCreateData($data);
+		return $this->getStockService()
+			->prepareCreateData($data);
 	}
 
-	protected function afterCreate(int $id, array $data): void
-	{
+	protected function afterCreate(
+		int $id,
+		array $data
+	): void {
 		$ledger = $this->getDb()->getById($id);
 
-		if (!$ledger) {
-			throw new Exception('MESSAGES_LEDGER_NOT_FOUND');
-		}
-
-		$stock = new Items_Service_Stock();
-		$stock->apply($ledger);
-	}
-
-	protected function beforeEditSave(array $values, array $row): array
-	{
-		if (isset($values['ledgerdate']) && strpos($values['ledgerdate'], '.') !== false) {
-			$date = new Zend_Date($values['ledgerdate'], Zend_Date::DATES, 'de');
-			$values['ledgerdate'] = $date->get('yyyy-MM-dd');
-		}
-
-		if (isset($values['quantity'])) {
-			$locale = Zend_Registry::get('Zend_Locale');
-			$values['quantity'] = Zend_Locale_Format::getNumber(
-				$values['quantity'],
-				[
-					'precision' => 4,
-					'locale' => $locale,
-				]
+		if(!$ledger) {
+			throw new Exception(
+				'MESSAGES_LEDGER_NOT_FOUND'
 			);
 		}
 
+		$this->getStockService()->apply($ledger);
+	}
+
+	protected function beforeEditSave(
+		array $values,
+		array $row
+	): array {
 		$stockFields = [
 			'itemid' => true,
 			'sku' => true,
 			'warehouseid' => true,
 			'type' => true,
+			'reason' => true,
 			'quantity' => true,
 			'ledgerdate' => true,
 		];
 
-		if (!array_intersect_key($values, $stockFields)) {
+		if(!array_intersect_key($values, $stockFields)) {
 			return $values;
 		}
 
-		$stock = new Items_Service_Stock();
-		$prepared = $stock->prepareCreateData(array_merge($row, $values));
+		$prepared = $this->getStockService()
+			->prepareCreateData(
+				array_merge($row, $values)
+			);
 
-		return array_intersect_key($prepared, $values + [
-			'itemid' => null,
-			'sku' => null,
-			'warehouseid' => null,
-		]);
+		unset($prepared['sku']);
+
+		return array_intersect_key(
+			$prepared,
+			$values + [
+				'itemid' => null,
+				'warehouseid' => null,
+			]
+		);
 	}
 
-	protected function afterEditSave(int $id, array $values, array $oldRow): void
-	{
+	protected function afterEditSave(
+		int $id,
+		array $values,
+		array $oldRow
+	): void {
 		$newRow = $this->getDb()->getById($id);
 
-		if (!$newRow) {
-			throw new Exception('MESSAGES_LEDGER_NOT_FOUND');
+		if(!$newRow) {
+			throw new Exception(
+				'MESSAGES_LEDGER_NOT_FOUND'
+			);
 		}
 
-		$stock = new Items_Service_Stock();
+		$stock = $this->getStockService();
 
 		$stock->revert($oldRow);
 		$stock->apply($newRow);
 	}
 
-	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
-	{
-		if (!$newRow) {
+	protected function afterCopy(
+		int $oldId,
+		int $newId,
+		array $oldRow,
+		array $newRow
+	): void {
+		if(!$newRow) {
 			return;
 		}
 
-		$stock = new Items_Service_Stock();
-		$stock->apply($newRow);
+		$this->getStockService()->apply($newRow);
 	}
 
-	protected function afterDelete(int $id, array $row): void
+	protected function afterDelete(
+		int $id,
+		array $row
+	): void {
+		$this->getStockService()->revert($row);
+	}
+
+	protected function getStockService(): Items_Service_Stock
 	{
-		$stock = new Items_Service_Stock();
-		$stock->revert($row);
+		return new Items_Service_Stock();
 	}
 }
