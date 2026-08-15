@@ -986,6 +986,10 @@ function edit(data, params) {
 				else pushMessages([response.message]);
 			} else {
 				Dewawi.setDirty(false);
+
+				if (response.calculation || response.reloadPositions) {
+					applySaveResponse(response, controller, 'pos', window.pageYOffset);
+				}
 			}
 		},
 		error: function(xhr){
@@ -1174,6 +1178,7 @@ function deleteAttachment(ids, message, type, cmodule) {
 //Apply position
 function applyPosition(parent, type, itemIds, setid) {
 	var ids = Array.isArray(itemIds) ? itemIds.slice() : [itemIds];
+	var lastResponse = null;
 
 	setid = setid || 0;
 
@@ -1181,11 +1186,13 @@ function applyPosition(parent, type, itemIds, setid) {
 		var itemId = ids.shift();
 
 		if (!itemId) {
-			window.parent.getPositions(
-				parent,
-				type,
-				window.parent.pageYOffset
-			);
+			if (lastResponse) {
+				window.parent.applyCalculation(
+					lastResponse.calculation
+				);
+			}
+
+			window.parent.getPositions(parent, type, window.parent.pageYOffset);
 
 			if (typeof window.parent.modalWindowClose === 'function') {
 				window.parent.modalWindowClose();
@@ -1205,17 +1212,19 @@ function applyPosition(parent, type, itemIds, setid) {
 				+ '/itemid/' + itemId,
 			dataType: 'json',
 			cache: false,
-			success: function (response) {
-				if (!response || !response.ok) {
+			success: function(response) {
+				if (!response || response.ok !== true) {
 					pushMessages([
 						'Position konnte nicht hinzugefügt werden.'
 					]);
 					return;
 				}
 
+				lastResponse = response;
+
 				applyNext();
 			},
-			error: function () {
+			error: function() {
 				pushMessages([
 					'Position konnte nicht hinzugefügt werden.'
 				]);
@@ -1226,13 +1235,12 @@ function applyPosition(parent, type, itemIds, setid) {
 	applyNext();
 }
 
-function applyPositionSaveResponse(response, parent, type) {
-	if (response.reloadPositions) {
-		getPositions(parent, type, window.pageYOffset);
-		return;
-	}
-
+function applySaveResponse(response, parent, type, scrollTo) {
 	applyCalculation(response.calculation);
+
+	if (response.reloadPositions) {
+		getPositions(parent, type, scrollTo);
+	}
 }
 
 function applyCalculation(calculation) {
@@ -1292,7 +1300,7 @@ function editPosition(parent, type, data, params) {
 
 			Dewawi.setDirty(false);
 
-			applyPositionSaveResponse(response, parent, type);
+			applySaveResponse(response, parent, type, window.pageYOffset);
 		}
 	});
 }
@@ -1305,6 +1313,7 @@ function addPosition(parent, type, setid) {
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id,
+		dataType: 'json',
 		cache: false,
 		success: function(response) {
 			if (!response || response.ok !== true) {
@@ -1318,8 +1327,7 @@ function addPosition(parent, type, setid) {
 
 			Dewawi.setDirty(false);
 
-			applyCalculation(response.calculation);
-			getPositions(parent, type, $(document).height());
+			applySaveResponse(response, parent, type, window.pageYOffset);
 		}
 	});
 }
@@ -1332,9 +1340,19 @@ function copyPosition(parent, type, positionID){
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+window.parent.module+'/position/copy/parent/'+parent+'/type/'+type+'/id/'+positionID+'/parentid/'+id,
+		dataType: 'json',
 		cache: false,
-		success: function(){
-			getPositions(parent, type, window.pageYOffset);
+		success: function(response) {
+			if (!response || response.ok !== true) {
+				pushMessages([
+					response && response.message
+						? response.message
+						: 'Position konnte nicht kopiert werden.'
+				]);
+				return;
+			}
+
+			applySaveResponse(response, parent, type, window.pageYOffset);
 		}
 	});
 }
@@ -1350,10 +1368,20 @@ function deletePosition(parent, type, positionID, setid, masterid){
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+window.parent.module+'/position/delete/parent/'+parent+'/type/'+type,
+		dataType: 'json',
 		cache: false,
 		data: data,
-		success: function(){
-			getPositions(parent, type, window.pageYOffset);
+		success: function(response) {
+			if (!response || response.ok !== true) {
+				pushMessages([
+					response && response.message
+						? response.message
+						: 'Position konnte nicht gelöscht werden.'
+				]);
+				return;
+			}
+
+			applySaveResponse(response, parent, type, window.pageYOffset);
 		}
 	});
 }
@@ -1386,12 +1414,24 @@ function addOption(parent, type, optionid, setid, masterid) {
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id+'/optionid/'+optionid+'/masterid/'+masterid,
+		dataType: 'json',
 		cache: false,
-		success: function(){
+		success: function(response) {
+			if (!response || response.ok !== true) {
+				pushMessages([
+					response && response.message
+						? response.message
+						: 'Position konnte nicht hinzugefügt werden.'
+				]);
+				return;
+			}
+
 			$('#status #warning').hide();
 			$('#status #success').show();
+
 			Dewawi.setDirty(false);
-			getPositions(parent, type, window.pageYOffset);
+
+			applySaveResponse(response, parent, type, window.pageYOffset);
 		}
 	});
 }
@@ -1401,6 +1441,7 @@ function addSet(parent, type) {
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+module+'/positionset/add/parent/'+parent+'/type/'+type+'/parentid/'+id,
+		dataType: 'json',
 		cache: false,
 		success: function(){
 			$('#status #warning').hide();
@@ -1416,6 +1457,7 @@ function copySet(parent, type, setid){
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+window.parent.module+'/positionset/copy/parent/'+parent+'/type/'+type+'/id/'+setid+'/parentid/'+id,
+		dataType: 'json',
 		cache: false,
 		success: function(){
 			getPositions(parent, type, window.pageYOffset);
@@ -2207,12 +2249,7 @@ function markFieldSaved($field) {
 				return;
 			}
 
-			applyPosition(
-				parent,
-				type,
-				id,
-				setId
-			);
+			applyPosition(parent, type, id, setId);
 
 			$input.val('');
 		}
@@ -2742,12 +2779,7 @@ function markFieldSaved($field) {
 					return;
 				}
 
-				applyPosition(
-					context.parent,
-					'pos',
-					selection.ids,
-					context.setid
-				);
+				applyPosition(context.parent, 'pos', selection.ids, context.setid);
 			},
 
 			'media-delete': function (selection, $button) {
