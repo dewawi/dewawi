@@ -167,32 +167,6 @@ class Users_UserController extends Zend_Controller_Action
 				$password = $formData['password'];
 				$stayLoggedIn = !empty($formData['stayLoggedIn']) ? 1 : 0;
 
-				//$authNamespace = new Zend_Session_Namespace('Zend_Auth');
-				//if($stayLoggedIn) $authNamespace->setExpirationSeconds(864000);
-				//else $authNamespace->setExpirationSeconds(3600);
-
-				// Persist cookie for 90 days if requested, otherwise session cookie
-				if (!empty($stayLoggedIn)) {
-					$seconds = 60*60*24*90; // 90 days
-
-					// 1) Persistent cookie (survives browser restarts)
-					Zend_Session::rememberMe($seconds);
-
-					// 2) Keep server-side session data around long enough
-					Zend_Session::setOptions(['gc_maxlifetime' => $seconds]);
-
-					// 3) Optional: add a hard time limit for the Zend_Auth namespace
-					$authNs = new Zend_Session_Namespace('Zend_Auth');
-					$authNs->setExpirationSeconds($seconds); // per-namespace timeout
-				} else {
-					// Session cookie only (dies when browser closes)
-					Zend_Session::forgetMe();
-					Zend_Session::setOptions([
-						'cookie_lifetime' => 0,
-						'gc_maxlifetime'  => 60*60, // e.g. 1 hour
-					]);
-				}
-
 				$userDb = new Users_Model_DbTable_User();
 				try {
 					if (filter_var($username, FILTER_VALIDATE_EMAIL)) {
@@ -231,26 +205,27 @@ class Users_UserController extends Zend_Controller_Action
 								$storage = $auth->getStorage();
 								$storage->write($user);
 
-								//Store login time into database
-								$userDb = new Users_Model_DbTable_User();
+								DEEC_Session::login(
+									(bool)$stayLoggedIn
+								);
+
 								$userDb->updateLoginTime($user->id);
 
-								//Get target url
 								$target = $this->_getParam('url', null);
 
-								//Add user tracking into database
 								$userTrackingDb = new Users_Model_DbTable_Usertracking();
 								$userTrackingDb->addUsertracking($user, $target);
 
-								//Redirect if url is defined
 								if($target) {
-									$url = explode("|", $this->_getParam('url', null));
+									$url = explode('|', $target);
+
 									if(isset($url[3]) && $url[3]) {
-										$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0], array('id' => $url[3]));
+										$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0], ['id' => $url[3]]);
 									} else {
 										$this->_helper->redirector->gotoSimple($url[2], $url[1], $url[0]);
 									}
 								}
+
 								$this->_helper->redirector->gotoSimple('index', 'index', 'index');
 							}
 						} else {
@@ -279,35 +254,32 @@ class Users_UserController extends Zend_Controller_Action
 
 	public function logoutAction()
 	{
-		// Clear session data
+		DEEC_Session::logout();
+
 		Zend_Auth::getInstance()->clearIdentity();
 
-		// Remove expiration time from session
-		unset($_SESSION['__ZF']['Zend_Auth']['ENT']);
-
-		// Redirect to start
 		$this->_helper->redirector->gotoSimple('index', 'index', 'index');
 	}
 
-    public function sessionAction(): void
-    {
-	    $this->_helper->viewRenderer->setNoRender();
-	    $this->_helper->getHelper('layout')->disableLayout();
+	public function sessionAction(): void
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
 
-	    $this->getResponse()
-		    ->setHttpResponseCode(401)
-		    ->setHeader(
-			    'Content-Type',
-			    'application/json; charset=UTF-8',
-			    true
-		    )
-		    ->setBody(
-			    Zend_Json::encode([
-				    'ok' => false,
-				    'message' => 'session_expired',
-			    ])
-		    );
-    }
+		$this->getResponse()
+			->setHttpResponseCode(401)
+			->setHeader(
+				'Content-Type',
+				'application/json; charset=UTF-8',
+				true
+			)
+			->setBody(
+				Zend_Json::encode([
+					'ok' => false,
+					'message' => 'session_expired',
+				])
+			);
+	}
 
 	public function clientAction()
 	{

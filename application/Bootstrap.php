@@ -13,39 +13,54 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		$view->doctype('XHTML1_STRICT');
 	}
 
+	protected function _initDeecAutoload()
+	{
+		Zend_Loader_Autoloader::getInstance()
+			->registerNamespace('DEEC_');
+
+		set_include_path(
+			get_include_path()
+			. PATH_SEPARATOR
+			. realpath(APPLICATION_PATH . '/../library')
+		);
+	}
+
+	protected function _initDeecSession()
+	{
+		$this->bootstrap('DeecAutoload');
+
+		DEEC_Session::configure();
+	}
+
 	protected function _initAuth()
 	{
+		$this->bootstrap('DeecSession');
+
 		$auth = Zend_Auth::getInstance();
+
 		if($auth->hasIdentity()) {
 			$identity = $auth->getIdentity();
 
 			$user = array(
-						'id' => $identity->id,
-						'username' => $identity->username,
-						'name' => $identity->name,
-						'email' => $identity->email,
-						'emailsender' => $identity->emailsender,
-						'emailsignature' => $identity->emailsignature,
-						'smtphost' => $identity->smtphost,
-						'smtpuser' => $identity->smtpuser,
-						'smtppass' => $identity->smtppass,
-						'admin' => $identity->admin,
-						'clientid' => $identity->clientid,
-						'activated' => $identity->activated,
-						'deleted' => $identity->deleted
-						);
+				'id' => $identity->id,
+				'username' => $identity->username,
+				'name' => $identity->name,
+				'email' => $identity->email,
+				'emailsender' => $identity->emailsender,
+				'emailsignature' => $identity->emailsignature,
+				'smtphost' => $identity->smtphost,
+				'smtpuser' => $identity->smtpuser,
+				'smtppass' => $identity->smtppass,
+				'admin' => $identity->admin,
+				'clientid' => $identity->clientid,
+				'activated' => $identity->activated,
+				'deleted' => $identity->deleted
+			);
 
 			Zend_Registry::set('User', $user);
+
+			DEEC_Session::refresh();
 		}
-	}
-
-	protected function _initDeecAutoload()
-	{
-		Zend_Loader_Autoloader::getInstance()->registerNamespace('DEEC_');
-
-		set_include_path(
-			get_include_path() . PATH_SEPARATOR . realpath(APPLICATION_PATH . '/../library')
-		);
 	}
 
 	protected function _initDatabase()
@@ -119,10 +134,6 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		}
 
 		Zend_Registry::set('DEEC_Translate', $tr);
-	}
-
-	protected function _initSessions() {
-		$this->bootstrap('session');
 	}
 
 	protected function _initCache()
