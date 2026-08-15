@@ -10,6 +10,7 @@ class Items_Model_Entity_Ledger
 
 			'joins' => [
 				[
+					'type' => 'left',
 					'table' => 'item',
 					'alias' => 'i',
 					'on' => 'l.itemid = i.id',
@@ -19,6 +20,7 @@ class Items_Model_Entity_Ledger
 					],
 				],
 				[
+					'type' => 'left',
 					'table' => 'warehouse',
 					'alias' => 'w',
 					'on' => 'l.warehouseid = w.id',

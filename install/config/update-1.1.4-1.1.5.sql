@@ -281,7 +281,7 @@ UPDATE `taskpos` SET `supplierid` = NULL WHERE `supplierid` = 0;
 UPDATE `taskpos` SET `itemid` = NULL WHERE `itemid` = 0;
 UPDATE `taskpos` SET `masterid` = NULL WHERE `masterid` = 0;
 
-CREATE TABLE `itemstock` (
+CREATE TABLE IF NOT EXISTS `itemstock` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `itemid` int(11) NOT NULL,
   `warehouseid` int(11) NOT NULL,

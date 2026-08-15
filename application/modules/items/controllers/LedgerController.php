@@ -14,8 +14,10 @@ class Items_LedgerController extends DEEC_Controller_Action
 	protected function getCreateData(): array
 	{
 		$data = [
+			'itemid' => 0,
 			'type' => 'inflow',
 			'reason' => 'correction',
+			'quantity' => 0,
 			'warehouseid' => 0,
 			'ledgerdate' => date('Y-m-d H:i:s'),
 		];
