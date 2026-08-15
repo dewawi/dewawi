@@ -1226,6 +1226,38 @@ function applyPosition(parent, type, itemIds, setid) {
 	applyNext();
 }
 
+function applyPositionSaveResponse(response, parent, type) {
+	if (response.reloadPositions) {
+		getPositions(parent, type, window.pageYOffset);
+		return;
+	}
+
+	applyCalculation(response.calculation);
+}
+
+function applyCalculation(calculation) {
+	if (!calculation || !Object.keys(calculation).length) {
+		return;
+	}
+
+	$('#subtotal').text(calculation.subtotal);
+	$('#total').text(calculation.total);
+
+	$.each(calculation.taxes, function(rate, value) {
+		if (rate !== 'total') {
+			$('[data-rate="' + rate + '"]').text(value);
+		}
+	});
+
+	$.each(calculation, function(positionId, values) {
+		if (!values || typeof values !== 'object' || values.total === undefined) {
+			return;
+		}
+
+		$('.dw-position-card[data-id="' + positionId + '"] .total').text(values.total);
+	});
+}
+
 //Edit position
 function editPosition(parent, type, data, params) {
 	var url;
@@ -1249,26 +1281,18 @@ function editPosition(parent, type, data, params) {
 		cache: false,
 		dataType: 'json',
 		success: function(response) {
+			if (!response || response.ok !== true) {
+				pushMessages([
+					response && response.message
+						? response.message
+						: 'Speichern fehlgeschlagen.'
+				]);
+				return;
+			}
+
 			Dewawi.setDirty(false);
 
-			if (
-				params.element === 'price' ||
-				params.element === 'quantity' ||
-				params.element === 'priceruleamount' ||
-				params.element === 'priceruleaction'
-			) {
-				$('#subtotal').text(response.subtotal);
-				$('#total').text(response.total);
-				$('.position' + params.id).find('.total').text(response[params.id].total);
-
-				$.each(response.taxes, function(key, val) {
-					if (key !== 'total') {
-						$('[data-rate="' + key + '"]').text(val);
-					}
-				});
-			} else if (params.element === 'taxrate' || params.controller === 'pricerulepos') {
-				getPositions(parent, type, window.pageYOffset);
-			}
+			applyPositionSaveResponse(response, parent, type);
 		}
 	});
 }
