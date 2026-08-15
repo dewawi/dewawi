@@ -1160,8 +1160,8 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 	{
 		return $this->_helper->Calculate(
 			$params['parentid'],
-			$this->_date,
-			$this->_user['id']
+			$this->getPositionModule(),
+			$params['parent']
 		);
 	}
 

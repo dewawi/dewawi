@@ -327,7 +327,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		}
 
 		if ($this->affectsDocumentCalculation($values)) {
-			$calculation = $this->_helper->Calculate($id, $this->_date, $this->_user['id']);
+			$calculation = $this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
 			$this->setSaveCalculation($calculation['locale']);
 		}
 	}

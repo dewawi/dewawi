@@ -99,7 +99,7 @@ class Sales_PositionsetController extends DEEC_Controller_Action
 				$position->updatePositionSet($params['id'], $data);
 
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
-					$calculations = $this->_helper->Calculate($params['parentid'], 'sales', $params['parent'].$params['type']);
+					$calculations = $this->_helper->Calculate($params['parentid'], 'sales', $params['parent']);
 					echo Zend_Json::encode($calculations['locale']);
 				}
 				echo Zend_Json::encode($position->getPositionSet($params['id']));
@@ -147,7 +147,7 @@ class Sales_PositionsetController extends DEEC_Controller_Action
 			}
 
 			//Calculate
-			$calculations = $this->_helper->Calculate($params['parentid'], 'sales', $params['parent'].$params['type']);
+			$calculations = $this->_helper->Calculate($params['parentid'], 'sales', $params['parent']);
 			echo Zend_Json::encode($calculations['locale']);
 		}
 	}
@@ -195,7 +195,7 @@ class Sales_PositionsetController extends DEEC_Controller_Action
 
 				//Reorder and calculate
 				$this->_helper->OrderingSet->setOrdering($params['parent'], $params['type'], $data['parentid'], $data['id']);
-				$calculations = $this->_helper->Calculate($data['parentid'], 'sales', $params['parent'].$params['type']);
+				$calculations = $this->_helper->Calculate($data['parentid'], 'sales', $params['parent']);
 				echo Zend_Json::encode($calculations['locale']);
 			}
 		}

@@ -4,88 +4,93 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 {
 	public function direct(int $id, string $module, string $controller)
 	{
-		$class = ucfirst($module).'_Model_DbTable_'.ucfirst($controller);
-		$classPos = $class.'pos';
+		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+		$classPos = $class . 'pos';
 
-		if(class_exists($class) && class_exists($classPos)) {
-			//Get object
-			$objectDb = new $class();
-			$object = $objectDb->getById($id);
-
-			if ($object === null) {
-				return null;
-			}
-
-			//Get positions
-			$positionsDb = new $classPos();
-			$positions = $positionsDb->getPositions($id);
-
-			$calculations = array();
-			$calculations['row'] = array();
-			$calculations['locale'] = array();
-			$calculations['row']['subtotal'] = 0;
-			$calculations['row']['taxes'] = array();
-			$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-			$pricerulesHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
-			$currency = $currencyHelper->getCurrency();
-			$pricerules = array();
-			$pricerulemaster = array();
-			foreach($positions as $position) {
-				//Get price rules and properties
-				if(!$position->masterid) {
-					$pricerules[$position->id] = $pricerulesHelper->getPriceRulePositions($module, $controller.'pos', $position->id);
-					$pricerulemaster[$position->id] = $position->pricerulemaster;
-				}
-			}
-			foreach($positions as $position) {
-				$masterId = (int)$position->masterid;
-
-				if ($masterId > 0 && !empty($pricerulemaster[$masterId]) && isset($pricerules[$masterId])) {
-					$price = $pricerulesHelper->usePriceRules(
-						$pricerules[$masterId],
-						$position->price
-					);
-				} elseif ($masterId === 0 && isset($pricerules[$position->id])) {
-					$price = $pricerulesHelper->usePriceRules(
-						$pricerules[$position->id],
-						$position->price
-					);
-				} else {
-					$price = $position->price;
-				}
-
-				$calculations['row'][$position->id]['total'] = round($price*$position->quantity, 2);
-				$calculations['row']['subtotal'] += round($calculations['row'][$position->id]['total'], 2);
-
-				if(isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] += $calculations['row'][$position->id]['total']*$position->taxrate/100;
-				else $calculations['row']['taxes']['total'] = $calculations['row'][$position->id]['total']*$position->taxrate/100;
-				if(isset($calculations['row']['taxes'][$position->taxrate])) $calculations['row']['taxes'][$position->taxrate] += $calculations['row'][$position->id]['total']*$position->taxrate/100;
-				else $calculations['row']['taxes'][$position->taxrate] = $calculations['row'][$position->id]['total']*$position->taxrate/100;
-
-				$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
-				$calculations['locale'][$position->id]['price'] = $currency->toCurrency($price);
-				$calculations['locale'][$position->id]['total'] = $currency->toCurrency($calculations['row'][$position->id]['total']);
-
-				$positionsDb->updatePosition($position->id, array('total' => ($price*$position->quantity*(1+$position->taxrate/100))));
-			}
-
-			if($taxfree === null) $taxfree = $object['taxfree'];
-			if($taxfree) $calculations['row']['taxes']['total'] = 0;
-
-			if(!isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] = 0;
-			$calculations['row']['total'] = $calculations['row']['subtotal'] + $calculations['row']['taxes']['total'];
-
-			$objectDb->updateById($id, [
-				'subtotal' => $calculations['row']['subtotal'],
-				'taxes'    => $calculations['row']['taxes']['total'],
-				'total'    => $calculations['row']['total'],
-			]);
-
-			$calculations['locale']['subtotal'] = $currency->toCurrency($calculations['row']['subtotal']);
-			$calculations['locale']['total'] = $currency->toCurrency($calculations['row']['subtotal']+$calculations['row']['taxes']['total']);
-				foreach($calculations['row']['taxes'] as $key => $value)
-					$calculations['locale']['taxes'][$key] = $currency->toCurrency($value);
-			return $calculations;
+		if (!class_exists($class) || !class_exists($classPos)) {
+			throw new RuntimeException(
+				'Calculation classes not found: ' . $class . ', ' . $classPos
+			);
 		}
+
+		$objectDb = new $class();
+		$object = $objectDb->getById($id);
+
+		if ($object === null) {
+			throw new RuntimeException(
+				'Calculation parent not found: ' . $id
+			);
+		}
+
+		$positionsDb = new $classPos();
+		$positions = $positionsDb->getPositions($id);
+
+		$calculations = array();
+		$calculations['row'] = array();
+		$calculations['locale'] = array();
+		$calculations['row']['subtotal'] = 0;
+		$calculations['row']['taxes'] = array();
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$pricerulesHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
+		$currency = $currencyHelper->getCurrency();
+		$pricerules = array();
+		$pricerulemaster = array();
+		foreach($positions as $position) {
+			//Get price rules and properties
+			if(!$position->masterid) {
+				$pricerules[$position->id] = $pricerulesHelper->getPriceRulePositions($module, $controller.'pos', $position->id);
+				$pricerulemaster[$position->id] = $position->pricerulemaster;
+			}
+		}
+		foreach($positions as $position) {
+			$masterId = (int)$position->masterid;
+
+			if ($masterId > 0 && !empty($pricerulemaster[$masterId]) && isset($pricerules[$masterId])) {
+				$price = $pricerulesHelper->usePriceRules(
+					$pricerules[$masterId],
+					$position->price
+				);
+			} elseif ($masterId === 0 && isset($pricerules[$position->id])) {
+				$price = $pricerulesHelper->usePriceRules(
+					$pricerules[$position->id],
+					$position->price
+				);
+			} else {
+				$price = $position->price;
+			}
+
+			$calculations['row'][$position->id]['total'] = round($price*$position->quantity, 2);
+			$calculations['row']['subtotal'] += round($calculations['row'][$position->id]['total'], 2);
+
+			if(isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] += $calculations['row'][$position->id]['total']*$position->taxrate/100;
+			else $calculations['row']['taxes']['total'] = $calculations['row'][$position->id]['total']*$position->taxrate/100;
+			if(isset($calculations['row']['taxes'][$position->taxrate])) $calculations['row']['taxes'][$position->taxrate] += $calculations['row'][$position->id]['total']*$position->taxrate/100;
+			else $calculations['row']['taxes'][$position->taxrate] = $calculations['row'][$position->id]['total']*$position->taxrate/100;
+
+			$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
+			$calculations['locale'][$position->id]['price'] = $currency->toCurrency($price);
+			$calculations['locale'][$position->id]['total'] = $currency->toCurrency($calculations['row'][$position->id]['total']);
+
+			$positionsDb->updatePosition($position->id, array('total' => ($price*$position->quantity*(1+$position->taxrate/100))));
+		}
+
+		if ($object['taxfree']) {
+			$calculations['row']['taxes']['total'] = 0;
+		}
+
+		if(!isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] = 0;
+		$calculations['row']['total'] = $calculations['row']['subtotal'] + $calculations['row']['taxes']['total'];
+
+		$objectDb->updateById($id, [
+			'subtotal' => $calculations['row']['subtotal'],
+			'taxes'    => $calculations['row']['taxes']['total'],
+			'total'    => $calculations['row']['total'],
+		]);
+
+		$calculations['locale']['subtotal'] = $currency->toCurrency($calculations['row']['subtotal']);
+		$calculations['locale']['total'] = $currency->toCurrency($calculations['row']['subtotal']+$calculations['row']['taxes']['total']);
+			foreach($calculations['row']['taxes'] as $key => $value)
+				$calculations['locale']['taxes'][$key] = $currency->toCurrency($value);
+		return $calculations;
 	}
 }

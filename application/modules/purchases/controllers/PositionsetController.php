@@ -125,7 +125,7 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 				$position->updatePositionSet($params['id'], $data);
 
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
-					$calculations = $this->_helper->Calculate($params['parentid'], 'purchases', $params['parent'].$params['type']);
+					$calculations = $this->_helper->Calculate($params['parentid'], 'purchases', $params['parent']);
 					echo Zend_Json::encode($calculations['locale']);
 				}
 				echo Zend_Json::encode($position->getPositionSet($params['id']));
@@ -173,7 +173,7 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 			}
 
 			//Calculate
-			$calculations = $this->_helper->Calculate($params['parentid'], 'purchases', $params['parent'].$params['type']);
+			$calculations = $this->_helper->Calculate($params['parentid'], 'purchases', $params['parent']);
 			echo Zend_Json::encode($calculations['locale']);
 		}
 	}
@@ -221,7 +221,7 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 
 				//Reorder and calculate
 				$this->_helper->OrderingSet->setOrdering($params['parent'], $params['type'], $data['parentid'], $data['id']);
-				$calculations = $this->_helper->Calculate($data['parentid'], 'purchases', $params['parent'].$params['type']);
+				$calculations = $this->_helper->Calculate($data['parentid'], 'purchases', $params['parent']);
 				echo Zend_Json::encode($calculations['locale']);
 			}
 		}
