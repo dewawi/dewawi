@@ -940,33 +940,31 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			$locale
 		);
 
+		$positionDb = $this->getPositionDb();
+
 		try {
-			$this->getPositionDb()->updatePosition(
-				$params['id'],
-				$values
-			);
+			$positionDb->updatePosition($params['id'], $values);
 		} catch (Throwable $exception) {
-			return $this->sendPositionError(
-				'save_failed'
-			);
+			return $this->sendPositionError('save_failed');
 		}
 
 		if ($this->affectsPositionCalculation($values)) {
-			$calculations =
-				$this->calculatePositionsParent(
-					$params
-				);
-
-			return $this->_helper->json(
-				$calculations['locale']
-			);
+			$calculations = $this->calculatePositionsParent($params);
+			$this->setSaveCalculation($calculations['locale']);
 		}
 
-		return $this->_helper->json([
-			'ok' => true,
-			'id' => $params['id'],
-			'values' => $values,
-		]);
+		if (isset($values['taxrate'])) {
+			$this->reloadPositionsAfterSave();
+		}
+
+		$row = $positionDb->getPosition($params['id']);
+		$changedFields = array_keys($values);
+
+		return $this->sendSaveResponse(
+			$params['id'],
+			array_intersect_key($row, array_flip($changedFields)),
+			DEEC_Display::fromRow($form, $row, $changedFields)
+		);
 	}
 
 	protected function buildPositionFormForRequest(
@@ -1006,18 +1004,12 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		return $form;
 	}
 
-	protected function affectsPositionCalculation(
-		array $values
-	): bool {
-		return (bool)array_intersect(
-			array_keys($values),
-			[
-				'price',
-				'quantity',
-				'taxrate',
-				'pricerulemaster',
-			]
-		);
+	protected function affectsPositionCalculation(array $values): bool
+	{
+		return isset($values['price'])
+			|| isset($values['quantity'])
+			|| isset($values['taxrate'])
+			|| isset($values['pricerulemaster']);
 	}
 
 	public function sortAction()
