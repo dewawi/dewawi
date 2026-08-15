@@ -12,19 +12,56 @@ class Admin_Form_Warehouse extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'code',
+			'type' => 'text',
+			'label' => 'ADMIN_WAREHOUSE_CODE',
+			'required' => true,
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'maxlength' => 50,
+			],
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'title',
 			'type' => 'text',
 			'label' => 'ADMIN_TITLE',
+			'required' => true,
 			'format' => ['type' => 'string'],
+			'attribs' => [
+				'maxlength' => 255,
+			],
+			'col' => 9,
+		]);
+
+		$this->addElement([
+			'name' => 'description',
+			'type' => 'text',
+			'label' => 'ADMIN_DESCRIPTION',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'maxlength' => 255,
+			],
 			'col' => 12,
 		]);
 
 		$this->addElement([
-			'name' => 'clientid',
-			'type' => 'select',
-			'options' => [],
+			'name' => 'active',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_ACTIVE',
+			'format' => ['type' => 'int'],
+			'default' => 1,
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'isdefault',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_WAREHOUSE_DEFAULT',
+			'format' => ['type' => 'int'],
 			'default' => 0,
-			'col' => 6,
+			'col' => 3,
 		]);
 	}
 }

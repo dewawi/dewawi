@@ -13,11 +13,10 @@ class Admin_WarehouseController extends DEEC_Controller_AdminAction
 
 	protected function getCreateData(): array
 	{
-		$db = new Admin_Model_DbTable_Warehouse();
-
 		return [
-			'name' => $this->view->translate('ADMIN_NEW_WAREHOUSE'),
-			'ordering' => $db->getNextOrdering(),
+			'title' => $this->view->translate('ADMIN_NEW_WAREHOUSE'),
+			'active' => 1,
+			'isdefault' => 0,
 		];
 	}
 }
