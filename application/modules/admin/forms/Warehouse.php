@@ -56,7 +56,7 @@ class Admin_Form_Warehouse extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'isdefault',
+			'name' => 'default',
 			'type' => 'checkbox',
 			'label' => 'ADMIN_WAREHOUSE_DEFAULT',
 			'format' => ['type' => 'int'],

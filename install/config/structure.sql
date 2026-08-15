@@ -2882,7 +2882,7 @@ CREATE TABLE IF NOT EXISTS `warehouse` (
   `title` varchar(255) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT 1,
-  `isdefault` tinyint(1) NOT NULL DEFAULT 0,
+  `default` tinyint(1) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,

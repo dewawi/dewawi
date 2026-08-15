@@ -161,6 +161,41 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return $this->fetchAll($select)->toArray();
 	}
 
+	public function getDefault(): ?array
+	{
+		$select = $this->select()
+			->where('clientid = ?', $this->getClientId())
+			->where('`default` = ?', 1)
+			->where('deleted = ?', 0)
+			->limit(1);
+
+		$row = $this->fetchRow($select);
+
+		return $row ? $row->toArray() : null;
+	}
+
+	public function setDefault(int $id): void
+	{
+		$where = [
+			$this->getAdapter()->quoteInto(
+				'clientid = ?',
+				$this->getClientId()
+			),
+			$this->getAdapter()->quoteInto(
+				'deleted = ?',
+				0
+			),
+		];
+
+		$this->update([
+			'default' => 0,
+		], $where);
+
+		$this->updateById($id, [
+			'default' => 1,
+		]);
+	}
+
 	public function create(array $data): int
 	{
 		$data = $this->prepareCreateData($data);

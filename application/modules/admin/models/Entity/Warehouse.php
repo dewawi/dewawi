@@ -9,15 +9,19 @@ class Admin_Model_Entity_Warehouse
 			'alias' => 'w',
 
 			'search' => [
-				'name',
+				'code',
+				'title',
+				'description',
 			],
 
 			'orders' => [
 				'id',
+				'code',
 				'title',
+				'active',
+				'isdefault',
 				'created',
 				'modified',
 			],
 		];
 	}
-}

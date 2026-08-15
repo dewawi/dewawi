@@ -305,7 +305,7 @@ CREATE TABLE `itemstock` (
 ALTER TABLE `warehouse` ADD `code` varchar(50) NOT NULL AFTER `id`;
 ALTER TABLE `warehouse` MODIFY `title` varchar(255) NOT NULL;
 ALTER TABLE `warehouse` ADD `active` tinyint(1) NOT NULL DEFAULT 1 AFTER `description`;
-ALTER TABLE `warehouse` ADD `isdefault` tinyint(1) NOT NULL DEFAULT 0 AFTER `active`;
+ALTER TABLE `warehouse` ADD `default` tinyint(1) NOT NULL DEFAULT 0 AFTER `active`;
 ALTER TABLE `warehouse` ADD KEY (clientid);
 ALTER TABLE `warehouse` ADD KEY (code);
 ALTER TABLE `warehouse` ADD KEY (active);
