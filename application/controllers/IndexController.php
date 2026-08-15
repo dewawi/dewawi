@@ -73,8 +73,19 @@ class IndexController extends Zend_Controller_Action
 		$this->view->items = $items;
 
 		$ledgerDb = new Items_Model_DbTable_Ledger();
-		$ledger = $ledgerDb->getLatestLedgers();
-		$this->view->ledgers = $ledger;
+		$itemDb = new Items_Model_DbTable_Item();
+
+		$ledgers = $ledgerDb->getLatest(5, 'ledgerdate');
+
+		foreach($ledgers as &$ledger) {
+			$item = $itemDb->getById((int)$ledger['itemid']);
+
+			$ledger['sku'] = $item['sku'] ?? '';
+		}
+
+		unset($ledger);
+
+		$this->view->ledgers = $ledgers;
 
 		$tasksDb = new Tasks_Model_DbTable_Task();
 		$tasks = $tasksDb->getLatestTasks();

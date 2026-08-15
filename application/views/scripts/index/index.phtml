@@ -140,13 +140,13 @@ echo $this->Messages();
 										<?php foreach ($this->ledgers as $ledger) : ?>
 											<tr class="dw-row">
 												<td class="dw-col-id">
-													<a href="<?php echo $this->url(['module' => 'items', 'controller' => 'ledger', 'action' => 'edit', 'id' => $ledger->id]); ?>">
-														<?php echo $this->escape($ledger->sku); ?>
+													<a href="<?php echo $this->url(['module' => 'items', 'controller' => 'ledger', 'action' => 'edit', 'id' => $ledger['id']]); ?>">
+														<?php echo $this->escape($ledger['sku']); ?>
 													</a>
 												</td>
 												<td class="dw-col-title">
-													<a href="<?php echo $this->url(['module' => 'items', 'controller' => 'ledger', 'action' => 'edit', 'id' => $ledger->id]); ?>">
-														<?php echo $this->escape($ledger->comment); ?>
+													<a href="<?php echo $this->url(['module' => 'items', 'controller' => 'ledger', 'action' => 'edit', 'id' => $ledger['id']]); ?>">
+														<?php echo $this->escape($ledger['comment']); ?>
 													</a>
 												</td>
 												<td class="dw-col-actions">
@@ -155,7 +155,7 @@ echo $this->Messages();
 															type="button"
 															class="dw-btn dw-btn--icon edit"
 															data-action="edit"
-															data-id="<?php echo (int)$ledger->id; ?>"
+															data-id="<?php echo (int)$ledger['id']; ?>"
 															data-module="items"
 															data-controller="ledger"
 															aria-label="<?php echo $this->escape($this->translate('TOOLBAR_EDIT')); ?>"
