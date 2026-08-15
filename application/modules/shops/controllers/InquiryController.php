@@ -614,7 +614,7 @@ class Shops_InquiryController extends Zend_Controller_Action
 
 			// trigger calculation once so totals are set
 			try {
-			 	$this->_helper->Calculate($quoteId, $this->_date, Zend_Registry::get('User')['id'] ?? 0, 0);
+			 	$this->_helper->Calculate($quoteId, 'sales', 'quote');
 			} catch (Exception $e) {}
 
 			$quote = $quoteDb->getQuote($quoteId);

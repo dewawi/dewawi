@@ -2,14 +2,11 @@
 
 class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Action_Helper_Abstract
 {
-	public function direct($id, $date, $user, $taxfree = null) {
-		$request = $this->getRequest();
-		$module = $request->getParam('module', null);
-		$controller = $request->getParam('controller', null);
-		if($controller == 'position') $controller = $request->getParam('parent');
-		if(substr($controller, -3) == 'pos') $controller = substr($controller, 0, -3);
+	public function direct(int $id, string $module, string $controller)
+	{
 		$class = ucfirst($module).'_Model_DbTable_'.ucfirst($controller);
 		$classPos = $class.'pos';
+
 		if(class_exists($class) && class_exists($classPos)) {
 			//Get object
 			$objectDb = new $class();
