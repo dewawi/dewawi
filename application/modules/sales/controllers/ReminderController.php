@@ -34,35 +34,4 @@ class Sales_ReminderController extends DEEC_Controller_DocumentAction
 
 		return null;
 	}
-
-	protected function beforeEditSave(array $values, array $row): array
-	{
-		$id = (int)$row['id'];
-
-		if (isset($values['currency'])) {
-			$positionsDb = new Sales_Model_DbTable_Reminderpos();
-			$positions = $positionsDb->getPositions($id);
-
-			foreach ($positions as $position) {
-				$positionsDb->updatePosition($position->id, [
-					'currency' => $values['currency'],
-				]);
-			}
-		}
-
-		if (isset($values['taxfree'])) {
-			$calculations = $this->_helper->Calculate(
-				$id,
-				$this->_date,
-				$this->_user['id'],
-				$values['taxfree']
-			);
-
-			$values['subtotal'] = $calculations['row']['subtotal'];
-			$values['taxes'] = $calculations['row']['taxes']['total'];
-			$values['total'] = $calculations['row']['total'];
-		}
-
-		return $values;
-	}
 }

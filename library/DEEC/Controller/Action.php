@@ -5,6 +5,8 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	protected $_date = null;
 	protected $_user = null;
 	protected $_flashMessenger = null;
+	protected array $_saveCalculation = [];
+	protected bool $_reloadPositions = false;
 
 	public function init()
 	{
@@ -288,6 +290,28 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	{
 	}
 
+	protected function setSaveCalculation(array $calculation): void
+	{
+		$this->_saveCalculation = $calculation;
+	}
+
+	protected function reloadPositionsAfterSave(): void
+	{
+		$this->_reloadPositions = true;
+	}
+
+	protected function sendSaveResponse(int $id, array $values = [], array $display = [])
+	{
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'values' => $values,
+			'display' => $display,
+			'calculation' => $this->_saveCalculation,
+			'reloadPositions' => $this->_reloadPositions,
+		]);
+	}
+
 	protected function handleEditAjaxSave(DEEC_Form $form, DEEC_Model_DbTable_Entity $db, int $id, array $row)
 	{
 		$this->disableView();
@@ -332,15 +356,11 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$newRow = $db->getById($id);
 		$changedFields = array_keys($values);
 
-		return $this->_helper->json([
-			'ok' => true,
-			'id' => $id,
-			'values' => array_intersect_key($newRow, array_flip($changedFields)),
-			'display' => DEEC_Display::fromRow($form, $newRow, $changedFields),
-			'meta' => [
-				'recalc' => [],
-			],
-		]);
+		return $this->sendSaveResponse(
+			$id,
+			array_intersect_key($newRow, array_flip($changedFields)),
+			DEEC_Display::fromRow($form, $newRow, $changedFields)
+		);
 	}
 
 	protected function getCurrentPermissions(): array

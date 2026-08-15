@@ -319,6 +319,36 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		);
 	}
 
+	protected function afterEditSave(int $id, array $values, array $row): void
+	{
+		if (isset($values['currency'])) {
+			$this->updatePositionCurrency($id, $values['currency']);
+			$this->reloadPositionsAfterSave();
+		}
+
+		if ($this->affectsDocumentCalculation($values)) {
+			$calculation = $this->_helper->Calculate($id, $this->_date, $this->_user['id']);
+			$this->setSaveCalculation($calculation['locale']);
+		}
+	}
+
+	protected function affectsDocumentCalculation(array $values): bool
+	{
+		return isset($values['taxfree']) || isset($values['currency']);
+	}
+
+	protected function updatePositionCurrency(int $documentId, string $currency): void
+	{
+		$className = $this->getPositionsDbTableClass();
+		$positionsDb = new $className();
+
+		foreach ($positionsDb->getPositions($documentId) as $position) {
+			$positionsDb->updatePosition((int)$position->id, [
+				'currency' => $currency,
+			]);
+		}
+	}
+
 	public function generateAction()
 	{
 		$id = (int)$this->_getParam('id', 0);
