@@ -95,16 +95,16 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		$templateId = (int)$this->_getParam('templateid', 0);
 		$isAjax = $this->getRequest()->isXmlHttpRequest();
 
-		try {
-			$result = $this->generatePdfDocument($id, [
-				'output' => $isAjax ? 'file' : 'inline',
-				'templateid' => $templateId ?: null,
-				'storage' => 'cache',
-				'overwrite' => true,
-			]);
-		} catch (RuntimeException $e) {
+		if (!$this->loadRow($id)) {
 			return $this->handleDocumentNotFound($isAjax);
 		}
+
+		$result = $this->generatePdfDocument($id, [
+			'output' => $isAjax ? 'file' : 'inline',
+			'templateid' => $templateId ?: null,
+			'storage' => 'cache',
+			'overwrite' => true,
+		]);
 
 		if ($isAjax) {
 			$this->disableView();
@@ -123,15 +123,15 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	{
 		$id = (int)$this->_getParam('id', 0);
 
-		try {
-			$result = $this->generatePdfDocument($id, [
-				'output' => 'download',
-				'storage' => 'cache',
-				'overwrite' => true,
-			]);
-		} catch (RuntimeException $e) {
+		if (!$this->loadRow($id)) {
 			return $this->handleDocumentNotFound(false);
 		}
+
+		$result = $this->generatePdfDocument($id, [
+			'output' => 'download',
+			'storage' => 'cache',
+			'overwrite' => true,
+		]);
 
 		return $this->sendPdfResponse($result);
 	}
@@ -292,22 +292,16 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	{
 		$id = (int)$this->_getParam('id', 0);
 
-		try {
-			$this->generatePdfDocument($id, [
-				'finalize' => true,
-				'output' => 'file',
-				'storage' => 'contact',
-				'overwrite' => false,
-			]);
-		} catch (RuntimeException $e) {
-			$this->_flashMessenger->addMessage($this->getNotFoundMessage());
-
-			return $this->_helper->redirector->gotoSimple(
-				'index',
-				$this->getRequest()->getControllerName(),
-				$this->getRequest()->getModuleName()
-			);
+		if (!$this->loadRow($id)) {
+			return $this->handleDocumentNotFound(false);
 		}
+
+		$this->generatePdfDocument($id, [
+			'finalize' => true,
+			'output' => 'file',
+			'storage' => 'contact',
+			'overwrite' => false,
+		]);
 
 		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
 
