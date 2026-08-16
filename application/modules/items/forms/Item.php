@@ -11,6 +11,13 @@ class Items_Form_Item extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'parentid',
+			'type' => 'hidden',
+			'format' => ['type' => 'int'],
+			'wrap' => false,
+		]);
+
+		$this->addElement([
 			'type' => 'text',
 			'name' => 'sku',
 			'label' => 'ITEMS_SKU',

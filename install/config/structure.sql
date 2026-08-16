@@ -1127,6 +1127,7 @@ CREATE TABLE IF NOT EXISTS `invoiceposset` (
 
 CREATE TABLE IF NOT EXISTS `item` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parentid` int(11) DEFAULT NULL,
   `catid` int(11) NOT NULL,
   `shopcatid` int(11) DEFAULT NULL,
   `ebaycatid` int(11) DEFAULT NULL,
@@ -1191,6 +1192,7 @@ CREATE TABLE IF NOT EXISTS `item` (
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
+  KEY (parentid),
   KEY (catid),
   KEY (sku),
   KEY (clientid)
