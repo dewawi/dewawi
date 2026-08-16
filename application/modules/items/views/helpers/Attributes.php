@@ -7,7 +7,7 @@ class Zend_View_Helper_Attributes extends Zend_View_Helper_Abstract
 		return $this->view->partial(
 			'item/attributes.phtml',
 			[
-				'attributes' => $this->view->attributes,
+				'attributes' => $this->view->itemAttributes,
 			]
 		);
 	}

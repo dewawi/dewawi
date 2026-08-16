@@ -26,11 +26,12 @@ class Items_ItemController extends DEEC_Controller_Action
 			: $id;
 
 		return [
-			'attributes' => $attributeDb->getPositions($id),
-			'options' => $optionDb->getPositions($id),
-			'ledgers' => $ledgerDb->getByItemId($id),
-			'variants' => $itemDb->getVariants($parentId),
-			'variantOptions' => $variantOptionDb->getByItemId($id),
+			'item' => $row,
+			'itemAttributes' => $attributeDb->getPositions($id),
+			'itemOptions' => $optionDb->getPositions($id),
+			'itemLedgers' => $ledgerDb->getByItemId($id),
+			'itemVariants' => $itemDb->getVariants($parentId),
+			'itemVariantOptions' => $variantOptionDb->getByItemId($id),
 		];
 	}
 

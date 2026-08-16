@@ -7,7 +7,7 @@ class Zend_View_Helper_Ledger extends Zend_View_Helper_Abstract
 		return $this->view->partial(
 			'item/ledger.phtml',
 			[
-				'ledgers' => $this->view->ledgers,
+				'ledgers' => $this->view->itemLedgers,
 			]
 		);
 	}
