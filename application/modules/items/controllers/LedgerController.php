@@ -13,12 +13,15 @@ class Items_LedgerController extends DEEC_Controller_Action
 
 	protected function getCreateData(): array
 	{
+		$warehouseDb = new Application_Model_DbTable_Warehouse();
+		$warehouse = $warehouseDb->getDefault();
+
 		$data = [
 			'itemid' => 0,
 			'type' => 'inflow',
 			'reason' => 'correction',
 			'quantity' => 0,
-			'warehouseid' => 0,
+			'warehouseid' => $warehouse ? (int)$warehouse['id'] : 0,
 			'ledgerdate' => date('Y-m-d H:i:s'),
 		];
 
@@ -57,6 +60,20 @@ class Items_LedgerController extends DEEC_Controller_Action
 		}
 
 		$this->getStockService()->apply($ledger);
+	}
+
+	protected function prepareEditRow(array $row): array
+	{
+		if(!empty($row['itemid'])) {
+			$itemDb = new Items_Model_DbTable_Item();
+			$item = $itemDb->getById((int)$row['itemid']);
+
+			if($item) {
+				$row['sku'] = $item['sku'];
+			}
+		}
+
+		return $row;
 	}
 
 	protected function beforeEditSave(

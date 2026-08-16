@@ -1314,7 +1314,7 @@ CREATE TABLE `itemstock` (
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (itemid),
+  UNIQUE KEY (itemid, warehouseid, clientid),
   KEY (warehouseid),
   KEY (clientid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
