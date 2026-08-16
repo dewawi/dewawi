@@ -12,5 +12,17 @@
 	'ITEMS_LEDGER_MODIFIED' => 'le. Änderung',
 	'ITEMS_LEDGER_PRICE' => 'Preis',
 	'ITEMS_LEDGER_UOM' => 'Messeinheit',
-	'ITEMS_LEDGER_ACTIVATED' => 'Bestandsführung aktivieren'
+	'ITEMS_LEDGER_ACTIVATED' => 'Bestandsführung aktivieren',
+	'ITEMS_LEDGER_REASON' => 'Buchungsgrund',
+	'ITEMS_LEDGER_REASON_RECEIPT' => 'Wareneingang',
+	'ITEMS_LEDGER_REASON_DELIVERY' => 'Warenausgang',
+	'ITEMS_LEDGER_REASON_RETURN_CUSTOMER' => 'Kundenretoure',
+	'ITEMS_LEDGER_REASON_RETURN_SUPPLIER' => 'Lieferantenretoure',
+	'ITEMS_LEDGER_REASON_TRANSFER' => 'Umlagerung',
+	'ITEMS_LEDGER_REASON_INVENTORY' => 'Inventur',
+	'ITEMS_LEDGER_REASON_DAMAGE' => 'Beschädigung',
+	'ITEMS_LEDGER_REASON_LOSS' => 'Verlust',
+	'ITEMS_LEDGER_REASON_SCRAP' => 'Ausmusterung',
+	'ITEMS_LEDGER_REASON_CORRECTION' => 'Korrektur',
+	'ITEMS_LEDGER_REASON_INITIAL' => 'Anfangsbestand',
 );
