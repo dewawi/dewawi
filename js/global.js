@@ -2253,8 +2253,10 @@ function markFieldSaved($field) {
 		var $item = $(this);
 		var $list = $item.closest('.autocomplete__list');
 		var $input = $list.data('input');
+		var items = $list.data('items') || [];
+		var item = items[Number($item.data('index'))] || {};
 
-		var id = Number($item.data('id'));
+		var id = Number(item.id);
 		var apply = String($list.data('apply') || '');
 
 		if (!id) {
@@ -2293,6 +2295,10 @@ function markFieldSaved($field) {
 			applyPosition(parent, type, id, setId);
 
 			$input.val('');
+		}
+
+		if (!apply && $input && $input.length) {
+			applyAutocompleteValue($input, item);
 		}
 
 		$list.remove();
@@ -2353,6 +2359,7 @@ function markFieldSaved($field) {
 			html += '<div'
 				+ ' class="autocomplete__item"'
 				+ ' data-id="' + itemId + '"'
+				+ ' data-index="' + i + '"'
 				+ '>';
 
 			html += '<div class="autocomplete__label">'
@@ -2373,6 +2380,7 @@ function markFieldSaved($field) {
 		var $list = $(html).appendTo('body');
 
 		$list.data('input', $input);
+		$list.data('items', items);
 
 		$list.css({
 			position: 'absolute',
@@ -2381,6 +2389,59 @@ function markFieldSaved($field) {
 			width: inputWidth,
 			zIndex: 9999
 		});
+	}
+
+	function applyAutocompleteValue($input, item) {
+		var valueField = String(
+			$input.data('autocomplete-value') || 'value'
+		);
+
+		var target = String(
+			$input.data('autocomplete-target') || ''
+		);
+
+		var targetValueField = String(
+			$input.data('autocomplete-target-value') || 'id'
+		);
+
+		var value = item[valueField];
+
+		if (value === undefined) {
+			value = item.value || item.label || '';
+		}
+
+		$input.val(value);
+
+		if (!target) {
+			return;
+		}
+
+		var $target = $input
+			.closest('form')
+			.find('[name="' + target + '"]');
+
+		if (!$target.length) {
+			return;
+		}
+
+		var targetValue = item[targetValueField];
+
+		if (targetValue === undefined) {
+			targetValue = '';
+		}
+
+		$target.val(targetValue);
+
+		if (action !== 'edit') {
+			return;
+		}
+
+		var data = {};
+
+		data[$input.attr('name')] = value;
+		data[target] = targetValue;
+
+		edit(data, {});
 	}
 
 	function closeAutocomplete($input) {

@@ -23,13 +23,17 @@ class Items_Form_Ledger extends DEEC_Form
 			'type' => 'text',
 			'label' => 'ITEMS_SKU',
 			'required' => true,
-			'attribs' => [
-				'class' => 'required',
-				'autocomplete' => 'off',
-			],
 			'format' => ['type' => 'string'],
-			'tab' => 'overview',
-			'section' => 'ITEMS_LEDGER_ITEM',
+			'attribs' => [
+				'class' => 'autocomplete',
+				'autocomplete' => 'off',
+				'data-autocomplete-source' => '/items/item/suggest',
+				'data-autocomplete-value' => 'sku',
+				'data-autocomplete-target' => 'itemid',
+				'data-autocomplete-target-value' => 'id',
+				'data-autocomplete-min-length' => 2,
+				'data-autocomplete-skip-autosave' => 1,
+			],
 			'col' => 6,
 		]);
 
