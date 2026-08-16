@@ -14,24 +14,24 @@ echo $this->FileManager();
 		'prices' => ['title' => 'TABS_PRICES'],
 		'details' => ['title' => 'TABS_DETAILS'],
 		'shop' => ['title' => 'TABS_SHOP', 'show' => (bool)$this->form->getValue('shopid')],
-		'ledger' => ['title' => 'TABS_LEDGER', 'html' => $this->Ledger()],
+		'ledger' => [
+			'title' => 'TABS_LEDGER',
+			'html' => $this->Ledger(),
+		],
+
 		'attributes' => [
 			'title' => 'TABS_ATTRIBUTES',
 			'html' => $this->Attributes(),
-			'a_attrs' => [
-				'data-tab-load' => 'getPositions',
-				'data-parent' => 'item',
-				'data-type' => 'atr',
-			],
 		],
+
 		'options' => [
 			'title' => 'TABS_OPTIONS',
 			'html' => $this->Options(),
-			'a_attrs' => [
-				'data-tab-load' => 'getPositions',
-				'data-parent' => 'item',
-				'data-type' => 'opt',
-			],
+		],
+
+		'variants' => [
+			'title' => 'TABS_VARIANTS',
+			'html' => $this->Variants(),
 		],
 		'images' => ['title' => 'TABS_IMAGES', 'html' => $this->Images()],
 		'files' => ['title' => 'TABS_FILES', 'html' => $this->Files(), 'show' => (bool)$this->dirwritable],

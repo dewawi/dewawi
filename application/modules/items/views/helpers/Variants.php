@@ -1,12 +1,12 @@
 <?php
 
-class Zend_View_Helper_Ledger extends Zend_View_Helper_Abstract
+class Zend_View_Helper_Variants extends Zend_View_Helper_Abstract
 {
-	public function Ledger()
+	public function Variants()
 	{
 		return
 			'<div class="dw-positions" '
-			. 'data-section="ledger" '
+			. 'data-section="variants" '
 			. 'data-refresh="positions" '
 			. 'data-parent="item" '
 			. 'data-type="opt"></div>';

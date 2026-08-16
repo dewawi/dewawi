@@ -53,4 +53,39 @@ class Items_Service_Variant
 			'price' => $price,
 		];
 	}
+
+	public function update(int $itemId): array
+	{
+		$data = $this->calculate($itemId);
+
+		$this->_itemDb->update(
+			[
+				'sku' => $data['sku'],
+				'price' => $data['price'],
+			],
+			$this->_itemDb->getAdapter()->quoteInto(
+				'id = ?',
+				$itemId
+			)
+		);
+
+		return $data;
+	}
+
+	public function getOptions(int $itemId): array
+	{
+		$options = [];
+
+		foreach($this->_variantOptionDb->getByItemId($itemId) as $relation) {
+			$option = $this->_optionDb->getById(
+				(int)$relation->itemoptid
+			);
+
+			if($option) {
+				$options[] = $option;
+			}
+		}
+
+		return $options;
+	}
 }

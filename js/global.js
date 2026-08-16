@@ -1406,6 +1406,51 @@ function getPositions(parent, type, scrollTo) {
 	});
 }
 
+function refreshSection(section, scrollTop) {
+	var $section = $('[data-section="' + section + '"]');
+
+	if (!$section.length) {
+		return;
+	}
+
+	var refresh = String(
+		$section.data('refresh') || ''
+	);
+
+	if (refresh === 'positions') {
+		getPositions(
+			String($section.data('parent') || ''),
+			String($section.data('type') || ''),
+			scrollTop
+		);
+
+		return;
+	}
+
+	if (refresh === 'html') {
+		var url = String(
+			$section.data('refresh-url') || ''
+		);
+
+		if (!url) {
+			return;
+		}
+
+		$.ajax({
+			type: 'GET',
+			url: url,
+			cache: false,
+			success: function (html) {
+				$section.html(html);
+
+				if (scrollTop !== undefined) {
+					window.scrollTo(0, scrollTop);
+				}
+			}
+		});
+	}
+}
+
 //Add option
 function addOption(parent, type, optionid, setid, masterid) {
 	$.ajax({
