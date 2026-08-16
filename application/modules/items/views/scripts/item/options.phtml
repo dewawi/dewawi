@@ -1,0 +1,25 @@
+<div
+	class="dw-positions"
+	data-section="options"
+	data-refresh="positions"
+	data-parent="item"
+	data-type="opt"
+>
+	<?php foreach($this->options as $option): ?>
+		<div class="dw-position-card">
+			<strong>
+				<?php echo $this->escape($option->sku); ?>
+			</strong>
+
+			<span>
+				<?php echo $this->escape($option->title); ?>
+			</span>
+
+			<?php if($option->price !== null): ?>
+				<span>
+					<?php echo $this->escape($option->price); ?>
+				</span>
+			<?php endif; ?>
+		</div>
+	<?php endforeach; ?>
+</div>

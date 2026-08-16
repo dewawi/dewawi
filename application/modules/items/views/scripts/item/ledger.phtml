@@ -1,0 +1,39 @@
+<div
+	class="dw-section"
+	data-section="ledger"
+	data-refresh="html"
+>
+	<?php if(!count($this->ledgers)): ?>
+		<p>
+			<?php echo $this->translate('ITEMS_LEDGER_EMPTY'); ?>
+		</p>
+	<?php else: ?>
+
+		<table class="dw-table">
+			<thead>
+				<tr>
+					<th><?php echo $this->translate('ITEMS_LEDGER_DATE'); ?></th>
+					<th><?php echo $this->translate('ITEMS_WAREHOUSE'); ?></th>
+					<th><?php echo $this->translate('ITEMS_LEDGER_TYPE'); ?></th>
+					<th><?php echo $this->translate('ITEMS_LEDGER_REASON'); ?></th>
+					<th><?php echo $this->translate('ITEMS_LEDGER_QUANTITY'); ?></th>
+					<th><?php echo $this->translate('ITEMS_LEDGER_COMMENT'); ?></th>
+				</tr>
+			</thead>
+
+			<tbody>
+				<?php foreach($this->ledgers as $ledger): ?>
+					<tr>
+						<td><?php echo $this->escape($ledger->ledgerdate); ?></td>
+						<td><?php echo (int)$ledger->warehouseid; ?></td>
+						<td><?php echo $this->escape($ledger->type); ?></td>
+						<td><?php echo $this->escape($ledger->reason); ?></td>
+						<td><?php echo $this->escape($ledger->quantity); ?></td>
+						<td><?php echo $this->escape($ledger->comment); ?></td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+
+	<?php endif; ?>
+</div>

@@ -1,0 +1,59 @@
+<div
+	class="dw-section"
+	data-section="variants"
+	data-refresh="html"
+>
+	<?php if(empty($this->item['parentid'])): ?>
+
+		<?php if(!count($this->variants)): ?>
+			<p>
+				<?php echo $this->translate('ITEMS_VARIANTS_EMPTY'); ?>
+			</p>
+		<?php else: ?>
+
+			<table class="dw-table">
+				<thead>
+					<tr>
+						<th><?php echo $this->translate('ITEMS_SKU'); ?></th>
+						<th><?php echo $this->translate('ITEMS_TITLE'); ?></th>
+						<th><?php echo $this->translate('ITEMS_PRICE'); ?></th>
+					</tr>
+				</thead>
+
+				<tbody>
+					<?php foreach($this->variants as $variant): ?>
+						<tr>
+							<td>
+								<a href="/items/item/edit/id/<?php echo (int)$variant->id; ?>">
+									<?php echo $this->escape($variant->sku); ?>
+								</a>
+							</td>
+
+							<td>
+								<?php echo $this->escape($variant->title); ?>
+							</td>
+
+							<td>
+								<?php echo $this->escape($variant->price); ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+
+		<?php endif; ?>
+
+	<?php else: ?>
+
+		<p>
+			<?php echo $this->translate('ITEMS_VARIANT_OPTIONS'); ?>
+		</p>
+
+		<?php foreach($this->variantOptions as $relation): ?>
+			<div>
+				<?php echo (int)$relation->itemoptid; ?>
+			</div>
+		<?php endforeach; ?>
+
+	<?php endif; ?>
+</div>

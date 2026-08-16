@@ -1,0 +1,21 @@
+<div
+	class="dw-positions"
+	data-section="attributes"
+	data-refresh="positions"
+	data-parent="item"
+	data-type="atr"
+>
+	<?php foreach($this->attributes as $attribute): ?>
+		<div class="dw-position-card">
+			<strong>
+				<?php echo $this->escape($attribute->title); ?>
+			</strong>
+
+			<?php if($attribute->value): ?>
+				<span>
+					<?php echo $this->escape($attribute->value); ?>
+				</span>
+			<?php endif; ?>
+		</div>
+	<?php endforeach; ?>
+</div>

@@ -6,19 +6,12 @@ class Items_Model_DbTable_Itemvariantopt extends DEEC_Model_DbTable_Entity
 
 	public function getByItemId(int $itemId)
 	{
-		return $this->fetchAll([
-			$this->getAdapter()->quoteInto(
-				'itemid = ?',
-				$itemId
-			),
-			$this->getAdapter()->quoteInto(
-				'clientid = ?',
-				$this->getClientId()
-			),
-			$this->getAdapter()->quoteInto(
-				'deleted = ?',
-				0
-			),
-		]);
+		$select = $this->select()
+			->where('itemid = ?', $itemId)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->order('id ASC');
+
+		return $this->fetchAll($select);
 	}
 }

@@ -2,13 +2,13 @@
 
 class Zend_View_Helper_Attributes extends Zend_View_Helper_Abstract
 {
-	public function Attributes()
+	public function Attributes(): string
 	{
-		return
-			'<div class="dw-positions" '
-			. 'data-section="attributes" '
-			. 'data-refresh="positions" '
-			. 'data-parent="item" '
-			. 'data-type="atr"></div>';
+		return $this->view->partial(
+			'item/attributes.phtml',
+			[
+				'attributes' => $this->view->attributes,
+			]
+		);
 	}
 }

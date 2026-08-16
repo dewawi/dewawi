@@ -2,13 +2,13 @@
 
 class Zend_View_Helper_Ledger extends Zend_View_Helper_Abstract
 {
-	public function Ledger()
+	public function Ledger(): string
 	{
-		return
-			'<div class="dw-positions" '
-			. 'data-section="ledger" '
-			. 'data-refresh="positions" '
-			. 'data-parent="item" '
-			. 'data-type="opt"></div>';
+		return $this->view->partial(
+			'item/ledger.phtml',
+			[
+				'ledgers' => $this->view->ledgers,
+			]
+		);
 	}
 }

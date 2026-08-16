@@ -2,13 +2,13 @@
 
 class Zend_View_Helper_Options extends Zend_View_Helper_Abstract
 {
-	public function Options()
+	public function Options(): string
 	{
-		return
-			'<div class="dw-positions" '
-			. 'data-section="options" '
-			. 'data-refresh="positions" '
-			. 'data-parent="item" '
-			. 'data-type="opt"></div>';
+		return $this->view->partial(
+			'item/options.phtml',
+			[
+				'options' => $this->view->options,
+			]
+		);
 	}
 }

@@ -11,6 +11,29 @@ class Items_ItemController extends DEEC_Controller_Action
 		]);
 	}
 
+	protected function buildEditViewModel(
+		int $id,
+		array $row
+	): array {
+		$attributeDb = new Items_Model_DbTable_Itematr();
+		$optionDb = new Items_Model_DbTable_Itemopt();
+		$ledgerDb = new Items_Model_DbTable_Ledger();
+		$itemDb = new Items_Model_DbTable_Item();
+		$variantOptionDb = new Items_Model_DbTable_Itemvariantopt();
+
+		$parentId = !empty($row['parentid'])
+			? (int)$row['parentid']
+			: $id;
+
+		return [
+			'attributes' => $attributeDb->getPositions($id),
+			'options' => $optionDb->getPositions($id),
+			'ledgers' => $ledgerDb->getByItemId($id),
+			'variants' => $itemDb->getVariants($parentId),
+			'variantOptions' => $variantOptionDb->getByItemId($id),
+		];
+	}
+
 	protected function getCreateData(): array
 	{
 		$catid = (int)$this->_getParam('catid', 0);

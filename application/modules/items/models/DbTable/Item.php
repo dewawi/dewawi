@@ -87,6 +87,17 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 		return $data;
 	}
 
+	public function getVariants(int $parentId)
+	{
+		$select = $this->select()
+			->where('parentid = ?', $parentId)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->order('sku ASC');
+
+		return $this->fetchAll($select);
+	}
+
 	public function addItem($data)
 	{
 		$data['clientid'] = $this->_client['id'];

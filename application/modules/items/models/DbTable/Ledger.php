@@ -4,7 +4,7 @@ class Items_Model_DbTable_Ledger extends DEEC_Model_DbTable_Entity
 {
 	protected $_name = 'ledger';
 
-	public function getByItemId(int $itemId): array
+	public function getByItemId(int $itemId)
 	{
 		$select = $this->select()
 			->where('itemid = ?', $itemId)
@@ -13,7 +13,7 @@ class Items_Model_DbTable_Ledger extends DEEC_Model_DbTable_Entity
 			->order('ledgerdate DESC')
 			->order('id DESC');
 
-		return $this->fetchAll($select)->toArray();
+		return $this->fetchAll($select);
 	}
 
 	public function getByReference(
