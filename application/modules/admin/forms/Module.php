@@ -39,7 +39,7 @@ class Admin_Form_Module extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'active',
+			'name' => 'activated',
 			'type' => 'checkbox',
 			'label' => 'ADMIN_ACTIVATED',
 			'format' => ['type' => 'int'],

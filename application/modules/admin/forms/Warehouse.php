@@ -47,9 +47,9 @@ class Admin_Form_Warehouse extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'active',
+			'name' => 'activated',
 			'type' => 'checkbox',
-			'label' => 'ADMIN_ACTIVE',
+			'label' => 'ADMIN_ACTIVATED',
 			'format' => ['type' => 'int'],
 			'default' => 1,
 			'col' => 3,

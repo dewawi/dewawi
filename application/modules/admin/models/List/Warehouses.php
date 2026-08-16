@@ -24,12 +24,12 @@ class Admin_Model_List_Warehouses extends DEEC_List
 				'class' => 'dw-col-title',
 			],
 			[
-				'name' => 'active',
-				'label' => 'ADMIN_ACTIVE',
+				'name' => 'activated',
+				'label' => 'ADMIN_ACTIVATED',
 				'type' => 'checkbox',
 			],
 			[
-				'name' => 'isdefault',
+				'name' => 'default',
 				'label' => 'ADMIN_DEFAULT',
 				'type' => 'checkbox',
 			],

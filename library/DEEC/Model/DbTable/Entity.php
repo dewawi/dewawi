@@ -166,10 +166,15 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		$select = $this->select()
 			->where('clientid = ?', $this->getClientId())
 			->where('`default` = ?', 1)
-			->where('deleted = ?', 0)
-			->limit(1);
+			->where('deleted = ?', 0);
 
-		$row = $this->fetchRow($select);
+		if(in_array('activated', $this->info(self::COLS), true)) {
+			$select->where('activated = ?', 1);
+		}
+
+		$row = $this->fetchRow(
+			$select->limit(1)
+		);
 
 		return $row ? $row->toArray() : null;
 	}

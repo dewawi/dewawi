@@ -8,7 +8,7 @@ class Application_Model_DbTable_Warehouse extends DEEC_Model_DbTable_Entity
 	{
 		$where = [];
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('active = ?', 1);
+		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 
 		return $this->fetchAll($where, ['default DESC', 'title ASC']);

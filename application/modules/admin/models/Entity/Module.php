@@ -19,9 +19,9 @@ class Admin_Model_Entity_Module
 				'id',
 				'name',
 				'ordering',
-				'active',
 				'created',
 				'modified',
+				'activated',
 			],
 		];
 	}

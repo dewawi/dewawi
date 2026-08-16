@@ -85,6 +85,13 @@ class Items_Service_Stock
 		throw new Exception('MESSAGES_ITEM_NOT_FOUND');
 	}
 
+	public function resolveItem(array $data): int
+	{
+		$item = $this->findItem($data);
+
+		return (int)$item['id'];
+	}
+
 	protected function validate(array $data): void
 	{
 		if(

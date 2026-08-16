@@ -63,34 +63,14 @@ class Items_LedgerController extends DEEC_Controller_Action
 		array $values,
 		array $row
 	): array {
-		$stockFields = [
-			'itemid' => true,
-			'sku' => true,
-			'warehouseid' => true,
-			'type' => true,
-			'reason' => true,
-			'quantity' => true,
-			'ledgerdate' => true,
-		];
+		if(array_key_exists('sku', $values)) {
+			$values['itemid'] = $this->getStockService()
+				->resolveItem($values);
 
-		if(!array_intersect_key($values, $stockFields)) {
-			return $values;
+			unset($values['sku']);
 		}
 
-		$prepared = $this->getStockService()
-			->prepareCreateData(
-				array_merge($row, $values)
-			);
-
-		unset($prepared['sku']);
-
-		return array_intersect_key(
-			$prepared,
-			$values + [
-				'itemid' => null,
-				'warehouseid' => null,
-			]
-		);
+		return $values;
 	}
 
 	protected function afterEditSave(
@@ -98,6 +78,17 @@ class Items_LedgerController extends DEEC_Controller_Action
 		array $values,
 		array $oldRow
 	): void {
+		$stockFields = [
+			'itemid',
+			'warehouseid',
+			'type',
+			'quantity',
+		];
+
+		if(!array_intersect(array_keys($values), $stockFields)) {
+			return;
+		}
+
 		$newRow = $this->getDb()->getById($id);
 
 		if(!$newRow) {
@@ -108,8 +99,21 @@ class Items_LedgerController extends DEEC_Controller_Action
 
 		$stock = $this->getStockService();
 
-		$stock->revert($oldRow);
-		$stock->apply($newRow);
+		if($this->isStockBookingComplete($oldRow)) {
+			$stock->revert($oldRow);
+		}
+
+		if($this->isStockBookingComplete($newRow)) {
+			$stock->apply($newRow);
+		}
+	}
+
+	protected function isStockBookingComplete(array $row): bool
+	{
+		return !empty($row['itemid'])
+			&& !empty($row['warehouseid'])
+			&& !empty($row['type'])
+			&& (float)($row['quantity'] ?? 0) > 0;
 	}
 
 	protected function afterCopy(

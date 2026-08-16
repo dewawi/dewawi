@@ -18,10 +18,10 @@ class Admin_Model_Entity_Warehouse
 				'id',
 				'code',
 				'title',
-				'active',
-				'isdefault',
+				'default',
 				'created',
 				'modified',
+				'activated',
 			],
 		];
 	}

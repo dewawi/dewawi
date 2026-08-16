@@ -34,7 +34,7 @@ class Admin_Model_List_Modules extends DEEC_List
 				'class' => 'dw-col-ordering',
 			],
 			[
-				'name' => 'active',
+				'name' => 'activated',
 				'label' => 'ADMIN_ACTIVATED',
 				'type' => 'text',
 				'class' => 'dw-col-active',
