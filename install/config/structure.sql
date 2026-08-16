@@ -1452,13 +1452,13 @@ CREATE TABLE IF NOT EXISTS `module` (
   `name` varchar(255) NOT NULL,
   `menu` text NOT NULL,
   `ordering` int(11) NOT NULL DEFAULT 0,
-  `active` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -2881,7 +2881,6 @@ CREATE TABLE IF NOT EXISTS `warehouse` (
   `code` varchar(50) NOT NULL,
   `title` varchar(255) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1,
   `default` tinyint(1) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
@@ -2890,10 +2889,11 @@ CREATE TABLE IF NOT EXISTS `warehouse` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
+  `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY (clientid),
   KEY (code),
-  KEY (active),
+  KEY (activated),
   KEY (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
