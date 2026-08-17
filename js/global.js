@@ -228,6 +228,111 @@ $(document).ready(function(){
 	//	Dewawi.setDirty(true);
 	//});
 
+	// Variant options
+	$(document).on(
+		'change',
+		'.variant-option',
+		function() {
+			var $option = $(this);
+			var $container = $option.closest(
+				'.dw-variant-options'
+			);
+
+			var variantId = parseInt(
+				$container.data('variant-id'),
+				10
+			);
+
+			var optionId = parseInt(
+				$option.data('option-id'),
+				10
+			);
+
+			if(!variantId || !optionId) {
+				return;
+			}
+
+			var actionName = $option.is(':checked')
+				? 'add-option'
+				: 'delete-option';
+
+			$option.prop('disabled', true);
+
+			$.ajax({
+				type: 'POST',
+				url: Dewawi.url(
+					'items',
+					'variant',
+					actionName,
+					variantId
+				),
+				data: {
+					optionid: optionId
+				},
+				dataType: 'json'
+			})
+			.done(function(response) {
+				if(
+					!response
+					|| response.ok === false
+				) {
+					$option.prop(
+						'checked',
+						!$option.is(':checked')
+					);
+
+					if(
+						response
+						&& response.message
+					) {
+						pushMessages([
+							response.message
+						]);
+					}
+
+					return;
+				}
+
+				if(
+					response.data
+					&& response.data.sku
+				) {
+					$('input[name="sku"]').val(
+						response.data.sku
+					);
+				}
+
+				if(
+					response.data
+					&& typeof response.data.price
+						!== 'undefined'
+				) {
+					$('input[name="price"]').val(
+						response.data.price
+					);
+				}
+
+				Dewawi.setDirty(false);
+			})
+			.fail(function() {
+				$option.prop(
+					'checked',
+					!$option.is(':checked')
+				);
+
+				pushMessages([
+					'Speichern fehlgeschlagen.'
+				]);
+			})
+			.always(function() {
+				$option.prop(
+					'disabled',
+					false
+				);
+			});
+		}
+	);
+
 	//Handle sub entities
 	$('.dw-positions').on('change', 'input, textarea, select', function() {
 		var $field = $(this);

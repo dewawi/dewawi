@@ -43,11 +43,13 @@
 								'ITEMS_SKU'
 							); ?>
 						</th>
+
 						<th>
 							<?php echo $this->translate(
 								'ITEMS_TITLE'
 							); ?>
 						</th>
+
 						<th>
 							<?php echo $this->translate(
 								'ITEMS_PRICE'
@@ -101,6 +103,12 @@
 		}
 		?>
 
+		<h4>
+			<?php echo $this->translate(
+				'ITEMS_VARIANT_OPTIONS'
+			); ?>
+		</h4>
+
 		<div
 			class="dw-variant-options"
 			data-variant-id="<?php echo (int)$this->item['id']; ?>"
@@ -118,6 +126,7 @@
 				<?php foreach($this->availableOptions as $option): ?>
 					<?php
 					$optionId = (int)$option->id;
+
 					$checked = isset(
 						$selectedOptions[$optionId]
 					);
@@ -133,25 +142,33 @@
 								: ''; ?>
 						>
 
-						<strong>
-							<?php echo $this->escape(
-								$option->sku
-							); ?>
-						</strong>
+						<span class="dw-variant-option__content">
 
-						<span>
-							<?php echo $this->escape(
-								$option->title
-							); ?>
+							<?php if(!empty($option->sku)): ?>
+								<strong class="dw-variant-option__sku">
+									<?php echo $this->escape(
+										$option->sku
+									); ?>
+								</strong>
+							<?php endif; ?>
+
+							<?php if(!empty($option->title)): ?>
+								<span class="dw-variant-option__title">
+									<?php echo $this->escape(
+										$option->title
+									); ?>
+								</span>
+							<?php endif; ?>
+
+							<?php if((float)$option->price !== 0.0): ?>
+								<span class="dw-variant-option__price">
+									<?php echo $this->escape(
+										$option->price
+									); ?>
+								</span>
+							<?php endif; ?>
+
 						</span>
-
-						<?php if((float)$option->price !== 0.0): ?>
-							<span>
-								<?php echo $this->escape(
-									$option->price
-								); ?>
-							</span>
-						<?php endif; ?>
 					</label>
 
 				<?php endforeach; ?>
