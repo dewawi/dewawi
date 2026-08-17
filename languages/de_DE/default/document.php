@@ -1,7 +1,7 @@
 <?php return array(
 	//Documents
 	'DOCUMENTS_VATIN' => 'USt-IdNr.:',
-	'DOCUMENTS_SHIPPING_ADDRESS' => 'Lieferanschrift:',
+	'DOCUMENTS_SHIPPING_ADDRESS' => 'Lieferanschrift',
 	'DOCUMENTS_ORDER_DATE' => 'Bestelldatum:',
 	'DOCUMENTS_DELIVERY_DATE' => 'Lieferdatum:',
 	'DOCUMENTS_POSITION' => 'Pos.',
@@ -49,7 +49,7 @@
 	'DOCUMENTS_OPTION_ON_REQUEST' => 'auf Anfrage',
 	'DOCUMENTS_OPTION_UNAVAILABLE' => 'nicht verfügbar',
 	'DOCUMENTS_ILLUSTRATION_SIMILAR' => 'Abbildung ähnlich',
-	'DOCUMENTS_PHONE' => 'Tel.:',
+	'DOCUMENTS_PHONE' => 'Tel.',
 	'DOCUMENTS_PREVIEW_PDF' => 'PDF-Vorschau',
 	'DOCUMENTS_SAVE_AND_BOOK' => 'Speichern und buchen',
 	'DOCUMENTS_DOWNLOAD_PDF' => 'PDF herunterladen',

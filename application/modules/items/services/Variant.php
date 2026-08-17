@@ -13,6 +13,44 @@ class Items_Service_Variant
 		$this->_variantOptionDb = new Items_Model_DbTable_Itemvariantopt();
 	}
 
+	public function create(int $parentId): int
+	{
+		$parent = $this->_itemDb->getById(
+			$parentId
+		);
+
+		if(!$parent) {
+			throw new Exception(
+				'MESSAGES_ITEM_NOT_FOUND'
+			);
+		}
+
+		if(!empty($parent['parentid'])) {
+			throw new Exception(
+				'MESSAGES_ITEM_VARIANT_INVALID'
+			);
+		}
+
+		$data = $parent;
+
+		unset(
+			$data['id'],
+			$data['created'],
+			$data['createdby'],
+			$data['modified'],
+			$data['modifiedby'],
+			$data['locked'],
+			$data['lockedtime']
+		);
+
+		$data['parentid'] = $parentId;
+		$data['quantity'] = 0;
+
+		return $this->_itemDb->create(
+			$data
+		);
+	}
+
 	public function calculate(int $itemId): array
 	{
 		$item = $this->_itemDb->getById($itemId);

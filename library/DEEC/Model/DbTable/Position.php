@@ -176,9 +176,6 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 			$data['modifiedby']
 		);
 
-		$data['locked'] = 0;
-		$data['lockedtime'] = null;
-
 		if (array_key_exists('deleted', $data)) {
 			$data['deleted'] = 0;
 		}
