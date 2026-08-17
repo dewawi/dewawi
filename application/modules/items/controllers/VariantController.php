@@ -4,28 +4,9 @@ class Items_VariantController extends DEEC_Controller_Action
 {
 	public function addAction()
 	{
-		$this->disableView();
-
-		$parentId = (int)$this->_getParam(
-			'parentid',
-			0
-		);
-
-		$itemDb = new Items_Model_DbTable_Item();
-
-		$parent = $itemDb->getById(
-			$parentId
-		);
-
-		if(!$parent) {
+		if(!$this->getRequest()->isPost()) {
 			throw new Exception(
-				'MESSAGES_ITEM_NOT_FOUND'
-			);
-		}
-
-		if(!empty($parent['parentid'])) {
-			throw new Exception(
-				'MESSAGES_ITEM_VARIANT_INVALID'
+				'MESSAGES_INVALID_REQUEST'
 			);
 		}
 
@@ -40,53 +21,44 @@ class Items_VariantController extends DEEC_Controller_Action
 
 	public function addOptionAction()
 	{
-		$variantId = (int)$this->_getParam(
-			'id',
-			0
-		);
+		if(!$this->getRequest()->isPost()) {
+			throw new Exception(
+				'MESSAGES_INVALID_REQUEST'
+			);
+		}
 
-		$optionId = (int)$this->_getParam(
-			'optionid',
-			0
-		);
-
-		$this->getVariantService()->addOption(
-			$variantId,
-			$optionId
-		);
-
-		$this->getVariantService()->update(
-			$variantId
+		$data = $this->getVariantService()->addOption(
+			(int)$this->_getParam('id', 0),
+			(int)$this->_getParam('optionid', 0)
 		);
 
 		return $this->_helper->json([
 			'ok' => true,
+			'data' => $data,
 		]);
 	}
 
 	public function deleteOptionAction()
 	{
-		$variantId = (int)$this->_getParam(
-			'id',
-			0
-		);
+		if(!$this->getRequest()->isPost()) {
+			throw new Exception(
+				'MESSAGES_INVALID_REQUEST'
+			);
+		}
 
-		$optionId = (int)$this->_getParam(
-			'optionid',
-			0
-		);
-
-		$this->getVariantService()->deleteOption(
-			$variantId,
-			$optionId
-		);
-
-		$this->getVariantService()->update(
-			$variantId
+		$data = $this->getVariantService()->deleteOption(
+			(int)$this->_getParam('id', 0),
+			(int)$this->_getParam('optionid', 0)
 		);
 
 		return $this->_helper->json([
 			'ok' => true,
+			'data' => $data,
 		]);
+	}
+
+	protected function getVariantService(): Items_Service_Variant
+	{
+		return new Items_Service_Variant();
 	}
 }

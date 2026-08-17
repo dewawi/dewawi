@@ -53,10 +53,14 @@ class Items_Service_Variant
 
 	public function calculate(int $itemId): array
 	{
-		$item = $this->_itemDb->getById($itemId);
+		$item = $this->_itemDb->getById(
+			$itemId
+		);
 
 		if(!$item || empty($item['parentid'])) {
-			throw new Exception('MESSAGES_ITEM_VARIANT_INVALID');
+			throw new Exception(
+				'MESSAGES_ITEM_VARIANT_INVALID'
+			);
 		}
 
 		$parent = $this->_itemDb->getById(
@@ -64,13 +68,19 @@ class Items_Service_Variant
 		);
 
 		if(!$parent) {
-			throw new Exception('MESSAGES_ITEM_NOT_FOUND');
+			throw new Exception(
+				'MESSAGES_ITEM_NOT_FOUND'
+			);
 		}
 
-		$sku = $parent['sku'];
+		$sku = (string)$parent['sku'];
 		$price = (float)$parent['price'];
 
-		foreach($this->_variantOptionDb->getByItemId($itemId) as $relation) {
+		foreach(
+			$this->_variantOptionDb->getByItemId(
+				$itemId
+			) as $relation
+		) {
 			$option = $this->_optionDb->getById(
 				(int)$relation->itemoptid
 			);
@@ -79,32 +89,40 @@ class Items_Service_Variant
 				continue;
 			}
 
+			if(
+				(int)$option['parentid']
+				!== (int)$item['parentid']
+			) {
+				continue;
+			}
+
 			if(!empty($option['sku'])) {
-				$sku .= ' ' . $option['sku'];
+				$sku .= ' ' . trim(
+					(string)$option['sku']
+				);
 			}
 
 			$price += (float)$option['price'];
 		}
 
 		return [
-			'sku' => $sku,
+			'sku' => trim($sku),
 			'price' => $price,
 		];
 	}
 
 	public function update(int $itemId): array
 	{
-		$data = $this->calculate($itemId);
+		$data = $this->calculate(
+			$itemId
+		);
 
-		$this->_itemDb->update(
+		$this->_itemDb->updateById(
+			$itemId,
 			[
 				'sku' => $data['sku'],
 				'price' => $data['price'],
-			],
-			$this->_itemDb->getAdapter()->quoteInto(
-				'id = ?',
-				$itemId
-			)
+			]
 		);
 
 		return $data;
@@ -114,7 +132,11 @@ class Items_Service_Variant
 	{
 		$options = [];
 
-		foreach($this->_variantOptionDb->getByItemId($itemId) as $relation) {
+		foreach(
+			$this->_variantOptionDb->getByItemId(
+				$itemId
+			) as $relation
+		) {
 			$option = $this->_optionDb->getById(
 				(int)$relation->itemoptid
 			);
@@ -125,5 +147,67 @@ class Items_Service_Variant
 		}
 
 		return $options;
+	}
+
+	public function addOption(
+		int $itemId,
+		int $optionId
+	): array {
+		$item = $this->_itemDb->getById(
+			$itemId
+		);
+
+		if(!$item || empty($item['parentid'])) {
+			throw new Exception(
+				'MESSAGES_ITEM_VARIANT_INVALID'
+			);
+		}
+
+		$option = $this->_optionDb->getById(
+			$optionId
+		);
+
+		if(
+			!$option
+			|| (int)$option['parentid']
+				!== (int)$item['parentid']
+		) {
+			throw new Exception(
+				'MESSAGES_ITEM_OPTION_INVALID'
+			);
+		}
+
+		$this->_variantOptionDb->addOption(
+			$itemId,
+			$optionId
+		);
+
+		return $this->update(
+			$itemId
+		);
+	}
+
+	public function deleteOption(
+		int $itemId,
+		int $optionId
+	): array {
+		$item = $this->_itemDb->getById(
+			$itemId
+		);
+
+		if(!$item || empty($item['parentid'])) {
+			throw new Exception(
+				'MESSAGES_ITEM_VARIANT_INVALID'
+			);
+		}
+
+		$this->_variantOptionDb->deleteOption(
+			$itemId,
+			$optionId
+		);
+
+		return $this->update(
+			$itemId
+		);
 	}
 }

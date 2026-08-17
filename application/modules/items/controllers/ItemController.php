@@ -25,6 +25,14 @@ class Items_ItemController extends DEEC_Controller_Action
 			? (int)$row['parentid']
 			: $id;
 
+		$availableVariantOptions = [];
+
+		if(!empty($row['parentid'])) {
+			$availableVariantOptions = $optionDb->getPositions(
+				(int)$row['parentid']
+			);
+		}
+
 		return [
 			'item' => $row,
 			'itemAttributes' => $attributeDb->getPositions($id),
@@ -32,6 +40,7 @@ class Items_ItemController extends DEEC_Controller_Action
 			'itemLedgers' => $ledgerDb->getByItemId($id),
 			'itemVariants' => $itemDb->getVariants($parentId),
 			'itemVariantOptions' => $variantOptionDb->getByItemId($id),
+			'itemVariantAvailableOptions' => $availableVariantOptions,
 		];
 	}
 

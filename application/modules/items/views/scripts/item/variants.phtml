@@ -5,18 +5,54 @@
 >
 	<?php if(empty($this->item['parentid'])): ?>
 
+		<form
+			method="post"
+			action="/items/variant/add"
+		>
+			<input
+				type="hidden"
+				name="parentid"
+				value="<?php echo (int)$this->item['id']; ?>"
+			>
+
+			<button
+				type="submit"
+				class="dw-btn dw-btn--action"
+			>
+				<?php echo $this->translate(
+					'ITEMS_VARIANT_ADD'
+				); ?>
+			</button>
+		</form>
+
 		<?php if(!count($this->variants)): ?>
+
 			<p>
-				<?php echo $this->translate('ITEMS_VARIANTS_EMPTY'); ?>
+				<?php echo $this->translate(
+					'ITEMS_VARIANTS_EMPTY'
+				); ?>
 			</p>
+
 		<?php else: ?>
 
 			<table class="dw-table">
 				<thead>
 					<tr>
-						<th><?php echo $this->translate('ITEMS_SKU'); ?></th>
-						<th><?php echo $this->translate('ITEMS_TITLE'); ?></th>
-						<th><?php echo $this->translate('ITEMS_PRICE'); ?></th>
+						<th>
+							<?php echo $this->translate(
+								'ITEMS_SKU'
+							); ?>
+						</th>
+						<th>
+							<?php echo $this->translate(
+								'ITEMS_TITLE'
+							); ?>
+						</th>
+						<th>
+							<?php echo $this->translate(
+								'ITEMS_PRICE'
+							); ?>
+						</th>
 					</tr>
 				</thead>
 
@@ -24,17 +60,27 @@
 					<?php foreach($this->variants as $variant): ?>
 						<tr>
 							<td>
-								<a href="/items/item/edit/id/<?php echo (int)$variant->id; ?>">
-									<?php echo $this->escape($variant->sku); ?>
+								<a
+									href="/items/item/edit/id/<?php
+										echo (int)$variant->id;
+									?>"
+								>
+									<?php echo $this->escape(
+										$variant->sku
+									); ?>
 								</a>
 							</td>
 
 							<td>
-								<?php echo $this->escape($variant->title); ?>
+								<?php echo $this->escape(
+									$variant->title
+								); ?>
 							</td>
 
 							<td>
-								<?php echo $this->escape($variant->price); ?>
+								<?php echo $this->escape(
+									$variant->price
+								); ?>
 							</td>
 						</tr>
 					<?php endforeach; ?>
@@ -45,15 +91,73 @@
 
 	<?php else: ?>
 
-		<p>
-			<?php echo $this->translate('ITEMS_VARIANT_OPTIONS'); ?>
-		</p>
+		<?php
+		$selectedOptions = [];
 
-		<?php foreach($this->variantOptions as $relation): ?>
-			<div>
-				<?php echo (int)$relation->itemoptid; ?>
-			</div>
-		<?php endforeach; ?>
+		foreach($this->variantOptions as $relation) {
+			$selectedOptions[
+				(int)$relation->itemoptid
+			] = true;
+		}
+		?>
+
+		<div
+			class="dw-variant-options"
+			data-variant-id="<?php echo (int)$this->item['id']; ?>"
+		>
+			<?php if(!count($this->availableOptions)): ?>
+
+				<p>
+					<?php echo $this->translate(
+						'ITEMS_VARIANT_OPTIONS_EMPTY'
+					); ?>
+				</p>
+
+			<?php else: ?>
+
+				<?php foreach($this->availableOptions as $option): ?>
+					<?php
+					$optionId = (int)$option->id;
+					$checked = isset(
+						$selectedOptions[$optionId]
+					);
+					?>
+
+					<label class="dw-variant-option">
+						<input
+							type="checkbox"
+							class="variant-option"
+							data-option-id="<?php echo $optionId; ?>"
+							<?php echo $checked
+								? 'checked'
+								: ''; ?>
+						>
+
+						<strong>
+							<?php echo $this->escape(
+								$option->sku
+							); ?>
+						</strong>
+
+						<span>
+							<?php echo $this->escape(
+								$option->title
+							); ?>
+						</span>
+
+						<?php if((float)$option->price !== 0.0): ?>
+							<span>
+								<?php echo $this->escape(
+									$option->price
+								); ?>
+							</span>
+						<?php endif; ?>
+					</label>
+
+				<?php endforeach; ?>
+
+			<?php endif; ?>
+		</div>
 
 	<?php endif; ?>
 </div>
