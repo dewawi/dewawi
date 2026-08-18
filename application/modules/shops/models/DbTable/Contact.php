@@ -17,11 +17,6 @@ class Shops_Model_DbTable_Contact extends Zend_Db_Table_Abstract
 		$this->_shop = Zend_Registry::get('Shop');
 	}
 
-	public function getInfo()
-	{
-		return $this->info(Zend_Db_Table_Abstract::COLS);
-	}
-
 	public function getContact($id)
 	{
 		$id = (int)$id;
