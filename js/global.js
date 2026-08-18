@@ -234,12 +234,13 @@ $(document).ready(function(){
 		'.variant-option',
 		function() {
 			var $option = $(this);
-			var $container = $option.closest(
-				'.dw-variant-options'
+
+			var $variant = $option.closest(
+				'.dw-variant'
 			);
 
 			var variantId = parseInt(
-				$container.data('variant-id'),
+				$variant.data('variant-id'),
 				10
 			);
 
@@ -256,7 +257,10 @@ $(document).ready(function(){
 				? 'add-option'
 				: 'delete-option';
 
-			$option.prop('disabled', true);
+			$option.prop(
+				'disabled',
+				true
+			);
 
 			$.ajax({
 				type: 'POST',
@@ -281,38 +285,22 @@ $(document).ready(function(){
 						!$option.is(':checked')
 					);
 
-					if(
-						response
-						&& response.message
-					) {
-						pushMessages([
-							response.message
-						]);
-					}
-
 					return;
 				}
 
-				if(
-					response.data
-					&& response.data.sku
-				) {
-					$('input[name="sku"]').val(
-						response.data.sku
-					);
-				}
+				if(response.data) {
+					$variant
+						.find('.dw-variant__sku')
+						.text(
+							response.data.sku
+						);
 
-				if(
-					response.data
-					&& typeof response.data.price
-						!== 'undefined'
-				) {
-					$('input[name="price"]').val(
-						response.data.price
-					);
+					$variant
+						.find('.dw-variant__price')
+						.text(
+							response.data.price
+						);
 				}
-
-				Dewawi.setDirty(false);
 			})
 			.fail(function() {
 				$option.prop(
@@ -329,6 +317,58 @@ $(document).ready(function(){
 					'disabled',
 					false
 				);
+			});
+		}
+	);
+
+	$(document).on(
+		'click',
+		'.dw-variant-toggle',
+		function() {
+			$(this)
+				.closest('.dw-variant')
+				.find('.dw-variant__details')
+				.prop(
+					'hidden',
+					function(index, hidden) {
+						return !hidden;
+					}
+				);
+		}
+	);
+
+	$(document).on(
+		'submit',
+		'.dw-variant-add',
+		function(event) {
+			event.preventDefault();
+
+			var $form = $(this);
+
+			$.ajax({
+				type: 'POST',
+				url: $form.attr('action'),
+				data: $form.serialize(),
+				dataType: 'json'
+			})
+			.done(function(response) {
+				if(
+					!response
+					|| response.ok !== true
+				) {
+					pushMessages([
+						'Variante konnte nicht erstellt werden.'
+					]);
+
+					return;
+				}
+
+				window.location.reload();
+			})
+			.fail(function() {
+				pushMessages([
+					'Variante konnte nicht erstellt werden.'
+				]);
 			});
 		}
 	);

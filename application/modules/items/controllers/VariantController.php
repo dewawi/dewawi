@@ -21,9 +21,10 @@ class Items_VariantController extends DEEC_Controller_Action
 			(int)$this->_getParam('parentid', 0)
 		);
 
-		$this->_redirect(
-			'/items/item/edit/id/' . $id
-		);
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+		]);
 	}
 
 	public function addOptionAction()
