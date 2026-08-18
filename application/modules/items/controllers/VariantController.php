@@ -2,6 +2,13 @@
 
 class Items_VariantController extends DEEC_Controller_Action
 {
+	public function indexAction()
+	{
+		$this->_redirect(
+			'/items/item'
+		);
+	}
+
 	public function addAction()
 	{
 		if(!$this->getRequest()->isPost()) {

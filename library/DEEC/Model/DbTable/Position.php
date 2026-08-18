@@ -297,6 +297,22 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 		}
 	}
 
+	public function deletePositionsByParentId(
+		int $parentId
+	): void {
+		$positions = $this->getPositions(
+			$parentId
+		);
+
+		$ids = [];
+
+		foreach($positions as $position) {
+			$ids[] = (int)$position->id;
+		}
+
+		$this->deletePositions($ids);
+	}
+
 	public function moveToOrdering(
 		int $id,
 		int $targetOrdering

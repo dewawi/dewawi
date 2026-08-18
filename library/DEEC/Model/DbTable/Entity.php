@@ -42,6 +42,13 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		throw new RuntimeException('Client context is missing');
 	}
 
+	public function getInfo(): array
+	{
+		return $this->info(
+			Zend_Db_Table_Abstract::COLS
+		);
+	}
+
 	public function hasClientContext(): bool
 	{
 		if ($this->_clientId !== null) {
