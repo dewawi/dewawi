@@ -7,6 +7,8 @@
 	'PURCHASE_ORDERS_REFERENCE' => 'Referenz',
 	'PURCHASE_ORDERS_QUOTE_ID' => 'Angebotsnummer',
 	'PURCHASE_ORDERS_QUOTE_DATE' => 'Angebotsdatum',
+	'PURCHASE_ORDERS_SALES_ORDER_ID' => 'Auftragsnummer',
+	'PURCHASE_ORDERS_SALES_ORDER_DATE' => 'Auftragsdatum',
 	'PURCHASE_ORDERS_CONTACT' => 'Kunde',
 	'PURCHASE_ORDERS_CONTACT_ID' => 'Kundennr.',
 	'PURCHASE_ORDERS_CONTACT_NAME' => 'Name',
