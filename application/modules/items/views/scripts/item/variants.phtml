@@ -1,7 +1,6 @@
 <div
 	class="dw-section"
 	data-section="variants"
-	data-refresh="html"
 	data-parent-id="<?php echo (int)$this->item['id']; ?>"
 >
 	<form
@@ -38,22 +37,7 @@
 		<div class="dw-variants">
 
 			<?php foreach($this->variants as $variant): ?>
-				<?php
-				$variantId = (int)$variant->id;
-
-				$selectedOptions = [];
-
-				if(isset($this->variantOptions[$variantId])) {
-					foreach(
-						$this->variantOptions[$variantId]
-						as $relation
-					) {
-						$selectedOptions[
-							(int)$relation->itemoptid
-						] = true;
-					}
-				}
-				?>
+				<?php $variantId = (int)$variant->id; ?>
 
 				<div
 					class="dw-variant"
@@ -79,102 +63,14 @@
 							); ?>
 						</span>
 
-						<button
-							type="button"
-							class="dw-btn dw-variant-toggle"
+						<a
+							href="/items/item/edit/id/<?php echo $variantId; ?>"
+							class="dw-btn"
 						>
 							<?php echo $this->translate(
 								'ITEMS_VARIANT_EDIT'
 							); ?>
-						</button>
-
-					</div>
-
-					<div
-						class="dw-variant__details"
-						hidden
-					>
-						<h4>
-							<?php echo $this->translate(
-								'ITEMS_VARIANT_OPTIONS'
-							); ?>
-						</h4>
-
-						<div class="dw-variant-options">
-
-							<?php foreach(
-								$this->availableOptions
-								as $option
-							): ?>
-								<?php
-								$optionId = (int)$option->id;
-
-								$checked = isset(
-									$selectedOptions[$optionId]
-								);
-								?>
-
-								<label class="dw-variant-option">
-
-									<input
-										type="checkbox"
-										class="variant-option"
-										data-option-id="<?php echo $optionId; ?>"
-										<?php echo $checked
-											? 'checked'
-											: ''; ?>
-									>
-
-									<span class="dw-variant-option__content">
-
-										<?php if(!empty($option->sku)): ?>
-											<strong
-												class="dw-variant-option__sku"
-											>
-												<?php echo $this->escape(
-													$option->sku
-												); ?>
-											</strong>
-										<?php endif; ?>
-
-										<?php if(!empty($option->title)): ?>
-											<span
-												class="dw-variant-option__title"
-											>
-												<?php echo $this->escape(
-													$option->title
-												); ?>
-											</span>
-										<?php endif; ?>
-
-										<?php if(
-											(float)$option->price !== 0.0
-										): ?>
-											<span
-												class="dw-variant-option__price"
-											>
-												<?php echo $this->escape(
-													$option->price
-												); ?>
-											</span>
-										<?php endif; ?>
-
-									</span>
-								</label>
-
-							<?php endforeach; ?>
-
-						</div>
-
-						<button
-							type="button"
-							class="dw-btn dw-variant-delete"
-							data-variant-id="<?php echo $variantId; ?>"
-						>
-							<?php echo $this->translate(
-								'ITEMS_VARIANT_DELETE'
-							); ?>
-						</button>
+						</a>
 
 					</div>
 				</div>
