@@ -477,4 +477,46 @@ class Items_Form_Item extends DEEC_Form
 			'tab' => 'shop',
 		]);
 	}
+
+	public function setVariantMode(): self
+	{
+		foreach(
+			Items_Model_Entity_Item::inheritedFields()
+			as $field
+		) {
+			if(!isset($this->elements[$field])) {
+				continue;
+			}
+
+			$type = (string)$this->elements[$field]['type'];
+
+			if(
+				in_array(
+					$type,
+					[
+						'text',
+						'email',
+						'number',
+						'date',
+						'textarea',
+					],
+					true
+				)
+			) {
+				$this->elements[$field]['attribs']['readonly']
+					= 'readonly';
+			} else {
+				$this->elements[$field]['attribs']['disabled']
+					= 'disabled';
+
+				$this->elements[$field]['required'] = false;
+			}
+
+			$this->elements[$field]['attribs'][
+				'data-inherited'
+			] = 'true';
+		}
+
+		return $this;
+	}
 }

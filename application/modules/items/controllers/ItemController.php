@@ -71,6 +71,47 @@ class Items_ItemController extends DEEC_Controller_Action
 		];
 	}
 
+	protected function getEditForm(): array
+	{
+		$formData = parent::getEditForm();
+
+		$id = (int)$this->_getParam('id', 0);
+
+		if($id < 1) {
+			return $formData;
+		}
+
+		$itemDb = new Items_Model_DbTable_Item();
+		$item = $itemDb->getById(
+			$id
+		);
+
+		if(
+			$item
+			&& !empty($item['parentid'])
+		) {
+			$formData['form']->setVariantMode();
+		}
+
+		return $formData;
+	}
+
+	protected function beforeEditSave(
+		array $values,
+		array $row
+	): array {
+		if(empty($row['parentid'])) {
+			return $values;
+		}
+
+		return array_diff_key(
+			$values,
+			array_flip(
+				Items_Model_Entity_Item::inheritedFields()
+			)
+		);
+	}
+
 	protected function afterEditSave(
 		int $id,
 		array $values,
