@@ -6,6 +6,64 @@ echo $this->Messages();
 echo $this->FileManager();
 ?>
 
+<?php if(!empty($this->itemParent)): ?>
+
+	<div class="dw-section dw-variant-context">
+
+		<div class="dw-variant-context__parent">
+			<strong>
+				<?php echo $this->translate(
+					'ITEMS_VARIANT_PARENT'
+				); ?>
+			</strong>
+
+			<a
+				href="/items/item/edit/id/<?php echo (int)$this->itemParent['id']; ?>"
+			>
+				<?php echo $this->escape(
+					$this->itemParent['sku']
+				); ?>
+
+				<?php if(!empty($this->itemParent['title'])): ?>
+					·
+					<?php echo $this->escape(
+						$this->itemParent['title']
+					); ?>
+				<?php endif; ?>
+			</a>
+		</div>
+
+		<?php if(!empty($this->itemVariantOptions)): ?>
+
+			<div class="dw-variant-context__options">
+
+				<strong>
+					<?php echo $this->translate(
+						'ITEMS_VARIANT_OPTIONS'
+					); ?>:
+				</strong>
+
+				<?php foreach(
+					$this->itemVariantOptions
+					as $option
+				): ?>
+
+					<span class="dw-variant-context__option">
+						<?php echo $this->escape(
+							$option['title'] ?? ''
+						); ?>
+					</span>
+
+				<?php endforeach; ?>
+
+			</div>
+
+		<?php endif; ?>
+
+	</div>
+
+<?php endif; ?>
+
 <?php echo $this->form->renderForm([
 	'id' => 'item',
 	'activeTab' => $this->activeTab,
@@ -22,15 +80,14 @@ echo $this->FileManager();
 			'title' => 'TABS_ATTRIBUTES',
 			'html' => $this->Attributes(),
 		],
-
 		'options' => [
 			'title' => 'TABS_OPTIONS',
 			'html' => $this->Options(),
 		],
-
 		'variants' => [
 			'title' => 'TABS_VARIANTS',
 			'html' => $this->Variants(),
+			'show' => empty($this->item['parentid']),
 		],
 		'images' => ['title' => 'TABS_IMAGES', 'html' => $this->Images()],
 		'files' => ['title' => 'TABS_FILES', 'html' => $this->Files(), 'show' => (bool)$this->dirwritable],

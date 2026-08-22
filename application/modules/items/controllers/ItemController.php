@@ -19,25 +19,25 @@ class Items_ItemController extends DEEC_Controller_Action
 		$optionDb = new Items_Model_DbTable_Itemopt();
 		$ledgerDb = new Items_Model_DbTable_Ledger();
 		$itemDb = new Items_Model_DbTable_Item();
-		$variantOptionDb = new Items_Model_DbTable_Itemvariantopt();
 
 		$variants = [];
+		$parent = null;
 		$variantOptions = [];
-		$availableVariantOptions = [];
 
 		if(empty($row['parentid'])) {
-			$variants = $itemDb->getVariants($id);
-
-			$availableVariantOptions = $optionDb->getPositions(
+			$variants = $itemDb->getVariants(
 				$id
 			);
+		} else {
+			$parent = $itemDb->getById(
+				(int)$row['parentid']
+			);
 
-			foreach($variants as $variant) {
-				$variantOptions[(int)$variant->id] =
-					$variantOptionDb->getByItemId(
-						(int)$variant->id
-					);
-			}
+			$variantService = new Items_Service_Variant();
+
+			$variantOptions = $variantService->getOptions(
+				$id
+			);
 		}
 
 		return [
@@ -46,8 +46,8 @@ class Items_ItemController extends DEEC_Controller_Action
 			'itemOptions' => $optionDb->getPositions($id),
 			'itemLedgers' => $ledgerDb->getByItemId($id),
 			'itemVariants' => $variants,
+			'itemParent' => $parent,
 			'itemVariantOptions' => $variantOptions,
-			'itemVariantAvailableOptions' => $availableVariantOptions,
 		];
 	}
 
