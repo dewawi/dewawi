@@ -3,26 +3,93 @@
 	data-section="variants"
 	data-parent-id="<?php echo (int)$this->item['id']; ?>"
 >
-	<form
-		class="dw-variant-add"
-		method="post"
-		action="/items/variant/add"
-	>
-		<input
-			type="hidden"
-			name="parentid"
-			value="<?php echo (int)$this->item['id']; ?>"
-		>
+	<?php if(count($this->optionSets)): ?>
 
-		<button
-			type="submit"
-			class="dw-btn dw-btn--action"
+		<form
+			class="dw-variant-add"
+			method="post"
+			action="/items/variant/add"
 		>
+			<input
+				type="hidden"
+				name="parentid"
+				value="<?php echo (int)$this->item['id']; ?>"
+			>
+
+			<div class="dw-variant-create">
+
+				<?php foreach($this->optionSets as $group): ?>
+					<?php
+					$set = $group['set'];
+					$options = $group['options'];
+					?>
+
+					<div class="dw-variant-create__field">
+
+						<label
+							for="variant-option-<?php echo (int)$set->id; ?>"
+						>
+							<?php echo $this->escape(
+								$set->title
+							); ?>
+						</label>
+
+						<select
+							id="variant-option-<?php echo (int)$set->id; ?>"
+							name="options[]"
+							required
+						>
+							<option value="">
+								<?php echo $this->translate(
+									'ITEMS_VARIANT_SELECT'
+								); ?>
+							</option>
+
+							<?php foreach($options as $option): ?>
+
+								<option
+									value="<?php echo (int)$option->id; ?>"
+								>
+									<?php echo $this->escape(
+										$option->title
+									); ?>
+
+									<?php if(!empty($option->sku)): ?>
+										(<?php echo $this->escape(
+											$option->sku
+										); ?>)
+									<?php endif; ?>
+								</option>
+
+							<?php endforeach; ?>
+
+						</select>
+
+					</div>
+
+				<?php endforeach; ?>
+
+				<button
+					type="submit"
+					class="dw-btn dw-btn--action"
+				>
+					<?php echo $this->translate(
+						'ITEMS_VARIANT_ADD'
+					); ?>
+				</button>
+
+			</div>
+		</form>
+
+	<?php else: ?>
+
+		<p>
 			<?php echo $this->translate(
-				'ITEMS_VARIANT_ADD'
+				'ITEMS_VARIANT_OPTIONS_EMPTY'
 			); ?>
-		</button>
-	</form>
+		</p>
+
+	<?php endif; ?>
 
 	<?php if(!count($this->variants)): ?>
 

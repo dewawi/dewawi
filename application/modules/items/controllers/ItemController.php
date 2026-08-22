@@ -17,17 +17,38 @@ class Items_ItemController extends DEEC_Controller_Action
 	): array {
 		$attributeDb = new Items_Model_DbTable_Itematr();
 		$optionDb = new Items_Model_DbTable_Itemopt();
+		$optionSetDb = new Items_Model_DbTable_Itemoptset();
 		$ledgerDb = new Items_Model_DbTable_Ledger();
 		$itemDb = new Items_Model_DbTable_Item();
 
 		$variants = [];
 		$parent = null;
 		$variantOptions = [];
+		$variantOptionSets = [];
 
 		if(empty($row['parentid'])) {
 			$variants = $itemDb->getVariants(
 				$id
 			);
+
+			foreach(
+				$optionSetDb->getPositionSets($id)
+				as $set
+			) {
+				$options = $optionDb->getPositions(
+					$id,
+					(int)$set->id
+				);
+
+				if(!count($options)) {
+					continue;
+				}
+
+				$variantOptionSets[] = [
+					'set' => $set,
+					'options' => $options,
+				];
+			}
 		} else {
 			$parent = $itemDb->getById(
 				(int)$row['parentid']
@@ -46,6 +67,7 @@ class Items_ItemController extends DEEC_Controller_Action
 			'itemOptions' => $optionDb->getPositions($id),
 			'itemLedgers' => $ledgerDb->getByItemId($id),
 			'itemVariants' => $variants,
+			'itemVariantOptionSets' => $variantOptionSets,
 			'itemParent' => $parent,
 			'itemVariantOptions' => $variantOptions,
 		];

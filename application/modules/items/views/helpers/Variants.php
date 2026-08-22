@@ -9,6 +9,7 @@ class Zend_View_Helper_Variants extends Zend_View_Helper_Abstract
 			[
 				'item' => $this->view->item,
 				'variants' => $this->view->itemVariants,
+				'optionSets' => $this->view->itemVariantOptionSets,
 			]
 		);
 	}
