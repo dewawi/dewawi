@@ -71,43 +71,26 @@ class Items_Service_Variant
 			);
 		}
 
-		$fields = array_flip(
-			Items_Model_Entity_Item::inheritedFields()
-		);
-
 		$data = array_intersect_key(
 			$data,
-			$fields
+			array_flip(
+				Items_Model_Entity_Item::inheritedFields()
+			)
 		);
 
 		if(!$data) {
 			return;
 		}
 
-		$variants = $this->_itemDb->getVariants(
-			$parentId
-		);
-
-		if(!count($variants)) {
-			return;
-		}
-
-		$adapter = $this->_itemDb->getAdapter();
-		$adapter->beginTransaction();
-
-		try {
-			foreach($variants as $variant) {
-				$this->_itemDb->updateById(
-					(int)$variant->id,
-					$data
-				);
-			}
-
-			$adapter->commit();
-		} catch(Throwable $exception) {
-			$adapter->rollBack();
-
-			throw $exception;
+		foreach(
+			$this->_itemDb->getVariants(
+				$parentId
+			) as $variant
+		) {
+			$this->_itemDb->updateById(
+				(int)$variant->id,
+				$data
+			);
 		}
 	}
 

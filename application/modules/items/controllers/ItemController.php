@@ -71,6 +71,23 @@ class Items_ItemController extends DEEC_Controller_Action
 		];
 	}
 
+	protected function afterEditSave(
+		int $id,
+		array $values,
+		array $oldRow
+	): void {
+		if(!empty($oldRow['parentid'])) {
+			return;
+		}
+
+		$variantService = new Items_Service_Variant();
+
+		$variantService->syncInheritedFields(
+			$id,
+			$values
+		);
+	}
+
 	public function downloadAction()
 	{
 		$this->_helper->getHelper('layout')->disableLayout();
