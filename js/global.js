@@ -254,7 +254,12 @@ $(document).ready(function(){
 					return;
 				}
 
-				window.location.reload();
+				window.location.href = Dewawi.url(
+					'items',
+					'item',
+					'edit',
+					response.id
+				);
 			})
 			.fail(function() {
 				pushMessages([

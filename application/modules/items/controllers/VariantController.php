@@ -17,52 +17,28 @@ class Items_VariantController extends DEEC_Controller_Action
 			);
 		}
 
-		$id = $this->getVariantService()->create(
-			(int)$this->_getParam('parentid', 0)
-		);
-
-		return $this->_helper->json([
-			'ok' => true,
-			'id' => $id,
-		]);
-	}
-
-	public function addOptionAction()
-	{
-		if(!$this->getRequest()->isPost()) {
-			throw new Exception(
-				'MESSAGES_INVALID_REQUEST'
+		try {
+			$id = $this->getVariantService()->create(
+				(int)$this->_getParam(
+					'parentid',
+					0
+				),
+				(array)$this->_getParam(
+					'options',
+					[]
+				)
 			);
+
+			return $this->_helper->json([
+				'ok' => true,
+				'id' => $id,
+			]);
+		} catch(Throwable $exception) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $exception->getMessage(),
+			]);
 		}
-
-		$data = $this->getVariantService()->addOption(
-			(int)$this->_getParam('id', 0),
-			(int)$this->_getParam('optionid', 0)
-		);
-
-		return $this->_helper->json([
-			'ok' => true,
-			'data' => $data,
-		]);
-	}
-
-	public function deleteOptionAction()
-	{
-		if(!$this->getRequest()->isPost()) {
-			throw new Exception(
-				'MESSAGES_INVALID_REQUEST'
-			);
-		}
-
-		$data = $this->getVariantService()->deleteOption(
-			(int)$this->_getParam('id', 0),
-			(int)$this->_getParam('optionid', 0)
-		);
-
-		return $this->_helper->json([
-			'ok' => true,
-			'data' => $data,
-		]);
 	}
 
 	protected function getVariantService(): Items_Service_Variant

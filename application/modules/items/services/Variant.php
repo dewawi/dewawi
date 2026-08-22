@@ -4,17 +4,21 @@ class Items_Service_Variant
 {
 	protected Items_Model_DbTable_Item $_itemDb;
 	protected Items_Model_DbTable_Itemopt $_optionDb;
+	protected Items_Model_DbTable_Itemoptset $_optionSetDb;
 	protected Items_Model_DbTable_Itemvariantopt $_variantOptionDb;
 
 	public function __construct()
 	{
 		$this->_itemDb = new Items_Model_DbTable_Item();
 		$this->_optionDb = new Items_Model_DbTable_Itemopt();
+		$this->_optionSetDb = new Items_Model_DbTable_Itemoptset();
 		$this->_variantOptionDb = new Items_Model_DbTable_Itemvariantopt();
 	}
 
-	public function create(int $parentId): int
-	{
+	public function create(
+		int $parentId,
+		array $optionIds
+	): int {
 		$parent = $this->_itemDb->getById(
 			$parentId
 		);
@@ -31,24 +35,179 @@ class Items_Service_Variant
 			);
 		}
 
-		$data = $parent;
-
-		unset(
-			$data['id'],
-			$data['created'],
-			$data['createdby'],
-			$data['modified'],
-			$data['modifiedby'],
-			$data['locked'],
-			$data['lockedtime']
+		$optionIds = $this->validateOptions(
+			$parentId,
+			$optionIds
 		);
 
-		$data['parentid'] = $parentId;
-		$data['quantity'] = 0;
-
-		return $this->_itemDb->create(
-			$data
+		$this->validateCombination(
+			$parentId,
+			$optionIds
 		);
+
+		$adapter = $this->_itemDb->getAdapter();
+		$adapter->beginTransaction();
+
+		try {
+			$data = $parent;
+
+			unset(
+				$data['id'],
+				$data['created'],
+				$data['createdby'],
+				$data['modified'],
+				$data['modifiedby'],
+				$data['locked'],
+				$data['lockedtime']
+			);
+
+			$data['parentid'] = $parentId;
+			$data['quantity'] = 0;
+
+			$itemId = $this->_itemDb->create(
+				$data
+			);
+
+			foreach($optionIds as $optionId) {
+				$this->_variantOptionDb->addOption(
+					$itemId,
+					$optionId
+				);
+			}
+
+			$this->update(
+				$itemId
+			);
+
+			$adapter->commit();
+
+			return $itemId;
+		} catch(Throwable $exception) {
+			$adapter->rollBack();
+
+			throw $exception;
+		}
+	}
+
+	protected function validateOptions(
+		int $parentId,
+		array $optionIds
+	): array {
+		$optionIds = array_values(
+			array_unique(
+				array_filter(
+					array_map(
+						'intval',
+						$optionIds
+					)
+				)
+			)
+		);
+
+		if(!$optionIds) {
+			throw new Exception(
+				'MESSAGES_ITEM_VARIANT_OPTIONS_REQUIRED'
+			);
+		}
+
+		$sets = [];
+
+		foreach(
+			$this->_optionSetDb->getPositionSets(
+				$parentId
+			) as $set
+		) {
+			$options = $this->_optionDb->getPositions(
+				$parentId,
+				(int)$set->id
+			);
+
+			if(count($options)) {
+				$sets[(int)$set->id] = true;
+			}
+		}
+
+		if(!$sets) {
+			throw new Exception(
+				'MESSAGES_ITEM_VARIANT_OPTIONS_REQUIRED'
+			);
+		}
+
+		$selectedSets = [];
+
+		foreach($optionIds as $optionId) {
+			$option = $this->_optionDb->getById(
+				$optionId
+			);
+
+			if(
+				!$option
+				|| (int)$option['parentid'] !== $parentId
+			) {
+				throw new Exception(
+					'MESSAGES_ITEM_OPTION_INVALID'
+				);
+			}
+
+			$setId = (int)$option['optsetid'];
+
+			if(
+				$setId < 1
+				|| !isset($sets[$setId])
+			) {
+				throw new Exception(
+					'MESSAGES_ITEM_OPTION_INVALID'
+				);
+			}
+
+			if(isset($selectedSets[$setId])) {
+				throw new Exception(
+					'MESSAGES_ITEM_VARIANT_OPTION_DUPLICATE'
+				);
+			}
+
+			$selectedSets[$setId] = true;
+		}
+
+		if(count($selectedSets) !== count($sets)) {
+			throw new Exception(
+				'MESSAGES_ITEM_VARIANT_OPTIONS_REQUIRED'
+			);
+		}
+
+		sort($optionIds);
+
+		return $optionIds;
+	}
+
+	protected function validateCombination(
+		int $parentId,
+		array $optionIds
+	): void {
+		foreach(
+			$this->_itemDb->getVariants(
+				$parentId
+			) as $variant
+		) {
+			$currentOptionIds = [];
+
+			foreach(
+				$this->_variantOptionDb->getByItemId(
+					(int)$variant->id
+				) as $relation
+			) {
+				$currentOptionIds[] =
+					(int)$relation->itemoptid;
+			}
+
+			sort($currentOptionIds);
+
+			if($currentOptionIds === $optionIds) {
+				throw new Exception(
+					'MESSAGES_ITEM_VARIANT_EXISTS'
+				);
+			}
+		}
 	}
 
 	public function syncInheritedFields(
@@ -190,67 +349,5 @@ class Items_Service_Variant
 		}
 
 		return $options;
-	}
-
-	public function addOption(
-		int $itemId,
-		int $optionId
-	): array {
-		$item = $this->_itemDb->getById(
-			$itemId
-		);
-
-		if(!$item || empty($item['parentid'])) {
-			throw new Exception(
-				'MESSAGES_ITEM_VARIANT_INVALID'
-			);
-		}
-
-		$option = $this->_optionDb->getById(
-			$optionId
-		);
-
-		if(
-			!$option
-			|| (int)$option['parentid']
-				!== (int)$item['parentid']
-		) {
-			throw new Exception(
-				'MESSAGES_ITEM_OPTION_INVALID'
-			);
-		}
-
-		$this->_variantOptionDb->addOption(
-			$itemId,
-			$optionId
-		);
-
-		return $this->update(
-			$itemId
-		);
-	}
-
-	public function deleteOption(
-		int $itemId,
-		int $optionId
-	): array {
-		$item = $this->_itemDb->getById(
-			$itemId
-		);
-
-		if(!$item || empty($item['parentid'])) {
-			throw new Exception(
-				'MESSAGES_ITEM_VARIANT_INVALID'
-			);
-		}
-
-		$this->_variantOptionDb->deleteOption(
-			$itemId,
-			$optionId
-		);
-
-		return $this->update(
-			$itemId
-		);
 	}
 }
