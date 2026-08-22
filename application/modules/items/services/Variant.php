@@ -51,6 +51,66 @@ class Items_Service_Variant
 		);
 	}
 
+	public function syncInheritedFields(
+		int $parentId,
+		array $data
+	): void {
+		$parent = $this->_itemDb->getById(
+			$parentId
+		);
+
+		if(!$parent) {
+			throw new Exception(
+				'MESSAGES_ITEM_NOT_FOUND'
+			);
+		}
+
+		if(!empty($parent['parentid'])) {
+			throw new Exception(
+				'MESSAGES_ITEM_VARIANT_INVALID'
+			);
+		}
+
+		$fields = array_flip(
+			Items_Model_Entity_Item::inheritedFields()
+		);
+
+		$data = array_intersect_key(
+			$data,
+			$fields
+		);
+
+		if(!$data) {
+			return;
+		}
+
+		$variants = $this->_itemDb->getVariants(
+			$parentId
+		);
+
+		if(!count($variants)) {
+			return;
+		}
+
+		$adapter = $this->_itemDb->getAdapter();
+		$adapter->beginTransaction();
+
+		try {
+			foreach($variants as $variant) {
+				$this->_itemDb->updateById(
+					(int)$variant->id,
+					$data
+				);
+			}
+
+			$adapter->commit();
+		} catch(Throwable $exception) {
+			$adapter->rollBack();
+
+			throw $exception;
+		}
+	}
+
 	public function calculate(int $itemId): array
 	{
 		$item = $this->_itemDb->getById(
