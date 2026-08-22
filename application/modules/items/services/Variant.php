@@ -89,6 +89,121 @@ class Items_Service_Variant
 		}
 	}
 
+	public function editAction()
+	{
+		if(!$this->getRequest()->isPost()) {
+			throw new Exception(
+				'MESSAGES_INVALID_REQUEST'
+			);
+		}
+
+		try {
+			$data = $this->getVariantService()->updateOptions(
+				(int)$this->_getParam(
+					'id',
+					0
+				),
+				(array)$this->_getParam(
+					'options',
+					[]
+				)
+			);
+
+			return $this->_helper->json([
+				'ok' => true,
+				'data' => $data,
+			]);
+		} catch(Throwable $exception) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $exception->getMessage(),
+			]);
+		}
+	}
+
+	public function updateOptions(
+		int $itemId,
+		array $optionIds
+	): array {
+		$item = $this->_itemDb->getById(
+			$itemId
+		);
+
+		if(
+			!$item
+			|| empty($item['parentid'])
+		) {
+			throw new Exception(
+				'MESSAGES_ITEM_VARIANT_INVALID'
+			);
+		}
+
+		$parentId = (int)$item['parentid'];
+
+		$optionIds = $this->validateOptions(
+			$parentId,
+			$optionIds
+		);
+
+		$this->validateCombination(
+			$parentId,
+			$optionIds,
+			$itemId
+		);
+
+		$adapter = $this->_itemDb->getAdapter();
+		$adapter->beginTransaction();
+
+		try {
+			$currentOptionIds = [];
+
+			foreach(
+				$this->_variantOptionDb->getByItemId(
+					$itemId
+				) as $relation
+			) {
+				$currentOptionIds[] =
+					(int)$relation->itemoptid;
+			}
+
+			foreach(
+				array_diff(
+					$currentOptionIds,
+					$optionIds
+				) as $optionId
+			) {
+				$this->_variantOptionDb->deleteOption(
+					$itemId,
+					$optionId
+				);
+			}
+
+			foreach(
+				array_diff(
+					$optionIds,
+					$currentOptionIds
+				) as $optionId
+			) {
+				$this->_variantOptionDb->addOption(
+					$itemId,
+					$optionId
+				);
+			}
+
+			$data = $this->update(
+				$itemId
+			);
+
+			$adapter->commit();
+
+			return $data;
+		} catch(Throwable $exception) {
+			$adapter->rollBack();
+
+			throw $exception;
+		}
+	}
+
 	protected function validateOptions(
 		int $parentId,
 		array $optionIds
@@ -132,18 +247,28 @@ class Items_Service_Variant
 
 	protected function validateCombination(
 		int $parentId,
-		array $optionIds
+		array $optionIds,
+		int $excludeItemId = 0
 	): void {
 		foreach(
 			$this->_itemDb->getVariants(
 				$parentId
 			) as $variant
 		) {
+			$variantId = (int)$variant->id;
+
+			if(
+				$excludeItemId > 0
+				&& $variantId === $excludeItemId
+			) {
+				continue;
+			}
+
 			$currentOptionIds = [];
 
 			foreach(
 				$this->_variantOptionDb->getByItemId(
-					(int)$variant->id
+					$variantId
 				) as $relation
 			) {
 				$currentOptionIds[] =

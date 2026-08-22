@@ -1,0 +1,90 @@
+<?php
+$selected = [];
+
+foreach(
+	$this->itemVariantOptions as $option
+) {
+	$selected[(int)$option['id']] = true;
+}
+?>
+
+<form
+	class="dw-variant-options-edit"
+	method="post"
+	action="/items/variant/update-options"
+>
+	<input
+		type="hidden"
+		name="id"
+		value="<?php echo (int)$this->item['id']; ?>"
+	>
+
+	<?php foreach(
+		$this->itemVariantOptionSets as $group
+	): ?>
+		<?php
+		$set = $group['set'];
+		$options = $group['options'];
+		?>
+
+		<div class="dw-variant-create__group">
+
+			<strong class="dw-variant-create__title">
+				<?php echo $this->escape(
+					$set->title
+				); ?>
+			</strong>
+
+			<div class="dw-variant-create__options">
+
+				<?php foreach(
+					$options as $option
+				): ?>
+					<?php
+					$optionId = (int)$option->id;
+					?>
+
+					<label class="dw-variant-create__option">
+						<input
+							type="checkbox"
+							name="options[]"
+							value="<?php echo $optionId; ?>"
+							<?php if(
+								isset($selected[$optionId])
+							): ?>
+								checked
+							<?php endif; ?>
+						>
+
+						<span>
+							<?php echo $this->escape(
+								$option->title
+							); ?>
+
+							<?php if(
+								!empty($option->sku)
+							): ?>
+								(<?php echo $this->escape(
+									$option->sku
+								); ?>)
+							<?php endif; ?>
+						</span>
+					</label>
+
+				<?php endforeach; ?>
+
+			</div>
+
+		</div>
+
+	<?php endforeach; ?>
+
+	<button
+		type="submit"
+		class="dw-btn dw-btn--action"
+	>
+		<?php echo $this->translate(
+			'ITEMS_VARIANT_OPTIONS_SAVE'
+		); ?>
+	</button>
+</form>

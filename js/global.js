@@ -269,6 +269,39 @@ $(document).ready(function(){
 		}
 	);
 
+	$(document).on(
+		'submit',
+		'.dw-variant-edit',
+		function(event) {
+			event.preventDefault();
+
+			var $form = $(this);
+
+			$.ajax({
+				type: 'POST',
+				url: $form.attr('action'),
+				data: $form.serialize(),
+				dataType: 'json'
+			})
+			.done(function(response) {
+				if(
+					!response
+					|| response.ok !== true
+				) {
+					pushMessages([
+						response && response.message
+							? response.message
+							: 'Variantenoptionen konnten nicht gespeichert werden.'
+					]);
+
+					return;
+				}
+
+				window.location.reload();
+			});
+		}
+	);
+
 	//Handle sub entities
 	$('.dw-positions').on('change', 'input, textarea, select', function() {
 		var $field = $(this);
