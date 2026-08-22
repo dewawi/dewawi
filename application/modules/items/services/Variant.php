@@ -110,31 +110,6 @@ class Items_Service_Variant
 			);
 		}
 
-		$sets = [];
-
-		foreach(
-			$this->_optionSetDb->getPositionSets(
-				$parentId
-			) as $set
-		) {
-			$options = $this->_optionDb->getPositions(
-				$parentId,
-				(int)$set->id
-			);
-
-			if(count($options)) {
-				$sets[(int)$set->id] = true;
-			}
-		}
-
-		if(!$sets) {
-			throw new Exception(
-				'MESSAGES_ITEM_VARIANT_OPTIONS_REQUIRED'
-			);
-		}
-
-		$selectedSets = [];
-
 		foreach($optionIds as $optionId) {
 			$option = $this->_optionDb->getById(
 				$optionId
@@ -148,31 +123,6 @@ class Items_Service_Variant
 					'MESSAGES_ITEM_OPTION_INVALID'
 				);
 			}
-
-			$setId = (int)$option['optsetid'];
-
-			if(
-				$setId < 1
-				|| !isset($sets[$setId])
-			) {
-				throw new Exception(
-					'MESSAGES_ITEM_OPTION_INVALID'
-				);
-			}
-
-			if(isset($selectedSets[$setId])) {
-				throw new Exception(
-					'MESSAGES_ITEM_VARIANT_OPTION_DUPLICATE'
-				);
-			}
-
-			$selectedSets[$setId] = true;
-		}
-
-		if(count($selectedSets) !== count($sets)) {
-			throw new Exception(
-				'MESSAGES_ITEM_VARIANT_OPTIONS_REQUIRED'
-			);
 		}
 
 		sort($optionIds);

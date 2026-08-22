@@ -44,5 +44,8 @@
 	'MESSAGES_BEST_REGARDS' => 'Mit freundlichen Grüßen',
 	'MESSAGES_ALL_RIGHTS_RESERVED' => 'Alle Rechte vorbehalten',
 	'MESSAGES_THANK_YOU_ORDER' => 'Vielen Dank für Ihre Bestellung',
-	'MESSAGES_RECEIVED_YOUR_ORDER' => 'Vielen Dank, dass Sie uns kontaktiert haben. Wir haben Ihre Nachricht erhalten und werden uns schnellstmöglich mit Ihnen in Verbindung setzen.'
+	'MESSAGES_RECEIVED_YOUR_ORDER' => 'Vielen Dank, dass Sie uns kontaktiert haben. Wir haben Ihre Nachricht erhalten und werden uns schnellstmöglich mit Ihnen in Verbindung setzen.',
+	'MESSAGES_ITEM_VARIANT_OPTIONS_REQUIRED' => 'Für eine Variante muss mindestens eine Option ausgewählt werden.',
+	'MESSAGES_ITEM_VARIANT_EXISTS' => 'Diese Variantenkombination existiert bereits.',
+	'MESSAGES_ITEM_OPTION_INVALID' => 'Die ausgewählte Variantenoption ist ungültig.',
 );

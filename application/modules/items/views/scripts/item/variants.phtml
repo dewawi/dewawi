@@ -24,46 +24,41 @@
 					$options = $group['options'];
 					?>
 
-					<div class="dw-variant-create__field">
+					<div class="dw-variant-create__group">
 
-						<label
-							for="variant-option-<?php echo (int)$set->id; ?>"
-						>
+						<strong class="dw-variant-create__title">
 							<?php echo $this->escape(
 								$set->title
 							); ?>
-						</label>
+						</strong>
 
-						<select
-							id="variant-option-<?php echo (int)$set->id; ?>"
-							name="options[]"
-							required
-						>
-							<option value="">
-								<?php echo $this->translate(
-									'ITEMS_VARIANT_SELECT'
-								); ?>
-							</option>
+						<div class="dw-variant-create__options">
 
 							<?php foreach($options as $option): ?>
 
-								<option
-									value="<?php echo (int)$option->id; ?>"
-								>
-									<?php echo $this->escape(
-										$option->title
-									); ?>
+								<label class="dw-variant-create__option">
+									<input
+										type="checkbox"
+										name="options[]"
+										value="<?php echo (int)$option->id; ?>"
+									>
 
-									<?php if(!empty($option->sku)): ?>
-										(<?php echo $this->escape(
-											$option->sku
-										); ?>)
-									<?php endif; ?>
-								</option>
+									<span>
+										<?php echo $this->escape(
+											$option->title
+										); ?>
+
+										<?php if(!empty($option->sku)): ?>
+											(<?php echo $this->escape(
+												$option->sku
+											); ?>)
+										<?php endif; ?>
+									</span>
+								</label>
 
 							<?php endforeach; ?>
 
-						</select>
+						</div>
 
 					</div>
 
