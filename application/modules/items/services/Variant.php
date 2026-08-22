@@ -89,38 +89,6 @@ class Items_Service_Variant
 		}
 	}
 
-	public function editAction()
-	{
-		if(!$this->getRequest()->isPost()) {
-			throw new Exception(
-				'MESSAGES_INVALID_REQUEST'
-			);
-		}
-
-		try {
-			$data = $this->getVariantService()->updateOptions(
-				(int)$this->_getParam(
-					'id',
-					0
-				),
-				(array)$this->_getParam(
-					'options',
-					[]
-				)
-			);
-
-			return $this->_helper->json([
-				'ok' => true,
-				'data' => $data,
-			]);
-		} catch(Throwable $exception) {
-			return $this->_helper->json([
-				'ok' => false,
-				'message' => $exception->getMessage(),
-			]);
-		}
-	}
-
 	public function updateOptions(
 		int $itemId,
 		array $optionIds

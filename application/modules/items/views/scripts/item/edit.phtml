@@ -64,6 +64,19 @@ echo $this->FileManager();
 
 <?php endif; ?>
 
+<?php if(!empty($this->itemParent)): ?>
+
+	<?php echo $this->partial(
+		'item/variant-options.phtml',
+		[
+			'item' => $this->item,
+			'itemVariantOptions' => $this->itemVariantOptions,
+			'itemVariantOptionSets' => $this->itemVariantOptionSets,
+		]
+	); ?>
+
+<?php endif; ?>
+
 <?php echo $this->form->renderForm([
 	'id' => 'item',
 	'activeTab' => $this->activeTab,

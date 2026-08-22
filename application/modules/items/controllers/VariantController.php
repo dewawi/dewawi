@@ -41,6 +41,38 @@ class Items_VariantController extends DEEC_Controller_Action
 		}
 	}
 
+	public function editAction()
+	{
+		if(!$this->getRequest()->isPost()) {
+			throw new Exception(
+				'MESSAGES_INVALID_REQUEST'
+			);
+		}
+
+		try {
+			$data = $this->getVariantService()->updateOptions(
+				(int)$this->_getParam(
+					'id',
+					0
+				),
+				(array)$this->_getParam(
+					'options',
+					[]
+				)
+			);
+
+			return $this->_helper->json([
+				'ok' => true,
+				'data' => $data,
+			]);
+		} catch(Throwable $exception) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $exception->getMessage(),
+			]);
+		}
+	}
+
 	protected function getVariantService(): Items_Service_Variant
 	{
 		return new Items_Service_Variant();
