@@ -52,12 +52,13 @@ class Items_LedgerController extends DEEC_Controller_Action
 		$request = $this->getRequest();
 		$data = $this->getCreateData();
 
+		$formData = $this->getEditForm();
+		$form = $formData['form'];
+
+		$locale = Zend_Registry::get('Zend_Locale');
+		$form->setLocale($locale);
+
 		if(!$request->isPost()) {
-			$formData = $this->getEditForm();
-			$form = $formData['form'];
-
-			$locale = Zend_Registry::get('Zend_Locale');
-
 			$form->setValues(
 				DEEC_Display::rowToFormValues(
 					$form,
@@ -79,13 +80,13 @@ class Items_LedgerController extends DEEC_Controller_Action
 		$post = (array)$request->getPost();
 		$positions = (array)($post['positions'] ?? []);
 
-		$common = [
-			'warehouseid' => (int)($post['warehouseid'] ?? 0),
-			'type' => (string)($post['type'] ?? ''),
-			'reason' => (string)($post['reason'] ?? ''),
-			'ledgerdate' => (string)($post['ledgerdate'] ?? ''),
-			'comment' => (string)($post['comment'] ?? ''),
-		];
+		$common = $form->getFilteredValuesPartial([
+			'warehouseid' => $post['warehouseid'] ?? null,
+			'type' => $post['type'] ?? null,
+			'reason' => $post['reason'] ?? null,
+			'ledgerdate' => $post['ledgerdate'] ?? null,
+			'comment' => $post['comment'] ?? null,
+		]);
 
 		$db = $this->getDb();
 		$adapter = $db->getAdapter();
@@ -97,20 +98,28 @@ class Items_LedgerController extends DEEC_Controller_Action
 			$created = 0;
 
 			foreach($positions as $position) {
+				$positionValues = $form->getFilteredValuesPartial([
+					'itemid' => $position['itemid'] ?? null,
+					'sku' => $position['sku'] ?? null,
+					'quantity' => $position['quantity'] ?? null,
+				]);
 
 				if(
-					empty($position['itemid'])
-					&& trim((string)($position['sku'] ?? '')) === ''
-					&& (float)($position['quantity'] ?? 0) === 0.0
+					empty($positionValues['itemid'])
+					&& empty($positionValues['sku'])
+					&& empty($positionValues['quantity'])
 				) {
 					continue;
 				}
 
-				$ledger = array_merge($common, [
-					'itemid' => (int)($position['itemid'] ?? 0),
-					'sku' => trim((string)($position['sku'] ?? '')),
-					'quantity' => $position['quantity'] ?? 0,
-				]);
+				$ledger = array_merge(
+					$common,
+					[
+						'itemid' => (int)($positionValues['itemid'] ?? 0),
+						'sku' => (string)($positionValues['sku'] ?? ''),
+						'quantity' => $positionValues['quantity'] ?? null,
+					]
+				);
 
 				$ledger = $stock->prepareCreateData($ledger);
 
