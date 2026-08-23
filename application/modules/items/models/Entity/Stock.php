@@ -15,6 +15,9 @@ class Items_Model_Entity_Stock
 				'available' => new Zend_Db_Expr(
 					's.quantity - s.reserved'
 				),
+				'stockvalue' => new Zend_Db_Expr(
+					's.quantity * i.cost'
+				),
 			],
 
 			'joins' => [

@@ -47,6 +47,16 @@ class Items_Model_List_Stocks extends DEEC_List
 				'label' => 'ITEMS_STOCK_INCOMING',
 				'type' => 'text',
 			],
+			[
+				'name' => 'cost',
+				'label' => 'ITEMS_COST',
+				'type' => 'currency',
+			],
+			[
+				'name' => 'stockvalue',
+				'label' => 'ITEMS_STOCK_VALUE',
+				'type' => 'currency',
+			],
 		];
 	}
 }
