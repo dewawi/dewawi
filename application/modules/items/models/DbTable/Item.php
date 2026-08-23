@@ -111,35 +111,14 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 		$this->update($data, $where);
 	}
 
-	public function quantityItem($id, $quantity)
-	{
-		$id = (int)$id;
-		$data = array();
-		$data['quantity'] = $quantity;
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
-	}
-
 	protected function prepareCopyData(array $data): array
 	{
 		$data = parent::prepareCopyData($data);
 
-		$data['quantity'] = 0;
 		$data['inventory'] = 1;
 		$data['pinned'] = 0;
 
 		return $data;
-	}
-
-	public function changeQuantity(int $id, float $delta): void
-	{
-		$this->updateById($id, [
-			'quantity' => new Zend_Db_Expr(
-				$this->getAdapter()->quoteInto('IFNULL(quantity, 0) + ?', $delta)
-			),
-		]);
 	}
 
 	public function deleteItem($id)
@@ -162,7 +141,14 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 					'title',
 					'manufacturersku',
 					'price',
-					'quantity',
+					'quantity' => new Zend_Db_Expr(
+						'(
+							SELECT COALESCE(SUM(s.quantity), 0)
+							FROM itemstock AS s
+							WHERE s.itemid = i.id
+							AND s.clientid = i.clientid
+						)'
+					),
 				]
 			)
 			->where('i.clientid = ?', $clientId)

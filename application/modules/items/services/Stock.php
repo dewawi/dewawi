@@ -37,11 +37,6 @@ class Items_Service_Stock
 			(int)$ledger['warehouseid'],
 			$quantity
 		);
-
-		$this->_itemDb->changeQuantity(
-			(int)$ledger['itemid'],
-			$quantity
-		);
 	}
 
 	public function revert(array $ledger): void
@@ -51,11 +46,6 @@ class Items_Service_Stock
 		$this->_stockDb->changeQuantity(
 			(int)$ledger['itemid'],
 			(int)$ledger['warehouseid'],
-			$quantity
-		);
-
-		$this->_itemDb->changeQuantity(
-			(int)$ledger['itemid'],
 			$quantity
 		);
 	}
