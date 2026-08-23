@@ -2481,8 +2481,18 @@ function markFieldSaved($field) {
 				+ ' data-index="' + i + '"'
 				+ '>';
 
+			var label = item.label || '';
+
+			if(!label && (item.sku || item.title)) {
+				label = $.trim(
+					(item.sku || '')
+					+ ' · '
+					+ (item.title || '')
+				);
+			}
+
 			html += '<div class="autocomplete__label">'
-				+ escapeHtml(item.label || '')
+				+ escapeHtml(label)
 				+ '</div>';
 
 			if (item.subtitle) {
@@ -2530,6 +2540,28 @@ function markFieldSaved($field) {
 		}
 
 		$input.val(value);
+
+		var $position = $input.closest('.ledger-position');
+
+		if($position.length) {
+			if(item.sku !== undefined) {
+				$position
+					.find('.ledger-position-sku')
+					.val(item.sku);
+			}
+
+			if(item.title !== undefined) {
+				$position
+					.find('.ledger-position-title')
+					.val(item.title);
+			}
+
+			if(item.id !== undefined) {
+				$position
+					.find('.ledger-position-itemid')
+					.val(item.id);
+			}
+		}
 
 		if (!target) {
 			return;

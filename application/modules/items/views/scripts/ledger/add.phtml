@@ -25,6 +25,7 @@ echo $this->Messages();
 
 	<div id="ledgerPositions">
 		<div class="ledger-position" data-index="0">
+
 			<input
 				type="hidden"
 				name="positions[0][itemid]"
@@ -32,7 +33,8 @@ echo $this->Messages();
 			>
 
 			<div class="dw-form-row">
-				<div class="dw-field dw-field--col-8">
+
+				<div class="dw-field dw-field--col-3">
 					<label class="dw-label">
 						<?php echo $this->translate('ITEMS_SKU') ?>
 					</label>
@@ -44,14 +46,33 @@ echo $this->Messages();
 						autocomplete="off"
 						data-autocomplete-source="/items/item/suggest"
 						data-autocomplete-value="sku"
-						data-autocomplete-target="itemid"
+						data-autocomplete-target="positions[0][itemid]"
 						data-autocomplete-target-value="id"
 						data-autocomplete-min-length="2"
-						data-autocomplete-skip-autosave="1"
+						data-ledger-index="0"
 					>
 				</div>
 
-				<div class="dw-field dw-field--col-3">
+				<div class="dw-field dw-field--col-6">
+					<label class="dw-label">
+						<?php echo $this->translate('ITEMS_TITLE') ?>
+					</label>
+
+					<input
+						type="text"
+						name="positions[0][title]"
+						class="autocomplete dw-input ledger-position-title"
+						autocomplete="off"
+						data-autocomplete-source="/items/item/suggest"
+						data-autocomplete-value="title"
+						data-autocomplete-target="positions[0][itemid]"
+						data-autocomplete-target-value="id"
+						data-autocomplete-min-length="2"
+						data-ledger-index="0"
+					>
+				</div>
+
+				<div class="dw-field dw-field--col-2">
 					<label class="dw-label">
 						<?php echo $this->translate('ITEMS_LEDGER_QUANTITY') ?>
 					</label>
@@ -72,6 +93,7 @@ echo $this->Messages();
 						×
 					</button>
 				</div>
+
 			</div>
 		</div>
 	</div>
@@ -97,14 +119,20 @@ $(function() {
 
 		var html = ''
 			+ '<div class="ledger-position" data-index="' + index + '">'
+
 			+ '<input'
 			+ ' type="hidden"'
 			+ ' name="positions[' + index + '][itemid]"'
 			+ ' class="ledger-position-itemid"'
 			+ '>'
+
 			+ '<div class="dw-form-row">'
-			+ '<div class="dw-field dw-field--col-8">'
-			+ '<label class="dw-label"><?php echo $this->escape($this->translate('ITEMS_SKU')) ?></label>'
+
+			+ '<div class="dw-field dw-field--col-3">'
+			+ '<label class="dw-label">'
+			+ '<?php echo $this->escape($this->translate('ITEMS_SKU')) ?>'
+			+ '</label>'
+
 			+ '<input'
 			+ ' type="text"'
 			+ ' name="positions[' + index + '][sku]"'
@@ -112,14 +140,37 @@ $(function() {
 			+ ' autocomplete="off"'
 			+ ' data-autocomplete-source="/items/item/suggest"'
 			+ ' data-autocomplete-value="sku"'
-			+ ' data-autocomplete-target="itemid"'
+			+ ' data-autocomplete-target="positions[' + index + '][itemid]"'
 			+ ' data-autocomplete-target-value="id"'
 			+ ' data-autocomplete-min-length="2"'
-			+ ' data-autocomplete-skip-autosave="1"'
+			+ ' data-ledger-index="' + index + '"'
 			+ '>'
 			+ '</div>'
-			+ '<div class="dw-field dw-field--col-3">'
-			+ '<label class="dw-label"><?php echo $this->escape($this->translate('ITEMS_LEDGER_QUANTITY')) ?></label>'
+
+			+ '<div class="dw-field dw-field--col-6">'
+			+ '<label class="dw-label">'
+			+ '<?php echo $this->escape($this->translate('ITEMS_TITLE')) ?>'
+			+ '</label>'
+
+			+ '<input'
+			+ ' type="text"'
+			+ ' name="positions[' + index + '][title]"'
+			+ ' class="autocomplete dw-input ledger-position-title"'
+			+ ' autocomplete="off"'
+			+ ' data-autocomplete-source="/items/item/suggest"'
+			+ ' data-autocomplete-value="title"'
+			+ ' data-autocomplete-target="positions[' + index + '][itemid]"'
+			+ ' data-autocomplete-target-value="id"'
+			+ ' data-autocomplete-min-length="2"'
+			+ ' data-ledger-index="' + index + '"'
+			+ '>'
+			+ '</div>'
+
+			+ '<div class="dw-field dw-field--col-2">'
+			+ '<label class="dw-label">'
+			+ '<?php echo $this->escape($this->translate('ITEMS_LEDGER_QUANTITY')) ?>'
+			+ '</label>'
+
 			+ '<input'
 			+ ' type="text"'
 			+ ' name="positions[' + index + '][quantity]"'
@@ -127,12 +178,14 @@ $(function() {
 			+ ' data-precision="4"'
 			+ '>'
 			+ '</div>'
+
 			+ '<div class="dw-field dw-field--col-1">'
 			+ '<button'
 			+ ' type="button"'
 			+ ' class="removeLedgerPosition"'
 			+ '>×</button>'
 			+ '</div>'
+
 			+ '</div>'
 			+ '</div>';
 

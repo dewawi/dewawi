@@ -196,12 +196,6 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 		$items = [];
 
 		foreach ($rows as $row) {
-			$label = trim(
-				(string)$row->sku
-				. ' · '
-				. (string)$row->title
-			);
-
 			$subtitle = [];
 
 			if ((string)$row->manufacturersku !== '') {
@@ -213,7 +207,8 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 
 			$items[] = [
 				'id' => (int)$row->id,
-				'label' => $label,
+				'sku' => (string)$row->sku,
+				'title' => (string)$row->title,
 				'subtitle' => implode(' · ', $subtitle),
 			];
 		}

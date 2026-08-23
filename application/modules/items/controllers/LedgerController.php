@@ -69,13 +69,6 @@ class Items_LedgerController extends DEEC_Controller_Action
 			$this->view->assign([
 				'form' => $form,
 				'options' => $formData['options'],
-				'positions' => [
-					[
-						'itemid' => 0,
-						'sku' => '',
-						'quantity' => '',
-					],
-				],
 			]);
 
 			$this->assignMessages();
@@ -100,6 +93,8 @@ class Items_LedgerController extends DEEC_Controller_Action
 
 		try {
 			$adapter->beginTransaction();
+
+			$created = 0;
 
 			foreach($positions as $position) {
 
@@ -129,6 +124,14 @@ class Items_LedgerController extends DEEC_Controller_Action
 				}
 
 				$stock->apply($row);
+
+				$created++;
+			}
+
+			if($created === 0) {
+				throw new Exception(
+					'MESSAGES_LEDGER_POSITION_REQUIRED'
+				);
 			}
 
 			$adapter->commit();
