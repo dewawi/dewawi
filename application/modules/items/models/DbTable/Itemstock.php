@@ -72,4 +72,57 @@ class Items_Model_DbTable_Itemstock extends Zend_Db_Table_Abstract
 				'incoming' => 0,
 			];
 	}
+
+	public function getTotalValue(
+		?int $warehouseId = null
+	): float {
+		$clientId = $this->getClientId();
+
+		$select = $this->select()
+			->setIntegrityCheck(false)
+			->from(
+				['s' => $this->_name],
+				[
+					'total' => new Zend_Db_Expr(
+						'SUM(
+							s.quantity * (
+								CASE
+									WHEN i.parentid > 0
+										AND (
+											i.cost IS NULL
+											OR i.cost = 0
+										)
+										THEN p.cost
+									ELSE i.cost
+								END
+							)
+						)'
+					),
+				]
+			)
+			->join(
+				['i' => 'item'],
+				'i.id = s.itemid'
+					. ' AND i.clientid = s.clientid',
+				[]
+			)
+			->joinLeft(
+				['p' => 'item'],
+				'p.id = i.parentid'
+					. ' AND p.clientid = i.clientid',
+				[]
+			)
+			->where('s.clientid = ?', $clientId);
+
+		if($warehouseId !== null && $warehouseId > 0) {
+			$select->where(
+				's.warehouseid = ?',
+				$warehouseId
+			);
+		}
+
+		$value = $this->getAdapter()->fetchOne($select);
+
+		return (float)$value;
+	}
 }

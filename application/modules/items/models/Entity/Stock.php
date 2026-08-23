@@ -15,8 +15,23 @@ class Items_Model_Entity_Stock
 				'available' => new Zend_Db_Expr(
 					's.quantity - s.reserved'
 				),
+				'cost' => new Zend_Db_Expr(
+					'CASE
+						WHEN i.parentid > 0
+							AND (i.cost IS NULL OR i.cost = 0)
+							THEN p.cost
+						ELSE i.cost
+					END'
+				),
 				'stockvalue' => new Zend_Db_Expr(
-					's.quantity * i.cost'
+					's.quantity * (
+						CASE
+							WHEN i.parentid > 0
+								AND (i.cost IS NULL OR i.cost = 0)
+								THEN p.cost
+							ELSE i.cost
+						END
+					)'
 				),
 			],
 
@@ -30,6 +45,14 @@ class Items_Model_Entity_Stock
 						'sku AS sku',
 						'title AS itemtitle',
 					],
+				],
+				[
+					'table' => 'item',
+					'alias' => 'p',
+					'on' => 'i.parentid = p.id'
+						. ' AND i.clientid = p.clientid',
+					'columns' => [],
+					'type' => 'left',
 				],
 				[
 					'table' => 'warehouse',

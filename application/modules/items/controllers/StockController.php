@@ -23,6 +23,20 @@ class Items_StockController extends DEEC_Controller_Action
 			'list' => 'Items_Model_List_Stocks',
 			'entity' => Items_Model_Entity_Stock::listConfig(),
 		]);
+
+		$warehouseId = (int)$this->_getParam(
+			'warehouseid',
+			0
+		);
+
+		$stockDb = new Items_Model_DbTable_Itemstock();
+
+		$this->view->stockTotalValue =
+			$stockDb->getTotalValue(
+				$warehouseId > 0
+					? $warehouseId
+					: null
+			);
 	}
 
 	protected function getToolbarClass(): string

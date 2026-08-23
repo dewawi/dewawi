@@ -62,7 +62,6 @@ class Items_Service_Variant
 			);
 
 			$data['parentid'] = $parentId;
-			$data['quantity'] = 0;
 
 			$itemId = $this->_itemDb->create(
 				$data

@@ -11,3 +11,17 @@ echo $this->Pagination();
 <div class="dw-list-page">
 	<?php echo $this->stocks->render(); ?>
 </div>
+
+<?php if(isset($this->stockTotalValue)): ?>
+	<div class="dw-stock-summary">
+		<strong>
+			<?php echo $this->translate(
+				'ITEMS_STOCK_TOTAL_VALUE'
+			) ?>:
+		</strong>
+
+		<?php echo $this->currency(
+			$this->stockTotalValue
+		) ?>
+	</div>
+<?php endif; ?>
