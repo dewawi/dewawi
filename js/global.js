@@ -109,9 +109,21 @@ $(document).ready(function(){
 		else $(this).removeClass('error');
 	});
 
-	$('.add form').on('change', 'input, textarea, select', function() {
-		Dewawi.setDirty(true);
-	});
+	$(document).on(
+		'change',
+		'.add form input, .add form textarea, .add form select',
+		function() {
+			Dewawi.setDirty(true);
+		}
+	);
+
+	$(document).on(
+		'submit',
+		'.add form',
+		function() {
+			Dewawi.setDirty(false);
+		}
+	);
 
 	$('.edit form').on('change', 'input, textarea, select', function() {
 		var $field = $(this);
