@@ -1,0 +1,37 @@
+<div
+	class="ledger-position"
+	data-index="<?php echo (int)$this->index ?>"
+>
+	<input
+		type="hidden"
+		name="positions[<?php echo (int)$this->index ?>][itemid]"
+		class="ledger-position-itemid"
+	>
+
+	<input
+		type="text"
+		name="positions[<?php echo (int)$this->index ?>][sku]"
+		class="autocomplete ledger-position-sku"
+		autocomplete="off"
+		data-autocomplete-source="/items/item/suggest"
+		data-autocomplete-value="sku"
+		data-autocomplete-target="itemid"
+		data-autocomplete-target-value="id"
+		data-autocomplete-min-length="2"
+		data-autocomplete-skip-autosave="1"
+	>
+
+	<input
+		type="text"
+		name="positions[<?php echo (int)$this->index ?>][quantity]"
+		class="number required ledger-position-quantity"
+		data-precision="4"
+	>
+
+	<button
+		type="button"
+		class="remove-ledger-position"
+	>
+		×
+	</button>
+</div>

@@ -121,6 +121,22 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 		return $data;
 	}
 
+	public function canDelete(array $row): bool
+	{
+		$itemId = (int)($row['id'] ?? 0);
+
+		if($itemId <= 0) {
+			return false;
+		}
+
+		$stockDb = new Items_Model_DbTable_Itemstock();
+		$stock = $stockDb->getTotalsByItemId($itemId);
+
+		return (float)$stock['quantity'] === 0.0
+			&& (float)$stock['reserved'] === 0.0
+			&& (float)$stock['incoming'] === 0.0;
+	}
+
 	public function deleteItem($id)
 	{
 		$id = (int)$id;

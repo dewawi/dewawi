@@ -4,6 +4,8 @@
 	'ITEMS_LEDGER_DOCUMENT' => 'Beleg',
 	'ITEMS_LEDGER_COMMENT' => 'Kommentar',
 	'ITEMS_LEDGER_QUANTITY' => 'Anzahl',
+	'ITEMS_LEDGER_ADD_POSITION' => 'Position hinzufügen',
+	'ITEMS_LEDGER_BOOK' => 'Buchen',
 	'ITEMS_LEDGER_TYPE' => 'Zugang/Abgang',
 	'ITEMS_LEDGER_INFLOW' => 'Zugang',
 	'ITEMS_LEDGER_OUTFLOW' => 'Abgang',

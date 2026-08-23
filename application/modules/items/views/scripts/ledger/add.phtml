@@ -24,6 +24,56 @@ echo $this->Messages();
 	</div>
 
 	<div id="ledgerPositions">
+		<div class="ledger-position" data-index="0">
+			<input
+				type="hidden"
+				name="positions[0][itemid]"
+				class="ledger-position-itemid"
+			>
+
+			<div class="dw-form-row">
+				<div class="dw-field dw-field--col-8">
+					<label class="dw-label">
+						<?php echo $this->translate('ITEMS_SKU') ?>
+					</label>
+
+					<input
+						type="text"
+						name="positions[0][sku]"
+						class="autocomplete dw-input ledger-position-sku"
+						autocomplete="off"
+						data-autocomplete-source="/items/item/suggest"
+						data-autocomplete-value="sku"
+						data-autocomplete-target="itemid"
+						data-autocomplete-target-value="id"
+						data-autocomplete-min-length="2"
+						data-autocomplete-skip-autosave="1"
+					>
+				</div>
+
+				<div class="dw-field dw-field--col-3">
+					<label class="dw-label">
+						<?php echo $this->translate('ITEMS_LEDGER_QUANTITY') ?>
+					</label>
+
+					<input
+						type="text"
+						name="positions[0][quantity]"
+						class="number required dw-input ledger-position-quantity"
+						data-precision="4"
+					>
+				</div>
+
+				<div class="dw-field dw-field--col-1">
+					<button
+						type="button"
+						class="removeLedgerPosition"
+					>
+						×
+					</button>
+				</div>
+			</div>
+		</div>
 	</div>
 
 	<button
@@ -37,3 +87,74 @@ echo $this->Messages();
 		<?php echo $this->translate('ITEMS_LEDGER_BOOK') ?>
 	</button>
 </form>
+
+<script type="text/javascript">
+$(function() {
+	var positionIndex = 1;
+
+	$('#addLedgerPosition').on('click', function() {
+		var index = positionIndex++;
+
+		var html = ''
+			+ '<div class="ledger-position" data-index="' + index + '">'
+			+ '<input'
+			+ ' type="hidden"'
+			+ ' name="positions[' + index + '][itemid]"'
+			+ ' class="ledger-position-itemid"'
+			+ '>'
+			+ '<div class="dw-form-row">'
+			+ '<div class="dw-field dw-field--col-8">'
+			+ '<label class="dw-label"><?php echo $this->escape($this->translate('ITEMS_SKU')) ?></label>'
+			+ '<input'
+			+ ' type="text"'
+			+ ' name="positions[' + index + '][sku]"'
+			+ ' class="autocomplete dw-input ledger-position-sku"'
+			+ ' autocomplete="off"'
+			+ ' data-autocomplete-source="/items/item/suggest"'
+			+ ' data-autocomplete-value="sku"'
+			+ ' data-autocomplete-target="itemid"'
+			+ ' data-autocomplete-target-value="id"'
+			+ ' data-autocomplete-min-length="2"'
+			+ ' data-autocomplete-skip-autosave="1"'
+			+ '>'
+			+ '</div>'
+			+ '<div class="dw-field dw-field--col-3">'
+			+ '<label class="dw-label"><?php echo $this->escape($this->translate('ITEMS_LEDGER_QUANTITY')) ?></label>'
+			+ '<input'
+			+ ' type="text"'
+			+ ' name="positions[' + index + '][quantity]"'
+			+ ' class="number required dw-input ledger-position-quantity"'
+			+ ' data-precision="4"'
+			+ '>'
+			+ '</div>'
+			+ '<div class="dw-field dw-field--col-1">'
+			+ '<button'
+			+ ' type="button"'
+			+ ' class="removeLedgerPosition"'
+			+ '>×</button>'
+			+ '</div>'
+			+ '</div>'
+			+ '</div>';
+
+		$('#ledgerPositions').append(html);
+
+		$('#ledgerPositions')
+			.find('.ledger-position:last .ledger-position-sku')
+			.focus();
+	});
+
+	$('#ledgerPositions').on(
+		'click',
+		'.removeLedgerPosition',
+		function() {
+			if($('.ledger-position').length <= 1) {
+				return;
+			}
+
+			$(this)
+				.closest('.ledger-position')
+				.remove();
+		}
+	);
+});
+</script>
