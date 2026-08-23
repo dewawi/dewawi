@@ -1,31 +1,39 @@
-<?php 
+<?php
 $this->title = $this->translate('ITEMS_NEW_LEDGER');
 $this->headTitle($this->title);
 echo $this->Messages();
 ?>
 
-<ul class="tabs">
-	<li><a href="#tabOverview"><?php echo $this->translate('TABS_OVERVIEW') ?></a></li>
-</ul>
-
-<div class="tab_container">
-	<div id="tabOverview" class="tab_content">
-		<form id="ledger" name="ledger" enctype="application/x-www-form-urlencoded" action="" method="post">
-			<div class="row">
-				<div class="col-sm-12 col-lg-7">
-					<dl class="form">
-						<?php echo $this->form->getElement('id') ?>
-						<?php echo $this->form->getElement('sku') ?>
-						<?php echo $this->form->getElement('type') ?>
-						<?php echo $this->form->getElement('quantity') ?>
-						<?php echo $this->form->getElement('warehouseid') ?>
-						<?php echo $this->form->getElement('comment') ?>
-						<?php echo $this->form->getElement('ledgerdate') ?>
-					</dl>
-				</div>
-				<div class="col-sm-12 col-lg-5">
-				</div>
+<form
+	id="ledger"
+	name="ledger"
+	enctype="application/x-www-form-urlencoded"
+	action=""
+	method="post"
+>
+	<div class="row">
+		<div class="col-sm-12 col-lg-7">
+			<div class="dw-form-row">
+				<?php echo $this->form->renderElementWithAttribs('warehouseid') ?>
+				<?php echo $this->form->renderElementWithAttribs('type') ?>
+				<?php echo $this->form->renderElementWithAttribs('reason') ?>
+				<?php echo $this->form->renderElementWithAttribs('ledgerdate') ?>
+				<?php echo $this->form->renderElementWithAttribs('comment') ?>
 			</div>
-		</form>
+		</div>
 	</div>
-</div>
+
+	<div id="ledgerPositions">
+	</div>
+
+	<button
+		type="button"
+		id="addLedgerPosition"
+	>
+		<?php echo $this->translate('ITEMS_LEDGER_ADD_POSITION') ?>
+	</button>
+
+	<button type="submit">
+		<?php echo $this->translate('ITEMS_LEDGER_BOOK') ?>
+	</button>
+</form>

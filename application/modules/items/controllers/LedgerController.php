@@ -47,6 +47,102 @@ class Items_LedgerController extends DEEC_Controller_Action
 			->prepareCreateData($data);
 	}
 
+	public function addAction()
+	{
+		$request = $this->getRequest();
+		$data = $this->getCreateData();
+
+		if(!$request->isPost()) {
+			$formData = $this->getEditForm();
+			$form = $formData['form'];
+
+			$locale = Zend_Registry::get('Zend_Locale');
+
+			$form->setValues(
+				DEEC_Display::rowToFormValues(
+					$form,
+					$data,
+					$locale
+				)
+			);
+
+			$this->view->assign([
+				'form' => $form,
+				'options' => $formData['options'],
+				'positions' => [
+					[
+						'itemid' => 0,
+						'sku' => '',
+						'quantity' => '',
+					],
+				],
+			]);
+
+			$this->assignMessages();
+
+			return;
+		}
+
+		$post = (array)$request->getPost();
+		$positions = (array)($post['positions'] ?? []);
+
+		$common = [
+			'warehouseid' => (int)($post['warehouseid'] ?? 0),
+			'type' => (string)($post['type'] ?? ''),
+			'reason' => (string)($post['reason'] ?? ''),
+			'ledgerdate' => (string)($post['ledgerdate'] ?? ''),
+			'comment' => (string)($post['comment'] ?? ''),
+		];
+
+		$db = $this->getDb();
+		$adapter = $db->getAdapter();
+		$stock = $this->getStockService();
+
+		try {
+			$adapter->beginTransaction();
+
+			foreach($positions as $position) {
+
+				if(
+					empty($position['itemid'])
+					&& trim((string)($position['sku'] ?? '')) === ''
+					&& (float)($position['quantity'] ?? 0) === 0.0
+				) {
+					continue;
+				}
+
+				$ledger = array_merge($common, [
+					'itemid' => (int)($position['itemid'] ?? 0),
+					'sku' => trim((string)($position['sku'] ?? '')),
+					'quantity' => $position['quantity'] ?? 0,
+				]);
+
+				$ledger = $stock->prepareCreateData($ledger);
+
+				$id = $db->create($ledger);
+				$row = $db->getById($id);
+
+				if(!$row) {
+					throw new Exception(
+						'MESSAGES_LEDGER_NOT_FOUND'
+					);
+				}
+
+				$stock->apply($row);
+			}
+
+			$adapter->commit();
+		} catch(Exception $e) {
+			$adapter->rollBack();
+			throw $e;
+		}
+
+		return $this->_helper->redirector->gotoSimple(
+			'index',
+			'ledger'
+		);
+	}
+
 	protected function afterCreate(
 		int $id,
 		array $data
