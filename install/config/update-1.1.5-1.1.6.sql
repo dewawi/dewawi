@@ -24,3 +24,5 @@ CREATE TABLE IF NOT EXISTS `itemvariantopt` (
 
 ALTER TABLE `itematr` ADD `masterid` int(11) DEFAULT NULL AFTER `itemid`;
 ALTER TABLE `itemopt` ADD `masterid` int(11) DEFAULT NULL AFTER `itemid`;
+
+ALTER TABLE `item` DROP COLUMN `quantity`;

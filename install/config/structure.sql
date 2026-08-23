@@ -1153,7 +1153,6 @@ CREATE TABLE IF NOT EXISTS `item` (
   `amazondescription` text DEFAULT NULL,
   `info` text DEFAULT NULL,
   `notes` text DEFAULT NULL,
-  `quantity` decimal(12,4) DEFAULT NULL,
   `minquantity` decimal(12,4) DEFAULT NULL,
   `orderquantity` decimal(12,4) DEFAULT NULL,
   `inventory` int(11) NOT NULL DEFAULT 0,
