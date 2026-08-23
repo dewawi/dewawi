@@ -3121,7 +3121,7 @@ function markFieldSaved($field) {
 		},
 
 		bindFilters: function () {
-			$(document).on('change', '.dw-toolbar select, .dw-filter-panel select', function () {
+			$(document).on('change', '.dw-toolbar select, .dw-filter-panel select, .dw-filter-panel .datePicker', function () {
 				var $field = $(this);
 
 				DewawiToolbar.persistField($field);
