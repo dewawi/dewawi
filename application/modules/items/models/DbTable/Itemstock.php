@@ -1,6 +1,6 @@
 <?php
 
-class Items_Model_DbTable_Itemstock extends Zend_Db_Table_Abstract
+class Items_Model_DbTable_Itemstock extends DEEC_Model_DbTable_Entity
 {
 	protected $_name = 'itemstock';
 
@@ -9,7 +9,6 @@ class Items_Model_DbTable_Itemstock extends Zend_Db_Table_Abstract
 		int $warehouseId,
 		float $delta
 	): void {
-		$client = Zend_Registry::get('Client');
 		$user = Zend_Registry::get('User');
 		$date = date('Y-m-d H:i:s');
 
@@ -20,20 +19,23 @@ class Items_Model_DbTable_Itemstock extends Zend_Db_Table_Abstract
 				`quantity`,
 				`clientid`,
 				`created`,
-				`createdby`
+				`createdby`,
+				`deleted`
 			)
-			VALUES (?, ?, ?, ?, ?, ?)
+			VALUES (?, ?, ?, ?, ?, ?, 0)
 			ON DUPLICATE KEY UPDATE
-				`quantity` = `quantity` + VALUES(`quantity`),
+				`quantity` = COALESCE(`quantity`, 0)
+					+ VALUES(`quantity`),
 				`modified` = VALUES(`created`),
-				`modifiedby` = VALUES(`createdby`)
+				`modifiedby` = VALUES(`createdby`),
+				`deleted` = 0
 		';
 
 		$this->getAdapter()->query($sql, [
 			$itemId,
 			$warehouseId,
 			$delta,
-			(int)$client['id'],
+			$this->getClientId(),
 			$date,
 			(int)$user['id'],
 		]);
@@ -57,10 +59,8 @@ class Items_Model_DbTable_Itemstock extends Zend_Db_Table_Abstract
 				]
 			)
 			->where('itemid = ?', $itemId)
-			->where(
-				'clientid = ?',
-				(int)Zend_Registry::get('Client')['id']
-			);
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0);
 
 		$row = $this->fetchRow($select);
 
@@ -76,26 +76,27 @@ class Items_Model_DbTable_Itemstock extends Zend_Db_Table_Abstract
 	public function getTotalValue(
 		?int $warehouseId = null
 	): float {
-		$clientId = $this->getClientId();
-
 		$select = $this->select()
 			->setIntegrityCheck(false)
 			->from(
 				['s' => $this->_name],
 				[
 					'total' => new Zend_Db_Expr(
-						'SUM(
-							s.quantity * (
-								CASE
-									WHEN i.parentid > 0
-										AND (
-											i.cost IS NULL
-											OR i.cost = 0
-										)
-										THEN p.cost
-									ELSE i.cost
-								END
-							)
+						'COALESCE(
+							SUM(
+								COALESCE(s.quantity, 0) * (
+									CASE
+										WHEN i.parentid > 0
+											AND (
+												i.cost IS NULL
+												OR i.cost = 0
+											)
+											THEN COALESCE(p.cost, 0)
+										ELSE COALESCE(i.cost, 0)
+									END
+								)
+							),
+							0
 						)'
 					),
 				]
@@ -112,7 +113,9 @@ class Items_Model_DbTable_Itemstock extends Zend_Db_Table_Abstract
 					. ' AND p.clientid = i.clientid',
 				[]
 			)
-			->where('s.clientid = ?', $clientId);
+			->where('s.clientid = ?', $this->getClientId())
+			->where('s.deleted = ?', 0)
+			->where('i.deleted = ?', 0);
 
 		if($warehouseId !== null && $warehouseId > 0) {
 			$select->where(
