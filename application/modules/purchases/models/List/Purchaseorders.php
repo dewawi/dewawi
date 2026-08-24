@@ -6,7 +6,7 @@ class Purchases_Model_List_Purchaseorders extends DEEC_List
 	{
 		return [
 			[
-				'name' => 'quoteid',
+				'name' => 'purchaseorderid',
 				'label' => 'PURCHASE_ORDERS_PURCHASE_ORDER_ID',
 				'type' => 'link',
 				'class' => 'dw-col-id',
