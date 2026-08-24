@@ -789,10 +789,12 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 	): array {
 		$taxrate = $this->getPrimaryPositionTaxrate();
 
+		$uomDb = new Application_Model_DbTable_Uom();
+		$defaultUom = $uomDb->getDefault();
+
 		$data = [
 			'parentid' => $params['parentid'],
-			$params['type'] . 'setid' =>
-				$params['setid'],
+			$params['type'] . 'setid' => $params['setid'],
 			'masterid' => $params['masterid'],
 			'itemid' => 0,
 			'sku' => '',
@@ -804,7 +806,7 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			'quantity' => 1,
 			'total' => 0,
 			'currency' => $parent['currency'],
-			'uom' => '',
+			'uom' => $defaultUom ? (string)$defaultUom['title'] : '',
 		];
 
 		$itemId = (int)$this->_getParam(
