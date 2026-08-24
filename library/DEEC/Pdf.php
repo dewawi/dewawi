@@ -244,7 +244,7 @@ class DEEC_Pdf
 		}
 
 		$pages['offer_start'] = $pdf->getPage();
-		$this->renderPositions($pdf, $document, $positions, $options, $optionSets, $attributesByGroup, $settings, !empty($settings['showCover']));
+		$this->renderPositions($pdf, $document, $positions, $options, $optionSets, $attributesByGroup, $media, $mediaPath, $settings, !empty($settings['showCover']));
 		$pages['offer_end'] = $pdf->getPage();
 
 		if (!empty($settings['showTotals']) || !empty($settings['showFooter'])) {
@@ -771,13 +771,14 @@ class DEEC_Pdf
 	 * Draws the main positions table (header + rows).
 	 * Expects a Traversable/array of positions with fields: id, sku, title, description, price, quantity, uom, image (optional).
 	 */
-	private function renderPositions(TCPDF $pdf, array $document, $positions, $options, $optionSets, $attributesByGroup = [], array $settings = [], bool $startOnNewPage = true)
+	private function renderPositions(TCPDF $pdf, array $document, $positions, $options, $optionSets, $attributesByGroup = [], $media, $mediaPath, array $settings = [], bool $startOnNewPage = true)
 	{
 		$settings = array_merge([
 			'showPrices' => true,
 			'showDiscounts' => false,
 			'showOptions' => true,
 			'showAttributes' => true,
+			'showPositionImages' => true,
 		], $settings);
 
 		if (!count($positions)) {
@@ -814,12 +815,19 @@ class DEEC_Pdf
 				continue;
 			}
 
+			$imageFile = null;
+
+			if (!empty($settings['showPositionImages'])) {
+				$imageFile = $this->getPositionImage($p, $media, $mediaPath);
+			}
+
 			list($descX, $descWidth) = $this->drawPositionRow(
 				$pdf,
 				$p,
 				(string)$mainIndex,
 				$settings,
-				false
+				false,
+				$imageFile
 			);
 
 			if (!empty($settings['showAttributes']) && isset($attributesByGroup[$p->id])) {
@@ -1361,7 +1369,34 @@ class DEEC_Pdf
 		$pdf->ln(5);
 	}
 
-	private function drawPositionRow(TCPDF $pdf, $p, string $positionNumber, array $settings, bool $isChild = false)
+	private function getPositionImage($position, array $media, string $mediaPath): ?string
+	{
+		$itemId = (int)($position->itemid ?? 0);
+
+		if ($itemId <= 0 || empty($media[$itemId])) {
+			return null;
+		}
+
+		foreach ($media[$itemId] as $image) {
+			$url = is_array($image)
+				? ($image['url'] ?? '')
+				: ($image->url ?? '');
+
+			if ($url === '') {
+				continue;
+			}
+
+			$file = $mediaPath . $url;
+
+			if (is_file($file)) {
+				return $file;
+			}
+		}
+
+		return null;
+	}
+
+	private function drawPositionRow(TCPDF $pdf, $p, string $positionNumber, array $settings, bool $isChild = false, ?string $imageFile = null)
 	{
 		$x = $pdf->GetX();
 		$y = $pdf->GetY();
@@ -1369,6 +1404,11 @@ class DEEC_Pdf
 		$pdf->setCellPaddings(0, 2, 0, 0);
 
 		$indent = $isChild ? 8 : 0;
+
+		$imageWidth = 25;
+		$imageHeight = 25;
+		$imageGap = 3;
+		$hasImage = !$isChild && $imageFile !== null;
 
 		$title = trim((string)($p->title ?? ''));
 		$desc = trim((string)($p->description ?? ''));
@@ -1378,13 +1418,30 @@ class DEEC_Pdf
 		$price = $p->price ?? 0;
 		$total = $p->total ?? 0;
 
-		$descX = $x + 10 + $indent;
-		$descWidth = (!empty($settings['showPrices']) ? 98 : 95) - $indent;
+		if (!empty($settings['showPrices'])) {
+			$descX = $x + 10 + $indent;
+			$descWidth = 98 - $indent;
+		} else {
+			$descX = $x + 35 + $indent;
+			$descWidth = 95 - $indent;
+		}
+
+		$textX = $descX;
+		$textWidth = $descWidth;
+
+		if ($hasImage) {
+			$textX += $imageWidth + $imageGap;
+			$textWidth -= $imageWidth + $imageGap;
+		}
 
 		$fontSize = $isChild ? 8.5 : 9;
 		$titleFontSize = $isChild ? 8.5 : 9;
 
 		$pdf->SetFont('freesans', '', $fontSize);
+
+		if ($hasImage) {
+			$pdf->Image($imageFile, $descX, $y + 2, $imageWidth, $imageHeight, '', '', 'N', true, 300, '', false, false, 0, 'CM');
+		}
 
 		if (!empty($settings['showPrices'])) {
 			// Right side fixed columns
@@ -1403,19 +1460,19 @@ class DEEC_Pdf
 
 			if ($sku !== '') {
 				$pdf->SetFont('freesans', '', $fontSize);
-				$pdf->MultiCell(108 - $indent, 0, $sku, 0, 'L', false, 1, $x + 10 + $indent, $currentY, true, 0);
+				$pdf->MultiCell($textWidth, 0, $sku, 0, 'L', false, 1, $textX, $currentY, true, 0);
 				$currentY = $pdf->GetY();
 			}
 
 			if ($title !== '') {
 				$pdf->SetFont('freesansb', 'B', $titleFontSize);
-				$pdf->MultiCell(108 - $indent, 0, $title, 0, 'L', false, 1, $x + 10 + $indent, $currentY, true, 0);
+				$pdf->MultiCell($textWidth, 0, $title, 0, 'L', false, 1, $textX, $currentY, true, 0);
 				$currentY = $pdf->GetY();
 			}
 
 			if ($desc !== '') {
 				$pdf->SetFont('freesans', '', $fontSize);
-				$pdf->MultiCell(98 - $indent, 0, $desc, 0, 'L', false, 1, $x + 10 + $indent, $currentY, true, 0);
+				$pdf->MultiCell($textWidth, 0, $desc, 0, 'L', false, 1, $textX, $currentY, true, 0);
 				$currentY = $pdf->GetY();
 			}
 		} else {
@@ -1431,23 +1488,35 @@ class DEEC_Pdf
 
 			if ($sku !== '') {
 				$pdf->SetFont('freesans', '', $fontSize);
-				$pdf->MultiCell(25 - $indent, 0, $sku, 0, 'C', false, 1, $x + 10 + $indent, $currentY, true, 0);
+				$pdf->MultiCell($textWidth, 0, $sku, 0, 'C', false, 1, $textX, $currentY, true, 0);
 			}
 
 			$textX = $x + 35 + $indent;
 
 			if ($title !== '') {
 				$pdf->SetFont('freesansb', 'B', $titleFontSize);
-				$pdf->MultiCell(95 - $indent, 0, $title, 0, 'L', false, 1, $textX, $currentY, true, 0);
+				$pdf->MultiCell($textWidth, 0, $title, 0, 'L', false, 1, $textX, $currentY, true, 0);
 				$currentY = $pdf->GetY();
 			}
 
 			if ($desc !== '') {
 				$pdf->SetFont('freesans', '', $fontSize);
-				$pdf->MultiCell(95 - $indent, 0, $desc, 0, 'L', false, 1, $textX, $currentY, true, 0);
+				$pdf->MultiCell($textWidth, 0, $desc, 0, 'L', false, 1, $textX, $currentY, true, 0);
 				$currentY = $pdf->GetY();
 			}
 		}
+
+		$rowBottom = $pdf->GetY();
+
+		if ($hasImage) {
+			$imageBottom = $y + $imageHeight + 2;
+
+			if ($imageBottom > $rowBottom) {
+				$rowBottom = $imageBottom;
+			}
+		}
+
+		$pdf->SetY($rowBottom);
 
 		return [$descX, $descWidth];
 	}
