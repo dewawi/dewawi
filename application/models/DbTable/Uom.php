@@ -2,43 +2,24 @@
 
 class Application_Model_DbTable_Uom extends DEEC_Model_DbTable_Entity
 {
-
 	protected $_name = 'uom';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_client = null;
-
-	public function init()
+	public function getUoms(): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
-	}
+		$select = $this->select()
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->order('ordering ASC')
+			->order('id ASC');
 
-	public function getUom($id)
-	{
-		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
-		if (!$row) {
-			throw new Exception("Could not find row $id");
+		$rows = $this->fetchAll($select);
+
+		$uoms = [];
+
+		foreach ($rows as $uom) {
+			$uoms[(int)$uom->id] = $uom->title;
 		}
-		return $row->toArray();
-	}
 
-	public function getUoms()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-
-		$uoms = array();
-		foreach($data as $uom) {
-			$uoms[$uom->id] = $uom->title;
-		}
 		return $uoms;
 	}
 
