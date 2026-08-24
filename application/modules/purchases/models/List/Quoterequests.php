@@ -6,7 +6,7 @@ class Purchases_Model_List_Quoterequests extends DEEC_List
 	{
 		return [
 			[
-				'name' => 'quoteid',
+				'name' => 'quoterequestid',
 				'label' => 'QUOTE_REQUESTS_QUOTE_REQUEST_ID',
 				'type' => 'link',
 				'class' => 'dw-col-id',
@@ -46,7 +46,7 @@ class Purchases_Model_List_Quoterequests extends DEEC_List
 				'empty_label' => 'TOOLBAR_NEW',
 			],
 			[
-				'name' => 'quotedate',
+				'name' => 'quoterequestdate',
 				'label' => 'QUOTE_REQUESTS_QUOTE_REQUEST_DATE',
 				'type' => 'date',
 				'format' => 'd.m.Y',

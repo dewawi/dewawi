@@ -46,7 +46,7 @@ class Purchases_Model_List_Purchaseorders extends DEEC_List
 				'empty_label' => 'TOOLBAR_NEW',
 			],
 			[
-				'name' => 'quotedate',
+				'name' => 'purchaseorderdate',
 				'label' => 'PURCHASE_ORDERS_PURCHASE_ORDER_DATE',
 				'type' => 'date',
 				'format' => 'd.m.Y',
