@@ -1488,10 +1488,8 @@ class DEEC_Pdf
 
 			if ($sku !== '') {
 				$pdf->SetFont('freesans', '', $fontSize);
-				$pdf->MultiCell($textWidth, 0, $sku, 0, 'C', false, 1, $textX, $currentY, true, 0);
+				$pdf->MultiCell(25 - $indent, 0, $sku, 0, 'C', false, 1, $x + 10 + $indent, $currentY, true, 0);
 			}
-
-			$textX = $x + 35 + $indent;
 
 			if ($title !== '') {
 				$pdf->SetFont('freesansb', 'B', $titleFontSize);
@@ -1504,6 +1502,8 @@ class DEEC_Pdf
 				$pdf->MultiCell($textWidth, 0, $desc, 0, 'L', false, 1, $textX, $currentY, true, 0);
 				$currentY = $pdf->GetY();
 			}
+
+
 		}
 
 		$rowBottom = $pdf->GetY();
