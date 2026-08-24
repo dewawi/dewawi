@@ -26,3 +26,5 @@ ALTER TABLE `itematr` ADD `masterid` int(11) DEFAULT NULL AFTER `itemid`;
 ALTER TABLE `itemopt` ADD `masterid` int(11) DEFAULT NULL AFTER `itemid`;
 
 ALTER TABLE `item` DROP COLUMN `quantity`;
+
+ALTER TABLE `uom` ADD `default` tinyint(1) NOT NULL DEFAULT 0 AFTER `ordering`;
