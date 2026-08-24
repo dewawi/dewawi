@@ -220,6 +220,7 @@ class DEEC_Pdf
 		$options = $payload['options'];
 		$optionSets = $payload['optionSets'];
 		$attributesByGroup = $payload['attributesByGroup'];
+		$media = $payload['extra']['media'] ?? [];
 		$settings = $payload['settings'];
 		$clientId = (int)($payload['clientId'] ?? 0);
 		$controller = (string)($payload['meta']['controller'] ?? '');
@@ -260,11 +261,11 @@ class DEEC_Pdf
 
 		if (!empty($settings['showCover'])) {
 			$pages['images_start'] = $pdf->getPage();
-			$this->renderImages($pdf, $positions, $mediaPath);
+			$this->renderImages($pdf, $positions, $media, $mediaPath);
 			$pages['images_end'] = $pdf->getPage();
 
 			$this->renderTableOfContentsOnCover($pdf, $document, $template, $coverY, $pages, $settings);
-			$this->renderCoverImage($pdf, $positions, $mediaPath);
+			$this->renderCoverImage($pdf, $positions, $media, $mediaPath);
 		}
 
 		if (!empty($settings['showHeader'])) {
@@ -611,34 +612,39 @@ class DEEC_Pdf
 		return max($pdf->GetY() + 8, 90);
 	}
 
-	private function renderCoverImage(TCPDF $pdf, $positions, $mediaPath)
+	private function renderCoverImage(TCPDF $pdf, $positions, array $media, string $mediaPath): void
 	{
-		// Draw on page 1
 		$pdf->setPage(1);
 
-		// --- Display first product image if available
-		$mediaDb = new Application_Model_DbTable_Media();
+		foreach ($positions as $position) {
+			if ((int)$position->masterid !== 0 || empty($position->itemid)) {
+				continue;
+			}
 
-		foreach ($positions as $p) {
-			if ((int)$p->masterid !== 0) continue; // only main items
+			$itemId = (int)$position->itemid;
 
-			if (!empty($p->itemid)) {
-				$images = $mediaDb->getByParentId($p->itemid, 'items', 'item');
-				if (!count($images)) continue;
+			if (empty($media[$itemId])) {
+				continue;
+			}
 
-				foreach ($images as $img) {
-					$url = $img['url'] ?? null;
-					$title = $img['title'] ?? '';
+			foreach ($media[$itemId] as $image) {
+				$url = is_array($image)
+					? ($image['url'] ?? '')
+					: ($image->url ?? '');
 
-					if (!$url) continue;
-					$file = $mediaPath . $url;
-					if (!is_file($file)) continue;
-
-					$pdf->Image($file, 120, 110, 85, 0, '', '', 'N');
-
-					// done after the first valid image
-					return;
+				if ($url === '') {
+					continue;
 				}
+
+				$file = $mediaPath . $url;
+
+				if (!is_file($file)) {
+					continue;
+				}
+
+				$pdf->Image($file, 120, 110, 85, 0, '', '', 'N');
+
+				return;
 			}
 		}
 	}
@@ -1126,41 +1132,65 @@ class DEEC_Pdf
 		return $height;
 	}
 
-	/**
-	 * Renders an “images” section where each item image is put on its own page with a caption.
-	 * Expects you can fetch media by itemid via Shops model.
-	 */
-	private function renderImages(TCPDF $pdf, $positions, $mediaPath)
+	private function renderImages(TCPDF $pdf, $positions, array $media, string $mediaPath): void
 	{
-		if (!count($positions)) return;
+		if (!count($positions)) {
+			return;
+		}
 
-		$mediaDb = new Application_Model_DbTable_Media();
+		foreach ($positions as $position) {
+			if ((int)$position->masterid !== 0 || empty($position->itemid)) {
+				continue;
+			}
 
-		foreach ($positions as $p) {
-			if ((int)$p->masterid !== 0) continue; // only main items
+			$itemId = (int)$position->itemid;
 
-			if (!empty($p->itemid)) {
-				$images = $mediaDb->getByParentId($p->itemid, 'items', 'item');
-				if (!count($images)) continue;
+			if (empty($media[$itemId])) {
+				continue;
+			}
 
-				foreach ($images as $img) {
-					$url = $img['url'] ?? null;
-					$title = $img['title'] ?? '';
+			foreach ($media[$itemId] as $image) {
+				$url = is_array($image)
+					? ($image['url'] ?? '')
+					: ($image->url ?? '');
 
-					if (!$url) continue;
-					$file = $mediaPath . $url;
-					if (!is_file($file)) continue;
+				$title = is_array($image)
+					? ($image['title'] ?? '')
+					: ($image->title ?? '');
 
-					$pdf->AddPage();
-					$pdf->ln(4);
-					$pdf->SetFont('freesansb', 'B', 11);
-					$pdf->MultiCell(108, 0, $title, 0, 'L', false, 1, '', '', true, 0);
-					$pdf->SetFont('freesansb', '', 9);
-					$pdf->MultiCell(108, 0, $this->translate('DOCUMENTS_ILLUSTRATION_SIMILAR'), 0, 'L', false, 1, '', '', true, 0);
-					$pdf->ln(4);
-					$pdf->Image($file, 20, '', 165, 0, '', '', 'N');
-					$pdf->SetFont('freesansb', '', 10);
+				if ($url === '') {
+					continue;
 				}
+
+				$file = $mediaPath . $url;
+
+				if (!is_file($file)) {
+					continue;
+				}
+
+				$pdf->AddPage();
+				$pdf->ln(4);
+
+				$pdf->SetFont('freesansb', 'B', 11);
+				$pdf->MultiCell(108, 0, $title, 0, 'L', false, 1, '', '', true, 0);
+
+				$pdf->SetFont('freesansb', '', 9);
+				$pdf->MultiCell(
+					108,
+					0,
+					$this->translate('DOCUMENTS_ILLUSTRATION_SIMILAR'),
+					0,
+					'L',
+					false,
+					1,
+					'',
+					'',
+					true,
+					0
+				);
+
+				$pdf->ln(4);
+				$pdf->Image($file, 20, '', 165, 0, '', '', 'N');
 			}
 		}
 	}
