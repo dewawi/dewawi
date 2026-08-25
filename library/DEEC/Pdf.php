@@ -259,11 +259,13 @@ class DEEC_Pdf
 			$pages['options_end'] = $pdf->getPage();
 		}
 
-		if (!empty($settings['showCover'])) {
+		if (!empty($settings['showImages'])) {
 			$pages['images_start'] = $pdf->getPage();
 			$this->renderImages($pdf, $positions, $media, $mediaPath);
 			$pages['images_end'] = $pdf->getPage();
+		}
 
+		if (!empty($settings['showCover'])) {
 			$this->renderTableOfContentsOnCover($pdf, $document, $template, $coverY, $pages, $settings);
 			$this->renderCoverImage($pdf, $positions, $media, $mediaPath);
 		}
