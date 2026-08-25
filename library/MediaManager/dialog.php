@@ -3,6 +3,12 @@ $time = time();
 
 $config = include 'config/config.php';
 
+$session = &$_SESSION['MediaManager'];
+
+if (!is_array($session)) {
+    $session = [];
+}
+
 if (USE_ACCESS_KEYS == true){
 	if (!isset($_GET['akey'], $config['access_keys']) || empty($config['access_keys'])){
 		die('Access Denied!');
@@ -15,7 +21,7 @@ if (USE_ACCESS_KEYS == true){
 	}
 }
 
-$_SESSION['RF']["verify"] = "RESPONSIVEfilemanager";
+$session["verify"] = "RESPONSIVEfilemanager";
 
 if (isset($_POST['submit'])) {
     include 'upload.php';
@@ -24,14 +30,14 @@ if (isset($_POST['submit'])) {
 
     list($preferred_language) = array_values(array_filter(array(
         isset($_GET['lang']) ? $_GET['lang'] : null,
-        isset($_SESSION['RF']['language']) ? $_SESSION['RF']['language'] : null,
+        isset($session['language']) ? $session['language'] : null,
         $config['default_language']
     )));
 
     if (array_key_exists($preferred_language, $available_languages)) {
-        $_SESSION['RF']['language'] = $preferred_language;
+        $session['language'] = $preferred_language;
     } else {
-        $_SESSION['RF']['language'] = $config['default_language'];
+        $session['language'] = $config['default_language'];
     }
 }
 
@@ -41,14 +47,14 @@ $subdir_path = '';
 
 if (isset($_GET['fldr']) && !empty($_GET['fldr'])) {
     $subdir_path = rawurldecode(trim(strip_tags($_GET['fldr']), "/"));
-} elseif (isset($_SESSION['RF']['fldr']) && !empty($_SESSION['RF']['fldr'])) {
-    $subdir_path = rawurldecode(trim(strip_tags($_SESSION['RF']['fldr']), "/"));
+} elseif (isset($session['fldr']) && !empty($session['fldr'])) {
+    $subdir_path = rawurldecode(trim(strip_tags($session['fldr']), "/"));
 }
 
 if (checkRelativePath($subdir_path)) {
     $subdir = strip_tags($subdir_path) . "/";
-    $_SESSION['RF']['fldr'] = $subdir_path;
-    $_SESSION['RF']["filter"] = '';
+    $session['fldr'] = $subdir_path;
+    $session["filter"] = '';
 } else {
     $subdir = '';
 }
@@ -83,29 +89,45 @@ if ($config['show_total_size']) {
 /***
  * SUB-DIR CODE
  ***/
-if (!isset($_SESSION['RF']["subfolder"])) {
-    $_SESSION['RF']["subfolder"] = '';
+if (!isset($session['subfolder'])) {
+    $session['subfolder'] = '';
 }
+
 $rfm_subfolder = '';
 
-if (!empty($_SESSION['RF']["subfolder"])
-    && strpos($_SESSION['RF']["subfolder"], "/") !== 0
-    && strpos($_SESSION['RF']["subfolder"], '.') === FALSE
+if (
+    !empty($session['subfolder'])
+    && strpos($session['subfolder'], '/') !== 0
+    && strpos($session['subfolder'], '.') === false
 ) {
-    $rfm_subfolder = $_SESSION['RF']['subfolder'];
+    $rfm_subfolder = $session['subfolder'];
 }
 
-if ($rfm_subfolder != "" && $rfm_subfolder[strlen($rfm_subfolder) - 1] != "/") {
-    $rfm_subfolder .= "/";
+if (
+    $rfm_subfolder !== ''
+    && $rfm_subfolder[strlen($rfm_subfolder) - 1] !== '/'
+) {
+    $rfm_subfolder .= '/';
 }
 
 $ftp = ftp_con($config);
 
-if (($ftp && !$ftp->isDir($config['ftp_base_folder'] . $config['upload_dir'] . $rfm_subfolder . $subdir)) || (!$ftp && !file_exists($config['current_path'] . $rfm_subfolder . $subdir))) {
+if (
+    ($ftp && !$ftp->isDir(
+        $config['ftp_base_folder']
+        . $config['upload_dir']
+        . $rfm_subfolder
+        . $subdir
+    ))
+    || (!$ftp && !file_exists(
+        $config['current_path']
+        . $rfm_subfolder
+        . $subdir
+    ))
+) {
     $subdir = '';
-    $rfm_subfolder = "";
+    $rfm_subfolder = '';
 }
-
 
 $cur_dir		= $config['upload_dir'].$rfm_subfolder.$subdir;
 $cur_dir_thumb	= $config['thumbs_upload_dir'].$rfm_subfolder.$subdir;
@@ -164,12 +186,12 @@ if (isset($_GET['multiple'])) {
 
 if (isset($_GET['callback'])) {
     $callback = strip_tags($_GET['callback']);
-    $_SESSION['RF']["callback"] = $callback;
+    $session["callback"] = $callback;
 } else {
     $callback = 0;
 
-    if (isset($_SESSION['RF']["callback"])) {
-        $callback = $_SESSION['RF']["callback"];
+    if (isset($session["callback"])) {
+        $callback = $session["callback"];
     }
 }
 
@@ -182,25 +204,25 @@ $crossdomain = isset($_GET['crossdomain']) ? strip_tags($_GET['crossdomain']) : 
 $crossdomain=!!$crossdomain;
 
 //view type
-if(!isset($_SESSION['RF']["view_type"]))
+if(!isset($session["view_type"]))
 {
     $view = $config['default_view'];
-    $_SESSION['RF']["view_type"] = $view;
+    $session["view_type"] = $view;
 }
 
 if (isset($_GET['view']))
 {
     $view = fix_get_params($_GET['view']);
-    $_SESSION['RF']["view_type"] = $view;
+    $session["view_type"] = $view;
 }
 
-$view = $_SESSION['RF']["view_type"];
+$view = $session["view_type"];
 
 //filter
 $filter = "";
-if(isset($_SESSION['RF']["filter"]))
+if(isset($session["filter"]))
 {
-    $filter = $_SESSION['RF']["filter"];
+    $filter = $session["filter"];
 }
 
 if(isset($_GET["filter"]))
@@ -208,26 +230,26 @@ if(isset($_GET["filter"]))
     $filter = fix_get_params($_GET["filter"]);
 }
 
-if (!isset($_SESSION['RF']['sort_by']))
+if (!isset($session['sort_by']))
 {
-    $_SESSION['RF']['sort_by'] = 'name';
+    $session['sort_by'] = 'name';
 }
 
 if (isset($_GET["sort_by"])) {
-    $sort_by = $_SESSION['RF']['sort_by'] = fix_get_params($_GET["sort_by"]);
+    $sort_by = $session['sort_by'] = fix_get_params($_GET["sort_by"]);
 } else {
-    $sort_by = $_SESSION['RF']['sort_by'];
+    $sort_by = $session['sort_by'];
 }
 
 
-if (!isset($_SESSION['RF']['descending'])) {
-    $_SESSION['RF']['descending'] = TRUE;
+if (!isset($session['descending'])) {
+    $session['descending'] = TRUE;
 }
 
 if (isset($_GET["descending"])) {
-    $descending = $_SESSION['RF']['descending'] = fix_get_params($_GET["descending"]) == 1;
+    $descending = $session['descending'] = fix_get_params($_GET["descending"]) == 1;
 } else {
-    $descending = $_SESSION['RF']['descending'];
+    $descending = $session['descending'];
 }
 
 $boolarray = array(false => 'false', true => 'true');
@@ -356,8 +378,6 @@ $get_params = http_build_query($get_params);
 
         
         <script src="js/include.js?v=<?php echo $version; ?>"></script>
-
-        <?php include 'dewawi-dialog.php'; ?>
 </head>
 <body>
     <!-- The Templates plugin is included to render the upload/download listings -->
@@ -426,7 +446,7 @@ $get_params = http_build_query($get_params);
     <input type="hidden" id="lang_files" value="<?php echo trans('Files');?>" />
     <input type="hidden" id="lang_folders" value="<?php echo trans('Folders');?>" />
     <input type="hidden" id="lang_files_on_clipboard" value="<?php echo trans('Files_ON_Clipboard');?>" />
-    <input type="hidden" id="clipboard" value="<?php echo ((isset($_SESSION['RF']['clipboard']['path']) && trim($_SESSION['RF']['clipboard']['path']) != null) ? 1 : 0);?>" />
+    <input type="hidden" id="clipboard" value="<?php echo ((isset($session['clipboard']['path']) && trim($session['clipboard']['path']) != null) ? 1 : 0);?>" />
     <input type="hidden" id="lang_clear_clipboard_confirm" value="<?php echo trans('Clear_Clipboard_Confirm');?>" />
     <input type="hidden" id="lang_file_permission" value="<?php echo trans('File_Permission');?>" />
     <input type="hidden" id="chmod_files_allowed" value="<?php if($config['chmod_files']) echo 1; else echo 0;?>" />

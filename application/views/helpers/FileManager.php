@@ -7,7 +7,7 @@ class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
 	public function FileManager() {
 
 		$client = Zend_Registry::get('Client');
-		$defaultNamespace = new Zend_Session_Namespace('RF');
+		$defaultNamespace = new Zend_Session_Namespace('FileManager');
 
 		$defaultNamespace->fldr = '';
 		$defaultNamespace->writable = true;

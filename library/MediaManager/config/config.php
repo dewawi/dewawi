@@ -14,10 +14,10 @@ $current_path = '../../media/';
 $thumbs_base_path = '../../cache/thumbs/media/';
 $thumbs_upload_dir = '/cache/thumbs/media/';
 //echo $current_path;
-//echo $_SESSION['RF']['subfolder'];
+//echo $_SESSION['MediaManager']['subfolder'];
 
 $writable = false;
-if(isset($_SESSION['RF']['writable']) && $_SESSION['RF']['writable']) $writable = true;
+if(isset($_SESSION['MediaManager']['writable']) && $_SESSION['MediaManager']['writable']) $writable = true;
 
 mb_internal_encoding('UTF-8');
 mb_http_output('UTF-8');
@@ -340,7 +340,7 @@ $config = array(
     // 0 => boxes
     // 1 => detailed list (1 column)
     // 2 => columns list (multiple columns depending on the width of the page)
-    // YOU CAN ALSO PASS THIS PARAMETERS USING SESSION VAR => $_SESSION['RF']["VIEW"]=
+    // YOU CAN ALSO PASS THIS PARAMETERS USING SESSION VAR => $_SESSION['MediaManager']["VIEW"]=
     //
     //******************
     'default_view'                            => 0,
