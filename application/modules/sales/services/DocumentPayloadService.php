@@ -151,6 +151,8 @@ class Sales_Service_DocumentPayloadService
 			'showFooter' => 1,
 			'showHeader' => 1,
 			'showCover' => 0,
+			'showImages' => 0,
+			'showPositionImages' => 0,
 		];
 
 		if ($controller === 'quote') {
@@ -158,6 +160,8 @@ class Sales_Service_DocumentPayloadService
 			$defaults['showIncludedOptions'] = 1;
 			$defaults['showAttributes'] = 1;
 			$defaults['showCover'] = 1;
+			$defaults['showImages'] = 1;
+			$defaults['showPositionImages'] = 1;
 		}
 
 		if ($controller === 'invoice') {
@@ -165,6 +169,8 @@ class Sales_Service_DocumentPayloadService
 			$defaults['showIncludedOptions'] = 0;
 			$defaults['showAttributes'] = 0;
 			$defaults['showCover'] = 0;
+			$defaults['showImages'] = 1;
+			$defaults['showPositionImages'] = 1;
 		}
 
 		if ($controller === 'deliveryorder') {
@@ -174,6 +180,8 @@ class Sales_Service_DocumentPayloadService
 			$defaults['showIncludedOptions'] = 0;
 			$defaults['showAttributes'] = 0;
 			$defaults['showCover'] = 0;
+			$defaults['showImages'] = 1;
+			$defaults['showPositionImages'] = 1;
 		}
 
 		return [
@@ -186,6 +194,8 @@ class Sales_Service_DocumentPayloadService
 			'showFooter' => 1,
 			'showHeader' => 1,
 			'showCover' => isset($document['pdfshowcover']) ? (int)$document['pdfshowcover'] : $defaults['showCover'],
-		];
+			'showImages' => isset($document['pdfshowimages']) ? (int)$document['pdfshowimages'] : $defaults['showImages'],
+			'showPositionImages' => isset($document['pdfshowpositionimages']) ? (int)$document['pdfshowpositionimages'] : $defaults['showPositionImages'],
+			];
 	}
 }

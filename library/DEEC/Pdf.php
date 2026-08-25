@@ -1227,7 +1227,9 @@ class DEEC_Pdf
 		$pdf->SetFont('freesans', '', 10);
 		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_PRODUCT_DESCRIPTION'), $pProduct);
 		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_SALES_OFFER'), ($pOfferS == $pOfferE) ? $pOfferS : "{$pOfferS}-{$pOfferE}");
-		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_TERMS'), $pTerms);
+		if (!empty($settings['showImages'])) {
+			$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_TERMS'), $pTerms);
+		}
 		if (!empty($settings['showOptions'])) {
 			$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_OPTIONS'), ($pOptS == $pOptE) ? $pOptS : "{$pOptS}-{$pOptE}");
 		}

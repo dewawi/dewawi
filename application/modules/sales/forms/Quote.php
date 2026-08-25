@@ -427,6 +427,26 @@ class Sales_Form_Quote extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'pdfshowimages',
+			'type' => 'checkbox',
+			'label' => 'QUOTES_PDF_SHOW_IMAGES',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'default' => 0,
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'pdfshowpositionimages',
+			'type' => 'checkbox',
+			'label' => 'QUOTES_PDF_SHOW_POSITION_IMAGES',
+			'format' => ['type' => 'int'],
+			'tab' => 'finish',
+			'default' => 0,
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'language',
 			'type' => 'select',
 			'label' => 'QUOTES_LANGUAGE',

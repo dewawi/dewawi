@@ -58,6 +58,12 @@ class Zend_View_Helper_Finish extends Zend_View_Helper_Abstract
 		$html .= '<div class="dw-field dw-field--col-3">';
 		$html .= $this->view->form->renderElement('pdfshowcover');
 		$html .= '</div>';
+		$html .= '<div class="dw-field dw-field--col-3">';
+		$html .= $this->view->form->renderElement('pdfshowimages');
+		$html .= '</div>';
+		$html .= '<div class="dw-field dw-field--col-3">';
+		$html .= $this->view->form->renderElement('pdfshowpositionimages');
+		$html .= '</div>';
 		$html .= '</div>';
 
 		$html .= '<div class="dw-form-row">';
