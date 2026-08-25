@@ -476,7 +476,7 @@ class Sales_Form_Invoice extends DEEC_Form
 		$this->addElement([
 			'name' => 'pdfshowimages',
 			'type' => 'checkbox',
-			'label' => 'DOCUMENTS_PDF_SHOW_IMAGES',
+			'label' => 'INVOICES_PDF_SHOW_IMAGES',
 			'format' => ['type' => 'int'],
 			'tab' => 'finish',
 			'default' => 0,
@@ -486,7 +486,7 @@ class Sales_Form_Invoice extends DEEC_Form
 		$this->addElement([
 			'name' => 'pdfshowpositionimages',
 			'type' => 'checkbox',
-			'label' => 'DOCUMENTS_PDF_SHOW_POSITION_IMAGES',
+			'label' => 'INVOICES_PDF_SHOW_POSITION_IMAGES',
 			'format' => ['type' => 'int'],
 			'tab' => 'finish',
 			'default' => 0,

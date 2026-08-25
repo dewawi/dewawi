@@ -62,4 +62,6 @@
 	'CREDIT_NOTES_PDF_SHOW_OPTIONS' => 'Optionen anzeigen',
 	'CREDIT_NOTES_PDF_SHOW_ATTRIBUTES' => 'Attribute anzeigen',
 	'CREDIT_NOTES_PDF_SHOW_COVER' => 'Deckblatt anzeigen',
+	'CREDIT_NOTES_PDF_SHOW_IMAGES' => 'Bilder und Zeichnungen anzeigen',
+	'CREDIT_NOTES_PDF_SHOW_POSITION_IMAGES' => 'Positionsbilder anzeigen',
 );

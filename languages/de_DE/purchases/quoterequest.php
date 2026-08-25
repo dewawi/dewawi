@@ -58,4 +58,6 @@
 	'QUOTE_REQUESTS_PDF_SHOW_OPTIONS' => 'Optionen anzeigen',
 	'QUOTE_REQUESTS_PDF_SHOW_ATTRIBUTES' => 'Attribute anzeigen',
 	'QUOTE_REQUESTS_PDF_SHOW_COVER' => 'Deckblatt anzeigen',
+	'QUOTE_REQUESTS_PDF_SHOW_IMAGES' => 'Bilder und Zeichnungen anzeigen',
+	'QUOTE_REQUESTS_PDF_SHOW_POSITION_IMAGES' => 'Positionsbilder anzeigen',
 );

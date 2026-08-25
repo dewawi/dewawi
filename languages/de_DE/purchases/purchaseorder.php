@@ -60,4 +60,6 @@
 	'PURCHASE_ORDERS_PDF_SHOW_OPTIONS' => 'Optionen anzeigen',
 	'PURCHASE_ORDERS_PDF_SHOW_ATTRIBUTES' => 'Attribute anzeigen',
 	'PURCHASE_ORDERS_PDF_SHOW_COVER' => 'Deckblatt anzeigen',
+	'PURCHASE_ORDERS_PDF_SHOW_IMAGES' => 'Bilder und Zeichnungen anzeigen',
+	'PURCHASE_ORDERS_PDF_SHOW_POSITION_IMAGES' => 'Positionsbilder anzeigen',
 );

@@ -60,4 +60,6 @@
 	'DELIVERY_ORDERS_PDF_SHOW_OPTIONS' => 'Optionen anzeigen',
 	'DELIVERY_ORDERS_PDF_SHOW_ATTRIBUTES' => 'Attribute anzeigen',
 	'DELIVERY_ORDERS_PDF_SHOW_COVER' => 'Deckblatt anzeigen',
+	'DELIVERY_ORDERS_PDF_SHOW_IMAGES' => 'Bilder und Zeichnungen anzeigen',
+	'DELIVERY_ORDERS_PDF_SHOW_POSITION_IMAGES' => 'Positionsbilder anzeigen',
 );

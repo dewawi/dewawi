@@ -488,7 +488,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'pdfshowimages',
 			'type' => 'checkbox',
-			'label' => 'DOCUMENTS_PDF_SHOW_IMAGES',
+			'label' => 'CREDIT_NOTES_PDF_SHOW_IMAGES',
 			'format' => ['type' => 'int'],
 			'tab' => 'finish',
 			'default' => 0,
@@ -498,7 +498,7 @@ class Sales_Form_Creditnote extends DEEC_Form
 		$this->addElement([
 			'name' => 'pdfshowpositionimages',
 			'type' => 'checkbox',
-			'label' => 'DOCUMENTS_PDF_SHOW_POSITION_IMAGES',
+			'label' => 'CREDIT_NOTES_PDF_SHOW_POSITION_IMAGES',
 			'format' => ['type' => 'int'],
 			'tab' => 'finish',
 			'default' => 0,
