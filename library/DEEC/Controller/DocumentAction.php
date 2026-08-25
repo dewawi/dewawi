@@ -569,7 +569,9 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 				$data['pdfshowdiscounts'],
 				$data['pdfshowoptions'],
 				$data['pdfshowattributes'],
-				$data['pdfshowcover']
+				$data['pdfshowcover'],
+				$data['pdfshowimages'],
+				$data['pdfshowpositionimages']
 			);
 		}
 
