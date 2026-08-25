@@ -1440,7 +1440,7 @@ class DEEC_Pdf
 		$pdf->SetFont('freesans', '', $fontSize);
 
 		if ($hasImage) {
-			$pdf->Image($imageFile, $descX, $y + 2, $imageWidth, $imageHeight, '', '', 'N', true, 300, '', false, false, 0, 'CM');
+			$pdf->Image($imageFile, $descX, $y + 2, $imageWidth, $imageHeight, '', '', 'N');
 		}
 
 		if (!empty($settings['showPrices'])) {
