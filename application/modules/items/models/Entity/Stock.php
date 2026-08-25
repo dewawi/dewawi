@@ -92,8 +92,10 @@ class Items_Model_Entity_Stock
 				'warehousetitle' => 'w.title',
 				'quantity',
 				'reserved',
-				'available',
+				'available' => new Zend_Db_Expr('available'),
 				'incoming',
+				'cost' => new Zend_Db_Expr('cost'),
+				'stockvalue' => new Zend_Db_Expr('stockvalue'),
 				'modified',
 			],
 		];

@@ -37,5 +37,29 @@ class Items_Form_ToolbarStock extends Items_Form_Toolbar
 			'wrap' => false,
 			'format' => ['type' => 'int'],
 		]);
+
+		$this->addElement([
+			'name' => 'order',
+			'type' => 'radio',
+			'label' => 'TOOLBAR_ORDER',
+			'default' => 'modified',
+			'options' => [
+			    'modified' => 'TOOLBAR_MODIFIED',
+			    'sku' => 'ITEMS_SKU',
+			    'itemtitle' => 'ITEMS_TITLE',
+			    'warehousecode' => 'ITEMS_WAREHOUSE_CODE',
+			    'warehousetitle' => 'ITEMS_WAREHOUSE',
+			    'quantity' => 'ITEMS_STOCK_QUANTITY',
+			    'reserved' => 'ITEMS_STOCK_RESERVED',
+			    'available' => 'ITEMS_STOCK_AVAILABLE',
+			    'incoming' => 'ITEMS_STOCK_INCOMING',
+			    'cost' => 'ITEMS_COST',
+			    'stockvalue' => 'ITEMS_STOCK_VALUE',
+			],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+		]);
 	}
 }
