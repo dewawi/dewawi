@@ -2,10 +2,11 @@
 
 $version = "9.14.0";
 
-//Set DEWAWI session directory
-//ini_set('session.save_path', '../../session');
+$sessionPath = dirname(__DIR__, 3) . '/session';
 
-if (session_id() == '') {
+ini_set('session.save_path', $sessionPath);
+
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 

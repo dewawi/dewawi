@@ -7,7 +7,7 @@ try {
 
     include 'include/utils.php';
 
-    if ($_SESSION['RF']["verify"] != "RESPONSIVEfilemanager") {
+    if ($session["verify"] != "RESPONSIVEfilemanager") {
         response(trans('forbidden') . AddErrorLocation(), 403)->send();
         exit;
     }

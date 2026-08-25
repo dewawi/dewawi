@@ -1,9 +1,14 @@
 <?php
 
-if (!isset($_SESSION['RF']) || $_SESSION['RF']["verify"] != "RESPONSIVEfilemanager")
-{
+if (
+	!isset($_SESSION['MediaManager'])
+	|| ($_SESSION['MediaManager']['verify'] ?? '') !== 'RESPONSIVEfilemanager'
+) {
 	die('forbiden');
 }
+
+$session = &$_SESSION['MediaManager'];
+
 require dirname(__FILE__) . '/Response.php';
 
 if ( ! function_exists('response'))
@@ -43,9 +48,9 @@ if ( ! function_exists('trans'))
 	}
 
 	// language
-	if ( ! isset($_SESSION['RF']['language'])
-		|| file_exists('lang/' . basename($_SESSION['RF']['language']) . '.php') === false
-		|| ! is_readable('lang/' . basename($_SESSION['RF']['language']) . '.php')
+	if ( ! isset($session['language'])
+		|| file_exists('lang/' . basename($session['language']) . '.php') === false
+		|| ! is_readable('lang/' . basename($session['language']) . '.php')
 	)
 	{
 		$lang = $config['default_language'];
@@ -64,7 +69,7 @@ if ( ! function_exists('trans'))
 		}
 
 		// add lang file to session for easy include
-		$_SESSION['RF']['language'] = $lang;
+		$session['language'] = $lang;
 	}
 	else
 	{
@@ -74,8 +79,8 @@ if ( ! function_exists('trans'))
 			$languages = include '../lang/languages.php';
 		}
 
-		if(array_key_exists($_SESSION['RF']['language'],$languages)){
-			$lang = $_SESSION['RF']['language'];
+		if(array_key_exists($session['language'],$languages)){
+			$lang = $session['language'];
 		}else{
 			response('Lang_Not_Found'.AddErrorLocation())->send();
 			exit;

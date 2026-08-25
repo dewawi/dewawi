@@ -3,7 +3,7 @@ $config = include 'config/config.php';
 
 include 'include/utils.php';
 
-if ($_SESSION['RF']["verify"] != "RESPONSIVEfilemanager") {
+if ($session["verify"] != "RESPONSIVEfilemanager") {
     response(trans('forbidden') . AddErrorLocation())->send();
     exit;
 }
@@ -13,10 +13,10 @@ if (!checkRelativePath($_POST['path'])) {
     exit;
 }
 
-if (isset($_SESSION['RF']['language']) && file_exists('lang/' . basename($_SESSION['RF']['language']) . '.php')) {
+if (isset($session['language']) && file_exists('lang/' . basename($session['language']) . '.php')) {
     $languages = include 'lang/languages.php';
-    if (array_key_exists($_SESSION['RF']['language'], $languages)) {
-        include 'lang/' . basename($_SESSION['RF']['language']) . '.php';
+    if (array_key_exists($session['language'], $languages)) {
+        include 'lang/' . basename($session['language']) . '.php';
     } else {
         response(trans('Lang_Not_Found') . AddErrorLocation())->send();
         exit;
@@ -321,15 +321,15 @@ if (isset($_GET['action'])) {
             break;
 
         case 'paste_clipboard':
-            if (!isset($_SESSION['RF']['clipboard_action'], $_SESSION['RF']['clipboard']['path'])
-                || $_SESSION['RF']['clipboard_action'] == ''
-                || $_SESSION['RF']['clipboard']['path'] == '') {
+            if (!isset($session['clipboard_action'], $session['clipboard']['path'])
+                || $session['clipboard_action'] == ''
+                || $session['clipboard']['path'] == '') {
                 response()->send();
                 exit;
             }
 
-            $action = $_SESSION['RF']['clipboard_action'];
-            $data = $_SESSION['RF']['clipboard'];
+            $action = $session['clipboard_action'];
+            $data = $session['clipboard'];
 
 
             if ($ftp) {
@@ -417,8 +417,8 @@ if (isset($_GET['action'])) {
 			}
 
             // cleanup
-            $_SESSION['RF']['clipboard']['path'] = null;
-            $_SESSION['RF']['clipboard_action'] = null;
+            $session['clipboard']['path'] = null;
+            $session['clipboard_action'] = null;
 
             break;
 

@@ -100,8 +100,6 @@ class Zend_View_Helper_FileManager extends Zend_View_Helper_Abstract{
 			$defaultNamespace->subfolder = 'uploads/'.$url;
 
 		}
-		//error_log($url);
-		//if($this->view->id == 39053) print_r($defaultNamespace->subfolder);
 	}
 }
 
