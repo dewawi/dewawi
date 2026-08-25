@@ -24,6 +24,11 @@ class Processes_Model_Entity_Process
 
 			'search' => [
 				'title',
+				'processid',
+				'salesorderid',
+				'deliveryorderid',
+				'invoiceid',
+				'creditnoteid',
 				'contactid',
 				'billingname1',
 				'billingname2',
