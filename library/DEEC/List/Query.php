@@ -462,15 +462,24 @@ class DEEC_List_Query
 			$orderColumn = $order;
 		}
 
-		$orderColumn = $this->column($orderColumn, $alias);
+        $ordering = [];
 
-		$ordering = [];
+        if (!empty($config['pinned'])) {
+	        $ordering[] = $alias . '.pinned DESC';
+        }
 
-		if (!empty($config['pinned'])) {
-			$ordering[] = $alias . '.pinned DESC';
-		}
+        if ($orderColumn instanceof Zend_Db_Expr) {
+	        $ordering[] = new Zend_Db_Expr(
+		        (string)$orderColumn . ' ' . $sort
+	        );
+        } else {
+	        $orderColumn = $this->column(
+		        (string)$orderColumn,
+		        $alias
+	        );
 
-		$ordering[] = $orderColumn . ' ' . $sort;
+	        $ordering[] = $orderColumn . ' ' . $sort;
+        }
 
 		$select->order($ordering);
 	}
