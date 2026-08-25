@@ -3121,17 +3121,13 @@ function markFieldSaved($field) {
 		},
 
 		bindFilters: function () {
-			$(document).on('change', '.dw-toolbar select, .dw-filter-panel select, .dw-filter-panel .datePicker', function () {
+			$(document).on('change', '.dw-toolbar select, .dw-filter-panel input, .dw-filter-panel select', function () {
 				var $field = $(this);
 
 				DewawiToolbar.persistField($field);
 
 				if ($field.attr('name') === 'daterange') {
 					DewawiToolbar.toggleDateRange($field.val());
-				}
-
-				if ($field.attr('name') !== 'page') {
-					$('#pagination-page').val(1);
 				}
 
 				search();
