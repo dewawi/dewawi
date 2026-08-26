@@ -144,30 +144,16 @@ class Purchases_Service_DocumentPayloadService
 		$defaults = [
 			'showPrices' => 1,
 			'showDiscounts' => 0,
-			'showOptions' => 1,
-			'showIncludedOptions' => 1,
-			'showAttributes' => 1,
+			'showOptions' => 0,
+			'showIncludedOptions' => 0,
+			'showAttributes' => 0,
 			'showTotals' => 1,
 			'showFooter' => 1,
 			'showHeader' => 1,
-			'showCover' => 1,
+			'showCover' => 0,
+			'showImages' => 0,
+			'showPositionImages' => 0,
 		];
-
-		if ($controller === 'invoice') {
-			$defaults['showOptions'] = 0;
-			$defaults['showIncludedOptions'] = 0;
-			$defaults['showAttributes'] = 0;
-			$defaults['showCover'] = 0;
-		}
-
-		if ($controller === 'deliveryorder') {
-			$defaults['showPrices'] = 0;
-			$defaults['showDiscounts'] = 0;
-			$defaults['showOptions'] = 0;
-			$defaults['showIncludedOptions'] = 0;
-			$defaults['showAttributes'] = 0;
-			$defaults['showCover'] = 0;
-		}
 
 		return [
 			'showPrices' => isset($document['pdfshowprices']) ? (int)$document['pdfshowprices'] : $defaults['showPrices'],
@@ -179,6 +165,8 @@ class Purchases_Service_DocumentPayloadService
 			'showFooter' => 1,
 			'showHeader' => 1,
 			'showCover' => isset($document['pdfshowcover']) ? (int)$document['pdfshowcover'] : $defaults['showCover'],
+			'showImages' => isset($document['pdfshowimages']) ? (int)$document['pdfshowimages'] : $defaults['showImages'],
+			'showPositionImages' => isset($document['pdfshowpositionimages']) ? (int)$document['pdfshowpositionimages'] : $defaults['showPositionImages'],
 		];
 	}
 }
