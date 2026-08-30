@@ -801,6 +801,7 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			'title' => '',
 			'image' => '',
 			'description' => '',
+			'cost' => null,
 			'price' => 0,
 			'taxrate' => $taxrate['rate'],
 			'quantity' => 1,
@@ -828,8 +829,10 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			$data['itemid'] = (int)$item['id'];
 			$data['sku'] = (string)$item['sku'];
 			$data['title'] = (string)$item['title'];
-			$data['description'] =
-				(string)$item['description'];
+			$data['description'] = (string)$item['description'];
+			$data['cost'] = $item['cost'] !== null
+				? (float)$item['cost']
+				: null;
 			$data['price'] = (float)$item['price'];
 			$data['currency'] =
 				(string)($item['currency'] ?: $parent['currency']);
