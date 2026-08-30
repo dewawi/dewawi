@@ -1790,6 +1790,7 @@ CREATE TABLE IF NOT EXISTS `processpos` (
   `title` varchar(255) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
+  `cost` decimal(12,4) DEFAULT NULL,
   `price` decimal(12,4) DEFAULT NULL,
   `taxrate` decimal(12,4) DEFAULT NULL,
   `pricerulemaster` tinyint(1) NOT NULL DEFAULT 0,

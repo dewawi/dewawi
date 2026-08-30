@@ -63,3 +63,4 @@ ALTER TABLE `reminderpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `descripti
 ALTER TABLE `salesorderpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
 ALTER TABLE `quoterequestpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
 ALTER TABLE `purchaseorderpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
+ALTER TABLE `processpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
