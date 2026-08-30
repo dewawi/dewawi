@@ -54,3 +54,12 @@ ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowimages` TINYINT(1) NOT NULL DEFAU
 ALTER TABLE `purchaseorder` ADD COLUMN `pdfshowpositionimages` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pdfshowimages`;
 
 UPDATE `quote` SET `pdfshowimages` = 1 WHERE `pdfshowimages` = 0;
+
+ALTER TABLE `creditnotepos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
+ALTER TABLE `deliveryorderpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
+ALTER TABLE `invoicepos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
+ALTER TABLE `quotepos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
+ALTER TABLE `reminderpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
+ALTER TABLE `salesorderpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
+ALTER TABLE `quoterequestpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
+ALTER TABLE `purchaseorderpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
