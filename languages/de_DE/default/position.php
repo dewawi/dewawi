@@ -20,5 +20,10 @@
 	'POSITIONS_SUBTOTAL' => 'Nettobetrag',
 	'POSITIONS_TAXES' => 'Umsatzsteuer',
 	'POSITIONS_TOTAL' => 'Gesamtb.',
-	'POSITIONS_NONE' => 'keine'
+	'POSITIONS_NONE' => 'keine',
+	'POSITIONS_OPTIONS' => 'Optionen',
+	'POSITIONS_COST' => 'Einkaufspreis',
+	'POSITIONS_PROFIT' => 'Rohertrag',
+	'POSITIONS_MARGIN'=> 'Marge',
+	'POSITIONS_COST_MISSING' => 'Einkaufspreis fehlt',
 );

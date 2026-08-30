@@ -190,7 +190,7 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 									<div class="dw-position-calculation">
 										<?php if ($calculation) : ?>
 											<div class="dw-position-calculation__row">
-												<span><?php echo $this->translate('ITEMS_COST'); ?></span>
+												<span><?php echo $this->translate('POSITIONS_COST'); ?></span>
 												<span><?php echo $calculation['cost']; ?></span>
 											</div>
 
@@ -200,7 +200,7 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 											</div>
 
 											<div class="dw-position-calculation__row">
-												<span><?php echo $this->translate('ITEMS_MARGIN'); ?></span>
+												<span><?php echo $this->translate('POSITIONS_MARGIN'); ?></span>
 												<span>
 													<?php echo $calculation['margin'] !== null
 														? $calculation['margin'] . ' %'
@@ -277,7 +277,7 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 
 						<?php if (count($options)) : ?>
 							<div class="dw-position-options">
-								<h4><?php echo $this->translate('OPTIONS'); ?></h4>
+								<h4><?php echo $this->translate('POSITIONS_OPTIONS'); ?></h4>
 
 								<div class="dw-option-list">
 									<?php foreach ($options as $option) : ?>
