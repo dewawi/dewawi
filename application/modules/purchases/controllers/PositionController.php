@@ -30,11 +30,62 @@ class Purchases_PositionController extends DEEC_Controller_PositionAction
 				(bool)$position->pricerulemaster;
 		}
 
-		return [
+		$context = [
 			'priceRules' => $priceRules,
-			'priceRuleMasters' =>
-				$priceRuleMasters,
+			'priceRuleMasters' => $priceRuleMasters,
+			'calculations' => [],
 		];
+
+		$currencyHelper = $this->_helper->Currency;
+		$currency = $currencyHelper->getCurrency();
+		$locale = Zend_Registry::get('Zend_Locale');
+
+		foreach ($positions as $position) {
+			$positionId = (int)$position->id;
+			$costPrice = (float)$position->cost;
+
+			if ($costPrice <= 0) {
+				$context['calculations'][$positionId] = null;
+				continue;
+			}
+
+			$quantity = (float)$position->quantity;
+
+			$revenue =
+				$this->getPositionDisplayPrice(
+				    $position,
+				    $context
+				) * $quantity;
+
+			$cost = $costPrice * $quantity;
+			$profit = $revenue - $cost;
+
+			$margin = $revenue > 0
+				? ($profit / $revenue) * 100
+				: null;
+
+			$currencyHelper->setCurrency(
+				$currency,
+				$position->currency,
+				'USE_SYMBOL'
+			);
+
+			$context['calculations'][$positionId] = [
+				'cost' => $currency->toCurrency($cost),
+				'profit' => $currency->toCurrency($profit),
+				'margin' => $margin !== null
+				    ? Zend_Locale_Format::toNumber(
+				        $margin,
+				        [
+				            'precision' => 2,
+				            'locale' => $locale,
+				        ]
+				    )
+				    : null,
+			];
+		}
+
+		return $context;
 	}
 
 	protected function afterPositionCopy(

@@ -178,9 +178,40 @@ $parentLocked = in_array($parentState, ['105', '106'], true);
 									</div>
 								</div>
 
+								<?php $calculation = isset($this->calculations[$positionId])
+									? $this->calculations[$positionId]
+									: null; ?>
+
 								<div class="dw-position-grid__total">
 									<div class="dw-position-total total">
 										<?php echo $position['form']->getValue('total'); ?>
+									</div>
+
+									<div class="dw-position-calculation">
+										<?php if ($calculation) : ?>
+											<div class="dw-position-calculation__row">
+												<span><?php echo $this->translate('ITEMS_COST'); ?></span>
+												<span><?php echo $calculation['cost']; ?></span>
+											</div>
+
+											<div class="dw-position-calculation__row">
+												<span><?php echo $this->translate('POSITIONS_PROFIT'); ?></span>
+												<span><?php echo $calculation['profit']; ?></span>
+											</div>
+
+											<div class="dw-position-calculation__row">
+												<span><?php echo $this->translate('ITEMS_MARGIN'); ?></span>
+												<span>
+													<?php echo $calculation['margin'] !== null
+														? $calculation['margin'] . ' %'
+														: '—'; ?>
+												</span>
+											</div>
+										<?php else : ?>
+											<div class="dw-position-calculation__missing">
+												<?php echo $this->translate('POSITIONS_COST_MISSING'); ?>
+											</div>
+										<?php endif; ?>
 									</div>
 								</div>
 							</div>

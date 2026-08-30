@@ -150,6 +150,7 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			'parent' => $parent,
 			'options' => $options,
 			'pricerules' => $context['priceRules'] ?? [],
+			'calculations' => $context['calculations'] ?? [],
 			'toolbar' =>
 				$this->getPositionToolbar(),
 			'toolbarPositions' =>
