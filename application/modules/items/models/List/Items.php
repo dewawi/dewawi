@@ -24,6 +24,12 @@ class Items_Model_List_Items extends DEEC_List
 				'class' => 'dw-col-title',
 			],
 			[
+				'name' => 'category',
+				'label' => 'ITEMS_CATEGORY',
+				'type' => 'callback',
+				'callback' => [$this, 'renderCategory'],
+			],
+			[
 				'name' => 'price',
 				'label' => 'ITEMS_PRICE',
 				'type' => 'currency',
@@ -83,6 +89,23 @@ class Items_Model_List_Items extends DEEC_List
 				],
 			],
 		];
+	}
+
+	public function renderCategory($item): string
+	{
+		$categories = (array)$this->getOption('categoryEntities', []);
+		$categoryId = (int)$this->getFieldValue($item, 'catid');
+
+		if (
+			$categoryId < 1
+			|| empty($categories[$categoryId])
+		) {
+			return '';
+		}
+
+		return $this->escape(
+			$categories[$categoryId]['breadcrumb'] ?? ''
+		);
 	}
 
 	public function renderTags($item): string

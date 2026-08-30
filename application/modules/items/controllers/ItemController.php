@@ -4,11 +4,18 @@ class Items_ItemController extends DEEC_Controller_Action
 {
 	protected function buildIndexView(): void
 	{
-		$this->buildListView([
+		$list = $this->buildListView([
 			'viewKey' => 'items',
 			'list' => 'Items_Model_List_Items',
 			'entity' => Items_Model_Entity_Item::listConfig(),
 		]);
+
+		$categoryDb = new Application_Model_DbTable_Category();
+
+		$options = $list->getOptions();
+		$options['categoryEntities'] = $categoryDb->getCategories('item');
+
+		$list->setOptions($options);
 	}
 
 	protected function buildEditViewModel(
