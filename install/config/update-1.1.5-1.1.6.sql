@@ -64,3 +64,59 @@ ALTER TABLE `salesorderpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `descrip
 ALTER TABLE `quoterequestpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
 ALTER TABLE `purchaseorderpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
 ALTER TABLE `processpos` ADD `cost` decimal(12,4) DEFAULT NULL AFTER `description`;
+
+ALTER TABLE `creditnote` ADD `contactpersonid` int(11) DEFAULT NULL AFTER `contactperson`;
+ALTER TABLE `creditnote` ADD `responsible` varchar(255) DEFAULT NULL AFTER `contactpersonid`;
+ALTER TABLE `creditnote` ADD `responsibleid` int(11) DEFAULT NULL AFTER `responsible`;
+
+ALTER TABLE `deliveryorder` ADD `contactpersonid` int(11) DEFAULT NULL AFTER `contactperson`;
+ALTER TABLE `deliveryorder` ADD `responsible` varchar(255) DEFAULT NULL AFTER `contactpersonid`;
+ALTER TABLE `deliveryorder` ADD `responsibleid` int(11) DEFAULT NULL AFTER `responsible`;
+
+ALTER TABLE `invoice` ADD `contactpersonid` int(11) DEFAULT NULL AFTER `contactperson`;
+ALTER TABLE `invoice` ADD `responsible` varchar(255) DEFAULT NULL AFTER `contactpersonid`;
+ALTER TABLE `invoice` ADD `responsibleid` int(11) DEFAULT NULL AFTER `responsible`;
+
+ALTER TABLE `purchaseorder` ADD `contactpersonid` int(11) DEFAULT NULL AFTER `contactperson`;
+ALTER TABLE `purchaseorder` ADD `responsible` varchar(255) DEFAULT NULL AFTER `contactpersonid`;
+ALTER TABLE `purchaseorder` ADD `responsibleid` int(11) DEFAULT NULL AFTER `responsible`;
+
+ALTER TABLE `quote` ADD `contactpersonid` int(11) DEFAULT NULL AFTER `contactperson`;
+ALTER TABLE `quote` ADD `responsible` varchar(255) DEFAULT NULL AFTER `contactpersonid`;
+ALTER TABLE `quote` ADD `responsibleid` int(11) DEFAULT NULL AFTER `responsible`;
+
+ALTER TABLE `quoterequest` ADD `contactpersonid` int(11) DEFAULT NULL AFTER `contactperson`;
+ALTER TABLE `quoterequest` ADD `responsible` varchar(255) DEFAULT NULL AFTER `contactpersonid`;
+ALTER TABLE `quoterequest` ADD `responsibleid` int(11) DEFAULT NULL AFTER `responsible`;
+
+ALTER TABLE `reminder` ADD `contactpersonid` int(11) DEFAULT NULL AFTER `contactperson`;
+ALTER TABLE `reminder` ADD `responsible` varchar(255) DEFAULT NULL AFTER `contactpersonid`;
+ALTER TABLE `reminder` ADD `responsibleid` int(11) DEFAULT NULL AFTER `responsible`;
+
+ALTER TABLE `salesorder` ADD `contactpersonid` int(11) DEFAULT NULL AFTER `contactperson`;
+ALTER TABLE `salesorder` ADD `responsible` varchar(255) DEFAULT NULL AFTER `contactpersonid`;
+ALTER TABLE `salesorder` ADD `responsibleid` int(11) DEFAULT NULL AFTER `responsible`;
+
+ALTER TABLE `process` ADD `contactpersonid` int(11) DEFAULT NULL AFTER `contactperson`;
+ALTER TABLE `process` ADD `responsible` varchar(255) DEFAULT NULL AFTER `contactpersonid`;
+ALTER TABLE `process` ADD `responsibleid` int(11) DEFAULT NULL AFTER `responsible`;
+
+UPDATE `creditnote` SET `responsible` = `contactperson` WHERE `contactperson` IS NOT NULL AND `contactperson` != '';
+UPDATE `deliveryorder` SET `responsible` = `contactperson` WHERE `contactperson` IS NOT NULL AND `contactperson` != '';
+UPDATE `invoice` SET `responsible` = `contactperson` WHERE `contactperson` IS NOT NULL AND `contactperson` != '';
+UPDATE `purchaseorder` SET `responsible` = `contactperson` WHERE `contactperson` IS NOT NULL AND `contactperson` != '';
+UPDATE `quote` SET `responsible` = `contactperson` WHERE `contactperson` IS NOT NULL AND `contactperson` != '';
+UPDATE `quoterequest` SET `responsible` = `contactperson` WHERE `contactperson` IS NOT NULL AND `contactperson` != '';
+UPDATE `reminder` SET `responsible` = `contactperson` WHERE `contactperson` IS NOT NULL AND `contactperson` != '';
+UPDATE `salesorder` SET `responsible` = `contactperson` WHERE `contactperson` IS NOT NULL AND `contactperson` != '';
+UPDATE `process` SET `responsible` = `contactperson` WHERE `contactperson` IS NOT NULL AND `contactperson` != '';
+
+UPDATE `creditnote` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
+UPDATE `deliveryorder` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
+UPDATE `invoice` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
+UPDATE `purchaseorder` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
+UPDATE `quote` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
+UPDATE `quoterequest` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
+UPDATE `reminder` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
+UPDATE `salesorder` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
+UPDATE `process` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
