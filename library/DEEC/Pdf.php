@@ -170,6 +170,20 @@ class DEEC_Pdf
 		$template = $data['template'] ?? [];
 		$resolvedDocument = $data['document'] ?? $document;
 
+		$responsibleUser = [];
+
+		if (!empty($resolvedDocument['responsibleid'])) {
+			$users = new Users_Model_DbTable_User();
+			$user = $users->getUser((int)$resolvedDocument['responsibleid']);
+
+			if (
+				$user &&
+				(int)$user['clientid'] === (int)$resolvedDocument['clientid']
+			) {
+				$responsibleUser = $user;
+			}
+		}
+
 		return [
 			'meta' => [
 				'module' => $module,
@@ -182,6 +196,7 @@ class DEEC_Pdf
 			],
 			'document' => $resolvedDocument,
 			'contact' => (array)($data['contact'] ?? []),
+			'responsibleUser' => $responsibleUser,
 			'clientId' => (int)($resolvedDocument['clientid'] ?? 0),
 			'template' => (array)$template,
 			'positions' => $data['positions'] ?? [],
@@ -222,6 +237,7 @@ class DEEC_Pdf
 		$attributesByGroup = $payload['attributesByGroup'];
 		$media = $payload['extra']['media'] ?? [];
 		$settings = $payload['settings'];
+		$responsibleUser = $payload['responsibleUser'] ?? [];
 		$clientId = (int)($payload['clientId'] ?? 0);
 		$controller = (string)($payload['meta']['controller'] ?? '');
 		$website = !empty($template['website']) ? $template['website'] : '';
@@ -266,7 +282,7 @@ class DEEC_Pdf
 		}
 
 		if (!empty($settings['showCover'])) {
-			$this->renderTableOfContentsOnCover($pdf, $document, $template, $coverY, $pages, $settings);
+			$this->renderTableOfContentsOnCover($pdf, $document, $template, $coverY, $pages, $settings, $responsibleUser);
 			$this->renderCoverImage($pdf, $positions, $media, $mediaPath);
 		}
 
@@ -1205,7 +1221,7 @@ class DEEC_Pdf
 		}
 	}
 
-	private function renderTableOfContentsOnCover(TCPDF $pdf, array $document, array $template, $yStart, array $pages, $settings)
+	private function renderTableOfContentsOnCover(TCPDF $pdf, array $document, array $template, $yStart, array $pages, $settings, $responsibleUser)
 	{
 		// Compute page numbers (defaults if a section wasn’t added)
 		$pProduct = $pages['product_start'] ?? 2;
@@ -1236,6 +1252,8 @@ class DEEC_Pdf
 			$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_OPTIONS'), ($pOptS == $pOptE) ? $pOptS : "{$pOptS}-{$pOptE}");
 		}
 		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_IMAGES'), ($pImgS == $pImgE) ? $pImgS : "{$pImgS}-{$pImgE}");
+
+		$this->renderResponsibleContact($pdf, $document, $responsibleUser);
 	}
 
 	private function renderHeaderFooter(TCPDF $pdf, $document, $template, $website, $controller, $footers)
@@ -1335,6 +1353,55 @@ class DEEC_Pdf
 	{
 		$pdf->MultiCell(60, 0, $label, 0, 'L', false, 0, 20, '', true, 0);
 		$pdf->MultiCell(30, 0, "(Seite {$pageText})", 0, 'R', false, 1, 80, '', true, 0);
+	}
+
+	private function renderResponsibleContact(TCPDF $pdf, array $document, array $user): void
+	{
+		$name = trim((string)($document['responsible'] ?? ''));
+
+		if ($name === '') {
+			return;
+		}
+
+		$position = trim((string)($user['position'] ?? ''));
+		$phone = trim((string)($user['phone'] ?? ''));
+		$mobile = trim((string)($user['mobile'] ?? ''));
+		$email = trim((string)($user['email'] ?? ''));
+
+		$pdf->ln(8);
+
+		$pdf->SetFont('freesansb', 'B', 11);
+		$pdf->MultiCell(90, 0, $this->translate('DOCUMENTS_CONTACT_PERSON_TITLE'), 0, 'L', false, 1, 20);
+
+		$pdf->ln(2);
+
+		$pdf->SetFont('freesansb', 'B', 10);
+		$pdf->MultiCell(90, 0, $name, 0, 'L', false, 1, 20);
+
+		if ($position !== '') {
+			$pdf->SetFont('freesans', '', 9);
+			$pdf->MultiCell(90, 0, $position, 0, 'L', false, 1, 20);
+		}
+
+		$pdf->ln(2);
+		$pdf->SetFont('freesans', '', 9);
+
+		if ($phone !== '') {
+			$pdf->MultiCell(90, 0, $this->translate('DOCUMENTS_PHONE') . ': ' . $phone, 0, 'L', false, 1, 20);
+		}
+
+		if ($mobile !== '') {
+			$pdf->MultiCell(90, 0, $this->translate('DOCUMENTS_MOBILE') . ': ' . $mobile, 0, 'L', false, 1, 20);
+		}
+
+		if ($email !== '') {
+			$pdf->MultiCell(90, 0, $this->translate('DOCUMENTS_EMAIL') . ': ' . $email, 0, 'L', false, 1, 20);
+		}
+
+		$pdf->ln(2);
+
+		$pdf->SetFont('freesans', '', 9);
+		$pdf->MultiCell(90, 0, $this->translate('DOCUMENTS_CONTACT_PERSON_TEXT'), 0, 'L', false, 1, 20);
 	}
 
 	/* ===========================================================
