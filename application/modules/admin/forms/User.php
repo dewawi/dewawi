@@ -28,11 +28,39 @@ class Admin_Form_User extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'name',
+			'type' => 'text',
+			'label' => 'ADMIN_NAME',
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'position',
+			'type' => 'text',
+			'label' => 'ADMIN_POSITION',
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
 			'name' => 'email',
 			'type' => 'text',
 			'label' => 'ADMIN_EMAIL',
 			'format' => ['type' => 'string'],
 			'col' => 12,
+		]);
+
+		$this->addElement([
+			'name' => 'phone',
+			'type' => 'text',
+			'label' => 'ADMIN_PHONE',
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
+			'name' => 'mobile',
+			'type' => 'text',
+			'label' => 'ADMIN_MOBILE',
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([

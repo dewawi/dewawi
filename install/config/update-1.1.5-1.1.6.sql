@@ -120,3 +120,7 @@ UPDATE `quoterequest` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL
 UPDATE `reminder` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
 UPDATE `salesorder` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
 UPDATE `process` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
+
+ALTER TABLE `user` ADD `position` varchar(255) DEFAULT NULL AFTER `name`;
+ALTER TABLE `user` ADD `phone` varchar(255) DEFAULT NULL AFTER `email`;
+ALTER TABLE `user` ADD `mobile` varchar(255) DEFAULT NULL AFTER `phone`;
