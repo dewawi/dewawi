@@ -177,6 +177,12 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 				'entity' => 'Items_Model_Entity_Item',
 				'service' => 'Items_Service_ItemExportService',
 			],
+			'stocks' => [
+				'label' => 'ITEMS_STOCK',
+				'toolbar' => 'Items_Form_Toolbar',
+				'entity' => 'Items_Model_Entity_Stock',
+				'service' => 'Items_Service_StockExportService',
+			],
 		];
 
 		return $map[$target] ?? null;

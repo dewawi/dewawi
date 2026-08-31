@@ -112,7 +112,17 @@ class Admin_Model_DbTable_Category extends DEEC_Model_DbTable_Entity
 		$this->update($data, 'id =' . (int)$id);
 	}
 
-	public function getSelectOptions(int $shopId = 0): array
+	public function getSelectOptions(
+		$source = 0
+	): array {
+		if (is_string($source)) {
+			return $this->getTypeSelectOptions($source);
+		}
+
+		return $this->getShopSelectOptions((int)$source);
+	}
+
+	protected function getShopSelectOptions(int $shopId = 0): array
 	{
 		$select = $this->select()
 			->where('clientid = ?', $this->getClientId())
@@ -130,6 +140,23 @@ class Admin_Model_DbTable_Category extends DEEC_Model_DbTable_Entity
 
 		foreach ($this->fetchAll($select)->toArray() as $row) {
 			$options[(string)$row['id']] = $row['type'].':'.(string)$row['title'];
+		}
+
+		return $options;
+	}
+
+	protected function getTypeSelectOptions(string $type): array
+	{
+		$categories = $this->getCategories(
+			$type,
+			null,
+			null
+		);
+
+		$options = [];
+
+		foreach ($categories as $id => $category) {
+			$options[(string)$id] = $category['title'];
 		}
 
 		return $options;
