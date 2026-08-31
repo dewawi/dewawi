@@ -14,6 +14,7 @@
 	'QUOTES_CONTACT_POSTCODE' => 'PLZ',
 	'QUOTES_CONTACT_CITY' => 'Ort',
 	'QUOTES_CONTACT_COUNTRY' => 'Land',
+	'QUOTES_RESPONSIBLE' => 'Sachbearbeiter',
 	'QUOTES_VATIN' => 'USt-IdNr.',
 	'QUOTES_QUOTE_DATE' => 'Belegdatum',
 	'QUOTES_ORDER_DATE' => 'Bestelldatum',

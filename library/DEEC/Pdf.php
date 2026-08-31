@@ -1368,10 +1368,10 @@ class DEEC_Pdf
 		$mobile = trim((string)($user['mobile'] ?? ''));
 		$email = trim((string)($user['email'] ?? ''));
 
-		$pdf->ln(8);
+		$pdf->ln(12);
 
 		$pdf->SetFont('freesansb', 'B', 11);
-		$pdf->MultiCell(90, 0, $this->translate('DOCUMENTS_CONTACT_PERSON_TITLE'), 0, 'L', false, 1, 20);
+		$pdf->MultiCell(90, 0, $this->translate('DOCUMENTS_RESPONSIBLE_TITLE'), 0, 'L', false, 1, 20);
 
 		$pdf->ln(2);
 
@@ -1401,7 +1401,7 @@ class DEEC_Pdf
 		$pdf->ln(2);
 
 		$pdf->SetFont('freesans', '', 9);
-		$pdf->MultiCell(90, 0, $this->translate('DOCUMENTS_CONTACT_PERSON_TEXT'), 0, 'L', false, 1, 20);
+		$pdf->MultiCell(90, 0, $this->translate('DOCUMENTS_RESPONSIBLE_TEXT'), 0, 'L', false, 1, 20);
 	}
 
 	/* ===========================================================

@@ -18,6 +18,7 @@
 	'INVOICES_CONTACT_POSTCODE' => 'PLZ',
 	'INVOICES_CONTACT_CITY' => 'Ort',
 	'INVOICES_CONTACT_COUNTRY' => 'Land',
+	'INVOICES_RESPONSIBLE' => 'Sachbearbeiter',
 	'INVOICES_VATIN' => 'USt-IdNr.',
 	'INVOICES_INVOICE_DATE' => 'Belegdatum',
 	'INVOICES_ORDER_DATE' => 'Bestelldatum',

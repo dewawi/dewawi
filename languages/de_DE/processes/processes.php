@@ -12,6 +12,7 @@
 	'PROCESSES_SUPPLIER_ID' => 'Lieferantennr.',
 	'PROCESSES_SUPPLIER_NAME' => 'Lieferantenna.',
 	'PROCESSES_SUPPLIER_DATA' => 'Lieferantendaten',
+	'PROCESSES_RESPONSIBLE' => 'Sachbearbeiter',
 	'PROCESSES_DELIVERY' => 'Lieferung',
 	'PROCESSES_SALES_ORDER_ID' => 'AB Nr.',
 	'PROCESSES_SALES_ORDER_DATE' => 'AB Datum',

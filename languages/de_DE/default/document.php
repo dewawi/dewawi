@@ -18,6 +18,11 @@
 	'DOCUMENTS_TOC_TERMS' => 'Verkaufsbedingungen',
 	'DOCUMENTS_TOC_OPTIONS' => 'Optionale Ausstattung',
 	'DOCUMENTS_TOC_IMAGES' => 'Bilder und Zeichnungen',
+	'DOCUMENTS_RESPONSIBLE_TITLE' => 'Ihr persönlicher Ansprechpartner',
+	'DOCUMENTS_RESPONSIBLE_TEXT' => 'Bei Fragen zu diesem Dokument stehen wir Ihnen gerne persönlich zur Verfügung.',
+	'DOCUMENTS_PHONE' => 'Telefon',
+	'DOCUMENTS_MOBILE' => 'Mobil',
+	'DOCUMENTS_EMAIL' => 'E-Mail',
 	'DOCUMENTS_QUOTE_ID' => 'Angebotsnummer:',
 	'DOCUMENTS_SALESORDER_ID' => 'Belegnummer:',
 	'DOCUMENTS_INVOICE_ID' => 'Rechnungsnummer:',
@@ -63,5 +68,5 @@
 	'DOCUMENTS_QUOTE_REQUEST_ID_%s_FROM_%s' => 'Anfragenummer %s vom %s',
 	'DOCUMENTS_PROCESS_ID_%s_FROM_%s' => 'Vorgangsnummer %s vom %s',
 	'DOCUMENTS_THERE_IS_NO_CONTACT' => 'Sie haben keinen Kontakt hinzugefügt!',
-	'DOCUMENTS_THERE_ARE_NO_POSITIONS' => 'Sie haben keine Positionen hinzugefügt!'
+	'DOCUMENTS_THERE_ARE_NO_POSITIONS' => 'Sie haben keine Positionen hinzugefügt!',
 );
