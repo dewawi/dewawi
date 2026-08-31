@@ -130,6 +130,17 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'responsibleid',
+			'type' => 'select',
+			'label' => 'PURCHASE_ORDERS_RESPONSIBLE',
+			'source' => 'user',
+			'options' => ['' => ''],
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'paymentmethod',
 			'type' => 'select',
 			'label' => 'PURCHASE_ORDERS_PAYMENT_METHOD',

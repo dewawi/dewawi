@@ -96,6 +96,17 @@ class Sales_Form_Quote extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'responsibleid',
+			'type' => 'select',
+			'label' => 'QUOTES_RESPONSIBLE',
+			'source' => 'user',
+			'options' => ['' => ''],
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'paymentmethod',
 			'type' => 'select',
 			'label' => 'QUOTES_PAYMENT_METHOD',

@@ -130,6 +130,17 @@ class Sales_Form_Reminder extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'responsibleid',
+			'type' => 'select',
+			'label' => 'REMINDERS_RESPONSIBLE',
+			'source' => 'user',
+			'options' => ['' => ''],
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'paymentmethod',
 			'type' => 'select',
 			'label' => 'REMINDERS_PAYMENT_METHOD',

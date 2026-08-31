@@ -130,6 +130,17 @@ class Sales_Form_Deliveryorder extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'responsibleid',
+			'type' => 'select',
+			'label' => 'DELIVERY_ORDERS_RESPONSIBLE',
+			'source' => 'user',
+			'options' => ['' => ''],
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'paymentmethod',
 			'type' => 'select',
 			'label' => 'DELIVERY_ORDERS_PAYMENT_METHOD',

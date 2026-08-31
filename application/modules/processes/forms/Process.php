@@ -238,6 +238,17 @@ class Processes_Form_Process extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'responsibleid',
+			'type' => 'select',
+			'label' => 'PROCESSES_RESPONSIBLE',
+			'source' => 'user',
+			'options' => ['' => ''],
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'taxfree',
 			'type' => 'checkbox',
 			'label' => 'PROCESSES_TAX_FREE',

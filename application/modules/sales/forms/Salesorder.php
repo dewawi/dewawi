@@ -105,6 +105,17 @@ class Sales_Form_Salesorder extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'responsibleid',
+			'type' => 'select',
+			'label' => 'SALES_ORDERS_RESPONSIBLE',
+			'source' => 'user',
+			'options' => ['' => ''],
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'paymentmethod',
 			'type' => 'select',
 			'label' => 'SALES_ORDERS_PAYMENT_METHOD',

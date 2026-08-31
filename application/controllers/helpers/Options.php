@@ -111,6 +111,14 @@ class Application_Controller_Action_Helper_Options extends Zend_Controller_Actio
 
 		$alias = $this->normalizeAlias($alias);
 
+		$models = [
+			'user' => 'Users_Model_DbTable_User',
+		];
+
+		if (isset($models[$alias])) {
+			return $models[$alias];
+		}
+
 		$studly = str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $alias)));
 
 		$request = $this->getRequest();

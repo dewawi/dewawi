@@ -91,4 +91,9 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
 	}
+
+	public function getSelectOptions()
+	{
+		return $this->getUsers();
+	}
 }

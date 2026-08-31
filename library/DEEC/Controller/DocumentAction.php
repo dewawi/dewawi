@@ -60,6 +60,35 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		return $contactDb->getContactWithID((int)$row['contactid']);
 	}
 
+	protected function beforeCreate(array $data): array
+	{
+		$data = parent::beforeCreate($data);
+
+		$data['responsibleid'] = (int)$this->_user['id'];
+		$data['responsible'] = (string)$this->_user['name'];
+
+		return $data;
+	}
+
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		if (array_key_exists('responsibleid', $values)) {
+			$responsibleId = (int)$values['responsibleid'];
+
+			if ($responsibleId) {
+				$users = new Users_Model_DbTable_User();
+				$user = $users->getUser($responsibleId);
+
+				$values['responsible'] = $user['name'];
+			} else {
+				$values['responsibleid'] = null;
+				$values['responsible'] = null;
+			}
+		}
+
+		return parent::beforeEditSave($values, $row);
+	}
+
 	protected function getReadonlyFormFactoryClass(): ?string
 	{
 		$module = ucfirst($this->getRequest()->getModuleName());
