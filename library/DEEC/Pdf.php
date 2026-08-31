@@ -374,7 +374,7 @@ class DEEC_Pdf
 		$deliveryDate = $this->formatDate($document['deliverydate'] ?? null);
 		$vatin = $document['vatin'] ?? '';
 		$customerId = $document['contactid'] ?? '';
-		$salesPerson = $document['contactperson'] ?? '';
+		$salesPerson = $document['responsible'] ?? '';
 
 		$x = 20;
 
@@ -531,7 +531,7 @@ class DEEC_Pdf
 		$documentDate = $this->formatDate($document[$docDateField]);
 		$delivery = $this->formatDate($document['deliverydate']);
 		$vatin = $document['vatin'] ?? '';
-		$salesPerson = $document['contactperson'] ?? '';
+		$salesPerson = $document['responsible'] ?? '';
 
 		// “IMPORTANT INFORMATION” box on top-right
 		$pdf->SetY(40);
