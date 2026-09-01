@@ -30,7 +30,7 @@ class Zend_View_Helper_RenderCategory extends Zend_View_Helper_Abstract
 			}
 		} elseif (isset($this->view->images['categories'][$category['id']][1]) && ($this->view->images['categories'][$category['id']][1]['type'] == 'image')) {
 			if ($this->view->images['categories'][$category['id']][1]['title'] || $category['subtitle']) {
-				$subtitle = $this->view->images['categories'][$category['id']][1]->title ? $this->view->images['categories'][$category['id']][1]['title'] : $category['subtitle'];
+				$subtitle = $this->view->images['categories'][$category['id']][0]['title'] ? $this->view->images['categories'][$category['id']][1]['title'] : $category['subtitle'];
 				$output .= '		<div class="category-text">';
 				$output .= '			<h3 class="text-right text-white">' . $subtitle . '</h3>';
 				$output .= '		</div>';
