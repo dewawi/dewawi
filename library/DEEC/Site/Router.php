@@ -205,6 +205,10 @@ class DEEC_Site_Router
 	{
 		$slugTable = new Zend_Db_Table('slug');
 		$slugs = $slugTable->fetchAll(array('shopid = ?' => (int) $siteId));
+		$slugs = $slugTable->fetchAll(array(
+			'shopid = ?' => (int) $siteId,
+			'deleted = ?' => 0
+		));
 
 		$slugDict = array();
 		foreach ($slugs as $slug) {
@@ -241,9 +245,17 @@ class DEEC_Site_Router
 	protected function buildFullSlug(array $item, array $slugDict)
 	{
 		$slug = $item['slug'];
+		$visited = array();
 
 		while (!empty($item['parentid']) && isset($slugDict[$item['parentid']])) {
-			$item = $slugDict[$item['parentid']];
+			$parentId = $item['parentid'];
+
+			if (isset($visited[$parentId])) {
+				break;
+			}
+
+			$visited[$parentId] = true;
+			$item = $slugDict[$parentId];
 			$slug = $item['slug'] . '/' . $slug;
 		}
 
