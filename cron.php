@@ -24,25 +24,29 @@ $Email = new DEEC_Email(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
 
 // Use Europe/Berlin by default
 date_default_timezone_set('Europe/Berlin');
-$now = new DateTime('now');
 
 $campaigns = $Campaign->getCampaigns();
 
 foreach ($campaigns as $campaign) {
-	// basic guards
 	if (empty($campaign['activated']) || !empty($campaign['deleted'])) {
 		continue;
 	}
 
-	// timezone override per campaign (optional)
+	$timezone = new DateTimeZone('Europe/Berlin');
+
 	if (!empty($campaign['timezone'])) {
-		try { $tz = new DateTimeZone($campaign['timezone']); $now->setTimezone($tz); } catch (Exception $e) {}
+		try {
+			$timezone = new DateTimeZone($campaign['timezone']);
+		} catch (Exception $e) {
+		}
 	}
 
-	// schedule window check
+	$now = new DateTime('now', $timezone);
+
 	if (!withinDateRange($now, $campaign['startdate'] ?? null, $campaign['duedate'] ?? null)) {
 		continue;
 	}
+
 	if (!withinDailyWindow($now, $campaign['startwindow'] ?? null, $campaign['endwindow'] ?? null)) {
 		continue;
 	}
@@ -55,7 +59,11 @@ foreach ($campaigns as $campaign) {
 	if (empty($campaign['lastsent'])) {
 		$okByInterval = true;
 	} else {
-		$last = DateTime::createFromFormat('Y-m-d H:i:s', $campaign['lastsent']);
+		$last = DateTime::createFromFormat(
+			'Y-m-d H:i:s',
+			$campaign['lastsent'],
+			$timezone
+		);
 		if ($last) {
 			$next = clone $last;
 			$next->modify("+{$intervalMin} minutes");
