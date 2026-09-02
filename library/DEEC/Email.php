@@ -55,100 +55,20 @@ class DEEC_Email {
 			$mail->Port		= 465;													// TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
 			if($campaign) {
-				//Get contacts
-				$categories = $this->category->getCategories('contact', $campaign['clientid']);
-				$contacts = $this->contact->getContacts($campaign['contactcatid'], $campaign['clientid'], $categories);
+				$categories = $this->category->getCategories(
+					'contact',
+					$campaign['clientid']
+				);
 
-				//Get already sent emails on campaign
-				$emailmessageArray = $this->emailmessage->getEmailmessages(NULL, $campaign['id'], 'campaigns', 'campaign', $campaign['clientid']);
+				$limit = 1;
 
-				// set of lowercase recipient emails already sent for this campaign
-				$alreadySent = [];
-				foreach ($emailmessageArray as $emailmessage) {
-					if (
-						!empty($emailmessage['recipient'])
-						&& empty($emailmessage['response'])
-					) {
-						$alreadySent[
-							strtolower(trim($emailmessage['recipient']))
-						] = true;
-					}
-				}
-
-				$i = 0;
-				$limit = 1; // your throttle per cron tick
-				$recipients = [];
-				$seen = []; // dedupe for this run (lowercased)
-
-				// build recipients from contacts + their contact persons
-				foreach ($contacts as $contact) {
-					if ($i >= $limit) break;
-
-					// 1) Contact-level emails (module/controller aren’t filtered in getEmailaddresses,
-					// so we accept rows where controller == 'contact' OR empty)
-					$contactEmails = $this->emailaddress->getEmailaddresses($contact['id'], $contact['clientid']);
-					if ($contactEmails) {
-						foreach ($contactEmails as $ea) {
-							if ($i >= $limit) break;
-							$em = strtolower(trim($ea['email']));
-							if (!$em) continue;
-
-							// if your email table distinguishes with controller, prefer contact-level here
-							if (isset($ea['controller']) && $ea['controller'] && $ea['controller'] !== 'contact') {
-								// skip non-contact rows in this first pass
-								continue;
-							}
-
-							if (isset($seen[$em])) continue;
-							if (isset($alreadySent[$em])) continue;
-
-							$recipients[] = [
-								'email' => $ea['email'],
-								'contactid' => $contact['id']
-							];
-							$seen[$em] = true;
-							$i++;
-						}
-					}
-
-					if ($i >= $limit) continue;
-
-					// 2) Contact-person emails (controller should be 'contactperson')
-					// We’ll reuse your class to fetch persons, then their emails.
-					$persons = $this->contactperson->getContactpersons($contact['id'], $contact['clientid']) ?: [];
-					foreach ($persons as $cp) {
-						if ($i >= $limit) break;
-
-						$cpEmails = $this->emailaddress->getEmailaddresses($cp['id'], $contact['clientid']);
-						if (!$cpEmails) continue;
-
-						foreach ($cpEmails as $ea) {
-							if ($i >= $limit) break;
-							$em = strtolower(trim($ea['email']));
-							if (!$em) continue;
-
-							// only take rows that actually belong to contact persons
-							if (isset($ea['controller']) && $ea['controller'] && $ea['controller'] !== 'contactperson') {
-								continue;
-							}
-
-							if (isset($seen[$em])) continue;
-							if (isset($alreadySent[$em])) continue;
-
-							$recipients[] = [
-								'email' => $ea['email'],
-								'contactid' => $contact['id'],
-								'contactpersonid' => $cp['id'],
-								'salutation' => $cp['salutation'],
-								'name1' => $cp['name1'],
-								'name2' => $cp['name2'],
-								'department' => $cp['department']
-							];
-							$seen[$em] = true;
-							$i++;
-						}
-					}
-				}
+				$recipients = $this->emailaddress->getCampaignRecipients(
+					$campaign['clientid'],
+					$campaign['contactcatid'],
+					$campaign['id'],
+					$categories,
+					$limit
+				);
 
 				$data = array();
 				$data['cc'] = $campaign['emailcc'];
