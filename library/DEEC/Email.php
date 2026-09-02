@@ -45,7 +45,7 @@ class DEEC_Email {
 			$mail = new PHPMailer\PHPMailer\PHPMailer();
 
 			//Server settings
-			$mail->SMTPDebug = PHPMailer\PHPMailer\SMTP::DEBUG_SERVER;				// Enable verbose debug output
+			$mail->SMTPDebug = 0;													// Enable verbose debug output
 			$mail->isSMTP();														// Send using SMTP
 			$mail->Host		= $user['smtphost'];									// Set the SMTP server to send through
 			$mail->SMTPAuth	= true;													// Enable SMTP authentication
@@ -64,11 +64,14 @@ class DEEC_Email {
 
 				// set of lowercase recipient emails already sent for this campaign
 				$alreadySent = [];
-				if ($emailmessageArray) {
-					foreach ($emailmessageArray as $em) {
-						if (!empty($em['recipient'])) {
-							$alreadySent[strtolower(trim($em['recipient']))] = true;
-						}
+				foreach ($emailmessageArray as $emailmessage) {
+					if (
+						!empty($emailmessage['recipient'])
+						&& empty($emailmessage['response'])
+					) {
+						$alreadySent[
+							strtolower(trim($emailmessage['recipient']))
+						] = true;
 					}
 				}
 
@@ -169,6 +172,8 @@ class DEEC_Email {
 				$data['body'] = str_replace('[BODY]', $data['body'], $template);
 			}*/
 
+			$sent = 0;
+
 			foreach($recipients as $recipient) {
 				//echo $recipient['email'];
 				//Recipients
@@ -251,12 +256,22 @@ class DEEC_Email {
 				$mail->Encoding = 'base64';
 
 				//Send the message, check for errors
-				if(!$mail->send()) {
-					//Save errors to the db
-					$this->emailmessage->updateEmailmessage($messageid, array('response' => $mail->ErrorInfo));
+				if (!$mail->send()) {
+					$this->emailmessage->updateEmailmessage(
+						$messageid,
+						[
+							'response' => $mail->ErrorInfo,
+						]
+					);
+
+					continue;
 				}
+
+				$sent++;
 			}
 		}
+
+		return $sent;
 	}
 
 	private function buildSalutation(array $recipient): string {
