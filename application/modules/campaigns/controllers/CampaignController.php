@@ -115,17 +115,25 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 						$iv = (int)$data['interval'];
 						$data['interval'] = $iv > 0 ? $iv : 60;
 					}
-					// window_start/window_end as HH:mm
-					foreach (['startwindow','endwindow'] as $k) {
-						if (isset($data[$k])) {
-							$v = trim($data[$k]);
-							if ($v === '') { $data[$k] = null; }
-							else {
-								// simple validation: HH:mm
-								if (!preg_match('/^\d{2}:\d{2}$/', $v)) $data[$k] = null;
-								else $data[$k] = $v . ':00';
-							}
+					// Normalize campaign sending window.
+					foreach (['startwindow', 'endwindow'] as $key) {
+						if (!isset($data[$key])) {
+							continue;
 						}
+
+						$value = trim($data[$key]);
+
+						if ($value === '') {
+							$data[$key] = null;
+							continue;
+						}
+
+						if (!preg_match('/^\d{2}:\d{2}$/', $value)) {
+							$data[$key] = null;
+							continue;
+						}
+
+						$data[$key] = $value . ':00';
 					}
 					if(isset($data['startdate'])) {
 						$data['startdate'] = trim($data['startdate']);
@@ -229,11 +237,12 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 					if (!empty($data['duedate'])) {
 						$data['duedate'] = date('d.m.Y H:i', strtotime($data['duedate']));
 					}
-					if (!empty($data['window_start'])) {
-						$data['window_start'] = substr($data['window_start'], 0, 5); // HH:mm
+					if (!empty($data['startwindow'])) {
+						$data['startwindow'] = substr($data['startwindow'], 0, 5);
 					}
-					if (!empty($data['window_end'])) {
-						$data['window_end'] = substr($data['window_end'], 0, 5);
+
+					if (!empty($data['endwindow'])) {
+						$data['endwindow'] = substr($data['endwindow'], 0, 5);
 					}
 
 					//Get email form
@@ -256,7 +265,6 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 					$emailForm->body->setValue($data['emailbody']);
 
 					$this->view->emailForm = $emailForm;
-					$this->view->url = $this->_helper->Directory->getUrl($contact['contactid']);
 
 					//Get email attachments
 					$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
