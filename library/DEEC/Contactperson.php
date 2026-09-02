@@ -15,41 +15,47 @@ class DEEC_Contactperson {
 		$this->query = new DEEC_Query();
 	}
 
-	public function getContactperson($id) {
-		$where = 'id = '.$id.' AND deleted = 0';
+	public function getContactperson($id, $clientid) {
+		$id = (int)$id;
+		$clientid = (int)$clientid;
+
 		$query = '
-				SELECT
-					* FROM contactperson
-				WHERE
-					'.$where.'
-				ORDER
-					BY id;';
-		//echo $query;
+			SELECT *
+			FROM contactperson
+			WHERE id = '.$id.'
+				AND clientid = '.$clientid.'
+				AND deleted = 0
+			ORDER BY id;
+		';
+
 		$result = mysqli_query($this->connection, $query);
-		if($result && (mysqli_num_rows($result) > 0)) {
+
+		if($result && mysqli_num_rows($result) > 0) {
 			return mysqli_fetch_all($result, MYSQLI_ASSOC);
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
 	public function getContactpersons($contactid, $clientid) {
-		$where = 'contactid = '.$contactid;
-		$where .= ' AND clientid = '.$clientid;
-		$where .= ' AND deleted = 0';
+		$contactid = (int)$contactid;
+		$clientid = (int)$clientid;
+
 		$query = '
-				SELECT
-					* FROM contactperson
-				WHERE
-					'.$where.'
-				ORDER
-					BY id;';
-		//echo $query;
+			SELECT *
+			FROM contactperson
+			WHERE parentid = '.$contactid.'
+				AND clientid = '.$clientid.'
+				AND deleted = 0
+			ORDER BY id;
+		';
+
 		$result = mysqli_query($this->connection, $query);
-		if($result && (mysqli_num_rows($result) > 0)) {
+
+		if($result && mysqli_num_rows($result) > 0) {
 			return mysqli_fetch_all($result, MYSQLI_ASSOC);
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 }
