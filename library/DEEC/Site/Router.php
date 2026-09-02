@@ -7,10 +7,8 @@ class DEEC_Site_Router
 		$frontController = Zend_Controller_Front::getInstance();
 		$router = $frontController->getRouter();
 
-		$site = $siteContext->getSite();
-
 		$this->registerFallbackRoute($router);
-		$this->registerSlugRoutes($router, $site['id']);
+		$this->registerSlugRoutes($router, $siteContext);
 		$this->registerBaseRoutes($router, $siteContext);
 	}
 
@@ -201,21 +199,21 @@ class DEEC_Site_Router
 		));
 	}
 
-	protected function registerSlugRoutes(Zend_Controller_Router_Rewrite $router, $siteId)
+	protected function registerSlugRoutes(Zend_Controller_Router_Rewrite $router, DEEC_Site_Context $siteContext)
 	{
 		$slugTable = new Zend_Db_Table('slug');
-		$slugs = $slugTable->fetchAll(array('shopid = ?' => (int) $siteId));
 		$slugs = $slugTable->fetchAll(array(
-			'shopid = ?' => (int) $siteId,
+			'shopid = ?' => $siteContext->getSiteId(),
+			'clientid = ?' => $siteContext->getClientId(),
 			'deleted = ?' => 0
 		));
 
 		$slugDict = array();
+
 		foreach ($slugs as $slug) {
 			$slugData = $slug->toArray();
 			$slugDict[$slugData['entityid']] = $slugData;
-			$key = $this->getSlugKey($slugData);
-			$slugDict[$key] = $slugData;
+			$slugDict[$this->getSlugKey($slugData)] = $slugData;
 		}
 
 		foreach ($slugs as $slug) {
@@ -225,12 +223,10 @@ class DEEC_Site_Router
 				continue;
 			}
 
-			$fullSlug = $this->buildFullSlug($slugData, $slugDict);
-
 			$router->addRoute(
 				$this->getRouteName($slugData),
 				new Zend_Controller_Router_Route(
-					$fullSlug,
+					$this->buildFullSlug($slugData, $slugDict),
 					array(
 						'module' => $slugData['module'],
 						'controller' => $slugData['controller'],
