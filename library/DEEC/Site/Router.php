@@ -212,7 +212,6 @@ class DEEC_Site_Router
 
 		foreach ($slugs as $slug) {
 			$slugData = $slug->toArray();
-			$slugDict[$slugData['entityid']] = $slugData;
 			$slugDict[$this->getSlugKey($slugData)] = $slugData;
 		}
 
@@ -243,15 +242,15 @@ class DEEC_Site_Router
 		$slug = $item['slug'];
 		$visited = array();
 
-		while (!empty($item['parentid']) && isset($slugDict[$item['parentid']])) {
-			$parentId = $item['parentid'];
+		while (!empty($item['parentid'])) {
+			$parentKey = $this->getParentSlugKey($item);
 
-			if (isset($visited[$parentId])) {
+			if (!isset($slugDict[$parentKey]) || isset($visited[$parentKey])) {
 				break;
 			}
 
-			$visited[$parentId] = true;
-			$item = $slugDict[$parentId];
+			$visited[$parentKey] = true;
+			$item = $slugDict[$parentKey];
 			$slug = $item['slug'] . '/' . $slug;
 		}
 
