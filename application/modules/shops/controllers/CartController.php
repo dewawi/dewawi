@@ -85,21 +85,31 @@ class Shops_CartController extends Zend_Controller_Action
 
 	public function addAction()
 	{
-		$id = $this->_getParam('id');
-		$title = $this->_getParam('title');
-		$sku = $this->_getParam('sku');
-		$price = $this->_getParam('price');
+		$shop = Zend_Registry::get('Shop');
+		$id = (int)$this->_getParam('id');
 		$quantity = $this->_getParam('quantity', 1);
 
-		$this->cart->addItem($id, $title, $sku, $price, $quantity);
+		if(!$id || !is_numeric($quantity) || $quantity <= 0) {
+			return $this->_helper->json(['success' => false, 'message' => 'Invalid cart item']);
+		}
 
-		$response = [
+		$itemDb = new Shops_Model_DbTable_Item();
+		$item = $itemDb->getItem($id, $shop['id']);
+
+		if(!$item || !empty($item['deleted'])) {
+			return $this->_helper->json(['success' => false, 'message' => 'Item not found']);
+		}
+
+		$price = !empty($item['specialprice']) ? $item['specialprice'] : $item['price'];
+
+		$this->cart->addItem($id, $item['title'], $item['sku'], $price, (float)$quantity);
+
+		return $this->_helper->json([
 			'success' => true,
 			'cart' => $this->cart->getItems(),
 			'total' => $this->cart->getTotalPrice(),
 			'cartItemCount' => $this->cart->getItemCount(),
-		];
-		$this->_helper->json($response);
+		]);
 	}
 
 	public function updateAction()

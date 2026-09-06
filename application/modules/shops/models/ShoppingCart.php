@@ -13,26 +13,40 @@ class Shops_Model_ShoppingCart
 
 	public function addItem($id, $title, $sku, $price, $quantity = 1)
 	{
-		if (isset($this->session->items[$id])) {
+		$id = (int)$id;
+		$price = (float)$price;
+		$quantity = (float)$quantity;
+
+		if(!$id || $quantity <= 0) return false;
+
+		if(isset($this->session->items[$id])) {
 			$this->session->items[$id]['quantity'] += $quantity;
 		} else {
 			$this->session->items[$id] = [
 				'title' => $title,
 				'sku' => $sku,
 				'price' => $price,
-				'quantity' => $quantity
+				'quantity' => $quantity,
 			];
 		}
+
+		return true;
 	}
 
 	public function updateItem($id, $quantity)
 	{
-		if (isset($this->session->items[$id])) {
-			$this->session->items[$id]['quantity'] = $quantity;
-			if ($this->session->items[$id]['quantity'] <= 0) {
-				unset($this->session->items[$id]);
-			}
+		$id = (int)$id;
+		$quantity = (float)$quantity;
+
+		if(!isset($this->session->items[$id])) return false;
+
+		if($quantity <= 0) {
+			unset($this->session->items[$id]);
+			return true;
 		}
+
+		$this->session->items[$id]['quantity'] = $quantity;
+		return true;
 	}
 
 	public function removeItem($id)

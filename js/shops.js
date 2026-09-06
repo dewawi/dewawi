@@ -56,16 +56,8 @@ $(document).ready(function () {
 	// Add to Cart
 	$('.add-to-cart').on('click', function () {
 		const id = $(this).data('id');
-		const title = $(this).data('title');
-		const sku = $(this).data('sku');
-		const price = parseFloat($(this).data('price'));
 
-		if (isNaN(price)) {
-			console.error('Invalid price for product:', { id, title, sku, price });
-			return;
-		}
-
-		$.post('/cart/add', { id, title, sku, price }, function (response) {
+		$.post('/cart/add', { id, quantity: 1 }, function (response) {
 			if (response.success) {
 				renderCartItems(response.cart);
 				updateCartSummary(response.total);

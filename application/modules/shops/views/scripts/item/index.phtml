@@ -129,16 +129,7 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 
 				<!-- Add to Cart Button -->
 				<div class="">
-					<button 
-						class="btn btn-primary btn-lg add-to-cart" 
-						data-id="<?php echo $this->item['id']; ?>" 
-						data-title="<?php echo $this->item['title']; ?>" 
-						data-sku="<?php echo $this->item['sku']; ?>" 
-						<?php if($this->prices['rawspecialprice']) : ?>
-							data-price="<?php echo $this->prices['rawspecialprice']; ?>">
-						<?php else : ?>
-							data-price="<?php echo $this->prices['raw']; ?>">
-						<?php endif; ?>
+					<button class="btn btn-primary btn-lg add-to-cart" data-id="<?php echo $this->item['id']; ?>">
 						<?php echo $this->translate('SHOPS_ADD_TO_CART'); ?>
 					</button>
 					<button class="btn btn-info btn-lg" onclick="showSection('<?php echo $this->item['id']; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
