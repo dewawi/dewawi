@@ -11,6 +11,8 @@ class Shops_Model_DbTable_Slug extends Zend_Db_Table_Abstract
 
 	protected $_shop = null;
 
+	protected $_pathCache = array();
+
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');

@@ -46,10 +46,10 @@ $router = Zend_Controller_Front::getInstance()->getRouter();
 
 						<!-- Show the first 5 main categories -->
 						<?php foreach($firstFiveCategories as $category) : ?>
-							<?php $routeName = 'slug_category_' . (int)$category['id']; ?>
-							<?php if((int)$category['id'] > 0 && $router->hasRoute($routeName)) : ?>
+							<?php $url = $this->SlugUrl('category', (int)$category['id']); ?>
+							<?php if($url) : ?>
 								<li class="nav-item">
-									<a class="nav-link" href="<?php echo $this->url([], $routeName); ?>">
+									<a class="nav-link" href="<?php echo $url; ?>">
 										<?php echo $this->escape($category['title']); ?>
 									</a>
 									<ul class="submenu">
@@ -67,10 +67,10 @@ $router = Zend_Controller_Front::getInstance()->getRouter();
 								</a>
 								<ul class="submenu">
 									<?php foreach($otherCategories as $category) : ?>
-										<?php $routeName = 'slug_category_' . (int)$category['id']; ?>
-										<?php if((int)$category['id'] > 0 && $router->hasRoute($routeName)) : ?>
+										<?php $url = $this->SlugUrl('category', (int)$category['id']); ?>
+										<?php if($url) : ?>
 											<li class="right-edge">
-												<a href="<?php echo $this->url([], $routeName); ?>">
+												<a href="<?php echo $url; ?>">
 													<?php echo $this->escape($category['title']); ?>
 												</a>
 												<ul class="submenu">
@@ -137,10 +137,10 @@ $router = Zend_Controller_Front::getInstance()->getRouter();
 					<?php if($menu->position == 'footer') : ?>
 						<?php foreach($menuitems[$menu->id] ?? [] as $menuitem) : ?>
 							<?php if((int)$menuitem->parentid === 0 && (int)$menuitem->pageid > 0) : ?>
-								<?php $routeName = 'slug_page_' . (int)$menuitem->pageid; ?>
-								<?php if($router->hasRoute($routeName)) : ?>
+								<?php $url = $this->SlugUrl('page', (int)$menuitem->pageid); ?>
+								<?php if($url) : ?>
 									<li class="nav-item">
-										<a class="nav-link" href="<?php echo $this->url([], $routeName); ?>">
+										<a class="nav-link" href="<?php echo $url; ?>">
 											<?php echo $this->escape($menuitem->title); ?>
 										</a>
 									</li>

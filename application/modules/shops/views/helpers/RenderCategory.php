@@ -5,18 +5,19 @@
 class Zend_View_Helper_RenderCategory extends Zend_View_Helper_Abstract
 {
 	public function RenderCategory($category) {
+		$url = $this->view->SlugUrl('category', $category['id']);
 		$output = '';
 		$output .= '<div class="col-md-3 mb-3 px-2 d-flex align-items-stretch">';
 		$output .= '	<div class="card">';
-		$output .= '		<a href="' . $this->view->url([], 'slug_category_' . $category['id']) . '">';
+		$output .= '		<a href="' . $url . '">';
 		if (isset($this->view->images['categories'][$category['id']][0]) && ($this->view->images['categories'][$category['id']][0]['type'] == 'image')) {
 			$categoryImage = $this->view->images['categories'][$category['id']][0]['url'];
-			$output .= '			<a href="' . $this->view->url([], 'slug_category_' . $category['id']) . '">';
+			$output .= '			<a href="' . $url . '">';
 			$output .= '				<img src="' . $this->view->baseUrl() . '/media/category/' . $categoryImage . '" class="card-img-top" alt="Category Image">';
 			$output .= '			</a>';
 		} elseif (isset($this->view->images['categories'][$category['id']][1]) && ($this->view->images['categories'][$category['id']][1]['type'] == 'image')) {
 			$categoryImage = $this->view->images['categories'][$category['id']][1]['url'];
-			$output .= '			<a href="' . $this->view->url([], 'slug_category_' . $category['id']) . '">';
+			$output .= '			<a href="' . $url . '">';
 			$output .= '				<img src="' . $this->view->baseUrl() . '/media/category/' . $categoryImage . '" class="card-img-top" alt="Category Image">';
 			$output .= '			</a>';
 		}
@@ -37,7 +38,7 @@ class Zend_View_Helper_RenderCategory extends Zend_View_Helper_Abstract
 			}
 		}
 		$output .= '		<div class="card-body px-3">';
-		$output .= '			<a href="' . $this->view->url([], 'slug_category_' . $category['id']) . '">';
+		$output .= '			<a href="' . $url . '">';
 		$output .= '				<h5 class="card-title">' . $category['title'] . '</h5>';
 		$output .= '			</a>';
 		if ($category['subtitle']) {

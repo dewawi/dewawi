@@ -79,7 +79,7 @@ $downloads = false;
 						<?php if($tagEntites) : ?>
 							<span>Anwendungs- und Einsatzgebiete:</span>
 							<?php foreach($this->tagEntites[$this->category['id']] as $tagEntity) : ?>
-								<a href="<?php echo $this->url([], 'slug_tag_' . $tagEntity['tagid']); ?>">
+								<a href="<?php echo $this->SlugUrl('tag', $tagEntity['tagid']); ?>">
 									<?php echo $this->escape($tagEntity['tag']); ?></a>
 									<?php if($i < $tagEntites) echo '|'; ?>
 									<?php ++$i; ?>
@@ -210,9 +210,9 @@ foreach ($this->categories as $subcategory) {
 										+
 									</button>
 									<div>
-										<?php $router = Zend_Controller_Front::getInstance()->getRouter(); ?>
-										<?php if($router->hasRoute('slug_item_' . $item->id)) : ?>
-											<a href="<?php echo $this->url([], 'slug_item_' . $item->id); ?>">
+										<?php $itemUrl = $this->SlugUrl('item', $item->id); ?>
+										<?php if($itemUrl) : ?>
+											<a href="<?php echo $itemUrl; ?>">
 												<strong><?php echo $item->title; ?></strong>
 											</a>
 										<?php else : ?>
@@ -258,9 +258,8 @@ foreach ($this->categories as $subcategory) {
 										<?php endif; ?>
 									<?php endif; ?>
 									<?php $shippingPage = $this->PageByType('shipping'); ?>
-
 									<?php if ($shippingPage) : ?>
-										<a href="<?php echo $this->url([], 'slug_page_' . $shippingPage['id']); ?>" target="_blank">
+										<a href="<?php echo $this->SlugUrl('page', $shippingPage['id']); ?>" target="_blank">
 											Versandkosten
 										</a>
 									<?php endif; ?>
