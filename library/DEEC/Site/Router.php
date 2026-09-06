@@ -285,25 +285,4 @@ class DEEC_Site_Router
 
 		return $path;
 	}
-
-	protected function getSlugKey(array $slugData)
-	{
-		return $slugData['module'] . ':' . $slugData['controller'] . ':' . $slugData['entityid'];
-	}
-
-	protected function getParentSlugKey(array $slugData)
-	{
-		$controller = $slugData['controller'];
-
-		if ($controller === 'item') {
-			$controller = 'category';
-		}
-
-		return $slugData['module'] . ':' . $controller . ':' . $slugData['parentid'];
-	}
-
-	protected function getRouteName(array $slugData)
-	{
-		return 'slug_' . $slugData['controller'] . '_' . $slugData['entityid'];
-	}
 }

@@ -121,7 +121,10 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 							<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices['formattedtax']; ?> inkl. MwSt.</p>
 						<?php endif; ?>
 					<?php endif; ?>
-					<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->url([], 'slug_page_842'); ?>" target="_blank">Versandkosten</a></span>
+					<?php $shippingPage = $this->PageByType('shipping'); ?>
+					<?php if($shippingPage) : ?>
+						<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->SlugUrl('page', (int)$shippingPage['id']); ?>" target="_blank">Versandkosten</a></span>
+					<?php endif; ?>
 				</div>
 
 				<!-- Add to Cart Button -->
