@@ -23,8 +23,10 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
 		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
-		$where[] = $this->getAdapter()->quoteInto('entityid = ?', $entityid);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
+		$where[] = $this->getAdapter()->quoteInto('entityid = ?', (int)$entityid);
+		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$shopid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 
 		$row = $this->fetchRow($where);
 
@@ -54,6 +56,8 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
 		$where[] = $this->getAdapter()->quoteInto('entityid = ?', $entityid);
 		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 
 		$data = array();
 		$data['parentid'] = $parentid;
