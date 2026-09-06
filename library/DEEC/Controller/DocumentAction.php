@@ -72,10 +72,10 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 
 	protected function beforeEditSave(array $values, array $row): array
 	{
-		if (array_key_exists('responsibleid', $values)) {
+		if(array_key_exists('responsibleid', $values)) {
 			$responsibleId = (int)$values['responsibleid'];
 
-			if ($responsibleId) {
+			if($responsibleId) {
 				$users = new Users_Model_DbTable_User();
 				$user = $users->getUser($responsibleId);
 
@@ -83,6 +83,28 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			} else {
 				$values['responsibleid'] = null;
 				$values['responsible'] = null;
+			}
+		}
+
+		if(array_key_exists('state', $values)) {
+			$oldState = (int)($row['state'] ?? 0);
+			$newState = (int)$values['state'];
+
+			if($newState !== $oldState) {
+				if($newState === 105) {
+					$values['completed'] = 1;
+
+					if(empty($row['completeddate'])) {
+						$values['completeddate'] = $this->_date;
+						$values['completedby'] = (int)$this->_user['id'];
+					}
+				}
+
+				if($newState === 106) {
+					$values['cancelled'] = 1;
+					$values['cancelleddate'] = $this->_date;
+					$values['cancelledby'] = (int)$this->_user['id'];
+				}
 			}
 		}
 

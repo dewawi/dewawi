@@ -124,3 +124,48 @@ UPDATE `process` SET `contactperson` = NULL WHERE `responsible` IS NOT NULL;
 ALTER TABLE `user` ADD `position` varchar(255) DEFAULT NULL AFTER `name`;
 ALTER TABLE `user` ADD `phone` varchar(255) DEFAULT NULL AFTER `email`;
 ALTER TABLE `user` ADD `mobile` varchar(255) DEFAULT NULL AFTER `phone`;
+
+ALTER TABLE `creditnote` ADD `completeddate` datetime DEFAULT NULL AFTER `completed`;
+ALTER TABLE `creditnote` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
+ALTER TABLE `creditnote` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
+ALTER TABLE `creditnote` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
+
+ALTER TABLE `deliveryorder` ADD `completeddate` datetime DEFAULT NULL AFTER `completed`;
+ALTER TABLE `deliveryorder` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
+ALTER TABLE `deliveryorder` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
+ALTER TABLE `deliveryorder` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
+
+ALTER TABLE `invoice` ADD `completeddate` datetime DEFAULT NULL AFTER `completed`;
+ALTER TABLE `invoice` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
+ALTER TABLE `invoice` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
+ALTER TABLE `invoice` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
+
+ALTER TABLE `purchaseorder` ADD `completeddate` datetime DEFAULT NULL AFTER `completed`;
+ALTER TABLE `purchaseorder` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
+ALTER TABLE `purchaseorder` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
+ALTER TABLE `purchaseorder` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
+
+ALTER TABLE `quote` ADD `completeddate` datetime DEFAULT NULL AFTER `completed`;
+ALTER TABLE `quote` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
+ALTER TABLE `quote` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
+ALTER TABLE `quote` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
+
+ALTER TABLE `quoterequest` ADD `completeddate` datetime DEFAULT NULL AFTER `completed`;
+ALTER TABLE `quoterequest` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
+ALTER TABLE `quoterequest` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
+ALTER TABLE `quoterequest` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
+
+ALTER TABLE `reminder` ADD `completeddate` datetime DEFAULT NULL AFTER `completed`;
+ALTER TABLE `reminder` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
+ALTER TABLE `reminder` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
+ALTER TABLE `reminder` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
+
+ALTER TABLE `salesorder` ADD `completeddate` datetime DEFAULT NULL AFTER `completed`;
+ALTER TABLE `salesorder` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
+ALTER TABLE `salesorder` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
+ALTER TABLE `salesorder` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
+
+ALTER TABLE `process` ADD `completeddate` datetime DEFAULT NULL AFTER `completed`;
+ALTER TABLE `process` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
+ALTER TABLE `process` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
+ALTER TABLE `process` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
