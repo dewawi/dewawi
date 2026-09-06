@@ -16,7 +16,7 @@
 						<?php foreach ($this->items as $id => $item) : ?>
 							<div class="cart-item d-flex justify-content-between align-items-center" data-id="<?php echo $id; ?>">
 								<div class="product-details" style="flex: 2; display: flex; flex-direction: column; justify-content: center;">
-									<?php $itemUrl = $this->SlugUrl('item', $item->id); ?>
+									<?php $itemUrl = $this->SlugUrl('item', (int)$id); ?>
 									<?php if($itemUrl) : ?>
 										<a href="<?php echo $itemUrl; ?>">
 											<strong class="product-title"><?php echo $this->escape($item['title']); ?></strong>
@@ -42,7 +42,9 @@
 					<div class="cart-summary d-flex justify-content-between align-items-center mt-3">
 						<h4><?php echo $this->translate('Total:'); ?> <span id="cart-total"><?php echo $this->total; ?></span></h4>
 						<?php $shippingPage = $this->PageByType('shipping'); ?>
-						<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->SlugUrl('page', $shippingPage['id']); ?>" target="_blank">Versandkosten</a></span>
+						<?php if($shippingPage) : ?>
+							<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->SlugUrl('page', (int)$shippingPage['id']); ?>" target="_blank">Versandkosten</a></span>
+						<?php endif; ?>
 						<button class="btn btn-warning" id="clear-cart"><?php echo $this->translate('SHOPS_SHOPPING_CART_CLEAR'); ?></button>
 						<button id="checkout-btn" class="btn btn-success"><?php echo $this->translate('SHOPS_CHECKOUT'); ?></button>
 					</div>

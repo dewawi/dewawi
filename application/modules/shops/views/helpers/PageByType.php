@@ -2,24 +2,11 @@
 
 class Zend_View_Helper_PageByType extends Zend_View_Helper_Abstract
 {
-	public function PageByType($type, $pages = null)
+	public function PageByType($type)
 	{
-		if ($pages === null && isset($this->view->pages)) {
-			$pages = $this->view->pages;
-		}
+		$shop = Zend_Registry::get('Shop');
+		$pageDb = new Shops_Model_DbTable_Page();
 
-		if (!$pages) {
-			return null;
-		}
-
-		foreach ($pages as $page) {
-			$page = is_object($page) ? $page->toArray() : $page;
-
-			if (($page['type'] ?? null) === $type) {
-				return $page;
-			}
-		}
-
-		return null;
+		return $pageDb->getPageByType($type, (int)$shop['id']);
 	}
 }
