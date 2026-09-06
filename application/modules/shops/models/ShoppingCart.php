@@ -38,9 +38,9 @@ class Shops_Model_ShoppingCart
 		$id = (int)$id;
 		$quantity = (float)$quantity;
 
-		if(!isset($this->session->items[$id])) return false;
+		if(!isset($this->session->items[$id]) || $quantity < 0) return false;
 
-		if($quantity <= 0) {
+		if($quantity == 0) {
 			unset($this->session->items[$id]);
 			return true;
 		}
@@ -51,9 +51,12 @@ class Shops_Model_ShoppingCart
 
 	public function removeItem($id)
 	{
-		if (isset($this->session->items[$id])) {
-			unset($this->session->items[$id]);
-		}
+		$id = (int)$id;
+
+		if(!isset($this->session->items[$id])) return false;
+
+		unset($this->session->items[$id]);
+		return true;
 	}
 
 	public function getItems()
@@ -82,5 +85,6 @@ class Shops_Model_ShoppingCart
 	public function clearCart()
 	{
 		$this->session->items = [];
+		return true;
 	}
 }

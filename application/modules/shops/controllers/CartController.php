@@ -85,6 +85,10 @@ class Shops_CartController extends Zend_Controller_Action
 
 	public function addAction()
 	{
+		if(!$this->getRequest()->isPost()) {
+			return $this->_helper->json(['success' => false, 'message' => 'Invalid request']);
+		}
+
 		$shop = Zend_Registry::get('Shop');
 		$id = (int)$this->_getParam('id');
 		$quantity = $this->_getParam('quantity', 1);
@@ -114,18 +118,23 @@ class Shops_CartController extends Zend_Controller_Action
 
 	public function updateAction()
 	{
-		$id = $this->_getParam('id');
+		$id = (int)$this->_getParam('id');
 		$quantity = $this->_getParam('quantity');
 
-		$this->cart->updateItem($id, $quantity);
+		if(!$id || !is_numeric($quantity)) {
+			return $this->_helper->json(['success' => false, 'message' => 'Invalid cart item']);
+		}
 
-		$response = [
+		if(!$this->cart->updateItem($id, (float)$quantity)) {
+			return $this->_helper->json(['success' => false, 'message' => 'Cart item not found']);
+		}
+
+		return $this->_helper->json([
 			'success' => true,
 			'cart' => $this->cart->getItems(),
 			'total' => $this->cart->getTotalPrice(),
 			'cartItemCount' => $this->cart->getItemCount(),
-		];
-		$this->_helper->json($response);
+		]);
 	}
 
 	public function countAction()
@@ -140,29 +149,29 @@ class Shops_CartController extends Zend_Controller_Action
 
 	public function removeAction()
 	{
-		$id = $this->_getParam('id');
+		$id = (int)$this->_getParam('id');
 
-		$this->cart->removeItem($id);
+		if(!$id || !$this->cart->removeItem($id)) {
+			return $this->_helper->json(['success' => false, 'message' => 'Cart item not found']);
+		}
 
-		$response = [
+		return $this->_helper->json([
 			'success' => true,
 			'cart' => $this->cart->getItems(),
 			'total' => $this->cart->getTotalPrice(),
 			'cartItemCount' => $this->cart->getItemCount(),
-		];
-		$this->_helper->json($response);
+		]);
 	}
 
 	public function clearAction()
 	{
 		$this->cart->clearCart();
 
-		$response = [
+		return $this->_helper->json([
 			'success' => true,
-			'cart' => $this->cart->getItems(),
-			'total' => $this->cart->getTotalPrice(),
-			'cartItemCount' => $this->cart->getItemCount(),
-		];
-		$this->_helper->json($response);
+			'cart' => [],
+			'total' => 0,
+			'cartItemCount' => 0,
+		]);
 	}
 }
