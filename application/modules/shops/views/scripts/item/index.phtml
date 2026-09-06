@@ -43,7 +43,7 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 	},
 	"offers": {
 		"@type": "Offer",
-		"url": "<?php echo $this->shop['url'].$this->url([], 'slug_category_' . $this->category['id']); ?>",
+		"url": "<?php echo $this->shop['url'].$this->SlugUrl('item', (int)$this->item['id']); ?>",
 		"priceCurrency": "<?php echo $this->item['currency']; ?>",
 		"price": "<?php echo $this->item['price']*1.19; ?>",
 		"availability": "https://schema.org/InStock"

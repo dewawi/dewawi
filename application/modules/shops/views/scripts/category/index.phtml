@@ -179,7 +179,7 @@ foreach ($this->categories as $subcategory) {
 						},
 						"offers": {
 							"@type": "Offer",
-							"url": "<?php echo $this->shop['url'].$this->url([], 'slug_category_' . $this->category['id']); ?>",
+							"url": "<?php echo $this->shop['url'].$this->SlugUrl('item', $item->id); ?>",
 							"priceCurrency": "<?php echo $item->currency; ?>",
 							"price": "<?php echo $this->prices[$item->id]['rawtax']; ?>",
 							"availability": "https://schema.org/InStock"

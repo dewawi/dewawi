@@ -11,7 +11,6 @@ $this->headTitle($shop['title'] ?? '');
 echo $this->doctype();
 $home = false;
 if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
-$router = Zend_Controller_Front::getInstance()->getRouter();
 ?>
 <html lang="en">
 <head>

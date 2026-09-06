@@ -43,7 +43,7 @@ class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract{
 						  </li>';
 			}
 			$html .= '<li class="breadcrumb-item">
-						  <a href="' . $this->view->SlugUrl('category', $breadcrumb['id']) . '">'
+						  <a href="' . $this->view->SlugUrl('category', $this->view->category['id']) . '">'
 						  . $this->view->escape($this->view->category['title']) . '</a>
 					  </li>';
 			$html .= '<li class="breadcrumb-item active" aria-current="page">'

@@ -54,18 +54,17 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
 		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
-		$where[] = $this->getAdapter()->quoteInto('entityid = ?', $entityid);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
+		$where[] = $this->getAdapter()->quoteInto('entityid = ?', (int)$entityid);
+		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$shopid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 
 		$data = array();
-		$data['parentid'] = $parentid;
+		$data['parentid'] = (int)$parentid;
 		if($slug) $data['slug'] = $slug;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
 
-		// Perform the update query
 		$this->update($data, $where);
 	}
 
@@ -95,10 +94,11 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
 		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		$where[] = $this->getAdapter()->quoteInto('entityid = ?', $entityid);
-		$data = array();
-		$data['deleted'] = 1;
-		$this->update($data, $where);
+		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$shopid);
+		$where[] = $this->getAdapter()->quoteInto('entityid = ?', (int)$entityid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+
+		$this->update(array('deleted' => 1), $where);
 	}
 }
