@@ -8,7 +8,7 @@ class DEEC_Site_Router
 		$router = $frontController->getRouter();
 
 		$this->registerFallbackRoute($router);
-		$this->registerSlugRoutes($router, $siteContext);
+		$this->registerSlugRoute($router, $siteContext);
 		$this->registerBaseRoutes($router, $siteContext);
 	}
 
@@ -199,33 +199,40 @@ class DEEC_Site_Router
 		));
 	}
 
-	protected function registerSlugRoutes(Zend_Controller_Router_Rewrite $router, DEEC_Site_Context $siteContext)
+	protected function registerSlugRoute(Zend_Controller_Router_Rewrite $router, DEEC_Site_Context $siteContext)
 	{
+		$path = trim((string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+
+		if ($path === '') {
+			return;
+		}
+
+		$segments = explode('/', $path);
+		$slug = end($segments);
+
+		if (!$slug) {
+			return;
+		}
+
 		$slugTable = new Zend_Db_Table('slug');
 		$slugs = $slugTable->fetchAll(array(
 			'shopid = ?' => $siteContext->getSiteId(),
 			'clientid = ?' => $siteContext->getClientId(),
+			'slug = ?' => $slug,
 			'deleted = ?' => 0
 		));
 
-		$slugDict = array();
+		foreach ($slugs as $row) {
+			$slugData = $row->toArray();
 
-		foreach ($slugs as $slug) {
-			$slugData = $slug->toArray();
-			$slugDict[$this->getSlugKey($slugData)] = $slugData;
-		}
-
-		foreach ($slugs as $slug) {
-			$slugData = $slug->toArray();
-
-			if (empty($slugData['slug'])) {
+			if ($this->buildSlugPath($slugData, $slugTable, $siteContext) !== $path) {
 				continue;
 			}
 
 			$router->addRoute(
-				$this->getRouteName($slugData),
+				'shop_slug',
 				new Zend_Controller_Router_Route(
-					$this->buildFullSlug($slugData, $slugDict),
+					$path,
 					array(
 						'module' => $slugData['module'],
 						'controller' => $slugData['controller'],
@@ -234,27 +241,49 @@ class DEEC_Site_Router
 					)
 				)
 			);
+
+			return;
 		}
 	}
 
-	protected function buildFullSlug(array $item, array $slugDict)
+	protected function buildSlugPath(array $item, Zend_Db_Table $slugTable, DEEC_Site_Context $siteContext)
 	{
-		$slug = $item['slug'];
+		$path = trim($item['slug'], '/');
 		$visited = array();
 
 		while (!empty($item['parentid'])) {
-			$parentKey = $this->getParentSlugKey($item);
+			$controller = $item['controller'] === 'item' ? 'category' : $item['controller'];
+			$key = $controller . ':' . (int)$item['parentid'];
 
-			if (!isset($slugDict[$parentKey]) || isset($visited[$parentKey])) {
+			if (isset($visited[$key])) {
 				break;
 			}
 
-			$visited[$parentKey] = true;
-			$item = $slugDict[$parentKey];
-			$slug = $item['slug'] . '/' . $slug;
+			$visited[$key] = true;
+
+			$parent = $slugTable->fetchRow(array(
+				'module = ?' => $item['module'],
+				'controller = ?' => $controller,
+				'entityid = ?' => (int)$item['parentid'],
+				'shopid = ?' => $siteContext->getSiteId(),
+				'clientid = ?' => $siteContext->getClientId(),
+				'deleted = ?' => 0
+			));
+
+			if (!$parent) {
+				break;
+			}
+
+			$item = $parent->toArray();
+
+			if (empty($item['slug'])) {
+				break;
+			}
+
+			$path = trim($item['slug'], '/') . '/' . $path;
 		}
 
-		return $slug;
+		return $path;
 	}
 
 	protected function getSlugKey(array $slugData)
