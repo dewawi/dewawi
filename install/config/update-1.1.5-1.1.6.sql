@@ -189,3 +189,5 @@ UPDATE `reminder` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
 UPDATE `purchaseorder` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
 UPDATE `quoterequest` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
 UPDATE `process` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
+
+ALTER TABLE `config` MODIFY `smtppass` varchar(255) DEFAULT NULL;

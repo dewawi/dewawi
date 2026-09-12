@@ -35,6 +35,31 @@ class DEEC_Email {
 		$this->emailattachment = new DEEC_Emailattachment($basePath, $host, $username, $password, $dbname);
 	}
 
+	private function getCampaignSmtpConfig($clientid) {
+		$clientid = (int)$clientid;
+
+		$query = '
+			SELECT smtphost, smtpuser, smtppass
+			FROM config
+			WHERE clientid = '.$clientid.'
+			LIMIT 1
+		';
+
+		$result = mysqli_query($this->connection, $query);
+
+		if(!$result || mysqli_num_rows($result) === 0) {
+			throw new Exception('Campaign SMTP configuration not found');
+		}
+
+		$config = mysqli_fetch_assoc($result);
+
+		if(empty($config['smtphost']) || empty($config['smtpuser']) || empty($config['smtppass'])) {
+			throw new Exception('Campaign SMTP configuration is incomplete');
+		}
+
+		return $config;
+	}
+
 	public function getCampaignRecipientStatus($campaign) {
 		$categories = $this->category->getCategories('contact', $campaign['clientid']);
 
@@ -55,20 +80,21 @@ class DEEC_Email {
 		require_once(BASE_PATH.'/library/PHPMailer/SMTP.php');
 
 		if(true) {
-			//echo $campaign['title'];
 			$mail = new PHPMailer\PHPMailer\PHPMailer();
 
-			//Server settings
-			$mail->SMTPDebug = 0;													// Enable verbose debug output
-			$mail->isSMTP();														// Send using SMTP
-			$mail->Host		= $user['smtphost'];									// Set the SMTP server to send through
-			$mail->SMTPAuth	= true;													// Enable SMTP authentication
-			$mail->Username	= $user['smtpuser'];									// SMTP username
-			$mail->Password	= $user['smtppass'];									// SMTP password
-			$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;	// Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
-			$mail->Port		= 465;													// TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
+			$mail->SMTPDebug = 0;
+			$mail->isSMTP();
+			$mail->SMTPAuth = true;
 
 			if($campaign) {
+				$smtp = $this->getCampaignSmtpConfig($campaign['clientid']);
+
+				$mail->Host = $smtp['smtphost'];
+				$mail->Username = $smtp['smtpuser'];
+				$mail->Password = $smtp['smtppass'];
+				$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+				$mail->Port = 465;
+
 				$categories = $this->category->getCategories(
 					'contact',
 					$campaign['clientid']
@@ -91,11 +117,11 @@ class DEEC_Email {
 				$data['module'] = 'campaigns';
 				$data['controller'] = 'campaign';
 			} else {
-				//Get email
-				//$emailDb = new Contacts_Model_DbTable_Email();
-				//$emailArray = $emailDb->getEmail($data['recipient']);
-				//$recipients[0]['email'] = $emailArray['email'];
-				//if($emailArray['controller'] == 'contact') $recipients[0]['contactid'] = $emailArray['parentid'];
+				$mail->Host = $user['smtphost'];
+				$mail->Username = $user['smtpuser'];
+				$mail->Password = $user['smtppass'];
+				$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+				$mail->Port = 465;
 			}
 //print_r($recipients);
 
@@ -128,7 +154,7 @@ class DEEC_Email {
 				//Recipients
 				$recipient['email'] = strtolower(trim($recipient['email']));
 				$mail->clearAllRecipients();											// clear all
-				$mail->setFrom($user['smtpuser'], $user['emailsender']);
+				$mail->setFrom($user['email'], $user['emailsender']);
 				$mail->addAddress($recipient['email']);									// Add a recipient
 				/*$data['replyto'] = str_replace(' ', '', $data['replyto']);			// Remove spaces
 				if($data['replyto']) $mail->addReplyTo($data['replyto']);				// Add reply to
