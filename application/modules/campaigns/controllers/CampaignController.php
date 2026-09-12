@@ -200,7 +200,7 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 					$toolbar = new Campaigns_Form_Toolbar();
 					$options = $this->_helper->Options->getOptions($toolbar);
 					$params = $this->_helper->Params->getParams($toolbar, $options);
-					$toolbar->state->setValue($data['state']);
+					$toolbar->setValue('state', $data['state']);
 					$toolbarPositions = new Campaigns_Form_ToolbarPositions();
 
 					//Get already sent emails on champaign
@@ -271,7 +271,7 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 					$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
 					$attachments = $emailattachmentDb->getEmailattachments($id, 'campaigns', 'campaign');
 
-					$form->populate($data);
+					$form->setValues($data);
 
 					$userDb = new Users_Model_DbTable_User();
 					$users = $userDb->getUsers();
