@@ -176,9 +176,8 @@ class DEEC_Email {
 
 			foreach($recipients as $recipient) {
 				//Recipients
-				$recipient['email'] = strtolower(trim($recipient['email']));
 				$mail->clearAllRecipients();											// clear all
-				$mail->setFrom($user['email'], $user['emailsender']);
+				$mail->setFrom($fromEmail, $fromName);
 				$mail->addAddress($recipient['email']);									// Add a recipient
 				/*$data['replyto'] = str_replace(' ', '', $data['replyto']);			// Remove spaces
 				if($data['replyto']) $mail->addReplyTo($data['replyto']);				// Add reply to
