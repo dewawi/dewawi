@@ -81,4 +81,45 @@ class DEEC_Emailmessage {
 			return false;
 		}
 	}
+
+	public function getCampaignStatus($campaignid, $clientid) {
+		$campaignid = (int)$campaignid;
+		$clientid = (int)$clientid;
+
+		$query = '
+			SELECT
+				SUM(response = "sent") AS sent,
+				SUM(response = "pending") AS pending,
+				SUM(response != "sent" AND response != "pending") AS failed
+			FROM emailmessage
+			WHERE parentid = '.$campaignid.'
+				AND module = "campaigns"
+				AND controller = "campaign"
+				AND clientid = '.$clientid.'
+				AND deleted = 0
+		';
+
+		$result = mysqli_query($this->connection, $query);
+
+		if (!$result) {
+			return [
+				'sent' => 0,
+				'pending' => 0,
+				'failed' => 0,
+				'total' => 0,
+			];
+		}
+
+		$status = mysqli_fetch_assoc($result);
+		$sent = (int)$status['sent'];
+		$pending = (int)$status['pending'];
+		$failed = (int)$status['failed'];
+
+		return [
+			'sent' => $sent,
+			'pending' => $pending,
+			'failed' => $failed,
+			'total' => $sent + $pending + $failed,
+		];
+	}
 }
