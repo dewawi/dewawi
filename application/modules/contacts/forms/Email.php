@@ -10,5 +10,12 @@ class Contacts_Form_Email extends DEEC_Form
 			'type' => 'text',
 			'format' => ['type' => 'string'],
 		]);
+
+		$this->addElement([
+			'name' => 'suppressed',
+			'label' => 'CONTACTS_EMAIL_SUPPRESSED',
+			'type' => 'checkbox',
+			'format' => ['type' => 'bool'],
+		]);
 	}
 }

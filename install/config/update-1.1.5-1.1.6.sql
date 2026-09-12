@@ -196,3 +196,7 @@ ALTER TABLE `config` ADD `smtpauth` tinyint(1) NOT NULL DEFAULT 1 AFTER `smtppor
 ALTER TABLE `config` ADD `smtpsecure` varchar(32) DEFAULT NULL AFTER `smtpauth`;
 ALTER TABLE `config` ADD `smtpuser` varchar(255) DEFAULT NULL AFTER `smtpsecure`;
 ALTER TABLE `config` ADD `smtppass` varchar(255) DEFAULT NULL AFTER `smtpuser`;
+
+ALTER TABLE `email` ADD `suppressed` tinyint(1) NOT NULL DEFAULT 0 AFTER `email`;
+ALTER TABLE `email` ADD `suppressionreason` varchar(32) DEFAULT NULL AFTER `suppressed`;
+ALTER TABLE `email` ADD `suppresseddate` datetime DEFAULT NULL AFTER `suppressionreason`;

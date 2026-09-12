@@ -115,6 +115,14 @@ class DEEC_Emailaddress {
 				AND TRIM(e.email) != ""
 				AND NOT EXISTS (
 					SELECT 1
+					FROM email AS suppressedemail
+					WHERE suppressedemail.clientid = e.clientid
+						AND suppressedemail.deleted = 0
+						AND suppressedemail.suppressed = 1
+						AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
+				)
+				AND NOT EXISTS (
+					SELECT 1
 					FROM emailmessage AS em
 					WHERE em.parentid = '.$campaignid.'
 						AND em.module = "campaigns"
@@ -173,6 +181,14 @@ class DEEC_Emailaddress {
 			WHERE '.$where.'
 				AND e.email IS NOT NULL
 				AND TRIM(e.email) != ""
+				AND NOT EXISTS (
+					SELECT 1
+					FROM email AS suppressedemail
+					WHERE suppressedemail.clientid = e.clientid
+						AND suppressedemail.deleted = 0
+						AND suppressedemail.suppressed = 1
+						AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
+				)
 				AND NOT EXISTS (
 					SELECT 1
 					FROM emailmessage AS em
@@ -315,6 +331,14 @@ class DEEC_Emailaddress {
 				WHERE '.$where.'
 					AND e.email IS NOT NULL
 					AND TRIM(e.email) != ""
+					AND NOT EXISTS (
+						SELECT 1
+						FROM email AS suppressedemail
+						WHERE suppressedemail.clientid = e.clientid
+							AND suppressedemail.deleted = 0
+							AND suppressedemail.suppressed = 1
+							AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
+					)
 
 				UNION
 
@@ -333,6 +357,14 @@ class DEEC_Emailaddress {
 				WHERE '.$where.'
 					AND e.email IS NOT NULL
 					AND TRIM(e.email) != ""
+					AND NOT EXISTS (
+						SELECT 1
+						FROM email AS suppressedemail
+						WHERE suppressedemail.clientid = e.clientid
+							AND suppressedemail.deleted = 0
+							AND suppressedemail.suppressed = 1
+							AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
+					)
 			) AS r
 			LEFT JOIN (
 				SELECT

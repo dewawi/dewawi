@@ -19,6 +19,28 @@ class Contacts_EmailController
 		];
 	}
 
+	protected function beforeMultiUpdate(array $values, array $row, array $post): array
+	{
+		if(!array_key_exists('suppressed', $values)) {
+			return $values;
+		}
+
+		if($values['suppressed']) {
+			if(empty($row['suppressed'])) {
+				$values['suppresseddate'] = $this->_date;
+			}
+
+			if(empty($row['suppressionreason'])) {
+				$values['suppressionreason'] = 'manual';
+			}
+		} else {
+			$values['suppressionreason'] = null;
+			$values['suppresseddate'] = null;
+		}
+
+		return $values;
+	}
+
 	public function indexAction()
 	{
 		if ($this->getRequest()->isPost()) {
