@@ -124,6 +124,30 @@ class DEEC_Emailaddress {
 						AND em.recipient = e.email
 						AND em.response = "sent"
 				)
+				AND NOT EXISTS (
+					SELECT 1
+					FROM emailmessage AS pending
+					WHERE pending.parentid = '.$campaignid.'
+						AND pending.module = "campaigns"
+						AND pending.controller = "campaign"
+						AND pending.clientid = '.$clientid.'
+						AND pending.deleted = 0
+						AND pending.recipient = e.email
+						AND pending.response = "pending"
+						AND pending.messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+				)
+				AND (
+					SELECT COUNT(*)
+					FROM emailmessage AS retry
+					WHERE retry.parentid = '.$campaignid.'
+						AND retry.module = "campaigns"
+						AND retry.controller = "campaign"
+						AND retry.clientid = '.$clientid.'
+						AND retry.deleted = 0
+						AND retry.recipient = e.email
+						AND retry.response != "sent"
+						AND retry.response != "pending"
+				) < 3
 
 			UNION ALL
 
@@ -160,7 +184,32 @@ class DEEC_Emailaddress {
 						AND em.recipient = e.email
 						AND em.response = "sent"
 				)
+				AND NOT EXISTS (
+					SELECT 1
+					FROM emailmessage AS pending
+					WHERE pending.parentid = '.$campaignid.'
+						AND pending.module = "campaigns"
+						AND pending.controller = "campaign"
+						AND pending.clientid = '.$clientid.'
+						AND pending.deleted = 0
+						AND pending.recipient = e.email
+						AND pending.response = "pending"
+						AND pending.messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+				)
+				AND (
+					SELECT COUNT(*)
+					FROM emailmessage AS retry
+					WHERE retry.parentid = '.$campaignid.'
+						AND retry.module = "campaigns"
+						AND retry.controller = "campaign"
+						AND retry.clientid = '.$clientid.'
+						AND retry.deleted = 0
+						AND retry.recipient = e.email
+						AND retry.response != "sent"
+						AND retry.response != "pending"
+				) < 3
 
+			ORDER BY contactid, contactpersonid, email
 			LIMIT '.$limit.'
 		';
 
