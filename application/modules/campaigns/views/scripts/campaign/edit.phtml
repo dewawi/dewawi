@@ -12,22 +12,23 @@ echo $this->FileManager();
 		'overview' => ['title' => 'TABS_OVERVIEW'],
 		'contacts' => [
 			'title' => 'TABS_CONTACTS',
-			'html' => $contactsHtml,
+			'html' => $this->Contacts(),
 		],
 		'errors' => [
 			'title' => 'TABS_ERRORS',
-			'html' => $errorsHtml,
+			'html' => $this->Errors(),
 		],
 		'messages' => [
 			'title' => 'TABS_MESSAGES',
 			'html' => $this->EmailMessages(),
 			'a_attrs' => [
-				'onclick' => 'getEmailmessages()',
+				'data-tab-load' => 'getEmailmessages',
 			],
 		],
 		'files' => [
 			'title' => 'TABS_FILES',
-			'html' => '<iframe src="' . $this->baseUrl() . '/library/FileManager/dialog.php?lang=de&type=0" width="100%" height="700"></iframe>',
+			'html' => $this->Files(),
 		],
 	],
 ]); ?>
+<?php echo $this->Popup(); ?>
