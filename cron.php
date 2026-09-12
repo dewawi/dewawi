@@ -43,7 +43,7 @@ foreach ($campaigns as $campaign) {
 
 	$now = new DateTime('now', $timezone);
 
-	if (!withinDateRange($now, $campaign['startdate'] ?? null, $campaign['duedate'] ?? null)) {
+	if (!withinDateRange($now, $campaign['startdate'] ?? null, $campaign['duedate'] ?? null, $timezone)) {
 		continue;
 	}
 
@@ -167,13 +167,13 @@ function isBetween($from, $till, $input) {
 error_log(date("Y-m-d H:i:s")." Cronjob 'dewawi' finished.\n", 3, $log_file);
 
 // helpers
-function withinDateRange(DateTime $now, $start, $due): bool {
+function withinDateRange(DateTime $now, $start, $due, DateTimeZone $timezone): bool {
 	if ($start) {
-		$sd = DateTime::createFromFormat('Y-m-d H:i:s', $start);
+		$sd = DateTime::createFromFormat('Y-m-d H:i:s', $start, $timezone);
 		if ($sd && $now < $sd) return false;
 	}
 	if ($due) {
-		$dd = DateTime::createFromFormat('Y-m-d H:i:s', $due);
+		$dd = DateTime::createFromFormat('Y-m-d H:i:s', $due, $timezone);
 		if ($dd && $now > $dd) return false;
 	}
 	return true;
