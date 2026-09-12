@@ -48,7 +48,10 @@ class Zend_View_Helper_Contacts extends Zend_View_Helper_Abstract
 									</td>
 									<td><?php echo $contact->name1; ?></td>
 									<td style="flex-grow: 2;">
-										<?php echo str_replace(',', '<br>', $this->view->escape($contact->emails)); ?>
+										<?php foreach((array)$contact->emails as $email) : ?>
+											<?php if(trim((string)$email) === '') continue; ?>
+											<div><?php echo $this->view->escape($email); ?></div>
+										<?php endforeach; ?>
 
 										<?php if(!empty($this->view->contactPersonsByCompany[$contact->id])) : ?>
 											<div style="margin-top:8px; border-top:1px solid #eee; padding-top:6px;">
