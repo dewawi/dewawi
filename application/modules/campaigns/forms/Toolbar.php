@@ -93,16 +93,29 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'name' => 'state',
 			'type' => 'select',
+			'default' => '100',
+			'source' => 'state',
 			'wrap' => false,
-			'options' => $this->stateOptions(),
+			'format' => ['type' => 'string'],
 		]);
 
 		$this->addElement([
 			'name' => 'states',
 			'type' => 'multicheckbox',
-			'wrap' => false,
-			'options' => $this->stateOptions(),
+			'label' => 'TOOLBAR_STATE',
 			'default' => ['100', '101', '102', '103', '104'],
+			'options' => [
+				'100' => 'STATES_CREATED',
+				'101' => 'STATES_IN_PROCESS',
+				'102' => 'STATES_PLEASE_CHECK',
+				'103' => 'STATES_PLEASE_DELETE',
+				'104' => 'STATES_RELEASED',
+				'105' => 'STATES_COMPLETED',
+				'106' => 'STATES_CANCELLED',
+			],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
 		]);
 
 		$this->addElement([
@@ -221,18 +234,5 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 			'wrap' => false,
 			'format' => ['type' => 'int'],
 		]);
-	}
-
-	protected function stateOptions(): array
-	{
-		return [
-			'100' => 'STATES_CREATED',
-			'101' => 'STATES_IN_PROCESS',
-			'102' => 'STATES_PLEASE_CHECK',
-			'103' => 'STATES_PLEASE_DELETE',
-			'104' => 'STATES_RELEASED',
-			'105' => 'STATES_COMPLETED',
-			'106' => 'STATES_CANCELLED',
-		];
 	}
 }

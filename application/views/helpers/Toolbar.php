@@ -79,9 +79,11 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 
 		$state = $toolbar->getElement('state');
 
-		if ($state) {
+		if($state) {
 			$html .= '<div class="dw-toolbar__field">';
-			$html .= $toolbar->renderElement('state');
+			$html .= $toolbar->renderElementWithAttribs('state', [
+				'aria-label' => $this->view->translate('TOOLBAR_STATE'),
+			]);
 			$html .= '</div>';
 		}
 
