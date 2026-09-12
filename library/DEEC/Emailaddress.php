@@ -122,10 +122,7 @@ class DEEC_Emailaddress {
 						AND em.clientid = '.$clientid.'
 						AND em.deleted = 0
 						AND em.recipient = e.email
-						AND (
-							em.response IS NULL
-							OR em.response = ""
-						)
+						AND em.response = "sent"
 				)
 
 			UNION ALL
@@ -161,10 +158,7 @@ class DEEC_Emailaddress {
 						AND em.clientid = '.$clientid.'
 						AND em.deleted = 0
 						AND em.recipient = e.email
-						AND (
-							em.response IS NULL
-							OR em.response = ""
-						)
+						AND em.response = "sent"
 				)
 
 			LIMIT '.$limit.'

@@ -150,6 +150,7 @@ class DEEC_Email {
 				$emailmessage['messagesent'] = date('Y-m-d H:i:s');
 				$emailmessage['messagesentby'] = $user['id'];
 				$emailmessage['attachment'] = implode(',', $attachmentsSent);
+				$emailmessage['response'] = 'pending';
 				$messageid = $this->emailmessage->addEmailmessage($emailmessage);
 
 				//Get portal TODO
@@ -178,15 +179,16 @@ class DEEC_Email {
 
 				//Send the message, check for errors
 				if (!$mail->send()) {
-					$this->emailmessage->updateEmailmessage(
-						$messageid,
-						[
-							'response' => $mail->ErrorInfo,
-						]
-					);
+					$this->emailmessage->updateEmailmessage($messageid, [
+						'response' => $mail->ErrorInfo,
+					]);
 
 					continue;
 				}
+
+				$this->emailmessage->updateEmailmessage($messageid, [
+					'response' => 'sent',
+				]);
 
 				$sent++;
 			}

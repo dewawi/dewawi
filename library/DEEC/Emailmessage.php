@@ -31,14 +31,12 @@ class DEEC_Emailmessage {
 	}
 
 	public function updateEmailmessage($id, $data) {
-		$query = 'UPDATE emailmessage SET response = "'.$data['response'].'" WHERE id = "'.$id.'";';
+		$id = (int)$id;
+		$response = $this->connection->real_escape_string($data['response']);
 
-		//echo $query;
-		if(mysqli_query($this->connection, $query)) {
-			return true;
-		} else{
-			return false;
-		}
+		$query = 'UPDATE emailmessage SET response = "'.$response.'" WHERE id = '.$id;
+
+		return mysqli_query($this->connection, $query) ? true : false;
 	}
 
 	public function getEmailmessage($id) {
