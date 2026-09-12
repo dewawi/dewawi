@@ -259,11 +259,13 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 						$emailForm->body->setValue($emailtemplate['body']);
 					}*/
 
-					if($data['emailcc']) $emailForm->cc->setValue($data['emailcc']);
-					if($data['emailbcc']) $emailForm->bcc->setValue($data['emailbcc']);
-					if($data['emailreplyto']) $emailForm->replyto->setValue($data['emailreplyto']);
-					$emailForm->subject->setValue($data['emailsubject']);
-					$emailForm->body->setValue($data['emailbody']);
+					$emailForm->setValues([
+						'cc' => $data['emailcc'],
+						'bcc' => $data['emailbcc'],
+						'replyto' => $data['emailreplyto'],
+						'subject' => $data['emailsubject'],
+						'body' => $data['emailbody'],
+					]);
 
 					$this->view->emailForm = $emailForm;
 
