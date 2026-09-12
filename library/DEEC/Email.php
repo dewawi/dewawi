@@ -35,11 +35,11 @@ class DEEC_Email {
 		$this->emailattachment = new DEEC_Emailattachment($basePath, $host, $username, $password, $dbname);
 	}
 
-	private function getCampaignSmtpConfig($clientid) {
+	private function getSmtpConfig($clientid) {
 		$clientid = (int)$clientid;
 
 		$query = '
-			SELECT smtphost, smtpuser, smtppass
+			SELECT smtphost, smtpport, smtpauth, smtpsecure, smtpuser, smtppass
 			FROM config
 			WHERE clientid = '.$clientid.'
 			LIMIT 1
@@ -48,13 +48,18 @@ class DEEC_Email {
 		$result = mysqli_query($this->connection, $query);
 
 		if(!$result || mysqli_num_rows($result) === 0) {
-			throw new Exception('Campaign SMTP configuration not found');
+			return null;
 		}
 
 		$config = mysqli_fetch_assoc($result);
+		$configured = !empty($config['smtphost']) || !empty($config['smtpport']) || !empty($config['smtpsecure']) || !empty($config['smtpuser']) || !empty($config['smtppass']);
 
-		if(empty($config['smtphost']) || empty($config['smtpuser']) || empty($config['smtppass'])) {
-			throw new Exception('Campaign SMTP configuration is incomplete');
+		if(!$configured) {
+			return null;
+		}
+
+		if(empty($config['smtphost']) || empty($config['smtpport']) || empty($config['smtpsecure']) || empty($config['smtpuser']) || empty($config['smtppass'])) {
+			throw new Exception('SMTP configuration is incomplete');
 		}
 
 		return $config;
@@ -87,13 +92,32 @@ class DEEC_Email {
 			$mail->SMTPAuth = true;
 
 			if($campaign) {
-				$smtp = $this->getCampaignSmtpConfig($campaign['clientid']);
+				$smtp = $this->getSmtpConfig($campaign['clientid']);
 
-				$mail->Host = $smtp['smtphost'];
-				$mail->Username = $smtp['smtpuser'];
-				$mail->Password = $smtp['smtppass'];
-				$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-				$mail->Port = 465;
+				if($smtp) {
+					$mail->Host = $smtp['smtphost'];
+					$mail->SMTPAuth = (bool)$smtp['smtpauth'];
+					$mail->Username = $smtp['smtpuser'];
+					$mail->Password = $smtp['smtppass'];
+					$mail->SMTPSecure = $smtp['smtpsecure'];
+					$mail->Port = (int)$smtp['smtpport'];
+
+					if(empty($user['email'])) {
+						throw new Exception('Campaign sender email is missing');
+					}
+
+					$fromEmail = $user['email'];
+				} else {
+					$mail->Host = $user['smtphost'];
+					$mail->SMTPAuth = true;
+					$mail->Username = $user['smtpuser'];
+					$mail->Password = $user['smtppass'];
+					$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+					$mail->Port = 465;
+					$fromEmail = $user['smtpuser'];
+				}
+
+				$fromName = $user['emailsender'];
 
 				$categories = $this->category->getCategories(
 					'contact',

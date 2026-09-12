@@ -190,4 +190,9 @@ UPDATE `purchaseorder` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` =
 UPDATE `quoterequest` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
 UPDATE `process` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
 
-ALTER TABLE `config` MODIFY `smtppass` varchar(255) DEFAULT NULL;
+ALTER TABLE `config` ADD `smtphost` varchar(255) DEFAULT NULL AFTER `footer`;
+ALTER TABLE `config` ADD `smtpport` int(11) DEFAULT NULL AFTER `smtphost`;
+ALTER TABLE `config` ADD `smtpauth` tinyint(1) NOT NULL DEFAULT 1 AFTER `smtpport`;
+ALTER TABLE `config` ADD `smtpsecure` varchar(32) DEFAULT NULL AFTER `smtpauth`;
+ALTER TABLE `config` ADD `smtpuser` varchar(255) DEFAULT NULL AFTER `smtpsecure`;
+ALTER TABLE `config` ADD `smtppass` varchar(255) DEFAULT NULL AFTER `smtpuser`;
