@@ -33,40 +33,36 @@ class Campaigns_Service_CampaignRecipientService
 		$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
 		$emailDb = new Contacts_Model_DbTable_Email();
 
-		foreach ($contacts as $contact) {
+		foreach($contacts as $contact) {
 			$contactId = is_array($contact) ? (int)$contact['id'] : (int)$contact->id;
 
-			$persons = $contactpersonDb->getContactpersons(
+			$persons = $contactpersonDb->getByParentId(
 				$contactId,
 				'contacts',
 				'contact'
 			);
 
-			foreach ($persons as &$person) {
-				$personId = is_array($person) ? (int)$person['id'] : (int)$person->id;
-
-				$emailRows = $emailDb->getEmails(
-					$personId,
+			foreach($persons as &$person) {
+				$emailRows = $emailDb->getByParentId(
+					(int)$person['id'],
 					'contacts',
 					'contactperson'
 				);
 
 				$emails = [];
 
-				foreach ((array)$emailRows as $emailRow) {
-					$emails[] = is_array($emailRow)
-						? ($emailRow['email'] ?? '')
-						: ($emailRow->email ?? '');
+				foreach($emailRows as $emailRow) {
+					if(!empty($emailRow['email'])) {
+						$emails[] = trim($emailRow['email']);
+					}
 				}
 
-				$emails = array_values(array_filter(array_map('trim', $emails)));
-
-				$person['email_list'] = implode(',', $emails);
+				$person['email_list'] = implode(',', array_values(array_unique($emails)));
 
 				$salutation = trim((string)($person['salutation'] ?? ''));
 				$name2 = trim((string)($person['name2'] ?? ''));
 
-				$person['display_name'] = trim($salutation . ' ' . $name2);
+				$person['display_name'] = trim($salutation.' '.$name2);
 			}
 			unset($person);
 
