@@ -217,7 +217,8 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 					$recipientData = $recipientService->getRecipients(
 						$params,
 						$options,
-						(int)$data['contactcatid']
+						(int)$data['contactcatid'],
+						(bool)$data['contactsubcat']
 					);
 
 					$contacts = $recipientData['contacts'];

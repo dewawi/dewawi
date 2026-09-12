@@ -2,18 +2,21 @@
 
 class Campaigns_Service_CampaignRecipientService
 {
-	public function getRecipients(array $params, array $options, int $contactCatId): array
+	public function getRecipients(array $params, array $options, int $contactCatId, bool $contactSubcat): array
 	{
 		$params['_export'] = true;
 		$params['limit'] = 0;
 		$params['catid'] = $contactCatId;
+
+		$config = Contacts_Model_Entity_Contact::listConfig();
+		$config['filters']['catid']['subcategories'] = $contactSubcat;
 
 		$query = new DEEC_List_Query();
 
 		list($contacts, $records) = $query->fetch(
 			$params,
 			$options,
-			Contacts_Model_Entity_Contact::listConfig()
+			$config
 		);
 
 		return [

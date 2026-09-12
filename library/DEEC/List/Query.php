@@ -319,11 +319,13 @@ class DEEC_List_Query
 			return;
 		}
 
-		$ids = array_merge([(int)$catid], $this->getChildCategoryIds($catid, $categories));
+		$ids = [(int)$catid];
 
-		if ($ids) {
-			$select->where($column.' IN (?)', $ids);
+		if (($filter['subcategories'] ?? true) === true) {
+			$ids = array_merge($ids, $this->getChildCategoryIds($catid, $categories));
 		}
+
+		$select->where($column.' IN (?)', $ids);
 	}
 
 	protected function applyQuantityFilter($select, $value, array $filter, array $config): void
