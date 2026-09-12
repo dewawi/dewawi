@@ -9,21 +9,6 @@ class Tasks_TaskController extends DEEC_Controller_Action
 			'list' => 'Tasks_Model_List_Tasks',
 			'entity' => Tasks_Model_Entity_Task::listConfig(),
 		]);
-
-		$tasks = $this->view->tasks ?? [];
-
-		$taskIDs = [];
-		foreach($tasks as $key => $task) {
-			$taskIDs[] = $task['id'];
-
-			if(!empty($task['deliverydate'])) {
-				$deliverydate = new Zend_Date($task['deliverydate']);
-				$tasks[$key]['deliverydate'] = $deliverydate->get('dd.MM.yyyy');
-			}
-		}
-
-		$this->view->tasks = $tasks;
-		$this->view->positions = $this->getPositions($taskIDs);
 	}
 
 	protected function getCreateData(): array
