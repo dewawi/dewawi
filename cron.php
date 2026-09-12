@@ -28,7 +28,12 @@ date_default_timezone_set('Europe/Berlin');
 $campaigns = $Campaign->getCampaigns();
 
 foreach ($campaigns as $campaign) {
-	if (empty($campaign['activated']) || !empty($campaign['deleted'])) {
+	if (
+		empty($campaign['activated'])
+		|| !empty($campaign['completed'])
+		|| !empty($campaign['cancelled'])
+		|| !empty($campaign['deleted'])
+	) {
 		continue;
 	}
 

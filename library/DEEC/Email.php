@@ -35,6 +35,18 @@ class DEEC_Email {
 		$this->emailattachment = new DEEC_Emailattachment($basePath, $host, $username, $password, $dbname);
 	}
 
+	public function getCampaignRecipientStatus($campaign) {
+		$categories = $this->category->getCategories('contact', $campaign['clientid']);
+
+		return $this->emailaddress->getCampaignRecipientStatus(
+			$campaign['clientid'],
+			$campaign['contactcatid'],
+			$campaign['contactsubcat'],
+			$campaign['id'],
+			$categories
+		);
+	}
+
 	public function send($user, $contactid, $documentid, $campaign = null) {
 
 		//PHPMailer
