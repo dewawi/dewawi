@@ -114,7 +114,6 @@ class Processes_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'name' => 'state',
 			'type' => 'select',
-			'label' => 'TOOLBAR_STATE',
 			'default' => '100',
 			'source' => 'state',
 			'wrap' => false,

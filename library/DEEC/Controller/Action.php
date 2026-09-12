@@ -145,6 +145,10 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$options = $formData['options'];
 		$toolbar = $this->getEditToolbar();
 
+		if($toolbar && $toolbar->getElement('state')) {
+			$toolbar->setValue('state', (string)($row['state'] ?? 100));
+		}
+
 		if ($request->isPost()) {
 			if ($isAjax) {
 				return $this->handleEditAjaxSave($form, $db, $id, $row);

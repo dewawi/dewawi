@@ -3122,6 +3122,10 @@ function markFieldSaved($field) {
 
 		bindFilters: function () {
 			$(document).on('change', '.dw-toolbar select, .dw-filter-panel input, .dw-filter-panel select', function () {
+				if(action !== 'index' && action !== 'select') {
+					return;
+				}
+
 				var $field = $(this);
 
 				DewawiToolbar.persistField($field);
@@ -3717,5 +3721,17 @@ $(document).on('change blur', '.js-media-field', function () {
 		error: function () {
 			alert('Save failed.');
 		}
+	});
+});
+
+$(document).on('change', '.dw-toolbar select[name="state"]', function () {
+	if(action !== 'edit') {
+		return;
+	}
+
+	edit({
+		state: $(this).val()
+	}, {
+		id: id
 	});
 });
