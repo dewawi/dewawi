@@ -16,15 +16,33 @@ class Admin_Form_Config extends DEEC_Form
 			'type' => 'text',
 			'label' => 'ADMIN_TIMEZONE',
 			'format' => ['type' => 'string'],
-			'col' => 12,
+			'col' => 6,
 		]);
 
 		$this->addElement([
 			'name' => 'language',
-			'type' => 'text',
+			'type' => 'select',
 			'label' => 'ADMIN_LANGUAGE',
+			'options' => [],
+			'source' => 'language',
 			'format' => ['type' => 'string'],
-			'col' => 12,
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'logo',
+			'type' => 'text',
+			'label' => 'ADMIN_LOGO',
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'footer',
+			'type' => 'text',
+			'label' => 'ADMIN_FOOTER',
+			'format' => ['type' => 'string'],
+			'col' => 6,
 		]);
 
 		$this->addElement([
@@ -33,25 +51,8 @@ class Admin_Form_Config extends DEEC_Form
 			'label' => 'ADMIN_ANALYTICS',
 			'format' => ['type' => 'string'],
 			'attribs' => [
-				'cols' => 62,
-				'rows' => 30,
+				'rows' => 12,
 			],
-			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'logo',
-			'type' => 'text',
-			'label' => 'ADMIN_LOGO',
-			'format' => ['type' => 'string'],
-			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'footer',
-			'type' => 'text',
-			'label' => 'ADMIN_FOOTER',
-			'format' => ['type' => 'string'],
 			'col' => 12,
 		]);
 	}

@@ -5,17 +5,28 @@ class Admin_Model_DbTable_Config extends DEEC_Model_DbTable_Entity
 
 	protected $_name = 'config';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_client = null;
-
-	public function init()
+	public function getById(int $id): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_user = Zend_Registry::get('User');
-		$this->_client = Zend_Registry::get('Client');
+		$select = $this->select()
+			->where('id = ?', $id)
+			->where('clientid = ?', $this->getClientId())
+			->limit(1);
+
+		$row = $this->fetchRow($select);
+
+		return $row ? $row->toArray() : null;
+	}
+
+	public function updateById(int $id, array $data): void
+	{
+		$data = $this->prepareUpdateData($data);
+
+		$where = [
+			$this->getAdapter()->quoteInto('id = ?', $id),
+			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
+		];
+
+		$this->update($data, $where);
 	}
 
 	public function getConfig($id)
