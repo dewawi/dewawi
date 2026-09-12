@@ -93,6 +93,20 @@ class DEEC_Email {
 				$data['body'] = str_replace('[BODY]', $data['body'], $template);
 			}*/
 
+			$attachmentsSent = array();
+			$emailattachmentArray = $this->emailattachment->getEmailattachments($campaign['id'], 'campaigns', 'campaign', $campaign['clientid']);
+
+			if($emailattachmentArray && count($emailattachmentArray)) {
+				foreach($emailattachmentArray as $file) {
+					$path = $file['location'].'/'.$file['filename'];
+
+					if(file_exists($path)) {
+						$attachmentsSent[] = $file['filename'];
+						$mail->addAttachment($path);
+					}
+				}
+			}
+
 			$sent = 0;
 
 			foreach($recipients as $recipient) {
@@ -119,20 +133,6 @@ class DEEC_Email {
 
 				// personalize for this recipient
 				$body = $this->personalizeBody($data['body'], $recipient);
-
-				//Get email attachments
-				$emailattachmentArray = $this->emailattachment->getEmailattachments($campaign['id'], 'campaigns', 'campaign', $campaign['clientid']);
-
-				$attachmentsSent = array();
-				if($emailattachmentArray && isset($emailattachmentArray) && count($emailattachmentArray)) {
-					$url = $this->directory->getUrl($campaign['id'], $campaign['clientid']);
-					foreach($emailattachmentArray as $file) {
-						if(file_exists($file['location'].'/'.$file['filename'])) {
-							array_push($attachmentsSent, $file['filename']);
-							$mail->addAttachment($file['location'].'/'.$file['filename']);
-						}
-					}
-				}
 
 				//Save email message to the db
 				$emailmessage = array();
