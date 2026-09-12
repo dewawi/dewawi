@@ -24,6 +24,9 @@ class Sales_Service_DocumentFinalizeService
 			$docIdField => $increment,
 			'filename' => $filename,
 			'state' => 105,
+			'completed' => 1,
+			'completeddate' => date('Y-m-d H:i:s'),
+			'completedby' => (int)Zend_Registry::get('User')['id'],
 		];
 
 		if (array_key_exists($docDateField, $document) && empty($document[$docDateField])) {
