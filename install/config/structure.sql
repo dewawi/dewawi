@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS `campaign` (
   `title` varchar(255) DEFAULT NULL,
   `priority` int(11) NOT NULL DEFAULT 0,
   `interval` int(11) NOT NULL DEFAULT 60,
+  `batchsize` int(11) NOT NULL DEFAULT 1,
   `timezone` varchar(255) DEFAULT NULL,
   `startwindow` time DEFAULT NULL,
   `endwindow` time DEFAULT NULL,

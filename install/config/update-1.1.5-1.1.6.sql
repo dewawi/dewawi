@@ -252,3 +252,5 @@ CREATE TABLE IF NOT EXISTS `campaign` (
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `campaign` ADD `batchsize` int(11) NOT NULL DEFAULT 1 AFTER `interval`;

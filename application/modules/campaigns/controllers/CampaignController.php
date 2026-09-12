@@ -110,10 +110,13 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 							$data['actualcost'] = NULL;
 						}
 					}
-					// interval
 					if (isset($data['interval'])) {
-						$iv = (int)$data['interval'];
-						$data['interval'] = $iv > 0 ? $iv : 60;
+						$interval = (int)$data['interval'];
+						$data['interval'] = $interval > 0 ? $interval : 60;
+					}
+					if(isset($data['batchsize'])) {
+						$batchSize = (int)$data['batchsize'];
+						$data['batchsize'] = $batchSize > 0 ? min($batchSize, 1000) : 1;
 					}
 					// Normalize campaign sending window.
 					foreach (['startwindow', 'endwindow'] as $key) {

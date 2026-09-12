@@ -36,7 +36,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 		$this->addElement([
 			'name' => 'contactcatid',
 			'type' => 'select',
-			'label' => 'PRICE_RULES_CONTACT_CATEGORY',
+			'label' => 'CAMPAIGNS_RECIPIENT_CATEGORY',
 			'options' => ['0' => 'PRICE_RULES_ITEMS_ALL_CATEGORIES'],
 			'source' => 'category:contact',
 			'required' => true,
@@ -46,7 +46,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 		$this->addElement([
 			'name' => 'contactsubcat',
 			'type' => 'checkbox',
-			'label' => 'PRICE_RULES_CONTACT_APPLY_TO_SUBCATEGORIES',
+			'label' => 'CAMPAIGNS_INCLUDE_SUBCATEGORIES',
 			'format' => ['type' => 'bool'],
 		]);
 
@@ -77,11 +77,29 @@ class Campaigns_Form_Campaign extends DEEC_Form
 
 		$this->addElement([
 			'name' => 'interval',
-			'type' => 'text',
+			'type' => 'number',
 			'label' => 'CAMPAIGNS_INTERVAL',
+			'description' => 'CAMPAIGNS_INTERVAL_INFO',
 			'default' => 60,
 			'format' => ['type' => 'int'],
-			'attribs' => ['size' => 6],
+			'attribs' => [
+				'min' => 1,
+			],
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'batchsize',
+			'type' => 'number',
+			'label' => 'CAMPAIGNS_BATCH_SIZE',
+			'description' => 'CAMPAIGNS_BATCH_SIZE_INFO',
+			'default' => 1,
+			'format' => ['type' => 'int'],
+			'attribs' => [
+				'min' => 1,
+				'max' => 1000,
+			],
+			'col' => 6,
 		]);
 
 		foreach([

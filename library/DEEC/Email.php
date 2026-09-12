@@ -2,8 +2,6 @@
 
 class DEEC_Email {
 
-	const CAMPAIGN_BATCH_SIZE = 1;
-
 	protected $basePath;
 
 	protected $connection;
@@ -124,13 +122,15 @@ class DEEC_Email {
 					$campaign['clientid']
 				);
 
+				$batchSize = max(1, (int)($campaign['batchsize'] ?? 1));
+
 				$recipients = $this->emailaddress->getCampaignRecipients(
 					$campaign['clientid'],
 					$campaign['contactcatid'],
 					$campaign['contactsubcat'],
 					$campaign['id'],
 					$categories,
-					self::CAMPAIGN_BATCH_SIZE
+					$batchSize
 				);
 
 				$data = array();
