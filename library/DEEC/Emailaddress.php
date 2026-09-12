@@ -96,7 +96,7 @@ class DEEC_Emailaddress {
 
 		$query = '
 			SELECT
-				e.email,
+				LOWER(TRIM(e.email)) AS email,
 				c.id AS contactid,
 				NULL AS contactpersonid,
 				NULL AS salutation,
@@ -112,7 +112,7 @@ class DEEC_Emailaddress {
 				AND e.deleted = 0
 			WHERE '.$where.'
 				AND e.email IS NOT NULL
-				AND e.email != ""
+				AND TRIM(e.email) != ""
 				AND NOT EXISTS (
 					SELECT 1
 					FROM emailmessage AS em
@@ -121,7 +121,7 @@ class DEEC_Emailaddress {
 						AND em.controller = "campaign"
 						AND em.clientid = '.$clientid.'
 						AND em.deleted = 0
-						AND em.recipient = e.email
+						AND LOWER(TRIM(em.recipient)) = LOWER(TRIM(e.email))
 						AND em.response = "sent"
 				)
 				AND NOT EXISTS (
@@ -132,7 +132,7 @@ class DEEC_Emailaddress {
 						AND pending.controller = "campaign"
 						AND pending.clientid = '.$clientid.'
 						AND pending.deleted = 0
-						AND pending.recipient = e.email
+						AND LOWER(TRIM(pending.recipient)) = LOWER(TRIM(e.email))
 						AND pending.response = "pending"
 						AND pending.messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
 				)
@@ -144,7 +144,7 @@ class DEEC_Emailaddress {
 						AND retry.controller = "campaign"
 						AND retry.clientid = '.$clientid.'
 						AND retry.deleted = 0
-						AND retry.recipient = e.email
+						AND LOWER(TRIM(retry.recipient)) = LOWER(TRIM(e.email))
 						AND retry.response != "sent"
 						AND retry.response != "pending"
 				) < 3
@@ -152,7 +152,7 @@ class DEEC_Emailaddress {
 			UNION ALL
 
 			SELECT
-				e.email,
+				LOWER(TRIM(e.email)) AS email,
 				c.id AS contactid,
 				cp.id AS contactpersonid,
 				cp.salutation,
@@ -172,7 +172,7 @@ class DEEC_Emailaddress {
 				AND e.deleted = 0
 			WHERE '.$where.'
 				AND e.email IS NOT NULL
-				AND e.email != ""
+				AND TRIM(e.email) != ""
 				AND NOT EXISTS (
 					SELECT 1
 					FROM emailmessage AS em
@@ -181,7 +181,7 @@ class DEEC_Emailaddress {
 						AND em.controller = "campaign"
 						AND em.clientid = '.$clientid.'
 						AND em.deleted = 0
-						AND em.recipient = e.email
+						AND LOWER(TRIM(em.recipient)) = LOWER(TRIM(e.email))
 						AND em.response = "sent"
 				)
 				AND NOT EXISTS (
@@ -192,7 +192,7 @@ class DEEC_Emailaddress {
 						AND pending.controller = "campaign"
 						AND pending.clientid = '.$clientid.'
 						AND pending.deleted = 0
-						AND pending.recipient = e.email
+						AND LOWER(TRIM(pending.recipient)) = LOWER(TRIM(e.email))
 						AND pending.response = "pending"
 						AND pending.messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
 				)
@@ -204,7 +204,7 @@ class DEEC_Emailaddress {
 						AND retry.controller = "campaign"
 						AND retry.clientid = '.$clientid.'
 						AND retry.deleted = 0
-						AND retry.recipient = e.email
+						AND LOWER(TRIM(retry.recipient)) = LOWER(TRIM(e.email))
 						AND retry.response != "sent"
 						AND retry.response != "pending"
 				) < 3

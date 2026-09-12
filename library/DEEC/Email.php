@@ -96,8 +96,8 @@ class DEEC_Email {
 			$sent = 0;
 
 			foreach($recipients as $recipient) {
-				//echo $recipient['email'];
 				//Recipients
+				$recipient['email'] = strtolower(trim($recipient['email']));
 				$mail->clearAllRecipients();											// clear all
 				$mail->setFrom($user['smtpuser'], $user['emailsender']);
 				$mail->addAddress($recipient['email']);									// Add a recipient
