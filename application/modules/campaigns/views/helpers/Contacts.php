@@ -9,8 +9,18 @@ class Zend_View_Helper_Contacts extends Zend_View_Helper_Abstract
 		<form id="campaign-contacts" enctype="application/x-www-form-urlencoded" action="" method="post">
 			<div class="row">
 				<div class="col-sm-12 col-lg-12">
-					Kontakte: <?php echo count($this->view->contacts); ?>
-					Nachrichten: <?php echo count($this->view->emailmessages); ?>
+					<?php $status = $this->view->recipientStatus ?? []; ?>
+
+					<div class="dw-email-card">
+						<strong><?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_STATUS'); ?></strong><br>
+						<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_TOTAL'); ?>: <?php echo (int)($status['total'] ?? 0); ?> |
+						<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_ELIGIBLE'); ?>: <?php echo (int)($status['eligible'] ?? 0); ?> |
+						<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_SUPPRESSED'); ?>: <?php echo (int)($status['suppressed'] ?? 0); ?> |
+						<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_OPEN'); ?>: <?php echo (int)($status['open'] ?? 0); ?> |
+						<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_PENDING'); ?>: <?php echo (int)($status['pending'] ?? 0); ?> |
+						<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_SENT'); ?>: <?php echo (int)($status['sent'] ?? 0); ?> |
+						<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_FAILED'); ?>: <?php echo (int)($status['failed'] ?? 0); ?>
+					</div>
 
 					<table id="data">
 						<thead>
@@ -69,11 +79,13 @@ class Zend_View_Helper_Contacts extends Zend_View_Helper_Abstract
 															<td><?php echo $emailmessage['messagesent']; ?></td>
 															<td><?php echo $this->view->users[$emailmessage['messagesentby']]; ?></td>
 															<td>
-																<?php if($emailmessage['response']) : ?>
+																<?php if($emailmessage['response'] === 'sent') : ?>
+																	<div class="successful"><?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_SENT'); ?></div>
+																<?php elseif($emailmessage['response'] === 'pending') : ?>
+																	<div><?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_PENDING'); ?></div>
+																<?php else : ?>
 																	<div class="error"><?php echo $this->view->translate('CONTACTS_EMAIL_ERROR'); ?></div>
 																	<pre><?php echo $this->view->escape($emailmessage['response']); ?></pre>
-																<?php else : ?>
-																	<div class="successful"><?php echo $this->view->translate('CONTACTS_EMAIL_SUCCESSFUL'); ?></div>
 																<?php endif; ?>
 															</td>
 															<td>

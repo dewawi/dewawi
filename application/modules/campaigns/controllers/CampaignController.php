@@ -228,6 +228,8 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 
 					$this->view->contactPersonsByCompany = $recipientData['contactPersonsByCompany'];
 
+					$this->view->recipientStatus = $recipientService->getRecipientStatus($contacts, $id);
+
 					//Get currency
 					$currency = $this->_helper->Currency->getCurrency($data['currency']);
 					$data['expectedrevenue'] = $currency->toCurrency($data['expectedrevenue']);
