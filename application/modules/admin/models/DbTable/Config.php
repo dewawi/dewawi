@@ -14,7 +14,14 @@ class Admin_Model_DbTable_Config extends DEEC_Model_DbTable_Entity
 
 		$row = $this->fetchRow($select);
 
-		return $row ? $row->toArray() : null;
+		if (!$row) {
+			return null;
+		}
+
+		$data = $row->toArray();
+		$data['smtppass'] = '';
+
+		return $data;
 	}
 
 	public function updateById(int $id, array $data): void

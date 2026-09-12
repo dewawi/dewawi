@@ -16,4 +16,13 @@ class Admin_ConfigController extends DEEC_Controller_AdminAction
 	{
 		return null;
 	}
+
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		if (array_key_exists('smtppass', $values) && $values['smtppass'] === null) {
+			unset($values['smtppass']);
+		}
+
+		return $values;
+	}
 }
