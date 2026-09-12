@@ -116,15 +116,7 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'type' => 'select',
 			'label' => 'TOOLBAR_STATE',
 			'default' => '100',
-			'options' => [
-				'100' => 'STATES_CREATED',
-				'101' => 'STATES_IN_PROCESS',
-				'102' => 'STATES_PLEASE_CHECK',
-				'103' => 'STATES_PLEASE_DELETE',
-				'104' => 'STATES_RELEASED',
-				'105' => 'STATES_COMPLETED',
-				'106' => 'STATES_CANCELLED',
-			],
+			'source' => 'state',
 			'wrap' => false,
 			'format' => ['type' => 'string'],
 		]);

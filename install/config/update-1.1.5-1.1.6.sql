@@ -169,3 +169,23 @@ ALTER TABLE `process` ADD `completeddate` datetime DEFAULT NULL AFTER `completed
 ALTER TABLE `process` ADD `completedby` int(11) NOT NULL DEFAULT 0 AFTER `completeddate`;
 ALTER TABLE `process` ADD `cancelleddate` datetime DEFAULT NULL AFTER `cancelled`;
 ALTER TABLE `process` ADD `cancelledby` int(11) NOT NULL DEFAULT 0 AFTER `cancelleddate`;
+
+UPDATE `quote` SET `completed` = 1 WHERE `state` = 105 AND `completed` = 0;
+UPDATE `invoice` SET `completed` = 1 WHERE `state` = 105 AND `completed` = 0;
+UPDATE `salesorder` SET `completed` = 1 WHERE `state` = 105 AND `completed` = 0;
+UPDATE `deliveryorder` SET `completed` = 1 WHERE `state` = 105 AND `completed` = 0;
+UPDATE `creditnote` SET `completed` = 1 WHERE `state` = 105 AND `completed` = 0;
+UPDATE `reminder` SET `completed` = 1 WHERE `state` = 105 AND `completed` = 0;
+UPDATE `purchaseorder` SET `completed` = 1 WHERE `state` = 105 AND `completed` = 0;
+UPDATE `quoterequest` SET `completed` = 1 WHERE `state` = 105 AND `completed` = 0;
+UPDATE `process` SET `completed` = 1 WHERE `state` = 105 AND `completed` = 0;
+
+UPDATE `quote` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
+UPDATE `invoice` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
+UPDATE `salesorder` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
+UPDATE `deliveryorder` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
+UPDATE `creditnote` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
+UPDATE `reminder` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
+UPDATE `purchaseorder` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
+UPDATE `quoterequest` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;
+UPDATE `process` SET `cancelled` = 1 WHERE `state` = 106 AND `cancelled` = 0;

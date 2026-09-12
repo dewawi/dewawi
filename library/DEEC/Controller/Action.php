@@ -445,11 +445,14 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	{
 		$class = $this->getToolbarClass();
 
-		if (!class_exists($class)) {
+		if(!class_exists($class)) {
 			return null;
 		}
 
-		return new $class();
+		$toolbar = new $class();
+		$this->_helper->Options->applyFormOptions($toolbar);
+
+		return $toolbar;
 	}
 
 	protected function getEditViewModelService()
