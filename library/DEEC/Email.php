@@ -107,7 +107,10 @@ class DEEC_Email {
 				}
 			}
 
-			$sent = 0;
+			$result = [
+				'attempted' => count($recipients),
+				'sent' => 0,
+			];
 
 			foreach($recipients as $recipient) {
 				//Recipients
@@ -190,11 +193,11 @@ class DEEC_Email {
 					'response' => 'sent',
 				]);
 
-				$sent++;
+				$result['sent']++;
 			}
 		}
 
-		return $sent;
+		return $result;
 	}
 
 	private function buildSalutation(array $recipient): string {

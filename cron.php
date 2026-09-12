@@ -79,9 +79,9 @@ foreach ($campaigns as $campaign) {
 	if (!empty($campaign['responsible'])) {
 		$user = $User->getUser($campaign['responsible']);
 		try {
-			$sent = $Email->send($user, 0, 0, $campaign);
+			$result = $Email->send($user, 0, 0, $campaign);
 
-			if ($sent > 0) {
+			if ($result['attempted'] > 0) {
 				$Campaign->touchLastSent($campaign['id'], $now);
 			}
 		} catch (Exception $e) {
