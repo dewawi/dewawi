@@ -61,14 +61,21 @@ class DEEC_Emailaddress {
 	public function getCampaignRecipients(
 		$clientid,
 		$contactcatid,
+		$contactsubcat,
 		$campaignid,
 		$categories,
 		$limit = 1
 	) {
 		$clientid = (int)$clientid;
-		$contactcatid = (int)$contactcatid;
 		$campaignid = (int)$campaignid;
+		$contactsubcat = (bool)$contactsubcat;
 		$limit = max(1, (int)$limit);
+
+		if ((string)$contactcatid === '0') {
+			$contactcatid = 'all';
+		} else {
+			$contactcatid = (int)$contactcatid;
+		}
 
 		$where = '';
 
@@ -76,7 +83,8 @@ class DEEC_Emailaddress {
 			$where,
 			$contactcatid,
 			$categories,
-			'c'
+			'c',
+			$contactsubcat
 		);
 
 		if ($where) {

@@ -29,20 +29,19 @@ class DEEC_Query {
 		return $query;
 	}
 
-	public function getQueryCategory($query, $catid, $categories, $schema = null)
+	public function getQueryCategory($query, $catid, $categories, $schema = null, $subcategories = true)
 	{
-		//echo $catid;
 		$categories = $this->getCategoryArray($categories);
-		//print_r($categories);
+
 		if($catid == '0') {
 			if($query) $query .= ' AND ';
 			if($schema) $query .= '('.$schema.'.catid = 0)';
 			else $query .= '(catid = 0)';
 		} elseif($catid == 'all') {
-			//Do nothing
+			// Do nothing
 		} elseif(isset($categories[$catid])) {
 			if($query) $query .= ' AND ';
-			if(isset($categories[$catid]['childs'])) {
+			if($subcategories && isset($categories[$catid]['childs'])) {
 				$childs = $this->getChildCategories($catid, $categories);
 				$childs = $this->getString($childs);
 				if($schema) $query .= '('.$schema.'.catid IN ('.$catid.','.$childs.'))';
@@ -52,6 +51,7 @@ class DEEC_Query {
 				else $query .= '(catid = '.$catid.')';
 			}
 		}
+
 		return $query;
 	}
 

@@ -65,6 +65,7 @@ class DEEC_Email {
 				$recipients = $this->emailaddress->getCampaignRecipients(
 					$campaign['clientid'],
 					$campaign['contactcatid'],
+					$campaign['contactsubcat'],
 					$campaign['id'],
 					$categories,
 					$limit
