@@ -208,18 +208,43 @@ class DEEC_Emailaddress {
 						AND retry.response != "sent"
 						AND retry.response != "pending"
 				) < 3
-
-			ORDER BY contactid, contactpersonid, email
-			LIMIT '.$limit.'
 		';
 
-		$result = mysqli_query($this->connection, $query);
+		$recipients = [];
+		$seen = [];
+		$offset = 0;
+		$chunkSize = max(10, $limit);
 
-		if (!$result || mysqli_num_rows($result) === 0) {
-			return [];
-		}
+		do {
+			$result = mysqli_query($this->connection, $query.' ORDER BY contactid, contactpersonid, email LIMIT '.$chunkSize.' OFFSET '.$offset);
 
-		return mysqli_fetch_all($result, MYSQLI_ASSOC);
+			if (!$result || mysqli_num_rows($result) === 0) {
+				break;
+			}
+
+			$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
+			$rowCount = count($rows);
+
+			foreach($rows as $recipient) {
+				$email = strtolower(trim($recipient['email']));
+
+				if(isset($seen[$email])) {
+					continue;
+				}
+
+				$seen[$email] = true;
+				$recipient['email'] = $email;
+				$recipients[] = $recipient;
+
+				if(count($recipients) >= $limit) {
+					break 2;
+				}
+			}
+
+			$offset += $rowCount;
+		} while($rowCount === $chunkSize);
+
+		return $recipients;
 	}
 
 	public function getCampaignRecipientStatus(
