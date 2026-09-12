@@ -8,41 +8,25 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 			'name' => 'add',
 			'type' => 'button',
 			'label' => 'TOOLBAR_NEW',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'add'],
-		]);
-
-		$this->addElement([
-			'name' => 'view',
-			'type' => 'button',
-			'label' => 'TOOLBAR_VIEW',
-			'wrap' => false,
-			'attribs' => ['class' => 'view'],
 		]);
 
 		$this->addElement([
 			'name' => 'edit',
 			'type' => 'button',
 			'label' => 'TOOLBAR_EDIT',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'edit hidden-sm'],
-		]);
-
-		$this->addElement([
-			'name' => 'select',
-			'type' => 'button',
-			'label' => 'TOOLBAR_SELECT',
-			'wrap' => false,
-			'attribs' => [
-				'class' => 'select poplight',
-				'rel' => 'addCustomer',
-			],
 		]);
 
 		$this->addElement([
 			'name' => 'copy',
 			'type' => 'button',
 			'label' => 'TOOLBAR_COPY',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'copy hidden-sm'],
 		]);
@@ -51,6 +35,7 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 			'name' => 'delete',
 			'type' => 'button',
 			'label' => 'TOOLBAR_DELETE',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'delete hidden-sm'],
 		]);
@@ -59,6 +44,7 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 			'name' => 'keyword',
 			'type' => 'text',
 			'default' => '',
+			'toolbar' => 'search',
 			'wrap' => false,
 			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'keyword'],
@@ -67,6 +53,7 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 		$this->addElement([
 			'name' => 'clear',
 			'type' => 'button',
+			'toolbar' => 'search',
 			'wrap' => false,
 			'attribs' => [
 				'class' => 'clear nolabel',
@@ -78,6 +65,7 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 			'name' => 'filter',
 			'type' => 'button',
 			'label' => 'TOOLBAR_FILTER',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'filter hidden-sm'],
 		]);
@@ -86,6 +74,7 @@ class Campaigns_Form_Toolbar extends DEEC_Form
 			'name' => 'reset',
 			'type' => 'button',
 			'label' => 'TOOLBAR_RESET',
+			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => ['class' => 'reset hidden-sm'],
 		]);

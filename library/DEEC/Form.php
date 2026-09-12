@@ -278,6 +278,10 @@ class DEEC_Form
 			$module = $request->getModuleName();
 		}
 
+		if (!$permission->hasModule($module)) {
+			return true;
+		}
+
 		if ($controller === '') {
 			$controller = $permission->resolveController($request);
 		}
