@@ -1,6 +1,16 @@
 <?php
 $this->title = $this->translate('ADMIN_CONFIG');
 $this->headTitle($this->title);
+
 echo $this->Messages();
-echo $this->form->renderForm();
+
+echo $this->form->renderForm([
+	'id' => 'config',
+	'activeTab' => $this->activeTab,
+	'tabs' => [
+		'general' => ['title' => 'ADMIN_CONFIG_GENERAL'],
+		'smtp' => ['title' => 'ADMIN_CONFIG_SMTP'],
+		'tracking' => ['title' => 'ADMIN_CONFIG_TRACKING'],
+	],
+]);
 ?>
