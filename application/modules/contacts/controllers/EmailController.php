@@ -19,26 +19,19 @@ class Contacts_EmailController
 		];
 	}
 
-	protected function beforeMultiUpdate(array $values, array $row, array $post): array
+	protected function afterMultiUpdate(int $id, array $values, array $row): void
 	{
-		if(!array_key_exists('suppressed', $values)) {
-			return $values;
-		}
+		if(!array_key_exists('suppressed', $values)) return;
+
+		$email = (string)($values['email'] ?? $row['email'] ?? '');
+
+		$emailDb = new Contacts_Model_DbTable_Email();
 
 		if($values['suppressed']) {
-			if(empty($row['suppressed'])) {
-				$values['suppresseddate'] = $this->_date;
-			}
-
-			if(empty($row['suppressionreason'])) {
-				$values['suppressionreason'] = 'manual';
-			}
+			$emailDb->suppressByEmail($email, 'manual');
 		} else {
-			$values['suppressionreason'] = null;
-			$values['suppresseddate'] = null;
+			$emailDb->unsuppressByEmail($email);
 		}
-
-		return $values;
 	}
 
 	public function indexAction()
