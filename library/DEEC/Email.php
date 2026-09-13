@@ -45,7 +45,11 @@ class DEEC_Email {
 
 		$result = mysqli_query($this->connection, $query);
 
-		if(!$result || mysqli_num_rows($result) === 0) {
+		if(!$result) {
+			throw new Exception('SMTP configuration could not be loaded: '.mysqli_error($this->connection));
+		}
+
+		if(mysqli_num_rows($result) === 0) {
 			return null;
 		}
 
