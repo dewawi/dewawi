@@ -11,12 +11,6 @@ class Campaigns_Form_Campaign extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'customerid',
-			'type' => 'hidden',
-			'format' => ['type' => 'int'],
-		]);
-
-		$this->addElement([
 			'name' => 'responsible',
 			'type' => 'select',
 			'label' => 'CAMPAIGNS_RESPONSIBLE_PERSON',

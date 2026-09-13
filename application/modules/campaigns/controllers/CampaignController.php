@@ -13,47 +13,16 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 
 	public function addAction()
 	{
-		$customerid = $this->_getParam('customerid', 0);
-
-		//Get primary currency
-		$currencies = new Application_Model_DbTable_Currency();
-		$currency = $currencies->getPrimaryCurrency();
-
-		$data = array();
-		$data['title'] = $this->view->translate('CAMPAIGNS_NEW_CAMPAIGN');
-		$data['state'] = 100;
-
-		//Get contact data
-		if($customerid) {
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContact($customerid);
-
-			//Get basic data
-			$data['customerid'] = $contact['contactid'];
-			$data['billingname1'] = $contact['name1'];
-			$data['billingname2'] = $contact['name2'];
-			$data['billingdepartment'] = $contact['department'];
-
-			//Get addresses
-			$addressDb = new Contacts_Model_DbTable_Address();
-			$addresses = $addressDb->getByParentId($contact['id'], 'contacts', 'contact');
-			if(count($addresses)) {
-				$data['billingstreet'] = $addresses[0]['street'];
-				$data['billingpostcode'] = $addresses[0]['postcode'];
-				$data['billingcity'] = $addresses[0]['city'];
-				$data['billingcountry'] = $addresses[0]['country'];
-			}
-
-			//Get additonal data
-			if($contact['vatin']) $data['vatin'] = $contact['vatin'];
-			if($contact['currency']) $data['currency'] = $contact['currency'];
-			if($contact['taxfree']) $data['taxfree'] = $contact['taxfree'];
-		}
-
 		$campaignDb = new Campaigns_Model_DbTable_Campaign();
-		$id = $campaignDb->addCampaign($data);
 
-		$this->_helper->redirector->gotoSimple('edit', 'campaign', null, array('id' => $id));
+		$id = $campaignDb->create([
+			'title' => $this->view->translate('CAMPAIGNS_NEW_CAMPAIGN'),
+			'state' => 100,
+			'responsible' => (int)$this->_user['id'],
+			'timezone' => 'Europe/Berlin',
+		]);
+
+		$this->_helper->redirector->gotoSimple('edit', 'campaign', null, ['id' => $id]);
 	}
 
 	public function editAction()
@@ -190,7 +159,9 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 						unset($data['body']);
 					}
 
-					$campaignDb->updateCampaign($id, $data);
+					unset($data['id']);
+
+					$campaignDb->updateById($id, $data);
 					echo Zend_Json::encode($campaignDb->getCampaign($id));
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -307,18 +278,22 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 		$campaign = $campaignDb->getCampaign($id);
 
 		$data = $campaign;
-		unset($data['id'], $data['campaignid']);
+		unset($data['id']);
+
 		$data['title'] = $campaign['title'].' 2';
 		$data['state'] = 100;
 		$data['completed'] = 0;
 		$data['cancelled'] = 0;
 		$data['pinned'] = 0;
-		$data['modified'] = NULL;
+		$data['activated'] = 0;
+		$data['lastsent'] = null;
+		$data['modified'] = null;
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
+		$data['lockedtime'] = null;
 
-		echo $newID = $campaignDb->addCampaign($data);
+		$newID = $campaignDb->create($data);
+		echo $newID;
 
 		$positionsDb = new Campaigns_Model_DbTable_Campaignpos();
 		$positions = $positionsDb->getPositions($id);
