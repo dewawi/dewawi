@@ -1185,7 +1185,7 @@ function trash(ids, message, type, cmodule) {
 	cmodule = cmodule || module;
 
 	if (!Array.isArray(ids)) {
-		ids = [ids]; // ensure it's an array
+		ids = [ids];
 	}
 
 	if (ids.length === 0) return;
@@ -1195,10 +1195,9 @@ function trash(ids, message, type, cmodule) {
 
 	if(action == 'add') {
 		ids.forEach(function(singleId) {
-			$('div#' + type + singleId).remove();
+			$('.dw-multiform__item[data-module="' + cmodule + '"][data-controller="' + type + '"][data-id="' + singleId + '"]').remove();
 		});
 	} else {
-		//console.log(ids);
 		$.ajax({
 			type: 'POST',
 			url: baseUrl+'/trash/add/',
@@ -1210,16 +1209,26 @@ function trash(ids, message, type, cmodule) {
 			}),
 			cache: false,
 			success: function(data){
+				var deletedIds = data && Array.isArray(data.deletedIds) ? data.deletedIds : [];
+
+				if (data && data.ok === false && data.message) {
+					pushMessages([data.message]);
+				}
+
+				if (!deletedIds.length) return;
+
 				if(action == 'edit') {
-					ids.forEach(function(singleId) {
-						$('div#' + type + singleId).remove();
+					deletedIds.forEach(function(singleId) {
+						$('.dw-multiform__item[data-module="' + cmodule + '"][data-controller="' + type + '"][data-id="' + singleId + '"]').remove();
 					});
+
 					if (module === 'contacts'
 						&& controller === 'contact'
 						&& $('#tabhistory').hasClass('is-active')) {
 						reloadHistory();
 						return;
 					}
+
 					if(type == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
 				} else {
 					search();
