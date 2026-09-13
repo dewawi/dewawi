@@ -17,6 +17,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 			'source' => 'user',
 			'required' => true,
 			'format' => ['type' => 'int'],
+			'col' => 3,
 		]);
 
 		$this->addElement([
@@ -25,16 +26,18 @@ class Campaigns_Form_Campaign extends DEEC_Form
 			'label' => 'CAMPAIGNS_TITLE',
 			'format' => ['type' => 'string'],
 			'attribs' => ['size' => 40],
+			'col' => 9,
 		]);
 
 		$this->addElement([
 			'name' => 'contactcatid',
 			'type' => 'select',
 			'label' => 'CAMPAIGNS_RECIPIENT_CATEGORY',
-			'options' => ['0' => 'PRICE_RULES_ITEMS_ALL_CATEGORIES'],
+			'options' => ['0' => 'CAMPAIGNS_ALL_CATEGORIES'],
 			'source' => 'category:contact',
 			'required' => true,
 			'format' => ['type' => 'int'],
+			'col' => 6,
 		]);
 
 		$this->addElement([
@@ -42,6 +45,15 @@ class Campaigns_Form_Campaign extends DEEC_Form
 			'type' => 'checkbox',
 			'label' => 'CAMPAIGNS_INCLUDE_SUBCATEGORIES',
 			'format' => ['type' => 'bool'],
+			'col' => 3,
+		]);
+
+		$this->addElement([
+			'name' => 'activated',
+			'type' => 'checkbox',
+			'label' => 'CAMPAIGNS_ACTIVATED',
+			'format' => ['type' => 'bool'],
+			'col' => 3,
 		]);
 
 		$this->addElement([
@@ -56,6 +68,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 				'4' => 'CAMPAIGNS_PRIORITY_HIGHEST',
 			],
 			'format' => ['type' => 'int'],
+			'col' => 3,
 		]);
 
 		$this->addElement([
@@ -67,6 +80,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 				'Europe/Berlin' => 'Europe/Berlin',
 			],
 			'format' => ['type' => 'string'],
+			'col' => 3,
 		]);
 
 		$this->addElement([
@@ -79,7 +93,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 			'attribs' => [
 				'min' => 1,
 			],
-			'col' => 6,
+			'col' => 3,
 		]);
 
 		$this->addElement([
@@ -93,7 +107,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 				'min' => 1,
 				'max' => 1000,
 			],
-			'col' => 6,
+			'col' => 3,
 		]);
 
 		foreach([
@@ -106,6 +120,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 				'label' => $label,
 				'format' => ['type' => 'string'],
 				'attribs' => ['class' => 'timePicker', 'size' => 6],
+				'col' => 3,
 			]);
 		}
 
@@ -119,6 +134,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 				'label' => $label,
 				'format' => ['type' => 'string'],
 				'attribs' => ['class' => 'datePicker', 'size' => 9],
+				'col' => 3,
 			]);
 		}
 
@@ -127,6 +143,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 			'type' => 'checkbox',
 			'label' => 'CAMPAIGNS_REMINDER',
 			'format' => ['type' => 'bool'],
+			'col' => 3,
 		]);
 
 		$this->addElement([
@@ -137,13 +154,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 				'email' => 'EMAIL',
 			],
 			'format' => ['type' => 'string'],
-		]);
-
-		$this->addElement([
-			'name' => 'activated',
-			'type' => 'checkbox',
-			'label' => 'CAMPAIGNS_ACTIVATED',
-			'format' => ['type' => 'bool'],
+			'col' => 3,
 		]);
 
 		foreach([
@@ -157,6 +168,7 @@ class Campaigns_Form_Campaign extends DEEC_Form
 				'label' => $cfg[0],
 				'format' => ['type' => 'string'],
 				'attribs' => ['cols' => $cfg[1], 'rows' => $cfg[2]],
+				'col' => 6,
 			]);
 		}
 	}
