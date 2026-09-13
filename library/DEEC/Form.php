@@ -1892,6 +1892,14 @@ class DEEC_Form
 		$module = (string)($ctx['module'] ?? '');
 		$controller = (string)($ctx['controller'] ?? '');
 
+		$this->setMultiContext((int)$rowId, $module, $controller);
+
+		foreach ($this->getMultiElements() as $multiName => $multiElement) {
+			$this->setElementData($multiName, [
+				'rows' => is_array($row[$multiName] ?? null) ? $row[$multiName] : [],
+			]);
+		}
+
 		$fields = is_array($ctx['fields'] ?? null)
 			&& $ctx['fields']
 				? $ctx['fields']
@@ -1928,9 +1936,14 @@ class DEEC_Form
 
 		$html .= '<div class="dw-multiform__actions">';
 
+		$emailElement = $this->getElement('email');
+		$email = $row['email'] ?? null;
+
 		if (
-			$this->getElement('email')
-			&& !empty($row['email'])
+			$emailElement
+			&& ($emailElement['type'] ?? '') !== 'multi'
+			&& is_scalar($email)
+			&& trim((string)$email) !== ''
 		) {
 			$html .= '<a'
 				. ' class="dw-btn dw-btn--icon email"'
