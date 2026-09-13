@@ -46,14 +46,18 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 	public function getUserByEmail($email)
 	{
 		return $this->fetchRow(
-			$this->select()->where('email = ?', $email)
+			$this->select()
+				->where('email = ?', $email)
+				->where('deleted = ?', 0)
 		);
 	}
 
 	public function getUserByUsername($username)
 	{
 		return $this->fetchRow(
-			$this->select()->where('username = ?', $username)
+			$this->select()
+				->where('username = ?', $username)
+				->where('deleted = ?', 0)
 		);
 	}
 
