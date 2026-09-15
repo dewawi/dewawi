@@ -2,24 +2,16 @@
 
 class Admin_Model_DbTable_Config extends DEEC_Model_DbTable_Entity
 {
-
 	protected $_name = 'config';
+	protected ?string $deletedField = null;
 
 	public function getById(int $id): ?array
 	{
-		$select = $this->select()
-			->where('id = ?', $id)
-			->where('clientid = ?', $this->getClientId())
-			->limit(1);
+		$data = parent::getById($id);
 
-		$row = $this->fetchRow($select);
-
-		if (!$row) {
-			return null;
+		if ($data) {
+			$data['smtppass'] = '';
 		}
-
-		$data = $row->toArray();
-		$data['smtppass'] = '';
 
 		return $data;
 	}

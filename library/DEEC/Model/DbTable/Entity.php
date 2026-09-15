@@ -70,13 +70,13 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 
 	public function getById(int $id): ?array
 	{
-		$select = $this->select()
-			->where('id = ?', $id)
-			->where('clientid = ?', $this->getClientId())
-			->where('deleted = ?', 0)
-			->limit(1);
+		$select = $this->select();
 
-		$row = $this->fetchRow($select);
+		foreach ($this->getEntityWhere($id) as $where) {
+			$select->where($where);
+		}
+
+		$row = $this->fetchRow($select->limit(1));
 
 		return $row ? $row->toArray() : null;
 	}
@@ -258,15 +258,10 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 
 	public function updateById(int $id, array $data): void
 	{
-		$data = $this->prepareUpdateData($data);
-
-		$where = [
-			$this->getAdapter()->quoteInto('id = ?', $id),
-			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
-			$this->getAdapter()->quoteInto('deleted = ?', 0),
-		];
-
-		$this->update($data, $where);
+		$this->update(
+			$this->prepareUpdateData($data),
+			$this->getEntityWhere($id)
+		);
 	}
 
 	public function copyById(int $id): int
