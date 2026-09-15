@@ -796,6 +796,28 @@ a {
   white-space: nowrap;
 }
 
+.dw-table--item-attributes .dw-item-attribute-title {
+	width: 45%;
+	font-weight: 600;
+	color: var(--dw-color-text);
+}
+
+.dw-table--item-attributes .dw-item-attribute-value {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.dw-table--item-options .dw-item-option-sku {
+	width: 120px;
+	font-weight: 600;
+	color: var(--dw-color-primary);
+	white-space: nowrap;
+}
+
+.dw-table--item-options .dw-col-total {
+	width: 140px;
+}
+
 /* Positions */
 
 .dw-positions {

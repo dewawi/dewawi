@@ -5,21 +5,30 @@
 	data-parent="item"
 	data-type="opt"
 >
-	<?php foreach($this->options as $option): ?>
-		<div class="dw-position-card">
-			<strong>
-				<?php echo $this->escape($option->sku); ?>
-			</strong>
-
-			<span>
-				<?php echo $this->escape($option->title); ?>
-			</span>
-
-			<?php if($option->price !== null): ?>
-				<span>
-					<?php echo $this->escape($option->price); ?>
-				</span>
-			<?php endif; ?>
+	<?php if(count($this->options)): ?>
+		<div class="dw-table-wrap">
+			<table class="dw-table dw-table--item-options">
+				<thead>
+					<tr>
+						<th><?php echo $this->translate('POSITIONS_SKU'); ?></th>
+						<th><?php echo $this->translate('ITEMS_OPTION_TITLE'); ?></th>
+						<th class="dw-col-total"><?php echo $this->translate('POSITIONS_PRICE'); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach($this->options as $option): ?>
+						<tr>
+							<td class="dw-item-option-sku"><?php echo $this->escape($option->sku); ?></td>
+							<td><?php echo $this->escape($option->title); ?></td>
+							<td class="dw-col-total">
+								<?php if($option->price !== null && $option->price !== ''): ?>
+									<?php echo $this->currency((float)$option->price, $option->currency); ?>
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
 		</div>
-	<?php endforeach; ?>
+	<?php endif; ?>
 </div>

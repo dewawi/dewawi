@@ -5,17 +5,24 @@
 	data-parent="item"
 	data-type="atr"
 >
-	<?php foreach($this->attributes as $attribute): ?>
-		<div class="dw-position-card">
-			<strong>
-				<?php echo $this->escape($attribute->title); ?>
-			</strong>
-
-			<?php if($attribute->description !== null && $attribute->description !== ''): ?>
-				<span>
-					<?php echo $this->escape($attribute->description); ?>
-				</span>
-			<?php endif; ?>
+	<?php if(count($this->attributes)): ?>
+		<div class="dw-table-wrap">
+			<table class="dw-table dw-table--item-attributes">
+				<thead>
+					<tr>
+						<th><?php echo $this->translate('ITEMS_ATTRIBUTE_TITLE'); ?></th>
+						<th><?php echo $this->translate('ITEMS_ATTRIBUTE_VALUE'); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach($this->attributes as $attribute): ?>
+						<tr>
+							<td class="dw-item-attribute-title"><?php echo $this->escape($attribute->title); ?></td>
+							<td class="dw-item-attribute-value"><?php echo nl2br($this->escape($attribute->description)); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
 		</div>
-	<?php endforeach; ?>
+	<?php endif; ?>
 </div>
