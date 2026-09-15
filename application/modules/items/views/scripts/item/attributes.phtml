@@ -11,9 +11,9 @@
 				<?php echo $this->escape($attribute->title); ?>
 			</strong>
 
-			<?php if($attribute->value): ?>
+			<?php if($attribute->description !== null && $attribute->description !== ''): ?>
 				<span>
-					<?php echo $this->escape($attribute->value); ?>
+					<?php echo $this->escape($attribute->description); ?>
 				</span>
 			<?php endif; ?>
 		</div>
