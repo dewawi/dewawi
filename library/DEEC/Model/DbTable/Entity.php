@@ -231,6 +231,21 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return $where;
 	}
 
+	protected function getEntitiesWhere(array $ids): array
+	{
+		$where = [
+			'id IN (' . implode(',', $ids) . ')',
+		];
+
+		$where = array_merge($where, $this->getAccessWhere());
+
+		if ($this->deletedField !== null) {
+			$where[] = $this->getAdapter()->quoteInto($this->deletedField . ' = ?', 0);
+		}
+
+		return $where;
+	}
+
 	public function create(array $data): int
 	{
 		$data = $this->prepareCreateData($data);
@@ -393,19 +408,17 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 			return 0;
 		}
 
+		if ($this->deletedField === null) {
+			throw new RuntimeException('Soft delete is not supported');
+		}
+
 		$data = [
-			'deleted' => 1,
+			$this->deletedField => 1,
 			'modified' => $this->_date,
 			'modifiedby' => $this->getUserId(),
 		];
 
-		$where = [
-			'id IN (' . implode(',', $ids) . ')',
-			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
-			$this->getAdapter()->quoteInto('deleted = ?', 0),
-		];
-
-		return $this->update($data, $where);
+		return $this->update($data, $this->getEntitiesWhere($ids));
 	}
 
 	public function hasChildren(int $id, array $row = []): bool
@@ -626,33 +639,17 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 
 	public function lock(int $id): void
 	{
-		$data = [
+		$this->update([
 			'locked' => $this->getUserId(),
 			'lockedtime' => $this->_date,
-		];
-
-		$where = [
-			$this->getAdapter()->quoteInto('id = ?', $id),
-			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
-			$this->getAdapter()->quoteInto('deleted = ?', 0),
-		];
-
-		$this->update($data, $where);
+		], $this->getEntityWhere($id));
 	}
 
 	public function unlock(int $id): void
 	{
-		$data = [
+		$this->update([
 			'locked' => 0,
 			'lockedtime' => null,
-		];
-
-		$where = [
-			$this->getAdapter()->quoteInto('id = ?', $id),
-			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
-			$this->getAdapter()->quoteInto('deleted = ?', 0),
-		];
-
-		$this->update($data, $where);
+		], $this->getEntityWhere($id));
 	}
 }
