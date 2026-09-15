@@ -8,7 +8,9 @@ class Admin_Model_Entity_Client
 			'tableClass' => 'Admin_Model_DbTable_Client',
 			'alias' => 'c',
 
-			'clientFilter' => false,
+			'clientFilter' => empty($user['admin']),
+			'clientColumns' => ['id', 'parentid'],
+			'clientId' => (int)$user['clientid'],
 
 			'search' => [
 				'id',

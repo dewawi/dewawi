@@ -187,10 +187,22 @@ class DEEC_List_Query
 		$this->applyConfiguredFilters($select, $params, $options, $config);
 		$this->applyTagFilter($select, $params, $config);
 
-		if (($config['clientFilter'] ?? true) === true) {
+		$clientFilter = $config['clientFilter'] ?? true;
+
+		if ($clientFilter === true) {
 			$clientId = $this->getClientId($config);
-			$select->where($alias . '.clientid = ?', $clientId);
+			$clientColumns = $config['clientColumns'] ?? ['clientid'];
+			$where = [];
+
+			foreach ($clientColumns as $column) {
+				$where[] = $db->quoteInto($alias . '.' . $column . ' = ?', $clientId);
+			}
+
+			if ($where) {
+				$select->where('(' . implode(' OR ', $where) . ')');
+			}
 		}
+
 		if (($config['deletedFilter'] ?? true) === true) {
 			$select->where($alias . '.deleted = ?', 0);
 		}
