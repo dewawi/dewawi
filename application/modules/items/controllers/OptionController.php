@@ -329,7 +329,7 @@ class Items_OptionController extends DEEC_Controller_Action
 					foreach($options as $itemid => $optionSet) {
 						//Delete existing item options
 						$itemOption->deletePositionsByParentId(
-							(int)$item['id']
+							(int)$itemid
 						);
 
 						//Create new item options

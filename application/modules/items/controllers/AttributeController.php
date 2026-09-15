@@ -332,7 +332,7 @@ class Items_AttributeController extends DEEC_Controller_Action
 					foreach($attributes as $itemid => $attributeSet) {
 						//Delete existing item attributes
 						$itemAttribute->deletePositionsByParentId(
-							(int)$item['id']
+							(int)$itemid
 						);
 
 						//Create new item attributes
