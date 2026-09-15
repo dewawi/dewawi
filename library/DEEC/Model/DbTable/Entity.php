@@ -9,6 +9,7 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 
 	protected string $parentField = 'parentid';
 	protected ?string $orderingField = 'ordering';
+	protected ?string $deletedField = 'deleted';
 
 	public function init()
 	{
@@ -206,6 +207,28 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		$this->updateById($id, [
 			'default' => 1,
 		]);
+	}
+
+	protected function getAccessWhere(): array
+	{
+		return [
+			$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
+		];
+	}
+
+	protected function getEntityWhere(int $id): array
+	{
+		$where = [
+			$this->getAdapter()->quoteInto('id = ?', $id),
+		];
+
+		$where = array_merge($where, $this->getAccessWhere());
+
+		if ($this->deletedField !== null) {
+			$where[] = $this->getAdapter()->quoteInto($this->deletedField . ' = ?', 0);
+		}
+
+		return $where;
 	}
 
 	public function create(array $data): int

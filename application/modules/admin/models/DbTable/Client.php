@@ -14,26 +14,23 @@ class Admin_Model_DbTable_Client extends DEEC_Model_DbTable_Entity
 
 	public function getById(int $id): ?array
 	{
-		$select = $this->select()
-			->where('id = ?', $id)
-			->where('deleted = ?', 0)
-			->limit(1);
+		$select = $this->select();
 
-		$row = $this->fetchRow($select);
+		foreach ($this->getEntityWhere($id) as $where) {
+			$select->where($where);
+		}
+
+		$row = $this->fetchRow($select->limit(1));
 
 		return $row ? $row->toArray() : null;
 	}
 
 	public function updateById(int $id, array $data): void
 	{
-		$data = $this->prepareUpdateData($data);
-
-		$where = [
-			$this->getAdapter()->quoteInto('id = ?', $id),
-			$this->getAdapter()->quoteInto('deleted = ?', 0),
-		];
-
-		$this->update($data, $where);
+		$this->update(
+			$this->prepareUpdateData($data),
+			$this->getEntityWhere($id)
+		);
 	}
 
 	public function deleteById(int $id): void
@@ -52,33 +49,36 @@ class Admin_Model_DbTable_Client extends DEEC_Model_DbTable_Entity
 		$this->update($data, $where);
 	}
 
+	protected function getAccessWhere(): array
+	{
+		if (!empty($this->_user['admin'])) {
+			return [];
+		}
+
+		$clientId = (int)$this->_user['clientid'];
+
+		return [
+			'('
+				. $this->getAdapter()->quoteInto('id = ?', $clientId)
+				. ' OR '
+				. $this->getAdapter()->quoteInto('parentid = ?', $clientId)
+			. ')',
+		];
+	}
+
 	public function lock(int $id): void
 	{
-		$data = [
+		$this->update([
 			'locked' => $this->getUserId(),
 			'lockedtime' => $this->_date,
-		];
-
-		$where = [
-			$this->getAdapter()->quoteInto('id = ?', $id),
-			$this->getAdapter()->quoteInto('deleted = ?', 0),
-		];
-
-		$this->update($data, $where);
+		], $this->getEntityWhere($id));
 	}
 
 	public function unlock(int $id): void
 	{
-		$data = [
+		$this->update([
 			'locked' => 0,
 			'lockedtime' => null,
-		];
-
-		$where = [
-			$this->getAdapter()->quoteInto('id = ?', $id),
-			$this->getAdapter()->quoteInto('deleted = ?', 0),
-		];
-
-		$this->update($data, $where);
+		], $this->getEntityWhere($id));
 	}
 }
