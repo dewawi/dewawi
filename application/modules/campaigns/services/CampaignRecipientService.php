@@ -2,20 +2,33 @@
 
 class Campaigns_Service_CampaignRecipientService
 {
-	public function getRecipients(array $params, array $options, int $contactCatId, bool $contactSubcat): array
+	public function getRecipients(int $campaignId, int $page, int $limit, int $contactCatId, bool $contactSubcat): array
 	{
-		$params['_export'] = true;
-		$params['limit'] = 0;
-		$params['catid'] = $contactCatId;
+		$page = max(1, $page);
+		$limit = max(10, min(100, $limit));
+
+		$categories = $this->getCategories();
+
+		$params = [
+			'page' => $page,
+			'limit' => $limit,
+			'catid' => $contactCatId,
+			'keyword' => '',
+			'country' => '0',
+			'tagid' => 0,
+			'order' => 'id',
+			'sort' => 'ASC',
+		];
 
 		$config = Contacts_Model_Entity_Contact::listConfig();
+		$config['pinned'] = false;
 		$config['filters']['catid']['subcategories'] = $contactSubcat;
 
 		$query = new DEEC_List_Query();
 
 		list($contacts, $records) = $query->fetch(
 			$params,
-			$options,
+			['catid' => $categories],
 			$config
 		);
 
@@ -23,6 +36,7 @@ class Campaigns_Service_CampaignRecipientService
 			'contacts' => $contacts,
 			'records' => $records,
 			'contactPersonsByCompany' => $this->getContactPersonsByCompany($contacts),
+			'emailmessages' => $this->getEmailMessagesByContact($contacts, $campaignId),
 		];
 	}
 
@@ -70,6 +84,61 @@ class Campaigns_Service_CampaignRecipientService
 		}
 
 		return $out;
+	}
+
+	protected function getCategories(): array
+	{
+		$categoryDb = new Application_Model_DbTable_Category();
+		$categories = $categoryDb->getCategories('contact');
+
+		foreach($categories as &$category) {
+			$category['childs'] = [];
+		}
+		unset($category);
+
+		foreach($categories as $id => $category) {
+			$parentId = (int)($category['parentid'] ?? 0);
+
+			if($parentId > 0 && isset($categories[$parentId])) {
+				$categories[$parentId]['childs'][] = (int)$id;
+			}
+		}
+
+		return $categories;
+	}
+
+	protected function getEmailMessagesByContact($contacts, int $campaignId): array
+	{
+		$contactIds = [];
+
+		foreach($contacts as $contact) {
+			$contactIds[] = is_array($contact) ? (int)$contact['id'] : (int)$contact->id;
+		}
+
+		$contactIds = array_values(array_unique(array_filter($contactIds)));
+
+		if(!$contactIds) return [];
+
+		$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
+		$adapter = $emailmessageDb->getAdapter();
+
+		$where = [
+			$adapter->quoteInto('parentid = ?', $campaignId),
+			$adapter->quoteInto('module = ?', 'campaigns'),
+			$adapter->quoteInto('controller = ?', 'campaign'),
+			$adapter->quoteInto('clientid = ?', $emailmessageDb->getClientId()),
+			$adapter->quoteInto('contactid IN (?)', $contactIds),
+			$adapter->quoteInto('deleted = ?', 0),
+		];
+
+		$rows = $emailmessageDb->fetchAll($where, 'id DESC')->toArray();
+		$messages = [];
+
+		foreach($rows as $row) {
+			$messages[(int)$row['contactid']][] = $row;
+		}
+
+		return $messages;
 	}
 
 	public function getRecipientStatus($contacts, int $campaignId): array

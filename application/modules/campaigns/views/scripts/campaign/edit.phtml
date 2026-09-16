@@ -12,7 +12,10 @@ echo $this->FileManager();
 		'overview' => ['title' => 'TABS_OVERVIEW'],
 		'contacts' => [
 			'title' => 'TABS_CONTACTS',
-			'html' => $this->Contacts(),
+			'html' => '<div id="campaign-recipients"></div>',
+			'a_attrs' => [
+				'data-tab-load' => 'getCampaignRecipients',
+			],
 		],
 		'errors' => [
 			'title' => 'TABS_ERRORS',

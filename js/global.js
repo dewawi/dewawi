@@ -3149,6 +3149,20 @@ function markFieldSaved($field) {
 			$(document).on('change', '.dw-pagination select', function () {
 				var $field = $(this);
 
+				var paginationHandler = String(
+					$field.closest('[data-pagination-change]').data('pagination-change') || ''
+				);
+
+				if(paginationHandler) {
+					var fn = window[paginationHandler];
+
+					if(typeof fn === 'function') {
+						fn($field);
+					}
+
+					return;
+				}
+
 				DewawiToolbar.persistField($field);
 
 				if ($field.attr('name') === 'limit') {
@@ -3744,3 +3758,34 @@ $(document).on('change', '.dw-toolbar select[name="state"]', function () {
 		id: id
 	});
 });
+
+function getCampaignRecipients($field)
+{
+	var $container = $('#campaign-recipients');
+	var $pagination = $container.find('.dw-pagination');
+
+	var page = 1;
+	var limit = 25;
+
+	if($pagination.length) {
+		if($field && $field.jquery && $field.attr('name') === 'limit') {
+			$pagination.find('[name="page"]').val(1);
+		}
+
+		page = parseInt($pagination.find('[name="page"]').val(), 10) || 1;
+		limit = parseInt($pagination.find('[name="limit"]').val(), 10) || 25;
+	}
+
+	$.ajax({
+		type: 'POST',
+		url: baseUrl + '/campaigns/campaign/recipients/id/' + id,
+		data: {
+			page: page,
+			limit: limit
+		},
+		cache: false,
+		success: function(response) {
+			$container.html(response);
+		}
+	});
+}

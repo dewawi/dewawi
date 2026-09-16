@@ -173,33 +173,8 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 					//Toolbar
 					$toolbar = new Campaigns_Form_Toolbar();
 					$options = $this->_helper->Options->getOptions($toolbar);
-					$params = $this->_helper->Params->getParams($toolbar, $options);
 					$toolbar->setValue('state', $data['state']);
 					$toolbarPositions = new Campaigns_Form_ToolbarPositions();
-
-					//Get already sent emails on champaign
-					$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
-					$emailmessageArray = $emailmessageDb->getEmailmessages(NULL, $id, 'campaigns', 'campaign');
-					$emailmessages = array();
-					foreach($emailmessageArray as $emailmessage) {
-						$emailmessages[$emailmessage['contactid']][] = $emailmessage;
-					}
-
-					//Get contacts
-					$recipientService = new Campaigns_Service_CampaignRecipientService();
-
-					$recipientData = $recipientService->getRecipients(
-						$params,
-						$options,
-						(int)$data['contactcatid'],
-						(bool)$data['contactsubcat']
-					);
-
-					$contacts = $recipientData['contacts'];
-
-					$this->view->contactPersonsByCompany = $recipientData['contactPersonsByCompany'];
-
-					$this->view->recipientStatus = $recipientService->getRecipientStatus($contacts, $id);
 
 					//Get currency
 					$currency = $this->_helper->Currency->getCurrency($data['currency']);
@@ -257,15 +232,56 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 					$this->view->form = $form;
 					$this->view->users = $users;
 					$this->view->activeTab = $activeTab;
-					$this->view->contacts = $contacts;
 					$this->view->attachments = $attachments;
-					$this->view->emailmessages = $emailmessages;
 					$this->view->toolbar = $toolbar;
 					$this->view->toolbarPositions = $toolbarPositions;
 				}
 			}
 		}
 		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
+	public function recipientsAction()
+	{
+		$this->disableView();
+
+		$id = (int)$this->_getParam('id', 0);
+		$page = max(1, (int)$this->_getParam('page', 1));
+		$limit = max(10, min(100, (int)$this->_getParam('limit', 25)));
+
+		$campaignDb = new Campaigns_Model_DbTable_Campaign();
+		$campaign = $campaignDb->getCampaign($id);
+
+		$recipientService = new Campaigns_Service_CampaignRecipientService();
+
+		$recipientData = $recipientService->getRecipients(
+			$id,
+			$page,
+			$limit,
+			(int)$campaign['contactcatid'],
+			(bool)$campaign['contactsubcat']
+		);
+
+		$records = (int)$recipientData['records'];
+		$count = count($recipientData['contacts']);
+		$start = $records > 0 ? (($page - 1) * $limit) + 1 : 0;
+		$end = $records > 0 ? min($start + $count - 1, $records) : 0;
+
+		$this->view->contacts = $recipientData['contacts'];
+		$this->view->contactPersonsByCompany = $recipientData['contactPersonsByCompany'];
+		$this->view->emailmessages = $recipientData['emailmessages'];
+
+		$this->view->pagination = [
+			'count' => $count,
+			'start' => $start,
+			'end' => $end,
+			'records' => $records,
+			'page' => $page,
+			'limit' => $limit,
+			'pages' => max(1, (int)ceil($records / $limit)),
+		];
+
+		echo $this->view->Contacts();
 	}
 
 	public function copyAction()
