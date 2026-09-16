@@ -12,7 +12,7 @@ class Campaigns_Service_CampaignRecipientService
 		$params = [
 			'page' => $page,
 			'limit' => $limit,
-			'catid' => $contactCatId,
+			'catid' => $contactCatId > 0 ? $contactCatId : 'all',
 			'keyword' => '',
 			'country' => '0',
 			'tagid' => 0,
@@ -38,6 +38,43 @@ class Campaigns_Service_CampaignRecipientService
 			'contactPersonsByCompany' => $this->getContactPersonsByCompany($contacts),
 			'emailmessages' => $this->getEmailMessagesByContact($contacts, $campaignId),
 		];
+	}
+
+	public function getErrors(int $campaignId): array
+	{
+		$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
+		$adapter = $emailmessageDb->getAdapter();
+		$clientId = $emailmessageDb->getClientId();
+
+		$select = $adapter->select()
+			->from(['em' => 'emailmessage'], [
+				'id',
+				'contactid',
+				'recipient',
+				'messagesent',
+				'messagesentby',
+				'response',
+			])
+			->joinLeft(
+				['c' => 'contact'],
+				'c.id = em.contactid AND c.clientid = em.clientid AND c.deleted = 0',
+				[
+					'contactnumber' => 'contactid',
+					'contactname' => 'name1',
+				]
+			)
+			->where('em.parentid = ?', $campaignId)
+			->where('em.module = ?', 'campaigns')
+			->where('em.controller = ?', 'campaign')
+			->where('em.clientid = ?', $clientId)
+			->where('em.deleted = ?', 0)
+			->where('em.response IS NOT NULL')
+			->where('em.response != ?', '')
+			->where('em.response != ?', 'sent')
+			->where('em.response != ?', 'pending')
+			->order('em.id DESC');
+
+		return $adapter->fetchAll($select);
 	}
 
 	protected function getContactPersonsByCompany($contacts): array

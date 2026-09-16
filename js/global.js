@@ -3789,3 +3789,19 @@ function getCampaignRecipients($field)
 		}
 	});
 }
+
+function getCampaignErrors()
+{
+	var $container = $('#campaign-errors');
+
+	if(!$container.length) return;
+
+	$.ajax({
+		type: 'GET',
+		url: baseUrl + '/campaigns/campaign/errors/id/' + id,
+		cache: false,
+		success: function(response) {
+			$container.html(response);
+		}
+	});
+}
