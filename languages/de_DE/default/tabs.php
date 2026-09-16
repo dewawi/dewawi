@@ -23,6 +23,7 @@
 	'TABS_DETAILS' => 'Details',
 	'TABS_PRICES' => 'Preise',
 	'TABS_SHOP' => 'Shop',
+	'TABS_ERRORS' => 'Fehler',
 	'TABS_INVENTORY' => 'Inventar',
 	'TABS_ATTRIBUTES' => 'Eigenschaften',
 	'TABS_OPTIONS' => 'Optionen',

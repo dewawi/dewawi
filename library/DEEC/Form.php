@@ -1401,7 +1401,7 @@ class DEEC_Form
 
 		// Description / info / errors
 		$desc = !empty($el['description'])
-			? '<div class="dw-field__description">'.htmlspecialchars((string)$el['description']).'</div>'
+			? '<div class="dw-field__description">'.htmlspecialchars($this->translate((string)$el['description'])).'</div>'
 			: '';
 
 		$info = !empty($el['info'])
