@@ -1,0 +1,10 @@
+<?php
+
+$type = (string)$this->form->getValue('type');
+$definition = DEEC_Site_Block::getDefinition($type);
+
+$this->title = $this->translate($definition['label']);
+$this->headTitle($this->title);
+
+echo $this->FileManager();
+echo $this->form->renderForm();

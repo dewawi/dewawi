@@ -196,6 +196,10 @@ class DEEC_Permission
 			return 'item';
 		}
 
+		if ($module === 'admin' && $controller === 'pageblock') {
+			return 'page';
+		}
+
 		return $controller;
 	}
 
