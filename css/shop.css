@@ -489,4 +489,49 @@ form .hidden {
   min-width: 160px;
 }
 
+.dw-site-block--hero {
+	position: relative;
+	display: flex;
+	align-items: center;
+	min-height: 420px;
+	overflow: hidden;
+	background: #e9ecef;
+}
 
+.dw-site-block--hero .dw-site-block__media {
+	position: absolute;
+	inset: 0;
+}
+
+.dw-site-block--hero .dw-site-block__media img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.dw-site-block--hero.has-image::after {
+	position: absolute;
+	inset: 0;
+	content: "";
+	background: rgba(0, 0, 0, .45);
+}
+
+.dw-site-block--hero .dw-site-block__content {
+	position: relative;
+	z-index: 1;
+	max-width: 760px;
+	padding-top: 5rem;
+	padding-bottom: 5rem;
+}
+
+.dw-site-block--hero.has-image .dw-site-block__content {
+	color: #fff;
+}
+
+.dw-site-block--hero h1 {
+	font-size: 3rem;
+}
+
+.dw-site-block--hero p {
+	font-size: 1.25rem;
+}

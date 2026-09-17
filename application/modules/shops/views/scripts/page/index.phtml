@@ -21,7 +21,48 @@ $contact = $this->ContactForm($this->translate('SHOPS_CONTACT_FORM'));
 //$content = str_replace('{tags}', $tagHtml, $content);
 //$content = str_replace('{categories}', $categoryHtml, $content);
 $content = str_replace('{contact}', $contact, $content);
+
+$pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
 ?>
+
+<?php if ($pageblocks): ?>
+
+	<?php echo $this->RenderPageBlocks($pageblocks); ?>
+
+	<?php if (trim($content) !== ''): ?>
+		<section class="py-5">
+			<div class="container">
+				<?php echo $content; ?>
+			</div>
+		</section>
+	<?php endif; ?>
+
+<?php else: ?>
+
+	<?php if (isset($this->page['header'])): ?>
+		<header class="jumbotron jumbotron-fluid text-center">
+			<div class="container">
+				<h1 class="display-4">Welcome to Our Company</h1>
+				<p class="lead">We provide innovative solutions to help your business grow.</p>
+				<a href="#contact" class="btn btn-primary btn-lg">Get Started</a>
+			</div>
+		</header>
+
+		<section id="about" class="py-5">
+			<div class="container">
+				<?php echo $content; ?>
+			</div>
+		</section>
+	<?php else: ?>
+		<section id="about" class="py-5">
+			<div class="container">
+				<h2 class="text-center mb-4"><?php echo $this->escape($this->page['title']); ?></h2>
+				<?php echo $content; ?>
+			</div>
+		</section>
+	<?php endif; ?>
+
+<?php endif; ?>
 
 <?php if(isset($this->page['header'])) : ?>
 	<header class="jumbotron jumbotron-fluid text-center">

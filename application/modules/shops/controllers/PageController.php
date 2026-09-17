@@ -65,6 +65,14 @@ class Shops_PageController extends Zend_Controller_Action
 		$pageDb = new Shops_Model_DbTable_Page();
 		$page = $pageDb->getPage($id, $shop['id']);
 
+		$pageblocks = [];
+
+		if ($page) {
+			$pageblockDb = new Application_Model_DbTable_Pageblock();
+			$pageblockDb->setClientId((int)$shop['clientid']);
+			$pageblocks = $pageblockDb->getBlocksByPageId((int)$page['id'], true, 0);
+		}
+
 		$menuDb = new Shops_Model_DbTable_Menu();
 		$menus = $menuDb->getMenus($shop['id']);
 
