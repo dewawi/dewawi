@@ -1,7 +1,27 @@
-<?php 
+<?php
+
 $this->title = $this->form->getValue('title');
 $this->headTitle($this->title);
+
 echo $this->TinyMCE();
 echo $this->FileManager();
-echo $this->form->renderForm();
-?>
+
+echo $this->form->renderForm([
+	'id' => 'page',
+	'activeTab' => $this->activeTab,
+	'tabs' => [
+		'overview' => [
+			'title' => 'TABS_OVERVIEW',
+		],
+		'content' => [
+			'title' => 'TABS_CONTENT',
+		],
+		'blocks' => [
+			'title' => 'TABS_PAGE_BLOCKS',
+			'html' => $this->Pageblocks(['pageid' => $this->id]),
+		],
+		'settings' => [
+			'title' => 'TABS_SETTINGS',
+		],
+	],
+]);

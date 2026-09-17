@@ -133,6 +133,8 @@
 	'ADMIN_CATEGORY_DESCRIPTION' => 'Beschreibung',
 	'ADMIN_CATEGORY_MINI_DESCRIPTION' => 'Minibeschreibung',
 	'ADMIN_CATEGORY_SHORT_DESCRIPTION' => 'Kurzbeschreibung',
+	'ADMIN_ADD_PAGEBLOCK' => 'Block hinzufügen',
+	'ADMIN_SAVE_PAGE_FIRST' => 'Seite zuerst speichern.',
 	'ADMIN_PAGEBLOCK_HERO' => 'Hero',
 	'ADMIN_PAGEBLOCK_BUTTON_TEXT' => 'Button-Text',
 	'ADMIN_TAG_IMAGE' => 'Bild',

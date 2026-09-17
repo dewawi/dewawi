@@ -4,7 +4,7 @@ class Application_Model_DbTable_Pageblock extends DEEC_Model_DbTable_Entity
 {
 	protected $_name = 'pageblock';
 
-	public function getBlocksByPageId(int $pageId, bool $activatedOnly = false): array
+	public function getBlocksByPageId(int $pageId, bool $activatedOnly = false, ?int $parentId = null): array
 	{
 		$select = $this->select()
 			->where('pageid = ?', $pageId)
@@ -15,8 +15,11 @@ class Application_Model_DbTable_Pageblock extends DEEC_Model_DbTable_Entity
 			$select->where('activated = ?', 1);
 		}
 
+		if ($parentId !== null) {
+			$select->where('parentid = ?', $parentId);
+		}
+
 		$select
-			->order('parentid ASC')
 			->order('ordering ASC')
 			->order('id ASC');
 
