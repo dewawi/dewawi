@@ -12,6 +12,8 @@ else :
 	$content = '';
 endif;
 
+$pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
+
 // Fetch data
 $tags = $this->{'tags'};
 $categories = $this->{'categories'};
@@ -50,12 +52,30 @@ $content = str_replace('{categories}', $categoryHtml, $content);
 $content = str_replace('{contact}', $contact, $content);
 ?>
 
-<?php if (!empty($this->slideImages)) : ?>
-	<?php echo $this->Slide($this->slideImages); ?>
-<?php endif; ?>
+<?php if ($pageblocks): ?>
 
-<section id="about" class="py-5">
-	<div class="container">
-		<?php echo $content; ?>
-	</div>
-</section>
+	<?php echo $this->RenderPageBlocks($pageblocks); ?>
+
+	<?php if (trim($content) !== ''): ?>
+		<section id="about" class="py-5">
+			<div class="container">
+				<?php echo $content; ?>
+			</div>
+		</section>
+	<?php endif; ?>
+
+<?php else: ?>
+
+	<?php if (!empty($this->slideImages)): ?>
+		<?php echo $this->Slide($this->slideImages); ?>
+	<?php endif; ?>
+
+	<?php if (trim($content) !== ''): ?>
+		<section id="about" class="py-5">
+			<div class="container">
+				<?php echo $content; ?>
+			</div>
+		</section>
+	<?php endif; ?>
+
+<?php endif; ?>

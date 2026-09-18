@@ -59,9 +59,6 @@ class Shops_PageController extends Zend_Controller_Action
 		$tags = $get->tags('shops', 'category');
 		//print_r($tags);
 
-		$menuDb = new Shops_Model_DbTable_Menu();
-		$menus = $menuDb->getMenus($shop['id']);
-
 		$pageDb = new Shops_Model_DbTable_Page();
 		$page = $pageDb->getPage($id, $shop['id']);
 
@@ -89,6 +86,7 @@ class Shops_PageController extends Zend_Controller_Action
 		$this->view->tags = $tags;
 		//$this->view->tagEntites = $tagEntites;
 		$this->view->page = $page;
+		$this->view->pageblocks = $pageblocks;
 		$this->view->shop = $shop;
 		$this->view->images = $images;
 		$this->view->menus = $menus;

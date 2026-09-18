@@ -57,6 +57,7 @@ class Shops_IndexController extends Zend_Controller_Action
 		$slide = $slideDb->getByPosition('home', (int)$shop['id']);
 
 		$slides = [];
+		$slideImages = [];
 
 		if ($slide) {
 			$mediaDb = new Shops_Model_DbTable_Media();
@@ -82,9 +83,18 @@ class Shops_IndexController extends Zend_Controller_Action
 		$pageDb = new Shops_Model_DbTable_Page();
 		$page = $pageDb->getPageByType('home', $shop['id']);
 
+		$pageblocks = [];
+
+		if ($page) {
+			$pageblockDb = new Application_Model_DbTable_Pageblock();
+			$pageblockDb->setClientId((int)$shop['clientid']);
+			$pageblocks = $pageblockDb->getBlocksByPageId((int)$page['id'], true, 0);
+		}
+
 		//$this->view->tags = $tags;
 		//$this->view->tagEntites = $tagEntites;
 		$this->view->page = $page;
+		$this->view->pageblocks = $pageblocks;
 		$this->view->shop = $shop;
 		$this->view->images = $images;
 		$this->view->slides = $slides;
