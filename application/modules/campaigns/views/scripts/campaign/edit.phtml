@@ -23,7 +23,9 @@ echo $this->FileManager();
 		],
 		'messages' => [
 			'title' => 'TABS_MESSAGES',
-			'html' => $this->EmailMessages(),
+			'html' => $this->EmailMessages([
+				'mode' => 'campaign',
+			]),
 			'a_attrs' => [
 				'data-tab-load' => 'getEmailmessages',
 			],
