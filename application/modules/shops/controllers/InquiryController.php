@@ -1,46 +1,19 @@
 <?php
 
-class Shops_InquiryController extends Zend_Controller_Action
+class Shops_InquiryController extends Shops_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
 	protected $formDataSession;
 	protected $formConfig;
+	protected $inquiryToken;
 
 	public function init()
 	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
-
-		$this->cart = new Shops_Model_ShoppingCart();
-
-		// Make the cart accessible in all views
-		$this->view->cart = $this->cart;
+		parent::init();
 
 		$this->formDataSession = new Zend_Session_Namespace('MultiStepForm');
 
-		// Load form config with safety checks
 		$this->formConfig = (new Shops_Model_FormConfig())->getConfig();
+
 		if (!is_array($this->formConfig)) {
 			$this->formConfig = [];
 		}
@@ -48,32 +21,22 @@ class Shops_InquiryController extends Zend_Controller_Action
 		if (!isset($this->formDataSession->inquiryToken)) {
 			$this->formDataSession->inquiryToken = bin2hex(random_bytes(16));
 		}
+
 		$this->inquiryToken = $this->formDataSession->inquiryToken;
 	}
 
 	public function indexAction()
 	{
-		$shop = Zend_Registry::get('Shop');
+		$shop = $this->_site;
+		$request = $this->getRequest();
 
-		$this->_helper->getHelper('layout')->setLayout('site');
-
-		$toolbar = new Items_Form_Toolbar();
-		//$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar);
-		$contact = new Shops_Form_Contact();
-		$this->view->contact = $contact;
-
-		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories();
-
-		$menuDb = new Shops_Model_DbTable_Menu();
-		$menus = $menuDb->getMenus($shop['id']);
-
-		$menuitems = array();
-		$menuitemDb = new Shops_Model_DbTable_Menuitem();
-		foreach($menus as $menu) {
-			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
+		if (!$request->isPost()) {
+			$this->initSiteLayout();
+			$this->assignMessages();
 		}
+
+		$isAjax = $request->isXmlHttpRequest();
+		$step = $request->getPost('step', '1');
 
 		//$this->view->tags = $tags;
 		//$this->view->tagEntites = $tagEntites;
@@ -374,55 +337,22 @@ class Shops_InquiryController extends Zend_Controller_Action
 
 	public function successAction()
 	{
-		$shop = Zend_Registry::get('Shop');
-
-		// Holt die Formulardaten aus der Session
-		$this->view->formData = $this->formDataSession->formData;
-
-		$this->_helper->getHelper('layout')->setLayout('site');
-
-		$toolbar = new Items_Form_Toolbar();
-		//$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar);
-
-		$contact = new Shops_Form_Contact();
-		$this->view->contact = $contact;
-
-		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories();
-
-		$images = array();
-		$imageDb = new Shops_Model_DbTable_Media();
-		$images['categories'] = $imageDb->getCategoryMedia($categories);
-
-		$menuDb = new Shops_Model_DbTable_Menu();
-		$menus = $menuDb->getMenus($shop['id']);
-
-		$menuitems = array();
-		$menuitemDb = new Shops_Model_DbTable_Menuitem();
-		foreach($menus as $menu) {
-			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
-		}
-
-		//$this->view->tags = $tags;
-		//$this->view->tagEntites = $tagEntites;
-		$this->view->shop = $shop;
-		$this->view->menus = $menus;
-		$this->view->images = $images;
-		$this->view->menus = $menus;
-		$this->view->menuitems = $menuitems;
-		$this->view->categories = $categories;
-		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->view->formData = $this->formDataSession->formData ?? [];
 		$this->view->downloadUrl = $this->formDataSession->downloadUrl ?? null;
 
-		$isAjax = $this->getRequest()->isXmlHttpRequest();
+		if ($this->getRequest()->isXmlHttpRequest()) {
+			$this->assignMessages();
 
-		if ($isAjax) {
-		 	$formHtml = $this->view->partial('inquiry/success.phtml', []);
-		 	$this->_helper->json(['status'=>'ok','formHtml'=>$formHtml]);
-		 	return;
+			$formHtml = $this->view->partial('inquiry/success.phtml', []);
+
+			$this->_helper->json([
+				'status' => 'ok',
+				'formHtml' => $formHtml,
+			]);
+
+			return;
 		}
+
 		return $this->_helper->redirector->gotoSimple('index', 'index', 'default');
 	}
 
