@@ -46,6 +46,72 @@ class DEEC_Site_Block
 					],
 				],
 			],
+			'text' => [
+				'label' => 'ADMIN_PAGEBLOCK_TEXT',
+				'fields' => [
+					[
+						'name' => 'title',
+						'type' => 'text',
+						'label' => 'ADMIN_TITLE',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'text',
+						'type' => 'textarea',
+						'label' => 'ADMIN_TEXT',
+						'format' => ['type' => 'string'],
+						'attribs' => ['rows' => 12],
+						'col' => 12,
+					],
+				],
+			],
+			'image_text' => [
+				'label' => 'ADMIN_PAGEBLOCK_IMAGE_TEXT',
+				'fields' => [
+					[
+						'name' => 'title',
+						'type' => 'text',
+						'label' => 'ADMIN_TITLE',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'text',
+						'type' => 'textarea',
+						'label' => 'ADMIN_TEXT',
+						'format' => ['type' => 'string'],
+						'attribs' => ['rows' => 10],
+						'col' => 12,
+					],
+					[
+						'name' => 'image',
+						'type' => 'text',
+						'label' => 'ADMIN_CATEGORY_IMAGE',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'imagealt',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_IMAGE_ALT',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'imageposition',
+						'type' => 'select',
+						'label' => 'ADMIN_PAGEBLOCK_IMAGE_POSITION',
+						'options' => [
+							'left' => 'ADMIN_PAGEBLOCK_IMAGE_LEFT',
+							'right' => 'ADMIN_PAGEBLOCK_IMAGE_RIGHT',
+						],
+						'default' => 'left',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+				],
+			],
 		];
 	}
 

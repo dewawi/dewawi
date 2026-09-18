@@ -1,0 +1,35 @@
+<?php
+
+$title = trim((string)($this->data['title'] ?? ''));
+$text = trim((string)($this->data['text'] ?? ''));
+$image = trim((string)($this->data['image'] ?? ''));
+$imageAlt = trim((string)($this->data['imagealt'] ?? ''));
+$imagePosition = ($this->data['imageposition'] ?? 'left') === 'right' ? 'right' : 'left';
+
+$imageClass = $imagePosition === 'right' ? ' order-md-2' : '';
+$textClass = $imagePosition === 'right' ? ' order-md-1' : '';
+?>
+
+<section class="dw-site-block dw-site-block--image-text">
+	<div class="container">
+		<div class="row align-items-center">
+			<?php if ($image !== ''): ?>
+				<div class="col-md-6<?php echo $imageClass; ?>">
+					<img class="dw-site-block__image img-fluid" src="<?php echo $this->escape($image); ?>" alt="<?php echo $this->escape($imageAlt); ?>">
+				</div>
+			<?php endif; ?>
+
+			<div class="<?php echo $image !== '' ? 'col-md-6' : 'col-12'; ?><?php echo $textClass; ?>">
+				<?php if ($title !== ''): ?>
+					<h2><?php echo $this->escape($title); ?></h2>
+				<?php endif; ?>
+
+				<?php if ($text !== ''): ?>
+					<div class="dw-site-block__text">
+						<?php echo nl2br($this->escape($text)); ?>
+					</div>
+				<?php endif; ?>
+			</div>
+		</div>
+	</div>
+</section>

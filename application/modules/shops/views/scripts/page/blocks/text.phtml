@@ -1,0 +1,19 @@
+<?php
+
+$title = trim((string)($this->data['title'] ?? ''));
+$text = trim((string)($this->data['text'] ?? ''));
+?>
+
+<section class="dw-site-block dw-site-block--text">
+	<div class="container">
+		<?php if ($title !== ''): ?>
+			<h2><?php echo $this->escape($title); ?></h2>
+		<?php endif; ?>
+
+		<?php if ($text !== ''): ?>
+			<div class="dw-site-block__text">
+				<?php echo nl2br($this->escape($text)); ?>
+			</div>
+		<?php endif; ?>
+	</div>
+</section>

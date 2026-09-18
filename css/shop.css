@@ -535,3 +535,24 @@ form .hidden {
 .dw-site-block--hero p {
 	font-size: 1.25rem;
 }
+
+.dw-site-block--text,
+.dw-site-block--image-text {
+	padding: 4rem 0;
+}
+
+.dw-site-block--text .dw-site-block__text,
+.dw-site-block--image-text .dw-site-block__text {
+	font-size: 1.1rem;
+	line-height: 1.7;
+}
+
+.dw-site-block--text h2,
+.dw-site-block--image-text h2 {
+	margin-bottom: 1.5rem;
+}
+
+.dw-site-block--image-text .dw-site-block__image {
+	width: 100%;
+	height: auto;
+}
