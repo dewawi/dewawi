@@ -29,20 +29,19 @@ class DEEC_Filter
 				$precision = isset($fmt['precision']) ? (int)$fmt['precision'] : null;
 				$n = self::parseDecimalLocale((string)$value, $locale);
 				if ($n === null) return null;
-				if ($precision !== null) {
-					$n = round($n, $precision);
-				}
+				if ($precision !== null) $n = round($n, $precision);
 				if ((float)$n == 0.0) return null;
 				return $n;
 
+			case 'html':
+				return self::sanitizeHtml((string)$value, $fmt);
+
 			case 'date':
-				// input kann d.m.Y sein, db soll Y-m-d
 				$dbPat = $fmt['pattern'] ?? 'Y-m-d';
 				$uiPat = $fmt['displayPattern'] ?? null;
 				return self::normalizeDate((string)$value, $dbPat, $uiPat);
 
 			default:
-				// string trim als default
 				return is_string($value) ? trim($value) : $value;
 		}
 	}
@@ -70,6 +69,41 @@ class DEEC_Filter
 		if ($s === '' || $s === '-' || $s === '.' || $s === '-.') return null;
 
 		return is_numeric($s) ? (float)$s : null;
+	}
+
+	protected static function sanitizeHtml(string $value, array $fmt): ?string
+	{
+		$value = trim($value);
+		if ($value === '') return null;
+
+		$allowTags = $fmt['allowTags'] ?? ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'b', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+		$allowAttribs = $fmt['allowAttribs'] ?? ['href', 'src', 'title', 'target', 'alt', 'class', 'width', 'height'];
+
+		$filter = new Zend_Filter_StripTags([
+			'allowTags' => $allowTags,
+			'allowAttribs' => $allowAttribs,
+		]);
+
+		return self::sanitizeHtmlUrls(trim($filter->filter($value)));
+	}
+
+	protected static function sanitizeHtmlUrls(string $html): string
+	{
+		return preg_replace_callback(
+			'~\s(href|src)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))~iu',
+			function ($match) {
+				$url = $match[2] ?? $match[3] ?? $match[4] ?? '';
+				$url = html_entity_decode(trim($url), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+				$normalized = preg_replace('~[\x00-\x20\x7F]+~u', '', $url);
+
+				if (preg_match('~^[a-z][a-z0-9+.-]*:~i', $normalized) && !preg_match('~^(https?|mailto|tel):~i', $normalized)) {
+					return '';
+				}
+
+				return $match[0];
+			},
+			$html
+		);
 	}
 
 	protected static function normalizeDate(string $raw, string $dbPat, ?string $uiPat): ?string
