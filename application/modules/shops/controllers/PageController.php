@@ -10,22 +10,16 @@ class Shops_PageController extends Shops_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 
 		$toolbar = new Items_Form_Toolbar();
-		//$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar);
 
 		$contact = new Shops_Form_Contact();
 		$this->view->contact = $contact;
 
-		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories();
-
-		//Tags
 		$get = new Shops_Model_Get();
 		$tags = $get->tags('shops', 'category');
-		//print_r($tags);
 
 		$pageDb = new Shops_Model_DbTable_Page();
-		$page = $pageDb->getPage($id, $shop['id']);
+		$page = $pageDb->getPage($id, (int)$shop['id']);
 
 		$pageblocks = [];
 
@@ -35,30 +29,17 @@ class Shops_PageController extends Shops_Controller_Action
 			$pageblocks = $pageblockDb->getBlocksByPageId((int)$page['id'], true, 0);
 		}
 
-		$menuDb = new Shops_Model_DbTable_Menu();
-		$menus = $menuDb->getMenus($shop['id']);
-
-		$menuitems = array();
-		$menuitemDb = new Shops_Model_DbTable_Menuitem();
-		foreach($menus as $menu) {
-			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
-		}
-
-		$images = array();
 		$imageDb = new Shops_Model_DbTable_Media();
-		$images['categories'] = $imageDb->getCategoryMedia($categories);
 
 		$this->view->tags = $tags;
-		//$this->view->tagEntites = $tagEntites;
 		$this->view->page = $page;
 		$this->view->pageblocks = $pageblocks;
-		$this->view->shop = $shop;
-		$this->view->images = $images;
-		$this->view->menus = $menus;
-		$this->view->menuitems = $menuitems;
-		$this->view->categories = $categories;
-		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->view->images = [
+			'categories' => $imageDb->getCategoryMedia($this->view->categories),
+		];
+		$this->view->toolbar = $toolbar;
+
+		$this->assignMessages();
 	}
 
 	public function searchAction()

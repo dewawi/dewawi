@@ -9,17 +9,13 @@ class Shops_IndexController extends Shops_Controller_Action
 		$shop = $this->_site;
 
 		$toolbar = new Shops_Form_Toolbar();
-		//$options = $this->_helper->Options->getOptions($toolbar);
-		//$params = $this->_helper->Params->getParams($toolbar);
-		//print_r($params);
-		//print_r($this->getRequest()->getParams());
+
 		$contact = new Shops_Form_Contact();
 		$this->view->contact = $contact;
 
 		$slideDb = new Shops_Model_DbTable_Slide();
 		$slide = $slideDb->getByPosition('home', (int)$shop['id']);
 
-		$slides = [];
 		$slideImages = [];
 
 		if ($slide) {
@@ -30,12 +26,13 @@ class Shops_IndexController extends Shops_Controller_Action
 		$this->view->slide = $slide;
 		$this->view->slideImages = $slideImages;
 
-		$images = array();
 		$imageDb = new Shops_Model_DbTable_Media();
-		$images['categories'] = $imageDb->getCategoryMedia($categories);
+		$this->view->images = [
+			'categories' => $imageDb->getCategoryMedia($this->view->categories),
+		];
 
 		$pageDb = new Shops_Model_DbTable_Page();
-		$page = $pageDb->getPageByType('home', $shop['id']);
+		$page = $pageDb->getPageByType('home', (int)$shop['id']);
 
 		$pageblocks = [];
 
@@ -45,18 +42,11 @@ class Shops_IndexController extends Shops_Controller_Action
 			$pageblocks = $pageblockDb->getBlocksByPageId((int)$page['id'], true, 0);
 		}
 
-		//$this->view->tags = $tags;
-		//$this->view->tagEntites = $tagEntites;
 		$this->view->page = $page;
 		$this->view->pageblocks = $pageblocks;
-		$this->view->shop = $shop;
-		$this->view->images = $images;
-		$this->view->slides = $slides;
-		$this->view->menus = $menus;
-		$this->view->menuitems = $menuitems;
-		$this->view->categories = $categories;
-		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->view->toolbar = $toolbar;
+
+		$this->assignMessages();
 	}
 
 	public function searchAction()
