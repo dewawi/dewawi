@@ -1,48 +1,13 @@
 <?php
 
-class Shops_PageController extends Zend_Controller_Action
+class Shops_PageController extends Shops_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
-	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
-
-		$this->cart = new Shops_Model_ShoppingCart();
-
-		// Make the cart accessible in all views
-		$this->view->cart = $this->cart;
-	}
-
 	public function indexAction()
 	{
-		$shop = Zend_Registry::get('Shop');
+		$this->initSiteLayout();
 
-		$id = $this->_getParam('id');
-
-		$this->_helper->getHelper('layout')->setLayout('site');
+		$shop = $this->_site;
+		$id = (int)$this->_getParam('id', 0);
 
 		$toolbar = new Items_Form_Toolbar();
 		//$options = $this->_helper->Options->getOptions($toolbar);

@@ -1,46 +1,12 @@
 <?php
 
-class Shops_IndexController extends Zend_Controller_Action
+class Shops_IndexController extends Shops_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
-
-	public function init()
-	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
-
-		$this->cart = new Shops_Model_ShoppingCart();
-
-		// Make the cart accessible in all views
-		$this->view->cart = $this->cart;
-	}
-
 	public function indexAction()
 	{
-		$shop = Zend_Registry::get('Shop');
+		$this->initSiteLayout();
 
-		$this->_helper->getHelper('layout')->setLayout('site');
+		$shop = $this->_site;
 
 		$toolbar = new Shops_Form_Toolbar();
 		//$options = $this->_helper->Options->getOptions($toolbar);
@@ -49,9 +15,6 @@ class Shops_IndexController extends Zend_Controller_Action
 		//print_r($this->getRequest()->getParams());
 		$contact = new Shops_Form_Contact();
 		$this->view->contact = $contact;
-
-		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories();
 
 		$slideDb = new Shops_Model_DbTable_Slide();
 		$slide = $slideDb->getByPosition('home', (int)$shop['id']);
@@ -66,15 +29,6 @@ class Shops_IndexController extends Zend_Controller_Action
 
 		$this->view->slide = $slide;
 		$this->view->slideImages = $slideImages;
-
-		$menuDb = new Shops_Model_DbTable_Menu();
-		$menus = $menuDb->getMenus($shop['id']);
-
-		$menuitems = array();
-		$menuitemDb = new Shops_Model_DbTable_Menuitem();
-		foreach($menus as $menu) {
-			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
-		}
 
 		$images = array();
 		$imageDb = new Shops_Model_DbTable_Media();
