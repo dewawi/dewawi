@@ -26,7 +26,10 @@ class Shops_CategoryController extends Shops_Controller_Action
 			$tagEntites[$categoryRow['id']] = $get->tags('shops', 'category', $categoryRow['id']);
 		}
 
-		$params = ['catid' => $category['id']];
+		$toolbar = new Items_Form_Toolbar();
+		$params = $this->_helper->Params->getParams($toolbar);
+		$params['catid'] = $category['id'];
+
 		list($items, $records) = $get->items($params, (int)$shop['id']);
 
 		$prices = [];
