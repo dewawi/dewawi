@@ -1,103 +1,55 @@
 <?php
-class Shops_CheckoutController extends Zend_Controller_Action
+class Shops_CheckoutController extends Shops_Controller_Action
 {
-	private $cart;
-
 	protected $checkoutDataSession;
 
 	public function init()
 	{
-		$params = $this->_getAllParams();
+		parent::init();
 
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
-
-		$this->cart = new Shops_Model_ShoppingCart();
-
-		// Make the cart accessible in all views
-		$this->view->cart = $this->cart;
-
+		$this->initSiteCart();
 		$this->checkoutDataSession = new Zend_Session_Namespace('ShopsCheckout');
 	}
 
 	public function indexAction()
 	{
-		$shop = Zend_Registry::get('Shop');
+		$this->initSiteLayout();
 
-		$this->_helper->getHelper('layout')->setLayout('site');
-
-		$toolbar = new Items_Form_Toolbar();
-		//$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar);
-		//print_r($params);
-		//print_r($this->getRequest()->getParams());
 		$checkout = new Shops_Form_Checkout();
 		$this->view->checkout = $checkout;
 
-		// Falls Werte vorhanden sind, ins Formular laden
 		if (!empty($this->checkoutDataSession->formData)) {
 			$checkout->populate($this->checkoutDataSession->formData);
 		}
 
-		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories();
-
-		//Get countries
 		$countryDb = new Shops_Model_DbTable_Country();
 		$countries = $countryDb->getCountries();
+
 		$checkout->billingcountry->addMultiOptions($countries);
-		$checkout->billingcountry->setValue('DE');
 		$checkout->shippingcountry->addMultiOptions($countries);
-		$checkout->shippingcountry->setValue('DE');
 
-		$menuDb = new Shops_Model_DbTable_Menu();
-		$menus = $menuDb->getMenus($shop['id']);
-
-		$menuitems = array();
-		$menuitemDb = new Shops_Model_DbTable_Menuitem();
-		foreach($menus as $menu) {
-			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
+		if (empty($this->checkoutDataSession->formData)) {
+			$checkout->billingcountry->setValue('DE');
+			$checkout->shippingcountry->setValue('DE');
 		}
 
-		$images = array();
-		$imageDb = new Shops_Model_DbTable_Media();
-		$images['categories'] = $imageDb->getCategoryMedia($categories);
-
-		//$this->view->tags = $tags;
-		//$this->view->tagEntites = $tagEntites;
-		$this->view->shop = $shop;
-		$this->view->images = $images;
-		$this->view->menus = $menus;
-		$this->view->menuitems = $menuitems;
-		$this->view->categories = $categories;
-		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
-		$this->view->messages = $this->_flashMessenger->getMessages();
-
-		//Get currency
 		$currency = $this->_helper->Currency->getCurrency('EUR', 'USE_SYMBOL');
 
-		// Retrieve cart items for display
-		$items = array();
-		foreach($this->cart->getItems() as $id => $item) {
-			$items[$id]['title'] = $item['title'];
-			$items[$id]['sku'] = $item['sku'];
-			$items[$id]['quantity'] = $item['quantity'];
-			$items[$id]['total'] = $currency->toCurrency($item['price']*$item['quantity']);
-			$items[$id]['price'] = $currency->toCurrency($item['price']);
+		$items = [];
+		foreach ($this->cart->getItems() as $id => $item) {
+			$items[$id] = [
+				'title' => $item['title'],
+				'sku' => $item['sku'],
+				'quantity' => $item['quantity'],
+				'total' => $currency->toCurrency($item['price'] * $item['quantity']),
+				'price' => $currency->toCurrency($item['price']),
+			];
 		}
 
 		$this->view->items = $items;
 		$this->view->total = $currency->toCurrency($this->cart->getTotalPrice());
+
+		$this->assignMessages();
 	}
 
 	public function sendAction()
@@ -140,7 +92,7 @@ class Shops_CheckoutController extends Zend_Controller_Action
 		}
 
 		$data = $checkout->getValues();
-		$shop = Zend_Registry::get('Shop');
+		$shop = $this->_site;
 		$total = $this->cart->getTotalPrice();
 
 		if(!$this->processPayment($total)) {
@@ -232,51 +184,16 @@ class Shops_CheckoutController extends Zend_Controller_Action
 
 		$this->cart->clearCart();
 
-		return $this->_helper->redirector->gotoRoute([], 'successcheckout', true);
+		return $this->_helper->redirector->gotoRoute([], 'checkout_success', true);
 	}
 
 	public function successAction()
 	{
-		$shop = Zend_Registry::get('Shop');
+		$this->initSiteLayout();
 
-		// Holt die Formulardaten aus der Session
-		$this->view->formData = $this->checkoutDataSession->formData;
+		$this->view->formData = $this->checkoutDataSession->formData ?? [];
 
-		$this->_helper->getHelper('layout')->setLayout('site');
-
-		$toolbar = new Items_Form_Toolbar();
-		//$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar);
-
-		$contact = new Shops_Form_Contact();
-		$this->view->contact = $contact;
-
-		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories();
-
-		$images = array();
-		$imageDb = new Shops_Model_DbTable_Media();
-		$images['categories'] = $imageDb->getCategoryMedia($categories);
-
-		$menuDb = new Shops_Model_DbTable_Menu();
-		$menus = $menuDb->getMenus($shop['id']);
-
-		$menuitems = array();
-		$menuitemDb = new Shops_Model_DbTable_Menuitem();
-		foreach($menus as $menu) {
-			$menuitems[$menu->id] = $menuitemDb->getMenuitems($menu->id);
-		}
-
-		//$this->view->tags = $tags;
-		//$this->view->tagEntites = $tagEntites;
-		$this->view->shop = $shop;
-		$this->view->menus = $menus;
-		$this->view->images = $images;
-		$this->view->menus = $menus;
-		$this->view->menuitems = $menuitems;
-		$this->view->categories = $categories;
-		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->assignMessages();
 	}
 
 	private function processPayment($amount)
