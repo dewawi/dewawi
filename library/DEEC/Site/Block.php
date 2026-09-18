@@ -28,6 +28,9 @@ class DEEC_Site_Block
 						'type' => 'text',
 						'label' => 'ADMIN_CATEGORY_IMAGE',
 						'format' => ['type' => 'string'],
+						'attribs' => [
+							'data-filemanager' => 'image',
+						],
 						'col' => 12,
 					],
 					[
@@ -103,6 +106,9 @@ class DEEC_Site_Block
 						'type' => 'text',
 						'label' => 'ADMIN_CATEGORY_IMAGE',
 						'format' => ['type' => 'string'],
+						'attribs' => [
+							'data-filemanager' => 'image',
+						],
 						'col' => 12,
 					],
 					[

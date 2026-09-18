@@ -2186,6 +2186,26 @@ a.dw-nav-link {
 	min-height: 60px;
 }
 
+/* File Manager */
+
+.dw-filemanager-field {
+	display: flex;
+	align-items: center;
+	gap: var(--dw-space-2);
+}
+
+.dw-filemanager-field .dw-input {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.dw-filemanager-select {
+	flex: 0 0 40px;
+	width: 40px;
+	padding: 0;
+	font-size: 18px;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 5. Feature-specific components                                             */
 /* -------------------------------------------------------------------------- */

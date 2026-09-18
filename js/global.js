@@ -109,6 +109,46 @@ $(document).ready(function(){
 		else $(this).removeClass('error');
 	});
 
+	function initFileManagerFields(context) {
+		$(context).find('input[data-filemanager]').each(function() {
+			var $field = $(this);
+
+			if($field.parent('.dw-filemanager-field').length) return;
+
+			var label = $field.closest('.dw-field').find('.dw-label').text().trim();
+
+			$field.wrap('<div class="dw-filemanager-field"></div>');
+
+			$('<button type="button" class="dw-btn dw-filemanager-select">…</button>')
+				.attr('data-field-id', this.id)
+				.attr('aria-label', label)
+				.attr('title', label)
+				.insertAfter($field);
+		});
+	}
+
+	initFileManagerFields(document);
+
+	$(document).on('click', '.dw-filemanager-select', function() {
+		var fieldId = $(this).data('field-id');
+
+		if(!fieldId) return;
+
+		var lang = typeof language !== 'undefined' ? language : 'en';
+		var url = baseUrl
+			+ '/library/FileManager/dialog.php'
+			+ '?type=1'
+			+ '&popup=1'
+			+ '&field_id=' + encodeURIComponent(fieldId)
+			+ '&lang=' + encodeURIComponent(lang);
+
+		window.open(
+			url,
+			'dewawiFileManager',
+			'width=1200,height=800,resizable=yes,scrollbars=yes'
+		);
+	});
+
 	$(document).on(
 		'change',
 		'.add form input, .add form textarea, .add form select',
@@ -153,6 +193,17 @@ $(document).ready(function(){
 
 			if($field.is(':checkbox')) {
 				value = $field.is(':checked') ? 1 : 0;
+			}
+
+			if($field.data('filemanager') && value) {
+				try {
+					var fileUrl = new URL(value, window.location.origin);
+
+					if(fileUrl.origin === window.location.origin) {
+						value = fileUrl.pathname + fileUrl.search + fileUrl.hash;
+						$field.val(value);
+					}
+				} catch(e) {}
 			}
 
 			data[this.name] = value;
