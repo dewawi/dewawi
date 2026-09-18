@@ -6,5 +6,6 @@ $definition = DEEC_Site_Block::getDefinition($type);
 $this->title = $this->translate($definition['label']);
 $this->headTitle($this->title);
 
+echo $this->TinyMCE();
 echo $this->FileManager();
 echo $this->form->renderForm();

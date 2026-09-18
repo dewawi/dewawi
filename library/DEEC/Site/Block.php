@@ -60,8 +60,15 @@ class DEEC_Site_Block
 						'name' => 'text',
 						'type' => 'textarea',
 						'label' => 'ADMIN_TEXT',
-						'format' => ['type' => 'string'],
-						'attribs' => ['rows' => 12],
+						'format' => [
+							'type' => 'html',
+							'allowTags' => ['a', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h2', 'h3', 'h4', 'h5'],
+							'allowAttribs' => ['href', 'title'],
+						],
+						'attribs' => [
+							'rows' => 12,
+							'class' => 'editor',
+						],
 						'col' => 12,
 					],
 				],
@@ -80,8 +87,15 @@ class DEEC_Site_Block
 						'name' => 'text',
 						'type' => 'textarea',
 						'label' => 'ADMIN_TEXT',
-						'format' => ['type' => 'string'],
-						'attribs' => ['rows' => 10],
+						'format' => [
+							'type' => 'html',
+							'allowTags' => ['a', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h2', 'h3', 'h4', 'h5'],
+							'allowAttribs' => ['href', 'title'],
+						],
+						'attribs' => [
+							'rows' => 10,
+							'class' => 'editor',
+						],
 						'col' => 12,
 					],
 					[
@@ -140,5 +154,18 @@ class DEEC_Site_Block
 		}
 
 		return $options;
+	}
+
+	public static function getFormatSchema(string $type): array
+	{
+		$schema = [];
+
+		foreach (self::getFields($type) as $field) {
+			if (!empty($field['format'])) {
+				$schema[$field['name']] = $field['format'];
+			}
+		}
+
+		return $schema;
 	}
 }
