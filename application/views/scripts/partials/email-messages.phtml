@@ -8,12 +8,17 @@ $uploadUrl = $this->baseUrl()
 <div id="output" class="dw-alert dw-alert--danger" style="display:none;"></div>
 
 <div class="dw-email-composer">
-	<form id="emailmessage" class="dw-email-composer__form" data-autosave="false" enctype="application/x-www-form-urlencoded" method="post">
+	<?php $isCampaign = $this->mode === 'campaign'; ?>
+	<form
+		id="emailmessage"
+		class="dw-email-composer__form"
+		data-autosave="<?php echo $isCampaign ? 'true' : 'false'; ?>"
+		method="post">
 		<div class="dw-form-row">
 			<div class="dw-field dw-field--col-8">
 				<div class="dw-email-card">
 					<div class="dw-form-row">
-						<?php if ($this->module !== 'campaigns') : ?>
+						<?php if(!$isCampaign) : ?>
 							<?= $this->emailForm->renderElement('recipient'); ?>
 						<?php endif; ?>
 
@@ -69,13 +74,15 @@ $uploadUrl = $this->baseUrl()
 
 						<?= $this->emailForm->renderElement('body'); ?>
 
-						<div class="dw-field dw-field--col-12">
-							<div class="dw-email-composer__actions">
-								<button type="button" class="send dw-btn dw-btn--primary" onclick="sendMessage()">
-									<?= $this->translate('EMAIL_SEND'); ?>
-								</button>
+						<?php if(!$isCampaign) : ?>
+							<div class="dw-field dw-field--col-12">
+								<div class="dw-email-composer__actions">
+									<button type="button" class="send dw-btn dw-btn--primary" onclick="sendMessage()">
+										<?= $this->translate('EMAIL_SEND'); ?>
+									</button>
+								</div>
 							</div>
-						</div>
+						<?php endif; ?>
 					</div>
 				</div>
 			</div>
