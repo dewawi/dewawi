@@ -1,25 +1,11 @@
 <?php
+
 $this->title = $this->page['title'];
 $this->headTitle($this->title);
-//echo $this->Messages();
-?>
 
-<?php
+$content = isset($this->page) ? (string)$this->page['content'] : '';
 
-if(isset($this->page)) :
-	$content = $this->page['content'];
-else :
-	$content = '';
-endif;
-
-// Fetch data
-$tags = $this->{'tags'};
-$categories = $this->{'categories'};
 $contact = $this->ContactForm($this->translate('SHOPS_CONTACT_FORM'));
-
-// Replace the placeholder with the HTML content
-//$content = str_replace('{tags}', $tagHtml, $content);
-//$content = str_replace('{categories}', $categoryHtml, $content);
 $content = str_replace('{contact}', $contact, $content);
 
 $pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
@@ -39,7 +25,7 @@ $pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
 
 <?php else: ?>
 
-	<?php if (isset($this->page['header'])): ?>
+	<?php if (!empty($this->page['header'])): ?>
 		<header class="jumbotron jumbotron-fluid text-center">
 			<div class="container">
 				<h1 class="display-4">Welcome to Our Company</h1>
@@ -63,26 +49,3 @@ $pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
 	<?php endif; ?>
 
 <?php endif; ?>
-
-<?php if(isset($this->page['header'])) : ?>
-	<header class="jumbotron jumbotron-fluid text-center">
-		<div class="container">
-			<h1 class="display-4">Welcome to Our Company</h1>
-			<p class="lead">We provide innovative solutions to help your business grow.</p>
-			<a href="#contact" class="btn btn-primary btn-lg">Get Started</a>
-		</div>
-	</header>
-	<section id="about" class="py-5">
-		<div class="container">
-			<?php echo $content; ?>
-		</div>
-	</section>
-<?php else : ?>
-	<section id="about" class="py-5">
-		<div class="container">
-			<h2 class="text-center mb-4"><?php echo $this->page['title']; ?></h2>
-			<?php echo $content; ?>
-		</div>
-	</section>
-<?php endif; ?>
-
