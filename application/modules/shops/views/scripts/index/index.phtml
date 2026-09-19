@@ -1,9 +1,17 @@
 <?php
 
-if (isset($this->page)) {
-	$content = $this->page['content'];
-} else {
-	$content = '';
+$page = is_array($this->page ?? null) ? $this->page : [];
+$content = (string)($page['content'] ?? '');
+
+$metaTitle = trim((string)($page['metatitle'] ?? ''));
+$metaDescription = trim((string)($page['metadescription'] ?? ''));
+
+if ($metaTitle !== '') {
+	$this->headTitle($metaTitle);
+}
+
+if ($metaDescription !== '') {
+	$this->headMeta()->setName('description', $metaDescription);
 }
 
 $pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];

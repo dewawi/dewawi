@@ -1,10 +1,17 @@
 <?php
 
-$this->title = $this->page['title'];
-$this->headTitle($this->title);
+$title = trim((string)($this->page['title'] ?? ''));
+$metaTitle = trim((string)($this->page['metatitle'] ?? ''));
+$metaDescription = trim((string)($this->page['metadescription'] ?? ''));
 
-$content = isset($this->page) ? (string)$this->page['content'] : '';
+$this->title = $title;
+$this->headTitle($metaTitle !== '' ? $metaTitle : $title);
 
+if ($metaDescription !== '') {
+	$this->headMeta()->setName('description', $metaDescription);
+}
+
+$content = (string)($this->page['content'] ?? '');
 $contact = $this->siteContext->hasFeature('contact') ? $this->ContactForm($this->translate('SHOPS_CONTACT_FORM')) : '';
 $content = str_replace('{contact}', $contact, $content);
 
@@ -12,40 +19,17 @@ $pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
 ?>
 
 <?php if ($pageblocks): ?>
-
 	<?php echo $this->RenderPageBlocks($pageblocks); ?>
+<?php endif; ?>
 
-	<?php if (trim($content) !== ''): ?>
-		<section class="py-5">
-			<div class="container">
-				<?php echo $content; ?>
-			</div>
-		</section>
-	<?php endif; ?>
+<?php if (trim($content) !== ''): ?>
+	<section class="py-5">
+		<div class="container">
+			<?php if (!$pageblocks && $title !== ''): ?>
+				<h1 class="text-center mb-4"><?php echo $this->escape($title); ?></h1>
+			<?php endif; ?>
 
-<?php else: ?>
-
-	<?php if (!empty($this->page['header'])): ?>
-		<header class="jumbotron jumbotron-fluid text-center">
-			<div class="container">
-				<h1 class="display-4">Welcome to Our Company</h1>
-				<p class="lead">We provide innovative solutions to help your business grow.</p>
-				<a href="#contact" class="btn btn-primary btn-lg">Get Started</a>
-			</div>
-		</header>
-
-		<section id="about" class="py-5">
-			<div class="container">
-				<?php echo $content; ?>
-			</div>
-		</section>
-	<?php else: ?>
-		<section id="about" class="py-5">
-			<div class="container">
-				<h2 class="text-center mb-4"><?php echo $this->escape($this->page['title']); ?></h2>
-				<?php echo $content; ?>
-			</div>
-		</section>
-	<?php endif; ?>
-
+			<?php echo $content; ?>
+		</div>
+	</section>
 <?php endif; ?>
