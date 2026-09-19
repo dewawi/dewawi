@@ -39,6 +39,12 @@ class Admin_Model_List_Pages extends DEEC_List
 				'class' => 'dw-col-ordering',
 			],
 			[
+				'name' => 'activated',
+				'label' => 'ADMIN_ACTIVATED',
+				'type' => 'checkbox',
+				'class' => 'dw-col-activated',
+			],
+			[
 				'name' => 'actions',
 				'label' => '',
 				'type' => 'actions',

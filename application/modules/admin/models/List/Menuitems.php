@@ -70,6 +70,12 @@ class Admin_Model_List_Menuitems extends DEEC_List
 				'class' => 'dw-col-parentid',
 			],
 			[
+				'name' => 'activated',
+				'label' => 'ADMIN_ACTIVATED',
+				'type' => 'checkbox',
+				'class' => 'dw-col-activated',
+			],
+			[
 				'name' => 'actions',
 				'label' => '',
 				'type' => 'actions',
