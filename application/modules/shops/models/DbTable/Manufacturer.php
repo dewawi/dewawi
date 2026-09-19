@@ -1,42 +1,18 @@
 <?php
 
-class Shops_Model_DbTable_Manufacturer extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Manufacturer extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'manufacturer';
+	protected ?string $siteField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getManufacturers(): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
-	}
+		$manufacturers = [];
 
-	public function getManufacturer($id)
-	{
-		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
-	}
-
-	public function getManufacturers()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-
-		$manufacturers = array();
-		foreach($data as $manufacturer) {
-			$manufacturers[$manufacturer->id] = $manufacturer->name;
+		foreach ($this->fetchAll($this->getPublicSelect()) as $manufacturer) {
+			$manufacturers[(int)$manufacturer->id] = $manufacturer->name;
 		}
+
 		return $manufacturers;
 	}
 }
