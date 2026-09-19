@@ -104,42 +104,6 @@ class Admin_Form_Page extends DEEC_Form
 		]);
 
 		$this->addElement([
-			'name' => 'shortdescription',
-			'type' => 'textarea',
-			'label' => 'ADMIN_CATEGORY_SHORT_DESCRIPTION',
-			'format' => [
-				'type' => 'html',
-				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
-			],
-			'attribs' => [
-				'cols' => 75,
-				'rows' => 18,
-				'class' => 'editor',
-			],
-			'tab' => 'content',
-			'col' => 12,
-		]);
-
-		$this->addElement([
-			'name' => 'minidescription',
-			'type' => 'textarea',
-			'label' => 'ADMIN_CATEGORY_MINI_DESCRIPTION',
-			'format' => [
-				'type' => 'html',
-				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
-			],
-			'attribs' => [
-				'cols' => 75,
-				'rows' => 18,
-				'class' => 'editor',
-			],
-			'tab' => 'content',
-			'col' => 12,
-		]);
-
-		$this->addElement([
 			'name' => 'header',
 			'type' => 'textarea',
 			'label' => 'ADMIN_HEADER',
@@ -174,6 +138,31 @@ class Admin_Form_Page extends DEEC_Form
 			'tab' => 'content',
 			'col' => 12,
 		]);
+
+		$this->addElement([
+			'name' => 'metatitle',
+			'type' => 'text',
+			'label' => 'ADMIN_META_TITLE',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'maxlength' => 255,
+			],
+			'tab' => 'settings',
+			'col' => 12,
+		]);
+
+		$this->addElement([
+			'name' => 'metadescription',
+			'type' => 'textarea',
+			'label' => 'ADMIN_META_DESCRIPTION',
+			'format' => ['type' => 'string'],
+			'attribs' => [
+				'rows' => 4,
+				'maxlength' => 1000,
+			],
+			'tab' => 'settings',
+			'col' => 12,
+]);
 
 		$this->addElement([
 			'name' => 'language',
