@@ -67,9 +67,27 @@ class Admin_Form_Shop extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'catalogenabled',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_CATALOG_ENABLED',
+			'format' => ['type' => 'int'],
+			'default' => 0,
+			'col' => 6,
+		]);
+
+		$this->addElement([
 			'name' => 'checkoutenabled',
 			'type' => 'checkbox',
 			'label' => 'ADMIN_CHECKOUT_ENABLED',
+			'format' => ['type' => 'int'],
+			'default' => 0,
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'contactenabled',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_CONTACT_ENABLED',
 			'format' => ['type' => 'int'],
 			'default' => 0,
 			'col' => 6,
