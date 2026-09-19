@@ -32,7 +32,7 @@ class Shops_IndexController extends Shops_Controller_Action
 		];
 
 		$pageDb = new Shops_Model_DbTable_Page();
-		$page = $pageDb->getPageByType('home', (int)$shop['id']);
+		$page = $pageDb->getPageByType('home');
 
 		$pageblocks = [];
 

@@ -1,61 +1,31 @@
 <?php
 
-class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Page extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'page';
+	protected ?string $publicField = 'activated';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getPage(int $id): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		return $this->getPublicById($id);
 	}
 
-	public function getPage($id, $shopid)
+	public function getPageByType(string $type): ?array
 	{
-		$select = $this->select()
-			->where('id = ?', (int)$id)
-			->where('shopid = ?', (int)$shopid)
-			->where('clientid = ?', (int)$this->_shop['clientid'])
-			->where('activated = ?', 1)
-			->where('deleted = ?', 0)
-			->limit(1);
-
-		$row = $this->fetchRow($select);
+		$row = $this->fetchRow(
+			$this->getPublicSelect()
+				->where('type = ?', $type)
+				->limit(1)
+		);
 
 		return $row ? $row->toArray() : null;
 	}
 
-	public function getPageByType($type, $shopid)
+	public function getPages(): array
 	{
-		$select = $this->select()
-			->where('type = ?', $type)
-			->where('shopid = ?', $shopid)
-			->where('clientid = ?', (int)$this->_shop['clientid'])
-			->where('activated = ?', 1)
-			->where('deleted = ?', 0)
-			->limit(1);
-
-		$row = $this->fetchRow($select);
-
-		return $row ? $row->toArray() : null;
-	}
-
-	public function getPages($shopid)
-	{
-		$shopid = (int)$shopid;
-
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'ordering');
-
-		return $data;
+		return $this->fetchAll(
+			$this->getPublicSelect()
+				->order('ordering ASC')
+		)->toArray();
 	}
 }

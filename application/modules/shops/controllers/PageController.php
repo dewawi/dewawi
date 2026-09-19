@@ -6,7 +6,6 @@ class Shops_PageController extends Shops_Controller_Action
 	{
 		$this->initSiteLayout();
 
-		$shop = $this->_site;
 		$id = (int)$this->_getParam('id', 0);
 
 		$toolbar = new Items_Form_Toolbar();
@@ -15,19 +14,15 @@ class Shops_PageController extends Shops_Controller_Action
 		$this->view->contact = $contact;
 
 		$pageDb = new Shops_Model_DbTable_Page();
-		$page = $pageDb->getPage($id, (int)$shop['id']);
+		$page = $pageDb->getPage($id);
 
 		if (!$page) {
 			throw new Zend_Controller_Action_Exception('Page not found', 404);
 		}
 
-		$pageblocks = [];
-
-		if ($page) {
-			$pageblockDb = new Application_Model_DbTable_Pageblock();
-			$pageblockDb->setClientId((int)$shop['clientid']);
-			$pageblocks = $pageblockDb->getBlocksByPageId((int)$page['id'], true, 0);
-		}
+		$pageblockDb = new Application_Model_DbTable_Pageblock();
+		$pageblockDb->setClientId($this->_siteContext->getClientId());
+		$pageblocks = $pageblockDb->getBlocksByPageId((int)$page['id'], true, 0);
 
 		$imageDb = new Shops_Model_DbTable_Media();
 
