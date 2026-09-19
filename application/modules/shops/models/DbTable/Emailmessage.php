@@ -1,74 +1,29 @@
 <?php
 
-class Shops_Model_DbTable_Emailmessage extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'emailmessage';
+	protected ?string $siteField = null;
+	protected ?string $orderingField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getEmailmessage(int $id): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		return $this->getById($id);
 	}
 
-	public function getEmailmessage($id)
+	public function addEmailmessage(array $data): int
 	{
-		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchRow($where);
-		if(!$data) {
-			throw new Exception("Could not find row $contactid");
-		}
-		return $data->toArray();
-	}
-
-	public function getEmailmessages($contactid = NULL, $parentid = NULL, $module = NULL, $controller = NULL)
-	{
-		$where = array();
-		if($contactid) $where[] = $this->getAdapter()->quoteInto('parentid = ?', $contactid);
-		if($parentid) $where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
-		if($module) $where[] = $this->getAdapter()->quoteInto('module = ?', $module);
-		if($controller) $where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'id DESC');
-		if(!$data) {
-			throw new Exception("Could not find row $parentid");
-		}
-		return $data->toArray();
-	}
-
-	public function addEmailmessage($data)
-	{
-		//$data['clientid'] = $this->_client['id'];
-		$data['clientid'] = 100;
+		$data['clientid'] = $this->getClientId();
 		$data['messagesent'] = $this->_date;
-		//$data['messagesentby'] = $this->_user['id'];
-		$data['messagesentby'] = 100;
+		$data['messagesentby'] = 0;
+
 		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
+
+		return (int)$this->getAdapter()->lastInsertId();
 	}
 
-	public function updateEmailmessage($id, $data)
+	public function updateEmailmessage(int $id, array $data): void
 	{
-		$id = (int)$id;
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
-	}
-
-	public function deleteEmailmessage($id)
-	{
-		$id = (int)$id;
-		$data = array('deleted' => 1);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->update($data, $this->getEntityWhere($id));
 	}
 }
