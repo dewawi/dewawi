@@ -90,7 +90,7 @@ class Shops_Model_DbTable_Slug extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'ordering');
+		$data = $this->fetchAll($where, 'id ASC');
 
 		return $data;
 	}
