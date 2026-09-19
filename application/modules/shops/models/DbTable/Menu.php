@@ -1,42 +1,20 @@
 <?php
 
-class Shops_Model_DbTable_Menu extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Menu extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'menu';
+	protected ?string $publicField = 'activated';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getMenu(int $id): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		return $this->getPublicById($id);
 	}
 
-	public function getMenu($id)
+	public function getMenus(): Zend_Db_Table_Rowset_Abstract
 	{
-		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
-	}
-
-	public function getMenus($shopid)
-	{
-		$shopid = (int)$shopid;
-
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'ordering');
-
-		return $data;
+		return $this->fetchAll(
+			$this->getPublicSelect()
+				->order('ordering ASC')
+		);
 	}
 }

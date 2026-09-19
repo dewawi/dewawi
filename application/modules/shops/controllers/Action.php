@@ -23,7 +23,7 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 		$categories = $categoryDb->getCategories();
 
 		$menuDb = new Shops_Model_DbTable_Menu();
-		$menus = $menuDb->getMenus((int)$this->_site['id']);
+		$menus = $menuDb->getMenus();
 
 		$menuitems = [];
 		$menuitemDb = new Shops_Model_DbTable_Menuitem();
