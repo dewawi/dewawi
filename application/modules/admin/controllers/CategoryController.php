@@ -132,23 +132,19 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 			);
 		}
 
-		if (empty($oldRow['shopid'])) {
-			return;
-		}
-
-		if (!array_key_exists('slug', $values) && !array_key_exists('parentid', $values)) {
+		if (!array_intersect_key($values, array_flip(['slug', 'parentid', 'shopid']))) {
 			return;
 		}
 
 		$slugDb = new Admin_Model_DbTable_Slug();
 
-		$result = $slugDb->saveSlug(
+		$slugDb->saveSlug(
 			'shops',
 			'category',
-			(int)$oldRow['shopid'],
+			(int)($values['shopid'] ?? $oldRow['shopid']),
 			(int)($values['parentid'] ?? $oldRow['parentid']),
 			$id,
-			(string)($values['slug'] ?? '')
+			array_key_exists('slug', $values) ? (string)$values['slug'] : null
 		);
 	}
 

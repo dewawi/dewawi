@@ -23,4 +23,22 @@ class Shops_PageController extends Shops_Controller_Action
 
 		$this->assignMessages();
 	}
+
+	protected function afterEditSave(int $id, array $values, array $oldRow): void
+	{
+		if (!array_intersect_key($values, array_flip(['slug', 'parentid', 'shopid']))) {
+			return;
+		}
+
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		$slugDb->saveSlug(
+			'shops',
+			'page',
+			(int)($values['shopid'] ?? $oldRow['shopid']),
+			(int)($values['parentid'] ?? $oldRow['parentid']),
+			$id,
+			array_key_exists('slug', $values) ? (string)$values['slug'] : null
+		);
+	}
 }

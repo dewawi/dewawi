@@ -33,6 +33,20 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		return $row ? $row->toArray() : [];
 	}
 
+	public function getEntitySlug($module, $controller, $entityid)
+	{
+		$where = array();
+		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
+		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
+		$where[] = $this->getAdapter()->quoteInto('entityid = ?', (int)$entityid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+
+		$row = $this->fetchRow($where);
+
+		return $row ? $row->toArray() : [];
+	}
+
 	public function addSlug($module, $controller, $shopid, $parentid, $entityid, $slug)
 	{
 		$data = array();
@@ -68,13 +82,40 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$this->update($data, $where);
 	}
 
-	public function saveSlug($module, $controller, $shopid, $parentid, $entityid, $slug)
+	public function saveSlug($module, $controller, $shopid, $parentid, $entityid, $slug = null)
 	{
-		$existing = $this->getSlug($module, $controller, $shopid, $entityid);
+		$existing = $this->getEntitySlug($module, $controller, $entityid);
 
-		if (!empty($existing)) {
-			$this->updateSlug($module, $controller, $shopid, $parentid, $entityid, $slug);
+		if ((int)$shopid <= 0) {
+			if ($existing) {
+				$this->deleteSlugById((int)$existing['id']);
+			}
+
+			return 0;
+		}
+
+		if ($existing) {
+			$data = array();
+			$data['shopid'] = (int)$shopid;
+			$data['parentid'] = (int)$parentid;
+
+			if ($slug !== null) {
+				$slug = trim((string)$slug, " \t\n\r\0\x0B/");
+				$data['slug'] = $slug !== '' ? $slug : (string)$entityid;
+			}
+
+			$data['modified'] = $this->_date;
+			$data['modifiedby'] = $this->_user['id'];
+
+			$this->update($data, 'id = ' . (int)$existing['id']);
+
 			return (int)$existing['id'];
+		}
+
+		$slug = trim((string)$slug, " \t\n\r\0\x0B/");
+
+		if ($slug === '') {
+			$slug = (string)$entityid;
 		}
 
 		return $this->addSlug($module, $controller, $shopid, $parentid, $entityid, $slug);
@@ -100,5 +141,14 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 
 		$this->update(array('deleted' => 1), $where);
+	}
+
+	public function deleteSlugById($id)
+	{
+		$this->update(array(
+			'deleted' => 1,
+			'modified' => $this->_date,
+			'modifiedby' => $this->_user['id'],
+		), 'id = ' . (int)$id);
 	}
 }
