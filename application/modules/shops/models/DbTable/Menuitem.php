@@ -1,38 +1,21 @@
 <?php
 
-class Shops_Model_DbTable_Menuitem extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Menuitem extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'menuitem';
+	protected ?string $siteField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getMenuitem(int $id): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		return $this->getById($id);
 	}
 
-	public function getMenuitem($id)
+	public function getMenuitems(int $menuid): Zend_Db_Table_Rowset_Abstract
 	{
-		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
-	}
-
-	public function getMenuitems($menuid)
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('menuid = ?', (int)$menuid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-
-		return $this->fetchAll($where, 'ordering');
+		return $this->fetchAll(
+			$this->getPublicSelect()
+				->where('menuid = ?', $menuid)
+				->order('ordering ASC')
+		);
 	}
 }
