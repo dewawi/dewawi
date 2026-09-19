@@ -468,15 +468,14 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 					//Add address
 					$addressDb = new Shops_Model_DbTable_Address();
-		 	 	 	$addressDb->addAddress([
-		 	 	 	 	'contactid' => $contactRowId,
-		 	 	 	 	'type' => 'billing',
-		 	 	 	 	'street' => trim($data['adresse']),
-		 	 	 	 	'postcode' => trim($data['plz']),
-		 	 	 	 	'city' => trim($data['stadt']),
-		 	 	 	 	'country' => trim('DE'),
-		 	 	 	 	'ordering' => 1,
-		 	 	 	]);
+					$addressDb->addAddress($contactRowId, [
+						'type' => 'billing',
+						'street' => trim($data['adresse']),
+						'postcode' => trim($data['plz']),
+						'city' => trim($data['stadt']),
+						'country' => 'DE',
+						'ordering' => 1,
+					]);
 
 		 	 	 	// attach email row
 					$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
