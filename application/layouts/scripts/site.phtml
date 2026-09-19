@@ -48,17 +48,9 @@ echo $this->doctype();
 								<?php echo $this->RenderMenuItems($menuitems[$menu->id] ?? []); ?>
 							<?php endif; ?>
 						<?php endforeach; ?>
-						<?php
-							$mainCategories = array_filter($categories, function($category) {
-								return $category['parentid'] == 0;
-							});
-
-							$firstFiveCategories = array_slice($mainCategories, 0, 5); // First 5 categories
-							$otherCategories = array_slice($mainCategories, 5); // Remaining categories
-						?>
 
 						<!-- Show the first 5 main categories -->
-						<?php foreach($firstFiveCategories as $category) : ?>
+						<?php foreach($firstCategories as $category) : ?>
 							<?php $url = $this->SlugUrl('category', (int)$category['id']); ?>
 							<?php if($url) : ?>
 								<li class="nav-item">
@@ -117,25 +109,16 @@ echo $this->doctype();
 
 	<?php echo $this->layout()->content; ?>
 
-	<?php if($this->controller === 'category' && $this->siteContext->hasFeature('inquiry')) : ?>
+	<?php if($this->controller === 'category' && $this->siteContext->hasFeature('inquiry') && isset($this->category)) : ?>
 		<section id="contact" class="jumbotron jumbotron-fluid py-5 mb-0">
 			<div class="container">
-				<h2 class="text-center mb-4">Wie können wir Ihnen helfen?</h2>
-				<div class="row">
-					<div class="col-md-6 mx-auto">
-						<!-- Add any relevant introductory text here -->
-					</div>
-				</div>
+				<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_INQUIRY_HEADING'); ?></h2>
 				<div class="row">
 					<div class="col-md-6">
-						<?php echo $this->shop['contact']; ?>
+						<?php echo $shop['contact'] ?? ''; ?>
 					</div>
 					<div class="col-md-6">
-						<?php if ($this->controller === 'category' && isset($this->category)) : ?>
-							<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->category['title']); ?>
-						<?php else : ?>
-							<?php echo $this->ContactForm($this->translate('SHOPS_CONTACT_FORM')); ?>
-						<?php endif; ?>
+						<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->category['title']); ?>
 					</div>
 				</div>
 			</div>

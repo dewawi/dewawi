@@ -12,6 +12,7 @@
 	'SHOPS_DOWNLOADS' => 'Downloads',
 	'SHOPS_SEND_INQUIRY' => 'Anfrage senden',
 	'SHOPS_INQUIRY_FORM' => 'Anfrageformular',
+	'SHOPS_INQUIRY_HEADING' => 'Wie können wir Ihnen helfen?',
 	'SHOPS_CONTACT_FORM' => 'Kontaktformular',
 	'SHOPS_ORDER_FORM' => 'Bestellformular',
 	'SHOPS_SHOPPING_CART' => 'Warenkorb',
