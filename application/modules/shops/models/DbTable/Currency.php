@@ -1,59 +1,22 @@
 <?php
 
-class Shops_Model_DbTable_Currency extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Currency extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'currency';
+	protected ?string $siteField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getPrimaryCurrency(): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
-	}
+		$row = $this->fetchRow(
+			$this->getPublicSelect()
+				->order('ordering ASC')
+				->limit(1)
+		);
 
-	public function getPrimaryCurrency()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchRow($where, 'ordering');
-		if(!$data) {
-			throw new Exception("Could not find currency");
+		if (!$row) {
+			throw new RuntimeException('Could not find currency');
 		}
-		return $data->toArray();
-	}
 
-	public function getCurrencies()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-
-		$currencies = array();
-		foreach($data as $currency) {
-			$currencies[$currency->code] = $currency->code.' ('.$currency->symbol.')';
-		}
-		return $currencies;
-	}
-
-	public function getCurrencySymbols()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-
-		$currencies = array();
-		foreach($data as $currency) {
-			$currencies[$currency->code] = $currency->symbol;
-		}
-		return $currencies;
+		return $row->toArray();
 	}
 }
