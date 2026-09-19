@@ -34,6 +34,11 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 				</button>
 				<div class="collapse navbar-collapse" id="navbarNav">
 					<ul class="navbar-nav ml-auto">
+						<?php foreach($menus as $menu) : ?>
+							<?php if($menu->position === 'header') : ?>
+								<?php echo $this->RenderMenuItems($menuitems[$menu->id] ?? []); ?>
+							<?php endif; ?>
+						<?php endforeach; ?>
 						<?php
 							$mainCategories = array_filter($categories, function($category) {
 								return $category['parentid'] == 0;
@@ -134,19 +139,8 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 		<div class="container text-center">
 			<ul class="row-menu">
 				<?php foreach($menus as $menu) : ?>
-					<?php if($menu->position == 'footer') : ?>
-						<?php foreach($menuitems[$menu->id] ?? [] as $menuitem) : ?>
-							<?php if((int)$menuitem->parentid === 0 && (int)$menuitem->pageid > 0) : ?>
-								<?php $url = $this->SlugUrl('page', (int)$menuitem->pageid); ?>
-								<?php if($url) : ?>
-									<li class="nav-item">
-										<a class="nav-link" href="<?php echo $url; ?>">
-											<?php echo $this->escape($menuitem->title); ?>
-										</a>
-									</li>
-								<?php endif; ?>
-							<?php endif; ?>
-						<?php endforeach; ?>
+					<?php if($menu->position === 'footer') : ?>
+						<?php echo $this->RenderMenuItems($menuitems[$menu->id] ?? []); ?>
 					<?php endif; ?>
 				<?php endforeach; ?>
 			</ul>
