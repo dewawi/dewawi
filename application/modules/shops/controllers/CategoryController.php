@@ -26,11 +26,7 @@ class Shops_CategoryController extends Shops_Controller_Action
 		$get = new Shops_Model_Get();
 
 		$tagEntityDb = new Shops_Model_DbTable_Tagentity();
-		$tagEntities = $tagEntityDb->getByEntityId(
-			(int)$category['id'],
-			'shops',
-			'category'
-		);
+		$tagEntities = $tagEntityDb->getByEntityId((int)$category['id'], 'shops', 'category');
 
 		$toolbar = new Items_Form_Toolbar();
 		$params = $this->_helper->Params->getParams($toolbar);
@@ -79,7 +75,7 @@ class Shops_CategoryController extends Shops_Controller_Action
 
 		$this->view->category = $category;
 		$this->view->items = $items;
-		$this->view->tagEntites = $tagEntites;
+		$this->view->tagEntities = $tagEntities;
 		$this->view->manufacturers = $manufacturers;
 		$this->view->prices = $prices;
 		$this->view->images = $images;
