@@ -1,50 +1,29 @@
 <?php
 
-class Shops_Model_DbTable_Tag extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Tag extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'tag';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getTag(int $id): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		return $this->getPublicById($id);
 	}
 
-	public function getTag($id)
+	public function getTags(string $module, string $controller): array
 	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', (int)$id);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$this->_shop['id']);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$rows = $this->fetchAll(
+			$this->getPublicSelect()
+				->where('module = ?', $module)
+				->where('controller = ?', $controller)
+				->order('ordering ASC')
+		);
 
-		return $this->fetchRow($where);
-}
+		$tags = [];
 
-	public function getTags($module, $controller, $id = null)
-	{
-		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$this->_shop['id']);
-		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
-		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'ordering');
-		if (!$data) {
-			throw new Exception("Could not find row $id");
-		}
-		$tags = array();
-		foreach($data as $tag) {
+		foreach ($rows as $tag) {
 			$tags[$tag->id] = $tag;
 		}
+
 		return $tags;
 	}
 }

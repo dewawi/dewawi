@@ -3,9 +3,9 @@ $this->title = $this->tag['title'];
 $this->headTitle($this->title);
 ?>
 
-<?php if($this->tag->header) : ?>
+<?php if($this->tag['header']) : ?>
 	<section id="header" style="position: relative;">
-		<?php echo $this->tag->header; ?>
+		<?php echo $this->tag['header']; ?>
 		<div class="header-text">
 			<h1 class="text-center text-white"><?php echo $this->tag['title']; ?></h1>
 		</div>
