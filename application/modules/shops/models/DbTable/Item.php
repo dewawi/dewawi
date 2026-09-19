@@ -23,7 +23,6 @@ class Shops_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('id = ?', (int)$id);
 		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$shopid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('shopenabled = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 
 		$data = $this->fetchRow($where);
@@ -37,7 +36,6 @@ class Shops_Model_DbTable_Item extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
 		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$shopid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('shopenabled = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 
 		$data = $this->fetchRow($where);
