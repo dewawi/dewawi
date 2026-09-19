@@ -147,6 +147,8 @@
 	'ADMIN_TAG_DESCRIPTION' => 'Beschreibung',
 	'ADMIN_ORDERING' => 'Position',
 	'ADMIN_CHILD_COUNT' => 'Anzahl der Subkategorien',
+	'ADMIN_CHECKOUT_ENABLED' => 'Checkout aktiviert',
+	'ADMIN_INQUIRY_ENABLED' => 'Anfrage aktiviert',
 	'ADMIN_ACTIVATED' => 'Aktiv',
 	'ADMIN_ADD' => 'Hinzufügen',
 	'ADMIN_EDIT' => 'Bearbeiten',

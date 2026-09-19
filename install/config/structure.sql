@@ -2597,6 +2597,8 @@ CREATE TABLE IF NOT EXISTS `shop` (
   `footer` text DEFAULT NULL,
   `copyright` varchar(255) DEFAULT NULL,
   `emailsender` varchar(255) DEFAULT NULL,
+  `checkoutenabled` tinyint(1) NOT NULL DEFAULT 0,
+  `inquiryenabled` tinyint(1) NOT NULL DEFAULT 0,
   `smtphost` varchar(255) DEFAULT NULL,
   `smtpauth` varchar(255) DEFAULT NULL,
   `smtpsecure` varchar(255) DEFAULT NULL,

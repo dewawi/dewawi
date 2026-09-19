@@ -21,3 +21,6 @@ CREATE TABLE IF NOT EXISTS `pageblock` (
   KEY (`clientid`),
   KEY (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `shop` ADD `checkoutenabled` tinyint(1) NOT NULL DEFAULT 0 AFTER `emailsender`;
+ALTER TABLE `shop` ADD `inquiryenabled` tinyint(1) NOT NULL DEFAULT 0 AFTER `checkoutenabled`;
