@@ -19,21 +19,7 @@ class Shops_Model_DbTable_Category extends Zend_Db_Table_Abstract
 
 	public function getCategory($id)
 	{
-		$id = (int)$id;
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $this->_shop['id']);
-		$data = $this->fetchRow($where);
-		return $data;
-	}
-
-	public function getCategories($parentid = null)
-	{
-		// Prepare the where conditions
-		$where = [];
-		if ($parentid !== null) {
-			$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
-		}
 		$where[] = $this->getAdapter()->quoteInto('id = ?', (int)$id);
 		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$this->_shop['id']);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
@@ -41,15 +27,28 @@ class Shops_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 
-		// Fetch the data
+		return $this->fetchRow($where);
+	}
+
+	public function getCategories($parentid = null)
+	{
+		$where = [];
+
+		if ($parentid !== null) {
+			$where[] = $this->getAdapter()->quoteInto('parentid = ?', (int)$parentid);
+		}
+
+		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$this->_shop['id']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('type = ?', 'shop');
+		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+
 		$data = $this->fetchAll($where, 'ordering');
 
-		// Initialize categories array
 		$categories = [];
 
-		// Iterate through the data
 		foreach ($data as $category) {
-			// Prepare the category array
 			$categories[$category->id] = [
 				'id' => $category->id,
 				'type' => $category->type,
@@ -63,11 +62,10 @@ class Shops_Model_DbTable_Category extends Zend_Db_Table_Abstract
 				'parentid' => $category->parentid,
 				'ordering' => $category->ordering,
 				'activated' => $category->activated,
-				'shopid' => isset($category->shopid) ? $category->shopid : null,
-				//'shopcatid' => isset($category->shopcatid) ? $category->shopcatid : null
+				'shopid' => $category->shopid ?? null,
 			];
 		}
-		// If the category has a parent, add it to the parent's 'childs' array
+
 		foreach ($data as $category) {
 			if ($category->parentid && isset($categories[$category->parentid])) {
 				$categories[$category->parentid]['childs'][] = $category->id;

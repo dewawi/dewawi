@@ -28,15 +28,11 @@ class Shops_Model_DbTable_Menuitem extends Zend_Db_Table_Abstract
 
 	public function getMenuitems($menuid)
 	{
-		$menuid = (int)$menuid;
-
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('menuid = ?', $menuid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
+		$where[] = $this->getAdapter()->quoteInto('menuid = ?', (int)$menuid);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'ordering');
 
-		return $data;
+		return $this->fetchAll($where, 'ordering');
 	}
 }
