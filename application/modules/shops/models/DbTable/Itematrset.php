@@ -1,37 +1,16 @@
 <?php
 
-class Shops_Model_DbTable_Itematrset extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Itematrset extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'itematrset';
+	protected ?string $siteField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getPositionSets(int $parentId): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
-	}
-
-	public function getPositionSets($parentid)
-	{
-		$parentid = (int)$parentid;
-
-		$select = $this->select()
-			->where('parentid = ?', $parentid)
-			->where('clientid = ?', $this->_shop['clientid'])
-			->where('deleted = ?', 0)
-			->order('ordering');
-
-		$data = $this->fetchAll($select);
-		if (!$data) {
-			throw new Exception("Could not find row $parentid");
-		}
-
-		return $data->toArray();
+		return $this->fetchAll(
+			$this->getPublicSelect()
+				->where('parentid = ?', $parentId)
+				->order('ordering ASC')
+		)->toArray();
 	}
 }
