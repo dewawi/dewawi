@@ -161,17 +161,6 @@ header.home {
 	background-color: #f0f0f0;
 }
 
-/* Nested submenu styles */
-.submenu .submenu {
-	top: 0;
-	left: 100%; /* Position the nested submenu to the right */
-	margin-left: 1px;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-	left: 100%; /* Nested submenus to the right */
-	top: 0;
-	margin-left: 1px;
-}
-
 .row-menu {
 	display: flex;
 	flex-wrap: wrap;

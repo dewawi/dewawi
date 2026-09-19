@@ -5,14 +5,23 @@ $categories = is_array($this->categories ?? null) ? $this->categories : [];
 $menus = is_iterable($this->menus ?? null) ? $this->menus : [];
 $menuitems = is_array($this->menuitems ?? null) ? $this->menuitems : [];
 
+$language = str_replace('_', '-', (string)$this->siteContext->getLanguage());
+$home = $this->controller === 'index' && $this->action === 'index';
+
+$mainCategories = array_filter($categories, static function($category) {
+	return (int)$category['parentid'] === 0;
+});
+
+$firstCategories = array_slice($mainCategories, 0, 5);
+$otherCategories = array_slice($mainCategories, 5);
+
 $this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
 $this->headTitle()->setSeparator(' - ');
 $this->headTitle($shop['title'] ?? '');
+
 echo $this->doctype();
-$home = false;
-if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 ?>
-<html lang="en">
+<html lang="<?php echo $this->escape($language); ?>">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -105,8 +114,6 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 			<?php echo $this->Breadcrumbs(); ?>
 		<?php endif; ?>
 	</header>
-
-	<?php //print_r($categories); ?>
 
 	<?php echo $this->layout()->content; ?>
 
