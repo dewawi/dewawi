@@ -18,7 +18,6 @@ class DEEC_Site_Resolver
 			$shopHost = $this->normalizeHost(parse_url($shopData['url'], PHP_URL_HOST));
 
 			if ($shopHost !== '' && $shopHost === $host) {
-				$shopData['checkoutenabled'] = true;
 				$features = $this->detectLegacyFeatures($shopData);
 
 				return new DEEC_Site_Context($shopData, array('host' => $host), $features);
