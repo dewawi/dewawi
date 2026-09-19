@@ -23,16 +23,14 @@ class Shops_CategoryController extends Shops_Controller_Action
 		$taxratesDb = new Shops_Model_DbTable_Taxrate();
 		$taxrates = $taxratesDb->getTaxRates();
 
-		$get = new Shops_Model_Get();
-
 		$tagEntityDb = new Shops_Model_DbTable_Tagentity();
 		$tagEntities = $tagEntityDb->getByEntityId((int)$category['id'], 'shops', 'category');
 
 		$toolbar = new Items_Form_Toolbar();
 		$params = $this->_helper->Params->getParams($toolbar);
-		$params['catid'] = $category['id'];
 
-		list($items, $records) = $get->items($params, (int)$shop['id']);
+		$itemDb = new Shops_Model_DbTable_Item();
+		$items = $itemDb->getItemsByCategory((int)$category['id'], $params);
 
 		$prices = [];
 		foreach ($items as $item) {

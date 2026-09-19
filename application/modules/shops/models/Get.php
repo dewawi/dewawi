@@ -37,35 +37,6 @@ class Shops_Model_Get
 		return $accounts;
 	}
 
-	public function items($params, $shopid)
-	{
-		$shop = Zend_Registry::get('Shop');
-
-		$itemsDb = new Shops_Model_DbTable_Item();
-
-		$records = $itemsDb->fetchAll(
-			$itemsDb->select()
-				->where('shopid = ?', $shopid)
-				->where('shopcatid = ?', $params['catid'])
-				->where('clientid = ?', (int)$shop['clientid'])
-				->order($params['order'].' '.$params['sort'])
-				->limit($params['limit'])
-				->where('deleted = ?', 0)
-		);
-
-		$items = $itemsDb->fetchAll(
-			$itemsDb->select()
-				->where('shopid = ?', $shopid)
-				->where('shopcatid = ?', $params['catid'])
-				->where('clientid = ?', (int)$shop['clientid'])
-				->order($params['order'].' '.$params['sort'])
-				->limit($params['limit'])
-				->where('deleted = ?', 0)
-		);
-
-		return array($items, count($records));
-	}
-
 	public function getImages($parentid, $module, $controller)
 	{
 		// Fetch images from the database associated with the given item ID
