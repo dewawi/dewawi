@@ -1,68 +1,26 @@
 <?php
-//$this->title = $this->translate('SHOPS_ACCOUNTS');
-//$this->headTitle($this->title);
-//echo $this->Messages();
-?>
 
-<?php
-
-if(isset($this->page)) :
+if (isset($this->page)) {
 	$content = $this->page['content'];
-else :
+} else {
 	$content = '';
-endif;
+}
 
 $pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
-
-// Fetch data
-$tags = $this->{'tags'};
-$categories = $this->{'categories'};
+$categories = is_array($this->categories ?? null) ? $this->categories : [];
 $contact = $this->ContactForm($this->translate('SHOPS_CONTACT_FORM'));
 
-// Construct HTML content for tags
-$tagHtml = '<div class="row">';
-if ($tags) {
-	foreach ($tags as $tag) {
-		if ($tag->slug) {
-			$tagHtml .= '<div class="col-md-3 mb-3 px-2 d-flex align-items-stretch">';
-			$tagHtml .= '<div class="card">';
-			$tagHtml .= '<a href="' . $this->url(array('tag' => $tag->slug), $tag->slug) . '">';
-			//$tagHtml .= '<img src="' . $this->baseUrl() . '/media/tag/' . $tag->image . '" class="card-img-top" alt="tag Image">';
-			$tagHtml .= '</a>';
-			$tagHtml .= '<div class="card-body">';
-			$tagHtml .= '<a href="' . $this->url(array('tag' => $tag->slug), $tag->slug) . '">';
-			$tagHtml .= '<h5 class="card-title">' . $tag->title . '</h5>';
-			$tagHtml .= '</a>';
-			//$tagHtml .= '<p class="card-text">' . $tag->shortdescription . '</p>';
-			$tagHtml .= '<a href="' . $this->url(array('tag' => $tag->slug), $tag->slug) . '" class="btn btn-primary">View Details</a>';
-			$tagHtml .= '</div>';
-			$tagHtml .= '</div>';
-			$tagHtml .= '</div>';
-		}
-	}
-}
-$tagHtml .= '</div>';
-
-// Construct HTML content for Categories
 $categoryHtml = $this->RenderCategories($categories);
+$hasCategoryPlaceholder = strpos($content, '{categories}') !== false;
 
-// Replace the placeholder with the HTML content
-$content = str_replace('{tags}', $tagHtml, $content);
 $content = str_replace('{categories}', $categoryHtml, $content);
 $content = str_replace('{contact}', $contact, $content);
+
 ?>
 
 <?php if ($pageblocks): ?>
 
 	<?php echo $this->RenderPageBlocks($pageblocks); ?>
-
-	<?php if (trim($content) !== ''): ?>
-		<section id="about" class="py-5">
-			<div class="container">
-				<?php echo $content; ?>
-			</div>
-		</section>
-	<?php endif; ?>
 
 <?php else: ?>
 
@@ -70,12 +28,20 @@ $content = str_replace('{contact}', $contact, $content);
 		<?php echo $this->Slide($this->slideImages); ?>
 	<?php endif; ?>
 
-	<?php if (trim($content) !== ''): ?>
-		<section id="about" class="py-5">
-			<div class="container">
-				<?php echo $content; ?>
-			</div>
-		</section>
-	<?php endif; ?>
+<?php endif; ?>
 
+<?php if (!$hasCategoryPlaceholder && $categoryHtml !== ''): ?>
+	<section id="categories" class="py-5">
+		<div class="container">
+			<?php echo $categoryHtml; ?>
+		</div>
+	</section>
+<?php endif; ?>
+
+<?php if (trim($content) !== ''): ?>
+	<section id="about" class="py-5">
+		<div class="container">
+			<?php echo $content; ?>
+		</div>
+	</section>
 <?php endif; ?>
