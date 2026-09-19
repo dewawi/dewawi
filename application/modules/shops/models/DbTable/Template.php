@@ -1,74 +1,22 @@
 <?php
 
-class Shops_Model_DbTable_Template extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Template extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'template';
+	protected ?string $siteField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getPrimaryTemplate(): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
-	}
+		$row = $this->fetchRow(
+			$this->getPublicSelect()
+				->order('ordering ASC')
+				->limit(1)
+		);
 
-	public function getTemplate($id)
-	{
-		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchRow($where);
-		if(!$data) {
-			throw new Exception("Could not find row $id");
+		if (!$row) {
+			throw new RuntimeException('Could not find template');
 		}
-		return $data->toArray();
-	}
 
-	public function getPrimaryTemplate()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchRow($where, 'ordering');
-		if(!$data) {
-			throw new Exception("Could not find template");
-		}
-		return $data->toArray();
-	}
-
-	public function getDefaultTemplate()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('`default` = ?', 1);
-		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchRow($where);
-		if($data) {
-			return $data->toArray();
-		}
-	}
-
-	public function getTemplates()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-
-		$templates = array();
-		foreach($data as $template) {
-			$templates[$template->id] = $template->description;
-		}
-		return $templates;
+		return $row->toArray();
 	}
 }
