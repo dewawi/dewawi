@@ -1,44 +1,23 @@
 <?php
 
-class Shops_Model_DbTable_Taxrate extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Taxrate extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'taxrate';
+	protected ?string $siteField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getTaxRate(int $id): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		return $this->getById($id);
 	}
 
-	public function getTaxrate($id)
+	public function getTaxRates(): array
 	{
-		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
-		if(!$row) {
-			throw new Exception("Could not find row $id");
-		}
-		return $row->toArray();
-	}
+		$taxrates = [];
 
-	public function getTaxrates()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where);
-
-		$taxrates = array();
-		$locale = Zend_Registry::get('Zend_Locale');
-		foreach($data as $taxrate) {
-			$taxrates[$taxrate->id] = $taxrate->rate;
+		foreach ($this->fetchAll($this->getPublicSelect()) as $taxrate) {
+			$taxrates[(int)$taxrate->id] = $taxrate->rate;
 		}
+
 		return $taxrates;
 	}
 }
