@@ -269,7 +269,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 			// Save data in DB
 			$inquiryDb = new Shops_Model_DbTable_Inquirydata();
-			$inquiryDb->save($formId, $shop['id'], $this->inquiryToken, $allFormValues, $shop['clientid']);
+			$inquiryDb->save($formId, $this->inquiryToken, $allFormValues);
 
 			// Auto-create quote if a SKU was provided
 			$quoteId = $this->createQuoteFromInquiry($allFormValues, $shop);
