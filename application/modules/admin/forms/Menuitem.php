@@ -86,6 +86,16 @@ class Admin_Form_Menuitem extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'activated',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_ACTIVATED',
+			'format' => ['type' => 'int'],
+			'default' => 0,
+			'tab' => 'settings',
+			'col' => 3,
+		]);
+
+		$this->addElement([
 			'name' => 'clientid',
 			'type' => 'select',
 			'label' => 'ADMIN_CLIENT',

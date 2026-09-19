@@ -184,5 +184,15 @@ class Admin_Form_Page extends DEEC_Form
 			'tab' => 'settings',
 			'col' => 3,
 		]);
+
+		$this->addElement([
+			'name' => 'activated',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_ACTIVATED',
+			'format' => ['type' => 'int'],
+			'default' => 0,
+			'tab' => 'overview',
+			'col' => 3,
+		]);
 	}
 }

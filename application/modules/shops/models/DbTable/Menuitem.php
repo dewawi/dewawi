@@ -4,6 +4,7 @@ class Shops_Model_DbTable_Menuitem extends DEEC_Model_DbTable_SiteEntity
 {
 	protected $_name = 'menuitem';
 	protected ?string $siteField = null;
+	protected ?string $publicField = 'activated';
 
 	public function getMenuitem(int $id): ?array
 	{
