@@ -100,7 +100,7 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 			$data['parentid'] = (int)$parentid;
 
 			if ($slug !== null) {
-				$slug = trim((string)$slug, " \t\n\r\0\x0B/");
+				$slug = trim((string)$slug, '/');
 				$data['slug'] = $slug !== '' ? $slug : (string)$entityid;
 			}
 
@@ -112,7 +112,7 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 			return (int)$existing['id'];
 		}
 
-		$slug = trim((string)$slug, " \t\n\r\0\x0B/");
+		$slug = trim((string)$slug, '/');
 
 		if ($slug === '') {
 			$slug = (string)$entityid;
