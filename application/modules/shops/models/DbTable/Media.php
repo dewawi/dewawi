@@ -1,101 +1,63 @@
 <?php
 
-class Shops_Model_DbTable_Media extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Media extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'media';
+	protected ?string $siteField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getItemMedia($items): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
-	}
-
-	public function getItemMedia($items) {
-		$images = array();
-		foreach($items as $key => $item) {
-			$images[$item->id] = $this->getMedia($item->id, 'items', 'item');
-		}
-		return $images;
-	}
-
-	public function getCategoryMedia($categories) {
-		$images = array();
-		foreach($categories as $key => $category) {
-			$images[$category['id']] = $this->getMedia($category['id'], 'shops', 'category');
-		}
-		//print_r($images);
-		return $images;
-	}
-
-	public function getMediaByParentID($parentid, $module, $controller)
-	{
-		$select = $this->select()
-			->where('parentid = ?', (int)$parentid)
-			->where('module = ?', $module)
-			->where('controller = ?', $controller)
-			->where('clientid = ?', $this->_client['id'])
-			->where('deleted = ?', 0)
-			->order('ordering ASC')
-			->order('id ASC');
-
-		return $this->fetchAll($select);
-	}
-
-	public function getCategoryMediaById($id) {
-		$images = $this->getMedia($id, 'shops', 'category');
-		return $images;
-	}
-
-	public function getMedia($parentid, $module, $controller)
-	{
-		$select = $this->select()
-			->where('parentid = ?', $parentid)
-			->where('module = ?', $module)
-			->where('controller = ?', $controller)
-			->where('deleted = ?', 0);
-
-		$imagesData = $this->fetchAll($select);
-
 		$images = [];
-		foreach ($imagesData as $row) {
-			$images[] = [
-				'url'   => $row['url'],
+
+		foreach ($items as $item) {
+			$images[$item->id] = $this->getMedia((int)$item->id, 'items', 'item');
+		}
+
+		return $images;
+	}
+
+	public function getCategoryMedia(array $categories): array
+	{
+		$images = [];
+
+		foreach ($categories as $category) {
+			$images[$category['id']] = $this->getMedia((int)$category['id'], 'shops', 'category');
+		}
+
+		return $images;
+	}
+
+	public function getCategoryMediaById(int $id): array
+	{
+		return $this->getMedia($id, 'shops', 'category');
+	}
+
+	public function getMedia(int $parentId, string $module, string $controller): array
+	{
+		$rows = $this->getByParentId($parentId, $module, $controller);
+		$media = [];
+
+		foreach ($rows as $row) {
+			$media[] = [
+				'url' => $row['url'],
 				'title' => $row['title'],
-				'type'  => $row['type'],
+				'type' => $row['type'],
 			];
 		}
-		return $images;
+
+		return $media;
 	}
 
-	public function getSlideImages(int $slideid): array
+	public function getSlideImages(int $slideId): array
 	{
-		$select = $this->select()
-			->where('parentid = ?', $slideid)
-			->where('module = ?', 'shops')
-			->where('controller = ?', 'slide')
-			->where('type = ?', 'image')
-			->where('clientid = ?', (int)$this->_shop['clientid'])
-			->where('deleted = ?', 0)
-			->order('ordering ASC');
-
-		return $this->fetchAll($select)->toArray();
-	}
-
-	public function getItem($itemid, $shopid)
-	{
-		$itemid = (int)$itemid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
+		return $this->fetchAll(
+			$this->getPublicSelect()
+				->where('parentid = ?', $slideId)
+				->where('module = ?', 'shops')
+				->where('controller = ?', 'slide')
+				->where('type = ?', 'image')
+				->order('ordering ASC')
+				->order('id ASC')
+		)->toArray();
 	}
 }
