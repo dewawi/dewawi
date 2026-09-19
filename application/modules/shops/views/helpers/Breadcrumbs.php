@@ -53,7 +53,7 @@ class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract{
 			$breadcrumbs = $this->CategoryBreadcrumbs($this->view->category, $this->view->categories);
 		} elseif ($this->view->controller === 'tag' && isset($this->view->tag)) {
 			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->escape($this->view->tag->title) . '</li>';
+				  . $this->view->escape($this->view->tag['title']) . '</li>';
 		} elseif ($this->view->controller === 'page' && isset($this->view->page)) {
 			$html .= '<li class="breadcrumb-item active" aria-current="page">'
 				  . $this->view->escape($this->view->page['title']) . '</li>';
