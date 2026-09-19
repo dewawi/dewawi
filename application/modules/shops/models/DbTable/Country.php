@@ -1,37 +1,24 @@
 <?php
 
-class Shops_Model_DbTable_Country extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Country extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'country';
+	protected ?string $siteField = null;
+	protected ?string $deletedField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getCountries(): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
-	}
-
-	public function getCountries()
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$data = $this->fetchAll($where, 'name');
-
-		$countries = array();
+		$countries = [];
 		$translate = Zend_Registry::get('DEEC_Translate');
-		foreach($data as $country) {
+
+		foreach ($this->fetchAll($this->getPublicSelect(), 'name') as $country) {
 			$countries[$country->code] = $translate->t($country->code);
 		}
-		//Sort countries with current locale
+
 		$language = Zend_Registry::get('Zend_Locale');
 		$collator = Collator::create($language);
 		$collator->asort($countries);
+
 		return $countries;
 	}
 }
