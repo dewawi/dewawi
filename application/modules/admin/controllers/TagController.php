@@ -167,7 +167,7 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 					$toolbar = new Admin_Form_Toolbar();
 
 					//Tags
-					$get = new Shops_Model_Get();
+					$get = new Admin_Model_Get();
 					$tags = $get->tags('shops', 'tag', $tag['id']);
 
 					//Get slug

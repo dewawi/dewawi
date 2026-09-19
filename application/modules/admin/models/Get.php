@@ -28,7 +28,7 @@ class Admin_Model_Get
 			);
 			$tags = $tags->toArray();
 		} else {
-			$tagsDb = new Shops_Model_DbTable_Tag();
+			$tagsDb = new Application_Model_DbTable_Tag();
 			$tags = $tagsDb->getTags($module, $controller);
 		}
 		//print_r($tags);
