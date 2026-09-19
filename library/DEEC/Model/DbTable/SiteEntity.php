@@ -53,13 +53,6 @@ abstract class DEEC_Model_DbTable_SiteEntity extends DEEC_Model_DbTable_Entity
 		return $row ? $row->toArray() : null;
 	}
 
-	protected function applyPublicScope(Zend_Db_Table_Select $select): void
-	{
-		if (in_array('activated', $this->info(self::COLS), true)) {
-			$select->where('activated = ?', 1);
-		}
-	}
-
 	protected function getAccessWhere(): array
 	{
 		$where = parent::getAccessWhere();
