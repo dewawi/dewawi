@@ -10,9 +10,6 @@ class Shops_CategoryController extends Shops_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 		$categories = $this->view->categories;
 
-		$contact = new Shops_Form_Contact();
-		$this->view->contact = $contact;
-
 		$categoryDb = new Shops_Model_DbTable_Category();
 		$category = $categoryDb->getCategory($id);
 

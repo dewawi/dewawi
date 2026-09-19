@@ -28,6 +28,8 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 			$this->initSiteCart();
 		}
 
+		$this->initSiteContactForm();
+
 		$menuDb = new Shops_Model_DbTable_Menu();
 		$menus = $menuDb->getMenus();
 
@@ -42,5 +44,12 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 		$this->view->categories = $categories;
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
+	}
+
+	protected function initSiteContactForm(): void
+	{
+		if ($this->_siteContext->hasFeature('contact') || $this->_siteContext->hasFeature('inquiry')) {
+			$this->view->contact = new Shops_Form_Contact();
+		}
 	}
 }

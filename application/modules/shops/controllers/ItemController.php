@@ -9,9 +9,6 @@ class Shops_ItemController extends Shops_Controller_Action
 		$shop = $this->_site;
 		$id = (int)$this->_getParam('id', 0);
 
-		$contact = new Shops_Form_Contact();
-		$this->view->contact = $contact;
-
 		$itemDb = new Shops_Model_DbTable_Item();
 		$item = $itemDb->getItem($id);
 
