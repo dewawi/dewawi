@@ -127,11 +127,12 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 					<?php endif; ?>
 				</div>
 
-				<!-- Add to Cart Button -->
-				<div class="">
-					<button class="btn btn-primary btn-lg add-to-cart" data-id="<?php echo $this->item['id']; ?>">
-						<?php echo $this->translate('SHOPS_ADD_TO_CART'); ?>
-					</button>
+				<div>
+					<?php if($this->siteContext->hasFeature('cart')) : ?>
+						<button class="btn btn-primary btn-lg add-to-cart" data-id="<?php echo $this->item['id']; ?>">
+							<?php echo $this->translate('SHOPS_ADD_TO_CART'); ?>
+						</button>
+					<?php endif; ?>
 					<button class="btn btn-info btn-lg" onclick="showSection('<?php echo $this->item['id']; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
 				</div>
 			</div>

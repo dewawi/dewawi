@@ -82,14 +82,15 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 							</li>
 						<?php endif; ?>
 
-						<!-- Add Cart Icon -->
-						<li class="nav-item">
-							<a class="nav-link" href="<?php echo $this->url(array(), 'cart'); ?>" id="navbar-cart">
-								🛒 <span id="cart-count" class="badge badge-danger">
-									<?php echo $this->cart->getItemCount(); ?>
-								</span>
-							</a>
-						</li>
+						<?php if($this->siteContext->hasFeature('cart')) : ?>
+							<li class="nav-item">
+								<a class="nav-link" href="<?php echo $this->url(array(), 'cart'); ?>" id="navbar-cart">
+									🛒 <span id="cart-count" class="badge badge-danger">
+										<?php echo $this->cart->getItemCount(); ?>
+									</span>
+								</a>
+							</li>
+						<?php endif; ?>
 					</ul>
 				</div>
 			</div>

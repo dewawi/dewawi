@@ -17,10 +17,16 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 	protected function initSiteLayout(): void
 	{
 		$this->_helper->getHelper('layout')->setLayout('site');
-		$this->initSiteCart();
 
-		$categoryDb = new Shops_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories();
+		$categories = [];
+		if ($this->_siteContext->hasFeature('catalog')) {
+			$categoryDb = new Shops_Model_DbTable_Category();
+			$categories = $categoryDb->getCategories();
+		}
+
+		if ($this->_siteContext->hasFeature('cart')) {
+			$this->initSiteCart();
+		}
 
 		$menuDb = new Shops_Model_DbTable_Menu();
 		$menus = $menuDb->getMenus();
