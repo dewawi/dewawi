@@ -14,7 +14,7 @@ class Shops_IndexController extends Shops_Controller_Action
 		$this->view->contact = $contact;
 
 		$slideDb = new Shops_Model_DbTable_Slide();
-		$slide = $slideDb->getByPosition('home', (int)$shop['id']);
+		$slide = $slideDb->getByPosition('home');
 
 		$slideImages = [];
 
