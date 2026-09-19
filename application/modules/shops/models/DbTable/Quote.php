@@ -1,94 +1,39 @@
 <?php
 
-class Shops_Model_DbTable_Quote extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Quote extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'quote';
+	protected ?string $siteField = null;
+	protected ?string $orderingField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getQuote(int $id): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
-	}
+		$row = $this->getById($id);
 
-	public function getQuote($id)
-	{
-		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
 		if (!$row) {
-			throw new Exception("Could not find row $id");
+			throw new RuntimeException("Could not find quote $id");
 		}
-		return $row->toArray();
+
+		return $row;
 	}
 
-	public function getLatestQuoteID()
+	public function addQuote(array $data): int
 	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchRow($where, 'quoteid DESC');
-		if (!$data) {
-			throw new Exception("Could not find row");
-		}
-		return $data->quoteid;
+		return $this->create($data);
 	}
 
-	public function addQuote($data)
+	public function updateQuote(int $id, array $data): void
 	{
-		$data['created'] = $this->_date;
-		//$data['createdby'] = $this->_user['id'];
-		$data['clientid'] = $this->_shop['clientid'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
+		$this->updateById($id, $data);
 	}
 
-	public function updateQuote($id, $data)
+	public function saveQuote(int $id, int $quoteId, string $filename): void
 	{
-		$data['modified'] = $this->_date;
-		//$data['modifiedby'] = $this->_user['id'];
-		$this->update($data, 'id = '.(int)$id);
-	}
-
-	public function saveQuote($id, $quoteid, $filename)
-	{
-		$data = array();
-		$data['quoteid'] = $quoteid;
-		$data['quotedate'] = $this->_date;
-		$data['filename'] = $filename;
-		$data['state'] = 105;
-		$data['modified'] = $this->_date;
-		//$data['modifiedby'] = $this->_user['id'];
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function lock($id)
-	{
-		$data = array(
-			//'locked' => $this->_user['id'],
-			'lockedtime' => $this->_date
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function unlock($id)
-	{
-		$data = array(
-			'locked' => 0
-		);
-		$this->update($data, 'id = '. (int)$id);
-	}
-
-	public function deleteQuote($id)
-	{
-		$data = array(
-			'deleted' => 1
-		);
-		$this->update($data, 'id =' . (int)$id);
+		$this->updateById($id, [
+			'quoteid' => $quoteId,
+			'quotedate' => $this->_date,
+			'filename' => $filename,
+			'state' => 105,
+		]);
 	}
 }
