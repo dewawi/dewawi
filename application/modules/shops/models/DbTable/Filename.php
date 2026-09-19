@@ -1,39 +1,23 @@
 <?php
 
-class Shops_Model_DbTable_Filename extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Filename extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'filename';
+	protected ?string $siteField = null;
+	protected ?string $deletedField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getFilename(string $type, string $language): string
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
-	}
-
-	public function getFilename($type, $language)
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('language = ?', $language);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$data = $this->fetchRow($where);
-		if(!$data) {
-			throw new Exception("Could not find row $type");
-		}
-		return $data->$type;
-	}
-
-	public function setFilename($id, $type)
-	{
-		$data = array(
-			$type => $id,
+		$row = $this->fetchRow(
+			$this->getPublicSelect()
+				->where('language = ?', $language)
+				->limit(1)
 		);
-		$this->update($data, 'clientid = '. (int)$this->_shop['clientid']);
+
+		if (!$row) {
+			throw new RuntimeException("Could not find filename for $type");
+		}
+
+		return $row->$type;
 	}
 }
