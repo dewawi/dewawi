@@ -1,34 +1,20 @@
 <?php
 
-class Shops_Model_DbTable_Itemopt extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Itemopt extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'itemopt';
+	protected ?string $siteField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getPositions(int $parentId, ?int $setId = null): Zend_Db_Table_Rowset_Abstract
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
-	}
+		$select = $this->getPublicSelect()
+			->where('parentid = ?', $parentId)
+			->order('ordering ASC');
 
-	public function getPositions($parentid, $setid = null)
-	{
-		$parentid = (int)$parentid;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
-		if($setid !== null) $where[] = $this->getAdapter()->quoteInto('optsetid = ?', $setid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'ordering');
-		if (!$data) {
-			throw new Exception("Could not find row $parentid");
+		if ($setId !== null) {
+			$select->where('optsetid = ?', $setId);
 		}
-		return $data;
+
+		return $this->fetchAll($select);
 	}
 }
