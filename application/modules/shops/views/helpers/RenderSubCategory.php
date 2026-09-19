@@ -2,32 +2,33 @@
 
 class Zend_View_Helper_RenderSubCategory extends Zend_View_Helper_Abstract
 {
-	public function RenderSubCategory($categories, $parentId = 0)
+	public function RenderSubCategory(array $categories, int $parentId = 0): string
 	{
-		$output = '';
+		$html = '';
 
 		foreach ($categories as $subcategory) {
-			if ($subcategory['parentid'] == $parentId) {
-				$url = $this->view->SlugUrl('category', $subcategory['id']);
-
-				if (!$url) {
-					continue;
-				}
-
-				$output .= '<li>';
-				$output .= '<a href="' . $url . '">' . $subcategory['title'] . '</a>';
-
-				$childCategories = $this->RenderSubCategory($categories, $subcategory['id']);
-				if (!empty($childCategories)) {
-					$output .= '<ul class="submenu">';
-					$output .= $childCategories;
-					$output .= '</ul>';
-				}
-
-				$output .= '</li>';
+			if ((int)$subcategory['parentid'] !== $parentId) {
+				continue;
 			}
+
+			$url = $this->view->SlugUrl('category', (int)$subcategory['id']);
+
+			if (!$url) {
+				continue;
+			}
+
+			$children = $this->RenderSubCategory($categories, (int)$subcategory['id']);
+
+			$html .= '<li>';
+			$html .= '<a href="' . $this->view->escape($url) . '">' . $this->view->escape((string)$subcategory['title']) . '</a>';
+
+			if ($children !== '') {
+				$html .= '<ul class="submenu">' . $children . '</ul>';
+			}
+
+			$html .= '</li>';
 		}
 
-		return $output;
+		return $html;
 	}
 }
