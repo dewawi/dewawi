@@ -129,7 +129,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 			$price = (float)$row['price'];
 			$lineTotal = $quantity * $price;
 
-			$item = $itemDb->getItemBySku($sku, $shop['id']);
+			$item = $itemDb->getItemBySku($sku);
 			if(!$item) {
 				return $this->_helper->json(['success' => false, 'message' => 'Cart item not found']);
 			}

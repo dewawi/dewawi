@@ -1,57 +1,49 @@
 <?php
 
-class Shops_Model_DbTable_Item extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Item extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'item';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getItem(int $id): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		return $this->getPublicById($id);
 	}
 
-	public function getItem($id, $shopid)
+	public function getItemBySku(string $sku): ?array
 	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', (int)$id);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$shopid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$row = $this->fetchRow(
+			$this->getPublicSelect()
+				->where('sku = ?', $sku)
+				->limit(1)
+		);
 
-		$data = $this->fetchRow($where);
-
-		return $data ? $data->toArray() : null;
+		return $row ? $row->toArray() : null;
 	}
 
-	public function getItemBySku($sku, $shopid)
+	public function getItemsByCategory(int $categoryId, array $params = []): Zend_Db_Table_Rowset_Abstract
 	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$shopid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
+		$order = $params['order'] ?? 'modified';
+		$sort = strtoupper((string)($params['sort'] ?? 'DESC'));
 
-		$data = $this->fetchRow($where);
-
-		return $data ? $data->toArray() : null;
-	}
-
-	public function getItems($ids)
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('sku IN (?)', $ids);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$data = $this->fetchAll($where);
-		if (!$row) {
-			throw new Exception("Could not find row $ids");
+		if (!in_array($order, ['modified', 'created', 'title'], true)) {
+			$order = 'modified';
 		}
-		return $row->toArray();
+
+		if (!in_array($sort, ['ASC', 'DESC'], true)) {
+			$sort = 'DESC';
+		}
+
+		$select = $this->getPublicSelect()
+			->where('shopcatid = ?', $categoryId)
+			->order($order . ' ' . $sort);
+
+		$limit = (int)($params['limit'] ?? 25);
+		$offset = max(0, (int)($params['offset'] ?? 0));
+
+		if ($limit > 0) {
+			$select->limit($limit, $offset);
+		}
+
+		return $this->fetchAll($select);
 	}
 }

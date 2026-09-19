@@ -13,7 +13,7 @@ class Shops_ItemController extends Shops_Controller_Action
 		$this->view->contact = $contact;
 
 		$itemDb = new Shops_Model_DbTable_Item();
-		$item = $itemDb->getItem($id, (int)$shop['id']);
+		$item = $itemDb->getItem($id);
 
 		if (!$item) {
 			throw new Zend_Controller_Action_Exception('Item not found', 404);

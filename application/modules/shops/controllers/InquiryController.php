@@ -211,7 +211,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 				$itemsWithImages = [];
 				foreach ($this->formDataSession->suggestions ?? [] as $suggestion) {
-					$item = $itemDb->getItemBySku($suggestion['description'], $shop['id']);
+					$item = $itemDb->getItemBySku($suggestion['description']);
 					if (!$item) continue;
 
 					$images = $mediaDb->getMedia($item['id'], 'items', 'item');
@@ -424,7 +424,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 		// 1) Find the item by SKU
 		$itemDb = new Shops_Model_DbTable_Item();
-		$item = $itemDb->getItemBySku($sku, $shop['id']);
+		$item = $itemDb->getItemBySku($sku);
 		if (!$item) return null; // invalid sku, silently skip
 
 		// 2) Pick defaults (currency/language/template) like Sales_QuoteController::addAction()

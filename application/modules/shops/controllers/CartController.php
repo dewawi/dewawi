@@ -37,16 +37,7 @@ class Shops_CartController extends Shops_Controller_Action
 			return $this->_helper->json(['success' => false, 'message' => 'Invalid request']);
 		}
 
-		$shop = $this->_site;
-		$id = (int)$this->_getParam('id');
-		$quantity = $this->_getParam('quantity', 1);
-
-		if(!$id || !is_numeric($quantity) || $quantity <= 0) {
-			return $this->_helper->json(['success' => false, 'message' => 'Invalid cart item']);
-		}
-
-		$itemDb = new Shops_Model_DbTable_Item();
-		$item = $itemDb->getItem($id, $shop['id']);
+		$item = $itemDb->getItem($id);
 
 		if(!$item || !empty($item['deleted'])) {
 			return $this->_helper->json(['success' => false, 'message' => 'Item not found']);
