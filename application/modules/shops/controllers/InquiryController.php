@@ -29,32 +29,14 @@ class Shops_InquiryController extends Shops_Controller_Action
 	{
 		$shop = $this->_site;
 		$request = $this->getRequest();
+		$step = $request->getPost('step', '1');
 
 		if (!$request->isPost()) {
 			$this->initSiteLayout();
 			$this->assignMessages();
 		}
 
-		$isAjax = $request->isXmlHttpRequest();
-		$step = $request->getPost('step', '1');
-
-		//$this->view->tags = $tags;
-		//$this->view->tagEntites = $tagEntites;
 		$this->view->shop = $shop;
-		$this->view->menus = $menus;
-		$this->view->menuitems = $menuitems;
-		$this->view->categories = $categories;
-		//$this->view->pagination = $this->_helper->Pagination->getPagination($toolbar, $params, $records, count($items));
-		$this->view->messages = $this->_flashMessenger->getMessages();
-
-		$request = $this->getRequest();
-		$isAjax = $request->isXmlHttpRequest();
-		$step = $request->getPost('step', '1');
-
-		// Fallback for initial page load (only for full render)
-		if (!$isAjax && !$request->isPost()) {
-			$step = '1';
-		}
 
 		$stepOrder = array_keys($this->formConfig);
 		if (!in_array($step, $stepOrder)) {
