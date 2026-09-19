@@ -4,6 +4,10 @@ class Zend_View_Helper_RenderMenuItems extends Zend_View_Helper_Abstract
 {
 	public function RenderMenuItems($items, int $parentId = 0): string
 	{
+		if ($items instanceof Zend_Db_Table_Rowset_Abstract) {
+			$items = iterator_to_array($items, false);
+		}
+
 		$html = '';
 
 		foreach ($items as $item) {
