@@ -17,7 +17,7 @@ class Shops_TagController extends Shops_Controller_Action
 		}
 
 		$tagEntityDb = new Shops_Model_DbTable_Tagentity();
-		$tagEntities = $tagEntityDb->getTagEntities('shops', 'category', $id);
+		$tagEntities = $tagEntityDb->getByTagId($id, 'shops', 'category');
 
 		$imageDb = new Shops_Model_DbTable_Media();
 

@@ -25,10 +25,12 @@ class Shops_CategoryController extends Shops_Controller_Action
 
 		$get = new Shops_Model_Get();
 
-		$tagEntites = [];
-		foreach ($categories as $categoryRow) {
-			$tagEntites[$categoryRow['id']] = $get->tags('shops', 'category', $categoryRow['id']);
-		}
+		$tagEntityDb = new Shops_Model_DbTable_Tagentity();
+		$tagEntities = $tagEntityDb->getByEntityId(
+			(int)$category['id'],
+			'shops',
+			'category'
+		);
 
 		$toolbar = new Items_Form_Toolbar();
 		$params = $this->_helper->Params->getParams($toolbar);

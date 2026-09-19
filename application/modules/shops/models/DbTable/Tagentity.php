@@ -1,34 +1,50 @@
 <?php
 
-class Shops_Model_DbTable_Tagentity extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Tagentity extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'tagentity';
+	protected ?string $siteField = null;
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getByTagId(int $tagId, string $module, string $controller): array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		return $this->fetchAll(
+			$this->getPublicSelect()
+				->where('tagid = ?', $tagId)
+				->where('module = ?', $module)
+				->where('controller = ?', $controller)
+				->order('ordering ASC')
+		)->toArray();
 	}
 
-	public function getTagEntities($module, $controller, $id)
+	public function getByEntityId(int $entityId, string $module, string $controller): array
 	{
-		$tags = $this->fetchAll(
-			$this->select()
-				->setIntegrityCheck(false)
-				->from(array('t' => 'tagentity'))
-				->joinLeft(array('tag' => 'tag'), 't.tagid = tag.id', array('title as tag', 'module', 'controller'))
-				->group('t.id')
-				->where('(t.tagid = "'.$id.'") AND (t.module = "'.$module.'") AND (t.controller = "'.$controller.'") AND (t.deleted = 0)')
-				//->order($order.' '.$params['sort'])
-				//->limit($params['limit'], $params['offset'])
-		);
-		return $tags->toArray();
+		$select = $this->select()
+			->setIntegrityCheck(false)
+			->from(['t' => 'tagentity'], [
+				'id',
+				'tagid',
+				'entityid',
+				'ordering',
+			])
+			->join(
+				['tag' => 'tag'],
+				'tag.id = t.tagid',
+				[
+					'tag' => 'title',
+				]
+			)
+			->where('t.entityid = ?', $entityId)
+			->where('t.module = ?', $module)
+			->where('t.controller = ?', $controller)
+			->where('t.clientid = ?', $this->getClientId())
+			->where('t.deleted = ?', 0)
+			->where('tag.shopid = ?', $this->getSiteId())
+			->where('tag.clientid = ?', $this->getClientId())
+			->where('tag.module = ?', $module)
+			->where('tag.controller = ?', $controller)
+			->where('tag.deleted = ?', 0)
+			->order('t.ordering ASC');
+
+		return $this->fetchAll($select)->toArray();
 	}
 }

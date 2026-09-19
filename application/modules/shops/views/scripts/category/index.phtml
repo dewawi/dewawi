@@ -75,14 +75,15 @@ $downloads = false;
 					<div class="col-md-6 mb-4">
 						<?php echo $this->category['shortdescription']; ?>
 						<?php $i = 1; ?>
-						<?php $tagEntites = count($this->tagEntites[$this->category['id']]); ?>
-						<?php if($tagEntites) : ?>
+						<?php $tagCount = count($this->tagEntities); ?>
+						<?php if($tagCount) : ?>
 							<span>Anwendungs- und Einsatzgebiete:</span>
-							<?php foreach($this->tagEntites[$this->category['id']] as $tagEntity) : ?>
-								<a href="<?php echo $this->SlugUrl('tag', $tagEntity['tagid']); ?>">
-									<?php echo $this->escape($tagEntity['tag']); ?></a>
-									<?php if($i < $tagEntites) echo '|'; ?>
-									<?php ++$i; ?>
+							<?php foreach($this->tagEntities as $tagEntity) : ?>
+								<a href="<?php echo $this->SlugUrl('tag', (int)$tagEntity['tagid']); ?>">
+									<?php echo $this->escape($tagEntity['tag']); ?>
+								</a>
+								<?php if($i < $tagCount) echo '|'; ?>
+								<?php ++$i; ?>
 							<?php endforeach; ?>
 						<?php endif; ?>
 					</div>
