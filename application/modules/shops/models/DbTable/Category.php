@@ -1,77 +1,65 @@
 <?php
 
-class Shops_Model_DbTable_Category extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Category extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'category';
+	protected ?string $publicField = 'activated';
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	public function init()
+	public function getCategory(int $id): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		$row = $this->fetchRow(
+			$this->getCategorySelect()
+				->where('id = ?', $id)
+				->limit(1)
+		);
+
+		return $row ? $row->toArray() : null;
 	}
 
-	public function getCategory($id)
+	public function getCategories(?int $parentid = null): array
 	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', (int)$id);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$this->_shop['id']);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('type = ?', 'shop');
-		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-
-		return $this->fetchRow($where);
-	}
-
-	public function getCategories($parentid = null)
-	{
-		$where = [];
+		$select = $this->getCategorySelect();
 
 		if ($parentid !== null) {
-			$where[] = $this->getAdapter()->quoteInto('parentid = ?', (int)$parentid);
+			$select->where('parentid = ?', $parentid);
 		}
 
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$this->_shop['id']);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('type = ?', 'shop');
-		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-
-		$data = $this->fetchAll($where, 'ordering');
+		$rows = $this->fetchAll(
+			$select->order('ordering ASC')
+		)->toArray();
 
 		$categories = [];
 
-		foreach ($data as $category) {
-			$categories[$category->id] = [
-				'id' => $category->id,
-				'type' => $category->type,
-				'title' => $category->title,
-				'subtitle' => $category->subtitle,
-				'image' => $category->image,
-				'description' => $category->description,
-				'minidescription' => $category->minidescription,
-				'shortdescription' => $category->shortdescription,
-				'footer' => $category->footer,
-				'parentid' => $category->parentid,
-				'ordering' => $category->ordering,
-				'activated' => $category->activated,
-				'shopid' => $category->shopid ?? null,
+		foreach ($rows as $category) {
+			$categories[$category['id']] = [
+				'id' => $category['id'],
+				'type' => $category['type'],
+				'title' => $category['title'],
+				'subtitle' => $category['subtitle'],
+				'image' => $category['image'],
+				'description' => $category['description'],
+				'minidescription' => $category['minidescription'],
+				'shortdescription' => $category['shortdescription'],
+				'footer' => $category['footer'],
+				'parentid' => $category['parentid'],
+				'ordering' => $category['ordering'],
+				'activated' => $category['activated'],
+				'shopid' => $category['shopid'],
 			];
 		}
 
-		foreach ($data as $category) {
-			if ($category->parentid && isset($categories[$category->parentid])) {
-				$categories[$category->parentid]['childs'][] = $category->id;
+		foreach ($rows as $category) {
+			if ($category['parentid'] && isset($categories[$category['parentid']])) {
+				$categories[$category['parentid']]['childs'][] = $category['id'];
 			}
 		}
 
 		return $categories;
+	}
+
+	protected function getCategorySelect(): Zend_Db_Table_Select
+	{
+		return $this->getPublicSelect()
+			->where('type = ?', 'shop');
 	}
 }

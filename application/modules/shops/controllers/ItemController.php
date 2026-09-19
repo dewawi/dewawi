@@ -50,8 +50,8 @@ class Shops_ItemController extends Shops_Controller_Action
 
 		$mediaDb = new Shops_Model_DbTable_Media();
 		$images = $mediaDb->getMedia($id, 'items', 'item');
-		$categoryImages = $mediaDb->getCategoryMediaById((int)$category->id);
-		$parentCategoryImages = $mediaDb->getCategoryMediaById((int)$category->parentid);
+		$categoryImages = $mediaDb->getCategoryMediaById((int)$category['id']);
+		$parentCategoryImages = $mediaDb->getCategoryMediaById((int)$category['parentid']);
 
 		$manufacturersDb = new Shops_Model_DbTable_Manufacturer();
 		$manufacturers = $manufacturersDb->getManufacturers();
