@@ -24,6 +24,10 @@ class Shops_SitemapController extends Shops_Controller_Action
 				continue;
 			}
 
+			if (!$this->_siteContext->hasFeature('catalog') && in_array($slug['controller'], array('category', 'item', 'tag'), true)) {
+				continue;
+			}
+
 			$path = $slugDb->getPath($slug['controller'], (int)$slug['entityid']);
 
 			if (!$path) {

@@ -32,32 +32,34 @@ class DEEC_Site_Router
 			)
 		));
 
-		$router->addRoute('contact_send', new Zend_Controller_Router_Route(
-			'contact/send',
-			array(
-				'module' => 'shops',
-				'controller' => 'contact',
-				'action' => 'send'
-			)
-		));
+		if ($siteContext->hasFeature('contact') || $siteContext->hasFeature('inquiry')) {
+			$router->addRoute('contact_send', new Zend_Controller_Router_Route(
+				'contact/send',
+				array(
+					'module' => 'shops',
+					'controller' => 'contact',
+					'action' => 'send'
+				)
+			));
 
-		$router->addRoute('contact_success', new Zend_Controller_Router_Route(
-			'contact/success',
-			array(
-				'module' => 'shops',
-				'controller' => 'contact',
-				'action' => 'success'
-			)
-		));
+			$router->addRoute('contact_success', new Zend_Controller_Router_Route(
+				'contact/success',
+				array(
+					'module' => 'shops',
+					'controller' => 'contact',
+					'action' => 'success'
+				)
+			));
 
-		$router->addRoute('contact_error', new Zend_Controller_Router_Route(
-			'contact/error',
-			array(
-				'module' => 'shops',
-				'controller' => 'contact',
-				'action' => 'error'
-			)
-		));
+			$router->addRoute('contact_error', new Zend_Controller_Router_Route(
+				'contact/error',
+				array(
+					'module' => 'shops',
+					'controller' => 'contact',
+					'action' => 'error'
+				)
+			));
+		}
 
 		if ($siteContext->hasFeature('inquiry')) {
 			$router->addRoute('inquiry_send', new Zend_Controller_Router_Route(
@@ -164,27 +166,29 @@ class DEEC_Site_Router
 			));
 		}
 
-		$router->addRoute('feed', new Zend_Controller_Router_Route(
-			'products-de.xml',
-			array(
-				'module' => 'shops',
-				'controller' => 'item',
-				'action' => 'feed'
-			)
-		));
+		if ($siteContext->hasFeature('catalog')) {
+			$router->addRoute('feed', new Zend_Controller_Router_Route(
+				'products-de.xml',
+				array(
+					'module' => 'shops',
+					'controller' => 'item',
+					'action' => 'feed'
+				)
+			));
 
-		$router->addRoute('product', new Zend_Controller_Router_Route(
-			'product/:id',
-			array(
-				'module' => 'shops',
-				'controller' => 'item',
-				'action' => 'index',
-				'id' => null
-			),
-			array(
-				'id' => '\d+'
-			)
-		));
+			$router->addRoute('product', new Zend_Controller_Router_Route(
+				'product/:id',
+				array(
+					'module' => 'shops',
+					'controller' => 'item',
+					'action' => 'index',
+					'id' => null
+				),
+				array(
+					'id' => '\d+'
+				)
+			));
+		}
 	}
 
 	protected function registerFallbackRoute(Zend_Controller_Router_Rewrite $router)
@@ -225,6 +229,10 @@ class DEEC_Site_Router
 		foreach ($slugs as $row) {
 			$slugData = $row->toArray();
 
+			if (!$this->isSlugControllerEnabled($slugData['controller'], $siteContext)) {
+				continue;
+			}
+
 			if ($this->buildSlugPath($slugData, $slugTable, $siteContext) !== $path) {
 				continue;
 			}
@@ -244,6 +252,15 @@ class DEEC_Site_Router
 
 			return;
 		}
+	}
+
+	protected function isSlugControllerEnabled($controller, DEEC_Site_Context $siteContext)
+	{
+		if (in_array($controller, array('category', 'item', 'tag'), true)) {
+			return $siteContext->hasFeature('catalog');
+		}
+
+		return true;
 	}
 
 	protected function buildSlugPath(array $item, Zend_Db_Table $slugTable, DEEC_Site_Context $siteContext)

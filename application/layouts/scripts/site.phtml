@@ -105,7 +105,7 @@ if($this->serverUrl() . $this->url() == $this->serverUrl() . '/') $home = true;
 
 	<?php echo $this->layout()->content; ?>
 
-	<?php if($this->controller === 'category') : ?>
+	<?php if($this->controller === 'category' && $this->siteContext->hasFeature('inquiry')) : ?>
 		<section id="contact" class="jumbotron jumbotron-fluid py-5 mb-0">
 			<div class="container">
 				<h2 class="text-center mb-4">Wie können wir Ihnen helfen?</h2>

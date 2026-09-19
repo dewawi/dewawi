@@ -133,7 +133,9 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 							<?php echo $this->translate('SHOPS_ADD_TO_CART'); ?>
 						</button>
 					<?php endif; ?>
-					<button class="btn btn-info btn-lg" onclick="showSection('<?php echo $this->item['id']; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
+					<?php if($this->siteContext->hasFeature('inquiry')) : ?>
+						<button class="btn btn-info btn-lg" onclick="showSection('<?php echo $this->item['id']; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
+					<?php endif; ?>
 				</div>
 			</div>
 		</div>
@@ -266,14 +268,16 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 <?php endif; ?>
 
 <!-- Inquiry -->
-<section id="inquiry" class="py-5">
-	<div class="container">
-		<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></h2>
-		<div class="card card-body">
-			<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->item['title'].' '.$this->item['sku']); ?>
+<?php if($this->siteContext->hasFeature('inquiry')) : ?>
+	<section id="inquiry" class="py-5">
+		<div class="container">
+			<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></h2>
+			<div class="card card-body">
+				<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->item['title'].' '.$this->item['sku']); ?>
+			</div>
 		</div>
-	</div>
-</section>
+	</section>
+<?php endif; ?>
 
 <!-- Modal for larger images -->
 <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">

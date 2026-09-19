@@ -8,7 +8,7 @@ if (isset($this->page)) {
 
 $pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
 $categories = is_array($this->categories ?? null) ? $this->categories : [];
-$contact = $this->ContactForm($this->translate('SHOPS_CONTACT_FORM'));
+$contact = $this->siteContext->hasFeature('contact') ? $this->ContactForm($this->translate('SHOPS_CONTACT_FORM')) : '';
 
 $categoryHtml = $this->RenderCategories($categories);
 $hasCategoryPlaceholder = strpos($content, '{categories}') !== false;

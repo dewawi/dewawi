@@ -18,7 +18,7 @@ class DEEC_Site_Resolver
 			$shopHost = $this->normalizeHost(parse_url($shopData['url'], PHP_URL_HOST));
 
 			if ($shopHost !== '' && $shopHost === $host) {
-				$features = $this->detectLegacyFeatures($shopData);
+				$features = $this->detectFeatures($shopData);
 
 				return new DEEC_Site_Context($shopData, array('host' => $host), $features);
 			}
@@ -27,20 +27,28 @@ class DEEC_Site_Resolver
 		return null;
 	}
 
-	protected function detectLegacyFeatures(array $site)
+	protected function detectFeatures(array $site)
 	{
-		$features = array('cms', 'catalog', 'contact');
+		$features = array('cms');
+
+		if (!empty($site['catalogenabled'])) {
+			$features[] = 'catalog';
+		}
 
 		if (!empty($site['checkoutenabled'])) {
 			$features[] = 'cart';
 			$features[] = 'checkout';
 		}
 
+		if (!empty($site['contactenabled'])) {
+			$features[] = 'contact';
+		}
+
 		if (!empty($site['inquiryenabled'])) {
 			$features[] = 'inquiry';
 		}
 
-		return array_values(array_unique($features));
+		return $features;
 	}
 
 	protected function normalizeHost($host)
