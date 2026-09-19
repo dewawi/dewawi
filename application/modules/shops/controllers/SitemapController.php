@@ -11,7 +11,7 @@ class Shops_SitemapController extends Shops_Controller_Action
 
 		$baseUrl = rtrim($this->getRequest()->getScheme() . '://' . $this->getRequest()->getHttpHost(), '/');
 		$slugDb = new Shops_Model_DbTable_Slug();
-		$slugs = $slugDb->getSlugs((int)$this->_site['id']);
+		$slugs = $slugDb->getSlugs();
 
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>';
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';

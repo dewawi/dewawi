@@ -1,64 +1,39 @@
 <?php
 
-class Shops_Model_DbTable_Slug extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Slug extends DEEC_Model_DbTable_SiteEntity
 {
-
 	protected $_name = 'slug';
+	protected $_pathCache = [];
 
-	protected $_date = null;
-
-	protected $_user = null;
-
-	protected $_shop = null;
-
-	protected $_pathCache = array();
-
-	public function init()
+	public function getEntitySlug(string $controller, int $entityId): ?array
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		$row = $this->fetchRow(
+			$this->getPublicSelect()
+				->where('module = ?', 'shops')
+				->where('controller = ?', $controller)
+				->where('entityid = ?', $entityId)
+				->limit(1)
+		);
+
+		return $row ? $row->toArray() : null;
 	}
 
-	public function getSlug($id)
+	public function getPath(string $controller, int $entityId): ?string
 	{
-		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$data = $this->fetchRow($where);
-		return $data ? $data->toArray() : $data;
-	}
-
-	public function getEntitySlug($controller, $entityid)
-	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('module = ?', 'shops');
-		$where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
-		$where[] = $this->getAdapter()->quoteInto('entityid = ?', (int)$entityid);
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$this->_shop['id']);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-
-		$data = $this->fetchRow($where);
-
-		return $data ? $data->toArray() : null;
-	}
-
-	public function getPath($controller, $entityid)
-	{
-		$key = $controller . ':' . (int)$entityid;
+		$key = $controller . ':' . $entityId;
 
 		if (array_key_exists($key, $this->_pathCache)) {
 			return $this->_pathCache[$key];
 		}
 
-		$item = $this->getEntitySlug($controller, $entityid);
+		$item = $this->getEntitySlug($controller, $entityId);
 
 		if (!$item || empty($item['slug'])) {
 			return $this->_pathCache[$key] = null;
 		}
 
 		$path = trim($item['slug'], '/');
-		$visited = array();
+		$visited = [];
 
 		while (!empty($item['parentid'])) {
 			$parentController = $item['controller'] === 'item' ? 'category' : $item['controller'];
@@ -69,7 +44,7 @@ class Shops_Model_DbTable_Slug extends Zend_Db_Table_Abstract
 			}
 
 			$visited[$parentKey] = true;
-			$parent = $this->getEntitySlug($parentController, $item['parentid']);
+			$parent = $this->getEntitySlug($parentController, (int)$item['parentid']);
 
 			if (!$parent || empty($parent['slug'])) {
 				break;
@@ -82,16 +57,10 @@ class Shops_Model_DbTable_Slug extends Zend_Db_Table_Abstract
 		return $this->_pathCache[$key] = $path;
 	}
 
-	public function getSlugs($shopid)
+	public function getSlugs(): Zend_Db_Table_Rowset_Abstract
 	{
-		$shopid = (int)$shopid;
-
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $shopid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-		$data = $this->fetchAll($where, 'id ASC');
-
-		return $data;
+		return $this->fetchAll(
+			$this->getPublicSelect()->order('id ASC')
+		);
 	}
 }
