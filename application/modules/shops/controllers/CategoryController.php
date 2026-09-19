@@ -16,6 +16,10 @@ class Shops_CategoryController extends Shops_Controller_Action
 		$categoryDb = new Shops_Model_DbTable_Category();
 		$category = $categoryDb->getCategory($id);
 
+		if (!$category) {
+			throw new Zend_Controller_Action_Exception('Category not found', 404);
+		}
+
 		$taxratesDb = new Shops_Model_DbTable_Taxrate();
 		$taxrates = $taxratesDb->getTaxRates();
 

@@ -20,8 +20,10 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 	public function getPage($id, $shopid)
 	{
 		$select = $this->select()
-			->where('id = ?', $id)
-			->where('shopid = ?', $shopid)
+			->where('id = ?', (int)$id)
+			->where('shopid = ?', (int)$shopid)
+			->where('clientid = ?', (int)$this->_shop['clientid'])
+			->where('activated = ?', 1)
 			->where('deleted = ?', 0)
 			->limit(1);
 
@@ -35,6 +37,8 @@ class Shops_Model_DbTable_Page extends Zend_Db_Table_Abstract
 		$select = $this->select()
 			->where('type = ?', $type)
 			->where('shopid = ?', $shopid)
+			->where('clientid = ?', (int)$this->_shop['clientid'])
+			->where('activated = ?', 1)
 			->where('deleted = ?', 0)
 			->limit(1);
 

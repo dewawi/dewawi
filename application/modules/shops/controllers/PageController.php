@@ -17,6 +17,10 @@ class Shops_PageController extends Shops_Controller_Action
 		$pageDb = new Shops_Model_DbTable_Page();
 		$page = $pageDb->getPage($id, (int)$shop['id']);
 
+		if (!$page) {
+			throw new Zend_Controller_Action_Exception('Page not found', 404);
+		}
+
 		$pageblocks = [];
 
 		if ($page) {

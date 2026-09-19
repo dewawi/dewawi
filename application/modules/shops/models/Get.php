@@ -39,11 +39,7 @@ class Shops_Model_Get
 
 	public function items($params, $shopid)
 	{
-		//$client = Zend_Registry::get('Client');
-		//if($client['parentid']) {
-		//	$client['id'] = $client['modules']['shops'];
-		//}
-		//print_r($params);
+		$shop = Zend_Registry::get('Shop');
 
 		$itemsDb = new Shops_Model_DbTable_Item();
 
@@ -51,6 +47,8 @@ class Shops_Model_Get
 			$itemsDb->select()
 				->where('shopid = ?', $shopid)
 				->where('shopcatid = ?', $params['catid'])
+				->where('clientid = ?', (int)$shop['clientid'])
+				->where('shopenabled = ?', 1)
 				->order($params['order'].' '.$params['sort'])
 				->limit($params['limit'])
 				->where('deleted = ?', 0)
@@ -60,6 +58,8 @@ class Shops_Model_Get
 			$itemsDb->select()
 				->where('shopid = ?', $shopid)
 				->where('shopcatid = ?', $params['catid'])
+				->where('clientid = ?', (int)$shop['clientid'])
+				->where('shopenabled = ?', 1)
 				->order($params['order'].' '.$params['sort'])
 				->limit($params['limit'])
 				->where('deleted = ?', 0)

@@ -34,7 +34,9 @@ class Shops_Model_DbTable_Category extends Zend_Db_Table_Abstract
 		if ($parentid !== null) {
 			$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
 		}
-		$where[] = $this->getAdapter()->quoteInto('shopid = ?', $this->_shop['id']);
+		$where[] = $this->getAdapter()->quoteInto('id = ?', (int)$id);
+		$where[] = $this->getAdapter()->quoteInto('shopid = ?', (int)$this->_shop['id']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_shop['clientid']);
 		$where[] = $this->getAdapter()->quoteInto('type = ?', 'shop');
 		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);

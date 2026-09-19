@@ -33,6 +33,7 @@ class Shops_Model_DbTable_Menuitem extends Zend_Db_Table_Abstract
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('menuid = ?', $menuid);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_shop['clientid']);
+		$where[] = $this->getAdapter()->quoteInto('activated = ?', 1);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');
 

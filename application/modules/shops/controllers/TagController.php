@@ -12,6 +12,10 @@ class Shops_TagController extends Shops_Controller_Action
 		$tagDb = new Shops_Model_DbTable_Tag();
 		$tag = $tagDb->getTag($id);
 
+		if (!$tag) {
+			throw new Zend_Controller_Action_Exception('Tag not found', 404);
+		}
+
 		$tagEntityDb = new Shops_Model_DbTable_Tagentity();
 		$tagEntities = $tagEntityDb->getTagEntities('shops', 'category', $id);
 

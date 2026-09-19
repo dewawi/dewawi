@@ -15,6 +15,10 @@ class Shops_ItemController extends Shops_Controller_Action
 		$itemDb = new Shops_Model_DbTable_Item();
 		$item = $itemDb->getItem($id, (int)$shop['id']);
 
+		if (!$item) {
+			throw new Zend_Controller_Action_Exception('Item not found', 404);
+		}
+
 		$currency = $this->_helper->Currency->getCurrency($item['currency'], 'USE_SYMBOL');
 
 		if ($item['taxid']) {
@@ -39,6 +43,10 @@ class Shops_ItemController extends Shops_Controller_Action
 
 		$categoryDb = new Shops_Model_DbTable_Category();
 		$category = $categoryDb->getCategory((int)$item['shopcatid']);
+
+		if (!$category) {
+			throw new Zend_Controller_Action_Exception('Category not found', 404);
+		}
 
 		$mediaDb = new Shops_Model_DbTable_Media();
 		$images = $mediaDb->getMedia($id, 'items', 'item');
