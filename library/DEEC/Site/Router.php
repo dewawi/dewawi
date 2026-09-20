@@ -211,95 +211,37 @@ class DEEC_Site_Router
 			return;
 		}
 
-		$segments = explode('/', $path);
-		$slug = end($segments);
+		$slugDb = new Shops_Model_DbTable_Slug();
+		$slug = $slugDb->resolvePath($path);
 
-		if (!$slug) {
+		if (!$slug || !$this->isSlugControllerEnabled((string)$slug['controller'], $siteContext)) {
 			return;
 		}
 
-		$slugTable = new Zend_Db_Table('slug');
-		$slugs = $slugTable->fetchAll(array(
-			'shopid = ?' => $siteContext->getSiteId(),
-			'clientid = ?' => $siteContext->getClientId(),
-			'slug = ?' => $slug,
-			'deleted = ?' => 0
-		));
-
-		foreach ($slugs as $row) {
-			$slugData = $row->toArray();
-
-			if (!$this->isSlugControllerEnabled($slugData['controller'], $siteContext)) {
-				continue;
-			}
-
-			if ($this->buildSlugPath($slugData, $slugTable, $siteContext) !== $path) {
-				continue;
-			}
-
-			$router->addRoute(
-				'shop_slug',
-				new Zend_Controller_Router_Route(
-					$path,
-					array(
-						'module' => $slugData['module'],
-						'controller' => $slugData['controller'],
-						'action' => 'index',
-						'id' => $slugData['entityid']
-					)
+		$router->addRoute(
+			'shop_slug',
+			new Zend_Controller_Router_Route(
+				$path,
+				array(
+					'module' => 'shops',
+					'controller' => $slug['controller'],
+					'action' => 'index',
+					'id' => $slug['entityid']
 				)
-			);
-
-			return;
-		}
+			)
+		);
 	}
 
 	protected function isSlugControllerEnabled($controller, DEEC_Site_Context $siteContext)
 	{
+		if (!in_array($controller, array('page', 'category', 'item', 'tag'), true)) {
+			return false;
+		}
+
 		if (in_array($controller, array('category', 'item', 'tag'), true)) {
 			return $siteContext->hasFeature('catalog');
 		}
 
 		return true;
-	}
-
-	protected function buildSlugPath(array $item, Zend_Db_Table $slugTable, DEEC_Site_Context $siteContext)
-	{
-		$path = trim($item['slug'], '/');
-		$visited = array();
-
-		while (!empty($item['parentid'])) {
-			$controller = $item['controller'] === 'item' ? 'category' : $item['controller'];
-			$key = $controller . ':' . (int)$item['parentid'];
-
-			if (isset($visited[$key])) {
-				break;
-			}
-
-			$visited[$key] = true;
-
-			$parent = $slugTable->fetchRow(array(
-				'module = ?' => $item['module'],
-				'controller = ?' => $controller,
-				'entityid = ?' => (int)$item['parentid'],
-				'shopid = ?' => $siteContext->getSiteId(),
-				'clientid = ?' => $siteContext->getClientId(),
-				'deleted = ?' => 0
-			));
-
-			if (!$parent) {
-				break;
-			}
-
-			$item = $parent->toArray();
-
-			if (empty($item['slug'])) {
-				break;
-			}
-
-			$path = trim($item['slug'], '/') . '/' . $path;
-		}
-
-		return $path;
 	}
 }
