@@ -1,0 +1,24 @@
+<?php
+
+$title = trim((string)($this->data['title'] ?? ''));
+
+if (!$this->siteContext instanceof DEEC_Site_Context || !$this->siteContext->hasFeature('catalog') || !$this->categories) {
+	return;
+}
+
+$categories = $this->RenderCategories($this->categories);
+
+if ($categories === '') {
+	return;
+}
+?>
+
+<section class="dw-site-block dw-site-block--categories">
+	<div class="container">
+		<?php if($title !== '') : ?>
+			<h2 class="text-center mb-4"><?php echo $this->escape($title); ?></h2>
+		<?php endif; ?>
+
+		<?php echo $categories; ?>
+	</div>
+</section>

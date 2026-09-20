@@ -18,6 +18,15 @@ $pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
 $categories = is_array($this->categories ?? null) ? $this->categories : [];
 $contact = $this->siteContext->hasFeature('contact') ? $this->ContactForm($this->translate('SHOPS_CONTACT_FORM')) : '';
 
+$hasCategoryBlock = false;
+
+foreach ($pageblocks as $pageblock) {
+	if (($pageblock['type'] ?? '') === 'categories') {
+		$hasCategoryBlock = true;
+		break;
+	}
+}
+
 $categoryHtml = $this->RenderCategories($categories);
 $hasCategoryPlaceholder = strpos($content, '{categories}') !== false;
 
@@ -38,7 +47,7 @@ $content = str_replace('{contact}', $contact, $content);
 
 <?php endif; ?>
 
-<?php if (!$hasCategoryPlaceholder && $categoryHtml !== ''): ?>
+<?php if (!$hasCategoryBlock && !$hasCategoryPlaceholder && $categoryHtml !== ''): ?>
 	<section id="categories" class="py-5">
 		<div class="container">
 			<?php echo $categoryHtml; ?>

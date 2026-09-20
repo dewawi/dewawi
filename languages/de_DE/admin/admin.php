@@ -147,6 +147,8 @@
 	'ADMIN_PAGEBLOCK_IMAGE_POSITION' => 'Bildposition',
 	'ADMIN_PAGEBLOCK_IMAGE_LEFT' => 'Links',
 	'ADMIN_PAGEBLOCK_IMAGE_RIGHT' => 'Rechts',
+	'ADMIN_PAGEBLOCK_CONTACT' => 'Kontakt',
+	'ADMIN_PAGEBLOCK_CATEGORIES' => 'Kategorien',
 	'ADMIN_TAG_IMAGE' => 'Bild',
 	'ADMIN_TAG_DESCRIPTION' => 'Beschreibung',
 	'ADMIN_ORDERING' => 'Position',

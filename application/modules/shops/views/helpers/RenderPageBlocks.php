@@ -26,6 +26,11 @@ class Zend_View_Helper_RenderPageBlocks extends Zend_View_Helper_Abstract
 			$html .= $this->view->partial('page/blocks/' . $type . '.phtml', [
 				'block' => $block,
 				'data' => $data,
+				'siteContext' => $this->view->siteContext ?? null,
+				'shop' => is_array($this->view->shop ?? null) ? $this->view->shop : [],
+				'categories' => is_array($this->view->categories ?? null) ? $this->view->categories : [],
+				'images' => is_array($this->view->images ?? null) ? $this->view->images : [],
+				'contact' => $this->view->contact ?? null,
 			]);
 		}
 

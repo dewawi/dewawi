@@ -132,6 +132,30 @@ class DEEC_Site_Block
 					],
 				],
 			],
+			'contact' => [
+				'label' => 'ADMIN_PAGEBLOCK_CONTACT',
+				'fields' => [
+					[
+						'name' => 'title',
+						'type' => 'text',
+						'label' => 'ADMIN_TITLE',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+				],
+			],
+			'categories' => [
+				'label' => 'ADMIN_PAGEBLOCK_CATEGORIES',
+				'fields' => [
+					[
+						'name' => 'title',
+						'type' => 'text',
+						'label' => 'ADMIN_TITLE',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+				],
+			],
 		];
 	}
 

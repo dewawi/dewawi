@@ -591,7 +591,9 @@ form .hidden {
 }
 
 .dw-site-block--text,
-.dw-site-block--image-text {
+.dw-site-block--image-text,
+.dw-site-block--contact,
+.dw-site-block--categories {
 	padding: 4rem 0;
 }
 
