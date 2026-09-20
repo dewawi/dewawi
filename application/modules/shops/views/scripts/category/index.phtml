@@ -140,6 +140,7 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 
 <!-- Display product list if available -->
 <?php if (count($this->items) > 0): ?>
+	<?php $shippingPage = $this->PageByType('shipping'); ?>
 	<section id="category" class="py-5">
 		<div class="container">
 			<h2 class="text-center mb-4"><?php echo $this->category['title']; ?></h2>
@@ -257,13 +258,12 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 										<?php endif; ?>
 									</p>
 									<?php if($itemPrice['rawtax'] > $itemPrice['raw']) : ?>
-										<?php if($this->prices[$item->id]['rawspecialprice']) : ?>
+										<?php if($hasSpecial) : ?>
 											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $itemPrice['formattedspecialpricetax']; ?> inkl. MwSt.</p>
 										<?php else : ?>
 											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $itemPrice['formattedtax']; ?> inkl. MwSt.</p>
 										<?php endif; ?>
 									<?php endif; ?>
-									<?php $shippingPage = $this->PageByType('shipping'); ?>
 									<?php if ($shippingPage) : ?>
 										<a href="<?php echo $this->SlugUrl('page', $shippingPage['id']); ?>" target="_blank">
 											Versandkosten
@@ -298,7 +298,7 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 										<a class="nav-link" id="attributes-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#attributes_<?php echo $item->id; ?>" role="tab" aria-controls="attributes_<?php echo $item->id; ?>" aria-selected="false"><?php echo $this->translate('SHOPS_ATTRIBUTES'); ?></a>
 									</li>
 									<?php endif; ?>
-									<?php if (!empty($this->optionSets[$item->id])) : ?>
+									<?php if($itemOptions) : ?>
 										<li class="nav-item">
 											<a class="nav-link" id="options-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#options_<?php echo $item->id; ?>" role="tab" aria-controls="options_<?php echo $item->id; ?>" aria-selected="false"><?php echo $this->translate('SHOPS_OPTIONS'); ?></a>
 										</li>
@@ -380,15 +380,16 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 									<?php endif; ?>
 
 									<!-- Options Tab -->
-									<?php if (!empty($this->optionSets[$item->id])) : ?>
-										<div class="tab-pane fade" id="options_<?php echo $item->id; ?>" role="tabpanel" aria-labelledby="options-tab_<?php echo $item->id; ?>">
+									<?php if($itemOptions) : ?>
+										<div class="tab-pane fade" id="options_<?php echo $itemId; ?>" role="tabpanel" aria-labelledby="options-tab_<?php echo $itemId; ?>">
 											<div class="card card-body">
-												<?php foreach ($this->optionSets[$item->id] as $optionSet) : ?>
-													<h5><?php echo $optionSet['title']; ?></h5>
+												<?php foreach($itemOptions as $optionSet) : ?>
+													<h5><?php echo $this->escape($optionSet['title']); ?></h5>
 													<ul>
-														<?php foreach ($optionSet['options'] as $option) : ?>
-															<li><strong><?php echo $option['title']; ?>:</strong>
-																<?php if ($option['description']) : ?>
+														<?php foreach($optionSet['options'] as $option) : ?>
+															<li>
+																<strong><?php echo $this->escape($option['title']); ?>:</strong>
+																<?php if($option['description']) : ?>
 																	<?php echo $option['description']; ?>
 																<?php else : ?>
 																	<span>bereits enthalten</span>
