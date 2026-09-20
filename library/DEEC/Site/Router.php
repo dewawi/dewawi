@@ -234,6 +234,10 @@ class DEEC_Site_Router
 
 	protected function isSlugControllerEnabled($controller, DEEC_Site_Context $siteContext)
 	{
+		if ($controller === 'inquiry') {
+			return $siteContext->hasFeature('inquiry');
+		}
+
 		if (!in_array($controller, array('page', 'category', 'item', 'tag'), true)) {
 			return false;
 		}
