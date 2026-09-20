@@ -1,0 +1,48 @@
+<?php
+
+$eyebrow = trim((string)($this->data['eyebrow'] ?? ''));
+$title = trim((string)($this->data['title'] ?? ''));
+$text = trim((string)($this->data['text'] ?? ''));
+$buttonLabel = trim((string)($this->data['buttonlabel'] ?? ''));
+$buttonUrl = trim((string)($this->data['buttonurl'] ?? ''));
+$buttonLabel2 = trim((string)($this->data['buttonlabel2'] ?? ''));
+$buttonUrl2 = trim((string)($this->data['buttonurl2'] ?? ''));
+$variant = ($this->data['variant'] ?? 'default') === 'dark' ? 'dark' : 'default';
+$alignment = ($this->data['alignment'] ?? 'left') === 'center' ? 'center' : 'left';
+
+foreach (['buttonUrl', 'buttonUrl2'] as $variable) {
+	if ($$variable !== '' && preg_match('~^[a-z][a-z0-9+.-]*:~i', $$variable) && !preg_match('~^(https?|mailto|tel):~i', $$variable)) $$variable = '';
+}
+
+$secondaryButtonClass = $variant === 'dark' ? 'btn-outline-light' : 'btn-outline-primary';
+?>
+
+<section class="dw-site-block dw-site-block--cta dw-site-block--cta-<?php echo $variant; ?> dw-site-block--cta-<?php echo $alignment; ?>">
+	<div class="container">
+		<div class="dw-site-block__content">
+			<?php if($eyebrow !== '') : ?>
+				<div class="dw-site-block__eyebrow"><?php echo $this->escape($eyebrow); ?></div>
+			<?php endif; ?>
+
+			<?php if($title !== '') : ?>
+				<h2><?php echo $this->escape($title); ?></h2>
+			<?php endif; ?>
+
+			<?php if($text !== '') : ?>
+				<div class="dw-site-block__text"><?php echo $text; ?></div>
+			<?php endif; ?>
+
+			<?php if(($buttonLabel !== '' && $buttonUrl !== '') || ($buttonLabel2 !== '' && $buttonUrl2 !== '')) : ?>
+				<div class="dw-site-block__actions">
+					<?php if($buttonLabel !== '' && $buttonUrl !== '') : ?>
+						<a class="btn btn-primary btn-lg" href="<?php echo $this->escape($buttonUrl); ?>"><?php echo $this->escape($buttonLabel); ?></a>
+					<?php endif; ?>
+
+					<?php if($buttonLabel2 !== '' && $buttonUrl2 !== '') : ?>
+						<a class="btn <?php echo $secondaryButtonClass; ?> btn-lg" href="<?php echo $this->escape($buttonUrl2); ?>"><?php echo $this->escape($buttonLabel2); ?></a>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
+		</div>
+	</div>
+</section>

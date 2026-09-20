@@ -543,6 +543,64 @@ form .hidden {
   min-width: 160px;
 }
 
+.dw-site-block--cta {
+	padding: 5rem 0;
+}
+
+.dw-site-block--cta .dw-site-block__content {
+	max-width: 900px;
+}
+
+.dw-site-block--cta h2 {
+	margin-bottom: 1.5rem;
+	font-size: 2.5rem;
+}
+
+.dw-site-block--cta .dw-site-block__text {
+	font-size: 1.1rem;
+	line-height: 1.7;
+}
+
+.dw-site-block--cta .dw-site-block__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .75rem;
+	margin-top: 2rem;
+}
+
+.dw-site-block--cta-dark {
+	background: #212529;
+	color: #fff;
+}
+
+.dw-site-block--cta-dark .dw-site-block__text {
+	color: rgba(255, 255, 255, .85);
+}
+
+.dw-site-block--cta-center .dw-site-block__content {
+	margin: 0 auto;
+	text-align: center;
+}
+
+.dw-site-block--cta-center .dw-site-block__actions {
+	justify-content: center;
+}
+
+@media (max-width: 767.98px) {
+	.dw-site-block--cta h2 {
+		font-size: 2rem;
+	}
+
+	.dw-site-block--cta .dw-site-block__actions {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.dw-site-block--cta-center .dw-site-block__actions {
+		align-items: center;
+	}
+}
+
 .dw-site-block--hero {
 	position: relative;
 	display: flex;

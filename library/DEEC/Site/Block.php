@@ -5,6 +5,92 @@ class DEEC_Site_Block
 	public static function getDefinitions(): array
 	{
 		return [
+			'cta' => [
+				'label' => 'ADMIN_PAGEBLOCK_CTA',
+				'fields' => [
+					[
+						'name' => 'eyebrow',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_EYEBROW',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'title',
+						'type' => 'text',
+						'label' => 'ADMIN_TITLE',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'text',
+						'type' => 'textarea',
+						'label' => 'ADMIN_TEXT',
+						'format' => [
+							'type' => 'html',
+							'allowTags' => ['a', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li'],
+							'allowAttribs' => ['href', 'title'],
+						],
+						'attribs' => [
+							'rows' => 10,
+							'class' => 'editor',
+						],
+						'col' => 12,
+					],
+					[
+						'name' => 'buttonlabel',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_BUTTON_TEXT',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'buttonurl',
+						'type' => 'text',
+						'label' => 'ADMIN_URL',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'buttonlabel2',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_SECOND_BUTTON_TEXT',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'buttonurl2',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_SECOND_BUTTON_URL',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'variant',
+						'type' => 'select',
+						'label' => 'ADMIN_PAGEBLOCK_VARIANT',
+						'options' => [
+							'default' => 'ADMIN_PAGEBLOCK_VARIANT_DEFAULT',
+							'dark' => 'ADMIN_PAGEBLOCK_VARIANT_DARK',
+						],
+						'default' => 'default',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'alignment',
+						'type' => 'select',
+						'label' => 'ADMIN_PAGEBLOCK_ALIGNMENT',
+						'options' => [
+							'left' => 'ADMIN_PAGEBLOCK_ALIGNMENT_LEFT',
+							'center' => 'ADMIN_PAGEBLOCK_ALIGNMENT_CENTER',
+						],
+						'default' => 'left',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+				],
+			],
 			'hero' => [
 				'label' => 'ADMIN_PAGEBLOCK_HERO',
 				'fields' => [
