@@ -552,6 +552,10 @@ form .hidden {
 	background: #e9ecef;
 }
 
+.dw-site-block--hero .dw-site-block__eyebrow {
+	margin-bottom: 1rem;
+}
+
 .dw-site-block--hero .dw-site-block__media {
 	position: absolute;
 	inset: 0;
@@ -588,6 +592,33 @@ form .hidden {
 
 .dw-site-block--hero p {
 	font-size: 1.25rem;
+}
+
+.dw-site-block--hero .dw-site-block__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .75rem;
+	margin-top: 2rem;
+}
+
+.dw-site-block--hero .dw-site-block__trust {
+	margin-top: 2rem;
+	font-size: .95rem;
+}
+
+.dw-site-block--hero.has-image .dw-site-block__trust {
+	color: rgba(255, 255, 255, .85);
+}
+
+@media (max-width: 767.98px) {
+	.dw-site-block--hero h1 {
+		font-size: 2.25rem;
+	}
+
+	.dw-site-block--hero .dw-site-block__actions {
+		align-items: flex-start;
+		flex-direction: column;
+	}
 }
 
 .dw-site-block--text,

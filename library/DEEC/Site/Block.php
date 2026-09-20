@@ -9,6 +9,13 @@ class DEEC_Site_Block
 				'label' => 'ADMIN_PAGEBLOCK_HERO',
 				'fields' => [
 					[
+						'name' => 'eyebrow',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_EYEBROW',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
 						'name' => 'title',
 						'type' => 'text',
 						'label' => 'ADMIN_TITLE',
@@ -46,6 +53,27 @@ class DEEC_Site_Block
 						'label' => 'ADMIN_URL',
 						'format' => ['type' => 'string'],
 						'col' => 6,
+					],
+					[
+						'name' => 'buttonlabel2',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_SECOND_BUTTON_TEXT',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'buttonurl2',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_SECOND_BUTTON_URL',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'trust',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_TRUST',
+						'format' => ['type' => 'string'],
+						'col' => 12,
 					],
 				],
 			],

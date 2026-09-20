@@ -1,36 +1,52 @@
 <?php
 
+$eyebrow = trim((string)($this->data['eyebrow'] ?? ''));
 $title = trim((string)($this->data['title'] ?? ''));
 $text = trim((string)($this->data['text'] ?? ''));
 $image = trim((string)($this->data['image'] ?? ''));
 $buttonLabel = trim((string)($this->data['buttonlabel'] ?? ''));
 $buttonUrl = trim((string)($this->data['buttonurl'] ?? ''));
+$buttonLabel2 = trim((string)($this->data['buttonlabel2'] ?? ''));
+$buttonUrl2 = trim((string)($this->data['buttonurl2'] ?? ''));
+$trust = trim((string)($this->data['trust'] ?? ''));
 
-if ($buttonUrl !== '' && preg_match('~^[a-z][a-z0-9+.-]*:~i', $buttonUrl) && !preg_match('~^(https?|mailto|tel):~i', $buttonUrl)) {
-	$buttonUrl = '';
+foreach (['buttonUrl', 'buttonUrl2'] as $variable) {
+	if ($$variable !== '' && preg_match('~^[a-z][a-z0-9+.-]*:~i', $$variable) && !preg_match('~^(https?|mailto|tel):~i', $$variable)) {
+		$$variable = '';
+	}
 }
 ?>
 
-<section class="dw-site-block dw-site-block--hero<?php echo $image !== '' ? ' has-image' : ''; ?>">
-	<?php if ($image !== ''): ?>
-		<div class="dw-site-block__media">
-			<img src="<?php echo $this->escape($image); ?>" alt="">
+<div class="container dw-site-block__content">
+	<?php if($eyebrow !== '') : ?>
+		<div class="dw-site-block__eyebrow"><?php echo $this->escape($eyebrow); ?></div>
+	<?php endif; ?>
+
+	<?php if($title !== '') : ?>
+		<h1><?php echo $this->escape($title); ?></h1>
+	<?php endif; ?>
+
+	<?php if($text !== '') : ?>
+		<p><?php echo nl2br($this->escape($text)); ?></p>
+	<?php endif; ?>
+
+	<?php if(($buttonLabel !== '' && $buttonUrl !== '') || ($buttonLabel2 !== '' && $buttonUrl2 !== '')) : ?>
+		<div class="dw-site-block__actions">
+			<?php if($buttonLabel !== '' && $buttonUrl !== '') : ?>
+				<a class="btn btn-primary btn-lg" href="<?php echo $this->escape($buttonUrl); ?>">
+					<?php echo $this->escape($buttonLabel); ?>
+				</a>
+			<?php endif; ?>
+
+			<?php if($buttonLabel2 !== '' && $buttonUrl2 !== '') : ?>
+				<a class="btn btn-outline-light btn-lg" href="<?php echo $this->escape($buttonUrl2); ?>">
+					<?php echo $this->escape($buttonLabel2); ?>
+				</a>
+			<?php endif; ?>
 		</div>
 	<?php endif; ?>
 
-	<div class="container dw-site-block__content">
-		<?php if ($title !== ''): ?>
-			<h1><?php echo $this->escape($title); ?></h1>
-		<?php endif; ?>
-
-		<?php if ($text !== ''): ?>
-			<p><?php echo nl2br($this->escape($text)); ?></p>
-		<?php endif; ?>
-
-		<?php if ($buttonLabel !== '' && $buttonUrl !== ''): ?>
-			<a class="btn btn-primary btn-lg" href="<?php echo $this->escape($buttonUrl); ?>">
-				<?php echo $this->escape($buttonLabel); ?>
-			</a>
-		<?php endif; ?>
-	</div>
-</section>
+	<?php if($trust !== '') : ?>
+		<div class="dw-site-block__trust"><?php echo $this->escape($trust); ?></div>
+	<?php endif; ?>
+</div>
