@@ -169,6 +169,34 @@ $(document).ready(function () {
 			console.warn('Feld nicht gefunden.');
 		}
 	});
+
+	function closeMegaMenus() {
+		$('.dw-mega-nav-item.is-open').removeClass('is-open').find('[data-mega-toggle]').attr('aria-expanded', 'false');
+	}
+
+	$(document).on('click', '[data-mega-toggle]', function (event) {
+		event.preventDefault();
+
+		const $item = $(this).closest('.dw-mega-nav-item');
+		const open = !$item.hasClass('is-open');
+
+		closeMegaMenus();
+
+		if (open) {
+			$item.addClass('is-open');
+			$(this).attr('aria-expanded', 'true');
+		}
+	});
+
+	$(document).on('click', function (event) {
+		if (!$(event.target).closest('.dw-mega-nav-item').length) closeMegaMenus();
+	});
+
+	$(document).on('keydown', function (event) {
+		if (event.key === 'Escape') closeMegaMenus();
+	});
+
+	$('#navbarNav').on('hidden.bs.collapse', closeMegaMenus);
 });
 
 function toggleDependentFields() {

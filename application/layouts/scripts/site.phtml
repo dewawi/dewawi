@@ -9,6 +9,19 @@ $language = str_replace('_', '-', (string)$this->siteContext->getLanguage());
 $theme = $this->siteContext->getTheme();
 $home = $this->controller === 'index' && $this->action === 'index';
 
+$headerNavigation = '';
+$headerActions = '';
+
+foreach ($menus as $menu) {
+	$items = $menuitems[$menu->id] ?? [];
+
+	if ($menu->position === 'header') {
+		$headerNavigation .= $this->RenderMenuItems($items, 0, 'mega');
+	} elseif ($menu->position === 'header-actions') {
+		$headerActions .= $this->RenderMenuItems($items);
+	}
+}
+
 $this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
 $this->headTitle()->setSeparator(' - ');
 $this->headTitle($shop['title'] ?? '');
@@ -29,7 +42,7 @@ echo $this->doctype();
 	<?php endif; ?>
 </head>
 <body>
-	<header <?php if($home) echo 'class="home"' ?>>
+	<header class="dw-site-header<?php echo $home ? ' home' : ''; ?>">
 		<nav class="navbar navbar-expand-lg navbar-light">
 			<div class="container">
 				<a class="navbar-brand" href="<?php echo $this->url(array(), 'shop_home'); ?>">
@@ -39,23 +52,27 @@ echo $this->doctype();
 					<span class="navbar-toggler-icon"></span>
 				</button>
 				<div class="collapse navbar-collapse" id="navbarNav">
-					<ul class="navbar-nav ml-auto">
-						<?php foreach($menus as $menu) : ?>
-							<?php if($menu->position === 'header') : ?>
-								<?php echo $this->RenderMenuItems($menuitems[$menu->id] ?? []); ?>
-							<?php endif; ?>
-						<?php endforeach; ?>
-
-						<?php echo $this->RenderCategoryNavigation($categories); ?>
-
-						<?php if($this->siteContext->hasFeature('cart')) : ?>
-							<li class="nav-item">
-								<a class="nav-link" href="<?php echo $this->url(array(), 'cart'); ?>" id="navbar-cart">
-									🛒 <span id="cart-count" class="badge badge-danger"><?php echo $this->cart->getItemCount(); ?></span>
-								</a>
-							</li>
+					<ul class="navbar-nav ml-auto dw-main-nav">
+						<?php if($headerNavigation !== '') : ?>
+							<?php echo $headerNavigation; ?>
+						<?php else : ?>
+							<?php echo $this->RenderCategoryNavigation($categories); ?>
 						<?php endif; ?>
 					</ul>
+
+					<?php if($headerActions !== '' || $this->siteContext->hasFeature('cart')) : ?>
+						<ul class="navbar-nav dw-header-actions">
+							<?php echo $headerActions; ?>
+
+							<?php if($this->siteContext->hasFeature('cart')) : ?>
+								<li class="nav-item">
+									<a class="nav-link" href="<?php echo $this->url(array(), 'cart'); ?>" id="navbar-cart">
+										🛒 <span id="cart-count" class="badge badge-danger"><?php echo $this->cart->getItemCount(); ?></span>
+									</a>
+								</li>
+							<?php endif; ?>
+						</ul>
+					<?php endif; ?>
 				</div>
 			</div>
 		</nav>

@@ -134,6 +134,145 @@ header.home {
 	}
 }
 
+.dw-site-header .navbar {
+	position: relative;
+}
+
+.dw-mega-nav-item {
+	position: static;
+}
+
+.dw-mega-toggle {
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+}
+
+.dw-mega-menu__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 2rem;
+}
+
+.dw-mega-menu__heading {
+	display: block;
+	margin-bottom: 1rem;
+	color: #212529;
+	font-weight: 700;
+}
+
+.dw-mega-menu__links {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.dw-mega-menu__links li {
+	margin-bottom: .5rem;
+}
+
+.dw-mega-menu__links a,
+.dw-mega-menu__flat a {
+	color: #495057;
+	text-decoration: none;
+}
+
+.dw-mega-menu__links a:hover,
+.dw-mega-menu__flat a:hover {
+	color: #007bff;
+	text-decoration: none;
+}
+
+.dw-mega-menu__flat {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: .75rem 2rem;
+}
+
+.dw-mega-menu__actions {
+	margin-top: 2rem;
+	padding-top: 1.25rem;
+	border-top: 1px solid #dee2e6;
+}
+
+.dw-mega-menu__actions a {
+	font-weight: 600;
+}
+
+.dw-header-actions {
+	margin-left: 1rem;
+}
+
+.dw-header-actions .nav-item {
+	margin-right: .5rem;
+}
+
+.dw-header-actions .nav-item--highlight .nav-link {
+	padding-right: 1rem;
+	padding-left: 1rem;
+	border-radius: .25rem;
+	background: #212529;
+	color: #fff;
+}
+
+@media (min-width: 992px) {
+	.dw-mega-menu {
+		position: absolute;
+		top: 100%;
+		right: 0;
+		left: 0;
+		z-index: 1100;
+		padding: 2.5rem 0;
+		background: #fff;
+		box-shadow: 0 12px 30px rgba(0, 0, 0, .12);
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-8px);
+		transition: opacity .15s ease, transform .15s ease, visibility .15s ease;
+		pointer-events: none;
+	}
+
+	.dw-mega-nav-item:hover > .dw-mega-menu,
+	.dw-mega-nav-item:focus-within > .dw-mega-menu,
+	.dw-mega-nav-item.is-open > .dw-mega-menu {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+		pointer-events: auto;
+	}
+}
+
+@media (max-width: 991.98px) {
+	.dw-header-actions {
+		margin-left: 0;
+		padding-top: .75rem;
+		border-top: 1px solid #dee2e6;
+	}
+
+	.dw-mega-menu {
+		display: none;
+		padding: .5rem 0 1rem 1rem;
+	}
+
+	.dw-mega-nav-item.is-open > .dw-mega-menu {
+		display: block;
+	}
+
+	.dw-mega-menu__grid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	.dw-mega-menu__flat {
+		grid-template-columns: 1fr;
+	}
+
+	.dw-mega-menu__actions {
+		margin-top: 1rem;
+	}
+}
+
 /* Submenu styles */
 .submenu {
 	display: none;
