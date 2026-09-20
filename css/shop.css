@@ -612,3 +612,57 @@ form .hidden {
 	width: 100%;
 	height: auto;
 }
+
+.dw-site-block--cards {
+	padding: 5rem 0;
+}
+
+.dw-site-block__eyebrow,
+.dw-site-card__eyebrow {
+	margin-bottom: .75rem;
+	font-size: .8rem;
+	font-weight: 700;
+	letter-spacing: .12em;
+	text-transform: uppercase;
+}
+
+.dw-site-block__intro {
+	max-width: 760px;
+	margin-bottom: 2.5rem;
+	font-size: 1.1rem;
+	line-height: 1.7;
+}
+
+.dw-site-block__action {
+	margin-top: 1rem;
+}
+
+.dw-site-card {
+	height: 100%;
+}
+
+.dw-site-card__media {
+	overflow: hidden;
+	margin-bottom: 1.5rem;
+}
+
+.dw-site-card__media img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+}
+
+.dw-site-card h3 {
+	margin-bottom: 1rem;
+}
+
+.dw-site-card__text {
+	line-height: 1.6;
+}
+
+.dw-site-card__link {
+	display: inline-block;
+	margin-top: 1rem;
+	font-weight: 600;
+}

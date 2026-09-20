@@ -1,0 +1,69 @@
+<?php
+
+$eyebrow = trim((string)($this->data['eyebrow'] ?? ''));
+$title = trim((string)($this->data['title'] ?? ''));
+$text = trim((string)($this->data['text'] ?? ''));
+$columns = (int)($this->data['columns'] ?? 3);
+$buttonLabel = trim((string)($this->data['buttonlabel'] ?? ''));
+$buttonUrl = trim((string)($this->data['buttonurl'] ?? ''));
+
+if (!in_array($columns, [2, 3, 4], true)) $columns = 3;
+
+$columnClass = [
+	2 => 'col-md-6',
+	3 => 'col-md-4',
+	4 => 'col-md-6 col-lg-3',
+][$columns];
+
+if ($buttonUrl !== '' && preg_match('~^[a-z][a-z0-9+.-]*:~i', $buttonUrl) && !preg_match('~^(https?|mailto|tel):~i', $buttonUrl)) {
+	$buttonUrl = '';
+}
+?>
+
+<section class="dw-site-block dw-site-block--cards">
+	<div class="container">
+		<?php if($eyebrow !== '') : ?>
+			<div class="dw-site-block__eyebrow"><?php echo $this->escape($eyebrow); ?></div>
+		<?php endif; ?>
+
+		<?php if($title !== '') : ?>
+			<h2><?php echo $this->escape($title); ?></h2>
+		<?php endif; ?>
+
+		<?php if($text !== '') : ?>
+			<div class="dw-site-block__intro"><?php echo $text; ?></div>
+		<?php endif; ?>
+
+		<?php if($this->children) : ?>
+			<div class="row">
+				<?php foreach($this->children as $child) : ?>
+					<?php
+					$data = json_decode((string)($child['data'] ?? ''), true);
+
+					if (!is_array($data)) continue;
+
+					$data = DEEC_Filter::applyAll(
+						$data,
+						DEEC_Site_Block::getFormatSchema('card'),
+						Zend_Registry::get('Zend_Locale')
+					);
+					?>
+					<div class="<?php echo $columnClass; ?> mb-4">
+						<?php echo $this->partial('page/blocks/card.phtml', [
+							'block' => $child,
+							'data' => $data,
+						]); ?>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
+
+		<?php if($buttonLabel !== '' && $buttonUrl !== '') : ?>
+			<div class="dw-site-block__action">
+				<a class="btn btn-outline-primary" href="<?php echo $this->escape($buttonUrl); ?>">
+					<?php echo $this->escape($buttonLabel); ?>
+				</a>
+			</div>
+		<?php endif; ?>
+	</div>
+</section>

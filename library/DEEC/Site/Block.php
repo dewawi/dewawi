@@ -156,6 +156,131 @@ class DEEC_Site_Block
 					],
 				],
 			],
+			'cards' => [
+				'label' => 'ADMIN_PAGEBLOCK_CARDS',
+				'fields' => [
+					[
+						'name' => 'eyebrow',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_EYEBROW',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'title',
+						'type' => 'text',
+						'label' => 'ADMIN_TITLE',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'text',
+						'type' => 'textarea',
+						'label' => 'ADMIN_TEXT',
+						'format' => [
+							'type' => 'html',
+							'allowTags' => ['a', 'p', 'br', 'strong', 'em'],
+							'allowAttribs' => ['href', 'title'],
+						],
+						'attribs' => [
+							'rows' => 6,
+							'class' => 'editor',
+						],
+						'col' => 12,
+					],
+					[
+						'name' => 'columns',
+						'type' => 'select',
+						'label' => 'ADMIN_PAGEBLOCK_COLUMNS',
+						'options' => [
+							'2' => '2',
+							'3' => '3',
+							'4' => '4',
+						],
+						'default' => '3',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'buttonlabel',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_BUTTON_TEXT',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'buttonurl',
+						'type' => 'text',
+						'label' => 'ADMIN_URL',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+				],
+			],
+			'card' => [
+				'label' => 'ADMIN_PAGEBLOCK_CARD',
+				'parent' => 'cards',
+				'fields' => [
+					[
+						'name' => 'eyebrow',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_EYEBROW',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'title',
+						'type' => 'text',
+						'label' => 'ADMIN_TITLE',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'text',
+						'type' => 'textarea',
+						'label' => 'ADMIN_TEXT',
+						'format' => [
+							'type' => 'html',
+							'allowTags' => ['a', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li'],
+							'allowAttribs' => ['href', 'title'],
+						],
+						'attribs' => [
+							'rows' => 8,
+							'class' => 'editor',
+						],
+						'col' => 12,
+					],
+					[
+						'name' => 'image',
+						'type' => 'text',
+						'label' => 'ADMIN_CATEGORY_IMAGE',
+						'format' => ['type' => 'string'],
+						'attribs' => ['data-filemanager' => 'image'],
+						'col' => 12,
+					],
+					[
+						'name' => 'imagealt',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_IMAGE_ALT',
+						'format' => ['type' => 'string'],
+						'col' => 12,
+					],
+					[
+						'name' => 'buttonlabel',
+						'type' => 'text',
+						'label' => 'ADMIN_PAGEBLOCK_BUTTON_TEXT',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+					[
+						'name' => 'buttonurl',
+						'type' => 'text',
+						'label' => 'ADMIN_URL',
+						'format' => ['type' => 'string'],
+						'col' => 6,
+					],
+				],
+			],
 		];
 	}
 
