@@ -38,6 +38,18 @@ class Admin_Form_Menuitem extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'categoryid',
+			'type' => 'select',
+			'label' => 'ADMIN_MENU_CATEGORY',
+			'options' => [
+				'0' => 'ADMIN_MENU_NO_CATEGORY',
+			],
+			'default' => '0',
+			'tab' => 'settings',
+			'col' => 6,
+		]);
+
+		$this->addElement([
 			'name' => 'parentid',
 			'type' => 'select',
 			'label' => 'ADMIN_PARENT_MENU_ITEM',
@@ -70,6 +82,21 @@ class Admin_Form_Menuitem extends DEEC_Form
 			'attribs' => [
 				'size' => 12,
 			],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'variant',
+			'type' => 'select',
+			'label' => 'ADMIN_MENU_VARIANT',
+			'options' => [
+				'default' => 'ADMIN_MENU_VARIANT_DEFAULT',
+				'action' => 'ADMIN_MENU_VARIANT_ACTION',
+				'highlight' => 'ADMIN_MENU_VARIANT_HIGHLIGHT',
+			],
+			'default' => 'default',
+			'format' => ['type' => 'string'],
 			'tab' => 'overview',
 			'col' => 6,
 		]);

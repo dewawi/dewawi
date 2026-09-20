@@ -1545,8 +1545,10 @@ CREATE TABLE IF NOT EXISTS `menuitem` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `menuid` int(11) NOT NULL,
   `pageid` int(11) NOT NULL,
+  `categoryid` int(11) NOT NULL DEFAULT 0,
   `parentid` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
+  `variant` varchar(50) NOT NULL DEFAULT 'default',
   `ordering` int(11) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
@@ -1558,7 +1560,8 @@ CREATE TABLE IF NOT EXISTS `menuitem` (
   `activated` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (menuid)
+  KEY (menuid),
+  KEY (categoryid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `module` (

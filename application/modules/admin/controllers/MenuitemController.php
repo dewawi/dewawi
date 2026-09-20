@@ -44,6 +44,9 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 		$pageDb = new Admin_Model_DbTable_Page();
 		$pageOptions = ['0' => 'ADMIN_MENU_NO_PAGE'] + $pageDb->getSelectOptions($this->shopId);
 
+		$categoryDb = new Admin_Model_DbTable_Category();
+		$categoryOptions = ['0' => 'ADMIN_MENU_NO_CATEGORY'] + $categoryDb->getSelectOptions($this->shopId);
+
 		$menuitemDb = new Admin_Model_DbTable_Menuitem();
 		$parentOptions = ['0' => 'ADMIN_MAIN_MENU_ITEM'] + $menuitemDb->getSelectOptions(
 			$this->menuId,
@@ -52,10 +55,12 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 
 		$form->addOptions('menuid', $menuOptions, 'replace');
 		$form->addOptions('pageid', $pageOptions, 'replace');
+		$form->addOptions('categoryid', $categoryOptions, 'replace');
 		$form->addOptions('parentid', $parentOptions, 'replace');
 
 		$formData['options']['menuid'] = $menuOptions;
 		$formData['options']['pageid'] = $pageOptions;
+		$formData['options']['categoryid'] = $categoryOptions;
 		$formData['options']['parentid'] = $parentOptions;
 
 		return $formData;
@@ -131,6 +136,12 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 				'menuid' => (int)$row['menuid'],
 				'parentid' => (int)$values['parentid'],
 			]);
+		}
+
+		if (!empty($values['categoryid'])) {
+			$values['pageid'] = 0;
+		} elseif (!empty($values['pageid'])) {
+			$values['categoryid'] = 0;
 		}
 
 		return $values;

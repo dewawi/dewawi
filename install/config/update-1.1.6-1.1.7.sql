@@ -26,3 +26,7 @@ ALTER TABLE `shop` ADD `catalogenabled` tinyint(1) NOT NULL DEFAULT 0 AFTER `smt
 ALTER TABLE `shop` ADD `checkoutenabled` tinyint(1) NOT NULL DEFAULT 0 AFTER `catalogenabled`;
 ALTER TABLE `shop` ADD `contactenabled` tinyint(1) NOT NULL DEFAULT 0 AFTER `checkoutenabled`;
 ALTER TABLE `shop` ADD `inquiryenabled` tinyint(1) NOT NULL DEFAULT 0 AFTER `contactenabled`;
+
+ALTER TABLE `menuitem` ADD `categoryid` int(11) NOT NULL DEFAULT 0 AFTER `pageid`;
+ALTER TABLE `menuitem` ADD `variant` varchar(50) NOT NULL DEFAULT 'default' AFTER `title`;
+ALTER TABLE `menuitem` ADD INDEX (`categoryid`);

@@ -16,7 +16,14 @@ class Zend_View_Helper_RenderMenuItems extends Zend_View_Helper_Abstract
 			}
 
 			$children = $this->RenderMenuItems($items, (int)$item->id);
-			$url = (int)$item->pageid > 0 ? $this->view->SlugUrl('page', (int)$item->pageid) : '';
+
+			$url = '';
+
+			if ((int)$item->categoryid > 0) {
+				$url = (string)$this->view->SlugUrl('category', (int)$item->categoryid);
+			} elseif ((int)$item->pageid > 0) {
+				$url = (string)$this->view->SlugUrl('page', (int)$item->pageid);
+			}
 
 			if ($url === '' && $children === '') {
 				continue;
