@@ -30,15 +30,31 @@ class Admin_Model_DbTable_Menuitem extends DEEC_Model_DbTable_Entity
 
 	public function getItemsByMenuId(int $menuId): array
 	{
-		$select = $this->select()
-			->where('menuid = ?', $menuId)
-			->where('clientid = ?', $this->getClientId())
-			->where('deleted = ?', 0)
-			->order('parentid ASC')
-			->order('ordering ASC')
-			->order('id ASC');
+		$rows = $this->fetchAll(
+			$this->select()
+				->where('menuid = ?', $menuId)
+				->where('clientid = ?', $this->getClientId())
+				->where('deleted = ?', 0)
+				->order('ordering ASC')
+				->order('id ASC')
+		)->toArray();
 
-		return $this->fetchAll($select)->toArray();
+		return $this->buildTreeList($rows);
+	}
+
+	protected function buildTreeList(array $rows, int $parentId = 0, int $depth = 0): array
+	{
+		$result = [];
+
+		foreach ($rows as $row) {
+			if ((int)$row['parentid'] !== $parentId) continue;
+
+			$row['depth'] = $depth;
+			$result[] = $row;
+			$result = array_merge($result, $this->buildTreeList($rows, (int)$row['id'], $depth + 1));
+		}
+
+		return $result;
 	}
 
 	public function getSelectOptions(int $menuId = 0, int $excludeId = 0): array

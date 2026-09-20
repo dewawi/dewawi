@@ -77,6 +77,8 @@
 	'ADMIN_HOME_PAGE' => 'Startseite',
 	'ADMIN_HEADER_MENU' => 'Header',
 	'ADMIN_FOOTER_MENU' => 'Footer',
+	'ADMIN_HEADER_ACTIONS_MENU' => 'Header Aktionen',
+	'ADMIN_ADD_SUBMENUITEM' => 'Unterpunkt',
 	'ADMIN_SHOP' => 'Shop',
 	'ADMIN_SHOPS' => 'Shops',
 	'ADMIN_PAGES' => 'Seiten',

@@ -38,34 +38,22 @@ class Admin_Model_List_Menuitems extends DEEC_List
 				'name' => 'title',
 				'label' => 'ADMIN_TITLE',
 				'data_label' => 'ADMIN_TITLE',
-				'type' => 'link',
-				'field' => 'title',
-				'fallback_field' => 'id',
-				'url' => [
-					'action' => 'edit',
-					'id_field' => 'id',
-				],
+				'type' => 'callback',
+				'callback' => [$this, 'renderTitle'],
 				'class' => 'dw-col-title',
 			],
 			[
-				'name' => 'subtitle',
-				'label' => 'ADMIN_SUBTITLE',
-				'data_label' => 'ADMIN_SUBTITLE',
-				'type' => 'link',
-				'field' => 'subtitle',
-				'fallback_field' => 'id',
-				'url' => [
-					'action' => 'edit',
-					'id_field' => 'id',
-				],
-				'class' => 'dw-col-subtitle',
+				'name' => 'variant',
+				'label' => 'ADMIN_MENU_VARIANT',
+				'type' => 'text',
+				'class' => 'dw-col-variant',
 			],
 			[
 				'name' => 'parentid',
 				'label' => 'ADMIN_MAIN_MENU_ITEM',
 				'data_label' => 'ADMIN_MAIN_MENU_ITEM',
 				'type' => 'text',
-				'field' => 'subtitle',
+				'field' => 'parentid',
 				'fallback_field' => 'id',
 				'class' => 'dw-col-parentid',
 			],
@@ -114,5 +102,28 @@ class Admin_Model_List_Menuitems extends DEEC_List
 				],
 			],
 		];
+	}
+
+	public function renderTitle($item): string
+	{
+		$id = (int)$this->getFieldValue($item, 'id');
+		$depth = (int)$this->getFieldValue($item, 'depth', 0);
+		$title = str_repeat('— ', $depth).(string)$this->getFieldValue($item, 'title');
+
+		$editUrl = $this->buildUrl($item, [
+			'action' => 'edit',
+			'id_field' => 'id',
+		]);
+
+		$addUrl = $this->getView()->url([
+			'module' => 'admin',
+			'controller' => 'menuitem',
+			'action' => 'add',
+			'menuid' => (int)$this->getContext('menuid'),
+			'parentid' => $id,
+		], null, true);
+
+		return '<a href="'.$this->escapeAttr($editUrl).'">'.$this->escape($title).'</a>'
+			.' <a class="dw-menuitem-add-child" href="'.$this->escapeAttr($addUrl).'">+ '.$this->escape($this->translate('ADMIN_ADD_SUBMENUITEM')).'</a>';
 	}
 }

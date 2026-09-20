@@ -38,6 +38,7 @@ class Admin_ShopController extends DEEC_Controller_AdminAction
 
 		foreach ([
 			'header' => 'ADMIN_HEADER_MENU',
+			'header-actions' => 'ADMIN_HEADER_ACTIONS_MENU',
 			'footer' => 'ADMIN_FOOTER_MENU',
 		] as $position => $title) {
 			$menuDb->create([
