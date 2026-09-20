@@ -66,23 +66,19 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 		}
 
 		$slugDb = new Admin_Model_DbTable_Slug();
-		$slugDb->addSlug(
+		$slugDb->saveSlug(
 			'shops',
 			'page',
 			(int)$data['shopid'],
 			(int)$data['parentid'],
 			$id,
-			$id
+			(string)$id
 		);
 	}
 
 	protected function afterEditSave(int $id, array $values, array $oldRow): void
 	{
-		if (empty($oldRow['shopid'])) {
-			return;
-		}
-
-		if (!array_key_exists('slug', $values) && !array_key_exists('parentid', $values)) {
+		if (!array_intersect_key($values, array_flip(['slug', 'parentid', 'shopid']))) {
 			return;
 		}
 
@@ -91,10 +87,10 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 		$slugDb->saveSlug(
 			'shops',
 			'page',
-			(int)$oldRow['shopid'],
+			(int)($values['shopid'] ?? $oldRow['shopid']),
 			(int)($values['parentid'] ?? $oldRow['parentid']),
 			$id,
-			(string)($values['slug'] ?? '')
+			array_key_exists('slug', $values) ? (string)$values['slug'] : null
 		);
 	}
 

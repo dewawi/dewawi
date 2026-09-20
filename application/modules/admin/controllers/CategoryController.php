@@ -66,13 +66,13 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 		}
 
 		$slugDb = new Admin_Model_DbTable_Slug();
-		$slugDb->addSlug(
+		$slugDb->saveSlug(
 			'shops',
 			'category',
 			(int)$data['shopid'],
 			(int)$data['parentid'],
 			$id,
-			$id
+			(string)$id
 		);
 	}
 
