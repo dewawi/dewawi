@@ -78,20 +78,24 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 
 	protected function afterEditSave(int $id, array $values, array $oldRow): void
 	{
-		if (!array_intersect_key($values, array_flip(['slug', 'parentid', 'shopid']))) {
+		if (!array_intersect_key($values, array_flip(['slug', 'title', 'parentid', 'shopid']))) {
 			return;
 		}
 
+		$shopId = (int)($values['shopid'] ?? $oldRow['shopid']);
+		$parentId = (int)($values['parentid'] ?? $oldRow['parentid']);
 		$slugDb = new Admin_Model_DbTable_Slug();
+		$existing = $slugDb->getEntitySlug('shops', 'page', $id);
+		$slug = null;
 
-		$slugDb->saveSlug(
-			'shops',
-			'page',
-			(int)($values['shopid'] ?? $oldRow['shopid']),
-			(int)($values['parentid'] ?? $oldRow['parentid']),
-			$id,
-			array_key_exists('slug', $values) ? (string)$values['slug'] : null
-		);
+		if (array_key_exists('slug', $values)) {
+			$slug = DEEC_Filter::slug((string)$values['slug']);
+		} elseif (!$existing || empty($existing['slug']) || (string)$existing['slug'] === (string)$id) {
+			$title = (string)($values['title'] ?? $oldRow['title'] ?? '');
+			if ($title !== '') $slug = DEEC_Filter::slug($title);
+		}
+
+		$slugDb->saveSlug('shops', 'page', $shopId, $parentId, $id, $slug);
 	}
 
 	protected function afterDelete(int $id, array $row): void

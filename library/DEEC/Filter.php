@@ -122,4 +122,12 @@ class DEEC_Filter
 
 		return null;
 	}
+
+	public static function slug(string $value): string
+	{
+		$value = preg_replace('~[^\pL\d]+~u', '-', $value);
+		$value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+		$value = preg_replace('~[^-\w]+~', '', (string)$value);
+		return strtolower(trim((string)$value, '-'));
+	}
 }
