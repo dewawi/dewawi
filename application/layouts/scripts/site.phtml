@@ -8,13 +8,6 @@ $menuitems = is_array($this->menuitems ?? null) ? $this->menuitems : [];
 $language = str_replace('_', '-', (string)$this->siteContext->getLanguage());
 $home = $this->controller === 'index' && $this->action === 'index';
 
-$mainCategories = array_filter($categories, static function($category) {
-	return (int)$category['parentid'] === 0;
-});
-
-$firstCategories = array_slice($mainCategories, 0, 5);
-$otherCategories = array_slice($mainCategories, 5);
-
 $this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
 $this->headTitle()->setSeparator(' - ');
 $this->headTitle($shop['title'] ?? '');
@@ -49,47 +42,12 @@ echo $this->doctype();
 							<?php endif; ?>
 						<?php endforeach; ?>
 
-						<?php foreach($firstCategories as $category) : ?>
-							<?php $url = $this->SlugUrl('category', (int)$category['id']); ?>
-							<?php if($url) : ?>
-								<?php $children = $this->RenderSubCategory($categories, (int)$category['id']); ?>
-								<li class="nav-item">
-									<a class="nav-link" href="<?php echo $this->escape($url); ?>">
-										<?php echo $this->escape($category['title']); ?>
-									</a>
-									<?php if($children !== '') : ?>
-										<ul class="submenu"><?php echo $children; ?></ul>
-									<?php endif; ?>
-								</li>
-							<?php endif; ?>
-						<?php endforeach; ?>
-
-						<?php if($otherCategories) : ?>
-							<li class="nav-item">
-								<a class="nav-link" href="#"><?php echo $this->translate('SHOPS_OTHER_CATEGORIES'); ?></a>
-								<ul class="submenu">
-									<?php foreach($otherCategories as $category) : ?>
-										<?php $url = $this->SlugUrl('category', (int)$category['id']); ?>
-										<?php if($url) : ?>
-											<?php $children = $this->RenderSubCategory($categories, (int)$category['id']); ?>
-											<li class="right-edge">
-												<a href="<?php echo $this->escape($url); ?>"><?php echo $this->escape($category['title']); ?></a>
-												<?php if($children !== '') : ?>
-													<ul class="submenu"><?php echo $children; ?></ul>
-												<?php endif; ?>
-											</li>
-										<?php endif; ?>
-									<?php endforeach; ?>
-								</ul>
-							</li>
-						<?php endif; ?>
+						<?php echo $this->RenderCategoryNavigation($categories); ?>
 
 						<?php if($this->siteContext->hasFeature('cart')) : ?>
 							<li class="nav-item">
 								<a class="nav-link" href="<?php echo $this->url(array(), 'cart'); ?>" id="navbar-cart">
-									🛒 <span id="cart-count" class="badge badge-danger">
-										<?php echo $this->cart->getItemCount(); ?>
-									</span>
+									🛒 <span id="cart-count" class="badge badge-danger"><?php echo $this->cart->getItemCount(); ?></span>
 								</a>
 							</li>
 						<?php endif; ?>
