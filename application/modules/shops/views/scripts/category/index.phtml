@@ -146,39 +146,46 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 			<!-- List Overview of Products -->
 			<div class="list-group">
 				<?php foreach($this->items as $item) : ?>
-					<script type="application/ld+json">
-					{
-						"@context": "https://schema.org/",
-						"@type": "Product",
-						"name": "<?php echo $item->title; ?>",
-						<?php if (count($this->images['items'][$item->id]) > 0): ?>
-							<?php $folder = 'images'; ?>
-							"image": [
-								<?php
-								$totalImages = count($this->images['items'][$item->id]);
-								$i = 0;
-								foreach ($this->images['items'][$item->id] as $image):
-									$i++;
-								?>
-									"<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image['url']); ?>"<?php if ($i < $totalImages) echo ','; ?>
-								<?php endforeach; ?>
-							],
-						<?php endif; ?>
-						"description": "<?php echo $item->shopdescriptionshort; ?>",
-						"sku": "<?php echo $item->sku; ?>",
-						"brand": {
-							"@type": "Brand",
-							"name": "<?php echo $this->manufacturers[$item->manufacturerid]; ?>"
-						},
-						"offers": {
-							"@type": "Offer",
-							"url": "<?php echo $this->shop['url'].$this->SlugUrl('item', $item->id); ?>",
-							"priceCurrency": "<?php echo $item->currency; ?>",
-							"price": "<?php echo $this->prices[$item->id]['rawtax']; ?>",
-							"availability": "https://schema.org/InStock"
-						}
+					<?php
+					$itemId = (int)$item->id;
+					$itemUrl = $this->SlugUrl('item', $itemId);
+					$itemMedia = $this->images['items'][$itemId] ?? [];
+					$itemImages = [];
+
+					foreach ($itemMedia as $media) {
+						if (($media['type'] ?? '') !== 'image') continue;
+						$itemImages[] = $this->baseUrl() . '/media/images/' . (string)$media['url'];
 					}
-					</script>
+
+					$productSchema = [
+						'@context' => 'https://schema.org/',
+						'@type' => 'Product',
+						'name' => (string)$item->title,
+						'description' => trim(strip_tags((string)$item->shopdescriptionshort)),
+						'sku' => (string)$item->sku,
+						'offers' => [
+							'@type' => 'Offer',
+							'url' => (string)($this->shop['url'] ?? '') . (string)$itemUrl,
+							'priceCurrency' => (string)$item->currency,
+							'price' => (float)$this->prices[$itemId]['rawtax'],
+							'availability' => 'https://schema.org/InStock',
+						],
+					];
+
+					if ($itemImages) {
+						$productSchema['image'] = $itemImages;
+					}
+
+					$manufacturer = trim((string)($this->manufacturers[(int)$item->manufacturerid] ?? ''));
+
+					if ($manufacturer !== '') {
+						$productSchema['brand'] = [
+							'@type' => 'Brand',
+							'name' => $manufacturer,
+						];
+					}
+					?>
+					<script type="application/ld+json"><?php echo Zend_Json::encode($productSchema); ?></script>
 					<?php if($item->title) : ?>
 						<div class="list-group-item">
 							<div class="row d-flex align-items-center"> <!-- Flexbox and vertical alignment -->
@@ -203,16 +210,15 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 										+
 									</button>
 									<div>
-										<?php $itemUrl = $this->SlugUrl('item', $item->id); ?>
 										<?php if($itemUrl) : ?>
-											<a href="<?php echo $itemUrl; ?>">
-												<strong><?php echo $item->title; ?></strong>
+											<a href="<?php echo $this->escape($itemUrl); ?>">
+												<strong><?php echo $this->escape($item->title); ?></strong>
 											</a>
 										<?php else : ?>
-											<strong><?php echo $item->title; ?></strong>
+											<strong><?php echo $this->escape($item->title); ?></strong>
 										<?php endif; ?>
 										<br>
-										<span><?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $item->sku; ?></span>
+										<span><?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $this->escape($item->sku); ?></span>
 									</div>
 								</div>
 
