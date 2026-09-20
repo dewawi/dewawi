@@ -1,53 +1,57 @@
 <?php
-/**
-* Class inserts neccery code for Toolbar
-*/
+
 class Zend_View_Helper_RenderCategory extends Zend_View_Helper_Abstract
 {
-	public function RenderCategory($category) {
-		$url = $this->view->SlugUrl('category', $category['id']);
-		$output = '';
-		$output .= '<div class="col-md-3 mb-3 px-2 d-flex align-items-stretch">';
-		$output .= '	<div class="card">';
-		$output .= '		<a href="' . $url . '">';
-		if (isset($this->view->images['categories'][$category['id']][0]) && ($this->view->images['categories'][$category['id']][0]['type'] == 'image')) {
-			$categoryImage = $this->view->images['categories'][$category['id']][0]['url'];
-			$output .= '			<a href="' . $url . '">';
-			$output .= '				<img src="' . $this->view->baseUrl() . '/media/category/' . $categoryImage . '" class="card-img-top" alt="Category Image">';
-			$output .= '			</a>';
-		} elseif (isset($this->view->images['categories'][$category['id']][1]) && ($this->view->images['categories'][$category['id']][1]['type'] == 'image')) {
-			$categoryImage = $this->view->images['categories'][$category['id']][1]['url'];
-			$output .= '			<a href="' . $url . '">';
-			$output .= '				<img src="' . $this->view->baseUrl() . '/media/category/' . $categoryImage . '" class="card-img-top" alt="Category Image">';
-			$output .= '			</a>';
-		}
-		$output .= '		</a>';
-		if (isset($this->view->images['categories'][$category['id']][0]) && ($this->view->images['categories'][$category['id']][0]['type'] == 'image')) {
-			if ($this->view->images['categories'][$category['id']][0]['title'] || $category['subtitle']) {
-				$subtitle = $this->view->images['categories'][$category['id']][0]['title'] ? $this->view->images['categories'][$category['id']][0]['title'] : $category['subtitle'];
-				$output .= '		<div class="category-text">';
-				$output .= '			<h3 class="text-right text-white">' . $subtitle . '</h3>';
-				$output .= '		</div>';
-			}
-		} elseif (isset($this->view->images['categories'][$category['id']][1]) && ($this->view->images['categories'][$category['id']][1]['type'] == 'image')) {
-			if ($this->view->images['categories'][$category['id']][1]['title'] || $category['subtitle']) {
-				$subtitle = $this->view->images['categories'][$category['id']][0]['title'] ? $this->view->images['categories'][$category['id']][1]['title'] : $category['subtitle'];
-				$output .= '		<div class="category-text">';
-				$output .= '			<h3 class="text-right text-white">' . $subtitle . '</h3>';
-				$output .= '		</div>';
+	public function RenderCategory(array $category): string
+	{
+		$url = (string)$this->view->SlugUrl('category', (int)$category['id']);
+		$title = (string)($category['title'] ?? '');
+		$subtitle = (string)($category['subtitle'] ?? '');
+		$description = (string)($category['minidescription'] ?? '');
+		$media = $this->view->images['categories'][$category['id']] ?? [];
+		$image = null;
+
+		foreach ($media as $item) {
+			if (($item['type'] ?? '') === 'image') {
+				$image = $item;
+				break;
 			}
 		}
-		$output .= '		<div class="card-body px-3">';
-		$output .= '			<a href="' . $url . '">';
-		$output .= '				<h5 class="card-title">' . $category['title'] . '</h5>';
-		$output .= '			</a>';
-		if ($category['subtitle']) {
-			$output .= '			<h6 class="card-title">' . $category['subtitle'] . '</h6>';
+
+		$html = '<div class="col-md-3 mb-3 px-2 d-flex align-items-stretch">';
+		$html .= '<div class="card">';
+
+		if ($image) {
+			$imageUrl = $this->view->baseUrl() . '/media/category/' . (string)$image['url'];
+			$html .= '<a href="' . $this->view->escape($url) . '">';
+			$html .= '<img src="' . $this->view->escape($imageUrl) . '" class="card-img-top" alt="' . $this->view->escape($title) . '">';
+			$html .= '</a>';
+
+			$imageTitle = trim((string)($image['title'] ?? ''));
+			$imageSubtitle = $imageTitle !== '' ? $imageTitle : $subtitle;
+
+			if ($imageSubtitle !== '') {
+				$html .= '<div class="category-text">';
+				$html .= '<h3 class="text-right text-white">' . $this->view->escape($imageSubtitle) . '</h3>';
+				$html .= '</div>';
+			}
 		}
-		$output .= '			<p class="card-text">' . $category['minidescription'] . '</p>';
-		$output .= '		</div>';
-		$output .= '	</div>';
-		$output .= '</div>';
-		return $output;
+
+		$html .= '<div class="card-body px-3">';
+		$html .= '<a href="' . $this->view->escape($url) . '"><h5 class="card-title">' . $this->view->escape($title) . '</h5></a>';
+
+		if ($subtitle !== '') {
+			$html .= '<h6 class="card-title">' . $this->view->escape($subtitle) . '</h6>';
+		}
+
+		if ($description !== '') {
+			$html .= '<div class="card-text">' . $description . '</div>';
+		}
+
+		$html .= '</div>';
+		$html .= '</div>';
+		$html .= '</div>';
+
+		return $html;
 	}
 }

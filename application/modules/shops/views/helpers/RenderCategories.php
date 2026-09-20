@@ -1,20 +1,21 @@
 <?php
-/**
-* Class inserts neccery code for Toolbar
-*/
+
 class Zend_View_Helper_RenderCategories extends Zend_View_Helper_Abstract
 {
-	public function RenderCategories($categories, $parentid = 0) {
-		$output = '';
-		if (!empty($categories)) {
-			$output .= '<div class="row">';
-			foreach ($categories as $category) {
-				if ($parentid == $category['parentid']) {
-					$output .= $this->view->RenderCategory($category);
-				}
-			}
-			$output .= '</div>';
+	public function RenderCategories(array $categories, int $parentId = 0): string
+	{
+		if (!$categories) return '';
+
+		$html = '<div class="row">';
+
+		foreach ($categories as $category) {
+			if ((int)$category['parentid'] !== $parentId) continue;
+
+			$html .= $this->view->RenderCategory($category);
 		}
-		return $output;
+
+		$html .= '</div>';
+
+		return $html;
 	}
 }
