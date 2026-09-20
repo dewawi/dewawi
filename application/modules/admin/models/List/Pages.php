@@ -20,6 +20,12 @@ class Admin_Model_List_Pages extends DEEC_List
 				'fallback_field' => 'id',
 			],
 			[
+				'name' => 'slug',
+				'label' => 'ADMIN_SLUG',
+				'type' => 'text',
+				'class' => 'dw-col-slug',
+			],
+			[
 				'name' => 'parentid',
 				'label' => 'ADMIN_PARENT_CATEGORY',
 				'type' => 'text',

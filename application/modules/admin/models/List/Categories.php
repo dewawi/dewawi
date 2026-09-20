@@ -32,6 +32,12 @@ class Admin_Model_List_Categories extends DEEC_List
 				'class' => 'dw-col-title',
 			],
 			[
+				'name' => 'slug',
+				'label' => 'ADMIN_SLUG',
+				'type' => 'text',
+				'class' => 'dw-col-slug',
+			],
+			[
 				'name' => 'parentid',
 				'label' => 'ADMIN_MAIN_CATEGORY',
 				'data_label' => 'ADMIN_MAIN_CATEGORY',

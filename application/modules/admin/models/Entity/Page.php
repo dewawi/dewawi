@@ -11,6 +11,7 @@ class Admin_Model_Entity_Page
 			'columns' => [
 				'p.*',
 				'shoptitle' => 's.title',
+				'slug' => 'sl.slug',
 			],
 
 			'joins' => [
@@ -18,7 +19,7 @@ class Admin_Model_Entity_Page
 					'type' => 'left',
 					'table' => 'shop',
 					'alias' => 's',
-					'on' => 'p.shopid = s.id',
+					'on' => "sl.clientid = p.clientid AND sl.shopid = p.shopid AND sl.module = 'shops' AND sl.controller = 'page' AND sl.entityid = p.id AND sl.deleted = 0",
 					'columns' => [],
 				],
 			],
@@ -27,6 +28,7 @@ class Admin_Model_Entity_Page
 				'title',
 				'content',
 				'image',
+				'sl.slug',
 			],
 
 			'filters' => [
@@ -47,6 +49,7 @@ class Admin_Model_Entity_Page
 			'orders' => [
 				'id',
 				'title',
+				'slug' => 'sl.slug',
 				'parentid',
 				'ordering',
 				'created',
