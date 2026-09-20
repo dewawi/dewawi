@@ -93,7 +93,7 @@ class Admin_Model_DbTable_Page extends DEEC_Model_DbTable_Entity
 		$this->update($data, 'id =' . (int)$id);
 	}
 
-	public function getSelectOptions(int $shopId = 0): array
+	public function getSelectOptions(int $shopId = 0, int $excludeId = 0): array
 	{
 		$select = $this->select()
 			->where('clientid = ?', $this->getClientId())
@@ -103,6 +103,10 @@ class Admin_Model_DbTable_Page extends DEEC_Model_DbTable_Entity
 			$select->where('shopid = ?', $shopId);
 		}
 
+		if ($excludeId > 0) {
+			$select->where('id != ?', $excludeId);
+		}
+
 		$select
 			->order('ordering ASC')
 			->order('title ASC');
@@ -110,7 +114,7 @@ class Admin_Model_DbTable_Page extends DEEC_Model_DbTable_Entity
 		$options = [];
 
 		foreach ($this->fetchAll($select)->toArray() as $row) {
-			$options[(string)$row['id']] = $row['shopid'].':'.(string)$row['title'];
+			$options[(string)$row['id']] = $shopId > 0 ? (string)$row['title'] : $row['shopid'].':'.(string)$row['title'];
 		}
 
 		return $options;

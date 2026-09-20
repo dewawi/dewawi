@@ -63,7 +63,7 @@ class Admin_Model_DbTable_Menu extends DEEC_Model_DbTable_Entity
 		$options = [];
 
 		foreach ($this->fetchAll($select)->toArray() as $row) {
-			$options[(string)$row['id']] = $row['shopid'].':'.(string)$row['title'];
+			$options[(string)$row['id']] = $shopId > 0 ? (string)$row['title'] : $row['shopid'].':'.(string)$row['title'];
 		}
 
 		return $options;

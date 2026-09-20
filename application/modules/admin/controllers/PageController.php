@@ -2,6 +2,8 @@
 
 class Admin_PageController extends DEEC_Controller_AdminAction
 {
+	protected int $shopId = 0;
+
 	protected function buildIndexView(): void
 	{
 		$this->buildListView([
@@ -19,6 +21,23 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 			'parentid' => (int)$this->_getParam('parentid', 0),
 			'type' => (string)$this->_getParam('type', ''),
 		];
+	}
+
+	protected function getEditForm(): array
+	{
+		$formData = parent::getEditForm();
+
+		if ($this->shopId <= 0) {
+			return $formData;
+		}
+
+		$pageDb = new Admin_Model_DbTable_Page();
+		$options = ['0' => 'ADMIN_MAIN_PAGE'] + $pageDb->getSelectOptions($this->shopId, (int)$this->view->id);
+
+		$formData['form']->addOptions('parentid', $options, 'replace');
+		$formData['options']['parentid'] = $options;
+
+		return $formData;
 	}
 
 	protected function beforeCreate(array $data): array
@@ -40,6 +59,8 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 
 	protected function prepareEditRow(array $row): array
 	{
+		$this->shopId = (int)($row['shopid'] ?? 0);
+
 		if (empty($row['shopid']) || empty($row['id'])) {
 			$row['slug'] = '';
 			return $row;
