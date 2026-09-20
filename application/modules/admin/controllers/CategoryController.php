@@ -123,6 +123,15 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 
 	protected function afterEditSave(int $id, array $values, array $oldRow): void
 	{
+		if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$oldRow['parentid']) {
+			$this->resetOrdering(
+				Admin_Model_DbTable_Category::class,
+				'getCategories',
+				'sortCategory',
+				[(string)($oldRow['type'] ?? ''), (int)$oldRow['parentid'], (int)($oldRow['shopid'] ?? 0)]
+			);
+		}
+
 		if (!array_intersect_key($values, array_flip(['slug', 'title', 'type', 'parentid', 'shopid']))) {
 			return;
 		}
