@@ -61,26 +61,52 @@ if ($manufacturer !== '') {
 			</div>
 			<div class="col-md-6 mb-4">
 				<div class="main-image-wrapper">
-					<?php if(isset($this->images) && isset($this->images[0])) : ?>
-						<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->images[0]['url']; ?>" id="mainImage" class="img-fluid" alt="Product Image" onclick="openModal()">
-					<?php else : ?>
-						<img src="" id="mainImage" class="img-fluid" alt="Product Image">
+					<?php if($previewImage) : ?>
+						<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" id="mainImage" class="img-fluid" alt="<?php echo $this->escape($previewImage['title'] ?? $itemTitle); ?>" onclick="openModal()">
 					<?php endif; ?>
 				</div>
+				<?php if($previewImage) : ?>
+					<span class="imagetitle"><?php echo $this->escape($previewImage['title'] ?? ''); ?></span>
+					<span class="imagedescription"></span>
+				<?php endif; ?>
 				<?php if($previewImage) : ?>
 					<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" id="mainImage" class="img-fluid" alt="<?php echo $this->escape($previewImage['title'] ?? $itemTitle); ?>" onclick="openModal()">
 				<?php endif; ?>
 				<div class="row">
-					<?php if(isset($this->images) && count($this->images)) : ?>
-						<?php foreach($itemImages as $image) : ?>
-							<div class="col-md-3 mb-2">
-								<div class="thumbnail-wrapper">
-									<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" class="img-thumbnail" alt="<?php echo $this->escape($image['title'] ?? $itemTitle); ?>" onclick="changeMainImage(this)">
-									<span class="imagetitle" style="display:none"><?php echo $this->escape($image['title'] ?? ''); ?></span>
-									<span class="imagedescription" style="display:none"></span>
+					<?php if($itemImages) : ?>
+						<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-hidden="true">
+							<div class="modal-dialog modal-xl" role="document">
+								<div class="modal-content">
+									<div class="modal-body">
+										<div id="carouselExampleControls" class="carousel slide" data-interval="false">
+											<div class="carousel-inner">
+												<?php foreach($itemImages as $index => $image) : ?>
+													<div class="carousel-item<?php echo $index === 0 ? ' active' : ''; ?>">
+														<div class="modal-image-wrapper">
+															<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" class="d-block w-100" alt="<?php echo $this->escape($image['title'] ?? $itemTitle); ?>">
+														</div>
+														<?php if(!empty($image['title'])) : ?>
+															<span><?php echo $this->escape($image['title']); ?></span>
+														<?php endif; ?>
+													</div>
+												<?php endforeach; ?>
+											</div>
+
+											<?php if(count($itemImages) > 1) : ?>
+												<a class="carousel-control-prev" href="#carouselExampleControls" role="button" data-slide="prev">
+													<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+													<span class="sr-only">Previous</span>
+												</a>
+												<a class="carousel-control-next" href="#carouselExampleControls" role="button" data-slide="next">
+													<span class="carousel-control-next-icon" aria-hidden="true"></span>
+													<span class="sr-only">Next</span>
+												</a>
+											<?php endif; ?>
+										</div>
+									</div>
 								</div>
 							</div>
-						<?php endforeach; ?>
+						</div>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -316,13 +342,9 @@ if ($manufacturer !== '') {
 
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
-		var imageModal = document.getElementById('imageModal');
-		var carousel = imageModal.querySelector('.carousel');
-
-		carousel.addEventListener('slid.bs.carousel', function () {
-			var activeImage = carousel.querySelector('.carousel-item.active img');
-			var mainImage = document.getElementById('mainImage');
-			mainImage.src = activeImage.src;
+		$('#carouselExampleControls').on('slid.bs.carousel', function () {
+			var activeImage = $(this).find('.carousel-item.active img').get(0);
+			if (activeImage) $('#mainImage').attr('src', activeImage.src);
 		});
 	});
 
@@ -381,7 +403,6 @@ if ($manufacturer !== '') {
 	}
 
 	function openModal() {
-		var myModal = new bootstrap.Modal(document.getElementById('imageModal'));
-		myModal.show();
+		$('#imageModal').modal('show');
 	}
 </script>
