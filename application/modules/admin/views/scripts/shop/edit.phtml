@@ -1,7 +1,19 @@
-<?php 
+<?php
+
 $this->title = $this->form->getValue('title');
 $this->headTitle($this->title);
+
 echo $this->TinyMCE();
 echo $this->FileManager();
-echo $this->form->renderForm();
-?>
+
+echo $this->form->renderForm([
+	'id' => 'shop',
+	'activeTab' => $this->activeTab,
+	'tabs' => [
+		'overview' => ['title' => 'TABS_OVERVIEW'],
+		'design' => ['title' => 'ADMIN_DESIGN'],
+		'content' => ['title' => 'TABS_CONTENT'],
+		'features' => ['title' => 'ADMIN_SITE_FEATURES'],
+		'settings' => ['title' => 'TABS_SETTINGS'],
+	],
+]);

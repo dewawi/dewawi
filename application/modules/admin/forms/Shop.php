@@ -16,10 +16,9 @@ class Admin_Form_Shop extends DEEC_Form
 			'type' => 'text',
 			'label' => 'ADMIN_TITLE',
 			'format' => ['type' => 'string'],
-			'attribs' => [
-				'maxlength' => 255,
-			],
-			'col' => 12,
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'overview',
+			'col' => 6,
 		]);
 
 		$this->addElement([
@@ -27,10 +26,29 @@ class Admin_Form_Shop extends DEEC_Form
 			'type' => 'text',
 			'label' => 'ADMIN_URL',
 			'format' => ['type' => 'string'],
-			'attribs' => [
-				'maxlength' => 255,
-			],
-			'col' => 12,
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'activated',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_ACTIVATED',
+			'format' => ['type' => 'int'],
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'theme',
+			'type' => 'text',
+			'label' => 'ADMIN_THEME',
+			'format' => ['type' => 'string'],
+			'default' => 'default',
+			'attribs' => ['maxlength' => 100],
+			'tab' => 'design',
+			'col' => 6,
 		]);
 
 		$this->addElement([
@@ -38,31 +56,52 @@ class Admin_Form_Shop extends DEEC_Form
 			'type' => 'text',
 			'label' => 'ADMIN_LOGO',
 			'format' => ['type' => 'string'],
-			'attribs' => [
-				'maxlength' => 255,
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'design',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'contact',
+			'type' => 'textarea',
+			'label' => 'ADMIN_CONTACT',
+			'format' => [
+				'type' => 'html',
+				'allowTags' => ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
 			],
+			'attribs' => [
+				'rows' => 12,
+				'class' => 'editor',
+			],
+			'tab' => 'content',
 			'col' => 12,
 		]);
 
 		$this->addElement([
 			'name' => 'footer',
-			'type' => 'text',
+			'type' => 'textarea',
 			'label' => 'ADMIN_FOOTER',
-			'format' => ['type' => 'string'],
-			'attribs' => [
-				'maxlength' => 255,
+			'format' => [
+				'type' => 'html',
+				'allowTags' => ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'em', 'ul', 'ol', 'li'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
 			],
+			'attribs' => [
+				'rows' => 8,
+				'class' => 'editor',
+			],
+			'tab' => 'content',
 			'col' => 12,
 		]);
 
 		$this->addElement([
-			'name' => 'emailsender',
+			'name' => 'copyright',
 			'type' => 'text',
-			'label' => 'ADMIN_EMAIL',
+			'label' => 'ADMIN_COPYRIGHT',
 			'format' => ['type' => 'string'],
-			'attribs' => [
-				'maxlength' => 255,
-			],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'content',
 			'col' => 12,
 		]);
 
@@ -72,6 +111,7 @@ class Admin_Form_Shop extends DEEC_Form
 			'label' => 'ADMIN_CATALOG_ENABLED',
 			'format' => ['type' => 'int'],
 			'default' => 0,
+			'tab' => 'features',
 			'col' => 6,
 		]);
 
@@ -81,6 +121,7 @@ class Admin_Form_Shop extends DEEC_Form
 			'label' => 'ADMIN_CHECKOUT_ENABLED',
 			'format' => ['type' => 'int'],
 			'default' => 0,
+			'tab' => 'features',
 			'col' => 6,
 		]);
 
@@ -90,6 +131,7 @@ class Admin_Form_Shop extends DEEC_Form
 			'label' => 'ADMIN_CONTACT_ENABLED',
 			'format' => ['type' => 'int'],
 			'default' => 0,
+			'tab' => 'features',
 			'col' => 6,
 		]);
 
@@ -99,14 +141,48 @@ class Admin_Form_Shop extends DEEC_Form
 			'label' => 'ADMIN_INQUIRY_ENABLED',
 			'format' => ['type' => 'int'],
 			'default' => 0,
+			'tab' => 'features',
 			'col' => 6,
 		]);
 
 		$this->addElement([
-			'name' => 'activated',
-			'type' => 'checkbox',
-			'label' => 'ADMIN_ACTIVATED',
-			'format' => ['type' => 'int'],
+			'name' => 'language',
+			'type' => 'select',
+			'label' => 'ADMIN_LANGUAGE',
+			'options' => [],
+			'source' => 'language',
+			'format' => ['type' => 'string'],
+			'tab' => 'settings',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'timezone',
+			'type' => 'text',
+			'label' => 'ADMIN_TIMEZONE',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'settings',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'emailsender',
+			'type' => 'text',
+			'label' => 'ADMIN_EMAIL',
+			'format' => ['type' => 'string'],
+			'attribs' => ['maxlength' => 255],
+			'tab' => 'settings',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'name' => 'analytics',
+			'type' => 'textarea',
+			'label' => 'ADMIN_ANALYTICS',
+			'format' => ['type' => 'string'],
+			'attribs' => ['rows' => 12],
+			'tab' => 'settings',
 			'col' => 12,
 		]);
 	}
