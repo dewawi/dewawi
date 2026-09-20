@@ -92,6 +92,7 @@ header.home {
 	margin: -5px 0;
 }
 
+/* Menu styles */
 .navbar {
 	padding: 0;
 }
@@ -104,6 +105,45 @@ header.home {
 }
 .nav-link {
 	padding: 20px;
+}
+
+@media (max-width: 991.98px) {
+	.navbar {
+		padding: .5rem 0;
+	}
+
+	.navbar-collapse {
+		padding-bottom: .75rem;
+	}
+
+	.navbar-nav .nav-item {
+		margin-right: 0;
+	}
+
+	.navbar-nav .nav-link {
+		padding: .75rem 0;
+	}
+
+	.navbar-nav .submenu {
+		display: block;
+		position: static;
+		min-width: 0;
+		margin: 0 0 0 1rem;
+		padding: 0;
+		background: transparent;
+		box-shadow: none;
+		opacity: 1;
+		white-space: normal;
+	}
+
+	.navbar-nav .submenu .submenu {
+		margin-left: 1rem;
+	}
+
+	.navbar-nav .submenu a {
+		max-width: none;
+		padding: .4rem 0;
+	}
 }
 
 /* Submenu styles */

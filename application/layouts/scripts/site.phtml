@@ -26,7 +26,7 @@ echo $this->doctype();
 </head>
 <body>
 	<header <?php if($home) echo 'class="home"' ?>>
-		<nav class="navbar navbar-expand-lg">
+		<nav class="navbar navbar-expand-lg navbar-light">
 			<div class="container">
 				<a class="navbar-brand" href="<?php echo $this->url(array(), 'shop_home'); ?>">
 					<img src="<?php echo $this->baseUrl(); ?>/media/header/<?php echo $shop['logo'] ?? ''; ?>" alt="<?php echo $shop['title'] ?? ''; ?>" height="75">
@@ -96,9 +96,8 @@ echo $this->doctype();
 	</footer>
 
 	<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/shops.js"></script>
-	<?php echo $this->shop['analytics']; ?>
+	<?php echo $shop['analytics'] ?? ''; ?>
 </body>
 </html>
