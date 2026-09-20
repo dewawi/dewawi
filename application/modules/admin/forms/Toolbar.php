@@ -131,6 +131,7 @@ class Admin_Form_Toolbar extends DEEC_Form
 				'0' => 'ADMIN_SELECT',
 				'contact' => 'CONTACTS',
 				'item' => 'ITEMS',
+				'shop' => 'ADMIN_SHOPS',
 			],
 			'filter' => true,
 			'wrap' => false,

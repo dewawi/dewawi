@@ -49,6 +49,12 @@ class Application_Controller_Action_Helper_Params extends Zend_Controller_Action
 			return $request->getPost($name, $default);
 		}
 
+		$params = $request->getParams();
+
+		if (array_key_exists($name, $params)) {
+			return $request->getParam($name, $default);
+		}
+
 		return $request->getCookie($name, $default);
 	}
 
