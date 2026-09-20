@@ -108,10 +108,14 @@ if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
 							<span style="text-decoration: line-through; font-size: 1.3rem;">
 								Listenpreis: <?php echo $this->prices['formatted']; ?>
 							</span><br>
-							<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+							<?php if($this->siteContext->hasFeature('inquiry')) : ?>
+								<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+							<?php endif; ?>
 						<?php else : ?>
 							<span style="font-size: 1.3rem;">Listenpreis: <?php echo $this->prices['formatted']; ?></span> *<br>
-							<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+							<?php if($this->siteContext->hasFeature('inquiry')) : ?>
+								<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+							<?php endif; ?>
 						<?php endif; ?>
 					</p>
 					<?php if($this->prices['rawtax'] > $this->prices['raw']) : ?>

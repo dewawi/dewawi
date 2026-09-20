@@ -37,6 +37,7 @@ $parentCategoryDownloads = array_values(array_filter($parentCategoryMedia, stati
 }));
 
 $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
+$inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 ?>
 
 <!-- Display category header if it exists -->
@@ -250,7 +251,9 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 											<span><strong>Auf Anfrage</strong></span>
 										<?php else : ?>
 											<strong>Listenpreis: <?php echo $itemPrice['formatted']; ?></strong> *<br>
-											<span style="font-size: 0.8rem;"><strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong></span>
+											<?php if($inquiryEnabled) : ?>
+												<span style="font-size: 0.8rem;"><strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong></span>
+											<?php endif; ?>
 										<?php endif; ?>
 									</p>
 									<?php if($itemPrice['rawtax'] > $itemPrice['raw']) : ?>
@@ -270,12 +273,11 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 
 
 								</div>
-								<div class="col-md-2 d-flex justify-content-between">
-									<!--<button class="btn btn-info" onclick="showTab('<?php echo $item->id; ?>', 'description')">Description</button>-->
-									<!--<button class="btn btn-info" onclick="showTab('<?php echo $item->id; ?>', 'attributes')">Attributes</button>-->
-									<!--<button class="btn btn-info" onclick="showTab('<?php echo $item->id; ?>', 'options')">Options</button>-->
-									<button class="btn btn-info" onclick="showTab('<?php echo $item->id; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
-								</div>
+								<?php if($inquiryEnabled) : ?>
+									<div class="col-md-2 d-flex justify-content-between">
+										<button class="btn btn-info" onclick="showTab('<?php echo $itemId; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
+									</div>
+								<?php endif; ?>
 
 								<!-- Add to Cart Button -->
 								<!-- <div class="col-md-2 d-flex justify-content-end">
@@ -308,9 +310,11 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 											</a>
 										</li>
 									<?php endif; ?>
-									<li class="nav-item">
-										<a class="nav-link" id="inquiry-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#inquiry_<?php echo $item->id; ?>" role="tab" aria-controls="inquiry_<?php echo $item->id; ?>" aria-selected="false"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></a>
-									</li>
+									<?php if($inquiryEnabled) : ?>
+										<li class="nav-item">
+											<a class="nav-link" id="inquiry-tab_<?php echo $itemId; ?>" data-toggle="tab" href="#inquiry_<?php echo $itemId; ?>" role="tab" aria-controls="inquiry_<?php echo $itemId; ?>" aria-selected="false"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></a>
+										</li>
+									<?php endif; ?>
 								</ul>
 
 								<div class="tab-content" id="productTabContent_<?php echo $item->id; ?>">
@@ -437,11 +441,13 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 									<?php endif; ?>
 
 									<!-- Inquiry Tab -->
-									<div class="tab-pane fade" id="inquiry_<?php echo $item->id; ?>" role="tabpanel" aria-labelledby="inquiry-tab_<?php echo $item->id; ?>">
-										<div class="card card-body">
-											<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$item->title.' '.$item->sku); ?>
+									<?php if($inquiryEnabled) : ?>
+										<div class="tab-pane fade" id="inquiry_<?php echo $itemId; ?>" role="tabpanel" aria-labelledby="inquiry-tab_<?php echo $itemId; ?>">
+											<div class="card card-body">
+												<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$item->title.' '.$item->sku); ?>
+											</div>
 										</div>
-									</div>
+									<?php endif; ?>
 								</div>
 							</div>
 						</div>
