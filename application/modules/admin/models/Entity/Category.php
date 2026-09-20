@@ -17,6 +17,13 @@ class Admin_Model_Entity_Category
 			'joins' => [
 				[
 					'type' => 'left',
+					'table' => 'shop',
+					'alias' => 's',
+					'on' => 'c.shopid = s.id',
+					'columns' => [],
+				],
+				[
+					'type' => 'left',
 					'table' => 'slug',
 					'alias' => 'sl',
 					'on' => "sl.clientid = c.clientid AND sl.shopid = c.shopid AND sl.module = 'shops' AND sl.controller = 'category' AND sl.entityid = c.id AND sl.deleted = 0",

@@ -19,6 +19,13 @@ class Admin_Model_Entity_Page
 					'type' => 'left',
 					'table' => 'shop',
 					'alias' => 's',
+					'on' => 'p.shopid = s.id',
+					'columns' => [],
+				],
+				[
+					'type' => 'left',
+					'table' => 'slug',
+					'alias' => 'sl',
 					'on' => "sl.clientid = p.clientid AND sl.shopid = p.shopid AND sl.module = 'shops' AND sl.controller = 'page' AND sl.entityid = p.id AND sl.deleted = 0",
 					'columns' => [],
 				],
