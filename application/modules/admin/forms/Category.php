@@ -70,7 +70,6 @@ class Admin_Form_Category extends DEEC_Form
 			'options' => [
 				'0' => 'ADMIN_MAIN_CATEGORY',
 			],
-			'source' => 'category',
 			'default' => '0',
 			'tab' => 'overview',
 			'col' => 6,

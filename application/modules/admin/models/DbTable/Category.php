@@ -124,22 +124,18 @@ class Admin_Model_DbTable_Category extends DEEC_Model_DbTable_Entity
 
 	protected function getShopSelectOptions(int $shopId = 0): array
 	{
+		if ($shopId > 0) return $this->getParentSelectOptions('shop', $shopId);
+
 		$select = $this->select()
 			->where('clientid = ?', $this->getClientId())
-			->where('deleted = ?', 0);
-
-		if ($shopId > 0) {
-			$select->where('shopid = ?', $shopId);
-		}
-
-		$select
-			->order('ordering ASC')
+			->where('type = ?', 'shop')
+			->where('deleted = ?', 0)
 			->order('title ASC');
 
 		$options = [];
 
 		foreach ($this->fetchAll($select)->toArray() as $row) {
-			$options[(string)$row['id']] = $row['type'].':'.(string)$row['title'];
+			$options[(string)$row['id']] = $row['shopid'].':'.(string)$row['title'];
 		}
 
 		return $options;
@@ -160,5 +156,49 @@ class Admin_Model_DbTable_Category extends DEEC_Model_DbTable_Entity
 		}
 
 		return $options;
+	}
+
+	public function getParentSelectOptions(string $type, int $shopId = 0, int $excludeId = 0): array
+	{
+		$categories = $this->getCategories($type, null, $shopId);
+		$excluded = [];
+
+		if ($excludeId > 0) {
+			$excluded[$excludeId] = true;
+
+			foreach ($this->getDescendantIds($categories, $excludeId) as $id) {
+				$excluded[$id] = true;
+			}
+		}
+
+		return $this->buildCategorySelectOptions($categories, 0, 0, $excluded);
+	}
+
+	protected function buildCategorySelectOptions(array $categories, int $parentId = 0, int $depth = 0, array $excluded = []): array
+	{
+		$options = [];
+
+		foreach ($categories as $id => $category) {
+			if ((int)$category['parentid'] !== $parentId || isset($excluded[$id])) continue;
+
+			$options[(string)$id] = str_repeat('— ', $depth).(string)$category['title'];
+			$options += $this->buildCategorySelectOptions($categories, (int)$id, $depth + 1, $excluded);
+		}
+
+		return $options;
+	}
+
+	protected function getDescendantIds(array $categories, int $parentId): array
+	{
+		$ids = [];
+
+		foreach ($categories as $id => $category) {
+			if ((int)$category['parentid'] !== $parentId) continue;
+
+			$ids[] = (int)$id;
+			$ids = array_merge($ids, $this->getDescendantIds($categories, (int)$id));
+		}
+
+		return $ids;
 	}
 }

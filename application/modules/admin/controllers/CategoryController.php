@@ -2,6 +2,9 @@
 
 class Admin_CategoryController extends DEEC_Controller_AdminAction
 {
+	protected string $categoryType = '';
+	protected int $shopId = 0;
+
 	protected function buildIndexView(): void
 	{
 		$this->buildListView([
@@ -19,6 +22,25 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 			'shopid' => (int)$this->_getParam('shopid', 0),
 			'type' => (string)$this->_getParam('type', ''),
 		];
+	}
+
+	protected function getEditForm(): array
+	{
+		$formData = parent::getEditForm();
+
+		if ($this->categoryType === '') return $formData;
+
+		$db = new Admin_Model_DbTable_Category();
+		$options = ['0' => 'ADMIN_MAIN_CATEGORY'] + $db->getParentSelectOptions(
+			$this->categoryType,
+			$this->shopId,
+			(int)$this->view->id
+		);
+
+		$formData['form']->addOptions('parentid', $options, 'replace');
+		$formData['options']['parentid'] = $options;
+
+		return $formData;
 	}
 
 	protected function beforeCreate(array $data): array
@@ -40,6 +62,9 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 
 	protected function prepareEditRow(array $row): array
 	{
+		$this->categoryType = (string)($row['type'] ?? '');
+		$this->shopId = (int)($row['shopid'] ?? 0);
+
 		if (empty($row['shopid']) || empty($row['id'])) {
 			$row['slug'] = '';
 			return $row;
