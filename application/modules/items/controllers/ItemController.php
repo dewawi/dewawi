@@ -156,6 +156,28 @@ class Items_ItemController extends DEEC_Controller_Action
 			$id,
 			$values
 		);
+
+		$shopId = (int)($values['shopid'] ?? $oldRow['shopid'] ?? 0);
+		$shopCategoryId = (int)($values['shopcatid'] ?? $oldRow['shopcatid'] ?? 0);
+		$slugDb = new Admin_Model_DbTable_Slug();
+
+		if($shopId <= 0 || $shopCategoryId <= 0) {
+			$slugDb->saveSlug('shops', 'item', 0, 0, $id);
+			return;
+		}
+
+		$slug = $slugDb->getEntitySlug('shops', 'item', $id);
+		$slugValue = !$slug || empty($slug['slug'])
+			? $this->slugify((string)($values['sku'] ?? $oldRow['sku'] ?? $id))
+			: null;
+
+		$slugDb->saveSlug('shops', 'item', $shopId, $shopCategoryId, $id, $slugValue);
+	}
+
+	protected function afterDelete(int $id, array $row): void
+	{
+		$slugDb = new Admin_Model_DbTable_Slug();
+		$slugDb->saveSlug('shops', 'item', 0, 0, $id);
 	}
 
 	public function downloadAction()
@@ -503,17 +525,19 @@ class Items_ItemController extends DEEC_Controller_Action
 									}
 								}
 
-								//Update shop listing
+								// Update shop listing
 								if(isset($map['shopid'])) {
 									$slugDb = new Admin_Model_DbTable_Slug();
-									$slugDb->deleteSlug('shops', 'item', $updateData['shopid'], $item['id']);
-									$slug = $this->slugify($item['title']);
-									if(isset($datacsv[$map['shopid']]) && is_numeric($datacsv[$map['shopid']]) && $datacsv[$map['shopid']] > 0 && $updateData['shopcatid']) {
-										//Update slug
-										$slugDb->addSlug('shops', 'item', $updateData['shopid'], $updateData['shopcatid'], $item['id'], $this->slugify($item['sku']));
-										echo 'Item added to shop: '.$updateData['sku'].', itemid: '.$item['id'].' to '.$datacsv[$map['shopid']].'<br>';
+									$shopId = (int)($updateData['shopid'] ?? 0);
+									$shopCategoryId = (int)($updateData['shopcatid'] ?? 0);
+
+									if($shopId > 0 && $shopCategoryId > 0) {
+										$slugDb->saveSlug('shops', 'item', $shopId, $shopCategoryId, (int)$item['id'], $this->slugify((string)$updateData['sku']));
+										echo 'Item added to shop: '.$updateData['sku'].', itemid: '.$item['id'].' to '.$shopId.'<br>';
 									} else {
-										$updateData['shopid'] = 0; // Default to 0 if not valid
+										$updateData['shopid'] = 0;
+										$updateData['shopcatid'] = null;
+										$slugDb->saveSlug('shops', 'item', 0, 0, (int)$item['id']);
 									}
 								}
 
@@ -564,17 +588,6 @@ class Items_ItemController extends DEEC_Controller_Action
 								if(!isset($updateData['height']) || !$updateData['height']) $updateData['height'] = NULL;
 								if(!isset($updateData['inventory'])) $updateData['inventory'] = 1;
 
-								/*if(isset($map['shopid'])) {
-									echo 'Item shopid: '.$map['shopid'].'<br>';
-									if($datacsv[$map['shopid']] == 0) {
-										$shopItemDb->deleteItem($itemid);
-										echo 'Item deleted from shop: '.$updateData['sku'].', itemid: '.$itemid.'<br>';
-									} elseif($map['shopid']) {
-										$shopItemDb->addItem(array('itemid' => $itemid, 'shopid' => $datacsv[$map['shopid']], 'catid' => 0));
-										echo 'Item added to shop: '.$updateData['sku'].', itemid: '.$itemid.' to '.$datacsv[$map['shopid']].'<br>';
-									}
-								}*/
-
 								// Create slug
 								$createShopSlug = false;
 
@@ -591,7 +604,7 @@ class Items_ItemController extends DEEC_Controller_Action
 
 								if ($createShopSlug) {
 									$slugDb = new Admin_Model_DbTable_Slug();
-									$slugDb->addSlug('shops', 'item', $updateData['shopid'], $updateData['shopcatid'], $itemid, $this->slugify($updateData['sku']));
+									$slugDb->saveSlug('shops', 'item', (int)$updateData['shopid'], (int)$updateData['shopcatid'], $itemid, $this->slugify((string)$updateData['sku']));
 								}
 
 								if(isset($map['ebayuserid'])) {
