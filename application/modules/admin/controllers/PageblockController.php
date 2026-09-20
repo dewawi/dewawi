@@ -9,6 +9,13 @@ class Admin_PageblockController extends DEEC_Controller_AdminAction
 		$this->_helper->redirector->gotoSimple('index', 'page');
 	}
 
+	protected function buildEditViewModel(int $id, array $row): array
+	{
+		return [
+			'pageid' => (int)($row['pageid'] ?? 0),
+		];
+	}
+
 	protected function getDbTableClass(): string
 	{
 		return Application_Model_DbTable_Pageblock::class;
@@ -30,12 +37,22 @@ class Admin_PageblockController extends DEEC_Controller_AdminAction
 
 		$db = new Application_Model_DbTable_Pageblock();
 
+		$parentType = null;
+
 		if ($parentId > 0) {
 			$parent = $db->getById($parentId);
 
 			if (!$parent || (int)$parent['pageid'] !== $pageId) {
 				throw new RuntimeException('Invalid parent page block');
 			}
+
+			$parentType = (string)$parent['type'];
+		}
+
+		$allowedTypes = DEEC_Site_Block::getTypeOptions($parentType);
+
+		if (!isset($allowedTypes[$type])) {
+			throw new RuntimeException('Invalid page block hierarchy');
 		}
 
 		return [

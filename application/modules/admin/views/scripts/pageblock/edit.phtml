@@ -8,4 +8,28 @@ $this->headTitle($this->title);
 
 echo $this->TinyMCE();
 echo $this->FileManager();
-echo $this->form->renderForm();
+
+$tabs = [
+	'overview' => [
+		'title' => 'TABS_OVERVIEW',
+	],
+];
+
+$childTypes = DEEC_Site_Block::getTypeOptions($type);
+
+if ($childTypes) {
+	$tabs['children'] = [
+		'title' => 'TABS_CONTENT',
+		'html' => $this->Pageblocks([
+			'pageid' => (int)$this->pageid,
+			'parentid' => (int)$this->id,
+			'parenttype' => $type,
+		]),
+	];
+}
+
+echo $this->form->renderForm([
+	'id' => 'pageblock',
+	'activeTab' => $this->activeTab,
+	'tabs' => $tabs,
+]);

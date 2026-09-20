@@ -6,6 +6,12 @@ class Zend_View_Helper_RenderPageBlocks extends Zend_View_Helper_Abstract
 	{
 		$html = '';
 
+		$pageblockDb = new Application_Model_DbTable_Pageblock();
+
+		if (($this->view->siteContext ?? null) instanceof DEEC_Site_Context) {
+			$pageblockDb->setClientId($this->view->siteContext->getClientId());
+		}
+
 		foreach ($blocks as $block) {
 			$type = (string)($block['type'] ?? '');
 
@@ -23,9 +29,20 @@ class Zend_View_Helper_RenderPageBlocks extends Zend_View_Helper_Abstract
 				Zend_Registry::get('Zend_Locale')
 			);
 
+			$children = [];
+
+			if (DEEC_Site_Block::getTypeOptions($type)) {
+				$children = $pageblockDb->getBlocksByPageId(
+					(int)$block['pageid'],
+					true,
+					(int)$block['id']
+				);
+			}
+
 			$html .= $this->view->partial('page/blocks/' . $type . '.phtml', [
 				'block' => $block,
 				'data' => $data,
+				'children' => $children,
 				'siteContext' => $this->view->siteContext ?? null,
 				'shop' => is_array($this->view->shop ?? null) ? $this->view->shop : [],
 				'categories' => is_array($this->view->categories ?? null) ? $this->view->categories : [],

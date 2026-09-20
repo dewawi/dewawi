@@ -175,11 +175,16 @@ class DEEC_Site_Block
 		return self::getDefinition($type)['fields'];
 	}
 
-	public static function getTypeOptions(): array
+	public static function getTypeOptions(?string $parentType = null): array
 	{
 		$options = [];
 
 		foreach (self::getDefinitions() as $type => $definition) {
+			$parent = (string)($definition['parent'] ?? '');
+
+			if ($parentType === null && $parent !== '') continue;
+			if ($parentType !== null && $parent !== $parentType) continue;
+
 			$options[$type] = $definition['label'];
 		}
 
