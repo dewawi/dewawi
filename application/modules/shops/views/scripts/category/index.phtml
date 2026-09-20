@@ -1,14 +1,25 @@
 <?php
-$this->title = $this->category['subtitle'] 
-	? $this->category['title'] . " " . $this->category['subtitle'] 
-	: $this->category['title'];
-if($this->category['parentid'] != 0) $this->title .= ' '.$this->categories[$this->category['parentid']]['title'];
-$this->headTitle($this->title);
-if($this->category['metatitle']) $this->headMeta()->setName('title', $this->category['metatitle']);
-if($this->category['metadescription']) $this->headMeta()->setName('description', $this->category['metadescription']);
 
-$categoryId = (int)$this->category['id'];
-$parentCategoryId = (int)$this->category['parentid'];
+$category = $this->category;
+$categoryId = (int)$category['id'];
+$parentCategoryId = (int)$category['parentid'];
+
+$title = trim((string)($category['title'] ?? ''));
+$subtitle = trim((string)($category['subtitle'] ?? ''));
+$metaTitle = trim((string)($category['metatitle'] ?? ''));
+$metaDescription = trim((string)($category['metadescription'] ?? ''));
+
+$this->title = trim($title . ($subtitle !== '' ? ' ' . $subtitle : ''));
+
+if ($parentCategoryId > 0 && isset($this->categories[$parentCategoryId])) {
+	$this->title .= ' ' . trim((string)$this->categories[$parentCategoryId]['title']);
+}
+
+$this->headTitle($metaTitle !== '' ? $metaTitle : $this->title);
+
+if ($metaDescription !== '') {
+	$this->headMeta()->setName('description', $metaDescription);
+}
 
 $categoryMedia = $this->images['categories'][$categoryId] ?? [];
 $parentCategoryMedia = $parentCategoryId > 0 ? ($this->images['categories'][$parentCategoryId] ?? []) : [];
@@ -56,13 +67,6 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 											<img src="<?php echo $this->baseUrl(); ?>/media/category/<?php echo $this->escape($image['url']); ?>" class="d-block w-100" alt="<?php echo $this->escape($image['title'] ?? $this->category['title']); ?>">
 										</div>
 									<?php endforeach; ?>
-									<?php if(count($parentCategoryImages)) : ?>
-										<?php foreach ($parentCategoryImages as $image) : ?>
-											<?php if ($image['type'] == 'download') : ?>
-												<?php $downloads = true; ?>
-											<?php endif; ?>
-										<?php endforeach; ?>
-									<?php endif; ?>
 								</div>
 								<?php if(count($categoryImages) > 1) : ?>
 									<a class="carousel-control-prev" href="#carousel_<?php echo $this->category['id']; ?>" role="button" data-slide="prev">
@@ -98,15 +102,7 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 	<?php endif; ?>
 <?php endif; ?>
 
-<?php
-$hasSubcategories = false;
-foreach ($this->categories as $subcategory) {
-	if ($subcategory['parentid'] == $this->category['id']) {
-		$hasSubcategories = true;
-		break; // Exit loop if a subcategory is found
-	}
-}
-?>
+<?php $hasSubcategories = !empty($this->categories[$categoryId]['childs']); ?>
 
 <!-- Display subcategories for parent category -->
 <?php if ($hasSubcategories) : ?>
