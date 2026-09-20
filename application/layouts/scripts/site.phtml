@@ -64,20 +64,25 @@ echo $this->doctype();
 							<?php endif; ?>
 						<?php endforeach; ?>
 
-						<?php foreach($otherCategories as $category) : ?>
-							<?php $url = $this->SlugUrl('category', (int)$category['id']); ?>
-							<?php if($url) : ?>
-								<?php $children = $this->RenderSubCategory($categories, (int)$category['id']); ?>
-								<li class="right-edge">
-									<a href="<?php echo $this->escape($url); ?>">
-										<?php echo $this->escape($category['title']); ?>
-									</a>
-									<?php if($children !== '') : ?>
-										<ul class="submenu"><?php echo $children; ?></ul>
-									<?php endif; ?>
-								</li>
-							<?php endif; ?>
-						<?php endforeach; ?>
+						<?php if($otherCategories) : ?>
+							<li class="nav-item">
+								<a class="nav-link" href="#"><?php echo $this->translate('SHOPS_OTHER_CATEGORIES'); ?></a>
+								<ul class="submenu">
+									<?php foreach($otherCategories as $category) : ?>
+										<?php $url = $this->SlugUrl('category', (int)$category['id']); ?>
+										<?php if($url) : ?>
+											<?php $children = $this->RenderSubCategory($categories, (int)$category['id']); ?>
+											<li class="right-edge">
+												<a href="<?php echo $this->escape($url); ?>"><?php echo $this->escape($category['title']); ?></a>
+												<?php if($children !== '') : ?>
+													<ul class="submenu"><?php echo $children; ?></ul>
+												<?php endif; ?>
+											</li>
+										<?php endif; ?>
+									<?php endforeach; ?>
+								</ul>
+							</li>
+						<?php endif; ?>
 
 						<?php if($this->siteContext->hasFeature('cart')) : ?>
 							<li class="nav-item">
