@@ -193,6 +193,8 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 			return;
 		}
 
+		$this->bootstrap('modules');
+
 		$siteContext = Zend_Registry::get('SiteContext');
 		$router = new DEEC_Site_Router();
 		$router->registerRoutes($siteContext);
