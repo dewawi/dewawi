@@ -6,6 +6,7 @@ $menus = is_iterable($this->menus ?? null) ? $this->menus : [];
 $menuitems = is_array($this->menuitems ?? null) ? $this->menuitems : [];
 
 $language = str_replace('_', '-', (string)$this->siteContext->getLanguage());
+$theme = $this->siteContext->getTheme();
 $home = $this->controller === 'index' && $this->action === 'index';
 
 $this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
@@ -23,6 +24,9 @@ echo $this->doctype();
 	<?php echo $this->headLink(); ?>
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 	<link rel="stylesheet" href="<?php echo $this->baseUrl(); ?>/css/shop.css">
+	<?php if($theme !== 'default') : ?>
+		<link rel="stylesheet" href="<?php echo $this->baseUrl(); ?>/css/themes/<?php echo $this->escape($theme); ?>.css">
+	<?php endif; ?>
 </head>
 <body>
 	<header <?php if($home) echo 'class="home"' ?>>

@@ -45,11 +45,9 @@ class DEEC_Site_Context
 
 	public function getTheme()
 	{
-		if (!empty($this->site['theme'])) {
-			return $this->site['theme'];
-		}
+		$theme = strtolower(trim((string)($this->site['theme'] ?? '')));
 
-		return 'default';
+		return $theme !== '' && preg_match('/^[a-z0-9_-]+$/', $theme) ? $theme : 'default';
 	}
 
 	public function hasFeature($featureKey)
