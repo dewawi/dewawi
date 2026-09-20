@@ -138,7 +138,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 		$row = $this->prepareEditRow((array)$row);
 
-		$this->_helper->Access->lock($id, $this->_user['id'], $row['locked'] ?? 0, $row['lockedtime'] ?? null);
+		$this->_helper->Access->lock($id, $this->_user['id'], $row['locked'] ?? 0, $row['lockedtime'] ?? null, $db);
 
 		$formData = $this->getEditForm();
 		$form = $formData['form'];
@@ -913,7 +913,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	public function lockAction()
 	{
 		$id = (int)$this->_getParam('id', 0);
-		$result = $this->_helper->Access->lock($id, $this->_user['id']);
+		$result = $this->_helper->Access->lock($id, $this->_user['id'], null, null, $this->getDb());
 
 		if (is_array($result)) {
 			return $this->_helper->json($result);
@@ -923,7 +923,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	public function unlockAction()
 	{
 		$id = (int)$this->_getParam('id', 0);
-		$result = $this->_helper->Access->unlock($id);
+		$result = $this->_helper->Access->unlock($id, $this->getDb());
 
 		if (is_array($result)) {
 			return $this->_helper->json($result);
@@ -934,7 +934,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	{
 		$id = (int)$this->_getParam('id', 0);
 		$this->disableView();
-		$this->_helper->Access->keepalive($id);
+		$this->_helper->Access->keepalive($id, $this->getDb());
 	}
 
 	public function validateAction()

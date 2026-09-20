@@ -2,7 +2,7 @@
 
 class Application_Controller_Action_Helper_Access extends Zend_Controller_Action_Helper_Abstract
 {
-	public function lock($id, $userid, $locked = null, $lockedtime = null)
+	public function lock($id, $userid, $locked = null, $lockedtime = null, $db = null)
 	{
 		$request = $this->getRequest();
 		$params = $request->getParams();
@@ -12,8 +12,7 @@ class Application_Controller_Action_Helper_Access extends Zend_Controller_Action
 			$this->disableView();
 		}
 
-		$class = ucfirst($params['module']) . '_Model_DbTable_' . ucfirst($params['controller']);
-		$db = new $class();
+		$db = $this->resolveDb($db);
 
 		if (($locked === null) || ($lockedtime === null)) {
 			$data = $db->getById($id);
@@ -61,7 +60,7 @@ class Application_Controller_Action_Helper_Access extends Zend_Controller_Action
 		return null;
 	}
 
-	public function unlock($id)
+	public function unlock($id, $db = null)
 	{
 		$request = $this->getRequest();
 		$params = $request->getParams();
@@ -71,8 +70,7 @@ class Application_Controller_Action_Helper_Access extends Zend_Controller_Action
 			$this->disableView();
 		}
 
-		$class = ucfirst($params['module']) . '_Model_DbTable_' . ucfirst($params['controller']);
-		$db = new $class();
+		$db = $this->resolveDb($db);
 		$db->unlock($id);
 
 		if ($isAjax) {
@@ -84,15 +82,14 @@ class Application_Controller_Action_Helper_Access extends Zend_Controller_Action
 		return null;
 	}
 
-	public function keepalive($id)
+	public function keepalive($id, $db = null)
 	{
 		$request = $this->getRequest();
 		$params = $request->getParams();
 
 		$this->disableView();
 
-		$class = ucfirst($params['module']) . '_Model_DbTable_' . ucfirst($params['controller']);
-		$db = new $class();
+		$db = $this->resolveDb($db);
 		$db->lock($id);
 
 		return [
@@ -119,5 +116,15 @@ class Application_Controller_Action_Helper_Access extends Zend_Controller_Action
 		}
 
 		return false;
+	}
+
+	protected function resolveDb($db = null)
+	{
+		if ($db instanceof DEEC_Model_DbTable_Entity) return $db;
+
+		$params = $this->getRequest()->getParams();
+		$class = ucfirst($params['module']) . '_Model_DbTable_' . ucfirst($params['controller']);
+
+		return new $class();
 	}
 }
