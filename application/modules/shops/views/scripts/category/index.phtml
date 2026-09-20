@@ -150,11 +150,19 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 					$itemId = (int)$item->id;
 					$itemUrl = $this->SlugUrl('item', $itemId);
 					$itemMedia = $this->images['items'][$itemId] ?? [];
-					$itemImages = [];
+					$itemPrice = $this->prices[$itemId];
+					$itemAttributes = $this->attributeSets[$itemId] ?? [];
+					$itemOptions = $this->optionSets[$itemId] ?? [];
 
-					foreach ($itemMedia as $media) {
-						if (($media['type'] ?? '') !== 'image') continue;
-						$itemImages[] = $this->baseUrl() . '/media/images/' . (string)$media['url'];
+					$itemImages = array_values(array_filter($itemMedia, static function($media) {
+						return ($media['type'] ?? '') === 'image';
+					}));
+
+					$previewImage = $itemImages[0] ?? null;
+					$itemImageUrls = [];
+
+					foreach ($itemImages as $image) {
+						$itemImageUrls[] = $this->baseUrl() . '/media/images/' . (string)$image['url'];
 					}
 
 					$productSchema = [
@@ -167,13 +175,13 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 							'@type' => 'Offer',
 							'url' => (string)($this->shop['url'] ?? '') . (string)$itemUrl,
 							'priceCurrency' => (string)$item->currency,
-							'price' => (float)$this->prices[$itemId]['rawtax'],
+							'price' => (float)$itemPrice['rawtax'],
 							'availability' => 'https://schema.org/InStock',
 						],
 					];
 
-					if ($itemImages) {
-						$productSchema['image'] = $itemImages;
+					if ($itemImageUrls) {
+						$productSchema['image'] = $itemImageUrls;
 					}
 
 					$manufacturer = trim((string)($this->manufacturers[(int)$item->manufacturerid] ?? ''));
@@ -191,17 +199,13 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 							<div class="row d-flex align-items-center"> <!-- Flexbox and vertical alignment -->
 								<div class="col-md-1 d-flex align-items-center">
 									<!-- Image -->
-									<?php if (count($this->images['items'][$item->id]) > 0): ?>
-										<?php $folder = 'images'; ?>
+									<?php if($previewImage) : ?>
 										<div class="image-grid" style="width: 100%;">
-											<?php foreach ($this->images['items'][$item->id] as $image): ?>
-												<div class="image">
-													<a href="<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image['url']); ?>" target="_blank">
-														<img src="<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image['url']); ?>" alt="<?php //echo $this->escape($image['title']); ?>" class="image-thumbnail" style="width: 100%;"/>
-													</a>
-												</div>
-												<?php break; // show only the first image ?>
-											<?php endforeach; ?>
+											<div class="image">
+												<a href="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" target="_blank">
+													<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" alt="<?php echo $this->escape($previewImage['title'] ?? $item->title); ?>" class="image-thumbnail" style="width: 100%;">
+												</a>
+											</div>
 										</div>
 									<?php endif; ?>
 								</div>
@@ -223,9 +227,9 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 								</div>
 
 								<?php
-								$hasSpecial = !empty($this->prices[$item->id]['rawspecialprice']);
-								$base = (float)($this->prices[$item->id]['raw'] ?? 0);
-								$special = (float)($this->prices[$item->id]['rawspecialprice'] ?? 0);
+								$hasSpecial = !empty($itemPrice['rawspecialprice']);
+								$base = (float)$itemPrice['raw'];
+								$special = (float)$itemPrice['rawspecialprice'];
 
 								$discountPct = null;
 								if ($hasSpecial && $base > 0 && $special > 0 && $special < $base) {
@@ -236,24 +240,24 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 								<div class="col-md-5">
 									<p style="margin-bottom: 0;">
 										<?php if($hasSpecial) : ?>
-											<strong style="color: #008000;">Sonderpreis: <?php echo $this->prices[$item->id]['formattedspecialprice']; ?>
+											<strong style="color: #008000;">Sonderpreis: <?php echo $itemPrice['formattedspecialprice']; ?>
 												<?php if ($discountPct !== null): ?>
 													<span class="badge bg-danger ms-2" style="color: #ffffff;">-<?= $discountPct; ?>%</span>
 												<?php endif; ?>
 											</strong> *<br>
-											<span style="text-decoration: line-through;">Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></span><br>
-										<?php elseif($this->prices[$item->id]['raw'] == 0) : ?>
+											<span style="text-decoration: line-through;">Listenpreis: <?php echo $itemPrice['formatted']; ?></span><br>
+										<?php elseif($itemPrice['raw'] == 0) : ?>
 											<span><strong>Auf Anfrage</strong></span>
 										<?php else : ?>
-											<strong>Listenpreis: <?php echo $this->prices[$item->id]['formatted']; ?></strong> *<br>
+											<strong>Listenpreis: <?php echo $itemPrice['formatted']; ?></strong> *<br>
 											<span style="font-size: 0.8rem;"><strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong></span>
 										<?php endif; ?>
 									</p>
-									<?php if($this->prices[$item->id]['rawtax'] > $this->prices[$item->id]['raw']) : ?>
+									<?php if($itemPrice['rawtax'] > $itemPrice['raw']) : ?>
 										<?php if($this->prices[$item->id]['rawspecialprice']) : ?>
-											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices[$item->id]['formattedspecialpricetax']; ?> inkl. MwSt.</p>
+											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $itemPrice['formattedspecialpricetax']; ?> inkl. MwSt.</p>
 										<?php else : ?>
-											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices[$item->id]['formattedtax']; ?> inkl. MwSt.</p>
+											<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $itemPrice['formattedtax']; ?> inkl. MwSt.</p>
 										<?php endif; ?>
 									<?php endif; ?>
 									<?php $shippingPage = $this->PageByType('shipping'); ?>
@@ -287,7 +291,7 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 									<li class="nav-item">
 										<a class="nav-link active" id="description-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#description_<?php echo $item->id; ?>" role="tab" aria-controls="description_<?php echo $item->id; ?>" aria-selected="true"><?php echo $this->translate('SHOPS_DESCRIPTION'); ?></a>
 									</li>
-									<?php if (!empty($this->attributeSets[$item->id])) : ?>
+									<?php if($itemAttributes) : ?>
 									<li class="nav-item">
 										<a class="nav-link" id="attributes-tab_<?php echo $item->id; ?>" data-toggle="tab" href="#attributes_<?php echo $item->id; ?>" role="tab" aria-controls="attributes_<?php echo $item->id; ?>" aria-selected="false"><?php echo $this->translate('SHOPS_ATTRIBUTES'); ?></a>
 									</li>
@@ -316,19 +320,15 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 										<div class="card card-body">
 											<div class="row">
 												<!-- Images -->
-												<?php if (count($this->images['items'][$item->id]) > 0): ?>
+												<?php if($itemImages) : ?>
 													<div class="col-md-4 mb-4">
 														<div class="image-gallery">
-															<?php $folder = 'images'; ?>
 															<div class="image-grid">
-																<?php foreach ($this->images['items'][$item->id] as $image): ?>
+																<?php foreach($itemImages as $image) : ?>
 																	<div class="image">
-																		<a href="<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image['url']); ?>" target="_blank">
-																			<img src="<?php echo $this->baseUrl(); ?>/media/<?php echo $folder; ?>/<?php echo $this->escape($image['url']); ?>" alt="<?php //echo $this->escape($image['title']); ?>" class="image-thumbnail" />
+																		<a href="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" target="_blank">
+																			<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" alt="<?php echo $this->escape($image['title'] ?? $item->title); ?>" class="image-thumbnail">
 																		</a>
-																		<div class="image-caption">
-																			<?php //echo $this->escape($image['title']); ?>
-																		</div>
 																	</div>
 																<?php endforeach; ?>
 															</div>
@@ -348,11 +348,11 @@ $downloads = (bool)($categoryDownloads || $parentCategoryDownloads);
 									</div>
 
 									<!-- Attributes Tab -->
-									<?php if (!empty($this->attributeSets[$item->id])) : ?>
+									<?php if($itemAttributes) : ?>
 										<div class="tab-pane fade" id="attributes_<?php echo $item->id; ?>" role="tabpanel" aria-labelledby="attributes-tab_<?php echo $item->id; ?>">
 											<div class="card card-body">
 												<div class="row">
-													<?php foreach ($this->attributeSets[$item->id] as $attributeSet) : ?>
+													<?php foreach($itemAttributes as $attributeSet) : ?>
 														<div class="col-md-4 mb-4">
 															<div class="card">
 																<div class="card-header">
