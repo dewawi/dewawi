@@ -61,7 +61,7 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 
 	protected function afterCreate(int $id, array $data): void
 	{
-		if (empty($data['shopid'])) {
+		if (empty($data['shopid']) || ($data['type'] ?? '') === 'home') {
 			return;
 		}
 
@@ -78,13 +78,20 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 
 	protected function afterEditSave(int $id, array $values, array $oldRow): void
 	{
-		if (!array_intersect_key($values, array_flip(['slug', 'title', 'parentid', 'shopid']))) {
+		if (!array_intersect_key($values, array_flip(['slug', 'title', 'type', 'parentid', 'shopid']))) {
 			return;
 		}
 
-		$shopId = (int)($values['shopid'] ?? $oldRow['shopid']);
-		$parentId = (int)($values['parentid'] ?? $oldRow['parentid']);
+		$type = (string)($values['type'] ?? $oldRow['type'] ?? '');
+		$shopId = (int)($values['shopid'] ?? $oldRow['shopid'] ?? 0);
+		$parentId = (int)($values['parentid'] ?? $oldRow['parentid'] ?? 0);
 		$slugDb = new Admin_Model_DbTable_Slug();
+
+		if ($type === 'home' || $shopId <= 0) {
+			$slugDb->saveSlug('shops', 'page', 0, 0, $id);
+			return;
+		}
+
 		$existing = $slugDb->getEntitySlug('shops', 'page', $id);
 		$slug = null;
 

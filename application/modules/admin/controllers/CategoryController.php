@@ -61,7 +61,7 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 
 	protected function afterCreate(int $id, array $data): void
 	{
-		if (empty($data['shopid'])) {
+		if (empty($data['shopid']) || ($data['type'] ?? '') !== 'shop') {
 			return;
 		}
 
@@ -123,29 +123,31 @@ class Admin_CategoryController extends DEEC_Controller_AdminAction
 
 	protected function afterEditSave(int $id, array $values, array $oldRow): void
 	{
-		if (array_key_exists('parentid', $values) && (string)$values['parentid'] !== (string)$oldRow['parentid']) {
-			$this->resetOrdering(
-				Admin_Model_DbTable_Category::class,
-				'getCategories',
-				'sortCategory',
-				[(string)($oldRow['type'] ?? ''), (int)$oldRow['parentid'], (int)($oldRow['shopid'] ?? 0)]
-			);
-		}
-
-		if (!array_intersect_key($values, array_flip(['slug', 'parentid', 'shopid']))) {
+		if (!array_intersect_key($values, array_flip(['slug', 'title', 'type', 'parentid', 'shopid']))) {
 			return;
 		}
 
+		$type = (string)($values['type'] ?? $oldRow['type'] ?? '');
+		$shopId = (int)($values['shopid'] ?? $oldRow['shopid'] ?? 0);
+		$parentId = (int)($values['parentid'] ?? $oldRow['parentid'] ?? 0);
 		$slugDb = new Admin_Model_DbTable_Slug();
 
-		$slugDb->saveSlug(
-			'shops',
-			'category',
-			(int)($values['shopid'] ?? $oldRow['shopid']),
-			(int)($values['parentid'] ?? $oldRow['parentid']),
-			$id,
-			array_key_exists('slug', $values) ? (string)$values['slug'] : null
-		);
+		if ($type !== 'shop' || $shopId <= 0) {
+			$slugDb->saveSlug('shops', 'category', 0, 0, $id);
+			return;
+		}
+
+		$existing = $slugDb->getEntitySlug('shops', 'category', $id);
+		$slug = null;
+
+		if (array_key_exists('slug', $values)) {
+			$slug = DEEC_Filter::slug((string)$values['slug']);
+		} elseif (!$existing || empty($existing['slug']) || (string)$existing['slug'] === (string)$id) {
+			$title = (string)($values['title'] ?? $oldRow['title'] ?? '');
+			if ($title !== '') $slug = DEEC_Filter::slug($title);
+		}
+
+		$slugDb->saveSlug('shops', 'category', $shopId, $parentId, $id, $slug);
 	}
 
 	protected function canDeleteRow(array $row): bool
