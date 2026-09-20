@@ -6,11 +6,28 @@ $this->headTitle($this->title);
 echo $this->TinyMCE();
 echo $this->FileManager();
 
+$shopId = (int)$this->id;
+$shopTitle = (string)$this->form->getValue('title');
+
 echo $this->form->renderForm([
 	'id' => 'shop',
 	'activeTab' => $this->activeTab,
 	'tabs' => [
 		'overview' => ['title' => 'TABS_OVERVIEW'],
+		'pages' => [
+			'title' => 'ADMIN_PAGES',
+			'html' => $this->SitePages([
+				'shopid' => $shopId,
+				'shoptitle' => $shopTitle,
+			]),
+		],
+		'menus' => [
+			'title' => 'ADMIN_MENUS',
+			'html' => $this->SiteMenus([
+				'shopid' => $shopId,
+				'shoptitle' => $shopTitle,
+			]),
+		],
 		'design' => ['title' => 'ADMIN_DESIGN'],
 		'content' => ['title' => 'TABS_CONTENT'],
 		'features' => ['title' => 'ADMIN_SITE_FEATURES'],

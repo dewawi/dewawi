@@ -57,6 +57,18 @@ class Admin_Model_DbTable_Page extends DEEC_Model_DbTable_Entity
 		return $categories;
 	}
 
+	public function getPagesByShopId(int $shopId): array
+	{
+		$select = $this->select()
+			->where('shopid = ?', $shopId)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->order('ordering ASC')
+			->order('title ASC');
+
+		return $this->fetchAll($select)->toArray();
+	}
+
 	public function addPage($data, $clientid = 0)
 	{
 		$data['created'] = $this->_date;
