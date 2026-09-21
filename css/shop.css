@@ -80,78 +80,94 @@ header.home {
 	margin: -5px 0;
 }
 
-/* Menu styles */
-.navbar {
-	padding: 0;
-}
-.navbar-brand {
-	padding: 0;
-}
-.nav-item {
-	margin-right: 20px;
+/* Site navigation */
+.dw-site-header {
 	position: relative;
+	padding: 0;
+	background: #fff;
 }
-.nav-link {
-	padding: 20px;
-}
 
-@media (max-width: 991.98px) {
-	.navbar {
-		padding: .5rem 0;
-	}
-
-	.navbar-collapse {
-		padding-bottom: .75rem;
-	}
-
-	.navbar-nav .nav-item {
-		margin-right: 0;
-	}
-
-	.navbar-nav .nav-link {
-		padding: .75rem 0;
-	}
-
-	.navbar-nav .submenu {
-		display: block;
-		position: static;
-		min-width: 0;
-		margin: 0 0 0 1rem;
-		padding: 0;
-		background: transparent;
-		box-shadow: none;
-		opacity: 1;
-		white-space: normal;
-	}
-
-	.navbar-nav .submenu .submenu {
-		margin-left: 1rem;
-	}
-
-	.navbar-nav .submenu a {
-		max-width: none;
-		padding: .4rem 0;
-	}
+.dw-site-header.home {
+	background: #e9ecef;
 }
 
 .dw-site-header .navbar {
 	position: relative;
+	padding: 0;
 }
 
-.dw-mega-nav-item {
+.dw-site-header .navbar > .container {
 	position: static;
 }
 
+.dw-site-header .navbar-brand {
+	flex: 0 0 auto;
+	padding: 0;
+}
+
+.dw-site-header .navbar-collapse {
+	align-items: stretch;
+}
+
+.dw-main-nav,
+.dw-header-actions {
+	align-items: stretch;
+}
+
+.dw-main-nav > .nav-item,
+.dw-header-actions > .nav-item {
+	margin: 0;
+}
+
+.dw-main-nav > .nav-item {
+	position: relative;
+}
+
+.dw-main-nav > .dw-mega-nav-item {
+	position: static;
+}
+
+.dw-main-nav > .nav-item > .nav-link,
+.dw-header-actions > .nav-item > .nav-link {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	padding: 1.75rem .75rem;
+	white-space: nowrap;
+}
+
 .dw-mega-toggle {
+	margin: 0;
 	border: 0;
 	background: transparent;
+	color: inherit;
+	font: inherit;
 	cursor: pointer;
 }
 
+.dw-header-actions {
+	gap: .5rem;
+	margin-left: 1rem;
+}
+
+.dw-header-actions .nav-item--highlight .nav-link {
+	padding-right: 1rem;
+	padding-left: 1rem;
+	border-radius: .25rem;
+	background: #212529;
+	color: #fff;
+}
+
+/* Mega menu */
 .dw-mega-menu__grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-	gap: 2rem;
+	width: 100%;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 2rem 2.5rem;
+}
+
+.dw-mega-menu__column {
+	min-width: 0;
 }
 
 .dw-mega-menu__heading {
@@ -159,6 +175,12 @@ header.home {
 	margin-bottom: 1rem;
 	color: #212529;
 	font-weight: 700;
+	text-decoration: none;
+}
+
+.dw-mega-menu__heading:hover {
+	color: #007bff;
+	text-decoration: none;
 }
 
 .dw-mega-menu__links {
@@ -168,7 +190,8 @@ header.home {
 }
 
 .dw-mega-menu__links li {
-	margin-bottom: .5rem;
+	margin: 0 0 .5rem;
+	padding: 0;
 }
 
 .dw-mega-menu__links a,
@@ -186,11 +209,13 @@ header.home {
 .dw-mega-menu__flat {
 	grid-column: 1 / -1;
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 	gap: .75rem 2rem;
 }
 
 .dw-mega-menu__actions {
+	display: flex;
+	gap: 1.5rem;
 	margin-top: 2rem;
 	padding-top: 1.25rem;
 	border-top: 1px solid #dee2e6;
@@ -198,31 +223,18 @@ header.home {
 
 .dw-mega-menu__actions a {
 	font-weight: 600;
+	text-decoration: none;
 }
 
-.dw-header-actions {
-	margin-left: 1rem;
-}
-
-.dw-header-actions .nav-item {
-	margin-right: .5rem;
-}
-
-.dw-header-actions .nav-item--highlight .nav-link {
-	padding-right: 1rem;
-	padding-left: 1rem;
-	border-radius: .25rem;
-	background: #212529;
-	color: #fff;
-}
-
-@media (min-width: 992px) {
+/* Desktop navigation */
+@media (min-width: 1200px) {
 	.dw-mega-menu {
 		position: absolute;
 		top: 100%;
 		right: 0;
 		left: 0;
 		z-index: 1100;
+		width: 100%;
 		padding: 2.5rem 0;
 		background: #fff;
 		box-shadow: 0 12px 30px rgba(0, 0, 0, .12);
@@ -241,27 +253,79 @@ header.home {
 		transform: translateY(0);
 		pointer-events: auto;
 	}
+
+	.dw-main-nav .submenu {
+		display: none;
+		position: absolute;
+		top: 100%;
+		left: 0;
+		z-index: 1000;
+		min-width: 300px;
+		margin: 0;
+		padding: .625rem 0;
+		background: #fff;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
+		list-style: none;
+	}
+
+	.dw-main-nav .submenu .submenu {
+		top: 0;
+		left: 100%;
+	}
+
+	.dw-main-nav .nav-item:hover > .submenu,
+	.dw-main-nav .submenu li:hover > .submenu {
+		display: block;
+	}
 }
 
-@media (max-width: 991.98px) {
+/* Collapsed navigation */
+@media (max-width: 1199.98px) {
+	.dw-site-header .navbar {
+		padding: .5rem 0;
+	}
+
+	.dw-site-header .navbar-collapse {
+		padding-bottom: .75rem;
+	}
+
+	.dw-main-nav,
 	.dw-header-actions {
-		margin-left: 0;
-		padding-top: .75rem;
-		border-top: 1px solid #dee2e6;
+		align-items: stretch;
+	}
+
+	.dw-main-nav > .nav-item > .nav-link,
+	.dw-header-actions > .nav-item > .nav-link {
+		width: 100%;
+		height: auto;
+		padding: .75rem 0;
+	}
+
+	.dw-mega-nav-item {
+		position: relative;
 	}
 
 	.dw-mega-menu {
 		display: none;
-		padding: .5rem 0 1rem 1rem;
+		position: static;
+		width: 100%;
+		padding: .25rem 0 1rem 1rem;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	.dw-mega-nav-item.is-open > .dw-mega-menu {
 		display: block;
 	}
 
+	.dw-mega-menu > .container {
+		max-width: none;
+		padding: 0;
+	}
+
 	.dw-mega-menu__grid {
 		grid-template-columns: 1fr;
-		gap: 1rem;
+		gap: 1.25rem;
 	}
 
 	.dw-mega-menu__flat {
@@ -269,63 +333,62 @@ header.home {
 	}
 
 	.dw-mega-menu__actions {
+		flex-direction: column;
+		gap: .5rem;
 		margin-top: 1rem;
+	}
+
+	.dw-header-actions {
+		gap: 0;
+		margin-left: 0;
+		padding-top: .75rem;
+		border-top: 1px solid #dee2e6;
+	}
+
+	.dw-main-nav .submenu {
+		display: block;
+		position: static;
+		min-width: 0;
+		margin: 0 0 0 1rem;
+		padding: 0;
+		background: transparent;
+		box-shadow: none;
+		list-style: none;
+	}
+
+	.dw-main-nav .submenu .submenu {
+		margin-left: 1rem;
 	}
 }
 
-/* Submenu styles */
-.submenu {
-	display: none;
-	position: absolute;
-	top: 100%;
-	left: 0;
-	min-width: 300px;
-	margin-top: 0;
-	padding: 10px 0;
-	background-color: #fff;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
-	z-index: 1000;
-	opacity: 0;
-	transition: opacity .3s ease;
-	white-space: nowrap;
+.dw-main-nav .submenu li {
+	position: relative;
+	list-style: none;
 }
 
-.submenu .submenu {
-	top: 0;
-	left: 100%;
-	margin-left: 1px;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
-}
-
-.nav-item .right-edge .submenu {
-	left: auto;
-	right: 100%;
-}
-
-.nav-item:hover > .submenu,
-.submenu li:hover > .submenu {
-	display: block; /* Display submenu when hovered */
-	opacity: 1;
-}
-
-/* Style submenu items */
-.submenu li {
-	position: relative; /* Allow positioning of nested submenus */
-	list-style: none; /* Remove default list styling */
-}
-
-.submenu a {
+.dw-main-nav .submenu a {
+	display: block;
 	max-width: 300px;
-	padding: 10px;
+	padding: .625rem;
 	color: #333;
 	text-decoration: none;
-	display: block;
 	white-space: normal;
-	word-wrap: break-word;
+	overflow-wrap: break-word;
 }
 
-.submenu a:hover {
-	background-color: #f0f0f0;
+.dw-main-nav .submenu a:hover {
+	background: #f0f0f0;
+}
+
+@media (max-width: 1199.98px) {
+	.dw-main-nav .submenu a {
+		max-width: none;
+		padding: .4rem 0;
+	}
+
+	.dw-main-nav .submenu a:hover {
+		background: transparent;
+	}
 }
 
 .row-menu {
