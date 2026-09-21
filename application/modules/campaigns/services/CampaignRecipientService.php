@@ -307,4 +307,29 @@ class Campaigns_Service_CampaignRecipientService
 
 		return $empty;
 	}
+
+	public function getCampaignRecipientStatus(array $campaign): array
+	{
+		$emailDb = new Contacts_Model_DbTable_Email();
+		$dbConfig = $emailDb->getAdapter()->getConfig();
+
+		$categoryDb = new Application_Model_DbTable_Category();
+		$categories = $categoryDb->getCategories('contact');
+
+		$emailaddress = new DEEC_Emailaddress(
+			BASE_PATH,
+			$dbConfig['host'],
+			$dbConfig['username'],
+			$dbConfig['password'],
+			$dbConfig['dbname']
+		);
+
+		return $emailaddress->getCampaignRecipientStatus(
+			(int)$campaign['clientid'],
+			(int)$campaign['contactcatid'],
+			(bool)$campaign['contactsubcat'],
+			(int)$campaign['id'],
+			$categories
+		);
+	}
 }

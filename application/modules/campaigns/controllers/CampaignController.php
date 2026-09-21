@@ -262,6 +262,8 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 			(bool)$campaign['contactsubcat']
 		);
 
+		$recipientStatus = $recipientService->getCampaignRecipientStatus($campaign);
+
 		$records = (int)$recipientData['records'];
 		$count = count($recipientData['contacts']);
 		$start = $records > 0 ? (($page - 1) * $limit) + 1 : 0;
@@ -270,6 +272,7 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 		$this->view->contacts = $recipientData['contacts'];
 		$this->view->contactPersonsByCompany = $recipientData['contactPersonsByCompany'];
 		$this->view->emailmessages = $recipientData['emailmessages'];
+		$this->view->recipientStatus = $recipientStatus;
 
 		$this->view->pagination = [
 			'count' => $count,

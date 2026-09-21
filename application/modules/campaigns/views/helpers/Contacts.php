@@ -19,7 +19,24 @@ class Zend_View_Helper_Contacts extends Zend_View_Helper_Abstract
 
 		ob_start();
 		?>
+		<?php $status = $this->view->recipientStatus ?? []; ?>
+
 		<div data-pagination-change="getCampaignRecipients">
+			<?php if($status) { ?>
+				<div class="dw-list-value">
+					<strong><?php echo $this->view->translate('CAMPAIGNS_EMAIL_RECIPIENTS'); ?>:</strong>
+					<?php echo (int)$status['total']; ?>
+					&nbsp;|&nbsp;
+					<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_OPEN'); ?>: <?php echo (int)$status['open']; ?>
+					&nbsp;|&nbsp;
+					<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_PENDING'); ?>: <?php echo (int)$status['pending']; ?>
+					&nbsp;|&nbsp;
+					<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_SENT'); ?>: <?php echo (int)$status['sent']; ?>
+					&nbsp;|&nbsp;
+					<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_FAILED'); ?>: <?php echo (int)$status['failed']; ?>
+				</div>
+			<?php } ?>
+
 			<?php echo $this->view->Pagination(); ?>
 
 			<div class="dw-list-page">

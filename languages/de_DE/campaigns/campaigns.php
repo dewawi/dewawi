@@ -138,6 +138,7 @@
 	'CAMPAIGNS_NONE' => 'keine',
 	'CAMPAIGNS_EMPTY' => 'leer',
 	'CAMPAIGNS_ACTIVE_FILTER' => 'active Filter',
+	'CAMPAIGNS_EMAIL_RECIPIENTS' => 'E-Mail-Empfänger',
 	'CAMPAIGNS_UNSUBSCRIBE_URL' => 'Abmelde-URL',
 	'CAMPAIGNS_UNSUBSCRIBE_URL_INFO' => 'Leer lassen, um die URL aus der Systemkonfiguration zu verwenden.',
 	'CAMPAIGNS_UNSUBSCRIBE_TITLE' => 'E-Mail-Empfang beenden',

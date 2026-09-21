@@ -19,5 +19,7 @@
 	'CONTACTS_EMAIL_SUPPRESSED' => 'Für Kampagnen sperren',
 	'CONTACTS_EMAIL_ACCESS_TIME' => 'Zugriffszeit',
 	'CONTACTS_EMAIL_SUCCESSFUL' => 'Erfolgreich versendet',
+	'CONTACTS_EMAIL_SUCCESSFUL' => 'Erfolgreich versendet',
+	'CONTACTS_EMAIL_PENDING' => 'Versand läuft',
 	'CONTACTS_EMAIL_ERROR' => 'Fehler!'
 );

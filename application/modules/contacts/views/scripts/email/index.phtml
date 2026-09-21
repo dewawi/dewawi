@@ -94,15 +94,21 @@ echo $this->Messages();
 							</td>
 
 							<td class="dw-col-status" data-label="Status">
-								<?php if ($emailmessage['response']) : ?>
-									<div class="dw-status-message dw-status-message--error">
-										<?php echo $this->translate('CONTACTS_EMAIL_ERROR'); ?>
-									</div>
-									<pre class="dw-status-response"><?php echo $this->escape($emailmessage['response']); ?></pre>
-								<?php else : ?>
+								<?php $response = trim((string)($emailmessage['response'] ?? '')); ?>
+
+								<?php if($response === '' || $response === 'sent') : ?>
 									<div class="dw-status-message dw-status-message--success">
 										<?php echo $this->translate('CONTACTS_EMAIL_SUCCESSFUL'); ?>
 									</div>
+								<?php elseif($response === 'pending') : ?>
+									<div class="dw-status-message">
+										<?php echo $this->translate('CONTACTS_EMAIL_PENDING'); ?>
+									</div>
+								<?php else : ?>
+									<div class="dw-status-message dw-status-message--error">
+										<?php echo $this->translate('CONTACTS_EMAIL_ERROR'); ?>
+									</div>
+									<pre class="dw-status-response"><?php echo $this->escape($response); ?></pre>
 								<?php endif; ?>
 
 								<button
