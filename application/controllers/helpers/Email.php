@@ -204,6 +204,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$emailmessage['subject'] = $subject ? $subject : 'Anfrageformular';
 			$emailmessage['body'] = $body;
 			$emailmessage['attachment'] = implode(',', $attachmentsSent);
+			$emailmessage['response'] = 'pending';
 			$messageid = $emailmessageDb->addEmailmessage($emailmessage);
 
 			//Get portal TODO
@@ -262,14 +263,11 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 			//Send the message, check for errors
 			if(!$mail->send()) {
-				//Save errors to the db
 				$emailmessageDb->updateEmailmessage($messageid, array('response' => $mail->ErrorInfo));
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_ERROR');
-				//$redirector->gotoSimple('error', $controller, 'default');
 			} else {
-//print_r($formData);
+				$emailmessageDb->updateEmailmessage($messageid, array('response' => 'sent'));
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
-				//print_r($formData);
 			}
 		}
 	}
