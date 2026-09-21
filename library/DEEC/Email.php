@@ -243,9 +243,11 @@ class DEEC_Email {
 				$emailmessage['parentid'] = $campaign['id'];
 				$emailmessage['module'] = $data['module'];
 				$emailmessage['controller'] = $data['controller'];
+				$emailmessage['sender'] = $fromEmail;
 				$emailmessage['recipient'] = $recipient['email'];
 				$emailmessage['cc'] = $data['cc'];
 				$emailmessage['bcc'] = $data['bcc'];
+				$emailmessage['replyto'] = $data['replyto'] !== '' ? $data['replyto'] : null;
 				$emailmessage['subject'] = $data['subject'];
 				$emailmessage['body'] = $body;
 				$emailmessage['clientid'] = $campaign['clientid'];
