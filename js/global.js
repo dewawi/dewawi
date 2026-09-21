@@ -1928,13 +1928,28 @@ function sendMessage() {
 
 function resendMessage(messageid){
 	var url = baseUrl+'/contacts/email/send/messageid/'+messageid;
+
 	$.ajax({
 		type: 'POST',
 		url: url,
-		cache: false,
-		success: function(response){
-			getEmailmessages(window.pageYOffset);
+		dataType: 'json',
+		cache: false
+	}).done(function(response) {
+		if(!response || response.ok !== true) {
+			pushMessages(['Nachricht konnte nicht erneut gesendet werden.']);
+			return;
 		}
+
+		if(module === 'campaigns' && controller === 'campaign') {
+			getCampaignRecipients();
+			getCampaignErrors();
+			return;
+		}
+
+		getEmailmessages(window.pageYOffset);
+	}).fail(function(xhr) {
+		pushMessages(['Nachricht konnte nicht erneut gesendet werden.']);
+		console.log('resendMessage error', xhr.responseText);
 	});
 }
 

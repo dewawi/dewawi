@@ -53,34 +53,37 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 				$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
 
+				$recipients = array();
+
 				if($messageid) {
 					$emailmessage = $emailmessageDb->getEmailmessage($messageid);
+					$contactid = (int)($emailmessage['contactid'] ?? 0);
+					$documentid = (int)($emailmessage['documentid'] ?? 0);
+					$campaignid = (int)($emailmessage['parentid'] ?? 0);
+
 					unset($emailmessage['id'], $emailmessage['messagesent'], $emailmessage['messagesentby'], $emailmessage['response']);
+
 					$data = $emailmessage;
-					$contactid = $emailmessage['contactid'];
-					$documentid = $emailmessage['documentid'];
-					$campaignid = $emailmessage['campaignid'];
-				}
+					$recipients[0]['email'] = $data['recipient'];
+					$recipients[0]['contactid'] = $contactid;
+				} else {
+					$emailDb = new Contacts_Model_DbTable_Email();
+					$emailArray = $emailDb->getEmail($data['recipient']);
+					$recipients[0]['email'] = $emailArray['email'];
 
-				$recipients = array();
-				//Get email
-				$emailDb = new Contacts_Model_DbTable_Email();
-				$emailArray = $emailDb->getEmail($data['recipient']);
-				$recipients[0]['email'] = $emailArray['email'];
-				if($emailArray['controller'] == 'contact') {
-					$recipients[0]['contactid'] = $emailArray['parentid'];
-				} elseif($emailArray['controller'] == 'contactperson') {
-					$recipients[0]['contactid'] = $emailArray['parentid'];
+					if($emailArray['controller'] == 'contact') {
+						$recipients[0]['contactid'] = $emailArray['parentid'];
+					} elseif($emailArray['controller'] == 'contactperson') {
+						$recipients[0]['contactid'] = $emailArray['parentid'];
 
-					//Get contact person
-					$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
-					$contactperson = $contactpersonDb->getById($emailArray['parentid']);
+						$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+						$contactperson = $contactpersonDb->getById($emailArray['parentid']);
 
-					$recipients[0]['salutation'] = $contactperson['salutation'];
-					$recipients[0]['name2'] = $contactperson['name2'];
+						$recipients[0]['salutation'] = $contactperson['salutation'];
+						$recipients[0]['name2'] = $contactperson['name2'];
+					}
 				}
 			}
-			//print_r($recipients);
 
 			if($form->isValid($data) || true) {
 				// Get form data
