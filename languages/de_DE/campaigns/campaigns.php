@@ -138,6 +138,9 @@
 	'CAMPAIGNS_NONE' => 'keine',
 	'CAMPAIGNS_EMPTY' => 'leer',
 	'CAMPAIGNS_ACTIVE_FILTER' => 'active Filter',
-	'CAMPAIGNS_UNSUBSCRIBE_URL' => 'Abmelde-URL',
-	'CAMPAIGNS_UNSUBSCRIBE_URL_INFO' => 'Leer lassen, um die URL aus der Systemkonfiguration zu verwenden.',
+	'CAMPAIGNS_UNSUBSCRIBE_TITLE' => 'E-Mail-Empfang beenden',
+	'CAMPAIGNS_UNSUBSCRIBE_CONFIRM' => 'Möchten Sie keine weiteren E-Mails von uns erhalten?',
+	'CAMPAIGNS_UNSUBSCRIBE_BUTTON' => 'Keine weiteren E-Mails erhalten',
+	'CAMPAIGNS_UNSUBSCRIBE_SUCCESS' => 'Sie wurden erfolgreich abgemeldet und erhalten künftig keine weiteren E-Mails an diese Adresse.',
+	'CAMPAIGNS_UNSUBSCRIBE_INVALID' => 'Der Abmeldelink ist ungültig.',
 );

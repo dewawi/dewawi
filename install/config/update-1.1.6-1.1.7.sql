@@ -30,3 +30,6 @@ ALTER TABLE `shop` ADD `inquiryenabled` tinyint(1) NOT NULL DEFAULT 0 AFTER `con
 ALTER TABLE `menuitem` ADD `categoryid` int(11) NOT NULL DEFAULT 0 AFTER `pageid`;
 ALTER TABLE `menuitem` ADD `variant` varchar(50) NOT NULL DEFAULT 'default' AFTER `title`;
 ALTER TABLE `menuitem` ADD INDEX (`categoryid`);
+
+ALTER TABLE `config` ADD `unsubscribeurl` varchar(255) DEFAULT NULL AFTER `smtppass`;
+ALTER TABLE `campaign` ADD `unsubscribeurl` varchar(255) DEFAULT NULL AFTER `emailattachment`;

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title><?= $this->escape($this->translate('CAMPAIGNS_UNSUBSCRIBE_TITLE')); ?></title>
+</head>
+<body>
+	<main>
+		<h1><?= $this->escape($this->translate('CAMPAIGNS_UNSUBSCRIBE_TITLE')); ?></h1>
+
+		<?php if(!$this->valid) : ?>
+			<p><?= $this->escape($this->translate('CAMPAIGNS_UNSUBSCRIBE_INVALID')); ?></p>
+		<?php elseif($this->unsubscribed) : ?>
+			<p><?= $this->escape($this->translate('CAMPAIGNS_UNSUBSCRIBE_SUCCESS')); ?></p>
+		<?php else : ?>
+			<p><?= $this->escape($this->translate('CAMPAIGNS_UNSUBSCRIBE_CONFIRM')); ?></p>
+
+			<form method="post">
+				<input type="hidden" name="id" value="<?= (int)$this->id; ?>">
+				<input type="hidden" name="token" value="<?= $this->escape($this->token); ?>">
+
+				<button type="submit">
+					<?= $this->escape($this->translate('CAMPAIGNS_UNSUBSCRIBE_BUTTON')); ?>
+				</button>
+			</form>
+		<?php endif; ?>
+	</main>
+</body>
+</html>
