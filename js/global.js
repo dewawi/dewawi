@@ -789,7 +789,7 @@ $(document).ready(function(){
 		$('#treemenu li a').removeClass('active');
 		$(this).addClass('active');
 		const id = $(this).data('id');
-		$('#catid').val(id);
+		$('.dw-toolbar [name="catid"]').val(id);
 		$.cookie('catid', id, { path: cookiePath });
 		$('#pagination-page').val(1);
 		search();
