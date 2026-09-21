@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS `campaign` (
   `emailsubject` varchar(255) DEFAULT NULL,
   `emailbody` text DEFAULT NULL,
   `emailattachment` text DEFAULT NULL,
+  `unsubscribeurl` varchar(255) DEFAULT NULL;
   `state` int(11) NOT NULL,
   `completed` tinyint(1) NOT NULL DEFAULT 0,
   `cancelled` tinyint(1) NOT NULL DEFAULT 0,
@@ -227,6 +228,7 @@ CREATE TABLE IF NOT EXISTS `config` (
   `smtpsecure` varchar(32) DEFAULT NULL,
   `smtpuser` varchar(255) DEFAULT NULL,
   `smtppass` varchar(255) DEFAULT NULL,
+  `unsubscribeurl` varchar(255) DEFAULT NULL;
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,

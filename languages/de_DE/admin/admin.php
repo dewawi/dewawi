@@ -186,5 +186,7 @@
 	'ADMIN_EXPORT_SQL' => 'SQL-Export',
 	'ADMIN_FILE_NAME' => 'Dateiname',
 	'ADMIN_FILE_CREATED' => 'Erstellungsdatum',
-	'ADMIN_FILE_SIZE' => 'Dateigröße'
+	'ADMIN_FILE_SIZE' => 'Dateigröße',
+	'ADMIN_UNSUBSCRIBE_URL' => 'Abmelde-URL',
+	'ADMIN_UNSUBSCRIBE_URL_INFO' => 'Fallback-URL für Campaign-Abmeldelinks.',
 );

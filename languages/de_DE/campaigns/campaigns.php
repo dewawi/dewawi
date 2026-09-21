@@ -137,5 +137,7 @@
 	'CAMPAIGNS_EDIT_POSITIONS_SEPARATELY' => 'Positionen einzeln bearbeiten',
 	'CAMPAIGNS_NONE' => 'keine',
 	'CAMPAIGNS_EMPTY' => 'leer',
-	'CAMPAIGNS_ACTIVE_FILTER' => 'active Filter'
+	'CAMPAIGNS_ACTIVE_FILTER' => 'active Filter',
+	'CAMPAIGNS_UNSUBSCRIBE_URL' => 'Abmelde-URL',
+	'CAMPAIGNS_UNSUBSCRIBE_URL_INFO' => 'Leer lassen, um die URL aus der Systemkonfiguration zu verwenden.',
 );

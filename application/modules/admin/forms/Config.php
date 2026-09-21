@@ -120,6 +120,16 @@ class Admin_Form_Config extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'unsubscribeurl',
+			'type' => 'text',
+			'label' => 'ADMIN_UNSUBSCRIBE_URL',
+			'description' => 'ADMIN_UNSUBSCRIBE_URL_INFO',
+			'tab' => 'smtp',
+			'format' => ['type' => 'string'],
+			'col' => 12,
+		]);
+
+		$this->addElement([
 			'name' => 'analytics',
 			'type' => 'textarea',
 			'label' => 'ADMIN_ANALYTICS',

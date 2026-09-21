@@ -171,5 +171,14 @@ class Campaigns_Form_Campaign extends DEEC_Form
 				'col' => 6,
 			]);
 		}
+
+		$this->addElement([
+			'name' => 'unsubscribeurl',
+			'type' => 'text',
+			'label' => 'CAMPAIGNS_UNSUBSCRIBE_URL',
+			'description' => 'CAMPAIGNS_UNSUBSCRIBE_URL_INFO',
+			'format' => ['type' => 'string'],
+			'col' => 6,
+		]);
 	}
 }
