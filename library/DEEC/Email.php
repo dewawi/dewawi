@@ -37,7 +37,7 @@ class DEEC_Email {
 		$clientid = (int)$clientid;
 
 		$query = '
-			SELECT smtphost, smtpport, smtpauth, smtpsecure, smtpuser, smtppass
+			SELECT smtphost, smtpport, smtpauth, smtpsecure, smtpuser, smtppass, unsubscribeurl
 			FROM config
 			WHERE clientid = '.$clientid.'
 			LIMIT 1
@@ -95,6 +95,20 @@ class DEEC_Email {
 
 			if($campaign) {
 				$smtp = $this->getSmtpConfig($campaign['clientid']);
+
+				$unsubscribeBaseUrl = trim((string)($campaign['unsubscribeurl'] ?? ''));
+
+				if($unsubscribeBaseUrl === '' && $smtp) {
+					$unsubscribeBaseUrl = trim((string)($smtp['unsubscribeurl'] ?? ''));
+				}
+
+				if($unsubscribeBaseUrl === '') {
+					throw new Exception('Campaign unsubscribe URL is missing');
+				}
+
+				if(!filter_var($unsubscribeBaseUrl, FILTER_VALIDATE_URL)) {
+					throw new Exception('Campaign unsubscribe URL is invalid');
+				}
 
 				if($smtp) {
 					$mail->Host = $smtp['smtphost'];
@@ -180,27 +194,47 @@ class DEEC_Email {
 
 			foreach($recipients as $recipient) {
 				//Recipients
-				$mail->clearAllRecipients();											// clear all
+				$mail->clearAllRecipients();
+				$mail->clearReplyTos();
+				$mail->clearCustomHeaders();
 				$mail->setFrom($fromEmail, $fromName);
-				$mail->addAddress($recipient['email']);									// Add a recipient
-				/*$data['replyto'] = str_replace(' ', '', $data['replyto']);			// Remove spaces
-				if($data['replyto']) $mail->addReplyTo($data['replyto']);				// Add reply to
-				$data['cc'] = str_replace(' ', '', $data['cc']);						// Remove spaces
-				if($data['cc']) {														// Add copy recipients
-					if(strpos($data['cc'], ',') !== false) {
-						$ccs = explode(',', $data['cc']);
-						foreach($ccs as $cc) {
-							$mail->addCC($cc);
-						}
-					} else {
-						$mail->addCC($data['cc']);
-					}
+				$mail->addAddress($recipient['email']);
+				$data['cc'] = $campaign['emailcc'];
+				$data['bcc'] = $campaign['emailbcc'];
+				$data['replyto'] = trim((string)($campaign['emailreplyto'] ?? ''));
+				$data['subject'] = $campaign['emailsubject'];
+				if($data['replyto'] !== '') {
+					$mail->addReplyTo($data['replyto']);
 				}
-				$data['bcc'] = str_replace(' ', '', $data['bcc']);
-				if($data['bcc']) $mail->addBCC($data['bcc']);*/
+
+				if(empty($recipient['emailid']) || empty($recipient['password'])) {
+					throw new Exception('Campaign recipient unsubscribe data is missing');
+				}
+
+				$unsubscribeToken = hash(
+					'sha256',
+					(int)$recipient['emailid'].'|'.(int)$campaign['clientid'].'|'.$recipient['password']
+				);
+
+				$separator = strpos($unsubscribeBaseUrl, '?') === false ? '?' : '&';
+
+				$unsubscribeUrl = $unsubscribeBaseUrl
+					.$separator
+					.'id='.(int)$recipient['emailid']
+					.'&token='.urlencode($unsubscribeToken);
 
 				// personalize for this recipient
 				$body = $this->personalizeBody($data['body'], $recipient);
+
+				$unsubscribeLink = '<a href="'
+					.htmlspecialchars($unsubscribeUrl, ENT_QUOTES, 'UTF-8')
+					.'">Ich möchte keine weiteren E-Mails erhalten</a>';
+
+				if(strpos($body, '[UNSUBSCRIBE]') !== false) {
+					$body = str_replace('[UNSUBSCRIBE]', $unsubscribeLink, $body);
+				} else {
+					$body .= '<p style="font-size:12px;margin-top:24px;">'.$unsubscribeLink.'</p>';
+				}
 
 				//Save email message to the db
 				$emailmessage = array();
@@ -240,10 +274,20 @@ class DEEC_Email {
 				$mail->Subject = $data['subject'];
 				$mail->Body	= $body;
 				//$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
-//echo $data['body'];
+
 				//Content
 				$mail->CharSet	= 'UTF-8';
 				$mail->Encoding = 'base64';
+
+				$mail->addCustomHeader(
+					'List-Unsubscribe',
+					'<'.$unsubscribeUrl.'>'
+				);
+
+				$mail->addCustomHeader(
+					'List-Unsubscribe-Post',
+					'List-Unsubscribe=One-Click'
+				);
 
 				//Send the message, check for errors
 				if (!$mail->send()) {

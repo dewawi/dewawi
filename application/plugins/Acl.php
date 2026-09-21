@@ -2,12 +2,13 @@
 
 class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 {
-	public function routeShutdown(
-		Zend_Controller_Request_Abstract $request
-	): void {
+	public function routeShutdown(Zend_Controller_Request_Abstract $request): void
+	{
+		if($this->isPublicRequest($request)) return;
+
 		$auth = Zend_Auth::getInstance();
 
-		if (!$auth->hasIdentity()) {
+		if(!$auth->hasIdentity()) {
 			$this->handleGuestRequest($request);
 			return;
 		}

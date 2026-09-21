@@ -96,6 +96,8 @@ class DEEC_Emailaddress {
 
 		$query = '
 			SELECT
+				e.id AS emailid,
+				e.password,
 				LOWER(TRIM(e.email)) AS email,
 				c.id AS contactid,
 				NULL AS contactpersonid,
@@ -160,6 +162,8 @@ class DEEC_Emailaddress {
 			UNION ALL
 
 			SELECT
+				e.id AS emailid,
+				e.password,
 				LOWER(TRIM(e.email)) AS email,
 				c.id AS contactid,
 				cp.id AS contactpersonid,
