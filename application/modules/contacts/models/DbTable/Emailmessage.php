@@ -71,4 +71,35 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);
 	}
+
+	public function getByProviderMessageId(string $providerMessageId): ?array
+	{
+		$providerMessageId = trim($providerMessageId);
+		if($providerMessageId === '') return null;
+
+		$where = [
+			$this->getAdapter()->quoteInto('providermessageid = ?', $providerMessageId),
+			$this->getAdapter()->quoteInto('deleted = ?', 0),
+		];
+
+		$row = $this->fetchRow($where);
+
+		return $row ? $row->toArray() : null;
+	}
+
+	public function updateDelivery(int $id, int $clientId, array $data): void
+	{
+		$allowed = ['deliverystatus', 'deliverydate', 'deliveryresponse'];
+		$data = array_intersect_key($data, array_flip($allowed));
+
+		if(!$data) return;
+
+		$where = [
+			$this->getAdapter()->quoteInto('id = ?', $id),
+			$this->getAdapter()->quoteInto('clientid = ?', $clientId),
+			$this->getAdapter()->quoteInto('deleted = ?', 0),
+		];
+
+		$this->update($data, $where);
+	}
 }
