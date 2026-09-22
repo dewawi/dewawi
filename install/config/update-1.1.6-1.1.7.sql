@@ -49,6 +49,6 @@ ALTER TABLE `email` DROP INDEX `controller`;
 ALTER TABLE `email` DROP INDEX `clientid`;
 ALTER TABLE `email` DROP INDEX `deleted`;
 ALTER TABLE `email` ADD INDEX `parentid_clientid_deleted` (`parentid`, `clientid`, `deleted`);
-ALTER TABLE `email` ADD INDEX `clientid_suppressed_deleted` (`clientid`, `suppressed`, `deleted`);
+ALTER TABLE `email` ADD INDEX `clientid_deleted_suppressed` (`clientid`, `deleted`, `suppressed`);
 
 ALTER TABLE `emailmessage` ADD INDEX `parentid_clientid_deleted_module_controller` (`parentid`, `clientid`, `deleted`, `module`, `controller`);
