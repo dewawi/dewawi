@@ -52,3 +52,11 @@ ALTER TABLE `email` ADD INDEX `parentid_clientid_deleted` (`parentid`, `clientid
 ALTER TABLE `email` ADD INDEX `clientid_deleted_suppressed` (`clientid`, `deleted`, `suppressed`);
 
 ALTER TABLE `emailmessage` ADD INDEX `parentid_clientid_deleted_module_controller` (`parentid`, `clientid`, `deleted`, `module`, `controller`);
+
+ALTER TABLE `config` ADD `sesfeedbacktopicarn` varchar(255) DEFAULT NULL AFTER `unsubscribeurl`;
+
+ALTER TABLE `emailmessage` ADD `providermessageid` varchar(255) DEFAULT NULL AFTER `response`;
+ALTER TABLE `emailmessage` ADD `deliverystatus` varchar(32) DEFAULT NULL AFTER `providermessageid`;
+ALTER TABLE `emailmessage` ADD `deliverydate` datetime DEFAULT NULL AFTER `deliverystatus`;
+ALTER TABLE `emailmessage` ADD `deliveryresponse` text DEFAULT NULL AFTER `deliverydate`;
+ALTER TABLE `emailmessage` ADD INDEX `providermessageid` (`providermessageid`);

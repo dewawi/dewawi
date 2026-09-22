@@ -229,6 +229,7 @@ CREATE TABLE IF NOT EXISTS `config` (
   `smtpuser` varchar(255) DEFAULT NULL,
   `smtppass` varchar(255) DEFAULT NULL,
   `unsubscribeurl` varchar(255) DEFAULT NULL,
+  `sesfeedbacktopicarn` varchar(255) DEFAULT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
@@ -888,9 +889,14 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `messagesent` datetime DEFAULT NULL,
   `messagesentby` int(11) NOT NULL DEFAULT 0,
   `response` text DEFAULT NULL,
+  `providermessageid` varchar(255) DEFAULT NULL,
+  `deliverystatus` varchar(32) DEFAULT NULL,
+  `deliverydate` datetime DEFAULT NULL,
+  `deliveryresponse` text DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY `parentid_clientid_deleted_module_controller` (parentid, clientid, deleted, module, controller)
+  KEY `providermessageid` (providermessageid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `emailtemplate` (

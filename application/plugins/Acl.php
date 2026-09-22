@@ -114,8 +114,16 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 
 	private function isPublicRequest(Zend_Controller_Request_Abstract $request): bool
 	{
-		return $request->getModuleName() === 'campaigns'
+		if(
+			$request->getModuleName() === 'campaigns'
 			&& $request->getControllerName() === 'unsubscribe'
+			&& $request->getActionName() === 'index'
+		) {
+			return true;
+		}
+
+		return $request->getModuleName() === 'campaigns'
+			&& $request->getControllerName() === 'feedback'
 			&& $request->getActionName() === 'index';
 	}
 

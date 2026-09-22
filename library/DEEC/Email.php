@@ -312,8 +312,11 @@ class DEEC_Email {
 					continue;
 				}
 
+				$providerMessageId = $mail->getSMTPInstance()->getLastTransactionID();
+
 				$this->emailmessage->updateEmailmessage($messageid, [
 					'response' => 'sent',
+					'providermessageid' => $providerMessageId ?: null,
 				]);
 
 				$result['sent']++;

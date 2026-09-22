@@ -32,9 +32,22 @@ class DEEC_Emailmessage {
 
 	public function updateEmailmessage($id, $data) {
 		$id = (int)$id;
-		$response = $this->connection->real_escape_string($data['response']);
+		$allowed = ['response', 'providermessageid', 'deliverystatus', 'deliverydate', 'deliveryresponse'];
+		$values = [];
 
-		$query = 'UPDATE emailmessage SET response = "'.$response.'" WHERE id = '.$id;
+		foreach($allowed as $field) {
+			if(!array_key_exists($field, $data)) continue;
+
+			if($data[$field] === null) {
+				$values[] = '`'.$field.'` = NULL';
+			} else {
+				$values[] = '`'.$field.'` = "'.$this->connection->real_escape_string((string)$data[$field]).'"';
+			}
+		}
+
+		if(!$values) return false;
+
+		$query = 'UPDATE emailmessage SET '.implode(', ', $values).' WHERE id = '.$id;
 
 		return mysqli_query($this->connection, $query) ? true : false;
 	}
