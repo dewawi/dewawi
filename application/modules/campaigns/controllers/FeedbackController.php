@@ -61,12 +61,15 @@ class Campaigns_FeedbackController extends Zend_Controller_Action
 	{
 		$type = (string)($event['notificationType'] ?? $event['eventType'] ?? '');
 		$providerMessageId = trim((string)($event['mail']['messageId'] ?? ''));
+		$emailmessageId = $this->getEmailmessageId($event);
 
-		if($providerMessageId === '' || $type === '') return;
+		if($providerMessageId === '' || $type === '' || !$emailmessageId) return;
 
 		$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
-		$message = $emailmessageDb->getByProviderMessageId($providerMessageId);
+		$emailmessageDb->setClientId((int)$config['clientid']);
+		$message = $emailmessageDb->getById($emailmessageId);
 
+		if(!$message) return;
 		if($message['module'] !== 'campaigns' || $message['controller'] !== 'campaign') return;
 
 		$recipient = strtolower(trim((string)$message['recipient']));
