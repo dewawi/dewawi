@@ -112,14 +112,17 @@ class Campaigns_Model_List_Recipients extends DEEC_List
 				$label = $this->translate('CAMPAIGNS_RECIPIENT_FAILED');
 			}
 
+			$content = '<div>'.$this->escape((string)($message['recipient'] ?? '')).'</div>';
+
+			if(!empty($message['messagesent'])) {
+				$content .= '<div class="dw-list-value">'.$this->escape($message['messagesent']).'</div>';
+			}
+
+			$content .= '<div class="dw-list-value">'.$this->escape($label).'</div>';
+
 			if(!in_array($deliveryStatus, ['bounce', 'complaint'], true)) {
 				$content .= '<button type="button" class="dw-btn dw-btn--secondary" onclick="resendMessage('.(int)$message['id'].')">'.$this->escape($this->translate('CAMPAIGNS_RESEND')).'</button>';
 			}
-
-			if(!empty($message['messagesent'])) $content .= '<div class="dw-list-value">'.$this->escape($message['messagesent']).'</div>';
-
-			$content .= '<div class="dw-list-value">'.$this->escape($label).'</div>';
-			$content .= '<button type="button" class="dw-btn dw-btn--secondary" onclick="resendMessage('.(int)$message['id'].')">'.$this->escape($this->translate('CAMPAIGNS_RESEND')).'</button>';
 
 			$html[] = '<div>'.$content.'</div>';
 		}
