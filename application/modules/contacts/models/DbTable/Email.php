@@ -4,6 +4,29 @@ class Contacts_Model_DbTable_Email extends DEEC_Model_DbTable_Entity
 {
 	protected $_name = 'email';
 
+	protected function prepareCreateData(array $data): array
+	{
+		return parent::prepareCreateData($this->normalizeEmailData($data));
+	}
+
+	protected function prepareUpdateData(array $data): array
+	{
+		return parent::prepareUpdateData($this->normalizeEmailData($data));
+	}
+
+	protected function normalizeEmailData(array $data): array
+	{
+		if(!array_key_exists('email', $data)) return $data;
+
+		$data['email'] = DEEC_Filter::email((string)$data['email']);
+
+		if($data['email'] !== null && !DEEC_Filter::isValidEmail($data['email'])) {
+			throw new InvalidArgumentException('Invalid email address');
+		}
+
+		return $data;
+	}
+
 	public function getEmail($id)
 	{
 		$id = (int)$id;

@@ -33,6 +33,9 @@ class DEEC_Filter
 				if ((float)$n == 0.0) return null;
 				return $n;
 
+			case 'email':
+				return self::email((string)$value);
+
 			case 'html':
 				return self::sanitizeHtml((string)$value, $fmt);
 
@@ -69,6 +72,37 @@ class DEEC_Filter
 		if ($s === '' || $s === '-' || $s === '.' || $s === '-.') return null;
 
 		return is_numeric($s) ? (float)$s : null;
+	}
+
+	public static function email(string $value): ?string
+	{
+		$value = preg_replace('~^\s+|\s+$~u', '', $value);
+		$value = preg_replace('~[\x{00AD}\x{200B}-\x{200F}\x{2028}\x{2029}\x{2060}-\x{206F}\x{FEFF}]~u', '', $value);
+		$value = str_replace(['‐', '-', '‒', '–', '—', '−'], '-', $value);
+		$value = preg_replace('~^\s+|\s+$~u', '', $value);
+
+		return $value === '' ? null : $value;
+	}
+
+	public static function isValidEmail($value): bool
+	{
+		$email = self::email((string)$value);
+
+		if($email === null || substr_count($email, '@') !== 1) return false;
+
+		list($local, $domain) = explode('@', $email, 2);
+
+		if($local === '' || $domain === '') return false;
+
+		if(preg_match('~[^\x00-\x7F]~', $domain)) {
+			if(!function_exists('idn_to_ascii')) return false;
+
+			$domain = idn_to_ascii($domain, 0, INTL_IDNA_VARIANT_UTS46);
+
+			if($domain === false) return false;
+		}
+
+		return filter_var($local.'@'.$domain, FILTER_VALIDATE_EMAIL) !== false;
 	}
 
 	protected static function sanitizeHtml(string $value, array $fmt): ?string

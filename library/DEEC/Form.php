@@ -646,7 +646,9 @@ class DEEC_Form
 			if ($val === null || $val === '') continue;
 
 			// email
-			if ($type === 'email' && !filter_var($val, FILTER_VALIDATE_EMAIL)) {
+			$isEmail = $type === 'email' || (($el['format']['type'] ?? '') === 'email');
+
+			if($isEmail && !DEEC_Filter::isValidEmail($val)) {
 				$this->errors[$name][] = 'email';
 			}
 

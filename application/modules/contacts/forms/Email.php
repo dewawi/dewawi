@@ -8,7 +8,7 @@ class Contacts_Form_Email extends DEEC_Form
 			'name' => 'email',
 			'label' => 'CONTACTS_EMAIL',
 			'type' => 'text',
-			'format' => ['type' => 'string'],
+			'format' => ['type' => 'email'],
 		]);
 
 		$this->addElement([
