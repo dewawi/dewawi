@@ -64,24 +64,9 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 		$this->update($data, $where);
 	}
 
-	public function getByProviderMessageId(string $providerMessageId): ?array
-	{
-		$providerMessageId = trim($providerMessageId);
-		if($providerMessageId === '') return null;
-
-		$where = [
-			$this->getAdapter()->quoteInto('providermessageid = ?', $providerMessageId),
-			$this->getAdapter()->quoteInto('deleted = ?', 0),
-		];
-
-		$row = $this->fetchRow($where);
-
-		return $row ? $row->toArray() : null;
-	}
-
 	public function updateDelivery(int $id, int $clientId, array $data): void
 	{
-		$allowed = ['deliverystatus', 'deliverydate', 'deliveryresponse'];
+		$allowed = ['providermessageid', 'deliverystatus', 'deliverydate', 'deliveryresponse'];
 		$data = array_intersect_key($data, array_flip($allowed));
 
 		if(!$data) return;
@@ -91,6 +76,10 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 			$this->getAdapter()->quoteInto('clientid = ?', $clientId),
 			$this->getAdapter()->quoteInto('deleted = ?', 0),
 		];
+
+		if(($data['deliverystatus'] ?? '') === 'delivered') {
+			$where[] = '(deliverystatus IS NULL OR deliverystatus = "" OR deliverystatus = "delivered")';
+		}
 
 		$this->update($data, $where);
 	}

@@ -269,6 +269,8 @@ class DEEC_Email {
 				$emailmessage['response'] = 'pending';
 				$messageid = $this->emailmessage->addEmailmessage($emailmessage);
 
+				$mail->addCustomHeader('X-DEWAWI-Emailmessage-ID', (string)$messageid);
+
 				//Get portal TODO
 				/*$portalDb = new Portals_Model_DbTable_Portal();
 				$portal = $portalDb->getPortal($email['clientid']);
@@ -312,11 +314,8 @@ class DEEC_Email {
 					continue;
 				}
 
-				$providerMessageId = $mail->getSMTPInstance()->getLastTransactionID();
-
 				$this->emailmessage->updateEmailmessage($messageid, [
 					'response' => 'sent',
-					'providermessageid' => $providerMessageId ?: null,
 				]);
 
 				$result['sent']++;

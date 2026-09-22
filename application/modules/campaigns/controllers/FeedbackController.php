@@ -67,8 +67,6 @@ class Campaigns_FeedbackController extends Zend_Controller_Action
 		$emailmessageDb = new Contacts_Model_DbTable_Emailmessage();
 		$message = $emailmessageDb->getByProviderMessageId($providerMessageId);
 
-		if(!$message) return;
-		if((int)$message['clientid'] !== (int)$config['clientid']) return;
 		if($message['module'] !== 'campaigns' || $message['controller'] !== 'campaign') return;
 
 		$recipient = strtolower(trim((string)$message['recipient']));
@@ -88,6 +86,7 @@ class Campaigns_FeedbackController extends Zend_Controller_Action
 
 		if($type === 'Delivery') {
 			$emailmessageDb->updateDelivery((int)$message['id'], (int)$message['clientid'], [
+				'providermessageid' => $providerMessageId,
 				'deliverystatus' => 'delivered',
 				'deliverydate' => $this->formatDate($event['delivery']['timestamp'] ?? null, $config),
 				'deliveryresponse' => (string)($event['delivery']['smtpResponse'] ?? ''),
@@ -101,6 +100,7 @@ class Campaigns_FeedbackController extends Zend_Controller_Action
 			$response = $this->getBounceResponse($bounce, $recipient);
 
 			$emailmessageDb->updateDelivery((int)$message['id'], (int)$message['clientid'], [
+				'providermessageid' => $providerMessageId,
 				'deliverystatus' => 'bounce',
 				'deliverydate' => $this->formatDate($bounce['timestamp'] ?? null, $config),
 				'deliveryresponse' => $response,
@@ -117,6 +117,7 @@ class Campaigns_FeedbackController extends Zend_Controller_Action
 			$complaint = $event['complaint'] ?? [];
 
 			$emailmessageDb->updateDelivery((int)$message['id'], (int)$message['clientid'], [
+				'providermessageid' => $providerMessageId,
 				'deliverystatus' => 'complaint',
 				'deliverydate' => $this->formatDate($complaint['timestamp'] ?? null, $config),
 				'deliveryresponse' => (string)($complaint['complaintFeedbackType'] ?? $complaint['complaintSubType'] ?? ''),
@@ -124,6 +125,16 @@ class Campaigns_FeedbackController extends Zend_Controller_Action
 
 			$this->suppress($message, 'complaint');
 		}
+	}
+
+	private function getEmailmessageId(array $event): int
+	{
+		foreach(($event['mail']['headers'] ?? []) as $header) {
+			if(strcasecmp(trim((string)($header['name'] ?? '')), 'X-DEWAWI-Emailmessage-ID') !== 0) continue;
+			return (int)($header['value'] ?? 0);
+		}
+
+		return 0;
 	}
 
 	private function getRecipients(array $event, string $type): array
