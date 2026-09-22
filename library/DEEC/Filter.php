@@ -76,10 +76,12 @@ class DEEC_Filter
 
 	public static function email(string $value): ?string
 	{
-		$value = preg_replace('~^\s+|\s+$~u', '', $value);
+		$value = preg_replace('~^[\s\p{Z}]+|[\s\p{Z}]+$~u', '', $value);
 		$value = preg_replace('~[\x{00AD}\x{200B}-\x{200F}\x{2028}\x{2029}\x{2060}-\x{206F}\x{FEFF}]~u', '', $value);
 		$value = str_replace(['‐', '-', '‒', '–', '—', '−'], '-', $value);
-		$value = preg_replace('~^\s+|\s+$~u', '', $value);
+		$value = preg_replace('~\s*@\s*~u', '@', $value);
+		$value = preg_replace('~\s*\.\s*~u', '.', $value);
+		$value = preg_replace('~^[\s\p{Z}]+|[\s\p{Z}]+$~u', '', $value);
 
 		return $value === '' ? null : $value;
 	}
@@ -97,7 +99,11 @@ class DEEC_Filter
 		if(preg_match('~[^\x00-\x7F]~', $domain)) {
 			if(!function_exists('idn_to_ascii')) return false;
 
-			$domain = idn_to_ascii($domain, 0, INTL_IDNA_VARIANT_UTS46);
+			if(defined('INTL_IDNA_VARIANT_UTS46')) {
+				$domain = idn_to_ascii($domain, 0, INTL_IDNA_VARIANT_UTS46);
+			} else {
+				$domain = idn_to_ascii($domain);
+			}
 
 			if($domain === false) return false;
 		}
