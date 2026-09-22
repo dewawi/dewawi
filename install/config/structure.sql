@@ -269,12 +269,12 @@ CREATE TABLE IF NOT EXISTS `contact` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id),
-  KEY (contactid),
-  KEY (name1),
-  KEY (name2),
-  KEY (clientid),
-  KEY (deleted)
+  PRIMARY KEY (`id`),
+  KEY (`contactid`),
+  KEY (`catid`),
+  KEY (`name1`),
+  KEY (`name2`),
+  KEY `clientid_deleted_catid` (`clientid`, `deleted`, `catid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `contactperson` (
@@ -297,9 +297,7 @@ CREATE TABLE IF NOT EXISTS `contactperson` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (module),
-  KEY (controller),
-  KEY (parentid)
+  KEY `parentid_clientid_deleted` (parentid, clientid, deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `country` (
@@ -849,12 +847,9 @@ CREATE TABLE IF NOT EXISTS `email` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (parentid),
-  KEY (module),
-  KEY (controller),
   KEY (email),
-  KEY (clientid),
-  KEY (deleted)
+  KEY `parentid_clientid_deleted` (parentid, clientid, deleted),
+  KEY `clientid_deleted_suppressed` (clientid, deleted, suppressed)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `emailattachment` (
@@ -895,7 +890,7 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `response` text DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY (parentid)
+  KEY `parentid_clientid_deleted_module_controller` (parentid, clientid, deleted, module, controller)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `emailtemplate` (

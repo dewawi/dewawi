@@ -33,3 +33,22 @@ ALTER TABLE `menuitem` ADD INDEX (`categoryid`);
 
 ALTER TABLE `config` ADD `unsubscribeurl` varchar(255) DEFAULT NULL AFTER `smtppass`;
 ALTER TABLE `campaign` ADD `unsubscribeurl` varchar(255) DEFAULT NULL AFTER `emailattachment`;
+
+ALTER TABLE `contact` DROP INDEX `clientid`;
+ALTER TABLE `contact` DROP INDEX `deleted`;
+ALTER TABLE `contact` ADD INDEX `clientid_deleted_catid` (`clientid`, `deleted`, `catid`);
+
+ALTER TABLE `contactperson` DROP INDEX `parentid`;
+ALTER TABLE `contactperson` DROP INDEX `module`;
+ALTER TABLE `contactperson` DROP INDEX `controller`;
+ALTER TABLE `contactperson` ADD INDEX `parentid_clientid_deleted` (`parentid`, `clientid`, `deleted`);
+
+ALTER TABLE `email` DROP INDEX `contactid`;
+ALTER TABLE `email` DROP INDEX `module`;
+ALTER TABLE `email` DROP INDEX `controller`;
+ALTER TABLE `email` DROP INDEX `clientid`;
+ALTER TABLE `email` DROP INDEX `deleted`;
+ALTER TABLE `email` ADD INDEX `parentid_clientid_deleted` (`parentid`, `clientid`, `deleted`);
+ALTER TABLE `email` ADD INDEX `clientid_suppressed_deleted` (`clientid`, `suppressed`, `deleted`);
+
+ALTER TABLE `emailmessage` ADD INDEX `parentid_clientid_deleted_module_controller` (`parentid`, `clientid`, `deleted`, `module`, `controller`);
