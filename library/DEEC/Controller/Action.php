@@ -592,8 +592,18 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 	protected function buildViewForm(array $row)
 	{
-		$form = $this->getEditForm();
-		$form->populate($row);
+		$formData = $this->getEditForm();
+		$form = $formData['form'];
+
+		$form->setValues(
+			DEEC_Display::rowToFormValues(
+				$form,
+				$row,
+				Zend_Registry::get('Zend_Locale')
+			)
+		);
+
+		$form->setMode('readonly');
 
 		return $form;
 	}
