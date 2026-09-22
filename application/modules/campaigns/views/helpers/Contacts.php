@@ -20,10 +20,14 @@ class Zend_View_Helper_Contacts extends Zend_View_Helper_Abstract
 		ob_start();
 		?>
 		<?php $status = $this->view->recipientStatus ?? []; ?>
+		<?php $contactCount = (int)($this->view->pagination['records'] ?? 0); ?>
 
 		<div data-pagination-change="getCampaignRecipients">
 			<?php if($status) { ?>
 				<div class="dw-list-value">
+					<strong><?php echo $this->view->translate('CONTACTS'); ?>:</strong>
+					<?php echo $contactCount; ?>
+					&nbsp;|&nbsp;
 					<strong><?php echo $this->view->translate('CAMPAIGNS_EMAIL_RECIPIENTS'); ?>:</strong>
 					<?php echo (int)$status['total']; ?>
 					&nbsp;|&nbsp;
