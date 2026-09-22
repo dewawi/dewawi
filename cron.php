@@ -89,6 +89,12 @@ foreach ($campaigns as $campaign) {
 			if ($result['attempted'] > 0) {
 				$Campaign->touchLastSent($campaign['id'], $now);
 			}
+
+			$status = $Email->getCampaignRecipientStatus($campaign);
+
+			if ($status['open'] === 0 && $status['pending'] === 0) {
+				$Campaign->complete($campaign['id']);
+			}
 		} catch (Exception $e) {
 			error_log(date("Y-m-d H:i:s")." Campaign {$campaign['id']} send error: ".$e->getMessage()."\n", 3, $log_file);
 		}

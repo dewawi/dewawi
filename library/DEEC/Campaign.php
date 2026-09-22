@@ -147,4 +147,10 @@ class DEEC_Campaign {
 		$sql = "UPDATE campaign SET lastsent = '$ts' WHERE id = $id";
 		mysqli_query($this->connection, $sql);
 	}
+
+	public function complete($id) {
+		$id = (int)$id;
+		$sql = "UPDATE campaign SET completed = 1, activated = 0, state = 105 WHERE id = $id";
+		mysqli_query($this->connection, $sql);
+	}
 }
