@@ -895,7 +895,7 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `deliveryresponse` text DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
-  KEY `parentid_clientid_deleted_module_controller` (parentid, clientid, deleted, module, controller)
+  KEY `parentid_clientid_deleted_module_controller` (parentid, clientid, deleted, module, controller),
   KEY `providermessageid` (providermessageid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
