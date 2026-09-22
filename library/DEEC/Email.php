@@ -207,6 +207,18 @@ class DEEC_Email {
 					$mail->addReplyTo($data['replyto']);
 				}
 
+				if(!empty($data['cc'])) {
+					foreach(array_filter(array_map('trim', explode(',', $data['cc']))) as $cc) {
+						$mail->addCC($cc);
+					}
+				}
+
+				if(!empty($data['bcc'])) {
+					foreach(array_filter(array_map('trim', explode(',', $data['bcc']))) as $bcc) {
+						$mail->addBCC($bcc);
+					}
+				}
+
 				if(empty($recipient['emailid']) || empty($recipient['password'])) {
 					throw new Exception('Campaign recipient unsubscribe data is missing');
 				}
