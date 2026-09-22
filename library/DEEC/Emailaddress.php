@@ -258,20 +258,40 @@ class DEEC_Emailaddress {
 		$query = '
 			SELECT
 				SUM(CASE
-					WHEN COALESCE(h.sent, 0) = 0
+					WHEN r.suppressed = 0
+						AND COALESCE(h.sent, 0) = 0
 						AND COALESCE(h.pending, 0) = 0
 						AND COALESCE(h.failed, 0) < 3
 					THEN 1 ELSE 0
 				END) AS open,
 				SUM(CASE
-					WHEN COALESCE(h.sent, 0) = 0
+					WHEN r.suppressed = 0
+						AND COALESCE(h.sent, 0) = 0
 						AND COALESCE(h.pending, 0) > 0
 					THEN 1 ELSE 0
 				END) AS pending,
 				SUM(CASE
 					WHEN COALESCE(h.sent, 0) > 0
+						AND COALESCE(h.delivered, 0) = 0
+						AND COALESCE(h.bounce, 0) = 0
+						AND COALESCE(h.complaint, 0) = 0
 					THEN 1 ELSE 0
 				END) AS sent,
+				SUM(CASE
+					WHEN COALESCE(h.delivered, 0) > 0
+						AND COALESCE(h.bounce, 0) = 0
+						AND COALESCE(h.complaint, 0) = 0
+					THEN 1 ELSE 0
+				END) AS delivered,
+				SUM(CASE
+					WHEN COALESCE(h.bounce, 0) > 0
+						AND COALESCE(h.complaint, 0) = 0
+					THEN 1 ELSE 0
+				END) AS bounce,
+				SUM(CASE
+					WHEN COALESCE(h.complaint, 0) > 0
+					THEN 1 ELSE 0
+				END) AS complaint,
 				SUM(CASE
 					WHEN COALESCE(h.sent, 0) = 0
 						AND COALESCE(h.pending, 0) = 0
@@ -280,58 +300,73 @@ class DEEC_Emailaddress {
 				END) AS failed,
 				COUNT(*) AS total
 			FROM (
-				SELECT LOWER(TRIM(e.email)) AS email
-				FROM contact AS c
-				INNER JOIN email AS e
-					ON e.parentid = c.id
-					AND e.module = "contacts"
-					AND e.controller = "contact"
-					AND e.clientid = c.clientid
-					AND e.deleted = 0
-				WHERE '.$where.'
-					AND e.email IS NOT NULL
-					AND TRIM(e.email) != ""
-					AND NOT EXISTS (
-						SELECT 1
-						FROM email AS suppressedemail
-						WHERE suppressedemail.clientid = e.clientid
-							AND suppressedemail.deleted = 0
-							AND suppressedemail.suppressed = 1
-							AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
-					)
+				SELECT email, MAX(suppressed) AS suppressed
+				FROM (
+					SELECT
+						LOWER(TRIM(e.email)) AS email,
+						EXISTS (
+							SELECT 1
+							FROM email AS suppressedemail
+							WHERE suppressedemail.clientid = e.clientid
+								AND suppressedemail.deleted = 0
+								AND suppressedemail.suppressed = 1
+								AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
+						) AS suppressed
+					FROM contact AS c
+					INNER JOIN email AS e
+						ON e.parentid = c.id
+						AND e.module = "contacts"
+						AND e.controller = "contact"
+						AND e.clientid = c.clientid
+						AND e.deleted = 0
+					WHERE '.$where.'
+						AND e.email IS NOT NULL
+						AND TRIM(e.email) != ""
 
-				UNION
+					UNION ALL
 
-				SELECT LOWER(TRIM(e.email)) AS email
-				FROM contact AS c
-				INNER JOIN contactperson AS cp
-					ON cp.parentid = c.id
-					AND cp.clientid = c.clientid
-					AND cp.deleted = 0
-				INNER JOIN email AS e
-					ON e.parentid = cp.id
-					AND e.module = "contacts"
-					AND e.controller = "contactperson"
-					AND e.clientid = cp.clientid
-					AND e.deleted = 0
-				WHERE '.$where.'
-					AND e.email IS NOT NULL
-					AND TRIM(e.email) != ""
-					AND NOT EXISTS (
-						SELECT 1
-						FROM email AS suppressedemail
-						WHERE suppressedemail.clientid = e.clientid
-							AND suppressedemail.deleted = 0
-							AND suppressedemail.suppressed = 1
-							AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
-					)
+					SELECT
+						LOWER(TRIM(e.email)) AS email,
+						EXISTS (
+							SELECT 1
+							FROM email AS suppressedemail
+							WHERE suppressedemail.clientid = e.clientid
+								AND suppressedemail.deleted = 0
+								AND suppressedemail.suppressed = 1
+								AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
+						) AS suppressed
+					FROM contact AS c
+					INNER JOIN contactperson AS cp
+						ON cp.parentid = c.id
+						AND cp.clientid = c.clientid
+						AND cp.deleted = 0
+					INNER JOIN email AS e
+						ON e.parentid = cp.id
+						AND e.module = "contacts"
+						AND e.controller = "contactperson"
+						AND e.clientid = cp.clientid
+						AND e.deleted = 0
+					WHERE '.$where.'
+						AND e.email IS NOT NULL
+						AND TRIM(e.email) != ""
+				) AS addresses
+				GROUP BY email
 			) AS r
 			LEFT JOIN (
 				SELECT
 					LOWER(TRIM(recipient)) AS email,
-					SUM(response = "sent") AS sent,
-					SUM(response = "pending" AND messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)) AS pending,
-					SUM(response != "sent" AND response != "pending") AS failed
+					COUNT(*) AS attempts,
+					MAX(response = "sent") AS sent,
+					MAX(response = "pending" AND messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)) AS pending,
+					SUM(
+						response IS NOT NULL
+						AND response != ""
+						AND response != "sent"
+						AND response != "pending"
+					) AS failed,
+					MAX(deliverystatus = "delivered") AS delivered,
+					MAX(deliverystatus = "bounce") AS bounce,
+					MAX(deliverystatus = "complaint") AS complaint
 				FROM emailmessage
 				WHERE parentid = '.$campaignid.'
 					AND module = "campaigns"
@@ -339,8 +374,8 @@ class DEEC_Emailaddress {
 					AND clientid = '.$clientid.'
 					AND deleted = 0
 				GROUP BY LOWER(TRIM(recipient))
-			) AS h
-				ON h.email = r.email
+			) AS h ON h.email = r.email
+			WHERE r.suppressed = 0 OR COALESCE(h.attempts, 0) > 0
 		';
 
 		$result = mysqli_query($this->connection, $query);
@@ -350,6 +385,9 @@ class DEEC_Emailaddress {
 				'open' => 0,
 				'pending' => 0,
 				'sent' => 0,
+				'delivered' => 0,
+				'bounce' => 0,
+				'complaint' => 0,
 				'failed' => 0,
 				'total' => 0,
 			];
@@ -361,6 +399,9 @@ class DEEC_Emailaddress {
 			'open' => (int)$status['open'],
 			'pending' => (int)$status['pending'],
 			'sent' => (int)$status['sent'],
+			'delivered' => (int)$status['delivered'],
+			'bounce' => (int)$status['bounce'],
+			'complaint' => (int)$status['complaint'],
 			'failed' => (int)$status['failed'],
 			'total' => (int)$status['total'],
 		];

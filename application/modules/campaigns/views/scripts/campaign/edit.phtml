@@ -19,7 +19,10 @@ echo $this->FileManager();
 		],
 		'errors' => [
 			'title' => 'TABS_ERRORS',
-			'html' => $this->Errors(),
+			'html' => '<div id="campaign-errors"></div>',
+			'a_attrs' => [
+				'data-tab-load' => 'getCampaignErrors',
+			],
 		],
 		'messages' => [
 			'title' => 'TABS_MESSAGES',

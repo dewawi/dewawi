@@ -54,6 +54,9 @@ class Campaigns_Service_CampaignRecipientService
 				'messagesent',
 				'messagesentby',
 				'response',
+				'deliverystatus',
+				'deliverydate',
+				'deliveryresponse',
 			])
 			->joinLeft(
 				['c' => 'contact'],
@@ -68,10 +71,12 @@ class Campaigns_Service_CampaignRecipientService
 			->where('em.controller = ?', 'campaign')
 			->where('em.clientid = ?', $clientId)
 			->where('em.deleted = ?', 0)
-			->where('em.response IS NOT NULL')
-			->where('em.response != ?', '')
-			->where('em.response != ?', 'sent')
-			->where('em.response != ?', 'pending')
+			->where(
+				'(
+					(em.response IS NOT NULL AND em.response != "" AND em.response != "sent" AND em.response != "pending")
+					OR em.deliverystatus IN ("bounce", "complaint")
+				)'
+			)
 			->order('em.id DESC');
 
 		return $adapter->fetchAll($select);

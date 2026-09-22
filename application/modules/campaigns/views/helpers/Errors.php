@@ -38,6 +38,24 @@ class Zend_View_Helper_Errors extends Zend_View_Helper_Abstract
 									'action' => 'edit',
 									'id' => $contactId,
 								], null, true) : '';
+
+								$deliveryStatus = strtolower(trim((string)($error['deliverystatus'] ?? '')));
+
+								if($deliveryStatus === 'complaint') {
+									$statusLabel = $this->view->translate('CAMPAIGNS_RECIPIENT_COMPLAINT');
+								} elseif($deliveryStatus === 'bounce') {
+									$statusLabel = $this->view->translate('CAMPAIGNS_RECIPIENT_BOUNCE');
+								} else {
+									$statusLabel = $this->view->translate('CAMPAIGNS_RECIPIENT_FAILED');
+								}
+
+								$response = !empty($error['deliveryresponse'])
+									? $error['deliveryresponse']
+									: ($error['response'] ?? '');
+
+								$date = !empty($error['deliverydate'])
+									? $error['deliverydate']
+									: ($error['messagesent'] ?? '');
 								?>
 								<tr class="dw-row">
 									<td class="dw-col-id"><?php echo (int)$error['id']; ?></td>
@@ -54,20 +72,24 @@ class Zend_View_Helper_Errors extends Zend_View_Helper_Abstract
 									<td><?php echo $this->view->escape($error['contactname'] ?? ''); ?></td>
 									<td><?php echo $this->view->escape($error['recipient'] ?? ''); ?></td>
 									<td>
-										<?php if(!empty($error['messagesent'])) : ?>
-											<div class="dw-list-value"><?php echo $this->view->escape($error['messagesent']); ?></div>
+										<?php if($date) : ?>
+											<div class="dw-list-value"><?php echo $this->view->escape($date); ?></div>
 										<?php endif; ?>
+
+										<strong><?php echo $this->view->escape($statusLabel); ?></strong>
 
 										<?php if(!empty($error['messagesentby'])) : ?>
 											<div class="dw-list-value"><?php echo $this->view->escape($users[$error['messagesentby']] ?? ''); ?></div>
 										<?php endif; ?>
 
-										<pre><?php echo $this->view->escape($error['response'] ?? ''); ?></pre>
+										<pre><?php echo $this->view->escape($response); ?></pre>
 									</td>
 									<td>
-										<button type="button" class="dw-btn dw-btn--secondary" onclick="resendMessage(<?php echo (int)$error['id']; ?>)">
-											<?php echo $this->view->escape($this->view->translate('CAMPAIGNS_RESEND')); ?>
-										</button>
+										<?php if(!in_array($deliveryStatus, ['bounce', 'complaint'], true)) : ?>
+											<button type="button" class="dw-btn dw-btn--secondary" onclick="resendMessage(<?php echo (int)$error['id']; ?>)">
+												<?php echo $this->view->escape($this->view->translate('CAMPAIGNS_RESEND')); ?>
+											</button>
+										<?php endif; ?>
 									</td>
 								</tr>
 							<?php endforeach; ?>

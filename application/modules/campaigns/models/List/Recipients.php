@@ -96,11 +96,25 @@ class Campaigns_Model_List_Recipients extends DEEC_List
 
 		foreach($messages as $message) {
 			$response = (string)($message['response'] ?? '');
-			$label = $response === 'sent'
-				? $this->translate('CAMPAIGNS_RECIPIENT_SENT')
-				: ($response === 'pending' ? $this->translate('CAMPAIGNS_RECIPIENT_PENDING') : $this->translate('CAMPAIGNS_RECIPIENT_FAILED'));
+			$deliveryStatus = strtolower(trim((string)($message['deliverystatus'] ?? '')));
 
-			$content = '<div>'.$this->escape((string)($message['recipient'] ?? '')).'</div>';
+			if($deliveryStatus === 'complaint') {
+				$label = $this->translate('CAMPAIGNS_RECIPIENT_COMPLAINT');
+			} elseif($deliveryStatus === 'bounce') {
+				$label = $this->translate('CAMPAIGNS_RECIPIENT_BOUNCE');
+			} elseif($deliveryStatus === 'delivered') {
+				$label = $this->translate('CAMPAIGNS_RECIPIENT_DELIVERED');
+			} elseif($response === 'sent') {
+				$label = $this->translate('CAMPAIGNS_RECIPIENT_SENT');
+			} elseif($response === 'pending') {
+				$label = $this->translate('CAMPAIGNS_RECIPIENT_PENDING');
+			} else {
+				$label = $this->translate('CAMPAIGNS_RECIPIENT_FAILED');
+			}
+
+			if(!in_array($deliveryStatus, ['bounce', 'complaint'], true)) {
+				$content .= '<button type="button" class="dw-btn dw-btn--secondary" onclick="resendMessage('.(int)$message['id'].')">'.$this->escape($this->translate('CAMPAIGNS_RESEND')).'</button>';
+			}
 
 			if(!empty($message['messagesent'])) $content .= '<div class="dw-list-value">'.$this->escape($message['messagesent']).'</div>';
 

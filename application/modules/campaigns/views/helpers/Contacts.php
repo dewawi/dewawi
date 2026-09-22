@@ -37,6 +37,12 @@ class Zend_View_Helper_Contacts extends Zend_View_Helper_Abstract
 					&nbsp;|&nbsp;
 					<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_SENT'); ?>: <?php echo (int)$status['sent']; ?>
 					&nbsp;|&nbsp;
+					<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_DELIVERED'); ?>: <?php echo (int)$status['delivered']; ?>
+					&nbsp;|&nbsp;
+					<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_BOUNCE'); ?>: <?php echo (int)$status['bounce']; ?>
+					&nbsp;|&nbsp;
+					<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_COMPLAINT'); ?>: <?php echo (int)$status['complaint']; ?>
+					&nbsp;|&nbsp;
 					<?php echo $this->view->translate('CAMPAIGNS_RECIPIENT_FAILED'); ?>: <?php echo (int)$status['failed']; ?>
 				</div>
 			<?php } ?>

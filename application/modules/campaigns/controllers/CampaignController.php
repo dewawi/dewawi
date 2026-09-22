@@ -287,6 +287,23 @@ class Campaigns_CampaignController extends DEEC_Controller_Action
 		echo $this->view->Contacts();
 	}
 
+	public function errorsAction()
+	{
+		$this->disableView();
+
+		$id = (int)$this->_getParam('id', 0);
+
+		if($id <= 0) return;
+
+		$recipientService = new Campaigns_Service_CampaignRecipientService();
+		$userDb = new Users_Model_DbTable_User();
+
+		$this->view->campaignErrors = $recipientService->getErrors($id);
+		$this->view->users = $userDb->getUsers();
+
+		echo $this->view->Errors();
+	}
+
 	public function copyAction()
 	{
 		$this->_helper->viewRenderer->setNoRender();
