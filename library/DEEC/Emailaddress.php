@@ -96,138 +96,94 @@ class DEEC_Emailaddress {
 
 		$query = '
 			SELECT
-				e.id AS emailid,
-				e.password,
-				LOWER(TRIM(e.email)) AS email,
-				c.id AS contactid,
-				NULL AS contactpersonid,
-				NULL AS salutation,
-				NULL AS name1,
-				NULL AS name2,
-				NULL AS department
-			FROM contact AS c
-			INNER JOIN email AS e
-				ON e.parentid = c.id
-				AND e.module = "contacts"
-				AND e.controller = "contact"
-				AND e.clientid = c.clientid
-				AND e.deleted = 0
-			WHERE '.$where.'
-				AND e.email IS NOT NULL
-				AND TRIM(e.email) != ""
-				AND NOT EXISTS (
-					SELECT 1
-					FROM email AS suppressedemail
-					WHERE suppressedemail.clientid = e.clientid
-						AND suppressedemail.deleted = 0
-						AND suppressedemail.suppressed = 1
-						AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
-				)
-				AND NOT EXISTS (
-					SELECT 1
-					FROM emailmessage AS em
-					WHERE em.parentid = '.$campaignid.'
-						AND em.module = "campaigns"
-						AND em.controller = "campaign"
-						AND em.clientid = '.$clientid.'
-						AND em.deleted = 0
-						AND LOWER(TRIM(em.recipient)) = LOWER(TRIM(e.email))
-						AND em.response = "sent"
-				)
-				AND NOT EXISTS (
-					SELECT 1
-					FROM emailmessage AS pending
-					WHERE pending.parentid = '.$campaignid.'
-						AND pending.module = "campaigns"
-						AND pending.controller = "campaign"
-						AND pending.clientid = '.$clientid.'
-						AND pending.deleted = 0
-						AND LOWER(TRIM(pending.recipient)) = LOWER(TRIM(e.email))
-						AND pending.response = "pending"
-						AND pending.messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
-				)
-				AND (
-					SELECT COUNT(*)
-					FROM emailmessage AS retry
-					WHERE retry.parentid = '.$campaignid.'
-						AND retry.module = "campaigns"
-						AND retry.controller = "campaign"
-						AND retry.clientid = '.$clientid.'
-						AND retry.deleted = 0
-						AND LOWER(TRIM(retry.recipient)) = LOWER(TRIM(e.email))
-						AND retry.response != "sent"
-						AND retry.response != "pending"
-				) < 3
+				r.emailid,
+				r.password,
+				r.email,
+				r.contactid,
+				r.contactpersonid,
+				r.salutation,
+				r.name1,
+				r.name2,
+				r.department
+			FROM (
+				SELECT
+					e.id AS emailid,
+					e.password,
+					LOWER(TRIM(e.email)) AS email,
+					c.id AS contactid,
+					NULL AS contactpersonid,
+					NULL AS salutation,
+					NULL AS name1,
+					NULL AS name2,
+					NULL AS department
+				FROM contact AS c
+				INNER JOIN email AS e
+					ON e.parentid = c.id
+					AND e.clientid = c.clientid
+					AND e.module = "contacts"
+					AND e.controller = "contact"
+					AND e.deleted = 0
+				WHERE '.$where.'
+					AND e.email IS NOT NULL
+					AND TRIM(e.email) != ""
 
-			UNION ALL
+				UNION ALL
 
-			SELECT
-				e.id AS emailid,
-				e.password,
-				LOWER(TRIM(e.email)) AS email,
-				c.id AS contactid,
-				cp.id AS contactpersonid,
-				cp.salutation,
-				cp.name1,
-				cp.name2,
-				cp.department
-			FROM contact AS c
-			INNER JOIN contactperson AS cp
-				ON cp.parentid = c.id
-				AND cp.clientid = c.clientid
-				AND cp.deleted = 0
-			INNER JOIN email AS e
-				ON e.parentid = cp.id
-				AND e.module = "contacts"
-				AND e.controller = "contactperson"
-				AND e.clientid = cp.clientid
-				AND e.deleted = 0
-			WHERE '.$where.'
-				AND e.email IS NOT NULL
-				AND TRIM(e.email) != ""
-				AND NOT EXISTS (
-					SELECT 1
-					FROM email AS suppressedemail
-					WHERE suppressedemail.clientid = e.clientid
-						AND suppressedemail.deleted = 0
-						AND suppressedemail.suppressed = 1
-						AND LOWER(TRIM(suppressedemail.email)) = LOWER(TRIM(e.email))
-				)
-				AND NOT EXISTS (
-					SELECT 1
-					FROM emailmessage AS em
-					WHERE em.parentid = '.$campaignid.'
-						AND em.module = "campaigns"
-						AND em.controller = "campaign"
-						AND em.clientid = '.$clientid.'
-						AND em.deleted = 0
-						AND LOWER(TRIM(em.recipient)) = LOWER(TRIM(e.email))
-						AND em.response = "sent"
-				)
-				AND NOT EXISTS (
-					SELECT 1
-					FROM emailmessage AS pending
-					WHERE pending.parentid = '.$campaignid.'
-						AND pending.module = "campaigns"
-						AND pending.controller = "campaign"
-						AND pending.clientid = '.$clientid.'
-						AND pending.deleted = 0
-						AND LOWER(TRIM(pending.recipient)) = LOWER(TRIM(e.email))
-						AND pending.response = "pending"
-						AND pending.messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
-				)
-				AND (
-					SELECT COUNT(*)
-					FROM emailmessage AS retry
-					WHERE retry.parentid = '.$campaignid.'
-						AND retry.module = "campaigns"
-						AND retry.controller = "campaign"
-						AND retry.clientid = '.$clientid.'
-						AND retry.deleted = 0
-						AND LOWER(TRIM(retry.recipient)) = LOWER(TRIM(e.email))
-						AND retry.response != "sent"
-						AND retry.response != "pending"
-				) < 3
+				SELECT
+					e.id AS emailid,
+					e.password,
+					LOWER(TRIM(e.email)) AS email,
+					c.id AS contactid,
+					cp.id AS contactpersonid,
+					cp.salutation,
+					cp.name1,
+					cp.name2,
+					cp.department
+				FROM contact AS c
+				INNER JOIN contactperson AS cp
+					ON cp.parentid = c.id
+					AND cp.clientid = c.clientid
+					AND cp.deleted = 0
+				INNER JOIN email AS e
+					ON e.parentid = cp.id
+					AND e.clientid = cp.clientid
+					AND e.module = "contacts"
+					AND e.controller = "contactperson"
+					AND e.deleted = 0
+				WHERE '.$where.'
+					AND e.email IS NOT NULL
+					AND TRIM(e.email) != ""
+			) AS r
+			LEFT JOIN (
+				SELECT LOWER(TRIM(email)) AS email
+				FROM email
+				WHERE clientid = '.$clientid.'
+					AND deleted = 0
+					AND suppressed = 1
+					AND email IS NOT NULL
+					AND TRIM(email) != ""
+				GROUP BY LOWER(TRIM(email))
+			) AS s
+				ON s.email = r.email
+			LEFT JOIN (
+				SELECT
+					LOWER(TRIM(recipient)) AS email,
+					MAX(response = "sent") AS sent,
+					MAX(response = "pending" AND messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)) AS pending,
+					SUM(response != "sent" AND response != "pending") AS failed
+				FROM emailmessage
+				WHERE parentid = '.$campaignid.'
+					AND module = "campaigns"
+					AND controller = "campaign"
+					AND clientid = '.$clientid.'
+					AND deleted = 0
+				GROUP BY LOWER(TRIM(recipient))
+			) AS h
+				ON h.email = r.email
+			WHERE s.email IS NULL
+				AND COALESCE(h.sent, 0) = 0
+				AND COALESCE(h.pending, 0) = 0
+				AND COALESCE(h.failed, 0) < 3
 		';
 
 		$recipients = [];
