@@ -73,8 +73,18 @@ class Campaigns_FeedbackController extends Zend_Controller_Action
 
 		$recipient = strtolower(trim((string)$message['recipient']));
 		$recipients = $this->getRecipients($event, $type);
+		$recipientMatches = in_array($recipient, $recipients, true);
 
-		if(!in_array($recipient, $recipients, true)) return;
+		if($type === 'Complaint') {
+			if($recipients && !$recipientMatches) return;
+
+			if(!$recipients && (trim((string)$message['cc']) !== '' || trim((string)$message['bcc']) !== '')) {
+				error_log('SES complaint could not be mapped because the message has copy recipients: '.$providerMessageId);
+				return;
+			}
+		} elseif(!$recipientMatches) {
+			return;
+		}
 
 		if($type === 'Delivery') {
 			$emailmessageDb->updateDelivery((int)$message['id'], (int)$message['clientid'], [

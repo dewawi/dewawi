@@ -237,7 +237,8 @@ CREATE TABLE IF NOT EXISTS `config` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY `sesfeedbacktopicarn` (`sesfeedbacktopicarn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `contact` (
