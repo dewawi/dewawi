@@ -197,6 +197,16 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 				},
 			],
 			[
+				'type' => 'link',
+				'label' => 'MENU_CAMPAIGNS',
+				'module' => 'campaigns',
+				'controller' => 'campaign',
+				'action' => 'index',
+				'active' => function () {
+					return $this->isActive('campaigns', 'campaign');
+				},
+			],
+			[
 				'type' => 'group',
 				'label' => 'MENU_STATISTICS',
 				'active' => function () {
