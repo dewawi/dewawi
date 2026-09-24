@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title><?= $this->escape($this->translate('FEEDBACK_TITLE')); ?></title>
+	<style>
+		body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; color: #222; }
+		main { max-width: 680px; margin: 40px auto; padding: 30px; background: #fff; }
+		fieldset { margin: 24px 0; padding: 0; border: 0; }
+		legend { margin-bottom: 12px; font-weight: bold; }
+		label.option { display: block; margin: 8px 0; padding: 14px; border: 1px solid #ccc; cursor: pointer; }
+		label.option input { margin-right: 10px; }
+		textarea { box-sizing: border-box; width: 100%; min-height: 120px; padding: 10px; }
+		button { padding: 12px 20px; cursor: pointer; }
+		.error { color: #a00; }
+	</style>
+</head>
+<body>
+	<main>
+		<h1><?= $this->escape($this->translate('FEEDBACK_TITLE')); ?></h1>
+
+		<?php if(!$this->valid) : ?>
+			<p><?= $this->escape($this->translate('FEEDBACK_INVALID')); ?></p>
+		<?php elseif($this->submitted) : ?>
+			<p><?= $this->escape($this->translate('FEEDBACK_SUCCESS')); ?></p>
+		<?php else : ?>
+			<p><?= $this->escape($this->translate('FEEDBACK_QUOTE_QUESTION')); ?></p>
+
+			<?php if($this->error) : ?>
+				<p class="error"><?= $this->escape($this->translate('FEEDBACK_INVALID_SELECTION')); ?></p>
+			<?php endif; ?>
+
+			<form method="post">
+				<input type="hidden" name="token" value="<?= $this->escape($this->token); ?>">
+
+				<fieldset>
+					<?php foreach($this->config['statuses'] as $value => $label) : ?>
+						<label class="option">
+							<input type="radio" name="status" value="<?= $this->escape($value); ?>"<?= $this->status === $value ? ' checked' : ''; ?> required>
+							<?= $this->escape($this->translate($label)); ?>
+						</label>
+					<?php endforeach; ?>
+				</fieldset>
+
+				<fieldset id="feedback-reasons"<?= $this->status === 'declined' ? '' : ' hidden'; ?>>
+					<legend><?= $this->escape($this->translate('FEEDBACK_QUOTE_REASON_TITLE')); ?></legend>
+					<?php foreach($this->config['reasons'] as $value => $label) : ?>
+						<label class="option">
+							<input type="radio" name="reason" value="<?= $this->escape($value); ?>"<?= $this->reason === $value ? ' checked' : ''; ?>>
+							<?= $this->escape($this->translate($label)); ?>
+						</label>
+					<?php endforeach; ?>
+				</fieldset>
+
+				<label for="feedback-message"><?= $this->escape($this->translate('FEEDBACK_MESSAGE_LABEL')); ?></label>
+				<textarea id="feedback-message" name="message" maxlength="5000"><?= $this->escape($this->message); ?></textarea>
+
+				<p><button type="submit"><?= $this->escape($this->translate('FEEDBACK_SUBMIT')); ?></button></p>
+			</form>
+
+			<script>
+				(function() {
+					var reasons = document.getElementById('feedback-reasons');
+					var statuses = document.querySelectorAll('input[name="status"]');
+					function updateReasons() {
+						var selected = document.querySelector('input[name="status"]:checked');
+						reasons.hidden = !selected || selected.value !== 'declined';
+					}
+					for(var i = 0; i < statuses.length; i++) statuses[i].addEventListener('change', updateReasons);
+					updateReasons();
+				})();
+			</script>
+		<?php endif; ?>
+	</main>
+</body>
+</html>

@@ -61,3 +61,30 @@ ALTER TABLE `emailmessage` ADD `deliverystatus` varchar(32) DEFAULT NULL AFTER `
 ALTER TABLE `emailmessage` ADD `deliverydate` datetime DEFAULT NULL AFTER `deliverystatus`;
 ALTER TABLE `emailmessage` ADD `deliveryresponse` text DEFAULT NULL AFTER `deliverydate`;
 ALTER TABLE `emailmessage` ADD INDEX `providermessageid` (`providermessageid`);
+
+CREATE TABLE IF NOT EXISTS `feedback` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `module` varchar(255) NOT NULL,
+  `controller` varchar(255) NOT NULL,
+  `parentid` int(11) NOT NULL,
+  `emailmessageid` int(11) DEFAULT NULL,
+  `contactid` int(11) DEFAULT NULL,
+  `type` varchar(32) NOT NULL,
+  `status` varchar(32) DEFAULT NULL,
+  `reason` varchar(32) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `token` char(64) NOT NULL,
+  `responded` datetime DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  KEY `entity` (`module`, `controller`, `parentid`, `clientid`, `deleted`),
+  KEY `emailmessageid` (`emailmessageid`),
+  KEY `contactid` (`contactid`),
+  KEY `clientid_type_responded_deleted` (`clientid`, `type`, `responded`, `deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
