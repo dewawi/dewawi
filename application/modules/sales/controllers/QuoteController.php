@@ -4,7 +4,7 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 {
 	protected function buildIndexView(): void
 	{
-		$this->buildListView([
+		$list = $this->buildListView([
 			'viewKey' => 'quotes',
 			'list' => 'Sales_Model_List_Quotes',
 			'entity' => Sales_Model_Entity_Quote::listConfig(),
