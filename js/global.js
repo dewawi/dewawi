@@ -1824,22 +1824,13 @@ function sendMessage() {
 	$('#output').hide().html('');
 
 	var data = {
-		recipient:
-			$form.find('[name="recipient"]').val() || '',
-		cc:
-			$form.find('[name="cc"]').val() || '',
-		bcc:
-			$form.find('[name="bcc"]').val() || '',
-		replyto:
-			$form.find('[name="replyto"]').val() || '',
-		subject:
-			$form.find('[name="subject"]').val() || '',
-		body: editor
-			? editor.getContent()
-			: (
-				$form.find('[name="body"]').val()
-				|| ''
-			),
+		recipient: $form.find('[name="recipient"]').val() || '',
+		cc: $form.find('[name="cc"]').val() || '',
+		bcc: $form.find('[name="bcc"]').val() || '',
+		replyto: $form.find('[name="replyto"]').val() || '',
+		subject: $form.find('[name="subject"]').val() || '',
+		body: editor ? editor.getContent() : ($form.find('[name="body"]').val() || ''),
+		feedback: Number($form.find('[name="feedback"]').val()) || 0,
 		module: module,
 		controller: controller,
 		files: {}

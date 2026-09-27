@@ -57,10 +57,14 @@ class DEEC_Feedback
 
 	public function attachEmailMessage(array $feedback, int $emailMessageId): void
 	{
-		if(empty($feedback['id']) || empty($feedback['clientid']) || $emailMessageId <= 0) return;
+		if(empty($feedback['id']) || empty($feedback['clientid']) || $emailMessageId <= 0 || !empty($feedback['emailmessageid'])) return;
 
 		$db = new Application_Model_DbTable_Feedback();
 		$db->setClientId((int)$feedback['clientid']);
+
+		$current = $db->getById((int)$feedback['id']);
+		if(!$current || !empty($current['emailmessageid'])) return;
+
 		$db->updateById((int)$feedback['id'], ['emailmessageid' => $emailMessageId]);
 	}
 
