@@ -8,6 +8,7 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 			'viewKey' => 'quotes',
 			'list' => 'Sales_Model_List_Quotes',
 			'entity' => Sales_Model_Entity_Quote::listConfig(),
+			'toolbar' => 'Sales_Form_QuoteToolbar',
 		]);
 
 		$monitoring = new Sales_Service_QuoteMonitoring();

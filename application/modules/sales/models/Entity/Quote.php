@@ -47,6 +47,11 @@ class Sales_Model_Entity_Quote
 				],
 				'daterange' => [
 					'type' => 'daterange',
+					'columns' => ['quotedate'],
+				],
+				'monitoring' => [
+					'type' => 'callback',
+					'callback' => ['Sales_Service_QuoteMonitoring', 'applyListFilter'],
 				],
 			],
 

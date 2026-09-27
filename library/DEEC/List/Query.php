@@ -278,6 +278,11 @@ class DEEC_List_Query
 				case 'equals':
 					$this->applyEqualsFilter($select, $value, $filter, $config);
 					break;
+
+				case 'callback':
+					$callback = $filter['callback'] ?? null;
+					if(is_callable($callback)) call_user_func($callback, $select, $value, $filter, $config, $params);
+					break;
 			}
 		}
 	}

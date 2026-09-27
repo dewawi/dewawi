@@ -2,6 +2,151 @@
 
 class Sales_Service_QuoteMonitoring
 {
+	public static function applyListFilter($select, $value, array $filter, array $config, array $params = []): void
+	{
+		$value = trim((string)$value);
+		if($value === '' || $value === 'all') return;
+
+		$alias = $filter['alias'] ?? $config['alias'];
+		$db = $select->getAdapter();
+
+		$sales = $db->quote('sales');
+		$quote = $db->quote('quote');
+		$sent = $db->quote('sent');
+
+		$active = $alias . '.quoteid IS NOT NULL'
+			. ' AND ' . $alias . '.quoteid > 0'
+			. ' AND ' . $alias . '.state <> 106'
+			. ' AND COALESCE(' . $alias . '.cancelled, 0) = 0';
+
+		$salesorderExists = 'EXISTS (
+			SELECT 1 FROM salesorder so
+			WHERE so.quoteid = ' . $alias . '.quoteid
+			AND so.clientid = ' . $alias . '.clientid
+			AND so.deleted = 0
+			AND so.state <> 106
+		)';
+
+		$invoiceExists = 'EXISTS (
+			SELECT 1 FROM invoice i
+			WHERE i.quoteid = ' . $alias . '.quoteid
+			AND i.clientid = ' . $alias . '.clientid
+			AND i.deleted = 0
+			AND i.state <> 106
+		)';
+
+		$deliveryorderExists = 'EXISTS (
+			SELECT 1 FROM deliveryorder d
+			WHERE d.quoteid = ' . $alias . '.quoteid
+			AND d.clientid = ' . $alias . '.clientid
+			AND d.deleted = 0
+			AND d.state <> 106
+		)';
+
+		$anyFollowup = '(' . $salesorderExists . ' OR ' . $invoiceExists . ' OR ' . $deliveryorderExists . ')';
+
+		$finalSalesorder = 'EXISTS (
+			SELECT 1 FROM salesorder so
+			WHERE so.quoteid = ' . $alias . '.quoteid
+			AND so.clientid = ' . $alias . '.clientid
+			AND so.deleted = 0
+			AND so.state <> 106
+			AND COALESCE(so.salesorderid, 0) > 0
+		)';
+
+		$finalInvoice = 'EXISTS (
+			SELECT 1 FROM invoice i
+			WHERE i.quoteid = ' . $alias . '.quoteid
+			AND i.clientid = ' . $alias . '.clientid
+			AND i.deleted = 0
+			AND i.state <> 106
+			AND COALESCE(i.invoiceid, 0) > 0
+		)';
+
+		$finalDeliveryorder = 'EXISTS (
+			SELECT 1 FROM deliveryorder d
+			WHERE d.quoteid = ' . $alias . '.quoteid
+			AND d.clientid = ' . $alias . '.clientid
+			AND d.deleted = 0
+			AND d.state <> 106
+			AND COALESCE(d.deliveryorderid, 0) > 0
+		)';
+
+		$finalFollowup = '(' . $finalSalesorder . ' OR ' . $finalInvoice . ' OR ' . $finalDeliveryorder . ')';
+
+		$latestFeedbackId = '(SELECT MAX(f2.id)
+			FROM feedback f2
+			WHERE f2.parentid = ' . $alias . '.id
+			AND f2.clientid = ' . $alias . '.clientid
+			AND f2.module = ' . $sales . '
+			AND f2.controller = ' . $quote . '
+			AND f2.deleted = 0
+		)';
+
+		$feedbackExists = $latestFeedbackId . ' IS NOT NULL';
+
+		$feedbackOpen = 'EXISTS (
+			SELECT 1 FROM feedback f
+			WHERE f.id = ' . $latestFeedbackId . '
+			AND f.responded IS NULL
+		)';
+
+		$feedbackResponse = 'EXISTS (
+			SELECT 1 FROM feedback f
+			WHERE f.id = ' . $latestFeedbackId . '
+			AND f.responded IS NOT NULL
+		)';
+
+		$emailSent = 'EXISTS (
+			SELECT 1 FROM emailmessage em
+			WHERE em.documentid = ' . $alias . '.id
+			AND em.module = ' . $sales . '
+			AND em.controller = ' . $quote . '
+			AND em.deleted = 0
+			AND em.response = ' . $sent . '
+		)';
+
+		switch($value) {
+			case 'action_required':
+				$select->where('(' . $active . ') AND NOT (' . $finalFollowup . ')');
+				break;
+
+			case 'continued':
+				$select->where('(' . $active . ') AND (' . $finalFollowup . ')');
+				break;
+
+			case 'followup_draft':
+				$select->where('(' . $active . ') AND (' . $anyFollowup . ') AND NOT (' . $finalFollowup . ')');
+				break;
+
+			case 'feedback_response':
+				$select->where('(' . $active . ') AND NOT (' . $anyFollowup . ') AND (' . $feedbackResponse . ')');
+				break;
+
+			case 'feedback_open':
+				$select->where('(' . $active . ') AND NOT (' . $anyFollowup . ') AND (' . $feedbackOpen . ')');
+				break;
+
+			case 'follow_up':
+				$select->where(
+					'(' . $active . ')'
+					. ' AND NOT (' . $anyFollowup . ')'
+					. ' AND NOT (' . $feedbackExists . ')'
+					. ' AND (' . $emailSent . ')'
+				);
+				break;
+
+			case 'check_send':
+				$select->where(
+					'(' . $active . ')'
+					. ' AND NOT (' . $anyFollowup . ')'
+					. ' AND NOT (' . $feedbackExists . ')'
+					. ' AND NOT (' . $emailSent . ')'
+				);
+				break;
+		}
+	}
+
 	public function enrich($items): array
 	{
 		$rows = $this->normalizeItems($items);
