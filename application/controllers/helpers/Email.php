@@ -225,7 +225,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			if(!$sendResult['sent']) {
 				$emailmessageDb->updateEmailmessage($messageid, array('response' => $sendResult['error']));
 
-				if($feedback['service'] && $feedback['request']) {
+				if($feedback['service'] && $feedback['request'] && $feedback['created']) {
 					$feedback['service']->deleteRequest($feedback['request']);
 				}
 
@@ -252,7 +252,6 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 		$service = new DEEC_Feedback();
 		$result['service'] = $service;
-		$result['body'] = $service->removeEmailBlock($result['body']);
 
 		try {
 			$user = Zend_Registry::get('User');
@@ -263,7 +262,9 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$quote = $quoteDb->getById($documentid);
 			if(!$quote) return $result;
 
-			$request = $service->createRequest(
+			$result['locale'] = (string)($quote['language'] ?? '');
+
+			$prepared = $service->prepareRequest(
 				'sales',
 				'quote',
 				$documentid,
@@ -271,17 +272,26 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				DEEC_Feedback::TYPE_QUOTE,
 				[
 					'contactid' => (int)($quote['contactid'] ?? 0),
-				]
+				],
+				!empty($data['feedback'])
 			);
+
+			$request = $prepared['request'];
+
+			if(!$request) {
+				$result['body'] = $service->removeEmailBlock($result['body']);
+				return $result;
+			}
 
 			$block = $service->buildEmailBlock(
 				$request,
 				$this->getPublicBaseUrl(),
-				(string)($quote['language'] ?? '')
+				$result['locale']
 			);
 
-			$result['body'] = $service->insertEmailBlock($result['body'], $block);
+			$result['body'] = $service->replaceEmailBlock($result['body'], $block);
 			$result['request'] = $request;
+			$result['created'] = !empty($prepared['created']);
 		} catch(Exception $e) {
 			error_log('Quote feedback could not be created: ' . $e->getMessage());
 		}
@@ -463,6 +473,20 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$subject = $data['subject'];
 			return [$body, $subject];
 		}
+	}
+
+	public function replaceEmailBlock(string $body, string $block): string
+	{
+		if($block === '') return $this->removeEmailBlock($body);
+
+		$pattern = '/' . preg_quote(self::EMAIL_MARKER_START, '/') . '.*?' . preg_quote(self::EMAIL_MARKER_END, '/') . '/s';
+
+		if(preg_match($pattern, $body)) {
+			$result = preg_replace($pattern, $block, $body, 1);
+			return $result !== null ? $result : $body;
+		}
+
+		return $this->insertEmailBlock($body, $block);
 	}
 
 	private function buildSalutation(array $recipient): string {

@@ -14,6 +14,11 @@ $uploadUrl = $this->baseUrl()
 		class="dw-email-composer__form"
 		data-autosave="<?php echo $isCampaign ? 'true' : 'false'; ?>"
 		method="post">
+
+		<?php if($this->emailForm->getElement('feedback')) : ?>
+			<?= $this->emailForm->renderElement('feedback'); ?>
+		<?php endif; ?>
+
 		<div class="dw-form-row">
 			<div class="dw-field dw-field--col-8">
 				<div class="dw-email-card">

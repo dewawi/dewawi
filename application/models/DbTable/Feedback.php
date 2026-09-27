@@ -34,4 +34,22 @@ class Application_Model_DbTable_Feedback extends DEEC_Model_DbTable_Entity
 
 		return $this->fetchAll($select)->toArray();
 	}
+
+	public function getOpenForEntity(int $parentId, string $module, string $controller, string $type): ?array
+	{
+		$row = $this->fetchRow(
+			$this->select()
+				->where('parentid = ?', $parentId)
+				->where('module = ?', $module)
+				->where('controller = ?', $controller)
+				->where('type = ?', $type)
+				->where('clientid = ?', $this->getClientId())
+				->where('responded IS NULL')
+				->where('deleted = ?', 0)
+				->order('id DESC')
+				->limit(1)
+		);
+
+		return $row ? $row->toArray() : null;
+	}
 }

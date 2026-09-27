@@ -26,6 +26,35 @@ class DEEC_Feedback
 		return $db->getById($id);
 	}
 
+	public function prepareRequest(string $module, string $controller, int $parentId, int $clientId, string $type, array $data = [], bool $startNew = false): array
+	{
+		$db = new Application_Model_DbTable_Feedback();
+		$db->setClientId($clientId);
+
+		$open = $db->getOpenForEntity($parentId, $module, $controller, $type);
+
+		if($open) {
+			return [
+				'request' => $open,
+				'created' => false,
+			];
+		}
+
+		$existing = $db->getForEntity($parentId, $module, $controller, $type);
+
+		if($existing && !$startNew) {
+			return [
+				'request' => null,
+				'created' => false,
+			];
+		}
+
+		return [
+			'request' => $this->createRequest($module, $controller, $parentId, $clientId, $type, $data),
+			'created' => true,
+		];
+	}
+
 	public function attachEmailMessage(array $feedback, int $emailMessageId): void
 	{
 		if(empty($feedback['id']) || empty($feedback['clientid']) || $emailMessageId <= 0) return;
@@ -113,7 +142,9 @@ class DEEC_Feedback
 		if(!$config) return '';
 
 		$translator = $this->getTranslator($locale);
-		$feedbackUrl = rtrim($baseUrl, '/') . '/feedback/index/token/' . rawurlencode((string)$feedback['token']);
+		$feedbackUrl = rtrim($baseUrl, '/')
+			. '/feedback/index/token/' . rawurlencode((string)$feedback['token'])
+			. '/lang/' . rawurlencode($translator->getLocale());
 
 		$buttons = '';
 		foreach($config['statuses'] as $status => $labelKey) {
@@ -161,7 +192,7 @@ class DEEC_Feedback
 		$db->deleteById((int)$feedback['id']);
 	}
 
-	private function getTranslator(string $locale): DEEC_Translate
+	public function getTranslator(string $locale): DEEC_Translate
 	{
 		$locale = trim($locale);
 

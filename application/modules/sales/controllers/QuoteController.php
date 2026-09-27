@@ -53,6 +53,14 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 			(string)($row['language'] ?? '')
 		);
 
+		$assign['emailForm']->addElement([
+			'name' => 'feedback',
+			'type' => 'hidden',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
+
+		$assign['emailForm']->setValue('feedback', 1);
 		$assign['emailForm']->setValue('subject', $email['subject']);
 		$assign['emailForm']->setValue('body', $email['body']);
 
