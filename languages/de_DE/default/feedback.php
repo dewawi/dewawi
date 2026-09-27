@@ -17,4 +17,7 @@
 	'FEEDBACK_QUOTE_REASON_OTHER' => 'Anderer Grund',
 	'FEEDBACK_MESSAGE_LABEL' => 'Möchten Sie uns noch etwas mitteilen?',
 	'FEEDBACK_SUBMIT' => 'Rückmeldung senden',
+	'FEEDBACK_EMAIL_QUOTE_TITLE' => 'Wie ist der aktuelle Stand zu unserem Angebot?',
+	'FEEDBACK_EMAIL_QUOTE_TEXT' => 'Mit einem Klick können Sie uns schnell eine Rückmeldung geben.',
+	'FEEDBACK_EMAIL_OPEN' => 'Rückmeldung online öffnen',
 );

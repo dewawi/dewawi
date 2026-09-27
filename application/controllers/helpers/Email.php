@@ -185,6 +185,12 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				}
 			}
 
+			$feedback = $this->prepareFeedback($module, $controller, $data, (int)$documentid);
+
+			if($feedback['service']) {
+				$data['body'] = $feedback['body'];
+			}
+
 			// Get email body and subject
 			list($body, $subject) = $this->getEmailBody($module, $controller, $formData, $data, $items);
 
@@ -206,6 +212,10 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$emailmessage['attachment'] = implode(',', $attachmentsSent);
 			$emailmessage['response'] = 'pending';
 			$messageid = $emailmessageDb->addEmailmessage($emailmessage);
+
+			if($feedback['service'] && $feedback['request']) {
+				$feedback['service']->attachEmailMessage($feedback['request'], (int)$messageid);
+			}
 
 			//Get portal TODO
 			/*$portalDb = new Portals_Model_DbTable_Portal();
@@ -264,12 +274,77 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			//Send the message, check for errors
 			if(!$mail->send()) {
 				$emailmessageDb->updateEmailmessage($messageid, array('response' => $mail->ErrorInfo));
+
+				if($feedback['service'] && $feedback['request']) {
+					$feedback['service']->deleteRequest($feedback['request']);
+				}
+
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_ERROR');
 			} else {
 				$emailmessageDb->updateEmailmessage($messageid, array('response' => 'sent'));
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
 			}
 		}
+	}
+
+	private function prepareFeedback($module, $controller, array $data, int $documentid): array
+	{
+		$result = [
+			'service' => null,
+			'request' => null,
+			'body' => (string)($data['body'] ?? ''),
+		];
+
+		$documentModule = (string)($data['module'] ?? $module);
+		$documentController = (string)($data['controller'] ?? $controller);
+
+		if($documentModule !== 'sales' || $documentController !== 'quote' || $documentid <= 0) return $result;
+
+		$service = new DEEC_Feedback();
+		$result['service'] = $service;
+		$result['body'] = $service->removeEmailBlock($result['body']);
+
+		try {
+			$user = Zend_Registry::get('User');
+
+			$quoteDb = new Sales_Model_DbTable_Quote();
+			$quoteDb->setClientId((int)$user['clientid']);
+
+			$quote = $quoteDb->getById($documentid);
+			if(!$quote) return $result;
+
+			$request = $service->createRequest(
+				'sales',
+				'quote',
+				$documentid,
+				(int)$quote['clientid'],
+				DEEC_Feedback::TYPE_QUOTE,
+				[
+					'contactid' => (int)($quote['contactid'] ?? 0),
+				]
+			);
+
+			$block = $service->buildEmailBlock(
+				$request,
+				$this->getPublicBaseUrl(),
+				(string)($quote['language'] ?? '')
+			);
+
+			$result['body'] = $service->insertEmailBlock($result['body'], $block);
+			$result['request'] = $request;
+		} catch(Exception $e) {
+			error_log('Quote feedback could not be created: ' . $e->getMessage());
+		}
+
+		return $result;
+	}
+
+	private function getPublicBaseUrl(): string
+	{
+		$request = $this->getRequest();
+		$basePath = rtrim((string)Zend_Controller_Front::getInstance()->getBaseUrl(), '/');
+
+		return rtrim($request->getScheme() . '://' . $request->getHttpHost() . $basePath, '/');
 	}
 
 	private function getSmtpDetails($module)
