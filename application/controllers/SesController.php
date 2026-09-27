@@ -70,17 +70,18 @@ class SesController extends Zend_Controller_Action
 		$message = $emailmessageDb->getById($emailmessageId);
 
 		if(!$message) return;
-		if($message['module'] !== 'campaigns' || $message['controller'] !== 'campaign') return;
+
+		$isCampaign = $message['module'] === 'campaigns' && $message['controller'] === 'campaign';
 
 		$recipient = strtolower(trim((string)$message['recipient']));
 		$recipients = $this->getRecipients($event, $type);
 		$recipientMatches = in_array($recipient, $recipients, true);
 
 		if($type === 'Complaint') {
-			if($recipients && !$recipientMatches) return;
-
-			if(!$recipients && (trim((string)$message['cc']) !== '' || trim((string)$message['bcc']) !== '')) {
-				error_log('SES complaint could not be mapped because the message has copy recipients: '.$providerMessageId);
+			if($recipients) {
+				if(!$recipientMatches) return;
+			} elseif(!$isCampaign || trim((string)$message['cc']) !== '' || trim((string)$message['bcc']) !== '') {
+				error_log('SES complaint could not be mapped to primary recipient: '.$providerMessageId);
 				return;
 			}
 		} elseif(!$recipientMatches) {
