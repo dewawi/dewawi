@@ -501,20 +501,6 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 		}
 	}
 
-	public function replaceEmailBlock(string $body, string $block): string
-	{
-		if($block === '') return $this->removeEmailBlock($body);
-
-		$pattern = '/' . preg_quote(self::EMAIL_MARKER_START, '/') . '.*?' . preg_quote(self::EMAIL_MARKER_END, '/') . '/s';
-
-		if(preg_match($pattern, $body)) {
-			$result = preg_replace($pattern, $block, $body, 1);
-			return $result !== null ? $result : $body;
-		}
-
-		return $this->insertEmailBlock($body, $block);
-	}
-
 	private function buildSalutation(array $recipient): string {
 		//derive from gender + name
 		$gender = trim($recipient['salutation'] ?? '');

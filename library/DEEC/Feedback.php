@@ -183,6 +183,20 @@ class DEEC_Feedback
 		return rtrim($body) . '<br><br>' . $block;
 	}
 
+	public function replaceEmailBlock(string $body, string $block): string
+	{
+		if($block === '') return $this->removeEmailBlock($body);
+
+		$pattern = '/' . preg_quote(self::EMAIL_MARKER_START, '/') . '.*?' . preg_quote(self::EMAIL_MARKER_END, '/') . '/s';
+
+		if(preg_match($pattern, $body)) {
+			$result = preg_replace($pattern, $block, $body, 1);
+			return $result !== null ? $result : $body;
+		}
+
+		return $this->insertEmailBlock($body, $block);
+	}
+
 	public function deleteRequest(array $feedback): void
 	{
 		if(empty($feedback['id']) || empty($feedback['clientid'])) return;
