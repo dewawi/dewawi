@@ -136,23 +136,6 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		Zend_Registry::set('DEEC_Translate', $tr);
 	}
 
-	protected function _initRoutes()
-	{
-		$router = Zend_Controller_Front::getInstance()->getRouter();
-
-		$router->addRoute(
-			'legacy-email-delivery',
-			new Zend_Controller_Router_Route_Static(
-				'campaigns/feedback',
-				[
-					'module' => 'default',
-					'controller' => 'email-delivery',
-					'action' => 'index',
-				]
-			)
-		);
-	}
-
 	protected function _initCache()
 	{
 		//mb_internal_encoding("UTF-8");
@@ -216,5 +199,19 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		$siteContext = Zend_Registry::get('SiteContext');
 		$router = new DEEC_Site_Router();
 		$router->registerRoutes($siteContext);
+	}
+
+	protected function _initEmailDeliveryRoutes()
+	{
+		$router = Zend_Controller_Front::getInstance()->getRouter();
+
+		$defaults = [
+			'module' => 'default',
+			'controller' => 'email-delivery',
+			'action' => 'index',
+		];
+
+		$router->addRoute('email-delivery', new Zend_Controller_Router_Route_Static('email-delivery', $defaults));
+		$router->addRoute('legacy-email-delivery', new Zend_Controller_Router_Route_Static('campaigns/feedback', $defaults));
 	}
 }
