@@ -41,4 +41,26 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 
 		return null;
 	}
+
+	protected function getViewAssigns(array $row, $form): array
+	{
+		$assign = parent::getViewAssigns($row, $form);
+
+		if((int)$this->_getParam('feedback', 0) !== 1 || empty($assign['emailForm']) || empty($row['quoteid'])) return $assign;
+
+		$email = (new DEEC_Feedback())->buildQuoteFollowupEmail(
+			(int)$row['quoteid'],
+			(string)($row['language'] ?? '')
+		);
+
+		$assign['emailForm']->setValue('subject', $email['subject']);
+		$assign['emailForm']->setValue('body', $email['body']);
+
+		return $assign;
+	}
+
+	protected function afterView(array $row, $form): void
+	{
+		if((int)$this->_getParam('feedback', 0) === 1) $this->view->activeTab = 'messages';
+	}
 }

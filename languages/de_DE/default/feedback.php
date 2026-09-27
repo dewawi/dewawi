@@ -20,4 +20,6 @@
 	'FEEDBACK_EMAIL_QUOTE_TITLE' => 'Wie ist der aktuelle Stand zu unserem Angebot?',
 	'FEEDBACK_EMAIL_QUOTE_TEXT' => 'Mit einem Klick können Sie uns schnell eine Rückmeldung geben.',
 	'FEEDBACK_EMAIL_OPEN' => 'Rückmeldung online öffnen',
+	'FEEDBACK_EMAIL_QUOTE_SUBJECT' => 'Rückfrage zu unserem Angebot %s',
+	'FEEDBACK_EMAIL_QUOTE_FOLLOWUP' => '[SALUTATION]<br><br>wir möchten kurz nachfragen, wie der aktuelle Stand zu unserem Angebot %s ist.<br><br>Für eine kurze Rückmeldung können Sie einfach eine der untenstehenden Möglichkeiten auswählen.<br><br>[SIGNATURE]',
 );

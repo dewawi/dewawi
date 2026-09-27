@@ -176,6 +176,7 @@ class Sales_Model_List_Quotes extends DEEC_List
 			$parts[] = $this->renderMonitoringTask($item);
 		} elseif($status === 'sent') {
 			$parts[] = $this->badge('QUOTES_MONITORING_FOLLOW_UP', 'warning');
+			$parts[] = $this->renderFeedbackLink($item);
 		} elseif($status === 'not_sent') {
 			$parts[] = $this->badge('QUOTES_MONITORING_CHECK_SEND', 'warning');
 			$parts[] = '<div>' . $this->escape($this->translate('QUOTES_MONITORING_NOT_SENT')) . '</div>';
@@ -297,6 +298,22 @@ class Sales_Model_List_Quotes extends DEEC_List
 		], null, true);
 
 		return '<div><a href="' . $this->escapeAttr($url) . '">' . $this->escape($this->translate('QUOTES_MONITORING_CREATE_TASK')) . '</a></div>';
+	}
+
+	private function renderFeedbackLink($item): string
+	{
+		$id = (int)$this->getFieldValue($item, 'id', 0);
+		if($id <= 0) return '';
+
+		$url = $this->getView()->url([
+			'module' => 'sales',
+			'controller' => 'quote',
+			'action' => 'view',
+			'id' => $id,
+			'feedback' => 1,
+		], null, true);
+
+		return '<div><a href="' . $this->escapeAttr($url) . '">' . $this->escape($this->translate('QUOTES_MONITORING_SEND_FEEDBACK')) . '</a></div>';
 	}
 
 	private function getFeedbackLabel(string $group, string $value): string

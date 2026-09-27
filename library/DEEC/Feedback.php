@@ -95,6 +95,16 @@ class DEEC_Feedback
 		];
 	}
 
+	public function buildQuoteFollowupEmail(int $quoteId, string $locale = ''): array
+	{
+		$translator = $this->getTranslator($locale);
+
+		return [
+			'subject' => $translator->t('FEEDBACK_EMAIL_QUOTE_SUBJECT', [$quoteId]),
+			'body' => $translator->t('FEEDBACK_EMAIL_QUOTE_FOLLOWUP', [$quoteId]),
+		];
+	}
+
 	public function buildEmailBlock(array $feedback, string $baseUrl, string $locale = ''): string
 	{
 		if(empty($feedback['token']) || empty($feedback['type'])) return '';

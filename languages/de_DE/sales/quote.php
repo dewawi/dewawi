@@ -69,6 +69,7 @@
 	'QUOTES_MONITORING_OPEN_DAYS' => '%s Tage offen',
 	'QUOTES_MONITORING_FEEDBACK_RECEIVED' => 'Rückmeldung erhalten',
 	'QUOTES_MONITORING_FEEDBACK_OPEN' => 'Rückmeldung offen',
+	'QUOTES_MONITORING_SEND_FEEDBACK' => 'Feedback senden',
 	'QUOTES_MONITORING_FOLLOW_UP' => 'Nachfassen',
 	'QUOTES_MONITORING_CHECK_SEND' => 'Versand prüfen',
 	'QUOTES_MONITORING_CONTACT' => 'Kontakt aufnehmen',
