@@ -1141,6 +1141,7 @@ function edit(data, params) {
 //Search
 function search() {
 	var data = collectToolbarData();
+	data.context_action = action === 'select' ? 'select' : 'index';
 
 	if (action === 'select') {
 		data.parent = DewawiToolbar.getUrlParam('parent');
@@ -1162,9 +1163,11 @@ function search() {
 			url: baseUrl + '/' + module + '/' + controller + '/search',
 			data: data,
 			cache: false,
+			dataType: 'json',
 
 			success: function (response) {
-				$('#content').html(response);
+				$('#content').html(response.content || '');
+				DewawiToolbar.refresh(response.toolbar || '');
 				initDwTabs('#content');
 			},
 
@@ -2741,6 +2744,24 @@ function markFieldSaved($field) {
 			this.bindActions();
 			this.bindFilters();
 			this.bindKeyword();
+		},
+
+		refresh: function (html) {
+			var $toolbar = $('.dw-page-header__toolbar .dw-toolbar').first();
+
+			if(!$toolbar.length) return;
+
+			var $response = $('<div>').html(html || '');
+			var $activeFilters = $response.find('.dw-active-filters').first();
+
+			$toolbar.children('.dw-active-filters').remove();
+
+			if(!$activeFilters.length) return;
+
+			var $filterPanel = $toolbar.children('.dw-filter-panel').first();
+
+			if($filterPanel.length) $activeFilters.insertBefore($filterPanel);
+			else $toolbar.append($activeFilters);
 		},
 
 		bindActions: function () {
