@@ -12,10 +12,13 @@ class Application_Model_DbTable_Config extends DEEC_Model_DbTable_Entity
 
 	public function getConfig()
 	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$row = $this->fetchRow($where);
-		return $row->toArray();
+		return $this->getByClientId((int)$this->_client['id']);
+	}
+
+	public function getByClientId(int $clientId): ?array
+	{
+		$row = $this->fetchRow($this->getAdapter()->quoteInto('clientid = ?', $clientId));
+		return $row ? $row->toArray() : null;
 	}
 
 	public function getBySesFeedbackTopicArn(string $topicArn): ?array

@@ -53,18 +53,30 @@ class DEEC_Email {
 			return null;
 		}
 
-		$config = mysqli_fetch_assoc($result);
-		$configured = !empty($config['smtphost']) || !empty($config['smtpport']) || !empty($config['smtpsecure']) || !empty($config['smtpuser']) || !empty($config['smtppass']);
+		return mysqli_fetch_assoc($result);
+	}
 
-		if(!$configured) {
-			return null;
-		}
+	public static function buildSmtpConfig(array $config): ?array
+	{
+		$host = trim((string)($config['smtphost'] ?? ''));
+		$port = (int)($config['smtpport'] ?? 0);
+		$auth = (bool)($config['smtpauth'] ?? false);
+		$secure = trim((string)($config['smtpsecure'] ?? ''));
+		$username = trim((string)($config['smtpuser'] ?? ''));
+		$password = (string)($config['smtppass'] ?? '');
 
-		if(empty($config['smtphost']) || empty($config['smtpport']) || empty($config['smtpsecure']) || empty($config['smtpuser']) || empty($config['smtppass'])) {
-			throw new Exception('SMTP configuration is incomplete');
-		}
+		if($host === '' && $port === 0 && $secure === '' && $username === '' && $password === '') return null;
+		if($host === '' || $port <= 0) throw new InvalidArgumentException('SMTP configuration is incomplete');
+		if($auth && ($username === '' || $password === '')) throw new InvalidArgumentException('SMTP authentication configuration is incomplete');
 
-		return $config;
+		return [
+			'host' => $host,
+			'auth' => $auth,
+			'username' => $username,
+			'password' => $password,
+			'secure' => $secure,
+			'port' => $port,
+		];
 	}
 
 	public static function prepareMessageData(array $message): array
@@ -205,20 +217,10 @@ class DEEC_Email {
 					throw new Exception('Campaign unsubscribe URL is invalid');
 				}
 
-				if($smtp) {
-					$smtpConfig = [
-						'host' => $smtp['smtphost'],
-						'auth' => (bool)$smtp['smtpauth'],
-						'username' => $smtp['smtpuser'],
-						'password' => $smtp['smtppass'],
-						'secure' => $smtp['smtpsecure'],
-						'port' => (int)$smtp['smtpport'],
-					];
+				$smtpConfig = $smtp ? self::buildSmtpConfig($smtp) : null;
 
-					if(empty($user['email'])) {
-						throw new Exception('Campaign sender email is missing');
-					}
-
+				if($smtpConfig) {
+					if(empty($user['email'])) throw new Exception('Campaign sender email is missing');
 					$fromEmail = $user['email'];
 				} else {
 					$smtpConfig = [

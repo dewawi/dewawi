@@ -95,9 +95,9 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 				if($form->isValid($data) || true) {
 					// Get SMTP settings
-					list($smtpHost, $smtpUser, $smtpPass, $emailSender) = $this->getSmtpDetails($module);
+					list($smtpConfig, $fromEmail, $fromName) = $this->getEmailConfig($module);
 
-					$this->sendEmails($module, $controller, $recipients, $smtpHost, $smtpUser, $smtpPass, $emailSender, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items);
+					$this->sendEmails($module, $controller, $recipients, $smtpConfig, $fromEmail, $fromName, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items);
 				}
 			}
 		} else {
@@ -106,20 +106,11 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 		}
 	}
 
-	private function sendEmails($module, $controller, $recipients, $smtpHost, $smtpUser, $smtpPass, $emailSender, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items)
+	private function sendEmails($module, $controller, $recipients, array $smtpConfig, $fromEmail, $fromName, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items)
 	{
-		$smtpConfig = [
-			'host' => $smtpHost,
-			'auth' => true,
-			'username' => $smtpUser,
-			'password' => $smtpPass,
-			'secure' => 'ssl',
-			'port' => 465,
-		];
-
 		foreach($recipients as $recipient) {
 			$to = [$recipient['email']];
-			if($module == 'shops') $to[] = $emailSender;
+			if($module == 'shops') $to[] = $fromEmail;
 
 			if(isset($data['replyto']) && $data['replyto']) $data['replyto'] = str_replace(' ', '', $data['replyto']);
 			if(isset($data['cc']) && $data['cc']) $data['cc'] = str_replace(' ', '', $data['cc']);
@@ -168,7 +159,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				'parentid' => $campaignid,
 				'module' => $data['module'] ?? $module,
 				'controller' => $data['controller'] ?? $controller,
-				'sender' => $smtpUser,
+				'sender' => $fromEmail,
 				'recipient' => $recipient['email'],
 				'cc' => $data['cc'] ?? '',
 				'bcc' => $data['bcc'] ?? '',
@@ -205,7 +196,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 			$sendResult = DEEC_Email::sendMessage($smtpConfig, [
 				'fromEmail' => $emailmessage['sender'],
-				'fromName' => $emailSender,
+				'fromName' => $fromName,
 				'to' => $to,
 				'cc' => $emailmessage['cc'],
 				'bcc' => $emailmessage['bcc'],
@@ -307,15 +298,49 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 		return rtrim($request->getScheme() . '://' . $request->getHttpHost() . $basePath, '/');
 	}
 
-	private function getSmtpDetails($module)
+	private function getEmailConfig($module): array
 	{
-		if ($module === 'shops') {
+		if($module === 'shops') {
 			$shop = Zend_Registry::get('Shop');
-			return [$shop['smtphost'], $shop['smtpuser'], $shop['smtppass'], $shop['emailsender']];
-		} else {
-			$user = Zend_Registry::get('User');
-			return [$user['smtphost'], $user['smtpuser'], $user['smtppass'], $user['emailsender']];
+
+			$configDb = new Application_Model_DbTable_Config();
+			$config = $configDb->getByClientId((int)$shop['clientid']);
+			$smtpConfig = $config ? DEEC_Email::buildSmtpConfig($config) : null;
+
+			if(!$smtpConfig) {
+				$smtpConfig = [
+					'host' => $shop['smtphost'],
+					'auth' => true,
+					'username' => $shop['smtpuser'],
+					'password' => $shop['smtppass'],
+					'secure' => 'ssl',
+					'port' => 465,
+				];
+			}
+
+			return [$smtpConfig, (string)$shop['emailsender'], (string)$shop['title']];
 		}
+
+		$user = Zend_Registry::get('User');
+		$config = Zend_Registry::get('Config');
+		$smtpConfig = DEEC_Email::buildSmtpConfig($config);
+
+		if(!$smtpConfig) {
+			$smtpConfig = [
+				'host' => $user['smtphost'],
+				'auth' => true,
+				'username' => $user['smtpuser'],
+				'password' => $user['smtppass'],
+				'secure' => 'ssl',
+				'port' => 465,
+			];
+
+			return [$smtpConfig, (string)$user['smtpuser'], (string)$user['emailsender']];
+		}
+
+		if(empty($user['email'])) throw new Exception('Email sender address is missing');
+
+		return [$smtpConfig, (string)$user['email'], (string)$user['emailsender']];
 	}
 
 	private function getEmailBody($module, $controller, $formData, $data, $items)
