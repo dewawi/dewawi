@@ -885,7 +885,7 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `bcc` varchar(255) DEFAULT NULL,
   `replyto` varchar(255) DEFAULT NULL,
   `subject` varchar(255) DEFAULT NULL,
-  `body` text DEFAULT NULL,
+  `body` longtext DEFAULT NULL,
   `attachment` text DEFAULT NULL,
   `clientid` int(11) NOT NULL,
   `messagesent` datetime DEFAULT NULL,
