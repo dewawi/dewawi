@@ -9,6 +9,12 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 			'list' => 'Sales_Model_List_Quotes',
 			'entity' => Sales_Model_Entity_Quote::listConfig(),
 		]);
+
+		$monitoring = new Sales_Service_QuoteMonitoring();
+		$items = $monitoring->enrich($list->getItems());
+
+		$list->setItems($items);
+		$this->view->quotesItems = $items;
 	}
 
 	protected function getCreateData(): array
