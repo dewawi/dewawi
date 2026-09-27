@@ -136,6 +136,23 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		Zend_Registry::set('DEEC_Translate', $tr);
 	}
 
+	protected function _initRoutes()
+	{
+		$router = Zend_Controller_Front::getInstance()->getRouter();
+
+		$router->addRoute(
+			'legacy-email-delivery',
+			new Zend_Controller_Router_Route_Static(
+				'campaigns/feedback',
+				[
+					'module' => 'default',
+					'controller' => 'email-delivery',
+					'action' => 'index',
+				]
+			)
+		);
+	}
+
 	protected function _initCache()
 	{
 		//mb_internal_encoding("UTF-8");

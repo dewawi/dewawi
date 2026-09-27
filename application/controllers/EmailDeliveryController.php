@@ -1,6 +1,6 @@
 <?php
 
-class SesController extends Zend_Controller_Action
+class EmailDeliveryController extends Zend_Controller_Action
 {
 	public function init()
 	{
