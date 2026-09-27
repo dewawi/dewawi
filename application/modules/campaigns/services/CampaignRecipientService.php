@@ -66,7 +66,7 @@ class Campaigns_Service_CampaignRecipientService
 					'contactname' => 'name1',
 				]
 			)
-			->where('em.parentid = ?', $campaignId)
+			->where('em.campaignid = ?', $campaignId)
 			->where('em.module = ?', 'campaigns')
 			->where('em.controller = ?', 'campaign')
 			->where('em.clientid = ?', $clientId)
@@ -165,7 +165,7 @@ class Campaigns_Service_CampaignRecipientService
 		$adapter = $emailmessageDb->getAdapter();
 
 		$where = [
-			$adapter->quoteInto('parentid = ?', $campaignId),
+			$adapter->quoteInto('campaignid = ?', $campaignId),
 			$adapter->quoteInto('module = ?', 'campaigns'),
 			$adapter->quoteInto('controller = ?', 'campaign'),
 			$adapter->quoteInto('clientid = ?', $emailmessageDb->getClientId()),
@@ -293,7 +293,7 @@ class Campaigns_Service_CampaignRecipientService
 					SUM(response = "pending" AND messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)) AS pending,
 					SUM(response != "sent" AND response != "pending") AS failed
 				FROM emailmessage
-				WHERE parentid = '.$campaignId.'
+				WHERE campaignid = '.$campaignId.'
 					AND module = "campaigns"
 					AND controller = "campaign"
 					AND clientid = '.$clientId.'

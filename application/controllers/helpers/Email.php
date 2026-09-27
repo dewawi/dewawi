@@ -59,7 +59,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					$emailmessage = $emailmessageDb->getEmailmessage($messageid);
 					$contactid = (int)($emailmessage['contactid'] ?? 0);
 					$documentid = (int)($emailmessage['documentid'] ?? 0);
-					$campaignid = (int)($emailmessage['parentid'] ?? 0);
+					$campaignid = (int)($emailmessage['campaignid'] ?? 0);
 
 					unset($emailmessage['id'], $emailmessage['messagesent'], $emailmessage['messagesentby'], $emailmessage['response']);
 
@@ -156,8 +156,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$emailmessage = DEEC_Email::prepareMessageData([
 				'contactid' => $recipient['contactid'],
 				'documentid' => $documentid,
+				'campaignid' => $campaignid,
 				'feedbackid' => !empty($feedback['request']['id']) ? (int)$feedback['request']['id'] : null,
-				'parentid' => $campaignid,
 				'module' => $data['module'] ?? $module,
 				'controller' => $data['controller'] ?? $controller,
 				'sender' => $fromEmail,

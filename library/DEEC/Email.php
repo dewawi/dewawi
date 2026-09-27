@@ -87,7 +87,8 @@ class DEEC_Email {
 		return [
 			'contactid' => (int)($message['contactid'] ?? 0),
 			'documentid' => (int)($message['documentid'] ?? 0),
-			'parentid' => (int)($message['parentid'] ?? 0),
+			'campaignid' => !empty($message['campaignid']) ? (int)$message['campaignid'] : null,
+			'feedbackid' => !empty($message['feedbackid']) ? (int)$message['feedbackid'] : null,
 			'module' => (string)($message['module'] ?? ''),
 			'controller' => (string)($message['controller'] ?? ''),
 			'sender' => trim((string)($message['sender'] ?? '')),
@@ -336,7 +337,7 @@ class DEEC_Email {
 				$emailmessage = self::prepareMessageData([
 					'contactid' => $recipient['contactid'],
 					'documentid' => $documentid,
-					'parentid' => $campaign['id'],
+					'campaignid' => $campaign['id'],
 					'module' => $data['module'],
 					'controller' => $data['controller'],
 					'sender' => $fromEmail,

@@ -70,8 +70,8 @@ class DEEC_Emailmessage {
 		}
 	}
 
-	public function getEmailmessages($contactid, $parentid, $module, $controller, $clientid) {
-		$where = 'parentid = "'.$parentid.'" AND module = "'.$module.'" AND controller = "'.$controller.'"';
+	public function getEmailmessages($contactid, $campaignid, $module, $controller, $clientid) {
+		$where = 'campaignid = "'.$campaignid.'" AND module = "'.$module.'" AND controller = "'.$controller.'"';
 		if($where) {
 			$where .= ' AND clientid = '.$clientid;
 			$where .= ' AND deleted = 0';
@@ -105,7 +105,7 @@ class DEEC_Emailmessage {
 				SUM(response = "pending") AS pending,
 				SUM(response != "sent" AND response != "pending") AS failed
 			FROM emailmessage
-			WHERE parentid = '.$campaignid.'
+			WHERE campaignid = '.$campaignid.'
 				AND module = "campaigns"
 				AND controller = "campaign"
 				AND clientid = '.$clientid.'

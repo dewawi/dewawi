@@ -89,5 +89,10 @@ CREATE TABLE IF NOT EXISTS `feedback` (
   KEY `clientid_type_responded_deleted` (`clientid`, `type`, `responded`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `emailmessage` ADD `feedbackid` int(11) DEFAULT NULL AFTER `documentid`;
+ALTER TABLE `emailmessage` DROP INDEX `parentid_clientid_deleted_module_controller`;
+ALTER TABLE `emailmessage` CHANGE `parentid` `campaignid` int(11) DEFAULT NULL;
+ALTER TABLE `emailmessage` ADD INDEX `campaignid_clientid_deleted_module_controller` (`campaignid`, `clientid`, `deleted`, `module`, `controller`);
+UPDATE `emailmessage` SET `campaignid` = NULL WHERE `campaignid` = 0;
+
+ALTER TABLE `emailmessage` ADD `feedbackid` int(11) DEFAULT NULL AFTER `campaignid`;
 ALTER TABLE `emailmessage` ADD INDEX `feedbackid` (`feedbackid`);

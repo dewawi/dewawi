@@ -24,19 +24,17 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 		return $data->toArray();
 	}
 
-	public function getEmailmessages($contactid = NULL, $parentid = NULL, $module = NULL, $controller = NULL)
+	public function getEmailmessages($contactid = NULL, $campaignid = NULL, $module = NULL, $controller = NULL)
 	{
 		$where = array();
-		if($contactid) $where[] = $this->getAdapter()->quoteInto('parentid = ?', $contactid);
-		if($parentid) $where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
+		if($contactid) $where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
+		if($campaignid) $where[] = $this->getAdapter()->quoteInto('campaignid = ?', $campaignid);
 		if($module) $where[] = $this->getAdapter()->quoteInto('module = ?', $module);
 		if($controller) $where[] = $this->getAdapter()->quoteInto('controller = ?', $controller);
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC');
-		if(!$data) {
-			throw new Exception("Could not find row $parentid");
-		}
+		if(!$data) throw new Exception("Could not find email messages");
 		return $data->toArray();
 	}
 

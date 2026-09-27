@@ -172,7 +172,7 @@ class DEEC_Emailaddress {
 					MAX(response = "pending" AND messagesent >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)) AS pending,
 					SUM(response != "sent" AND response != "pending") AS failed
 				FROM emailmessage
-				WHERE parentid = '.$campaignid.'
+				WHERE campaignid = '.$campaignid.'
 					AND module = "campaigns"
 					AND controller = "campaign"
 					AND clientid = '.$clientid.'
@@ -368,7 +368,7 @@ class DEEC_Emailaddress {
 					MAX(deliverystatus = "bounce") AS bounce,
 					MAX(deliverystatus = "complaint") AS complaint
 				FROM emailmessage
-				WHERE parentid = '.$campaignid.'
+				WHERE campaignid = '.$campaignid.'
 					AND module = "campaigns"
 					AND controller = "campaign"
 					AND clientid = '.$clientid.'
