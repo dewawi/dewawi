@@ -172,10 +172,6 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 			$messageid = $emailmessageDb->addEmailmessage($emailmessage);
 
-			if($feedback['service'] && $feedback['request']) {
-				$feedback['service']->attachEmailMessage($feedback['request'], (int)$messageid);
-			}
-
 			if(!empty($formData['__attach_paths']) && is_array($formData['__attach_paths'])) {
 				foreach($formData['__attach_paths'] as $path) {
 					if($path && file_exists($path)) $attachmentPaths[] = $path;
@@ -223,7 +219,12 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_ERROR');
 			} else {
-				$emailmessageDb->updateEmailmessage($messageid, array('response' => 'sent'));
+				$emailmessageDb->updateEmailmessage($messageid, ['response' => 'sent']);
+
+				if($feedback['service'] && $feedback['request']) {
+					$feedback['service']->attachEmailMessage($feedback['request'], (int)$messageid);
+				}
+
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
 			}
 		}

@@ -97,6 +97,13 @@ class Sales_Service_QuoteMonitoring
 			AND f.responded IS NOT NULL
 		)';
 
+		$feedbackNeedsAction = 'EXISTS (
+			SELECT 1 FROM feedback f
+			WHERE f.id = ' . $latestFeedbackId . '
+			AND f.responded IS NOT NULL
+			AND f.status IN (' . $db->quote('interested') . ', ' . $db->quote('question') . ')
+		)';
+
 		$emailSent = 'EXISTS (
 			SELECT 1 FROM emailmessage em
 			WHERE em.documentid = ' . $alias . '.id
@@ -130,11 +137,21 @@ class Sales_Service_QuoteMonitoring
 				break;
 
 			case 'feedback_response':
-				$select->where('(' . $active . ') AND NOT (' . $anyFollowup . ') AND (' . $feedbackResponse . ')');
+				$select->where(
+					'(' . $active . ')'
+					. ' AND NOT (' . $anyFollowup . ')'
+					. ' AND (' . $feedbackResponse . ')'
+					. ' AND ((' . $feedbackNeedsAction . ') OR NOT (' . $taskExists . '))'
+				);
 				break;
 
 			case 'feedback_open':
-				$select->where('(' . $active . ') AND NOT (' . $anyFollowup . ') AND (' . $feedbackOpen . ')');
+				$select->where(
+					'(' . $active . ')'
+					. ' AND NOT (' . $anyFollowup . ')'
+					. ' AND (' . $feedbackOpen . ')'
+					. ' AND NOT (' . $taskExists . ')'
+				);
 				break;
 
 			case 'follow_up':
@@ -161,8 +178,8 @@ class Sales_Service_QuoteMonitoring
 				$select->where(
 					'(' . $active . ')'
 					. ' AND NOT (' . $anyFollowup . ')'
-					. ' AND NOT (' . $feedbackExists . ')'
 					. ' AND (' . $taskExists . ')'
+					. ' AND NOT (' . $feedbackNeedsAction . ')'
 				);
 				break;
 		}
@@ -257,28 +274,26 @@ class Sales_Service_QuoteMonitoring
 
 		$rows = $db->fetchAll(
 			$db->select()
-				->from('emailmessage', ['id', 'documentid', 'messagesent'])
+				->from('emailmessage', [
+					'documentid',
+					'lastsent' => new Zend_Db_Expr('MAX(messagesent)'),
+					'sentcount' => new Zend_Db_Expr('COUNT(*)'),
+				])
 				->where('documentid IN (?)', $documentIds)
 				->where('module = ?', 'sales')
 				->where('controller = ?', 'quote')
 				->where('deleted = ?', 0)
 				->where('response = ?', 'sent')
-				->order('id DESC')
+				->group('documentid')
 		);
 
 		$result = [];
 
 		foreach($rows as $row) {
-			$id = (int)$row['documentid'];
-
-			if(!isset($result[$id])) {
-				$result[$id] = [
-					'lastsent' => $row['messagesent'],
-					'sentcount' => 0,
-				];
-			}
-
-			$result[$id]['sentcount']++;
+			$result[(int)$row['documentid']] = [
+				'lastsent' => $row['lastsent'],
+				'sentcount' => (int)$row['sentcount'],
+			];
 		}
 
 		return $result;
@@ -334,7 +349,11 @@ class Sales_Service_QuoteMonitoring
 
 		foreach($rows as $row) {
 			$key = $this->quoteKey((int)$row['clientid'], (int)$row['quoteid']);
-			if(!isset($result[$key])) $result[$key] = $row;
+			$isFinal = !empty($row[$documentField]);
+
+			if(!isset($result[$key]) || ($isFinal && empty($result[$key][$documentField]))) {
+				$result[$key] = $row;
+			}
 		}
 
 		return $result;
@@ -402,15 +421,12 @@ class Sales_Service_QuoteMonitoring
 			return;
 		}
 
-		if(!empty($row['monitoring_feedback_id'])) {
-			if(!empty($row['monitoring_feedback_responded'])) {
-				$row['monitoring_status'] = 'feedback_response';
-				$row['monitoring_action'] = $this->getFeedbackAction((string)($row['monitoring_feedback_status'] ?? ''));
-				return;
-			}
+		$feedbackStatus = (string)($row['monitoring_feedback_status'] ?? '');
+		$feedbackResponded = !empty($row['monitoring_feedback_responded']);
 
-			$row['monitoring_status'] = 'feedback_open';
-			$row['monitoring_open_days'] = $this->daysSince($row['monitoring_feedback_created'] ?? null);
+		if($feedbackResponded && in_array($feedbackStatus, ['interested', 'question'], true)) {
+			$row['monitoring_status'] = 'feedback_response';
+			$row['monitoring_action'] = $this->getFeedbackAction($feedbackStatus);
 			return;
 		}
 
@@ -425,6 +441,18 @@ class Sales_Service_QuoteMonitoring
 				$row['monitoring_action'] = 'waiting';
 			}
 
+			return;
+		}
+
+		if(!empty($row['monitoring_feedback_id'])) {
+			if($feedbackResponded) {
+				$row['monitoring_status'] = 'feedback_response';
+				$row['monitoring_action'] = $this->getFeedbackAction($feedbackStatus);
+				return;
+			}
+
+			$row['monitoring_status'] = 'feedback_open';
+			$row['monitoring_open_days'] = $this->daysSince($row['monitoring_feedback_created'] ?? null);
 			return;
 		}
 
