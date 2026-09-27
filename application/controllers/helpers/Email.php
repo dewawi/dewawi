@@ -93,11 +93,6 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					$formData = $form->getValues();
 				}
 
-				//PHPMailer
-				require_once(BASE_PATH.'/library/PHPMailer/Exception.php');
-				require_once(BASE_PATH.'/library/PHPMailer/PHPMailer.php');
-				require_once(BASE_PATH.'/library/PHPMailer/SMTP.php');
-
 				if($form->isValid($data) || true) {
 					// Get SMTP settings
 					list($smtpHost, $smtpUser, $smtpPass, $emailSender) = $this->getSmtpDetails($module);
@@ -113,56 +108,25 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 	private function sendEmails($module, $controller, $recipients, $smtpHost, $smtpUser, $smtpPass, $emailSender, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items)
 	{
-		$mail = new PHPMailer\PHPMailer\PHPMailer();
-
-		//Server settings
-		$mail->SMTPDebug = 0;													// Enable verbose debug output: PHPMailer\PHPMailer\SMTP::DEBUG_SERVER
-		$mail->isSMTP();														// Send using SMTP
-		$mail->Host		= $smtpHost;											// Set the SMTP server to send through
-		$mail->SMTPAuth	= true;													// Enable SMTP authentication
-		$mail->Username	= $smtpUser;											// SMTP username
-		$mail->Password	= $smtpPass;											// SMTP password
-		$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;	// Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
-		$mail->Port		= 465;													// TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
+		$smtpConfig = [
+			'host' => $smtpHost,
+			'auth' => true,
+			'username' => $smtpUser,
+			'password' => $smtpPass,
+			'secure' => 'ssl',
+			'port' => 465,
+		];
 
 		foreach($recipients as $recipient) {
-			//Recipients
-			$mail->clearAllRecipients( );												// clear all
-			$mail->setFrom($smtpUser, $emailSender);
-			$mail->addAddress($recipient['email']);										// Add a recipient
-			if($module == 'shops') $mail->addAddress($emailSender);						// Add a recipient
-			if(isset($data['replyto']) && $data['replyto']) {
-				$data['replyto'] = str_replace(' ', '', $data['replyto']);				// Remove spaces
-				if($data['replyto']) $mail->addReplyTo($data['replyto']);				// Add reply to
-			}
-			if(isset($data['cc']) && $data['cc']) {
-				$data['cc'] = str_replace(' ', '', $data['cc']);						// Remove spaces
-				if($data['cc']) {														// Add copy recipients
-					if(strpos($data['cc'], ',') !== false) {
-						$ccs = explode(',', $data['cc']);
-						foreach($ccs as $cc) {
-							$mail->addCC($cc);
-						}
-					} else {
-						$mail->addCC($data['cc']);
-					}
-				}
-			}
-			if(isset($data['bcc']) && $data['bcc']) {
-				$data['bcc'] = str_replace(' ', '', $data['bcc']);						// Remove spaces
-				if($data['bcc']) {														// Add copy recipients
-					if(strpos($data['bcc'], ',') !== false) {
-						$bccs = explode(',', $data['bcc']);
-						foreach($bccs as $bcc) {
-							$mail->addBCC($bcc);
-						}
-					} else {
-						$mail->addBCC($data['bcc']);
-					}
-				}
-			}
+			$to = [$recipient['email']];
+			if($module == 'shops') $to[] = $emailSender;
+
+			if(isset($data['replyto']) && $data['replyto']) $data['replyto'] = str_replace(' ', '', $data['replyto']);
+			if(isset($data['cc']) && $data['cc']) $data['cc'] = str_replace(' ', '', $data['cc']);
+			if(isset($data['bcc']) && $data['bcc']) $data['bcc'] = str_replace(' ', '', $data['bcc']);
 
 			$attachmentsSent = array();
+			$attachmentPaths = array();
 			if($module == 'contacts') {
 				//Get email attachments
 				$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
@@ -179,7 +143,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					foreach($data['files'] as $file) {
 						if(file_exists($attachmentsAvailable[$file]['location'].'/'.$attachmentsAvailable[$file]['filename'])) {
 							array_push($attachmentsSent, $attachmentsAvailable[$file]['filename']);
-							$mail->addAttachment($attachmentsAvailable[$file]['location'].'/'.$attachmentsAvailable[$file]['filename']);
+							$attachmentPaths[] = $attachmentsAvailable[$file]['location'].'/'.$attachmentsAvailable[$file]['filename'];
 						}
 					}
 				}
@@ -231,49 +195,45 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				$data['body'] .= '<img src="'.$url.'/email/view/key/'.$hash.'" border="0" width="1" height="1">';
 			}*/
 
-			// Allow explicit file attachments from callers
-			if (!empty($formData['__attach_paths']) && is_array($formData['__attach_paths'])) {
-				foreach ($formData['__attach_paths'] as $ap) {
-					if ($ap && file_exists($ap)) {
-						$mail->addAttachment($ap);
-					}
+			if(!empty($formData['__attach_paths']) && is_array($formData['__attach_paths'])) {
+				foreach($formData['__attach_paths'] as $path) {
+					if($path && file_exists($path)) $attachmentPaths[] = $path;
 				}
-				// don’t show internal field in the body table
 				unset($formData['__attach_paths']);
 			}
 
-			//Content
-			$mail->isHTML(true);									// Set email format to HTML
-			$mail->Subject = $subject ? $subject : 'Anfrageformular';
-			$mail->Body	= $body;
-			$mail->AltBody = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], "\n", $body)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-			if ($module === 'shops') {
+			$embeddedImages = [];
+			if($module === 'shops') {
 				$shop = Zend_Registry::get('Shop');
-				//Get image path
 				$clientid = $shop['clientid'];
 				$dir1 = substr($clientid, 0, 1);
-				if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
-				else $dir2 = '0';
-				$imagePath = $dir1.'/'.$dir2.'/'.$clientid;
-
-				// Logo einbetten
-				$mail->addEmbeddedImage(BASE_PATH.'/media/'.$imagePath.'/header/'.$shop['logo'], 'logo_cid');
+				$dir2 = strlen($clientid) > 1 ? substr($clientid, 1, 1) : '0';
+				$embeddedImages[] = [
+					'path' => BASE_PATH.'/media/'.$dir1.'/'.$dir2.'/'.$clientid.'/header/'.$shop['logo'],
+					'cid' => 'logo_cid',
+				];
 			}
 
-			//Content
-			$mail->CharSet	= 'UTF-8';
-			$mail->Encoding = 'base64';
-
-			// Optional: Remove PHPMailer signature (recommended)
-			$mail->XMailer = '';
+			$sendResult = DEEC_Email::sendMessage($smtpConfig, [
+				'fromEmail' => $smtpUser,
+				'fromName' => $emailSender,
+				'to' => $to,
+				'cc' => $data['cc'] ?? '',
+				'bcc' => $data['bcc'] ?? '',
+				'replyTo' => $data['replyto'] ?? '',
+				'subject' => $subject ? $subject : 'Anfrageformular',
+				'body' => $body,
+				'altBody' => html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], "\n", $body)), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+				'attachments' => $attachmentPaths,
+				'embeddedImages' => $embeddedImages,
+				'xMailer' => '',
+			]);
 
 			$flashMessengerHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
 			$redirector = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
 
-			//Send the message, check for errors
-			if(!$mail->send()) {
-				$emailmessageDb->updateEmailmessage($messageid, array('response' => $mail->ErrorInfo));
+			if(!$sendResult['sent']) {
+				$emailmessageDb->updateEmailmessage($messageid, array('response' => $sendResult['error']));
 
 				if($feedback['service'] && $feedback['request']) {
 					$feedback['service']->deleteRequest($feedback['request']);

@@ -67,6 +67,81 @@ class DEEC_Email {
 		return $config;
 	}
 
+	public static function sendMessage(array $smtp, array $message): array
+	{
+		require_once(BASE_PATH.'/library/PHPMailer/Exception.php');
+		require_once(BASE_PATH.'/library/PHPMailer/PHPMailer.php');
+		require_once(BASE_PATH.'/library/PHPMailer/SMTP.php');
+
+		$mail = new PHPMailer\PHPMailer\PHPMailer();
+		$mail->SMTPDebug = (int)($smtp['debug'] ?? 0);
+		$mail->isSMTP();
+		$mail->Host = (string)($smtp['host'] ?? '');
+		$mail->SMTPAuth = array_key_exists('auth', $smtp) ? (bool)$smtp['auth'] : true;
+		$mail->Username = (string)($smtp['username'] ?? '');
+		$mail->Password = (string)($smtp['password'] ?? '');
+		$mail->SMTPSecure = (string)($smtp['secure'] ?? '');
+		$mail->Port = (int)($smtp['port'] ?? 465);
+
+		$mail->setFrom((string)($message['fromEmail'] ?? ''), (string)($message['fromName'] ?? ''));
+
+		foreach(self::normalizeAddresses($message['to'] ?? []) as $address) $mail->addAddress($address);
+		foreach(self::normalizeAddresses($message['cc'] ?? []) as $address) $mail->addCC($address);
+		foreach(self::normalizeAddresses($message['bcc'] ?? []) as $address) $mail->addBCC($address);
+
+		$replyTo = trim((string)($message['replyTo'] ?? ''));
+		if($replyTo !== '') $mail->addReplyTo($replyTo);
+
+		foreach((array)($message['attachments'] ?? []) as $path) {
+			if($path && file_exists($path)) $mail->addAttachment($path);
+		}
+
+		foreach((array)($message['embeddedImages'] ?? []) as $image) {
+			if(!empty($image['path']) && !empty($image['cid'])) $mail->addEmbeddedImage($image['path'], $image['cid']);
+		}
+
+		foreach((array)($message['headers'] ?? []) as $name => $value) {
+			if($name !== '' && $value !== '') $mail->addCustomHeader($name, $value);
+		}
+
+		$mail->isHTML(true);
+		$mail->Subject = (string)($message['subject'] ?? '');
+		$mail->Body = (string)($message['body'] ?? '');
+
+		if(array_key_exists('altBody', $message)) $mail->AltBody = (string)$message['altBody'];
+
+		$mail->CharSet = (string)($message['charset'] ?? 'UTF-8');
+		$mail->Encoding = (string)($message['encoding'] ?? 'base64');
+
+		if(array_key_exists('xMailer', $message)) $mail->XMailer = (string)$message['xMailer'];
+
+		if(!$mail->send()) {
+			return [
+				'sent' => false,
+				'error' => $mail->ErrorInfo,
+			];
+		}
+
+		return [
+			'sent' => true,
+			'error' => '',
+		];
+	}
+
+	private static function normalizeAddresses($addresses): array
+	{
+		if(!is_array($addresses)) $addresses = explode(',', (string)$addresses);
+
+		$result = [];
+
+		foreach($addresses as $address) {
+			$address = trim((string)$address);
+			if($address !== '') $result[] = $address;
+		}
+
+		return array_values(array_unique($result));
+	}
+
 	public function getCampaignRecipientStatus($campaign) {
 		$categories = $this->category->getCategories('contact', $campaign['clientid']);
 
@@ -80,19 +155,7 @@ class DEEC_Email {
 	}
 
 	public function send($user, $contactid, $documentid, $campaign = null) {
-
-		//PHPMailer
-		require_once(BASE_PATH.'/library/PHPMailer/Exception.php');
-		require_once(BASE_PATH.'/library/PHPMailer/PHPMailer.php');
-		require_once(BASE_PATH.'/library/PHPMailer/SMTP.php');
-
 		if(true) {
-			$mail = new PHPMailer\PHPMailer\PHPMailer();
-
-			$mail->SMTPDebug = 0;
-			$mail->isSMTP();
-			$mail->SMTPAuth = true;
-
 			if($campaign) {
 				$smtp = $this->getSmtpConfig($campaign['clientid']);
 
@@ -111,12 +174,14 @@ class DEEC_Email {
 				}
 
 				if($smtp) {
-					$mail->Host = $smtp['smtphost'];
-					$mail->SMTPAuth = (bool)$smtp['smtpauth'];
-					$mail->Username = $smtp['smtpuser'];
-					$mail->Password = $smtp['smtppass'];
-					$mail->SMTPSecure = $smtp['smtpsecure'];
-					$mail->Port = (int)$smtp['smtpport'];
+					$smtpConfig = [
+						'host' => $smtp['smtphost'],
+						'auth' => (bool)$smtp['smtpauth'],
+						'username' => $smtp['smtpuser'],
+						'password' => $smtp['smtppass'],
+						'secure' => $smtp['smtpsecure'],
+						'port' => (int)$smtp['smtpport'],
+					];
 
 					if(empty($user['email'])) {
 						throw new Exception('Campaign sender email is missing');
@@ -124,12 +189,14 @@ class DEEC_Email {
 
 					$fromEmail = $user['email'];
 				} else {
-					$mail->Host = $user['smtphost'];
-					$mail->SMTPAuth = true;
-					$mail->Username = $user['smtpuser'];
-					$mail->Password = $user['smtppass'];
-					$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-					$mail->Port = 465;
+					$smtpConfig = [
+						'host' => $user['smtphost'],
+						'auth' => true,
+						'username' => $user['smtpuser'],
+						'password' => $user['smtppass'],
+						'secure' => 'ssl',
+						'port' => 465,
+					];
 					$fromEmail = $user['smtpuser'];
 				}
 
@@ -159,11 +226,14 @@ class DEEC_Email {
 				$data['module'] = 'campaigns';
 				$data['controller'] = 'campaign';
 			} else {
-				$mail->Host = $user['smtphost'];
-				$mail->Username = $user['smtpuser'];
-				$mail->Password = $user['smtppass'];
-				$mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-				$mail->Port = 465;
+				$smtpConfig = [
+					'host' => $user['smtphost'],
+					'auth' => true,
+					'username' => $user['smtpuser'],
+					'password' => $user['smtppass'],
+					'secure' => 'ssl',
+					'port' => 465,
+				];
 			}
 //print_r($recipients);
 
@@ -174,6 +244,7 @@ class DEEC_Email {
 			}*/
 
 			$attachmentsSent = array();
+			$attachmentPaths = array();
 			$emailattachmentArray = $this->emailattachment->getEmailattachments($campaign['id'], 'campaigns', 'campaign', $campaign['clientid']);
 
 			if($emailattachmentArray && count($emailattachmentArray)) {
@@ -182,7 +253,7 @@ class DEEC_Email {
 
 					if(file_exists($path)) {
 						$attachmentsSent[] = $file['filename'];
-						$mail->addAttachment($path);
+						$attachmentPaths[] = $path;
 					}
 				}
 			}
@@ -193,31 +264,10 @@ class DEEC_Email {
 			];
 
 			foreach($recipients as $recipient) {
-				//Recipients
-				$mail->clearAllRecipients();
-				$mail->clearReplyTos();
-				$mail->clearCustomHeaders();
-				$mail->setFrom($fromEmail, $fromName);
-				$mail->addAddress($recipient['email']);
 				$data['cc'] = $campaign['emailcc'];
 				$data['bcc'] = $campaign['emailbcc'];
 				$data['replyto'] = trim((string)($campaign['emailreplyto'] ?? ''));
 				$data['subject'] = $campaign['emailsubject'];
-				if($data['replyto'] !== '') {
-					$mail->addReplyTo($data['replyto']);
-				}
-
-				if(!empty($data['cc'])) {
-					foreach(array_filter(array_map('trim', explode(',', $data['cc']))) as $cc) {
-						$mail->addCC($cc);
-					}
-				}
-
-				if(!empty($data['bcc'])) {
-					foreach(array_filter(array_map('trim', explode(',', $data['bcc']))) as $bcc) {
-						$mail->addBCC($bcc);
-					}
-				}
 
 				if(empty($recipient['emailid']) || empty($recipient['password'])) {
 					throw new Exception('Campaign recipient unsubscribe data is missing');
@@ -269,8 +319,6 @@ class DEEC_Email {
 				$emailmessage['response'] = 'pending';
 				$messageid = $this->emailmessage->addEmailmessage($emailmessage);
 
-				$mail->addCustomHeader('X-DEWAWI-Emailmessage-ID', (string)$messageid);
-
 				//Get portal TODO
 				/*$portalDb = new Portals_Model_DbTable_Portal();
 				$portal = $portalDb->getPortal($email['clientid']);
@@ -285,30 +333,26 @@ class DEEC_Email {
 					$data['body'] .= '<img src="'.$url.'/email/view/key/'.$hash.'" border="0" width="1" height="1">';
 				}*/
 
-				//Content
-				$mail->isHTML(true);									// Set email format to HTML
-				$mail->Subject = $data['subject'];
-				$mail->Body	= $body;
-				//$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+				$sendResult = self::sendMessage($smtpConfig, [
+					'fromEmail' => $fromEmail,
+					'fromName' => $fromName,
+					'to' => $recipient['email'],
+					'cc' => $data['cc'],
+					'bcc' => $data['bcc'],
+					'replyTo' => $data['replyto'],
+					'subject' => $data['subject'],
+					'body' => $body,
+					'attachments' => $attachmentPaths,
+					'headers' => [
+						'X-DEWAWI-Emailmessage-ID' => (string)$messageid,
+						'List-Unsubscribe' => '<'.$unsubscribeUrl.'>',
+						'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
+					],
+				]);
 
-				//Content
-				$mail->CharSet	= 'UTF-8';
-				$mail->Encoding = 'base64';
-
-				$mail->addCustomHeader(
-					'List-Unsubscribe',
-					'<'.$unsubscribeUrl.'>'
-				);
-
-				$mail->addCustomHeader(
-					'List-Unsubscribe-Post',
-					'List-Unsubscribe=One-Click'
-				);
-
-				//Send the message, check for errors
-				if (!$mail->send()) {
+				if(!$sendResult['sent']) {
 					$this->emailmessage->updateEmailmessage($messageid, [
-						'response' => $mail->ErrorInfo,
+						'response' => $sendResult['error'],
 					]);
 
 					continue;
