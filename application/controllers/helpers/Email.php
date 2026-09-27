@@ -156,6 +156,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$emailmessage = DEEC_Email::prepareMessageData([
 				'contactid' => $recipient['contactid'],
 				'documentid' => $documentid,
+				'feedbackid' => !empty($feedback['request']['id']) ? (int)$feedback['request']['id'] : null,
 				'parentid' => $campaignid,
 				'module' => $data['module'] ?? $module,
 				'controller' => $data['controller'] ?? $controller,

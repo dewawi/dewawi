@@ -876,6 +876,7 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `contactid` int(11) NOT NULL,
   `documentid` int(11) NOT NULL,
   `parentid` int(11) NOT NULL,
+  `feedbackid` int(11) DEFAULT NULL,
   `module` varchar(255) DEFAULT NULL,
   `controller` varchar(255) DEFAULT NULL,
   `sender` varchar(255) DEFAULT NULL,
@@ -897,7 +898,8 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY `parentid_clientid_deleted_module_controller` (parentid, clientid, deleted, module, controller),
-  KEY `providermessageid` (providermessageid)
+  KEY `providermessageid` (providermessageid),
+  KEY (`feedbackid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `emailtemplate` (

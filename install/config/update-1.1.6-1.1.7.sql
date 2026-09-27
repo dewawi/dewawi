@@ -88,3 +88,6 @@ CREATE TABLE IF NOT EXISTS `feedback` (
   KEY `contactid` (`contactid`),
   KEY `clientid_type_responded_deleted` (`clientid`, `type`, `responded`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `emailmessage` ADD `feedbackid` int(11) DEFAULT NULL AFTER `documentid`;
+ALTER TABLE `emailmessage` ADD INDEX `feedbackid` (`feedbackid`);
