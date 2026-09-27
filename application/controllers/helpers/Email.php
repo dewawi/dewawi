@@ -162,38 +162,27 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$body = $this->personalizeBody($body, $recipient);
 
 			//Save email message to the db
-			$emailmessage = array();
-			$emailmessage['contactid'] = $recipient['contactid'];
-			$emailmessage['documentid'] = $documentid;
-			$emailmessage['parentid'] = $campaignid;
-			$emailmessage['module'] = $data['module'] ?? $module;
-			$emailmessage['controller'] = $data['controller'] ?? $controller;
-			$emailmessage['recipient'] = $recipient['email'];
-			if(isset($data['cc'])) $emailmessage['cc'] = $data['cc'];
-			if(isset($data['bcc'])) $emailmessage['bcc'] = $data['bcc'];
-			$emailmessage['subject'] = $subject ? $subject : 'Anfrageformular';
-			$emailmessage['body'] = $body;
-			$emailmessage['attachment'] = implode(',', $attachmentsSent);
-			$emailmessage['response'] = 'pending';
+			$emailmessage = DEEC_Email::prepareMessageData([
+				'contactid' => $recipient['contactid'],
+				'documentid' => $documentid,
+				'parentid' => $campaignid,
+				'module' => $data['module'] ?? $module,
+				'controller' => $data['controller'] ?? $controller,
+				'sender' => $smtpUser,
+				'recipient' => $recipient['email'],
+				'cc' => $data['cc'] ?? '',
+				'bcc' => $data['bcc'] ?? '',
+				'replyto' => $data['replyto'] ?? '',
+				'subject' => $subject ? $subject : 'Anfrageformular',
+				'body' => $body,
+				'attachments' => $attachmentsSent,
+			]);
+
 			$messageid = $emailmessageDb->addEmailmessage($emailmessage);
 
 			if($feedback['service'] && $feedback['request']) {
 				$feedback['service']->attachEmailMessage($feedback['request'], (int)$messageid);
 			}
-
-			//Get portal TODO
-			/*$portalDb = new Portals_Model_DbTable_Portal();
-			$portal = $portalDb->getPortal($email['clientid']);
-			if($portal) {
-				$key = hash('sha256', $email['id'].$email['contactid'].$email['clientid'].hash('sha256', $email['password']));
-				$url = $portal->url.'/portals';
-				$link = $url.'/auth/login/target/download/key/'.$key;
-				$html = '<a href="'.$link.'">'.$link.'</a>';
-				$data['body'] = str_replace('[LINK]', $html, $data['body']);
-
-				$hash = hash('sha256', $messageid.$contactid.$email['clientid']);
-				$data['body'] .= '<img src="'.$url.'/email/view/key/'.$hash.'" border="0" width="1" height="1">';
-			}*/
 
 			if(!empty($formData['__attach_paths']) && is_array($formData['__attach_paths'])) {
 				foreach($formData['__attach_paths'] as $path) {
@@ -215,17 +204,18 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			}
 
 			$sendResult = DEEC_Email::sendMessage($smtpConfig, [
-				'fromEmail' => $smtpUser,
+				'fromEmail' => $emailmessage['sender'],
 				'fromName' => $emailSender,
 				'to' => $to,
-				'cc' => $data['cc'] ?? '',
-				'bcc' => $data['bcc'] ?? '',
-				'replyTo' => $data['replyto'] ?? '',
-				'subject' => $subject ? $subject : 'Anfrageformular',
-				'body' => $body,
-				'altBody' => html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], "\n", $body)), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+				'cc' => $emailmessage['cc'],
+				'bcc' => $emailmessage['bcc'],
+				'replyTo' => $emailmessage['replyto'],
+				'subject' => $emailmessage['subject'],
+				'body' => $emailmessage['body'],
+				'altBody' => html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], "\n", $emailmessage['body'])), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
 				'attachments' => $attachmentPaths,
 				'embeddedImages' => $embeddedImages,
+				'emailmessageId' => $messageid,
 				'xMailer' => '',
 			]);
 

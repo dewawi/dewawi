@@ -67,6 +67,29 @@ class DEEC_Email {
 		return $config;
 	}
 
+	public static function prepareMessageData(array $message): array
+	{
+		$replyTo = trim((string)($message['replyto'] ?? ''));
+		$attachments = array_values(array_filter(array_map('trim', (array)($message['attachments'] ?? []))));
+
+		return [
+			'contactid' => (int)($message['contactid'] ?? 0),
+			'documentid' => (int)($message['documentid'] ?? 0),
+			'parentid' => (int)($message['parentid'] ?? 0),
+			'module' => (string)($message['module'] ?? ''),
+			'controller' => (string)($message['controller'] ?? ''),
+			'sender' => trim((string)($message['sender'] ?? '')),
+			'recipient' => trim((string)($message['recipient'] ?? '')),
+			'cc' => self::normalizeAddressString($message['cc'] ?? ''),
+			'bcc' => self::normalizeAddressString($message['bcc'] ?? ''),
+			'replyto' => $replyTo !== '' ? $replyTo : null,
+			'subject' => (string)($message['subject'] ?? ''),
+			'body' => (string)($message['body'] ?? ''),
+			'attachment' => implode(',', $attachments),
+			'response' => 'pending',
+		];
+	}
+
 	public static function sendMessage(array $smtp, array $message): array
 	{
 		require_once(BASE_PATH.'/library/PHPMailer/Exception.php');
@@ -99,6 +122,9 @@ class DEEC_Email {
 		foreach((array)($message['embeddedImages'] ?? []) as $image) {
 			if(!empty($image['path']) && !empty($image['cid'])) $mail->addEmbeddedImage($image['path'], $image['cid']);
 		}
+
+		$emailmessageId = (int)($message['emailmessageId'] ?? 0);
+		if($emailmessageId > 0) $mail->addCustomHeader('X-DEWAWI-Emailmessage-ID', (string)$emailmessageId);
 
 		foreach((array)($message['headers'] ?? []) as $name => $value) {
 			if($name !== '' && $value !== '') $mail->addCustomHeader($name, $value);
@@ -140,6 +166,12 @@ class DEEC_Email {
 		}
 
 		return array_values(array_unique($result));
+	}
+
+	private static function normalizeAddressString($addresses): ?string
+	{
+		$addresses = self::normalizeAddresses($addresses);
+		return $addresses ? implode(',', $addresses) : null;
 	}
 
 	public function getCampaignRecipientStatus($campaign) {
@@ -299,52 +331,40 @@ class DEEC_Email {
 				}
 
 				//Save email message to the db
-				$emailmessage = array();
-				$emailmessage['contactid'] = $recipient['contactid'];
-				$emailmessage['documentid'] = $documentid;
-				$emailmessage['parentid'] = $campaign['id'];
-				$emailmessage['module'] = $data['module'];
-				$emailmessage['controller'] = $data['controller'];
-				$emailmessage['sender'] = $fromEmail;
-				$emailmessage['recipient'] = $recipient['email'];
-				$emailmessage['cc'] = $data['cc'];
-				$emailmessage['bcc'] = $data['bcc'];
-				$emailmessage['replyto'] = $data['replyto'] !== '' ? $data['replyto'] : null;
-				$emailmessage['subject'] = $data['subject'];
-				$emailmessage['body'] = $body;
+				$emailmessage = self::prepareMessageData([
+					'contactid' => $recipient['contactid'],
+					'documentid' => $documentid,
+					'parentid' => $campaign['id'],
+					'module' => $data['module'],
+					'controller' => $data['controller'],
+					'sender' => $fromEmail,
+					'recipient' => $recipient['email'],
+					'cc' => $data['cc'],
+					'bcc' => $data['bcc'],
+					'replyto' => $data['replyto'],
+					'subject' => $data['subject'],
+					'body' => $body,
+					'attachments' => $attachmentsSent,
+				]);
+
 				$emailmessage['clientid'] = $campaign['clientid'];
 				$emailmessage['messagesent'] = date('Y-m-d H:i:s');
 				$emailmessage['messagesentby'] = $user['id'];
-				$emailmessage['attachment'] = implode(',', $attachmentsSent);
-				$emailmessage['response'] = 'pending';
+
 				$messageid = $this->emailmessage->addEmailmessage($emailmessage);
 
-				//Get portal TODO
-				/*$portalDb = new Portals_Model_DbTable_Portal();
-				$portal = $portalDb->getPortal($email['clientid']);
-				if($portal) {
-					$key = hash('sha256', $email['id'].$email['contactid'].$email['clientid'].hash('sha256', $email['password']));
-					$url = $portal->url.'/portals';
-					$link = $url.'/auth/login/target/download/key/'.$key;
-					$html = '<a href="'.$link.'">'.$link.'</a>';
-					$data['body'] = str_replace('[LINK]', $html, $data['body']);
-
-					$hash = hash('sha256', $messageid.$contactid.$email['clientid']);
-					$data['body'] .= '<img src="'.$url.'/email/view/key/'.$hash.'" border="0" width="1" height="1">';
-				}*/
-
 				$sendResult = self::sendMessage($smtpConfig, [
-					'fromEmail' => $fromEmail,
+					'fromEmail' => $emailmessage['sender'],
 					'fromName' => $fromName,
-					'to' => $recipient['email'],
-					'cc' => $data['cc'],
-					'bcc' => $data['bcc'],
-					'replyTo' => $data['replyto'],
-					'subject' => $data['subject'],
-					'body' => $body,
+					'to' => $emailmessage['recipient'],
+					'cc' => $emailmessage['cc'],
+					'bcc' => $emailmessage['bcc'],
+					'replyTo' => $emailmessage['replyto'],
+					'subject' => $emailmessage['subject'],
+					'body' => $emailmessage['body'],
 					'attachments' => $attachmentPaths,
+					'emailmessageId' => $messageid,
 					'headers' => [
-						'X-DEWAWI-Emailmessage-ID' => (string)$messageid,
 						'List-Unsubscribe' => '<'.$unsubscribeUrl.'>',
 						'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
 					],
