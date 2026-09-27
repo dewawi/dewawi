@@ -14,6 +14,7 @@ class Tasks_TaskController extends DEEC_Controller_Action
 	protected function getCreateData(): array
 	{
 		$contactId = (int)$this->_getParam('contactid', 0);
+		$quoteId = (int)$this->_getParam('quoteid', 0);
 
 		$currencies = new Application_Model_DbTable_Currency();
 		$currency = $currencies->getPrimaryCurrency();
@@ -25,6 +26,8 @@ class Tasks_TaskController extends DEEC_Controller_Action
 			'currency' => $currency['code'],
 			'state' => 100,
 		];
+
+		if($quoteId > 0) $data['quoteid'] = $quoteId;
 
 		if($contactId > 0) {
 			$contactDataFactory = new Contacts_Service_ContactDataFactory();

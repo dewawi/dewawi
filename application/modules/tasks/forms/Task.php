@@ -237,6 +237,7 @@ class Tasks_Form_Task extends DEEC_Form
 	protected function addDocumentFields(): void
 	{
 		foreach([
+			'quoteid' => 'TASKS_QUOTE_ID',
 			'salesorderid' => 'TASKS_SALES_ORDER_ID',
 			'invoiceid' => 'TASKS_INVOICE_ID',
 			'prepaymentinvoiceid' => 'TASKS_PREPAYMENT_INVOICE_ID',

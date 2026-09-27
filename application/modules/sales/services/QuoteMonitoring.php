@@ -106,6 +106,16 @@ class Sales_Service_QuoteMonitoring
 			AND em.response = ' . $sent . '
 		)';
 
+		$taskExists = 'EXISTS (
+			SELECT 1 FROM task t
+			WHERE t.quoteid = ' . $alias . '.quoteid
+			AND t.clientid = ' . $alias . '.clientid
+			AND t.deleted = 0
+			AND t.completed = 0
+			AND t.cancelled = 0
+			AND t.state NOT IN (105, 106)
+		)';
+
 		switch($value) {
 			case 'action_required':
 				$select->where('(' . $active . ') AND NOT (' . $finalFollowup . ')');
@@ -132,6 +142,7 @@ class Sales_Service_QuoteMonitoring
 					'(' . $active . ')'
 					. ' AND NOT (' . $anyFollowup . ')'
 					. ' AND NOT (' . $feedbackExists . ')'
+					. ' AND NOT (' . $taskExists . ')'
 					. ' AND (' . $emailSent . ')'
 				);
 				break;
@@ -141,7 +152,17 @@ class Sales_Service_QuoteMonitoring
 					'(' . $active . ')'
 					. ' AND NOT (' . $anyFollowup . ')'
 					. ' AND NOT (' . $feedbackExists . ')'
+					. ' AND NOT (' . $taskExists . ')'
 					. ' AND NOT (' . $emailSent . ')'
+				);
+				break;
+
+			case 'scheduled':
+				$select->where(
+					'(' . $active . ')'
+					. ' AND NOT (' . $anyFollowup . ')'
+					. ' AND NOT (' . $feedbackExists . ')'
+					. ' AND (' . $taskExists . ')'
 				);
 				break;
 		}
@@ -173,6 +194,7 @@ class Sales_Service_QuoteMonitoring
 		$salesorders = $this->getFollowupData($db, 'salesorder', 'salesorderid', $quoteIds, $clientIds);
 		$invoices = $this->getFollowupData($db, 'invoice', 'invoiceid', $quoteIds, $clientIds);
 		$deliveryorders = $this->getFollowupData($db, 'deliveryorder', 'deliveryorderid', $quoteIds, $clientIds);
+		$tasks = $this->getTaskData($db, $quoteIds, $clientIds);
 
 		foreach($rows as &$row) {
 			$documentId = (int)($row['id'] ?? 0);
@@ -183,6 +205,7 @@ class Sales_Service_QuoteMonitoring
 			$salesorder = $salesorders[$key] ?? [];
 			$invoice = $invoices[$key] ?? [];
 			$deliveryorder = $deliveryorders[$key] ?? [];
+			$task = $tasks[$key] ?? [];
 
 			$row['monitoring_lastsent'] = $email['lastsent'] ?? null;
 			$row['monitoring_sentcount'] = (int)($email['sentcount'] ?? 0);
@@ -202,6 +225,11 @@ class Sales_Service_QuoteMonitoring
 
 			$row['monitoring_deliveryorder_internal_id'] = (int)($deliveryorder['id'] ?? 0);
 			$row['monitoring_deliveryorderid'] = $deliveryorder['deliveryorderid'] ?? null;
+
+			$row['monitoring_task_id'] = (int)($task['id'] ?? 0);
+			$row['monitoring_task_title'] = $task['title'] ?? null;
+			$row['monitoring_task_duedate'] = $task['duedate'] ?? null;
+			$row['monitoring_task_responsible'] = $task['responsible'] ?? null;
 
 			$this->applyStatus($row);
 		}
@@ -312,6 +340,32 @@ class Sales_Service_QuoteMonitoring
 		return $result;
 	}
 
+	private function getTaskData($db, array $quoteIds, array $clientIds): array
+	{
+		if(!$quoteIds || !$clientIds) return [];
+
+		$rows = $db->fetchAll(
+			$db->select()
+				->from('task', ['id', 'clientid', 'quoteid', 'title', 'duedate', 'responsible', 'state', 'created'])
+				->where('quoteid IN (?)', $quoteIds)
+				->where('clientid IN (?)', $clientIds)
+				->where('deleted = ?', 0)
+				->where('completed = ?', 0)
+				->where('cancelled = ?', 0)
+				->where('state NOT IN (?)', [105, 106])
+				->order('id DESC')
+		);
+
+		$result = [];
+
+		foreach($rows as $row) {
+			$key = $this->quoteKey((int)$row['clientid'], (int)$row['quoteid']);
+			if(!isset($result[$key])) $result[$key] = $row;
+		}
+
+		return $result;
+	}
+
 	private function applyStatus(array &$row): void
 	{
 		$row['monitoring_open_days'] = null;
@@ -357,6 +411,20 @@ class Sales_Service_QuoteMonitoring
 
 			$row['monitoring_status'] = 'feedback_open';
 			$row['monitoring_open_days'] = $this->daysSince($row['monitoring_feedback_created'] ?? null);
+			return;
+		}
+
+		if(!empty($row['monitoring_task_id'])) {
+			$dueDate = $row['monitoring_task_duedate'] ?? null;
+
+			if($dueDate && strtotime((string)$dueDate) <= strtotime(date('Y-m-d'))) {
+				$row['monitoring_status'] = 'scheduled_due';
+				$row['monitoring_action'] = 'follow_up';
+			} else {
+				$row['monitoring_status'] = 'scheduled';
+				$row['monitoring_action'] = 'waiting';
+			}
+
 			return;
 		}
 

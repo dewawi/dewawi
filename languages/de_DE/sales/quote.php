@@ -78,4 +78,9 @@
 	'QUOTES_MONITORING_INVOICE' => 'Rechnung',
 	'QUOTES_MONITORING_DELIVERYORDER' => 'Lieferschein',
 	'QUOTES_MONITORING_ACTION_REQUIRED' => 'Handlungsbedarf',
+	'QUOTES_MONITORING_SCHEDULED' => 'Wiedervorlage',
+	'QUOTES_MONITORING_SCHEDULED_DUE' => 'Wiedervorlage fällig',
+	'QUOTES_MONITORING_TASK' => 'Aufgabe',
+	'QUOTES_MONITORING_TASK_DUE' => 'Fällig: %s',
+	'QUOTES_MONITORING_CREATE_TASK' => 'Wiedervorlage erstellen',
 );

@@ -167,6 +167,13 @@ class Sales_Model_List_Quotes extends DEEC_List
 			if($feedbackMessage !== '') $parts[] = '<div>' . $this->escape($this->truncate($feedbackMessage, 80)) . '</div>';
 		} elseif($status === 'feedback_open') {
 			$parts[] = $this->badge('QUOTES_MONITORING_FEEDBACK_OPEN', 'info');
+		} elseif($status === 'scheduled' || $status === 'scheduled_due') {
+			$parts[] = $this->badge(
+				$status === 'scheduled_due' ? 'QUOTES_MONITORING_SCHEDULED_DUE' : 'QUOTES_MONITORING_SCHEDULED',
+				$status === 'scheduled_due' ? 'warning' : 'info'
+			);
+
+			$parts[] = $this->renderMonitoringTask($item);
 		} elseif($status === 'sent') {
 			$parts[] = $this->badge('QUOTES_MONITORING_FOLLOW_UP', 'warning');
 		} elseif($status === 'not_sent') {
@@ -194,6 +201,10 @@ class Sales_Model_List_Quotes extends DEEC_List
 
 		if($actionKey !== '' && !in_array($status, ['sent', 'not_sent'], true)) {
 			$parts[] = '<div><strong>' . $this->escape($this->translate($actionKey)) . '</strong></div>';
+		}
+
+		if(in_array($status, ['sent', 'not_sent'], true)) {
+			$parts[] = $this->renderCreateTaskLink($item);
 		}
 
 		return implode('', $parts);
@@ -244,6 +255,48 @@ class Sales_Model_List_Quotes extends DEEC_List
 		}
 
 		return $parts;
+	}
+
+	private function renderMonitoringTask($item): string
+	{
+		$id = (int)$this->getFieldValue($item, 'monitoring_task_id', 0);
+		if($id <= 0) return '';
+
+		$url = $this->getView()->url([
+			'module' => 'tasks',
+			'controller' => 'task',
+			'action' => 'edit',
+			'id' => $id,
+		], null, true);
+
+		$title = trim((string)$this->getFieldValue($item, 'monitoring_task_title', ''));
+		$dueDate = $this->formatMonitoringDate($this->getFieldValue($item, 'monitoring_task_duedate'));
+
+		$html = '<div><a href="' . $this->escapeAttr($url) . '">' . $this->escape($title !== '' ? $title : $this->translate('QUOTES_MONITORING_TASK')) . '</a></div>';
+
+		if($dueDate !== '') {
+			$html .= '<div>' . $this->escape($this->translate('QUOTES_MONITORING_TASK_DUE', [$dueDate])) . '</div>';
+		}
+
+		return $html;
+	}
+
+	private function renderCreateTaskLink($item): string
+	{
+		$quoteId = (int)$this->getFieldValue($item, 'quoteid', 0);
+		$contactId = (int)$this->getFieldValue($item, 'cid', 0);
+
+		if($quoteId <= 0 || $contactId <= 0) return '';
+
+		$url = $this->getView()->url([
+			'module' => 'tasks',
+			'controller' => 'task',
+			'action' => 'add',
+			'contactid' => $contactId,
+			'quoteid' => $quoteId,
+		], null, true);
+
+		return '<div><a href="' . $this->escapeAttr($url) . '">' . $this->escape($this->translate('QUOTES_MONITORING_CREATE_TASK')) . '</a></div>';
 	}
 
 	private function getFeedbackLabel(string $group, string $value): string

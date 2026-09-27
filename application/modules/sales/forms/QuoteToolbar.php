@@ -17,6 +17,7 @@ class Sales_Form_QuoteToolbar extends Sales_Form_Toolbar
 				'follow_up' => 'QUOTES_MONITORING_FOLLOW_UP',
 				'feedback_open' => 'QUOTES_MONITORING_FEEDBACK_OPEN',
 				'feedback_response' => 'QUOTES_MONITORING_FEEDBACK_RECEIVED',
+				'scheduled' => 'QUOTES_MONITORING_SCHEDULED',
 				'check_send' => 'QUOTES_MONITORING_CHECK_SEND',
 				'followup_draft' => 'QUOTES_MONITORING_FOLLOWUP_DRAFT',
 				'continued' => 'QUOTES_MONITORING_CONTINUED',

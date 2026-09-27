@@ -25,6 +25,7 @@
 	'TASKS_SUPPLIER_NAME' => 'Lieferantenna.',
 	'TASKS_SUPPLIER_DATA' => 'Lieferantendaten',
 	'TASKS_DELIVERY' => 'Lieferung',
+	'TASKS_QUOTE_ID' => 'Angebotsnr.',
 	'TASKS_INVOICE_ID' => 'Rechnungsnr.',
 	'TASKS_INVOICE_DATE' => 'Rechnungsdat.',
 	'TASKS_PREPAYMENT_INVOICE_ID' => 'Anzahlungsr. Nr.',
