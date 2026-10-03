@@ -27,7 +27,14 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 			return;
 		}
 
+		$user = Zend_Registry::get('User');
+
 		if ($module === 'admin') {
+			if (!empty($user['admin'])) {
+				return;
+			}
+
+			$this->denyAccess($request);
 			return;
 		}
 
@@ -35,7 +42,6 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 			return;
 		}
 
-		$user = Zend_Registry::get('User');
 		$permission = new DEEC_Permission((array)$user);
 
 		/*
