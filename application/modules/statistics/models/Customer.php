@@ -46,17 +46,19 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 					$invoices = $invoicesByMonth[$year.$ym] ?? [];
 					$creditnotes = $creditnotesByMonth[$year.$ym] ?? [];
 
-					//Calculate invoices
+					// Calculate invoices
 					foreach($invoices as $invoice) {
 						if(isset($invoice->name1) && $invoice->invoiceid) {
+							$invoiceSubtotal = $this->getInvoiceNetSubtotal($invoice);
+
 							if(isset($customerList[$invoice->contactid])) {
-								$customerList[$invoice->contactid]['subtotal'] += $invoice->subtotal;
+								$customerList[$invoice->contactid]['subtotal'] += $invoiceSubtotal;
 								$customerList[$invoice->contactid]['invoices'][] = $invoice->invoiceid;
 							} else {
 								$customerList[$invoice->contactid]['cid'] = $invoice->cid;
 								$customerList[$invoice->contactid]['contactid'] = $invoice->contactid;
 								$customerList[$invoice->contactid]['name1'] = $invoice->name1;
-								$customerList[$invoice->contactid]['subtotal'] = $invoice->subtotal;
+								$customerList[$invoice->contactid]['subtotal'] = $invoiceSubtotal;
 								$customerList[$invoice->contactid]['invoices'] = array($invoice->invoiceid);
 								$category = ($invoice->catid && isset($categories[$invoice->catid]))
 									? $categories[$invoice->catid]
@@ -64,9 +66,6 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 
 								$customerList[$invoice->contactid]['ctitle'] = isset($category['title']) ? $category['title'] : '';
 								$customerList[$invoice->contactid]['cfulltitle'] = isset($category['fulltitle']) ? $category['fulltitle'] : $customerList[$invoice->contactid]['ctitle'];
-							}
-							if($invoice->prepayment) {
-								$customerList[$invoice->contactid]['subtotal'] -= ($invoice->prepayment/1.19); //TODO
 							}
 						}
 					}

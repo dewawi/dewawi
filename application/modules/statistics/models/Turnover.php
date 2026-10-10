@@ -53,27 +53,25 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 					$turnover[$year.$ym] = 0;
 					$turnoverCategories[0][$year.$ym] = 0;
 
-					//Calculate invoices
+					// Calculate invoices
 					foreach($invoices as $invoice) {
+						$invoiceSubtotal = $this->getInvoiceNetSubtotal($invoice);
+
 						if(isset($turnoverList[$year.$ym]['invoicesQuantity'])) {
 							$turnoverList[$year.$ym]['invoicesQuantity'] += 1;
-							$turnoverList[$year.$ym]['invoicesSubtotal'] += $invoice->subtotal;
+							$turnoverList[$year.$ym]['invoicesSubtotal'] += $invoiceSubtotal;
 						} else {
 							$turnoverList[$year.$ym]['invoicesQuantity'] = 1;
-							$turnoverList[$year.$ym]['invoicesSubtotal'] = $invoice->subtotal;
+							$turnoverList[$year.$ym]['invoicesSubtotal'] = $invoiceSubtotal;
 							$turnoverList[$year.$ym]['month'] = $year.'/'.$ym;
 						}
 
-						$turnover[$year.$ym] += $invoice->subtotal;
+						$turnover[$year.$ym] += $invoiceSubtotal;
+
 						if(isset($turnoverCategories[$invoice->catid][$year.$ym])) {
-							$turnoverCategories[$invoice->catid][$year.$ym] += $invoice->subtotal;
+							$turnoverCategories[$invoice->catid][$year.$ym] += $invoiceSubtotal;
 						} else {
-							$turnoverCategories[$invoice->catid][$year.$ym] = $invoice->subtotal;
-						}
-						if($invoice->prepayment) {
-							$turnover[$year.$ym] -= ($invoice->prepayment/1.19); //TODO
-							$turnoverList[$year.$ym]['invoicesSubtotal'] -= ($invoice->prepayment/1.19); //TODO
-							$turnoverCategories[$invoice->catid][$year.$ym] -= ($invoice->prepayment/1.19); //TODO
+							$turnoverCategories[$invoice->catid][$year.$ym] = $invoiceSubtotal;
 						}
 					}
 

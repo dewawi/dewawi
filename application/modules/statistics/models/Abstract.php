@@ -9,6 +9,19 @@ abstract class Statistics_Model_Abstract
 		return $this->chartImages;
 	}
 
+	protected function getInvoiceNetSubtotal($invoice): float
+	{
+		$subtotal = (float)$invoice->subtotal;
+		$prepayment = (float)$invoice->prepayment;
+
+		if($prepayment <= 0) return $subtotal;
+
+		$total = (float)$invoice->total;
+		if($total <= 0) throw new UnexpectedValueException('Invalid invoice total for prepayment');
+
+		return $subtotal - ($prepayment * $subtotal / $total);
+	}
+
 	protected function prepareRanking(array $rows, int $nameLength = 20): array
 	{
 		usort($rows, static fn($a, $b) => $b['subtotal'] <=> $a['subtotal']);
@@ -77,7 +90,7 @@ abstract class Statistics_Model_Abstract
 
 		$dateField = $type.'date';
 		$columns = ['id', 'contactid', $type.'id', $dateField, 'subtotal'];
-		if($type === 'invoice') $columns[] = 'prepayment';
+		if($type === 'invoice') array_push($columns, 'total', 'prepayment');
 
 		$select = $db->select()
 			->from(['i' => $type], $columns)
