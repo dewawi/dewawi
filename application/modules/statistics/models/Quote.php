@@ -59,17 +59,8 @@ class Statistics_Model_Quote extends Statistics_Model_Abstract
 			$startMonth = 1;
 		}
 
-		function sortBySubtotal($a, $b) {
-			if ($a['subtotal'] > $b['subtotal']) {
-				return -1;
-			} elseif ($a['subtotal'] < $b['subtotal']) {
-				return 1;
-			}
-			return 0;
-		}
-
 		if(count($customerList)) {
-			usort($customerList, 'sortBySubtotal');
+			usort($customerList, static fn($a, $b) => $b['subtotal'] <=> $a['subtotal']);
 
 			$i = 0;
 			$total = 0;
@@ -87,7 +78,7 @@ class Statistics_Model_Quote extends Statistics_Model_Abstract
 
 			$currency = Zend_Registry::get('Zend_Currency');
 			foreach($customerList as $id => $customer) {
-				if($customer['subtotal'] > 0) $customerList[$id]['share'] = round($customer['subtotal']/$total*100, 2);
+				if($customer['subtotal'] > 0 && $total > 0) $customerList[$id]['share'] = round($customer['subtotal']/$total*100, 2);
 				else $customerList[$id]['share'] = 0;
 				$customerList[$id]['total'] = $currency->toCurrency($total);
 				$customerList[$id]['subtotal'] = $currency->toCurrency($customer['subtotal']);
