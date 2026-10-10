@@ -9,12 +9,53 @@ abstract class Statistics_Model_Abstract
 		return $this->chartImages;
 	}
 
-	protected function fetchData($db, $type, $year, $month, $ym, $client, array $params, array $options)
+	protected function getPeriod(int $lenght, array $params): array
+	{
+		$start = new DateTimeImmutable('first day of this month');
+		$from = $start->modify('-'.($lenght-1).' months')->format('Y-m-d');
+		$to = $start->format('Y-m-t');
+
+		if(($params['daterange'] ?? 'all') !== 'all') {
+			$from = $this->normalizeDate($params['from'] ?? '');
+			$to = $this->normalizeDate($params['to'] ?? '');
+		}
+
+		if($from > $to) throw new InvalidArgumentException('Statistics start date must not exceed end date');
+
+		$startMonth = new DateTimeImmutable(substr($from, 0, 7).'-01');
+		$endMonth = new DateTimeImmutable(substr($to, 0, 7).'-01');
+		$interval = $startMonth->diff($endMonth);
+		$months = $interval->y * 12 + $interval->m + 1;
+
+		if($months > 60) throw new InvalidArgumentException('Statistics period exceeds 60 months');
+
+		return ['from' => $from, 'to' => $to];
+	}
+
+	protected function normalizeDate($value): string
+	{
+		if(!is_string($value)) throw new InvalidArgumentException('Invalid statistics date');
+
+		$locale = (string)Zend_Registry::get('Zend_Locale');
+		$formats = ['!Y-m-d', '!d.m.Y', strpos($locale, 'en_US') === 0 ? '!m/d/Y' : '!d/m/Y'];
+
+		foreach($formats as $format) {
+			$date = DateTimeImmutable::createFromFormat($format, $value);
+			if($date && $date->format(substr($format, 1)) === $value) return $date->format('Y-m-d');
+		}
+
+		throw new InvalidArgumentException('Invalid statistics date');
+	}
+
+	protected function fetchData($db, $type, $year, $month, $ym, $client, array $params, array $options, array $period)
 	{
 		if(!in_array($type, ['invoice', 'creditnote', 'quote'], true)) throw new InvalidArgumentException('Invalid statistics document type');
 
-		$from = $year.'-'.$ym.'-01';
-		$to = date('Y-m-t', strtotime($from));
+		$monthFrom = $year.'-'.$ym.'-01';
+		$monthTo = date('Y-m-t', strtotime($monthFrom));
+
+		$from = max($monthFrom, $period['from']);
+		$to = min($monthTo, $period['to']);
 
 		$select = $db->select()
 			->from(['i' => $type])

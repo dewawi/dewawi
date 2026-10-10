@@ -40,6 +40,7 @@ class Statistics_CustomerController extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$options['categories'] = (new Application_Model_DbTable_Category())->getCategories('contact');
 		$params = $this->_helper->Params->getParams($toolbar, $options);
+		$toolbar->setValue('lenght', $lenght);
 
 		$chart = new Statistics_Model_Customer();
 		$customerList = $chart->createCharts($lenght, 1000, 600, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);

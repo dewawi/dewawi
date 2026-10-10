@@ -39,6 +39,7 @@ class Statistics_Form_Toolbar extends DEEC_Form
 				'0' => 'TOOLBAR_ALL_COUNTRIES',
 			],
 			'source' => 'country',
+			'toolbar' => 'filters',
 			'default' => '0',
 		]);
 
@@ -47,6 +48,7 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'type' => 'text',
 			'wrap' => false,
 			'format' => ['type' => 'date'],
+			'toolbar' => 'filters',
 		]);
 
 		$this->addElement([
@@ -54,6 +56,7 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'type' => 'text',
 			'wrap' => false,
 			'format' => ['type' => 'date'],
+			'toolbar' => 'filters',
 		]);
 
 		$this->addElement([
@@ -88,6 +91,7 @@ class Statistics_Form_Toolbar extends DEEC_Form
 				'all' => 'CATEGORIES_ALL',
 			],
 			'source' => 'category:contact',
+			'toolbar' => 'filters',
 			'default' => 'all',
 		]);
 
@@ -105,6 +109,13 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'default' => '400',
 			'wrap' => false,
 			'format' => ['type' => 'int'],
+		]);
+
+		$this->addElement([
+			'name' => 'lenght',
+			'type' => 'hidden',
+			'default' => '12',
+			'toolbar' => 'search',
 		]);
 	}
 }

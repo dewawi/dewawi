@@ -19,11 +19,11 @@ class Statistics_Model_Quote extends Statistics_Model_Abstract
 {
 	public function createCharts($lenght, $width = 1000, $height = 600, $statisticsUncategorized, $statisticsNoData, $params, $options)
 	{
-		$currentYear = (int)date('Y');
-		$currentMonth = (int)date('n');
-		$startDate = strtotime('first day of this month -'.($lenght-1).' months');
-		$startYear = (int)date('Y', $startDate);
-		$startMonth = (int)date('n', $startDate);
+		$period = $this->getPeriod((int)$lenght, $params);
+		$currentYear = (int)substr($period['to'], 0, 4);
+		$currentMonth = (int)substr($period['to'], 5, 2);
+		$startYear = (int)substr($period['from'], 0, 4);
+		$startMonth = (int)substr($period['from'], 5, 2);
 
 		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');
@@ -38,7 +38,7 @@ class Statistics_Model_Quote extends Statistics_Model_Abstract
 					$ym = str_pad($month, 2, '0', STR_PAD_LEFT);
 
 					//Get quotes
-					$quotes = $this->fetchData($quotesDb, 'quote', $year, $month, $ym, $client, $params, $options);
+					$quotes = $this->fetchData($quotesDb, 'quote', $year, $month, $ym, $client, $params, $options, $period);
 
 					//Calculate quotes
 					foreach($quotes as $quote) {

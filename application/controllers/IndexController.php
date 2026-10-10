@@ -47,6 +47,7 @@ class IndexController extends Zend_Controller_Action
 		$this->view->canViewTurnover = $permission->hasPermission('statistics', 'turnover', 'view');
 
 		if($this->view->canViewTurnover) {
+			$params['daterange'] = 'all';
 			$charts = new Statistics_Model_Turnover();
 			$charts->createCharts(12, 750, 400, $this->view->translate('STATISTICS_UNCATEGORIZED'), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
 			$this->view->chartImages = $charts->getChartImages();
