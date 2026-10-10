@@ -31,6 +31,9 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 		$invoicesDb = new Sales_Model_DbTable_Invoice();
 		$creditnotesDb = new Sales_Model_DbTable_Creditnote();
 
+		$invoicesByMonth = $this->fetchData($invoicesDb, 'invoice', $client, $params, $options, $period);
+		$creditnotesByMonth = $this->fetchData($creditnotesDb, 'creditnote', $client, $params, $options, $period);
+
 		$turnover = array();
 		$turnoverCategories = array();
 
@@ -44,11 +47,8 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 					// Ensure a two-digit representation for the month
 					$ym = str_pad($month, 2, '0', STR_PAD_LEFT);
 
-					//Get invoices
-					$invoices = $this->fetchData($invoicesDb, 'invoice', $year, $month, $ym, $client, $params, $options, $period);
-
-					//Get credit notes
-					$creditnotes = $this->fetchData($creditnotesDb, 'creditnote', $year, $month, $ym, $client, $params, $options, $period);
+					$invoices = $invoicesByMonth[$year.$ym] ?? [];
+					$creditnotes = $creditnotesByMonth[$year.$ym] ?? [];
 
 					$turnover[$year.$ym] = 0;
 					$turnoverCategories[0][$year.$ym] = 0;

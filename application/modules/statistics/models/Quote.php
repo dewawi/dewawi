@@ -30,6 +30,8 @@ class Statistics_Model_Quote extends Statistics_Model_Abstract
 
 		$quotesDb = new Sales_Model_DbTable_Quote();
 
+		$quotesByMonth = $this->fetchData($quotesDb, 'quote', $client, $params, $options, $period);
+
 		$customerList = array();
 		for($year = $startYear; $year <= $currentYear; $year++) {
 			for($month = $startMonth; $month <= 12; $month++) {
@@ -37,8 +39,7 @@ class Statistics_Model_Quote extends Statistics_Model_Abstract
 					// Ensure a two-digit representation for the month
 					$ym = str_pad($month, 2, '0', STR_PAD_LEFT);
 
-					//Get quotes
-					$quotes = $this->fetchData($quotesDb, 'quote', $year, $month, $ym, $client, $params, $options, $period);
+					$quotes = $quotesByMonth[$year.$ym] ?? [];
 
 					//Calculate quotes
 					foreach($quotes as $quote) {

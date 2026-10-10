@@ -47,24 +47,22 @@ abstract class Statistics_Model_Abstract
 		throw new InvalidArgumentException('Invalid statistics date');
 	}
 
-	protected function fetchData($db, $type, $year, $month, $ym, $client, array $params, array $options, array $period)
+	protected function fetchData($db, string $type, array $client, array $params, array $options, array $period): array
 	{
 		if(!in_array($type, ['invoice', 'creditnote', 'quote'], true)) throw new InvalidArgumentException('Invalid statistics document type');
 
-		$monthFrom = $year.'-'.$ym.'-01';
-		$monthTo = date('Y-m-t', strtotime($monthFrom));
-
-		$from = max($monthFrom, $period['from']);
-		$to = min($monthTo, $period['to']);
+		$dateField = $type.'date';
+		$columns = ['id', 'contactid', $type.'id', $dateField, 'subtotal'];
+		if($type === 'invoice') $columns[] = 'prepayment';
 
 		$select = $db->select()
-			->from(['i' => $type])
-			->join(['c' => 'contact'], 'i.contactid = c.contactid', ['id AS cid', 'catid', 'name1'])
+			->from(['i' => $type], $columns)
+			->join(['c' => 'contact'], 'i.contactid = c.contactid', ['cid' => 'id', 'catid', 'name1'])
 			->where('i.state = ?', 105)
 			->where('i.deleted = ?', 0)
 			->where('i.cancelled = ?', 0)
-			->where("i.{$type}date >= ?", $from)
-			->where("i.{$type}date <= ?", $to)
+			->where("i.{$dateField} >= ?", $period['from'])
+			->where("i.{$dateField} <= ?", $period['to'])
 			->where('i.clientid = ?', (int)$client['id'])
 			->where('c.clientid = ?', (int)$client['id'])
 			->setIntegrityCheck(false);
@@ -97,6 +95,12 @@ abstract class Statistics_Model_Abstract
 			$select->where("($billing OR $shipping)");
 		}
 
-		return $db->fetchAll($select);
+		$months = [];
+		foreach($db->fetchAll($select) as $document) {
+			$month = str_replace('-', '', substr((string)$document->$dateField, 0, 7));
+			$months[$month][] = $document;
+		}
+
+		return $months;
 	}
 }
