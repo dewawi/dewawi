@@ -9,6 +9,30 @@ abstract class Statistics_Model_Abstract
 		return $this->chartImages;
 	}
 
+	protected function prepareRanking(array $rows, int $nameLength = 20): array
+	{
+		usort($rows, static fn($a, $b) => $b['subtotal'] <=> $a['subtotal']);
+
+		$total = array_sum(array_column($rows, 'subtotal'));
+		$currency = Zend_Registry::get('Zend_Currency');
+		$names = [];
+		$values = [];
+
+		foreach($rows as $i => &$row) {
+			if($i < 15) {
+				$names[] = substr($row['name1'], 0, $nameLength);
+				$values[] = round($row['subtotal']);
+			}
+
+			$row['share'] = $row['subtotal'] > 0 && $total > 0 ? round($row['subtotal'] / $total * 100, 2) : 0;
+			$row['subtotal'] = $currency->toCurrency($row['subtotal']);
+			$row['total'] = $currency->toCurrency($total);
+		}
+		unset($row);
+
+		return [$rows, $names, $values];
+	}
+
 	protected function getPeriod(int $lenght, array $params): array
 	{
 		$start = new DateTimeImmutable('first day of this month');

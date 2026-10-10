@@ -100,29 +100,7 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 		}
 
 		if(count($customerList)) {
-			usort($customerList, static fn($a, $b) => $b['subtotal'] <=> $a['subtotal']);
-
-			$i = 0;
-			$total = 0;
-			$customerName = array();
-			$customerTurnover = array();
-			foreach($customerList as $id => $customer) {
-				$total += $customer['subtotal'];
-				$customerList[$id]['total'] = $total;
-				if($i < 15) {
-					array_push($customerName, substr($customer['name1'], 0, 20));
-					array_push($customerTurnover, round($customer['subtotal']));
-				}
-				++$i;
-			}
-
-			$currency = Zend_Registry::get('Zend_Currency');
-			foreach($customerList as $id => $customer) {
-				if($customer['subtotal'] > 0 && $total > 0) $customerList[$id]['share'] = round($customer['subtotal']/$total*100, 2);
-				else $customerList[$id]['share'] = 0;
-				$customerList[$id]['total'] = $currency->toCurrency($total);
-				$customerList[$id]['subtotal'] = $currency->toCurrency($customer['subtotal']);
-			}
+			list($customerList, $customerName, $customerTurnover) = $this->prepareRanking($customerList, 20);
 
 			/* Create the pChart object */
 			$chartCustomer = new pDraw($width, $height);
