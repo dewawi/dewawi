@@ -11,31 +11,51 @@ abstract class Statistics_Model_Abstract
 
 	protected function fetchData($db, $type, $year, $month, $ym, $client, array $params, array $options)
 	{
-		$categoryOptions = isset($options['categories']) && is_array($options['categories']) ? $options['categories'] : array();
-		$countryOptions = isset($options['country']) && is_array($options['country']) ? $options['country'] : array();
-
-		$catid = isset($params['catid']) ? $params['catid'] : null;
-		$country = isset($params['country']) ? $params['country'] : null;
+		if(!in_array($type, ['invoice', 'creditnote', 'quote'], true)) throw new InvalidArgumentException('Invalid statistics document type');
 
 		$from = $year.'-'.$ym.'-01';
 		$to = date('Y-m-t', strtotime($from));
 
-		$query = "i.state = 105 AND i.deleted = 0 AND i.cancelled = 0";
-		$query .= " AND ({$type}date >= '{$from}' AND {$type}date <= '{$to}')";
-		$query .= " AND i.clientid = {$client['id']}";
-		$query .= " AND c.clientid = {$client['id']}";
-		$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCategory($query, $catid, $categoryOptions, 'c');
+		$select = $db->select()
+			->from(['i' => $type])
+			->join(['c' => 'contact'], 'i.contactid = c.contactid', ['id AS cid', 'catid', 'name1'])
+			->where('i.state = ?', 105)
+			->where('i.deleted = ?', 0)
+			->where('i.cancelled = ?', 0)
+			->where("i.{$type}date >= ?", $from)
+			->where("i.{$type}date <= ?", $to)
+			->where('i.clientid = ?', (int)$client['id'])
+			->where('c.clientid = ?', (int)$client['id'])
+			->setIntegrityCheck(false);
 
-		if($country) {
-			$query = Zend_Controller_Action_HelperBroker::getStaticHelper('Query')->getQueryCountry($query, $country, $countryOptions, 'i');
+		$categories = $options['categories'] ?? [];
+		$catid = $params['catid'] ?? 'all';
+
+		if($catid === '0' || $catid === 0) {
+			$select->where('c.catid = ?', 0);
+		} elseif(is_scalar($catid) && ctype_digit((string)$catid) && isset($categories[(int)$catid])) {
+			$ids = [(int)$catid];
+			$byParent = Application_Model_DbTable_Category::groupByParent($categories);
+
+			for($i = 0; $i < count($ids); $i++) {
+				foreach($byParent[$ids[$i]] ?? [] as $id => $category) {
+					if(!in_array((int)$id, $ids, true)) $ids[] = (int)$id;
+				}
+			}
+
+			$select->where('c.catid IN (?)', $ids);
 		}
 
-		return $db->fetchAll(
-			$db->select()
-				->from(array('i' => $type))
-				->join(array('c' => 'contact'), "i.contactid = c.contactid", array('id AS cid', 'catid', 'name1'))
-				->where($query ? $query : 1)
-				->setIntegrityCheck(false)
-		);
+		$country = $params['country'] ?? null;
+		$countries = $options['country'] ?? [];
+
+		if(is_string($country) && $country !== '' && isset($countries[$country])) {
+			$adapter = $db->getAdapter();
+			$billing = $adapter->quoteInto('i.billingcountry = ?', $country);
+			$shipping = $adapter->quoteInto('i.shippingcountry = ?', $country);
+			$select->where("($billing OR $shipping)");
+		}
+
+		return $db->fetchAll($select);
 	}
 }

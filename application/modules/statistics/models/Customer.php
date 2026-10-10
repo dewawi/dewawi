@@ -19,18 +19,19 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 {
 	public function createCharts($lenght, $width = 1000, $height = 600, $statisticsUncategorized, $statisticsNoData, $params, $options)
 	{
-		//print_r($params);
-		//print_r($options);
-		$currentYear = date('Y');
-		$currentMonth = date('m');
-		$startYear = date('Y', strtotime('-'.($lenght-1).' month'));
-		$startMonth = date('m', strtotime('-'.($lenght-1).' month'));
+		$currentYear = (int)date('Y');
+		$currentMonth = (int)date('n');
+		$startDate = strtotime('first day of this month -'.($lenght-1).' months');
+		$startYear = (int)date('Y', $startDate);
+		$startMonth = (int)date('n', $startDate);
 
 		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');
 
 		$invoicesDb = new Sales_Model_DbTable_Invoice();
 		$creditnotesDb = new Sales_Model_DbTable_Creditnote();
+
+		$categories = $options['categories'] ?? [];
 
 		$customerList = array();
 		for($year = $startYear; $year <= $currentYear; $year++) {
@@ -44,10 +45,6 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 
 					//Get credit notes
 					$creditnotes = $this->fetchData($creditnotesDb, 'creditnote', $year, $month, $ym, $client, $params, $options);
-
-					//Get categories
-					$categoriesDb = new Application_Model_DbTable_Category();
-					$categories = $categoriesDb->getCategories('contact');
 
 					//Calculate invoices
 					foreach($invoices as $invoice) {

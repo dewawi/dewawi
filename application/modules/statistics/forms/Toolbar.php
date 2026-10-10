@@ -87,6 +87,7 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'options' => [
 				'all' => 'CATEGORIES_ALL',
 			],
+			'source' => 'category:contact',
 			'default' => 'all',
 		]);
 
