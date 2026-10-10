@@ -49,7 +49,7 @@ abstract class Statistics_Model_Abstract
 		$country = $params['country'] ?? null;
 		$countries = $options['country'] ?? [];
 
-		if(is_string($country) && $country !== '' && isset($countries[$country])) {
+		if(is_string($country) && $country !== '' && $country !== '0' && isset($countries[$country])) {
 			$adapter = $db->getAdapter();
 			$billing = $adapter->quoteInto('i.billingcountry = ?', $country);
 			$shipping = $adapter->quoteInto('i.shippingcountry = ?', $country);
