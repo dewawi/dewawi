@@ -13,7 +13,7 @@ abstract class Statistics_Model_Abstract
 		$from = $year.'-'.$ym.'-01';
 		$to = date('Y-m-t', strtotime($from));
 
-		$query = "i.state = 105";
+		$query = "i.state = 105 AND i.deleted = 0 AND i.cancelled = 0";
 		$query .= " AND ({$type}date >= '{$from}' AND {$type}date <= '{$to}')";
 		$query .= " AND i.clientid = {$client['id']}";
 		$query .= " AND c.clientid = {$client['id']}";

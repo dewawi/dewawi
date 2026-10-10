@@ -52,9 +52,9 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 					//Calculate invoices
 					foreach($invoices as $invoice) {
 						if(isset($invoice->name1) && $invoice->invoiceid) {
-							if(isset($customerList[$invoice->contactid]) && isset($customerList[$invoice->contactid]['invoices'])) {
+							if(isset($customerList[$invoice->contactid])) {
 								$customerList[$invoice->contactid]['subtotal'] += $invoice->subtotal;
-								array_push($customerList[$invoice->contactid]['invoices'], $invoice->invoiceid);
+								$customerList[$invoice->contactid]['invoices'][] = $invoice->invoiceid;
 							} else {
 								$customerList[$invoice->contactid]['cid'] = $invoice->cid;
 								$customerList[$invoice->contactid]['contactid'] = $invoice->contactid;
@@ -77,23 +77,22 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 					//Calculate credit notes
 					foreach($creditnotes as $creditnote) {
 						if(isset($creditnote->name1) && $creditnote->creditnoteid) {
-							if(isset($customerList[$creditnote->contactid]) && isset($customerList[$creditnote->contactid]['creditnotes'])) {
-								$customerList[$creditnote->contactid]['subtotal'] += $creditnote->subtotal;
-								if(isset($customerList[$creditnote->contactid]['creditnotes']))
-									array_push($customerList[$creditnote->contactid]['creditnotes'], $creditnote->creditnoteid);
-								else $customerList[$creditnote->contactid]['creditnotes'][] = $creditnote->creditnoteid;
+							if(isset($customerList[$creditnote->contactid])) {
+								$customerList[$creditnote->contactid]['subtotal'] -= $creditnote->subtotal;
+								$customerList[$creditnote->contactid]['creditnotes'][] = $creditnote->creditnoteid;
 							} else {
 								$customerList[$creditnote->contactid]['cid'] = $creditnote->cid;
 								$customerList[$creditnote->contactid]['contactid'] = $creditnote->contactid;
 								$customerList[$creditnote->contactid]['name1'] = $creditnote->name1;
-								$customerList[$creditnote->contactid]['subtotal'] = $creditnote->subtotal;
-								$customerList[$creditnote->contactid]['creditnotes'] = array($creditnote->creditnoteid);
+								$customerList[$creditnote->contactid]['subtotal'] = -$creditnote->subtotal;
+								$customerList[$creditnote->contactid]['creditnotes'] = [$creditnote->creditnoteid];
+
 								$category = ($creditnote->catid && isset($categories[$creditnote->catid]))
 									? $categories[$creditnote->catid]
-									: array();
+									: [];
 
-								$customerList[$creditnote->contactid]['ctitle'] = isset($category['title']) ? $category['title'] : '';
-								$customerList[$creditnote->contactid]['cfulltitle'] = isset($category['fulltitle']) ? $category['fulltitle'] : $customerList[$creditnote->contactid]['ctitle'];
+								$customerList[$creditnote->contactid]['ctitle'] = $category['title'] ?? '';
+								$customerList[$creditnote->contactid]['cfulltitle'] = $category['fulltitle'] ?? $customerList[$creditnote->contactid]['ctitle'];
 							}
 						}
 					}
@@ -131,7 +130,7 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 
 			$currency = Zend_Registry::get('Zend_Currency');
 			foreach($customerList as $id => $customer) {
-				if($customer['subtotal'] > 0) $customerList[$id]['share'] = round($customer['subtotal']/$total*100, 2);
+				if($customer['subtotal'] > 0 && $total > 0) $customerList[$id]['share'] = round($customer['subtotal']/$total*100, 2);
 				else $customerList[$id]['share'] = 0;
 				$customerList[$id]['total'] = $currency->toCurrency($total);
 				$customerList[$id]['subtotal'] = $currency->toCurrency($customer['subtotal']);

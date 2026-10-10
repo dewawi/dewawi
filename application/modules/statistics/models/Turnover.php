@@ -81,19 +81,20 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 					//Calculate credit notes
 					foreach($creditnotes as $creditnote) {
 						if(isset($turnoverList[$year.$ym]['creditnotesQuantity'])) {
-							$turnoverList[$year.$ym]['creditnotesQuantity'] += 1;
+							$turnoverList[$year.$ym]['creditnotesQuantity']++;
 							$turnoverList[$year.$ym]['creditnotesSubtotal'] += $creditnote->subtotal;
 						} else {
 							$turnoverList[$year.$ym]['creditnotesQuantity'] = 1;
-							$turnoverList[$year.$ym]['creditnotesSubtotal'] = 0;
+							$turnoverList[$year.$ym]['creditnotesSubtotal'] = $creditnote->subtotal;
 							$turnoverList[$year.$ym]['month'] = $year.'/'.$ym;
 						}
 
 						$turnover[$year.$ym] -= $creditnote->subtotal;
+
 						if(isset($turnoverCategories[$creditnote->catid][$year.$ym])) {
-							$turnoverCategories[$creditnote->catid][$year.$ym] += $creditnote->subtotal;
+							$turnoverCategories[$creditnote->catid][$year.$ym] -= $creditnote->subtotal;
 						} else {
-							$turnoverCategories[$creditnote->catid][$year.$ym] = $creditnote->subtotal;
+							$turnoverCategories[$creditnote->catid][$year.$ym] = -$creditnote->subtotal;
 						}
 					}
 
