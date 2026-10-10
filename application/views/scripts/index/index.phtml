@@ -590,40 +590,41 @@ echo $this->Messages();
 			</div>
 		</div>
 	</div>
+	<?php if($this->canViewTurnover) : ?>
+		<div class="dw-field dw-field--col-3">
+			<section class="dw-dashboard-card dw-dashboard-card--chart">
+				<div class="dw-dashboard-card__header">
+					<h3><?php echo $this->translate('STATISTICS_TURNOVER'); ?></h3>
+					<a class="dw-dashboard-card__link" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index'), null, true); ?>">
+						<?php echo $this->translate('MORE'); ?>
+					</a>
+				</div>
 
-	<div class="dw-field dw-field--col-3">
-		<section class="dw-dashboard-card dw-dashboard-card--chart">
-			<div class="dw-dashboard-card__header">
-				<h3><?php echo $this->translate('STATISTICS_TURNOVER'); ?></h3>
-				<a class="dw-dashboard-card__link" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index'), null, true); ?>">
-					<?php echo $this->translate('MORE'); ?>
-				</a>
-			</div>
+				<div class="dw-chart-wrap">
+					<img
+						class="dw-chart-image"
+						src="data:image/png;base64,<?php echo $this->chartImages['turnover']; ?>"
+						alt="<?php echo $this->translate('STATISTICS_TURNOVER'); ?>"
+					>
+				</div>
+			</section>
 
-			<div class="dw-chart-wrap">
-				<img
-					class="dw-chart-image"
-					src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-750-400.png"
-					alt="<?php echo $this->translate('STATISTICS_TURNOVER'); ?>"
-				>
-			</div>
-		</section>
+			<section class="dw-dashboard-card dw-dashboard-card--chart">
+				<div class="dw-dashboard-card__header">
+					<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
+					<a class="dw-dashboard-card__link" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index'), null, true); ?>">
+						<?php echo $this->translate('MORE'); ?>
+					</a>
+				</div>
 
-		<section class="dw-dashboard-card dw-dashboard-card--chart">
-			<div class="dw-dashboard-card__header">
-				<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
-				<a class="dw-dashboard-card__link" href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'turnover', 'action'=>'index'), null, true); ?>">
-					<?php echo $this->translate('MORE'); ?>
-				</a>
-			</div>
-
-			<div class="dw-chart-wrap">
-				<img
-					class="dw-chart-image"
-					src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-category-750-400.png"
-					alt="<?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?>"
-				>
-			</div>
-		</section>
-	</div>
+				<div class="dw-chart-wrap">
+					<img
+						class="dw-chart-image"
+						src="data:image/png;base64,<?php echo $this->chartImages['turnover-category']; ?>"
+						alt="<?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?>"
+					>
+				</div>
+			</section>
+		</div>
+	<?php endif; ?>
 </div>

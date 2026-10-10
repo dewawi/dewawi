@@ -229,12 +229,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 			$pCharts->drawBarChart($settings);
 			$chartTurnover->setShadow(FALSE);
 
-			// Build the PNG file and send it to the web browser
-			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
-			if(!file_exists(BASE_PATH.'/cache/chart/'.$url)) {
-				mkdir(BASE_PATH.'/cache/chart/'.$url, 0777, true);
-			}
-			$chartTurnover->Render(BASE_PATH.'/cache/chart/'.$url.'/turnover-'.$width.'-'.$height.'.png');
+			$this->chartImages['turnover'] = $chartTurnover->toBase64();
 
 			/* Create the pChart object */
 			$chartTurnoverCategory = new pDraw($width, $height);
@@ -282,15 +277,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 			$pCharts->drawStackedAreaChart($settings);
 			$chartTurnoverCategory->setShadow(FALSE);
 
-			/* Write the chart legend */
-			//$chartTurnoverCategory->drawLegend(100, 20, array('Style' => LEGEND_NOBORDER, 'Mode' => LEGEND_VERTICAL));
-
-			// Build the PNG file and send it to the web browser
-			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
-			if(!file_exists(BASE_PATH.'/cache/chart/'.$url)) {
-				mkdir(BASE_PATH.'/cache/chart/'.$url, 0777, true);
-			}
-			$chartTurnoverCategory->Render(BASE_PATH.'/cache/chart/'.$url.'/turnover-category-'.$width.'-'.$height.'.png');
+			$this->chartImages['turnover-category'] = $chartTurnoverCategory->toBase64();
 		} else {
 			// Create an empty chart with a message
 			$chartTurnover = new pDraw($width, $height);
@@ -307,12 +294,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 				"Align" => TEXT_ALIGN_MIDDLEMIDDLE
 			]);
 
-			// Build the PNG file and send it to the web browser
-			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
-			if (!file_exists(BASE_PATH . '/cache/chart/' . $url)) {
-				mkdir(BASE_PATH . '/cache/chart/' . $url, 0777, true);
-			}
-			$chartTurnover->Render(BASE_PATH . '/cache/chart/' . $url . '/turnover-' . $width . '-' . $height . '.png');
+			$this->chartImages['turnover'] = $chartTurnover->toBase64();
 
 			$chartTurnoverCategory = new pDraw($width, $height);
 			$chartTurnoverCategory->drawFilledRectangle(0, 0, $width, $height, [
@@ -328,12 +310,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 				"Align" => TEXT_ALIGN_MIDDLEMIDDLE
 			]);
 
-			// Build the PNG file and send it to the web browser
-			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
-			if (!file_exists(BASE_PATH . '/cache/chart/' . $url)) {
-				mkdir(BASE_PATH . '/cache/chart/' . $url, 0777, true);
-			}
-			$chartTurnoverCategory->Render(BASE_PATH . '/cache/chart/' . $url . '/turnover-category-' . $width . '-' . $height . '.png');
+			$this->chartImages['turnover-category'] = $chartTurnoverCategory->toBase64();
 		}
 		return array($turnoverList, $turnoverTotal);
 	}

@@ -163,12 +163,7 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 			$pCharts->drawBarChart($settings);
 			$chartCustomer->setShadow(FALSE);
 
-			// Build the PNG file and send it to the web browser
-			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
-			if(!file_exists(BASE_PATH.'/cache/chart/'.$url)) {
-				mkdir(BASE_PATH.'/cache/chart/'.$url, 0777, true);
-			}
-			$chartCustomer->Render(BASE_PATH.'/cache/chart/'.$url.'/customer-'.$width.'-'.$height.'.png');
+			$this->chartImages['customer'] = $chartCustomer->toBase64();
 		}
 		return $customerList;
 	}

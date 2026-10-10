@@ -32,6 +32,8 @@ class IndexController extends Zend_Controller_Action
 
 	public function indexAction()
 	{
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+
 		$toolbar = new Application_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
@@ -41,8 +43,14 @@ class IndexController extends Zend_Controller_Action
 		$categories = $categoriesDb->getCategories('contact');
 		$options['categories'] = $categories;
 
-		$charts = new Statistics_Model_Turnover();
-		$charts->createCharts(12, 750, 400, $this->view->translate('STATISTICS_UNCATEGORIZED'), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
+		$permission = new DEEC_Permission((array)$this->_user);
+		$this->view->canViewTurnover = $permission->hasPermission('statistics', 'turnover', 'view');
+
+		if($this->view->canViewTurnover) {
+			$charts = new Statistics_Model_Turnover();
+			$charts->createCharts(12, 750, 400, $this->view->translate('STATISTICS_UNCATEGORIZED'), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
+			$this->view->chartImages = $charts->getChartImages();
+		}
 
 		$quotesDb = new Sales_Model_DbTable_Quote();
 		$quotes = $quotesDb->getLatestDrafts();
@@ -113,7 +121,6 @@ class IndexController extends Zend_Controller_Action
 
 		$this->view->options = $options;
 		$this->view->toolbar = new Application_Form_Toolbar();
-		$this->view->subfolder = $this->_helper->Directory->getShortUrl();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 }

@@ -120,12 +120,7 @@ class Statistics_Model_Quote extends Statistics_Model_Abstract
 			$pCharts->drawBarChart($settings);
 			$chartQuote->setShadow(FALSE);
 
-			// Build the PNG file and send it to the web browser
-			$url = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory')->getShortUrl();
-			if(!file_exists(BASE_PATH.'/cache/chart/'.$url)) {
-				mkdir(BASE_PATH.'/cache/chart/'.$url, 0777, true);
-			}
-			$chartQuote->Render(BASE_PATH.'/cache/chart/'.$url.'/quote-'.$width.'-'.$height.'.png');
+			$this->chartImages['quote'] = $chartQuote->toBase64();
 		}
 		return $customerList;
 	}

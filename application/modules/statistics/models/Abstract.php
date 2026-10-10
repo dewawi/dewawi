@@ -2,6 +2,13 @@
 
 abstract class Statistics_Model_Abstract
 {
+	protected array $chartImages = [];
+
+	public function getChartImages(): array
+	{
+		return $this->chartImages;
+	}
+
 	protected function fetchData($db, $type, $year, $month, $ym, $client, array $params, array $options)
 	{
 		$categoryOptions = isset($options['categories']) && is_array($options['categories']) ? $options['categories'] : array();

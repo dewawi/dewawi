@@ -21,9 +21,9 @@ $this->headTitle($this->title);
 <?php endif; ?>
 
 <h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
-<img src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-1000-400.png">
+<img src="data:image/png;base64,<?php echo $this->chartImages['turnover']; ?>">
 <h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
-<img src="<?php echo $this->baseUrl(); ?>/cache/chart/<?php echo $this->subfolder; ?>/turnover-category-1000-400.png">
+<img src="data:image/png;base64,<?php echo $this->chartImages['turnover-category']; ?>">
 
 <?php if($this->yearlyTurnover) : ?>
 	<h3><?php echo $this->translate('STATISTICS_TURNOVER_YEARS'); ?></h3>

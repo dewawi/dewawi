@@ -31,6 +31,8 @@ class Statistics_CustomerController extends Zend_Controller_Action
 
 	public function indexAction()
 	{
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+
 		$lenght = $this->_getParam('lenght', 25);
 
 		$toolbar = new Statistics_Form_Toolbar();
@@ -44,7 +46,7 @@ class Statistics_CustomerController extends Zend_Controller_Action
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->customerList = $customerList;
-		$this->view->subfolder = $this->_helper->Directory->getShortUrl();
+		$this->view->chartImages = $chart->getChartImages();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 
@@ -52,20 +54,7 @@ class Statistics_CustomerController extends Zend_Controller_Action
 	{
 		$this->_helper->viewRenderer->setRender('index');
 		$this->_helper->getHelper('layout')->disableLayout();
-
-		$lenght = $this->_getParam('lenght', 25);
-
-		$toolbar = new Statistics_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$chart = new Statistics_Model_Customer();
-		$chart->createCharts($lenght, 1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
-
-		$this->view->lenght = $lenght;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->indexAction();
 	}
 
 	public function toolbarAction()
