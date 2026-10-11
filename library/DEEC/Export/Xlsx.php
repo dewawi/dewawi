@@ -168,10 +168,10 @@ class DEEC_Export_Xlsx
 		$count = count($sheet['rows']);
 
 		$series = '<c:ser><c:idx val="0"/><c:order val="0"/>'
-		    .'<c:tx><c:v>'.$this->escape($title).'</c:v></c:tx>'
-		    .'<c:cat><c:strRef><c:f>'.$this->escape($categoryRef).'</c:f>'
-		    .'<c:spPr><a:solidFill><a:srgbClr val="25678B"/></a:solidFill><a:ln><a:noFill/></a:ln></c:spPr>'
-		    .'<c:strCache><c:ptCount val="'.$count.'"/>'.$categoryPoints.'</c:strCache>'
+			.'<c:tx><c:v>'.$this->escape($title).'</c:v></c:tx>'
+			.'<c:spPr><a:solidFill><a:srgbClr val="25678B"/></a:solidFill><a:ln><a:noFill/></a:ln></c:spPr>'
+			.'<c:cat><c:strRef><c:f>'.$this->escape($categoryRef).'</c:f>'
+			.'<c:strCache><c:ptCount val="'.$count.'"/>'.$categoryPoints.'</c:strCache>'
 		    .'</c:strRef></c:cat>'
 		    .'<c:val><c:numRef><c:f>'.$this->escape($valueRef).'</c:f>'
 		    .'<c:numCache><c:formatCode>General</c:formatCode>'
