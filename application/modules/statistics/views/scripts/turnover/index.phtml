@@ -9,25 +9,40 @@ $this->headTitle($this->title);
 	<?php if(!empty($this->chartImages['turnover-yearly'])) : ?>
 		<img src="data:image/png;base64,<?php echo $this->chartImages['turnover-yearly']; ?>" alt="<?php echo $this->translate('STATISTICS_TURNOVER_YEARS'); ?>">
 	<?php endif; ?>
-	<?php echo $this->yearlyList->render(); ?>
-<?php else : ?>
-	<p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
 <?php endif; ?>
 
 <h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
 <img src="data:image/png;base64,<?php echo $this->chartImages['turnover']; ?>" alt="<?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?>">
 
+<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
+<img src="data:image/png;base64,<?php echo $this->chartImages['turnover-category']; ?>" alt="<?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?>">
+
+<?php if($this->yearlyTurnover) : ?>
+	<h3><?php echo $this->translate('STATISTICS_TURNOVER_YEARS'); ?></h3>
+	<?php echo $this->yearlyList->render(); ?>
+<?php else : ?>
+	<p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
+<?php endif; ?>
+
 <?php if($this->monthlyTurnover) : ?>
+	<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
 	<?php echo $this->monthlyList->render(); ?>
 <?php else : ?>
 	<p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
 <?php endif; ?>
 
-<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
-<img src="data:image/png;base64,<?php echo $this->chartImages['turnover-category']; ?>" alt="<?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?>">
-
 <?php if($this->categoryRows) : ?>
+	<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS'); ?></h3>
 	<?php echo $this->categoryList->render(); ?>
 <?php else : ?>
 	<p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
+<?php endif; ?>
+
+<h3><?php echo $this->translate('STATISTICS_TURNOVER_CUSTOMER_GROUPS_YEARLY'); ?></h3>
+<p><?php echo $this->translate('STATISTICS_CUSTOMER_CATEGORY_CURRENT_NOTE'); ?></p>
+
+<?php if($this->yearlyCategoryRows) : ?>
+    <?php echo $this->yearlyCategoryList->render(); ?>
+<?php else : ?>
+    <p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
 <?php endif; ?>

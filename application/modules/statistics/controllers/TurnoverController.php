@@ -128,6 +128,52 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 			],
 		]);
 
+		$yearlyCategoryRows = $chart->getYearlyCategoryRows();
+
+		$yearlyCategoryList = new DEEC_List([
+			'id' => 'statistics-turnover-categories-yearly',
+			'view' => $this->view,
+			'module' => 'statistics',
+			'controller' => 'turnover',
+			'items' => $yearlyCategoryRows,
+			'selectable' => false,
+			'columns' => [
+				[
+				    'name' => 'year',
+				    'label' => 'STATISTICS_TURNOVER_YEAR',
+				],
+				[
+				    'name' => 'category',
+				    'label' => 'STATISTICS_CUSTOMER_CATEGORY',
+				],
+				[
+				    'name' => 'customersQuantity',
+				    'label' => 'STATISTICS_CUSTOMERS_WITH_DOCUMENTS',
+				],
+				[
+				    'name' => 'invoicesQuantity',
+				    'label' => 'STATISTICS_INVOICE_QUANTITY',
+				],
+				[
+				    'name' => 'creditnotesQuantity',
+				    'label' => 'STATISTICS_CREDIT_NOTE_QUANTITY',
+				],
+				[
+				    'name' => 'subtotal',
+				    'label' => 'STATISTICS_NET_TURNOVER',
+				    'type' => 'currency',
+				    'export_callback' => static fn($item) => number_format((float)$item['subtotal'], 2, ',', ''),
+				],
+				[
+				    'name' => 'share',
+				    'label' => 'STATISTICS_CUSTOMER_SHARE_PERCENT',
+				    'type' => 'callback',
+				    'callback' => static fn($item) => number_format((float)$item['share'], 2, ',', '.').'%',
+				    'export_callback' => static fn($item) => number_format((float)$item['share'], 4, ',', ''),
+				],
+			],
+		]);
+
 		if($categoryRows) {
 			$categoryTotal = array_sum(array_column($categoryRows, 'subtotal'));
 
@@ -162,6 +208,8 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 		$this->view->yearlyList = $yearlyList;
 		$this->view->categoryRows = $categoryRows;
 		$this->view->categoryList = $categoryList;
+		$this->view->yearlyCategoryRows = $yearlyCategoryRows;
+		$this->view->yearlyCategoryList = $yearlyCategoryList;
 		$this->view->turnoverTotal = $turnoverTotal;
 		$this->view->chartImages = $chart->getChartImages();
 		$this->view->messages = $this->_flashMessenger->getMessages();
@@ -200,6 +248,7 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 					'umsatz-jaehrlich.csv' => $this->view->yearlyList,
 					'umsatz-monatlich.csv' => $this->view->monthlyList,
 					'umsatz-kundengruppen.csv' => $this->view->categoryList,
+					'umsatz-kundengruppen-jaehrlich.csv' => $this->view->yearlyCategoryList,
 				];
 
 				foreach($lists as $name => $list) {

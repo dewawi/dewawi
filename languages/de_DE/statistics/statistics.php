@@ -5,6 +5,7 @@
 	'STATISTICS_TURNOVER_MONTHS' => 'Monatliche Umsätze',
 	'STATISTICS_TURNOVER_YEARS' => 'Jährliche Umsätze',
 	'STATISTICS_NET_TURNOVER' => 'Nettoumsatz nach Gutschriften',
+	'STATISTICS_TURNOVER_CUSTOMER_GROUPS_YEARLY' => 'Kundengruppen nach Jahren',
 	'STATISTICS_CUSTOMER' => 'Kunden',
 	'STATISTICS_CUSTOMER_LIST' => 'Kundenliste',
 	'STATISTICS_CUSTOMER_TOP_TEN' => 'Top 10 Kunden',
@@ -28,6 +29,7 @@
 	'STATISTICS_CUSTOMER_CATEGORY' => 'Kategorie',
 	'STATISTICS_CUSTOMER_YEARLY' => 'Kundenentwicklung nach Jahren',
 	'STATISTICS_CUSTOMER_YEARLY_NOTE' => 'Die Jahreswerte berücksichtigen den gewählten Zeitraum. Kundenkategorien entsprechen dem aktuellen Kontaktstamm.',
+	'STATISTICS_CUSTOMER_CATEGORY_CURRENT_NOTE' => 'Die Auswertung berücksichtigt den gewählten Zeitraum. Die Kategorien entsprechen dem aktuellen Kontaktstamm. Einzelne Jahre können unvollständig sein.',
 	'STATISTICS_CUSTOMER_TOP_THIRTY' => 'Top 30 Kunden',
 	'STATISTICS_CUSTOMERS_WITH_DOCUMENTS' => 'Kunden mit Belegen',
 	'STATISTICS_NO_DATA' => 'Keine Daten vorhanden'

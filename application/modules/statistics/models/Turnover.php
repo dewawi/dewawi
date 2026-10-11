@@ -17,6 +17,13 @@ use pChart\pException;
 
 class Statistics_Model_Turnover extends Statistics_Model_Abstract
 {
+	private array $yearlyCategoryRows = [];
+
+	public function getYearlyCategoryRows(): array
+	{
+		return $this->yearlyCategoryRows;
+	}
+
 	public function createCharts($width, $height, $statisticsUncategorized, $statisticsNoData, $params, $options)
 	{
 		$period = $this->getPeriod($params);
@@ -42,6 +49,8 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 
 		$categoryOptions = isset($options['categories']) && is_array($options['categories']) ? $options['categories'] : array();
 
+		$yearlyCategoryData = [];
+
 		$turnoverList = array();
 		for($year = $startYear; $year <= $currentYear; $year++) {
 			for($month = $startMonth; $month <= 12; $month++) {
@@ -58,6 +67,8 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 					// Calculate invoices
 					foreach($invoices as $invoice) {
 						$invoiceSubtotal = $this->getInvoiceNetSubtotal($invoice);
+
+						$this->addYearlyCategoryDocument($yearlyCategoryData, $year, $invoice, $invoiceSubtotal, false);
 
 						if(isset($turnoverList[$year.$ym]['invoicesQuantity'])) {
 							$turnoverList[$year.$ym]['invoicesQuantity'] += 1;
@@ -79,6 +90,8 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 
 					//Calculate credit notes
 					foreach($creditnotes as $creditnote) {
+						$this->addYearlyCategoryDocument($yearlyCategoryData, $year, $creditnote, -(float)$creditnote->subtotal, true);
+
 						if(isset($turnoverList[$year.$ym]['creditnotesQuantity'])) {
 							$turnoverList[$year.$ym]['creditnotesQuantity']++;
 							$turnoverList[$year.$ym]['creditnotesSubtotal'] += $creditnote->subtotal;
@@ -105,6 +118,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 			$startMonth = 1;
 		}
 
+		$this->prepareYearlyCategoryRows($yearlyCategoryData, $categoryOptions, $statisticsUncategorized);
 
 		// Aggregate categories into their top-level parent.
 		$groupedCategories = [];
@@ -355,5 +369,48 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 		$chart->setShadow(FALSE);
 
 		$this->chartImages['turnover-yearly'] = $chart->toBase64();
+	}
+
+	private function addYearlyCategoryDocument(array &$data, int $year, $document, float $amount, bool $creditnote): void
+	{
+		$id = (int)$document->catid;
+
+		if(!isset($data[$year][$id])) {
+		    $data[$year][$id] = [
+		        'subtotal' => 0.0,
+		        'customers' => [],
+		        'invoicesQuantity' => 0,
+		        'creditnotesQuantity' => 0,
+		    ];
+		}
+
+		$data[$year][$id]['subtotal'] += $amount;
+		$data[$year][$id][$creditnote ? 'creditnotesQuantity' : 'invoicesQuantity']++;
+		$data[$year][$id]['customers'][(int)$document->contactid] = true;
+	}
+
+	private function prepareYearlyCategoryRows(array $data, array $categories, string $uncategorized): void
+	{
+		$this->yearlyCategoryRows = [];
+
+		foreach($data as $year => $groups) {
+		    $total = array_sum(array_column($groups, 'subtotal'));
+
+		    foreach($groups as $id => $group) {
+		        $name = (int)$id === 0 ? $uncategorized : ($categories[$id]['breadcrumb'] ?? $categories[$id]['title'] ?? 'ID '.$id);
+
+		        $this->yearlyCategoryRows[] = [
+		            'year' => $year,
+		            'category' => $name,
+		            'customersQuantity' => count($group['customers']),
+		            'invoicesQuantity' => $group['invoicesQuantity'],
+		            'creditnotesQuantity' => $group['creditnotesQuantity'],
+		            'subtotal' => $group['subtotal'],
+		            'share' => $total != 0 ? $group['subtotal'] / $total * 100 : 0,
+		        ];
+		    }
+		}
+
+		usort($this->yearlyCategoryRows, static fn($a, $b) => ($b['year'] <=> $a['year']) ?: ($b['subtotal'] <=> $a['subtotal']));
 	}
 }
