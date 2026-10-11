@@ -116,6 +116,7 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
+		$this->view->exportFilters = $params;
 		$this->view->monthlyTurnover = $monthlyTurnover;
 		$this->view->yearlyTurnover = $yearlyTurnover;
 		$this->view->monthlyList = $monthlyList;
@@ -162,6 +163,30 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 				foreach($lists as $name => $list) {
 					$stream = fopen('php://temp', 'w+');
 					if($stream === false) throw new RuntimeException('Unable to create CSV stream.');
+
+					$filters = $this->view->exportFilters;
+					$daterange = $filters['daterange'] ?? 'all';
+
+					$from = $daterange === 'all' ? 'unbegrenzt' : (string)$filters['from'];
+					$to = $daterange === 'all' ? 'unbegrenzt' : (string)$filters['to'];
+
+					$info = [
+						'DEWAWI - Umsatzstatistik',
+						'Erstellt am: '.date('d.m.Y H:i:s'),
+						'Zeitraum: '.$from.' bis '.$to,
+						'Zeitraumauswahl: '.$daterange,
+						'Letzter Monat mit Belegen: '.(array_key_last($this->view->monthlyTurnover) ?? 'keine'),
+						'Land (Code): '.($filters['country'] ?? '0'),
+						'Kundenkategorie (ID): '.($filters['catid'] ?? 'all'),
+						'Belegstatus: 105 (abgeschlossen)',
+						'Geloeschte und stornierte Belege: ausgeschlossen',
+						'Nettoumsatz: Rechnungsnetto abzueglich Gutschriftennetto',
+						'Hinweis: Das laufende Geschaeftsjahr ist nicht abgeschlossen.',
+					];
+
+					if(!$zip->addFromString('export-info.txt', implode("\n", $info)."\n")) {
+						throw new RuntimeException('Unable to add export metadata.');
+					}
 
 					try {
 						$list->writeCsv($stream);
