@@ -1,6 +1,6 @@
 <?php
 
-class Statistics_TurnoverController extends Zend_Controller_Action
+class Statistics_TurnoverController extends DEEC_Controller_Action
 {
 	protected $_date = null;
 
@@ -144,6 +144,15 @@ class Statistics_TurnoverController extends Zend_Controller_Action
 		$this->view->turnoverTotal = $turnoverTotal;
 		$this->view->chartImages = $chart->getChartImages();
 		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
+	protected function buildIndexView(): void
+	{
+		$group = (string)$this->_getParam('group', 'monthly');
+		if(!in_array($group, ['monthly', 'yearly'], true)) throw new InvalidArgumentException('Invalid turnover export group.');
+
+		$this->indexAction();
+		$this->exportList = $group === 'yearly' ? $this->view->yearlyList : $this->view->monthlyList;
 	}
 
 	public function searchAction()

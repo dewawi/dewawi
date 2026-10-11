@@ -1,6 +1,6 @@
 <?php
 
-class Statistics_QuoteController extends Zend_Controller_Action
+class Statistics_QuoteController extends DEEC_Controller_Action
 {
 	protected $_date = null;
 
@@ -61,6 +61,12 @@ class Statistics_QuoteController extends Zend_Controller_Action
 		$this->view->quoteList = $list;
 		$this->view->chartImages = $chart->getChartImages();
 		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
+	protected function buildIndexView(): void
+	{
+		$this->indexAction();
+		$this->exportList = $this->view->quoteList;
 	}
 
 	public function searchAction()

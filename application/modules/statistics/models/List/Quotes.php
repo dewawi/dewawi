@@ -45,6 +45,9 @@ class Statistics_Model_List_Quotes extends DEEC_List
 				'callback' => static function($item, $column, $list) {
 					return $list->escape((string)$item['share']).'%';
 				},
+				'export_callback' => static function($item, $column, $list) {
+					return (string)$item['share'].'%';
+				},
 			],
 		];
 	}

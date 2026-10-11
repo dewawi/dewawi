@@ -1,6 +1,6 @@
 <?php
 
-class Statistics_CustomerController extends Zend_Controller_Action
+class Statistics_CustomerController extends DEEC_Controller_Action
 {
 	protected $_date = null;
 
@@ -61,6 +61,12 @@ class Statistics_CustomerController extends Zend_Controller_Action
 		$this->view->customerListTable = $list;
 		$this->view->chartImages = $chart->getChartImages();
 		$this->view->messages = $this->_flashMessenger->getMessages();
+	}
+
+	protected function buildIndexView(): void
+	{
+		$this->indexAction();
+		$this->exportList = $this->view->customerListTable;
 	}
 
 	public function searchAction()

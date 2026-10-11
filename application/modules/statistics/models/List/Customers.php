@@ -51,6 +51,19 @@ class Statistics_Model_List_Customers extends DEEC_List
 
 					return implode('<br>', $parts);
 				},
+				'export_callback' => static function($item, $column, $list) {
+					$parts = [];
+
+					if(!empty($item['invoices'])) {
+						$parts[] = $list->translate('STATISTICS_INVOICE').': '.count($item['invoices']);
+					}
+
+					if(!empty($item['creditnotes'])) {
+						$parts[] = $list->translate('STATISTICS_CREDIT_NOTE').': '.count($item['creditnotes']);
+					}
+
+					return implode(' | ', $parts);
+				},
 			],
 			[
 				'name' => 'share',
@@ -58,6 +71,9 @@ class Statistics_Model_List_Customers extends DEEC_List
 				'type' => 'callback',
 				'callback' => static function($item, $column, $list) {
 					return $list->escape((string)$item['share']).'%';
+				},
+				'export_callback' => static function($item, $column, $list) {
+					return (string)$item['share'].'%';
 				},
 			],
 		];
