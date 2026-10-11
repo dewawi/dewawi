@@ -8,10 +8,35 @@ class Statistics_Model_Reporting
 		$options = ['categories' => (new Application_Model_DbTable_Category())->getCategories('contact')];
 
 		$turnover = new Statistics_Model_Turnover();
-		[$months, , $categories] = $turnover->createCharts(1000, 400, $uncategorized, $noData, $params, $options);
+		[$months] = $turnover->createCharts(1000, 400, $uncategorized, $noData, $params, $options);
 
-		$yearly = [];
-		for($year = (int)substr($from, 0, 4); $year <= (int)substr($to, 0, 4); $year++) $yearly[$year] = ['period' => (string)$year, 'invoicesQuantity' => 0, 'invoicesSubtotal' => 0.0, 'creditnotesQuantity' => 0, 'creditnotesSubtotal' => 0.0];
+		$yearlyCategories = $turnover->getYearlyCategoryRows();
+		$categories = [];
+
+		foreach($yearlyCategories as $row) {
+			$id = (int)$row['categoryId'];
+
+			if(!isset($categories[$id])) {
+				$categories[$id] = [
+					'category' => $row['category'],
+					'subtotal' => 0.0,
+				];
+			}
+
+			$categories[$id]['subtotal'] += (float)$row['subtotal'];
+		}
+
+		$total = array_sum(array_column($categories, 'subtotal'));
+
+		foreach($categories as &$category) {
+			$category['share'] = $total != 0 ? $category['subtotal'] / $total * 100 : 0;
+		}
+		unset($category);
+
+		usort($categories, static fn($a, $b) => $b['subtotal'] <=> $a['subtotal']);
+
+				$yearly = [];
+				for($year = (int)substr($from, 0, 4); $year <= (int)substr($to, 0, 4); $year++) $yearly[$year] = ['period' => (string)$year, 'invoicesQuantity' => 0, 'invoicesSubtotal' => 0.0, 'creditnotesQuantity' => 0, 'creditnotesSubtotal' => 0.0];
 
 		$monthly = [];
 		$fields = ['invoicesQuantity', 'invoicesSubtotal', 'creditnotesQuantity', 'creditnotesSubtotal'];
@@ -64,7 +89,7 @@ class Statistics_Model_Reporting
 			'monthly' => $monthly,
 			'comparisons' => $turnover->getYearlyComparisons(),
 			'categories' => $categories,
-			'yearlyCategories' => $turnover->getYearlyCategoryRows(),
+			'yearlyCategories' => $yearlyCategories,
 			'negativeCreditnotes' => $turnover->getNegativeCreditnotes(),
 			'customerSummary' => $customerSummary,
 			'customers' => $this->rankCustomers(array_values($allCustomers), 30),

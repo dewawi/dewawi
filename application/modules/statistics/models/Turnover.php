@@ -420,6 +420,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 		        $name = (int)$id === 0 ? $uncategorized : ($categories[$id]['breadcrumb'] ?? $categories[$id]['title'] ?? 'ID '.$id);
 
 		        $this->yearlyCategoryRows[] = [
+				    'categoryId' => (int)$id,
 		            'year' => $year,
 		            'category' => $name,
 		            'customersQuantity' => count($group['customers']),
