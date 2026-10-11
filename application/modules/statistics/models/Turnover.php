@@ -229,22 +229,23 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 			foreach($turnoverCategories as $key => $value) {
 				$turnoverCategoriesTotal[$key] = array_sum($value);
 			}
+
 			arsort($turnoverCategoriesTotal);
 			foreach($turnoverCategoriesTotal as $key => $value) {
 				if($key && isset($categoryOptions[$key])) {
-					$chartTurnoverCategory->myData->addPoints($turnoverCategories[$key], $categoryOptions[$key]['title']);
-					//print_r($turnoverCategories[$key]);
-					//print_r($options['categories'][$key]['title']);
+					$series = 'category-'.$key;
+					$chartTurnoverCategory->myData->addPoints(array_values($turnoverCategories[$key]), $series);
+					$chartTurnoverCategory->myData->setSerieDescription($series, $categoryOptions[$key]['title']);
 				}
 			}
+
 			if(isset($turnoverCategories[0])) {
-				$chartTurnoverCategory->myData->addPoints($turnoverCategories[0], $statisticsUncategorized);
+				$series = 'category-0';
+				$chartTurnoverCategory->myData->addPoints(array_values($turnoverCategories[0]), $series);
+				$chartTurnoverCategory->myData->setSerieDescription($series, $statisticsUncategorized);
 			}
-//print_r($turnoverCategoriesTotal);
-//print_r($options['categories']);
 
 			/* Populate the pData object */
-			//$chartTurnoverCategory->myData->setSerieProperties("Values",["Ticks" => 5]);
 			$chartTurnoverCategory->myData->setAxisName(0,"€ / Netto");
 			$chartTurnoverCategory->myData->addPoints($months,"Labels");
 			$chartTurnoverCategory->myData->setSerieDescription("Labels","Months");
@@ -259,7 +260,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 			/* Draw the scale and the 1st chart */
 			$chartTurnoverCategory->setGraphArea(75, 20, $width-30, $height-60);
 			$chartTurnoverCategory->drawFilledRectangle(0,0,$width,$height,["Color"=> new pColor(234,240,200), "Dash"=>TRUE, "DashColor"=>new pColor(190,203,107)]);
-			$chartTurnoverCategory->drawScale(array('XMargin' => 2, 'DrawSubTicks' => TRUE, 'Mode' => SCALE_MODE_ADDALL_START0, 'LabelRotation' => 45));
+			$chartTurnoverCategory->drawScale(['XMargin' => 2, 'DrawSubTicks' => TRUE, 'Mode' => SCALE_MODE_ADDALL, 'LabelRotation' => 45]);
 			$chartTurnoverCategory->setShadow(TRUE,["X"=>1,"Y"=>1,"Color"=>new pColor(0,0,0,10)]);
 			$chartTurnoverCategory->setFontProperties(["FontSize"=>10]);
 
