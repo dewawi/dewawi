@@ -38,6 +38,7 @@ $this->headTitle($this->title);
 				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_QUANTITY'); ?></th>
 				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_SUBTOTAL'); ?></th>
 				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_AVERAGE'); ?></th>
+				<th width="12%"><?php echo $this->translate('STATISTICS_NET_TURNOVER'); ?></th>
 				<th width="8%"></th>
 			</tr>
 		</thead>
@@ -60,6 +61,7 @@ $this->headTitle($this->title);
 				<td><?php echo $yearlyTurnover['creditnotesQuantity']; ?></td>
 				<td><?php echo $yearlyTurnover['creditnotesSubtotal']; ?></td>
 				<td><?php echo $yearlyTurnover['creditnotesAverage']; ?></td>
+				<td><?php echo $yearlyTurnover['netTurnover']; ?></td>
 				<td></td>
 			</tr>
 			<?php ++$i; ?>
@@ -73,6 +75,7 @@ $this->headTitle($this->title);
 			<td><b><?php echo $this->turnoverTotal['creditnotesTotalQuantity']; ?></b></td>
 			<td><b><?php echo $this->turnoverTotal['creditnotesTotal']; ?></b></td>
 			<td><b><?php echo $this->turnoverTotal['creditnotesAverage']; ?></b></td>
+			<td><b><?php echo $this->turnoverTotal['netTurnover']; ?></b></td>
 			<td></td>
 		</tr>
 	</table>
@@ -92,6 +95,7 @@ $this->headTitle($this->title);
 				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_QUANTITY'); ?></th>
 				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_SUBTOTAL'); ?></th>
 				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_AVERAGE'); ?></th>
+				<th width="12%"><?php echo $this->translate('STATISTICS_NET_TURNOVER'); ?></th>
 				<th width="8%"></th>
 			</tr>
 		</thead>
@@ -114,6 +118,7 @@ $this->headTitle($this->title);
 				<td><?php echo $turnover['creditnotesQuantity']; ?></td>
 				<td><?php echo $turnover['creditnotesSubtotal']; ?></td>
 				<td><?php echo $turnover['creditnotesAverage']; ?></td>
+				<td><?php echo $turnover['netTurnover']; ?></td>
 				<td></td>
 			</tr>
 			<?php ++$i; ?>
@@ -127,6 +132,7 @@ $this->headTitle($this->title);
 			<td><b><?php echo $this->turnoverTotal['creditnotesTotalQuantity']; ?></b></td>
 			<td><b><?php echo $this->turnoverTotal['creditnotesTotal']; ?></b></td>
 			<td><b><?php echo $this->turnoverTotal['creditnotesAverage']; ?></b></td>
+			<td><b><?php echo $this->turnoverTotal['netTurnover']; ?></b></td>
 			<td></td>
 		</tr>
 	</table>

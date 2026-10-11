@@ -68,11 +68,13 @@ class Statistics_TurnoverController extends Zend_Controller_Action
 			$monthlyTurnover[$month]['creditnotesSubtotal'] += $turnover['creditnotesSubtotal'];
 		}
 
-		// Calculate averages for each month
-		foreach ($monthlyTurnover as $month => &$data) {
+		// Calculate averages and net turnover for each month
+		foreach($monthlyTurnover as $month => &$data) {
 			$data['invoicesAverage'] = $data['invoicesQuantity'] ? $data['invoicesSubtotal'] / $data['invoicesQuantity'] : 0;
 			$data['creditnotesAverage'] = $data['creditnotesQuantity'] ? $data['creditnotesSubtotal'] / $data['creditnotesQuantity'] : 0;
+			$data['netTurnover'] = $data['invoicesSubtotal'] - $data['creditnotesSubtotal'];
 		}
+		unset($data);
 
 		// Array to group data by year
 		$yearlyTurnover = [];
@@ -97,11 +99,13 @@ class Statistics_TurnoverController extends Zend_Controller_Action
 			$yearlyTurnover[$year]['creditnotesSubtotal'] += $turnover['creditnotesSubtotal'];
 		}
 
-		// Calculate averages for each year
-		foreach ($yearlyTurnover as $year => &$data) {
+		// Calculate averages and net turnover for each year
+		foreach($yearlyTurnover as $year => &$data) {
 			$data['invoicesAverage'] = $data['invoicesQuantity'] ? $data['invoicesSubtotal'] / $data['invoicesQuantity'] : 0;
 			$data['creditnotesAverage'] = $data['creditnotesQuantity'] ? $data['creditnotesSubtotal'] / $data['creditnotesQuantity'] : 0;
+			$data['netTurnover'] = $data['invoicesSubtotal'] - $data['creditnotesSubtotal'];
 		}
+		unset($data);
 
 		// Formatting with currency for monthly and yearly totals
 		$currency = Zend_Registry::get('Zend_Currency');
@@ -110,6 +114,7 @@ class Statistics_TurnoverController extends Zend_Controller_Action
 			$monthlyTurnover[$id]['creditnotesSubtotal'] = $currency->toCurrency($value['creditnotesSubtotal']);
 			$monthlyTurnover[$id]['invoicesAverage'] = $currency->toCurrency($value['invoicesAverage']);
 			$monthlyTurnover[$id]['creditnotesAverage'] = $currency->toCurrency($value['creditnotesAverage']);
+			$monthlyTurnover[$id]['netTurnover'] = $currency->toCurrency($value['netTurnover']);
 		}
 
 		foreach ($yearlyTurnover as $id => $value) {
@@ -117,9 +122,11 @@ class Statistics_TurnoverController extends Zend_Controller_Action
 			$yearlyTurnover[$id]['creditnotesSubtotal'] = $currency->toCurrency($value['creditnotesSubtotal']);
 			$yearlyTurnover[$id]['invoicesAverage'] = $currency->toCurrency($value['invoicesAverage']);
 			$yearlyTurnover[$id]['creditnotesAverage'] = $currency->toCurrency($value['creditnotesAverage']);
+			$yearlyTurnover[$id]['netTurnover'] = $currency->toCurrency($value['netTurnover']);
 		}
 
 		// Format total values with currency
+		if($turnoverTotal) $turnoverTotal['netTurnover'] = $currency->toCurrency($turnoverTotal['invoicesTotal'] - $turnoverTotal['creditnotesTotal']);
 		if(isset($turnoverTotal['invoicesTotal'])) $turnoverTotal['invoicesTotal'] = $currency->toCurrency($turnoverTotal['invoicesTotal']);
 		if(isset($turnoverTotal['invoicesAverage'])) $turnoverTotal['invoicesAverage'] = $currency->toCurrency($turnoverTotal['invoicesAverage']);
 		if(isset($turnoverTotal['creditnotesTotal'])) $turnoverTotal['creditnotesTotal'] = $currency->toCurrency($turnoverTotal['creditnotesTotal']);
