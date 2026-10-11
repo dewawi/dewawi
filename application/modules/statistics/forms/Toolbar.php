@@ -80,6 +80,7 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'wrap' => false,
 			'options' => [
 				'all' => 'CATEGORIES_ALL',
+				'0' => 'STATISTICS_UNCATEGORIZED',
 			],
 			'source' => 'category:contact',
 			'toolbar' => 'filters',
