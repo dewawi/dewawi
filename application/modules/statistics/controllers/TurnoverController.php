@@ -45,62 +45,32 @@ class Statistics_TurnoverController extends Zend_Controller_Action
 		$chart = new Statistics_Model_Turnover();
 		list($turnoverList, $turnoverTotal) = $chart->createCharts($lenght, 1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
 
-		// Array to group data by month
+		// Aggregate monthly and yearly turnover
 		$monthlyTurnover = [];
+		$yearlyTurnover = [];
+		$fields = ['invoicesQuantity', 'invoicesSubtotal', 'creditnotesQuantity', 'creditnotesSubtotal'];
 
-		// Loop through the monthly turnovers
-		foreach ($turnoverList as $turnover) {
-			// Extract the month from the "month" field
+		foreach($turnoverList as $turnover) {
 			$month = $turnover['month'];
-			
-			// Initialize if the month doesn't exist in the array
-			if (!isset($monthlyTurnover[$month])) {
-				$monthlyTurnover[$month]['invoicesQuantity'] = 0;
-				$monthlyTurnover[$month]['invoicesSubtotal'] = 0;
-				$monthlyTurnover[$month]['creditnotesQuantity'] = 0;
-				$monthlyTurnover[$month]['creditnotesSubtotal'] = 0;
+			$year = substr($month, 0, 4);
+
+			foreach($fields as $field) {
+				$value = $turnover[$field] ?? 0;
+				$monthlyTurnover[$month][$field] = $value;
+				$yearlyTurnover[$year][$field] = ($yearlyTurnover[$year][$field] ?? 0) + $value;
 			}
-			
-			// Add the monthly turnover to the corresponding month
-			$monthlyTurnover[$month]['invoicesQuantity'] += $turnover['invoicesQuantity'];
-			$monthlyTurnover[$month]['invoicesSubtotal'] += $turnover['invoicesSubtotal'];
-			$monthlyTurnover[$month]['creditnotesQuantity'] += $turnover['creditnotesQuantity'];
-			$monthlyTurnover[$month]['creditnotesSubtotal'] += $turnover['creditnotesSubtotal'];
 		}
 
-		// Calculate averages and net turnover for each month
-		foreach($monthlyTurnover as $month => &$data) {
+		// Calculate monthly averages and net turnover
+		foreach($monthlyTurnover as &$data) {
 			$data['invoicesAverage'] = $data['invoicesQuantity'] ? $data['invoicesSubtotal'] / $data['invoicesQuantity'] : 0;
 			$data['creditnotesAverage'] = $data['creditnotesQuantity'] ? $data['creditnotesSubtotal'] / $data['creditnotesQuantity'] : 0;
 			$data['netTurnover'] = $data['invoicesSubtotal'] - $data['creditnotesSubtotal'];
 		}
 		unset($data);
 
-		// Array to group data by year
-		$yearlyTurnover = [];
-
-		// Loop through the monthly turnovers
-		foreach ($turnoverList as $turnover) {
-			// Extract the year from the "month" field
-			$year = substr($turnover['month'], 0, 4);
-			
-			// Initialize if the year doesn't exist in the array
-			if (!isset($yearlyTurnover[$year])) {
-				$yearlyTurnover[$year]['invoicesQuantity'] = 0;
-				$yearlyTurnover[$year]['invoicesSubtotal'] = 0;
-				$yearlyTurnover[$year]['creditnotesQuantity'] = 0;
-				$yearlyTurnover[$year]['creditnotesSubtotal'] = 0;
-			}
-			
-			// Add the monthly turnover to the corresponding year
-			$yearlyTurnover[$year]['invoicesQuantity'] += $turnover['invoicesQuantity'];
-			$yearlyTurnover[$year]['invoicesSubtotal'] += $turnover['invoicesSubtotal'];
-			$yearlyTurnover[$year]['creditnotesQuantity'] += $turnover['creditnotesQuantity'];
-			$yearlyTurnover[$year]['creditnotesSubtotal'] += $turnover['creditnotesSubtotal'];
-		}
-
-		// Calculate averages and net turnover for each year
-		foreach($yearlyTurnover as $year => &$data) {
+		// Calculate yearly averages and net turnover
+		foreach($yearlyTurnover as &$data) {
 			$data['invoicesAverage'] = $data['invoicesQuantity'] ? $data['invoicesSubtotal'] / $data['invoicesQuantity'] : 0;
 			$data['creditnotesAverage'] = $data['creditnotesQuantity'] ? $data['creditnotesSubtotal'] / $data['creditnotesQuantity'] : 0;
 			$data['netTurnover'] = $data['invoicesSubtotal'] - $data['creditnotesSubtotal'];
