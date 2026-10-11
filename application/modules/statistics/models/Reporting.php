@@ -65,6 +65,7 @@ class Statistics_Model_Reporting
 			'comparisons' => $turnover->getYearlyComparisons(),
 			'categories' => $categories,
 			'yearlyCategories' => $turnover->getYearlyCategoryRows(),
+			'negativeCreditnotes' => $turnover->getNegativeCreditnotes(),
 			'customerSummary' => $customerSummary,
 			'customers' => $this->rankCustomers(array_values($allCustomers), 30),
 			'customersByYear' => $topByYear,
@@ -93,7 +94,7 @@ class Statistics_Model_Reporting
 		$net = array_sum(array_column($data['yearly'], 'netTurnover'));
 		$customerNet = array_sum(array_column($data['allCustomers'], 'subtotal'));
 
-		$checks = $this->createAuditRows($data);
+		$checks = $this->getAuditRows($data);
 		$hasWarnings = count(array_filter($checks, static fn($row) => $row[8] !== 'OK')) > 0;
 
 		$sheets = [[
@@ -203,11 +204,11 @@ class Statistics_Model_Reporting
 			'headers' => [
 				'Jahr', 'Jahresumsatz', 'Monatssumme', 'Kundensumme',
 				'Kundengruppensumme', 'Diff. Monate', 'Diff. Kunden',
-				'Diff. Gruppen', 'Status',
+				'Diff. Gruppen', 'Status', 'Hinweis',
 			],
 			'rows' => $checks,
-			'formats' => ['integer', 'money', 'money', 'money', 'money', 'money', 'money', 'money', 'text'],
-			'widths' => [12, 22, 22, 22, 25, 20, 20, 20, 18],
+			'formats' => ['integer', 'money', 'money', 'money', 'money', 'money', 'money', 'money', 'text', 'text'],
+			'widths' => [12, 22, 22, 22, 25, 20, 20, 20, 18, 58],
 		];
 
 		return $sheets;
@@ -240,7 +241,7 @@ class Statistics_Model_Reporting
 		];
 	}
 
-	private function createAuditRows(array $data): array
+	public function getAuditRows(array $data): array
 	{
 		$monthly = [];
 		$categories = [];
@@ -268,13 +269,22 @@ class Statistics_Model_Reporting
 		    $customerDiff = round($net - $customerNet, 2);
 		    $categoryDiff = round($net - $categoryNet, 2);
 
-		    $hasDocuments = (int)$row['invoicesQuantity'] + (int)$row['creditnotesQuantity'] > 0;
-		    $status = !$hasDocuments ? 'KEINE BELEGE' : (max(abs($monthDiff), abs($customerDiff), abs($categoryDiff)) <= 0.05 ? 'OK' : 'PRÜFEN');
+			$issues = [];
 
-		    $checks[] = [
-		        $year, $net, $monthlyNet, $customerNet, $categoryNet,
-		        $monthDiff, $customerDiff, $categoryDiff, $status,
-		    ];
+			if(abs($monthDiff) > 0.05) $issues[] = 'Monatssumme abweichend';
+			if(abs($customerDiff) > 0.05) $issues[] = 'Kundensumme abweichend';
+			if(abs($categoryDiff) > 0.05) $issues[] = 'Kundengruppensumme abweichend';
+
+			$negativeCount = (int)($data['negativeCreditnotes'][$year] ?? 0);
+			if($negativeCount > 0) $issues[] = $negativeCount.' Gutschrift(en) mit negativem Nettobetrag';
+
+			$hasDocuments = (int)$row['invoicesQuantity'] + (int)$row['creditnotesQuantity'] > 0;
+			$status = !$hasDocuments ? 'KEINE BELEGE' : ($issues ? 'PRÜFEN' : 'OK');
+
+			$checks[] = [
+				$year, $net, $monthlyNet, $customerNet, $categoryNet,
+				$monthDiff, $customerDiff, $categoryDiff, $status, implode('; ', $issues),
+			];
 		}
 
 		return $checks;

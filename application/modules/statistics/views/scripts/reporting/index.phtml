@@ -48,6 +48,16 @@ $sections = [
     <?php endif; ?>
 <?php endforeach; ?>
 
+<?php if($this->auditWarnings) : ?>
+    <section class="dw-card">
+        <h3 class="dw-card__title"><?php echo $this->translate('STATISTICS_REPORTING_AUDIT_WARNING'); ?></h3>
+
+        <?php foreach($this->auditWarnings as $row) : ?>
+            <p><?php echo $this->escape($row[0].': '.$row[9]); ?></p>
+        <?php endforeach; ?>
+    </section>
+<?php endif; ?>
+
 <?php foreach($this->yearlyCustomerLists as $year => $list) : ?>
     <h3><?php echo $this->translate('STATISTICS_CUSTOMER_TOP_THIRTY').' '.$this->escape((string)$year); ?></h3>
 

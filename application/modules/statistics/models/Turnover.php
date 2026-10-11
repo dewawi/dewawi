@@ -19,6 +19,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 {
 	private array $yearlyCategoryRows = [];
 	private array $yearlyComparisons = [];
+	private array $negativeCreditnotes = [];
 
 	public function getYearlyCategoryRows(): array
 	{
@@ -30,8 +31,15 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 		return $this->yearlyComparisons;
 	}
 
+	public function getNegativeCreditnotes(): array
+	{
+		return $this->negativeCreditnotes;
+	}
+
 	public function createCharts($width, $height, $statisticsUncategorized, $statisticsNoData, $params, $options)
 	{
+		$this->negativeCreditnotes = [];
+
 		$period = $this->getPeriod($params);
 
 		$user = Zend_Registry::get('User');
@@ -98,6 +106,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 
 					//Calculate credit notes
 					foreach($creditnotes as $creditnote) {
+						if((float)$creditnote->subtotal < 0) $this->negativeCreditnotes[$year] = ($this->negativeCreditnotes[$year] ?? 0) + 1;
 						$this->addYearlyCategoryDocument($yearlyCategoryData, $year, $creditnote, -(float)$creditnote->subtotal, true);
 
 						if(isset($turnoverList[$year.$ym]['creditnotesQuantity'])) {

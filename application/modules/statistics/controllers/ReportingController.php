@@ -15,7 +15,9 @@ class Statistics_ReportingController extends DEEC_Controller_Action
 
         if($from > $to) throw new InvalidArgumentException('Reporting start date must not exceed end date.');
 
-        $data = (new Statistics_Model_Reporting())->build($from, $to, $this->view->translate('STATISTICS_UNCATEGORIZED'), $this->view->translate('STATISTICS_NO_DATA'));
+		$report = new Statistics_Model_Reporting();
+		$data = $report->build($from, $to, $this->view->translate('STATISTICS_UNCATEGORIZED'), $this->view->translate('STATISTICS_NO_DATA'));
+		$this->view->auditWarnings = array_values(array_filter($report->getAuditRows($data), static fn($row) => $row[8] === 'PRÜFEN'));
 
         $percentage = static fn($item, $column) => $item[$column['name']] === null ? '–' : number_format((float)$item[$column['name']], 2, ',', '.').'%';
         $money = static fn($name, $label) => ['name' => $name, 'label' => $label, 'type' => 'currency'];
