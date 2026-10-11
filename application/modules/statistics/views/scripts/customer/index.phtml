@@ -3,23 +3,6 @@ $this->title = $this->translate('STATISTICS');
 $this->headTitle($this->title);
 ?>
 
-<?php echo $this->translate('STATISTICS_PERIOD'); ?>: 
-<?php if($this->lenght == 12) : ?>
-	1 Jahr
-<?php else : ?>
-	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'customer', 'action'=>'index', 'lenght'=>'12', 'daterange' => 'all')); ?>">1 Jahr</a>
-<?php endif; ?>
-<?php if($this->lenght == 24) : ?>
-	2 Jahre
-<?php else : ?>
-	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'customer', 'action'=>'index', 'lenght'=>'24', 'daterange' => 'all')); ?>">2 Jahre</a>
-<?php endif; ?>
-<?php if($this->lenght == 60) : ?>
-	5 Jahre
-<?php else : ?>
-	<a href="<?php echo $this->url(array('module'=>'statistics', 'controller'=>'customer', 'action'=>'index', 'lenght'=>'60', 'daterange' => 'all')); ?>">5 Jahre</a>
-<?php endif; ?>
-
 <?php if($this->customerList) : ?>
 	<h3><?php echo $this->translate('STATISTICS_CUSTOMER_TOP_TEN'); ?></h3>
 	<img src="data:image/png;base64,<?php echo $this->chartImages['customer']; ?>">

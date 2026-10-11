@@ -33,17 +33,13 @@ class Statistics_QuoteController extends DEEC_Controller_Action
 	{
 		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
 
-		$lenght = (int)$this->_getParam('lenght', 12);
-		if(!in_array($lenght, [12, 24, 60], true)) $lenght = 12;
-
 		$toolbar = new Statistics_Form_Toolbar();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$options['categories'] = (new Application_Model_DbTable_Category())->getCategories('contact');
 		$params = $this->_helper->Params->getParams($toolbar, $options);
-		$toolbar->setValue('lenght', $lenght);
 
 		$chart = new Statistics_Model_Quote();
-		$customerList = $chart->createCharts($lenght, 1000, 600, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
+		$customerList = $chart->createCharts(1000, 600, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
 
 		foreach($customerList as $i => $customer) $customerList[$i]['rank'] = $i + 1;
 
@@ -54,7 +50,6 @@ class Statistics_QuoteController extends DEEC_Controller_Action
 			'subtotal' => $customerList[0]['total'],
 		]);
 
-		$this->view->lenght = $lenght;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->customerList = $customerList;

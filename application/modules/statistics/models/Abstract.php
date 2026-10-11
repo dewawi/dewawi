@@ -46,27 +46,30 @@ abstract class Statistics_Model_Abstract
 		return [$rows, $names, $values];
 	}
 
-	protected function getPeriod(int $lenght, array $params): array
+	protected function getPeriod(array $params): array
 	{
-		$start = new DateTimeImmutable('first day of this month');
-		$from = $start->modify('-'.($lenght-1).' months')->format('Y-m-d');
-		$to = $start->format('Y-m-t');
+		if(($params['daterange'] ?? 'all') === 'all') return ['from' => null, 'to' => null];
 
-		if(($params['daterange'] ?? 'all') !== 'all') {
-			$from = $this->normalizeDate($params['from'] ?? '');
-			$to = $this->normalizeDate($params['to'] ?? '');
-		}
+		$from = $this->normalizeDate($params['from'] ?? '');
+		$to = $this->normalizeDate($params['to'] ?? '');
 
 		if($from > $to) throw new InvalidArgumentException('Statistics start date must not exceed end date');
 
-		$startMonth = new DateTimeImmutable(substr($from, 0, 7).'-01');
-		$endMonth = new DateTimeImmutable(substr($to, 0, 7).'-01');
-		$interval = $startMonth->diff($endMonth);
-		$months = $interval->y * 12 + $interval->m + 1;
-
-		if($months > 60) throw new InvalidArgumentException('Statistics period exceeds 60 months');
-
 		return ['from' => $from, 'to' => $to];
+	}
+
+	protected function resolvePeriod(array $period, array ...$groups): array
+	{
+		$keys = [];
+		foreach($groups as $group) $keys = array_merge($keys, array_keys($group));
+
+		$first = $keys ? (string)min($keys) : date('Ym');
+		$last = $keys ? (string)max($keys) : date('Ym');
+
+		$period['from'] ??= substr($first, 0, 4).'-'.substr($first, 4, 2).'-01';
+		$period['to'] ??= date('Y-m-t', strtotime(substr($last, 0, 4).'-'.substr($last, 4, 2).'-01'));
+
+		return $period;
 	}
 
 	protected function normalizeDate($value): string
@@ -98,11 +101,12 @@ abstract class Statistics_Model_Abstract
 			->where('i.state = ?', 105)
 			->where('i.deleted = ?', 0)
 			->where('i.cancelled = ?', 0)
-			->where("i.{$dateField} >= ?", $period['from'])
-			->where("i.{$dateField} <= ?", $period['to'])
 			->where('i.clientid = ?', (int)$client['id'])
 			->where('c.clientid = ?', (int)$client['id'])
 			->setIntegrityCheck(false);
+
+		if($period['from'] !== null) $select->where("i.{$dateField} >= ?", $period['from']);
+		if($period['to'] !== null) $select->where("i.{$dateField} <= ?", $period['to']);
 
 		$categories = $options['categories'] ?? [];
 		$catid = $params['catid'] ?? 'all';

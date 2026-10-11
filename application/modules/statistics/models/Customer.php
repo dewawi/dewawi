@@ -17,9 +17,9 @@ use pChart\pException;
 
 class Statistics_Model_Customer extends Statistics_Model_Abstract
 {
-	public function createCharts($lenght, $width = 1000, $height = 600, $statisticsUncategorized, $statisticsNoData, $params, $options)
+	public function createCharts($width, $height, $statisticsUncategorized, $statisticsNoData, $params, $options)
 	{
-		$period = $this->getPeriod((int)$lenght, $params);
+		$period = $this->getPeriod($params);
 		$currentYear = (int)substr($period['to'], 0, 4);
 		$currentMonth = (int)substr($period['to'], 5, 2);
 		$startYear = (int)substr($period['from'], 0, 4);
@@ -33,6 +33,13 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 
 		$invoicesByMonth = $this->fetchData($invoicesDb, 'invoice', $client, $params, $options, $period);
 		$creditnotesByMonth = $this->fetchData($creditnotesDb, 'creditnote', $client, $params, $options, $period);
+
+		$period = $this->resolvePeriod($period, $invoicesByMonth, $creditnotesByMonth);
+
+		$currentYear = (int)substr($period['to'], 0, 4);
+		$currentMonth = (int)substr($period['to'], 5, 2);
+		$startYear = (int)substr($period['from'], 0, 4);
+		$startMonth = (int)substr($period['from'], 5, 2);
 
 		$categories = $options['categories'] ?? [];
 
