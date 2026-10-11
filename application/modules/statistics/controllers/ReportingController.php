@@ -1,4 +1,3 @@
-
 <?php
 
 class Statistics_ReportingController extends DEEC_Controller_Action
