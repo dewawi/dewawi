@@ -44,9 +44,11 @@ class Statistics_Model_Quote extends Statistics_Model_Abstract
 					//Calculate quotes
 					foreach($quotes as $quote) {
 						if(isset($customerList[$quote->contactid])) {
+							$customerList[$quote->contactid]['cid'] = $quote->cid;
 							$customerList[$quote->contactid]['subtotal'] += $quote->subtotal;
 							$customerList[$quote->contactid]['quantity'] += 1;
 						} else {
+							$customerList[$quote->contactid]['cid'] = $quote->cid;
 							$customerList[$quote->contactid]['contactid'] = $quote->contactid;
 							$customerList[$quote->contactid]['name1'] = $quote->name1;
 							$customerList[$quote->contactid]['subtotal'] = $quote->subtotal;

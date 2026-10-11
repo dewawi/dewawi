@@ -10,6 +10,7 @@
 	'STATISTICS_CUSTOMER_TOP_TEN' => 'Top 10 Kunden',
 	'STATISTICS_QUOTE' => 'Angebote',
 	'STATISTICS_QUOTE_QUANTITY' => 'Anzahl',
+	'STATISTICS_QUOTE_VOLUME' => 'Angebotsvolumen',
 	'STATISTICS_INVOICE' => 'Rechnungen',
 	'STATISTICS_INVOICE_QUANTITY' => 'Anzahl Rechnungen',
 	'STATISTICS_INVOICE_SUBTOTAL' => 'Höhe Rechnungen',

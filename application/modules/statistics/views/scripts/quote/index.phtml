@@ -31,7 +31,7 @@ $this->headTitle($this->title);
 				<th width="2%"><input type="checkbox" class="checkall" name="checkall"></th>
 				<th class="id" width="5%"><?php echo $this->translate('STATISTICS_CUSTOMER_ID'); ?></th>
 				<th class="name" width="20%"><?php echo $this->translate('STATISTICS_CUSTOMER_NAME'); ?></th>
-				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_TURNOVER'); ?></th>
+				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_QUOTE_VOLUME'); ?></th>
 				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_QUOTE_QUANTITY'); ?></th>
 				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_CUSTOMER_SHARE'); ?></th>
 				<th width="8%"></th>
@@ -42,7 +42,11 @@ $this->headTitle($this->title);
 		<?php foreach($this->customerList as $customer) : ?>
 			<tr>
 				<td><?php echo $i; ?></td>
-				<td><?php echo $customer['contactid']; ?></td>
+				<td>
+					<a href="<?php echo $this->url(['module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$customer['cid']]); ?>">
+						<?php echo $customer['contactid']; ?>
+					</a>
+				</td>
 				<td><?php echo $customer['name1']; ?></td>
 				<td><?php echo $customer['subtotal']; ?></td>
 				<td><?php echo $customer['quantity']; ?></td>
