@@ -17,8 +17,19 @@ use pChart\pException;
 
 class Statistics_Model_Customer extends Statistics_Model_Abstract
 {
+    private array $yearlyCustomers = [];
+    private array $yearlyReport = [];
+
+    public function getYearlyReport(): array
+    {
+        return $this->yearlyReport;
+    }
+
 	public function createCharts($width, $height, $statisticsUncategorized, $statisticsNoData, $params, $options)
 	{
+		$this->yearlyCustomers = [];
+		$this->yearlyReport = [];
+
 		$period = $this->getPeriod($params);
 
 		$user = Zend_Registry::get('User');
@@ -40,6 +51,7 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 		$categories = $options['categories'] ?? [];
 
 		$customerList = array();
+		for($year = $startYear; $year <= $currentYear; $year++) $this->yearlyCustomers[$year] = [];
 		for($year = $startYear; $year <= $currentYear; $year++) {
 			for($month = $startMonth; $month <= 12; $month++) {
 				if(($year < $currentYear) || ($month <= $currentMonth)) {
@@ -53,6 +65,8 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 					foreach($invoices as $invoice) {
 						if(isset($invoice->name1) && $invoice->invoiceid) {
 							$invoiceSubtotal = $this->getInvoiceNetSubtotal($invoice);
+
+							$this->addYearlyDocument($year, $invoice, $invoiceSubtotal, 'invoice', $categories);
 
 							if(isset($customerList[$invoice->contactid])) {
 								$customerList[$invoice->contactid]['subtotal'] += $invoiceSubtotal;
@@ -76,6 +90,7 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 					//Calculate credit notes
 					foreach($creditnotes as $creditnote) {
 						if(isset($creditnote->name1) && $creditnote->creditnoteid) {
+							$this->addYearlyDocument($year, $creditnote, -(float)$creditnote->subtotal, 'creditnote', $categories);
 							if(isset($customerList[$creditnote->contactid])) {
 								$customerList[$creditnote->contactid]['subtotal'] -= $creditnote->subtotal;
 								$customerList[$creditnote->contactid]['creditnotes'][] = $creditnote->creditnoteid;
@@ -100,6 +115,8 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 			//Begin from first month at the end of the year
 			$startMonth = 1;
 		}
+
+		$this->prepareYearlyReport();
 
 		if(count($customerList)) {
 			list($customerList, $customerName, $customerTurnover) = $this->prepareRanking($customerList, 20);
@@ -134,5 +151,67 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 			$this->chartImages['customer'] = $chartCustomer->toBase64();
 		}
 		return $customerList;
+	}
+
+	private function addYearlyDocument(int $year, $document, float $amount, string $type, array $categories): void
+	{
+		$id = (int)$document->contactid;
+		$number = $document->{$type.'id'};
+
+		if(!isset($this->yearlyCustomers[$year][$id])) {
+		    $category = $categories[(int)$document->catid] ?? [];
+
+		    $this->yearlyCustomers[$year][$id] = [
+		        'cid' => $document->cid,
+		        'contactid' => $document->contactid,
+		        'name1' => $document->name1,
+		        'ctitle' => $category['title'] ?? '',
+		        'cfulltitle' => $category['fulltitle'] ?? $category['breadcrumb'] ?? $category['title'] ?? '',
+		        'subtotal' => 0.0,
+		        'invoices' => [],
+		        'creditnotes' => [],
+		    ];
+		}
+
+		$this->yearlyCustomers[$year][$id]['subtotal'] += $amount;
+		$this->yearlyCustomers[$year][$id][$type === 'invoice' ? 'invoices' : 'creditnotes'][] = $number;
+	}
+
+	private function prepareYearlyReport(): void
+	{
+		foreach($this->yearlyCustomers as $year => $customers) {
+		    $rows = array_values($customers);
+		    usort($rows, static fn($a, $b) => $b['subtotal'] <=> $a['subtotal']);
+
+		    $total = array_sum(array_column($rows, 'subtotal'));
+
+		    $summary = [
+		        'year' => $year,
+		        'customers' => count($rows),
+		        'invoices' => array_sum(array_map(static fn($row) => count($row['invoices']), $rows)),
+		        'creditnotes' => array_sum(array_map(static fn($row) => count($row['creditnotes']), $rows)),
+		        'subtotal' => $total,
+		    ];
+
+		    foreach([1, 5, 10, 20, 30] as $count) {
+		        $topTotal = array_sum(array_column(array_slice($rows, 0, $count), 'subtotal'));
+		        $summary['top'.$count] = $total > 0 ? $topTotal / $total * 100 : 0;
+		    }
+
+		    $formatted = [];
+
+		    if($rows) {
+		        [$formatted] = $this->prepareRanking($rows, 20);
+
+		        foreach($formatted as $i => &$row) $row['rank'] = $i + 1;
+		        unset($row);
+		    }
+
+		    $this->yearlyReport[$year] = [
+		        'summary' => $summary,
+		        'customers' => $formatted,
+		        'raw' => $rows,
+		    ];
+		}
 	}
 }

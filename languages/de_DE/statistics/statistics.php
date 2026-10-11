@@ -26,5 +26,9 @@
 	'STATISTICS_CUSTOMER_ID' => 'Kundennr.',
 	'STATISTICS_CUSTOMER_NAME' => 'Name',
 	'STATISTICS_CUSTOMER_CATEGORY' => 'Kategorie',
+	'STATISTICS_CUSTOMER_YEARLY' => 'Kundenentwicklung nach Jahren',
+	'STATISTICS_CUSTOMER_YEARLY_NOTE' => 'Die Jahreswerte berücksichtigen den gewählten Zeitraum. Kundenkategorien entsprechen dem aktuellen Kontaktstamm.',
+	'STATISTICS_CUSTOMER_TOP_THIRTY' => 'Top 30 Kunden',
+	'STATISTICS_CUSTOMERS_WITH_DOCUMENTS' => 'Kunden mit Belegen',
 	'STATISTICS_NO_DATA' => 'Keine Daten vorhanden'
 );

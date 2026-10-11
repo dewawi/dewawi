@@ -50,10 +50,56 @@ class Statistics_CustomerController extends DEEC_Controller_Action
 			'subtotal' => $customerList[0]['total'],
 		]);
 
+		$yearlySummaries = [];
+		$yearlyTables = [];
+
+		foreach($chart->getYearlyReport() as $year => $report) {
+			$yearlySummaries[] = $report['summary'];
+
+			$yearlyTables[$year] = (new Statistics_Model_List_Customers())
+				->setId('statistics-customer-year-'.$year)
+				->setView($this->view)
+				->setModule('statistics')
+				->setController('customer')
+				->setItems(array_slice($report['customers'], 0, 30))
+				->setSelectable(false);
+		}
+
+		$percentage = static fn($item, $column) => number_format((float)$item[$column['name']], 2, ',', '.').'%';
+
+		$columns = [
+			['name' => 'year', 'label' => 'STATISTICS_TURNOVER_YEAR'],
+			['name' => 'customers', 'label' => 'STATISTICS_CUSTOMERS_WITH_DOCUMENTS'],
+			['name' => 'invoices', 'label' => 'STATISTICS_INVOICE_QUANTITY'],
+			['name' => 'creditnotes', 'label' => 'STATISTICS_CREDIT_NOTE_QUANTITY'],
+			['name' => 'subtotal', 'label' => 'STATISTICS_NET_TURNOVER', 'type' => 'currency'],
+		];
+
+		foreach([1, 5, 10, 20, 30] as $count) {
+			$columns[] = [
+				'name' => 'top'.$count,
+				'label' => 'Top '.$count.' (%)',
+				'type' => 'callback',
+				'callback' => $percentage,
+			];
+		}
+
+		$yearlySummaryTable = new DEEC_List([
+			'id' => 'statistics-customer-yearly-summary',
+			'view' => $this->view,
+			'module' => 'statistics',
+			'controller' => 'customer',
+			'items' => $yearlySummaries,
+			'selectable' => false,
+			'columns' => $columns,
+		]);
+
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->customerList = $customerList;
 		$this->view->customerListTable = $list;
+		$this->view->yearlySummaryTable = $yearlySummaryTable;
+		$this->view->yearlyTables = $yearlyTables;
 		$this->view->chartImages = $chart->getChartImages();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
