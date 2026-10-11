@@ -47,7 +47,7 @@ $this->headTitle($this->title);
 						<?php echo $customer['contactid']; ?>
 					</a>
 				</td>
-				<td><?php echo $customer['name1']; ?></td>
+				<td><?php echo $this->escape($customer['name1']); ?></td>
 				<td><?php echo $customer['subtotal']; ?></td>
 				<td><?php echo $customer['quantity']; ?></td>
 				<td><?php echo $customer['share']; ?>%</td>

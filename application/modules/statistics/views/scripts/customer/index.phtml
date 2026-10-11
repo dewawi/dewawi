@@ -48,8 +48,8 @@ $this->headTitle($this->title);
 						<?php echo $customer['contactid']; ?>
 					</a>
 				</td>
-				<td><?php echo $customer['name1']; ?></td>
-				<td><?php if(isset($customer['ctitle'])) echo $customer['cfulltitle']; ?></td>
+				<td><?php echo $this->escape($customer['name1']); ?></td>
+				<td><?php if(isset($customer['ctitle'])) echo $this->escape($customer['cfulltitle']); ?></td>
 				<td><?php echo $customer['subtotal']; ?></td>
 				<td>
 					<?php if(isset($customer['invoices'])) : ?>
