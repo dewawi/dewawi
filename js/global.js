@@ -842,23 +842,19 @@ $(document).ready(function(){
 	var to = new Date($('#to').val());
 
 	if($('#fromDatePicker').length) {
-		var dateFromPickerOptions = {
-					language: language,
+		$('.dw-filter-panel [name="from"]').datepicker({
+			language: language,
 			inline: true,
-						container: $('#fromDatePicker')
-		}
-		//$.extend(dateFromPickerOptions, datePickerOptions)
-		var datesFrom = $('#from').datepicker(dateFromPickerOptions);
+			container: $('#fromDatePicker')
+		});
 	}
 
 	if($('#toDatePicker').length) {
-		var dateToPickerOptions = {
-					language: language,
+		$('.dw-filter-panel [name="to"]').datepicker({
+			language: language,
 			inline: true,
-						container: $('#toDatePicker')
-		};
-		//$.extend(dateToPickerOptions, datePickerOptions)
-		var datesTo = $('#to').datepicker(dateToPickerOptions);
+			container: $('#toDatePicker')
+		});
 	}
 
 	//Table alt

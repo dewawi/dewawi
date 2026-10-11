@@ -5,27 +5,6 @@ class Statistics_Form_Toolbar extends DEEC_Form
 	public function __construct()
 	{
 		$this->addElement([
-			'name' => 'keyword',
-			'type' => 'text',
-			'default' => '',
-			'wrap' => false,
-			'format' => ['type' => 'string'],
-			'attribs' => ['class' => 'keyword'],
-			'toolbar' => 'actions',
-		]);
-
-		$this->addElement([
-			'name' => 'clear',
-			'type' => 'button',
-			'wrap' => false,
-			'attribs' => [
-				'class' => 'clear nolabel',
-				'rel' => 'keyword',
-			],
-			'toolbar' => 'actions',
-		]);
-
-		$this->addElement([
 			'name' => 'reset',
 			'type' => 'button',
 			'label' => 'TOOLBAR_RESET',

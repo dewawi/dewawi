@@ -20,10 +20,6 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 	public function createCharts($width, $height, $statisticsUncategorized, $statisticsNoData, $params, $options)
 	{
 		$period = $this->getPeriod($params);
-		$currentYear = (int)substr($period['to'], 0, 4);
-		$currentMonth = (int)substr($period['to'], 5, 2);
-		$startYear = (int)substr($period['from'], 0, 4);
-		$startMonth = (int)substr($period['from'], 5, 2);
 
 		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');
