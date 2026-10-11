@@ -1,0 +1,53 @@
+<?php
+$this->title = $this->translate('STATISTICS_REPORTING');
+$this->headTitle($this->title);
+
+$sections = [
+    'yearly' => 'STATISTICS_TURNOVER_YEARS',
+    'comparisons' => 'STATISTICS_TURNOVER_YEARLY_COMPARISON',
+    'monthly' => 'STATISTICS_TURNOVER_MONTHS',
+    'categories' => 'STATISTICS_TURNOVER_CUSTOMER_GROUPS',
+    'yearlyCategories' => 'STATISTICS_TURNOVER_CUSTOMER_GROUPS_YEARLY',
+    'customerSummary' => 'STATISTICS_CUSTOMER_YEARLY',
+    'customers' => 'STATISTICS_CUSTOMER_TOP_THIRTY',
+];
+?>
+
+<form class="dw-form" method="get" action="<?php echo $this->url(['module' => 'statistics', 'controller' => 'reporting', 'action' => 'index']); ?>">
+    <div class="dw-form__row">
+        <div class="dw-form__col">
+            <label class="dw-label" for="report-from"><?php echo $this->translate('STATISTICS_REPORTING_FROM'); ?></label>
+            <input class="dw-input" id="report-from" type="date" name="from" value="<?php echo $this->escape($this->from); ?>" required>
+        </div>
+        <div class="dw-form__col">
+            <label class="dw-label" for="report-to"><?php echo $this->translate('STATISTICS_REPORTING_TO'); ?></label>
+            <input class="dw-input" id="report-to" type="date" name="to" value="<?php echo $this->escape($this->to); ?>" required>
+        </div>
+    </div>
+
+    <div class="dw-form__actions">
+        <button type="submit" class="dw-button dw-button--primary"><?php echo $this->translate('STATISTICS_REPORTING_ANALYZE'); ?></button>
+    </div>
+</form>
+
+<p><?php echo $this->translate('STATISTICS_REPORTING_NOTE'); ?></p>
+
+<?php foreach($sections as $key => $label) : ?>
+    <h3><?php echo $this->translate($label); ?></h3>
+
+    <?php if($this->reportLists[$key]->hasItems()) : ?>
+        <?php echo $this->reportLists[$key]->render(); ?>
+    <?php else : ?>
+        <p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
+    <?php endif; ?>
+<?php endforeach; ?>
+
+<?php foreach($this->yearlyCustomerLists as $year => $list) : ?>
+    <h3><?php echo $this->translate('STATISTICS_CUSTOMER_TOP_THIRTY').' '.$this->escape((string)$year); ?></h3>
+
+    <?php if($list->hasItems()) : ?>
+        <?php echo $list->render(); ?>
+    <?php else : ?>
+        <p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
+    <?php endif; ?>
+<?php endforeach; ?>

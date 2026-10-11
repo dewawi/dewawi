@@ -16,6 +16,8 @@ $permissionId = (int)($this->permission['id'] ?? 0);
 			<?php
 			$controllers = $this->permission[$module] ?? [];
 
+			if($module === 'statistics' && !array_key_exists('reporting', $controllers)) $controllers['reporting'] = [];
+
 			if (!is_array($controllers) || !$controllers) {
 				continue;
 			}

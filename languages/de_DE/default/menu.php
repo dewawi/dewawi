@@ -27,5 +27,6 @@
 	'MENU_STATISTICS_TURNOVER' => 'Umsatz',
 	'MENU_STATISTICS_CUSTOMER' => 'Kunden',
 	'MENU_STATISTICS_QUOTE' => 'Angebote',
+	'MENU_STATISTICS_REPORTING' => 'Reporting',
 	'MENU_TASKS' => 'Aufgaben',
 );

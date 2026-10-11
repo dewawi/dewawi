@@ -5,7 +5,7 @@
 	'STATISTICS_TURNOVER_MONTHS' => 'Monatliche Umsätze',
 	'STATISTICS_TURNOVER_YEARS' => 'Jährliche Umsätze',
 	'STATISTICS_NET_TURNOVER' => 'Nettoumsatz nach Gutschriften',
-	'STATISTICS_TURNOVER_CUSTOMER_GROUPS_YEARLY' => 'Kundengruppen nach Jahren',,
+	'STATISTICS_TURNOVER_CUSTOMER_GROUPS_YEARLY' => 'Kundengruppen nach Jahren',
 	'STATISTICS_CUSTOMER' => 'Kunden',
 	'STATISTICS_CUSTOMER_LIST' => 'Kundenliste',
 	'STATISTICS_CUSTOMER_TOP_TEN' => 'Top 10 Kunden',
@@ -39,6 +39,11 @@
 	'STATISTICS_CURRENT_TURNOVER' => 'Aktuelles Jahr netto',
 	'STATISTICS_TURNOVER_DIFFERENCE' => 'Differenz netto',
 	'STATISTICS_TURNOVER_GROWTH' => 'Veränderung (%)',
-	'STATISTICS_NO_COMPARABLE_YEARS' => 'Im gewählten Zeitraum sind keine vergleichbaren Jahre enthalten.'
-	'STATISTICS_NO_DATA' => 'Keine Daten vorhanden'
+	'STATISTICS_NO_COMPARABLE_YEARS' => 'Im gewählten Zeitraum sind keine vergleichbaren Jahre enthalten.',
+	'STATISTICS_NO_DATA' => 'Keine Daten vorhanden',
+	'STATISTICS_REPORTING' => 'Unternehmensreporting',
+	'STATISTICS_REPORTING_FROM' => 'Von',
+	'STATISTICS_REPORTING_TO' => 'Bis',
+	'STATISTICS_REPORTING_ANALYZE' => 'Analysieren',
+	'STATISTICS_REPORTING_NOTE' => 'Alle Auswertungen berücksichtigen den gewählten Zeitraum. Es werden abgeschlossene, nicht stornierte Rechnungen und Gutschriften verwendet. Kundenkategorien entsprechen dem aktuellen Kontaktstamm. Einzelne Jahre können unvollständig sein.',
 );

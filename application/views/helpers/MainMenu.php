@@ -231,6 +231,12 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 						'controller' => 'quote',
 						'action' => 'index',
 					],
+					[
+						'label' => 'MENU_STATISTICS_REPORTING',
+						'module' => 'statistics',
+						'controller' => 'reporting',
+						'action' => 'index',
+					],
 				],
 			],
 		];
