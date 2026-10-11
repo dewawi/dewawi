@@ -115,28 +115,5 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'wrap' => false,
 			'attribs' => ['class' => 'export'],
 		]);
-
-		$this->addElement([
-			'name' => 'width',
-			'type' => 'text',
-			'default' => '1000',
-			'wrap' => false,
-			'format' => ['type' => 'int'],
-		]);
-
-		$this->addElement([
-			'name' => 'height',
-			'type' => 'text',
-			'default' => '400',
-			'wrap' => false,
-			'format' => ['type' => 'int'],
-		]);
-
-		$this->addElement([
-			'name' => 'lenght',
-			'type' => 'hidden',
-			'default' => '12',
-			'toolbar' => 'search',
-		]);
 	}
 }
