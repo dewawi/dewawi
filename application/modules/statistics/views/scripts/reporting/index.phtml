@@ -30,6 +30,12 @@ $sections = [
     </div>
 </form>
 
+<div class="dw-form__actions">
+    <a class="dw-button dw-button--success" href="<?php echo $this->url(['module' => 'statistics', 'controller' => 'reporting', 'action' => 'export']).'?from='.rawurlencode($this->from).'&to='.rawurlencode($this->to); ?>">
+        <?php echo $this->translate('STATISTICS_REPORTING_EXPORT_XLSX'); ?>
+    </a>
+</div>
+
 <p><?php echo $this->translate('STATISTICS_REPORTING_NOTE'); ?></p>
 
 <?php foreach($sections as $key => $label) : ?>

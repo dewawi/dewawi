@@ -39,11 +39,13 @@ class Statistics_Model_Reporting
         $customerYears = $customer->getYearlyReport();
         $allCustomers = [];
         $topByYear = [];
+		$allCustomersByYear = [];
         $customerSummary = [];
 
         foreach($customerYears as $year => $report) {
             $customerSummary[] = $report['summary'];
             $topByYear[$year] = $this->rankCustomers($report['raw'], 30);
+			$allCustomersByYear[$year] = $this->rankCustomers($report['raw'], count($report['raw']));
 
             foreach($report['raw'] as $row) {
                 $id = (int)$row['contactid'];
@@ -67,6 +69,8 @@ class Statistics_Model_Reporting
             'customerSummary' => $customerSummary,
             'customers' => $this->rankCustomers(array_values($allCustomers), 30),
             'customersByYear' => $topByYear,
+			'allCustomers' => $this->rankCustomers(array_values($allCustomers), count($allCustomers)),
+			'allCustomersByYear' => $allCustomersByYear,
         ];
     }
 
@@ -84,4 +88,131 @@ class Statistics_Model_Reporting
 
         return $rows;
     }
+
+	public function createWorksheets(array $data, string $from, string $to): array
+	{
+		$net = array_sum(array_column($data['yearly'], 'netTurnover'));
+		$customerNet = array_sum(array_column($data['allCustomers'], 'subtotal'));
+
+		$sheets = [[
+		    'name' => 'Übersicht',
+		    'headers' => ['Kennzahl', 'Wert', 'Einheit'],
+		    'rows' => [
+		        ['Zeitraum', $from.' bis '.$to, ''],
+		        ['Erstellt am', date('Y-m-d H:i:s'), ''],
+		        ['Nettoumsatz', $net, 'EUR'],
+		        ['Rechnungen', array_sum(array_column($data['yearly'], 'invoicesQuantity')), 'Anzahl'],
+		        ['Gutschriften', array_sum(array_column($data['yearly'], 'creditnotesQuantity')), 'Anzahl'],
+		        ['Kunden mit Belegen', count($data['allCustomers']), 'Anzahl'],
+		        ['Differenz Umsatz/Kunden', round($net - $customerNet, 2), 'EUR'],
+		        ['Belege', 'Abgeschlossen (Status 105), nicht gelöscht, nicht storniert', ''],
+		        ['Kategorien', 'Aktuelle Kategorien der Kontakte, nicht historisiert', ''],
+		        ['Jahresvergleich', 'Gleiche Kalendertage innerhalb des gewählten Zeitraums', ''],
+		        ['Teiljahre', 'Erstes und letztes Jahr können unvollständig sein', ''],
+		        ['Datenprüfung', 'Vorzeichen historischer Gutschriften vor externer Nutzung prüfen', ''],
+		    ],
+		    'widths' => [28, 76, 16],
+		]];
+
+		$sheets[] = $this->worksheet('Jahresumsatz', [
+		    ['period', 'Jahr', 'text'],
+		    ['invoicesQuantity', 'Rechnungen', 'integer'],
+		    ['invoicesSubtotal', 'Rechnungen netto', 'money'],
+		    ['creditnotesQuantity', 'Gutschriften', 'integer'],
+		    ['creditnotesSubtotal', 'Gutschriften netto', 'money'],
+		    ['netTurnover', 'Nettoumsatz', 'money'],
+		], $data['yearly']);
+
+		$sheets[] = $this->worksheet('Monatsumsatz', [
+		    ['period', 'Monat', 'text'],
+		    ['invoicesQuantity', 'Rechnungen', 'integer'],
+		    ['invoicesSubtotal', 'Rechnungen netto', 'money'],
+		    ['creditnotesQuantity', 'Gutschriften', 'integer'],
+		    ['creditnotesSubtotal', 'Gutschriften netto', 'money'],
+		    ['netTurnover', 'Nettoumsatz', 'money'],
+		], $data['monthly']);
+
+		$sheets[] = $this->worksheet('Vorjahresvergleich', [
+		    ['year', 'Jahr', 'integer'],
+		    ['period', 'Vergleichszeitraum', 'text'],
+		    ['previousTurnover', 'Vorjahr netto', 'money'],
+		    ['currentTurnover', 'Aktuelles Jahr netto', 'money'],
+		    ['difference', 'Differenz netto', 'money'],
+		    ['growth', 'Veränderung (%)', 'percent'],
+		], $data['comparisons']);
+
+		$sheets[] = $this->worksheet('Kundengruppen', [
+		    ['category', 'Kundengruppe', 'text'],
+		    ['subtotal', 'Nettoumsatz', 'money'],
+		    ['share', 'Anteil (%)', 'percent'],
+		], $data['categories']);
+
+		$sheets[] = $this->worksheet('Kundengruppen Jahre', [
+		    ['year', 'Jahr', 'integer'],
+		    ['category', 'Kundengruppe', 'text'],
+		    ['customersQuantity', 'Kunden', 'integer'],
+		    ['invoicesQuantity', 'Rechnungen', 'integer'],
+		    ['creditnotesQuantity', 'Gutschriften', 'integer'],
+		    ['subtotal', 'Nettoumsatz', 'money'],
+		    ['share', 'Anteil (%)', 'percent'],
+		], $data['yearlyCategories']);
+
+		$customerSummaryColumns = [
+		    ['year', 'Jahr', 'integer'],
+		    ['customers', 'Kunden', 'integer'],
+		    ['invoices', 'Rechnungen', 'integer'],
+		    ['creditnotes', 'Gutschriften', 'integer'],
+		    ['subtotal', 'Nettoumsatz', 'money'],
+		];
+
+		foreach([1, 5, 10, 20, 30] as $count) $customerSummaryColumns[] = ['top'.$count, 'Top '.$count.' (%)', 'percent'];
+
+		$sheets[] = $this->worksheet('Kunden Kennzahlen', $customerSummaryColumns, $data['customerSummary']);
+
+		$customerColumns = [
+		    ['rank', 'Rang', 'integer'],
+		    ['contactid', 'Kundennummer', 'text'],
+		    ['name1', 'Kunde', 'text'],
+		    ['cfulltitle', 'Kundengruppe', 'text'],
+		    ['invoicesCount', 'Rechnungen', 'integer'],
+		    ['creditnotesCount', 'Gutschriften', 'integer'],
+		    ['subtotal', 'Nettoumsatz', 'money'],
+		    ['share', 'Anteil (%)', 'percent'],
+		];
+
+		$sheets[] = $this->worksheet('Kunden Gesamt', $customerColumns, $data['allCustomers']);
+
+		foreach($data['allCustomersByYear'] as $year => $customers) {
+		    $sheets[] = $this->worksheet('Kunden '.$year, $customerColumns, $customers);
+		}
+
+		return $sheets;
+	}
+
+	private function worksheet(string $name, array $columns, array $items): array
+	{
+		$rows = [];
+
+		foreach($items as $item) {
+		    $row = [];
+
+		    foreach($columns as [$field, , $format]) {
+		        $value = $field === 'invoicesCount' ? count($item['invoices'] ?? []) : ($field === 'creditnotesCount' ? count($item['creditnotes'] ?? []) : ($item[$field] ?? null));
+
+		        if($format === 'percent' && $value !== null) $value = (float)$value / 100;
+		        if($field === 'contactid' && $value !== null) $value = (string)$value;
+
+		        $row[] = $value;
+		    }
+
+		    $rows[] = $row;
+		}
+
+		return [
+		    'name' => $name,
+		    'headers' => array_column($columns, 1),
+		    'rows' => $rows,
+		    'formats' => array_column($columns, 2),
+		];
+	}
 }

@@ -46,4 +46,5 @@
 	'STATISTICS_REPORTING_TO' => 'Bis',
 	'STATISTICS_REPORTING_ANALYZE' => 'Analysieren',
 	'STATISTICS_REPORTING_NOTE' => 'Alle Auswertungen berücksichtigen den gewählten Zeitraum. Es werden abgeschlossene, nicht stornierte Rechnungen und Gutschriften verwendet. Kundenkategorien entsprechen dem aktuellen Kontaktstamm. Einzelne Jahre können unvollständig sein.',
+	'STATISTICS_REPORTING_EXPORT_XLSX' => 'Excel exportieren',
 );

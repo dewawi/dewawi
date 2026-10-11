@@ -7,8 +7,7 @@ class Statistics_ReportingController extends DEEC_Controller_Action
     {
         $this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
 
-        $from = (string)$this->_getParam('from', date('Y-01-01'));
-        $to = (string)$this->_getParam('to', date('Y-m-d'));
+        [$from, $to] = $this->getReportingPeriod();
 
         foreach([$from, $to] as $value) {
             $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -88,6 +87,30 @@ class Statistics_ReportingController extends DEEC_Controller_Action
         $this->view->yearlyCustomerLists = $yearlyCustomerLists;
     }
 
+	public function exportAction()
+	{
+		$this->disableView();
+
+		[$from, $to] = $this->getReportingPeriod();
+
+		$model = new Statistics_Model_Reporting();
+		$data = $model->build($from, $to, $this->view->translate('STATISTICS_UNCATEGORIZED'), $this->view->translate('STATISTICS_NO_DATA'));
+		$sheets = $model->createWorksheets($data, $from, $to);
+
+		require_once(BASE_PATH.'/library/DEEC/Export/Xlsx.php');
+
+		$xlsx = (new DEEC_Export_Xlsx())->create($sheets, $from.' bis '.$to);
+
+		$filename = 'dewawi-reporting-'.str_replace('-', '', $from).'-'.str_replace('-', '', $to).'.xlsx';
+
+		$response = $this->getResponse();
+		$response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', true);
+		$response->setHeader('Content-Disposition', 'attachment; filename="'.$filename.'"', true);
+		$response->setHeader('Cache-Control', 'private, no-store', true);
+		$response->setHeader('X-Content-Type-Options', 'nosniff', true);
+		$response->setBody($xlsx);
+	}
+
     private function makeList(string $id, array $rows, array $columns): DEEC_List
     {
         return new DEEC_List([
@@ -100,4 +123,19 @@ class Statistics_ReportingController extends DEEC_Controller_Action
             'selectable' => false,
         ]);
     }
+
+	private function getReportingPeriod(): array
+	{
+		$from = (string)$this->_getParam('from', date('Y-01-01'));
+		$to = (string)$this->_getParam('to', date('Y-m-d'));
+
+		foreach([$from, $to] as $value) {
+		    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+		    if(!$date || $date->format('Y-m-d') !== $value) throw new InvalidArgumentException('Invalid reporting date.');
+		}
+
+		if($from > $to) throw new InvalidArgumentException('Reporting start date must not exceed end date.');
+
+		return [$from, $to];
+	}
 }
