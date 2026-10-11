@@ -37,7 +37,7 @@ abstract class Statistics_Model_Abstract
 				$values[] = round($row['subtotal']);
 			}
 
-			$row['share'] = $row['subtotal'] > 0 && $total > 0 ? round($row['subtotal'] / $total * 100, 2) : 0;
+			$row['share'] = $total > 0 ? round($row['subtotal'] / $total * 100, 2) : 0;
 			$row['subtotal'] = $currency->toCurrency($row['subtotal']);
 			$row['total'] = $currency->toCurrency($total);
 		}
