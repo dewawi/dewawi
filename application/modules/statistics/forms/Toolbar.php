@@ -11,6 +11,7 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'wrap' => false,
 			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'keyword'],
+			'toolbar' => 'actions',
 		]);
 
 		$this->addElement([
@@ -21,6 +22,7 @@ class Statistics_Form_Toolbar extends DEEC_Form
 				'class' => 'clear nolabel',
 				'rel' => 'keyword',
 			],
+			'toolbar' => 'actions',
 		]);
 
 		$this->addElement([
@@ -29,6 +31,7 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'label' => 'TOOLBAR_RESET',
 			'wrap' => false,
 			'attribs' => ['class' => 'reset'],
+			'toolbar' => 'actions',
 		]);
 
 		$this->addElement([
@@ -41,6 +44,15 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'source' => 'country',
 			'toolbar' => 'filters',
 			'default' => '0',
+		]);
+
+		$this->addElement([
+			'name' => 'filter',
+			'type' => 'button',
+			'label' => 'TOOLBAR_FILTER',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'filter'],
 		]);
 
 		$this->addElement([
@@ -93,6 +105,15 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'source' => 'category:contact',
 			'toolbar' => 'filters',
 			'default' => 'all',
+		]);
+
+		$this->addElement([
+			'name' => 'export',
+			'type' => 'button',
+			'label' => 'TOOLBAR_EXPORT',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => ['class' => 'export'],
 		]);
 
 		$this->addElement([
