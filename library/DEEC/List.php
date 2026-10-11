@@ -413,6 +413,76 @@ class DEEC_List
 		return $this->emptyText;
 	}
 
+	public function writeCsv($stream): void
+	{
+		if(!is_resource($stream)) throw new InvalidArgumentException('CSV export requires a writable stream.');
+
+		$columns = array_values(array_filter($this->getColumns(), static function(array $column): bool {
+			$type = $column['type'] ?? 'text';
+			return ($column['export'] ?? true) && !in_array($type, ['actions', 'pin'], true) && ($type !== 'callback' || is_callable($column['export_callback'] ?? null));
+		}));
+
+		fwrite($stream, "\xEF\xBB\xBF");
+		fputcsv($stream, array_map(fn($column) => $this->getColumnLabel($column), $columns), ';', '"', '');
+
+		foreach($this->getItems() as $item) {
+			$row = [];
+
+			foreach($columns as $column) {
+				$row[] = $this->escapeCsvValue($this->getExportValue($item, $column));
+			}
+
+			fputcsv($stream, $row, ';', '"', '');
+		}
+	}
+
+	protected function getExportValue($item, array $column)
+	{
+		if(is_callable($column['export_callback'] ?? null)) {
+			return call_user_func($column['export_callback'], $item, $column, $this);
+		}
+
+		$type = $column['type'] ?? 'text';
+
+		if($type === 'state_badge') {
+			$value = (string)$this->getDisplayValue($item, $column);
+			$options = (array)$this->getOption($column['option_key'] ?? '', []);
+			return isset($options[$value]) ? $this->translate($options[$value]) : $value;
+		}
+
+		if(in_array($type, ['contact', 'address', 'delivery', 'payment'], true)) {
+			$fields = $column['fields'] ?? [];
+
+			if($type === 'contact') $fields = ['contactid', 'billingname1', 'billingname2'];
+			if($type === 'delivery') $fields = [$column['deliverystatus_field'] ?? 'deliverystatus', $column['deliverydate_field'] ?? 'deliverydate'];
+			if($type === 'payment') $fields = [$column['paymentstatus_field'] ?? 'paymentstatus', $column['total_field'] ?? 'total'];
+
+			$values = [];
+
+			foreach($fields as $field) {
+				$value = $this->getFieldValue($item, $field);
+				if($value !== null && $value !== '') $values[] = $value;
+			}
+
+			return implode(', ', $values);
+		}
+
+		return $this->getDisplayValue($item, $column);
+	}
+
+	protected function escapeCsvValue($value): string
+	{
+		if(is_array($value)) $value = implode(', ', array_map('strval', $value));
+
+		$value = (string)($value ?? '');
+
+		if(preg_match('/^[\x00-\x20]*[=+\-@]/', $value) && !is_numeric(trim($value))) {
+			return "'".$value;
+		}
+
+		return $value;
+	}
+
 	public function render()
 	{
 		if (!$this->view) {

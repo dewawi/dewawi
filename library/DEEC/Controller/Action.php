@@ -7,6 +7,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	protected $_flashMessenger = null;
 	protected array $_saveCalculation = [];
 	protected bool $_reloadPositions = false;
+	protected ?DEEC_List $exportList = null;
 
 	public function init()
 	{
@@ -54,6 +55,36 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		}
 
 		$this->buildIndexView();
+	}
+
+	public function exportAction()
+	{
+		$this->disableView();
+		$this->buildIndexView();
+
+		if(!$this->exportList) throw new RuntimeException('No list available for CSV export.');
+
+		$stream = fopen('php://temp', 'w+');
+		if($stream === false) throw new RuntimeException('Unable to create CSV stream.');
+
+		try {
+			$this->exportList->writeCsv($stream);
+			rewind($stream);
+			$csv = stream_get_contents($stream);
+		} finally {
+			fclose($stream);
+		}
+
+		if($csv === false) throw new RuntimeException('Unable to read CSV stream.');
+
+		$filename = $this->getRequest()->getModuleName().'-'.$this->getRequest()->getControllerName().'-'.date('Ymd-His').'.csv';
+
+		$response = $this->getResponse();
+		$response->setHeader('Content-Type', 'text/csv; charset=UTF-8', true);
+		$response->setHeader('Content-Disposition', 'attachment; filename="'.$filename.'"', true);
+		$response->setHeader('Cache-Control', 'private, no-store', true);
+		$response->setHeader('X-Content-Type-Options', 'nosniff', true);
+		$response->setBody($csv);
 	}
 
 	public function selectAction()
@@ -963,6 +994,20 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
+		$params['_export'] = $this->getRequest()->getActionName() === 'export';
+
+		if(isset($config['entity']) && $this->getRequest()->getActionName() === 'index') {
+			$toolbar->addElement([
+				'name' => 'export',
+				'type' => 'button',
+				'label' => 'TOOLBAR_EXPORT',
+				'toolbar' => 'actions',
+				'wrap' => false,
+				'attribs' => ['class' => 'export'],
+			]);
+		}
+
+		if($params['_export'] && !isset($config['entity'])) throw new RuntimeException('CSV export requires an entity-backed list.');
 
 		if (isset($config['entity'])) {
 			$listQuery = new DEEC_List_Query();
@@ -980,7 +1025,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			$items = $result;
 		}
 
-		$this->assignPagination($params, $records, $items, $toolbar);
+		if(!$params['_export']) $this->assignPagination($params, $records, $items, $toolbar);
 
 		$contextAction = $this->_getParam('context_action', $this->getRequest()->getActionName());
 
@@ -1008,6 +1053,8 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$this->view->toolbarInline = $toolbarInline;
 
 		$this->assignMessages();
+
+		if($params['_export']) $this->exportList = $list;
 
 		return $list;
 	}

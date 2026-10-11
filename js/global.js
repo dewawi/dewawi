@@ -2709,6 +2709,7 @@ function markFieldSaved($field) {
 			'multi-add': { selection: 'none' },
 			filter: { selection: 'none' },
 			reset: { selection: 'none' },
+			export: { selection: 'none' },
 			clear: { selection: 'none' },
 			'clear-filter': { selection: 'none' },
 
@@ -3056,6 +3057,30 @@ function markFieldSaved($field) {
 			reset: function () {
 				this.resetAll();
 				search();
+			},
+
+			export: function () {
+				var data = collectToolbarData();
+				var $form = $('<form>', {
+					method: 'post',
+					action: Dewawi.url(module, controller, 'export')
+				}).hide();
+
+				$.each(data, function(name, value) {
+					var values = Array.isArray(value) ? value : [value];
+
+					values.forEach(function(item) {
+						$('<input>', {
+							type: 'hidden',
+							name: Array.isArray(value) ? name + '[]' : name,
+							value: item
+						}).appendTo($form);
+					});
+				});
+
+				$form.appendTo('body');
+				$form[0].submit();
+				$form.remove();
 			},
 
 			clear: function (selection, $button) {
