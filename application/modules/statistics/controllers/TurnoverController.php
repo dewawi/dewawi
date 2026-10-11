@@ -73,23 +73,7 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 		}
 		unset($data);
 
-		// Formatting with currency for monthly and yearly totals
 		$currency = Zend_Registry::get('Zend_Currency');
-		foreach ($monthlyTurnover as $id => $value) {
-			$monthlyTurnover[$id]['invoicesSubtotal'] = $currency->toCurrency($value['invoicesSubtotal']);
-			$monthlyTurnover[$id]['creditnotesSubtotal'] = $currency->toCurrency($value['creditnotesSubtotal']);
-			$monthlyTurnover[$id]['invoicesAverage'] = $currency->toCurrency($value['invoicesAverage']);
-			$monthlyTurnover[$id]['creditnotesAverage'] = $currency->toCurrency($value['creditnotesAverage']);
-			$monthlyTurnover[$id]['netTurnover'] = $currency->toCurrency($value['netTurnover']);
-		}
-
-		foreach ($yearlyTurnover as $id => $value) {
-			$yearlyTurnover[$id]['invoicesSubtotal'] = $currency->toCurrency($value['invoicesSubtotal']);
-			$yearlyTurnover[$id]['creditnotesSubtotal'] = $currency->toCurrency($value['creditnotesSubtotal']);
-			$yearlyTurnover[$id]['invoicesAverage'] = $currency->toCurrency($value['invoicesAverage']);
-			$yearlyTurnover[$id]['creditnotesAverage'] = $currency->toCurrency($value['creditnotesAverage']);
-			$yearlyTurnover[$id]['netTurnover'] = $currency->toCurrency($value['netTurnover']);
-		}
 
 		// Format total values with currency
 		if($turnoverTotal) $turnoverTotal['netTurnover'] = $currency->toCurrency($turnoverTotal['invoicesTotal'] - $turnoverTotal['creditnotesTotal']);
