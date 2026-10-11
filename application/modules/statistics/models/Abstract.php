@@ -32,7 +32,7 @@ abstract class Statistics_Model_Abstract
 		$values = [];
 
 		foreach($rows as $i => &$row) {
-			if($i < 15) {
+			if($i < 10) {
 				$names[] = substr($row['name1'], 0, $nameLength);
 				$values[] = round($row['subtotal']);
 			}
