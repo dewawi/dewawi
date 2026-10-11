@@ -18,10 +18,16 @@ use pChart\pException;
 class Statistics_Model_Turnover extends Statistics_Model_Abstract
 {
 	private array $yearlyCategoryRows = [];
+	private array $yearlyComparisons = [];
 
 	public function getYearlyCategoryRows(): array
 	{
 		return $this->yearlyCategoryRows;
+	}
+
+	public function getYearlyComparisons(): array
+	{
+		return $this->yearlyComparisons;
 	}
 
 	public function createCharts($width, $height, $statisticsUncategorized, $statisticsNoData, $params, $options)
@@ -38,6 +44,8 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 		$creditnotesByMonth = $this->fetchData($creditnotesDb, 'creditnote', $client, $params, $options, $period);
 
 		$period = $this->resolvePeriod($period, $invoicesByMonth, $creditnotesByMonth);
+
+		$this->yearlyComparisons = $this->createYearlyComparisons($invoicesByMonth, $creditnotesByMonth, $period);
 
 		$currentYear = (int)substr($period['to'], 0, 4);
 		$currentMonth = (int)substr($period['to'], 5, 2);
@@ -412,5 +420,75 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 		}
 
 		usort($this->yearlyCategoryRows, static fn($a, $b) => ($b['year'] <=> $a['year']) ?: ($b['subtotal'] <=> $a['subtotal']));
+	}
+
+	private function createYearlyComparisons(array $invoicesByMonth, array $creditnotesByMonth, array $period): array
+	{
+		$end = min($period['to'], date('Y-m-d'));
+		if($period['from'] > $end) return [];
+
+		$documents = [];
+
+		foreach($invoicesByMonth as $invoices) {
+		    foreach($invoices as $invoice) {
+		        $date = (string)$invoice->invoicedate;
+		        $documents[(int)substr($date, 0, 4)][] = [
+		            'day' => substr($date, 5, 5),
+		            'subtotal' => $this->getInvoiceNetSubtotal($invoice),
+		        ];
+		    }
+		}
+
+		foreach($creditnotesByMonth as $creditnotes) {
+		    foreach($creditnotes as $creditnote) {
+		        $date = (string)$creditnote->creditnotedate;
+		        $documents[(int)substr($date, 0, 4)][] = [
+		            'day' => substr($date, 5, 5),
+		            'subtotal' => -(float)$creditnote->subtotal,
+		        ];
+		    }
+		}
+
+		$rows = [];
+		$firstYear = (int)substr($period['from'], 0, 4);
+		$lastYear = (int)substr($end, 0, 4);
+
+		for($year = $firstYear + 1; $year <= $lastYear; $year++) {
+		    $previousYear = $year - 1;
+		    $fromCurrent = max($period['from'], $year.'-01-01');
+		    $toCurrent = min($end, $year.'-12-31');
+		    $fromPrevious = max($period['from'], $previousYear.'-01-01');
+		    $toPrevious = min($end, $previousYear.'-12-31');
+
+		    if($fromCurrent > $toCurrent || $fromPrevious > $toPrevious) continue;
+
+		    $from = max(substr($fromCurrent, 5), substr($fromPrevious, 5));
+		    $to = min(substr($toCurrent, 5), substr($toPrevious, 5));
+		    if($from > $to) continue;
+
+		    $current = 0.0;
+		    $previous = 0.0;
+
+		    foreach($documents[$year] ?? [] as $document) {
+		        if($document['day'] >= $from && $document['day'] <= $to) $current += $document['subtotal'];
+		    }
+
+		    foreach($documents[$previousYear] ?? [] as $document) {
+		        if($document['day'] >= $from && $document['day'] <= $to) $previous += $document['subtotal'];
+		    }
+
+		    $difference = $current - $previous;
+
+		    $rows[] = [
+		        'year' => $year,
+		        'period' => substr($from, 3, 2).'.'.substr($from, 0, 2).'.–'.substr($to, 3, 2).'.'.substr($to, 0, 2).'.',
+		        'currentTurnover' => $current,
+		        'previousTurnover' => $previous,
+		        'difference' => $difference,
+		        'growth' => $previous > 0 ? $difference / $previous * 100 : null,
+		    ];
+		}
+
+		return $rows;
 	}
 }

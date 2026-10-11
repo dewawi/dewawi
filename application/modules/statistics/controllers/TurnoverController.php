@@ -100,6 +100,52 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 		$yearlyList->setId('statistics-turnover-yearly')->setView($this->view)->setModule('statistics')->setController('turnover')->setItems($yearlyRows)->setSelectable(false);
 		$yearlyList->setPeriodLabel('STATISTICS_TURNOVER_YEAR');
 
+		$yearlyComparisonRows = $chart->getYearlyComparisons();
+
+		$yearlyComparisonList = new DEEC_List([
+			'id' => 'statistics-turnover-yearly-comparison',
+			'view' => $this->view,
+			'module' => 'statistics',
+			'controller' => 'turnover',
+			'items' => $yearlyComparisonRows,
+			'selectable' => false,
+			'columns' => [
+				[
+				    'name' => 'year',
+				    'label' => 'STATISTICS_TURNOVER_YEAR',
+				],
+				[
+				    'name' => 'period',
+				    'label' => 'STATISTICS_COMPARISON_PERIOD',
+				],
+				[
+				    'name' => 'previousTurnover',
+				    'label' => 'STATISTICS_PREVIOUS_TURNOVER',
+				    'type' => 'currency',
+				    'export_callback' => static fn($item) => number_format((float)$item['previousTurnover'], 2, ',', ''),
+				],
+				[
+				    'name' => 'currentTurnover',
+				    'label' => 'STATISTICS_CURRENT_TURNOVER',
+				    'type' => 'currency',
+				    'export_callback' => static fn($item) => number_format((float)$item['currentTurnover'], 2, ',', ''),
+				],
+				[
+				    'name' => 'difference',
+				    'label' => 'STATISTICS_TURNOVER_DIFFERENCE',
+				    'type' => 'currency',
+				    'export_callback' => static fn($item) => number_format((float)$item['difference'], 2, ',', ''),
+				],
+				[
+				    'name' => 'growth',
+				    'label' => 'STATISTICS_TURNOVER_GROWTH',
+				    'type' => 'callback',
+				    'callback' => static fn($item) => $item['growth'] === null ? '–' : number_format((float)$item['growth'], 2, ',', '.').'%',
+				    'export_callback' => static fn($item) => $item['growth'] === null ? '' : number_format((float)$item['growth'], 4, ',', ''),
+				],
+			],
+		]);
+
 		$categoryList = new DEEC_List([
 			'id' => 'statistics-turnover-categories',
 			'view' => $this->view,
@@ -206,6 +252,8 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 		$this->view->yearlyTurnover = $yearlyTurnover;
 		$this->view->monthlyList = $monthlyList;
 		$this->view->yearlyList = $yearlyList;
+		$this->view->yearlyComparisonRows = $yearlyComparisonRows;
+		$this->view->yearlyComparisonList = $yearlyComparisonList;
 		$this->view->categoryRows = $categoryRows;
 		$this->view->categoryList = $categoryList;
 		$this->view->yearlyCategoryRows = $yearlyCategoryRows;
@@ -246,6 +294,7 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 			try {
 				$lists = [
 					'umsatz-jaehrlich.csv' => $this->view->yearlyList,
+					'umsatz-vorjahresvergleich.csv' => $this->view->yearlyComparisonList,
 					'umsatz-monatlich.csv' => $this->view->monthlyList,
 					'umsatz-kundengruppen.csv' => $this->view->categoryList,
 					'umsatz-kundengruppen-jaehrlich.csv' => $this->view->yearlyCategoryList,
