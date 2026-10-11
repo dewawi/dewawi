@@ -27,115 +27,14 @@ $this->headTitle($this->title);
 
 <?php if($this->yearlyTurnover) : ?>
 	<h3><?php echo $this->translate('STATISTICS_TURNOVER_YEARS'); ?></h3>
-	<table id="data">
-		<thead>
-			<tr>
-				<th width="2%"><input type="checkbox" class="checkall" name="checkall"></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_TURNOVER_YEAR'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_INVOICE_QUANTITY'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_INVOICE_SUBTOTAL'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_INVOICE_AVERAGE'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_QUANTITY'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_SUBTOTAL'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_AVERAGE'); ?></th>
-				<th width="12%"><?php echo $this->translate('STATISTICS_NET_TURNOVER'); ?></th>
-				<th width="8%"></th>
-			</tr>
-		</thead>
-		<?php $i = 1; ?>
-		<?php $invoicesTotal = 0; ?>
-		<?php $creditnotesTotal = 0; ?>
-		<?php $invoicesQuantity = 0; ?>
-		<?php $creditnotesQuantity = 0; ?>
-		<?php $invoicesAverage = 0; ?>
-		<?php $creditnotesAverage = 0; ?>
-		<?php foreach($this->yearlyTurnover as $year => $yearlyTurnover) : ?>
-			<tr>
-				<td><?php echo $i; ?></td>
-				<td>
-					<?php echo $year; ?>
-				</td>
-				<td><?php echo $yearlyTurnover['invoicesQuantity']; ?></td>
-				<td><?php echo $yearlyTurnover['invoicesSubtotal']; ?></td>
-				<td><?php echo $yearlyTurnover['invoicesAverage']; ?></td>
-				<td><?php echo $yearlyTurnover['creditnotesQuantity']; ?></td>
-				<td><?php echo $yearlyTurnover['creditnotesSubtotal']; ?></td>
-				<td><?php echo $yearlyTurnover['creditnotesAverage']; ?></td>
-				<td><?php echo $yearlyTurnover['netTurnover']; ?></td>
-				<td></td>
-			</tr>
-			<?php ++$i; ?>
-		<?php endforeach; ?>
-		<tr>
-			<td></td>
-			<td></td>
-			<td><b><?php echo $this->turnoverTotal['invoicesTotalQuantity']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['invoicesTotal']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['invoicesAverage']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['creditnotesTotalQuantity']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['creditnotesTotal']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['creditnotesAverage']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['netTurnover']; ?></b></td>
-			<td></td>
-		</tr>
-	</table>
+	<?php echo $this->yearlyList->render(); ?>
 <?php else : ?>
 	<p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
 <?php endif; ?>
+
 <?php if($this->monthlyTurnover) : ?>
 	<h3><?php echo $this->translate('STATISTICS_TURNOVER_MONTHS'); ?></h3>
-	<table id="data">
-		<thead>
-			<tr>
-				<th width="2%"><input type="checkbox" class="checkall" name="checkall"></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_TURNOVER_MONTH'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_INVOICE_QUANTITY'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_INVOICE_SUBTOTAL'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_INVOICE_AVERAGE'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_QUANTITY'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_SUBTOTAL'); ?></th>
-				<th width="8%"><?php echo $this->translate('STATISTICS_CREDIT_NOTE_AVERAGE'); ?></th>
-				<th width="12%"><?php echo $this->translate('STATISTICS_NET_TURNOVER'); ?></th>
-				<th width="8%"></th>
-			</tr>
-		</thead>
-		<?php $i = 1; ?>
-		<?php $invoicesTotal = 0; ?>
-		<?php $creditnotesTotal = 0; ?>
-		<?php $invoicesQuantity = 0; ?>
-		<?php $creditnotesQuantity = 0; ?>
-		<?php $invoicesAverage = 0; ?>
-		<?php $creditnotesAverage = 0; ?>
-		<?php foreach($this->monthlyTurnover as $month => $turnover) : ?>
-			<tr>
-				<td><?php echo $i; ?></td>
-				<td>
-					<?php echo $month; ?>
-				</td>
-				<td><?php echo $turnover['invoicesQuantity']; ?></td>
-				<td><?php echo $turnover['invoicesSubtotal']; ?></td>
-				<td><?php echo $turnover['invoicesAverage']; ?></td>
-				<td><?php echo $turnover['creditnotesQuantity']; ?></td>
-				<td><?php echo $turnover['creditnotesSubtotal']; ?></td>
-				<td><?php echo $turnover['creditnotesAverage']; ?></td>
-				<td><?php echo $turnover['netTurnover']; ?></td>
-				<td></td>
-			</tr>
-			<?php ++$i; ?>
-		<?php endforeach; ?>
-		<tr>
-			<td></td>
-			<td></td>
-			<td><b><?php echo $this->turnoverTotal['invoicesTotalQuantity']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['invoicesTotal']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['invoicesAverage']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['creditnotesTotalQuantity']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['creditnotesTotal']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['creditnotesAverage']; ?></b></td>
-			<td><b><?php echo $this->turnoverTotal['netTurnover']; ?></b></td>
-			<td></td>
-		</tr>
-	</table>
+	<?php echo $this->monthlyList->render(); ?>
 <?php else : ?>
 	<p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
 <?php endif; ?>

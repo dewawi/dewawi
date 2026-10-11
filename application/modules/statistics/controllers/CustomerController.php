@@ -45,10 +45,20 @@ class Statistics_CustomerController extends Zend_Controller_Action
 		$chart = new Statistics_Model_Customer();
 		$customerList = $chart->createCharts($lenght, 1000, 600, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
 
+		foreach($customerList as $i => $customer) $customerList[$i]['rank'] = $i + 1;
+
+		$list = new Statistics_Model_List_Customers();
+		$list->setId('statistics-customer')->setView($this->view)->setModule('statistics')->setController('customer')->setItems($customerList)->setSelectable(false);
+
+		if($customerList) $list->setFooter([
+			'subtotal' => $customerList[0]['total'],
+		]);
+
 		$this->view->lenght = $lenght;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->customerList = $customerList;
+		$this->view->customerListTable = $list;
 		$this->view->chartImages = $chart->getChartImages();
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}

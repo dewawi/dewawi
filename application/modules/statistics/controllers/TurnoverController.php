@@ -102,11 +102,45 @@ class Statistics_TurnoverController extends Zend_Controller_Action
 		if(isset($turnoverTotal['creditnotesTotal'])) $turnoverTotal['creditnotesTotal'] = $currency->toCurrency($turnoverTotal['creditnotesTotal']);
 		if(isset($turnoverTotal['creditnotesAverage'])) $turnoverTotal['creditnotesAverage'] = $currency->toCurrency($turnoverTotal['creditnotesAverage']);
 
+		$monthlyRows = [];
+		foreach($monthlyTurnover as $month => $data) {
+			$monthlyRows[] = ['rank' => count($monthlyRows) + 1, 'period' => $month] + $data;
+		}
+
+		$yearlyRows = [];
+		foreach($yearlyTurnover as $year => $data) {
+			$yearlyRows[] = ['rank' => count($yearlyRows) + 1, 'period' => $year] + $data;
+		}
+
+		$monthlyList = new Statistics_Model_List_Turnover();
+		$monthlyList->setId('statistics-turnover-monthly')->setView($this->view)->setModule('statistics')->setController('turnover')->setItems($monthlyRows)->setSelectable(false);
+
+		$yearlyList = new Statistics_Model_List_Turnover();
+		$yearlyList->setId('statistics-turnover-yearly')->setView($this->view)->setModule('statistics')->setController('turnover')->setItems($yearlyRows)->setSelectable(false);
+		$yearlyList->setPeriodLabel('STATISTICS_TURNOVER_YEAR');
+
+		if($turnoverTotal) {
+			$footer = [
+				'invoicesQuantity' => $turnoverTotal['invoicesTotalQuantity'],
+				'invoicesSubtotal' => $turnoverTotal['invoicesTotal'],
+				'invoicesAverage' => $turnoverTotal['invoicesAverage'],
+				'creditnotesQuantity' => $turnoverTotal['creditnotesTotalQuantity'],
+				'creditnotesSubtotal' => $turnoverTotal['creditnotesTotal'],
+				'creditnotesAverage' => $turnoverTotal['creditnotesAverage'],
+				'netTurnover' => $turnoverTotal['netTurnover'],
+			];
+
+			$monthlyList->setFooter($footer);
+			$yearlyList->setFooter($footer);
+		}
+
 		$this->view->lenght = $lenght;
 		$this->view->options = $options;
 		$this->view->toolbar = $toolbar;
 		$this->view->monthlyTurnover = $monthlyTurnover;
 		$this->view->yearlyTurnover = $yearlyTurnover;
+		$this->view->monthlyList = $monthlyList;
+		$this->view->yearlyList = $yearlyList;
 		$this->view->turnoverTotal = $turnoverTotal;
 		$this->view->chartImages = $chart->getChartImages();
 		$this->view->messages = $this->_flashMessenger->getMessages();

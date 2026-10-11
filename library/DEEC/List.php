@@ -15,6 +15,7 @@ class DEEC_List
 	protected $selectable = true;
 	protected $tableClass = '';
 	protected $total = null;
+	protected $footer = [];
 	protected $rowClassCallback = null;
 	protected $readonlyStates = ['105', '106'];
 	protected $partial = 'list/list.phtml';
@@ -29,6 +30,11 @@ class DEEC_List
 		}
 	}
 
+	protected function buildColumns()
+	{
+		return [];
+	}
+
 	public function configure(array $config)
 	{
 		if (array_key_exists('id', $config)) {
@@ -41,6 +47,10 @@ class DEEC_List
 
 		if (array_key_exists('options', $config)) {
 			$this->setOptions($config['options']);
+		}
+
+		if (array_key_exists('footer', $config)) {
+			$this->setFooter($config['footer']);
 		}
 
 		if (array_key_exists('view', $config)) {
@@ -306,6 +316,17 @@ class DEEC_List
 		}
 
 		return 0;
+	}
+
+	public function setFooter(array $footer)
+	{
+		$this->footer = $footer;
+		return $this;
+	}
+
+	public function getFooter(): array
+	{
+		return $this->footer;
 	}
 
 	public function setRowClassCallback($callback)

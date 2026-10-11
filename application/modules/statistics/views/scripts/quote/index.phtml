@@ -25,47 +25,7 @@ $this->headTitle($this->title);
 	<img src="data:image/png;base64,<?php echo $this->chartImages['quote']; ?>">
 
 	<h3><?php echo $this->translate('STATISTICS_CUSTOMER_LIST'); ?></h3>
-	<table id="data">
-		<thead>
-			<tr>
-				<th width="2%"><input type="checkbox" class="checkall" name="checkall"></th>
-				<th class="id" width="5%"><?php echo $this->translate('STATISTICS_CUSTOMER_ID'); ?></th>
-				<th class="name" width="20%"><?php echo $this->translate('STATISTICS_CUSTOMER_NAME'); ?></th>
-				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_QUOTE_VOLUME'); ?></th>
-				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_QUOTE_QUANTITY'); ?></th>
-				<th class="phone" width="12%"><?php echo $this->translate('STATISTICS_CUSTOMER_SHARE'); ?></th>
-				<th width="8%"></th>
-			</tr>
-		</thead>
-		<?php $i = 1; ?>
-		<?php $total = ''; ?>
-		<?php foreach($this->customerList as $customer) : ?>
-			<tr>
-				<td><?php echo $i; ?></td>
-				<td>
-					<a href="<?php echo $this->url(['module'=>'contacts', 'controller'=>'contact', 'action'=>'edit', 'id'=>$customer['cid']]); ?>">
-						<?php echo $customer['contactid']; ?>
-					</a>
-				</td>
-				<td><?php echo $this->escape($customer['name1']); ?></td>
-				<td><?php echo $customer['subtotal']; ?></td>
-				<td><?php echo $customer['quantity']; ?></td>
-				<td><?php echo $customer['share']; ?>%</td>
-				<td></td>
-			</tr>
-			<?php $total = $customer['total']; ?>
-			<?php ++$i; ?>
-		<?php endforeach; ?>
-		<tr>
-			<td></td>
-			<td></td>
-			<td></td>
-			<td><b><?php echo $total; ?></b></td>
-			<td></td>
-			<td></td>
-			<td></td>
-		</tr>
-	</table>
+	<?php echo $this->quoteList->render(); ?>
 <?php else : ?>
 	<p><?php echo $this->translate('STATISTICS_NO_DATA'); ?></p>
 <?php endif; ?>

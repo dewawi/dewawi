@@ -46,5 +46,23 @@
 				<?php endforeach; ?>
 			<?php endif; ?>
 		</tbody>
+
+		<?php $footer = $this->table->getFooter(); ?>
+		<?php if ($footer) : ?>
+			<tfoot>
+				<tr class="dw-row dw-row--total">
+					<?php if ($this->table->isSelectable()) : ?>
+						<td class="dw-col-check"></td>
+					<?php endif; ?>
+
+					<?php foreach ($this->table->getColumns() as $column) : ?>
+						<?php $field = $column['field'] ?? $column['name'] ?? ''; ?>
+						<td class="<?php echo $this->escape($this->table->getCellClass($column)); ?>">
+							<?php echo $this->escape($footer[$field] ?? ''); ?>
+						</td>
+					<?php endforeach; ?>
+				</tr>
+			</tfoot>
+		<?php endif; ?>
 	</table>
 </div>
