@@ -170,11 +170,15 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 		        'subtotal' => 0.0,
 		        'invoices' => [],
 		        'creditnotes' => [],
+				'daily' => [],
 		    ];
 		}
 
 		$this->yearlyCustomers[$year][$id]['subtotal'] += $amount;
 		$this->yearlyCustomers[$year][$id][$type === 'invoice' ? 'invoices' : 'creditnotes'][] = $number;
+
+		$date = substr((string)$document->{$type.'date'}, 0, 10);
+		$this->yearlyCustomers[$year][$id]['daily'][$date] = ($this->yearlyCustomers[$year][$id]['daily'][$date] ?? 0) + $amount;
 	}
 
 	private function prepareYearlyReport(): void

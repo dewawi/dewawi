@@ -111,6 +111,8 @@ class Statistics_Model_Reporting
 				['Belege', 'Abgeschlossen (Status 105), nicht gelöscht, nicht storniert', ''],
 				['Kategorien', 'Aktuelle Kategorien der Kontakte, nicht historisiert', ''],
 				['Jahresvergleich', 'Gleiche Kalendertage innerhalb des gewählten Zeitraums', ''],
+				['Kundenentwicklung', 'Jahreswerte vollständig innerhalb des Filters; Vorjahresvergleiche für übereinstimmende Kalendertage', ''],
+				['Kundenaktivität', 'Einordnung ausschließlich nach Belegen in den verglichenen Zeiträumen', ''],
 				['Teiljahre', 'Erstes und letztes Jahr können unvollständig sein', ''],
 				['Datenprüfung', 'Vorzeichen historischer Gutschriften vor externer Nutzung prüfen', ''],
 			],
@@ -188,6 +190,9 @@ class Statistics_Model_Reporting
 		];
 
 		$sheets[] = $this->worksheet('Kunden Gesamt', $customerColumns, $data['allCustomers']);
+
+		$sheets[] = $this->customerMatrixWorksheet($data);
+		$sheets[] = $this->customerComparisonWorksheet($data, $from, $to);
 
 		foreach($data['allCustomersByYear'] as $year => $customers) {
 			$sheets[] = $this->worksheet('Kunden '.$year, $customerColumns, $customers);
@@ -273,5 +278,117 @@ class Statistics_Model_Reporting
 		}
 
 		return $checks;
+	}
+
+	private function customerMatrixWorksheet(array $data): array
+	{
+		$years = array_column($data['yearly'], 'period');
+		$headers = ['Kundennr.', 'Kunde', 'Kundengruppe', 'Gesamt netto'];
+		$formats = ['text', 'text', 'text', 'money'];
+		$amounts = [];
+
+		foreach($data['allCustomersByYear'] as $year => $customers) {
+		    foreach($customers as $customer) $amounts[$year][(int)$customer['contactid']] = (float)$customer['subtotal'];
+		}
+
+		foreach($years as $year) {
+		    $headers[] = $year.' netto';
+		    $formats[] = 'money';
+		}
+
+		$rows = [];
+		foreach($data['allCustomers'] as $customer) {
+		    $id = (int)$customer['contactid'];
+		    $row = [(string)$customer['contactid'], $customer['name1'], $customer['cfulltitle'], (float)$customer['subtotal']];
+		    foreach($years as $year) $row[] = $amounts[$year][$id] ?? 0.0;
+		    $rows[] = $row;
+		}
+
+		return [
+		    'name' => 'Kunden Jahresmatrix',
+		    'headers' => $headers,
+		    'rows' => $rows,
+		    'formats' => $formats,
+		    'widths' => array_merge([18, 44, 42, 22], array_fill(0, count($years), 20)),
+		];
+	}
+
+	private function customerComparisonWorksheet(array $data, string $from, string $to): array
+	{
+		$years = array_column($data['yearly'], 'period');
+		$customersByYear = [];
+
+		foreach($data['allCustomersByYear'] as $year => $customers) {
+		    foreach($customers as $customer) $customersByYear[$year][(int)$customer['contactid']] = $customer;
+		}
+
+		$rows = [];
+
+		foreach($years as $index => $year) {
+		    if($index === 0) continue;
+
+		    $previousYear = (int)$year - 1;
+		    $currentFrom = max($from, $year.'-01-01');
+		    $currentTo = min($to, $year.'-12-31');
+		    $previousFrom = max($from, $previousYear.'-01-01');
+		    $previousTo = min($to, $previousYear.'-12-31');
+
+		    $start = max(substr($currentFrom, 5), substr($previousFrom, 5));
+		    $end = min(substr($currentTo, 5), substr($previousTo, 5));
+		    if($start > $end) continue;
+
+		    $period = substr($start, 3, 2).'.'.substr($start, 0, 2).'.–'.substr($end, 3, 2).'.'.substr($end, 0, 2).'.';
+
+		    foreach($data['allCustomers'] as $customer) {
+		        $id = (int)$customer['contactid'];
+
+		        [$previous, $hadPrevious] = $this->sumCustomerDays($customersByYear[$previousYear][$id]['daily'] ?? [], $start, $end);
+		        [$current, $hadCurrent] = $this->sumCustomerDays($customersByYear[$year][$id]['daily'] ?? [], $start, $end);
+
+		        if(!$hadPrevious && !$hadCurrent) continue;
+
+		        $difference = $current - $previous;
+		        $status = !$hadPrevious ? 'Vorjahr ohne Belege' : (!$hadCurrent ? 'Aktuelles Jahr ohne Belege' : 'In beiden Zeiträumen aktiv');
+
+		        $rows[] = [
+		            (int)$year,
+		            $period,
+		            (string)$customer['contactid'],
+		            $customer['name1'],
+		            $customer['cfulltitle'],
+		            $previous,
+		            $current,
+		            $difference,
+		            $previous > 0 ? $difference / $previous : null,
+		            $status,
+		        ];
+		    }
+		}
+
+		usort($rows, static fn($a, $b) => ($a[0] <=> $b[0]) ?: (abs($b[7]) <=> abs($a[7])));
+
+		return [
+		    'name' => 'Kunden Veränderung',
+		    'headers' => ['Jahr', 'Vergleichszeitraum', 'Kundennr.', 'Kunde', 'Kundengruppe', 'Vorjahr netto', 'Aktuelles Jahr netto', 'Differenz netto', 'Veränderung (%)', 'Einordnung'],
+		    'rows' => $rows,
+		    'formats' => ['integer', 'text', 'text', 'text', 'text', 'money', 'money', 'money', 'percent', 'text'],
+		    'widths' => [12, 22, 18, 44, 42, 22, 22, 22, 20, 29],
+		];
+	}
+
+	private function sumCustomerDays(array $daily, string $start, string $end): array
+	{
+		$sum = 0.0;
+		$hasDocuments = false;
+
+		foreach($daily as $date => $amount) {
+		    $day = substr((string)$date, 5, 5);
+		    if($day < $start || $day > $end) continue;
+
+		    $sum += (float)$amount;
+		    $hasDocuments = true;
+		}
+
+		return [$sum, $hasDocuments];
 	}
 }
