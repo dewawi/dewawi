@@ -39,7 +39,7 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 
 		$chart = new Statistics_Model_Turnover();
-		list($turnoverList, $turnoverTotal) = $chart->createCharts(1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
+		[$turnoverList, $turnoverTotal, $categoryRows] = $chart->createCharts(1000, 400, $this->view->translate("STATISTICS_UNCATEGORIZED"), $this->view->translate("STATISTICS_NO_DATA"), $params, $options);
 
 		// Aggregate monthly and yearly turnover
 		$monthlyTurnover = [];
@@ -72,6 +72,7 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 			$data['netTurnover'] = $data['invoicesSubtotal'] - $data['creditnotesSubtotal'];
 		}
 		unset($data);
+		$chart->createYearlyChart($yearlyTurnover, 1000, 400);
 
 		$currency = Zend_Registry::get('Zend_Currency');
 
@@ -99,6 +100,44 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 		$yearlyList->setId('statistics-turnover-yearly')->setView($this->view)->setModule('statistics')->setController('turnover')->setItems($yearlyRows)->setSelectable(false);
 		$yearlyList->setPeriodLabel('STATISTICS_TURNOVER_YEAR');
 
+		$categoryList = new DEEC_List([
+			'id' => 'statistics-turnover-categories',
+			'view' => $this->view,
+			'module' => 'statistics',
+			'controller' => 'turnover',
+			'items' => $categoryRows,
+			'selectable' => false,
+			'columns' => [
+				[
+					'name' => 'category',
+					'label' => 'STATISTICS_CUSTOMER_CATEGORY',
+				],
+				[
+					'name' => 'subtotal',
+					'label' => 'STATISTICS_NET_TURNOVER',
+					'type' => 'currency',
+					'export_callback' => static fn($item) => number_format((float)$item['subtotal'], 2, ',', ''),
+				],
+				[
+					'name' => 'share',
+					'label' => 'STATISTICS_CUSTOMER_SHARE_PERCENT',
+					'type' => 'callback',
+					'callback' => static fn($item) => number_format((float)$item['share'], 2, ',', '').'%',
+					'export_callback' => static fn($item) => number_format((float)$item['share'], 4, ',', ''),
+				],
+			],
+		]);
+
+		if($categoryRows) {
+			$categoryTotal = array_sum(array_column($categoryRows, 'subtotal'));
+
+			$categoryList->setFooter([
+				'category' => $this->view->translate('STATISTICS_NET_TURNOVER'),
+				'subtotal' => $currency->toCurrency($categoryTotal),
+				'share' => $categoryTotal != 0 ? '100,00%' : '0,00%',
+			]);
+		}
+
 		if($turnoverTotal) {
 			$footer = [
 				'invoicesQuantity' => $turnoverTotal['invoicesTotalQuantity'],
@@ -121,6 +160,8 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 		$this->view->yearlyTurnover = $yearlyTurnover;
 		$this->view->monthlyList = $monthlyList;
 		$this->view->yearlyList = $yearlyList;
+		$this->view->categoryRows = $categoryRows;
+		$this->view->categoryList = $categoryList;
 		$this->view->turnoverTotal = $turnoverTotal;
 		$this->view->chartImages = $chart->getChartImages();
 		$this->view->messages = $this->_flashMessenger->getMessages();
@@ -158,6 +199,7 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 				$lists = [
 					'umsatz-jaehrlich.csv' => $this->view->yearlyList,
 					'umsatz-monatlich.csv' => $this->view->monthlyList,
+					'umsatz-kundengruppen.csv' => $this->view->categoryList,
 				];
 
 				foreach($lists as $name => $list) {

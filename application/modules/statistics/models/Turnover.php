@@ -41,7 +41,6 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 		$turnoverCategories = array();
 
 		$categoryOptions = isset($options['categories']) && is_array($options['categories']) ? $options['categories'] : array();
-		$catid = isset($params['catid']) ? $params['catid'] : null;
 
 		$turnoverList = array();
 		for($year = $startYear; $year <= $currentYear; $year++) {
@@ -98,13 +97,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 						}
 					}
 
-					// Prepare category values for charts
-					foreach($categoryOptions as $id => $category) {
-						$turnoverCategories[$id][$year.$ym] = round($turnoverCategories[$id][$year.$ym] ?? 0);
-					}
-
 					$turnover[$year.$ym] = round($turnover[$year.$ym]);
-					$turnoverCategories[0][$year.$ym] = round($turnoverCategories[0][$year.$ym]);
 					$months[$year.$ym] = $year.'/'.$ym;
 				}
 			}
@@ -112,24 +105,48 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 			$startMonth = 1;
 		}
 
-		//Merge subcategories to main categories
+
+		// Aggregate categories into their top-level parent.
+		$groupedCategories = [];
+
 		foreach($turnoverCategories as $id => $values) {
-			if(isset($categoryOptions[$id]['childs']) && ($id != $catid)) {
-				foreach($categoryOptions[$id]['childs'] as $childId) {
-					if(!isset($turnoverCategories[$childId])) {
-						continue;
-					}
-					foreach($values as $month => $value) {
-						if(isset($turnoverCategories[$id][$month])) {
-							$turnoverCategories[$id][$month] += $turnoverCategories[$childId][$month];
-						} else {
-							$turnoverCategories[$id][$month] = $turnoverCategories[$childId][$month];
-						}
-					}
-					unset($turnoverCategories[$childId]);
-				}
+			$groupId = (int)$id;
+
+			while(isset($categoryOptions[$groupId]) && !empty($categoryOptions[$groupId]['parentid'])) {
+				$parentId = (int)$categoryOptions[$groupId]['parentid'];
+				if(!isset($categoryOptions[$parentId])) break;
+				$groupId = $parentId;
+			}
+
+			foreach($values as $month => $value) {
+				$groupedCategories[$groupId][$month] = ($groupedCategories[$groupId][$month] ?? 0) + $value;
 			}
 		}
+
+		$turnoverCategories = [];
+		$categoryRows = [];
+		$categoryTotal = 0;
+
+		foreach($groupedCategories as $id => $values) {
+			$values = array_replace(array_fill_keys(array_keys($months), 0), $values);
+			if(!array_filter($values)) continue;
+
+			$subtotal = array_sum($values);
+			$turnoverCategories[$id] = $values;
+			$categoryTotal += $subtotal;
+
+			$categoryRows[] = [
+				'category' => $id === 0 ? $statisticsUncategorized : ($categoryOptions[$id]['title'] ?? 'ID '.$id),
+				'subtotal' => $subtotal,
+			];
+		}
+
+		usort($categoryRows, static fn($a, $b) => $b['subtotal'] <=> $a['subtotal']);
+
+		foreach($categoryRows as &$row) {
+			$row['share'] = $categoryTotal != 0 ? $row['subtotal'] / $categoryTotal * 100 : 0;
+		}
+		unset($row);
 
 		//Remove empty arrays
 		foreach($turnoverCategories as $key => $values) {
@@ -232,11 +249,11 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 
 			arsort($turnoverCategoriesTotal);
 			foreach($turnoverCategoriesTotal as $key => $value) {
-				if($key && isset($categoryOptions[$key])) {
-					$series = 'category-'.$key;
-					$chartTurnoverCategory->myData->addPoints(array_values($turnoverCategories[$key]), $series);
-					$chartTurnoverCategory->myData->setSerieDescription($series, $categoryOptions[$key]['title']);
-				}
+				if(!$key) continue;
+
+				$series = 'category-'.$key;
+				$chartTurnoverCategory->myData->addPoints(array_values($turnoverCategories[$key]), $series);
+				$chartTurnoverCategory->myData->setSerieDescription($series, $categoryOptions[$key]['title'] ?? 'ID '.$key);
 			}
 
 			if(isset($turnoverCategories[0])) {
@@ -303,6 +320,39 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 
 			$this->chartImages['turnover-category'] = $chartTurnoverCategory->toBase64();
 		}
-		return array($turnoverList, $turnoverTotal);
+		return [$turnoverList, $turnoverTotal, $categoryRows];
+	}
+
+	public function createYearlyChart(array $yearlyTurnover, int $width, int $height): void
+	{
+		if(!$yearlyTurnover) return;
+
+		$years = array_keys($yearlyTurnover);
+		$values = array_map(static fn($row) => round((float)$row['netTurnover'], 2), array_values($yearlyTurnover));
+
+		$chart = new pDraw($width, $height);
+		$chart->myData->addPoints($values, 'Values');
+		$chart->myData->setAxisName(0, '€ / Netto');
+		$chart->myData->addPoints($years, 'Labels');
+		$chart->myData->setSerieDescription('Labels', 'Years');
+		$chart->myData->setAbscissa('Labels');
+
+		$chart->setFontProperties(['FontName' => BASE_PATH.'/library/pChart/fonts/Cairo-Regular.ttf', 'FontSize' => 10]);
+		$chart->setGraphArea(75, 20, $width-30, $height-60);
+		$chart->drawFilledRectangle(0, 0, $width, $height, [
+			'Color' => new pColor(234, 240, 200),
+			'Dash' => TRUE,
+			'DashColor' => new pColor(190, 203, 107),
+		]);
+
+		$mode = min($values) < 0 ? SCALE_MODE_FLOATING : SCALE_MODE_START0;
+		$chart->drawScale(['DrawSubTicks' => TRUE, 'Mode' => $mode]);
+
+		$chart->setShadow(TRUE, ['X' => 1, 'Y' => 1, 'Color' => new pColor(0, 0, 0, 10)]);
+		$pCharts = new pCharts($chart);
+		$pCharts->drawBarChart(['Gradient' => TRUE, 'GradientMode' => GRADIENT_EFFECT_CAN]);
+		$chart->setShadow(FALSE);
+
+		$this->chartImages['turnover-yearly'] = $chart->toBase64();
 	}
 }
