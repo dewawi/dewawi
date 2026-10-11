@@ -157,6 +157,58 @@ class Statistics_TurnoverController extends DEEC_Controller_Action
 		$this->indexAction();
 	}
 
+	public function exportAction()
+	{
+		$this->disableView();
+		$this->indexAction();
+
+		$file = tempnam(sys_get_temp_dir(), 'dewawi-turnover-');
+		if($file === false) throw new RuntimeException('Unable to create temporary ZIP file.');
+
+		try {
+			$zip = new ZipArchive();
+			if($zip->open($file, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) throw new RuntimeException('Unable to create ZIP archive.');
+
+			try {
+				$lists = [
+					'umsatz-jaehrlich.csv' => $this->view->yearlyList,
+					'umsatz-monatlich.csv' => $this->view->monthlyList,
+				];
+
+				foreach($lists as $name => $list) {
+					$stream = fopen('php://temp', 'w+');
+					if($stream === false) throw new RuntimeException('Unable to create CSV stream.');
+
+					try {
+						$list->writeCsv($stream);
+						rewind($stream);
+						$csv = stream_get_contents($stream);
+					} finally {
+						fclose($stream);
+					}
+
+					if($csv === false || !$zip->addFromString($name, $csv)) throw new RuntimeException('Unable to add CSV to ZIP archive.');
+				}
+			} finally {
+				$closed = $zip->close();
+			}
+
+			if(!$closed) throw new RuntimeException('Unable to finalize ZIP archive.');
+
+			$content = file_get_contents($file);
+			if($content === false) throw new RuntimeException('Unable to read ZIP archive.');
+
+			$response = $this->getResponse();
+			$response->setHeader('Content-Type', 'application/zip', true);
+			$response->setHeader('Content-Disposition', 'attachment; filename="statistics-turnover-'.date('Ymd-His').'.zip"', true);
+			$response->setHeader('Cache-Control', 'private, no-store', true);
+			$response->setHeader('X-Content-Type-Options', 'nosniff', true);
+			$response->setBody($content);
+		} finally {
+			unlink($file);
+		}
+	}
+
 	public function toolbarAction()
 	{
 		//$this->_helper->getHelper('layout')->disableLayout();

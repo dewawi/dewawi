@@ -476,7 +476,7 @@ class DEEC_List
 
 		$value = (string)($value ?? '');
 
-		if(preg_match('/^[\x00-\x20]*[=+\-@]/', $value) && !is_numeric(trim($value))) {
+		if(preg_match('/^[\x00-\x20]*[=+\-@]/', $value) && !is_numeric(trim($value)) && !preg_match('/^-?\d+(?:,\d+)?$/D', trim($value))) {
 			return "'".$value;
 		}
 
