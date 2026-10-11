@@ -95,23 +95,13 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 						}
 					}
 
-					//Calculate categories
+					// Prepare category values for charts
 					foreach($categoryOptions as $id => $category) {
-						if(isset($turnoverCategories[$id][$year.$ym])) {
-							$turnoverCategories[$id][$year.$ym] = round($turnoverCategories[$id][$year.$ym]);
-						} else {
-							$turnoverCategories[$id][$year.$ym] = 0;
-						}
+						$turnoverCategories[$id][$year.$ym] = round($turnoverCategories[$id][$year.$ym] ?? 0);
 					}
 
 					$turnover[$year.$ym] = round($turnover[$year.$ym]);
 					$turnoverCategories[0][$year.$ym] = round($turnoverCategories[0][$year.$ym]);
-
-					$dataDb = 'total:'.$turnover[$year.$ym].';';
-					foreach($turnoverCategories as $key => $value) {
-						if(isset($value[$year.$ym])) $dataDb .= $key.':'.$value[$year.$ym].';';
-					}
-					//$archiveDb->addArchive($year.$ym, $dataDb, $client['id']);
 					$months[$year.$ym] = $year.'/'.$ym;
 				}
 			}
