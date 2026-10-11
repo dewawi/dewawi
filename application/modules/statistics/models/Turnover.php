@@ -333,6 +333,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 		$chart = new pDraw($width, $height);
 		$chart->myData->addPoints($values, 'Values');
 		$chart->myData->setAxisName(0, '€ / Netto');
+		$chart->myData->setAxisProperties(0, ['Display' => AXIS_FORMAT_CUSTOM, 'Format' => static fn($value) => number_format((float)$value, 0, ',', '.')]);
 		$chart->myData->addPoints($years, 'Labels');
 		$chart->myData->setSerieDescription('Labels', 'Years');
 		$chart->myData->setAbscissa('Labels');
