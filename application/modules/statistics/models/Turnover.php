@@ -350,7 +350,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 
 		$chart->setShadow(TRUE, ['X' => 1, 'Y' => 1, 'Color' => new pColor(0, 0, 0, 10)]);
 		$pCharts = new pCharts($chart);
-		$pCharts->drawBarChart(['Gradient' => TRUE, 'GradientMode' => GRADIENT_EFFECT_CAN]);
+		$pCharts->drawBarChart(['Gradient' => TRUE, 'GradientMode' => GRADIENT_EFFECT_CAN, 'DisplayValues' => TRUE, 'DisplayPos' => LABEL_POS_INSIDE, 'DisplayColor' => new pColor(0, 0, 0), 'DisplayShadow' => FALSE]);
 		$chart->setShadow(FALSE);
 
 		$this->chartImages['turnover-yearly'] = $chart->toBase64();
