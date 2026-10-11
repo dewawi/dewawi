@@ -106,24 +106,27 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 
 					//Calculate credit notes
 					foreach($creditnotes as $creditnote) {
+						$amount = $this->getCreditnoteNetSubtotal($creditnote);
+
 						if((float)$creditnote->subtotal < 0) $this->negativeCreditnotes[$year] = ($this->negativeCreditnotes[$year] ?? 0) + 1;
-						$this->addYearlyCategoryDocument($yearlyCategoryData, $year, $creditnote, -(float)$creditnote->subtotal, true);
+
+						$this->addYearlyCategoryDocument($yearlyCategoryData, $year, $creditnote, -$amount, true);
 
 						if(isset($turnoverList[$year.$ym]['creditnotesQuantity'])) {
 							$turnoverList[$year.$ym]['creditnotesQuantity']++;
-							$turnoverList[$year.$ym]['creditnotesSubtotal'] += $creditnote->subtotal;
+							$turnoverList[$year.$ym]['creditnotesSubtotal'] += $amount;
 						} else {
 							$turnoverList[$year.$ym]['creditnotesQuantity'] = 1;
-							$turnoverList[$year.$ym]['creditnotesSubtotal'] = $creditnote->subtotal;
+							$turnoverList[$year.$ym]['creditnotesSubtotal'] = $amount;
 							$turnoverList[$year.$ym]['month'] = $year.'/'.$ym;
 						}
 
-						$turnover[$year.$ym] -= $creditnote->subtotal;
+						$turnover[$year.$ym] -= $amount;
 
 						if(isset($turnoverCategories[$creditnote->catid][$year.$ym])) {
-							$turnoverCategories[$creditnote->catid][$year.$ym] -= $creditnote->subtotal;
+							$turnoverCategories[$creditnote->catid][$year.$ym] -= $amount;
 						} else {
-							$turnoverCategories[$creditnote->catid][$year.$ym] = -$creditnote->subtotal;
+							$turnoverCategories[$creditnote->catid][$year.$ym] = -$amount;
 						}
 					}
 
@@ -453,7 +456,7 @@ class Statistics_Model_Turnover extends Statistics_Model_Abstract
 		        $date = (string)$creditnote->creditnotedate;
 		        $documents[(int)substr($date, 0, 4)][] = [
 		            'day' => substr($date, 5, 5),
-		            'subtotal' => -(float)$creditnote->subtotal,
+		            'subtotal' => -$this->getCreditnoteNetSubtotal($creditnote),
 		        ];
 		    }
 		}

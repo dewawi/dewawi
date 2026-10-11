@@ -115,7 +115,7 @@ class Statistics_Model_Reporting
 				['Kundenentwicklung', 'Jahreswerte vollständig innerhalb des Filters; Vorjahresvergleiche für übereinstimmende Kalendertage', ''],
 				['Kundenaktivität', 'Einordnung ausschließlich nach Belegen in den verglichenen Zeiträumen', ''],
 				['Teiljahre', 'Erstes und letztes Jahr können unvollständig sein', ''],
-				['Datenprüfung', 'Vorzeichen historischer Gutschriften vor externer Nutzung prüfen', ''],
+				['Gutschriften', 'Positive und negative Ausgangsbeträge werden als Umsatzminderung berücksichtigt', ''],
 			],
 			'widths' => [28, 76, 16],
 		]];
@@ -276,14 +276,15 @@ class Statistics_Model_Reporting
 			if(abs($categoryDiff) > 0.05) $issues[] = 'Kundengruppensumme abweichend';
 
 			$negativeCount = (int)($data['negativeCreditnotes'][$year] ?? 0);
-			if($negativeCount > 0) $issues[] = $negativeCount.' Gutschrift(en) mit negativem Nettobetrag';
+			$notes = [];
+			if($negativeCount > 0) $notes[] = $negativeCount.' Gutschrift(en) mit negativem Ausgangsbetrag normalisiert';
 
 			$hasDocuments = (int)$row['invoicesQuantity'] + (int)$row['creditnotesQuantity'] > 0;
 			$status = !$hasDocuments ? 'KEINE BELEGE' : ($issues ? 'PRÜFEN' : 'OK');
 
 			$checks[] = [
 				$year, $net, $monthlyNet, $customerNet, $categoryNet,
-				$monthDiff, $customerDiff, $categoryDiff, $status, implode('; ', $issues),
+				$monthDiff, $customerDiff, $categoryDiff, $status, implode('; ', array_merge($issues, $notes)),
 			];
 		}
 

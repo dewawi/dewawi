@@ -22,6 +22,11 @@ abstract class Statistics_Model_Abstract
 		return $subtotal - ($prepayment * $subtotal / $total);
 	}
 
+	protected function getCreditnoteNetSubtotal($creditnote): float
+	{
+		return abs((float)$creditnote->subtotal);
+	}
+
 	protected function prepareRanking(array $rows, int $nameLength = 20): array
 	{
 		usort($rows, static fn($a, $b) => $b['subtotal'] <=> $a['subtotal']);

@@ -90,15 +90,16 @@ class Statistics_Model_Customer extends Statistics_Model_Abstract
 					//Calculate credit notes
 					foreach($creditnotes as $creditnote) {
 						if(isset($creditnote->name1) && $creditnote->creditnoteid) {
-							$this->addYearlyDocument($year, $creditnote, -(float)$creditnote->subtotal, 'creditnote', $categories);
+							$amount = $this->getCreditnoteNetSubtotal($creditnote);
+							$this->addYearlyDocument($year, $creditnote, -$amount, 'creditnote', $categories);
 							if(isset($customerList[$creditnote->contactid])) {
-								$customerList[$creditnote->contactid]['subtotal'] -= $creditnote->subtotal;
+								$customerList[$creditnote->contactid]['subtotal'] -= $amount;
 								$customerList[$creditnote->contactid]['creditnotes'][] = $creditnote->creditnoteid;
 							} else {
 								$customerList[$creditnote->contactid]['cid'] = $creditnote->cid;
 								$customerList[$creditnote->contactid]['contactid'] = $creditnote->contactid;
 								$customerList[$creditnote->contactid]['name1'] = $creditnote->name1;
-								$customerList[$creditnote->contactid]['subtotal'] = -$creditnote->subtotal;
+								$customerList[$creditnote->contactid]['subtotal'] -= $amount;
 								$customerList[$creditnote->contactid]['creditnotes'] = [$creditnote->creditnoteid];
 
 								$category = ($creditnote->catid && isset($categories[$creditnote->catid]))
