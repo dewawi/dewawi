@@ -37,7 +37,7 @@ class DEEC_Export_Xlsx
 
 						if(
 							!$zip->addFromString('xl/charts/chart'.$i.'.xml', $this->chart($sheet))
-							|| !$zip->addFromString('xl/drawings/drawing'.$i.'.xml', $this->drawing())
+							|| !$zip->addFromString('xl/drawings/drawing'.$i.'.xml', $this->drawing($sheet))
 							|| !$zip->addFromString('xl/drawings/_rels/drawing'.$i.'.xml.rels', $chartRelations)
 							|| !$zip->addFromString('xl/worksheets/_rels/sheet'.$i.'.xml.rels', $sheetRelations)
 						) throw new RuntimeException('Unable to write XLSX chart.');
@@ -197,13 +197,16 @@ class DEEC_Export_Xlsx
 		    .'</c:chart></c:chartSpace>';
 	}
 
-	private function drawing(): string
+	private function drawing(array $sheet): string
 	{
+		$fromCol = count($sheet['headers']) + 1;
+		$toCol = $fromCol + 11;
+
 		return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
 		    .'<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
 		    .'<xdr:twoCellAnchor>'
-		    .'<xdr:from><xdr:col>7</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>3</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>'
-		    .'<xdr:to><xdr:col>18</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>21</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>'
+		    .'<xdr:from><xdr:col>'.$fromCol.'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>3</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>'
+		    .'<xdr:to><xdr:col>'.$toCol.'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>21</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>'
 		    .'<xdr:graphicFrame macro="">'
 		    .'<xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr>'
 		    .'<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>'
