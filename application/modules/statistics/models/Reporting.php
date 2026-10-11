@@ -5,7 +5,7 @@ class Statistics_Model_Reporting
 	public function build(string $from, string $to, string $uncategorized, string $noData): array
 	{
 		$params = ['daterange' => 'custom', 'from' => $from, 'to' => $to, 'catid' => 'all', 'country' => '0'];
-		$options = ['categories' => (new Application_Model_DbTable_Category())->getCategories('contact')];
+		$options = ['categories' => (new Application_Model_DbTable_Category())->getCategories('contact', true)];
 
 		$turnover = new Statistics_Model_Turnover();
 		[$months] = $turnover->createCharts(1000, 400, $uncategorized, $noData, $params, $options);
@@ -135,7 +135,7 @@ class Statistics_Model_Reporting
 				['Differenz Umsatz/Kunden', round($net - $customerNet, 2), 'EUR'],
 				['Datenprüfung', $hasWarnings ? 'PRÜFEN' : 'OK', ''],
 				['Belege', 'Abgeschlossen (Status 105), nicht gelöscht, nicht storniert', ''],
-				['Kategorien', 'Aktuelle Kategorien der Kontakte, nicht historisiert', ''],
+				['Kategorien', 'Aktuelle Kategoriezuordnungen mit vorhandenen aktiven, deaktivierten und gelöschten Kategorien; keine historischen Snapshots', ''],
 				['Jahresvergleich', 'Gleiche Kalendertage innerhalb des gewählten Zeitraums', ''],
 				['Kundenentwicklung', 'Jahreswerte vollständig innerhalb des Filters; Vorjahresvergleiche für übereinstimmende Kalendertage', ''],
 				['Kundenaktivität', 'Einordnung ausschließlich nach Belegen in den verglichenen Zeiträumen', ''],
