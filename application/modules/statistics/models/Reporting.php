@@ -221,7 +221,12 @@ class Statistics_Model_Reporting
 		$sheets[] = $this->customerComparisonWorksheet($data, $from, $to);
 
 		foreach($data['allCustomersByYear'] as $year => $customers) {
-			$sheets[] = $this->worksheet('Kunden '.$year, $customerColumns, $customers);
+			$start = max($from, $year.'-01-01');
+			$end = min($to, $year.'-12-31');
+
+			$sheet = $this->worksheet('Kunden '.$year, $customerColumns, $customers);
+			$sheet['period'] = 'Geschäftsjahr '.$year.' – '.date('d.m.Y', strtotime($start)).' bis '.date('d.m.Y', strtotime($end));
+			$sheets[] = $sheet;
 		}
 
 		$sheets[] = [

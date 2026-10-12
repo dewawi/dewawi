@@ -85,7 +85,7 @@ class DEEC_Export_Xlsx
 
 		$xml .= '</cols><sheetData>';
 		$xml .= '<row r="1" ht="29" customHeight="1">'.$this->cell('A1', $sheet['name'], 5).'</row>';
-		$xml .= '<row r="2">'.$this->cell('A2', $period, 6).'</row>';
+		$xml .= '<row r="2">'.$this->cell('A2', $sheet['period'] ?? $period, 6).'</row>';
 		$xml .= '<row r="4" ht="22" customHeight="1">';
 
 		foreach($headers as $i => $header) $xml .= $this->cell($this->column($i+1).'4', $header, 1);
