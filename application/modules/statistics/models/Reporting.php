@@ -120,7 +120,7 @@ class Statistics_Model_Reporting
 		$customerNet = array_sum(array_column($data['allCustomers'], 'subtotal'));
 
 		$checks = $this->getAuditRows($data);
-		$hasWarnings = count(array_filter($checks, static fn($row) => $row[8] !== 'OK')) > 0;
+		$hasWarnings = count(array_filter($checks, static fn($row) => $row[8] === 'PRÜFEN')) > 0;
 
 		$sheets = [[
 			'name' => 'Übersicht',
@@ -166,7 +166,7 @@ class Statistics_Model_Reporting
 		], $data['monthly']);
 
 		$sheets[] = $this->worksheet('Vorjahresvergleich', [
-			['year', 'Jahr', 'integer'],
+			['year', 'Jahr', 'year'],
 			['period', 'Vergleichszeitraum', 'text'],
 			['previousTurnover', 'Vorjahr netto', 'money'],
 			['currentTurnover', 'Aktuelles Jahr netto', 'money'],
@@ -181,7 +181,7 @@ class Statistics_Model_Reporting
 		], $data['categories']);
 
 		$sheets[] = $this->worksheet('Kundengruppen Jahre', [
-			['year', 'Jahr', 'integer'],
+			['year', 'Jahr', 'year'],
 			['category', 'Kundengruppe', 'text'],
 			['customersQuantity', 'Kunden', 'integer'],
 			['invoicesQuantity', 'Rechnungen', 'integer'],
@@ -191,7 +191,7 @@ class Statistics_Model_Reporting
 		], $data['yearlyCategories']);
 
 		$customerSummaryColumns = [
-			['year', 'Jahr', 'integer'],
+			['year', 'Jahr', 'year'],
 			['customers', 'Kunden', 'integer'],
 			['invoices', 'Rechnungen', 'integer'],
 			['creditnotes', 'Gutschriften', 'integer'],
@@ -232,7 +232,7 @@ class Statistics_Model_Reporting
 				'Diff. Gruppen', 'Status', 'Hinweis',
 			],
 			'rows' => $checks,
-			'formats' => ['integer', 'money', 'money', 'money', 'money', 'money', 'money', 'money', 'text', 'text'],
+			'formats' => ['year', 'money', 'money', 'money', 'money', 'money', 'money', 'money', 'text', 'text'],
 			'widths' => [12, 22, 22, 22, 25, 20, 20, 20, 18, 58],
 		];
 
@@ -258,11 +258,14 @@ class Statistics_Model_Reporting
 			$rows[] = $row;
 		}
 
+		$columnWidths = ['category' => 54, 'name1' => 46, 'cfulltitle' => 54];
+
 		return [
 			'name' => $name,
 			'headers' => array_column($columns, 1),
 			'rows' => $rows,
 			'formats' => array_column($columns, 2),
+			'widths' => array_map(static fn($column) => $columnWidths[$column[0]] ?? min(46, max(14, strlen($column[1]) + 4)), $columns),
 		];
 	}
 
@@ -345,7 +348,7 @@ class Statistics_Model_Reporting
 		    'headers' => $headers,
 		    'rows' => $rows,
 		    'formats' => $formats,
-		    'widths' => array_merge([18, 44, 42, 22], array_fill(0, count($years), 20)),
+		    'widths' => array_merge([18, 46, 54, 22], array_fill(0, count($years), 20)),
 		];
 	}
 
@@ -407,8 +410,8 @@ class Statistics_Model_Reporting
 		    'name' => 'Kunden Veränderung',
 		    'headers' => ['Jahr', 'Vergleichszeitraum', 'Kundennr.', 'Kunde', 'Kundengruppe', 'Vorjahr netto', 'Aktuelles Jahr netto', 'Differenz netto', 'Veränderung (%)', 'Einordnung'],
 		    'rows' => $rows,
-		    'formats' => ['integer', 'text', 'text', 'text', 'text', 'money', 'money', 'money', 'percent', 'text'],
-		    'widths' => [12, 22, 18, 44, 42, 22, 22, 22, 20, 29],
+			'formats' => ['year', 'text', 'text', 'text', 'text', 'money', 'money', 'money', 'percent', 'text'],
+		    'widths' => [12, 22, 18, 46, 54, 22, 22, 22, 20, 29],
 		];
 	}
 
