@@ -35,6 +35,26 @@ class Contacts_Model_DbTable_Email extends DEEC_Model_DbTable_Entity
 		return $row->toArray();
 	}
 
+	public function getContactRecipients(int $contactId): array
+	{
+		$emails = $this->getByParentId($contactId, 'contacts', 'contact');
+		$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+		$contactpersonDb->setClientId($this->getClientId());
+
+		foreach($contactpersonDb->getByParentId($contactId, 'contacts', 'contact') as $person) {
+			foreach($this->getByParentId((int)$person['id'], 'contacts', 'contactperson') as $email) {
+				$email['salutation'] = $person['salutation'];
+				$email['name1'] = $person['name1'];
+				$email['name2'] = $person['name2'];
+				$emails[] = $email;
+			}
+		}
+
+		return array_values(array_filter($emails, static function (array $email): bool {
+			return empty($email['suppressed']) && DEEC_Filter::isValidEmail((string)$email['email']);
+		}));
+	}
+
 	public function suppressByEmail(string $email, string $reason): int
 	{
 		$email = strtolower(trim($email));

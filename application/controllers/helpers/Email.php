@@ -56,7 +56,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				$recipients = array();
 
 				if($messageid) {
-					$emailmessage = $emailmessageDb->getEmailmessage($messageid);
+					$emailmessage = $emailmessageDb->getById((int)$messageid);
+					if(!$emailmessage) throw new RuntimeException('Email message is not available');
 					$contactid = (int)($emailmessage['contactid'] ?? 0);
 					$documentid = (int)($emailmessage['documentid'] ?? 0);
 					$campaignid = (int)($emailmessage['campaignid'] ?? 0);
@@ -64,11 +65,19 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					unset($emailmessage['id'], $emailmessage['messagesent'], $emailmessage['messagesentby'], $emailmessage['response']);
 
 					$data = $emailmessage;
+				}
+
+				$quoteRecipient = $this->getQuoteRecipient($data, (int)$documentid, (bool)$messageid, (int)$campaignid);
+
+				if($quoteRecipient !== null) {
+					$recipients[0] = $quoteRecipient;
+				} elseif($messageid) {
 					$recipients[0]['email'] = $data['recipient'];
 					$recipients[0]['contactid'] = $contactid;
 				} else {
 					$emailDb = new Contacts_Model_DbTable_Email();
-					$emailArray = $emailDb->getEmail($data['recipient']);
+					$emailArray = $emailDb->getById((int)($data['recipient'] ?? 0));
+					if(!$emailArray) throw new RuntimeException('Email recipient is not available');
 					$recipients[0]['email'] = $emailArray['email'];
 
 					if($emailArray['controller'] == 'contact') {
@@ -104,6 +113,53 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$flashMessengerHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
 			$flashMessengerHelper->addMessage('MESSAGES_FORM_INVALID');
 		}
+	}
+
+	private function getQuoteRecipient(array &$data, int $documentId, bool $resend, int $campaignId): ?array
+	{
+		$module = $data['module'] ?? 'contacts';
+		$controller = $data['controller'] ?? 'contact';
+		if(!is_string($module) || !is_string($controller)) throw new InvalidArgumentException('Invalid email context');
+		$module = strtolower(trim($module));
+		$controller = strtolower(trim($controller));
+		if(!preg_match('/^[a-z][a-z0-9-]*$/D', $module) || !preg_match('/^[a-z][a-z0-9-]*$/D', $controller)) throw new InvalidArgumentException('Invalid email context');
+		if($module !== 'sales' || $controller !== 'quote') return null;
+
+		$data['module'] = $module;
+		$data['controller'] = $controller;
+		$user = Zend_Registry::get('User');
+		if(empty($user['id']) || empty($user['clientid'])) throw new RuntimeException('Quote email client context is missing');
+		$permission = new DEEC_Permission($user);
+		if(!$permission->hasActionPermission('sales', 'quote', 'view') || !$permission->hasActionPermission('sales', 'quote', 'send')) throw new RuntimeException('Quote email permission denied');
+		if($documentId <= 0 || $campaignId !== 0) throw new InvalidArgumentException('Invalid quote email context');
+
+		$quoteDb = new Sales_Model_DbTable_Quote();
+		$quoteDb->setClientId((int)$user['clientid']);
+		$quote = $quoteDb->getById($documentId);
+		if(!$quote || empty($quote['contactid'])) throw new RuntimeException('Quote is not available');
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->getContactWithID((int)$quote['contactid']);
+		if(!$contact) throw new RuntimeException('Quote contact is not available');
+
+		$recipient = $data['recipient'] ?? null;
+		$recipientId = $resend ? null : filter_var($recipient, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+		if(($resend && !is_string($recipient)) || (!$resend && !$recipientId)) throw new InvalidArgumentException('Invalid quote email recipient');
+
+		$emailDb = new Contacts_Model_DbTable_Email();
+		$emailDb->setClientId((int)$contact['clientid']);
+		foreach($emailDb->getContactRecipients((int)$contact['id']) as $email) {
+			$matches = $resend ? strcasecmp(trim((string)$email['email']), trim($recipient)) === 0 : (int)$email['id'] === $recipientId;
+			if(!$matches) continue;
+			return [
+				'email' => (string)$email['email'],
+				'contactid' => (int)$email['parentid'],
+				'salutation' => (string)($email['salutation'] ?? ''),
+				'name2' => (string)($email['name2'] ?? ''),
+			];
+		}
+
+		throw new RuntimeException('Email recipient does not belong to the quote contact');
 	}
 
 	private function sendEmails($module, $controller, $recipients, array $smtpConfig, $fromEmail, $fromName, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items)
