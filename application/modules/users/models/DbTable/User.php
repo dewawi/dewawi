@@ -28,6 +28,18 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 		return $row->toArray();
 	}
 
+	public function getActiveUserById(int $id): ?array
+	{
+		$row = $this->fetchRow(
+			$this->select()
+				->where('id = ?', $id)
+				->where('activated = ?', 1)
+				->where('deleted = ?', 0)
+		);
+
+		return $row ? $row->toArray() : null;
+	}
+
 	public function getUsers()
 	{
 		$data = $this->fetchAll(

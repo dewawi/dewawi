@@ -39,27 +39,62 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		$auth = Zend_Auth::getInstance();
 
 		if($auth->hasIdentity()) {
+			$this->bootstrap('Database');
+			$this->bootstrap('modules');
+
 			$identity = $auth->getIdentity();
+			$userDb = new Users_Model_DbTable_User();
+			$account = $userDb->getActiveUserById((int)$identity->id);
+
+			if(!$account) {
+				$this->clearAuthentication();
+				return;
+			}
 
 			$user = array(
-				'id' => $identity->id,
-				'username' => $identity->username,
-				'name' => $identity->name,
-				'email' => $identity->email,
-				'emailsender' => $identity->emailsender,
-				'emailsignature' => $identity->emailsignature,
-				'smtphost' => $identity->smtphost,
-				'smtpuser' => $identity->smtpuser,
-				'smtppass' => $identity->smtppass,
-				'admin' => $identity->admin,
-				'clientid' => $identity->clientid,
-				'activated' => $identity->activated,
-				'deleted' => $identity->deleted
+				'id' => $account['id'],
+				'username' => $account['username'],
+				'name' => $account['name'],
+				'email' => $account['email'],
+				'emailsender' => $account['emailsender'],
+				'emailsignature' => $account['emailsignature'],
+				'smtphost' => $account['smtphost'],
+				'smtpuser' => $account['smtpuser'],
+				'smtppass' => $account['smtppass'],
+				'admin' => $account['admin'],
+				'clientid' => $account['clientid'],
+				'activated' => $account['activated'],
+				'deleted' => $account['deleted']
 			);
 
 			Zend_Registry::set('User', $user);
 
+			// Keep the selected client separate from the persisted account assignment.
+			$clientId = filter_var($identity->clientid, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+			$clientDb = new Application_Model_DbTable_Client();
+			if($clientId === false || !array_key_exists($clientId, $clientDb->getSwitchableClients())) {
+				$this->clearAuthentication();
+				return;
+			}
+
+			$user['clientid'] = $clientId;
+			Zend_Registry::set('User', $user);
+
+			$currentIdentity = (object)$account;
+			$currentIdentity->clientid = $clientId;
+			if(isset($identity->language)) $currentIdentity->language = $identity->language;
+			$auth->getStorage()->write($currentIdentity);
+
 			DEEC_Session::refresh();
+		}
+	}
+
+	protected function clearAuthentication(): void
+	{
+		Zend_Auth::getInstance()->clearIdentity();
+		DEEC_Session::logout();
+		foreach(['User', 'Client', 'Config'] as $key) {
+			if(Zend_Registry::isRegistered($key)) Zend_Registry::getInstance()->offsetUnset($key);
 		}
 	}
 
@@ -70,6 +105,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
 	protected function _initClient()
 	{
+		$this->bootstrap('Auth');
 		$auth = Zend_Auth::getInstance();
 		if($auth->hasIdentity()) {
 
@@ -91,6 +127,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
 	protected function _initLocale()
 	{
+		$this->bootstrap('Client');
 		$auth = Zend_Auth::getInstance();
 		if($auth->hasIdentity()) {
 			//Config
