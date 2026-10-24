@@ -29,11 +29,20 @@ class Shops_Model_DbTable_Quote extends DEEC_Model_DbTable_SiteEntity
 
 	public function saveQuote(int $id, int $quoteId, string $filename): void
 	{
-		$this->updateById($id, [
+		$quote = $this->getQuote($id);
+		if (!empty($quote['quoteid'])) return;
+
+		$where = $this->getEntityWhere($id);
+		$where[] = '(quoteid IS NULL OR quoteid = 0)';
+
+		$this->update($this->prepareUpdateData([
 			'quoteid' => $quoteId,
-			'quotedate' => $this->_date,
+			'quotedate' => $quote['quotedate'] ?: date('Y-m-d'),
 			'filename' => $filename,
 			'state' => 105,
-		]);
+			'completed' => 1,
+			'completeddate' => $this->_date,
+			'completedby' => $this->getUserId(),
+		]), $where);
 	}
 }

@@ -589,7 +589,11 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	{
 		$data['state'] = 100;
 		$data['completed'] = 0;
+		$data['completeddate'] = null;
+		$data['completedby'] = 0;
 		$data['cancelled'] = 0;
+		$data['cancelleddate'] = null;
+		$data['cancelledby'] = 0;
 		$data['pinned'] = 0;
 		$data['modified'] = null;
 		$data['modifiedby'] = 0;
@@ -600,7 +604,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			$data[$targetField] = $data[$sourceField] ?? null;
 		}
 
-		unset($data['id']);
+		unset($data['id'], $data['filename'], $data[$target . 'id'], $data[$target . 'date']);
 
 		foreach (($config['unset'] ?? []) as $field) {
 			unset($data[$field]);

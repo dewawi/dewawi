@@ -22,8 +22,13 @@ class Sales_Model_DbTable_Salesorder extends DEEC_Model_DbTable_Entity
 		$data['salesorderdate'] = null;
 		$data['state'] = 100;
 		$data['completed'] = 0;
+		$data['completeddate'] = null;
+		$data['completedby'] = 0;
 		$data['cancelled'] = 0;
+		$data['cancelleddate'] = null;
+		$data['cancelledby'] = 0;
 		$data['pinned'] = 0;
+		$data['filename'] = null;
 		$data['modified'] = null;
 		$data['modifiedby'] = 0;
 		$data['locked'] = 0;
