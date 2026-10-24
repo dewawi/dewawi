@@ -64,38 +64,52 @@ class Items_TagController extends Zend_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Items_Form_Item();
+		if(!$request->isPost()) return;
 
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$tagEntityDb = new Application_Model_DbTable_Tagentity();
-				$tagEntityDataBefore = $tagEntityDb->getTagEntities('items', 'item', $data['itemid']);
-				$latestOrdering = is_array($tagEntityDataBefore) && !empty($tagEntityDataBefore)
-					? end($tagEntityDataBefore)['ordering']
-					: 0;
-				if(isset($data['tagid']) && $data['tagid']) {
-					header('Content-type: application/json');
-					$existingTags = array();
-					foreach($tagEntityDataBefore as $tagEntity) {
-						$existingTags[$tagEntity['tagid']] = $tagEntity['tagid'];
-					}
-					if(array_search($data['tagid'], $existingTags) !== false) {
-						echo Zend_Json::encode(array('message' => $this->view->translate('TAG_ALREADY_EXISTS')));
-					} else {
-						$tagEntityDb->addTagEntity(array('tagid' => $data['tagid'], 'entityid' => $data['itemid'], 'module' => 'items', 'controller' => 'item', 'ordering' => $latestOrdering+1));
-						$tagEntityDataAfter = $tagEntityDb->getTagEntities('items', 'item', $data['itemid']);
-						$tagEntity = end($tagEntityDataAfter);
-						echo Zend_Json::encode($tagEntity);
-					}
-				} else {
-					$tagEntityDb->addTagEntity(array('tagid' => 0, 'entityid' => $data['itemid'], 'module' => 'items', 'controller' => 'item', 'ordering' => $latest['ordering']+1));
-					$tagEntityDataAfter = $tagEntityDb->getTagEntities('items', 'item', $data['itemid']);
-					$tagEntity = end($tagEntityDataAfter);
-					echo $this->view->MultiForm('items', 'tag', $tagEntity);
-				}
+		$data = $request->getPost();
+		$itemId = filter_var($data['itemid'] ?? null, FILTER_VALIDATE_INT, array('options' => array('min_range' => 1)));
+		$tagId = $data['tagid'] ?? 0;
+		$tagId = filter_var($tagId === '' ? 0 : $tagId, FILTER_VALIDATE_INT, array('options' => array('min_range' => 0)));
+
+		if($itemId === false || $tagId === false) {
+			$this->getResponse()->setHttpResponseCode(400);
+			return $this->_helper->json(array('ok' => false, 'message' => 'invalid_request'));
+		}
+
+		$itemDb = new Items_Model_DbTable_Item();
+		if(!$itemDb->getById($itemId)) {
+			$this->getResponse()->setHttpResponseCode(404);
+			return $this->_helper->json(array('ok' => false, 'message' => 'not_found'));
+		}
+
+		if($tagId) {
+			$tagDb = new Application_Model_DbTable_Tag();
+			$tags = $tagDb->getTags('items', 'item');
+			if(!array_key_exists($tagId, $tags)) {
+				$this->getResponse()->setHttpResponseCode(404);
+				return $this->_helper->json(array('ok' => false, 'message' => 'not_found'));
 			}
 		}
+
+		$tagEntityDb = new Application_Model_DbTable_Tagentity();
+		$tagEntities = $tagEntityDb->getTagEntities('items', 'item', $itemId);
+		$latestOrdering = 0;
+		foreach($tagEntities as $tagEntity) {
+			$latestOrdering = max($latestOrdering, (int)$tagEntity['ordering']);
+			if($tagId && (int)$tagEntity['tagid'] === $tagId) {
+				return $this->_helper->json(array('message' => $this->view->translate('TAG_ALREADY_EXISTS')));
+			}
+		}
+
+		$id = $tagEntityDb->addTagEntity(array('tagid' => $tagId, 'entityid' => $itemId, 'module' => 'items', 'controller' => 'item', 'ordering' => $latestOrdering+1));
+		$tagEntities = array_column($tagEntityDb->getTagEntities('items', 'item', $itemId), null, 'id');
+		$tagEntity = $tagEntities[$id];
+
+		if($tagId) {
+			return $this->_helper->json($tagEntity);
+		}
+
+		echo $this->view->MultiForm('items', 'tag', $tagEntity);
 	}
 
 	public function editAction()

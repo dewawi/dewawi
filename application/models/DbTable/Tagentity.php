@@ -20,16 +20,18 @@ class Application_Model_DbTable_Tagentity extends Zend_Db_Table_Abstract
 
 	public function getTagEntities($module, $controller, $id)
 	{
-		$tagEntityDb = new Application_Model_DbTable_Tagentity();
-		$tags = $tagEntityDb->fetchAll(
-			$tagEntityDb->select()
+		$tags = $this->fetchAll(
+			$this->select()
 				->setIntegrityCheck(false)
 				->from(array('t' => 'tagentity'))
-				->joinLeft(array('tag' => 'tag'), 't.tagid = tag.id', array('title as tag', 'module', 'controller'))
+				->joinLeft(array('tag' => 'tag'), 't.tagid = tag.id AND tag.clientid = t.clientid AND tag.deleted = 0', array('title as tag', 'module', 'controller'))
 				->group('t.id')
-				->where('(t.entityid = "'.$id.'") AND (t.module = "'.$module.'") AND (t.controller = "'.$controller.'") AND (t.clientid = "'.$this->_client['id'].'") AND (t.deleted = 0)')
-				//->order($order.' '.$params['sort'])
-				//->limit($params['limit'], $params['offset'])
+				->where('t.entityid = ?', $id)
+				->where('t.module = ?', $module)
+				->where('t.controller = ?', $controller)
+				->where('t.clientid = ?', $this->_client['id'])
+				->where('t.deleted = ?', 0)
+				->order(array('t.ordering ASC', 't.id ASC'))
 		);
 		return $tags->toArray();
 	}
