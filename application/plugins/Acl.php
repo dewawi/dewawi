@@ -22,7 +22,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 		$module = $request->getModuleName();
 		$controller = $request->getControllerName();
 
-		if ($controller === 'error') {
+		if ($module === 'default' && $controller === 'error') {
 			$this->logPermit($request);
 			return;
 		}
@@ -216,6 +216,13 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 
 			return;
 		}
+
+		// Route to a response-only action so the denied controller cannot run.
+		$this->getResponse()->setHttpResponseCode(403);
+		$request
+			->setModuleName('default')
+			->setControllerName('error')
+			->setActionName('forbidden');
 	}
 
 	private function logPermit(

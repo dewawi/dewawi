@@ -15,6 +15,10 @@ class ErrorController extends Zend_Controller_Action
 
 	public function init()
 	{
+		if ($this->getRequest()->getActionName() === 'forbidden') {
+			return;
+		}
+
 		$params = $this->_getAllParams();
 
 		$this->_date = date('Y-m-d H:i:s');
@@ -28,6 +32,17 @@ class ErrorController extends Zend_Controller_Action
 			$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 		}
 		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
+	}
+
+	public function forbiddenAction()
+	{
+		$this->_helper->viewRenderer->setNoRender(true);
+		$this->_helper->layout->disableLayout();
+		$this->getResponse()
+			->setHttpResponseCode(403)
+			->setHeader('Content-Type', 'text/plain; charset=UTF-8', true)
+			->setHeader('Cache-Control', 'no-store', true)
+			->setBody('Forbidden');
 	}
 
 	public function errorAction()
