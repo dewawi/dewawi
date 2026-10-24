@@ -27,21 +27,33 @@ class Application_Model_DbTable_Client extends DEEC_Model_DbTable_Entity
 
 	public function getClients($parentid)
 	{
-		if($this->_user['admin']) {
-			$where = array();
-			$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-			$data = $this->fetchAll($where);
-		} else {
-			$data = $this->fetchAll(
-				$this->select()
-					->where('id = ?', $this->_user['clientid'])
-					->where('deleted = ?', 0)
-					->orWhere('parentid = ?', $this->_user['clientid'])
-					->where('deleted = ?', 0)
-					->orWhere('id = ?', $parentid)
-					->where('deleted = ?', 0)
-				);
+		return $this->getSwitchableClients();
+	}
+
+	public function getSwitchableClients(): array
+	{
+		// Anchor access to the persisted account, not the selected session client.
+		$userDb = new Users_Model_DbTable_User();
+		$user = $userDb->getUser((int)$this->_user['id']);
+		if(!empty($user['deleted']) || empty($user['activated'])) return [];
+
+		$select = $this->select()->where('deleted = ?', 0);
+
+		if(empty($user['admin'])) {
+			$clientid = (int)$user['clientid'];
+			$home = $this->fetchRow($this->select()->where('id = ?', $clientid)->where('deleted = ?', 0));
+			if(!$home) return [];
+
+			$adapter = $this->getAdapter();
+			$scope = [
+				$adapter->quoteInto('id = ?', $clientid),
+				$adapter->quoteInto('parentid = ?', $clientid),
+			];
+			if((int)$home->parentid > 0) $scope[] = $adapter->quoteInto('id = ?', (int)$home->parentid);
+			$select->where('(' . implode(' OR ', $scope) . ')');
 		}
+
+		$data = $this->fetchAll($select);
 		$clients = array();
 		foreach($data as $client) {
 			$clients[$client->id] = $client->company;

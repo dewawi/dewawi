@@ -75,13 +75,20 @@ $(document).ready(function(){
 			$.ajax({
 				type: 'POST',
 				async: true,
-				url: baseUrl+'/users/user/client/clientid/'+$('#clientid').val(),
+				url: baseUrl+'/users/user/client',
+				data: {
+					clientid: $('#clientid').val(),
+					client_csrf: $('#client_csrf').val()
+				},
 				cache: false,
 				success: function(json){
 					//response = json;
 					//Dewawi.setDirty(false);
 								//console.log(isDirty);
 								location.reload();
+				},
+				error: function(){
+					location.reload();
 				}
 			});
 	});

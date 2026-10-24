@@ -104,6 +104,7 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 						<?php if ($this->action === 'index') : ?>
 							<div class="dw-userbar__switchers">
 								<?php echo $this->clientSwitcher; ?>
+								<?php echo $this->clientSwitcherCsrf; ?>
 								<?php echo $this->languageSwitcher; ?>
 							</div>
 						<?php endif; ?>
