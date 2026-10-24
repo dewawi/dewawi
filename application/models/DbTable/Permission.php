@@ -21,10 +21,11 @@ class Application_Model_DbTable_Permission extends Zend_Db_Table_Abstract
 	public function getPermissions()
 	{
 		$id = (int)$this->_user['id'];
-		$row = $this->fetchRow('userid = ' . $id);
-		if (!$row) {
-			throw new Exception("Could not find row $id");
-		}
-		return $row->toArray();
+		$row = $this->fetchRow(
+			$this->select()
+				->where('userid = ?', $id)
+				->where('deleted = ?', 0)
+		);
+		return $row ? $row->toArray() : [];
 	}
 }

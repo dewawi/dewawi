@@ -1,6 +1,6 @@
 <?php
 
-class Application_Model_DbTable_Tagentity extends Zend_Db_Table_Abstract
+class Application_Model_DbTable_Tagentity extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'tagentity';
@@ -47,18 +47,12 @@ class Application_Model_DbTable_Tagentity extends Zend_Db_Table_Abstract
 
 	public function updateTagEntity($id, $data)
 	{
-		$id = (int)$id;
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$data = array_intersect_key($data, array('tagid' => true));
+		if($data) $this->updateById((int)$id, $data);
 	}
 
 	public function deleteTagEntity($id)
 	{
-		$id = (int)$id;
-		$data = array('deleted' => 1);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById((int)$id, array('deleted' => 1));
 	}
 }

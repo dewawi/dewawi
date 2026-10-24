@@ -2,6 +2,11 @@
 
 class DEEC_Permission
 {
+	private const MODULES = [
+		'default', 'calendar', 'contacts', 'items',
+		'processes', 'purchases', 'sales', 'statistics',
+	];
+
 	private const ACTIONS = [
 		'add' => [
 			'add',
@@ -118,7 +123,8 @@ class DEEC_Permission
 
 	public function hasModule(string $module): bool
 	{
-		return array_key_exists($module, $this->getPermissions());
+		return in_array($module, self::MODULES, true)
+			|| array_key_exists($module, $this->getPermissions());
 	}
 
 	public function hasController(

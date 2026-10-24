@@ -29,10 +29,11 @@ function matchesClientSwitchWhere(string $where, array $row): bool {
 class ClientSwitchFixtureAdapter extends Zend_Db_Adapter_Pdo_Mysql {
     public array $users = [];
     public array $clients = [];
+    public array $permissions = [];
     protected function _connect() {}
     public function describeTable($tableName, $schemaName = null) {
         $metadata = [];
-        foreach (['id', 'clientid', 'admin', 'activated', 'deleted', 'parentid', 'company'] as $column) {
+        foreach (['id', 'userid', 'clientid', 'admin', 'activated', 'deleted', 'parentid', 'company'] as $column) {
             $metadata[$column] = ['COLUMN_NAME'=>$column, 'DATA_TYPE'=>'int', 'PRIMARY'=>$column === 'id', 'PRIMARY_POSITION'=>1, 'IDENTITY'=>false];
         }
         return $metadata;
@@ -42,8 +43,8 @@ class ClientSwitchFixtureAdapter extends Zend_Db_Adapter_Pdo_Mysql {
         $sql->assemble();
         $from = $sql->getPart(Zend_Db_Select::FROM);
         $table = reset($from)['tableName'];
-        check(in_array($table, ['user', 'client'], true), 'Unexpected fixture table');
-        $rows = $table === 'user' ? $this->users : $this->clients;
+        check(in_array($table, ['user', 'client', 'permission'], true), 'Unexpected fixture table');
+        $rows = ['user' => $this->users, 'client' => $this->clients, 'permission' => $this->permissions][$table];
         $where = implode(' ', $sql->getPart(Zend_Db_Select::WHERE));
         $rows = array_values(array_filter($rows, static fn($row) => matchesClientSwitchWhere($where, $row)));
         if ($limit = $sql->getPart(Zend_Db_Select::LIMIT_COUNT)) $rows = array_slice($rows, 0, $limit);

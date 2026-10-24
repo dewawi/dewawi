@@ -104,6 +104,16 @@ class Zend_Db_Table_Abstract
         self::$writes[] = [$this->_name, $data];
         return $id;
     }
+    public function update(array $data, $where)
+    {
+        $rows = $this->fetchAll((array)$where);
+        foreach ($rows as $row) {
+            $id = (int)$row['id'];
+            self::$rows[$this->_name][$id] = array_replace(self::$rows[$this->_name][$id], $data);
+            self::$writes[] = [$this->_name, ['id' => $id] + $data];
+        }
+        return count($rows);
+    }
 }
 
 class Application_Model_DbTable_Permission
@@ -167,11 +177,16 @@ function fixtures(): void
 
 function addTag(array $post, string $method = 'POST'): array
 {
+    return requestTag('add', $post, 0, $method);
+}
+
+function requestTag(string $action, array $post, $id = 0, string $method = 'POST'): array
+{
     $_SERVER['REQUEST_METHOD'] = $method;
     $_POST = $post;
     $_GET = [];
     $request = new Zend_Controller_Request_Http();
-    $request->setModuleName('items')->setControllerName('tag')->setActionName('add');
+    $request->setModuleName('items')->setControllerName('tag')->setActionName($action)->setParam('id', $id);
     $response = new Zend_Controller_Response_Http();
     Zend_Controller_Front::getInstance()->setRequest($request)->setResponse($response);
     $acl = new Application_Plugin_Acl();
@@ -181,7 +196,7 @@ function addTag(array $post, string $method = 'POST'): array
     try {
         if ($request->getModuleName() === 'items') {
             $controller = new TagTestController($request, $response);
-            $controller->addAction();
+            $controller->{$action . 'Action'}();
         }
     } finally {
         $output = ob_get_clean();
@@ -271,5 +286,104 @@ foreach (['0") OR (1=1) OR (t.entityid = "0', "x' OR 1=1 -- "] as $payload) {
 $rows = $model->getTagEntities('items', 'item', 11);
 check(count($rows) === 1 && $rows[0]['id'] === 31, 'Tag query included foreign assignments or lost blank tags');
 $checks++;
+
+// Existing assignments require ownership of both the assignment and the item.
+Zend_Registry::set('User', ['id'=>42, 'admin'=>0, 'clientid'=>7]);
+Zend_Registry::set('Client', ['id'=>7, 'parentid'=>0]);
+Application_Model_DbTable_Permission::$permissions = ['add', 'edit', 'delete'];
+foreach (['edit', 'delete'] as $action) {
+    foreach ([0, -1, '31 OR 1=1', ['31'], '1.1', '999999999999999999999999'] as $id) {
+        fixtures();
+        [$status] = requestTag($action, ['tag' => 'New tag'], $id);
+        check($status === 400 && !Zend_Db_Table_Abstract::$writes, 'Invalid assignment ID accepted: ' . $action);
+        $checks++;
+    }
+    foreach ([32, 33, 34, 35, 36, 37, 999] as $id) {
+        fixtures();
+        foreach ([
+            33 => ['deleted' => 1],
+            34 => ['module' => 'contacts', 'controller' => 'contact'],
+            35 => ['entityid' => 12],
+            36 => ['entityid' => 13],
+            37 => ['entityid' => 999],
+        ] as $rowId => $changes) {
+            Zend_Db_Table_Abstract::$rows['tagentity'][$rowId] = array_replace(Zend_Db_Table_Abstract::$rows['tagentity'][31], ['id' => $rowId], $changes);
+        }
+        [$status] = requestTag($action, ['tag' => 'New tag'], $id);
+        check($status === 404 && !Zend_Db_Table_Abstract::$writes, 'Inaccessible assignment or item accepted: ' . $action);
+        $checks++;
+    }
+
+    fixtures();
+    Application_Model_DbTable_Permission::$permissions = [];
+    [$status] = requestTag($action, ['tag' => 'Own tag'], 31);
+    check($status === 403 && !Zend_Db_Table_Abstract::$writes, 'Missing permission allowed tag mutation: ' . $action);
+    Application_Model_DbTable_Permission::$permissions = ['add', 'edit', 'delete'];
+    $checks++;
+
+    fixtures();
+    requestTag($action, ['tag' => 'New tag'], 31, 'GET');
+    check(!Zend_Db_Table_Abstract::$writes, 'GET request changed an assignment: ' . $action);
+    $checks++;
+}
+
+foreach ([[], ['tag' => []], ['tag' => ['nested' => ['unexpected']]]] as $post) {
+    fixtures();
+    [$status] = requestTag('edit', $post, 31);
+    check($status === 400 && !Zend_Db_Table_Abstract::$writes, 'Missing or malformed tag title accepted');
+    $checks++;
+}
+
+fixtures();
+[$status, $body] = requestTag('edit', [
+    'tag' => 'Own tag', 'id' => 32, 'clientid' => 8, 'entityid' => 12,
+    'module' => 'contacts', 'controller' => 'contact', 'deleted' => 1, 'ordering' => 99,
+], 31);
+$row = Zend_Db_Table_Abstract::$rows['tagentity'][31];
+check($status === 200 && json_decode($body, true)['tagid'] === 21, 'Existing tag could not be selected');
+check($row['tagid'] === 21 && $row['clientid'] === 7 && $row['entityid'] === 11 && $row['module'] === 'items' && $row['controller'] === 'item' && $row['deleted'] === 0 && $row['ordering'] === 4, 'Extra POST fields changed assignment ownership or context');
+check(count(Zend_Db_Table_Abstract::$writes) === 1 && $row['modifiedby'] === 42, 'Existing tag selection did not produce one audited update');
+$checks++;
+
+fixtures();
+[$status, $body] = requestTag('edit', ['tag' => ' <b>New tag</b> '], 31);
+$tagId = json_decode($body, true)['tagid'];
+$tag = Zend_Db_Table_Abstract::$rows['tag'][$tagId];
+check($status === 200 && $tag['title'] === 'New tag' && $tag['clientid'] === 7 && $tag['module'] === 'items' && $tag['controller'] === 'item', 'New tag did not use the existing form filters and current context');
+check(count(Zend_Db_Table_Abstract::$writes) === 2 && Zend_Db_Table_Abstract::$rows['tagentity'][31]['tagid'] === $tagId, 'New tag was not assigned');
+$checks++;
+
+fixtures();
+[$status] = requestTag('delete', [], 31);
+check($status === 200 && Zend_Db_Table_Abstract::$rows['tagentity'][31]['deleted'] === 1, 'Own assignment could not be deleted');
+check(Zend_Db_Table_Abstract::$rows['tagentity'][32]['deleted'] === 0 && count(Zend_Db_Table_Abstract::$writes) === 1, 'Deleting own assignment changed foreign data');
+$checks++;
+
+// Model methods must also restrict writes when called without the controller.
+foreach (['updateTagEntity', 'deleteTagEntity'] as $method) {
+    fixtures();
+    $model = new Application_Model_DbTable_Tagentity();
+    $model->$method(32, ['tagid' => 21]);
+    check(!Zend_Db_Table_Abstract::$writes, 'Model modified a foreign assignment: ' . $method);
+    Zend_Db_Table_Abstract::$rows['tagentity'][31]['deleted'] = 1;
+    $model->$method(31, ['tagid' => 21]);
+    check(!Zend_Db_Table_Abstract::$writes, 'Model modified a deleted assignment: ' . $method);
+    $checks++;
+}
+fixtures();
+(new Application_Model_DbTable_Tagentity())->updateTagEntity(31, ['tagid' => 21, 'clientid' => 8, 'entityid' => 12, 'module' => 'contacts', 'controller' => 'contact']);
+$row = Zend_Db_Table_Abstract::$rows['tagentity'][31];
+check($row['clientid'] === 7 && $row['entityid'] === 11 && $row['module'] === 'items' && $row['controller'] === 'item' && $row['tagid'] === 21, 'Model allowed changing assignment ownership or context');
+$checks++;
+
+// Preserve edits and deletions in an authorized parent's shared item context.
+Zend_Registry::set('User', ['id'=>42, 'admin'=>0, 'clientid'=>70]);
+Zend_Registry::set('Client', ['id'=>7, 'parentid'=>7, 'modules'=>['items'=>7]]);
+foreach (['edit', 'delete'] as $action) {
+    fixtures();
+    [$status] = requestTag($action, ['tag' => 'Own tag'], 31);
+    check($status === 200 && count(Zend_Db_Table_Abstract::$writes) === 1, 'Authorized parent context lost tag mutation: ' . $action);
+    $checks++;
+}
 
 echo 'PASS: ' . $checks . " item tag security and compatibility cases\n";

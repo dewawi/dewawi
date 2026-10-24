@@ -115,38 +115,42 @@ class Items_TagController extends Zend_Controller_Action
 	public function editAction()
 	{
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
 
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
 
-		$form = new Items_Form_Item();
+		if(!$request->isPost()) return;
 
-		if($request->isPost()) {
-			$data = $request->getPost();
-			if($form->isValid($data) || true) {
-				$tagDb = new Application_Model_DbTable_Tag();
-				$tags = $tagDb->getTags('items', 'item');
-
-				$key = array_search($data['tag'], $tags);
-				if(false !== $key) {
-					$data['tagid'] = $key;
-				} else {
-					$data['tagid'] = $tagDb->addTag(array('title' => $data['tag'], 'module' => 'items', 'controller' => 'item'));
-				}
-				unset($data['tag']);
-
-				$tagEntityDb = new Application_Model_DbTable_Tagentity();
-				if($id > 0) {
-					$tagEntityDb->updateTagEntity($id, $data);
-					echo Zend_Json::encode($data);
-				}
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
+		$id = filter_var($this->_getParam('id', 0), FILTER_VALIDATE_INT, array('options' => array('min_range' => 1)));
+		$tag = $request->getPost('tag');
+		if($id === false || !is_string($tag)) {
+			$this->getResponse()->setHttpResponseCode(400);
+			return $this->_helper->json(array('ok' => false, 'message' => 'invalid_request'));
 		}
 
-		$this->view->form = $form;
+		if(!$this->getItemTagEntity($id)) {
+			$this->getResponse()->setHttpResponseCode(404);
+			return $this->_helper->json(array('ok' => false, 'message' => 'not_found'));
+		}
+
+		$form = new Items_Form_Tag();
+		if(!$form->isValid(array('tag' => $tag))) {
+			$this->getResponse()->setHttpResponseCode(400);
+			return $this->_helper->json(array('ok' => false, 'message' => 'invalid_request'));
+		}
+
+		$tag = (string)$form->getValue('tag');
+		$tagDb = new Application_Model_DbTable_Tag();
+		$tags = $tagDb->getTags('items', 'item');
+		$tagId = array_search($tag, $tags, true);
+		if($tagId === false) {
+			$tagId = $tagDb->addTag(array('title' => $tag, 'module' => 'items', 'controller' => 'item'));
+		}
+
+		$data = array('tagid' => $tagId);
+		$tagEntityDb = new Application_Model_DbTable_Tagentity();
+		$tagEntityDb->updateTagEntity($id, $data);
+		return $this->_helper->json($data);
 	}
 
 	public function deleteAction()
@@ -155,10 +159,30 @@ class Items_TagController extends Zend_Controller_Action
 		$this->_helper->getHelper('layout')->disableLayout();
 
 		if($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
+			$id = filter_var($this->_getParam('id', 0), FILTER_VALIDATE_INT, array('options' => array('min_range' => 1)));
+			if($id === false) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(array('ok' => false, 'message' => 'invalid_request'));
+			}
+
+			if(!$this->getItemTagEntity($id)) {
+				$this->getResponse()->setHttpResponseCode(404);
+				return $this->_helper->json(array('ok' => false, 'message' => 'not_found'));
+			}
+
 			$tagEntityDb = new Application_Model_DbTable_Tagentity();
 			$tagEntityDb->deleteTagEntity($id);
 		}
 		//$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
+	}
+
+	protected function getItemTagEntity(int $id): ?array
+	{
+		$tagEntityDb = new Application_Model_DbTable_Tagentity();
+		$row = $tagEntityDb->getById($id);
+		if(!$row || $row['module'] !== 'items' || $row['controller'] !== 'item') return null;
+
+		$itemDb = new Items_Model_DbTable_Item();
+		return $itemDb->getById((int)$row['entityid']) ? $row : null;
 	}
 }
