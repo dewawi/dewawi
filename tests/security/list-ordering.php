@@ -42,6 +42,7 @@ $attacks = [
     's.modified DESC, sleep(5)', 'other.column', '0', 0, [],
     new Zend_Db_Expr('sleep(5)'),
 ];
+Zend_Registry::set('User', ['id'=>42, 'admin'=>0, 'clientid'=>7]);
 $checks = 0;
 foreach (glob($root . '/application/modules/*/models/Entity/*.php') as $file) {
     $relative = substr($file, strlen($root) + 1);
@@ -72,6 +73,15 @@ foreach (glob($root . '/application/modules/*/models/Entity/*.php') as $file) {
         $checks++;
     }
 }
+// Client configuration must use the authenticated user's role and tenant.
+foreach ([0, 1] as $admin) {
+    Zend_Registry::set('User', ['id'=>42, 'admin'=>$admin, 'clientid'=>7]);
+    $config = Admin_Model_Entity_Client::listConfig();
+    check($config['clientFilter'] === ($admin === 0), 'Incorrect client filtering for user role');
+    check($config['clientId'] === 7, 'Incorrect user client ID');
+    $checks++;
+}
+Zend_Registry::set('User', ['id'=>42, 'admin'=>0, 'clientid'=>7]);
 check(DEEC_List_Ordering::column('0', ['title','modified']) === 'modified', 'Numeric index accepted as order');
 check(DEEC_List_Ordering::column('c.name1', ['name1'=>'c.name1']) === 'c.name1', 'Qualified mapping lost');
 $expr = new Zend_Db_Expr('COALESCE(s.modified,s.created)');

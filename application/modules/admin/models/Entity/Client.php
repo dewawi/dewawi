@@ -4,6 +4,8 @@ class Admin_Model_Entity_Client
 {
 	public static function listConfig(): array
 	{
+		$user = Zend_Registry::get('User');
+
 		return [
 			'tableClass' => 'Admin_Model_DbTable_Client',
 			'alias' => 'c',
