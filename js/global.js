@@ -976,11 +976,20 @@ function save() {
 			url: url,
 			data: data,
 			cache: false,
+			dataType: 'json',
 			success: function(json){
 				response = json;
+				if (!response || response.saved !== true) {
+					if (response && response.message === 'locked') pushMessages(['Datensatz wird bereits bearbeitet.']);
+					else pushMessages([response && response.message || 'Speichern fehlgeschlagen.']);
+					return;
+				}
 				Dewawi.setDirty(false);
 				//Close the modal window
 				window.parent.modalWindowClose();
+			},
+			error: function(){
+				pushMessages(['Speichern fehlgeschlagen.']);
 			}
 		});
 	} else {
@@ -1115,7 +1124,7 @@ function edit(data, params) {
 		dataType: 'json',
 		success: function(json){
 			response = json;
-			if (response && response.ok === false) {
+			if (response && (response.ok === false || response.saved === false)) {
 				for (var field in data) {
 					if (!data.hasOwnProperty(field)) continue;
 					$('form #'+field).addClass('error');
@@ -1123,6 +1132,7 @@ function edit(data, params) {
 				}
 				if (response.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
 				else if (response.message === 'not_found') pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
+				else if (response.message === 'locked') pushMessages(['Datensatz wird bereits bearbeitet.']);
 				else pushMessages([response.message]);
 			} else {
 				Dewawi.setDirty(false);

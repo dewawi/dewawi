@@ -58,7 +58,7 @@ $user = [
     'smtpuser' => '', 'smtppass' => 'Stored SMTP password', 'locked' => 0, 'lockedtime' => null,
 ];
 
-function profileRequest(array $post, array $user, string $action = 'edit'): array
+function profileRequest(array $post, array $user, string $action = 'edit', bool $ajax = true): array
 {
     $adapter = new ProfileTestAdapter();
     $metadata = [];
@@ -74,7 +74,7 @@ function profileRequest(array $post, array $user, string $action = 'edit'): arra
 
     $_POST = $post;
     $_SERVER['REQUEST_METHOD'] = 'POST';
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = $ajax ? 'XMLHttpRequest' : '';
     $request = new Zend_Controller_Request_Http();
     // A supplied ID from another tenant must never select the profile being updated.
     $request->setModuleName('users')->setControllerName('user')->setActionName($action)
@@ -104,7 +104,7 @@ function profileRequest(array $post, array $user, string $action = 'edit'): arra
         $updates[] = $data;
     }
 
-    return [Zend_Json::decode($body, Zend_Json::TYPE_ARRAY), $updates];
+    return [Zend_Json::decode($body, Zend_Json::TYPE_ARRAY), $updates, $response->getHttpResponseCode()];
 }
 
 $cases = [
@@ -146,6 +146,31 @@ foreach ($cases as [$label, $post, $expected, $saved]) {
     $checks++;
 }
 
+// Allowed field names must not admit array values, even alongside valid fields.
+foreach (array_keys($profile) as $field) {
+    foreach ([[], ['unexpected'], ['nested' => ['unexpected']]] as $value) {
+        foreach ([true, false] as $ajax) {
+            [$result, $updates, $status] = profileRequest([$field => $value] + ['name' => 'Updated'], $user, 'edit', $ajax);
+            check($status === 400 && $result['saved'] === false && !$updates, 'Array profile value accepted: ' . $field);
+            $checks++;
+        }
+    }
+}
+
+// Foreign active locks block all profile writes; own and expired locks allow them.
+foreach ([true, false] as $ajax) {
+    $lockedUser = array_replace($user, ['locked' => 99, 'lockedtime' => date('Y-m-d H:i:s')]);
+    [$result, $updates] = profileRequest(['name' => 'Updated'], $lockedUser, 'edit', $ajax);
+    check($result['saved'] === false && $result['message'] === 'locked' && !$updates, 'Active foreign lock allowed a profile write');
+    $checks++;
+    foreach ([[42, date('Y-m-d H:i:s')], [99, date('Y-m-d H:i:s', time() - 600)]] as [$owner, $time]) {
+        $unlockedUser = array_replace($user, ['locked' => $owner, 'lockedtime' => $time]);
+        [$result, $updates] = profileRequest(['name' => 'Updated'], $unlockedUser, 'edit', $ajax);
+        check($result['saved'] === true && $updates === [['name' => 'Updated']], 'Own or expired lock blocked profile write');
+        $checks++;
+    }
+}
+
 // Password changes must continue to use the existing current-password check and hashing.
 $passwordPost = [
     'passwordactual' => 'Current-password-1', 'passwordnew' => 'New-password-2',
@@ -160,6 +185,24 @@ foreach (['passwordactual' => 'Wrong password', 'passwordconfirm' => 'Different 
     [$result, $updates] = profileRequest(array_replace($passwordPost, [$field => $value]), $user, 'password');
     check(empty($result['saved']) && !$updates, 'Invalid password change succeeded');
     $checks++;
+}
+
+foreach (['passwordactual', 'passwordnew', 'passwordconfirm'] as $field) {
+    [$result, $updates, $status] = profileRequest(array_replace($passwordPost, [$field => ['unexpected']]), $user, 'password');
+    check($status === 400 && $result['saved'] === false && !$updates, 'Array password value accepted: ' . $field);
+    $checks++;
+}
+foreach ([true, false] as $ajax) {
+    [$result, $updates] = profileRequest($passwordPost, $lockedUser, 'password', $ajax);
+    check($result['saved'] === false && $result['message'] === 'locked' && !$updates, 'Active foreign lock allowed a password change');
+    $checks++;
+    foreach ([[42, date('Y-m-d H:i:s')], [99, date('Y-m-d H:i:s', time() - 600)]] as [$owner, $time]) {
+        $unlockedUser = array_replace($user, ['locked' => $owner, 'lockedtime' => $time]);
+        [$result, $updates] = profileRequest($passwordPost, $unlockedUser, 'password', $ajax);
+        check($result['saved'] === true && count($updates) === 1, 'Own or expired lock blocked password change');
+        check(array_keys($updates[0]) === ['password'] && password_verify('New-password-2', $updates[0]['password']), 'Password lock handling changed stored fields');
+        $checks++;
+    }
 }
 
 echo 'PASS: ' . $checks . " user profile and password cases\n";

@@ -38,6 +38,7 @@ class Users_Model_DbTable_User {
 class ProfileTestAccess extends Zend_Controller_Action_Helper_Abstract {
     public static array $locks = [];
     public function getName() { return 'Access'; }
+    public function isLocked($locked, $lockedtime, $userid) { return false; }
     public function lock($id, $userid, $locked, $lockedtime) { self::$locks[] = [$id, $userid]; }
 }
 class ProfileTestMainMenu extends Zend_Controller_Action_Helper_Abstract {

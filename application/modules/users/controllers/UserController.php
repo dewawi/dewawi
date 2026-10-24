@@ -71,9 +71,21 @@ class Users_UserController extends Zend_Controller_Action
 					return;
 				}
 
+				foreach ($data as $value) {
+					if (!is_string($value)) {
+						$this->getResponse()->setHttpResponseCode(400);
+						echo Zend_Json::encode(['saved' => false, 'message' => 'Form is invalid']);
+						return;
+					}
+				}
+
 				if ($form->getElement($element) && $form->isValidPartial($data)) {
 					$values = $form->getFilteredValuesPartial($data);
 					if ($values) {
+						if ($this->_helper->Access->isLocked($user['locked'], $user['lockedtime'], $this->_user['id'])) {
+							echo Zend_Json::encode(['saved' => false, 'message' => 'locked']);
+							return;
+						}
 						$this->_helper->Access->lock($id, $this->_user['id'], $user['locked'], $user['lockedtime']);
 						$userDb->updateUser($id, $values);
 					}
@@ -119,8 +131,6 @@ class Users_UserController extends Zend_Controller_Action
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'user', null, array('id' => $id));
 		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $user['locked'], $user['lockedtime']);
-
 			$form = new Users_Form_Password();
 			$options = $this->_helper->Options->getOptions($form);
 
@@ -128,11 +138,23 @@ class Users_UserController extends Zend_Controller_Action
 				$this->_helper->viewRenderer->setNoRender();
 				$this->_helper->getHelper('layout')->disableLayout();
 				$data = $request->getPost();
+				foreach (['passwordactual', 'passwordnew', 'passwordconfirm'] as $field) {
+					if (isset($data[$field]) && !is_string($data[$field])) {
+						$this->getResponse()->setHttpResponseCode(400);
+						echo Zend_Json::encode(['saved' => false, 'message' => 'Form is invalid']);
+						return;
+					}
+				}
 				if(isset($data['passwordactual']) && $data['passwordactual']) {
 					if(isset($data['passwordnew']) && $data['passwordnew']) {
 						if(isset($data['passwordconfirm']) && $data['passwordconfirm']) {
 							if($data['passwordnew'] == $data['passwordconfirm']) {
 								if(password_verify($data['passwordactual'], $user['password'])) {
+									if ($this->_helper->Access->isLocked($user['locked'], $user['lockedtime'], $this->_user['id'])) {
+										echo Zend_Json::encode(['saved' => false, 'message' => 'locked']);
+										return;
+									}
+									$this->_helper->Access->lock($id, $this->_user['id'], $user['locked'], $user['lockedtime']);
 									$userDb->updateUser($id, array('password' => password_hash($data['passwordnew'], PASSWORD_DEFAULT)));
 									echo Zend_Json::encode(array('saved' => true));
 								} else {
@@ -151,6 +173,7 @@ class Users_UserController extends Zend_Controller_Action
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
 				}
 			} else {
+				$this->_helper->Access->lock($id, $this->_user['id'], $user['locked'], $user['lockedtime']);
 				if($id > 0) {
 					$this->view->form = $form;
 					$this->view->activeTab = $activeTab;
