@@ -280,7 +280,7 @@ INSERT INTO `increment` (`clientid`, `contactid`, `creditnoteid`, `deliveryorder
 INSERT INTO `language` (`id`, `code`, `name`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
 (1, 'de_DE', 'Deutsch', 1, 1, NULL, 0, NULL, 0, 0, NULL);
 
-INSERT INTO `module` (`id`, `name`, `menu`, `ordering`, `active`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+INSERT INTO `module` (`id`, `name`, `menu`, `ordering`, `activated`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
 (1, 'Admin', '{}', 1, 1, NULL, 0, '2015-11-24 14:40:56', 1, 0, '2015-11-24 14:40:56'),
 (2, 'Contacts', '{\n "CONTACTS": {\n  "title":"CONTACTS",\n  "module":"contacts",\n  "controller":"contact",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 16:48:39', 1, '2015-11-24 14:40:57', 1, 0, '2015-11-24 14:40:57'),
 (3, 'Items', '{\n "ITEMS": {\n  "title":"ITEMS",\n  "module":"items",\n  "controller":"item",\n  "action":"index"\n }\n}', 1, 1, '2015-11-21 16:48:52', 1, '2015-11-24 14:40:50', 1, 0, '2015-11-24 14:40:50'),
