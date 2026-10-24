@@ -1,53 +1,73 @@
+
 <?php
 
-	$error = false;
-	$goToNextStep = false;
-	
-	if (isset($_POST['database']))
-	{
-		$database = $_POST['database'];
-		$username = $_POST['username'];
-		$password = $_POST['password'];
-		$host = $_POST['host'];
-		
-		// check connection
-		$connection = new mysqli($host, $username, $password, $database);
-        //print_r($connection);
-		if (mysqli_connect_errno())
-		{
-			$error = mysqli_connect_error();
-        }
-        else
-        {
-			if (!$error)
-			{
-				// save login in session for further use
-				$_SESSION['db_host'] = $host;
-				$_SESSION['db_user'] = $username;
-				$_SESSION['db_pass'] = $password;
-				$_SESSION['db_name'] = $database;
+$error = false;
+$goToNextStep = false;
 
-				// allow user to proceed
-				$goToNextStep = true;
+$database = isset($_SESSION['db_name']) ? $_SESSION['db_name'] : '';
+$username = isset($_SESSION['db_user']) ? $_SESSION['db_user'] : '';
+$password = '';
+$host = isset($_SESSION['db_host']) ? $_SESSION['db_host'] : 'localhost';
+
+if (isset($_POST['database'])) {
+	$database = trim((string) $_POST['database']);
+	$username = trim((string) ($_POST['username'] ?? ''));
+	$password = (string) ($_POST['password'] ?? '');
+	$host = trim((string) ($_POST['host'] ?? ''));
+
+	if ($database === '' || $username === '' || $host === '' || $password === '') {
+		$error = 'Please fill in all database connection fields.';
+	} else {
+		try {
+			mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+			$connection = new mysqli(
+				$host,
+				$username,
+				$password,
+				$database
+			);
+
+			$connection->close();
+
+			// Save valid connection details
+			$_SESSION['db_host'] = $host;
+			$_SESSION['db_user'] = $username;
+			$_SESSION['db_pass'] = $password;
+			$_SESSION['db_name'] = $database;
+
+			$goToNextStep = true;
+
+		} catch (mysqli_sql_exception $e) {
+			error_log(
+				'DEWAWI installer: Database connection failed. Code: '
+				. $e->getCode()
+			);
+
+			switch ((int) $e->getCode()) {
+				case 1044:
+					$error = 'Database access denied. Please check the user permissions.';
+					break;
+
+				case 1045:
+					$error = 'Invalid database username or password.';
+					break;
+
+				case 1049:
+					$error = 'The specified database does not exist.';
+					break;
+
+				case 2002:
+				case 2003:
+					$error = 'Database server not reachable. Please check the hostname and server status.';
+					break;
+
+				default:
+					$error = 'Database connection failed. Please check your settings.';
+					break;
 			}
 		}
 	}
-	else
-	{
-		if (isset($_SESSION['db_host']))
-		{
-			$host = $_SESSION['db_host'];
-			$username = $_SESSION['db_user'];
-			$password = $_SESSION['db_pass'];
-			$database = $_SESSION['db_name'];
-		}
-		else
-		{
-			$database = "";
-			$username = "";
-			$password = "";
-			$host = "localhost";
-		}
-	}
-		
-	include("templates/database.php");
+}
+
+include __DIR__ . '/templates/database.php';
