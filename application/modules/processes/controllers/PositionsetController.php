@@ -125,7 +125,7 @@ class Processes_PositionsetController extends Zend_Controller_Action
 				$position->updatePositionSet($params['id'], $data);
 
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
-					$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
+					$calculations = $this->_helper->Calculate($params['parentid'], 'processes', $params['parent']);
 					echo Zend_Json::encode($calculations['locale']);
 				}
 				echo Zend_Json::encode($position->getPositionSet($params['id']));
@@ -146,34 +146,39 @@ class Processes_PositionsetController extends Zend_Controller_Action
 		if($request->isPost()) {
 			header('Content-type: application/json');
 
-			//Define belonging classes
-			$positionClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
-			$positionSetClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
+			$parentClass = 'Processes_Model_DbTable_'.ucfirst($params['parent']);
+			$parentDb = new $parentClass();
+			$adapter = $parentDb->getAdapter();
+			$adapter->beginTransaction();
+			try {
+				$parent = $parentDb->getByIdForUpdate((int)$params['parentid']);
+				if (!$parent || DEEC_Permission::isDocumentReadonly('processes', $params['parent'], $parent)
+					|| in_array((int)($parent['state'] ?? 0), [105, 106], true)) {
+					throw new RuntimeException('Position parent is not editable');
+				}
+				//Define belonging classes
+				$positionClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+				$positionSetClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
 
-			//Copy position set
-			$positionSetDb = new $positionSetClass();
-			$data = $positionSetDb->getPositionSet($params['id']);
-			$this->_helper->OrderingSet->pushOrdering($data['ordering'], $params['parent'], $params['type'], $data['parentid']);
-			$data['ordering'] += 1;
-			$data['modified'] = NULL;
-			$data['modifiedby'] = 0;
-			unset($data['id']);
-			$id = $positionSetDb->addPositionSet($data);
+				//Copy position set
+				$positionSetDb = new $positionSetClass();
+				$data = $positionSetDb->getPositionSet($params['id']);
+				$this->_helper->OrderingSet->pushOrdering($data['ordering'], $params['parent'], $params['type'], $data['parentid']);
+				$data['ordering'] += 1;
+				$data['modified'] = NULL;
+				$data['modifiedby'] = 0;
+				unset($data['id']);
+				$id = $positionSetDb->addPositionSet($data);
 
-			//Get positions and copy
-			$positionDb = new $positionClass();
-			$positions = $positionDb->getPositions($params['parentid'], $params['id']);
-			foreach($positions as $position) {
-				$positionData = $position->toArray();
-				$positionData[$params['type'].'setid'] = $id;
-				$positionData['modified'] = NULL;
-				$positionData['modifiedby'] = 0;
-				unset($positionData['id']);
-				$positionDb->addPosition($positionData);
+				//Get positions and copy
+				$positionDb = new $positionClass();
+				$positions = $positionDb->getPositions($params['parentid'], $params['id']);
+				$calculations = $this->_helper->Position->copyPositions($positions, $params['parentid'], 'processes', $params['parent'], $this->_date, (int)$id);
+				$adapter->commit();
+			} catch (Throwable $exception) {
+				$adapter->rollBack();
+				throw $exception;
 			}
-
-			//Calculate
-			$calculations = $this->_helper->Calculate($params['parentid'], $this->_date, $this->_user['id']);
 			echo Zend_Json::encode($calculations['locale']);
 		}
 	}
@@ -204,24 +209,39 @@ class Processes_PositionsetController extends Zend_Controller_Action
 			header('Content-type: application/json');
 			$data = $request->getPost();
 			if($data['delete'] == 'Yes') {
-				//Define belonging classes
-				$positionClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
-				$positionSetClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
+				$parentClass = 'Processes_Model_DbTable_'.ucfirst($params['parent']);
+				$parentDb = new $parentClass();
+				$adapter = $parentDb->getAdapter();
+				$adapter->beginTransaction();
+				try {
+					$parent = $parentDb->getByIdForUpdate((int)$params['parentid']);
+					if (!$parent || DEEC_Permission::isDocumentReadonly('processes', $params['parent'], $parent)
+						|| in_array((int)($parent['state'] ?? 0), [105, 106], true)) {
+						throw new RuntimeException('Position parent is not editable');
+					}
+					//Define belonging classes
+					$positionClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type']);
+					$positionSetClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
 
-				//Get positions and delete
-				$positionDb = new $positionClass();
-				$positions = $positionDb->getPositions($data['parentid'], $data['id']);
-				foreach($positions as $position) {
-					$positionDb->deletePosition($position->id);
+					//Get positions and delete
+					$positionDb = new $positionClass();
+					$positions = $positionDb->getPositions($data['parentid'], $data['id']);
+					foreach($positions as $position) {
+						$positionDb->deletePosition($position->id, false);
+					}
+
+					//Delete position set itself
+					$positionSetDb = new $positionSetClass();
+					$positionSetDb->deletePositionSet($data['id']);
+
+					//Reorder and calculate
+					$this->_helper->OrderingSet->setOrdering($params['parent'], $params['type'], $data['parentid'], $data['id']);
+					$calculations = $this->_helper->Calculate($data['parentid'], 'processes', $params['parent']);
+					$adapter->commit();
+				} catch (Throwable $exception) {
+					$adapter->rollBack();
+					throw $exception;
 				}
-
-				//Delete position set itself
-				$positionSetDb = new $positionSetClass();
-				$positionSetDb->deletePositionSet($data['id']);
-
-				//Reorder and calculate
-				$this->_helper->OrderingSet->setOrdering($params['parent'], $params['type'], $data['parentid'], $data['id']);
-				$calculations = $this->_helper->Calculate($data['parentid'], $this->_date, $this->_user['id']);
 				echo Zend_Json::encode($calculations['locale']);
 			}
 		}

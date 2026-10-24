@@ -119,7 +119,7 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 		}
 	}
 
-	public function copyPosition(int $id): int
+	public function copyPosition(int $id, bool $transaction = true): int
 	{
 		$row = $this->getPosition($id);
 		$children = [];
@@ -133,7 +133,7 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 		}
 
 		$adapter = $this->getAdapter();
-		$adapter->beginTransaction();
+		if ($transaction) $adapter->beginTransaction();
 
 		try {
 			$this->shiftPositionOrderingForCopy($row);
@@ -156,11 +156,11 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 				$this->addPosition($childData);
 			}
 
-			$adapter->commit();
+			if ($transaction) $adapter->commit();
 
 			return $newId;
 		} catch (Throwable $exception) {
-			$adapter->rollBack();
+			if ($transaction) $adapter->rollBack();
 			throw $exception;
 		}
 	}
@@ -236,12 +236,12 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 		);
 	}
 
-	public function deletePosition(int $id): void
+	public function deletePosition(int $id, bool $transaction = true): void
 	{
-		$this->deletePositions([$id]);
+		$this->deletePositions([$id], $transaction);
 	}
 
-	public function deletePositions(array $ids): void
+	public function deletePositions(array $ids, bool $transaction = true): void
 	{
 		$ids = $this->normalizePositionIds($ids);
 
@@ -281,7 +281,7 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 		);
 
 		$adapter = $this->getAdapter();
-		$adapter->beginTransaction();
+		if ($transaction) $adapter->beginTransaction();
 
 		try {
 			$this->deleteByIds($deleteIds);
@@ -290,9 +290,9 @@ abstract class DEEC_Model_DbTable_Position extends DEEC_Model_DbTable_Entity
 				$this->normalizeOrderingByRow($row);
 			}
 
-			$adapter->commit();
+			if ($transaction) $adapter->commit();
 		} catch (Throwable $exception) {
-			$adapter->rollBack();
+			if ($transaction) $adapter->rollBack();
 			throw $exception;
 		}
 	}

@@ -56,7 +56,9 @@ function positionWhereMatches(string $where, array $row): bool
     }
     if ($where[0] === '(' && substr($where, -1) === ')') return positionWhereMatches(substr($where, 1, -1), $row);
     if (preg_match('/^([a-z]+) IS NULL$/', $where, $match)) return ($row[$match[1]] ?? null) === null;
-    if (!preg_match('/^([a-z]+) = (.*)$/', $where, $match)) throw new RuntimeException('Unsupported fixture predicate: ' . $where);
+    if (preg_match('/^([a-z]+) IN \(([^)]+)\)$/', $where, $match)) return in_array((string)($row[$match[1]] ?? ''), array_map('trim', explode(',', $match[2])), true);
+    if (preg_match('/^([a-z]+) > (.*)$/', $where, $match)) return $row[$match[1]] > trim($match[2], " '");
+    if (!preg_match('/^([a-z]+)\s*=\s*(.*)$/', $where, $match)) throw new RuntimeException('Unsupported fixture predicate: ' . $where);
     return (string)($row[$match[1]] ?? '') === trim($match[2], " '");
 }
 
@@ -65,9 +67,25 @@ class PositionReadTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
     public array $rows = [];
     public array $writes = [];
     public bool $allowWrites = false;
+    public ?string $failUpdateTable = null;
+    private ?array $transactionSnapshot = null;
     private int $lastId = 100;
     protected function _connect() {}
     protected function _quote($value) { return Zend_Db_Adapter_Abstract::_quote($value); }
+    public function beginTransaction()
+    {
+        if ($this->transactionSnapshot !== null) throw new RuntimeException('Nested fixture transaction');
+        $this->transactionSnapshot = [$this->rows, $this->writes];
+        return $this;
+    }
+    public function commit() { $this->transactionSnapshot = null; return $this; }
+    public function rollBack()
+    {
+        if ($this->transactionSnapshot === null) throw new RuntimeException('No fixture transaction');
+        [$this->rows, $this->writes] = $this->transactionSnapshot;
+        $this->transactionSnapshot = null;
+        return $this;
+    }
     public function describeTable($tableName, $schemaName = null)
     {
         $columns = ['id', 'clientid', 'parentid', 'deleted', 'ordering'];
@@ -114,6 +132,7 @@ class PositionReadTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
     public function update($table, array $bind, $where = '')
     {
         if (!$this->allowWrites) throw new RuntimeException('Read action attempted an update');
+        if ($this->failUpdateTable === $table) throw new RuntimeException('Simulated calculation write failure');
         $affected = 0;
         foreach ($this->rows[$table] as &$row) {
             foreach ((array)$where as $condition) {

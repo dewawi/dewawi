@@ -42,7 +42,7 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 		}
 		foreach($positions as $position) {
 			//Use price rules
-			if($position->masterid && $price['master'][$position->masterid] && isset($price['rules'][$position->masterid])) {
+			if($position->masterid && !empty($price['master'][$position->masterid]) && isset($price['rules'][$position->masterid])) {
 				$price['calculated'][$position->id] = $this->usePriceRules($price['rules'][$position->masterid], $position->price);
 			} elseif(!$position->masterid && isset($price['rules'][$position->id])) {
 				$price['calculated'][$position->id] = $this->usePriceRules($price['rules'][$position->id], $position->price);

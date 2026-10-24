@@ -1226,6 +1226,7 @@ class DEEC_Pdf
 	private function getTotalBoxHeight(array $document): float
 	{
 		$height = 18; // subtotal + taxes + total
+		$height += max(0, count($document['taxgroups'] ?? []) - 1) * 6;
 
 		if (!empty($document['prepayment_raw']) && !empty($document['balance'])) {
 			$height += 12; // prepayment + balance
@@ -1688,8 +1689,18 @@ class DEEC_Pdf
 		$pdf->MultiCell(30, 0, $subtotal, 'TR', 'R', false, 1);
 
 		$pdf->setCellPaddings(3, 0, 3, 1);
-		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TAXES').' ('.$taxrate.'%)', 'L', 'L', false, 0 ,$x);
-		$pdf->MultiCell(30, 0, $taxes, 'R', 'R', false, 1);
+		$taxgroups = $document['taxgroups'] ?? [];
+		$formattedRate = !$taxgroups;
+		if (!$taxgroups) $taxgroups = [($taxrate ?? '') => $taxes];
+		$locale = Zend_Registry::get('Zend_Locale');
+		foreach ($taxgroups as $rate => $value) {
+			$label = $this->translate('DOCUMENTS_TAXES');
+			if ($rate !== '') {
+				$label .= ' (' . ($formattedRate ? $rate : Zend_Locale_Format::toNumber($rate, ['precision' => 2, 'locale' => $locale])) . '%)';
+			}
+			$pdf->MultiCell(45, 0, $label, 'L', 'L', false, 0 ,$x);
+			$pdf->MultiCell(30, 0, $value, 'R', 'R', false, 1);
+		}
 
 		$pdf->setCellPaddings(3, 1, 3, 1);
 		$pdf->MultiCell(45, 0, $this->translate('DOCUMENTS_TOTAL'), 'LBT', 'L', false, 0 ,$x);

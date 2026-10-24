@@ -26,14 +26,14 @@ class Purchases_Service_DocumentPayloadService
 
 		$document['templateid'] = (int)$template['id'];
 
+		list($positions, $document, $optionsList, $optionSets) = $this->getPositions($document, $locale, $controller);
+
 		$payment = $this->buildPaymentData($document);
 
 		$document['prepayment'] = $payment['prepayment_formatted'];
 		$document['prepayment_raw'] = $payment['prepayment_raw'];
 		$document['balance'] = $payment['balance_formatted'];
 		$document['balance_raw'] = $payment['balance_raw'];
-
-		list($positions, $document, $optionsList, $optionSets) = $this->getPositions($document, $locale, $controller);
 
 		$itemData = $this->getItemData($positions);
 
@@ -128,7 +128,7 @@ class Purchases_Service_DocumentPayloadService
 		$currency = $currencyHelper->getCurrency($document['currency'], 'USE_SYMBOL');
 
 		$prepayment = (float)($document['prepayment'] ?? 0);
-		$total = (float)($document['total'] ?? 0);
+		$total = (float)($document['total_raw'] ?? $document['total'] ?? 0);
 		$balance = max(0, $total - $prepayment);
 
 		return [

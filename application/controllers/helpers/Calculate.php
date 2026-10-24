@@ -24,62 +24,11 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 
 		$positionsDb = new $classPos();
 		$positions = $positionsDb->getPositions($id);
+		$calculations = $this->calculate($object, $positions, $module, $controller);
 
-		$calculations = array();
-		$calculations['row'] = array();
-		$calculations['locale'] = array();
-		$calculations['row']['subtotal'] = 0;
-		$calculations['row']['taxes'] = array();
-		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-		$pricerulesHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
-		$currency = $currencyHelper->getCurrency();
-		$pricerules = array();
-		$pricerulemaster = array();
-		foreach($positions as $position) {
-			//Get price rules and properties
-			if(!$position->masterid) {
-				$pricerules[$position->id] = $pricerulesHelper->getPriceRulePositions($module, $controller.'pos', $position->id);
-				$pricerulemaster[$position->id] = $position->pricerulemaster;
-			}
+		foreach ($positions as $position) {
+			$positionsDb->updatePosition($position->id, ['total' => $calculations['row'][$position->id]['gross']]);
 		}
-		foreach($positions as $position) {
-			$masterId = (int)$position->masterid;
-
-			if ($masterId > 0 && !empty($pricerulemaster[$masterId]) && isset($pricerules[$masterId])) {
-				$price = $pricerulesHelper->usePriceRules(
-					$pricerules[$masterId],
-					$position->price
-				);
-			} elseif ($masterId === 0 && isset($pricerules[$position->id])) {
-				$price = $pricerulesHelper->usePriceRules(
-					$pricerules[$position->id],
-					$position->price
-				);
-			} else {
-				$price = $position->price;
-			}
-
-			$calculations['row'][$position->id]['total'] = round($price*$position->quantity, 2);
-			$calculations['row']['subtotal'] += round($calculations['row'][$position->id]['total'], 2);
-
-			if(isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] += $calculations['row'][$position->id]['total']*$position->taxrate/100;
-			else $calculations['row']['taxes']['total'] = $calculations['row'][$position->id]['total']*$position->taxrate/100;
-			if(isset($calculations['row']['taxes'][$position->taxrate])) $calculations['row']['taxes'][$position->taxrate] += $calculations['row'][$position->id]['total']*$position->taxrate/100;
-			else $calculations['row']['taxes'][$position->taxrate] = $calculations['row'][$position->id]['total']*$position->taxrate/100;
-
-			$currencyHelper->setCurrency($currency, $position->currency, 'USE_SYMBOL');
-			$calculations['locale'][$position->id]['price'] = $currency->toCurrency($price);
-			$calculations['locale'][$position->id]['total'] = $currency->toCurrency($calculations['row'][$position->id]['total']);
-
-			$positionsDb->updatePosition($position->id, array('total' => ($price*$position->quantity*(1+$position->taxrate/100))));
-		}
-
-		if ($object['taxfree']) {
-			$calculations['row']['taxes']['total'] = 0;
-		}
-
-		if(!isset($calculations['row']['taxes']['total'])) $calculations['row']['taxes']['total'] = 0;
-		$calculations['row']['total'] = $calculations['row']['subtotal'] + $calculations['row']['taxes']['total'];
 
 		$objectDb->updateById($id, [
 			'subtotal' => $calculations['row']['subtotal'],
@@ -87,10 +36,43 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			'total'    => $calculations['row']['total'],
 		]);
 
+		return $calculations;
+	}
+
+	public function calculate(array $object, $positions, string $module, string $controller): array
+	{
+		$calculations = ['row' => ['subtotal' => 0, 'taxes' => []], 'locale' => []];
+		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
+		$currency = $currencyHelper->getCurrency($object['currency'], 'USE_SYMBOL');
+		$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
+		$prices = $priceRuleHelper->usePriceRulesOnPositions($positions, $module, $controller . 'pos');
+
+		foreach ($positions as $position) {
+			$price = $prices['calculated'][$position->id];
+			$net = round($price * $position->quantity, 2);
+			$rate = empty($object['taxfree']) ? (float)$position->taxrate : 0;
+			$tax = $net * $rate / 100;
+			// String keys preserve fractional tax rates instead of truncating them to integers.
+			$rateKey = (string)(float)$position->taxrate;
+			$calculations['row'][$position->id] = ['price' => $price, 'total' => $net, 'gross' => round($net + $tax, 2)];
+			$calculations['row']['subtotal'] += $net;
+			$calculations['row']['taxes'][$rateKey] = ($calculations['row']['taxes'][$rateKey] ?? 0) + $tax;
+			$calculations['locale'][$position->id] = [
+				'price' => $currency->toCurrency($price, ['precision' => round($price, 2) == $price ? 2 : 4]),
+				'total' => $currency->toCurrency($net),
+			];
+		}
+
+		// Round each tax group before adding it to the document total.
+		$calculations['row']['taxes'] = array_map(static function ($tax) { return round($tax, 2); }, $calculations['row']['taxes']);
+		$calculations['row']['taxes']['total'] = round(array_sum($calculations['row']['taxes']), 2);
+		$calculations['row']['subtotal'] = round($calculations['row']['subtotal'], 2);
+		$calculations['row']['total'] = round($calculations['row']['subtotal'] + $calculations['row']['taxes']['total'], 2);
 		$calculations['locale']['subtotal'] = $currency->toCurrency($calculations['row']['subtotal']);
-		$calculations['locale']['total'] = $currency->toCurrency($calculations['row']['subtotal']+$calculations['row']['taxes']['total']);
-			foreach($calculations['row']['taxes'] as $key => $value)
-				$calculations['locale']['taxes'][$key] = $currency->toCurrency($value);
+		$calculations['locale']['total'] = $currency->toCurrency($calculations['row']['total']);
+		foreach ($calculations['row']['taxes'] as $key => $value) {
+			$calculations['locale']['taxes'][$key] = $currency->toCurrency($value);
+		}
 		return $calculations;
 	}
 }

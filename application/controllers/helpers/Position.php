@@ -2,7 +2,7 @@
 
 class Application_Controller_Action_Helper_Position extends Zend_Controller_Action_Helper_Abstract
 {
-	public function copyPositions($positions, $parentid, $module, $controller, $created)
+	public function copyPositions($positions, $parentid, $module, $controller, $created, ?int $targetSetId = null)
 	{
 		//Set target module and controller if parameter is array
 		if(is_array($module)) list($sourceModule, $targetModule) = $module;
@@ -23,7 +23,9 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			if(!$dataPosition['masterid']) {
-				if($dataPosition['possetid']) {
+				if ($targetSetId !== null) {
+					$dataPosition['possetid'] = $targetSetId;
+				} elseif($dataPosition['possetid']) {
 					if(isset($positionSetIndex[$dataPosition['possetid']]) && $positionSetIndex[$dataPosition['possetid']]) {
 						$dataPosition['possetid'] = $positionSetIndex[$dataPosition['possetid']];
 					} else {
@@ -71,7 +73,9 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 		foreach($positions as $position) {
 			$dataPosition = $position->toArray();
 			if($dataPosition['masterid']) {
-				if($dataPosition['possetid']) {
+				if ($targetSetId !== null) {
+					$dataPosition['possetid'] = $targetSetId;
+				} elseif($dataPosition['possetid']) {
 					$dataPosition['possetid'] = $positionSetIndex[$dataPosition['possetid']];
 				}
 				if($targetController == 'process') {
@@ -88,6 +92,6 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 			}
 		}
 
-		Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->direct($parentid, $targetModule, $targetController);
+		return Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->direct($parentid, $targetModule, $targetController);
 	}
 }

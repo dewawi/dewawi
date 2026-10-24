@@ -4,48 +4,44 @@ class Application_Controller_Action_Helper_Positions extends Zend_Controller_Act
 {
 	public function getPositions($id, $document, $locale, $controller)
 	{
-		//Get currency
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 		$currency = $currencyHelper->getCurrency($document['currency'], 'USE_SYMBOL');
-
-		$options = array();
-		$optionSets = array();
 		$positionsDb = $this->getDocumentDb($controller);
 		$positions = $positionsDb->getPositions($id);
-		if(count($positions)) {
-			//Use price rules on all positions
-			$positionTable = $controller . 'pos';
-			$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
-			$price = $priceRuleHelper->usePriceRulesOnPositions($positions, 'sales', $positionTable);
+		$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate($document, $positions, 'sales', $controller);
 
-			//Set precision and currency
-			foreach($positions as $key => $position) {
-				$precision = (floor($position->quantity) == $position->quantity) ? 0 : 2;
-
-				// Calculate raw values
-				$rawTotal = $price['calculated'][$position->id] * $position->quantity;
-				$rawPrice = $price['calculated'][$position->id];
-
-				$position->manufacturerid = $rawPrice;
-
-				$position->total = $currency->toCurrency($price['calculated'][$position->id]*$position->quantity);
-				$position->price = $currency->toCurrency($price['calculated'][$position->id]);
-				$position->quantity = Zend_Locale_Format::toNumber($position->quantity,array('precision' => $precision,'locale' => $locale));
-			}
-
-			$document['taxes'] = $currency->toCurrency($document['taxes']);
-			$document['subtotal'] = $currency->toCurrency($document['subtotal']);
-			$document['total'] = $currency->toCurrency($document['total']);
-			if($document['taxfree']) {
-				$document['taxrate'] = Zend_Locale_Format::toNumber(0, array('precision' => 2, 'locale' => $locale));
-			} else {
-				$document['taxrate'] = Zend_Locale_Format::toNumber($positions[0]->taxrate, array('precision' => 2, 'locale' => $locale));
-			}
-
-			//Get options
-			list($options, $optionSets) = $this->getOptions($positions, $price, $currency, $positionTable);
+		if (empty($document[$controller . 'id'])) {
+			$document['subtotal'] = $calculation['row']['subtotal'];
+			$document['taxes'] = $calculation['row']['taxes']['total'];
+			$document['total'] = $calculation['row']['total'];
 		}
-		return array($positions, $document, $options, $optionSets);
+
+		$document['taxgroups'] = [];
+		if (abs((float)$document['taxes'] - $calculation['row']['taxes']['total']) < 0.005) {
+			foreach ($calculation['locale']['taxes'] as $rate => $value) {
+				if ($rate === 'total') continue;
+				$document['taxgroups'][empty($document['taxfree']) ? $rate : 0] = $value;
+			}
+		}
+		$rates = array_unique(array_map(static function ($position) { return (float)$position['taxrate']; }, $positions->toArray()));
+		$document['taxrate'] = count($rates) === 1 || !empty($document['taxfree'])
+			? Zend_Locale_Format::toNumber(empty($document['taxfree']) ? reset($rates) : 0, ['precision' => 2, 'locale' => $locale])
+			: null;
+		$document['total_raw'] = (float)$document['total'];
+		$document['taxes'] = $currency->toCurrency($document['taxes']);
+		$document['subtotal'] = $currency->toCurrency($document['subtotal']);
+		$document['total'] = $currency->toCurrency($document['total']);
+
+		foreach ($positions as $position) {
+			$precision = floor($position->quantity) == $position->quantity ? 0 : (round($position->quantity, 2) == $position->quantity ? 2 : 4);
+			$position->manufacturerid = $calculation['row'][$position->id]['price'];
+			$position->total = $calculation['locale'][$position->id]['total'];
+			$position->price = $calculation['locale'][$position->id]['price'];
+			$position->quantity = Zend_Locale_Format::toNumber($position->quantity, ['precision' => $precision, 'locale' => $locale]);
+		}
+
+		list($options, $optionSets) = $this->getOptions($positions, [], $currency, $controller . 'pos');
+		return [$positions, $document, $options, $optionSets];
 	}
 
 	public function getOptions($positions, $price, $currency, $positionTable)

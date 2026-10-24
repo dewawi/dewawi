@@ -1458,6 +1458,7 @@ function editPosition(parent, type, data, params) {
 
 	$.ajax({
 		type: 'POST',
+		async: false,
 		url: url,
 		data: data,
 		cache: false,
@@ -1563,11 +1564,16 @@ function deletePosition(parent, type, positionID, setid, masterid){
 //Get Positions
 function getPositions(parent, type, scrollTo) {
 	scrollTo = scrollTo || null;
+	Dewawi.positionRequests = Dewawi.positionRequests || {};
+	var requestKey = parent + '/' + type;
+	var requestId = (Dewawi.positionRequests[requestKey] || 0) + 1;
+	Dewawi.positionRequests[requestKey] = requestId;
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+window.parent.module+'/position/index/parent/'+parent+'/type/'+type+'/parentid/'+id,
 		cache: false,
 		success: function(data){
+			if (Dewawi.positionRequests[requestKey] !== requestId) return;
 			$('.dw-positions[data-parent="'+parent+'"]').html(data);
 			autosize($('.dw-positions').find('textarea'));
 			if(data) $('#tabpositions .toolbar.positions.bottom').show();

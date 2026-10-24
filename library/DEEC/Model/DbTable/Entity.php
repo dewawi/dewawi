@@ -70,13 +70,23 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 
 	public function getById(int $id): ?array
 	{
+		return $this->fetchById($id, false);
+	}
+
+	public function getByIdForUpdate(int $id): ?array
+	{
+		return $this->fetchById($id, true);
+	}
+
+	protected function fetchById(int $id, bool $forUpdate): ?array
+	{
 		$select = $this->select();
 
 		foreach ($this->getEntityWhere($id) as $where) {
 			$select->where($where);
 		}
 
-		$row = $this->fetchRow($select->limit(1));
+		$row = $this->fetchRow($select->limit(1)->forUpdate($forUpdate));
 
 		return $row ? $row->toArray() : null;
 	}

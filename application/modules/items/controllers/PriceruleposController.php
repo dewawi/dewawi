@@ -38,25 +38,26 @@ class Items_PriceruleposController extends DEEC_Controller_Action
 		];
 
 		$db = $this->getPriceRuleDb();
+		$context = $this->getCalculationContext(['module' => $parentModule, 'controller' => $parentController, 'parentid' => $parentId]);
+		$adapter = $db->getAdapter();
+		$adapter->beginTransaction();
 
 		try {
+			$this->lockPriceRuleParent($context);
 			$id = $db->createForParent(
 				$parentId,
 				$parentModule,
 				$parentController,
 				$data
 			);
+			$row = $db->getById($id);
+			if (!$row) throw new RuntimeException('Price rule not found');
+			$this->calculatePriceRuleParent($row);
+			$adapter->commit();
 		} catch (Throwable $exception) {
+			$adapter->rollBack();
 			return $this->sendPriceRuleError('save_failed');
 		}
-
-		$row = $db->getById($id);
-
-		if (!$row) {
-			return $this->sendPriceRuleError('not_found');
-		}
-
-		$this->calculatePriceRuleParent($row);
 
 		return $this->sendSaveResponse($id);
 	}
@@ -96,19 +97,20 @@ class Items_PriceruleposController extends DEEC_Controller_Action
 
 		$values = $form->getFilteredValuesPartial($post);
 
+		$context = $this->getCalculationContext($row);
+		$adapter = $db->getAdapter();
+		$adapter->beginTransaction();
 		try {
+			$this->lockPriceRuleParent($context);
 			$db->updateById($id, $values);
+			$row = $db->getById($id);
+			if (!$row) throw new RuntimeException('Price rule not found');
+			$this->calculatePriceRuleParent($row);
+			$adapter->commit();
 		} catch (Throwable $exception) {
+			$adapter->rollBack();
 			return $this->sendPriceRuleError('save_failed');
 		}
-
-		$row = $db->getById($id);
-
-		if (!$row) {
-			return $this->sendPriceRuleError('not_found');
-		}
-
-		$this->calculatePriceRuleParent($row);
 
 		$changedFields = array_keys($values);
 
@@ -140,15 +142,30 @@ class Items_PriceruleposController extends DEEC_Controller_Action
 			return $this->sendPriceRuleError('not_found');
 		}
 
+		$context = $this->getCalculationContext($row);
+		$adapter = $db->getAdapter();
+		$adapter->beginTransaction();
 		try {
-			$db->deletePosition($id);
+			$this->lockPriceRuleParent($context);
+			$db->deletePosition($id, false);
+			$this->calculatePriceRuleParent($row);
+			$adapter->commit();
 		} catch (Throwable $exception) {
+			$adapter->rollBack();
 			return $this->sendPriceRuleError('delete_failed');
 		}
 
-		$this->calculatePriceRuleParent($row);
-
 		return $this->sendSaveResponse();
+	}
+
+	protected function lockPriceRuleParent(array $context): void
+	{
+		$class = DEEC_Util::dbTableClassFromModuleController($context['module'], $context['controller']);
+		$parent = (new $class())->getByIdForUpdate($context['id']);
+		if (!$parent || DEEC_Permission::isDocumentReadonly($context['module'], $context['controller'], $parent)
+			|| ($context['module'] === 'processes' && in_array((int)($parent['state'] ?? 0), [105, 106], true))) {
+			throw new RuntimeException('Price rule parent is not editable');
+		}
 	}
 
 	protected function getCalculationContext(array $priceRule): array
