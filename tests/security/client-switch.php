@@ -58,6 +58,11 @@ foreach (['activated'=>0, 'deleted'=>1] as $field => $value) {
     $adapter->users[0] = $before;
     $checks++;
 }
+$account = $adapter->users;
+$adapter->users = [];
+check((new Application_Model_DbTable_Client())->getSwitchableClients() === [], 'Missing account did not fail closed');
+$adapter->users = $account;
+$checks++;
 $adapter->clients[1]['deleted'] = 1;
 check((new Application_Model_DbTable_Client())->getSwitchableClients() === [], 'Deleted home client retained switch access');
 $adapter->clients[1]['deleted'] = 0;
@@ -136,5 +141,19 @@ check($otherToken !== $token, 'New session reused an old token');
 check(switchClient('POST', ['clientid'=>'4', 'client_csrf'=>$token]) === [403, 2], 'Token from another session was accepted');
 check(switchClient('POST', ['clientid'=>'4', 'client_csrf'=>$otherToken]) === [200, 4], 'Current session token was rejected');
 $checks += 3;
+
+$beforeLogout = (new Application_Form_Client())->getValue('client_csrf');
+DEEC_Session::logout();
+check(!isset($csrfSession->token), 'Logout retained the client switch token');
+$afterLogout = (new Application_Form_Client())->getValue('client_csrf');
+check($afterLogout !== $beforeLogout, 'Logout reused the previous client switch token');
+check(switchClient('POST', ['clientid'=>'4', 'client_csrf'=>$beforeLogout]) === [403, 2], 'Token survived logout and reauthentication');
+DEEC_Session::login(false);
+check(!isset($csrfSession->token), 'Login retained the previous client switch token');
+$afterLogin = (new Application_Form_Client())->getValue('client_csrf');
+check($afterLogin !== $afterLogout, 'Login reused a preauthentication token');
+check(switchClient('POST', ['clientid'=>'4', 'client_csrf'=>$afterLogout]) === [403, 2], 'Preauthentication token was accepted after login');
+check(switchClient('POST', ['clientid'=>'4', 'client_csrf'=>$afterLogin]) === [200, 4], 'Fresh login token was rejected');
+$checks += 7;
 
 echo 'PASS: ' . $checks . " client scope, CSRF and controller cases\n";

@@ -34,8 +34,8 @@ class Application_Model_DbTable_Client extends DEEC_Model_DbTable_Entity
 	{
 		// Anchor access to the persisted account, not the selected session client.
 		$userDb = new Users_Model_DbTable_User();
-		$user = $userDb->getUser((int)$this->_user['id']);
-		if(!empty($user['deleted']) || empty($user['activated'])) return [];
+		$user = $userDb->getActiveUserById((int)$this->_user['id']);
+		if(!$user) return [];
 
 		$select = $this->select()->where('deleted = ?', 0);
 

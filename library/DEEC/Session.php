@@ -25,6 +25,7 @@ class DEEC_Session
 	public static function login(bool $remember): void
 	{
 		Zend_Session::regenerateId();
+		Zend_Session::namespaceUnset('ClientSwitch');
 
 		$_SESSION[self::REMEMBER_KEY] = $remember;
 
@@ -45,6 +46,7 @@ class DEEC_Session
 	public static function logout(): void
 	{
 		unset($_SESSION[self::REMEMBER_KEY]);
+		Zend_Session::namespaceUnset('ClientSwitch');
 	}
 
 	private static function refreshCookie(): void
