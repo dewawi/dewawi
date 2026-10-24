@@ -87,5 +87,7 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 				$positionId = $positionsDb->addPosition($dataPosition);
 			}
 		}
+
+		Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->direct($parentid, $targetModule, $targetController);
 	}
 }

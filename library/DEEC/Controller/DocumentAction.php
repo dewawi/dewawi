@@ -63,6 +63,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	protected function beforeCreate(array $data): array
 	{
 		$data = parent::beforeCreate($data);
+		$data += ['subtotal' => 0, 'taxes' => 0, 'total' => 0];
 
 		$data['responsibleid'] = (int)$this->_user['id'];
 		$data['responsible'] = (string)$this->_user['name'];
@@ -196,6 +197,11 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		}
 
 		if (!empty($options['finalize'])) {
+			if (empty($row[$this->getDocumentNumberField()])) {
+				$this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
+				$row = $this->loadRow($id);
+			}
+
 			$row = $this->finalizeDocument($row);
 		}
 

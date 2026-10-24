@@ -220,11 +220,6 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 
 	protected function beforeBuildPositionIndex(array $params): void
 	{
-		$this->_helper->Calculate(
-			$params['parentid'],
-			$this->getPositionModule(),
-			$params['parent']
-		);
 	}
 
 	protected function buildPositionIndexContext(
