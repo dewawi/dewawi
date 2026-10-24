@@ -42,8 +42,6 @@ class Users_UserController extends Zend_Controller_Action
 		if(false) {
 			$this->_helper->redirector->gotoSimple('view', 'user', null, array('id' => $id));
 		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $user['locked'], $user['lockedtime']);
-
 			$form = new Users_Form_User();
 			$options = $this->_helper->Options->getOptions($form);
 
@@ -62,8 +60,23 @@ class Users_UserController extends Zend_Controller_Action
 					unset($data['smtppass']);
 				}
 
+				$allowedFields = array_flip([
+					'name', 'email', 'emailsender', 'smtphost',
+					'smtpauth', 'smtpsecure', 'smtpuser', 'smtppass',
+				]);
+
+				if (array_diff_key($data, $allowedFields)) {
+					$this->getResponse()->setHttpResponseCode(403);
+					echo Zend_Json::encode(['saved' => false, 'message' => 'Access denied']);
+					return;
+				}
+
 				if ($form->getElement($element) && $form->isValidPartial($data)) {
-					$userDb->updateUser($id, $data);
+					$values = $form->getFilteredValuesPartial($data);
+					if ($values) {
+						$this->_helper->Access->lock($id, $this->_user['id'], $user['locked'], $user['lockedtime']);
+						$userDb->updateUser($id, $values);
+					}
 					echo Zend_Json::encode(['saved' => true]);
 				} else {
 					echo Zend_Json::encode([
@@ -74,6 +87,7 @@ class Users_UserController extends Zend_Controller_Action
 				}
 				return;
 			} else {
+				$this->_helper->Access->lock($id, $this->_user['id'], $user['locked'], $user['lockedtime']);
 				if($id > 0) {
 					$form->setValues($user);
 					$form->setValue('password', 'xxxxxxxxxx');
@@ -285,11 +299,31 @@ class Users_UserController extends Zend_Controller_Action
 	{
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
-		$clientid = $this->_getParam('clientid', 0);
-		if($clientid) {
-			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
-			$authNamespace->storage->clientid = $clientid;
+		$this->getResponse()->setHeader('Cache-Control', 'no-store', true);
+		$request = $this->getRequest();
+
+		if(!Zend_Auth::getInstance()->hasIdentity()) {
+			$this->getResponse()->setHttpResponseCode(401);
+			return;
 		}
+
+		if(!$request->isPost()) {
+			$this->getResponse()->setHeader('Allow', 'POST', true)->setHttpResponseCode(405);
+			return;
+		}
+
+		$clientDb = new Application_Model_DbTable_Client();
+		$form = new Application_Form_Client();
+		$form->clientid->addMultiOptions($clientDb->getSwitchableClients());
+		$data = $request->getPost();
+
+		if(!is_scalar($data['clientid'] ?? null) || !$form->isValid($data)) {
+			$this->getResponse()->setHttpResponseCode(403);
+			return;
+		}
+
+		$authNamespace = new Zend_Session_Namespace('Zend_Auth');
+		$authNamespace->storage->clientid = (int)$form->getValue('clientid');
 	}
 
 	public function languageAction()
