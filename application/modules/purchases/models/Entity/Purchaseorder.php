@@ -51,6 +51,8 @@ class Purchases_Model_Entity_Purchaseorder
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'documentid' => 'purchaseorderid',
 				'name1' => 'c.name1',
 			],

@@ -4,6 +4,17 @@ class Items_Model_Get
 {
 	public function ledger($params, $options)
 	{
+		$ordering = DEEC_List_Ordering::clause($params, [
+			'id' => 'le.id',
+			'modified' => 'le.modified',
+			'created' => 'le.created',
+			'ledgerdate' => 'le.ledgerdate',
+			'sku' => 'i.sku',
+			'title' => 'i.title',
+			'quantity' => 'le.quantity',
+			'comment' => 'le.comment',
+		]);
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['items'];
@@ -28,7 +39,7 @@ class Items_Model_Get
 				->join(array('i' => 'item'), $schema.'.sku = i.sku', array('catid', 'title'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order($params['order'].' '.$params['sort'])
+				->order($ordering)
 				->limit($params['limit'])
 		);
 
@@ -108,6 +119,14 @@ class Items_Model_Get
 
 	public function itemlists($params, $options)
 	{
+		$ordering = DEEC_List_Ordering::clause($params, [
+			'id',
+			'modified',
+			'created',
+			'title',
+			'description',
+		]);
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['items'];
@@ -128,14 +147,14 @@ class Items_Model_Get
 			$items = $itemlistDb->fetchAll(
 				$itemlistDb->select()
 					->where($query ? $query : 0)
-					->order($params['order'].' '.$params['sort'])
+					->order($ordering)
 					->limit($params['limit'])
 			);
 		} else {
 			$items = $itemlistDb->fetchAll(
 				$itemlistDb->select()
 					->where($query ? $query : 0)
-					->order($params['order'].' '.$params['sort'])
+					->order($ordering)
 					->limit($params['limit'])
 			);
 		}

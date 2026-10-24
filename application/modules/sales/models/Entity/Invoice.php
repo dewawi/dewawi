@@ -51,6 +51,8 @@ class Sales_Model_Entity_Invoice
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'documentid' => 'invoiceid',
 				'name1' => 'c.name1',
 			],

@@ -51,6 +51,8 @@ class Sales_Model_Entity_Reminder
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'documentid' => 'reminderid',
 				'name1' => 'c.name1',
 			],

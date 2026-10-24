@@ -49,6 +49,7 @@ class Items_Model_Entity_Ledger
 			],
 
 			'orders' => [
+				'modified',
 				'id',
 				'ledgerdate',
 				'sku' => 'i.sku',

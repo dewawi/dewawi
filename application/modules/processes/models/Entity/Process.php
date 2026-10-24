@@ -59,6 +59,8 @@ class Processes_Model_Entity_Process
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'documentid' => 'processid',
 				'name1' => 'c.name1',
 			],

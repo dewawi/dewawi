@@ -16,6 +16,8 @@ class Admin_Model_Entity_Country
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'id',
 				'code',
 				'name',

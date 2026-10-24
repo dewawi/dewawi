@@ -4,6 +4,19 @@ class Tasks_Model_Get
 {
 	public function tasks($params, $options, $flashMessenger)
 	{
+		$ordering = DEEC_List_Ordering::clause($params, [
+			'id' => 'p.id',
+			'modified' => 'p.modified',
+			'created' => 'p.created',
+			'title' => 'p.title',
+			'taskdate' => 'p.taskdate',
+			'duedate' => 'p.duedate',
+			'priority' => 'p.priority',
+			'state' => 'p.state',
+			'completed' => 'p.completed',
+			'name1' => 'c.name1',
+		]);
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['tasks'];
@@ -36,7 +49,7 @@ class Tasks_Model_Get
 				->join(array('c' => 'contact'), 'p.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
-				->order(array('pinned desc', $params['order'].' '.$params['sort']))
+				->order(array('pinned desc', $ordering))
 				->limit($params['limit'])
 		);
 		if(!count($tasks) && $params['keyword']) {
@@ -50,7 +63,7 @@ class Tasks_Model_Get
 					->join(array('c' => 'contact'), 'p.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
-					->order(array('pinned desc', $params['order'].' '.$params['sort']))
+					->order(array('pinned desc', $ordering))
 					->limit($params['limit'])
 			);
 		}

@@ -94,6 +94,12 @@ class Contacts_Model_Entity_Contact
 			],
 
 			'orders' => [
+				'id',
+				'modified',
+				'created',
+				'contactid',
+				'name1',
+				'name2',
 				'street' => 'a.street',
 				'postcode' => 'a.postcode',
 				'city' => 'a.city',

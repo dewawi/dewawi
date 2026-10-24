@@ -85,11 +85,7 @@ class DEEC_List_Query
 		$params['from'] = $params['from'] ?? date('Y-m-d', strtotime('-1 month'));
 		$params['to'] = $params['to'] ?? date('Y-m-d');
 		$params['order'] = $params['order'] ?? 'modified';
-		$params['sort'] = strtoupper($params['sort'] ?? 'DESC');
-
-		if (!in_array($params['sort'], ['ASC', 'DESC'], true)) {
-			$params['sort'] = 'DESC';
-		}
+		$params['sort'] = DEEC_List_Ordering::direction($params['sort'] ?? 'DESC');
 
 		return $params;
 	}
@@ -469,17 +465,8 @@ class DEEC_List_Query
 	{
 		$alias = $config['alias'];
 		$order = $params['order'] ?? 'modified';
-		$sort = $params['sort'] ?? 'DESC';
-
-		$orders = $config['orders'] ?? [];
-
-		if (isset($orders[$order])) {
-			$orderColumn = $orders[$order];
-		} elseif (in_array($order, $orders, true)) {
-			$orderColumn = $order;
-		} else {
-			$orderColumn = $order;
-		}
+		$sort = DEEC_List_Ordering::direction($params['sort'] ?? 'DESC');
+		$orderColumn = DEEC_List_Ordering::column($order, $config['orders'] ?? []);
 
         $ordering = [];
 

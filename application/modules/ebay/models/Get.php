@@ -4,6 +4,14 @@ class Ebay_Model_Get
 {
 	public function accounts($params, $options)
 	{
+		$ordering = DEEC_List_Ordering::clause($params, [
+			'id',
+			'modified',
+			'created',
+			'userid',
+			'catid',
+		]);
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['ebay'];
@@ -22,7 +30,7 @@ class Ebay_Model_Get
 		$accounts = $accountsDb->fetchAll(
 			$accountsDb->select()
 				->where($query ? $query : 0)
-				->order($params['order'].' '.$params['sort'])
+				->order($ordering)
 				->limit($params['limit'])
 		);
 
@@ -31,6 +39,20 @@ class Ebay_Model_Get
 
 	public function listings($params, $options)
 	{
+		$ordering = DEEC_List_Ordering::clause($params, [
+			'id' => 'e.id',
+			'modified' => 'e.modified',
+			'created' => 'e.created',
+			'accountid' => 'e.accountid',
+			'itemid' => 'e.itemid',
+			'sku' => 'i.sku',
+			'title' => 'i.title',
+			'price' => 'i.price',
+			'cost' => 'i.cost',
+			'margin' => 'i.margin',
+			'catid' => 'i.catid',
+		]);
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['ebay'];
@@ -55,7 +77,7 @@ class Ebay_Model_Get
 				->join(array('i' => 'item'), 'i.id = e.itemid', array('sku', 'title', 'ebaytitle'))
 				->group($schema.'.id')
 				->where($query ? $query : 0)
-				->order($params['order'].' '.$params['sort'])
+				->order($ordering)
 				->limit($params['limit'])
 		);
 
@@ -64,6 +86,16 @@ class Ebay_Model_Get
 
 	public function orders($params, $options)
 	{
+		$ordering = DEEC_List_Ordering::clause($params, [
+			'id',
+			'modified',
+			'created',
+			'accountid',
+			'orderid',
+			'contactid',
+			'invoiceid',
+		]);
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['ebay'];
@@ -82,7 +114,7 @@ class Ebay_Model_Get
 		$orders = $ordersDb->fetchAll(
 			$ordersDb->select()
 				->where($query ? $query : 0)
-				->order($params['order'].' '.$params['sort'])
+				->order($ordering)
 				->limit($params['limit'])
 		);
 
@@ -91,6 +123,13 @@ class Ebay_Model_Get
 
 	public function items($params, $options)
 	{
+		$ordering = DEEC_List_Ordering::clause($params, [
+			'id',
+			'modified',
+			'created',
+			'itemid',
+		]);
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['ebay'];
@@ -109,7 +148,7 @@ class Ebay_Model_Get
 		$items = $itemsDb->fetchAll(
 			$itemsDb->select()
 				->where($query ? $query : 0)
-				->order($params['order'].' '.$params['sort'])
+				->order($ordering)
 				->limit($params['limit'])
 		);
 

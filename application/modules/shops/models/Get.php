@@ -12,6 +12,14 @@ class Shops_Model_Get
 
 	public function accounts($params, $options)
 	{
+		$ordering = DEEC_List_Ordering::clause($params, [
+			'id',
+			'modified',
+			'created',
+			'title',
+			'catid',
+		]);
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['shops'];
@@ -30,7 +38,7 @@ class Shops_Model_Get
 		$accounts = $accountsDb->fetchAll(
 			$accountsDb->select()
 				->where($query ? $query : 0)
-				->order($params['order'].' '.$params['sort'])
+				->order($ordering)
 				->limit($params['limit'])
 		);
 
@@ -63,6 +71,18 @@ class Shops_Model_Get
 
 	public function orders($params, $options)
 	{
+		$ordering = DEEC_List_Ordering::clause($params, [
+			'id',
+			'modified',
+			'created',
+			'shopid',
+			'orderid',
+			'contactid',
+			'invoiceid',
+			'orderdate',
+			'total',
+		]);
+
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
 			$client['id'] = $client['modules']['shops'];
@@ -81,7 +101,7 @@ class Shops_Model_Get
 		$orders = $ordersDb->fetchAll(
 			$ordersDb->select()
 				->where($query ? $query : 0)
-				->order($params['order'].' '.$params['sort'])
+				->order($ordering)
 				->limit($params['limit'])
 		);
 

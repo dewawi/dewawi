@@ -56,6 +56,8 @@ class Sales_Model_Entity_Quote
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'documentid' => 'quoteid',
 				'name1' => 'c.name1',
 			],

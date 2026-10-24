@@ -51,6 +51,8 @@ class Sales_Model_Entity_Creditnote
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'documentid' => 'creditnoteid',
 				'name1' => 'c.name1',
 			],

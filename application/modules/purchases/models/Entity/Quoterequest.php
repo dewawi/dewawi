@@ -51,6 +51,8 @@ class Purchases_Model_Entity_Quoterequest
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'documentid' => 'quoterequestid',
 				'name1' => 'c.name1',
 			],

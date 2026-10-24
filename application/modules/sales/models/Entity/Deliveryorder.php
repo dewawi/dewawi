@@ -51,6 +51,8 @@ class Sales_Model_Entity_Deliveryorder
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'documentid' => 'deliveryorderid',
 				'name1' => 'c.name1',
 			],

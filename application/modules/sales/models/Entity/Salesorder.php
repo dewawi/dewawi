@@ -51,6 +51,8 @@ class Sales_Model_Entity_Salesorder
 			],
 
 			'orders' => [
+				'modified',
+				'created',
 				'documentid' => 'salesorderid',
 				'name1' => 'c.name1',
 			],
