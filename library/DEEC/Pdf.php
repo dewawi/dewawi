@@ -91,9 +91,19 @@ class DEEC_Pdf
 
 	public function generate(array $request): array
 	{
-		$this->bootstrapTcpdf();
-
 		$payload = $this->buildPayload($request);
+		$file = $this->getOutputFile($payload);
+
+		if (empty($payload['meta']['overwrite']) && $file['exists']) {
+			return $file;
+		}
+
+		if (empty($payload['meta']['overwrite']) && $this->restorePdfAttachment($payload, $file)) {
+			return $this->getOutputFile($payload);
+		}
+
+		$this->bootstrapTcpdf();
+		$payload = $this->buildDocumentPayload($payload);
 
 		if (empty($payload['document']['id'])) {
 			throw new RuntimeException('Document payload is invalid');
@@ -128,17 +138,35 @@ class DEEC_Pdf
 			throw new InvalidArgumentException('Invalid PDF request');
 		}
 
-		return $this->buildDocumentPayload(
-			$documentId,
-			$module,
-			$controller,
-			$output,
-			$templateId ?: null,
-			[
-				'storage' => (string)($request['storage'] ?? 'cache'),
-				'overwrite' => !empty($request['overwrite']),
-			]
-		);
+		$documentDb = $this->getDocumentDb($module, $controller);
+		$document = $documentDb->getById($documentId);
+
+		if (!$document) {
+			throw new RuntimeException('Document not found');
+		}
+
+		$issued = !empty($document[$this->getDocumentIdField($controller)]);
+
+		if ($issued && (empty($document['clientid']) || empty($document['contactid']) || empty($document['filename']))) {
+			throw new RuntimeException('Issued document storage is incomplete');
+		}
+
+		$view = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer')->view;
+
+		return [
+			'meta' => [
+				'module' => $module,
+				'controller' => $controller,
+				'documentId' => $documentId,
+				'output' => $output,
+				'templateid' => $issued ? null : ($templateId ?: null),
+				'storage' => $issued ? 'contact' : (string)($request['storage'] ?? 'cache'),
+				'overwrite' => !$issued && !empty($request['overwrite']),
+				'baseUrl' => $view->baseUrl(),
+			],
+			'document' => $document,
+			'clientId' => (int)($document['clientid'] ?? 0),
+		];
 	}
 
 	protected function buildPdfTitle(array $payload): string
@@ -152,19 +180,14 @@ class DEEC_Pdf
 		return $title . ' ' . ($document[$docIdField] ?? $document['id'] ?? '');
 	}
 
-	protected function buildDocumentPayload(int $documentId, string $module, string $controller, string $output, ?int $templateId = null, array $options = []): array
+	protected function buildDocumentPayload(array $payload): array
 	{
-		$view = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer')->view;
-
-		$documentDb = $this->getDocumentDb($module, $controller);
-		$document = $documentDb->getById($documentId);
-
-		if (!$document) {
-			throw new RuntimeException('Document not found');
-		}
+		$module = $payload['meta']['module'];
+		$controller = $payload['meta']['controller'];
+		$document = $payload['document'];
 
 		$data = $this->resolveDocumentPayloadData($module, $controller, $document, [
-			'templateid' => $templateId,
+			'templateid' => $payload['meta']['templateid'],
 		]);
 
 		$template = $data['template'] ?? [];
@@ -184,16 +207,7 @@ class DEEC_Pdf
 			}
 		}
 
-		return [
-			'meta' => [
-				'module' => $module,
-				'controller' => $controller,
-				'documentId' => $documentId,
-				'output' => $output,
-				'storage' => $options['storage'] ?? 'cache',
-				'overwrite' => !empty($options['overwrite']),
-				'baseUrl' => $view->baseUrl(),
-			],
+		return array_merge($payload, [
 			'document' => $resolvedDocument,
 			'contact' => (array)($data['contact'] ?? []),
 			'responsibleUser' => $responsibleUser,
@@ -211,7 +225,7 @@ class DEEC_Pdf
 				'footers' => $data['footers'] ?? [],
 				'calculations' => $data['calculations'] ?? [],
 			],
-		];
+		]);
 	}
 
 	protected function resolveDocumentPayloadData(string $module, string $controller, array $document, array $options = []): array
@@ -310,9 +324,72 @@ class DEEC_Pdf
 
 	protected function outputPdf(TCPDF $pdf, array $payload): array
 	{
+		$file = $this->getOutputFile($payload);
+		$this->mkdirp(dirname($file['path']));
+
+		if (!empty($payload['meta']['overwrite'])) {
+			$pdf->Output($file['path'], 'F');
+		} elseif (!$file['exists']) {
+			$tempFile = tempnam(dirname($file['path']), '.pdf-');
+			if ($tempFile === false) throw new RuntimeException('Could not create temporary PDF file');
+
+			try {
+				$pdf->Output($tempFile, 'F');
+				$this->publishPdfFile($tempFile, $file, $payload, 'render');
+			} finally {
+				unlink($tempFile);
+			}
+		}
+
+		clearstatcache(true, $file['path']);
+		$file['exists'] = is_file($file['path']);
+
+		return $file;
+	}
+
+	protected function restorePdfAttachment(array $payload, array $file): bool
+	{
+		if ($file['storage'] !== 'contact') return false;
+
+		$directory = $this->contactUrl((string)$payload['document']['id'], (string)$payload['clientId']);
+		$attachment = BASE_PATH . '/files/attachments/' . $payload['meta']['module'] . '/'
+			. $payload['meta']['controller'] . '/' . $directory . $file['filename'];
+
+		if (!is_file($attachment)) return false;
+
+		$this->mkdirp(dirname($file['path']));
+		$tempFile = tempnam(dirname($file['path']), '.pdf-');
+		if ($tempFile === false) throw new RuntimeException('Could not create temporary PDF file');
+
+		try {
+			if (!copy($attachment, $tempFile)) throw new RuntimeException('Could not restore PDF attachment');
+			$this->publishPdfFile($tempFile, $file, $payload, 'attachment');
+		} finally {
+			unlink($tempFile);
+		}
+
+		return true;
+	}
+
+	protected function publishPdfFile(string $tempFile, array $file, array $payload, string $source): void
+	{
+		chmod($tempFile, 0666 & ~umask());
+
+		// Publish the complete PDF without replacing a concurrent writer's file.
+		if (@link($tempFile, $file['path'])) {
+			error_log('Stored document PDF: ' . $payload['meta']['module'] . '/' . $payload['meta']['controller']
+				. ' id=' . $payload['document']['id'] . ' clientid=' . $payload['clientId'] . ' source=' . $source);
+			return;
+		}
+
+		clearstatcache(true, $file['path']);
+		if (!is_file($file['path'])) throw new RuntimeException('Could not store PDF file');
+	}
+
+	protected function getOutputFile(array $payload): array
+	{
 		$output = $payload['meta']['output'] ?? 'file';
 		$storage = $payload['meta']['storage'] ?? 'cache';
-		$overwrite = !empty($payload['meta']['overwrite']);
 		$document = $payload['document'];
 		$baseUrl = $payload['meta']['baseUrl'] ?? '';
 		$module = $payload['meta']['module'] ?? 'document';
@@ -323,6 +400,10 @@ class DEEC_Pdf
 		$filename = !empty($document['filename'])
 			? $document['filename']
 			: ($controller . '_' . $document['id'] . '.pdf');
+
+		if (basename($filename) !== $filename || strpbrk($filename, "\\\0") !== false || in_array($filename, ['.', '..'], true)) {
+			throw new RuntimeException('Invalid PDF filename');
+		}
 
 		$relativeDir = '';
 		$dirAbs = '';
@@ -340,14 +421,9 @@ class DEEC_Pdf
 			$dirUrl = $baseUrl . '/cache/document/' . $relativeDir;
 		}
 
-		$this->mkdirp($dirAbs);
-
 		$fileAbs = $dirAbs . $filename;
 		$fileUrl = $dirUrl . $filename;
-
-		if ($overwrite || !is_file($fileAbs)) {
-			$pdf->Output($fileAbs, 'F');
-		}
+		clearstatcache(true, $fileAbs);
 
 		return [
 			'path' => $fileAbs,
