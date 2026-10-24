@@ -1,0 +1,45 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Document note autosave regression</title>
+<!-- Open locally in a browser; all AJAX calls are captured without sending requests. -->
+<div class="view">
+  <form><textarea id="notes" name="notes" data-document-note="1" data-module="sales" data-controller="invoice" data-id="1">Old note</textarea></form>
+</div>
+<div id="content">
+  <table><tr><td><input class="id" type="hidden" value="1"></td><td class="editableContainer"><pre class="editable dw-editable-note" data-type="textarea" data-name="notes" data-module="sales" data-controller="invoice" data-id="1">Old note</pre></td></tr></table>
+</div>
+<pre id="result">RUNNING</pre>
+<script src="../../library/jQuery/jquery-1.12.4.min.js"></script>
+<script src="../../library/jQuery/jquery.cookie.js"></script>
+<script>
+var language = 'de', module = 'sales', controller = 'invoice', action = 'view';
+var baseUrl = '/fixture', id = 1, cookiePath = '/', calls = [], failures = [];
+window.addEventListener('error', function(event) { failures.push(event.message); });
+// These widgets have no matching elements in this fixture.
+$.fn.datepicker = function() { return this; };
+function autosize() {}
+$.ajax = function(options) {
+  calls.push({ url: options.url, data: options.data });
+  var response = { ok: true, values: options.data || {}, display: options.data || {} };
+  if (options.success) options.success(response);
+  return $.Deferred().resolve(response).promise();
+};
+</script>
+<script src="../../js/global.js"></script>
+<script>
+$(function() {
+  function check(condition, message) { if (!condition) failures.push(message); }
+  $('#notes').val('Updated document note').trigger('change');
+  var saves = calls.filter(function(call) { return call.url.indexOf('/edit/id/') !== -1; });
+  check(saves.length === 1 && saves[0].url === '/fixture/sales/invoice/edit/id/1', 'Document note route changed');
+  check(saves.length === 1 && JSON.stringify(saves[0].data) === JSON.stringify({ notes: 'Updated document note' }), 'Document note included protected fields');
+  calls = [];
+  $('.dw-editable-note').trigger('click');
+  $('.editableValue').val('Updated inline note').trigger('change');
+  saves = calls.filter(function(call) { return call.url.indexOf('/edit/id/') !== -1; });
+  check(saves.length === 1 && saves[0].url === '/fixture/sales/invoice/edit/id/1', 'Inline note route changed');
+  check(saves.length === 1 && Object.keys(saves[0].data).join(',') === 'notes' && saves[0].data.notes === 'Updated inline note', 'Inline note included an unrelated ordering field');
+  check(!isDirty, 'Successful note save left unsaved changes');
+  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: document and inline note autosave send only notes');
+});
+</script>

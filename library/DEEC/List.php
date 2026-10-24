@@ -227,6 +227,16 @@ class DEEC_List
 	public function isReadonly($item, string $field = 'state'): bool
 	{
 		$value = (string)$this->getFieldValue($item, $field);
+		$module = (string)$this->getFieldValue($item, 'module', $this->getModule());
+		$controller = (string)$this->getFieldValue($item, 'controller', $this->getController());
+		if ($field === 'state' && DEEC_Permission::isDocument($module, $controller)) {
+			return DEEC_Permission::isDocumentReadonly($module, $controller, [
+				'state' => $value,
+				'completed' => $this->getFieldValue($item, 'completed'),
+				'cancelled' => $this->getFieldValue($item, 'cancelled'),
+				$controller . 'id' => $this->getFieldValue($item, $controller . 'id', $this->getFieldValue($item, 'document_number')),
+			]);
+		}
 
 		return in_array($value, $this->readonlyStates, true);
 	}

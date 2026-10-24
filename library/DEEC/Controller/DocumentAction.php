@@ -12,16 +12,66 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		$factoryClass = $this->getReadonlyFormFactoryClass();
 
 		if(!$factoryClass || !class_exists($factoryClass)) {
-			return parent::buildViewForm($row);
+			$form = parent::buildViewForm($row);
+		} else {
+			$factory = new $factoryClass();
+			$form = $factory->build($this->getFormClass(), $row, Zend_Registry::get('Zend_Locale'));
 		}
 
-		$factory = new $factoryClass();
+		$request = $this->getRequest();
+		$module = $request->getModuleName();
+		$controller = $request->getControllerName();
+		if ((new DEEC_Permission((array)$this->_user))->hasPermission($module, $controller, 'edit')) {
+			$form->setReadonlyEditableFields(['notes']);
+			$form->setElementData('notes', ['attribs' => [
+				'data-document-note' => 1,
+				'data-module' => $module,
+				'data-controller' => $controller,
+				'data-id' => (int)$row['id'],
+			]]);
+		}
 
-		return $factory->build(
-			$this->getFormClass(),
-			$row,
-			Zend_Registry::get('Zend_Locale')
-		);
+		return $form;
+	}
+
+	public function editAction()
+	{
+		$request = $this->getRequest();
+		if (!$request->isPost()) return parent::editAction();
+
+		$id = (int)$this->_getParam('id', 0);
+		$row = $this->loadRow($id);
+		if (!$row || !$this->isReadonlyState($row)) return parent::editAction();
+
+		$this->disableView();
+		$post = (array)$request->getPost();
+		$permission = new DEEC_Permission((array)$this->_user);
+		if (!$permission->hasPermission($request->getModuleName(), $request->getControllerName(), 'edit')
+			|| array_keys($post) !== ['notes'] || !is_string($post['notes'])) {
+			$this->getResponse()->setHttpResponseCode(403);
+			return $this->_helper->json(['ok' => false, 'message' => 'MESSAGES_DOCUMENT_READONLY']);
+		}
+
+		if ($this->_helper->Access->isLocked($row['locked'] ?? 0, $row['lockedtime'] ?? null, $this->_user['id'])) {
+			return $this->_helper->json(['ok' => false, 'message' => 'locked']);
+		}
+
+		$formClass = $this->getFormClass();
+		$form = new $formClass();
+		if (!$form->isValidPartial($post)) {
+			return $this->_helper->json(['ok' => false, 'errors' => $this->toErrorMessages($form->getErrors(), $form)]);
+		}
+
+		$values = $form->getFilteredValuesPartial($post);
+		if ((string)($row['notes'] ?? '') !== $values['notes']) {
+			try {
+				$this->getDb()->updateById($id, $values);
+			} catch (Exception $e) {
+				return $this->_helper->json(['ok' => false, 'message' => 'save_failed']);
+			}
+		}
+
+		return $this->sendSaveResponse($id, $values, DEEC_Display::fromRow($form, $values, ['notes']));
 	}
 
 	protected function getViewAssigns(array $row, $form): array
@@ -198,11 +248,25 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 
 		if (!empty($options['finalize'])) {
 			if (empty($row[$this->getDocumentNumberField()])) {
-				$this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
-				$row = $this->loadRow($id);
+				$db = $this->getDb();
+				$adapter = $db->getAdapter();
+				$adapter->beginTransaction();
+				try {
+					$row = $db->getByIdForUpdate($id);
+					if (!$row) throw new RuntimeException('Document not found');
+					if (empty($row[$this->getDocumentNumberField()])) {
+						$this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
+						$row = $this->loadRow($id);
+					}
+					$row = $this->finalizeDocument($row);
+					$adapter->commit();
+				} catch (Throwable $exception) {
+					$adapter->rollBack();
+					throw $exception;
+				}
+			} else {
+				$row = $this->finalizeDocument($row);
 			}
-
-			$row = $this->finalizeDocument($row);
 		}
 
 		$pdf = new DEEC_Pdf();
@@ -301,7 +365,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 
 	protected function isReadonlyState(array $row): bool
 	{
-		return in_array((int)($row['state'] ?? 0), [105, 106], true);
+		return DEEC_Permission::isDocumentReadonly($this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), $row);
 	}
 
 	protected function finalizeDocument(array $row): array
@@ -372,15 +436,18 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 
 	protected function afterEditSave(int $id, array $values, array $row): void
 	{
-		if (isset($values['currency'])) {
-			$this->updatePositionCurrency($id, $values['currency']);
-			$this->reloadPositionsAfterSave();
+		$current = $this->getDb()->getByIdForUpdate($id);
+		if (!$current || !empty($current[$this->getDocumentNumberField()])) {
+			throw new RuntimeException('Document is not editable');
 		}
 
-		if ($this->affectsDocumentCalculation($values)) {
-			$calculation = $this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
-			$this->setSaveCalculation($calculation['locale']);
+		if (isset($values['currency'])) {
+			$this->updatePositionCurrency($id, $values['currency']);
 		}
+
+		$calculation = $this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
+		$this->setSaveCalculation($calculation['locale']);
+		$this->reloadPositionsAfterSave();
 	}
 
 	protected function affectsDocumentCalculation(array $values): bool

@@ -172,6 +172,15 @@ $(document).ready(function(){
 		}
 	);
 
+	$(document).on('change', '[data-document-note]', function() {
+		Dewawi.setDirty(true);
+		edit({ notes: $(this).val() }, {
+			module: $(this).data('module'),
+			controller: $(this).data('controller'),
+			id: $(this).data('id')
+		});
+	});
+
 	$('.edit form').on('change', 'input, textarea, select', function() {
 		var $field = $(this);
 
@@ -385,7 +394,10 @@ $(document).ready(function(){
 		}
 
 		if ($field.hasClass('number')) {
-			$field.formatCurrency({ region: language });
+			$field.formatCurrency({
+				region: language,
+				roundToDecimalPlace: /^(price|quantity)$/.test(this.name) ? 4 : 2
+			});
 		}
 
 		var $card = $field.closest('.dw-position-card');
@@ -657,7 +669,7 @@ $(document).ready(function(){
 				params['action'] = element.dataset.action || params['action'];
 				params['controller'] = element.dataset.controller || params['controller'];
 				params['module'] = element.dataset.module || params['module'];
-				data['ordering'] = element.dataset.ordering || data['ordering'];
+				if (element.dataset.ordering !== undefined) data['ordering'] = element.dataset.ordering;
 			}
 		});
 
@@ -822,7 +834,10 @@ $(document).ready(function(){
 
 	//Prices and quantities
 	$('.number').on('blur, change', function() {
-		$(this).formatCurrency({ region: language });
+		$(this).formatCurrency({
+			region: language,
+			roundToDecimalPlace: $(this).closest('.dw-positions').length && /^(price|quantity)$/.test(this.name) ? 4 : 2
+		});
 	});
 	$('#cost, #price').on('textchange', function () {
 		var price = $('#price').asNumber({ region: language });

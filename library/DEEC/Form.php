@@ -157,6 +157,7 @@
 class DEEC_Form
 {
 	protected $mode = 'edit';
+	protected array $readonlyEditableFields = [];
 	protected $method = 'post';
 	protected $locale = null;
 	protected $elements = [];
@@ -179,6 +180,12 @@ class DEEC_Form
 	public function getMode(): string
 	{
 		return $this->mode;
+	}
+
+	public function setReadonlyEditableFields(array $fields): self
+	{
+		$this->readonlyEditableFields = $fields;
+		return $this;
 	}
 
 	public function isReadonly(): bool
@@ -308,7 +315,7 @@ class DEEC_Form
 
 	protected function applyModeToAttribs(array $el, array $attribs): array
 	{
-		if (!$this->isReadonly()) {
+		if (!$this->isReadonly() || in_array($el['name'], $this->readonlyEditableFields, true)) {
 			return $attribs;
 		}
 

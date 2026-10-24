@@ -2,6 +2,24 @@
 
 class DEEC_Permission
 {
+	private const DOCUMENTS = [
+		'sales' => ['quote', 'salesorder', 'invoice', 'deliveryorder', 'creditnote', 'reminder'],
+		'purchases' => ['quoterequest', 'purchaseorder'],
+	];
+
+	public static function isDocument(string $module, string $controller): bool
+	{
+		return in_array($controller, self::DOCUMENTS[$module] ?? [], true);
+	}
+
+	public static function isDocumentReadonly(string $module, string $controller, array $row): bool
+	{
+		return self::isDocument($module, $controller) && (
+			!empty($row[$controller . 'id']) || !empty($row['completed']) || !empty($row['cancelled'])
+			|| in_array((int)($row['state'] ?? 0), [105, 106], true)
+		);
+	}
+
 	private const MODULES = [
 		'default', 'calendar', 'contacts', 'items',
 		'processes', 'purchases', 'sales', 'statistics',

@@ -168,15 +168,14 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			return;
 		}
 
-		$taxrateKey = (string)$position->taxrate;
+		$taxrateKey = (string)(float)$position->taxrate;
 
 		if (!array_key_exists($taxrateKey, $taxes)) {
 			return;
 		}
 
 		$taxes[$taxrateKey]['value'] +=
-			$price
-			* (float)$position->quantity
+			round($price * (float)$position->quantity, 2)
 			* (float)$position->taxrate
 			/ 100;
 	}
@@ -195,7 +194,7 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		);
 
 		$position->total = $currency->toCurrency(
-			$price * (float)$position->quantity
+			round($price * (float)$position->quantity, 2)
 		);
 
 		$currencyHelper->setCurrency(
@@ -205,14 +204,15 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		);
 
 		$position->price = $currency->toCurrency(
-			$position->price
+			$position->price,
+			['precision' => round($position->price, 2) == $position->price ? 2 : 4]
 		);
 
 		$position->quantity =
 			Zend_Locale_Format::toNumber(
 				$position->quantity,
 				[
-					'precision' => 2,
+					'precision' => round($position->quantity, 2) == $position->quantity ? 2 : 4,
 					'locale' => $locale,
 				]
 			);
@@ -233,6 +233,11 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 	protected function isPositionParentReadonly(
 		array $parent
 	): bool {
+		$params = $this->getPositionParams();
+		if (DEEC_Permission::isDocument($this->getPositionModule(), $params['parent'])) {
+			return DEEC_Permission::isDocumentReadonly($this->getPositionModule(), $params['parent'], $parent);
+		}
+
 		return in_array(
 			(int)($parent['state'] ?? 0),
 			[105, 106],
@@ -389,17 +394,7 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		$taxes = [];
 
 		foreach ($positions as $position) {
-			$taxrateId = array_search(
-				$position->taxrate,
-				$taxrates,
-				true
-			);
-
-			if ($taxrateId === false) {
-				continue;
-			}
-
-			$rate = (string)$position->taxrate;
+			$rate = (string)(float)$position->taxrate;
 
 			if (isset($taxes[$rate])) {
 				continue;
@@ -690,42 +685,22 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 	}
 
 	protected function preparePositionEditValues(array $values, array $post, array $uoms, array $taxrates, $locale): array {
-		$element = key($post);
-
 		if (
-			$element === 'taxrate'
-			&& isset($values['taxrate'])
+			isset($values['taxrate'])
 			&& $values['taxrate'] != 0
 		) {
 			$values['taxrate'] =
 				$taxrates[$values['taxrate']] ?? 0;
 		}
 
-		if (
-			in_array(
-				$element,
-				[
-					'price',
-					'quantity',
-					'priceruleamount',
-				],
-				true
-			)
-			&& isset($values[$element])
-		) {
-			$values[$element] =
-				Zend_Locale_Format::getNumber(
-					$post[$element],
-					[
-						'precision' => 2,
-						'locale' => $locale,
-					]
-				);
+		foreach (['price', 'quantity', 'priceruleamount'] as $element) {
+			if (isset($values[$element])) {
+				$values[$element] = Zend_Locale_Format::getNumber($post[$element], ['locale' => $locale]);
+			}
 		}
 
 		if (
-			$element === 'uom'
-			&& isset($values['uom'])
+			isset($values['uom'])
 			&& $values['uom'] != 0
 		) {
 			$values['uom'] =
@@ -758,23 +733,19 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			);
 		}
 
-		$data = $this->getNewPositionData(
-			$params,
-			$parent
-		);
-
-		$id = $this->getPositionDb()->addPosition(
-			$data
-		);
-
-		$this->afterPositionAdd(
-			$id,
-			$data,
-			$params,
-			$parent
-		);
-
-		$this->calculateAndReloadPositions($params);
+		$adapter = $this->getParentDb()->getAdapter();
+		$adapter->beginTransaction();
+		try {
+			$parent = $this->lockPositionParent($params);
+			$data = $this->getNewPositionData($params, $parent);
+			$id = $this->getPositionDb()->addPosition($data);
+			$this->afterPositionAdd($id, $data, $params, $parent);
+			$this->calculateAndReloadPositions($params);
+			$adapter->commit();
+		} catch (Throwable $exception) {
+			$adapter->rollBack();
+			return $this->sendPositionError('save_failed');
+		}
 
 		return $this->sendSaveResponse($id);
 	}
@@ -940,19 +911,21 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		);
 
 		$positionDb = $this->getPositionDb();
+		$adapter = $positionDb->getAdapter();
+		$adapter->beginTransaction();
 
 		try {
+			$this->lockPositionParent($params);
 			$positionDb->updatePosition($params['id'], $values);
+			$calculations = $this->calculatePositionsParent($params);
+			$this->setSaveCalculation($calculations['locale']);
+			$adapter->commit();
 		} catch (Throwable $exception) {
+			$adapter->rollBack();
 			return $this->sendPositionError('save_failed');
 		}
 
 		if ($this->affectsPositionCalculation($values)) {
-			$calculations = $this->calculatePositionsParent($params);
-			$this->setSaveCalculation($calculations['locale']);
-		}
-
-		if (isset($values['taxrate'])) {
 			$this->reloadPositionsAfterSave();
 		}
 
@@ -1099,9 +1072,12 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 
 		$positionDb = $this->getPositionDb();
 
+		$adapter = $positionDb->getAdapter();
+		$adapter->beginTransaction();
 		try {
+			$this->lockPositionParent($params);
 			$newId = $positionDb->copyPosition(
-				$params['id']
+				$params['id'], false
 			);
 
 			$this->afterPositionCopy(
@@ -1109,13 +1085,14 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 				$newId,
 				$params
 			);
+			$this->calculateAndReloadPositions($params);
+			$adapter->commit();
 		} catch (Throwable $exception) {
+			$adapter->rollBack();
 			return $this->sendPositionError(
 				'copy_failed'
 			);
 		}
-
-		$this->calculateAndReloadPositions($params);
 
 		return $this->sendSaveResponse($newId);
 	}
@@ -1156,6 +1133,15 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 		$this->reloadPositionsAfterSave();
 	}
 
+	protected function lockPositionParent(array $params): array
+	{
+		$parent = $this->getParentDb()->getByIdForUpdate($params['parentid']);
+		if (!$parent || $this->isPositionParentReadonly($parent)) {
+			throw new RuntimeException('Position parent is not editable');
+		}
+		return $parent;
+	}
+
 	protected function calculatePositionsParent(array $params): array
 	{
 		return $this->_helper->Calculate(
@@ -1189,15 +1175,18 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 			return $this->sendPositionError('Position ID is missing');
 		}
 
+		$params = $this->getPositionParams();
+		$adapter = $this->getPositionDb()->getAdapter();
+		$adapter->beginTransaction();
 		try {
-			$this->getPositionDb()->deletePositions($ids);
+			$this->lockPositionParent($params);
+			$this->getPositionDb()->deletePositions($ids, false);
+			$this->calculateAndReloadPositions($params);
+			$adapter->commit();
 		} catch (Throwable $exception) {
+			$adapter->rollBack();
 			return $this->sendPositionError('delete_failed');
 		}
-
-		$params = $this->getPositionParams();
-
-		$this->calculateAndReloadPositions($params);
 
 		return $this->sendSaveResponse();
 	}
