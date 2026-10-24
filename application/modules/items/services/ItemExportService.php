@@ -43,9 +43,9 @@ class Items_Service_ItemExportService
 			$tags = [];
 
 			$tagRows = $tagEntityDb->getTagEntities(
-				(int)$item->id,
 				'items',
-				'item'
+				'item',
+				(int)$item->id
 			);
 
 			foreach ($tagRows as $tag) {

@@ -42,9 +42,9 @@ class Contacts_Service_ContactExportService
 			$tags = [];
 
 			$tagRows = $tagEntityDb->getTagEntities(
-				(int)$contact->id,
 				'contacts',
-				'contact'
+				'contact',
+				(int)$contact->id
 			);
 
 			foreach ($tagRows as $tag) {

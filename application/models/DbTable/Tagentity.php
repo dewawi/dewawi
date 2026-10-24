@@ -24,12 +24,16 @@ class Application_Model_DbTable_Tagentity extends DEEC_Model_DbTable_Entity
 			$this->select()
 				->setIntegrityCheck(false)
 				->from(array('t' => 'tagentity'))
-				->joinLeft(array('tag' => 'tag'), 't.tagid = tag.id AND tag.clientid = t.clientid AND tag.deleted = 0', array('title as tag', 'module', 'controller'))
+				->joinLeft(
+					array('tag' => 'tag'),
+					't.tagid = tag.id AND tag.clientid = t.clientid AND tag.module = t.module AND tag.controller = t.controller AND tag.deleted = 0',
+					array('title as tag')
+				)
 				->group('t.id')
 				->where('t.entityid = ?', $id)
 				->where('t.module = ?', $module)
 				->where('t.controller = ?', $controller)
-				->where('t.clientid = ?', $this->_client['id'])
+				->where('t.clientid = ?', $this->getClientId())
 				->where('t.deleted = ?', 0)
 				->order(array('t.ordering ASC', 't.id ASC'))
 		);
@@ -38,7 +42,7 @@ class Application_Model_DbTable_Tagentity extends DEEC_Model_DbTable_Entity
 
 	public function addTagEntity($data)
 	{
-		$data['clientid'] = $this->_client['id'];
+		$data['clientid'] = $this->getClientId();
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);

@@ -128,7 +128,8 @@ class Items_TagController extends Zend_Controller_Action
 			return $this->_helper->json(array('ok' => false, 'message' => 'invalid_request'));
 		}
 
-		if(!$this->getItemTagEntity($id)) {
+		$row = $this->getItemTagEntity($id);
+		if(!$row) {
 			$this->getResponse()->setHttpResponseCode(404);
 			return $this->_helper->json(array('ok' => false, 'message' => 'not_found'));
 		}
@@ -139,16 +140,25 @@ class Items_TagController extends Zend_Controller_Action
 			return $this->_helper->json(array('ok' => false, 'message' => 'invalid_request'));
 		}
 
-		$tag = (string)$form->getValue('tag');
-		$tagDb = new Application_Model_DbTable_Tag();
-		$tags = $tagDb->getTags('items', 'item');
-		$tagId = array_search($tag, $tags, true);
-		if($tagId === false) {
-			$tagId = $tagDb->addTag(array('title' => $tag, 'module' => 'items', 'controller' => 'item'));
+		$tag = trim(strip_tags((string)$form->getValue('tag')));
+		$tagId = 0;
+		$tagEntityDb = new Application_Model_DbTable_Tagentity();
+		if($tag !== '') {
+			$tagDb = new Application_Model_DbTable_Tag();
+			$tags = $tagDb->getTags('items', 'item');
+			$tagId = array_search($tag, $tags, true);
+			if($tagId === false) {
+				$tagId = $tagDb->addTag(array('title' => $tag, 'module' => 'items', 'controller' => 'item'));
+			} else {
+				foreach($tagEntityDb->getTagEntities('items', 'item', (int)$row['entityid']) as $tagEntity) {
+					if((int)$tagEntity['id'] !== $id && (int)$tagEntity['tagid'] === (int)$tagId) {
+						return $this->_helper->json(array('ok' => false, 'message' => $this->view->translate('TAG_ALREADY_EXISTS')));
+					}
+				}
+			}
 		}
 
 		$data = array('tagid' => $tagId);
-		$tagEntityDb = new Application_Model_DbTable_Tagentity();
 		$tagEntityDb->updateTagEntity($id, $data);
 		return $this->_helper->json($data);
 	}

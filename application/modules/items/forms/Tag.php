@@ -1,20 +1,15 @@
 <?php
 
-class Items_Form_Tag extends Zend_Form
+class Items_Form_Tag extends DEEC_Form
 {
-	public function init()
+	public function __construct()
 	{
-		$this->setName('tag');
-
-		$form = array();
-
-		$form['tag'] = new Zend_Form_Element_Text('tag');
-		$form['tag']->setLabel('CONTACTS_TAG')
-			->addFilter('StripTags')
-			->addFilter('StringTrim')
-			->setAttrib('size', '30')
-			->removeDecorator('label');
-
-		$this->addElements($form);
+		$this->addElement([
+			'name' => 'tag',
+			'label' => 'CONTACTS_TAG',
+			'type' => 'text',
+			'format' => ['type' => 'string'],
+			'attribs' => ['size' => 30],
+		]);
 	}
 }

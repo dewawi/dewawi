@@ -127,8 +127,12 @@ require_once $root . '/application/modules/items/controllers/TagController.php';
 
 class TagTestView extends Zend_View
 {
+    public function __construct()
+    {
+        parent::__construct();
+        $this->addHelperPath(dirname(__DIR__, 2) . '/application/views/helpers', 'Zend_View_Helper_');
+    }
     public function translate($message) { return $message; }
-    public function MultiForm($module, $controller, $row) { return '<div data-id="' . $row['id'] . '"></div>'; }
 }
 
 class TagTestController extends Items_TagController
@@ -244,7 +248,7 @@ foreach ([[], ['tagid'=>'0'], ['tagid'=>'']] as $blankTag) {
     fixtures();
     [$status, $body] = addTag(['itemid'=>'11'] + $blankTag);
     $written = Zend_Db_Table_Abstract::$writes[0][1];
-    check($status === 200 && str_contains($body, '<div') && $written['tagid'] === 0 && $written['ordering'] === 5, 'Blank tag HTML or ordering changed');
+    check($status === 200 && str_contains($body, 'name="tag"') && str_contains($body, 'data-id="' . $written['id'] . '"') && $written['tagid'] === 0 && $written['ordering'] === 5, 'Blank tag form HTML or ordering changed');
     $checks++;
 }
 
@@ -281,6 +285,10 @@ foreach (['0") OR (1=1) OR (t.entityid = "0', "x' OR 1=1 -- "] as $payload) {
     }
     $join = $select->getPart(Zend_Db_Select::FROM)['tag'];
     check($join['joinType'] === Zend_Db_Select::LEFT_JOIN && str_contains($join['joinCondition'], 'tag.clientid = t.clientid') && str_contains($join['joinCondition'], 'tag.deleted = 0'), 'Tag join lost isolation or blank assignments');
+    check(str_contains($join['joinCondition'], 'tag.module = t.module') && str_contains($join['joinCondition'], 'tag.controller = t.controller'), 'Tag join accepted a different entity context');
+    foreach ($select->getPart(Zend_Db_Select::COLUMNS) as $column) {
+        check($column[0] !== 'tag' || $column[1] === 'title', 'Joined tag columns overwrite assignment context');
+    }
     $checks++;
 }
 $rows = $model->getTagEntities('items', 'item', 11);
@@ -353,6 +361,27 @@ check($status === 200 && $tag['title'] === 'New tag' && $tag['clientid'] === 7 &
 check(count(Zend_Db_Table_Abstract::$writes) === 2 && Zend_Db_Table_Abstract::$rows['tagentity'][31]['tagid'] === $tagId, 'New tag was not assigned');
 $checks++;
 
+foreach (['', '   ', '<b> </b>'] as $title) {
+    fixtures();
+    Zend_Db_Table_Abstract::$rows['tagentity'][31]['tagid'] = 21;
+    [$status, $body] = requestTag('edit', ['tag' => $title], 31);
+    check($status === 200 && json_decode($body, true)['tagid'] === 0, 'Clearing a tag did not reset the assignment');
+    check(count(Zend_Db_Table_Abstract::$rows['tag']) === 4 && count(Zend_Db_Table_Abstract::$writes) === 1, 'Clearing a tag created an empty tag record');
+    $checks++;
+}
+
+fixtures();
+Zend_Db_Table_Abstract::$rows['tagentity'][40] = array_replace(Zend_Db_Table_Abstract::$rows['tagentity'][31], ['id' => 40, 'tagid' => 21]);
+[$status, $body] = requestTag('edit', ['tag' => 'Own tag'], 31);
+check(json_decode($body, true)['message'] === 'TAG_ALREADY_EXISTS' && !Zend_Db_Table_Abstract::$writes, 'Editing allowed a duplicate item tag');
+$checks++;
+
+fixtures();
+Zend_Db_Table_Abstract::$rows['tagentity'][31]['tagid'] = 21;
+[$status, $body] = requestTag('edit', ['tag' => 'Own tag'], 31);
+check($status === 200 && json_decode($body, true)['tagid'] === 21 && count(Zend_Db_Table_Abstract::$writes) === 1, 'Unchanged tag was rejected as a duplicate');
+$checks++;
+
 fixtures();
 [$status] = requestTag('delete', [], 31);
 check($status === 200 && Zend_Db_Table_Abstract::$rows['tagentity'][31]['deleted'] === 1, 'Own assignment could not be deleted');
@@ -385,5 +414,44 @@ foreach (['edit', 'delete'] as $action) {
     check($status === 200 && count(Zend_Db_Table_Abstract::$writes) === 1, 'Authorized parent context lost tag mutation: ' . $action);
     $checks++;
 }
+
+fixtures();
+$model = (new Application_Model_DbTable_Tagentity())->setClientId(8);
+$rows = $model->getTagEntities('items', 'item', 11);
+check(count($rows) === 1 && $rows[0]['id'] === 32, 'Tag query ignored the explicit model client context');
+$model->addTagEntity(['entityid' => 12, 'module' => 'items', 'controller' => 'item', 'tagid' => 22, 'ordering' => 1]);
+check(Zend_Db_Table_Abstract::$writes[0][1]['clientid'] === 8, 'Tag creation ignored the explicit model client context');
+$checks++;
+
+class TagTestItemExport extends Items_Service_ItemExportService
+{
+    public array $rows = [];
+    protected function writeCsv(string $file, array $rows): void { $this->rows = $rows; }
+}
+
+class TagTestContactExport extends Contacts_Service_ContactExportService
+{
+    public array $rows = [];
+    protected function writeCsv(string $file, array $rows): void { $this->rows = $rows; }
+}
+
+fixtures();
+Zend_Db_Table_Abstract::$rows['tagentity'][31]['tagid'] = 21;
+$item = (object)array_fill_keys(['id', 'catid', 'sku', 'gtin', 'title', 'description', 'quantity', 'price', 'currency', 'taxid', 'manufacturersku', 'manufacturergtin', 'length', 'width', 'height', 'weight'], '');
+$item->id = 11;
+$export = new TagTestItemExport();
+$export->export('/unused/', [$item]);
+check(end($export->rows[1]) === 'Own tag', 'Item export lost tags or included foreign tags');
+$checks++;
+
+Zend_Db_Table_Abstract::$rows['tag'][25] = ['id'=>25, 'clientid'=>7, 'module'=>'contacts', 'controller'=>'contact', 'deleted'=>0, 'title'=>'Own contact tag'];
+Zend_Db_Table_Abstract::$rows['tagentity'][41] = ['id'=>41, 'clientid'=>7, 'entityid'=>14, 'module'=>'contacts', 'controller'=>'contact', 'deleted'=>0, 'tagid'=>25, 'ordering'=>1];
+Zend_Db_Table_Abstract::$rows['tagentity'][42] = array_replace(Zend_Db_Table_Abstract::$rows['tagentity'][41], ['id'=>42, 'clientid'=>8, 'tagid'=>22]);
+$contact = (object)array_fill_keys(['id', 'catid', 'name1', 'name2', 'department', 'street', 'postcode', 'city', 'country', 'taxnumber', 'vatin', 'phones', 'emails', 'internets'], '');
+$contact->id = 14;
+$export = new TagTestContactExport();
+$export->export('/unused/', [$contact]);
+check(end($export->rows[1]) === 'Own contact tag', 'Contact export lost tags or included foreign tags');
+$checks++;
 
 echo 'PASS: ' . $checks . " item tag security and compatibility cases\n";
