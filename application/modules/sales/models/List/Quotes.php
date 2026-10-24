@@ -134,14 +134,12 @@ class Sales_Model_List_Quotes extends DEEC_List
 		if($status === 'continued') {
 			$parts[] = $this->badge('QUOTES_MONITORING_CONTINUED', 'completed');
 			$parts = array_merge($parts, $this->renderFollowups($item));
-			return implode('', $parts);
 		}
 
 		if($status === 'followup_draft') {
 			$parts[] = $this->badge('QUOTES_MONITORING_FOLLOWUP_DRAFT', 'warning');
 			$parts = array_merge($parts, $this->renderFollowups($item));
 			$parts[] = '<div><strong>' . $this->escape($this->translate('QUOTES_MONITORING_REVIEW')) . '</strong></div>';
-			return implode('', $parts);
 		}
 
 		$lastsent = $this->formatMonitoringDate($this->getFieldValue($item, 'monitoring_lastsent'));
@@ -152,29 +150,36 @@ class Sales_Model_List_Quotes extends DEEC_List
 			) . '</div>';
 		}
 
-		if($status === 'feedback_response') {
-			$parts[] = $this->badge('QUOTES_MONITORING_FEEDBACK_RECEIVED', 'info');
+		if($this->getFieldValue($item, 'monitoring_feedback_id', 0)) {
+			if($this->getFieldValue($item, 'monitoring_feedback_responded')) {
+				$parts[] = $this->badge('QUOTES_MONITORING_FEEDBACK_RECEIVED', 'info');
 
-			$feedbackStatus = (string)$this->getFieldValue($item, 'monitoring_feedback_status', '');
-			$feedbackReason = (string)$this->getFieldValue($item, 'monitoring_feedback_reason', '');
-			$feedbackMessage = trim((string)$this->getFieldValue($item, 'monitoring_feedback_message', ''));
+				$feedbackStatus = (string)$this->getFieldValue($item, 'monitoring_feedback_status', '');
+				$feedbackReason = (string)$this->getFieldValue($item, 'monitoring_feedback_reason', '');
+				$feedbackMessage = trim((string)$this->getFieldValue($item, 'monitoring_feedback_message', ''));
 
-			$statusLabel = $this->getFeedbackLabel('statuses', $feedbackStatus);
-			$reasonLabel = $this->getFeedbackLabel('reasons', $feedbackReason);
+				$statusLabel = $this->getFeedbackLabel('statuses', $feedbackStatus);
+				$reasonLabel = $this->getFeedbackLabel('reasons', $feedbackReason);
 
-			if($statusLabel !== '') $parts[] = '<div>' . $this->escape($statusLabel) . '</div>';
-			if($reasonLabel !== '') $parts[] = '<div>' . $this->escape($reasonLabel) . '</div>';
-			if($feedbackMessage !== '') $parts[] = '<div>' . $this->escape($this->truncate($feedbackMessage, 80)) . '</div>';
-		} elseif($status === 'feedback_open') {
-			$parts[] = $this->badge('QUOTES_MONITORING_FEEDBACK_OPEN', 'info');
-		} elseif($status === 'scheduled' || $status === 'scheduled_due') {
+				if($statusLabel !== '') $parts[] = '<div>' . $this->escape($statusLabel) . '</div>';
+				if($reasonLabel !== '') $parts[] = '<div>' . $this->escape($reasonLabel) . '</div>';
+				if($feedbackMessage !== '') $parts[] = '<div>' . $this->escape($this->truncate($feedbackMessage, 80)) . '</div>';
+			} else {
+				$parts[] = $this->badge('QUOTES_MONITORING_FEEDBACK_OPEN', 'info');
+			}
+		}
+
+		if($this->getFieldValue($item, 'monitoring_task_id', 0)) {
+			$taskDue = (bool)$this->getFieldValue($item, 'monitoring_task_due', false);
 			$parts[] = $this->badge(
-				$status === 'scheduled_due' ? 'QUOTES_MONITORING_SCHEDULED_DUE' : 'QUOTES_MONITORING_SCHEDULED',
-				$status === 'scheduled_due' ? 'warning' : 'info'
+				$taskDue ? 'QUOTES_MONITORING_SCHEDULED_DUE' : 'QUOTES_MONITORING_SCHEDULED',
+				$taskDue ? 'warning' : 'info'
 			);
 
 			$parts[] = $this->renderMonitoringTask($item);
-		} elseif($status === 'sent') {
+		}
+
+		if($status === 'sent') {
 			$parts[] = $this->badge('QUOTES_MONITORING_FOLLOW_UP', 'warning');
 			$parts[] = $this->renderFeedbackLink($item);
 		} elseif($status === 'not_sent') {
@@ -200,7 +205,7 @@ class Sales_Model_List_Quotes extends DEEC_List
 			'review' => 'QUOTES_MONITORING_REVIEW',
 		][$action] ?? '';
 
-		if($actionKey !== '' && !in_array($status, ['sent', 'not_sent'], true)) {
+		if($actionKey !== '' && !in_array($status, ['sent', 'not_sent', 'followup_draft'], true)) {
 			$parts[] = '<div><strong>' . $this->escape($this->translate($actionKey)) . '</strong></div>';
 		}
 

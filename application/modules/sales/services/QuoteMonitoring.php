@@ -97,13 +97,6 @@ class Sales_Service_QuoteMonitoring
 			AND f.responded IS NOT NULL
 		)';
 
-		$feedbackNeedsAction = 'EXISTS (
-			SELECT 1 FROM feedback f
-			WHERE f.id = ' . $latestFeedbackId . '
-			AND f.responded IS NOT NULL
-			AND f.status IN (' . $db->quote('interested') . ', ' . $db->quote('question') . ')
-		)';
-
 		$emailSent = 'EXISTS (
 			SELECT 1 FROM emailmessage em
 			WHERE em.documentid = ' . $alias . '.id
@@ -139,18 +132,14 @@ class Sales_Service_QuoteMonitoring
 			case 'feedback_response':
 				$select->where(
 					'(' . $active . ')'
-					. ' AND NOT (' . $anyFollowup . ')'
 					. ' AND (' . $feedbackResponse . ')'
-					. ' AND ((' . $feedbackNeedsAction . ') OR NOT (' . $taskExists . '))'
 				);
 				break;
 
 			case 'feedback_open':
 				$select->where(
 					'(' . $active . ')'
-					. ' AND NOT (' . $anyFollowup . ')'
 					. ' AND (' . $feedbackOpen . ')'
-					. ' AND NOT (' . $taskExists . ')'
 				);
 				break;
 
@@ -177,9 +166,7 @@ class Sales_Service_QuoteMonitoring
 			case 'scheduled':
 				$select->where(
 					'(' . $active . ')'
-					. ' AND NOT (' . $anyFollowup . ')'
 					. ' AND (' . $taskExists . ')'
-					. ' AND NOT (' . $feedbackNeedsAction . ')'
 				);
 				break;
 		}
@@ -247,6 +234,7 @@ class Sales_Service_QuoteMonitoring
 			$row['monitoring_task_title'] = $task['title'] ?? null;
 			$row['monitoring_task_duedate'] = $task['duedate'] ?? null;
 			$row['monitoring_task_responsible'] = $task['responsible'] ?? null;
+			$row['monitoring_task_due'] = !empty($task['duedate']) && strtotime((string)$task['duedate']) <= strtotime(date('Y-m-d'));
 
 			$this->applyStatus($row);
 		}
@@ -372,6 +360,8 @@ class Sales_Service_QuoteMonitoring
 				->where('completed = ?', 0)
 				->where('cancelled = ?', 0)
 				->where('state NOT IN (?)', [105, 106])
+				->order(new Zend_Db_Expr('duedate IS NULL ASC'))
+				->order('duedate ASC')
 				->order('id DESC')
 		);
 
@@ -431,9 +421,7 @@ class Sales_Service_QuoteMonitoring
 		}
 
 		if(!empty($row['monitoring_task_id'])) {
-			$dueDate = $row['monitoring_task_duedate'] ?? null;
-
-			if($dueDate && strtotime((string)$dueDate) <= strtotime(date('Y-m-d'))) {
+			if($row['monitoring_task_due']) {
 				$row['monitoring_status'] = 'scheduled_due';
 				$row['monitoring_action'] = 'follow_up';
 			} else {

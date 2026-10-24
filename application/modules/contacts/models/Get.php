@@ -201,7 +201,10 @@ class Contacts_Model_Get
 		//Get states
 		$stateDb = new Application_Model_DbTable_State();
 		$states = $stateDb->getStates();
-		$history['states'] = $states;
+		$history['states'] = $states + [
+			'105' => 'STATES_COMPLETED',
+			'106' => 'STATES_CANCELLED',
+		];
 
 		return $history;
 	}
