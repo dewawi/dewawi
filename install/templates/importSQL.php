@@ -8,7 +8,7 @@
 	
 	<ul>
 		<?php foreach ($errors as $error): ?>
-			<li><?php echo $error; ?></li>
+			<li><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></li>
 		<?php endforeach; ?>
 	</ul>
 <?php } else { ?>

@@ -1,50 +1,86 @@
+
 <?php
 
-	include("helper.php");
-	$errors = array();
-	$goToNextStep = false;
+require_once __DIR__ . '/helper.php';
 
-	$host = $_SESSION['db_host'];
-	$username = $_SESSION['db_user'];
-	$password = $_SESSION['db_pass'];
-	$database = $_SESSION['db_name'];
+$errors = [];
+$goToNextStep = false;
+$con = null;
 
-	// connect to db
-	$con = mysqli_connect($host, $username, $password);
-	mysqli_set_charset($con, "UTF8");
-	mysqli_select_db($con, $database);
-	
-	// read structure sql
-	$structure = file_get_contents("config/structure.sql");
-	
-	$queries = array();
-	PMA_splitSqlFile($queries, $structure);
-	
-	foreach ($queries as $query)
-	{
-		//print_r($query['query']);
-		if (!mysqli_query($con, $query['query']))
-		{
-			$errors[] = "<b>".mysqli_error()."</b><br>(".substr($query['query'], 0, 200)."...)";
-		}
-	}
-	
-	// read data sql
-	$data = file_get_contents("config/data.sql");
+try {
+    if (!isset(
+        $_SESSION['db_host'],
+        $_SESSION['db_user'],
+        $_SESSION['db_pass'],
+        $_SESSION['db_name']
+    )) {
+        throw new RuntimeException(
+            'Database connection settings are missing. Please return to the database step.'
+        );
+    }
 
-	$queries = array();
-	PMA_splitSqlFile($queries, $data);
-	
-	foreach ($queries as $query)
-	{
-		if (!mysqli_query($con, $query['query']))
-		{
-			$errors[] = "<b>".mysqli_error()."</b><br>(".substr($query['query'], 0, 200)."...)";
-		}
-	}
-   
-	// close connection
-	mysqli_close($con);
-	
-	// show error
-	include("templates/importSQL.php");
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+    $con = new mysqli(
+        $_SESSION['db_host'],
+        $_SESSION['db_user'],
+        $_SESSION['db_pass'],
+        $_SESSION['db_name']
+    );
+
+    $con->set_charset('utf8mb4');
+
+    foreach (['structure.sql', 'data.sql'] as $file) {
+        $path = __DIR__ . '/config/' . $file;
+        $sql = file_get_contents($path);
+
+        if ($sql === false) {
+            throw new RuntimeException(
+                'Cannot read SQL file: ' . $file
+            );
+        }
+
+        $queries = [];
+        PMA_splitSqlFile($queries, $sql);
+
+        foreach ($queries as $index => $query) {
+            $statement = trim($query['query'] ?? '');
+
+            if ($statement === '') {
+                continue;
+            }
+
+            try {
+                $con->query($statement);
+            } catch (mysqli_sql_exception $e) {
+                $errors[] = sprintf(
+                    '%s - Statement %d - SQL Error %d: %s',
+                    $file,
+                    $index + 1,
+                    $e->getCode(),
+                    $e->getMessage()
+                );
+
+                error_log(
+                    'DEWAWI Installer: ' . end($errors)
+                );
+
+                break 2;
+            }
+        }
+    }
+
+} catch (Throwable $e) {
+    error_log('DEWAWI Installer: ' . $e->getMessage());
+
+    $errors[] = 'Import failed: ' . $e->getMessage();
+
+} finally {
+    if ($con instanceof mysqli) {
+        $con->close();
+    }
+}
+
+$goToNextStep = empty($errors);
+
+include __DIR__ . '/templates/importSQL.php';

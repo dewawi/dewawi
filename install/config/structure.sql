@@ -1426,7 +1426,7 @@ CREATE TABLE IF NOT EXISTS `itemoptset` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `itemstock` (
+CREATE TABLE IF NOT EXISTS `itemstock` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `itemid` int(11) NOT NULL,
   `warehouseid` int(11) NOT NULL,
@@ -1469,7 +1469,7 @@ CREATE TABLE IF NOT EXISTS `itemlist` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `itemvariantopt` (
+	CREATE TABLE IF NOT EXISTS `itemvariantopt` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `itemid` int(11) NOT NULL,
   `itemoptid` int(11) NOT NULL,
@@ -1613,7 +1613,7 @@ CREATE TABLE IF NOT EXISTS `module` (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `page` (
+	CREATE TABLE IF NOT EXISTS `page` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `parentid` int(11) NOT NULL DEFAULT 0,
   `shopid` int(11) NOT NULL,
@@ -2920,8 +2920,6 @@ CREATE TABLE IF NOT EXISTS `task` (
   `cancelled` tinyint(1) NOT NULL DEFAULT 0,
   `contactperson` varchar(255) DEFAULT NULL,
   `contactpersonid` int(11) DEFAULT NULL,
-  `responsible` varchar(255) DEFAULT NULL,
-  `responsibleid` int(11) DEFAULT NULL,
   `responsible` int(11) NOT NULL DEFAULT 0,
   `pinned` tinyint(1) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
