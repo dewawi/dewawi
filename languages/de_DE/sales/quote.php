@@ -94,4 +94,10 @@
 	'QUOTES_MONITORING_TASK' => 'Aufgabe',
 	'QUOTES_MONITORING_TASK_DUE' => 'Fällig: %s',
 	'QUOTES_MONITORING_CREATE_TASK' => 'Wiedervorlage erstellen',
+	'QUOTES_MONITORING_FOLLOWUP_DUE_FILTER' => 'Nachfassen fällig',
+	'QUOTES_MONITORING_SENT_DAYS' => 'Versand vor %s Tagen',
+	'QUOTES_MONITORING_FOLLOWUP_DATE' => 'Nachfasstermin: %s',
+	'QUOTES_MONITORING_FOLLOWUP_NOT_DUE' => 'Nachfassen noch nicht fällig',
+	'QUOTES_MONITORING_FOLLOWUP_TODAY' => 'Nachfassen heute fällig',
+	'QUOTES_MONITORING_FOLLOWUP_OVERDUE' => 'Nachfassen überfällig',
 );

@@ -67,6 +67,17 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 		return $assign;
 	}
 
+	protected function getViewContact(array $row): array
+	{
+		if(empty($row['contactid'])) return [];
+		$client = Zend_Registry::get('Client');
+		$clientId = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$this->_user['clientid'];
+		$db = new Contacts_Model_DbTable_Contact();
+		$contact = $db->fetchRow($db->select()->where('contactid = ?', (int)$row['contactid'])
+			->where('clientid = ?', $clientId)->where('deleted = ?', 0));
+		return $contact && $clientId > 0 ? $contact->toArray() : [];
+	}
+
 	protected function afterView(array $row, $form): void
 	{
 		if((int)$this->_getParam('feedback', 0) === 1) $this->view->activeTab = 'messages';

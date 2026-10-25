@@ -2,6 +2,73 @@
 
 class Tasks_TaskController extends DEEC_Controller_Action
 {
+	public function addAction()
+	{
+		if($this->_getParam('sourcequote') === null) return parent::addAction();
+
+		$id = filter_var($this->_getParam('sourcequote'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+		$permission = new DEEC_Permission((array)$this->_user);
+		if(empty($this->_user['id']) || !$permission->hasActionPermission('sales', 'quote', 'view')
+			|| ($permission->hasModule('tasks') && !$permission->hasActionPermission('tasks', 'task', 'add'))) {
+			throw new Zend_Controller_Action_Exception('Forbidden', 403);
+		}
+
+		$quoteDb = new Sales_Model_DbTable_Quote();
+		$quoteDb->setClientId((int)$this->_user['clientid']);
+		$quote = $id ? $quoteDb->getById($id) : null;
+		if(!$quote) throw new Zend_Controller_Action_Exception('Quote not found', 404);
+		$quote = (new Sales_Service_QuoteMonitoring())->enrich([$quote])[0];
+		if(empty($quote['monitoring_followup_date'])) throw new Zend_Controller_Action_Exception('Quote follow-up unavailable', 409);
+
+		$client = Zend_Registry::get('Client');
+		$contactClient = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$this->_user['clientid'];
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contact = $contactDb->fetchRow($contactDb->select()->where('contactid = ?', (int)$quote['contactid'])
+			->where('clientid = ?', $contactClient)->where('deleted = ?', 0));
+		if(!$contact || $contactClient <= 0) throw new Zend_Controller_Action_Exception('Contact not found', 404);
+
+		$formData = $this->getEditForm();
+		$form = $formData['form'];
+		foreach($form->getElements() as $name => $element) {
+			if(($element['format']['type'] ?? '') === 'date') $form->setElementData($name, ['attribs' => ['data-format' => 'yyyy-mm-dd']]);
+		}
+		$defaults = array_intersect_key($quote, $form->getElements());
+		unset($defaults['id']);
+		$defaults['title'] = sprintf($this->view->translate('FEEDBACK_QUOTE_TASK_TITLE'), (int)$quote['quoteid']);
+		$defaults['quoteid'] = (int)$quote['quoteid'];
+		$defaults['contactid'] = (int)$contact->contactid;
+		$defaults['duedate'] = max(date('Y-m-d'), $quote['monitoring_followup_date']);
+		$defaults['responsible'] = (int)$this->_user['id'];
+		$defaults['state'] = 100;
+		$defaults['deliverystatus'] = 'deliveryIsWaiting';
+		$defaults['paymentstatus'] = 'waitingForPayment';
+		$form->setValues($defaults);
+
+		$request = $this->getRequest();
+		if($request->isPost() && $request->getPost('create_followup') === '1' && $form->isValid((array)$request->getPost())) {
+			$data = $form->getFilteredValues();
+			unset($data['id']);
+			$data['quoteid'] = $defaults['quoteid'];
+			$data['contactid'] = $defaults['contactid'];
+			$data['state'] = 100;
+			$db = $this->getDb()->setClientId((int)$this->_user['clientid']);
+			$adapter = $db->getAdapter();
+			try {
+				$adapter->beginTransaction();
+				$id = $db->create($this->beforeCreate($data));
+				$this->afterCreate($id, $data);
+				$adapter->commit();
+			} catch (Exception $e) {
+				$adapter->rollBack();
+				throw $e;
+			}
+			return $this->_helper->redirector->gotoSimple('edit', 'task', 'tasks', ['id' => $id]);
+		}
+
+		$this->view->assign(['form' => $form, 'quoteFollowup' => true, 'options' => $formData['options']]);
+		$this->_helper->viewRenderer->setRender('edit');
+	}
+
 	protected function buildIndexView(): void
 	{
 		$this->buildListView([

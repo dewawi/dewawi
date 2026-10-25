@@ -4,4 +4,11 @@ $this->headTitle($this->title);
 echo $this->Messages();
 ?>
 
+<?php if(!empty($this->quoteFollowup)): ?>
+<form method="post" data-autosave="false">
+	<?php echo $this->form->render(); ?>
+	<button type="submit" name="create_followup" value="1"><?php echo $this->translate('TOOLBAR_SAVE'); ?></button>
+</form>
+<?php else: ?>
 <?php echo $this->form->renderForm(); ?>
+<?php endif; ?>

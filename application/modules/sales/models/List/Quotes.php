@@ -151,6 +151,18 @@ class Sales_Model_List_Quotes extends DEEC_List
 		} elseif(!$this->getFieldValue($item, 'monitoring_sentcount', 0) && !in_array($status, ['continued', 'followup_draft'], true)) {
 			$parts[] = '<div>' . $this->escape($this->translate('QUOTES_MONITORING_NOT_SENT')) . '</div>';
 		}
+		$sentDays = $this->getFieldValue($item, 'monitoring_sent_days');
+		if($sentDays !== null) $parts[] = '<div>' . $this->escape($this->translate('QUOTES_MONITORING_SENT_DAYS', [(int)$sentDays])) . '</div>';
+		$followupDate = $this->formatMonitoringDate($this->getFieldValue($item, 'monitoring_followup_date'));
+		if($followupDate !== '') {
+			[$label, $badge] = [
+				'future' => ['QUOTES_MONITORING_FOLLOWUP_NOT_DUE', 'info'],
+				'today' => ['QUOTES_MONITORING_FOLLOWUP_TODAY', 'warning'],
+				'overdue' => ['QUOTES_MONITORING_FOLLOWUP_OVERDUE', 'cancelled'],
+			][(string)$this->getFieldValue($item, 'monitoring_followup_state')];
+			$parts[] = $this->badge($label, $badge);
+			$parts[] = '<div>' . $this->escape($this->translate('QUOTES_MONITORING_FOLLOWUP_DATE', [$followupDate])) . '</div>';
+		}
 
 		if($this->getFieldValue($item, 'monitoring_feedback_id', 0)) {
 			if($this->getFieldValue($item, 'monitoring_feedback_responded')) {
@@ -192,8 +204,7 @@ class Sales_Model_List_Quotes extends DEEC_List
 			$parts[] = $this->renderMonitoringTask($item);
 		}
 
-		if($status === 'sent') {
-			$parts[] = $this->badge('QUOTES_MONITORING_FOLLOW_UP', 'warning');
+		if($status === 'sent' || $followupDate !== '') {
 			$parts[] = $this->renderFeedbackLink($item);
 		} elseif($status === 'not_sent') {
 			$parts[] = $this->badge('QUOTES_MONITORING_CHECK_SEND', 'warning');
@@ -201,7 +212,7 @@ class Sales_Model_List_Quotes extends DEEC_List
 
 		$days = $this->getFieldValue($item, 'monitoring_open_days');
 
-		if($days !== null && $status !== 'feedback_response') {
+		if($days !== null && $status !== 'feedback_response' && $sentDays === null) {
 			$parts[] = '<div>' . $this->escape(
 				$this->translate('QUOTES_MONITORING_OPEN_DAYS', [(int)$days])
 			) . '</div>';
@@ -220,11 +231,11 @@ class Sales_Model_List_Quotes extends DEEC_List
 			'review_task' => 'QUOTES_MONITORING_REVIEW_TASK',
 		][$action] ?? '';
 
-		if($actionKey !== '' && !in_array($status, ['sent', 'not_sent', 'followup_draft'], true)) {
+		if($actionKey !== '' && !in_array($status, ['not_sent', 'followup_draft'], true)) {
 			$parts[] = '<div><strong>' . $this->escape($this->translate($actionKey)) . '</strong></div>';
 		}
 
-		if(in_array($status, ['sent', 'not_sent'], true)) {
+		if(in_array($status, ['sent', 'not_sent'], true) || $followupDate !== '') {
 			$parts[] = $this->renderCreateTaskLink($item);
 		}
 
@@ -314,15 +325,18 @@ class Sales_Model_List_Quotes extends DEEC_List
 		$quoteId = (int)$this->getFieldValue($item, 'quoteid', 0);
 		$contactId = (int)$this->getFieldValue($item, 'cid', 0);
 
-		if($quoteId <= 0 || $contactId <= 0) return '';
+		$sourceId = $this->getFieldValue($item, 'monitoring_followup_date') ? (int)$this->getFieldValue($item, 'id', 0) : 0;
+		if($quoteId <= 0 || ($sourceId <= 0 && $contactId <= 0)) return '';
 
-		$url = $this->getView()->url([
+		$params = [
 			'module' => 'tasks',
 			'controller' => 'task',
 			'action' => 'add',
 			'contactid' => $contactId,
 			'quoteid' => $quoteId,
-		], null, true);
+		];
+		if($sourceId > 0) $params = ['module' => 'tasks', 'controller' => 'task', 'action' => 'add', 'sourcequote' => $sourceId];
+		$url = $this->getView()->url($params, null, true);
 
 		return '<div><a href="' . $this->escapeAttr($url) . '">' . $this->escape($this->translate('QUOTES_MONITORING_CREATE_TASK')) . '</a></div>';
 	}

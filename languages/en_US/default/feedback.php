@@ -17,4 +17,7 @@
 	'FEEDBACK_QUOTE_REASON_OTHER' => 'Other reason',
 	'FEEDBACK_MESSAGE_LABEL' => 'Would you like to tell us anything else?',
 	'FEEDBACK_SUBMIT' => 'Send feedback',
+	'FEEDBACK_QUOTE_TASK_TITLE' => 'Follow up quote %s',
+	'FEEDBACK_EMAIL_QUOTE_SUBJECT' => 'Follow-up on our quote %s',
+	'FEEDBACK_EMAIL_QUOTE_FOLLOWUP' => '[SALUTATION]<br><br>we would like to ask about the current status of our quote %s.<br><br>Please let us know by selecting one of the options below.<br><br>[SIGNATURE]',
 );

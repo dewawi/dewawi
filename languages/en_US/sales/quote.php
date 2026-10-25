@@ -85,4 +85,10 @@
 	'QUOTES_MONITORING_TASK' => 'Task',
 	'QUOTES_MONITORING_TASK_DUE' => 'Due: %s',
 	'QUOTES_MONITORING_CREATE_TASK' => 'Create follow-up task',
+	'QUOTES_MONITORING_FOLLOWUP_DUE_FILTER' => 'Follow-up due',
+	'QUOTES_MONITORING_SENT_DAYS' => 'Sent %s days ago',
+	'QUOTES_MONITORING_FOLLOWUP_DATE' => 'Follow-up date: %s',
+	'QUOTES_MONITORING_FOLLOWUP_NOT_DUE' => 'Follow-up not yet due',
+	'QUOTES_MONITORING_FOLLOWUP_TODAY' => 'Follow-up due today',
+	'QUOTES_MONITORING_FOLLOWUP_OVERDUE' => 'Follow-up overdue',
 );

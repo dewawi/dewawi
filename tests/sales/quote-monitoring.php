@@ -5,7 +5,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-// Run with: php tests/sales/quote-monitoring.php (in-memory fixtures, no database required).
+// Run with: php tests/sales/quote-monitoring.php (in-memory fixtures; Python 3 for isolated SQLite, no database server).
 error_reporting(E_ALL & ~E_DEPRECATED);
 $root = dirname(__DIR__, 2);
 set_include_path($root . '/library' . PATH_SEPARATOR . get_include_path());
@@ -14,9 +14,11 @@ spl_autoload_register(static function (string $class) use ($root): void {
         require_once $path;
         return;
     }
-    if (str_starts_with($class, 'Sales_')) {
-        $parts = explode('_', $class);
-        $path = $root . '/application/modules/sales/' . strtolower($parts[1]) . 's/' . implode('/', array_slice($parts, 2)) . '.php';
+    $parts = explode('_', $class);
+    if (count($parts) >= 3) {
+        $module = array_shift($parts);
+        $base = $module === 'Application' ? '/application/' : '/application/modules/' . strtolower($module) . '/';
+        $path = $root . $base . strtolower(array_shift($parts)) . 's/' . implode('/', $parts) . '.php';
         if (is_file($path)) require_once $path;
     }
 });
@@ -34,7 +36,27 @@ class QuoteMonitoringTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
     public array $rows = [];
     protected function _connect() {}
     protected function _quote($value) { return Zend_Db_Adapter_Abstract::_quote($value); }
-    public function query($sql, $bind = []) { throw new RuntimeException('Database access is forbidden in this test'); }
+    public function query($sql, $bind = [])
+    {
+        if (!$sql instanceof Zend_Db_Table_Select || $bind) throw new RuntimeException('Unexpected database access');
+        return new class($this->fetchAll($sql)) {
+            public function __construct(private array $rows) {}
+            public function fetchAll($mode) { return $this->rows; }
+        };
+    }
+    public function describeTable($tableName, $schemaName = null)
+    {
+        $columns = ['id', 'clientid', 'deleted'];
+        foreach ($this->rows as $rows) foreach ($rows as $row) $columns = array_merge($columns, array_keys($row));
+        $metadata = [];
+        foreach (array_unique($columns) as $column) {
+            $metadata[$column] = ['COLUMN_NAME' => $column, 'DATA_TYPE' => 'varchar', 'PRIMARY' => $column === 'id', 'PRIMARY_POSITION' => 1, 'IDENTITY' => $column === 'id'];
+        }
+        return $metadata;
+    }
+    public function beginTransaction() { return true; }
+    public function commit() { return true; }
+    public function rollBack() { return true; }
 
     public function fetchAll($sql, $bind = [], $fetchMode = null)
     {
@@ -203,6 +225,13 @@ class QuoteMonitoringTestQuery extends DEEC_List_Query
         $this->applyFilters($select, $params, [], Sales_Model_Entity_Quote::listConfig());
         return $select;
     }
+    public function pageSelect(array $params, $adapter)
+    {
+        $params = $this->normalizeParams($params);
+        $select = $this->filteredSelect($params, $adapter)->order('q.id ASC');
+        $this->applyLimit($select, $params);
+        return $select;
+    }
 }
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $_GET = $_POST = $_COOKIE = [];
@@ -308,5 +337,250 @@ foreach (['de_DE', 'en_US'] as $locale) {
         check(!str_contains($html, 'QUOTES_MONITORING_') && !str_contains($html, 'FEEDBACK_QUOTE_'), 'Untranslated customer response: ' . $locale . '/' . $status);
     }
 }
+
+// Calendar-day follow-up uses only the latest successful send, including shared-contact logs.
+$sentAgo = static fn(int $days) => (new DateTimeImmutable('today'))->modify('-' . $days . ' days')->format('Y-m-d') . ' 23:59:59';
+foreach ([3 => 'future', 7 => 'today', 10 => 'overdue'] as $days => $state) {
+    $adapter->rows = ['emailmessage' => [array_replace($email, ['messagesent' => $sentAgo($days)])]];
+    $row = $service->enrich([$quote])[0];
+    check($row['monitoring_sent_days'] === $days && $row['monitoring_followup_state'] === $state, 'Wrong calendar follow-up age/state: ' . $days);
+    check($row['monitoring_followup_date'] === (new DateTimeImmutable($sentAgo($days)))->modify('+7 days')->format('Y-m-d'), 'Wrong follow-up date');
+    check($row['monitoring_followup_due'] === ($days >= 7), 'Wrong automatic due flag');
+    check($row['monitoring_action'] === ($days >= 7 ? 'follow_up' : ''), 'Premature or missing follow-up action');
+    foreach (['de_DE', 'en_US'] as $locale) {
+        $translator = new DEEC_Translate($locale);
+        $translator->load('quote', $root . '/languages/' . $locale . '/sales/quote.php');
+        $list->setTranslator($translator);
+        $html = $render($row);
+        check(!str_contains($html, 'QUOTES_MONITORING_') && str_contains($html, '/sales/quote/view/1/1'), 'Localized due state or manual email entry missing');
+        check(str_contains($html, '/tasks/task/add/1'), 'Task entry must use internal source quote ID without untrusted contact join');
+    }
+}
+$oldMail = array_replace($email, ['messagesent' => $sentAgo(10)]);
+$newMail = array_replace($email, ['messagesent' => $sentAgo(3)]);
+foreach (['sent' => 'future', 'failed' => 'overdue', 'pending' => 'overdue'] as $response => $state) {
+    $adapter->rows = ['emailmessage' => [$oldMail, array_replace($newMail, ['response' => $response])]];
+    check($service->enrich([$quote])[0]['monitoring_followup_state'] === $state, 'Failed send reset deadline or resend did not reset it');
+}
+$adapter->rows = ['emailmessage' => [array_replace($newMail, ['response' => 'failed'])]];
+check($service->enrich([$quote])[0]['monitoring_followup_date'] === null, 'Failed-only send produced follow-up');
+$adapter->rows = ['emailmessage' => [$oldMail], 'feedback' => [$feedback]];
+$row = $service->enrich([$quote])[0];
+check($row['monitoring_followup_due'] && $row['monitoring_status'] === 'feedback_open' && $row['monitoring_action'] === 'follow_up', 'Unanswered request blocked due follow-up');
+foreach (['interested', 'question', 'pending', 'declined'] as $status) {
+    $adapter->rows['feedback'] = [array_replace($feedback, ['status' => $status, 'responded' => date('Y-m-d H:i:s')])];
+    check($service->enrich([$quote])[0]['monitoring_followup_date'] === null, 'Answered request triggered automatic follow-up');
+}
+$adapter->rows['feedback'][] = array_replace($feedback, ['id' => 11]);
+check($service->enrich([$quote])[0]['monitoring_followup_date'] === null, 'Renewed request ignored an earlier response');
+foreach ([null, date('Y-m-d'), '2000-01-01', '2099-01-01'] as $dueDate) {
+    $adapter->rows = ['emailmessage' => [$oldMail], 'task' => [array_replace($task, ['duedate' => $dueDate])]];
+    check($service->enrich([$quote])[0]['monitoring_followup_date'] === null, 'Open task did not suppress automatic follow-up');
+}
+foreach (['salesorder' => 'salesorderid', 'invoice' => 'invoiceid', 'deliveryorder' => 'deliveryorderid'] as $table => $number) {
+    $adapter->rows = ['emailmessage' => [$oldMail], $table => [['id' => 20, 'quoteid' => 1001, 'clientid' => 7, $number => 3001, 'state' => 105, 'deleted' => 0]]];
+    check($service->enrich([$quote])[0]['monitoring_followup_date'] === null, 'Final document allowed follow-up');
+    $adapter->rows[$table][0][$number] = null;
+    check($service->enrich([$quote])[0]['monitoring_status'] === 'followup_draft', 'Draft follow-up lost its own state');
+}
+$adapter->rows = ['emailmessage' => [$oldMail]];
+foreach ([['cancelled' => 1], ['state' => 106], ['quoteid' => null]] as $override) {
+    check($service->enrich([array_replace($quote, $override)])[0]['monitoring_followup_date'] === null, 'Cancelled/draft quote allowed follow-up');
+}
+$adapter->rows = ['emailmessage' => [array_replace($oldMail, ['documentid' => 2])], 'feedback' => [array_replace($feedback, ['clientid' => 8, 'responded' => '2026-01-01'])], 'task' => [array_replace($task, ['clientid' => 8])]];
+$twoQuotes = $service->enrich([$quote, array_replace($quote, ['id' => 2, 'clientid' => 8])]);
+check($twoQuotes[0]['monitoring_sentcount'] === 0 && $twoQuotes[1]['monitoring_sentcount'] === 1, 'Same visible quote number mixed mail between tenants');
+
+// Execute generated SQL on isolated SQLite fixtures via Python's standard library; never connect to production.
+$fixtures = ['quote' => [], 'emailmessage' => [], 'feedback' => [], 'task' => [], 'salesorder' => [], 'invoice' => [], 'deliveryorder' => []];
+$expected = [];
+for ($id = 1; $id <= 17; $id++) {
+    $q = array_replace($quote, ['id' => $id, 'quoteid' => 1000 + $id]);
+    $mail = array_replace($oldMail, ['documentid' => $id]);
+    if ($id === 1) $mail['messagesent'] = $sentAgo(3);
+    if ($id === 2) $mail['messagesent'] = $sentAgo(7);
+    if ($id === 4) $fixtures['feedback'][] = array_replace($feedback, ['parentid' => $id]);
+    if ($id === 5 || $id === 6) $fixtures['feedback'][] = array_replace($feedback, ['parentid' => $id, 'responded' => date('Y-m-d'), 'status' => $id === 6 ? 'declined' : 'question']);
+    if ($id === 7) $fixtures['task'][] = array_replace($task, ['quoteid' => $q['quoteid']]);
+    if ($id === 8) $fixtures['salesorder'][] = ['id' => 50, 'quoteid' => $q['quoteid'], 'clientid' => 7, 'salesorderid' => 3001, 'state' => 105, 'deleted' => 0];
+    if ($id === 9) $q['cancelled'] = 1;
+    if ($id === 10) $mail['response'] = 'failed';
+    if ($id === 11) $fixtures['emailmessage'][] = array_replace($mail, ['messagesent' => $sentAgo(3)]);
+    if ($id === 12) $fixtures['emailmessage'][] = array_replace($mail, ['messagesent' => $sentAgo(3), 'response' => 'failed']);
+    if ($id === 13) $q['clientid'] = 8;
+    if ($id === 14) {
+        $fixtures['task'][] = array_replace($task, ['quoteid' => $q['quoteid'], 'clientid' => 8]);
+        $fixtures['salesorder'][] = ['id' => 51, 'quoteid' => $q['quoteid'], 'clientid' => 8, 'salesorderid' => 3001, 'state' => 105, 'deleted' => 0];
+        $fixtures['feedback'][] = array_replace($feedback, ['parentid' => $id, 'clientid' => 8, 'responded' => date('Y-m-d')]);
+    }
+    if ($id === 15) {
+        $fixtures['feedback'][] = array_replace($feedback, ['parentid' => $id, 'responded' => date('Y-m-d')]);
+        $fixtures['feedback'][] = array_replace($feedback, ['id' => 11, 'parentid' => $id]);
+    }
+    if ($id === 16) $fixtures['salesorder'][] = ['id' => 52, 'quoteid' => $q['quoteid'], 'clientid' => 7, 'salesorderid' => null, 'state' => 100, 'deleted' => 0];
+    if ($id === 17) $q['state'] = 106;
+    $fixtures['quote'][] = $q;
+    $fixtures['emailmessage'][] = $mail;
+    $adapter->rows = $fixtures;
+    $r = $service->enrich([$q])[0];
+    if ($q['clientid'] === 7 && $r['monitoring_followup_due']) $expected[] = $id;
+}
+check($expected === [2, 3, 4, 12, 14, 16], 'Unexpected automatic follow-up fixtures');
+$filterParams = ['monitoring' => 'followup_due', 'states' => ['100', '101', '102', '103', '104', '105']];
+$sql = [$query->filteredSelect($filterParams, $adapter)->order('q.id ASC')->assemble()];
+for ($page = 1; $page <= 3; $page++) $sql[] = $query->pageSelect($filterParams + ['page' => $page, 'limit' => 2], $adapter)->assemble();
+$python = <<<'PY'
+import sys, json, sqlite3
+payload = json.load(sys.stdin)
+db = sqlite3.connect(':memory:')
+schema = {
+ 'quote': ['id','quoteid','clientid','deleted','state','cancelled'],
+ 'emailmessage': ['documentid','module','controller','deleted','response','messagesent'],
+ 'feedback': ['id','parentid','clientid','module','controller','deleted','responded','status'],
+ 'task': ['quoteid','clientid','deleted','completed','cancelled','state'],
+ 'salesorder': ['quoteid','clientid','deleted','state','salesorderid'],
+ 'invoice': ['quoteid','clientid','deleted','state','invoiceid'],
+ 'deliveryorder': ['quoteid','clientid','deleted','state','deliveryorderid']
+}
+for table, columns in schema.items():
+ db.execute('CREATE TABLE '+table+' ('+','.join(c+' '+('TEXT' if c in ['module','controller','response','messagesent','responded','status'] else 'INTEGER') for c in columns)+')')
+ for row in payload['fixtures'][table]:
+  db.execute('INSERT INTO '+table+' VALUES ('+','.join('?' for _ in columns)+')', [row.get(c) for c in columns])
+print(json.dumps([[r[0] for r in db.execute(sql)] for sql in payload['sql']]))
+PY;
+$process = proc_open(['python3', '-c', $python], [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes);
+if (!is_resource($process)) throw new RuntimeException('Cannot start isolated SQL fixture runner');
+fwrite($pipes[0], json_encode(['fixtures' => $fixtures, 'sql' => $sql], JSON_THROW_ON_ERROR));
+fclose($pipes[0]);
+$output = stream_get_contents($pipes[1]);
+$error = stream_get_contents($pipes[2]);
+fclose($pipes[1]);
+fclose($pipes[2]);
+check(proc_close($process) === 0, 'Generated SQL failed: ' . $error);
+$results = json_decode($output, true, 512, JSON_THROW_ON_ERROR);
+check($results[0] === $expected, 'SQL filter diverged from displayed due states');
+check(array_merge(...array_slice($results, 1)) === $expected && count($results[1]) === 2, 'Filter applied after pagination or returned wrong pages');
+check(isset((new Sales_Form_QuoteToolbar())->getElement('monitoring')['options']['followup_due']), 'Due filter missing from toolbar');
+
+// Exercise the existing task controller with real forms/models and isolated database I/O.
+require_once $root . '/application/modules/tasks/controllers/TaskController.php';
+require_once $root . '/application/modules/sales/controllers/QuoteController.php';
+class QuoteFollowupTestTaskDb extends Tasks_Model_DbTable_Task
+{
+    public static array $created = [];
+    public function create(array $data): int { self::$created[] = $data; return 999; }
+}
+class QuoteFollowupTestView extends Zend_View
+{
+    public function translate($key) { return $key === 'FEEDBACK_QUOTE_TASK_TITLE' ? 'Follow up quote %s' : $key; }
+}
+class QuoteFollowupTestTaskController extends Tasks_TaskController
+{
+    public function init()
+    {
+        $this->_user = Zend_Registry::get('User');
+        $this->view = new QuoteFollowupTestView();
+    }
+    protected function getEditForm(): array
+    {
+        $form = new Tasks_Form_Task();
+        $form->addOptions('responsible', ['42' => 'Alice']);
+        $form->addOptions('currency', ['EUR' => 'EUR']);
+        $form->setLocale('en_US');
+        return ['form' => $form, 'options' => []];
+    }
+    protected function getDb(): DEEC_Model_DbTable_Entity { return new QuoteFollowupTestTaskDb(); }
+}
+class QuoteFollowupTestQuoteController extends Sales_QuoteController
+{
+    public function init() { $this->_user = Zend_Registry::get('User'); }
+    public function contact(array $quote): array { return $this->getViewContact($quote); }
+}
+Zend_Registry::set('User', ['id' => 42, 'clientid' => 7, 'name' => 'Alice']);
+Zend_Registry::set('Client', ['id' => 7, 'parentid' => 70, 'modules' => ['contacts' => 70]]);
+Zend_Registry::set('Zend_Locale', new Zend_Locale('en_US'));
+$permissionRow = ['id' => 1, 'userid' => 42, 'deleted' => 0, 'sales' => json_encode(['quote' => ['view']])];
+$adapter->rows = [
+    'quote' => [array_replace($quote, ['contactid' => 300, 'currency' => 'EUR', 'billingname1' => 'Shared customer'])],
+    'emailmessage' => [$oldMail],
+    'contact' => [
+        ['id' => 600, 'contactid' => 300, 'clientid' => 70, 'deleted' => 0, 'name1' => 'Shared customer'],
+        ['id' => 601, 'contactid' => 300, 'clientid' => 8, 'deleted' => 0, 'name1' => 'Foreign customer'],
+    ],
+    'permission' => [$permissionRow],
+];
+$taskRequest = static function ($source = 1, bool $post = false) {
+    $_SERVER['REQUEST_METHOD'] = $post ? 'POST' : 'GET';
+    $request = new Zend_Controller_Request_Http();
+    $request->setModuleName('tasks')->setControllerName('task')->setActionName('add');
+    $request->setParam('sourcequote', $source)->setParam('contactid', 601)->setParam('quoteid', 9999);
+    return $request;
+};
+Zend_Controller_Front::getInstance()->addControllerDirectory($root . '/application/modules/tasks/controllers', 'tasks');
+$controller = new QuoteFollowupTestTaskController($taskRequest(), new Zend_Controller_Response_Http());
+$controller->addAction();
+$form = $controller->view->form;
+check(QuoteFollowupTestTaskDb::$created === [], 'Opening follow-up form automatically saved a task');
+check($form->getFilteredValues()['contactid'] === 300 && $form->getFilteredValues()['quoteid'] === 1001, 'Task defaults trusted URL IDs instead of shared quote/contact');
+check($form->getValue('title') === 'Follow up quote 1001' && (int)$form->getValue('responsible') === 42, 'Task title or owner missing');
+check($form->getFilteredValues()['duedate'] === date('Y-m-d'), 'Overdue follow-up did not default task date to today');
+$adapter->rows['emailmessage'] = [$newMail];
+$futureController = new QuoteFollowupTestTaskController($taskRequest(), new Zend_Controller_Response_Http());
+$futureController->addAction();
+check($futureController->view->form->getFilteredValues()['duedate'] === (new DateTimeImmutable('today'))->modify('+4 days')->format('Y-m-d'), 'Future follow-up task date was not preserved');
+check(str_contains($futureController->view->form->renderElement('duedate'), 'data-format="yyyy-mm-dd"'), 'Task date picker does not match server-side date parsing');
+$adapter->rows['emailmessage'] = [$oldMail];
+Zend_Registry::set('User', []);
+try {
+    (new QuoteFollowupTestTaskController($taskRequest(), new Zend_Controller_Response_Http()))->addAction();
+    check(false, 'Anonymous task follow-up allowed');
+} catch (Zend_Controller_Action_Exception $e) { check($e->getCode() === 403, 'Anonymous follow-up not rejected'); }
+Zend_Registry::set('User', ['id' => 42, 'clientid' => 7, 'name' => 'Alice']);
+foreach ([0, -1, '1 OR 1=1', 999] as $invalidId) {
+    try {
+        (new QuoteFollowupTestTaskController($taskRequest($invalidId), new Zend_Controller_Response_Http()))->addAction();
+        check(false, 'Invalid internal source ID allowed');
+    } catch (Zend_Controller_Action_Exception $e) { check($e->getCode() === 404, 'Unexpected invalid source error'); }
+}
+$adapter->rows['quote'][0]['clientid'] = 8;
+try {
+    (new QuoteFollowupTestTaskController($taskRequest(), new Zend_Controller_Response_Http()))->addAction();
+    check(false, 'Foreign quote allowed as source');
+} catch (Zend_Controller_Action_Exception $e) { check($e->getCode() === 404, 'Foreign quote not rejected'); }
+$adapter->rows['quote'][0]['clientid'] = 7;
+foreach ([['sales' => json_encode(['quote' => []])], ['tasks' => json_encode(['task' => []])]] as $deny) {
+    $adapter->rows['permission'] = [array_replace($permissionRow, $deny)];
+    try {
+        (new QuoteFollowupTestTaskController($taskRequest(), new Zend_Controller_Response_Http()))->addAction();
+        check(false, 'Source quote or task permission ignored');
+    } catch (Zend_Controller_Action_Exception $e) { check($e->getCode() === 403, 'Permission denial not enforced'); }
+}
+$adapter->rows['permission'] = [$permissionRow];
+$adapter->rows['task'] = [$task];
+try {
+    (new QuoteFollowupTestTaskController($taskRequest(), new Zend_Controller_Response_Http()))->addAction();
+    check(false, 'Open task did not prevent another follow-up draft');
+} catch (Zend_Controller_Action_Exception $e) { check($e->getCode() === 409, 'Stale follow-up entry not rejected'); }
+unset($adapter->rows['task']);
+Zend_Controller_Front::getInstance()->addControllerDirectory($root . '/application/modules/sales/controllers', 'sales');
+$quoteRequest = new Zend_Controller_Request_Http();
+$quoteRequest->setModuleName('sales')->setControllerName('quote')->setActionName('view');
+$quoteController = new QuoteFollowupTestQuoteController($quoteRequest, new Zend_Controller_Response_Http());
+check($quoteController->contact(['contactid' => 300])['id'] === 600, 'Manual email used foreign contact with same visible number');
+if (!defined('BASE_PATH')) define('BASE_PATH', $root);
+foreach (['de_DE', 'en_US'] as $locale) {
+    $emailDraft = (new DEEC_Feedback())->buildQuoteFollowupEmail(1001, $locale);
+    check(str_contains($emailDraft['subject'], '1001') && str_contains($emailDraft['body'], '1001'), 'Existing follow-up email draft lost quote number');
+}
+check(QuoteFollowupTestTaskDb::$created === [], 'Read-only follow-up actions saved tasks');
+$postRequest = $taskRequest(1, true);
+$postRequest->setPost(array_filter(array_replace($form->getValues(), ['create_followup' => '1', 'contactid' => 999, 'quoteid' => 999, 'id' => 999, 'state' => 105]), static fn($value) => $value !== null));
+$postController = new QuoteFollowupTestTaskController($postRequest, new Zend_Controller_Response_Http());
+Zend_Controller_Action_HelperBroker::getStaticHelper('redirector')->setExit(false);
+Zend_Controller_Front::getInstance()->getRouter()->addDefaultRoutes();
+$postController->addAction();
+check(count(QuoteFollowupTestTaskDb::$created) === 1, 'Explicit manual submission did not create exactly one task');
+$saved = QuoteFollowupTestTaskDb::$created[0];
+check($saved['contactid'] === 300 && $saved['quoteid'] === 1001 && $saved['state'] === 100 && !isset($saved['id']), 'Manual task save accepted manipulated source association');
 
 echo 'PASS: ' . $checks . " quote monitoring, defaults, customer actions, due dates and tenant cases\n";

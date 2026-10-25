@@ -2,6 +2,8 @@
 
 class Sales_Service_QuoteMonitoring
 {
+	public const FOLLOWUP_DAYS = 7;
+
 	public static function applyListFilter($select, $value, array $filter, array $config, array $params = []): void
 	{
 		$value = trim((string)$value);
@@ -117,6 +119,21 @@ class Sales_Service_QuoteMonitoring
 		)';
 
 		switch($value) {
+			case 'followup_due':
+				$lastSent = '(SELECT MAX(em.messagesent) FROM emailmessage em
+					WHERE em.documentid = ' . $alias . '.id
+					AND em.module = ' . $sales . ' AND em.controller = ' . $quote . '
+					AND em.deleted = 0 AND em.response = ' . $sent . ')';
+				$answered = 'EXISTS (SELECT 1 FROM feedback f
+					WHERE f.parentid = ' . $alias . '.id AND f.clientid = ' . $alias . '.clientid
+					AND f.module = ' . $sales . ' AND f.controller = ' . $quote . '
+					AND f.deleted = 0 AND (f.responded IS NOT NULL OR f.status = ' . $db->quote('declined') . '))';
+				$cutoff = (new DateTimeImmutable('today'))->modify('-' . self::FOLLOWUP_DAYS . ' days')->format('Y-m-d');
+				$select->where('(' . $active . ') AND NOT (' . $finalFollowup . ')'
+					. ' AND NOT (' . $answered . ') AND NOT (' . $taskExists . ')'
+					. ' AND DATE(' . $lastSent . ') BETWEEN ' . $db->quote('1000-01-01') . ' AND ' . $db->quote($cutoff));
+				break;
+
 			case 'action_required':
 				$select->where('(' . $active . ') AND NOT (' . $finalFollowup . ')');
 				break;
@@ -221,6 +238,7 @@ class Sales_Service_QuoteMonitoring
 			$row['monitoring_feedback_message'] = $response['message'] ?? null;
 			$row['monitoring_feedback_created'] = $response['created'] ?? null;
 			$row['monitoring_feedback_responded'] = $response['responded'] ?? null;
+			$row['monitoring_feedback_has_response'] = !empty($response['has_response']);
 
 			$row['monitoring_salesorder_internal_id'] = (int)($salesorder['id'] ?? 0);
 			$row['monitoring_salesorderid'] = $salesorder['salesorderid'] ?? null;
@@ -316,7 +334,8 @@ class Sales_Service_QuoteMonitoring
 
 		foreach($db->fetchAll($select) as $row) {
 			$id = (int)$row['parentid'];
-			if(!isset($result[$id])) $result[$id] = $row;
+			if(!isset($result[$id])) $result[$id] = $row + ['has_response' => false];
+			if(!empty($row['responded']) || ($row['status'] ?? '') === 'declined') $result[$id]['has_response'] = true;
 		}
 
 		return $result;
@@ -382,6 +401,14 @@ class Sales_Service_QuoteMonitoring
 	{
 		$row['monitoring_open_days'] = null;
 		$row['monitoring_action'] = '';
+		$row['monitoring_followup_date'] = null;
+		$row['monitoring_followup_state'] = '';
+		$row['monitoring_followup_due'] = false;
+		$sentDay = substr((string)($row['monitoring_lastsent'] ?? ''), 0, 10);
+		$sentDate = DateTimeImmutable::createFromFormat('!Y-m-d', $sentDay);
+		if(!$sentDate || $sentDate->format('Y-m-d') !== $sentDay || $sentDay < '1000-01-01') $sentDate = null;
+		$today = new DateTimeImmutable('today');
+		$row['monitoring_sent_days'] = $sentDate ? max(0, (int)$sentDate->diff($today)->format('%r%a')) : null;
 
 		if((int)($row['state'] ?? 0) === 106 || !empty($row['cancelled'])) {
 			$row['monitoring_status'] = 'cancelled';
@@ -406,6 +433,13 @@ class Sales_Service_QuoteMonitoring
 		if($hasFinalFollowup) {
 			$row['monitoring_status'] = 'continued';
 			return;
+		}
+
+		if($sentDate && !empty($row['monitoring_sentcount']) && empty($row['monitoring_feedback_has_response']) && empty($row['monitoring_task_id'])) {
+			$due = $sentDate->modify('+' . self::FOLLOWUP_DAYS . ' days');
+			$row['monitoring_followup_date'] = $due->format('Y-m-d');
+			$row['monitoring_followup_state'] = $due < $today ? 'overdue' : ($due == $today ? 'today' : 'future');
+			$row['monitoring_followup_due'] = $due <= $today;
 		}
 
 		if($hasFollowup) {
@@ -439,12 +473,13 @@ class Sales_Service_QuoteMonitoring
 		if(!empty($row['monitoring_feedback_id'])) {
 			$row['monitoring_status'] = 'feedback_open';
 			$row['monitoring_open_days'] = $this->daysSince($row['monitoring_feedback_created'] ?? null);
+			if($row['monitoring_followup_due']) $row['monitoring_action'] = 'follow_up';
 			return;
 		}
 
 		if(!empty($row['monitoring_sentcount'])) {
 			$row['monitoring_status'] = 'sent';
-			$row['monitoring_action'] = 'follow_up';
+			$row['monitoring_action'] = $row['monitoring_followup_due'] ? 'follow_up' : '';
 			$row['monitoring_open_days'] = $this->daysSince($row['monitoring_lastsent'] ?? null);
 			return;
 		}
