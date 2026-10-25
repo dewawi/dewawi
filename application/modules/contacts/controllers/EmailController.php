@@ -52,16 +52,15 @@ class Contacts_EmailController
 		);
 
 		$request = $this->getRequest();
-		$post = (array)$request->getPost();
 
-		$params['contactid'] = (int)$this->_getParam(
+		$params['contactid'] = $this->_getParam(
 			'contactid',
 			0
 		);
 
-		$params['module'] = $post['module'] ?? 0;
-		$params['controller'] = $post['controller'] ?? 0;
-		$params['documentid'] = $post['documentid'] ?? 0;
+		$params['module'] = $request->getPost('module', $request->getQuery('module', ''));
+		$params['controller'] = $request->getPost('controller', $request->getQuery('controller', ''));
+		$params['documentid'] = $request->getPost('documentid', $request->getQuery('documentid', 0));
 
 		$get = new Contacts_Model_Get();
 
@@ -115,16 +114,16 @@ class Contacts_EmailController
 			$options
 		);
 
-		$post = (array)$this->getRequest()->getPost();
+		$request = $this->getRequest();
 
-		$params['contactid'] = (int)$this->_getParam(
+		$params['contactid'] = $this->_getParam(
 			'contactid',
 			0
 		);
 
-		$params['module'] = $post['module'] ?? 0;
-		$params['controller'] = $post['controller'] ?? 0;
-		$params['documentid'] = $post['documentid'] ?? 0;
+		$params['module'] = $request->getPost('module', $request->getQuery('module', ''));
+		$params['controller'] = $request->getPost('controller', $request->getQuery('controller', ''));
+		$params['documentid'] = $request->getPost('documentid', $request->getQuery('documentid', 0));
 
 		$get = new Contacts_Model_Get();
 

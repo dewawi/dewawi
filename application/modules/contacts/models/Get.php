@@ -21,67 +21,90 @@ class Contacts_Model_Get
 
 	public function emailmessages($params, $options)
 	{
+		if(!Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client')) return [];
+		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');
-		if($client['parentid']) {
-			$client['id'] = $client['modules']['contacts'];
+		if(empty($user['id']) || empty($user['clientid'])) return [];
+
+		$permission = new DEEC_Permission($user);
+		if(!$permission->hasActionPermission('contacts', 'contact', 'view')) return [];
+
+		$documentId = filter_var($params['documentid'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+		$contactId = filter_var($params['contactid'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+		$module = $params['module'] ?? '';
+		$controller = $params['controller'] ?? '';
+		if($documentId === false || $contactId === false || !is_string($module) || !is_string($controller)) return [];
+		if(($module === '') !== ($controller === '') || ($documentId > 0 && $module === '')) return [];
+		if($module !== '' && (!preg_match('/^[a-z][a-z0-9-]*$/D', $module) || !preg_match('/^[a-z][a-z0-9-]*$/D', $controller))) return [];
+
+		$contactClientId = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$user['clientid'];
+		if($contactClientId <= 0) return [];
+
+		// Contact pages use internal contact IDs; document pages pass contact numbers.
+		if($documentId === 0 && $contactId > 0) {
+			$contactDb = new Contacts_Model_DbTable_Contact();
+			$contactDb->setClientId($contactClientId);
+			if(!$contactDb->getById($contactId)) return [];
 		}
 
 		$emailmessagesDb = new Contacts_Model_DbTable_Emailmessage();
+		$db = $emailmessagesDb->getAdapter();
+		$select = $emailmessagesDb->select()
+			->setIntegrityCheck(false)
+			->from(['m' => 'emailmessage'])
+			->joinLeft(['t' => 'emailtracking'], 'm.id = t.emailmessageid', ['accesstime' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT t.accesstime)')])
+			->where('m.clientid = ?', $contactClientId)
+			->where('m.deleted = ?', 0)
+			->where($this->getEmailHistoryAccess($db, $permission, (int)$user['clientid']))
+			->group('m.id')
+			->order('m.id DESC')
+			->limit($params['limit']);
 
-		$columns = array('m.subject', 'm.body');
+		if($documentId > 0) $select->where('m.documentid = ?', $documentId);
+		elseif($contactId > 0) $select->where('m.contactid = ?', $contactId);
+		if($module !== '') $select->where('m.module = ?', $module)->where('m.controller = ?', $controller);
+		if(!empty($params['keyword'])) {
+			if(!is_string($params['keyword'])) return [];
+			$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
+			$query = $queryHelper->getQueryKeyword('', $params['keyword'], ['m.subject', 'm.body']);
+			if($query !== '') $select->where($query);
+		}
 
-		$query = '';
-		$schema = 'm';
-		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
-		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		if($params['documentid']) {
-			if($query) {
-				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.documentid = ?', $params['documentid']);
-			} else {
-				$query = $emailmessagesDb->getAdapter()->quoteInto('m.documentid = ?', $params['documentid']);
-			}
-		} else if($params['contactid']) {
-			if($query) {
-				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.contactid = ?', $params['contactid']);
-			} else {
-				$query = $emailmessagesDb->getAdapter()->quoteInto('m.contactid = ?', $params['contactid']);
+		return $emailmessagesDb->fetchAll($select)->toArray();
+	}
+
+	private function getEmailHistoryAccess($db, DEEC_Permission $permission, int $clientId): string
+	{
+		// Missing document IDs on document messages must never turn them into contact mail.
+		$access = ["(COALESCE(m.documentid, 0) = 0 AND COALESCE(m.campaignid, 0) = 0 AND m.module = 'contacts' AND m.controller = 'contact')"];
+		$contexts = [
+			'sales' => ['quote', 'salesorder', 'invoice', 'deliveryorder', 'creditnote', 'reminder'],
+			'purchases' => ['quoterequest', 'purchaseorder'],
+			'processes' => ['process'],
+			'tasks' => ['task'],
+			'campaigns' => ['campaign'],
+		];
+
+		foreach($contexts as $module => $controllers) {
+			foreach($controllers as $controller) {
+				// Preserve the ACL behavior for existing modules without a permission column.
+				if($permission->hasModule($module) && !$permission->hasActionPermission($module, $controller, 'view')) continue;
+				$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+				$documentDb = new $class();
+				$documentDb->setClientId($clientId);
+				$field = $module === 'campaigns' ? 'campaignid' : 'documentid';
+				$document = $documentDb->select()->from(['history_document' => $documentDb->info('name')], ['id'])
+					->where('history_document.id = m.' . $field)
+					->where('history_document.clientid = ?', $documentDb->getClientId())
+					->where('history_document.deleted = ?', 0);
+				$access[] = '(' . $db->quoteInto('m.module = ?', $module)
+					. ' AND ' . $db->quoteInto('m.controller = ?', $controller)
+					. ($module === 'campaigns' ? ' AND COALESCE(m.documentid, 0) = 0' : '')
+					. ' AND m.' . $field . ' > 0 AND EXISTS (' . $document . '))';
 			}
 		}
-		if($params['module']) {
-			if($query) {
-				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.module = ?', $params['module']);
-			} else {
-				$query = $emailmessagesDb->getAdapter()->quoteInto('m.module = ?', $params['module']);
-			}
-		}
-		if($params['controller']) {
-			if($query) {
-				$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.controller = ?', $params['controller']);
-			} else {
-				$query = $emailmessagesDb->getAdapter()->quoteInto('m.controller = ?', $params['controller']);
-			}
-		}
-		if($query) $query .= ' AND ';
-		$query .= $emailmessagesDb->getAdapter()->quoteInto('m.clientid = ?', $client['id']);
-		$query .= ' AND '.$emailmessagesDb->getAdapter()->quoteInto('m.deleted = ?', 0);
 
-		$data = $emailmessagesDb->fetchAll(
-			$emailmessagesDb->select()
-				->setIntegrityCheck(false)
-				->from(array($schema => 'emailmessage'))
-				->joinLeft(array('t' => 'emailtracking'), 'm.id = t.emailmessageid', array('accesstime' => new Zend_Db_Expr('GROUP_CONCAT(DISTINCT t.accesstime)')))
-				->group($schema.'.id')
-				->where($query)
-				->order('id DESC')
-				->limit($params['limit'])
-		);
-//print_r($where);
-
-		//$data = $emailmessagesDb->fetchAll($where, 'id DESC', $limit);
-		if(!$data) {
-			throw new Exception("Could not find row");
-		}
-		return $data->toArray();
+		return '(' . implode(' OR ', $access) . ')';
 	}
 
 	public function history($contactid) {
