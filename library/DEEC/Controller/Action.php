@@ -191,13 +191,13 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 				$form->setValues($post);
 			} else {
 				$values = $form->getFilteredValues();
-				$values = $this->beforeEditSave($values, $row);
 
 				$adapter = $db->getAdapter();
 
 				try {
 					$adapter->beginTransaction();
 
+					$values = $this->beforeEditSave($values, $row);
 					$db->updateById($id, $values);
 					$this->afterEditSave($id, $values, $row);
 
@@ -361,16 +361,16 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		}
 
 		$values = $form->getFilteredValuesPartial($post);
-		$values = $this->beforeEditSave($values, $row);
-
-		$splitValues = $this->splitEditValues($values);
-		$mainValues = $splitValues['main'];
-		$externalValues = $splitValues['external'];
 
 		$adapter = $db->getAdapter();
 
 		try {
 			$adapter->beginTransaction();
+
+			$values = $this->beforeEditSave($values, $row);
+			$splitValues = $this->splitEditValues($values);
+			$mainValues = $splitValues['main'];
+			$externalValues = $splitValues['external'];
 
 			if (!empty($mainValues)) {
 				$db->updateById($id, $mainValues);
@@ -810,6 +810,8 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			try {
 				$adapter->beginTransaction();
 
+				$row = $db->getByIdForUpdate((int)$id);
+				if (!$row || !$this->canDeleteRow($row)) throw new RuntimeException('Record is not deletable');
 				$db->deleteById((int)$id);
 				$db->normalizeOrderingByRow($row);
 

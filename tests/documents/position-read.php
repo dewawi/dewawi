@@ -68,6 +68,7 @@ class PositionReadTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
     public array $writes = [];
     public bool $allowWrites = false;
     public ?string $failUpdateTable = null;
+    public ?Closure $beforeTransaction = null;
     private ?array $transactionSnapshot = null;
     private int $lastId = 100;
     protected function _connect() {}
@@ -75,6 +76,10 @@ class PositionReadTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
     public function beginTransaction()
     {
         if ($this->transactionSnapshot !== null) throw new RuntimeException('Nested fixture transaction');
+        if ($callback = $this->beforeTransaction) {
+            $this->beforeTransaction = null;
+            $callback();
+        }
         $this->transactionSnapshot = [$this->rows, $this->writes];
         return $this;
     }
@@ -275,12 +280,12 @@ $defaults = $controller->defaults([]);
 check($defaults['subtotal'] === 0 && $defaults['taxes'] === 0 && $defaults['total'] === 0, 'New empty draft totals missing');
 check($controller->defaults(['total' => 123])['total'] === 123, 'Draft defaults replaced supplied values');
 $adapter->rows['quote'] = [array_replace($parent, ['state' => 100]) + ['quoteid' => null]];
-$controller->issue(1);
+check($controller->issue(1)['createOriginal'] === true, 'First finalization did not authorize original PDF creation');
 check(abs($controller->finalizedRow['total'] - 278.46) < 0.00001, 'Finalization received stale totals');
 $adapter->rows['quote'] = [$parent + ['quoteid' => 1001]];
 $before = $adapter->rows;
 $adapter->allowWrites = false;
-$controller->issue(1);
+check($controller->issue(1)['createOriginal'] === false, 'Repeated finalization authorized PDF reconstruction');
 check($adapter->rows === $before && $controller->finalizedRow['total'] === $parent['total'], 'Repeated finalization recalculated issued document');
 
 echo 'PASS: ' . $checks . " position read and write checks; views preserve data, copies and finalization update totals\n";

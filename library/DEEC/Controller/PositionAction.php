@@ -1014,24 +1014,22 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 
 		$positionDb = $this->getPositionDb();
 
-		if (
-			$direction === 'up'
-			|| $direction === 'down'
-		) {
-			$sorted = $positionDb->moveOrdering(
-				$id,
-				$direction
-			);
-		} elseif ($ordering > 0) {
-			$sorted = $positionDb->moveToOrdering(
-				$id,
-				$ordering
-			);
-		} else {
-			return $this->sendSortResponse(
-				false,
-				'Invalid sort target'
-			);
+		$adapter = $positionDb->getAdapter();
+		$adapter->beginTransaction();
+		try {
+			$this->lockPositionParent($this->getPositionParams());
+			if ($direction === 'up' || $direction === 'down') {
+				$sorted = $positionDb->moveOrdering($id, $direction);
+			} elseif ($ordering > 0) {
+				$sorted = $positionDb->moveToOrdering($id, $ordering);
+			} else {
+				$adapter->rollBack();
+				return $this->sendSortResponse(false, 'Invalid sort target');
+			}
+			$adapter->commit();
+		} catch (Throwable $exception) {
+			$adapter->rollBack();
+			return $this->sendSortResponse(false, 'Position could not be sorted');
 		}
 
 		return $this->sendSortResponse(

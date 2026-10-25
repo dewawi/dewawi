@@ -102,6 +102,12 @@ class DEEC_Pdf
 			return $this->getOutputFile($payload);
 		}
 
+		if ($payload['meta']['module'] === 'sales' && in_array($payload['meta']['controller'], ['invoice', 'creditnote'], true)
+			&& DEEC_Permission::isDocumentReadonly('sales', $payload['meta']['controller'], $payload['document'])
+			&& empty($request['createOriginal'])) {
+			throw new RuntimeException('Original PDF is unavailable');
+		}
+
 		$this->bootstrapTcpdf();
 		$payload = $this->buildDocumentPayload($payload);
 
@@ -145,7 +151,9 @@ class DEEC_Pdf
 			throw new RuntimeException('Document not found');
 		}
 
-		$issued = !empty($document[$this->getDocumentIdField($controller)]);
+		$issued = !empty($document[$this->getDocumentIdField($controller)])
+			|| ($module === 'sales' && in_array($controller, ['invoice', 'creditnote'], true)
+				&& DEEC_Permission::isDocumentReadonly($module, $controller, $document));
 
 		if ($issued && (empty($document['clientid']) || empty($document['contactid']) || empty($document['filename']))) {
 			throw new RuntimeException('Issued document storage is incomplete');

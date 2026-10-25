@@ -217,9 +217,37 @@ check(str_contains(file_get_contents($testPath . '/pdf.log'), 'source=attachment
 unlink($attachment);
 unlink($original);
 
-// Restore a missing original once, using the stored template and canonical location.
+// Issued invoices and credit notes cannot be reconstructed from mutable current data.
+foreach (['invoice', 'creditnote'] as $controller) {
+    $saved = $document + [$controller . 'id' => 1001];
+    $adapter->rows[$controller] = [$saved];
+    $generator = new DocumentPdfTestGenerator();
+    try {
+        $generator->generate(array_replace($request, ['controller' => $controller]));
+        throw new LogicException('Missing original was silently reconstructed');
+    } catch (RuntimeException $expected) {
+        check($expected->getMessage() === 'Original PDF is unavailable', 'Unexpected missing-original error');
+    }
+    check($generator->bootstraps === 0 && $generator->renders === 0 && !is_file($original), 'Missing original used current template or data');
+    check($adapter->rows[$controller] === [$saved], 'Missing original changed completion data');
+
+    $archiveDir = BASE_PATH . '/files/attachments/sales/' . $controller . '/7/0/7/1/0/1';
+    if (!is_dir($archiveDir)) mkdir($archiveDir, 0775, true);
+    file_put_contents($archiveDir . '/original.pdf', $originalBytes);
+    check($generator->generate(array_replace($request, ['controller' => $controller]))['path'] === $original, 'Archived original was not restored');
+    check(file_get_contents($original) === $originalBytes && $generator->renders === 0, 'Recovery changed original bytes');
+    $adapter->rows[$controller][0]['notes'] = 'Changed internal note';
+    $generator->generate(array_replace($request, ['controller' => $controller]));
+    check(file_get_contents($original) === $originalBytes && $generator->renders === 0, 'Note change or repeated download regenerated the original');
+    unlink($archiveDir . '/original.pdf');
+    unlink($original);
+}
+$adapter->rows['invoice'] = [$issued];
+
+// Initial finalization can publish the original once in the canonical location.
+$initialRequest = $request + ['createOriginal' => true];
 $generator = new DocumentPdfTestGenerator();
-$restored = $generator->generate($request);
+$restored = $generator->generate($initialRequest);
 check($generator->renders === 1 && $generator->lastOptions === ['templateid' => null], 'Restore accepted a template override');
 check($restored['path'] === $original && str_starts_with(file_get_contents($original), '%PDF-'), 'Missing original was not restored as a PDF');
 check((fileperms($original) & 0777) === (0666 & ~umask()), 'Restored file permissions changed');
@@ -233,7 +261,7 @@ check(str_contains(file_get_contents($testPath . '/pdf.log'), 'source=render'), 
 unlink($original);
 $generator = new DocumentPdfTestGenerator();
 $generator->duringRender = [$original, $originalBytes];
-$generator->generate($request);
+$generator->generate($initialRequest);
 check(file_get_contents($original) === $originalBytes, 'Concurrent original was overwritten');
 check(glob($originalDir . '/.pdf-*') === [], 'Temporary PDFs were left behind');
 
@@ -241,7 +269,7 @@ check(glob($originalDir . '/.pdf-*') === [], 'Temporary PDFs were left behind');
 unlink($original);
 $generator = new DocumentPdfTestGenerator();
 $generator->duringPublish = [$original, $originalBytes];
-$generator->generate($request);
+$generator->generate($initialRequest);
 check(file_get_contents($original) === $originalBytes, 'Original created immediately before publication was overwritten');
 check(glob($originalDir . '/.pdf-*') === [], 'Publish race left temporary PDFs behind');
 
@@ -250,7 +278,7 @@ unlink($original);
 $generator = new DocumentPdfTestGenerator();
 $generator->failResolution = true;
 try {
-    $generator->generate($request);
+    $generator->generate($initialRequest);
     throw new LogicException('Missing template did not fail');
 } catch (RuntimeException $expected) {
     check($expected->getMessage() === 'Template unavailable', 'Unexpected template failure');
@@ -275,7 +303,7 @@ check(!is_file($original) && glob($originalDir . '/.pdf-*') === [], 'Failed outp
 
 // Draft previews remain replaceable even if a copied draft carries an old filename.
 file_put_contents($original, $originalBytes);
-$adapter->rows['invoice'] = [array_replace($issued, ['invoiceid' => null, 'state' => 100])];
+$adapter->rows['invoice'] = [array_replace($issued, ['invoiceid' => null, 'state' => 100, 'completed' => 0])];
 $generator = new DocumentPdfTestGenerator();
 $draft = $generator->generate($request);
 check($draft['storage'] === 'cache' && $draft['path'] !== $original && $generator->lastOptions === ['templateid' => 999], 'Draft preview behavior changed');

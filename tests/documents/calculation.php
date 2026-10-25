@@ -306,4 +306,63 @@ foreach ($modules as $module => $documents) {
     check($adapter->rows === $before, 'Failed group copy retained partial positions/rules');
 }
 
-echo 'PASS: ' . $checks . ' calculation checks including ' . $moduleUnderTest . " PDF payloads\n";
+// Real position writes must reject finalized invoices/credit notes, including stale route checks.
+foreach (['invoice', 'creditnote'] as $document) {
+    foreach (['add', 'edit', 'sort', 'copy', 'delete'] as $action) {
+        foreach ([false, true] as $stale) {
+            $issued = array_replace($draft, [$document . 'id' => 1001, 'state' => 105, 'completed' => 1]);
+            $adapter->rows[$document] = [$stale ? array_replace($issued, [$document . 'id' => null, 'state' => 100, 'completed' => 0]) : $issued];
+            $adapter->rows[$document . 'pos'] = [$position, $child];
+            $adapter->rows[$document . 'posset'] = [];
+            $adapter->rows['pricerulepos'] = [];
+            $expected = $adapter->rows;
+            $expected[$document] = [$issued];
+            if ($stale) $adapter->beforeTransaction = static function () use ($adapter, $document, $issued): void { $adapter->rows[$document] = [$issued]; };
+            $request = new Zend_Controller_Request_Http();
+            $request->setModuleName('sales')->setControllerName('position')->setActionName($action)
+                ->setParams(['id' => 10, 'parent' => $document, 'parentid' => 1, 'direction' => 'down'])
+                ->setPost($action === 'delete' ? ['id' => 10, 'delete' => 'Yes'] : ['price' => '99,00']);
+            $response = new Zend_Controller_Response_Http();
+            Zend_Controller_Front::getInstance()->setRequest($request)->setResponse($response);
+            (new ReadSalesPositionController($request, $response))->{$action . 'Action'}();
+            check(json_decode($response->getBody(), true)['ok'] === false, 'Final position action was accepted: ' . $document . '/' . $action);
+            check($adapter->rows === $expected, 'Final position action changed document data: ' . $document . '/' . $action);
+        }
+    }
+
+    // Legacy group add/sort also recheck the parent after the route plugin has run.
+    foreach (['add', 'sort', 'copy', 'delete'] as $action) {
+        $adapter->rows[$document] = [array_replace($issued, [$document . 'id' => null, 'state' => 100, 'completed' => 0])];
+        $adapter->rows[$document . 'posset'] = [['id' => 1, 'clientid' => 7, 'parentid' => 1, 'deleted' => 0, 'ordering' => 1, 'title' => 'Group']];
+        $expected = $adapter->rows;
+        $expected[$document] = [$issued];
+        $adapter->beforeTransaction = static function () use ($adapter, $document, $issued): void { $adapter->rows[$document] = [$issued]; };
+        $request = new Zend_Controller_Request_Http();
+        $request->setModuleName('sales')->setControllerName('positionset')->setActionName($action)
+            ->setParams(['id' => 1, 'parent' => $document, 'parentid' => 1, 'type' => 'pos'])
+            ->setPost(['id' => 1, 'parentid' => 1, 'delete' => 'Yes', 'ordering' => 'down']);
+        $response = new Zend_Controller_Response_Http();
+        Zend_Controller_Front::getInstance()->setRequest($request)->setResponse($response);
+        ob_start();
+        try {
+            (new CalculationSalesSetController($request, $response))->{$action . 'Action'}();
+            throw new LogicException('Stale group action was accepted');
+        } catch (RuntimeException $expectedError) {
+            check($expectedError->getMessage() === 'Position parent is not editable', 'Unexpected stale group error');
+        } finally {
+            ob_end_clean();
+        }
+        check($adapter->rows === $expected, 'Stale group action changed the original');
+    }
+
+    // An ordinary draft still supports sorting through the same position endpoint.
+    $adapter->rows[$document] = [array_replace($issued, [$document . 'id' => null, 'state' => 100, 'completed' => 0])];
+    $adapter->rows[$document . 'pos'] = [$position, array_replace($position, ['id' => 12, 'ordering' => 2])];
+    $request->setControllerName('position')->setActionName('sort')->setParam('id', 10)->setParam('direction', 'down')->setPost([]);
+    $response = new Zend_Controller_Response_Http();
+    Zend_Controller_Front::getInstance()->setRequest($request)->setResponse($response);
+    (new ReadSalesPositionController($request, $response))->sortAction();
+    check(json_decode($response->getBody(), true)['ok'] && $adapter->rows[$document . 'pos'][0]['ordering'] === 2, 'Draft position sorting stopped working');
+}
+
+echo 'PASS: ' . $checks . ' calculation checks including ' . $moduleUnderTest . " PDF payloads and finalized document write protection\n";

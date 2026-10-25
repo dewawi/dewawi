@@ -123,6 +123,12 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 
 	protected function beforeEditSave(array $values, array $row): array
 	{
+		$current = $this->getDb()->getByIdForUpdate((int)$row['id']);
+		if (!$current || $this->isReadonlyState($current)) {
+			throw new RuntimeException('Document is not editable');
+		}
+		$row = $current;
+
 		if(array_key_exists('responsibleid', $values)) {
 			$responsibleId = (int)$values['responsibleid'];
 
@@ -241,6 +247,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	protected function generatePdfDocument(int $id, array $options = []): array
 	{
 		$row = $this->loadRow($id);
+		$createOriginal = false;
 
 		if (!$row) {
 			throw new RuntimeException('Document not found');
@@ -255,6 +262,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 					$row = $db->getByIdForUpdate($id);
 					if (!$row) throw new RuntimeException('Document not found');
 					if (empty($row[$this->getDocumentNumberField()])) {
+						$createOriginal = true;
 						$this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
 						$row = $this->loadRow($id);
 					}
@@ -279,6 +287,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			'templateid' => $options['templateid'] ?? null,
 			'storage' => $options['storage'] ?? 'cache',
 			'overwrite' => !empty($options['overwrite']),
+			'createOriginal' => $createOriginal,
 		]);
 	}
 
@@ -366,6 +375,41 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	protected function isReadonlyState(array $row): bool
 	{
 		return DEEC_Permission::isDocumentReadonly($this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), $row);
+	}
+
+	protected function canDeleteRow(array $row): bool
+	{
+		return !$this->isReadonlyState($row) && parent::canDeleteRow($row);
+	}
+
+	public function cancelAction()
+	{
+		if (!$this->getRequest()->isPost()) return parent::cancelAction();
+
+		$this->disableView();
+		$adapter = $this->getDb()->getAdapter();
+		$adapter->beginTransaction();
+		try {
+			$row = $this->getDb()->getByIdForUpdate((int)$this->_getParam('id', 0));
+			if (!$row || $this->isReadonlyState($row)) {
+				$adapter->rollBack();
+				$this->getResponse()->setHttpResponseCode(403);
+				return $this->_helper->json(['ok' => false, 'message' => 'MESSAGES_DOCUMENT_READONLY']);
+			}
+			$id = (int)$row['id'];
+			$this->getDb()->setState($id, $this->getCancelledState());
+			$adapter->commit();
+		} catch (Throwable $exception) {
+			$adapter->rollBack();
+			throw $exception;
+		}
+
+		return $this->_helper->json([
+			'ok' => true,
+			'id' => $id,
+			'state' => $this->getCancelledState(),
+			'message' => 'MESSAGES_SUCCESFULLY_CANCELLED',
+		]);
 	}
 
 	protected function finalizeDocument(array $row): array

@@ -9,7 +9,7 @@ class Application_Plugin_State extends Zend_Controller_Plugin_Abstract
 		$action = $request->getActionName();
 
 		if (DEEC_Permission::isDocument($module, $controller)) {
-			if (!in_array($action, ['edit', 'delete', 'import', 'apply', 'sort', 'state'], true)) return;
+			if (!in_array($action, ['edit', 'delete', 'import', 'apply', 'sort', 'state', 'cancel'], true)) return;
 			if ($action === 'edit' && !$request->isPost()) return;
 			if (!$request->isPost()) return $this->deny($request);
 

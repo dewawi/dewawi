@@ -19,40 +19,49 @@ class Sales_PositionsetController extends DEEC_Controller_Action
 		$parent = $parentDb->getById($params['parentid']);
 
 		if($this->getRequest()->isPost()) {
-			//Get existing position sets
-			$positionSetDb = new $positionSetClass();
-			$positionSets = $positionSetDb->getPositionSets($params['parentid']);
-
-			//Check if there are position sets already
-			if(count($positionSets)) {
-				$data = array();
-				$data['parentid'] = $params['parentid'];
-				$data['title'] = '';
-				$data['image'] = '';
-				$data['description'] = '';
-				$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['type'], $params['parentid']) + 1;
+			$adapter = $this->getParentDb($params)->getAdapter();
+			$adapter->beginTransaction();
+			try {
+				$this->lockPositionParent($params);
+				//Get existing position sets
 				$positionSetDb = new $positionSetClass();
-				$positionSetDb->addPositionSet($data);
-			} else {
-				//Get existing positions
-				$positionsDb = new $positionClass();
-				$positions = $positionsDb->getPositions($params['parentid']);
+				$positionSets = $positionSetDb->getPositionSets($params['parentid']);
 
-				//Create a new position set
-				$data = array();
-				$data['parentid'] = $params['parentid'];
-				$data['title'] = '';
-				$data['image'] = '';
-				$data['description'] = '';
-				$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['type'], $params['parentid']) + 1;
-				$positionSetDb = new $positionSetClass();
-				$positionSetId = $positionSetDb->addPositionSet($data);
+				//Check if there are position sets already
+				if(count($positionSets)) {
+					$data = array();
+					$data['parentid'] = $params['parentid'];
+					$data['title'] = '';
+					$data['image'] = '';
+					$data['description'] = '';
+					$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['type'], $params['parentid']) + 1;
+					$positionSetDb = new $positionSetClass();
+					$positionSetDb->addPositionSet($data);
+				} else {
+					//Get existing positions
+					$positionsDb = new $positionClass();
+					$positions = $positionsDb->getPositions($params['parentid']);
 
-				//Move all positions to the new set
-				$positionData = array($params['type'].'setid' => $positionSetId);
-				foreach($positions as $position) {
-					$positionsDb->updatePosition($position->id, $positionData);
+					//Create a new position set
+					$data = array();
+					$data['parentid'] = $params['parentid'];
+					$data['title'] = '';
+					$data['image'] = '';
+					$data['description'] = '';
+					$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['type'], $params['parentid']) + 1;
+					$positionSetDb = new $positionSetClass();
+					$positionSetId = $positionSetDb->addPositionSet($data);
+
+					//Move all positions to the new set
+					$positionData = array($params['type'].'setid' => $positionSetId);
+					foreach($positions as $position) {
+						$positionsDb->updatePosition($position->id, $positionData);
+					}
 				}
+				$adapter->commit();
+			} catch (Throwable $exception) {
+				$adapter->rollBack();
+				throw $exception;
 			}
 		}
 	}
@@ -84,27 +93,36 @@ class Sales_PositionsetController extends DEEC_Controller_Action
 		$form->taxrate->addMultiOptions($taxrates);
 
 		if($request->isPost()) {
-			header('Content-type: application/json');
-			$data = $request->getPost();
-			$element = key($data);
-			if(isset($form->$element) && $form->isValidPartial($data)) {
-				if(($element == 'taxrate') && ($data[$element] != 0))
-					$data['taxrate'] = $taxrates[$data['taxrate']];
-				if(($element == 'price') || ($element == 'quantity') || ($element == 'priceruleamount'))
-					$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
-				if(($element == 'uom') && ($data[$element] != 0))
-					$data['uom'] = $uoms[$data[$element]];
+			$adapter = $this->getParentDb($params)->getAdapter();
+			$adapter->beginTransaction();
+			try {
+				$this->lockPositionParent($params);
+				header('Content-type: application/json');
+				$data = $request->getPost();
+				$element = key($data);
+				if(isset($form->$element) && $form->isValidPartial($data)) {
+					if(($element == 'taxrate') && ($data[$element] != 0))
+						$data['taxrate'] = $taxrates[$data['taxrate']];
+					if(($element == 'price') || ($element == 'quantity') || ($element == 'priceruleamount'))
+						$data[$element] = Zend_Locale_Format::getNumber($data[$element],array('precision' => 2,'locale' => $locale));
+					if(($element == 'uom') && ($data[$element] != 0))
+						$data['uom'] = $uoms[$data[$element]];
 
-				$position = new $modelClass();
-				$position->updatePositionSet($params['id'], $data);
+					$position = new $modelClass();
+					$position->updatePositionSet($params['id'], $data);
 
-				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
-					$calculations = $this->_helper->Calculate($params['parentid'], 'sales', $params['parent']);
-					echo Zend_Json::encode($calculations['locale']);
+					if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
+						$calculations = $this->_helper->Calculate($params['parentid'], 'sales', $params['parent']);
+						echo Zend_Json::encode($calculations['locale']);
+					}
+					echo Zend_Json::encode($position->getPositionSet($params['id']));
+				} else {
+					throw new Exception('Form is invalid');
 				}
-				echo Zend_Json::encode($position->getPositionSet($params['id']));
-			} else {
-				throw new Exception('Form is invalid');
+				$adapter->commit();
+			} catch (Throwable $exception) {
+				$adapter->rollBack();
+				throw $exception;
 			}
 		}
 	}
@@ -166,8 +184,17 @@ class Sales_PositionsetController extends DEEC_Controller_Action
 		$params = $this->_getAllParams();
 
 		if($request->isPost()) {
-			$data = $request->getPost();
-			$this->_helper->OrderingSet->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $data['ordering']);
+			$adapter = $this->getParentDb($params)->getAdapter();
+			$adapter->beginTransaction();
+			try {
+				$this->lockPositionParent($params);
+				$data = $request->getPost();
+				$this->_helper->OrderingSet->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $data['ordering']);
+				$adapter->commit();
+			} catch (Throwable $exception) {
+				$adapter->rollBack();
+				throw $exception;
+			}
 		}
 	}
 
@@ -218,6 +245,20 @@ class Sales_PositionsetController extends DEEC_Controller_Action
 				}
 				echo Zend_Json::encode($calculations['locale']);
 			}
+		}
+	}
+
+	protected function getParentDb(array $params): DEEC_Model_DbTable_Entity
+	{
+		$class = 'Sales_Model_DbTable_' . ucfirst($params['parent']);
+		return new $class();
+	}
+
+	protected function lockPositionParent(array $params): void
+	{
+		$parent = $this->getParentDb($params)->getByIdForUpdate((int)$params['parentid']);
+		if (!$parent || DEEC_Permission::isDocumentReadonly('sales', $params['parent'], $parent)) {
+			throw new RuntimeException('Position parent is not editable');
 		}
 	}
 

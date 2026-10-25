@@ -25,6 +25,7 @@ spl_autoload_register(static function (string $class) use ($root): void {
 });
 require_once $root . '/application/plugins/State.php';
 require_once $root . '/application/controllers/helpers/Access.php';
+Zend_Session::$_unitTestEnabled = true;
 
 $checks = 0;
 function check(bool $condition, string $message): void
@@ -49,8 +50,28 @@ class DocumentEditTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
 {
     public array $rows = [];
     public array $writes = [];
+    public ?Closure $beforeTransaction = null;
+    private ?array $transactionSnapshot = null;
     protected function _connect() {}
     protected function _quote($value) { return Zend_Db_Adapter_Abstract::_quote($value); }
+    public function beginTransaction()
+    {
+        if ($this->transactionSnapshot !== null) throw new RuntimeException('Nested fixture transaction');
+        if ($callback = $this->beforeTransaction) {
+            $this->beforeTransaction = null;
+            $callback();
+        }
+        $this->transactionSnapshot = [$this->rows, $this->writes];
+        return $this;
+    }
+    public function commit() { $this->transactionSnapshot = null; return $this; }
+    public function rollBack()
+    {
+        if ($this->transactionSnapshot === null) throw new RuntimeException('No fixture transaction');
+        [$this->rows, $this->writes] = $this->transactionSnapshot;
+        $this->transactionSnapshot = null;
+        return $this;
+    }
     public function describeTable($tableName, $schemaName = null)
     {
         $columns = ['id', 'parentid', 'clientid', 'deleted'];
@@ -92,6 +113,7 @@ class DocumentNotesTestController extends DEEC_Controller_DocumentAction
     public function init()
     {
         $this->_user = Zend_Registry::get('User');
+        $this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
         $this->view = new Zend_View();
     }
     public function readonlyForm(array $row): DEEC_Form { return $this->buildViewForm($row); }
@@ -184,7 +206,7 @@ foreach ($modules as $module => $documents) {
 
         foreach ([1, 3, 4, 5, 6] as $id) {
             checkDocumentRoute(true, $module, $document, 'edit', ['id' => $id], ['notes' => 'New note']);
-            foreach (['total', 'title', 'state', 'completeddate', 'filename', 'clientid', 'unknown'] as $field) {
+            foreach (['total', 'title', 'state', 'completeddate', 'filename', 'clientid', 'unknown', $document . 'id', $document . 'date', 'contactid', 'billingname1', 'billingstreet', 'billingpostcode', 'billingcity', 'billingcountry', 'taxfree', 'currency', 'subtotal', 'taxes'] as $field) {
                 checkDocumentRoute(false, $module, $document, 'edit', ['id' => $id], ['notes' => 'New note', $field => 'changed']);
                 checkDocumentRoute(false, $module, $document, 'edit', ['id' => $id], [$field => 'changed']);
             }
@@ -195,6 +217,15 @@ foreach ($modules as $module => $documents) {
         checkDocumentRoute(false, $module, $document, 'edit', ['id' => 8], ['notes' => 'Deleted']);
         checkDocumentRoute(false, $module, $document, 'delete', ['ids' => [2, 1]]);
         checkDocumentRoute(true, $module, $document, 'delete', ['ids' => [2, 9]]);
+        checkDocumentRoute(false, $module, $document, 'cancel', ['id' => 1]);
+        checkDocumentRoute(true, $module, $document, 'cancel', ['id' => 2]);
+
+        // Cancellation must also reject issued documents when invoked without the plugin.
+        [$request, $response] = documentEditRoute($module, $document, 'cancel', ['id' => 2]);
+        $request->setParam('id', 1);
+        $before = $adapter->rows;
+        (new DocumentNotesTestController($request, $response))->cancelAction();
+        check($response->getHttpResponseCode() === 403 && $adapter->rows === $before, 'Cancellation changed an issued document');
 
         foreach (['position', 'positionset'] as $childController) {
             foreach (['add', 'edit', 'copy', 'sort', 'delete'] as $action) {
@@ -274,6 +305,35 @@ foreach ($modules as $module => $documents) {
         checkDocumentRoute(false, 'items', 'pricerulepos', 'edit', ['id' => 21], ['amount' => '1']);
         $adapter->rows['permission'][0] = $permissions;
     }
+}
+
+// Finalization after the route check must win against stale document edits/deletion/cancellation.
+foreach (['invoice', 'creditnote'] as $document) {
+    foreach (['edit', 'delete', 'cancel'] as $action) {
+        $draft = array_replace($base, [$document . 'id' => null, 'state' => 100, 'completed' => 0]);
+        $adapter->rows[$document] = [$draft];
+        $adapter->rows[$document . 'pos'] = [];
+        $adapter->rows[$document . 'posset'] = [];
+        [$request, $response] = documentEditRoute('sales', $document, $action, ['id' => 1], ['state' => '100', 'notes' => 'Stale edit']);
+        check($response->getHttpResponseCode() === 200, 'Draft did not pass the route guard');
+        $winner = null;
+        $adapter->beforeTransaction = static function () use ($adapter, $document, &$winner): void {
+            $winner = array_replace($adapter->rows[$document][0], ['state' => 105, 'completed' => 1]);
+            $adapter->rows[$document][0] = $winner;
+        };
+        try {
+            (new DocumentNotesTestController($request, $response))->{$action . 'Action'}();
+        } catch (RuntimeException $expected) {
+            check($action === 'delete' && $expected->getMessage() === 'Record is not deletable', 'Unexpected stale document error');
+        }
+        check($winner !== null && $adapter->rows[$document] === [$winner], 'Stale request changed a finalized document: ' . $document . '/' . $action);
+    }
+
+    // Cancelling a draft remains possible through the same controller.
+    $adapter->rows[$document] = [$draft];
+    [$request, $response] = documentEditRoute('sales', $document, 'cancel', ['id' => 1]);
+    (new DocumentNotesTestController($request, $response))->cancelAction();
+    check(json_decode($response->getBody(), true)['ok'] && $adapter->rows[$document][0]['state'] === 106, 'Draft cancellation stopped working');
 }
 
 // Other modules and standalone item price rules retain their existing behavior.
