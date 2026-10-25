@@ -25,7 +25,7 @@ echo $this->FileManager();
 		'document' => ['title' => 'TABS_DOCUMENT', 'html' => $this->Document()],
 		'messages' => [
 			'title' => 'TABS_MESSAGES',
-			'html' => $this->EmailMessages(),
+			'html' => $this->partial('partials/quote-feedback.phtml', ['feedbackHistory' => $this->feedbackHistory]) . $this->EmailMessages(),
 			'a_attrs' => [
 				'data-tab-load' => 'getEmailmessages',
 			],

@@ -82,22 +82,17 @@ class Sales_Service_QuoteMonitoring
 			AND f2.clientid = ' . $alias . '.clientid
 			AND f2.module = ' . $sales . '
 			AND f2.controller = ' . $quote . '
+			AND f2.type = ' . $quote . '
 			AND f2.deleted = 0
 		)';
 
 		$feedbackExists = $latestFeedbackId . ' IS NOT NULL';
 
-		$feedbackOpen = 'EXISTS (
-			SELECT 1 FROM feedback f
-			WHERE f.id = ' . $latestFeedbackId . '
-			AND f.responded IS NULL
-		)';
-
-		$feedbackResponse = 'EXISTS (
-			SELECT 1 FROM feedback f
-			WHERE f.id = ' . $latestFeedbackId . '
-			AND f.responded IS NOT NULL
-		)';
+		$feedbackScope = 'SELECT 1 FROM feedback f WHERE f.parentid = ' . $alias . '.id
+			AND f.clientid = ' . $alias . '.clientid AND f.module = ' . $sales . '
+			AND f.controller = ' . $quote . ' AND f.type = ' . $quote . ' AND f.deleted = 0';
+		$feedbackOpen = 'EXISTS (' . $feedbackScope . ' AND f.responded IS NULL)';
+		$feedbackResponse = 'EXISTS (' . $feedbackScope . ' AND f.responded IS NOT NULL)';
 
 		$emailSent = 'EXISTS (
 			SELECT 1 FROM emailmessage em
@@ -127,6 +122,7 @@ class Sales_Service_QuoteMonitoring
 				$answered = 'EXISTS (SELECT 1 FROM feedback f
 					WHERE f.parentid = ' . $alias . '.id AND f.clientid = ' . $alias . '.clientid
 					AND f.module = ' . $sales . ' AND f.controller = ' . $quote . '
+					AND f.type = ' . $quote . '
 					AND f.deleted = 0 AND (f.responded IS NOT NULL OR f.status = ' . $db->quote('declined') . '))';
 				$cutoff = (new DateTimeImmutable('today'))->modify('-' . self::FOLLOWUP_DAYS . ' days')->format('Y-m-d');
 				$select->where('(' . $active . ') AND NOT (' . $finalFollowup . ')'
@@ -223,7 +219,7 @@ class Sales_Service_QuoteMonitoring
 			$key = $this->quoteKey((int)($row['clientid'] ?? 0), (int)($row['quoteid'] ?? 0));
 
 			$email = $emails[$documentId] ?? [];
-			$response = $feedback[$documentId] ?? [];
+			$response = $feedback[$this->quoteKey((int)($row['clientid'] ?? 0), $documentId)] ?? [];
 			$salesorder = $salesorders[$key] ?? [];
 			$invoice = $invoices[$key] ?? [];
 			$deliveryorder = $deliveryorders[$key] ?? [];
@@ -239,6 +235,7 @@ class Sales_Service_QuoteMonitoring
 			$row['monitoring_feedback_created'] = $response['created'] ?? null;
 			$row['monitoring_feedback_responded'] = $response['responded'] ?? null;
 			$row['monitoring_feedback_has_response'] = !empty($response['has_response']);
+			$row['monitoring_feedback_has_open'] = !empty($response['has_open']);
 
 			$row['monitoring_salesorder_internal_id'] = (int)($salesorder['id'] ?? 0);
 			$row['monitoring_salesorderid'] = $salesorder['salesorderid'] ?? null;
@@ -316,6 +313,7 @@ class Sales_Service_QuoteMonitoring
 			->from('feedback', [
 				'id',
 				'parentid',
+				'clientid',
 				'status',
 				'reason',
 				'message',
@@ -325,7 +323,9 @@ class Sales_Service_QuoteMonitoring
 			->where('parentid IN (?)', $documentIds)
 			->where('module = ?', 'sales')
 			->where('controller = ?', 'quote')
+			->where('type = ?', DEEC_Feedback::TYPE_QUOTE)
 			->where('deleted = ?', 0)
+			->order('responded DESC')
 			->order('id DESC');
 
 		if($clientIds) $select->where('clientid IN (?)', $clientIds);
@@ -333,9 +333,10 @@ class Sales_Service_QuoteMonitoring
 		$result = [];
 
 		foreach($db->fetchAll($select) as $row) {
-			$id = (int)$row['parentid'];
-			if(!isset($result[$id])) $result[$id] = $row + ['has_response' => false];
+			$id = $this->quoteKey((int)$row['clientid'], (int)$row['parentid']);
+			if(!isset($result[$id])) $result[$id] = $row + ['has_response' => false, 'has_open' => false];
 			if(!empty($row['responded']) || ($row['status'] ?? '') === 'declined') $result[$id]['has_response'] = true;
+			if(empty($row['responded'])) $result[$id]['has_open'] = true;
 		}
 
 		return $result;

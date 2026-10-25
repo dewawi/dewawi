@@ -91,4 +91,5 @@
 	'QUOTES_MONITORING_FOLLOWUP_NOT_DUE' => 'Follow-up not yet due',
 	'QUOTES_MONITORING_FOLLOWUP_TODAY' => 'Follow-up due today',
 	'QUOTES_MONITORING_FOLLOWUP_OVERDUE' => 'Follow-up overdue',
+	'QUOTES_MONITORING_VIEW_RESPONSE' => 'View response',
 );

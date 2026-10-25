@@ -121,7 +121,7 @@ Zend_Db_Table::setDefaultAdapter($adapter);
 $service = new Sales_Service_QuoteMonitoring();
 $quote = ['id' => 1, 'quoteid' => 1001, 'clientid' => 7, 'state' => 105, 'completed' => 1, 'cancelled' => 0, 'deleted' => 0];
 $task = ['id' => 10, 'quoteid' => 1001, 'clientid' => 7, 'title' => '<Task>', 'duedate' => '2000-01-01', 'responsible' => 42, 'state' => 100, 'completed' => 0, 'cancelled' => 0, 'deleted' => 0];
-$feedback = ['id' => 10, 'parentid' => 1, 'clientid' => 7, 'module' => 'sales', 'controller' => 'quote', 'created' => '2000-01-01', 'responded' => null, 'status' => null, 'reason' => null, 'message' => null, 'deleted' => 0];
+$feedback = ['id' => 10, 'parentid' => 1, 'clientid' => 7, 'module' => 'sales', 'controller' => 'quote', 'type' => 'quote', 'created' => '2000-01-01', 'responded' => null, 'status' => null, 'reason' => null, 'message' => null, 'deleted' => 0];
 $list = new Sales_Model_List_Quotes(['view' => new QuoteMonitoringTestView()]);
 $column = array_values(array_filter($list->getColumns(), static fn($column) => $column['name'] === 'monitoring'))[0];
 $render = static fn($row) => $list->renderCell($row, $column);
@@ -209,7 +209,7 @@ foreach (['feedback_open', 'feedback_response', 'scheduled'] as $filter) {
         check(str_contains($sql, 't.clientid = q.clientid') && str_contains($sql, 't.state NOT IN (105, 106)'), 'Task scope or closed-task exclusion lost');
         check(!str_contains($sql, 'FROM feedback'), 'Feedback still suppresses scheduled filter');
     } else {
-        check(str_contains($sql, 'f2.clientid = q.clientid'), 'Feedback tenant correlation lost');
+        check(str_contains($sql, 'f.clientid = q.clientid') && str_contains($sql, 'f.type = \'quote\''), 'Feedback tenant correlation lost');
         check(!str_contains($sql, 'FROM task'), 'Task still suppresses feedback filter');
         check(str_contains($sql, $filter === 'feedback_open' ? 'f.responded IS NULL' : 'f.responded IS NOT NULL'), 'Feedback response filter changed');
     }
@@ -429,6 +429,7 @@ check($expected === [2, 3, 4, 12, 14, 16], 'Unexpected automatic follow-up fixtu
 $filterParams = ['monitoring' => 'followup_due', 'states' => ['100', '101', '102', '103', '104', '105']];
 $sql = [$query->filteredSelect($filterParams, $adapter)->order('q.id ASC')->assemble()];
 for ($page = 1; $page <= 3; $page++) $sql[] = $query->pageSelect($filterParams + ['page' => $page, 'limit' => 2], $adapter)->assemble();
+foreach (['feedback_open', 'feedback_response'] as $filter) $sql[] = $query->filteredSelect(array_replace($filterParams, ['monitoring' => $filter]), $adapter)->order('q.id ASC')->assemble();
 $python = <<<'PY'
 import sys, json, sqlite3
 payload = json.load(sys.stdin)
@@ -436,14 +437,14 @@ db = sqlite3.connect(':memory:')
 schema = {
  'quote': ['id','quoteid','clientid','deleted','state','cancelled'],
  'emailmessage': ['documentid','module','controller','deleted','response','messagesent'],
- 'feedback': ['id','parentid','clientid','module','controller','deleted','responded','status'],
+ 'feedback': ['id','parentid','clientid','module','controller','type','deleted','responded','status'],
  'task': ['quoteid','clientid','deleted','completed','cancelled','state'],
  'salesorder': ['quoteid','clientid','deleted','state','salesorderid'],
  'invoice': ['quoteid','clientid','deleted','state','invoiceid'],
  'deliveryorder': ['quoteid','clientid','deleted','state','deliveryorderid']
 }
 for table, columns in schema.items():
- db.execute('CREATE TABLE '+table+' ('+','.join(c+' '+('TEXT' if c in ['module','controller','response','messagesent','responded','status'] else 'INTEGER') for c in columns)+')')
+ db.execute('CREATE TABLE '+table+' ('+','.join(c+' '+('TEXT' if c in ['module','controller','type','response','messagesent','responded','status'] else 'INTEGER') for c in columns)+')')
  for row in payload['fixtures'][table]:
   db.execute('INSERT INTO '+table+' VALUES ('+','.join('?' for _ in columns)+')', [row.get(c) for c in columns])
 print(json.dumps([[r[0] for r in db.execute(sql)] for sql in payload['sql']]))
@@ -459,7 +460,8 @@ fclose($pipes[2]);
 check(proc_close($process) === 0, 'Generated SQL failed: ' . $error);
 $results = json_decode($output, true, 512, JSON_THROW_ON_ERROR);
 check($results[0] === $expected, 'SQL filter diverged from displayed due states');
-check(array_merge(...array_slice($results, 1)) === $expected && count($results[1]) === 2, 'Filter applied after pagination or returned wrong pages');
+check(array_merge(...array_slice($results, 1, 3)) === $expected && count($results[1]) === 2, 'Filter applied after pagination or returned wrong pages');
+check($results[4] === [4, 15] && $results[5] === [5, 6, 15], 'Open and answered SQL filters must both include an earlier response with a new open request');
 check(isset((new Sales_Form_QuoteToolbar())->getElement('monitoring')['options']['followup_due']), 'Due filter missing from toolbar');
 
 // Exercise the existing task controller with real forms/models and isolated database I/O.
@@ -582,5 +584,127 @@ $postController->addAction();
 check(count(QuoteFollowupTestTaskDb::$created) === 1, 'Explicit manual submission did not create exactly one task');
 $saved = QuoteFollowupTestTaskDb::$created[0];
 check($saved['contactid'] === 300 && $saved['quoteid'] === 1001 && $saved['state'] === 100 && !isset($saved['id']), 'Manual task save accepted manipulated source association');
+
+// Feedback history keeps every request and summarizes the latest received answer independently of open requests.
+$pendingAnswer = array_replace($feedback, ['id' => 20, 'created' => '2026-10-01 10:00:00', 'responded' => '2026-10-03 11:00:00', 'status' => 'pending', 'message' => 'First decision']);
+$interestedAnswer = array_replace($feedback, ['id' => 21, 'created' => '2026-10-10 10:00:00', 'responded' => '2026-10-12 11:00:00', 'status' => 'interested', 'message' => "<script>alert('x')</script> & Grüße\n" . str_repeat('Full customer message ', 30)]);
+$openRequest = array_replace($feedback, ['id' => 22, 'created' => '2026-10-13 10:00:00', 'token' => str_repeat('a', 64)]);
+$feedbackList = new Sales_Model_List_Quotes(['view' => new QuoteMonitoringTestView()]);
+$feedbackColumn = array_values(array_filter($feedbackList->getColumns(), static fn($column) => $column['name'] === 'monitoring'))[0];
+$renderFeedback = static fn($row) => $feedbackList->renderCell($row, $feedbackColumn);
+foreach ([[], [$openRequest], [$pendingAnswer], [$pendingAnswer, $interestedAnswer], [$pendingAnswer, $interestedAnswer, $openRequest]] as $requests) {
+    $adapter->rows = ['feedback' => $requests];
+    $row = $service->enrich([$quote])[0];
+    $answered = array_values(array_filter($requests, static fn($request) => !empty($request['responded'])));
+    $expectedId = $answered ? end($answered)['id'] : ($requests[0]['id'] ?? 0);
+    check($row['monitoring_feedback_id'] === $expectedId, 'New open request displaced latest received answer');
+    check($row['monitoring_feedback_has_open'] === in_array($openRequest, $requests, true), 'Additional open request flag lost');
+    if ($answered) {
+        $html = $renderFeedback($row);
+        check(str_contains($html, 'QUOTES_MONITORING_VIEW_RESPONSE') && str_contains($html, '#quote-feedback-history'), 'Response history link missing');
+        check(str_contains($html, '/sales/quote/view/1/1#quote-feedback-history'), 'History link did not use internal quote ID and separate history parameter');
+        check(str_contains($html, 'QUOTES_MONITORING_FEEDBACK_RECEIVED') && !str_contains($html, '<script>'), 'Latest answer badge missing or unsafe');
+        check(!str_contains($html, str_repeat('Full customer message ', 30)), 'Monitoring summary did not truncate long customer messages');
+        if (count($requests) === 3) check(str_contains($html, 'QUOTES_MONITORING_FEEDBACK_OPEN') && $row['monitoring_action'] === 'next_step', 'Open request hid customer action or open badge');
+    }
+}
+// Order by response time, even when an older request was answered later.
+$adapter->rows = ['feedback' => [$interestedAnswer, array_replace($pendingAnswer, ['responded' => '2026-10-15 12:00:00'])]];
+check($service->enrich([$quote])[0]['monitoring_feedback_status'] === 'pending', 'Request creation order displaced latest response time');
+$invalidFeedback = [];
+foreach (['clientid' => 8, 'module' => 'purchases', 'controller' => 'invoice', 'type' => 'other', 'parentid' => 2, 'deleted' => 1] as $field => $value) {
+    $invalidFeedback[] = array_replace($interestedAnswer, [$field => $value, 'id' => 999]);
+}
+$adapter->rows = ['feedback' => $invalidFeedback];
+check($service->enrich([$quote])[0]['monitoring_feedback_id'] === 0, 'Foreign or unrelated feedback leaked into summary');
+$adapter->rows = ['feedback' => [array_replace($interestedAnswer, ['clientid' => 8])]];
+$pair = $service->enrich([$quote, array_replace($quote, ['id' => 2, 'clientid' => 8])]);
+check($pair[0]['monitoring_feedback_id'] === 0 && $pair[1]['monitoring_feedback_id'] === 0, 'Bulk feedback tenant IDs were not paired with their parent IDs');
+
+class QuoteFeedbackHistoryTestView extends Zend_View
+{
+    public DEEC_Translate $translator;
+    public function translate($key) { return $this->translator->t($key); }
+}
+class QuoteFeedbackHistoryTestOptions extends Zend_Controller_Action_Helper_Abstract
+{
+    public function getName() { return 'Options'; }
+    public function applyFormOptions($form): array { return []; }
+}
+Zend_Controller_Action_HelperBroker::addHelper(new QuoteFeedbackHistoryTestOptions());
+class QuoteFeedbackHistoryTestController extends QuoteFollowupTestQuoteController
+{
+    public function init()
+    {
+        parent::init();
+        $this->view = new QuoteFeedbackHistoryTestView();
+        $this->_flashMessenger = new class { public function getMessages(): array { return []; } };
+    }
+    protected function getAttachmentService() { return null; }
+    protected function getEmailFormFactory()
+    {
+        return new class {
+            public function build(...$args): DEEC_Form
+            {
+                $form = new DEEC_Form();
+                $form->addElement(['name' => 'subject', 'type' => 'text', 'value' => 'Original subject']);
+                $form->addElement(['name' => 'body', 'type' => 'textarea', 'value' => 'Original body']);
+                return $form;
+            }
+        };
+    }
+    protected function getEditToolbar() { return null; }
+    public function visibleQuote(int $id): ?array { return $this->loadRow($id); }
+}
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_POST = [];
+$declinedAnswer = array_replace($interestedAnswer, ['id' => 23, 'status' => 'declined', 'reason' => 'price']);
+$historyRequest = static function (array $params = []) {
+    $request = new Zend_Controller_Request_Http();
+    return $request->setModuleName('sales')->setControllerName('quote')->setActionName('view')->setParams($params + ['id' => 1]);
+};
+$adapter->rows = ['quote' => [$quote, array_replace($quote, ['id' => 2, 'clientid' => 8])], 'feedback' => array_merge([$pendingAnswer, $interestedAnswer, $openRequest, $declinedAnswer], $invalidFeedback)];
+$historyController = new QuoteFeedbackHistoryTestController($historyRequest(['history' => 1]), new Zend_Controller_Response_Http());
+$historyController->viewAction();
+$history = $historyController->view->feedbackHistory;
+check(array_column($history, 'id') === [23, 22, 21, 20], 'Detail history missing answers, order or tenant/type scope');
+check(!isset($history[1]['token']) && !str_contains(json_encode($history), str_repeat('a', 64)), 'Feedback token exposed to detail view');
+check($historyController->view->activeTab === 'messages', 'History link did not activate messages tab');
+check($historyController->view->emailForm->getValue('subject') === 'Original subject' && $historyController->view->emailForm->getValue('body') === 'Original body' && !$historyController->view->emailForm->getElement('feedback'), 'Read-only history link prepared a follow-up email');
+check($historyController->visibleQuote(2) === null, 'Foreign quote accessible through history view');
+$feedbackBefore = $adapter->rows['feedback'];
+foreach (['de_DE', 'en_US'] as $locale) {
+    $view = $historyController->view;
+    $view->translator = new DEEC_Translate($locale);
+    $view->translator->loadDir('default', $root . '/languages/' . $locale . '/default');
+    $view->setScriptPath($root . '/application/views/scripts');
+    $view->feedbackHistory = $history;
+    $html = $view->render('partials/quote-feedback.phtml');
+    check(!str_contains($html, 'FEEDBACK_') && !str_contains($html, str_repeat('a', 64)), 'History has untranslated labels or tokens');
+    check(str_contains($html, '&lt;script&gt;') && !str_contains($html, '<script>') && str_contains($html, '&amp; Grüße'), 'Customer HTML or special characters unsafe');
+    check(str_contains($html, str_repeat('Full customer message ', 30)) && str_contains($html, '<br'), 'Full message or line breaks lost');
+    check(str_contains($html, $view->translator->t('FEEDBACK_QUOTE_REASON_PRICE')), 'Decline reason missing from detail');
+    check(strpos($html, '2026-10-13') < strpos($html, '2026-10-01'), 'History not newest request first');
+    $view->feedbackHistory = [];
+    check(str_contains($view->render('partials/quote-feedback.phtml'), $view->translator->t('FEEDBACK_HISTORY_EMPTY')), 'Empty feedback history not explained');
+}
+$adapter->rows['quote'][0]['cancelled'] = 1;
+$adapter->rows['quote'][0]['state'] = 106;
+$cancelledHistory = new QuoteFeedbackHistoryTestController($historyRequest(['history' => 1]), new Zend_Controller_Response_Http());
+$cancelledHistory->viewAction();
+check(count($cancelledHistory->view->feedbackHistory) === 4 && $cancelledHistory->view->form->getMode() === 'readonly', 'Cancelled quote history unavailable or editable');
+check($adapter->rows['feedback'] === $feedbackBefore, 'Reading cancelled quote mutated feedback');
+foreach ([[], [$openRequest], [$pendingAnswer], [$pendingAnswer, $interestedAnswer], [$pendingAnswer, $openRequest]] as $entries) {
+    $adapter->rows['feedback'] = $entries;
+    $detail = new QuoteFeedbackHistoryTestController($historyRequest(['history' => 1]), new Zend_Controller_Response_Http());
+    $detail->viewAction();
+    check(count($detail->view->feedbackHistory) === count($entries), 'Entity history lost empty/open/answered/multiple request cases');
+}
+$adapter->rows['feedback'] = $feedbackBefore;
+$adapter->rows['quote'][0] = $quote;
+Zend_Registry::set('DEEC_Translate', $historyController->view->translator);
+$composer = new QuoteFeedbackHistoryTestController($historyRequest(['feedback' => 1]), new Zend_Controller_Response_Http());
+$composer->viewAction();
+check((int)$composer->view->emailForm->getValue('feedback') === 1 && $composer->view->emailForm->getValue('subject') !== 'Original subject' && $composer->view->activeTab === 'messages', 'Existing feedback=1 email preparation broken');
 
 echo 'PASS: ' . $checks . " quote monitoring, defaults, customer actions, due dates and tenant cases\n";

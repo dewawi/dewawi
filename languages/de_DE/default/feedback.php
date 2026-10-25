@@ -23,4 +23,10 @@
 	'FEEDBACK_EMAIL_QUOTE_SUBJECT' => 'Rückfrage zu unserem Angebot %s',
 	'FEEDBACK_EMAIL_QUOTE_FOLLOWUP' => '[SALUTATION]<br><br>wir möchten kurz nachfragen, wie der aktuelle Stand zu unserem Angebot %s ist.<br><br>Für eine kurze Rückmeldung können Sie einfach eine der untenstehenden Möglichkeiten auswählen.<br><br>[SIGNATURE]',
 	'FEEDBACK_QUOTE_TASK_TITLE' => 'Angebot %s nachverfolgen',
+	'FEEDBACK_HISTORY_TITLE' => 'Feedbackverlauf',
+	'FEEDBACK_HISTORY_EMPTY' => 'Noch keine Feedback-Anfragen.',
+	'FEEDBACK_HISTORY_CREATED' => 'Anfrage erstellt',
+	'FEEDBACK_HISTORY_OPEN' => 'Offen',
+	'FEEDBACK_HISTORY_ANSWERED' => 'Beantwortet',
+	'FEEDBACK_HISTORY_RESPONDED' => 'Antwort erhalten',
 );

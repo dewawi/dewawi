@@ -178,8 +178,14 @@ class Sales_Model_List_Quotes extends DEEC_List
 				if($statusLabel !== '') $parts[] = '<div>' . $this->escape($statusLabel) . '</div>';
 				if($reasonLabel !== '') $parts[] = '<div>' . $this->escape($reasonLabel) . '</div>';
 				if($feedbackMessage !== '') $parts[] = '<div>' . $this->escape($this->truncate($feedbackMessage, 80)) . '</div>';
-			} else {
+			}
+			if($this->getFieldValue($item, 'monitoring_feedback_has_open', false)) {
 				$parts[] = $this->badge('QUOTES_MONITORING_FEEDBACK_OPEN', 'info');
+			}
+			if($this->getFieldValue($item, 'monitoring_feedback_responded')) {
+				$url = $this->getView()->url(['module' => 'sales', 'controller' => 'quote', 'action' => 'view',
+					'id' => (int)$this->getFieldValue($item, 'id', 0), 'history' => 1], null, true) . '#quote-feedback-history';
+				$parts[] = '<div><a href="' . $this->escapeAttr($url) . '">' . $this->escape($this->translate('QUOTES_MONITORING_VIEW_RESPONSE')) . '</a></div>';
 			}
 		}
 

@@ -45,6 +45,11 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 	protected function getViewAssigns(array $row, $form): array
 	{
 		$assign = parent::getViewAssigns($row, $form);
+		$feedbackDb = new Application_Model_DbTable_Feedback();
+		$feedbackDb->setClientId((int)$row['clientid']);
+		$fields = array_flip(['id', 'created', 'responded', 'status', 'reason', 'message']);
+		$assign['feedbackHistory'] = array_map(static fn($entry) => array_intersect_key($entry, $fields),
+			$feedbackDb->getForEntity((int)$row['id'], 'sales', 'quote', DEEC_Feedback::TYPE_QUOTE));
 
 		if((int)$this->_getParam('feedback', 0) !== 1 || empty($assign['emailForm']) || empty($row['quoteid'])) return $assign;
 
@@ -80,6 +85,6 @@ class Sales_QuoteController extends DEEC_Controller_DocumentAction
 
 	protected function afterView(array $row, $form): void
 	{
-		if((int)$this->_getParam('feedback', 0) === 1) $this->view->activeTab = 'messages';
+		if((int)$this->_getParam('feedback', 0) === 1 || (int)$this->_getParam('history', 0) === 1) $this->view->activeTab = 'messages';
 	}
 }

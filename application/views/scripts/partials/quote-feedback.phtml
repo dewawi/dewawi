@@ -1,0 +1,21 @@
+<?php $config = (new DEEC_Feedback())->getTypeConfig(DEEC_Feedback::TYPE_QUOTE); ?>
+<div id="quote-feedback-history" class="dw-email-history">
+	<h4 class="dw-email-card__title"><?= $this->translate('FEEDBACK_HISTORY_TITLE'); ?></h4>
+	<?php if(empty($this->feedbackHistory)): ?>
+		<p><?= $this->translate('FEEDBACK_HISTORY_EMPTY'); ?></p>
+	<?php endif; ?>
+	<?php foreach($this->feedbackHistory ?? [] as $entry): ?>
+		<div class="dw-email-card">
+			<div><?= $this->translate('FEEDBACK_HISTORY_CREATED'); ?>: <?= $this->escape($entry['created'] ?? ''); ?></div>
+			<span class="dw-badge dw-badge--info"><?= $this->translate(empty($entry['responded']) ? 'FEEDBACK_HISTORY_OPEN' : 'FEEDBACK_HISTORY_ANSWERED'); ?></span>
+			<?php if(!empty($entry['responded'])): ?>
+				<div><?= $this->translate('FEEDBACK_HISTORY_RESPONDED'); ?>: <?= $this->escape($entry['responded']); ?></div>
+				<?php $status = $config['statuses'][$entry['status'] ?? ''] ?? ($entry['status'] ?? ''); ?>
+				<?php if($status !== ''): ?><div><?= $this->escape($this->translate($status)); ?></div><?php endif; ?>
+				<?php $reason = $config['reasons'][$entry['reason'] ?? ''] ?? ($entry['reason'] ?? ''); ?>
+				<?php if($reason !== ''): ?><div><?= $this->escape($this->translate($reason)); ?></div><?php endif; ?>
+				<?php if((string)($entry['message'] ?? '') !== ''): ?><p><?= nl2br($this->escape($entry['message'])); ?></p><?php endif; ?>
+			<?php endif; ?>
+		</div>
+	<?php endforeach; ?>
+</div>

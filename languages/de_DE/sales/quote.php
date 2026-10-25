@@ -100,4 +100,5 @@
 	'QUOTES_MONITORING_FOLLOWUP_NOT_DUE' => 'Nachfassen noch nicht fällig',
 	'QUOTES_MONITORING_FOLLOWUP_TODAY' => 'Nachfassen heute fällig',
 	'QUOTES_MONITORING_FOLLOWUP_OVERDUE' => 'Nachfassen überfällig',
+	'QUOTES_MONITORING_VIEW_RESPONSE' => 'Antwort ansehen',
 );
