@@ -893,7 +893,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		}
 
 		$id = (int)$this->_getParam('id', 0);
-		$direction = (string)$this->_getParam('ordering', '');
+		$direction = (string)$this->_getParam('direction', $this->_getParam('ordering', ''));
 
 		$db = $this->getDb();
 

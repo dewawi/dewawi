@@ -53,6 +53,19 @@ class TrashController extends Zend_Controller_Action
 		$targetController = ucfirst($controller);
 
 		$modelClass = $targetModule . '_Model_DbTable_' . $targetController;
+		$isPageblockController = ($module === 'admin' && $controller === 'pageblock');
+
+		if ($isPageblockController) {
+			$user = Zend_Registry::get('User');
+
+			if (empty($user['admin'])) {
+				$this->getResponse()->setHttpResponseCode(403);
+				return $this->_helper->json(['ok' => false, 'message' => 'MESSAGES_ACCESS_DENIED']);
+			}
+
+			$modelClass = Application_Model_DbTable_Pageblock::class;
+		}
+
 		if (!class_exists($modelClass)) {
 			throw new Zend_Controller_Exception("Model class {$modelClass} does not exist.");
 		}
@@ -113,6 +126,10 @@ class TrashController extends Zend_Controller_Action
 			}
 
 			$mainModel->deleteById($id);
+
+			if ($isPageblockController) {
+				$mainModel->normalizeOrderingByRow($row);
+			}
 
 			// Delete related positions
 			if ($positionsDb && method_exists($positionsDb, 'getPositions')) {

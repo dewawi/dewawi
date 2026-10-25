@@ -1299,6 +1299,11 @@ function trash(ids, message, type, cmodule) {
 
 				if (!deletedIds.length) return;
 
+				if (cmodule === 'admin' && type === 'pageblock') {
+					location.reload();
+					return;
+				}
+
 				if(action == 'edit') {
 					deletedIds.forEach(function(singleId) {
 						$('.dw-multiform__item[data-module="' + cmodule + '"][data-controller="' + type + '"][data-id="' + singleId + '"]').remove();

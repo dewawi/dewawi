@@ -23,7 +23,7 @@ class Admin_Model_List_Pageblocks extends DEEC_List
 				'name' => 'title',
 				'label' => 'ADMIN_TITLE',
 				'type' => 'link',
-				'fallback_field' => 'type',
+				'fallback_field' => 'typelabel',
 				'class' => 'dw-col-title',
 			],
 			[
@@ -35,7 +35,10 @@ class Admin_Model_List_Pageblocks extends DEEC_List
 			[
 				'name' => 'activated',
 				'label' => 'ADMIN_ACTIVATED',
-				'type' => 'checkbox',
+				'type' => 'state_badge',
+				'option_key' => 'activated',
+				'state_map' => ['0' => 'default', '1' => 'completed'],
+				'editable' => function () { return false; },
 				'class' => 'dw-col-activated',
 			],
 			[

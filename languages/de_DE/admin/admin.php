@@ -29,6 +29,8 @@
 	'ADMIN_CODE' => 'Code',
 	'ADMIN_DESCRIPTION' => 'Beschreibung',
 	'ADMIN_ACTIVE' => 'Aktiv',
+	'ADMIN_INACTIVE' => 'Inaktiv',
+	'ADMIN_TYPE' => 'Typ',
 	'ADMIN_DEFAULT' => 'Standard',
 	'ADMIN_CLIENT' => 'Mandant',
 	'ADMIN_CLIENTS' => 'Mandanten',

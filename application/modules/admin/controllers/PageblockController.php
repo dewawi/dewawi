@@ -27,6 +27,10 @@ class Admin_PageblockController extends DEEC_Controller_AdminAction
 		$parentId = (int)$this->_getParam('parentid', 0);
 		$type = trim((string)$this->_getParam('type', ''));
 
+		if ($parentId < 0) {
+			throw new RuntimeException('Invalid parent page block');
+		}
+
 		$pageDb = new Admin_Model_DbTable_Page();
 
 		if (!$pageDb->getById($pageId)) {
@@ -127,6 +131,23 @@ class Admin_PageblockController extends DEEC_Controller_AdminAction
 		}
 
 		return $values;
+	}
+
+	protected function afterCopy(int $oldId, int $newId, array $oldRow, array $newRow): void
+	{
+		$db = $this->getDb();
+		$children = $db->getBlocksByPageId((int)$oldRow['pageid'], false, $oldId);
+
+		foreach ($children as $child) {
+			$oldChildId = (int)$child['id'];
+			unset($child['id'], $child['created'], $child['createdby'], $child['modified'], $child['modifiedby']);
+			$child['parentid'] = $newId;
+			$child['locked'] = 0;
+			$child['lockedtime'] = null;
+
+			$newChildId = $db->create($child);
+			$this->afterCopy($oldChildId, $newChildId, $child, []);
+		}
 	}
 
 	private function decodeBlockData($data): array

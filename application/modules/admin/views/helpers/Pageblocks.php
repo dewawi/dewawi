@@ -38,6 +38,7 @@ class Zend_View_Helper_Pageblocks extends Zend_View_Helper_Abstract
 			'view' => $this->view,
 			'module' => 'admin',
 			'controller' => 'pageblock',
+			'options' => ['activated' => ['0' => 'ADMIN_INACTIVE', '1' => 'ADMIN_ACTIVE']],
 			'toolbarInline' => $toolbarInline,
 			'context' => [
 				'user' => $this->view->user,

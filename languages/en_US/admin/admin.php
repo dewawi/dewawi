@@ -53,6 +53,8 @@
 	'ADMIN_LOGO' => 'Logo',
 	'ADMIN_MENU' => 'Menu',
 	'ADMIN_ACTIVE' => 'Active',
+	'ADMIN_INACTIVE' => 'Inactive',
+	'ADMIN_TYPE' => 'Type',
 	'ADMIN_PASSWORD' => 'Password',
 	'ADMIN_MAIN_CATEGORY' => 'Main category',
 	'ADMIN_PARENT_CATEGORY' => 'Parent category',
