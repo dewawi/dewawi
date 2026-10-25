@@ -46,6 +46,8 @@ Zusätzlich zu den bei Arbeitsbeginn vorhandenen Änderungen wurden folgende Dat
 - `tests/documents/calculation-db.php`
 - `tests/documents/calculation-db.py`
 - `tests/documents/pdf-totals.php`
+- `tests/documents/calculation-ui.html`
+- `tests/documents/calculation-ui.py`
 - `tests/documents/calculation-review.md`
 
 ## Ausgeführte Prüfungen
@@ -65,6 +67,16 @@ php tests/security/document-edits.php
 
 Zusätzlich erfolgreich: PHP-Syntaxprüfung aller betroffenen PHP-Dateien, `git diff --check`, vollständiges Parsen von `js/global.js` und eine JavaScript-Simulation vertauschter Positionsantworten.
 
+Die anschließende Prüfung mit echtem Chromium hat zwei zusätzliche Oberflächenfehler aufgedeckt und abgesichert: Die sofortige Summenaktualisierung erreichte bei mehreren Positionsgruppen nur die erste Anzeige, und fehlgeschlagene Positionsspeicherungen wurden nicht als ungespeicherte Änderungen markiert. `js/global.js` aktualisiert jetzt alle vorhandenen Summenanzeigen und markiert Positionsänderungen vor der Anfrage als ungespeichert. Ein Netzwerkfehler beim Speichern wird dem Benutzer ausdrücklich angezeigt.
+
+Die neue Browser-Fixture verwendet die echten jQuery- und formatCurrency-Dateien sowie `js/global.js`. Sie prüft 26 Fälle, darunter vier Nachkommastellen bei Preis und Menge, Haupt-/Unterpositionszuordnung, Preisregelbetrag und Vererbung, Steuerbefreiung an/aus, Summen in mehreren Gruppen, fehlgeschlagene Speicherungen, Netzwerkfehler, vertauschte Positionsantworten und die Anzeige der PDF-Vorschau. AJAX-Antworten werden in dieser Fixture gezielt vorgegeben; sie führt keine Schreibzugriffe auf die Anwendung aus. Beide Browser-Fixtures wurden erfolgreich ausgeführt:
+
+```sh
+python3 tests/documents/calculation-ui.py
+```
+
+Das Skript führt `notes-ui.html` und `calculation-ui.html` jeweils mit einem temporären Chromium-Profil aus und liefert bei einer fehlgeschlagenen Prüfung einen Fehlerstatus zurück. Es benötigt das lokal vorhandene Chromium und Python 3.
+
 Der zusätzliche Integrationstest wurde mit einer separaten MariaDB 10.11 unter `/tmp` ausgeführt. Die Instanz hatte ausschließlich einen lokalen Unix-Socket und keinen Netzwerk-Listener. Geprüft wurden echte DECIMAL-Speicherung, Preisregeln, Steuerbefreiung, Transaktions-Rollback nach einem Berechnungsfehler, Warten auf die Dokumentsperre, zwei gleichzeitige Fertigstellungen desselben Dokuments und Ablehnung eines veralteten Positionsspeicherversuchs nach Fertigstellung. Alle Prüfungen waren erfolgreich. Die Testinstanz und ihre Daten wurden danach entfernt; vorhandene Datenbanken wurden nicht verwendet.
 
 Die aufbewahrte Fassung lässt sich mit folgendem Befehl erneut ausführen:
@@ -81,6 +93,8 @@ Es gibt keine Schemaänderung und keine neue Anwendungsabhängigkeit. Die besteh
 
 An Rundungsgrenzen können Entwurfssummen gegenüber der bisherigen ungerundeten Steuerspeicherung um Centbeträge abweichen. Die Steuergruppen und die angezeigte Endsumme stimmen anschließend überein. Ausgestellte historische Dokumente werden nicht nachträglich korrigiert. Synchrone Positionsänderungen können die Oberfläche während einer langsamen Speicheranfrage kurz blockieren.
 
-Nicht ausgeführt wurde ein vollständiger Browser-End-to-End-Durchlauf mit einem angemeldeten Testmandanten, allen Vorlagen und sämtlichen externen Integrationen. Die Datenbank-Nebenläufigkeit wurde für die oben beschriebenen Szenarien geprüft. Daraus folgt keine uneingeschränkte 100%-Garantie für alle denkbaren Abläufe, direkte Datenbankänderungen oder externe Schreibwege.
+Nicht ausgeführt wurde ein vollständiger Browser-End-to-End-Durchlauf mit einem angemeldeten Testmandanten, allen Vorlagen und sämtlichen externen Integrationen. Die vom Benutzer genannte lokale Adresse `http://127.0.0.1:8080/` wurde lesend geprüft und leitet zur Anmeldung weiter. Für Änderungen in dieser Instanz fehlen noch eine zugängliche Testsitzung und der freigegebene Testmandant. Die Datenbank-Nebenläufigkeit wurde für die oben beschriebenen Szenarien geprüft. Daraus folgt keine uneingeschränkte 100%-Garantie für alle denkbaren Abläufe, direkte Datenbankänderungen oder externe Schreibwege.
 
 Vorgeschlagene Commit-Nachricht: `fix document totals, tax exemption and price rule recalculation`
+
+Commit-Nachricht für die anschließenden Browserkorrekturen: `fix document total displays and failed position save state`

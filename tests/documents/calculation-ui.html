@@ -1,0 +1,139 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Document calculation UI regression</title>
+<!-- Open locally in a browser; real application JavaScript/widgets, captured AJAX only. -->
+<div class="edit">
+  <form id="quote-overview-form">
+    <input name="subject" value="Fixture document">
+    <input type="checkbox" name="taxfree" id="taxfree" value="1">
+    <select name="templateid" id="templateid"><option value="1">Fixture template</option></select>
+  </form>
+  <div class="dw-positions" data-parent="quote" data-type="pos">
+    <section class="dw-position-set" data-setid="1">
+      <article class="dw-position-card is-master" data-id="10">
+        <input name="price" class="number" value="100,00">
+        <input name="quantity" class="number" value="2,00">
+        <input type="checkbox" name="pricerulemaster" value="1" checked>
+        <input type="checkbox" class="position-check" name="ids[]" value="10">
+        <div class="dw-position-total total">180,00 €</div>
+        <div class="dw-multiform__item" data-id="20" data-module="items" data-controller="pricerulepos">
+          <input name="amount" class="number" value="10,00" data-id="20" data-module="items" data-controller="pricerulepos">
+          <select name="action" data-id="20" data-module="items" data-controller="pricerulepos"><option value="bypercent">Discount</option><option value="tofixed">Surcharge</option></select>
+        </div>
+        <div class="dw-position-children">
+          <div class="dw-position-card is-child" data-id="11" data-masterid="10">
+            <input name="price" class="number" value="20,00">
+            <input name="quantity" class="number" value="3,00">
+          </div>
+        </div>
+      </article>
+      <strong id="subtotal">234,00 €</strong><strong data-rate="19">44,46 €</strong><strong id="total">278,46 €</strong>
+    </section>
+    <section class="dw-position-set" data-setid="2">
+      <strong id="subtotal">234,00 €</strong><strong data-rate="19">44,46 €</strong><strong id="total">278,46 €</strong>
+    </section>
+  </div>
+</div>
+<div id="output"></div>
+<div id="content"></div>
+<pre id="result">RUNNING</pre>
+<script src="../../library/jQuery/jquery-1.12.4.min.js"></script>
+<script src="../../library/jQuery/jquery.cookie.js"></script>
+<script src="../../library/jQuery/formatCurrency/jquery.formatCurrency-1.4.0.min.js"></script>
+<script src="../../library/jQuery/formatCurrency/i18n/jquery.formatCurrency.de.js"></script>
+<script>
+var language = 'de', module = 'sales', controller = 'quote', action = 'edit';
+var baseUrl = '/fixture', id = 1, cookiePath = '/', calls = [], loads = [], failures = [], checks = 0;
+var failSave = false, failNetwork = false;
+var calculation = { subtotal: '300,00 €', total: '357,00 €', taxes: { 19: '57,00 €', total: '57,00 €' }, 10: { total: '270,00 €' }, 11: { total: '30,00 €' } };
+window.addEventListener('error', function(event) { failures.push(event.message); });
+$.fn.datepicker = function() { return this; };
+function autosize() {}
+$.ajax = function(options) {
+  calls.push({ url: options.url, data: $.extend({}, options.data), dirty: isDirty, async: options.async });
+  if (options.url.indexOf('/position/index/') !== -1) {
+    loads.push(options);
+  } else if (options.url.indexOf('/preview/') !== -1) {
+    if (options.success) options.success({ ok: true, url: '/fixture/current-preview.pdf' });
+  } else if (failNetwork) {
+    if (options.error) options.error({ status: 500 });
+  } else {
+    var response = failSave ? { ok: false, message: 'save_failed' } : { ok: true, values: options.data, display: options.data, calculation: calculation, reloadPositions: true };
+    if (options.success) options.success(response);
+  }
+  return $.Deferred().resolve().promise();
+};
+</script>
+<script src="../../js/global.js"></script>
+<script>
+$(function() {
+  function check(condition, message) { checks++; if (!condition) failures.push(message); }
+  function saves() { return calls.filter(function(call) { return call.url.indexOf('/edit') !== -1; }); }
+  function reset() { calls = []; loads = []; Dewawi.setDirty(false); }
+  function change(selector, value) { $(selector).val(value).trigger('change'); }
+
+  reset();
+  change('.is-master > input[name="price"]', '12,3456');
+  check(saves().length === 1 && saves()[0].url === '/fixture/sales/position/edit/id/10/parent/quote/type/pos/parentid/1', 'Price change did not target its position exactly once');
+  check(saves().length === 1 && saves()[0].data.price === '12,3456 €', 'Price lost precision before AJAX');
+  check(saves().length === 1 && saves()[0].dirty, 'Position was not marked dirty before saving');
+  check(saves().length === 1 && saves()[0].async === false, 'Position save can overtake finalization');
+  check(!isDirty && loads.length === 1, 'Successful position save did not refresh positions');
+  $('[id="subtotal"]').each(function() { check($(this).text() === calculation.subtotal, 'One group retained an outdated subtotal'); });
+  $('[id="total"]').each(function() { check($(this).text() === calculation.total, 'One group retained an outdated total'); });
+
+  reset();
+  change('.is-child input[name="quantity"]', '1,2345');
+  check(saves().length === 1 && saves()[0].url.indexOf('/id/11/') !== -1, 'Child quantity saved to the master');
+  check(saves().length === 1 && saves()[0].data.quantity === '1,2345 €', 'Quantity lost precision before AJAX');
+
+  reset();
+  change('.dw-multiform__item input[name="amount"]', '12,50');
+  check(saves().length === 1 && saves()[0].url === '/fixture/items/pricerulepos/edit/id/20', 'Price rule amount saved to the wrong row');
+  check(saves().length === 1 && saves()[0].data.amount === '12,50 €', 'Localized rule amount changed');
+  check(loads.length === 1, 'Price rule edit did not refresh inherited child totals');
+
+  reset();
+  $('.is-master > input[name="pricerulemaster"]').prop('checked', false).trigger('change');
+  check(saves().length === 1 && saves()[0].data.pricerulemaster === 0, 'Disabling rule inheritance did not send zero');
+
+  reset();
+  $('#taxfree').prop('checked', true).trigger('change');
+  check(saves().length === 1 && saves()[0].url === '/fixture/sales/quote/edit/id/1' && saves()[0].data.taxfree === 1, 'Tax exemption did not save the document');
+  check(loads.length === 1, 'Tax exemption did not reload tax groups');
+  reset();
+  $('#taxfree').prop('checked', false).trigger('change');
+  check(saves().length === 1 && saves()[0].data.taxfree === 0, 'Removing tax exemption did not send zero');
+
+  reset();
+  $('.position-check').prop('checked', true).trigger('change');
+  check(saves().length === 0, 'Selecting a position caused a save');
+
+  reset();
+  failSave = true;
+  change('.is-master > input[name="price"]', '99,9999');
+  check(isDirty, 'Failed position save cleared the unsaved-change state');
+  check(loads.length === 0, 'Failed save reloaded and discarded the entered value');
+  failSave = false;
+
+  reset();
+  failNetwork = true;
+  change('.is-child input[name="quantity"]', '2,3456');
+  check(isDirty, 'Network failure left the document apparently saved');
+  check($('#messages').length > 0, 'Network failure was not shown to the user');
+  failNetwork = false;
+
+  reset();
+  getPositions('quote', 'pos');
+  getPositions('quote', 'pos');
+  loads[1].success('<span class="current">Current totals</span>');
+  loads[0].success('<span class="outdated">Outdated totals</span>');
+  check($('.current').length === 1 && $('.outdated').length === 0, 'Older response replaced newer position totals');
+
+  reset();
+  previewPdf();
+  check(calls.length === 1 && calls[0].url === '/fixture/sales/quote/preview/id/1/templateid/1', 'PDF preview targeted a different document');
+  check($('#output iframe').attr('src') === '/fixture/current-preview.pdf', 'PDF preview URL was not displayed');
+  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' calculation browser checks');
+});
+</script>

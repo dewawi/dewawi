@@ -1422,8 +1422,8 @@ function applyCalculation(calculation) {
 		return;
 	}
 
-	$('#subtotal').text(calculation.subtotal);
-	$('#total').text(calculation.total);
+	$('[id="subtotal"]').text(calculation.subtotal);
+	$('[id="total"]').text(calculation.total);
 
 	$.each(calculation.taxes, function(rate, value) {
 		if (rate !== 'total') {
@@ -1443,6 +1443,7 @@ function applyCalculation(calculation) {
 //Edit position
 function editPosition(parent, type, data, params) {
 	var url;
+	Dewawi.setDirty(true);
 
 	if (params.controller === 'pricerulepos') {
 		url = baseUrl + '/' + params.module + '/' + params.controller + '/edit/id/' + params.id;
@@ -1476,6 +1477,9 @@ function editPosition(parent, type, data, params) {
 			Dewawi.setDirty(false);
 
 			applySaveResponse(response, parent, type, window.pageYOffset);
+		},
+		error: function() {
+			pushMessages(['Speichern fehlgeschlagen.']);
 		}
 	});
 }
