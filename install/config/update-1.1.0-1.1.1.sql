@@ -177,7 +177,6 @@ ALTER TABLE `contact` ADD INDEX(`deleted`);
 
 ALTER TABLE `address` ADD INDEX(`type`);
 ALTER TABLE `address` ADD INDEX(`department`);
-ALTER TABLE `address` ADD INDEX(`street`);
 ALTER TABLE `address` ADD INDEX(`postcode`);
 ALTER TABLE `address` ADD INDEX(`city`);
 ALTER TABLE `address` ADD INDEX(`country`);

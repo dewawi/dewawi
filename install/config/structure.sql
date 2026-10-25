@@ -31,7 +31,6 @@ CREATE TABLE IF NOT EXISTS `address` (
   KEY (parentid),
   KEY (type),
   KEY (department),
-  KEY (street),
   KEY (postcode),
   KEY (city),
   KEY (country)
