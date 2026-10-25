@@ -430,14 +430,6 @@ class Zend_Session extends Zend_Session_Abstract
      */
     public static function start($options = false)
     {
-        // Check to see if we've been passed an invalid session ID
-        if ( self::getId() && !self::_checkId(self::getId()) ) {
-            // Generate a valid, temporary replacement
-            self::setId(md5(self::getId()));
-            // Force a regenerate after session is started
-            self::$_regenerateIdState = -1;
-        }
-
         if (self::$_sessionStarted && self::$_destroyed) {
             require_once 'Zend/Session/Exception.php';
             throw new Zend_Session_Exception('The session was explicitly destroyed during this request, attempting to re-start is not allowed.');
@@ -445,6 +437,14 @@ class Zend_Session extends Zend_Session_Abstract
 
         if (self::$_sessionStarted) {
             return; // already started
+        }
+
+        // Validate only before startup; PHP may resume an ID with an older character set.
+        if ( self::getId() && !self::_checkId(self::getId()) ) {
+            // Generate a valid, temporary replacement
+            self::setId(md5(self::getId()));
+            // Force a regenerate after session is started
+            self::$_regenerateIdState = -1;
         }
 
         // make sure our default options (at the least) have been set
