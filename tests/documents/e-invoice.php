@@ -189,4 +189,182 @@ $adapter->rows = $fixture;
 $adapter->rows['permission'][0]['sales'] = '{"invoice":["edit"]}';
 try { $service->prepareEInvoice(1, $export); throw new LogicException('Missing view permission was accepted'); }
 catch (RuntimeException $expected) { check($expected->getMessage() === 'Invoice access denied', 'Unexpected permission failure'); }
-echo 'PASS: ' . $checks . " e-invoice data preflight checks; calculation reuse, tax/payment conditions, snapshots, tenant isolation and no writes\n";
+// XML generation reuses preparation and must leave the original invoice/PDF untouched.
+$adapter->rows = $fixture;
+Zend_Registry::set('User', ['id' => 42, 'clientid' => 7]);
+$xmlService = new Sales_Service_XRechnungService();
+$originalPdf = tempnam(sys_get_temp_dir(), 'dewawi-einvoice-original-');
+file_put_contents($originalPdf, "%PDF-1.4\nUnchanged original\n%%EOF\n");
+register_shutdown_function(static function () use ($originalPdf): void { unlink($originalPdf); });
+$xmlDirectory = $argv[1] ?? null;
+if ($xmlDirectory !== null) {
+    if (!str_starts_with($xmlDirectory, '/tmp/dewawi-xrechnung-')) throw new InvalidArgumentException('Only temporary XML fixture directories are accepted');
+    if (!is_dir($xmlDirectory)) mkdir($xmlDirectory, 0775, true);
+}
+function generateInvoice(array $export): array
+{
+    global $adapter, $xmlService, $originalPdf;
+    $before = [$adapter->rows, $adapter->writes, hash_file('sha256', $originalPdf), filemtime($originalPdf)];
+    $currency = serialize(Zend_Registry::get('Zend_Currency'));
+    try { return $xmlService->generate(1, $export); }
+    finally {
+        check([$adapter->rows, $adapter->writes, hash_file('sha256', $originalPdf), filemtime($originalPdf)] === $before, 'XML export changed database records or original PDF');
+        check(serialize(Zend_Registry::get('Zend_Currency')) === $currency, 'XML export changed PDF currency context');
+    }
+}
+function invoiceXml(array $export, string $name): DOMXPath
+{
+    global $xmlDirectory;
+    $result = generateInvoice($export);
+    check($result['valid'] && is_string($result['xml']), 'XML generation failed: ' . json_encode($result['errors']));
+    $document = new DOMDocument();
+    check($document->loadXML($result['xml'], LIBXML_NONET), 'Generated XML is not well-formed');
+    check($document->documentElement->namespaceURI === 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2', 'Wrong UBL root namespace');
+    $xpath = new DOMXPath($document);
+    $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+    $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+    check($xpath->evaluate('string(/*/cbc:CustomizationID)') === 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0', 'Wrong XRechnung customization');
+    check($xpath->evaluate('string(/*/cbc:InvoiceTypeCode)') === '380', 'Wrong invoice type');
+    check($xpath->evaluate('count(//cac:AllowanceCharge)') === 0.0, 'Already applied discounts were deducted a second time');
+    if ($xmlDirectory !== null) file_put_contents($xmlDirectory . '/' . $name . '.xml', $result['xml']);
+    return $xpath;
+}
+
+$xpath = invoiceXml($export, 'standard-s-58');
+check($xpath->evaluate('count(/*/cac:InvoiceLine)') === 2.0, 'XML lost invoice lines');
+check($xpath->evaluate('string(/*/cac:InvoiceLine[1]/cac:Price/cbc:PriceAmount)') === '90', 'XML changed the effective discounted price');
+check($xpath->evaluate('string(/*/cac:InvoiceLine[2]/cac:Price/cbc:PriceAmount)') === '18', 'XML lost inherited discount');
+check($xpath->evaluate('string(/*/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount)') === '278.46', 'XML changed gross amount');
+check($xpath->evaluate('string(/*/cac:InvoiceLine[1]/cbc:InvoicedQuantity/@unitCode)') === 'H87', 'XML lost unit code');
+check($xpath->evaluate('string(/*/cac:AccountingSupplierParty/cac:Party/cbc:EndpointID/@schemeID)') === 'EM', 'XML lost endpoint scheme');
+
+// A single line is also a complete ordinary invoice.
+$adapter->rows['invoicepos'] = [$fixture['invoicepos'][0]];
+$adapter->rows['invoice'][0] = array_replace($fixture['invoice'][0], ['subtotal' => 180, 'taxes' => 34.20, 'total' => 214.20]);
+$xpath = invoiceXml($export, 'single-s-58');
+check($xpath->evaluate('count(/*/cac:InvoiceLine)') === 1.0, 'Single-line invoice failed');
+
+$adapter->rows = $fixture;
+$adapter->rows['invoicepos'][1]['taxrate'] = 7;
+$adapter->rows['invoicepos'][1]['total'] = 57.78;
+$adapter->rows['invoice'][0]['taxes'] = 37.98;
+$adapter->rows['invoice'][0]['total'] = 271.98;
+$adapter->rows['client'][0]['company'] = 'Müller & Söhne <GmbH>';
+$adapter->rows['invoice'][0]['billingname1'] = 'Käufer & Partner';
+$adapter->rows['invoicepos'][0]['title'] = 'Öl & Zubehör <Spezial>';
+$adapter->rows['invoicepos'][0]['description'] = 'Größe "Ä" > 1';
+$xpath = invoiceXml($export + ['period_start' => '2026-10-01', 'period_end' => '2026-10-24'], 'mixed-s-58');
+check($xpath->evaluate('count(/*/cac:TaxTotal/cac:TaxSubtotal)') === 2.0, 'Mixed tax groups were merged');
+check($xpath->evaluate('string(/*/cac:TaxTotal/cbc:TaxAmount)') === '37.98', 'Mixed VAT amount was changed');
+check($xpath->evaluate('string(/*/cac:InvoiceLine[1]/cac:Item/cbc:Name)') === 'Öl & Zubehör <Spezial>', 'XML did not escape/restore special characters');
+check($xpath->evaluate('string(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName)') === 'Müller & Söhne <GmbH>', 'XML lost seller umlauts');
+check($xpath->evaluate('string(/*/cac:InvoicePeriod/cbc:StartDate)') === '2026-10-01', 'Service period was lost');
+
+$adapter->rows = $fixture;
+$adapter->rows['invoice'][0]['prepayment'] = 100;
+$transfer = $export;
+$transfer['payment']['means_code'] = '30';
+$transfer['payment']['terms'] = '14 Tage netto';
+$xpath = invoiceXml($transfer, 'standard-s-30');
+check($xpath->evaluate('string(/*/cac:LegalMonetaryTotal/cbc:PrepaidAmount)') === '100.00' && $xpath->evaluate('string(/*/cac:LegalMonetaryTotal/cbc:PayableAmount)') === '178.46', 'Advance payment was changed');
+
+$adapter->rows = $fixture;
+$adapter->rows['invoice'][0]['prepayment'] = 278.46;
+$cash = array_replace($export, ['payment' => ['means_code' => '10', 'terms' => 'Bereits bar bezahlt']]);
+$xpath = invoiceXml($cash, 'standard-s-10');
+check($xpath->evaluate('count(//cac:PayeeFinancialAccount)') === 0.0 && $xpath->evaluate('string(/*/cac:LegalMonetaryTotal/cbc:PayableAmount)') === '0.00', 'Cash payment invented account or balance');
+
+$adapter->rows = $fixture;
+$adapter->rows['invoice'][0]['prepayment'] = 300;
+$xpath = invoiceXml($export, 'overpaid-s-58');
+check($xpath->evaluate('string(/*/cac:LegalMonetaryTotal/cbc:PayableAmount)') === '-21.54', 'XML clamped the signed payload balance');
+
+// Effective prices can be much smaller than their stored list price after price rules.
+$adapter->rows = $fixture;
+$adapter->rows['invoicepos'] = [array_replace($position, ['price' => 0.0001, 'quantity' => 10000000, 'total' => 1.19])];
+$adapter->rows['pricerulepos'][0]['amount'] = 99.9;
+$adapter->rows['invoice'][0] = array_replace($fixture['invoice'][0], ['subtotal' => 1, 'taxes' => 0.19, 'total' => 1.19]);
+$xpath = invoiceXml($export, 'fractional-price-s-58');
+$serializedPrice = $xpath->evaluate('string(/*/cac:InvoiceLine/cac:Price/cbc:PriceAmount)');
+check(!str_contains(strtolower($serializedPrice), 'e') && (float)$serializedPrice > 0 && (float)$serializedPrice < 0.0001, 'XML rounded a small effective price or used scientific notation');
+
+$adapter->rows = $fixture;
+$adapter->rows['invoice'][0]['vatin'] = 'DE987654321';
+$taxRegistration = $export;
+$taxRegistration['seller'] = array_replace($taxRegistration['seller'], ['vat_id' => '', 'tax_id' => '12/345/67890', 'identifier' => 'SUPPLIER-123']);
+$xpath = invoiceXml($taxRegistration, 'seller-tax-id');
+check($xpath->evaluate('string(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cac:TaxScheme/cbc:ID)') === 'FC', 'Seller tax registration was incorrectly serialized as VAT ID');
+check($xpath->evaluate('string(/*/cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)') === 'DE987654321', 'Buyer VAT identification was lost');
+
+foreach (['Z', 'E'] as $category) {
+    $adapter->rows = $fixture;
+    $adapter->rows['invoice'][0] = array_replace($fixture['invoice'][0], ['taxfree' => 1, 'taxes' => 0, 'total' => 234]);
+    $adapter->rows['invoicepos'][0]['total'] = 180;
+    $adapter->rows['invoicepos'][1]['total'] = 54;
+    $zero = $export + ['tax' => ['category' => $category, 'exemption_reason' => $category === 'E' ? 'Steuerbefreiung nach § 4 Nr. 14 UStG' : '']];
+    $xpath = invoiceXml($zero, 'standard-' . strtolower($category) . '-58');
+    check($xpath->evaluate('string(/*/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID)') === $category, 'Zero VAT category was changed');
+    check($xpath->evaluate('string(/*/cac:TaxTotal/cbc:TaxAmount)') === '0.00', 'Tax-free XML invented VAT');
+    foreach (['30', '10'] as $code) {
+        $zero['payment'] = $code === '10' ? ['means_code' => '10', 'terms' => 'Zahlung bei Erhalt'] : array_replace($export['payment'], ['means_code' => '30']);
+        invoiceXml($zero, 'standard-' . strtolower($category) . '-' . $code);
+    }
+}
+
+// FIN-03 errors remain unchanged and no XML is emitted for failed preparation.
+$adapter->rows = $fixture;
+$expected = $service->prepareEInvoice(1, [], 'xrechnung');
+$result = generateInvoice([]);
+check(!$result['valid'] && $result['xml'] === null && $result['errors'] === $expected['errors'], 'XML export replaced FIN-03 errors');
+foreach ([['state' => 100, 'completed' => 0], ['completed' => 0], ['state' => 106, 'cancelled' => 1]] as $lifecycle) {
+    $adapter->rows = $fixture;
+    $adapter->rows['invoice'][0] = array_replace($fixture['invoice'][0], $lifecycle);
+    $result = generateInvoice($export);
+    check(!$result['valid'] && $result['xml'] === null && invoiceHasError($result, 'state'), 'Draft/incomplete/cancelled invoice was exported');
+}
+foreach (['AE', 'K', 'G', 'O'] as $category) {
+    $adapter->rows = $fixture;
+    $result = generateInvoice($export + ['tax' => ['category' => $category]]);
+    check(!$result['valid'] && $result['xml'] === null, 'Unsupported tax case was exported');
+}
+foreach (['currency' => 'USD', 'billingcountry' => 'AT'] as $field => $value) {
+    $adapter->rows = $fixture;
+    $adapter->rows['invoice'][0][$field] = $value;
+    if ($field === 'currency') foreach ($adapter->rows['invoicepos'] as &$line) $line['currency'] = $value;
+    unset($line);
+    $result = generateInvoice($export);
+    check(!$result['valid'] && $result['xml'] === null, 'Unsupported export scope was accepted');
+}
+$adapter->rows = $fixture;
+foreach ([['business_process' => 'unknown'], ['buyer' => ['endpoint_scheme' => '0088', 'endpoint' => '1234567890128']], ['seller' => ['vat_id' => 'DE123']], ['seller' => ['contact_phone' => 'abc']], ['payment' => ['terms' => '#SKONTO#INVALID#']]] as $metadata) {
+    $result = generateInvoice(array_replace_recursive($export, $metadata));
+    check(!$result['valid'] && $result['xml'] === null, 'Unsupported profile/address or invalid tax/contact data was exported');
+}
+$adapter->rows['bankaccount'][0]['bic'] = 'INVALID';
+check(generateInvoice($export)['xml'] === null, 'Invalid BIC was emitted');
+$adapter->rows = $fixture;
+$adapter->rows['invoice'][0]['total'] = 999;
+check(generateInvoice($export)['xml'] === null, 'Contradictory totals were exported');
+
+// FIN-03's historical half-cent tolerance is insufficient for serialized XML totals.
+$adapter->rows = $fixture;
+$adapter->rows['invoicepos'] = [array_replace($position, ['price' => 0.025, 'quantity' => 1, 'total' => 0.04])];
+$adapter->rows['pricerulepos'] = [];
+$adapter->rows['invoice'][0] = array_replace($fixture['invoice'][0], ['subtotal' => 0.03, 'taxes' => 0.01, 'total' => 0.04, 'prepayment' => 0.000001]);
+check(generateInvoice($export)['xml'] === null, 'A non-cent prepayment was rounded silently');
+$adapter->rows = $fixture;
+$adapter->rows['invoicepos'][0]['title'] = "Invalid\x01text";
+check(generateInvoice($export)['xml'] === null, 'XML 1.0 control character was emitted');
+
+foreach (['clientid' => 8, 'deleted' => 1] as $field => $value) {
+    $adapter->rows = $fixture;
+    $adapter->rows['invoice'][0][$field] = $value;
+    try { generateInvoice($export); throw new LogicException('Foreign/deleted XML was exported'); }
+    catch (RuntimeException $expected) { check($expected->getMessage() === 'Invoice not found', 'Unexpected XML tenant failure'); }
+}
+$adapter->rows = $fixture;
+$adapter->rows['permission'][0]['sales'] = '{}';
+try { generateInvoice($export); throw new LogicException('XML without permission was exported'); }
+catch (RuntimeException $expected) { check($expected->getMessage() === 'Invoice access denied', 'Unexpected XML permission failure'); }
+
+echo 'PASS: ' . $checks . " e-invoice preparation and UBL XML checks; discounts, tax groups, escaping, lifecycle, permissions and unchanged originals\n";
