@@ -184,14 +184,12 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				foreach($attachmentsObject as $attachment) $attachmentsAvailable[$attachment['id']] = $attachment;
 
 				if(isset($data['files'])) {
-					$directoryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Directory');
-					if($data['module'] == 'contacts') $url = $directoryHelper->getUrl($recipient['contactid']);
-					else $url = $directoryHelper->getUrl($documentid);
+					if(!is_array($data['files'])) throw new InvalidArgumentException('Invalid email attachments');
 					foreach($data['files'] as $file) {
-						if(file_exists($attachmentsAvailable[$file]['location'].'/'.$attachmentsAvailable[$file]['filename'])) {
-							array_push($attachmentsSent, $attachmentsAvailable[$file]['filename']);
-							$attachmentPaths[] = $attachmentsAvailable[$file]['location'].'/'.$attachmentsAvailable[$file]['filename'];
-						}
+						$id = filter_var($file, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+						if(!$id || !isset($attachmentsAvailable[$id])) throw new RuntimeException('Email attachment is not available');
+						$attachmentPaths[] = DEEC_Emailattachment::getPath($attachmentsAvailable[$id]);
+						$attachmentsSent[] = $attachmentsAvailable[$id]['filename'];
 					}
 				}
 			}

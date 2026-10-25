@@ -44,11 +44,7 @@ $uploadUrl = $this->baseUrl()
 										$attachmentId = (int) $attachment['id'];
 										$filename = (string) $attachment['filename'];
 
-										$attachmentUrl = $this->baseUrl()
-											. '/files/attachments/' . rawurlencode((string) $attachment['module'])
-											. '/' . rawurlencode((string) $attachment['controller'])
-											. '/' . ltrim((string) $this->documentUrl, '/')
-											. '/' . rawurlencode($filename);
+										$attachmentUrl = $this->baseUrl() . '/contacts/attachment/download/id/' . $attachmentId;
 										?>
 										<div id="attachment<?= $attachmentId; ?>" class="dw-attachment-item">
 											<label class="dw-attachment-item__select">

@@ -43,7 +43,7 @@ $(document).ready(function () {
 				</label>
 
 				<a class="dw-attachment-item__link"
-				   href="/files/attachments/<?= $this->escape($attachment['module']); ?>/<?= $this->escape($attachment['controller']); ?>/<?= $this->documentUrl; ?>/<?= rawurlencode($attachment['filename']); ?>"
+				   href="<?= $this->baseUrl(); ?>/contacts/attachment/download/id/<?= (int)$id; ?>"
 				   target="_blank"
 				   rel="noopener">
 					<span class="dw-attachment-item__name"><?= $this->escape($attachment['filename']); ?></span>

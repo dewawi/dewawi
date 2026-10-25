@@ -238,6 +238,14 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		$router->registerRoutes($siteContext);
 	}
 
+	protected function _initAttachmentRoutes()
+	{
+		$router = Zend_Controller_Front::getInstance()->getRouter();
+		$router->addRoute('attachment-file', new Zend_Controller_Router_Route_Regex('files/attachments/(.+)', [
+			'module' => 'contacts', 'controller' => 'attachment', 'action' => 'download',
+		], [1 => 'attachmentPath']));
+	}
+
 	protected function _initEmailDeliveryRoutes()
 	{
 		$router = Zend_Controller_Front::getInstance()->getRouter();

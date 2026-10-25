@@ -65,7 +65,7 @@ echo $this->Messages();
 										<?php foreach ($attachments as $attachment) : ?>
 											<div class="dw-attachment-item">
 												<a
-													href="<?php echo $this->baseUrl(); ?>/files/attachments/<?php echo $emailmessage['module']; ?>/<?php echo $emailmessage['controller']; ?>/<?php echo $emailmessage['url']; ?>/<?php echo $attachment; ?>"
+													href="<?php echo $this->baseUrl(); ?>/contacts/attachment/download/messageid/<?php echo (int)$emailmessage['id']; ?>/filename/<?php echo rawurlencode($attachment); ?>"
 													target="_blank"
 												><?php echo $this->escape($attachment); ?></a>
 											</div>

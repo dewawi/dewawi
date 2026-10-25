@@ -284,12 +284,8 @@ class DEEC_Email {
 
 			if($emailattachmentArray && count($emailattachmentArray)) {
 				foreach($emailattachmentArray as $file) {
-					$path = $file['location'].'/'.$file['filename'];
-
-					if(file_exists($path)) {
-						$attachmentsSent[] = $file['filename'];
-						$attachmentPaths[] = $path;
-					}
+					$attachmentPaths[] = DEEC_Emailattachment::getPath($file);
+					$attachmentsSent[] = $file['filename'];
 				}
 			}
 

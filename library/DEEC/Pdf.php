@@ -354,6 +354,7 @@ class DEEC_Pdf
 		$directory = $this->contactUrl((string)$payload['document']['id'], (string)$payload['clientId']);
 		$attachment = BASE_PATH . '/files/attachments/' . $payload['meta']['module'] . '/'
 			. $payload['meta']['controller'] . '/' . $directory . $file['filename'];
+		DEEC_Emailattachment::checkPath($attachment);
 
 		if (!is_file($attachment)) return false;
 
