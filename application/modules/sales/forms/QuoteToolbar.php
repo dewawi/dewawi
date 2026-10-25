@@ -5,6 +5,10 @@ class Sales_Form_QuoteToolbar extends Sales_Form_Toolbar
 	public function __construct()
 	{
 		parent::__construct();
+		$states = $this->getDefault('states');
+		$states[] = '105';
+		$this->setElementData('states', ['default' => $states]);
+		$this->setValue('states', $states);
 
 		$this->addElement([
 			'name' => 'monitoring',

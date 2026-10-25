@@ -199,6 +199,7 @@ class Sales_Service_QuoteMonitoring
 		$invoices = $this->getFollowupData($db, 'invoice', 'invoiceid', $quoteIds, $clientIds);
 		$deliveryorders = $this->getFollowupData($db, 'deliveryorder', 'deliveryorderid', $quoteIds, $clientIds);
 		$tasks = $this->getTaskData($db, $quoteIds, $clientIds);
+		$today = strtotime(date('Y-m-d'));
 
 		foreach($rows as &$row) {
 			$documentId = (int)($row['id'] ?? 0);
@@ -234,7 +235,9 @@ class Sales_Service_QuoteMonitoring
 			$row['monitoring_task_title'] = $task['title'] ?? null;
 			$row['monitoring_task_duedate'] = $task['duedate'] ?? null;
 			$row['monitoring_task_responsible'] = $task['responsible'] ?? null;
-			$row['monitoring_task_due'] = !empty($task['duedate']) && strtotime((string)$task['duedate']) <= strtotime(date('Y-m-d'));
+			$dueDate = !empty($task['duedate']) ? strtotime((string)$task['duedate']) : false;
+			$row['monitoring_task_due_state'] = $dueDate === false ? 'undated' : ($dueDate < $today ? 'overdue' : ($dueDate === $today ? 'today' : 'future'));
+			$row['monitoring_task_due'] = in_array($row['monitoring_task_due_state'], ['today', 'overdue'], true);
 
 			$this->applyStatus($row);
 		}
@@ -380,13 +383,13 @@ class Sales_Service_QuoteMonitoring
 		$row['monitoring_open_days'] = null;
 		$row['monitoring_action'] = '';
 
-		if(empty($row['quoteid'])) {
-			$row['monitoring_status'] = 'draft';
+		if((int)($row['state'] ?? 0) === 106 || !empty($row['cancelled'])) {
+			$row['monitoring_status'] = 'cancelled';
 			return;
 		}
 
-		if((int)($row['state'] ?? 0) === 106 || !empty($row['cancelled'])) {
-			$row['monitoring_status'] = 'cancelled';
+		if(empty($row['quoteid'])) {
+			$row['monitoring_status'] = 'draft';
 			return;
 		}
 
@@ -414,9 +417,10 @@ class Sales_Service_QuoteMonitoring
 		$feedbackStatus = (string)($row['monitoring_feedback_status'] ?? '');
 		$feedbackResponded = !empty($row['monitoring_feedback_responded']);
 
-		if($feedbackResponded && in_array($feedbackStatus, ['interested', 'question'], true)) {
+		if($feedbackResponded) {
 			$row['monitoring_status'] = 'feedback_response';
 			$row['monitoring_action'] = $this->getFeedbackAction($feedbackStatus);
+			if($feedbackStatus === 'pending' && !empty($row['monitoring_task_id']) && $row['monitoring_task_due']) $row['monitoring_action'] = 'review_task';
 			return;
 		}
 
@@ -433,12 +437,6 @@ class Sales_Service_QuoteMonitoring
 		}
 
 		if(!empty($row['monitoring_feedback_id'])) {
-			if($feedbackResponded) {
-				$row['monitoring_status'] = 'feedback_response';
-				$row['monitoring_action'] = $this->getFeedbackAction($feedbackStatus);
-				return;
-			}
-
 			$row['monitoring_status'] = 'feedback_open';
 			$row['monitoring_open_days'] = $this->daysSince($row['monitoring_feedback_created'] ?? null);
 			return;
@@ -459,10 +457,10 @@ class Sales_Service_QuoteMonitoring
 	private function getFeedbackAction(string $status): string
 	{
 		return [
-			'interested' => 'follow_up',
+			'interested' => 'next_step',
 			'question' => 'contact',
 			'pending' => 'waiting',
-			'declined' => 'review',
+			'declined' => 'review_decline',
 		][$status] ?? 'review';
 	}
 

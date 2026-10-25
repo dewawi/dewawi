@@ -148,6 +148,8 @@ class Sales_Model_List_Quotes extends DEEC_List
 			$parts[] = '<div>' . $this->escape(
 				$this->translate('QUOTES_MONITORING_SENT_AT', [$lastsent])
 			) . '</div>';
+		} elseif(!$this->getFieldValue($item, 'monitoring_sentcount', 0) && !in_array($status, ['continued', 'followup_draft'], true)) {
+			$parts[] = '<div>' . $this->escape($this->translate('QUOTES_MONITORING_NOT_SENT')) . '</div>';
 		}
 
 		if($this->getFieldValue($item, 'monitoring_feedback_id', 0)) {
@@ -170,11 +172,22 @@ class Sales_Model_List_Quotes extends DEEC_List
 		}
 
 		if($this->getFieldValue($item, 'monitoring_task_id', 0)) {
-			$taskDue = (bool)$this->getFieldValue($item, 'monitoring_task_due', false);
-			$parts[] = $this->badge(
-				$taskDue ? 'QUOTES_MONITORING_SCHEDULED_DUE' : 'QUOTES_MONITORING_SCHEDULED',
-				$taskDue ? 'warning' : 'info'
-			);
+			$dueState = (string)$this->getFieldValue($item, 'monitoring_task_due_state', 'undated');
+			if($status === 'continued') {
+				$label = [
+					'today' => 'QUOTES_MONITORING_OPEN_TASK_TODAY',
+					'overdue' => 'QUOTES_MONITORING_OPEN_TASK_OVERDUE',
+				][$dueState] ?? 'QUOTES_MONITORING_OPEN_TASK';
+				$parts[] = $this->badge($label, 'default');
+			} else {
+				[$label, $badge] = [
+					'future' => ['QUOTES_MONITORING_SCHEDULED_PLANNED', 'info'],
+					'today' => ['QUOTES_MONITORING_SCHEDULED_DUE', 'warning'],
+					'overdue' => ['QUOTES_MONITORING_SCHEDULED_OVERDUE', 'cancelled'],
+					'undated' => ['QUOTES_MONITORING_SCHEDULED_UNDATED', 'default'],
+				][$dueState];
+				$parts[] = $this->badge($label, $badge);
+			}
 
 			$parts[] = $this->renderMonitoringTask($item);
 		}
@@ -184,7 +197,6 @@ class Sales_Model_List_Quotes extends DEEC_List
 			$parts[] = $this->renderFeedbackLink($item);
 		} elseif($status === 'not_sent') {
 			$parts[] = $this->badge('QUOTES_MONITORING_CHECK_SEND', 'warning');
-			$parts[] = '<div>' . $this->escape($this->translate('QUOTES_MONITORING_NOT_SENT')) . '</div>';
 		}
 
 		$days = $this->getFieldValue($item, 'monitoring_open_days');
@@ -199,10 +211,13 @@ class Sales_Model_List_Quotes extends DEEC_List
 
 		$actionKey = [
 			'follow_up' => 'QUOTES_MONITORING_FOLLOW_UP',
+			'next_step' => 'QUOTES_MONITORING_NEXT_STEP',
 			'check_send' => 'QUOTES_MONITORING_CHECK_SEND',
 			'contact' => 'QUOTES_MONITORING_CONTACT',
 			'waiting' => 'QUOTES_MONITORING_WAITING',
 			'review' => 'QUOTES_MONITORING_REVIEW',
+			'review_decline' => 'QUOTES_MONITORING_REVIEW_DECLINE',
+			'review_task' => 'QUOTES_MONITORING_REVIEW_TASK',
 		][$action] ?? '';
 
 		if($actionKey !== '' && !in_array($status, ['sent', 'not_sent', 'followup_draft'], true)) {
@@ -283,6 +298,13 @@ class Sales_Model_List_Quotes extends DEEC_List
 		if($dueDate !== '') {
 			$html .= '<div>' . $this->escape($this->translate('QUOTES_MONITORING_TASK_DUE', [$dueDate])) . '</div>';
 		}
+
+		$responsibleId = (int)$this->getFieldValue($item, 'monitoring_task_responsible', 0);
+		$user = $this->getContext('user', []);
+		$name = '';
+		if($responsibleId > 0 && $responsibleId === (int)$this->getFieldValue($item, 'responsibleid', 0)) $name = trim((string)$this->getFieldValue($item, 'responsible', ''));
+		if($name === '' && $responsibleId > 0 && $responsibleId === (int)($user['id'] ?? 0)) $name = trim((string)($user['name'] ?? ''));
+		if($name !== '') $html .= '<div>' . $this->escape($this->translate('QUOTES_MONITORING_TASK_RESPONSIBLE', [$name])) . '</div>';
 
 		return $html;
 	}
