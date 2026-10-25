@@ -12,7 +12,7 @@ class Processes_Service_DocumentFinalizeService
 		}
 
 		$incrementDb = new Application_Model_DbTable_Increment();
-		$increment = $incrementDb->getIncrement($docIdField);
+		$increment = $incrementDb->getIncrement($docIdField, true);
 
 		$filenameDb = new Application_Model_DbTable_Filename();
 		$filename = $filenameDb->getFilename($controller, $document['language']);

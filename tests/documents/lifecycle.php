@@ -51,10 +51,33 @@ class LifecycleTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
 {
     public array $rows = [];
     public array $writes = [];
+    public array $incrementLocks = [];
     public ?Closure $beforeUpdate = null;
+    private ?array $transactionSnapshot = null;
     private int $lastId = 100;
     protected function _connect() {}
     protected function _quote($value) { return Zend_Db_Adapter_Abstract::_quote($value); }
+    public function getConnection()
+    {
+        return new class($this->transactionSnapshot !== null) {
+            public function __construct(private bool $active) {}
+            public function inTransaction() { return $this->active; }
+        };
+    }
+    public function beginTransaction()
+    {
+        if ($this->transactionSnapshot !== null) throw new RuntimeException('Nested fixture transaction');
+        $this->transactionSnapshot = [$this->rows, $this->writes];
+        return $this;
+    }
+    public function commit() { $this->transactionSnapshot = null; return $this; }
+    public function rollBack()
+    {
+        if ($this->transactionSnapshot === null) throw new RuntimeException('No fixture transaction');
+        [$this->rows, $this->writes] = $this->transactionSnapshot;
+        $this->transactionSnapshot = null;
+        return $this;
+    }
     public function describeTable($tableName, $schemaName = null)
     {
         $metadata = [];
@@ -69,6 +92,7 @@ class LifecycleTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
         $sql->assemble();
         $from = $sql->getPart(Zend_Db_Select::FROM);
         $table = reset($from)['tableName'];
+        if ($table === 'increment') $this->incrementLocks[] = $sql->getPart(Zend_Db_Select::FOR_UPDATE);
         $rows = array_values(array_filter($this->rows[$table], static fn($row) => lifecycleWhereMatches($sql->getPart(Zend_Db_Select::WHERE), $row)));
         if ($limit = $sql->getPart(Zend_Db_Select::LIMIT_COUNT)) $rows = array_slice($rows, 0, $limit);
         return new class($rows) {
@@ -151,7 +175,11 @@ foreach ($modules as $module => $controllers) {
 
         $serviceClass = $module . '_Service_DocumentFinalizeService';
         $service = new $serviceClass();
+        $adapter->beginTransaction();
         $finalized = $service->finalize($copy, $controller);
+        $adapter->commit();
+        check(end($adapter->incrementLocks) === true, 'Finalization read an unlocked counter');
+        check($adapter->rows['increment'][0][$controller . 'id'] === 1001, 'Finalization changed the existing number sequence');
         check($finalized[$controller . 'id'] === 1000 && $finalized['completed'] === 1, 'Finalization did not issue copied draft');
         check($finalized['completeddate'] >= $copy['created'] && $finalized['completedby'] === 42, 'Finalization retained an old timestamp or actor');
         check($finalized['filename'] === $controller . '_1000.pdf', 'Finalization reused source PDF filename');
@@ -171,6 +199,29 @@ foreach ($modules as $module => $controllers) {
         }
         $adapter->rows[$controller][0] = $source;
     }
+}
+
+// All three services require a transaction for drafts and preserve existing identities.
+foreach (['Sales' => 'invoice', 'Purchases' => 'purchaseorder', 'Processes' => 'process'] as $module => $name) {
+    $draft = array_replace($fields, [$name . 'id' => null, $name . 'date' => null, 'state' => 100, 'completed' => 0, 'filename' => null]);
+    $adapter->rows[$name] = [$draft];
+    $adapter->rows['increment'][0][$name . 'id'] = 4321;
+    $adapter->rows['filename'][0][$name] = $name . '_%NUMBER%.pdf';
+    $class = $module . '_Service_DocumentFinalizeService';
+    $service = new $class();
+    $before = $adapter->rows;
+    try {
+        $service->finalize($draft, $name);
+        throw new LogicException('Finalization accepted an ineffective counter lock');
+    } catch (RuntimeException $expected) {
+        check($expected->getMessage() === 'Increment lock requires an active transaction', 'Unexpected transaction error');
+    }
+    check($adapter->rows === $before, 'Finalization without a transaction changed data');
+    $adapter->beginTransaction();
+    $finalized = $service->finalize($draft, $name);
+    check(end($adapter->incrementLocks) === true && $finalized[$name . 'id'] === 4321, 'Service did not lock and reuse the existing counter');
+    $adapter->rollBack();
+    check($adapter->rows === $before, 'Rollback retained a partial finalization or advanced counter');
 }
 
 // Cover every configured continuation, including source rows that refer to an older target.

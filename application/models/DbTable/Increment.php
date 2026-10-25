@@ -18,11 +18,15 @@ class Application_Model_DbTable_Increment extends DEEC_Model_DbTable_Entity
 		$this->_client = Zend_Registry::get('Client');
 	}
 
-	public function getIncrement($type)
+	public function getIncrement($type, bool $forUpdate = false)
 	{
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$data = $this->fetchRow($where);
+		if ($forUpdate && !$this->getAdapter()->getConnection()->inTransaction()) {
+			throw new RuntimeException('Increment lock requires an active transaction');
+		}
+
+		// Keep the client counter locked until document finalization commits or rolls back.
+		$select = $this->select()->where('clientid = ?', $this->_client['id'])->forUpdate($forUpdate);
+		$data = $this->fetchRow($select);
 		if(!$data) {
 			throw new Exception("Could not find row $type");
 		}
