@@ -3,6 +3,9 @@
 class Contacts_ContactController extends DEEC_Controller_Action
 {
 	private const MAX_TAG_CONTACTS = 100;
+	private const MAX_IMPORT_ROWS = 5000;
+	private const IMPORT_SESSION = 'Contacts_Import';
+	private const IMPORT_SESSION_TTL = 7200;
 
 	public function init()
 	{
@@ -479,218 +482,552 @@ class Contacts_ContactController extends DEEC_Controller_Action
 	public function importAction()
 	{
 		$request = $this->getRequest();
-
 		$form = new Contacts_Form_Import();
+		$clientId = $this->getContactImportClientId();
+		$session = new Zend_Session_Namespace(self::IMPORT_SESSION);
+		$tagDb = (new Contacts_Model_DbTable_Tag())->setClientId($clientId);
+		$form->getElement('tagid')->addMultiOptions($tagDb->getSelectOptions());
+		$action = (string)$request->getPost('import_action', '');
 
-		if($request->isPost()) {
-			$formData = $request->getPost();
-			if($form->isValid($formData)) {
+		if ($request->isPost() && $action === 'cancel') {
+			$this->clearContactImportSession($session);
+			return $this->_helper->redirector->gotoSimple('import', 'contact');
+		}
 
-				$clientid = $this->_user['clientid'];
-				$dir1 = substr($clientid, 0, 1);
-				if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
-				else $dir2 = '0';
+		if ($request->isPost() && $action === 'confirm') {
+			$token = (string)$request->getPost('token', '');
 
-				if(!file_exists(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/')) {
-					mkdir(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/', 0777, true);
-				}
+			if (!$this->isValidContactImportSession($session, $token, $clientId)) {
+				$this->clearContactImportSession($session);
+				$this->view->importError = 'CONTACTS_IMPORT_SESSION_EXPIRED';
+			} else {
+				$preview = $this->buildContactImportPreview((string)$session->file, (string)$session->separator, $clientId);
 
-				/* Uploading Document File on Server */
-				$upload = new Zend_File_Transfer_Adapter_Http();
-				$upload->setDestination(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/');
 				try {
-					// upload received file(s)
-					$upload->receive();
-				} catch (Zend_File_Transfer_Exception $e) {
-					$e->getMessage();
+					$this->view->importResult = $this->executeContactImport($preview, (int)$session->tagid, $clientId);
+					$this->clearContactImportSession($session);
+				} catch (Exception $e) {
+					$this->view->importError = 'CONTACTS_IMPORT_FAILED';
 				}
-				$file = $upload->getFileName();
-				$data = fopen($file, 'r');
+			}
+		} elseif ($request->isPost()) {
+			$formData = (array)$request->getPost();
+			$formData['separator'] = $formData['separator'] ?? 'auto';
+			$formData['tagid'] = $formData['tagid'] ?? '0';
 
-				if($data && ($data !== FALSE)) {
-					$map = array();
-					$dataTemplate = array();
-					$contactDb = new Contacts_Model_DbTable_Contact();
-					$contactInfo = $contactDb->getInfo();
-					$contactAddress = new Contacts_Model_DbTable_Address();
-					$contactEmail = new Contacts_Model_DbTable_Email();
-					$contactInternet = new Contacts_Model_DbTable_Internet();
-					$contactPhone = new Contacts_Model_DbTable_Phone();
-
-					//Get categories
-					$categoryIndex = $this->getProductCategoryIndex();
-
-					//Get
-					if($formData['separator'] == 'comma') $separator = ',';
-					if($formData['separator'] == 'semicolon') $separator = ';';
-					if($formData['delimiter'] == 'single') $delimeter = "'";
-					if($formData['delimiter'] == 'double') $delimeter = '"';
-
-					$row = 0;
-					$rowsUpdated = 0;
-					$rowsCreated = 0;
-					while(($datacsv = fgetcsv($data, 0, $separator, $delimeter)) !== FALSE) {
-						if($row == 0) {
-							foreach($datacsv as $pos => $attr) {
-								if($attr) {
-									$map[$attr] = $pos;
-								}
-							}
-						} elseif(isset($map['name1']) && isset($datacsv[$map['name1']]) && $datacsv[$map['name1']]) {
-							//echo $datacsv[$map['sku']];
-							//print_r($map);
-							$updateData = array();
-							foreach($map as $attr => $pos) {
-								if(isset($datacsv[$map[$attr]])) {
-									if(array_search($attr, $contactInfo)) {
-										if($attr == 'priceruleamount') {
-											if(is_numeric($datacsv[$map['priceruleamount']])) {
-												$updateData['priceruleamount'] = $datacsv[$map['priceruleamount']];
-											} else {
-												echo 'Price rule amount is not numeric for '.$datacsv[$map['name1']].': '.$datacsv[$map[$attr]]."<br>";
-											}
-										} else {
-											$updateData[$attr] = $datacsv[$map[$attr]];
-											//var_dump($datacsv[$map[$attr]]);
-										}
-									} elseif($attr == 'category') {
-										$updateData['catid'] = 0;
-										$currentCategory = $categoryIndex;
-										$shopCategories = explode(' > ', $datacsv[$map['category']]);
-										foreach($shopCategories as $shopCategory) {
-											if(isset($currentCategory[md5($shopCategory)])) {
-												$currentCategory = $currentCategory[md5($shopCategory)];
-												$updateData['catid'] = $currentCategory['id'];
-												if(isset($currentCategory['childs'])) $currentCategory = $currentCategory['childs'];
-											} else {
-												$updateData['catid'] = 0;
-											}
-										}
-										if($updateData['catid'] == 0) {
-											/* TO DO handle if no category found */
-											echo 'No category found for '.$datacsv[$map['name1']].': '.$datacsv[$map['category']]."<br>";
-										}
-									}
-								}
-							}
-
-							//Create and update the contact
-							if($contact = $contactDb->getContactWithID($datacsv[$map['name1']])) {
-								//error_log(print_r($updateData,true));
-								$contactDb->updateContact($contact['id'], $updateData);
-								++$rowsUpdated;
-							} else {
-								if(!isset($updateData['catid'])) $updateData['catid'] = 0;
-
-								$id = $contactDb->addContact($updateData);
-
-								//Set increment value
-								$incrementDb = new Application_Model_DbTable_Increment();
-								$increment = $incrementDb->getIncrement('contactid');
-								$contactDb->updateContact($id, array('contactid' => $increment));
-								$incrementDb->setIncrement(($increment), 'contactid');
-
-								$address = array();
-								$address['street'] = isset($map['street']) ? $datacsv[$map['street']] : NULL;
-								$address['postcode'] = isset($map['postcode']) ? $datacsv[$map['postcode']] : NULL;
-								$address['city'] = isset($map['city']) ? $datacsv[$map['city']] : NULL;
-								$address['country'] = isset($map['country']) ? $datacsv[$map['country']] : NULL;
-
-								$addressDb = new Contacts_Model_DbTable_Address();
-								$data = array(
-									'type' => 'billing',
-									'street' => $address['street'],
-									'postcode' => $address['postcode'],
-									'city' => $address['city'],
-									'country' => $address['country'],
-									'ordering' => 1
-								);
-								$addressDb->createForParent($id, 'contacts', 'contact', $data);
-
-								if(isset($map['phone']) && isset($datacsv[$map['phone']]) && $datacsv[$map['phone']]) {
-									$phoneDb = new Contacts_Model_DbTable_Phone();
-									$phoneDb->addPhone(array('parentid' => $id, 'type' => 'phone', 'phone' => $datacsv[$map['phone']], 'ordering' => 1));
-								}
-
-								if(isset($map['email']) && isset($datacsv[$map['email']]) && $datacsv[$map['email']]) {
-									$emailDb = new Contacts_Model_DbTable_Email();
-									$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
-									$emailDb->addEmail(array('parentid' => $id, 'email' => $datacsv[$map['email']], 'ordering' => 1, 'password' => $password));
-								}
-
-								if(isset($map['internet']) && isset($datacsv[$map['internet']]) && $datacsv[$map['internet']]) {
-									$internetDb = new Contacts_Model_DbTable_Internet();
-									$internetDb->addInternet(array('parentid' => $id, 'internet' => $datacsv[$map['internet']], 'ordering' => 1));
-								}
-								++$rowsCreated;
-							}
-						}
-						$row++;
-					}
-					//print_r($map);
-					fclose($data);
-				} else {
-					echo 'ERROR: No data recieved<br>';
+			if ($form->isValid($formData)) {
+				$file = null;
+				try {
+					$this->clearContactImportSession($session);
+					$file = $this->receiveContactImportFile($clientId);
+					$preview = $this->buildContactImportPreview($file, (string)$formData['separator'], $clientId);
+					$token = bin2hex(random_bytes(24));
+					$session->file = $file;
+					$session->separator = (string)$formData['separator'];
+					$session->tagid = (int)$formData['tagid'];
+					$session->clientid = $clientId;
+					$session->token = $token;
+					$session->created = time();
+					$this->view->importPreview = $preview;
+					$this->view->importToken = $token;
+				} catch (Exception $e) {
+					if ($file && is_file($file)) unlink($file);
+					$this->view->importError = 'CONTACTS_IMPORT_FILE_ERROR';
 				}
-
-				echo ($row-1).' rows are processed<br>';
-				echo $rowsUpdated.' existing rows are updated<br>';
-				echo $rowsCreated.' new rows are created<br>';
-
-				$this->view->data = $data;
 			} else {
 				$form->populate($formData);
 			}
+		} elseif ($this->isValidContactImportSession($session, (string)($session->token ?? ''), $clientId)) {
+			$this->view->importPreview = $this->buildContactImportPreview((string)$session->file, (string)$session->separator, $clientId);
+			$this->view->importToken = (string)$session->token;
+			$form->getElement('tagid')->setValue((string)$session->tagid);
 		}
 
 		$this->view->form = $form;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		$this->assignMessages();
 	}
 
-	public function getProductCategoryIndex() {
-		$categoryDb = new Application_Model_DbTable_Category();
-		$categories = $categoryDb->getCategories('contact');
-		$categoriesByID = array();
-		foreach($categories as $category) {
-			$categoriesByID[$category['id']] = $category['title'];
+	protected function buildContactImportPreview(string $file, string $separator, int $clientId): array
+	{
+		$parsed = $this->readContactImportCsv($file, $separator);
+
+		if ($parsed['errors']) {
+			return $parsed + ['items' => [], 'counts' => $this->getEmptyImportCounts()];
 		}
 
-		$childCategories = array();
-		foreach($categories as $category) {
-			if(isset($childCategories[$category['parentid']])) {
-				array_push($childCategories[$category['parentid']], $category['id']);
-			} else {
-				$childCategories[$category['parentid']] = array($category['id']);
+		$reference = $this->getContactImportReferenceData($clientId);
+		$contacts = $reference['contacts'];
+		$categories = $reference['categories'];
+		$contactsByNumber = [];
+		$contactsByName = [];
+
+		foreach ($contacts as $contact) {
+			$number = (int)$contact['contactid'];
+			if ($number > 0) $contactsByNumber[$number][] = $contact;
+			$name = $this->normalizeImportValue((string)$contact['name1']);
+			if ($name !== '') $contactsByName[$name][] = $contact;
+		}
+
+		$categoryIndex = $this->buildContactImportCategoryIndex($categories);
+		$numberCounts = [];
+		$nameCounts = [];
+
+		foreach ($parsed['rows'] as $row) {
+			$number = trim((string)($row['values']['contactid'] ?? ''));
+			if (preg_match('/^[1-9][0-9]*$/D', $number)) $numberCounts[(int)$number] = ($numberCounts[(int)$number] ?? 0) + 1;
+			if ($number === '') {
+				$name = $this->normalizeImportValue((string)($row['values']['name1'] ?? ''));
+				if ($name !== '') $nameCounts[$name] = ($nameCounts[$name] ?? 0) + 1;
 			}
 		}
 
-		$categoryIndex = array();
-		foreach($categories as $category) {
-			if($category['parentid'] == 0) {
-				$categoryIndex[md5($category['title'])]['id'] = $category['id'];
-				$categoryIndex[md5($category['title'])]['title'] = $category['title'];
-				if(isset($childCategories[$category['id']])) {
-					$categoryIndex[md5($category['title'])]['childs'] = $this->getSubCategoryIndex($categoriesByID, $childCategories, $category['id']);
+		$items = [];
+		$counts = $this->getEmptyImportCounts();
+
+		foreach ($parsed['rows'] as $row) {
+			$item = $this->buildContactImportPreviewItem($row, $contactsByNumber, $contactsByName, $categoryIndex, $numberCounts, $nameCounts);
+			$items[] = $item;
+			$counts[$item['status']]++;
+		}
+
+		return $parsed + ['items' => $items, 'counts' => $counts];
+	}
+
+	protected function readContactImportCsv(string $file, string $separator): array
+	{
+		$handle = fopen($file, 'rb');
+		if ($handle === false) throw new RuntimeException('Unable to read contact import file.');
+
+		$delimiter = $this->resolveContactImportSeparator($handle, $separator);
+		$headers = fgetcsv($handle, 0, $delimiter, '"', '');
+
+		if ($headers === false) {
+			fclose($handle);
+			return ['headers' => [], 'mappedHeaders' => [], 'unknownHeaders' => [], 'rows' => [], 'errors' => ['CONTACTS_IMPORT_EMPTY_FILE']];
+		}
+
+		$headers[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string)$headers[0]);
+		$aliases = $this->getContactImportHeaderAliases();
+		$mappedHeaders = [];
+		$unknownHeaders = [];
+		$errors = [];
+
+		foreach ($headers as $position => $header) {
+			$normalized = $this->normalizeImportHeader((string)$header);
+			$canonical = $aliases[$normalized] ?? null;
+
+			if ($canonical === null) {
+				if ($normalized !== '') $unknownHeaders[] = trim((string)$header);
+				continue;
+			}
+
+			if (in_array($canonical, $mappedHeaders, true)) {
+				$errors[] = 'CONTACTS_IMPORT_DUPLICATE_HEADER';
+				continue;
+			}
+
+			$mappedHeaders[$position] = $canonical;
+		}
+
+		if (!in_array('contactid', $mappedHeaders, true) && !in_array('name1', $mappedHeaders, true)) {
+			$errors[] = 'CONTACTS_IMPORT_REQUIRED_HEADER';
+		}
+
+		$rows = [];
+		$line = 1;
+
+		while (($cells = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
+			$line++;
+			$values = [];
+
+			foreach ($mappedHeaders as $position => $canonical) {
+				if (array_key_exists($position, $cells)) $values[$canonical] = trim((string)$cells[$position]);
+			}
+
+			if (!array_filter($values, static fn($value): bool => $value !== '')) continue;
+			$rows[] = ['line' => $line, 'values' => $values];
+
+			if (count($rows) > self::MAX_IMPORT_ROWS) {
+				$errors[] = 'CONTACTS_IMPORT_TOO_MANY_ROWS';
+				break;
+			}
+		}
+
+		fclose($handle);
+
+		if (!$rows && !$errors) $errors[] = 'CONTACTS_IMPORT_EMPTY_FILE';
+
+		return [
+			'headers' => $headers,
+			'mappedHeaders' => $mappedHeaders,
+			'unknownHeaders' => array_values(array_unique($unknownHeaders)),
+			'rows' => $rows,
+			'errors' => array_values(array_unique($errors)),
+			'separator' => $delimiter,
+		];
+	}
+
+	protected function buildContactImportPreviewItem(array $row, array $contactsByNumber, array $contactsByName, array $categoryIndex, array $numberCounts, array $nameCounts): array
+	{
+		$values = $row['values'];
+		$numberValue = trim((string)($values['contactid'] ?? ''));
+		$name = trim((string)($values['name1'] ?? ''));
+		$errors = [];
+		$existing = null;
+		$duplicates = [];
+		$csvDuplicate = false;
+
+		if ($numberValue !== '' && !preg_match('/^[1-9][0-9]*$/D', $numberValue)) {
+			$errors[] = 'CONTACTS_IMPORT_INVALID_CONTACT_ID';
+		} elseif ($numberValue !== '') {
+			$number = (int)$numberValue;
+			if (($numberCounts[$number] ?? 0) > 1) $errors[] = 'CONTACTS_IMPORT_DUPLICATE_CONTACT_ID_CSV';
+			if (count($contactsByNumber[$number] ?? []) > 1) $errors[] = 'CONTACTS_IMPORT_AMBIGUOUS_CONTACT_ID';
+			if (count($contactsByNumber[$number] ?? []) === 1) $existing = $contactsByNumber[$number][0];
+		}
+
+		if ($existing === null && $name === '') $errors[] = 'CONTACTS_IMPORT_NAME_REQUIRED';
+		if ($existing !== null && array_key_exists('name1', $values) && $name === '') $errors[] = 'CONTACTS_IMPORT_NAME_REQUIRED';
+
+		$contactData = [];
+		foreach (['name1', 'name2', 'department'] as $field) {
+			if (array_key_exists($field, $values)) $contactData[$field] = $values[$field];
+		}
+
+		if (array_key_exists('category', $values)) {
+			$category = $this->resolveContactImportCategory($values['category'], $categoryIndex);
+			if ($category === null) $errors[] = 'CONTACTS_IMPORT_INVALID_CATEGORY';
+			else $contactData['catid'] = $category;
+		}
+
+		$addressData = [];
+		foreach (['street', 'postcode', 'city', 'country'] as $field) {
+			if (array_key_exists($field, $values)) $addressData[$field] = $values[$field];
+		}
+
+		$phones = $this->splitContactImportValues($values['phone'] ?? '');
+		$emails = $this->splitContactImportValues($values['email'] ?? '');
+		$internets = $this->splitContactImportValues($values['internet'] ?? '');
+
+		foreach ($emails as $email) {
+			if (!DEEC_Filter::isValidEmail($email)) $errors[] = 'CONTACTS_IMPORT_INVALID_EMAIL';
+		}
+
+		if ($existing === null && $numberValue === '') {
+			$normalizedName = $this->normalizeImportValue($name);
+			$duplicates = $contactsByName[$normalizedName] ?? [];
+			$csvDuplicate = ($nameCounts[$normalizedName] ?? 0) > 1;
+		}
+
+		$status = $errors ? 'error' : ($existing !== null ? 'update' : (($duplicates || $csvDuplicate) ? 'duplicate' : 'new'));
+
+		return [
+			'line' => (int)$row['line'],
+			'status' => $status,
+			'contactid' => $numberValue,
+			'name1' => $name !== '' ? $name : (string)($existing['name1'] ?? ''),
+			'name2' => (string)($values['name2'] ?? $existing['name2'] ?? ''),
+			'category' => (string)($values['category'] ?? ''),
+			'existingId' => (int)($existing['id'] ?? 0),
+			'duplicates' => array_map(static fn(array $contact): string => (string)$contact['contactid'] . ' · ' . (string)$contact['name1'], $duplicates),
+			'csvDuplicate' => $csvDuplicate,
+			'errors' => array_values(array_unique($errors)),
+			'contactData' => $contactData,
+			'addressData' => $addressData,
+			'phones' => $phones,
+			'emails' => $emails,
+			'internets' => $internets,
+		];
+	}
+
+	protected function executeContactImport(array $preview, int $tagId, int $clientId): array
+	{
+		if ($preview['errors']) throw new RuntimeException('Contact import preview is invalid.');
+
+		$contactDb = (new Contacts_Model_DbTable_Contact())->setClientId($clientId);
+		$addressDb = (new Contacts_Model_DbTable_Address())->setClientId($clientId);
+		$phoneDb = (new Contacts_Model_DbTable_Phone())->setClientId($clientId);
+		$emailDb = (new Contacts_Model_DbTable_Email())->setClientId($clientId);
+		$internetDb = (new Contacts_Model_DbTable_Internet())->setClientId($clientId);
+		$incrementDb = (new Application_Model_DbTable_Increment())->setClientId($clientId);
+		$adapter = $contactDb->getAdapter();
+		$validItems = array_values(array_filter($preview['items'], static fn(array $item): bool => $item['status'] !== 'error'));
+		usort($validItems, static function(array $a, array $b): int {
+			$aPriority = (int)$a['existingId'] === 0 && $a['contactid'] !== '' ? 0 : 1;
+			$bPriority = (int)$b['existingId'] === 0 && $b['contactid'] !== '' ? 0 : 1;
+			return $aPriority <=> $bPriority;
+		});
+		$existingIds = array_values(array_unique(array_filter(array_map(static fn(array $item): int => (int)$item['existingId'], $validItems))));
+		$addresses = $this->groupImportRows($addressDb->getByParentIds($existingIds, 'contacts', 'contact'));
+		$phones = $this->groupImportRows($phoneDb->getByParentIds($existingIds, 'contacts', 'contact'));
+		$emails = $this->groupImportRows($emailDb->getByParentIds($existingIds, 'contacts', 'contact'));
+		$internets = $this->groupImportRows($internetDb->getByParentIds($existingIds, 'contacts', 'contact'));
+		$created = 0;
+		$updated = 0;
+		$tagContactIds = [];
+
+		$tagEntityDb = null;
+		if ($tagId > 0) {
+			$tagDefinitionDb = (new Application_Model_DbTable_Tag())->setClientId($clientId);
+			$tag = $tagDefinitionDb->getById($tagId);
+			if (!$tag || $tag['module'] !== 'contacts' || $tag['controller'] !== 'contact' || (int)$tag['shopid'] !== 0) {
+				throw new InvalidArgumentException('Invalid contact import tag.');
+			}
+			$tagEntityDb = (new Contacts_Model_DbTable_Tag())->setClientId($clientId);
+		}
+
+		try {
+			$adapter->beginTransaction();
+
+			foreach ($validItems as $item) {
+				$isNew = (int)$item['existingId'] === 0;
+				$contactData = $item['contactData'];
+
+				if ($isNew) {
+					$contactData['catid'] = (int)($contactData['catid'] ?? 0);
+					$contactData['contactid'] = $this->getImportedContactNumber($item['contactid'], $incrementDb, $contactDb);
+					$contactId = $contactDb->create($contactData);
+					$created++;
+				} else {
+					$contactId = (int)$item['existingId'];
+					if ($contactData) $contactDb->updateById($contactId, $contactData);
+					$updated++;
 				}
-			}
-		}
-		//var_dump($categoriesByID);
-		//var_dump($childCategories);
-		//var_dump($categoryIndex);
 
-		return $categoryIndex;
+				$this->importContactAddress($addressDb, $contactId, $item['addressData'], $addresses[$contactId] ?? [], $isNew);
+				$this->importContactValues($phoneDb, $contactId, 'phone', $item['phones'], $phones[$contactId] ?? [], ['type' => 'phone']);
+				$this->importContactValues($emailDb, $contactId, 'email', $item['emails'], $emails[$contactId] ?? []);
+				$this->importContactValues($internetDb, $contactId, 'internet', $item['internets'], $internets[$contactId] ?? []);
+				$tagContactIds[] = $contactId;
+			}
+
+			if ($tagEntityDb && $tagContactIds) $tagEntityDb->assignToContacts(array_values(array_unique($tagContactIds)), $tagId);
+			$adapter->commit();
+		} catch (Exception $e) {
+			$adapter->rollBack();
+			throw $e;
+		}
+
+		return [
+			'created' => $created,
+			'updated' => $updated,
+			'skipped' => (int)($preview['counts']['error'] ?? 0),
+			'processed' => count($preview['items']),
+		];
 	}
 
-	public function getSubCategoryIndex($categories, $childCategories, $id) {
-		$subCategories = array();
-		foreach($childCategories[$id] as $child) {
-			$subCategories[md5($categories[$child])]['id'] = $child;
-			$subCategories[md5($categories[$child])]['title'] = $categories[$child];
-			if(isset($childCategories[$child])) {
-				$subCategories[md5($categories[$child])]['childs'] = $this->getSubCategoryIndex($categories, $childCategories, $child);
+	private function receiveContactImportFile(int $clientId): string
+	{
+		$digits = str_pad((string)$clientId, 2, '0');
+		$directory = BASE_PATH . '/files/import/' . $digits[0] . '/' . $digits[1] . '/' . $clientId . '/';
+		if (!is_dir($directory) && !mkdir($directory, 0777, true) && !is_dir($directory)) {
+			throw new RuntimeException('Unable to create contact import directory.');
+		}
+
+		$target = $directory . 'contacts-' . bin2hex(random_bytes(16)) . '.csv';
+		$upload = new Zend_File_Transfer_Adapter_Http();
+		$upload->addValidator('Count', false, 1);
+		$upload->addValidator('Size', false, 10240000);
+		$upload->addValidator('Extension', false, 'csv');
+		$upload->addFilter('Rename', ['target' => $target, 'overwrite' => false]);
+
+		if (!$upload->receive() || !is_file($target)) throw new RuntimeException('Unable to receive contact import file.');
+		return $target;
+	}
+
+	protected function getContactImportReferenceData(int $clientId): array
+	{
+		$contactDb = (new Contacts_Model_DbTable_Contact())->setClientId($clientId);
+		$categoryDb = (new Application_Model_DbTable_Category())->setClientId($clientId);
+
+		return [
+			'contacts' => $contactDb->getActiveImportContacts(),
+			'categories' => $categoryDb->getCategories('contact'),
+		];
+	}
+
+	private function resolveContactImportSeparator($handle, string $separator): string
+	{
+		if ($separator === 'comma') return ',';
+		if ($separator === 'semicolon') return ';';
+
+		$position = ftell($handle);
+		$line = fgets($handle);
+		fseek($handle, $position);
+
+		if ($line === false) return ';';
+		return count(str_getcsv($line, ';', '"', '')) >= count(str_getcsv($line, ',', '"', '')) ? ';' : ',';
+	}
+
+	private function getContactImportHeaderAliases(): array
+	{
+		$aliases = [
+			'contactid' => ['contactid', 'contact id', 'contact number', 'kontaktnr', 'kontaktnummer'],
+			'name1' => ['name1', 'company', 'company name', 'organisation', 'organization', 'firmenname', 'unternehmen'],
+			'name2' => ['name2', 'name affix', 'namenszusatz'],
+			'department' => ['department', 'abteilung'],
+			'category' => ['category', 'kategorie'],
+			'street' => ['street', 'strasse', 'straße'],
+			'postcode' => ['postcode', 'post code', 'postal code', 'zip', 'plz'],
+			'city' => ['city', 'ort'],
+			'country' => ['country', 'land'],
+			'phone' => ['phone', 'telephone', 'telefon'],
+			'email' => ['email', 'e mail'],
+			'internet' => ['internet', 'website', 'url'],
+		];
+		$index = [];
+
+		foreach ($aliases as $canonical => $names) {
+			foreach ($names as $name) $index[$this->normalizeImportHeader($name)] = $canonical;
+		}
+
+		return $index;
+	}
+
+	private function buildContactImportCategoryIndex(array $categories): array
+	{
+		$index = ['ids' => [], 'names' => []];
+
+		foreach ($categories as $id => $category) {
+			$id = (int)$id;
+			$index['ids'][$id] = true;
+			foreach ([(string)($category['title'] ?? ''), (string)($category['breadcrumb'] ?? '')] as $name) {
+				$name = $this->normalizeImportValue($name);
+				if ($name !== '') $index['names'][$name][$id] = true;
 			}
 		}
-		return $subCategories;
+
+		return $index;
+	}
+
+	private function resolveContactImportCategory(string $value, array $index): ?int
+	{
+		$value = trim($value);
+		if ($value === '' || $value === '0') return 0;
+		if (preg_match('/^[1-9][0-9]*$/D', $value)) return isset($index['ids'][(int)$value]) ? (int)$value : null;
+
+		$matches = array_keys($index['names'][$this->normalizeImportValue($value)] ?? []);
+		return count($matches) === 1 ? (int)$matches[0] : null;
+	}
+
+	private function splitContactImportValues(string $value): array
+	{
+		$values = preg_split('/[,|\r\n]+/', $value);
+		$unique = [];
+
+		foreach ($values as $item) {
+			$item = trim($item);
+			if ($item !== '') $unique[$this->normalizeImportValue($item)] = $item;
+		}
+
+		return array_values($unique);
+	}
+
+	private function normalizeImportValue(string $value): string
+	{
+		$value = trim(preg_replace('/\s+/u', ' ', $value));
+		return function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+	}
+
+	private function normalizeImportHeader(string $value): string
+	{
+		$value = preg_replace('/[^\pL\pN]+/u', ' ', $value);
+		return $this->normalizeImportValue($value);
+	}
+
+	private function getEmptyImportCounts(): array
+	{
+		return ['new' => 0, 'update' => 0, 'duplicate' => 0, 'error' => 0];
+	}
+
+	private function groupImportRows(array $rows): array
+	{
+		$grouped = [];
+		foreach ($rows as $row) $grouped[(int)$row['parentid']][] = $row;
+		return $grouped;
+	}
+
+	private function getImportedContactNumber(string $value, Application_Model_DbTable_Increment $incrementDb, Contacts_Model_DbTable_Contact $contactDb): int
+	{
+		$current = (int)$incrementDb->getIncrement('contactid', true);
+
+		if ($value !== '') {
+			$number = (int)$value;
+			if ($contactDb->getContactWithID($number)) throw new RuntimeException('Contact number already exists.');
+			if ($number >= $current) $incrementDb->setIncrement($number, 'contactid');
+			return $number;
+		}
+
+		while ($contactDb->getContactWithID($current)) $current++;
+		$incrementDb->setIncrement($current, 'contactid');
+		return $current;
+	}
+
+	private function importContactAddress(Contacts_Model_DbTable_Address $addressDb, int $contactId, array $data, array $existing, bool $isNew): void
+	{
+		$billing = null;
+		foreach ($existing as $address) {
+			if ($address['type'] === 'billing') {
+				$billing = $address;
+				break;
+			}
+		}
+
+		if ($billing && $data) {
+			$addressDb->updateById((int)$billing['id'], $data);
+			return;
+		}
+
+		if (!$billing && ($data || $isNew)) {
+			if ($isNew && !array_key_exists('country', $data)) {
+				$client = Zend_Registry::get('Client');
+				$data['country'] = $client['country'] ?? '0';
+			}
+			$data['type'] = 'billing';
+			$addressDb->createForParent($contactId, 'contacts', 'contact', $data);
+		}
+	}
+
+	private function importContactValues(DEEC_Model_DbTable_Entity $db, int $contactId, string $field, array $values, array $existing, array $defaults = []): void
+	{
+		$known = [];
+		foreach ($existing as $row) {
+			$value = $this->normalizeImportValue((string)($row[$field] ?? ''));
+			if ($value !== '') $known[$value] = true;
+		}
+
+		foreach ($values as $value) {
+			$normalized = $this->normalizeImportValue($value);
+			if (isset($known[$normalized])) continue;
+			$data = $defaults + [$field => $value];
+			if ($field === 'email') $data['password'] = password_hash(bin2hex(random_bytes(10)), PASSWORD_DEFAULT);
+			$db->createForParent($contactId, 'contacts', 'contact', $data);
+			$known[$normalized] = true;
+		}
+	}
+
+	private function getContactImportClientId(): int
+	{
+		$client = Zend_Registry::get('Client');
+		$clientId = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$client['id'];
+		if ($clientId <= 0) throw new RuntimeException('Contact client context is missing.');
+		return $clientId;
+	}
+
+	private function isValidContactImportSession(Zend_Session_Namespace $session, string $token, int $clientId): bool
+	{
+		return $token !== ''
+			&& isset($session->token, $session->file, $session->clientid, $session->created)
+			&& hash_equals((string)$session->token, $token)
+			&& (int)$session->clientid === $clientId
+			&& time() - (int)$session->created <= self::IMPORT_SESSION_TTL
+			&& is_file((string)$session->file);
+	}
+
+	private function clearContactImportSession(Zend_Session_Namespace $session): void
+	{
+		if (isset($session->file) && is_file((string)$session->file)) unlink((string)$session->file);
+		$session->unsetAll();
 	}
 
 	public function suggestAction()

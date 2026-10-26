@@ -1,47 +1,116 @@
 <?php
-$this->title = $this->translate('CONTACTS');
+$this->title = $this->translate('CONTACTS_IMPORT_TITLE');
 $this->headTitle($this->title);
 echo $this->Messages();
+$preview = $this->importPreview ?? null;
+$result = $this->importResult ?? null;
 ?>
+
+<h2><?php echo $this->escape($this->title); ?></h2>
+<p><?php echo $this->escape($this->translate('CONTACTS_IMPORT_DESCRIPTION')); ?></p>
+<p><strong><?php echo $this->escape($this->translate('CONTACTS_IMPORT_SUPPORTED_HEADERS')); ?></strong></p>
+
+<?php if (!empty($this->importError)) : ?>
+	<div class="dw-status-message dw-status-message--error">
+		<?php echo $this->escape($this->translate($this->importError)); ?>
+	</div>
+<?php endif; ?>
+
+<?php if ($result) : ?>
+	<div class="dw-status-message dw-status-message--success">
+		<?php echo $this->escape(sprintf(
+			$this->translate('CONTACTS_IMPORT_RESULT'),
+			(int)$result['created'],
+			(int)$result['updated'],
+			(int)$result['skipped']
+		)); ?>
+	</div>
+<?php endif; ?>
 
 <form id="upload" enctype="multipart/form-data" action="" method="post">
+	<input type="hidden" name="import_action" value="preview">
 	<dl class="form">
-		<?php echo $this->form->getElement('file') ?>
-		<?php echo $this->form->getElement('separator') ?>
-		<?php echo $this->form->getElement('delimiter') ?>
-		<?php echo $this->form->getElement('submit') ?>
+		<?php echo $this->form->getElement('file'); ?>
+		<?php echo $this->form->getElement('separator'); ?>
+		<?php echo $this->form->getElement('tagid'); ?>
+		<?php echo $this->form->getElement('submit'); ?>
 	</dl>
-	<p>Max: <?php echo ini_get('upload_max_filesize'); ?></p>
+	<p><?php echo $this->escape(sprintf($this->translate('CONTACTS_IMPORT_MAX_FILE_SIZE'), ini_get('upload_max_filesize'))); ?></p>
 </form>
 
-<br>
-<br>
-<br>
-<br>
-<br>
+<?php if ($preview) : ?>
+	<h3><?php echo $this->escape($this->translate('CONTACTS_IMPORT_PREVIEW_TITLE')); ?></h3>
 
-<table>
-<?php
-/*
-if ($this->data && ($this->data !== FALSE)) {
-	while (($data = fgetcsv($this->data, 0, ',')) !== FALSE) {
-		print_r($data);
-	}
-	fclose($this->data);
-}
+	<?php foreach ($preview['errors'] as $error) : ?>
+		<div class="dw-status-message dw-status-message--error"><?php echo $this->escape($this->translate($error)); ?></div>
+	<?php endforeach; ?>
 
-$row = 1;
-if ($this->data && ($this->data !== FALSE)) {
-	while (($data = fgetcsv($this->data, 0, ',')) !== FALSE) {
-		$num = count($data);
-		echo "<tr>\n";
-		$row++;
-		for ($c=0; $c < $num; $c++) {
-				echo "<td>".$data[$c] . "</td>\n";
-		}
-		echo "</tr>\n";
-	}
-	fclose($this->data);
-}*/
-?>
-</table>
+	<?php if ($preview['unknownHeaders']) : ?>
+		<div class="dw-status-message">
+			<?php echo $this->escape(sprintf(
+				$this->translate('CONTACTS_IMPORT_UNKNOWN_HEADERS'),
+				implode(', ', $preview['unknownHeaders'])
+			)); ?>
+		</div>
+	<?php endif; ?>
+
+	<div class="dw-contact-import-summary">
+		<span class="dw-badge dw-badge--created"><?php echo (int)$preview['counts']['new']; ?> <?php echo $this->escape($this->translate('CONTACTS_IMPORT_STATUS_NEW')); ?></span>
+		<span class="dw-badge dw-badge--info"><?php echo (int)$preview['counts']['update']; ?> <?php echo $this->escape($this->translate('CONTACTS_IMPORT_STATUS_UPDATE')); ?></span>
+		<span class="dw-badge dw-badge--warning"><?php echo (int)$preview['counts']['duplicate']; ?> <?php echo $this->escape($this->translate('CONTACTS_IMPORT_STATUS_DUPLICATE')); ?></span>
+		<span class="dw-badge dw-badge--delete"><?php echo (int)$preview['counts']['error']; ?> <?php echo $this->escape($this->translate('CONTACTS_IMPORT_STATUS_ERROR')); ?></span>
+	</div>
+
+	<?php if ($preview['items']) : ?>
+		<div class="dw-table-wrap">
+			<table class="dw-table dw-table--contact-import">
+				<thead>
+					<tr>
+						<th><?php echo $this->escape($this->translate('CONTACTS_IMPORT_LINE')); ?></th>
+						<th><?php echo $this->escape($this->translate('CONTACTS_IMPORT_STATUS')); ?></th>
+						<th><?php echo $this->escape($this->translate('CONTACTS_CONTACT_ID')); ?></th>
+						<th><?php echo $this->escape($this->translate('CONTACTS_NAME_ORGANISATION')); ?></th>
+						<th><?php echo $this->escape($this->translate('CONTACTS_NAME_AFFIX')); ?></th>
+						<th><?php echo $this->escape($this->translate('CONTACTS_CATEGORY')); ?></th>
+						<th><?php echo $this->escape($this->translate('CONTACTS_IMPORT_NOTES')); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($preview['items'] as $item) : ?>
+						<tr>
+							<td><?php echo (int)$item['line']; ?></td>
+							<td><?php echo $this->escape($this->translate('CONTACTS_IMPORT_STATUS_' . strtoupper($item['status']))); ?></td>
+							<td><?php echo $this->escape($item['contactid']); ?></td>
+							<td><?php echo $this->escape($item['name1']); ?></td>
+							<td><?php echo $this->escape($item['name2']); ?></td>
+							<td><?php echo $this->escape($item['category']); ?></td>
+							<td>
+								<?php foreach ($item['errors'] as $error) : ?>
+									<div><?php echo $this->escape($this->translate($error)); ?></div>
+								<?php endforeach; ?>
+								<?php if ($item['duplicates']) : ?>
+									<div><?php echo $this->escape(sprintf($this->translate('CONTACTS_IMPORT_DUPLICATE_MATCHES'), implode(', ', $item['duplicates']))); ?></div>
+								<?php endif; ?>
+								<?php if ($item['csvDuplicate']) : ?>
+									<div><?php echo $this->escape($this->translate('CONTACTS_IMPORT_DUPLICATE_IN_CSV')); ?></div>
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+	<?php endif; ?>
+
+	<form action="" method="post" class="dw-contact-import-actions">
+		<input type="hidden" name="token" value="<?php echo $this->escape($this->importToken ?? ''); ?>">
+		<?php if (!$preview['errors'] && ($preview['counts']['new'] + $preview['counts']['update'] + $preview['counts']['duplicate']) > 0) : ?>
+			<button type="submit" name="import_action" value="confirm" class="dw-btn dw-btn--action">
+				<?php echo $this->escape($this->translate('CONTACTS_IMPORT_CONFIRM')); ?>
+			</button>
+		<?php endif; ?>
+		<button type="submit" name="import_action" value="cancel" class="dw-btn">
+			<?php echo $this->escape($this->translate('CONTACTS_IMPORT_CANCEL')); ?>
+		</button>
+	</form>
+<?php endif; ?>

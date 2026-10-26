@@ -25,7 +25,7 @@ class Application_Model_DbTable_Increment extends DEEC_Model_DbTable_Entity
 		}
 
 		// Keep the client counter locked until document finalization commits or rolls back.
-		$select = $this->select()->where('clientid = ?', $this->_client['id'])->forUpdate($forUpdate);
+		$select = $this->select()->where('clientid = ?', $this->getClientId())->forUpdate($forUpdate);
 		$data = $this->fetchRow($select);
 		if(!$data) {
 			throw new Exception("Could not find row $type");
@@ -44,7 +44,7 @@ class Application_Model_DbTable_Increment extends DEEC_Model_DbTable_Entity
 		);
 
 		// Update only the specific column for the client
-		$where = $this->getAdapter()->quoteInto('clientid = ?', (int)$this->_client['id']);
+		$where = $this->getAdapter()->quoteInto('clientid = ?', $this->getClientId());
 		$this->update($data, $where);
 	}
 }

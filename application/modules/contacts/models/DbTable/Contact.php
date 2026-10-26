@@ -30,14 +30,34 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 
 	public function getContactWithID($contactid)
 	{
+		if (
+			!(is_int($contactid) && $contactid > 0)
+			&& !(is_string($contactid) && preg_match('/^[1-9][0-9]*$/D', trim($contactid)))
+		) {
+			return false;
+		}
+
 		$contactid = (int)$contactid;
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->getClientId());
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$row = $this->fetchRow($where);
 		if(!$row) return false;
 		return $row->toArray();
+	}
+
+	public function getActiveImportContacts(): array
+	{
+		$rows = $this->fetchAll(
+			$this->select()
+				->from($this->_name, ['id', 'contactid', 'catid', 'name1', 'name2', 'department'])
+				->where('clientid = ?', $this->getClientId())
+				->where('deleted = ?', 0)
+				->order('id ASC')
+		);
+
+		return $rows ? $rows->toArray() : [];
 	}
 
 	public function getContactsByCategory($catid)

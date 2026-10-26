@@ -9,29 +9,27 @@ class Contacts_Form_Import extends Zend_Form
 
 		$form['file'] = new Zend_Form_Element_File('file');
 		$form['file']->setLabel('FILE')
-			->setAttrib('name', 'file[]')
-			->setAttrib('multiple', 'multiple')
 			->setRequired(true)
-			->addValidator('Count', false, 10)
+			->addValidator('Count', false, 1)
 			->addValidator('Size', false, 10240000)
-			->addValidator('Extension', false, 'pdf,jpg,jpeg,png,gif,csv,zip');
+			->addValidator('Extension', false, 'csv');
 
 		$form['separator'] = new Zend_Form_Element_Select('separator');
-		$form['separator']->setLabel('ITEMS_IMPORT_SEPARATOR')
+		$form['separator']->setLabel('CONTACTS_IMPORT_SEPARATOR')
 			->setRequired(true)
-			->addMultiOption('comma', 'ITEMS_IMPORT_COMMA')
-			->addMultiOption('semicolon', 'ITEMS_IMPORT_SEMICOLON')
+			->addMultiOption('auto', 'CONTACTS_IMPORT_SEPARATOR_AUTO')
+			->addMultiOption('comma', 'CONTACTS_IMPORT_SEPARATOR_COMMA')
+			->addMultiOption('semicolon', 'CONTACTS_IMPORT_SEPARATOR_SEMICOLON')
+			->setValue('auto')
 			->addValidator('NotEmpty');
 
-		$form['delimiter'] = new Zend_Form_Element_Select('delimiter');
-		$form['delimiter']->setLabel('ITEMS_IMPORT_DELIMITER')
-			->setRequired(true)
-			->addMultiOption('double', 'ITEMS_IMPORT_DOUBLE_QUOTES')
-			->addMultiOption('single', 'ITEMS_IMPORT_SINGLE_QUOTES')
-			->addValidator('NotEmpty');
+		$form['tagid'] = new Zend_Form_Element_Select('tagid');
+		$form['tagid']->setLabel('CONTACTS_IMPORT_TAG')
+			->addMultiOption('0', 'CONTACTS_IMPORT_TAG_NONE')
+			->setValue('0');
 
 		$form['submit'] = new Zend_Form_Element_Submit('submit');
-		$form['submit']->setLabel('UPLOAD_SUBMIT')
+		$form['submit']->setLabel('CONTACTS_IMPORT_PREVIEW')
 			->setAttrib('id', 'submitbutton');
 
 		$this->addElements($form);

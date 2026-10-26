@@ -220,6 +220,10 @@ check($contactDb->getContact(10)['name1'] === 'Own Company', 'Legacy contact loo
 check($contactDb->getById(11) === null && $contactDb->getContact(11) === false, 'Foreign contact was returned');
 check($contactDb->getById(12) === null && $contactDb->getContact(12) === false, 'Deleted contact was returned');
 check($contactDb->getById(999) === null && $contactDb->getContact(999) === false, 'Missing contact was returned');
+check($contactDb->getContactWithID(1000)['id'] === 10, 'Valid contact number was not found');
+check($contactDb->getContactWithID('Own Company') === false, 'Company name was interpreted as a contact number');
+check($contactDb->getContactWithID('1000invalid') === false, 'Partially numeric contact number was accepted');
+check($contactDb->getContactWithID(1100) === false && $contactDb->getContactWithID(1200) === false, 'Foreign or deleted contact number was returned');
 
 $factory = new Contacts_Service_ContactDataFactory();
 $ownData = $factory->getContactData(10);
