@@ -152,9 +152,18 @@ $person = [
     'type' => null,
 ];
 $adapter->rows = [
+	'contact' => [
+		['id' => 1, 'contactid' => 100, 'clientid' => 7, 'deleted' => 0],
+		['id' => 2, 'contactid' => 200, 'clientid' => 7, 'deleted' => 0],
+		['id' => 3, 'contactid' => 300, 'clientid' => 70, 'deleted' => 0],
+	],
     'contactperson' => [
         $person,
         array_replace($person, ['id' => 11, 'ordering' => 2, 'firstname' => 'Erika', 'lastname' => 'Musterfrau', 'salutation' => 'Frau', 'title' => '', 'position' => 'Manager']),
+        array_replace($person, ['id' => 12, 'clientid' => 8]),
+        array_replace($person, ['id' => 13, 'deleted' => 1]),
+        array_replace($person, ['id' => 14, 'parentid' => 2]),
+        array_replace($person, ['id' => 15, 'parentid' => 3, 'clientid' => 70]),
     ],
     'email' => [
         ['id' => 20, 'parentid' => 1, 'module' => 'contacts', 'controller' => 'contact', 'clientid' => 7, 'deleted' => 0, 'ordering' => 1, 'email' => 'company@example.invalid', 'suppressed' => 0],
@@ -185,6 +194,43 @@ check($personalizeBody->invoke($campaignEmail, '[SALUTATION] Willkommen', $perso
 check($personalizeBody->invoke($campaignEmail, '[SALUTATION] Willkommen', ['salutation' => '0']) === 'Guten Tag, Willkommen', 'Campaign email neutral greeting is inconsistent');
 
 $contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+$selectOptions = $contactpersonDb->getSelectOptionsForContact(1);
+check($selectOptions === ['10' => 'Dr. Max Mustermann', '11' => 'Erika Musterfrau'], 'Purchase contact-person options are incomplete or incorrectly formatted');
+check($contactpersonDb->belongsToContact(10, 1), 'Valid contact-person relation was rejected');
+check(!$contactpersonDb->belongsToContact(12, 1) && !$contactpersonDb->belongsToContact(13, 1) && !$contactpersonDb->belongsToContact(14, 1), 'Foreign, deleted or unrelated contact person was accepted');
+$purchaseorderViewModel = (new Purchases_Service_PurchaseorderEditViewModel())->build(1, Zend_Registry::get('User'), ['contactid' => 100]);
+$quoterequestViewModel = (new Purchases_Service_QuoterequestEditViewModel())->build(1, Zend_Registry::get('User'), ['contactid' => 100]);
+check($purchaseorderViewModel['contactpersonOptions'] === $selectOptions, 'Purchase order did not reload supplier contact persons');
+check($quoterequestViewModel['contactpersonOptions'] === $selectOptions, 'Quote request did not reload supplier contact persons');
+
+class PurchaseContactpersonValidationController extends DEEC_Controller_DocumentAction
+{
+	public function init() {}
+	public function validateSelection(array $values, array $row): array { return $this->validateDocumentContactperson($values, $row); }
+	public function viewContact(array $row): array { return $this->getViewContact($row); }
+}
+
+$request = new Zend_Controller_Request_Http();
+$request->setModuleName('purchases')->setControllerName('purchaseorder')->setActionName('edit');
+$validationController = new PurchaseContactpersonValidationController($request, new Zend_Controller_Response_Http());
+check((int)$validationController->viewContact(['contactid' => 100])['id'] === 1, 'Purchase document did not load its contact for view and email');
+check($validationController->validateSelection(['contactpersonid' => 10], ['contactid' => 100, 'contactpersonid' => null])['contactpersonid'] === 10, 'Valid purchase contact person was rejected');
+check($validationController->validateSelection(['contactpersonid' => 0], ['contactid' => 100, 'contactpersonid' => 10])['contactpersonid'] === null, 'Empty purchase contact-person selection was not normalized');
+check($validationController->validateSelection(['contactid' => 200], ['contactid' => 100, 'contactpersonid' => 10])['contactpersonid'] === null, 'Supplier change did not clear an unrelated contact person');
+try {
+	$validationController->validateSelection(['contactpersonid' => 14], ['contactid' => 100, 'contactpersonid' => null]);
+	throw new RuntimeException('Unrelated purchase contact person was accepted');
+} catch (InvalidArgumentException $expected) {
+	check($expected->getMessage() === 'Contact person does not belong to the selected contact.', 'Unexpected contact-person validation error');
+}
+
+Zend_Registry::set('Client', ['id' => 7, 'parentid' => 70, 'modules' => ['contacts' => 70, 'purchases' => 7]]);
+check((int)$validationController->viewContact(['contactid' => 300])['id'] === 3, 'Purchase document did not load the shared parent contact for email');
+check($validationController->validateSelection(['contactpersonid' => 15], ['contactid' => 300, 'contactpersonid' => null])['contactpersonid'] === 15, 'Shared parent contact person was rejected');
+$sharedPurchaseViewModel = (new Purchases_Service_PurchaseorderEditViewModel())->build(1, Zend_Registry::get('User'), ['contactid' => 300]);
+check($sharedPurchaseViewModel['contactpersonOptions'] === ['15' => 'Dr. Max Mustermann'], 'Shared parent contact persons were not loaded for purchase orders');
+Zend_Registry::set('Client', ['id' => 7, 'parentid' => 0, 'modules' => ['contacts' => 7]]);
+
 $newId = $contactpersonDb->createForParent(1, 'contacts', 'contact', [
     'firstname' => 'John',
     'lastname' => 'Doe',

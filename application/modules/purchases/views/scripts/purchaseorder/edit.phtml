@@ -3,6 +3,7 @@ $this->title = $this->form->getValue('title') ? $this->form->getValue('title') :
 $this->headTitle($this->title);
 echo $this->TinyMCE();
 echo $this->FileManager();
+$this->form->addOptions('contactpersonid', $this->contactpersonOptions ?? []);
 ?>
 
 <?php echo $this->form->renderForm([
@@ -19,7 +20,7 @@ echo $this->FileManager();
 				'data-type' => 'pos',
 			],
 		],
-		'customer' => ['title' => 'TABS_CUSTOMER'],
+		'customer' => ['title' => 'TABS_SUPPLIER'],
 		'shipping' => ['title' => 'TABS_SHIPPING_ADDRESS'],
 		'files' => ['title' => 'TABS_FILES', 'html' => $this->Files()],
 		'finish' => [

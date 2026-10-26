@@ -105,9 +105,13 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			return [];
 		}
 
-		$contactDb = new Contacts_Model_DbTable_Contact();
+		$client = Zend_Registry::get('Client');
+		$contactClientId = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$client['id'];
+		if ($contactClientId <= 0) return [];
 
-		return $contactDb->getContactWithID((int)$row['contactid']);
+		$contactDb = (new Contacts_Model_DbTable_Contact())->setClientId($contactClientId);
+
+		return $contactDb->getContactWithID((int)$row['contactid']) ?: [];
 	}
 
 	protected function beforeCreate(array $data): array
@@ -166,6 +170,41 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		}
 
 		return parent::beforeEditSave($values, $row);
+	}
+
+	protected function validateDocumentContactperson(array $values, array $row): array
+	{
+		if (!array_key_exists('contactpersonid', $values) && !array_key_exists('contactid', $values)) return $values;
+
+		$contactChanged = array_key_exists('contactid', $values)
+			&& (string)$values['contactid'] !== (string)($row['contactid'] ?? '');
+		$personExplicit = array_key_exists('contactpersonid', $values);
+		$contactpersonId = (int)($personExplicit ? $values['contactpersonid'] : ($row['contactpersonid'] ?? 0));
+
+		if ($contactpersonId <= 0) {
+			if ($personExplicit) $values['contactpersonid'] = null;
+			return $values;
+		}
+
+		$client = Zend_Registry::get('Client');
+		$contactClientId = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$client['id'];
+		if ($contactClientId <= 0) throw new InvalidArgumentException('Contact client context is missing.');
+
+		$contactDb = (new Contacts_Model_DbTable_Contact())->setClientId($contactClientId);
+		$contact = $contactDb->getContactWithID((int)($values['contactid'] ?? $row['contactid'] ?? 0));
+
+		$contactpersonDb = (new Contacts_Model_DbTable_Contactperson())->setClientId($contactClientId);
+		if ($contact && $contactpersonDb->belongsToContact($contactpersonId, (int)$contact['id'])) {
+			if ($personExplicit) $values['contactpersonid'] = $contactpersonId;
+			return $values;
+		}
+
+		if ($contactChanged && !$personExplicit) {
+			$values['contactpersonid'] = null;
+			return $values;
+		}
+
+		throw new InvalidArgumentException('Contact person does not belong to the selected contact.');
 	}
 
 	protected function getReadonlyFormFactoryClass(): ?string

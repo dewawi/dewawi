@@ -217,6 +217,16 @@ class Purchases_Form_Quoterequest extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'contactpersonid',
+			'type' => 'select',
+			'label' => 'QUOTE_REQUESTS_CONTACT_PERSON',
+			'options' => ['' => 'QUOTE_REQUESTS_NONE'],
+			'format' => ['type' => 'int'],
+			'tab' => 'customer',
+			'col' => 6,
+		]);
+
+		$this->addElement([
 			'name' => 'billingname1',
 			'type' => 'text',
 			'label' => 'QUOTE_REQUESTS_CONTACT_NAME',

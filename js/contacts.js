@@ -23,6 +23,17 @@ function applyContact(contactID) {
 	data.billingcity = contact.city;
 	data.billingcountry = contact.country;
 
+	var $contactperson = $('[name="contactpersonid"]');
+	if ($contactperson.length) {
+		var currentContactNumber = $.trim(String($('[name="contactid"]').val() || ''));
+		var selectedContactpersonId = currentContactNumber === String(contact.contactid)
+			? String($contactperson.val() || '')
+			: '';
+
+		data.contactpersonid = selectedContactpersonId;
+		refreshContactpersonOptions(contact.id, selectedContactpersonId);
+	}
+
 	if (billingAddress) {
 		data.billingname1 = billingAddress.name1 || contact.name1;
 		data.billingname2 = billingAddress.name2 || contact.name2;
@@ -167,6 +178,27 @@ function getRowsByParent(moduleName, controllerName, parentId, parentModule, par
 	});
 
 	return items;
+}
+
+function refreshContactpersonOptions(contactId, selectedId) {
+	var $select = $('[name="contactpersonid"]');
+
+	if (!$select.length) {
+		return;
+	}
+
+	var emptyLabel = $select.find('option[value=""]').first().text();
+	var contactpersons = getRowsByParent('contacts', 'contactperson', contactId, 'contacts', 'contact');
+
+	$select.empty().append($('<option>').val('').text(emptyLabel));
+
+	$.each(contactpersons, function (index, contactperson) {
+		$select.append(
+			$('<option>').val(contactperson.id).text(contactperson.displayname || '')
+		);
+	});
+
+	$select.val(String(selectedId || ''));
 }
 
 function findFirstByType(items, type) {

@@ -11,6 +11,8 @@ class Purchases_Service_EmailFormFactory
 		$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
 
 		$recipientOptions = [];
+		$preferredRecipientId = 0;
+		$selectedContactpersonId = (int)($document['contactpersonid'] ?? 0);
 
 		foreach ($emailDb->getContactRecipients((int)$contact['id']) as $row) {
 			if (empty($row['id']) || empty($row['email'])) {
@@ -18,9 +20,14 @@ class Purchases_Service_EmailFormFactory
 			}
 
 			$recipientOptions[(string)$row['id']] = DEEC_ContactpersonFormatter::recipientLabel($row);
+
+			if ($selectedContactpersonId > 0 && !$preferredRecipientId && (int)($row['contactpersonid'] ?? 0) === $selectedContactpersonId) {
+				$preferredRecipientId = (int)$row['id'];
+			}
 		}
 
 		$emailForm->addOptions('recipient', $recipientOptions, 'merge');
+		if ($preferredRecipientId) $emailForm->setValue('recipient', (string)$preferredRecipientId);
 
 		// Template key = controller
 		$emailtemplate = $emailtemplateDb->getEmailtemplate('purchases', $controller);

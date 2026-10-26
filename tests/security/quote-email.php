@@ -286,6 +286,11 @@ foreach ([false, true] as $shared) {
         check($factoryOptions === $options, 'Document email factories do not share the contact-person recipient model');
     }
 
+    $purchaseDocument = array_replace($adapter->rows['quote'][0], ['contactpersonid' => 204]);
+    $purchaseEmailForm = (new Purchases_Service_EmailFormFactory())->build($purchaseDocument, $adapter->rows['contact'][0], 'purchaseorder');
+    check($purchaseEmailForm->getValue('recipient') === '311', 'Selected purchase contact person was not preselected for email');
+    check(isset($purchaseEmailForm->getElement('recipient')['options'][311], $purchaseEmailForm->getElement('recipient')['options'][312]), 'Email selection lost additional addresses of the selected contact person');
+
     $campaignPersons = (new QuoteEmailTestCampaignRecipientService())->contactPersons([$adapter->rows['contact'][0]]);
     check($campaignPersons[100][0]['display_name'] === 'Dr. Jane Doe', 'Campaign contact-person name is inconsistent');
     check($campaignPersons[100][0]['formal_salutation'] === 'Sehr geehrte Frau Dr. Doe,', 'Campaign salutation is inconsistent');

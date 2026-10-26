@@ -5,23 +5,27 @@ class Purchases_Service_PurchaseorderEditViewModel
 	public function build(int $purchaseorderId, array $user, array $purchaseorderRow): array
 	{
 		$contact = [];
+		$contactpersonOptions = [];
 
-		//Get contact
 		if($purchaseorderRow['contactid']) {
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContactWithID($purchaseorderRow['contactid']);
+			$contactClientId = $this->getContactClientId();
+			if ($contactClientId <= 0) return ['contact' => [], 'contactpersonOptions' => []];
+			$contactDb = (new Contacts_Model_DbTable_Contact())->setClientId($contactClientId);
+			$contact = $contactDb->getContactWithID($purchaseorderRow['contactid']) ?: [];
 
-			//Phone
-			$phoneDb = new Contacts_Model_DbTable_Phone();
-			$contact['phone'] = $phoneDb->getByParentId($contact['id'], 'contacts', 'contact');
+			if ($contact) {
+				$phoneDb = (new Contacts_Model_DbTable_Phone())->setClientId($contactClientId);
+				$contact['phone'] = $phoneDb->getByParentId($contact['id'], 'contacts', 'contact');
 
-			//Email
-			$emailDb = new Contacts_Model_DbTable_Email();
-			$contact['email'] = $emailDb->getByParentId($contact['id'], 'contacts', 'contact');
+				$emailDb = (new Contacts_Model_DbTable_Email())->setClientId($contactClientId);
+				$contact['email'] = $emailDb->getByParentId($contact['id'], 'contacts', 'contact');
 
-			//Internet
-			$internetDb = new Contacts_Model_DbTable_Internet();
-			$contact['internet'] = $internetDb->getByParentId($contact['id'], 'contacts', 'contact');
+				$internetDb = (new Contacts_Model_DbTable_Internet())->setClientId($contactClientId);
+				$contact['internet'] = $internetDb->getByParentId($contact['id'], 'contacts', 'contact');
+
+				$contactpersonDb = (new Contacts_Model_DbTable_Contactperson())->setClientId($contactClientId);
+				$contactpersonOptions = $contactpersonDb->getSelectOptionsForContact((int)$contact['id']);
+			}
 		}
 
 		/*if($purchaseorder['contactid']) {
@@ -34,7 +38,14 @@ class Purchases_Service_PurchaseorderEditViewModel
 
 		return [
 			'contact' => $contact,
+			'contactpersonOptions' => $contactpersonOptions,
 		];
+	}
+
+	private function getContactClientId(): int
+	{
+		$client = Zend_Registry::get('Client');
+		return !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$client['id'];
 	}
 
 	protected function getContactFiles(int $contactId): array

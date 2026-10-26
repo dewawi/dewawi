@@ -34,4 +34,10 @@ class Purchases_PurchaseorderController extends DEEC_Controller_DocumentAction
 
 		return null;
 	}
+
+	protected function beforeEditSave(array $values, array $row): array
+	{
+		$values = parent::beforeEditSave($values, $row);
+		return $this->validateDocumentContactperson($values, $row);
+	}
 }

@@ -242,6 +242,16 @@ class Purchases_Form_Purchaseorder extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'contactpersonid',
+			'type' => 'select',
+			'label' => 'PURCHASE_ORDERS_CONTACT_PERSON',
+			'options' => ['' => 'PURCHASE_ORDERS_NONE'],
+			'format' => ['type' => 'int'],
+			'tab' => 'customer',
+			'col' => 6,
+		]);
+
+		$this->addElement([
 			'name' => 'billingname1',
 			'type' => 'text',
 			'label' => 'PURCHASE_ORDERS_CONTACT_NAME',
