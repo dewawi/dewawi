@@ -5,9 +5,16 @@ class Contacts_Service_ContactDataFactory
 	public function getContactData(int $contactId): array
 	{
 		$data = [];
+		$client = Zend_Registry::get('Client');
+		$contactClientId = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$client['id'];
+
+		if($contactClientId <= 0) {
+			return $data;
+		}
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$contact = $contactDb->getContact($contactId);
+		$contactDb->setClientId($contactClientId);
+		$contact = $contactDb->getById($contactId);
 
 		if(!$contact) {
 			return $data;
@@ -31,6 +38,7 @@ class Contacts_Service_ContactDataFactory
 		}
 
 		$addressDb = new Contacts_Model_DbTable_Address();
+		$addressDb->setClientId($contactClientId);
 		$addresses = $addressDb->getByParentId($contact['id'], 'contacts', 'contact');
 
 		$billingAddress = null;

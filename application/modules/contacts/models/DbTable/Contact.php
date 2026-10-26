@@ -20,24 +20,12 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 
 	public function getContact($id)
 	{
-		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
-		if(!$row) return false;
-		return $row->toArray();
+		return $this->getById((int)$id) ?: false;
 	}
 
 	public function getContactForEdit($id)
 	{
-		$id = (int)$id;
-
-		$where = [];
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
-		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
-
-		$row = $this->fetchRow($where);
-
-		return $row ? $row->toArray() : null;
+		return $this->getById((int)$id);
 	}
 
 	public function getContactWithID($contactid)
@@ -82,19 +70,12 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 
 	public function updateContact($id, $data)
 	{
-		$id = (int)$id;
-		$data['modified'] = $this->_date;
-		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById((int)$id, $data);
 	}
 
 	public function deleteContact($id)
 	{
-		$id = (int)$id;
-		$data = array('deleted' => 1);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->deleteById((int)$id);
 	}
 
 	public function suggestContacts(string $keyword, int $clientId, int $limit = 10): array
