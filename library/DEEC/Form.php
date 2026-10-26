@@ -1666,6 +1666,7 @@ class DEEC_Form
 
 			$field = $labelHtml;
 			$field .= '<div class="dw-choice-group dw-choice-group--checkbox">';
+			$field .= '<input type="hidden" name="'.$nameEsc.'[]" value="">';
 
 			foreach ((array)($el['options'] ?? []) as $optValue => $optLabel) {
 				$checked = isset($selectedMap[(string)$optValue]);

@@ -182,6 +182,20 @@ class Contacts_Form_Toolbar extends DEEC_Form
 
 		if ($isContactController) {
 			$this->addElement([
+				'name' => 'role',
+				'type' => 'select',
+				'label' => 'CONTACTS_ROLES',
+				'default' => 'all',
+				'options' => ['all' => 'TOOLBAR_ALL'] + Contacts_Model_DbTable_Contactrole::getRoleOptions(),
+				'filter' => true,
+				'toolbar' => 'filters',
+				'wrap' => false,
+				'format' => ['type' => 'string'],
+			]);
+		}
+
+		if ($isContactController) {
+			$this->addElement([
 				'name' => 'bulk-tagid',
 				'type' => 'select',
 				'label' => 'TOOLBAR_TAG',

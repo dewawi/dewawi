@@ -98,6 +98,13 @@ class Contacts_Model_Entity_Contact
 					'alias' => 'a',
 					'columns' => ['country'],
 				],
+				'role' => [
+					'type' => 'relation',
+					'table' => 'contactrole',
+					'entityColumn' => 'parentid',
+					'valueColumn' => 'role',
+					'allowed' => array_keys(Contacts_Model_DbTable_Contactrole::ROLE_LABELS),
+				],
 			],
 
 			'orders' => [

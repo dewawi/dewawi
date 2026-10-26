@@ -48,6 +48,12 @@ class Contacts_Model_List_Contacts extends DEEC_List
 				'callback' => [$this, 'renderTags'],
 			],
 			[
+				'name' => 'roles',
+				'label' => 'CONTACTS_ROLES',
+				'type' => 'callback',
+				'callback' => [$this, 'renderRoles'],
+			],
+			[
 				'name' => 'pin',
 				'label' => '',
 				'type' => 'pin',
@@ -113,6 +119,23 @@ class Contacts_Model_List_Contacts extends DEEC_List
 			$html[] = '<span class="dw-badge dw-badge--info">'
 				. $this->escape($label)
 				. '</span>';
+		}
+
+		return implode(' ', $html);
+	}
+
+	public function renderRoles($contact): string
+	{
+		$contactRoles = (array)$this->getOption('contactRoles', []);
+		$id = (int)$this->getFieldValue($contact, 'id');
+		$html = [];
+
+		foreach ($contactRoles[$id] ?? [] as $role) {
+			$label = Contacts_Model_DbTable_Contactrole::ROLE_LABELS[$role] ?? null;
+
+			if ($label !== null) {
+				$html[] = '<span class="dw-badge">'.$this->escape($this->translate($label)).'</span>';
+			}
 		}
 
 		return implode(' ', $html);

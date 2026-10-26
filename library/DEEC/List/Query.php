@@ -55,6 +55,7 @@ class DEEC_List_Query
 		$params['page'] = isset($params['page']) ? (int)$params['page'] : 1;
 		$params['limit'] = isset($params['limit']) ? (int)$params['limit'] : 25;
 		$params['tagid'] = isset($params['tagid']) ? (int)$params['tagid'] : 0;
+		$params['role'] = isset($params['role']) ? trim((string)$params['role']) : 'all';
 
 		if ($params['page'] <= 0) {
 			$params['page'] = 1;
@@ -275,12 +276,55 @@ class DEEC_List_Query
 					$this->applyEqualsFilter($select, $value, $filter, $config);
 					break;
 
+				case 'relation':
+					$this->applyRelationFilter($select, $value, $filter, $config, $name);
+					break;
+
 				case 'callback':
 					$callback = $filter['callback'] ?? null;
 					if(is_callable($callback)) call_user_func($callback, $select, $value, $filter, $config, $params);
 					break;
 			}
 		}
+	}
+
+	protected function applyRelationFilter($select, $value, array $filter, array $config, string $name): void
+	{
+		$value = trim((string)$value);
+		$allowed = $filter['allowed'] ?? [];
+
+		if ($allowed && !in_array($value, $allowed, true)) {
+			$select->where('1 = 0');
+			return;
+		}
+
+		$table = trim((string)($filter['table'] ?? ''));
+		$entityColumn = trim((string)($filter['entityColumn'] ?? ''));
+		$valueColumn = trim((string)($filter['valueColumn'] ?? ''));
+
+		if ($table === '' || $entityColumn === '' || $valueColumn === '') {
+			throw new InvalidArgumentException('Invalid relation filter configuration.');
+		}
+
+		$db = $select->getAdapter();
+		$relationAlias = preg_replace('/[^a-z0-9_]/i', '_', $name).'_filter';
+		$entityAlias = $filter['alias'] ?? $config['alias'];
+		$entityIdColumn = $filter['entityIdColumn'] ?? 'id';
+		$clientColumn = $filter['clientColumn'] ?? 'clientid';
+		$deletedColumn = $filter['deletedColumn'] ?? 'deleted';
+
+		$where = $relationAlias.'.'.$db->quoteIdentifier($entityColumn)
+			.' = '.$entityAlias.'.'.$db->quoteIdentifier($entityIdColumn)
+			.' AND '.$relationAlias.'.'.$db->quoteIdentifier($valueColumn).' = '.$db->quote($value)
+			.' AND '.$relationAlias.'.'.$db->quoteIdentifier($clientColumn).' = '.(int)$this->getClientId($config);
+
+		if ($deletedColumn !== null && $deletedColumn !== '') {
+			$where .= ' AND '.$relationAlias.'.'.$db->quoteIdentifier((string)$deletedColumn).' = 0';
+		}
+
+		$select->where(
+			'EXISTS (SELECT 1 FROM '.$db->quoteIdentifier($table).' AS '.$relationAlias.' WHERE '.$where.')'
+		);
 	}
 
 	protected function applyTagFilter($select, array $params, array $config): void

@@ -29,6 +29,15 @@ class Contacts_Form_Contact extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'type' => 'multicheckbox',
+			'name' => 'roles',
+			'label' => 'CONTACTS_ROLES',
+			'options' => Contacts_Model_DbTable_Contactrole::getRoleOptions(),
+			'tab' => 'overview',
+			'col' => 12,
+		]);
+
+		$this->addElement([
 			'type' => 'text',
 			'name' => 'name1',
 			'label' => 'CONTACTS_NAME_ORGANISATION',

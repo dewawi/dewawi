@@ -448,6 +448,7 @@ class TagTestContactExport extends Contacts_Service_ContactExportService
             'contactpersonEmails' => [],
             'categories' => [],
             'tags' => $tags,
+            'roles' => [],
         ];
     }
 }
@@ -470,7 +471,7 @@ $contact->clientid = 7;
 $export = new TagTestContactExport();
 $rows = $export->createList(Contacts_Service_ContactExportService::PROFILE_COMPANIES, [$contact])->getItems();
 $row = $rows[0];
-check(end($row) === 'Own contact tag', 'Contact export lost tags or included foreign tags: ' . json_encode($row));
+check($row['tags'] === 'Own contact tag', 'Contact export lost tags or included foreign tags: ' . json_encode($row));
 $checks++;
 
 echo 'PASS: ' . $checks . " item tag security and compatibility cases\n";

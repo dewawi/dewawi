@@ -206,8 +206,16 @@ $(document).ready(function(){
 			var data = {};
 			var params = {};
 			var value = this.value;
+			var fieldName = this.name;
+			var isMultiCheckbox = $field.is(':checkbox') && fieldName.slice(-2) === '[]';
 
-			if($field.is(':checkbox')) {
+			if(isMultiCheckbox) {
+				var baseName = fieldName.slice(0, -2);
+				var selected = $field.closest('form').find('input[type="checkbox"][name="' + fieldName + '"]:checked').map(function() {
+					return this.value;
+				}).get();
+				data[baseName] = selected.length ? selected : [''];
+			} else if($field.is(':checkbox')) {
 				value = $field.is(':checked') ? 1 : 0;
 			}
 
@@ -222,7 +230,9 @@ $(document).ready(function(){
 				} catch(e) {}
 			}
 
-			data[this.name] = value;
+			if(!isMultiCheckbox) {
+				data[fieldName] = value;
+			}
 
 			if(typeof this.dataset.id !== 'undefined') params['id'] = this.dataset.id;
 			if(typeof this.dataset.action !== 'undefined') params['action'] = this.dataset.action;

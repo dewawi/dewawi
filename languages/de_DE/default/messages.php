@@ -10,6 +10,7 @@
 	'MESSAGES_FORM_IS_INVALID' => 'Das Formular ist ungültig.',
 	'MESSAGES_NO_ITEM_FOUND' => 'Artikel <b>%s</b> konnte nicht gefunden werden.',
 	'MESSAGES_CONTACT_NOT_FOUND' => 'Kontakt konnte nicht gefunden werden.',
+	'MESSAGES_INVALID_CONTACT_ROLES' => 'Die ausgewählten Kontaktrollen sind ungültig.',
 	'MESSAGES_TAG_INVALID' => 'Der ausgewählte Tag ist ungültig oder nicht verfügbar.',
 	'MESSAGES_TAG_CONTEXT_INVALID' => 'Tags können nur gültigen Kontakten zugeordnet werden.',
 	'MESSAGES_TAG_ALREADY_ASSIGNED' => 'Dieser Tag ist dem Kontakt bereits zugeordnet.',

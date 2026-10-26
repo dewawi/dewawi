@@ -41,6 +41,9 @@ class ContactExportTestTranslator
 			'CONTACTS_CONTACT_ID' => 'Kontaktnr.',
 			'CONTACTS_NAME_ORGANISATION' => 'Firmenname',
 			'CONTACTS_EXPORT_COMPANY' => 'Unternehmen',
+			'CONTACTS_ROLES' => 'Rollen',
+			'CONTACTS_ROLE_CUSTOMER' => 'Kunde',
+			'CONTACTS_ROLE_SUPPLIER' => 'Lieferant',
 		];
 
 		return $translations[$key] ?? $key;
@@ -147,11 +150,15 @@ $service->related = [
 		11 => [['tag' => 'Gilventa'], ['tag' => '<i>VIP</i>']],
 		12 => [['tag' => 'Gilventa']],
 	],
+	'roles' => [
+		11 => ['customer', 'supplier'],
+		12 => [],
+	],
 ];
 
 $companyRows = csvRows($service->createList(Contacts_Service_ContactExportService::PROFILE_COMPANIES, [$contacts[0], $contacts[0], $contacts[1]]));
 check(count($companyRows) === 3, 'Company export does not contain exactly one row per contact');
-check(count($companyRows[0]) === 13, 'Company export contains an unexpected column count');
+check(count($companyRows[0]) === 14, 'Company export contains an unexpected column count');
 check($companyRows[0][0] === 'Kontaktnr.' && $companyRows[0][1] === 'Firmenname', 'Company headers were not translated');
 check($companyRows[1][1] === "'=Acme & Co", 'CSV formula injection or HTML sanitizing failed');
 check($companyRows[1][2] === 'Nord; "West"', 'CSV quoting changed special characters');
@@ -160,23 +167,26 @@ check($companyRows[1][8] === "'+49 1, +49 2", 'Company phone values were not com
 check($companyRows[1][9] === 'info@example.test, office@example.test', 'Company email values were not combined');
 check($companyRows[1][11] === 'Geschäftspartner > Kunden', 'Company category breadcrumb is missing');
 check($companyRows[1][12] === 'Gilventa, VIP', 'Company tags were not combined or sanitized');
+check($companyRows[1][13] === 'Kunde, Lieferant', 'Company roles were not exported');
 check(!str_contains(implode(';', $companyRows[0]), 'notes') && !str_contains(implode(';', $companyRows[0]), 'vatin'), 'Company export exposes sensitive columns');
 check($service->loadedClientId === 70, 'Authorized parent contact client was not used for export details');
 
 $personRows = csvRows($service->createList(Contacts_Service_ContactExportService::PROFILE_CONTACTPERSONS, $contacts));
 check(count($personRows) === 3, 'Contact person export does not contain exactly one row per active person');
-check(count($personRows[0]) === 11, 'Contact person export contains an unexpected column count');
+check(count($personRows[0]) === 12, 'Contact person export contains an unexpected column count');
 check($personRows[1][2] === 'Max' && $personRows[1][3] === 'Mustermann', 'Contact person export lost the new name fields');
 check(!str_contains(implode(';', $personRows[1]), 'Legacy') && !str_contains(implode(';', $personRows[1]), 'Ignored'), 'Contact person export used legacy name fields');
 check($personRows[1][8] === 'max@example.test, max.work@example.test', 'Contact person emails were not combined');
 check(!str_contains(implode("\n", array_map(static fn(array $row): string => implode(';', $row), $personRows)), 'Ohne Ansprechpartner'), 'Contact without a person created an empty person row');
 check($personRows[1][10] === 'Gilventa, VIP', 'Contact person export lost company tags');
+check($personRows[1][11] === 'Kunde, Lieferant', 'Contact person export lost company roles');
 
 $params = (new ContactExportTestQuery())->exportParams([
 	'_export' => true,
 	'page' => 4,
 	'limit' => 25,
 	'tagid' => 21,
+	'role' => 'supplier',
 	'catid' => 3,
 	'country' => 'DE',
 	'keyword' => 'Acme',
@@ -185,6 +195,7 @@ $params = (new ContactExportTestQuery())->exportParams([
 ]);
 check($params['limit'] === 0 && $params['offset'] === 0, 'Export is restricted to the visible list page');
 check($params['tagid'] === 21 && $params['catid'] === 3 && $params['country'] === 'DE' && $params['keyword'] === 'Acme', 'Export normalization lost active filters');
+check($params['role'] === 'supplier', 'Export normalization lost the role filter');
 check($params['order'] === 'name1' && $params['sort'] === 'ASC', 'Export normalization lost list sorting');
 
 $contactsJs = file_get_contents($root . '/js/contacts.js');

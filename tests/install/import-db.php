@@ -71,5 +71,23 @@ check($db->query('SELECT street FROM address WHERE id = 1')->fetch_row()[0] === 
 // Existing MariaDB installations may have an automatically prefixed street index.
 $db->query('ALTER TABLE address ADD INDEX street (street(255))');
 check($db->query('SELECT street FROM address WHERE id = 1')->fetch_row()[0] === "First line\nSecond line", 'Existing installation with a street index lost data');
-echo "PASS: full installation, schema indexes, structure/data failure handling and historical address upgrade on " . $db->server_info . "\n";
+
+// Contact role upgrade maps only explicit legacy codes and remains idempotent.
+$db->query('CREATE DATABASE contact_role_upgrade');
+$db->select_db('contact_role_upgrade');
+$db->query('CREATE TABLE contactperson (id INT PRIMARY KEY, name1 VARCHAR(255) NULL, name2 VARCHAR(255) NULL) ENGINE=InnoDB');
+$db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+$db->query("INSERT INTO contact (id, type, clientid, deleted) VALUES (1, ' customer ', 7, 0), (2, 'supplier', 7, 0), (3, 'customer,supplier', 7, 0), (4, '', 7, 0), (5, 'partner', 7, 1), (6, 'Prospect', 7, 0)");
+$roleQueries = [];
+PMA_splitSqlFile($roleQueries, file_get_contents($root . '/install/config/update-1.1.7-1.1.8.sql'));
+foreach ($roleQueries as $query) $db->query($query['query']);
+check((int)$db->query('SELECT COUNT(*) FROM contactrole')->fetch_row()[0] === 4, 'Contact role upgrade mapped ambiguous or empty legacy values');
+check($db->query('SELECT GROUP_CONCAT(role ORDER BY role) FROM contactrole')->fetch_row()[0] === 'customer,partner,prospect,supplier', 'Contact role upgrade lost an explicit role code');
+check($db->query('SELECT type FROM contact WHERE id = 1')->fetch_row()[0] === ' customer ', 'Contact role upgrade changed contact.type');
+foreach ($roleQueries as $query) {
+    if (str_starts_with(trim($query['query']), 'INSERT IGNORE INTO `contactrole`')) $db->query($query['query']);
+}
+check((int)$db->query('SELECT COUNT(*) FROM contactrole')->fetch_row()[0] === 4, 'Repeated contact role upgrade created duplicates');
+
+echo "PASS: full installation, schema indexes, upgrade migrations and failure handling on " . $db->server_info . "\n";
 $db->close();

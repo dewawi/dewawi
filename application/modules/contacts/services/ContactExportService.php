@@ -15,8 +15,8 @@ class Contacts_Service_ContactExportService
 		$clientId = $this->getContactClientId($contacts);
 		$related = $this->loadRelatedData($contacts, $clientId, $context);
 		$items = $profile === self::PROFILE_CONTACTPERSONS
-			? $this->buildContactpersonRows($contacts, $related)
-			: $this->buildCompanyRows($contacts, $related);
+			? $this->buildContactpersonRows($contacts, $related, $context)
+			: $this->buildCompanyRows($contacts, $related, $context);
 
 		return new DEEC_List([
 			'items' => $items,
@@ -113,6 +113,7 @@ class Contacts_Service_ContactExportService
 				'contactpersonEmails' => [],
 				'categories' => [],
 				'tags' => [],
+				'roles' => [],
 			];
 		}
 
@@ -136,6 +137,12 @@ class Contacts_Service_ContactExportService
 			$tags = $tagEntityDb->getTagEntitiesForParents('contacts', 'contact', $contactIds);
 		}
 
+		$roles = $context['contactRoles'] ?? null;
+		if (!is_array($roles)) {
+			$contactRoleDb = (new Contacts_Model_DbTable_Contactrole())->setClientId($clientId);
+			$roles = $contactRoleDb->getForContacts($contactIds);
+		}
+
 		return [
 			'addresses' => $this->groupRows($addressDb->getByParentIds($contactIds, 'contacts', 'contact')),
 			'phones' => $this->groupRows($phoneDb->getByParentIds($contactIds, 'contacts', 'contact')),
@@ -145,6 +152,7 @@ class Contacts_Service_ContactExportService
 			'contactpersonEmails' => $this->groupRows($emailDb->getByParentIds($contactpersonIds, 'contacts', 'contactperson')),
 			'categories' => $categories,
 			'tags' => $tags,
+			'roles' => $roles,
 		];
 	}
 
@@ -159,7 +167,7 @@ class Contacts_Service_ContactExportService
 		return $grouped;
 	}
 
-	private function buildCompanyRows(array $contacts, array $related): array
+	private function buildCompanyRows(array $contacts, array $related, array $context): array
 	{
 		$rows = [];
 
@@ -181,13 +189,14 @@ class Contacts_Service_ContactExportService
 				'internet' => $this->joinField($related['internets'][$id] ?? [], 'internet'),
 				'category' => $this->getCategory($contact, $related['categories']),
 				'tags' => $this->joinField($related['tags'][$id] ?? [], 'tag'),
+				'roles' => $this->joinRoles($related['roles'][$id] ?? [], $context),
 			];
 		}
 
 		return $rows;
 	}
 
-	private function buildContactpersonRows(array $contacts, array $related): array
+	private function buildContactpersonRows(array $contacts, array $related, array $context): array
 	{
 		$rows = [];
 
@@ -195,6 +204,7 @@ class Contacts_Service_ContactExportService
 			$contactId = (int)$contact['id'];
 			$category = $this->getCategory($contact, $related['categories']);
 			$tags = $this->joinField($related['tags'][$contactId] ?? [], 'tag');
+			$roles = $this->joinRoles($related['roles'][$contactId] ?? [], $context);
 
 			foreach ($related['contactpersons'][$contactId] ?? [] as $contactperson) {
 				$personId = (int)$contactperson['id'];
@@ -210,6 +220,7 @@ class Contacts_Service_ContactExportService
 					'email' => $this->joinField($related['contactpersonEmails'][$personId] ?? [], 'email'),
 					'category' => $category,
 					'tags' => $tags,
+					'roles' => $roles,
 				];
 			}
 		}
@@ -256,6 +267,33 @@ class Contacts_Service_ContactExportService
 		return trim(strip_tags($value));
 	}
 
+	private function joinRoles(array $roles, array $context): string
+	{
+		$labels = [];
+
+		foreach (Contacts_Model_DbTable_Contactrole::ROLE_LABELS as $role => $translationKey) {
+			if (!in_array($role, $roles, true)) {
+				continue;
+			}
+
+			$label = $translationKey;
+			$view = $context['view'] ?? null;
+
+			if ($view && method_exists($view, 'translate')) {
+				$label = $view->translate($translationKey);
+			} elseif (Zend_Registry::isRegistered('DEEC_Translate')) {
+				$translator = Zend_Registry::get('DEEC_Translate');
+				if (method_exists($translator, 't')) {
+					$label = $translator->t($translationKey);
+				}
+			}
+
+			$labels[] = $this->plain($label);
+		}
+
+		return implode(', ', $labels);
+	}
+
 	private function getColumns(string $profile): array
 	{
 		if ($profile === self::PROFILE_CONTACTPERSONS) {
@@ -271,6 +309,7 @@ class Contacts_Service_ContactExportService
 				['name' => 'email', 'label' => 'CONTACTS_CONTACT_PERSONS_EMAIL'],
 				['name' => 'category', 'label' => 'CONTACTS_CATEGORY'],
 				['name' => 'tags', 'label' => 'CONTACTS_TAGS'],
+				['name' => 'roles', 'label' => 'CONTACTS_ROLES'],
 			];
 		}
 
@@ -288,6 +327,7 @@ class Contacts_Service_ContactExportService
 			['name' => 'internet', 'label' => 'CONTACTS_INTERNET'],
 			['name' => 'category', 'label' => 'CONTACTS_CATEGORY'],
 			['name' => 'tags', 'label' => 'CONTACTS_TAGS'],
+			['name' => 'roles', 'label' => 'CONTACTS_ROLES'],
 		];
 	}
 }

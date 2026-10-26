@@ -53,6 +53,12 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		}
 		$options = $list->getOptions();
 		$options['tagEntities'] = $tagEntityDb->getTagEntitiesForParents('contacts', 'contact', $contactIds);
+
+		$contactRoleDb = new Contacts_Model_DbTable_Contactrole();
+		if ($contactClientId > 0) {
+			$contactRoleDb->setClientId($contactClientId);
+		}
+		$options['contactRoles'] = $contactRoleDb->getForContacts($contactIds);
 		$list->setOptions($options);
 
 		if ($this->getRequest()->getActionName() === 'export') {
@@ -60,6 +66,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 			$this->exportList = $service->createList($this->getExportProfile(), $list->getItems(), [
 				'view' => $this->view,
 				'tagEntities' => $options['tagEntities'],
+				'contactRoles' => $options['contactRoles'],
 			]);
 		}
 	}
@@ -303,7 +310,9 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		$options = $this->_helper->Options->applyFormOptions($form);
 
 		$toolbar = new Contacts_Form_Toolbar();
-		$contactDb = new Contacts_Model_DbTable_Contact();
+		$contactClientId = $this->getContactClientId();
+		$contactDb = (new Contacts_Model_DbTable_Contact())->setClientId($contactClientId);
+		$contactRoleDb = (new Contacts_Model_DbTable_Contactrole())->setClientId($contactClientId);
 
 		$contact = $contactDb->getById($id);
 
@@ -328,7 +337,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 				$this->disableView();
 
 				return $this->_helper->json(
-					$this->saveFormAjax($form, $contactDb, $id)
+					$this->saveContactFormAjax($form, $contactDb, $contactRoleDb, $id)
 				);
 			}
 
@@ -337,19 +346,22 @@ class Contacts_ContactController extends DEEC_Controller_Action
 			if (!$form->isValid($post)) {
 				$form->setValues($post);
 			} else {
-				$values = $form->getFilteredValues();
+				try {
+					$this->saveContactForm($form, $contactDb, $contactRoleDb, $id);
+					$this->_flashMessenger->addMessage('MESSAGES_SAVED');
 
-				$contactDb->updateById($id, $values);
-
-				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
-
-				return $this->_helper->redirector->gotoSimple('edit', 'contact', null, ['id' => $id]);
+					return $this->_helper->redirector->gotoSimple('edit', 'contact', null, ['id' => $id]);
+				} catch (InvalidArgumentException $e) {
+					$this->_flashMessenger->addMessage('MESSAGES_INVALID_CONTACT_ROLES');
+					$form->setValues($post);
+				}
 			}
 		} else {
 			$locale = Zend_Registry::get('Zend_Locale');
 			$contactDisplay = DEEC_Display::rowToFormValues($form, $contact, $locale);
 
 			$form->setValues($contactDisplay);
+			$form->setValue('roles', $contactRoleDb->getForContact($id));
 
 			$this->_helper->MultiEntityLoader->populate($form, $id, 'contacts', 'contact');
 		}
@@ -367,6 +379,85 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		]));
 
 		$this->assignMessages();
+	}
+
+	private function saveContactFormAjax(
+		DEEC_Form $form,
+		Contacts_Model_DbTable_Contact $contactDb,
+		Contacts_Model_DbTable_Contactrole $contactRoleDb,
+		int $id
+	): array {
+		$post = (array)$this->getRequest()->getPost();
+		$hasRoles = array_key_exists('roles', $post);
+
+		try {
+			$roles = $hasRoles ? Contacts_Model_DbTable_Contactrole::normalizeRoleCodes($post['roles']) : [];
+		} catch (InvalidArgumentException $e) {
+			return [
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_INVALID_CONTACT_ROLES'),
+			];
+		}
+
+		unset($post['roles']);
+		$adapter = $contactDb->getAdapter();
+
+		try {
+			$adapter->beginTransaction();
+
+			if (!$contactDb->getByIdForUpdate($id)) {
+				throw new RuntimeException('Contact not found.');
+			}
+
+			$service = new DEEC_Service_FormSaveService();
+			$result = $service->save($form, $contactDb, $id, $post, true);
+
+			if (empty($result['ok'])) {
+				$adapter->rollBack();
+				return $result;
+			}
+
+			if ($hasRoles) {
+				$result['values']['roles'] = $contactRoleDb->syncForContact($id, $roles);
+			}
+
+			$adapter->commit();
+			return $result;
+		} catch (Exception $e) {
+			$adapter->rollBack();
+
+			return [
+				'ok' => false,
+				'message' => 'save_failed',
+			];
+		}
+	}
+
+	private function saveContactForm(
+		DEEC_Form $form,
+		Contacts_Model_DbTable_Contact $contactDb,
+		Contacts_Model_DbTable_Contactrole $contactRoleDb,
+		int $id
+	): void {
+		$values = $form->getFilteredValues();
+		$roles = Contacts_Model_DbTable_Contactrole::normalizeRoleCodes($values['roles'] ?? []);
+		unset($values['roles']);
+		$adapter = $contactDb->getAdapter();
+
+		try {
+			$adapter->beginTransaction();
+
+			if (!$contactDb->getByIdForUpdate($id)) {
+				throw new RuntimeException('Contact not found.');
+			}
+
+			$contactDb->updateById($id, $values);
+			$contactRoleDb->syncForContact($id, $roles);
+			$adapter->commit();
+		} catch (Exception $e) {
+			$adapter->rollBack();
+			throw $e;
+		}
 	}
 
 	public function historyAction()
@@ -483,7 +574,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 	{
 		$request = $this->getRequest();
 		$form = new Contacts_Form_Import();
-		$clientId = $this->getContactImportClientId();
+		$clientId = $this->getContactClientId();
 		$session = new Zend_Session_Namespace(self::IMPORT_SESSION);
 		$tagDb = (new Contacts_Model_DbTable_Tag())->setClientId($clientId);
 		$form->getElement('tagid')->addMultiOptions($tagDb->getSelectOptions());
@@ -1006,7 +1097,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		}
 	}
 
-	private function getContactImportClientId(): int
+	private function getContactClientId(): int
 	{
 		$client = Zend_Registry::get('Client');
 		$clientId = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$client['id'];
