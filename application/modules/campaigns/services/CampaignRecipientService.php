@@ -114,11 +114,8 @@ class Campaigns_Service_CampaignRecipientService
 				}
 
 				$person['email_list'] = implode(',', array_values(array_unique($emails)));
-
-				$salutation = trim((string)($person['salutation'] ?? ''));
-				$name2 = trim((string)($person['name2'] ?? ''));
-
-				$person['display_name'] = trim($salutation.' '.$name2);
+				$person['display_name'] = DEEC_ContactpersonFormatter::displayName($person);
+				$person['formal_salutation'] = DEEC_ContactpersonFormatter::formalSalutation($person);
 			}
 			unset($person);
 

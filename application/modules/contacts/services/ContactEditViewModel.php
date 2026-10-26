@@ -73,17 +73,9 @@ class Contacts_Service_ContactEditViewModel
 					continue;
 				}
 
-				$personName = trim(
-					((string) ($contactperson['name1'] ?? '')) . ' ' .
-					((string) ($contactperson['name2'] ?? ''))
+				$recipientOptions[(string) $row['id']] = DEEC_ContactpersonFormatter::recipientLabel(
+					array_merge($row, $contactperson)
 				);
-
-				$label = (string) $row['email'];
-				if ($personName !== '') {
-					$label .= ' (' . $personName . ')';
-				}
-
-				$recipientOptions[(string) $row['id']] = $label;
 			}
 		}
 

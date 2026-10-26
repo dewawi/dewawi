@@ -102,8 +102,10 @@ class DEEC_Emailaddress {
 				r.contactid,
 				r.contactpersonid,
 				r.salutation,
-				r.name1,
-				r.name2,
+				r.title,
+				r.firstname,
+				r.lastname,
+				r.position,
 				r.department
 			FROM (
 				SELECT
@@ -113,8 +115,10 @@ class DEEC_Emailaddress {
 					c.id AS contactid,
 					NULL AS contactpersonid,
 					NULL AS salutation,
-					NULL AS name1,
-					NULL AS name2,
+					NULL AS title,
+					NULL AS firstname,
+					NULL AS lastname,
+					NULL AS position,
 					NULL AS department
 				FROM contact AS c
 				INNER JOIN email AS e
@@ -136,8 +140,10 @@ class DEEC_Emailaddress {
 					c.id AS contactid,
 					cp.id AS contactpersonid,
 					cp.salutation,
-					cp.name1,
-					cp.name2,
+					cp.title,
+					cp.firstname,
+					cp.lastname,
+					cp.position,
 					cp.department
 				FROM contact AS c
 				INNER JOIN contactperson AS cp

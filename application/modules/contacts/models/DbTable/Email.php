@@ -38,14 +38,32 @@ class Contacts_Model_DbTable_Email extends DEEC_Model_DbTable_Entity
 	public function getContactRecipients(int $contactId): array
 	{
 		$emails = $this->getByParentId($contactId, 'contacts', 'contact');
+
+		foreach($emails as &$email) {
+			$email['contactid'] = $contactId;
+			$email['contactpersonid'] = null;
+			$email['salutation'] = null;
+			$email['title'] = null;
+			$email['firstname'] = null;
+			$email['lastname'] = null;
+			$email['position'] = null;
+			$email['department'] = null;
+		}
+		unset($email);
+
 		$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
 		$contactpersonDb->setClientId($this->getClientId());
 
 		foreach($contactpersonDb->getByParentId($contactId, 'contacts', 'contact') as $person) {
 			foreach($this->getByParentId((int)$person['id'], 'contacts', 'contactperson') as $email) {
+				$email['contactid'] = $contactId;
+				$email['contactpersonid'] = (int)$person['id'];
 				$email['salutation'] = $person['salutation'];
-				$email['name1'] = $person['name1'];
-				$email['name2'] = $person['name2'];
+				$email['title'] = $person['title'];
+				$email['firstname'] = $person['firstname'];
+				$email['lastname'] = $person['lastname'];
+				$email['position'] = $person['position'];
+				$email['department'] = $person['department'];
 				$emails[] = $email;
 			}
 		}

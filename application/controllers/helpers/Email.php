@@ -83,13 +83,15 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					if($emailArray['controller'] == 'contact') {
 						$recipients[0]['contactid'] = $emailArray['parentid'];
 					} elseif($emailArray['controller'] == 'contactperson') {
-						$recipients[0]['contactid'] = $emailArray['parentid'];
-
 						$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+						$contactpersonDb->setClientId((int)$emailArray['clientid']);
 						$contactperson = $contactpersonDb->getById($emailArray['parentid']);
+						if(!$contactperson) throw new RuntimeException('Contact person is not available');
 
-						$recipients[0]['salutation'] = $contactperson['salutation'];
-						$recipients[0]['name2'] = $contactperson['name2'];
+						$recipients[0]['contactid'] = (int)$contactperson['parentid'];
+						foreach(['salutation', 'title', 'firstname', 'lastname', 'position', 'department'] as $field) {
+							$recipients[0][$field] = (string)($contactperson[$field] ?? '');
+						}
 					}
 				}
 			}
@@ -153,9 +155,13 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			if(!$matches) continue;
 			return [
 				'email' => (string)$email['email'],
-				'contactid' => (int)$email['parentid'],
+				'contactid' => (int)$email['contactid'],
 				'salutation' => (string)($email['salutation'] ?? ''),
-				'name2' => (string)($email['name2'] ?? ''),
+				'title' => (string)($email['title'] ?? ''),
+				'firstname' => (string)($email['firstname'] ?? ''),
+				'lastname' => (string)($email['lastname'] ?? ''),
+				'position' => (string)($email['position'] ?? ''),
+				'department' => (string)($email['department'] ?? ''),
 			];
 		}
 
@@ -556,23 +562,9 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 		}
 	}
 
-	private function buildSalutation(array $recipient): string {
-		//derive from gender + name
-		$gender = trim($recipient['salutation'] ?? '');
-		$name = trim($recipient['name2'] ?? '');
-
-		if ($gender && $name) {
-			return 'Guten Tag ' . $gender . ' ' . $name . ',';
-		}
-
-		// default fallback
-		return 'Sehr geehrte Damen und Herren,';
-	}
-
 	private function personalizeBody(string $body, array $recipient): string {
-		// only replace if placeholder is present
 		if (strpos($body, '[SALUTATION]') !== false) {
-			$salutation = $this->buildSalutation($recipient);
+			$salutation = DEEC_ContactpersonFormatter::formalSalutation($recipient);
 			$body = str_replace('[SALUTATION]', $salutation, $body);
 		}
 

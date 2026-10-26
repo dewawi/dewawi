@@ -17,12 +17,7 @@ class Sales_Service_EmailFormFactory
 				continue;
 			}
 
-			$personName = trim((string)($row['name1'] ?? '') . ' ' . (string)($row['name2'] ?? ''));
-			$label = (string)$row['email'];
-			if ($personName !== '') {
-				$label .= ' (' . $personName . ')';
-			}
-			$recipientOptions[(string)$row['id']] = $label;
+			$recipientOptions[(string)$row['id']] = DEEC_ContactpersonFormatter::recipientLabel($row);
 		}
 
 		$emailForm->addOptions('recipient', $recipientOptions, 'merge');

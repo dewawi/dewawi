@@ -31,6 +31,7 @@ class DEEC_Email {
 		$this->emailaddress = new DEEC_Emailaddress($basePath, $host, $username, $password, $dbname);
 		require_once(BASE_PATH.'/library/DEEC/Emailattachment.php');
 		$this->emailattachment = new DEEC_Emailattachment($basePath, $host, $username, $password, $dbname);
+		require_once(BASE_PATH.'/library/DEEC/ContactpersonFormatter.php');
 	}
 
 	private function getSmtpConfig($clientid) {
@@ -388,23 +389,9 @@ class DEEC_Email {
 		return $result;
 	}
 
-	private function buildSalutation(array $recipient): string {
-		//derive from gender + name
-		$gender = trim($recipient['salutation'] ?? '');
-		$name = trim($recipient['name2'] ?? '');
-
-		if ($gender && $name) {
-			return 'Guten Tag ' . $gender . ' ' . $name . ',';
-		}
-
-		// default fallback
-		return 'Sehr geehrte Damen und Herren,';
-	}
-
 	private function personalizeBody(string $body, array $recipient): string {
-		// only replace if placeholder is present
 		if (strpos($body, '[SALUTATION]') !== false) {
-			$salutation = $this->buildSalutation($recipient);
+			$salutation = DEEC_ContactpersonFormatter::formalSalutation($recipient);
 			$body = str_replace('[SALUTATION]', $salutation, $body);
 		}
 

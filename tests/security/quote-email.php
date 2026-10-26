@@ -133,6 +133,14 @@ class QuoteEmailTestDirectory extends Zend_Controller_Action_Helper_Abstract
     public function getUrl($id) { return 'unused'; }
 }
 
+class QuoteEmailTestCampaignRecipientService extends Campaigns_Service_CampaignRecipientService
+{
+    public function contactPersons(array $contacts): array
+    {
+        return $this->getContactPersonsByCompany($contacts);
+    }
+}
+
 $adapter = new QuoteEmailTestAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
 Zend_Db_Table::setDefaultAdapter($adapter);
 Zend_Controller_Action_HelperBroker::addHelper(new QuoteEmailTestFlashMessenger());
@@ -147,14 +155,15 @@ function setupQuoteEmail(bool $shared = false): void
     Zend_Registry::set('Config', []);
     $quote = ['id' => 10, 'quoteid' => 1001, 'clientid' => 7, 'contactid' => 500, 'language' => 'de_DE', 'state' => 105, 'deleted' => 0];
     $contact = ['id' => 100, 'contactid' => 500, 'clientid' => $contactClientId, 'deleted' => 0];
-    $person = ['id' => 200, 'parentid' => 100, 'module' => 'contacts', 'controller' => 'contact', 'clientid' => $contactClientId, 'deleted' => 0, 'name1' => 'Jane', 'name2' => 'Doe', 'salutation' => 'Ms'];
+    $person = ['id' => 200, 'parentid' => 100, 'module' => 'contacts', 'controller' => 'contact', 'clientid' => $contactClientId, 'deleted' => 0, 'name1' => 'Legacy First', 'name2' => 'Legacy Last', 'firstname' => 'Jane', 'lastname' => 'Doe', 'salutation' => 'Frau', 'title' => 'Dr.', 'position' => 'Buyer', 'department' => 'Purchasing'];
+    $secondPerson = array_replace($person, ['id' => 204, 'firstname' => 'John', 'lastname' => 'Smith', 'salutation' => 'Herr', 'title' => '', 'position' => 'Manager', 'department' => 'Sales']);
     $email = ['id' => 300, 'parentid' => 100, 'module' => 'contacts', 'controller' => 'contact', 'clientid' => $contactClientId, 'deleted' => 0, 'email' => 'customer@example.invalid', 'suppressed' => 0];
     $message = ['id' => 400, 'documentid' => 10, 'contactid' => 100, 'campaignid' => null, 'module' => 'sales', 'controller' => 'quote', 'recipient' => $email['email'], 'clientid' => $contactClientId, 'deleted' => 0, 'subject' => 'Quote', 'body' => '[SALUTATION] [SIGNATURE]'];
     $adapter->rows = [
         'permission' => [['id' => 1, 'userid' => 42, 'clientid' => 7, 'deleted' => 0, 'sales' => '{"quote":["view","add"]}']],
         'quote' => [$quote, array_replace($quote, ['id' => 11, 'clientid' => 8]), array_replace($quote, ['id' => 12, 'clientid' => 70]), array_replace($quote, ['id' => 13, 'deleted' => 1])],
         'contact' => [$contact, array_replace($contact, ['id' => 101, 'contactid' => 501]), array_replace($contact, ['id' => 102, 'clientid' => 8])],
-        'contactperson' => [$person, array_replace($person, ['id' => 201, 'parentid' => 101]), array_replace($person, ['id' => 202, 'clientid' => 8]), array_replace($person, ['id' => 203, 'deleted' => 1])],
+        'contactperson' => [$person, $secondPerson, array_replace($person, ['id' => 201, 'parentid' => 101]), array_replace($person, ['id' => 202, 'clientid' => 8]), array_replace($person, ['id' => 203, 'deleted' => 1])],
         'email' => [
             $email,
             array_replace($email, ['id' => 301, 'parentid' => 200, 'controller' => 'contactperson', 'email' => 'person@example.invalid']),
@@ -167,6 +176,8 @@ function setupQuoteEmail(bool $shared = false): void
             array_replace($email, ['id' => 308, 'module' => 'items']),
             array_replace($email, ['id' => 309, 'controller' => 'other']),
             array_replace($email, ['id' => 310, 'email' => 'invalid']),
+            array_replace($email, ['id' => 311, 'parentid' => 204, 'controller' => 'contactperson', 'email' => 'john@example.invalid']),
+            array_replace($email, ['id' => 312, 'parentid' => 204, 'controller' => 'contactperson', 'email' => 'john.alt@example.invalid']),
         ],
         'emailmessage' => [$message, array_replace($message, ['id' => 401, 'documentid' => 11]), array_replace($message, ['id' => 402, 'recipient' => 'unrelated@example.invalid']), array_replace($message, ['id' => 403, 'deleted' => 1]), array_replace($message, ['id' => 404, 'clientid' => 8]), array_replace($message, ['id' => 405, 'documentid' => 12]), array_replace($message, ['id' => 406, 'recipient' => 'person@example.invalid'])],
     ];
@@ -204,13 +215,16 @@ function deniedQuoteEmail(array $post = [], array $params = [], string $method =
 
 foreach ([false, true] as $shared) {
     setupQuoteEmail($shared);
-    foreach ([300 => 'customer@example.invalid', 301 => 'person@example.invalid'] as $id => $address) {
+    foreach ([300 => 'customer@example.invalid', 301 => 'person@example.invalid', 311 => 'john@example.invalid', 312 => 'john.alt@example.invalid'] as $id => $address) {
         check(sendQuoteEmail(['recipient' => $id]), 'Allowed contact or contact-person email was rejected');
         check(count(DEEC_Email::$sent) === 1 && DEEC_Email::$sent[0]['to'] === [$address], 'Wrong recipient or duplicate send');
         check(DEEC_Feedback::$requests[0][2] === 10 && DEEC_Feedback::$requests[0][3] === 7, 'Feedback used contact tenant instead of quote tenant');
         check($adapter->writes[0][1]['clientid'] === ($shared ? 70 : 7), 'Existing email log tenant changed');
+        check($adapter->writes[0][1]['contactid'] === 100, 'Email history was not assigned to the company contact');
     }
-    check(str_contains(DEEC_Email::$sent[0]['body'], 'Ms Doe'), 'Contact-person salutation was lost');
+    check(sendQuoteEmail(['recipient' => 301]) && str_contains(DEEC_Email::$sent[0]['body'], 'Sehr geehrte Frau Dr. Doe,'), 'Female contact-person salutation was not personalized');
+    check(sendQuoteEmail(['recipient' => 311]) && str_contains(DEEC_Email::$sent[0]['body'], 'Sehr geehrter Herr Smith,'), 'Male contact-person salutation was not personalized');
+    check(sendQuoteEmail(['recipient' => 300]) && str_contains(DEEC_Email::$sent[0]['body'], 'Guten Tag,'), 'Company email did not receive a neutral greeting');
     foreach ([302, 303, 304, 305, 306, 307, 308, 309, 310, 999, 0, -1, [], '300 OR 1=1'] as $id) deniedQuoteEmail(['recipient' => $id]);
     foreach ([11, 12, 13, 999, 0, -1] as $documentId) deniedQuoteEmail([], ['documentid' => $documentId]);
     deniedQuoteEmail([], ['campaignid' => 999]);
@@ -260,8 +274,22 @@ foreach ([false, true] as $shared) {
     deniedQuoteEmail(['module' => 'contacts', 'controller' => 'contact', 'recipient' => 305]);
     $form = (new Sales_Service_EmailFormFactory())->build($adapter->rows['quote'][0], $adapter->rows['contact'][0], 'quote');
     $options = $form->getElement('recipient')['options'];
-    check($options[300] === 'customer@example.invalid' && $options[301] === 'person@example.invalid (Jane Doe)', 'Recipient option labels changed');
+    check($options[300] === 'customer@example.invalid' && $options[301] === 'person@example.invalid (Dr. Jane Doe)', 'Recipient option labels changed');
+    check($options[311] === 'john@example.invalid (John Smith)' && $options[312] === 'john.alt@example.invalid (John Smith)', 'Multiple contact-person addresses were not listed');
     check(array_intersect(array_keys($options), [302, 303, 304, 305, 306, 307, 308, 309, 310]) === [], 'Unrelated, deleted, suppressed or invalid recipient appeared in quote form');
+
+    foreach ([
+        new Purchases_Service_EmailFormFactory(),
+        new Processes_Service_EmailFormFactory(),
+    ] as $factory) {
+        $factoryOptions = $factory->build($adapter->rows['quote'][0], $adapter->rows['contact'][0], 'quote')->getElement('recipient')['options'];
+        check($factoryOptions === $options, 'Document email factories do not share the contact-person recipient model');
+    }
+
+    $campaignPersons = (new QuoteEmailTestCampaignRecipientService())->contactPersons([$adapter->rows['contact'][0]]);
+    check($campaignPersons[100][0]['display_name'] === 'Dr. Jane Doe', 'Campaign contact-person name is inconsistent');
+    check($campaignPersons[100][0]['formal_salutation'] === 'Sehr geehrte Frau Dr. Doe,', 'Campaign salutation is inconsistent');
+    check($campaignPersons[100][1]['email_list'] === 'john@example.invalid,john.alt@example.invalid', 'Campaign lost multiple contact-person email addresses');
 }
 
 setupQuoteEmail(true);
@@ -286,6 +314,9 @@ setupQuoteEmail();
 $adapter->rows['permission'] = [];
 check(sendQuoteEmail(['module' => 'contacts', 'controller' => 'contact']), 'Ordinary contact email unexpectedly needs quote permission');
 check(DEEC_Feedback::$requests === [], 'Ordinary contact email created quote feedback');
+check(sendQuoteEmail(['module' => 'contacts', 'controller' => 'contact', 'recipient' => 301]), 'Ordinary contact-person email failed');
+check($adapter->writes[0][1]['contactid'] === 100, 'Ordinary contact-person email history used the person ID');
+check(str_contains(DEEC_Email::$sent[0]['body'], 'Sehr geehrte Frau Dr. Doe,'), 'Ordinary contact-person email was not personalized');
 
 // Public unsubscribe links still resolve an email before validating its token and tenant.
 Zend_Registry::getInstance()->offsetUnset('User');

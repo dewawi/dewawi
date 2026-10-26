@@ -544,28 +544,10 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 			->order($this->orderingField . ' ASC')
 			->order('id ASC');
 
-		if (isset($row[$this->parentField])) {
-			$select->where($this->parentField . ' = ?', (int)$row[$this->parentField]);
-		}
-
-		if (isset($row['module'])) {
-			$select->where('module = ?', (string)$row['module']);
-		}
-
-		if (isset($row['controller'])) {
-			$select->where('controller = ?', (string)$row['controller']);
-		}
-
-		if (isset($row['type'])) {
-			$select->where('type = ?', (string)$row['type']);
-		}
-
-		if (isset($row['shopid'])) {
-			$select->where('shopid = ?', (int)$row['shopid']);
-		}
-
-		if (isset($row['position'])) {
-			$select->where('position = ?', (string)$row['position']);
+		foreach($this->getOrderingContextFields($row) as $field) {
+			if(isset($row[$field])) {
+				$select->where($field . ' = ?', $row[$field]);
+			}
 		}
 
 		return $this->fetchAll($select)->toArray();

@@ -7,40 +7,17 @@ class Purchases_Service_EmailFormFactory
 		$emailForm = new Contacts_Form_Emailmessage();
 
 		$emailDb = new Contacts_Model_DbTable_Email();
-		$contactpersonDb = new Contacts_Model_DbTable_Contactperson();
+		$emailDb->setClientId((int)$contact['clientid']);
 		$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
 
 		$recipientOptions = [];
 
-		// Contact emails
-		$contactEmails = $emailDb->getByParentId((int) $contact['id'], 'contacts', 'contact');
-		foreach ($contactEmails as $row) {
+		foreach ($emailDb->getContactRecipients((int)$contact['id']) as $row) {
 			if (empty($row['id']) || empty($row['email'])) {
 				continue;
 			}
 
-			$recipientOptions[(string) $row['id']] = (string) $row['email'];
-		}
-
-		// Contact person emails
-		$contactpersons = $contactpersonDb->getByParentId((int) $contact['id'], 'contacts', 'contact');
-		foreach ($contactpersons as $contactperson) {
-			$personEmails = $emailDb->getByParentId((int) $contactperson['id'], 'contacts', 'contactperson');
-
-			foreach ($personEmails as $row) {
-				if (empty($row['id']) || empty($row['email'])) {
-					continue;
-				}
-
-				$personName = trim(((string) ($contactperson['name1'] ?? '')) . ' ' . ((string) ($contactperson['name2'] ?? '')));
-				$label = (string) $row['email'];
-
-				if ($personName !== '') {
-					$label .= ' (' . $personName . ')';
-				}
-
-				$recipientOptions[(string) $row['id']] = $label;
-			}
+			$recipientOptions[(string)$row['id']] = DEEC_ContactpersonFormatter::recipientLabel($row);
 		}
 
 		$emailForm->addOptions('recipient', $recipientOptions, 'merge');
