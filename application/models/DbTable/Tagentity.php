@@ -26,7 +26,7 @@ class Application_Model_DbTable_Tagentity extends DEEC_Model_DbTable_Entity
 				->from(array('t' => 'tagentity'))
 				->joinLeft(
 					array('tag' => 'tag'),
-					't.tagid = tag.id AND tag.clientid = t.clientid AND tag.module = t.module AND tag.controller = t.controller AND tag.deleted = 0',
+					't.tagid = tag.id AND tag.clientid = t.clientid AND tag.module = t.module AND tag.controller = t.controller AND tag.shopid = 0 AND tag.deleted = 0',
 					array('title as tag')
 				)
 				->group('t.id')
@@ -38,6 +38,61 @@ class Application_Model_DbTable_Tagentity extends DEEC_Model_DbTable_Entity
 				->order(array('t.ordering ASC', 't.id ASC'))
 		);
 		return $tags->toArray();
+	}
+
+	public function getTagEntitiesForParents(string $module, string $controller, array $ids): array
+	{
+		$ids = array_values(array_unique(array_filter(array_map('intval', $ids), static function(int $id): bool {
+			return $id > 0;
+		})));
+
+		if (!$ids) {
+			return [];
+		}
+
+		$rows = $this->fetchAll(
+			$this->select()
+				->setIntegrityCheck(false)
+				->from(['t' => 'tagentity'])
+				->join(
+					['tag' => 'tag'],
+					't.tagid = tag.id AND tag.clientid = t.clientid AND tag.module = t.module AND tag.controller = t.controller AND tag.shopid = 0 AND tag.deleted = 0',
+					['title AS tag']
+				)
+				->where('t.entityid IN (?)', $ids)
+				->where('t.module = ?', $module)
+				->where('t.controller = ?', $controller)
+				->where('t.clientid = ?', $this->getClientId())
+				->where('t.deleted = ?', 0)
+				->order(['t.entityid ASC', 't.ordering ASC', 't.id ASC'])
+		);
+
+		$tags = [];
+
+		foreach($rows as $row) {
+			$tags[(int)$row->entityid][] = $row->toArray();
+		}
+
+		return $tags;
+	}
+
+	public function existsForParent(int $parentId, string $module, string $controller, int $tagId, int $excludeId = 0): bool
+	{
+		$select = $this->select()
+			->from($this->_name, ['id'])
+			->where('entityid = ?', $parentId)
+			->where('module = ?', $module)
+			->where('controller = ?', $controller)
+			->where('tagid = ?', $tagId)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->limit(1);
+
+		if ($excludeId > 0) {
+			$select->where('id != ?', $excludeId);
+		}
+
+		return (bool)$this->fetchRow($select);
 	}
 
 	public function addTagEntity($data)

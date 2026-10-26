@@ -7,6 +7,10 @@ class Contacts_Model_Entity_Contact
 		return [
 			'tableClass' => 'Contacts_Model_DbTable_Contact',
 			'alias' => 'c',
+			'module' => 'contacts',
+			'controller' => 'contact',
+			'clientModule' => 'contacts',
+			'tagShopId' => 0,
 
 			'pinned' => true,
 

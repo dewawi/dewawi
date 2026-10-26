@@ -26,11 +26,22 @@ class Contacts_ContactController extends DEEC_Controller_Action
 
 	protected function buildIndexView(): void
 	{
-		$this->buildListView([
+		$list = $this->buildListView([
 			'viewKey' => 'contacts',
 			'list' => 'Contacts_Model_List_Contacts',
 			'entity' => Contacts_Model_Entity_Contact::listConfig(),
 		]);
+
+		$contactIds = [];
+
+		foreach($list->getItems() as $contact) {
+			$contactIds[] = (int)$contact->id;
+		}
+
+		$tagEntityDb = new Application_Model_DbTable_Tagentity();
+		$options = $list->getOptions();
+		$options['tagEntities'] = $tagEntityDb->getTagEntitiesForParents('contacts', 'contact', $contactIds);
+		$list->setOptions($options);
 	}
 
 	protected function getCreateData(): array

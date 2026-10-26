@@ -316,6 +316,22 @@ class DEEC_List_Query
 			. ' AND tag_filter.deleted = 0',
 			[]
 		);
+
+		$tagDefinitionJoin = 'tag_filter_definition.id = tag_filter.tagid'
+			. ' AND tag_filter_definition.clientid = tag_filter.clientid'
+			. ' AND tag_filter_definition.module = tag_filter.module'
+			. ' AND tag_filter_definition.controller = tag_filter.controller'
+			. ' AND tag_filter_definition.deleted = 0';
+
+		if (array_key_exists('tagShopId', $config)) {
+			$tagDefinitionJoin .= ' AND tag_filter_definition.shopid = '.(int)$config['tagShopId'];
+		}
+
+		$select->join(
+			['tag_filter_definition' => 'tag'],
+			$tagDefinitionJoin,
+			[]
+		);
 	}
 
 	protected function applyCategoryFilter($select, $catid, array $categories, array $filter, array $config): void

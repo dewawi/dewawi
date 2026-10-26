@@ -26,6 +26,16 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 		return $data;
 	}
 
+	protected function validateMultiCreate(
+		int $parentId,
+		string $parentModule,
+		string $parentController,
+		array $data,
+		array $post
+	): ?string {
+		return null;
+	}
+
 	protected function afterMultiCreate(
 		int $id,
 		array $row,
@@ -39,6 +49,23 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 		array $post
 	): array {
 		return $values;
+	}
+
+	protected function validateMultiRow(
+		int $id,
+		array $row,
+		array $post
+	): ?string {
+		return null;
+	}
+
+	protected function validateMultiUpdate(
+		int $id,
+		array $values,
+		array $row,
+		array $post
+	): ?string {
+		return null;
 	}
 
 	protected function afterMultiUpdate(
@@ -81,17 +108,30 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 			);
 		}
 
-		$data = $this->getCreateDefaults($post);
-		$data = $this->beforeMultiCreate(
-			$data,
-			$post
-		);
-
 		$db = $this->getDb();
 		$adapter = $db->getAdapter();
 
 		try {
 			$adapter->beginTransaction();
+
+			$data = $this->getCreateDefaults($post);
+			$data = $this->beforeMultiCreate(
+				$data,
+				$post
+			);
+
+			$error = $this->validateMultiCreate(
+				$parentId,
+				$parentModule,
+				$parentController,
+				$data,
+				$post
+			);
+
+			if ($error !== null) {
+				$adapter->rollBack();
+				return $this->jsonError($error);
+			}
 
 			$newId = $db->createForParent(
 				$parentId,
@@ -163,8 +203,18 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 			return $this->jsonError('not_found');
 		}
 
-		$form = $this->createRowForm();
 		$post = (array)$request->getPost();
+		$error = $this->validateMultiRow(
+			$id,
+			$row,
+			$post
+		);
+
+		if ($error !== null) {
+			return $this->jsonError($error);
+		}
+
+		$form = $this->createRowForm();
 
 		if (!$form->isValidPartial($post)) {
 			return $this->_helper->json([
@@ -180,25 +230,38 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 			$post
 		);
 
-		$values = $this->beforeMultiUpdate(
-			$values,
-			$row,
-			$post
-		);
-
-		if (!$values) {
-			return $this->_helper->json([
-				'ok' => true,
-				'id' => $id,
-				'values' => [],
-				'display' => [],
-			]);
-		}
-
 		$adapter = $db->getAdapter();
 
 		try {
 			$adapter->beginTransaction();
+
+			$values = $this->beforeMultiUpdate(
+				$values,
+				$row,
+				$post
+			);
+
+			if (!$values) {
+				$adapter->rollBack();
+				return $this->_helper->json([
+					'ok' => true,
+					'id' => $id,
+					'values' => [],
+					'display' => [],
+				]);
+			}
+
+			$error = $this->validateMultiUpdate(
+				$id,
+				$values,
+				$row,
+				$post
+			);
+
+			if ($error !== null) {
+				$adapter->rollBack();
+				return $this->jsonError($error);
+			}
 
 			$db->updateById($id, $values);
 
@@ -316,6 +379,16 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 
 		if (!$row) {
 			return $this->jsonError('not_found');
+		}
+
+		$error = $this->validateMultiRow(
+			$id,
+			$row,
+			(array)$request->getPost()
+		);
+
+		if ($error !== null) {
+			return $this->jsonError($error);
 		}
 
 		$adapter = $db->getAdapter();

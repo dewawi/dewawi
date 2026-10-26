@@ -15,6 +15,32 @@ class Contacts_TagController extends DEEC_Controller_MultiEntityAction
 		];
 	}
 
+	protected function validateMultiCreate(
+		int $parentId,
+		string $parentModule,
+		string $parentController,
+		array $data,
+		array $post
+	): ?string {
+		return $this->validateContactParent(
+			$parentId,
+			$parentModule,
+			$parentController
+		);
+	}
+
+	protected function validateMultiRow(
+		int $id,
+		array $row,
+		array $post
+	): ?string {
+		return $this->validateContactParent(
+			(int)($row['entityid'] ?? 0),
+			(string)($row['module'] ?? ''),
+			(string)($row['controller'] ?? '')
+		);
+	}
+
 	protected function beforeMultiUpdate(
 		array $values,
 		array $row,
@@ -24,9 +50,9 @@ class Contacts_TagController extends DEEC_Controller_MultiEntityAction
 			return $values;
 		}
 
-		$title = trim(
+		$title = trim(strip_tags(
 			(string)$values['tag']
-		);
+		));
 
 		unset($values['tag']);
 
@@ -63,6 +89,18 @@ class Contacts_TagController extends DEEC_Controller_MultiEntityAction
 			return null;
 		}
 
+		$tagDb = new Application_Model_DbTable_Tag();
+		$tag = $tagDb->getById($tagId);
+
+		if (
+			!$tag
+			|| (string)$tag['module'] !== 'contacts'
+			|| (string)$tag['controller'] !== 'contact'
+			|| (int)$tag['shopid'] !== 0
+		) {
+			return $this->view->translate('MESSAGES_TAG_INVALID');
+		}
+
 		$tagEntityDb = $this->getDb();
 
 		if (!$tagEntityDb instanceof Contacts_Model_DbTable_Tag) {
@@ -90,9 +128,20 @@ class Contacts_TagController extends DEEC_Controller_MultiEntityAction
 				$id
 			)
 		) {
-			return 'TAG_ALREADY_EXISTS';
+			return $this->view->translate('MESSAGES_TAG_ALREADY_ASSIGNED');
 		}
 
 		return null;
+	}
+
+	protected function validateContactParent(int $parentId, string $module, string $controller): ?string
+	{
+		if ($module !== 'contacts' || $controller !== 'contact') {
+			return $this->view->translate('MESSAGES_TAG_CONTEXT_INVALID');
+		}
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+
+		return $contactDb->getById($parentId) ? null : $this->view->translate('MESSAGES_CONTACT_NOT_FOUND');
 	}
 }
