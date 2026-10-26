@@ -2,7 +2,7 @@
 
 class Application_Controller_Action_Helper_MultiEntityLoader extends Zend_Controller_Action_Helper_Abstract
 {
-	public function populate(DEEC_Form $form, int $parentId, string $parentModule, string $parentController): void
+	public function populate(DEEC_Form $form, int $parentId, string $parentModule, string $parentController, ?int $clientId = null): void
 	{
 		$form->setMultiContext($parentId, $parentModule, $parentController);
 
@@ -14,20 +14,20 @@ class Application_Controller_Action_Helper_MultiEntityLoader extends Zend_Contro
 				continue;
 			}
 
-			$db = $this->createDbTable($module, $controller);
+			$db = $this->createDbTable($module, $controller, $clientId);
 
 			if (!$db) {
 				continue;
 			}
 
 			$rows = $db->getByParentId($parentId, $parentModule, $parentController);
-			$rows = $this->populateNestedRows(is_array($rows) ? $rows : [], $module, $controller);
+			$rows = $this->populateNestedRows(is_array($rows) ? $rows : [], $module, $controller, $clientId);
 
 			$form->setElementData($name, ['rows' => $rows]);
 		}
 	}
 
-	protected function populateNestedRows(array $rows, string $module, string $controller): array
+	protected function populateNestedRows(array $rows, string $module, string $controller, ?int $clientId = null): array
 	{
 		$form = $this->createForm($module, $controller);
 
@@ -56,7 +56,7 @@ class Application_Controller_Action_Helper_MultiEntityLoader extends Zend_Contro
 					continue;
 				}
 
-				$db = $this->createDbTable($childModule, $childController);
+				$db = $this->createDbTable($childModule, $childController, $clientId);
 
 				if (!$db) {
 					$row[$name] = [];
@@ -68,7 +68,8 @@ class Application_Controller_Action_Helper_MultiEntityLoader extends Zend_Contro
 				$row[$name] = $this->populateNestedRows(
 					is_array($childRows) ? $childRows : [],
 					$childModule,
-					$childController
+					$childController,
+					$clientId
 				);
 			}
 		}
@@ -90,7 +91,7 @@ class Application_Controller_Action_Helper_MultiEntityLoader extends Zend_Contro
 		return $form instanceof DEEC_Form ? $form : null;
 	}
 
-	protected function createDbTable(string $module, string $controller)
+	protected function createDbTable(string $module, string $controller, ?int $clientId = null)
 	{
 		$className = DEEC_Util::dbTableClassFromModuleController($module, $controller);
 
@@ -102,6 +103,10 @@ class Application_Controller_Action_Helper_MultiEntityLoader extends Zend_Contro
 
 		if (!$db instanceof DEEC_Model_DbTable_Entity) {
 			return null;
+		}
+
+		if ($clientId !== null && $clientId > 0) {
+			$db->setClientId($clientId);
 		}
 
 		return $db;

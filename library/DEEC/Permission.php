@@ -46,6 +46,7 @@ class DEEC_Permission
 			'cancel',
 			'state',
 			'tags',
+			'assigncontactperson',
 		],
 		'view' => [
 			'view',

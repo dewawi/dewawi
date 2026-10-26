@@ -25,3 +25,43 @@ echo $this->FileManager();
 		'downloads' => ['title' => 'TABS_DOWNLOADS', 'html' => $this->Downloads()],
 	]
 ]); ?>
+
+<?php if (!empty($this->permissions['edit']) && isset($this->contactpersonAssignmentForm)) : ?>
+	<div id="popup">
+		<div
+			id="emailContactpersonAssignment"
+			class="popup_block dw-email-contactperson-dialog"
+			data-contact-id="<?php echo (int)$this->id; ?>"
+			data-save-failed="<?php echo $this->escape($this->translate('MESSAGES_EMAIL_CONTACTPERSON_ASSIGNMENT_FAILED')); ?>"
+		>
+			<h3><?php echo $this->escape($this->translate('CONTACTS_EMAIL_ASSIGN_CONTACTPERSON')); ?></h3>
+			<div class="dw-email-contactperson-dialog__email">
+				<strong><?php echo $this->escape($this->translate('CONTACTS_EMAIL_ASSIGNMENT_EMAIL')); ?>:</strong>
+				<span data-email-contactperson-address></span>
+			</div>
+
+			<?php echo $this->contactpersonAssignmentForm->renderElement('assignment_type'); ?>
+
+			<div class="dw-email-contactperson-dialog__section" data-email-contactperson-new>
+				<div class="dw-form-row">
+					<?php echo $this->contactpersonAssignmentForm->renderElement('salutation'); ?>
+					<?php echo $this->contactpersonAssignmentForm->renderElement('title'); ?>
+					<?php echo $this->contactpersonAssignmentForm->renderElement('firstname'); ?>
+					<?php echo $this->contactpersonAssignmentForm->renderElement('lastname'); ?>
+					<?php echo $this->contactpersonAssignmentForm->renderElement('position'); ?>
+					<?php echo $this->contactpersonAssignmentForm->renderElement('department'); ?>
+				</div>
+			</div>
+
+			<div class="dw-email-contactperson-dialog__section" data-email-contactperson-existing hidden>
+				<?php echo $this->contactpersonAssignmentForm->renderElement('existing_contactpersonid'); ?>
+			</div>
+
+			<div class="dw-contact-dialog__actions">
+				<button type="button" class="dw-btn dw-btn--action" data-email-contactperson-submit>
+					<?php echo $this->escape($this->translate('CONTACTS_EMAIL_ASSIGNMENT_SAVE')); ?>
+				</button>
+			</div>
+		</div>
+	</div>
+<?php endif; ?>

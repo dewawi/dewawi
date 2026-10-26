@@ -2317,10 +2317,21 @@ cursor: default;
   border-radius: 10px;
 }
 .dw-contact-tags-dialog,
-.dw-contact-export-dialog {
+.dw-contact-export-dialog,
+.dw-email-contactperson-dialog {
   bottom: auto;
   max-width: calc(100% - 40px);
   width: 480px;
+}
+.dw-email-contactperson-dialog {
+  width: 720px;
+}
+.dw-email-contactperson-dialog__email,
+.dw-email-contactperson-dialog__section {
+  margin-top: 16px;
+}
+.dw-email-contactperson-dialog .dw-form-row > .dw-field {
+  grid-column: span 6;
 }
 .dw-contact-dialog__actions {
   display: flex;
@@ -2358,6 +2369,12 @@ cursor: default;
         position: absolute;
         right: 0;
     }
+}
+
+@media screen and (max-width: 767px) {
+  .dw-email-contactperson-dialog .dw-form-row > .dw-field {
+    grid-column: span 12;
+  }
 }
 
 /* Loading */

@@ -1962,6 +1962,8 @@ class DEEC_Form
 				. '></a>';
 		}
 
+		$html .= $this->renderAdditionalMultiActions($row, $ctx);
+
 		$html .= $this->renderMultiActionButton(
 			'delete',
 			'delete',
@@ -1977,6 +1979,11 @@ class DEEC_Form
 		$html .= '</div>';
 
 		return $html;
+	}
+
+	protected function renderAdditionalMultiActions(array $row, array $ctx): string
+	{
+		return '';
 	}
 
 	protected function renderHtmlAttribs(array $attribs): string

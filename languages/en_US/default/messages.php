@@ -8,6 +8,8 @@
 	'MESSAGES_SUCCESFULLY_CANCELLED' => 'The entry was successfully canceled!',
 	'MESSAGES_CONTACT_NOT_FOUND' => 'The contact could not be found.',
 	'MESSAGES_INVALID_CONTACT_ROLES' => 'The selected contact roles are invalid.',
+	'MESSAGES_EMAIL_CONTACTPERSON_ASSIGNMENT_INVALID' => 'The email address cannot be assigned to the selected contact person.',
+	'MESSAGES_EMAIL_CONTACTPERSON_ASSIGNMENT_FAILED' => 'The email assignment could not be saved.',
 	'MESSAGES_TAG_INVALID' => 'The selected tag is invalid or unavailable.',
 	'MESSAGES_TAG_CONTEXT_INVALID' => 'Tags can only be assigned to valid contacts.',
 	'MESSAGES_TAG_ALREADY_ASSIGNED' => 'This tag is already assigned to the contact.',

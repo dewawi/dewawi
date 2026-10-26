@@ -4,6 +4,7 @@ class Contacts_Service_ContactEditViewModel
 {
 	public function build(int $contactId, array $user, array $contactRow): array
 	{
+		$contactClientId = (int)($contactRow['clientid'] ?? 0);
 		$emailDb = new Contacts_Model_DbTable_Email();
 		$phoneDb = new Contacts_Model_DbTable_Phone();
 		$internetDb = new Contacts_Model_DbTable_Internet();
@@ -13,6 +14,11 @@ class Contacts_Service_ContactEditViewModel
 		$commentDb = new Application_Model_DbTable_Comment();
 		$downloadsDb = new Contacts_Model_DbTable_Download();
 		$downloadtrackingsDb = new Contacts_Model_DbTable_Downloadtracking();
+
+		if ($contactClientId > 0) {
+			$emailDb->setClientId($contactClientId);
+			$contactpersonDb->setClientId($contactClientId);
+		}
 
 		$phone = $phoneDb->getByParentId($contactId, 'contacts', 'contact');
 		$email = $emailDb->getByParentId($contactId, 'contacts', 'contact');
@@ -81,6 +87,25 @@ class Contacts_Service_ContactEditViewModel
 
 		$emailForm->addOptions('recipient', $recipientOptions, 'merge');
 
+		$assignmentForm = new Contacts_Form_Contactperson();
+		$assignmentForm->addElement([
+			'name' => 'assignment_type',
+			'type' => 'radio',
+			'label' => 'CONTACTS_EMAIL_ASSIGNMENT_TARGET',
+			'default' => 'new',
+			'options' => [
+				'new' => 'CONTACTS_EMAIL_ASSIGNMENT_NEW',
+				'existing' => 'CONTACTS_EMAIL_ASSIGNMENT_EXISTING',
+			],
+		]);
+		$assignmentForm->addElement([
+			'name' => 'existing_contactpersonid',
+			'type' => 'select',
+			'label' => 'CONTACTS_CONTACT_PERSON',
+			'options' => ['' => 'CONTACTS_EMAIL_ASSIGNMENT_SELECT'] + $contactpersonDb->getSelectOptionsForContact($contactId),
+			'format' => ['type' => 'int'],
+		]);
+
 		$emailtemplateDb = new Contacts_Model_DbTable_Emailtemplate();
 		$emailtemplate = $emailtemplateDb->getEmailtemplate('contacts', 'contact');
 
@@ -113,6 +138,7 @@ class Contacts_Service_ContactEditViewModel
 			'files' => $files,
 			'url' => $url,
 			'emailForm' => $emailForm,
+			'contactpersonAssignmentForm' => $assignmentForm,
 			'attachments' => $attachments,
 			'address' => $address,
 			'phone' => $phone,

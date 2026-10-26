@@ -363,7 +363,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 			$form->setValues($contactDisplay);
 			$form->setValue('roles', $contactRoleDb->getForContact($id));
 
-			$this->_helper->MultiEntityLoader->populate($form, $id, 'contacts', 'contact');
+			$this->_helper->MultiEntityLoader->populate($form, $id, 'contacts', 'contact', $contactClientId);
 		}
 
 		$vmService = new Contacts_Service_ContactEditViewModel();

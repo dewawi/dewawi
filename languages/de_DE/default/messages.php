@@ -11,6 +11,8 @@
 	'MESSAGES_NO_ITEM_FOUND' => 'Artikel <b>%s</b> konnte nicht gefunden werden.',
 	'MESSAGES_CONTACT_NOT_FOUND' => 'Kontakt konnte nicht gefunden werden.',
 	'MESSAGES_INVALID_CONTACT_ROLES' => 'Die ausgewählten Kontaktrollen sind ungültig.',
+	'MESSAGES_EMAIL_CONTACTPERSON_ASSIGNMENT_INVALID' => 'Die E-Mail-Adresse kann der ausgewählten Kontaktperson nicht zugeordnet werden.',
+	'MESSAGES_EMAIL_CONTACTPERSON_ASSIGNMENT_FAILED' => 'Die E-Mail-Zuordnung konnte nicht gespeichert werden.',
 	'MESSAGES_TAG_INVALID' => 'Der ausgewählte Tag ist ungültig oder nicht verfügbar.',
 	'MESSAGES_TAG_CONTEXT_INVALID' => 'Tags können nur gültigen Kontakten zugeordnet werden.',
 	'MESSAGES_TAG_ALREADY_ASSIGNED' => 'Dieser Tag ist dem Kontakt bereits zugeordnet.',

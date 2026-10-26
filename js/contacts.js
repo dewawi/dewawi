@@ -298,5 +298,79 @@ function findFirstByType(items, type) {
 				}
 			});
 		});
+
+		function setEmailContactpersonMode($dialog, mode) {
+			var useExisting = mode === 'existing';
+			$dialog.find('[data-email-contactperson-new]').prop('hidden', useExisting);
+			$dialog.find('[data-email-contactperson-existing]').prop('hidden', !useExisting);
+		}
+
+		$(document).on('click', '[data-email-contactperson-assign]', function () {
+			var $button = $(this);
+			var $dialog = $('#emailContactpersonAssignment');
+
+			if (!$dialog.length) {
+				return;
+			}
+
+			$dialog.data('email-id', parseInt($button.data('email-id'), 10) || 0);
+			$dialog.find('[data-email-contactperson-address]').text(String($button.data('email-address') || ''));
+			$dialog.find('input[type="text"]').val('');
+			$dialog.find('[name="salutation"]').val('0');
+			$dialog.find('[name="existing_contactpersonid"]').val('');
+			$dialog.find('[name="assignment_type"][value="new"]').prop('checked', true);
+			setEmailContactpersonMode($dialog, 'new');
+			modalWindow('emailContactpersonAssignment');
+		});
+
+		$(document).on('change', '#emailContactpersonAssignment [name="assignment_type"]', function () {
+			setEmailContactpersonMode($('#emailContactpersonAssignment'), String(this.value || 'new'));
+		});
+
+		$(document).on('click', '[data-email-contactperson-submit]', function () {
+			var $button = $(this);
+			var $dialog = $('#emailContactpersonAssignment');
+			var mode = String($dialog.find('[name="assignment_type"]:checked').val() || 'new');
+			var payload = {
+				contactid: parseInt($dialog.data('contact-id'), 10) || 0,
+				emailid: parseInt($dialog.data('email-id'), 10) || 0,
+				assignment_type: mode
+			};
+
+			if (mode === 'existing') {
+				payload.contactpersonid = parseInt($dialog.find('[name="existing_contactpersonid"]').val(), 10) || 0;
+			} else {
+				$.each(['salutation', 'title', 'firstname', 'lastname', 'position', 'department'], function (index, name) {
+					payload[name] = $dialog.find('[name="' + name + '"]').val() || '';
+				});
+			}
+
+			$button.prop('disabled', true);
+
+			$.ajax({
+				type: 'POST',
+				url: Dewawi.url('contacts', 'email', 'assigncontactperson'),
+				dataType: 'json',
+				cache: false,
+				data: payload,
+				success: function (response) {
+					if (!response || response.ok === false) {
+						pushMessages([response && response.message ? response.message : $dialog.data('save-failed')]);
+						return;
+					}
+
+					$.cookie('tab', '#tabcontactperson', {
+						path: cookiePath + '/edit'
+					});
+					window.location.reload();
+				},
+				error: function () {
+					pushMessages([$dialog.data('save-failed')]);
+				},
+				complete: function () {
+					$button.prop('disabled', false);
+				}
+			});
+		});
 	});
 })(jQuery);
