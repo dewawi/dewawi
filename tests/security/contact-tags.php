@@ -458,7 +458,7 @@ $tagFilterForm->addElement(['name' => 'tagid', 'type' => 'select', 'source' => '
 $toolbarOptions = (new Application_Controller_Action_Helper_Options())->getOptions($tagFilterForm);
 check(($toolbarOptions['tagid'][21] ?? null) === 'Gilventa' && !isset($toolbarOptions['tagid'][22], $toolbarOptions['tagid'][23], $toolbarOptions['tagid'][24]), 'Contact toolbar tag options lost tenant or context isolation');
 $params = ['keyword' => 'Own', 'catid' => '3', 'tagid' => 21, 'country' => '0'];
-$options = ['catid' => [3 => ['childs' => []]]];
+$options = ['catid' => [3 => ['childs' => [4]], 4 => ['childs' => []]]];
 $select = (new ContactTagTestListQuery())->build($params, $options, Contacts_Model_Entity_Contact::listConfig());
 $from = $select->getPart(Zend_Db_Select::FROM);
 $where = implode(' ', $select->getPart(Zend_Db_Select::WHERE));
@@ -466,6 +466,7 @@ check(isset($from['tag_filter'], $from['tag_filter_definition']), 'Tag filter di
 check(str_contains($from['tag_filter']['joinCondition'], "tag_filter.module = 'contacts'") && str_contains($from['tag_filter']['joinCondition'], "tag_filter.controller = 'contact'"), 'Tag filter lost contact context');
 check(str_contains($from['tag_filter_definition']['joinCondition'], 'tag_filter_definition.clientid = tag_filter.clientid') && str_contains($from['tag_filter_definition']['joinCondition'], 'tag_filter_definition.deleted = 0'), 'Tag filter accepts foreign or deleted definitions');
 check(str_contains($where, 'c.catid IN') && str_contains($where, 'LIKE') && str_contains($where, 'c.deleted'), 'Category, search or deletion filter was lost');
+check(str_contains($where, '3') && str_contains($where, '4'), 'Category filter lost configured subcategories');
 check($select->getPart(Zend_Db_Select::GROUP) === ['c.id'], 'Tag filter can return duplicate contact rows');
 
 echo 'PASS: ' . $checks . " contact tag security, display and filter cases\n";

@@ -32,7 +32,7 @@ class Application_Model_DbTable_Category extends DEEC_Model_DbTable_Entity
 	{
 		$where = [];
 		$where[] = $this->getAdapter()->quoteInto('type = ?', $type);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->getClientId());
 
 		if(!$includeArchived) {
 		    $where[] = $this->getAdapter()->quoteInto('activated = ?', 1);

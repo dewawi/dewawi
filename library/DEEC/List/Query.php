@@ -344,6 +344,12 @@ class DEEC_List_Query
 			return;
 		}
 
+		if ((!isset($categories[$catid]) || !is_array($categories[$catid])) && !empty($filter['categoryType'])) {
+			$categoryDb = new Application_Model_DbTable_Category();
+			$categoryDb->setClientId($this->getClientId($config));
+			$categories = $categoryDb->getCategories((string)$filter['categoryType']);
+		}
+
 		if (!isset($categories[$catid])) {
 			return;
 		}
@@ -601,11 +607,17 @@ class DEEC_List_Query
 	{
 		$ids = [];
 
-		if (!isset($categories[$category]['childs'])) {
-			return $ids;
+		$children = $categories[$category]['childs'] ?? [];
+
+		if (!$children) {
+			foreach ($categories as $id => $row) {
+				if (is_array($row) && (int)($row['parentid'] ?? 0) === (int)$category) {
+					$children[] = (int)$id;
+				}
+			}
 		}
 
-		foreach ($categories[$category]['childs'] as $childCategory) {
+		foreach ($children as $childCategory) {
 			$ids[] = (int)$childCategory;
 			$ids = array_merge($ids, $this->getChildCategoryIds($childCategory, $categories));
 		}

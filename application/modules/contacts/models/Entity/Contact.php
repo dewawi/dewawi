@@ -16,10 +16,12 @@ class Contacts_Model_Entity_Contact
 
 			'columns' => [
 				'id',
+				'clientid',
 				'contactid',
 				'catid',
 				'name1',
 				'name2',
+				'department',
 				'notes',
 				'taxnumber',
 				'vatin',
@@ -35,7 +37,7 @@ class Contacts_Model_Entity_Contact
 					'on' => "c.id = a.parentid AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing' AND a.deleted = 0",
 					'columns' => [
 						'street',
-						'department',
+						'address_department' => 'department',
 						'postcode',
 						'city',
 						'country',
@@ -89,6 +91,7 @@ class Contacts_Model_Entity_Contact
 			'filters' => [
 				'catid' => [
 					'type' => 'category',
+					'categoryType' => 'contact',
 				],
 				'country' => [
 					'type' => 'country',

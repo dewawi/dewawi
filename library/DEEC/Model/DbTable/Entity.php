@@ -124,6 +124,35 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 		return $rows ? $rows->toArray() : [];
 	}
 
+	public function getByParentIds(array $parentIds, string $module, string $controller): array
+	{
+		$parentIds = array_values(array_unique(array_filter(array_map('intval', $parentIds), static function(int $id): bool {
+			return $id > 0;
+		})));
+
+		if (!$parentIds) {
+			return [];
+		}
+
+		$select = $this->select()
+			->where($this->parentField . ' IN (?)', $parentIds)
+			->where('module = ?', $module)
+			->where('controller = ?', $controller)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0)
+			->order($this->parentField . ' ASC');
+
+		if ($this->orderingField !== null) {
+			$select->order($this->orderingField . ' ASC');
+		}
+
+		$select->order('id ASC');
+
+		$rows = $this->fetchAll($select);
+
+		return $rows ? $rows->toArray() : [];
+	}
+
 	public function getByContactId(int $contactId, string $order = 'id DESC')
 	{
 		$select = $this->select()

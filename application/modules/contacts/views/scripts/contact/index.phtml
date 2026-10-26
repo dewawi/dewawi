@@ -16,27 +16,44 @@ echo $this->Pagination();
 	</div>
 </div>
 
-<?php if ($this->contextAction !== 'select' && !empty($this->permissions['edit']) && isset($this->toolbar) && $this->toolbar->getElement('bulk-tagid')) : ?>
+<?php if ($this->contextAction !== 'select') : ?>
 	<div id="popup">
-		<div
-			id="contactTags"
-			class="popup_block dw-contact-tags-dialog"
-			data-confirm-add="<?php echo $this->escape($this->translate('MESSAGES_TAGS_ASSIGN_CONFIRM')); ?>"
-			data-confirm-remove="<?php echo $this->escape($this->translate('MESSAGES_TAGS_REMOVE_CONFIRM')); ?>"
-			data-invalid-tag="<?php echo $this->escape($this->translate('MESSAGES_TAG_INVALID')); ?>"
-			data-update-failed="<?php echo $this->escape($this->translate('MESSAGES_TAGS_UPDATE_FAILED')); ?>"
-		>
-			<h3><?php echo $this->escape($this->translate('TOOLBAR_EDIT_TAGS')); ?></h3>
-			<?php echo $this->toolbar->renderElement('bulk-tagid'); ?>
-			<div class="dw-contact-tags-dialog__actions">
-				<button type="button" class="dw-btn dw-btn--action" data-contact-tag-operation="add">
-					<?php echo $this->escape($this->translate('TOOLBAR_ASSIGN_TAG')); ?>
-				</button>
-				<button type="button" class="dw-btn dw-btn--action" data-contact-tag-operation="remove">
-					<?php echo $this->escape($this->translate('TOOLBAR_REMOVE_TAG')); ?>
-				</button>
+		<?php if (!empty($this->permissions['edit']) && isset($this->toolbar) && $this->toolbar->getElement('bulk-tagid')) : ?>
+			<div
+				id="contactTags"
+				class="popup_block dw-contact-tags-dialog"
+				data-confirm-add="<?php echo $this->escape($this->translate('MESSAGES_TAGS_ASSIGN_CONFIRM')); ?>"
+				data-confirm-remove="<?php echo $this->escape($this->translate('MESSAGES_TAGS_REMOVE_CONFIRM')); ?>"
+				data-invalid-tag="<?php echo $this->escape($this->translate('MESSAGES_TAG_INVALID')); ?>"
+				data-update-failed="<?php echo $this->escape($this->translate('MESSAGES_TAGS_UPDATE_FAILED')); ?>"
+			>
+				<h3><?php echo $this->escape($this->translate('TOOLBAR_EDIT_TAGS')); ?></h3>
+				<?php echo $this->toolbar->renderElement('bulk-tagid'); ?>
+				<div class="dw-contact-dialog__actions">
+					<button type="button" class="dw-btn dw-btn--action" data-contact-tag-operation="add">
+						<?php echo $this->escape($this->translate('TOOLBAR_ASSIGN_TAG')); ?>
+					</button>
+					<button type="button" class="dw-btn dw-btn--action" data-contact-tag-operation="remove">
+						<?php echo $this->escape($this->translate('TOOLBAR_REMOVE_TAG')); ?>
+					</button>
+				</div>
 			</div>
-		</div>
+		<?php endif; ?>
+
+		<?php if (!empty($this->permissions['view'])) : ?>
+			<div id="contactExport" class="popup_block dw-contact-export-dialog">
+				<h3><?php echo $this->escape($this->translate('CONTACTS_EXPORT_TITLE')); ?></h3>
+				<p><?php echo $this->escape($this->translate('CONTACTS_EXPORT_DESCRIPTION')); ?></p>
+				<div class="dw-contact-dialog__actions">
+					<button type="button" class="dw-btn dw-btn--action" data-contact-export-profile="companies">
+						<?php echo $this->escape($this->translate('CONTACTS_EXPORT_COMPANIES')); ?>
+					</button>
+					<button type="button" class="dw-btn dw-btn--action" data-contact-export-profile="contactpersons">
+						<?php echo $this->escape($this->translate('CONTACTS_EXPORT_CONTACTPERSONS')); ?>
+					</button>
+				</div>
+			</div>
+		<?php endif; ?>
 	</div>
 <?php endif; ?>
 

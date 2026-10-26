@@ -2962,6 +2962,30 @@ function markFieldSaved($field) {
 			};
 		},
 
+		submitExport: function (extraData) {
+			var data = $.extend({}, collectToolbarData(), extraData || {});
+			var $form = $('<form>', {
+				method: 'post',
+				action: Dewawi.url(module, controller, 'export')
+			}).hide();
+
+			$.each(data, function(name, value) {
+				var values = Array.isArray(value) ? value : [value];
+
+				values.forEach(function(item) {
+					$('<input>', {
+						type: 'hidden',
+						name: Array.isArray(value) ? name + '[]' : name,
+						value: item
+					}).appendTo($form);
+				});
+			});
+
+			$form.appendTo('body');
+			$form[0].submit();
+			$form.remove();
+		},
+
 		actions: {
 			add: function () {
 				var url = Dewawi.url(module, controller, 'add');
@@ -3107,27 +3131,7 @@ function markFieldSaved($field) {
 			},
 
 			export: function () {
-				var data = collectToolbarData();
-				var $form = $('<form>', {
-					method: 'post',
-					action: Dewawi.url(module, controller, 'export')
-				}).hide();
-
-				$.each(data, function(name, value) {
-					var values = Array.isArray(value) ? value : [value];
-
-					values.forEach(function(item) {
-						$('<input>', {
-							type: 'hidden',
-							name: Array.isArray(value) ? name + '[]' : name,
-							value: item
-						}).appendTo($form);
-					});
-				});
-
-				$form.appendTo('body');
-				$form[0].submit();
-				$form.remove();
+				this.submitExport();
 			},
 
 			clear: function (selection, $button) {

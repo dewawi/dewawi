@@ -431,8 +431,25 @@ class TagTestItemExport extends Items_Service_ItemExportService
 
 class TagTestContactExport extends Contacts_Service_ContactExportService
 {
-    public array $rows = [];
-    protected function writeCsv(string $file, array $rows): void { $this->rows = $rows; }
+    protected function loadRelatedData(array $contacts, int $clientId, array $context): array
+    {
+        $tagDb = (new Application_Model_DbTable_Tagentity())->setClientId($clientId);
+        $tags = [];
+        foreach ($contacts as $contact) {
+            $tags[(int)$contact['id']] = $tagDb->getTagEntities('contacts', 'contact', (int)$contact['id']);
+        }
+
+        return [
+            'addresses' => [],
+            'phones' => [],
+            'emails' => [],
+            'internets' => [],
+            'contactpersons' => [],
+            'contactpersonEmails' => [],
+            'categories' => [],
+            'tags' => $tags,
+        ];
+    }
 }
 
 fixtures();
@@ -447,11 +464,13 @@ $checks++;
 Zend_Db_Table_Abstract::$rows['tag'][25] = ['id'=>25, 'clientid'=>7, 'module'=>'contacts', 'controller'=>'contact', 'deleted'=>0, 'title'=>'Own contact tag'];
 Zend_Db_Table_Abstract::$rows['tagentity'][41] = ['id'=>41, 'clientid'=>7, 'entityid'=>14, 'module'=>'contacts', 'controller'=>'contact', 'deleted'=>0, 'tagid'=>25, 'ordering'=>1];
 Zend_Db_Table_Abstract::$rows['tagentity'][42] = array_replace(Zend_Db_Table_Abstract::$rows['tagentity'][41], ['id'=>42, 'clientid'=>8, 'tagid'=>22]);
-$contact = (object)array_fill_keys(['id', 'catid', 'name1', 'name2', 'department', 'street', 'postcode', 'city', 'country', 'taxnumber', 'vatin', 'phones', 'emails', 'internets'], '');
+$contact = (object)array_fill_keys(['id', 'clientid', 'contactid', 'catid', 'name1', 'name2', 'department'], '');
 $contact->id = 14;
+$contact->clientid = 7;
 $export = new TagTestContactExport();
-$export->export('/unused/', [$contact]);
-check(end($export->rows[1]) === 'Own contact tag', 'Contact export lost tags or included foreign tags');
+$rows = $export->createList(Contacts_Service_ContactExportService::PROFILE_COMPANIES, [$contact])->getItems();
+$row = $rows[0];
+check(end($row) === 'Own contact tag', 'Contact export lost tags or included foreign tags: ' . json_encode($row));
 $checks++;
 
 echo 'PASS: ' . $checks . " item tag security and compatibility cases\n";

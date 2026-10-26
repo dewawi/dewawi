@@ -188,6 +188,14 @@ function findFirstByType(items, type) {
 		}
 
 		DewawiToolbar.actionConfig.tags = { selection: 'multiple' };
+		DewawiToolbar.actions.export = function () {
+			if (!$('#contactExport').length) {
+				this.submitExport();
+				return;
+			}
+
+			modalWindow('contactExport');
+		};
 		DewawiToolbar.actions.tags = function (selection) {
 			var $dialog = $('#contactTags');
 
@@ -198,6 +206,17 @@ function findFirstByType(items, type) {
 			$dialog.data('contact-ids', selection.ids);
 			modalWindow('contactTags');
 		};
+
+		$(document).on('click', '[data-contact-export-profile]', function () {
+			var profile = String($(this).data('contact-export-profile') || '');
+
+			if (profile !== 'companies' && profile !== 'contactpersons') {
+				return;
+			}
+
+			modalWindowClose();
+			DewawiToolbar.submitExport({ profile: profile });
+		});
 
 		$(document).on('click', '[data-contact-tag-operation]', function () {
 			var $dialog = $('#contactTags');

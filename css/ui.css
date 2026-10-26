@@ -2316,12 +2316,13 @@ cursor: default;
   -moz-border-radius: 10px;
   border-radius: 10px;
 }
-.dw-contact-tags-dialog {
+.dw-contact-tags-dialog,
+.dw-contact-export-dialog {
   bottom: auto;
   max-width: calc(100% - 40px);
   width: 480px;
 }
-.dw-contact-tags-dialog__actions {
+.dw-contact-dialog__actions {
   display: flex;
   gap: 10px;
   margin-top: 20px;

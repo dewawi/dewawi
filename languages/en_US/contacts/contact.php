@@ -46,6 +46,12 @@
 	'CONTACTS_CASH_DISCOUNT_DAYS' => 'Cash discount days',
 	'CONTACTS_CASH_DISCOUNT_DAYS_PERCENT' => 'Cash discount days percent',
 	'CONTACTS_TYPE' => 'Contact type',
+	'CONTACTS_TAGS' => 'Tags',
+	'CONTACTS_EXPORT_TITLE' => 'Export contacts',
+	'CONTACTS_EXPORT_DESCRIPTION' => 'The current filters are applied to the complete export.',
+	'CONTACTS_EXPORT_COMPANIES' => 'Companies (CSV)',
+	'CONTACTS_EXPORT_CONTACTPERSONS' => 'Contact persons (CSV)',
+	'CONTACTS_EXPORT_COMPANY' => 'Company',
 	//Customers
 	'CONTACTS_CUSTOMER' => 'Customer',
 	'CONTACTS_CUSTOMERS' => 'Customers',

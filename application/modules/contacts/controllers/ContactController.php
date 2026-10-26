@@ -35,15 +35,60 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		]);
 
 		$contactIds = [];
+		$contactClientId = 0;
 
 		foreach($list->getItems() as $contact) {
 			$contactIds[] = (int)$contact->id;
+			if ($contactClientId === 0) {
+				$contactClientId = (int)$contact->clientid;
+			}
 		}
 
 		$tagEntityDb = new Application_Model_DbTable_Tagentity();
+		if ($contactClientId > 0) {
+			$tagEntityDb->setClientId($contactClientId);
+		}
 		$options = $list->getOptions();
 		$options['tagEntities'] = $tagEntityDb->getTagEntitiesForParents('contacts', 'contact', $contactIds);
 		$list->setOptions($options);
+
+		if ($this->getRequest()->getActionName() === 'export') {
+			$service = new Contacts_Service_ContactExportService();
+			$this->exportList = $service->createList($this->getExportProfile(), $list->getItems(), [
+				'view' => $this->view,
+				'tagEntities' => $options['tagEntities'],
+			]);
+		}
+	}
+
+	public function exportAction()
+	{
+		try {
+			$profile = $this->getExportProfile();
+		} catch (InvalidArgumentException $e) {
+			$this->disableView();
+			$this->getResponse()->setHttpResponseCode(400);
+			return;
+		}
+
+		parent::exportAction();
+
+		$filename = 'contacts-' . $profile . '-' . date('Ymd-His') . '.csv';
+		$this->getResponse()->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"', true);
+	}
+
+	private function getExportProfile(): string
+	{
+		$profile = (string)$this->_getParam('profile', Contacts_Service_ContactExportService::PROFILE_COMPANIES);
+
+		if (!in_array($profile, [
+			Contacts_Service_ContactExportService::PROFILE_COMPANIES,
+			Contacts_Service_ContactExportService::PROFILE_CONTACTPERSONS,
+		], true)) {
+			throw new InvalidArgumentException('Invalid contact export profile.');
+		}
+
+		return $profile;
 	}
 
 	public function tagsAction()
