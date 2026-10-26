@@ -1,0 +1,33 @@
+<?php
+$form = $this->xRechnungForm;
+$actionUrl = $this->baseUrl() . '/sales/invoice/xrechnung/id/' . (int)$this->invoice['id'];
+?>
+
+<div class="dw-alert dw-alert--warning">
+	<?php echo $this->escape($this->translate('XRECHNUNG_PREFLIGHT_NOTICE')); ?>
+</div>
+
+<form
+	id="xrechnung-export-form"
+	class="dw-xrechnung-form"
+	method="post"
+	action="<?php echo $this->escape($actionUrl); ?>"
+	data-request-failed="<?php echo $this->escape($this->translate('XRECHNUNG_REQUEST_FAILED')); ?>"
+	data-success="<?php echo $this->escape($this->translate('XRECHNUNG_VALID')); ?>"
+	data-downloading="<?php echo $this->escape($this->translate('XRECHNUNG_DOWNLOADING')); ?>"
+>
+	<?php echo $form->render(); ?>
+
+	<div class="dw-form-row">
+		<div class="dw-field dw-field--col-12">
+			<button type="submit" class="dw-btn dw-btn--action" data-xrechnung-check>
+				<?php echo $this->escape($this->translate('XRECHNUNG_CHECK')); ?>
+			</button>
+			<button type="button" class="dw-btn dw-btn--action" data-xrechnung-download disabled="disabled">
+				<?php echo $this->escape($this->translate('XRECHNUNG_DOWNLOAD')); ?>
+			</button>
+		</div>
+	</div>
+</form>
+
+<div class="dw-xrechnung-results" data-xrechnung-results aria-live="polite"></div>

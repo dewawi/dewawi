@@ -78,7 +78,7 @@ foreach ([
 // A valid permission still belongs to the authenticated user in a shared parent context.
 $adapter->permissions = [['id' => 1, 'userid' => 42, 'clientid' => 70, 'deleted' => 0, 'items' => '{"item":["view"]}']];
 $permission = new DEEC_Permission(Zend_Registry::get('User'));
-foreach (['view', 'get', 'search', 'suggest', 'download', 'export'] as $action) {
+foreach (['view', 'get', 'search', 'suggest', 'download', 'export', 'xrechnung'] as $action) {
     check($permission->hasActionPermission('items', 'item', $action), 'Read permission lost: ' . $action);
     $checks++;
 }

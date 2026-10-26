@@ -3,6 +3,13 @@ $this->title = $this->invoice['title'] ? $this->invoice['title'] : $this->transl
 $this->headTitle($this->title);
 echo $this->TinyMCE();
 echo $this->FileManager();
+$xRechnungHtml = '';
+if (!empty($this->xRechnungAvailable) && $this->xRechnungForm) {
+	$xRechnungHtml = $this->partial('invoice/xrechnung.phtml', [
+		'invoice' => $this->invoice,
+		'xRechnungForm' => $this->xRechnungForm,
+	]);
+}
 ?>
 
 <?php echo $this->form->renderForm([
@@ -23,6 +30,11 @@ echo $this->FileManager();
 		'shipping' => ['title' => 'TABS_SHIPPING_ADDRESS'],
 		'files' => ['title' => 'TABS_FILES', 'html' => $this->Files()],
 		'document' => ['title' => 'TABS_DOCUMENT', 'html' => $this->Document()],
+		'xrechnung' => [
+			'title' => 'TABS_E_INVOICE',
+			'html' => $xRechnungHtml,
+			'show' => !empty($this->xRechnungAvailable),
+		],
 		'messages' => [
 			'title' => 'TABS_MESSAGES',
 			'html' => $this->EmailMessages(),

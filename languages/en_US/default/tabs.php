@@ -1,6 +1,7 @@
 <?php return array(
 	//Tabs
 	'TABS_OVERVIEW' => 'Overview',
+	'TABS_E_INVOICE' => 'E-invoice',
 	'TABS_CUSTOMER' => 'Customer',
 	'TABS_SUPPLIER' => 'Supplier',
 	'TABS_POSITIONS' => 'Positions',

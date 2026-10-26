@@ -367,4 +367,97 @@ $adapter->rows['permission'][0]['sales'] = '{}';
 try { generateInvoice($export); throw new LogicException('XML without permission was exported'); }
 catch (RuntimeException $expected) { check($expected->getMessage() === 'Invoice access denied', 'Unexpected XML permission failure'); }
 
+// FIN-04B form/controller integration: flat form values are validated, mapped and downloaded without writes.
+require_once $root . '/application/modules/sales/controllers/InvoiceController.php';
+class XRechnungUiTestController extends Sales_InvoiceController
+{
+    public function init()
+    {
+        $this->_user = Zend_Registry::get('User');
+        $this->view = new Zend_View();
+    }
+}
+Zend_Controller_Action_HelperBroker::getStaticHelper('json')->suppressExit = true;
+$translator = new DEEC_Translate('de_DE');
+$translator->load('sales', $root . '/languages/de_DE/sales/invoice.php');
+Zend_Registry::set('DEEC_Translate', $translator);
+
+function xRechnungUiRequest(array $post, array $params = [], string $method = 'POST'): array
+{
+    $_SERVER['REQUEST_METHOD'] = $method;
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+    $_POST = [];
+    $request = new Zend_Controller_Request_Http();
+    $request->setModuleName('sales')->setControllerName('invoice')->setActionName('xrechnung')
+        ->setParams(['module' => 'sales', 'controller' => 'invoice', 'action' => 'xrechnung', 'id' => 1] + $params)
+        ->setPost($post);
+    $response = new Zend_Controller_Response_Http();
+    Zend_Controller_Front::getInstance()->setRequest($request)->setResponse($response);
+    (new XRechnungUiTestController($request, $response))->xrechnungAction();
+    $headers = array_column($response->getHeaders(), 'value', 'name');
+    return [$response->getHttpResponseCode(), $response->getBody(), $headers];
+}
+
+$uiPost = [
+    'seller_vat_id' => 'DE123456789', 'seller_tax_id' => '', 'seller_identifier' => '',
+    'seller_contact_name' => 'Billing Team', 'seller_contact_phone' => '+49 30 123456',
+    'seller_contact_email' => 'billing@seller.example', 'seller_endpoint' => 'billing@seller.example',
+    'seller_endpoint_scheme' => 'EM', 'buyer_reference' => 'BUYER-REFERENCE',
+    'buyer_endpoint' => 'billing@buyer.example', 'buyer_endpoint_scheme' => 'EM',
+    'payment_means_code' => '58', 'bank_account_id' => '1', 'payment_due_date' => '08.11.2026',
+    'payment_terms' => '', 'business_process' => Sales_Form_XRechnung::getBusinessProcess(),
+    'period_start' => '', 'period_end' => '', 'unit_code_0' => 'H87',
+    'line_tax_category_10' => 'S', 'line_exemption_reason_10' => '',
+    'line_tax_category_11' => 'S', 'line_exemption_reason_11' => '',
+];
+
+$adapter->rows = $fixture;
+Zend_Registry::set('User', ['id' => 42, 'clientid' => 7]);
+check((new DEEC_Permission((array)Zend_Registry::get('User')))->getPermissionForAction('xrechnung') === 'view', 'XRechnung route does not require invoice view permission');
+[$status, $body] = xRechnungUiRequest([], [], 'GET');
+check($status === 405 && json_decode($body, true, 512, JSON_THROW_ON_ERROR)['valid'] === false, 'XRechnung action accepted a non-POST request');
+$before = [$adapter->rows, $adapter->writes];
+[$status, $body] = xRechnungUiRequest(array_diff_key($uiPost, ['buyer_reference' => true]));
+$json = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+check($status === 200 && !$json['valid'] && in_array('buyer_reference', array_column($json['errors'], 'field'), true), 'Required XRechnung form field was accepted or not associated');
+[$status, $body] = xRechnungUiRequest(array_replace($uiPost, ['payment_means_code' => '99']));
+$json = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+check($status === 200 && !$json['valid'] && in_array('payment_means_code', array_column($json['errors'], 'field'), true), 'Unsupported payment means was accepted by the export form');
+[$status, $body] = xRechnungUiRequest(array_replace($uiPost, ['line_tax_category_10' => 'AE']));
+$json = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+check($status === 200 && !$json['valid'] && in_array('line_tax_category_10', array_column($json['errors'], 'field'), true), 'Unsupported tax category was accepted by the export form');
+[$status, $body] = xRechnungUiRequest(array_replace($uiPost, ['payment_due_date' => '31.02.2026']));
+$json = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+check($status === 200 && !$json['valid'] && in_array('payment_due_date', array_column($json['errors'], 'field'), true), 'Invalid localized due date was normalized into another date');
+[$status, $body] = xRechnungUiRequest(array_replace($uiPost, ['seller_contact_phone' => 'x']));
+$json = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+check($status === 200 && !$json['valid'] && in_array('seller_contact_phone', array_column($json['errors'], 'field'), true), 'Service error was not associated with its export form field');
+[$status, $body] = xRechnungUiRequest($uiPost);
+$json = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+check($status === 200 && $json['valid'] && $json['errors'] === [] && count($json['warnings']) === 2, 'Corrected XRechnung form did not pass the internal pre-check');
+check(str_contains(implode(' ', array_column($json['warnings'], 'message')), 'KoSIT'), 'Successful pre-check was not distinguished from external KoSIT validation');
+[$status, $xml, $headers] = xRechnungUiRequest($uiPost + ['download' => '1']);
+check($status === 200 && str_starts_with($xml, '<?xml') && str_starts_with($headers['Content-Type'] ?? '', 'application/xml'), 'Validated XML was not returned directly');
+check(str_contains($headers['Content-Disposition'] ?? '', 'attachment; filename="XRechnung-7300.xml"'), 'XML download filename or disposition is unsafe or missing');
+$downloadDocument = new DOMDocument();
+check($downloadDocument->loadXML($xml, LIBXML_NONET) && $downloadDocument->getElementsByTagNameNS('*', 'DueDate')->item(0)->textContent === '2026-11-08', 'Localized form date was not mapped explicitly to the export payload');
+check([$adapter->rows, $adapter->writes] === $before, 'XRechnung UI requests changed invoice or master data');
+
+foreach ([['state' => 100, 'completed' => 0], ['state' => 106, 'cancelled' => 1]] as $lifecycle) {
+    $adapter->rows = $fixture;
+    $adapter->rows['invoice'][0] = array_replace($fixture['invoice'][0], $lifecycle);
+    [$status, $body] = xRechnungUiRequest($uiPost + ['download' => '1']);
+    $json = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+    check($status === 200 && !$json['valid'] && in_array('state', array_column($json['errors'], 'field'), true), 'Draft or cancelled invoice reached XML download');
+}
+
+$adapter->rows = $fixture;
+$adapter->rows['invoice'][0]['clientid'] = 8;
+[$status, $body] = xRechnungUiRequest($uiPost);
+check($status === 404 && json_decode($body, true, 512, JSON_THROW_ON_ERROR)['valid'] === false, 'Foreign tenant invoice reached XRechnung generation');
+$adapter->rows = $fixture;
+$adapter->rows['permission'][0]['sales'] = '{}';
+[$status, $body] = xRechnungUiRequest($uiPost);
+check($status === 403 && json_decode($body, true, 512, JSON_THROW_ON_ERROR)['valid'] === false, 'Missing invoice view permission reached XRechnung generation');
+
 echo 'PASS: ' . $checks . " e-invoice preparation and UBL XML checks; discounts, tax groups, escaping, lifecycle, permissions and unchanged originals\n";
