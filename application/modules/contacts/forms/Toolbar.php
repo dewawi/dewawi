@@ -4,6 +4,11 @@ class Contacts_Form_Toolbar extends DEEC_Form
 {
 	public function __construct()
 	{
+		$request = Zend_Controller_Front::getInstance()->getRequest();
+		$isContactController = $request
+			&& $request->getModuleName() === 'contacts'
+			&& $request->getControllerName() === 'contact';
+
 		$this->addElement([
 			'name' => 'add',
 			'type' => 'button',
@@ -39,6 +44,17 @@ class Contacts_Form_Toolbar extends DEEC_Form
 			'wrap' => false,
 			'attribs' => ['class' => 'delete'],
 		]);
+
+		if ($isContactController) {
+			$this->addElement([
+				'name' => 'tags',
+				'type' => 'button',
+				'label' => 'TOOLBAR_EDIT_TAGS',
+				'toolbar' => 'actions',
+				'wrap' => false,
+				'attribs' => ['class' => 'tags'],
+			]);
+		}
 
 		$this->addElement([
 			'name' => 'apply',
@@ -163,5 +179,20 @@ class Contacts_Form_Toolbar extends DEEC_Form
 			'wrap' => false,
 			'format' => ['type' => 'int'],
 		]);
+
+		if ($isContactController) {
+			$this->addElement([
+				'name' => 'bulk-tagid',
+				'type' => 'select',
+				'label' => 'TOOLBAR_TAG',
+				'default' => '0',
+				'options' => [
+					'0' => 'TOOLBAR_SELECT',
+				],
+				'source' => 'tag:contacts:contact',
+				'toolbar' => 'tag-dialog',
+				'format' => ['type' => 'int'],
+			]);
+		}
 	}
 }

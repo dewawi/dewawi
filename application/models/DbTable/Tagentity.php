@@ -95,6 +95,63 @@ class Application_Model_DbTable_Tagentity extends DEEC_Model_DbTable_Entity
 		return (bool)$this->fetchRow($select);
 	}
 
+	public function getAssignedParentIds(array $parentIds, string $module, string $controller, int $tagId, bool $forUpdate = false): array
+	{
+		$parentIds = $this->normalizeParentIds($parentIds);
+
+		if (!$parentIds || $tagId <= 0) {
+			return [];
+		}
+
+		$rows = $this->fetchAll(
+			$this->select()
+				->from($this->_name, ['entityid'])
+				->where('entityid IN (?)', $parentIds)
+				->where('module = ?', $module)
+				->where('controller = ?', $controller)
+				->where('tagid = ?', $tagId)
+				->where('clientid = ?', $this->getClientId())
+				->where('deleted = ?', 0)
+				->forUpdate($forUpdate)
+		);
+
+		$assigned = [];
+
+		foreach($rows as $row) {
+			$assigned[(int)$row->entityid] = true;
+		}
+
+		return array_keys($assigned);
+	}
+
+	public function deleteForParents(array $parentIds, string $module, string $controller, int $tagId): int
+	{
+		$parentIds = $this->normalizeParentIds($parentIds);
+
+		if (!$parentIds || $tagId <= 0) {
+			return 0;
+		}
+
+		return $this->update(
+			$this->prepareUpdateData(['deleted' => 1]),
+			[
+				$this->getAdapter()->quoteInto('entityid IN (?)', $parentIds),
+				$this->getAdapter()->quoteInto('module = ?', $module),
+				$this->getAdapter()->quoteInto('controller = ?', $controller),
+				$this->getAdapter()->quoteInto('tagid = ?', $tagId),
+				$this->getAdapter()->quoteInto('clientid = ?', $this->getClientId()),
+				$this->getAdapter()->quoteInto('deleted = ?', 0),
+			]
+		);
+	}
+
+	private function normalizeParentIds(array $parentIds): array
+	{
+		return array_values(array_unique(array_filter(array_map('intval', $parentIds), static function(int $id): bool {
+			return $id > 0;
+		})));
+	}
+
 	public function addTagEntity($data)
 	{
 		$data['clientid'] = $this->getClientId();

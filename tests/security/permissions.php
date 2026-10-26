@@ -82,7 +82,7 @@ foreach (['view', 'get', 'search', 'suggest', 'download', 'export'] as $action) 
     check($permission->hasActionPermission('items', 'item', $action), 'Read permission lost: ' . $action);
     $checks++;
 }
-foreach (['add', 'copy', 'edit', 'save', 'delete'] as $action) {
+foreach (['add', 'copy', 'edit', 'save', 'tags', 'delete'] as $action) {
     check(!$permission->hasActionPermission('items', 'item', $action), 'Read permission allowed a write: ' . $action);
     $checks++;
 }
@@ -98,6 +98,14 @@ foreach (['add', 'edit', 'delete'] as $action) {
     check($response->getHttpResponseCode() === 200 && $request->getModuleName() === 'items', 'Valid write permission was lost: ' . $action);
     $checks++;
 }
+
+$adapter->permissions[0]['contacts'] = json_encode(['contact' => ['view']]);
+[$request, $response] = permissionRoute('contacts', 'contact', 'tags');
+check($response->isRedirect(), 'Contact view permission allowed bulk tag changes');
+$adapter->permissions[0]['contacts'] = json_encode(['contact' => ['edit']]);
+[$request, $response] = permissionRoute('contacts', 'contact', 'tags');
+check($response->getHttpResponseCode() === 200 && $request->getModuleName() === 'contacts', 'Contact edit permission did not allow bulk tag changes');
+$checks += 2;
 
 // Preserve the existing explicit public and non-managed module behavior.
 $adapter->permissions = [];

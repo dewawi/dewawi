@@ -45,6 +45,7 @@ class DEEC_Permission
 			'save',
 			'cancel',
 			'state',
+			'tags',
 		],
 		'view' => [
 			'view',

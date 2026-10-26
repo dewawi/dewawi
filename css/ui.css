@@ -2316,6 +2316,16 @@ cursor: default;
   -moz-border-radius: 10px;
   border-radius: 10px;
 }
+.dw-contact-tags-dialog {
+  bottom: auto;
+  max-width: calc(100% - 40px);
+  width: 480px;
+}
+.dw-contact-tags-dialog__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
 #popup .close {
   height: 48px;
   width: 48px;

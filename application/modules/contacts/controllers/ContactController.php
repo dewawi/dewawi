@@ -2,6 +2,8 @@
 
 class Contacts_ContactController extends DEEC_Controller_Action
 {
+	private const MAX_TAG_CONTACTS = 100;
+
 	public function init()
 	{
 		parent::init();
@@ -42,6 +44,133 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		$options = $list->getOptions();
 		$options['tagEntities'] = $tagEntityDb->getTagEntitiesForParents('contacts', 'contact', $contactIds);
 		$list->setOptions($options);
+	}
+
+	public function tagsAction()
+	{
+		$this->disableView();
+
+		if (!$this->getRequest()->isPost()) {
+			$this->getResponse()->setHttpResponseCode(405);
+
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_INVALID_REQUEST'),
+			]);
+		}
+
+		try {
+			$contactIds = $this->getTagContactIds($this->getRequest()->getPost('ids', []));
+		} catch (InvalidArgumentException $e) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_TAG_SELECTION_INVALID'),
+			]);
+		}
+
+		$tagId = filter_var(
+			$this->getRequest()->getPost('tagid'),
+			FILTER_VALIDATE_INT,
+			['options' => ['min_range' => 1]]
+		);
+		$operation = (string)$this->getRequest()->getPost('operation', '');
+
+		if ($tagId === false || !in_array($operation, ['add', 'remove'], true)) {
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_TAG_INVALID'),
+			]);
+		}
+
+		$contactDb = new Contacts_Model_DbTable_Contact();
+		$tagDb = new Application_Model_DbTable_Tag();
+		$tagEntityDb = new Contacts_Model_DbTable_Tag();
+		$adapter = $contactDb->getAdapter();
+
+		try {
+			$adapter->beginTransaction();
+
+			$tag = $tagDb->getByIdForUpdate((int)$tagId);
+
+			if (
+				!$tag
+				|| (string)$tag['module'] !== 'contacts'
+				|| (string)$tag['controller'] !== 'contact'
+				|| (int)$tag['shopid'] !== 0
+			) {
+				throw new DomainException('invalid_tag');
+			}
+
+			foreach($contactIds as $contactId) {
+				if (!$contactDb->getByIdForUpdate($contactId)) {
+					throw new DomainException('invalid_contact');
+				}
+			}
+
+			$result = $operation === 'add'
+				? $tagEntityDb->assignToContacts($contactIds, (int)$tagId)
+				: $tagEntityDb->removeFromContacts($contactIds, (int)$tagId);
+
+			$adapter->commit();
+		} catch (DomainException $e) {
+			$adapter->rollBack();
+
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate(
+					$e->getMessage() === 'invalid_tag'
+						? 'MESSAGES_TAG_INVALID'
+						: 'MESSAGES_CONTACT_NOT_FOUND'
+				),
+			]);
+		} catch (Exception $e) {
+			$adapter->rollBack();
+
+			return $this->_helper->json([
+				'ok' => false,
+				'message' => $this->view->translate('MESSAGES_TAGS_UPDATE_FAILED'),
+			]);
+		}
+
+		$message = sprintf(
+			$this->view->translate(
+				$operation === 'add'
+					? 'MESSAGES_TAGS_ASSIGNED'
+					: 'MESSAGES_TAGS_REMOVED'
+			),
+			$result['changed'],
+			$result['unchanged']
+		);
+
+		return $this->_helper->json([
+			'ok' => true,
+			'operation' => $operation,
+			'changed' => $result['changed'],
+			'unchanged' => $result['unchanged'],
+			'message' => $message,
+		]);
+	}
+
+	private function getTagContactIds($ids): array
+	{
+		if (!is_array($ids) || !$ids || count($ids) > self::MAX_TAG_CONTACTS) {
+			throw new InvalidArgumentException('Invalid contact selection');
+		}
+
+		$contactIds = [];
+
+		foreach($ids as $id) {
+			if (
+				!(is_int($id) && $id > 0)
+				&& !(is_string($id) && preg_match('/^[1-9][0-9]*$/D', $id))
+			) {
+				throw new InvalidArgumentException('Invalid contact ID');
+			}
+
+			$contactIds[(int)$id] = true;
+		}
+
+		return array_keys($contactIds);
 	}
 
 	protected function getCreateData(): array

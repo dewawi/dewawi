@@ -1167,7 +1167,7 @@ function edit(data, params) {
 }
 
 //Search
-function search() {
+function search(onSuccess) {
 	var data = collectToolbarData();
 	data.context_action = action === 'select' ? 'select' : 'index';
 
@@ -1197,6 +1197,10 @@ function search() {
 				$('#content').html(response.content || '');
 				DewawiToolbar.refresh(response.toolbar || '');
 				initDwTabs('#content');
+
+				if (typeof onSuccess === 'function') {
+					onSuccess(response);
+				}
 			},
 
 			error: function (xhr, status) {

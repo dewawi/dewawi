@@ -178,3 +178,74 @@ function findFirstByType(items, type) {
 
 	return null;
 }
+
+(function ($) {
+	'use strict';
+
+	$(function () {
+		if (!window.DewawiToolbar) {
+			return;
+		}
+
+		DewawiToolbar.actionConfig.tags = { selection: 'multiple' };
+		DewawiToolbar.actions.tags = function (selection) {
+			var $dialog = $('#contactTags');
+
+			if (!$dialog.length) {
+				return;
+			}
+
+			$dialog.data('contact-ids', selection.ids);
+			modalWindow('contactTags');
+		};
+
+		$(document).on('click', '[data-contact-tag-operation]', function () {
+			var $dialog = $('#contactTags');
+			var operation = String($(this).data('contact-tag-operation') || '');
+			var tagId = parseInt($dialog.find('[name="bulk-tagid"]').val(), 10);
+			var ids = $dialog.data('contact-ids') || [];
+			var confirmation = operation === 'add'
+				? $dialog.data('confirm-add')
+				: $dialog.data('confirm-remove');
+
+			if (operation !== 'add' && operation !== 'remove') {
+				return;
+			}
+
+			if (!tagId) {
+				pushMessages([$dialog.data('invalid-tag')]);
+				return;
+			}
+
+			if (!ids.length || !confirm(confirmation)) {
+				return;
+			}
+
+			$.ajax({
+				type: 'POST',
+				url: Dewawi.url('contacts', 'contact', 'tags'),
+				dataType: 'json',
+				cache: false,
+				data: {
+					ids: ids,
+					tagid: tagId,
+					operation: operation
+				},
+				success: function (response) {
+					if (!response || response.ok === false) {
+						pushMessages([response && response.message ? response.message : $dialog.data('update-failed')]);
+						return;
+					}
+
+					modalWindowClose();
+					search(function () {
+						pushMessages([response.message]);
+					});
+				},
+				error: function () {
+					pushMessages([$dialog.data('update-failed')]);
+				}
+			});
+		});
+	});
+})(jQuery);

@@ -169,6 +169,7 @@ class Zend_Db_Table_Abstract
 }
 
 require_once $root . '/application/modules/contacts/controllers/TagController.php';
+require_once $root . '/application/modules/contacts/controllers/ContactController.php';
 require_once $root . '/application/controllers/helpers/Options.php';
 
 class ContactTagTestView extends Zend_View
@@ -184,6 +185,15 @@ class ContactTagTestController extends Contacts_TagController
     {
         return $this->validateMultiUpdate($id, $values, $row, []);
     }
+}
+
+class ContactBulkTagTestController extends Contacts_ContactController
+{
+	public function init()
+	{
+		$this->_user = Zend_Registry::get('User');
+		$this->view = new ContactTagTestView();
+	}
 }
 
 class ContactTagTestListQuery extends DEEC_List_Query
@@ -258,11 +268,103 @@ function requestContactTag(string $action, array $post, int $id = 0, int $parent
     return [$response->getHttpResponseCode(), $response->getBody() . $output];
 }
 
+function requestBulkContactTags(array $ids, int $tagId, string $operation): array
+{
+	$_SERVER['REQUEST_METHOD'] = 'POST';
+	$_POST = ['ids' => $ids, 'tagid' => $tagId, 'operation' => $operation];
+	$_GET = [];
+	$request = new Zend_Controller_Request_Http();
+	$request->setModuleName('contacts')->setControllerName('contact')->setActionName('tags')->setPost($_POST);
+	$response = new Zend_Controller_Response_Http();
+	Zend_Controller_Front::getInstance()->setRequest($request)->setResponse($response);
+
+	ob_start();
+	try {
+		$controller = new ContactBulkTagTestController($request, $response);
+		$controller->tagsAction();
+	} finally {
+		$output = ob_get_clean();
+	}
+
+	return [$response->getHttpResponseCode(), json_decode($response->getBody() . $output, true)];
+}
+
 function addBlankContactTag(int $contactId): int
 {
     requestContactTag('add', ['parent_module' => 'contacts', 'parent_controller' => 'contact'], 0, $contactId);
     return ContactTagTestAdapter::$lastId;
 }
+
+contactTagFixtures();
+[$status, $response] = requestBulkContactTags([11, 12], 21, 'add');
+check($status === 200 && $response['ok'] === true, 'Bulk contact tag assignment failed');
+check($response['changed'] === 1 && $response['unchanged'] === 1, 'Bulk assignment counts are incorrect');
+$gilventaAssignments = array_filter(Zend_Db_Table_Abstract::$rows['tagentity'], static function(array $row): bool {
+	return (int)$row['tagid'] === 21 && (int)$row['deleted'] === 0;
+});
+check(count($gilventaAssignments) === 2, 'One tag was not assigned to multiple contacts');
+check(Zend_Db_Table_Abstract::$rows['contact'][11]['catid'] === 3 && Zend_Db_Table_Abstract::$rows['contact'][12]['catid'] === 4, 'Bulk assignment changed contact categories');
+check((int)Zend_Db_Table_Abstract::$rows['tagentity'][33]['deleted'] === 0, 'Bulk assignment changed another tag');
+
+$assignmentCount = count(Zend_Db_Table_Abstract::$rows['tagentity']);
+[, $response] = requestBulkContactTags([11, 12], 21, 'add');
+check($response['ok'] === true && $response['changed'] === 0 && $response['unchanged'] === 2, 'Repeated bulk assignment is not idempotent');
+check(count(Zend_Db_Table_Abstract::$rows['tagentity']) === $assignmentCount, 'Repeated bulk assignment created duplicates');
+
+[, $response] = requestBulkContactTags([11, 12], 21, 'remove');
+check($response['ok'] === true && $response['changed'] === 2 && $response['unchanged'] === 0, 'Bulk tag removal failed');
+check(!array_filter(Zend_Db_Table_Abstract::$rows['tagentity'], static function(array $row): bool {
+	return (int)$row['tagid'] === 21 && (int)$row['deleted'] === 0;
+}), 'Bulk tag removal left active assignments');
+check((int)Zend_Db_Table_Abstract::$rows['tagentity'][33]['deleted'] === 0, 'Bulk removal changed another tag');
+check(Zend_Db_Table_Abstract::$rows['contact'][11]['catid'] === 3 && Zend_Db_Table_Abstract::$rows['contact'][12]['catid'] === 4, 'Bulk removal changed contact categories');
+
+[, $response] = requestBulkContactTags([11, 12], 21, 'remove');
+check($response['ok'] === true && $response['changed'] === 0 && $response['unchanged'] === 2, 'Repeated bulk removal is not idempotent');
+
+foreach ([22, 23, 24, 999] as $invalidTagId) {
+	contactTagFixtures();
+	$writes = count(Zend_Db_Table_Abstract::$writes);
+	[, $response] = requestBulkContactTags([11, 12], $invalidTagId, 'add');
+	check($response['ok'] === false && $response['message'] === 'MESSAGES_TAG_INVALID', 'Invalid or foreign bulk tag was accepted: ' . $invalidTagId);
+	check(count(Zend_Db_Table_Abstract::$writes) === $writes, 'Invalid bulk tag request wrote data: ' . $invalidTagId);
+}
+
+foreach ([13, 14] as $invalidContactId) {
+	contactTagFixtures();
+	$writes = count(Zend_Db_Table_Abstract::$writes);
+	[, $response] = requestBulkContactTags([12, $invalidContactId], 21, 'add');
+	check($response['ok'] === false && $response['message'] === 'MESSAGES_CONTACT_NOT_FOUND', 'Invalid bulk contact was accepted: ' . $invalidContactId);
+	check(count(Zend_Db_Table_Abstract::$writes) === $writes, 'Mixed bulk selection caused a partial write: ' . $invalidContactId);
+	check(!array_filter(Zend_Db_Table_Abstract::$rows['tagentity'], static function(array $row): bool {
+		return (int)$row['entityid'] === 12 && (int)$row['tagid'] === 21 && (int)$row['deleted'] === 0;
+	}), 'Mixed bulk selection assigned the tag to an allowed contact');
+}
+
+contactTagFixtures();
+Zend_Registry::set('Client', ['id' => 70, 'parentid' => 70, 'modules' => ['contacts' => 70]]);
+[, $response] = requestBulkContactTags([70], 71, 'add');
+check($response['ok'] === true && $response['changed'] === 1, 'Shared parent contact rejected a bulk tag');
+$parentAssignments = array_filter(Zend_Db_Table_Abstract::$rows['tagentity'], static function(array $row): bool {
+	return (int)$row['entityid'] === 70 && (int)$row['tagid'] === 71 && (int)$row['deleted'] === 0 && (int)$row['clientid'] === 70;
+});
+check(count($parentAssignments) === 1, 'Shared parent bulk tag used the wrong tenant');
+[, $response] = requestBulkContactTags([70], 71, 'remove');
+check($response['ok'] === true && $response['changed'] === 1, 'Shared parent bulk tag could not be removed');
+
+contactTagFixtures();
+Zend_Registry::set('Client', ['id' => 7, 'parentid' => 0]);
+[, $response] = requestBulkContactTags(array_fill(0, 101, 11), 21, 'add');
+check($response['ok'] === false && $response['message'] === 'MESSAGES_TAG_SELECTION_INVALID', 'Oversized contact selection was accepted');
+$writes = count(Zend_Db_Table_Abstract::$writes);
+[, $response] = requestBulkContactTags([11, 'invalid'], 21, 'add');
+check($response['ok'] === false && $response['message'] === 'MESSAGES_TAG_SELECTION_INVALID', 'Malformed contact selection was accepted');
+check(count(Zend_Db_Table_Abstract::$writes) === $writes, 'Malformed contact selection wrote data');
+check((new DEEC_Permission([]))->getPermissionForAction('tags') === 'edit', 'Bulk tag route is not protected by edit permission');
+$toolbar = new Contacts_Form_Toolbar();
+check($toolbar->getElement('tags') !== null && $toolbar->getElement('bulk-tagid') !== null, 'Bulk tag toolbar controls are missing');
+$contactsJs = file_get_contents($root . '/js/contacts.js');
+check(str_contains($contactsJs, "actionConfig.tags = { selection: 'multiple' }") && str_contains($contactsJs, "ids: ids"), 'Bulk tag toolbar action does not use the selected contacts');
 
 contactTagFixtures();
 $rowId = addBlankContactTag(12);
