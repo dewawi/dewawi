@@ -2,12 +2,13 @@
 
 class Contacts_Service_ContactExportService
 {
+	public const PROFILE_COMBINED = 'combined';
 	public const PROFILE_COMPANIES = 'companies';
 	public const PROFILE_CONTACTPERSONS = 'contactpersons';
 
 	public function createList(string $profile, $contacts, array $context = []): DEEC_List
 	{
-		if (!in_array($profile, [self::PROFILE_COMPANIES, self::PROFILE_CONTACTPERSONS], true)) {
+		if (!in_array($profile, [self::PROFILE_COMBINED, self::PROFILE_COMPANIES, self::PROFILE_CONTACTPERSONS], true)) {
 			throw new InvalidArgumentException('Invalid contact export profile.');
 		}
 
@@ -16,7 +17,7 @@ class Contacts_Service_ContactExportService
 		$related = $this->loadRelatedData($contacts, $clientId, $context);
 		$items = $profile === self::PROFILE_CONTACTPERSONS
 			? $this->buildContactpersonRows($contacts, $related, $context)
-			: $this->buildCompanyRows($contacts, $related, $context);
+			: $this->buildCompanyRows($contacts, $related, $context, $profile === self::PROFILE_COMBINED);
 
 		return new DEEC_List([
 			'items' => $items,
@@ -167,7 +168,7 @@ class Contacts_Service_ContactExportService
 		return $grouped;
 	}
 
-	private function buildCompanyRows(array $contacts, array $related, array $context): array
+	private function buildCompanyRows(array $contacts, array $related, array $context, bool $combined = false): array
 	{
 		$rows = [];
 
@@ -175,7 +176,7 @@ class Contacts_Service_ContactExportService
 			$id = (int)$contact['id'];
 			$address = $this->selectAddress($related['addresses'][$id] ?? []);
 
-			$rows[] = [
+			$row = [
 				'contactid' => $this->plain($contact['contactid'] ?? ''),
 				'name1' => $this->plain($contact['name1'] ?? ''),
 				'name2' => $this->plain($contact['name2'] ?? ''),
@@ -191,6 +192,19 @@ class Contacts_Service_ContactExportService
 				'tags' => $this->joinField($related['tags'][$id] ?? [], 'tag'),
 				'roles' => $this->joinRoles($related['roles'][$id] ?? [], $context),
 			];
+
+			if (!$combined) {
+				$rows[] = $row;
+				continue;
+			}
+
+			foreach (($related['contactpersons'][$id] ?? []) ?: [[]] as $contactperson) {
+				$person = $this->getContactpersonFields($contactperson, $related);
+				$person['contactperson_department'] = $person['department'];
+				$person['contactperson_email'] = $person['email'];
+				unset($person['department'], $person['email']);
+				$rows[] = $row + $person;
+			}
 		}
 
 		return $rows;
@@ -207,17 +221,10 @@ class Contacts_Service_ContactExportService
 			$roles = $this->joinRoles($related['roles'][$contactId] ?? [], $context);
 
 			foreach ($related['contactpersons'][$contactId] ?? [] as $contactperson) {
-				$personId = (int)$contactperson['id'];
 				$rows[] = [
 					'contactid' => $this->plain($contact['contactid'] ?? ''),
 					'company' => $this->plain($contact['name1'] ?? ''),
-					'firstname' => $this->plain($contactperson['firstname'] ?? ''),
-					'lastname' => $this->plain($contactperson['lastname'] ?? ''),
-					'salutation' => $this->plain($contactperson['salutation'] ?? ''),
-					'title' => $this->plain($contactperson['title'] ?? ''),
-					'position' => $this->plain($contactperson['position'] ?? ''),
-					'department' => $this->plain($contactperson['department'] ?? ''),
-					'email' => $this->joinField($related['contactpersonEmails'][$personId] ?? [], 'email'),
+				] + $this->getContactpersonFields($contactperson, $related) + [
 					'category' => $category,
 					'tags' => $tags,
 					'roles' => $roles,
@@ -226,6 +233,21 @@ class Contacts_Service_ContactExportService
 		}
 
 		return $rows;
+	}
+
+	private function getContactpersonFields(array $contactperson, array $related): array
+	{
+		$personId = (int)($contactperson['id'] ?? 0);
+
+		return [
+			'firstname' => $this->plain($contactperson['firstname'] ?? ''),
+			'lastname' => $this->plain($contactperson['lastname'] ?? ''),
+			'salutation' => $this->plain($contactperson['salutation'] ?? ''),
+			'title' => $this->plain($contactperson['title'] ?? ''),
+			'position' => $this->plain($contactperson['position'] ?? ''),
+			'department' => $this->plain($contactperson['department'] ?? ''),
+			'email' => $this->joinField($related['contactpersonEmails'][$personId] ?? [], 'email'),
+		];
 	}
 
 	private function selectAddress(array $addresses): array
@@ -313,7 +335,7 @@ class Contacts_Service_ContactExportService
 			];
 		}
 
-		return [
+		$columns = [
 			['name' => 'contactid', 'label' => 'CONTACTS_CONTACT_ID'],
 			['name' => 'name1', 'label' => 'CONTACTS_NAME_ORGANISATION'],
 			['name' => 'name2', 'label' => 'CONTACTS_NAME_AFFIX'],
@@ -329,5 +351,30 @@ class Contacts_Service_ContactExportService
 			['name' => 'tags', 'label' => 'CONTACTS_TAGS'],
 			['name' => 'roles', 'label' => 'CONTACTS_ROLES'],
 		];
+
+		if ($profile === self::PROFILE_COMBINED) {
+			$labels = [
+				'name1' => 'CONTACTS_EXPORT_COMPANY_NAME',
+				'department' => 'CONTACTS_EXPORT_COMPANY_DEPARTMENT',
+				'phone' => 'CONTACTS_EXPORT_COMPANY_PHONE',
+				'email' => 'CONTACTS_EXPORT_COMPANY_EMAIL',
+			];
+			foreach ($columns as &$column) {
+				$column['label'] = $labels[$column['name']] ?? $column['label'];
+			}
+			unset($column);
+
+			$columns = array_merge($columns, [
+				['name' => 'salutation', 'label' => 'CONTACTS_CONTACT_PERSONS_SALUTATION'],
+				['name' => 'title', 'label' => 'CONTACTS_CONTACT_PERSONS_TITLE'],
+				['name' => 'firstname', 'label' => 'CONTACTS_CONTACT_PERSONS_FIRSTNAME'],
+				['name' => 'lastname', 'label' => 'CONTACTS_CONTACT_PERSONS_LASTNAME'],
+				['name' => 'position', 'label' => 'CONTACTS_CONTACT_PERSONS_POSITION'],
+				['name' => 'contactperson_department', 'label' => 'CONTACTS_EXPORT_CONTACTPERSON_DEPARTMENT'],
+				['name' => 'contactperson_email', 'label' => 'CONTACTS_EXPORT_CONTACTPERSON_EMAIL'],
+			]);
+		}
+
+		return $columns;
 	}
 }

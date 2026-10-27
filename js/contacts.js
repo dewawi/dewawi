@@ -242,7 +242,7 @@ function findFirstByType(items, type) {
 		$(document).on('click', '[data-contact-export-profile]', function () {
 			var profile = String($(this).data('contact-export-profile') || '');
 
-			if (profile !== 'companies' && profile !== 'contactpersons') {
+			if (profile !== 'combined' && profile !== 'companies' && profile !== 'contactpersons') {
 				return;
 			}
 

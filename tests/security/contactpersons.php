@@ -52,6 +52,7 @@ function contactpersonWhereMatches(string $where, array $row): bool
 class ContactpersonTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
 {
     public array $rows = [];
+    public array $selects = [];
     private int $lastId = 100;
 
     protected function _connect() {}
@@ -75,6 +76,7 @@ class ContactpersonTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
     {
         if (!$sql instanceof Zend_Db_Table_Select || $bind) throw new RuntimeException('Unexpected database access');
         $sql->assemble();
+        $this->selects[] = $sql;
         $from = $sql->getPart(Zend_Db_Select::FROM);
         $table = reset($from)['tableName'];
         $rows = array_values(array_filter($this->rows[$table] ?? [], static function(array $row) use ($sql): bool {
@@ -172,6 +174,28 @@ $adapter->rows = [
         ['id' => 23, 'parentid' => 11, 'module' => 'contacts', 'controller' => 'contactperson', 'clientid' => 7, 'deleted' => 0, 'ordering' => 1, 'email' => 'erika@example.invalid', 'suppressed' => 0],
     ],
 ];
+
+$exportService = new Contacts_Service_ContactExportService();
+$exportContext = ['tagEntities' => [], 'contactRoles' => []];
+$originalRows = $adapter->rows;
+$adapter->rows['contactperson'][] = array_replace($person, ['id' => 16, 'parentid' => 4, 'deleted' => 1]);
+$adapter->rows['contactperson'][] = array_replace($person, ['id' => 17, 'parentid' => 4, 'clientid' => 8]);
+foreach ([['clientid' => 8], ['deleted' => 1], ['module' => 'sales'], ['controller' => 'contact']] as $overrides) {
+    $adapter->rows['email'][] = array_replace($adapter->rows['email'][1], $overrides, ['email' => 'excluded@example.invalid']);
+}
+$beforeSelects = count($adapter->selects);
+$exportRows = $exportService->createList('combined', [$adapter->rows['contact'][0], ['id' => 4, 'clientid' => 7, 'contactid' => 400]], $exportContext)->getItems();
+check(count($exportRows) === 3 && array_column($exportRows, 'firstname') === ['Max', 'Erika', ''], 'Combined data loading included deleted, foreign or unrelated persons');
+check($exportRows[0]['email'] === 'company@example.invalid' && $exportRows[0]['contactperson_email'] === 'max@example.invalid, max.alt@example.invalid', 'Combined data loading mixed email ownership or included excluded emails');
+check($exportRows[2]['contactid'] === '400' && $exportRows[2]['contactperson_email'] === '', 'Company with only deleted or foreign persons did not get one empty person row');
+check(count($adapter->selects) === $beforeSelects + 7, 'Combined export did not batch related data loading');
+$adapter->rows = $originalRows;
+
+Zend_Registry::set('Client', ['id' => 7, 'parentid' => 70, 'modules' => ['contacts' => 70]]);
+$sharedExportRows = $exportService->createList('combined', [$adapter->rows['contact'][2]], $exportContext)->getItems();
+check(count($sharedExportRows) === 1 && $sharedExportRows[0]['firstname'] === 'Max', 'Combined export did not load the authorized parent tenant person');
+check($sharedExportRows[0]['contactperson_email'] === '', 'Combined export leaked child tenant emails into a shared parent contact');
+Zend_Registry::set('Client', ['id' => 7, 'parentid' => 0, 'modules' => ['contacts' => 7]]);
 
 $form = new Contacts_Form_Contactperson();
 check(array_keys($form->getElements()) === ['salutation', 'title', 'firstname', 'lastname', 'position', 'department', 'email'], 'Contact-person form fields or order are incorrect');

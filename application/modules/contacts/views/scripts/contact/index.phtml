@@ -39,7 +39,11 @@ echo $this->Pagination();
 			<div id="contactExport" class="popup_block dw-contact-export-dialog">
 				<h3><?php echo $this->escape($this->translate('CONTACTS_EXPORT_TITLE')); ?></h3>
 				<p><?php echo $this->escape($this->translate('CONTACTS_EXPORT_DESCRIPTION')); ?></p>
+				<p><?php echo $this->escape($this->translate('CONTACTS_EXPORT_COMBINED_DESCRIPTION')); ?></p>
 				<div class="dw-contact-dialog__actions">
+					<button type="button" class="dw-btn dw-btn--action dw-btn--primary" data-contact-export-profile="combined">
+						<?php echo $this->escape($this->translate('CONTACTS_EXPORT_COMBINED')); ?>
+					</button>
 					<button type="button" class="dw-btn dw-btn--action" data-contact-export-profile="companies">
 						<?php echo $this->escape($this->translate('CONTACTS_EXPORT_COMPANIES')); ?>
 					</button>

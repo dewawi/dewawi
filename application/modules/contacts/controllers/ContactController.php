@@ -92,6 +92,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		$profile = (string)$this->_getParam('profile', Contacts_Service_ContactExportService::PROFILE_COMPANIES);
 
 		if (!in_array($profile, [
+			Contacts_Service_ContactExportService::PROFILE_COMBINED,
 			Contacts_Service_ContactExportService::PROFILE_COMPANIES,
 			Contacts_Service_ContactExportService::PROFILE_CONTACTPERSONS,
 		], true)) {
