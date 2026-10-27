@@ -6,6 +6,10 @@ class Items_Form_ToolbarStock extends Items_Form_Toolbar
 	{
 		parent::__construct();
 
+		foreach(['catid', 'country', 'tagid'] as $name) {
+			unset($this->elements[$name]);
+		}
+
 		$this->addElement([
 			'name' => 'stockdate',
 			'type' => 'text',

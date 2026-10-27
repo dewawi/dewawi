@@ -19,6 +19,38 @@ class DEEC_List_Query
 		];
 	}
 
+	public function sum(array $params, array $options, array $config, Zend_Db_Expr $expression): float
+	{
+		$params = $this->normalizeParams($params);
+
+		$tableClass = $config['tableClass'];
+		$dbTable = new $tableClass();
+		$db = $dbTable->getAdapter();
+
+		$select = $this->buildBaseSelect($dbTable, $config, true);
+		$select->reset(Zend_Db_Select::COLUMNS);
+		$select->columns([
+			'aggregate_value' => new Zend_Db_Expr(
+				'MAX(' . (string)$expression . ')'
+			),
+		]);
+
+		$this->applyFilters($select, $params, $options, $config);
+		$this->applyGrouping($select, $config);
+
+		$sumSelect = $db->select()
+			->from(
+				['filtered_values' => $select],
+				[
+					'total' => new Zend_Db_Expr(
+						'COALESCE(SUM(filtered_values.aggregate_value), 0)'
+					),
+				]
+			);
+
+		return (float)$db->fetchOne($sumSelect);
+	}
+
 	protected function fetchResult(array $params, array $options, array $config): array
 	{
 		$tableClass = $config['tableClass'];

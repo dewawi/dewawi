@@ -1,0 +1,15 @@
+<?php return array(
+	'ITEMS_STOCK' => 'Stock',
+	'ITEMS_STOCK_QUANTITY' => 'Stock',
+	'ITEMS_STOCK_RESERVED' => 'Reserved',
+	'ITEMS_STOCK_AVAILABLE' => 'Available',
+	'ITEMS_STOCK_INCOMING' => 'Incoming',
+	'ITEMS_STOCK_VALUE' => 'Stock value',
+	'ITEMS_STOCK_DATE' => 'Stock date',
+	'ITEMS_STOCK_TOTAL_VALUE' => 'Total stock value',
+	'ITEMS_STOCK_FILTERED_VALUE' => 'Filtered stock value',
+	'ITEMS_STOCK_PAGE_VALUE' => 'Page stock value',
+	'ITEMS_STOCK_FOUND_ITEMS' => 'Items found',
+	'ITEMS_WAREHOUSE_CODE' => 'Warehouse code',
+	'STOCK' => 'Stock',
+);

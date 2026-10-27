@@ -4,5 +4,12 @@
 	'ITEMS_STOCK_RESERVED' => 'Reserviert',
 	'ITEMS_STOCK_AVAILABLE' => 'Verfügbar',
 	'ITEMS_STOCK_INCOMING' => 'Im Zulauf',
+	'ITEMS_STOCK_VALUE' => 'Lagerwert',
+	'ITEMS_STOCK_DATE' => 'Bestandsstichtag',
+	'ITEMS_STOCK_TOTAL_VALUE' => 'Lagerwert gesamt',
+	'ITEMS_STOCK_FILTERED_VALUE' => 'Gefilterter Lagerwert',
+	'ITEMS_STOCK_PAGE_VALUE' => 'Lagerwert dieser Seite',
+	'ITEMS_STOCK_FOUND_ITEMS' => 'Gefundene Artikel',
 	'ITEMS_WAREHOUSE_CODE' => 'Lagercode',
+	'STOCK' => 'Lagerbestand',
 );

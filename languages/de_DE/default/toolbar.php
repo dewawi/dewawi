@@ -43,6 +43,7 @@
 	'TOOLBAR_EXPORT' => 'Exportieren',
 	'TOOLBAR_FILTER' => 'Filter',
 	'TOOLBAR_RESET' => 'Zurücksetzen',
+	'CLEAR' => 'Leeren',
 	'TOOLBAR_SELECTED_FILTER' => 'Ausgewählte Filter',
 	'TOOLBAR_FROM' => 'Von',
 	'TOOLBAR_TO' => 'Bis',

@@ -8,6 +8,8 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	protected array $_saveCalculation = [];
 	protected bool $_reloadPositions = false;
 	protected ?DEEC_List $exportList = null;
+	protected array $_listParams = [];
+	protected array $_listOptions = [];
 
 	public function init()
 	{
@@ -997,6 +999,8 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 		$params['_export'] = $this->getRequest()->getActionName() === 'export';
+		$this->_listParams = $params;
+		$this->_listOptions = $options;
 
 		if(isset($config['entity']) && $this->getRequest()->getActionName() === 'index') {
 			$toolbar->addElement([
@@ -1059,6 +1063,16 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		if($params['_export']) $this->exportList = $list;
 
 		return $list;
+	}
+
+	protected function getListParams(): array
+	{
+		return $this->_listParams;
+	}
+
+	protected function getListOptions(): array
+	{
+		return $this->_listOptions;
 	}
 
 	protected function assignPagination(array $params, $records, $items, $toolbar): void

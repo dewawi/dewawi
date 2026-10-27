@@ -82,22 +82,9 @@ class Items_Model_DbTable_Itemstock extends DEEC_Model_DbTable_Entity
 				['s' => $this->_name],
 				[
 					'total' => new Zend_Db_Expr(
-						'COALESCE(
-							SUM(
-								COALESCE(s.quantity, 0) * (
-									CASE
-										WHEN i.parentid > 0
-											AND (
-												i.cost IS NULL
-												OR i.cost = 0
-											)
-											THEN COALESCE(p.cost, 0)
-										ELSE COALESCE(i.cost, 0)
-									END
-								)
-							),
-							0
-						)'
+						'COALESCE(SUM('
+							. (string)Items_Model_Entity_Stock::stockValueExpression()
+							. '), 0)'
 					),
 				]
 			)
@@ -111,6 +98,12 @@ class Items_Model_DbTable_Itemstock extends DEEC_Model_DbTable_Entity
 				['p' => 'item'],
 				'p.id = i.parentid'
 					. ' AND p.clientid = i.clientid',
+				[]
+			)
+			->join(
+				['w' => 'warehouse'],
+				'w.id = s.warehouseid'
+					. ' AND w.clientid = s.clientid',
 				[]
 			)
 			->where('s.clientid = ?', $this->getClientId())
@@ -127,5 +120,17 @@ class Items_Model_DbTable_Itemstock extends DEEC_Model_DbTable_Entity
 		$value = $this->getAdapter()->fetchOne($select);
 
 		return (float)$value;
+	}
+
+	public function getFilteredTotalValue(array $params, array $options): float
+	{
+		$query = new DEEC_List_Query();
+
+		return $query->sum(
+			$params,
+			$options,
+			Items_Model_Entity_Stock::listConfig(),
+			Items_Model_Entity_Stock::stockValueExpression()
+		);
 	}
 }

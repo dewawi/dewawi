@@ -14,14 +14,54 @@ echo $this->Pagination();
 
 <?php if(isset($this->stockTotalValue)): ?>
 	<div class="dw-stock-summary">
-		<strong>
-			<?php echo $this->translate(
-				'ITEMS_STOCK_TOTAL_VALUE'
-			) ?>:
-		</strong>
+		<div>
+			<strong>
+				<?php echo $this->translate(
+					'ITEMS_STOCK_TOTAL_VALUE'
+				) ?>:
+			</strong>
 
-		<?php echo $this->currency(
-			$this->stockTotalValue
-		) ?>
+			<?php echo $this->currency(
+				$this->stockTotalValue
+			) ?>
+		</div>
+
+		<?php if(!empty($this->showStockFilteredValue)): ?>
+			<div>
+				<strong>
+					<?php echo $this->translate(
+						'ITEMS_STOCK_FILTERED_VALUE'
+					) ?>:
+				</strong>
+
+				<?php echo $this->currency(
+					$this->stockFilteredValue
+				) ?>
+			</div>
+		<?php endif; ?>
+
+		<div>
+			<strong>
+				<?php echo $this->translate(
+					'ITEMS_STOCK_FOUND_ITEMS'
+				) ?>:
+			</strong>
+
+			<?php echo (int)$this->stockRecords ?>
+		</div>
+
+		<?php if(!empty($this->showStockPageValue)): ?>
+			<div>
+				<strong>
+					<?php echo $this->translate(
+						'ITEMS_STOCK_PAGE_VALUE'
+					) ?>:
+				</strong>
+
+				<?php echo $this->currency(
+					$this->stockPageValue
+				) ?>
+			</div>
+		<?php endif; ?>
 	</div>
 <?php endif; ?>

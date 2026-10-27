@@ -1,4 +1,5 @@
 <?php return array(
+	'LIST_NO_ENTRIES_FOUND' => 'No entries found',
 	//Language
 	'LANGUAGES_DE_DE' => 'Deutsch',
 	'LANGUAGES_EN_US' => 'Englisch',

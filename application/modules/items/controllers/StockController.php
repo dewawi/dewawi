@@ -18,25 +18,88 @@ class Items_StockController extends DEEC_Controller_Action
 
 	protected function buildCurrentStockView(): void
 	{
+		$entity = Items_Model_Entity_Stock::listConfig();
+
 		$this->buildListView([
 			'viewKey' => 'stocks',
 			'list' => 'Items_Model_List_Stocks',
-			'entity' => Items_Model_Entity_Stock::listConfig(),
+			'entity' => $entity,
 		]);
 
-		$warehouseId = (int)$this->_getParam(
-			'warehouseid',
-			0
-		);
+		if($this->getRequest()->getActionName() === 'export') {
+			return;
+		}
+
+		$params = $this->getListParams();
+		$warehouseId = (int)($params['warehouseid'] ?? 0);
 
 		$stockDb = new Items_Model_DbTable_Itemstock();
 
-		$this->view->stockTotalValue =
-			$stockDb->getTotalValue(
-				$warehouseId > 0
-					? $warehouseId
-					: null
-			);
+		$totalValue = $stockDb->getTotalValue(
+			$warehouseId > 0
+				? $warehouseId
+				: null
+		);
+
+		$filteredValue = $stockDb->getFilteredTotalValue(
+			$params,
+			$this->getListOptions()
+		);
+
+		$pageValue = 0.0;
+
+		foreach($this->view->stocksItems as $item) {
+			$pageValue += (float)$item->stockvalue;
+		}
+
+		$this->view->assign([
+			'stockTotalValue' => $totalValue,
+			'stockFilteredValue' => $filteredValue,
+			'stockPageValue' => $pageValue,
+			'stockRecords' => (int)($this->view->pagination['records'] ?? 0),
+			'showStockFilteredValue' => $this->hasStockValueFilter(
+				$params,
+				$entity
+			),
+			'showStockPageValue' =>
+				(int)($this->view->pagination['pages'] ?? 1) > 1
+				&& abs($pageValue - $filteredValue) > 0.00001,
+		]);
+	}
+
+	protected function hasStockValueFilter(array $params, array $config): bool
+	{
+		$keyword = preg_replace(
+			'/[^\p{L}\p{N}\s]/u',
+			' ',
+			trim((string)($params['keyword'] ?? ''))
+		);
+
+		if(trim((string)$keyword) !== '') {
+			return true;
+		}
+
+		foreach(array_keys($config['filters'] ?? []) as $name) {
+			if($name === 'warehouseid') {
+				continue;
+			}
+
+			$value = $params[$name] ?? null;
+
+			if(is_array($value)) {
+				if($value) {
+					return true;
+				}
+
+				continue;
+			}
+
+			if($value !== null && $value !== '' && $value !== '0' && $value !== 'all') {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	protected function getToolbarClass(): string

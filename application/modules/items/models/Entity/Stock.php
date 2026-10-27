@@ -2,37 +2,42 @@
 
 class Items_Model_Entity_Stock
 {
+	public static function costExpression(): Zend_Db_Expr
+	{
+		return new Zend_Db_Expr(
+			'CASE
+				WHEN i.parentid > 0
+					AND (i.cost IS NULL OR i.cost = 0)
+					THEN COALESCE(p.cost, 0)
+				ELSE COALESCE(i.cost, 0)
+			END'
+		);
+	}
+
+	public static function stockValueExpression(): Zend_Db_Expr
+	{
+		return new Zend_Db_Expr(
+			'COALESCE(s.quantity, 0) * ('
+				. (string)self::costExpression()
+				. ')'
+		);
+	}
+
 	public static function listConfig(): array
 	{
 		return [
 			'tableClass' => 'Items_Model_DbTable_Itemstock',
 			'alias' => 's',
 
-			'deletedFilter' => false,
+			'tags' => false,
 
 			'columns' => [
 				'*',
 				'available' => new Zend_Db_Expr(
 					's.quantity - s.reserved'
 				),
-				'cost' => new Zend_Db_Expr(
-					'CASE
-						WHEN i.parentid > 0
-							AND (i.cost IS NULL OR i.cost = 0)
-							THEN p.cost
-						ELSE i.cost
-					END'
-				),
-				'stockvalue' => new Zend_Db_Expr(
-					's.quantity * (
-						CASE
-							WHEN i.parentid > 0
-								AND (i.cost IS NULL OR i.cost = 0)
-								THEN p.cost
-							ELSE i.cost
-						END
-					)'
-				),
+				'cost' => self::costExpression(),
+				'stockvalue' => self::stockValueExpression(),
 			],
 
 			'joins' => [
@@ -40,7 +45,8 @@ class Items_Model_Entity_Stock
 					'table' => 'item',
 					'alias' => 'i',
 					'on' => 's.itemid = i.id'
-						. ' AND s.clientid = i.clientid',
+						. ' AND s.clientid = i.clientid'
+						. ' AND i.deleted = 0',
 					'columns' => [
 						'sku AS sku',
 						'title AS itemtitle',
