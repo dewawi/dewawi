@@ -74,6 +74,45 @@ class StockSummaryTable extends Items_Model_DbTable_Itemstock
 	];
 }
 
+class StockSummaryQuery extends DEEC_List_Query
+{
+	public function exportParams(array $params): array
+	{
+		return $this->normalizeParams($params);
+	}
+}
+
+class StockSummaryLedger extends Items_Model_DbTable_Ledger
+{
+	protected $_primary = 'id';
+	protected $_cols = [
+		'id',
+		'itemid',
+		'warehouseid',
+		'type',
+		'quantity',
+		'ledgerdate',
+		'clientid',
+		'deleted',
+	];
+
+	public function historicalSql(string $status): string
+	{
+		return (string)$this->buildStockAtSelect(
+			'2026-10-01 23:59:59',
+			3,
+			[
+				'categoryids' => [12, 13],
+				'manufacturerid' => 8,
+				'stockstatus' => $status,
+				'keyword' => 'ext unit',
+				'order' => 'quantity',
+				'sort' => 'DESC',
+			]
+		);
+	}
+}
+
 require_once $root . '/application/modules/items/controllers/StockController.php';
 
 class StockSummaryController extends Items_StockController
@@ -108,10 +147,17 @@ $value = (new DEEC_List_Query())->sum(
 		'order' => 'stockvalue',
 		'sort' => 'ASC',
 		'catid' => '12',
+		'manufacturerid' => 8,
+		'stockstatus' => 'negative',
 		'country' => 'DE',
 		'tagid' => 55,
 	],
-	[],
+	[
+		'catid' => [
+			12 => ['parentid' => 0, 'childs' => [13]],
+			13 => ['parentid' => 12, 'childs' => [],],
+		],
+	],
 	$config,
 	Items_Model_Entity_Stock::stockValueExpression()
 );
@@ -130,8 +176,52 @@ check(str_contains($sql, 'COALESCE(p.cost, 0)'), 'Parent cost null fallback is m
 check(!str_contains($sql, 'ORDER BY'), 'Aggregation depends on sorting');
 check(!str_contains($sql, 'LIMIT'), 'Aggregation depends on pagination');
 check(!str_contains($sql, 'tag_filter'), 'Stock rows are incorrectly filtered as tagged entities');
-check(!str_contains($sql, 'catid'), 'Unsupported category filter was applied');
+check(str_contains($sql, 'i.catid IN (12, 13)'), 'Category descendants are missing');
+check(str_contains($sql, 'i.manufacturerid = 8'), 'Manufacturer filter is missing');
+check(str_contains($sql, 's.quantity < 0'), 'Negative stock filter is missing');
 check(!str_contains($sql, 'country'), 'Unsupported country filter was applied');
+
+foreach([
+	'positive' => 's.quantity > 0',
+	'zero' => 's.quantity = 0',
+	'negative' => 's.quantity < 0',
+] as $status => $condition) {
+	(new DEEC_List_Query())->sum(
+		['stockstatus' => $status],
+		[],
+		$config,
+		Items_Model_Entity_Stock::stockValueExpression()
+	);
+	check(str_contains(end($adapter->sql), $condition), 'Stock status condition is missing: ' . $status);
+}
+
+(new DEEC_List_Query())->sum(
+	['stockstatus' => 'invalid'],
+	[],
+	$config,
+	Items_Model_Entity_Stock::stockValueExpression()
+);
+check(str_contains(end($adapter->sql), '1 = 0'), 'Invalid stock status was not rejected');
+
+$exportParams = (new StockSummaryQuery())->exportParams([
+	'_export' => true,
+	'page' => 4,
+	'limit' => 25,
+	'keyword' => 'ext',
+	'catid' => 12,
+	'manufacturerid' => 8,
+	'warehouseid' => 3,
+	'stockstatus' => 'zero',
+]);
+check($exportParams['limit'] === 0 && $exportParams['offset'] === 0, 'Stock CSV export is restricted to the visible page');
+check(
+	$exportParams['keyword'] === 'ext'
+	&& $exportParams['catid'] === 12
+	&& $exportParams['manufacturerid'] === 8
+	&& $exportParams['warehouseid'] === 3
+	&& $exportParams['stockstatus'] === 'zero',
+	'Stock CSV export lost active filters'
+);
 
 $adapter->result = 229853.0;
 $totalValue = (new StockSummaryTable())->getTotalValue(3);
@@ -147,9 +237,32 @@ check(str_contains($totalSql, (string)Items_Model_Entity_Stock::stockValueExpres
 
 $toolbar = new Items_Form_ToolbarStock();
 
-foreach(['catid', 'country', 'tagid'] as $name) {
+foreach(['country', 'tagid'] as $name) {
 	check($toolbar->getElement($name) === null, 'Unsupported stock filter is visible: ' . $name);
 }
+
+check($toolbar->getElement('catid')['source'] === 'category:item', 'Stock category source is incorrect');
+check($toolbar->getElement('catid')['default'] === 'all', 'Stock category default is incorrect');
+check($toolbar->getElement('manufacturerid')['source'] === 'manufacturer', 'Manufacturer source is incorrect');
+check($toolbar->getElement('manufacturerid')['default'] === '0', 'Manufacturer default is incorrect');
+check(
+	array_keys($toolbar->getElement('stockstatus')['options']) === ['all', 'positive', 'zero', 'negative'],
+	'Stock status options are not fixed'
+);
+
+foreach(['positive' => ' > 0', 'zero' => ' = 0', 'negative' => ' < 0'] as $status => $condition) {
+	$historicalSql = (new StockSummaryLedger())->historicalSql($status);
+	check(str_contains($historicalSql, 'l.clientid = 7'), 'Historical tenant filter is missing');
+	check(str_contains($historicalSql, 'l.deleted = 0'), 'Historical deleted ledger filter is missing');
+	check(str_contains($historicalSql, 'i.deleted = 0'), 'Historical deleted item filter is missing');
+	check(str_contains($historicalSql, 'l.warehouseid = 3'), 'Historical warehouse filter is missing');
+	check(str_contains($historicalSql, 'i.catid IN (12, 13)'), 'Historical category filter is missing');
+	check(str_contains($historicalSql, 'i.manufacturerid = 8'), 'Historical manufacturer filter is missing');
+	check(substr_count($historicalSql, 'LIKE') === 8, 'Historical multi-word search is incomplete');
+	check(str_contains($historicalSql, 'HAVING') && str_contains($historicalSql, $condition), 'Historical status does not filter the calculated quantity: ' . $status);
+	check(str_contains($historicalSql, 'ORDER BY `quantity` DESC'), 'Historical ordering is incorrect');
+}
+check(str_contains((new StockSummaryLedger())->historicalSql('invalid'), 'HAVING (1 = 0)'), 'Invalid historical stock status was not rejected');
 
 $translationKeys = [
 	'ITEMS_STOCK_VALUE',
@@ -158,6 +271,12 @@ $translationKeys = [
 	'ITEMS_STOCK_FILTERED_VALUE',
 	'ITEMS_STOCK_PAGE_VALUE',
 	'ITEMS_STOCK_FOUND_ITEMS',
+	'ITEMS_MANUFACTURERS_ALL',
+	'ITEMS_STOCK_STATUS',
+	'ITEMS_STOCK_STATUS_ALL',
+	'ITEMS_STOCK_STATUS_POSITIVE',
+	'ITEMS_STOCK_STATUS_ZERO',
+	'ITEMS_STOCK_STATUS_NEGATIVE',
 	'STOCK',
 ];
 
@@ -178,4 +297,17 @@ foreach(['', 'not-a-date', '2026-02-31', '2026-10-1', '01.10.2026'] as $stockDat
 	check($controller->parseDate($stockDate) === null, 'Invalid stock date was accepted: ' . $stockDate);
 }
 
-echo "PASS: stock summary filters, valuation and translations\n";
+$globalJs = file_get_contents($root . '/js/global.js');
+check(
+	str_contains(
+		$globalJs,
+		"if (\$field.attr('name') === 'daterange') {\n"
+		. "\t\t\t\t\tDewawiToolbar.toggleDateRange(\$field.val());\n"
+		. "\t\t\t\t}\n\n"
+		. "\t\t\t\t$('#pagination-page').val(1);\n"
+		. "\t\t\t\tsearch();"
+	),
+	'Filter changes do not reset pagination'
+);
+
+echo "PASS: stock filters, historical stock, valuation, AJAX and translations\n";

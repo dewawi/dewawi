@@ -81,12 +81,23 @@ class Items_Model_Entity_Stock
 			],
 
 			'filters' => [
+				'catid' => [
+					'type' => 'category',
+					'alias' => 'i',
+					'column' => 'catid',
+					'categoryType' => 'item',
+				],
+				'manufacturerid' => [
+					'type' => 'equals',
+					'alias' => 'i',
+					'column' => 'manufacturerid',
+				],
 				'warehouseid' => [
 					'type' => 'equals',
 					'column' => 'warehouseid',
 				],
-				'quantity' => [
-					'type' => 'quantity',
+				'stockstatus' => [
+					'type' => 'stockstatus',
 					'column' => 'quantity',
 				],
 			],

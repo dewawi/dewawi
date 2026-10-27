@@ -10,6 +10,12 @@
 	'ITEMS_STOCK_FILTERED_VALUE' => 'Filtered stock value',
 	'ITEMS_STOCK_PAGE_VALUE' => 'Page stock value',
 	'ITEMS_STOCK_FOUND_ITEMS' => 'Items found',
+	'ITEMS_MANUFACTURERS_ALL' => 'All manufacturers',
+	'ITEMS_STOCK_STATUS' => 'Stock status',
+	'ITEMS_STOCK_STATUS_ALL' => 'All stock',
+	'ITEMS_STOCK_STATUS_POSITIVE' => 'Positive stock',
+	'ITEMS_STOCK_STATUS_ZERO' => 'Zero stock',
+	'ITEMS_STOCK_STATUS_NEGATIVE' => 'Negative stock',
 	'ITEMS_WAREHOUSE_CODE' => 'Warehouse code',
 	'STOCK' => 'Stock',
 );

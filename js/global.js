@@ -3307,6 +3307,7 @@ function markFieldSaved($field) {
 					DewawiToolbar.toggleDateRange($field.val());
 				}
 
+				$('#pagination-page').val(1);
 				search();
 			});
 

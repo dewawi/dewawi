@@ -6,9 +6,41 @@ class Items_Form_ToolbarStock extends Items_Form_Toolbar
 	{
 		parent::__construct();
 
-		foreach(['catid', 'country', 'tagid'] as $name) {
+		foreach(['country', 'tagid'] as $name) {
 			unset($this->elements[$name]);
 		}
+
+		$this->addElement([
+			'name' => 'manufacturerid',
+			'type' => 'select',
+			'label' => 'ITEMS_MANUFACTURER',
+			'default' => '0',
+			'options' => [
+				'0' => 'ITEMS_MANUFACTURERS_ALL',
+			],
+			'source' => 'manufacturer',
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'int'],
+		]);
+
+		$this->addElement([
+			'name' => 'stockstatus',
+			'type' => 'select',
+			'label' => 'ITEMS_STOCK_STATUS',
+			'default' => 'all',
+			'options' => [
+				'all' => 'ITEMS_STOCK_STATUS_ALL',
+				'positive' => 'ITEMS_STOCK_STATUS_POSITIVE',
+				'zero' => 'ITEMS_STOCK_STATUS_ZERO',
+				'negative' => 'ITEMS_STOCK_STATUS_NEGATIVE',
+			],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+		]);
 
 		$this->addElement([
 			'name' => 'stockdate',

@@ -10,6 +10,12 @@
 	'ITEMS_STOCK_FILTERED_VALUE' => 'Gefilterter Lagerwert',
 	'ITEMS_STOCK_PAGE_VALUE' => 'Lagerwert dieser Seite',
 	'ITEMS_STOCK_FOUND_ITEMS' => 'Gefundene Artikel',
+	'ITEMS_MANUFACTURERS_ALL' => 'Alle Hersteller',
+	'ITEMS_STOCK_STATUS' => 'Bestandsstatus',
+	'ITEMS_STOCK_STATUS_ALL' => 'Alle Bestände',
+	'ITEMS_STOCK_STATUS_POSITIVE' => 'Positiver Bestand',
+	'ITEMS_STOCK_STATUS_ZERO' => 'Nullbestand',
+	'ITEMS_STOCK_STATUS_NEGATIVE' => 'Negativer Bestand',
 	'ITEMS_WAREHOUSE_CODE' => 'Lagercode',
 	'STOCK' => 'Lagerbestand',
 );

@@ -353,6 +353,8 @@ $stockSummary = $controller->summary(
 	[
 		'keyword' => 'ext',
 		'warehouseid' => 3,
+		'manufacturerid' => 8,
+		'stockstatus' => 'positive',
 		'page' => 1,
 		'limit' => 25,
 	],
@@ -364,7 +366,11 @@ check($stockSummary['total'][''] === 229853.0, 'Stock total is incorrect');
 check($stockSummary['filtered'][''] === 4296.0, 'Filtered stock total is incorrect');
 check(str_contains($adapter->sql[0], 's.warehouseid = 3'), 'Warehouse was not retained as a base filter');
 check(!str_contains($adapter->sql[0], "LIKE '%ext%'"), 'Stock total includes keyword filter');
+check(!str_contains($adapter->sql[0], 'i.manufacturerid = 8'), 'Stock total includes manufacturer filter');
+check(!str_contains($adapter->sql[0], 's.quantity > 0'), 'Stock total includes stock status filter');
 check(str_contains($adapter->sql[1], "LIKE '%ext%'"), 'Filtered stock total is missing keyword filter');
+check(str_contains($adapter->sql[1], 'i.manufacturerid = 8'), 'Filtered stock total is missing manufacturer filter');
+check(str_contains($adapter->sql[1], 's.quantity > 0'), 'Filtered stock total is missing stock status filter');
 
 require_once $root . '/application/views/helpers/ToolbarBottom.php';
 $view = new Zend_View();

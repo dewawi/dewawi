@@ -356,6 +356,10 @@ class DEEC_List_Query
 					$this->applyQuantityFilter($select, $value, $filter, $config);
 					break;
 
+				case 'stockstatus':
+					$this->applyStockStatusFilter($select, $value, $filter, $config);
+					break;
+
 				case 'states':
 					$this->applyStatesFilter($select, $value, $filter, $config);
 					break;
@@ -513,6 +517,27 @@ class DEEC_List_Query
 		$column = $filter['column'] ?? 'quantity';
 
 		$select->where($alias . '.' . $column . ' > ?', 0);
+	}
+
+	protected function applyStockStatusFilter($select, $value, array $filter, array $config): void
+	{
+		$operators = [
+			'positive' => '>',
+			'zero' => '=',
+			'negative' => '<',
+		];
+
+		$value = (string)$value;
+
+		if(!isset($operators[$value])) {
+			$select->where('1 = 0');
+			return;
+		}
+
+		$alias = $filter['alias'] ?? $config['alias'];
+		$column = $filter['column'] ?? 'quantity';
+
+		$select->where($alias . '.' . $column . ' ' . $operators[$value] . ' ?', 0);
 	}
 
 	protected function applyStatesFilter($select, $states, array $filter, array $config): void
