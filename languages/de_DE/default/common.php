@@ -36,6 +36,10 @@
 	'EMAIL_MESSAGE_SUCCESFULLY_SENT' => 'Nachricht erfolgreich gesendet!',
 	//List
 	'LIST_NO_ENTRIES_FOUND' => 'Keine Einträge gefunden',
+	'LIST_RECORDS' => 'Datensätze',
+	'LIST_TOTAL_VALUE' => 'Gesamtwert',
+	'LIST_FILTERED_VALUE' => 'Gefilterter Wert',
+	'LIST_PAGE_VALUE' => 'Wert dieser Seite',
 	//Upload
 	'UPLOAD' => 'Datei hochladen',
 	'UPLOAD_SUBMIT' => 'Hochladen',

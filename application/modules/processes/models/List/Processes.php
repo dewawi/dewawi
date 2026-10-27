@@ -57,6 +57,11 @@ class Processes_Model_List_Processes extends DEEC_List
 				'type' => 'payment',
 				'class' => 'dw-col-payment',
 				'option_key' => 'paymentstatus',
+				'summary' => [
+					'type' => 'sum',
+					'field' => 'total',
+					'currency_field' => 'currency',
+				],
 				'editable' => function ($item, $element, $list) {
 					return !$list->isReadonly($item);
 				},

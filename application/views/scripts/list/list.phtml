@@ -66,3 +66,41 @@
 		<?php endif; ?>
 	</table>
 </div>
+
+<?php if($this->table->hasListFooter()): ?>
+	<?php
+	$actions = $this->ToolbarBottom(
+		$this->table->getToolbar(),
+		(string)$this->table->getContext('action', '')
+	);
+	$summary = $this->table->getSummary();
+	?>
+
+	<div class="dw-list-footer">
+		<?php if($actions !== ''): ?>
+			<div class="dw-list-footer__actions">
+				<?php echo $actions; ?>
+			</div>
+		<?php endif; ?>
+
+		<div class="dw-list-footer__summary">
+			<div class="dw-list-footer__metric">
+				<span><?php echo $this->escape($this->translate('LIST_RECORDS')); ?>:</span>
+				<strong><?php echo (int)$this->table->getRecordCount(); ?></strong>
+			</div>
+
+			<?php foreach([
+				'total' => 'LIST_TOTAL_VALUE',
+				'filtered' => 'LIST_FILTERED_VALUE',
+				'page' => 'LIST_PAGE_VALUE',
+			] as $name => $label): ?>
+				<?php if(!empty($summary[$name])): ?>
+					<div class="dw-list-footer__metric">
+						<span><?php echo $this->escape($this->translate($label)); ?>:</span>
+						<strong><?php echo $this->table->renderSummaryValues($summary[$name]); ?></strong>
+					</div>
+				<?php endif; ?>
+			<?php endforeach; ?>
+		</div>
+	</div>
+<?php endif; ?>

@@ -1,5 +1,9 @@
 <?php return array(
 	'LIST_NO_ENTRIES_FOUND' => 'No entries found',
+	'LIST_RECORDS' => 'Records',
+	'LIST_TOTAL_VALUE' => 'Total value',
+	'LIST_FILTERED_VALUE' => 'Filtered value',
+	'LIST_PAGE_VALUE' => 'Page value',
 	//Language
 	'LANGUAGES_DE_DE' => 'Deutsch',
 	'LANGUAGES_EN_US' => 'Englisch',

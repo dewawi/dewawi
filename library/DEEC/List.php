@@ -11,11 +11,15 @@ class DEEC_List
 	protected $items = [];
 	protected $options = [];
 	protected $context = [];
+	protected $toolbar = null;
 	protected $toolbarInline = null;
 	protected $selectable = true;
 	protected $tableClass = '';
 	protected $total = null;
 	protected $footer = [];
+	protected $pagination = [];
+	protected $summary = [];
+	protected bool $listFooter = false;
 	protected $rowClassCallback = null;
 	protected $readonlyStates = ['105', '106'];
 	protected $partial = 'list/list.phtml';
@@ -53,6 +57,18 @@ class DEEC_List
 			$this->setFooter($config['footer']);
 		}
 
+		if (array_key_exists('pagination', $config)) {
+			$this->setPagination($config['pagination']);
+		}
+
+		if (array_key_exists('summary', $config)) {
+			$this->setSummary($config['summary']);
+		}
+
+		if (array_key_exists('listFooter', $config)) {
+			$this->setListFooter($config['listFooter']);
+		}
+
 		if (array_key_exists('view', $config)) {
 			$this->setView($config['view']);
 		}
@@ -67,6 +83,10 @@ class DEEC_List
 
 		if (array_key_exists('toolbarInline', $config)) {
 			$this->setToolbarInline($config['toolbarInline']);
+		}
+
+		if (array_key_exists('toolbar', $config)) {
+			$this->setToolbar($config['toolbar']);
 		}
 
 		if (array_key_exists('context', $config)) {
@@ -268,6 +288,17 @@ class DEEC_List
 		return $this;
 	}
 
+	public function setToolbar($toolbar)
+	{
+		$this->toolbar = $toolbar;
+		return $this;
+	}
+
+	public function getToolbar()
+	{
+		return $this->toolbar;
+	}
+
 	public function getToolbarInline()
 	{
 		return $this->toolbarInline;
@@ -339,6 +370,97 @@ class DEEC_List
 		return $this->footer;
 	}
 
+	public function setPagination(array $pagination)
+	{
+		$this->pagination = $pagination;
+		return $this;
+	}
+
+	public function getPagination(): array
+	{
+		return $this->pagination;
+	}
+
+	public function getRecordCount(): int
+	{
+		if(array_key_exists('records', $this->pagination)) {
+			return (int)$this->pagination['records'];
+		}
+
+		return (int)$this->getTotal();
+	}
+
+	public function setSummary(array $summary)
+	{
+		$this->summary = $summary;
+		return $this;
+	}
+
+	public function getSummary(): array
+	{
+		return $this->summary;
+	}
+
+	public function setListFooter(bool $enabled)
+	{
+		$this->listFooter = $enabled;
+		return $this;
+	}
+
+	public function hasListFooter(): bool
+	{
+		return $this->listFooter;
+	}
+
+	public function getSummaryColumn(): ?array
+	{
+		foreach($this->columns as $column) {
+			if(($column['summary']['type'] ?? '') === 'sum') {
+				return $column;
+			}
+		}
+
+		return null;
+	}
+
+	public function getPageSummary(array $column): array
+	{
+		$field = (string)(
+			$column['summary']['field']
+			?? $column['field']
+			?? $column['name']
+			?? ''
+		);
+		$currencyField = $column['summary']['currency_field'] ?? null;
+		$values = [];
+
+		foreach($this->items as $item) {
+			$currency = $currencyField
+				? trim((string)$this->getFieldValue($item, $currencyField, ''))
+				: '';
+
+			$values[$currency] = ($values[$currency] ?? 0.0)
+				+ (float)$this->getFieldValue($item, $field, 0);
+		}
+
+		ksort($values);
+
+		return $values;
+	}
+
+	public function renderSummaryValues(array $values): string
+	{
+		$parts = [];
+
+		foreach($values as $currency => $value) {
+			$parts[] = '<span class="dw-list-footer__amount">'
+				. $this->renderCurrencyValue((float)$value, (string)$currency)
+				. '</span>';
+		}
+
+		return implode('<span class="dw-list-footer__separator"> · </span>', $parts);
+	}
+
 	public function setRowClassCallback($callback)
 	{
 		$this->rowClassCallback = $callback;
@@ -391,6 +513,14 @@ class DEEC_List
 				'action' => 'edit',
 				'id_field' => 'id',
 			];
+		}
+
+		if(($column['summary'] ?? null) === 'sum') {
+			$column['summary'] = ['type' => 'sum'];
+		}
+
+		if(isset($column['summary_currency_field'])) {
+			$column['summary']['currency_field'] = $column['summary_currency_field'];
 		}
 
 		return $column;
@@ -966,6 +1096,21 @@ class DEEC_List
 		if ($value === null || $value === '') return '';
 
 		$currencyCode = $this->getFieldValue($item, $column['currency_field'] ?? 'currency');
+		$html = $this->renderCurrencyValue($value, (string)$currencyCode);
+
+		if (!empty($column['secondary_field'])) {
+			$secondaryValue = $this->getFieldValue($item, $column['secondary_field']);
+
+			if ($secondaryValue !== null && $secondaryValue !== '') {
+				$html .= '<br>(' . $this->renderCurrencyValue($secondaryValue, (string)$currencyCode) . ')';
+			}
+		}
+
+		return $html;
+	}
+
+	public function renderCurrencyValue($value, string $currencyCode = ''): string
+	{
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 		$currency = $currencyHelper->getCurrency();
 
@@ -973,17 +1118,7 @@ class DEEC_List
 			$currency = $currencyHelper->setCurrency($currency, $currencyCode, 'USE_SYMBOL');
 		}
 
-		$html = $this->escape($currency->toCurrency($value));
-
-		if (!empty($column['secondary_field'])) {
-			$secondaryValue = $this->getFieldValue($item, $column['secondary_field']);
-
-			if ($secondaryValue !== null && $secondaryValue !== '') {
-				$html .= '<br>(' . $this->escape($currency->toCurrency($secondaryValue)) . ')';
-			}
-		}
-
-		return $html;
+		return $this->escape($currency->toCurrency($value));
 	}
 
 	protected function renderCallbackCell($item, array $column)

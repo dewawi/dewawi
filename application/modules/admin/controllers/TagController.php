@@ -35,16 +35,30 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 		}
 
 		$list = new Admin_Model_List_Tags();
+		$records = is_countable($tags) ? count($tags) : 0;
+		$pagination = [
+			'count' => $records,
+			'start' => $records > 0 ? 1 : 0,
+			'end' => $records,
+			'records' => $records,
+			'page' => 1,
+			'limit' => max(1, $records),
+			'pages' => 1,
+		];
 
 		$list->configure([
 			'items' => $tags,
 			'options' => $options,
+			'pagination' => $pagination,
+			'listFooter' => true,
 			'view' => $this->view,
 			'module' => 'admin',
 			'controller' => 'tag',
+			'toolbar' => $toolbar,
 			'toolbarInline' => $toolbarInline,
 			'context' => [
 				'user' => $this->_user,
+				'action' => $this->getRequest()->getActionName(),
 				'slugs' => $slugs,
 				'type' => $params['type'],
 			],
@@ -54,6 +68,7 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 		$this->view->form = $form;
 		$this->view->toolbar = $toolbar;
 		$this->view->toolbarInline = $toolbarInline;
+		$this->view->pagination = $pagination;
 		$this->view->messages = $this->_flashMessenger->getMessages();
 	}
 

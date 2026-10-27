@@ -30,6 +30,7 @@ class Items_Model_Entity_Stock
 			'alias' => 's',
 
 			'tags' => false,
+			'summaryBaseFilters' => ['warehouseid'],
 
 			'columns' => [
 				'*',

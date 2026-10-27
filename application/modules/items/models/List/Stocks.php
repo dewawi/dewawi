@@ -56,6 +56,7 @@ class Items_Model_List_Stocks extends DEEC_List
 				'name' => 'stockvalue',
 				'label' => 'ITEMS_STOCK_VALUE',
 				'type' => 'currency',
+				'summary' => 'sum',
 			],
 		];
 	}

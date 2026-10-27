@@ -121,16 +121,4 @@ class Items_Model_DbTable_Itemstock extends DEEC_Model_DbTable_Entity
 
 		return (float)$value;
 	}
-
-	public function getFilteredTotalValue(array $params, array $options): float
-	{
-		$query = new DEEC_List_Query();
-
-		return $query->sum(
-			$params,
-			$options,
-			Items_Model_Entity_Stock::listConfig(),
-			Items_Model_Entity_Stock::stockValueExpression()
-		);
-	}
 }

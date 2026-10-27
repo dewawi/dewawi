@@ -8,8 +8,6 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 	protected array $_saveCalculation = [];
 	protected bool $_reloadPositions = false;
 	protected ?DEEC_List $exportList = null;
-	protected array $_listParams = [];
-	protected array $_listOptions = [];
 
 	public function init()
 	{
@@ -999,8 +997,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 		$params['_export'] = $this->getRequest()->getActionName() === 'export';
-		$this->_listParams = $params;
-		$this->_listOptions = $options;
+		$list = new $config['list']();
 
 		if(isset($config['entity']) && $this->getRequest()->getActionName() === 'index') {
 			$toolbar->addElement([
@@ -1018,6 +1015,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		if (isset($config['entity'])) {
 			$listQuery = new DEEC_List_Query();
 			$result = $listQuery->fetch($params, $options, $config['entity']);
+			$params = $listQuery->getAppliedParams();
 		} else {
 			$result = call_user_func($config['items'], $params, $options);
 		}
@@ -1035,13 +1033,15 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 
 		$contextAction = $this->_getParam('context_action', $this->getRequest()->getActionName());
 
-		$list = new $config['list']();
 		$list->configure([
 			'items' => $items,
 			'options' => $options,
+			'pagination' => (array)($this->view->pagination ?? []),
+			'listFooter' => $config['listFooter'] ?? true,
 			'view' => $this->view,
 			'module' => $this->getRequest()->getModuleName(),
 			'controller' => $this->getRequest()->getControllerName(),
+			'toolbar' => $toolbar,
 			'toolbarInline' => $toolbarInline,
 			'context' => [
 				'user' => $this->_user,
@@ -1050,6 +1050,17 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 				'setid' => (int)$this->_getParam('setid', 0),
 			],
 		]);
+
+		if($this->shouldBuildListSummary($list, $params, $config)) {
+			$list->setSummary(
+				$this->buildListSummary(
+					$list,
+					$params,
+					$options,
+					$config['entity']
+				)
+			);
+		}
 
 		$this->view->{$config['viewKey']} = $list;
 		$this->view->{$config['viewKey'] . 'Items'} = $items;
@@ -1065,14 +1076,226 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		return $list;
 	}
 
-	protected function getListParams(): array
+	protected function shouldBuildListSummary(DEEC_List $list, array $params, array $config): bool
 	{
-		return $this->_listParams;
+		return empty($params['_export'])
+			&& isset($config['entity'])
+			&& $list->getSummaryColumn() !== null;
 	}
 
-	protected function getListOptions(): array
+	protected function buildListSummary(
+		DEEC_List $list,
+		array $params,
+		array $options,
+		array $config
+	): array {
+		$column = $list->getSummaryColumn();
+
+		if(!$column) {
+			return [];
+		}
+
+		$field = (string)(
+			$column['summary']['field']
+			?? $column['field']
+			?? $column['name']
+			?? ''
+		);
+
+		if(!preg_match('/^[a-zA-Z0-9_]+$/D', $field)) {
+			throw new InvalidArgumentException('Invalid summary field.');
+		}
+
+		$expression = $this->getListSummaryExpression($field, $config);
+		$currencyField = $column['summary']['currency_field'] ?? null;
+		$query = new DEEC_List_Query();
+		$baseParams = $this->getListSummaryBaseParams($params, $config);
+		$total = $this->fetchListSummary(
+			$query,
+			$baseParams,
+			$options,
+			$config,
+			$expression,
+			$currencyField
+		);
+
+		$hasFilters = $this->hasListSummaryFilters($params, $config);
+		$filtered = $hasFilters
+			? $this->fetchListSummary(
+				$query,
+				$params,
+				$options,
+				$config,
+				$expression,
+				$currencyField
+			)
+			: $total;
+
+		$total = $this->normalizeListSummaryValues($total);
+		$filtered = $this->normalizeListSummaryValues($filtered, array_keys($total));
+		$page = $this->normalizeListSummaryValues(
+			$list->getPageSummary($column),
+			array_keys($filtered)
+		);
+
+		$summary = ['total' => $total];
+
+		if(!$this->sameListSummaryValues($filtered, $total)) {
+			$summary['filtered'] = $filtered;
+		}
+
+		if(
+			(int)($list->getPagination()['pages'] ?? 1) > 1
+			&& !$this->sameListSummaryValues($page, $filtered)
+		) {
+			$summary['page'] = $page;
+		}
+
+		return $summary;
+	}
+
+	protected function getListSummaryExpression(string $field, array $config): Zend_Db_Expr
 	{
-		return $this->_listOptions;
+		$columns = $config['columns'] ?? [];
+
+		if(isset($columns[$field])) {
+			$expression = $columns[$field];
+
+			if($expression instanceof Zend_Db_Expr) {
+				return $expression;
+			}
+
+			if(is_string($expression) && trim($expression) !== '') {
+				return new Zend_Db_Expr($expression);
+			}
+		}
+
+		return new Zend_Db_Expr($config['alias'] . '.' . $field);
+	}
+
+	protected function fetchListSummary(
+		DEEC_List_Query $query,
+		array $params,
+		array $options,
+		array $config,
+		Zend_Db_Expr $expression,
+		$currencyField
+	): array {
+		if($currencyField === null || $currencyField === '') {
+			return ['' => $query->sum($params, $options, $config, $expression)];
+		}
+
+		if(!preg_match('/^[a-zA-Z0-9_]+$/D', (string)$currencyField)) {
+			throw new InvalidArgumentException('Invalid summary currency field.');
+		}
+
+		return $query->sumBy(
+			$params,
+			$options,
+			$config,
+			$expression,
+			$config['alias'] . '.' . $currencyField
+		);
+	}
+
+	protected function getListSummaryBaseParams(array $params, array $config): array
+	{
+		$preserve = $config['summaryBaseFilters'] ?? [];
+		$params['keyword'] = '';
+
+		if(!in_array('tagid', $preserve, true)) {
+			$params['tagid'] = 0;
+		}
+
+		foreach(array_keys($config['filters'] ?? []) as $name) {
+			if(!in_array($name, $preserve, true)) {
+				unset($params[$name]);
+			}
+		}
+
+		return $params;
+	}
+
+	protected function hasListSummaryFilters(array $params, array $config): bool
+	{
+		$preserve = $config['summaryBaseFilters'] ?? [];
+
+		if(trim((string)($params['keyword'] ?? '')) !== '') {
+			return true;
+		}
+
+		if(
+			!in_array('tagid', $preserve, true)
+			&& ($config['tags'] ?? true) !== false
+			&& (int)($params['tagid'] ?? 0) > 0
+		) {
+			return true;
+		}
+
+		foreach(array_keys($config['filters'] ?? []) as $name) {
+			if(in_array($name, $preserve, true)) {
+				continue;
+			}
+
+			$value = $params[$name] ?? null;
+
+			if(is_array($value)) {
+				if($value) return true;
+				continue;
+			}
+
+			if($value !== null && $value !== '' && $value !== '0' && $value !== 'all') {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	protected function normalizeListSummaryValues(array $values, array $currencies = []): array
+	{
+		if(
+			array_key_exists('', $values)
+			&& Zend_Registry::isRegistered('Zend_Currency')
+		) {
+			$currency = Zend_Registry::get('Zend_Currency');
+			$currencyCode = trim((string)$currency->getShortName());
+
+			if($currencyCode !== '') {
+				$values[$currencyCode] = ($values[$currencyCode] ?? 0.0)
+					+ (float)$values[''];
+				unset($values['']);
+			}
+		}
+
+		foreach($currencies as $currency) {
+			if(!array_key_exists($currency, $values)) {
+				$values[$currency] = 0.0;
+			}
+		}
+
+		if(!$values) {
+			$values[''] = 0.0;
+		}
+
+		ksort($values);
+
+		return $values;
+	}
+
+	protected function sameListSummaryValues(array $left, array $right): bool
+	{
+		if(array_keys($left) !== array_keys($right)) {
+			return false;
+		}
+
+		foreach($left as $currency => $value) {
+			if(abs((float)$value - (float)$right[$currency]) > 0.00001) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	protected function assignPagination(array $params, $records, $items, $toolbar): void

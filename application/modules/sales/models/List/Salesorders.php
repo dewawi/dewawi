@@ -56,6 +56,8 @@ class Sales_Model_List_Salesorders extends DEEC_List
 				'label' => 'SALES_ORDERS_TOTAL',
 				'type' => 'currency',
 				'secondary_field' => 'subtotal',
+				'summary' => 'sum',
+				'summary_currency_field' => 'currency',
 			],
 			[
 				'name' => 'state',

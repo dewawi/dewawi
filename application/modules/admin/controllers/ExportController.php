@@ -45,6 +45,7 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 
 		$list->configure([
 			'items' => $exportedFiles,
+			'listFooter' => true,
 			'view' => $this->view,
 			'module' => 'admin',
 			'controller' => 'export',

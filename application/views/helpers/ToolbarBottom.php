@@ -2,9 +2,10 @@
 
 class Zend_View_Helper_ToolbarBottom extends Zend_View_Helper_Abstract
 {
-	public function ToolbarBottom(): string
+	public function ToolbarBottom($toolbar = null, ?string $action = null): string
 	{
-		$toolbar = $this->view->toolbar ?? null;
+		$toolbar = $toolbar ?? ($this->view->toolbar ?? null);
+		$action = $action ?? (string)($this->view->action ?? '');
 
 		if (
 			!is_object($toolbar)
@@ -16,7 +17,7 @@ class Zend_View_Helper_ToolbarBottom extends Zend_View_Helper_Abstract
 		$html = '<div class="dw-toolbar dw-toolbar--bottom">';
 		$html .= '<div class="dw-toolbar__main">';
 
-		if ($this->view->action === 'select') {
+		if ($action === 'select') {
 			$html .= $toolbar->renderElement('apply');
 		} else {
 			foreach (['add', 'edit', 'copy', 'delete'] as $name) {

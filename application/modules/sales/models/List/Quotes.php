@@ -56,6 +56,8 @@ class Sales_Model_List_Quotes extends DEEC_List
 				'label' => 'QUOTES_TOTAL',
 				'type' => 'currency',
 				'secondary_field' => 'subtotal',
+				'summary' => 'sum',
+				'summary_currency_field' => 'currency',
 			],
 			[
 				'name' => 'monitoring',

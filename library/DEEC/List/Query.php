@@ -2,6 +2,8 @@
 
 class DEEC_List_Query
 {
+	protected array $appliedParams = [];
+
 	public function fetch(array $params, array $options, array $config): array
 	{
 		$params = $this->normalizeParams($params);
@@ -13,10 +15,17 @@ class DEEC_List_Query
 			$result = $this->fetchResult($params, $options, $config);
 		}
 
+		$this->appliedParams = $params;
+
 		return [
 			$result['items'],
 			$result['records'],
 		];
+	}
+
+	public function getAppliedParams(): array
+	{
+		return $this->appliedParams;
 	}
 
 	public function sum(array $params, array $options, array $config, Zend_Db_Expr $expression): float
@@ -49,6 +58,61 @@ class DEEC_List_Query
 			);
 
 		return (float)$db->fetchOne($sumSelect);
+	}
+
+	public function sumBy(
+		array $params,
+		array $options,
+		array $config,
+		Zend_Db_Expr $expression,
+		string $groupColumn
+	): array {
+		if(!preg_match('/^[a-zA-Z0-9_.]+$/D', $groupColumn)) {
+			throw new InvalidArgumentException('Invalid summary group column.');
+		}
+
+		$params = $this->normalizeParams($params);
+
+		$tableClass = $config['tableClass'];
+		$dbTable = new $tableClass();
+		$db = $dbTable->getAdapter();
+
+		$select = $this->buildBaseSelect($dbTable, $config, true);
+		$select->reset(Zend_Db_Select::COLUMNS);
+		$select->columns([
+			'aggregate_value' => new Zend_Db_Expr(
+				'MAX(' . (string)$expression . ')'
+			),
+			'aggregate_group' => new Zend_Db_Expr(
+				'MAX(' . $groupColumn . ')'
+			),
+		]);
+
+		$this->applyFilters($select, $params, $options, $config);
+		$this->applyGrouping($select, $config);
+
+		$sumSelect = $db->select()
+			->from(
+				['filtered_values' => $select],
+				[
+					'aggregate_group',
+					'total' => new Zend_Db_Expr(
+						'COALESCE(SUM(filtered_values.aggregate_value), 0)'
+					),
+				]
+			)
+			->group('filtered_values.aggregate_group');
+
+		$values = [];
+
+		foreach($db->fetchAll($sumSelect) as $row) {
+			$group = trim((string)($row['aggregate_group'] ?? ''));
+			$values[$group] = (float)($row['total'] ?? 0);
+		}
+
+		ksort($values);
+
+		return $values;
 	}
 
 	protected function fetchResult(array $params, array $options, array $config): array

@@ -56,6 +56,8 @@ class Purchases_Model_List_Purchaseorders extends DEEC_List
 				'label' => 'PURCHASE_ORDERS_TOTAL',
 				'type' => 'currency',
 				'secondary_field' => 'subtotal',
+				'summary' => 'sum',
+				'summary_currency_field' => 'currency',
 			],
 			[
 				'name' => 'state',
