@@ -33,10 +33,7 @@ class Items_StockController extends DEEC_Controller_Action
 	protected function buildHistoricalStockView(
 		string $stockDate
 	): void {
-		$date = DateTime::createFromFormat(
-			'Y-m-d',
-			$stockDate
-		);
+		$date = $this->parseStockDate($stockDate);
 
 		if(!$date) {
 			$this->buildCurrentStockView();
@@ -73,5 +70,21 @@ class Items_StockController extends DEEC_Controller_Action
 		]);
 
 		$this->assignMessages();
+	}
+
+	protected function parseStockDate(string $stockDate): ?DateTime
+	{
+		$date = DateTime::createFromFormat('!Y-m-d', $stockDate);
+		$errors = DateTime::getLastErrors();
+
+		if(
+			!$date
+			|| ($errors && ($errors['warning_count'] || $errors['error_count']))
+			|| $date->format('Y-m-d') !== $stockDate
+		) {
+			return null;
+		}
+
+		return $date;
 	}
 }

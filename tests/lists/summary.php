@@ -194,6 +194,18 @@ check($list->getSummaryColumn()['field'] === 'total', 'Summable column was not d
 check($list->getPageSummary($list->getSummaryColumn()) === ['EUR' => 10.0, 'USD' => 5.0], 'Page currencies were mixed');
 check((new ListWithoutSummary())->getSummaryColumn() === null, 'Unit price was treated as a total');
 
+$summaryColumns = [
+	Items_Model_List_Stocks::class => ['stockvalue', null],
+	Processes_Model_List_Processes::class => ['total', 'currency'],
+	Purchases_Model_List_Quoterequests::class => ['total', 'currency'],
+	Purchases_Model_List_Purchaseorders::class => ['total', 'currency'],
+];
+foreach($summaryColumns as $class => [$field, $currencyField]) {
+	$column = (new $class())->getSummaryColumn();
+	check(($column['summary']['field'] ?? $column['field'] ?? null) === $field, $class . ' has the wrong summary field');
+	check(($column['summary']['currency_field'] ?? null) === $currencyField, $class . ' has the wrong summary currency field');
+}
+
 $secondPage = new ListSummaryList([
 	'items' => [
 		(object)['id' => 3, 'title' => 'Three', 'total' => 25, 'currency' => 'EUR'],
@@ -208,6 +220,10 @@ check($list->getSummary()['total']['EUR'] === 15.0, 'List summary was not stored
 $list->setTotal(99);
 check($list->getTotal() === 99, 'Legacy getTotal behavior changed');
 check($list->getRecordCount() === 4, 'Pagination is not the record-count source');
+$directList = new ListWithoutSummary(['items' => [(object)['id' => 1], (object)['id' => 2]]]);
+check($directList->getRecordCount() === 2, 'Direct list does not count its loaded rows');
+$directList->setTotal(7);
+check($directList->getRecordCount() === 7, 'Direct list no longer honors its legacy total');
 
 $controller = (new ReflectionClass(ListSummaryControllerProbe::class))->newInstanceWithoutConstructor();
 
@@ -382,12 +398,47 @@ $renderedList = $renderList->render();
 check(str_contains($renderedList, 'dw-list-footer'), 'Central list footer was not rendered');
 check(str_contains($renderedList, 'data-name="add"'), 'List footer lost its explicit toolbar');
 check(str_contains($renderedList, 'LIST_RECORDS'), 'Record count label is missing');
+check(
+	glob($root . '/application/modules/*/views/scripts/list/list.phtml') === [],
+	'A module-specific list partial shadows the central footer'
+);
+
+foreach(['campaigns', 'contacts', 'items', 'processes', 'purchases'] as $module) {
+	$moduleView = new Zend_View();
+	$moduleView->addScriptPath($root . '/application/views/scripts');
+	$moduleView->addScriptPath($root . '/application/modules/' . $module . '/views/scripts');
+	$moduleView->addHelperPath($root . '/application/views/helpers', 'Zend_View_Helper_');
+	$moduleList = new ListWithoutSummary([
+		'items' => [],
+		'view' => $moduleView,
+		'listFooter' => true,
+		'pagination' => ['records' => 0, 'pages' => 1],
+	]);
+
+	check(
+		str_contains($moduleList->render(), 'dw-list-footer'),
+		'Module view path hides the central list footer: ' . $module
+	);
+}
+
+$itemlist = new Items_Model_List_Itemlists();
+check($itemlist->getSummaryColumn() === null, 'Item lists received a monetary summary');
+check(Items_Model_Entity_Itemlist::listConfig()['tableClass'] === 'Items_Model_DbTable_Itemlist', 'Item list uses the wrong entity table');
+$itemlistToolbar = new Items_Form_ToolbarItemlist();
+foreach(['catid', 'country', 'tagid'] as $name) {
+	check($itemlistToolbar->getElement($name) === null, 'Unsupported item-list filter is visible: ' . $name);
+}
 
 foreach(['de_DE', 'en_US'] as $locale) {
 	$translations = require $root . '/languages/' . $locale . '/default/common.php';
+	$itemlistTranslations = require $root . '/languages/' . $locale . '/items/itemlist.php';
 
 	foreach(['LIST_RECORDS', 'LIST_TOTAL_VALUE', 'LIST_FILTERED_VALUE', 'LIST_PAGE_VALUE'] as $key) {
 		check(isset($translations[$key]), $locale . ' translation is missing: ' . $key);
+	}
+
+	foreach(['ITEM_LISTS', 'ITEM_LISTS_TITLE', 'ITEM_LISTS_DESCRIPTION'] as $key) {
+		check(isset($itemlistTranslations[$key]), $locale . ' translation is missing: ' . $key);
 	}
 }
 

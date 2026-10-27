@@ -5,9 +5,10 @@ class Items_ItemlistController extends DEEC_Controller_Action
 	protected function buildIndexView(): void
 	{
 		$this->buildListView([
-			'viewKey' => 'items',
-			'list' => 'Items_Model_List_Items',
-			'entity' => Items_Model_Entity_Item::listConfig(),
+			'viewKey' => 'itemlists',
+			'list' => 'Items_Model_List_Itemlists',
+			'entity' => Items_Model_Entity_Itemlist::listConfig(),
+			'toolbar' => 'Items_Form_ToolbarItemlist',
 		]);
 	}
 

@@ -74,6 +74,16 @@ class StockSummaryTable extends Items_Model_DbTable_Itemstock
 	];
 }
 
+require_once $root . '/application/modules/items/controllers/StockController.php';
+
+class StockSummaryController extends Items_StockController
+{
+	public function parseDate(string $date): ?DateTime
+	{
+		return $this->parseStockDate($date);
+	}
+}
+
 $adapter = new StockSummaryAdapter([
 	'host' => 'unused',
 	'username' => 'unused',
@@ -160,6 +170,12 @@ foreach(['de_DE', 'en_US'] as $locale) {
 	}
 
 	check(isset($toolbarTranslations['CLEAR']), $locale . ' translation is missing: CLEAR');
+}
+
+$controller = (new ReflectionClass(StockSummaryController::class))->newInstanceWithoutConstructor();
+check($controller->parseDate('2026-10-01')?->format('Y-m-d') === '2026-10-01', 'Valid stock date was rejected');
+foreach(['', 'not-a-date', '2026-02-31', '2026-10-1', '01.10.2026'] as $stockDate) {
+	check($controller->parseDate($stockDate) === null, 'Invalid stock date was accepted: ' . $stockDate);
 }
 
 echo "PASS: stock summary filters, valuation and translations\n";

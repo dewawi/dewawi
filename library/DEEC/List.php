@@ -387,6 +387,10 @@ class DEEC_List
 			return (int)$this->pagination['records'];
 		}
 
+		if($this->getTotal() === null && is_countable($this->items)) {
+			return count($this->items);
+		}
+
 		return (int)$this->getTotal();
 	}
 
