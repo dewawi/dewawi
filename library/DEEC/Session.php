@@ -26,6 +26,8 @@ class DEEC_Session
 	{
 		Zend_Session::regenerateId();
 		Zend_Session::namespaceUnset('ClientSwitch');
+		Zend_Session::namespaceUnset('FileManager');
+		Zend_Session::namespaceUnset('MediaManager');
 
 		$_SESSION[self::REMEMBER_KEY] = $remember;
 
@@ -47,6 +49,8 @@ class DEEC_Session
 	{
 		unset($_SESSION[self::REMEMBER_KEY]);
 		Zend_Session::namespaceUnset('ClientSwitch');
+		Zend_Session::namespaceUnset('FileManager');
+		Zend_Session::namespaceUnset('MediaManager');
 	}
 
 	private static function refreshCookie(): void

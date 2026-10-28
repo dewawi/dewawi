@@ -14,6 +14,17 @@
 	}
 
 	session_start();
+	if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD', 'POST'], true)) {
+		http_response_code(405);
+		header('Allow: GET, HEAD, POST');
+		exit;
+	}
+	if (empty($_SESSION['installer_csrf'])) $_SESSION['installer_csrf'] = bin2hex(random_bytes(32));
+	if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && (!is_string($_POST['csrf_token'] ?? null) || !hash_equals($_SESSION['installer_csrf'], $_POST['csrf_token']))) {
+		http_response_code(403);
+		echo 'Invalid installation request.';
+		exit;
+	}
 	require("config/config.php");
 	
 	// show current step

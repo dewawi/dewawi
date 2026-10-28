@@ -23,6 +23,7 @@
 
 <?php if (count($errors) == 0) { ?>
 	<form method="post">
+	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['installer_csrf'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 		<input type="hidden" name="nextStep" value="done">
 		<button type="submit" class="button positive">
 			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> Next
@@ -30,6 +31,7 @@
 	</form>
 <?php } else { ?>
 	<form method="post">
+	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['installer_csrf'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 		<input type="hidden" name="nextStep" value="importSQL">
 		<button type="submit" class="button positive">
 			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> Retry

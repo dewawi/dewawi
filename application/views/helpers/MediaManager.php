@@ -7,8 +7,11 @@ class Zend_View_Helper_MediaManager extends Zend_View_Helper_Abstract{
 	public function MediaManager() {
 
 		$client = Zend_Registry::get('Client');
+		$user = Zend_Registry::get('User');
 		$defaultNamespace = new Zend_Session_Namespace('MediaManager');
 
+		$previousFolder = $defaultNamespace->subfolder ?? '';
+		$defaultNamespace->subfolder = 'uploads/' . (new DEEC_Directory())->getShortUrl($client['id']);
 		$defaultNamespace->fldr = '';
 		$defaultNamespace->writable = true;
 
@@ -42,7 +45,7 @@ class Zend_View_Helper_MediaManager extends Zend_View_Helper_Abstract{
 				else $dir4 = '0';
 				$url = 'campaigns/'.$dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
 			} else {
-				$url = 'uploads';
+				$url = 'uploads/' . (new DEEC_Directory())->getShortUrl($client['id']);
 				$defaultNamespace->writable = false;
 			}
 
@@ -63,7 +66,7 @@ class Zend_View_Helper_MediaManager extends Zend_View_Helper_Abstract{
 				else $dir4 = '0';
 				$url = 'contacts/'.$dir1.'/'.$dir2.'/'.$clientid.'/'.$dir3.'/'.$dir4.'/'.$id;
 			} else {
-				$url = 'uploads';
+				$url = 'uploads/' . (new DEEC_Directory())->getShortUrl($client['id']);
 				$defaultNamespace->writable = false;
 			}
 
@@ -99,6 +102,12 @@ class Zend_View_Helper_MediaManager extends Zend_View_Helper_Abstract{
 			$defaultNamespace->view_type = '0'; //boxes
 			$defaultNamespace->subfolder = $url;
 		}
+		if ($previousFolder !== $defaultNamespace->subfolder) unset($defaultNamespace->clipboard, $defaultNamespace->clipboard_action);
+		$defaultNamespace->context = [
+			'userid' => (int)$user['id'], 'clientid' => (int)$user['clientid'], 'ownerid' => (int)$client['id'],
+			'module' => (string)$this->view->module, 'controller' => (string)$this->view->controller, 'action' => (string)$this->view->action,
+		];
+		if (empty($defaultNamespace->csrf_token)) $defaultNamespace->csrf_token = bin2hex(random_bytes(32));
 	}
 }
 

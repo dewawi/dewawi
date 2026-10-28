@@ -120,4 +120,37 @@ foreach ([
     $checks++;
 }
 
-echo 'PASS: ' . $checks . " module permission, ACL and compatibility cases\n";
+// File managers must enter the authenticated response flow, including for AJAX guests.
+Zend_Auth::getInstance()->clearIdentity();
+[$request, $response] = permissionRoute('default', 'media', 'manager');
+check($response->getHttpResponseCode() === 403 && $request->getControllerName() === 'error', 'Guest manager request was not denied');
+Zend_Auth::getInstance()->getStorage()->write((object)['id' => 42]);
+[$request, $response] = permissionRoute('default', 'media', 'manager');
+check($response->getHttpResponseCode() === 200 && $request->getActionName() === 'manager', 'Authenticated manager gateway did not reach its context checks');
+$checks += 2;
+
+// Bind each manager to the selected tenant while retaining the shared data owner.
+Zend_Session::$_unitTestEnabled = true;
+require_once $root . '/application/views/helpers/FileManager.php';
+require_once $root . '/application/views/helpers/MediaManager.php';
+Zend_Registry::set('User', ['id' => 42, 'clientid' => 70]);
+Zend_Registry::set('Client', ['id' => 7, 'parentid' => 0]);
+foreach (['FileManager', 'MediaManager'] as $manager) {
+    foreach ([['contacts', 'contact', 10, 'contacts/7/0/7/1/0/10'], ['users', 'user', 42, 'uploads/7/0/7'], ['campaigns', 'campaign', 0, 'uploads/7/0/7'], ['admin', 'media', 0, $manager === 'MediaManager' ? '7/0/7' : 'uploads/7/0/7']] as [$module, $controller, $id, $folder]) {
+        $view = new Zend_View();
+        $view->assign(['module' => $module, 'controller' => $controller, 'action' => 'edit', 'id' => $id]);
+        $session = new Zend_Session_Namespace($manager);
+        $session->subfolder = 'foreign';
+        $session->clipboard = ['path' => 'foreign/secret.pdf'];
+        $class = 'Zend_View_Helper_' . $manager;
+        $helper = new $class();
+        $helper->setView($view);
+        $helper->$manager();
+        check(trim($session->subfolder, '/') === $folder, 'Manager folder lost tenant scope: ' . $manager . '/' . $module);
+        check($session->context['userid'] === 42 && $session->context['clientid'] === 70 && $session->context['ownerid'] === 7, 'Manager mixed selected tenant and shared owner');
+        check(strlen($session->csrf_token) === 64 && !isset($session->clipboard), 'Manager token missing or stale clipboard retained');
+        $checks += 3;
+    }
+}
+
+echo 'PASS: ' . $checks . " module permission, ACL, manager context and compatibility cases\n";

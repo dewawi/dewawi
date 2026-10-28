@@ -37,9 +37,17 @@ try {
         $auth->getStorage()->write((object)['id' => 42, 'clientid' => 7]);
         $clientSwitch = new Zend_Session_Namespace('ClientSwitch');
         $clientSwitch->token = 'fixture-token';
+        foreach (['FileManager', 'MediaManager'] as $name) {
+            $manager = new Zend_Session_Namespace($name);
+            $manager->verify = 'old-grant';
+        }
         DEEC_Session::login(!empty($_GET['remember']));
     }
     if ($action === 'logout') {
+        foreach (['FileManager', 'MediaManager'] as $name) {
+            $manager = new Zend_Session_Namespace($name);
+            $manager->verify = 'old-grant';
+        }
         DEEC_Session::logout();
         $auth->clearIdentity();
     }
@@ -57,6 +65,7 @@ try {
         'identity' => $auth->hasIdentity() ? (array)$auth->getIdentity() : null,
         'remember' => $_SESSION[DEEC_Session::REMEMBER_KEY] ?? false,
         'clientSwitch' => Zend_Session::namespaceIsset('ClientSwitch'),
+        'managers' => Zend_Session::namespaceIsset('FileManager') || Zend_Session::namespaceIsset('MediaManager'),
         'locale' => Zend_Registry::isRegistered('Zend_Locale'),
         'db' => $bootstrap->hasResource('db'),
         'cookie' => session_get_cookie_params(),
@@ -130,7 +139,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-session-http-') as temp:
                 guest, _ = request()
                 login, cookies = request('login', guest['id'], remember=remember)
                 assert login['identity'] == {'id': 42, 'clientid': 7}
-                assert login['id'] != guest['id'] and not login['clientSwitch']
+                assert login['id'] != guest['id'] and not login['clientSwitch'] and not login['managers']
                 assert login['remember'] == bool(remember)
                 assert ('expires=' in cookies[-1].lower()) == bool(remember), 'Remember-me cookie lifetime changed'
                 assert not (temp / 'session' / ('sess_' + guest['id'])).exists(), 'Login did not remove the old session'
@@ -144,7 +153,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-session-http-') as temp:
                 assert regenerated['id'] != login['id'] and regenerated['identity'] == login['identity']
                 assert not (temp / 'session' / ('sess_' + login['id'])).exists()
                 logout, _ = request('logout', regenerated['id'])
-                assert logout['identity'] is None and not logout['remember'] and not logout['clientSwitch']
+                assert logout['identity'] is None and not logout['remember'] and not logout['clientSwitch'] and not logout['managers']
                 after, _ = request('status', logout['id'])
                 assert after['identity'] is None and not after['remember']
                 replay, _ = request('status', login['id'])

@@ -22,6 +22,7 @@
 <?php } ?>
 
 <form method="post">
+	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['installer_csrf'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 	<p>
 		<label>Database name </label> (The name of the database you want to run this script in)<br>
 		<input class="title" type="text" name="database" value="<?php echo htmlspecialchars($database, ENT_QUOTES, 'UTF-8'); ?>">

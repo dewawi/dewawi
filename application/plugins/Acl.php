@@ -7,6 +7,10 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 		if($this->isPublicRequest($request)) return;
 
 		$auth = Zend_Auth::getInstance();
+		if ($request->getModuleName() === 'default' && $request->getControllerName() === 'media' && $request->getActionName() === 'manager') {
+			if (!$auth->hasIdentity()) $this->denyAccess($request);
+			return;
+		}
 
 		if(!$auth->hasIdentity()) {
 			$this->handleGuestRequest($request);

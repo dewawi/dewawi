@@ -9,6 +9,10 @@ RewriteRule ^install/(?!index\.php(?:/|$)).*\.php(?:/|$) - [F,NC]
 RewriteRule \.(?:ini|sql|log)(?:[./]|$) - [F,NC]
 RewriteRule ^cache/(?:[^/]+/)*zend_cache(?:--|$) - [F,NC]
 
+# Keep only the front controller, installer and authenticated manager routes public.
+RewriteRule ^library/(?:FileManager|MediaManager)/(?:dialog|upload|execute|ajax_calls|force_download)\.php$ index.php [L]
+RewriteRule ^(?!(?:index\.php|install/index\.php)(?:/|$)).*\.(?:php[0-9]*|phtml|pht|phar|inc)(?:[^a-z0-9]|$) - [F,NC]
+
 RewriteRule ^files/attachments(?:/|$) index.php [NC,L]
 RewriteCond %{REQUEST_FILENAME} -s [OR]
 RewriteCond %{REQUEST_FILENAME} -l [OR]

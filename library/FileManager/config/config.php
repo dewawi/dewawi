@@ -1,5 +1,10 @@
 <?php
 
+if (!defined('DEWAWI_FILE_MANAGER') || DEWAWI_FILE_MANAGER !== 'FileManager') {
+    http_response_code(403);
+    exit;
+}
+
 $version = "9.14.0";
 
 ini_set('display_errors', getenv('APPLICATION_ENV') === 'development' ? '1' : '0');
@@ -16,9 +21,8 @@ set_exception_handler(static function (Throwable $exception): void {
 
 $sessionPath = dirname(__DIR__, 3) . '/session';
 
-ini_set('session.save_path', $sessionPath);
-
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.save_path', $sessionPath);
     session_start();
 }
 

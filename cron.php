@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+	http_response_code(403);
+	exit;
+}
+
 define("_CRONJOB_",true);
 require('index.php');
 

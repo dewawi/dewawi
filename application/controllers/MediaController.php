@@ -2,6 +2,128 @@
 
 class MediaController extends DEEC_Controller_Action
 {
+	public function init()
+	{
+		if ($this->getRequest()->getActionName() === 'manager') return;
+		parent::init();
+	}
+
+	public function managerAction()
+	{
+		// The legacy manager includes share configuration and translation globals.
+		global $config, $session, $lang_vars, $ftp, $descending;
+		$this->disableView();
+		$request = $this->getRequest();
+		$manager = $this->_getParam('managerName');
+		$script = $this->_getParam('managerScript');
+		if (!in_array($manager, ['FileManager', 'MediaManager'], true) || !in_array($script, ['dialog', 'upload', 'execute', 'ajax_calls', 'force_download'], true)) return $this->rejectManager(404);
+		if (!Zend_Auth::getInstance()->hasIdentity() || !Zend_Registry::isRegistered('User')) return $this->rejectManager(403);
+
+		$user = Zend_Registry::get('User');
+		$client = Zend_Registry::get('Client');
+		$managerSession = new Zend_Session_Namespace($manager);
+		$context = $managerSession->context ?? [];
+		if (($context['userid'] ?? 0) !== (int)$user['id'] || ($context['clientid'] ?? 0) !== (int)$user['clientid']) return $this->rejectManager(403);
+		$module = $context['module'] ?? '';
+		$controller = $context['controller'] ?? '';
+		$owner = $client['modules'][$module] ?? $client['id'];
+		if (($context['ownerid'] ?? 0) !== (int)$owner || ($manager === 'MediaManager' && $module !== 'admin')) return $this->rejectManager(403);
+		$permission = new DEEC_Permission($user);
+		$route = new Zend_Controller_Request_Simple($context['action'] ?? '', $controller, $module);
+		$controller = $permission->resolveController($route);
+		if ($module === 'admin' ? empty($user['admin']) : ($permission->hasModule($module) && !$permission->hasRoutePermission($route))) return $this->rejectManager(403);
+		$writable = !empty($managerSession->writable) && ($module === 'admin' || !$permission->hasModule($module) || $permission->hasPermission($module, $controller, 'edit'));
+		$managerSession->writable = $writable;
+
+		$method = $request->getMethod();
+		$action = $_GET['action'] ?? '';
+		if (!in_array($method, ['GET', 'HEAD', 'POST'], true) || (in_array($script, ['upload', 'execute', 'force_download'], true) && $method !== 'POST')) {
+			$this->getResponse()->setHeader('Allow', in_array($script, ['upload', 'execute', 'force_download'], true) ? 'POST' : 'GET, HEAD, POST', true);
+			return $this->rejectManager(405);
+		}
+		if ($method === 'POST') {
+			$token = $request->getHeader('X-CSRF-Token') ?: ($_POST['csrf_token'] ?? '');
+			if (!is_string($token) || empty($managerSession->csrf_token) || !hash_equals($managerSession->csrf_token, $token)) return $this->rejectManager(403);
+		}
+		$writes = in_array($script, ['upload', 'execute'], true) || ($script === 'dialog' && isset($_POST['submit'])) || ($script === 'ajax_calls' && in_array($action, ['save_img', 'extract'], true));
+		if ($writes && ($method !== 'POST' || !$writable)) return $this->rejectManager(403);
+		if ($script === 'ajax_calls' && $method !== 'POST' && !in_array($action, ['new_file_form', 'media_preview', 'cad_preview', 'get_file'], true)) return $this->rejectManager(405);
+
+		$folder = trim((string)($managerSession->subfolder ?? ''), '/');
+		$base = BASE_PATH . ($manager === 'FileManager' ? '/files/' : '/media/');
+		if ($folder === '' || $folder === 'uploads' || !$this->isManagerPath($base, '', $folder)) return $this->rejectManager(403);
+		$scope = $base . $folder;
+		if (!is_dir($scope)) {
+			if ($script !== 'dialog' || !$writable) return $this->rejectManager(404);
+			if (!mkdir($scope, 0775, true)) throw new RuntimeException('Unable to create file manager directory.');
+		}
+		$thumbs = BASE_PATH . '/cache/thumbs/' . ($manager === 'FileManager' ? 'files/' : 'media/') . $folder;
+		if ($script === 'dialog' && !is_dir($thumbs) && !mkdir($thumbs, 0775, true)) throw new RuntimeException('Unable to create file manager thumbnail directory.');
+		foreach (['path', 'fldr', 'paths'] as $field) {
+			foreach ((array)($_POST[$field] ?? []) as $path) {
+				if (!is_string($path) || !$this->isManagerPath($base, $folder, $path)) return $this->rejectManager(403);
+			}
+		}
+		if (isset($_GET['file']) && (!is_string($_GET['file']) || !$this->isManagerPath($base, $folder, $_GET['file']))) return $this->rejectManager(403);
+		foreach (['name', 'names'] as $field) {
+			foreach ((array)($_POST[$field] ?? []) as $name) {
+				if (!is_string($name) || $name === '.' || $name === '..' || strpbrk(rawurldecode($name), "/\\\0") !== false) return $this->rejectManager(403);
+				if (is_string($_POST['path'] ?? null) && !$this->isManagerPath($base, $folder, rtrim($_POST['path'], '/') . '/' . $name)) return $this->rejectManager(403);
+			}
+		}
+		foreach ((array)($_FILES['files']['name'] ?? []) as $name) {
+			if (!is_string($name) || strpbrk(rawurldecode($name), "/\\\0") !== false || !is_string($_POST['fldr'] ?? null) || !$this->isManagerPath($base, $folder, rtrim($_POST['fldr'], '/') . '/' . $name)) return $this->rejectManager(403);
+		}
+		if (!empty($managerSession->clipboard['path']) && !$this->isManagerPath($base, $folder, $managerSession->clipboard['path'])) unset($managerSession->clipboard, $managerSession->clipboard_action);
+		if ($script === 'dialog') {
+			$relative = $_GET['fldr'] ?? ($managerSession->fldr ?? '');
+			if (!is_string($relative) || !$this->isManagerPath($base, $folder, $folder . '/' . $relative) || !is_dir($scope . '/' . $relative)) $relative = '';
+			$_GET['fldr'] = $managerSession->fldr = $relative;
+			unset($_COOKIE['last_position']);
+		}
+
+		define('DEWAWI_FILE_MANAGER', $manager);
+		$managerSession->verify = 'RESPONSIVEfilemanager';
+		$directory = getcwd();
+		chdir(BASE_PATH . '/library/' . $manager);
+		$bufferLevel = ob_get_level();
+		$server = array_intersect_key($_SERVER, array_flip(['SCRIPT_FILENAME', 'SCRIPT_NAME', 'PHP_SELF']));
+		$_SERVER['SCRIPT_FILENAME'] = getcwd() . '/' . $script . '.php';
+		$_SERVER['SCRIPT_NAME'] = $_SERVER['PHP_SELF'] = $request->getBaseUrl() . '/library/' . $manager . '/' . $script . '.php';
+		try {
+			if ($script === 'dialog') ob_start();
+			require $script . '.php';
+			if ($script === 'dialog') {
+				while (ob_get_level() > $bufferLevel + 1) ob_end_flush();
+				$html = ob_get_clean();
+				$scripts = '<script>window.dewawiFileManagerToken=' . json_encode($managerSession->csrf_token) . ';</script><script src="' . htmlspecialchars($request->getBaseUrl(), ENT_QUOTES, 'UTF-8') . '/js/filemanager.js"></script>';
+				$this->getResponse()->setBody(str_replace('</head>', $scripts . '</head>', $html));
+			} else {
+				while (ob_get_level() > $bufferLevel) ob_end_flush();
+			}
+		} finally {
+			$_SERVER = array_replace($_SERVER, $server);
+			chdir($directory);
+		}
+	}
+
+	protected function rejectManager(int $status)
+	{
+		$this->getResponse()->setHttpResponseCode($status)->setHeader('Content-Type', 'text/plain; charset=UTF-8', true)->setHeader('Cache-Control', 'no-store', true)->setBody($status === 404 ? 'Not found' : 'Access denied');
+	}
+
+	protected function isManagerPath(string $base, string $folder, string $path): bool
+	{
+		$path = rawurldecode($path);
+		if (strpbrk($path, "\\\0") !== false || str_starts_with($path, '/') || preg_match('~(?:^|/)\.{1,2}(?:/|$)~', $path)) return false;
+		if ($folder !== '' && $path !== $folder && !str_starts_with($path, $folder . '/')) return false;
+		$target = $base . $path;
+		while (!file_exists($target) && !is_link($target)) $target = dirname($target);
+		$real = realpath($target);
+		$root = realpath($base . $folder);
+		return $real !== false && $root !== false && ($real === $root || str_starts_with($real, rtrim($root, '/') . '/'));
+	}
+
 	protected function getDbTableClass(): string
 	{
 		return Application_Model_DbTable_Media::class;

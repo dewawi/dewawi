@@ -4,6 +4,7 @@ import base64
 import http.client
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import socket
@@ -21,6 +22,7 @@ router = r'''<?php
 $case = $_GET['failure'] ?? ($argv[1] ?? '');
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 if (preg_match('~^/manager/(FileManager|MediaManager)/~', $path, $match)) {
+    define('DEWAWI_FILE_MANAGER', $match[1]);
     chdir(__DIR__ . '/site/library/' . $match[1]);
     require 'probe.php';
     return;
@@ -30,6 +32,7 @@ if (str_starts_with($path, '/install/')) {
     require 'index.php';
     return;
 }
+if ($path === '/native-cron') { require ROOT_PATH . '/cron.php'; return; }
 define('APPLICATION_PATH', __DIR__ . '/site/application');
 define('BASE_PATH', __DIR__ . (in_array($case, ['config', 'database', 'missing'], true) ? '/' . $case : '/site'));
 if (PHP_SAPI === 'cli' || $path === '/cron') define('_CRONJOB_', true);
@@ -218,11 +221,16 @@ with tempfile.TemporaryDirectory(prefix="dewawi-errors-http-") as temp:
                 else:
                     raise RuntimeError("Isolated PHP server did not start")
 
+                installer = {}
+
                 def request(path, data=None, headers=None, status=500):
                     global checks
                     headers = dict(headers or {})
                     body = None
                     if data is not None:
+                        if path.startswith('/install/'):
+                            data = dict(data, csrf_token=installer['token'])
+                            headers['Cookie'] = installer['cookie']
                         headers["Content-Type"] = "application/x-www-form-urlencoded"
                         body = urlencode(data)
                     connection = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
@@ -230,6 +238,13 @@ with tempfile.TemporaryDirectory(prefix="dewawi-errors-http-") as temp:
                     response = connection.getresponse()
                     content = response.read().decode("utf-8")
                     content_type = response.getheader("Content-Type", "")
+                    if path.startswith('/install/'):
+                        cookie = response.getheader('Set-Cookie')
+                        if cookie:
+                            installer['cookie'] = cookie.split(';', 1)[0]
+                        token = re.search(r'name="csrf_token" value="([a-f0-9]{64})"', content)
+                        if token:
+                            installer['token'] = token.group(1)
                     connection.close()
                     assert response.status == status, (environment, path, response.status, content)
                     assert parameter not in content and "PRIVATE RESPONSE OUTPUT" not in content and "PRIVATE STARTUP OUTPUT" not in content, (path, content)
@@ -261,6 +276,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-errors-http-") as temp:
                 request("/error/error")
                 request("/cron?failure=config")
                 request("/cron?failure=missing")
+                request("/native-cron", status=403)
                 for operation in ["add", "edit"]:
                     path = "/probe/variant?operation=" + operation
                     body, _ = request(path, {"id": 42}, status=200)
@@ -292,6 +308,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-errors-http-") as temp:
                     body, _ = request(path + "?case=uploadhandler", status=200)
                     assert json.loads(body) == {"created": False}, body
 
+                request("/install/index.php", status=200)
                 body, _ = request("/install/index.php", {"nextStep": "database", "database": ""}, status=200)
                 assert "Please fill in all database connection fields." in body
                 body, _ = request("/install/index.php", {"nextStep": "importSQL"}, status=200)

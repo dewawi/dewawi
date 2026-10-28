@@ -246,6 +246,14 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		], [1 => 'attachmentPath']));
 	}
 
+	protected function _initFileManagerRoutes()
+	{
+		$router = Zend_Controller_Front::getInstance()->getRouter();
+		$router->addRoute('file-manager', new Zend_Controller_Router_Route_Regex('library/(FileManager|MediaManager)/(dialog|upload|execute|ajax_calls|force_download)\.php', [
+			'module' => 'default', 'controller' => 'media', 'action' => 'manager',
+		], [1 => 'managerName', 2 => 'managerScript']));
+	}
+
 	protected function _initEmailDeliveryRoutes()
 	{
 		$router = Zend_Controller_Front::getInstance()->getRouter();

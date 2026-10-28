@@ -56,6 +56,7 @@
 
 <?php if ($goToNextStep) { ?>
 	<form method="post">
+	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['installer_csrf'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 		<input type="hidden" name="nextStep" value="filePermissions">
 		<button type="submit" class="button positive">
 			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> Next
@@ -63,6 +64,7 @@
 	</form>
 <?php } else { ?>
 	<form method="post">
+	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['installer_csrf'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 		<input type="hidden" name="nextStep" value="requirements">
 		<button type="submit" class="button positive">
 			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> Retry
