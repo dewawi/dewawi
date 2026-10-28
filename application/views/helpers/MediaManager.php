@@ -104,6 +104,7 @@ class Zend_View_Helper_MediaManager extends Zend_View_Helper_Abstract{
 		}
 		if ($previousFolder !== $defaultNamespace->subfolder) unset($defaultNamespace->clipboard, $defaultNamespace->clipboard_action);
 		$defaultNamespace->context = [
+			'id' => (int)$this->view->id,
 			'userid' => (int)$user['id'], 'clientid' => (int)$user['clientid'], 'ownerid' => (int)$client['id'],
 			'module' => (string)$this->view->module, 'controller' => (string)$this->view->controller, 'action' => (string)$this->view->action,
 		];

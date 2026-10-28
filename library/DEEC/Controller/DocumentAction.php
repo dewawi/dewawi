@@ -380,6 +380,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 
 		$mode = $result['output'] ?? 'inline';
 		$filename = $result['filename'] ?? basename($result['path']);
+		DEEC_Emailattachment::checkPath($result['path']);
 
 		$this->disableView();
 
@@ -388,13 +389,16 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		$response->setHeader('Content-Type', 'application/pdf', true);
 		$response->setHeader(
 			'Content-Disposition',
-			($mode === 'download' ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
+			($mode === 'download' ? 'attachment' : 'inline') . '; filename="' . rawurlencode($filename) . '"; filename*=UTF-8\'\'' . rawurlencode($filename),
 			true
 		);
 		$response->setHeader('Content-Length', (string)filesize($result['path']), true);
+		$response->setHeader('X-Content-Type-Options', 'nosniff', true);
+		$response->setHeader('Cache-Control', 'private, no-store', true);
+		$response->setHeader('Content-Security-Policy', "sandbox; default-src 'none'", true);
 		$response->sendHeaders();
 
-		readfile($result['path']);
+		if ($this->getRequest()->getMethod() !== 'HEAD') readfile($result['path']);
 		exit;
 	}
 

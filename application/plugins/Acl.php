@@ -124,6 +124,8 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 
 	private function isPublicRequest(Zend_Controller_Request_Abstract $request): bool
 	{
+		// The file action authorizes private objects itself and also serves public shop assets.
+		if ($request->getModuleName() === 'contacts' && $request->getControllerName() === 'attachment' && $request->getActionName() === 'file') return true;
 		if(
 			$request->getModuleName() === 'default'
 			&& $request->getControllerName() === 'feedback'

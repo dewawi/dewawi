@@ -226,7 +226,7 @@ function savePosition(positionID, formElementId){
 
 function printPdf(id){
 	$('iframe#print').remove();
-	$('body').append('<iframe id="print" name="print" src="'+baseUrl+'/cache/'+controller+'/'+id+'.pdf'+'"></iframe>');
+	$('body').append('<iframe id="print" name="print" src="'+baseUrl+'/'+module+'/'+controller+'/preview/id/'+encodeURIComponent(id)+'"></iframe>');
 	var iframe = document.frames ? document.frames["print"] : document.getElementById("print");
 	var ifWin = iframe.contentWindow || iframe;
 	iframe.focus();

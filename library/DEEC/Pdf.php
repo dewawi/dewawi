@@ -410,7 +410,7 @@ class DEEC_Pdf
 			? $document['filename']
 			: ($controller . '_' . $document['id'] . '.pdf');
 
-		if (basename($filename) !== $filename || strpbrk($filename, "\\\0") !== false || in_array($filename, ['.', '..'], true)) {
+		if (!DEEC_Emailattachment::validFilename($filename)) {
 			throw new RuntimeException('Invalid PDF filename');
 		}
 
@@ -425,13 +425,14 @@ class DEEC_Pdf
 		} else {
 			$safeModule = preg_replace('/[^a-z0-9_-]+/i', '_', $module);
 			$safeController = preg_replace('/[^a-z0-9_-]+/i', '_', $controller);
-			$relativeDir = $safeModule . '/' . $safeController . '/';
+			$relativeDir = $safeModule . '/' . $safeController . '/' . $clientId . '/' . (int)$document['id'] . '/';
 			$dirAbs = BASE_PATH . '/cache/document/' . $relativeDir;
 			$dirUrl = $baseUrl . '/cache/document/' . $relativeDir;
 		}
 
 		$fileAbs = $dirAbs . $filename;
-		$fileUrl = $dirUrl . $filename;
+		DEEC_Emailattachment::checkPath($fileAbs);
+		$fileUrl = $dirUrl . rawurlencode($filename);
 		clearstatcache(true, $fileAbs);
 
 		return [

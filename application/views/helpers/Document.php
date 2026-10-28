@@ -7,7 +7,6 @@ class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 		$module = $this->view->module;
 		$controller = $this->view->controller;
 		$document = $this->view->$controller;
-		$contactUrl = $this->view->contactUrl;
 
 		$url = $this->view->url([
 			'module' => $module,
@@ -16,11 +15,7 @@ class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 			'id' => $document['id'],
 		]);
 
-		$fileUrl = $this->view->baseUrl()
-			. '/files/contacts/'
-			. $contactUrl . '/'
-			. $document['filename']
-			. '?' . time();
+		$fileUrl = $this->view->url(['module' => $module, 'controller' => $controller, 'action' => 'preview', 'id' => $document['id']]);
 
 		$html  = '<p>';
 		$html .= '<a href="' . $url . '" target="_blank">';
@@ -28,7 +23,7 @@ class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 		$html .= '</a>';
 		$html .= '</p>';
 
-		$html .= '<iframe src="' . $fileUrl . '" width="900px" height="500px"></iframe>';
+		$html .= '<iframe src="' . $this->view->escape($fileUrl) . '" width="900px" height="500px"></iframe>';
 
 		return $html;
 	}

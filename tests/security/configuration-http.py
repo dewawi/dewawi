@@ -33,8 +33,28 @@ $bootstrap = (new ReflectionClass(Bootstrap::class))->newInstanceWithoutConstruc
 $routes = new ReflectionMethod(Bootstrap::class, '_initFileManagerRoutes');
 $routes->setAccessible(true);
 $routes->invoke($bootstrap);
+$routes = new ReflectionMethod(Bootstrap::class, '_initAttachmentRoutes');
+$routes->setAccessible(true);
+$routes->invoke($bootstrap);
 $request = new Zend_Controller_Request_Http();
 $front->getRouter()->route($request);
+// Publication is tested with real models in file-access.php and attachment-http.py.
+class Contacts_Model_DbTable_Emailattachment {
+    public function getPublishedFilePath($path) { return in_array($path, ['media/header/logo.png', 'media/images/public.png'], true) ? $path : null; }
+    public function canReadStoredFile($path, $action = 'view') { return str_starts_with($path, 'files/contacts/7/0/7/1/0/10/'); }
+}
+if ($request->getModuleName() === 'contacts' && $request->getControllerName() === 'attachment' && $request->getActionName() === 'file') {
+    define('BASE_PATH', __DIR__);
+    Zend_Loader_Autoloader::getInstance()->registerNamespace('DEEC_');
+    DEEC_Session::configure();
+    Zend_Layout::startMvc();
+    require_once ROOT_PATH . '/application/modules/contacts/controllers/AttachmentController.php';
+    $response = new Zend_Controller_Response_Http();
+    $front->setRequest($request)->setResponse($response);
+    (new Contacts_AttachmentController($request, $response))->fileAction();
+    $response->sendResponse();
+    return;
+}
 if ($request->getModuleName() === 'default' && $request->getControllerName() === 'media' && $request->getActionName() === 'manager') {
     define('BASE_PATH', __DIR__);
     Zend_Loader_Autoloader::getInstance()->registerNamespace('DEEC_');
@@ -68,7 +88,24 @@ if ($request->getModuleName() === 'default' && $request->getControllerName() ===
         $session->csrf_token = str_repeat('a', 64);
     }
     require_once ROOT_PATH . '/application/controllers/MediaController.php';
-    (new MediaController($request, $response))->managerAction();
+    class ManagerUrlFixture extends DEEC_UrlDownload {
+        protected function resolve(string $host): array { return ['8.8.8.8']; }
+        protected function transfer(array $options): array {
+            $options[CURLOPT_WRITEFUNCTION](null, "%PDF-1.4\nManager URL fixture\n%%EOF\n");
+            return [200, '8.8.8.8'];
+        }
+        public function receive(string $url, int $limit = 10240000): array {
+            $download = parent::receive($url, $limit);
+            file_put_contents(BASE_PATH . '/.staged-url-path', $download['path']);
+            return $download;
+        }
+    }
+    class ManagerFixtureController extends MediaController {
+        protected function getUrlDownload(): DEEC_UrlDownload {
+            return isset($_SERVER['HTTP_X_SIMULATED_URL']) ? new ManagerUrlFixture() : parent::getUrlDownload();
+        }
+    }
+    (new ManagerFixtureController($request, $response))->managerAction();
     $response->sendResponse();
     return;
 }
@@ -90,7 +127,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
         "configs/application.ini", "configs/database.ini", "configs/magento.ini",
         "application/Bootstrap.php", "languages/de_DE/default/default.php",
         "logs/cron.log", "logs/extensionless", "session/sess_fixture", "templates/private.phtml",
-        "tests/security/fixture.php", "library/DEEC/Fixture.php", "library/Zend/Fixture.php",
+        "tests/security/fixture.php", "tests/security/file-access.php", "tests/security/url-download.php", "library/DEEC/UrlDownload.php", "library/DEEC/Fixture.php", "library/Zend/Fixture.php",
         ".git/config", ".aws/credentials", ".codex/config.toml", ".agents/private.txt",
         ".env", ".htaccess", "media/.private", "media/database.INI.bak",
         "files/export.sql", "files/export.SQL.gz", "media/error.log", "media/error.log.1",
@@ -114,8 +151,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
     ]:
         public[relative] = (root / relative).read_bytes()
     for relative in [
-        "media/header/logo.png", "files/images/public.png", "files/contacts/public.pdf",
-        "cache/item/42.pdf", "cache/thumbs/media/public.png", "cache/thumbs/files/public.png",
+        "media/header/logo.png", "media/images/public.png",
         ".well-known/acme-challenge/fixture", "images/configs-logo.png",
     ]:
         public[relative] = b"Public HTTP resource fixture"
@@ -124,7 +160,6 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(contents)
     (site / "media/linked.png").symlink_to(site / "media/header/logo.png")
-    public["media/linked.png"] = public["media/header/logo.png"]
     (site / "index.php").write_text(front)
     for relative in [
         "index.php", "helper.php", "introduction.php", "requirements.php", "config/config.php",
@@ -180,7 +215,8 @@ jQuery(function () {
 
     # Reproduce the old static-file bypass before applying the current rules.
     current = (root / ".htaccess").read_text()
-    (site / ".htaccess").write_text("RewriteEngine On\n" + current[current.index("RewriteRule ^files/attachments"):])
+    baseline = current[current.index("RewriteRule ^files/attachments"):].replace('RewriteRule ^(?:files|media|cache)(?:/|$) index.php [NC,L]\n', '').replace('RewriteRule ^files/import(?:/|$) - [F,NC]\n', '')
+    (site / ".htaccess").write_text("RewriteEngine On\n" + baseline)
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
         port = listener.getsockname()[1]
@@ -263,7 +299,9 @@ php_admin_value session.save_path "{temp}"
                     assert status == 403 and marker not in body, f"Private path exposed: {method} {prefix}/{path} (HTTP {status})"
             for path, contents in public.items():
                 assert fetch(prefix + "/" + path) == (200, contents), f"Public resource affected: {prefix}/{path}"
-            assert fetch(prefix + "/media/")[0] == 403, "Directory listing enabled"
+            assert fetch(prefix + "/media/")[0] in (403, 404), "Directory listing enabled"
+            for path in ['files/contacts/unmapped.pdf', 'files/uploads/unmapped.pdf', 'cache/item/42.pdf', 'cache/thumbs/files/unmapped.png', 'media/linked.png']:
+                assert fetch(prefix + '/' + path)[0] == 404, f'Unmapped file exposed: {path}'
             for manager in ["FileManager", "MediaManager"]:
                 endpoint = prefix + "/library/" + manager + "/"
                 folder = "uploads/7/0/7" if manager == "FileManager" else "7/0/7"
@@ -277,6 +315,16 @@ php_admin_value session.save_path "{temp}"
                     assert fetch(endpoint + "dialog.php", headers={"X-Manager-Fixture": mode})[0] == 403, f"Invalid manager context allowed: {mode}"
                 assert fetch(endpoint + "execute.php?action=delete_file", "POST", "path=uploads/7/0/7/fixture.pdf", {"X-Manager-Fixture": "admin"})[0] == 403, "Missing CSRF token accepted"
                 assert fetch(endpoint + "execute.php?action=delete_file", "GET", headers=headers)[0] == 405, "GET mutation accepted"
+                for url in ['http://127.0.0.1/file.pdf', 'http://169.254.169.254/file.pdf', 'http://10.0.0.1/file.pdf', 'http://[::1]/file.pdf', 'http://[fc00::1]/file.pdf', 'file:///etc/passwd', 'http://2130706433/file.pdf']:
+                    status, body = fetch(endpoint + 'upload.php', 'POST', urlencode({'fldr': folder + '/', 'url': url}), headers)
+                    assert status == 400 and json.loads(body).get('error') == 'The file could not be downloaded.', f'Unsafe URL upload accepted: {url}'
+                    assert b'/var/' not in body and b'Stack trace' not in body, 'URL upload leaked technical details'
+                status, body = fetch(endpoint + 'upload.php', 'POST', urlencode({'fldr': folder + '/', 'url': 'https://safe.test/url-upload.pdf'}), dict(headers, **{'X-Simulated-URL': '1'}))
+                assert status == 200 and 'error' not in json.loads(body)['files'][0], ('URL upload failed', manager, status, body[:1000])
+                installation = site / prefix.lstrip('/')
+                uploaded_url = installation / ('files' if manager == 'FileManager' else 'media') / folder / 'url-upload.pdf'
+                assert uploaded_url.read_bytes() == b'%PDF-1.4\nManager URL fixture\n%%EOF\n', 'URL upload did not preserve downloaded bytes'
+                assert not Path((installation / '.staged-url-path').read_text()).exists(), 'Manager left its URL staging file'
                 for path in ["uploads/9/0/9/", folder + "/../9/", folder + "/foreign/", folder + "/%2e%2e/"]:
                     assert fetch(endpoint + "force_download.php", "POST", urlencode({"path": path, "name": "fixture.pdf"}), headers)[0] == 403, f"Foreign manager path accepted: {path}"
                 assert fetch(endpoint + "force_download.php", "POST", urlencode({"path": folder + "/", "name": "linked.pdf"}), headers)[0] == 403, "File symlink escaped the manager scope"
@@ -293,6 +341,8 @@ php_admin_value session.save_path "{temp}"
                 status, body = fetch(endpoint + "upload.php", "POST", payload, {"X-Manager-Fixture": "admin", "Content-Type": "multipart/form-data; boundary=" + boundary})
                 assert status == 200 and "error" not in json.loads(body)["files"][0], (manager, status, body[:1000])
                 assert (site / prefix.lstrip("/") / ("files" if manager == "FileManager" else "media") / folder / "uploaded.pdf").read_bytes() == pdf, "Authorized multipart upload affected"
+                unsafe_payload = payload.replace(b'filename="uploaded.pdf"', b'filename="evil.php.png"')
+                assert fetch(endpoint + 'upload.php', 'POST', unsafe_payload, {'X-Manager-Fixture': 'admin', 'Content-Type': 'multipart/form-data; boundary=' + boundary})[0] == 403, 'Executable multipart filename accepted'
                 if manager == "FileManager":
                     for mode in ["readonly", "shared"]:
                         scoped_headers = dict(headers, **{"X-Manager-Fixture": mode})
@@ -300,9 +350,10 @@ php_admin_value session.save_path "{temp}"
                         assert fetch(endpoint + "force_download.php", "POST", "path=contacts/7/0/7/1/0/10/&name=fixture.pdf", scoped_headers) == (200, pdf)
                     assert fetch(endpoint + "execute.php?action=delete_file", "POST", "path=contacts/7/0/7/1/0/10/fixture.pdf", dict(headers, **{"X-Manager-Fixture": "readonly"}))[0] == 403, "Read-only manager allowed writes"
                     assert fetch(endpoint + "ajax_calls.php?action=save_img", "POST", "path=contacts/7/0/7/1/0/10/", dict(headers, **{"X-Manager-Fixture": "readonly"}))[0] == 403, "Read-only image write accepted"
+                    assert fetch(endpoint + 'dialog.php', 'POST', urlencode({'url': 'http://127.0.0.1/file.pdf'}), dict(headers, **{'X-Manager-Fixture': 'readonly'}))[0] == 403, 'Read-only dialog initiated a URL upload'
             for path in ["/files/export", "/media/error"]:
                 status, body = fetch(prefix + path)
-                assert status == 200 and json.loads(body)["uri"] == prefix + path, "MultiViews exposed a private file through an extensionless URL"
+                assert status == 404 and marker not in body, "MultiViews exposed a private file through an extensionless URL"
             for path in ["/", "/index.php", "/contacts/contact/index?format=json", "/contacts/contact/save/id/42"]:
                 headers = {"X-Requested-With": "XMLHttpRequest", "Content-Type": "application/x-www-form-urlencoded"}
                 status, body = fetch(prefix + path, "POST", urlencode({"name": "AJAX fixture"}), headers)

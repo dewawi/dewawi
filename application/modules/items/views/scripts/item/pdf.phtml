@@ -157,8 +157,11 @@ if($this->action == 'download') {
 			$pdf->Output($path.$url.$filename, 'F');
 		$html = '<iframe src="'.$this->baseUrl().'/files/items/'.$url.$filename.'?'.time().'" width="900px" height="500px">';
 	} else {
-		$pdf->Output(BASE_PATH.'/cache/item/'.$id.'.pdf', 'F');
-		$html = '<iframe src="'.$this->baseUrl().'/cache/item/'.$id.'.pdf?'.time().'" width="900px" height="500px">';
+		$relative = 'cache/item/' . (int)$client['id'] . '/' . $id . '/preview.pdf';
+		DEEC_Emailattachment::checkPath(BASE_PATH . '/' . $relative);
+		if (!is_dir(dirname(BASE_PATH . '/' . $relative))) mkdir(dirname(BASE_PATH . '/' . $relative), 0775, true);
+		$pdf->Output(BASE_PATH . '/' . $relative, 'F');
+		$html = '<iframe src="' . $this->baseUrl() . '/' . $relative . '" width="900px" height="500px">';
 	}
 	echo $html;
 }

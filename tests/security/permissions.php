@@ -136,7 +136,7 @@ require_once $root . '/application/views/helpers/MediaManager.php';
 Zend_Registry::set('User', ['id' => 42, 'clientid' => 70]);
 Zend_Registry::set('Client', ['id' => 7, 'parentid' => 0]);
 foreach (['FileManager', 'MediaManager'] as $manager) {
-    foreach ([['contacts', 'contact', 10, 'contacts/7/0/7/1/0/10'], ['users', 'user', 42, 'uploads/7/0/7'], ['campaigns', 'campaign', 0, 'uploads/7/0/7'], ['admin', 'media', 0, $manager === 'MediaManager' ? '7/0/7' : 'uploads/7/0/7']] as [$module, $controller, $id, $folder]) {
+    foreach ([['contacts', 'contact', 10, 'contacts/7/0/7/1/0/10'], ['users', 'user', 42, 'uploads/7/0/7' . ($manager === 'FileManager' ? '/users/42' : '')], ['campaigns', 'campaign', 0, 'uploads/7/0/7'], ['admin', 'media', 0, $manager === 'MediaManager' ? '7/0/7' : 'uploads/7/0/7']] as [$module, $controller, $id, $folder]) {
         $view = new Zend_View();
         $view->assign(['module' => $module, 'controller' => $controller, 'action' => 'edit', 'id' => $id]);
         $session = new Zend_Session_Namespace($manager);

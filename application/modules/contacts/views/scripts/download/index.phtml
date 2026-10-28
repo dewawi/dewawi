@@ -174,7 +174,7 @@ echo $this->Messages();
 							</td>
 
 							<td class="dw-col-title" data-label="<?php echo $this->translate('CONTACTS_FILE_NAME'); ?>">
-								<a href="<?php echo $this->baseUrl(); ?>/files/downloads/<?php echo $this->downloadsurl . $downloadtracking['filename']; ?>" target="_blank">
+								<a href="<?php echo $this->escape($this->baseUrl().'/files/downloads/'.$this->downloadsurl.rawurlencode((string)$downloadtracking['filename'])); ?>" target="_blank">
 									<?php echo $this->escape($downloadtracking['title']); ?>
 								</a>
 							</td>

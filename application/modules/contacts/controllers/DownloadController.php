@@ -24,6 +24,7 @@ class Contacts_DownloadController extends Zend_Controller_Action
 		$this->view->controller = $params['controller'];
 		$this->view->module = $params['module'];
 		$this->view->client = Zend_Registry::get('Client');
+		$this->view->downloadsurl = (new DEEC_Directory())->getShortUrl($this->view->client['id']) . '/';
 		$this->view->user = $this->_user = Zend_Registry::get('User');
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 
@@ -51,7 +52,7 @@ class Contacts_DownloadController extends Zend_Controller_Action
 		$downloadtrackingsDb = new Contacts_Model_DbTable_Downloadtracking();
 		$downloadtrackings = $downloadtrackingsDb->getDownloadtrackings();
 
-		$clientid = $this->_user['clientid'];
+		$clientid = $this->view->client['id'];
 		$dir1 = substr($clientid, 0, 1);
 		if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
 		else $dir2 = '0';
@@ -80,33 +81,19 @@ class Contacts_DownloadController extends Zend_Controller_Action
 			if($form->isValid($formData)) {
 				//$documentUrl = $this->_helper->Directory->getUrl($this->view->client['id']);
 
-				$clientid = $this->_user['clientid'];
+				$clientid = $this->view->client['id'];
 				$dir1 = substr($clientid, 0, 1);
 				if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
 				else $dir2 = '0';
 
-				if(!file_exists(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid.'/')) {
-					mkdir(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid.'/', 0777, true);
-				}
-
-				/* Uploading Document File on Server */
-				$upload = new Zend_File_Transfer_Adapter_Http();
-				$upload->setDestination(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid.'/');
-
-				try {
-					// upload received file(s)
-					$upload->receive();
-				} catch (Zend_File_Transfer_Exception $e) {
-					$e->getMessage();
-				}
-				$file = $upload->getFileName();
-				$info = $upload->getFileInfo();
+				$info = $this->receiveFile(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid);
+				if (!$info) return;
 
 				$data = array();
 				$data['setid'] = $formData['setid'];
 				$data['title'] = $formData['title'];
-				$data['filename'] = $info['file_0_']['name'];
-				$data['filesize'] = filesize($file);
+				$data['filename'] = $info['name'];
+				$data['filesize'] = $info['size'];
 				$data['parentid'] = 0;
 				//$data['ordering'] = $this->getLatestOrdering($id, $module, $controller) + 1;
 
@@ -147,33 +134,19 @@ class Contacts_DownloadController extends Zend_Controller_Action
 			if($request->isPost()) {
 				$data = $request->getPost();
 				if(isset($data['MAX_FILE_SIZE'])) {
-					$clientid = $this->_user['clientid'];
+					$clientid = $this->view->client['id'];
 					$dir1 = substr($clientid, 0, 1);
 					if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
 					else $dir2 = '0';
 
-					if(!file_exists(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid.'/')) {
-						mkdir(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid.'/', 0777, true);
-					}
-
-					/* Uploading Document File on Server */
-					$upload = new Zend_File_Transfer_Adapter_Http();
-					$upload->setDestination(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid.'/');
-
-					try {
-						// upload received file(s)
-						$upload->receive();
-					} catch (Zend_File_Transfer_Exception $e) {
-						$e->getMessage();
-					}
-					$file = $upload->getFileName();
-					$info = $upload->getFileInfo();
+					$info = $this->receiveFile(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid);
+					if (!$info) return;
 
 					$updateData = array();
 					$updateData['setid'] = $data['setid'];
 					$updateData['title'] = $data['title'];
-					$updateData['filename'] = $info['file_0_']['name'];
-					$updateData['filesize'] = filesize($file);
+					$updateData['filename'] = $info['name'];
+					$updateData['filesize'] = $info['size'];
 					$updateData['parentid'] = 0;
 					//$updateData['ordering'] = $this->getLatestOrdering($id, $module, $controller) + 1;
 
@@ -184,7 +157,7 @@ class Contacts_DownloadController extends Zend_Controller_Action
 					$this->_helper->getHelper('layout')->disableLayout();
 					$element = key($data);
 					if(isset($form->$element) && $form->isValidPartial($data)) {
-						$downloadDb->updateDownload($id, $data);
+						$downloadDb->updateDownload($id, array_intersect_key($form->getValues(), $data));
 						echo Zend_Json::encode($downloadDb->getDownload($id));
 					} else {
 						echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -210,5 +183,36 @@ class Contacts_DownloadController extends Zend_Controller_Action
 			$this->_helper->flashMessenger->getCurrentMessages()
 		);
 		$this->_helper->flashMessenger->clearCurrentMessages();
+	}
+
+	protected function getUploadAdapter()
+	{
+		return new Zend_File_Transfer_Adapter_Http();
+	}
+
+	protected function receiveFile(string $directory): ?array
+	{
+		try {
+			$upload = $this->getUploadAdapter();
+			$upload->addValidator('Count', false, 1);
+			$upload->addValidator('Size', false, ['min' => 1, 'max' => 10240000]);
+			$files = $upload->getFileInfo();
+			if (count($files) !== 1) throw new InvalidArgumentException('One download file is required');
+			$field = array_key_first($files);
+			$info = $files[$field];
+			if (!$upload->isUploaded($field) || !$upload->isValid($field) || !DEEC_Emailattachment::validUpload($info['name'], $info['tmp_name'])) throw new InvalidArgumentException('Invalid download file');
+			$target = $directory . '/' . $info['name'];
+			DEEC_Emailattachment::checkPath($target);
+			if (file_exists($target)) throw new RuntimeException('Download file already exists');
+			if (!is_dir($directory) && !mkdir($directory, 0775, true)) throw new RuntimeException('Download directory unavailable');
+			$upload->setDestination($directory);
+			if (!$upload->receive($field)) throw new RuntimeException('Download upload failed');
+			return ['name' => $info['name'], 'size' => filesize($target)];
+		} catch (Exception $exception) {
+			error_log((string)$exception);
+			$this->getResponse()->setHttpResponseCode(400);
+			$this->_flashMessenger->addMessage('MESSAGES_FORM_IS_INVALID');
+			return null;
+		}
 	}
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise Apache rewrites using isolated test files and the real guest download action."""
+"""Exercise Apache rewrites and real file authorization using isolated files and in-memory data."""
 import grp
 import os
 from pathlib import Path
@@ -50,6 +50,11 @@ class HttpAttachmentAdapter extends Zend_Db_Adapter_Pdo_Mysql {
         $rows = array_values(array_filter($this->rows[$table] ?? [], static function ($row) use ($sql): bool {
             foreach ($sql->getPart(Zend_Db_Select::WHERE) as $where) {
                 $where = trim(preg_replace('/^AND /', '', $where), '() ');
+                if (str_starts_with($where, 'SUBSTRING_INDEX(')) {
+                    preg_match("/= '(.*)'/", $where, $match);
+                    if (substr(strrchr('|' . ($row['downloads'] ?? ''), '|'), 1) !== $match[1]) return false;
+                    continue;
+                }
                 if (!preg_match('/^(\w+) = (.*)$/', $where, $match)) throw new RuntimeException('Unexpected fixture predicate');
                 if ((string)($row[$match[1]] ?? '') !== trim($match[2], " '\"")) return false;
             }
@@ -67,13 +72,23 @@ class HttpAttachmentLayout extends Zend_Controller_Action_Helper_Abstract {
     public function disableLayout() {}
 }
 $adapter = new HttpAttachmentAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
+$adapter->rows = [
+    'media' => [['id' => 1, 'clientid' => 7, 'deleted' => 0, 'module' => 'items', 'controller' => 'item', 'parentid' => 501, 'type' => 'image', 'url' => 'product.png']],
+    'item' => [['id' => 501, 'clientid' => 7, 'shopid' => 1, 'deleted' => 0, 'downloads' => 'de|public.pdf']],
+];
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 1, 'clientid' => 7]));
+Zend_Session::setOptions(['save_path' => BASE_PATH . '/session', 'use_cookies' => false, 'cache_limiter' => '']);
 if (isset($_SERVER['HTTP_X_ATTACHMENT_TEST_USER'])) {
-    Zend_Registry::set('User', ['id' => 42, 'clientid' => 7]);
-    Zend_Registry::set('Client', ['id' => 7, 'parentid' => 0]);
-    $rights = $_SERVER['HTTP_X_ATTACHMENT_TEST_USER'] === 'allowed' ? ['quote' => ['view']] : [];
-    $adapter->rows = [
-        'permission' => [['id' => 1, 'userid' => 42, 'deleted' => 0, 'sales' => json_encode($rights)]],
-        'quote' => [['id' => 10, 'clientid' => 7, 'deleted' => 0]],
+    $mode = $_SERVER['HTTP_X_ATTACHMENT_TEST_USER'];
+    $clientId = $mode === 'foreign' ? 8 : 7;
+    Zend_Registry::set('User', ['id' => 42, 'clientid' => $clientId]);
+    Zend_Registry::set('Client', ['id' => $clientId, 'parentid' => 0]);
+    $rights = $mode === 'allowed' ? ['quote' => ['view']] : [];
+    $adapter->rows += [
+        'permission' => [['id' => 1, 'userid' => 42, 'deleted' => 0, 'sales' => json_encode($rights), 'contacts' => json_encode(['contact' => ['view']])]],
+        'quote' => [['id' => 10, 'contactid' => 100, 'filename' => 'quote.pdf', 'clientid' => 7, 'deleted' => 0]],
+        'invoice' => [['id' => 20, 'contactid' => 100, 'filename' => 'invoice.pdf', 'clientid' => 7, 'deleted' => 0]],
+        'contact' => [['id' => 100, 'clientid' => 7, 'deleted' => 0]],
         'emailattachment' => [['id' => 600, 'documentid' => 10, 'clientid' => 7, 'module' => 'sales', 'controller' => 'quote', 'filename' => 'fixture.pdf', 'location' => BASE_PATH . '/files/attachments/sales/quote/7/0/7/1/0/10', 'deleted' => 0]],
     ];
 }
@@ -91,10 +106,11 @@ $request = new Zend_Controller_Request_Http();
 $response = new Zend_Controller_Response_Http();
 $front->setRequest($request)->setResponse($response);
 $front->getRouter()->route($request);
-if ($request->getModuleName() !== 'contacts' || $request->getControllerName() !== 'attachment' || $request->getActionName() !== 'download') {
+if ($request->getModuleName() !== 'contacts' || $request->getControllerName() !== 'attachment' || !in_array($request->getActionName(), ['download', 'file'], true)) {
     $response->setHttpResponseCode(404);
 } else {
-    (new Contacts_AttachmentController($request, $response))->downloadAction();
+    $controller = new Contacts_AttachmentController($request, $response);
+    $controller->{$request->getActionName() . 'Action'}();
 }
 $response->sendResponse();
 '''.replace("ROOT_PATH", "'" + str(root).replace("'", "\\'") + "'")
@@ -107,12 +123,19 @@ with tempfile.TemporaryDirectory(prefix="dewawi-attachment-http-") as temp:
     fixture.parent.mkdir(parents=True)
     contents = b"%PDF-1.4\nHTTP attachment security fixture\n%%EOF\n"
     fixture.write_bytes(contents)
-    public = site / "media/public.txt"
-    public.parent.mkdir()
+    public = site / "media/7/0/7/images/product.png"
+    public.parent.mkdir(parents=True)
     public.write_bytes(b"Public media fixture")
+    (site / "session").mkdir()
+    stored_files = ["files/contacts/7/0/7/1/0/100/notes.txt", "files/contacts/7/0/7/1/0/100/quote.pdf", "files/contacts/7/0/7/1/0/100/invoice.pdf", "cache/document/sales/quote/7/10/quote.pdf", "files/uploads/unmapped.pdf", "cache/item/501.pdf", "media/7/0/7/images/unmapped.png"]
+    for relative in stored_files:
+        target = site / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(contents)
+    (site / "files/contacts/7/0/7/1/0/100/linked.pdf").symlink_to(fixture)
     (site / "index.php").write_text(front)
     current = (root / ".htaccess").read_text()
-    (site / ".htaccess").write_text(current.replace("RewriteRule ^files/attachments(?:/|$) index.php [NC,L]\n", ""))
+    (site / ".htaccess").write_text(current.replace("RewriteRule ^files/attachments(?:/|$) index.php [NC,L]\n", "").replace("RewriteRule ^(?:files|media|cache)(?:/|$) index.php [NC,L]\n", ""))
     with socket.socket() as port_socket:
         port_socket.bind(("127.0.0.1", 0))
         port = port_socket.getsockname()[1]
@@ -155,10 +178,14 @@ DocumentRoot "{site}"
         else:
             raise RuntimeError("Isolated Apache did not start")
 
+        last_headers = {}
+
         def fetch(path, user=None, method="GET"):
             try:
                 request = urllib.request.Request(f"http://127.0.0.1:{port}{path}", headers={"X-Attachment-Test-User": user} if user else {}, method=method)
                 with urllib.request.urlopen(request, timeout=5) as response:
+                    last_headers.clear()
+                    last_headers.update(response.headers)
                     return response.status, response.read()
             except urllib.error.HTTPError as error:
                 return error.code, error.read()
@@ -175,8 +202,30 @@ DocumentRoot "{site}"
         assert fetch(path, "allowed", "HEAD") == (200, b""), "HEAD request returned file content"
         assert fetch(path, "denied")[0] == 404, "Missing document permission allowed a download"
         assert fetch("/contacts/attachment/download/id/601", "allowed")[0] == 404, "Missing attachment ID allowed a download"
-        assert fetch("/media/public.txt") == (200, b"Public media fixture"), "Public media affected"
-        print("PASS: Apache baseline bypass reproduced; guests and missing rights denied; authorized legacy/ID downloads and HEAD work; public media unaffected")
+        for relative in stored_files:
+            status, body = fetch('/' + relative)
+            assert status == 404 and contents not in body, f"Anonymous stored file exposed: {relative}"
+        for relative in stored_files[:2] + [stored_files[3]]:
+            assert fetch('/' + relative, 'allowed') == (200, contents), f"Authorized file failed: {relative}"
+            assert last_headers['Cache-Control'] == 'private, no-store' and last_headers['X-Content-Type-Options'] == 'nosniff'
+            assert fetch('/' + relative, 'allowed', 'HEAD') == (200, b'')
+            assert fetch('/' + relative, 'foreign')[0] == 404, 'Foreign tenant downloaded a file'
+            assert fetch('/' + relative, 'allowed', 'POST')[0] == 405, 'File accepted a write request'
+        assert fetch('/' + stored_files[1], 'denied')[0] == 404, 'Missing quote permission accepted'
+        assert fetch('/' + stored_files[2], 'allowed')[0] == 404, 'Contact rights bypassed invoice permission'
+        for requested in ['files/contacts/7/0/7/1/0/100/linked.pdf', 'files/contacts/7/0/7/1/0/100/%2e%2e/100/quote.pdf', 'files/contacts/7/0/7/1/0/100/%252e%252e/quote.pdf', 'files/contacts/7/0/7/1/0/100/quote.pdf%00']:
+            assert fetch('/' + requested, 'denied')[0] in (400, 403, 404), f'Traversal or symlink accepted: {requested}'
+        for requested in ['/media/images/product.png', '/media/7/0/7/images/product.png']:
+            assert fetch(requested) == (200, b"Public media fixture"), 'Public product media affected'
+            assert last_headers['Cache-Control'] == 'public, max-age=3600'
+        shutil.copytree(site, temp / 'subdirectory', symlinks=True)
+        (temp / 'subdirectory').rename(site / 'dewawi')
+        for relative in stored_files[:2] + [stored_files[3]]:
+            assert fetch('/dewawi/' + relative)[0] == 404, 'Subdirectory guest file access allowed'
+            assert fetch('/dewawi/' + relative, 'allowed') == (200, contents), 'Subdirectory authorized download failed'
+            assert fetch('/dewawi/' + relative, 'foreign')[0] == 404, 'Subdirectory tenant bypass'
+        assert fetch('/dewawi/media/images/product.png') == (200, b'Public media fixture'), 'Subdirectory publication failed'
+        print("PASS: Apache static bypass reproduced; attachments and stored files protected; tenant, object, method, traversal, symlink and cache checks pass; published media accessible")
     finally:
         server.terminate()
         try:

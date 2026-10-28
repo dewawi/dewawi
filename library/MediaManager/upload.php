@@ -138,6 +138,7 @@ try {
 
     $uploadConfig = array(
         'config' => $config,
+        'input_stream' => defined('DEWAWI_URL_UPLOAD') ? DEWAWI_URL_UPLOAD : 'php://input',
         'storeFolder' => $storeFolder,
         'storeFolderThumb' => $storeFolderThumb,
         'ftp' => $ftp,

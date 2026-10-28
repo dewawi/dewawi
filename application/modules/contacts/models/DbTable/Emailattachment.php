@@ -4,6 +4,119 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 {
 	protected $_name = 'emailattachment';
 
+	public function getPublishedFilePath(string $relative): ?string
+	{
+		if (!Zend_Registry::isRegistered('SiteContext')) return null;
+		$site = Zend_Registry::get('SiteContext');
+		$thumb = str_starts_with($relative, 'cache/thumbs/media/');
+		$relative = preg_replace('~^cache/thumbs/media/~', 'media/', $relative);
+		if (!preg_match('~^media/(?:(?:([0-9])/([0-9])/([1-9][0-9]*)/)?)(images|header|category|slide|downloads|download)/(.+)$~D', $relative, $parts)) return null;
+		$owner = (int)$site->getClientId();
+		if ($parts[3] !== '' && ($owner !== (int)$parts[3] || implode('/', array_slice($parts, 1, 3)) !== (new DEEC_Directory())->getShortUrl($owner))) return null;
+		[$kind, $filename] = [$parts[4], $parts[5]];
+		$prefix = ($thumb ? 'cache/thumbs/media/' : 'media/') . (new DEEC_Directory())->getShortUrl($owner) . '/';
+		if ($kind === 'header' && $site->get('logo') === $filename) return $prefix . 'header/' . $filename;
+		$db = new Shops_Model_DbTable_Media();
+		$rows = $db->fetchAll($db->select()->where('clientid = ?', $owner)->where('url = ?', $filename)->where('deleted = ?', 0));
+		foreach ($rows as $row) {
+			if (in_array($kind, ['downloads', 'download'], true) ? !in_array($row['type'], ['file', 'download'], true) : $row['type'] !== 'image') continue;
+			if ($row['module'] === 'items' && $row['controller'] === 'item' && in_array($kind, ['images', 'downloads', 'download'], true)) {
+				if ((new Shops_Model_DbTable_Item())->getItem((int)$row['parentid'])) return $prefix . ($row['type'] === 'image' ? 'images' : ($row['type'] === 'download' ? 'download' : 'downloads')) . '/' . $filename;
+			}
+			if ($row['module'] === 'shops' && in_array($row['controller'], ['category', 'slide'], true) && in_array($kind, [$row['controller'], 'downloads', 'download'], true)) {
+				$class = 'Shops_Model_DbTable_' . ucfirst($row['controller']);
+				if ((new $class())->getPublicById((int)$row['parentid'])) return $prefix . ($row['type'] === 'image' ? $row['controller'] : ($row['type'] === 'download' ? 'download' : 'downloads')) . '/' . $filename;
+			}
+		}
+		return in_array($kind, ['downloads', 'download'], true) && (new Shops_Model_DbTable_Item())->hasPublicDownload($filename) ? $prefix . 'downloads/' . $filename : null;
+	}
+
+	public function canReadStoredFile(string $relative, string $action = 'view'): bool
+	{
+		if (!Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client')) return false;
+		$user = Zend_Registry::get('User');
+		$client = Zend_Registry::get('Client');
+		$relative = preg_replace(['~^cache/thumbs/files/~', '~^cache/thumbs/media/~'], ['files/', 'media/'], $relative);
+		if (str_starts_with($relative, 'files/images/')) {
+			$filename = substr($relative, strlen('files/images/'));
+			$permission = new DEEC_Permission($user);
+			foreach (['items' => ['itemlist' => 'image', 'inventory' => 'image'], 'admin' => ['tag' => 'image', 'template' => 'logo']] as $module => $controllers) {
+				if ($module === 'admin' ? empty($user['admin']) : !$permission->hasActionPermission('items', 'item', $action)) continue;
+				$owner = (int)($client['modules'][$module] ?? $user['clientid']);
+				foreach ($controllers as $controller => $field) {
+					$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+					$db = new $class();
+					if ($db->fetchRow($db->select()->where('clientid = ?', $owner)->where($field . ' = ?', $filename)->where('deleted = ?', 0))) return true;
+				}
+			}
+			return false;
+		}
+		if (preg_match('~^cache/document/([a-z-]+)/([a-z-]+)/([1-9][0-9]*)/([1-9][0-9]*)/([^/]+)$~D', $relative, $parts)) {
+			$context = $this->getParentContext($parts[4], $parts[1], $parts[2], $action);
+			return $context && $context['clientid'] === (int)$parts[3] && $parts[5] === (($context['parent']['filename'] ?? '') ?: $parts[2] . '_' . $parts[4] . '.pdf');
+		}
+		if (preg_match('~^cache/(item|itemlist)/([1-9][0-9]*)/([1-9][0-9]*)/preview\.pdf$~D', $relative, $parts)) {
+			$context = $this->getParentContext($parts[3], 'items', $parts[1], $action);
+			return $context && $context['clientid'] === (int)$parts[2];
+		}
+		if (preg_match('~^files/(contacts|items)/[0-9]/[0-9]/([1-9][0-9]*)/[0-9]/[0-9]/([1-9][0-9]*)/(.+)$~D', $relative, $parts)) {
+			[$all, $kind, $owner, $id, $filename] = $parts;
+			$prefix = 'files/' . $kind . '/' . (new DEEC_Directory())->getUrl($id, $owner) . '/';
+			if (!str_starts_with($relative, $prefix)) return false;
+			if ($kind === 'contacts') {
+				$matches = [];
+				foreach (['sales' => ['quote', 'salesorder', 'invoice', 'deliveryorder', 'creditnote', 'reminder'], 'purchases' => ['quoterequest', 'purchaseorder']] as $module => $controllers) {
+					foreach ($controllers as $controller) {
+						$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+						$db = new $class();
+						$rows = $db->fetchAll($db->select()->where('clientid = ?', (int)$owner)->where('contactid = ?', (int)$id)->where('filename = ?', basename($filename)));
+						foreach ($rows as $row) $matches[] = [$module, $controller, (int)$row['id']];
+					}
+				}
+				if ($matches) {
+					if (count($matches) !== 1) return false;
+					[$module, $controller, $documentId] = $matches[0];
+					$context = $this->getParentContext($documentId, $module, $controller, $action);
+					return $context && $context['clientid'] === (int)$owner;
+				}
+			}
+			$context = $this->getParentContext($id, $kind === 'contacts' ? 'contacts' : 'items', $kind === 'contacts' ? 'contact' : 'item', $action);
+			return $context && $context['clientid'] === (int)$owner;
+		}
+		if (preg_match('~^files/(downloads|export)/[0-9]/[0-9]/([1-9][0-9]*)/(.+)$~D', $relative, $parts)) {
+			$owner = (int)$parts[2];
+			if (!str_starts_with($relative, 'files/' . $parts[1] . '/' . (new DEEC_Directory())->getShortUrl($owner) . '/')) return false;
+			if ($parts[1] === 'export') return !empty($user['admin']) && $owner === (int)$user['clientid'];
+			if (!in_array($owner, $this->getStorageClients(), true) || str_contains($parts[3], '/') || !(new DEEC_Permission($user))->hasPermission('contacts', 'contact', 'view')) return false;
+			$db = (new Contacts_Model_DbTable_Download())->setClientId($owner);
+			$rows = $db->fetchAll($db->select()->where('clientid = ?', $owner)->where('filename = ?', $parts[3])->where('deleted = ?', 0));
+			return count($rows) === 1;
+		}
+		if (!preg_match('~^(files|media)/(.+)$~D', $relative, $parts)) return false;
+		if (preg_match('~^media/[0-9]/[0-9]/([1-9][0-9]*)/(images|header|category|slide|downloads|download)/(.+)$~D', $relative, $media)) {
+			$owner = (int)$media[1];
+			if (!str_starts_with($relative, 'media/' . (new DEEC_Directory())->getShortUrl($owner) . '/')) return false;
+			if (!empty($user['admin']) && $owner === (int)$user['clientid']) return true;
+			$db = new Application_Model_DbTable_Media();
+			$rows = $db->fetchAll($db->select()->where('clientid = ?', $owner)->where('url = ?', $media[3])->where('deleted = ?', 0));
+			foreach ($rows as $row) {
+				$context = $this->getParentContext($row['parentid'], $row['module'], $row['controller']);
+				if ($context && $context['clientid'] === $owner) return true;
+			}
+		}
+		$session = new Zend_Session_Namespace($parts[1] === 'files' ? 'FileManager' : 'MediaManager');
+		$context = $session->context ?? [];
+		$folder = trim((string)($session->subfolder ?? ''), '/');
+		if ($folder === '' || $folder === 'uploads' || !str_starts_with($parts[2], $folder . '/')
+			|| ($context['userid'] ?? 0) !== (int)$user['id'] || ($context['clientid'] ?? 0) !== (int)$user['clientid']) return false;
+		$module = $context['module'] ?? '';
+		if (($context['ownerid'] ?? 0) !== (int)($client['modules'][$module] ?? $user['clientid'])) return false;
+		if ($module === 'admin') return !empty($user['admin']);
+		if ($module === 'users') return ($context['controller'] ?? '') === 'user' && ($context['id'] ?? 0) === (int)$user['id'] && $folder === 'uploads/' . (new DEEC_Directory())->getShortUrl($user['clientid']) . '/users/' . (int)$user['id'];
+		if (str_starts_with($parts[2], 'uploads/')) return false;
+		return $this->getParentContext($context['id'] ?? 0, $module, $context['controller'] ?? '') !== null;
+	}
+
 	public function getParentContext($documentId, $module, $controller, string $action = 'view'): ?array
 	{
 		if(!Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client')) return null;
@@ -14,13 +127,13 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		$contactClientId = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$user['clientid'];
 		if($contactClientId <= 0) return null;
 		if(!DEEC_Permission::isDocument($module, $controller) && !in_array([$module, $controller], [
-			['contacts', 'contact'], ['contacts', 'contactperson'], ['processes', 'process'], ['tasks', 'task'], ['campaigns', 'campaign'],
+			['contacts', 'contact'], ['contacts', 'contactperson'], ['items', 'item'], ['items', 'itemlist'], ['processes', 'process'], ['tasks', 'task'], ['campaigns', 'campaign'],
 		], true)) return null;
 
 		$permission = new DEEC_Permission($user);
-		$permissionController = $module === 'contacts' ? 'contact' : $controller;
+		$permissionController = $module === 'contacts' ? 'contact' : ($module === 'items' ? 'item' : $controller);
 		if($permission->hasModule($module) && (!$permission->hasActionPermission($module, $permissionController, 'view') || !$permission->hasActionPermission($module, $permissionController, $action))) return null;
-		$ownerClientId = $module === 'contacts' ? $contactClientId : (int)$user['clientid'];
+		$ownerClientId = $module === 'contacts' ? $contactClientId : ($module === 'items' ? (int)($client['modules']['items'] ?? $user['clientid']) : (int)$user['clientid']);
 		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
 		$parentDb = new $class();
 		$parentDb->setClientId($ownerClientId);

@@ -92,16 +92,15 @@ class DEEC_Sns
 
 	private function loadUrl(string $url)
 	{
-		$context = stream_context_create([
-			'http' => [
-				'timeout' => 5,
-			],
-			'ssl' => [
-				'verify_peer' => true,
-				'verify_peer_name' => true,
-			],
-		]);
-
-		return @file_get_contents($url, false, $context);
+		$download = null;
+		try {
+			$download = (new DEEC_UrlDownload())->receive($url, 65536);
+			return file_get_contents($download['path']);
+		} catch (Exception $exception) {
+			error_log((string)$exception);
+			return false;
+		} finally {
+			if ($download && is_file($download['path'])) unlink($download['path']);
+		}
 	}
 }

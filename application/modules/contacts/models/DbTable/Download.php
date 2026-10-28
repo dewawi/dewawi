@@ -21,9 +21,7 @@ class Contacts_Model_DbTable_Download extends DEEC_Model_DbTable_Entity
 	public function getDownload($id)
 	{
 		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
-		if(!$row) return false;
-		return $row->toArray();
+		return $this->getById($id) ?: false;
 	}
 
 	public function getDownloads($contactid = null)
@@ -54,7 +52,6 @@ class Contacts_Model_DbTable_Download extends DEEC_Model_DbTable_Entity
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 }

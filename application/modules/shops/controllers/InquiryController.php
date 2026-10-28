@@ -31,6 +31,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 					$this->formDataSession->suggestions,
 					$this->formDataSession->requestValues,
 					$this->formDataSession->downloadUrl,
+					$this->formDataSession->downloadFile,
 					$this->formDataSession->submittedData,
 					$this->formDataSession->inquiryToken,
 					$this->formDataSession->csrfToken
@@ -349,6 +350,10 @@ class Shops_InquiryController extends Shops_Controller_Action
 			}
 
 			$notificationSent = $this->sendInquiryNotification($allFormValues);
+			if ($quoteId && !empty($pdfInfo['path'])) {
+				DEEC_Emailattachment::checkPath($pdfInfo['path']);
+				$this->formDataSession->downloadFile = ['siteid' => (int)$this->_siteContext->getSiteId(), 'clientid' => (int)$this->_siteContext->getClientId(), 'quoteid' => (int)$quoteId, 'relative' => substr($pdfInfo['path'], strlen(realpath(BASE_PATH)) + 1)];
+			}
 
 			if ($quoteId && !empty($pdfInfo['path'])) {
 				$this->sendOfferNotification($allFormValues, (string)$pdfInfo['path']);

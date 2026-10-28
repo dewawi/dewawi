@@ -1,0 +1,144 @@
+file	line	source
+js/global.js	4108	url: '/media/edit',
+application/layouts/scripts/site.phtml	51	<img src="<?php echo $this->baseUrl(); ?>/media/header/<?php echo $shop['logo'] ?? ''; ?>" alt="<?php echo $shop['title'] ?? ''; ?>" height="75">
+library/DEEC/Ebay.php	32	$filePath = $this->basePath.'/files/ebay/'.$fileUrl;
+library/DEEC/Ebay.php	71	$filePath = $this->basePath.'/files/ebay/'.$fileUrl;
+library/DEEC/Campaign.php	36	$path = BASE_PATH.'/files/';
+library/DEEC/Campaign.php	54	$path = BASE_PATH.'/media/';
+library/DEEC/Campaign.php	81	if(!file_exists(BASE_PATH.'/cache/'.$controller.'/')) {
+library/DEEC/Campaign.php	82	mkdir(BASE_PATH.'/cache/'.$controller.'/');
+library/DEEC/Campaign.php	83	chmod(BASE_PATH.'/cache/'.$controller.'/', 0777);
+library/DEEC/Campaign.php	100	$cache = BASE_PATH.'/cache/';
+library/DEEC/Campaign.php	103	$path = BASE_PATH.'/files/contacts/';
+application/views/helpers/Media.php	153	. '/media/'
+application/controllers/MediaController.php	53	$base = BASE_PATH . ($manager === 'FileManager' ? '/files/' : '/media/');
+application/controllers/MediaController.php	62	$thumbs = BASE_PATH . '/cache/thumbs/' . ($manager === 'FileManager' ? 'files/' : 'media/') . $folder;
+application/controllers/MediaController.php	160	if ($base === BASE_PATH . '/files/' && is_file($target) && preg_match('~^(contacts|items)/~', $path)
+application/controllers/MediaController.php	161	&& !(new Contacts_Model_DbTable_Emailattachment())->canReadStoredFile('files/' . $path, $action)) return false;
+application/controllers/MediaController.php	256	$uploadDir = BASE_PATH . '/media/' . $mediaPath . '/' . $targetPath . '/';
+application/controllers/MediaController.php	355	. '/media/'
+library/DEEC/Pdf.php	363	$attachment = BASE_PATH . '/files/attachments/' . $payload['meta']['module'] . '/'
+library/DEEC/Pdf.php	423	$dirAbs = BASE_PATH . '/files/contacts/' . $relativeDir;
+library/DEEC/Pdf.php	424	$dirUrl = $baseUrl . '/files/contacts/' . $relativeDir;
+library/DEEC/Pdf.php	429	$dirAbs = BASE_PATH . '/cache/document/' . $relativeDir;
+library/DEEC/Pdf.php	430	$dirUrl = $baseUrl . '/cache/document/' . $relativeDir;
+library/DEEC/Pdf.php	455	// reproduce your “files/contacts” sharding scheme
+library/DEEC/Pdf.php	1502	$logoFile = BASE_PATH.'/files/images/'.$template['logo'];
+library/DEEC/Pdf.php	1847	return BASE_PATH . '/media/' . $dir1 . '/' . $dir2 . '/' . $clientId . '/images/';
+library/DEEC/Emailattachment.php	17	$path = realpath(BASE_PATH) . '/files/attachments/' . $module . '/' . $controller . '/' . $directory;
+application/Bootstrap.php	185	'cache_dir' => BASE_PATH . '/cache/' // Directory where to put the cache files
+application/Bootstrap.php	247	$router->addRoute('attachment-file', new Zend_Controller_Router_Route_Regex('files/attachments/(.+)', [
+application/controllers/helpers/Email.php	251	'path' => BASE_PATH.'/media/'.$dir1.'/'.$dir2.'/'.$clientid.'/header/'.$shop['logo'],
+library/DEEC/Directory.php	33	$path = BASE_PATH.'/files/';
+library/DEEC/Directory.php	52	$path = BASE_PATH.'/media/';
+library/DEEC/Directory.php	81	DEEC_Emailattachment::checkPath(BASE_PATH.'/cache/'.$controller);
+library/DEEC/Directory.php	82	if(!file_exists(BASE_PATH.'/cache/'.$controller.'/')) {
+library/DEEC/Directory.php	83	mkdir(BASE_PATH.'/cache/'.$controller.'/');
+library/DEEC/Directory.php	84	chmod(BASE_PATH.'/cache/'.$controller.'/', 0775);
+library/DEEC/Directory.php	102	$cache = BASE_PATH.'/cache/';
+library/DEEC/Directory.php	105	$path = BASE_PATH.'/files/contacts/';
+application/controllers/helpers/Directory.php	14	$path = BASE_PATH.'/files/';
+application/controllers/helpers/Directory.php	33	$path = BASE_PATH.'/media/';
+application/controllers/helpers/Directory.php	90	DEEC_Emailattachment::checkPath(BASE_PATH.'/cache/'.$controller);
+application/controllers/helpers/Directory.php	91	if(!file_exists(BASE_PATH.'/cache/'.$controller.'/')) {
+application/controllers/helpers/Directory.php	92	mkdir(BASE_PATH.'/cache/'.$controller.'/');
+application/controllers/helpers/Directory.php	93	chmod(BASE_PATH.'/cache/'.$controller.'/', 0775);
+application/controllers/helpers/Directory.php	111	$cache = BASE_PATH.'/cache/';
+application/controllers/helpers/Directory.php	114	$path = BASE_PATH.'/files/contacts/';
+application/modules/items/controllers/OptionController.php	177	if(!file_exists(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/')) {
+application/modules/items/controllers/OptionController.php	178	mkdir(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/', 0777, true);
+application/modules/items/controllers/OptionController.php	183	$upload->setDestination(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/');
+application/modules/items/controllers/ItemController.php	248	if(!file_exists(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/')) {
+application/modules/items/controllers/ItemController.php	249	mkdir(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/', 0777, true);
+application/modules/items/controllers/ItemController.php	254	$upload->setDestination(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/');
+application/modules/items/controllers/ItemController.php	439	$url = '/media/'.$dir1.'/'.$dir2.'/'.$clientid.'/images/';
+application/modules/items/controllers/ItemController.php	456	$url = '/media/'.$dir1.'/'.$dir2.'/'.$clientid.'/downloads/';
+application/modules/items/controllers/AttributeController.php	177	if(!file_exists(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/')) {
+application/modules/items/controllers/AttributeController.php	178	mkdir(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/', 0777, true);
+application/modules/items/controllers/AttributeController.php	183	$upload->setDestination(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/');
+application/modules/items/views/helpers/Images.php	19	$v->baseUrl() . '/media/' .
+application/modules/admin/controllers/ExportController.php	34	$filePath = BASE_PATH . '/files/export/' . $fileUrl . '/';
+application/modules/admin/controllers/ExportController.php	76	$filePath = BASE_PATH.'/files/export/'.$fileUrl.'/';
+application/modules/admin/controllers/ExportController.php	203	$filePath = BASE_PATH.'/files/export/'.$fileUrl.'/';
+application/modules/items/views/scripts/itemlist/edit.phtml	45	<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+application/modules/items/views/scripts/itemlist/edit.phtml	46	<p><img id="preview" src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+application/modules/items/views/scripts/itemlist/pdf.phtml	82	if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
+application/modules/items/views/scripts/itemlist/pdf.phtml	83	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
+application/modules/items/views/scripts/itemlist/pdf.phtml	100	$pathUploads = BASE_PATH.'/files/uploads/'.$dir1.'/'.$dir2.'/'.$client['id'].'/';
+application/modules/items/views/scripts/itemlist/pdf.phtml	226	$path = BASE_PATH.'/files/items/';
+application/modules/items/views/scripts/itemlist/pdf.phtml	237	$html = '<iframe src="'.$this->baseUrl().'/files/items/'.$url.$filename.'?'.time().'" width="900px" height="500px">';
+application/modules/items/views/scripts/itemlist/pdf.phtml	239	$relative = 'cache/itemlist/' . (int)$client['id'] . '/' . (int)$this->itemlist['id'] . '/preview.pdf';
+application/modules/shops/views/helpers/Slide.php	32	. '/media/slide/'
+application/modules/shops/views/helpers/RenderCategory.php	25	$imageUrl = $this->view->baseUrl() . '/media/category/' . (string)$image['url'];
+application/modules/items/views/scripts/item/pdf.phtml	75	if(isset($this->template) && $this->template['logo'] && file_exists(BASE_PATH.'/files/images/'.$this->template['logo'])) {
+application/modules/items/views/scripts/item/pdf.phtml	76	$logo = BASE_PATH.'/files/images/'.$this->template['logo'];
+application/modules/items/views/scripts/item/pdf.phtml	85	if(isset($images) && file_exists(BASE_PATH.'/files/images/'.$images['url'])) {
+application/modules/items/views/scripts/item/pdf.phtml	86	$image = BASE_PATH.'/files/images/'.$images['url'];
+application/modules/items/views/scripts/item/pdf.phtml	147	$path = BASE_PATH.'/files/items/';
+application/modules/items/views/scripts/item/pdf.phtml	158	$html = '<iframe src="'.$this->baseUrl().'/files/items/'.$url.$filename.'?'.time().'" width="900px" height="500px">';
+application/modules/items/views/scripts/item/pdf.phtml	160	$relative = 'cache/item/' . (int)$client['id'] . '/' . $id . '/preview.pdf';
+application/modules/shops/controllers/ItemController.php	182	echo '<g:image_link>' . $shop['url'] . '/media/images/' . $image['url'] . '</g:image_link>';
+application/modules/shops/controllers/ItemController.php	184	echo '<g:additional_image_link>' . $shop['url'] . '/media/images/' . $image['url'] . '</g:additional_image_link>';
+application/modules/purchases/services/QuoterequestEditViewModel.php	54	$path = BASE_PATH . '/files/contacts/' . $contactId;
+application/modules/processes/services/ProcessEditViewModel.php	43	$path = BASE_PATH . '/files/contacts/' . $contactId;
+application/modules/items/views/scripts/inventory/edit.phtml	63	<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+application/modules/items/views/scripts/inventory/edit.phtml	64	<p><img src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+application/modules/items/views/scripts/inventory/edit.phtml	90	<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+application/modules/items/views/scripts/inventory/edit.phtml	91	<p><img id="preview" src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+application/modules/purchases/services/PurchaseorderEditViewModel.php	54	$path = BASE_PATH . '/files/contacts/' . $contactId;
+application/modules/items/services/ItemEditViewModel.php	10	// Files in /files/items/{id}
+application/modules/items/services/ItemEditViewModel.php	22	$path = BASE_PATH . '/files/items/' . $itemId;
+application/modules/contacts/controllers/AttachmentController.php	107	$prefix = rtrim($this->getRequest()->getBaseUrl(), '/') . '/files/attachments/';
+application/modules/shops/views/scripts/category/index.phtml	68	<img src="<?php echo $this->baseUrl(); ?>/media/category/<?php echo $this->escape($image['url']); ?>" class="d-block w-100" alt="<?php echo $this->escape($image['title'] ?? $this->category['title']); ?>">
+application/modules/shops/views/scripts/category/index.phtml	167	$itemImageUrls[] = $this->baseUrl() . '/media/images/' . (string)$image['url'];
+application/modules/shops/views/scripts/category/index.phtml	207	<a href="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" target="_blank">
+application/modules/shops/views/scripts/category/index.phtml	208	<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" alt="<?php echo $this->escape($previewImage['title'] ?? $item->title); ?>" class="image-thumbnail" style="width: 100%;">
+application/modules/shops/views/scripts/category/index.phtml	333	<a href="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" target="_blank">
+application/modules/shops/views/scripts/category/index.phtml	334	<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" alt="<?php echo $this->escape($image['title'] ?? $item->title); ?>" class="image-thumbnail">
+application/modules/shops/views/scripts/category/index.phtml	412	<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file['url']); ?>" target="_blank">
+application/modules/shops/views/scripts/category/index.phtml	425	$serverFilePath = BASE_PATH . '/media/' . $this->escape($this->imagePath) . '/downloads/' . $filePath;
+application/modules/shops/views/scripts/category/index.phtml	433	<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($filePath); ?>" target="_blank">
+application/modules/shops/views/scripts/category/index.phtml	494	<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file['url']); ?>" target="_blank">
+application/modules/shops/views/scripts/category/index.phtml	503	<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file['url']); ?>" target="_blank">
+application/modules/admin/views/scripts/tag/edit.phtml	44	<?php if($this->form->getElement('image') && file_exists(BASE_PATH."/files/images/".$this->form->getElement('image'))); { ?>
+application/modules/admin/views/scripts/tag/edit.phtml	45	<p><img id="preview" src="<?php echo $this->baseUrl().'/files/images/'.$this->form->getValue('image'); ?>"></p>
+application/modules/contacts/controllers/DownloadController.php	60	$documentUrl = '/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid;
+application/modules/contacts/controllers/DownloadController.php	89	$info = $this->receiveFile(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid);
+application/modules/contacts/controllers/DownloadController.php	142	$info = $this->receiveFile(BASE_PATH.'/files/downloads/'.$dir1.'/'.$dir2.'/'.$clientid);
+application/modules/admin/services/EditViewModel.php	111	BASE_PATH . '/media/' . $mediaPath . '/' . $path . '/'
+application/modules/admin/models/List/Exports.php	25	return '<a href="/files/export/'
+application/modules/shops/views/scripts/item/index.phtml	23	$itemImageUrls[] = $this->baseUrl() . '/media/images/' . (string)$image['url'];
+application/modules/shops/views/scripts/item/index.phtml	65	<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" id="mainImage" class="img-fluid" alt="<?php echo $this->escape($previewImage['title'] ?? $itemTitle); ?>" onclick="openModal()">
+application/modules/shops/views/scripts/item/index.phtml	73	<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" id="mainImage" class="img-fluid" alt="<?php echo $this->escape($previewImage['title'] ?? $itemTitle); ?>" onclick="openModal()">
+application/modules/shops/views/scripts/item/index.phtml	86	<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" class="d-block w-100" alt="<?php echo $this->escape($image['title'] ?? $itemTitle); ?>">
+application/modules/shops/views/scripts/item/index.phtml	258	<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file['url']); ?>" target="_blank">
+application/modules/shops/views/scripts/item/index.phtml	266	<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($file['url']); ?>" target="_blank">
+application/modules/shops/views/scripts/item/index.phtml	279	$serverFilePath = BASE_PATH . '/media/' . $this->escape($this->imagePath) . '/downloads/' . $filePath;
+application/modules/shops/views/scripts/item/index.phtml	287	<a href="<?php echo $this->baseUrl(); ?>/media/downloads/<?php echo $this->escape($filePath); ?>" target="_blank">
+application/modules/shops/views/scripts/item/index.phtml	322	<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $image['url']; ?>" class="d-block w-100" alt="Product Image">
+application/modules/contacts/controllers/ContactController.php	914	$directory = BASE_PATH . '/files/import/' . $digits[0] . '/' . $digits[1] . '/' . $clientId . '/';
+application/modules/contacts/services/ContactEditViewModel.php	160	$path = BASE_PATH . '/files/contacts/' . $contactId;
+application/modules/contacts/models/DbTable/Emailattachment.php	11	$thumb = str_starts_with($relative, 'cache/thumbs/media/');
+application/modules/contacts/models/DbTable/Emailattachment.php	12	$relative = preg_replace('~^cache/thumbs/media/~', 'media/', $relative);
+application/modules/contacts/models/DbTable/Emailattachment.php	13	if (!preg_match('~^media/(?:(?:([0-9])/([0-9])/([1-9][0-9]*)/)?)(images|header|category|slide|downloads|download)/(.+)$~D', $relative, $parts)) return null;
+application/modules/contacts/models/DbTable/Emailattachment.php	17	$prefix = ($thumb ? 'cache/thumbs/media/' : 'media/') . (new DEEC_Directory())->getShortUrl($owner) . '/';
+application/modules/contacts/models/DbTable/Emailattachment.php	39	$relative = preg_replace(['~^cache/thumbs/files/~', '~^cache/thumbs/media/~'], ['files/', 'media/'], $relative);
+application/modules/contacts/models/DbTable/Emailattachment.php	40	if (str_starts_with($relative, 'files/images/')) {
+application/modules/contacts/models/DbTable/Emailattachment.php	41	$filename = substr($relative, strlen('files/images/'));
+application/modules/contacts/models/DbTable/Emailattachment.php	54	if (preg_match('~^cache/document/([a-z-]+)/([a-z-]+)/([1-9][0-9]*)/([1-9][0-9]*)/([^/]+)$~D', $relative, $parts)) {
+application/modules/contacts/models/DbTable/Emailattachment.php	58	if (preg_match('~^cache/(item|itemlist)/([1-9][0-9]*)/([1-9][0-9]*)/preview\.pdf$~D', $relative, $parts)) {
+application/modules/contacts/models/DbTable/Emailattachment.php	62	if (preg_match('~^files/(contacts|items)/[0-9]/[0-9]/([1-9][0-9]*)/[0-9]/[0-9]/([1-9][0-9]*)/(.+)$~D', $relative, $parts)) {
+application/modules/contacts/models/DbTable/Emailattachment.php	64	$prefix = 'files/' . $kind . '/' . (new DEEC_Directory())->getUrl($id, $owner) . '/';
+application/modules/contacts/models/DbTable/Emailattachment.php	86	if (preg_match('~^files/(downloads|export)/[0-9]/[0-9]/([1-9][0-9]*)/(.+)$~D', $relative, $parts)) {
+application/modules/contacts/models/DbTable/Emailattachment.php	88	if (!str_starts_with($relative, 'files/' . $parts[1] . '/' . (new DEEC_Directory())->getShortUrl($owner) . '/')) return false;
+application/modules/contacts/models/DbTable/Emailattachment.php	96	if (preg_match('~^media/[0-9]/[0-9]/([1-9][0-9]*)/(images|header|category|slide|downloads|download)/(.+)$~D', $relative, $media)) {
+application/modules/contacts/models/DbTable/Emailattachment.php	98	if (!str_starts_with($relative, 'media/' . (new DEEC_Directory())->getShortUrl($owner) . '/')) return false;
+application/modules/contacts/models/DbTable/Emailattachment.php	233	$source = realpath(BASE_PATH) . '/files/contacts/' . $contactUrl . '/' . $filename;
+application/modules/contacts/models/Get.php	239	$path = BASE_PATH.'/files/attachments/'.$module.'/'.$controller.'/'.$url;
+application/modules/contacts/views/scripts/download/edit.phtml	27	<iframe src="<?php echo $this->escape($this->baseUrl().'/files/downloads/'.$this->downloadsurl.rawurlencode((string)$this->form->getValue('filename'))); ?>" width="100%" height="700px"></iframe>
+application/modules/shops/views/scripts/inquiry/index.phtml	64	<img src="<?= $this->baseUrl(); ?>/media/images/<?= $this->escape($item['images'][0]['url']); ?>" alt="" class="card-img-top" style="object-fit: cover; height: 200px;">
+application/modules/contacts/views/scripts/download/index.phtml	171	<a href="<?php echo $this->baseUrl(); ?>/files/downloads/<?php echo $this->downloadsurl . $downloadtracking['id']; ?>" target="_blank">
+application/modules/contacts/views/scripts/download/index.phtml	177	<a href="<?php echo $this->escape($this->baseUrl().'/files/downloads/'.$this->downloadsurl.rawurlencode((string)$downloadtracking['filename'])); ?>" target="_blank">
+application/modules/contacts/views/scripts/contact/files.phtml	9	<input type="checkbox" name="standardAttachment" value="<?php echo $file ?>" /> <a href="<?php echo $this->baseUrl().'/files/attachments/'.$file ?>" target="_blank"><?php echo $file ?></a><br />
+application/modules/contacts/views/scripts/contact/files.phtml	17	<input type="checkbox" name="contactSpecificFile" value="<?php echo $this->escape($file) ?>" /> <a href="<?php echo $this->escape($this->baseUrl().'/files/contacts/'.(int)$this->id.'/'.rawurlencode($file)) ?>" target="_blank"><?php echo $this->escape($file) ?></a><br />
+application/modules/ebay/controllers/IndexController.php	65	$files[$account['id']]['url'] = '/files/ebay/'.$fileUrl.'/';

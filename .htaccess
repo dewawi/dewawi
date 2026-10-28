@@ -14,6 +14,8 @@ RewriteRule ^library/(?:FileManager|MediaManager)/(?:dialog|upload|execute|ajax_
 RewriteRule ^(?!(?:index\.php|install/index\.php)(?:/|$)).*\.(?:php[0-9]*|phtml|pht|phar|inc)(?:[^a-z0-9]|$) - [F,NC]
 
 RewriteRule ^files/attachments(?:/|$) index.php [NC,L]
+RewriteRule ^files/import(?:/|$) - [F,NC]
+RewriteRule ^(?:files|media|cache)(?:/|$) index.php [NC,L]
 RewriteCond %{REQUEST_FILENAME} -s [OR]
 RewriteCond %{REQUEST_FILENAME} -l [OR]
 RewriteCond %{REQUEST_FILENAME} -d

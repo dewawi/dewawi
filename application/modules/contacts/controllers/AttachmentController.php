@@ -16,7 +16,7 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 	private function reject(int $status = 404): void
 	{
 		$this->disableView();
-		$this->getResponse()->setHttpResponseCode($status);
+		$this->getResponse()->setHttpResponseCode($status)->setHeader('Cache-Control', 'private, no-store', true)->setHeader('X-Content-Type-Options', 'nosniff', true);
 	}
 
 	public function uploadAction()
@@ -135,6 +135,47 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 		$response->setHeader('Content-Length', (string)$stat['size'], true);
 		$response->setHeader('X-Content-Type-Options', 'nosniff', true);
 		$response->setHeader('Cache-Control', 'private, no-store', true);
+		$this->sendAttachmentFile($stream);
+	}
+
+	public function fileAction()
+	{
+		$this->disableView();
+		$request = $this->getRequest();
+		if (!in_array($request->getMethod(), ['GET', 'HEAD'], true)) return $this->reject(405);
+		$uri = parse_url($request->getRequestUri(), PHP_URL_PATH);
+		$prefix = rtrim($request->getBaseUrl(), '/') . '/';
+		if (!is_string($uri) || !str_starts_with($uri, $prefix)) return $this->reject();
+		$relative = rawurldecode(substr($uri, strlen($prefix)));
+		try {
+			$db = new Contacts_Model_DbTable_Emailattachment();
+			$publishedPath = $db->getPublishedFilePath($relative);
+			$public = $publishedPath !== null;
+			if (!$public) {
+				$session = new Zend_Session_Namespace('MultiStepForm');
+				$grant = $session->downloadFile ?? [];
+				$site = Zend_Registry::isRegistered('SiteContext') ? Zend_Registry::get('SiteContext') : null;
+				$inquiry = $site && ($grant['siteid'] ?? 0) === (int)$site->getSiteId() && ($grant['clientid'] ?? 0) === (int)$site->getClientId() && ($grant['relative'] ?? '') === $relative;
+				if ($inquiry) $inquiry = (new Shops_Model_DbTable_Quote())->getById((int)($grant['quoteid'] ?? 0)) !== null;
+				if (!$inquiry && !$db->canReadStoredFile($relative)) return $this->reject();
+			}
+			$path = DEEC_Directory::storedPath($publishedPath ?? $relative);
+		} catch (Exception $exception) {
+			if ($exception instanceof Zend_Db_Exception) error_log((string)$exception);
+			return $this->reject();
+		}
+		$stream = @fopen($path, 'rb');
+		if (!$stream) return $this->reject();
+		$type = (new finfo(FILEINFO_MIME_TYPE))->file($path);
+		$inline = $type === 'application/pdf' || preg_match('~^(?:image|audio|video)/~', $type);
+		$filename = rawurlencode(basename($path));
+		$response = $this->getResponse();
+		$response->setHeader('Content-Type', $inline ? $type : 'application/octet-stream', true);
+		$response->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $filename . '"; filename*=UTF-8\'\'' . $filename, true);
+		$response->setHeader('Content-Length', (string)fstat($stream)['size'], true);
+		$response->setHeader('X-Content-Type-Options', 'nosniff', true);
+		$response->setHeader('Content-Security-Policy', "sandbox; default-src 'none'; style-src 'unsafe-inline'", true);
+		$response->setHeader('Cache-Control', $public ? 'public, max-age=3600' : 'private, no-store', true);
 		$this->sendAttachmentFile($stream);
 	}
 

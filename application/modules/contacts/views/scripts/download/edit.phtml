@@ -24,7 +24,7 @@ echo $this->FileManager();
 					</dl>
 				</div>
 				<div class="col-sm-12 col-lg-6">
-					<iframe src="<?php echo $this->baseUrl(); ?>/files/downloads/<?php echo $this->downloadsurl.$this->form->getValue('filename'); ?>" width="100%" height="700px"></iframe>
+					<iframe src="<?php echo $this->escape($this->baseUrl().'/files/downloads/'.$this->downloadsurl.rawurlencode((string)$this->form->getValue('filename'))); ?>" width="100%" height="700px"></iframe>
 				</div>
 			</div>
 		</form>

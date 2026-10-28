@@ -241,6 +241,9 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 	protected function _initAttachmentRoutes()
 	{
 		$router = Zend_Controller_Front::getInstance()->getRouter();
+		$router->addRoute('stored-file', new Zend_Controller_Router_Route_Regex('(files|media|cache)(?:/(.*))?', [
+			'module' => 'contacts', 'controller' => 'attachment', 'action' => 'file',
+		], [1 => 'fileArea', 2 => 'storedPath']));
 		$router->addRoute('attachment-file', new Zend_Controller_Router_Route_Regex('files/attachments/(.+)', [
 			'module' => 'contacts', 'controller' => 'attachment', 'action' => 'download',
 		], [1 => 'attachmentPath']));

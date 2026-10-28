@@ -4,6 +4,11 @@ class Shops_Model_DbTable_Item extends DEEC_Model_DbTable_SiteEntity
 {
 	protected $_name = 'item';
 
+	public function hasPublicDownload(string $filename): bool
+	{
+		return (bool)$this->fetchRow($this->getPublicSelect()->where("SUBSTRING_INDEX(downloads, '|', -1) = ?", $filename)->limit(1));
+	}
+
 	public function getItem(int $id): ?array
 	{
 		return $this->getPublicById($id);
