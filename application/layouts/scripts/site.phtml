@@ -7,6 +7,8 @@ $menuitems = is_array($this->menuitems ?? null) ? $this->menuitems : [];
 
 $language = str_replace('_', '-', (string)$this->siteContext->getLanguage());
 $theme = $this->siteContext->getTheme();
+$themeFile = BASE_PATH . '/css/themes/' . $theme . '.css';
+$activeTheme = $theme !== 'default' && is_file($themeFile) ? $theme : 'default';
 $home = $this->controller === 'index' && $this->action === 'index';
 
 $headerNavigation = '';
@@ -37,11 +39,11 @@ echo $this->doctype();
 	<?php echo $this->headLink(); ?>
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 	<link rel="stylesheet" href="<?php echo $this->baseUrl(); ?>/css/shop.css">
-	<?php if($theme !== 'default') : ?>
-		<link rel="stylesheet" href="<?php echo $this->baseUrl(); ?>/css/themes/<?php echo $this->escape($theme); ?>.css">
+	<?php if($activeTheme !== 'default') : ?>
+		<link rel="stylesheet" href="<?php echo $this->baseUrl(); ?>/css/themes/<?php echo $this->escape($activeTheme); ?>.css">
 	<?php endif; ?>
 </head>
-<body>
+<body class="dw-theme-<?php echo $this->escape($activeTheme); ?>" data-theme="<?php echo $this->escape($activeTheme); ?>">
 	<header class="dw-site-header<?php echo $home ? ' home' : ''; ?>">
 		<nav class="navbar navbar-expand-xl navbar-light">
 			<div class="container">

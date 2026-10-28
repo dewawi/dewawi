@@ -105,6 +105,13 @@ header.home {
 	padding: 0;
 }
 
+.dw-site-header .navbar-brand img {
+	display: block;
+	max-width: min(280px, 70vw);
+	max-height: 75px;
+	height: auto;
+}
+
 .dw-site-header .navbar-collapse {
 	align-items: stretch;
 }
@@ -749,6 +756,23 @@ form .hidden {
 	padding: 5rem 0;
 }
 
+.dw-site-block h1,
+.dw-site-block h2,
+.dw-site-block h3,
+.dw-site-block__text,
+.dw-site-block__intro,
+.dw-site-card__text {
+	overflow-wrap: anywhere;
+}
+
+.dw-site-block__text img,
+.dw-site-block__intro img,
+.dw-site-card__text img,
+.dw-site-block--contact img {
+	max-width: 100%;
+	height: auto;
+}
+
 .dw-site-block--cta .dw-site-block__content {
 	max-width: 900px;
 }
@@ -789,6 +813,11 @@ form .hidden {
 }
 
 @media (max-width: 767.98px) {
+	.dw-site-block--cta,
+	.dw-site-block--cards {
+		padding: 3.5rem 0;
+	}
+
 	.dw-site-block--cta h2 {
 		font-size: 2rem;
 	}
@@ -871,6 +900,15 @@ form .hidden {
 }
 
 @media (max-width: 767.98px) {
+	.dw-site-block--hero {
+		min-height: 360px;
+	}
+
+	.dw-site-block--hero .dw-site-block__content {
+		padding-top: 3.5rem;
+		padding-bottom: 3.5rem;
+	}
+
 	.dw-site-block--hero h1 {
 		font-size: 2.25rem;
 	}
@@ -902,6 +940,19 @@ form .hidden {
 .dw-site-block--image-text .dw-site-block__image {
 	width: 100%;
 	height: auto;
+}
+
+@media (max-width: 767.98px) {
+	.dw-site-block--text,
+	.dw-site-block--image-text,
+	.dw-site-block--contact,
+	.dw-site-block--categories {
+		padding: 3rem 0;
+	}
+
+	.dw-site-block--image-text .dw-site-block__image {
+		margin-bottom: 2rem;
+	}
 }
 
 .dw-site-block--cards {

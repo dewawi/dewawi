@@ -28,7 +28,7 @@ class Shops_SitemapController extends Shops_Controller_Action
 				continue;
 			}
 
-			$path = $slugDb->getPath($slug['controller'], (int)$slug['entityid']);
+			$path = $slugDb->getPublicPath($slug['controller'], (int)$slug['entityid']);
 
 			if (!$path) {
 				continue;

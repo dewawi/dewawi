@@ -4,6 +4,45 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 {
 	protected int $shopId = 0;
 
+	protected function buildEditViewModel(int $id, array $row): array
+	{
+		$viewModel = parent::buildEditViewModel($id, $row);
+		$shopId = (int)($row['shopid'] ?? 0);
+		$shop = $shopId > 0 ? (new Admin_Model_DbTable_Shop())->getById($shopId) : null;
+		$baseUrl = $shop ? $this->normalizeShopUrl((string)($shop['url'] ?? '')) : '';
+		$path = null;
+
+		if (($row['type'] ?? '') === 'home') {
+			$path = '';
+		} elseif ($shopId > 0) {
+			$path = (new Admin_Model_DbTable_Slug())->getPath('shops', 'page', $shopId, $id);
+		}
+
+		$isPageActive = !empty($row['activated']);
+		$isShopActive = !empty($shop['activated']);
+		$previewUrl = $baseUrl !== '' && $path !== null
+			? rtrim($baseUrl, '/') . ($path !== '' ? '/' . ltrim($path, '/') : '/')
+			: '';
+
+		if (!$isPageActive) {
+			$status = 'ADMIN_PAGE_STATUS_DRAFT';
+		} elseif (!$isShopActive) {
+			$status = 'ADMIN_PAGE_STATUS_SHOP_INACTIVE';
+		} elseif ($previewUrl === '') {
+			$status = 'ADMIN_PAGE_STATUS_SLUG_MISSING';
+		} else {
+			$status = 'ADMIN_PAGE_STATUS_PUBLISHED';
+		}
+
+		$viewModel['pagePublication'] = [
+			'published' => $isPageActive && $isShopActive && $previewUrl !== '',
+			'previewUrl' => $isPageActive && $isShopActive ? $previewUrl : '',
+			'status' => $status,
+		];
+
+		return $viewModel;
+	}
+
 	protected function buildIndexView(): void
 	{
 		$this->buildListView([
@@ -134,5 +173,20 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 
 		$slugDb = new Admin_Model_DbTable_Slug();
 		$slugDb->deleteSlug('shops', 'page', (int)$row['shopid'], $id);
+	}
+
+	private function normalizeShopUrl(string $url): string
+	{
+		$url = trim($url);
+
+		if ($url === '') {
+			return '';
+		}
+
+		if (!preg_match('~^https?://~i', $url)) {
+			$url = 'https://' . ltrim($url, '/');
+		}
+
+		return filter_var($url, FILTER_VALIDATE_URL) ? $url : '';
 	}
 }

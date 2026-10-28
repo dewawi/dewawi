@@ -60,11 +60,18 @@ class Admin_Model_DbTable_Page extends DEEC_Model_DbTable_Entity
 	public function getPagesByShopId(int $shopId): array
 	{
 		$select = $this->select()
-			->where('shopid = ?', $shopId)
-			->where('clientid = ?', $this->getClientId())
-			->where('deleted = ?', 0)
-			->order('ordering ASC')
-			->order('title ASC');
+			->setIntegrityCheck(false)
+			->from(['p' => $this->_name], ['p.*', 'slug' => 'sl.slug'])
+			->joinLeft(
+				['sl' => 'slug'],
+				"sl.clientid = p.clientid AND sl.shopid = p.shopid AND sl.module = 'shops' AND sl.controller = 'page' AND sl.entityid = p.id AND sl.deleted = 0",
+				[]
+			)
+			->where('p.shopid = ?', $shopId)
+			->where('p.clientid = ?', $this->getClientId())
+			->where('p.deleted = ?', 0)
+			->order('p.ordering ASC')
+			->order('p.title ASC');
 
 		return $this->fetchAll($select)->toArray();
 	}

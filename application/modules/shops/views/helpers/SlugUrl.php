@@ -10,7 +10,7 @@ class Zend_View_Helper_SlugUrl extends Zend_View_Helper_Abstract
 			$this->_slugDb = new Shops_Model_DbTable_Slug();
 		}
 
-		$path = $this->_slugDb->getPath($controller, $entityid);
+		$path = $this->_slugDb->getPublicPath($controller, $entityid);
 
 		if (!$path) {
 			return null;

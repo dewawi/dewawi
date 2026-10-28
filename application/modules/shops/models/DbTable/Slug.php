@@ -70,6 +70,15 @@ class Shops_Model_DbTable_Slug extends DEEC_Model_DbTable_SiteEntity
 		return $this->_pathCache[$key] = $path;
 	}
 
+	public function getPublicPath(string $controller, int $entityId): ?string
+	{
+		if (!$this->isPublicEntity($controller, $entityId)) {
+			return null;
+		}
+
+		return $this->getPath($controller, $entityId);
+	}
+
 	public function resolvePath(string $path): ?array
 	{
 		$path = trim($path, '/');
@@ -101,7 +110,7 @@ class Shops_Model_DbTable_Slug extends DEEC_Model_DbTable_SiteEntity
 				continue;
 			}
 
-			if ($this->getPath((string)$item['controller'], (int)$item['entityid']) !== $path) {
+			if ($this->getPublicPath((string)$item['controller'], (int)$item['entityid']) !== $path) {
 				continue;
 			}
 
@@ -120,5 +129,23 @@ class Shops_Model_DbTable_Slug extends DEEC_Model_DbTable_SiteEntity
 		return $this->fetchAll(
 			$this->getPublicSelect()->order('id ASC')
 		);
+	}
+
+	protected function isPublicEntity(string $controller, int $entityId): bool
+	{
+		switch ($controller) {
+			case 'page':
+				return (bool)(new Shops_Model_DbTable_Page())->getPage($entityId);
+			case 'category':
+				return (bool)(new Shops_Model_DbTable_Category())->getCategory($entityId);
+			case 'item':
+				return (bool)(new Shops_Model_DbTable_Item())->getItem($entityId);
+			case 'tag':
+				return (bool)(new Shops_Model_DbTable_Tag())->getTag($entityId);
+			case 'inquiry':
+				return true;
+		}
+
+		return false;
 	}
 }

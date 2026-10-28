@@ -6,6 +6,21 @@ $this->headTitle($this->title);
 echo $this->TinyMCE();
 echo $this->FileManager();
 
+$publication = is_array($this->pagePublication ?? null) ? $this->pagePublication : [];
+
+if ($publication) :
+	$alertClass = !empty($publication['published']) ? 'success' : 'warning';
+?>
+	<div class="dw-alert dw-alert--<?php echo $alertClass; ?>">
+		<span><?php echo $this->translate((string)$publication['status']); ?></span>
+		<?php if(!empty($publication['previewUrl'])) : ?>
+			<a class="dw-btn" href="<?php echo $this->escape($publication['previewUrl']); ?>" target="_blank" rel="noopener">
+				<?php echo $this->translate('ADMIN_PAGE_PREVIEW'); ?>
+			</a>
+		<?php endif; ?>
+	</div>
+<?php endif;
+
 echo $this->form->renderForm([
 	'id' => 'page',
 	'activeTab' => $this->activeTab,

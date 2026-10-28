@@ -197,8 +197,9 @@ class DEEC_Site_Router
 			'*',
 			array(
 				'module' => 'shops',
-				'controller' => 'index',
-				'action' => 'index'
+				'controller' => 'page',
+				'action' => 'index',
+				'id' => 0
 			)
 		));
 	}

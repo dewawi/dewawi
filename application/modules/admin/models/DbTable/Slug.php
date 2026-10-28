@@ -47,6 +47,49 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		return $row ? $row->toArray() : [];
 	}
 
+	public function getPath($module, $controller, $shopid, $entityid): ?string
+	{
+		$item = $this->getSlug($module, $controller, $shopid, $entityid);
+
+		if (!$item) {
+			return null;
+		}
+
+		$slug = trim((string)($item['slug'] ?? ''), '/');
+
+		if ($slug === '') {
+			return null;
+		}
+
+		$path = $slug;
+		$visited = [(int)$entityid => true];
+
+		while (!empty($item['parentid'])) {
+			$parentId = (int)$item['parentid'];
+
+			if (isset($visited[$parentId])) {
+				return null;
+			}
+
+			$visited[$parentId] = true;
+			$item = $this->getSlug($module, $controller, $shopid, $parentId);
+
+			if (!$item) {
+				return null;
+			}
+
+			$slug = trim((string)($item['slug'] ?? ''), '/');
+
+			if ($slug === '') {
+				return null;
+			}
+
+			$path = $slug . '/' . $path;
+		}
+
+		return $path;
+	}
+
 	public function addSlug($module, $controller, $shopid, $parentid, $entityid, $slug)
 	{
 		$data = array();

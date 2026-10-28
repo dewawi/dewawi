@@ -44,6 +44,7 @@ class Admin_Form_Shop extends DEEC_Form
 			'name' => 'theme',
 			'type' => 'text',
 			'label' => 'ADMIN_THEME',
+			'description' => 'ADMIN_THEME_INFO',
 			'format' => ['type' => 'string'],
 			'default' => 'default',
 			'attribs' => ['maxlength' => 100],
