@@ -382,6 +382,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		} catch (Exception $e) {
 			$adapter->rollBack();
 
+			error_log((string)$e);
 			return $this->_helper->json([
 				'ok' => false,
 				'message' => 'save_failed',

@@ -1,5 +1,5 @@
 <?php
-	include("helper.php");
+	require_once __DIR__ . '/helper.php';
 
 	$goToNextStep = true;
 	

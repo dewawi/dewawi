@@ -1,6 +1,8 @@
 
 <?php
 
+require_once __DIR__ . '/helper.php';
+
 $error = false;
 $goToNextStep = false;
 
@@ -39,10 +41,7 @@ if (isset($_POST['database'])) {
 			$goToNextStep = true;
 
 		} catch (mysqli_sql_exception $e) {
-			error_log(
-				'DEWAWI installer: Database connection failed. Code: '
-				. $e->getCode()
-			);
+			error_log('DEWAWI installer: ' . (string)$e);
 
 			switch ((int) $e->getCode()) {
 				case 1044:

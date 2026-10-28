@@ -2,6 +2,18 @@
 
 $version = "9.14.0";
 
+ini_set('display_errors', getenv('APPLICATION_ENV') === 'development' ? '1' : '0');
+ini_set('display_startup_errors', getenv('APPLICATION_ENV') === 'development' ? '1' : '0');
+ini_set('log_errors', '1');
+set_exception_handler(static function (Throwable $exception): void {
+    error_log((string)$exception);
+    while (ob_get_level() > 0) ob_end_clean();
+    http_response_code(500);
+    header('Cache-Control: no-store');
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo getenv('APPLICATION_ENV') === 'development' ? (string)$exception : ($GLOBALS['lang_vars']['File_Save_Error'] ?? 'File operation failed. Please try again.');
+});
+
 $sessionPath = dirname(__DIR__, 3) . '/session';
 
 ini_set('session.save_path', $sessionPath);

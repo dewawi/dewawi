@@ -5,6 +5,7 @@ RewriteEngine On
 # Deny private paths before existing files and directories bypass routing.
 RewriteRule (^|/)\.(?!well-known(?:/|$)) - [F,NC]
 RewriteRule ^(?:application|configs|languages|logs|session|templates|tests|library/(?:DEEC|Zend)|install/(?:config|templates))(?:/|$) - [F,NC]
+RewriteRule ^install/(?!index\.php(?:/|$)).*\.php(?:/|$) - [F,NC]
 RewriteRule \.(?:ini|sql|log)(?:[./]|$) - [F,NC]
 RewriteRule ^cache/(?:[^/]+/)*zend_cache(?:--|$) - [F,NC]
 

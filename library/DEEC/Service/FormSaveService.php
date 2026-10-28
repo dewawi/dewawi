@@ -37,6 +37,7 @@ class DEEC_Service_FormSaveService
 		try {
 			$db->updateById($id, $values);
 		} catch (Exception $e) {
+			error_log((string)$e);
 			return [
 				'ok' => false,
 				'message' => 'save_failed',

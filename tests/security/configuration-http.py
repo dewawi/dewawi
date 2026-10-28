@@ -84,7 +84,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
     public["media/linked.png"] = public["media/header/logo.png"]
     (site / "index.php").write_text(front)
     for relative in [
-        "index.php", "introduction.php", "requirements.php", "config/config.php",
+        "index.php", "helper.php", "introduction.php", "requirements.php", "config/config.php",
         "templates/header.php", "templates/footer.php", "templates/introduction.php", "templates/requirements.php",
     ]:
         target = site / "install" / relative
@@ -167,6 +167,7 @@ php_admin_value session.save_path "{temp}"
                 "install/config", "install/templates/", "configs//database.ini", "%63onfigs/database.ini",
                 "configs/database.ini/extra", "files/export%2esql", "media/error%2elog?download=1",
                 ".git/config?raw=1", "media/../configs/database.ini",
+                "install/database.php", "install/importSQL.php", "install/helper.php", "install/requirements.php",
             ]:
                 for method in ["GET", "HEAD", "POST"]:
                     status, body = fetch(prefix + "/" + path, method)

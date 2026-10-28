@@ -177,14 +177,18 @@ try {
 
     //print_r($_FILES);die();
     $upload_handler = new UploadHandler($uploadConfig, true, $messages);
-} catch (Exception $e) {
+} catch (Throwable $e) {
+    error_log((string)$e);
+    $message = get_class($e) === Exception::class && in_array($e->getMessage(), ['Invalid URL', 'Is not a valid URL.'], true)
+        ? $e->getMessage() : ($lang_vars['File_Save_Error'] ?? 'File operation failed. Please try again.');
+    header('Content-Type: application/json; charset=UTF-8');
     $return = array();
 
-    if ($_FILES['files']) {
+    if (!empty($_FILES['files']['name'])) {
         foreach ($_FILES['files']['name'] as $i => $name) {
             $return[] = array(
                 'name' => $name,
-                'error' => $e->getMessage(),
+                'error' => $message,
                 'size' => $_FILES['files']['size'][$i],
                 'type' => $_FILES['files']['type'][$i]
             );
@@ -194,5 +198,5 @@ try {
         return;
     }
 
-    echo json_encode(array("error" => $e->getMessage()));
+    echo json_encode(array("error" => $message));
 }

@@ -165,6 +165,7 @@ function deleteFile($path,$path_thumb,$config){
 				$ftp->delete("/".$path);
 				@$ftp->delete("/".$path_thumb);
 			}catch(FtpClient\FtpException $e){
+				error_log((string)$e);
 				return;
 			}
 		}else{
@@ -221,6 +222,7 @@ function deleteDir($dir,$ftp = null, $config = null)
 			return true;
 
 		}catch(FtpClient\FtpException $e){
+			error_log((string)$e);
 			return null;
 		}
 
@@ -270,6 +272,7 @@ function duplicate_file( $old_path, $name, $ftp = null, $config = null )
 			return true;
 
 		}catch(FtpClient\FtpException $e){
+			error_log((string)$e);
 			return null;
 		}
 	}else{
@@ -304,6 +307,7 @@ function rename_file($old_path, $name, $ftp = null, $config = null)
 		try{
 			return $ftp->rename("/".$old_path, "/".$new_path);
 		}catch(FtpClient\FtpException $e){
+			error_log((string)$e);
 			return false;
 		}
 	}else{
@@ -381,12 +385,8 @@ function ftp_con($config){
 			$ftp->pasv(true);
 			return $ftp;
 		}catch(FtpClient\FtpException $e){
-			echo "Error: ";
-			echo $e->getMessage();
-			echo " to server ";
-			$tmp = $e->getTrace();
-			echo $tmp[0]['args'][0];
-			echo "<br/>Please check configurations";
+			error_log((string)$e);
+			response(trans('File_Save_Error'), 500)->send();
 			die();
 		}
 	}else{
@@ -431,7 +431,8 @@ function create_img($imgfile, $imgthumb, $newwidth, $newheight = null, $option =
 				$magicianObj->resizeImage($newwidth, $newheight, $option);
 				$magicianObj->saveImage($imgthumb, 80);
 			}catch (Exception $e){
-				return $e->getMessage();
+				error_log((string)$e);
+				return false;
 			}
 			$result = true;
 		}
@@ -587,7 +588,10 @@ function create_folder($path = null, $path_thumbs = null,$ftp = null,$config = n
 		} // or even 01777 so you get the sticky bit set
 		if ($path_thumbs)
 		{
-			mkdir($path_thumbs, $permission, true) or die("$path_thumbs cannot be found");
+			if (!mkdir($path_thumbs, $permission, true)) {
+				umask($oldumask);
+				throw new RuntimeException('Unable to create thumbnail directory: ' . $path_thumbs);
+			}
 		} // or even 01777 so you get the sticky bit set
 		umask($oldumask);
 		return true;

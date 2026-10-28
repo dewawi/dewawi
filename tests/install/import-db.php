@@ -9,6 +9,8 @@ if (!$work || !str_starts_with($work, '/tmp/dewawi-install-db-') || $argv[1] !==
 }
 $root = dirname(__DIR__, 2);
 ini_set('mysqli.default_socket', $argv[1]);
+putenv('APPLICATION_ENV=production');
+ini_set('error_log', $work . '/php-error.log');
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $db = new mysqli('localhost', 'root', '');
 $db->set_charset('utf8mb4');
@@ -47,7 +49,10 @@ $data = 'INSERT INTO import_before VALUES (1);';
 foreach (['structure', 'data'] as $file) {
     $invalid = ' INVALID SQL; CREATE TABLE import_after (id INT);';
     [$errors, $next, $html] = importFixture('install_failure_' . $file, $structure . ($file === 'structure' ? $invalid : ''), $data . ($file === 'data' ? $invalid : ''));
-    check(count($errors) === 1 && str_contains($errors[0], $file . '.sql - Statement 2 - SQL Error 1064'), 'SQL failure did not identify the file and statement');
+    check(count($errors) === 1 && str_contains($errors[0], 'Import failed.'), 'SQL failure did not produce a safe public message');
+    check(!str_contains($html, 'SQL Error') && !str_contains($html, '1064') && !str_contains($html, 'INVALID SQL') && !str_contains($html, 'Stack trace') && !str_contains($html, $work), 'Installer exposed technical details');
+    $log = file_get_contents($work . '/php-error.log');
+    check(str_contains($log, $file . '.sql - Statement 2 - SQL Error 1064') && str_contains($log, 'mysqli_sql_exception') && str_contains($log, 'Stack trace:'), 'SQL error context or trace missing from internal log');
     check(!$next && !str_contains($html, 'Data import succeeded!') && !str_contains($html, 'value="done"') && str_contains($html, 'Retry'), 'Failed import reported success or allowed the next step');
     check($db->query("SHOW TABLES LIKE 'import_after'")->num_rows === 0, 'Import continued after failure');
     check((int)$db->query('SELECT COUNT(*) FROM import_before')->fetch_row()[0] === ($file === 'data' ? 1 : 0), 'Data import ran after a structure failure');

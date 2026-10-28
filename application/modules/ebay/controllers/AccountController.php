@@ -365,11 +365,7 @@ class Ebay_AccountController extends Zend_Controller_Action
 					//print_r(opcache_get_status());
 				}
 			} catch (OAuthException $e) {
-				echo "<pre>";
-				print_r($e->getMessage());
-				echo "<br/>";
-				print_r($e->lastResponse);
-				echo "</pre>";
+				throw $e;
 			}
 		}
 	}

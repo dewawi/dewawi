@@ -15,7 +15,7 @@ class ErrorController extends Zend_Controller_Action
 
 	public function init()
 	{
-		if ($this->getRequest()->getActionName() === 'forbidden') {
+		if (in_array($this->getRequest()->getActionName(), ['error', 'forbidden'], true)) {
 			return;
 		}
 
@@ -48,6 +48,12 @@ class ErrorController extends Zend_Controller_Action
 	public function errorAction()
 	{
 		$errors = $this->_getParam('error_handler');
+		$exception = $errors->exception ?? new RuntimeException('No error information available.');
+		$this->_helper->layout->disableLayout();
+		$response = $this->getResponse();
+		$response->clearBody();
+		foreach (['Content-Disposition', 'Content-Length', 'Location'] as $header) $response->clearHeader($header);
+		$response->setHeader('Cache-Control', 'no-store', true);
 
 		if ($this->isNotFound($errors)) {
 			$this->getResponse()->setHttpResponseCode(404);
@@ -57,38 +63,41 @@ class ErrorController extends Zend_Controller_Action
 			$this->view->message = 'Application error';
 		}
 
-		// Log exception, if logger available
-		if ($log = $this->getLog()) {
-			$log->crit($this->view->message, $errors->exception);
+		// Always retain the full exception even if the application logger is unavailable.
+		error_log((string)$exception);
+		try {
+			if ($log = $this->getLog()) $log->crit((string)$exception);
+		} catch (Throwable $loggingException) {
+			error_log((string)$loggingException);
 		}
 
-		// conditionally display exceptions
-		if ($this->getInvokeArg('displayExceptions') == true) {
-			$this->view->exception = $errors->exception;
+		$debug = defined('APPLICATION_ENV') && APPLICATION_ENV === 'development' && $this->getInvokeArg('displayExceptions');
+		$this->view->exception = $debug ? $exception : null;
+		$request = $this->getRequest();
+		if ($request->isXmlHttpRequest() || stripos($request->getHeader('Accept') ?: '', 'application/json') !== false) {
+			$error = ['ok' => false, 'message' => $this->view->message];
+			if ($debug) $error['exception'] = (string)$exception;
+			return $this->_helper->json($error);
 		}
-
-		// send errors to the web server's error log file
-		error_log($errors->exception->getMessage());
-
-		$this->view->request   = $errors->request;
+		$this->getResponse()->setHeader('Content-Type', 'text/html; charset=UTF-8', true);
 	}
 
 	protected function isNotFound($errors): bool
 	{
-		return in_array($errors->type, [
+		return $errors && (in_array($errors->type, [
 			Zend_Controller_Plugin_ErrorHandler::EXCEPTION_NO_ROUTE,
 			Zend_Controller_Plugin_ErrorHandler::EXCEPTION_NO_CONTROLLER,
 			Zend_Controller_Plugin_ErrorHandler::EXCEPTION_NO_ACTION,
 		], true) || (
 			$errors->exception instanceof Zend_Controller_Action_Exception
 			&& (int)$errors->exception->getCode() === 404
-		);
+		));
 	}
 
 	public function getLog()
 	{
 		$bootstrap = $this->getInvokeArg('bootstrap');
-		if (!$bootstrap->hasPluginResource('Log')) {
+		if (!$bootstrap || !$bootstrap->hasPluginResource('Log')) {
 			return false;
 		}
 		$log = $bootstrap->getResource('Log');

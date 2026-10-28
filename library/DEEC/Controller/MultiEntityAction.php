@@ -168,6 +168,7 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 		} catch (Exception $e) {
 			$adapter->rollBack();
 
+			error_log((string)$e);
 			return $this->jsonError('save_failed');
 		}
 
@@ -275,6 +276,7 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 		} catch (Exception $e) {
 			$adapter->rollBack();
 
+			error_log((string)$e);
 			return $this->jsonError('save_failed');
 		}
 
@@ -403,6 +405,7 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 		} catch (Exception $e) {
 			$adapter->rollBack();
 
+			error_log((string)$e);
 			return $this->jsonError('delete_failed');
 		}
 

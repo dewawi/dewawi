@@ -53,7 +53,7 @@ try {
             try {
                 $con->query($statement);
             } catch (mysqli_sql_exception $e) {
-                $errors[] = sprintf(
+                $details = sprintf(
                     '%s - Statement %d - SQL Error %d: %s',
                     $file,
                     $index + 1,
@@ -61,9 +61,9 @@ try {
                     $e->getMessage()
                 );
 
-                error_log(
-                    'DEWAWI Installer: ' . end($errors)
-                );
+                error_log('DEWAWI Installer: ' . $details . "\n" . (string)$e);
+                $errors[] = 'Import failed. Please check the server logs or contact your administrator.';
+                if (getenv('APPLICATION_ENV') === 'development') $errors[] = (string)$e;
 
                 break 2;
             }
@@ -71,9 +71,11 @@ try {
     }
 
 } catch (Throwable $e) {
-    error_log('DEWAWI Installer: ' . $e->getMessage());
+    error_log('DEWAWI Installer: ' . (string)$e);
 
-    $errors[] = 'Import failed: ' . $e->getMessage();
+    $missingSettings = 'Database connection settings are missing. Please return to the database step.';
+    $errors[] = $e instanceof RuntimeException && $e->getMessage() === $missingSettings ? $missingSettings : 'Import failed. Please check the server logs or contact your administrator.';
+    if (getenv('APPLICATION_ENV') === 'development') $errors[] = (string)$e;
 
 } finally {
     if ($con instanceof mysqli) {

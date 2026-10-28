@@ -1023,7 +1023,7 @@ class UploadHandler
                     }
                     return false;
                 } catch (\Exception $e) {
-                    error_log($e->getMessage());
+                    error_log((string)$e);
                 }
             }
             if ($this->options['image_library'] === 2) {
@@ -1056,7 +1056,7 @@ class UploadHandler
             }
             return $this->gd_create_scaled_image($file_name, $version, $options);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            error_log((string)$e);
             return false;
         }
     }

@@ -12,9 +12,7 @@ class Items_VariantController extends DEEC_Controller_Action
 	public function addAction()
 	{
 		if(!$this->getRequest()->isPost()) {
-			throw new Exception(
-				'MESSAGES_INVALID_REQUEST'
-			);
+			return $this->_helper->json(['ok' => false, 'message' => 'MESSAGES_INVALID_REQUEST']);
 		}
 
 		try {
@@ -34,19 +32,14 @@ class Items_VariantController extends DEEC_Controller_Action
 				'id' => $id,
 			]);
 		} catch(Throwable $exception) {
-			return $this->_helper->json([
-				'ok' => false,
-				'message' => $exception->getMessage(),
-			]);
+			return $this->sendVariantError($exception);
 		}
 	}
 
 	public function editAction()
 	{
 		if(!$this->getRequest()->isPost()) {
-			throw new Exception(
-				'MESSAGES_INVALID_REQUEST'
-			);
+			return $this->_helper->json(['ok' => false, 'message' => 'MESSAGES_INVALID_REQUEST']);
 		}
 
 		try {
@@ -66,11 +59,21 @@ class Items_VariantController extends DEEC_Controller_Action
 				'data' => $data,
 			]);
 		} catch(Throwable $exception) {
-			return $this->_helper->json([
-				'ok' => false,
-				'message' => $exception->getMessage(),
-			]);
+			return $this->sendVariantError($exception);
 		}
+	}
+
+	protected function sendVariantError(Throwable $exception)
+	{
+		$message = $exception->getMessage();
+		if (get_class($exception) !== Exception::class || !in_array($message, [
+			'MESSAGES_ITEM_NOT_FOUND', 'MESSAGES_ITEM_VARIANT_INVALID', 'MESSAGES_ITEM_VARIANT_OPTIONS_REQUIRED',
+			'MESSAGES_ITEM_OPTION_INVALID', 'MESSAGES_ITEM_VARIANT_EXISTS',
+		], true)) {
+			error_log((string)$exception);
+			$message = 'save_failed';
+		}
+		return $this->_helper->json(['ok' => false, 'message' => $message]);
 	}
 
 	protected function getVariantService(): Items_Service_Variant

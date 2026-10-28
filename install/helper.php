@@ -1,5 +1,23 @@
 <?php
 
+ini_set('display_errors', getenv('APPLICATION_ENV') === 'development' ? '1' : '0');
+ini_set('display_startup_errors', getenv('APPLICATION_ENV') === 'development' ? '1' : '0');
+ini_set('log_errors', '1');
+set_exception_handler(static function (Throwable $exception): void {
+    error_log((string)$exception);
+    $message = 'Installation failed. Please check the server logs or contact your administrator.';
+    if (PHP_SAPI === 'cli') {
+        fwrite(STDERR, $message . "\n");
+        exit(1);
+    }
+    while (ob_get_level() > 0) ob_end_clean();
+    http_response_code(500);
+    header('Cache-Control: no-store');
+    header('Content-Type: text/html; charset=UTF-8');
+    echo '<p>' . $message . '</p>';
+    if (getenv('APPLICATION_ENV') === 'development') echo '<pre>' . htmlspecialchars((string)$exception, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</pre>';
+});
+
 define( "_PL_OS_SEP", "/" );
 define( "_CUR_OS", substr( php_uname( ), 0, 7 ) == "Windows" ? "Win" : "_Nix" );
 

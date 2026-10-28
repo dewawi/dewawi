@@ -623,9 +623,8 @@ if ($ftp) {
             create_folder(false, $config['ftp_base_folder'] . $config['ftp_thumbs_dir'] . $rfm_subfolder . $subdir, $ftp, $config);
         }
     } catch (FtpClient\FtpException $e) {
-        echo "Error: ";
-        echo $e->getMessage();
-        echo "<br/>Please check configurations";
+        error_log((string)$e);
+        echo htmlspecialchars(trans('File_Save_Error'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         die();
     }
 } else {

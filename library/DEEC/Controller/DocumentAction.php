@@ -74,6 +74,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			try {
 				$this->getDb()->updateById($id, $values);
 			} catch (Exception $e) {
+				error_log((string)$e);
 				return $this->_helper->json(['ok' => false, 'message' => 'save_failed']);
 			}
 		}
@@ -367,6 +368,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			]);
 		} catch (RuntimeException $e) {
 			// Keep view page working even if PDF generation fails
+			error_log((string)$e);
 		}
 	}
 
