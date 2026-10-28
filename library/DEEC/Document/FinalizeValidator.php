@@ -43,9 +43,13 @@ class DEEC_Document_FinalizeValidator
 			$errors[] = $this->issue('DOCUMENT_VALIDATION_LANGUAGE_REQUIRED', 'finish', 'language');
 		}
 
-		$errors = array_merge($errors, $this->validatePositions($document, $module, $controller));
+		$positionValidation = $this->validatePositions($document, $module, $controller);
+		$errors = array_merge($errors, $positionValidation['errors']);
+		$warnings = array_merge($warnings, $positionValidation['warnings']);
 
-		if (in_array($controller, self::DELIVERY_DATE_DOCUMENTS, true) && empty($document['deliverydate'])) {
+		if ($controller === 'invoice' && empty($document['deliverydate'])) {
+			$warnings[] = $this->issue('DOCUMENT_VALIDATION_INVOICE_SERVICE_DATE_MISSING', 'overview', 'deliverydate');
+		} elseif (in_array($controller, self::DELIVERY_DATE_DOCUMENTS, true) && empty($document['deliverydate'])) {
 			$warnings[] = $this->issue('DOCUMENT_VALIDATION_DELIVERY_DATE_MISSING', 'overview', 'deliverydate');
 		}
 
@@ -76,18 +80,25 @@ class DEEC_Document_FinalizeValidator
 	protected function validatePositions(array $document, string $module, string $controller): array
 	{
 		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller) . 'pos';
-		if (!class_exists($class)) return [$this->issue('DOCUMENT_VALIDATION_POSITIONS_UNAVAILABLE', 'positions')];
+		if (!class_exists($class)) return $this->positionResult([$this->issue('DOCUMENT_VALIDATION_POSITIONS_UNAVAILABLE', 'positions')], []);
 
 		$positions = (new $class())->getPositions((int)$document['id']);
-		if (count($positions) === 0) return [$this->issue('DOCUMENT_VALIDATION_POSITION_REQUIRED', 'positions')];
+		if (count($positions) === 0) return $this->positionResult([$this->issue('DOCUMENT_VALIDATION_POSITION_REQUIRED', 'positions')], []);
 
 		$errors = [];
+		$warnings = [];
 		$number = 0;
+		$relevant = 0;
+		$hasZeroPrice = false;
+		$hasZeroQuantity = false;
 		$formClass = ucfirst($module) . '_Form_' . ucfirst($controller) . 'pos';
 		$form = class_exists($formClass) ? new $formClass() : null;
 		foreach ($positions as $position) {
 			$number++;
 			$row = method_exists($position, 'toArray') ? $position->toArray() : (array)$position;
+			if (!$this->isRelevantPosition($row)) continue;
+			$relevant++;
+			if ($this->isTextOnlyPosition($row)) continue;
 			$positionId = (int)($row['id'] ?? 0);
 			$requiredErrors = [];
 			if ($form) {
@@ -95,24 +106,49 @@ class DEEC_Document_FinalizeValidator
 				$requiredErrors = $form->getErrors();
 			}
 
-			if (!empty($requiredErrors['sku']) || trim((string)($row['sku'] ?? '')) === '') {
-				$errors[] = $this->positionIssue('DOCUMENT_VALIDATION_POSITION_SKU_REQUIRED', $number, $positionId, 'sku');
-			}
 			if (!empty($requiredErrors['price']) || !isset($row['price']) || !is_numeric($row['price'])) {
 				$errors[] = $this->positionIssue('DOCUMENT_VALIDATION_POSITION_PRICE_INVALID', $number, $positionId, 'price');
+			} elseif ((float)$row['price'] == 0.0) {
+				$hasZeroPrice = true;
 			}
 			if (!empty($requiredErrors['taxrate']) || !isset($row['taxrate']) || !is_numeric($row['taxrate'])) {
 				$errors[] = $this->positionIssue('DOCUMENT_VALIDATION_POSITION_TAXRATE_INVALID', $number, $positionId, 'taxrate');
 			}
-			if (!empty($requiredErrors['quantity']) || !isset($row['quantity']) || !is_numeric($row['quantity']) || (float)$row['quantity'] == 0.0) {
+			if (!empty($requiredErrors['quantity']) || !isset($row['quantity']) || !is_numeric($row['quantity'])) {
 				$errors[] = $this->positionIssue('DOCUMENT_VALIDATION_POSITION_QUANTITY_INVALID', $number, $positionId, 'quantity');
-			}
-			if (!empty($requiredErrors['uom']) || !isset($row['uom']) || $row['uom'] === '') {
-				$errors[] = $this->positionIssue('DOCUMENT_VALIDATION_POSITION_UOM_REQUIRED', $number, $positionId, 'uom');
+			} elseif ((float)$row['quantity'] == 0.0) {
+				$hasZeroQuantity = true;
 			}
 		}
 
-		return $errors;
+		if ($relevant === 0) $errors[] = $this->issue('DOCUMENT_VALIDATION_POSITION_CONTENT_REQUIRED', 'positions');
+		if ($hasZeroQuantity) $warnings[] = $this->issue('DOCUMENT_VALIDATION_ZERO_QUANTITY', 'positions');
+		if ($hasZeroPrice) $warnings[] = $this->issue('DOCUMENT_VALIDATION_ZERO_PRICE', 'positions');
+		return $this->positionResult($errors, $warnings);
+	}
+
+	protected function isRelevantPosition(array $position): bool
+	{
+		if (!empty($position['itemid'])) return true;
+		foreach (['sku', 'title', 'description'] as $field) {
+			$value = html_entity_decode(strip_tags((string)($position[$field] ?? '')), ENT_QUOTES, 'UTF-8');
+			if (trim(str_replace("\xc2\xa0", ' ', $value)) !== '') return true;
+		}
+		return false;
+	}
+
+	protected function isTextOnlyPosition(array $position): bool
+	{
+		if ((int)($position['itemid'] ?? 0) > 0 || trim((string)($position['sku'] ?? '')) !== '') return false;
+		foreach (['price', 'taxrate', 'quantity'] as $field) {
+			if (isset($position[$field]) && $position[$field] !== '') return false;
+		}
+		return true;
+	}
+
+	protected function positionResult(array $errors, array $warnings): array
+	{
+		return ['errors' => $errors, 'warnings' => $warnings];
 	}
 
 	protected function issue(string $message, string $tab, ?string $field = null, array $args = []): array

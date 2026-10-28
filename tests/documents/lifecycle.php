@@ -179,7 +179,7 @@ foreach ($modules as $module => $controllers) {
         $table = new $class();
         $copyId = $table->copyById(1);
         $copy = $table->getById($copyId);
-        $adapter->rows[$controller . 'pos'] = [lifecyclePosition($controller, $copyId)];
+        $adapter->rows[$controller . 'pos'] = [lifecyclePosition($controller, $copyId, ['quantity' => 0, 'price' => 0])];
         check(empty($copy[$controller . 'id']) && empty($copy[$controller . 'date']), 'Copy retained its own document identity');
         check($copy['state'] === 100 && $copy['completed'] === 0 && $copy['completeddate'] === null && $copy['completedby'] === 0, 'Copy retained completion metadata');
         check($copy['cancelled'] === 0 && $copy['cancelleddate'] === null && $copy['cancelledby'] === 0, 'Copy retained cancellation metadata');
@@ -259,7 +259,8 @@ foreach ([
     'missing currency' => [array_replace($draft, ['currency' => '']), $adapter->rows['invoicepos']],
     'missing language' => [array_replace($draft, ['language' => '']), $adapter->rows['invoicepos']],
     'missing position' => [$draft, []],
-    'invalid position' => [$draft, [lifecyclePosition('invoice', 1, ['quantity' => 0])]],
+    'invalid quantity' => [$draft, [lifecyclePosition('invoice', 1, ['quantity' => 'invalid'])]],
+    'invalid price' => [$draft, [lifecyclePosition('invoice', 1, ['price' => 'invalid'])]],
 ] as $case => [$invalidDraft, $positions]) {
     $adapter->rows['invoice'] = [$invalidDraft];
     $adapter->rows['invoicepos'] = $positions;
@@ -277,6 +278,44 @@ foreach ([
     check(count($adapter->writes) === $writes, 'Failed finalization wrote data: ' . $case);
 }
 
+// Zero values and free positions are valid; their optional notes remain non-blocking and grouped.
+$validator = new DEEC_Document_FinalizeValidator();
+foreach ([
+    'zero quantity' => ['quantity' => 0],
+    'zero price' => ['price' => 0],
+    'zero quantity and price' => ['quantity' => 0, 'price' => 0],
+    'negative quantity' => ['quantity' => -1],
+    'free position' => ['itemid' => 0, 'sku' => '', 'title' => 'Individual project position', 'uom' => ''],
+    'text position' => ['itemid' => 0, 'sku' => '', 'title' => 'Section heading', 'price' => null, 'taxrate' => null, 'quantity' => null, 'uom' => ''],
+] as $case => $changes) {
+    $adapter->rows['invoice'] = [$draft];
+    $adapter->rows['invoicepos'] = [lifecyclePosition('invoice', 1, $changes)];
+    $validation = $validator->validate($draft, 'sales', 'invoice');
+    check($validation['canFinalize'], 'Valid position was blocked: ' . $case);
+}
+$adapter->rows['invoicepos'] = [
+    lifecyclePosition('invoice', 1, ['quantity' => 0, 'price' => 0]),
+    lifecyclePosition('invoice', 1, ['id' => 2, 'quantity' => 0, 'price' => 0]),
+];
+$validation = $validator->validate($draft, 'sales', 'invoice');
+$messages = array_column($validation['warnings'], 'message');
+check(count(array_keys($messages, 'DOCUMENT_VALIDATION_ZERO_QUANTITY', true)) === 1, 'Zero quantity warnings were not grouped');
+check(count(array_keys($messages, 'DOCUMENT_VALIDATION_ZERO_PRICE', true)) === 1, 'Zero price warnings were not grouped');
+$adapter->rows['invoicepos'] = [lifecyclePosition('invoice', 1, ['sku' => '', 'title' => '', 'description' => ''])];
+check(!$validator->validate($draft, 'sales', 'invoice')['canFinalize'], 'Empty position counted as business content');
+
+// Structured dates and quote validity remain optional.
+foreach ([
+    ['sales', 'invoice', array_replace($draft, ['deliverydate' => null])],
+    ['sales', 'deliveryorder', array_replace($draft, ['deliveryorderid' => null, 'deliverydate' => null])],
+    ['sales', 'quote', array_replace($draft, ['quoteid' => null, 'deliverydate' => null])],
+] as [$module, $controller, $dateDraft]) {
+    $adapter->rows[$controller . 'pos'] = [lifecyclePosition($controller, 1)];
+    check($validator->validate($dateDraft, $module, $controller)['canFinalize'], 'Optional date blocked ' . $controller);
+}
+$invoiceDateValidation = $validator->validate(array_replace($draft, ['deliverydate' => null]), 'sales', 'invoice');
+check(in_array('DOCUMENT_VALIDATION_INVOICE_SERVICE_DATE_MISSING', array_column($invoiceDateValidation['warnings'], 'message'), true), 'Invoice service date note missing');
+
 // Delivery dates are recommendations for logistical documents and never block finalization.
 $purchaseDraft = array_replace($fields, [
     'purchaseorderid' => null, 'purchaseorderdate' => null, 'deliverydate' => null,
@@ -284,7 +323,7 @@ $purchaseDraft = array_replace($fields, [
     'cancelled' => 0, 'filename' => null,
 ]);
 $adapter->rows['purchaseorder'] = [$purchaseDraft];
-$adapter->rows['purchaseorderpos'] = [lifecyclePosition('purchaseorder', 1)];
+$adapter->rows['purchaseorderpos'] = [lifecyclePosition('purchaseorder', 1, ['quantity' => 0, 'price' => 0])];
 $adapter->rows['increment'][0]['purchaseorderid'] = 8000;
 $adapter->rows['filename'][0]['purchaseorder'] = 'purchaseorder_%NUMBER%.pdf';
 $validation = (new DEEC_Document_FinalizeValidator())->validate($purchaseDraft, 'purchases', 'purchaseorder');
