@@ -19,6 +19,11 @@ class Admin_Model_List_Uoms extends DEEC_List
 				'class' => 'dw-col-title',
 			],
 			[
+				'name' => 'default',
+				'label' => 'ADMIN_DEFAULT',
+				'type' => 'checkbox',
+			],
+			[
 				'name' => 'actions',
 				'label' => '',
 				'type' => 'actions',

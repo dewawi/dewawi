@@ -340,12 +340,12 @@ INSERT INTO `textblock` (`id`, `text`, `module`, `controller`, `section`, `order
 (15, '<p>Sehr geehrte Damen und Herren,</p>\n<p>vielen Dank f&uuml;r Ihr Angebot, hiermit bestellen wir nachfolgende Positionen;</p>', 'purchases', 'purchaseorder', 'header', 1, 1, NULL, 0, '2020-04-25 19:18:56', 1),
 (16, '<p>Wir bitten um schnellstm&ouml;gliche Lieferung.</p>', 'purchases', 'purchaseorder', 'footer', 2, 1, NULL, 0, '2020-04-25 19:22:49', 1);
 
-INSERT INTO `uom` (`id`, `title`, `ordering`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
-(1, 'Stück', 0, 1, '2015-12-06 15:39:14', 1, NULL, 0, 0, NULL),
-(2, 'Pack.', 0, 1, '2015-12-06 15:41:43', 1, NULL, 0, 0, NULL),
-(3, 'Std.', 0, 1, '2015-12-06 15:41:50', 1, NULL, 0, 0, NULL),
-(4, 'kg', 0, 1, '2015-12-06 15:41:54', 1, NULL, 0, 0, NULL),
-(5, 'm', 0, 1, '2015-12-06 15:41:57', 1, NULL, 0, 0, NULL);
+INSERT INTO `uom` (`id`, `title`, `ordering`, `default`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`) VALUES
+(1, 'Stück', 0, 1, 1, '2015-12-06 15:39:14', 1, NULL, 0, 0, NULL),
+(2, 'Pack.', 0, 0, 1, '2015-12-06 15:41:43', 1, NULL, 0, 0, NULL),
+(3, 'Std.', 0, 0, 1, '2015-12-06 15:41:50', 1, NULL, 0, 0, NULL),
+(4, 'kg', 0, 0, 1, '2015-12-06 15:41:54', 1, NULL, 0, 0, NULL),
+(5, 'm', 0, 0, 1, '2015-12-06 15:41:57', 1, NULL, 0, 0, NULL);
 
 INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `admin`, `smtphost`, `smtpauth`, `smtpsecure`, `smtpuser`, `smtppass`, `clientid`, `created`, `createdby`, `modified`, `modifiedby`, `locked`, `lockedtime`, `activated`, `deleted`) VALUES
 (1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'Admin', NULL, 1, NULL, NULL, NULL, NULL, NULL, 1, NULL, 0, NULL, 0, 0, NULL, 1, 0);

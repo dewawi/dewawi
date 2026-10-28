@@ -4,12 +4,25 @@ class Admin_Model_DbTable_Uom extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'uom';
+	protected string $parentField = '';
 
 	protected $_date = null;
 
 	protected $_user = null;
 
 	protected $_client = null;
+
+	protected function prepareCopyData(array $data): array
+	{
+		$data = parent::prepareCopyData($data);
+		$data['default'] = 0;
+		return $data;
+	}
+
+	public function canDelete(array $row): bool
+	{
+		return empty($row['default']) && parent::canDelete($row);
+	}
 
 	public function init()
 	{

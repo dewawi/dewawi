@@ -32,6 +32,7 @@
 	'ADMIN_INACTIVE' => 'Inaktiv',
 	'ADMIN_TYPE' => 'Typ',
 	'ADMIN_DEFAULT' => 'Standard',
+	'MESSAGES_UOM_CANNOT_BE_DELETED' => 'Die Standard-Mengeneinheit kann nicht gelöscht werden. Bitte zuerst eine andere Mengeneinheit als Standard festlegen.',
 	'ADMIN_CLIENT' => 'Mandant',
 	'ADMIN_CLIENTS' => 'Mandanten',
 	'ADMIN_CATEGORY_ID' => 'ID',

@@ -11,6 +11,7 @@ $root = dirname(__DIR__, 2);
 ini_set('mysqli.default_socket', $argv[1]);
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $db = new mysqli('localhost', 'root', '');
+$db->set_charset('utf8mb4');
 mkdir($work . '/install/config', 0700, true);
 mkdir($work . '/install/templates', 0700);
 foreach (['importSQL.php', 'helper.php', 'templates/importSQL.php'] as $file) {
@@ -36,6 +37,7 @@ function importFixture(string $database, string $structure, string $data): array
 [$errors, $next, $html] = importFixture('install_success', file_get_contents($root . '/install/config/structure.sql'), file_get_contents($root . '/install/config/data.sql'));
 check(!$errors && $next && str_contains($html, 'Data import succeeded!'), 'Full installation failed: ' . implode('; ', $errors));
 check((int)$db->query('SELECT COUNT(*) FROM client')->fetch_row()[0] === 1, 'Installation data was not imported');
+check($db->query('SELECT GROUP_CONCAT(title ORDER BY id) FROM uom WHERE `default` = 1 AND deleted = 0')->fetch_row()[0] === 'Stück', 'Fresh installation did not select Stück as the only default UOM');
 check($db->query("SHOW COLUMNS FROM address LIKE 'street'")->fetch_assoc()['Type'] === 'text', 'Street type changed');
 check($db->query("SHOW INDEX FROM address WHERE Column_name = 'street'")->num_rows === 0, 'Street index still exists');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.STATISTICS s JOIN information_schema.COLUMNS c ON c.TABLE_SCHEMA = s.TABLE_SCHEMA AND c.TABLE_NAME = s.TABLE_NAME AND c.COLUMN_NAME = s.COLUMN_NAME WHERE s.TABLE_SCHEMA = DATABASE() AND c.DATA_TYPE IN ('tinytext', 'text', 'mediumtext', 'longtext', 'tinyblob', 'blob', 'mediumblob', 'longblob') AND s.SUB_PART IS NULL AND s.INDEX_TYPE <> 'FULLTEXT'")->fetch_row()[0] === 0, 'Unprefixed TEXT/BLOB index remains');
@@ -79,11 +81,20 @@ $db->query('CREATE TABLE contactperson (id INT PRIMARY KEY, name1 VARCHAR(255) N
 $db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquiryform (id INT PRIMARY KEY, shopid INT NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquirydata (id INT PRIMARY KEY, formid INT NOT NULL, shopid INT NOT NULL, token VARCHAR(255) NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+$db->query('CREATE TABLE uom LIKE install_success.uom');
+$db->query("INSERT INTO uom (id, clientid, ordering, `default`, deleted) VALUES (20, 7, 0, 1, 1), (21, 7, 2, 0, 0), (23, 7, 1, 0, 0), (25, 7, 1, 0, 0), (30, 8, 0, 0, 0), (31, 8, 9, 1, 0), (40, 9, 2, 1, 0), (41, 9, 1, 1, 0), (42, 9, 1, 1, 0), (43, 9, 0, 1, 1), (50, 10, 0, 1, 1), (60, 12, -1, 0, 0), (61, 12, 0, 2, 0)");
 $db->query("INSERT INTO contact (id, type, clientid, deleted) VALUES (1, ' customer ', 7, 0), (2, 'supplier', 7, 0), (3, 'customer,supplier', 7, 0), (4, '', 7, 0), (5, 'partner', 7, 1), (6, 'Prospect', 7, 0)");
 $db->query("INSERT INTO shopinquirydata (id, formid, shopid, token, clientid, deleted) VALUES (1, 11, 41, 'duplicate-token', 7, 0), (2, 11, 41, 'duplicate-token', 7, 0), (3, 11, 42, 'duplicate-token', 7, 0), (4, 11, 41, 'duplicate-token', 8, 0)");
 $roleQueries = [];
 PMA_splitSqlFile($roleQueries, file_get_contents($root . '/install/config/update-1.1.7-1.1.8.sql'));
 foreach ($roleQueries as $query) $db->query($query['query']);
+check($db->query('SELECT GROUP_CONCAT(id ORDER BY clientid) FROM uom WHERE `default` = 1')->fetch_row()[0] === '23,31,41,60', 'UOM upgrade did not preserve and normalize tenant defaults by ordering and ID');
+check((int)$db->query('SELECT COUNT(*) FROM uom WHERE deleted != 0 AND `default` != 0')->fetch_row()[0] === 0, 'UOM upgrade retained a deleted default');
+$uoms = $db->query('SELECT * FROM uom ORDER BY id')->fetch_all(MYSQLI_ASSOC);
+foreach ($roleQueries as $query) {
+    if (str_contains($query['query'], 'UPDATE `uom` AS u')) $db->query($query['query']);
+}
+check($db->query('SELECT * FROM uom ORDER BY id')->fetch_all(MYSQLI_ASSOC) === $uoms, 'Repeated UOM upgrade changed normalized data');
 check((int)$db->query('SELECT COUNT(*) FROM contactrole')->fetch_row()[0] === 4, 'Contact role upgrade mapped ambiguous or empty legacy values');
 check($db->query('SELECT GROUP_CONCAT(role ORDER BY role) FROM contactrole')->fetch_row()[0] === 'customer,partner,prospect,supplier', 'Contact role upgrade lost an explicit role code');
 check($db->query('SELECT type FROM contact WHERE id = 1')->fetch_row()[0] === ' customer ', 'Contact role upgrade changed contact.type');

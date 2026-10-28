@@ -31,6 +31,8 @@
 	//General
 	'ADMIN_ID' => 'ID',
 	'ADMIN_NAME' => 'Name',
+	'ADMIN_DEFAULT' => 'Default',
+	'MESSAGES_UOM_CANNOT_BE_DELETED' => 'The default unit of measure cannot be deleted. Please set another unit of measure as the default first.',
 	'ADMIN_USER_NAME' => 'User name',
 	'ADMIN_CLIENT_ID' => 'Client ID.',
 	'ADMIN_PARENT_ID' => 'Parent ID.',

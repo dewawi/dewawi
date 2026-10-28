@@ -145,6 +145,7 @@ class Admin_Model_Service_ClientInitializer
 		foreach (['Stück', 'Pack.', 'Std.', 'kg', 'm'] as $title) {
 			$db->addUom([
 				'title' => $title,
+				'default' => (int)($title === 'Stück'),
 			], $clientId);
 		}
 	}

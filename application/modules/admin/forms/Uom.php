@@ -20,6 +20,14 @@ class Admin_Form_Uom extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'default',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_DEFAULT',
+			'format' => ['type' => 'int'],
+			'default' => 0,
+		]);
+
+		$this->addElement([
 			'name' => 'language',
 			'type' => 'select',
 			'options' => [],

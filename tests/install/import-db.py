@@ -16,9 +16,11 @@ try:
         if Path(socket).exists():
             break
         time.sleep(0.1)
-    result = subprocess.run(['php', str(Path(__file__).with_suffix('.php')), socket, str(work)], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    print(result.stdout)
-    raise SystemExit(result.returncode)
+    for script in [Path(__file__).with_suffix('.php'), Path(__file__).parent.parent/'admin/uom.php']:
+        result = subprocess.run(['php', str(script), socket, str(work)], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        print(result.stdout)
+        if result.returncode:
+            raise SystemExit(result.returncode)
 finally:
     if server is not None:
         server.terminate()

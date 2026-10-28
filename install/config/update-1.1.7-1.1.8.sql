@@ -58,3 +58,22 @@ ALTER TABLE `shopinquiryform`
 ALTER TABLE `shopinquirydata`
   ADD UNIQUE INDEX `clientid_shopid_token` (`clientid`, `shopid`, `token`(64)),
   ADD INDEX `clientid_shopid_formid_deleted` (`clientid`, `shopid`, `formid`, `deleted`);
+
+-- Preserve an existing active default, otherwise use the first active UOM by ordering and ID.
+UPDATE `uom` AS u
+LEFT JOIN (
+  SELECT candidate.`clientid`, candidate.`id`
+  FROM `uom` AS candidate
+  LEFT JOIN `uom` AS preferred
+    ON preferred.`clientid` = candidate.`clientid`
+    AND preferred.`deleted` = 0
+    AND (
+      (preferred.`default` = 1) > (candidate.`default` = 1)
+      OR ((preferred.`default` = 1) = (candidate.`default` = 1) AND (
+        preferred.`ordering` < candidate.`ordering`
+        OR (preferred.`ordering` = candidate.`ordering` AND preferred.`id` < candidate.`id`)
+      ))
+    )
+  WHERE candidate.`deleted` = 0 AND preferred.`id` IS NULL
+) AS chosen ON chosen.`clientid` = u.`clientid`
+SET u.`default` = IF(u.`id` = chosen.`id`, 1, 0);
