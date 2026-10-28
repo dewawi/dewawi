@@ -1896,6 +1896,30 @@ span.editable {
   border-color: #efb3b3;
 }
 
+.dw-document-validation__summary {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+}
+
+.dw-document-validation__issues {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+.dw-document-validation__issues li + li {
+  margin-top: 4px;
+}
+
+.dw-document-validation__issues a {
+  color: var(--dw-color-text);
+  text-decoration: underline;
+}
+
+[data-document-finalize].is-loading {
+  opacity: .65;
+  pointer-events: none;
+}
+
 /* Main menu */
 
 .dw-topbar-wrap {

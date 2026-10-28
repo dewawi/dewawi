@@ -11,6 +11,8 @@ class Purchases_Service_DocumentFinalizeService
 			return $document;
 		}
 
+		(new DEEC_Document_FinalizeValidator())->assertValid($document, 'purchases', $controller);
+
 		$incrementDb = new Application_Model_DbTable_Increment();
 		$increment = $incrementDb->getIncrement($docIdField, true);
 

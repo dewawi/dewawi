@@ -32,6 +32,16 @@ function check(bool $condition, string $message): void
     $checks++;
 }
 
+function lifecyclePosition(string $controller, int $documentId, array $changes = []): array
+{
+    return array_replace([
+        'id' => 1, 'clientid' => 7, 'deleted' => 0, 'parentid' => $documentId,
+        'possetid' => 0, 'masterid' => null, 'ordering' => 1, 'sku' => 'TEST-1', 'title' => 'Test position',
+        'description' => '', 'price' => '100.0000', 'taxrate' => '19.0000', 'quantity' => '1.0000',
+        'uom' => 'pcs', 'currency' => 'EUR',
+    ], $changes);
+}
+
 function lifecycleWhereMatches($where, array $row): bool
 {
     foreach ((array)$where as $condition) {
@@ -81,7 +91,8 @@ class LifecycleTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
     public function describeTable($tableName, $schemaName = null)
     {
         $metadata = [];
-        foreach (array_keys($this->rows[$tableName][0]) as $column) {
+        $columns = array_keys($this->rows[$tableName][0] ?? lifecyclePosition('fixture', 1));
+        foreach ($columns as $column) {
             $metadata[$column] = ['COLUMN_NAME' => $column, 'DATA_TYPE' => 'varchar', 'PRIMARY' => $column === 'id', 'PRIMARY_POSITION' => 1, 'IDENTITY' => $column === 'id'];
         }
         return $metadata;
@@ -152,6 +163,10 @@ $fields = [
 ];
 $adapter->rows['increment'] = [['id' => 1, 'clientid' => 7]];
 $adapter->rows['filename'] = [['id' => 1, 'clientid' => 7, 'language' => 'de_DE']];
+$adapter->rows['contact'] = [
+    ['id' => 12, 'contactid' => 12, 'clientid' => 7, 'deleted' => 0],
+    ['id' => 99, 'contactid' => 99, 'clientid' => 8, 'deleted' => 0],
+];
 
 // Copy real document rows, then finalize the resulting drafts using the real services.
 foreach ($modules as $module => $controllers) {
@@ -164,6 +179,7 @@ foreach ($modules as $module => $controllers) {
         $table = new $class();
         $copyId = $table->copyById(1);
         $copy = $table->getById($copyId);
+        $adapter->rows[$controller . 'pos'] = [lifecyclePosition($controller, $copyId)];
         check(empty($copy[$controller . 'id']) && empty($copy[$controller . 'date']), 'Copy retained its own document identity');
         check($copy['state'] === 100 && $copy['completed'] === 0 && $copy['completeddate'] === null && $copy['completedby'] === 0, 'Copy retained completion metadata');
         check($copy['cancelled'] === 0 && $copy['cancelleddate'] === null && $copy['cancelledby'] === 0, 'Copy retained cancellation metadata');
@@ -205,6 +221,7 @@ foreach ($modules as $module => $controllers) {
 foreach (['Sales' => 'invoice', 'Purchases' => 'purchaseorder', 'Processes' => 'process'] as $module => $name) {
     $draft = array_replace($fields, [$name . 'id' => null, $name . 'date' => null, 'state' => 100, 'completed' => 0, 'filename' => null]);
     $adapter->rows[$name] = [$draft];
+    $adapter->rows[$name . 'pos'] = [lifecyclePosition($name, 1)];
     $adapter->rows['increment'][0][$name . 'id'] = 4321;
     $adapter->rows['filename'][0][$name] = $name . '_%NUMBER%.pdf';
     $class = $module . '_Service_DocumentFinalizeService';
@@ -223,6 +240,66 @@ foreach (['Sales' => 'invoice', 'Purchases' => 'purchaseorder', 'Processes' => '
     $adapter->rollBack();
     check($adapter->rows === $before, 'Rollback retained a partial finalization or advanced counter');
 }
+
+// Finalization validation blocks only errors and runs before number allocation or status changes.
+Zend_Registry::set('User', ['id' => 42]);
+$service = new Sales_Service_DocumentFinalizeService();
+$draft = array_replace($fields, [
+    'invoiceid' => null, 'invoicedate' => null, 'state' => 100, 'completed' => 0,
+    'completeddate' => null, 'completedby' => 0, 'cancelled' => 0, 'filename' => null,
+]);
+$adapter->rows['invoice'] = [$draft];
+$adapter->rows['invoicepos'] = [lifecyclePosition('invoice', 1)];
+$adapter->rows['increment'][0]['invoiceid'] = 7000;
+$adapter->rows['filename'][0]['invoice'] = 'invoice_%NUMBER%.pdf';
+
+foreach ([
+    'missing customer' => [array_replace($draft, ['contactid' => null]), $adapter->rows['invoicepos']],
+    'cross-tenant customer' => [array_replace($draft, ['contactid' => 99]), $adapter->rows['invoicepos']],
+    'missing currency' => [array_replace($draft, ['currency' => '']), $adapter->rows['invoicepos']],
+    'missing language' => [array_replace($draft, ['language' => '']), $adapter->rows['invoicepos']],
+    'missing position' => [$draft, []],
+    'invalid position' => [$draft, [lifecyclePosition('invoice', 1, ['quantity' => 0])]],
+] as $case => [$invalidDraft, $positions]) {
+    $adapter->rows['invoice'] = [$invalidDraft];
+    $adapter->rows['invoicepos'] = $positions;
+    $before = $adapter->rows;
+    $writes = count($adapter->writes);
+    $adapter->beginTransaction();
+    try {
+        $service->finalize($invalidDraft, 'invoice');
+        throw new LogicException('Finalization accepted ' . $case);
+    } catch (DEEC_Document_ValidationException $expected) {
+        check($expected->getValidation()['canFinalize'] === false, 'Validation exception did not contain blocking errors');
+    }
+    $adapter->rollBack();
+    check($adapter->rows === $before, 'Failed finalization changed document data or number sequence: ' . $case);
+    check(count($adapter->writes) === $writes, 'Failed finalization wrote data: ' . $case);
+}
+
+// Delivery dates are recommendations for logistical documents and never block finalization.
+$purchaseDraft = array_replace($fields, [
+    'purchaseorderid' => null, 'purchaseorderdate' => null, 'deliverydate' => null,
+    'state' => 100, 'completed' => 0, 'completeddate' => null, 'completedby' => 0,
+    'cancelled' => 0, 'filename' => null,
+]);
+$adapter->rows['purchaseorder'] = [$purchaseDraft];
+$adapter->rows['purchaseorderpos'] = [lifecyclePosition('purchaseorder', 1)];
+$adapter->rows['increment'][0]['purchaseorderid'] = 8000;
+$adapter->rows['filename'][0]['purchaseorder'] = 'purchaseorder_%NUMBER%.pdf';
+$validation = (new DEEC_Document_FinalizeValidator())->validate($purchaseDraft, 'purchases', 'purchaseorder');
+check($validation['status'] === 'warning' && $validation['canFinalize'], 'Delivery date warning blocked finalization');
+$adapter->beginTransaction();
+$finalized = (new Purchases_Service_DocumentFinalizeService())->finalize($purchaseDraft, 'purchaseorder');
+$adapter->commit();
+check($finalized['purchaseorderid'] === 8000 && $finalized['completed'] === 1, 'Warning-only document was not finalized');
+
+// Existing issued documents remain idempotent even if current draft rules would reject their historical data.
+$issued = array_replace($draft, ['invoiceid' => 6000, 'contactid' => null, 'completed' => 1, 'state' => 105]);
+$adapter->rows['invoice'] = [$issued];
+$adapter->rows['invoicepos'] = [];
+$writes = count($adapter->writes);
+check($service->finalize($issued, 'invoice') === $issued && count($adapter->writes) === $writes, 'Issued document was revalidated or changed');
 
 // Cover every configured continuation, including source rows that refer to an older target.
 $controller = new LifecycleTestController(new Zend_Controller_Request_Simple(), new Zend_Controller_Response_Http());

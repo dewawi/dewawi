@@ -40,6 +40,14 @@ class Zend_View_Helper_Finish extends Zend_View_Helper_Abstract
 		$html .= '</div>';
 
 		$html .= '<div class="dw-form-row">';
+		$html .= '<div class="dw-field dw-field--col-12">';
+		$html .= '<div class="dw-document-validation" aria-live="polite">';
+		$html .= $this->renderValidation($this->view->documentValidation ?? []);
+		$html .= '</div>';
+		$html .= '</div>';
+		$html .= '</div>';
+
+		$html .= '<div class="dw-form-row">';
 		$html .= '<div class="dw-field dw-field--col-3">';
 		$html .= $this->view->form->renderElement('pdfshowprices');
 		$html .= '</div>';
@@ -72,7 +80,7 @@ class Zend_View_Helper_Finish extends Zend_View_Helper_Abstract
 		$html .= '<button type="button" class="dw-btn view" onclick="previewPdf()">';
 		$html .= htmlspecialchars($this->view->translate('DOCUMENTS_PREVIEW_PDF'));
 		$html .= '</button>';
-		$html .= '<a class="dw-btn save" href="' . htmlspecialchars($saveUrl) . '">';
+		$html .= '<a class="dw-btn save" data-document-finalize data-error-message="' . htmlspecialchars($this->view->translate('DOCUMENT_VALIDATION_REQUEST_FAILED')) . '" href="' . htmlspecialchars($saveUrl) . '">';
 		$html .= htmlspecialchars($this->view->translate('DOCUMENTS_SAVE_AND_BOOK'));
 		$html .= '</a>';
 		$html .= '<a class="dw-btn pdf" href="' . htmlspecialchars($downloadUrl) . '" target="_blank" rel="noopener">';
@@ -92,6 +100,33 @@ class Zend_View_Helper_Finish extends Zend_View_Helper_Abstract
 		$html .= '</form>';
 		$html .= '</div>';
 
+		return $html;
+	}
+
+	protected function renderValidation(array $validation): string
+	{
+		$status = $validation['status'] ?? 'success';
+		$classes = ['success' => 'success', 'warning' => 'warning', 'error' => 'danger'];
+		$titles = [
+			'success' => 'DOCUMENT_VALIDATION_SUCCESS',
+			'warning' => 'DOCUMENT_VALIDATION_WARNING',
+			'error' => 'DOCUMENT_VALIDATION_ERROR',
+		];
+		$html = '<div class="dw-alert dw-alert--' . $classes[$status] . ' dw-document-validation__summary">';
+		$html .= '<strong>' . htmlspecialchars($this->view->translate($titles[$status])) . '</strong>';
+		$html .= '</div>';
+		$issues = array_merge($validation['errors'] ?? [], $validation['warnings'] ?? []);
+		if (!$issues) return $html;
+
+		$html .= '<ul class="dw-document-validation__issues">';
+		foreach ($issues as $issue) {
+			$text = $this->view->translate($issue['message'], $issue['args'] ?? []);
+			$attrs = ' href="#tab' . htmlspecialchars($issue['tab']) . '" data-document-validation-target';
+			if (!empty($issue['field'])) $attrs .= ' data-field="' . htmlspecialchars($issue['field']) . '"';
+			if (!empty($issue['positionId'])) $attrs .= ' data-position-id="' . (int)$issue['positionId'] . '"';
+			$html .= '<li><a' . $attrs . '>' . htmlspecialchars($text) . '</a></li>';
+		}
+		$html .= '</ul>';
 		return $html;
 	}
 }

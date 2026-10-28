@@ -11,6 +11,8 @@ class Processes_Service_DocumentFinalizeService
 			return $document;
 		}
 
+		(new DEEC_Document_FinalizeValidator())->assertValid($document, 'processes', $controller);
+
 		$incrementDb = new Application_Model_DbTable_Increment();
 		$increment = $incrementDb->getIncrement($docIdField, true);
 

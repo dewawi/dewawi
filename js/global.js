@@ -2190,6 +2190,7 @@ function previewPdf() {
 		url: baseUrl + '/' + module + '/' + controller + '/preview/id/' + id + '/templateid/' + $('#templateid').val(),
 		dataType: 'json',
 		success: function(response) {
+			if (response.validation) updateDocumentValidation(response.validation);
 			if (!response.ok || !response.url) {
 				return;
 			}
@@ -2200,6 +2201,80 @@ function previewPdf() {
 		}
 	});
 }
+
+function escapeDocumentValidationText(value) {
+	return $('<div>').text(value == null ? '' : String(value)).html();
+}
+
+function updateDocumentValidation(validation) {
+	var $container = $('.dw-document-validation').first();
+	if (!$container.length || !validation) return;
+
+	var status = validation.status || 'success';
+	var alertClass = status === 'error' ? 'danger' : status;
+	var html = '<div class="dw-alert dw-alert--' + alertClass + ' dw-document-validation__summary">';
+	html += '<strong>' + escapeDocumentValidationText(validation.title || '') + '</strong></div>';
+	var issues = (validation.errors || []).concat(validation.warnings || []);
+	if (issues.length) {
+		html += '<ul class="dw-document-validation__issues">';
+		$.each(issues, function(_, issue) {
+			html += '<li><a href="#tab' + escapeDocumentValidationText(issue.tab || 'overview') + '" data-document-validation-target';
+			if (issue.field) html += ' data-field="' + escapeDocumentValidationText(issue.field) + '"';
+			if (issue.positionId) html += ' data-position-id="' + parseInt(issue.positionId, 10) + '"';
+			html += '>' + escapeDocumentValidationText(issue.text || issue.message || '') + '</a></li>';
+		});
+		html += '</ul>';
+	}
+	$container.html(html);
+}
+
+$(document).on('click', '[data-document-finalize]', function(event) {
+	event.preventDefault();
+	var $button = $(this);
+	if ($button.hasClass('is-loading')) return;
+	$button.addClass('is-loading').attr('aria-disabled', 'true');
+
+	$.ajax({
+		type: 'POST',
+		url: $button.attr('href'),
+		dataType: 'json',
+		success: function(response) {
+			if (response && response.ok && response.redirect) window.location.href = response.redirect;
+			else if (response && response.validation) updateDocumentValidation(response.validation);
+			else updateDocumentValidation({status: 'error', title: $button.data('error-message')});
+		},
+		error: function(xhr) {
+			var response = xhr.responseJSON;
+			if (response && response.validation) updateDocumentValidation(response.validation);
+			else updateDocumentValidation({status: 'error', title: $button.data('error-message')});
+		},
+		complete: function() {
+			$button.removeClass('is-loading').removeAttr('aria-disabled');
+		}
+	});
+});
+
+$(document).on('click', '[data-document-validation-target]', function(event) {
+	event.preventDefault();
+	var $target = $(this);
+	var $tab = $('.dw-tabs__link[href="' + $target.attr('href') + '"]').first();
+	if (!$tab.length) return;
+	activateDwTab($tab, true);
+	runDwTabAction($tab, false);
+
+	var attempts = 0;
+	(function focusField() {
+		var positionId = $target.data('position-id');
+		var $scope = positionId ? $('.dw-position-card[data-id="' + positionId + '"]') : $($target.attr('href'));
+		var $field = $target.data('field') ? $scope.find('[name="' + $target.data('field') + '"]').first() : $scope;
+		if ($field.length) {
+			$field.focus();
+			$field[0].scrollIntoView({behavior: 'smooth', block: 'center'});
+			return;
+		}
+		if (++attempts < 10) window.setTimeout(focusField, 100);
+	})();
+});
 
 //Modal Window
 function modalWindow(popID, setid) {

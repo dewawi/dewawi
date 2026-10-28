@@ -185,7 +185,7 @@ Zend_Controller_Action_HelperBroker::addHelper(new Application_Controller_Action
 Zend_Controller_Action_HelperBroker::addHelper(new Application_Controller_Action_Helper_PriceRule());
 Zend_Controller_Action_HelperBroker::addHelper(new Application_Controller_Action_Helper_Position());
 
-$parent = ['id' => 1, 'clientid' => 7, 'deleted' => 0, 'currency' => 'EUR', 'taxfree' => 0,
+$parent = ['id' => 1, 'clientid' => 7, 'contactid' => 12, 'deleted' => 0, 'currency' => 'EUR', 'language' => 'de_DE', 'taxfree' => 0,
     'state' => 105, 'completeddate' => '2026-09-09 12:00:00', 'completedby' => 17,
     'subtotal' => '999.0000', 'taxes' => '199.0000', 'total' => '1198.0000',
     'modified' => '2026-09-10 12:00:00', 'modifiedby' => 17];
@@ -199,6 +199,7 @@ $rule = ['id' => 20, 'clientid' => 7, 'parentid' => 10, 'module' => 'sales', 'co
     'deleted' => 0, 'ordering' => 1, 'masterid' => null, 'possetid' => 0, 'amount' => 10, 'action' => 'bypercent'];
 $adapter->rows['uom'] = [['id' => 1, 'clientid' => 7, 'deleted' => 0, 'ordering' => 1, 'title' => 'Piece']];
 $adapter->rows['taxrate'] = [['id' => 1, 'clientid' => 7, 'deleted' => 0, 'rate' => 19.0]];
+$adapter->rows['contact'] = [['id' => 12, 'contactid' => 12, 'clientid' => 7, 'deleted' => 0]];
 $modules = ['sales' => ['quote', 'invoice', 'salesorder', 'deliveryorder', 'creditnote', 'reminder'], 'purchases' => ['quoterequest', 'purchaseorder'], 'processes' => ['process']];
 
 // Run the complete position-index action twice, with deliberately stale stored totals.
@@ -279,6 +280,16 @@ $controller = new CalculationDocumentController($request, new Zend_Controller_Re
 $defaults = $controller->defaults([]);
 check($defaults['subtotal'] === 0 && $defaults['taxes'] === 0 && $defaults['total'] === 0, 'New empty draft totals missing');
 check($controller->defaults(['total' => 123])['total'] === 123, 'Draft defaults replaced supplied values');
+$adapter->rows['quote'] = [array_replace($parent, ['contactid' => null, 'state' => 100]) + ['quoteid' => null]];
+$before = $adapter->rows;
+$writes = $adapter->writes;
+try {
+    $controller->issue(1);
+    throw new LogicException('Direct finalization accepted an invalid document');
+} catch (DEEC_Document_ValidationException $expected) {
+    check($expected->getValidation()['canFinalize'] === false, 'Direct finalization returned no validation errors');
+}
+check($adapter->rows === $before && $adapter->writes === $writes, 'Rejected direct finalization changed document data');
 $adapter->rows['quote'] = [array_replace($parent, ['state' => 100]) + ['quoteid' => null]];
 check($controller->issue(1)['createOriginal'] === true, 'First finalization did not authorize original PDF creation');
 check(abs($controller->finalizedRow['total'] - 278.46) < 0.00001, 'Finalization received stale totals');

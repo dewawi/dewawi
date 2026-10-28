@@ -2,6 +2,13 @@
 
 abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 {
+	protected function buildEditViewModel(int $id, array $row): array
+	{
+		$viewModel = parent::buildEditViewModel($id, $row);
+		$viewModel['documentValidation'] = $this->getDocumentValidation($row);
+		return $viewModel;
+	}
+
 	protected function beforeView(array $row): void
 	{
 		$this->ensurePdfDocumentExists((int)$row['id']);
@@ -242,7 +249,8 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		$templateId = (int)$this->_getParam('templateid', 0);
 		$isAjax = $this->getRequest()->isXmlHttpRequest();
 
-		if (!$this->loadRow($id)) {
+		$row = $this->loadRow($id);
+		if (!$row) {
 			return $this->handleDocumentNotFound($isAjax);
 		}
 
@@ -260,6 +268,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 				'ok' => true,
 				'url' => $result['url'] ?? null,
 				'filename' => $result['filename'] ?? null,
+				'validation' => $this->localizeDocumentValidation($this->getDocumentValidation($row)),
 			]);
 		}
 
@@ -301,6 +310,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 					$row = $db->getByIdForUpdate($id);
 					if (!$row) throw new RuntimeException('Document not found');
 					if (empty($row[$this->getDocumentNumberField()])) {
+						$this->assertDocumentCanFinalize($row);
 						$createOriginal = true;
 						$this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
 						$row = $this->loadRow($id);
@@ -492,22 +502,83 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		return null;
 	}
 
+	protected function getDocumentValidation(array $row): array
+	{
+		return (new DEEC_Document_FinalizeValidator())->validate(
+			$row,
+			$this->getRequest()->getModuleName(),
+			$this->getRequest()->getControllerName()
+		);
+	}
+
+	protected function assertDocumentCanFinalize(array $row): array
+	{
+		return (new DEEC_Document_FinalizeValidator())->assertValid(
+			$row,
+			$this->getRequest()->getModuleName(),
+			$this->getRequest()->getControllerName()
+		);
+	}
+
+	protected function localizeDocumentValidation(array $validation): array
+	{
+		$titles = [
+			'success' => 'DOCUMENT_VALIDATION_SUCCESS',
+			'warning' => 'DOCUMENT_VALIDATION_WARNING',
+			'error' => 'DOCUMENT_VALIDATION_ERROR',
+		];
+		$validation['title'] = $this->view->translate($titles[$validation['status']]);
+		foreach (['errors', 'warnings'] as $type) {
+			foreach ($validation[$type] as &$issue) {
+				$issue['text'] = $this->view->translate($issue['message'], $issue['args'] ?? []);
+			}
+			unset($issue);
+		}
+		return $validation;
+	}
+
 	public function saveAction()
 	{
 		$id = (int)$this->_getParam('id', 0);
+		$isAjax = $this->getRequest()->isXmlHttpRequest();
 
 		if (!$this->loadRow($id)) {
-			return $this->handleDocumentNotFound(false);
+			return $this->handleDocumentNotFound($isAjax);
 		}
 
-		$this->generatePdfDocument($id, [
-			'finalize' => true,
-			'output' => 'file',
-			'storage' => 'contact',
-			'overwrite' => false,
-		]);
+		try {
+			$this->generatePdfDocument($id, [
+				'finalize' => true,
+				'output' => 'file',
+				'storage' => 'contact',
+				'overwrite' => false,
+			]);
+		} catch (DEEC_Document_ValidationException $exception) {
+			$validation = $this->localizeDocumentValidation($exception->getValidation());
+			if ($isAjax) {
+				$this->disableView();
+				$this->getResponse()->setHttpResponseCode(422);
+				return $this->_helper->json(['ok' => false, 'validation' => $validation]);
+			}
+
+			foreach ($validation['errors'] as $issue) $this->_flashMessenger->addMessage($issue['text']);
+			return $this->_helper->redirector->gotoSimple('edit', $this->getRequest()->getControllerName(), null, ['id' => $id]);
+		}
 
 		$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+
+		if ($isAjax) {
+			$this->disableView();
+			return $this->_helper->json([
+				'ok' => true,
+				'redirect' => $this->view->url([
+					'module' => $this->getRequest()->getModuleName(),
+					'controller' => $this->getRequest()->getControllerName(),
+					'action' => 'view',
+					'id' => $id,
+				], null, true),
+			]);
+		}
 
 		return $this->_helper->redirector->gotoSimple(
 			'view',
