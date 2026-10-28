@@ -43,3 +43,18 @@ SELECT
   0
 FROM `contact`
 WHERE LOWER(TRIM(COALESCE(`type`, ''))) IN ('customer', 'supplier', 'prospect', 'partner');
+
+UPDATE `shopinquirydata` AS duplicate
+JOIN `shopinquirydata` AS original
+  ON original.`clientid` = duplicate.`clientid`
+  AND original.`shopid` = duplicate.`shopid`
+  AND original.`token` = duplicate.`token`
+  AND original.`id` < duplicate.`id`
+SET duplicate.`token` = SHA2(CONCAT(duplicate.`token`, ':', duplicate.`id`), 256);
+
+ALTER TABLE `shopinquiryform`
+  ADD INDEX `clientid_shopid_deleted_id` (`clientid`, `shopid`, `deleted`, `id`);
+
+ALTER TABLE `shopinquirydata`
+  ADD UNIQUE INDEX `clientid_shopid_token` (`clientid`, `shopid`, `token`(64)),
+  ADD INDEX `clientid_shopid_formid_deleted` (`clientid`, `shopid`, `formid`, `deleted`);

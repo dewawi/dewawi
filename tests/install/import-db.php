@@ -72,18 +72,27 @@ check($db->query('SELECT street FROM address WHERE id = 1')->fetch_row()[0] === 
 $db->query('ALTER TABLE address ADD INDEX street (street(255))');
 check($db->query('SELECT street FROM address WHERE id = 1')->fetch_row()[0] === "First line\nSecond line", 'Existing installation with a street index lost data');
 
-// Contact role upgrade maps only explicit legacy codes and remains idempotent.
+// Version 1.1.8 maps explicit contact roles and normalizes inquiry tokens before adding indexes.
 $db->query('CREATE DATABASE contact_role_upgrade');
 $db->select_db('contact_role_upgrade');
 $db->query('CREATE TABLE contactperson (id INT PRIMARY KEY, name1 VARCHAR(255) NULL, name2 VARCHAR(255) NULL) ENGINE=InnoDB');
 $db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+$db->query('CREATE TABLE shopinquiryform (id INT PRIMARY KEY, shopid INT NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+$db->query('CREATE TABLE shopinquirydata (id INT PRIMARY KEY, formid INT NOT NULL, shopid INT NOT NULL, token VARCHAR(255) NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query("INSERT INTO contact (id, type, clientid, deleted) VALUES (1, ' customer ', 7, 0), (2, 'supplier', 7, 0), (3, 'customer,supplier', 7, 0), (4, '', 7, 0), (5, 'partner', 7, 1), (6, 'Prospect', 7, 0)");
+$db->query("INSERT INTO shopinquirydata (id, formid, shopid, token, clientid, deleted) VALUES (1, 11, 41, 'duplicate-token', 7, 0), (2, 11, 41, 'duplicate-token', 7, 0), (3, 11, 42, 'duplicate-token', 7, 0), (4, 11, 41, 'duplicate-token', 8, 0)");
 $roleQueries = [];
 PMA_splitSqlFile($roleQueries, file_get_contents($root . '/install/config/update-1.1.7-1.1.8.sql'));
 foreach ($roleQueries as $query) $db->query($query['query']);
 check((int)$db->query('SELECT COUNT(*) FROM contactrole')->fetch_row()[0] === 4, 'Contact role upgrade mapped ambiguous or empty legacy values');
 check($db->query('SELECT GROUP_CONCAT(role ORDER BY role) FROM contactrole')->fetch_row()[0] === 'customer,partner,prospect,supplier', 'Contact role upgrade lost an explicit role code');
 check($db->query('SELECT type FROM contact WHERE id = 1')->fetch_row()[0] === ' customer ', 'Contact role upgrade changed contact.type');
+check((int)$db->query('SELECT COUNT(*) FROM shopinquirydata')->fetch_row()[0] === 4, 'Inquiry migration deleted an existing duplicate record');
+check((int)$db->query('SELECT COUNT(DISTINCT token) FROM shopinquirydata WHERE clientid = 7 AND shopid = 41')->fetch_row()[0] === 2, 'Inquiry migration did not normalize duplicate tokens within one tenant and shop');
+check($db->query('SELECT GROUP_CONCAT(token ORDER BY id) FROM shopinquirydata WHERE id IN (3, 4)')->fetch_row()[0] === 'duplicate-token,duplicate-token', 'Inquiry migration changed equal tokens from different shops or tenants');
+check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_shopid_token' AND non_unique = 0")->fetch_row()[0] === 3, 'Inquiry token unique index is missing or has the wrong columns');
+check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_shopid_formid_deleted'")->fetch_row()[0] === 4, 'Inquiry data lookup index is missing or has the wrong columns');
+check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquiryform' AND index_name = 'clientid_shopid_deleted_id'")->fetch_row()[0] === 4, 'Inquiry form lookup index is missing or has the wrong columns');
 foreach ($roleQueries as $query) {
     if (str_starts_with(trim($query['query']), 'INSERT IGNORE INTO `contactrole`')) $db->query($query['query']);
 }

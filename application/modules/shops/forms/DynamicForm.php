@@ -2,15 +2,21 @@
 
 class Shops_Form_DynamicForm extends DEEC_Form
 {
-	public function __construct(array $config, $step = null)
+	public function __construct(array $config, $step = null, string $csrfToken = '', string $inquiryToken = '')
 	{
 		$this->setMethod('post');
-		//print_r($config);
  	 	$this->currentStep = $step;
 
 		$this->addCsrfToken();
+		$this->setValue('csrf_token', $csrfToken);
+		$this->addElement([
+			'name' => 'inquiry_token',
+			'type' => 'hidden',
+			'value' => $inquiryToken,
+			'wrap' => false,
+		]);
 
-		foreach ($config[$step] as $field) {
+		foreach (($config[$step] ?? []) as $field) {
 			if (!is_array($field)) continue;
 			if (empty($field['name']) || empty($field['type'])) continue;
 

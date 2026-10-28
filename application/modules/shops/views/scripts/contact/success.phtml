@@ -15,7 +15,18 @@ $this->headTitle($this->title);
 			<div class="col-md-8 text-center">
 				<i class="icon-check fas fa-check-circle"></i>
 				<h1>Vielen Dank für Ihre Kontaktaufnahme!</h1>
-				<p>Wir werden Ihre Anfrage bearbeiten und uns schnellstmöglich mit Ihnen in Verbindung setzen. Eine Kopie Ihrer Nachricht wurde an die angegebene E-Mail-Adresse versandt.</p>
+				<?php if (!empty($this->stored)): ?>
+					<p>Ihre Anfrage wurde gespeichert. Wir werden sie bearbeiten und uns schnellstmöglich mit Ihnen in Verbindung setzen.</p>
+					<?php if ($this->notificationSent === true): ?>
+						<p>Eine Kopie wurde an die angegebene E-Mail-Adresse versandt.</p>
+					<?php elseif ($this->notificationSent === false): ?>
+						<p>Die E-Mail-Benachrichtigung konnte nicht versandt werden. Ihre gespeicherte Anfrage bleibt davon unberührt.</p>
+					<?php elseif (!empty($this->duplicate)): ?>
+						<p>Diese Anfrage war bereits gespeichert und wurde nicht erneut angelegt.</p>
+					<?php endif; ?>
+				<?php else: ?>
+					<p>Vielen Dank. Ihre Nachricht wurde entgegengenommen.</p>
+				<?php endif; ?>
 			</div>
 		</div>
 

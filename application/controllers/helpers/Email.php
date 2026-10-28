@@ -108,7 +108,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					// Get SMTP settings
 					list($smtpConfig, $fromEmail, $fromName) = $this->getEmailConfig($module);
 
-					$this->sendEmails($module, $controller, $recipients, $smtpConfig, $fromEmail, $fromName, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items);
+					return $this->sendEmails($module, $controller, $recipients, $smtpConfig, $fromEmail, $fromName, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items);
 				}
 			}
 		} else {
@@ -170,6 +170,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 	private function sendEmails($module, $controller, $recipients, array $smtpConfig, $fromEmail, $fromName, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items)
 	{
+		$result = ['ok' => true, 'sent' => 0, 'failed' => 0];
+
 		foreach($recipients as $recipient) {
 			$to = [$recipient['email']];
 			if($module == 'shops') $to[] = $fromEmail;
@@ -271,6 +273,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$redirector = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
 
 			if(!$sendResult['sent']) {
+				$result['ok'] = false;
+				$result['failed']++;
 				$emailmessageDb->updateEmailmessage($messageid, array('response' => $sendResult['error']));
 
 				if($feedback['service'] && $feedback['request'] && $feedback['created']) {
@@ -279,6 +283,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_ERROR');
 			} else {
+				$result['sent']++;
 				$emailmessageDb->updateEmailmessage($messageid, ['response' => 'sent']);
 
 				if($feedback['service'] && $feedback['request']) {
@@ -288,6 +293,10 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
 			}
 		}
+
+		if ($result['sent'] === 0) $result['ok'] = false;
+
+		return $result;
 	}
 
 	private function prepareFeedback($module, $controller, array $data, int $documentid): array

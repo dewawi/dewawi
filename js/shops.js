@@ -236,14 +236,25 @@ function submitStep(formElement, currentStep) {
 		return false;
 	}
 
+	const $form = $(formElement);
+	const $buttons = $form.find('button, input[type="submit"]');
+	$buttons.prop('disabled', true);
 	const formData = $(formElement).serialize() + '&step=' + encodeURIComponent(currentStep);
 
 	$.post(window.location.href, formData, function (response) {
 		const newContainer = $(response.formHtml).find('#form-container');
-		if (response && response.status === 'ok' && newContainer) {
+		if (response && newContainer.length) {
 			$('#form-container').replaceWith(newContainer);
+			toggleDependentFields();
+		} else if (!response || response.status !== 'ok') {
+			window.alert((response && response.message) || 'Das Formular konnte nicht verarbeitet werden.');
 		}
-	}, 'json');
+	}, 'json').fail(function (xhr) {
+		const response = xhr.responseJSON || {};
+		window.alert(response.message || 'Das Formular konnte nicht verarbeitet werden. Bitte laden Sie die Seite neu.');
+	}).always(function () {
+		$buttons.prop('disabled', false);
+	});
 
 	return false;
 }

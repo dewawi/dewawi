@@ -3,8 +3,11 @@
 class Shops_InquiryController extends Shops_Controller_Action
 {
 	protected $formDataSession;
-	protected $formConfig;
-	protected $inquiryToken;
+	protected $formConfig = [];
+	protected $formRow = null;
+	protected int $formId = 0;
+	protected string $inquiryToken = '';
+	protected string $csrfToken = '';
 
 	public function init()
 	{
@@ -12,24 +15,67 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 		$this->formDataSession = new Zend_Session_Namespace('MultiStepForm');
 
-		$this->formConfig = (new Shops_Model_FormConfig())->getConfig();
+		if ($this->getRequest()->getActionName() === 'index') {
+			$this->formId = (int)$this->_getParam('id', 0);
+			$inquiryformDb = new Shops_Model_DbTable_Inquiryform();
+			$this->formRow = $this->formId > 0 ? $inquiryformDb->getInquiryform($this->formId) : null;
+			$this->formConfig = $this->formRow
+				? (new Shops_Model_FormConfig($inquiryformDb))->getConfig($this->formId)
+				: [];
 
-		if (!is_array($this->formConfig)) {
-			$this->formConfig = [];
+			$context = $this->_siteContext->getSiteId() . ':' . $this->formId;
+
+			if (($this->formDataSession->context ?? '') !== $context) {
+				unset(
+					$this->formDataSession->formData,
+					$this->formDataSession->suggestions,
+					$this->formDataSession->requestValues,
+					$this->formDataSession->downloadUrl,
+					$this->formDataSession->submittedData,
+					$this->formDataSession->inquiryToken,
+					$this->formDataSession->csrfToken
+				);
+				$this->formDataSession->context = $context;
+			}
 		}
 
-		if (!isset($this->formDataSession->inquiryToken)) {
+		if (empty($this->formDataSession->inquiryToken)) {
 			$this->formDataSession->inquiryToken = bin2hex(random_bytes(16));
 		}
 
-		$this->inquiryToken = $this->formDataSession->inquiryToken;
+		if (empty($this->formDataSession->csrfToken)) {
+			$this->formDataSession->csrfToken = bin2hex(random_bytes(32));
+		}
+
+		$this->inquiryToken = (string)$this->formDataSession->inquiryToken;
+		$this->csrfToken = (string)$this->formDataSession->csrfToken;
 	}
 
 	public function indexAction()
 	{
 		$shop = $this->_site;
 		$request = $this->getRequest();
-		$step = $request->getPost('step', '1');
+
+		if (!$this->formRow || !$this->formConfig) {
+			if ($request->isPost()) {
+				$this->getResponse()->setHttpResponseCode(404);
+				return $this->_helper->json(['status' => 'error', 'message' => 'Anfrageformular nicht gefunden.']);
+			}
+
+			throw new Zend_Controller_Action_Exception('Inquiry form not found', 404);
+		}
+
+		$stepOrder = array_keys($this->formConfig);
+		$step = (string)$request->getPost('step', (string)$stepOrder[0]);
+
+		if (!isset($this->formConfig[$step])) {
+			if ($request->isPost()) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(['status' => 'error', 'message' => 'Ungültiger Formularschritt.']);
+			}
+
+			throw new Zend_Controller_Action_Exception('Invalid inquiry form step', 404);
+		}
 
 		if (!$request->isPost()) {
 			$this->initSiteLayout();
@@ -37,33 +83,48 @@ class Shops_InquiryController extends Shops_Controller_Action
 		}
 
 		$this->view->shop = $shop;
+		$this->view->formRow = $this->formRow;
 
-		$stepOrder = array_keys($this->formConfig);
-		if (!in_array($step, $stepOrder)) {
-			//throw new Zend_Controller_Action_Exception('Ungültiger Schritt');
-		}
-
-		$form = new Shops_Form_DynamicForm($this->formConfig, $step);
+		$form = $this->createStepForm($step);
 
 		// Falls Werte für den aktuellen Step vorhanden sind, ins Formular laden
 		if (!empty($this->formDataSession->formData[$step])) {
 			$form->setValues($this->formDataSession->formData[$step]);
 		}
 
-		$formId = (int)$this->_getParam('id', 0);
-	 	$inqDb = new Shops_Model_DbTable_Inquiryform();
- 	 	$this->view->formRow = $inqDb->getInquiryform($formId);
-
 		// Handle form submission via AJAX
 		if ($request->isPost()) {
 			$this->_helper->layout()->disableLayout();
-			$post = $request->getPost();
+			$post = (array)$request->getPost();
+
+			if (!$this->isValidCsrf($post)) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(['status' => 'error', 'message' => 'Das Formular ist abgelaufen. Bitte laden Sie die Seite neu.']);
+			}
+
+			$submittedToken = strtolower(trim((string)($post['inquiry_token'] ?? '')));
+
+			if (!preg_match('/^[a-f0-9]{32,64}$/D', $submittedToken)) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(['status' => 'error', 'message' => 'Ungültige Anfragekennung.']);
+			}
+
+			if (!$request->getPost('back')) {
+				$existing = (new Shops_Model_DbTable_Inquirydata())->getByToken($submittedToken);
+
+				if ($existing) {
+					$data = json_decode((string)$existing['data'], true);
+					$this->completeInquiry(is_array($data) ? $data : [], null, null, true);
+
+					return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
+				}
+			}
 
 			if ($request->getPost('back')) {
 				$currentIndex = array_search($step, $stepOrder);
 				$prevStep = $stepOrder[max(0, $currentIndex - 1)];
 
-				$prevForm = new Shops_Form_DynamicForm($this->formConfig, $prevStep);
+				$prevForm = $this->createStepForm($prevStep);
 				if (!empty($this->formDataSession->formData[$prevStep])) {
 					$prevForm->setValues($this->formDataSession->formData[$prevStep]);
 				}
@@ -75,15 +136,14 @@ class Shops_InquiryController extends Shops_Controller_Action
 					'suggestions' => $this->formDataSession->suggestions ?? [],
 					'suggestedItems' => [],
 					'requestValues' => $this->formDataSession->requestValues ?? [],
- 					'formRow' => $this->view->formRow
+					'formRow' => $this->formRow
 				]);
 
 				$this->_helper->json(['status'=>'ok','formHtml'=>$formHtml]);
 				return;
 			}
 
- 			// Populate -> validate
-			$form->setValues($post);
+			// Populate -> validate
 			if (!$form->isValid($post)) {
 				// re-render the same step with errors
 				$this->view->form = $form;
@@ -93,8 +153,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 					'form' => $form,
 					'step' => $step,
 					'ajax' => true,
- 	 	 			'errors' => $form->getErrors()
-
+					'errors' => $form->getErrors(),
+					'formRow' => $this->formRow,
 				]);
 
 				$this->_helper->json([
@@ -105,10 +165,11 @@ class Shops_InquiryController extends Shops_Controller_Action
 			}
 
 			// Save valid data to session under structured key
-			$formValues = $form->getValues();
+			$formValues = $form->getFilteredValues();
+			unset($formValues['csrf_token'], $formValues['inquiry_token'], $formValues['next']);
 			$this->formDataSession->formData[$step] = $formValues;
 
- 			// Step 1 suggestions (use validated values!)
+			// Step 1 suggestions (use validated values!)
 			if ($step === '1') {
 				foreach ($this->formConfig[$step] as $field) {
 	 	 	 		if (empty($field['calculate']) || !is_array($field['calculate'])) continue;
@@ -183,7 +244,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$nextStep = $stepOrder[$currentIndex + 1] ?? null;
 
 			if ($nextStep && isset($this->formConfig[$nextStep])) {
-				$nextForm = new Shops_Form_DynamicForm($this->formConfig, $nextStep);
+				$nextForm = $this->createStepForm($nextStep);
 				if (!empty($this->formDataSession->formData[$nextStep])) {
 					$nextForm->setValues($this->formDataSession->formData[$nextStep]);
 				}
@@ -214,7 +275,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 					'ajax' => true,
 					'suggestions' => $this->formDataSession->suggestions ?? [],
 					'suggestedItems' => $itemsWithImages ?? [],
-					'requestValues' => $this->formDataSession->requestValues ?? []
+					'requestValues' => $this->formDataSession->requestValues ?? [],
+					'formRow' => $this->formRow,
 				]);
 
 				$this->_helper->json([
@@ -224,7 +286,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 	 	 		return;
 			}
 
-			// Last step: send email and redirect
+			// Last step: persist first, then run the existing optional quote and notification flow.
 			$allFormValues = [];
 			foreach ($this->formDataSession->formData as $stepValues) {
 				$allFormValues = array_merge($allFormValues, $stepValues);
@@ -249,68 +311,52 @@ class Shops_InquiryController extends Shops_Controller_Action
 				return;
 			}
 
-			// Save data in DB
+			$storedData = array_merge($allFormValues, [
+				'origin' => 'technical_inquiry',
+				'source_path' => $this->getSourcePath(),
+			]);
+
 			$inquiryDb = new Shops_Model_DbTable_Inquirydata();
-			$inquiryDb->save($formId, $this->inquiryToken, $allFormValues);
+			$stored = $inquiryDb->saveOnce($this->formId, $submittedToken, $storedData);
 
-			// Auto-create quote if a SKU was provided
-			$quoteId = $this->createQuoteFromInquiry($allFormValues, $shop);
-
-			if($quoteId) {
-				$generator = new DEEC_Pdf();
-				$pdfInfo = $generator->generate([
-					'module' => 'shops',
-					'controller' => 'quote',
-					'documentId' => $quoteId,
-					'output' => 'file',
-				]);
-
-				// store for the success page
-				$this->formDataSession->downloadUrl = $pdfInfo['url'] ?? null;
-
-	 	 	 	// New per-inquiry token right after sending mail and before returning JSON
-				$this->formDataSession->inquiryToken = bin2hex(random_bytes(16));
-
-				// ------------------------------------------------------
-				// 1) FIRST MAIL: Anfrageformular (no attachment)
-				// ------------------------------------------------------
-				$this->getRequest()->setPost(array_merge($allFormValues, [
-					'subject' => 'Anfrageformular',
-					'message' => $allFormValues['message'] ?? 'Vielen Dank für Ihre Anfrage.',
-				]));
-				Zend_Controller_Action_HelperBroker::getStaticHelper('Email')
-					->sendEmail('shops', 'inquiry');
-
-				// ------------------------------------------------------
-				// 2) SECOND MAIL: Angebot (with attachment + quote info)
-				// ------------------------------------------------------
-				$quoteDb = new Shops_Model_DbTable_Quote();
-				$quote = $quoteDb->getQuote($quoteId);
-
-				// helpful values for the Angebot template
-				$angebotPost = array_merge($allFormValues, [
-					//'subject' => 'Angebot ' . ($quote['quoteid'] ?? ''),
-					//'message' => 'Im Anhang erhalten Sie Ihr Angebot.',
-					'__attach_paths'=> [$pdfInfo['path']], // let helper attach PDF
-					//'download_url' => $pdfInfo['url'] ?? null, // in-template link if needed
-					//'quote_id' => $quoteId, // for item table lookup
-					//'quote_number' => $quote['quoteid'] ?? '', // placeholders
-					//'quote_date' => date('d.m.Y', strtotime($quote['created'] ?? 'now')),
-					//'quote_total' => number_format((float)($quote['total'] ?? 0), 2, ',', '.'),
-					//'quote_filename'=> $pdfInfo['filename'] ?? '',
-				]);
-
-				$this->getRequest()->setPost($angebotPost);
-				Zend_Controller_Action_HelperBroker::getStaticHelper('Email')
-					->sendEmail('shops', 'offer');
+			if (!$stored['inserted']) {
+				$this->completeInquiry($allFormValues, null, null, true);
 
 				return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
-
-				//$successUrl = $this->view->url(['module'=>'shops','controller'=>'inquiry','action'=>'success'], null, true);
-
-				//$this->_helper->json(['status' => 'done', 'redirectUrl' => $successUrl]);
-				//return;
 			}
+
+			// Auto-create quote if a SKU was provided
+			$quoteId = null;
+			$pdfInfo = [];
+
+			try {
+				$quoteId = $this->createQuoteFromInquiry($allFormValues, $shop);
+			} catch (Exception $e) {
+				error_log('Stored shop inquiry could not create a quote: ' . $e->getMessage());
+			}
+
+			if ($quoteId) {
+				try {
+					$pdfInfo = (new DEEC_Pdf())->generate([
+						'module' => 'shops',
+						'controller' => 'quote',
+						'documentId' => $quoteId,
+						'output' => 'file',
+					]);
+				} catch (Exception $e) {
+					error_log('Stored shop inquiry quote PDF could not be generated: ' . $e->getMessage());
+				}
+			}
+
+			$notificationSent = $this->sendInquiryNotification($allFormValues);
+
+			if ($quoteId && !empty($pdfInfo['path'])) {
+				$this->sendOfferNotification($allFormValues, (string)$pdfInfo['path']);
+			}
+
+			$this->completeInquiry($allFormValues, $pdfInfo['url'] ?? null, $notificationSent, false);
+
+			return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
 		}
 
 		$this->view->form = $form;
@@ -319,13 +365,20 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 	public function successAction()
 	{
-		$this->view->formData = $this->formDataSession->formData ?? [];
+		$this->view->formData = $this->formDataSession->submittedData ?? [];
 		$this->view->downloadUrl = $this->formDataSession->downloadUrl ?? null;
+		$this->view->notificationSent = $this->formDataSession->notificationSent ?? null;
+		$this->view->duplicate = $this->formDataSession->duplicate ?? false;
 
 		if ($this->getRequest()->isXmlHttpRequest()) {
 			$this->assignMessages();
 
-			$formHtml = $this->view->partial('inquiry/success.phtml', []);
+			$formHtml = $this->view->partial('inquiry/success.phtml', [
+				'formData' => $this->view->formData,
+				'downloadUrl' => $this->view->downloadUrl,
+				'notificationSent' => $this->view->notificationSent,
+				'duplicate' => $this->view->duplicate,
+			]);
 
 			$this->_helper->json([
 				'status' => 'ok',
@@ -336,6 +389,85 @@ class Shops_InquiryController extends Shops_Controller_Action
 		}
 
 		return $this->_helper->redirector->gotoSimple('index', 'index', 'default');
+	}
+
+	protected function createStepForm(string $step): Shops_Form_DynamicForm
+	{
+		return new Shops_Form_DynamicForm(
+			$this->formConfig,
+			$step,
+			$this->csrfToken,
+			$this->inquiryToken
+		);
+	}
+
+	protected function isValidCsrf(array $data): bool
+	{
+		$token = (string)($data['csrf_token'] ?? '');
+
+		return $token !== '' && hash_equals($this->csrfToken, $token);
+	}
+
+	protected function sendInquiryNotification(array $data): bool
+	{
+		$this->getRequest()->setPost(array_merge($data, [
+			'subject' => 'Anfrageformular',
+			'message' => $data['message'] ?? 'Vielen Dank für Ihre Anfrage.',
+		]));
+
+		try {
+			$result = Zend_Controller_Action_HelperBroker::getStaticHelper('Email')
+				->sendEmail('shops', 'inquiry');
+
+			return !empty($result['ok']);
+		} catch (Exception $e) {
+			error_log('Stored shop inquiry could not be emailed: ' . $e->getMessage());
+			$this->_flashMessenger->addMessage('MESSAGES_EMAIL_SENT_ERROR');
+
+			return false;
+		}
+	}
+
+	protected function sendOfferNotification(array $data, string $pdfPath): bool
+	{
+		$this->getRequest()->setPost(array_merge($data, [
+			'__attach_paths' => [$pdfPath],
+		]));
+
+		try {
+			$result = Zend_Controller_Action_HelperBroker::getStaticHelper('Email')
+				->sendEmail('shops', 'offer');
+
+			return !empty($result['ok']);
+		} catch (Exception $e) {
+			error_log('Stored shop inquiry offer could not be emailed: ' . $e->getMessage());
+			$this->_flashMessenger->addMessage('MESSAGES_EMAIL_SENT_ERROR');
+
+			return false;
+		}
+	}
+
+	protected function completeInquiry(array $data, ?string $downloadUrl, ?bool $notificationSent, bool $duplicate): void
+	{
+		$this->formDataSession->submittedData = $data;
+		$this->formDataSession->downloadUrl = $downloadUrl;
+		$this->formDataSession->notificationSent = $notificationSent;
+		$this->formDataSession->duplicate = $duplicate;
+		$this->formDataSession->inquiryToken = bin2hex(random_bytes(16));
+		$this->inquiryToken = (string)$this->formDataSession->inquiryToken;
+
+		unset(
+			$this->formDataSession->formData,
+			$this->formDataSession->suggestions,
+			$this->formDataSession->requestValues
+		);
+	}
+
+	protected function getSourcePath(): string
+	{
+		$path = parse_url((string)$this->getRequest()->getRequestUri(), PHP_URL_PATH);
+
+		return is_string($path) ? $path : '';
 	}
 
 	protected function findMatchingReferences($attrsReference, $targetAttrValue, $requiredCooling, $tolerance)
@@ -395,6 +527,12 @@ class Shops_InquiryController extends Shops_Controller_Action
 		return $matches;
 	}
 
+	/**
+	 * Existing optional auto-quote flow, invoked only after the inquiry was inserted:
+	 * resolve SKU and defaults, resolve/create the contact and address, create quote and
+	 * position, calculate totals, then finalize number and filename. PDF generation and
+	 * both notification emails remain in indexAction after this method returns a quote ID.
+	 */
 	private function createQuoteFromInquiry(array $data, array $shop)
 	{
 		// need: sku (required), qty (optional), title (optional)
@@ -419,9 +557,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$tplDb = new Shops_Model_DbTable_Template();
 		$tpl = $tplDb->getPrimaryTemplate();
 
-		$formId = (int)$this->_getParam('id', 0);
-	 	$inqDb = new Shops_Model_DbTable_Inquiryform();
- 	 	$formRow = $inqDb->getInquiryform($formId);
+		$formRow = $this->formRow ?? [];
 
 		// 3) (Optional) resolve/create a contact from inquiry data
 		// adjust to your real fields!

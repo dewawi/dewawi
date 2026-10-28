@@ -11,6 +11,14 @@ $this->headTitle($this->title);
 			</div>
 		</div>
 
+		<?php if (!empty($this->errors)): ?>
+			<div class="row justify-content-center">
+				<div class="col-md-8">
+					<div class="alert alert-danger">Bitte prüfen Sie die Pflichtfelder, die E-Mail-Adresse, die Datenschutzzustimmung und laden Sie das Formular gegebenenfalls neu.</div>
+				</div>
+			</div>
+		<?php endif; ?>
+
 		<div class="row justify-content-center">
 			<div class="col-md-8 text-center">
 				<i class="icon-check fas fa-check-circle"></i>

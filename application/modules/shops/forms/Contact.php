@@ -12,6 +12,19 @@ class Shops_Form_Contact extends Zend_Form
 		$csrf->setTimeout(600); // Token expires in 10 minutes
 		$this->addElement($csrf);
 
+		$contactSession = new Zend_Session_Namespace('ShopsContact');
+
+		if (empty($contactSession->inquiryToken)) {
+			$contactSession->inquiryToken = bin2hex(random_bytes(16));
+		}
+
+		$inquiryToken = new Zend_Form_Element_Hidden('inquiry_token');
+		$inquiryToken->removeDecorator('Label')
+			->setValue($contactSession->inquiryToken)
+			->setRequired(true)
+			->addValidator('Regex', true, ['pattern' => '/^[a-f0-9]{32,64}$/D']);
+		$this->addElement($inquiryToken);
+
 		// Honeypot field (must stay empty)
 		$honeypot = new Zend_Form_Element_Text('fax_number');
 		$honeypot->removeDecorator('Label')

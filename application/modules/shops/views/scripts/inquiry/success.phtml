@@ -15,7 +15,14 @@ $this->headTitle($this->title);
 			<div class="col-md-8 text-center">
 				<i class="icon-check fas fa-check-circle"></i>
 				<h1>Vielen Dank für Ihre Kontaktaufnahme!</h1>
-				<p>Wir werden Ihre Anfrage bearbeiten und uns schnellstmöglich mit Ihnen in Verbindung setzen. Eine Kopie Ihrer Nachricht wurde an die angegebene E-Mail-Adresse versandt.</p>
+				<p>Ihre Anfrage wurde gespeichert. Wir werden sie bearbeiten und uns schnellstmöglich mit Ihnen in Verbindung setzen.</p>
+				<?php if ($this->notificationSent === true): ?>
+					<p>Eine Kopie wurde an die angegebene E-Mail-Adresse versandt.</p>
+				<?php elseif ($this->notificationSent === false): ?>
+					<p>Die E-Mail-Benachrichtigung konnte nicht versandt werden. Ihre gespeicherte Anfrage bleibt davon unberührt.</p>
+				<?php elseif (!empty($this->duplicate)): ?>
+					<p>Diese Anfrage war bereits gespeichert und wurde nicht erneut angelegt.</p>
+				<?php endif; ?>
 			</div>
 		</div>
 
@@ -34,17 +41,17 @@ $this->headTitle($this->title);
 					<div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
 						<div class="card-body">
 							<ul class="list-group">
-								<?php if (isset($this->formData[3]['firma'])): ?>
-									<li class="list-group-item">Name: <?php echo $this->escape($this->formData['name']); ?></li>
+								<?php if (isset($this->formData['firma'])): ?>
+									<li class="list-group-item">Firma: <?php echo $this->escape($this->formData['firma']); ?></li>
 								<?php endif; ?>
-								<?php if (isset($this->formData[3]['ansprechpartner'])): ?>
-									<li class="list-group-item">Email: <?php echo $this->escape($this->formData['email']); ?></li>
+								<?php if (isset($this->formData['ansprechpartner'])): ?>
+									<li class="list-group-item">Ansprechpartner: <?php echo $this->escape($this->formData['ansprechpartner']); ?></li>
 								<?php endif; ?>
-								<?php if (isset($this->formData[3]['email'])): ?>
-									<li class="list-group-item">Betreff: <?php echo $this->escape($this->formData['subject']); ?></li>
+								<?php if (isset($this->formData['email'])): ?>
+									<li class="list-group-item">E-Mail: <?php echo $this->escape($this->formData['email']); ?></li>
 								<?php endif; ?>
-								<?php if (isset($this->formData[3]['telefon'])): ?>
-									<li class="list-group-item">Nachricht: <?php echo $this->escape($this->formData['message']); ?></li>
+								<?php if (isset($this->formData['telefon'])): ?>
+									<li class="list-group-item">Telefon: <?php echo $this->escape($this->formData['telefon']); ?></li>
 								<?php endif; ?>
 							</ul>
 						</div>

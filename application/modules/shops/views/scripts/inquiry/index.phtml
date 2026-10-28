@@ -18,7 +18,7 @@ $categories = $this->{'categories'};
 			<div class="col-12 col-lg-6">
 				<div id="form-container">
 					<div class="form-step">
-						<form method="post" id="inquiry-form" onsubmit="return submitStep(this, <?= $this->step ?>);">
+						<form method="post" id="inquiry-form" onsubmit='return submitStep(this, <?php echo json_encode((string)$this->step); ?>);'>
 							<p><?= htmlspecialchars(($this->formRow['description'] ?? '')) ?></p>
 
 							<?php if (!empty($this->errors)): ?>
