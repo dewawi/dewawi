@@ -39,7 +39,7 @@ Zend_Auth::getInstance()->getStorage()->write(['id' => 42]);
 $checks = 0;
 foreach ([0, 1] as $admin) {
     Zend_Registry::set('User', ['id' => 42, 'admin' => $admin]);
-    foreach (['user', 'config', 'permission', 'client', 'export', 'error'] as $controller) {
+    foreach (['user', 'config', 'permission', 'client', 'export', 'error', 'uom'] as $controller) {
         foreach (['GET', 'POST'] as $method) {
             foreach ([false, true] as $ajax) {
                 $request = new Zend_Controller_Request_Http();

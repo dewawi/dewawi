@@ -41,16 +41,16 @@ set_include_path(implode(PATH_SEPARATOR, array(
 
 /** Zend_Application **/
 require_once 'Zend/Application.php';
+require_once 'Zend/Config/Ini.php';
 
 // Create application, bootstrap, and run
+// Keep existing production-only database configurations usable in development.
+$databaseConfig = new Zend_Config_Ini(BASE_PATH . '/configs/database.ini');
 $application = new Zend_Application(
 	APPLICATION_ENV,
-	array(
-		'config' => array(
-			BASE_PATH . '/configs/application.ini',
-			BASE_PATH . '/configs/database.ini'
-		),
-	)
+	array_merge($databaseConfig->get(APPLICATION_ENV, $databaseConfig->production)->toArray(), array(
+		'config' => BASE_PATH . '/configs/application.ini'
+	))
 );
 
 /** Cronjobs don't need all the extra's **/

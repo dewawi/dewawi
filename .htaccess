@@ -1,4 +1,13 @@
+Options -Indexes -MultiViews
+
 RewriteEngine On
+
+# Deny private paths before existing files and directories bypass routing.
+RewriteRule (^|/)\.(?!well-known(?:/|$)) - [F,NC]
+RewriteRule ^(?:application|configs|languages|logs|session|templates|tests|library/(?:DEEC|Zend)|install/(?:config|templates))(?:/|$) - [F,NC]
+RewriteRule \.(?:ini|sql|log)(?:[./]|$) - [F,NC]
+RewriteRule ^cache/(?:[^/]+/)*zend_cache(?:--|$) - [F,NC]
+
 RewriteRule ^files/attachments(?:/|$) index.php [NC,L]
 RewriteCond %{REQUEST_FILENAME} -s [OR]
 RewriteCond %{REQUEST_FILENAME} -l [OR]
