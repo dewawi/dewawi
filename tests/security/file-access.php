@@ -16,8 +16,11 @@ $checks = 0;
 
 class StoredFileAdapter extends AttachmentTestAdapter
 {
+    public bool $denyReads = false;
+
     public function query($sql, $bind = [])
     {
+        if ($this->denyReads) throw new RuntimeException('Media publication must not query the database');
         if (!$sql instanceof Zend_Db_Table_Select || $bind) throw new RuntimeException('Unexpected database access');
         $sql->assemble();
         $from = $sql->getPart(Zend_Db_Select::FROM);
@@ -221,30 +224,74 @@ foreach (['../outside', '10/../../outside', -1, 'bad'] as $id) {
     catch (InvalidArgumentException $exception) { $checks++; }
 }
 
-// Guest publication uses the real SiteEntity scopes and metadata, without a logged-in user.
+// The tenant's media directory is public without metadata, a user or a client session.
 setupStoredFiles();
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 1, 'clientid' => 7, 'logo' => 'logo.png']));
 Zend_Registry::getInstance()->offsetUnset('User');
 Zend_Registry::getInstance()->offsetUnset('Client');
-$public = ['images/product.png', 'category/category.png', 'slide/slide.png', 'download/data.pdf', 'downloads/legacy.pdf', 'header/logo.png'];
+$adapter->denyReads = true;
+$public = ['images/product.png', 'category/category.png', 'category/unpublished.png', 'slide/slide.png', 'download/data.pdf', 'downloads/legacy.pdf', 'header/logo.png', 'header/kaeltemaschine.jpg', 'header/another.png', 'custom/nested/banner.png', 'root.txt', 'images/unmapped.png', 'downloads/unmapped.pdf'];
 foreach ($public as $relative) {
     $contents = str_ends_with($relative, '.pdf') ? "%PDF-1.4\nPublic fixture\n" : base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII=');
     storedFixture('media/7/0/7/' . $relative, $contents);
     foreach (['media/' . $relative, 'media/7/0/7/' . $relative] as $url) {
         [$status, $body, $controller] = storedResponse($url);
         check($status === 200 && $body === $contents && storedHeader($controller, 'Cache-Control') === 'public, max-age=3600', 'Published media unavailable: ' . $url);
+        check(storedHeader($controller, 'X-Content-Type-Options') === 'nosniff' && str_starts_with(storedHeader($controller, 'Content-Security-Policy'), 'sandbox;'), 'Public file protection headers missing');
+        check(storedResponse($url, 'HEAD')[1] === '' && storedResponse($url, 'POST')[0] === 405, 'Public file method handling failed');
     }
 }
 check(storedResponse('media/downloads/data.pdf')[0] === 200, 'Legacy plural category URL did not resolve to its stored download folder');
 check(storedResponse('files/images/internal.png')[0] === 404, 'Internal preview became public');
-foreach (['media/7/0/7/category/unpublished.png', 'media/8/0/8/images/foreign.png', 'media/images/unmapped.png', 'media/downloads/unmapped.pdf', 'files/images/logo.png'] as $relative) {
+foreach (['media/8/0/8/images/foreign.png', 'media/0/7/7/header/logo.png', 'media/07/0/7/header/logo.png', 'media/images/global.png', 'files/images/logo.png', 'cache/internal.txt', 'cache/thumbs/files/private.png'] as $relative) {
     storedFixture($relative);
-    check(storedResponse($relative)[0] === 404, 'Unpublished media exposed: ' . $relative);
+    check(storedResponse($relative)[0] === 404, 'Foreign or private file exposed: ' . $relative);
 }
+foreach (['media/header/missing.png', 'media/', 'media/header/', 'media/header/../root.txt', 'media/header/%2e%2e/root.txt', 'media/header/%252e%252e/root.txt', 'media/header//logo.png', 'media/header/logo.png%00', 'media/header/..\\root.txt'] as $relative) check(storedResponse($relative)[0] === 404, 'Invalid media path accepted: ' . $relative);
+foreach (['hidden/.secret', '.internal/file.txt', 'header/evil.php', 'header/evil.PHP.png', 'header/script.sh', 'header/script.py', 'header/config.inc', 'header/database.ini.bak', 'header/export.sql.gz', 'header/error.log.1'] as $relative) {
+    storedFixture('media/7/0/7/' . $relative);
+    check(storedResponse('media/' . $relative)[0] === 404, 'Unsafe media name accepted: ' . $relative);
+}
+foreach (['php.txt' => '<?php echo "secret";', 'shell.txt' => "#!/bin/sh\necho secret\n", 'active.html' => '<!DOCTYPE html><html><script>alert(1)</script></html>'] as $name => $contents) {
+    storedFixture('media/7/0/7/header/' . $name, $contents);
+    check(storedResponse('media/header/' . $name)[0] === 404, 'Unsafe media content exposed: ' . $name);
+}
+storedFixture('media/7/0/7/custom/empty.txt', '');
+check(storedResponse('media/custom/empty.txt')[0] === 200, 'Empty regular media file unavailable');
+storedFixture('media/7/0/7/custom/large.txt', str_repeat('a', 10240001));
+check(storedResponse('media/custom/large.txt')[0] === 200, 'Upload size limit incorrectly applied to stored media');
+storedFixture('media/7/0/7/custom/active.svg', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+[$status, $body, $controller] = storedResponse('media/custom/active.svg');
+check($status === 200 && storedHeader($controller, 'Content-Type') === 'image/svg+xml' && str_starts_with(storedHeader($controller, 'Content-Security-Policy'), 'sandbox;'), 'SVG media lost its sandbox');
+symlink(BASE_PATH . '/media/7/0/7/header/logo.png', BASE_PATH . '/media/7/0/7/header/linked.png');
+symlink(BASE_PATH . '/media/8/0/8/images', BASE_PATH . '/media/7/0/7/foreign');
+symlink(BASE_PATH . '/files', BASE_PATH . '/media/7/0/7/business');
+foreach (['header/linked.png', 'foreign/foreign.png', 'business/images/internal.png'] as $relative) check(storedResponse('media/' . $relative)[0] === 404, 'Media symlink accepted: ' . $relative);
 storedFixture('cache/thumbs/media/7/0/7/images/product.png');
 check(storedResponse('cache/thumbs/media/7/0/7/images/product.png')[0] === 200, 'Public thumbnail unavailable');
+check(storedResponse('cache/thumbs/media/images/product.png')[0] === 200, 'Flat public thumbnail unavailable');
+storedFixture('cache/thumbs/media/7/0/7/custom/orphan.png');
+check(storedResponse('cache/thumbs/media/custom/orphan.png')[0] === 404, 'Thumbnail without a source became public');
+storedFixture('cache/thumbs/media/7/0/7/header/php.txt');
+check(storedResponse('cache/thumbs/media/header/php.txt')[0] === 404, 'Thumbnail of unsafe source became public');
+storedFixture('cache/thumbs/media/7/0/7/header/logo.png', '<?php echo "secret";');
+check(storedResponse('cache/thumbs/media/header/logo.png')[0] === 404, 'Executable thumbnail became public');
+symlink(BASE_PATH . '/media/7/0/7/header', BASE_PATH . '/cache/thumbs/media/7/0/7/linked');
+storedFixture('media/7/0/7/linked/logo.png');
+check(storedResponse('cache/thumbs/media/linked/logo.png')[0] === 404, 'Thumbnail directory symlink accepted');
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 2, 'clientid' => 8]));
 check(storedResponse('media/7/0/7/images/product.png')[0] === 404, 'Wrong shop served a published image from another tenant');
+check(storedResponse('cache/thumbs/media/7/0/7/images/product.png')[0] === 404, 'Wrong shop served a thumbnail from another tenant');
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 120, 'clientid' => 100, 'logo' => 'renocold.png']));
+foreach (['header/kaeltemaschine.jpg', 'category/kaltwassererzeuger.jpg', 'header/renocold.png', 'header/extra.png', 'other/nested/banner.png'] as $relative) {
+    storedFixture('media/1/0/100/' . $relative);
+    check(storedResponse('media/' . $relative)[0] === 200 && storedResponse('media/1/0/100/' . $relative)[0] === 200, 'Shop 120 media mapping failed: ' . $relative);
+}
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 1, 'clientid' => 0]));
+check(storedResponse('media/header/logo.png')[0] === 404, 'Invalid tenant media mapping accepted');
+Zend_Registry::getInstance()->offsetUnset('SiteContext');
+check(storedResponse('media/7/0/7/header/logo.png')[0] === 404, 'Media published without a site context');
+$adapter->denyReads = false;
 
 // The shop quote grant is bound to this session, site, tenant, object and exact file.
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 1, 'clientid' => 7]));

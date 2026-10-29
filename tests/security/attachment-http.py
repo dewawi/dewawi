@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise Apache rewrites and real file authorization using isolated files and in-memory data."""
 import grp
+import base64
 import os
 from pathlib import Path
 import pwd
@@ -47,6 +48,7 @@ class HttpAttachmentAdapter extends Zend_Db_Adapter_Pdo_Mysql {
         $sql->assemble();
         $from = $sql->getPart(Zend_Db_Select::FROM);
         $table = reset($from)['tableName'];
+        if (in_array($table, ['media', 'item'], true)) throw new RuntimeException('Media publication queried metadata');
         $rows = array_values(array_filter($this->rows[$table] ?? [], static function ($row) use ($sql): bool {
             foreach ($sql->getPart(Zend_Db_Select::WHERE) as $where) {
                 $where = trim(preg_replace('/^AND /', '', $where), '() ');
@@ -73,10 +75,12 @@ class HttpAttachmentLayout extends Zend_Controller_Action_Helper_Abstract {
 }
 $adapter = new HttpAttachmentAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
 $adapter->rows = [
-    'media' => [['id' => 1, 'clientid' => 7, 'deleted' => 0, 'module' => 'items', 'controller' => 'item', 'parentid' => 501, 'type' => 'image', 'url' => 'product.png']],
-    'item' => [['id' => 501, 'clientid' => 7, 'shopid' => 1, 'deleted' => 0, 'downloads' => 'de|public.pdf']],
+    'shop' => [
+        ['id' => 1, 'clientid' => 7, 'activated' => 1, 'url' => 'http://localhost'],
+        ['id' => 120, 'clientid' => 100, 'activated' => 1, 'url' => 'https://www.renocold.com', 'logo' => 'renocold.png'],
+        ['id' => 2, 'clientid' => 8, 'activated' => 1, 'url' => 'https://foreign.test'],
+    ],
 ];
-Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 1, 'clientid' => 7]));
 Zend_Session::setOptions(['save_path' => BASE_PATH . '/session', 'use_cookies' => false, 'cache_limiter' => '']);
 if (isset($_SERVER['HTTP_X_ATTACHMENT_TEST_USER'])) {
     $mode = $_SERVER['HTTP_X_ATTACHMENT_TEST_USER'];
@@ -93,6 +97,11 @@ if (isset($_SERVER['HTTP_X_ATTACHMENT_TEST_USER'])) {
     ];
 }
 Zend_Db_Table::setDefaultAdapter($adapter);
+$site = (new DEEC_Site_Resolver())->resolveByHost($_SERVER['HTTP_HOST'] ?? '');
+if ($site) Zend_Registry::set('SiteContext', $site);
+header_register_callback(static function (): void {
+    header('X-Test-Session-Started: ' . (Zend_Session::isStarted() ? 'yes' : 'no'));
+});
 require $root . '/application/Bootstrap.php';
 require $root . '/application/modules/contacts/controllers/AttachmentController.php';
 $front = Zend_Controller_Front::getInstance();
@@ -127,12 +136,36 @@ with tempfile.TemporaryDirectory(prefix="dewawi-attachment-http-") as temp:
     public.parent.mkdir(parents=True)
     public.write_bytes(b"Public media fixture")
     (site / "session").mkdir()
-    stored_files = ["files/contacts/7/0/7/1/0/100/notes.txt", "files/contacts/7/0/7/1/0/100/quote.pdf", "files/contacts/7/0/7/1/0/100/invoice.pdf", "cache/document/sales/quote/7/10/quote.pdf", "files/uploads/unmapped.pdf", "cache/item/501.pdf", "media/7/0/7/images/unmapped.png"]
+    stored_files = ["files/contacts/7/0/7/1/0/100/notes.txt", "files/contacts/7/0/7/1/0/100/quote.pdf", "files/contacts/7/0/7/1/0/100/invoice.pdf", "cache/document/sales/quote/7/10/quote.pdf", "files/uploads/unmapped.pdf", "cache/item/501.pdf", "cache/internal.pdf", "cache/thumbs/files/unmapped.png"]
     for relative in stored_files:
         target = site / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(contents)
     (site / "files/contacts/7/0/7/1/0/100/linked.pdf").symlink_to(fixture)
+    image = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII=')
+    media_files = ['header/kaeltemaschine.jpg', 'category/kaltwassererzeuger.jpg', 'header/renocold.png', 'header/another.png', 'custom/nested/banner.png', 'root.png']
+    for shard in ['1/0/100', '8/0/8']:
+        for relative in media_files:
+            for area in ['media', 'cache/thumbs/media']:
+                target = site / area / shard / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(image)
+    unsafe_media = {
+        'header/evil.php': b'<?php echo "executed";', 'header/evil.PHP.png': b'fixture',
+        'header/script.sh': b'#!/bin/sh\necho secret\n', 'header/config.inc': b'fixture',
+        'header/disguised.png': b'<?php echo "secret";', 'header/active.html': b'<!DOCTYPE html><html><script>alert(1)</script></html>',
+        '.secret': b'fixture', '.internal/file.txt': b'fixture', 'header/database.ini.bak': b'fixture',
+    }
+    for relative, data in unsafe_media.items():
+        target = site / 'media/1/0/100' / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    for area in ['media', 'cache/thumbs/media']:
+        (site / area / '1/0/100/linked.png').symlink_to(site / area / '1/0/100/header/renocold.png')
+        (site / area / '1/0/100/foreign').symlink_to(site / area / '8/0/8/header', target_is_directory=True)
+    (site / 'media/1/0/100/business').symlink_to(site / 'files', target_is_directory=True)
+    (site / 'cache/thumbs/media/1/0/100/orphan.png').write_bytes(image)
+    (site / 'cache/thumbs/media/1/0/100/header/another.png').write_bytes(b'<?php echo "secret";')
     (site / "index.php").write_text(front)
     current = (root / ".htaccess").read_text()
     (site / ".htaccess").write_text(current.replace("RewriteRule ^files/attachments(?:/|$) index.php [NC,L]\n", "").replace("RewriteRule ^(?:files|media|cache)(?:/|$) index.php [NC,L]\n", ""))
@@ -180,9 +213,12 @@ DocumentRoot "{site}"
 
         last_headers = {}
 
-        def fetch(path, user=None, method="GET"):
+        def fetch(path, user=None, method="GET", host="localhost"):
             try:
-                request = urllib.request.Request(f"http://127.0.0.1:{port}{path}", headers={"X-Attachment-Test-User": user} if user else {}, method=method)
+                headers = {"Host": host}
+                if user:
+                    headers['X-Attachment-Test-User'] = user
+                request = urllib.request.Request(f"http://127.0.0.1:{port}{path}", headers=headers, method=method)
                 with urllib.request.urlopen(request, timeout=5) as response:
                     last_headers.clear()
                     last_headers.update(response.headers)
@@ -225,6 +261,29 @@ DocumentRoot "{site}"
             assert fetch('/dewawi/' + relative, 'allowed') == (200, contents), 'Subdirectory authorized download failed'
             assert fetch('/dewawi/' + relative, 'foreign')[0] == 404, 'Subdirectory tenant bypass'
         assert fetch('/dewawi/media/images/product.png') == (200, b'Public media fixture'), 'Subdirectory publication failed'
+        for prefix in ['', '/dewawi']:
+            for relative in media_files:
+                for path in ['/media/' + relative, '/media/1/0/100/' + relative]:
+                    assert fetch(prefix + path, host='www.renocold.com') == (200, image), f'Tenant media failed: {prefix}{path}'
+                    assert last_headers['Cache-Control'] == 'public, max-age=3600' and last_headers['X-Content-Type-Options'] == 'nosniff'
+                    assert last_headers['Content-Security-Policy'].startswith('sandbox;')
+                    assert last_headers['X-Test-Session-Started'] == 'no' and 'Set-Cookie' not in last_headers, 'Public media required a session'
+                    assert fetch(prefix + path, method='HEAD', host='www.renocold.com') == (200, b'')
+                    assert fetch(prefix + path, method='POST', host='www.renocold.com')[0] == 405
+                if relative != 'header/another.png':
+                    for path in ['/cache/thumbs/media/' + relative, '/cache/thumbs/media/1/0/100/' + relative]:
+                        assert fetch(prefix + path, host='www.renocold.com') == (200, image), f'Public thumbnail failed: {path}'
+            for area in ['media', 'cache/thumbs/media']:
+                for path in ['8/0/8/header/renocold.png', '0/0/100/header/renocold.png', '01/0/100/header/renocold.png', 'linked.png', 'foreign/renocold.png', 'business/contacts/7/0/7/1/0/100/quote.pdf', 'header/%2e%2e/root.png', 'header/%252e%252e/root.png', 'header//renocold.png', 'header/renocold.png%00', 'missing.png', '', 'header/'] + list(unsafe_media):
+                    assert fetch(prefix + '/' + area + '/' + path, host='www.renocold.com')[0] in (400, 403, 404), f'Unsafe media request accepted: {area}/{path}'
+            for path in ['/cache/thumbs/media/1/0/100/orphan.png', '/cache/thumbs/media/1/0/100/header/another.png', '/media/1/0/100/header/renocold.png']:
+                assert fetch(prefix + path, host='foreign.test')[0] == 404, 'Foreign shop served tenant media'
+            assert fetch(prefix + '/cache/thumbs/media/orphan.png', host='www.renocold.com')[0] == 404, 'Orphan thumbnail exposed'
+            assert fetch(prefix + '/cache/thumbs/media/header/another.png', host='www.renocold.com')[0] == 404, 'Executable thumbnail exposed'
+            assert fetch(prefix + '/media/8/0/8/header/renocold.png', host='foreign.test') == (200, image), 'Foreign shop lost its own media'
+            assert fetch(prefix + '/media/1/0/100/header/renocold.png', host='unknown.test')[0] == 404, 'Unknown domain published media'
+            for relative in stored_files:
+                assert fetch(prefix + '/' + relative, host='www.renocold.com')[0] == 404, 'Public shop exposed private files or cache'
         print("PASS: Apache static bypass reproduced; attachments and stored files protected; tenant, object, method, traversal, symlink and cache checks pass; published media accessible")
     finally:
         server.terminate()

@@ -10,25 +10,35 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		$site = Zend_Registry::get('SiteContext');
 		$thumb = str_starts_with($relative, 'cache/thumbs/media/');
 		$relative = preg_replace('~^cache/thumbs/media/~', 'media/', $relative);
-		if (!preg_match('~^media/(?:(?:([0-9])/([0-9])/([1-9][0-9]*)/)?)(images|header|category|slide|downloads|download)/(.+)$~D', $relative, $parts)) return null;
+		if (!preg_match('~^media/(?:([0-9]+)/([0-9]+)/([0-9]+)/)?(.+)$~D', $relative, $parts)) return null;
 		$owner = (int)$site->getClientId();
-		if ($parts[3] !== '' && ($owner !== (int)$parts[3] || implode('/', array_slice($parts, 1, 3)) !== (new DEEC_Directory())->getShortUrl($owner))) return null;
-		[$kind, $filename] = [$parts[4], $parts[5]];
-		$prefix = ($thumb ? 'cache/thumbs/media/' : 'media/') . (new DEEC_Directory())->getShortUrl($owner) . '/';
-		if ($kind === 'header' && $site->get('logo') === $filename) return $prefix . 'header/' . $filename;
-		$db = new Shops_Model_DbTable_Media();
-		$rows = $db->fetchAll($db->select()->where('clientid = ?', $owner)->where('url = ?', $filename)->where('deleted = ?', 0));
-		foreach ($rows as $row) {
-			if (in_array($kind, ['downloads', 'download'], true) ? !in_array($row['type'], ['file', 'download'], true) : $row['type'] !== 'image') continue;
-			if ($row['module'] === 'items' && $row['controller'] === 'item' && in_array($kind, ['images', 'downloads', 'download'], true)) {
-				if ((new Shops_Model_DbTable_Item())->getItem((int)$row['parentid'])) return $prefix . ($row['type'] === 'image' ? 'images' : ($row['type'] === 'download' ? 'download' : 'downloads')) . '/' . $filename;
-			}
-			if ($row['module'] === 'shops' && in_array($row['controller'], ['category', 'slide'], true) && in_array($kind, [$row['controller'], 'downloads', 'download'], true)) {
-				$class = 'Shops_Model_DbTable_' . ucfirst($row['controller']);
-				if ((new $class())->getPublicById((int)$row['parentid'])) return $prefix . ($row['type'] === 'image' ? $row['controller'] : ($row['type'] === 'download' ? 'download' : 'downloads')) . '/' . $filename;
-			}
+		if ($owner < 1) return null;
+		$shard = (new DEEC_Directory())->getShortUrl($owner);
+		if ($parts[3] !== '' && implode('/', array_slice($parts, 1, 3)) !== $shard) return null;
+		$filename = $parts[4];
+		foreach (explode('/', $filename) as $part) {
+			if (!DEEC_Directory::validUploadName($part) || preg_match('~\.(?:inc|ini|sql|log)(?:\.|$)~i', $part)) return null;
 		}
-		return in_array($kind, ['downloads', 'download'], true) && (new Shops_Model_DbTable_Item())->hasPublicDownload($filename) ? $prefix . 'downloads/' . $filename : null;
+		$prefix = 'media/' . $shard . '/';
+		$candidates = [$filename];
+		// Preserve the legacy download/downloads alias without media metadata.
+		if (preg_match('~^(downloads?)/(.+)$~D', $filename, $download)) $candidates[] = ($download[1] === 'download' ? 'downloads/' : 'download/') . $download[2];
+		foreach ($candidates as $candidate) {
+			try {
+				$path = DEEC_Directory::storedPath($prefix . $candidate);
+			} catch (RuntimeException $exception) {
+				continue;
+			}
+			$paths = [$path];
+			$published = ($thumb ? 'cache/thumbs/' : '') . $prefix . $candidate;
+			if ($thumb) $paths[] = DEEC_Directory::storedPath($published);
+			foreach ($paths as $path) {
+				$type = (new finfo(FILEINFO_MIME_TYPE))->file($path);
+				if (!$type || in_array($type, ['text/x-php', 'application/x-httpd-php', 'application/x-executable', 'application/x-pie-executable', 'application/x-dosexec', 'application/x-sharedlib', 'application/x-shellscript', 'text/x-shellscript', 'text/html', 'application/xhtml+xml', 'text/javascript', 'application/javascript', 'text/xml', 'application/xml'], true)) return null;
+			}
+			return $published;
+		}
+		return null;
 	}
 
 	public function canReadStoredFile(string $relative, string $action = 'view'): bool
