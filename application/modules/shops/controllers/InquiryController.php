@@ -433,8 +433,9 @@ class Shops_InquiryController extends Shops_Controller_Action
 		try {
 			$result = Zend_Controller_Action_HelperBroker::getStaticHelper('Email')
 				->sendEmail('shops', 'inquiry');
+			if(($result['internalAccepted'] ?? null) === false) error_log('Stored shop inquiry internal notification was not accepted by SMTP');
 
-			return !empty($result['ok']);
+			return !empty($result['customerAccepted']);
 		} catch (Exception $e) {
 			error_log('Stored shop inquiry could not be emailed: ' . $e->getMessage());
 
@@ -451,8 +452,9 @@ class Shops_InquiryController extends Shops_Controller_Action
 		try {
 			$result = Zend_Controller_Action_HelperBroker::getStaticHelper('Email')
 				->sendEmail('shops', 'offer');
+			if(($result['internalAccepted'] ?? null) === false) error_log('Stored shop inquiry offer internal notification was not accepted by SMTP');
 
-			return !empty($result['ok']);
+			return !empty($result['customerAccepted']);
 		} catch (Exception $e) {
 			error_log('Stored shop inquiry offer could not be emailed: ' . $e->getMessage());
 

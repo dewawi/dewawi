@@ -44,10 +44,6 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				}
 
 				$emailmessageDb = new Shops_Model_DbTable_Emailmessage();
-
-				$recipients = array();
-				$recipients[0]['email'] = $data['email'];
-				$recipients[0]['contactid'] = 0;
 			} else {
 				$form = new Contacts_Form_Contact();
 
@@ -107,6 +103,25 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				if($form->isValid($data) || true) {
 					// Get SMTP settings
 					list($smtpConfig, $fromEmail, $fromName) = $this->getEmailConfig($module);
+
+					if($module === 'shops') {
+						$customerEmail = DEEC_Filter::email((string)($data['email'] ?? '')) ?? '';
+						$recipients = [[
+							'email' => $customerEmail,
+							'contactid' => 0,
+							'roles' => ['customer'],
+						]];
+
+						if(strcasecmp($customerEmail, $fromEmail) === 0) {
+							$recipients[0]['roles'][] = 'internal';
+						} else {
+							$recipients[] = [
+								'email' => $fromEmail,
+								'contactid' => 0,
+								'roles' => ['internal'],
+							];
+						}
+					}
 
 					return $this->sendEmails($module, $controller, $recipients, $smtpConfig, $fromEmail, $fromName, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items);
 				}
@@ -171,14 +186,19 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 	private function sendEmails($module, $controller, $recipients, array $smtpConfig, $fromEmail, $fromName, $formData, $data, $emailmessageDb, $documentid, $campaignid, $items)
 	{
 		$result = ['ok' => true, 'sent' => 0, 'failed' => 0];
+		if($module === 'shops') {
+			$result['customerAccepted'] = null;
+			$result['internalAccepted'] = null;
+		}
 
-		foreach($recipients as $recipient) {
+		foreach($recipients as $recipientIndex => $recipient) {
 			$to = [$recipient['email']];
-			if($module == 'shops') $to[] = $fromEmail;
 
 			if(isset($data['replyto']) && $data['replyto']) $data['replyto'] = str_replace(' ', '', $data['replyto']);
 			if(isset($data['cc']) && $data['cc']) $data['cc'] = str_replace(' ', '', $data['cc']);
 			if(isset($data['bcc']) && $data['bcc']) $data['bcc'] = str_replace(' ', '', $data['bcc']);
+			$cc = $module !== 'shops' || $recipientIndex === 0 ? ($data['cc'] ?? '') : '';
+			$bcc = $module !== 'shops' || $recipientIndex === 0 ? ($data['bcc'] ?? '') : '';
 
 			$attachmentsSent = array();
 			$attachmentPaths = array();
@@ -224,8 +244,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				'controller' => $data['controller'] ?? $controller,
 				'sender' => $fromEmail,
 				'recipient' => $recipient['email'],
-				'cc' => $data['cc'] ?? '',
-				'bcc' => $data['bcc'] ?? '',
+				'cc' => $cc,
+				'bcc' => $bcc,
 				'replyto' => $data['replyto'] ?? '',
 				'subject' => $subject ? $subject : 'Anfrageformular',
 				'body' => $body,
@@ -238,7 +258,6 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				foreach($formData['__attach_paths'] as $path) {
 					if($path && file_exists($path)) $attachmentPaths[] = $path;
 				}
-				unset($formData['__attach_paths']);
 			}
 
 			$embeddedImages = [];
@@ -253,29 +272,43 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				];
 			}
 
-			$sendResult = DEEC_Email::sendMessage($smtpConfig, [
-				'fromEmail' => $emailmessage['sender'],
-				'fromName' => $fromName,
-				'to' => $to,
-				'cc' => $emailmessage['cc'],
-				'bcc' => $emailmessage['bcc'],
-				'replyTo' => $emailmessage['replyto'],
-				'subject' => $emailmessage['subject'],
-				'body' => $emailmessage['body'],
-				'altBody' => html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], "\n", $emailmessage['body'])), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
-				'attachments' => $attachmentPaths,
-				'embeddedImages' => $embeddedImages,
-				'emailmessageId' => $messageid,
-				'xMailer' => '',
-			]);
+			try {
+				if($module === 'shops' && !DEEC_Filter::isValidEmail($recipient['email'])) {
+					throw new RuntimeException('Invalid shop email recipient');
+				}
+
+				$sendResult = DEEC_Email::sendMessage($smtpConfig, [
+					'fromEmail' => $emailmessage['sender'],
+					'fromName' => $fromName,
+					'to' => $to,
+					'cc' => $emailmessage['cc'],
+					'bcc' => $emailmessage['bcc'],
+					'replyTo' => $emailmessage['replyto'],
+					'subject' => $emailmessage['subject'],
+					'body' => $emailmessage['body'],
+					'altBody' => html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], "\n", $emailmessage['body'])), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+					'attachments' => $attachmentPaths,
+					'embeddedImages' => $embeddedImages,
+					'emailmessageId' => $messageid,
+					'xMailer' => '',
+				]);
+			} catch(Exception $e) {
+				if($module !== 'shops') throw $e;
+				$sendResult = ['sent' => false, 'error' => $e->getMessage()];
+			}
 
 			$flashMessengerHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
 			$redirector = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
+			$accepted = !empty($sendResult['sent']);
+			if($module === 'shops') {
+				foreach($recipient['roles'] as $role) $result[$role.'Accepted'] = $accepted;
+			}
 
-			if(!$sendResult['sent']) {
+			if(!$accepted) {
 				$result['ok'] = false;
 				$result['failed']++;
-				$emailmessageDb->updateEmailmessage($messageid, array('response' => $sendResult['error']));
+				$error = trim((string)($sendResult['error'] ?? ''));
+				$emailmessageDb->updateEmailmessage($messageid, ['response' => $error !== '' ? $error : 'Email transport did not confirm SMTP acceptance']);
 
 				if($feedback['service'] && $feedback['request'] && $feedback['created']) {
 					$feedback['service']->deleteRequest($feedback['request']);

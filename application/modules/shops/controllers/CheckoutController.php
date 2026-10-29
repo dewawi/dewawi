@@ -182,7 +182,8 @@ class Shops_CheckoutController extends Shops_Controller_Action
 
 		try {
 			$emailResult = $this->_helper->Email->sendEmail('shops', 'checkout', 'checkout', $cart);
-			$this->checkoutDataSession->notificationSent = !empty($emailResult['ok']);
+			$this->checkoutDataSession->notificationSent = !empty($emailResult['customerAccepted']);
+			if(($emailResult['internalAccepted'] ?? null) === false) error_log('Stored shop order internal notification was not accepted by SMTP');
 		} catch (Exception $e) {
 			error_log('Stored shop order could not be emailed: ' . $e->getMessage());
 			$this->checkoutDataSession->notificationSent = false;

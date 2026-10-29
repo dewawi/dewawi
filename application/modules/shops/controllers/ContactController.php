@@ -55,7 +55,8 @@ class Shops_ContactController extends Shops_Controller_Action
 		if ($stored['inserted']) {
 			try {
 				$emailResult = $this->_helper->Email->sendEmail('shops', 'contact', 'contact');
-				$this->contactDataSession->notificationSent = !empty($emailResult['ok']);
+				$this->contactDataSession->notificationSent = !empty($emailResult['customerAccepted']);
+				if(($emailResult['internalAccepted'] ?? null) === false) error_log('Stored shop contact internal notification was not accepted by SMTP');
 			} catch (Exception $e) {
 				error_log('Stored shop contact inquiry could not be emailed: ' . $e->getMessage());
 				$this->contactDataSession->notificationSent = false;
