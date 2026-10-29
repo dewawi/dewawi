@@ -2,7 +2,7 @@
 
 ## Umfang und Bestandsaufnahme
 
-Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen und Phase 4.3 um Dokument- und Toolbar-Aktionen. Weitere Aktionen werden separat migriert.
+Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen, Phase 4.3 um Dokument- und Toolbar-Aktionen und Phase 4.4 um Auto-Save und Positionsbearbeitung. Weitere Aktionen werden separat migriert.
 
 | Vorhandene Stelle | Befund | Entscheidung / Umsetzung |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vo
 | FlashMessenger im E-Mail-Helper | Zusätzliche Meldung trotz AJAX-Antwort | Bei AJAX keine Flashmeldung einreihen; normale Requests behalten FlashMessenger |
 | E-Mail-Historie in `contacts` | Technische Transportantwort im sichtbaren Fehlertext | Verständlichen übersetzten Status anzeigen; vorhandene Speicherung bleibt erhalten, negative Transportresultate werden serverseitig geloggt |
 | `layout.phtml` / `plain.phtml` | Bestehende JavaScript-Konfiguration, beide laden `global.js` | Kleinen gemeinsamen Übersetzungskatalog aus dem Messages-Helper mit sicheren JSON-Flags bereitstellen |
-| `#loading` / `ajaxStart` | Globales Overlay vorhanden, globale AJAX-Aktivierung auskommentiert; Suche verwendet Overlay ausdrücklich | Keine globale Aktivierung; Suche, Keepalive und Auto-Save behalten ihr Verhalten |
+| `#loading` / `ajaxStart` | Globales Overlay vorhanden, globale AJAX-Aktivierung auskommentiert; Suche verwendet Overlay ausdrücklich | Keine globale Aktivierung; Suche und Keepalive bleiben bestehen, Auto-Save erhält in Phase 4.4 lokale Feldzustände |
 | Dokumentfinalisierung | Vorhandene eigene `.is-loading`-Sperre und Validierungsdarstellung | Gemeinsame Buttonzustandsverwaltung wiederverwenden; vorhandene Validierungsdarstellung und Route erhalten |
 | `js/contacts.js` | Meldungen über `pushMessages()`, bei Kontaktpersonenzuordnung bereits lokale `disabled`-Behandlung | Zentrale Darstellung wirkt sofort; weitere lokale Ladezustände folgen separat |
 | Kampagnen und Shop | Kampagnen nutzen `resendMessage()`; Shop nutzt denselben PHP-Meldungshelper, aber `shops.js` und eigenes Layout | Kampagnen übergeben den betätigten Button; Shop erhält die Schließen-Behandlung für den gemeinsam gerenderten Button |
@@ -280,17 +280,115 @@ Ein AJAX-Timeout beweist keinen Abbruch der serverseitigen Finalisierung. Seiten
 
 Die Vorschau-Reihenfolgenprüfung schützt JSON-Ergebnis und DOM. Die bestehende Cache-Datei verwendet weiterhin einen gemeinsamen Dateinamen und `overwrite: true`; konkurrierende serverseitige Dateischreibvorgänge werden durch einen ignorierten alten AJAX-Callback nicht rückgängig gemacht. Eine vollständig versionierte Vorschauablage wäre eine getrennte Backend-/Cache-Änderung. Auch das tatsächliche Laden der PDF-Datei kann nach erfolgreicher JSON-Antwort noch fehlschlagen.
 
-Manuelle Screenreader-/Gerätebedienung und echte produktive Dokumentnavigationen wurden nicht durchgeführt. **Phase 4.4 wurde nicht begonnen und benötigt einen separaten Auftrag.**
+Manuelle Screenreader-/Gerätebedienung und echte produktive Dokumentnavigationen wurden nicht durchgeführt. Der damalige Ausblick auf Phase 4.4 ist durch den nachfolgenden Implementierungsbericht aktualisiert.
 
 Commit-Vorschlag:
 
 `unify loading states for document and toolbar actions`
 
-## Priorisierte Folgeschritte nach Phase 4.3 (noch nicht umgesetzt)
+## Phase 4.4 – Auto-Save und Positionsbearbeitung
+
+### Bestand, Aufrufer und Antwortverträge
+
+Untersucht wurden `edit`, `saveEntity`, `editPosition`, `editPositionSet`, alle sieben Positions-/Gruppen-/Optionsmutationen, `applySaveResponse`, `applyCalculation`, `getPositions`, die Feldstatushelfer und der Toolbar-Dispatch in `js/global.js`. Berücksichtigt wurden normale Formularänderungen, `input`/`textchange`, MultiForm, Dokumentnotizen, Inline-Edit, TinyMCE und programmatische Saves aus Kontaktübernahme/Autocomplete. `ToolbarPositions.php`, `ToolbarPositionSets.php`, die Positions-Partials der Module und `DEEC_Controller_PositionAction` liefern bereits die erforderlichen Aktions- und Kontextattribute und bleiben unverändert.
+
+| Stelle | Vorheriger Vertrag | Vertrag nach Phase 4.4 |
+| --- | --- | --- |
+| `edit` / generische DEEC-Edit-Aktionen | Synchrone JSON-Antwort; normalerweise `ok: true`, teilweise `saved: true`. Automatische Saves akzeptierten auch Antworten ohne positive Bestätigung. | Rückgabe bleibt das ursprüngliche JSON-Objekt beziehungsweise `null` bei Transportfehler. Nur ausdrücklich positives `ok`/`saved`, ohne negativen Gegenstatus oder `errors`, bestätigt Speicherung. |
+| `Items_TagController::editAction` | JSON mit `tagid`, aber ohne Status. Wird durch Inline-`edit` verwendet. | Dasselbe `tagid` plus `ok: true`; negative Antworten bleiben unverändert. Der vorhandene Legacy-Tag-Erstellvertrag in `getCreateResponse` bleibt erhalten. |
+| `DEEC_Controller_PositionAction` in Verkauf, Einkauf, Artikeln und Prozessen | Strukturierte JSON-Antwort mit `ok`; erfolgreiche Mutationen enthalten die vorhandenen Berechnungen und/oder `reloadPositions`. | Backend unverändert. `editPosition` bleibt synchron und ohne Rückgabewert. Nur bestätigte Resultate werden angewendet. |
+| Gruppen `addAction`, alle vier Module | Erfolgreicher POST lieferte leeren Inhalt. | Ein JSON-Dokument mit `ok: true`, neuer Gruppen-`id` und `reloadPositions: true`. Bei Verkauf erst nach Commit. Beide Zweige – erste Gruppe mit Übernahme bisher ungruppierter Positionen und weitere Gruppe – sind geprüft. |
+| Gruppen `editAction`, Verkauf/Einkauf/Prozesse | Textänderungen lieferten die Gruppenzeile; die alten numerischen Zweige gaben Berechnung und Zeile als zwei aneinandergehängte JSON-Dokumente aus. Zusätzlich waren die Zend-Form-Zugriffe mit den bereits migrierten DEEC-Formularen inkompatibel. | Genau ein JSON-Objekt: bisherige Zeilenfelder und flache Berechnungsschlüssel, zusätzlich `ok`, `calculation` und `reloadPositions`. Vorhandene `DEEC_Form::addMultiOptions`/`getElement` ersetzen ausschließlich in diesen Edit-Aktionen die ungültigen Zend-Zugriffe. |
+| Gruppen `copyAction` / `deleteAction`, Verkauf/Einkauf/Prozesse | Flache lokalisierte Berechnungsdaten ohne Status. | Bestehende flache Schlüssel bleiben erhalten; zusätzlich `ok: true`, dieselben Daten unter `calculation` und `reloadPositions: true`. `array_replace` erhält numerische Positions-IDs. Keine Änderung der Transaktionen oder Berechnungsregeln. |
+| Gruppen `editAction` / `copyAction` / `deleteAction`, Artikel | Zeilen-/Aktionsdaten ohne Status. | Bisherige Daten plus `ok` und passendes `reloadPositions`; Kopieren ergänzt die neue `id`. Keine Dokumentberechnung für Artikelgruppen. |
+| `getPositions` | HTML; laufende Read-ID verhinderte ältere Listenantworten. Der Zielselektor unterschied nicht zwischen Positionstypen. | Weiterhin HTML und bestehende Read-ID. Zielbereich berücksichtigt `parent` und `type`; zusätzliche lokale Änderungsrevision und Schutz ungespeicherter Felder verhindern veraltete Ersetzungen. |
+
+`editPositionSet` liefert weiterhin synchron das ursprüngliche JSON-Objekt beziehungsweise `undefined` bei Transportfehler. Die URL enthält jetzt ausdrücklich den tatsächlichen Positionstyp; der bisherige fehlerhafte Taxrate-Reload mit der Dokumenthöhe als zweitem Argument entfällt zugunsten von `applySaveResponse`. Bestehende Zeilenwerte stehen für Inline-Anzeige weiterhin direkt zur Verfügung.
+
+### Lokaler Feldstatus, Dirty-State und Bedienung
+
+`markFieldSaving`, `markFieldSaved`, `markFieldError` und `clearFieldState` verwenden die vorhandenen Klassen `is-valid`, `is-invalid`, `.dw-field__description` und `.dw-field-error`. Während des Requests stehen `aria-busy` und eine dezente Statusmeldung am Feld; nach bestätigtem Erfolg bleibt der bisherige kurze `is-valid`-Hinweis. Synchrone Requests erlauben dem Browser häufig keinen sichtbaren Zwischenaufbau. Es gibt keine Zusage einer sichtbaren Ladeanimation, keine künstliche Verzögerung, keine globale Sperre und keinen Erfolgstoast je automatischem Save.
+
+Feldfehler werden ausschließlich mit `.text()` aufgebaut, auch bei verschachtelten Validierungsobjekten. Sie besitzen eine eindeutige ID, `role="alert"`, `aria-live="assertive"`, `aria-invalid` und eine ergänzte `aria-describedby`-Verknüpfung. Bereits vorhandene Beschreibungstexte bleiben verknüpft; der vorherige Busy-Wert wird restauriert. Die dunkle vorhandene Textfarbe und Wortumbruch machen lange Feldfehler lesbar. Erfolgreiche Eingaben entfernen ausschließlich ihre eigenen Fehler. Fehlgeschlagene oder noch nicht gespeicherte Inline-Eingaben bleiben auch nach einem Klick auf ein anderes Bedienelement geöffnet und korrigierbar.
+
+Die begrenzte Ergänzung zum vorhandenen Dirty-Boolean ist ein Attribut am betroffenen DOM-Feld: `data-autosave-unsaved`. Eingaben und fehlgeschlagene/unklare Saves behalten es, ausschließlich die Bestätigung dieses Feldes entfernt es. `Dewawi.setDirty(false)` berücksichtigt verbleibende Markierungen; ein unabhängiger erfolgreicher Save oder eine explizite Positionsaktion kann dadurch keinen anderen Feldfehler als gespeichert kennzeichnen. Für abgelaufene Sitzungen bleibt der bisherige Reload ohne zusätzliche Verlassen-Rückfrage möglich. Es gibt keine neue globale Zustandsverwaltung und keinen parallelen Auto-Save-Mechanismus. TinyMCE markiert Änderungen bereits während seiner bestehenden Speicherverzögerung als ungespeichert und aktualisiert seinen Inhaltscache nur bei positivem Speicherstatus ohne Validierungsfehler. Auch das Zurücksetzen eines unklar gespeicherten Editorinhalts auf den Cachewert wird erneut bestätigt. Erfolgreiche Inline-Erstellungen geben ihre Feldmarkierung anschließend für die normale Bearbeitung frei.
+
+Die vorhandenen synchronen Aufrufe und Rückgaben von `edit`, `editPosition` und `editPositionSet` bleiben erhalten. Dadurch können diese Feldsaves weiterhin vor Dokumentberechnung und Finalisierung abschließen. Die vorhandenen generischen Formular- und MultiForm-Handler überspringen Positions-, Inline- und gesonderte Notizfelder, damit dasselbe `change` nicht zusätzlich durch Bubbling einen zweiten Save auslöst. Auswahl-Checkboxen speichern weiterhin nichts; der bestehende gesonderte Sortierablauf bleibt bestehen.
+
+### Explizite Aktionen, Reihenfolge und Aktualisierung
+
+Hinzufügen, Kopieren und Löschen von Positionen/Gruppen sowie Optionsübernahme übergeben den tatsächlichen Toolbar-Button an den vorhandenen `beginActionRequest`-/`setButtonLoading`-Mechanismus. Alte Argumente bleiben gültig; neue Button-/Feldargumente sind optional. Der Buttonzustand einschließlich DOM-Inhalt, vorherigem Disabled-/ARIA-Zustand wird nach Abschluss wiederhergestellt. Gleiche Aktionen auf denselben IDs werden auch bei überlappenden Einzel-/Mehrfachauswahlen abgefangen.
+
+Eine benannte jQuery-Queue am vorhandenen Positionsbereich verarbeitet explizite Mutationen dieses Bereichs nacheinander. Auch verschiedene ausdrücklich angeforderte Aktionen werden dort geordnet, während Eingaben und andere Bereiche bedienbar bleiben. `copy-selected-position` und `delete-selected-position` verarbeiten die ausgewählten Karten in DOM-Reihenfolge. Ein Batch zeigt durchgehend denselben Buttonstatus, liest am Ende einmal nach und stoppt beim ersten negativen oder unklaren Resultat. Bereits bestätigte Teilresultate werden durch einen frischen Read sichtbar; die Fehlermeldung bleibt bestehen. Es gibt keine automatische Wiederholung unsicherer Schreiboperationen. Schreibrequests besitzen den vorhandenen 120-Sekunden-Timeout.
+
+Die bestehende Read-ID wird um eine Änderungsrevision am Positionsbereich ergänzt. Eine ältere Mutationsberechnung wird übersprungen, wenn inzwischen ein synchroner Feldsave erfolgte; ein neuer Read holt den aktuellen Serverstand. Listenantworten aus der Zeit vor einer neueren Mutation werden ignoriert. Während einer Mutation oder bei ungespeicherten Feldern ersetzt ein Read die Eingaben nicht. Eine erforderliche Aktualisierung wird am vorhandenen Bereich vermerkt und nach Korrektur mit einem **neuen** Read erledigt; es wird kein altes HTML zwischengespeichert und später eingefügt. Aktuelle Read-Fehler behalten den DOM-Inhalt und zeigen eine getrennte Warnung.
+
+`applyCalculation` und die fachlichen Berechnungshelfer bleiben unverändert: Mengen/Preise, Rabatt-/Preisregeln, Steuergruppen, Netto/Brutto, Positions- und Dokumentbeträge verwenden dieselben Daten. Die vorhandenen Scrollparameter bleiben erhalten. Berechtigungs-/Mandanten- und Readonly-Prüfungen in Plugin, Modellen und Controllern wurden nicht gelockert.
+
+### Ausgeführte Prüfungen
+
+Alle Schreiboperationen liefen ausschließlich gegen abgefangene AJAX-Aufrufe oder bestehende In-Memory-Adapter. Keine produktive Datenbank, echte E-Mail oder produktive Buchung wurde verwendet. Der vorhandene Browser-Runner `tests/ui/notifications.py` prüft beide Sprachen und verwendet für 390 px weiterhin einen tatsächlichen iframe-Viewport. Er rendert zusätzlich den tatsächlichen TinyMCE-Helper mit PHP; dessen JavaScript läuft mit einer abgefangenen Editor-API ohne externe TinyMCE-Initialisierung. Geprüft sind Speicherverzögerung, unveränderter Inhalt, persistenter Dirty-State, Cacheverhalten bei negativen/unklaren Antworten, Korrektur und Readonly-Verhalten.
+
+| Ausgeführter Befehl | Ergebnis dieser Phase |
+| --- | --- |
+| `python3 tests/ui/notifications.py` | Je **1287 Prüfungen bei 1280 px und 390 px** bestanden. Enthält alle 606 bisherigen UX-Prüfungen sowie normale/rasche Feldsaves, lokale Zustände, MultiForm, Inline-Korrektur, persistente Fehler/Dirty-State, XSS/ARIA/Umbruch, sämtliche tatsächlichen Positions-Toolbar-Handler, Doppelklick/überlappende IDs, geordnete Batches/Teilresultate, Verkauf/Einkauf, unklare/negative Antworten, Netzwerk/Timeout/Parser/HTTP, Buttonwiederherstellung, getrennte Positionstypen und verspätete Berechnungs-/Listenantworten. |
+| `python3 tests/documents/calculation-ui.py` | Notiz-/Inline-Notiz-Auto-Save und **28 Berechnungsprüfungen** bestanden, einschließlich Preis-/Mengenpräzision, Preisregeln, Steuerbefreiung, synchroner Reihenfolge und unabhängiger Feldfehler. |
+| `php tests/documents/calculation.php` | **700 Prüfungen** bestanden. |
+| `php tests/documents/calculation.php purchases` | **676 Prüfungen** bestanden. |
+| `php tests/documents/calculation.php processes` | **670 Prüfungen** bestanden. Die drei Läufe verwenden reale Controller/Formulare/Modelle mit dem bestehenden In-Memory-Adapter: Gruppen-Erstellung in beiden Zweigen, einzelne gültige JSON-Antwort, lokale Zahlenwerte, Legacy-/Nested-Berechnungsschlüssel, unveränderte numerische IDs, Artikelgruppen, negative Edit-Fälle, Kopieren/Löschen und Rollback. |
+| `php tests/documents/lifecycle.php` | **879 Prüfungen** bestanden. |
+| `php tests/security/document-edits.php` | **7400 Prüfungen** bestanden; erwartete Readonly-Fehler werden durch die vorhandene Fixture geloggt. |
+| `php tests/documents/pdf.php` | **134 Prüfungen** bestanden. |
+| `php tests/documents/pdf-totals.php` | **170 Prüfungen** bestanden. |
+| `php tests/security/notifications.php` | **104 allgemeine**, **60 Verkaufs-** und **24 Einkaufsprüfungen** bestanden; **37 Browser-Übersetzungen je Sprache** vollständig. |
+| `php tests/security/item-tags.php` | **80 Prüfungen** bestanden; bisherige Tag-Rückgabewerte bleiben nutzbar. |
+| `php tests/security/permissions.php` | **369 Prüfungen** bestanden. |
+| `php tests/security/tenant-access.php` | **268 Prüfungen** bestanden. |
+| `php tests/security/attachments.php` | **224 Anhang-** und **364 enthaltene Quote-E-Mail-Prüfungen** bestanden. |
+| `php tests/security/pageblocks.php` | **74 Prüfungen** bestanden. |
+| `php tests/security/profile-save.php` | **100 Prüfungen** bestanden. |
+| `php -l` für alle geänderten PHP-Dateien | **11 Dateien** ohne Syntaxfehler. |
+| `git diff --check` | Ohne Befund. |
+
+Die Browser-Fixtures wurden während der Implementierung erweitert und zunächst fehlgeschlagene Assertions korrigiert. Die neuen echten Gruppen-Edit-Prüfungen deckten die inkompatiblen Zend-Form-Zugriffe auf; diese wurden an DEEC angepasst. Das Backend-Fixture nutzt jetzt den vorhandenen Zend-Session-Testmodus, damit die tatsächliche Artikelcontroller-Initialisierung keine Systemsession benötigt. Ein JavaScript-Syntaxcheck über Node war nicht möglich, weil Node nicht installiert ist; die tatsächliche Skriptausführung wurde mit Chromium geprüft. Keine manuelle Screenreader-/Geräteabnahme und kein produktiver End-to-End-Durchlauf wurden durchgeführt.
+
+### Geänderte Dateien in Phase 4.4
+
+1. `js/global.js`
+2. `css/ui.css`
+3. `application/views/helpers/Messages.php`
+4. `application/views/helpers/TinyMCE.php`
+5. `application/modules/sales/controllers/PositionsetController.php`
+6. `application/modules/purchases/controllers/PositionsetController.php`
+7. `application/modules/processes/controllers/PositionsetController.php`
+8. `application/modules/items/controllers/PositionsetController.php`
+9. `application/modules/items/controllers/TagController.php`
+10. `languages/de_DE/default/messages.php`
+11. `languages/en_US/default/messages.php`
+12. `tests/ui/notifications.html`
+13. `tests/ui/notifications.py`
+14. `tests/security/notifications.php`
+15. `tests/documents/calculation-ui.html`
+16. `tests/documents/calculation.php`
+17. `tests/ui/notifications-review.md`
+
+### Verbleibende Grenzen und Kompatibilität
+
+- Die Klicksperre/Queue gilt innerhalb dieser geöffneten Seite. Sie bietet keine serverseitige Idempotenz über Tabs/Geräte hinweg; ein Timeout beweist keinen Abbruch der serverseitigen Verarbeitung. Bei unklarem Ergebnis müssen aktuelle Daten vor einer manuellen Wiederholung geprüft werden.
+- Die vorhandenen Transaktionsgrenzen bleiben erhalten. Insbesondere wurden die alten Gruppen-Add-/Edit-Aktionen von Einkauf/Prozessen/Artikeln nicht umfassend auf neue Transaktionen umgestellt. Unklare Ergebnisse können dort bereits persistierte Teiländerungen enthalten.
+- Die DOM-Markierung löst den Dirty-Konflikt für zugeordnete, noch vorhandene Eingabefelder. Programmatische Saves ohne zuordenbares Feld behalten die bisherige begrenzte globale Boolean-Aussage und eine globale Fehlermeldung; eine vollständige Historie solcher Änderungen oder entfernter DOM-Felder wird nicht eingeführt. Solange sichtbare Eingaben noch nicht bestätigt sind, kann der Positions-HTML-Refresh bewusst ausstehen.
+- Synchrones AJAX blockiert während des Netzwerkaufrufs weiterhin den Browserthread; sichtbarer Fortschritt wird dabei nicht versprochen. Eine generelle Async-Umstellung ist ausdrücklich nicht Teil dieser Phase.
+- Bestehende Zahlen-/Rabatt-/Steuerberechnung und serverseitige Rechteprüfung bleiben unverändert. Die erweiterten Backend-Fixtures prüfen keine reale MariaDB-Schemaausführung. Alte externe Clients, die trotz der bisher fehlerhaften/mehrdeutigen Gruppen-Antworten ein exaktes Rohformat voraussetzen, müssen die ergänzten JSON-Felder tolerieren.
+- `application/modules/admin/views/scripts/settings/clients.phtml` enthält bereits vorher einargumentige `copyPosition`-/`deletePosition`-Aufrufe, die nicht zum Positionsvertrag passen. Diese fachfremde Legacy-Ansicht wurde nicht repariert. Ebenso bleiben separate Sortier-, Preisregel-Toolbar- und modale Artikelübernahmeabläufe außerhalb der hier aufgeführten sieben Aktionen bei ihrer bisherigen Abwicklung.
+
+Keine Commits oder Pushes. **Phase 4.4 ist abgeschlossen; Phase 4.5 wurde nicht begonnen.**
+
+Commit-Vorschlag: `unify autosave and position feedback`
+
+## Verbleibende Folgeschritte nach Phase 4.4 (noch nicht umgesetzt)
 
 | Priorität | Bereich und konkrete Dateien | Nächster begrenzter Schritt / notwendige Regressionen |
 | --- | --- | --- |
-| P2 | Auto-Save und Positionen: `js/global.js` (`edit`, `editPosition`, `addPosition`, `addSet`, `deletePosition`, `deleteSet`), `application/views/helpers/ToolbarPositions.php` | Status am betroffenen Feld bzw. Positionsbereich; keine globale Sperre. Reihenfolge synchroner Saves vor Finalisierung beibehalten; Feldfehler und Summenregressionen prüfen |
 | P2 | Kontakte und modale Dialoge: `js/contacts.js`, `js/global.js` (`modalWindow`, `modalWindowClose`) | Bestehende lokale `disabled`-Behandlung durch gemeinsame Zustandsverwaltung ergänzen; Fokus, Validierung und Verhalten nach erneutem Öffnen prüfen |
 | P2 | Artikel und Listenaktionen: `application/modules/items/views/scripts/item/index.phtml`, `application/modules/items/views/scripts/item/edit.phtml`, `application/modules/items/forms/Toolbar.php`, `js/global.js` | Gemeinsame Toolbar-Aktionen nach deren P1-Migration übernehmen; Filter, Auswahl und Mehrfachbearbeitung erhalten |
 | P2 | Upload und Download: `application/modules/contacts/controllers/AttachmentController.php`, `application/views/scripts/partials/email-messages.phtml`, `application/views/scripts/partials/downloads.phtml`, `js/filemanager.js`, `js/global.js` (XRechnung-Download) | Zustände in bestehendem Upload-iframe und bei Blob-Downloads vereinheitlichen; Dateivalidierung und Downloadrechte prüfen. Native Downloads haben kein verlässliches Browserereignis für das Ende des Downloads |

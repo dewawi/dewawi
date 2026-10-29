@@ -353,13 +353,17 @@ a {
 
 .dw-input.is-invalid,
 .dw-select.is-invalid,
-.dw-textarea.is-invalid {
+.dw-textarea.is-invalid,
+[data-autosave-unsaved].is-invalid {
 	border-color: var(--dw-color-danger-text);
 }
 
 .dw-input.is-valid,
 .dw-select.is-valid,
-.dw-textarea.is-valid {
+.dw-textarea.is-valid,
+input.is-valid,
+textarea.is-valid,
+select.is-valid {
 	border-color: var(--dw-color-success-text);
 }
 
@@ -387,6 +391,17 @@ a {
 	margin-top: 2px;
 	font-size: 12px;
 	color: var(--dw-color-danger-text);
+}
+
+input[aria-busy="true"],
+textarea[aria-busy="true"],
+select[aria-busy="true"] {
+	border-color: var(--dw-color-text-muted);
+}
+
+.dw-field-error {
+	color: var(--dw-color-text);
+	overflow-wrap: anywhere;
 }
 
 /* TinyMCE */

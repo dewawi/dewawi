@@ -42,6 +42,11 @@ class Zend_View_Helper_TinyMCE extends Zend_View_Helper_Abstract
 		});
 
 		function scheduleEditorSave(editor) {
+			var $field = $(editor.targetElm);
+			if(editor.mode.isReadOnly() || $field.closest('form').is('[data-autosave="false"]')) return;
+			if(editor.getContent() === contentCache[editor.id] && !$field.is('[data-autosave-unsaved]')) return;
+			$field.attr('data-autosave-unsaved', 'true');
+			Dewawi.setDirty(true);
 			clearTimeout(editor._dewawiSaveTimer);
 
 			editor._dewawiSaveTimer = setTimeout(function() {
@@ -57,16 +62,16 @@ class Zend_View_Helper_TinyMCE extends Zend_View_Helper_Abstract
 
 			var value = editor.getContent();
 
-			if(value === contentCache[editor.id]) return;
+			if(value === contentCache[editor.id] && !$field.is('[data-autosave-unsaved]')) return;
 
 			Dewawi.setDirty(true);
 
 			var data = {};
 			data[editor.targetElm.name] = value;
 
-			var response = edit(data);
+			var response = edit(data, null, undefined, $field);
 
-			if(response && response.ok !== false) {
+			if(response && response.ok !== false && response.saved !== false && !response.errors && (response.ok === true || response.saved === true)) {
 				contentCache[editor.id] = value;
 			}
 		}

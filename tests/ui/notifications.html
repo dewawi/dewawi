@@ -19,6 +19,7 @@
   <div id="emailmessages"></div><div id="loading"></div>
   <div id="document-fixture" class="edit"><form id="document-fixture-form" data-autosave="false"></form></div>
 </div>
+<div id="autosave-positions" class="dw-positions" data-type="pos"></div><div id="autosave-other" class="dw-positions" data-type="opt"></div>
 <pre id="result">RUNNING</pre>
 <script src="__ROOT__/library/jQuery/jquery-1.12.4.min.js"></script>
 <script src="__ROOT__/library/jQuery/jquery.cookie.js"></script>
@@ -29,7 +30,7 @@ var baseUrl = '/fixture', id = 100, cookiePath = '/', calls = [], failures = [],
 var dwMessages = catalogs.de_DE, confirms = 0, confirmResult = true, reloads = 0;
 var deleteConfirm = 'Delete fixture?', confirmationTexts = [];
 window.fixtureReload = function() { reloads++; };
-window.addEventListener('error', function(event) { failures.push(event.message); $('#result').text('FAIL: ' + event.message + ' at ' + event.filename + ':' + event.lineno); if (window.parent !== window) window.parent.document.getElementById('result').textContent = $('#result').text(); });
+window.addEventListener('error', function(event) { failures.push(event.message); $('#result').text('FAIL: ' + event.message + ' at ' + event.filename + ':' + event.lineno + ' ' + (event.error && event.error.stack || '') + ' Previous: ' + failures.join('; ')); if (window.parent !== window) window.parent.document.getElementById('result').textContent = $('#result').text(); });
 window.confirm = function(message) { confirms++; confirmationTexts.push(message); return confirmResult; };
 $.fn.datepicker = function() { return this; };
 function autosize() {}
@@ -41,6 +42,10 @@ $.ajax = function(options) {
 };
 </script>
 <script src="__ROOT__/js/global.js"></script>
+<script>
+var editorSettings, tinymce = {init: function(settings) { editorSettings = settings; }, get: function() { return null; }};
+/* editor helper */
+</script>
 <script>
 $(function() {
   function check(condition, message) { checks++; if (!condition) failures.push(message); }
@@ -657,7 +662,189 @@ $(function() {
     check(contrast >= 4.5, type + ': text contrast below 4.5:1');
   });
   documentGuardFinished();
-  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, document and accessibility checks at ' + innerWidth + 'px');
+  // Field saves remain synchronous; explicit mutations use controlled asynchronous completions.
+  var saveResponse = {ok: true}, saveError = null, pendingSeen = 0;
+  $.ajax = function(options) {
+    var result = realAjax(options);
+    if (options.async === false) {
+      if (/\/(un)?lock\//.test(options.url)) { finish(calls[calls.length - 1], {ok: true}); return result; }
+      check($('[aria-busy="true"][data-autosave-unsaved]').length > 0 && $('.dw-field__description[role="status"]').last().text() === dwMessages.MESSAGES_SAVING, 'Synchronous save lacks local pending state');
+      check(!$('[data-autosave-unsaved]').filter(':disabled').length && !$('#loading').is(':visible'), 'Auto-save blocked input or global UI');
+      pendingSeen++;
+      finish(calls[calls.length - 1], saveResponse, saveError);
+    }
+    return result;
+  };
+  function autosaveFixture(documentModule) {
+    module = documentModule; controller = documentModule === 'sales' ? 'invoice' : 'purchaseorder'; action = 'edit'; id = 100;
+    $('#save-fixture').empty();
+    var $positions = $('#autosave-positions').detach();
+    $('#document-fixture-form').removeAttr('data-autosave').html('<input id="auto-a" class="dw-input" name="subject" value="Subject" aria-describedby="auto-help" aria-busy="false"><span id="auto-help">Help</span><input id="auto-b" class="dw-input" name="reference" value="Reference">');
+    $('#document-fixture-form').append($positions);
+    $('#autosave-positions').attr('data-parent', controller).data('parent', controller).html(
+      '<section class="dw-position-set" data-setid="1"><input id="auto-group" class="dw-input" name="title" value="Group" data-controller="positionset" data-id="1">' +
+      '<button type="button" id="pos-add" class="dw-btn" data-action="add-position" aria-busy="false"><span>Add</span></button>' +
+      '<button type="button" id="pos-copy" class="dw-btn" data-action="copy-selected-position">Copy selected</button><button type="button" id="pos-delete" class="dw-btn" data-action="delete-selected-position">Delete selected</button>' +
+      '<article class="dw-position-card" data-id="10" data-setid="1"><input class="position-check" type="checkbox" name="ids[]" value="10" checked><input id="auto-price" class="dw-input" name="price" value="10"><span class="total">10</span></article>' +
+      '<article class="dw-position-card" data-id="11" data-setid="1"><input class="position-check" type="checkbox" name="ids[]" value="11" checked></article><strong id="subtotal">Old subtotal</strong><strong id="total">Old total</strong></section>');
+    $('#autosave-other').attr('data-parent', controller).data('parent', controller).html('<span>Other positions</span>');
+    calls = []; saveError = null; saveResponse = {ok: true}; removeMessages(); Dewawi.setDirty(false);
+  }
+  function savedCalculation(total) { return {ok: true, calculation: {subtotal: total, total: total, taxes: {}}, reloadPositions: true}; }
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale];
+    ['sales', 'purchases'].forEach(function(documentModule) {
+      autosaveFixture(documentModule);
+      $('#auto-a').val('Updated').trigger('input').trigger('change');
+      check(calls.length === 1 && calls[0].options.async === false && calls[0].options.url === '/fixture/' + module + '/' + controller + '/edit/id/100', 'Normal auto-save route/order changed');
+      check($('#auto-a').hasClass('is-valid') && !isDirty && $('#auto-a').attr('aria-busy') === 'false' && !$('#messages .dw-alert').length, 'Auto-save lacks local success or created a toast');
+      calls = []; ['One', 'Two', 'Three'].forEach(function(value) { $('#auto-a').val(value).trigger('input').trigger('change'); });
+      check(calls.length === 3 && calls.map(function(call) { return call.options.data.subject; }).join(',') === 'One,Two,Three' && $('#auto-a').val() === 'Three' && !isDirty, 'Rapid field changes lost synchronous order or latest input');
+      saveResponse = {ok: false, errors: {subject: {required: '<img src=x onerror="window.fieldXss=1">Invalid'}}};
+      $('#auto-a').val('Rejected').trigger('change');
+      check($('#auto-a').hasClass('is-invalid') && $('#auto-a').attr('aria-invalid') === 'true' && isDirty, 'Rejected field appears saved');
+      var errorId = $('#auto-a').data('dw-field-error').attr('id');
+      check($('#auto-a').attr('aria-describedby') === 'auto-help ' + errorId && $('#' + errorId).attr('role') === 'alert' && !$('#' + errorId + ' img').length && !window.fieldXss, 'Field error lacks safe text or ARIA relationship');
+      var fieldError = $('#' + errorId)[0], fieldStyle = getComputedStyle(fieldError);
+      check(fieldError.scrollWidth <= fieldError.clientWidth + 1 && fieldStyle.color === 'rgb(31, 41, 55)', 'Field error overflows or lacks the shared accessible text color');
+      saveResponse = {ok: true}; $('#auto-b').trigger('change');
+      check($('#auto-a').hasClass('is-invalid') && isDirty && $('#auto-b').hasClass('is-valid'), 'Independent success erased a failed field');
+      $('#auto-a').trigger('change');
+      check(!isDirty && !$('#' + errorId).length && $('#auto-a').attr('aria-describedby') === 'auto-help', 'Correction did not clear only its own error');
+      [null, {}, '', {ok: 1}, {ok: true, saved: false}].forEach(function(response) {
+        saveResponse = response; $('#auto-a').trigger('change');
+        check($('#auto-a').hasClass('is-invalid') && isDirty && !$('#auto-a').hasClass('is-valid'), 'Ambiguous auto-save reported success');
+      });
+      [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500, responseJSON: {ok: true}}].forEach(function(error) {
+        saveError = error; $('#auto-a').trigger('change');
+        check(isDirty && $('#auto-a').next('.dw-field-error').text() === dwMessages.MESSAGES_CHANGE_STATUS_UNKNOWN && $('#auto-a').attr('aria-busy') === 'false', 'Network/parse error lost field feedback or invented success');
+      });
+      saveError = null; saveResponse = {ok: true}; $('#auto-a').trigger('change');
+      calls = []; $('#auto-price').val('12').trigger('change');
+      check(calls.length === 1 && calls[0].options.async === false && calls[0].options.data.price === '12' && calls[0].options.url.indexOf('/position/edit/id/10/') !== -1, 'Position field saved twice through bubbling');
+      calls = []; var groupResult = {ok: true, title: 'Changed group', calculation: {subtotal: '20', total: '24', taxes: {}}, reloadPositions: false}; saveResponse = groupResult;
+      var returned = editPositionSet({title: 'Changed group'}, {id: 1, element: 'title'}, $('#auto-group'));
+      check(returned === groupResult && calls[0].options.async === false && calls[0].options.dataType === 'json' && calls[0].options.url.indexOf('/type/pos/') !== -1 && $('#auto-group').hasClass('is-valid'), 'Group save return/JSON/type contract changed');
+      check($('#autosave-positions [id="total"]').text() === '24', 'Group calculation not applied');
+
+      calls = []; saveResponse = {saved: true};
+      $('#document-fixture-form').append('<div class="dw-multiform__item" data-id="20" data-module="contacts" data-controller="phone"><input id="auto-multi" class="dw-input" name="phone" value="123"></div>');
+      $('#auto-multi').trigger('change');
+      check(calls.length === 1 && calls[0].options.url === '/fixture/contacts/phone/edit/id/20' && $('#auto-multi').hasClass('is-valid') && !isDirty, 'MultiForm save duplicated, targeted wrong entity or rejected saved:true');
+      $('#auto-group').before('<span class="editable" style="display:none">Old group</span>').addClass('editableValue');
+      calls = []; saveResponse = {ok: false}; $('#auto-group').val('Rejected group').trigger('input').trigger('change');
+      $('#auto-b').trigger('click');
+      check(calls.length === 1 && $('#auto-group').is(':visible') && $('#auto-group').val() === 'Rejected group' && $('#auto-group').prev('.editable').text() === 'Old group' && isDirty, 'Failed inline edit was saved twice, hidden or displayed as saved');
+      calls = []; saveResponse = {ok: true, title: 'Correct group'}; $('#auto-group').val('Correct group').trigger('change');
+      check(calls.length === 2 && calls[0].options.url.indexOf('/positionset/edit/') !== -1 && calls[1].options.url.indexOf('/unlock/') !== -1 && $('#auto-group').prev('.editable').text() === 'Correct group' && !isDirty, 'Inline correction lost synchronous return/display/unlock ordering');
+
+      $('#document-fixture-form').append('<textarea id="auto-editor" name="header" class="editor" style="display:none"></textarea>');
+      var editorEvents = {}, editorValue = '<p>Original</p>', editorReadonly = false;
+      var capturedEditor = {id: 'auto-editor', targetElm: $('#auto-editor')[0], mode: {isReadOnly: function() { return editorReadonly; }}, getContent: function() { return editorValue; }, on: function(name, callback) { editorEvents[name] = callback; }};
+      editorSettings.setup(capturedEditor); editorEvents.init();
+      calls = []; editorEvents['input change']();
+      check(!calls.length && !$('#auto-editor').is('[data-autosave-unsaved]'), 'Unchanged editor created an unnecessary save');
+      editorValue = '<p>Unsaved editor</p>'; editorEvents['input change'](); clearTimeout(capturedEditor._dewawiSaveTimer);
+      check(isDirty && $('#auto-editor').is('[data-autosave-unsaved]'), 'Editor debounce window was not marked dirty');
+      saveResponse = {ok: true}; $('#auto-b').trigger('change');
+      check(isDirty && contentCache['auto-editor'] === '<p>Original</p>', 'Independent save erased pending editor input');
+      [null, {}, {ok: false}, {ok: true, errors: {header: ['Invalid editor content']}}].forEach(function(response) {
+        saveResponse = response; saveEditor(capturedEditor);
+        check($('#auto-editor').hasClass('is-invalid') && isDirty && contentCache['auto-editor'] === '<p>Original</p>', 'Unconfirmed editor save changed its cache or dirty state');
+      });
+      editorValue = '<p>Original</p>'; saveResponse = {ok: true}; calls = []; saveEditor(capturedEditor);
+      check(calls.length === 1 && !isDirty && $('#auto-editor').hasClass('is-valid'), 'Reverting an uncertain editor change skipped the confirming save');
+      editorReadonly = true; editorValue = '<p>Read only</p>'; calls = []; editorEvents['input change'](); saveEditor(capturedEditor);
+      check(!calls.length && !$('#auto-editor').is('[data-autosave-unsaved]'), 'Readonly editor scheduled a save');
+
+      // Inline creation shares the same local field marker as subsequent inline edits.
+      $('#document-fixture-form').append('<span class="editable" style="display:none">Old tag</span><input id="auto-tag" class="editableValue dw-input" name="tagid" value="7" data-id="100" data-controller="tag" data-module="items" data-action="add">');
+      calls = []; saveResponse = {ok: true, id: 44}; $('#auto-tag').trigger('input').trigger('change');
+      check(calls.length === 2 && calls[0].options.url.indexOf('/items/tag/add') !== -1 && !$('#auto-tag').is('[data-autosave-unsaved]') && !isDirty && $('#auto-tag').attr('data-action') === '', 'Inline creation left its new local marker dirty or lost its add contract');
+
+      // Every explicit action uses the initiating button and accepts only confirmed JSON success.
+      [
+        function(button) { addPosition(controller, 'pos', 1, button); },
+        function(button) { copyPosition(controller, 'pos', 10, button); },
+        function(button) { deletePosition(controller, 'pos', 10, 1, null, button); },
+        function(button) { addSet(controller, 'pos', button); },
+        function(button) { copySet(controller, 'pos', 1, button); },
+        function(button) { deleteSet(controller, 'pos', 1, button); },
+        function(button) { addOption(controller, 'pos', 2, 1, 10, button); }
+      ].forEach(function(invoke, index) {
+        autosaveFixture(documentModule); var $button = $('#pos-add'), markup = $button.html();
+        var toolbarAction = ['add-position', 'copy-position', 'delete-position', 'add-position-set', 'copy-position-set', 'delete-position-set', 'add-option'][index];
+        $button.attr('data-action', toolbarAction).data({action: toolbarAction, parent: controller, type: 'pos', 'option-id': 2, setid: 1, masterid: 10});
+        $button.trigger('click').trigger('click'); invoke();
+        check(calls.length === 1 && $button.prop('disabled') && $button.attr('aria-busy') === 'true' && !$('#auto-price').prop('disabled'), 'Explicit position mutation duplicated or blocked area');
+        check(calls[0].options.timeout > 0 && calls[0].options.dataType === 'json', 'Position request lacks timeout or JSON contract');
+        finish(calls[0], savedCalculation('Confirmed'));
+        check(calls.length === 2 && calls[1].options.url.indexOf('/position/index/') !== -1 && $('#autosave-positions [id="total"]').text() === 'Confirmed', 'Confirmed mutation failed to update totals/positions');
+        check(!$button.prop('disabled') && $button.attr('aria-busy') === 'false' && $button.html() === markup && !Object.keys(Dewawi.actionRequests).length, 'Position button/record lock not restored');
+        finish(calls[1], '<span class="confirmed-list">Confirmed list</span>');
+        check($('#autosave-positions .confirmed-list').length === 1 && $('#autosave-other').text() === 'Other positions', 'Refresh changed a different position type');
+      });
+      [null, '', {}, {total: '119'}, {ok: 1}, {ok: false, message: '<img src=x alt="internal secret">'}].forEach(function(response) {
+        autosaveFixture(documentModule); $('#pos-add').trigger('click').trigger('click'); finish(calls[0], response);
+        check(calls.length === 1 && $('#auto-price').length === 1 && !$('#pos-add').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, 'Invalid position response reloaded, retried or left loading');
+        check($('#messages li').text() === dwMessages[response && response.ok === false ? 'MESSAGES_POSITION_ADD_FAILED' : 'MESSAGES_ACTION_STATUS_UNKNOWN'] && !$('#messages img').length, 'Position failure leaked technical details');
+      });
+      [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 403, responseJSON: {ok: false}}].forEach(function(error) {
+        autosaveFixture(documentModule); deleteSet(controller, 'pos', 1, $('#pos-add')); finish(calls[0], null, error);
+        check(calls.length === 1 && $('#auto-price').length && !$('#pos-add').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, 'Group network failure retried or lost button/DOM');
+      });
+
+      ['copy', 'delete'].forEach(function(operation) {
+        autosaveFixture(documentModule); $('#pos-' + operation).trigger('click').trigger('click');
+        if (operation === 'copy') copyPosition(controller, 'pos', 11); else deletePosition(controller, 'pos', 11, 1);
+        check(calls.length === 1 && calls[0].options.url.indexOf('/' + operation + '/') !== -1 && calls[0].options.url.indexOf('/id/10/') !== -1, 'Batch did not start in DOM order or permit overlap');
+        finish(calls[0], savedCalculation('First'));
+        check(calls.length === 2 && calls[1].options.url.indexOf('/id/11/') !== -1 && $('#pos-' + operation).prop('disabled'), 'Batch request order or loading duration incorrect');
+        finish(calls[1], savedCalculation('Second'));
+        check(calls.length === 3 && calls[2].options.url.indexOf('/position/index/') !== -1 && $('#autosave-positions [id="total"]').text() === 'Second' && !$('#pos-' + operation).prop('disabled'), 'Batch did not refresh once with final totals');
+        finish(calls[2], '<span>Batch list</span>');
+      });
+      autosaveFixture(documentModule); $('#pos-copy').trigger('click'); finish(calls[0], null, {status: 0});
+      check(calls.length === 1 && !$('#pos-copy').prop('disabled'), 'Uncertain first batch result continued or retried');
+      autosaveFixture(documentModule); $('#pos-delete').trigger('click'); finish(calls[0], savedCalculation('First')); finish(calls[1], {ok: false});
+      check(calls.length === 3 && calls[2].options.url.indexOf('/position/index/') !== -1 && $('#messages .dw-alert--danger').length && !Object.keys(Dewawi.actionRequests).length, 'Partial batch lost confirmed refresh/error or lock cleanup');
+
+      autosaveFixture(documentModule); $('#pos-add').trigger('click'); copySet(controller, 'pos', 1, $('#pos-copy'));
+      check(calls.length === 1 && $('#pos-add').prop('disabled') && $('#pos-copy').prop('disabled') && !$('#auto-price').prop('disabled'), 'Distinct explicit mutations were not queued locally');
+      finish(calls[0], savedCalculation('Add')); finish(calls[1], '<span>Obsolete queued read</span>');
+      check(calls.length === 3 && calls[2].options.url.indexOf('/positionset/copy/') !== -1 && $('#auto-price').length === 1, 'Queued mutation did not start or accepted an obsolete read');
+      finish(calls[2], savedCalculation('Group copy')); finish(calls[3], '<span>Queued latest list</span>');
+      check(!$('#pos-add').prop('disabled') && !Object.keys(Dewawi.actionRequests).length && $('#autosave-positions').text() === 'Queued latest list', 'Queued completion did not restore buttons or refresh latest list');
+      autosaveFixture(documentModule); getPositions(controller, 'pos'); finish(calls[0], null, {status: 500});
+      check($('#auto-price').length === 1 && $('#messages .dw-alert--warning li').text() === dwMessages.MESSAGES_REQUEST_FAILED && calls.length === 1, 'Read failure discarded current inputs or retried');
+
+      // A synchronous edit may complete while an explicit asynchronous mutation is pending.
+      autosaveFixture(documentModule); $('#pos-add').trigger('click'); saveResponse = savedCalculation('Newer'); $('#auto-price').trigger('change');
+      var staleRead = calls[2]; finish(staleRead, '<span>Before add</span>');
+      check($('#auto-price').length === 1, 'Read overwrote a pending mutation');
+      finish(calls[0], savedCalculation('Older'));
+      check($('#autosave-positions [id="total"]').text() === 'Newer' && calls.length === 4, 'Old mutation response overwrote newer calculation');
+      finish(calls[3], '<span>Current after add</span>');
+      check($('#autosave-positions').text() === 'Current after add', 'Fresh read after interleaved mutations not applied');
+
+      autosaveFixture(documentModule); getPositions(controller, 'pos'); saveResponse = savedCalculation('Latest'); $('#auto-price').trigger('change');
+      finish(calls[0], '<span>Obsolete read</span>');
+      check($('#auto-price').length === 1 && $('#autosave-positions [id="total"]').text() === 'Latest', 'Read from before save overwrote newer state');
+      finish(calls[2], '<span>Newest read</span>');
+      check($('#autosave-positions').text() === 'Newest read', 'Latest read was not applied');
+
+      autosaveFixture(documentModule); saveResponse = {ok: false}; $('#auto-price').val('Keep failed value').trigger('change');
+      $('#pos-add').trigger('click'); finish(calls[1], savedCalculation('Server')); finish(calls[2], '<span>Would discard field</span>');
+      check($('#auto-price').val() === 'Keep failed value' && $('#auto-price').hasClass('is-invalid') && isDirty, 'Explicit success/refresh erased failed input or dirty state');
+      saveResponse = savedCalculation('Corrected'); $('#auto-price').val('Corrected value').trigger('change');
+      check(!isDirty && calls.length === 5, 'Corrected field did not trigger one fresh deferred read');
+      finish(calls[4], '<span>Corrected positions</span>');
+      check($('#autosave-positions').text() === 'Corrected positions', 'Correction reused stale HTML');
+    });
+  });
+  check(pendingSeen > 0, 'No synchronous auto-save was exercised');
+  $.ajax = realAjax;
+  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, document, autosave, position and accessibility checks at ' + innerWidth + 'px');
   if (window.parent !== window) window.parent.document.getElementById('result').textContent = $('#result').text();
 });
 </script>

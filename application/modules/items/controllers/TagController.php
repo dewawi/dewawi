@@ -160,7 +160,7 @@ class Items_TagController extends Zend_Controller_Action
 
 		$data = array('tagid' => $tagId);
 		$tagEntityDb->updateTagEntity($id, $data);
-		return $this->_helper->json($data);
+		return $this->_helper->json(['ok' => true] + $data);
 	}
 
 	public function deleteAction()

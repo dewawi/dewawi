@@ -3,6 +3,7 @@ from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
 import json
+import re
 import subprocess
 import tempfile
 
@@ -31,7 +32,19 @@ catalogs = {}
 for locale in ['de_DE', 'en_US']:
     result = subprocess.run(['php', '-r', 'echo json_encode(array_replace(require $argv[1], require $argv[2]));', str(root / 'languages' / locale / 'default/messages.php'), str(root / 'languages' / locale / 'default/document.php')], check=True, capture_output=True, text=True)
     catalogs[locale] = json.loads(result.stdout)
+# Execute the actual rendered editor save callbacks with a captured editor API in the browser.
+editor = subprocess.run(['php', '-r', """
+set_include_path($argv[1] . '/library' . PATH_SEPARATOR . get_include_path());
+require 'Zend/View.php'; require 'Zend/View/Helper/Abstract.php'; require 'Zend/Registry.php';
+require $argv[1] . '/application/views/helpers/TinyMCE.php';
+Zend_Registry::set('Zend_Locale', 'de_DE');
+$view = new Zend_View();
+(new Zend_View_Helper_TinyMCE())->setView($view)->TinyMCE();
+echo $view->headScript();
+""", str(root)], check=True, capture_output=True, text=True)
+editor_script = '\n'.join(re.findall(r'<script[^>]*>(.*?)</script>', editor.stdout, re.S))
 html = Path(__file__).with_suffix('.html').read_text().replace('__ROOT__', root.as_uri())
+html = html.replace('/* editor helper */', editor_script)
 html = html.replace('/* translations */', 'var catalogs = ' + json.dumps(catalogs) + ';')
 with tempfile.TemporaryDirectory(prefix='dewawi-notifications-ui-') as directory:
     # Record hard reloads in the fixture instead of navigating away from its assertions.

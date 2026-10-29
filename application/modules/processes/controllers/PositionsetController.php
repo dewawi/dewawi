@@ -58,7 +58,7 @@ class Processes_PositionsetController extends Zend_Controller_Action
 				$data['description'] = '';
 				$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['type'], $params['parentid']) + 1;
 				$positionSetDb = new $positionSetClass();
-				$positionSetDb->addPositionSet($data);
+				$positionSetId = $positionSetDb->addPositionSet($data);
 			} else {
 				//Get existing positions
 				$positionsDb = new $positionClass();
@@ -80,6 +80,7 @@ class Processes_PositionsetController extends Zend_Controller_Action
 					$positionsDb->updatePosition($position->id, $positionData);
 				}
 			}
+			return $this->_helper->json(['ok' => true, 'id' => (int)$positionSetId, 'reloadPositions' => true]);
 		}
 	}
 
@@ -105,15 +106,13 @@ class Processes_PositionsetController extends Zend_Controller_Action
 		$modelClass = 'Processes_Model_DbTable_'.ucfirst($params['parent'].$params['type'].'set');
 
 		$form = new $formClass();
-		$form->uom->addMultiOptions($uoms);
-		$form->ordering->addMultiOptions($this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], $params['id']));
-		$form->taxrate->addMultiOptions($taxrates);
+		$form->addMultiOptions(['uom' => $uoms, 'ordering' => $this->_helper->Ordering->getOrdering($params['parent'], $params['type'], $params['parentid'], $params['id']), 'taxrate' => $taxrates]);
 
 		if($request->isPost()) {
 			header('Content-type: application/json');
 			$data = $request->getPost();
 			$element = key($data);
-			if(isset($form->$element) && $form->isValidPartial($data)) {
+			if($form->getElement($element) !== null && $form->isValidPartial($data)) {
 				if(($element == 'taxrate') && ($data[$element] != 0))
 					$data['taxrate'] = $taxrates[$data['taxrate']];
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'priceruleamount'))
@@ -126,12 +125,12 @@ class Processes_PositionsetController extends Zend_Controller_Action
 
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'taxrate') || ($element == 'priceruleamount') || ($element == 'priceruleaction')) {
 					$calculations = $this->_helper->Calculate($params['parentid'], 'processes', $params['parent']);
-					echo Zend_Json::encode($calculations['locale']);
 				}
-				echo Zend_Json::encode($position->getPositionSet($params['id']));
+				$result = array_replace($position->getPositionSet($params['id']), $calculations['locale'] ?? [], ['ok' => true, 'calculation' => $calculations['locale'] ?? [], 'reloadPositions' => isset($calculations)]);
 			} else {
 				throw new Exception('Form is invalid');
 			}
+			return $this->_helper->json($result);
 		}
 	}
 
@@ -179,7 +178,7 @@ class Processes_PositionsetController extends Zend_Controller_Action
 				$adapter->rollBack();
 				throw $exception;
 			}
-			echo Zend_Json::encode($calculations['locale']);
+			return $this->_helper->json(array_replace($calculations['locale'], ['ok' => true, 'calculation' => $calculations['locale'], 'reloadPositions' => true]));
 		}
 	}
 
@@ -242,7 +241,7 @@ class Processes_PositionsetController extends Zend_Controller_Action
 					$adapter->rollBack();
 					throw $exception;
 				}
-				echo Zend_Json::encode($calculations['locale']);
+				return $this->_helper->json(array_replace($calculations['locale'], ['ok' => true, 'calculation' => $calculations['locale'], 'reloadPositions' => true]));
 			}
 		}
 	}

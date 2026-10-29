@@ -58,7 +58,7 @@ class Items_PositionsetController extends Zend_Controller_Action
 				$data['description'] = '';
 				$data['ordering'] = $this->_helper->OrderingSet->getLatestOrdering($params['parent'], $params['type'], $params['parentid']) + 1;
 				$positionSetDb = new $positionSetClass();
-				$positionSetDb->addPositionSet($data);
+				$positionSetId = $positionSetDb->addPositionSet($data);
 			} else {
 				//Get existing positions
 				$positionsDb = new $positionClass();
@@ -80,6 +80,7 @@ class Items_PositionsetController extends Zend_Controller_Action
 					$positionsDb->updatePosition($position->id, $positionData);
 				}
 			}
+			return $this->_helper->json(['ok' => true, 'id' => (int)$positionSetId, 'reloadPositions' => true]);
 		}
 	}
 
@@ -125,10 +126,11 @@ class Items_PositionsetController extends Zend_Controller_Action
 				$position = new $modelClass();
 				$position->updatePositionSet($params['id'], $data);
 
-				echo Zend_Json::encode($position->getPositionSet($params['id']));
+				$result = array_replace($position->getPositionSet($params['id']), ['ok' => true, 'reloadPositions' => false]);
 			} else {
 				throw new Exception('Form is invalid');
 			}
+			return $this->_helper->json($result);
 		}
 	}
 
@@ -168,7 +170,7 @@ class Items_PositionsetController extends Zend_Controller_Action
 				unset($positionData['id']);
 				$positionDb->addPosition($positionData);
 			}
-			echo Zend_Json::encode($data);
+			return $this->_helper->json(array_replace($data, ['ok' => true, 'id' => (int)$id, 'reloadPositions' => true]));
 		}
 	}
 
@@ -215,7 +217,7 @@ class Items_PositionsetController extends Zend_Controller_Action
 
 				//Reorder
 				$this->_helper->OrderingSet->setOrdering($params['parent'], $params['type'], $data['parentid'], $data['id']);
-				echo Zend_Json::encode($data);
+				return $this->_helper->json(array_replace($data, ['ok' => true, 'reloadPositions' => true]));
 			}
 		}
 	}

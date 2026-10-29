@@ -61,6 +61,7 @@ $.ajax = function(options) {
     var response = failSave ? { ok: false, message: 'save_failed' } : { ok: true, values: options.data, display: options.data, calculation: calculation, reloadPositions: true };
     if (options.success) options.success(response);
   }
+  if (options.complete && options.url.indexOf('/position/index/') === -1) options.complete();
   return $.Deferred().resolve().promise();
 };
 </script>
@@ -120,9 +121,14 @@ $(function() {
   failNetwork = true;
   change('.is-child input[name="quantity"]', '2,3456');
   check(isDirty, 'Network failure left the document apparently saved');
-  check($('#messages').length > 0, 'Network failure was not shown to the user');
+  check($('.is-child input[name="quantity"]').hasClass('is-invalid') && $('.is-child .dw-field-error[role="alert"]').length === 1, 'Network failure was not shown near its field');
   failNetwork = false;
 
+  reset();
+  change('.is-master > input[name="price"]', '100,00');
+  check(isDirty, 'Independent save erased another failed field');
+  change('.is-child input[name="quantity"]', '2,00');
+  check(!isDirty, 'Correcting both failed fields did not clear dirty state');
   reset();
   getPositions('quote', 'pos');
   getPositions('quote', 'pos');

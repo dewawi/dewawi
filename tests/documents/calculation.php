@@ -10,11 +10,12 @@ if (PHP_SAPI !== 'cli') {
 ob_start();
 require __DIR__ . '/position-read.php';
 ob_end_clean();
+Zend_Session::$_unitTestEnabled = true;
 Zend_Registry::set('User', ['id' => 42, 'name' => 'Fixture user', 'clientid' => 7]);
 $adapter->rows['permission'] = [['id' => 1, 'userid' => 42, 'clientid' => 7, 'deleted' => 0]];
 foreach ($modules as $module => $documents) $adapter->rows['permission'][0][$module] = json_encode(array_fill_keys($documents, ['view', 'edit', 'add', 'delete']));
 require_once $root . '/application/modules/items/controllers/PriceruleposController.php';
-foreach (['sales', 'purchases', 'processes'] as $testModule) require_once $root . '/application/modules/' . $testModule . '/controllers/PositionsetController.php';
+foreach (['sales', 'purchases', 'processes', 'items'] as $testModule) require_once $root . '/application/modules/' . $testModule . '/controllers/PositionsetController.php';
 $moduleUnderTest = $argv[1] ?? 'sales';
 if (!in_array($moduleUnderTest, ['sales', 'purchases', 'processes'], true)) throw new InvalidArgumentException('Invalid test module');
 require_once $root . '/application/modules/' . $moduleUnderTest . '/controllers/helpers/Positions.php';
@@ -26,7 +27,14 @@ class CalculationTestOptions extends Zend_Controller_Action_Helper_Abstract
 }
 class CalculationTestOrderingSet extends Zend_Controller_Action_Helper_Abstract
 {
-    public function getName() { return 'OrderingSet'; }
+    public string $name = 'OrderingSet';
+    public function getName() { return $this->name; }
+    public function getOrdering(...$args) { return [1 => 1]; }
+    public function getLatestOrdering($parent, $type, $parentid)
+    {
+        global $adapter;
+        return count(array_filter($adapter->rows[$parent . $type . 'set'], static fn($row) => !$row['deleted'] && $row['parentid'] === $parentid));
+    }
     public function pushOrdering(...$args) {}
     public function setOrdering(...$args) {}
 }
@@ -59,6 +67,9 @@ class CalculationFailFinalizeController extends CalculationDocumentController
 
 Zend_Controller_Action_HelperBroker::addHelper(new CalculationTestOptions());
 Zend_Controller_Action_HelperBroker::addHelper(new CalculationTestOrderingSet());
+$ordering = new CalculationTestOrderingSet();
+$ordering->name = 'Ordering';
+Zend_Controller_Action_HelperBroker::addHelper($ordering);
 Zend_Controller_Front::getInstance()->addControllerDirectory($root . '/application/modules/items/controllers', 'items');
 Zend_Controller_Action_HelperBroker::getStaticHelper('json')->suppressExit = true;
 $adapter->allowWrites = true;
@@ -282,7 +293,10 @@ foreach ($modules as $module => $documents) {
     $controller = new $class($request, $response);
     ob_start();
     $controller->copyAction();
-    $result = json_decode(ob_get_clean(), true);
+    check(ob_get_clean() === '', 'Set copy emitted a second JSON document');
+    $result = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+    check($result['ok'] === true && $result['reloadPositions'] === true && $result['calculation']['total'] === $result['total'], 'Set copy lacks confirmed success or legacy calculation keys');
+    check(isset($result[10]) && !isset($result[0]), 'Numeric position calculation keys were reindexed');
     check($result['total'] === '556,92 €', 'Set copy action returned stale/malformed totals');
     $newSet = $adapter->rows[$document . 'posset'][1]['id'];
     check($newSet !== 1 && count($adapter->rows[$document . 'pos']) === 4, 'Set action copied to the wrong table');
@@ -290,7 +304,9 @@ foreach ($modules as $module => $documents) {
     $request->setActionName('delete')->setPost(['delete' => 'Yes', 'id' => $newSet, 'parentid' => 1]);
     ob_start();
     $controller->deleteAction();
-    $result = json_decode(ob_get_clean(), true);
+    check(ob_get_clean() === '', 'Set delete emitted a second JSON document');
+    $result = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+    check($result['ok'] === true && $result['reloadPositions'] === true && $result['calculation']['total'] === $result['total'], 'Set delete lacks confirmed success or legacy totals');
     check($result['total'] === '278,46 €', 'Set delete action did not recalculate remaining group');
 
     $before = $adapter->rows;
@@ -307,6 +323,74 @@ foreach ($modules as $module => $documents) {
         $adapter->failUpdateTable = null;
     }
     check($adapter->rows === $before, 'Failed group copy retained partial positions/rules');
+}
+
+// Validate the single-JSON group contracts against real controllers and in-memory writes.
+foreach ([$moduleUnderTest, 'items'] as $groupModule) {
+    $document = $groupModule === 'items' ? 'item' : $modules[$groupModule][0];
+    $type = $groupModule === 'items' ? 'opt' : 'pos';
+    $setRow = ['id' => 1, 'clientid' => 7, 'parentid' => 1, 'deleted' => 0, 'ordering' => 1, 'title' => 'Group', 'image' => '', 'description' => '', 'price' => 10, 'quantity' => 1, 'taxrate' => 19, 'modified' => null, 'modifiedby' => 0];
+    $adapter->rows[$document] = [$draft + [$document . 'id' => null]];
+    $adapter->rows[$document . $type . 'set'] = [$setRow];
+    $adapter->rows[$document . $type] = [array_replace($position, [$type . 'setid' => 1])];
+    $adapter->rows['pricerulepos'] = [];
+    $request = new Zend_Controller_Request_Http();
+    $request->setModuleName($groupModule)->setControllerName('positionset')->setActionName('edit')
+        ->setParams(['module' => $groupModule, 'controller' => 'positionset', 'action' => 'edit', 'parent' => $document, 'parentid' => 1, 'type' => $type, 'id' => 1]);
+    $response = new Zend_Controller_Response_Http();
+    Zend_Controller_Front::getInstance()->setRequest($request)->setResponse($response);
+    $class = $groupModule === 'items' ? Items_PositionsetController::class : 'Calculation' . ucfirst($groupModule) . 'SetController';
+    $controller = new $class($request, $response);
+    foreach (['title' => 'Changed group', 'price' => '12,50'] as $field => $value) {
+        $response->clearBody();
+        $_POST = [$field => $value];
+        ob_start();
+        $controller->editAction();
+        check(ob_get_clean() === '', 'Group edit emitted concatenated JSON');
+        $result = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        check($result['ok'] === true && $result['id'] === 1, 'Group edit did not confirm its own row');
+        check($field === 'title' ? $result['title'] === $value : (float)$result['price'] === 12.5, 'Group edit lost locale or row values');
+        if ($groupModule !== 'items' && $field === 'price') check($result['calculation']['total'] === $result['total'] && isset($result[10]), 'Group edit lost nested/legacy calculation or numeric position keys');
+        else check($result['reloadPositions'] === false, 'Text/item group edit requested an unnecessary calculation refresh: ' . $groupModule . '/' . $field);
+    }
+    $before = $adapter->rows;
+    $response->clearBody();
+    $_POST = ['nonexistent' => 'Rejected'];
+    try {
+        $controller->editAction();
+        throw new LogicException('Invalid group edit succeeded');
+    } catch (Exception $expected) {
+        check($expected->getMessage() === 'Form is invalid', 'Unexpected group validation error');
+    }
+    check($response->getBody() === '' && $adapter->rows === $before, 'Invalid group edit confirmed success or changed data');
+
+    foreach ([true, false] as $existing) {
+        $adapter->rows[$document . $type . 'set'] = $existing ? [$setRow] : [];
+        $adapter->rows[$document . $type] = [array_replace($position, [$type . 'setid' => $existing ? 1 : 0])];
+        $_POST = [];
+        $request->setActionName('add');
+        $response->clearBody();
+        ob_start();
+        $controller->addAction();
+        check(ob_get_clean() === '', 'Group add emitted a second response');
+        $result = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        check($result['ok'] === true && $result['id'] > 1 && $result['reloadPositions'] === true, 'Group add lacks explicit success/id/refresh');
+        check(count($adapter->rows[$document . $type . 'set']) === ($existing ? 2 : 1), 'Group add wrote the wrong set table');
+        check($adapter->rows[$document . $type][0][$type . 'setid'] === ($existing ? 1 : $result['id']), 'First group no longer adopts existing positions');
+    }
+    if ($groupModule === 'items') {
+        $_POST = [];
+        $request->setParam('id', $result['id'])->setActionName('copy');
+        $response->clearBody();
+        $controller->copyAction();
+        $copied = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        check($copied['ok'] === true && $copied['id'] !== $result['id'] && $copied['title'] === '' && $copied['reloadPositions'] === true, 'Item group copy lost row data or success');
+        $request->setActionName('delete')->setPost(['delete' => 'Yes', 'id' => $copied['id'], 'parentid' => 1]);
+        $response->clearBody();
+        $controller->deleteAction();
+        $deleted = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        check($deleted['ok'] === true && $deleted['id'] === $copied['id'] && $deleted['reloadPositions'] === true, 'Item group delete lost its legacy data');
+    }
 }
 
 // Real position writes must reject finalized invoices/credit notes, including stale route checks.

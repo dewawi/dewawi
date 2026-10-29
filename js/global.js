@@ -30,8 +30,8 @@ var Dewawi = {
 	},
 
 	setDirty: function (dirty) {
-		isDirty = !!dirty;
-		this.isDirty = !!dirty;
+		isDirty = !!dirty || $('[data-autosave-unsaved]').length > 0;
+		this.isDirty = isDirty;
 	},
 
 	handleSessionExpired: function () {
@@ -188,7 +188,7 @@ $(document).ready(function(){
 			module: $(this).data('module'),
 			controller: $(this).data('controller'),
 			id: $(this).data('id')
-		});
+		}, undefined, $(this));
 	});
 
 	$('.edit form').on('change', 'input, textarea, select', function() {
@@ -202,7 +202,7 @@ $(document).ready(function(){
 			return;
 		}
 
-		if($field.closest('.dw-multiform__item').length) {
+		if($field.closest('.dw-multiform__item, .dw-positions').length || $field.is('.editableValue, [data-document-note]')) {
 			return;
 		}
 
@@ -250,7 +250,7 @@ $(document).ready(function(){
 			if(typeof this.dataset.module !== 'undefined') params['module'] = this.dataset.module;
 			if(typeof this.dataset.ordering !== 'undefined') data['ordering'] = this.dataset.ordering;
 
-			edit(data, params);
+			edit(data, params, undefined, $field);
 		}
 	});
 
@@ -260,6 +260,7 @@ $(document).ready(function(){
 		}
 
 		var $field = $(this);
+		if ($field.is('.editableValue') || $field.closest('.dw-positions').length || $field.closest('form').is('[data-autosave="false"]')) return;
 
 		var $item = $field.closest('.dw-multiform__item');
 
@@ -291,37 +292,19 @@ $(document).ready(function(){
 			id: entityId
 		};
 
-		clearFieldState($field);
-
-		var response = saveEntity(payload, target);
-
-		if (!response) {
-			markFieldError($field, ['Speichern fehlgeschlagen.']);
-			return;
-		}
-
-		if (response.ok === false) {
-			if (response.errors && response.errors[this.name]) {
-				markFieldError($field, response.errors[this.name]);
-			} else if (response.message) {
-				markFieldError($field, [response.message]);
-			} else {
-				markFieldError($field, ['Speichern fehlgeschlagen.']);
-			}
-			return;
-		}
-
-		markFieldSaved($field);
+		saveEntity(payload, target, undefined, $field);
 	});
 	$('.edit form input').on('textchange', function() {
 		if((this.name != 'file[]') && (this.name != 'media[]') && (this.name != 'subfolder')) {
 			if(!$(this).hasClass('datePicker')) {
 				Dewawi.setDirty(true);
+				if (!$(this).closest('form').is('[data-autosave="false"]')) $(this).attr('data-autosave-unsaved', 'true');
 			}
 		}
 	});
 	$('.edit form textarea').on('textchange', function() {
 		Dewawi.setDirty(true);
+		if (!$(this).closest('form').is('[data-autosave="false"]')) $(this).attr('data-autosave-unsaved', 'true');
 	});
 	//$('.edit form select').on('textchange', function() {
 	//	Dewawi.setDirty(true);
@@ -402,6 +385,13 @@ $(document).ready(function(){
 		}
 	);
 
+	$(document).on('input', '.edit input, .edit textarea, .dw-positions input, .dw-positions textarea', function () {
+		var $field = $(this);
+		if (isSelectionField($field) || this.name === 'ordering' || $field.closest('form').is('[data-autosave="false"]') || /^(file|media|subfolder)(\[\])?$/.test(this.name)) return;
+		$field.attr('data-autosave-unsaved', 'true');
+		Dewawi.setDirty(true);
+	});
+
 	//Handle sub entities
 	$('.dw-positions').on('change', 'input, textarea, select', function() {
 		var $field = $(this);
@@ -480,7 +470,7 @@ $(document).ready(function(){
 
 			return;
 		} else {
-			editPosition(parent, type, data, params);
+			editPosition(parent, type, data, params, $field);
 		}
 	});
 	$('.edit form').on('change', '.dw-permission-all', function() {
@@ -550,8 +540,8 @@ $(document).ready(function(){
 		var type = $(this).data('type') || 'input';
 		//Close and unlock all other elements
 		var $editableValue = $(this).next('.editableValue');
-		$('.editable').not(this).show();
-		$('.editableValue:visible').each(function(e) {
+		$('.editable').not(this).filter(function () { return !$(this).next('.editableValue').is('[data-autosave-unsaved]'); }).show();
+		$('.editableValue:visible').not('[data-autosave-unsaved]').each(function(e) {
 			if($(this)[0] != $editableValue[0]) {
 				$(this).hide();
 				if(action == 'index') {
@@ -658,9 +648,9 @@ $(document).ready(function(){
 			return;
 		}
 
-		$('.editable').show();
+		$('.editable').filter(function () { return !$(this).next('.editableValue').is('[data-autosave-unsaved]'); }).show();
 
-		$('.editableValue:visible').each(function() {
+		$('.editableValue:visible').not('[data-autosave-unsaved]').each(function() {
 			$(this).hide();
 			unlock($(this).closest('tr').find('input.id[type="hidden"]').val() || $(this).closest('tr').find('input.id').not(':checkbox').val());
 		});
@@ -697,20 +687,19 @@ $(document).ready(function(){
 		// Perform actions based on controller or action
 		var response;
 		if (params['action'] === 'add') {
+			markFieldSaving($(this));
 			response = add(data, params);
 			var created = getCreateResponse(response, {module: params.module || module, controller: params.controller || controller}, data.itemid || params.id);
-			if (created && created.ok === true) this.dataset.action = '';
+			if (finishFieldSave($(this), created)) this.dataset.action = '';
 		} else if (params['controller'] === 'positionset') {
-			response = editPositionSet(data, params);
+			response = editPositionSet(data, params, $(this));
 		} else {
-			response = edit(data, params);
+			response = edit(data, params, undefined, $(this));
 		}
 
-		// NEU: Fehler sauber behandeln
-		if (!response) {
-			pushMessages(['Speichern fehlgeschlagen.']);
-			return;
-		}
+		if (!response) return;
+
+		if (response.ok === false || response.saved === false || $(this).hasClass('is-invalid')) return;
 
 		// SELECT update
 		if(this.nodeName == 'SELECT') {
@@ -735,8 +724,8 @@ $(document).ready(function(){
 
 			if(this.name == 'tagid') {
 				$(this).prev('.editable').before('<span>'+shown+'</span>');
-				$('.editable').show();
-				$('.editableValue:visible').each(function() {
+				$('.editable').filter(function () { return !$(this).next('.editableValue').is('[data-autosave-unsaved]'); }).show();
+				$('.editableValue:visible').not('[data-autosave-unsaved]').each(function() {
 				$(this).hide();
 				unlock($(this).closest('tr').find('input.id').val());
 			});
@@ -927,7 +916,7 @@ $(document).ready(function(){
 window.onbeforeunload = function(e) {
 	var e = e || window.event;
 
-	if(isDirty && !Dewawi.nativeSubmission) {
+	if(isDirty && !Dewawi.nativeSubmission && !Dewawi.sessionExpired) {
 		// For IE and Firefox prior to version 4
 		if (e) {
 			e.returnValue = 'Any string';
@@ -1155,7 +1144,7 @@ function add(data, params, button) {
 }
 
 //Edit
-function edit(data, params, button) {
+function edit(data, params, button, fields) {
 	var url = baseUrl;
 	params = params || null;
 	if(params && params['module']) url += '/'+params['module'];
@@ -1172,6 +1161,10 @@ function edit(data, params, button) {
 	var explicit = button !== undefined;
 	var complete = explicit ? beginActionRequest('save', params && params.module || module, params && params.controller || controller, [params && params.id || window.id], $(button)) : null;
 	if (explicit && !complete) return null;
+	var $fields = getSaveFields(data, params, fields);
+	markFieldSaving($fields);
+	var $positions = $('.dw-positions[data-parent="' + controller + '"]').first();
+	if ($positions.length) $positions.data('dw-position-revision', ($positions.data('dw-position-revision') || 0) + 1);
 	var response = null;
 	$.ajax({
 		type: 'POST',
@@ -1181,34 +1174,22 @@ function edit(data, params, button) {
 		cache: false,
 		dataType: 'json',
 		timeout: explicit ? 120000 : 0,
-		success: function(json){
+		success: function(json) {
 			response = json;
-			if (explicit && (!response || response.ok === false || response.saved === false || response.errors || (response.ok !== true && response.saved !== true))) {
-				showSaveError(response, false);
+			var result = json;
+			if (data.tagid) result = getCreateResponse(json, {module: params && params.module || module, controller: 'tag'}, data.parentid);
+			if (!finishFieldSave($fields, result)) {
+				if (explicit) showSaveError(response, false);
+				else if (!$fields.length) pushMessages(Dewawi.message(response && (response.ok === false || response.saved === false) ? 'MESSAGES_SAVE_FAILED' : 'MESSAGES_CHANGE_STATUS_UNKNOWN'), 'danger', '#messages');
 				return;
 			}
-			if (response && (response.ok === false || response.saved === false)) {
-				for (var field in data) {
-					if (!data.hasOwnProperty(field)) continue;
-					$('form #'+field).addClass('error');
-					//console.log('form #'+field);
-				}
-				if (response.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
-				else if (response.message === 'not_found') pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
-				else if (response.message === 'locked') pushMessages(['Datensatz wird bereits bearbeitet.']);
-				else pushMessages([response.message]);
-			} else {
-				Dewawi.setDirty(false);
-				if (explicit) pushMessages(Dewawi.message('MESSAGES_SAVED'), 'success');
-
-				if (response.calculation || response.reloadPositions) {
-					applySaveResponse(response, controller, 'pos', window.pageYOffset);
-				}
-			}
+			if (explicit) pushMessages(Dewawi.message('MESSAGES_SAVED'), 'success');
+			applySaveResponse(response, controller, 'pos', window.pageYOffset);
 		},
-		error: function(xhr){
+		error: function(xhr) {
+			finishFieldSave($fields, xhr.responseJSON && xhr.responseJSON.ok === false ? xhr.responseJSON : null);
 			if (explicit) showSaveError(xhr.responseJSON, false);
-			else pushMessages(['Speichern fehlgeschlagen.']);
+			else if (!$fields.length) pushMessages(Dewawi.message('MESSAGES_CHANGE_STATUS_UNKNOWN'), 'danger', '#messages');
 		},
 		complete: complete
 	});
@@ -1505,7 +1486,7 @@ function applyPosition(parent, type, itemIds, setid) {
 function applySaveResponse(response, parent, type, scrollTo) {
 	applyCalculation(response.calculation);
 
-	if (response.reloadPositions) {
+	if (response.reloadPositions || positionArea(parent, type).data('dw-positions-refresh-needed')) {
 		getPositions(parent, type, scrollTo);
 	}
 }
@@ -1534,8 +1515,12 @@ function applyCalculation(calculation) {
 }
 
 //Edit position
-function editPosition(parent, type, data, params) {
+function editPosition(parent, type, data, params, fields) {
 	var url;
+	var $fields = fields === undefined ? positionArea(parent, type).find('.dw-position-card[data-id="' + params.id + '"] input, .dw-position-card[data-id="' + params.id + '"] textarea, .dw-position-card[data-id="' + params.id + '"] select').filter(function () { return Object.prototype.hasOwnProperty.call(data, this.name); }) : $(fields);
+	var $area = positionArea(parent, type);
+	$area.data('dw-position-revision', ($area.data('dw-position-revision') || 0) + 1);
+	markFieldSaving($fields);
 	Dewawi.setDirty(true);
 
 	if (params.controller === 'pricerulepos') {
@@ -1558,110 +1543,95 @@ function editPosition(parent, type, data, params) {
 		cache: false,
 		dataType: 'json',
 		success: function(response) {
-			if (!response || response.ok !== true) {
-				pushMessages([
-					response && response.message
-						? response.message
-						: 'Speichern fehlgeschlagen.'
-				]);
-				return;
-			}
-
-			Dewawi.setDirty(false);
-
-			applySaveResponse(response, parent, type, window.pageYOffset);
+			if (finishFieldSave($fields, response)) applySaveResponse(response, parent, type, window.pageYOffset);
+			else if (!$fields.length) pushMessages(Dewawi.message('MESSAGES_CHANGE_STATUS_UNKNOWN'), 'danger', '#messages');
 		},
-		error: function() {
-			pushMessages(['Speichern fehlgeschlagen.']);
+		error: function(xhr) {
+			finishFieldSave($fields, xhr.responseJSON && xhr.responseJSON.ok === false ? xhr.responseJSON : null);
+			if (!$fields.length) pushMessages(Dewawi.message('MESSAGES_CHANGE_STATUS_UNKNOWN'), 'danger', '#messages');
 		}
 	});
 }
 
-//Add position
-function addPosition(parent, type, setid) {
-	if (typeof setid === 'undefined' || setid === null || setid === '') {
-		setid = 0;
+function positionArea(parent, type) {
+	return $('.dw-positions').filter(function () { return String($(this).data('parent')) === String(parent) && String($(this).data('type') || 'pos') === String(type); });
+}
+
+// Serialize explicit mutations per document; synchronous field saves retain their existing contract.
+function requestPositionAction(name, parent, type, requests, button, failureKey, scrollTo) {
+	if (!requests.length) return;
+	var $area = positionArea(parent, type), $queue = $area.length ? $area.first() : $(document);
+	var complete = beginActionRequest(name, module, parent + '/' + type + '/' + id, requests.map(function (request) { return request.key; }), $(button));
+	if (!complete) return;
+	var queueName = 'dw-positions-' + parent + '-' + type + '-' + id;
+	$queue.queue(queueName, function (next) {
+		var lastResponse = null, lastRevision, index = 0, failed = false;
+		function finish() {
+			if (lastResponse || $area.data('dw-positions-refresh-needed')) {
+				if (lastResponse && ($area.data('dw-position-revision') || 0) === lastRevision) applyCalculation(lastResponse.calculation);
+				getPositions(parent, type, scrollTo === undefined ? window.pageYOffset : scrollTo);
+			}
+			complete();
+			next();
+		}
+		function sendNext() {
+			if (failed || index >= requests.length) { finish(); return; }
+			var request = requests[index++];
+			var revision = ($area.data('dw-position-revision') || 0) + 1;
+			$area.data('dw-position-revision', revision).data('dw-position-pending', true);
+			$.ajax({
+				type: 'POST', url: request.url, data: request.data, dataType: 'json', cache: false, timeout: 120000,
+				success: function (response) {
+					if (!response || response.ok !== true || response.saved === false || response.errors) {
+						failed = true;
+						showActionRequestError(response, failureKey);
+						return;
+					}
+					lastResponse = response;
+					lastRevision = revision;
+				},
+				error: function (xhr) { failed = true; showActionRequestError(xhr.responseJSON, failureKey); },
+				complete: function () { $area.removeData('dw-position-pending'); sendNext(); }
+			});
+		}
+		sendNext();
+	});
+	if (!$queue.data(queueName)) {
+		$queue.data(queueName, true);
+		$queue.promise(queueName).always(function () { $queue.removeData(queueName); });
+		$queue.dequeue(queueName);
 	}
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id,
-		dataType: 'json',
-		cache: false,
-		success: function(response) {
-			if (!response || response.ok !== true) {
-				pushMessages([
-					response && response.message
-						? response.message
-						: 'Position konnte nicht hinzugefügt werden.'
-				]);
-				return;
-			}
-
-			Dewawi.setDirty(false);
-
-			applySaveResponse(response, parent, type, window.pageYOffset);
-		}
-	});
 }
 
-//Copy Position
-function copyPosition(parent, type, positionID){
-	if (typeof setid === 'undefined' || setid === null || setid === '') {
-		setid = 0;
-	}
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+window.parent.module+'/position/copy/parent/'+parent+'/type/'+type+'/id/'+positionID+'/parentid/'+id,
-		dataType: 'json',
-		cache: false,
-		success: function(response) {
-			if (!response || response.ok !== true) {
-				pushMessages([
-					response && response.message
-						? response.message
-						: 'Position konnte nicht kopiert werden.'
-				]);
-				return;
-			}
-
-			applySaveResponse(response, parent, type, window.pageYOffset);
-		}
-	});
+function addPosition(parent, type, setid, button) {
+	setid = setid || 0;
+	return requestPositionAction('position-add', parent, type, [{key: setid, url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id}], button, 'MESSAGES_POSITION_ADD_FAILED');
 }
 
-//Delete Position
-function deletePosition(parent, type, positionID, setid, masterid){
-	var data = {};
-	data.id = positionID;
-	data.setid = setid;
-	data.masterid = masterid || null;
-	data.parentid = id;
-	data.delete = 'Yes';
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+window.parent.module+'/position/delete/parent/'+parent+'/type/'+type,
-		dataType: 'json',
-		cache: false,
-		data: data,
-		success: function(response) {
-			if (!response || response.ok !== true) {
-				pushMessages([
-					response && response.message
-						? response.message
-						: 'Position konnte nicht gelöscht werden.'
-				]);
-				return;
-			}
+function copyPosition(parent, type, positionID, button) {
+	return changeSelectedPositions('copy', [{parent: parent, type: type, id: positionID}], button);
+}
 
-			applySaveResponse(response, parent, type, window.pageYOffset);
-		}
+function deletePosition(parent, type, positionID, setid, masterid, button) {
+	return changeSelectedPositions('delete', [{parent: parent, type: type, id: positionID, setid: setid, masterid: masterid}], button);
+}
+
+function changeSelectedPositions(actionName, positions, button) {
+	if (!positions.length) return;
+	var parent = positions[0].parent, type = positions[0].type;
+	var requests = positions.map(function (position) {
+		return {key: position.id, url: baseUrl+'/'+module+'/position/'+actionName+'/parent/'+parent+'/type/'+type+'/id/'+position.id+'/parentid/'+id,
+			data: actionName === 'delete' ? {id: position.id, setid: position.setid, masterid: position.masterid || null, parentid: id, delete: 'Yes'} : undefined};
 	});
+	return requestPositionAction('position-' + actionName, parent, type, requests, button, actionName === 'delete' ? 'MESSAGES_POSITION_DELETE_FAILED' : 'MESSAGES_POSITION_COPY_FAILED');
 }
 
 //Get Positions
 function getPositions(parent, type, scrollTo) {
 	scrollTo = scrollTo || null;
 	Dewawi.positionRequests = Dewawi.positionRequests || {};
+	var $area = positionArea(parent, type);
+	var revision = $area.data('dw-position-revision') || 0;
 	var requestKey = parent + '/' + type;
 	var requestId = (Dewawi.positionRequests[requestKey] || 0) + 1;
 	Dewawi.positionRequests[requestKey] = requestId;
@@ -1670,9 +1640,13 @@ function getPositions(parent, type, scrollTo) {
 		url: baseUrl+'/'+window.parent.module+'/position/index/parent/'+parent+'/type/'+type+'/parentid/'+id,
 		cache: false,
 		success: function(data){
-			if (Dewawi.positionRequests[requestKey] !== requestId) return;
-			$('.dw-positions[data-parent="'+parent+'"]').html(data);
-			autosize($('.dw-positions').find('textarea'));
+			if (Dewawi.positionRequests[requestKey] !== requestId || ($area.data('dw-position-revision') || 0) !== revision) return;
+			if ($area.data('dw-position-pending') || $area.find('[data-autosave-unsaved]').length) {
+				$area.data('dw-positions-refresh-needed', true);
+				return;
+			}
+			$area.html(data).removeData('dw-positions-refresh-needed');
+			autosize($area.find('textarea'));
 			if(data) $('#tabpositions .toolbar.positions.bottom').show();
 			else $('#tabpositions .toolbar.positions.bottom').hide();
 			if(scrollTo) {
@@ -1682,6 +1656,11 @@ function getPositions(parent, type, scrollTo) {
 				window.scrollTo(0, scrollTo);
 			}
 			$('.datePickerLive').datepicker(datePickerOptions);
+		},
+		error: function () {
+			if (Dewawi.positionRequests[requestKey] !== requestId || ($area.data('dw-position-revision') || 0) !== revision) return;
+			$area.data('dw-positions-refresh-needed', true);
+			pushMessages(Dewawi.message('MESSAGES_REQUEST_FAILED'), 'warning', '#messages');
 		}
 	});
 }
@@ -1732,103 +1711,42 @@ function refreshSection(section, scrollTop) {
 }
 
 //Add option
-function addOption(parent, type, optionid, setid, masterid) {
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id+'/optionid/'+optionid+'/masterid/'+masterid,
-		dataType: 'json',
-		cache: false,
-		success: function(response) {
-			if (!response || response.ok !== true) {
-				pushMessages([
-					response && response.message
-						? response.message
-						: 'Position konnte nicht hinzugefügt werden.'
-				]);
-				return;
-			}
-
-			$('#status #warning').hide();
-			$('#status #success').show();
-
-			Dewawi.setDirty(false);
-
-			applySaveResponse(response, parent, type, window.pageYOffset);
-		}
-	});
+function addOption(parent, type, optionid, setid, masterid, button) {
+	return requestPositionAction('position-option', parent, type, [{key: [setid, masterid, optionid].join('/'), url: baseUrl+'/'+module+'/position/add/setid/'+setid+'/parent/'+parent+'/type/'+type+'/parentid/'+id+'/optionid/'+optionid+'/masterid/'+masterid}], button, 'MESSAGES_POSITION_ADD_FAILED');
 }
 
-//Add Set
-function addSet(parent, type) {
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+module+'/positionset/add/parent/'+parent+'/type/'+type+'/parentid/'+id,
-		dataType: 'json',
-		cache: false,
-		success: function(){
-			$('#status #warning').hide();
-			$('#status #success').show();
-			Dewawi.setDirty(false);
-			getPositions(parent, type, $(document).height());
-		}
-	});
+function addSet(parent, type, button) {
+	return requestPositionAction('positionset-add', parent, type, [{key: 'new', url: baseUrl+'/'+module+'/positionset/add/parent/'+parent+'/type/'+type+'/parentid/'+id}], button, 'MESSAGES_POSITION_SET_FAILED', $(document).height());
 }
 
-//Copy Set
-function copySet(parent, type, setid){
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+window.parent.module+'/positionset/copy/parent/'+parent+'/type/'+type+'/id/'+setid+'/parentid/'+id,
-		dataType: 'json',
-		cache: false,
-		success: function(){
-			getPositions(parent, type, window.pageYOffset);
-		}
-	});
+function copySet(parent, type, setid, button) {
+	return requestPositionAction('positionset-copy', parent, type, [{key: setid, url: baseUrl+'/'+module+'/positionset/copy/parent/'+parent+'/type/'+type+'/id/'+setid+'/parentid/'+id}], button, 'MESSAGES_POSITION_SET_FAILED');
 }
 
-//Delete Set
-function deleteSet(parent, type, setid){
-	var data = {};
-	data.id = setid;
-	data.parentid = id;
-	data.delete = 'Yes';
-	$.ajax({
-		type: 'POST',
-		url: baseUrl+'/'+window.parent.module+'/positionset/delete/parent/'+parent+'/type/'+type,
-		cache: false,
-		data: data,
-		success: function(){
-			getPositions(parent, type, window.pageYOffset);
-		}
-	});
+function deleteSet(parent, type, setid, button) {
+	return requestPositionAction('positionset-delete', parent, type, [{key: setid, url: baseUrl+'/'+module+'/positionset/delete/parent/'+parent+'/type/'+type,
+		data: {id: setid, parentid: id, delete: 'Yes'}}], button, 'MESSAGES_POSITION_SET_FAILED');
 }
 
-//Edit position
-function editPositionSet(data, params) {
+function editPositionSet(data, params, fields) {
 	var response;
-	var url = baseUrl+'/'+module+'/positionset';
-	if(params['id']) url += '/edit/id/'+params['id'];
-	url += '/parent/'+controller+'/parentid/'+id;
+	var $fields = getSaveFields(data, {controller: 'positionset', id: params.id}, fields);
+	var $area = $fields.closest('.dw-positions');
+	var parent = $area.data('parent') || controller, type = $area.data('type') || 'pos';
+	$area.data('dw-position-revision', ($area.data('dw-position-revision') || 0) + 1);
+	markFieldSaving($fields);
+	Dewawi.setDirty(true);
 	$.ajax({
-		type: 'POST',
-		async: false,
-		url: url,
-		data: data,
-		cache: false,
-		success: function(json){
-			Dewawi.setDirty(false);
-			if((params['element'] == 'price') || (params['element'] == 'quantity') || (params['element'] == 'priceruleamount') || (params['element'] == 'priceruleaction')) {
-				$('table#total #subtotal').text(json['subtotal']);
-				$('table#total #total').text(json['total']);
-				$('tr.position'+params['id']+'.wrap').find('.total').text(json[params['id']]['total']);
-								$.each(json['taxes'], function(key, val) {
-										if(key != 'total') $('td[data-rate="'+key+'"]').text(val);
-								});
-			} else if(params['element'] == 'taxrate') {
-				getPositions(controller, $(document).height());
-			}
+		type: 'POST', async: false, url: baseUrl+'/'+module+'/positionset/edit/id/'+params.id+'/parent/'+parent+'/type/'+type+'/parentid/'+id,
+		data: data, cache: false, dataType: 'json',
+		success: function (json) {
 			response = json;
+			if (finishFieldSave($fields, json)) applySaveResponse(json, parent, type, window.pageYOffset);
+			else if (!$fields.length) pushMessages(Dewawi.message('MESSAGES_CHANGE_STATUS_UNKNOWN'), 'danger', '#messages');
+		},
+		error: function (xhr) {
+			finishFieldSave($fields, xhr.responseJSON && xhr.responseJSON.ok === false ? xhr.responseJSON : null);
+			if (!$fields.length) pushMessages(Dewawi.message('MESSAGES_CHANGE_STATUS_UNKNOWN'), 'danger', '#messages');
 		}
 	});
 	return response;
@@ -2519,7 +2437,7 @@ function setLocation(location){
 	window.location = location;
 }
 
-function saveEntity(payload, target, button) {
+function saveEntity(payload, target, button, fields) {
 	payload = payload || {};
 	target = target || {};
 
@@ -2545,7 +2463,7 @@ function saveEntity(payload, target, button) {
 		params.controller = target.controller;
 	}
 
-	return edit(requestPayload, params, button);
+	return edit(requestPayload, params, button, fields);
 }
 
 function createEntity(payload, target, context, $container, button) {
@@ -2631,43 +2549,86 @@ function deleteEntity(ids, target, context, button) {
 	);
 }
 
-function clearFieldState($field) {
-	if (!$field || !$field.length) return;
+function getSaveFields(data, params, fields) {
+	if (fields !== undefined) return $(fields);
+	params = params || {};
+	return $('input, textarea, select').filter(function () {
+		var $field = $(this), name = (this.name || '').replace(/\[\]$/, '');
+		if (!Object.prototype.hasOwnProperty.call(data, name) || $field.closest('form').is('[data-autosave="false"]')) return false;
+		var $item = $field.closest('.dw-multiform__item');
+		var fieldController = $field.data('controller') || $item.data('controller');
+		var fieldId = $field.data('id') || $item.data('id');
+		if (fieldController) return fieldController === (params.controller || controller) && String(fieldId) === String(params.id || window.id);
+		return (!params.controller || params.controller === controller) && (!params.id || String(params.id) === String(window.id)) && !$field.closest('.dw-positions').length;
+	});
+}
 
-	$field.removeClass('is-invalid is-valid');
-	$field.next('.dw-field-error').remove();
+function markFieldSaving($fields) {
+	$fields.each(function () {
+		var $field = $(this);
+		if (!$field.data('dw-autosave-state')) $field.data('dw-autosave-state', {busy: $field.attr('aria-busy')});
+		var $status = $field.data('dw-autosave-status');
+		if ($status) $status.remove();
+		$status = $('<span>', {'class': 'dw-field__description', role: 'status', 'aria-live': 'polite'}).text(Dewawi.message('MESSAGES_SAVING'));
+		$field.removeClass('is-valid').attr({'aria-busy': 'true', 'data-autosave-unsaved': 'true'}).after($status).data('dw-autosave-status', $status);
+	});
+}
+
+function finishFieldSave($fields, response) {
+	var saved = !!response && response.ok !== false && response.saved !== false && !response.errors && (response.ok === true || response.saved === true);
+	if (saved) {
+		markFieldSaved($fields);
+		Dewawi.setDirty(false);
+	} else {
+		var failed = response && (response.ok === false || response.saved === false || response.errors);
+		var message = Dewawi.message(failed ? 'MESSAGES_SAVE_FAILED' : 'MESSAGES_CHANGE_STATUS_UNKNOWN');
+		$fields.each(function () {
+			var messages = response && response.errors && response.errors[(this.name || '').replace(/\[\]$/, '')];
+			markFieldError($(this), messages || [message]);
+		});
+		Dewawi.setDirty(true);
+	}
+	return saved;
+}
+
+function clearFieldState($field) {
+	$field.each(function () {
+		var $field = $(this), state = $field.data('dw-autosave-state');
+		var $status = $field.data('dw-autosave-status'), $error = $field.data('dw-field-error');
+		if ($status) $status.remove();
+		if ($error) {
+			var errorId = $error.attr('id');
+			var describedBy = ($field.attr('aria-describedby') || '').split(/\s+/).filter(function (id) { return id && id !== errorId; }).join(' ');
+			if (describedBy) $field.attr('aria-describedby', describedBy);
+			else $field.removeAttr('aria-describedby');
+			$error.remove();
+		}
+		$field.removeClass('is-invalid is-valid').removeAttr('aria-invalid').removeData('dw-field-error dw-autosave-status dw-autosave-state');
+		if (state && state.busy !== undefined) $field.attr('aria-busy', state.busy);
+		else $field.removeAttr('aria-busy');
+	});
 }
 
 function markFieldError($field, messages) {
-	if (!$field || !$field.length) return;
-
-	clearFieldState($field);
-	$field.addClass('is-invalid');
-
-	if (!Array.isArray(messages)) {
-		messages = messages ? [messages] : [];
-	}
-
-	if (!messages.length) return;
-
-	var html = '<div class="dw-field-error">';
-	for (var i = 0; i < messages.length; i++) {
-		html += '<div>' + messages[i] + '</div>';
-	}
-	html += '</div>';
-
-	$field.after(html);
+	$field.each(function () {
+		var $field = $(this);
+		clearFieldState($field);
+		markFieldError.sequence = (markFieldError.sequence || 0) + 1;
+		var errorId = 'dw-field-error-' + markFieldError.sequence;
+		var $error = $('<div>', {id: errorId, 'class': 'dw-field-error', role: 'alert', 'aria-live': 'assertive'});
+		function append(value) {
+			if (typeof value === 'string') $('<div>').text(value).appendTo($error);
+			else if (value && typeof value === 'object') $.each(value, function (_, item) { append(item); });
+		}
+		append(messages);
+		$field.addClass('is-invalid').attr({'aria-invalid': 'true', 'data-autosave-unsaved': 'true', 'aria-describedby': $.trim(($field.attr('aria-describedby') || '') + ' ' + errorId)}).after($error).data('dw-field-error', $error);
+	});
 }
 
 function markFieldSaved($field) {
-	if (!$field || !$field.length) return;
-
 	clearFieldState($field);
-	$field.addClass('is-valid');
-
-	window.setTimeout(function() {
-		$field.removeClass('is-valid');
-	}, 1200);
+	$field.removeAttr('data-autosave-unsaved').addClass('is-valid');
+	window.setTimeout(function () { $field.removeClass('is-valid'); }, 1200);
 }
 
 (function () {
@@ -3240,72 +3201,36 @@ function markFieldSaved($field) {
 
 			'add-position': function (selection, $button) {
 				var $container = $button.closest('.dw-positions');
-				var $set = $button.closest('.dw-position-set');
-
-				addPosition(
-					String($container.data('parent') || controller),
-					String($container.data('type') || 'pos'),
-					String($set.data('setid') || 0)
-				);
+				addPosition(String($container.data('parent') || controller), String($container.data('type') || 'pos'), String($button.closest('.dw-position-set').data('setid') || 0), $button);
 			},
 
-			'delete-position': function (selection) {
-				deletePosition(
-					selection.parent,
-					selection.type,
-					selection.id,
-					selection.setid,
-					selection.masterid
-				);
+			'delete-position': function (selection, $button) {
+				deletePosition(selection.parent, selection.type, selection.id, selection.setid, selection.masterid, $button);
 			},
 
-			'copy-position': function (selection) {
-				copyPosition(
-					selection.parent,
-					selection.type,
-					selection.id
-				);
+			'copy-position': function (selection, $button) {
+				copyPosition(selection.parent, selection.type, selection.id, $button);
 			},
 
 			'copy-selected-position': function (selection, $button) {
-				this.resolvePositions($button).forEach(function (position) {
-					copyPosition(position.parent, position.type, position.id);
-				});
+				changeSelectedPositions('copy', this.resolvePositions($button), $button);
 			},
 
 			'delete-selected-position': function (selection, $button) {
-				var positions = this.resolvePositions($button);
-
-				if (!positions.length) {
-					return;
-				}
-
-				positions.forEach(function (position) {
-					deletePosition(
-						position.parent,
-						position.type,
-						position.id,
-						position.setid,
-						position.masterid
-					);
-				});
+				changeSelectedPositions('delete', this.resolvePositions($button), $button);
 			},
 
 			'add-position-set': function (selection, $button) {
 				var $container = $button.closest('.dw-positions');
-
-				addSet(
-					String($container.data('parent') || controller),
-					String($container.data('type') || 'pos')
-				);
+				addSet(String($container.data('parent') || controller), String($container.data('type') || 'pos'), $button);
 			},
 
-			'copy-position-set': function (selection) {
-				copySet(selection.parent, selection.type, selection.setid);
+			'copy-position-set': function (selection, $button) {
+				copySet(selection.parent, selection.type, selection.setid, $button);
 			},
 
-			'delete-position-set': function (selection) {
-				deleteSet(selection.parent, selection.type, selection.setid);
+			'delete-position-set': function (selection, $button) {
+				deleteSet(selection.parent, selection.type, selection.setid, $button);
 			},
 
 			'multi-add': function (selection, $button) {
@@ -3450,7 +3375,8 @@ function markFieldSaved($field) {
 					String($button.data('type') || 'pos'),
 					Number($button.data('option-id')),
 					Number($button.data('setid') || 0),
-					Number($button.data('masterid') || 0)
+					Number($button.data('masterid') || 0),
+					$button
 				);
 			},
 
