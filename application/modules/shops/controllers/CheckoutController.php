@@ -180,7 +180,14 @@ class Shops_CheckoutController extends Shops_Controller_Action
 			]
 		));
 
-		$this->_helper->Email->sendEmail('shops', 'checkout', 'checkout', $cart);
+		try {
+			$emailResult = $this->_helper->Email->sendEmail('shops', 'checkout', 'checkout', $cart);
+			$this->checkoutDataSession->notificationSent = !empty($emailResult['ok']);
+		} catch (Exception $e) {
+			error_log('Stored shop order could not be emailed: ' . $e->getMessage());
+			$this->checkoutDataSession->notificationSent = false;
+			$this->_flashMessenger->addMessage('MESSAGES_EMAIL_SENT_ERROR');
+		}
 
 		$this->cart->clearCart();
 
@@ -192,6 +199,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		$this->initSiteLayout();
 
 		$this->view->formData = $this->checkoutDataSession->formData ?? [];
+		$this->view->notificationSent = $this->checkoutDataSession->notificationSent ?? null;
 
 		$this->assignMessages();
 	}

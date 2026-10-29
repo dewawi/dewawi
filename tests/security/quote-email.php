@@ -101,12 +101,15 @@ class Contacts_Form_Contact
 class DEEC_Email
 {
     public static array $sent = [];
+    public static array $smtp = [];
+    public static array $result = ['sent' => true, 'error' => ''];
     public static function buildSmtpConfig(array $config): array { return ['host' => 'unused']; }
     public static function prepareMessageData(array $message): array { return $message; }
     public static function sendMessage(array $smtp, array $message): array
     {
+        self::$smtp[] = $smtp;
         self::$sent[] = $message;
-        return ['sent' => true, 'error' => ''];
+        return self::$result;
     }
 }
 class DEEC_Feedback
@@ -150,9 +153,13 @@ function setupQuoteEmail(bool $shared = false): void
 {
     global $adapter;
     $contactClientId = $shared ? 70 : 7;
-    Zend_Registry::set('User', ['id' => 42, 'clientid' => 7, 'email' => 'sender@example.invalid', 'emailsender' => 'Sender', 'emailsignature' => 'Signature']);
+    Zend_Registry::set('User', [
+        'id' => 42, 'clientid' => 7, 'email' => 'sender@example.invalid', 'emailsender' => 'Sender', 'emailsignature' => 'Signature',
+        'smtphost' => 'smtp.user.example.invalid', 'smtpuser' => 'smtp-user@example.invalid', 'smtppass' => 'fixture-password',
+    ]);
     Zend_Registry::set('Client', ['id' => $contactClientId, 'parentid' => $shared ? 70 : 0, 'modules' => ['contacts' => $contactClientId, 'sales' => 7]]);
-    Zend_Registry::set('Config', []);
+    Zend_Registry::set('Config', ['smtphost' => 'ses-central.example.invalid', 'smtpport' => 587, 'smtpuser' => 'central-user', 'smtppass' => 'central-password']);
+    DEEC_Email::$result = ['sent' => true, 'error' => ''];
     $quote = ['id' => 10, 'quoteid' => 1001, 'clientid' => 7, 'contactid' => 500, 'language' => 'de_DE', 'state' => 105, 'deleted' => 0];
     $contact = ['id' => 100, 'contactid' => 500, 'clientid' => $contactClientId, 'deleted' => 0];
     $person = ['id' => 200, 'parentid' => 100, 'module' => 'contacts', 'controller' => 'contact', 'clientid' => $contactClientId, 'deleted' => 0, 'name1' => 'Legacy First', 'name2' => 'Legacy Last', 'firstname' => 'Jane', 'lastname' => 'Doe', 'salutation' => 'Frau', 'title' => 'Dr.', 'position' => 'Buyer', 'department' => 'Purchasing'];
@@ -188,6 +195,7 @@ function sendQuoteEmail(array $post = [], array $params = [], string $method = '
     global $adapter;
     $adapter->writes = [];
     DEEC_Email::$sent = [];
+    DEEC_Email::$smtp = [];
     DEEC_Feedback::$requests = [];
     $_SERVER['REQUEST_METHOD'] = $method;
     $_POST = [];
@@ -218,6 +226,7 @@ foreach ([false, true] as $shared) {
     foreach ([300 => 'customer@example.invalid', 301 => 'person@example.invalid', 311 => 'john@example.invalid', 312 => 'john.alt@example.invalid'] as $id => $address) {
         check(sendQuoteEmail(['recipient' => $id]), 'Allowed contact or contact-person email was rejected');
         check(count(DEEC_Email::$sent) === 1 && DEEC_Email::$sent[0]['to'] === [$address], 'Wrong recipient or duplicate send');
+        check(DEEC_Email::$smtp[0]['host'] === 'smtp.user.example.invalid' && DEEC_Email::$sent[0]['fromEmail'] === 'smtp-user@example.invalid', 'Normal email did not use the user SMTP configuration and sender');
         check(DEEC_Feedback::$requests[0][2] === 10 && DEEC_Feedback::$requests[0][3] === 7, 'Feedback used contact tenant instead of quote tenant');
         check($adapter->writes[0][1]['clientid'] === ($shared ? 70 : 7), 'Existing email log tenant changed');
         check($adapter->writes[0][1]['contactid'] === 100, 'Email history was not assigned to the company contact');
@@ -322,6 +331,11 @@ check(DEEC_Feedback::$requests === [], 'Ordinary contact email created quote fee
 check(sendQuoteEmail(['module' => 'contacts', 'controller' => 'contact', 'recipient' => 301]), 'Ordinary contact-person email failed');
 check($adapter->writes[0][1]['contactid'] === 100, 'Ordinary contact-person email history used the person ID');
 check(str_contains(DEEC_Email::$sent[0]['body'], 'Sehr geehrte Frau Dr. Doe,'), 'Ordinary contact-person email was not personalized');
+
+setupQuoteEmail();
+DEEC_Email::$result = ['sent' => false, 'error' => 'Fixture SMTP rejection'];
+check(!sendQuoteEmail(['module' => 'contacts', 'controller' => 'contact']), 'Negative SMTP result was reported as successful');
+check($adapter->writes[0][0] === 'emailmessage' && $adapter->writes[1][1]['response'] === 'Fixture SMTP rejection', 'Negative SMTP result was not retained in email history');
 
 // Public unsubscribe links still resolve an email before validating its token and tenant.
 Zend_Registry::getInstance()->offsetUnset('User');

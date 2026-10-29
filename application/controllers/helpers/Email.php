@@ -373,45 +373,40 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 	{
 		if($module === 'shops') {
 			$shop = Zend_Registry::get('Shop');
+			$smtpConfig = $this->getDirectSmtpConfig($shop, 'Shop');
+			$fromEmail = DEEC_Filter::email((string)($shop['emailsender'] ?? ''));
+			if(!DEEC_Filter::isValidEmail($fromEmail)) throw new RuntimeException('Shop sender email is missing or invalid');
 
-			$configDb = new Application_Model_DbTable_Config();
-			$config = $configDb->getByClientId((int)$shop['clientid']);
-			$smtpConfig = $config ? DEEC_Email::buildSmtpConfig($config) : null;
-
-			if(!$smtpConfig) {
-				$smtpConfig = [
-					'host' => $shop['smtphost'],
-					'auth' => true,
-					'username' => $shop['smtpuser'],
-					'password' => $shop['smtppass'],
-					'secure' => 'ssl',
-					'port' => 465,
-				];
-			}
-
-			return [$smtpConfig, (string)$shop['emailsender'], (string)$shop['title']];
+			return [$smtpConfig, $fromEmail, (string)($shop['title'] ?? '')];
 		}
 
 		$user = Zend_Registry::get('User');
-		$config = Zend_Registry::get('Config');
-		$smtpConfig = DEEC_Email::buildSmtpConfig($config);
+		$smtpConfig = $this->getDirectSmtpConfig($user, 'User');
+		$fromEmail = DEEC_Filter::email((string)($user['smtpuser'] ?? ''));
+		if(!DEEC_Filter::isValidEmail($fromEmail)) throw new RuntimeException('User SMTP username must be a valid sender email address');
 
-		if(!$smtpConfig) {
-			$smtpConfig = [
-				'host' => $user['smtphost'],
-				'auth' => true,
-				'username' => $user['smtpuser'],
-				'password' => $user['smtppass'],
-				'secure' => 'ssl',
-				'port' => 465,
-			];
+		return [$smtpConfig, $fromEmail, (string)($user['emailsender'] ?? '')];
+	}
 
-			return [$smtpConfig, (string)$user['smtpuser'], (string)$user['emailsender']];
-		}
+	private function getDirectSmtpConfig(array $source, string $context): array
+	{
+		$host = trim((string)($source['smtphost'] ?? ''));
+		$username = trim((string)($source['smtpuser'] ?? ''));
+		$password = (string)($source['smtppass'] ?? '');
 
-		if(empty($user['email'])) throw new Exception('Email sender address is missing');
+		if($host === '') throw new RuntimeException($context.' SMTP host is missing');
+		if(strlen($host) > 255 || preg_match('/[\x00-\x20\x7f]/', $host)) throw new RuntimeException($context.' SMTP host is invalid');
+		if($username === '') throw new RuntimeException($context.' SMTP username is missing');
+		if($password === '') throw new RuntimeException($context.' SMTP password is missing');
 
-		return [$smtpConfig, (string)$user['email'], (string)$user['emailsender']];
+		return [
+			'host' => $host,
+			'auth' => true,
+			'username' => $username,
+			'password' => $password,
+			'secure' => 'ssl',
+			'port' => 465,
+		];
 	}
 
 	private function getEmailBody($module, $controller, $formData, $data, $items)

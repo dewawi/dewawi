@@ -356,7 +356,9 @@ class Shops_InquiryController extends Shops_Controller_Action
 			}
 
 			if ($quoteId && !empty($pdfInfo['path'])) {
-				$this->sendOfferNotification($allFormValues, (string)$pdfInfo['path']);
+				if (!$this->sendOfferNotification($allFormValues, (string)$pdfInfo['path'])) {
+					$notificationSent = false;
+				}
 			}
 
 			$this->completeInquiry($allFormValues, $pdfInfo['url'] ?? null, $notificationSent, false);
