@@ -2,6 +2,37 @@
 
 class Items_StockplanningController extends DEEC_Controller_Action
 {
+	public function indexAction()
+	{
+		$params = ['movement' => 'planned'];
+		$type = (string)$this->_getParam('type', '');
+		if(in_array($type, ['incoming', 'reservation'], true)) $params['movement'] = $type;
+
+		$status = (string)$this->_getParam('status', '');
+		if(in_array($status, ['draft', 'planned', 'completed', 'cancelled', 'released'], true)) $params['status'] = $status;
+
+		$warehouseId = max(0, (int)$this->_getParam('warehouseid', 0));
+		if($warehouseId > 0) $params['warehouseid'] = $warehouseId;
+
+		$keyword = trim((string)$this->_getParam('keyword', ''));
+		if($keyword !== '') $params['keyword'] = $keyword;
+
+		$planningDate = trim((string)$this->_getParam('planningdate', ''));
+		$date = DateTime::createFromFormat('!Y-m-d', $planningDate);
+		if($date && $date->format('Y-m-d') === $planningDate) {
+			$params['daterange'] = 'custom';
+			$params['from'] = $planningDate;
+			$params['to'] = $planningDate;
+		}
+
+		return $this->_helper->redirector->gotoSimple(
+			'index',
+			'ledger',
+			'items',
+			$params
+		);
+	}
+
 	protected function buildIndexView(): void
 	{
 		$this->buildListView([
@@ -17,13 +48,16 @@ class Items_StockplanningController extends DEEC_Controller_Action
 		$type = (string)$this->_getParam('type', 'incoming');
 		if(!in_array($type, ['incoming', 'reservation'], true)) $type = 'incoming';
 		$warehouse = (new Application_Model_DbTable_Warehouse())->getDefault();
+		$warehouseId = max(0, (int)$this->_getParam('warehouseid', 0));
+		$warehouseDb = new Application_Model_DbTable_Warehouse();
+		if($warehouseId > 0 && !$warehouseDb->getById($warehouseId)) $warehouseId = 0;
 		$itemId = max(0, (int)$this->_getParam('itemid', 0));
 		if($itemId > 0 && !(new Items_Model_DbTable_Item())->getById($itemId)) $itemId = 0;
 
 		return [
 			'type' => $type,
 			'itemid' => $itemId,
-			'warehouseid' => $warehouse ? (int)$warehouse['id'] : 0,
+			'warehouseid' => $warehouseId ?: ($warehouse ? (int)$warehouse['id'] : 0),
 			'quantity' => 0,
 			'fulfilled' => 0,
 			'planningdate' => date('Y-m-d'),

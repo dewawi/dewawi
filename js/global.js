@@ -3078,20 +3078,24 @@ function markFieldSaved($field) {
 				var targetController = String($button.data('route-controller') || controller);
 				var url = Dewawi.url(targetModule, targetController, 'add');
 				var routeType = String($button.data('route-type') || '');
+				var routeReason = String($button.data('route-reason') || '');
+				var toolbarData = collectToolbarData();
 
-				if (routeType) {
-					url += '/type/' + encodeURIComponent(routeType);
-					setLocation(url);
-					return;
-				}
+				if (routeType) url += '/type/' + encodeURIComponent(routeType);
+				if (routeReason) url += '/reason/' + encodeURIComponent(routeReason);
 
-				[
-					'type',
+				var inheritedParams = [
 					'catid',
 					'parentid',
-					'shopid'
-				].forEach(function (key) {
-					var value = Dewawi.getParam(key);
+					'shopid',
+					'itemid',
+					'warehouseid'
+				];
+
+				if (!routeType) inheritedParams.unshift('type');
+
+				inheritedParams.forEach(function (key) {
+					var value = Dewawi.getParam(key) || toolbarData[key];
 
 					if (value && value !== '0') {
 						url += '/' + key + '/' + encodeURIComponent(value);

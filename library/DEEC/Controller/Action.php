@@ -999,8 +999,9 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 		$params['_export'] = $this->getRequest()->getActionName() === 'export';
 		$list = new $config['list']();
+		$exportable = isset($config['entity']) || !empty($config['exportable']);
 
-		if(isset($config['entity']) && $this->getRequest()->getActionName() === 'index') {
+		if($exportable && $this->getRequest()->getActionName() === 'index') {
 			$toolbar->addElement([
 				'name' => 'export',
 				'type' => 'button',
@@ -1011,7 +1012,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			]);
 		}
 
-		if($params['_export'] && !isset($config['entity'])) throw new RuntimeException('CSV export requires an entity-backed list.');
+		if($params['_export'] && !$exportable) throw new RuntimeException('CSV export is not available for this list.');
 
 		if (isset($config['entity'])) {
 			$listQuery = new DEEC_List_Query();
@@ -1026,6 +1027,10 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		if (is_array($result) && array_key_exists(0, $result) && array_key_exists(1, $result)) {
 			$items = $result[0];
 			$records = (int)$result[1];
+
+			if(isset($result[2]) && is_array($result[2])) {
+				$params = $result[2];
+			}
 		} else {
 			$items = $result;
 		}
@@ -1044,6 +1049,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			'controller' => $this->getRequest()->getControllerName(),
 			'toolbar' => $toolbar,
 			'toolbarInline' => $toolbarInline,
+			'selectable' => $config['selectable'] ?? true,
 			'context' => [
 				'user' => $this->_user,
 				'action' => $contextAction,

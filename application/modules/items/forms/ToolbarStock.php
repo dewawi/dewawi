@@ -66,14 +66,14 @@ class Items_Form_ToolbarStock extends Items_Form_Toolbar
 		$this->addElement([
 			'name' => 'planning',
 			'type' => 'button',
-			'label' => 'ITEMS_PLANNING',
+			'label' => 'ITEMS_MOVEMENTS',
 			'toolbar' => 'actions',
 			'wrap' => false,
 			'attribs' => [
 				'class' => 'view',
 				'data-action' => 'index',
 				'data-route-module' => 'items',
-				'data-route-controller' => 'stockplanning',
+				'data-route-controller' => 'ledger',
 			],
 		]);
 

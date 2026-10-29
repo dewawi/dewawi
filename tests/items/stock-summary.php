@@ -254,7 +254,7 @@ check($stockActions['ledger']['attribs']['data-action'] === 'add', 'Stock bookin
 check($stockActions['ledger']['attribs']['data-route-controller'] === 'ledger', 'Stock booking route is incorrect');
 check($stockActions['incoming']['attribs']['data-route-controller'] === 'stockplanning' && $stockActions['incoming']['attribs']['data-route-type'] === 'incoming', 'Incoming planning route is incorrect');
 check($stockActions['reservation']['attribs']['data-route-controller'] === 'stockplanning' && $stockActions['reservation']['attribs']['data-route-type'] === 'reservation', 'Reservation route is incorrect');
-check($stockActions['planning']['attribs']['data-action'] === 'index' && $stockActions['planning']['attribs']['data-route-controller'] === 'stockplanning', 'Stock planning overview route is incorrect');
+check($stockActions['planning']['attribs']['data-action'] === 'index' && $stockActions['planning']['attribs']['data-route-controller'] === 'ledger', 'Stock movement overview route is incorrect');
 
 $historicalToolbar = new Items_Form_ToolbarStock();
 $historicalToolbar->setHistoricalMode();

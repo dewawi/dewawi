@@ -4,6 +4,7 @@
 	'ITEMS' => 'Artikel',
 	//Ledger
 	'ITEMS_LEDGER' => 'Buchungsverlauf',
+	'ITEMS_MOVEMENTS' => 'Lagerbewegungen',
 	//Price rules
 	'ITEMS_PRICE_RULES' => 'Preisregeln',
 	'ITEMS_PRICE_RULES_ACTION' => 'Aktion',

@@ -4,10 +4,15 @@ class Items_LedgerController extends DEEC_Controller_Action
 {
 	protected function buildIndexView(): void
 	{
+		$query = new Items_Model_MovementQuery();
+
 		$this->buildListView([
 			'viewKey' => 'ledgers',
-			'list' => 'Items_Model_List_Ledgers',
-			'entity' => Items_Model_Entity_Ledger::listConfig(),
+			'list' => 'Items_Model_List_Movements',
+			'toolbar' => 'Items_Form_ToolbarMovements',
+			'items' => [$query, 'fetch'],
+			'exportable' => true,
+			'selectable' => false,
 		]);
 	}
 
@@ -27,9 +32,19 @@ class Items_LedgerController extends DEEC_Controller_Action
 
 		$itemId = (int)$this->_getParam('itemid', 0);
 
-		if($itemId > 0) {
+		if($itemId > 0 && (new Items_Model_DbTable_Item())->getById($itemId)) {
 			$data['itemid'] = $itemId;
 		}
+
+		$type = (string)$this->_getParam('type', '');
+		if(in_array($type, ['inflow', 'outflow'], true)) $data['type'] = $type;
+
+		$reasons = ['receipt', 'delivery', 'returncustomer', 'returnsupplier', 'transfer', 'inventory', 'damage', 'loss', 'scrap', 'correction', 'initial'];
+		$reason = (string)$this->_getParam('reason', '');
+		if(in_array($reason, $reasons, true)) $data['reason'] = $reason;
+
+		$warehouseId = max(0, (int)$this->_getParam('warehouseid', 0));
+		if($warehouseId > 0 && $warehouseDb->getById($warehouseId)) $data['warehouseid'] = $warehouseId;
 
 		return $data;
 	}
@@ -59,6 +74,14 @@ class Items_LedgerController extends DEEC_Controller_Action
 		$form->setLocale($locale);
 
 		if(!$request->isPost()) {
+			$item = !empty($data['itemid'])
+				? (new Items_Model_DbTable_Item())->getById((int)$data['itemid'])
+				: null;
+			if($item) {
+				$data['sku'] = (string)$item['sku'];
+				$data['itemtitle'] = (string)$item['title'];
+			}
+
 			$form->setValues(
 				DEEC_Display::rowToFormValues(
 					$form,
@@ -70,6 +93,7 @@ class Items_LedgerController extends DEEC_Controller_Action
 			$this->view->assign([
 				'form' => $form,
 				'options' => $formData['options'],
+				'ledgerDefaults' => $data,
 			]);
 
 			$this->assignMessages();

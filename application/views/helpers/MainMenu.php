@@ -62,7 +62,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 				'type' => 'group',
 				'label' => 'MENU_ITEMS',
 				'active' => function () {
-					return in_array($this->view->controller, ['item', 'attribute', 'option', 'itemlist', 'inventory', 'ledger'], true);
+					return in_array($this->view->controller, ['item', 'attribute', 'option', 'itemlist', 'inventory', 'ledger', 'stockplanning', 'stock'], true);
 				},
 				'children' => [
 					[
@@ -84,7 +84,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 						'action' => 'index',
 					],*/
 					[
-						'label' => 'MENU_LEDGER',
+						'label' => 'MENU_STOCK_MOVEMENTS',
 						'module' => 'items',
 						'controller' => 'ledger',
 						'action' => 'index',

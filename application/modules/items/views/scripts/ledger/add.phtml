@@ -30,6 +30,7 @@ echo $this->Messages();
 				type="hidden"
 				name="positions[0][itemid]"
 				class="ledger-position-itemid"
+				value="<?php echo (int)($this->ledgerDefaults['itemid'] ?? 0) ?>"
 			>
 
 			<div class="dw-form-row">
@@ -50,6 +51,7 @@ echo $this->Messages();
 						data-autocomplete-target-value="id"
 						data-autocomplete-min-length="2"
 						data-ledger-index="0"
+						value="<?php echo $this->escape($this->ledgerDefaults['sku'] ?? '') ?>"
 					>
 				</div>
 
@@ -69,6 +71,7 @@ echo $this->Messages();
 						data-autocomplete-target-value="id"
 						data-autocomplete-min-length="2"
 						data-ledger-index="0"
+						value="<?php echo $this->escape($this->ledgerDefaults['itemtitle'] ?? '') ?>"
 					>
 				</div>
 

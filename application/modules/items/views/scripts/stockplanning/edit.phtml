@@ -1,5 +1,9 @@
 <?php
-$this->title = $this->translate('ITEMS_PLANNING');
+$this->title = $this->translate(
+	($this->stockplanning['type'] ?? '') === 'reservation'
+		? 'ITEMS_PLANNING_RESERVATION'
+		: 'ITEMS_PLANNING_INCOMING'
+);
 $this->headTitle($this->title);
 echo $this->Messages();
 ?>
