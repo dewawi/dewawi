@@ -159,7 +159,7 @@ foreach (['Ada Example', 'Example GmbH', 'ada@example.invalid', '+49 30 123456',
 }
 
 $helperSource = file_get_contents($root . '/application/controllers/helpers/Email.php');
-check(substr_count($helperSource, "if(\$module !== 'shops') \$flashMessengerHelper->addMessage") === 2, 'Shop flash messages are not suppressed for both send outcomes');
+check(substr_count($helperSource, "if(\$module !== 'shops') {") >= 2 && substr_count($helperSource, "addMessage('MESSAGES_EMAIL_SENT_") === 2, 'Shop flash messages are not suppressed for both send outcomes');
 foreach (['ContactController.php', 'InquiryController.php', 'CheckoutController.php'] as $controller) {
     $source = file_get_contents($root . '/application/modules/shops/controllers/' . $controller);
     check(!str_contains($source, "addMessage('MESSAGES_EMAIL_SENT_ERROR')"), $controller . ' still duplicates the shop email failure message');

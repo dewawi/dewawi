@@ -318,6 +318,7 @@ class Contacts_EmailController
 				]);
 			}
 		} catch (Exception $e) {
+			error_log('Email send action failed: ' . $e->getMessage());
 			return $this->_helper->json([
 				'ok' => false,
 				'message' => 'send_failed',

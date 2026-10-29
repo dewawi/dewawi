@@ -50,14 +50,14 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 	public function updateEmailmessage($id, $data)
 	{
 		$id = (int)$id;
-		$this->updateById($id, $data);
+		$this->update($data, $this->getEntityWhere($id));
 	}
 
 	public function deleteEmailmessage($id)
 	{
 		$id = (int)$id;
 		$data = array('deleted' => 1);
-		$this->updateById($id, $data);
+		$this->update($data, $this->getEntityWhere($id));
 	}
 
 	public function updateDelivery(int $id, int $clientId, array $data): void

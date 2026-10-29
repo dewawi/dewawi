@@ -116,6 +116,7 @@ class DEEC_Feedback
 {
     public const TYPE_QUOTE = 'quote';
     public static array $requests = [];
+    public static bool $failAttach = false;
     public function prepareRequest(...$args): array
     {
         self::$requests[] = $args;
@@ -123,13 +124,17 @@ class DEEC_Feedback
     }
     public function buildEmailBlock(...$args): string { return '<feedback>'; }
     public function replaceEmailBlock(string $body, string $block): string { return $body . $block; }
-    public function attachEmailMessage(...$args): void {}
+    public function attachEmailMessage(...$args): void
+    {
+        if (self::$failAttach) throw new RuntimeException('Fixture feedback attachment failure');
+    }
 }
 class QuoteEmailTestFlashMessenger extends Zend_Controller_Action_Helper_Abstract
 {
     public static array $messages = [];
+    public static bool $failAdd = false;
     public function getName() { return 'FlashMessenger'; }
-    public function addMessage($message) { self::$messages[] = $message; return $this; }
+    public function addMessage($message) { if (self::$failAdd) throw new RuntimeException('Fixture flash failure'); self::$messages[] = $message; return $this; }
 }
 class QuoteEmailTestDirectory extends Zend_Controller_Action_Helper_Abstract
 {
@@ -161,6 +166,8 @@ function setupQuoteEmail(bool $shared = false): void
     Zend_Registry::set('Client', ['id' => $contactClientId, 'parentid' => $shared ? 70 : 0, 'modules' => ['contacts' => $contactClientId, 'sales' => 7]]);
     Zend_Registry::set('Config', ['smtphost' => 'ses-central.example.invalid', 'smtpport' => 587, 'smtpuser' => 'central-user', 'smtppass' => 'central-password']);
     DEEC_Email::$result = ['sent' => true, 'error' => ''];
+    DEEC_Feedback::$failAttach = false;
+    QuoteEmailTestFlashMessenger::$failAdd = false;
     $quote = ['id' => 10, 'quoteid' => 1001, 'clientid' => 7, 'contactid' => 500, 'language' => 'de_DE', 'state' => 105, 'deleted' => 0];
     $contact = ['id' => 100, 'contactid' => 500, 'clientid' => $contactClientId, 'deleted' => 0];
     $person = ['id' => 200, 'parentid' => 100, 'module' => 'contacts', 'controller' => 'contact', 'clientid' => $contactClientId, 'deleted' => 0, 'name1' => 'Legacy First', 'name2' => 'Legacy Last', 'firstname' => 'Jane', 'lastname' => 'Doe', 'salutation' => 'Frau', 'title' => 'Dr.', 'position' => 'Buyer', 'department' => 'Purchasing'];
@@ -340,6 +347,18 @@ DEEC_Email::$result = ['sent' => false, 'error' => 'Fixture SMTP rejection'];
 check(!sendQuoteEmail(['module' => 'contacts', 'controller' => 'contact']), 'Negative SMTP result was reported as successful');
 check($adapter->writes[0][0] === 'emailmessage' && $adapter->writes[1][1]['response'] === 'Fixture SMTP rejection', 'Negative SMTP result was not retained in email history');
 check(QuoteEmailTestFlashMessenger::$messages === ['MESSAGES_EMAIL_SENT_ERROR'], 'Normal email failure message is missing or duplicated');
+
+$previousErrorLog = ini_get('error_log');
+ini_set('error_log', '/dev/null');
+setupQuoteEmail();
+DEEC_Feedback::$failAttach = true;
+check(sendQuoteEmail(), 'Feedback linking failure changed an accepted SMTP result');
+check($adapter->writes[1][1]['response'] === 'sent', 'Feedback linking failure left an accepted email pending');
+setupQuoteEmail();
+QuoteEmailTestFlashMessenger::$failAdd = true;
+check(sendQuoteEmail(), 'Flash message failure changed an accepted SMTP result');
+check($adapter->writes[1][1]['response'] === 'sent', 'Flash message failure left an accepted email pending');
+ini_set('error_log', $previousErrorLog);
 
 // Public unsubscribe links still resolve an email before validating its token and tenant.
 Zend_Registry::getInstance()->offsetUnset('User');

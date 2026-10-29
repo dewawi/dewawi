@@ -297,8 +297,6 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				$sendResult = ['sent' => false, 'error' => $e->getMessage()];
 			}
 
-			$flashMessengerHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
-			$redirector = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
 			$accepted = !empty($sendResult['sent']);
 			if($module === 'shops') {
 				foreach($recipient['roles'] as $role) $result[$role.'Accepted'] = $accepted;
@@ -314,16 +312,32 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					$feedback['service']->deleteRequest($feedback['request']);
 				}
 
-				if($module !== 'shops') $flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_ERROR');
+				if($module !== 'shops') {
+					try {
+						Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger')->addMessage('MESSAGES_EMAIL_SENT_ERROR');
+					} catch(Exception $e) {
+						error_log('Email failure message could not be stored: ' . $e->getMessage());
+					}
+				}
 			} else {
 				$result['sent']++;
 				$emailmessageDb->updateEmailmessage($messageid, ['response' => 'sent']);
 
 				if($feedback['service'] && $feedback['request']) {
-					$feedback['service']->attachEmailMessage($feedback['request'], (int)$messageid);
+					try {
+						$feedback['service']->attachEmailMessage($feedback['request'], (int)$messageid);
+					} catch(Exception $e) {
+						error_log('Email feedback could not be linked after SMTP acceptance: ' . $e->getMessage());
+					}
 				}
 
-				if($module !== 'shops') $flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
+				if($module !== 'shops') {
+					try {
+						Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger')->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
+					} catch(Exception $e) {
+						error_log('Email success message could not be stored after SMTP acceptance: ' . $e->getMessage());
+					}
+				}
 			}
 		}
 
