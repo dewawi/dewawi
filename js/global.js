@@ -173,8 +173,12 @@ $(document).ready(function(){
 	$(document).on(
 		'submit',
 		'.add form',
-		function() {
-			Dewawi.setDirty(false);
+		function(event) {
+			if (this.id !== controller || event.isDefaultPrevented()) return;
+			var submitter = event.originalEvent && event.originalEvent.submitter;
+			var complete = prepareFormSubmit($(this), $(submitter), submitter);
+			if (!complete) event.preventDefault();
+			else setTimeout(function () { if (event.isDefaultPrevented()) complete(); }, 0);
 		}
 	);
 
@@ -349,6 +353,7 @@ $(document).ready(function(){
 					return;
 				}
 
+				Dewawi.setDirty(false);
 				window.location.href = Dewawi.url(
 					'items',
 					'item',
@@ -693,7 +698,8 @@ $(document).ready(function(){
 		var response;
 		if (params['action'] === 'add') {
 			response = add(data, params);
-			this.dataset.action = ''; // Reset action after add
+			var created = getCreateResponse(response, {module: params.module || module, controller: params.controller || controller}, data.itemid || params.id);
+			if (created && created.ok === true) this.dataset.action = '';
 		} else if (params['controller'] === 'positionset') {
 			response = editPositionSet(data, params);
 		} else {
@@ -921,7 +927,7 @@ $(document).ready(function(){
 window.onbeforeunload = function(e) {
 	var e = e || window.event;
 
-	if(isDirty) {
+	if(isDirty && !Dewawi.nativeSubmission) {
 		// For IE and Firefox prior to version 4
 		if (e) {
 			e.returnValue = 'Any string';
@@ -977,158 +983,179 @@ function pin(id) {
 	});
 }
 
+function showSaveError(response, creating) {
+	var validation = response && (response.errors || response.message === 'validation_failed' || response.message === 'Form is invalid'
+		|| response.message === 'MESSAGES_FORM_IS_INVALID' || response.message === Dewawi.message('MESSAGES_FORM_IS_INVALID'));
+	var failed = response && (response.ok === false || response.saved === false);
+	var key = validation ? 'MESSAGES_FORM_IS_INVALID' : (failed ? (creating ? 'MESSAGES_CREATE_FAILED' : 'MESSAGES_SAVE_FAILED') : 'MESSAGES_ACTION_STATUS_UNKNOWN');
+	pushMessages(Dewawi.message(key), 'danger', '#messages');
+}
+
+function prepareFormSubmit($form, $button, submitter) {
+	var invalid = false;
+	$form.find('input.required').each(function () {
+		$(this).toggleClass('error', !$(this).val());
+		if (!$(this).val()) invalid = true;
+	});
+	if (!$form.length || invalid || (!$form[0].noValidate && !(submitter && submitter.formNoValidate) && !$form[0].reportValidity())) {
+		pushMessages(Dewawi.message('MESSAGES_FORM_IS_INVALID'), 'danger', '#messages');
+		return;
+	}
+	var release = beginActionRequest('submit', module, controller, [$form.attr('id')], $button);
+	if (!release) return;
+	var $submitValue = $();
+	if (submitter && submitter.name) $submitValue = $('<input>', {type: 'hidden', name: submitter.name, value: submitter.value}).appendTo($form);
+	Dewawi.nativeSubmission = true;
+	var complete = function () {
+		$submitValue.remove();
+		Dewawi.nativeSubmission = false;
+		$form.removeData('dw-submit-complete');
+		release();
+	};
+	$form.data('dw-submit-complete', complete);
+	return complete;
+}
+
+$(window).on('pageshow', function () {
+	$('form').each(function () {
+		var complete = $(this).data('dw-submit-complete');
+		if (complete) complete();
+	});
+});
+
+$(document).on('click', '.dw-toolbar button.save:not([data-action])', function () { save(this); });
+
 //Save
-function save() {
-	var error = false;
-	if(action == 'add') {
-		$('input.required').each(function(index) {
-			if(!$(this).val()) {
-				$(this).addClass('error');
-				error = true;
-			}
-			else $(this).removeClass('error');
-		});
-		if(!error) {
-			Dewawi.setDirty(false);
-			document.getElementById(controller).submit();
+function save(button) {
+	var $button = $(button);
+	if (action === 'add') {
+		var $form = $(document.getElementById(controller));
+		var complete = prepareFormSubmit($form, $button);
+		if (!complete) return;
+		try {
+			HTMLFormElement.prototype.submit.call($form[0]);
+		} catch (error) {
+			complete();
+			showSaveError({ok: false}, false);
 		}
-	} else if(action == 'password') {
-		var data = {};
-		data['passwordactual'] = $('#passwordactual').val();
-		data['passwordnew'] = $('#passwordnew').val();
-		data['passwordconfirm'] = $('#passwordconfirm').val();
-		var url = baseUrl+'/'+module+'/'+controller+'/'+action;
+	} else if (action === 'password') {
+		var $passwordForm = $('form#password');
+		if (!$button.length) $button = $passwordForm.find('button.password');
+		if (!$passwordForm.length || !$passwordForm[0].reportValidity() || $passwordForm.find('[name="passwordnew"]').val() !== $passwordForm.find('[name="passwordconfirm"]').val()) {
+			pushMessages(Dewawi.message('MESSAGES_FORM_IS_INVALID'), 'danger', '#messages');
+			return;
+		}
+		var complete = beginActionRequest('save', module, controller, ['password'], $button);
+		if (!complete) return;
 		$.ajax({
 			type: 'POST',
-			async: false,
-			url: url,
-			data: data,
+			async: true,
+			url: baseUrl + '/' + module + '/' + controller + '/' + action,
+			data: {
+				passwordactual: $passwordForm.find('[name="passwordactual"]').val(),
+				passwordnew: $passwordForm.find('[name="passwordnew"]').val(),
+				passwordconfirm: $passwordForm.find('[name="passwordconfirm"]').val()
+			},
 			cache: false,
 			dataType: 'json',
-			success: function(json){
-				response = json;
-				if (!response || response.saved !== true) {
-					if (response && response.message === 'locked') pushMessages(['Datensatz wird bereits bearbeitet.']);
-					else pushMessages([response && response.message || 'Speichern fehlgeschlagen.']);
+			timeout: 120000,
+			success: function (response) {
+				if (!response || response.saved !== true || response.ok === false || response.errors) {
+					showSaveError(response, false);
 					return;
 				}
 				Dewawi.setDirty(false);
-				//Close the modal window
 				window.parent.modalWindowClose();
 			},
-			error: function(){
-				pushMessages(['Speichern fehlgeschlagen.']);
-			}
+			error: function (xhr) { showSaveError(xhr.responseJSON, false); },
+			complete: complete
 		});
 	} else {
-		var data = $(".add :input")
-			.filter(function(index, element) {
-			return $(element).val() != "";
-		}).serialize();
-		if(data) add(data);
+		var data = $('.add :input').filter(function () { return $(this).val() !== ''; }).serialize();
+		if (data) add(data, null, $button);
 	}
+}
+
+// Accept the observed JSON contracts or one correctly scoped server-rendered row.
+function getCreateResponse(response, target, parentId) {
+	if (typeof response === 'string') {
+		var text = $.trim(response);
+		if (text.charAt(0) === '{' || text.charAt(0) === '[') {
+			try { response = JSON.parse(text); } catch (error) { return null; }
+		} else {
+			var $html = $($.parseHTML(text, document, false));
+			var $item = $html.filter('.dw-multiform__item');
+			if ($html.length === 1 && $html.hasClass('dw-multiform')) $item = $html.find('> .dw-multiform__list > .dw-multiform__item');
+			if ($html.length !== 1 || $item.length !== 1 || !/^[1-9][0-9]*$/.test($item.attr('data-id') || '')
+				|| $item.attr('data-module') !== target.module || $item.attr('data-controller') !== target.controller) return null;
+			return {ok: true, item: $item};
+		}
+	}
+	if (response && typeof response === 'object' && target.module === 'items' && target.controller === 'tag' && !('ok' in response) && response.saved !== false && !response.errors
+		&& /^[1-9][0-9]*$/.test(String(response.id)) && response.module === 'items' && response.controller === 'item'
+		&& String(response.parentid) === String(parentId) && Number(response.tagid) > 0) return {ok: true};
+	return response && typeof response === 'object' && !Array.isArray(response) ? response : null;
 }
 
 //Add
-function add(data, params) {
-	params = params || null;
-
-	if (params) {
-		var url = baseUrl;
-
-		if (params['module'] && params['module'] !== 'default') {
-			url += '/' + params['module'];
-		} else {
-			url += '/' + module;
-		}
-
-		if (params['controller']) {
-			url += '/' + params['controller'];
-		} else {
-			url += '/' + controller;
-		}
-
-		if (params['id']) {
-			url += '/add/id/' + params['id'];
-		} else {
-			url += '/add/id/' + id;
-		}
-
-		var response = null;
-
-		$.ajax({
-			type: 'POST',
-			async: false,
-			url: url,
-			data: data,
-			cache: false,
-			success: function(resp){
-				response = resp;
-				Dewawi.setDirty(false);
-
-				// JSON error response
-				if (typeof resp === 'object' && resp !== null && resp.ok === false) {
-					if (resp.message) pushMessages([resp.message]);
-					else pushMessages(['Speichern fehlgeschlagen.']);
-					return;
-				}
-
-				// Try to detect JSON returned as text
-				if (typeof resp === 'string' && resp.length && resp.charAt(0) === '{') {
-					try {
-						var json = JSON.parse(resp);
-						if (json && json.ok === false) {
-							if (json.message) pushMessages([json.message]);
-							else pushMessages(['Speichern fehlgeschlagen.']);
-							return;
-						}
-					} catch (e) {
-						// not JSON, continue as HTML
-					}
-				}
-
-				var parentId = data.parent_id || data.parentid || params['id'] || id;
-				var $container = $('.dw-multiform-context[data-controller="' + params['controller'] + '"][data-parentid="' + parentId + '"]');
-
-				if ($container.length) {
-					$container.find('button.addMulti').before(resp);
-					$container.find('.dw-multiform__item:last input:first, .dw-multiform__item:last textarea:first, .dw-multiform__item:last select:first').focus();
-				}
-
-				if (action == 'index') search();
-			},
-			error: function(){
-				pushMessages(['Speichern fehlgeschlagen.']);
-			}
-		});
-
-		return response;
-	}
-
-	// legacy branch unchanged for now
-	data[controller+'id'] = id;
-	if(data['module']) url = baseUrl+'/'+data['module'];
-	else var url = baseUrl+'/'+module;
-	if(data['controller']) url += '/'+data['controller'];
-	else url += '/'+controller;
-	if(data['id']) url += '/add/id/'+data['id'];
-	else url += '/add/id/'+id;
+function add(data, params, button) {
+	var sync = !!params;
+	var target = {module: sync ? (params.module && params.module !== 'default' ? params.module : module) : data.module || module, controller: sync ? params.controller || controller : data.controller || controller};
+	var parentId = data.parent_id || data.parentid || data.itemid || params && params.id || window.id;
+	var url = baseUrl + '/' + target.module + '/' + target.controller + '/add/id/' + (sync ? params.id || window.id : data.id || window.id);
+	if (!sync && typeof data === 'object') data[controller + 'id'] = window.id;
+	var complete = beginActionRequest('create', target.module, target.controller, [JSON.stringify([String(parentId), data.parent_module || '', data.parent_controller || ''])], $(button));
+	if (!complete) return sync ? null : undefined;
+	var response = null;
 	$.ajax({
 		type: 'POST',
+		async: !sync,
 		url: url,
 		data: data,
 		cache: false,
-		success: function(response){
+		timeout: 120000,
+		success: function (raw) {
+			response = raw;
+			var result = getCreateResponse(raw, target, parentId);
+			if (!result || result.ok !== true || result.saved === false || result.errors) {
+				showSaveError(result, true);
+				return;
+			}
+			if (result.item instanceof jQuery) {
+				var $container = sync ? $('.dw-multiform-context').filter(function () {
+					var $context = $(this);
+					var contextController = $context.attr('data-controller') || $context.children('.dw-multiform').attr('data-controller');
+					return contextController === target.controller && String($context.attr('data-parentid')) === String(parentId)
+						&& (!data.parent_module || $context.attr('data-parent-module') === data.parent_module)
+						&& (!data.parent_controller || $context.attr('data-parent-controller') === data.parent_controller);
+				}).first() : $('div#' + target.controller);
+				var $list = $container.find('> .dw-multiform > .dw-multiform__list').first();
+				if (!$list.length) $list = $container.find('> .dw-multiform__list').first();
+				var $anchor = $container.find(sync ? 'button.addMulti' : 'button.add').first();
+				if (!$list.length && !$anchor.length) {
+					showSaveError(null, true);
+					return;
+				}
+				if (!$container.find('.dw-multiform__item').filter(function () { return $(this).attr('data-id') === result.item.attr('data-id') && $(this).attr('data-controller') === target.controller; }).length) {
+					if ($list.length) $list.append(result.item);
+					else $anchor.before(result.item);
+				}
+				result.item.find('input, textarea, select').first().focus().select();
+			}
 			Dewawi.setDirty(false);
-			$('div#'+data['controller']+' button.add').before(response);
-			$('div#'+data['controller']+' div:last input:first').focus().select();
-			if(action == 'index') search();
-		}
+			if (result.calculation || result.reloadPositions) applySaveResponse(result, controller, 'pos', window.pageYOffset);
+			var notify = function () { pushMessages(Dewawi.message('MESSAGES_CREATED'), 'success'); };
+			notify();
+			if (action === 'index') search(notify);
+		},
+		error: function (xhr) { showSaveError(xhr.responseJSON, true); },
+		complete: complete
 	});
+	if (sync) return response;
 }
 
 //Edit
-function edit(data, params) {
+function edit(data, params, button) {
 	var url = baseUrl;
 	params = params || null;
 	if(params && params['module']) url += '/'+params['module'];
@@ -1142,6 +1169,9 @@ function edit(data, params) {
 		if(params && params['id']) url += '/edit/id/'+params['id'];
 		else url += '/edit/id/'+id;
 	}
+	var explicit = button !== undefined;
+	var complete = explicit ? beginActionRequest('save', params && params.module || module, params && params.controller || controller, [params && params.id || window.id], $(button)) : null;
+	if (explicit && !complete) return null;
 	var response = null;
 	$.ajax({
 		type: 'POST',
@@ -1150,8 +1180,13 @@ function edit(data, params) {
 		data: data,
 		cache: false,
 		dataType: 'json',
+		timeout: explicit ? 120000 : 0,
 		success: function(json){
 			response = json;
+			if (explicit && (!response || response.ok === false || response.saved === false || response.errors || (response.ok !== true && response.saved !== true))) {
+				showSaveError(response, false);
+				return;
+			}
 			if (response && (response.ok === false || response.saved === false)) {
 				for (var field in data) {
 					if (!data.hasOwnProperty(field)) continue;
@@ -1164,6 +1199,7 @@ function edit(data, params) {
 				else pushMessages([response.message]);
 			} else {
 				Dewawi.setDirty(false);
+				if (explicit) pushMessages(Dewawi.message('MESSAGES_SAVED'), 'success');
 
 				if (response.calculation || response.reloadPositions) {
 					applySaveResponse(response, controller, 'pos', window.pageYOffset);
@@ -1171,8 +1207,10 @@ function edit(data, params) {
 			}
 		},
 		error: function(xhr){
-			pushMessages(['Speichern fehlgeschlagen.']);
-		}
+			if (explicit) showSaveError(xhr.responseJSON, false);
+			else pushMessages(['Speichern fehlgeschlagen.']);
+		},
+		complete: complete
 	});
 	//console.log(data);
 	//console.log(params);
@@ -1282,7 +1320,7 @@ function collectToolbarData() {
 function beginActionRequest(name, cmodule, type, ids, $button, message) {
 	var keys = ids.map(function (id) { return JSON.stringify([name, cmodule, type, String(id)]); });
 	if ($button.data('dw-loading-state') || keys.some(function (key) { return Dewawi.actionRequests[key]; })) return;
-	if (!confirm(message)) return;
+	if (message !== undefined && !confirm(message)) return;
 
 	keys.forEach(function (key) { Dewawi.actionRequests[key] = true; });
 	setButtonLoading($button, true);
@@ -2396,7 +2434,7 @@ function setLocation(location){
 	window.location = location;
 }
 
-function saveEntity(payload, target) {
+function saveEntity(payload, target, button) {
 	payload = payload || {};
 	target = target || {};
 
@@ -2422,126 +2460,56 @@ function saveEntity(payload, target) {
 		params.controller = target.controller;
 	}
 
-	return edit(requestPayload, params);
+	return edit(requestPayload, params, button);
 }
 
-function createEntity(payload, target, context, $container) {
+function createEntity(payload, target, context, $container, button) {
 	payload = payload || {};
 	target = target || {};
 	context = context || {};
-
 	var requestPayload = $.extend({}, payload);
-
 	if (context.parentModule) requestPayload.parent_module = context.parentModule;
 	if (context.parentController) requestPayload.parent_controller = context.parentController;
 	if (context.parentId) requestPayload.parentid = context.parentId;
 
-	var url = baseUrl;
-
-	if (
-		target.module
-		&& target.module !== 'default'
-	) {
-		url += '/'
-			+ encodeURIComponent(target.module);
-	}
-
-	url += '/'
-		+ encodeURIComponent(target.controller);
-
-	url += '/'
-		+ encodeURIComponent(
-			target.action || 'add'
-		);
-
-	if (
-		target.id !== undefined
-		&& target.id !== null
-		&& target.id !== ''
-	) {
-		url += '/id/'
-			+ encodeURIComponent(target.id);
-	}
+	var url = baseUrl + (target.module && target.module !== 'default' ? '/' + encodeURIComponent(target.module) : '');
+	url += '/' + encodeURIComponent(target.controller) + '/' + encodeURIComponent(target.action || 'add');
+	if (target.id !== undefined && target.id !== null && target.id !== '') url += '/id/' + encodeURIComponent(target.id);
+	var complete = beginActionRequest('create', target.module, target.controller, [JSON.stringify([String(context.parentId || target.id || window.id), context.parentModule || '', context.parentController || ''])], $(button));
+	if (!complete) return;
 
 	$.ajax({
 		type: 'POST',
 		url: url,
 		data: requestPayload,
 		cache: false,
-		success: function(response) {
+		timeout: 120000,
+		success: function (raw) {
+			var response = getCreateResponse(raw, target, context.parentId);
+			if (!response || response.ok !== true || response.saved === false || response.errors) {
+				showSaveError(response, true);
+				return;
+			}
+			if (response.item instanceof jQuery) {
+				var $list = $container && $container.find('> .dw-multiform > .dw-multiform__list').first();
+				if (!$list || !$list.length) {
+					showSaveError(null, true);
+					return;
+				}
+				if (!$list.children('.dw-multiform__item').filter(function () { return $(this).attr('data-id') === response.item.attr('data-id'); }).length) $list.append(response.item);
+				response.item.find('input, textarea, select').filter(':visible').first().focus().select();
+			}
 			Dewawi.setDirty(false);
-
-			if (
-				response
-				&& typeof response === 'object'
-				&& response.ok === false
-			) {
-				pushMessages([
-					response.message || 'Speichern fehlgeschlagen.'
-				]);
-
-				return;
+			if (response.calculation || response.reloadPositions) {
+				var $positions = $container && $container.closest('.dw-positions');
+				applySaveResponse(response, $positions && $positions.data('parent'), $positions && $positions.data('type'), window.pageYOffset);
 			}
-
-			if (
-				response
-				&& response.ok === true
-				&& response.reloadPositions
-			) {
-				var $positions = $container.closest('.dw-positions');
-
-				applySaveResponse(
-					response,
-					$positions.data('parent'),
-					$positions.data('type'),
-					window.pageYOffset
-				);
-
-				return;
-			}
-
-			if (!$container || !$container.length) {
-				return;
-			}
-
-			var $list = $container.find(
-				'> .dw-multiform > .dw-multiform__list'
-			).first();
-
-			if (!$list.length) {
-				pushMessages([
-					'MultiForm-Liste wurde nicht gefunden.'
-				]);
-
-				return;
-			}
-
-			var $newItem = $(response);
-
-			if (!$newItem.hasClass('dw-multiform__item')) {
-				pushMessages([
-					'Ungültige MultiForm-Antwort.'
-				]);
-
-				return;
-			}
-
-			$list.append($newItem);
-
-			$newItem
-				.find('input, textarea, select')
-				.filter(':visible')
-				.first()
-				.focus()
-				.select();
-
-			if (action === 'index') {
-				search();
-			}
+			var notify = function () { pushMessages(Dewawi.message('MESSAGES_CREATED'), 'success'); };
+			notify();
+			if (action === 'index') search(notify);
 		},
-		error: function() {
-			pushMessages(['Speichern fehlgeschlagen.']);
-		}
+		error: function (xhr) { showSaveError(xhr.responseJSON, true); },
+		complete: complete
 	});
 }
 
@@ -2895,6 +2863,7 @@ function markFieldSaved($field) {
 	var DewawiToolbar = {
 		actionConfig: {
 			add: { selection: 'none' },
+			save: { selection: 'none' },
 			index: { selection: 'none' },
 			'add-position': { selection: 'none' },
 			'add-position-set': { selection: 'none' },
@@ -3171,6 +3140,8 @@ function markFieldSaved($field) {
 				setLocation(url);
 			},
 
+			save: function (selection, $button) { save($button); },
+
 			index: function (selection, $button) {
 				var targetModule = String($button.data('route-module') || module);
 				var targetController = String($button.data('route-controller') || controller);
@@ -3289,7 +3260,8 @@ function markFieldSaved($field) {
 					{},
 					target,
 					context,
-					$container
+					$container,
+					$button
 				);
 			},
 

@@ -1,4 +1,6 @@
 <?php return array(
+	'MESSAGES_CREATED' => 'Eintrag wurde erstellt.',
+	'MESSAGES_CREATE_FAILED' => 'Eintrag konnte nicht erstellt werden.',
 	'MESSAGES_PARTIALLY_DELETED' => 'Einige Einträge wurden gelöscht. Die übrigen Einträge konnten nicht gelöscht werden.',
 	'MESSAGES_ACTION_STATUS_UNKNOWN' => 'Der Status der Aktion konnte nicht bestätigt werden. Bitte prüfen Sie die aktuelle Ansicht, bevor Sie die Aktion wiederholen.',
 	'MESSAGES_CANCEL_FAILED' => 'Vorgang konnte nicht storniert werden.',

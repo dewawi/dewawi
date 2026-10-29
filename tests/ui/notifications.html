@@ -315,6 +315,191 @@ $(function() {
   });
   search = originalSearch;
 
+  // Explicit create/save actions share the existing fixture and captured transport.
+  var realAjax = $.ajax, syncReply = null, submitted = 0, submittedValues = [], closed = 0;
+  var nativeSubmit = HTMLFormElement.prototype.submit, closeDialog = window.parent.modalWindowClose;
+  HTMLFormElement.prototype.submit = function() { submitted++; submittedValues = $(this).serializeArray(); };
+  window.parent.modalWindowClose = function() { closed++; };
+  $.ajax = function(options) {
+    var result = realAjax(options);
+    if (options.async === false && syncReply) syncReply(calls[calls.length - 1]);
+    return result;
+  };
+  $('<div id="save-fixture"></div>').appendTo('#content');
+  function saveFixture() {
+    $('#save-fixture').html(
+      '<div id="phone-context" class="dw-multiform-context" data-parent-module="contacts" data-parent-controller="contact" data-parentid="100">' +
+        '<div class="dw-multiform" data-module="contacts" data-controller="phone"><div class="dw-multiform__list"></div><button id="create-one" class="dw-btn dw-btn--icon add" data-action="multi-add" data-module="contacts" data-controller="phone" aria-disabled="false" aria-busy="false"><span>Create</span></button></div></div>' +
+      '<div id="email-context" class="dw-multiform-context" data-controller="email" data-parent-module="contacts" data-parent-controller="contact" data-parentid="100">' +
+        '<div class="dw-multiform"><div class="dw-multiform__list"></div><button id="create-two" class="dw-btn" data-action="multi-add" data-module="contacts" data-controller="email">Create email</button></div></div>' +
+      '<button id="save-one" class="dw-btn" aria-disabled="false" aria-busy="false"><span>Save</span></button><button id="save-two" class="dw-btn">Save other</button>' +
+      '<div class="add"><form id="downloadset"><input name="title" class="required" required value="Title"><button id="native-save" type="button" class="dw-btn" data-action="save">Save form</button><button id="native-submit" type="submit" name="create_mode" value="manual" class="dw-btn">Create form</button></form></div>' +
+      '<form id="password"><input type="password" name="passwordactual" required value="old-fixture"><input type="password" name="passwordnew" required value="new-fixture"><input type="password" name="passwordconfirm" required value="new-fixture"><button type="button" class="password dw-btn" id="password-save" onclick="save(this)">Change password</button></form>'
+    );
+    action = 'edit'; module = 'contacts'; controller = 'contact'; id = 100;
+    calls = []; searches = []; navigations = []; confirms = 0; closed = 0; submitted = 0; syncReply = null;
+    Dewawi.setDirty(true); removeMessages();
+  }
+  function rowHtml(rowId, targetController) {
+    return '<div class="dw-multiform__item" data-id="' + rowId + '" data-module="contacts" data-controller="' + targetController + '"><input name="value" value="Fixture"></div>';
+  }
+  function phoneCreate() { $('#create-one').trigger('click'); }
+  function savePhone(button) { return saveEntity({phone: 'Fixture'}, {module: 'contacts', controller: 'phone', id: 10}, button); }
+  var createTarget = {module: 'contacts', controller: 'phone'}, createContext = {parentId: 100, parentModule: 'contacts', parentController: 'contact'};
+  search = function(callback) { searches.push(callback); };
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale]; saveFixture();
+    var createMarkup = $('#create-one').html();
+    phoneCreate(); phoneCreate(); createEntity({}, createTarget, createContext, $('#phone-context'));
+    check(calls.length === 1 && confirms === 0 && $('#create-one').prop('disabled') && $('#create-one').hasClass('is-loading'), locale + ': create duplicate, confirmation or missing loading');
+    check(calls[0].options.url === '/fixture/contacts/phone/add' && calls[0].options.data.parentid === 100 && calls[0].options.data.parent_module === 'contacts', locale + ': multi-create route or context changed');
+    $('#create-two').trigger('click'); $.ajax({url: '/fixture/keepalive'});
+    check(calls.length === 3 && !$('#loading').is(':visible'), locale + ': unrelated create or background request blocked');
+    finish(calls[0], rowHtml(501, 'phone'));
+    check($('#phone-context .dw-multiform__item').length === 1 && document.activeElement.name === 'value' && !isDirty, locale + ': expected HTML creation did not insert/focus row or clear dirty state');
+    check($('#create-one').html() === createMarkup && $('#create-one').attr('aria-disabled') === 'false' && $('#create-one').attr('aria-busy') === 'false' && !$('#create-one').prop('disabled'), locale + ': create button state lost');
+    check($('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_CREATED, locale + ': create success missing');
+    finish(calls[1], rowHtml(502, 'email'));
+    Dewawi.setDirty(true); phoneCreate(); finish(calls[3], rowHtml(501, 'phone'));
+    check($('#phone-context .dw-multiform__item').length === 1, locale + ': repeated row response duplicated MultiForm item');
+    check(!Object.keys(Dewawi.actionRequests).length, locale + ': create left pending locks');
+
+    [null, '', {}, '<main>Login or error page</main>', '<div class="dw-multiform__item" data-id="1" data-module="other" data-controller="phone"></div>',
+      '<div class="dw-multiform__item" data-id="1" data-module="contacts" data-controller="email"></div>', rowHtml(1, 'phone') + rowHtml(2, 'phone'), '{invalid', '[]', '{"ok":1}', {ok: true, saved: false}].forEach(function(response) {
+      saveFixture(); phoneCreate(); finish(calls[0], response);
+      check(isDirty && !$('#phone-context .dw-multiform__item').length && !$('#create-one').prop('disabled') && !$('#messages .dw-alert--success').length && !Object.keys(Dewawi.actionRequests).length, locale + ': invalid creation cleared dirty state, inserted HTML or left loading');
+    });
+    saveFixture(); phoneCreate(); finish(calls[0], {ok: false, message: '<img src=x alt=technical>'});
+    check(isDirty && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CREATE_FAILED && !$('#messages img').length, locale + ': negative create leaked details or cleared dirty');
+    saveFixture(); phoneCreate(); finish(calls[0], {ok: false, errors: {subject: ['technical validator code']}});
+    check(isDirty && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_FORM_IS_INVALID, locale + ': create validation not translated');
+    saveFixture(); phoneCreate(); finish(calls[0], '{"ok":true,"id":501}');
+    check(!isDirty && $('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_CREATED, locale + ': JSON returned as text rejected');
+    saveFixture(); phoneCreate(); finish(calls[0], ' {"ok":false,"message":"save_failed"}');
+    check(isDirty && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CREATE_FAILED, locale + ': JSON error text treated as HTML success');
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500}].forEach(function(error) {
+      saveFixture(); phoneCreate(); finish(calls[0], null, error);
+      check(calls.length === 1 && isDirty && !$('#create-one').prop('disabled') && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN && !Object.keys(Dewawi.actionRequests).length, locale + ': uncertain create retried, reset dirty or stayed locked');
+    });
+    saveFixture(); phoneCreate(); finish(calls[0], null, {status: 403, responseJSON: {ok: false, message: 'denied'}});
+    check(isDirty && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CREATE_FAILED, locale + ': HTTP create rejection not recognized');
+    saveFixture(); action = 'index'; phoneCreate(); finish(calls[0], rowHtml(501, 'phone'));
+    check(searches.length === 1, locale + ': create list refresh lost'); completeRefresh();
+    check($('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_CREATED, locale + ': create feedback lost after search');
+
+    saveFixture(); var apply = applySaveResponse, calculations = [];
+    applySaveResponse = function(response, parent, type) { calculations.push({response: response, parent: parent, type: type}); };
+    $('#phone-context').wrap('<div class="dw-positions" data-parent="invoice" data-type="pos"></div>');
+    phoneCreate(); var calculated = {ok: true, id: 1, reloadPositions: true, calculation: {total: '1,00 €'}}; finish(calls[0], calculated);
+    check(!isDirty && calculations.length === 1 && calculations[0].response === calculated && calculations[0].parent === 'invoice' && calculations[0].type === 'pos', locale + ': JSON create lost calculation or position reload');
+    applySaveResponse = apply;
+
+    saveFixture(); var params = {module: 'contacts', controller: 'phone', id: 100}, rawHtml = rowHtml(601, 'phone');
+    syncReply = function(call) {
+      check(call.options.async === false && $('#save-one').prop('disabled') && confirms === 0, locale + ': synchronous add lost loading or opened confirmation');
+      var duplicate = add({}, params, $('#save-two'));
+      check(duplicate === null && calls.length === 1, locale + ': synchronous add reentry not blocked');
+      finish(call, rawHtml);
+    };
+    var returned = add({}, params, $('#save-one'));
+    check(returned === rawHtml && $('#phone-context .dw-multiform__item').length === 1 && !isDirty && !$('#save-one').prop('disabled'), locale + ': synchronous add return contract or insertion changed');
+    saveFixture(); var negative = {ok: false, message: 'save_failed'};
+    syncReply = function(call) { finish(call, negative); };
+    check(add({}, params, $('#save-one')) === negative && isDirty && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CREATE_FAILED, locale + ': sync negative add lost return or reset dirty');
+    saveFixture(); syncReply = function(call) { finish(call, '<main>Unexpected</main>'); };
+    check(add({}, params, $('#save-one')) === '<main>Unexpected</main>' && isDirty && !$('#messages .dw-alert--success').length, locale + ': unexpected sync HTML reported success');
+    saveFixture(); syncReply = function(call) { finish(call, null, {status: 0, kind: 'timeout'}); };
+    check(add({}, params, $('#save-one')) === null && isDirty && !Object.keys(Dewawi.actionRequests).length, locale + ': synchronous timeout lost return or lock cleanup');
+    saveFixture(); $('#save-fixture').append('<div id="tag"><button class="add">Add tag</button></div>');
+    var legacy = add({module: 'items', controller: 'tag'}, null, $('#save-one'));
+    check(legacy === undefined && calls[0].options.async === true, locale + ': legacy asynchronous add return changed');
+    finish(calls[0], '<div class="dw-multiform" data-module="items" data-controller="tag"><div class="dw-multiform__list"><div class="dw-multiform__item" data-id="601" data-module="items" data-controller="tag"><input name="tag"></div></div></div>');
+    check($('#tag .dw-multiform__item').length === 1 && !isDirty, locale + ': legacy wrapped HTML add no longer works');
+    saveFixture(); syncReply = function(call) { finish(call, {id: 44, module: 'items', controller: 'item', parentid: 100, tagid: 5}); };
+    returned = add({itemid: 100, tagid: 5}, {module: 'items', controller: 'tag', id: 100});
+    check(returned.id === 44 && !isDirty, locale + ': observed legacy tag-row JSON contract rejected');
+
+    saveFixture(); syncReply = function(call) { finish(call, {id: 44, module: 'items', controller: 'item', parentid: 100, tagid: 5, saved: false}); };
+    add({itemid: 100, tagid: 5}, {module: 'items', controller: 'tag', id: 100});
+    check(isDirty && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CREATE_FAILED, locale + ': legacy tag row hid a negative status');
+
+    saveFixture(); var expected = {ok: true, values: {phone: 'Fixture'}};
+    syncReply = function(call) {
+      check($('#save-one').prop('disabled') && call.options.async === false && call.options.dataType === 'json', locale + ': explicit save changed sync transport or loading');
+      check(savePhone($('#save-two')) === null && calls.length === 1, locale + ': explicit save reentry allowed');
+      finish(call, expected);
+    };
+    returned = savePhone($('#save-one'));
+    check(returned === expected && !isDirty && confirms === 0 && !$('#save-one').prop('disabled') && $('#save-one span').text() === 'Save' && $('#save-one').attr('aria-busy') === 'false', locale + ': explicit save lost return, dirty or button state');
+    check($('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_SAVED, locale + ': explicit save success missing');
+    [null, {}, {ok: false, message: 'technical failure'}, {saved: false}, {ok: 1}, {ok: true, saved: false}].forEach(function(response) {
+      saveFixture(); syncReply = function(call) { finish(call, response); }; returned = savePhone($('#save-one'));
+      check(returned === response && isDirty && !$('#messages .dw-alert--success').length && !$('#save-one').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, locale + ': failed/invalid explicit save reset dirty or left loading');
+    });
+    saveFixture(); syncReply = function(call) { finish(call, {ok: false, errors: {phone: ['internal error']}}); }; savePhone($('#save-one'));
+    check($('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_FORM_IS_INVALID && isDirty, locale + ': explicit save validation not translated');
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500}].forEach(function(error) {
+      saveFixture(); syncReply = function(call) { finish(call, null, error); };
+      check(savePhone($('#save-one')) === null && calls.length === 1 && isDirty && !$('#save-one').prop('disabled') && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN, locale + ': uncertain save retried or lost dirty/cleanup');
+    });
+    saveFixture(); phoneCreate(); syncReply = function(call) { finish(call, expected); };
+    returned = savePhone();
+    check(returned === expected && calls.length === 2 && !$('#save-one').prop('disabled') && $('#create-one').prop('disabled') && confirms === 0, locale + ': auto-save received a button/global lock');
+    finish(calls[0], {ok: false});
+
+    saveFixture(); action = 'add'; controller = 'downloadset';
+    $('#downloadset [name="title"]').val(''); $('#native-save').trigger('click');
+    check(submitted === 0 && calls.length === 0 && isDirty && !$('#native-save').prop('disabled') && !Dewawi.nativeSubmission && !Object.keys(Dewawi.actionRequests).length, locale + ': invalid native form submitted or stayed loading');
+    $('#downloadset [name="title"]').val('Valid'); $('#native-save').trigger('click').trigger('click'); save($('#save-two'));
+    check(submitted === 1 && calls.length === 0 && isDirty && Dewawi.nativeSubmission && $('#native-save').prop('disabled') && confirms === 0, locale + ': native submission duplicated, used AJAX or claimed saved');
+    var unloadEvent = {}; check(window.onbeforeunload(unloadEvent) === undefined && !unloadEvent.returnValue, locale + ': intended native navigation warned about unsaved changes');
+    $(window).trigger('pageshow');
+    check(!Dewawi.nativeSubmission && !$('#native-save').prop('disabled') && !Object.keys(Dewawi.actionRequests).length && isDirty, locale + ': pageshow did not restore native form state');
+    saveFixture(); action = 'add'; controller = 'downloadset';
+    var submitEvent = $.Event('submit'); submitEvent.originalEvent = {submitter: $('#native-submit')[0], preventDefault: function() {}};
+    $('#downloadset').trigger(submitEvent);
+    check(submitted === 1 && $('#native-submit').prop('disabled') && submittedValues.some(function(field) { return field.name === 'create_mode' && field.value === 'manual'; }), locale + ': native submit lost guard or submitter payload');
+    $('#downloadset').trigger('submit'); check(submitted === 1, locale + ': direct duplicate form submit allowed');
+    $(window).trigger('pageshow');
+    check(!$('#downloadset input[name="create_mode"]').length && !$('#native-submit').prop('disabled'), locale + ': native submitter field or disabled state leaked');
+    saveFixture(); action = 'add'; controller = 'downloadset';
+    HTMLFormElement.prototype.submit = function() { throw new Error('Fixture submit failure'); };
+    save($('#native-save'));
+    check(isDirty && !$('#native-save').prop('disabled') && !Dewawi.nativeSubmission && !Object.keys(Dewawi.actionRequests).length, locale + ': native submit exception left pending state');
+    HTMLFormElement.prototype.submit = function() { submitted++; submittedValues = $(this).serializeArray(); };
+
+    saveFixture(); action = 'password'; module = 'users'; controller = 'user';
+    $('#password [name="passwordnew"]').val(''); $('#password-save').trigger('click');
+    check(!calls.length && isDirty && !$('#password-save').prop('disabled'), locale + ': invalid password sent a request');
+    $('#password [name="passwordnew"]').val('different'); $('#password-save').trigger('click');
+    check(!calls.length && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_FORM_IS_INVALID, locale + ': mismatched password was sent');
+    $('#password [name="passwordnew"]').val('new-fixture'); $('#password-save').trigger('click').trigger('click'); save();
+    check(calls.length === 1 && $('#password-save').prop('disabled') && calls[0].options.async === true && calls[0].options.url === '/fixture/users/user/password' && confirms === 0, locale + ': password request duplicated or blocked rendering');
+    finish(calls[0], {saved: false, message: 'locked'});
+    check(isDirty && !closed && !$('#password-save').prop('disabled') && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_SAVE_FAILED, locale + ': password rejection reset dirty, closed dialog or lost feedback');
+    calls = []; $('#password-save').trigger('click'); finish(calls[0], {message: dwMessages.MESSAGES_FORM_IS_INVALID});
+    check(isDirty && !closed && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_FORM_IS_INVALID, locale + ': legacy password validation response not recognized');
+    [null, {}, {saved: 1}].forEach(function(response) {
+      calls = []; $('#password-save').trigger('click'); finish(calls[0], response);
+      check(isDirty && !closed && !$('#password-save').prop('disabled') && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN, locale + ': invalid password response closed dialog or reset dirty');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500}].forEach(function(error) {
+      calls = []; $('#password-save').trigger('click'); finish(calls[0], null, error);
+      check(calls.length === 1 && isDirty && !closed && !$('#password-save').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, locale + ': password error retried or stayed loading');
+    });
+    calls = []; $('#password-save').trigger('click'); finish(calls[0], {saved: true});
+    check(closed === 1 && !isDirty && !$('#password-save').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, locale + ': confirmed password save failed to close/restore state');
+
+    saveFixture(); action = 'index';
+    $('#save-fixture').append('<div class="add"><input name="subject" value="Legacy subject"></div>');
+    save($('#save-one'));
+    check(calls.length === 1 && typeof calls[0].options.data === 'string' && $('#save-one').prop('disabled'), locale + ': save fallback no longer delegates serialized data to add');
+    finish(calls[0], {ok: true, id: 1});
+    check(!isDirty && searches.length === 1 && !$('#save-one').prop('disabled'), locale + ': save fallback lost dirty or list refresh');
+  });
+  $.ajax = realAjax; search = originalSearch; HTMLFormElement.prototype.submit = nativeSubmit;
+  window.parent.modalWindowClose = closeDialog;
+
   ['info', 'success', 'warning', 'danger'].forEach(function(type) {
     pushMessages('A long message ' + new Array(160).join('x'), type, '#output');
     var alert = $('#output .dw-alert--' + type)[0];
@@ -326,7 +511,7 @@ $(function() {
     var contrast = (luminance(style.backgroundColor) + 0.05) / (luminance(style.color) + 0.05);
     check(contrast >= 4.5, type + ': text contrast below 4.5:1');
   });
-  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, loading and accessibility checks at ' + innerWidth + 'px');
+  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, loading and accessibility checks at ' + innerWidth + 'px');
   if (window.parent !== window) window.parent.postMessage($('#result').text(), '*');
 });
 </script>

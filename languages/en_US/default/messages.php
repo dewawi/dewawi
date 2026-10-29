@@ -1,4 +1,6 @@
 <?php return array(
+	'MESSAGES_CREATED' => 'Entry has been created.',
+	'MESSAGES_CREATE_FAILED' => 'Entry could not be created.',
 	'MESSAGES_PARTIALLY_DELETED' => 'Some entries have been deleted. The remaining entries could not be deleted.',
 	'MESSAGES_ACTION_STATUS_UNKNOWN' => 'The status of the action could not be confirmed. Please check the current view before repeating the action.',
 	'MESSAGES_CANCEL_FAILED' => 'Operation could not be cancelled.',

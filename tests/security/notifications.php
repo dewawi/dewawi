@@ -34,7 +34,7 @@ foreach (['de_DE', 'en_US'] as $locale) {
     $view = new NotificationTestView();
     $view->catalog = require $root . '/languages/' . $locale . '/default/messages.php';
     $translations = (new Zend_View_Helper_Messages())->setView($view)->getTranslations();
-    check(count($translations) === 21 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
+    check(count($translations) === 23 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
     foreach ($translations as $key => $text) check($key !== $text, $locale . ': untranslated browser key ' . $key);
     $view->messages = [
         'MESSAGES_EMAIL_SENT_SUCCESS', 'MESSAGES_EMAIL_SENT_SUCCESS',
@@ -56,6 +56,13 @@ foreach (['de_DE', 'en_US'] as $locale) {
     ob_start();
     $view->Messages();
     check(ob_get_clean() === '', $locale . ': empty flash rendered a container');
+
+    $view->messages = ['MESSAGES_CREATED'];
+    ob_start();
+    $view->Messages();
+    $createdHtml = ob_get_clean();
+    check(str_contains($createdHtml, 'dw-alert--success') && str_contains($createdHtml, $view->catalog['MESSAGES_CREATED']), $locale . ': creation flash has no translated success state');
+    $view->messages = [];
 
     // Render the real email history view: transport details stay out of the user interface.
     $view->setScriptPath($root . '/application/modules/contacts/views/scripts');

@@ -2,7 +2,7 @@
 
 ## Umfang und Bestandsaufnahme
 
-Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen. Weitere Aktionen werden separat migriert.
+Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen. Weitere Aktionen werden separat migriert.
 
 | Vorhandene Stelle | Befund | Entscheidung / Umsetzung |
 | --- | --- | --- |
@@ -112,17 +112,94 @@ Die Sperre gilt pro geöffneter Seite und laufendem Browserrequest. Sie bietet k
 
 Frontend und JSON-Erfolgsbestätigung des Anhangcontrollers sollten gemeinsam ausgeliefert werden. Ein alter Frontend-Aufrufer, der den Antwortinhalt ignoriert, bleibt kompatibel; das neue Frontend behandelt eine alte leere Antwort sicherheitshalber als unklar. Die physische Navigation, echte Serverlaufzeiten und die manuelle Screenreader-/Gerätebedienung wurden nicht mit produktiven Endpunkten geprüft.
 
-**Phase 4.2 wurde nicht begonnen und benötigt einen separaten Auftrag.** Die weiteren Migrationspunkte unten sind ausschließlich Planung.
+Phase 4.1 ist abgeschlossen. Phase 4.2 ist im folgenden Abschnitt gesondert dokumentiert.
 
 Commit-Vorschlag für den abgeschlossenen Schritt:
 
 `unify loading states for delete and cancel actions`
 
-## Priorisierte Folgeschritte nach Phase 4.1 (noch nicht umgesetzt)
+## Phase 4.2 – Ausdrückliches Erstellen und Speichern
+
+### Untersuchte Aufrufstellen und Antwortverträge
+
+| Stelle | Tatsächlicher Vertrag / Umsetzung |
+| --- | --- |
+| `createEntity()` / Toolbar `multi-add` | Einziger produktiver Aufrufer ist die gemeinsame Toolbar-Aktion. Sie übergibt nun den betätigten Button als zusätzliches optionales Argument. Kontakte und weitere MultiEntities liefern eine HTML-Zeile; Positionspreisregeln liefern JSON mit `ok`, `calculation` und `reloadPositions`. Beide Formen bleiben unterstützt. |
+| `DEEC_Controller_MultiEntityAction::addAction()` und `DEEC_Form::renderMultiRow()` | Nach Transaktion wird eine einzelne `.dw-multiform__item`-Zeile mit ID, Modul und Controller ausgegeben; Fehler sind JSON mit `ok: false`. Die umgebende aktuelle DEEC-MultiForm trägt `data-controller` am inneren `.dw-multiform`, nicht am äußeren Kontext. Dies wird bei der Zielsuche berücksichtigt. |
+| `add(data, params)` | Produktiver synchroner Aufrufer ist der Inline-Change-Handler für `data-action="add"`. Der rohe Rückgabewert bleibt erhalten, einschließlich negativer Antworten und HTML-Strings. Bei Transportfehlern bleibt er `null`. Das Inline-Add-Merkmal wird erst nach bestätigter Erstellung entfernt. |
+| `add(data)` | Asynchroner Legacy-Zweig, aufgerufen vom sonstigen `save()`-Zweig. Sein Rückgabewert bleibt `undefined`. Die vorhandene Payload-Ergänzung und Zielroute bleiben erhalten. Alte `button.add`-/`button.addMulti`-Einfügepunkte bleiben zusätzlich zu aktuellen MultiForm-Listen unterstützt. |
+| `Items_TagController::addAction()` | Bei ausgewähltem Tag wird ein gespeicherter Tagentity-Datensatz ohne `ok` zurückgegeben; bei neuem Tag eine ganze MultiForm. Die spezifische JSON-Ausnahme wird nur für `items/tag` mit gültiger ID, positivem Tag, korrektem Item-Kontext und passendem Parent akzeptiert. Die HTML-Hülle wird auf ihre einzelne erwartete Zeile reduziert. |
+| `save()` bei `action === 'add'` | Bisherige native Übermittlung bleibt nativ. Legacy-Pflichtfelder und Browservalidierung werden vor dem Ladezustand geprüft. Der Dirty-State bleibt bis zum Dokumentwechsel erhalten; nur die Unsaved-Warnung wird während beabsichtigter nativer Übermittlung unterdrückt. |
+| Native `.add form`-Übermittlung | Der bisherige pauschale Dirty-Reset wurde durch eine lokale Sperre des Hauptformulars (`form.id === controller`) ersetzt. Bei einem Submitter mit Namen wird dessen Wert trotz Deaktivierung erhalten. Nach Rückkehr über den Browsercache stellt `pageshow` den Zustand wieder her. Formularabbrüche durch nachfolgende Handler sowie synchrone Submit-Ausnahmen räumen auf. Kein allgemeiner AJAX-Formularersatz. |
+| `save()` bei `action === 'password'` | `Users_UserController::passwordAction()` liefert bei Erfolg `saved: true`, bei Sperre `saved: false` und bei Validierungsfehlern teils nur einen übersetzten Meldungstext. Nur bestätigter Erfolg setzt Dirty zurück und schließt den Dialog. Pflichtfelder und Passwortbestätigung werden vor dem Request geprüft. |
+| Passwort-Synchronität | `save()` hatte und behält keinen direkten Rückgabewert. Die tatsächlichen Aufrufer (`password.phtml` sowie ältere programmgesteuerte Aufrufe in `js/settings.js`) benötigen kein synchrones Passwortresultat. Nur dieser einzelne Request wurde asynchron, damit der Ladezustand gezeichnet werden kann und weitere Klicks während des Requests unterdrückt werden. |
+| `saveEntity()` / `edit()` | `saveEntity()` delegiert weiterhin an das synchrone `edit()` und gibt dessen Ergebnis zurück. Ohne zusätzliches Buttonargument bleibt es der bestehende Auto-Save-Pfad. Mit Buttonargument gibt es eine lokale Requestsperre, strikte Erfolgsprüfung und übersetzte Rückmeldung. |
+| Weitere `edit()`-Aufrufer | Feldänderungen, Inline-Bearbeitung, Dokumentnotizen, TinyMCE und `js/contacts.js::applyContact()` benötigen ihre bisherigen synchronen Ergebnisse. Sie erhalten keine neue globale Sperre oder Erfolgsmeldung. `js/trash.js` enthält eigene gleichnamige Legacy-Funktionen und wird nicht verändert. |
+| `DEEC_Controller_Action`, Kontakt-/Dokument-Save-Services | Native Create-Aktionen können direkt auf Edit-Seiten weiterleiten. Native POST-Saves validieren serverseitig und verwenden Redirect/Flash. AJAX-Saves bestätigen `ok: true`; Fehler enthalten `ok: false` und optional `errors`. Backend, Berechtigungen, Transaktionen und Geschäftsregeln bleiben unverändert. |
+| Toolbar / MultiForm / CSS | Vorhandene Zielattribute und `setButtonLoading()` reichen aus. Die Toolbar bekommt eine `save`-Dispatch-Aktion; alte Save-Buttons ohne `data-action` werden innerhalb `.dw-toolbar` bedient. Am Passwortbutton werden bestehende Buttonklassen und `save(this)` verwendet. Keine CSS-Erweiterung erforderlich. |
+| Variantenformular | Da der pauschale `.add form`-Dirty-Reset entfällt, setzt die bestehende Varianten-Erstellung Dirty ausdrücklich erst nach bestätigtem `ok: true` vor ihrer unveränderten Navigation zurück. Der Requestpfad wird sonst nicht umgebaut. |
+
+### Architektur, Dirty-State und Fehlerbehandlung
+
+`beginActionRequest()` bleibt der gemeinsame Sperrmechanismus. Nur wenn ein Bestätigungstext übergeben wurde, erscheint ein Dialog; vorhandene Lösch-/Stornierungsaufrufe übergeben ihn unverändert. Erstellen, Speichern und native Übermittlung rufen denselben Mechanismus ohne Bestätigung auf. `setButtonLoading()` bleibt die einzige Buttonkomponente. Die Sperren werden nach Ziel und Parent-Kontext beziehungsweise Datensatz unterschieden; unabhängige Aktionen und Hintergrundrequests bleiben möglich.
+
+`createEntity()` und beide `add()`-Zweige prüfen das Resultat vor jedem Dirty-Reset. JSON benötigt einen ausdrücklichen positiven Status; beobachtete Legacy-Tag-Datensätze werden nur im oben beschriebenen Sondervertrag akzeptiert. Für HTML prüft `getCreateResponse()` eine einzelne erwartete MultiForm-Zeile mit positiver ID und passendem Modul/Controller. Allgemeine Seiten, Login-/Fehlerseiten, leere oder fehlerhafte Antworten, mehrere Wurzelelemente und falsche Kontexte bestätigen keine Erstellung. Skripte werden beim Parsen nicht übernommen. Dies ersetzt keine allgemeine HTML-Sanitization: korrekt zugeordnete Formularfragmente stammen weiterhin vom vertrauenswürdigen Serverrenderer.
+
+Bestätigte HTML-Zeilen werden in die bestehende Liste eingefügt, fokussiert und anhand ihrer ID vor doppelter Einfügung geschützt. JSON-Resultate behalten Berechnung und Positionsaktualisierung über `applySaveResponse()`. Listenaktualisierungen behalten ihre Rückmeldung über den vorhandenen Such-Callback. Explizites `saveEntity(..., button)` akzeptiert nur positive `ok`-/`saved`-Bestätigung ohne negativen Status oder Validierungsfehler. Fehlgeschlagene oder unklare Antworten verändern den Dirty-State nicht.
+
+`showSaveError()` zeigt übersetzte allgemeine Texte für Erstellen, Speichern und Validierung. Technische Servertexte werden in diesen expliziten Pfaden nicht ungefiltert ausgegeben. Netzwerk-/Parserfehler, uneindeutige HTTP-Fehler und unerwartete Antworten erhalten den vorhandenen Hinweis auf einen unklaren Aktionsstatus. Es gibt keine automatische Wiederholung. Fehler bleiben über die bestehende Meldungskomponente sichtbar, bis sie geschlossen oder durch einen bestätigten Erfolg ersetzt werden. Bei Passwort-Dialogschließung und nativer Navigation gibt es keine zusätzliche Erfolgsmeldung.
+
+Die vorhandene synchrone Reihenfolge und Rückgabewerte von `add(..., params)`, `saveEntity()` und `edit()` bleiben erhalten. Insbesondere werden synchrone Saves vor Dokumentberechnung und Finalisierung nicht pauschal asynchron. Ohne explizites Buttonargument bleiben Verhalten und Rückgabevertrag von Auto-Save erhalten; dessen bestehende allgemeine Antwortbehandlung wird hier nicht global verschärft.
+
+### Tests in Phase 4.2
+
+Alle Requests, Passwortaktionen und nativen Formularübermittlungen in den Browser-Fixtures werden abgefangen. PHP-Tests verwenden die vorhandenen isolierten Adapter. Keine produktiven Speicheraktionen, Datenbankänderungen oder echten E-Mails.
+
+| Ausgeführte Prüfung | Ergebnis |
+| --- | --- |
+| `python3 tests/ui/notifications.py` | Jeweils **388 Prüfungen** bei 1280 px und 390 px bestanden. Einschließlich der bisherigen Phasen und neuer Tests in Deutsch/Englisch: Mehrfachklick/Reentry, unabhängige Aktionen, Button-/ARIA-Wiederherstellung, HTML und JSON einschließlich JSON-Text/Legacy-Tag-Zeilen, fehlende/negative/ungültige Resultate, Validierung, Netzwerk-/HTTP-/Timeout-/Parserfehler, Dirty-State, keine doppelten MultiForm-Zeilen, Fokus, Berechnungsweitergabe, synchrone Rückgaben, Auto-Save ohne Buttonsperre, native Übermittlung ohne AJAX, Submitter-Wert, Browsercache-Rückkehr, Submit-Ausnahme sowie Passwortdialog nur nach bestätigtem Erfolg. |
+| `php tests/security/notifications.php` | **76 Prüfungen** bestanden, einschließlich 23 Browser-Übersetzungen je Sprache und Erfolgseinstufung von `MESSAGES_CREATED`. |
+| `php tests/security/profile-save.php` | **100 Profil-/Passwortprüfungen** bestanden. |
+| `php tests/security/user-profile.php` | **126 Profil-/Passwortprüfungen** bestanden. |
+| `php tests/security/contact-data.php` | **39 Prüfungen** mandantensicherer Kontaktdaten bestanden. |
+| `php tests/security/document-edits.php` | **7400 Prüfungen** bestanden. |
+| `php tests/security/permissions.php` | **369 Prüfungen** bestanden. |
+| `php tests/security/tenant-access.php` | **268 Prüfungen** bestanden. |
+| `php tests/documents/lifecycle.php` | **879 Prüfungen** bestanden. |
+| `php tests/documents/calculation.php` | **647 Berechnungsprüfungen** bestanden. |
+| `python3 tests/documents/calculation-ui.py` | Dokument-/Inline-Notiz-Auto-Save und **26 Berechnungsprüfungen** bestanden. |
+| `php -l` | Alle **5** geänderten PHP-/PHTML-Dateien ohne Syntaxfehler. |
+| `git diff --check` | Ohne Befund. |
+
+### Geänderte Dateien in Phase 4.2
+
+1. `js/global.js`
+2. `application/modules/users/views/scripts/user/password.phtml`
+3. `application/views/helpers/Messages.php`
+4. `languages/de_DE/default/messages.php`
+5. `languages/en_US/default/messages.php`
+6. `tests/security/notifications.php`
+7. `tests/ui/notifications.html`
+8. `tests/ui/notifications-review.md`
+
+### Grenzen und separater Folgeschritt
+
+Die Sperren schützen laufende Requests in derselben Seite; sie sind keine serverseitige Idempotenz über Tabs, Geräte oder manuelle Wiederholungen nach einem Timeout hinweg. Ein weiterer ausdrücklich gestarteter Vorgang nach abgeschlossenem Request bleibt möglich. Der bestehende globale Dirty-State besitzt keine Revision pro Feld oder Request; eine bestätigte Speicherung setzt ihn weiterhin nach bisherigem Vertrag zurück.
+
+Bei synchronen XHR-Aufrufen kann der Browser den gesetzten Ladezustand vor Abschluss nicht zuverlässig zeichnen. Auch jQuerys Timeoutoption begrenzt synchrone XHRs nicht verlässlich. Die Option wird gesetzt und Fehlerpfade räumen auf, die synchronen Browsergrenzen bleiben aber zugunsten der erforderlichen Rückgabekompatibilität bestehen. Der asynchrone Passwortpfad und die asynchrone MultiForm-Erstellung können ihren Ladezustand unmittelbar darstellen.
+
+Native Navigation hat kein mit AJAX vergleichbares Abschlussereignis. Die Sperre endet beim Dokumentwechsel beziehungsweise nach `pageshow`; ein manuell im Browser abgebrochener Ladevorgang ohne neues Dokument kann deshalb eine erneute Ansicht erfordern. Die serverseitige Formularvalidierung und Redirects wurden nicht gegen produktive Endpunkte ausgelöst. Manuelle Screenreader-/Geräteabnahme bleibt offen.
+
+**Phase 4.3 wurde nicht begonnen und benötigt einen separaten Auftrag.**
+
+Commit-Vorschlag:
+
+`unify loading states for create and save actions`
+
+## Priorisierte Folgeschritte nach Phase 4.2 (noch nicht umgesetzt)
 
 | Priorität | Bereich und konkrete Dateien | Nächster begrenzter Schritt / notwendige Regressionen |
 | --- | --- | --- |
-| P1 | Erstellen und explizites Speichern: `js/global.js` (`save`, `createEntity`, `saveEntity`), `library/DEEC/Controller/Action.php` | Lokale Rückmeldung und Requestsperre für ausdrückliche Aktionen; native Formularvalidierung und Redirects erhalten |
 | P1 | Verkauf/Einkauf und Dokumenterstellung: `js/global.js`, `library/DEEC/Controller/DocumentAction.php`, `application/modules/sales/forms/Toolbar.php`, `application/modules/purchases/forms/Toolbar.php`, deren `invoice`-/`purchaseorder`-Views | Generieren und weitere PDF-Aktionen integrieren; vorhandene Validierungszusammenfassung weiterverwenden; Lifecycle-, Rechte- und Berechnungstests ausführen |
 | P2 | Auto-Save und Positionen: `js/global.js` (`edit`, `editPosition`, `addPosition`, `addSet`, `deletePosition`, `deleteSet`), `application/views/helpers/ToolbarPositions.php` | Status am betroffenen Feld bzw. Positionsbereich; keine globale Sperre. Reihenfolge synchroner Saves vor Finalisierung beibehalten; Feldfehler und Summenregressionen prüfen |
 | P2 | Kontakte und modale Dialoge: `js/contacts.js`, `js/global.js` (`modalWindow`, `modalWindowClose`) | Bestehende lokale `disabled`-Behandlung durch gemeinsame Zustandsverwaltung ergänzen; Fokus, Validierung und Verhalten nach erneutem Öffnen prüfen |
