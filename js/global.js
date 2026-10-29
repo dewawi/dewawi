@@ -2829,6 +2829,7 @@ function markFieldSaved($field) {
 	var DewawiToolbar = {
 		actionConfig: {
 			add: { selection: 'none' },
+			index: { selection: 'none' },
 			'add-position': { selection: 'none' },
 			'add-position-set': { selection: 'none' },
 			'copy-position': { selection: 'position' },
@@ -3072,8 +3073,17 @@ function markFieldSaved($field) {
 		},
 
 		actions: {
-			add: function () {
-				var url = Dewawi.url(module, controller, 'add');
+			add: function (selection, $button) {
+				var targetModule = String($button.data('route-module') || module);
+				var targetController = String($button.data('route-controller') || controller);
+				var url = Dewawi.url(targetModule, targetController, 'add');
+				var routeType = String($button.data('route-type') || '');
+
+				if (routeType) {
+					url += '/type/' + encodeURIComponent(routeType);
+					setLocation(url);
+					return;
+				}
 
 				[
 					'type',
@@ -3089,6 +3099,13 @@ function markFieldSaved($field) {
 				});
 
 				setLocation(url);
+			},
+
+			index: function (selection, $button) {
+				var targetModule = String($button.data('route-module') || module);
+				var targetController = String($button.data('route-controller') || controller);
+
+				setLocation(Dewawi.url(targetModule, targetController, 'index'));
 			},
 
 			copy: function (selection) {

@@ -8,6 +8,7 @@
 	'ITEMS_STOCK_AVAILABILITY' => 'Stock & availability',
 	'ITEMS_STOCK_AVAILABILITY_DATE' => 'Availability date',
 	'ITEMS_STOCK_AVAILABILITY_STATUS' => 'Availability status',
+	'ITEMS_STOCK_ACTION_LEDGER' => 'Stock booking',
 	'ITEMS_STOCK_VALUE' => 'Stock value',
 	'ITEMS_STOCK_DATE' => 'Stock date',
 	'ITEMS_STOCK_TOTAL_VALUE' => 'Total stock value',

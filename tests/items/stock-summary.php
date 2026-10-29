@@ -237,9 +237,29 @@ check(str_contains($totalSql, (string)Items_Model_Entity_Stock::stockValueExpres
 
 $toolbar = new Items_Form_ToolbarStock();
 
-foreach(['country', 'tagid'] as $name) {
-	check($toolbar->getElement($name) === null, 'Unsupported stock filter is visible: ' . $name);
+foreach(['add', 'edit', 'copy', 'delete', 'apply', 'country', 'tagid'] as $name) {
+	check($toolbar->getElement($name) === null, 'Unsupported stock toolbar element is visible: ' . $name);
 }
+
+foreach(['add', 'edit', 'copy', 'delete'] as $name) {
+	check((new Items_Form_Toolbar())->getElement($name) !== null, 'Generic item toolbar action was removed: ' . $name);
+}
+
+$stockActions = $toolbar->getToolbarElements('actions');
+check(array_keys($stockActions) === ['ledger', 'incoming', 'reservation', 'planning', 'filter', 'reset'], 'Stock actions are incomplete or incorrectly ordered');
+foreach(['keyword', 'clear', 'filter', 'reset', 'order', 'sort'] as $name) {
+	check($toolbar->getElement($name) !== null, 'Stock search, filter or sorting element is missing: ' . $name);
+}
+check($stockActions['ledger']['attribs']['data-action'] === 'add', 'Stock booking does not use the add action');
+check($stockActions['ledger']['attribs']['data-route-controller'] === 'ledger', 'Stock booking route is incorrect');
+check($stockActions['incoming']['attribs']['data-route-controller'] === 'stockplanning' && $stockActions['incoming']['attribs']['data-route-type'] === 'incoming', 'Incoming planning route is incorrect');
+check($stockActions['reservation']['attribs']['data-route-controller'] === 'stockplanning' && $stockActions['reservation']['attribs']['data-route-type'] === 'reservation', 'Reservation route is incorrect');
+check($stockActions['planning']['attribs']['data-action'] === 'index' && $stockActions['planning']['attribs']['data-route-controller'] === 'stockplanning', 'Stock planning overview route is incorrect');
+
+$historicalToolbar = new Items_Form_ToolbarStock();
+$historicalToolbar->setHistoricalMode();
+check($historicalToolbar->getElement('availabilitydate') === null && $historicalToolbar->getElement('availabilitystatus') === null, 'Historical stock exposes availability-only filters');
+check($historicalToolbar->getElement('stockdate') !== null && $historicalToolbar->getElement('ledger') !== null, 'Historical stock lost its date filter or stock actions');
 
 check($toolbar->getElement('catid')['source'] === 'category:item', 'Stock category source is incorrect');
 check($toolbar->getElement('catid')['default'] === 'all', 'Stock category default is incorrect');
@@ -277,6 +297,7 @@ $translationKeys = [
 	'ITEMS_STOCK_STATUS_POSITIVE',
 	'ITEMS_STOCK_STATUS_ZERO',
 	'ITEMS_STOCK_STATUS_NEGATIVE',
+	'ITEMS_STOCK_ACTION_LEDGER',
 	'STOCK',
 ];
 
@@ -298,6 +319,14 @@ foreach(['', 'not-a-date', '2026-02-31', '2026-10-1', '01.10.2026'] as $stockDat
 }
 
 $globalJs = file_get_contents($root . '/js/global.js');
+check(str_contains($globalJs, "index: { selection: 'none' }"), 'Toolbar index navigation is not registered');
+check(str_contains($globalJs, "var targetController = String(\$button.data('route-controller') || controller);"), 'Toolbar add action ignores its target controller');
+check(str_contains($globalJs, "url += '/type/' + encodeURIComponent(routeType);"), 'Toolbar add action loses the planning type');
+
+$stockView = file_get_contents($root . '/application/modules/items/views/scripts/stock/index.phtml');
+check(!str_contains($stockView, '/items/stock/add'), 'Stock view still links to the invalid add route');
+check(!str_contains($stockView, '/items/stockplanning/'), 'Stock view duplicates planning toolbar actions');
+
 check(
 	str_contains(
 		$globalJs,

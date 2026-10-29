@@ -10,9 +10,75 @@ class Items_Form_ToolbarStock extends Items_Form_Toolbar
 	public function __construct()
 	{
 		parent::__construct();
+		$listActions = array_intersect_key(
+			$this->elements,
+			array_flip(['filter', 'reset'])
+		);
 
-		foreach(['country', 'tagid'] as $name) {
+		foreach(['add', 'edit', 'copy', 'delete', 'apply', 'filter', 'reset', 'country', 'tagid'] as $name) {
 			unset($this->elements[$name]);
+		}
+
+		$this->addElement([
+			'name' => 'ledger',
+			'type' => 'button',
+			'label' => 'ITEMS_STOCK_ACTION_LEDGER',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'add',
+				'data-action' => 'add',
+				'data-route-module' => 'items',
+				'data-route-controller' => 'ledger',
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'incoming',
+			'type' => 'button',
+			'label' => 'ITEMS_PLANNING_NEW_INCOMING',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'add',
+				'data-action' => 'add',
+				'data-route-module' => 'items',
+				'data-route-controller' => 'stockplanning',
+				'data-route-type' => 'incoming',
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'reservation',
+			'type' => 'button',
+			'label' => 'ITEMS_PLANNING_NEW_RESERVATION',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'add',
+				'data-action' => 'add',
+				'data-route-module' => 'items',
+				'data-route-controller' => 'stockplanning',
+				'data-route-type' => 'reservation',
+			],
+		]);
+
+		$this->addElement([
+			'name' => 'planning',
+			'type' => 'button',
+			'label' => 'ITEMS_PLANNING',
+			'toolbar' => 'actions',
+			'wrap' => false,
+			'attribs' => [
+				'class' => 'view',
+				'data-action' => 'index',
+				'data-route-module' => 'items',
+				'data-route-controller' => 'stockplanning',
+			],
+		]);
+
+		foreach($listActions as $name => $element) {
+			$this->elements[$name] = $element;
 		}
 
 		$this->addElement([

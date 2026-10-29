@@ -9,10 +9,5 @@ echo $this->Pagination();
 ?>
 
 <div class="dw-list-page">
-	<p>
-		<a href="/items/stockplanning/index"><?php echo $this->translate('ITEMS_PLANNING'); ?></a>
-		· <a href="/items/stockplanning/add/type/incoming"><?php echo $this->translate('ITEMS_PLANNING_NEW_INCOMING'); ?></a>
-		· <a href="/items/stockplanning/add/type/reservation"><?php echo $this->translate('ITEMS_PLANNING_NEW_RESERVATION'); ?></a>
-	</p>
 	<?php echo $this->stocks->render(); ?>
 </div>

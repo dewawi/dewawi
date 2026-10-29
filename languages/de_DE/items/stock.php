@@ -8,6 +8,7 @@
 	'ITEMS_STOCK_AVAILABILITY' => 'Bestand & Verfügbarkeit',
 	'ITEMS_STOCK_AVAILABILITY_DATE' => 'Verfügbarkeitsdatum',
 	'ITEMS_STOCK_AVAILABILITY_STATUS' => 'Verfügbarkeitsstatus',
+	'ITEMS_STOCK_ACTION_LEDGER' => 'Lagerbuchung',
 	'ITEMS_STOCK_VALUE' => 'Lagerwert',
 	'ITEMS_STOCK_DATE' => 'Bestandsstichtag',
 	'ITEMS_STOCK_TOTAL_VALUE' => 'Lagerwert gesamt',
