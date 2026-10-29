@@ -34,6 +34,10 @@ for locale in ['de_DE', 'en_US']:
 html = Path(__file__).with_suffix('.html').read_text().replace('__ROOT__', root.as_uri())
 html = html.replace('/* translations */', 'var catalogs = ' + json.dumps(catalogs) + ';')
 with tempfile.TemporaryDirectory(prefix='dewawi-notifications-ui-') as directory:
+    # Record hard reloads in the fixture instead of navigating away from its assertions.
+    script = Path(directory) / 'global.js'
+    script.write_text((root / 'js/global.js').read_text().replace('location.reload()', 'window.fixtureReload()'))
+    html = html.replace((root / 'js/global.js').as_uri(), script.as_uri())
     fixture = Path(directory) / 'fixture.html'
     for width in [1280, 390]:
         # Chromium enforces a 500px window minimum; use an iframe for a true mobile viewport.

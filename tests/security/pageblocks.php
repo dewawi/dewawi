@@ -321,4 +321,13 @@ check(str_contains($view->Pageblocks(['pageid' => 0]), 'Seite zuerst speichern.'
 $adapter->rows['pageblock'][1]['data'] = '{}';
 check(str_contains($view->Pageblocks(['pageid' => 10]), '>Text</a>'), 'Untitled block does not use the translated type');
 
+// A mixed trash batch confirms only the deletable leaf, preserving protected and foreign rows.
+[$request, $response] = pageblockRoute('add');
+$request->setModuleName('default')->setControllerName('trash');
+$request->body = json_encode(['module' => 'admin', 'controller' => 'pageblock', 'id' => [1, 2, 5]]);
+(new TrashController($request, $response))->addAction();
+$result = json_decode($response->getBody(), true);
+check($result['ok'] === false && $result['deletedIds'] === [2] && $result['blockedIds'] === [1], 'Mixed trash batch lost its partial result contract');
+check($db->getById(1) !== null && $db->getById(2) === null && $adapter->rows['pageblock'][4]['deleted'] === 0, 'Mixed trash batch changed a protected or foreign block');
+
 echo 'PASS: ' . $checks . " pageblock list, CRUD, hierarchy, ordering, ACL and tenant cases\n";

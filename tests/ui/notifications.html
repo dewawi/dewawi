@@ -25,9 +25,11 @@
 /* translations */
 var language = 'de-DE', module = 'contacts', controller = 'contact', action = 'edit';
 var baseUrl = '/fixture', id = 100, cookiePath = '/', calls = [], failures = [], checks = 0;
-var dwMessages = catalogs.de_DE, confirms = 0, confirmResult = true;
+var dwMessages = catalogs.de_DE, confirms = 0, confirmResult = true, reloads = 0;
+var deleteConfirm = 'Delete fixture?', confirmationTexts = [];
+window.fixtureReload = function() { reloads++; };
 window.addEventListener('error', function(event) { failures.push(event.message); $('#result').text('FAIL: ' + event.message + ' at ' + event.filename + ':' + event.lineno); });
-window.confirm = function() { confirms++; return confirmResult; };
+window.confirm = function(message) { confirms++; confirmationTexts.push(message); return confirmResult; };
 $.fn.datepicker = function() { return this; };
 function autosize() {}
 // Capture every request; completion is controlled explicitly without network access.
@@ -151,6 +153,168 @@ $(function() {
   check(!$('[data-document-finalize]').hasClass('is-loading') && !$('[data-document-finalize]').attr('aria-disabled') && $('[data-document-finalize]').prop('disabled') === undefined, 'Finalize failed to restore state');
   check($('.dw-document-validation').text() === 'Validation failed', 'Finalize error feedback disappeared');
 
+  // Exercise the real toolbar dispatch and request lifecycle; navigation is recorded only.
+  var searches = [], navigations = [], originalSearch = search;
+  setLocation = function(url) { navigations.push(url); };
+  search = function(callback) { searches.push(callback); };
+  $('<div id="action-fixture"></div>').appendTo('#content');
+  function actionFixture() {
+    $('#action-fixture').html(
+      '<button id="delete-one" class="dw-btn dw-btn--icon delete" data-action="delete" data-id="10" data-module="contacts" data-controller="phone" aria-disabled="false" aria-busy="false"><span>Delete</span></button>' +
+      '<button id="delete-two" class="dw-btn delete" data-action="delete" data-id="20" data-module="contacts" data-controller="phone">Delete other</button>' +
+      '<button id="cancel-one" class="dw-btn cancel" data-action="cancel" data-id="10" data-module="sales" data-controller="invoice" data-message="Cancel fixture?"><span>Cancel</span></button>' +
+      '<button id="cancel-two" class="dw-btn cancel" data-action="cancel" data-id="20" data-module="sales" data-controller="invoice">Cancel other</button>' +
+      '<button id="bulk-delete" class="dw-btn delete" data-action="delete">Delete selected</button>' +
+      '<input class="check-id" type="checkbox" value="10" checked><input class="check-id" type="checkbox" value="20" checked>' +
+      '<div class="dw-multiform__item" data-module="contacts" data-controller="phone" data-id="10"></div>' +
+      '<div class="dw-multiform__item" data-module="contacts" data-controller="phone" data-id="20"></div>' +
+      '<div class="dw-multiform__item" data-module="contacts" data-controller="phone" data-id="99"></div>' +
+      '<div id="attachment10"><button id="attachment-delete" class="dw-btn dw-btn--icon delete" onclick="deleteAttachment(10, deleteConfirm, \'attachment\', \'contacts\', this)">Delete attachment</button></div>' +
+      '<div id="attachment20">Other attachment</div><div id="attachment99">Unrequested attachment</div>'
+    );
+    calls = []; searches = []; navigations = []; reloads = 0; confirms = 0; confirmationTexts = [];
+    action = 'edit'; module = 'contacts'; controller = 'contact'; confirmResult = true;
+    removeMessages();
+  }
+  function hasPhone(value) { return $('#action-fixture .dw-multiform__item[data-id="' + value + '"]').length === 1; }
+  function completeRefresh() {
+    removeMessages();
+    searches[0]();
+  }
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale];
+    actionFixture(); confirmResult = false;
+    $('#delete-one').trigger('click'); $('#cancel-one').trigger('click'); $('#attachment-delete').trigger('click');
+    check(!calls.length && !$('#action-fixture .is-loading').length && !Object.keys(Dewawi.actionRequests).length, locale + ': cancelled confirmation started an action');
+    check(confirmationTexts[0] === deleteConfirm && confirmationTexts[1] === 'Cancel fixture?', locale + ': existing confirmations changed');
+
+    actionFixture(); var $delete = $('#delete-one'), deleteHtml = $delete.html();
+    $delete.trigger('click').trigger('click');
+    trash(10, deleteConfirm, 'phone', 'contacts', $('#delete-two'));
+    check(calls.length === 1 && confirms === 1, locale + ': duplicate delete or repeated confirmation');
+    check($delete.prop('disabled') && $delete.hasClass('is-loading') && $delete.attr('aria-busy') === 'true', locale + ': delete lacks loading state');
+    var marker = getComputedStyle($delete[0], '::after');
+    check(parseFloat(marker.fontSize) > 0 && getComputedStyle($delete[0]).backgroundImage === 'none', locale + ': icon button loading marker is invisible');
+    check(calls[0].options.dataType === 'json' && calls[0].options.timeout > 0 && JSON.parse(calls[0].options.data).id.join(',') === '10', locale + ': deletion request contract changed');
+    $('#delete-two').trigger('click'); $('#cancel-one').trigger('click'); $.ajax({url: '/fixture/keepalive'});
+    check(calls.length === 4 && !$('#loading').is(':visible'), locale + ': independent actions or background request blocked');
+    finish(calls[0], {ok: true, deletedIds: [10]});
+    check(!hasPhone(10) && hasPhone(20) && hasPhone(99), locale + ': deletion removed unconfirmed rows');
+    check(!$delete.prop('disabled') && $delete.attr('aria-disabled') === 'false' && $delete.attr('aria-busy') === 'false' && $delete.html() === deleteHtml && !$delete.hasClass('is-loading'), locale + ': delete button state not restored');
+    check($('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_SUCCESFULLY_DELETED, locale + ': delete success text incorrect');
+    finish(calls[1], {ok: false, deletedIds: [], message: '<img src=x alt=technical>'});
+    finish(calls[2], {ok: false, message: 'cancel_failed'});
+    check(!Object.keys(Dewawi.actionRequests).length, locale + ': independent actions left locks');
+
+    actionFixture(); action = 'index'; controller = 'phone';
+    $('#bulk-delete').trigger('click');
+    trash([20, 10], deleteConfirm, 'phone', 'contacts');
+    trash([20, 99], deleteConfirm, 'phone', 'contacts');
+    check(calls.length === 1 && confirms === 1, locale + ': reordered or overlapping bulk request allowed');
+    finish(calls[0], {ok: true, deletedIds: [10, 20], blockedIds: []});
+    check(searches.length === 1, locale + ': list was not refreshed after deletion');
+    completeRefresh();
+    check($('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_RECORDS_SUCCESFULLY_DELETED, locale + ': bulk success lost after list refresh');
+
+    actionFixture(); action = 'index'; controller = 'phone'; $('#bulk-delete').trigger('click');
+    finish(calls[0], {ok: false, deletedIds: [10], blockedIds: [20], message: 'technical_delete_failed'});
+    check(searches.length === 1, locale + ': partial deletion did not refresh list');
+    completeRefresh();
+    check($('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_PARTIALLY_DELETED && !$('#messages .dw-alert--success').length, locale + ': partial result reported complete success or lost error');
+    actionFixture(); trash([10, 20], deleteConfirm, 'phone', 'contacts', $('#delete-one'));
+    finish(calls[0], {ok: false, deletedIds: [10, 99], blockedIds: [20]});
+    check(!hasPhone(10) && hasPhone(20) && hasPhone(99), locale + ': partial edit deletion trusted unrequested ID or removed blocked row');
+    actionFixture(); trash([10, 20], deleteConfirm, 'phone', 'contacts', $('#delete-one'));
+    finish(calls[0], {ok: true, deletedIds: [10]});
+    check(!hasPhone(10) && hasPhone(20) && $('#messages .dw-alert--danger').length === 1, locale + ': missing IDs treated as complete success');
+
+    [null, {}, '', {ok: 1, deletedIds: [10]}, {ok: true}, {deletedIds: [10]}, {ok: true, deletedIds: [[10]]}, {ok: true, deletedIds: [null]}].forEach(function(response) {
+      actionFixture(); $('#delete-one').trigger('click'); finish(calls[0], response);
+      check(hasPhone(10) && !searches.length && !navigations.length && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN && !Object.keys(Dewawi.actionRequests).length && !$('#delete-one').prop('disabled'), locale + ': invalid delete response removed row or left loading');
+    });
+    actionFixture(); $('#delete-one').trigger('click'); finish(calls[0], {ok: false, message: '<img src=x alt=secret>'});
+    check(hasPhone(10) && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CANNOT_BE_DELETED && !$('#messages img').length, locale + ': negative delete leaked server details');
+    actionFixture(); $('#delete-one').trigger('click'); finish(calls[0], {ok: true, deletedIds: []});
+    check(hasPhone(10) && !searches.length && !navigations.length && $('#messages .dw-alert--danger').length === 1, locale + ': empty deletion navigated or reported success');
+
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500}].forEach(function(error) {
+      actionFixture(); $('#delete-one').trigger('click'); finish(calls[0], null, error);
+      check(calls.length === 1 && hasPhone(10) && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN && !$('#delete-one').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, locale + ': uncertain delete retried, removed row or stayed locked');
+      $('#delete-one').trigger('click');
+      check(calls.length === 2, locale + ': completed delete lock not released');
+      finish(calls[1], {ok: true, deletedIds: [10]});
+      check(!$('#messages .dw-alert--danger').length, locale + ': successful retry did not replace persistent error');
+    });
+    actionFixture(); $('#delete-one').trigger('click'); finish(calls[0], null, {status: 403, responseJSON: {ok: false, message: 'denied'}});
+    check($('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CANNOT_BE_DELETED && hasPhone(10), locale + ': known HTTP rejection misreported');
+
+    actionFixture(); action = 'add'; $('#delete-one').trigger('click');
+    check(!calls.length && !hasPhone(10) && hasPhone(20) && !$('#delete-one').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, locale + ': local removal sent a request or blocked the button');
+    actionFixture(); action = 'add'; confirmResult = false; $('#delete-one').trigger('click');
+    check(!calls.length && hasPhone(10), locale + ': cancelled local removal changed the form');
+    actionFixture(); trash([], deleteConfirm); deleteEntity([null, '']);
+    check(!calls.length && !confirms, locale + ': empty IDs started deletion');
+    deleteEntity(10, {module: 'contacts', controller: 'phone'}, {}, $('#delete-one'));
+    check(calls.length === 1 && $('#delete-one').prop('disabled'), locale + ': deleteEntity did not forward its button or target');
+    finish(calls[0], {ok: true, deletedIds: [10]});
+    actionFixture(); trash(10, deleteConfirm, 'phone', 'contacts'); trash('10', deleteConfirm, 'phone', 'contacts');
+    check(calls.length === 1, locale + ': legacy caller without button bypassed lock');
+    finish(calls[0], {ok: false, deletedIds: []});
+
+    actionFixture(); var beforeNavigate = navigations.length;
+    trash(100, deleteConfirm, 'contact', 'contacts', $('#delete-one')); finish(calls[0], {ok: true, deletedIds: [100]});
+    check(navigations.length === beforeNavigate + 1 && navigations[0] === '/fixture/contacts/contact', locale + ': edit deletion navigation changed');
+    actionFixture(); trash(10, deleteConfirm, 'pageblock', 'admin', $('#delete-one')); finish(calls[0], {ok: true, deletedIds: [10]});
+    check(reloads === 1 && !searches.length && !navigations.length, locale + ': pageblock reload changed');
+    actionFixture(); $('<div id="tabhistory" class="is-active"></div>').appendTo('#action-fixture');
+    trash(10, deleteConfirm, 'phone', 'contacts', $('#delete-one')); finish(calls[0], {ok: true, deletedIds: [10]});
+    check(calls.length === 2 && calls[1].options.url === '/fixture/contacts/contact/history/id/100' && !navigations.length && !searches.length, locale + ': contact history update changed');
+    finish(calls[1], '<p>Updated history</p>');
+    check($('#tabhistory').text() === 'Updated history' && $('#messages .dw-alert--success').length === 1, locale + ': contact history feedback missing');
+
+    actionFixture(); action = 'index'; $('#cancel-one').trigger('click').trigger('click');
+    DewawiToolbar.actions.cancel({module: 'sales', controller: 'invoice', ids: ['10']}, $('#cancel-two'));
+    check(calls.length === 1 && confirms === 1 && $('#cancel-one').prop('disabled'), locale + ': duplicate cancellation allowed');
+    check(calls[0].options.url === '/fixture/sales/invoice/cancel/id/10' && calls[0].options.dataType === 'json' && calls[0].options.timeout > 0, locale + ': cancel route or contract changed');
+    $('#cancel-two').trigger('click');
+    check(calls.length === 2, locale + ': independent cancellation blocked');
+    finish(calls[0], {ok: true, state: 106});
+    check(searches.length === 1 && !$('#cancel-one').prop('disabled') && $('#cancel-one span').text() === 'Cancel', locale + ': successful cancellation lost refresh or button content');
+    completeRefresh();
+    check($('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_SUCCESFULLY_CANCELLED, locale + ': cancel success lost after refresh');
+    finish(calls[1], {ok: false, message: 'technical failure'});
+    check($('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CANCEL_FAILED && !Object.keys(Dewawi.actionRequests).length, locale + ': cancel failure leaked technical text or left lock');
+    ['edit', 'view'].forEach(function(viewAction) {
+      actionFixture(); action = viewAction; $('#cancel-one').trigger('click'); finish(calls[0], {ok: true});
+      check(reloads === 1 && !searches.length, locale + ': detail cancellation navigation changed');
+    });
+    [null, {}, {ok: 1}].forEach(function(response) {
+      actionFixture(); $('#cancel-one').trigger('click'); finish(calls[0], response);
+      check(!reloads && !searches.length && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN && !$('#cancel-one').prop('disabled'), locale + ': invalid cancellation response treated as success');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500}].forEach(function(error) {
+      actionFixture(); $('#cancel-one').trigger('click'); finish(calls[0], null, error);
+      check(calls.length === 1 && !reloads && !searches.length && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN && !$('#cancel-one').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, locale + ': uncertain cancellation retried or left loading');
+    });
+    actionFixture(); $('#cancel-one').trigger('click'); finish(calls[0], null, {status: 403, responseJSON: {ok: false}});
+    check($('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CANCEL_FAILED, locale + ': explicit cancel HTTP failure unrecognized');
+
+    actionFixture(); $('#attachment-delete').trigger('click'); deleteAttachment(10, deleteConfirm, 'attachment', 'contacts');
+    check(calls.length === 1 && confirms === 1 && $('#attachment-delete').prop('disabled') && calls[0].options.url === '/fixture/contacts/attachment/delete/' && calls[0].options.dataType === 'json', locale + ': attachment deletion not guarded');
+    finish(calls[0], {ok: true, deletedIds: [10]});
+    check(!$('#attachment10').length && $('#attachment20').length === 1 && !Object.keys(Dewawi.actionRequests).length, locale + ': attachment result removed wrong DOM or left lock');
+    actionFixture(); deleteAttachment([10, 20], deleteConfirm, 'attachment', 'contacts', $('#attachment-delete'));
+    finish(calls[0], {ok: false, deletedIds: [10, 99], blockedIds: [20]});
+    check(!$('#attachment10').length && $('#attachment20').length === 1 && $('#attachment99').length === 1, locale + ': attachment partial result removed unconfirmed attachment');
+    [null, '', {}, {ok: true}].forEach(function(response) {
+      actionFixture(); $('#attachment-delete').trigger('click'); finish(calls[0], response);
+      check($('#attachment10').length === 1 && !$('#attachment-delete').prop('disabled') && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN, locale + ': invalid attachment response treated as success');
+    });
+    actionFixture(); $('#attachment-delete').trigger('click'); finish(calls[0], null, {status: 0, kind: 'timeout'});
+    check(calls.length === 1 && $('#attachment10').length === 1 && !$('#attachment-delete').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, locale + ': attachment timeout retried or stayed locked');
+  });
+  search = originalSearch;
+
   ['info', 'success', 'warning', 'danger'].forEach(function(type) {
     pushMessages('A long message ' + new Array(160).join('x'), type, '#output');
     var alert = $('#output .dw-alert--' + type)[0];
@@ -162,7 +326,7 @@ $(function() {
     var contrast = (luminance(style.backgroundColor) + 0.05) / (luminance(style.color) + 0.05);
     check(contrast >= 4.5, type + ': text contrast below 4.5:1');
   });
-  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, loading and accessibility checks at ' + innerWidth + 'px');
+  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, loading and accessibility checks at ' + innerWidth + 'px');
   if (window.parent !== window) window.parent.postMessage($('#result').text(), '*');
 });
 </script>

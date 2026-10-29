@@ -206,5 +206,6 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 		} catch(Exception $e) {
 			return $this->reject();
 		}
+		return $this->_helper->json(['ok' => true, 'deletedIds' => array_values(array_unique(array_map('intval', $ids)))]);
 	}
 }

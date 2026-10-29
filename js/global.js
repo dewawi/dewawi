@@ -13,6 +13,7 @@ var Dewawi = {
 	searchTimeout: 0,
 	sessionExpired: false,
 	emailRequestPending: false,
+	actionRequests: {},
 
 	message: function (key) {
 		return window.dwMessages && Object.prototype.hasOwnProperty.call(window.dwMessages, key) ? window.dwMessages[key] : key;
@@ -1277,96 +1278,129 @@ function collectToolbarData() {
 	return data;
 }
 
+// Lock individual records so overlapping batches cannot repeat the same action.
+function beginActionRequest(name, cmodule, type, ids, $button, message) {
+	var keys = ids.map(function (id) { return JSON.stringify([name, cmodule, type, String(id)]); });
+	if ($button.data('dw-loading-state') || keys.some(function (key) { return Dewawi.actionRequests[key]; })) return;
+	if (!confirm(message)) return;
+
+	keys.forEach(function (key) { Dewawi.actionRequests[key] = true; });
+	setButtonLoading($button, true);
+	return function () {
+		keys.forEach(function (key) { delete Dewawi.actionRequests[key]; });
+		setButtonLoading($button, false);
+	};
+}
+
+function getDeletedIds(response, ids) {
+	if (!response || typeof response.ok !== 'boolean' || !Array.isArray(response.deletedIds)) return null;
+	if (response.deletedIds.some(function (id) { return (typeof id !== 'number' && typeof id !== 'string') || !/^[1-9][0-9]*$/.test(String(id)); })) return null;
+	return ids.filter(function (id) {
+		return /^[1-9][0-9]*$/.test(String(id)) && response.deletedIds.some(function (deletedId) { return String(deletedId) === String(id); });
+	});
+}
+
+function showDeleteResult(response, ids, deletedIds) {
+	var success = response.ok === true && deletedIds.length === ids.length;
+	var key = success ? (ids.length === 1 ? 'MESSAGES_SUCCESFULLY_DELETED' : 'MESSAGES_RECORDS_SUCCESFULLY_DELETED')
+		: (deletedIds.length ? 'MESSAGES_PARTIALLY_DELETED' : 'MESSAGES_CANNOT_BE_DELETED');
+	pushMessages(Dewawi.message(key), success ? 'success' : 'danger', '#messages');
+}
+
+function showActionRequestError(response, failureKey) {
+	pushMessages(Dewawi.message(response && response.ok === false ? failureKey : 'MESSAGES_ACTION_STATUS_UNKNOWN'), 'danger', '#messages');
+}
+
 //Trash
-function trash(ids, message, type, cmodule) {
+function trash(ids, message, type, cmodule, button) {
 	type = type || controller;
 	cmodule = cmodule || module;
+	ids = (Array.isArray(ids) ? ids : [ids]).filter(function (id) { return id !== undefined && id !== null && id !== ''; });
+	ids = ids.map(String).filter(function (id, index, values) { return values.indexOf(id) === index; });
+	if (!ids.length) return;
 
-	if (!Array.isArray(ids)) {
-		ids = [ids];
-	}
-
-	if (ids.length === 0) return;
-
-	var answer = confirm(message);
-	if (!answer) return;
-
-	if(action == 'add') {
-		ids.forEach(function(singleId) {
+	if (action === 'add') {
+		if (!confirm(message)) return;
+		ids.forEach(function (singleId) {
 			$('.dw-multiform__item[data-module="' + cmodule + '"][data-controller="' + type + '"][data-id="' + singleId + '"]').remove();
 		});
-	} else {
-		$.ajax({
-			type: 'POST',
-			url: baseUrl+'/trash/add/',
-			contentType: 'application/json',
-			data: JSON.stringify({
-				module: cmodule,
-				controller: type,
-				id: ids
-			}),
-			cache: false,
-			success: function(data){
-				var deletedIds = data && Array.isArray(data.deletedIds) ? data.deletedIds : [];
+		return;
+	}
 
-				if (data && data.ok === false && data.message) {
-					pushMessages([data.message]);
-				}
+	var complete = beginActionRequest('delete', cmodule, type, ids, $(button), message);
+	if (!complete) return;
+	return $.ajax({
+		type: 'POST',
+		url: baseUrl + '/trash/add/',
+		contentType: 'application/json',
+		dataType: 'json',
+		data: JSON.stringify({module: cmodule, controller: type, id: ids}),
+		cache: false,
+		timeout: 120000,
+		success: function (response) {
+			var deletedIds = getDeletedIds(response, ids);
+			if (deletedIds === null) {
+				showActionRequestError(response, 'MESSAGES_CANNOT_BE_DELETED');
+				return;
+			}
 
-				if (!deletedIds.length) return;
+			var notify = function () { showDeleteResult(response, ids, deletedIds); };
+			notify();
+			if (!deletedIds.length) return;
 
-				if (cmodule === 'admin' && type === 'pageblock') {
-					location.reload();
+			if (cmodule === 'admin' && type === 'pageblock') {
+				location.reload();
+				return;
+			}
+
+			if (action === 'edit') {
+				deletedIds.forEach(function (singleId) {
+					$('.dw-multiform__item[data-module="' + cmodule + '"][data-controller="' + type + '"][data-id="' + singleId + '"]').remove();
+				});
+
+				if (module === 'contacts' && controller === 'contact' && $('#tabhistory').hasClass('is-active')) {
+					reloadHistory(notify);
 					return;
 				}
 
-				if(action == 'edit') {
-					deletedIds.forEach(function(singleId) {
-						$('.dw-multiform__item[data-module="' + cmodule + '"][data-controller="' + type + '"][data-id="' + singleId + '"]').remove();
-					});
-
-					if (module === 'contacts'
-						&& controller === 'contact'
-						&& $('#tabhistory').hasClass('is-active')) {
-						reloadHistory();
-						return;
-					}
-
-					if(type == controller) window.location = baseUrl+'/'+cmodule+'/'+controller;
-				} else {
-					search();
-				}
+				if (type === controller) setLocation(baseUrl + '/' + cmodule + '/' + controller);
+			} else {
+				search(notify);
 			}
-		});
-	}
+		},
+		error: function (xhr) { showActionRequestError(xhr.responseJSON, 'MESSAGES_CANNOT_BE_DELETED'); },
+		complete: complete
+	});
 }
 
-function deleteAttachment(ids, message, type, cmodule) {
+function deleteAttachment(ids, message, type, cmodule, button) {
 	type = type || controller;
 	cmodule = cmodule || module;
+	ids = (Array.isArray(ids) ? ids : [ids]).filter(function (id) { return id !== undefined && id !== null && id !== ''; });
+	ids = ids.map(String).filter(function (id, index, values) { return values.indexOf(id) === index; });
+	if (!ids.length) return;
 
-	if (!Array.isArray(ids)) {
-		ids = [ids]; // ensure it's an array
-	}
-
-	if (ids.length === 0) return;
-
-	var answer = confirm(message);
-	if (!answer) return;
-
-	$.ajax({
+	var complete = beginActionRequest('delete', cmodule, type, ids, $(button), message);
+	if (!complete) return;
+	return $.ajax({
 		type: 'POST',
-		url: baseUrl+'/'+cmodule+'/'+type+'/delete/',
+		url: baseUrl + '/' + cmodule + '/' + type + '/delete/',
 		contentType: 'application/json',
-		data: JSON.stringify({
-			id: ids
-		}),
+		dataType: 'json',
+		data: JSON.stringify({id: ids}),
 		cache: false,
-		success: function(data){
-			ids.forEach(function(singleId) {
-				$('div#' + type + singleId).remove();
-			});
-		}
+		timeout: 120000,
+		success: function (response) {
+			var deletedIds = getDeletedIds(response, ids);
+			if (deletedIds === null) {
+				showActionRequestError(response, 'MESSAGES_CANNOT_BE_DELETED');
+				return;
+			}
+			showDeleteResult(response, ids, deletedIds);
+			deletedIds.forEach(function (singleId) { $('#' + type + singleId).remove(); });
+		},
+		error: function (xhr) { showActionRequestError(xhr.responseJSON, 'MESSAGES_CANNOT_BE_DELETED'); },
+		complete: complete
 	});
 }
 
@@ -2133,7 +2167,7 @@ function pushMessages(messages, type, target) {
 	$.each(texts, function (_, text) { $('<li>').text(text).appendTo($list); });
 	$('<button>', {type: 'button', 'class': 'dw-alert__close', 'aria-label': Dewawi.message('MESSAGES_DISMISS')}).text('×').appendTo($alert);
 	$container.append($alert).show();
-	if (type === 'danger' && target === '#output' && $container.length) {
+	if (type === 'danger' && (target === '#output' || target === '#messages') && $container.length) {
 		var bounds = $container[0].getBoundingClientRect();
 		if (bounds.top < 0 || bounds.bottom > window.innerHeight) $container[0].scrollIntoView({block: 'nearest'});
 	}
@@ -2511,7 +2545,7 @@ function createEntity(payload, target, context, $container) {
 	});
 }
 
-function deleteEntity(ids, target, context) {
+function deleteEntity(ids, target, context, button) {
 	target = target || {};
 	context = context || {};
 
@@ -2539,7 +2573,8 @@ function deleteEntity(ids, target, context) {
 		ids,
 		deleteConfirm,
 		requestTarget.controller,
-		requestTarget.module
+		requestTarget.module,
+		button
 	);
 }
 
@@ -3294,36 +3329,37 @@ function markFieldSaved($field) {
 			},
 
 			cancel: function (selection, $button) {
-				if (!confirm($button.data('message') || 'Wirklich stornieren?')) {
-					return;
-				}
+				var complete = beginActionRequest('cancel', selection.module, selection.controller, [selection.ids[0]], $button, $button.data('message') || 'Wirklich stornieren?');
+				if (!complete) return;
 
-				$.ajax({
+				return $.ajax({
 					type: 'POST',
 					url: Dewawi.url(selection.module, selection.controller, 'cancel', selection.ids[0]),
 					dataType: 'json',
 					cache: false,
+					timeout: 120000,
 					success: function (response) {
-						if (!response || response.ok === false) {
-							pushMessages([response && response.message ? response.message : 'Stornieren fehlgeschlagen.']);
+						if (!response || response.ok !== true) {
+							showActionRequestError(response, 'MESSAGES_CANCEL_FAILED');
 							return;
 						}
 
+						var notify = function () { pushMessages(Dewawi.message('MESSAGES_SUCCESFULLY_CANCELLED'), 'success'); };
+						notify();
 						if (action === 'view' || action === 'edit') {
 							location.reload();
 							return;
 						}
 
-						search();
+						search(notify);
 					},
-					error: function () {
-						pushMessages(['Stornieren fehlgeschlagen.']);
-					}
+					error: function (xhr) { showActionRequestError(xhr.responseJSON, 'MESSAGES_CANCEL_FAILED'); },
+					complete: complete
 				});
 			},
 
-			delete: function (selection) {
-				trash(selection.ids, deleteConfirm, selection.controller, selection.module);
+			delete: function (selection, $button) {
+				return trash(selection.ids, deleteConfirm, selection.controller, selection.module, $button);
 			},
 
 			pdf: function (selection) {
@@ -3949,7 +3985,7 @@ function runDwTabAction($link, force) {
 	}
 }
 
-function reloadHistory() {
+function reloadHistory(onSuccess) {
 	if (module !== 'contacts' || controller !== 'contact' || action !== 'edit') {
 		return;
 	}
@@ -3961,6 +3997,7 @@ function reloadHistory() {
 		success: function (html) {
 			$('#tabhistory').html(html);
 			initDwTabs('#tabhistory');
+			if (typeof onSuccess === 'function') onSuccess();
 		},
 		error: function () {
 			pushMessages(['Historie konnte nicht aktualisiert werden.']);

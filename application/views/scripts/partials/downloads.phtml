@@ -37,8 +37,8 @@ $attachments = is_array($this->attachments) || $this->attachments instanceof Tra
 									<span class="filesize">(<?= $this->HumanFileSize($attachment['filesize']); ?>)</span>
 								</a>
 
-								<button type="button" class="delete nolabel"
-									onclick="deleteAttachment('<?= $attachment['id']; ?>', deleteConfirm, 'attachment', 'contacts');">
+								<button type="button" class="dw-btn dw-btn--icon delete nolabel" aria-label="<?= $this->escape($this->translate('TOOLBAR_DELETE')); ?>"
+									onclick="deleteAttachment('<?= $attachment['id']; ?>', deleteConfirm, 'attachment', 'contacts', this);">
 								</button><br>
 							</div>
 						<?php endforeach; ?>

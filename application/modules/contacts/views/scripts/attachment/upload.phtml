@@ -52,8 +52,8 @@ $(document).ready(function () {
 
 				<button
 					type="button"
-					class="delete nolabel"
-					onclick="deleteAttachment('<?= (int) $id; ?>', deleteConfirm, 'attachment', 'contacts');">
+					class="dw-btn dw-btn--icon delete nolabel" aria-label="<?= $this->escape($this->translate('TOOLBAR_DELETE')); ?>"
+					onclick="deleteAttachment('<?= (int) $id; ?>', deleteConfirm, 'attachment', 'contacts', this);">
 					Delete
 				</button>
 			</div>

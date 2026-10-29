@@ -1958,6 +1958,12 @@ span.editable {
 .dw-btn.is-loading::after,
 [data-document-finalize].is-loading::after {
   content: "…";
+  font-size: var(--dw-font-size-md);
+  line-height: 1;
+}
+
+.dw-btn--icon.is-loading {
+  background-image: none;
 }
 
 /* Main menu */

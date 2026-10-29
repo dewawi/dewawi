@@ -34,7 +34,7 @@ foreach (['de_DE', 'en_US'] as $locale) {
     $view = new NotificationTestView();
     $view->catalog = require $root . '/languages/' . $locale . '/default/messages.php';
     $translations = (new Zend_View_Helper_Messages())->setView($view)->getTranslations();
-    check(count($translations) === 14 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
+    check(count($translations) === 21 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
     foreach ($translations as $key => $text) check($key !== $text, $locale . ': untranslated browser key ' . $key);
     $view->messages = [
         'MESSAGES_EMAIL_SENT_SUCCESS', 'MESSAGES_EMAIL_SENT_SUCCESS',

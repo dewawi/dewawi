@@ -59,8 +59,8 @@ $uploadUrl = $this->baseUrl()
 
 											<button
 												type="button"
-												class="delete nolabel"
-												onclick="deleteAttachment('<?= $attachmentId; ?>', deleteConfirm, 'attachment', 'contacts');">
+												class="dw-btn dw-btn--icon delete nolabel" aria-label="<?= $this->escape($this->translate('TOOLBAR_DELETE')); ?>"
+												onclick="deleteAttachment('<?= $attachmentId; ?>', deleteConfirm, 'attachment', 'contacts', this);">
 												Delete
 											</button>
 										</div>

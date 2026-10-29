@@ -82,6 +82,7 @@ class AttachmentTestController extends Contacts_AttachmentController
 $adapter = new AttachmentTestAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
 Zend_Db_Table::setDefaultAdapter($adapter);
 Zend_Controller_Action_HelperBroker::addHelper(new AttachmentTestLayout());
+Zend_Controller_Action_HelperBroker::getStaticHelper('json')->suppressExit = true;
 Zend_Controller_Front::getInstance()->setControllerDirectory(['contacts' => $root . '/application/modules/contacts/controllers']);
 
 function attachmentFile(array $overrides = []): array
@@ -176,7 +177,9 @@ foreach ([false, true] as $shared) {
     $uploaded = end($adapter->rows['emailattachment']);
     check($uploaded['clientid'] === 7 && $uploaded['documentid'] === 10, 'Document upload used the shared contact tenant or visible quote number');
     check(attachmentAction('upload', ['cmodule' => 'sales', 'ccontroller' => 'quote', 'id' => 10], 'POST')[0] === 409, 'Upload overwrote an existing file');
-    check(attachmentAction('delete', [], 'POST', ['id' => [$uploaded['id']]])[0] === 200 && !is_file($target), 'Allowed deletion failed');
+    [$status, $body] = attachmentAction('delete', [], 'POST', ['id' => [$uploaded['id'], $uploaded['id']]]);
+    check($status === 200 && !is_file($target), 'Allowed deletion failed');
+    check(json_decode($body, true) === ['ok' => true, 'deletedIds' => [(int)$uploaded['id']]], 'Deletion did not explicitly confirm unique deleted IDs');
     check(attachmentAction('delete', [], 'POST', ['id' => [$uploaded['id']]])[0] === 404, 'Repeated deletion accepted');
 
     setupAttachments($shared);
