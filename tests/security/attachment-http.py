@@ -34,15 +34,22 @@ spl_autoload_register(static function ($class) use ($root): void {
 });
 class HttpAttachmentAdapter extends Zend_Db_Adapter_Pdo_Mysql {
     public array $rows = [];
+    private int $lastId = 1000;
     protected function _connect() {}
     protected function _quote($value) { return Zend_Db_Adapter_Abstract::_quote($value); }
     public function describeTable($tableName, $schemaName = null) {
         $metadata = [];
-        foreach (array_keys(($this->rows[$tableName][0] ?? []) + ['id' => 0]) as $field) {
+        foreach (array_keys(($this->rows[$tableName][0] ?? []) + array_fill_keys(['id', 'ordering', 'uploaded', 'uploadedby', 'filesize', 'filetype'], 0)) as $field) {
             $metadata[$field] = ['COLUMN_NAME' => $field, 'DATA_TYPE' => 'varchar', 'PRIMARY' => $field === 'id', 'PRIMARY_POSITION' => 1, 'IDENTITY' => $field === 'id'];
         }
         return $metadata;
     }
+    public function insert($table, array $bind) {
+        $bind['id'] = ++$this->lastId;
+        $this->rows[$table][] = $bind + ['deleted' => 0];
+        return 1;
+    }
+    public function lastInsertId($tableName = null, $primaryKey = null) { return $this->lastId; }
     public function query($sql, $bind = []) {
         if (!$sql instanceof Zend_Db_Table_Select || $bind) throw new RuntimeException('Unexpected database access');
         $sql->assemble();
@@ -62,6 +69,7 @@ class HttpAttachmentAdapter extends Zend_Db_Adapter_Pdo_Mysql {
             }
             return true;
         }));
+        if ($limit = $sql->getPart(Zend_Db_Select::LIMIT_COUNT)) $rows = array_slice($rows, 0, $limit);
         return new class($rows) {
             public function __construct(private array $rows) {}
             public function fetchAll($mode) { return $this->rows; }
@@ -87,13 +95,13 @@ if (isset($_SERVER['HTTP_X_ATTACHMENT_TEST_USER'])) {
     $clientId = $mode === 'foreign' ? 8 : 7;
     Zend_Registry::set('User', ['id' => 42, 'clientid' => $clientId]);
     Zend_Registry::set('Client', ['id' => $clientId, 'parentid' => 0]);
-    $rights = $mode === 'allowed' ? ['quote' => ['view']] : [];
+    $rights = $mode === 'allowed' ? ['quote' => ['view']] : ($mode === 'upload' ? ['quote' => ['view', 'add']] : []);
     $adapter->rows += [
         'permission' => [['id' => 1, 'userid' => 42, 'deleted' => 0, 'sales' => json_encode($rights), 'contacts' => json_encode(['contact' => ['view']])]],
         'quote' => [['id' => 10, 'contactid' => 100, 'filename' => 'quote.pdf', 'clientid' => 7, 'deleted' => 0]],
         'invoice' => [['id' => 20, 'contactid' => 100, 'filename' => 'invoice.pdf', 'clientid' => 7, 'deleted' => 0]],
         'contact' => [['id' => 100, 'clientid' => 7, 'deleted' => 0]],
-        'emailattachment' => [['id' => 600, 'documentid' => 10, 'clientid' => 7, 'module' => 'sales', 'controller' => 'quote', 'filename' => 'fixture.pdf', 'location' => BASE_PATH . '/files/attachments/sales/quote/7/0/7/1/0/10', 'deleted' => 0]],
+        'emailattachment' => [['id' => 600, 'documentid' => 10, 'clientid' => 7, 'module' => 'sales', 'controller' => 'quote', 'filename' => 'fixture.pdf', 'location' => BASE_PATH . '/files/attachments/sales/quote/7/0/7/1/0/10', 'deleted' => 0, 'ordering' => 0]],
     ];
 }
 Zend_Db_Table::setDefaultAdapter($adapter);
@@ -115,11 +123,20 @@ $request = new Zend_Controller_Request_Http();
 $response = new Zend_Controller_Response_Http();
 $front->setRequest($request)->setResponse($response);
 $front->getRouter()->route($request);
-if ($request->getModuleName() !== 'contacts' || $request->getControllerName() !== 'attachment' || !in_array($request->getActionName(), ['download', 'file'], true)) {
+if ($request->getModuleName() !== 'contacts' || $request->getControllerName() !== 'attachment' || !in_array($request->getActionName(), ['download', 'file', 'upload'], true)) {
     $response->setHttpResponseCode(404);
 } else {
     $controller = new Contacts_AttachmentController($request, $response);
+    if ($request->getActionName() === 'upload') {
+        $translator = new DEEC_Translate('de_DE');
+        $translator->loadDir('default', $root . '/languages/de_DE/default');
+        Zend_Registry::set('DEEC_Translate', $translator);
+        $controller->view = new Zend_View();
+        $controller->view->setScriptPath($root . '/application/modules/contacts/views/scripts');
+        $controller->view->addHelperPath($root . '/application/views/helpers');
+    }
     $controller->{$request->getActionName() . 'Action'}();
+    if ($request->getActionName() === 'upload') $response->setBody($controller->view->render('attachment/upload.phtml'));
 }
 $response->sendResponse();
 '''.replace("ROOT_PATH", "'" + str(root).replace("'", "\\'") + "'")
@@ -188,6 +205,8 @@ LoadModule mpm_prefork_module "{modules}/mod_mpm_prefork.so"
 LoadModule authz_core_module "{modules}/mod_authz_core.so"
 LoadModule rewrite_module "{modules}/mod_rewrite.so"
 LoadModule php_module "{modules}/libphp8.3.so"
+php_admin_value upload_max_filesize 16M
+php_admin_value post_max_size 32M
 DocumentRoot "{site}"
 <Directory "{site}">
     AllowOverride All
@@ -226,6 +245,20 @@ DocumentRoot "{site}"
             except urllib.error.HTTPError as error:
                 return error.code, error.read()
 
+        def upload(files, user="upload"):
+            boundary = "dewawi-native-upload-fixture"
+            body = b""
+            for filename, contents in files:
+                body += (f'--{boundary}\r\nContent-Disposition: form-data; name="file[]"; filename="{filename}"\r\nContent-Type: application/octet-stream\r\n\r\n').encode() + contents + b"\r\n"
+            body += f"--{boundary}--\r\n".encode()
+            headers = {'X-Attachment-Test-User': user, 'Content-Type': 'multipart/form-data; boundary=' + boundary}
+            request = urllib.request.Request(f"http://127.0.0.1:{port}/contacts/attachment/upload/cmodule/sales/ccontroller/quote/id/10", data=body, headers=headers)
+            try:
+                with urllib.request.urlopen(request, timeout=10) as response:
+                    return response.status, response.read()
+            except urllib.error.HTTPError as error:
+                return error.code, error.read()
+
         path = "/files/attachments/sales/quote/7/0/7/1/0/10/fixture.pdf"
         assert fetch(path) == (200, contents), "Baseline did not reproduce the anonymous static-file bypass"
         (site / ".htaccess").write_text(current)
@@ -238,6 +271,29 @@ DocumentRoot "{site}"
         assert fetch(path, "allowed", "HEAD") == (200, b""), "HEAD request returned file content"
         assert fetch(path, "denied")[0] == 404, "Missing document permission allowed a download"
         assert fetch("/contacts/attachment/download/id/601", "allowed")[0] == 404, "Missing attachment ID allowed a download"
+        for files, expected, message in [
+            ([], 400, 'Bitte wählen Sie eine Datei aus.'),
+            ([('unsupported.exe', contents)], 400, 'Dieser Dateityp'),
+            ([('wrong-content.png', contents)], 400, 'Dieser Dateityp'),
+            ([('oversized.pdf', contents + b' ' * 10240001)], 400, 'zulässige Größe'),
+            ([(f'count-{n}.pdf', contents) for n in range(11)], 400, 'höchstens zehn'),
+            ([('duplicate.pdf', contents), ('duplicate.pdf', contents)], 409, 'diesem Namen'),
+        ]:
+            status, body = upload(files)
+            assert status == expected and message.encode() in body and b'data-upload-result="error"' in body, (status, expected, body[:1500])
+            assert b'type="submit"' in body and b'type="file"' in body and b'dw-alert--success' not in body, 'Rejected native upload lost reusable form or falsely confirmed success'
+            assert str(temp).encode() not in body and b'Stack trace' not in body, 'Upload leaked a server path'
+        for user in ['allowed', 'foreign', 'denied']:
+            status, body = upload([('denied.pdf', contents)], user)
+            assert status == 404 and b'keine Berechtigung' in body and b'id="uploads"' not in body, 'Unauthorized multipart upload exposed data or omitted safe feedback'
+        status, body = upload([('native-one.pdf', contents), ('native-two.pdf', contents)])
+        assert status == 200 and b'data-upload-result="confirmed"' in body and b'id="attachment1001"' in body and b'id="attachment1002"' in body, (status, body[:1500])
+        assert b'enctype="multipart/form-data"' in body and b'/contacts/attachment/download/id/1001' in body, 'Native upload contract or protected download link lost'
+        destination = fixture.parent
+        assert (destination / 'native-one.pdf').read_bytes() == contents and (destination / 'native-two.pdf').read_bytes() == contents, 'Real HTTP upload changed file bytes'
+        assert not (destination / 'denied.pdf').exists() and not (destination / 'count-0.pdf').exists(), 'Rejected upload persisted files'
+        status, body = upload([('native-one.pdf', contents)])
+        assert status == 409 and b'dw-alert--success' not in body, 'Repeated native upload overwrote confirmed files'
         for relative in stored_files:
             status, body = fetch('/' + relative)
             assert status == 404 and contents not in body, f"Anonymous stored file exposed: {relative}"
@@ -284,7 +340,7 @@ DocumentRoot "{site}"
             assert fetch(prefix + '/media/1/0/100/header/renocold.png', host='unknown.test')[0] == 404, 'Unknown domain published media'
             for relative in stored_files:
                 assert fetch(prefix + '/' + relative, host='www.renocold.com')[0] == 404, 'Public shop exposed private files or cache'
-        print("PASS: Apache static bypass reproduced; attachments and stored files protected; tenant, object, method, traversal, symlink and cache checks pass; published media accessible")
+        print("PASS: native multipart uploads and reusable error responses; Apache static bypass reproduced; attachments and stored files protected; tenant, object, method, traversal, symlink and cache checks pass; published media accessible")
     finally:
         server.terminate()
         try:

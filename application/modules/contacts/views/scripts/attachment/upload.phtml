@@ -2,26 +2,9 @@
 $this->title = $this->translate('UPLOAD');
 $this->headTitle($this->title);
 ?>
-<script type="text/javascript">
-$(document).ready(function () {
-	var $parentAttachments = $('#attachments', parent.document);
-	var $newItems = $('#uploads').children();
+<?php echo $this->Messages(); ?>
 
-	$newItems.each(function () {
-		var attachmentId = $(this).attr('id');
-
-		if (attachmentId) {
-			$('#' + attachmentId, parent.document).remove();
-		}
-
-		$parentAttachments.append($(this));
-	});
-
-	$('#attachments input[type="checkbox"][name="file[]"]', parent.document).prop('checked', true);
-});
-</script>
-
-<form id="upload" enctype="multipart/form-data" action="" method="post">
+<form id="upload" data-attachment-upload data-autosave="false" data-upload-result="<?= $this->escape($this->uploadResult); ?>" enctype="multipart/form-data" action="" method="post">
 	<div class="dw-form-layout">
 		<div class="dw-form-row">
 			<?= $this->form->renderElement('file'); ?>

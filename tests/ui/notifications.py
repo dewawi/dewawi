@@ -30,7 +30,7 @@ class ResultParser(HTMLParser):
 root = Path(__file__).resolve().parents[2]
 catalogs = {}
 for locale in ['de_DE', 'en_US']:
-    result = subprocess.run(['php', '-r', 'echo json_encode(array_replace(require $argv[1], require $argv[2]));', str(root / 'languages' / locale / 'default/messages.php'), str(root / 'languages' / locale / 'default/document.php')], check=True, capture_output=True, text=True)
+    result = subprocess.run(['php', '-r', 'echo json_encode(array_replace(require $argv[1], require $argv[2], require $argv[3]));', str(root / 'languages' / locale / 'default/messages.php'), str(root / 'languages' / locale / 'default/document.php'), str(root / 'languages' / locale / 'sales/invoice.php')], check=True, capture_output=True, text=True)
     catalogs[locale] = json.loads(result.stdout)
 # Execute the actual rendered editor save callbacks with a captured editor API in the browser.
 editor = subprocess.run(['php', '-r', """

@@ -19,17 +19,28 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 		$this->getResponse()->setHttpResponseCode($status)->setHeader('Cache-Control', 'private, no-store', true)->setHeader('X-Content-Type-Options', 'nosniff', true);
 	}
 
+	private function uploadError(string $message, int $status = 400): void
+	{
+		$this->getResponse()->setHttpResponseCode($status);
+		$this->view->uploadResult = empty($this->view->uploads) ? 'error' : 'partial';
+		$this->view->messages = [['type' => 'danger', 'message' => $message]];
+		if (!empty($this->view->uploads)) $this->view->messages[] = ['type' => 'warning', 'message' => 'MESSAGES_UPLOAD_PARTIAL'];
+	}
+
 	public function uploadAction()
 	{
+		$this->view->form = new Application_Form_Upload();
+		$this->view->uploads = [];
+		$this->view->uploadResult = '';
+		$this->view->messages = [];
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true)->setHeader('X-Content-Type-Options', 'nosniff', true);
 		$id = $this->_getParam('id', 0);
 		$module = $this->_getParam('cmodule', '');
 		$controller = $this->_getParam('ccontroller', '');
 		$db = new Contacts_Model_DbTable_Emailattachment();
 		$context = $db->getParentContext($id, $module, $controller, 'upload');
-		if(!$context) return $this->reject();
+		if(!$context) return $this->uploadError('MESSAGES_UPLOAD_DENIED', 404);
 
-		$this->view->form = new Application_Form_Upload();
-		$this->view->uploads = [];
 		$this->view->documentUrl = (new DEEC_Directory())->getUrl((string)$id, (string)$context['clientid']);
 		if(!$this->getRequest()->isPost()) return;
 
@@ -41,13 +52,19 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 			$upload->addValidator('Size', false, ['min' => 1, 'max' => 10240000]);
 			$upload->addValidator('Extension', false, 'pdf,jpg,jpeg,png,gif,csv,zip');
 			$files = $upload->getFileInfo();
-			if(!$files || count($files) > 10) return $this->reject(400);
+			if(!$files) return $this->uploadError('MESSAGES_UPLOAD_SELECT');
+			if(count($files) > 10) return $this->uploadError('MESSAGES_UPLOAD_LIMIT');
 			$names = [];
 			foreach($files as $file => $info) {
-				if(!$upload->isUploaded($file) || !$upload->isValid($file) || !DEEC_Emailattachment::validUpload((string)$info['name'], (string)$info['tmp_name'])) return $this->reject(400);
+				$error = (int)($info['error'] ?? UPLOAD_ERR_OK);
+				if($error === UPLOAD_ERR_NO_FILE) return $this->uploadError('MESSAGES_UPLOAD_SELECT');
+				if(in_array($error, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) || (int)($info['size'] ?? 0) > 10240000) return $this->uploadError('MESSAGES_UPLOAD_SIZE');
+				if($error !== UPLOAD_ERR_OK || !$upload->isUploaded($file)) return $this->uploadError('MESSAGES_UPLOAD_FAILED');
+				if(!in_array(strtolower(pathinfo((string)$info['name'], PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'csv', 'zip'], true)) return $this->uploadError('MESSAGES_UPLOAD_TYPE');
+				if(!$upload->isValid($file) || !DEEC_Emailattachment::validUpload((string)$info['name'], (string)$info['tmp_name'])) return $this->uploadError('MESSAGES_UPLOAD_TYPE');
 				$path = $destination . '/' . $info['name'];
 				DEEC_Emailattachment::checkPath($path);
-				if(file_exists($path) || isset($names[$info['name']])) return $this->reject(409);
+				if(file_exists($path) || isset($names[$info['name']])) return $this->uploadError('MESSAGES_UPLOAD_EXISTS', 409);
 				$names[$info['name']] = true;
 			}
 
@@ -62,7 +79,7 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 				$path = $destination . '/' . $info['name'];
 				DEEC_Emailattachment::checkPath($path);
 				$output = @fopen($path, 'x');
-				if(!$output) throw new RuntimeException('Attachment already exists');
+				if(!$output) return $this->uploadError(file_exists($path) ? 'MESSAGES_UPLOAD_EXISTS' : 'MESSAGES_UPLOAD_FAILED', file_exists($path) ? 409 : 400);
 				$input = fopen($source, 'rb');
 				try {
 					if(!$input || stream_copy_to_stream($input, $output) !== filesize($source)) throw new RuntimeException('Attachment upload failed');
@@ -86,8 +103,10 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 				}
 				$this->view->uploads[$data['id']] = $data;
 			}
+			$this->view->uploadResult = 'confirmed';
+			$this->view->messages = [['type' => 'success', 'message' => 'MESSAGES_RECORDS_SUCCESFULLY_UPLOADED']];
 		} catch(Exception $e) {
-			$this->reject(400);
+			$this->uploadError('MESSAGES_UPLOAD_FAILED');
 		} finally {
 			if($staging !== null && is_dir($staging)) {
 				foreach(new FilesystemIterator($staging) as $file) unlink($file->getPathname());

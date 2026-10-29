@@ -1273,6 +1273,163 @@ $(function() {
     DewawiToolbar.getUrlParam = originalGetUrlParam;
   });
   clearTimeout(Dewawi.searchTimeout); window.setTimeout = listSetTimeout; window.clearTimeout = listClearTimeout; $.ajax = realAjax; $.cookie = originalCookie; $.removeCookie = originalRemoveCookie; search = originalSearch;
+  if (!$('#loading').length) $('<div id="loading" style="display:none">').appendTo('body');
+  // Phase 4.7: keep native uploads and Blob-XHR downloads, with isolated transports.
+  var transferTimeout = window.setTimeout, transferClearTimeout = window.clearTimeout;
+  var originalXHR = window.XMLHttpRequest, originalReader = window.FileReader;
+  var createURL = URL.createObjectURL, revokeURL = URL.revokeObjectURL, anchorClick = HTMLAnchorElement.prototype.click;
+  var transferTimers = [], requests = [], readers = [], downloads = [], urls = [], revoked = [];
+  window.setTimeout = function(fn, delay) { var timer = {fn: fn, delay: delay}; transferTimers.push(timer); return timer; };
+  window.clearTimeout = function(timer) { if (timer && typeof timer === 'object') timer.cleared = true; else transferClearTimeout(timer); };
+  window.XMLHttpRequest = function() { this.headers = {}; this.open = function(method, url) { this.method = method; this.url = url; }; this.setRequestHeader = function(key, value) { this.headers[key] = value; }; this.send = function(data) { this.data = data; }; this.abort = function() { this.onabort(); }; this.getResponseHeader = function(name) { return this.responseHeaders && this.responseHeaders[name] || ''; }; requests.push(this); };
+  window.FileReader = function() { this.readAsText = function(blob) { this.blob = blob; this.readyState = 1; }; this.abort = function() { this.onabort(); }; readers.push(this); };
+  URL.createObjectURL = function(blob) { var url = 'blob:fixture-' + urls.length; urls.push({url: url, blob: blob}); return url; };
+  URL.revokeObjectURL = function(url) { revoked.push(url); };
+  HTMLAnchorElement.prototype.click = function() { downloads.push({href: this.href, filename: this.download}); };
+  var invoiceXml = '<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"><ID>Fixture</ID></Invoice>';
+  function blobResponse(request, type, text, status, disposition) {
+    request.status = status === undefined ? 200 : status;
+    request.responseHeaders = {'Content-Type': type, 'Content-Disposition': disposition || 'attachment; filename="XRechnung-7300.xml"'};
+    request.response = new Blob([text]); request.onload();
+  }
+  function readBlob(text) { var reader = readers[readers.length - 1]; reader.result = text; reader.readyState = 2; reader.onload(); }
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale]; calls = []; requests = []; readers = []; downloads = []; urls = []; revoked = [];
+    var $area = $('<div>').appendTo('body');
+    var $form = $('<form id="xrechnung-export-form" action="/fixture/sales/invoice/xrechnung/id/100" data-autosave="false"><div class="dw-field"><label class="dw-label">Buyer reference</label><input name="buyer_reference" value="A"></div><button type="submit" data-xrechnung-check aria-busy="false"><b>Check</b></button><button type="button" data-xrechnung-download disabled><b>XML</b></button></form>').appendTo($area);
+    $form.data({'request-failed': catalogs[locale].XRECHNUNG_REQUEST_FAILED, success: catalogs[locale].XRECHNUNG_VALID, downloading: catalogs[locale].XRECHNUNG_DOWNLOADING});
+    var $results = $('<div data-xrechnung-results aria-live="polite">').appendTo($area);
+    var $check = $form.find('[data-xrechnung-check]'), $download = $form.find('[data-xrechnung-download]'), $input = $form.find('input');
+    function validate(response, error) { $form.trigger('submit'); var call = calls[calls.length - 1]; finish(call, response, error); return call; }
+    function valid() { validate({ok: true, valid: true, errors: [], warnings: [{message: 'KoSIT warning'}]}); }
+    $form.trigger('submit'); $form.trigger('submit');
+    check(calls.length === 1 && $check.prop('disabled') && $check.hasClass('is-loading') && $form.attr('aria-busy') === 'true' && $download.prop('disabled'), locale + ': validation allows duplicates or lacks local loading');
+    check(calls[0].options.type === 'POST' && calls[0].options.timeout === 120000 && calls[0].options.data === 'buyer_reference=A' && $('#loading').css('display') === 'none', 'Validation payload, timeout or global lock changed');
+    finish(calls[0], {ok: true, valid: false, errors: [{field: 'buyer_reference', rule: 'BR', message: '<img src=x>Required'}], warnings: [{message: '<script>warning<\/script>'}]});
+    check($input.hasClass('is-invalid') && $form.find('.dw-field-error').text() === '<img src=x>Required' && $results.find('.dw-alert--warning').length === 1 && !$results.find('img,script').length && $download.prop('disabled'), 'Business validation errors/warnings lost or interpreted as HTML');
+    $form.trigger('submit'); finish(calls[calls.length - 1], null, {status: 0, kind: 'timeout'});
+    check($input.hasClass('is-invalid') && $form.find('.dw-field-error').text() === '<img src=x>Required' && $results.find('.dw-alert--warning').length === 1 && $results.find('[data-xrechnung-request-error]').text() === catalogs[locale].XRECHNUNG_REQUEST_FAILED, 'Technical preflight failure erased field validation errors or warnings');
+    check(!$check.prop('disabled') && $check.attr('aria-busy') === 'false' && $check.find('b').length === 1 && !$form.attr('aria-busy'), 'Validation did not restore button contents/ARIA');
+    valid(); check(!$download.prop('disabled') && !$input.hasClass('is-invalid') && $results.find('.dw-alert--success').length === 1 && $results.find('.dw-alert--warning').length === 1, 'Confirmed validation did not unlock XML or lost warnings');
+    $input.val('B').trigger('input'); check($download.prop('disabled') && !$results.find('.dw-alert--success').length, 'Input change retained old download approval');
+    $form.trigger('submit'); var stale = calls[calls.length - 1]; $input.val('C').trigger('change');
+    finish(stale, {ok: true, valid: true, errors: [], warnings: []});
+    check($download.prop('disabled') && !$results.find('.dw-alert--success').length && !$check.prop('disabled'), 'Stale preflight reapproved changed inputs');
+    $form.trigger('submit'); stale = calls[calls.length - 1]; $input.val('D').trigger('input').val('C').trigger('input');
+    finish(stale, {ok: true, valid: true, errors: [], warnings: []});
+    check($download.prop('disabled'), 'Changed-back inputs accepted an earlier validation generation');
+    [null, {}, {ok: false, valid: true, errors: [], warnings: []}, {ok: true, valid: true, errors: [{message: 'Conflict'}], warnings: []}].forEach(function(response) {
+      validate(response); check($download.prop('disabled') && !$check.prop('disabled') && $results.find('.dw-alert--danger').text() === catalogs[locale].XRECHNUNG_REQUEST_FAILED, 'Malformed preflight enabled XML or leaked response');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500, responseJSON: {ok: true, valid: true, errors: [], warnings: []}}].forEach(function(error) {
+      validate(null, error); check($download.prop('disabled') && !$check.prop('disabled') && !$check.hasClass('is-loading') && !$form.attr('aria-busy'), 'Validation failure left request/button busy or confirmed HTTP error');
+    });
+    valid(); var beforeRequests = requests.length, beforeChecks = calls.length;
+    $download.trigger('click').trigger('click'); $form.trigger('submit');
+    var request = requests[requests.length - 1];
+    check(requests.length === beforeRequests + 1 && calls.length === beforeChecks && $download.hasClass('is-loading') && $check.prop('disabled') && $results.find('.dw-alert--info').text() === catalogs[locale].XRECHNUNG_DOWNLOADING && $results.find('.dw-alert--warning').length === 1, 'XML duplicates allowed or renderer warnings replaced by progress');
+    check(request.method === 'POST' && request.url === $form.attr('action') && request.data === 'buyer_reference=C&download=1' && request.responseType === 'blob' && request.timeout === 120000 && request.headers['X-Requested-With'] === 'XMLHttpRequest', 'Blob transport or download payload changed');
+    blobResponse(request, 'application/xml; charset=UTF-8', invoiceXml, 200, "attachment; filename=\"fallback.xml\"; filename*=UTF-8''Rechnung-%C3%84.xml");
+    check($download.hasClass('is-loading') && downloads.length === 0, 'XML was downloaded before its blob could be read');
+    readBlob(invoiceXml);
+    check(downloads.length === 1 && downloads[0].filename === 'Rechnung-Ä.xml' && !$download.prop('disabled') && !$download.hasClass('is-loading') && !$check.prop('disabled') && $check.attr('aria-busy') === 'false' && $download.find('b').length === 1 && !$form.attr('aria-busy'), 'XML completion did not restore controls or preserve filename');
+    check(urls.length === 1 && revoked.length === 0 && $results.find('.dw-alert--info').length === 0, 'Object URL revoked too soon or progress left visible');
+    var revokeTimer = transferTimers.filter(function(timer) { return timer.delay === 1000 && !timer.cleared; }).pop(); revokeTimer.fn(); revokeTimer.cleared = true;
+    check(revoked[revoked.length - 1] === urls[0].url && !$results.text().match(/gespeichert|saved/i), 'Object URL not released or local save falsely confirmed');
+    $download.trigger('click'); request = requests[requests.length - 1];
+    blobResponse(request, 'application/json', JSON.stringify({ok: true, valid: false, errors: [{field: 'buyer_reference', message: 'Updated server requirement'}], warnings: [{message: 'Still a warning'}]}));
+    readBlob(JSON.stringify({ok: true, valid: false, errors: [{field: 'buyer_reference', message: 'Updated server requirement'}], warnings: [{message: 'Still a warning'}]}));
+    check($download.prop('disabled') && !$check.prop('disabled') && $input.hasClass('is-invalid') && $results.text().indexOf('Updated server requirement') !== -1 && $results.find('.dw-alert--warning').length === 1 && downloads.length === 1, 'JSON validation on download lost field errors, warnings or approval invalidation');
+    ['onerror', 'onabort', 'ontimeout'].forEach(function(eventName) {
+      valid(); $download.trigger('click'); var failed = requests[requests.length - 1]; failed[eventName](); failed[eventName]();
+      check($download.prop('disabled') && !$check.prop('disabled') && !$download.hasClass('is-loading') && !$form.attr('aria-busy') && $results.find('.dw-alert--danger').text() === catalogs[locale].XRECHNUNG_REQUEST_FAILED, 'XHR ' + eventName + ' did not release state safely');
+      valid(); check(!$download.prop('disabled'), 'XHR ' + eventName + ' left a stale action lock');
+    });
+    [
+      ['text/html', '<html>Internal /var/secret</html>', 500], ['application/octet-stream', invoiceXml, 200],
+      ['application/xml', '', 200], ['application/xml', '<Invoice>', 200], ['application/xml', '<html/>', 200],
+      ['application/json', '{not JSON /var/secret', 200], ['application/json', JSON.stringify({message: '/var/secret'}), 400],
+      ['application/json', JSON.stringify({ok: true, valid: true, errors: [], warnings: []}), 200]
+    ].forEach(function(response) {
+      valid(); $download.trigger('click'); var failed = requests[requests.length - 1], beforeDownloads = downloads.length, beforeReaders = readers.length;
+      blobResponse(failed, response[0], response[1], response[2]); if (readers.length > beforeReaders) readBlob(response[1]);
+      check($download.prop('disabled') && !$check.prop('disabled') && !$download.hasClass('is-loading') && downloads.length === beforeDownloads && $results.text().indexOf('/var/secret') === -1, 'Invalid Blob response downloaded, leaked internals or retained pending state');
+    });
+    ['onerror', 'onabort'].forEach(function(eventName) {
+      valid(); $download.trigger('click'); blobResponse(requests[requests.length - 1], 'application/xml', invoiceXml);
+      readers[readers.length - 1][eventName]();
+      check(!$check.prop('disabled') && $download.prop('disabled') && !$download.hasClass('is-loading'), 'FileReader ' + eventName + ' left request pending');
+    });
+    valid(); $download.trigger('click'); blobResponse(requests[requests.length - 1], 'application/xml', invoiceXml); $input.val('New').trigger('input'); var previousDownloads = downloads.length; readBlob(invoiceXml);
+    check(downloads.length === previousDownloads && $download.prop('disabled') && !$check.prop('disabled') && !$results.find('.dw-alert--success').length, 'Late XML downloaded stale inputs or restored stale approval');
+    valid(); $download.trigger('click'); var timed = requests[requests.length - 1]; blobResponse(timed, 'application/xml', invoiceXml);
+    var readTimer = transferTimers.filter(function(timer) { return timer.delay === 120000 && !timer.cleared; }).pop(); readTimer.fn();
+    check(!$check.prop('disabled') && $download.prop('disabled') && !$download.hasClass('is-loading'), 'A stalled FileReader has no bounded cleanup');
+    valid(); $download.trigger('click'); blobResponse(requests[requests.length - 1], 'application/xml', invoiceXml, 200, 'attachment; filename="../bad:name.xml"'); readBlob(invoiceXml);
+    check(downloads[downloads.length - 1].filename === '.._bad_name.xml', 'Download filename preserved path separators or controls');
+    valid(); $download.trigger('click'); blobResponse(requests[requests.length - 1], 'application/xml', invoiceXml, 200, 'attachment; filename="wrong.html"'); readBlob(invoiceXml);
+    check(downloads[downloads.length - 1].filename === 'XRechnung.xml', 'Unexpected filename extension accepted');
+    var realCreate = URL.createObjectURL;
+    URL.createObjectURL = function() { throw new Error('Fixture URL failure'); };
+    valid(); $download.trigger('click'); blobResponse(requests[requests.length - 1], 'application/xml', invoiceXml); readBlob(invoiceXml);
+    check(!$check.prop('disabled') && $download.prop('disabled') && !$download.hasClass('is-loading'), 'Object URL failure left controls pending');
+    URL.createObjectURL = realCreate;
+    var originalParser = window.DOMParser;
+    window.DOMParser = function() { this.parseFromString = function() { throw new Error('Fixture XML parser failure'); }; };
+    valid(); $download.trigger('click'); blobResponse(requests[requests.length - 1], 'application/xml', invoiceXml); readBlob(invoiceXml);
+    check(!$check.prop('disabled') && $download.prop('disabled') && !$download.hasClass('is-loading'), 'XML parser exception left request pending');
+    window.DOMParser = originalParser;
+    var safeAnchorClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function() { throw new Error('Fixture browser download failure'); };
+    valid(); $download.trigger('click'); var beforeURLFailure = urls.length; blobResponse(requests[requests.length - 1], 'application/xml', invoiceXml); readBlob(invoiceXml);
+    check(!$check.prop('disabled') && $download.prop('disabled') && urls.length === beforeURLFailure + 1 && transferTimers.some(function(timer) { return timer.delay === 1000 && !timer.cleared; }), 'Browser download exception left state or Object URL unreleased');
+    HTMLAnchorElement.prototype.click = safeAnchorClick;
+    var realReadAsText = window.FileReader;
+    window.FileReader = function() { this.readAsText = function() { throw new Error('Fixture read failure'); }; };
+    valid(); $download.trigger('click'); blobResponse(requests[requests.length - 1], 'application/xml', invoiceXml);
+    check(!$check.prop('disabled') && $download.prop('disabled'), 'Synchronous blob read failure left controls pending');
+    window.FileReader = realReadAsText;
+    var transportXHR = window.XMLHttpRequest;
+    window.XMLHttpRequest = function() { this.open = function() { throw new Error('Fixture open failure'); }; };
+    valid(); $download.trigger('click'); check(!$check.prop('disabled') && $download.prop('disabled'), 'Synchronous XHR setup failure left controls pending');
+    window.XMLHttpRequest = transportXHR;
+    check($('#loading').css('display') === 'none', 'Upload/download activated the global overlay');
+    $area.remove();
+
+    var nativeSubmits = 0;
+    var $upload = $('<form id="upload" action="/fixture/upload" data-attachment-upload data-autosave="false"><input type="file" name="file[]" multiple><button type="submit"><b>Upload</b></button></form>').appendTo('body');
+    $upload[0].submit = function() { nativeSubmits++; };
+    var input = $upload.find('input')[0], $uploadButton = $upload.find('button');
+    Object.defineProperty(input, 'files', {value: [], configurable: true});
+    $upload.trigger('submit'); check(nativeSubmits === 0 && !$uploadButton.prop('disabled') && $('#messages .dw-alert--danger').text().indexOf(catalogs[locale].MESSAGES_UPLOAD_SELECT) !== -1, 'Empty native upload did not restore its form');
+    Object.defineProperty(input, 'files', {value: [{name: 'one.pdf'}, {name: 'two.pdf'}], configurable: true});
+    $upload.trigger('submit').trigger('submit');
+    check(nativeSubmits === 1 && $uploadButton.hasClass('is-loading') && $upload.attr('aria-busy') === 'true' && $('#messages .dw-alert--info li').text() === catalogs[locale].MESSAGES_UPLOAD_RUNNING, 'Native multipart upload was replaced, repeated or has no progress');
+    var unknownTimer = transferTimers.filter(function(timer) { return timer.delay === 120000 && !timer.cleared; }).pop(); unknownTimer.fn();
+    check(nativeSubmits === 1 && !$uploadButton.prop('disabled') && $uploadButton.find('b').length === 1 && !$upload.attr('aria-busy') && !$('#messages .dw-alert--info').length && $('#messages .dw-alert--warning').text().indexOf(catalogs[locale].MESSAGES_UPLOAD_UNKNOWN) !== -1 && !$('#messages .dw-alert--success').length, 'Unknown native navigation reported success, retried or left form unusable');
+    $upload.trigger('submit'); check(nativeSubmits === 2, 'Native form not reusable after unknown status');
+    $(window).trigger($.Event('pageshow', {originalEvent: {persisted: true}}));
+    check(!$uploadButton.prop('disabled') && !$upload.data('dw-upload-complete') && nativeSubmits === 2, 'Back/forward restoration retained a native upload lock or repeated the upload');
+    $upload.remove();
+
+    // Execute the real transfer initializer in a same-origin child window.
+    var $frame = $('<iframe>').appendTo('body'), child = $frame[0].contentWindow;
+    child.eval('var $ = parent.jQuery, Dewawi = parent.Dewawi, pushMessages = parent.pushMessages; ' + initAttachmentUpload.toString());
+    var $parentAttachments = $('#attachments'); if (!$parentAttachments.length) $parentAttachments = $('<div id="attachments">').appendTo('body');
+    ['error', '', 'confirmed', 'partial'].forEach(function(state) {
+      child.document.body.innerHTML = '<form data-upload-result="' + state + '"></form><div id="uploads"><div id="attachment9801" class="dw-attachment-item"><input name="file[]" type="checkbox" value="9801"><a href="/fixture/contacts/attachment/download/id/9801" target="_blank">Fixture file</a></div><div id="attachment9802" class="dw-attachment-item"><input name="file[]" type="checkbox" value="9802"></div></div>';
+      $parentAttachments.find('#attachment9801,#attachment9802').remove();
+      child.initAttachmentUpload($(child.document).find('form'));
+      check($parentAttachments.find('#attachment9801,#attachment9802').length === ($.inArray(state, ['confirmed', 'partial']) === -1 ? 0 : 2), 'iframe load/error transferred unconfirmed rows or dropped confirmed partial uploads');
+      if (state === 'confirmed' || state === 'partial') check($parentAttachments.find('#attachment9801 input').prop('checked') && $parentAttachments.find('#attachment9801 a').attr('href') === '/fixture/contacts/attachment/download/id/9801', 'Confirmed upload lost parent selection or native download route');
+      child.initAttachmentUpload($(child.document).find('form'));
+      check($parentAttachments.find('#attachment9801').length <= 1, 'Repeated upload initializer duplicated attachments');
+    });
+    $frame.remove(); $parentAttachments.find('#attachment9801,#attachment9802').remove();
+  });
+  transferTimers.forEach(function(timer) { if (timer.delay === 1000 && !timer.cleared) timer.fn(); });
+  window.setTimeout = transferTimeout; window.clearTimeout = transferClearTimeout; window.XMLHttpRequest = originalXHR; window.FileReader = originalReader;
+  URL.createObjectURL = createURL; URL.revokeObjectURL = revokeURL; HTMLAnchorElement.prototype.click = anchorClick;
   $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, document, autosave, position, contact, modal, item, list and accessibility checks at ' + innerWidth + 'px');
   if (window.parent !== window) window.parent.document.getElementById('result').textContent = $('#result').text();
 });

@@ -20,6 +20,7 @@ require_once $root . '/application/modules/items/forms/Toolbar.php';
 require_once $root . '/application/modules/items/forms/Item.php';
 require_once $root . '/application/modules/items/models/Entity/Item.php';
 require_once $root . '/application/views/helpers/Toolbar.php';
+require_once $root . '/application/forms/Upload.php';
 
 class NotificationTestView extends Zend_View
 {
@@ -79,7 +80,10 @@ foreach (['de_DE', 'en_US'] as $locale) {
     $view = new NotificationTestView();
     $view->catalog = array_replace(require $root . '/languages/' . $locale . '/default/messages.php', require $root . '/languages/' . $locale . '/default/document.php');
     $translations = (new Zend_View_Helper_Messages())->setView($view)->getTranslations();
-    check(count($translations) === 60 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
+    foreach ($view->catalog as $key => $text) {
+        if (str_starts_with($key, 'MESSAGES_UPLOAD_')) check($text !== '' && $text !== $key, $locale . ': untranslated upload message ' . $key);
+    }
+    check(count($translations) === 63 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
     foreach ($translations as $key => $text) check($key !== $text, $locale . ': untranslated browser key ' . $key);
     $view->messages = [
         'MESSAGES_EMAIL_SENT_SUCCESS', 'MESSAGES_EMAIL_SENT_SUCCESS',
@@ -129,6 +133,21 @@ foreach (['de_DE', 'en_US'] as $locale) {
 
     // Render the real email history view: transport details stay out of the user interface.
     $view->setScriptPath($root . '/application/modules/contacts/views/scripts');
+    $view->addHelperPath($root . '/application/views/helpers');
+    $view->form = new Application_Form_Upload();
+    $view->title = '';
+    $view->uploads = [901 => ['filename' => '<img src=x>.pdf', 'filesize' => 128]];
+    foreach (['confirmed', 'partial', 'error'] as $state) {
+        $view->uploadResult = $state;
+        $view->messages = [['type' => $state === 'confirmed' ? 'success' : 'danger', 'message' => $state === 'confirmed' ? 'MESSAGES_RECORDS_SUCCESFULLY_UPLOADED' : 'MESSAGES_UPLOAD_FAILED']];
+        if ($state === 'error') $view->uploads = [];
+        $uploadHtml = $view->render('attachment/upload.phtml');
+        check(str_contains($uploadHtml, 'data-upload-result="' . $state . '"') && str_contains($uploadHtml, 'enctype="multipart/form-data"') && str_contains($uploadHtml, 'data-autosave="false"'), 'Native upload or explicit result marker missing');
+        check(str_contains($uploadHtml, 'role="' . ($state === 'confirmed' ? 'status' : 'alert') . '"') && !str_contains($uploadHtml, '<img'), 'Unsafe or inaccessible upload response');
+        check(str_contains($uploadHtml, 'type="file"') && str_contains($uploadHtml, 'type="submit"'), 'Upload form is not reusable after a server response');
+        check($state === 'error' ? !str_contains($uploadHtml, 'id="uploads"') : str_contains($uploadHtml, '/contacts/attachment/download/id/901') && str_contains($uploadHtml, '&lt;img src=x&gt;.pdf'), 'Confirmed upload rows or native links changed');
+    }
+    $view->messages = [];
     $view->controller = 'email';
     $view->module = 'contacts';
     $view->users = [];

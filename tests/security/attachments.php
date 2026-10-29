@@ -51,7 +51,8 @@ class AttachmentTestUpload
 {
     public array $files = [];
     public int $receives = 0;
-    private string $destination;
+    public int $failReceiveAt = 0;
+    public string $destination;
     public function addValidator(...$args) {}
     public function setDestination($destination) { $this->destination = $destination; }
     public function getFileInfo() { return $this->files; }
@@ -60,6 +61,7 @@ class AttachmentTestUpload
     public function receive($file)
     {
         $this->receives++;
+        if ($this->receives === $this->failReceiveAt) return false;
         return copy($this->files[$file]['tmp_name'], $this->destination . '/' . $this->files[$file]['name']);
     }
 }
@@ -342,6 +344,48 @@ try {
 } catch (RuntimeException $e) {
     check($e->getMessage() === 'Attachment file is not available' && $adapter->writes === [] && DEEC_Email::$sent === [], 'Missing attachment reached the mail transport');
 }
+
+// Native iframe responses distinguish rejected, confirmed and partially persisted batches.
+$uploadParams = ['cmodule' => 'sales', 'ccontroller' => 'quote', 'id' => 10];
+foreach ([
+    [[], 'MESSAGES_UPLOAD_SELECT'],
+    [['a' => array_replace(uploadFixture('none.pdf'), ['error' => UPLOAD_ERR_NO_FILE])], 'MESSAGES_UPLOAD_SELECT'],
+    [['a' => array_replace(uploadFixture('limit.pdf'), ['error' => UPLOAD_ERR_INI_SIZE])], 'MESSAGES_UPLOAD_SIZE'],
+    [['a' => array_replace(uploadFixture('limit2.pdf'), ['size' => 10240001])], 'MESSAGES_UPLOAD_SIZE'],
+    [['a' => array_replace(uploadFixture('partial.pdf'), ['error' => UPLOAD_ERR_PARTIAL])], 'MESSAGES_UPLOAD_FAILED'],
+    [['a' => uploadFixture('wrong.exe')], 'MESSAGES_UPLOAD_TYPE'],
+    [['a' => uploadFixture('wrong.png')], 'MESSAGES_UPLOAD_TYPE'],
+    [array_combine(range(1, 11), array_map(fn($n) => uploadFixture('count-' . $n . '.pdf'), range(1, 11))), 'MESSAGES_UPLOAD_LIMIT'],
+] as [$files, $message]) {
+    setupAttachments();
+    AttachmentTestController::$upload->files = $files;
+    [$status, , $controller] = attachmentAction('upload', $uploadParams, 'POST');
+    check($status === 400 && $controller->view->uploadResult === 'error' && $controller->view->messages[0]['message'] === $message, 'Upload error lost its safe iframe response: ' . $message);
+    check($controller->view->uploads === [] && $adapter->writes === [] && AttachmentTestController::$upload->receives === 0, 'Rejected batch wrote a file');
+}
+setupAttachments();
+AttachmentTestController::$upload->files = ['a' => uploadFixture('confirmed-first.pdf'), 'b' => uploadFixture('failed-second.pdf')];
+AttachmentTestController::$upload->failReceiveAt = 2;
+[$status, , $controller] = attachmentAction('upload', $uploadParams, 'POST');
+$confirmed = array_values($controller->view->uploads);
+check($status === 400 && $controller->view->uploadResult === 'partial' && count($confirmed) === 1, 'Partial upload was reported as a complete failure or success');
+check(is_file(DEEC_Emailattachment::getPath($confirmed[0])) && count($adapter->writes) === 1, 'Confirmed first upload was rolled back or duplicated');
+check(!is_dir(AttachmentTestController::$upload->destination), 'Failed batch left staging files');
+check(array_column($controller->view->messages, 'message') === ['MESSAGES_UPLOAD_FAILED', 'MESSAGES_UPLOAD_PARTIAL'], 'Partial upload lacks persistent error and warning');
+AttachmentTestController::$upload = new AttachmentTestUpload();
+AttachmentTestController::$upload->files = ['b' => uploadFixture('failed-second.pdf')];
+[$status, , $controller] = attachmentAction('upload', $uploadParams, 'POST');
+check($status === 200 && $controller->view->uploadResult === 'confirmed' && count($controller->view->uploads) === 1, 'Upload could not be retried with corrected remaining files');
+check(!is_dir(AttachmentTestController::$upload->destination), 'Successful upload left staging files');
+setupAttachments();
+AttachmentTestController::$upload->files = array_combine(range(1, 10), array_map(fn($n) => uploadFixture('ten-' . $n . '.pdf'), range(1, 10)));
+[$status, , $controller] = attachmentAction('upload', $uploadParams, 'POST');
+check($status === 200 && $controller->view->uploadResult === 'confirmed' && count($controller->view->uploads) === 10, 'Ten valid files were not individually confirmed');
+[$status, , $controller] = attachmentAction('upload', $uploadParams, 'POST');
+check($status === 409 && $controller->view->uploadResult === 'error' && $controller->view->messages[0]['message'] === 'MESSAGES_UPLOAD_EXISTS', 'Duplicate filenames lack safe conflict feedback');
+$adapter->rows['permission'][0]['sales'] = '{"quote":["view"]}';
+[$status, , $controller] = attachmentAction('upload', $uploadParams, 'POST');
+check($status === 404 && $controller->view->messages[0]['message'] === 'MESSAGES_UPLOAD_DENIED' && $controller->view->uploads === [], 'Denied upload exposed attachments or omitted its safe message');
 
 setupAttachments(true);
 Zend_Registry::getInstance()->offsetUnset('User');

@@ -190,7 +190,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
     (site / "browser-test.html").write_text('''<!DOCTYPE html><html><body>
 <form id="fileupload" method="post"></form><form id="download" method="post"></form><pre id="result">WAIT</pre>
 <script src="library/jQuery/jquery-1.12.4.min.js"></script>
-<script>jQuery(function () { jQuery('#fileupload').on('fileuploadsubmit', function (event, data) { data.formData = { fldr: 'uploads/7/0/7/' }; }); });
+<script>jQuery(function () { jQuery('#fileupload').on('fileuploadsubmit', function (event, data) { data.formData = data.asArray ? [{name: 'fldr', value: 'uploads/7/0/7/'}] : { fldr: 'uploads/7/0/7/' }; }); });
 window.dewawiFileManagerToken = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';</script>
 <script src="js/filemanager.js"></script><script>
 jQuery(function () {
@@ -199,6 +199,20 @@ jQuery(function () {
     if (data.formData.csrf_token !== window.dewawiFileManagerToken || data.formData.fldr !== 'uploads/7/0/7/' || jQuery('form input[name=csrf_token]').length !== 2) {
         jQuery('#result').text('FAIL: form or iframe upload token missing'); return;
     }
+    var $upload = jQuery('#fileupload');
+    var arrayData = {asArray: true};
+    $upload.trigger('fileuploadsubmit', [arrayData]);
+    if (arrayData.formData.length !== 2 || arrayData.formData[0].value !== 'uploads/7/0/7/' || arrayData.formData[1].name !== 'csrf_token' || arrayData.formData[1].value !== window.dewawiFileManagerToken) {
+        jQuery('#result').text('FAIL: array upload token or directory lost'); return;
+    }
+    $upload.trigger('fileuploadstart').trigger('fileuploadstart');
+    if ($upload.attr('aria-busy') !== 'true' || jQuery('#download').attr('aria-busy')) {
+        jQuery('#result').text('FAIL: upload busy state missing or blocks independent form'); return;
+    }
+    $upload.trigger('fileuploadstop');
+    if ($upload.attr('aria-busy') !== undefined) { jQuery('#result').text('FAIL: upload stop left busy state'); return; }
+    $upload.attr('aria-busy', 'false').trigger('fileuploadstart').trigger('fileuploadstop');
+    if ($upload.attr('aria-busy') !== 'false') { jQuery('#result').text('FAIL: original upload ARIA state lost'); return; }
     jQuery.ajax({ type: 'POST', url: 'library/FileManager/ajax_calls.php?action=clear_clipboard', headers: { 'X-Manager-Fixture': 'admin' } })
         .done(function () { jQuery('#result').text('PASS: manager AJAX, forms and upload CSRF tokens'); })
         .fail(function () { jQuery('#result').text('FAIL: AJAX CSRF header missing'); });
@@ -383,10 +397,10 @@ php_admin_value session.save_path "{temp}"
             assert status == 200 and b"PHP Extensions" in body, "Installer POST step unavailable"
         chromium = shutil.which("chromium")
         if not chromium:
-            raise RuntimeError("Chromium is required for the manager CSRF browser regression")
+            raise RuntimeError("Chromium is required for the manager CSRF and upload ARIA browser regression")
         browser = subprocess.run([chromium, "--headless", "--disable-gpu", "--disable-background-networking", "--no-first-run", "--no-default-browser-check", "--user-data-dir=" + str(temp / "browser-profile"), "--virtual-time-budget=5000", "--dump-dom", f"http://127.0.0.1:{port}/browser-test.html"], capture_output=True, text=True, timeout=30)
         assert browser.returncode == 0 and '<pre id="result">PASS:' in browser.stdout, browser.stdout[-3000:] + browser.stderr[-2000:]
-        print(f"PASS: {checks} Apache HTTP cases; {len(inventory)} inventoried PHP/include files; manager CSRF browser regression")
+        print(f"PASS: {checks} Apache HTTP cases; {len(inventory)} inventoried PHP/include files; manager CSRF and upload ARIA browser regression")
     except Exception:
         print((temp / "error.log").read_text())
         raise

@@ -4070,8 +4070,72 @@ $(function () {
 	initDwTabs();
 });
 
+function initAttachmentUpload($form) {
+	if (!$form.length || $form.data('dw-upload-initialized')) return;
+	$form.data('dw-upload-initialized', true);
+	if ($.inArray($form.attr('data-upload-result'), ['confirmed', 'partial']) === -1) return;
+	try {
+		if (window.parent === window) return;
+		var $attachments = $('#attachments', window.parent.document);
+		if (!$attachments.length) return;
+		$form.siblings('#uploads').children('.dw-attachment-item').each(function () {
+			if (!/^attachment[1-9][0-9]*$/.test(this.id)) return;
+			$(window.parent.document.getElementById(this.id)).remove();
+			$attachments.children('.dw-attachment-list__empty').remove();
+			$attachments.append(this);
+		});
+		$attachments.find('input[type="checkbox"][name="file[]"]').prop('checked', true);
+	} catch (error) {
+		pushMessages(Dewawi.message('MESSAGES_UPLOAD_UNKNOWN'), 'warning', '#messages');
+	}
+}
+
+$(function () { initAttachmentUpload($('#upload[data-attachment-upload]')); });
+
+$(document).on('submit', '#upload[data-attachment-upload]', function (event) {
+	var $form = $(this);
+	var $button = $form.find('[type="submit"]');
+	var complete = beginActionRequest('upload', 'contacts', 'attachment', [$form.attr('action') || location.href], $button);
+	if (!complete) { event.preventDefault(); return; }
+	var input = $form.find('input[type="file"]')[0];
+	if (!input || !input.files || !input.files.length) {
+		event.preventDefault();
+		complete();
+		pushMessages(Dewawi.message('MESSAGES_UPLOAD_SELECT'), 'danger', '#messages');
+		return;
+	}
+	var busy = $form.attr('aria-busy');
+	$form.attr('aria-busy', 'true');
+	pushMessages(Dewawi.message('MESSAGES_UPLOAD_RUNNING'), 'info', '#messages');
+	var timer;
+	function unknown() {
+		clearTimeout(timer);
+		$form.removeData('dw-upload-complete');
+		complete();
+		if (busy === undefined) $form.removeAttr('aria-busy');
+		else $form.attr('aria-busy', busy);
+		pushMessages(Dewawi.message('MESSAGES_UPLOAD_UNKNOWN'), 'warning', '#messages');
+		$('#messages .dw-alert--info').remove();
+	}
+	// Native navigation has no reliable transfer completion or cancellation event.
+	$form.data('dw-upload-complete', unknown);
+	timer = setTimeout(unknown, 120000);
+});
+
+$(window).on('pageshow', function (event) {
+	if (event.originalEvent && event.originalEvent.persisted) {
+		var complete = $('#upload[data-attachment-upload]').data('dw-upload-complete');
+		if (complete) complete();
+	}
+});
+
 function renderXRechnungResults($form, response) {
-	var $results = $('[data-xrechnung-results]');
+	var $results = $form.nextAll('[data-xrechnung-results]').first();
+	if (!isXRechnungResponse(response)) {
+		$results.find('.dw-alert--success, [data-xrechnung-request-error]').remove();
+		$('<div>', {'class': 'dw-alert dw-alert--danger', role: 'alert', 'aria-live': 'assertive', 'data-xrechnung-request-error': '', text: $form.data('request-failed')}).appendTo($results);
+		return;
+	}
 	$results.empty();
 	$form.find('.is-invalid').removeClass('is-invalid');
 	$form.find('.dw-field-error').remove();
@@ -4099,11 +4163,11 @@ function renderXRechnungResults($form, response) {
 	});
 
 	if (errors.length) {
-		$results.append($('<div>', {'class': 'dw-alert dw-alert--danger'}).append($errorList));
+		$results.append($('<div>', {'class': 'dw-alert dw-alert--danger', role: 'alert', 'aria-live': 'assertive'}).append($errorList));
 	}
 
-	if (response && response.valid === true) {
-		$results.append($('<div>', {'class': 'dw-alert dw-alert--success', text: $form.data('success')}));
+	if (response && response.ok === true && response.valid === true && !errors.length) {
+		$results.append($('<div>', {'class': 'dw-alert dw-alert--success', role: 'status', text: $form.data('success')}));
 	}
 
 	if (warnings.length) {
@@ -4112,95 +4176,147 @@ function renderXRechnungResults($form, response) {
 			if (warning && warning.message) $warningList.append($('<li>', {text: String(warning.message)}));
 		});
 		if ($warningList.children().length) {
-			$results.append($('<div>', {'class': 'dw-alert dw-alert--warning'}).append($warningList));
+			$results.append($('<div>', {'class': 'dw-alert dw-alert--warning', role: 'status'}).append($warningList));
 		}
 	}
 }
 
+function isXRechnungResponse(response) {
+	return response && typeof response.ok === 'boolean' && typeof response.valid === 'boolean'
+		&& Array.isArray(response.errors) && Array.isArray(response.warnings)
+		&& !(response.valid && (response.ok !== true || response.errors.length));
+}
+
 $(document).on('input change', '#xrechnung-export-form :input', function () {
-	$('#xrechnung-export-form [data-xrechnung-download]').prop('disabled', true);
+	var $form = $(this).closest('form');
+	$form.data('dw-xrechnung-revision', ($form.data('dw-xrechnung-revision') || 0) + 1).removeData('dw-xrechnung-valid');
+	$form.find('[data-xrechnung-download]').prop('disabled', true);
+	$form.nextAll('[data-xrechnung-results]').first().find('.dw-alert--success').remove();
 });
 
 $(document).on('submit', '#xrechnung-export-form', function (event) {
 	event.preventDefault();
 	var $form = $(this);
-	var $buttons = $form.find('button');
-	$buttons.prop('disabled', true);
-
-	$.ajax({
-		type: 'POST',
-		url: $form.attr('action'),
-		data: $form.serialize(),
-		dataType: 'json'
-	}).done(function (response) {
-		renderXRechnungResults($form, response || {});
-		$form.find('[data-xrechnung-download]').prop('disabled', !(response && response.valid === true));
-	}).fail(function (xhr) {
-		var response = xhr.responseJSON || {
-			valid: false,
-			errors: [{message: $form.data('request-failed')}],
-			warnings: []
-		};
+	var $button = $form.find('[data-xrechnung-check]');
+	var complete = beginActionRequest('xrechnung', 'sales', $form.attr('action'), [$form.attr('id')], $button);
+	if (!complete) return;
+	var data = $form.serialize();
+	var revision = $form.data('dw-xrechnung-revision') || 0;
+	var busy = $form.attr('aria-busy');
+	$form.attr('aria-busy', 'true').removeData('dw-xrechnung-valid');
+	$form.find('[data-xrechnung-download]').prop('disabled', true);
+	function current() { return revision === ($form.data('dw-xrechnung-revision') || 0) && data === $form.serialize(); }
+	function result(response) {
+		if (!current()) return;
 		renderXRechnungResults($form, response);
-	}).always(function () {
-		$form.find('[data-xrechnung-check]').prop('disabled', false);
-	});
+		if (isXRechnungResponse(response) && response.ok === true && response.valid === true) $form.data('dw-xrechnung-valid', data);
+	}
+	$.ajax({type: 'POST', url: $form.attr('action'), data: data, dataType: 'json', timeout: 120000})
+		.done(result).fail(function (xhr) { result(xhr.responseJSON && xhr.responseJSON.valid === false ? xhr.responseJSON : null); }).always(function () {
+			complete();
+			if (busy === undefined) $form.removeAttr('aria-busy');
+			else $form.attr('aria-busy', busy);
+			$form.find('[data-xrechnung-download]').prop('disabled', !current() || $form.data('dw-xrechnung-valid') !== data);
+		});
 });
 
 $(document).on('click', '#xrechnung-export-form [data-xrechnung-download]', function () {
-	var $form = $('#xrechnung-export-form');
-	var $buttons = $form.find('button');
-	var request = new XMLHttpRequest();
-	$buttons.prop('disabled', true);
-	$('[data-xrechnung-results]').empty().append(
-		$('<div>', {'class': 'dw-alert dw-alert--warning', text: $form.data('downloading')})
-	);
-
-	request.open('POST', $form.attr('action'), true);
-	request.responseType = 'blob';
-	request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-	request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-	request.onload = function () {
-		var contentType = request.getResponseHeader('Content-Type') || '';
-		if (request.status >= 200 && request.status < 300 && contentType.indexOf('application/xml') === 0) {
-			var disposition = request.getResponseHeader('Content-Disposition') || '';
-			var match = disposition.match(/filename="([^"]+)"/i);
-			var filename = match ? match[1] : 'XRechnung.xml';
-			var url = URL.createObjectURL(request.response);
-			var link = document.createElement('a');
-			link.href = url;
-			link.download = filename;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(url);
-			$form.find('[data-xrechnung-download]').prop('disabled', false);
-			$form.find('[data-xrechnung-check]').prop('disabled', false);
-			return;
+	var $form = $(this).closest('form');
+	var $button = $(this);
+	var data = $form.serialize();
+	if ($button.prop('disabled') || $form.data('dw-xrechnung-valid') !== data) return;
+	var complete = beginActionRequest('xrechnung', 'sales', $form.attr('action'), [$form.attr('id')], $button);
+	if (!complete) return;
+	var $check = $form.find('[data-xrechnung-check]');
+	var disabled = $check.prop('disabled');
+	var revision = $form.data('dw-xrechnung-revision') || 0;
+	var busy = $form.attr('aria-busy');
+	var finished = false;
+	var request, reader, timer;
+	var $results = $form.nextAll('[data-xrechnung-results]').first();
+	$check.prop('disabled', true);
+	$form.attr('aria-busy', 'true');
+	var $status = $('<div>', {'class': 'dw-alert dw-alert--info', role: 'status', text: $form.data('downloading')}).appendTo($results);
+	function current() { return revision === ($form.data('dw-xrechnung-revision') || 0) && data === $form.serialize(); }
+	function finish(response, failed) {
+		if (finished) return;
+		finished = true;
+		clearTimeout(timer);
+		$status.remove();
+		complete();
+		$check.prop('disabled', disabled);
+		if (busy === undefined) $form.removeAttr('aria-busy');
+		else $form.attr('aria-busy', busy);
+		if (failed) {
+			$form.removeData('dw-xrechnung-valid');
+			if (current()) renderXRechnungResults($form, isXRechnungResponse(response) && response.valid === false ? response : null);
 		}
-
-		var reader = new FileReader();
-		reader.onload = function () {
-			var response = null;
-			try { response = JSON.parse(reader.result); } catch (error) {}
-			renderXRechnungResults($form, response || {
-				valid: false,
-				errors: [{message: $form.data('request-failed')}],
-				warnings: []
-			});
-			$form.find('[data-xrechnung-check]').prop('disabled', false);
+		$button.prop('disabled', !current() || $form.data('dw-xrechnung-valid') !== data);
+	}
+	try {
+		request = new XMLHttpRequest();
+		request.open('POST', $form.attr('action'), true);
+		request.responseType = 'blob';
+		request.timeout = 120000;
+		request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+		request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+		request.onerror = request.onabort = request.ontimeout = function () { finish(null, true); };
+		request.onload = function () {
+			if (finished) return;
+			var type = (request.getResponseHeader('Content-Type') || '').split(';')[0].trim().toLowerCase();
+			if (!request.response || !request.response.size || !current()) { finish(null, true); return; }
+			var xml = request.status >= 200 && request.status < 300 && type === 'application/xml';
+			if (!xml && type !== 'application/json') { finish(null, true); return; }
+			try {
+				reader = new FileReader();
+				reader.onerror = reader.onabort = function () { finish(null, true); };
+				reader.onload = function () {
+					if (finished) return;
+					var url, link;
+					try {
+						if (!current()) { finish(null, true); return; }
+						if (!xml) {
+							var response;
+							try { response = JSON.parse(reader.result); } catch (error) {}
+							finish(response, true);
+							return;
+						}
+						var documentXml = new DOMParser().parseFromString(reader.result, 'application/xml');
+						if (documentXml.getElementsByTagName('parsererror').length || !documentXml.documentElement
+							|| documentXml.documentElement.localName !== 'Invoice'
+							|| documentXml.documentElement.namespaceURI !== 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2') { finish(null, true); return; }
+						var disposition = request.getResponseHeader('Content-Disposition') || '';
+						var extended = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+						var quoted = disposition.match(/filename="([^"]+)"/i);
+						var filename = quoted ? quoted[1] : 'XRechnung.xml';
+						if (extended) { try { filename = decodeURIComponent(extended[1]); } catch (error) {} }
+						filename = filename.replace(/[\x00-\x1f\x7f\\/:]/g, '_');
+						if (!/\.xml$/i.test(filename) || filename.length > 255) filename = 'XRechnung.xml';
+						link = document.createElement('a');
+						url = URL.createObjectURL(request.response);
+						link.href = url;
+						link.download = filename;
+						document.body.appendChild(link);
+						link.click();
+						finish();
+					} catch (error) { finish(null, true); }
+					finally {
+						if (link && link.parentNode) link.parentNode.removeChild(link);
+						// Let the browser consume the URL before releasing its backing blob.
+						if (url) setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+					}
+				};
+				reader.readAsText(request.response);
+			} catch (error) { finish(null, true); }
 		};
-		reader.readAsText(request.response);
-	};
-	request.onerror = function () {
-		renderXRechnungResults($form, {
-			valid: false,
-			errors: [{message: $form.data('request-failed')}],
-			warnings: []
-		});
-		$form.find('[data-xrechnung-check]').prop('disabled', false);
-	};
-	request.send($form.serialize() + '&download=1');
+		// Also bound FileReader time; XHR timeout only covers the network transfer.
+		timer = setTimeout(function () {
+			finish(null, true);
+			request.abort();
+			if (reader && reader.readyState === 1) reader.abort();
+		}, 120000);
+		request.send(data + '&download=1');
+	} catch (error) { finish(null, true); }
 });
 
 function refreshFilesTabIfNeeded() {

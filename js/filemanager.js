@@ -15,6 +15,17 @@
 		$('#fileupload').on('fileuploadsubmit', function (event, data) {
 			if (Array.isArray(data.formData)) data.formData.push({ name: 'csrf_token', value: token });
 			else data.formData = $.extend({}, data.formData, { csrf_token: token });
+		}).on('fileuploadstart', function () {
+			var $form = $(this);
+			if (!$form.data('dw-upload-busy')) $form.data('dw-upload-busy', { value: $form.attr('aria-busy') });
+			$form.attr('aria-busy', 'true');
+		}).on('fileuploadstop', function () {
+			var $form = $(this);
+			var state = $form.data('dw-upload-busy');
+			if (!state) return;
+			if (state.value === undefined) $form.removeAttr('aria-busy');
+			else $form.attr('aria-busy', state.value);
+			$form.removeData('dw-upload-busy');
 		});
 	});
 })(jQuery);

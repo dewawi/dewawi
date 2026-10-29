@@ -2,7 +2,7 @@
 
 ## Umfang und Bestandsaufnahme
 
-Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen, Phase 4.3 um Dokument- und Toolbar-Aktionen, Phase 4.4 um Auto-Save und Positionsbearbeitung, Phase 4.5 um Kontaktaktionen und modale Dialoge und Phase 4.6 um Artikel- und Listenaktionen. Weitere Aktionen werden separat migriert.
+Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen, Phase 4.3 um Dokument- und Toolbar-Aktionen, Phase 4.4 um Auto-Save und Positionsbearbeitung, Phase 4.5 um Kontaktaktionen und modale Dialoge, Phase 4.6 um Artikel- und Listenaktionen und Phase 4.7 um Upload- und Download-Zustände. Weitere Aktionen werden separat migriert.
 
 | Vorhandene Stelle | Befund | Entscheidung / Umsetzung |
 | --- | --- | --- |
@@ -590,15 +590,110 @@ Als **separate Backend-Sicherheitsaufgabe** sind verbindliche HTTP-Methoden, CSR
 - Suchantworten enthalten weiterhin vertrauenswürdiges, serverseitig gerendertes HTML. Dessen vorhandene Escaping-/Berechtigungsgrenzen bleiben maßgeblich; die neue Reihenfolgenprüfung ist keine HTML-Sanitizer- oder Autorisierungsschicht.
 - Keine manuelle Screenreader-/Geräteabnahme und keine produktiven SQL-/Varianten-/Lager-Ende-zu-Ende-Schreibläufe. Geprüft sind Browserzustände, reale Renderer und vorhandene In-Memory-Sicherheits-/Berechnungsabläufe. Die bisherigen Grenzen von synchronem Auto-Save und nativen Downloads bleiben bestehen.
 
-Keine Commits oder Pushes. **Phase 4.6 ist abgeschlossen; Phase 4.7 wurde nicht begonnen.**
+Keine Commits oder Pushes. **Phase 4.6 ist abgeschlossen.** Die anschließende Phase 4.7 ist im folgenden Abschnitt dokumentiert.
 
 Commit-Vorschlag: `unify item and list action feedback`
 
-## Verbleibende Folgeschritte nach Phase 4.6 (noch nicht umgesetzt)
+## Phase 4.7 – Upload- und Download-Zustände
+
+### Bestandsaufnahme und tatsächliche Verträge
+
+Die folgenden Verträge wurden vor den Codeänderungen an den tatsächlichen Controllern, Views und Bibliotheken geprüft:
+
+| Bereich | Ausgangsvertrag | Umsetzung |
+| --- | --- | --- |
+| `Contacts_AttachmentController::uploadAction()`, `Application_Form_Upload`, `attachment/upload.phtml` | Natives Multipart-POST im iframe; `uploads` enthält bereits angelegte Metadaten. Fehler lieferten bisher überwiegend leeres HTTP 400/409/404. | Dasselbe Formular rendert übersetzte, escapte Meldungen und einen ausdrücklichen Ergebniszustand. Nur bestätigte Datensätze gelangen in die Elternansicht. HTTP-Statuscodes bleiben erhalten; nachträgliche Namenskonflikte erhalten ebenfalls 409. |
+| E-Mail-Partial, Downloads-Partial und Upload-Ergebniszeilen | Native Links nach `contacts/attachment/download/id/...`; historische E-Mail-Anhänge außerdem über Message-ID/Dateiname. | Links, GET/HEAD, Content-Disposition und Zugriffsprüfungen bleiben erhalten. Kein Blob-Umbau, keine dauerhafte Sperre und keine künstliche Download-Erfolgsmeldung. |
+| `DEEC_Emailattachment`, Attachment-Modell | Vollständige Vorprüfung, temporäres Staging, danach einzelne Datei-/Metadatenschreibvorgänge. | `validUpload()`, `getParentContext()`, Pfad-/MIME-/Mandanten-/Berechtigungsprüfungen bleiben unverändert. Teilweise bestätigte Dateien werden bei einem späteren Laufzeitfehler ausdrücklich sichtbar gemacht. |
+| `FileManager`-/`MediaManager`-Helper, `MediaController::managerAction()`, `js/filemanager.js` | Mandantenbezogener Sessionkontext; beide Manager erhalten denselben CSRF-Adapter. Blueimp File Upload besitzt bereits Fortschrittsbalken, Dateizeilen, Fehler, Abbruch und ARIA-Prozentwerte. | Bestehende Darstellung weiterverwenden. `fileuploadstart`/`fileuploadstop` setzen beziehungsweise restaurieren ausschließlich den lokalen Busy-Zustand. CSRF-Header, Hidden-Felder und Upload-Formdaten bleiben erhalten. |
+| `Sales_InvoiceController::xrechnungAction()` | Vorprüfung liefert JSON mit `ok`, `valid`, `errors`, `warnings`. `ok: true, valid: false` ist eine reguläre fachliche Prüfantwort. Download-POST liefert UBL-XML mit `application/xml`/Content-Disposition oder JSON-Prüfergebnisse. | Bestehender Ergebnisrenderer und Blob-XHR bleiben bestehen; positive Freigabe ist an die geprüften Eingaben gebunden. Keine Änderung an Validierungsregeln oder XML-Generierung. |
+
+Zusätzlich geprüft: `js/global.js` mit `deleteAttachment()`, `refreshFilesTabIfNeeded()` und Dateiauswahl-Popup; `css/ui.css`; die Anhangdarstellung in `partials/email-messages.phtml` und `partials/downloads.phtml`; Artikel-Dateihelper; `FileManager`-/`MediaManager`-Initialisierung und Einbindung über `MediaController`; Manager-Dialoge, `include.js` und Blueimp-Callbacks. Auch die weiteren Datei-iframes in Kontakten, Dokumenten, Kampagnen, Inventuren, Artikellisten und Admin-Medien verwenden die bestehenden Manager. Löschaktionen und iframe-Refresh werden nicht neu implementiert.
+
+### Natives Uploadformular und bestätigte Teilresultate
+
+Das bestehende `#upload` erhält `data-attachment-upload`, `data-autosave="false"` und einen serverseitigen Ergebniszustand. Der delegierte Submit-Handler verwendet `beginActionRequest()` und `setButtonLoading()`: Der Button reagiert unmittelbar, derselbe laufende Upload kann nicht mehrfach abgesendet werden, und das Formular erhält `aria-busy`. Ohne Auswahl bleibt es bedienbar und zeigt die übersetzte Aufforderung. Das tatsächliche Multipart-Submit bleibt nativ; es gibt keinen AJAX-Ersatz, keine neue Uploadbibliothek und keine automatische Wiederholung.
+
+Die kleine Controller-Ergänzung unterscheidet fehlende Auswahl, Anzahl-/Größenlimit, nicht unterstützte Erweiterung beziehungsweise Inhalt, Dateinamenskonflikt, allgemeinen Uploadfehler und verweigerten Zugriff. Technische Exceptiontexte und Pfade werden nicht ausgegeben. Die bestehende `Messages`-Komponente rendert sichere Texte und passende Rollen. HTTP 400/409/404 wird mit einer wiederverwendbaren Formularansicht statt leerem Body beantwortet. `private, no-store` und `nosniff` gelten auch für Uploadantworten.
+
+Die Sicherheitsgrenzen bleiben unverändert: höchstens zehn Dateien, höchstens 10.240.000 Byte je Datei, PDF/JPG/JPEG/PNG/GIF/CSV/ZIP, tatsächliche Inhaltserkennung, Tenant-/Objektrechte, sichere Pfade, Konfliktschutz und temporäres Staging. Die zusätzlichen Fehlerklassifikationen erweitern keine Freigabe. Die bestehenden Prüfungen werden weiterhin vor der Übernahme und nach dem Empfang ausgeführt.
+
+Nach bestätigtem vollständigem Upload markiert der Server `confirmed`. Bei einem Fehler nach bereits bestätigten Dateien markiert er `partial` und rendert Fehler plus Warnung. Die vorherigen Dateien und Metadaten bleiben bestehen; ein vollständiger atomarer Rollback wird nicht behauptet. Der gemeinsame Initialisierer verschiebt nur serverseitig erzeugte Ergebniszeilen mit gültigen Anhang-IDs aus `#uploads` nach `#attachments` im gleichursprünglichen Elternfenster. Dateinamen bleiben escaped; externe HTML-Fragmente werden nicht ausgewertet. Bestehende Checkboxübernahme und geschützte Downloadlinks bleiben erhalten, leere Platzhalter werden entfernt und Initialisierungen nicht doppelt ausgeführt. Auch bei Teilresultaten gelangen ausschließlich bestätigte Zeilen in die Elternansicht.
+
+Ein iframe-`load` bestätigt keinen Upload. Die Bestätigung beruht allein auf dem serverseitigen Ergebnis und den gespeicherten Zeilen. Falls das ursprüngliche Dokument nach 120 Sekunden noch besteht, endet seine lokale Ladeanzeige mit einem ausdrücklich unklaren Status. Eine Wiederherstellung aus dem Back/Forward-Cache löst denselben unbekannten Status aus. Das ist kein Abbruch des serverseitigen Schreibvorgangs und keine Aufforderung zu einer ungeprüften Wiederholung.
+
+### Dateimanager und native Downloads
+
+`js/filemanager.js` ergänzt die vorhandenen Ereignisse um `aria-busy` am Uploadformular und stellt dessen ursprünglichen Wert beim Ende wieder her. Mehrere Dateien werden weiterhin durch die vorhandene Komponente verwaltet. Fortschrittsberechnung, Prozentwerte, Dateiergebnisse, Abbruch und Fehler bleiben bei Blueimp; es gibt keinen zweiten Statuskanal und keine Änderungen an Drittanbieter-Sourcen.
+
+Der CSRF-Prefilter bleibt auf gleichursprüngliche Manager-Endpunkte begrenzt. Tokens in normalen POST-Formularen sowie Objekt-/Array-Formdaten bleiben erhalten, ebenso `fldr` und die bisherigen Dateiauswahl-/iframe-Verträge. Der HTTP-Test prüft beide Manager einschließlich echter Multipart-Uploads, URL-Import-Guards, geschützter Downloads, Mandantengrenzen und fehlender/falscher Tokens. Native Anhang- und Manager-Downloads bleiben jederzeit erneut bedienbar. Ein verlässlicher Abschluss oder ein Speichern auf dem Gerät wird aus einem Klick nicht abgeleitet.
+
+### XRechnung: Prüfung, Eingabeversionen und Blob-Download
+
+Prüfung und Download nutzen dieselbe vorhandene Requestsperre für das jeweilige Formular und dessen Endpunkt. Hintergrundaktionen und unabhängige Uploads bleiben verfügbar. Die Prüfung zeigt den vorhandenen Buttonzustand und lokalen Busy-Zustand, hat 120 Sekunden Timeout und akzeptiert nur den tatsächlichen JSON-Vertrag. Eine fachlich negative Antwort rendert weiterhin Feldfehler und separate Warnungen. Technische Fehler zeigen ausschließlich die übersetzte Requestmeldung; bereits vorhandene Feldfehler und Warnungen werden dabei erhalten, statt durch eine allgemeine Meldung ersetzt zu werden.
+
+Die Downloadfreigabe ist an die serialisierten geprüften Eingaben gebunden. Jede `input`-/`change`-Änderung entfernt sie und erhöht die lokale Eingabeversion. Verspätete Antworten dürfen weder korrigierte Eingaben noch eine zwischenzeitlich geänderte und anschließend zurückgesetzte Eingabe erneut freigeben. Der aktuelle Formularinhalt wird auch vor dem Download und nach dem Lesen des Blobs nochmals verglichen.
+
+Der XML-Download bleibt ein POST mit `XMLHttpRequest.responseType = 'blob'`. Sein lokaler Fortschritt ergänzt die vorhandenen Prüfergebnisse, ohne Warnungen zu löschen. Nichtleere XML-Antworten benötigen einen passenden Content-Type, erfolgreiche HTTP-Antwort und lesbares, wohlgeformtes UBL-Invoice-XML. Diese Transportprüfung ersetzt keine fachliche XRechnung-Validierung. JSON-Prüfergebnisse werden auch beim Download mit Feldfehlern/Warnungen dargestellt. Andere oder leere Antworten, ungültiges XML/JSON und technische Response-Texte werden nicht als Download bestätigt.
+
+Eine gemeinsame Abschlussfunktion stellt Requestlock, Buttoninhalt, Disabled-/ARIA-Zustände und lokalen Fortschritt wieder her. Geprüft sind HTTP-/Netzwerkfehler, XHR-Abbruch und -Timeout, FileReader-Abbruch/-Fehler, ein hängenbleibender FileReader, synchrone Setup-/Lese-/Parser-/Object-URL-/Klickfehler sowie verspätete Antworten. Netzwerktransfer und anschließendes Lesen sind gemeinsam auf 120 Sekunden begrenzt. Fehler invalidieren die Downloadfreigabe und erfordern eine erneute Prüfung; es gibt keine automatische Wiederholung.
+
+Content-Disposition liefert weiterhin den Dateinamen; zusätzlich wird UTF-8-`filename*` berücksichtigt. Steuer-/Pfadzeichen werden ersetzt, unerwartete Erweiterungen verwenden `XRechnung.xml`. Der temporäre Link wird entfernt. Eine erzeugte Object-URL wird auch bei einem Klickfehler freigegeben, erst mit einer kurzen Verzögerung nach dem Downloadaufruf, damit der Browser sie konsumieren kann. Es wird keine Meldung ausgegeben, die ein erfolgreiches Speichern auf dem Endgerät behauptet.
+
+### Ausgeführte Prüfungen
+
+Alle Dateioperationen liefen ausschließlich in temporären Testverzeichnissen; Datenbankzugriffe verwendeten vorhandene In-Memory-Adapter. Browser-Schreibrequests, Blob-Transport und Downloadklicks wurden abgefangen. Es gab keine produktiven Uploads, Löschungen, Datenbankänderungen oder echten E-Mails. Die HTTP-Tests verwenden isolierte Apache-Konfigurationen; dort gesetzte Uploadgrößen dienen ausschließlich dazu, die Anwendungslimits mit realen Multipart-Requests zu prüfen.
+
+| Befehl | Ergebnis dieser Phase |
+| --- | --- |
+| `python3 tests/ui/notifications.py` | Je **1909 Prüfungen bei 1280 px und 390 px** bestanden, Deutsch und Englisch, einschließlich aller **1779 bisherigen UX-Prüfungen**. Neue Fälle: native Uploads/Doppelklick/fehlende Auswahl/unklarer Status/BFCache; bestätigte und teilweise bestätigte Elternübernahme ohne falschen iframe-Erfolg; XRechnung-Feldfehler/Warnungen, Eingabeversionen, fehlerhafte/verspätete Antworten, Blob-/Dateinamen-/URL-Lebenszyklus und sämtliche geprüften Fehlerabschlüsse. |
+| `php tests/security/notifications.php` | **224 allgemeine**, **60 Verkaufs-** und **24 Einkaufsprüfungen** bestanden. **63 Browser-Übersetzungen je Sprache** vollständig; alle zehn ergänzten Uploadtexte sowie reales Multipart-Formular, Ergebniszustände, Escaping, Meldungsrollen und native Downloadlinks geprüft. |
+| `php tests/security/attachments.php` | **249 Anhangprüfungen** bestanden; wiederverwendete Mail-Fixture zusätzlich **364 Prüfungen** bestanden. Gültige Einzel-/Mehrfachuploads bis zehn Dateien, Ablehnungen, Teilbatchfehler nach erster Bestätigung, korrigierter Folgeupload, Staging-Cleanup, Downloads, Rechte und Tenant-Sharing geprüft. Erwartete SMTP-Ablehnungen stammen aus dem abgefangenen Testtransport. |
+| `python3 tests/security/attachment-http.py` | Native Multipart-Uploads mit dem realen Zend-Adapter, bestätigte Ergebniszeilen, wiederverwendbare Fehleransichten, leere Auswahl, Anzahl-/Größen-/Typ-/Inhaltsfehler, Konflikte und verweigerte Zugriffe bestanden. Bestehende Apache-Routing-, Download-, Tenant-, Methoden-, Traversal-, Symlink-, Cache- und Veröffentlichungsprüfungen ebenfalls bestanden. |
+| `php tests/security/file-access.php` | **317 Prüfungen** zu gespeicherten Dateien, Mandanten, Veröffentlichung, Manager, Upload und Headern bestanden. |
+| `python3 tests/security/configuration-http.py` | **8461 Apache-HTTP-Fälle**, **3985 inventarisierte PHP-/Include-Dateien** und Browserregression für Manager-CSRF, Objekt-/Array-Formdaten sowie lokale Upload-ARIA-Zustände bestanden. |
+| `php tests/security/permissions.php` | **369 Prüfungen** bestanden; erwartete Ablehnungen werden von der Fixture geloggt. |
+| `php tests/security/tenant-access.php` | **268 Prüfungen** bestanden. |
+| `php tests/documents/e-invoice.php` | **369 Prüfungen** zu Vorbereitung, UBL-XML, Rabatten, Steuern, Escaping, Lifecycle, Berechtigungen und unveränderten Originalen bestanden. |
+| `php tests/documents/calculation.php` | **725 Prüfungen** bestanden. |
+| `php tests/documents/lifecycle.php` | **879 Prüfungen** bestanden. |
+| `python3 tests/documents/calculation-ui.py` | Dokument-/Inline-Notiz-Auto-Save und **28 Berechnungsprüfungen** bestanden. |
+| `php -l` | Alle **7 geänderten PHP-/PHTML-Dateien** ohne Syntaxfehler. |
+| `git diff --check` | Ohne Befund. |
+
+### Geänderte Dateien in Phase 4.7
+
+1. `application/modules/contacts/controllers/AttachmentController.php`
+2. `application/modules/contacts/views/scripts/attachment/upload.phtml`
+3. `application/views/helpers/Messages.php`
+4. `js/global.js`
+5. `js/filemanager.js`
+6. `languages/de_DE/default/messages.php`
+7. `languages/en_US/default/messages.php`
+8. `tests/security/attachments.php`
+9. `tests/security/attachment-http.py`
+10. `tests/security/configuration-http.py`
+11. `tests/security/notifications.php`
+12. `tests/ui/notifications.html`
+13. `tests/ui/notifications.py`
+14. `tests/ui/notifications-review.md`
+
+### Verbleibende Grenzen und Rückwärtskompatibilität
+
+- Native Downloads melden keinen zuverlässigen Abschluss an JavaScript. Auch ein erfolgreicher Blob-Aufruf beweist kein erfolgreiches Speichern auf dem Gerät. Beide Abläufe bleiben deshalb ohne solche Erfolgsmeldungen.
+- Native Multipart-Navigation lässt sich durch diesen Seitenhandler nicht zuverlässig abbrechen. Die lokale Zeitgrenze und BFCache-Behandlung zeigen Ungewissheit und senden nichts erneut. Falls der Browser das iframe durch eine eigene Netzwerkfehlerseite ersetzt, kann die zuvor geladene Seite dort keine Meldung mehr zeichnen; auch daraus wird kein Erfolg abgeleitet.
+- Mehrfachuploads bleiben einzelne Datei-/Metadatenschreibvorgänge ohne gemeinsamen atomaren Rollback. Bestätigte Dateien können bereits gespeichert sein; Fehler/Timeouts müssen vor einer manuellen Wiederholung anhand der vorhandenen Anhänge geprüft werden. Globale Idempotenz oder neue CSRF-Verträge für die Anhang-/XRechnung-Routen sind nicht Bestandteil dieser UX-Änderung.
+- Die umfassende Vereinheitlichung älterer Bootbox-/URL-Import-/Downloadanzeigen innerhalb der Drittanbieter-Manager würde deren eigene Oberfläche und Sourcen betreffen. In dieser Phase werden die bestehenden Blueimp-Anzeigen wiederverwendet und lokale ARIA-Zustände ergänzt. Drittanbieterdateien, Verzeichnisrechte, Zugriffsregeln und Uploadbibliotheken bleiben unverändert.
+- Browserzustände und Elternübernahme werden isoliert simuliert, reale Multipart- und Routing-Abläufe separat über HTTP geprüft. Keine manuelle Geräte-/Screenreader-Abnahme und kein produktiver Ende-zu-Ende-Lauf mit Dateiauswahl und tatsächlichem Speichern auf dem Gerät.
+
+Keine Commits oder Pushes. **Phase 4.7 ist abgeschlossen; die nächste Phase wurde nicht begonnen.**
+
+Commit-Vorschlag: `unify upload and download feedback`
+
+## Verbleibende Folgeschritte nach Phase 4.7 (noch nicht umgesetzt)
 
 | Priorität | Bereich und konkrete Dateien | Nächster begrenzter Schritt / notwendige Regressionen |
 | --- | --- | --- |
-| P2 | Upload und Download: `application/modules/contacts/controllers/AttachmentController.php`, `application/views/scripts/partials/email-messages.phtml`, `application/views/scripts/partials/downloads.phtml`, `js/filemanager.js`, `js/global.js` (XRechnung-Download) | Zustände in bestehendem Upload-iframe und bei Blob-Downloads vereinheitlichen; Dateivalidierung und Downloadrechte prüfen. Native Downloads haben kein verlässliches Browserereignis für das Ende des Downloads |
 | P3 | Kampagnen: `application/modules/campaigns/views/helpers/Errors.php`, `application/modules/campaigns/models/List/Recipients.php`, `js/global.js` (`getCampaignRecipients`, `getCampaignErrors`) | Technische Statusdetails und Fehler beim Aktualisieren der Übersichten separat vereinheitlichen; Bounce-/Complaint-Regeln erhalten |
 | P3 | Shop-Oberfläche: `application/layouts/scripts/site.phtml`, `css/shop.css`, `js/shops.js` | Eigenes Shop-Design und Bootstrap-Verwendung separat prüfen, bevor das interne `ui.css` übernommen wird |
 
