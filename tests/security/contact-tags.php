@@ -300,6 +300,7 @@ contactTagFixtures();
 [$status, $response] = requestBulkContactTags([11, 12], 21, 'add');
 check($status === 200 && $response['ok'] === true, 'Bulk contact tag assignment failed');
 check($response['changed'] === 1 && $response['unchanged'] === 1, 'Bulk assignment counts are incorrect');
+check($response['operation'] === 'add' && $response['message'] !== '', 'Bulk assignment response lost its operation/message contract');
 $gilventaAssignments = array_filter(Zend_Db_Table_Abstract::$rows['tagentity'], static function(array $row): bool {
 	return (int)$row['tagid'] === 21 && (int)$row['deleted'] === 0;
 });
@@ -314,6 +315,7 @@ check(count(Zend_Db_Table_Abstract::$rows['tagentity']) === $assignmentCount, 'R
 
 [, $response] = requestBulkContactTags([11, 12], 21, 'remove');
 check($response['ok'] === true && $response['changed'] === 2 && $response['unchanged'] === 0, 'Bulk tag removal failed');
+check($response['operation'] === 'remove' && is_int($response['changed']) && is_int($response['unchanged']), 'Bulk removal response lost operation or integer counters');
 check(!array_filter(Zend_Db_Table_Abstract::$rows['tagentity'], static function(array $row): bool {
 	return (int)$row['tagid'] === 21 && (int)$row['deleted'] === 0;
 }), 'Bulk tag removal left active assignments');

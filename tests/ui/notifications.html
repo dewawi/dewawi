@@ -42,6 +42,7 @@ $.ajax = function(options) {
 };
 </script>
 <script src="__ROOT__/js/global.js"></script>
+<script src="__ROOT__/js/contacts.js"></script>
 <script>
 var editorSettings, tinymce = {init: function(settings) { editorSettings = settings; }, get: function() { return null; }};
 /* editor helper */
@@ -844,7 +845,236 @@ $(function() {
   });
   check(pendingSeen > 0, 'No synchronous auto-save was exercised');
   $.ajax = realAjax;
-  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, document, autosave, position and accessibility checks at ' + innerWidth + 'px');
+  // Real contact handlers, shared modals and captured transport; no customer data or downloads.
+  $('#document-fixture-form').empty().attr('data-autosave', 'false');
+  $('<div id="contact-dialog-fixture"></div>').appendTo('#content');
+  var contactSearches = [], contactCookies = [], contactExports = [], originalCookie = $.cookie;
+  search = function(callback) { contactSearches.push(callback); };
+  $.cookie = function(name, value, options) { if (arguments.length > 1) contactCookies.push({name: name, value: value, options: options}); return originalCookie.apply(this, arguments); };
+  HTMLFormElement.prototype.submit = function() { contactExports.push({url: this.action, method: this.method, values: $(this).serializeArray()}); };
+  function contactFixture() {
+    modalWindowClose(true);
+    $('#contact-dialog-fixture').html(
+      '<button type="button" id="tags-open" data-action="tags" data-id="11" class="dw-btn">Tags</button>' +
+      '<button type="button" id="export-open" data-action="export" class="dw-btn">Export contacts</button>' +
+      '<button type="button" id="assign-open" data-email-contactperson-assign data-email-id="20" data-email-address="&lt;img src=x onerror=window.contactXss=1&gt;">Assign email</button>' +
+      '<button type="button" id="frame-open" class="poplight" rel="contact-frame" aria-label="Select contact">Select</button>' +
+      '<div class="dw-toolbar" id="contact-filter"><input name="keyword" value="Fixture filter"><input name="tagid" value="21"><input name="catid" value="3"></div>' +
+      '<div id="contact-list-result"></div><div id="popup">' +
+      '<div id="contactTags" class="popup_block dw-contact-tags-dialog" data-confirm-add="Add tag?" data-confirm-remove="Remove tag?"><h3>Contact tags</h3><select name="bulk-tagid"><option value="21">VIP</option><option value="22">Other tag</option></select><button type="button" data-contact-tag-operation="add" aria-disabled="false" aria-busy="false"><span>Assign tag</span></button><button type="button" data-contact-tag-operation="remove">Remove tag</button></div>' +
+      '<div id="contactExport" class="popup_block dw-contact-export-dialog"><h3>Export contacts</h3><button type="button" data-contact-export-profile="combined">All contacts</button><button type="button" data-contact-export-profile="companies">Companies</button><button type="button" data-contact-export-profile="contactpersons">Contact persons</button></div>' +
+      '<div id="emailContactpersonAssignment" class="popup_block dw-email-contactperson-dialog" data-contact-id="11"><h3>Assign contact person</h3><span data-email-contactperson-address></span>' +
+      '<label><input type="radio" name="assignment_type" value="new" checked>New</label><label><input type="radio" name="assignment_type" value="existing">Existing</label>' +
+      '<div data-email-contactperson-new><select name="salutation"><option value="0">None</option><option value="Frau">Frau</option></select><input name="title" type="text"><input name="firstname" type="text"><input name="lastname" type="text"><input name="position" type="text"><input name="department" type="text"></div>' +
+      '<div data-email-contactperson-existing hidden><select name="existing_contactpersonid"><option value="">Select</option><option value="71">Existing person</option></select></div>' +
+      '<button type="button" data-email-contactperson-submit aria-busy="false"><span>Assign</span></button></div>' +
+      '<div id="contact-frame" class="popup_block"><iframe src="about:blank"></iframe></div></div>');
+    module = 'contacts'; controller = 'contact'; action = 'index'; id = 11;
+    calls = []; contactSearches = []; contactCookies = []; contactExports = []; reloads = 0; confirms = 0; confirmResult = true;
+    document.body.style.overflow = 'scroll'; removeMessages(); Dewawi.setDirty(false);
+  }
+  function openTags(ids) { DewawiToolbar.actions.tags.call(DewawiToolbar, {ids: ids || [11, 12]}, $('#tags-open')); }
+  function tagResponse(operation, changed, unchanged) { return {ok: true, operation: operation, changed: changed, unchanged: unchanged, message: '<img src=x alt="technical tag detail">'}; }
+  function press($target, key, shift) { var event = $.Event('keydown', {key: key, which: key === 'Escape' ? 27 : 9, shiftKey: !!shift}); $target.trigger(event); return event; }
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale];
+    ['add', 'remove'].forEach(function(operation) {
+      contactFixture(); $('#tags-open').focus(); openTags();
+      var $dialog = $('#contactTags'), $button = $dialog.find('[data-contact-tag-operation="' + operation + '"]'), markup = $button.html(), originalBusy = $button.attr('aria-busy');
+      check($dialog.is(':visible') && $dialog.attr('role') === 'dialog' && $dialog.attr('aria-modal') === 'true' && $('#' + $dialog.attr('aria-labelledby')).text() === 'Contact tags', 'Tag dialog lacks accessible name/role');
+      check(document.activeElement === $dialog.find('select')[0] && $('#fade').length === 1 && document.body.style.overflow === 'hidden', 'Opening tag dialog did not move focus/lock background');
+      confirmResult = false; $button.trigger('click');
+      check(!calls.length && !modalWindowBusy($dialog) && !$button.prop('disabled'), 'Cancelled tag action sent request or left loading');
+      confirmResult = true; $button.trigger('click').trigger('click'); $dialog.find('[data-contact-tag-operation]').not($button).trigger('click'); openTags([12, 13]);
+      check(calls.length === 1 && confirms === 2 && $button.prop('disabled') && $button.attr('aria-busy') === 'true' && $button.hasClass('is-loading'), 'Tag action duplicated or reconfirmed a pending selection');
+      check(calls[0].options.url === '/fixture/contacts/contact/tags' && calls[0].options.timeout > 0 && calls[0].options.data.ids.join(',') === '11,12' && calls[0].options.data.operation === operation, 'Tag action lost route/selection/operation');
+      check($dialog.find('[data-modal-messages] .dw-alert--info li').text() === dwMessages.MESSAGES_TAGS_UPDATING && !$dialog.find('select').prop('disabled'), 'Tag progress missing or input unnecessarily disabled');
+      press($dialog.find('select'), 'Escape'); $('#fade').trigger('click'); $dialog.children('.close').trigger('click');
+      check($dialog.is(':visible') && $('#fade').length === 1 && !contactSearches.length, 'Pending tag operation was closed or interrupted');
+      finish(calls[0], tagResponse(operation, 0, 2));
+      check(!$dialog.is(':visible') && !$('#fade').length && contactSearches.length === 1 && !$('#messages .dw-alert--success').length, 'Confirmed unchanged tags did not close/refresh or announced success too early');
+      check(!$button.prop('disabled') && $button.attr('aria-busy') === originalBusy && $button.html() === markup && !modalWindowBusy($dialog) && !Object.keys(Dewawi.actionRequests).length, 'Tag completion lost original button state or record locks');
+      check(document.activeElement === $('#tags-open')[0] && document.body.style.overflow === 'scroll', 'Tag close lost opener focus or original body scrolling');
+      $('#contact-list-result').text('Updated list'); contactSearches[0]();
+      check($('#messages .dw-alert--success li').text() === dwMessages[operation === 'add' ? 'MESSAGES_TAGS_ASSIGNED' : 'MESSAGES_TAGS_REMOVED'].replace('%1$d', 0).replace('%2$d', 2) && !$('#messages img').length, 'Tag result counts were lost or response message interpreted');
+    });
+    [null, {}, {ok: 1}, {ok: true}, tagResponse('remove', 1, 1), tagResponse('add', -1, 3), tagResponse('add', 1, 0), {ok: false, message: 'technical secret <img src=x>'}].forEach(function(response) {
+      contactFixture(); openTags(); var $dialog = $('#contactTags'); $dialog.find('[data-contact-tag-operation="add"]').trigger('click'); finish(calls[0], response);
+      check($dialog.is(':visible') && $dialog.find('select').val() === '21' && $dialog.data('contact-ids').join(',') === '11,12' && !contactSearches.length, 'Unconfirmed tag response closed dialog or lost selection');
+      check($dialog.find('.dw-alert--danger li').text() === dwMessages[response && response.ok === false ? 'MESSAGES_TAGS_UPDATE_FAILED' : 'MESSAGES_ACTION_STATUS_UNKNOWN'] && $dialog.text().indexOf('technical secret') === -1 && !modalWindowBusy($dialog), 'Tag failure leaked details or left loading');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 403, responseJSON: {ok: false}}].forEach(function(error) {
+      contactFixture(); openTags(); $('#contactTags [data-contact-tag-operation="add"]').trigger('click'); finish(calls[0], null, error);
+      check(calls.length === 1 && $('#contactTags').is(':visible') && !modalWindowBusy($('#contactTags')) && !Object.keys(Dewawi.actionRequests).length, 'Tag network failure retried, closed or kept locks');
+    });
+    contactFixture(); openTags(); $('#contactTags [data-contact-tag-operation="add"]').trigger('click');
+    var overlap = beginActionRequest('contact-tags', 'contacts', 'contact', [12, 13], $(), 'Overlap confirmation?');
+    check(!overlap && confirms === 1, 'Overlapping contact IDs bypassed the existing record lock');
+    finish(calls[0], {ok: false}); modalWindowClose(); openTags([13]);
+    check($('#contactTags').children('.close').length === 1 && $('#fade').length === 1 && !$('#contactTags .dw-alert').length, 'Reopened tag dialog retained controls/overlay/error state');
+
+    ['new', 'existing'].forEach(function(mode) {
+      contactFixture(); $('#assign-open').focus().trigger('click'); var $dialog = $('#emailContactpersonAssignment'), $button = $dialog.find('[data-email-contactperson-submit]'), markup = $button.html();
+      check($dialog.is(':visible') && !$dialog.find('[data-email-contactperson-address] img').length && $dialog.find('[data-email-contactperson-address]').text().indexOf('<img') === 0, 'Email address was not shown safely in assignment dialog');
+      $dialog.find('[name="lastname"]').val('Preserved name'); $dialog.find('[name="firstname"]').val('Jane');
+      if (mode === 'existing') { $dialog.find('[name="assignment_type"][value="existing"]').prop('checked', true).trigger('change'); $dialog.find('[name="existing_contactpersonid"]').val('71'); }
+      $button.trigger('click').trigger('click'); $('#assign-open').attr('data-email-id', '99').data('email-id', 99).trigger('click');
+      check(calls.length === 1 && $dialog.data('email-id') === 20 && $button.prop('disabled') && $dialog.find('[data-modal-messages] .dw-alert--info li').text() === dwMessages.MESSAGES_EMAIL_CONTACTPERSON_ASSIGNING, 'Assignment duplicated, reset pending data or lacks progress');
+      check(calls[0].options.url === '/fixture/contacts/email/assigncontactperson' && calls[0].options.timeout > 0 && calls[0].options.data.assignment_type === mode && (mode === 'new' ? calls[0].options.data.lastname === 'Preserved name' : calls[0].options.data.contactpersonid === 71), 'Assignment payload/route changed');
+      press($button, 'Escape'); check($dialog.is(':visible'), 'Pending assignment escaped its dialog');
+      finish(calls[0], {ok: false, message: 'SQL secret <img src=x>'});
+      check($dialog.is(':visible') && $dialog.find('[name="lastname"]').val() === 'Preserved name' && $dialog.find('[name="assignment_type"]:checked').val() === mode && !$button.prop('disabled') && $button.html() === markup, 'Assignment failure lost values or button markup');
+      check($dialog.find('.dw-alert--danger li').text() === dwMessages.MESSAGES_EMAIL_CONTACTPERSON_ASSIGNMENT_FAILED && !reloads && !contactCookies.length && !$dialog.find('.dw-alert img').length, 'Assignment rejection navigated or leaked details');
+      $button.trigger('click'); finish(calls[1], {ok: true, emailid: 20, contactpersonid: 71});
+      check(reloads === 1 && !$dialog.is(':visible') && contactCookies.length === 1 && contactCookies[0].name === 'tab' && contactCookies[0].value === '#tabcontactperson' && contactCookies[0].options.path === cookiePath + '/edit', 'Assignment success lost original navigation/tab choice');
+      check(!$button.prop('disabled') && $button.attr('aria-busy') === 'false' && !Object.keys(Dewawi.actionRequests).length && confirms === 0, 'Assignment cleanup/confirmation behavior changed');
+    });
+    [null, {}, {ok: 1}].forEach(function(response) {
+      contactFixture(); $('#assign-open').trigger('click'); $('#emailContactpersonAssignment [name="lastname"]').val('Keep'); $('#emailContactpersonAssignment [data-email-contactperson-submit]').trigger('click'); finish(calls[0], response);
+      check(!reloads && $('#emailContactpersonAssignment').is(':visible') && $('#emailContactpersonAssignment .dw-alert--danger li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN, 'Ambiguous assignment treated as success');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 400, responseJSON: {ok: false}}].forEach(function(error) {
+      contactFixture(); $('#assign-open').trigger('click'); $('#emailContactpersonAssignment [name="lastname"]').val('Keep'); $('#emailContactpersonAssignment [data-email-contactperson-submit]').trigger('click'); finish(calls[0], null, error);
+      check(calls.length === 1 && !reloads && $('#emailContactpersonAssignment').is(':visible') && !modalWindowBusy($('#emailContactpersonAssignment')) && !Object.keys(Dewawi.actionRequests).length, 'Assignment transport failure retried, closed or stayed loading');
+    });
+    contactFixture(); $('#assign-open').trigger('click'); $('#emailContactpersonAssignment [data-email-contactperson-submit]').trigger('click');
+    check(!calls.length && $('#emailContactpersonAssignment .dw-alert--danger li').text() === dwMessages.MESSAGES_EMAIL_CONTACTPERSON_ASSIGNMENT_INVALID, 'Empty new contact person was submitted');
+    $('#emailContactpersonAssignment [name="assignment_type"][value="existing"]').prop('checked', true).trigger('change'); $('#emailContactpersonAssignment [data-email-contactperson-submit]').trigger('click');
+    check(!calls.length && !$('#emailContactpersonAssignment [data-email-contactperson-existing]').prop('hidden') && $('#emailContactpersonAssignment [data-email-contactperson-new]').prop('hidden'), 'Empty existing assignment was submitted or target panels broken');
+
+    // Native export keeps all three profiles and the existing filter-aware form submission.
+    ['combined', 'companies', 'contactpersons'].forEach(function(profile) {
+      contactFixture(); $('#export-open').focus().trigger('click'); var $button = $('[data-contact-export-profile="' + profile + '"]');
+      $button.trigger('click').trigger('click');
+      var exported = contactExports[0], values = {};
+      exported.values.forEach(function(value) { values[value.name] = value.value; });
+      check(contactExports.length === 1 && exported.url.indexOf('/fixture/contacts/contact/export') !== -1 && exported.method === 'post' && values.profile === profile && values.keyword === 'Fixture filter' && values.tagid === '21' && values.catid === '3', 'Contact export lost native route/profile/filters');
+      check(!calls.length && !$button.prop('disabled') && !$('#contactExport').is(':visible') && !$('#messages .dw-alert--success').length && document.activeElement === $('#export-open')[0], 'Native export became AJAX, stayed disabled or invented download success');
+    });
+
+    contactFixture(); $('#tags-open').focus(); openTags(); var $dialog = $('#contactTags');
+    for (var cycle = 0; cycle < 3; cycle++) { modalWindowClose(); openTags(); }
+    check($dialog.children('.close').length === 1 && $('[id="fade"]').length === 1, 'Repeated open duplicated close controls/overlays');
+    var bounds = $dialog[0].getBoundingClientRect();
+    check(bounds.left >= 0 && bounds.right <= innerWidth + 1 && bounds.height <= innerHeight + 1, 'Contact dialog exceeds viewport boundaries');
+    var $controls = modalWindowControls($dialog); $controls.first().focus(); press($controls.first(), 'Tab', true);
+    check(document.activeElement === $controls.last()[0], 'Shift+Tab escaped the dialog');
+    press($controls.last(), 'Tab'); check(document.activeElement === $controls.first()[0], 'Tab escaped the dialog');
+    press($controls.first(), 'Escape');
+    check(!$dialog.is(':visible') && !$('#fade').length && document.activeElement === $('#tags-open')[0] && document.body.style.overflow === 'scroll', 'Escape did not close/restore focus and scrolling');
+    openTags(); $('#fade').trigger('click'); check(!$dialog.is(':visible') && !$('#fade').length, 'Backdrop no longer closes an idle dialog');
+    openTags(); $dialog.children('.close').trigger('click'); check(!$dialog.is(':visible'), 'Close button does not work');
+    openTags(); $('#tags-open').remove(); modalWindowClose(); check(!$('#fade').length && document.body.style.overflow === 'scroll', 'Removed opener prevented modal cleanup');
+    modalWindow('missing-dialog'); check(!$('#fade').length, 'Missing dialog created an overlay');
+
+    contactFixture(); var frame = $('#contact-frame iframe')[0];
+    $(frame.contentDocument.body).html('<input id="keyword"><button type="button">Last frame control</button>');
+    $('#frame-open').focus().trigger('click');
+    check($('#contact-frame').attr('aria-label') === 'Select contact' && $(frame).attr('title') === 'Select contact' && document.activeElement === frame && frame.contentDocument.activeElement.id === 'keyword', 'Iframe dialog lost its name, URL or search focus');
+    check($(frame).attr('src') === 'about:blank' && $('#contact-frame').children('.close').length === 1, 'Iframe source or close control changed');
+    press($(frame.contentDocument).find('#keyword'), 'Tab', true);
+    check(document.activeElement === $('#contact-frame > .close')[0], 'Iframe Shift+Tab did not return to parent dialog');
+    $(frame.contentDocument).find('button').focus(); press($(frame.contentDocument).find('button'), 'Tab');
+    check(document.activeElement === $('#contact-frame > .close')[0], 'Iframe last control escaped keyboard loop');
+    $(frame.contentDocument).find('#keyword').focus(); press($(frame.contentDocument).find('#keyword'), 'Escape');
+    check(!$('#contact-frame').is(':visible') && document.activeElement === $('#frame-open')[0] && !$('#fade').length, 'Iframe Escape did not close parent/restore opener');
+    $('#frame-open').trigger('click');
+    var $frameButton = $(frame.contentDocument).find('button'); setButtonLoading($frameButton, true);
+    press($(frame.contentDocument).find('#keyword'), 'Escape'); $('#fade').trigger('click');
+    check($('#contact-frame').is(':visible'), 'Iframe save loading state did not protect the parent dialog');
+    setButtonLoading($frameButton, false); $('#contact-frame > .close').trigger('click');
+    check(!$('#contact-frame').is(':visible') && !$('#fade').length, 'Reopened iframe dialog did not close');
+    // Run the existing position-selection function in its actual iframe window context.
+    var originalPositionsRead = getPositions, selectionReads = [];
+    getPositions = function(parent, type, scroll) { selectionReads.push([parent, type, scroll]); };
+    frame.contentWindow.$ = $; frame.contentWindow.pushMessages = pushMessages;
+    frame.contentWindow.eval('var applyPosition = ' + applyPosition.toString());
+    $('#frame-open').trigger('click'); calls = [];
+    frame.contentWindow.applyPosition('invoice', 'pos', [50, 51], 1); frame.contentWindow.applyPosition('invoice', 'pos', [50, 51], 1);
+    press($(frame.contentDocument).find('#keyword'), 'Escape');
+    check(calls.length === 1 && $('#contact-frame').is(':visible') && modalWindowBusy($('#contact-frame')), 'Iframe selection sequence duplicated or escaped while pending');
+    finish(calls[0], {ok: true, calculation: {}}); check(calls.length === 2, 'Existing iframe selection order changed');
+    finish(calls[1], {ok: true, calculation: {}});
+    check(!$('#contact-frame').is(':visible') && selectionReads.length === 1 && !modalWindowBusy($('#contact-frame')), 'Confirmed iframe selection failed to close/refresh/release its dialog');
+    $('#frame-open').trigger('click'); calls = [];
+    frame.contentWindow.applyPosition('invoice', 'pos', [50], 1); finish(calls[0], null, {status: 0});
+    check($('#contact-frame').is(':visible') && !modalWindowBusy($('#contact-frame')), 'Failed iframe selection closed or stayed busy');
+    modalWindowClose(); getPositions = originalPositionsRead;
+    Object.defineProperty(frame, 'contentDocument', {configurable: true, get: function() { throw new DOMException('Fixture cross-origin access', 'SecurityError'); }});
+    $('#frame-open').trigger('click'); $('#contact-frame > .close').trigger('click'); delete frame.contentDocument;
+    check(!$('#fade').length && document.body.style.overflow === 'scroll', 'Inaccessible iframe broke modal cleanup');
+
+    $('<div id="safe-contact-info"></div>').appendTo('#contact-dialog-fixture');
+    refreshContactInfoList('#safe-contact-info', [{value: '<img src=x onerror="window.contactXss=1">'}, {email: '<script>bad()<' + '/script>'}, 'Plain text', null, {}]);
+    check($('#safe-contact-info .dw-list-value').length === 3 && !$('#safe-contact-info img, #safe-contact-info script').length && !window.contactXss && $('#safe-contact-info').text().indexOf('<img') !== -1, 'Contact information interpreted HTML or lost existing classes');
+  });
+
+  // Preserve real synchronous get/edit contracts during contact adoption into documents.
+  var contactRead, addressRead, personRead, adoptionSave, adoptionError, readError;
+  var selectedContact = {id: 30, contactid: 500, name1: 'Company', name2: 'Department', department: 'Sales', street: 'Original street', postcode: '12345', city: 'City', country: 'DE', taxfree: 1, vatin: 'DE123', phones: [{phone: '<img src=x>Phone'}], emails: [{email: 'fixture@example.invalid'}], internets: ['https://example.invalid']};
+  function adoptionFixture(documentModule) {
+    contactFixture(); module = documentModule; controller = documentModule === 'sales' ? 'invoice' : documentModule === 'purchases' ? 'purchaseorder' : documentModule === 'tasks' ? 'task' : 'process'; action = 'edit'; id = 100;
+    $('#document-fixture-form').removeAttr('data-autosave').html('<input name="contactid" value="500"><input name="customerid" value="500"><input name="vatin"><input type="checkbox" name="taxfree"><input name="subject" value="Keep subject">' +
+      ['billingname1','billingname2','billingdepartment','billingstreet','billingpostcode','billingcity','billingcountry','shippingname1','shippingname2','shippingdepartment','shippingstreet','shippingpostcode','shippingcity','shippingcountry','shippingphone'].map(function(name) { return '<input name="' + name + '" value="Old value">'; }).join('') +
+      (documentModule === 'purchases' ? '<select name="contactpersonid"><option value="">Select person</option><option value="71" selected>Previous person</option></select>' : '') + '<div id="phones"></div><div id="emails"></div><div id="internets"></div><div id="tabfiles"></div>');
+    contactRead = {ok: true, item: selectedContact}; addressRead = {ok: true, items: [{type: 'billing', name1: 'Billing name', street: 'Billing street', postcode: '10000', city: 'Billing city', country: 'DE'}, {type: 'shipping', name1: 'Shipping name', street: 'Shipping street', postcode: '20000', city: 'Shipping city', country: 'AT', phone: '123'}]};
+    personRead = {ok: true, items: [{id: 71, displayname: '<img src=x>Person'}]}; adoptionSave = {ok: true}; adoptionError = null; readError = null;
+    modalWindow('contact-frame', undefined, $('#frame-open')); calls = []; Dewawi.setDirty(false);
+  }
+  $.ajax = function(options) {
+    var result = realAjax(options), call = calls[calls.length - 1];
+    if (options.async === false) {
+      if (options.url.indexOf('/contacts/contact/get/') !== -1) finish(call, contactRead, readError);
+      else if (options.url.indexOf('/contacts/address/get/') !== -1) finish(call, addressRead);
+      else if (options.url.indexOf('/contacts/contactperson/get/') !== -1) finish(call, personRead);
+      else if (options.url.indexOf('/edit/') !== -1) { check(isDirty && $('#frame-open').prop('disabled'), 'Contact adoption did not preserve pending dirty/button state'); finish(call, adoptionSave, adoptionError); }
+      else finish(call, {ok: true});
+    }
+    return result;
+  };
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale];
+    ['sales', 'purchases', 'processes', 'tasks'].forEach(function(documentModule) {
+      adoptionFixture(documentModule); applyContact(30, $('#frame-open'));
+      var writes = calls.filter(function(call) { return call.options.url.indexOf('/edit/') !== -1; }), data = writes[0].options.data;
+      check(writes.length === 1 && calls.every(function(call) { return call.options.async === false; }) && writes[0].options.url === '/fixture/' + documentModule + '/' + controller + '/edit/id/100', 'Contact adoption changed synchronous read/save order or document route');
+      check(data.billingstreet === 'Billing street' && data.shippingstreet === 'Shipping street' && data.shippingphone === '123' && data.taxfree === 1 && data.vatin === 'DE123' && !('subject' in data) && !('total' in data) && !('price' in data), 'Adoption lost addresses/contact flags or added unrelated document fields');
+      check(documentModule === 'processes' || documentModule === 'tasks' ? data.customerid === 500 && !('contactid' in data) : data.contactid === 500, 'Operational customer/document contact distinction changed');
+      check(!$('#contact-frame').is(':visible') && !$('#fade').length && $('#tabfiles').data('needs-refresh') === 1 && !isDirty && !$('#frame-open').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, 'Confirmed adoption did not close/refresh/clean up');
+      check($('#phones .dw-list-value').text() === '<img src=x>Phone' && !$('#phones img').length && $('#emails').text() === 'fixture@example.invalid', 'Adoption lost or interpreted contact information');
+      if (documentModule === 'purchases') check(data.contactpersonid === '71' && $('[name="contactpersonid"]').val() === '71' && !$('[name="contactpersonid"] img').length, 'Purchase adoption lost current contact person or safe option labels');
+    });
+    [null, {}, {ok: 1}, {ok: false, message: 'technical save secret'}, {ok: true, saved: false}].forEach(function(response) {
+      adoptionFixture('sales'); adoptionSave = response; applyContact(30, $('#frame-open'));
+      check($('#contact-frame').is(':visible') && $('#tabfiles').data('needs-refresh') !== 1 && isDirty && $('[name="billingstreet"]').hasClass('is-invalid') && $('[name="billingstreet"]').val() === 'Billing street', 'Failed adoption closed dialog, cleared dirty or discarded local field error/input');
+      check($('#contact-frame .dw-alert--danger li').text() === dwMessages[response && (response.ok === false || response.saved === false) ? 'MESSAGES_CONTACT_APPLY_FAILED' : 'MESSAGES_ACTION_STATUS_UNKNOWN'] && $('#contact-frame').text().indexOf('technical save secret') === -1 && !$('#frame-open').prop('disabled'), 'Adoption error leaked details or left loading');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 403, responseJSON: {ok: false}}].forEach(function(error) {
+      adoptionFixture('sales'); adoptionError = error; applyContact(30, $('#frame-open'));
+      check($('#contact-frame').is(':visible') && isDirty && !modalWindowBusy($('#contact-frame')) && !Object.keys(Dewawi.actionRequests).length && calls.length === 3, 'Adoption network failure retried, closed dialog or kept locks');
+    });
+    adoptionFixture('purchases'); addressRead = null; applyContact(30, $('#frame-open'));
+    check(calls.length === 2 && $('[name="billingstreet"]').val() === 'Old value' && $('[name="contactpersonid"]').val() === '71' && $('#contact-frame').is(':visible'), 'Failed address read wrote partial contact data');
+    adoptionFixture('purchases'); personRead = {ok: false}; applyContact(30, $('#frame-open'));
+    check(calls.length === 3 && $('[name="billingstreet"]').val() === 'Old value' && $('[name="contactpersonid"]').val() === '71', 'Failed contact-person read discarded existing selection or saved');
+    adoptionFixture('sales'); readError = {status: 500}; applyContact(30, $('#frame-open'));
+    check(calls.length === 1 && $('#contact-frame').is(':visible') && !$('[name="billingstreet"]').is('[data-autosave-unsaved]'), 'Failed contact read still mutated document data');
+    adoptionFixture('sales'); contactRead = {ok: true, item: {ok: true, item: selectedContact}}; applyContact(30, $('#frame-open'));
+    check(!$('#contact-frame').is(':visible') && !isDirty, 'Observed legacy nested contact response no longer works');
+    adoptionFixture('sales'); contactRead = {ok: true, item: {ok: false, item: selectedContact}}; applyContact(30, $('#frame-open'));
+    check(calls.length === 1 && $('#contact-frame').is(':visible'), 'Nested negative contact status was ignored');
+    adoptionFixture('purchases'); $('[name="contactid"]').val('999'); adoptionSave = {saved: true}; applyContact(30, $('#frame-open'));
+    var purchaseWrite = calls.filter(function(call) { return call.options.url.indexOf('/edit/') !== -1; })[0];
+    check(purchaseWrite.options.data.contactpersonid === '' && $('[name="contactpersonid"]').val() === '' && !$('#contact-frame').is(':visible'), 'Changing contact retained an incompatible contact person or rejected saved:true');
+    adoptionFixture('sales'); addressRead = {ok: true, items: []}; applyContact(30, $('#frame-open'));
+    check($('[name="billingstreet"]').val() === 'Original street' && $('[name="shippingstreet"]').val() === 'Old value' && !$('#contact-frame').is(':visible'), 'Confirmed empty addresses lost contact defaults or changed existing shipping fields');
+    adoptionFixture('sales'); contactRead = {ok: 1, item: selectedContact}; applyContact(30, $('#frame-open'));
+    check(calls.length === 1 && $('#contact-frame').is(':visible'), 'Non-boolean contact success was accepted');
+    adoptionFixture('sales'); markFieldError($('#document-fixture-form [name="subject"]'), ['Independent failed subject']); applyContact(30, $('#frame-open'));
+    check(isDirty && $('#document-fixture-form [name="subject"]').hasClass('is-invalid') && $('#document-fixture-form [name="subject"]').val() === 'Keep subject', 'Contact adoption erased an independent field error/dirty state');
+  });
+  modalWindowClose(true); $.ajax = realAjax; search = originalSearch; $.cookie = originalCookie; HTMLFormElement.prototype.submit = nativeSubmit;
+  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, document, autosave, position, contact, modal and accessibility checks at ' + innerWidth + 'px');
   if (window.parent !== window) window.parent.document.getElementById('result').textContent = $('#result').text();
 });
 </script>

@@ -2439,12 +2439,41 @@ cursor: default;
   -moz-border-radius: 10px;
   border-radius: 10px;
 }
+.popup_block {
+  max-width: calc(100% - 40px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.popup_block > .close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  cursor: pointer;
+  border: 0;
+  color: var(--dw-color-text);
+  font-size: 28px;
+}
+.popup_block h3 {
+  padding-right: 48px;
+}
+.popup_block > .close:focus-visible {
+  outline: 2px solid var(--dw-color-primary);
+  outline-offset: -3px;
+}
+.popup_block [data-modal-messages] {
+  clear: both;
+  overflow-wrap: anywhere;
+}
+
 .dw-contact-tags-dialog,
 .dw-contact-export-dialog,
 .dw-email-contactperson-dialog {
   bottom: auto;
   max-width: calc(100% - 40px);
   width: 480px;
+  max-height: 80vh;
+  padding-top: 38px;
 }
 .dw-email-contactperson-dialog {
   width: 720px;
@@ -2459,6 +2488,7 @@ cursor: default;
 .dw-contact-dialog__actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
   margin-top: 20px;
 }
 .dw-contact-import-summary,
@@ -2471,9 +2501,9 @@ cursor: default;
 #popup .close {
   height: 48px;
   width: 48px;
-  background: url('../images/close-modal-window.png') no-repeat 0 0 transparent;
+  background: var(--dw-color-surface);
   float: right;
-  margin: -36px -36px -30px 0;
+  margin: 0;
 }
 @media screen and (max-width: 1279px) {
     .popup_block{

@@ -828,10 +828,10 @@ $(document).ready(function(){
 	//Modal window
 	$(document).on('click', 'button.poplight', function() {
 		var popID = $(this).attr('rel');
-		setid = $(this).closest('.dw-position-set').data('setid') || 0;
-		modalWindow(popID, setid);
+		var setid = $(this).closest('.dw-position-set').data('setid') || 0;
+		modalWindow(popID, setid, this);
 	});
-	$(document).on('click', 'a.close, #fade', modalWindowClose);
+	$(document).on('click', '.popup_block > .close, #fade', function (event) { event.preventDefault(); modalWindowClose(); });
 
 	//Loading
 	/*$(document)
@@ -1054,7 +1054,7 @@ function save(button) {
 					return;
 				}
 				Dewawi.setDirty(false);
-				window.parent.modalWindowClose();
+				window.parent.modalWindowClose(true);
 			},
 			error: function (xhr) { showSaveError(xhr.responseJSON, false); },
 			complete: complete
@@ -1427,6 +1427,9 @@ function deleteAttachment(ids, message, type, cmodule, button) {
 function applyPosition(parent, type, itemIds, setid) {
 	var ids = Array.isArray(itemIds) ? itemIds.slice() : [itemIds];
 	var lastResponse = null;
+	var $dialog = window.parent.modalWindow && window.parent.modalWindow.current;
+	if ($dialog && $dialog.data('dw-modal-pending')) return;
+	if ($dialog) $dialog.data('dw-modal-pending', true);
 
 	setid = setid || 0;
 
@@ -1434,6 +1437,7 @@ function applyPosition(parent, type, itemIds, setid) {
 		var itemId = ids.shift();
 
 		if (!itemId) {
+			if ($dialog) $dialog.removeData('dw-modal-pending');
 			if (lastResponse) {
 				window.parent.applyCalculation(
 					lastResponse.calculation
@@ -1442,7 +1446,7 @@ function applyPosition(parent, type, itemIds, setid) {
 
 			window.parent.getPositions(parent, type, window.parent.pageYOffset);
 
-			if (typeof window.parent.modalWindowClose === 'function') {
+			if (typeof window.parent.modalWindowClose === 'function' && (!$dialog || window.parent.modalWindow.current === $dialog)) {
 				window.parent.modalWindowClose();
 			}
 
@@ -1462,6 +1466,7 @@ function applyPosition(parent, type, itemIds, setid) {
 			cache: false,
 			success: function(response) {
 				if (!response || response.ok !== true) {
+					if ($dialog) $dialog.removeData('dw-modal-pending');
 					pushMessages([
 						'Position konnte nicht hinzugefügt werden.'
 					]);
@@ -1473,6 +1478,7 @@ function applyPosition(parent, type, itemIds, setid) {
 				applyNext();
 			},
 			error: function() {
+				if ($dialog) $dialog.removeData('dw-modal-pending');
 				pushMessages([
 					'Position konnte nicht hinzugefügt werden.'
 				]);
@@ -2382,55 +2388,124 @@ $(document).on('click', '[data-document-validation-target]', function(event) {
 	})();
 });
 
-//Modal Window
-function modalWindow(popID, setid) {
-	//var popURL = $(this).attr('href');
-	//var query= popURL.split('?');
-	//var dim= query[1].split('&');
-	//var popWidth = dim[0].split('=')[1];
-
-	$('#' + popID).fadeIn().prepend('<a href="#" class="close"></a>');
-	//$('#' + popID).fadeIn().css({ 'width': Number( popWidth ) }).prepend('<a href="#" class="close"></a>');
-
-	//var popMargTop = ($('#' + popID).height() + 80) / 2;
-	var popMargLeft = ($('#' + popID).width() + 80) / 2;
-
-	$('#' + popID).css({
-	//'margin-top' : -popMargTop,
-	'margin-left' : -popMargLeft
+// Reuse the existing popup element and keep state scoped to the active dialog.
+function modalWindowBusy($dialog) {
+	if (!$dialog || !$dialog.length) return false;
+	var busy = !!$dialog.data('dw-modal-pending') || $dialog.find('.is-loading[aria-busy="true"]').length > 0;
+	$dialog.find('iframe').each(function () {
+		try { if ($(this).contents().find('.is-loading[aria-busy="true"]').length) busy = true; } catch (error) { /* Cross-origin frames retain their own keyboard handling. */ }
 	});
+	return busy;
+}
 
+function modalWindowMessages($dialog) {
+	$dialog = $dialog || modalWindow.current;
+	if (!$dialog || !$dialog.length) return '#messages';
+	var $messages = $dialog.children('[data-modal-messages]');
+	if (!$messages.length) $messages = $('<div>', {'data-modal-messages': ''}).prependTo($dialog);
+	return $messages;
+}
+
+function modalWindowControls($scope) {
+	return $scope.find('a[href], button, input:not([type="hidden"]), select, textarea, iframe, [tabindex]').filter(':visible').not(':disabled, [tabindex="-1"]');
+}
+
+function modalWindowKeydown(event) {
+	var $dialog = modalWindow.current;
+	if (!$dialog || !$dialog.is(':visible')) return;
+	if (event.key === 'Escape' || event.which === 27) {
+		event.preventDefault();
+		modalWindowClose();
+		return;
+	}
+	if (event.key !== 'Tab' && event.which !== 9) return;
+	var $controls = modalWindowControls($dialog), $scope = $dialog;
+	var owner = event.target.ownerDocument;
+	if (owner && owner !== document) {
+		$scope = $(owner);
+		var $inner = modalWindowControls($scope);
+		if ($inner.length && ((event.shiftKey && event.target !== $inner[0]) || (!event.shiftKey && event.target !== $inner[$inner.length - 1]))) return;
+		var $frame = $dialog.find('iframe').filter(function () { try { return this.contentDocument === owner; } catch (error) { return false; } });
+		var index = $controls.index($frame);
+		event.preventDefault();
+		$controls.eq((index + (event.shiftKey ? -1 : 1) + $controls.length) % $controls.length).focus();
+		return;
+	}
+	if (!$controls.length) { event.preventDefault(); $dialog.focus(); return; }
+	if (!$dialog[0].contains(event.target) || (event.shiftKey && event.target === $controls[0]) || (!event.shiftKey && event.target === $controls[$controls.length - 1])) {
+		event.preventDefault();
+		$controls.eq(event.shiftKey ? -1 : 0).focus();
+	}
+}
+
+function modalWindow(popID, setid, opener) {
+	var $dialog = $(document.getElementById(popID));
+	if (!$dialog.length || modalWindowBusy(modalWindow.current)) return false;
+	if (modalWindow.current && modalWindow.current[0] === $dialog[0]) return false;
+	var trigger = $(opener)[0] || document.activeElement;
+	if (modalWindow.current) modalWindowClose();
+	modalWindow.opener = trigger;
+	modalWindow.overflow = document.body.style.overflow;
+	modalWindow.current = $dialog;
+
+	var $heading = $dialog.find('h1, h2, h3, [role="heading"]').first();
+	var label = $dialog.attr('aria-label') || $heading.text() || $(modalWindow.opener).attr('aria-label') || $(modalWindow.opener).attr('title') || $(modalWindow.opener).text() || Dewawi.message('MESSAGES_DIALOG');
+	if (!$dialog.attr('aria-labelledby') && !$dialog.attr('aria-label')) {
+		if ($heading.length) {
+			if (!$heading.attr('id')) $heading.attr('id', popID + '-title');
+			$dialog.attr('aria-labelledby', $heading.attr('id'));
+		} else $dialog.attr('aria-label', $.trim(label));
+	}
+	$dialog.attr({role: 'dialog', 'aria-modal': 'true', 'aria-hidden': 'false', tabindex: '-1'});
+	var $close = $dialog.children('.close').first();
+	if (!$close.length) $close = $('<button>', {type: 'button', 'class': 'close'}).text('×').prependTo($dialog);
+	$close.attr('aria-label', Dewawi.message('MESSAGES_DIALOG_CLOSE'));
+	modalWindowMessages($dialog);
+	$dialog.stop(true, true).show().css('margin-left', -$dialog.outerWidth() / 2);
 	$('body').css('overflow', 'hidden');
-	$('body').append('<div id="fade"></div>');
-	$('#fade').css({'filter' : 'alpha(opacity=80)'}).fadeIn();
+	$('[id="fade"]').remove();
+	$('<div>', {id: 'fade', 'aria-hidden': 'true'}).appendTo('body').show();
 
-	//get the IFRAME element
-	var iframeRef = document.getElementById(popID).getElementsByTagName('iframe');
-	//focus the IFRAME element
-	$(iframeRef).focus();
-	//use JQuery to find the control in the IFRAME and set focus
-	$(iframeRef).contents().find('#keyword').focus().select();
-
-	if(action == 'index') {
-		var id = $(this).closest('tr').find('input#id').val();
-		$('iframe#edit').attr('src', baseUrl+'/'+module+'/'+controller+'/edit/id/'+id);
-	}
-
-	return false;
-}
-
-function modalWindowClose() {
-	$('#fade , .popup_block').fadeOut(function() {
-		$('#fade, a.close').remove();
+	var $frames = $dialog.find('iframe');
+	$frames.each(function () { if (!$(this).attr('title')) $(this).attr('title', $.trim(label)); });
+	$frames.off('load.dw-modal').on('load.dw-modal', function () {
+		if (!modalWindow.current || modalWindow.current[0] !== $dialog[0]) return;
+		try {
+			var $contents = $(this).contents();
+			$contents.off('keydown.dw-modal').on('keydown.dw-modal', modalWindowKeydown);
+			var $keyword = $contents.find('#keyword');
+			if ($keyword.length) $keyword.focus().select();
+		} catch (error) { /* A cross-origin frame can still receive focus as a single control. */ }
 	});
-
-	if(action == 'index') {
-		$('iframe#edit').attr('src', baseUrl+'/index/blank');
+	var $first = modalWindowControls($dialog).not('.close').first();
+	($first.length ? $first : $dialog).focus();
+	$frames.each(function () { $(this).triggerHandler('load.dw-modal'); });
+	if (action === 'index' && $frames.filter('#edit').length) {
+		var rowId = $(modalWindow.opener).data('id') || $(modalWindow.opener).closest('tr').find('input.id, input#id').val();
+		if (rowId) $frames.filter('#edit').attr('src', baseUrl+'/'+module+'/'+controller+'/edit/id/'+rowId);
 	}
-	$('body').css('overflow', 'auto');
-
 	return false;
 }
+
+function modalWindowClose(force) {
+	var $dialog = modalWindow.current;
+	if (!$dialog || (force !== true && modalWindowBusy($dialog))) return false;
+	$dialog.find('iframe').off('load.dw-modal').each(function () {
+		try { $(this).contents().off('keydown.dw-modal'); } catch (error) { /* No access to cross-origin frame events. */ }
+	});
+	if (action === 'index') $dialog.find('iframe#edit').attr('src', baseUrl+'/index/blank');
+	$dialog.stop(true, true).hide().attr('aria-hidden', 'true').removeAttr('aria-modal');
+	$dialog.children('[data-modal-messages]').empty();
+	$('[id="fade"]').remove();
+	document.body.style.overflow = modalWindow.overflow;
+	var opener = modalWindow.opener;
+	modalWindow.current = null;
+	modalWindow.opener = null;
+	if (opener && document.documentElement.contains(opener)) $(opener).focus();
+	return false;
+}
+
+$(document).on('keydown.dw-modal', modalWindowKeydown);
 
 //Set location
 function setLocation(location){
@@ -3351,12 +3426,12 @@ function markFieldSaved($field) {
 				if (!window.open(url, '_blank')) complete();
 			},
 
-			apply: function (selection) {
+			apply: function (selection, $button) {
 				var context = this.getSelectContext();
 
 				if (selection.module === 'contacts' && selection.controller === 'contact') {
 					if (window.parent && typeof window.parent.applyContact === 'function') {
-						window.parent.applyContact(selection.ids[0]);
+						window.parent.applyContact(selection.ids[0], $button);
 					}
 
 					return;

@@ -51,6 +51,9 @@ with tempfile.TemporaryDirectory(prefix='dewawi-notifications-ui-') as directory
     script = Path(directory) / 'global.js'
     script.write_text((root / 'js/global.js').read_text().replace('location.reload()', 'window.fixtureReload()'))
     html = html.replace((root / 'js/global.js').as_uri(), script.as_uri())
+    contacts_script = Path(directory) / 'contacts.js'
+    contacts_script.write_text((root / 'js/contacts.js').read_text().replace('location.reload()', 'window.fixtureReload()'))
+    html = html.replace((root / 'js/contacts.js').as_uri(), contacts_script.as_uri())
     fixture = Path(directory) / 'fixture.html'
     for width in [1280, 390]:
         # Chromium enforces a 500px window minimum; use an iframe for a true mobile viewport.

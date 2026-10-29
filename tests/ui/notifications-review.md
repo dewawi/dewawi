@@ -2,7 +2,7 @@
 
 ## Umfang und Bestandsaufnahme
 
-Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen, Phase 4.3 um Dokument- und Toolbar-Aktionen und Phase 4.4 um Auto-Save und Positionsbearbeitung. Weitere Aktionen werden separat migriert.
+Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen, Phase 4.3 um Dokument- und Toolbar-Aktionen, Phase 4.4 um Auto-Save und Positionsbearbeitung und Phase 4.5 um Kontaktaktionen und modale Dialoge. Weitere Aktionen werden separat migriert.
 
 | Vorhandene Stelle | Befund | Entscheidung / Umsetzung |
 | --- | --- | --- |
@@ -381,15 +381,107 @@ Die Browser-Fixtures wurden während der Implementierung erweitert und zunächst
 - Bestehende Zahlen-/Rabatt-/Steuerberechnung und serverseitige Rechteprüfung bleiben unverändert. Die erweiterten Backend-Fixtures prüfen keine reale MariaDB-Schemaausführung. Alte externe Clients, die trotz der bisher fehlerhaften/mehrdeutigen Gruppen-Antworten ein exaktes Rohformat voraussetzen, müssen die ergänzten JSON-Felder tolerieren.
 - `application/modules/admin/views/scripts/settings/clients.phtml` enthält bereits vorher einargumentige `copyPosition`-/`deletePosition`-Aufrufe, die nicht zum Positionsvertrag passen. Diese fachfremde Legacy-Ansicht wurde nicht repariert. Ebenso bleiben separate Sortier-, Preisregel-Toolbar- und modale Artikelübernahmeabläufe außerhalb der hier aufgeführten sieben Aktionen bei ihrer bisherigen Abwicklung.
 
-Keine Commits oder Pushes. **Phase 4.4 ist abgeschlossen; Phase 4.5 wurde nicht begonnen.**
+Keine Commits oder Pushes. **Phase 4.4 ist abgeschlossen.** Der folgende Abschnitt dokumentiert die inzwischen beauftragte Phase 4.5.
 
 Commit-Vorschlag: `unify autosave and position feedback`
 
-## Verbleibende Folgeschritte nach Phase 4.4 (noch nicht umgesetzt)
+## Phase 4.5 – Kontakte und modale Dialoge
+
+### Geprüfte Abläufe und Antwortverträge
+
+Untersucht wurden `js/contacts.js`, die gemeinsame Modal-, Toolbar-, Lade- und Meldungsabwicklung in `js/global.js`, Kontakt-Index/-Edit-Views, `Contacts_ContactController`, `Contacts_EmailController` und der gemeinsame Toolbar-Helper. Die vorhandenen Views, Formulare und Controller benötigen für diese Phase keine Änderungen.
+
+| Ablauf / Dialog | Tatsächlicher Vertrag und Umsetzung |
+| --- | --- |
+| `contactTags`: Zuweisen / Entfernen | `tagsAction()` liefert `ok`, `operation`, ganzzahlige Kontaktzähler `changed` / `unchanged` und eine serverseitige Meldung. Nur `ok === true` mit passender Operation und plausiblen Zählern bestätigt den angeforderten Batch. Beide Zähler müssen zusammen die deduplizierte Kontaktauswahl ergeben; `changed: 0` bei bereits vorhandenem/fehlendem Tag bleibt Erfolg. Die Anzeige verwendet die vorhandenen DE-/EN-Zählervorlagen statt ungeprüfter Antworttexte. |
+| `emailContactpersonAssignment`: neu / vorhanden | `assigncontactpersonAction()` liefert `ok: true`, `emailid`, `contactpersonid` beziehungsweise `ok: false` und eine Meldung. Nur ausdrücklich positives `ok` ohne widersprüchliche Fehlerflags führt zum Schließen und zum bisherigen Reload mit Cookie `tab=#tabcontactperson` unter `cookiePath + '/edit'`. Neue Ansprechpartner benötigen weiterhin einen Nachnamen, vorhandene eine positive Auswahl; die fachlichen Prüfungen bleiben serverseitig. |
+| `applyContact()` in Dokumenten | `getContact()` gibt synchron Kontakt oder `null` zurück. Der gegenwärtige DEEC-`getAction()` liefert `{ok:true,item:row}`; der im bisherigen Client unterstützte verschachtelte Legacy-Vertrag `{ok:true,item:{ok:true,item:row}}` bleibt mit positiver Bestätigung beider Ebenen nutzbar. Kontakt-ID und erforderliche Kontaktnummer müssen vorhanden sein. |
+| Adressen und Ansprechpartneroptionen | `getRowsByParent()` gibt weiterhin synchron ein Array zurück. Nur `{ok:true,items:[...]}` bestätigt eine gelesene Liste; ein leeres Array ist gültig. Ein optionaler Fehlercallback unterscheidet für die Übernahme einen fehlgeschlagenen Abruf von einer tatsächlich leeren Liste. Fehlgeschlagene Adress-/Ansprechpartnerabrufe führen zu keinem Dokument-Save; vorhandene Werte bleiben erhalten. `refreshContactpersonOptions()` erhält seine bisherige Rückgabe und verwendet weiterhin sichere Optionstexte. |
+| Anschließendes `edit()` | Bleibt synchron und liefert das ursprüngliche JSON beziehungsweise `null` bei Transportfehler. Wie in Phase 4.4 gelten ausdrücklich positives `ok` oder `saved`, ohne negativen Gegenstatus oder `errors`, als Bestätigung. Leere, fehlerhafte oder unklare Ergebnisse schließen den Dialog nicht. |
+| `contactExport` | Alle drei Profile `combined`, `companies`, `contactpersons` verwenden weiterhin `DewawiToolbar.submitExport()` und dessen natives POST-Formular samt aktiven Filtern. Keine AJAX-Umstellung, kein dauerhafter Disabled-Zustand und keine Behauptung eines abgeschlossenen Downloads. Ein zweiter Klick auf einen bereits geschlossenen Exportdialog löst keinen weiteren Export aus. |
+
+Die vorhandene Rechnungs-/Lieferadressenauswahl und die bisherigen Kontaktinformationen bleiben Teil derselben Übernahme. Ein leerer bestätigter Adressbestand verwendet weiterhin die Kontakt-Stammdaten als Rechnungsadresse und überschreibt keine nicht gelieferten Versandfelder. Bei demselben Kontakt bleibt die vorhandene Ansprechpartnerauswahl erhalten; bei einem Kontaktwechsel wird sie wie bisher geleert. Prozesse und Aufgaben speichern weiterhin `customerid` statt `contactid`. Steuerbefreiung und USt-ID bleiben Bestandteil des bisherigen Payloads; zusätzliche Preis-, Summen- oder Betreffänderungen werden nicht eingeführt. Die vorhandenen Berechnungen laufen ausschließlich über das bestehende `edit()` / `applySaveResponse()`.
+
+`refreshContactInfoList()` erstellt weiterhin `.dw-list-value`-Elemente, befüllt sie jetzt jedoch ausschließlich mit `.text()`. HTML in Telefon-, E-Mail-, Internet- oder allgemeinen Kontaktwerten wird als Text angezeigt; leere beziehungsweise unbrauchbare Einträge werden übersprungen. Ansprechpartneroptionen und die dynamische E-Mail-Beschriftung verwenden ebenfalls Textausgabe. Technische Fehlertexte aus AJAX-Antworten werden nicht in Dialogmeldungen übernommen.
+
+### Ladezustände, Fehler und Dirty-State
+
+Tagaktionen verwenden nach der bestehenden Bestätigung `beginActionRequest()` und `setButtonLoading()`. Die Locks sind an Kontakt-IDs gebunden und gelten für beide Operationen sowie unterschiedliche Tags, sodass überlappende Auswahlen nicht parallel dieselben Kontakte bearbeiten. Die aktive Dialogauswahl wird während eines Requests nicht durch erneutes Öffnen ersetzt. Nach bestätigtem Erfolg schließt der Dialog; erst der erfolgreiche Callback der bestehenden Listenaktualisierung zeigt die übersetzte Zählermeldung. Ein fehlgeschlagener Listen-Read ist keine erneute Tagoperation und löst keine automatische Wiederholung aus.
+
+Die Ansprechpartnerzuordnung verwendet denselben vorhandenen Lock- und Buttonmechanismus, gebunden an die E-Mail-ID. Die direkte `.prop('disabled', true/false)`-Abwicklung entfällt. Beide Varianten behalten ihre Felder und Auswahl bei Fehlern. Es gibt keine zusätzliche Bestätigung. Schreibrequests für Tags und Zuordnung besitzen den vorhandenen 120-Sekunden-Timeout. Die bisherigen Buttoninhalte und Disabled-/ARIA-Zustände werden in `complete` wiederhergestellt.
+
+Fortschritt und Fehler stehen in einem wiederverwendeten Meldungsbereich innerhalb des bestehenden Dialogs und verwenden `pushMessages()` mit den vorhandenen `.dw-alert`-Komponenten. Ein neuer Versuch entfernt keine bisherige Fehlermeldung vorzeitig. Fehler bleiben bis zum Schließen oder bestätigten Erfolg sichtbar. Negative Antworten erhalten verständliche vorhandene Fachmeldungen, unklare Antworten den bestehenden Statushinweis. Es gibt keine automatische Wiederholung unsicherer Schreiboperationen und keine globale AJAX-Sperre.
+
+Die Kontaktübernahme hat einen optionalen Buttonparameter und eine vorhandene aktionsbezogene Requestsperre; `try/finally` gibt sie auch bei fehlgeschlagenen Vorababrufen frei. Bei fehlgeschlagenem Speichern bleiben übernommene Eingaben, lokale Feldfehler und der Dirty-State aus Phase 4.4 erhalten. Ein bestätigter Kontakt-Save entfernt keine Fehler anderer Felder. Dateibereich und Dialog werden erst nach bestätigtem Save aktualisiert beziehungsweise geschlossen. Synchrones AJAX bleibt erhalten; sichtbarer Fortschritt während eines solchen Aufrufs wird nicht versprochen.
+
+### Gemeinsame Dialoge, Fokus und Tastatur
+
+Geprüfte gemeinsame Aufrufer sind die Kontakt-Tag-/Export-/Zuordnungsdialoge, `addCustomer` und `selectPosition` der Verkaufs-/Einkaufs-/Prozess-Popup-Helper, die `poplight`-Buttons der vorhandenen Positions-Toolbars und der Passwort-iframe `newPassword`. Die Schließaufrufe des Legacy-Settings-Skripts wurden ebenfalls geprüft; dessen eigener Kontaktübernahmeablauf wird nicht neu implementiert.
+
+`modalWindow()` verwendet das vorhandene `.popup_block`-Element und genau ein Overlay. Wiederholtes Öffnen erzeugt keinen weiteren Schließen-Button oder weiteren Hintergrund. Es gibt weiterhin nur einen aktiven Dialog; ein anderer wartender Dialog wird während eines laufenden Vorgangs nicht geöffnet. Ohne laufenden Vorgang ersetzt ein neu geöffneter Dialog den alten.
+
+Der Dialog erhält `role="dialog"`, `aria-modal`, eine vorhandene Überschrift als `aria-labelledby` oder den vorhandenen Namen seines Auslösers als Beschriftung. Iframes ohne Titel übernehmen diesen Namen. Der bestehende `.close`-Mechanismus verwendet einen beschrifteten nativen Button. Fokus geht auf die erste bedienbare Eingabe beziehungsweise den iframe; vorhandene `#keyword`-Felder in zugänglichen iframe-Dokumenten werden weiterhin fokussiert und ausgewählt. Die alten pauschalen `iframe#edit`-URL-Änderungen erfolgen nur noch für einen solchen iframe im tatsächlich geöffneten Dialog und mit vorhandenem Datensatzkontext.
+
+Tab und Umschalt+Tab bleiben an den Dialoggrenzen innerhalb des Dialogs. Für gleichoriginige iframe-Dokumente wird der bestehende Tastaturhandler mit einem eigenen Event-Namensraum angebunden und beim Schließen entfernt. Escape, Schließen-Button und Hintergrundklick schließen einen wartenden Dialog. Während einer markierten Aktion oder eines vorhandenen iframe-Button-Ladezustands bleibt er geöffnet. Bestätigte Erfolgsaufrufe können explizit schließen; der bestehende Passwort-Save verwendet dies nach seinem fachlichen Erfolg.
+
+Auch die bereits vorhandene Positionsauswahl im iframe markiert ihre laufende Requestfolge am vorhandenen Eltern-Dialog. Dadurch kann Escape sie nicht vor Abschluss schließen; Fehler geben den Dialog wieder frei, Erfolg behält die vorhandene Berechnung und sequenzielle Verarbeitung bei. Das ist ausschließlich eine Ergänzung zur gemeinsamen Dialog-Lebensdauer.
+
+Schließen versteckt nur den aktiven Dialog, entfernt den Hintergrund und dessen lokalen Meldungsinhalt und stellt den vorherigen Inline-Overflow des Bodys wieder her. Der ursprüngliche Auslöser erhält Fokus zurück, sofern er noch im Dokument vorhanden ist. Die unmittelbare Show-/Hide-Abwicklung vermeidet verspätete Fade-Callbacks beim erneuten Öffnen. CSS begrenzt die Breite auf den Viewport, macht lange Dialoginhalte scrollbar und hält den Schließen-Button innerhalb des Dialogs. Eine neue Dialogbibliothek, ein Modal-Stack oder eine parallele Zustandsverwaltung wurden nicht eingeführt.
+
+### Tests dieser Phase
+
+Die Browser-Fixtures laden jetzt auch den tatsächlichen Kontaktcode. AJAX, Listen-Refresh-Callbacks, Reloads und native Formularübergaben werden kontrolliert abgefangen; für einen Auswahlfall läuft die tatsächliche `applyPosition`-Funktion im iframe-Kontext. Keine echten Exporte, Kundendaten, E-Mails oder produktiven Kontaktänderungen wurden verwendet.
+
+| Ausgeführter Befehl | Ergebnis |
+| --- | --- |
+| `python3 tests/ui/notifications.py` | Je **1603 Prüfungen bei 1280 px und 390 px** bestanden, einschließlich sämtlicher **1287 bisherigen UX-Prüfungen**. Neue Fälle: Tagzuweisung/-entfernung einschließlich unveränderter Zuordnungen und Zähler, Bestätigungsabbruch, Doppel-/überlappende Klicks, negative/unklare Antworten, Netzwerk/Timeout/Parser/HTTP, lokale Fehlermeldungen, beide Ansprechpartnervarianten, erhaltene Eingaben, Reload/Tab-Cookie, native Exportprofile mit Filtern und erneutem Klick, wiederholtes Öffnen/Schließen, fehlender/entfernter Auslöser, Rollen/Namen, Fokus/Tab/Escape/Overlay/Scrollen, Viewportgrenzen, iframe-Fokus und laufende Requests, sicher ausgegebene Kontaktwerte sowie synchrone Kontaktübernahme in Verkauf/Einkauf/Prozesse/Aufgaben und unabhängiger Dirty-State. |
+| `php tests/security/contact-tags.php` | **74 Prüfungen** bestanden; zusätzliche Assertions sichern Operation, Meldung und ganzzahlige Zähler des vorhandenen Antwortvertrags. |
+| `php tests/security/contact-export.php` | **89 Prüfungen** bestanden; CSV-Inhalte, Profile, Filter, Rechte und Mandanten unverändert. |
+| `php tests/security/email-contactperson-assignment.php` | **53 Prüfungen** bestanden; beide Varianten, ungültige/fremde Zuordnungen, Rollback und freigegebener Elternmandant. |
+| `php tests/security/permissions.php` | **369 Prüfungen** bestanden. |
+| `php tests/security/tenant-access.php` | **268 Prüfungen** bestanden. |
+| `php tests/security/contact-data.php` | **39 Prüfungen** bestanden. |
+| `php tests/security/purchase-contactpersons.php` | **20 Prüfungen** bestanden; der vorhandene Integrationscheck berücksichtigt den optionalen Fehlercallback. |
+| `php tests/security/profile-save.php` | **100 Prüfungen** bestanden. |
+| `php tests/security/notifications.php` | **128 allgemeine**, **60 Verkaufs-** und **24 Einkaufsprüfungen** bestanden. **49 Browser-Übersetzungen je Sprache** vollständig. |
+| `python3 tests/documents/calculation-ui.py` | Notiz-/Inline-Notiz-Auto-Save und **28 Berechnungsprüfungen** bestanden. |
+| `php tests/documents/calculation.php` | **700 Prüfungen** bestanden. |
+| `php tests/documents/calculation.php purchases` | **676 Prüfungen** bestanden. |
+| `php tests/documents/lifecycle.php` | **879 Prüfungen** bestanden. |
+| `php -l` | Alle **6 geänderten PHP-Dateien** ohne Syntaxfehler. |
+| `git diff --check` | Ohne Befund. |
+
+### Geänderte Dateien in Phase 4.5
+
+1. `js/contacts.js`
+2. `js/global.js`
+3. `css/ui.css`
+4. `application/views/helpers/Messages.php`
+5. `languages/de_DE/default/messages.php`
+6. `languages/en_US/default/messages.php`
+7. `tests/ui/notifications.html`
+8. `tests/ui/notifications.py`
+9. `tests/security/contact-tags.php`
+10. `tests/security/notifications.php`
+11. `tests/security/purchase-contactpersons.php`
+12. `tests/ui/notifications-review.md`
+
+### Verbleibende Grenzen
+
+- Locks gelten innerhalb der geöffneten Seite; sie ersetzen keine serverseitige Idempotenz über Tabs oder Geräte. Ein Timeout kann eine bereits ausgeführte Änderung nicht rückgängig machen. Vor einer manuellen Wiederholung muss der aktuelle Datenstand geprüft werden.
+- Synchrones Lesen und Speichern bei Kontaktübernahme blockiert weiterhin den Browserthread. Die vorhandene DOM-gebundene Dirty-Markierung aus Phase 4.4 behält ihre dort dokumentierten Grenzen für programmatische Saves ohne zuordenbares Feld.
+- Die gemeinsame Tastaturführung kann iframe-Inhalte nur bei erlaubtem gleichoriginigem Zugriff anbinden. Bei fremder Origin bleibt der iframe als Control fokussierbar und der äußere Schließen-Button nutzbar; Escape innerhalb des fremden Dokuments kann der Elternseite nicht zugesichert werden. Das Fehlerverhalten bei verweigertem Zugriff wurde isoliert simuliert, kein fremder Dienst kontaktiert.
+- Die Modal-Schließsperre berücksichtigt die hier markierten Vorgänge und vorhandene Button-Ladezustände. Sie ist kein universeller Tracker aller denkbaren Requests eines eingebetteten Dokuments. Unveränderte Legacy-Settings-Abläufe wurden nicht vollständig Ende-zu-Ende migriert.
+- Browser-Fixtures prüfen DOM, Tastaturereignisse und Zustandsübergänge mit abgefangenem Transport. Nicht durchgeführt wurden manuelle Screenreader-/Gerätetests, ein realer Downloadabschluss oder produktive End-to-End-Kontaktänderungen. Die Backend-Berechtigungs-/Mandantenprüfungen bleiben unverändert und wurden mit den bestehenden Security-Fixtures ausgeführt.
+
+Keine Commits oder Pushes. **Phase 4.5 ist abgeschlossen; die nächste Phase wurde nicht begonnen.**
+
+Commit-Vorschlag: `unify contact actions and modal feedback`
+
+## Verbleibende Folgeschritte nach Phase 4.5 (noch nicht umgesetzt)
 
 | Priorität | Bereich und konkrete Dateien | Nächster begrenzter Schritt / notwendige Regressionen |
 | --- | --- | --- |
-| P2 | Kontakte und modale Dialoge: `js/contacts.js`, `js/global.js` (`modalWindow`, `modalWindowClose`) | Bestehende lokale `disabled`-Behandlung durch gemeinsame Zustandsverwaltung ergänzen; Fokus, Validierung und Verhalten nach erneutem Öffnen prüfen |
 | P2 | Artikel und Listenaktionen: `application/modules/items/views/scripts/item/index.phtml`, `application/modules/items/views/scripts/item/edit.phtml`, `application/modules/items/forms/Toolbar.php`, `js/global.js` | Gemeinsame Toolbar-Aktionen nach deren P1-Migration übernehmen; Filter, Auswahl und Mehrfachbearbeitung erhalten |
 | P2 | Upload und Download: `application/modules/contacts/controllers/AttachmentController.php`, `application/views/scripts/partials/email-messages.phtml`, `application/views/scripts/partials/downloads.phtml`, `js/filemanager.js`, `js/global.js` (XRechnung-Download) | Zustände in bestehendem Upload-iframe und bei Blob-Downloads vereinheitlichen; Dateivalidierung und Downloadrechte prüfen. Native Downloads haben kein verlässliches Browserereignis für das Ende des Downloads |
 | P3 | Kampagnen: `application/modules/campaigns/views/helpers/Errors.php`, `application/modules/campaigns/models/List/Recipients.php`, `js/global.js` (`getCampaignRecipients`, `getCampaignErrors`) | Technische Statusdetails und Fehler beim Aktualisieren der Übersichten separat vereinheitlichen; Bounce-/Complaint-Regeln erhalten |

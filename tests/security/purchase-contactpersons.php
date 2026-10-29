@@ -70,7 +70,7 @@ $responsibleMigration = file_get_contents($root . '/install/config/update-1.1.5-
 
 check(str_contains($contactpersonModel, 'DEEC_ContactpersonFormatter::displayName'), 'Contact-person options do not use the shared formatter');
 check(str_contains($contactpersonController, "'displayname' => \$label"), 'Existing contact-person endpoint does not provide formatted option labels');
-check(str_contains($contactsJs, 'refreshContactpersonOptions(contact.id, selectedContactpersonId)') && str_contains($contactsJs, 'data.contactpersonid = selectedContactpersonId'), 'Supplier autocomplete does not refresh and save the contact-person selection');
+check(str_contains($contactsJs, 'refreshContactpersonOptions(contact.id, selectedContactpersonId, failRead)') && str_contains($contactsJs, 'data.contactpersonid = selectedContactpersonId'), 'Supplier autocomplete does not refresh and save the contact-person selection');
 check(str_contains($purchaseController, 'validateDocumentContactperson') && str_contains($quoteRequestController, 'validateDocumentContactperson'), 'Purchase controllers do not validate contact-person ownership');
 check(!str_contains($salesForms, "'name' => 'contactpersonid'"), 'Sales forms were unexpectedly changed to use purchase contact persons');
 check(str_contains($responsibleMigration, 'SET `responsible` = `contactperson`') && str_contains($responsibleMigration, 'SET `contactperson` = NULL'), 'Historical contactperson field semantics are no longer documented by the migration');
