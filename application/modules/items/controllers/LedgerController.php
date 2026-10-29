@@ -188,6 +188,13 @@ class Items_LedgerController extends DEEC_Controller_Action
 		array $values,
 		array $row
 	): array {
+		if(
+			($row['referencemodule'] ?? '') === 'items'
+			&& ($row['referencetype'] ?? '') === 'stockplanning'
+			&& array_intersect(array_keys($values), ['itemid', 'warehouseid', 'sku', 'quantity', 'type'])
+		) {
+			throw new RuntimeException('ITEMS_PLANNING_LEDGER_IMMUTABLE');
+		}
 		if (array_intersect(array_keys($values), ['itemid', 'warehouseid', 'sku', 'quantity', 'type'])) $this->getStockService()->prepareCreateData(array_replace($row, $values));
 		if(array_key_exists('sku', $values)) {
 			$values['itemid'] = $this->getStockService()
@@ -248,6 +255,9 @@ class Items_LedgerController extends DEEC_Controller_Action
 		array $oldRow,
 		array $newRow
 	): void {
+		if(($oldRow['referencemodule'] ?? '') === 'items' && ($oldRow['referencetype'] ?? '') === 'stockplanning') {
+			throw new RuntimeException('ITEMS_PLANNING_LEDGER_COPY_NOT_ALLOWED');
+		}
 		if(!$newRow) {
 			return;
 		}
@@ -260,6 +270,7 @@ class Items_LedgerController extends DEEC_Controller_Action
 		array $row
 	): void {
 		$this->getStockService()->revert($row);
+		(new Items_Service_StockPlanning())->revertFulfillment($row);
 	}
 
 	protected function getStockService(): Items_Service_Stock

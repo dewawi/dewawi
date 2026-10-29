@@ -87,6 +87,8 @@ $db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clienti
 $db->query('CREATE TABLE shopinquiryform (id INT PRIMARY KEY, shopid INT NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquirydata (id INT PRIMARY KEY, formid INT NOT NULL, shopid INT NOT NULL, token VARCHAR(255) NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE uom LIKE install_success.uom');
+$db->query('CREATE TABLE itemstock (id INT AUTO_INCREMENT PRIMARY KEY, itemid INT NOT NULL, warehouseid INT NOT NULL, quantity DECIMAL(12,4), reserved DECIMAL(12,4), incoming DECIMAL(12,4), clientid INT NOT NULL, UNIQUE KEY (itemid, warehouseid, clientid)) ENGINE=InnoDB');
+$db->query('INSERT INTO itemstock (itemid, warehouseid, quantity, reserved, incoming, clientid) VALUES (10, 3, 8, 99, 88, 7)');
 $db->query("INSERT INTO uom (id, clientid, ordering, `default`, deleted) VALUES (20, 7, 0, 1, 1), (21, 7, 2, 0, 0), (23, 7, 1, 0, 0), (25, 7, 1, 0, 0), (30, 8, 0, 0, 0), (31, 8, 9, 1, 0), (40, 9, 2, 1, 0), (41, 9, 1, 1, 0), (42, 9, 1, 1, 0), (43, 9, 0, 1, 1), (50, 10, 0, 1, 1), (60, 12, -1, 0, 0), (61, 12, 0, 2, 0)");
 $db->query("INSERT INTO contact (id, type, clientid, deleted) VALUES (1, ' customer ', 7, 0), (2, 'supplier', 7, 0), (3, 'customer,supplier', 7, 0), (4, '', 7, 0), (5, 'partner', 7, 1), (6, 'Prospect', 7, 0)");
 $db->query("INSERT INTO shopinquirydata (id, formid, shopid, token, clientid, deleted) VALUES (1, 11, 41, 'duplicate-token', 7, 0), (2, 11, 41, 'duplicate-token', 7, 0), (3, 11, 42, 'duplicate-token', 7, 0), (4, 11, 41, 'duplicate-token', 8, 0)");
@@ -120,6 +122,14 @@ foreach ($roleQueries as $query) {
     if (str_starts_with(trim($query['query']), 'INSERT IGNORE INTO `contactrole`')) $db->query($query['query']);
 }
 check((int)$db->query('SELECT COUNT(*) FROM contactrole')->fetch_row()[0] === 4, 'Repeated contact role upgrade created duplicates');
+check($db->query("SHOW TABLES LIKE 'stockplanning'")->num_rows === 1, 'Stock planning upgrade did not create its table');
+check($db->query("SHOW COLUMNS FROM stockplanning LIKE 'fulfilled'")->fetch_assoc()['Type'] === 'decimal(12,4)', 'Stock planning fulfilled precision is incorrect');
+check($db->query('SELECT CONCAT(reserved, ":", incoming) FROM itemstock WHERE id = 1')->fetch_row()[0] === '0.0000:0.0000', 'Legacy planning totals were not normalized');
+$db->query("INSERT INTO stockplanning (type, itemid, warehouseid, quantity, fulfilled, planningdate, status, clientid) VALUES ('reservation', 10, 3, 5, 2, '2026-11-01', 'planned', 7), ('incoming', 10, 3, 9, 4, '2026-11-02', 'planned', 7), ('incoming', 10, 3, 20, 0, '2026-11-03', 'cancelled', 7)");
+foreach ($roleQueries as $query) {
+    if (str_starts_with(trim($query['query']), 'UPDATE `itemstock`')) $db->query($query['query']);
+}
+check($db->query('SELECT CONCAT(reserved, ":", incoming) FROM itemstock WHERE id = 1')->fetch_row()[0] === '3.0000:5.0000', 'Repeated stock planning upgrade did not derive open totals');
 
 echo "PASS: full installation, schema indexes, upgrade migrations and failure handling on " . $db->server_info . "\n";
 $db->close();

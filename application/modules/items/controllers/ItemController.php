@@ -26,6 +26,8 @@ class Items_ItemController extends DEEC_Controller_Action
 		$optionDb = new Items_Model_DbTable_Itemopt();
 		$optionSetDb = new Items_Model_DbTable_Itemoptset();
 		$ledgerDb = new Items_Model_DbTable_Ledger();
+		$planningDb = new Items_Model_DbTable_Stockplanning();
+		$stockDb = new Items_Model_DbTable_Itemstock();
 		$itemDb = new Items_Model_DbTable_Item();
 
 		$variants = [];
@@ -68,11 +70,24 @@ class Items_ItemController extends DEEC_Controller_Action
 			);
 		}
 
+		$planning = $planningDb->getByItemId($id);
+		$availability = [];
+		$planningService = new Items_Service_StockPlanning();
+		$warehouseDb = new Application_Model_DbTable_Warehouse();
+		foreach($stockDb->getByItemId($id) as $stock) {
+			$warehouseId = (int)$stock['warehouseid'];
+			$availability[$warehouseId] = $planningService->getAvailability($id, $warehouseId, date('Y-m-d'));
+			$warehouse = $warehouseDb->getById($warehouseId);
+			$availability[$warehouseId]['warehouse'] = $warehouse['title'] ?? (string)$warehouseId;
+		}
+
 		return [
 			'item' => $row,
 			'itemAttributes' => $attributeDb->getPositions($id),
 			'itemOptions' => $optionDb->getPositions($id),
 			'itemLedgers' => $ledgerDb->getByItemId($id),
+			'itemStockPlanning' => $planning,
+			'itemAvailability' => $availability,
 			'itemVariants' => $variants,
 			'itemVariantOptionSets' => $variantOptionSets,
 			'itemParent' => $parent,

@@ -48,6 +48,11 @@ class Items_Model_List_Stocks extends DEEC_List
 				'type' => 'text',
 			],
 			[
+				'name' => 'forecastavailable',
+				'label' => 'ITEMS_STOCK_FORECAST_AVAILABLE',
+				'type' => 'text',
+			],
+			[
 				'name' => 'cost',
 				'label' => 'ITEMS_COST',
 				'type' => 'currency',

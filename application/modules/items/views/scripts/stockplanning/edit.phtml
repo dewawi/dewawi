@@ -1,0 +1,80 @@
+<?php
+$this->title = $this->translate('ITEMS_PLANNING');
+$this->headTitle($this->title);
+echo $this->Messages();
+?>
+
+<?php if(!empty($this->stockplanning['referencemodule']) && !empty($this->stockplanning['referencetype']) && !empty($this->stockplanning['referenceid'])): ?>
+	<p>
+		<a href="/<?php echo $this->escape($this->stockplanning['referencemodule']); ?>/<?php echo $this->escape($this->stockplanning['referencetype']); ?>/view/id/<?php echo (int)$this->stockplanning['referenceid']; ?>">
+			<?php echo $this->translate('ITEMS_PLANNING_OPEN_REFERENCE'); ?>
+		</a>
+	</p>
+<?php endif; ?>
+
+<?php echo $this->form->renderForm([
+	'id' => 'stockplanning',
+	'activeTab' => $this->activeTab,
+	'tabs' => [
+		'overview' => ['title' => 'TABS_OVERVIEW'],
+		'reference' => ['title' => 'ITEMS_PLANNING_ORIGIN'],
+	],
+]); ?>
+
+<?php if(($this->stockplanning['status'] ?? '') === 'planned'): ?>
+	<div class="dw-section">
+		<h3><?php echo $this->translate('ITEMS_PLANNING_PROCESS'); ?></h3>
+		<p>
+			<?php echo $this->translate('ITEMS_PLANNING_REMAINING'); ?>:
+			<strong><?php echo $this->escape((float)$this->stockplanning['quantity'] - (float)$this->stockplanning['fulfilled']); ?></strong>
+		</p>
+		<?php if(!empty($this->availability) && ($this->stockplanning['type'] ?? '') === 'reservation'): ?>
+			<p>
+				<?php echo $this->translate('ITEMS_PLANNING_AVAILABLE_ON_DATE'); ?>:
+				<strong><?php echo $this->escape($this->availability['available']); ?></strong>
+				<?php if($this->availability['shortage'] > 0): ?>
+					· <?php echo $this->translate('ITEMS_PLANNING_SHORTAGE'); ?>:
+					<strong><?php echo $this->escape($this->availability['shortage']); ?></strong>
+				<?php endif; ?>
+			</p>
+			<p>
+				<?php echo $this->translate('ITEMS_PLANNING_EARLIEST_DATE'); ?>:
+				<strong><?php echo $this->escape($this->availability['earliestDate'] ?? $this->translate('ITEMS_PLANNING_NOT_AVAILABLE')); ?></strong>
+			</p>
+		<?php endif; ?>
+		<form class="stockplanning-operation" method="post" action="/items/stockplanning/apply/id/<?php echo (int)$this->stockplanning['id']; ?>">
+			<input type="hidden" name="operation" value="<?php echo $this->stockplanning['type'] === 'incoming' ? 'receive' : 'fulfill'; ?>">
+			<label>
+				<?php echo $this->translate('ITEMS_PLANNING_PROCESS_QUANTITY'); ?>
+				<input class="number" data-precision="4" name="quantity" required>
+			</label>
+			<label>
+				<?php echo $this->translate('ITEMS_LEDGER_DATE'); ?>
+				<input class="datePicker" name="ledgerdate" value="<?php echo date('Y-m-d'); ?>" required>
+			</label>
+			<button type="submit"><?php echo $this->translate($this->stockplanning['type'] === 'incoming' ? 'ITEMS_PLANNING_RECEIVE' : 'ITEMS_PLANNING_FULFILL'); ?></button>
+		</form>
+		<form class="stockplanning-operation" method="post" action="/items/stockplanning/apply/id/<?php echo (int)$this->stockplanning['id']; ?>">
+			<input type="hidden" name="operation" value="<?php echo $this->stockplanning['type'] === 'reservation' ? 'release' : 'cancel'; ?>">
+			<button type="submit"><?php echo $this->translate($this->stockplanning['type'] === 'reservation' ? 'ITEMS_PLANNING_RELEASE' : 'ITEMS_PLANNING_CANCEL'); ?></button>
+		</form>
+		<?php if($this->stockplanning['type'] === 'reservation'): ?>
+			<form class="stockplanning-operation" method="post" action="/items/stockplanning/apply/id/<?php echo (int)$this->stockplanning['id']; ?>">
+				<input type="hidden" name="operation" value="cancel">
+				<button type="submit"><?php echo $this->translate('ITEMS_PLANNING_CANCEL_RESERVATION'); ?></button>
+			</form>
+		<?php endif; ?>
+	</div>
+	<script>
+	jQuery(function($) {
+		$('.stockplanning-operation').on('submit', function(event) {
+			event.preventDefault();
+			var $form = $(this);
+			$.post($form.attr('action'), $form.serialize()).done(function(response) {
+				if(response && response.ok) window.location.reload();
+				else window.alert(response && response.message ? response.message : 'save_failed');
+			});
+		});
+	});
+	</script>
+<?php endif; ?>

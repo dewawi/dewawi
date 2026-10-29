@@ -89,6 +89,14 @@ echo $this->FileManager();
 			'title' => 'TABS_LEDGER',
 			'html' => $this->Ledger(),
 		],
+		'availability' => [
+			'title' => 'ITEMS_STOCK_AVAILABILITY',
+			'html' => $this->partial('item/availability.phtml', [
+				'item' => $this->item,
+				'planning' => $this->itemStockPlanning,
+				'availability' => $this->itemAvailability,
+			]),
+		],
 		'attributes' => [
 			'title' => 'TABS_ATTRIBUTES',
 			'html' => $this->Attributes(),

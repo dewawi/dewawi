@@ -1,0 +1,92 @@
+<div class="dw-section" data-section="availability">
+	<p>
+		<a href="/items/stockplanning/add/type/incoming/itemid/<?php echo (int)$this->item['id']; ?>">
+			<?php echo $this->translate('ITEMS_PLANNING_NEW_INCOMING'); ?>
+		</a>
+		·
+		<a href="/items/stockplanning/add/type/reservation/itemid/<?php echo (int)$this->item['id']; ?>">
+			<?php echo $this->translate('ITEMS_PLANNING_NEW_RESERVATION'); ?>
+		</a>
+	</p>
+
+	<h3><?php echo $this->translate('ITEMS_STOCK_AVAILABILITY'); ?></h3>
+	<?php if(empty($this->availability)): ?>
+		<p><?php echo $this->translate('ITEMS_PLANNING_NO_STOCK'); ?></p>
+	<?php else: ?>
+		<table class="dw-table">
+			<thead>
+				<tr>
+					<th><?php echo $this->translate('ITEMS_WAREHOUSE'); ?></th>
+					<th><?php echo $this->translate('ITEMS_STOCK_QUANTITY'); ?></th>
+					<th><?php echo $this->translate('ITEMS_STOCK_RESERVED'); ?></th>
+					<th><?php echo $this->translate('ITEMS_STOCK_AVAILABLE'); ?></th>
+					<th><?php echo $this->translate('ITEMS_STOCK_INCOMING'); ?></th>
+					<th><?php echo $this->translate('ITEMS_STOCK_FORECAST_AVAILABLE'); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($this->availability as $warehouseId => $values): ?>
+					<tr>
+						<td><?php echo $this->escape($values['warehouse']); ?></td>
+						<td><?php echo $this->escape($values['physical']); ?></td>
+						<td><?php echo $this->escape($values['reserved']); ?></td>
+						<td><?php echo $this->escape($values['currentAvailable']); ?></td>
+						<td><?php echo $this->escape($values['incoming']); ?></td>
+						<td><?php echo $this->escape($values['available']); ?></td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+
+	<h3><?php echo $this->translate('ITEMS_PLANNING_OPEN'); ?></h3>
+	<?php $open = array_filter((array)$this->planning, static fn(array $row): bool => $row['status'] === 'planned'); ?>
+	<?php if(!$open): ?>
+		<p><?php echo $this->translate('ITEMS_PLANNING_NONE'); ?></p>
+	<?php else: ?>
+		<table class="dw-table">
+			<thead>
+				<tr>
+					<th><?php echo $this->translate('ITEMS_PLANNING_DATE'); ?></th>
+					<th><?php echo $this->translate('ITEMS_PLANNING_TYPE'); ?></th>
+					<th><?php echo $this->translate('ITEMS_WAREHOUSE'); ?></th>
+					<th><?php echo $this->translate('ITEMS_PLANNING_QUANTITY'); ?></th>
+					<th><?php echo $this->translate('ITEMS_PLANNING_REMAINING'); ?></th>
+					<th><?php echo $this->translate('ITEMS_PLANNING_ORIGIN'); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($open as $row): ?>
+					<tr>
+						<td><a href="/items/stockplanning/edit/id/<?php echo (int)$row['id']; ?>"><?php echo $this->escape($row['planningdate']); ?></a></td>
+						<td><?php echo $this->translate($row['type'] === 'incoming' ? 'ITEMS_PLANNING_INCOMING' : 'ITEMS_PLANNING_RESERVATION'); ?></td>
+						<td><?php echo (int)$row['warehouseid']; ?></td>
+						<td><?php echo $this->escape($row['quantity']); ?></td>
+						<td><?php echo $this->escape((float)$row['quantity'] - (float)$row['fulfilled']); ?></td>
+						<td>
+							<?php if(!empty($row['referencemodule']) && !empty($row['referencetype']) && !empty($row['referenceid'])): ?>
+								<a href="/<?php echo $this->escape($row['referencemodule']); ?>/<?php echo $this->escape($row['referencetype']); ?>/view/id/<?php echo (int)$row['referenceid']; ?>">
+									<?php echo $this->escape($row['referencetype'] . ' #' . $row['referenceid']); ?>
+								</a>
+							<?php else: ?>
+								<?php echo $this->escape($row['externalnumber'] ?? ''); ?>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+
+	<?php foreach($this->availability as $warehouseId => $values): ?>
+		<h3><?php echo $this->translate('ITEMS_PLANNING_TIMELINE'); ?> · <?php echo $this->escape($values['warehouse']); ?></h3>
+		<table class="dw-table">
+			<thead><tr><th><?php echo $this->translate('ITEMS_PLANNING_DATE'); ?></th><th><?php echo $this->translate('ITEMS_PLANNING_EVENT'); ?></th><th><?php echo $this->translate('ITEMS_PLANNING_QUANTITY'); ?></th><th><?php echo $this->translate('ITEMS_PLANNING_FORECAST'); ?></th></tr></thead>
+			<tbody>
+				<?php foreach($values['timeline'] as $event): ?>
+					<tr><td><?php echo $this->escape($event['date']); ?></td><td><?php echo $this->translate($event['type'] === 'stock' ? 'ITEMS_STOCK_QUANTITY' : ($event['type'] === 'incoming' ? 'ITEMS_PLANNING_INCOMING' : 'ITEMS_PLANNING_RESERVATION')); ?></td><td><?php echo $this->escape($event['quantity']); ?></td><td><?php echo $this->escape($event['forecast']); ?></td></tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endforeach; ?>
+</div>

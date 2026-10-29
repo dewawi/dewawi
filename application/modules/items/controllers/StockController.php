@@ -18,11 +18,15 @@ class Items_StockController extends DEEC_Controller_Action
 
 	protected function buildCurrentStockView(): void
 	{
+		$availabilityDate = trim((string)$this->_getParam('availabilitydate', date('Y-m-d')));
+		if(!$this->parseStockDate($availabilityDate)) $availabilityDate = date('Y-m-d');
+
 		$this->buildListView([
 			'viewKey' => 'stocks',
 			'list' => 'Items_Model_List_Stocks',
-			'entity' => Items_Model_Entity_Stock::listConfig(),
+			'entity' => Items_Model_Entity_Stock::listConfig($availabilityDate),
 		]);
+		$this->view->availabilitydate = $availabilityDate;
 	}
 
 	protected function getToolbarClass(): string
@@ -45,6 +49,7 @@ class Items_StockController extends DEEC_Controller_Action
 		$toolbarClass = $this->getToolbarClass();
 		$toolbarInlineClass = $this->getToolbarInlineClass();
 		$toolbar = new $toolbarClass();
+		if(method_exists($toolbar, 'setHistoricalMode')) $toolbar->setHistoricalMode();
 		$toolbarInline = new $toolbarInlineClass();
 		$options = $this->_helper->Options->getOptions($toolbar);
 		$params = $this->_helper->Params->getParams($toolbar, $options);

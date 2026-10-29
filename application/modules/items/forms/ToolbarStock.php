@@ -2,6 +2,11 @@
 
 class Items_Form_ToolbarStock extends Items_Form_Toolbar
 {
+	public function setHistoricalMode(): void
+	{
+		unset($this->elements['availabilitydate'], $this->elements['availabilitystatus']);
+	}
+
 	public function __construct()
 	{
 		parent::__construct();
@@ -60,6 +65,35 @@ class Items_Form_ToolbarStock extends Items_Form_Toolbar
 		]);
 
 		$this->addElement([
+			'name' => 'availabilitydate',
+			'type' => 'text',
+			'label' => 'ITEMS_STOCK_AVAILABILITY_DATE',
+			'default' => date('Y-m-d'),
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'date', 'pattern' => 'Y-m-d'],
+			'attribs' => ['class' => 'datePicker'],
+		]);
+
+		$this->addElement([
+			'name' => 'availabilitystatus',
+			'type' => 'select',
+			'label' => 'ITEMS_STOCK_AVAILABILITY_STATUS',
+			'default' => 'all',
+			'options' => [
+				'all' => 'ITEMS_STOCK_STATUS_ALL',
+				'positive' => 'ITEMS_STOCK_STATUS_POSITIVE',
+				'zero' => 'ITEMS_STOCK_STATUS_ZERO',
+				'negative' => 'ITEMS_STOCK_STATUS_NEGATIVE',
+			],
+			'filter' => true,
+			'toolbar' => 'filters',
+			'wrap' => false,
+			'format' => ['type' => 'string'],
+		]);
+
+		$this->addElement([
 			'name' => 'warehouseid',
 			'type' => 'select',
 			'label' => 'ITEMS_WAREHOUSE',
@@ -89,6 +123,7 @@ class Items_Form_ToolbarStock extends Items_Form_Toolbar
 			    'reserved' => 'ITEMS_STOCK_RESERVED',
 			    'available' => 'ITEMS_STOCK_AVAILABLE',
 			    'incoming' => 'ITEMS_STOCK_INCOMING',
+			    'forecastavailable' => 'ITEMS_STOCK_FORECAST_AVAILABLE',
 			    'cost' => 'ITEMS_COST',
 			    'stockvalue' => 'ITEMS_STOCK_VALUE',
 			],

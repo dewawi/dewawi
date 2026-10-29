@@ -174,6 +174,7 @@ class TrashController extends Zend_Controller_Action
 			// Reverse stock effect for ledger deletion
 			if ($itemDb) {
 				(new Items_Service_Stock())->revert($row);
+				(new Items_Service_StockPlanning())->revertFulfillment($row);
 			}
 
 			// Delete ledgers for delivery orders

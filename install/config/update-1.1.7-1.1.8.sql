@@ -83,3 +83,61 @@ LEFT JOIN (
   WHERE candidate.`deleted` = 0 AND preferred.`id` IS NULL
 ) AS chosen ON chosen.`clientid` = u.`clientid`
 SET u.`default` = IF(u.`id` = chosen.`id`, 1, 0);
+
+CREATE TABLE IF NOT EXISTS `stockplanning` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` varchar(20) NOT NULL,
+  `itemid` int(11) NOT NULL DEFAULT 0,
+  `warehouseid` int(11) NOT NULL DEFAULT 0,
+  `quantity` decimal(12,4) NOT NULL DEFAULT 0,
+  `fulfilled` decimal(12,4) NOT NULL DEFAULT 0,
+  `planningdate` date DEFAULT NULL,
+  `dateconfirmed` tinyint(1) NOT NULL DEFAULT 0,
+  `status` varchar(20) NOT NULL DEFAULT 'draft',
+  `allowoverbooking` tinyint(1) NOT NULL DEFAULT 0,
+  `contactid` int(11) DEFAULT NULL,
+  `referencemodule` varchar(50) DEFAULT NULL,
+  `referencetype` varchar(50) DEFAULT NULL,
+  `referenceid` int(11) DEFAULT NULL,
+  `referencepositionid` int(11) DEFAULT NULL,
+  `linkedplanningid` int(11) DEFAULT NULL,
+  `externalnumber` varchar(255) DEFAULT NULL,
+  `comment` text DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `locked` int(11) NOT NULL DEFAULT 0,
+  `lockedtime` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `client_item_warehouse_status_date` (`clientid`, `itemid`, `warehouseid`, `status`, `planningdate`),
+  KEY `client_type_status` (`clientid`, `type`, `status`),
+  KEY `client_reference` (`clientid`, `referencemodule`, `referencetype`, `referenceid`, `referencepositionid`),
+  KEY `client_contact` (`clientid`, `contactid`),
+  KEY `client_linkedplanning` (`clientid`, `linkedplanningid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+UPDATE `itemstock`
+SET
+  `reserved` = COALESCE((
+    SELECT SUM(sp.`quantity` - sp.`fulfilled`)
+    FROM `stockplanning` AS sp
+    WHERE sp.`itemid` = `itemstock`.`itemid`
+      AND sp.`warehouseid` = `itemstock`.`warehouseid`
+      AND sp.`clientid` = `itemstock`.`clientid`
+      AND sp.`type` = 'reservation'
+      AND sp.`status` = 'planned'
+      AND sp.`deleted` = 0
+  ), 0),
+  `incoming` = COALESCE((
+    SELECT SUM(sp.`quantity` - sp.`fulfilled`)
+    FROM `stockplanning` AS sp
+    WHERE sp.`itemid` = `itemstock`.`itemid`
+      AND sp.`warehouseid` = `itemstock`.`warehouseid`
+      AND sp.`clientid` = `itemstock`.`clientid`
+      AND sp.`type` = 'incoming'
+      AND sp.`status` = 'planned'
+      AND sp.`deleted` = 0
+  ), 0);

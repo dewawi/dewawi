@@ -2,6 +2,29 @@
 
 class Items_Model_Entity_Stock
 {
+	public static function forecastAvailableExpression(string $date): Zend_Db_Expr
+	{
+		if(!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date)) {
+			throw new InvalidArgumentException('Invalid availability date.');
+		}
+
+		return new Zend_Db_Expr(
+			'COALESCE(s.quantity, 0)'
+			. ' + COALESCE((SELECT SUM(spi.quantity - spi.fulfilled) FROM stockplanning AS spi'
+			. ' WHERE spi.itemid = s.itemid AND spi.warehouseid = s.warehouseid'
+			. ' AND spi.clientid = s.clientid AND spi.type = "incoming"'
+			. ' AND spi.status = "planned" AND spi.dateconfirmed = 1'
+			. ' AND spi.planningdate <= ' . "'" . $date . "'"
+			. ' AND spi.deleted = 0), 0)'
+			. ' - COALESCE((SELECT SUM(spr.quantity - spr.fulfilled) FROM stockplanning AS spr'
+			. ' WHERE spr.itemid = s.itemid AND spr.warehouseid = s.warehouseid'
+			. ' AND spr.clientid = s.clientid AND spr.type = "reservation"'
+			. ' AND spr.status = "planned"'
+			. ' AND spr.planningdate <= ' . "'" . $date . "'"
+			. ' AND spr.deleted = 0), 0)'
+		);
+	}
+
 	public static function costExpression(): Zend_Db_Expr
 	{
 		return new Zend_Db_Expr(
@@ -23,8 +46,10 @@ class Items_Model_Entity_Stock
 		);
 	}
 
-	public static function listConfig(): array
+	public static function listConfig(?string $availabilityDate = null): array
 	{
+		$forecast = self::forecastAvailableExpression($availabilityDate ?: date('Y-m-d'));
+
 		return [
 			'tableClass' => 'Items_Model_DbTable_Itemstock',
 			'alias' => 's',
@@ -35,8 +60,9 @@ class Items_Model_Entity_Stock
 			'columns' => [
 				'*',
 				'available' => new Zend_Db_Expr(
-					's.quantity - s.reserved'
+					'COALESCE(s.quantity, 0) - COALESCE(s.reserved, 0)'
 				),
+				'forecastavailable' => $forecast,
 				'cost' => self::costExpression(),
 				'stockvalue' => self::stockValueExpression(),
 			],
@@ -103,6 +129,17 @@ class Items_Model_Entity_Stock
 					'type' => 'stockstatus',
 					'column' => 'quantity',
 				],
+				'availabilitystatus' => [
+					'type' => 'callback',
+					'callback' => static function($select, $value) use ($forecast): void {
+						$operators = ['positive' => '>', 'zero' => '=', 'negative' => '<'];
+						if(!isset($operators[$value])) {
+							$select->where('1 = 0');
+							return;
+						}
+						$select->where('(' . (string)$forecast . ') ' . $operators[$value] . ' ?', 0);
+					},
+				],
 			],
 
 			'orders' => [
@@ -115,6 +152,7 @@ class Items_Model_Entity_Stock
 				'reserved',
 				'available' => new Zend_Db_Expr('available'),
 				'incoming',
+				'forecastavailable' => new Zend_Db_Expr('forecastavailable'),
 				'cost' => new Zend_Db_Expr('cost'),
 				'stockvalue' => new Zend_Db_Expr('stockvalue'),
 				'modified',
