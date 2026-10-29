@@ -1976,8 +1976,8 @@ function requestEmailSend(url, data, $button, target) {
 
 			pushMessages(Dewawi.message('MESSAGES_EMAIL_SENT_SUCCESS'), 'success', target);
 			if (module === 'campaigns' && controller === 'campaign') {
-				getCampaignRecipients();
-				getCampaignErrors();
+				getCampaignRecipients(null, true);
+				getCampaignErrors(true);
 			} else {
 				getEmailmessages(window.pageYOffset, true);
 			}
@@ -4137,6 +4137,15 @@ function renderXRechnungResults($form, response) {
 		return;
 	}
 	$results.empty();
+	$form.find('[data-xrechnung-error]').each(function () {
+		var $field = $(this), state = $field.data('dw-xrechnung-error');
+		var described = ($field.attr('aria-describedby') || '').split(/\s+/).filter(function (id) { return id && id !== $field.attr('data-xrechnung-error'); }).join(' ');
+		if (described) $field.attr('aria-describedby', described);
+		else $field.removeAttr('aria-describedby');
+		if (state && state.invalid !== undefined) $field.attr('aria-invalid', state.invalid);
+		else $field.removeAttr('aria-invalid');
+		$field.removeAttr('data-xrechnung-error').removeData('dw-xrechnung-error');
+	});
 	$form.find('.is-invalid').removeClass('is-invalid');
 	$form.find('.dw-field-error').remove();
 
@@ -4154,7 +4163,14 @@ function renderXRechnungResults($form, response) {
 		if ($field.length) {
 			$field.addClass('is-invalid');
 			label = $field.closest('.dw-field').find('.dw-label').first().text().trim();
-			$('<div>', {'class': 'dw-field-error', text: message}).insertAfter($field);
+			var errorId = $field.attr('data-xrechnung-error');
+			if (!errorId) {
+				renderXRechnungResults.sequence = (renderXRechnungResults.sequence || 0) + 1;
+				errorId = 'dw-xrechnung-error-' + renderXRechnungResults.sequence;
+				$field.data('dw-xrechnung-error', {invalid: $field.attr('aria-invalid')}).attr({'data-xrechnung-error': errorId, 'aria-invalid': 'true', 'aria-describedby': $.trim(($field.attr('aria-describedby') || '') + ' ' + errorId)});
+				$('<div>', {id: errorId, 'class': 'dw-field-error', role: 'alert'}).insertAfter($field);
+			}
+			$('<div>', {text: message}).appendTo(document.getElementById(errorId));
 		}
 
 		var summary = label ? label + ': ' + message : message;
@@ -4381,49 +4397,58 @@ $(document).on('change', '.dw-toolbar select[name="state"]', function () {
 	});
 });
 
-function getCampaignRecipients($field)
-{
-	var $container = $('#campaign-recipients');
-	var $pagination = $container.find('.dw-pagination');
-
-	var page = 1;
-	var limit = 25;
-
-	if($pagination.length) {
-		if($field && $field.jquery && $field.attr('name') === 'limit') {
-			$pagination.find('[name="page"]').val(1);
-		}
-
-		page = parseInt($pagination.find('[name="page"]').val(), 10) || 1;
-		limit = parseInt($pagination.find('[name="limit"]').val(), 10) || 25;
+function loadCampaignOverview(kind, data, force) {
+	var $container = $('#campaign-' + kind);
+	if (!$container.length) return;
+	var url = baseUrl + '/campaigns/campaign/' + kind + '/id/' + id;
+	var key = JSON.stringify([url, data]);
+	var previous = $container.data('dw-campaign-request');
+	if (!force && previous && previous.key === key) return previous.xhr;
+	var state = {key: key, busy: previous ? previous.busy : $container.attr('aria-busy')};
+	$container.data('dw-campaign-request', state).attr('aria-busy', 'true');
+	if (previous && previous.xhr) previous.xhr.abort();
+	var $feedback = $container.prev('[data-campaign-feedback]');
+	if (!$feedback.length) $feedback = $('<div>', {'data-campaign-feedback': kind}).insertBefore($container);
+	pushMessages(Dewawi.message('MESSAGES_CAMPAIGN_LOADING'), 'info', $feedback);
+	var completed = false;
+	function current() { return $container.data('dw-campaign-request') === state; }
+	function failed() {
+		pushMessages(Dewawi.message(kind === 'recipients' ? 'MESSAGES_CAMPAIGN_RECIPIENTS_FAILED' : 'MESSAGES_CAMPAIGN_ERRORS_FAILED'), 'danger', $feedback);
 	}
-
-	$.ajax({
-		type: 'POST',
-		url: baseUrl + '/campaigns/campaign/recipients/id/' + id,
-		data: {
-			page: page,
-			limit: limit
+	var xhr = $.ajax({
+		type: kind === 'recipients' ? 'POST' : 'GET', url: url, data: data, dataType: 'html', cache: false, timeout: 120000,
+		success: function (response) {
+			if (!current()) return;
+			var $nodes = typeof response === 'string' ? $($.parseHTML(response, document, false)).filter(function () { return this.nodeType === 1; }) : $();
+			var selector = kind === 'recipients' ? '[data-pagination-change="getCampaignRecipients"]' : '[data-campaign-errors]';
+			if ($nodes.length !== 1 || !$nodes.is(selector)) { failed(); return; }
+			$container.empty().append($nodes);
+			$feedback.empty();
 		},
-		cache: false,
-		success: function(response) {
-			$container.html(response);
+		error: function (xhr, status) { if (current() && status !== 'abort') failed(); },
+		complete: function () {
+			completed = true;
+			if (!current()) return;
+			if (state.busy === undefined) $container.removeAttr('aria-busy');
+			else $container.attr('aria-busy', state.busy);
+			$container.removeData('dw-campaign-request');
+			$feedback.children('.dw-alert--info').remove();
 		}
 	});
+	if (!completed) state.xhr = xhr;
+	return xhr;
 }
 
-function getCampaignErrors()
-{
-	var $container = $('#campaign-errors');
+function getCampaignRecipients($field, force) {
+	var $container = $('#campaign-recipients');
+	var $pagination = $container.find('.dw-pagination');
+	if ($field && $field.jquery && $field.attr('name') === 'limit') $pagination.find('[name="page"]').val(1);
+	return loadCampaignOverview('recipients', {
+		page: parseInt($pagination.find('[name="page"]').val(), 10) || 1,
+		limit: parseInt($pagination.find('[name="limit"]').val(), 10) || 25
+	}, force === true);
+}
 
-	if(!$container.length) return;
-
-	$.ajax({
-		type: 'GET',
-		url: baseUrl + '/campaigns/campaign/errors/id/' + id,
-		cache: false,
-		success: function(response) {
-			$container.html(response);
-		}
-	});
+function getCampaignErrors(force) {
+	return loadCampaignOverview('errors', {}, force === true);
 }

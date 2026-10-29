@@ -1,4 +1,7 @@
 <?php return array(
+	'MESSAGES_CAMPAIGN_LOADING' => 'Updating overview …',
+	'MESSAGES_CAMPAIGN_RECIPIENTS_FAILED' => 'The recipient overview could not be refreshed. Please try again.',
+	'MESSAGES_CAMPAIGN_ERRORS_FAILED' => 'The error overview could not be refreshed. Please try again.',
 	'MESSAGES_UPLOAD_RUNNING' => 'Uploading files …',
 	'MESSAGES_UPLOAD_SELECT' => 'Please select a file.',
 	'MESSAGES_UPLOAD_TYPE' => 'This file type or content is not supported.',

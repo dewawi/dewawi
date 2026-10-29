@@ -132,4 +132,23 @@ check((int)$adapter->fetchOne('SELECT COUNT(*) FROM emailmessage') === 5, 'Statu
 $controllerSource = file_get_contents($root . '/application/modules/contacts/controllers/EmailController.php');
 check(str_contains($controllerSource, "error_log('Email send action failed: '"), 'Send action exceptions are not logged');
 
+// Exercise the real campaign error query with isolated schema and tenant boundaries.
+$adapter->query('CREATE TABLE contact (id INT PRIMARY KEY, contactid VARCHAR(50), name1 VARCHAR(255), clientid INT, deleted INT)');
+$adapter->insert('contact', ['id' => 100, 'contactid' => 'C-100', 'name1' => 'Campaign fixture', 'clientid' => 7, 'deleted' => 0]);
+$campaignIds = [];
+foreach (['pending', 'sent', 'delivered', 'failed', 'bounce', 'complaint'] as $status) {
+    $messageId = addEmailMessage($adapter, 7, $status === 'failed' ? 'Fixture SMTP rejection' : ($status === 'pending' ? 'pending' : 'sent'));
+    $adapter->update('emailmessage', ['campaignid' => 10, 'documentid' => 0, 'module' => 'campaigns', 'controller' => 'campaign', 'deliverystatus' => in_array($status, ['delivered', 'bounce', 'complaint'], true) ? $status : null], ['id = ?' => $messageId]);
+    $campaignIds[$status] = $messageId;
+}
+foreach ([['clientid' => 8], ['deleted' => 1], ['campaignid' => 11], ['module' => 'sales'], ['controller' => 'other']] as $override) {
+    $messageId = addEmailMessage($adapter, 7, 'Fixture rejection');
+    $adapter->update('emailmessage', array_replace(['campaignid' => 10, 'documentid' => 0, 'module' => 'campaigns', 'controller' => 'campaign'], $override), ['id = ?' => $messageId]);
+}
+$before = $adapter->fetchAll('SELECT * FROM emailmessage ORDER BY id');
+$errors = (new Campaigns_Service_CampaignRecipientService())->getErrors(10);
+check(array_map('intval', array_column($errors, 'id')) === array_reverse(array_values(array_intersect_key($campaignIds, array_flip(['failed', 'bounce', 'complaint'])))), 'Campaign errors mixed pending/sent/delivered, tenants, deleted or unrelated messages');
+check(count(array_filter($errors, fn($row) => $row['contactnumber'] === 'C-100' && $row['contactname'] === 'Campaign fixture')) === 3, 'Campaign errors lost their authorized contact context');
+check($adapter->fetchAll('SELECT * FROM emailmessage ORDER BY id') === $before, 'Campaign overview changed delivery status or retried a message');
+
 echo "PASS: {$checks} real-schema email message status, tenant and deletion checks\n";

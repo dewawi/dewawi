@@ -2,7 +2,7 @@
 
 ## Umfang und Bestandsaufnahme
 
-Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen, Phase 4.3 um Dokument- und Toolbar-Aktionen, Phase 4.4 um Auto-Save und Positionsbearbeitung, Phase 4.5 um Kontaktaktionen und modale Dialoge, Phase 4.6 um Artikel- und Listenaktionen und Phase 4.7 um Upload- und Download-Zustände. Weitere Aktionen werden separat migriert.
+Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen, Phase 4.3 um Dokument- und Toolbar-Aktionen, Phase 4.4 um Auto-Save und Positionsbearbeitung, Phase 4.5 um Kontaktaktionen und modale Dialoge, Phase 4.6 um Artikel- und Listenaktionen und Phase 4.7 um Upload- und Download-Zustände. Die internen Rückmeldungen einschließlich Kampagnen wurden im konsolidierten Abschluss unten technisch geprüft; manuelle Abnahme und gesonderte Folgearbeiten bleiben dort ausdrücklich ausgewiesen.
 
 | Vorhandene Stelle | Befund | Entscheidung / Umsetzung |
 | --- | --- | --- |
@@ -686,16 +686,140 @@ Alle Dateioperationen liefen ausschließlich in temporären Testverzeichnissen; 
 - Die umfassende Vereinheitlichung älterer Bootbox-/URL-Import-/Downloadanzeigen innerhalb der Drittanbieter-Manager würde deren eigene Oberfläche und Sourcen betreffen. In dieser Phase werden die bestehenden Blueimp-Anzeigen wiederverwendet und lokale ARIA-Zustände ergänzt. Drittanbieterdateien, Verzeichnisrechte, Zugriffsregeln und Uploadbibliotheken bleiben unverändert.
 - Browserzustände und Elternübernahme werden isoliert simuliert, reale Multipart- und Routing-Abläufe separat über HTTP geprüft. Keine manuelle Geräte-/Screenreader-Abnahme und kein produktiver Ende-zu-Ende-Lauf mit Dateiauswahl und tatsächlichem Speichern auf dem Gerät.
 
-Keine Commits oder Pushes. **Phase 4.7 ist abgeschlossen; die nächste Phase wurde nicht begonnen.**
+Keine Commits oder Pushes. **Phase 4.7 ist abgeschlossen.** Der nachfolgende konsolidierte Abschluss prüft den aktuellen Gesamtstand einschließlich Kampagnen.
 
 Commit-Vorschlag: `unify upload and download feedback`
 
-## Verbleibende Folgeschritte nach Phase 4.7 (noch nicht umgesetzt)
+## Konsolidierter Abschluss – internes UX-System
 
-| Priorität | Bereich und konkrete Dateien | Nächster begrenzter Schritt / notwendige Regressionen |
-| --- | --- | --- |
-| P3 | Kampagnen: `application/modules/campaigns/views/helpers/Errors.php`, `application/modules/campaigns/models/List/Recipients.php`, `js/global.js` (`getCampaignRecipients`, `getCampaignErrors`) | Technische Statusdetails und Fehler beim Aktualisieren der Übersichten separat vereinheitlichen; Bounce-/Complaint-Regeln erhalten |
-| P3 | Shop-Oberfläche: `application/layouts/scripts/site.phtml`, `css/shop.css`, `js/shops.js` | Eigenes Shop-Design und Bootstrap-Verwendung separat prüfen, bevor das interne `ui.css` übernommen wird |
+### A. Abgeschlossene Implementierung und aktueller Phasenstatus
+
+Der Abschlussauftrag wurde auf einem sauberen Arbeitsverzeichnis begonnen. Phase 4.7 war bereits umgesetzt und als `unify upload and download feedback` in der lokalen Historie vorhanden. Ihr Code und ihre aktuellen Tests wurden erneut geprüft. Die folgende Bewertung beruht auf dem jetzt ausgeführten Gesamtlauf und den tatsächlich vorhandenen Implementierungen, nicht nur auf den historischen Phasenberichten.
+
+| Phase / Bereich | Aktueller Status und geprüfter Umfang |
+| --- | --- |
+| 1–3: Meldungen und E-Mail | Implementiert und aktuell geprüft: vier Schweregrade, sichere Textausgabe, FlashMessenger, Deduplizierung, Schließen, Kontrast, ARIA, Versandbestätigung, lokale Buttonzustände, Versandhistorie und unklarer Versandstatus. |
+| 4.1: Löschen und Stornieren | Implementiert und aktuell geprüft: geschützte Einzel-/Mehrfachaktionen, überlappende Auswahlen, bestätigte Teilresultate, kein automatischer Retry, Dokument-Readonly und Mandantentrennung. |
+| 4.2: Erstellen und Speichern | Implementiert und aktuell geprüft: vorhandene native und synchrone Verträge, explizite Aktionen, ursprüngliche Inhalte/Icons/ARIA, negative und unklare Antworten, Dirty-State und Passwort-/Profilfälle. |
+| 4.3: Dokumente und Toolbar | Implementiert und aktuell geprüft: Vorschau, Finalisierung, Dokumentaktionen und native Downloads, vorhandene Validierung, Summen, Nummernkreise, Rollback und konkurrierende Finalisierung im isolierten Datenbanktest. |
+| 4.4: Auto-Save und Positionen | Implementiert und aktuell geprüft: lokale Feldzustände, eigene Fehlermeldungen, erhaltene unsaved-Markierungen, synchrone Reihenfolge, gemeinsame Positions-Queue und Schutz vor überholten Leseantworten. |
+| 4.5: Kontakte und Dialoge | Implementiert und aktuell geprüft: Zuordnung, Tags, Kontaktpersonen, E-Mail, Modal-Fokus/Tab/Escape und Schließschutz, Fehler-/Dirty-Zustände sowie bestehende serverseitige Berechtigungen. |
+| 4.6: Artikel und Listen | Implementiert und aktuell geprüft: geordnetes Kopieren, neue bestätigte IDs, Teilresultate, Auswahlsnapshot, Sortierung, Variantenfelder, Suche, Filter, Pagination und iframe-Auswahl. Bekannte abweichende Legacy-Kopierverträge bleiben unten abgegrenzt. |
+| 4.7: Upload und Download | Implementiert und jetzt erneut geprüft: natives Multipart-iframe mit wiederverwendbaren Fehleransichten, bestätigten Teiluploads, Staging und bestehenden Sicherheitsgrenzen; FileManager-/MediaManager-CSRF und Fortschritt; XRechnung mit Eingabeversionen und aufgeräumten Blob-XHR-/FileReader-Zuständen. |
+| Abschluss: Kampagnen | Implementiert und aktuell geprüft: lokale Lesezustände, Zusammenfassung identischer Anfragen, Verwerfen überholter Antworten, erhaltene Daten bei Fehlern, Pagination, erneuter Versand über die vorhandene Funktion, Statusübersetzungen und ausgeblendete Transportdetails. |
+
+Die vorgesehenen internen Rückmeldeabläufe sind technisch implementiert. Der aktuelle automatisierte Gesamtlauf zeigt keine neu eingeführte kritische UX-Regression. Diese Bewertung ist keine manuelle Gesamtfreigabe und keine Zusage, dass sämtliche Legacy-Backendaktionen bereits modernisierte Antwort- oder Sicherheitsverträge besitzen.
+
+### Änderungen dieses Abschlussauftrags und Architekturentscheidungen
+
+`getCampaignRecipients()` und `getCampaignErrors()` behalten ihre bestehenden Einstiegspunkte, Methoden, Routen und Parameter. Beide verwenden einen kleinen gemeinsamen Lesehelfer in `global.js`. Der Zustand liegt direkt am jeweiligen vorhandenen Container. Identische laufende Leseanfragen werden zusammengefasst. Bei anderer Pagination wird die vorherige Anfrage abgebrochen; nur der aktuelle Besitzer darf HTML, Meldungen und Busy-Zustand verändern. Empfänger und Fehlerübersicht bleiben voneinander unabhängig.
+
+Lokale Rückmeldungen verwenden ausschließlich `pushMessages()` und `.dw-alert` in einem Ziel neben der betroffenen Übersicht. Es gibt keine neue Meldungsbibliothek, keinen globalen AJAX-Lock und keinen zweiten Versandmechanismus. Fehler bleiben sichtbar und lassen die vorhandenen Datensätze stehen. Abbrüche überholter Requests erzeugen keinen Fehler. Erfolgreiches Nachladen räumt nur die eigene Leserückmeldung auf. HTTP-, Parser-, Timeout- und unerwartete HTML-Antworten zeigen übersetzte, sichere Texte. Die tatsächlichen HTML-Verträge sind der bestehende Empfänger-/Pagination-Wrapper und ein ergänztes `data-campaign-errors` am bisherigen Fehlerwrapper. Die Antwort wird ohne eingebettete Skripte übernommen; die vorhandene serverseitige HTML-/Escaping-Grenze bleibt maßgeblich.
+
+Nach bestätigtem erneutem Versand erzwingt die bestehende `requestEmailSend()`-Funktion frische Empfänger- und Fehlerdaten. Eine noch vor dem Versand gestartete identische Leseanfrage darf diese Aktualisierung nicht ersetzen. Bestätigung, seitenlokale Versandsperre, Timeout und Verzicht auf automatische Wiederholung bleiben erhalten. Lesefehler stehen in ihren eigenen Bereichen und löschen keinen bereits bestätigten Versanderfolg.
+
+`Errors.php` zeigt Status, Empfänger, Datum und Benutzer weiterhin an, jedoch keine technischen `response`-/`deliveryresponse`-Texte. Speicherung, Versandprotokollierung und Diagnosefelder bleiben unverändert. `Campaigns_Model_List_Recipients` unterstützt bereits alle sechs Status und blendet Bounce-/Complaint-Wiederholungen aus; seine fachliche Logik wurde nicht geändert. Der fehlende englische Kampagnenkatalog wurde für die aktiven Kampagnenformular- und Übersichtstexte ergänzt. Drei gemeinsame Leserückmeldungen erweitern die vorhandenen DE-/EN-Kataloge; der Browserkatalog enthält jetzt 66 vollständig übersetzte Schlüssel je Sprache.
+
+Bei XRechnung wurde ein konkret festgestellter Accessibility-Mangel im vorhandenen Renderer korrigiert: Feldfehler besitzen eindeutige IDs, `aria-invalid`, eine `aria-describedby`-Beziehung und eine Fehlerrolle. Vorhandene Hilfetexte und ursprüngliche ARIA-Werte bleiben erhalten. Die nächste bestätigte Prüfantwort entfernt nur die ergänzten Beziehungen; technische Fehler erhalten vorhandene Feldfehler. Die Formularfelder werden dadurch nicht als Auto-Save-Änderungen markiert. Validierungsregeln und XML-Generierung bleiben unverändert.
+
+Die gemeinsamen Komponenten `pushMessages`, `removeMessages`, `setButtonLoading`, `beginActionRequest`, Toolbar, Feldfehler und Unsaved-Markierungen wurden anhand ihrer aktuellen Browserfälle zusammen geprüft. Bestehende synchrone AJAX-Verträge und native Navigation bleiben erhalten. CSS, Shop-Dateien, SMTP-Konfiguration, Versandstatusspeicherung, fachliche Dokument-/Lagerlogik und Controller-Sicherheitsarchitektur wurden in diesem Abschlussauftrag nicht geändert.
+
+### Aktuell ausgeführte Gesamttests
+
+Alle folgenden Befehle wurden während dieses Abschlussauftrags tatsächlich ausgeführt. Die PHP-Fixtures verwenden abgefangene Transporte beziehungsweise In-Memory-Adapter. SQL-Prüfungen starten ausschließlich temporäre MariaDB-Instanzen unter `/tmp` mit isolierten Sockets und `--skip-networking`. HTTP-Prüfungen verwenden temporäre Apache-Installationen und Testdateien. Keine echten E-Mails, Kampagnensendungen, produktiven Dokumentbuchungen, produktiven Dateioperationen oder Datenbankänderungen.
+
+| Aktuell ausgeführter Befehl | Ergebnis |
+| --- | --- |
+| `php tests/security/notifications.php` | 350 allgemeine, 60 Verkaufs- und 24 Einkaufsprüfungen; 66 Browserübersetzungen je Sprache, aktive Kampagnenformulartexte, sechs Status und sichere Renderer bestanden. |
+| `php tests/security/permissions.php` | 369 module permission, ACL, manager context and compatibility cases. Bestanden. |
+| `php tests/security/tenant-access.php` | 268 tenant, object, legacy model, AJAX, trash, stock, history and shared-list cases. Bestanden. |
+| `php tests/security/document-edits.php` | 7400 document edit checks; final notes, field protection, child routes, locks and tenant permissions. Bestanden. |
+| `php tests/security/attachments.php` | 364 quote email permission, recipient, resend and tenant-sharing checks; 249 attachment upload, download, deletion, path and mail-selection checks. Bestanden. |
+| `php tests/security/contact-tags.php` | 74 contact tag security, display and filter cases. Bestanden. |
+| `php tests/security/email-history.php` | 233 email history permission, tenant-sharing, document mapping and controller checks. Bestanden. |
+| `php tests/security/quote-email.php` | 364 quote email permission, recipient, resend and tenant-sharing checks. Bestanden. |
+| `php tests/security/smtp-routing.php` | 15 Prüfungen bestanden (`OK`). |
+| `php tests/security/contactpersons.php` | 66 contact-person model, form, migration and email checks. Bestanden. |
+| `php tests/security/contact-export.php` | 89 contact export cases. Bestanden. |
+| `php tests/security/email-contactperson-assignment.php` | 53 email-to-contact-person assignment cases. Bestanden. |
+| `php tests/security/purchase-contactpersons.php` | 20 purchase contact-person integration cases. Bestanden. |
+| `php tests/security/profile-save.php` | 100 profile and password security cases. Bestanden. |
+| `php tests/security/list-ordering.php` | 792 entity and legacy ordering cases. Bestanden. |
+| `php tests/security/item-tags.php` | 80 item tag security and compatibility cases. Bestanden. |
+| `php tests/security/file-access.php` | 317 stored file, tenant, publication, manager, upload and header checks. Bestanden. |
+| `php tests/security/url-download.php` | 137 URL download checks; DNS and HTTP transport fully isolated. Bestanden. |
+| `php tests/security/pageblocks.php` | 74 pageblock list, CRUD, hierarchy, ordering, ACL and tenant cases. Bestanden. |
+| `php tests/documents/lifecycle.php` | 879 document lifecycle checks; copy, continuation, finalization and tenant isolation. Bestanden. |
+| `php tests/documents/position-read.php` | 233 position read and write checks; views preserve data, copies and finalization update totals. Bestanden. |
+| `php tests/documents/e-invoice.php` | 369 e-invoice preparation and UBL XML checks; discounts, tax groups, escaping, lifecycle, permissions and unchanged originals. Bestanden. |
+| `php tests/documents/calculation.php` | 725 calculation checks including sales PDF payloads and finalized document write protection. Bestanden. |
+| `php tests/documents/calculation.php purchases` | 701 calculation checks including purchases PDF payloads and finalized document write protection. Bestanden. |
+| `php tests/documents/calculation.php processes` | 695 calculation checks including processes PDF payloads and finalized document write protection. Bestanden. |
+| `php tests/documents/pdf.php` | 134 PDF checks; originals preserved, missing files restored, tenant isolation retained. Bestanden. |
+| `php tests/documents/pdf-totals.php` | 170 PDF checks including mixed-rate total boxes, exemption and balance. Bestanden. |
+| `php tests/items/stock-summary.php` | stock filters, historical stock, valuation, AJAX and translations. Bestanden. |
+| `php tests/items/stock-planning.php` | stock planning chronology, partial quantities, shortages, warehouse isolation and schema guards. Bestanden. |
+| `php tests/lists/summary.php` | central list footer and monetary summaries. Bestanden. |
+| `php tests/contacts/history-states.php` | 14 translated history statuses; selectable states unchanged. Bestanden. |
+| `python3 tests/ui/notifications.py` | Je **1971 Prüfungen bei 1280 px und 390 px** bestanden, einschließlich aller **1909 bisherigen UX-Fälle**. Neue Kampagnenfälle prüfen echte Einstiegspunkte, konkurrierende Reads, Deduplizierung, verspätete Callback-Abschlüsse, Fehler, Pagination, bestätigten/unklaren erneuten Versand, unabhängige Rückmeldungen, Fokus und Tabellen. Neue XRechnung-Fälle prüfen Fehlerzuordnung und erhaltene Hilfetexte. |
+| `python3 tests/documents/calculation-ui.py` | Dokument-/Inline-Notiz-Auto-Save und **28 Berechnungsprüfungen** bestanden. |
+| `python3 tests/security/email-message-status-db.py` | **31 Prüfungen** gegen das reale E-Mail-Schema bestanden. Ergänzt: echte Kampagnenfehlerabfrage mit Ausschluss von Pending/Sent/Delivered, anderen Mandanten, gelöschten/anderen Kampagnen-/Moduldatensätzen; autorisierter Kontaktkontext und keine Statusänderung durch Lesen. |
+| `python3 tests/documents/calculation-db.py` | Isolierte MariaDB-Prüfungen für Berechnung, Steuerbefreiung, Rollback, Parent-Lock, konkurrierende Dokumente/Mandanten, Nummernvergabe, erneute Finalisierung und veraltete Edits bestanden. |
+| `python3 tests/items/stock-movements-db.py` | Lagerbewegungen, Filter, Sortierung, Pagination, Mandantentrennung und Routen gegen isolierte MariaDB bestanden. |
+| `python3 tests/security/configuration-http.py` | **8461 HTTP-Fälle**, **3985 inventarisierte PHP-/Include-Dateien**, Manager-CSRF und Upload-ARIA-Browserprüfung bestanden. |
+| `python3 tests/security/attachment-http.py` | Native Multipart-Uploads mit realem Adapter und Fehleransichten sowie Datei-/Download-/Tenant-/Methoden-/Traversal-/Symlink-/Cache-/Veröffentlichungsprüfungen bestanden. |
+| `python3 tests/security/error-handling-http.py` | **140 HTTP-Fälle** für produktive/Entwicklungs-Fehlerdarstellung, HTML/JSON, Initialisierung, Logging-Fallback, Cron, Varianten, Installer und Manager bestanden. |
+| `php -l` | Alle **7 geänderten/neuen PHP-Dateien** ohne Syntaxfehler. |
+| `git diff --check` | Ohne Befund. |
+
+Das sind 39 aktuelle Haupt-Testbefehle zuzüglich Syntaxprüfung, Diffprüfung und gesondertem Sicherheits-Audit. In eingebundenen Fixtures wiederholt ausgeführte Checks werden nicht als voneinander unabhängige Abnahmen ausgegeben. Erwartete Readonly-/Berechtigungs-/SMTP-Ablehnungen stammen aus isolierten Negativfällen.
+
+Die ersten MariaDB-Anläufe wurden durch die Sandbox beim Unix-Socket-Bind blockiert; parallel gestartete Initialisierungen kollidierten außerdem bei temporären SQL-Dateinamen. Die finalen Datenbankläufe wurden nacheinander außerhalb der Sandbox ausgeführt und sind bestanden. Neue Renderer-Fixtures wurden an die vorhandene Listen-API und vollständige Pagination-Metadaten angepasst. Im realen SQL-Test werden von PDO als Strings gelieferte IDs für den Vergleich numerisch normalisiert. Die aktuellen Ergebnisse oben stammen aus den korrigierten, bestandenen Läufen.
+
+### Geänderte Dateien dieses Abschlussauftrags
+
+1. `js/global.js`
+2. `application/modules/campaigns/views/helpers/Errors.php`
+3. `application/views/helpers/Messages.php`
+4. `languages/de_DE/default/messages.php`
+5. `languages/en_US/default/messages.php`
+6. `languages/en_US/campaigns/campaigns.php` (neu)
+7. `tests/security/notifications.php`
+8. `tests/security/email-message-status-db.php`
+9. `tests/ui/notifications.html`
+10. `tests/ui/notifications-review.md`
+
+Frühere Phasen sind bereits separat vorhanden; ihre historischen Dateilisten stehen in den jeweiligen Abschnitten. Vorhandene fremde uncommittete Änderungen wurden nicht überschrieben. Es wurden keine Commits oder Pushes ausgeführt.
+
+### B. Offene manuelle Abnahme und technische Grenzen
+
+**Offene manuelle Abnahme:** Es wurde keine manuelle Screenreader-, Geräte- oder fachliche Gesamtprüfung durchgeführt. Automatisierte DOM-/Tastaturprüfungen gelten ausdrücklich nicht als vollständige Screenreader-Abnahme. Die gemeinsame fachliche Abnahme steht aus.
+
+Für diese Abnahme sind folgende konkrete Punkte offen:
+
+1. Mit Screenreader wichtige Fehler, Warnungen und Statuswechsel prüfen; Feldzuordnung, vorhandene Hilfetexte, einmalige Ansage und Fokus nach Modalschließen beurteilen.
+2. Reale Tastaturbedienung mit Tab/Shift+Tab/Enter/Escape in Kontakt- und Artikelansichten, Dialogen und gleichursprünglichen iframes prüfen. Sichtbare Fokuszustände und Schließsperren während Vorgängen bestätigen. Fremde iframe-Origins bleiben eine dokumentierte Grenze.
+3. Auf tatsächlichem Mobilgerät bei schmaler Breite und mit Zoom lange Texte, Tabellen, Toolbar-Aktionen, Touchbedienung und Ladebuttons prüfen. Automatisiert wurden echte Viewports von 1280 und 390 px geprüft.
+4. In einer isolierten Testumgebung Kontakt-/Artikeländerungen, Varianten, Angebote/Aufträge/Lieferscheine/Rechnungen, Einkaufsanfragen/-bestellungen, Lagerpositionen und Kampagnen als zusammenhängende Benutzerabläufe abnehmen. Die automatisierten Prüfungen decken Komponenten, Controller, Modellverträge und konkurrierende Datenbankfälle ab; ein produktiver Ende-zu-Ende-Lauf wurde nicht durchgeführt.
+5. Native Dateiauswahl, bewusst unterbrochene Uploadnavigation, Back/Forward-Cache und echte native/Blob-Downloads auf Geräten prüfen. Ein gestarteter Download beweist kein erfolgreiches Speichern auf dem Gerät.
+
+Technische Grenzen bleiben: seitenlokale Locks ohne tab-/geräteübergreifende Idempotenz; Timeout ohne sicheren serverseitigen Abbruch; einzelne Transaktionen statt Gesamt-Rollback bei Kopier-/Uploadbatches; bestehende synchrone Auto-Save-Verträge; fremde iframe-Origins; bestehende Drittanbieter-Dateimanageroberflächen. Legacy-Kopierrouten mit skalaren/abweichenden Antworten und bekannte Backenddefekte, etwa die nicht initialisierte Kontaktkopiervariable, bleiben getrennte Folgearbeiten. Die UI behauptet dort keinen unbestätigten Erfolg.
+
+### C. Gesonderte Sicherheits- und Shop-Aufgaben
+
+**Neu konkret bestätigt: Kampagnen-Wiederholungsbeschränkung im Backend.** Die normalen Kampagnenrenderer blenden erneuten Versand bei Bounce/Complaint weiterhin aus. Ein gesonderter Audit über den echten `Application_Controller_Action_Helper_Email` mit dem vorhandenen In-Memory-/Mail-Testadapter zeigte jedoch: Gespeicherte Kampagnennachrichten mit `deliverystatus=bounce` oder `complaint` werden beim direkten Helper-Aufruf weiterhin akzeptiert und lösen jeweils genau einen abgefangenen Versand aus. Ausgeführt wurde `php /tmp/dewawi-campaign-resend-audit.php`; keine echte E-Mail wurde gesendet. Das prüft den Helper-Vertrag und ist kein vollständiger HTTP-/ACL-Endpunkttest.
+
+Die Ursache ist der generische Message-ID-Zweig in `application/controllers/helpers/Email.php`: Er übernimmt gespeicherte Metadaten und prüft dort den Kampagnenzustellstatus nicht erneut. Der spezifische Quote-Empfängerschutz greift nur für Verkaufsangebote. Die vorhandene UI-Sperre ist daher keine verbindliche serverseitige Bounce-/Complaint-Sicherung. Eine separate priorisierte Backend-Aufgabe muss Kampagnen-/Objektberechtigungen, Suppression sowie verbindliche Wiederholungsbeschränkungen über alle manuellen und automatischen Einstiegspunkte prüfen. Der Abschlussauftrag verändert ausdrücklich weder SMTP noch Versandstatusspeicherung oder Empfängerprotokollierung; diese Sicherheitsmigration wurde nicht begonnen.
+
+Weiterhin separat: POST-/CSRF-Bindung zustandsändernder Legacy-GET-Routen, serverseitige Idempotenz, Duplikatvermeidung über Tabs/Geräte und umfassende Controller-Sicherheitsmodernisierung. Die bereits in Phase 4.6 belegte generische GET-Kopierroute bleibt dabei ein konkreter Befund. Bestandene Security-Regressionstests sind keine umfassende Sicherheitsfreigabe.
+
+Das Shop-Frontend bleibt vollständig aus diesem Abschlussauftrag ausgenommen: keine Änderungen an Shop-Layout, `css/shop.css` oder `js/shops.js`. Shop-spezifische AJAX-/UX-Vereinheitlichung ist eine spätere eigenständige Aufgabe.
+
+**Bewertung:** Technischer Implementierungsabschluss der beauftragten internen UX-Rückmeldungen mit bestandenem aktuellem automatisiertem Gesamtlauf. Offen bleiben die oben genannten manuellen Abnahmen, Legacy-Grenzen und priorisierten separaten Sicherheitsarbeiten. Keine uneingeschränkte manuelle oder sicherheitliche Gesamtfreigabe.
+
+Commit-Vorschlag: `complete unified notification and ajax feedback system`
+
+Nach dem Abschluss wurde gestoppt; keine Shop- oder Sicherheitsmigration begonnen.
 
 ## Ausgeführte Prüfungen der Phasen 1–3
 

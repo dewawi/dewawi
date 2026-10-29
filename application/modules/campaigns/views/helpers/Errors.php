@@ -9,7 +9,7 @@ class Zend_View_Helper_Errors extends Zend_View_Helper_Abstract
 
 		ob_start();
 		?>
-		<div class="dw-list-page">
+		<div class="dw-list-page" data-campaign-errors>
 			<?php if(!$errors) : ?>
 				<div class="dw-email-card">
 					<?php echo $this->view->escape($this->view->translate('CAMPAIGNS_NO_ERRORS')); ?>
@@ -49,10 +49,6 @@ class Zend_View_Helper_Errors extends Zend_View_Helper_Abstract
 									$statusLabel = $this->view->translate('CAMPAIGNS_RECIPIENT_FAILED');
 								}
 
-								$response = !empty($error['deliveryresponse'])
-									? $error['deliveryresponse']
-									: ($error['response'] ?? '');
-
 								$date = !empty($error['deliverydate'])
 									? $error['deliverydate']
 									: ($error['messagesent'] ?? '');
@@ -82,7 +78,6 @@ class Zend_View_Helper_Errors extends Zend_View_Helper_Abstract
 											<div class="dw-list-value"><?php echo $this->view->escape($users[$error['messagesentby']] ?? ''); ?></div>
 										<?php endif; ?>
 
-										<pre><?php echo $this->view->escape($response); ?></pre>
 									</td>
 									<td>
 										<?php if(!in_array($deliveryStatus, ['bounce', 'complaint'], true)) : ?>

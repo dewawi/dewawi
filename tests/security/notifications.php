@@ -21,6 +21,11 @@ require_once $root . '/application/modules/items/forms/Item.php';
 require_once $root . '/application/modules/items/models/Entity/Item.php';
 require_once $root . '/application/views/helpers/Toolbar.php';
 require_once $root . '/application/forms/Upload.php';
+require_once $root . '/library/DEEC/List.php';
+require_once $root . '/library/DEEC/Translate.php';
+require_once $root . '/application/modules/campaigns/models/List/Recipients.php';
+require_once $root . '/application/modules/campaigns/views/helpers/Errors.php';
+require_once $root . '/application/modules/campaigns/views/helpers/Contacts.php';
 
 class NotificationTestView extends Zend_View
 {
@@ -83,7 +88,7 @@ foreach (['de_DE', 'en_US'] as $locale) {
     foreach ($view->catalog as $key => $text) {
         if (str_starts_with($key, 'MESSAGES_UPLOAD_')) check($text !== '' && $text !== $key, $locale . ': untranslated upload message ' . $key);
     }
-    check(count($translations) === 63 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
+    check(count($translations) === 66 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
     foreach ($translations as $key => $text) check($key !== $text, $locale . ': untranslated browser key ' . $key);
     $view->messages = [
         'MESSAGES_EMAIL_SENT_SUCCESS', 'MESSAGES_EMAIL_SENT_SUCCESS',
@@ -130,6 +135,44 @@ foreach (['de_DE', 'en_US'] as $locale) {
     $variant = (new Items_Form_Item())->setVariantMode();
     check(($variant->getElement('title')['attribs']['readonly'] ?? null) === 'readonly' && ($variant->getElement('catid')['attribs']['disabled'] ?? null) === 'disabled', 'Variant inherited fields lost readonly/disabled behavior');
     check(empty($variant->getElement('sku')['attribs']['readonly']) && empty($variant->getElement('price')['attribs']['readonly']) && empty($variant->getElement('quantity')['attribs']['disabled']), 'Variant-specific SKU/price/quantity fields became unavailable');
+
+    // Exercise the real campaign renderers without transport internals or changed resend rules.
+    $campaignCatalog = require $root . '/languages/' . $locale . '/campaigns/campaigns.php';
+    preg_match_all("/'(CAMPAIGNS_[A-Z_]+)'/", file_get_contents($root . '/application/modules/campaigns/forms/Campaign.php'), $campaignKeys);
+    foreach (array_unique($campaignKeys[1]) as $key) check(isset($campaignCatalog[$key]) && $campaignCatalog[$key] !== '', $locale . ': campaign form key missing: ' . $key);
+
+    $view->catalog = array_replace($view->catalog, $campaignCatalog);
+    $translator = new DEEC_Translate($locale);
+    $translator->load('campaigns', $root . '/languages/' . $locale . '/campaigns/campaigns.php');
+    $translator->loadDir('default', $root . '/languages/' . $locale . '/default');
+    Zend_Registry::set('DEEC_Translate', $translator);
+    $campaignList = new Campaigns_Model_List_Recipients(['view' => $view]);
+    $messageStates = [
+        ['pending', '', 'PENDING', true], ['sent', '', 'SENT', true],
+        ['sent', 'delivered', 'DELIVERED', true], ['SMTP secret /var/mail', '', 'FAILED', true],
+        ['sent', 'bounce', 'BOUNCE', false], ['sent', 'complaint', 'COMPLAINT', false],
+    ];
+    foreach ($messageStates as [$response, $delivery, $label, $canResend]) {
+        $message = ['id' => 800, 'contactid' => 100, 'recipient' => '<img src=x>@example.invalid', 'response' => $response, 'deliverystatus' => $delivery, 'deliveryresponse' => 'Provider secret /var/internal', 'contactname' => '<script>Contact</script>'];
+        $campaignList->setOptions(['emailmessages' => [100 => [$message]]]);
+        $recipientHtml = $campaignList->renderMessages(['id' => 100]);
+        $view->campaignErrors = [$message];
+        $errorHtml = (new Zend_View_Helper_Errors())->setView($view)->Errors();
+        check(str_contains($recipientHtml, $campaignCatalog['CAMPAIGNS_RECIPIENT_' . $label]), $locale . ': campaign status untranslated: ' . $label);
+        check(str_contains($recipientHtml, 'resendMessage(800, this)') === $canResend && str_contains($errorHtml, 'resendMessage(800, this)') === $canResend, 'Campaign bounce/complaint resend visibility changed');
+        foreach ([$recipientHtml, $errorHtml] as $html) check(!str_contains($html, '<img') && !str_contains($html, '<script>') && !str_contains($html, 'secret') && !str_contains($html, '/var/'), 'Campaign renderer leaked transport details or interpreted markup');
+        check(str_contains($errorHtml, 'data-campaign-errors') && str_contains($errorHtml, 'dw-table-wrap'), 'Campaign errors lost its response marker or responsive table');
+    }
+    $view->campaignErrors = [];
+    $html = (new Zend_View_Helper_Errors())->setView($view)->Errors();
+    check(str_contains($html, $campaignCatalog['CAMPAIGNS_NO_ERRORS']) && str_contains($html, 'data-campaign-errors'), 'Empty campaign errors has no confirmed HTML contract');
+    $view->contacts = [];
+    $view->recipientStatus = [];
+    $view->pagination = ['records' => 150, 'pages' => 3, 'page' => 3, 'limit' => 50];
+    $view->setScriptPath($root . '/application/views/scripts');
+    $view->addHelperPath($root . '/application/views/helpers');
+    $html = (new Zend_View_Helper_Contacts())->setView($view)->Contacts();
+    check(str_contains($html, 'data-pagination-change="getCampaignRecipients"') && str_contains($html, 'dw-pagination') && str_contains($html, 'value="3"') && str_contains($html, 'value="50"'), 'Campaign recipient contract or pagination changed');
 
     // Render the real email history view: transport details stay out of the user interface.
     $view->setScriptPath($root . '/application/modules/contacts/views/scripts');

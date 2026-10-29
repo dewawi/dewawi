@@ -150,10 +150,11 @@ $(function() {
   calls = []; module = 'contacts'; id = 0; sendMessage();
   check(!calls.length && !Dewawi.emailRequestPending && $('#output .dw-alert--danger li').text() === dwMessages.MESSAGES_CONTACT_NOT_FOUND, 'Missing contact sent a request or left loading');
   id = 100;
-  module = 'campaigns'; controller = 'campaign'; var refreshed = 0;
+  module = 'campaigns'; controller = 'campaign'; var refreshed = 0, originalCampaignRecipients = getCampaignRecipients, originalCampaignErrors = getCampaignErrors;
   getCampaignRecipients = function() { refreshed++; }; getCampaignErrors = function() { refreshed++; };
   calls = []; $('#resend').trigger('click'); finish(calls[0], {ok: true});
   check(refreshed === 2 && calls.length === 1, 'Campaign resend refresh changed');
+  getCampaignRecipients = originalCampaignRecipients; getCampaignErrors = originalCampaignErrors;
 
   calls = []; $('[data-document-finalize]').trigger('click').trigger('click');
   check(calls.length === 1 && $('[data-document-finalize]').attr('aria-busy') === 'true', 'Finalize duplicate request allowed');
@@ -1296,7 +1297,7 @@ $(function() {
   ['de_DE', 'en_US'].forEach(function(locale) {
     dwMessages = catalogs[locale]; calls = []; requests = []; readers = []; downloads = []; urls = []; revoked = [];
     var $area = $('<div>').appendTo('body');
-    var $form = $('<form id="xrechnung-export-form" action="/fixture/sales/invoice/xrechnung/id/100" data-autosave="false"><div class="dw-field"><label class="dw-label">Buyer reference</label><input name="buyer_reference" value="A"></div><button type="submit" data-xrechnung-check aria-busy="false"><b>Check</b></button><button type="button" data-xrechnung-download disabled><b>XML</b></button></form>').appendTo($area);
+    var $form = $('<form id="xrechnung-export-form" action="/fixture/sales/invoice/xrechnung/id/100" data-autosave="false"><div class="dw-field"><label class="dw-label">Buyer reference</label><input name="buyer_reference" value="A" aria-describedby="buyer-help"><span id="buyer-help">Help</span></div><button type="submit" data-xrechnung-check aria-busy="false"><b>Check</b></button><button type="button" data-xrechnung-download disabled><b>XML</b></button></form>').appendTo($area);
     $form.data({'request-failed': catalogs[locale].XRECHNUNG_REQUEST_FAILED, success: catalogs[locale].XRECHNUNG_VALID, downloading: catalogs[locale].XRECHNUNG_DOWNLOADING});
     var $results = $('<div data-xrechnung-results aria-live="polite">').appendTo($area);
     var $check = $form.find('[data-xrechnung-check]'), $download = $form.find('[data-xrechnung-download]'), $input = $form.find('input');
@@ -1309,8 +1310,11 @@ $(function() {
     check($input.hasClass('is-invalid') && $form.find('.dw-field-error').text() === '<img src=x>Required' && $results.find('.dw-alert--warning').length === 1 && !$results.find('img,script').length && $download.prop('disabled'), 'Business validation errors/warnings lost or interpreted as HTML');
     $form.trigger('submit'); finish(calls[calls.length - 1], null, {status: 0, kind: 'timeout'});
     check($input.hasClass('is-invalid') && $form.find('.dw-field-error').text() === '<img src=x>Required' && $results.find('.dw-alert--warning').length === 1 && $results.find('[data-xrechnung-request-error]').text() === catalogs[locale].XRECHNUNG_REQUEST_FAILED, 'Technical preflight failure erased field validation errors or warnings');
+    var xError = $input.attr('data-xrechnung-error');
+    check($input.attr('aria-invalid') === 'true' && $input.attr('aria-describedby') === 'buyer-help ' + xError && $('#' + xError).attr('role') === 'alert' && !$input.attr('data-autosave-unsaved'), 'XRechnung field error lacks ARIA association or marks autosave dirty');
     check(!$check.prop('disabled') && $check.attr('aria-busy') === 'false' && $check.find('b').length === 1 && !$form.attr('aria-busy'), 'Validation did not restore button contents/ARIA');
     valid(); check(!$download.prop('disabled') && !$input.hasClass('is-invalid') && $results.find('.dw-alert--success').length === 1 && $results.find('.dw-alert--warning').length === 1, 'Confirmed validation did not unlock XML or lost warnings');
+    check(!$input.attr('aria-invalid') && $input.attr('aria-describedby') === 'buyer-help' && !$('#' + xError).length, 'XRechnung correction removed existing help or left stale ARIA errors');
     $input.val('B').trigger('input'); check($download.prop('disabled') && !$results.find('.dw-alert--success').length, 'Input change retained old download approval');
     $form.trigger('submit'); var stale = calls[calls.length - 1]; $input.val('C').trigger('change');
     finish(stale, {ok: true, valid: true, errors: [], warnings: []});
@@ -1430,6 +1434,70 @@ $(function() {
   transferTimers.forEach(function(timer) { if (timer.delay === 1000 && !timer.cleared) timer.fn(); });
   window.setTimeout = transferTimeout; window.clearTimeout = transferClearTimeout; window.XMLHttpRequest = originalXHR; window.FileReader = originalReader;
   URL.createObjectURL = createURL; URL.revokeObjectURL = revokeURL; HTMLAnchorElement.prototype.click = anchorClick;
+  // Completion audit: real campaign readers share local feedback and retain their HTML contracts.
+  var campaignAjax = $.ajax;
+  $.ajax = function(options) {
+    var deferred = $.Deferred(), xhr = deferred.promise();
+    xhr.abort = function() { if (options.error) options.error(xhr, 'abort'); deferred.reject(xhr); if (options.complete) options.complete(); };
+    calls.push({options: options, deferred: deferred, xhr: xhr}); return xhr;
+  };
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale]; module = 'campaigns'; controller = 'campaign'; id = 100; calls = []; confirms = 0; confirmResult = true;
+    var $area = $('<div>').appendTo('body');
+    var $recipients = $('<div id="campaign-recipients" aria-busy="false"><div data-pagination-change="getCampaignRecipients"><div class="dw-pagination"><select name="page"><option>1</option><option selected>2</option><option>3</option></select><select name="limit"><option>25</option><option>50</option></select></div><div class="dw-table-wrap"><table class="dw-table"><tbody><tr><td>Old recipients</td></tr></tbody></table></div></div></div>').appendTo($area);
+    var $errors = $('<div id="campaign-errors"><div data-campaign-errors>Old errors</div></div>').appendTo($area);
+    var $resend = $('<button type="button" class="dw-btn" aria-busy="false"><b>Send again</b></button>').appendTo($area);
+    function recipientHtml(text, page, limit) { return '<div data-pagination-change="getCampaignRecipients"><div class="dw-pagination"><select name="page"><option>1</option><option' + (page === 2 ? ' selected' : '') + '>2</option><option' + (page === 3 ? ' selected' : '') + '>3</option></select><select name="limit"><option>25</option><option' + (limit === 50 ? ' selected' : '') + '>50</option></select></div><div class="dw-table-wrap"><table class="dw-table"><tbody><tr><td>' + text + '</td></tr></tbody></table></div></div>'; }
+    getCampaignRecipients(); getCampaignRecipients(); getCampaignErrors(); getCampaignErrors();
+    check(calls.length === 2 && calls[0].options.type === 'POST' && calls[0].options.data.page === 2 && calls[0].options.data.limit === 25 && calls[1].options.type === 'GET', locale + ': campaign reads duplicated, blocked independent contexts or lost pagination');
+    check($recipients.attr('aria-busy') === 'true' && $errors.attr('aria-busy') === 'true' && $recipients.prev().find('.dw-alert--info li').text() === dwMessages.MESSAGES_CAMPAIGN_LOADING && !$('#loading').is(':visible'), 'Campaign reads lack local progress or activate global overlay');
+    var old = calls[0]; $recipients.find('[name=page]').val('3'); getCampaignRecipients(); var latest = calls[2];
+    check(calls.length === 3 && latest.options.data.page === 3 && $recipients.data('dw-campaign-request').xhr === latest.xhr && $recipients.attr('aria-busy') === 'true' && !$recipients.prev().find('.dw-alert--danger').length, 'Campaign abort cleared the new request or showed an error');
+    finish(old, recipientHtml('Stale recipients', 2, 25));
+    check($recipients.text().indexOf('Stale recipients') === -1 && $recipients.attr('aria-busy') === 'true' && $recipients.data('dw-campaign-request').xhr === latest.xhr, 'Old campaign success/complete overwrote results or cleared the new busy state');
+    old.options.error({status: 500}, 'error');
+    check(!$recipients.prev().find('.dw-alert--danger').length, 'Old campaign failure overwrote current feedback');
+    finish(latest, recipientHtml('Current recipients', 3, 25)); finish(calls[1], '<div class="dw-list-page" data-campaign-errors>Current errors</div>');
+    check($recipients.text().indexOf('Current recipients') !== -1 && $recipients.attr('aria-busy') === 'false' && !$errors.attr('aria-busy') && !$recipients.data('dw-campaign-request') && !$errors.data('dw-campaign-request') && !$area.find('.dw-alert--info').length, 'Campaign completion lost results or original ARIA state');
+    $recipients.find('[name=limit]').val('50'); getCampaignRecipients($recipients.find('[name=limit]'));
+    check(calls[calls.length - 1].options.data.page === 1 && calls[calls.length - 1].options.data.limit === 50, 'Campaign limit change did not reset page or keep limit');
+    finish(calls[calls.length - 1], recipientHtml('Limited recipients', 1, 50));
+    [null, {}, '', ' ', '{"ok":true}', '<html><body>Login expired</body></html>', '<div>Unrelated HTML</div>'].forEach(function(response) {
+      getCampaignRecipients(); finish(calls[calls.length - 1], response);
+      check($recipients.text().indexOf('Limited recipients') !== -1 && $recipients.prev().find('.dw-alert--danger li').text() === dwMessages.MESSAGES_CAMPAIGN_RECIPIENTS_FAILED && $recipients.attr('aria-busy') === 'false' && !$recipients.data('dw-campaign-request'), 'Invalid campaign recipient response replaced results or left a lock');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 500}, {status: 200, kind: 'parsererror'}].forEach(function(error) {
+      getCampaignErrors(); var failed = calls[calls.length - 1]; finish(failed, null, error);
+      check($errors.text() === 'Current errors' && $errors.prev().find('.dw-alert--danger li').text() === dwMessages.MESSAGES_CAMPAIGN_ERRORS_FAILED && !$errors.attr('aria-busy') && !$errors.data('dw-campaign-request'), 'Campaign read failure erased errors or retained pending state');
+    });
+    getCampaignErrors(); var aborted = calls[calls.length - 1]; aborted.xhr.abort();
+    check(!$errors.attr('aria-busy') && !$errors.data('dw-campaign-request'), 'Aborted current campaign request left busy state');
+    getCampaignErrors(); finish(calls[calls.length - 1], '<div data-campaign-errors>No errors</div>');
+    check(!$errors.prev().children().length && $errors.text() === 'No errors', 'Valid empty campaign overview did not clear its old read failure');
+    getCampaignRecipients(); var beforeSendRecipients = calls[calls.length - 1]; getCampaignErrors(); var beforeSendErrors = calls[calls.length - 1];
+    var beforeSend = calls.length;
+    resendMessage(800, $resend[0]); resendMessage(800, $resend[0]);
+    check(calls.length === beforeSend + 1 && confirms === 1 && $resend.prop('disabled') && $resend.hasClass('is-loading') && calls[calls.length - 1].options.url === '/fixture/contacts/email/send/messageid/800', 'Campaign resend confirmation, route or duplicate protection changed');
+    finish(calls[calls.length - 1], {ok: true});
+    var refreshedRecipients = calls[calls.length - 2], refreshedErrors = calls[calls.length - 1];
+    check(calls.length === beforeSend + 3 && refreshedRecipients.options.url.indexOf('/recipients/id/100') !== -1 && refreshedRecipients.options.data.limit === 50 && refreshedErrors.options.url.indexOf('/errors/id/100') !== -1, 'Confirmed resend reused stale in-flight reads or lost pagination');
+    finish(beforeSendRecipients, recipientHtml('Before resend', 1, 50)); finish(beforeSendErrors, '<div data-campaign-errors>Before resend errors</div>');
+    check($recipients.text().indexOf('Before resend') === -1 && $errors.text().indexOf('Before resend') === -1 && $recipients.attr('aria-busy') === 'true', 'Pre-send campaign response overwrote the post-send refresh');
+    finish(refreshedRecipients, null, {status: 0}); finish(refreshedErrors, null, {status: 500});
+    check($('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_EMAIL_SENT_SUCCESS && $recipients.prev().find('.dw-alert--danger').length === 1 && $errors.prev().find('.dw-alert--danger').length === 1 && !$resend.prop('disabled') && $resend.attr('aria-busy') === 'false' && $resend.find('b').length === 1, 'Campaign read error erased confirmed send or failed to restore resend button');
+    beforeSend = calls.length; resendMessage(800, $resend[0]); finish(calls[calls.length - 1], null, {status: 0, kind: 'timeout'});
+    check(calls.length === beforeSend + 1 && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_EMAIL_STATUS_UNKNOWN && !$resend.prop('disabled') && !Dewawi.emailRequestPending, 'Unknown campaign send refreshed, retried or lost history guidance');
+    confirmResult = false; beforeSend = calls.length; resendMessage(800, $resend[0]); check(calls.length === beforeSend, 'Cancelled campaign resend sent a request'); confirmResult = true;
+    getCampaignRecipients(); finish(calls[calls.length - 1], recipientHtml('Responsive recipients', 1, 50));
+    var wrap = $recipients.find('.dw-table-wrap')[0];
+    check(wrap.scrollWidth <= wrap.clientWidth + 1 || getComputedStyle(wrap).overflowX === 'auto', 'Campaign table is not responsive at ' + innerWidth);
+    var $close = $recipients.prev().find('.dw-alert__close');
+    pushMessages('Persistent read error', 'danger', $recipients.prev()); $close = $recipients.prev().find('.dw-alert__close'); $close[0].focus();
+    check(document.activeElement === $close[0] && $close.css('outline-style') !== 'none', 'Campaign message dismissal lacks visible keyboard focus');
+    $close.trigger('click'); check(!$recipients.prev().children().length, 'Campaign read feedback cannot be dismissed');
+    $area.remove();
+  });
+  $.ajax = campaignAjax;
   $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, document, autosave, position, contact, modal, item, list and accessibility checks at ' + innerWidth + 'px');
   if (window.parent !== window) window.parent.document.getElementById('result').textContent = $('#result').text();
 });

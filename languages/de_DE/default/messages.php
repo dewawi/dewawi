@@ -1,4 +1,7 @@
 <?php return array(
+	'MESSAGES_CAMPAIGN_LOADING' => 'Übersicht wird aktualisiert …',
+	'MESSAGES_CAMPAIGN_RECIPIENTS_FAILED' => 'Die Empfängerübersicht konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.',
+	'MESSAGES_CAMPAIGN_ERRORS_FAILED' => 'Die Fehlerübersicht konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.',
 	'MESSAGES_UPLOAD_RUNNING' => 'Dateien werden hochgeladen …',
 	'MESSAGES_UPLOAD_SELECT' => 'Bitte wählen Sie eine Datei aus.',
 	'MESSAGES_UPLOAD_TYPE' => 'Dieser Dateityp oder Dateiinhalt wird nicht unterstützt.',
