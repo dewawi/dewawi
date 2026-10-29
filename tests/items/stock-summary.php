@@ -327,13 +327,14 @@ $stockView = file_get_contents($root . '/application/modules/items/views/scripts
 check(!str_contains($stockView, '/items/stock/add'), 'Stock view still links to the invalid add route');
 check(!str_contains($stockView, '/items/stockplanning/'), 'Stock view duplicates planning toolbar actions');
 
+check(str_contains($globalJs, "resetPage: function () {\n\t\t\t$('#pagination-page').val(1);") && str_contains($globalJs, "$.cookie('page', 1, {path: cookiePath});"), 'Shared pagination reset lost its value/cookie behavior');
 check(
 	str_contains(
 		$globalJs,
 		"if (\$field.attr('name') === 'daterange') {\n"
 		. "\t\t\t\t\tDewawiToolbar.toggleDateRange(\$field.val());\n"
 		. "\t\t\t\t}\n\n"
-		. "\t\t\t\t$('#pagination-page').val(1);\n"
+		. "\t\t\t\tDewawiToolbar.resetPage();\n"
 		. "\t\t\t\tsearch();"
 	),
 	'Filter changes do not reset pagination'

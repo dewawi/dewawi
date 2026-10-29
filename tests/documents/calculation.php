@@ -15,6 +15,7 @@ Zend_Registry::set('User', ['id' => 42, 'name' => 'Fixture user', 'clientid' => 
 $adapter->rows['permission'] = [['id' => 1, 'userid' => 42, 'clientid' => 7, 'deleted' => 0]];
 foreach ($modules as $module => $documents) $adapter->rows['permission'][0][$module] = json_encode(array_fill_keys($documents, ['view', 'edit', 'add', 'delete']));
 require_once $root . '/application/modules/items/controllers/PriceruleposController.php';
+require_once $root . '/application/modules/items/controllers/ItemController.php';
 foreach (['sales', 'purchases', 'processes', 'items'] as $testModule) require_once $root . '/application/modules/' . $testModule . '/controllers/PositionsetController.php';
 $moduleUnderTest = $argv[1] ?? 'sales';
 if (!in_array($moduleUnderTest, ['sales', 'purchases', 'processes'], true)) throw new InvalidArgumentException('Invalid test module');
@@ -35,6 +36,8 @@ class CalculationTestOrderingSet extends Zend_Controller_Action_Helper_Abstract
         global $adapter;
         return count(array_filter($adapter->rows[$parent . $type . 'set'], static fn($row) => !$row['deleted'] && $row['parentid'] === $parentid));
     }
+    public array $sortCalls = [];
+    public function sortOrdering(...$args) { $this->sortCalls[] = $args; }
     public function pushOrdering(...$args) {}
     public function setOrdering(...$args) {}
 }
@@ -364,6 +367,16 @@ foreach ([$moduleUnderTest, 'items'] as $groupModule) {
     }
     check($response->getBody() === '' && $adapter->rows === $before, 'Invalid group edit confirmed success or changed data');
 
+    $sortHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('OrderingSet');
+    foreach (['up', 'down', 2] as $target) {
+        $_POST = ['id' => 1, 'ordering' => $target];
+        $request->setActionName('sort'); $response->clearBody();
+        ob_start(); $controller->sortAction();
+        check(ob_get_clean() === '', 'Group sort emitted extra JSON/output');
+        check(json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR)['ok'] === true, 'Completed group sort did not confirm success');
+        check(end($sortHelper->sortCalls) === [1, $document, $type, 1, $target], 'Group sort changed its legacy helper contract');
+    }
+
     foreach ([true, false] as $existing) {
         $adapter->rows[$document . $type . 'set'] = $existing ? [$setRow] : [];
         $adapter->rows[$document . $type] = [array_replace($position, [$type . 'setid' => $existing ? 1 : 0])];
@@ -392,6 +405,33 @@ foreach ([$moduleUnderTest, 'items'] as $groupModule) {
         check($deleted['ok'] === true && $deleted['id'] === $copied['id'] && $deleted['reloadPositions'] === true, 'Item group delete lost its legacy data');
     }
 }
+
+// Exercise the inherited item copy action without initializing unrelated page services.
+$adapter->rows['item'] = [
+    ['id' => 1, 'clientid' => 7, 'deleted' => 0, 'parentid' => 0, 'sku' => 'Item', 'title' => 'Original', 'quantity' => 4, 'price' => 12],
+    ['id' => 2, 'clientid' => 8, 'deleted' => 0, 'parentid' => 0, 'sku' => 'Foreign'],
+    ['id' => 3, 'clientid' => 7, 'deleted' => 0, 'parentid' => 1, 'sku' => 'Variant', 'quantity' => 2, 'price' => 15],
+];
+foreach ([[1, 'POST'], [3, 'POST'], [2, 'POST'], [1, 'GET']] as [$sourceId, $method]) {
+    $_POST = []; $_SERVER['REQUEST_METHOD'] = $method;
+    $request = (new Zend_Controller_Request_Http())->setModuleName('items')->setControllerName('item')->setActionName('copy')->setParam('id', $sourceId);
+    $response = new Zend_Controller_Response_Http();
+    Zend_Controller_Front::getInstance()->setRequest($request)->setResponse($response);
+    $controller = (new ReflectionClass(Items_ItemController::class))->newInstanceWithoutConstructor();
+    $controller->setRequest($request)->setResponse($response);
+    (new ReflectionProperty(Zend_Controller_Action::class, '_helper'))->setValue($controller, new Zend_Controller_Action_HelperBroker($controller));
+    $before = $adapter->rows['item'];
+    $controller->copyAction();
+    $result = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+    if ($sourceId === 2) {
+        check($result['ok'] === false && $adapter->rows['item'] === $before, 'Item copy exposed or changed a foreign tenant');
+    } else {
+        $copy = (new Items_Model_DbTable_Item())->getById($result['id']);
+        check($result['ok'] === true && $result['id'] > 3 && $result['id'] !== $sourceId && $copy['clientid'] === 7, 'Item copy lost positive JSON/new ID/tenant contract');
+        check($copy['parentid'] === ($sourceId === 3 ? 1 : 0) && $copy['quantity'] === ($sourceId === 3 ? 2 : 4) && $copy['price'] === ($sourceId === 3 ? 15 : 12), 'Item copy altered existing variant/quantity/price semantics');
+    }
+}
+$_SERVER['REQUEST_METHOD'] = 'POST';
 
 // Real position writes must reject finalized invoices/credit notes, including stale route checks.
 foreach (['invoice', 'creditnote'] as $document) {

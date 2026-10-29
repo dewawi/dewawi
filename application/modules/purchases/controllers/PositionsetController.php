@@ -193,6 +193,7 @@ class Purchases_PositionsetController extends Zend_Controller_Action
 		if($request->isPost()) {
 			$data = $request->getPost();
 			$this->_helper->OrderingSet->sortOrdering($data['id'], $params['parent'], $params['type'], $params['parentid'], $data['ordering']);
+			return $this->_helper->json(['ok' => true]);
 		}
 	}
 

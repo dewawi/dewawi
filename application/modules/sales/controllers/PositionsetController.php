@@ -194,6 +194,7 @@ class Sales_PositionsetController extends DEEC_Controller_Action
 				$adapter->rollBack();
 				throw $exception;
 			}
+			return $this->_helper->json(['ok' => true]);
 		}
 	}
 

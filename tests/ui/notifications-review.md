@@ -2,7 +2,7 @@
 
 ## Umfang und Bestandsaufnahme
 
-Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen, Phase 4.3 um Dokument- und Toolbar-Aktionen, Phase 4.4 um Auto-Save und Positionsbearbeitung und Phase 4.5 um Kontaktaktionen und modale Dialoge. Weitere Aktionen werden separat migriert.
+Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen, Phase 4.3 um Dokument- und Toolbar-Aktionen, Phase 4.4 um Auto-Save und Positionsbearbeitung, Phase 4.5 um Kontaktaktionen und modale Dialoge und Phase 4.6 um Artikel- und Listenaktionen. Weitere Aktionen werden separat migriert.
 
 | Vorhandene Stelle | Befund | Entscheidung / Umsetzung |
 | --- | --- | --- |
@@ -474,15 +474,130 @@ Die Browser-Fixtures laden jetzt auch den tatsächlichen Kontaktcode. AJAX, List
 - Die Modal-Schließsperre berücksichtigt die hier markierten Vorgänge und vorhandene Button-Ladezustände. Sie ist kein universeller Tracker aller denkbaren Requests eines eingebetteten Dokuments. Unveränderte Legacy-Settings-Abläufe wurden nicht vollständig Ende-zu-Ende migriert.
 - Browser-Fixtures prüfen DOM, Tastaturereignisse und Zustandsübergänge mit abgefangenem Transport. Nicht durchgeführt wurden manuelle Screenreader-/Gerätetests, ein realer Downloadabschluss oder produktive End-to-End-Kontaktänderungen. Die Backend-Berechtigungs-/Mandantenprüfungen bleiben unverändert und wurden mit den bestehenden Security-Fixtures ausgeführt.
 
-Keine Commits oder Pushes. **Phase 4.5 ist abgeschlossen; die nächste Phase wurde nicht begonnen.**
+Keine Commits oder Pushes. **Phase 4.5 ist abgeschlossen.** Der folgende Abschnitt dokumentiert die inzwischen beauftragte Phase 4.6.
 
 Commit-Vorschlag: `unify contact actions and modal feedback`
 
-## Verbleibende Folgeschritte nach Phase 4.5 (noch nicht umgesetzt)
+## Phase 4.6 – Artikel- und Listenaktionen
+
+### Bestandsaufnahme und Antwortverträge
+
+Untersucht wurden die Artikel-Index-/Edit-Views, `Items_Form_Toolbar`, `Items_ItemController`, `Items_Model_List_Items`, der gemeinsame Toolbar-Helper, `DEEC_Controller_Action`, die tatsächlichen Kopier-Overrides anderer Module und die gemeinsamen Kopier-, Sortier-, Such- und Filterfunktionen in `js/global.js`. Die vorhandenen Artikelansichten, Register und List-Renderer bleiben erhalten. Stammdaten, Varianten, Preise/Preisregeln, Kategorien, Attribute, Optionen, Lager, Bilder/Dateien und Shop-Zuordnungen werden fachlich nicht verändert.
+
+| Stelle | Tatsächlicher Vertrag / Änderung |
+| --- | --- |
+| Artikelkopie | `Items_ItemController` erbt `DEEC_Controller_Action::copyAction()`: JSON mit `ok`, neuer `id` und Meldungsschlüssel. Das Backend bleibt unverändert. Nur `ok === true` ohne negativen Gegenstatus/Fehler und eine gültige positive neue ID bestätigen eine Kopie. Quell-IDs, bereits bestätigte Kopie-IDs und uneindeutige/ungültige ID-Werte werden zurückgewiesen. |
+| Weitere generische DEEC-Kopien | Derselbe positive Vertrag gilt unter anderem für migrierte Datensätze und Dokumente. Berechtigungen, Mandantenscoping und einzelne Backend-Transaktionen bleiben bestehen. |
+| Legacy-Kopier-Overrides | Einige Controller liefern weiterhin ausschließlich eine skalare ID beziehungsweise alte Ausgaben: `contacts/contact`, `campaigns/campaign`, `items/itemlist`, `items/attribute`, `items/option`, `items/inventory` und die untersuchten `shops`-/`ebay`-Overrides für Accounts/Orders/Logs beziehungsweise weitere Legacy-Controller. Diese Rohwerte werden **nicht** zu einem künstlichen `ok: true` aufgewertet. Ein solcher Lauf stoppt mit unbestätigtem Status; in Listen/Historien wird anschließend nur lesend aktualisiert. Eine umfassende Umstellung dieser alten Controller ist nicht Bestandteil dieser UX-Phase. |
+| Generische Sortierung | `DEEC_Controller_Action::sortAction()` verlangt AJAX-POST und liefert `ok: true` oder `ok: false`. Der vorhandene Modellaufruf `moveOrdering` und seine Gruppierung bleiben unverändert. |
+| Positionssortierung | `DEEC_Controller_PositionAction::sortAction()` verlangt POST und bestätigt mit `ok`. Bestehende Transaktion, Parent-Lock, Readonly-/Mandantenprüfung sowie `direction` beziehungsweise numerisches `ordering` bleiben erhalten. |
+| Gruppensortierung | Die tatsächlichen `sortAction()`-Methoden in Verkauf, Einkauf, Artikeln und Prozessen lieferten bislang leeren Inhalt und erwarten `ordering`. Jetzt folgt nach dem bestehenden erfolgreichen Helperaufruf genau ein JSON-`ok: true`; bei Verkauf erst nach Commit. Die Toolbar übergibt bei Auf-/Abwärtsaktionen zusätzlich `ordering: 'up'/'down'`. Geschäftslogik und bisherige numerische Zielwerte bleiben unverändert. |
+| Suche | `Application_Plugin_ListResponse` liefert `{content: string, toolbar: string}` ohne fachliches `ok`. Dieser vorhandene Vertrag bleibt bestehen. Beide Bestandteile werden vor dem Ersetzen geprüft; negative/fehlerhafte Antworten ersetzen keine bestehenden Ergebnisse. |
+
+Das generische `copyEntity()` bleibt ein POST mit JSON-Antwort und liefert weiterhin den jQuery-Request zurück. Die vorhandenen Such-/Historiencallbacks behalten ihre erste Bedeutung; optionale Fehlercallbacks erlauben die getrennte Warnung bei fehlgeschlagenem Nachladen bereits bestätigter Aktionen.
+
+### Kopieren, Teilresultate und Historie
+
+Die betätigte Toolbar-Aktion übergibt ihren Button an `copyEntities()`. IDs und Zielmodul/-controller werden vor Beginn kopiert und dedupliziert. Auch der anfängliche Historien-/Detailkontext wird erfasst: Ein späterer Tabwechsel darf eine Historienkopie nicht unerwartet in eine Detailnavigation umleiten.
+
+`beginActionRequest('copy', …)` sperrt alle ausgewählten Quell-IDs für den Lauf und verwendet den vorhandenen Button-Ladezustand. Identische und überlappende Auswahlen können währenddessen keine zweite Kopie derselben Quellen starten. Andere Datensätze und Kontexte bleiben bedienbar.
+
+Eine einfache `next()`-Folge ersetzt die bisher parallelen Requests. Jede Antwort wird einzeln geprüft. Beim ersten negativen oder unklaren Ergebnis stoppt der Lauf; weitere ausgewählte Datensätze werden nicht automatisch versucht. Bereits bestätigte Ergebnisse werden nicht erneut erstellt. Teilresultate nennen die Zahl bestätigter Kopien im Verhältnis zur ursprünglichen Auswahl. Bei unklarem Status wird ausdrücklich zur Prüfung der Liste vor einer Wiederholung aufgefordert. Die bisherigen Buttoninhalte sowie Disabled-/ARIA-Zustände werden am Ende vollständig wiederhergestellt. Schreibrequests haben einen Timeout von 120 Sekunden; es gibt keine automatische Wiederholung.
+
+Bestätigte Einzelkopien aus Edit-/View-Ansichten behalten ihre bisherige Navigation zur neuen ID. Listen bleiben Listen und laden mit den bestehenden Filtern neu. Bei einem unklaren Lauf ohne bestätigte Kopie werden Listen beziehungsweise die anfängliche Kontakt-Historie lesend aktualisiert, ohne daraus Erfolg abzuleiten. Unbestätigte Detailkopien navigieren nicht. Eine fehlgeschlagene Listenaktualisierung entfernt keine bereits bestätigten Teilresultate; stattdessen erscheint eine zusätzliche Warnung.
+
+`afterHistoryCopy()` verwendet die bestehende Historienaktualisierung. Die Erfolgsmeldung ist übersetzter Text; der optionale Link zur validierten neuen ID entsteht mit `$('<a>').attr/Elementattributen` und `.text()`. `pushMessages()` bleibt strikt textbasiert und erhält keine allgemeine HTML-Freigabe. Wiederholtes Nachladen erzeugt keinen doppelten Link.
+
+### Sortieren und Positionsreihenfolge
+
+Die globale `sortRequestPending`-Sperre entfällt zugunsten der bereits vorhandenen, nach Kontext aufgebauten `beginActionRequest`-Locks. Bei generischen Listen sperrt ein laufender Sortiervorgang den betroffenen Endpunkt, weil ein Move auch Nachbarzeilen verändert; andere Module/Controller bleiben unabhängig. Up-/Down-Buttons verwenden ihren eigenen Ladezustand. Nur bestätigte Antworten starten den bisherigen Listen-Refresh beziehungsweise Detail-Reload. Fehlermeldungen zeigen keine technischen Servertexte.
+
+Positions- und Gruppensortierungen einschließlich des Ordering-Dropdowns laufen durch die **vorhandene** jQuery-Positions-Queue aus Phase 4.4. Es gibt keine zweite Queue. Sortierung und die bereits migrierten Add-/Copy-/Delete-Aktionen behalten damit ihre gemeinsame Reihenfolge. Gleichartige Aktionen auf derselben Position/Gruppe sind geschützt; verschiedene Datensätze werden im Bereich nacheinander verarbeitet. Andere Positionsbereiche bleiben unabhängig.
+
+Ein fehlgeschlagenes Ordering-Dropdown kehrt zum zuvor bestätigten Wert zurück. Nach einem erfolgreichen Move wird dieser Ausgangswert auch dann aktualisiert, wenn das anschließende HTML-Nachladen scheitert. Die vorhandene Read-ID-/Revisionsprüfung ignoriert alte Positionsantworten. Falls eine ältere Read-Antwort durch eine inzwischen fehlgeschlagene, nachfolgende Mutation überholt wurde, wird die erforderliche lesende Aktualisierung mit dem bestehenden Refresh-Marker nachgeholt. So verschwindet eine zuvor bestätigte Änderung nicht aus der sichtbaren Liste. Es werden keine Schreiboperationen wiederholt und keine Berechnungsregeln verändert.
+
+### Suche, Filter und Auswahl
+
+`search()` behält 300-ms-Debouncing, den Abbruch älterer Requests, `collectToolbarData()`, Toolbar-Chips, Tab-Initialisierung und die bestehenden Filtercookies. Ein monotoner Requestzähler im vorhandenen `Dewawi`-Objekt bestimmt den aktuellen Besitzer der Antwort und des Ladezustands. Alte Timer, Erfolgs-/Fehlercallbacks und `complete`-Callbacks können weder die neuere Liste überschreiben noch deren Requestzeiger oder Busy-Zustand entfernen. Abgebrochene beziehungsweise überholte Requests erzeugen keine Fehlermeldung.
+
+Die Suche aktiviert `#loading` nicht mehr. Stattdessen stehen ein einzelner dezenter vorhandener Statustext unmittelbar bei der Liste und `aria-busy` am Inhaltsbereich. Eingaben werden nicht deaktiviert; der vorherige Busy-Wert wird am Ende wiederhergestellt. Fehler und ungültige Antworten erhalten die vorhandenen Ergebnisse. Bei erfolgreichem Nachladen bleibt ein bereits vorhandener Meldungscontainer erhalten, sofern die Antwort keinen eigenen belegten Meldungskanal liefert; readonly Listen-Refreshs löschen dadurch nicht versehentlich Kopier-/Teilresultate. Neue serverseitige Flashmeldungen behalten ihre bisherige Priorität.
+
+Filterwechsel, Keyword-Eingabe, einzelne Chip-/Keyword-Entfernung und vollständiges Zurücksetzen verwenden denselben kleinen `DewawiToolbar.resetPage()`-Schritt für Seite 1 und das bestehende Page-Cookie. Kategorien, Tags, Länder, Sortierung und Reihenfolge werden weiterhin über die bisherigen Controls gesammelt und persistiert. Select-/iframe-Suchen behalten `context_action`, `parent` und `setid`.
+
+Zwei tatsächlich defekte Reset-Fälle wurden gezielt korrigiert: Radio-Gruppen setzen jetzt `checked`, statt alle Optionswerte mit `.val(default)` zu verändern. Mehrfachauswahlen berücksichtigen ausschließlich die Checkboxen und lassen ihren Hidden-Sentinel unverändert. `DEEC_Form` gibt dafür die bereits ermittelten, sicher escapten `data-default`-Werte auch an Radio-/Checkbox-Optionsinputs aus. Werte, Feldnamen und übriges Form-Rendering bleiben erhalten. Es gibt keinen parallelen Filtermechanismus und keine neue Listenkomponente.
+
+### Ausgeführte Prüfungen
+
+Alle Schreiboperationen und Navigationen liefen gegen abgefangene Browseraufrufe beziehungsweise bestehende In-Memory-Adapter. Keine produktive Kopie, Löschung, Lagerbewegung oder E-Mail wurde ausgeführt. Der vorhandene Browser-Runner bleibt unverändert und prüft beide Sprachen sowie tatsächliche Viewports von 1280 px und 390 px.
+
+| Ausgeführter Befehl | Ergebnis dieser Phase |
+| --- | --- |
+| `python3 tests/ui/notifications.py` | Je **1779 Prüfungen bei 1280 px und 390 px** bestanden, einschließlich sämtlicher **1603 bisherigen UX-Prüfungen**. Neue Fälle: Einzel-/Mehrfachkopien, eingefrorene Auswahl, Doppelklick/Überlappung, jede einzelne ID-/Statusprüfung, Teilresultate, Timeout/Netzwerk/Parser/HTTP, keine Schreibwiederholung, Buttonwiederherstellung, Detailnavigation, sicherer Historienlink trotz Tabwechsel, unabhängige Sortierkontexte, Positions-Queue/Dropdown und fehlgeschlagene Folgeaktionen, schnelle Suche/Filter, veraltete Timer/Antworten/Fehler/Abschlüsse, Abbruch, lokale Busy-Anzeige, erhaltene Ergebnisse/Meldungen, Filterchips/Defaults/Pagination, iframe-Select-Kontext und Artikel-Auto-Save. |
+| `php tests/security/notifications.php` | **174 allgemeine**, **60 Verkaufs-** und **24 Einkaufsprüfungen** bestanden. **60 Browser-Übersetzungen je Sprache** vollständig. Zusätzlich real gerenderte Artikel-Toolbar, sichere Filterchips, Radio-/Checkbox-Defaults sowie readonly/disabled geerbte Variantenfelder und bearbeitbare Variantenfelder geprüft. |
+| `php tests/documents/calculation.php` | **725 Prüfungen** bestanden. |
+| `php tests/documents/calculation.php purchases` | **701 Prüfungen** bestanden. |
+| `php tests/documents/calculation.php processes` | **695 Prüfungen** bestanden. Neue In-Memory-Fälle prüfen die expliziten Gruppensortierantworten und die unveränderte Argumentweitergabe an den bestehenden Ordering-Helper sowie tatsächliche generische Artikelkopien mit neuer ID, Mandantenscoping und unveränderter Eltern-/Mengen-/Preisemantik. Der Artikelcontroller wird für diese Aktion ohne die fachfremde Seiteninitialisierung aufgebaut. Die Gruppen-Helper-Aufrufe werden durch den vorhandenen Testhelper erfasst; dies ist kein vollständiger produktiver SQL-Gruppensortierlauf. |
+| `python3 tests/documents/calculation-ui.py` | Dokument-/Inline-Notizen und **28 Berechnungsprüfungen** bestanden. |
+| `php tests/documents/lifecycle.php` | **879 Prüfungen** bestanden. |
+| `php tests/security/document-edits.php` | **7400 Prüfungen** bestanden; erwartete Readonly-Fehler werden von der bestehenden Fixture geloggt. |
+| `php tests/documents/pdf.php` | **134 Prüfungen** bestanden. |
+| `php tests/documents/pdf-totals.php` | **170 Prüfungen** bestanden. |
+| `php tests/security/permissions.php` | **369 Prüfungen** bestanden. |
+| `php tests/security/tenant-access.php` | **268 Prüfungen** bestanden. |
+| `php tests/security/list-ordering.php` | **792 Prüfungen** bestanden. |
+| `php tests/security/item-tags.php` | **80 Prüfungen** bestanden. |
+| `php tests/items/stock-summary.php` | Lagerfilter, historische Bestände, Bewertung, AJAX und Übersetzungen bestanden. Der bestehende Quelltextcheck berücksichtigt die gemeinsame Pagination-Methode und prüft deren DOM-/Cookie-Verhalten zusätzlich; die Browser-Fixture prüft den tatsächlichen Ablauf. |
+| `php tests/items/stock-planning.php` | Chronologie, Teilmengen, Fehlbestände, Lagertrennung und Schema-Guards bestanden. |
+| `php tests/lists/summary.php` | Zentrale Listenfooter und Geldsummen bestanden. |
+| `php tests/security/contact-tags.php` | **74 Prüfungen** bestanden. |
+| `php tests/security/contact-export.php` | **89 Prüfungen** bestanden. |
+| `php tests/security/email-contactperson-assignment.php` | **53 Prüfungen** bestanden. |
+| `php -l` | Alle **11 geänderten PHP-Dateien** ohne Syntaxfehler. |
+| `git diff --check` | Ohne Befund. |
+
+### Geänderte Dateien in Phase 4.6
+
+1. `js/global.js`
+2. `application/modules/sales/controllers/PositionsetController.php`
+3. `application/modules/purchases/controllers/PositionsetController.php`
+4. `application/modules/items/controllers/PositionsetController.php`
+5. `application/modules/processes/controllers/PositionsetController.php`
+6. `application/views/helpers/Messages.php`
+7. `languages/de_DE/default/messages.php`
+8. `languages/en_US/default/messages.php`
+9. `library/DEEC/Form.php`
+10. `tests/ui/notifications.html`
+11. `tests/security/notifications.php`
+12. `tests/documents/calculation.php`
+13. `tests/items/stock-summary.php`
+14. `tests/ui/notifications-review.md`
+
+### Gesonderte Sicherheitsprüfung der Kopierrouten
+
+`DEEC_Controller_Action::copyAction()` besitzt weiterhin **keine eigene POST-Bindung, CSRF-Prüfung oder serverseitige Idempotenzsicherung**. Die neue UI verwendet ausschließlich POST; ein direkter GET kann bei vorhandener Berechtigung trotzdem kopieren. Das wurde mit der realen geerbten Artikelaktion ausschließlich im In-Memory-Testadapter bestätigt. Auch der vorhandene Tenant-Test verwendet für eine berechtigte geerbte Ansprechpartnerkopie GET. Das ist dokumentiertes Altverhalten, keine Sicherheitszusage; eine spätere Absicherung muss diese entsprechenden Fixture-Erwartungen ändern.
+
+Die bestehende Berechtigungszuordnung behandelt Kopieren als `add`; Quellzugriff und Mandantengrenzen werden durch die vorhandenen Row-/Modellprüfungen berücksichtigt. Eine Transaktion pro Kopie verhindert keinen zweiten berechtigten Request mit erneutem Insert. Die lokale Klicksperre schützt nur diese geöffnete Seite. Mehrere Tabs/Geräte, Reloads und Wiederholungen nach einem Timeout werden dadurch nicht idempotent.
+
+Die dedizierten Positions-/Gruppenkopien besitzen ihre bisherigen POST-/Parent-Prüfungen beziehungsweise Locks, jedoch in den untersuchten Methoden ebenfalls keinen eigenen CSRF-/Idempotenzvertrag. Legacy-Overrides haben weitere abweichende Methoden-/Ausgabeverträge. Diese werden nicht pauschal modernisiert oder aufgrund einer skalaren ID als Erfolg interpretiert.
+
+Als **separate Backend-Sicherheitsaufgabe** sind verbindliche HTTP-Methoden, CSRF-Validierung über alle betroffenen Einstiegspunkte, ein für Wiederholungen nutzbarer serverseitiger Idempotenzvertrag und seine Interaktion mit Berechtigungen/Transaktionen zu entwerfen und mit negativen sowie konkurrierenden Requests zu prüfen. Solche Änderungen sind ausdrücklich nicht mit dieser UX-Phase vermischt.
+
+### Verbleibende Grenzen
+
+- Ein Batch besteht weiterhin aus einzelnen Backend-Transaktionen. Bei Abbruch bleiben bestätigte Kopien bestehen; es gibt keinen fachlichen Gesamt-Rollback und keine automatische Fortsetzung. Bei unklarem Status kann der Server bereits geschrieben haben. Vor einer manuellen Wiederholung müssen die aktuellen Daten geprüft werden; eine lesende Aktualisierung beweist keinen Abbruch einer noch laufenden Transaktion.
+- Legacy-Kopierrouten ohne bestätigten JSON-Vertrag bleiben ein eigener Migrationsbedarf. Insbesondere sind die alten Overrides teilweise auch fachlich auffällig: die untersuchten `items/attribute`-/`option`-/`inventory`-Overrides arbeiten noch mit dem Item-Modell; `contacts/contact::copyAction()` verwendet eine nicht initialisierte `$contact`-Variable. Diese vorhandenen Backend-Probleme wurden nicht repariert. Ein Erfolg wird dort nicht vorgetäuscht.
+- Generische Sortierlocks sind je Endpunkt konservativ, weil ein Move Nachbarn verändert. Die gemeinsame Positions-Queue bleibt je Dokumentbereich. Eine seitenübergreifende Ordnungs-/Kopierkoordination wird nicht eingeführt.
+- Suchantworten enthalten weiterhin vertrauenswürdiges, serverseitig gerendertes HTML. Dessen vorhandene Escaping-/Berechtigungsgrenzen bleiben maßgeblich; die neue Reihenfolgenprüfung ist keine HTML-Sanitizer- oder Autorisierungsschicht.
+- Keine manuelle Screenreader-/Geräteabnahme und keine produktiven SQL-/Varianten-/Lager-Ende-zu-Ende-Schreibläufe. Geprüft sind Browserzustände, reale Renderer und vorhandene In-Memory-Sicherheits-/Berechnungsabläufe. Die bisherigen Grenzen von synchronem Auto-Save und nativen Downloads bleiben bestehen.
+
+Keine Commits oder Pushes. **Phase 4.6 ist abgeschlossen; Phase 4.7 wurde nicht begonnen.**
+
+Commit-Vorschlag: `unify item and list action feedback`
+
+## Verbleibende Folgeschritte nach Phase 4.6 (noch nicht umgesetzt)
 
 | Priorität | Bereich und konkrete Dateien | Nächster begrenzter Schritt / notwendige Regressionen |
 | --- | --- | --- |
-| P2 | Artikel und Listenaktionen: `application/modules/items/views/scripts/item/index.phtml`, `application/modules/items/views/scripts/item/edit.phtml`, `application/modules/items/forms/Toolbar.php`, `js/global.js` | Gemeinsame Toolbar-Aktionen nach deren P1-Migration übernehmen; Filter, Auswahl und Mehrfachbearbeitung erhalten |
 | P2 | Upload und Download: `application/modules/contacts/controllers/AttachmentController.php`, `application/views/scripts/partials/email-messages.phtml`, `application/views/scripts/partials/downloads.phtml`, `js/filemanager.js`, `js/global.js` (XRechnung-Download) | Zustände in bestehendem Upload-iframe und bei Blob-Downloads vereinheitlichen; Dateivalidierung und Downloadrechte prüfen. Native Downloads haben kein verlässliches Browserereignis für das Ende des Downloads |
 | P3 | Kampagnen: `application/modules/campaigns/views/helpers/Errors.php`, `application/modules/campaigns/models/List/Recipients.php`, `js/global.js` (`getCampaignRecipients`, `getCampaignErrors`) | Technische Statusdetails und Fehler beim Aktualisieren der Übersichten separat vereinheitlichen; Bounce-/Complaint-Regeln erhalten |
 | P3 | Shop-Oberfläche: `application/layouts/scripts/site.phtml`, `css/shop.css`, `js/shops.js` | Eigenes Shop-Design und Bootstrap-Verwendung separat prüfen, bevor das interne `ui.css` übernommen wird |

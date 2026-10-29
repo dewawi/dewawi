@@ -1641,6 +1641,7 @@ class DEEC_Form
 				$field .= '<input type="radio"'
 					. ' name="'.$nameEsc.'"'
 					. ' value="'.htmlspecialchars((string)$optValue).'"'
+					. (isset($attribs['data-default']) ? ' data-default="'.htmlspecialchars((string)$attribs['data-default']).'"' : '')
 					. ($checked ? ' checked' : '')
 					. '>';
 				$field .= '<span>'.htmlspecialchars($this->translate((string)$optLabel)).'</span>';
@@ -1675,6 +1676,7 @@ class DEEC_Form
 				$field .= '<input type="checkbox"'
 					. ' name="'.$nameEsc.'[]"'
 					. ' value="'.htmlspecialchars((string)$optValue).'"'
+					. (isset($attribs['data-default']) ? ' data-default="'.htmlspecialchars((string)$attribs['data-default']).'"' : '')
 					. ($checked ? ' checked' : '')
 					. '>';
 				$field .= '<span>'.htmlspecialchars($this->translate((string)$optLabel)).'</span>';

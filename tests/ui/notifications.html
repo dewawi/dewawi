@@ -20,6 +20,7 @@
   <div id="document-fixture" class="edit"><form id="document-fixture-form" data-autosave="false"></form></div>
 </div>
 <div id="autosave-positions" class="dw-positions" data-type="pos"></div><div id="autosave-other" class="dw-positions" data-type="opt"></div>
+<div id="list-positions" class="dw-positions" data-parent="fixture-unbound" data-type="pos"></div>
 <pre id="result">RUNNING</pre>
 <script src="__ROOT__/library/jQuery/jquery-1.12.4.min.js"></script>
 <script src="__ROOT__/library/jQuery/jquery.cookie.js"></script>
@@ -275,7 +276,7 @@ $(function() {
     check(reloads === 1 && !searches.length && !navigations.length, locale + ': pageblock reload changed');
     actionFixture(); $('<div id="tabhistory" class="is-active"></div>').appendTo('#action-fixture');
     trash(10, deleteConfirm, 'phone', 'contacts', $('#delete-one')); finish(calls[0], {ok: true, deletedIds: [10]});
-    check(calls.length === 2 && calls[1].options.url === '/fixture/contacts/contact/history/id/100' && !navigations.length && !searches.length, locale + ': contact history update changed');
+    check(calls.length === 2 && !navigations.length && calls[1].options.url === '/fixture/contacts/contact/history/id/100' && !navigations.length && !searches.length, locale + ': contact history update changed');
     finish(calls[1], '<p>Updated history</p>');
     check($('#tabhistory').text() === 'Updated history' && $('#messages .dw-alert--success').length === 1, locale + ': contact history feedback missing');
 
@@ -1074,7 +1075,205 @@ $(function() {
     check(isDirty && $('#document-fixture-form [name="subject"]').hasClass('is-invalid') && $('#document-fixture-form [name="subject"]').val() === 'Keep subject', 'Contact adoption erased an independent field error/dirty state');
   });
   modalWindowClose(true); $.ajax = realAjax; search = originalSearch; $.cookie = originalCookie; HTMLFormElement.prototype.submit = nativeSubmit;
-  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, document, autosave, position, contact, modal and accessibility checks at ' + innerWidth + 'px');
+  // Item/list actions reuse the existing captured transport and actual toolbar dispatch.
+  var listSearches = [], listCookies = {}, originalRemoveCookie = $.removeCookie;
+  var pageTimers = {}, pageTimerId = -2000, listSetTimeout = window.setTimeout, listClearTimeout = window.clearTimeout;
+  window.setTimeout = function(callback, delay) { if (delay === 300) { pageTimers[pageTimerId] = callback; return pageTimerId--; } return listSetTimeout(callback, delay); };
+  window.clearTimeout = function(timer) { if (Object.prototype.hasOwnProperty.call(pageTimers, timer)) delete pageTimers[timer]; else listClearTimeout(timer); };
+  $.cookie = function(name, value, options) { if (arguments.length > 1) listCookies[name] = {value: String(value), path: options && options.path}; return listCookies[name] && listCookies[name].value; };
+  $.removeCookie = function(name) { delete listCookies[name]; };
+  function flushSearch() { Object.keys(pageTimers).forEach(function(timer) { var callback = pageTimers[timer]; delete pageTimers[timer]; callback(); }); }
+  var $listToolbar = $('<div class="dw-page-header__toolbar" id="list-toolbar"></div>').insertBefore('#content');
+  function listFixture() {
+    clearTimeout(Dewawi.searchTimeout);
+    $('#content').html('<div id="messages"></div><div class="dw-list-page"><p id="item-list-state">Original list</p>' + [11,12,13,14,15].map(function(rowId) { return '<div class="dw-list-row" data-id="' + rowId + '"><input type="checkbox" class="check-id" name="ids[]" value="' + rowId + '" data-select-id="' + rowId + '" checked><button type="button" class="row-copy dw-btn" data-action="copy" data-module="items" data-controller="item" data-id="' + rowId + '" aria-disabled="false" aria-busy="false"><span>Copy row</span></button></div>'; }).join('') + '</div><div class="dw-pagination"><input id="pagination-page" name="page" value="3"></div>');
+    $listToolbar.html('<div class="dw-toolbar"><button type="button" id="copy-bulk" class="dw-btn" data-action="copy" aria-busy="false"><span>Copy selected</span></button><button type="button" id="list-up" class="dw-btn" data-action="sortup" data-module="admin" data-controller="uom" data-id="11">Up</button><button type="button" id="list-down" class="dw-btn" data-action="sortdown" data-module="admin" data-controller="uom" data-id="12">Down</button><button type="button" id="other-sort" class="dw-btn" data-action="sortdown" data-module="admin" data-controller="warehouse" data-id="11">Other context</button>' +
+      '<input name="keyword" value="" data-default=""><button type="button" data-action="clear" rel="keyword">Clear keyword</button><select name="catid" data-default="all"><option value="all">All</option><option value="1">One</option><option value="2">Two</option></select><button type="button" data-action="filter">Filters</button><button type="button" data-action="reset">Reset</button>' +
+      '<div class="dw-active-filters"><button type="button" data-action="clear-filter" data-filter="tagid">Old tag chip</button></div><div class="dw-filter-panel">' +
+      '<input type="radio" name="order" value="modified" data-default="modified"><input type="radio" name="order" value="title" data-default="modified" checked><input type="radio" name="sort" value="ASC" data-default="DESC" checked><input type="radio" name="sort" value="DESC" data-default="DESC">' +
+      '<select name="country" data-default="0"><option value="0">All</option><option value="DE" selected>Germany</option></select><select name="tagid" data-default="0"><option value="0">All</option><option value="21" selected>VIP</option><option value="22">Other</option></select>' +
+      '<input type="hidden" name="states[]" value=""><input type="checkbox" name="states[]" value="100" data-default="[100,105]" checked><input type="checkbox" name="states[]" value="105" data-default="[100,105]"><input type="checkbox" name="states[]" value="106" data-default="[100,105]" checked></div></div>');
+    $('#list-positions').empty().attr('data-parent', 'fixture-unbound').data('parent', 'fixture-unbound');
+    module = 'items'; controller = 'item'; action = 'index'; id = 100;
+    calls = []; navigations = []; reloads = 0; listSearches = []; listCookies = {}; Dewawi.setDirty(false);
+    search = function(success, error) { listSearches.push({success: success, error: error}); };
+  }
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale]; listFixture();
+    var $copy = $('.row-copy').first(), markup = $copy.html();
+    $copy.trigger('click').trigger('click');
+    check(calls.length === 1 && calls[0].options.type === 'POST' && calls[0].options.url === '/fixture/items/item/copy/id/11' && calls[0].options.timeout > 0 && $copy.prop('disabled'), 'Single item copy route/timeout/duplicate guard failed');
+    finish(calls[0], {ok: true, id: 101});
+    check(listSearches.length === 1 && !navigations.length && $('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_SUCCESFULLY_COPIED && !$copy.prop('disabled') && $copy.html() === markup && $copy.attr('aria-busy') === 'false' && !Object.keys(Dewawi.actionRequests).length, 'Single list copy did not refresh/restore button/confirm success');
+    listSearches[0].success();
+    check($('#messages .dw-alert--success').length === 1, 'Copy refresh duplicated feedback');
+
+    listFixture(); $('#copy-bulk').trigger('click').trigger('click'); $('.row-copy').eq(1).trigger('click');
+    $('.check-id').prop('checked', false).trigger('change');
+    check(calls.length === 1 && $('#copy-bulk').prop('disabled') && $('#messages .dw-alert--info li').text() === dwMessages.MESSAGES_COPY_RUNNING, 'Bulk copy duplicated/overlapped or selection change ended loading');
+    for (var n = 0; n < 5; n++) {
+      check(calls.length === n + 1 && calls[n].options.url === '/fixture/items/item/copy/id/' + (11 + n), 'Bulk copy did not retain captured selection/order');
+      finish(calls[n], {ok: true, id: 201 + n});
+    }
+    check(calls.length === 5 && listSearches.length === 1 && !$('#copy-bulk').prop('disabled') && $('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_RECORDS_COPIED, 'Bulk copy did not finish once with confirmed results');
+
+    [false, true].forEach(function(network) {
+      listFixture(); $('#copy-bulk').trigger('click'); finish(calls[0], {ok: true, id: 201}); finish(calls[1], {ok: true, id: 202});
+      finish(calls[2], network ? null : {ok: false, message: '<img src=x>SQL secret'}, network ? {status: 0, kind: 'timeout'} : null);
+      check(calls.length === 3 && listSearches.length === 1 && !$('#copy-bulk').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, 'Partial batch continued/retried or retained locks');
+      check($('#messages .dw-alert--danger').length === 1 && $('#messages').text().indexOf(dwMessages.MESSAGES_COPY_PARTIAL.replace('%1$d', 2).replace('%2$d', 5)) !== -1 && !$('#messages .dw-alert--success').length && $('#messages').text().indexOf('SQL secret') === -1, 'Partial copies were reported as complete or leaked errors');
+      if (network) check($('#messages').text().indexOf(dwMessages.MESSAGES_COPY_STATUS_UNKNOWN) !== -1, 'Partial timeout omitted uncertain-status guidance');
+      listSearches[0].error();
+      check($('#messages .dw-alert--danger').length === 1 && $('#messages .dw-alert--warning li').text() === dwMessages.MESSAGES_SEARCH_FAILED, 'Refresh failure erased known partial results');
+    });
+    [null, {}, 101, {ok: 1, id: 101}, {ok: true}, {ok: true, id: 0}, {ok: true, id: -1}, {ok: true, id: '101x'}, {ok: true, id: 1.5}, {ok: true, id: []}, {ok: true, id: 11}, {ok: true, id: 101, saved: false}, {ok: true, id: 101, errors: {field: ['Invalid']}}].forEach(function(response) {
+      listFixture(); $('.row-copy').first().trigger('click'); finish(calls[0], response);
+      check(!navigations.length && listSearches.length === (response && (response.ok === false || response.saved === false || response.errors) ? 0 : 1) && !$('.row-copy').first().prop('disabled') && !Object.keys(Dewawi.actionRequests).length && !$('#messages .dw-alert--success').length, 'Invalid new copy ID/status was accepted or left loading');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 403, responseJSON: {ok: false, message: 'technical'}}].forEach(function(error) {
+      listFixture(); $('#copy-bulk').trigger('click'); finish(calls[0], null, error);
+      check(calls.length === 1 && listSearches.length === (error.responseJSON ? 0 : 1) && !$('#copy-bulk').prop('disabled') && $('#messages .dw-alert--danger li').text() === dwMessages[error.responseJSON ? 'MESSAGES_COPY_FAILED' : 'MESSAGES_COPY_STATUS_UNKNOWN'], 'Copy transport failure retried or lacked safe status/cleanup');
+    });
+    listFixture(); $('#copy-bulk').trigger('click'); finish(calls[0], {ok: true, id: 201}); finish(calls[1], {ok: true, id: 201});
+    check(calls.length === 2 && listSearches.length === 1 && $('#messages').text().indexOf(dwMessages.MESSAGES_COPY_PARTIAL.replace('%1$d', 1).replace('%2$d', 5)) !== -1, 'Duplicate returned IDs were counted as independent copies');
+    ['edit', 'view'].forEach(function(detail) {
+      listFixture(); action = detail; $('.row-copy').first().trigger('click'); finish(calls[0], {ok: true, id: '301'});
+      check(navigations[0] === '/fixture/items/item/edit/id/301' && !listSearches.length && !$('#messages .dw-alert--success').length, 'Confirmed detail copy lost existing navigation or created an artificial navigation success');
+    });
+    listFixture(); module = 'contacts'; controller = 'contact'; action = 'edit';
+    $('#content').append('<div id="tabhistory" class="is-active"></div>');
+    $('.row-copy').first().attr({'data-module': 'sales', 'data-controller': 'quote'}).data({module: 'sales', controller: 'quote'}).trigger('click'); $('#tabhistory').removeClass('is-active'); finish(calls[0], {ok: true, id: 501, message: '<img src=x>'});
+    check(calls.length === 2 && !navigations.length && calls[1].options.url === '/fixture/contacts/contact/history/id/100' && $('#messages .dw-alert--success a').attr('href') === '/fixture/sales/quote/edit/id/501' && $('#messages a').text() === dwMessages.MESSAGES_COPY_OPEN && !$('#messages img').length && $('#messages').text().indexOf('<a') === -1, 'History copy message/link was not safely constructed or lost history refresh');
+    finish(calls[1], '<p>Updated history</p>');
+    check($('#tabhistory').text() === 'Updated history' && $('#messages .dw-alert--success a').length === 1, 'History refresh lost its success link or duplicated it');
+
+    listFixture(); action = 'edit';
+    $('#content').append('<input id="item-autosave" class="dw-input" name="sku" value="Changed SKU">');
+    var autoResult = {ok: true}, listAjax = $.ajax;
+    $.ajax = function(options) { var result = realAjax(options); if (options.async === false) finish(calls[calls.length - 1], autoResult); return result; };
+    var returnedItem = edit({sku: 'Changed SKU'}, {module: 'items', controller: 'item', id: 11}, undefined, $('#item-autosave'));
+    check(returnedItem === autoResult && calls[0].options.async === false && calls[0].options.url === '/fixture/items/item/edit/id/11' && $('#item-autosave').hasClass('is-valid') && !isDirty && !$('#messages .dw-alert--success').length, 'Item autosave lost synchronous/local feedback contract');
+    autoResult = {ok: false}; edit({sku: 'Rejected'}, {module: 'items', controller: 'item', id: 11}, undefined, $('#item-autosave'));
+    check(isDirty && $('#item-autosave').hasClass('is-invalid') && $('#item-autosave').next('.dw-field-error').length === 1, 'Item autosave failure cleared dirty or lost field feedback');
+    $.ajax = listAjax;
+
+    ['up', 'down'].forEach(function(direction) {
+      listFixture(); var $button = $(direction === 'up' ? '#list-up' : '#list-down'); $button.trigger('click').trigger('click');
+      check(calls.length === 1 && calls[0].options.data.direction === direction && $button.prop('disabled'), 'Sort direction/duplicate guard/button state failed');
+      finish(calls[0], {ok: true});
+      check(listSearches.length === 1 && !$button.prop('disabled') && !Object.keys(Dewawi.actionRequests).length, 'Confirmed sorting did not refresh/release state');
+    });
+    listFixture(); $('#list-up').trigger('click'); $('#list-down').trigger('click'); $('#other-sort').trigger('click');
+    check(calls.length === 2 && $('#list-up').prop('disabled') && $('#other-sort').prop('disabled') && !$('#list-down').prop('disabled'), 'Sort locks blocked an unrelated context or permitted conflicting moves');
+    finish(calls[0], {ok: false, message: 'SQL secret'}); finish(calls[1], {ok: true});
+    check(listSearches.length === 1 && $('#item-list-state').text() === 'Original list' && $('#messages li').text() === dwMessages.MESSAGES_SORT_FAILED && !Object.keys(Dewawi.actionRequests).length, 'Negative sort changed order, leaked errors or prevented independent success');
+    [null, {}, {ok: 1}].forEach(function(response) {
+      listFixture(); $('#list-up').trigger('click'); finish(calls[0], response);
+      check(!listSearches.length && !$('#list-up').prop('disabled') && $('#messages li').text() === dwMessages.MESSAGES_ACTION_STATUS_UNKNOWN, 'Unconfirmed sort refreshed or stayed loading');
+    });
+    listFixture(); $('#list-up').trigger('click'); finish(calls[0], null, {status: 0, kind: 'timeout'});
+    check(calls.length === 1 && !listSearches.length && !$('#list-up').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, 'Timed-out sort retried or stayed locked');
+    listFixture(); action = 'edit'; $('#list-down').trigger('click'); finish(calls[0], {ok: true});
+    check(reloads === 1 && !listSearches.length, 'Detail sort lost its original reload');
+
+    listFixture(); module = 'sales'; controller = 'invoice'; action = 'edit';
+    $('#list-positions').attr('data-parent', 'invoice').data('parent', 'invoice').html('<section class="dw-position-set" data-setid="1"><button type="button" id="queued-add" data-action="add-position">Add</button><button type="button" id="group-down" data-action="sort-position-set-down">Group down</button><article class="dw-position-card" data-id="11" data-parent="invoice" data-type="pos" data-setid="1"><select name="ordering"><option value="1">1</option><option value="2">2</option></select><button type="button" id="position-down" data-action="sort-position-down">Position down</button></article></section>');
+    $('#queued-add').trigger('click'); $('#position-down').trigger('click').trigger('click');
+    check(calls.length === 1 && $('#position-down').prop('disabled'), 'Position sort bypassed existing mutation queue or duplicated');
+    finish(calls[0], {ok: true, reloadPositions: true});
+    check(calls.length === 3 && calls[2].options.url.indexOf('/position/sort/id/11/') !== -1 && calls[2].options.data.direction === 'down', 'Queued position sort did not retain its existing route/data');
+    finish(calls[1], '<span>Obsolete queued read</span>');
+    check($('#position-down').length === 1, 'Read from before queued sort replaced current positions');
+    finish(calls[2], {ok: true}); finish(calls[3], '<span>Sorted positions</span>');
+    check($('#list-positions').text() === 'Sorted positions' && !Object.keys(Dewawi.actionRequests).length, 'Sorted position refresh failed or left record locks');
+    $('#list-positions').html('<section class="dw-position-set" data-setid="1"><button type="button" id="queued-add" data-action="add-position">Add</button><article class="dw-position-card" data-id="11" data-parent="invoice" data-type="pos"><button type="button" id="position-down" data-action="sort-position-down">Down</button></article></section>'); calls = [];
+    $('#queued-add').trigger('click'); $('#position-down').trigger('click'); finish(calls[0], {ok: true}); finish(calls[1], '<span>Stale before failed sort</span>'); finish(calls[2], {ok: false});
+    check(calls.length === 4 && calls[3].options.url.indexOf('/position/index/') !== -1, 'Queued failed sort lost the refresh for an earlier confirmed mutation');
+    finish(calls[3], '<span>Confirmed add retained</span>');
+    check($('#list-positions').text() === 'Confirmed add retained' && $('#messages .dw-alert--danger').length === 1, 'Confirmed queued changes or sort failure feedback were lost');
+    $('#list-positions').html('<section class="dw-position-set" data-setid="1"><button type="button" id="group-down" data-action="sort-position-set-down">Group down</button></section>'); calls = [];
+    $('#group-down').trigger('click');
+    check(calls[0].options.data.ordering === 'down' && calls[0].options.url.indexOf('/positionset/sort/id/1/') !== -1, 'Group sort lost its legacy ordering parameter');
+    finish(calls[0], {ok: false});
+    check(calls.length === 1 && $('#group-down').length === 1 && !$('#group-down').prop('disabled'), 'Rejected group sort refreshed or stayed disabled');
+    $('#list-positions').html('<article class="dw-position-card" data-id="11"><select name="ordering"><option value="1">1</option><option value="2">2</option></select></article>'); calls = [];
+    $('#list-positions select').val('2').trigger('change');
+    check(calls.length === 1 && calls[0].options.data.ordering === 2 && calls[0].options.url.indexOf('/position/sort/id/11/') !== -1 && $('#list-positions select').prop('disabled'), 'Ordering dropdown caused duplicate save or bypassed scoped pending state');
+    finish(calls[0], {ok: false});
+    check($('#list-positions select').val() === '1' && !$('#list-positions select').prop('disabled') && calls.length === 1, 'Rejected dropdown sort did not restore its original order');
+    calls = []; $('#list-positions select').val('2').trigger('change');
+    finish(calls[0], {ok: true}); finish(calls[1], null, {status: 500});
+    calls = []; $('#list-positions select').val('1').trigger('change'); finish(calls[0], {ok: false});
+    check($('#list-positions select').val() === '2', 'Sort failure restored a stale default after a confirmed move/read failure');
+    finish(calls[1], '<span>Dropdown sorted</span>');
+    check(!Object.keys(Dewawi.actionRequests).length, 'Ordering dropdown left mutation locks');
+  });
+
+  // Exercise the actual 300-ms debounce, aborts and ownership of pending list requests.
+  var abortCompletes = false;
+  $.ajax = function(options) {
+    var result = realAjax(options), call = calls[calls.length - 1];
+    result.abort = function() { call.aborted = true; if (abortCompletes) finish(call, null, {status: 0, kind: 'abort'}); };
+    return result;
+  };
+  function listResponse(text, chip) { return {content: '<div class="dw-list-page"><p id="item-list-state">' + text + '</p></div><div class="dw-pagination"><input id="pagination-page" name="page" value="1"></div>', toolbar: '<div class="dw-toolbar">' + (chip ? '<div class="dw-active-filters"><button type="button" data-action="clear-filter" data-filter="tagid">' + chip + '</button></div>' : '') + '</div>'}; }
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale]; listFixture(); search = originalSearch;
+    var $keyword = $('#list-toolbar [name="keyword"]');
+    $keyword.val('A').trigger('input'); var obsoleteTimer = pageTimers[Object.keys(pageTimers)[0]]; $keyword.val('AB').trigger('input'); $keyword.val('ABC').trigger('input');
+    check(!calls.length && Object.keys(pageTimers).length === 1 && $('#content').attr('aria-busy') === 'true' && $('[data-list-loading]').length === 1 && $('[data-list-loading]').text() === dwMessages.MESSAGES_SEARCH_RUNNING && !$('#loading').is(':visible') && !$keyword.prop('disabled'), 'Search debounce/loading blocked input or used the global overlay');
+    check($('#pagination-page').val() === '1' && listCookies.page.value === '1' && listCookies.keyword.value === 'ABC', 'Keyword did not persist/reset pagination');
+    obsoleteTimer(); check(!calls.length, 'Superseded debounce timer started an unnecessary request');
+    flushSearch(); var oldest = calls[0];
+    check(calls.length === 1 && oldest.options.data.keyword === 'ABC' && oldest.options.data.context_action === 'index' && Dewawi.searchRequest, 'Debounce did not issue the final captured search');
+    $('#list-toolbar [name="catid"]').val('2').trigger('change'); $('#list-toolbar [name="tagid"]').val('22').trigger('change');
+    check(oldest.aborted && $('#item-list-state').text() === 'Original list' && listCookies.catid.value === '2' && listCookies.tagid.value === '22' && Object.keys(pageTimers).length === 1, 'Changing filters lost persistence, old results or abort/debounce behavior');
+    flushSearch(); var newest = calls[1], currentRequest = Dewawi.searchRequest;
+    finish(oldest, listResponse('Stale list', 'Stale chip'));
+    check($('#item-list-state').text() === 'Original list' && $('#content').attr('aria-busy') === 'true' && Dewawi.searchRequest === currentRequest && $('[data-list-loading]').length === 1, 'Old success/completion replaced results or cleared newer request state');
+    finish(newest, listResponse('Latest list', 'Latest chip'));
+    check($('#item-list-state').text() === 'Latest list' && $('#list-toolbar .dw-active-filters').text() === 'Latest chip' && $keyword.val() === 'ABC' && $('#list-toolbar [name="tagid"]').val() === '22' && !Dewawi.searchRequest && !$('#content').attr('aria-busy') && !$('[data-list-loading]').length, 'Latest search failed to update chips/list or restore pending state without losing filters');
+
+    $keyword.val('Next').trigger('input'); flushSearch(); var olderError = calls[2]; $keyword.val('Newest').trigger('input'); flushSearch(); currentRequest = Dewawi.searchRequest;
+    finish(olderError, null, {status: 500});
+    check(!$('#messages .dw-alert--danger').length && Dewawi.searchRequest === currentRequest && $('#content').attr('aria-busy') === 'true', 'Superseded error removed current progress or showed an error');
+    finish(calls[3], listResponse('Newest result', ''));
+    check(!$('#list-toolbar .dw-active-filters').length && $('#item-list-state').text() === 'Newest result', 'Removing current chips failed');
+    abortCompletes = true; $keyword.val('Abort me').trigger('input'); flushSearch(); $keyword.val('After abort').trigger('input');
+    check($('#content').attr('aria-busy') === 'true' && !$('#messages .dw-alert--danger').length, 'Aborted request was reported as failure or cleared scheduled progress');
+    flushSearch(); finish(calls[calls.length - 1], listResponse('After abort result', '')); abortCompletes = false;
+
+    [null, {}, {content: 'Invalid'}, {content: 'Not saved', toolbar: '', ok: false}].forEach(function(response) {
+      var before = $('#item-list-state').text(); $keyword.trigger('input'); flushSearch(); finish(calls[calls.length - 1], response);
+      check($('#item-list-state').text() === before && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_SEARCH_FAILED && !Dewawi.searchRequest && !$('[data-list-loading]').length, 'Malformed search response discarded results or left loading');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500, responseJSON: {message: 'technical secret'}}].forEach(function(error) {
+      $keyword.trigger('input'); flushSearch(); finish(calls[calls.length - 1], null, error);
+      check($('#item-list-state').text() === 'After abort result' && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_SEARCH_FAILED && $('#messages').text().indexOf('technical secret') === -1 && !Dewawi.searchRequest, 'Search transport failure lost results, leaked details or left request ownership');
+    });
+    removeMessages(); pushMessages('Confirmed partial copy', 'danger', '#messages'); $keyword.trigger('input'); flushSearch(); finish(calls[calls.length - 1], listResponse('Read-only refresh', ''));
+    check($('#messages .dw-alert--danger li').text() === 'Confirmed partial copy' && $('[id="messages"]').length === 1, 'Read-only list refresh erased existing action feedback or duplicated its container');
+    $('#list-toolbar').find('[data-action="filter"]').trigger('click'); check($('#list-toolbar .dw-filter-panel').hasClass('is-open'), 'Existing filter panel action stopped working');
+    $('#list-toolbar [name="tagid"]').val('21'); $('#pagination-page').val('7');
+    $('<button type="button" data-action="clear-filter" data-filter="tagid">Clear tag</button>').appendTo('#list-toolbar .dw-toolbar').trigger('click');
+    check($('#list-toolbar [name="tagid"]').val() === '0' && $('#pagination-page').val() === '1' && listCookies.tagid.value === '0', 'Single filter-chip removal failed to restore default/pagination');
+    flushSearch(); finish(calls[calls.length - 1], listResponse('Cleared tag', ''));
+    $keyword.val('Clear me'); $('#pagination-page').val('8'); $('#list-toolbar [data-action="clear"]').trigger('click');
+    check($keyword.val() === '' && $('#pagination-page').val() === '1' && !listCookies.keyword, 'Clear keyword failed to remove stored value/reset page');
+    flushSearch(); finish(calls[calls.length - 1], listResponse('Cleared keyword', ''));
+    $('#list-toolbar [data-action="reset"]').trigger('click');
+    var defaults = collectToolbarData();
+    check(defaults.order === 'modified' && defaults.sort === 'DESC' && defaults.country === '0' && defaults.tagid === '0' && defaults.catid === 'all' && defaults.states.join(',') === '100,105' && $('#list-toolbar [name="sort"]').map(function() { return this.value; }).get().join(',') === 'ASC,DESC', 'Reset corrupted radio values, checkbox defaults or other filters');
+    flushSearch(); finish(calls[calls.length - 1], listResponse('Reset filters', ''));
+    var originalGetUrlParam = DewawiToolbar.getUrlParam;
+    DewawiToolbar.getUrlParam = function(name) { return name === 'parent' ? 'sales|quote|100' : name === 'setid' ? '2' : ''; };
+    action = 'select'; search(); flushSearch();
+    check(calls[calls.length - 1].options.data.context_action === 'select' && calls[calls.length - 1].options.data.parent === 'sales|quote|100' && calls[calls.length - 1].options.data.setid === '2', 'Select-list search lost iframe selection context');
+    finish(calls[calls.length - 1], listResponse('Selection list', ''));
+    DewawiToolbar.getUrlParam = originalGetUrlParam;
+  });
+  clearTimeout(Dewawi.searchTimeout); window.setTimeout = listSetTimeout; window.clearTimeout = listClearTimeout; $.ajax = realAjax; $.cookie = originalCookie; $.removeCookie = originalRemoveCookie; search = originalSearch;
+  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, document, autosave, position, contact, modal, item, list and accessibility checks at ' + innerWidth + 'px');
   if (window.parent !== window) window.parent.document.getElementById('result').textContent = $('#result').text();
 });
 </script>

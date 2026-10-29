@@ -12,6 +12,14 @@ set_include_path($root . '/library' . PATH_SEPARATOR . get_include_path());
 require_once 'Zend/View.php';
 require_once 'Zend/View/Helper/Abstract.php';
 require_once $root . '/application/views/helpers/Messages.php';
+require_once 'Zend/Registry.php';
+require_once 'Zend/Json.php';
+require_once $root . '/library/DEEC/Form.php';
+require_once $root . '/library/DEEC/Permission.php';
+require_once $root . '/application/modules/items/forms/Toolbar.php';
+require_once $root . '/application/modules/items/forms/Item.php';
+require_once $root . '/application/modules/items/models/Entity/Item.php';
+require_once $root . '/application/views/helpers/Toolbar.php';
 
 class NotificationTestView extends Zend_View
 {
@@ -71,7 +79,7 @@ foreach (['de_DE', 'en_US'] as $locale) {
     $view = new NotificationTestView();
     $view->catalog = array_replace(require $root . '/languages/' . $locale . '/default/messages.php', require $root . '/languages/' . $locale . '/default/document.php');
     $translations = (new Zend_View_Helper_Messages())->setView($view)->getTranslations();
-    check(count($translations) === 49 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
+    check(count($translations) === 60 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
     foreach ($translations as $key => $text) check($key !== $text, $locale . ': untranslated browser key ' . $key);
     $view->messages = [
         'MESSAGES_EMAIL_SENT_SUCCESS', 'MESSAGES_EMAIL_SENT_SUCCESS',
@@ -100,6 +108,24 @@ foreach (['de_DE', 'en_US'] as $locale) {
     $createdHtml = ob_get_clean();
     check(str_contains($createdHtml, 'dw-alert--success') && str_contains($createdHtml, $view->catalog['MESSAGES_CREATED']), $locale . ': creation flash has no translated success state');
     $view->messages = [];
+
+    $toolbar = new Items_Form_Toolbar();
+    $toolbar->addMultiOptions(['tagid' => [21 => '<img src=x>VIP'], 'country' => ['DE' => 'Germany']]);
+    $toolbar->setValues(['tagid' => 21, 'country' => 'DE', 'order' => 'title', 'sort' => 'ASC']);
+    $view->toolbar = $toolbar;
+    $view->action = 'index'; $view->module = 'items'; $view->controller = 'item';
+    $view->options = ['tagid' => [21 => '<img src=x>VIP'], 'country' => ['DE' => 'Germany']];
+    $html = (new Zend_View_Helper_Toolbar())->setView($view)->toolbar();
+    foreach (['add', 'edit', 'copy', 'delete', 'filter', 'reset', 'clear'] as $button) check(str_contains($html, 'data-action="' . $button . '"'), 'Real item toolbar lost action ' . $button);
+    check(substr_count($html, 'data-default="modified"') === 3 && substr_count($html, 'data-default="DESC"') === 2, 'Radio filters lost their declared defaults');
+    check(str_contains($html, 'data-filter="tagid"') && str_contains($html, '&lt;img src=x&gt;VIP') && !str_contains($html, '<img'), 'Real item filter chip lost its target or escaped label');
+    $toolbar->addElement(['name' => 'states', 'type' => 'multicheckbox', 'toolbar' => 'filters', 'default' => [100, 105], 'options' => [100 => 'Draft', 105 => 'Complete', 106 => 'Cancelled']]);
+    $states = $toolbar->renderElement('states');
+    check(substr_count($states, 'data-default="[100,105]"') === 3 && str_contains($states, 'type="hidden" name="states[]" value=""'), 'Checkbox defaults or empty-selection sentinel changed');
+
+    $variant = (new Items_Form_Item())->setVariantMode();
+    check(($variant->getElement('title')['attribs']['readonly'] ?? null) === 'readonly' && ($variant->getElement('catid')['attribs']['disabled'] ?? null) === 'disabled', 'Variant inherited fields lost readonly/disabled behavior');
+    check(empty($variant->getElement('sku')['attribs']['readonly']) && empty($variant->getElement('price')['attribs']['readonly']) && empty($variant->getElement('quantity')['attribs']['disabled']), 'Variant-specific SKU/price/quantity fields became unavailable');
 
     // Render the real email history view: transport details stay out of the user interface.
     $view->setScriptPath($root . '/application/modules/contacts/views/scripts');

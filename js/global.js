@@ -447,6 +447,7 @@ $(document).ready(function(){
 				return;
 			}
 
+			var previousOrdering = $field.find('option').filter(function () { return this.defaultSelected; }).val() || $field.find('option').first().val();
 			sortEntity({
 				url: getSortUrl(
 					'position',
@@ -459,13 +460,11 @@ $(document).ready(function(){
 				),
 				id: positionId,
 				ordering: ordering,
-				success: function () {
-					getPositions(
-						parent,
-						type,
-						window.pageYOffset
-					);
-				}
+				parent: parent,
+				type: type,
+				button: $field,
+				error: function () { $field.val(previousOrdering); },
+				success: function () { $field.find('option').each(function () { this.defaultSelected = parseInt(this.value, 10) === ordering; }); }
 			});
 
 			return;
@@ -821,7 +820,7 @@ $(document).ready(function(){
 		const id = $(this).data('id');
 		$('.dw-toolbar [name="catid"]').val(id);
 		$.cookie('catid', id, { path: cookiePath });
-		$('#pagination-page').val(1);
+		DewawiToolbar.resetPage();
 		search();
 	});
 
@@ -1199,57 +1198,64 @@ function edit(data, params, button, fields) {
 }
 
 //Search
-function search(onSuccess) {
+function search(onSuccess, onError) {
 	var data = collectToolbarData();
 	data.context_action = action === 'select' ? 'select' : 'index';
-
 	if (action === 'select') {
 		data.parent = DewawiToolbar.getUrlParam('parent');
 		data.setid = DewawiToolbar.getUrlParam('setid');
 	}
-
+	var url = baseUrl + '/' + module + '/' + controller + '/search';
+	var requestId = (Dewawi.searchRequestId || 0) + 1;
+	Dewawi.searchRequestId = requestId;
 	clearTimeout(Dewawi.searchTimeout);
+	var previous = Dewawi.searchRequest;
+	Dewawi.searchRequest = null;
+	if (previous) previous.abort();
 
-	if (Dewawi.searchRequest) {
-		Dewawi.searchRequest.abort();
-		Dewawi.searchRequest = null;
-	}
+	var $content = $('#content');
+	if (!$content.data('dw-search-state')) $content.data('dw-search-state', {busy: $content.attr('aria-busy')});
+	$content.attr('aria-busy', 'true');
+	if (!$content.prev('[data-list-loading]').length) $('<div>', {'data-list-loading': '', 'class': 'dw-field__description', role: 'status', 'aria-live': 'polite'}).text(Dewawi.message('MESSAGES_SEARCH_RUNNING')).insertBefore($content);
 
 	Dewawi.searchTimeout = setTimeout(function () {
-		$('#loading').show();
-
-		Dewawi.searchRequest = $.ajax({
-			type: 'POST',
-			url: baseUrl + '/' + module + '/' + controller + '/search',
-			data: data,
-			cache: false,
-			dataType: 'json',
-
+		if (Dewawi.searchRequestId !== requestId) return;
+		var completed = false;
+		function failed() {
+			if (typeof onError === 'function') onError();
+			else pushMessages(Dewawi.message('MESSAGES_SEARCH_FAILED'), 'danger', '#messages');
+		}
+		var request = $.ajax({
+			type: 'POST', url: url, data: data, cache: false, dataType: 'json', timeout: 120000,
 			success: function (response) {
-				$('#content').html(response.content || '');
-				DewawiToolbar.refresh(response.toolbar || '');
+				if (Dewawi.searchRequestId !== requestId) return;
+				if (!response || response.ok === false || response.errors || typeof response.content !== 'string' || typeof response.toolbar !== 'string') { failed(); return; }
+				var $messages = $content.find('#messages').first().detach();
+				$content.html(response.content);
+				var $newMessages = $content.find('#messages').first();
+				if ($messages.length && (!$newMessages.length || !$newMessages.children().length)) {
+					if ($newMessages.length) $newMessages.replaceWith($messages);
+					else $content.prepend($messages);
+				}
+				DewawiToolbar.refresh(response.toolbar);
 				initDwTabs('#content');
-
-				if (typeof onSuccess === 'function') {
-					onSuccess(response);
-				}
+				if (typeof onSuccess === 'function') onSuccess(response);
 			},
-
 			error: function (xhr, status) {
-				if (status === 'abort' || xhr.status === 401) {
-					return;
-				}
-
-				pushMessages([
-					'Suche konnte nicht ausgeführt werden.'
-				]);
+				if (Dewawi.searchRequestId !== requestId || status === 'abort' || xhr.status === 401) return;
+				failed();
 			},
-
 			complete: function () {
+				completed = true;
+				if (Dewawi.searchRequestId !== requestId) return;
 				Dewawi.searchRequest = null;
-				$('#loading').hide();
+				var state = $content.data('dw-search-state');
+				if (state && state.busy !== undefined) $content.attr('aria-busy', state.busy);
+				else $content.removeAttr('aria-busy');
+				$content.removeData('dw-search-state').prev('[data-list-loading]').remove();
 			}
 		});
+		if (!completed && Dewawi.searchRequestId === requestId) Dewawi.searchRequest = request;
 	}, 300);
 }
 
@@ -1591,12 +1597,14 @@ function requestPositionAction(name, parent, type, requests, button, failureKey,
 					if (!response || response.ok !== true || response.saved === false || response.errors) {
 						failed = true;
 						showActionRequestError(response, failureKey);
+						if (typeof request.error === 'function') request.error(response);
 						return;
 					}
 					lastResponse = response;
 					lastRevision = revision;
+					if (typeof request.success === 'function') request.success(response);
 				},
-				error: function (xhr) { failed = true; showActionRequestError(xhr.responseJSON, failureKey); },
+				error: function (xhr) { failed = true; showActionRequestError(xhr.responseJSON, failureKey); if (typeof request.error === 'function') request.error(xhr.responseJSON); },
 				complete: function () { $area.removeData('dw-position-pending'); sendNext(); }
 			});
 		}
@@ -1641,12 +1649,19 @@ function getPositions(parent, type, scrollTo) {
 	var requestKey = parent + '/' + type;
 	var requestId = (Dewawi.positionRequests[requestKey] || 0) + 1;
 	Dewawi.positionRequests[requestKey] = requestId;
+	function current() {
+		if (Dewawi.positionRequests[requestKey] !== requestId) return false;
+		if (($area.data('dw-position-revision') || 0) === revision) return true;
+		$area.data('dw-positions-refresh-needed', true);
+		if (!$area.data('dw-position-pending')) getPositions(parent, type, scrollTo);
+		return false;
+	}
 	$.ajax({
 		type: 'POST',
 		url: baseUrl+'/'+window.parent.module+'/position/index/parent/'+parent+'/type/'+type+'/parentid/'+id,
 		cache: false,
 		success: function(data){
-			if (Dewawi.positionRequests[requestKey] !== requestId || ($area.data('dw-position-revision') || 0) !== revision) return;
+			if (!current()) return;
 			if ($area.data('dw-position-pending') || $area.find('[data-autosave-unsaved]').length) {
 				$area.data('dw-positions-refresh-needed', true);
 				return;
@@ -1664,7 +1679,7 @@ function getPositions(parent, type, scrollTo) {
 			$('.datePickerLive').datepicker(datePickerOptions);
 		},
 		error: function () {
-			if (Dewawi.positionRequests[requestKey] !== requestId || ($area.data('dw-position-revision') || 0) !== revision) return;
+			if (!current()) return;
 			$area.data('dw-positions-refresh-needed', true);
 			pushMessages(Dewawi.message('MESSAGES_REQUEST_FAILED'), 'warning', '#messages');
 		}
@@ -1987,77 +2002,29 @@ function getDisplayValue(resp, field) {
 }
 
 //Ordering
-var sortRequestPending = false;
-
 function sortEntity(options) {
-	if (sortRequestPending) {
-		return;
-	}
-
-	if (!options || !options.url || !options.id) {
-		pushMessages([
-			'Sortierparameter fehlen.'
-		]);
-		return;
-	}
-
-	var data = {
-		id: options.id
-	};
-
-	if (
-		options.direction === 'up'
-		|| options.direction === 'down'
-	) {
+	if (!options || !options.url || !options.id) { showActionRequestError({ok: false}, 'MESSAGES_SORT_FAILED'); return; }
+	var data = {id: options.id};
+	if (options.direction === 'up' || options.direction === 'down') {
 		data.direction = options.direction;
-	} else if (parseInt(options.ordering, 10) > 0) {
-		data.ordering = parseInt(
-			options.ordering,
-			10
-		);
-	} else {
-		pushMessages([
-			'Ungültiges Sortierziel.'
-		]);
-		return;
+		if (options.controller === 'positionset') data.ordering = options.direction;
+	} else if (parseInt(options.ordering, 10) > 0) data.ordering = parseInt(options.ordering, 10);
+	else { showActionRequestError({ok: false}, 'MESSAGES_SORT_FAILED'); return; }
+
+	if (options.parent && options.type) {
+		return requestPositionAction('position-sort', options.parent, options.type, [{key: (options.controller || 'position') + '/' + options.id, url: options.url, data: data, error: options.error, success: options.success}], options.button, 'MESSAGES_SORT_FAILED');
 	}
-
-	sortRequestPending = true;
-
-	$.ajax({
-		type: 'POST',
-		url: options.url,
-		data: data,
-		dataType: 'json',
-		cache: false,
+	var context = options.url.replace(/\/id\/[^/]+/, '');
+	var complete = beginActionRequest('sort', options.module || module, context, ['ordering'], $(options.button));
+	if (!complete) return;
+	return $.ajax({
+		type: 'POST', url: options.url, data: data, dataType: 'json', cache: false, timeout: 120000,
 		success: function (response) {
-			if (!response || response.ok !== true) {
-				pushMessages([
-					response && response.message
-						? response.message
-						: 'Sortierung fehlgeschlagen.'
-				]);
-
-				return;
-			}
-
-			if (typeof options.success === 'function') {
-				options.success(response);
-			}
+			if (!response || response.ok !== true || response.saved === false || response.errors) { showActionRequestError(response, 'MESSAGES_SORT_FAILED'); if (typeof options.error === 'function') options.error(response); return; }
+			if (typeof options.success === 'function') options.success(response);
 		},
-		error: function (xhr) {
-			pushMessages([
-				'Sortierung fehlgeschlagen.'
-			]);
-
-			console.log(
-				'sortEntity error',
-				xhr.responseText
-			);
-		},
-		complete: function () {
-			sortRequestPending = false;
-		}
+		error: function (xhr) { showActionRequestError(xhr.responseJSON, 'MESSAGES_SORT_FAILED'); if (typeof options.error === 'function') options.error(xhr.responseJSON); },
+		complete: complete
 	});
 }
 
@@ -3270,8 +3237,8 @@ function markFieldSaved($field) {
 				setLocation(Dewawi.url(targetModule, targetController, 'index'));
 			},
 
-			copy: function (selection) {
-				this.copyEntities(selection);
+			copy: function (selection, $button) {
+				this.copyEntities(selection, $button);
 			},
 
 			'add-position': function (selection, $button) {
@@ -3365,11 +3332,13 @@ function markFieldSaved($field) {
 
 			clear: function (selection, $button) {
 				this.resetField($button.attr('rel'));
+				this.resetPage();
 				search();
 			},
 
 			'clear-filter': function (selection, $button) {
 				this.resetField($button.data('filter'));
+				this.resetPage();
 				search();
 			},
 
@@ -3455,60 +3424,60 @@ function markFieldSaved($field) {
 				);
 			},
 
-			sortup: function (selection) {
+			sortup: function (selection, $button) {
 				this.sortEntitySelection(
 					selection,
 					{
-						direction: 'up'
+						direction: 'up', button: $button
 					}
 				);
 			},
 
-			sortdown: function (selection) {
+			sortdown: function (selection, $button) {
 				this.sortEntitySelection(
 					selection,
 					{
-						direction: 'down'
+						direction: 'down', button: $button
 					}
 				);
 			},
 
-			'sort-position-up': function (selection) {
+			'sort-position-up': function (selection, $button) {
 				this.sortPositionSelection(
 					selection,
 					'position',
 					{
-						direction: 'up'
+						direction: 'up', button: $button
 					}
 				);
 			},
 
-			'sort-position-down': function (selection) {
+			'sort-position-down': function (selection, $button) {
 				this.sortPositionSelection(
 					selection,
 					'position',
 					{
-						direction: 'down'
+						direction: 'down', button: $button
 					}
 				);
 			},
 
-			'sort-position-set-up': function (selection) {
+			'sort-position-set-up': function (selection, $button) {
 				this.sortPositionSelection(
 					selection,
 					'positionset',
 					{
-						direction: 'up'
+						direction: 'up', button: $button
 					}
 				);
 			},
 
-			'sort-position-set-down': function (selection) {
+			'sort-position-set-down': function (selection, $button) {
 				this.sortPositionSelection(
 					selection,
 					'positionset',
 					{
-						direction: 'down'
+						direction: 'down', button: $button
 					}
 				);
 			}
@@ -3528,7 +3497,7 @@ function markFieldSaved($field) {
 					DewawiToolbar.toggleDateRange($field.val());
 				}
 
-				$('#pagination-page').val(1);
+				DewawiToolbar.resetPage();
 				search();
 			});
 
@@ -3552,8 +3521,7 @@ function markFieldSaved($field) {
 				DewawiToolbar.persistField($field);
 
 				if ($field.attr('name') === 'limit') {
-					$('#pagination-page').val(1);
-					$.cookie('page', 1, { path: cookiePath });
+					DewawiToolbar.resetPage();
 				}
 
 				search();
@@ -3567,7 +3535,7 @@ function markFieldSaved($field) {
 
 				$boxes.prop('checked', true);
 				DewawiToolbar.persistField($boxes.first());
-				$('#pagination-page').val(1);
+				DewawiToolbar.resetPage();
 				search();
 			});
 
@@ -3583,7 +3551,7 @@ function markFieldSaved($field) {
 				});
 
 				DewawiToolbar.persistField($boxes.first());
-				$('#pagination-page').val(1);
+				DewawiToolbar.resetPage();
 				search();
 			});
 
@@ -3600,7 +3568,7 @@ function markFieldSaved($field) {
 				});
 
 				DewawiToolbar.persistField($boxes.first());
-				$('#pagination-page').val(1);
+				DewawiToolbar.resetPage();
 				search();
 			});
 		},
@@ -3608,7 +3576,7 @@ function markFieldSaved($field) {
 		bindKeyword: function () {
 			$(document).on('input', '.dw-toolbar #keyword, .dw-toolbar [name="keyword"]', function () {
 				DewawiToolbar.persistField($(this));
-				$('#pagination-page').val(1);
+				DewawiToolbar.resetPage();
 				search();
 			});
 		},
@@ -3671,10 +3639,11 @@ function markFieldSaved($field) {
 				return;
 			}
 
-			if ($fields.first().is(':checkbox')) {
-				var defaultValues = this.getDefaultArray($fields.first());
+			if ($fields.filter(':checkbox').length) {
+				var $boxes = $fields.filter(':checkbox');
+				var defaultValues = this.getDefaultArray($boxes.first());
 
-				$fields.each(function () {
+				$boxes.each(function () {
 					$(this).prop('checked', defaultValues.indexOf(String(this.value)) !== -1);
 				});
 
@@ -3684,7 +3653,8 @@ function markFieldSaved($field) {
 
 			var defaultValue = this.getDefaultValue($fields.first());
 
-			$fields.val(defaultValue);
+			if ($fields.first().is(':radio')) $fields.each(function () { this.checked = String(this.value) === defaultValue; });
+			else $fields.val(defaultValue);
 
 			if (defaultValue === '') {
 				$.removeCookie(name, { path: cookiePath });
@@ -3697,6 +3667,11 @@ function markFieldSaved($field) {
 			}
 		},
 
+		resetPage: function () {
+			$('#pagination-page').val(1);
+			$.cookie('page', 1, {path: cookiePath});
+		},
+
 		resetAll: function () {
 			$('.dw-toolbar input, .dw-toolbar select, .dw-filter-panel input, .dw-filter-panel select').each(function () {
 				var name = String($(this).attr('name') || '').replace('[]', '');
@@ -3706,52 +3681,71 @@ function markFieldSaved($field) {
 				}
 			});
 
-			$('#pagination-page').val(1);
+			DewawiToolbar.resetPage();
 		},
 
 		copyEntity: function (id, moduleName, controllerName) {
-			return $.ajax({
-				type: 'POST',
-				url: Dewawi.url(moduleName, controllerName, 'copy', id),
-				dataType: 'json',
-				cache: false
-			});
+			return $.ajax({type: 'POST', url: Dewawi.url(moduleName, controllerName, 'copy', id), dataType: 'json', cache: false, timeout: 120000});
 		},
 
-		copyEntities: function (selection) {
+		copyEntities: function (selection, button) {
 			var self = this;
-			var requests = selection.ids.map(function (id) {
-				return self.copyEntity(id, selection.module, selection.controller);
-			});
-
-			$.when.apply($, requests)
-				.done(function () {
-					self.afterCopy(selection, arguments);
-				})
-				.fail(function () {
-					pushMessages(['Kopieren fehlgeschlagen.']);
-				});
+			selection = $.extend({}, selection, {ids: selection.ids.map(String).filter(function (id, index, values) { return values.indexOf(id) === index; })});
+			if (!selection.ids.length || selection.ids.some(function (id) { return !/^[1-9][0-9]*$/.test(id); })) return;
+			var context = {history: self.isHistoryContext(selection), action: action};
+			var complete = beginActionRequest('copy', selection.module, selection.controller, selection.ids, $(button));
+			if (!complete) return;
+			pushMessages(Dewawi.message('MESSAGES_COPY_RUNNING'), 'info', '#messages');
+			var responses = [], index = 0, failed = false, unknown = false;
+			function finish() {
+				complete();
+				var notify = function () {
+					if (failed) {
+						var messages = [Dewawi.message(unknown ? 'MESSAGES_COPY_STATUS_UNKNOWN' : 'MESSAGES_COPY_FAILED')];
+						if (responses.length) messages.unshift(Dewawi.message('MESSAGES_COPY_PARTIAL').replace('%1$d', responses.length).replace('%2$d', selection.ids.length));
+						pushMessages(messages, 'danger', '#messages');
+					} else pushMessages(Dewawi.message(selection.ids.length === 1 ? 'MESSAGES_SUCCESFULLY_COPIED' : 'MESSAGES_RECORDS_COPIED'), 'success', '#messages');
+				};
+				if (responses.length) self.afterCopy(selection, responses, notify, context);
+				else {
+					notify();
+					if (unknown) {
+						var refreshFailed = function () { notify(); pushMessages(Dewawi.message(context.history ? 'MESSAGES_HISTORY_REFRESH_FAILED' : 'MESSAGES_SEARCH_FAILED'), 'warning', '#messages'); };
+						if (context.history) reloadHistory(notify, refreshFailed);
+						else if (context.action === 'index' || context.action === 'select') search(notify, refreshFailed);
+					}
+				}
+			}
+			function next() {
+				if (index >= selection.ids.length) { finish(); return; }
+				self.copyEntity(selection.ids[index++], selection.module, selection.controller)
+					.done(function (response) {
+						var newId = self.getCopiedId([response]);
+						if (!newId || selection.ids.indexOf(String(newId)) !== -1 || responses.some(function (item) { return String(item.id) === String(newId); })) {
+							failed = true;
+							unknown = !response || (response.ok !== false && response.saved !== false && !response.errors);
+							finish();
+							return;
+						}
+						responses.push(response);
+						next();
+					})
+					.fail(function (xhr) { failed = true; unknown = !xhr.responseJSON || xhr.responseJSON.ok !== false; finish(); });
+			}
+			next();
 		},
 
-		afterCopy: function (selection, responses) {
+		afterCopy: function (selection, responses, notify, context) {
+			context = context || {history: this.isHistoryContext(selection), action: action};
 			var newId = this.getCopiedId(responses);
-
-			if (this.isHistoryContext(selection) && newId > 0) {
-				this.afterHistoryCopy(selection, newId);
-				return;
-			}
-
-			if ((action === 'edit' || action === 'view') && selection.ids.length === 1 && newId > 0) {
+			if (selection.ids.length === 1 && context.history && newId > 0) { this.afterHistoryCopy(selection, newId); return; }
+			if ((context.action === 'edit' || context.action === 'view') && selection.ids.length === 1 && newId > 0) {
 				setLocation(Dewawi.url(selection.module, selection.controller, 'edit', newId));
 				return;
 			}
-
-			if (typeof search === 'function') {
-				search();
-				return;
-			}
-
-			location.reload();
+			notify = notify || function () { pushMessages(Dewawi.message('MESSAGES_SUCCESFULLY_COPIED'), 'success', '#messages'); };
+			notify();
+			search(notify, function () { notify(); pushMessages(Dewawi.message('MESSAGES_SEARCH_FAILED'), 'warning', '#messages'); });
 		},
 
 		isHistoryContext: function (selection) {
@@ -3764,26 +3758,18 @@ function markFieldSaved($field) {
 
 		afterHistoryCopy: function (selection, newId) {
 			var url = Dewawi.url(selection.module, selection.controller, 'edit', newId);
-
-			reloadHistory();
-
-			pushMessages([
-				'Kopie wurde erstellt. <a href="' + url + '">Kopie öffnen</a>'
-			]);
+			var notify = function () {
+				var $alert = pushMessages(Dewawi.message('MESSAGES_SUCCESFULLY_COPIED'), 'success', '#messages');
+				$('<a>', {href: url}).text(Dewawi.message('MESSAGES_COPY_OPEN')).appendTo($alert.find('li').first().append(' '));
+			};
+			notify();
+			reloadHistory(notify, function () { notify(); pushMessages(Dewawi.message('MESSAGES_HISTORY_REFRESH_FAILED'), 'warning', '#messages'); });
 		},
 
 		getCopiedId: function (responses) {
-			if (!responses || !responses.length) {
-				return 0;
-			}
-
-			var response = responses[0];
-
-			if (response && response.ok === true && response.id) {
-				return parseInt(response.id, 10);
-			}
-
-			return 0;
+			var response = responses && responses[0];
+			if (!response || response.ok !== true || response.saved === false || response.errors || (typeof response.id !== 'string' && typeof response.id !== 'number')) return 0;
+			return /^[1-9][0-9]*$/.test(String(response.id)) && Number(response.id) <= 9007199254740991 ? Number(response.id) : 0;
 		},
 
 		sortEntitySelection: function (selection, sort) {
@@ -3795,6 +3781,8 @@ function markFieldSaved($field) {
 					selection.ids[0]
 				),
 				id: selection.ids[0],
+				module: selection.module,
+				button: sort.button,
 				direction: sort.direction,
 				ordering: sort.ordering,
 				success: function () {
@@ -3825,13 +3813,10 @@ function markFieldSaved($field) {
 				id: selection.id,
 				direction: sort.direction,
 				ordering: sort.ordering,
-				success: function () {
-					getPositions(
-						selection.parent,
-						selection.type,
-						window.pageYOffset
-					);
-				}
+				parent: selection.parent,
+				type: selection.type,
+				controller: controllerName,
+				button: sort.button
 			});
 		},
 
@@ -4043,7 +4028,7 @@ function runDwTabAction($link, force) {
 	}
 }
 
-function reloadHistory(onSuccess) {
+function reloadHistory(onSuccess, onError) {
 	if (module !== 'contacts' || controller !== 'contact' || action !== 'edit') {
 		return;
 	}
@@ -4058,7 +4043,8 @@ function reloadHistory(onSuccess) {
 			if (typeof onSuccess === 'function') onSuccess();
 		},
 		error: function () {
-			pushMessages(['Historie konnte nicht aktualisiert werden.']);
+			if (typeof onError === 'function') onError();
+			else pushMessages(Dewawi.message('MESSAGES_HISTORY_REFRESH_FAILED'), 'danger', '#messages');
 		}
 	});
 }
