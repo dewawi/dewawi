@@ -735,7 +735,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		}
 
 		$db = $this->getDb();
-		$row = $db->getById($id);
+		$row = $this->loadRow($id);
 
 		if (!$row) {
 			return $this->_helper->json([

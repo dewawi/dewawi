@@ -18,6 +18,7 @@ class Admin_Model_Entity_Page
 				[
 					'type' => 'left',
 					'table' => 'shop',
+					'clientModule' => 'admin',
 					'alias' => 's',
 					'on' => 'p.shopid = s.id',
 					'columns' => [],

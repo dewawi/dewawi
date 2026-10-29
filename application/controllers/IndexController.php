@@ -56,38 +56,31 @@ class IndexController extends Zend_Controller_Action
 			$this->view->chartImages = $charts->getChartImages();
 		}
 
-		$quotesDb = new Sales_Model_DbTable_Quote();
-		$quotes = $quotesDb->getLatestDrafts();
-		$this->view->quotes = $quotes;
-
-		$salesordersDb = new Sales_Model_DbTable_Salesorder();
-		$salesorders = $salesordersDb->getLatestDrafts();
-		$this->view->salesorders = $salesorders;
-
-		$invoicesDb = new Sales_Model_DbTable_Invoice();
-		$invoices = $invoicesDb->getLatestDrafts();
-		$this->view->invoices = $invoices;
-
-		$quoterequestsDb = new Purchases_Model_DbTable_Quoterequest();
-		$quoterequests = $quoterequestsDb->getLatestDrafts();
-		$this->view->quoterequests = $quoterequests;
-
-		$purchaseordersDb = new Purchases_Model_DbTable_Purchaseorder();
-		$purchaseorders = $purchaseordersDb->getLatestDrafts();
-		$this->view->purchaseorders = $purchaseorders;
+		foreach (['sales' => ['quote', 'salesorder', 'invoice'], 'purchases' => ['quoterequest', 'purchaseorder']] as $module => $controllers) {
+			foreach ($controllers as $controller) {
+				$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+				$key = $controller . 's';
+				$this->view->$key = $permission->hasActionPermission($module, $controller, 'view') ? (new $class())->getLatestDrafts() : [];
+			}
+		}
 
 		$contactsDb = new Contacts_Model_DbTable_Contact();
-		$contacts = $contactsDb->getLatestContacts();
+		$client = Zend_Registry::get('Client');
+		$contactsDb->setClientId((int)($client['modules']['contacts'] ?? $client['id']));
+		$contacts = $permission->hasActionPermission('contacts', 'contact', 'view') ? $contactsDb->getLatestContacts() : [];
 		$this->view->contacts = $contacts;
 
 		$itemsDb = new Items_Model_DbTable_Item();
-		$items = $itemsDb->getLatestItems();
+		$itemsDb->setClientId((int)($client['modules']['items'] ?? $client['id']));
+		$items = $permission->hasActionPermission('items', 'item', 'view') ? $itemsDb->getLatestItems() : [];
 		$this->view->items = $items;
 
 		$ledgerDb = new Items_Model_DbTable_Ledger();
 		$itemDb = new Items_Model_DbTable_Item();
 
-		$ledgers = $ledgerDb->getLatest(5, 'ledgerdate');
+		$ledgerDb->setClientId((int)($client['modules']['items'] ?? $client['id']));
+		$itemDb->setClientId($ledgerDb->getClientId());
+		$ledgers = $permission->hasActionPermission('items', 'item', 'view') ? $ledgerDb->getLatest(5, 'ledgerdate') : [];
 
 		foreach($ledgers as &$ledger) {
 			$item = $itemDb->getById((int)$ledger['itemid']);
@@ -100,7 +93,7 @@ class IndexController extends Zend_Controller_Action
 		$this->view->ledgers = $ledgers;
 
 		$tasksDb = new Tasks_Model_DbTable_Task();
-		$tasks = $tasksDb->getLatestTasks();
+		$tasks = !$permission->hasModule('tasks') || $permission->hasActionPermission('tasks', 'task', 'view') ? $tasksDb->getLatestTasks() : [];
 		foreach($tasks as $task) {
 			if($task->startdate) {
 				$startdate = new Zend_Date($task->startdate, Zend_Date::DATES, 'de');

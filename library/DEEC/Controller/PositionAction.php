@@ -1104,6 +1104,7 @@ abstract class DEEC_Controller_PositionAction extends DEEC_Controller_Action
 
 	protected function validatePositionParams(array $params): void
 	{
+		if (!DEEC_Permission::isPositionContext($this->getPositionModule(), $params['parent'], $params['type'])) throw new InvalidArgumentException('Invalid position context');
 		if ($params['parent'] === '') {
 			throw new InvalidArgumentException(
 				'Position parent is missing'

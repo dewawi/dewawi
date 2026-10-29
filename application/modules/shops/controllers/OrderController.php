@@ -144,6 +144,7 @@ class Shops_OrderController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
+					$data = array_intersect_key($data, $form->getElements());
 					if(array_key_exists('cost', $data)) {
 						$locale = Zend_Registry::get('Zend_Locale');
 						$data['cost'] = Zend_Locale_Format::getNumber($data['cost'],array('precision' => 2,'locale' => $locale));

@@ -144,6 +144,7 @@ class Shops_AccountController extends Zend_Controller_Action
 				$data = $request->getPost();
 				$element = key($data);
 				if(isset($form->$element) && $form->isValidPartial($data)) {
+					$data = array_intersect_key($data, $form->getElements());
 					$accountDb->updateAccount($id, $data);
 					echo Zend_Json::encode($accountDb->getAccount($id));
 				} else {

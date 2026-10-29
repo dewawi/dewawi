@@ -12,6 +12,13 @@ class DEEC_Permission
 		return in_array($controller, self::DOCUMENTS[$module] ?? [], true);
 	}
 
+	public static function isPositionContext(string $module, string $parent, string $type): bool
+	{
+		if (self::isDocument($module, $parent)) return $type === 'pos';
+		return ($module === 'items' && $parent === 'item' && in_array($type, ['atr', 'opt'], true))
+			|| (in_array([$module, $parent], [['processes', 'process'], ['tasks', 'task'], ['campaigns', 'campaign']], true) && $type === 'pos');
+	}
+
 	public static function isDocumentReadonly(string $module, string $controller, array $row): bool
 	{
 		return self::isDocument($module, $controller) && (
@@ -73,6 +80,31 @@ class DEEC_Permission
 	public function __construct(array $user)
 	{
 		$this->user = $user;
+	}
+
+	public function getObjectContext($id, string $module, string $controller, string $action = 'view'): ?array
+	{
+		$id = filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+		if (!$id || empty($this->user['id']) || empty($this->user['clientid']) || !Zend_Registry::isRegistered('Client')) return null;
+		if (!in_array($module, ['contacts', 'items', 'sales', 'purchases', 'processes', 'tasks', 'campaigns', 'admin'], true) || !preg_match('/^[a-z][a-z0-9]*$/D', $controller)) return null;
+		if ($module === 'admin' && empty($this->user['admin'])) return null;
+		$client = Zend_Registry::get('Client');
+		$owner = (int)($client['modules'][$module] ?? $this->user['clientid']);
+		$contactOwner = (int)($client['modules']['contacts'] ?? $this->user['clientid']);
+		if ($owner <= 0 || $contactOwner <= 0) return null;
+		$parentController = preg_replace('/(?:pos|atr|opt)(?:set)?$/', '', $controller);
+		$route = new Zend_Controller_Request_Simple($action, $parentController, $module);
+		$permissionController = $this->resolveController($route);
+		if ($this->hasModule($module) && !$this->hasActionPermission($module, $permissionController, $action)) return null;
+		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+		if (!class_exists($class)) return null;
+		$db = new $class();
+		if (!$db instanceof DEEC_Model_DbTable_Entity) return null;
+		$parent = $db->setClientId($owner)->getById($id);
+		if (!$parent) return null;
+		if ($parentController !== $controller && !$this->getObjectContext($parent['parentid'] ?? 0, $module, $parentController, $action)) return null;
+		if ($module === 'contacts' && $controller === 'contactperson' && !$this->getObjectContext($parent['parentid'] ?? 0, 'contacts', 'contact', $action)) return null;
+		return ['parent' => $parent, 'clientid' => $owner, 'storageClients' => array_values(array_unique([$owner, $contactOwner]))];
 	}
 
 	public function hasRoutePermission(

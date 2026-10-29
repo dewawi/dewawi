@@ -29,6 +29,10 @@ class HistoryTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
 }
 
 // Replace document reads while keeping the real history loader and status renderer.
+class Application_Model_DbTable_Permission
+{
+    public function getPermissions() { return []; }
+}
 class HistoryTestDocuments
 {
     public function getByContactId($contactid) { return []; }
@@ -47,6 +51,7 @@ Zend_Db_Table::setDefaultAdapter(new HistoryTestAdapter([
     'host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused',
 ]));
 Zend_Registry::set('Client', ['id' => 7, 'parentid' => 0]);
+Zend_Registry::set('User', ['id' => 42, 'clientid' => 7]);
 Zend_Registry::set('Zend_Currency', null);
 $history = (new Contacts_Model_Get())->history(42);
 $list = new Contacts_Model_List_History(['options' => ['states' => $history['states']]]);

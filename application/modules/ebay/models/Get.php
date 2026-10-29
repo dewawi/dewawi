@@ -74,7 +74,7 @@ class Ebay_Model_Get
 			$listingsDb->select()
 				->setIntegrityCheck(false)
 				->from(array('e' => 'ebaylisting'))
-				->join(array('i' => 'item'), 'i.id = e.itemid', array('sku', 'title', 'ebaytitle'))
+				->join(array('i' => 'item'), 'i.id = e.itemid AND i.clientid = ' . (int)($client['modules']['items'] ?? $client['id']), array('sku', 'title', 'ebaytitle'))
 				->group($schema.'.id')
 				->where($query ? $query : 0)
 				->order($ordering)

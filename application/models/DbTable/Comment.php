@@ -48,15 +48,13 @@ class Application_Model_DbTable_Comment extends DEEC_Model_DbTable_Entity
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function deleteComment($id)
 	{
 		$id = (int)$id;
 		$data = array('deleted' => 1);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 }

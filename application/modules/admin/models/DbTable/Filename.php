@@ -54,13 +54,13 @@ class Admin_Model_DbTable_Filename extends DEEC_Model_DbTable_Entity
 	{
 		//$data['modified'] = $this->_date;
 		//$data['modifiedby'] = $this->_user['id'];
-		$this->update($data, 'id = '. (int)$id);
+		$this->updateById((int)$id, $data);
 	}
 
 	public function deleteFilename($id)
 	{
 		$data = array();
 		$data['deleted'] = 1;
-		$this->update($data, 'id =' . (int)$id);
+		$this->updateById((int)$id, $data);
 	}
 }

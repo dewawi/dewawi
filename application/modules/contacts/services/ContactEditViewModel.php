@@ -49,7 +49,7 @@ class Contacts_Service_ContactEditViewModel
 		$downloads = $downloadsDb->getDownloads($contactId);
 		$downloadtrackings = $downloadtrackingsDb->getDownloadtrackings($contactId);
 
-		$clientid = $user['clientid'] ?? 0;
+		$clientid = $contactClientId;
 		$dir1 = substr((string) $clientid, 0, 1);
 		$dir2 = (strlen((string) $clientid) > 1) ? substr((string) $clientid, 1, 1) : '0';
 		$downloadsurl = $dir1 . '/' . $dir2 . '/' . $clientid . '/';

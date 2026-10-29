@@ -73,7 +73,7 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 	public function getLatestContacts()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->getClientId());
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC', 5);
 		return $data;
@@ -81,7 +81,7 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 
 	public function addContact($data)
 	{
-		$data['clientid'] = $this->_client['id'];
+		$data['clientid'] = $this->getClientId();
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);

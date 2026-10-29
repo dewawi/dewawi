@@ -1,6 +1,6 @@
 <?php
 
-class Shops_Model_DbTable_Order extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Order extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'shoporder';
@@ -13,22 +13,23 @@ class Shops_Model_DbTable_Order extends Zend_Db_Table_Abstract
 
 	public function init()
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		parent::init();
+		$this->_shop = Zend_Registry::isRegistered('Shop') ? Zend_Registry::get('Shop') : null;
+		if (!$this->hasClientContext() && $this->_shop) $this->setClientId((int)$this->_shop['clientid']);
 	}
 
 	public function addOrder($data)
 	{
 		$data['created'] = $this->_date;
 		//$data['createdby'] = $this->_user['id'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
+		return $this->create($data);
 	}
 
 	public function getOrder($itemid, $orderid)
 	{
 		$itemid = (int)$itemid;
-		$where = array();
+		$where = $this->getAccessWhere();
+		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
 		$where[] = $this->getAdapter()->quoteInto('orderid = ?', $orderid);
 		$data = $this->fetchRow($where);
@@ -50,32 +51,30 @@ class Shops_Model_DbTable_Order extends Zend_Db_Table_Abstract
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
-	public function lock($id)
+	public function lock($id): void
 	{
 		$id = (int)$id;
 		$data = array();
 		$data['locked'] = $this->_user['id'];
 		$data['lockedtime'] = $this->_date;
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
-	public function unlock($id)
+	public function unlock($id): void
 	{
 		$id = (int)$id;
 		$data = array('locked' => 0);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function deleteOrder($itemid)
 	{
 		$itemid = (int)$itemid;
-		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
+		$where = $this->getAccessWhere();
+		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
 		$this->delete($where);
 	}
 }

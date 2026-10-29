@@ -7,6 +7,11 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 		if($this->isPublicRequest($request)) return;
 
 		$auth = Zend_Auth::getInstance();
+		if ($request->getModuleName() === 'default' && $request->getControllerName() === 'trash' && $request->getActionName() === 'add') {
+			// The JSON endpoint checks the actual target module and delete permission.
+			if (!$auth->hasIdentity()) $this->denyAccess($request);
+			return;
+		}
 		if ($request->getModuleName() === 'default' && $request->getControllerName() === 'media' && $request->getActionName() === 'manager') {
 			if (!$auth->hasIdentity()) $this->denyAccess($request);
 			return;
@@ -33,7 +38,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 
 		$user = Zend_Registry::get('User');
 
-		if ($module === 'admin') {
+		if ($module === 'admin' || (in_array($module, ['ebay', 'shops'], true) && $controller === 'log')) {
 			if (!empty($user['admin'])) {
 				return;
 			}
@@ -86,7 +91,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
     private function handleGuestRequest(
 	    Zend_Controller_Request_Abstract $request
     ): void {
-	    if ($request->getModuleName() === 'shops') {
+	    if ($request->getModuleName() === 'shops' && in_array($request->getControllerName(), ['index', 'item', 'category', 'page', 'tag', 'sitemap', 'cart', 'checkout', 'contact', 'inquiry'], true)) {
 		    return;
 	    }
 
@@ -197,7 +202,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 				'redirector'
 			);
 
-		if ($canViewController && $resolvedController !== null) {
+		if ($canViewController && $resolvedController !== null && !$request->isPost() && !$request->isXmlHttpRequest()) {
 			if (
 				$request->getActionName() === 'edit'
 				&& (int)$request->getParam('id', 0) > 0

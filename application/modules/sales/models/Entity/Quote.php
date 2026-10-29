@@ -13,6 +13,7 @@ class Sales_Model_Entity_Quote
 			'joins' => [
 				[
 					'table' => 'contact',
+					'clientModule' => 'contacts',
 					'alias' => 'c',
 					'on' => 'q.contactid = c.contactid',
 					'columns' => [

@@ -12,6 +12,7 @@ class Items_Model_Entity_Ledger
 				[
 					'type' => 'left',
 					'table' => 'item',
+					'clientModule' => 'items',
 					'alias' => 'i',
 					'on' => 'l.itemid = i.id',
 					'columns' => [
@@ -22,6 +23,7 @@ class Items_Model_Entity_Ledger
 				[
 					'type' => 'left',
 					'table' => 'warehouse',
+					'clientModule' => 'items',
 					'alias' => 'w',
 					'on' => 'l.warehouseid = w.id',
 					'columns' => [

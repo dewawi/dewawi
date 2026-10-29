@@ -109,7 +109,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		$orderNumber = $incrementDb->getIncrement('shoporderid');
 		$orderDate = date('Y-m-d');
 
-		$orderDb = new Shops_Model_DbTable_Order();
+		$orderDb = (new Shops_Model_DbTable_Order())->setClientId((int)$shop['clientid']);
 		$orderDb->addOrder([
 			'shopid' => $shop['id'],
 			'orderid' => $orderNumber,

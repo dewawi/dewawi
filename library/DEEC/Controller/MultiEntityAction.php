@@ -132,6 +132,10 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 				$adapter->rollBack();
 				return $this->jsonError($error);
 			}
+			if (!$this->canAccessParent($parentId, $parentModule, $parentController)) {
+				$adapter->rollBack();
+				return $this->jsonError('not_found');
+			}
 
 			$newId = $db->createForParent(
 				$parentId,
@@ -203,6 +207,7 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 		if (!$row) {
 			return $this->jsonError('not_found');
 		}
+		if (!$this->canAccessParent((int)$row[$db->getParentField()], (string)$row['module'], (string)$row['controller'])) return $this->jsonError('not_found');
 
 		$post = (array)$request->getPost();
 		$error = $this->validateMultiRow(
@@ -231,6 +236,7 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 			$post
 		);
 
+		unset($values[$db->getParentField()], $values['module'], $values['controller']);
 		$adapter = $db->getAdapter();
 
 		try {
@@ -324,6 +330,31 @@ abstract class DEEC_Controller_MultiEntityAction extends DEEC_Controller_Action
 		}
 
 		return $form;
+	}
+
+	protected function canAccessParent(int $id, string $module, string $controller): bool
+	{
+		$action = $module === $this->getRequest()->getModuleName() ? $this->getRequest()->getActionName() : 'view';
+		return (new DEEC_Permission((array)Zend_Registry::get('User')))->getObjectContext($id, $module, $controller, $action) !== null;
+	}
+
+	protected function loadRow(int $id): ?array
+	{
+		$row = parent::loadRow($id);
+		return $row && $this->canAccessParent((int)$row[$this->getDb()->getParentField()], (string)$row['module'], (string)$row['controller']) ? $row : null;
+	}
+
+	protected function getRowsByParentId(int $parentId)
+	{
+		$module = (string)$this->_getParam('parent_module', '');
+		$controller = (string)$this->_getParam('parent_controller', '');
+		if (!$this->canAccessParent($parentId, $module, $controller)) return $this->jsonError('not_found');
+		return parent::getRowsByParentId($parentId);
+	}
+
+	protected function canDeleteRow(array $row): bool
+	{
+		return $this->canAccessParent((int)$row[$this->getDb()->getParentField()], (string)$row['module'], (string)$row['controller']) && parent::canDeleteRow($row);
 	}
 
 	protected function createRowForm(): DEEC_Form

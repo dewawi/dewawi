@@ -107,7 +107,7 @@ abstract class Statistics_Model_Abstract
 			->where('i.deleted = ?', 0)
 			->where('i.cancelled = ?', 0)
 			->where('i.clientid = ?', (int)$client['id'])
-			->where('c.clientid = ?', (int)$client['id'])
+			->where('c.clientid = ?', (int)($client['modules']['contacts'] ?? $client['id']))
 			->setIntegrityCheck(false);
 
 		if($period['from'] !== null) $select->where("i.{$dateField} >= ?", $period['from']);

@@ -32,20 +32,20 @@ class Application_Plugin_State extends Zend_Controller_Plugin_Abstract
 			return;
 		}
 
-		if (in_array($module, ['sales', 'purchases'], true) && in_array($controller, ['position', 'positionset'], true)) {
+		if (in_array($module, ['sales', 'purchases', 'items', 'processes', 'tasks', 'campaigns'], true) && in_array($controller, ['position', 'positionset'], true)) {
 			if (!in_array($action, ['add', 'edit', 'delete', 'copy', 'sort', 'apply'], true)) return;
 			if (!$request->isPost()) return $this->deny($request);
 
 			$parent = $request->getParam('parent', '');
 			$parentId = filter_var($request->getParam('parentid'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-			if (!is_string($parent) || !DEEC_Permission::isDocument($module, $parent)
-				|| !$parentId || $request->getParam('type', 'pos') !== 'pos') return $this->deny($request);
+			$type = $request->getParam('type', 'pos');
+			if (!is_string($parent) || !is_string($type) || !DEEC_Permission::isPositionContext($module, $parent, $type) || !$parentId) return $this->deny($request);
 			if ($request->getPost('parentid') !== null
 				&& filter_var($request->getPost('parentid'), FILTER_VALIDATE_INT) !== $parentId) return $this->deny($request);
 			if (!$this->editable($module, $parent, $parentId)) return $this->deny($request);
 
 			if ($controller === 'position') {
-				foreach (['masterid' => 'pos', 'setid' => 'posset'] as $field => $suffix) {
+				foreach (['masterid' => $type, 'setid' => $type . 'set'] as $field => $suffix) {
 					$value = $request->getParam($field, 0);
 					if ($value === 0 || $value === '0' || $value === null || $value === '') continue;
 					$ids = $this->ids($value, false);
@@ -60,7 +60,7 @@ class Application_Plugin_State extends Zend_Controller_Plugin_Abstract
 					? $request->getPost('id', $request->getParam('id', 0)) : $request->getParam('id', 0);
 				$ids = $this->ids($rawIds, $controller === 'position' && $action === 'delete');
 				if (!$ids) return $this->deny($request);
-				$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($parent . ($controller === 'position' ? 'pos' : 'posset'));
+				$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($parent . $type . ($controller === 'positionset' ? 'set' : ''));
 				$db = new $class();
 				foreach ($ids as $id) {
 					$row = $db->getById($id);
@@ -70,7 +70,7 @@ class Application_Plugin_State extends Zend_Controller_Plugin_Abstract
 
 			// Legacy set controllers pass the posted values directly to the table.
 			if ($action === 'edit') {
-				$formClass = ucfirst($module) . '_Form_' . ucfirst($parent . 'pos');
+				$formClass = ucfirst($module) . '_Form_' . ucfirst($parent . $type);
 				$form = new $formClass();
 				$allowed = array_diff(array_keys($form->getElements()), ['id']);
 				if (array_diff(array_keys((array)$request->getPost()), $allowed)) return $this->deny($request);
@@ -93,11 +93,11 @@ class Application_Plugin_State extends Zend_Controller_Plugin_Abstract
 			}
 			if (!is_string($context['module']) || !is_string($context['controller'])) return $this->deny($request);
 			$parent = substr($context['controller'], 0, -3);
-			if (!DEEC_Permission::isDocument($context['module'], $parent)) return;
-			if ($context['controller'] !== $parent . 'pos') return $this->deny($request);
+			if (!DEEC_Permission::isPositionContext($context['module'], $parent, substr($context['controller'], -3))) return $this->deny($request);
 			$class = ucfirst($context['module']) . '_Model_DbTable_' . ucfirst($context['controller']);
 			$ids = $this->ids($context['parentid'], false);
-			$position = $ids ? (new $class())->getById($ids[0]) : null;
+			$client = Zend_Registry::get('Client');
+			$position = $ids ? (new $class())->setClientId((int)($client['modules'][$context['module']] ?? $client['id']))->getById($ids[0]) : null;
 			if (!$position || !$this->editable($context['module'], $parent, (int)$position['parentid'])) return $this->deny($request);
 		}
 	}
@@ -117,15 +117,17 @@ class Application_Plugin_State extends Zend_Controller_Plugin_Abstract
 	private function document(string $module, string $controller, int $id): ?array
 	{
 		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
-		return (new $class())->getById($id);
+		$client = Zend_Registry::get('Client');
+		return (new $class())->setClientId((int)($client['modules'][$module] ?? $client['id']))->getById($id);
 	}
 
 	private function editable(string $module, string $controller, int $id): bool
 	{
 		$permission = new DEEC_Permission((array)Zend_Registry::get('User'));
-		if (!$permission->hasPermission($module, $controller, 'edit')) return false;
+		if ($permission->hasModule($module) && !$permission->hasActionPermission($module, $controller, 'edit')) return false;
 		$row = $this->document($module, $controller, $id);
-		return $row && !DEEC_Permission::isDocumentReadonly($module, $controller, $row);
+		return $row && !DEEC_Permission::isDocumentReadonly($module, $controller, $row)
+			&& (DEEC_Permission::isDocument($module, $controller) || !in_array((int)($row['state'] ?? 0), [105, 106], true));
 	}
 
 	private function deny(Zend_Controller_Request_Abstract $request): void

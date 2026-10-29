@@ -7,6 +7,23 @@ class Items_PriceruleposController extends DEEC_Controller_Action
 		return new Items_Model_DbTable_Pricerulepos();
 	}
 
+	protected function loadRow(int $id): ?array
+	{
+		$row = parent::loadRow($id);
+		return $row && $this->canReadPriceRuleParent((int)$row['parentid'], (string)$row['module'], (string)$row['controller']) ? $row : null;
+	}
+
+	protected function canReadPriceRuleParent(int $id, string $module, string $controller): bool
+	{
+		return (new DEEC_Permission((array)$this->_user))->getObjectContext($id, $module, $controller) !== null;
+	}
+
+	protected function getRowsByParentId(int $parentId)
+	{
+		if (!$this->canReadPriceRuleParent($parentId, (string)$this->_getParam('parent_module', ''), (string)$this->_getParam('parent_controller', ''))) return $this->sendPriceRuleError('not_found');
+		return parent::getRowsByParentId($parentId);
+	}
+
 	public function addAction()
 	{
 		$this->disableView();
@@ -161,7 +178,7 @@ class Items_PriceruleposController extends DEEC_Controller_Action
 	protected function lockPriceRuleParent(array $context): void
 	{
 		$class = DEEC_Util::dbTableClassFromModuleController($context['module'], $context['controller']);
-		$parent = (new $class())->getByIdForUpdate($context['id']);
+		$parent = (new $class())->setClientId($context['clientid'])->getByIdForUpdate($context['id']);
 		if (!$parent || DEEC_Permission::isDocumentReadonly($context['module'], $context['controller'], $parent)
 			|| ($context['module'] === 'processes' && in_array((int)($parent['state'] ?? 0), [105, 106], true))) {
 			throw new RuntimeException('Price rule parent is not editable');
@@ -173,17 +190,14 @@ class Items_PriceruleposController extends DEEC_Controller_Action
 		$module = (string)$priceRule['module'];
 		$positionController = (string)$priceRule['controller'];
 		$documentController = substr($positionController, 0, -3);
-
-		$className = DEEC_Util::dbTableClassFromModuleController(
-			$module,
-			$positionController
-		);
-
-		$positionDb = new $className();
-		$position = $positionDb->getPosition((int)$priceRule['parentid']);
+		if (!DEEC_Permission::isPositionContext($module, $documentController, substr($positionController, -3))) throw new InvalidArgumentException('Invalid price rule parent');
+		$context = (new DEEC_Permission((array)$this->_user))->getObjectContext($priceRule['parentid'], $module, $positionController, 'edit');
+		if (!$context) throw new InvalidArgumentException('Invalid price rule parent');
+		$position = $context['parent'];
 
 		return [
 			'id' => (int)$position['parentid'],
+			'clientid' => $context['clientid'],
 			'module' => $module,
 			'controller' => $documentController,
 		];

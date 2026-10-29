@@ -29,10 +29,10 @@ class Application_Plugin_Client extends Zend_Controller_Plugin_Abstract
 
 			//Change clientid if parentid exists
 			if($client['parentid']) {
-				$params = $request->getParams();
-				if(isset($client['modules'][$params['module']])) {
+				$module = $request->getModuleName();
+				if(isset($client['modules'][$module])) {
 					$client = Zend_Registry::get('Client');
-					$client['id'] = $client['modules'][$params['module']];
+					$client['id'] = $client['modules'][$module];
 					Zend_Registry::set('Client', $client);
 				}
 				//error_log($client['id']);

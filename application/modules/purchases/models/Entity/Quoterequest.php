@@ -13,6 +13,7 @@ class Purchases_Model_Entity_Quoterequest
 			'joins' => [
 				[
 					'table' => 'contact',
+					'clientModule' => 'contacts',
 					'alias' => 'c',
 					'on' => 'q.contactid = c.contactid',
 					'columns' => [

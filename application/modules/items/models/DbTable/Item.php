@@ -11,6 +11,13 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 
 	protected $_client = null;
 
+	protected function prepareUpdateData(array $data): array
+	{
+		// Variant parents are assigned by the variant service when the item is created.
+		unset($data['parentid']);
+		return parent::prepareUpdateData($data);
+	}
+
 	public function init()
 	{
 		$this->_date = date('Y-m-d H:i:s');
@@ -21,7 +28,7 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 	public function getItem($id)
 	{
 		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
+		$row = $this->fetchRow($this->getEntityWhere($id));
 
 		return $row ? $row->toArray() : null;
 	}
@@ -32,7 +39,7 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 
 		$where = [];
 		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->getClientId());
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 
 		$row = $this->fetchRow($where);
@@ -44,7 +51,7 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 	{
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('sku = ?', $sku);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->getClientId());
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where);
 		return $data ? $data->toArray() : $data;
@@ -63,7 +70,7 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 	public function getItemsByCategory($catid)
 	{
 		$catid = (int)$catid;
-		$where = array();
+		$where = $this->getAccessWhere();
 		$where[] = $this->getAdapter()->quoteInto('catid = ?', $catid);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$row = $this->fetchAll($where);
@@ -76,7 +83,7 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 	public function getLatestItems()
 	{
 		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->getClientId());
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC', 5);
 		return $data;
@@ -95,7 +102,7 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 
 	public function addItem($data)
 	{
-		$data['clientid'] = $this->_client['id'];
+		$data['clientid'] = $this->getClientId();
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);
@@ -107,8 +114,7 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	protected function prepareCopyData(array $data): array
@@ -141,8 +147,7 @@ class Items_Model_DbTable_Item extends DEEC_Model_DbTable_Entity
 	{
 		$id = (int)$id;
 		$data = array('deleted' => 1);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function suggestItems(string $keyword, int $clientId, int $limit = 10): array {

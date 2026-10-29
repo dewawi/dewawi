@@ -112,6 +112,7 @@ class DEEC_Query {
 
 	public function getQueryClient($query, $clientid, $schema = null)
 	{
+		$clientid = (int)filter_var($clientid, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 		if($query) $query .= ' AND ';
 		if($schema) $query .= '('.$schema.'.clientid = '.$clientid.')';
 		else $query .= '(clientid = '.$clientid.')';
@@ -120,6 +121,7 @@ class DEEC_Query {
 
 	public function getQueryShopID($query, $shopid, $schema = null)
 	{
+		$shopid = (int)filter_var($shopid, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 		if($query) $query .= ' AND ';
 		if($schema) $query .= '('.$schema.'.shopid = '.$shopid.')';
 		else $query .= '(shopid = '.$shopid.')';
@@ -128,6 +130,7 @@ class DEEC_Query {
 
 	public function getQueryAccountID($query, $accountid, $schema = null)
 	{
+		$accountid = (int)filter_var($accountid, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 		if($query) $query .= ' AND ';
 		if($schema) $query .= '('.$schema.'.accountid = '.$accountid.')';
 		else $query .= '(accountid = '.$accountid.')';

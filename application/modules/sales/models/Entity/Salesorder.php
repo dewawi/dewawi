@@ -13,6 +13,7 @@ class Sales_Model_Entity_Salesorder
 			'joins' => [
 				[
 					'table' => 'contact',
+					'clientModule' => 'contacts',
 					'alias' => 'c',
 					'on' => 's.contactid = c.contactid',
 					'columns' => [

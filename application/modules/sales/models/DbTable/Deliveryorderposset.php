@@ -21,7 +21,7 @@ class Sales_Model_DbTable_Deliveryorderposset extends DEEC_Model_DbTable_Entity
 	public function getPositionSet($id)
 	{
 		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
+		$row = $this->fetchRow($this->getEntityWhere($id));
 		if (!$row) {
 			throw new Exception("Could not find row $id");
 		}
@@ -33,7 +33,7 @@ class Sales_Model_DbTable_Deliveryorderposset extends DEEC_Model_DbTable_Entity
 		$parentid = (int)$parentid;
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('parentid = ?', $parentid);
-		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
+		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->getClientId());
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'ordering');
 		if (!$data) {
@@ -44,7 +44,7 @@ class Sales_Model_DbTable_Deliveryorderposset extends DEEC_Model_DbTable_Entity
 
 	public function addPositionSet($data)
 	{
-		$data['clientid'] = $this->_client['id'];
+		$data['clientid'] = $this->getClientId();
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
 		$this->insert($data);
@@ -56,8 +56,7 @@ class Sales_Model_DbTable_Deliveryorderposset extends DEEC_Model_DbTable_Entity
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function sortPositionSet($id, $ordering)
@@ -65,18 +64,12 @@ class Sales_Model_DbTable_Deliveryorderposset extends DEEC_Model_DbTable_Entity
 		$data = array(
 			'ordering' => $ordering,
 		);
-		$this->update($data, 'id = '. (int)$id);
+		$this->updateById((int)$id, $data);
 	}
 
 	public function sortPositionSets($orderings)
 	{
-		$ids = implode(',', array_keys($orderings));
-		$sql = "UPDATE ".$this->_name." SET ordering = CASE id ";
-		foreach ($orderings as $id => $ordering) {
-			$sql .= sprintf("WHEN %d THEN %d ", $id, $ordering);
-		}
-		$sql .= "END WHERE id IN (".$ids.")";
-		$this->_db->query($sql);
+		foreach ($orderings as $id => $ordering) $this->updateById((int)$id, ['ordering' => (int)$ordering]);
 	}
 
 	public function deletePositionSet($id)
@@ -84,7 +77,7 @@ class Sales_Model_DbTable_Deliveryorderposset extends DEEC_Model_DbTable_Entity
 		$data = array(
 			'deleted' => 1
 		);
-		$this->update($data, 'id =' . (int)$id);
+		$this->updateById((int)$id, $data);
 	}
 
 	public function deletePositionSets($ids)
@@ -92,7 +85,9 @@ class Sales_Model_DbTable_Deliveryorderposset extends DEEC_Model_DbTable_Entity
 		$data = array(
 			'deleted' => 1
 		);
-		$where = $this->getAdapter()->quoteInto('id IN (?)', $ids);
+		$ids = $this->normalizeIds((array)$ids);
+		if (!$ids) return;
+		$where = $this->getEntitiesWhere($ids);
 		$this->update($data, $where);
 	}
 }

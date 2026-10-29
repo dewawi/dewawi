@@ -157,6 +157,7 @@ class Contacts_DownloadController extends Zend_Controller_Action
 					$this->_helper->getHelper('layout')->disableLayout();
 					$element = key($data);
 					if(isset($form->$element) && $form->isValidPartial($data)) {
+					$data = array_intersect_key($data, $form->getElements());
 						$downloadDb->updateDownload($id, array_intersect_key($form->getValues(), $data));
 						echo Zend_Json::encode($downloadDb->getDownload($id));
 					} else {

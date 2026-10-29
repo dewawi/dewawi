@@ -116,7 +116,9 @@ foreach (['items' => 1, 'contacts' => 1, 'sales' => 2, 'purchases' => 2, 'proces
     Zend_Controller_Front::getInstance()->setParam('bootstrap', $bootstrap);
     $request = new Zend_Controller_Request_Http();
     $request->setModuleName($module)->setParams(['module' => $module]);
+    $_POST['module'] = $module === 'sales' ? 'contacts' : 'sales';
     (new Application_Plugin_Client())->routeShutdown($request);
+    unset($_POST['module']);
     check(Zend_Registry::get('Client')['id'] === $owner, 'Client plugin changed the data owner: ' . $module);
     check(Zend_Registry::get('User')['clientid'] === 2, 'Client plugin changed the selected account client');
     if ($module === 'items') check((new Items_Model_DbTable_Item())->getClientId() === 1, 'Item model lost parent context');

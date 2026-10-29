@@ -222,6 +222,7 @@ function contactTagFixtures(): void
     Zend_Db_Table_Abstract::$writes = [];
     Zend_Db_Table_Abstract::$selects = [];
     Zend_Db_Table_Abstract::$rows = [
+        'permission' => [1 => ['id' => 1, 'userid' => 42, 'clientid' => 7, 'deleted' => 0, 'contacts' => '{"contact":["add","edit","view","delete"]}']],
         'contact' => [
             11 => ['id' => 11, 'clientid' => 7, 'deleted' => 0, 'catid' => 3, 'name1' => 'Own Contact'],
             12 => ['id' => 12, 'clientid' => 7, 'deleted' => 0, 'catid' => 4, 'name1' => 'Second Contact'],

@@ -114,6 +114,7 @@ class Items_PositionsetController extends Zend_Controller_Action
 			$data = $request->getPost();
 			$element = key($data);
 			if(isset($form->$element) && $form->isValidPartial($data)) {
+				$data = array_intersect_key($data, $form->getElements());
 				if(($element == 'taxrate') && ($data[$element] != 0))
 					$data['taxrate'] = $taxrates[$data['taxrate']];
 				if(($element == 'price') || ($element == 'quantity') || ($element == 'priceruleamount'))

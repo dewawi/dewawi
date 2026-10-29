@@ -92,7 +92,7 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 
 	public function lock($id)
 	{
-		$id = (int)$id;
+		$id = (int)($this->_user['id'] ?? 0);
 		$data = array();
 		$data['locked'] = $this->_user['id'];
 		$data['lockedtime'] = $this->_date;
@@ -102,7 +102,7 @@ class Users_Model_DbTable_User extends Zend_Db_Table_Abstract
 
 	public function unlock($id)
 	{
-		$id = (int)$id;
+		$id = (int)($this->_user['id'] ?? 0);
 		$data = array('locked' => 0);
 		$where = $this->getAdapter()->quoteInto('id = ?', $id);
 		$this->update($data, $where);

@@ -21,7 +21,7 @@ class Items_Model_DbTable_Inventory extends DEEC_Model_DbTable_Entity
 	public function getInventory($id)
 	{
 		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
+		$row = $this->fetchRow($this->getEntityWhere($id));
 
 		return $row ? $row->toArray() : null;
 	}
@@ -96,8 +96,7 @@ class Items_Model_DbTable_Inventory extends DEEC_Model_DbTable_Entity
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function quantityInventory($id, $quantity)
@@ -107,15 +106,13 @@ class Items_Model_DbTable_Inventory extends DEEC_Model_DbTable_Entity
 		$data['quantity'] = $quantity;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function deleteInventory($id)
 	{
 		$id = (int)$id;
 		$data = array('deleted' => 1);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 }

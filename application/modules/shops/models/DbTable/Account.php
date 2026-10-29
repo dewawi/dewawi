@@ -1,6 +1,6 @@
 <?php
 
-class Shops_Model_DbTable_Account extends Zend_Db_Table_Abstract
+class Shops_Model_DbTable_Account extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'shopaccount';
@@ -13,15 +13,15 @@ class Shops_Model_DbTable_Account extends Zend_Db_Table_Abstract
 
 	public function init()
 	{
-		$this->_date = date('Y-m-d H:i:s');
-		$this->_shop = Zend_Registry::get('Shop');
+		parent::init();
+		$this->_shop = Zend_Registry::isRegistered('Shop') ? Zend_Registry::get('Shop') : null;
+		if (!$this->hasClientContext() && $this->_shop) $this->setClientId((int)$this->_shop['clientid']);
 	}
 
 	public function getAccount($id)
 	{
 		$id = (int)$id;
-		$where = array();
-		$where[] = $this->getAdapter()->quoteInto('id = ?', $id);
+		$where = $this->getEntityWhere($id);
 		$data = $this->fetchRow($where);
 		return $data ? $data->toArray() : $data;
 	}
@@ -43,8 +43,7 @@ class Shops_Model_DbTable_Account extends Zend_Db_Table_Abstract
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
+		return $this->create($data);
 	}
 
 	public function updateAccount($id, $data)
@@ -52,32 +51,30 @@ class Shops_Model_DbTable_Account extends Zend_Db_Table_Abstract
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
-	public function lock($id)
+	public function lock($id): void
 	{
 		$id = (int)$id;
 		$data = array();
 		$data['locked'] = $this->_user['id'];
 		$data['lockedtime'] = $this->_date;
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
-	public function unlock($id)
+	public function unlock($id): void
 	{
 		$id = (int)$id;
 		$data = array('locked' => 0);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function deleteAccount($itemid)
 	{
 		$itemid = (int)$itemid;
-		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
+		$where = $this->getAccessWhere();
+		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
 		$this->delete($where);
 	}
 }

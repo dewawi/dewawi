@@ -13,7 +13,9 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			);
 		}
 
-		$objectDb = new $class();
+		$client = Zend_Registry::get('Client');
+		$owner = (int)($client['modules'][$module] ?? $client['id']);
+		$objectDb = (new $class())->setClientId($owner);
 		$object = $objectDb->getById($id);
 
 		if ($object === null) {
@@ -22,7 +24,7 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			);
 		}
 
-		$positionsDb = new $classPos();
+		$positionsDb = (new $classPos())->setClientId($owner);
 		$positions = $positionsDb->getPositions($id);
 		$calculations = $this->calculate($object, $positions, $module, $controller);
 

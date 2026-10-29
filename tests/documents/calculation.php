@@ -10,6 +10,9 @@ if (PHP_SAPI !== 'cli') {
 ob_start();
 require __DIR__ . '/position-read.php';
 ob_end_clean();
+Zend_Registry::set('User', ['id' => 42, 'name' => 'Fixture user', 'clientid' => 7]);
+$adapter->rows['permission'] = [['id' => 1, 'userid' => 42, 'clientid' => 7, 'deleted' => 0]];
+foreach ($modules as $module => $documents) $adapter->rows['permission'][0][$module] = json_encode(array_fill_keys($documents, ['view', 'edit', 'add', 'delete']));
 require_once $root . '/application/modules/items/controllers/PriceruleposController.php';
 foreach (['sales', 'purchases', 'processes'] as $testModule) require_once $root . '/application/modules/' . $testModule . '/controllers/PositionsetController.php';
 $moduleUnderTest = $argv[1] ?? 'sales';

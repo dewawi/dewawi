@@ -147,6 +147,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			if($responsibleId) {
 				$users = new Users_Model_DbTable_User();
 				$user = $users->getUser($responsibleId);
+				if ($responsibleId !== (int)$this->_user['id'] && ((int)$user['clientid'] !== (int)$row['clientid'] || empty($user['activated']) || !empty($user['deleted']))) throw new InvalidArgumentException('Invalid responsible user');
 
 				$values['responsible'] = $user['name'];
 			} else {

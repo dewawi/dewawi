@@ -39,7 +39,10 @@ Zend_Controller_Front::getInstance()->setControllerDirectory([
 ]);
 Zend_Controller_Front::getInstance()->getRouter()->addDefaultRoutes();
 
-function permissionRoute(string $module, string $controller, string $action): array {
+function permissionRoute(string $module, string $controller, string $action, string $method = 'GET', bool $ajax = false): array {
+    $_SERVER['REQUEST_METHOD'] = $method;
+    if ($ajax) $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+    else unset($_SERVER['HTTP_X_REQUESTED_WITH']);
     $request = new Zend_Controller_Request_Http();
     $request->setModuleName($module)->setControllerName($controller)->setActionName($action);
     $response = new Zend_Controller_Response_Http();
@@ -107,6 +110,14 @@ $adapter->permissions[0]['contacts'] = json_encode(['contact' => ['edit']]);
 check($response->getHttpResponseCode() === 200 && $request->getModuleName() === 'contacts', 'Contact edit permission did not allow bulk tag changes');
 $checks += 2;
 
+// Denied writes must produce a forbidden response, including view-only AJAX users.
+$adapter->permissions[0]['items'] = json_encode(['item' => ['view']]);
+foreach (['edit', 'copy', 'delete', 'state', 'import'] as $action) {
+    [$request, $response] = permissionRoute('items', 'item', $action, 'POST', true);
+    check($response->getHttpResponseCode() === 403 && !$response->isRedirect() && $request->getControllerName() === 'error', 'Denied AJAX write redirected instead of failing: ' . $action);
+    $checks++;
+}
+
 // Preserve the existing explicit public and non-managed module behavior.
 $adapter->permissions = [];
 foreach ([
@@ -128,6 +139,31 @@ Zend_Auth::getInstance()->getStorage()->write((object)['id' => 42]);
 [$request, $response] = permissionRoute('default', 'media', 'manager');
 check($response->getHttpResponseCode() === 200 && $request->getActionName() === 'manager', 'Authenticated manager gateway did not reach its context checks');
 $checks += 2;
+
+// Public storefront routes do not make the legacy ERP shop controllers public.
+Zend_Auth::getInstance()->clearIdentity();
+foreach (['account', 'order', 'log'] as $controller) {
+    [$request, $response] = permissionRoute('shops', $controller, 'edit', 'POST', true);
+    check($request->getModuleName() === 'users' && $request->getActionName() === 'session', 'Guest can dispatch shop administration: ' . $controller);
+    $checks++;
+}
+foreach (['index', 'item', 'category', 'page', 'tag', 'sitemap', 'cart', 'checkout', 'contact', 'inquiry'] as $controller) {
+    [$request, $response] = permissionRoute('shops', $controller, 'index');
+    check($request->getModuleName() === 'shops' && $response->getHttpResponseCode() === 200, 'Public storefront denied: ' . $controller);
+    $checks++;
+}
+Zend_Auth::getInstance()->getStorage()->write((object)['id' => 42]);
+
+// Integration log files contain records of multiple tenants and use the existing admin role.
+foreach (['shops', 'ebay'] as $module) {
+    Zend_Registry::set('User', ['id' => 42, 'clientid' => 70, 'admin' => 0]);
+    [$request, $response] = permissionRoute($module, 'log', 'index');
+    check($response->getHttpResponseCode() === 403, 'Non-admin can read global integration logs: ' . $module);
+    Zend_Registry::set('User', ['id' => 42, 'clientid' => 70, 'admin' => 1]);
+    [$request, $response] = permissionRoute($module, 'log', 'index');
+    check($response->getHttpResponseCode() === 200, 'Administrator lost integration diagnostics: ' . $module);
+    $checks += 2;
+}
 
 // Bind each manager to the selected tenant while retaining the shared data owner.
 Zend_Session::$_unitTestEnabled = true;

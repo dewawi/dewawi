@@ -170,7 +170,7 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
 		$data['ordering'] = $ordering;
-		$this->update($data, 'id = '. (int)$id);
+		$this->updateById((int)$id, $data);
 	}
 
 	public function deleteSlug($module, $controller, $shopid, $entityid)

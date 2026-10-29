@@ -49,7 +49,17 @@ class TrashController extends Zend_Controller_Action
 			]);
 		}
 
-		$targetModule = ucfirst($module);
+		$user = Zend_Registry::get('User');
+		$permission = new DEEC_Permission((array)$user);
+		$route = new Zend_Controller_Request_Simple('delete', $controller, $module);
+		if (empty($user['id']) || !preg_match('/^[a-z][a-z0-9]*$/D', $controller) || !in_array($module, ['default', 'admin', 'contacts', 'items', 'sales', 'purchases', 'processes', 'tasks', 'campaigns'], true)
+			|| ($module === 'admin' ? empty($user['admin']) : ($permission->hasModule($module) && !$permission->hasRoutePermission($route)))) {
+			$this->getResponse()->setHttpResponseCode(403);
+			return $this->_helper->json(['ok' => false, 'message' => 'MESSAGES_ACCESS_DENIED']);
+		}
+		$client = Zend_Registry::get('Client');
+		$owner = (int)($client['modules'][$module] ?? $client['id']);
+		$targetModule = $module === 'default' ? 'Application' : ucfirst($module);
 		$targetController = ucfirst($controller);
 
 		$modelClass = $targetModule . '_Model_DbTable_' . $targetController;
@@ -71,10 +81,13 @@ class TrashController extends Zend_Controller_Action
 		}
 
 		$mainModel = new $modelClass();
+		if (!$mainModel instanceof DEEC_Model_DbTable_Entity) throw new Zend_Controller_Action_Exception('Not found', 404);
+		$mainModel->setClientId($owner);
 
 		// Related positions model
 		$positionClass = $targetModule . '_Model_DbTable_' . $targetController . 'pos';
 		$positionsDb = class_exists($positionClass) ? new $positionClass() : null;
+		if ($positionsDb instanceof DEEC_Model_DbTable_Entity) $positionsDb->setClientId($owner);
 
 		// Items/item special case
 		$isItemController = ($module === 'items' && $controller === 'item');
@@ -105,22 +118,36 @@ class TrashController extends Zend_Controller_Action
 		// Permissions delete
 		$isUserController = ($module === 'admin' && $controller === 'user');
 		$permissionDb = $isUserController ? new Admin_Model_DbTable_Permission() : null;
+		foreach ([$addressDb, $phoneDb, $emailDb, $internetDb, $bankaccountDb, $contactpersonDb, $commentDb, $permissionDb] as $relatedDb) {
+			if ($relatedDb instanceof DEEC_Model_DbTable_Entity) $relatedDb->setClientId($owner);
+		}
 
 		$deletedIds = [];
 		$blockedIds = [];
+		$adapter = $mainModel->getAdapter();
+		$adapter->beginTransaction();
+		try {
 
 		foreach ($ids as $id) {
 			if ($id <= 0) {
 				continue;
 			}
 
-			$row = $mainModel->getById($id);
+			$row = $mainModel->getByIdForUpdate($id);
 
 			if (!$row) {
 				continue;
 			}
 
-			if (!$mainModel->canDelete($row)) {
+			$parentId = (int)($row[$mainModel->getParentField()] ?? 0);
+			if (!empty($row['module']) && !empty($row['controller']) && $parentId > 0
+				&& !$permission->getObjectContext($parentId, (string)$row['module'], (string)$row['controller'])) {
+				$blockedIds[] = $id;
+				continue;
+			}
+			if (!$mainModel->canDelete($row) || (array_key_exists($mainModel->getParentField(), $row) && $mainModel->hasChildren($id, $row))
+				|| ($isUserController && $id === (int)$user['id'])
+				|| (DEEC_Permission::isDocument($module, $controller) && DEEC_Permission::isDocumentReadonly($module, $controller, $row))) {
 				$blockedIds[] = $id;
 				continue;
 			}
@@ -146,18 +173,7 @@ class TrashController extends Zend_Controller_Action
 
 			// Reverse stock effect for ledger deletion
 			if ($itemDb) {
-				$ledger = $mainModel->getLedger($id);
-				if ($ledger && ($item = $itemDb->getItemBySKU($ledger['sku']))) {
-					$signed = (float)$ledger['quantity'];
-					if ($ledger['type'] === 'outflow') {
-						$signed = -$signed;
-					}
-
-					$delta = -$signed;
-					$newQty = ((float)$item['quantity']) + $delta;
-
-					$itemDb->updateItem($item['id'], ['quantity' => $newQty]);
-				}
+				(new Items_Service_Stock())->revert($row);
 			}
 
 			// Delete ledgers for delivery orders
@@ -215,16 +231,21 @@ class TrashController extends Zend_Controller_Action
 			}
 
 			if ($permissionDb) {
-				$permission = $permissionDb->getByUserId($id);
+				$userPermission = $permissionDb->getByUserId($id);
 
-				if ($permission) {
+				if ($userPermission) {
 					$permissionDb->deleteById(
-						(int)$permission['id']
+						(int)$userPermission['id']
 					);
 				}
 			}
 
 			$deletedIds[] = $id;
+		}
+		$adapter->commit();
+		} catch (Throwable $exception) {
+			$adapter->rollBack();
+			throw $exception;
 		}
 
 		if ($blockedIds) {

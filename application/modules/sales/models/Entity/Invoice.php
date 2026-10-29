@@ -13,6 +13,7 @@ class Sales_Model_Entity_Invoice
 			'joins' => [
 				[
 					'table' => 'contact',
+					'clientModule' => 'contacts',
 					'alias' => 'c',
 					'on' => 'i.contactid = c.contactid',
 					'columns' => [

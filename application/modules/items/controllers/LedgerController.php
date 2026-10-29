@@ -188,6 +188,7 @@ class Items_LedgerController extends DEEC_Controller_Action
 		array $values,
 		array $row
 	): array {
+		if (array_intersect(array_keys($values), ['itemid', 'warehouseid', 'sku', 'quantity', 'type'])) $this->getStockService()->prepareCreateData(array_replace($row, $values));
 		if(array_key_exists('sku', $values)) {
 			$values['itemid'] = $this->getStockService()
 				->resolveItem($values);

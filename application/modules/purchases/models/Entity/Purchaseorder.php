@@ -13,6 +13,7 @@ class Purchases_Model_Entity_Purchaseorder
 			'joins' => [
 				[
 					'table' => 'contact',
+					'clientModule' => 'contacts',
 					'alias' => 'c',
 					'on' => 'p.contactid = c.contactid',
 					'columns' => [

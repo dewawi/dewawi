@@ -13,6 +13,7 @@ class Sales_Model_Entity_Reminder
 			'joins' => [
 				[
 					'table' => 'contact',
+					'clientModule' => 'contacts',
 					'alias' => 'c',
 					'on' => 'r.contactid = c.contactid',
 					'columns' => [

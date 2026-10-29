@@ -1,6 +1,6 @@
 <?php
 
-class Ebay_Model_DbTable_Account extends Zend_Db_Table_Abstract
+class Ebay_Model_DbTable_Account extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'ebayaccount';
@@ -52,8 +52,7 @@ class Ebay_Model_DbTable_Account extends Zend_Db_Table_Abstract
 		$data['clientid'] = $this->_client['id'];
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->_user['id'];
-		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
+		return $this->create($data);
 	}
 
 	public function updateAccount($id, $data)
@@ -61,32 +60,30 @@ class Ebay_Model_DbTable_Account extends Zend_Db_Table_Abstract
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
-	public function lock($id)
+	public function lock($id): void
 	{
 		$id = (int)$id;
 		$data = array();
 		$data['locked'] = $this->_user['id'];
 		$data['lockedtime'] = $this->_date;
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
-	public function unlock($id)
+	public function unlock($id): void
 	{
 		$id = (int)$id;
 		$data = array('locked' => 0);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function deleteAccount($itemid)
 	{
 		$itemid = (int)$itemid;
-		$where = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
+		$where = $this->getAccessWhere();
+		$where[] = $this->getAdapter()->quoteInto('itemid = ?', $itemid);
 		$this->delete($where);
 	}
 }

@@ -19,7 +19,7 @@ class Tasks_Model_Get
 
 		$client = Zend_Registry::get('Client');
 		if($client['parentid']) {
-			$client['id'] = $client['modules']['tasks'];
+			$client['id'] = $client['modules']['tasks'] ?? $client['id'];
 		}
 
 		$tasksDb = new Tasks_Model_DbTable_Task();
@@ -46,7 +46,7 @@ class Tasks_Model_Get
 			$tasksDb->select()
 				->setIntegrityCheck(false)
 				->from(array('p' => 'task'))
-				->join(array('c' => 'contact'), 'p.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
+				->join(array('c' => 'contact'), 'p.contactid = c.contactid AND c.clientid = ' . (int)($client['modules']['contacts'] ?? $client['id']), array('catid AS catid', 'id AS cid'))
 				->group($schema.'.id')
 				->where($query ? $query : 1)
 				->order(array('pinned desc', $ordering))
@@ -60,7 +60,7 @@ class Tasks_Model_Get
 				$tasksDb->select()
 					->setIntegrityCheck(false)
 					->from(array('p' => 'task'))
-					->join(array('c' => 'contact'), 'p.contactid = c.contactid', array('catid AS catid', 'id AS cid'))
+					->join(array('c' => 'contact'), 'p.contactid = c.contactid AND c.clientid = ' . (int)($client['modules']['contacts'] ?? $client['id']), array('catid AS catid', 'id AS cid'))
 					->group($schema.'.id')
 					->where($query ? $query : 1)
 					->order(array('pinned desc', $ordering))

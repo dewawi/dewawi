@@ -13,6 +13,7 @@ class Sales_Model_Entity_Creditnote
 			'joins' => [
 				[
 					'table' => 'contact',
+					'clientModule' => 'contacts',
 					'alias' => 'c',
 					'on' => 'cr.contactid = c.contactid',
 					'columns' => [

@@ -130,6 +130,19 @@ foreach (['1', '2', '4'] as $id) {
     check(switchClient('POST', ['clientid'=>$id, 'client_csrf'=>$token]) === [200, (int)$id], 'Allowed client rejected: ' . $id);
     $checks++;
 }
+foreach (['FileManager', 'MediaManager'] as $manager) {
+    $session = new Zend_Session_Namespace($manager);
+    $session->context = ['clientid' => 2, 'ownerid' => 1];
+    $session->clipboard = ['path' => 'old-tenant.pdf'];
+    $session->csrf_token = 'old-token';
+}
+check(switchClient('POST', ['clientid'=>'4', 'client_csrf'=>$token]) === [200, 4], 'Client switch failed');
+foreach (['FileManager', 'MediaManager'] as $manager) {
+    $session = new Zend_Session_Namespace($manager);
+    check(!isset($session->context) && !isset($session->clipboard) && !isset($session->csrf_token), 'Switch retained old manager authorization: ' . $manager);
+    $checks++;
+}
+$checks++;
 $adapter->users[0]['admin'] = 1;
 check(switchClient('POST', ['clientid'=>'6', 'client_csrf'=>$token]) === [200, 6], 'Administrator cannot switch to unrelated active client');
 $checks++;

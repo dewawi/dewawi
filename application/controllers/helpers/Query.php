@@ -96,18 +96,21 @@ class Application_Controller_Action_Helper_Query extends Zend_Controller_Action_
 
 	public function getQueryClient($query, $clientid, $schema = null)
 	{
+		$clientid = (int)filter_var($clientid, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 		$this->appendCondition($query, ($schema ? "$schema." : "") . "clientid = $clientid");
 		return $query;
 	}
 
 	public function getQueryShopID($query, $shopid, $schema = null)
 	{
+		$shopid = (int)filter_var($shopid, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 		$this->appendCondition($query, ($schema ? "$schema." : "") . "shopid = $shopid");
 		return $query;
 	}
 
 	public function getQueryAccountID($query, $accountid, $schema = null)
 	{
+		$accountid = (int)filter_var($accountid, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 		$this->appendCondition($query, ($schema ? "$schema." : "") . "accountid = $accountid");
 		return $query;
 	}

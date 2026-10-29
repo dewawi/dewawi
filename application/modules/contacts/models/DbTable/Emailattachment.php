@@ -120,32 +120,13 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 	public function getParentContext($documentId, $module, $controller, string $action = 'view'): ?array
 	{
 		if(!Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client')) return null;
-		$user = Zend_Registry::get('User');
-		$client = Zend_Registry::get('Client');
-		$id = filter_var($documentId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-		if(!$id || empty($user['id']) || empty($user['clientid']) || !is_string($module) || !is_string($controller)) return null;
-		$contactClientId = !empty($client['parentid']) ? (int)($client['modules']['contacts'] ?? 0) : (int)$user['clientid'];
-		if($contactClientId <= 0) return null;
+		if (!is_string($module) || !is_string($controller)) return null;
 		if(!DEEC_Permission::isDocument($module, $controller) && !in_array([$module, $controller], [
 			['contacts', 'contact'], ['contacts', 'contactperson'], ['items', 'item'], ['items', 'itemlist'], ['processes', 'process'], ['tasks', 'task'], ['campaigns', 'campaign'],
 		], true)) return null;
-
-		$permission = new DEEC_Permission($user);
-		$permissionController = $module === 'contacts' ? 'contact' : ($module === 'items' ? 'item' : $controller);
-		if($permission->hasModule($module) && (!$permission->hasActionPermission($module, $permissionController, 'view') || !$permission->hasActionPermission($module, $permissionController, $action))) return null;
-		$ownerClientId = $module === 'contacts' ? $contactClientId : ($module === 'items' ? (int)($client['modules']['items'] ?? $user['clientid']) : (int)$user['clientid']);
-		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
-		$parentDb = new $class();
-		$parentDb->setClientId($ownerClientId);
-		$parent = $parentDb->getById($id);
-		if(!$parent) return null;
-		if($module === 'contacts' && $controller === 'contactperson') {
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contactDb->setClientId($ownerClientId);
-			if(!$contactDb->getById((int)$parent['parentid'])) return null;
-		}
-
-		return ['parent' => $parent, 'clientid' => $ownerClientId, 'storageClients' => array_values(array_unique([$ownerClientId, $contactClientId]))];
+		$permission = new DEEC_Permission((array)Zend_Registry::get('User'));
+		if ($action !== 'view' && !$permission->getObjectContext($documentId, $module, $controller)) return null;
+		return $permission->getObjectContext($documentId, $module, $controller, $action);
 	}
 
 	private function getStorageClients(): array

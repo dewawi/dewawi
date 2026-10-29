@@ -346,6 +346,10 @@ class Users_UserController extends Zend_Controller_Action
 		}
 
 		$authNamespace = new Zend_Session_Namespace('Zend_Auth');
+		if ((int)$authNamespace->storage->clientid !== (int)$form->getValue('clientid')) {
+			Zend_Session::namespaceUnset('FileManager');
+			Zend_Session::namespaceUnset('MediaManager');
+		}
 		$authNamespace->storage->clientid = (int)$form->getValue('clientid');
 	}
 

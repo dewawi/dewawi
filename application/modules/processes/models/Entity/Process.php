@@ -13,6 +13,7 @@ class Processes_Model_Entity_Process
 			'joins' => [
 				[
 					'table' => 'contact',
+					'clientModule' => 'contacts',
 					'alias' => 'c',
 					'on' => 'p.contactid = c.contactid',
 					'columns' => [

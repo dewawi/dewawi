@@ -111,6 +111,8 @@ class Items_Service_Stock
 				'MESSAGES_WAREHOUSE_REQUIRED'
 			);
 		}
+		$warehouse = (new Application_Model_DbTable_Warehouse())->setClientId($this->_itemDb->getClientId())->getById((int)$data['warehouseid']);
+		if (!$warehouse) throw new Exception('MESSAGES_WAREHOUSE_REQUIRED');
 
 		if(empty($data['reason'])) {
 			throw new Exception(

@@ -336,9 +336,9 @@ foreach (['invoice', 'creditnote'] as $document) {
     check(json_decode($response->getBody(), true)['ok'] && $adapter->rows[$document][0]['state'] === 106, 'Draft cancellation stopped working');
 }
 
-// Other modules and standalone item price rules retain their existing behavior.
-checkDocumentRoute(true, 'processes', 'position', 'edit', ['parent' => 'process', 'parentid' => 1, 'id' => 10]);
-checkDocumentRoute(true, 'items', 'pricerulepos', 'add', ['parent_module' => 'items', 'parent_controller' => 'itempos', 'parentid' => 1]);
+// Non-fiscal positions also require an existing authorized parent.
+checkDocumentRoute(false, 'processes', 'position', 'edit', ['parent' => 'process', 'parentid' => 1, 'id' => 10]);
+checkDocumentRoute(false, 'items', 'pricerulepos', 'add', ['parent_module' => 'items', 'parent_controller' => 'itempos', 'parentid' => 1]);
 check(!DEEC_Permission::isDocument('processes', 'process'), 'Operational process became a frozen document');
 check((new DEEC_List(['module' => 'sales', 'controller' => 'invoice']))->isReadonly((object)['invoiceid' => 1001, 'state' => 100]), 'List did not protect a numbered legacy document');
 

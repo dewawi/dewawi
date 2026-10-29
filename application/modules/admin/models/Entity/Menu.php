@@ -17,6 +17,7 @@ class Admin_Model_Entity_Menu
 				[
 					'type' => 'left',
 					'table' => 'shop',
+					'clientModule' => 'admin',
 					'alias' => 's',
 					'on' => 'm.shopid = s.id',
 					'columns' => [],

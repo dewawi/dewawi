@@ -19,7 +19,7 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where);
 		if(!$data) {
-			throw new Exception("Could not find row $contactid");
+			throw new Exception("Could not find row $id");
 		}
 		return $data->toArray();
 	}
@@ -50,16 +50,14 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 	public function updateEmailmessage($id, $data)
 	{
 		$id = (int)$id;
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function deleteEmailmessage($id)
 	{
 		$id = (int)$id;
 		$data = array('deleted' => 1);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function updateDelivery(int $id, int $clientId, array $data): void

@@ -44,6 +44,7 @@ class Items_Model_Entity_Stock
 			'joins' => [
 				[
 					'table' => 'item',
+					'clientModule' => 'items',
 					'alias' => 'i',
 					'on' => 's.itemid = i.id'
 						. ' AND s.clientid = i.clientid'
@@ -55,6 +56,7 @@ class Items_Model_Entity_Stock
 				],
 				[
 					'table' => 'item',
+					'clientModule' => 'items',
 					'alias' => 'p',
 					'on' => 'i.parentid = p.id'
 						. ' AND i.clientid = p.clientid',
@@ -63,6 +65,7 @@ class Items_Model_Entity_Stock
 				],
 				[
 					'table' => 'warehouse',
+					'clientModule' => 'items',
 					'alias' => 'w',
 					'on' => 's.warehouseid = w.id'
 						. ' AND s.clientid = w.clientid',

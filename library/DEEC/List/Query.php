@@ -253,11 +253,13 @@ class DEEC_List_Query
 		foreach (($config['joins'] ?? []) as $join) {
 			$type = $join['type'] ?? 'inner';
 			$columns = $countOnly ? [] : ($join['columns'] ?? []);
+			$condition = $join['on'];
+			if (isset($join['clientModule'])) $condition .= ' AND ' . $join['alias'] . '.clientid = ' . $this->getClientId(['clientModule' => $join['clientModule']]);
 
 			if ($type === 'left') {
 				$select->joinLeft(
 					[$join['alias'] => $join['table']],
-					$join['on'],
+					$condition,
 					$columns
 				);
 				continue;
@@ -265,7 +267,7 @@ class DEEC_List_Query
 
 			$select->join(
 				[$join['alias'] => $join['table']],
-				$join['on'],
+				$condition,
 				$columns
 			);
 		}

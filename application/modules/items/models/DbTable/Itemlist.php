@@ -21,7 +21,7 @@ class Items_Model_DbTable_Itemlist extends DEEC_Model_DbTable_Entity
 	public function getItemlist($id)
 	{
 		$id = (int)$id;
-		$row = $this->fetchRow('id = ' . $id);
+		$row = $this->fetchRow($this->getEntityWhere($id));
 		if (!$row) {
 			throw new Exception("Could not find row $id");
 		}
@@ -71,8 +71,7 @@ class Items_Model_DbTable_Itemlist extends DEEC_Model_DbTable_Entity
 		$id = (int)$id;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function quantityItemlist($id, $quantity)
@@ -82,15 +81,13 @@ class Items_Model_DbTable_Itemlist extends DEEC_Model_DbTable_Entity
 		$data['quantity'] = $quantity;
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->_user['id'];
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 
 	public function deleteItemlist($id)
 	{
 		$id = (int)$id;
 		$data = array('deleted' => 1);
-		$where = $this->getAdapter()->quoteInto('id = ?', $id);
-		$this->update($data, $where);
+		$this->updateById($id, $data);
 	}
 }

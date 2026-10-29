@@ -628,6 +628,7 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 
 	protected function prepareCreateData(array $data): array
 	{
+		unset($data['id']);
 		$data['clientid'] = $this->getClientId();
 		$data['created'] = $this->_date;
 		$data['createdby'] = $this->getUserId();
@@ -637,6 +638,7 @@ abstract class DEEC_Model_DbTable_Entity extends Zend_Db_Table_Abstract
 
 	protected function prepareUpdateData(array $data): array
 	{
+		unset($data['id'], $data['clientid'], $data['created'], $data['createdby']);
 		$data['modified'] = $this->_date;
 		$data['modifiedby'] = $this->getUserId();
 

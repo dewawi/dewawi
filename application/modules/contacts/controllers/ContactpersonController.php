@@ -9,6 +9,7 @@ class Contacts_ContactpersonController extends DEEC_Controller_MultiEntityAction
 
 	protected function getRowsByParentId(int $parentId)
 	{
+		if (!$this->canAccessParent($parentId, 'contacts', 'contact')) return $this->jsonError('not_found');
 		$options = $this->getDb()->getSelectOptionsForContact($parentId);
 		$items = [];
 

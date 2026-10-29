@@ -33,6 +33,7 @@ class Contacts_Model_Entity_Contact
 				[
 					'type' => 'left',
 					'table' => 'address',
+					'clientModule' => 'contacts',
 					'alias' => 'a',
 					'on' => "c.id = a.parentid AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing' AND a.deleted = 0",
 					'columns' => [
@@ -48,6 +49,7 @@ class Contacts_Model_Entity_Contact
 				[
 					'type' => 'left',
 					'table' => 'phone',
+					'clientModule' => 'contacts',
 					'alias' => 'p',
 					'on' => "c.id = p.parentid AND p.module = 'contacts' AND p.controller = 'contact' AND p.deleted = 0",
 					'columns' => [
@@ -57,6 +59,7 @@ class Contacts_Model_Entity_Contact
 				[
 					'type' => 'left',
 					'table' => 'email',
+					'clientModule' => 'contacts',
 					'alias' => 'e',
 					'on' => "c.id = e.parentid AND e.module = 'contacts' AND e.controller = 'contact' AND e.deleted = 0",
 					'columns' => [
@@ -66,6 +69,7 @@ class Contacts_Model_Entity_Contact
 				[
 					'type' => 'left',
 					'table' => 'internet',
+					'clientModule' => 'contacts',
 					'alias' => 'i',
 					'on' => "c.id = i.parentid AND i.module = 'contacts' AND i.controller = 'contact' AND i.deleted = 0",
 					'columns' => [
@@ -101,6 +105,7 @@ class Contacts_Model_Entity_Contact
 				'role' => [
 					'type' => 'relation',
 					'table' => 'contactrole',
+					'clientModule' => 'contacts',
 					'entityColumn' => 'parentid',
 					'valueColumn' => 'role',
 					'allowed' => array_keys(Contacts_Model_DbTable_Contactrole::ROLE_LABELS),
