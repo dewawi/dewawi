@@ -42,7 +42,7 @@
 	'MESSAGES_RECORDS_SUCCESFULLY_UPDATED' => 'Datensätze wurden erfolgreich aktualisiert.',
 	'MESSAGES_RECORDS_SUCCESFULLY_UPLOADED' => 'Datensätze wurden erfolgreich hochgeladen.',
 	'MESSAGES_EMAIL_SENT_ERROR' => 'Ihre Nachricht konnte nicht versendet werden!',
-	'MESSAGES_EMAIL_SENT_SUCCESS' => 'Ihre Nachricht wurde vom SMTP-Server zur weiteren Übermittlung angenommen.',
+	'MESSAGES_EMAIL_SENT_SUCCESS' => 'Die E-Mail wurde zum Versand übergeben.',
 	'MESSAGES_THANK_YOU_CONTACTING_US' => 'Vielen Dank für Ihre Kontaktaufnahme',
 	'MESSAGES_HELLO_NAME' => 'Hallo %s,', // %s will be replaced by the user’s name
 	'MESSAGES_RECEIVED_YOUR_MESSAGE' => 'Vielen Dank, dass Sie uns kontaktiert haben. Wir haben Ihre Nachricht erhalten und werden uns schnellstmöglich mit Ihnen in Verbindung setzen.',

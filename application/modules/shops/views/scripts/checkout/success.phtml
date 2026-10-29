@@ -15,11 +15,9 @@ $this->headTitle($this->title);
 			<div class="col-md-8 text-center">
 				<i class="icon-check fas fa-check-circle"></i>
 				<h1>Vielen Dank für Ihre Bestellung!</h1>
-				<p>Wir haben Ihre Bestellung erhalten und bearbeiten diese nun.</p>
-				<?php if ($this->notificationSent === true): ?>
-					<p>Die E-Mail-Benachrichtigung wurde vom SMTP-Server zur weiteren Übermittlung angenommen.</p>
-				<?php elseif ($this->notificationSent === false): ?>
-					<p>Die E-Mail-Benachrichtigung konnte nicht an den SMTP-Server übergeben werden. Ihre gespeicherte Bestellung bleibt davon unberührt.</p>
+				<p>Wir haben Ihre Bestellung erhalten und werden sie schnellstmöglich bearbeiten.</p>
+				<?php if ($this->notificationSent === false): ?>
+					<p>Ihre Bestellung wurde gespeichert. Leider konnten wir derzeit keine E-Mail-Bestätigung versenden. Bitte geben Sie Ihre Bestellung nicht erneut auf.</p>
 				<?php endif; ?>
 			</div>
 		</div>

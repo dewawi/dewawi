@@ -127,8 +127,9 @@ class DEEC_Feedback
 }
 class QuoteEmailTestFlashMessenger extends Zend_Controller_Action_Helper_Abstract
 {
+    public static array $messages = [];
     public function getName() { return 'FlashMessenger'; }
-    public function addMessage($message) { return $this; }
+    public function addMessage($message) { self::$messages[] = $message; return $this; }
 }
 class QuoteEmailTestDirectory extends Zend_Controller_Action_Helper_Abstract
 {
@@ -197,6 +198,7 @@ function sendQuoteEmail(array $post = [], array $params = [], string $method = '
     DEEC_Email::$sent = [];
     DEEC_Email::$smtp = [];
     DEEC_Feedback::$requests = [];
+    QuoteEmailTestFlashMessenger::$messages = [];
     $_SERVER['REQUEST_METHOD'] = $method;
     $_POST = [];
     $request = new Zend_Controller_Request_Http();
@@ -227,6 +229,7 @@ foreach ([false, true] as $shared) {
         check(sendQuoteEmail(['recipient' => $id]), 'Allowed contact or contact-person email was rejected');
         check(count(DEEC_Email::$sent) === 1 && DEEC_Email::$sent[0]['to'] === [$address], 'Wrong recipient or duplicate send');
         check(DEEC_Email::$smtp[0]['host'] === 'smtp.user.example.invalid' && DEEC_Email::$sent[0]['fromEmail'] === 'smtp-user@example.invalid', 'Normal email did not use the user SMTP configuration and sender');
+        check(QuoteEmailTestFlashMessenger::$messages === ['MESSAGES_EMAIL_SENT_SUCCESS'], 'Normal email success message is missing or duplicated');
         check(DEEC_Feedback::$requests[0][2] === 10 && DEEC_Feedback::$requests[0][3] === 7, 'Feedback used contact tenant instead of quote tenant');
         check($adapter->writes[0][1]['clientid'] === ($shared ? 70 : 7), 'Existing email log tenant changed');
         check($adapter->writes[0][1]['contactid'] === 100, 'Email history was not assigned to the company contact');
@@ -336,6 +339,7 @@ setupQuoteEmail();
 DEEC_Email::$result = ['sent' => false, 'error' => 'Fixture SMTP rejection'];
 check(!sendQuoteEmail(['module' => 'contacts', 'controller' => 'contact']), 'Negative SMTP result was reported as successful');
 check($adapter->writes[0][0] === 'emailmessage' && $adapter->writes[1][1]['response'] === 'Fixture SMTP rejection', 'Negative SMTP result was not retained in email history');
+check(QuoteEmailTestFlashMessenger::$messages === ['MESSAGES_EMAIL_SENT_ERROR'], 'Normal email failure message is missing or duplicated');
 
 // Public unsubscribe links still resolve an email before validating its token and tenant.
 Zend_Registry::getInstance()->offsetUnset('User');

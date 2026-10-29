@@ -186,7 +186,6 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		} catch (Exception $e) {
 			error_log('Stored shop order could not be emailed: ' . $e->getMessage());
 			$this->checkoutDataSession->notificationSent = false;
-			$this->_flashMessenger->addMessage('MESSAGES_EMAIL_SENT_ERROR');
 		}
 
 		$this->cart->clearCart();

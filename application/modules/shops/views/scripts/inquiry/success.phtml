@@ -14,12 +14,10 @@ $this->headTitle($this->title);
 		<div class="row justify-content-center">
 			<div class="col-md-8 text-center">
 				<i class="icon-check fas fa-check-circle"></i>
-				<h1>Vielen Dank für Ihre Kontaktaufnahme!</h1>
-				<p>Ihre Anfrage wurde gespeichert. Wir werden sie bearbeiten und uns schnellstmöglich mit Ihnen in Verbindung setzen.</p>
-				<?php if ($this->notificationSent === true): ?>
-					<p>Die E-Mail-Benachrichtigung wurde vom SMTP-Server zur weiteren Übermittlung angenommen.</p>
-				<?php elseif ($this->notificationSent === false): ?>
-					<p>Die E-Mail-Benachrichtigung konnte nicht an den SMTP-Server übergeben werden. Ihre gespeicherte Anfrage bleibt davon unberührt.</p>
+				<h1>Vielen Dank für Ihre Anfrage!</h1>
+				<p>Ihre Anfrage wurde gespeichert. Wir werden sie schnellstmöglich bearbeiten.</p>
+				<?php if ($this->notificationSent === false): ?>
+					<p>Ihre Anfrage wurde gespeichert. Leider konnten wir derzeit keine E-Mail-Bestätigung versenden. Bitte senden Sie Ihre Anfrage nicht erneut.</p>
 				<?php elseif (!empty($this->duplicate)): ?>
 					<p>Diese Anfrage war bereits gespeichert und wurde nicht erneut angelegt.</p>
 				<?php endif; ?>

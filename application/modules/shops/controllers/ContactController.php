@@ -59,7 +59,6 @@ class Shops_ContactController extends Shops_Controller_Action
 			} catch (Exception $e) {
 				error_log('Stored shop contact inquiry could not be emailed: ' . $e->getMessage());
 				$this->contactDataSession->notificationSent = false;
-				$this->_flashMessenger->addMessage('MESSAGES_EMAIL_SENT_ERROR');
 			}
 		}
 

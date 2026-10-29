@@ -281,7 +281,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					$feedback['service']->deleteRequest($feedback['request']);
 				}
 
-				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_ERROR');
+				if($module !== 'shops') $flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_ERROR');
 			} else {
 				$result['sent']++;
 				$emailmessageDb->updateEmailmessage($messageid, ['response' => 'sent']);
@@ -290,7 +290,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					$feedback['service']->attachEmailMessage($feedback['request'], (int)$messageid);
 				}
 
-				$flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
+				if($module !== 'shops') $flashMessengerHelper->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
 			}
 		}
 
@@ -505,7 +505,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$internalKeys = [
 				'csrf', 'csrf_token', '_csrf', 'g-recaptcha-response',
 				'step', 'next', 'back', 'submit', 'controller', 'module', 'action',
-				'subject', 'message'
+				'subject', 'message', 'inquiry_token', 'fax_number', 'privacy'
 			];
 			$internalPrefixes = ['_', '__']; // e.g. __meta, _internal
 

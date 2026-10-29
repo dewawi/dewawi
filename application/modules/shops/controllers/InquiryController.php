@@ -429,7 +429,6 @@ class Shops_InquiryController extends Shops_Controller_Action
 			return !empty($result['ok']);
 		} catch (Exception $e) {
 			error_log('Stored shop inquiry could not be emailed: ' . $e->getMessage());
-			$this->_flashMessenger->addMessage('MESSAGES_EMAIL_SENT_ERROR');
 
 			return false;
 		}
@@ -448,7 +447,6 @@ class Shops_InquiryController extends Shops_Controller_Action
 			return !empty($result['ok']);
 		} catch (Exception $e) {
 			error_log('Stored shop inquiry offer could not be emailed: ' . $e->getMessage());
-			$this->_flashMessenger->addMessage('MESSAGES_EMAIL_SENT_ERROR');
 
 			return false;
 		}
