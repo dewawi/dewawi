@@ -338,6 +338,14 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 			if ($quoteId) {
 				try {
+					$this->linkInquiryQuote((int)$stored['id'], (int)$quoteId);
+				} catch (Exception $e) {
+					error_log('Stored shop inquiry quote could not be linked: ' . $e->getMessage());
+				}
+			}
+
+			if ($quoteId) {
+				try {
 					$pdfInfo = (new DEEC_Pdf())->generate([
 						'module' => 'shops',
 						'controller' => 'quote',
@@ -745,5 +753,17 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 		// Persist to quote
 		$quoteDb->updateQuote($quoteId, $data);
+	}
+
+	private function linkInquiryQuote(int $inquiryId, int $quoteId): void
+	{
+		$quote = (new Shops_Model_DbTable_Quote())->getQuote($quoteId);
+		$contact = (new Shops_Model_DbTable_Contact())->getContactWithID((int)$quote['contactid']);
+		if (!$contact) throw new RuntimeException('Auto-created quote contact is not available.');
+
+		(new Shops_Model_DbTable_Inquirydata())->updateById($inquiryId, [
+			'contactid' => (int)$contact['id'],
+			'quoteid' => $quoteId,
+		]);
 	}
 }

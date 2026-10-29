@@ -36,6 +36,7 @@ class DEEC_Permission
 		'add' => [
 			'add',
 			'copy',
+			'createcontact',
 			'generate',
 			'send',
 			'upload',
@@ -54,6 +55,8 @@ class DEEC_Permission
 			'state',
 			'tags',
 			'assigncontactperson',
+			'assigncontact',
+			'createquote',
 		],
 		'view' => [
 			'view',

@@ -12,3 +12,14 @@ echo $this->Messages();
 </form>
 
 <?php echo $this->partial('inquiry/detail.phtml', ['inquiry' => $this->inquiry]); ?>
+
+<?php echo $this->partial('inquiry/workflow.phtml', [
+	'inquiry' => $this->inquiry,
+	'workflow' => $this->workflow,
+	'assignmentForm' => $this->assignmentForm,
+	'contactForm' => $this->contactForm,
+	'permissions' => $this->permissions,
+	'canCreateQuote' => $this->canCreateQuote,
+	'canViewQuote' => $this->canViewQuote,
+	'duplicateWarning' => $this->duplicateWarning ?? false,
+]); ?>

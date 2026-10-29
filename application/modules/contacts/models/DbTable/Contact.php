@@ -116,9 +116,11 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 					SELECT MIN(a2.id)
 					FROM address AS a2
 					WHERE a2.parentid = c.id
+						AND a2.clientid = c.clientid
 						AND a2.module = 'contacts'
 						AND a2.controller = 'contact'
 						AND a2.type = 'billing'
+						AND a2.deleted = 0
 				)",
 				[
 					'street',
@@ -150,6 +152,37 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 					OR a.street LIKE ' . $db->quote($like) . '
 					OR a.postcode LIKE ' . $db->quote($like) . '
 					OR a.city LIKE ' . $db->quote($like) . '
+					OR EXISTS (
+						SELECT 1 FROM email AS ce
+						WHERE ce.parentid = c.id
+							AND ce.clientid = c.clientid
+							AND ce.module = \'contacts\'
+							AND ce.controller = \'contact\'
+							AND ce.deleted = 0
+							AND ce.email LIKE ' . $db->quote($like) . '
+					)
+					OR EXISTS (
+						SELECT 1
+						FROM contactperson AS cp
+						LEFT JOIN email AS cpe
+							ON cpe.parentid = cp.id
+							AND cpe.clientid = cp.clientid
+							AND cpe.module = \'contacts\'
+							AND cpe.controller = \'contactperson\'
+							AND cpe.deleted = 0
+						WHERE cp.parentid = c.id
+							AND cp.clientid = c.clientid
+							AND cp.module = \'contacts\'
+							AND cp.controller = \'contact\'
+							AND cp.deleted = 0
+							AND (
+								cp.firstname LIKE ' . $db->quote($like) . '
+								OR cp.lastname LIKE ' . $db->quote($like) . '
+								OR cp.name1 LIKE ' . $db->quote($like) . '
+								OR cp.name2 LIKE ' . $db->quote($like) . '
+								OR cpe.email LIKE ' . $db->quote($like) . '
+							)
+					)
 				)'
 			);
 		}

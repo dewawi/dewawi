@@ -1139,7 +1139,7 @@ class Contacts_ContactController extends DEEC_Controller_Action
 
 		return $this->_helper->json([
 			'ok' => true,
-			'items' => $contactDb->suggestContacts($keyword, (int)$this->_user['clientid']),
+			'items' => $contactDb->suggestContacts($keyword, $this->getContactClientId()),
 		]);
 	}
 }

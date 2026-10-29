@@ -82,12 +82,12 @@ class ContactInquiryAdapter extends Zend_Db_Adapter_Pdo_Mysql
 
 $adapter = new ContactInquiryAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
 $adapter->rows = [
-	['id' => 1, 'formid' => 0, 'shopid' => 11, 'token' => 'own', 'data' => '{}', 'status' => 'new', 'clientid' => 7, 'created' => null, 'createdby' => 0, 'modified' => null, 'modifiedby' => 0, 'deleted' => 0],
-	['id' => 2, 'formid' => 0, 'shopid' => 12, 'token' => 'foreign', 'data' => '{}', 'status' => 'new', 'clientid' => 8, 'created' => null, 'createdby' => 0, 'modified' => null, 'modifiedby' => 0, 'deleted' => 0],
+	['id' => 1, 'formid' => 0, 'shopid' => 11, 'token' => 'own', 'data' => '{}', 'status' => 'new', 'contactid' => null, 'quoteid' => null, 'clientid' => 7, 'created' => null, 'createdby' => 0, 'modified' => null, 'modifiedby' => 0, 'deleted' => 0],
+	['id' => 2, 'formid' => 0, 'shopid' => 12, 'token' => 'foreign', 'data' => '{}', 'status' => 'new', 'contactid' => null, 'quoteid' => null, 'clientid' => 8, 'created' => null, 'createdby' => 0, 'modified' => null, 'modifiedby' => 0, 'deleted' => 0],
 ];
 Zend_Db_Table::setDefaultAdapter($adapter);
 Zend_Registry::set('User', ['id' => 42, 'clientid' => 10]);
-Zend_Registry::set('Client', ['id' => 10, 'parentid' => 9, 'modules' => ['contacts' => 6, 'shops' => 7]]);
+Zend_Registry::set('Client', ['id' => 10, 'parentid' => 9, 'modules' => ['contacts' => 6, 'shops' => 7, 'sales' => 8, 'items' => 9]]);
 $inquiryDb = new Contacts_Model_DbTable_Inquiry();
 check($inquiryDb->getClientId() === 7, 'Inquiry model did not select the authorized shop data owner');
 check($inquiryDb->getById(1)['token'] === 'own', 'Authorized shared inquiry was not available');
@@ -159,11 +159,58 @@ check($list->renderOrigin($item) === '/contact', 'Inquiry list did not extract t
 $form = new Contacts_Form_Inquiry();
 check($form->isValid(['status' => 'in_progress']), 'Supported inquiry status was rejected');
 check(!$form->isValid(['status' => 'invalid']), 'Unsupported inquiry status was accepted');
+$contactForm = new Contacts_Form_InquiryContact();
+check($contactForm->isValid(['name1' => 'Example GmbH', 'email' => 'mail@example.test']), 'Valid inquiry contact preview was rejected');
+check(!$contactForm->isValid(['name1' => '', 'email' => 'mail@example.test']), 'Inquiry contact preview accepted an empty contact name');
+check(!$contactForm->isValid(['name1' => 'Example GmbH', 'email' => 'invalid']), 'Inquiry contact preview accepted an invalid email address');
+
+$workflow = new Contacts_Service_InquiryWorkflow();
+$defaults = $workflow->getContactDefaults([
+	'data' => json_encode([
+		'firma' => 'Example GmbH',
+		'ansprechpartner' => 'Erika Muster',
+		'adresse' => 'Example Street 1',
+		'plz' => '12345',
+		'stadt' => 'Example City',
+		'telefon' => '+49 30 1234',
+		'email' => 'erika@example.test',
+	]),
+]);
+check($defaults['name1'] === 'Example GmbH' && $defaults['firstname'] === 'Erika' && $defaults['lastname'] === 'Muster', 'Inquiry contact identity was not mapped');
+check($defaults['street'] === 'Example Street 1' && $defaults['postcode'] === '12345' && $defaults['city'] === 'Example City', 'Inquiry address was not mapped');
+check($defaults['phone'] === '+49 30 1234' && $defaults['email'] === 'erika@example.test', 'Inquiry communication data was not mapped');
+
+Zend_Registry::set('Client', ['id' => 10, 'parentid' => 9, 'modules' => ['shops' => 7]]);
+try {
+	new Contacts_Service_InquiryWorkflow();
+	check(false, 'Child tenant without a contacts module owner received a workflow context');
+} catch (RuntimeException $e) {
+	check(str_contains($e->getMessage(), 'client context'), 'Missing contact module owner failed for an unexpected reason');
+}
+Zend_Registry::set('Client', ['id' => 10, 'parentid' => 9, 'modules' => ['contacts' => 6, 'shops' => 7, 'sales' => 8, 'items' => 9]]);
+
+$permission = new DEEC_Permission(['id' => 42, 'clientid' => 10]);
+check($permission->getPermissionForAction('assigncontact') === 'edit', 'Customer assignment does not use contact edit permission');
+check($permission->getPermissionForAction('createcontact') === 'add', 'Contact creation does not use contact add permission');
+check($permission->getPermissionForAction('createquote') === 'edit', 'Quote workflow link does not use contact edit permission');
 
 $migration = file_get_contents($root.'/install/config/update-1.1.7-1.1.8.sql');
 $structure = file_get_contents($root.'/install/config/structure.sql');
 check(str_contains($migration, "ADD `status` varchar(32) NOT NULL DEFAULT 'new'"), 'Inquiry status migration is missing');
+check(str_contains($migration, 'ADD `contactid` int(11) DEFAULT NULL'), 'Inquiry contact relation migration is missing');
+check(str_contains($migration, 'ADD `quoteid` int(11) DEFAULT NULL'), 'Inquiry quote relation migration is missing');
 check(str_contains($structure, "`status` varchar(32) NOT NULL DEFAULT 'new'"), 'Inquiry status install schema is missing');
+check(str_contains($structure, '`clientid_contactid_deleted`'), 'Inquiry contact relation index is missing');
+check(str_contains($structure, '`clientid_quoteid_deleted`'), 'Inquiry quote relation index is missing');
 check(str_contains($structure, 'clientid_status_shopid_formid_deleted'), 'Inquiry management lookup index is missing');
+
+$contactSource = file_get_contents($root.'/application/modules/contacts/models/DbTable/Contact.php');
+$shopController = file_get_contents($root.'/application/modules/shops/controllers/InquiryController.php');
+$workflowSource = file_get_contents($root.'/application/modules/contacts/services/InquiryWorkflow.php');
+check(str_contains($contactSource, "cpe.controller = \\'contactperson\\'") && str_contains($contactSource, 'OR cpe.email LIKE'), 'Contact suggestions do not search contact-person email addresses');
+check(str_contains($contactSource, 'a2.clientid = c.clientid') && str_contains($contactSource, 'a2.deleted = 0'), 'Contact suggestion address join is not tenant/deletion scoped');
+check(str_contains($shopController, 'linkInquiryQuote((int)$stored[\'id\'], (int)$quoteId)'), 'Automatic shop quote is not linked to its inquiry');
+check(str_contains($workflowSource, 'return $count === 1 ? $item : null;'), 'Ambiguous SKUs are not excluded from quote position suggestions');
+check(!str_contains($workflowSource, 'saveQuote(') && !str_contains($workflowSource, 'DEEC_Pdf') && !str_contains($workflowSource, 'sendEmail'), 'Inquiry quote workflow finalizes or sends a draft');
 
 echo "OK ({$checks} checks)\n";

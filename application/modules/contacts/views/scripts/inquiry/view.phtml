@@ -3,4 +3,11 @@ $this->title = $this->translate('CONTACT_INQUIRIES_REQUEST').' #'.(int)$this->in
 $this->headTitle($this->title);
 echo $this->Messages();
 echo $this->partial('inquiry/detail.phtml', ['inquiry' => $this->inquiry]);
+echo $this->partial('inquiry/workflow.phtml', [
+	'inquiry' => $this->inquiry,
+	'workflow' => $this->workflow,
+	'permissions' => [],
+	'canCreateQuote' => false,
+	'canViewQuote' => $this->canViewQuote,
+]);
 ?>

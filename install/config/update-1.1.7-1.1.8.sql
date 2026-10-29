@@ -57,9 +57,13 @@ ALTER TABLE `shopinquiryform`
 
 ALTER TABLE `shopinquirydata`
   ADD `status` varchar(32) NOT NULL DEFAULT 'new',
+  ADD `contactid` int(11) DEFAULT NULL,
+  ADD `quoteid` int(11) DEFAULT NULL,
   ADD UNIQUE INDEX `clientid_shopid_token` (`clientid`, `shopid`, `token`(64)),
   ADD INDEX `clientid_shopid_formid_deleted` (`clientid`, `shopid`, `formid`, `deleted`),
-  ADD INDEX `clientid_status_shopid_formid_deleted` (`clientid`, `status`, `shopid`, `formid`, `deleted`);
+  ADD INDEX `clientid_status_shopid_formid_deleted` (`clientid`, `status`, `shopid`, `formid`, `deleted`),
+  ADD INDEX `clientid_contactid_deleted` (`clientid`, `contactid`, `deleted`),
+  ADD INDEX `clientid_quoteid_deleted` (`clientid`, `quoteid`, `deleted`);
 
 -- Preserve an existing active default, otherwise use the first active UOM by ordering and ID.
 UPDATE `uom` AS u

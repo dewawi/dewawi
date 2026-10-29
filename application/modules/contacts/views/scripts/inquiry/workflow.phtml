@@ -1,0 +1,97 @@
+<?php
+$contact = $this->workflow['contact'] ?? null;
+$quote = $this->workflow['quote'] ?? null;
+$suggestions = $this->workflow['suggestions'] ?? [];
+$item = $this->workflow['item'] ?? null;
+$canEdit = !empty($this->permissions['edit']);
+$canAdd = !empty($this->permissions['add']) && $canEdit;
+?>
+
+<div class="row">
+	<div class="col-sm-12 col-lg-6">
+		<h3><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_CUSTOMER_ASSIGNMENT')); ?></h3>
+
+		<?php if ($contact) : ?>
+			<p>
+				<strong><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_ASSIGNED_CUSTOMER')); ?>:</strong>
+				<a href="<?php echo $this->url(['module' => 'contacts', 'controller' => 'contact', 'action' => 'edit', 'id' => (int)$contact['id']], null, true); ?>">
+					<?php echo $this->escape(trim($contact['contactid'].' · '.$contact['name1'].' '.$contact['name2'])); ?>
+				</a>
+			</p>
+		<?php else : ?>
+			<p><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_NO_CUSTOMER')); ?></p>
+		<?php endif; ?>
+
+		<?php if ($canEdit && isset($this->assignmentForm)) : ?>
+			<form method="post" action="<?php echo $this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'assigncontact', 'id' => (int)$this->inquiry['id']], null, true); ?>">
+				<?php echo $this->assignmentForm->renderElement('contact_search'); ?>
+				<?php echo $this->assignmentForm->renderElement('contactid'); ?>
+				<div class="dw-form-row">
+					<?php echo $this->assignmentForm->renderElement('assign'); ?>
+					<?php if ($contact) echo $this->assignmentForm->renderElement('remove'); ?>
+				</div>
+			</form>
+		<?php endif; ?>
+
+		<?php if ($suggestions) : ?>
+			<h4><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_MATCHING_CONTACTS')); ?></h4>
+			<ul>
+				<?php foreach ($suggestions as $suggestion) : ?>
+					<li>
+						<?php echo $this->escape($suggestion['label']); ?>
+						<?php if ($suggestion['subtitle'] !== '') : ?>
+							— <?php echo $this->escape($suggestion['subtitle']); ?>
+						<?php endif; ?>
+						<?php if ($canEdit) : ?>
+							<form method="post" class="inline" action="<?php echo $this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'assigncontact', 'id' => (int)$this->inquiry['id']], null, true); ?>">
+								<input type="hidden" name="contactid" value="<?php echo (int)$suggestion['id']; ?>">
+								<button type="submit" class="dw-btn"><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_ASSIGN_CUSTOMER')); ?></button>
+							</form>
+						<?php endif; ?>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		<?php endif; ?>
+	</div>
+
+	<div class="col-sm-12 col-lg-6">
+		<h3><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_QUOTE')); ?></h3>
+		<?php if ($quote) : ?>
+			<?php if ($this->canViewQuote) : ?>
+				<p>
+					<a href="<?php echo $this->url(['module' => 'sales', 'controller' => 'quote', 'action' => 'edit', 'id' => (int)$quote['id']], null, true); ?>">
+						<?php echo $this->escape($quote['quoteid'] ? $this->translate('CONTACT_INQUIRIES_QUOTE_NUMBER').' '.$quote['quoteid'] : $this->translate('CONTACT_INQUIRIES_QUOTE_DRAFT')); ?>
+					</a>
+				</p>
+			<?php else : ?>
+				<p><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_QUOTE_LINKED')); ?></p>
+			<?php endif; ?>
+		<?php elseif (!empty($this->workflow['quote_linked'])) : ?>
+			<p><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_QUOTE_LINKED')); ?></p>
+		<?php elseif (!$contact) : ?>
+			<p><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_QUOTE_REQUIRES_CUSTOMER')); ?></p>
+		<?php elseif ($this->canCreateQuote) : ?>
+			<?php if ($item) : ?>
+				<p><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_POSITION_SUGGESTION')); ?>: <?php echo $this->escape($item['sku'].' · '.$item['title']); ?></p>
+			<?php endif; ?>
+			<form method="post" action="<?php echo $this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'createquote', 'id' => (int)$this->inquiry['id']], null, true); ?>">
+				<button type="submit" class="dw-btn dw-btn--primary"><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_CREATE_QUOTE')); ?></button>
+			</form>
+		<?php endif; ?>
+	</div>
+</div>
+
+<?php if ($canAdd && !$contact && isset($this->contactForm)) : ?>
+	<h3><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_CREATE_CONTACT')); ?></h3>
+	<p><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_REVIEW_CONTACT')); ?></p>
+	<?php if (!empty($this->duplicateWarning)) : ?>
+		<p class="warning"><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_DUPLICATE_WARNING')); ?></p>
+	<?php endif; ?>
+	<form method="post" action="<?php echo $this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'createcontact', 'id' => (int)$this->inquiry['id']], null, true); ?>">
+		<div class="dw-form-row">
+			<?php foreach (['name1', 'name2', 'firstname', 'lastname', 'street', 'postcode', 'city', 'country', 'phone', 'email'] as $element) echo $this->contactForm->renderElement($element); ?>
+		</div>
+		<?php echo $this->contactForm->renderElement('confirm_duplicate'); ?>
+		<?php echo $this->contactForm->renderElement('create'); ?>
+	</form>
+<?php endif; ?>
