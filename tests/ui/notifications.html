@@ -17,6 +17,7 @@
   <a href="/fixture/finalize" class="dw-btn" data-document-finalize data-error-message="Validation failed">Finalize</a>
   <div class="dw-document-validation"></div>
   <div id="emailmessages"></div><div id="loading"></div>
+  <div id="document-fixture" class="edit"><form id="document-fixture-form" data-autosave="false"></form></div>
 </div>
 <pre id="result">RUNNING</pre>
 <script src="__ROOT__/library/jQuery/jquery-1.12.4.min.js"></script>
@@ -28,7 +29,7 @@ var baseUrl = '/fixture', id = 100, cookiePath = '/', calls = [], failures = [],
 var dwMessages = catalogs.de_DE, confirms = 0, confirmResult = true, reloads = 0;
 var deleteConfirm = 'Delete fixture?', confirmationTexts = [];
 window.fixtureReload = function() { reloads++; };
-window.addEventListener('error', function(event) { failures.push(event.message); $('#result').text('FAIL: ' + event.message + ' at ' + event.filename + ':' + event.lineno); });
+window.addEventListener('error', function(event) { failures.push(event.message); $('#result').text('FAIL: ' + event.message + ' at ' + event.filename + ':' + event.lineno); if (window.parent !== window) window.parent.document.getElementById('result').textContent = $('#result').text(); });
 window.confirm = function(message) { confirms++; confirmationTexts.push(message); return confirmResult; };
 $.fn.datepicker = function() { return this; };
 function autosize() {}
@@ -151,7 +152,7 @@ $(function() {
   check(calls.length === 1 && $('[data-document-finalize]').attr('aria-busy') === 'true', 'Finalize duplicate request allowed');
   finish(calls[0], null, {status: 0});
   check(!$('[data-document-finalize]').hasClass('is-loading') && !$('[data-document-finalize]').attr('aria-disabled') && $('[data-document-finalize]').prop('disabled') === undefined, 'Finalize failed to restore state');
-  check($('.dw-document-validation').text() === 'Validation failed', 'Finalize error feedback disappeared');
+  check($('#messages .dw-alert--danger li').text() === dwMessages.DOCUMENT_STATUS_UNKNOWN, 'Unknown finalize result claimed definitive failure');
 
   // Exercise the real toolbar dispatch and request lifecycle; navigation is recorded only.
   var searches = [], navigations = [], originalSearch = search;
@@ -500,6 +501,150 @@ $(function() {
   $.ajax = realAjax; search = originalSearch; HTMLFormElement.prototype.submit = nativeSubmit;
   window.parent.modalWindowClose = closeDialog;
 
+  // Keep document AJAX, navigation intent and native download guards inside this fixture.
+  var nativeDocumentIntents = [], popups = [], originalOpen = window.open;
+  var guardTimers = {}, guardTimerId = -1, realSetTimeout = window.setTimeout, realClearTimeout = window.clearTimeout;
+  // Advance only the 1-second native download guards with a controlled fixture clock.
+  window.setTimeout = function(callback, delay) {
+    if (delay === 1000) { guardTimers[guardTimerId] = callback; return guardTimerId--; }
+    return realSetTimeout(callback, delay);
+  };
+  window.clearTimeout = function(timer) {
+    if (Object.prototype.hasOwnProperty.call(guardTimers, timer)) delete guardTimers[timer];
+    else realClearTimeout(timer);
+  };
+  window.open = function(url, target) { popups.push({url: url, target: target}); return {}; };
+  $(document).on('click.document-fixture', '[data-document-generate], [data-document-download]', function(event) {
+    if (!event.isDefaultPrevented()) nativeDocumentIntents.push($(this).attr('href'));
+  });
+  function documentFixture(documentModule) {
+    $('[data-document-finalize]').not('#document-fixture [data-document-finalize]').remove();
+    $('.dw-document-validation').not('#document-fixture .dw-document-validation').remove();
+    $('#body').removeAttr('id');
+    $('#document-fixture-form').html(
+      '<div class="dw-finish"><select id="templateid" name="templateid"><option value="1">First</option><option value="2">Second</option></select>' +
+      '<select id="language" name="language"><option value="de_DE">German</option><option value="en_US">English</option></select>' +
+      '<div class="dw-document-validation"><p class="validation-original">Original validation</p></div>' +
+      '<button type="button" id="document-preview" class="dw-btn" onclick="previewPdf(this)" aria-busy="false"><span>PDF preview</span></button>' +
+      '<button type="button" id="document-preview-other" class="dw-btn" onclick="previewPdf(this)">Other preview</button>' +
+      '<a id="document-finalize" class="dw-btn" data-document-finalize href="/fixture/' + documentModule + '/document/save/id/100" aria-disabled="false"><span>Finalize</span></a>' +
+      '<a id="document-finalize-other" class="dw-btn" data-document-finalize href="/fixture/' + documentModule + '/document/save/id/100">Finalize again</a>' +
+      '<a id="document-download" class="dw-btn" data-document-download target="_blank" rel="noopener" href="/fixture/' + documentModule + '/document/download/id/100">PDF</a>' +
+      '<div class="dw-finish__preview"></div></div>' +
+      '<a id="document-generate" class="dw-btn" data-document-generate href="/fixture/' + documentModule + '/document/generate/id/100/target/invoice"><span>Generate invoice</span></a>' +
+      '<a id="document-generate-other" class="dw-btn" data-document-generate href="/fixture/' + documentModule + '/document/generate/id/100/target/invoice">Same action</a>' +
+      '<a id="document-generate-independent" class="dw-btn" data-document-generate href="/fixture/' + documentModule + '/document/generate/id/100/target/salesorder">Other target</a>' +
+      '<button type="button" id="toolbar-pdf" class="dw-btn" data-action="pdf" data-id="100" data-module="' + documentModule + '" data-controller="document">Toolbar PDF</button>'
+    );
+    $('#document-fixture .dw-finish__preview').append($(document.createElement('iframe')).attr({title: 'Existing preview', src: 'about:blank'}));
+    action = 'edit'; module = documentModule; controller = documentModule === 'sales' ? 'invoice' : 'purchaseorder'; id = 100;
+    calls = []; navigations = []; popups = []; nativeDocumentIntents = []; confirms = 0;
+    removeMessages();
+  }
+  function previewClick() { $('#document-preview').trigger('click'); }
+  function finalizeClick() { $('#document-finalize').trigger('click'); }
+  function previewSrc() { return $('#document-fixture .dw-finish__preview iframe').attr('src'); }
+  function releaseDocumentNavigation() { $(window).trigger('pageshow'); }
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale];
+    ['sales', 'purchases'].forEach(function(documentModule) {
+      documentFixture(documentModule); var previewMarkup = $('#document-preview').html();
+      previewClick(); previewClick(); $('#document-preview-other').trigger('click');
+      check(calls.length === 1 && confirms === 0 && $('#document-preview').prop('disabled') && $('#document-preview').attr('aria-busy') === 'true', locale + '/' + documentModule + ': preview duplicate or missing loading');
+      check(calls[0].options.type === 'POST' && calls[0].options.url === '/fixture/' + documentModule + '/' + controller + '/preview/id/100/templateid/1' && calls[0].options.timeout > 0, 'Preview route or request contract changed');
+      check($('#messages .dw-alert--info li').text() === dwMessages.DOCUMENTS_PREVIEW_RUNNING && previewSrc() === 'about:blank', 'Preview progress destroyed existing PDF');
+      finish(calls[0], {ok: true, url: '/fixture/current.pdf', validation: {status: 'success', title: 'Valid', errors: [], warnings: []}});
+      check(previewSrc() === '/fixture/current.pdf' && $('.dw-document-validation').text() === 'Valid', 'Successful preview or validation not displayed');
+      check(!$('#document-preview').prop('disabled') && $('#document-preview').attr('aria-busy') === 'false' && $('#document-preview').html() === previewMarkup && !$('#messages .dw-alert--info').length && !Object.keys(Dewawi.actionRequests).length, 'Preview did not restore original button state');
+      pushMessages('Independent message', 'warning');
+      check(previewSrc() === '/fixture/current.pdf', 'General message replaced PDF output');
+
+      documentFixture(documentModule); $('#templateid').val('2').trigger('change');
+      $('#language').val('en_US').trigger('change');
+      check(calls.length === 2 && calls[0].options.url.indexOf('/templateid/2') !== -1 && !$('#document-preview').prop('disabled') && !$('#messages .dw-alert--info').length && !$('#loading').is(':visible'), 'Automatic preview change blocked controls or lost template');
+      finish(calls[1], {ok: true, url: '/fixture/newer.pdf', validation: {status: 'warning', title: 'New validation'}});
+      finish(calls[0], {ok: true, url: '/fixture/older.pdf', validation: {status: 'error', title: 'Old validation'}});
+      check(previewSrc() === '/fixture/newer.pdf' && $('.dw-document-validation').text() === 'New validation', 'Stale preview overwrote current PDF or validation');
+      documentFixture(documentModule); previewPdf(); previewPdf();
+      finish(calls[1], {ok: true, url: '/fixture/newer.pdf'}); finish(calls[0], null, {status: 500});
+      check(previewSrc() === '/fixture/newer.pdf' && !$('#messages .dw-alert--danger').length, 'Stale preview error overwrote current status');
+      documentFixture(documentModule); previewClick(); previewPdf();
+      finish(calls[1], {ok: true, url: '/fixture/automatic.pdf'}); finish(calls[0], {ok: true, url: '/fixture/explicit-old.pdf'});
+      check(previewSrc() === '/fixture/automatic.pdf' && !$('#document-preview').prop('disabled'), 'Explicit preview raced with automatic update');
+
+      [null, {}, {ok: 1, url: '/fixture/false.pdf'}, {ok: false, message: 'technical exception'}, {ok: true},
+        {ok: true, url: 'javascript:alert(1)'}, {ok: true, url: '//other.invalid/a.pdf'}, {ok: true, url: 'https://other.invalid/a.pdf'},
+        {ok: true, url: 'data:text/html,unsafe'}, {ok: true, url: '/\\other.invalid/file.pdf'}].forEach(function(response) {
+        documentFixture(documentModule); previewClick(); finish(calls[0], response);
+        check(previewSrc() === 'about:blank' && !$('#document-preview').prop('disabled') && $('#messages .dw-alert--danger li').text() === dwMessages.DOCUMENTS_PREVIEW_FAILED && !Object.keys(Dewawi.actionRequests).length, 'Invalid preview response caused unsafe display or stuck loading');
+      });
+      documentFixture(documentModule); previewClick(); finish(calls[0], {ok: true, url: '/fixture/quote\"onload=\"unsafe.pdf'});
+      check(previewSrc() === '/fixture/quote\"onload=\"unsafe.pdf' && !$('#document-fixture iframe').attr('onload'), 'PDF URL was interpolated into HTML');
+      [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500}].forEach(function(error) {
+        documentFixture(documentModule); previewClick(); finish(calls[0], null, error);
+        check(calls.length === 1 && previewSrc() === 'about:blank' && !$('#document-preview').prop('disabled') && $('#messages .dw-alert--danger li').text() === dwMessages.DOCUMENTS_PREVIEW_FAILED, 'Preview failure retried or left loading');
+      });
+      documentFixture(documentModule);
+      check(updateDocumentValidation({status: '\" onclick=\"unsafe', title: 'Unsafe'}) === false && $('.validation-original').length === 1, 'Validation severity accepted injected HTML');
+      check(updateDocumentValidation({status: 'error', title: 'Bad', errors: 'invalid'}) === false, 'Malformed validation accepted');
+      previewClick(); finish(calls[0], {ok: true, url: '/fixture/valid.pdf', validation: {status: 'error', title: '<img src=x>', errors: [{tab: 'overview', field: 'name', text: '<img src=x onerror=unsafe>'}]}});
+      check($('.dw-document-validation img').length === 0 && $('.dw-document-validation').text().indexOf('<img') !== -1, 'Validation text interpreted HTML');
+
+      documentFixture(documentModule); var finalizeMarkup = $('#document-finalize').html();
+      finalizeClick(); finalizeClick(); $('#document-finalize-other').trigger('click');
+      check(calls.length === 1 && confirms === 0 && $('#document-finalize').attr('aria-busy') === 'true' && $('#messages .dw-alert--info li').text() === dwMessages.DOCUMENTS_FINALIZING, 'Duplicate finalization or missing progress');
+      $.ajax({url: '/fixture/keepalive'}); check(calls.length === 2, 'Finalization blocked background request');
+      var redirect = '/fixture/' + documentModule + '/document/view/id/100'; finish(calls[0], {ok: true, redirect: redirect});
+      check(navigations.length === 1 && navigations[0] === redirect && !$('#messages .dw-alert--success').length, 'Finalization redirect changed or duplicated flash feedback');
+      check($('#document-finalize').html() === finalizeMarkup && $('#document-finalize').attr('aria-disabled') === 'false' && !$('#document-finalize').hasClass('is-loading') && !Object.keys(Dewawi.actionRequests).length, 'Finalization button state not restored');
+      [null, {}, {ok: 1, redirect: '/fixture/view'}, {ok: true}, {ok: true, redirect: '//other.invalid/view'}, {ok: true, redirect: 'javascript:alert(1)'}, {ok: true, redirect: 'https://other.invalid/view'}].forEach(function(response) {
+        documentFixture(documentModule); finalizeClick(); finish(calls[0], response);
+        check(!navigations.length && calls.length === 1 && !$('#document-finalize').hasClass('is-loading') && $('#messages .dw-alert--danger li').text() === dwMessages.DOCUMENT_STATUS_UNKNOWN && $('.validation-original').length === 1, 'Unclear finalization navigated, retried or claimed failure');
+      });
+      documentFixture(documentModule); finalizeClick(); finish(calls[0], {ok: false, message: '<img src=x alt=exception>'});
+      check($('#messages .dw-alert--danger li').text() === dwMessages.DOCUMENT_VALIDATION_REQUEST_FAILED && !$('#messages img').length && !navigations.length, 'Known finalization failure leaked exception or navigated');
+      documentFixture(documentModule); finalizeClick(); finish(calls[0], null, {status: 422, responseJSON: {ok: false, validation: {status: 'error', title: 'Required fields missing', errors: [{tab: 'overview', field: 'name', text: 'Name required'}], warnings: []}}});
+      check($('.dw-document-validation').text().indexOf('Name required') !== -1 && $('.dw-document-validation [data-field="name"]').length === 1 && $('#messages .dw-alert--danger li').text() === dwMessages.DOCUMENT_VALIDATION_INPUT_INVALID && !navigations.length, 'Document validation summary or field links lost');
+      [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500}].forEach(function(error) {
+        documentFixture(documentModule); finalizeClick(); finish(calls[0], null, error);
+        check(calls.length === 1 && !navigations.length && !$('#document-finalize').hasClass('is-loading') && $('#messages .dw-alert--danger li').text() === dwMessages.DOCUMENT_STATUS_UNKNOWN && !Object.keys(Dewawi.actionRequests).length, 'Uncertain finalization retried, claimed booking failure or stayed loading');
+      });
+
+      documentFixture(documentModule); var generateHref = $('#document-generate').attr('href'), generateMarkup = $('#document-generate').html();
+      $('#document-generate').trigger('click').trigger('click'); $('#document-generate-other').trigger('click');
+      check(calls.length === 0 && nativeDocumentIntents.length === 1 && nativeDocumentIntents[0] === generateHref && $('#document-generate').attr('href') === generateHref && $('#document-generate').attr('aria-busy') === 'true', 'Generation changed native GET or permitted duplicate navigation');
+      check($('#messages .dw-alert--info li').text() === dwMessages.DOCUMENTS_GENERATING && !$('#messages .dw-alert--success').length && confirms === 0, 'Generation progress falsely reported success or introduced confirmation');
+      $('#document-generate-independent').trigger('click');
+      check(nativeDocumentIntents.length === 2, 'Independent follow-up document blocked');
+      releaseDocumentNavigation();
+      check($('#document-generate').html() === generateMarkup && !$('#document-generate').hasClass('is-loading') && !Object.keys(Dewawi.actionRequests).length, 'Generation navigation state not restored on pageshow');
+      documentFixture(documentModule); var modified = $.Event('click', {ctrlKey: true}); $('#document-generate').trigger(modified);
+      check(!modified.isDefaultPrevented() && !$('#document-generate').hasClass('is-loading') && !Object.keys(Dewawi.actionRequests).length, 'Modified native navigation was overridden');
+      documentFixture(documentModule); $('#document-generate').one('click.cancel-fixture', function(event) { event.preventDefault(); }); $('#document-generate').trigger('click');
+      check(!nativeDocumentIntents.length && !$('#document-generate').hasClass('is-loading') && !$('#messages .dw-alert--success').length, 'Cancelled generation navigation claimed success or locked button');
+
+      documentFixture(documentModule); $('#document-download').trigger('click').trigger('click');
+      check(nativeDocumentIntents.length === 1 && calls.length === 0 && $('#document-download').attr('target') === '_blank' && $('#document-download').attr('aria-busy') === 'true' && !$('#messages .dw-alert--success').length, 'Native download changed or falsely confirmed completion');
+      releaseDocumentNavigation();
+      $('#toolbar-pdf').trigger('click').trigger('click');
+      check(popups.length === 1 && popups[0].target === '_blank' && popups[0].url === '/fixture/' + documentModule + '/document/download/id/100' && calls.length === 0, 'Toolbar PDF did not retain native popup or duplicate guard');
+      releaseDocumentNavigation();
+      var open = window.open; window.open = function() { return null; }; $('#toolbar-pdf').trigger('click'); window.open = open;
+      check(!$('#toolbar-pdf').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, 'Blocked PDF popup left button disabled');
+      releaseDocumentNavigation();
+    });
+  });
+  documentFixture('sales'); $('#document-download').trigger('click');
+  $('#toolbar-pdf').attr('data-id', '200').data('id', 200).trigger('click');
+  // Advance the captured guards without waiting for browser navigation events.
+  var documentGuardFinished = function() {
+    Object.keys(guardTimers).forEach(function(timer) { var callback = guardTimers[timer]; delete guardTimers[timer]; callback(); });
+    check(!$('#document-download').hasClass('is-loading') && !$('#toolbar-pdf').prop('disabled') && !Object.keys(Dewawi.actionRequests).length, 'Native download guard did not expire');
+    check(!$('#messages .dw-alert--success').length, 'Native download timer invented success');
+    window.open = originalOpen;
+    window.setTimeout = realSetTimeout; window.clearTimeout = realClearTimeout;
+  };
+
   ['info', 'success', 'warning', 'danger'].forEach(function(type) {
     pushMessages('A long message ' + new Array(160).join('x'), type, '#output');
     var alert = $('#output .dw-alert--' + type)[0];
@@ -511,7 +656,8 @@ $(function() {
     var contrast = (luminance(style.backgroundColor) + 0.05) / (luminance(style.color) + 0.05);
     check(contrast >= 4.5, type + ': text contrast below 4.5:1');
   });
-  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, loading and accessibility checks at ' + innerWidth + 'px');
-  if (window.parent !== window) window.parent.postMessage($('#result').text(), '*');
+  documentGuardFinished();
+  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, delete, cancel, create, save, document and accessibility checks at ' + innerWidth + 'px');
+  if (window.parent !== window) window.parent.document.getElementById('result').textContent = $('#result').text();
 });
 </script>

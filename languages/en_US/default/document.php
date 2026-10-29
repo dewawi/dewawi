@@ -1,4 +1,10 @@
 <?php return array(
+	'DOCUMENTS_PREVIEW_RUNNING' => 'Creating PDF preview …',
+	'DOCUMENTS_PREVIEW_FAILED' => 'PDF preview could not be created.',
+	'DOCUMENTS_FINALIZING' => 'Finalizing document …',
+	'DOCUMENTS_GENERATING' => 'Creating document …',
+	'DOCUMENT_STATUS_UNKNOWN' => 'The document status could not be confirmed. Please check the current document status before repeating the action.',
+	'DOCUMENT_VALIDATION_INPUT_INVALID' => 'Please check the highlighted details.',
 	//Documents
 	'DOCUMENTS_VATIN' => 'VATIN:',
 	'DOCUMENTS_SHIPPING_ADDRESS' => 'Shipping address',

@@ -17,7 +17,12 @@ class NotificationTestView extends Zend_View
 {
     public array $catalog = [];
     public function translate(string $key): string { return $this->catalog[$key] ?? $key; }
-    public function url(array $params): string { return '/fixture/contact/' . (int)$params['id']; }
+    public function url(array $params): string {
+        return '/fixture/' . $params['module'] . '/' . $params['controller'] . '/' . $params['action'] . '/id/' . (int)($params['id'] ?? 100)
+            . (isset($params['target']) ? '/target/' . $params['target'] : '');
+    }
+    public function getValue(string $name) { return $name === 'id' ? 100 : ''; }
+    public function renderElement(string $name): string { return '<input name="' . $this->escape($name) . '">'; }
     public function baseUrl(): string { return '/fixture'; }
     public function Messages() { (new Zend_View_Helper_Messages())->setView($this)->Messages(); }
 }
@@ -30,11 +35,43 @@ function check(bool $condition, string $message): void
     $checks++;
 }
 
+// Module helpers have identical ZF1 class names, so render each module in its own process.
+$documentModule = $argv[1] ?? null;
+if ($documentModule !== null) {
+    if (!in_array($documentModule, ['sales', 'purchases'], true)) throw new InvalidArgumentException('Invalid fixture module');
+    require_once $root . '/application/modules/' . $documentModule . '/views/helpers/Finish.php';
+    require_once $root . '/application/modules/' . $documentModule . '/views/helpers/Actions.php';
+    foreach (['de_DE', 'en_US'] as $locale) {
+        $view = new NotificationTestView();
+        $view->catalog = require $root . '/languages/' . $locale . '/default/document.php';
+        $view->form = $view;
+        $view->module = $documentModule;
+        $view->documentValidation = ['status' => 'success'];
+        $controllers = $documentModule === 'sales' ? ['quote', 'salesorder', 'invoice', 'deliveryorder', 'creditnote'] : ['quoterequest', 'purchaseorder'];
+        foreach ($controllers as $controller) {
+            $view->controller = $controller;
+            $finish = (new Zend_View_Helper_Finish())->setView($view)->finish();
+            check(str_contains($finish, 'onclick="previewPdf(this)"'), 'Explicit preview button missing in ' . $documentModule);
+            check(str_contains($finish, 'data-document-finalize') && str_contains($finish, '/' . $controller . '/save/id/100'), 'Finalization route changed');
+            check(str_contains($finish, 'data-document-download') && str_contains($finish, 'target="_blank"') && str_contains($finish, '/' . $controller . '/download/id/100'), 'Native PDF download changed');
+            check(str_contains($finish, 'id="output" class="dw-finish__preview"') && str_contains($finish, 'dw-document-validation'), 'Existing preview or validation container missing');
+            ob_start();
+            (new Zend_View_Helper_Actions())->setView($view)->Actions();
+            $actions = ob_get_clean();
+            $links = substr_count($actions, '<a ');
+            check($links > 0 && substr_count($actions, 'data-document-generate') === $links, 'A generation link lacks click protection');
+            check(substr_count($actions, '/' . $controller . '/generate/id/100/target/') === $links && !str_contains($actions, 'target="_blank"'), 'Generation route or navigation target changed');
+        }
+    }
+    echo 'PASS: ' . $checks . ' ' . $documentModule . " document helper rendering checks\n";
+    exit;
+}
+
 foreach (['de_DE', 'en_US'] as $locale) {
     $view = new NotificationTestView();
-    $view->catalog = require $root . '/languages/' . $locale . '/default/messages.php';
+    $view->catalog = array_replace(require $root . '/languages/' . $locale . '/default/messages.php', require $root . '/languages/' . $locale . '/default/document.php');
     $translations = (new Zend_View_Helper_Messages())->setView($view)->getTranslations();
-    check(count($translations) === 23 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
+    check(count($translations) === 31 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
     foreach ($translations as $key => $text) check($key !== $text, $locale . ': untranslated browser key ' . $key);
     $view->messages = [
         'MESSAGES_EMAIL_SENT_SUCCESS', 'MESSAGES_EMAIL_SENT_SUCCESS',
@@ -80,3 +117,8 @@ foreach (['de_DE', 'en_US'] as $locale) {
 }
 
 echo 'PASS: ' . $checks . " notification rendering, flash, translation and email history checks\n";
+
+foreach (['sales', 'purchases'] as $documentModule) {
+    passthru(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__FILE__) . ' ' . escapeshellarg($documentModule), $status);
+    if ($status !== 0) throw new RuntimeException('Document helper fixture failed: ' . $documentModule);
+}

@@ -1,4 +1,10 @@
 <?php return array(
+	'DOCUMENTS_PREVIEW_RUNNING' => 'PDF-Vorschau wird erstellt …',
+	'DOCUMENTS_PREVIEW_FAILED' => 'PDF-Vorschau konnte nicht erstellt werden.',
+	'DOCUMENTS_FINALIZING' => 'Dokument wird abgeschlossen …',
+	'DOCUMENTS_GENERATING' => 'Dokument wird erstellt …',
+	'DOCUMENT_STATUS_UNKNOWN' => 'Der Dokumentstatus konnte nicht bestätigt werden. Bitte prüfen Sie den aktuellen Dokumentstatus, bevor Sie die Aktion wiederholen.',
+	'DOCUMENT_VALIDATION_INPUT_INVALID' => 'Bitte überprüfen Sie die markierten Angaben.',
 	//Documents
 	'DOCUMENTS_VATIN' => 'USt-IdNr.:',
 	'DOCUMENTS_SHIPPING_ADDRESS' => 'Lieferanschrift',

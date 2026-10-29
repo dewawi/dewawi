@@ -2,7 +2,7 @@
 
 ## Umfang und Bestandsaufnahme
 
-Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen. Weitere Aktionen werden separat migriert.
+Die ersten drei Phasen sind umgesetzt: gemeinsame Meldungskomponenten und die vollständige Integration des interaktiven E-Mail-Versands. Phase 4.1 erweitert diese Komponenten um Lösch- und Stornierungsaktionen, Phase 4.2 um ausdrücklich ausgelöste Erstell- und Speicheraktionen und Phase 4.3 um Dokument- und Toolbar-Aktionen. Weitere Aktionen werden separat migriert.
 
 | Vorhandene Stelle | Befund | Entscheidung / Umsetzung |
 | --- | --- | --- |
@@ -190,17 +190,106 @@ Bei synchronen XHR-Aufrufen kann der Browser den gesetzten Ladezustand vor Absch
 
 Native Navigation hat kein mit AJAX vergleichbares Abschlussereignis. Die Sperre endet beim Dokumentwechsel beziehungsweise nach `pageshow`; ein manuell im Browser abgebrochener Ladevorgang ohne neues Dokument kann deshalb eine erneute Ansicht erfordern. Die serverseitige Formularvalidierung und Redirects wurden nicht gegen produktive Endpunkte ausgelöst. Manuelle Screenreader-/Geräteabnahme bleibt offen.
 
-**Phase 4.3 wurde nicht begonnen und benötigt einen separaten Auftrag.**
+Phase 4.2 ist abgeschlossen. Phase 4.3 ist im folgenden Abschnitt gesondert dokumentiert.
 
 Commit-Vorschlag:
 
 `unify loading states for create and save actions`
 
-## Priorisierte Folgeschritte nach Phase 4.2 (noch nicht umgesetzt)
+## Phase 4.3 – Dokument- und Toolbar-Aktionen
+
+### Geprüfte Aufrufstellen und tatsächliche Verträge
+
+| Stelle | Vertrag / Umsetzung |
+| --- | --- |
+| `previewPdf()` | POST an die bestehende `/preview/id/.../templateid/...`-Route; JSON mit `ok: true`, PDF-URL und optional lokalisierter Validierung. Explizite Buttons übergeben jetzt `this`; automatische Aufrufe bleiben ohne Buttonsperre. |
+| Automatische Vorschau | Bestehender Change-Handler für `#templateid`/`#language` und Lazy-Load über `data-tab-load="previewPdf"` in den Verkaufs-/Einkaufs-Edit-Views. Reihenfolge und synchrone vorgelagerte Speicheroperationen bleiben erhalten. |
+| `DocumentAction::previewAction()` | AJAX erzeugt eine Cache-Datei mit `overwrite: true`; die normale Route kann eine Inline-PDF liefern. Es wird kein `finalize`-Flag gesetzt. Backend unverändert. |
+| `updateDocumentValidation()` | Bestehende Zusammenfassung und Feld-/Tablinks bleiben. Status, Titel und Listenform werden geprüft; Texte bleiben escaped. Ungültige Strukturen überschreiben die bestehende Zusammenfassung nicht. |
+| `[data-document-finalize]` / `DocumentAction::saveAction()` | Bestehender AJAX-POST. Nur `ok === true` mit sicherer Weiterleitung führt zur Zielansicht. Validierungsfehler liefern `ok: false`, HTTP 422 und lokalisierte Details. Erfolg behält die vorhandene Flashmeldung `MESSAGES_SAVED`. |
+| `sales` / `purchases` `Finish.php` | Expliziter Vorschaubutton, vorhandene Finalisierung und native Downloadlinks. Vorschau bekommt den Buttonkontext, Downloadlinks erhalten ein Attribut zur kurzen Klicksperre. `#output` / `.dw-finish__preview` und `.dw-document-validation` bleiben bestehen. |
+| `sales` / `purchases` `Actions.php` | Bestehende Links zur Generierung erhalten vorhandene Buttonklassen und `data-document-generate`. Href, Zieldokumenttyp, Navigation und Übersetzungsaufrufe bleiben unverändert. |
+| `DocumentAction::generateAction()` | Bestehende navigierbare GET-Route: Quellbeleg laden, Zielkonfiguration prüfen, neuen Beleg erstellen, Positionen kopieren, `MESSAGES_DOCUMENT_SUCCESFULLY_GENERATED` einreihen und auf dessen Edit-Seite weiterleiten. Keine Umstellung auf AJAX oder POST. |
+| `DocumentAction::downloadAction()` | Erzeugt die Cache-PDF ohne Finalisierung und liefert eine native PDF-Antwort mit `Content-Disposition: attachment`. Kein Blob-AJAX und keine neue Erfolgsbehauptung. |
+| `DewawiToolbar.actions.pdf` | Weiterhin `window.open(..., '_blank')`; dieselbe kurze Klicksperre wie bei nativen Finish-Downloads. Blockierte Popups geben die Sperre sofort frei. |
+| Toolbar-/Berechtigungsstruktur | `sales/forms/Toolbar.php`, `purchases/forms/Toolbar.php`, zugehörige Edit-Views, `Application_Plugin_Acl`, `Application_Plugin_State` und `DEEC_Permission` wurden geprüft. Rendering der Auswahl und vorhandene serverseitige Prüfungen werden nicht verändert. |
+| PDF-/Berechnungsstruktur | `DocumentAction::generatePdfDocument()` und `DEEC_Pdf` verwenden vorhandene Finalisierungs-, Berechnungs-, Cache- und Dateipfade. Fachliche Regeln, Steuern, Summen und Dokumentstatus bleiben unverändert. |
+
+### Wiederverwendete Komponenten und Verhalten
+
+Alle Ladezustände verwenden `setButtonLoading()`, alle Sperren den bestehenden `beginActionRequest()` ohne Bestätigungsdialog. `pushMessages()` gibt zusätzlich das erzeugte Alert-Element zurück, damit ein abgeschlossener Request nur seinen eigenen Fortschrittshinweis entfernt. Der bisherige Aufrufvertrag bleibt nutzbar. Meldungen stehen in `#messages`; der PDF-Container wird nur durch bestätigte Vorschauergebnisse ersetzt.
+
+Explizite Vorschauen sperren dieselbe Aktion am Dokument gegen parallele Ausführung. Automatische Vorschauwechsel bleiben möglich und bekommen keine globale Bediensperre. Eine aufsteigende Requestnummer sorgt dafür, dass ältere Erfolge und Fehler weder die aktuelle PDF noch die Validierungsdarstellung überschreiben. Nach Abschluss wird der ursprüngliche Buttonzustand wiederhergestellt. Der Timeout beträgt bei den asynchronen Dokumentrequests 120 Sekunden.
+
+PDF-URL und Weiterleitungsadresse werden auf einen nicht leeren String, lokale Root-Pfade beziehungsweise gleiche HTTP(S)-Origin und unzulässige Zeichen geprüft. Externe URLs, Protokoll-relative Adressen, Credentials und ausführbare Schemes werden nicht verwendet. Die PDF wird mit einem echten DOM-Element und `src`-Attribut eingesetzt; es gibt keine URL-Interpolation in einen HTML-String. Die Auflösung von Sperrschlüsseln verwendet die Dokumentbasis und funktioniert damit auch im mobilen srcdoc-Fixture.
+
+Finalisierung sperrt identische Zielrouten auch bei mehreren auslösenden Links. Nur bestätigter Erfolg mit gültiger Weiterleitung navigiert über die vorhandene `setLocation()`-Funktion. Es wird keine redundante Erfolgsmeldung vor dem vorhandenen Flash erzeugt. Fachliche Ablehnung wird allgemein übersetzt; validierte Fehlerdetails bleiben direkt am Dokument verlinkt. Bei Netzwerk-/Timeout-/Parserfehlern, uneindeutigen HTTP-Fehlern oder unbrauchbarer Erfolgsantwort erscheint ausdrücklich: „Der Dokumentstatus konnte nicht bestätigt werden. Bitte prüfen Sie den aktuellen Dokumentstatus, bevor Sie die Aktion wiederholen.“ Es erfolgt keine automatische Wiederholung.
+
+Native Generierungslinks behalten ihre Standardnavigation. Identische Links werden während der Navigation über dieselbe Requestsperre geschützt, unterschiedliche Ziele bleiben bedienbar. Ein Fortschrittshinweis behauptet keinen Erfolg. Bei abgebrochener Standardaktion durch einen anderen Eventhandler wird aufgeräumt; `pageshow` stellt Zustände nach Rückkehr über den Browsercache wieder her. Modifier-/Mittelklicks behalten ihr bisheriges Browserverhalten.
+
+Native Downloads behalten `target="_blank"` beziehungsweise `window.open()`. Die lokale Klicksperre endet nach einer Sekunde, unabhängig vom tatsächlichen Downloadende. Dieser Timer bestätigt ausschließlich das Ende der Klicksperre; er zeigt keine Erfolgsmeldung. `pageshow` und ein blockiertes Popup können ebenfalls freigeben. XRechnung und seine Blob-Verarbeitung wurden nicht verändert.
+
+### Tests in Phase 4.3
+
+Alle Anwendungsrequests, Buchungen, Generierungen und Download-Navigationen wurden in den Browser-Fixtures abgefangen. PHP-Tests verwenden In-Memory-Adapter und temporäre Dateien. Es wurden keine produktiven Belege erstellt, gebucht oder finalisiert und keine echten E-Mails versendet.
+
+| Ausgeführte Prüfung | Ergebnis |
+| --- | --- |
+| `python3 tests/ui/notifications.py` | Jeweils **606 Prüfungen bei 1280 px und 390 px** bestanden. Enthält sämtliche bisherigen E-Mail-, Lösch-, Erstell- und Speicherprüfungen sowie neue Dokumentfälle in Deutsch/Englisch für Verkauf und Einkauf: Einzel-/Mehrfachklick, Fortschritt, automatische Template-/Sprachwechsel, verspätete Erfolgs-/Fehlerantworten, sichere URLs, DOM-Attribute, unveränderter PDF-Container bei Meldungen, Validierungsdetails, strikte Finalisierungsbestätigung, Timeout/Netzwerk/Parser/HTTP, unabhängige Aktionen, native Generierungsnavigation, Modifier-Klicks, Browsercache-Rückkehr und Freigabe nativer Download-Klicksperren. |
+| `php tests/security/notifications.php` | **92 allgemeine Prüfungen**, zusätzlich **60 Verkaufs- und 24 Einkaufsprüfungen** an tatsächlich gerenderten Finish-/Actions-Helfern bestanden. Die gleichnamigen ZF1-Modulhelfer werden in getrennten PHP-Prozessen geladen; 31 Browser-Übersetzungen sind je Sprache vollständig. |
+| `python3 tests/documents/calculation-ui.py` | Dokument-/Inline-Notiz-Auto-Save und **26 Berechnungsprüfungen** bestanden. |
+| `php tests/documents/lifecycle.php` | **879 Prüfungen** bestanden. |
+| `php tests/security/document-edits.php` | **7400 Prüfungen** bestanden. |
+| `php tests/documents/calculation.php` | **647 Prüfungen** bestanden. |
+| `php tests/documents/pdf.php` | **134 PDF-Prüfungen** bestanden. |
+| `php tests/documents/pdf-totals.php` | **170 PDF-/Summenprüfungen** bestanden. |
+| `php tests/security/permissions.php` | **369 Prüfungen** bestanden. |
+| `php tests/security/tenant-access.php` | **268 Prüfungen** bestanden. |
+| `php tests/security/attachments.php` | **224 Anhangprüfungen** und die im Setup enthaltenen **364 Quote-E-Mail-Prüfungen** bestanden. |
+| `php tests/security/pageblocks.php` | **74 Prüfungen** bestanden. |
+| `php tests/security/profile-save.php` | **100 Profil-/Passwortprüfungen** bestanden. |
+| `php -l` | Alle **8** geänderten PHP-Dateien ohne Syntaxfehler. |
+| `git diff --check` | Ohne Befund. |
+
+Der vorhandene Browser-Runner wird weiterverwendet; er lädt jetzt auch die bestehenden Dokumentübersetzungen. Die einsekündigen Download-Timer werden mit einer kontrollierten Fixture-Uhr geprüft. Vorschau-Iframes sind echte DOM-Elemente mit isolierten lokalen Testadressen; reale PDF-Darstellung und Downloadabschluss werden dadurch nicht behauptet. Der mobile iframe übergibt sein Ergebnis synchron an die umgebende Fixture-Seite und meldet dort auch JavaScript-Fehler. Ein anfänglicher mobiler Testhänger wurde auf fehlende `type="button"`-Attribute in den neu geschriebenen Fixture-Buttons zurückgeführt und behoben; die Produktionshelfer hatten diese Attribute bereits korrekt gesetzt.
+
+### Geänderte Dateien in Phase 4.3
+
+1. `js/global.js`
+2. `application/modules/sales/views/helpers/Finish.php`
+3. `application/modules/purchases/views/helpers/Finish.php`
+4. `application/modules/sales/views/helpers/Actions.php`
+5. `application/modules/purchases/views/helpers/Actions.php`
+6. `application/views/helpers/Messages.php`
+7. `languages/de_DE/default/document.php`
+8. `languages/en_US/default/document.php`
+9. `tests/security/notifications.php`
+10. `tests/ui/notifications.html`
+11. `tests/ui/notifications.py`
+12. `tests/ui/notifications-review.md`
+
+Keine Backend-, Datenbank-, Berechnungs-, Toolbar-Formular- oder CSS-Änderungen waren erforderlich.
+
+### Risiken und separate Sicherheitsmaßnahmen
+
+`generateAction()` verändert den Zustand über GET und besitzt in der untersuchten Methode keine HTTP-Methodenbindung, CSRF-Prüfung oder serverseitige Idempotenzsicherung. Der Klickschutz ist ausschließlich UX-Schutz derselben geöffneten Seite. Neue Tabs, Modifier-Klicks, Wiederholung der URL, Browser-Reload, Prefetching oder andere Clients können zusätzliche Generierungen auslösen. Der vorhandene Zieltyp-Vertrag und die serverseitige Routing-/Mandantenlogik bleiben erhalten. Als **separater Sicherheitsauftrag** sind POST-/CSRF-Vertrag, explizite Prüfung der Zielberechtigungen, Transaktionsumfang und serverseitiger Idempotenzschlüssel mit Wiederverwendung des bereits erzeugten Folgedokuments zu analysieren und zu testen. Auch `saveAction()` besitzt in der untersuchten Methode keine POST-Bindung; der neue UI-Handler verwendet weiterhin POST, direkte GET-Aufrufe bleiben aber serverseitig möglich. Die Methoden-/CSRF-Prüfung dieser Route gehört ebenfalls in den separaten Sicherheitsauftrag. Diese Umstellungen wurden ausdrücklich nicht mit Phase 4.3 vermischt.
+
+Eine native Navigation besitzt kein zuverlässiges Fehler-/Abbruchereignis für den endgültigen Serverzustand. Bei einer im Browser abgebrochenen Generierungsnavigation ohne `pageshow` kann die lokale Sperre bestehen bleiben. Es gibt absichtlich keine zeitgesteuerte Generierungswiederholung oder falsche Erfolgsbestätigung; vor einer manuellen Wiederholung muss der Belegbestand geprüft werden. Insbesondere darf das erneute Laden einer Generierungs-GET-URL nicht als sichere Statusprüfung verstanden werden.
+
+Ein AJAX-Timeout beweist keinen Abbruch der serverseitigen Finalisierung. Seitenübergreifende Idempotenz sowie die fachliche Prüfung des aktuellen Status bleiben serverseitige Aufgaben. Die vorhandene Finalisierungslogik und deren Lifecycle-Regressionen wurden nicht geändert.
+
+Die Vorschau-Reihenfolgenprüfung schützt JSON-Ergebnis und DOM. Die bestehende Cache-Datei verwendet weiterhin einen gemeinsamen Dateinamen und `overwrite: true`; konkurrierende serverseitige Dateischreibvorgänge werden durch einen ignorierten alten AJAX-Callback nicht rückgängig gemacht. Eine vollständig versionierte Vorschauablage wäre eine getrennte Backend-/Cache-Änderung. Auch das tatsächliche Laden der PDF-Datei kann nach erfolgreicher JSON-Antwort noch fehlschlagen.
+
+Manuelle Screenreader-/Gerätebedienung und echte produktive Dokumentnavigationen wurden nicht durchgeführt. **Phase 4.4 wurde nicht begonnen und benötigt einen separaten Auftrag.**
+
+Commit-Vorschlag:
+
+`unify loading states for document and toolbar actions`
+
+## Priorisierte Folgeschritte nach Phase 4.3 (noch nicht umgesetzt)
 
 | Priorität | Bereich und konkrete Dateien | Nächster begrenzter Schritt / notwendige Regressionen |
 | --- | --- | --- |
-| P1 | Verkauf/Einkauf und Dokumenterstellung: `js/global.js`, `library/DEEC/Controller/DocumentAction.php`, `application/modules/sales/forms/Toolbar.php`, `application/modules/purchases/forms/Toolbar.php`, deren `invoice`-/`purchaseorder`-Views | Generieren und weitere PDF-Aktionen integrieren; vorhandene Validierungszusammenfassung weiterverwenden; Lifecycle-, Rechte- und Berechnungstests ausführen |
 | P2 | Auto-Save und Positionen: `js/global.js` (`edit`, `editPosition`, `addPosition`, `addSet`, `deletePosition`, `deleteSet`), `application/views/helpers/ToolbarPositions.php` | Status am betroffenen Feld bzw. Positionsbereich; keine globale Sperre. Reihenfolge synchroner Saves vor Finalisierung beibehalten; Feldfehler und Summenregressionen prüfen |
 | P2 | Kontakte und modale Dialoge: `js/contacts.js`, `js/global.js` (`modalWindow`, `modalWindowClose`) | Bestehende lokale `disabled`-Behandlung durch gemeinsame Zustandsverwaltung ergänzen; Fokus, Validierung und Verhalten nach erneutem Öffnen prüfen |
 | P2 | Artikel und Listenaktionen: `application/modules/items/views/scripts/item/index.phtml`, `application/modules/items/views/scripts/item/edit.phtml`, `application/modules/items/forms/Toolbar.php`, `js/global.js` | Gemeinsame Toolbar-Aktionen nach deren P1-Migration übernehmen; Filter, Auswahl und Mehrfachbearbeitung erhalten |

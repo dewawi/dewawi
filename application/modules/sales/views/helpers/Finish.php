@@ -77,13 +77,13 @@ class Zend_View_Helper_Finish extends Zend_View_Helper_Abstract
 		$html .= '<div class="dw-form-row">';
 		$html .= '<div class="dw-field dw-field--col-12">';
 		$html .= '<div class="dw-toolbar dw-finish__actions">';
-		$html .= '<button type="button" class="dw-btn view" onclick="previewPdf()">';
+		$html .= '<button type="button" class="dw-btn view" onclick="previewPdf(this)">';
 		$html .= htmlspecialchars($this->view->translate('DOCUMENTS_PREVIEW_PDF'));
 		$html .= '</button>';
 		$html .= '<a class="dw-btn save" data-document-finalize data-error-message="' . htmlspecialchars($this->view->translate('DOCUMENT_VALIDATION_REQUEST_FAILED')) . '" href="' . htmlspecialchars($saveUrl) . '">';
 		$html .= htmlspecialchars($this->view->translate('DOCUMENTS_SAVE_AND_BOOK'));
 		$html .= '</a>';
-		$html .= '<a class="dw-btn pdf" href="' . htmlspecialchars($downloadUrl) . '" target="_blank" rel="noopener">';
+		$html .= '<a class="dw-btn pdf" data-document-download href="' . htmlspecialchars($downloadUrl) . '" target="_blank" rel="noopener">';
 		$html .= htmlspecialchars($this->view->translate('DOCUMENTS_DOWNLOAD_PDF'));
 		$html .= '</a>';
 		$html .= '</div>';

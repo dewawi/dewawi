@@ -2209,6 +2209,7 @@ function pushMessages(messages, type, target) {
 		var bounds = $container[0].getBoundingClientRect();
 		if (bounds.top < 0 || bounds.bottom > window.innerHeight) $container[0].scrollIntoView({block: 'nearest'});
 	}
+	return $alert;
 }
 
 function setButtonLoading($buttons, loading, label) {
@@ -2285,21 +2286,53 @@ function removeMessages(target) {
 	$(target || '#messages').empty().hide();
 }
 
+function getDocumentUrl(value) {
+	if (typeof value !== 'string' || !value || /[\u0000-\u0020\\]/.test(value)) return '';
+	if (value.charAt(0) === '/' && value.charAt(1) !== '/') return value;
+	try {
+		var url = new URL(value);
+		return /^https?:$/.test(url.protocol) && url.origin === window.location.origin && !url.username && !url.password ? value : '';
+	} catch (error) {
+		return '';
+	}
+}
+
 //Make PDF
-function previewPdf() {
-	$.ajax({
+function previewPdf(button) {
+	var $button = $(button);
+	var complete = $button.length ? beginActionRequest('preview', module, controller, [id], $button) : null;
+	if ($button.length && !complete) return;
+	var requestId = (Dewawi.previewRequestId || 0) + 1;
+	Dewawi.previewRequestId = requestId;
+	if (Dewawi.previewStatus) Dewawi.previewStatus.remove();
+	var $status = $button.length ? pushMessages(Dewawi.message('DOCUMENTS_PREVIEW_RUNNING'), 'info', '#messages') : $();
+	Dewawi.previewStatus = $status;
+
+	return $.ajax({
 		type: 'POST',
 		url: baseUrl + '/' + module + '/' + controller + '/preview/id/' + id + '/templateid/' + $('#templateid').val(),
 		dataType: 'json',
+		timeout: 120000,
 		success: function(response) {
-			if (response.validation) updateDocumentValidation(response.validation);
-			if (!response.ok || !response.url) {
+			if (Dewawi.previewRequestId !== requestId) return;
+			if (response && response.validation) updateDocumentValidation(response.validation);
+			var url = response && response.ok === true ? getDocumentUrl(response.url) : '';
+			if (!url) {
+				pushMessages(Dewawi.message('DOCUMENTS_PREVIEW_FAILED'), 'danger', '#messages').attr('data-document-preview-error', 'true');
 				return;
 			}
 
-			$('#output').html(
-				'<iframe src="' + response.url + '" width="100%" height="700"></iframe>'
-			);
+			$('#messages > [data-document-preview-error]').remove();
+			var $output = $('.dw-finish__preview').first();
+			if (!$output.length) $output = $('#output');
+			$output.empty().append($('<iframe>', {src: url, width: '100%', height: '700', title: Dewawi.message('DOCUMENTS_PREVIEW_PDF')})).show();
+		},
+		error: function () {
+			if (Dewawi.previewRequestId === requestId) pushMessages(Dewawi.message('DOCUMENTS_PREVIEW_FAILED'), 'danger', '#messages').attr('data-document-preview-error', 'true');
+		},
+		complete: function () {
+			$status.remove();
+			if (complete) complete();
 		}
 	});
 }
@@ -2310,13 +2343,15 @@ function escapeDocumentValidationText(value) {
 
 function updateDocumentValidation(validation) {
 	var $container = $('.dw-document-validation').first();
-	if (!$container.length || !validation) return;
+	if (!$container.length || !validation || $.inArray(validation.status, ['success', 'warning', 'error']) === -1 || typeof validation.title !== 'string') return false;
+	if ((validation.errors !== undefined && !Array.isArray(validation.errors)) || (validation.warnings !== undefined && !Array.isArray(validation.warnings))) return false;
+	var issues = (validation.errors || []).concat(validation.warnings || []);
+	if (issues.some(function (issue) { return !issue || typeof (issue.text || issue.message) !== 'string'; })) return false;
 
 	var status = validation.status || 'success';
 	var alertClass = status === 'error' ? 'danger' : status;
 	var html = '<div class="dw-alert dw-alert--' + alertClass + ' dw-document-validation__summary">';
 	html += '<strong>' + escapeDocumentValidationText(validation.title || '') + '</strong></div>';
-	var issues = (validation.errors || []).concat(validation.warnings || []);
 	if (issues.length) {
 		html += '<ul class="dw-document-validation__issues">';
 		$.each(issues, function(_, issue) {
@@ -2328,32 +2363,82 @@ function updateDocumentValidation(validation) {
 		html += '</ul>';
 	}
 	$container.html(html);
+	return true;
+}
+
+function showDocumentFinalizeError(response) {
+	var key = 'DOCUMENT_STATUS_UNKNOWN';
+	if (response && response.ok === false) {
+		key = 'DOCUMENT_VALIDATION_REQUEST_FAILED';
+		if (response.validation && response.validation.status === 'error' && updateDocumentValidation(response.validation)) key = 'DOCUMENT_VALIDATION_INPUT_INVALID';
+	}
+	pushMessages(Dewawi.message(key), 'danger', '#messages');
 }
 
 $(document).on('click', '[data-document-finalize]', function(event) {
 	event.preventDefault();
 	var $button = $(this);
-	if ($button.hasClass('is-loading')) return;
-	setButtonLoading($button, true);
+	var url = getDocumentUrl($button.attr('href'));
+	if (!url) {
+		showDocumentFinalizeError({ok: false});
+		return;
+	}
+	var complete = beginActionRequest('finalize', module, controller, [new URL(url, document.baseURI).href], $button);
+	if (!complete) return;
+	var $status = pushMessages(Dewawi.message('DOCUMENTS_FINALIZING'), 'info', '#messages');
 
-	$.ajax({
+	return $.ajax({
 		type: 'POST',
-		url: $button.attr('href'),
+		url: url,
 		dataType: 'json',
-		timeout: 30000,
+		timeout: 120000,
 		success: function(response) {
-			if (response && response.ok && response.redirect) window.location.href = response.redirect;
-			else if (response && response.validation) updateDocumentValidation(response.validation);
-			else updateDocumentValidation({status: 'error', title: $button.data('error-message')});
+			var redirect = response && response.ok === true ? getDocumentUrl(response.redirect) : '';
+			if (redirect) setLocation(redirect);
+			else showDocumentFinalizeError(response);
 		},
-		error: function(xhr) {
-			var response = xhr.responseJSON;
-			if (response && response.validation) updateDocumentValidation(response.validation);
-			else updateDocumentValidation({status: 'error', title: $button.data('error-message')});
-		},
+		error: function(xhr) { showDocumentFinalizeError(xhr.responseJSON); },
 		complete: function() {
-			setButtonLoading($button, false);
+			$status.remove();
+			complete();
 		}
+	});
+});
+
+// Native navigation has no reliable completion event; downloads use a short click guard.
+function beginDocumentNavigation($button, name, url) {
+	url = getDocumentUrl(url);
+	if (!url) return;
+	var complete = beginActionRequest(name, module, controller, [new URL(url, document.baseURI).href], $button);
+	if (!complete) return;
+	var $status = name === 'generate' ? pushMessages(Dewawi.message('DOCUMENTS_GENERATING'), 'info', '#messages') : $();
+	var timer, released = false;
+	var release = function () {
+		if (released) return;
+		released = true;
+		clearTimeout(timer);
+		$status.remove();
+		$button.removeData('dw-document-navigation');
+		complete();
+	};
+	$button.data('dw-document-navigation', release);
+	if (name === 'download') timer = setTimeout(release, 1000);
+	return release;
+}
+
+$(document).on('click', '[data-document-generate], [data-document-download]', function(event) {
+	if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || (event.which && event.which !== 1)) return;
+	if (event.isDefaultPrevented()) return;
+	var $button = $(this);
+	var complete = beginDocumentNavigation($button, $button.is('[data-document-generate]') ? 'generate' : 'download', $button.attr('href'));
+	if (!complete) event.preventDefault();
+	else setTimeout(function () { if (event.isDefaultPrevented()) complete(); }, 0);
+});
+
+$(window).on('pageshow', function () {
+	$('[data-document-generate], [data-document-download], [data-action="pdf"]').each(function () {
+		var complete = $(this).data('dw-document-navigation');
+		if (complete) complete();
 	});
 });
 
@@ -3334,11 +3419,11 @@ function markFieldSaved($field) {
 				return trash(selection.ids, deleteConfirm, selection.controller, selection.module, $button);
 			},
 
-			pdf: function (selection) {
-				window.open(
-					Dewawi.url(selection.module, selection.controller, 'download', selection.ids[0]),
-					'_blank'
-				);
+			pdf: function (selection, $button) {
+				var url = Dewawi.url(selection.module, selection.controller, 'download', selection.ids[0]);
+				var complete = beginDocumentNavigation($button, 'download', url);
+				if (!complete) return;
+				if (!window.open(url, '_blank')) complete();
 			},
 
 			apply: function (selection) {
