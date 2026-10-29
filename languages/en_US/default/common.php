@@ -9,6 +9,7 @@
 	'LANGUAGES_EN_US' => 'Englisch',
 	//Menu
 	'CONTROL_PANEL' => 'Control panel',
+	'MENU_CONTACT_INQUIRIES' => 'Inquiries',
 	'MENU_EXTENSIONS' => 'Extensions',
 	'MENU_CATEGORIES' => 'Categories',
 	//Actions

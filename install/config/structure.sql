@@ -2699,6 +2699,7 @@ CREATE TABLE IF NOT EXISTS `shopinquirydata` (
   `shopid` int(11) NOT NULL,
   `token` varchar(255) NOT NULL,
   `data` TEXT NOT NULL,
+  `status` varchar(32) NOT NULL DEFAULT 'new',
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
@@ -2707,7 +2708,8 @@ CREATE TABLE IF NOT EXISTS `shopinquirydata` (
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   UNIQUE KEY `clientid_shopid_token` (`clientid`, `shopid`, `token`(64)),
-  KEY `clientid_shopid_formid_deleted` (`clientid`, `shopid`, `formid`, `deleted`)
+  KEY `clientid_shopid_formid_deleted` (`clientid`, `shopid`, `formid`, `deleted`),
+  KEY `clientid_status_shopid_formid_deleted` (`clientid`, `status`, `shopid`, `formid`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `shoporder` (

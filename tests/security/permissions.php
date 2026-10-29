@@ -103,9 +103,18 @@ foreach (['add', 'edit', 'delete'] as $action) {
 }
 
 $adapter->permissions[0]['contacts'] = json_encode(['contact' => ['view']]);
+$permission = new DEEC_Permission(Zend_Registry::get('User'));
+$inquiryRoute = new Zend_Controller_Request_Simple('index', 'inquiry', 'contacts');
+check($permission->resolveController($inquiryRoute) === 'contact', 'Inquiry management does not use contact permissions');
+[$request, $response] = permissionRoute('contacts', 'inquiry', 'index');
+check($response->getHttpResponseCode() === 200 && $request->getControllerName() === 'inquiry', 'Contact view permission did not allow inquiry management');
+[$request, $response] = permissionRoute('contacts', 'inquiry', 'edit', 'POST', true);
+check($response->getHttpResponseCode() === 403 && $request->getControllerName() === 'error', 'Contact view permission allowed inquiry status changes');
 [$request, $response] = permissionRoute('contacts', 'contact', 'tags');
 check($response->isRedirect(), 'Contact view permission allowed bulk tag changes');
 $adapter->permissions[0]['contacts'] = json_encode(['contact' => ['edit']]);
+[$request, $response] = permissionRoute('contacts', 'inquiry', 'edit', 'POST', true);
+check($response->getHttpResponseCode() === 200 && $request->getControllerName() === 'inquiry', 'Contact edit permission did not allow inquiry status changes');
 [$request, $response] = permissionRoute('contacts', 'contact', 'tags');
 check($response->getHttpResponseCode() === 200 && $request->getModuleName() === 'contacts', 'Contact edit permission did not allow bulk tag changes');
 $checks += 2;

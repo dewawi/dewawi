@@ -1,6 +1,7 @@
 <?php return array(
 	//Menu
 	'MENU_CONTACTS' => 'Kontakte',
+	'MENU_CONTACT_INQUIRIES' => 'Anfragen',
 	'MENU_EXTENSIONS' => 'Erweiterungen',
 	'MENU_CATEGORIES' => 'Kategorien',
 	'MENU_BILLING' => 'Abrechnung',

@@ -1,0 +1,36 @@
+<?php
+$website = $this->inquiry['website_title'] ?: $this->inquiry['website_url'];
+$statusOptions = Contacts_Model_DbTable_Inquiry::STATUSES;
+$statusLabel = $statusOptions[$this->inquiry['status']] ?? $this->inquiry['status'];
+$createdTimestamp = strtotime((string)$this->inquiry['created']);
+$created = $createdTimestamp ? date('d.m.Y H:i', $createdTimestamp) : (string)$this->inquiry['created'];
+?>
+
+<div class="row">
+	<div class="col-sm-12 col-lg-6">
+		<h3><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_REQUEST')); ?></h3>
+		<dl class="view">
+			<dt><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_DATE')); ?></dt>
+			<dd><?php echo $this->escape($created); ?></dd>
+			<dt><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_WEBSITE')); ?></dt>
+			<dd><?php echo $this->escape($website); ?></dd>
+			<dt><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_TYPE')); ?></dt>
+			<dd><?php echo $this->escape($this->inquiry['translate_inquiry_type'] ? $this->translate($this->inquiry['inquiry_type']) : $this->inquiry['inquiry_type']); ?></dd>
+			<dt><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_ORIGIN')); ?></dt>
+			<dd><?php echo $this->escape($this->inquiry['source_path'] ?: '/'); ?></dd>
+			<dt><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_STATUS')); ?></dt>
+			<dd><?php echo $this->escape($this->translate($statusLabel)); ?></dd>
+			<dt><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_REFERENCE')); ?></dt>
+			<dd><?php echo $this->escape($this->inquiry['token']); ?></dd>
+		</dl>
+	</div>
+	<div class="col-sm-12 col-lg-6">
+		<h3><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_INFORMATION')); ?></h3>
+		<dl class="view">
+			<?php foreach ($this->inquiry['fields'] as $field) : ?>
+				<dt><?php echo $this->escape($this->translate($field['label'])); ?></dt>
+				<dd><?php echo nl2br($this->escape($field['translate_value'] ? $this->translate($field['value']) : $field['value'])); ?></dd>
+			<?php endforeach; ?>
+		</dl>
+	</div>
+</div>

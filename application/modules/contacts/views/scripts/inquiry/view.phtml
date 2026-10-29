@@ -1,0 +1,6 @@
+<?php
+$this->title = $this->translate('CONTACT_INQUIRIES_REQUEST').' #'.(int)$this->inquiry['id'];
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->partial('inquiry/detail.phtml', ['inquiry' => $this->inquiry]);
+?>

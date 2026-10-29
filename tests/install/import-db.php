@@ -108,6 +108,9 @@ check((int)$db->query('SELECT COUNT(DISTINCT token) FROM shopinquirydata WHERE c
 check($db->query('SELECT GROUP_CONCAT(token ORDER BY id) FROM shopinquirydata WHERE id IN (3, 4)')->fetch_row()[0] === 'duplicate-token,duplicate-token', 'Inquiry migration changed equal tokens from different shops or tenants');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_shopid_token' AND non_unique = 0")->fetch_row()[0] === 3, 'Inquiry token unique index is missing or has the wrong columns');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_shopid_formid_deleted'")->fetch_row()[0] === 4, 'Inquiry data lookup index is missing or has the wrong columns');
+check($db->query("SHOW COLUMNS FROM shopinquirydata LIKE 'status'")->fetch_assoc()['Default'] === 'new', 'Inquiry status column is missing or has the wrong default');
+check((int)$db->query("SELECT COUNT(*) FROM shopinquirydata WHERE status = 'new'")->fetch_row()[0] === 4, 'Existing inquiries did not receive the initial processing status');
+check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_status_shopid_formid_deleted'")->fetch_row()[0] === 5, 'Inquiry management index is missing or has the wrong columns');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquiryform' AND index_name = 'clientid_shopid_deleted_id'")->fetch_row()[0] === 4, 'Inquiry form lookup index is missing or has the wrong columns');
 foreach ($roleQueries as $query) {
     if (str_starts_with(trim($query['query']), 'INSERT IGNORE INTO `contactrole`')) $db->query($query['query']);

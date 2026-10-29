@@ -35,6 +35,7 @@ class Shops_Model_DbTable_Inquirydata extends DEEC_Model_DbTable_SiteEntity
 				'formid' => $formId,
 				'token' => $token,
 				'data' => $json,
+				'status' => 'new',
 				'modified' => $this->_date,
 			]);
 

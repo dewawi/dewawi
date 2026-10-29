@@ -29,13 +29,19 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 				'type' => 'group',
 				'label' => 'MENU_CONTACTS',
 				'active' => function () {
-					return in_array($this->view->controller, ['contact', 'email', 'download'], true);
+					return in_array($this->view->controller, ['contact', 'inquiry', 'email', 'download'], true);
 				},
 				'children' => [
 					[
 						'label' => 'MENU_CONTACTS',
 						'module' => 'contacts',
 						'controller' => 'contact',
+						'action' => 'index',
+					],
+					[
+						'label' => 'MENU_CONTACT_INQUIRIES',
+						'module' => 'contacts',
+						'controller' => 'inquiry',
 						'action' => 'index',
 					],
 					[

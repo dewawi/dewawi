@@ -1,0 +1,14 @@
+<?php
+$this->title = $this->translate('CONTACT_INQUIRIES_REQUEST').' #'.(int)$this->inquiry['id'];
+$this->headTitle($this->title);
+echo $this->Messages();
+?>
+
+<form method="post" class="dw-form-layout">
+	<div class="dw-form-row">
+		<?php echo $this->form->renderElement('status'); ?>
+		<?php echo $this->form->renderElement('save'); ?>
+	</div>
+</form>
+
+<?php echo $this->partial('inquiry/detail.phtml', ['inquiry' => $this->inquiry]); ?>

@@ -137,6 +137,7 @@ $inquiryDataTemplate = [
     'shopid' => 41,
     'token' => str_repeat('f', 32),
     'data' => '{}',
+	'status' => 'new',
     'clientid' => 7,
     'created' => null,
     'createdby' => 0,
@@ -251,6 +252,7 @@ check($saved['inserted'] === true, 'Valid inquiry was not inserted');
 $stored = $inquiryDb->getByToken($token);
 $storedData = json_decode($stored['data'], true);
 check((int)$stored['formid'] === 11 && (int)$stored['shopid'] === 41 && (int)$stored['clientid'] === 7, 'Inquiry ownership or form assignment was not stored');
+check($stored['status'] === 'new', 'New inquiry did not receive the initial processing status');
 check(!empty($stored['created']) && !empty($stored['modified']), 'Inquiry audit timestamps were not stored');
 check($storedData['origin'] === 'technical_inquiry' && $storedData['source_path'] === '/technical-request', 'Inquiry origin was not stored');
 $duplicate = $inquiryDb->saveOnce(11, $token, ['email' => 'changed@example.test']);
@@ -271,6 +273,7 @@ check(!is_file($root . '/install/config/update-1.1.8-1.1.9.sql'), 'Inquiry migra
 check(substr_count($migration, 'ADD UNIQUE INDEX `clientid_shopid_token`') === 1, 'Inquiry token unique index is missing or duplicated in the 1.1.8 migration');
 check(substr_count($migration, 'ADD INDEX `clientid_shopid_deleted_id`') === 1, 'Inquiry form lookup index is missing or duplicated in the 1.1.8 migration');
 check(substr_count($migration, 'ADD INDEX `clientid_shopid_formid_deleted`') === 1, 'Inquiry data lookup index is missing or duplicated in the 1.1.8 migration');
+check(substr_count($migration, 'ADD INDEX `clientid_status_shopid_formid_deleted`') === 1, 'Inquiry management index is missing or duplicated in the 1.1.8 migration');
 $deduplicateAt = strpos($migration, 'UPDATE `shopinquirydata` AS duplicate');
 $uniqueIndexAt = strpos($migration, 'ADD UNIQUE INDEX `clientid_shopid_token`');
 check($deduplicateAt !== false && $uniqueIndexAt !== false && $deduplicateAt < $uniqueIndexAt, 'Inquiry duplicates are not normalized before the unique index is added');
@@ -278,5 +281,7 @@ check(str_contains($migration, "SHA2(CONCAT(duplicate.`token`, ':', duplicate.`i
 check(str_contains($structure, 'UNIQUE KEY `clientid_shopid_token` (`clientid`, `shopid`, `token`(64))'), 'Install schema lacks the inquiry token unique index');
 check(str_contains($structure, 'KEY `clientid_shopid_deleted_id` (`clientid`, `shopid`, `deleted`, `id`)'), 'Install schema lacks the inquiry form lookup index');
 check(str_contains($structure, 'KEY `clientid_shopid_formid_deleted` (`clientid`, `shopid`, `formid`, `deleted`)'), 'Install schema lacks the inquiry data lookup index');
+check(str_contains($structure, "`status` varchar(32) NOT NULL DEFAULT 'new'"), 'Install schema lacks the inquiry processing status');
+check(str_contains($structure, 'KEY `clientid_status_shopid_formid_deleted` (`clientid`, `status`, `shopid`, `formid`, `deleted`)'), 'Install schema lacks the inquiry management index');
 
 echo "OK ({$checks} checks)\n";
