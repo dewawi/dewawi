@@ -306,13 +306,14 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				$result['ok'] = false;
 				$result['failed']++;
 				$error = trim((string)($sendResult['error'] ?? ''));
+				error_log('Email transport did not confirm SMTP acceptance: ' . $error);
 				$emailmessageDb->updateEmailmessage($messageid, ['response' => $error !== '' ? $error : 'Email transport did not confirm SMTP acceptance']);
 
 				if($feedback['service'] && $feedback['request'] && $feedback['created']) {
 					$feedback['service']->deleteRequest($feedback['request']);
 				}
 
-				if($module !== 'shops') {
+				if($module !== 'shops' && !$this->getRequest()->isXmlHttpRequest()) {
 					try {
 						Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger')->addMessage('MESSAGES_EMAIL_SENT_ERROR');
 					} catch(Exception $e) {
@@ -331,7 +332,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					}
 				}
 
-				if($module !== 'shops') {
+				if($module !== 'shops' && !$this->getRequest()->isXmlHttpRequest()) {
 					try {
 						Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger')->addMessage('MESSAGES_EMAIL_SENT_SUCCESS');
 					} catch(Exception $e) {

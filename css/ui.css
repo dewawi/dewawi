@@ -1871,29 +1871,62 @@ span.editable {
 .dw-alert {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  margin-bottom: 16px;
+  gap: var(--dw-space-2);
+  padding: var(--dw-space-3) var(--dw-space-4);
+  border-radius: var(--dw-radius-md);
+  border: 1px solid var(--dw-color-border);
+  border-left: var(--dw-space-1) solid var(--dw-color-info-text);
+  margin-bottom: var(--dw-space-4);
+  color: var(--dw-color-text);
+  background: var(--dw-color-info);
+  font-size: var(--dw-font-size-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.dw-alert > ul {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding-left: var(--dw-space-5);
+}
+
+.dw-alert__close {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 0 var(--dw-space-2);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--dw-font-size-xl);
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.dw-alert__close:focus-visible {
+  outline: 2px solid var(--dw-color-primary);
+  outline-offset: 2px;
+}
+
+.dw-alert--info {
+  background: var(--dw-color-info);
+  border-left-color: var(--dw-color-info-text);
 }
 
 .dw-alert--success {
   background: var(--dw-color-success);
-  color: var(--dw-color-success-text);
-  border-color: #b9e8ca;
+  border-left-color: var(--dw-color-success-text);
 }
 
 .dw-alert--warning {
   background: var(--dw-color-warning);
-  color: var(--dw-color-warning-text);
-  border-color: #f2dd8c;
+  border-left-color: var(--dw-color-warning-text);
 }
 
 .dw-alert--danger {
   background: var(--dw-color-danger);
-  color: var(--dw-color-danger-text);
-  border-color: #efb3b3;
+  border-left-color: var(--dw-color-danger-text);
 }
 
 .dw-document-validation__summary {
@@ -1915,9 +1948,16 @@ span.editable {
   text-decoration: underline;
 }
 
+.dw-btn.is-loading,
 [data-document-finalize].is-loading {
-  opacity: .65;
+  opacity: .75;
+  cursor: wait;
   pointer-events: none;
+}
+
+.dw-btn.is-loading::after,
+[data-document-finalize].is-loading::after {
+  content: "…";
 }
 
 /* Main menu */

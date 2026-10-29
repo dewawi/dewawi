@@ -1,3 +1,7 @@
+$(document).on('click', '.dw-alert__close', function () {
+	$(this).closest('.dw-alert').remove();
+});
+
 $(document).ready(function () {
 	const cartItemsContainer = $('#cart-items');
 	const cartTotal = $('#cart-total');

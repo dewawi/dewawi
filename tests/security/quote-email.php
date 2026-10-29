@@ -198,7 +198,7 @@ function setupQuoteEmail(bool $shared = false): void
     ];
 }
 
-function sendQuoteEmail(array $post = [], array $params = [], string $method = 'POST'): bool
+function sendQuoteEmail(array $post = [], array $params = [], string $method = 'POST', bool $ajax = false): bool
 {
     global $adapter;
     $adapter->writes = [];
@@ -207,6 +207,7 @@ function sendQuoteEmail(array $post = [], array $params = [], string $method = '
     DEEC_Feedback::$requests = [];
     QuoteEmailTestFlashMessenger::$messages = [];
     $_SERVER['REQUEST_METHOD'] = $method;
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = $ajax ? 'XMLHttpRequest' : '';
     $_POST = [];
     $request = new Zend_Controller_Request_Http();
     $request->setModuleName('contacts')->setControllerName('email')->setActionName('send')
@@ -359,6 +360,16 @@ QuoteEmailTestFlashMessenger::$failAdd = true;
 check(sendQuoteEmail(), 'Flash message failure changed an accepted SMTP result');
 check($adapter->writes[1][1]['response'] === 'sent', 'Flash message failure left an accepted email pending');
 ini_set('error_log', $previousErrorLog);
+
+setupQuoteEmail();
+check(sendQuoteEmail([], [], 'POST', true), 'AJAX email failed');
+check(QuoteEmailTestFlashMessenger::$messages === [], 'AJAX success queued duplicate flash feedback');
+check(count(DEEC_Email::$sent) === 1 && $adapter->writes[1][1]['response'] === 'sent', 'AJAX changed SMTP activity or history status');
+setupQuoteEmail();
+DEEC_Email::$result = ['sent' => false, 'error' => 'Fixture AJAX SMTP rejection'];
+check(!sendQuoteEmail(['module' => 'contacts', 'controller' => 'contact'], [], 'POST', true), 'AJAX SMTP rejection reported success');
+check(QuoteEmailTestFlashMessenger::$messages === [], 'AJAX failure queued duplicate flash feedback');
+unset($_SERVER['HTTP_X_REQUESTED_WITH']);
 
 // Public unsubscribe links still resolve an email before validating its token and tenant.
 Zend_Registry::getInstance()->offsetUnset('User');

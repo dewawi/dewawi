@@ -86,7 +86,7 @@ class Zend_View_Helper_Errors extends Zend_View_Helper_Abstract
 									</td>
 									<td>
 										<?php if(!in_array($deliveryStatus, ['bounce', 'complaint'], true)) : ?>
-											<button type="button" class="dw-btn dw-btn--secondary" onclick="resendMessage(<?php echo (int)$error['id']; ?>)">
+											<button type="button" class="dw-btn dw-btn--secondary" onclick="resendMessage(<?php echo (int)$error['id']; ?>, this)">
 												<?php echo $this->view->escape($this->view->translate('CAMPAIGNS_RESEND')); ?>
 											</button>
 										<?php endif; ?>

@@ -1,0 +1,168 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notification and email action regression</title>
+<link rel="stylesheet" href="__ROOT__/css/ui.css">
+<div id="content">
+  <div id="messages"><div class="dw-alert dw-alert--success" role="status"><ul><li>Flash fixture</li></ul><button class="dw-alert__close">×</button></div></div>
+  <div id="output" style="display:none"></div>
+  <form id="emailmessage" data-autosave="false">
+    <input name="recipient" value="300"><input name="subject" value="Fixture">
+    <textarea id="body" name="body">Fixture body</textarea><input name="feedback" value="1">
+    <div id="attachments"><input type="checkbox" name="file[]" value="10" checked></div>
+    <button type="button" class="send dw-btn dw-btn--primary" onclick="sendMessage()"><span>Send</span></button>
+  </form>
+  <button id="resend" type="button" class="dw-btn" onclick="resendMessage(400, this)">Send again</button>
+  <button id="disabled" class="dw-btn" disabled aria-disabled="true" aria-busy="false"><b>Disabled</b></button>
+  <a href="/fixture/finalize" class="dw-btn" data-document-finalize data-error-message="Validation failed">Finalize</a>
+  <div class="dw-document-validation"></div>
+  <div id="emailmessages"></div><div id="loading"></div>
+</div>
+<pre id="result">RUNNING</pre>
+<script src="__ROOT__/library/jQuery/jquery-1.12.4.min.js"></script>
+<script src="__ROOT__/library/jQuery/jquery.cookie.js"></script>
+<script>
+/* translations */
+var language = 'de-DE', module = 'contacts', controller = 'contact', action = 'edit';
+var baseUrl = '/fixture', id = 100, cookiePath = '/', calls = [], failures = [], checks = 0;
+var dwMessages = catalogs.de_DE, confirms = 0, confirmResult = true;
+window.addEventListener('error', function(event) { failures.push(event.message); $('#result').text('FAIL: ' + event.message + ' at ' + event.filename + ':' + event.lineno); });
+window.confirm = function() { confirms++; return confirmResult; };
+$.fn.datepicker = function() { return this; };
+function autosize() {}
+// Capture every request; completion is controlled explicitly without network access.
+$.ajax = function(options) {
+  var deferred = $.Deferred();
+  calls.push({options: options, deferred: deferred});
+  return deferred.promise();
+};
+</script>
+<script src="__ROOT__/js/global.js"></script>
+<script>
+$(function() {
+  function check(condition, message) { checks++; if (!condition) failures.push(message); }
+  function finish(call, response, error) {
+    var options = call.options;
+    if (error) {
+      if (options.error) options.error(error, error.kind || 'error');
+      call.deferred.reject(error);
+    } else {
+      if (options.success) options.success(response);
+      call.deferred.resolve(response);
+    }
+    if (options.complete) options.complete();
+  }
+  var $send = $('#emailmessage button.send'), original = $send.html();
+  check($('#messages').text().indexOf('Flash fixture') !== -1, 'Ready handler removed flash feedback');
+  $('#messages .dw-alert__close').trigger('click');
+  check(!$('#messages .dw-alert').length, 'Server-rendered flash cannot be dismissed');
+  pushMessages(['<img src=x onerror="window.xss=1">', '<img src=x onerror="window.xss=1">']);
+  check($('[id="messages"]').length === 1 && $('#messages li').length === 1, 'Duplicate message container or text');
+  check(!$('#messages img').length && !window.xss, 'Dynamic message interpreted HTML');
+  check($('#messages .dw-alert').attr('role') === 'alert' && $('#messages .dw-alert').attr('aria-live') === 'assertive', 'Error lacks accessible announcement');
+  pushMessages({errors: {subject: {required: 'Subject required'}, recipient: ['Recipient invalid']}});
+  check($('#messages li').length === 2 && $('#messages').text().indexOf('Subject required') !== -1, 'Nested validation messages lost');
+  pushMessages('Working', 'info');
+  check($('#messages .dw-alert--danger').length === 1, 'Information erased a persistent error');
+  pushMessages('Saved', 'success');
+  check(!$('#messages .dw-alert--danger').length && !$('#messages .dw-alert--info').length, 'Success did not replace prior action state');
+  for (var n = 0; n < 5; n++) pushMessages('Warning', 'warning');
+  check($('#messages .dw-alert--warning').length === 1, 'Warnings accumulated');
+  $('#messages .dw-alert__close').first().trigger('click');
+  check($('#messages .dw-alert').length === 1, 'Dismissal removed other alerts');
+  removeMessages();
+  check(!$('#messages').children().length, 'Explicit removal did not clear messages');
+
+  setButtonLoading($('#disabled'), true, 'Working');
+  setButtonLoading($('#disabled'), true, 'Working twice');
+  setButtonLoading($('#disabled'), false);
+  check($('#disabled').prop('disabled') && $('#disabled').attr('aria-disabled') === 'true' && $('#disabled').attr('aria-busy') === 'false' && $('#disabled b').length === 1, 'Pre-disabled button state or markup was lost');
+
+  ['de_DE', 'en_US'].forEach(function(locale) {
+    dwMessages = catalogs[locale];
+    removeMessages('#output'); calls = []; confirms = 0;
+    sendMessage(); sendMessage(); $('#resend').trigger('click');
+    check(calls.length === 1 && confirms === 0, locale + ': parallel send or resend allowed');
+    check($send.prop('disabled') && $send.hasClass('is-loading') && $send.attr('aria-busy') === 'true', locale + ': missing button loading state');
+    check($('#output .dw-alert--info li').text() === dwMessages.MESSAGES_EMAIL_SENDING, locale + ': missing translated progress');
+    check(calls[0].options.url === '/fixture/contacts/email/send/contactid/100' && calls[0].options.data.files[10] === '10' && calls[0].options.data.body === 'Fixture body', locale + ': send payload or route changed');
+    check(calls[0].options.timeout > 0 && $('#loading').css('display') === 'none' && !$('#resend').prop('disabled'), locale + ': timeout missing or unrelated controls blocked');
+    // An unrelated background request must remain available while sending.
+    $.ajax({url: '/fixture/keepalive'});
+    check(calls.length === 2, locale + ': background AJAX blocked');
+    finish(calls[0], {ok: false, message: '<img src=x alt="technical SMTP secret">'});
+    check($('#output .dw-alert--danger li').text() === dwMessages.MESSAGES_EMAIL_SENT_ERROR && $('#output').text().indexOf('secret') === -1, locale + ': negative result leaked technical details');
+    check(!$send.prop('disabled') && !$send.hasClass('is-loading') && !$send.attr('aria-busy') && $send.html() === original && !Dewawi.emailRequestPending, locale + ': failed action did not restore button');
+    check(calls.length === 2, locale + ': negative result refreshed history');
+
+    [null, {}, {ok: 1}].forEach(function(response) {
+      calls = []; sendMessage(); finish(calls[0], response);
+      check(calls.length === 1 && $('#output .dw-alert--danger li').text() === dwMessages.MESSAGES_EMAIL_STATUS_UNKNOWN && !Dewawi.emailRequestPending, locale + ': invalid response treated as success or retried');
+    });
+    [{status: 0}, {status: 0, kind: 'timeout'}, {status: 200, kind: 'parsererror'}, {status: 500}].forEach(function(error) {
+      calls = []; sendMessage(); finish(calls[0], null, error);
+      check(calls.length === 1 && $('#output .dw-alert--danger li').text() === dwMessages.MESSAGES_EMAIL_STATUS_UNKNOWN && !Dewawi.emailRequestPending && !$send.prop('disabled'), locale + ': uncertain network result was retried or left loading');
+    });
+    calls = []; sendMessage(); finish(calls[0], null, {status: 400, responseJSON: {ok: false, message: 'send_failed'}});
+    check($('#output .dw-alert--danger li').text() === dwMessages.MESSAGES_EMAIL_SENT_ERROR, locale + ': explicit HTTP failure not recognized');
+
+    calls = []; sendMessage(); finish(calls[0], {ok: true});
+    check(calls.length === 2 && calls[1].options.url === '/fixture/contacts/email/index/contactid/100', locale + ': accepted email did not refresh history once');
+    check($('#output .dw-alert--success li').text() === dwMessages.MESSAGES_EMAIL_SENT_SUCCESS && !$('#output .dw-alert--danger').length, locale + ': success did not replace error');
+    finish(calls[1], '<p>History fixture</p>');
+    check($('#emailmessages').text() === 'History fixture', locale + ': history not updated');
+    calls = []; sendMessage(); finish(calls[0], {ok: true}); finish(calls[1], null, {status: 500});
+    check($('#output .dw-alert--success').length === 1 && $('#output .dw-alert--warning li').text() === dwMessages.MESSAGES_EMAIL_HISTORY_FAILED, locale + ': history failure confused with send failure');
+
+    calls = []; confirmResult = false; $('#resend').trigger('click');
+    check(calls.length === 0 && !$('#resend').prop('disabled'), locale + ': cancelled resend sent mail');
+    confirmResult = true; var before = confirms; $('#resend').trigger('click');
+    check(!$('#output .dw-alert--warning').length, locale + ': new send left an obsolete history warning');
+    resendMessage(400, $('#resend')[0]); sendMessage();
+    check(calls.length === 1 && confirms === before + 1 && $('#resend').prop('disabled'), locale + ': resend not guarded or confirmation repeated');
+    finish(calls[0], null, {status: 0});
+    check(!$('#resend').prop('disabled') && $('#resend').text() === 'Send again', locale + ': resend button not restored');
+    pushMessages('save_failed');
+    check($('#messages li').text() === dwMessages.MESSAGES_SAVE_FAILED, locale + ': technical save key not translated');
+  });
+
+  calls = []; module = 'sales'; controller = 'invoice';
+  $('<input name="contactid" value="500">').appendTo('#content');
+  sendMessage();
+  check(calls[0].options.url === '/fixture/contacts/email/send/contactid/500/documentid/100' && calls[0].options.data.module === 'sales', 'Document email route or scope changed');
+  finish(calls[0], {ok: true});
+  check(calls[1].options.data.documentid === 100 && calls[1].options.data.controller === 'invoice', 'History refresh lost document context');
+  finish(calls[1], '');
+  module = 'purchases'; controller = 'purchaseorder'; calls = []; sendMessage();
+  check(calls[0].options.data.module === 'purchases' && calls[0].options.data.controller === 'purchaseorder', 'Purchase order email context changed');
+  finish(calls[0], {ok: false});
+
+  calls = []; module = 'contacts'; id = 0; sendMessage();
+  check(!calls.length && !Dewawi.emailRequestPending && $('#output .dw-alert--danger li').text() === dwMessages.MESSAGES_CONTACT_NOT_FOUND, 'Missing contact sent a request or left loading');
+  id = 100;
+  module = 'campaigns'; controller = 'campaign'; var refreshed = 0;
+  getCampaignRecipients = function() { refreshed++; }; getCampaignErrors = function() { refreshed++; };
+  calls = []; $('#resend').trigger('click'); finish(calls[0], {ok: true});
+  check(refreshed === 2 && calls.length === 1, 'Campaign resend refresh changed');
+
+  calls = []; $('[data-document-finalize]').trigger('click').trigger('click');
+  check(calls.length === 1 && $('[data-document-finalize]').attr('aria-busy') === 'true', 'Finalize duplicate request allowed');
+  finish(calls[0], null, {status: 0});
+  check(!$('[data-document-finalize]').hasClass('is-loading') && !$('[data-document-finalize]').attr('aria-disabled') && $('[data-document-finalize]').prop('disabled') === undefined, 'Finalize failed to restore state');
+  check($('.dw-document-validation').text() === 'Validation failed', 'Finalize error feedback disappeared');
+
+  ['info', 'success', 'warning', 'danger'].forEach(function(type) {
+    pushMessages('A long message ' + new Array(160).join('x'), type, '#output');
+    var alert = $('#output .dw-alert--' + type)[0];
+    check(alert.scrollWidth <= alert.clientWidth + 1, type + ': message overflows at viewport width ' + innerWidth);
+    var style = getComputedStyle(alert);
+    function luminance(rgb) {
+      return rgb.match(/[\d.]+/g).slice(0, 3).map(function(c) { c = Number(c) / 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }).reduce(function(sum, c, i) { return sum + c * [0.2126, 0.7152, 0.0722][i]; }, 0);
+    }
+    var contrast = (luminance(style.backgroundColor) + 0.05) / (luminance(style.color) + 0.05);
+    check(contrast >= 4.5, type + ': text contrast below 4.5:1');
+  });
+  $('#result').text(failures.length ? 'FAIL: ' + failures.join('; ') : 'PASS: ' + checks + ' notification, email, loading and accessibility checks at ' + innerWidth + 'px');
+  if (window.parent !== window) window.parent.postMessage($('#result').text(), '*');
+});
+</script>

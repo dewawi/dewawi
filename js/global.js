@@ -12,6 +12,11 @@ var Dewawi = {
 	isDirty: false,
 	searchTimeout: 0,
 	sessionExpired: false,
+	emailRequestPending: false,
+
+	message: function (key) {
+		return window.dwMessages && Object.prototype.hasOwnProperty.call(window.dwMessages, key) ? window.dwMessages[key] : key;
+	},
 
 	url: function (moduleName, controllerName, actionName, id) {
 		var url = baseUrl + '/' + moduleName + '/' + controllerName + '/' + actionName;
@@ -900,9 +905,6 @@ $(document).ready(function(){
 			$(this).removeClass('highlight');
 		}
 	});
-
-	//Remove messages
-	removeMessages();
 
 	//Check all
 	$('#content, .dw-positions').on('click', '.checkall', function() {
@@ -1808,7 +1810,7 @@ function deletePriceRule(parent, type, priceRuleId) {
 }
 
 //Get Email Messages
-function getEmailmessages(scrollTo) {
+function getEmailmessages(scrollTo, reportError) {
 	var contactid = 0;
 
 	if (module === 'contacts') {
@@ -1859,26 +1861,26 @@ function getEmailmessages(scrollTo) {
 			if (scrollTo) {
 				window.scrollTo(0, scrollTo);
 			}
+		},
+		error: function () {
+			if (reportError) pushMessages(Dewawi.message('MESSAGES_EMAIL_HISTORY_FAILED'), 'warning', '#output');
 		}
 	});
 }
 
 function sendMessage() {
 	var $form = $('#emailmessage');
+	if (!$form.length || Dewawi.emailRequestPending) return;
 
 	var bodyElement = $form
 		.find('[name="body"]')
 		.get(0);
 
-	var editor = bodyElement
-		? tinymce.get(bodyElement.id)
-		: null;
+	var editor = bodyElement && typeof tinymce !== 'undefined' ? tinymce.get(bodyElement.id) : null;
 
 	var contactid = 0;
 	var campaignid = 0;
 	var url = '';
-
-	$('#output').hide().html('');
 
 	var data = {
 		recipient: $form.find('[name="recipient"]').val() || '',
@@ -1927,80 +1929,56 @@ function sendMessage() {
 	}
 
 	if (contactid <= 0 && campaignid <= 0) {
-		$('#output')
-			.html(
-				'Nachricht konnte nicht gesendet werden: '
-				+ 'Kontakt fehlt.'
-			)
-			.show();
-
+		pushMessages(Dewawi.message('MESSAGES_CONTACT_NOT_FOUND'), 'danger', '#output');
 		return;
 	}
 
-	$.ajax({
+	requestEmailSend(url, data, $form.find('button.send'), '#output');
+}
+
+function resendMessage(messageid, button) {
+	if (Dewawi.emailRequestPending) return;
+	if (!window.confirm(Dewawi.message('MESSAGES_EMAIL_RESEND_CONFIRM'))) return;
+
+	requestEmailSend(baseUrl + '/contacts/email/send/messageid/' + messageid, {}, $(button), $('#output').length ? '#output' : '#messages');
+}
+
+function requestEmailSend(url, data, $button, target) {
+	if (Dewawi.emailRequestPending) return;
+	Dewawi.emailRequestPending = true;
+	setButtonLoading($button, true, Dewawi.message('MESSAGES_EMAIL_SENDING'));
+	if (target === '#output') $(target).children('.dw-alert--warning').remove();
+	pushMessages(Dewawi.message('MESSAGES_EMAIL_SENDING'), 'info', target);
+
+	return $.ajax({
 		type: 'POST',
 		url: url,
 		data: data,
 		dataType: 'json',
 		cache: false,
+		timeout: 120000,
 		success: function (response) {
-			if (
-				response
-				&& response.ok === false
-			) {
-				$('#output')
-					.html(
-						response.message
-						|| 'Nachricht konnte nicht gesendet werden.'
-					)
-					.show();
-
+			if (!response || response.ok !== true) {
+				pushMessages(Dewawi.message(response && response.ok === false ? 'MESSAGES_EMAIL_SENT_ERROR' : 'MESSAGES_EMAIL_STATUS_UNKNOWN'), 'danger', target);
 				return;
 			}
 
-			getEmailmessages(
-				window.pageYOffset
-			);
+			pushMessages(Dewawi.message('MESSAGES_EMAIL_SENT_SUCCESS'), 'success', target);
+			if (module === 'campaigns' && controller === 'campaign') {
+				getCampaignRecipients();
+				getCampaignErrors();
+			} else {
+				getEmailmessages(window.pageYOffset, true);
+			}
 		},
 		error: function (xhr) {
-			$('#output')
-				.html(
-					'Nachricht konnte nicht gesendet werden.'
-				)
-				.show();
-
-			console.log(
-				'sendMessage error',
-				xhr.responseText
-			);
+			var response = xhr.responseJSON;
+			pushMessages(Dewawi.message(response && response.ok === false ? 'MESSAGES_EMAIL_SENT_ERROR' : 'MESSAGES_EMAIL_STATUS_UNKNOWN'), 'danger', target);
+		},
+		complete: function () {
+			setButtonLoading($button, false);
+			Dewawi.emailRequestPending = false;
 		}
-	});
-}
-
-function resendMessage(messageid){
-	var url = baseUrl+'/contacts/email/send/messageid/'+messageid;
-
-	$.ajax({
-		type: 'POST',
-		url: url,
-		dataType: 'json',
-		cache: false
-	}).done(function(response) {
-		if(!response || response.ok !== true) {
-			pushMessages(['Nachricht konnte nicht erneut gesendet werden.']);
-			return;
-		}
-
-		if(module === 'campaigns' && controller === 'campaign') {
-			getCampaignRecipients();
-			getCampaignErrors();
-			return;
-		}
-
-		getEmailmessages(window.pageYOffset);
-	}).fail(function(xhr) {
-		pushMessages(['Nachricht konnte nicht erneut gesendet werden.']);
-		console.log('resendMessage error', xhr.responseText);
 	});
 }
 
@@ -2113,28 +2091,86 @@ function getSortUrl(controller, id, params) {
 	return url;
 }
 
-function pushMessages(messages){
-	// normalize to array of strings
-	if (messages == null) return;
-
-	if (typeof messages === 'string') {
-		messages = [messages];
-	} else if (Array.isArray(messages)) {
-	// ok
-	} else if (typeof messages === 'object') {
-		// support {message:".."} or {messages:[..]}
-		if (messages.messages) messages = messages.messages;
-		else if (messages.message) messages = [messages.message];
-		else return;
-	} else {
-		messages = [String(messages)];
+function pushMessages(messages, type, target) {
+	var texts = [];
+	function collect(value) {
+		if (value == null) return;
+		if (typeof value === 'object') {
+			if (value.errors) collect(value.errors);
+			else if (value.messages) collect(value.messages);
+			else if (value.message) collect(value.message);
+			else $.each(value, function (_, item) { collect(item); });
+			return;
+		}
+		var text = String(value);
+		var keys = {
+			send_failed: 'MESSAGES_EMAIL_SENT_ERROR', save_failed: 'MESSAGES_SAVE_FAILED',
+			network_error: 'MESSAGES_REQUEST_FAILED', validation_failed: 'MESSAGES_FORM_IS_INVALID',
+			pending: 'MESSAGES_PENDING', 'SMTP accepted': 'MESSAGES_EMAIL_SENT_SUCCESS'
+		};
+		if (Object.prototype.hasOwnProperty.call(keys, text)) text = Dewawi.message(keys[text]);
+		else if (window.dwMessages && Object.prototype.hasOwnProperty.call(window.dwMessages, text)) text = Dewawi.message(text);
+		if (text && $.inArray(text, texts) === -1) texts.push(text);
 	}
+	collect(messages);
+	if (!texts.length) return;
 
-	$.each(messages, function(key, value) {
-		$('div#content').prepend('<div id="messages"><ul><li>'+value+'</li></ul></div>');
+	type = type === 'error' ? 'danger' : type;
+	if ($.inArray(type, ['success', 'danger', 'warning', 'info']) === -1) type = 'danger';
+	var $container = $(target || '#messages').first();
+	if (!$container.length) $container = $('#messages').first();
+	if (!$container.length) $container = $('<div>', {id: 'messages'}).prependTo('div#content');
+	$container.children('.dw-alert--' + type + ', .dw-alert--info').remove();
+	if (type === 'success') $container.children('.dw-alert--danger').remove();
+	if (type === 'info' || type === 'danger') $container.children('.dw-alert--success').remove();
+	var $alert = $('<div>', {
+		'class': 'dw-alert dw-alert--' + type,
+		role: type === 'danger' ? 'alert' : 'status',
+		'aria-live': type === 'danger' ? 'assertive' : 'polite',
+		'aria-atomic': 'true'
 	});
-	removeMessages();
+	var $list = $('<ul>').appendTo($alert);
+	$.each(texts, function (_, text) { $('<li>').text(text).appendTo($list); });
+	$('<button>', {type: 'button', 'class': 'dw-alert__close', 'aria-label': Dewawi.message('MESSAGES_DISMISS')}).text('×').appendTo($alert);
+	$container.append($alert).show();
+	if (type === 'danger' && target === '#output' && $container.length) {
+		var bounds = $container[0].getBoundingClientRect();
+		if (bounds.top < 0 || bounds.bottom > window.innerHeight) $container[0].scrollIntoView({block: 'nearest'});
+	}
 }
+
+function setButtonLoading($buttons, loading, label) {
+	$buttons.each(function () {
+		var $button = $(this);
+		var state = $button.data('dw-loading-state');
+		if (loading) {
+			if (state) return;
+			state = {
+				disabled: $button.prop('disabled'), ariaDisabled: $button.attr('aria-disabled'),
+				ariaBusy: $button.attr('aria-busy'), loading: $button.hasClass('is-loading')
+			};
+			if (label) {
+				state.contents = $button.contents().detach();
+				$button.text(label);
+			}
+			$button.data('dw-loading-state', state).prop('disabled', true).addClass('is-loading').attr({'aria-disabled': 'true', 'aria-busy': 'true'});
+		} else if (state) {
+			if (state.contents) $button.empty().append(state.contents);
+			if (state.disabled === undefined) $button.removeProp('disabled');
+			else $button.prop('disabled', state.disabled);
+			$button.toggleClass('is-loading', state.loading);
+			$.each({'aria-disabled': state.ariaDisabled, 'aria-busy': state.ariaBusy}, function (name, value) {
+				if (value === undefined) $button.removeAttr(name);
+				else $button.attr(name, value);
+			});
+			$button.removeData('dw-loading-state');
+		}
+	});
+}
+
+$(document).on('click', '.dw-alert__close', function () {
+	$(this).closest('.dw-alert').remove();
+});
 
 function handleEditError(resp, params) {
 	// 1) not_found -> Meldung + optional redirect
@@ -2173,14 +2209,8 @@ function isSelectionField($field) {
 	return $field.is('.checkall') || $field.attr('name') === 'ids[]';
 }
 
-function removeMessages(){
-	if($('#messages').length) {
-		/*$('#messages').delay(8000).fadeTo(2000, 0.00, function() {
-			$(this).slideUp('slow', function() {
-				$(this).remove();
-			});
-		});*/
-	}
+function removeMessages(target) {
+	$(target || '#messages').empty().hide();
 }
 
 //Make PDF
@@ -2232,12 +2262,13 @@ $(document).on('click', '[data-document-finalize]', function(event) {
 	event.preventDefault();
 	var $button = $(this);
 	if ($button.hasClass('is-loading')) return;
-	$button.addClass('is-loading').attr('aria-disabled', 'true');
+	setButtonLoading($button, true);
 
 	$.ajax({
 		type: 'POST',
 		url: $button.attr('href'),
 		dataType: 'json',
+		timeout: 30000,
 		success: function(response) {
 			if (response && response.ok && response.redirect) window.location.href = response.redirect;
 			else if (response && response.validation) updateDocumentValidation(response.validation);
@@ -2249,7 +2280,7 @@ $(document).on('click', '[data-document-finalize]', function(event) {
 			else updateDocumentValidation({status: 'error', title: $button.data('error-message')});
 		},
 		complete: function() {
-			$button.removeClass('is-loading').removeAttr('aria-disabled');
+			setButtonLoading($button, false);
 		}
 	});
 });

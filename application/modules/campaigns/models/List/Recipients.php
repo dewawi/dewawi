@@ -121,7 +121,7 @@ class Campaigns_Model_List_Recipients extends DEEC_List
 			$content .= '<div class="dw-list-value">'.$this->escape($label).'</div>';
 
 			if(!in_array($deliveryStatus, ['bounce', 'complaint'], true)) {
-				$content .= '<button type="button" class="dw-btn dw-btn--secondary" onclick="resendMessage('.(int)$message['id'].')">'.$this->escape($this->translate('CAMPAIGNS_RESEND')).'</button>';
+				$content .= '<button type="button" class="dw-btn dw-btn--secondary" onclick="resendMessage('.(int)$message['id'].', this)">'.$this->escape($this->translate('CAMPAIGNS_RESEND')).'</button>';
 			}
 
 			$html[] = '<div>'.$content.'</div>';

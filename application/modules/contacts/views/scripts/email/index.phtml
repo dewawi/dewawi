@@ -98,26 +98,25 @@ echo $this->Messages();
 
 								<?php if($response === '' || $response === 'sent') : ?>
 									<div class="dw-status-message dw-status-message--success">
-										<?php echo $this->translate('CONTACTS_EMAIL_SUCCESSFUL'); ?>
+										<?php echo $this->translate('MESSAGES_EMAIL_SENT_SUCCESS'); ?>
 									</div>
 								<?php elseif($response === 'pending') : ?>
 									<div class="dw-status-message">
-										<?php echo $this->translate('CONTACTS_EMAIL_PENDING'); ?>
+										<?php echo $this->translate('MESSAGES_PENDING'); ?>
 									</div>
 								<?php else : ?>
 									<div class="dw-status-message dw-status-message--error">
-										<?php echo $this->translate('CONTACTS_EMAIL_ERROR'); ?>
+										<?php echo $this->translate('MESSAGES_EMAIL_SENT_ERROR'); ?>
 									</div>
-									<pre class="dw-status-response"><?php echo $this->escape($response); ?></pre>
 								<?php endif; ?>
 
 								<button
 									name="send"
 									type="button"
 									class="dw-btn dw-btn--secondary send"
-									onclick="resendMessage(<?php echo (int)$emailmessage['id']; ?>)"
+									onclick="resendMessage(<?php echo (int)$emailmessage['id']; ?>, this)"
 								>
-									Erneut Senden
+									<?php echo $this->translate('MESSAGES_EMAIL_RESEND'); ?>
 								</button>
 							</td>
 
