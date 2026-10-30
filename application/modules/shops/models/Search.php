@@ -577,34 +577,40 @@ class Shops_Model_Search
 
 	protected function createExcerpt(array $candidate, array $terms): string
 	{
-		$values = array_merge($candidate['headings'] ?? [], $candidate['content'] ?? [], $candidate['descriptions'] ?? []);
-		$selected = '';
-		$selectedMatches = -1;
+		$titleValues = array_merge([(string)($candidate['title'] ?? '')], $candidate['titles'] ?? []);
+		$titleValues = array_filter(array_map([self::class, 'normalizeForMatch'], $titleValues));
+		$choices = [];
 
-		foreach ($values as $value) {
-			$plain = self::cleanSearchText((string)$value);
-			if ($plain === '') continue;
-			$matches = $this->countMatchedTerms($plain, $terms);
-			if ($selected === '' || $matches > $selectedMatches) {
-				$selected = $plain;
-				$selectedMatches = $matches;
+		foreach (['headings', 'content', 'descriptions'] as $group) {
+			foreach ($candidate[$group] ?? [] as $value) {
+				$plain = self::cleanSearchText((string)$value);
+				if ($plain === '') continue;
+				$choices[] = [
+					'text' => $plain,
+					'matches' => $this->countMatchedTerms($plain, $terms),
+					'repeatsTitle' => in_array(self::normalizeForMatch($plain), $titleValues, true),
+					'description' => $group !== 'headings',
+				];
 			}
 		}
 
-		if ($selected === '') return '';
+		if (!$choices) return '';
 
-		$sentences = preg_split('/(?<=[.!?])\s+(?=[\p{L}\p{N}])/u', $selected, -1, PREG_SPLIT_NO_EMPTY) ?: [$selected];
-		$bestSentence = '';
-		$bestSentenceMatches = 0;
+		$selected = $this->selectBestExcerptChoice($choices, true);
+		$selected = $selected['text'];
+
+		$sentences = $this->splitExcerptSentences($selected);
+		$sentenceChoices = [];
 		foreach ($sentences as $sentence) {
-			$matches = $this->countMatchedTerms($sentence, $terms);
-			if ($matches > $bestSentenceMatches) {
-				$bestSentence = trim($sentence);
-				$bestSentenceMatches = $matches;
-				if ($matches === count($terms)) break;
-			}
+			$sentenceChoices[] = [
+				'text' => $sentence,
+				'matches' => $this->countMatchedTerms($sentence, $terms),
+				'repeatsTitle' => in_array(self::normalizeForMatch($sentence), $titleValues, true),
+			];
 		}
-		if ($bestSentence !== '') $selected = $bestSentence;
+
+		$bestSentence = $this->selectBestExcerptChoice($sentenceChoices);
+		if ($bestSentence['matches'] > 0) $selected = $bestSentence['text'];
 
 		if (mb_strlen($selected, 'UTF-8') <= 240) return $selected;
 
@@ -626,6 +632,39 @@ class Shops_Model_Search
 		while ($end < $length && !preg_match('/\s/u', mb_substr($selected, $end, 1, 'UTF-8'))) $end++;
 		$excerpt = trim(mb_substr($selected, $start, $end - $start, 'UTF-8'));
 		return ($start > 0 ? '…' : '') . $excerpt . ($end < $length ? '…' : '');
+	}
+
+	protected function selectBestExcerptChoice(array $choices, bool $descriptionsOnly = false): array
+	{
+		$selected = $choices[0];
+		foreach ($choices as $choice) {
+			if ($choice['matches'] > $selected['matches']) $selected = $choice;
+		}
+
+		if (!$selected['repeatsTitle']) return $selected;
+
+		foreach ($choices as $choice) {
+			if (($descriptionsOnly && empty($choice['description'])) || $choice['repeatsTitle'] || $choice['matches'] <= 0) continue;
+			if ($selected['repeatsTitle'] || $choice['matches'] > $selected['matches']) $selected = $choice;
+		}
+
+		return $selected;
+	}
+
+	protected function splitExcerptSentences(string $value): array
+	{
+		$marker = "\u{E000}";
+		$patterns = [
+			'/\b(?:bzw|ca|vgl|Nr|Art|Dr|Prof)\./iu',
+			'/\b(?:\p{L}\.\s*){2,}/u',
+		];
+
+		foreach ($patterns as $pattern) {
+			$value = preg_replace_callback($pattern, static fn(array $match): string => str_replace('.', $marker, $match[0]), $value);
+		}
+
+		$sentences = preg_split('/(?<=[.!?])\s+(?=[\p{L}\p{N}])/u', (string)$value, -1, PREG_SPLIT_NO_EMPTY) ?: [$value];
+		return array_map(static fn(string $sentence): string => str_replace($marker, '.', trim($sentence)), $sentences);
 	}
 
 	protected function countMatchedTerms(string $value, array $terms): int

@@ -229,6 +229,15 @@ $excerpt = $search->excerpt($excerptCandidate, ['kaltwassersatz']);
 checkSearch($excerpt === 'Der Kaltwassersatz kühlt zuverlässig den laufenden Prozess.', 'Excerpt does not select a readable matching sentence');
 checkSearch(!str_contains($excerpt, '.jpg') && !str_contains($excerpt, '  '), 'Excerpt contains a filename or duplicate whitespace');
 
+$titleExcerptCandidate = candidate('category', 4, 'Kaltwassersätze', '/kaltwassersaetze', 'Kaltwassersätze. Kaltwassersätze ermöglichen eine bedarfsgerechte und effiziente Prozesskühlung.');
+$titleExcerptCandidate['headings'] = ['Kaltwassersätze'];
+$excerpt = $search->excerpt($titleExcerptCandidate, ['kaltwassersatz']);
+checkSearch($excerpt === 'Kaltwassersätze ermöglichen eine bedarfsgerechte und effiziente Prozesskühlung.', 'Excerpt repeats the displayed title instead of an informative description');
+
+$abbreviationCandidate = candidate('page', 5, 'Anwendungen', '/anwendungen', 'Kaltwassersätze versorgen z. B. Prozessanlagen bzw. Produktionshallen und u. a. Prüfstände zuverlässig. Weitere Informationen folgen im nächsten Satz.');
+$excerpt = $search->excerpt($abbreviationCandidate, ['kaltwassersatz']);
+checkSearch($excerpt === 'Kaltwassersätze versorgen z. B. Prozessanlagen bzw. Produktionshallen und u. a. Prüfstände zuverlässig.', 'Abbreviations split the excerpt into short sentence fragments');
+
 $breadcrumbView = new SearchBreadcrumbView();
 $breadcrumbView->controller = 'search';
 $breadcrumb = (new Zend_View_Helper_Breadcrumbs())->setView($breadcrumbView)->Breadcrumbs();
