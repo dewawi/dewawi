@@ -335,7 +335,6 @@ class Shops_Model_Search
 			->where('i.clientid = ?', $this->siteContext->getClientId())
 			->where('i.shopid = ?', $this->siteContext->getSiteId())
 			->where('i.deleted = ?', 0)
-			->where('i.shopenabled = ?', 1)
 			->where('c.clientid = ?', $this->siteContext->getClientId())
 			->where('c.shopid = ?', $this->siteContext->getSiteId())
 			->where('c.type = ?', 'shop')

@@ -19,6 +19,8 @@ require_once $root . '/library/DEEC/Site/Block.php';
 require_once $root . '/library/DEEC/Site/Router.php';
 require_once $root . '/application/modules/shops/models/Search.php';
 require_once $root . '/application/modules/shops/models/DbTable/Item.php';
+require_once $root . '/application/modules/shops/models/DbTable/Category.php';
+require_once $root . '/application/modules/shops/models/DbTable/Slug.php';
 require_once $root . '/application/modules/shops/views/helpers/Breadcrumbs.php';
 
 $checks = 0;
@@ -28,6 +30,58 @@ function checkSearch(bool $condition, string $message): void
 	global $checks;
 	$checks++;
 	if (!$condition) throw new RuntimeException($message);
+}
+
+function shopVisibilityMatches(array $where, array $row): bool
+{
+	foreach ($where as $condition) {
+		$condition = trim((string)preg_replace('/^AND /', '', $condition));
+		if ($condition[0] === '(' && substr($condition, -1) === ')') $condition = substr($condition, 1, -1);
+		if (!preg_match('/^([a-z]+) = (.*)$/', $condition, $match)) throw new RuntimeException('Unsupported shop visibility predicate: ' . $condition);
+		$value = trim($match[2], " '");
+		if ((string)($row[$match[1]] ?? '') !== $value) return false;
+	}
+
+	return true;
+}
+
+class ShopVisibilityTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
+{
+	public array $rows = [];
+
+	protected function _connect() {}
+	protected function _quote($value) { return Zend_Db_Adapter_Abstract::_quote($value); }
+
+	public function describeTable($tableName, $schemaName = null)
+	{
+		$metadata = [];
+		foreach (array_keys($this->rows[$tableName][0]) as $column) {
+			$metadata[$column] = ['COLUMN_NAME' => $column, 'DATA_TYPE' => 'varchar', 'PRIMARY' => $column === 'id', 'PRIMARY_POSITION' => 1, 'IDENTITY' => $column === 'id'];
+		}
+		return $metadata;
+	}
+
+	public function query($sql, $bind = [])
+	{
+		if (!$sql instanceof Zend_Db_Table_Select || $bind) throw new RuntimeException('Unexpected shop visibility database access');
+		$sql->assemble();
+		$from = $sql->getPart(Zend_Db_Select::FROM);
+		$table = reset($from)['tableName'];
+		$rows = array_values(array_filter($this->rows[$table], static fn(array $row): bool => shopVisibilityMatches($sql->getPart(Zend_Db_Select::WHERE), $row)));
+		$orders = $sql->getPart(Zend_Db_Select::ORDER);
+		usort($rows, static function(array $a, array $b) use ($orders): int {
+			foreach ($orders as [$field, $direction]) {
+				$result = $a[$field] <=> $b[$field];
+				if ($result) return $direction === 'DESC' ? -$result : $result;
+			}
+			return 0;
+		});
+		if ($limit = $sql->getPart(Zend_Db_Select::LIMIT_COUNT)) $rows = array_slice($rows, (int)$sql->getPart(Zend_Db_Select::LIMIT_OFFSET), $limit);
+		return new class($rows) {
+			public function __construct(private array $rows) {}
+			public function fetchAll($mode) { return $this->rows; }
+		};
+	}
 }
 
 class SearchFixture extends Shops_Model_Search
@@ -273,12 +327,35 @@ checkSearch(str_contains($layoutSource, "'search', true") && str_contains($layou
 $searchViewSource = file_get_contents($root . '/application/modules/shops/views/scripts/search/index.phtml');
 checkSearch(substr_count($searchViewSource, '$this->escape(') >= 8, 'Search output is not consistently escaped');
 $searchSource = file_get_contents($root . '/application/modules/shops/models/Search.php');
-foreach (['i.clientid = ?', 'i.shopid = ?', 'c.clientid = ?', 'c.shopid = ?', 'i.shopenabled = ?', 'c.activated = ?', 's.deleted = 0'] as $tenantFilter) {
+foreach (['i.clientid = ?', 'i.shopid = ?', 'i.deleted = ?', 'c.clientid = ?', 'c.shopid = ?', 'c.activated = ?', 's.deleted = 0'] as $tenantFilter) {
 	checkSearch(str_contains($searchSource, $tenantFilter), 'Missing item tenant/public filter: ' . $tenantFilter);
 }
+checkSearch(!str_contains($searchSource, 'i.shopenabled = ?'), 'Website search excludes existing shop items without shop approval');
 $pageblockSource = file_get_contents($root . '/application/models/DbTable/Pageblock.php');
 checkSearch(str_contains($pageblockSource, "where('clientid = ?', \$this->getClientId())") && str_contains($pageblockSource, "where('activated = ?', 1)") && str_contains($pageblockSource, "where('deleted = ?', 0)"), 'Page block public/tenant filters are incomplete');
 $itemDefaults = (new ReflectionClass(Shops_Model_DbTable_Item::class))->getDefaultProperties();
-checkSearch(($itemDefaults['publicField'] ?? null) === 'shopenabled', 'Public item model does not enforce shop approval');
+checkSearch(($itemDefaults['publicField'] ?? null) === null, 'Public item model still enforces shop approval');
+
+$adapter = new ShopVisibilityTestAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
+$adapter->rows = [
+	'item' => [
+		['id' => 100, 'clientid' => 3, 'shopid' => 7, 'shopcatid' => 10, 'shopenabled' => 0, 'title' => 'Existing item', 'modified' => '2026-01-01', 'created' => '2026-01-01', 'deleted' => 0],
+		['id' => 101, 'clientid' => 4, 'shopid' => 7, 'shopcatid' => 10, 'shopenabled' => 0, 'title' => 'Other tenant', 'modified' => '2026-01-02', 'created' => '2026-01-02', 'deleted' => 0],
+		['id' => 102, 'clientid' => 3, 'shopid' => 7, 'shopcatid' => 10, 'shopenabled' => 0, 'title' => 'Deleted item', 'modified' => '2026-01-03', 'created' => '2026-01-03', 'deleted' => 1],
+	],
+	'category' => [
+		['id' => 10, 'clientid' => 3, 'shopid' => 7, 'type' => 'shop', 'activated' => 1, 'deleted' => 0],
+	],
+	'slug' => [
+		['id' => 200, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'products', 'deleted' => 0],
+		['id' => 201, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'item', 'entityid' => 100, 'parentid' => 10, 'slug' => 'existing-item', 'deleted' => 0],
+	],
+];
+Zend_Db_Table::setDefaultAdapter($adapter);
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 7, 'clientid' => 3], [], ['cms', 'catalog']));
+$categoryItems = (new Shops_Model_DbTable_Item())->getItemsByCategory(10)->toArray();
+checkSearch(array_column($categoryItems, 'id') === [100] && (int)$categoryItems[0]['shopenabled'] === 0, 'Existing item without shop approval is missing from its category');
+$resolvedItem = (new Shops_Model_DbTable_Slug())->resolvePath('products/existing-item');
+checkSearch((int)($resolvedItem['entityid'] ?? 0) === 100 && ($resolvedItem['controller'] ?? '') === 'item', 'Existing item slug without shop approval is not publicly resolvable');
 
 echo 'PASS: ' . $checks . " website search, visibility, ranking, pagination and SEO cases\n";

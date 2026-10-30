@@ -3,7 +3,6 @@
 class Shops_Model_DbTable_Item extends DEEC_Model_DbTable_SiteEntity
 {
 	protected $_name = 'item';
-	protected ?string $publicField = 'shopenabled';
 
 	public function hasPublicDownload(string $filename): bool
 	{
