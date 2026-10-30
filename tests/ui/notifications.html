@@ -226,10 +226,10 @@ $(function() {
     check($('#messages .dw-alert--success li').text() === dwMessages.MESSAGES_RECORDS_SUCCESFULLY_DELETED, locale + ': bulk success lost after list refresh');
 
     actionFixture(); action = 'index'; controller = 'phone'; $('#bulk-delete').trigger('click');
-    finish(calls[0], {ok: false, deletedIds: [10], blockedIds: [20], message: 'technical_delete_failed'});
+    finish(calls[0], {ok: false, deletedIds: [10], blockedIds: [20], blockedReasons: {'20': 'MESSAGES_CONTACT_DELETE_BLOCKED_DOCUMENTS'}, message: 'technical_delete_failed'});
     check(searches.length === 1, locale + ': partial deletion did not refresh list');
     completeRefresh();
-    check($('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_PARTIALLY_DELETED && !$('#messages .dw-alert--success').length, locale + ': partial result reported complete success or lost error');
+    check($('#messages .dw-alert--danger li').length === 2 && $('#messages .dw-alert--danger').text().indexOf(dwMessages.MESSAGES_PARTIALLY_DELETED) !== -1 && $('#messages .dw-alert--danger').text().indexOf(dwMessages.MESSAGES_CONTACT_DELETE_BLOCKED_DOCUMENTS) !== -1 && !$('#messages .dw-alert--success').length, locale + ': partial result or business reason was lost');
     actionFixture(); trash([10, 20], deleteConfirm, 'phone', 'contacts', $('#delete-one'));
     finish(calls[0], {ok: false, deletedIds: [10, 99], blockedIds: [20]});
     check(!hasPhone(10) && hasPhone(20) && hasPhone(99), locale + ': partial edit deletion trusted unrequested ID or removed blocked row');
@@ -243,6 +243,10 @@ $(function() {
     });
     actionFixture(); $('#delete-one').trigger('click'); finish(calls[0], {ok: false, message: '<img src=x alt=secret>'});
     check(hasPhone(10) && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CANNOT_BE_DELETED && !$('#messages img').length, locale + ': negative delete leaked server details');
+    actionFixture(); $('#delete-one').trigger('click'); finish(calls[0], {ok: false, deletedIds: [], blockedIds: [10], blockedReasons: {'10': 'MESSAGES_CONTACT_DELETE_BLOCKED_COMMUNICATIONS'}});
+    check(hasPhone(10) && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CONTACT_DELETE_BLOCKED_COMMUNICATIONS, locale + ': translated contact delete reason is not visible');
+    actionFixture(); $('#delete-one').trigger('click'); finish(calls[0], {ok: false, deletedIds: [], blockedIds: [10], blockedReasons: {'10': '<img src=x alt=secret>'}});
+    check(hasPhone(10) && $('#messages .dw-alert--danger li').text() === dwMessages.MESSAGES_CANNOT_BE_DELETED && !$('#messages img').length, locale + ': unknown delete reason leaked backend content');
     actionFixture(); $('#delete-one').trigger('click'); finish(calls[0], {ok: true, deletedIds: []});
     check(hasPhone(10) && !searches.length && !navigations.length && $('#messages .dw-alert--danger').length === 1, locale + ': empty deletion navigated or reported success');
 

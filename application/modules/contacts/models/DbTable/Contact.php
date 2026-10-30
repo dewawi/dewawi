@@ -2,6 +2,35 @@
 
 class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 {
+	private const DELETE_DOCUMENT_REFERENCES = [
+		Sales_Model_DbTable_Quote::class => ['contactid'],
+		Sales_Model_DbTable_Salesorder::class => ['contactid'],
+		Sales_Model_DbTable_Invoice::class => ['contactid'],
+		Sales_Model_DbTable_Deliveryorder::class => ['contactid'],
+		Sales_Model_DbTable_Creditnote::class => ['contactid'],
+		Sales_Model_DbTable_Reminder::class => ['contactid'],
+		Purchases_Model_DbTable_Quoterequest::class => ['contactid'],
+		Purchases_Model_DbTable_Purchaseorder::class => ['contactid'],
+	];
+
+	private const DELETE_OPERATION_REFERENCES = [
+		Processes_Model_DbTable_Process::class => ['contactid', 'supplierid'],
+		Tasks_Model_DbTable_Task::class => ['contactid', 'supplierid'],
+	];
+
+	private const DELETE_INTERNAL_OPERATION_REFERENCES = [
+		Items_Model_DbTable_Stockplanning::class => ['contactid'],
+		Shops_Model_DbTable_Order::class => ['contactid'],
+	];
+
+	private const DELETE_COMMUNICATION_REFERENCES = [
+		Contacts_Model_DbTable_Emailmessage::class => ['contactid'],
+		Contacts_Model_DbTable_Downloadtracking::class => ['contactid'],
+	];
+
+	private const DELETE_NUMBER_COMMUNICATION_REFERENCES = [
+		Application_Model_DbTable_Feedback::class => ['contactid'],
+	];
 
 	protected $_name = 'contact';
 
@@ -10,6 +39,7 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 	protected $_user = null;
 
 	protected $_client = null;
+	private array $deleteReferenceClientIds = [];
 
 	public function init()
 	{
@@ -96,6 +126,84 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 	public function deleteContact($id)
 	{
 		$this->deleteById((int)$id);
+	}
+
+	public function canDelete(array $row): bool
+	{
+		return $this->getDeleteBlockReason($row) === null;
+	}
+
+	public function getDeleteBlockReason(array $row): ?string
+	{
+		$id = (int)($row['id'] ?? 0);
+		$contactNumber = (int)($row['contactid'] ?? 0);
+
+		if($id <= 0) return 'MESSAGES_CANNOT_BE_DELETED';
+
+		$clientIds = $this->getDeleteReferenceClientIds();
+
+		if($contactNumber > 0 && $this->hasActiveReference(self::DELETE_DOCUMENT_REFERENCES, $contactNumber, $clientIds)) {
+			return 'MESSAGES_CONTACT_DELETE_BLOCKED_DOCUMENTS';
+		}
+
+		if(($contactNumber > 0 && $this->hasActiveReference(self::DELETE_OPERATION_REFERENCES, $contactNumber, $clientIds))
+			|| $this->hasActiveReference(self::DELETE_INTERNAL_OPERATION_REFERENCES, $id, $clientIds)
+			|| $this->hasActiveTableReference('shopinquirydata', ['contactid'], $id, $clientIds)) {
+			return 'MESSAGES_CONTACT_DELETE_BLOCKED_OPERATIONS';
+		}
+
+		if($this->hasActiveReference(self::DELETE_COMMUNICATION_REFERENCES, $id, $clientIds)
+			|| ($contactNumber > 0 && $this->hasActiveReference(self::DELETE_NUMBER_COMMUNICATION_REFERENCES, $contactNumber, $clientIds))) {
+			return 'MESSAGES_CONTACT_DELETE_BLOCKED_COMMUNICATIONS';
+		}
+
+		return null;
+	}
+
+	protected function getDeleteReferenceClientIds(): array
+	{
+		$ownerId = $this->getClientId();
+		if(isset($this->deleteReferenceClientIds[$ownerId])) return $this->deleteReferenceClientIds[$ownerId];
+
+		$clientDb = new Application_Model_DbTable_Client();
+		$rows = $clientDb->fetchAll(
+			$clientDb->select()
+				->from('client', ['id'])
+				->where('parentid = ?', $ownerId)
+				->where('deleted = ?', 0)
+		);
+		$clientIds = [$ownerId];
+
+		foreach($rows as $row) $clientIds[] = (int)$row->id;
+
+		return $this->deleteReferenceClientIds[$ownerId] = array_values(array_unique($clientIds));
+	}
+
+	protected function hasActiveReference(array $references, int $value, array $clientIds): bool
+	{
+		foreach($references as $class => $fields) {
+			$db = new $class();
+
+			if($this->hasActiveTableReference($db->info(Zend_Db_Table_Abstract::NAME), $fields, $value, $clientIds)) return true;
+		}
+
+		return false;
+	}
+
+	protected function hasActiveTableReference(string $table, array $fields, int $value, array $clientIds): bool
+	{
+		$conditions = [];
+
+		foreach($fields as $field) $conditions[] = $this->getAdapter()->quoteInto($field . ' = ?', $value);
+
+		return (bool)$this->getAdapter()->fetchRow(
+			$this->getAdapter()->select()
+				->from($table, ['id'])
+				->where('(' . implode(' OR ', $conditions) . ')')
+				->where('clientid IN (?)', $clientIds)
+				->where('deleted = ?', 0)
+				->limit(1)
+		);
 	}
 
 	public function suggestContacts(string $keyword, int $clientId, int $limit = 10): array

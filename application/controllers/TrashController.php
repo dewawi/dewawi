@@ -77,11 +77,15 @@ class TrashController extends Zend_Controller_Action
 		}
 
 		if (!class_exists($modelClass)) {
-			throw new Zend_Controller_Exception("Model class {$modelClass} does not exist.");
+			$this->getResponse()->setHttpResponseCode(404);
+			return $this->_helper->json(['ok' => false, 'message' => 'MESSAGES_CANNOT_BE_DELETED']);
 		}
 
 		$mainModel = new $modelClass();
-		if (!$mainModel instanceof DEEC_Model_DbTable_Entity) throw new Zend_Controller_Action_Exception('Not found', 404);
+		if (!$mainModel instanceof DEEC_Model_DbTable_Entity) {
+			$this->getResponse()->setHttpResponseCode(404);
+			return $this->_helper->json(['ok' => false, 'message' => 'MESSAGES_CANNOT_BE_DELETED']);
+		}
 		$mainModel->setClientId($owner);
 
 		// Related positions model
@@ -124,6 +128,7 @@ class TrashController extends Zend_Controller_Action
 
 		$deletedIds = [];
 		$blockedIds = [];
+		$blockedReasons = [];
 		$adapter = $mainModel->getAdapter();
 		$adapter->beginTransaction();
 		try {
@@ -145,10 +150,17 @@ class TrashController extends Zend_Controller_Action
 				$blockedIds[] = $id;
 				continue;
 			}
-			if (!$mainModel->canDelete($row) || (array_key_exists($mainModel->getParentField(), $row) && $mainModel->hasChildren($id, $row))
+			$deleteBlockReason = method_exists($mainModel, 'getDeleteBlockReason')
+				? $mainModel->getDeleteBlockReason($row)
+				: null;
+			$canDelete = method_exists($mainModel, 'getDeleteBlockReason')
+				? $deleteBlockReason === null
+				: $mainModel->canDelete($row);
+			if (!$canDelete || (array_key_exists($mainModel->getParentField(), $row) && $mainModel->hasChildren($id, $row))
 				|| ($isUserController && $id === (int)$user['id'])
 				|| (DEEC_Permission::isDocument($module, $controller) && DEEC_Permission::isDocumentReadonly($module, $controller, $row))) {
 				$blockedIds[] = $id;
+				if ($deleteBlockReason) $blockedReasons[$id] = $deleteBlockReason;
 				continue;
 			}
 
@@ -246,11 +258,20 @@ class TrashController extends Zend_Controller_Action
 		$adapter->commit();
 		} catch (Throwable $exception) {
 			$adapter->rollBack();
-			throw $exception;
+			error_log('Trash deletion failed: ' . get_class($exception));
+			$this->getResponse()->setHttpResponseCode(500);
+			return $this->_helper->json([
+				'ok' => false,
+				'deletedIds' => [],
+				'blockedIds' => [],
+				'blockedReasons' => [],
+				'message' => 'MESSAGES_CANNOT_BE_DELETED',
+			]);
 		}
 
 		if ($blockedIds) {
-			$this->_flashMessenger->addMessage('MESSAGES_CANNOT_BE_DELETED');
+			$messages = array_values(array_unique($blockedReasons)) ?: ['MESSAGES_CANNOT_BE_DELETED'];
+			foreach ($messages as $message) $this->_flashMessenger->addMessage($message);
 		}
 
 		if ($deletedIds) {
@@ -261,6 +282,7 @@ class TrashController extends Zend_Controller_Action
 			'ok' => !$blockedIds,
 			'deletedIds' => $deletedIds,
 			'blockedIds' => $blockedIds,
+			'blockedReasons' => $blockedReasons,
 			'message' => $blockedIds
 				? 'MESSAGES_CANNOT_BE_DELETED'
 				: 'MESSAGES_SUCCESFULLY_DELETED',

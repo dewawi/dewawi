@@ -1329,11 +1329,38 @@ function getDeletedIds(response, ids) {
 	});
 }
 
+function getDeleteResultMessages(response, ids, deletedIds) {
+	var allowedReasons = {
+		MESSAGES_CONTACT_DELETE_BLOCKED_DOCUMENTS: true,
+		MESSAGES_CONTACT_DELETE_BLOCKED_OPERATIONS: true,
+		MESSAGES_CONTACT_DELETE_BLOCKED_COMMUNICATIONS: true
+	};
+	var messages = [];
+	var success = response.ok === true && deletedIds.length === ids.length;
+
+	if (success) {
+		return [Dewawi.message(ids.length === 1 ? 'MESSAGES_SUCCESFULLY_DELETED' : 'MESSAGES_RECORDS_SUCCESFULLY_DELETED')];
+	}
+
+	if (deletedIds.length) messages.push(Dewawi.message('MESSAGES_PARTIALLY_DELETED'));
+	var reasons = response.blockedReasons;
+	var blockedIds = Array.isArray(response.blockedIds) ? response.blockedIds.map(String) : [];
+
+	if (reasons && typeof reasons === 'object' && !Array.isArray(reasons)) {
+		ids.forEach(function (id) {
+			var key = reasons[String(id)];
+			if (blockedIds.indexOf(String(id)) !== -1 && allowedReasons[key]) messages.push(Dewawi.message(key));
+		});
+	}
+
+	if (!messages.length) messages.push(Dewawi.message('MESSAGES_CANNOT_BE_DELETED'));
+
+	return messages.filter(function (message, index, values) { return values.indexOf(message) === index; });
+}
+
 function showDeleteResult(response, ids, deletedIds) {
 	var success = response.ok === true && deletedIds.length === ids.length;
-	var key = success ? (ids.length === 1 ? 'MESSAGES_SUCCESFULLY_DELETED' : 'MESSAGES_RECORDS_SUCCESFULLY_DELETED')
-		: (deletedIds.length ? 'MESSAGES_PARTIALLY_DELETED' : 'MESSAGES_CANNOT_BE_DELETED');
-	pushMessages(Dewawi.message(key), success ? 'success' : 'danger', '#messages');
+	pushMessages(getDeleteResultMessages(response, ids, deletedIds), success ? 'success' : 'danger', '#messages');
 }
 
 function showActionRequestError(response, failureKey) {
