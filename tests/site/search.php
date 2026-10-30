@@ -185,6 +185,10 @@ checkSearch($request->getControllerName() === 'search', 'A CMS slug can override
 
 $controllerSource = file_get_contents($root . '/application/modules/shops/controllers/SearchController.php');
 checkSearch(str_contains($controllerSource, 'X-Robots-Tag') && str_contains($controllerSource, "setName('robots', 'noindex, follow')"), 'Search noindex protection is missing');
+$aclSource = file_get_contents($root . '/application/plugins/Acl.php');
+foreach (["getModuleName() === 'shops'", "getControllerName() === 'search'", "getActionName() === 'index'", "['GET', 'HEAD']", "isRegistered('SiteContext')", 'instanceof DEEC_Site_Context'] as $aclGuard) {
+	checkSearch(str_contains($aclSource, $aclGuard), 'Missing public search ACL guard: ' . $aclGuard);
+}
 $sitemapSource = file_get_contents($root . '/application/modules/shops/controllers/SitemapController.php');
 checkSearch(!str_contains($sitemapSource, "'controller' => 'search'"), 'Search URLs are present in the sitemap');
 $layoutSource = file_get_contents($root . '/application/layouts/scripts/site.phtml');

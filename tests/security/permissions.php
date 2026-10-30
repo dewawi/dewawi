@@ -14,6 +14,7 @@ spl_autoload_register(static function (string $class): void {
 });
 require_once $root . '/application/models/DbTable/Permission.php';
 require_once $root . '/application/plugins/Acl.php';
+require_once $root . '/library/DEEC/Site/Context.php';
 
 function check(bool $condition, string $message): void {
     if (!$condition) throw new RuntimeException($message);
@@ -161,6 +162,51 @@ foreach (['index', 'item', 'category', 'page', 'tag', 'sitemap', 'cart', 'checko
     check($request->getModuleName() === 'shops' && $response->getHttpResponseCode() === 200, 'Public storefront denied: ' . $controller);
     $checks++;
 }
+
+// The public website search is limited to its read-only index action on a resolved site.
+$siteContext = new DEEC_Site_Context(['id' => 5, 'clientid' => 70], [], ['cms']);
+Zend_Registry::set('SiteContext', $siteContext);
+$publicRequest = new ReflectionMethod(Application_Plugin_Acl::class, 'isPublicRequest');
+$publicRequest->setAccessible(true);
+foreach (['GET', 'HEAD'] as $method) {
+    [$request, $response] = permissionRoute('shops', 'search', 'index', $method);
+    check($request->getModuleName() === 'shops' && !$response->isRedirect() && $response->getHttpResponseCode() === 200, 'Guest website search denied: ' . $method);
+    check($publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Website search did not use the public ACL path: ' . $method);
+    $checks += 2;
+}
+
+Zend_Auth::getInstance()->getStorage()->write((object)['id' => 42]);
+[$request, $response] = permissionRoute('shops', 'search', 'index');
+check($request->getModuleName() === 'shops' && !$response->isRedirect() && $response->getHttpResponseCode() === 200, 'Authenticated website search denied');
+check($publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Authenticated website search did not use the public ACL path');
+$checks += 2;
+
+Zend_Auth::getInstance()->clearIdentity();
+foreach ([['index', 'POST'], ['preview', 'GET']] as [$action, $method]) {
+    [$request, $response] = permissionRoute('shops', 'search', $action, $method);
+    check($response->isRedirect(), 'Guest can dispatch non-public search request: ' . $action . '/' . $method);
+    check(!$publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Non-public search request matched the public ACL path: ' . $action . '/' . $method);
+    $checks += 2;
+}
+
+Zend_Registry::getInstance()->offsetUnset('SiteContext');
+[$request, $response] = permissionRoute('shops', 'search', 'index');
+check($response->isRedirect(), 'Guest website search is public without a site context');
+check(!$publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Website search matched the public ACL path without a site context');
+$checks += 2;
+
+Zend_Registry::set('SiteContext', new stdClass());
+[$request, $response] = permissionRoute('shops', 'search', 'index');
+check($response->isRedirect() && !$publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Invalid site context exposed website search');
+$checks++;
+
+Zend_Registry::set('SiteContext', $siteContext);
+foreach (['account', 'order', 'log'] as $controller) {
+    [$request, $response] = permissionRoute('shops', $controller, 'index');
+    check($response->isRedirect(), 'Site context exposed shop administration: ' . $controller);
+    $checks++;
+}
+Zend_Registry::getInstance()->offsetUnset('SiteContext');
 Zend_Auth::getInstance()->getStorage()->write((object)['id' => 42]);
 
 // Integration log files contain records of multiple tenants and use the existing admin role.
