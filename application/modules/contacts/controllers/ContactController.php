@@ -240,41 +240,10 @@ class Contacts_ContactController extends DEEC_Controller_Action
 	{
 		$client = Zend_Registry::get('Client');
 
-		$addressDb = new Contacts_Model_DbTable_Address();
-		$addressDb->createForParent($id, 'contacts', 'contact', [
-			'type' => 'billing',
-			'country' => $client['country'] ?? '0',
-		]);
-
-		$phoneDb = new Contacts_Model_DbTable_Phone();
-		$phoneDb->createForParent($id, 'contacts', 'contact', [
-			'type' => 'phone',
-		]);
-
-		$emailDb = new Contacts_Model_DbTable_Email();
-		$emailDb->createForParent($id, 'contacts', 'contact');
-
-		$internetDb = new Contacts_Model_DbTable_Internet();
-		$internetDb->createForParent($id, 'contacts', 'contact');
-	}
-
-	public function addAction()
-	{
-		$catid = $this->_getParam('catid', 0);
-
-		$data = [
-			'catid' => $catid,
-		];
-
-		$client = Zend_Registry::get('Client');
-
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		$id = $contactDb->addContact($data);
-
-		//Set increment value
 		$incrementDb = new Application_Model_DbTable_Increment();
-		$increment = $incrementDb->getIncrement('contactid');
-		$contactDb->updateContact($id, array('contactid' => $increment));
+		$increment = $incrementDb->getIncrement('contactid', true);
+		$contactDb->updateContact($id, ['contactid' => $increment]);
 		$incrementDb->setIncrement($increment, 'contactid');
 
 		$addressDb = new Contacts_Model_DbTable_Address();
@@ -289,7 +258,6 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		]);
 
 		$emailDb = new Contacts_Model_DbTable_Email();
-
 		$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
 		$emailDb->createForParent($id, 'contacts', 'contact', [
 			'password' => $password,
@@ -297,8 +265,6 @@ class Contacts_ContactController extends DEEC_Controller_Action
 
 		$internetDb = new Contacts_Model_DbTable_Internet();
 		$internetDb->createForParent($id, 'contacts', 'contact');
-
-		$this->_helper->redirector->gotoSimple('edit', 'contact', null, array('id' => $id));
 	}
 
 	public function editAction()
