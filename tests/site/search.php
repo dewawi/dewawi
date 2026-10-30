@@ -19,6 +19,7 @@ require_once $root . '/library/DEEC/Site/Block.php';
 require_once $root . '/library/DEEC/Site/Router.php';
 require_once $root . '/application/modules/shops/models/Search.php';
 require_once $root . '/application/modules/shops/models/DbTable/Item.php';
+require_once $root . '/application/modules/shops/views/helpers/Breadcrumbs.php';
 
 $checks = 0;
 
@@ -75,13 +76,36 @@ class SearchFixture extends Shops_Model_Search
 		return $this->getVisibleBlockText($blocks);
 	}
 
+	public function excerpt(array $candidate, array $terms): string
+	{
+		return $this->createExcerpt($candidate, $terms);
+	}
+
+	public function descriptiveMediaTitle(array $media): bool
+	{
+		return $this->isDescriptiveMediaTitle($media);
+	}
+
 	private function matchingItems(array $terms): array
 	{
 		return array_values(array_filter($this->items, static function(array $item) use ($terms): bool {
 			$values = array_merge($item['identifiers'] ?? [], $item['titles'] ?? [], $item['headings'] ?? [], $item['content'] ?? [], $item['descriptions'] ?? []);
-			$haystack = Shops_Model_Search::normalize(implode(' ', $values));
+			$haystack = Shops_Model_Search::normalizeForMatch(implode(' ', $values));
 			return (bool)array_filter($terms, static fn(string $term): bool => str_contains($haystack, $term));
 		}));
+	}
+}
+
+class SearchBreadcrumbView extends Zend_View
+{
+	public function url($urlOptions = [], $name = null, $reset = false, $encode = true): string
+	{
+		return '/';
+	}
+
+	public function translate($key, array $args = []): string
+	{
+		return $key === 'SHOPS_SEARCH' ? 'Suche' : (string)$key;
 	}
 }
 
@@ -166,6 +190,50 @@ checkSearch(!str_contains($visible, 'Geheim') && !str_contains($visible, 'Unsich
 checkSearch(!str_contains($visible, '/internal/image.jpg') && !str_contains($visible, '/mehr'), 'Technical block values are included');
 
 checkSearch(Shops_Model_Search::normalize('<b>ÄPFEL</b> &amp; Öl') === 'äpfel & öl', 'Unicode/HTML normalization failed');
+checkSearch(Shops_Model_Search::cleanText('<p>Kälte</p><p>Kühlung &amp; Wärme</p>') === 'Kälte Kühlung & Wärme', 'HTML elements are joined without word boundaries');
+checkSearch(Shops_Model_Search::normalizeForMatch('Wärmepumpe') === Shops_Model_Search::normalizeForMatch('Waermepumpe'), 'Wärmepumpe spelling variants differ');
+checkSearch(Shops_Model_Search::normalizeForMatch('Kälte') === Shops_Model_Search::normalizeForMatch('Kaelte'), 'Kälte spelling variants differ');
+checkSearch(Shops_Model_Search::normalizeForMatch('Kühlung') === Shops_Model_Search::normalizeForMatch('Kuehlung'), 'Kühlung spelling variants differ');
+checkSearch(Shops_Model_Search::normalizeForMatch('Groß-Kühlung') === Shops_Model_Search::normalizeForMatch('GROSSKUEHLUNG'), 'Case, sharp-s or hyphen normalization differs');
+checkSearch(Shops_Model_Search::normalizeForMatch('Kaltwassersatz') === Shops_Model_Search::normalizeForMatch('Kaltwassersätze'), 'Kaltwassersatz inflection differs');
+
+$search->pages = [candidate('page', 1, 'Prozesskühler', '/prozess', 'Ein Kaltwassersatz wird beiläufig erwähnt.')];
+$search->categories = [candidate('category', 2, 'Kaltwassersätze', '/kaltwassersaetze', 'Effiziente Lösungen')];
+$search->tags = [];
+$search->items = [];
+$result = $search->search('kaltwassersatz');
+checkSearch($result['results'][0]['url'] === '/kaltwassersaetze', 'Inflected category title does not outrank a body match');
+checkSearch($search->search('Kaltwassersätze')['results'][0]['url'] === '/kaltwassersaetze', 'Plural query ranking is inconsistent');
+
+$search->pages = [candidate('page', 1, 'Waermepumpe', '/ascii', '')];
+$search->categories = [candidate('category', 2, 'Wärmepumpe', '/umlaut', '')];
+$result = $search->search('Waermepumpe');
+checkSearch($result['results'][0]['url'] === '/ascii', 'Exact title spelling does not outrank a normalized variant');
+
+$repeated = candidate('page', 1, 'Ratgeber', '/ratgeber', 'Kühlung Kühlung Kühlung');
+$repeated['headings'] = ['Kühlung'];
+$repeated['descriptions'] = ['Kühlung'];
+$search->pages = [$repeated];
+$search->categories = [candidate('category', 2, 'Kuehlung', '/kuehlung', '')];
+$result = $search->search('Kühlung');
+checkSearch($result['results'][0]['url'] === '/kuehlung', 'Repeated low-priority fields outweigh a matching title');
+
+$search->pages = [];
+$search->categories = [candidate('category', 1, 'Prozesskühler', '/prozess', 'kaltwassersatz-arn-3.jpg')];
+checkSearch($search->search('kaltwassersatz')['total'] === 0, 'Technical filename is searchable as content');
+checkSearch(!$search->descriptiveMediaTitle(['title' => 'kaltwassersatz-arn-3.jpg', 'url' => '/img/kaltwassersatz-arn-3.jpg']), 'Technical media filename is treated as a descriptive title');
+checkSearch($search->descriptiveMediaTitle(['title' => 'Kaltwassersatz für Prozesskühlung', 'url' => '/img/arn-3.jpg']), 'Descriptive media title is excluded');
+
+$excerptCandidate = candidate('page', 3, 'Details', '/details', '<p>kaltwassersatz-arn-3.jpg</p><p>Dieser technische Vorspann ist absichtlich lang und enthält keine relevante Aussage.</p><p>Der Kaltwassersatz kühlt zuverlässig den laufenden Prozess.</p>');
+$excerpt = $search->excerpt($excerptCandidate, ['kaltwassersatz']);
+checkSearch($excerpt === 'Der Kaltwassersatz kühlt zuverlässig den laufenden Prozess.', 'Excerpt does not select a readable matching sentence');
+checkSearch(!str_contains($excerpt, '.jpg') && !str_contains($excerpt, '  '), 'Excerpt contains a filename or duplicate whitespace');
+
+$breadcrumbView = new SearchBreadcrumbView();
+$breadcrumbView->controller = 'search';
+$breadcrumb = (new Zend_View_Helper_Breadcrumbs())->setView($breadcrumbView)->Breadcrumbs();
+checkSearch(str_contains($breadcrumb, '>Suche</li>') && !str_contains($breadcrumb, '>search</li>'), 'Search breadcrumb is not translated');
+
 checkSearch($search->search("%' OR 1=1 --")['total'] === 0, 'Injection-like input returns unrelated results');
 checkSearch($search->search(str_repeat('x', 101))['valid'] === false, 'Oversized query is accepted');
 

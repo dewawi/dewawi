@@ -66,6 +66,9 @@ class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract{
 		} elseif ($this->view->controller === 'checkout') {
 			$html .= '<li class="breadcrumb-item active" aria-current="page">'
 				  . $this->view->translate('SHOPS_ORDER_FORM') . '</li>';
+		} elseif ($this->view->controller === 'search') {
+			$html .= '<li class="breadcrumb-item active" aria-current="page">'
+				  . $this->view->translate('SHOPS_SEARCH') . '</li>';
 		} else {
 			$html .= '<li class="breadcrumb-item active" aria-current="page">'
 				  . $this->view->escape($this->view->controller) . '</li>';

@@ -121,6 +121,12 @@ header.home {
 	align-items: stretch;
 }
 
+.dw-main-nav {
+	min-width: 0;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
 .dw-main-nav > .nav-item,
 .dw-header-actions > .nav-item {
 	margin: 0;
@@ -159,8 +165,9 @@ header.home {
 
 .dw-header-search {
 	align-self: center;
-	min-width: 210px;
+	min-width: 160px;
 	max-width: 280px;
+	flex: 1 1 210px;
 	margin-left: 1rem;
 }
 
@@ -441,6 +448,13 @@ footer .nav-link:hover {
 }
 
 /* Website search */
+.dw-search-page,
+.dw-search-results,
+.dw-search-result {
+	min-width: 0;
+	max-width: 100%;
+}
+
 .dw-search-page__form {
 	max-width: 760px;
 	margin: 1.5rem 0;
@@ -458,9 +472,14 @@ footer .nav-link:hover {
 	margin: 0 0 1.5rem;
 }
 
+.dw-search-filters .btn {
+	white-space: normal;
+}
+
 .dw-search-result {
 	padding: 1.5rem 0;
 	border-top: 1px solid #dee2e6;
+	overflow-wrap: anywhere;
 }
 
 .dw-search-result:last-child {

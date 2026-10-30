@@ -3,10 +3,18 @@
 class Shops_Model_Search
 {
 	public const PER_PAGE = 20;
+	private const MATCH_REPLACEMENTS = [
+		'ä' => 'a', 'ö' => 'o', 'ü' => 'u', 'ß' => 'ss',
+		'ae' => 'a', 'oe' => 'o', 'ue' => 'u',
+		'-' => '', '‐' => '', '‑' => '', '–' => '', '—' => '', '_' => '', '/' => '',
+	];
+	private const INFLECTION_REPLACEMENTS = ['kaltwassersatze' => 'kaltwassersatz'];
 
 	protected DEEC_Site_Context $siteContext;
 	protected Shops_Model_DbTable_Slug $slugDb;
 	protected array $supplementalMatchCache = [];
+	protected string $normalizedQuery = '';
+	protected string $matchQuery = '';
 
 	public function __construct(DEEC_Site_Context $siteContext)
 	{
@@ -40,8 +48,9 @@ class Shops_Model_Search
 
 		$this->preloadPaths();
 		$candidates = array_merge($this->getPageCandidates(), $this->getCategoryCandidates(), $this->getTagCandidates());
-		$normalizedQuery = self::normalize($query);
-		$candidates = $this->prepareCandidates($candidates, $normalizedQuery, $terms);
+		$this->normalizedQuery = self::normalize($query);
+		$this->matchQuery = self::normalizeForMatch($query);
+		$candidates = $this->prepareCandidates($candidates, $this->normalizedQuery, $terms);
 		$itemCount = $this->siteContext->hasFeature('catalog') ? $this->countItems($terms) : 0;
 
 		$typeCounts = array_fill_keys(['page', 'category', 'tag', 'item'], 0);
@@ -70,7 +79,7 @@ class Shops_Model_Search
 		if ($itemCount > 0 && ($type === '' || $type === 'item')) {
 			$itemCandidates = $this->prepareCandidates(
 				$this->getItemCandidates($terms, $offset + self::PER_PAGE),
-				$normalizedQuery,
+				$this->normalizedQuery,
 				$terms
 			);
 		}
@@ -134,7 +143,7 @@ class Shops_Model_Search
 					if ($slide) {
 						$mediaDb = new Shops_Model_DbTable_Media();
 						foreach ($mediaDb->getSlideImages((int)$slide['id']) as $media) {
-							$blockText['headings'][] = (string)($media['title'] ?? '');
+							if ($this->isDescriptiveMediaTitle($media)) $blockText['headings'][] = (string)$media['title'];
 							$blockText['content'][] = (string)($media['description'] ?? '');
 						}
 					}
@@ -167,7 +176,7 @@ class Shops_Model_Search
 		$mediaDb = new Shops_Model_DbTable_Media();
 
 		foreach ($mediaDb->getByParentIds(array_keys($categories), 'shops', 'category') as $media) {
-			$mediaByCategory[(int)$media['parentid']][] = (string)($media['title'] ?? '');
+			if ($this->isDescriptiveMediaTitle($media)) $mediaByCategory[(int)$media['parentid']][] = (string)$media['title'];
 		}
 
 		$candidates = [];
@@ -267,7 +276,7 @@ class Shops_Model_Search
 		$text = [];
 
 		$media = $db->select()
-			->from('media', ['parentid', 'title'])
+			->from('media', ['parentid', 'title', 'url'])
 			->where('parentid IN (?)', $itemIds)
 			->where('module = ?', 'items')
 			->where('controller = ?', 'item')
@@ -275,7 +284,7 @@ class Shops_Model_Search
 			->where('deleted = ?', 0);
 
 		foreach ($db->fetchAll($media) as $row) {
-			$text[(int)$row['parentid']]['content'][] = (string)$row['title'];
+			if ($this->isDescriptiveMediaTitle($row)) $text[(int)$row['parentid']]['content'][] = (string)$row['title'];
 		}
 
 		foreach ([['itematrset', 'itematr', 'atrsetid'], ['itemoptset', 'itemopt', 'optsetid']] as [$setTable, $positionTable, $setField]) {
@@ -338,7 +347,25 @@ class Shops_Model_Search
 
 	protected function getItemHaystack(): string
 	{
-		return "LOWER(CONCAT_WS(' ', i.sku, i.gtin, i.title, i.subtitle, i.shoptitle, i.shopdescription, i.shopdescriptionshort, IF(COALESCE(i.shopdescription, '') = '' OR COALESCE(i.shopdescriptionshort, '') = '', i.description, ''), i.manufacturersku))";
+		return $this->getSqlMatchExpression("CONCAT_WS(' ', i.sku, i.gtin, i.title, i.subtitle, i.shoptitle, i.shopdescription, i.shopdescriptionshort, IF(COALESCE(i.shopdescription, '') = '' OR COALESCE(i.shopdescriptionshort, '') = '', i.description, ''), i.manufacturersku)");
+	}
+
+	protected function getSqlMatchExpression(string $expression): string
+	{
+		$db = Zend_Db_Table::getDefaultAdapter();
+		$expression = 'LOWER(COALESCE(' . $expression . ", ''))";
+		$replacements = array_merge([
+			'&auml;' => 'a', '&#228;' => 'a', '&#x00e4;' => 'a',
+			'&ouml;' => 'o', '&#246;' => 'o', '&#x00f6;' => 'o',
+			'&uuml;' => 'u', '&#252;' => 'u', '&#x00fc;' => 'u',
+			'&szlig;' => 'ss', '&#223;' => 'ss', '&#x00df;' => 'ss',
+		], self::MATCH_REPLACEMENTS, self::INFLECTION_REPLACEMENTS);
+
+		foreach ($replacements as $search => $replace) {
+			$expression = 'REPLACE(' . $expression . ', ' . $db->quote($search) . ', ' . $db->quote($replace) . ')';
+		}
+
+		return $expression;
 	}
 
 	protected function getSupplementalMatchingItemIds(array $terms): array
@@ -351,22 +378,24 @@ class Shops_Model_Search
 		$ids = [];
 
 		$mediaWhere = [];
-		foreach ($terms as $term) $mediaWhere[] = 'LOCATE(' . $db->quote($term) . ", LOWER(COALESCE(title, ''))) > 0";
+		foreach ($terms as $term) $mediaWhere[] = 'LOCATE(' . $db->quote($term) . ', ' . $this->getSqlMatchExpression('title') . ') > 0';
 		$media = $db->select()
 			->distinct()
-			->from('media', ['parentid'])
+			->from('media', ['parentid', 'title', 'url'])
 			->where('module = ?', 'items')
 			->where('controller = ?', 'item')
 			->where('clientid = ?', $clientId)
 			->where('deleted = ?', 0)
 			->where(implode(' OR ', $mediaWhere));
 
-		foreach ($db->fetchCol($media) as $id) $ids[(int)$id] = true;
+		foreach ($db->fetchAll($media) as $row) {
+			if ($this->isDescriptiveMediaTitle($row)) $ids[(int)$row['parentid']] = true;
+		}
 
 		foreach ([['itematrset', 'itematr', 'atrsetid'], ['itemoptset', 'itemopt', 'optsetid']] as [$setTable, $positionTable, $setField]) {
 			$positionWhere = [];
 			foreach ($terms as $term) {
-				$positionWhere[] = 'LOCATE(' . $db->quote($term) . ", LOWER(CONCAT_WS(' ', p.title, p.description, s.title))) > 0";
+				$positionWhere[] = 'LOCATE(' . $db->quote($term) . ', ' . $this->getSqlMatchExpression("CONCAT_WS(' ', p.title, p.description, s.title)") . ') > 0';
 			}
 
 			$positions = $db->select()
@@ -390,18 +419,25 @@ class Shops_Model_Search
 	{
 		$db = Zend_Db_Table::getDefaultAdapter();
 		$title = "LOWER(TRIM(COALESCE(NULLIF(i.shoptitle, ''), i.title)))";
+		$matchTitle = $this->getSqlMatchExpression("TRIM(COALESCE(NULLIF(i.shoptitle, ''), i.title))");
+		$identifiers = $this->getSqlMatchExpression("CONCAT_WS(' ', i.sku, i.manufacturersku, i.gtin)");
+		$headings = $this->getSqlMatchExpression("CONCAT_WS(' ', i.subtitle)");
+		$content = $this->getSqlMatchExpression("CONCAT_WS(' ', i.shopdescriptionshort, i.shopdescription, IF(COALESCE(i.shopdescription, '') = '' OR COALESCE(i.shopdescriptionshort, '') = '', i.description, ''))");
 		$allTerms = [];
 		$score = [];
 
 		foreach ($terms as $term) {
 			$quoted = $db->quote($term);
 			$allTerms[] = 'LOCATE(' . $quoted . ', ' . $this->getItemHaystack() . ') > 0';
-			$score[] = '(CASE WHEN LOWER(TRIM(i.sku)) = ' . $quoted . ' OR ' . $title . ' = ' . $quoted . ' THEN 1000 WHEN LOCATE(' . $quoted . ', LOWER(i.sku)) = 1 OR LOCATE(' . $quoted . ', ' . $title . ') = 1 THEN 500 WHEN LOCATE(' . $quoted . ', ' . $title . ') > 0 THEN 200 ELSE 20 END)';
+			$score[] = '(CASE WHEN LOCATE(' . $quoted . ', ' . $identifiers . ') > 0 THEN 350 WHEN LOCATE(' . $quoted . ', ' . $matchTitle . ') > 0 THEN 300 WHEN LOCATE(' . $quoted . ', ' . $headings . ') > 0 THEN 180 WHEN LOCATE(' . $quoted . ', ' . $content . ') > 0 THEN 55 ELSE 0 END)';
 		}
 
+		$rawQuery = $db->quote($this->normalizedQuery);
+		$matchQuery = $db->quote($this->matchQuery);
+		$baseScore = '(CASE WHEN LOWER(TRIM(i.sku)) = ' . $rawQuery . ' THEN 1400 WHEN ' . $title . ' = ' . $rawQuery . ' THEN 1200 WHEN ' . $matchTitle . ' = ' . $matchQuery . ' THEN 1000 WHEN LOCATE(' . $matchQuery . ', ' . $identifiers . ') = 1 THEN 800 WHEN LOCATE(' . $matchQuery . ', ' . $matchTitle . ') = 1 THEN 750 ELSE 0 END)';
 		$supplementalIds = $this->getSupplementalMatchingItemIds($terms);
-		$supplementalScore = $supplementalIds ? ' + (CASE WHEN i.id IN (' . implode(',', $supplementalIds) . ') THEN 100 ELSE 0 END)' : '';
-		return '(CASE WHEN ' . implode(' AND ', $allTerms) . ' THEN 400 ELSE 0 END) + ' . implode(' + ', $score) . $supplementalScore;
+		$supplementalScore = $supplementalIds ? ' + (CASE WHEN i.id IN (' . implode(',', $supplementalIds) . ') THEN 50 ELSE 0 END)' : '';
+		return $baseScore . ' + (CASE WHEN ' . implode(' AND ', $allTerms) . ' THEN 400 ELSE 0 END) + ' . implode(' + ', $score) . $supplementalScore;
 	}
 
 	protected function getVisibleBlockText(array $blocks): array
@@ -494,37 +530,45 @@ class Shops_Model_Search
 
 	protected function scoreCandidate(array $candidate, string $query, array $terms): int
 	{
+		$rawGroups = [];
 		$groups = [];
 		foreach (['identifiers', 'titles', 'headings', 'content', 'descriptions'] as $group) {
-			$groups[$group] = array_map([self::class, 'normalize'], $candidate[$group] ?? []);
+			$values = array_map([self::class, 'cleanSearchText'], $candidate[$group] ?? []);
+			$rawGroups[$group] = array_map([self::class, 'normalize'], $values);
+			$groups[$group] = array_map([self::class, 'normalizeForMatch'], $values);
 		}
 
 		$score = 0;
 		$matchedTerms = 0;
+		$matchQuery = self::normalizeForMatch($query);
 
-		foreach ($groups['identifiers'] as $value) {
-			if ($value === $query) $score = max($score, 1200);
-			elseif ($query !== '' && str_starts_with($value, $query)) $score = max($score, 700);
+		foreach ($rawGroups['identifiers'] as $index => $value) {
+			if ($value === $query) $score = max($score, 1400);
+			elseif (($groups['identifiers'][$index] ?? '') === $matchQuery) $score = max($score, 1200);
+			elseif ($matchQuery !== '' && str_starts_with($groups['identifiers'][$index] ?? '', $matchQuery)) $score = max($score, 800);
 		}
 
-		foreach ($groups['titles'] as $value) {
-			if ($value === $query) $score = max($score, 1100);
-			elseif ($query !== '' && str_starts_with($value, $query)) $score = max($score, 650);
+		foreach ($rawGroups['titles'] as $index => $value) {
+			if ($value === $query) $score = max($score, 1150);
+			elseif (($groups['titles'][$index] ?? '') === $matchQuery) $score = max($score, 950);
+			elseif ($matchQuery !== '' && str_starts_with($groups['titles'][$index] ?? '', $matchQuery)) $score = max($score, 750);
 		}
 
 		foreach ($terms as $term) {
-			$termMatched = false;
-			foreach (['identifiers' => 280, 'titles' => 220, 'headings' => 150, 'content' => 55, 'descriptions' => 35] as $group => $weight) {
+			$termScore = 0;
+			foreach (['identifiers' => 350, 'titles' => 300, 'headings' => 180, 'content' => 55, 'descriptions' => 35] as $group => $weight) {
 				foreach ($groups[$group] as $value) {
 					if ($value !== '' && str_contains($value, $term)) {
-						$score += $weight;
-						$termMatched = true;
+						$termScore = max($termScore, $weight);
 						break;
 					}
 				}
 			}
 
-			if ($termMatched) $matchedTerms++;
+			if ($termScore > 0) {
+				$score += $termScore;
+				$matchedTerms++;
+			}
 		}
 
 		if ($matchedTerms === count($terms)) $score += 400;
@@ -535,31 +579,68 @@ class Shops_Model_Search
 	{
 		$values = array_merge($candidate['headings'] ?? [], $candidate['content'] ?? [], $candidate['descriptions'] ?? []);
 		$selected = '';
+		$selectedMatches = -1;
 
 		foreach ($values as $value) {
-			$plain = self::cleanText((string)$value);
+			$plain = self::cleanSearchText((string)$value);
 			if ($plain === '') continue;
-			if ($selected === '') $selected = $plain;
-			$normalized = self::normalize($plain);
-			if (array_filter($terms, static fn(string $term): bool => str_contains($normalized, $term))) {
+			$matches = $this->countMatchedTerms($plain, $terms);
+			if ($selected === '' || $matches > $selectedMatches) {
 				$selected = $plain;
-				break;
+				$selectedMatches = $matches;
 			}
 		}
 
 		if ($selected === '') return '';
-		if (mb_strlen($selected, 'UTF-8') <= 220) return $selected;
 
-		$normalized = self::normalize($selected);
-		$position = null;
-		foreach ($terms as $term) {
-			$found = mb_strpos($normalized, $term, 0, 'UTF-8');
-			if ($found !== false && ($position === null || $found < $position)) $position = $found;
+		$sentences = preg_split('/(?<=[.!?])\s+(?=[\p{L}\p{N}])/u', $selected, -1, PREG_SPLIT_NO_EMPTY) ?: [$selected];
+		$bestSentence = '';
+		$bestSentenceMatches = 0;
+		foreach ($sentences as $sentence) {
+			$matches = $this->countMatchedTerms($sentence, $terms);
+			if ($matches > $bestSentenceMatches) {
+				$bestSentence = trim($sentence);
+				$bestSentenceMatches = $matches;
+				if ($matches === count($terms)) break;
+			}
+		}
+		if ($bestSentence !== '') $selected = $bestSentence;
+
+		if (mb_strlen($selected, 'UTF-8') <= 240) return $selected;
+
+		$position = 0;
+		if (preg_match_all('/\S+/u', $selected, $words, PREG_OFFSET_CAPTURE)) {
+			foreach ($words[0] as [$word, $byteOffset]) {
+				$normalized = self::normalizeForMatch($word);
+				if (array_filter($terms, static fn(string $term): bool => str_contains($normalized, $term))) {
+					$position = mb_strlen(substr($selected, 0, $byteOffset), 'UTF-8');
+					break;
+				}
+			}
 		}
 
-		$start = max(0, (int)$position - 70);
-		$excerpt = trim(mb_substr($selected, $start, 220, 'UTF-8'));
-		return ($start > 0 ? '…' : '') . $excerpt . (mb_strlen($selected, 'UTF-8') > $start + 220 ? '…' : '');
+		$length = mb_strlen($selected, 'UTF-8');
+		$start = max(0, $position - 80);
+		while ($start > 0 && !preg_match('/\s/u', mb_substr($selected, $start - 1, 1, 'UTF-8'))) $start--;
+		$end = min($length, $start + 240);
+		while ($end < $length && !preg_match('/\s/u', mb_substr($selected, $end, 1, 'UTF-8'))) $end++;
+		$excerpt = trim(mb_substr($selected, $start, $end - $start, 'UTF-8'));
+		return ($start > 0 ? '…' : '') . $excerpt . ($end < $length ? '…' : '');
+	}
+
+	protected function countMatchedTerms(string $value, array $terms): int
+	{
+		$normalized = self::normalizeForMatch($value);
+		return count(array_filter($terms, static fn(string $term): bool => str_contains($normalized, $term)));
+	}
+
+	protected function isDescriptiveMediaTitle(array $media): bool
+	{
+		$title = self::cleanText((string)($media['title'] ?? ''));
+		if ($title === '' || preg_match('/\.(?:avif|bmp|gif|jpe?g|png|svg|tiff?|webp|pdf)(?:\?.*)?$/iu', $title)) return false;
+
+		$urlPath = parse_url((string)($media['url'] ?? ''), PHP_URL_PATH);
+		return $urlPath === null || $urlPath === '' || strcasecmp($title, basename($urlPath)) !== 0;
 	}
 
 	protected function sortCandidates(array &$candidates): void
@@ -574,19 +655,37 @@ class Shops_Model_Search
 
 	protected function getTerms(string $query): array
 	{
-		$terms = preg_split('/\s+/u', self::normalize($query), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+		$terms = preg_split('/\s+/u', self::normalizeForMatch($query), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 		return array_slice(array_values(array_unique($terms)), 0, 10);
 	}
 
 	public static function cleanText(string $value): string
 	{
 		$value = preg_replace('/\{[^}]+\}/u', ' ', $value);
+		$value = preg_replace('/<[^>]+>/u', ' ', (string)$value);
 		$value = html_entity_decode(strip_tags((string)$value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-		return trim((string)preg_replace('/\s+/u', ' ', $value));
+		$value = preg_replace('/[\p{Cc}\p{Cf}\p{Z}]+/u', ' ', (string)$value);
+		return trim((string)preg_replace('/\s+/u', ' ', (string)$value));
 	}
 
 	public static function normalize(string $value): string
 	{
 		return mb_strtolower(self::cleanText($value), 'UTF-8');
+	}
+
+	public static function normalizeForMatch(string $value): string
+	{
+		$value = strtr(self::normalize($value), self::MATCH_REPLACEMENTS);
+		$value = strtr($value, self::INFLECTION_REPLACEMENTS);
+		$value = preg_replace('/[\p{Pd}_\/\\\\]+/u', '', $value);
+		$value = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', (string)$value);
+		return trim((string)preg_replace('/\s+/u', ' ', (string)$value));
+	}
+
+	public static function cleanSearchText(string $value): string
+	{
+		$value = self::cleanText($value);
+		$value = preg_replace('~(?:^|\s)[^\s]+\.(?:avif|bmp|gif|jpe?g|png|svg|tiff?|webp|pdf)(?=$|[\s,;:!?])~iu', ' ', $value);
+		return trim((string)preg_replace('/\s+/u', ' ', (string)$value));
 	}
 }
