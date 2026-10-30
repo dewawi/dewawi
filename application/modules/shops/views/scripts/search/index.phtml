@@ -1,0 +1,97 @@
+<?php
+
+$search = is_array($this->search ?? null) ? $this->search : [];
+$query = (string)($search['query'] ?? '');
+$type = (string)($search['type'] ?? '');
+$typeLabels = [
+	'page' => $this->translate('SHOPS_SEARCH_TYPE_PAGE'),
+	'category' => $this->translate('SHOPS_SEARCH_TYPE_CATEGORY'),
+	'tag' => $this->translate('SHOPS_SEARCH_TYPE_TAG'),
+	'item' => $this->translate('SHOPS_SEARCH_TYPE_ITEM'),
+];
+
+$searchPath = $this->url([], 'search', true);
+$url = static function(int $page, string $filter = '') use ($query, $searchPath): string {
+	$params = ['q' => $query];
+	if ($filter !== '') $params['type'] = $filter;
+	if ($page > 1) $params['page'] = $page;
+	return $searchPath . '?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+};
+?>
+
+<main class="dw-search-page py-5">
+	<div class="container">
+		<h1><?php echo $this->translate('SHOPS_SEARCH'); ?></h1>
+
+		<form class="dw-search-page__form" action="<?php echo $this->url([], 'search', true); ?>" method="get" role="search">
+			<label class="sr-only" for="search-page-query"><?php echo $this->translate('SHOPS_SEARCH_LABEL'); ?></label>
+			<div class="input-group input-group-lg">
+				<input id="search-page-query" class="form-control" type="search" name="q" value="<?php echo $this->escape($query); ?>" placeholder="Was suchen Sie?" maxlength="100">
+				<div class="input-group-append">
+					<button class="btn btn-primary" type="submit">
+						<span aria-hidden="true">&#128269;</span>
+						<span class="sr-only"><?php echo $this->translate('SHOPS_SEARCH_SUBMIT'); ?></span>
+					</button>
+				</div>
+			</div>
+		</form>
+
+		<?php if ($query === ''): ?>
+			<p class="dw-search-page__message"><?php echo $this->translate('SHOPS_SEARCH_PROMPT'); ?></p>
+		<?php elseif (empty($search['valid'])): ?>
+			<p class="alert alert-warning" role="alert"><?php echo $this->translate('SHOPS_SEARCH_INVALID'); ?></p>
+		<?php else: ?>
+			<p class="dw-search-page__count" aria-live="polite">
+				<?php echo sprintf($this->translate('SHOPS_SEARCH_RESULTS'), (int)$search['total'], $this->escape($query)); ?>
+			</p>
+
+			<?php if (!empty($search['typeCounts'])): ?>
+				<nav class="dw-search-filters" aria-label="<?php echo $this->translate('SHOPS_SEARCH_FILTER'); ?>">
+					<a class="btn btn-sm <?php echo $type === '' ? 'btn-primary' : 'btn-outline-secondary'; ?>" href="<?php echo $this->escape($url(1)); ?>">
+						<?php echo $this->translate('SHOPS_SEARCH_ALL'); ?>
+					</a>
+					<?php foreach ($search['typeCounts'] as $filter => $count): ?>
+						<a class="btn btn-sm <?php echo $type === $filter ? 'btn-primary' : 'btn-outline-secondary'; ?>" href="<?php echo $this->escape($url(1, $filter)); ?>">
+							<?php echo $this->escape($typeLabels[$filter] ?? $filter); ?> (<?php echo (int)$count; ?>)
+						</a>
+					<?php endforeach; ?>
+				</nav>
+			<?php endif; ?>
+
+			<?php if (!empty($search['results'])): ?>
+				<div class="dw-search-results">
+					<?php foreach ($search['results'] as $result): ?>
+						<article class="dw-search-result">
+							<div class="dw-search-result__type"><?php echo $this->escape($typeLabels[$result['type']] ?? $result['type']); ?></div>
+							<h2><a href="<?php echo $this->escape($this->baseUrl($result['url'])); ?>"><?php echo $this->escape($result['title']); ?></a></h2>
+							<?php if (!empty($result['sku'])): ?>
+								<div class="dw-search-result__sku"><?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $this->escape($result['sku']); ?></div>
+							<?php endif; ?>
+							<?php if ($result['excerpt'] !== ''): ?>
+								<p><?php echo $this->escape($result['excerpt']); ?></p>
+							<?php endif; ?>
+						</article>
+					<?php endforeach; ?>
+				</div>
+			<?php else: ?>
+				<p class="alert alert-info" role="status"><?php echo $this->translate('SHOPS_SEARCH_EMPTY'); ?></p>
+			<?php endif; ?>
+
+			<?php if ((int)$search['pages'] > 1): ?>
+				<nav aria-label="<?php echo $this->translate('SHOPS_SEARCH_PAGINATION'); ?>">
+					<ul class="pagination justify-content-center">
+						<?php for ($number = 1; $number <= (int)$search['pages']; $number++): ?>
+							<?php if ($number === 1 || $number === (int)$search['pages'] || abs($number - (int)$search['page']) <= 2): ?>
+								<li class="page-item<?php echo $number === (int)$search['page'] ? ' active' : ''; ?>">
+									<a class="page-link" href="<?php echo $this->escape($url($number, $type)); ?>"<?php echo $number === (int)$search['page'] ? ' aria-current="page"' : ''; ?>><?php echo $number; ?></a>
+								</li>
+							<?php elseif ($number === 2 || $number === (int)$search['pages'] - 1): ?>
+								<li class="page-item disabled" aria-hidden="true"><span class="page-link">…</span></li>
+							<?php endif; ?>
+						<?php endfor; ?>
+					</ul>
+				</nav>
+			<?php endif; ?>
+		<?php endif; ?>
+	</div>
+</main>

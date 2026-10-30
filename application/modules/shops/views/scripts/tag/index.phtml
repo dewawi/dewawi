@@ -1,20 +1,27 @@
 <?php
 $this->title = $this->tag['title'];
 $this->headTitle($this->title);
+$metaDescription = trim(html_entity_decode(strip_tags((string)($this->tag['description'] ?? '')), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+if ($metaDescription !== '') $this->headMeta()->setName('description', mb_substr($metaDescription, 0, 160, 'UTF-8'));
+$hasHeader = !empty($this->tag['header']);
 ?>
 
-<?php if($this->tag['header']) : ?>
+<?php if($hasHeader) : ?>
 	<section id="header" style="position: relative;">
 		<?php echo $this->tag['header']; ?>
 		<div class="header-text">
-			<h1 class="text-center text-white"><?php echo $this->tag['title']; ?></h1>
+			<h1 class="text-center text-white"><?php echo $this->escape($this->tag['title']); ?></h1>
 		</div>
 	</section>
 <?php endif; ?>
 
 	<section id="subcategories" class="py-5">
 		<div class="container">
-			<h2 class="text-center mb-4"><?php echo $this->tag['title']; ?></h2>
+			<?php if($hasHeader) : ?>
+				<h2 class="text-center mb-4"><?php echo $this->escape($this->tag['title']); ?></h2>
+			<?php else : ?>
+				<h1 class="text-center mb-4"><?php echo $this->escape($this->tag['title']); ?></h1>
+			<?php endif; ?>
 			<div class="row">
 				<div class="text-center col-md-12 mb-4">
 					<?php echo $this->tag['description']; ?>

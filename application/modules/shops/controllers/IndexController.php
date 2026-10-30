@@ -5,6 +5,7 @@ class Shops_IndexController extends Shops_Controller_Action
 	public function indexAction()
 	{
 		$this->initSiteLayout();
+		$this->setCanonicalPath('/');
 
 		$pageDb = new Shops_Model_DbTable_Page();
 		$page = $pageDb->getPageByType('home');

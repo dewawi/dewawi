@@ -52,4 +52,18 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 			$this->view->contact = new Shops_Form_Contact();
 		}
 	}
+
+	protected function setCanonicalPath(string $path): void
+	{
+		$siteUrl = rtrim((string)($this->_site['url'] ?? ''), '/');
+
+		if (!filter_var($siteUrl, FILTER_VALIDATE_URL) || !in_array(parse_url($siteUrl, PHP_URL_SCHEME), ['http', 'https'], true)) {
+			return;
+		}
+
+		$this->view->headLink([
+			'rel' => 'canonical',
+			'href' => $siteUrl . '/' . ltrim($path, '/'),
+		]);
+	}
 }

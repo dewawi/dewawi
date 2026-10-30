@@ -17,9 +17,8 @@ if ($parentCategoryId > 0 && isset($this->categories[$parentCategoryId])) {
 
 $this->headTitle($metaTitle !== '' ? $metaTitle : $this->title);
 
-if ($metaDescription !== '') {
-	$this->headMeta()->setName('description', $metaDescription);
-}
+$descriptionSource = $metaDescription !== '' ? $metaDescription : trim(html_entity_decode(strip_tags((string)($category['shortdescription'] ?: $category['description'])), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+if ($descriptionSource !== '') $this->headMeta()->setName('description', mb_substr($descriptionSource, 0, 160, 'UTF-8'));
 
 $categoryMedia = $this->images['categories'][$categoryId] ?? [];
 $parentCategoryMedia = $parentCategoryId > 0 ? ($this->images['categories'][$parentCategoryId] ?? []) : [];
@@ -45,9 +44,15 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 	<section id="header" style="position: relative;">
 		<?php echo $this->category['header']; ?>
 		<div class="header-text">
-			<h1 class="text-center text-white"><?php echo $this->category['subtitle']; ?></h1>
+			<h1 class="text-center text-white"><?php echo $this->escape($this->category['subtitle'] ?: $this->category['title']); ?></h1>
 		</div>
 	</section>
+<?php endif; ?>
+
+<?php if(!$this->category['header']) : ?>
+	<div class="container pt-5">
+		<h1><?php echo $this->escape($this->category['title']); ?></h1>
+	</div>
 <?php endif; ?>
 
 <!-- Display description if the category is a child category -->
@@ -178,7 +183,6 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 							'url' => (string)($this->shop['url'] ?? '') . (string)$itemUrl,
 							'priceCurrency' => (string)$item->currency,
 							'price' => (float)$itemPrice['rawtax'],
-							'availability' => 'https://schema.org/InStock',
 						],
 					];
 

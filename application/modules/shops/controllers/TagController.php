@@ -16,6 +16,9 @@ class Shops_TagController extends Shops_Controller_Action
 			throw new Zend_Controller_Action_Exception('Tag not found', 404);
 		}
 
+		$path = (new Shops_Model_DbTable_Slug())->getPublicPath('tag', (int)$tag['id']);
+		if ($path) $this->setCanonicalPath($path);
+
 		$tagEntityDb = new Shops_Model_DbTable_Tagentity();
 		$tagEntities = $tagEntityDb->getByTagId($id, 'shops', 'category');
 

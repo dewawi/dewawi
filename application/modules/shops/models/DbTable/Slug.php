@@ -4,9 +4,32 @@ class Shops_Model_DbTable_Slug extends DEEC_Model_DbTable_SiteEntity
 {
 	protected $_name = 'slug';
 	protected $_pathCache = [];
+	protected $_slugCache = null;
+
+	public function preloadPaths(): void
+	{
+		if ($this->_slugCache !== null) {
+			return;
+		}
+
+		$this->_slugCache = [];
+
+		foreach ($this->getSlugs() as $row) {
+			$item = $row->toArray();
+			$key = (string)$item['controller'] . ':' . (int)$item['entityid'];
+
+			if (!isset($this->_slugCache[$key])) {
+				$this->_slugCache[$key] = $item;
+			}
+		}
+	}
 
 	public function getEntitySlug(string $controller, int $entityId): ?array
 	{
+		if ($this->_slugCache !== null) {
+			return $this->_slugCache[$controller . ':' . $entityId] ?? null;
+		}
+
 		$row = $this->fetchRow(
 			$this->getPublicSelect()
 				->where('module = ?', 'shops')
@@ -135,11 +158,13 @@ class Shops_Model_DbTable_Slug extends DEEC_Model_DbTable_SiteEntity
 	{
 		switch ($controller) {
 			case 'page':
-				return (bool)(new Shops_Model_DbTable_Page())->getPage($entityId);
+				$page = (new Shops_Model_DbTable_Page())->getPage($entityId);
+				return (bool)$page && (string)($page['type'] ?? '') !== 'home';
 			case 'category':
 				return (bool)(new Shops_Model_DbTable_Category())->getCategory($entityId);
 			case 'item':
-				return (bool)(new Shops_Model_DbTable_Item())->getItem($entityId);
+				$item = (new Shops_Model_DbTable_Item())->getItem($entityId);
+				return (bool)$item && (bool)(new Shops_Model_DbTable_Category())->getCategory((int)$item['shopcatid']);
 			case 'tag':
 				return (bool)(new Shops_Model_DbTable_Tag())->getTag($entityId);
 			case 'inquiry':

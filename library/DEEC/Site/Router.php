@@ -32,6 +32,15 @@ class DEEC_Site_Router
 			)
 		));
 
+		$router->addRoute('search', new Zend_Controller_Router_Route(
+			'search',
+			array(
+				'module' => 'shops',
+				'controller' => 'search',
+				'action' => 'index'
+			)
+		));
+
 		if ($siteContext->hasFeature('contact') || $siteContext->hasFeature('inquiry')) {
 			$router->addRoute('contact_send', new Zend_Controller_Router_Route(
 				'contact/send',

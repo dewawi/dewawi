@@ -7,16 +7,30 @@ $metaDescription = trim((string)($this->page['metadescription'] ?? ''));
 $this->title = $title;
 $this->headTitle($metaTitle !== '' ? $metaTitle : $title);
 
-if ($metaDescription !== '') {
-	$this->headMeta()->setName('description', $metaDescription);
-}
+$descriptionSource = $metaDescription !== '' ? $metaDescription : trim(html_entity_decode(strip_tags((string)($this->page['content'] ?? '')), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+if ($descriptionSource !== '') $this->headMeta()->setName('description', mb_substr($descriptionSource, 0, 160, 'UTF-8'));
 
 $content = (string)($this->page['content'] ?? '');
 $contact = $this->siteContext->hasFeature('contact') ? $this->ContactForm($this->translate('SHOPS_CONTACT_FORM')) : '';
 $content = str_replace('{contact}', $contact, $content);
 
 $pageblocks = is_array($this->pageblocks ?? null) ? $this->pageblocks : [];
+$hasHero = false;
+
+foreach ($pageblocks as $pageblock) {
+	$data = json_decode((string)($pageblock['data'] ?? ''), true);
+	if (($pageblock['type'] ?? '') === 'hero' && is_array($data) && trim((string)($data['title'] ?? '')) !== '') {
+		$hasHero = true;
+		break;
+	}
+}
 ?>
+
+<?php if ($pageblocks && !$hasHero && $title !== ''): ?>
+	<div class="container pt-5">
+		<h1><?php echo $this->escape($title); ?></h1>
+	</div>
+<?php endif; ?>
 
 <?php if ($pageblocks): ?>
 	<?php echo $this->RenderPageBlocks($pageblocks); ?>

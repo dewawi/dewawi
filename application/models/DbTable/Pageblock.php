@@ -26,6 +26,28 @@ class Application_Model_DbTable_Pageblock extends DEEC_Model_DbTable_Entity
 		return $this->fetchAll($select)->toArray();
 	}
 
+	public function getPublicBlocksByPageIds(array $pageIds): array
+	{
+		$pageIds = array_values(array_unique(array_filter(array_map('intval', $pageIds), static function(int $id): bool {
+			return $id > 0;
+		})));
+
+		if (!$pageIds) {
+			return [];
+		}
+
+		return $this->fetchAll(
+			$this->select()
+				->where('pageid IN (?)', $pageIds)
+				->where('clientid = ?', $this->getClientId())
+				->where('activated = ?', 1)
+				->where('deleted = ?', 0)
+				->order('pageid ASC')
+				->order('ordering ASC')
+				->order('id ASC')
+		)->toArray();
+	}
+
 	protected function getOrderingContextFields(array $row): array
 	{
 		return ['pageid', 'parentid'];

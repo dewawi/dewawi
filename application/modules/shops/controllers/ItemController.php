@@ -16,6 +16,9 @@ class Shops_ItemController extends Shops_Controller_Action
 			throw new Zend_Controller_Action_Exception('Item not found', 404);
 		}
 
+		$path = (new Shops_Model_DbTable_Slug())->getPublicPath('item', (int)$item['id']);
+		if ($path) $this->setCanonicalPath($path);
+
 		$currency = $this->_helper->Currency->getCurrency($item['currency'], 'USE_SYMBOL');
 
 		if ($item['taxid']) {

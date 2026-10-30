@@ -9,7 +9,10 @@ class Shops_SitemapController extends Shops_Controller_Action
 
 		$this->getResponse()->setHeader('Content-Type', 'application/xml; charset=UTF-8', true);
 
-		$baseUrl = rtrim($this->getRequest()->getScheme() . '://' . $this->getRequest()->getHttpHost(), '/');
+		$siteUrl = rtrim((string)($this->_site['url'] ?? ''), '/');
+		$baseUrl = filter_var($siteUrl, FILTER_VALIDATE_URL) && in_array(parse_url($siteUrl, PHP_URL_SCHEME), ['http', 'https'], true)
+			? $siteUrl
+			: rtrim($this->getRequest()->getScheme() . '://' . $this->getRequest()->getHttpHost(), '/');
 		$slugDb = new Shops_Model_DbTable_Slug();
 		$slugs = $slugDb->getSlugs();
 
@@ -25,6 +28,10 @@ class Shops_SitemapController extends Shops_Controller_Action
 			}
 
 			if (!$this->_siteContext->hasFeature('catalog') && in_array($slug['controller'], array('category', 'item', 'tag'), true)) {
+				continue;
+			}
+
+			if ($slug['controller'] === 'inquiry' && !$this->_siteContext->hasFeature('inquiry')) {
 				continue;
 			}
 

@@ -62,6 +62,19 @@ echo $this->doctype();
 						<?php endif; ?>
 					</ul>
 
+					<form class="dw-header-search" action="<?php echo $this->url([], 'search', true); ?>" method="get" role="search">
+						<label class="sr-only" for="header-search-query"><?php echo $this->translate('SHOPS_SEARCH_LABEL'); ?></label>
+						<div class="input-group">
+							<input id="header-search-query" class="form-control" type="search" name="q" value="<?php echo $this->escape((string)($this->search['query'] ?? '')); ?>" placeholder="Was suchen Sie?" maxlength="100">
+							<div class="input-group-append">
+								<button class="btn btn-outline-secondary" type="submit">
+									<span aria-hidden="true">&#128269;</span>
+									<span class="sr-only"><?php echo $this->translate('SHOPS_SEARCH_SUBMIT'); ?></span>
+								</button>
+							</div>
+						</div>
+					</form>
+
 					<?php if($headerActions !== '' || $this->siteContext->hasFeature('cart')) : ?>
 						<ul class="navbar-nav dw-header-actions">
 							<?php echo $headerActions; ?>

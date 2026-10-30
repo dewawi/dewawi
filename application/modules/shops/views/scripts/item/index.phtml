@@ -12,6 +12,8 @@ $previewImage = $itemImages[0] ?? null;
 
 $this->title = $itemTitle;
 $this->headTitle($itemTitle);
+$metaDescription = trim(html_entity_decode(strip_tags((string)($item['shopdescriptionshort'] ?: ($item['shopdescription'] ?: $item['description']))), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+if ($metaDescription !== '') $this->headMeta()->setName('description', mb_substr($metaDescription, 0, 160, 'UTF-8'));
 
 $hasSpecial = !empty($this->prices['rawspecialprice']);
 $base = (float)($this->prices['raw'] ?? 0);
@@ -34,7 +36,6 @@ $productSchema = [
 		'url' => (string)($this->shop['url'] ?? '') . (string)$itemUrl,
 		'priceCurrency' => (string)($item['currency'] ?? ''),
 		'price' => (float)$this->prices['rawtax'],
-		'availability' => 'https://schema.org/InStock',
 	],
 ];
 
@@ -57,7 +58,7 @@ if ($manufacturer !== '') {
 	<div class="container">
 		<div class="row">
 			<div class="col-md-12 mb-4">
-				<h2><?php echo $this->escape($this->item['title']); ?></h2>
+				<h1><?php echo $this->escape($this->item['title']); ?></h1>
 			</div>
 			<div class="col-md-6 mb-4">
 				<div class="main-image-wrapper">

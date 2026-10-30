@@ -15,6 +15,9 @@ class Shops_PageController extends Shops_Controller_Action
 			throw new Zend_Controller_Action_Exception('Page not found', 404);
 		}
 
+		$path = (new Shops_Model_DbTable_Slug())->getPublicPath('page', (int)$page['id']);
+		if ($path) $this->setCanonicalPath($path);
+
 		$pageblockDb = new Application_Model_DbTable_Pageblock();
 		$pageblockDb->setClientId($this->_siteContext->getClientId());
 
