@@ -387,7 +387,7 @@ $(document).ready(function(){
 
 	$(document).on('input', '.edit input, .edit textarea, .dw-positions input, .dw-positions textarea', function () {
 		var $field = $(this);
-		if (isSelectionField($field) || this.name === 'ordering' || $field.closest('form').is('[data-autosave="false"]') || /^(file|media|subfolder)(\[\])?$/.test(this.name)) return;
+		if ($field.data('autocomplete-skip-autosave') || isSelectionField($field) || this.name === 'ordering' || $field.closest('form').is('[data-autosave="false"]') || /^(file|media|subfolder)(\[\])?$/.test(this.name)) return;
 		$field.attr('data-autosave-unsaved', 'true');
 		Dewawi.setDirty(true);
 	});
@@ -395,6 +395,10 @@ $(document).ready(function(){
 	//Handle sub entities
 	$('.dw-positions').on('change', 'input, textarea, select', function() {
 		var $field = $(this);
+
+		if ($field.data('autocomplete-skip-autosave')) {
+			return;
+		}
 
 		if (isSelectionField($field)) {
 			return;

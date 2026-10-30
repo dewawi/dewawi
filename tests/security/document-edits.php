@@ -240,6 +240,7 @@ foreach ($modules as $module => $documents) {
             checkDocumentRoute(false, $module, $childController, 'edit', ['parent' => $document, 'parentid' => 2, 'id' => 11], ['title' => 'Draft', 'parentid' => 9]);
             checkDocumentRoute(false, $module, $childController, 'edit', ['parent' => $document, 'parentid' => 2, 'id' => 11], ['title' => 'Draft', 'clientid' => 8]);
         }
+        checkDocumentRoute(false, $module, 'position', 'edit', ['parent' => $document, 'parentid' => 2], ['search-position' => '112t']);
         checkDocumentRoute(false, $module, 'position', 'sort', ['parent' => $document, 'parentid' => 2, 'id' => 10], ['id' => 11, 'ordering' => 2]);
         checkDocumentRoute(false, $module, 'position', 'delete', ['parent' => $document, 'parentid' => 2], ['id' => [11, 10]]);
         checkDocumentRoute(false, $module, 'position', 'delete', ['parent' => $document, 'parentid' => 2], ['id' => [11, 15]]);

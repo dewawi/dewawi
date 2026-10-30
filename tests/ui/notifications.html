@@ -685,7 +685,8 @@ $(function() {
     $('#document-fixture-form').removeAttr('data-autosave').html('<input id="auto-a" class="dw-input" name="subject" value="Subject" aria-describedby="auto-help" aria-busy="false"><span id="auto-help">Help</span><input id="auto-b" class="dw-input" name="reference" value="Reference">');
     $('#document-fixture-form').append($positions);
     $('#autosave-positions').attr('data-parent', controller).data('parent', controller).html(
-      '<section class="dw-position-set" data-setid="1"><input id="auto-group" class="dw-input" name="title" value="Group" data-controller="positionset" data-id="1">' +
+      '<section class="dw-position-set" data-setid="1"><input id="auto-position-search" class="autocomplete autocomplete--position" name="search-position" data-autocomplete-skip-autosave="1">' +
+      '<input id="auto-group" class="dw-input" name="title" value="Group" data-controller="positionset" data-id="1">' +
       '<button type="button" id="pos-add" class="dw-btn" data-action="add-position" aria-busy="false"><span>Add</span></button>' +
       '<button type="button" id="pos-copy" class="dw-btn" data-action="copy-selected-position">Copy selected</button><button type="button" id="pos-delete" class="dw-btn" data-action="delete-selected-position">Delete selected</button>' +
       '<article class="dw-position-card" data-id="10" data-setid="1"><input class="position-check" type="checkbox" name="ids[]" value="10" checked><input id="auto-price" class="dw-input" name="price" value="10"><span class="total">10</span></article>' +
@@ -723,6 +724,9 @@ $(function() {
         check(isDirty && $('#auto-a').next('.dw-field-error').text() === dwMessages.MESSAGES_CHANGE_STATUS_UNKNOWN && $('#auto-a').attr('aria-busy') === 'false', 'Network/parse error lost field feedback or invented success');
       });
       saveError = null; saveResponse = {ok: true}; $('#auto-a').trigger('change');
+      calls = []; $('#auto-position-search').val('112t').trigger('input').trigger('change');
+      clearTimeout($('#auto-position-search').data('autocomplete-timer'));
+      check(!calls.length && !isDirty && !$('#auto-position-search').is('[data-autosave-unsaved]'), 'Position autocomplete triggered an edit without a position ID');
       calls = []; $('#auto-price').val('12').trigger('change');
       check(calls.length === 1 && calls[0].options.async === false && calls[0].options.data.price === '12' && calls[0].options.url.indexOf('/position/edit/id/10/') !== -1, 'Position field saved twice through bubbling');
       calls = []; var groupResult = {ok: true, title: 'Changed group', calculation: {subtotal: '20', total: '24', taxes: {}}, reloadPositions: false}; saveResponse = groupResult;
