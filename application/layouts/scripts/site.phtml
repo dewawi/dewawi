@@ -10,6 +10,10 @@ $theme = $this->siteContext->getTheme();
 $themeFile = BASE_PATH . '/css/themes/' . $theme . '.css';
 $activeTheme = $theme !== 'default' && is_file($themeFile) ? $theme : 'default';
 $home = $this->controller === 'index' && $this->action === 'index';
+$hasAnalytics = $this->siteContext->hasAnalytics();
+$analyticsConsent = $this->siteContext->getAnalyticsConsentState();
+$analyticsAllowed = $this->siteContext->canLoadAnalytics();
+$consentReturn = (string)($_SERVER['REQUEST_URI'] ?? '/');
 
 $headerNavigation = '';
 $headerActions = '';
@@ -133,12 +137,41 @@ echo $this->doctype();
 			<p><?php echo $this->shop['footer']; ?></p>
 			<p><?php echo $this->translate('SHOPS_FOOTER_LEGAL_NOTICE'); ?></p>
 			<p><?php echo $this->translate('SHOPS_FOOTER_COOKIE_NOTICE'); ?></p>
+			<?php if($hasAnalytics) : ?>
+				<button class="btn btn-link text-white dw-consent-settings" type="button" data-consent-open aria-controls="site-consent-panel" aria-expanded="<?php echo $analyticsConsent === null ? 'true' : 'false'; ?>">
+					<?php echo $this->translate('SHOPS_CONSENT_SETTINGS'); ?>
+				</button>
+			<?php endif; ?>
 		</div>
 	</footer>
+
+	<?php if($hasAnalytics) : ?>
+		<section id="site-consent-panel" class="dw-consent-panel" role="dialog" aria-modal="false" aria-labelledby="site-consent-title" aria-describedby="site-consent-description" tabindex="-1" data-consent-panel data-consent-state="<?php echo $this->escape((string)($analyticsConsent ?? 'unknown')); ?>"<?php echo $analyticsConsent === null ? ' data-consent-initial="true"' : ' hidden'; ?>>
+			<div class="dw-consent-panel__content">
+				<h2 id="site-consent-title" class="h5"><?php echo $this->translate('SHOPS_CONSENT_TITLE'); ?></h2>
+				<p id="site-consent-description"><?php echo $this->translate('SHOPS_CONSENT_DESCRIPTION'); ?></p>
+				<?php if($analyticsConsent !== null) : ?>
+					<p class="dw-consent-panel__status" role="status">
+						<?php echo $this->translate($analyticsConsent === 'accepted' ? 'SHOPS_CONSENT_STATUS_ACCEPTED' : 'SHOPS_CONSENT_STATUS_DECLINED'); ?>
+					</p>
+				<?php endif; ?>
+				<form action="<?php echo $this->url([], 'site_consent', true); ?>" method="post">
+					<input type="hidden" name="return" value="<?php echo $this->escape($consentReturn); ?>">
+					<div class="dw-consent-panel__actions">
+						<button class="btn btn-outline-secondary" type="submit" name="consent" value="declined"><?php echo $this->translate('SHOPS_CONSENT_DECLINE'); ?></button>
+						<button class="btn btn-primary" type="submit" name="consent" value="accepted"><?php echo $this->translate('SHOPS_CONSENT_ACCEPT'); ?></button>
+						<?php if($analyticsConsent !== null) : ?>
+							<button class="btn btn-link" type="button" data-consent-close><?php echo $this->translate('SHOPS_CLOSE'); ?></button>
+						<?php endif; ?>
+					</div>
+				</form>
+			</div>
+		</section>
+	<?php endif; ?>
 
 	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
 	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/shops.js"></script>
-	<?php if($this->siteContext->isIndexable()) echo $shop['analytics'] ?? ''; ?>
+	<?php if($analyticsAllowed) echo $shop['analytics']; ?>
 </body>
 </html>

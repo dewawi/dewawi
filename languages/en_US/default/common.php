@@ -66,5 +66,13 @@
 	'SHOPS_SLIDER_PAUSE' => 'Pause slider',
 	'SHOPS_SLIDER_PLAY' => 'Play slider',
 	'SHOPS_PREVIOUS' => 'Previous slide',
-	'SHOPS_NEXT' => 'Next slide'
+	'SHOPS_NEXT' => 'Next slide',
+	'SHOPS_FOOTER_COOKIE_NOTICE' => 'Technically necessary cookies provide the basic functions of this website. Optional analytics services are loaded only after your consent.',
+	'SHOPS_CONSENT_SETTINGS' => 'Cookie settings',
+	'SHOPS_CONSENT_TITLE' => 'Privacy settings',
+	'SHOPS_CONSENT_DESCRIPTION' => 'May we load optional analytics services? Your choice is voluntary and can be changed at any time through the cookie settings.',
+	'SHOPS_CONSENT_ACCEPT' => 'Allow analytics',
+	'SHOPS_CONSENT_DECLINE' => 'Necessary cookies only',
+	'SHOPS_CONSENT_STATUS_ACCEPTED' => 'Optional analytics services are currently allowed.',
+	'SHOPS_CONSENT_STATUS_DECLINED' => 'Optional analytics services are currently not allowed.'
 );

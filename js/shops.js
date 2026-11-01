@@ -320,6 +320,32 @@ $(document).ready(function () {
 		$(this).find('.dw-carousel-indicator').removeAttr('aria-current').filter('.active').attr('aria-current', 'true');
 	});
 
+	let consentOpener = null;
+	$(document).on('click', '[data-consent-open]', function () {
+		consentOpener = this;
+		$(this).attr('aria-expanded', 'true');
+		$('[data-consent-panel]').prop('hidden', false).trigger('focus');
+	});
+
+	function closeConsentPanel() {
+		$('[data-consent-panel]').prop('hidden', true);
+		$('[data-consent-open]').attr('aria-expanded', 'false');
+		if (consentOpener) $(consentOpener).trigger('focus');
+	}
+
+	$(document).on('click', '[data-consent-close]', function () {
+		closeConsentPanel();
+	});
+
+	$(document).on('keydown', '[data-consent-panel]:not([data-consent-initial="true"])', function (event) {
+		if (event.key !== 'Escape') return;
+		event.preventDefault();
+		closeConsentPanel();
+	});
+
+	const $initialConsent = $('[data-consent-panel][data-consent-initial="true"]');
+	if ($initialConsent.length) setTimeout(function () { $initialConsent.trigger('focus'); }, 0);
+
 	enhancePublicForms(document);
 });
 

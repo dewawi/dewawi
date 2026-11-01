@@ -2,6 +2,8 @@
 
 class DEEC_Site_Context
 {
+	public const ANALYTICS_CONSENT_VERSION = 1;
+
 	protected $site = array();
 	protected $domain = array();
 	protected $features = array();
@@ -66,6 +68,47 @@ class DEEC_Site_Context
 		$theme = strtolower(trim((string)($this->site['theme'] ?? '')));
 
 		return $theme !== '' && preg_match('/^[a-z0-9_-]+$/', $theme) ? $theme : 'default';
+	}
+
+	public function hasAnalytics(): bool
+	{
+		return trim((string)($this->site['analytics'] ?? '')) !== '';
+	}
+
+	public function getAnalyticsConsentCookieName(): string
+	{
+		return 'dw_site_consent_' . $this->getClientId() . '_' . $this->getSiteId();
+	}
+
+	public function getAnalyticsConsentValue(string $state): ?string
+	{
+		if ($this->getClientId() <= 0 || $this->getSiteId() <= 0) return null;
+		if (!in_array($state, ['accepted', 'declined'], true)) return null;
+
+		return self::ANALYTICS_CONSENT_VERSION . ':' . $state . ':' . $this->getClientId() . ':' . $this->getSiteId();
+	}
+
+	public function getAnalyticsConsentState(?array $cookies = null): ?string
+	{
+		$cookies = $cookies ?? $_COOKIE;
+		$value = (string)($cookies[$this->getAnalyticsConsentCookieName()] ?? '');
+
+		foreach (['accepted', 'declined'] as $state) {
+			$expected = $this->getAnalyticsConsentValue($state);
+			if ($expected !== null && hash_equals($expected, $value)) return $state;
+		}
+
+		return null;
+	}
+
+	public function canLoadAnalytics(?array $cookies = null, ?string $environment = null): bool
+	{
+		$environment = $environment ?? (defined('APPLICATION_ENV') ? APPLICATION_ENV : 'production');
+
+		return $environment === 'production'
+			&& $this->isIndexable()
+			&& $this->hasAnalytics()
+			&& $this->getAnalyticsConsentState($cookies) === 'accepted';
 	}
 
 	public function hasFeature($featureKey)

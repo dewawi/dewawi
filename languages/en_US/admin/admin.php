@@ -24,6 +24,8 @@
 	'ADMIN_DESIGN' => 'Design',
 	'ADMIN_THEME' => 'Theme',
 	'ADMIN_THEME_INFO' => 'Theme filename in css/themes without the extension. The default theme is used when the file is missing.',
+	'ADMIN_ANALYTICS' => 'Analytics code',
+	'ADMIN_ANALYTICS_INFO' => 'Optional analytics code. The public website renders it only after valid consent and only in an indexable production environment.',
 	'ADMIN_DELIVERY' => 'Lieferung',
 	'ADMIN_PAYMENT' => 'Zahlung',
 	'ADMIN_SYSTEM' => 'System',

@@ -112,7 +112,40 @@ foreach (['layout.phtml', 'plain.phtml', 'site.phtml'] as $layout) {
 
 $siteLayout = file_get_contents($root . '/application/layouts/scripts/site.phtml');
 checkBaseline(str_contains($siteLayout, "setName('robots', 'noindex, nofollow')"), 'Public noindex meta handling is missing');
-checkBaseline(str_contains($siteLayout, 'if($this->siteContext->isIndexable())'), 'Analytics is not gated by site indexability');
+checkBaseline(str_contains($siteLayout, '$analyticsAllowed = $this->siteContext->canLoadAnalytics()'), 'Analytics is not gated by the consent context');
+checkBaseline(str_contains($siteLayout, 'if($analyticsAllowed)') && !str_contains($siteLayout, 'if($this->siteContext->isIndexable()) echo'), 'Analytics bypasses consent gating');
+checkBaseline(str_contains($siteLayout, 'data-consent-panel') && str_contains($siteLayout, "'site_consent'"), 'The public consent controls are missing');
+$shopTranslations = file_get_contents($root . '/languages/de_DE/shops/shops.php');
+checkBaseline(!str_contains($shopTranslations, 'Mit der Nutzung unserer Website stimmen Sie'), 'The legacy implied-consent notice remains in the translations');
+checkBaseline(str_contains($shopTranslations, "'SHOPS_CONSENT_ACCEPT'") && str_contains($shopTranslations, "'SHOPS_CONSENT_DECLINE'"), 'Consent choices are not translated');
+checkBaseline(str_contains($shopForm, "'description' => 'ADMIN_ANALYTICS_INFO'"), 'The analytics configuration lacks a consent explanation');
+
+$consentSite = ['id' => 7, 'clientid' => 3, 'analytics' => '<script src="/analytics.js"></script>'];
+$consentContext = new DEEC_Site_Context($consentSite, ['indexable' => true]);
+$consentCookie = $consentContext->getAnalyticsConsentCookieName();
+$accepted = $consentContext->getAnalyticsConsentValue('accepted');
+$declined = $consentContext->getAnalyticsConsentValue('declined');
+checkBaseline($consentCookie === 'dw_site_consent_3_7', 'Consent cookie is not isolated by client and site');
+checkBaseline($accepted === '1:accepted:3:7' && $declined === '1:declined:3:7', 'Consent values are not versioned and site-bound');
+checkBaseline($consentContext->getAnalyticsConsentState([]) === null, 'Missing consent is treated as accepted');
+checkBaseline($consentContext->getAnalyticsConsentState([$consentCookie => $accepted]) === 'accepted', 'Valid acceptance is not recognized');
+checkBaseline($consentContext->getAnalyticsConsentState([$consentCookie => $declined]) === 'declined', 'Valid refusal is not recognized');
+checkBaseline((new DEEC_Site_Context(['analytics' => 'configured'], ['indexable' => true]))->getAnalyticsConsentValue('accepted') === null, 'Unscoped consent can be stored');
+foreach (['invalid', '2:accepted:3:7', '1:accepted:3:8', '1:accepted:4:7'] as $value) {
+	checkBaseline($consentContext->getAnalyticsConsentState([$consentCookie => $value]) === null, 'Malformed or foreign consent is accepted: ' . $value);
+}
+checkBaseline($consentContext->canLoadAnalytics([$consentCookie => $accepted], 'production'), 'Accepted production analytics is blocked');
+checkBaseline(!$consentContext->canLoadAnalytics([$consentCookie => $declined], 'production'), 'Declined analytics is loaded');
+checkBaseline(!$consentContext->canLoadAnalytics([$consentCookie => $accepted], 'development'), 'Development analytics is loaded');
+checkBaseline(!$consentContext->canLoadAnalytics([$consentCookie => $accepted], 'staging'), 'Staging analytics is loaded');
+checkBaseline(!(new DEEC_Site_Context($consentSite, ['indexable' => false]))->canLoadAnalytics([$consentCookie => $accepted], 'production'), 'Non-indexable analytics is loaded');
+checkBaseline(!(new DEEC_Site_Context(['id' => 7, 'clientid' => 3], ['indexable' => true]))->canLoadAnalytics([$consentCookie => $accepted], 'production'), 'Empty analytics configuration is treated as active');
+
+$consentController = file_get_contents($root . '/application/modules/shops/controllers/ConsentController.php');
+checkBaseline(str_contains($consentController, 'isPost()') && str_contains($consentController, 'isSameOriginRequest()'), 'Consent writes are not restricted to same-origin POST requests');
+checkBaseline(str_contains($consentController, "'httponly' => true") && str_contains($consentController, "'samesite' => 'Lax'"), 'Consent cookie security attributes are missing');
+checkBaseline(str_contains($consentController, "'secure' => \$secure") && str_contains($consentController, "'path' => \$this->cookiePath()"), 'Consent cookie transport or path scope is missing');
+checkBaseline(str_contains($consentController, "preg_match('~^/(?!/)[^\\r\\n]*$~D'"), 'Consent return path is not constrained locally');
 
 $siteController = file_get_contents($root . '/application/modules/shops/controllers/Action.php');
 checkBaseline(str_contains($siteController, 'if (!$this->_siteContext->isIndexable())'), 'Non-indexable sites can emit canonical links');

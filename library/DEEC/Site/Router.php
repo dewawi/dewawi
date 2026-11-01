@@ -8,7 +8,7 @@ class DEEC_Site_Router
 
 		return in_array($segment, [
 			'robots.txt', 'sitemap.xml', 'search', 'contact', 'inquiry', 'cart',
-			'checkout', 'products-de.xml', 'product',
+			'checkout', 'cookie-consent', 'products-de.xml', 'product',
 		], true);
 	}
 
@@ -69,6 +69,15 @@ class DEEC_Site_Router
 				'module' => 'shops',
 				'controller' => 'search',
 				'action' => 'index'
+			)
+		));
+
+		$router->addRoute('site_consent', new Zend_Controller_Router_Route(
+			'cookie-consent',
+			array(
+				'module' => 'shops',
+				'controller' => 'consent',
+				'action' => 'save'
 			)
 		));
 

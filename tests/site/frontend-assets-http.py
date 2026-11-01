@@ -83,6 +83,12 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if path == "/js/shops.js":
             self.send_body((ROOT / "js/shops.js").read_bytes(), "application/javascript")
             return
+        if path == "/tracking.js":
+            self.send_body(b"window.consentTrackingLoaded=true;", "application/javascript")
+            return
+        if path == "/consent-fixture":
+            self.send_body(self.consent_fixture(parsed).encode(), "text/html; charset=utf-8")
+            return
         if path == "/checkout":
             self.send_body(b'<!doctype html><html><body><div id="checkout-result">Checkout</div></body></html>', "text/html; charset=utf-8")
             return
@@ -111,8 +117,25 @@ class FixtureHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         length = int(self.headers.get("Content-Length", "0"))
-        self.rfile.read(length)
-        path = urllib.parse.urlsplit(self.path).path
+        body = self.rfile.read(length)
+        parsed = urllib.parse.urlsplit(self.path)
+        path = parsed.path
+        if path == "/cookie-consent-fixture":
+            query = urllib.parse.parse_qs(parsed.query)
+            form = urllib.parse.parse_qs(body.decode())
+            client = int(query.get("client", ["3"])[0])
+            shop = int(query.get("shop", ["7"])[0])
+            consent = form.get("consent", [""])[0]
+            return_path = form.get("return", ["/"])[0]
+            if consent not in {"accepted", "declined"} or not re.match(r"^/(?!/)[^\r\n]*$", return_path):
+                self.send_body(b"Invalid consent", "text/plain", 400)
+                return
+            self.send_response(303)
+            self.send_header("Location", return_path)
+            self.send_header("Set-Cookie", f"dw_site_consent_{client}_{shop}=1:{consent}:{client}:{shop}; Path=/; HttpOnly; SameSite=Lax")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            return
         if path == "/cart/add":
             self.send_json({
                 "success": True,
@@ -147,6 +170,41 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self.send_json({"status": "ok", "formHtml": '<main><div id="form-container" data-saved="true"><div class="dw-field"><label for="saved-field">Saved</label><input id="saved-field" class="is-invalid"><div class="dw-field__error">Check field</div></div></div></main>'})
             return
         self.send_json({"success": False}, 404)
+
+    def consent_fixture(self, parsed: urllib.parse.SplitResult) -> str:
+        query = urllib.parse.parse_qs(parsed.query)
+        client = int(query.get("client", ["3"])[0])
+        shop = int(query.get("shop", ["7"])[0])
+        environment = query.get("env", ["production"])[0]
+        indexable = query.get("indexable", ["1"])[0] == "1"
+        analytics = query.get("analytics", ["1"])[0] == "1"
+        cookie_name = f"dw_site_consent_{client}_{shop}"
+        cookies = {}
+        for part in self.headers.get("Cookie", "").split(";"):
+            if "=" in part:
+                name, value = part.strip().split("=", 1)
+                cookies[name] = value
+        state = None
+        for choice in ("accepted", "declined"):
+            if cookies.get(cookie_name) == f"1:{choice}:{client}:{shop}":
+                state = choice
+        return_path = parsed.path + ("?" + parsed.query if parsed.query else "")
+        action = f"/cookie-consent-fixture?client={client}&shop={shop}"
+        tracking = '<script src="/tracking.js"></script>' if analytics and indexable and environment == "production" and state == "accepted" else ""
+        status = "" if state is None else f'<p class="dw-consent-panel__status" role="status">Analytics {state}</p>'
+        close = "" if state is None else '<button class="btn btn-link" type="button" data-consent-close>Close</button>'
+        hidden = "" if state is None else " hidden"
+        initial = ' data-consent-initial="true"' if state is None else ""
+        return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consent fixture</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/assets/bootstrap.min.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body class="dw-theme-default" data-consent-state="{state or 'unknown'}"><main id="main-content"><h1>Consent fixture</h1><a id="shop-cart" href="/cart">Cart</a><a id="shop-checkout" href="/checkout">Checkout</a></main>
+<footer><nav aria-label="Footer navigation"><button class="btn btn-link text-white dw-consent-settings" type="button" data-consent-open aria-controls="site-consent-panel" aria-expanded="{'true' if state is None else 'false'}">Cookie settings</button></nav></footer>
+<section id="site-consent-panel" class="dw-consent-panel" role="dialog" aria-modal="false" aria-labelledby="site-consent-title" aria-describedby="site-consent-description" tabindex="-1" data-consent-panel data-consent-state="{state or 'unknown'}"{initial}{hidden}><div class="dw-consent-panel__content">
+<h2 id="site-consent-title" class="h5">Privacy settings</h2><p id="site-consent-description">May we load optional analytics services?</p>{status}
+<form action="{action}" method="post"><input type="hidden" name="return" value="{html.escape(return_path)}"><div class="dw-consent-panel__actions">
+<button class="btn btn-outline-secondary" type="submit" name="consent" value="declined">Necessary cookies only</button><button class="btn btn-primary" type="submit" name="consent" value="accepted">Allow analytics</button>{close}
+</div></form></div></section>
+<script src="/assets/jquery.min.js"></script><script src="/assets/bootstrap.bundle.min.js"></script><script src="/js/shops.js"></script>{tracking}</body></html>"""
 
     def fixture_page(self, path: str, manual: bool = False) -> str:
         mode = "cms" if path == "/cms/" else "home"

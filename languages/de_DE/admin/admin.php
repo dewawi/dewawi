@@ -17,6 +17,7 @@
 	'ADMIN_CONFIG_TRACKING' => 'Tracking',
 	'ADMIN_FOOTER' => 'Fußzeile',
 	'ADMIN_ANALYTICS' => 'Analytics-Code',
+	'ADMIN_ANALYTICS_INFO' => 'Optionaler Statistik-Code. Die öffentliche Website gibt ihn nur nach gültiger Einwilligung und ausschließlich in einer indexierbaren Produktionsumgebung aus.',
 	'ADMIN_SMTP_HOST' => 'SMTP-Server',
 	'ADMIN_SMTP_PORT' => 'Port',
 	'ADMIN_SMTP_AUTH' => 'Authentifizierung',

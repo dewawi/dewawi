@@ -192,6 +192,7 @@ class Admin_Form_Shop extends DEEC_Form
 			'name' => 'analytics',
 			'type' => 'textarea',
 			'label' => 'ADMIN_ANALYTICS',
+			'description' => 'ADMIN_ANALYTICS_INFO',
 			'format' => ['type' => 'string'],
 			'attribs' => ['rows' => 12],
 			'tab' => 'settings',

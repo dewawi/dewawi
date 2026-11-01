@@ -141,6 +141,12 @@ class WebDriver:
         features = [{"name": "prefers-reduced-motion", "value": "reduce"}] if enabled else []
         self.command("POST", "/goog/cdp/execute", {"cmd": "Emulation.setEmulatedMedia", "params": {"features": features}})
 
+    def cookies(self) -> list[dict]:
+        return self.command("GET", "/cookie")
+
+    def add_cookie(self, name: str, value: str) -> None:
+        self.command("POST", "/cookie", {"cookie": {"name": name, "value": value, "path": "/", "sameSite": "Lax"}})
+
     def close(self) -> None:
         if self.session:
             try:
@@ -273,6 +279,46 @@ def main() -> int:
         driver.navigate(origin + "/?manual=1&motion=reduce")
         check(driver.execute("return document.querySelector('[data-carousel-toggle]').getAttribute('data-paused')==='true'&&document.querySelector('[data-carousel-toggle]').textContent.trim()==='Play'"), "Reduced motion did not pause automatic carousel", checks)
         check(driver.execute("return parseFloat(getComputedStyle(document.querySelector('.carousel-item')).transitionDuration)<=0.001"), "Reduced-motion CSS did not suppress transitions", checks)
+
+        driver.reduced_motion(False)
+        driver.emulate_viewport(375)
+        consent_url = origin + "/consent-fixture?client=3&shop=7&env=production"
+        driver.navigate(consent_url)
+        check(driver.execute("return document.body.dataset.consentState==='unknown'&&!document.querySelector('[data-consent-panel]').hidden&&document.querySelector('[data-consent-open]').getAttribute('aria-expanded')==='true'"), "First visit did not show undecided consent controls", checks)
+        check(driver.execute("return document.activeElement.matches('[data-consent-panel]')"), "Initial consent controls did not receive focus", checks)
+        check(driver.execute("return !window.consentTrackingLoaded&&!performance.getEntriesByName(location.origin+'/tracking.js').length"), "Tracking loaded before consent", checks)
+        check(driver.execute("return [...document.querySelectorAll('[data-consent-panel] button[type=submit]')].every(node=>{const box=node.getBoundingClientRect();return box.height>=44&&box.left>=0&&box.right<=innerWidth})&&document.documentElement.scrollWidth<=innerWidth"), "Mobile consent controls overflow or have small targets", checks)
+        check(driver.execute("return document.querySelector('[data-consent-panel]').getAttribute('role')==='dialog'&&document.querySelector('[data-consent-panel]').getAttribute('aria-modal')==='false'&&document.querySelector('[data-consent-panel]').getAttribute('aria-labelledby')==='site-consent-title'"), "Consent semantics are incomplete", checks)
+        driver.click('button[name="consent"][value="accepted"]')
+        driver.wait("return document.readyState==='complete'&&document.body.dataset.consentState==='accepted'&&window.consentTrackingLoaded===true")
+        check(driver.execute("return document.querySelector('[data-consent-panel]').hidden&&performance.getEntriesByName(location.origin+'/tracking.js').length===1"), "Accepted analytics did not load after controlled reload", checks)
+        cookie = next((item for item in driver.cookies() if item["name"] == "dw_site_consent_3_7"), None)
+        check(bool(cookie) and cookie["value"] == "1:accepted:3:7" and cookie.get("httpOnly") is True and cookie.get("sameSite") == "Lax" and cookie.get("path") == "/", "Consent cookie attributes or value are incorrect", checks)
+        driver.click("[data-consent-open]")
+        check(driver.execute("return !document.querySelector('[data-consent-panel]').hidden&&document.activeElement.matches('[data-consent-panel]')&&document.querySelector('[data-consent-open]').getAttribute('aria-expanded')==='true'"), "Cookie settings did not reopen with focus", checks)
+        driver.keys("escape")
+        check(driver.execute("return document.querySelector('[data-consent-panel]').hidden&&document.activeElement.matches('[data-consent-open]')&&document.querySelector('[data-consent-open]').getAttribute('aria-expanded')==='false'"), "Consent Escape did not close settings and restore focus", checks)
+        driver.click("[data-consent-open]")
+        driver.click('button[name="consent"][value="declined"]')
+        driver.wait("return document.readyState==='complete'&&document.body.dataset.consentState==='declined'")
+        check(driver.execute("return !window.consentTrackingLoaded&&!performance.getEntriesByName(location.origin+'/tracking.js').length"), "Tracking remained after consent revocation", checks)
+        driver.navigate(consent_url)
+        check(driver.execute("return document.body.dataset.consentState==='declined'&&document.querySelector('[data-consent-panel]').hidden&&!window.consentTrackingLoaded"), "Declined consent did not persist across reload", checks)
+        driver.navigate(origin + "/consent-fixture?client=3&shop=8&env=production")
+        check(driver.execute("return document.body.dataset.consentState==='unknown'&&!window.consentTrackingLoaded"), "Consent leaked into another shop", checks)
+        driver.add_cookie("dw_site_consent_3_8", "invalid")
+        driver.navigate(origin + "/consent-fixture?client=3&shop=8&env=production")
+        check(driver.execute("return document.body.dataset.consentState==='unknown'&&!window.consentTrackingLoaded"), "Malformed consent cookie was accepted", checks)
+        driver.add_cookie("dw_site_consent_3_8", "1:accepted:3:7")
+        driver.navigate(origin + "/consent-fixture?client=3&shop=8&env=production")
+        check(driver.execute("return document.body.dataset.consentState==='unknown'&&!window.consentTrackingLoaded"), "Consent copied from another shop was accepted", checks)
+        driver.add_cookie("dw_site_consent_3_8", "1:accepted:3:8")
+        for environment in ("development", "staging"):
+            driver.navigate(origin + f"/consent-fixture?client=3&shop=8&env={environment}")
+            check(driver.execute("return document.body.dataset.consentState==='accepted'&&!window.consentTrackingLoaded&&!performance.getEntriesByName(location.origin+'/tracking.js').length"), f"Tracking loaded in {environment}", checks)
+        driver.navigate(origin + "/consent-fixture?client=4&shop=7&env=production")
+        check(driver.execute("return document.body.dataset.consentState==='unknown'&&!window.consentTrackingLoaded"), "Consent leaked into another tenant", checks)
+        check(driver.execute("return document.getElementById('shop-cart').href.endsWith('/cart')&&document.getElementById('shop-checkout').href.endsWith('/checkout')"), "Necessary shop paths depend on analytics consent", checks)
     finally:
         driver.close()
         server.shutdown()
