@@ -25,15 +25,16 @@ class Zend_View_Helper_RenderCategory extends Zend_View_Helper_Abstract
 			$imageUrl = $this->view->baseUrl() . '/media/category/' . (string)$image['url'];
 			$imageAlt = trim((string)($image['title'] ?? '')) ?: $title;
 			$imageHtml = $this->view->SiteImage($imageUrl, $imageAlt, ['class' => 'card-img-top dw-category-card__image', 'sizes' => '(max-width: 767.98px) 100vw, 25vw']);
-			if ($imageHtml !== '') $html .= '<a class="dw-category-card__media" href="' . $this->view->escape($url) . '">' . $imageHtml . '</a>';
+			if ($imageHtml !== '') {
+				$html .= '<a class="dw-category-card__media" href="' . $this->view->escape($url) . '">' . $imageHtml . '</a>';
+				$imageTitle = trim((string)($image['title'] ?? ''));
+				$imageSubtitle = $imageTitle !== '' ? $imageTitle : $subtitle;
 
-			$imageTitle = trim((string)($image['title'] ?? ''));
-			$imageSubtitle = $imageTitle !== '' ? $imageTitle : $subtitle;
-
-			if ($imageSubtitle !== '') {
-				$html .= '<div class="category-text">';
-				$html .= '<h3 class="text-right text-white">' . $this->view->escape($imageSubtitle) . '</h3>';
-				$html .= '</div>';
+				if ($imageSubtitle !== '') {
+					$html .= '<div class="category-text">';
+					$html .= '<h3 class="text-right text-white">' . $this->view->escape($imageSubtitle) . '</h3>';
+					$html .= '</div>';
+				}
 			}
 		}
 

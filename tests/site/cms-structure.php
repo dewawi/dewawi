@@ -20,6 +20,7 @@ require_once $root . '/library/DEEC/Site/Block.php';
 require_once $root . '/library/DEEC/Site/Context.php';
 require_once $root . '/library/DEEC/Site/Router.php';
 require_once $root . '/application/controllers/ErrorController.php';
+require_once $root . '/application/modules/shops/views/helpers/RenderCategory.php';
 
 $checks = 0;
 
@@ -38,6 +39,27 @@ class CmsTestErrorController extends ErrorController
 	public function isNotFoundError($errors): bool
 	{
 		return $this->isNotFound($errors);
+	}
+}
+
+class CmsCategoryImageView extends Zend_View
+{
+	public array $images = [];
+	public string $imageHtml = '';
+
+	public function SlugUrl($controller, $entityId): string
+	{
+		return '/category-' . (int)$entityId;
+	}
+
+	public function baseUrl($path = null): string
+	{
+		return $path === null ? '' : (string)$path;
+	}
+
+	public function SiteImage(string $source, string $alt = '', array $options = []): string
+	{
+		return $this->imageHtml;
 	}
 }
 
@@ -173,6 +195,15 @@ checkCms(str_contains($categoryRenderer, 'dw-category-card__media') && str_conta
 checkCms(str_contains($categoryView, 'dw-category-carousel') && str_contains($categoryView, 'dw-category-carousel__image'), 'Category detail images do not use their dedicated responsive carousel area');
 checkCms(str_contains($shopCss, '.dw-category-card__media {') && str_contains($shopCss, '.dw-category-carousel .carousel-inner {'), 'Category image dimensions are not scoped to category views');
 checkCms(!str_contains($shopCss, '#subcategories .card-img-top'), 'Legacy category image spacing still targets the generic Bootstrap image class');
+$categoryImageView = new CmsCategoryImageView();
+$categoryImageView->images = ['categories' => [5 => [['type' => 'image', 'url' => 'missing.jpg', 'title' => 'Image title']]]];
+$categoryRendererHelper = new Zend_View_Helper_RenderCategory();
+$categoryRendererHelper->setView($categoryImageView);
+$missingCategoryImage = $categoryRendererHelper->RenderCategory(['id' => 5, 'title' => 'Category', 'subtitle' => 'Subtitle']);
+checkCms(!str_contains($missingCategoryImage, 'dw-category-card__media') && !str_contains($missingCategoryImage, 'category-text') && str_contains($missingCategoryImage, 'Category'), 'A missing category image leaves an orphaned media link or overlay');
+$categoryImageView->imageHtml = '<img src="/media/category/available.jpg" alt="Image title">';
+$availableCategoryImage = $categoryRendererHelper->RenderCategory(['id' => 5, 'title' => 'Category', 'subtitle' => 'Subtitle']);
+checkCms(str_contains($availableCategoryImage, 'dw-category-card__media') && str_contains($availableCategoryImage, 'category-text'), 'A renderable category image lost its media link or overlay');
 checkCms(!str_contains($siteLayoutSource, 'as="image"'), 'Public layout preloads an image without a page-specific responsive source');
 checkCms(str_contains($siteLayoutSource, 'jquery-3.7.1.min.js') && !str_contains($siteLayoutSource, 'jquery-3.5.1'), 'Public layout does not use jQuery 3.7.1 exclusively');
 checkCms(!str_contains($siteLayoutSource, 'jquery-3.7.1.slim') && !str_contains($siteLayoutSource, 'jquery-migrate'), 'Public layout uses an incompatible jQuery build or Migrate');
