@@ -65,6 +65,10 @@ ALTER TABLE `shopinquirydata`
   ADD INDEX `clientid_contactid_deleted` (`clientid`, `contactid`, `deleted`),
   ADD INDEX `clientid_quoteid_deleted` (`clientid`, `quoteid`, `deleted`);
 
+-- Preserve publication for existing shops; newly created shops remain noindex until approved.
+ALTER TABLE `shop` ADD `indexable` tinyint(1) NOT NULL DEFAULT 1 AFTER `activated`;
+ALTER TABLE `shop` ALTER COLUMN `indexable` SET DEFAULT 0;
+
 -- Preserve an existing active default, otherwise use the first active UOM by ordering and ID.
 UPDATE `uom` AS u
 LEFT JOIN (

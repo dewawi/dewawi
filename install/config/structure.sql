@@ -2702,6 +2702,7 @@ CREATE TABLE IF NOT EXISTS `shop` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `activated` tinyint(1) NOT NULL DEFAULT 0,
+  `indexable` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY (url),

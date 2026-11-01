@@ -187,6 +187,8 @@
 	'ADMIN_CONTACT_ENABLED' => 'Kontakt aktiviert',
 	'ADMIN_INQUIRY_ENABLED' => 'Anfrage aktiviert',
 	'ADMIN_ACTIVATED' => 'Aktiv',
+	'ADMIN_INDEXABLE' => 'Suchmaschinen-Indexierung',
+	'ADMIN_INDEXABLE_INFO' => 'Nur für freigegebene Produktionswebsites aktivieren. Entwicklungs- und Staging-Umgebungen bleiben immer ausgeschlossen.',
 	'ADMIN_ADD' => 'Hinzufügen',
 	'ADMIN_EDIT' => 'Bearbeiten',
 	'ADMIN_VIEW' => 'Ansicht',

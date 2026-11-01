@@ -7,6 +7,11 @@ class Shops_SitemapController extends Shops_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->layout->disableLayout();
 
+		if (!$this->_siteContext->isIndexable()) {
+			$this->getResponse()->setHttpResponseCode(404);
+			return;
+		}
+
 		$this->getResponse()->setHeader('Content-Type', 'application/xml; charset=UTF-8', true);
 
 		$siteUrl = rtrim((string)($this->_site['url'] ?? ''), '/');

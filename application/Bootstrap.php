@@ -216,7 +216,9 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 	{
 		$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
 		$resolver = new DEEC_Site_Resolver();
-		$siteContext = $resolver->resolveByHost($host);
+		$siteContext = $resolver->resolveByHost($host, [
+			'environment' => defined('APPLICATION_ENV') ? APPLICATION_ENV : 'production',
+		]);
 
 		if ($siteContext) {
 			Zend_Registry::set('SiteContext', $siteContext);

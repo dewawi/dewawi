@@ -91,6 +91,8 @@
 	'ADMIN_ORDERING' => 'Ordering',
 	'ADMIN_CHILD_COUNT' => 'Child count',
 	'ADMIN_ACTIVATED' => 'Activated',
+	'ADMIN_INDEXABLE' => 'Search engine indexing',
+	'ADMIN_INDEXABLE_INFO' => 'Enable only for approved production websites. Development and staging environments always remain excluded.',
 	'ADMIN_PAGE_PREVIEW' => 'Public preview',
 	'ADMIN_PAGE_STATUS_DRAFT' => 'Draft: This page is not public. Enable “Activated” to publish it.',
 	'ADMIN_PAGE_STATUS_SHOP_INACTIVE' => 'The page is active, but its shop is not published.',

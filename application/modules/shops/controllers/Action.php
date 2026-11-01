@@ -55,6 +55,10 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 
 	protected function setCanonicalPath(string $path): void
 	{
+		if (!$this->_siteContext->isIndexable()) {
+			return;
+		}
+
 		$siteUrl = rtrim((string)($this->_site['url'] ?? ''), '/');
 
 		if (!filter_var($siteUrl, FILTER_VALIDATE_URL) || !in_array(parse_url($siteUrl, PHP_URL_SCHEME), ['http', 'https'], true)) {

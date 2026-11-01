@@ -86,6 +86,8 @@ $db->query('CREATE TABLE contactperson (id INT PRIMARY KEY, name1 VARCHAR(255) N
 $db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquiryform (id INT PRIMARY KEY, shopid INT NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquirydata (id INT PRIMARY KEY, formid INT NOT NULL, shopid INT NOT NULL, token VARCHAR(255) NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+$db->query('CREATE TABLE shop (id INT PRIMARY KEY, activated TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+$db->query('INSERT INTO shop (id, activated) VALUES (1, 1)');
 $db->query('CREATE TABLE uom LIKE install_success.uom');
 $db->query('CREATE TABLE itemstock (id INT AUTO_INCREMENT PRIMARY KEY, itemid INT NOT NULL, warehouseid INT NOT NULL, quantity DECIMAL(12,4), reserved DECIMAL(12,4), incoming DECIMAL(12,4), clientid INT NOT NULL, UNIQUE KEY (itemid, warehouseid, clientid)) ENGINE=InnoDB');
 $db->query('INSERT INTO itemstock (itemid, warehouseid, quantity, reserved, incoming, clientid) VALUES (10, 3, 8, 99, 88, 7)');
@@ -113,6 +115,8 @@ check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE 
 check($db->query("SHOW COLUMNS FROM shopinquirydata LIKE 'status'")->fetch_assoc()['Default'] === 'new', 'Inquiry status column is missing or has the wrong default');
 check($db->query("SHOW COLUMNS FROM shopinquirydata LIKE 'contactid'")->fetch_assoc()['Null'] === 'YES', 'Inquiry contact relation column is missing or not nullable');
 check($db->query("SHOW COLUMNS FROM shopinquirydata LIKE 'quoteid'")->fetch_assoc()['Null'] === 'YES', 'Inquiry quote relation column is missing or not nullable');
+check((int)$db->query('SELECT indexable FROM shop WHERE id = 1')->fetch_row()[0] === 1, 'Shop indexing migration disabled an existing website');
+check($db->query("SHOW COLUMNS FROM shop LIKE 'indexable'")->fetch_assoc()['Default'] === '0', 'New shops do not default to noindex after migration');
 check((int)$db->query("SELECT COUNT(*) FROM shopinquirydata WHERE status = 'new'")->fetch_row()[0] === 4, 'Existing inquiries did not receive the initial processing status');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_status_shopid_formid_deleted'")->fetch_row()[0] === 5, 'Inquiry management index is missing or has the wrong columns');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_contactid_deleted'")->fetch_row()[0] === 3, 'Inquiry contact relation index is missing or has the wrong columns');

@@ -41,6 +41,17 @@ class Admin_Form_Shop extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'indexable',
+			'type' => 'checkbox',
+			'label' => 'ADMIN_INDEXABLE',
+			'description' => 'ADMIN_INDEXABLE_INFO',
+			'format' => ['type' => 'int'],
+			'default' => 0,
+			'tab' => 'overview',
+			'col' => 6,
+		]);
+
+		$this->addElement([
 			'name' => 'theme',
 			'type' => 'text',
 			'label' => 'ADMIN_THEME',

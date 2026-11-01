@@ -43,6 +43,11 @@ class DEEC_Site_Context
 		return isset($this->site['timezone']) ? $this->site['timezone'] : 'Europe/Berlin';
 	}
 
+	public function isIndexable()
+	{
+		return !array_key_exists('indexable', $this->domain) || (bool)$this->domain['indexable'];
+	}
+
 	public function getTheme()
 	{
 		$theme = strtolower(trim((string)($this->site['theme'] ?? '')));

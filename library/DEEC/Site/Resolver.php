@@ -2,7 +2,7 @@
 
 class DEEC_Site_Resolver
 {
-	public function resolveByHost($host)
+	public function resolveByHost($host, array $options = array())
 	{
 		$host = $this->normalizeHost($host);
 
@@ -20,7 +20,10 @@ class DEEC_Site_Resolver
 			if ($shopHost !== '' && $shopHost === $host) {
 				$features = $this->detectFeatures($shopData);
 
-				return new DEEC_Site_Context($shopData, array('host' => $host), $features);
+				return new DEEC_Site_Context($shopData, array(
+					'host' => $host,
+					'indexable' => $this->isIndexable($shopData, $options),
+				), $features);
 			}
 		}
 
@@ -49,6 +52,14 @@ class DEEC_Site_Resolver
 		}
 
 		return $features;
+	}
+
+	protected function isIndexable(array $site, array $options)
+	{
+		$siteIndexable = array_key_exists('indexable', $site) ? (bool)$site['indexable'] : true;
+
+		return ($options['environment'] ?? 'production') === 'production'
+			&& $siteIndexable;
 	}
 
 	protected function normalizeHost($host)
