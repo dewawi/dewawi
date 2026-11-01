@@ -28,16 +28,17 @@ class Zend_View_Helper_RenderMenuItems extends Zend_View_Helper_Abstract
 				continue;
 			}
 
+			$panelId = 'dw-mega-menu-' . (int)$item['id'];
 			$html .= '<li class="nav-item dw-mega-nav-item">';
-			$html .= '<button class="nav-link dw-mega-toggle" type="button" data-mega-toggle aria-expanded="false">'.$this->view->escape($item['title']).'</button>';
-			$html .= $this->renderMegaPanel($items, $children);
+			$html .= '<button class="nav-link dw-mega-toggle" type="button" data-mega-toggle aria-expanded="false" aria-controls="'.$panelId.'">'.$this->view->escape($item['title']).'</button>';
+			$html .= $this->renderMegaPanel($items, $children, $panelId);
 			$html .= '</li>';
 		}
 
 		return $html;
 	}
 
-	protected function renderMegaPanel(array $items, array $children): string
+	protected function renderMegaPanel(array $items, array $children, string $panelId): string
 	{
 		$groups = [];
 		$links = [];
@@ -55,7 +56,7 @@ class Zend_View_Helper_RenderMenuItems extends Zend_View_Helper_Abstract
 			}
 		}
 
-		$html = '<div class="dw-mega-menu"><div class="container"><div class="dw-mega-menu__grid">';
+		$html = '<div class="dw-mega-menu" id="'.$panelId.'" hidden><div class="container"><div class="dw-mega-menu__grid">';
 
 		foreach ($groups as $item) {
 			$url = $this->resolveUrl($item);

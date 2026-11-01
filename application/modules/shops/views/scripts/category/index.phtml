@@ -283,13 +283,13 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 								</div>
 								<?php if($inquiryEnabled) : ?>
 									<div class="col-md-2 d-flex justify-content-between">
-										<button class="btn btn-info" onclick="showTab('<?php echo $itemId; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
+										<button class="btn btn-info" type="button" onclick="showTab('<?php echo $itemId; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
 									</div>
 								<?php endif; ?>
 
 								<!-- Add to Cart Button -->
 								<!-- <div class="col-md-2 d-flex justify-content-end">
-									<button class="btn btn-info add-to-cart" data-id="<?php echo $item->id; ?>">
+									<button class="btn btn-info add-to-cart" type="button" data-id="<?php echo $item->id; ?>">
 										<?php echo $this->translate('SHOPS_ADD_TO_CART'); ?>
 									</button>
 								</div> -->

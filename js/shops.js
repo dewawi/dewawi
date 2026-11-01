@@ -21,28 +21,31 @@ $(document).ready(function () {
 	// Function to render cart items dynamically
 	function renderCartItems(cart) {
 		const cartItemsContainer = $('#cart-items'); // Ensure the container is correctly selected
+		const quantityLabel = cartItemsContainer.data('quantity-label') || 'Quantity';
+		const removeLabel = cartItemsContainer.data('remove-label') || 'Remove';
+		const emptyLabel = cartItemsContainer.data('empty-label') || 'Your cart is empty.';
 		cartItemsContainer.empty();
 
 		if (Object.keys(cart).length === 0) {
-			cartItemsContainer.html('<p>Your cart is empty.</p>');
+			cartItemsContainer.append($('<p>').text(emptyLabel));
 		} else {
 			$.each(cart, function (id, item) {
-				cartItemsContainer.append(`
-					<div class="cart-item d-flex justify-content-between align-items-center" data-id="${id}">
-						<div class="product-details" style="flex: 2; display: flex; flex-direction: column; justify-content: center;">
-							<strong class="product-title">${item.title}</strong>
-							<div class="product-sku text-muted" style="font-size: 0.9rem;">SKU: ${item.sku}</div>
-						</div>
-						<div style="flex: 1; text-align: center;">${formatCurrency(item.price, userLocale, userCurrency)}</div>
-						<div style="flex: 1; text-align: center;">
-							<input type="number" class="form-control quantity-input" value="${item.quantity}" min="1" data-id="${id}">
-						</div>
-						<div style="flex: 1; text-align: center;" class="item-total">${formatCurrency(item.price * item.quantity, userLocale, userCurrency)}</div>
-						<div style="flex: 1; text-align: center;">
-							<button class="btn btn-danger btn-sm remove-item" data-id="${id}">Remove</button>
-						</div>
-					</div>
-				`);
+				const title = String(item.title ?? '');
+				const sku = String(item.sku ?? '');
+				const $row = $('<div>', { class: 'cart-item d-flex justify-content-between align-items-center' }).attr('data-id', id);
+				const $details = $('<div>', { class: 'product-details' }).css({ flex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' });
+				$details.append($('<strong>', { class: 'product-title' }).text(title));
+				$details.append($('<div>', { class: 'product-sku text-muted' }).css('font-size', '0.9rem').text('SKU: ' + sku));
+				$row.append($details);
+				$row.append($('<div>').css({ flex: 1, textAlign: 'center' }).text(formatCurrency(item.price, userLocale, userCurrency)));
+				const $quantity = $('<input>', { type: 'number', class: 'form-control quantity-input', min: 1 })
+					.val(item.quantity).attr('data-id', id).attr('aria-label', quantityLabel + ' ' + title);
+				$row.append($('<div>').css({ flex: 1, textAlign: 'center' }).append($quantity));
+				$row.append($('<div>', { class: 'item-total' }).css({ flex: 1, textAlign: 'center' }).text(formatCurrency(item.price * item.quantity, userLocale, userCurrency)));
+				const $remove = $('<button>', { type: 'button', class: 'btn btn-danger btn-sm remove-item' })
+					.attr('data-id', id).text(removeLabel);
+				$row.append($('<div>').css({ flex: 1, textAlign: 'center' }).append($remove));
+				cartItemsContainer.append($row);
 			});
 		}
 	}
@@ -174,8 +177,34 @@ $(document).ready(function () {
 		}
 	});
 
-	function closeMegaMenus() {
-		$('.dw-mega-nav-item.is-open').removeClass('is-open').find('[data-mega-toggle]').attr('aria-expanded', 'false');
+	function setMegaMenu($item, open) {
+		const $toggle = $item.children('[data-mega-toggle]');
+		const $panel = $item.children('.dw-mega-menu');
+		$item.toggleClass('is-open', open);
+		$toggle.attr('aria-expanded', open ? 'true' : 'false');
+		$panel.prop('hidden', !open);
+	}
+
+	function closeMegaMenus($except) {
+		$('.dw-mega-nav-item.is-open').each(function () {
+			const $item = $(this);
+			if (!$except || !$item.is($except)) setMegaMenu($item, false);
+		});
+	}
+
+	function setSubmenu($item, open) {
+		const $toggle = $item.children('.dw-submenu-toggle');
+		const panelId = $toggle.attr('aria-controls');
+		const $panel = panelId ? $(document.getElementById(panelId)) : $();
+		$item.toggleClass('is-open', open);
+		$toggle.attr('aria-expanded', open ? 'true' : 'false');
+		$panel.prop('hidden', !open);
+	}
+
+	function closeSubmenus($scope) {
+		($scope || $(document)).find('.dw-submenu-item.is-open').get().reverse().forEach(function (item) {
+			setSubmenu($(item), false);
+		});
 	}
 
 	$(document).on('click', '[data-mega-toggle]', function (event) {
@@ -184,24 +213,133 @@ $(document).ready(function () {
 		const $item = $(this).closest('.dw-mega-nav-item');
 		const open = !$item.hasClass('is-open');
 
-		closeMegaMenus();
+		closeMegaMenus($item);
+		setMegaMenu($item, open);
+	});
 
-		if (open) {
-			$item.addClass('is-open');
-			$(this).attr('aria-expanded', 'true');
-		}
+	$(document).on('click', '.dw-submenu-toggle', function (event) {
+		event.preventDefault();
+		setSubmenu($(this).closest('.dw-submenu-item'), $(this).attr('aria-expanded') !== 'true');
 	});
 
 	$(document).on('click', function (event) {
 		if (!$(event.target).closest('.dw-mega-nav-item').length) closeMegaMenus();
+		if (!$(event.target).closest('.dw-submenu-item').length) closeSubmenus($('.dw-main-nav'));
 	});
 
 	$(document).on('keydown', function (event) {
-		if (event.key === 'Escape') closeMegaMenus();
+		if (event.key !== 'Escape') return;
+
+		const $submenuItem = $(event.target).closest('.dw-submenu-item.is-open');
+		if ($submenuItem.length) {
+			event.preventDefault();
+			const $toggle = $submenuItem.children('.dw-submenu-toggle');
+			setSubmenu($submenuItem, false);
+			$toggle.trigger('focus');
+			return;
+		}
+
+		const $megaItem = $(event.target).closest('.dw-mega-nav-item.is-open');
+		if ($megaItem.length) {
+			event.preventDefault();
+			const $toggle = $megaItem.children('[data-mega-toggle]');
+			setMegaMenu($megaItem, false);
+			$toggle.trigger('focus');
+			return;
+		}
+
+		if ($('#navbarNav').hasClass('show')) {
+			event.preventDefault();
+			$('#navbarNav').data('restore-focus', true).collapse('hide');
+		}
 	});
 
-	$('#navbarNav').on('hidden.bs.collapse', closeMegaMenus);
+	$('.dw-main-nav').on('focusout', function () {
+		const navigation = this;
+		setTimeout(function () {
+			if (!navigation.contains(document.activeElement)) {
+				closeMegaMenus();
+				closeSubmenus($(navigation));
+			}
+		}, 0);
+	});
+
+	$('.dw-main-nav').on('focusout', '.dw-mega-nav-item, .dw-submenu-item', function () {
+		const item = this;
+		setTimeout(function () {
+			if (item.contains(document.activeElement)) return;
+			const $item = $(item);
+			if ($item.hasClass('dw-mega-nav-item')) setMegaMenu($item, false);
+			else setSubmenu($item, false);
+		}, 0);
+	});
+
+	$('.dw-main-nav').on('mouseenter', '.dw-mega-nav-item, .dw-submenu-item', function () {
+		if (!window.matchMedia('(min-width: 1200px) and (hover: hover)').matches) return;
+		const $item = $(this);
+		if ($item.hasClass('dw-mega-nav-item')) {
+			closeMegaMenus($item);
+			setMegaMenu($item, true);
+		} else {
+			setSubmenu($item, true);
+		}
+	}).on('mouseleave', '.dw-mega-nav-item, .dw-submenu-item', function () {
+		if (!window.matchMedia('(min-width: 1200px) and (hover: hover)').matches) return;
+		const $item = $(this);
+		if ($item.hasClass('dw-mega-nav-item')) setMegaMenu($item, false);
+		else setSubmenu($item, false);
+	});
+
+	$('#navbarNav').on('hidden.bs.collapse', function () {
+		closeMegaMenus();
+		closeSubmenus($(this));
+		if ($(this).data('restore-focus')) {
+			$(this).removeData('restore-focus');
+			$('.navbar-toggler').trigger('focus');
+		}
+	});
+
+	$(document).on('click', '[data-carousel-toggle]', function () {
+		const $button = $(this);
+		const $carousel = $(document.getElementById($button.attr('aria-controls')));
+		const paused = $button.attr('data-paused') !== 'true';
+		$carousel.carousel(paused ? 'pause' : 'cycle');
+		$button.attr('data-paused', paused ? 'true' : 'false')
+			.text($button.data(paused ? 'play-label' : 'pause-label'));
+	});
+
+	$('.carousel[data-ride="carousel"]').each(function () {
+		if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		$(this).carousel('pause');
+		$(this).find('[data-carousel-toggle]').attr('data-paused', 'true').each(function () {
+			$(this).text($(this).data('play-label'));
+		});
+	});
+
+	$('.carousel').on('slid.bs.carousel', function () {
+		$(this).find('.dw-carousel-indicator').removeAttr('aria-current').filter('.active').attr('aria-current', 'true');
+	});
+
+	enhancePublicForms(document);
 });
+
+function enhancePublicForms(context) {
+	$(context).find('.alert-danger').attr({ role: 'alert', 'aria-live': 'assertive' });
+	$(context).find('.dw-field').each(function () {
+		const $field = $(this);
+		const $control = $field.find('input, select, textarea').first();
+		const $error = $field.find('.dw-field__error').first();
+		if (!$control.length || !$error.length) return;
+
+		const controlId = $control.attr('id');
+		if (!controlId) return;
+		const errorId = controlId + '-error';
+		const describedBy = ($control.attr('aria-describedby') || '').split(/\s+/).filter(Boolean);
+		if (!describedBy.includes(errorId)) describedBy.push(errorId);
+		$error.attr({ id: errorId, role: 'alert' });
+		$control.attr({ 'aria-invalid': 'true', 'aria-describedby': describedBy.join(' ') });
+	});
+}
 
 function toggleDependentFields() {
 	$('.dependent-field').each(function () {
@@ -246,10 +384,17 @@ function submitStep(formElement, currentStep) {
 	const formData = $(formElement).serialize() + '&step=' + encodeURIComponent(currentStep);
 
 	$.post(window.location.href, formData, function (response) {
-		const newContainer = $(response.formHtml).find('#form-container');
-		if (response && newContainer.length) {
+		const newContainer = response && response.formHtml ? $(response.formHtml).find('#form-container') : $();
+		if (newContainer.length) {
 			$('#form-container').replaceWith(newContainer);
 			toggleDependentFields();
+			enhancePublicForms(newContainer);
+			const $invalid = newContainer.find('.is-invalid').first();
+			if ($invalid.length) {
+				$invalid.trigger('focus');
+			} else {
+				newContainer.attr('tabindex', '-1').trigger('focus');
+			}
 		} else if (!response || response.status !== 'ok') {
 			window.alert((response && response.message) || 'Das Formular konnte nicht verarbeitet werden.');
 		}
@@ -273,10 +418,12 @@ function goBackStep(currentStep) {
 				'&back=1';
 
 	$.post(url, formData, function (response) {
-		const newContainer = $(response.formHtml).find('#form-container');
-		if (response && response.status === 'ok' && newContainer) {
+		const newContainer = response && response.formHtml ? $(response.formHtml).find('#form-container') : $();
+		if (response && response.status === 'ok' && newContainer.length) {
 			$('#form-container').replaceWith(newContainer);
 			toggleDependentFields();
+			enhancePublicForms(newContainer);
+			newContainer.attr('tabindex', '-1').trigger('focus');
 		}
 	}, 'json');
 

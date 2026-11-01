@@ -24,16 +24,20 @@ class Zend_View_Helper_Slide extends Zend_View_Helper_Abstract
 		?>
 
 		<section id="carousel" class="carousel slide" data-ride="carousel" data-interval="5000">
+			<button class="btn btn-light dw-carousel-toggle" type="button" data-carousel-toggle aria-controls="carousel" data-paused="false" data-pause-label="<?php echo $this->view->escape($this->view->translate('SHOPS_SLIDER_PAUSE')); ?>" data-play-label="<?php echo $this->view->escape($this->view->translate('SHOPS_SLIDER_PLAY')); ?>">
+				<?php echo $this->view->translate('SHOPS_SLIDER_PAUSE'); ?>
+			</button>
 
-			<ol class="carousel-indicators">
+			<div class="carousel-indicators">
 				<?php foreach ($slides as $index => $slide) : ?>
-					<li
+					<button type="button"
 						data-target="#carousel"
 						data-slide-to="<?php echo $index; ?>"
-						<?php echo $index === 0 ? 'class="active"' : ''; ?>>
-					</li>
+						class="dw-carousel-indicator<?php echo $index === 0 ? ' active' : ''; ?>"
+						aria-label="<?php echo $this->view->escape(sprintf($this->view->translate('SHOPS_SLIDE'), $index + 1)); ?>"
+						<?php echo $index === 0 ? 'aria-current="true"' : ''; ?>></button>
 				<?php endforeach; ?>
-			</ol>
+			</div>
 
 			<div class="carousel-inner">
 
@@ -74,15 +78,15 @@ class Zend_View_Helper_Slide extends Zend_View_Helper_Abstract
 
 			</div>
 
-			<a class="carousel-control-prev" href="#carousel" role="button" data-slide="prev">
+			<button class="carousel-control-prev" type="button" data-target="#carousel" data-slide="prev">
 				<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-				<span class="sr-only">Previous</span>
-			</a>
+				<span class="sr-only"><?php echo $this->view->translate('SHOPS_PREVIOUS'); ?></span>
+			</button>
 
-			<a class="carousel-control-next" href="#carousel" role="button" data-slide="next">
+			<button class="carousel-control-next" type="button" data-target="#carousel" data-slide="next">
 				<span class="carousel-control-next-icon" aria-hidden="true"></span>
-				<span class="sr-only">Next</span>
-			</a>
+				<span class="sr-only"><?php echo $this->view->translate('SHOPS_NEXT'); ?></span>
+			</button>
 
 		</section>
 

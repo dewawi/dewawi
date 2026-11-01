@@ -12,9 +12,9 @@
 						<span><?php echo $this->translate('Total'); ?></span>
 						<span><?php echo $this->translate('Actions'); ?></span>
 					</div>
-					<div id="cart-items">
+					<div id="cart-items" aria-live="polite" data-quantity-label="<?php echo $this->translate('SHOPS_QUANTITY'); ?>" data-remove-label="<?php echo $this->translate('SHOPS_REMOVE'); ?>" data-empty-label="<?php echo $this->translate('SHOPS_SHOPPING_CART_EMPTY'); ?>">
 						<?php foreach ($this->items as $id => $item) : ?>
-							<div class="cart-item d-flex justify-content-between align-items-center" data-id="<?php echo $id; ?>">
+							<div class="cart-item d-flex justify-content-between align-items-center" data-id="<?php echo (int)$id; ?>">
 								<div class="product-details" style="flex: 2; display: flex; flex-direction: column; justify-content: center;">
 									<?php $itemUrl = $this->SlugUrl('item', (int)$id); ?>
 									<?php if($itemUrl) : ?>
@@ -25,16 +25,16 @@
 										<strong class="product-title"><?php echo $this->escape($item['title']); ?></strong>
 									<?php endif; ?>
 									<div class="product-sku text-muted">
-										<?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $item['sku']; ?>
+									<?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $this->escape($item['sku']); ?>
 									</div>
 								</div>
 								<div style="flex: 1; text-align: center;"><?php echo $item['price']; ?></div>
 								<div style="flex: 1; text-align: center;">
-									<input type="number" class="form-control quantity-input" value="<?php echo $item['quantity']; ?>" min="1" data-id="<?php echo $id; ?>">
+									<input type="number" class="form-control quantity-input" value="<?php echo $this->escape($item['quantity']); ?>" min="1" data-id="<?php echo (int)$id; ?>">
 								</div>
 								<div style="flex: 1; text-align: center;" class="item-total"><?php echo $item['total']; ?></div>
 								<div style="flex: 1; text-align: center;">
-									<button class="btn btn-danger btn-sm remove-item" data-id="<?php echo $id; ?>"><?php echo $this->translate('SHOPS_REMOVE'); ?></button>
+									<button class="btn btn-danger btn-sm remove-item" type="button" data-id="<?php echo (int)$id; ?>"><?php echo $this->translate('SHOPS_REMOVE'); ?></button>
 								</div>
 							</div>
 						<?php endforeach; ?>
@@ -45,8 +45,8 @@
 						<?php if($shippingPage) : ?>
 							<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->SlugUrl('page', (int)$shippingPage['id']); ?>" target="_blank">Versandkosten</a></span>
 						<?php endif; ?>
-						<button class="btn btn-warning" id="clear-cart"><?php echo $this->translate('SHOPS_SHOPPING_CART_CLEAR'); ?></button>
-						<button id="checkout-btn" class="btn btn-success"><?php echo $this->translate('SHOPS_CHECKOUT'); ?></button>
+						<button class="btn btn-warning" id="clear-cart" type="button"><?php echo $this->translate('SHOPS_SHOPPING_CART_CLEAR'); ?></button>
+						<button id="checkout-btn" class="btn btn-success" type="button"><?php echo $this->translate('SHOPS_CHECKOUT'); ?></button>
 					</div>
 				<?php else : ?>
 					<p><?php echo $this->translate('SHOPS_SHOPPING_CART_EMPTY'); ?></p>

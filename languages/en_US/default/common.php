@@ -54,5 +54,17 @@
 	'VIEW' => 'View',
 	'MORE' => 'More',
 	'SHOW_ALL' => 'Show all',
-	'COPY' => 'Copy'
+	'COPY' => 'Copy',
+	'SHOPS_SKIP_TO_CONTENT' => 'Skip to main content',
+	'SHOPS_MAIN_NAVIGATION' => 'Main navigation',
+	'SHOPS_FOOTER_NAVIGATION' => 'Footer navigation',
+	'SHOPS_MENU_TOGGLE' => 'Open or close navigation',
+	'SHOPS_SUBMENU_TOGGLE' => 'Open or close %s submenu',
+	'SHOPS_OPEN_GALLERY' => 'Open product images',
+	'SHOPS_CLOSE' => 'Close',
+	'SHOPS_SLIDE' => 'Show slide %d',
+	'SHOPS_SLIDER_PAUSE' => 'Pause slider',
+	'SHOPS_SLIDER_PLAY' => 'Play slider',
+	'SHOPS_PREVIOUS' => 'Previous slide',
+	'SHOPS_NEXT' => 'Next slide'
 );

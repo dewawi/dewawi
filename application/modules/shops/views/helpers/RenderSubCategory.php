@@ -18,12 +18,15 @@ class Zend_View_Helper_RenderSubCategory extends Zend_View_Helper_Abstract
 			}
 
 			$children = $this->RenderSubCategory($categories, (int)$subcategory['id']);
+			$submenuId = 'dw-category-submenu-' . (int)$subcategory['id'];
 
-			$html .= '<li>';
+			$html .= '<li'.($children !== '' ? ' class="dw-submenu-item"' : '').'>';
 			$html .= '<a href="' . $this->view->escape($url) . '">' . $this->view->escape((string)$subcategory['title']) . '</a>';
 
 			if ($children !== '') {
-				$html .= '<ul class="submenu">' . $children . '</ul>';
+				$label = sprintf($this->view->translate('SHOPS_SUBMENU_TOGGLE'), (string)$subcategory['title']);
+				$html .= '<button class="dw-submenu-toggle" type="button" aria-expanded="false" aria-controls="'.$submenuId.'"><span aria-hidden="true">&#9656;</span><span class="sr-only">'.$this->view->escape($label).'</span></button>';
+				$html .= '<ul class="submenu" id="'.$submenuId.'" hidden>' . $children . '</ul>';
 			}
 
 			$html .= '</li>';

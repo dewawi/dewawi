@@ -44,13 +44,14 @@ echo $this->doctype();
 	<?php endif; ?>
 </head>
 <body class="dw-theme-<?php echo $this->escape($activeTheme); ?>" data-theme="<?php echo $this->escape($activeTheme); ?>">
+	<a class="dw-skip-link" href="#main-content"><?php echo $this->translate('SHOPS_SKIP_TO_CONTENT'); ?></a>
 	<header class="dw-site-header<?php echo $home ? ' home' : ''; ?>">
-		<nav class="navbar navbar-expand-xl navbar-light">
+		<nav class="navbar navbar-expand-xl navbar-light" aria-label="<?php echo $this->translate('SHOPS_MAIN_NAVIGATION'); ?>">
 			<div class="container">
 				<a class="navbar-brand" href="<?php echo $this->url(array(), 'shop_home'); ?>">
 					<?php echo $this->SiteImage('/media/header/' . (string)($shop['logo'] ?? ''), (string)($shop['title'] ?? ''), ['loading' => false, 'sizes' => '280px']); ?>
 				</a>
-				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="<?php echo $this->translate('SHOPS_MENU_TOGGLE'); ?>">
 					<span class="navbar-toggler-icon"></span>
 				</button>
 				<div class="collapse navbar-collapse" id="navbarNav">
@@ -82,7 +83,7 @@ echo $this->doctype();
 							<?php if($this->siteContext->hasFeature('cart')) : ?>
 								<li class="nav-item">
 									<a class="nav-link" href="<?php echo $this->url(array(), 'cart'); ?>" id="navbar-cart">
-										🛒 <span id="cart-count" class="badge badge-danger"><?php echo $this->cart->getItemCount(); ?></span>
+										<span aria-hidden="true">🛒</span><span class="sr-only"><?php echo $this->translate('SHOPS_SHOPPING_CART'); ?>: </span> <span id="cart-count" class="badge badge-danger" aria-live="polite" aria-atomic="true"><?php echo $this->cart->getItemCount(); ?></span>
 									</a>
 								</li>
 							<?php endif; ?>
@@ -97,33 +98,37 @@ echo $this->doctype();
 		<?php endif; ?>
 	</header>
 
-	<?php echo $this->layout()->content; ?>
+	<main id="main-content" tabindex="-1">
+		<?php echo $this->layout()->content; ?>
 
-	<?php if($this->controller === 'category' && $this->siteContext->hasFeature('inquiry') && isset($this->category)) : ?>
-		<section id="contact" class="jumbotron jumbotron-fluid py-5 mb-0">
-			<div class="container">
-				<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_INQUIRY_HEADING'); ?></h2>
-				<div class="row">
-					<div class="col-md-6">
-						<?php echo $shop['contact'] ?? ''; ?>
-					</div>
-					<div class="col-md-6">
-						<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->category['title']); ?>
+		<?php if($this->controller === 'category' && $this->siteContext->hasFeature('inquiry') && isset($this->category)) : ?>
+			<section id="contact" class="jumbotron jumbotron-fluid py-5 mb-0">
+				<div class="container">
+					<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_INQUIRY_HEADING'); ?></h2>
+					<div class="row">
+						<div class="col-md-6">
+							<?php echo $shop['contact'] ?? ''; ?>
+						</div>
+						<div class="col-md-6">
+							<?php echo $this->ContactForm($this->translate('SHOPS_INQUIRY_FORM').' '.$this->category['title']); ?>
+						</div>
 					</div>
 				</div>
-			</div>
-		</section>
-	<?php endif; ?>
+			</section>
+		<?php endif; ?>
+	</main>
 
 	<footer class="py-4 bg-dark text-white">
 		<div class="container text-center">
-			<ul class="row-menu">
-				<?php foreach($menus as $menu) : ?>
-					<?php if($menu->position === 'footer') : ?>
-						<?php echo $this->RenderMenuItems($menuitems[$menu->id] ?? []); ?>
-					<?php endif; ?>
-				<?php endforeach; ?>
-			</ul>
+			<nav aria-label="<?php echo $this->translate('SHOPS_FOOTER_NAVIGATION'); ?>">
+				<ul class="row-menu">
+					<?php foreach($menus as $menu) : ?>
+						<?php if($menu->position === 'footer') : ?>
+							<?php echo $this->RenderMenuItems($menuitems[$menu->id] ?? []); ?>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				</ul>
+			</nav>
 			<p><?php echo $this->shop['copyright']; ?></p>
 			<p><?php echo $this->shop['footer']; ?></p>
 			<p><?php echo $this->translate('SHOPS_FOOTER_LEGAL_NOTICE'); ?></p>

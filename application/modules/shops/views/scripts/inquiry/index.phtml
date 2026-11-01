@@ -22,7 +22,7 @@ $categories = $this->{'categories'};
 							<p><?= htmlspecialchars(($this->formRow['description'] ?? '')) ?></p>
 
 							<?php if (!empty($this->errors)): ?>
-								<div class="alert alert-danger">
+								<div class="alert alert-danger" role="alert">
 									Bitte prüfen Sie Ihre Eingaben. Es sind Fehler aufgetreten.
 								</div>
 							<?php endif; ?>

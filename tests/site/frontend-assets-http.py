@@ -98,7 +98,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self.send_body(b'<!doctype html><html><body><form action="/search" method="get"><input name="q" value="heat"></form><script>document.forms[0].submit()</script></body></html>', "text/html; charset=utf-8")
             return
         if path in {"/", "/cms/"}:
-            self.send_body(self.fixture_page(path).encode(), "text/html; charset=utf-8")
+            manual = "manual" in urllib.parse.parse_qs(parsed.query)
+            self.send_body(self.fixture_page(path, manual).encode(), "text/html; charset=utf-8")
             return
         self.send_body(b"Not found", "text/plain", 404)
 
@@ -109,17 +110,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if path == "/cart/update":
             self.send_json({
                 "success": True,
-                "cart": {"7": {"title": "Pump", "sku": "P-7", "price": 19.5, "quantity": 3}},
+                "cart": {"7": {"title": "<img src=x onerror=alert(1)>", "sku": "</div><script>alert(1)</script>", "price": 19.5, "quantity": 3}},
                 "total": 58.5,
                 "cartItemCount": 3,
             })
             return
         if path in {"/", "/cms/"}:
-            self.send_json({"status": "ok", "formHtml": '<main><div id="form-container" data-saved="true">Saved</div></main>'})
+            self.send_json({"status": "ok", "formHtml": '<main><div id="form-container" data-saved="true"><div class="dw-field"><label for="saved-field">Saved</label><input id="saved-field" class="is-invalid"><div class="dw-field__error">Check field</div></div></div></main>'})
             return
         self.send_json({"success": False}, 404)
 
-    def fixture_page(self, path: str) -> str:
+    def fixture_page(self, path: str, manual: bool = False) -> str:
         mode = "cms" if path == "/cms/" else "home"
         return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -127,21 +128,21 @@ class FixtureHandler(BaseHTTPRequestHandler):
 <script>window.fixtureErrors=[];window.addEventListener('error',function(e){{window.fixtureErrors.push(e.message||e.target.src||e.target.href||'resource error')}},true);window.addEventListener('unhandledrejection',function(e){{window.fixtureErrors.push(String(e.reason))}});</script>
 <link rel="stylesheet" href="/assets/bootstrap.min.css" integrity="{ASSET_DEFINITIONS['/assets/bootstrap.min.css'][1]}" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/shop.css"></head><body data-page="{mode}">
-<header class="dw-site-header"><nav class="navbar navbar-expand-xl navbar-light"><div class="container">
-<a class="navbar-brand" href="/">DEWAWI</a><button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-expanded="false"><span class="navbar-toggler-icon"></span></button>
-<div class="collapse navbar-collapse" id="navbarNav"><ul class="navbar-nav ml-auto dw-main-nav"><li class="nav-item dw-mega-nav-item"><button class="nav-link dw-mega-toggle" data-mega-toggle aria-expanded="false">Products</button><div class="dw-mega-menu"><div class="container"><div class="dw-mega-menu__grid"><a href="#product-list">Pumps</a></div></div></div></li></ul>
+<a class="dw-skip-link" href="#main-content">Skip to main content</a><header class="dw-site-header"><nav class="navbar navbar-expand-xl navbar-light" aria-label="Main navigation"><div class="container">
+<a class="navbar-brand" href="/">DEWAWI</a><button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"><span class="navbar-toggler-icon"></span></button>
+<div class="collapse navbar-collapse" id="navbarNav"><ul class="navbar-nav ml-auto dw-main-nav"><li class="nav-item dw-mega-nav-item"><button class="nav-link dw-mega-toggle" type="button" data-mega-toggle aria-expanded="false" aria-controls="mega-products">Products</button><div class="dw-mega-menu" id="mega-products" hidden><div class="container"><div class="dw-mega-menu__grid"><a href="#product-list">Pumps</a></div></div></div></li><li class="nav-item dw-submenu-item"><a class="nav-link" href="#categories">Categories</a><button class="dw-submenu-toggle" type="button" aria-expanded="false" aria-controls="category-menu"><span aria-hidden="true">▼</span><span class="sr-only">Categories submenu</span></button><ul class="submenu" id="category-menu" hidden><li><a href="#category-one">Category one</a></li></ul></li></ul>
 <form class="dw-header-search" action="/search" method="get" role="search"><label class="sr-only" for="query">Search</label><input id="query" name="q" value="heat"><button type="submit">Search</button></form></div></div></nav></header>
-<main><section class="dw-site-block dw-site-block--hero"><h1>{'CMS page' if mode == 'cms' else 'Start page'}</h1></section>
+<main id="main-content" tabindex="-1"><section class="dw-site-block dw-site-block--hero"><h1>{'CMS page' if mode == 'cms' else 'Start page'}</h1></section>
 <section id="product-list"><article class="product-card">Product list</article></section>
-<div id="slider" class="carousel slide" data-interval="false"><div class="carousel-inner"><div class="carousel-item active">First</div><div class="carousel-item">Second</div></div></div>
+<div id="slider" class="carousel slide" data-ride="carousel" data-interval="5000"><button class="btn dw-carousel-toggle" type="button" data-carousel-toggle aria-controls="slider" data-paused="false" data-pause-label="Pause" data-play-label="Play">Pause</button><div class="carousel-inner"><div class="carousel-item active">First</div><div class="carousel-item">Second</div></div></div>
 <button id="details-button" data-toggle="collapse" data-target="#details">Details</button><div id="details" class="collapse"><ul class="nav nav-tabs"><li><a id="tab-one" class="nav-link active" data-toggle="tab" href="#pane-one">One</a></li><li><a id="tab-two" class="nav-link" data-toggle="tab" href="#pane-two">Two</a></li></ul><div class="tab-content"><div id="pane-one" class="tab-pane active">One</div><div id="pane-two" class="tab-pane">Two</div></div></div>
-<button id="gallery-button" data-toggle="modal" data-target="#imageModal">Gallery</button><div id="imageModal" class="modal fade" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Image</div></div></div></div>
-<div id="cart-items"><input class="quantity-input" data-id="7" value="2"></div><span id="cart-total"></span><span id="cart-count">2</span>
-<form id="inquiry-form" onsubmit="return submitStep(this, 1)"><input name="message" value="Request" required><button type="submit">Send</button></form><div id="form-container">Form</div>
+<button id="gallery-button" type="button" data-toggle="modal" data-target="#imageModal">Gallery</button><div id="imageModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-label"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h2 id="modal-label">Product images</h2><button type="button" data-dismiss="modal">Close</button></div><div class="modal-body"><a href="#modal-link">Image link</a></div></div></div></div>
+<div id="cart-items" aria-live="polite" data-quantity-label="Quantity" data-remove-label="Remove" data-empty-label="Empty"><input class="quantity-input" data-id="7" value="2" aria-label="Quantity Pump"></div><span id="cart-total"></span><span id="cart-count" aria-live="polite">2</span>
+<form id="inquiry-form" onsubmit="return submitStep(this, 1)"><label for="message">Message</label><input id="message" name="message" value="Request" required><button type="submit">Send</button></form><div id="form-container">Form</div>
 <button id="checkout-btn">Checkout</button></main>
 <script src="/assets/jquery.min.js" integrity="{ASSET_DEFINITIONS['/assets/jquery.min.js'][1]}" crossorigin="anonymous"></script>
 <script src="/assets/bootstrap.bundle.min.js" integrity="{ASSET_DEFINITIONS['/assets/bootstrap.bundle.min.js'][1]}" crossorigin="anonymous"></script>
-<script src="/js/shops.js"></script><script>{self.test_script()}</script></body></html>"""
+<script src="/js/shops.js"></script>{'' if manual else '<script>' + self.test_script() + '</script>'}<footer><nav aria-label="Footer navigation"><a href="#legal">Legal</a></nav></footer></body></html>"""
 
     @staticmethod
     def checkout_fixture() -> str:
@@ -168,16 +169,18 @@ class FixtureHandler(BaseHTTPRequestHandler):
   const togglerVisible=getComputedStyle(document.querySelector('.navbar-toggler')).display!=='none';
   check(togglerVisible===mobile,'responsive navbar breakpoint failed');
   if(mobile){$('.navbar-toggler').trigger('click');await wait(450);check($('#navbarNav').hasClass('show'),'mobile collapse did not open')}
-  $('.dw-mega-toggle').trigger('click');check($('.dw-mega-nav-item').hasClass('is-open')&&$('.dw-mega-toggle').attr('aria-expanded')==='true','mega menu did not open');
-  $(document).trigger($.Event('keydown',{key:'Escape'}));check(!$('.dw-mega-nav-item').hasClass('is-open'),'Escape did not close mega menu');
+  $('.dw-mega-toggle').trigger('focus').trigger('click');check($('.dw-mega-nav-item').hasClass('is-open')&&$('.dw-mega-toggle').attr('aria-expanded')==='true'&&!$('#mega-products').prop('hidden'),'mega menu did not open');
+  $('.dw-mega-menu a').trigger('focus').trigger($.Event('keydown',{key:'Escape'}));check(!$('.dw-mega-nav-item').hasClass('is-open')&&document.activeElement===$('.dw-mega-toggle').get(0)&&$('#mega-products').prop('hidden'),'Escape did not close mega menu and restore focus');
+  $('.dw-submenu-toggle').trigger('click');check($('.dw-submenu-item').hasClass('is-open')&&!$('#category-menu').prop('hidden'),'category submenu did not open');$('.dw-submenu-toggle').trigger('click');
   $('#details').collapse('show');await wait(450);check($('#details').hasClass('show'),'product accordion did not open');
   $('#tab-two').tab('show');check($('#tab-two').hasClass('active')&&$('#pane-two').hasClass('active'),'product tab did not activate');
-  $('#imageModal').modal('show');await wait(350);check($('#imageModal').hasClass('show'),'gallery modal did not open');$('#imageModal').modal('hide');await wait(350);
+  $('#gallery-button').trigger('click');await wait(500);check($('#imageModal').hasClass('show')&&$('#imageModal').attr('aria-labelledby')==='modal-label','gallery modal did not open with a name');$('#imageModal [data-dismiss=modal]').trigger('click');await wait(500);check(!$('#imageModal').hasClass('show'),'gallery modal did not close');
   $('#slider').carousel('next');await wait(700);check($('#slider .carousel-item').eq(1).hasClass('active'),'slider did not advance');
-  $('.quantity-input').val('3').trigger('change');await wait(350);check($('#cart-count').text()==='3','cart AJAX update failed');
-  submitStep(document.getElementById('inquiry-form'),1);await wait(350);check($('#form-container').attr('data-saved')==='true','inquiry AJAX submit failed');
+  $('.quantity-input').val('3').trigger('change');await wait(350);check($('#cart-count').text()==='3','cart AJAX update failed');check($('#cart-items script,#cart-items img').length===0&&$('#cart-items').text().includes('<img src=x onerror=alert(1)>')&&$('#cart-items').text().includes('</div><'+'script>alert(1)</'+'script>'),'cart response content was interpreted as markup');
+  document.querySelector('#inquiry-form input').value='';check(submitStep(document.getElementById('inquiry-form'),1)===false&&document.querySelector('#inquiry-form input:invalid'),'native form validation failed');document.querySelector('#inquiry-form input').value='Request';
+  submitStep(document.getElementById('inquiry-form'),1);await wait(350);check($('#form-container').attr('data-saved')==='true','inquiry AJAX response was not rendered');check($('#saved-field').attr('aria-invalid')==='true'&&$('#saved-field-error').attr('role')==='alert','inquiry AJAX errors were not announced');
   const search=document.querySelector('.dw-header-search');check(search&&search.method==='get'&&search.action.endsWith('/search')&&document.querySelector('label[for=query]'),'search form is inaccessible or invalid');
-  check(document.querySelector('[data-page]').dataset.page==='home'||document.querySelector('[data-page]').dataset.page==='cms','page fixture missing');
+  check(document.querySelectorAll('main').length===1&&document.getElementById('main-content')&&document.querySelector('nav[aria-label="Main navigation"]')&&document.querySelector('nav[aria-label="Footer navigation"]'),'page landmarks are invalid');
   const resources=performance.getEntriesByType('resource').filter(entry=>['script','link'].includes(entry.initiatorType));
   check(resources.length===5,'CSS/JS request count changed');
   check(await frameResult('/checkout-fixture','#checkout-result',function(){return true}),'checkout navigation failed');
@@ -217,6 +220,8 @@ def measure(url: str, width: int, height: int) -> dict:
     matches = re.findall(r'<pre id="metrics">(.*?)</pre>', result.stdout, re.S)
     if not matches:
         raise RuntimeError("Chromium did not return frontend metrics")
+    if not matches[-1].strip():
+        raise RuntimeError("Chromium returned an empty frontend metrics element: " + result.stdout[-2000:])
     return json.loads(html.unescape(matches[-1]))
 
 

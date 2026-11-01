@@ -170,4 +170,24 @@ checkCms(strpos($siteLayoutSource, 'jquery-3.7.1.min.js') < strpos($siteLayoutSo
 	&& strpos($siteLayoutSource, 'bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js') < strpos($siteLayoutSource, '/js/shops.js'), 'Public script dependency order is invalid');
 checkCms(substr_count($shopCss, '.dw-site-header {') === 1 && !preg_match('/^header(?:\.home)?\s*\{/m', $shopCss), 'Public stylesheet retains duplicate generic header rules');
 
+$menuSource = file_get_contents($root . '/application/modules/shops/views/helpers/RenderMenuItems.php');
+$categoryNavigationSource = file_get_contents($root . '/application/modules/shops/views/helpers/RenderCategoryNavigation.php');
+$subCategorySource = file_get_contents($root . '/application/modules/shops/views/helpers/RenderSubCategory.php');
+$slideSource = file_get_contents($root . '/application/modules/shops/views/helpers/Slide.php');
+$shopJsSource = file_get_contents($root . '/js/shops.js');
+$searchViewSource = file_get_contents($root . '/application/modules/shops/views/scripts/search/index.phtml');
+checkCms(substr_count($siteLayoutSource, '<main id="main-content"') === 1 && !str_contains($searchViewSource, '<main'), 'Public pages do not have exactly one template-owned main landmark');
+checkCms(str_contains($siteLayoutSource, 'class="dw-skip-link"') && str_contains($siteLayoutSource, 'aria-label="<?php echo $this->translate(\'SHOPS_MAIN_NAVIGATION\')'), 'Public layout lacks its skip link or labelled main navigation');
+checkCms(str_contains($siteLayoutSource, "translate('SHOPS_FOOTER_NAVIGATION')"), 'Footer navigation is not labelled');
+checkCms(str_contains($menuSource, 'dw-mega-toggle" type="button" data-mega-toggle aria-expanded="false" aria-controls=')
+	&& str_contains($menuSource, 'class="dw-mega-menu" id=') && str_contains($menuSource, ' hidden><div'), 'Mega-menu controls are not connected to hidden panels');
+checkCms(!str_contains($categoryNavigationSource, 'href="#"') && str_contains($categoryNavigationSource, 'dw-submenu-toggle--root'), 'Category fallback still uses a placeholder link');
+checkCms(str_contains($categoryNavigationSource, 'aria-controls=') && str_contains($subCategorySource, 'aria-controls='), 'Category submenu buttons lack controlled panel references');
+checkCms(str_contains($slideSource, 'data-carousel-toggle') && str_contains($slideSource, 'SHOPS_SLIDER_PAUSE') && str_contains($slideSource, 'SHOPS_SLIDER_PLAY'), 'Automatic slider lacks a pause control');
+checkCms(str_contains($shopCss, '@media (prefers-reduced-motion: reduce)') && str_contains($shopCss, ':focus-visible'), 'Public CSS lacks reduced-motion or visible-focus handling');
+checkCms(!str_contains($shopJsSource, '${item.title}') && !str_contains($shopJsSource, '${item.sku}')
+	&& str_contains($shopJsSource, "$('<strong>', { class: 'product-title' }).text(title)"), 'Cart response text is still interpolated as HTML');
+checkCms(str_contains($shopJsSource, "trigger('focus')") && str_contains($shopJsSource, "event.key !== 'Escape'"), 'Navigation does not restore focus after Escape');
+checkCms(!preg_match('/<button(?![^>]*\\btype=)/', $itemViewSource), 'Product detail contains a button without an explicit type');
+
 echo 'PASS: ' . $checks . " CMS block, CTA, theme and 404 structure cases\n";

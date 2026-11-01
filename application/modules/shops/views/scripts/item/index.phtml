@@ -81,17 +81,18 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 			<div class="col-md-6 mb-4">
 				<div class="main-image-wrapper">
 					<?php if($previewImage) : ?>
+						<button class="dw-product-image-button" type="button" data-toggle="modal" data-target="#imageModal" aria-label="<?php echo $this->translate('SHOPS_OPEN_GALLERY'); ?>">
 						<?php
 						$imageAlt = trim((string)($previewImage['title'] ?? '')) ?: $itemTitle;
 						echo $this->SiteImage('/media/images/' . (string)$previewImage['url'], $imageAlt, [
 							'id' => 'mainImage',
 							'class' => 'img-fluid',
-							'onclick' => 'openModal()',
 							'loading' => false,
 							'fetchpriority' => 'high',
 							'sizes' => '(max-width: 767.98px) 100vw, 50vw',
 						]);
 						?>
+						</button>
 					<?php endif; ?>
 				</div>
 				<?php if($previewImage) : ?>
@@ -100,9 +101,13 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 				<?php endif; ?>
 				<div class="row">
 					<?php if($itemImages) : ?>
-						<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-hidden="true">
+						<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
 							<div class="modal-dialog modal-xl" role="document">
 								<div class="modal-content">
+									<div class="modal-header">
+										<h2 class="modal-title h5" id="imageModalLabel"><?php echo $this->escape($itemTitle); ?></h2>
+										<button type="button" class="close" data-dismiss="modal" aria-label="<?php echo $this->translate('SHOPS_CLOSE'); ?>"><span aria-hidden="true">&times;</span></button>
+									</div>
 									<div class="modal-body">
 										<div id="carouselExampleControls" class="carousel slide" data-interval="false">
 											<div class="carousel-inner">
@@ -125,14 +130,14 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 											</div>
 
 											<?php if(count($itemImages) > 1) : ?>
-												<a class="carousel-control-prev" href="#carouselExampleControls" role="button" data-slide="prev">
+												<button class="carousel-control-prev" type="button" data-target="#carouselExampleControls" data-slide="prev">
 													<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-													<span class="sr-only">Previous</span>
-												</a>
-												<a class="carousel-control-next" href="#carouselExampleControls" role="button" data-slide="next">
+													<span class="sr-only"><?php echo $this->translate('SHOPS_PREVIOUS'); ?></span>
+												</button>
+												<button class="carousel-control-next" type="button" data-target="#carouselExampleControls" data-slide="next">
 													<span class="carousel-control-next-icon" aria-hidden="true"></span>
-													<span class="sr-only">Next</span>
-												</a>
+													<span class="sr-only"><?php echo $this->translate('SHOPS_NEXT'); ?></span>
+												</button>
 											<?php endif; ?>
 										</div>
 									</div>
@@ -191,12 +196,12 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 
 				<div>
 					<?php if($this->siteContext->hasFeature('cart')) : ?>
-						<button class="btn btn-primary btn-lg add-to-cart" data-id="<?php echo $this->item['id']; ?>">
+						<button class="btn btn-primary btn-lg add-to-cart" type="button" data-id="<?php echo $this->item['id']; ?>">
 							<?php echo $this->translate('SHOPS_ADD_TO_CART'); ?>
 						</button>
 					<?php endif; ?>
 					<?php if($this->siteContext->hasFeature('inquiry')) : ?>
-						<button class="btn btn-info btn-lg" onclick="showSection('<?php echo $this->item['id']; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
+						<button class="btn btn-info btn-lg" type="button" onclick="showSection('<?php echo $this->item['id']; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -364,7 +369,8 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 
 		if (section) {
 			// Scroll to the section smoothly
-			section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			section.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
 
 			// Optionally, highlight the section for better visibility
 			section.style.transition = 'background-color 0.5s ease';
@@ -375,9 +381,5 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 				section.style.backgroundColor = '';
 			}, 2000);
 		}
-	}
-
-	function openModal() {
-		$('#imageModal').modal('show');
 	}
 </script>
