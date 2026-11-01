@@ -15,6 +15,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Entwicklungs- und Staging-Umgebungen bleiben unabhängig von der Shop-Einstellung nicht indexierbar.
 - Nicht indexierbare Websites erhalten Robots-Meta und `X-Robots-Tag`; Canonical-Ausgabe und öffentlich konfiguriertes Analytics-Markup werden unterdrückt.
 - Optionales, über `shop.analytics` gepflegtes Statistik-Markup wird in indexierbarer Produktion erst nach einer versionierten, website- und mandantenbezogenen Einwilligung serverseitig ausgegeben. Development und Staging laden es unabhängig von der Entscheidung nicht.
+- Erfolgreich gespeicherte Kontaktanfragen, finale technische Anfragen und committete Bestellungen können nach derselben Freigabe einmalig als minimierte Conversion-Ereignisse an eine tatsächlich konfigurierte `gtag`- oder Google-Tag-Manager-`dataLayer`-Schnittstelle übergeben werden.
 - Neue und ausdrücklich geänderte öffentliche Slugs werden zentral normalisiert und vor dem Speichern auf Pfadkonflikte sowie reservierte Systemrouten geprüft.
 - Interne DEWAWI-Seiten erhalten grundlegende Sicherheits- und Noindex-Header.
 - Eine eigene Staging-Konfiguration wurde vorbereitet; Staging darf nicht stillschweigend die Produktionsdatenbank verwenden.
@@ -105,7 +106,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 61 | Teilweise | P0 vor Relaunch | Ein begrenzter CLI-Crawler prüft reale HTTP-Antworten für Links, Status, Redirects, Titel, Descriptions, H1, Canonicals, Open Graph, JSON-LD, Sitemap, Robots und Ressourcen und kann Text oder JSON ausgeben. Vor dem Relaunch bleibt der ausdrücklich freizugebende Lauf gegen die echte Staging-Website samt fachlicher Auswertung offen. |
 | 62 | Umgesetzt | P0 vor Relaunch | Redirects speichern keine weiteren Pfadziele, sondern die öffentliche Entität. Dadurch werden auch nach mehrfachen URL-Änderungen alle historischen Pfade direkt auf den aktuellen kanonischen Pfad aufgelöst; aktuelle URLs haben Vorrang und Schleifen werden verworfen. |
 | 63 | Infrastruktur | P1 nach Relaunch | Search-Console-/Webmaster-Zustand liegt außerhalb des Repositories. Eigentum prüfen, Produktionssitemap einreichen und Indexierung sowie 404 nach dem Relaunch beobachten. |
-| 64 | Teilweise | P0 vor Relaunch | Analytics ist konfigurierbar sowie consent-, umgebungs- und indexierungsabhängig. Eine fachliche Conversion-Migrationsliste fehlt weiterhin; bestehende Ereignisse und externe Konten müssen vor dem Relaunch inventarisiert und einzeln validiert werden. |
+| 64 | Teilweise | P0 vor Relaunch | Analytics und die Ereignisse `contact_submitted`, `technical_inquiry_submitted` und `order_submitted` sind consent-, umgebungs- und indexierungsabhängig. Der Bestellwert wird nicht als Zahlungserfolg bezeichnet. Bestehende externe Konten, Ziele und alte Conversion-Aktionen müssen vor dem Relaunch weiterhin inventarisiert und einzeln validiert werden. |
 | 65 | Derzeit nicht anwendbar | P1 bei Einführung | Kein öffentlicher Partnerzugang vorhanden. Datenschutzgerechte Events für Start, Erfolg, Login, autorisierten Download und Anfrage definieren, ohne sensible Daten zu übertragen. |
 | 66 | Teilweise | P0 | Production, Staging und Development sind als Anwendungsprofile vorhanden. Staging benötigt eine explizite, von Production abweichende Datenbankkonfiguration. Getrennte Hosts, Secrets, Mailziele und Deployments bleiben operative Aufgaben. |
 | 67 | Für den vorgegebenen Testbetrieb umgesetzt | P1 Betrieb | Development und Staging behalten bewusst den konfigurierten SMTP-Versand, damit echte E-Mail-Funktionstests vollständig möglich bleiben. Es gibt keine pauschale Sperre, keinen erzwungenen Test-Sink und keine Empfänger-Allowlist; Testverantwortliche müssen Empfänger und Testabläufe deshalb operativ kontrollieren. |
@@ -311,9 +312,28 @@ Die CMS-/Template-Inventur fand zusätzlich feste beziehungsweise ältere YouTub
 
 Die lokalen Chromium- und ChromeDriver-Fixtures prüfen Erstbesuch, Zustimmung, Ablehnung, erneutes Öffnen, Fokusführung, Widerruf, Reload, mobile Zielgrößen, Cookieattribute, manipulierte und websitefremde Werte, Shop-/Mandantentrennung sowie die harte Development-/Staging-Sperre. `tracking.js` wird vor Zustimmung und nach Ablehnung nachweislich weder angefordert noch ausgeführt; nach Zustimmung erscheint genau eine Anfrage. Diese technische Prüfung ist keine pauschale DSGVO-Bestätigung. Datenschutzerklärung, Rechtsgrundlage, konkrete Anbieter, Aufbewahrung, internationale Übermittlung und verwendete Analytics-Konfiguration sind je Betreiber fachlich und rechtlich zu prüfen.
 
+### 5.17 Consent-gesteuertes Conversion-Tracking
+
+- `contact_submitted` entsteht ausschließlich nach der erstmaligen Speicherung einer Kontaktanfrage, `technical_inquiry_submitted` ausschließlich nach der erstmaligen Speicherung des finalen Anfrageschritts und `order_submitted` ausschließlich nach dem Commit von Bestellung und Positionen. Validierungs-, Honeypot-, Rate-Limit-, Rollback-, Replay- und Zwischenschrittpfade markieren keine Conversion. Ein späterer E-Mail-Fehler ändert den bereits erfolgreichen Geschäftsvorgang nicht.
+- Ein Eventmarker wird nur in einer indexierbaren Production-Website mit gültiger Einwilligung und erkannter Analytics-Schnittstelle kurzzeitig in der bestehenden Session abgelegt. Vor der Ausgabe werden Consent, Umgebung, Mandant, Website und Schnittstelle erneut geprüft. Ablehnung, Widerruf, fehlende Einwilligung und nichtproduktive Umgebungen verwerfen offene Marker; bei späterer Zustimmung findet kein Nachversand statt.
+- Unterstützt werden direkt eingebundenes Google-`gtag.js` über `gtag('event', ...)` und Google Tag Manager über einen konfigurierten `dataLayer`. Wird beides erkannt, hat die direkte `gtag`-Schnittstelle Vorrang, damit kein Event doppelt übergeben wird. Freie oder andere Analytics-Snippets ohne eindeutig erkannte Schnittstelle erhalten kein Event und werden nicht verändert.
+- Kontakt und technische Anfrage übertragen nur den festen Ereignisnamen und die numerische Website-ID. Eine Bestellung darf zusätzlich den serverseitig bestätigten Gesamtwert und den dreistelligen Währungscode übertragen. Namen, Adressen, E-Mail-Adressen, Telefonnummern, Texte, Artikelangaben und Formular-, CSRF-, Inquiry- oder Checkout-Tokens werden nicht unterstützt. Der serverseitige Marker dient nur der lokalen Einmaligkeitsprüfung und wird nicht an Analytics übergeben.
+- Sessionmarker werden nach spätestens zehn Minuten und beim ersten Ausgabeversuch entfernt; die Warteschlange ist auf zehn Einträge begrenzt und an Mandant und Website gebunden. Sichere JSON-Ausgabe, ein bereits konsumiertes DOM-Element und die Markerprüfung im Frontend verhindern erneute Ausführung bei Reload, Zurücknavigation und doppelter Verarbeitung. Die fachliche Idempotenz der Phase 4.2 verhindert zusätzliche Marker bei Replay oder paralleler Doppelübertragung.
+- Serverseitig gerenderte Erfolgsseiten und die AJAX-Erfolgsantwort der technischen Anfrage verwenden denselben Dispatcher. Erfolgsantworten sind mit `private, no-store` gekennzeichnet. Die lokale Übergabe an `gtag` oder `dataLayer` belegt ausdrücklich nicht den Empfang oder die Verarbeitung bei einem externen Anbieter.
+- Es wurden keine Tracking-Plattform, keine externe JavaScript-Abhängigkeit, kein paralleles Consent-Cookie, keine Eventtabelle und keine SQL-Änderung ergänzt. Die Betreiberkonfiguration, Analytics-Ziele, Conversion-Definitionen und Datenschutzerklärung müssen vor dem produktiven Einsatz fachlich geprüft werden.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
-`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect`. Phase 2.3 hat beide Dateien ausschließlich geprüft und nicht verändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
+`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Phase 4.3 benötigt keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
+
+Installationen, auf denen eine frühere Fassung der laufenden 1.1.8-Anweisungen bereits manuell ausgeführt wurde, müssen vor dem Anwendungsdeployment das Checkout-Token-Schema prüfen. Nur wenn Spalte und Index noch fehlen, sind exakt die weiterhin in `update-1.1.7-1.1.8.sql` enthaltenen Anweisungen kontrolliert anzuwenden; bei einem teilweise vorhandenen Stand darf ausschließlich der jeweils fehlende Schritt ausgeführt werden:
+
+```sql
+ALTER TABLE `shoporder` ADD `token` char(64) DEFAULT NULL AFTER `orderid`;
+UPDATE `shoporder` SET `token` = SHA2(CONCAT('legacy:', `clientid`, ':', `shopid`, ':', `id`), 256) WHERE `token` IS NULL;
+ALTER TABLE `shoporder`
+  ADD UNIQUE INDEX `clientid_shopid_token` (`clientid`, `shopid`(64), `token`);
+```
 
 Empfohlene Reihenfolge:
 
@@ -321,7 +341,7 @@ Empfohlene Reihenfolge:
 2. Prüfen, ob die vorgesehene Migration in der Zielinstallation bereits ausgeführt wurde.
 3. Falls sie bereits ausgeführt wurde, die nachträglich ergänzten Schemaanweisungen einschließlich `slugredirect` kontrolliert und separat freigegeben anwenden; die Anwendung benötigt die Tabelle vor der ersten öffentlichen URL-Änderung.
 4. Für jede Entwicklungs-/Testwebsite die Indexierung im Shop-Datensatz deaktivieren.
-5. Anwendungscode deployen und Robots-Meta, `X-Robots-Tag`, Canonical, Redirects sowie Analytics-Ausgabe vor und nach einer Testeinwilligung prüfen.
+5. Anwendungscode einschließlich PHP und `js/shops.js` gemeinsam deployen und Robots-Meta, `X-Robots-Tag`, Canonical, Redirects, Analytics-Ausgabe und die drei Conversion-Ereignisse vor und nach einer Testeinwilligung prüfen.
 6. Indexierung einer Produktionswebsite erst nach TLS-, Canonical-, Redirect- und Content-Freigabe aktivieren.
 
 Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch Datenabfluss. Nicht öffentliche Umgebungen sollten zusätzlich durch Authentifizierung, Netzwerkregeln oder einen vorgeschalteten Zugriffsschutz abgesichert werden.
@@ -331,6 +351,7 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Prüfung | Ergebnis |
 |---|---|
 | PHP-Syntax der geänderten PHP-/PHTML-Dateien | Bestanden |
+| Consent-gesteuerte Conversionmarker, Datenminimierung, Einmaligkeit, Schnittstellen- und Shopisolation | 39 Prüfungen bestanden |
 | Reale lokale HTTP-Crawler-, SEO-, Redirect-, Sitemap-, Ressourcen-, Bildperformance- und Begrenzungsfälle | 34 Prüfungen bestanden |
 | SEO-Metadaten, Open Graph, Breadcrumbs, strukturierte Daten und Überschriften | 46 Prüfungen bestanden |
 | Technische HTML5-/Indexierungs-/Header-/Consent-Baseline | 65 Prüfungen bestanden |
@@ -339,7 +360,7 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Site-CMS-Struktur, Assets, Accessibility, SRI, Bildpriorisierung und responsive Medienflächen | 176 Prüfungen bestanden |
 | Dateizugriff, Medienvarianten, LCP-Attribute und Mandantenisolation | 327 Prüfungen bestanden |
 | Isolierte Chromium-Bildprioritäts-, Doppeldownload-, CLS- und Übertragungsmessung | 4 Prüfungen bestanden; LCP-/INP-Grenzen ausdrücklich dokumentiert |
-| Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, Shop-Abläufe, AJAX, Suche und Checkout | 63 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
+| Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, Shop-Abläufe, AJAX, Conversion-Dispatcher, Suche und Checkout | 75 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
 | ChromeDriver-Tastatur, Fokus, ARIA, Consent, Tracking-Requests, Formulare, Warenkorb, Header-Komponenten, Kontrast und Reflow | 95 Prüfungen bei 320, 375, 500, 768 und 1365 Pixeln bestanden |
 | Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 101 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
@@ -371,6 +392,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Das freie Feld `shop.analytics` kann beliebiges Betreiber-Markup enthalten. Die technische Freigabe verhindert seine Ausgabe vor Einwilligung, ersetzt aber weder die Anbieterinventur noch eine fachliche Prüfung des gespeicherten Codes und der Datenschutzerklärung.
 - Bestehende produktive Legacy-WYSIWYG-Datensätze wurden nicht gelesen. Bereits gespeicherte externe Scripts oder Iframes könnten außerhalb von `shop.analytics` liegen; der reale Bestand muss vor Livegang kontrolliert werden. Die identifizierten YouTube-Einbettungen benötigen eine getrennte Datenschutzentscheidung.
 - Die Consent-Entscheidung ist eine Benutzerpräferenz und keine Sicherheitsberechtigung. Exakt passende Cookiewerte sind bewusst nicht kryptografisch signiert; veraltete, fehlerhafte sowie mandanten- oder websitefremde Werte werden abgelehnt.
+- Conversion-Ereignisse werden nur für erkannte direkte `gtag.js`- oder Google-Tag-Manager-`dataLayer`-Konfigurationen erzeugt. Andere freie Analytics-Snippets benötigen eine getrennte, konkret getestete Schnittstelle. Lokale Dispatch-Tests sind kein Nachweis für den Empfang beim Anbieter.
 - TLS, Host-Redirects, HSTS, Kompression, Protokollversionen und Caching sind nicht allein durch den PHP-Code abgeschlossen.
 - Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Redirects entstehen erst bei einer ausdrücklichen Slug- oder Elternänderung innerhalb derselben Website; ein Websitewechsel erzeugt keine domainübergreifende Weiterleitung.
 - Vorhandene historische URLs werden nicht automatisch importiert. Dafür sind vor dem Relaunch eine fachliche Zuordnung und ein eigener sicherer Import- oder Verwaltungsweg erforderlich.
@@ -409,6 +431,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 ### Phase 4 – Consent, Tracking und Formulare
 
 - Die implementierte Analytics-Einwilligung mit realen Betreiberkonfigurationen und Datenschutzerklärungen fachlich abnehmen.
+- Die drei implementierten Conversion-Ereignisse in ausdrücklich freigegebenen Testkonten prüfen, externe Ziele und alte Conversion-Aktionen einzeln zuordnen und erst danach produktiv aktivieren.
 - YouTube-/Legacy-Einbettungen und mögliche bestehende WYSIWYG-Drittinhalte inventarisieren und je Dienst eine ausdrückliche Freigabe- oder Click-to-load-Strategie festlegen.
 - Öffentliche Formulare auf einheitliche CSRF-, Spam-, Rate-Limit- und Fehlerbehandlung prüfen.
 - Development und Staging für vollständige echte E-Mail-Funktionstests nutzbar halten; Testempfänger und Versandabläufe operativ bewusst kontrollieren, ohne pauschale SMTP-Sperre, erzwungenen Test-Sink oder Empfänger-Allowlist.
@@ -645,8 +668,17 @@ Inhalt:
 - Deutsch-/englischsprachige Fehlermeldungen, Schutz vor Mehrfachklicks sowie automatisierte Formular-, Größen-, Isolation-, Ablauf-, Parallelitäts-, Transaktions-, Rollback-, Replay- und E-Mail-Reihenfolgeregressionen.
 - Checkout-Token in Neuinstallation und ausschließlich in der bestehenden Migration `update-1.1.7-1.1.8.sql`; keine weitere Versionsdatei.
 
+### Commit 18: `add consent aware shop conversion tracking`
+
+Inhalt:
+
+- Einmalige Conversionmarker für erstmalig gespeicherte Kontakte und technische Anfragen sowie vollständig committete Bestellungen.
+- Zweifache Prüfung von Production, Indexierbarkeit, websitegebundener Einwilligung und konkret erkannter `gtag`-/`dataLayer`-Schnittstelle ohne späteren Nachversand.
+- Minimierte Eventparameter, sichere JSON-Ausgabe, Shop-/Mandantentrennung und gemeinsame Verarbeitung serverseitiger sowie AJAX-basierter Erfolgsantworten.
+- Statische, Session-, MariaDB-, Chromium-, Consent-, Formular-, SEO-, Sicherheits- und Mandantenregressionen ohne neue Datenbankänderung oder externe Tracking-Anfrage.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Die Phasen 4.1 und 4.2 sind für den vorhandenen Funktionsumfang technisch abgeschlossen; dies ist ausdrücklich keine Produktions-, Datenschutz- oder WCAG-Freigabe. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, tatsächlicher Staging-Crawl, fachliche Prüfung realer Drittanbieter-/Legacy-Inhalte, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Die Phasen 4.1 bis 4.3 sind für den vorhandenen Funktionsumfang technisch abgeschlossen; dies ist ausdrücklich keine Produktions-, Datenschutz- oder WCAG-Freigabe. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, tatsächlicher Staging-Crawl, fachliche Prüfung realer Drittanbieter-/Legacy-Inhalte, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.

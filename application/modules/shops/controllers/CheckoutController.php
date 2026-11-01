@@ -229,6 +229,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		));
 
 		if ($result['inserted']) {
+			$this->markSiteConversion('order_submitted', $total, 'EUR');
 			try {
 				$emailResult = $this->_helper->Email->sendEmail('shops', 'checkout', 'checkout', $cart);
 				$this->checkoutDataSession->notificationSent = !empty($emailResult['customerAccepted']);
@@ -246,6 +247,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 
 	public function successAction()
 	{
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
 		$this->initSiteLayout();
 
 		$this->view->formData = $this->checkoutDataSession->formData ?? [];

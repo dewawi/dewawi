@@ -75,6 +75,23 @@ class DEEC_Site_Context
 		return trim((string)($this->site['analytics'] ?? '')) !== '';
 	}
 
+	public function getAnalyticsEventInterface(): ?string
+	{
+		$analytics = (string)($this->site['analytics'] ?? '');
+
+		if (stripos($analytics, 'googletagmanager.com/gtag/js') !== false
+			&& preg_match('/\bgtag\s*\(/i', $analytics)) {
+			return 'gtag';
+		}
+
+		if (stripos($analytics, 'googletagmanager.com/gtm.js') !== false
+			&& stripos($analytics, 'dataLayer') !== false) {
+			return 'dataLayer';
+		}
+
+		return null;
+	}
+
 	public function getAnalyticsConsentCookieName(): string
 	{
 		return 'dw_site_consent_' . $this->getClientId() . '_' . $this->getSiteId();

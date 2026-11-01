@@ -172,7 +172,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self.inquiry_posts[path] = self.inquiry_posts.get(path, 0) + 1
             request_count = self.inquiry_posts[path]
             time.sleep(0.15)
-            self.send_json({"status": "ok", "formHtml": f'<main><div id="form-container" data-saved="true" data-request-count="{request_count}"><div class="dw-field"><label for="saved-field">Saved</label><input id="saved-field" class="is-invalid"><div class="dw-field__error">Check field</div></div></div></main>'})
+            marker = ("a" if path == "/" else "b") * 32
+            self.send_json({
+                "status": "ok",
+                "formHtml": f'<main><div id="form-container" data-saved="true" data-request-count="{request_count}"><div class="dw-field"><label for="saved-field">Saved</label><input id="saved-field" class="is-invalid"><div class="dw-field__error">Check field</div></div></div></main>',
+                "conversionEvents": [{
+                    "id": marker,
+                    "interface": "dataLayer",
+                    "name": "technical_inquiry_submitted",
+                    "parameters": {"shop_id": 7},
+                }],
+            })
             return
         self.send_json({"success": False}, 404)
 
@@ -216,7 +226,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
         return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Frontend fixture</title><link rel="icon" href="data:,">
-<script>window.fixtureErrors=[];window.addEventListener('error',function(e){{window.fixtureErrors.push(e.message||e.target.src||e.target.href||'resource error')}},true);window.addEventListener('unhandledrejection',function(e){{window.fixtureErrors.push(String(e.reason))}});</script>
+<script>window.fixtureErrors=[];window.dataLayer=[];window.addEventListener('error',function(e){{window.fixtureErrors.push(e.message||e.target.src||e.target.href||'resource error')}},true);window.addEventListener('unhandledrejection',function(e){{window.fixtureErrors.push(String(e.reason))}});</script>
 <link rel="stylesheet" href="/assets/bootstrap.min.css" integrity="{ASSET_DEFINITIONS['/assets/bootstrap.min.css'][1]}" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/shop.css"></head><body class="dw-theme-default" data-page="{mode}" data-theme="default">
 <a class="dw-skip-link" href="#main-content">Skip to main content</a><header class="dw-site-header"><nav class="navbar navbar-expand-xl navbar-light" aria-label="Main navigation"><div class="container">
@@ -282,6 +292,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
   $('#clear-cart').trigger('click');await wait(350);check($('#cart-count').text()==='0'&&$('#cart-items').text()==='Empty','cart clear failed');
   document.querySelector('#inquiry-form input').value='';check(submitStep(document.getElementById('inquiry-form'),1)===false&&document.querySelector('#inquiry-form input:invalid'),'native form validation failed');document.querySelector('#inquiry-form input').value='Request';
   submitStep(document.getElementById('inquiry-form'),1);submitStep(document.getElementById('inquiry-form'),1);await wait(500);check($('#form-container').attr('data-saved')==='true','inquiry AJAX response was not rendered');check($('#form-container').attr('data-request-count')==='1','inquiry multiple click sent more than one request');check($('#saved-field').attr('aria-invalid')==='true'&&$('#saved-field-error').attr('role')==='alert','inquiry AJAX errors were not announced');
+  const inquiryEvents=window.dataLayer.filter(item=>item.event==='technical_inquiry_submitted');check(inquiryEvents.length===1&&Object.keys(inquiryEvents[0]).sort().join(',')==='event,shop_id','AJAX conversion was duplicated or contains non-minimal data');
+  window.gtagCalls=[];window.gtag=function(){window.gtagCalls.push(Array.from(arguments))};const gtagEvent={id:'c'.repeat(32),interface:'gtag',name:'contact_submitted',parameters:{shop_id:7}};dispatchSiteConversions([gtagEvent]);dispatchSiteConversions([gtagEvent]);check(window.gtagCalls.length===1&&window.gtagCalls[0][0]==='event'&&window.gtagCalls[0][1]==='contact_submitted','gtag conversion was not mapped exactly once');
+  check(dispatchSiteConversions([{id:'d'.repeat(32),interface:'dataLayer',name:'contact_submitted',parameters:{shop_id:7,email:'private@example.invalid'}}])===0,'Personal conversion parameter was accepted');
+  check(dispatchSiteConversions([{id:'f'.repeat(32),interface:'dataLayer',name:'order_submitted',parameters:{shop_id:7,value:25.5,currency:123}}])===0,'Invalid numeric currency was accepted');
+  const eventNode=document.createElement('script');eventNode.type='application/json';eventNode.textContent=JSON.stringify([{id:'e'.repeat(32),interface:'dataLayer',name:'order_submitted',parameters:{shop_id:7,value:25.5,currency:'EUR'}}]);document.body.appendChild(eventNode);dispatchSiteConversionElement(eventNode);dispatchSiteConversionElement(eventNode);check(window.dataLayer.filter(item=>item.event==='order_submitted').length===1,'Server-rendered order conversion was duplicated');
   const search=document.querySelector('.dw-header-search');check(search&&search.method==='get'&&search.action.endsWith('/search')&&document.querySelector('label[for=query]'),'search form is inaccessible or invalid');
   check(document.querySelectorAll('main').length===1&&document.getElementById('main-content')&&document.querySelector('nav[aria-label="Main navigation"]')&&document.querySelector('nav[aria-label="Footer navigation"]'),'page landmarks are invalid');
   check(document.body.dataset.theme==='default'&&document.querySelector('.navbar-brand img[width][height]')&&document.querySelector('#breadcrumb [aria-current=page]'),'theme, logo or breadcrumb fixture failed');

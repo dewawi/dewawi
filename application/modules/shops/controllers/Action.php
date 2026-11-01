@@ -2,6 +2,8 @@
 
 abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 {
+	private const CONVERSION_TTL = 600;
+	private const CONVERSION_LIMIT = 10;
 	protected $cart = null;
 	private ?DEEC_Site_SubmissionLimiter $submissionLimiter = null;
 
@@ -45,6 +47,7 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 		$this->view->categories = $categories;
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
+		$this->view->conversionEvents = $this->consumeSiteConversions();
 	}
 
 	protected function initSiteContactForm(): void
@@ -114,5 +117,103 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 	{
 		$this->getResponse()->setHttpResponseCode(429);
 		$this->getResponse()->setHeader('Retry-After', (string)max(1, $retryAfter), true);
+	}
+
+	protected function markSiteConversion(string $name, ?float $value = null, ?string $currency = null, ?int $now = null, ?array $cookies = null, ?string $environment = null): void
+	{
+		try {
+			if (!in_array($name, ['contact_submitted', 'technical_inquiry_submitted', 'order_submitted'], true)) return;
+			$interface = $this->_siteContext->getAnalyticsEventInterface();
+			if ($interface === null || !$this->_siteContext->canLoadAnalytics($cookies, $environment)) {
+				$session = $this->getSiteConversionSession();
+				unset($session->events);
+				return;
+			}
+
+			$parameters = ['shop_id' => (int)$this->_siteContext->getSiteId()];
+			if ($name === 'order_submitted') {
+				$currency = strtoupper(trim((string)$currency));
+				if ($value === null || !is_finite($value) || $value < 0 || !preg_match('/^[A-Z]{3}$/D', $currency)) return;
+				$parameters['value'] = round($value, 4);
+				$parameters['currency'] = $currency;
+			}
+
+			$session = $this->getSiteConversionSession();
+			$events = is_array($session->events ?? null) ? $session->events : [];
+			$events[] = [
+				'id' => bin2hex(random_bytes(16)),
+				'name' => $name,
+				'parameters' => $parameters,
+				'interface' => $interface,
+				'clientid' => (int)$this->_siteContext->getClientId(),
+				'siteid' => (int)$this->_siteContext->getSiteId(),
+				'created' => $now ?? time(),
+			];
+			$session->events = array_slice($events, -self::CONVERSION_LIMIT);
+		} catch (Throwable $e) {
+			error_log('Shop conversion marker could not be stored: ' . $e->getMessage());
+		}
+	}
+
+	protected function consumeSiteConversions(?int $now = null, ?array $cookies = null, ?string $environment = null): array
+	{
+		try {
+			$session = $this->getSiteConversionSession();
+			$events = is_array($session->events ?? null) ? $session->events : [];
+			unset($session->events);
+
+			$interface = $this->_siteContext->getAnalyticsEventInterface();
+			if ($interface === null || !$this->_siteContext->canLoadAnalytics($cookies, $environment)) return [];
+			$now = $now ?? time();
+			$out = [];
+
+			foreach ($events as $event) {
+				if (!is_array($event)
+					|| !preg_match('/^[a-f0-9]{32}$/D', (string)($event['id'] ?? ''))
+					|| (int)($event['clientid'] ?? 0) !== (int)$this->_siteContext->getClientId()
+					|| (int)($event['siteid'] ?? 0) !== (int)$this->_siteContext->getSiteId()
+					|| (string)($event['interface'] ?? '') !== $interface
+					|| (int)($event['created'] ?? 0) < $now - self::CONVERSION_TTL
+					|| (int)($event['created'] ?? 0) > $now + 30) continue;
+
+				$name = (string)($event['name'] ?? '');
+				$parameters = is_array($event['parameters'] ?? null) ? $event['parameters'] : [];
+				if (!in_array($name, ['contact_submitted', 'technical_inquiry_submitted', 'order_submitted'], true)
+					|| (int)($parameters['shop_id'] ?? 0) !== (int)$this->_siteContext->getSiteId()) continue;
+
+				$cleanParameters = ['shop_id' => (int)$parameters['shop_id']];
+				if ($name === 'order_submitted') {
+					$value = $parameters['value'] ?? null;
+					$currency = (string)($parameters['currency'] ?? '');
+					if (!is_numeric($value) || !is_finite((float)$value) || (float)$value < 0 || !preg_match('/^[A-Z]{3}$/D', $currency)) continue;
+					$cleanParameters['value'] = round((float)$value, 4);
+					$cleanParameters['currency'] = $currency;
+				}
+
+				$out[] = [
+					'id' => (string)$event['id'],
+					'interface' => $interface,
+					'name' => $name,
+					'parameters' => $cleanParameters,
+				];
+			}
+
+			return $out;
+		} catch (Throwable $e) {
+			error_log('Shop conversion marker could not be consumed: ' . $e->getMessage());
+			return [];
+		}
+	}
+
+	private function getSiteConversionSession(): Zend_Session_Namespace
+	{
+		$session = new Zend_Session_Namespace('SiteConversion');
+		$context = $this->_siteContext->getClientId() . ':' . $this->_siteContext->getSiteId();
+		if (($session->context ?? '') !== $context) {
+			unset($session->events);
+			$session->context = $context;
+		}
+
+		return $session;
 	}
 }

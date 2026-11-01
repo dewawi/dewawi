@@ -75,6 +75,7 @@ class Shops_ContactController extends Shops_Controller_Action
 		$this->contactDataSession->notificationSent = null;
 
 		if ($stored['inserted']) {
+			$this->markSiteConversion('contact_submitted');
 			try {
 				$emailResult = $this->_helper->Email->sendEmail('shops', 'contact', 'contact');
 				$this->contactDataSession->notificationSent = !empty($emailResult['customerAccepted']);
@@ -92,6 +93,7 @@ class Shops_ContactController extends Shops_Controller_Action
 
 	public function successAction()
 	{
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
 		$this->initSiteLayout();
 
 		$this->view->formData = $this->contactDataSession->formData ?? [];

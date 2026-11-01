@@ -364,6 +364,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 				return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
 			}
 
+			$this->markSiteConversion('technical_inquiry_submitted');
+
 			// Auto-create quote if a SKU was provided
 			$quoteId = null;
 			$pdfInfo = [];
@@ -418,13 +420,23 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 	public function successAction()
 	{
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
 		$this->view->formData = $this->formDataSession->submittedData ?? [];
 		$this->view->downloadUrl = $this->formDataSession->downloadUrl ?? null;
 		$this->view->notificationSent = $this->formDataSession->notificationSent ?? null;
 		$this->view->duplicate = $this->formDataSession->duplicate ?? false;
+		if (!$this->view->formData) {
+			if ($this->getRequest()->isXmlHttpRequest()) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_FORM_EXPIRED')]);
+			}
+
+			return $this->_helper->redirector->gotoRoute([], 'shop_home', true);
+		}
 
 		if ($this->getRequest()->isXmlHttpRequest()) {
 			$this->assignMessages();
+			$conversionEvents = $this->consumeSiteConversions();
 
 			$formHtml = $this->view->partial('inquiry/success.phtml', [
 				'formData' => $this->view->formData,
@@ -436,12 +448,14 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$this->_helper->json([
 				'status' => 'ok',
 				'formHtml' => $formHtml,
+				'conversionEvents' => $conversionEvents,
 			]);
 
 			return;
 		}
 
-		return $this->_helper->redirector->gotoSimple('index', 'index', 'default');
+		$this->initSiteLayout();
+		$this->assignMessages();
 	}
 
 	protected function createStepForm(string $step): Shops_Form_DynamicForm

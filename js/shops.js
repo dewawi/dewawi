@@ -377,6 +377,54 @@ function enhancePublicForms(context) {
 	});
 }
 
+const siteConversionMarkers = new Set();
+
+function dispatchSiteConversions(events) {
+	if (!Array.isArray(events)) return 0;
+
+	let dispatched = 0;
+	events.forEach(function (event) {
+		if (!event || typeof event !== 'object') return;
+		const marker = String(event.id || '');
+		const name = String(event.name || '');
+		const analyticsInterface = String(event.interface || '');
+		const parameters = event.parameters;
+		if (!/^[a-f0-9]{32}$/.test(marker) || siteConversionMarkers.has(marker)) return;
+		if (!['contact_submitted', 'technical_inquiry_submitted', 'order_submitted'].includes(name)) return;
+		if (!parameters || typeof parameters !== 'object' || Array.isArray(parameters)) return;
+
+		const keys = Object.keys(parameters).sort();
+		const expectedKeys = name === 'order_submitted' ? ['currency', 'shop_id', 'value'] : ['shop_id'];
+		if (keys.length !== expectedKeys.length || keys.some(function (key, index) { return key !== expectedKeys[index]; })) return;
+		if (!Number.isInteger(parameters.shop_id) || parameters.shop_id <= 0) return;
+		if (name === 'order_submitted'
+			&& (!Number.isFinite(parameters.value) || parameters.value < 0
+				|| typeof parameters.currency !== 'string' || !/^[A-Z]{3}$/.test(parameters.currency))) return;
+
+		siteConversionMarkers.add(marker);
+		if (analyticsInterface === 'gtag' && typeof window.gtag === 'function') {
+			window.gtag('event', name, parameters);
+			dispatched++;
+		} else if (analyticsInterface === 'dataLayer' && Array.isArray(window.dataLayer)) {
+			window.dataLayer.push(Object.assign({ event: name }, parameters));
+			dispatched++;
+		}
+	});
+
+	return dispatched;
+}
+
+function dispatchSiteConversionElement(element) {
+	if (!element || element.dataset.dispatched === 'true') return 0;
+	element.dataset.dispatched = 'true';
+
+	try {
+		return dispatchSiteConversions(JSON.parse(element.textContent || '[]'));
+	} catch (error) {
+		return 0;
+	}
+}
+
 function toggleDependentFields() {
 	$('.dependent-field').each(function () {
 		const $group = $(this);
@@ -422,6 +470,7 @@ function submitStep(formElement, currentStep) {
 	const formData = $(formElement).serialize() + '&step=' + encodeURIComponent(currentStep);
 
 	$.post(window.location.href, formData, function (response) {
+		dispatchSiteConversions(response && response.conversionEvents);
 		const newContainer = response && response.formHtml ? $(response.formHtml).find('#form-container') : $();
 		if (newContainer.length) {
 			$('#form-container').replaceWith(newContainer);
