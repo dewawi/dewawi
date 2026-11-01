@@ -19,13 +19,13 @@ class Zend_View_Helper_RenderCategory extends Zend_View_Helper_Abstract
 		}
 
 		$html = '<div class="col-md-3 mb-3 px-2 d-flex align-items-stretch">';
-		$html .= '<div class="card">';
+		$html .= '<div class="card dw-category-card">';
 
 		if ($image) {
 			$imageUrl = $this->view->baseUrl() . '/media/category/' . (string)$image['url'];
 			$imageAlt = trim((string)($image['title'] ?? '')) ?: $title;
-			$imageHtml = $this->view->SiteImage($imageUrl, $imageAlt, ['class' => 'card-img-top', 'sizes' => '(max-width: 767.98px) 100vw, 25vw']);
-			if ($imageHtml !== '') $html .= '<a href="' . $this->view->escape($url) . '">' . $imageHtml . '</a>';
+			$imageHtml = $this->view->SiteImage($imageUrl, $imageAlt, ['class' => 'card-img-top dw-category-card__image', 'sizes' => '(max-width: 767.98px) 100vw, 25vw']);
+			if ($imageHtml !== '') $html .= '<a class="dw-category-card__media" href="' . $this->view->escape($url) . '">' . $imageHtml . '</a>';
 
 			$imageTitle = trim((string)($image['title'] ?? ''));
 			$imageSubtitle = $imageTitle !== '' ? $imageTitle : $subtitle;

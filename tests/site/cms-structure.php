@@ -167,6 +167,12 @@ $siteLayoutSource = file_get_contents($root . '/application/layouts/scripts/site
 checkCms(str_contains($pageRenderer, "in_array(\$type, ['hero', 'image_text'], true) && \$html === ''")
 	&& str_contains($heroTemplate, "'fetchpriority' => \$priorityImage ? 'high' : ''"), 'CMS images can prioritize more than the first visible media block');
 checkCms(str_contains($shopCss, '.main-image-wrapper {') && str_contains($shopCss, 'aspect-ratio: 4 / 3;'), 'Product media does not reserve a responsive aspect ratio');
+$categoryRenderer = file_get_contents($root . '/application/modules/shops/views/helpers/RenderCategory.php');
+$categoryView = file_get_contents($root . '/application/modules/shops/views/scripts/category/index.phtml');
+checkCms(str_contains($categoryRenderer, 'dw-category-card__media') && str_contains($categoryRenderer, 'dw-category-card__image'), 'Category cards do not use their dedicated responsive image area');
+checkCms(str_contains($categoryView, 'dw-category-carousel') && str_contains($categoryView, 'dw-category-carousel__image'), 'Category detail images do not use their dedicated responsive carousel area');
+checkCms(str_contains($shopCss, '.dw-category-card__media {') && str_contains($shopCss, '.dw-category-carousel .carousel-inner {'), 'Category image dimensions are not scoped to category views');
+checkCms(!str_contains($shopCss, '#subcategories .card-img-top'), 'Legacy category image spacing still targets the generic Bootstrap image class');
 checkCms(!str_contains($siteLayoutSource, 'as="image"'), 'Public layout preloads an image without a page-specific responsive source');
 checkCms(str_contains($siteLayoutSource, 'jquery-3.7.1.min.js') && !str_contains($siteLayoutSource, 'jquery-3.5.1'), 'Public layout does not use jQuery 3.7.1 exclusively');
 checkCms(!str_contains($siteLayoutSource, 'jquery-3.7.1.slim') && !str_contains($siteLayoutSource, 'jquery-migrate'), 'Public layout uses an incompatible jQuery build or Migrate');

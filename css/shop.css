@@ -809,8 +809,40 @@ footer {
 	min-height: 44px;
 }
 
-#subcategories .card-img-top {
-	margin-top: 20px;
+.dw-category-card {
+	width: 100%;
+}
+
+.dw-category-card__media {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	background-color: #f8f9fa;
+}
+
+.dw-category-card__image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.dw-category-carousel .carousel-inner {
+	width: 100%;
+	max-height: 420px;
+	aspect-ratio: 4 / 3;
+	background-color: #f8f9fa;
+}
+
+.dw-category-carousel .carousel-item {
+	height: 100%;
+}
+
+.dw-category-carousel .dw-category-carousel__image {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
 }
 
 .language-flag {

@@ -84,14 +84,14 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 				<div class="row">
 					<div class="col-md-6 mb-4" style="padding: 0 50px;">
 						<div class="card">
-							<div id="carousel_<?php echo $this->category['id']; ?>" class="carousel slide" data-ride="carousel">
+							<div id="carousel_<?php echo $this->category['id']; ?>" class="carousel slide dw-category-carousel" data-ride="carousel">
 								<div class="carousel-inner">
 									<?php foreach($categoryImages as $index => $image) : ?>
 										<div class="carousel-item<?php echo $index === 0 ? ' active' : ''; ?>">
 							<?php
 							$imageAlt = trim((string)($image['title'] ?? '')) ?: (string)$this->category['title'];
 							echo $this->SiteImage('/media/category/' . (string)$image['url'], $imageAlt, [
-								'class' => 'd-block w-100',
+								'class' => 'd-block w-100 dw-category-carousel__image',
 								'sizes' => '(max-width: 767.98px) 100vw, 50vw',
 							]);
 							?>
