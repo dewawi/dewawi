@@ -2,6 +2,11 @@
 
 class Items_Form_Item extends DEEC_Form
 {
+	protected array $shopOptions = [];
+	protected array $shopCategoryOptions = [];
+	protected int $currentShopId = 0;
+	protected int $currentShopCategoryId = 0;
+
 	public function __construct()
 	{
 		$this->addElement([
@@ -420,10 +425,25 @@ class Items_Form_Item extends DEEC_Form
 		}
 
 		$this->addElement([
-			'type' => 'hidden',
+			'type' => 'select',
 			'name' => 'shopid',
+			'label' => 'ITEMS_SHOP',
+			'options' => ['0' => 'ITEMS_SHOP_NONE'],
 			'format' => ['type' => 'int'],
+			'attribs' => ['data-shop-assignment' => 'shop'],
 			'tab' => 'shop',
+			'col' => 6,
+		]);
+
+		$this->addElement([
+			'type' => 'select',
+			'name' => 'shopcatid',
+			'label' => 'ITEMS_SHOP_CATEGORY',
+			'options' => ['0' => 'ITEMS_SHOP_CATEGORY_NONE'],
+			'format' => ['type' => 'int'],
+			'attribs' => ['data-shop-assignment' => 'category'],
+			'tab' => 'shop',
+			'col' => 6,
 		]);
 
 		$this->addElement([
@@ -476,6 +496,59 @@ class Items_Form_Item extends DEEC_Form
 			],
 			'tab' => 'shop',
 		]);
+	}
+
+	public function configureShopAssignment(array $shopOptions, array $categoryOptions, int $shopId, int $categoryId): self
+	{
+		$this->shopOptions = $shopOptions;
+		$this->shopCategoryOptions = $categoryOptions;
+		$this->currentShopId = $shopId;
+		$this->currentShopCategoryId = $categoryId;
+		$this->addOptions('shopid', $shopOptions, 'replace');
+		$this->addOptions('shopcatid', $categoryOptions, 'replace');
+
+		return $this;
+	}
+
+	public function isValid(array $data)
+	{
+		$valid = parent::isValid($data);
+		return $this->validateShopAssignment($data, false) && $valid;
+	}
+
+	public function isValidPartial(array $data): bool
+	{
+		$valid = parent::isValidPartial($data);
+		return $this->validateShopAssignment($data, true) && $valid;
+	}
+
+	protected function validateShopAssignment(array $data, bool $partial): bool
+	{
+		$hasShop = array_key_exists('shopid', $data);
+		$hasCategory = array_key_exists('shopcatid', $data);
+
+		if ($partial && !$hasShop && !$hasCategory) return true;
+
+		$shopValue = $hasShop ? $data['shopid'] : $this->currentShopId;
+		$categoryValue = $hasCategory ? $data['shopcatid'] : $this->currentShopCategoryId;
+		$shopId = is_scalar($shopValue) ? (int)$shopValue : -1;
+		$categoryId = is_scalar($categoryValue) ? (int)$categoryValue : -1;
+		$valid = true;
+
+		if (!array_key_exists((string)$shopId, $this->shopOptions)) {
+			$this->errors['shopid'][] = 'invalid';
+			$valid = false;
+		}
+
+		if ($hasShop && !$hasCategory && $shopId !== $this->currentShopId) $categoryId = 0;
+
+		if (($hasCategory && !is_scalar($categoryValue)) || $categoryId < 0
+			|| ($categoryId > 0 && ($shopId <= 0 || !array_key_exists((string)$categoryId, $this->shopCategoryOptions)))) {
+			$this->errors['shopcatid'][] = 'invalid';
+			$valid = false;
+		}
+
+		return $valid;
 	}
 
 	public function setVariantMode(): self

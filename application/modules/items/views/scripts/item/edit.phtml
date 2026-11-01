@@ -6,6 +6,13 @@ echo $this->Messages();
 echo $this->FileManager();
 ?>
 
+<?php $shopAssignment = is_array($this->shopAssignment ?? null) ? $this->shopAssignment : []; ?>
+<?php if($shopAssignment) : ?>
+	<div class="dw-alert dw-alert--<?php echo ($shopAssignment['state'] ?? '') === 'assigned' ? 'success' : 'warning'; ?>">
+		<?php echo $this->translate((string)$shopAssignment['message']); ?>
+	</div>
+<?php endif; ?>
+
 <?php if(!empty($this->itemParent)): ?>
 
 	<div class="dw-section dw-variant-context">
@@ -84,7 +91,7 @@ echo $this->FileManager();
 		'overview' => ['title' => 'TABS_OVERVIEW'],
 		'prices' => ['title' => 'TABS_PRICES'],
 		'details' => ['title' => 'TABS_DETAILS'],
-		'shop' => ['title' => 'TABS_SHOP', 'show' => (bool)$this->form->getValue('shopid')],
+		'shop' => ['title' => 'TABS_SHOP'],
 		'ledger' => [
 			'title' => 'TABS_LEDGER',
 			'html' => $this->Ledger(),

@@ -19,6 +19,7 @@ class Items_Model_Entity_Item
 		'deliverytimeoos',
 		'video',
 		'shopid',
+		'shopcatid',
 		'shopdescription',
 		'shopdescriptionshort',
 		'shopdescriptionmini',

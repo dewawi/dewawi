@@ -75,6 +75,7 @@ class Items_ItemController extends DEEC_Controller_Action
 		$media = $mediaDb->getMediaByParentID($id, 'items', 'item')->toArray();
 		$clientId = (string)(int)$this->view->client['id'];
 		$mediaPath = substr($clientId, 0, 1) . '/' . (strlen($clientId) > 1 ? substr($clientId, 1, 1) : '0') . '/' . $clientId;
+		$shopAssignment = (new Items_Service_ShopAssignment())->getStatus($row);
 		$availability = [];
 		$planningService = new Items_Service_StockPlanning();
 		$warehouseDb = new Application_Model_DbTable_Warehouse();
@@ -101,6 +102,7 @@ class Items_ItemController extends DEEC_Controller_Action
 			'subfolders' => [
 				'images' => $this->getSubfolders(BASE_PATH . '/media/' . $mediaPath . '/images/'),
 			],
+			'shopAssignment' => $shopAssignment,
 		];
 	}
 
@@ -138,6 +140,22 @@ class Items_ItemController extends DEEC_Controller_Action
 		$item = $itemDb->getById(
 			$id
 		);
+		$shopAssignment = new Items_Service_ShopAssignment();
+		$shopOptions = $shopAssignment->getShopOptions();
+		$shopId = (int)($item['shopid'] ?? 0);
+		$postShopId = $this->getRequest()->getPost('shopid', null);
+
+		if ($postShopId !== null && is_scalar($postShopId)) $shopId = (int)$postShopId;
+
+		$categoryOptions = $shopAssignment->getCategoryOptions($shopId);
+		$formData['form']->configureShopAssignment(
+			$shopOptions,
+			$categoryOptions,
+			(int)($item['shopid'] ?? 0),
+			(int)($item['shopcatid'] ?? 0)
+		);
+		$formData['options']['shopid'] = $shopOptions;
+		$formData['options']['shopcatid'] = $categoryOptions;
 
 		if(
 			$item
@@ -153,6 +171,8 @@ class Items_ItemController extends DEEC_Controller_Action
 		array $values,
 		array $row
 	): array {
+		$values = (new Items_Service_ShopAssignment())->normalize($values, $row);
+
 		if(empty($row['parentid'])) {
 			return $values;
 		}
@@ -163,6 +183,22 @@ class Items_ItemController extends DEEC_Controller_Action
 				Items_Model_Entity_Item::inheritedFields()
 			)
 		);
+	}
+
+	public function getAction()
+	{
+		$shopId = $this->_getParam('shopid', null);
+
+		if ($shopId === null) return parent::getAction();
+
+		$this->disableView();
+		$shopId = is_scalar($shopId) ? (int)$shopId : 0;
+		$options = (new Items_Service_ShopAssignment())->getCategoryOptions($shopId);
+
+		foreach ($options as &$label) $label = $this->view->translate((string)$label);
+		unset($label);
+
+		return $this->_helper->json(['ok' => true, 'options' => $options]);
 	}
 
 	protected function afterEditSave(
@@ -180,9 +216,20 @@ class Items_ItemController extends DEEC_Controller_Action
 			$id,
 			$values
 		);
+		$item = array_replace($oldRow, $values);
+		$this->saveShopSlug($id, $item);
 
-		$shopId = (int)($values['shopid'] ?? $oldRow['shopid'] ?? 0);
-		$shopCategoryId = (int)($values['shopcatid'] ?? $oldRow['shopcatid'] ?? 0);
+		if (!array_intersect_key($values, array_flip(['shopid', 'shopcatid']))) return;
+
+		foreach ((new Items_Model_DbTable_Item())->getVariants($id) as $variant) {
+			$this->saveShopSlug((int)$variant->id, $variant->toArray());
+		}
+	}
+
+	protected function saveShopSlug(int $id, array $item): void
+	{
+		$shopId = (int)($item['shopid'] ?? 0);
+		$shopCategoryId = (int)($item['shopcatid'] ?? 0);
 		$slugDb = new Admin_Model_DbTable_Slug();
 
 		if($shopId <= 0 || $shopCategoryId <= 0) {
@@ -192,7 +239,7 @@ class Items_ItemController extends DEEC_Controller_Action
 
 		$slug = $slugDb->getEntitySlug('shops', 'item', $id);
 		$slugValue = !$slug || empty($slug['slug'])
-			? $this->slugify((string)($values['sku'] ?? $oldRow['sku'] ?? $id))
+			? $this->slugify((string)($item['sku'] ?? $id))
 			: null;
 
 		$slugDb->saveSlug('shops', 'item', $shopId, $shopCategoryId, $id, $slugValue);

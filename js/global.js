@@ -192,6 +192,42 @@ $(document).ready(function(){
 		}, undefined, $(this));
 	});
 
+	$('.edit form').on('change', '[data-shop-assignment="shop"]', function(event) {
+		event.stopImmediatePropagation();
+
+		var $shop = $(this);
+		var $category = $shop.closest('form').find('[data-shop-assignment="category"]');
+		var shopId = parseInt($shop.val(), 10) || 0;
+
+		$category.empty().prop('disabled', true);
+		var result = edit({shopid: shopId, shopcatid: 0}, null, undefined, $shop.add($category));
+
+		if(!result || result.ok !== true) {
+			window.location.reload();
+			return;
+		}
+
+		$.ajax({
+			type: 'GET',
+			url: Dewawi.url('items', 'item', 'get'),
+			data: {shopid: shopId},
+			dataType: 'json',
+			cache: false
+		}).done(function(response) {
+			if(!response || response.ok !== true || !response.options) {
+				pushMessages(Dewawi.message('MESSAGES_REQUEST_FAILED'), 'danger', '#messages');
+				return;
+			}
+
+			$.each(response.options, function(value, label) {
+				$('<option>').val(value).text(label).appendTo($category);
+			});
+			$category.prop('disabled', false).val('0').focus();
+		}).fail(function() {
+			pushMessages(Dewawi.message('MESSAGES_REQUEST_FAILED'), 'danger', '#messages');
+		});
+	});
+
 	$('.edit form').on('change', 'input, textarea, select', function() {
 		var $field = $(this);
 
