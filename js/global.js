@@ -2691,7 +2691,9 @@ function finishFieldSave($fields, response) {
 		Dewawi.setDirty(false);
 	} else {
 		var failed = response && (response.ok === false || response.saved === false || response.errors);
-		var message = Dewawi.message(failed ? 'MESSAGES_SAVE_FAILED' : 'MESSAGES_CHANGE_STATUS_UNKNOWN');
+		var message = response && response.message
+			? Dewawi.message(response.message)
+			: Dewawi.message(failed ? 'MESSAGES_SAVE_FAILED' : 'MESSAGES_CHANGE_STATUS_UNKNOWN');
 		$fields.each(function () {
 			var messages = response && response.errors && response.errors[(this.name || '').replace(/\[\]$/, '')];
 			markFieldError($(this), messages || [message]);

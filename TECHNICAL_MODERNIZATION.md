@@ -14,6 +14,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Die Suchmaschinenfreigabe wird mandantenbezogen über `shop.indexable` gesteuert. Neue Shops sind standardmäßig nicht indexierbar.
 - Entwicklungs- und Staging-Umgebungen bleiben unabhängig von der Shop-Einstellung nicht indexierbar.
 - Nicht indexierbare Websites erhalten Robots-Meta und `X-Robots-Tag`; Canonical-Ausgabe und öffentlich konfiguriertes Analytics-Markup werden unterdrückt.
+- Neue und ausdrücklich geänderte öffentliche Slugs werden zentral normalisiert und vor dem Speichern auf Pfadkonflikte sowie reservierte Systemrouten geprüft.
 - Interne DEWAWI-Seiten erhalten grundlegende Sicherheits- und Noindex-Header.
 - Eine eigene Staging-Konfiguration wurde vorbereitet; Staging darf nicht stillschweigend die Produktionsdatenbank verwenden.
 - TLS, Redirects, Consent Management, responsive Bilder, Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
@@ -39,7 +40,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 3 | Umgesetzt | P0 | Nicht indexierbare Websites geben keine Canonical-URL aus. Vor dem Livegang muss `shop.url` die endgültige HTTPS-Produktionsadresse enthalten; anschließend alle Seitentypen prüfen. |
 | 4 | Umgesetzt | P1 | Bootstrap, Anwendungslayouts, Login, Fehlerausgabe und Installer verwenden HTML5. Fremde Demo-/Vendor-Dateien wurden nicht verändert. |
 | 5 | Umgesetzt | P1 | Veraltete Content-Type-Metaelemente wurden aus den anwendungseigenen Dokumenten entfernt; `<meta charset="UTF-8">` bleibt erhalten. |
-| 6 | Offen | P0 vor Relaunch | Slugs werden gespeichert, aber nicht zentral nach `ae/oe/ue/ss` normalisiert. Eine zentrale Normalisierung mit Kollisionsprüfung und freigegebener Redirect-Liste ergänzen. Bestehende Mandanten-Slugs nicht automatisch umschreiben. |
+| 6 | Umgesetzt | P0 vor Relaunch | Neue und ausdrücklich geänderte öffentliche Slugs werden zentral nach `ae/oe/ue/ss` normalisiert. Vollständige verschachtelte Pfade werden je Mandant und Website auf Kollisionen und reservierte Systemrouten geprüft. Bestehende Slugs bleiben ohne ausdrückliche Slug-Änderung unverändert; es gab keine Massenmigration. Redirects für spätere redaktionelle URL-Änderungen bleiben Anforderung 9. |
 | 7 | Teilweise | P1 | Generierte öffentliche Pfade verwenden aktuell keine abschließenden Schrägstriche. Diese Strategie für neue URLs beibehalten und nach einem Routen-Audit eine serverseitige 301-Normalisierung ergänzen, ohne Dateien, Startseite oder Legacy-Routen zu beschädigen. |
 | 8 | Infrastruktur | P0 vor Relaunch | Die kanonische Domain kommt mandantenbezogen aus `shop.url`; eine globale Host-Weiterleitung existiert nicht. Pro öffentlicher Website eine Hauptdomain festlegen und alternative Hosts nach DNS-/TLS-Prüfung per 301 umleiten. |
 | 9 | Offen | P0 vor Relaunch | Es gibt noch keine allgemeine mandantenbezogene Redirect-Tabelle und keinen geprüften Alt-zu-Neu-Import. Exakte permanente Weiterleitungen entwickeln; keine pauschale Umleitung auf die Startseite. |
@@ -150,6 +151,16 @@ Eine umfassende Script-/Style-CSP ist noch nicht aktiviert, weil Inline-Code, ex
 - Eine mit Production identische Staging-Datenbankkonfiguration beendet den Start mit einem Fehler.
 - Der bisherige Development-Fallback auf eine vorhandene Production-Sektion bleibt aus Rückwärtskompatibilität erhalten.
 
+### 5.6 Einheitliche Slug-Erzeugung
+
+- `DEEC_Filter::slug()` transliteriert deutsche Umlaute und `ß` verbindlich zu `ae`, `oe`, `ue` und `ss`, vereinheitlicht Trennzeichen und entfernt unerwünschte Sonderzeichen.
+- Die zentralen Slug-Speicherwege normalisieren neue oder ausdrücklich geänderte Werte und verwenden bei leerem Ergebnis weiterhin die Entitäts-ID als deterministischen Fallback.
+- Seiten, Kategorien, Tags, Menüpunkte, Artikel und Artikelimporte verwenden den zentralen Speicherweg; die separate Artikel-Normalisierung wurde entfernt.
+- Kollisionen werden anhand des vollständigen öffentlichen Pfads innerhalb derselben Website erkannt. Verschachtelte Seiten, Kategorien und Tags sowie Artikel unter Shopkategorien werden berücksichtigt.
+- Die Prüfung ist mandanten- und websitebezogen. Gleiche Pfade in unterschiedlichen Websites bleiben zulässig; fremde Website-IDs werden abgewiesen.
+- Reservierte Such-, Sitemap-, Kontakt-, Anfrage-, Warenkorb-, Checkout-, Feed- und Produkt-Routen können nicht als neue öffentliche Pfade gespeichert werden.
+- Bestehende Slug-Werte werden bei Titel-, Preis- oder anderen sachfremden Änderungen nicht normalisiert oder ersetzt. Es wurden keine vorhandenen Datensätze migriert und keine Redirects angelegt.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
 Die Änderungen an `structure.sql` und `update-1.1.7-1.1.8.sql` bereiten das Schema vor; während dieser Arbeit wurde keine reale Datenbank verändert.
@@ -171,8 +182,11 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 |---|---|
 | PHP-Syntax der geänderten PHP-/PHTML-Dateien | Bestanden |
 | Technische HTML5-/Indexierungs-/Header-Baseline | 40 Prüfungen bestanden |
+| Slug-Normalisierung, Speicherwege, Hierarchie, Kollisionen und Kompatibilität | 56 Prüfungen bestanden |
 | Site-CMS-Struktur | 144 Prüfungen bestanden |
 | Öffentliche Suche | 86 Prüfungen bestanden |
+| Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
+| Browsermeldungen, Übersetzungen und Benachrichtigungen | 366 Prüfungen bestanden; zusätzlich 60 Sales- und 24 Purchases-Helper-Prüfungen |
 | Sicherheitskonfiguration und Umgebungswahl | 22 Prüfungen bestanden |
 | Shop-Anfragen | 39 Prüfungen bestanden |
 | Kontaktanfragen | 45 Prüfungen bestanden |
@@ -197,14 +211,13 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Das Hinzufügen von Headern kann kundenspezifische Einbettungen beeinflussen; die Frame-Beschränkung gilt derzeit nur für interne Seiten.
 - Öffentliches Analytics ist in einer indexierbaren Produktionswebsite weiterhin nicht consent-gesteuert.
 - TLS, Host-Redirects, HSTS, Kompression, Protokollversionen und Caching sind nicht allein durch den PHP-Code abgeschlossen.
-- Slugs und bestehende URLs wurden bewusst nicht automatisch verändert, um Mandanten und vorhandene Links nicht zu beschädigen.
-- Die geprüften Änderungen wurden in vier lokalen Commits gesichert. Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
+- Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Eine ausdrückliche redaktionelle Slug-, Eltern- oder Website-Änderung kann den öffentlichen Pfad weiterhin ändern; die dafür benötigte Redirect-Verwaltung ist eine eigene Folgephase.
+- Die vorherige Modernisierungsbasis wurde in vier lokalen Commits gesichert. Die hier dokumentierte Slug-Phase wird als eigener fünfter lokaler Commit zusammengefasst. Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
 
 ## 9. Empfohlene nächste Phasen
 
 ### Phase 2 – URL-, SEO- und Relaunch-Basis
 
-- Zentralen Slug-Normalisierer und Kollisionsprüfung entwickeln.
 - Mandantenbezogene Redirect-Verwaltung einschließlich Schleifen-/Kettenprüfung ergänzen.
 - Dynamische Robots-Ausgabe und zusätzliche Sitemap-Status-/Entitätstests ergänzen.
 - Metadaten, Überschriftenhierarchie, Breadcrumb-JSON-LD und 404-Seite vervollständigen.
@@ -240,7 +253,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 
 ## 10. Lokale Commits
 
-Die Änderungen wurden hunkgenau in vier fachliche Einheiten getrennt. Dateien mit mehreren Themen wurden nicht pauschal einem einzelnen Commit zugeordnet.
+Die vorherigen Änderungen wurden hunkgenau in vier fachliche Einheiten getrennt. Dateien mit mehreren Themen wurden nicht pauschal einem einzelnen Commit zugeordnet. Die Slug-Vereinheitlichung aus Phase 2.1 wird als eigener fünfter lokaler Commit geführt.
 
 ### Commit 1: `modernize html document structure`
 
@@ -325,8 +338,18 @@ Datei:
 
 - `TECHNICAL_MODERNIZATION.md`
 
+### Commit 5: `standardize public site slugs`
+
+Inhalt:
+
+- Zentrale Slug-Normalisierung mit verbindlicher deutscher Transliteration.
+- Mandanten- und websitebezogene Prüfung vollständiger Pfade, Kollisionen und reservierter Routen.
+- Transaktionale Formular-, Tag- und Artikelimport-Speicherwege mit übersetzbaren Fehlermeldungen.
+- Kompatibilitätsschutz für bestehende Slugs, Zuordnungen, Canonicals und Sitemap-Pfade.
+- Automatisierte Slug- und Benachrichtigungsregressionen.
+
 Wegen der Schemaänderung in Commit 3 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, grundlegende Response-Header und eine sicherere Staging-Trennung ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS/Redirects, Consent, Relaunch-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, grundlegende Response-Header, eine sicherere Staging-Trennung und einheitliche Slug-Erzeugung ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS/Redirects, Consent, Relaunch-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.

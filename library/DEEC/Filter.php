@@ -165,9 +165,13 @@ class DEEC_Filter
 
 	public static function slug(string $value): string
 	{
+		$value = strtr($value, [
+			'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue', 'ẞ' => 'Ss',
+			'ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss',
+		]);
 		$value = preg_replace('~[^\pL\d]+~u', '-', $value);
 		$value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
-		$value = preg_replace('~[^-\w]+~', '', (string)$value);
+		$value = preg_replace('~[^a-zA-Z0-9]+~', '-', (string)$value);
 		return strtolower(trim((string)$value, '-'));
 	}
 }

@@ -138,7 +138,7 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 
 	protected function afterEditSave(int $id, array $values, array $oldRow): void
 	{
-		if (!array_intersect_key($values, array_flip(['slug', 'title', 'type', 'parentid', 'shopid']))) {
+		if (!array_intersect_key($values, array_flip(['slug', 'type', 'parentid', 'shopid']))) {
 			return;
 		}
 
@@ -155,11 +155,8 @@ class Admin_PageController extends DEEC_Controller_AdminAction
 		$existing = $slugDb->getEntitySlug('shops', 'page', $id);
 		$slug = null;
 
-		if (array_key_exists('slug', $values)) {
-			$slug = DEEC_Filter::slug((string)$values['slug']);
-		} elseif (!$existing || empty($existing['slug']) || (string)$existing['slug'] === (string)$id) {
-			$title = (string)($values['title'] ?? $oldRow['title'] ?? '');
-			if ($title !== '') $slug = DEEC_Filter::slug($title);
+		if (array_key_exists('slug', $values) && (!$existing || (string)$values['slug'] !== (string)$existing['slug'])) {
+			$slug = (string)$values['slug'];
 		}
 
 		$slugDb->saveSlug('shops', 'page', $shopId, $parentId, $id, $slug);

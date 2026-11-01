@@ -216,10 +216,11 @@ class Items_ItemController extends DEEC_Controller_Action
 			$id,
 			$values
 		);
-		$item = array_replace($oldRow, $values);
-		$this->saveShopSlug($id, $item);
 
 		if (!array_intersect_key($values, array_flip(['shopid', 'shopcatid']))) return;
+
+		$item = array_replace($oldRow, $values);
+		$this->saveShopSlug($id, $item);
 
 		foreach ((new Items_Model_DbTable_Item())->getVariants($id) as $variant) {
 			$this->saveShopSlug((int)$variant->id, $variant->toArray());
@@ -239,7 +240,7 @@ class Items_ItemController extends DEEC_Controller_Action
 
 		$slug = $slugDb->getEntitySlug('shops', 'item', $id);
 		$slugValue = !$slug || empty($slug['slug'])
-			? $this->slugify((string)($item['sku'] ?? $id))
+			? (string)($item['sku'] ?? $id)
 			: null;
 
 		$slugDb->saveSlug('shops', 'item', $shopId, $shopCategoryId, $id, $slugValue);
@@ -603,7 +604,7 @@ class Items_ItemController extends DEEC_Controller_Action
 									$shopCategoryId = (int)($updateData['shopcatid'] ?? 0);
 
 									if($shopId > 0 && $shopCategoryId > 0) {
-										$slugDb->saveSlug('shops', 'item', $shopId, $shopCategoryId, (int)$item['id'], $this->slugify((string)$updateData['sku']));
+										$this->saveShopSlug((int)$item['id'], array_replace($item, $updateData));
 										echo 'Item added to shop: '.$updateData['sku'].', itemid: '.$item['id'].' to '.$shopId.'<br>';
 									} else {
 										$updateData['shopid'] = 0;
@@ -670,13 +671,27 @@ class Items_ItemController extends DEEC_Controller_Action
 									}
 								}
 
-								$itemid = $itemDb->addItem($updateData);
-								++$rowsCreated;
+								$adapter = $itemDb->getAdapter();
+								$adapter->beginTransaction();
+								try {
+									$itemid = $itemDb->addItem($updateData);
 
-								if ($createShopSlug) {
-									$slugDb = new Admin_Model_DbTable_Slug();
-									$slugDb->saveSlug('shops', 'item', (int)$updateData['shopid'], (int)$updateData['shopcatid'], $itemid, $this->slugify((string)$updateData['sku']));
+									if ($createShopSlug) {
+										$slugDb = new Admin_Model_DbTable_Slug();
+										$slugDb->saveSlug('shops', 'item', (int)$updateData['shopid'], (int)$updateData['shopcatid'], $itemid, (string)$updateData['sku']);
+									}
+
+									$adapter->commit();
+								} catch (DomainException $exception) {
+									$adapter->rollBack();
+									echo htmlspecialchars((string)$this->view->translate($exception->getMessage()), ENT_QUOTES, 'UTF-8') . '<br>';
+									$row++;
+									continue;
+								} catch (Exception $exception) {
+									$adapter->rollBack();
+									throw $exception;
 								}
+								++$rowsCreated;
 
 								if(isset($map['ebayuserid'])) {
 									if($datacsv[$map['ebayuserid']] == 0) {
@@ -897,29 +912,6 @@ class Items_ItemController extends DEEC_Controller_Action
 				throw $e;
 			}
 		}
-	}
-
-	protected function slugify($string) {
-		// Replace non letter or digits with hyphens
-		$string = preg_replace('~[^\pL\d]+~u', '-', $string);
-
-		// Transliterate
-		$string = iconv('utf-8', 'us-ascii//TRANSLIT', $string);
-
-		// Remove unwanted characters
-		$string = preg_replace('~[^-\w]+~', '', $string);
-
-		// Trim hyphens from beginning and end
-		$string = trim($string, '-');
-
-		// Convert to lowercase
-		$string = strtolower($string);
-
-		if (empty($string)) {
-			return 'n-a';
-		}
-
-		return $string;
 	}
 
 	protected function getSubfolders($directory)

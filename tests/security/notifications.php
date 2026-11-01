@@ -88,7 +88,7 @@ foreach (['de_DE', 'en_US'] as $locale) {
     foreach ($view->catalog as $key => $text) {
         if (str_starts_with($key, 'MESSAGES_UPLOAD_')) check($text !== '' && $text !== $key, $locale . ': untranslated upload message ' . $key);
     }
-    check(count($translations) === 66 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
+    check(count($translations) === 74 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
     foreach ($translations as $key => $text) check($key !== $text, $locale . ': untranslated browser key ' . $key);
     $view->messages = [
         'MESSAGES_EMAIL_SENT_SUCCESS', 'MESSAGES_EMAIL_SENT_SUCCESS',

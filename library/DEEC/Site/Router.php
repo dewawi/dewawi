@@ -2,6 +2,16 @@
 
 class DEEC_Site_Router
 {
+	public static function isReservedPath(string $path): bool
+	{
+		$segment = explode('/', trim($path, '/'))[0] ?? '';
+
+		return in_array($segment, [
+			'sitemap.xml', 'search', 'contact', 'inquiry', 'cart',
+			'checkout', 'products-de.xml', 'product',
+		], true);
+	}
+
 	public function registerRoutes(DEEC_Site_Context $siteContext)
 	{
 		$frontController = Zend_Controller_Front::getInstance();

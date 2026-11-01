@@ -166,6 +166,12 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 		}
 
 		$slugDb = new Admin_Model_DbTable_Slug();
+		$existing = $slugDb->getEntitySlug('shops', 'menuitem', $id);
+		$slug = null;
+
+		if (array_key_exists('slug', $values) && (!$existing || (string)$values['slug'] !== (string)$existing['slug'])) {
+			$slug = (string)$values['slug'];
+		}
 
 		$slugDb->saveSlug(
 			'shops',
@@ -173,7 +179,7 @@ class Admin_MenuitemController extends DEEC_Controller_AdminAction
 			$shopId,
 			(int)($values['parentid'] ?? $oldRow['parentid']),
 			$id,
-			(string)($values['slug'] ?? '')
+			$slug
 		);
 	}
 

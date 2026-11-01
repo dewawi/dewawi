@@ -193,28 +193,43 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 				$values = $form->getFilteredValues();
 
 				$adapter = $db->getAdapter();
+				$saveFailed = false;
 
 				try {
 					$adapter->beginTransaction();
 
 					$values = $this->beforeEditSave($values, $row);
-					$db->updateById($id, $values);
+					$splitValues = $this->splitEditValues($values);
+
+					if (!empty($splitValues['main'])) {
+						$db->updateById($id, $splitValues['main']);
+					}
+
 					$this->afterEditSave($id, $values, $row);
 
 					$adapter->commit();
 				} catch (Exception $e) {
 					$adapter->rollBack();
-					throw $e;
+
+					if (!($e instanceof DomainException) || !str_starts_with($e->getMessage(), 'MESSAGES_SLUG_')) {
+						throw $e;
+					}
+
+					$saveFailed = true;
+					$form->setValues($post);
+					$this->_flashMessenger->addMessage($e->getMessage());
 				}
 
-				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
+				if (!$saveFailed) {
+					$this->_flashMessenger->addMessage('MESSAGES_SAVED');
 
-				return $this->_helper->redirector->gotoSimple(
-					'edit',
-					$this->getRequest()->getControllerName(),
-					null,
-					['id' => $id]
-				);
+					return $this->_helper->redirector->gotoSimple(
+						'edit',
+						$this->getRequest()->getControllerName(),
+						null,
+						['id' => $id]
+					);
+				}
 			}
 		} else {
 			$locale = Zend_Registry::get('Zend_Locale');
@@ -383,9 +398,12 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			$adapter->rollBack();
 
 			error_log((string)$e);
+			$message = $e instanceof DomainException && str_starts_with($e->getMessage(), 'MESSAGES_SLUG_')
+				? $e->getMessage()
+				: 'save_failed';
 			return $this->_helper->json([
 				'ok' => false,
-				'message' => 'save_failed',
+				'message' => $message,
 			]);
 		}
 

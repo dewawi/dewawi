@@ -90,15 +90,28 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 				//$data['parentid'] = $params['parentid'];
 
 				$tagDb = new Admin_Model_DbTable_Tag();
-				$id = $tagDb->addTag($data);
+				$adapter = $tagDb->getAdapter();
+				$adapter->beginTransaction();
+				try {
+					$id = $tagDb->addTag($data);
 
-				if($data['shopid']) {
-					$slugDb = new Admin_Model_DbTable_Slug();
-					$slugDb->addSlug('shops', 'tag', $data['shopid'], $data['parentid'], $id, $id);
+					if($data['shopid']) {
+						$slugDb = new Admin_Model_DbTable_Slug();
+						$slugDb->addSlug('shops', 'tag', $data['shopid'], $data['parentid'], $id, $id);
+					}
+
+					$adapter->commit();
+				} catch (DomainException $exception) {
+					$adapter->rollBack();
+					echo Zend_Json::encode(array('ok' => false, 'message' => $exception->getMessage()));
+					return;
+				} catch (Exception $exception) {
+					$adapter->rollBack();
+					throw $exception;
 				}
 
 				//echo Zend_Json::encode($data);
-				echo Zend_Json::encode($tagDb->getTag($id));
+				echo Zend_Json::encode(array('ok' => true, 'id' => $id, 'values' => $tagDb->getTag($id)));
 			//} else {
 			//	echo Zend_Json::encode($data);
 				//echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -143,15 +156,27 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 				if(true) {
 					$tagDb = new Admin_Model_DbTable_Tag();
 					if($element == 'parentid') {
-						$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-						$tagArray = $tagDb->getTag($id);
-						$tagDb->updateTag($id, $data);
+						$adapter = $tagDb->getAdapter();
+						$adapter->beginTransaction();
+						try {
+							$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
+							$tagArray = $tagDb->getTag($id);
+							$tagDb->updateTag($id, $data);
 
-						//sort old parent tag
-						$this->setOrdering($tagArray['clientid'], $tagArray['type'], $tagArray['parentid']);
+							//sort old parent tag
+							$this->setOrdering($tagArray['clientid'], $tagArray['type'], $tagArray['parentid']);
 
-						$slugDb = new Admin_Model_DbTable_Slug();
-						$slugDb->updateSlug('shops', 'tag', $tagArray['shopid'], $data['parentid'], $id);
+							$slugDb = new Admin_Model_DbTable_Slug();
+							$slugDb->updateSlug('shops', 'tag', $tagArray['shopid'], $data['parentid'], $id);
+							$adapter->commit();
+						} catch (DomainException $exception) {
+							$adapter->rollBack();
+							echo Zend_Json::encode(array('ok' => false, 'message' => $exception->getMessage()));
+							return;
+						} catch (Exception $exception) {
+							$adapter->rollBack();
+							throw $exception;
+						}
 
 						/*$tags = $this->_helper->Tags->getTags(null, $params['clientid'], $params['type'], $tagArray['parentid']);
 						$i = 1;
@@ -162,14 +187,30 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 								++$i;
 							}
 						}*/
-						echo Zend_Json::encode($tagDb->getTag($id));
+						echo Zend_Json::encode(array('ok' => true, 'id' => $id, 'values' => $tagDb->getTag($id)));
 					} elseif($element == 'slug') {
 						$slugDb = new Admin_Model_DbTable_Slug();
-						$slugDb->updateSlug('shops', 'tag', $tag['shopid'], $tag['parentid'], $id, $data['slug']);
-						echo Zend_Json::encode(array('slug' => $data['slug']));
+						$adapter = $slugDb->getAdapter();
+						$adapter->beginTransaction();
+						try {
+							$slugDb->updateSlug('shops', 'tag', $tag['shopid'], $tag['parentid'], $id, $data['slug']);
+							$adapter->commit();
+							$slug = $slugDb->getSlug('shops', 'tag', $tag['shopid'], $id);
+							echo Zend_Json::encode(array(
+								'ok' => true,
+								'id' => $id,
+								'values' => array('slug' => $slug['slug'] ?? ''),
+							));
+						} catch (DomainException $exception) {
+							$adapter->rollBack();
+							echo Zend_Json::encode(array('ok' => false, 'message' => $exception->getMessage()));
+						} catch (Exception $exception) {
+							$adapter->rollBack();
+							throw $exception;
+						}
 					} else {
 						$tagDb->updateTag($id, $data);
-						echo Zend_Json::encode($tagDb->getTag($id));
+						echo Zend_Json::encode(array('ok' => true, 'id' => $id, 'values' => $tagDb->getTag($id)));
 					}
 				} else {
 					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
@@ -272,6 +313,12 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 		}
 
 		$slugDb = new Admin_Model_DbTable_Slug();
+		$existing = $slugDb->getEntitySlug('shops', 'tag', $id);
+		$slug = null;
+
+		if (array_key_exists('slug', $values) && (!$existing || (string)$values['slug'] !== (string)$existing['slug'])) {
+			$slug = (string)$values['slug'];
+		}
 
 		$slugDb->saveSlug(
 			'shops',
@@ -279,7 +326,7 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 			(int)$oldRow['shopid'],
 			(int)($values['parentid'] ?? $oldRow['parentid']),
 			$id,
-			(string)($values['slug'] ?? '')
+			$slug
 		);
 	}
 
