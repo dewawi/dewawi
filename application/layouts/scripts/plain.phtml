@@ -1,5 +1,4 @@
 <?php
-$this->headMeta()->appendHttpEquiv('Content-Type', 'text/html;charset=utf-8');
 $this->headTitle()->setSeparator(' - ');
 $this->headTitle('DEWAWI');
 
@@ -7,8 +6,9 @@ echo $this->doctype();
 
 $this->language = str_replace('_', '-', $this->language);
 ?>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php echo $this->escape($this->language); ?>" lang="<?php echo $this->escape($this->language); ?>">
+<html lang="<?php echo $this->escape($this->language); ?>">
 <head>
+	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<link href="<?php echo $this->baseUrl(); ?>/favicon.ico" rel="icon" type="image/ico" />
 
