@@ -211,7 +211,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 				} catch (Exception $e) {
 					$adapter->rollBack();
 
-					if (!($e instanceof DomainException) || !str_starts_with($e->getMessage(), 'MESSAGES_SLUG_')) {
+					if (!($e instanceof DomainException) || !$this->isPublicUrlError($e->getMessage())) {
 						throw $e;
 					}
 
@@ -398,7 +398,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			$adapter->rollBack();
 
 			error_log((string)$e);
-			$message = $e instanceof DomainException && str_starts_with($e->getMessage(), 'MESSAGES_SLUG_')
+			$message = $e instanceof DomainException && $this->isPublicUrlError($e->getMessage())
 				? $e->getMessage()
 				: 'save_failed';
 			return $this->_helper->json([
@@ -415,6 +415,12 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 			array_intersect_key($newRow, array_flip($changedFields)),
 			DEEC_Display::fromRow($form, $newRow, $changedFields)
 		);
+	}
+
+	protected function isPublicUrlError(string $message): bool
+	{
+		return str_starts_with($message, 'MESSAGES_SLUG_')
+			|| str_starts_with($message, 'MESSAGES_REDIRECT_');
 	}
 
 	protected function getCurrentPermissions(): array

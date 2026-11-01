@@ -17,7 +17,8 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Neue und ausdrücklich geänderte öffentliche Slugs werden zentral normalisiert und vor dem Speichern auf Pfadkonflikte sowie reservierte Systemrouten geprüft.
 - Interne DEWAWI-Seiten erhalten grundlegende Sicherheits- und Noindex-Header.
 - Eine eigene Staging-Konfiguration wurde vorbereitet; Staging darf nicht stillschweigend die Produktionsdatenbank verwenden.
-- TLS, Redirects, Consent Management, responsive Bilder, Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
+- Automatische historische Pfade werden mandanten- und websitebezogen gespeichert und per HTTP 301 auf die jeweils aktuelle öffentliche Entitäts-URL weitergeleitet.
+- TLS, bekannte Alt-URL-Importe, Consent Management, responsive Bilder, Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
 
 ## 3. Status- und Prioritätsdefinitionen
 
@@ -40,11 +41,11 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 3 | Umgesetzt | P0 | Nicht indexierbare Websites geben keine Canonical-URL aus. Vor dem Livegang muss `shop.url` die endgültige HTTPS-Produktionsadresse enthalten; anschließend alle Seitentypen prüfen. |
 | 4 | Umgesetzt | P1 | Bootstrap, Anwendungslayouts, Login, Fehlerausgabe und Installer verwenden HTML5. Fremde Demo-/Vendor-Dateien wurden nicht verändert. |
 | 5 | Umgesetzt | P1 | Veraltete Content-Type-Metaelemente wurden aus den anwendungseigenen Dokumenten entfernt; `<meta charset="UTF-8">` bleibt erhalten. |
-| 6 | Umgesetzt | P0 vor Relaunch | Neue und ausdrücklich geänderte öffentliche Slugs werden zentral nach `ae/oe/ue/ss` normalisiert. Vollständige verschachtelte Pfade werden je Mandant und Website auf Kollisionen und reservierte Systemrouten geprüft. Bestehende Slugs bleiben ohne ausdrückliche Slug-Änderung unverändert; es gab keine Massenmigration. Redirects für spätere redaktionelle URL-Änderungen bleiben Anforderung 9. |
+| 6 | Umgesetzt | P0 vor Relaunch | Neue und ausdrücklich geänderte öffentliche Slugs werden zentral nach `ae/oe/ue/ss` normalisiert. Vollständige verschachtelte Pfade werden je Mandant und Website auf Kollisionen und reservierte Systemrouten geprüft. Bestehende Slugs bleiben ohne ausdrückliche URL-Änderung unverändert; es gab keine Massenmigration. |
 | 7 | Teilweise | P1 | Generierte öffentliche Pfade verwenden aktuell keine abschließenden Schrägstriche. Diese Strategie für neue URLs beibehalten und nach einem Routen-Audit eine serverseitige 301-Normalisierung ergänzen, ohne Dateien, Startseite oder Legacy-Routen zu beschädigen. |
 | 8 | Infrastruktur | P0 vor Relaunch | Die kanonische Domain kommt mandantenbezogen aus `shop.url`; eine globale Host-Weiterleitung existiert nicht. Pro öffentlicher Website eine Hauptdomain festlegen und alternative Hosts nach DNS-/TLS-Prüfung per 301 umleiten. |
-| 9 | Offen | P0 vor Relaunch | Es gibt noch keine allgemeine mandantenbezogene Redirect-Tabelle und keinen geprüften Alt-zu-Neu-Import. Exakte permanente Weiterleitungen entwickeln; keine pauschale Umleitung auf die Startseite. |
-| 10 | Offen | P0 vor Relaunch | Historische Doppelungen wurden nicht vollständig inventarisiert. Jede bekannte Alt-URL einzeln der fachlich passenden neuen Seite zuordnen und aus Navigation sowie Sitemap entfernen. |
+| 9 | Teilweise | P0 vor Relaunch | Ausdrückliche Änderungen öffentlicher Seiten-, Kategorie-, Produkt- und Tag-Pfade erzeugen automatisch mandanten- und websitebezogene 301-Weiterleitungen. Ziele werden bei jedem Abruf aus der aktuellen öffentlichen Entität ermittelt. Ein fachlich geprüfter Import bekannter Alt-URLs und eine manuelle Admin-Zuordnung bleiben offen. |
+| 10 | Offen | P0 vor Relaunch | Historische Doppelungen wurden nicht vollständig inventarisiert. Jede bekannte Alt-URL einzeln der fachlich passenden neuen Seite zuordnen und aus Navigation sowie Sitemap entfernen; die neue Redirect-Tabelle kann anschließend als technische Grundlage dienen. |
 | 11 | Teilweise | P1 | Seiten und Kategorien unterstützen `metatitle` und `metadescription`; einzelne Entitäten verwenden nur Fallbacks. Metadatenfelder und Fallback-Regeln pro öffentlichem Seitentyp vervollständigen und auf Duplikate prüfen. |
 | 12 | Teilweise | P1 | CMS-Blöcke und Views enthalten semantische Überschriften, jedoch erlauben Legacy-WYSIWYG-Felder beliebige H1–H6. Pro Template eine H1-Quelle definieren, Komponentenebenen begrenzen und gerenderte Seiten automatisiert prüfen. |
 | 13 | Teilweise | P1 | Mega-Menü-Schaltflächen, `aria-expanded`, Escape-Behandlung und Fokusdarstellung sind teilweise vorhanden. Fokusrückgabe, gegebenenfalls Pfeiltastensteuerung sowie Browser-/Tastaturtests ergänzen. |
@@ -79,7 +80,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 42 | Teilweise | P0 vor Relaunch | Die Sitemap verwendet öffentliche mandantenbezogene Slugs und die konfigurierte Basisadresse; Suche ist ausgeschlossen. Nicht indexierbare Websites liefern für die Sitemap jetzt HTTP 404. Weitere Status-/Entitätstests für indexierbare Websites ergänzen. |
 | 43 | Offen | P1 | Es gibt keine mandanten-/umgebungsabhängige `robots.txt`-Ausgabe. Eine dynamische Robots-Antwort ergänzen, CSS/JS crawlbar halten und Robots niemals als Zugriffsschutz verwenden. |
 | 44 | Teilweise | P1 | Fehlende Routen und Entitäten liefern echte 404-Antworten; die Seite ist noch generisch. Eine hilfreiche öffentliche 404-Seite mit Navigation, Suche und Kontakt ergänzen, ohne den Statuscode zu verändern. |
-| 45 | Teilweise | P0 | 403/404/500 werden explizit behandelt und wichtige Fehlerwege sind getestet. Eine zentrale Redirect-/410-Logik sowie Statusprüfungen im Relaunch-Crawl fehlen. |
+| 45 | Teilweise | P0 | 403/404/500 werden explizit behandelt; bekannte automatisch gespeicherte Altpfade liefern 301, unbekannte Pfade weiterhin 404. Eine fachliche 410-Strategie und vollständige Statusprüfungen im Relaunch-Crawl fehlen. |
 | 46 | Infrastruktur | P1 | Anwendungscache ist vorhanden; eine geprüfte statische Cache-Control-/Expires-Strategie ist nicht im Repository abgebildet. Versionierte Assets serverseitig langfristig cachen; Seitencache nur mit mandanten-, Consent- und Session-sicheren Schlüsseln. |
 | 47 | Infrastruktur | P1 | Keine gzip-/Brotli-Konfiguration im Repository. Kompression am Webserver oder Proxy aktivieren und Content-Types, `Vary` sowie bereits komprimierte Formate prüfen. |
 | 48 | Infrastruktur | P1 | HTTP/2-/HTTP/3-Unterstützung ist eine Server-/Proxy-Eigenschaft. HTTP/2 nach TLS prüfen; HTTP/3 nur bei unterstützter Infrastruktur und messbarem Nutzen aktivieren. |
@@ -96,7 +97,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 59 | Umgesetzt | P1 | `DEEC_Site_Block` und Partials bilden wiederverwendbare Hero-, CTA-, Text-, Bild/Text-, Karten-, Kontakt- und Kategorieblöcke ab. Nur bei konkretem Wiederverwendungsbedarf erweitern. |
 | 60 | Teilweise | P1 | Wichtige Blöcke besitzen getrennte Felder und Allowlists; generische HTML-/WYSIWYG-Felder bestehen weiterhin. Feldlimits und Medienauswahl ausbauen und Inhalte inkrementell migrieren. |
 | 61 | Offen | P0 vor Relaunch | Einzeltests existieren, aber kein vollständiger Crawl für Links, Status, Titel, H1, Canonicals und Redirect-Ketten. Einen sicheren Staging-Crawl als reproduzierbaren Relaunch-Report implementieren. |
-| 62 | Offen | P0 vor Relaunch | Ohne zentrale Redirect-Verwaltung können Schleifen und Ketten nicht zuverlässig verhindert werden. Beim Speichern Ziele auf finale Canonicals auflösen und Schleifen/Ketten ablehnen. |
+| 62 | Umgesetzt | P0 vor Relaunch | Redirects speichern keine weiteren Pfadziele, sondern die öffentliche Entität. Dadurch werden auch nach mehrfachen URL-Änderungen alle historischen Pfade direkt auf den aktuellen kanonischen Pfad aufgelöst; aktuelle URLs haben Vorrang und Schleifen werden verworfen. |
 | 63 | Infrastruktur | P1 nach Relaunch | Search-Console-/Webmaster-Zustand liegt außerhalb des Repositories. Eigentum prüfen, Produktionssitemap einreichen und Indexierung sowie 404 nach dem Relaunch beobachten. |
 | 64 | Teilweise | P0 vor Relaunch | Analytics ist konfigurierbar und jetzt umgebungs-/indexierungsabhängig, aber weder consent-gesteuert noch durch eine Conversion-Migrationsliste abgesichert. Bestehende Ereignisse inventarisieren und einzeln validieren. |
 | 65 | Derzeit nicht anwendbar | P1 bei Einführung | Kein öffentlicher Partnerzugang vorhanden. Datenschutzgerechte Events für Start, Erfolg, Login, autorisierten Download und Anfrage definieren, ohne sensible Daten zu übertragen. |
@@ -159,19 +160,30 @@ Eine umfassende Script-/Style-CSP ist noch nicht aktiviert, weil Inline-Code, ex
 - Kollisionen werden anhand des vollständigen öffentlichen Pfads innerhalb derselben Website erkannt. Verschachtelte Seiten, Kategorien und Tags sowie Artikel unter Shopkategorien werden berücksichtigt.
 - Die Prüfung ist mandanten- und websitebezogen. Gleiche Pfade in unterschiedlichen Websites bleiben zulässig; fremde Website-IDs werden abgewiesen.
 - Reservierte Such-, Sitemap-, Kontakt-, Anfrage-, Warenkorb-, Checkout-, Feed- und Produkt-Routen können nicht als neue öffentliche Pfade gespeichert werden.
-- Bestehende Slug-Werte werden bei Titel-, Preis- oder anderen sachfremden Änderungen nicht normalisiert oder ersetzt. Es wurden keine vorhandenen Datensätze migriert und keine Redirects angelegt.
+- Bestehende Slug-Werte werden bei Titel-, Preis- oder anderen sachfremden Änderungen nicht normalisiert oder ersetzt. Es wurden keine vorhandenen Slug-Datensätze migriert.
+
+### 5.7 Automatische öffentliche Weiterleitungen
+
+- `slugredirect` speichert ausschließlich relative historische Pfade, deren SHA-256-Prüfwert und die zugehörige öffentliche Entität. Mandant und Website sind Bestandteil der eindeutigen Zuordnung; Domains werden nicht gespeichert.
+- Bei einer ausdrücklichen Slug- oder Elternänderung werden der bisherige und der neue vollständige Pfad vor dem Schreiben berechnet. Das gilt auch für verschachtelte Seiten, Kategorien, Tags und Produkte unter einer verschobenen Kategorie.
+- Slug-Änderung und Redirect-Speicherung laufen in derselben bestehenden Formular-, Tag- oder Artikelimport-Transaktion. Ein Pfadkonflikt bricht die gesamte Änderung mit einer übersetzbaren Meldung ab.
+- Der öffentliche Resolver prüft zuerst aktuelle Slugs. Nur ein nicht mehr aktueller GET-/HEAD-Pfad kann anschließend eine 301-Antwort erhalten. POST und andere schreibende Requests werden nicht umgeleitet.
+- Das Ziel wird bei jedem Abruf aus der aktuellen kanonischen URL der gespeicherten Entität gebildet. Mehrfache Änderungen erzeugen deshalb keine Redirect-Ketten. Gelöschte, deaktivierte, mandantenfremde oder durch ein deaktiviertes Website-Feature nicht öffentliche Ziele werden nicht weitergeleitet.
+- Reservierte Systemrouten, Dateipfade und statische Ressourcen sind ausgeschlossen. Unbekannte Pfade bleiben echte 404-Antworten; es gibt keinen Startseiten-Fallback.
+- Canonicals und Sitemap verwenden weiterhin ausschließlich die bestehende Slug-Tabelle. Historische Pfade erscheinen dort nicht.
+- Bekannte historische URLs aus der Zeit vor dieser Funktion werden nicht automatisch erraten. Ein geprüfter Alt-URL-Import und eine kleine manuelle Admin-Zuordnung sind bewusst noch nicht enthalten.
 
 ## 6. Datenbank- und Deployment-Hinweise
 
-Die Änderungen an `structure.sql` und `update-1.1.7-1.1.8.sql` bereiten das Schema vor; während dieser Arbeit wurde keine reale Datenbank verändert.
+Die Änderungen an `structure.sql` und der weiterhin aktuellen Migration `update-1.1.7-1.1.8.sql` ergänzen `slugredirect`; während dieser Arbeit wurde keine reale Bestandsdatenbank verändert. Es wurde keine neue Migrationsversionsdatei angelegt.
 
 Empfohlene Reihenfolge:
 
 1. Vollständiges Datenbank-Backup erstellen.
 2. Prüfen, ob die vorgesehene Migration in der Zielinstallation bereits ausgeführt wurde.
-3. Falls sie bereits ausgeführt wurde, die beiden `shop.indexable`-ALTER-Anweisungen als separat freigegebene Deployment-Migration anwenden.
+3. Falls sie bereits ausgeführt wurde, die nachträglich ergänzten Schemaanweisungen einschließlich `slugredirect` kontrolliert und separat freigegeben anwenden; die Anwendung benötigt die Tabelle vor der ersten öffentlichen URL-Änderung.
 4. Für jede Entwicklungs-/Testwebsite die Indexierung im Shop-Datensatz deaktivieren.
-5. Anwendungscode deployen und Robots-Meta, `X-Robots-Tag`, Canonical und Analytics-Ausgabe prüfen.
+5. Anwendungscode deployen und Robots-Meta, `X-Robots-Tag`, Canonical, Redirects und Analytics-Ausgabe prüfen.
 6. Indexierung einer Produktionswebsite erst nach TLS-, Canonical-, Redirect- und Content-Freigabe aktivieren.
 
 Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch Datenabfluss. Nicht öffentliche Umgebungen sollten zusätzlich durch Authentifizierung, Netzwerkregeln oder einen vorgeschalteten Zugriffsschutz abgesichert werden.
@@ -182,17 +194,17 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 |---|---|
 | PHP-Syntax der geänderten PHP-/PHTML-Dateien | Bestanden |
 | Technische HTML5-/Indexierungs-/Header-Baseline | 40 Prüfungen bestanden |
-| Slug-Normalisierung, Speicherwege, Hierarchie, Kollisionen und Kompatibilität | 56 Prüfungen bestanden |
+| Slug-Normalisierung, Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 66 Prüfungen bestanden |
 | Site-CMS-Struktur | 144 Prüfungen bestanden |
-| Öffentliche Suche | 86 Prüfungen bestanden |
+| Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 100 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
-| Browsermeldungen, Übersetzungen und Benachrichtigungen | 366 Prüfungen bestanden; zusätzlich 60 Sales- und 24 Purchases-Helper-Prüfungen |
+| Browsermeldungen, Übersetzungen und Benachrichtigungen | 370 Prüfungen bestanden; zusätzlich 60 Sales- und 24 Purchases-Helper-Prüfungen |
 | Sicherheitskonfiguration und Umgebungswahl | 22 Prüfungen bestanden |
 | Shop-Anfragen | 39 Prüfungen bestanden |
 | Kontaktanfragen | 45 Prüfungen bestanden |
 | Kontaktpersonen | 66 Prüfungen bestanden |
 | Kontaktrollen | 32 Prüfungen bestanden |
-| Berechtigungen | 385 Prüfungen bestanden |
+| Berechtigungen | 393 Prüfungen bestanden |
 | Mandantenzugriff | 268 Prüfungen bestanden |
 | Mandantenwechsel | 53 Prüfungen bestanden |
 | HTTP-Sessions | 25 Prüfungen bestanden |
@@ -207,18 +219,19 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 ## 8. Kompatibilitätsrisiken und offene Punkte
 
 - Bestehende Shops werden bei der Schema-Migration absichtlich nicht automatisch auf Noindex gestellt. Die gewünschte Einstellung muss je Installation geprüft werden.
-- Wird der Code vor der Datenbankmigration bereitgestellt, behandelt der Resolver eine fehlende Spalte aus Kompatibilitätsgründen als indexierbar. Migration und Deployment müssen deshalb koordiniert werden.
+- Wird der Redirect-Code vor der ergänzten Datenbankmigration bereitgestellt, schlagen Redirect-Prüfungen bei öffentlichen URL-Änderungen wegen der fehlenden Tabelle fehl. Migration und Deployment müssen deshalb koordiniert werden.
 - Das Hinzufügen von Headern kann kundenspezifische Einbettungen beeinflussen; die Frame-Beschränkung gilt derzeit nur für interne Seiten.
 - Öffentliches Analytics ist in einer indexierbaren Produktionswebsite weiterhin nicht consent-gesteuert.
 - TLS, Host-Redirects, HSTS, Kompression, Protokollversionen und Caching sind nicht allein durch den PHP-Code abgeschlossen.
-- Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Eine ausdrückliche redaktionelle Slug-, Eltern- oder Website-Änderung kann den öffentlichen Pfad weiterhin ändern; die dafür benötigte Redirect-Verwaltung ist eine eigene Folgephase.
-- Die vorherige Modernisierungsbasis wurde in vier lokalen Commits gesichert. Die hier dokumentierte Slug-Phase wird als eigener fünfter lokaler Commit zusammengefasst. Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
+- Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Redirects entstehen erst bei einer ausdrücklichen Slug- oder Elternänderung innerhalb derselben Website; ein Websitewechsel erzeugt keine domainübergreifende Weiterleitung.
+- Vorhandene historische URLs werden nicht automatisch importiert. Dafür sind vor dem Relaunch eine fachliche Zuordnung und ein eigener sicherer Import- oder Verwaltungsweg erforderlich.
+- Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
 
 ## 9. Empfohlene nächste Phasen
 
 ### Phase 2 – URL-, SEO- und Relaunch-Basis
 
-- Mandantenbezogene Redirect-Verwaltung einschließlich Schleifen-/Kettenprüfung ergänzen.
+- Bekannte historische URLs inventarisieren und einen geprüften Import- oder kleinen manuellen Zuordnungsweg ergänzen.
 - Dynamische Robots-Ausgabe und zusätzliche Sitemap-Status-/Entitätstests ergänzen.
 - Metadaten, Überschriftenhierarchie, Breadcrumb-JSON-LD und 404-Seite vervollständigen.
 - Vollständigen Staging-Crawl als Release-Prüfung erstellen.
@@ -348,8 +361,18 @@ Inhalt:
 - Kompatibilitätsschutz für bestehende Slugs, Zuordnungen, Canonicals und Sitemap-Pfade.
 - Automatisierte Slug- und Benachrichtigungsregressionen.
 
-Wegen der Schemaänderung in Commit 3 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
+### Commit 6: `add automatic site redirects`
+
+Inhalt:
+
+- Mandanten- und websitebezogene Speicherung historischer öffentlicher Pfade.
+- Automatische Redirect-Erzeugung für ausdrückliche Slug-, Eltern- und Kategoriepfadänderungen einschließlich abhängiger Seiten und Produkte.
+- Direkte Auflösung auf die aktuelle öffentliche Entitäts-URL ohne Redirect-Ketten.
+- HTTP 301 für GET/HEAD mit Vorrang aktueller URLs sowie Schutz vor Schleifen, Systemrouten, statischen Pfaden und nicht öffentlichen Zielen.
+- Schemaergänzung in Neuinstallation und weiterhin aktueller Migration `update-1.1.7-1.1.8.sql` sowie automatisierte Routing-, ACL-, Kollisions- und MariaDB-Migrationstests.
+
+Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, grundlegende Response-Header, eine sicherere Staging-Trennung und einheitliche Slug-Erzeugung ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS/Redirects, Consent, Relaunch-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, Relaunch-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.

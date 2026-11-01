@@ -21,6 +21,7 @@ require_once $root . '/application/modules/shops/models/Search.php';
 require_once $root . '/application/modules/shops/models/DbTable/Item.php';
 require_once $root . '/application/modules/shops/models/DbTable/Category.php';
 require_once $root . '/application/modules/shops/models/DbTable/Slug.php';
+require_once $root . '/application/modules/shops/models/DbTable/Slugredirect.php';
 require_once $root . '/application/modules/shops/views/helpers/Breadcrumbs.php';
 
 $checks = 0;
@@ -353,6 +354,14 @@ $adapter->rows = [
 		['id' => 200, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'products', 'deleted' => 0],
 		['id' => 201, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'item', 'entityid' => 100, 'parentid' => 10, 'slug' => 'existing-item', 'deleted' => 0],
 	],
+	'slugredirect' => [
+		['id' => 300, 'clientid' => 3, 'shopid' => 7, 'path' => 'old-products', 'pathhash' => hash('sha256', 'old-products'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 0],
+		['id' => 301, 'clientid' => 4, 'shopid' => 7, 'path' => 'foreign', 'pathhash' => hash('sha256', 'foreign'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 0],
+		['id' => 302, 'clientid' => 3, 'shopid' => 8, 'path' => 'other-shop', 'pathhash' => hash('sha256', 'other-shop'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 0],
+		['id' => 303, 'clientid' => 3, 'shopid' => 7, 'path' => 'deleted-redirect', 'pathhash' => hash('sha256', 'deleted-redirect'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 1],
+		['id' => 304, 'clientid' => 3, 'shopid' => 7, 'path' => 'products', 'pathhash' => hash('sha256', 'products'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 0],
+		['id' => 305, 'clientid' => 3, 'shopid' => 7, 'path' => 'old-products/old-item', 'pathhash' => hash('sha256', 'old-products/old-item'), 'module' => 'shops', 'controller' => 'item', 'entityid' => 100, 'deleted' => 0],
+	],
 ];
 Zend_Db_Table::setDefaultAdapter($adapter);
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 7, 'clientid' => 3], [], ['cms', 'catalog']));
@@ -360,6 +369,52 @@ $categoryItems = (new Shops_Model_DbTable_Item())->getItemsByCategory(10)->toArr
 checkSearch(array_column($categoryItems, 'id') === [100] && (int)$categoryItems[0]['shopenabled'] === 0, 'Existing item without shop approval is missing from its category');
 $resolvedItem = (new Shops_Model_DbTable_Slug())->resolvePath('products/existing-item');
 checkSearch((int)($resolvedItem['entityid'] ?? 0) === 100 && ($resolvedItem['controller'] ?? '') === 'item', 'Existing item slug without shop approval is not publicly resolvable');
+
+$redirectDb = new Shops_Model_DbTable_Slugredirect();
+checkSearch($redirectDb->resolvePath('old-products') === 'products', 'Historical path does not resolve to the current canonical entity path');
+checkSearch($redirectDb->resolvePath('old-products/old-item') === 'products/existing-item', 'Historical product path does not resolve to its current canonical path');
+checkSearch($redirectDb->resolvePath('foreign') === null && $redirectDb->resolvePath('other-shop') === null, 'Redirect crossed a tenant or shop boundary');
+checkSearch($redirectDb->resolvePath('deleted-redirect') === null, 'Deleted redirect remains public');
+checkSearch($redirectDb->resolvePath('products') === null, 'Redirect loop to the current path was accepted');
+checkSearch($redirectDb->resolvePath('search') === null && $redirectDb->resolvePath('asset.css') === null, 'Reserved or static path was accepted as a redirect');
+
+$adapter->rows['category'][0]['activated'] = 0;
+checkSearch($redirectDb->resolvePath('old-products') === null, 'Redirect to a disabled entity remains active');
+$adapter->rows['category'][0]['activated'] = 1;
+
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 7, 'clientid' => 3], [], ['cms']));
+checkSearch((new Shops_Model_DbTable_Slugredirect())->resolvePath('old-products') === null, 'Redirect to a disabled website feature remains active');
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 7, 'clientid' => 3], [], ['cms', 'catalog']));
+
+$_SERVER['REQUEST_URI'] = '/old-products';
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$redirectRouter = new Zend_Controller_Router_Rewrite();
+$redirectMethod = new ReflectionMethod(DEEC_Site_Router::class, 'registerRedirectRoute');
+$redirectMethod->setAccessible(true);
+$redirectMethod->invoke(new DEEC_Site_Router(), $redirectRouter);
+$redirectRoute = $redirectRouter->getRoute('shop_redirect')->match('old-products');
+checkSearch(($redirectRoute['controller'] ?? '') === 'redirect', 'GET redirect route was not registered');
+
+$_SERVER['REQUEST_METHOD'] = 'POST';
+$postRouter = new Zend_Controller_Router_Rewrite();
+$redirectMethod->invoke(new DEEC_Site_Router(), $postRouter);
+checkSearch(!isset($postRouter->getRoutes()['shop_redirect']), 'Writing request was registered for a redirect');
+
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_SERVER['REQUEST_URI'] = '/unknown-historical-path';
+$unknownRouter = new Zend_Controller_Router_Rewrite();
+$redirectMethod->invoke(new DEEC_Site_Router(), $unknownRouter);
+checkSearch(!isset($unknownRouter->getRoutes()['shop_redirect']), 'Unknown path was turned into a catch-all redirect');
+
+$_SERVER['REQUEST_URI'] = '/products';
+$slugMethod = new ReflectionMethod(DEEC_Site_Router::class, 'registerSlugRoute');
+$slugMethod->setAccessible(true);
+checkSearch($slugMethod->invoke(new DEEC_Site_Router(), new Zend_Controller_Router_Rewrite(), $context) === true, 'Current public URL does not take precedence over redirects');
+
+$redirectControllerSource = file_get_contents($root . '/application/modules/shops/controllers/RedirectController.php');
+checkSearch(str_contains($redirectControllerSource, 'setHttpResponseCode(301)') && str_contains($redirectControllerSource, "setHeader('Location'")
+	&& str_contains($redirectControllerSource, 'isHead()') && str_contains($redirectControllerSource, "404"), 'Redirect response is missing HTTP 301, Location, HEAD or 404 handling');
+checkSearch(!str_contains($sitemapSource, 'Slugredirect'), 'Historical redirect paths can enter the sitemap');
 
 $itemDb = new Shops_Model_DbTable_Item();
 foreach ([0, 1, 25, 26, 60] as $total) {

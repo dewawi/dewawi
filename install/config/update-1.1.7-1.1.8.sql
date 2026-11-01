@@ -145,3 +145,22 @@ SET
       AND sp.`status` = 'planned'
       AND sp.`deleted` = 0
   ), 0);
+
+CREATE TABLE IF NOT EXISTS `slugredirect` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shopid` int(11) NOT NULL,
+  `path` varchar(2048) NOT NULL,
+  `pathhash` char(64) NOT NULL,
+  `module` varchar(255) NOT NULL DEFAULT 'shops',
+  `controller` varchar(255) NOT NULL,
+  `entityid` int(11) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clientid_shopid_pathhash` (`clientid`, `shopid`, `pathhash`),
+  KEY `clientid_shopid_target` (`clientid`, `shopid`, `module`, `controller`, `entityid`, `deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

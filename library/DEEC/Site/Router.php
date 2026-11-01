@@ -12,13 +12,25 @@ class DEEC_Site_Router
 		], true);
 	}
 
+	public static function isRedirectablePath(string $path): bool
+	{
+		$path = trim($path, '/');
+
+		if ($path === '' || strlen($path) > 2048 || self::isReservedPath($path)) return false;
+		if (preg_match('~[\\\\?#\x00-\x20\x7f]|(?:^|/)\.{1,2}(?:/|$)~', $path)) return false;
+		if (preg_match('~(?:^|/)[^/]*\.[^/]*(?:/|$)~', $path)) return false;
+
+		return true;
+	}
+
 	public function registerRoutes(DEEC_Site_Context $siteContext)
 	{
 		$frontController = Zend_Controller_Front::getInstance();
 		$router = $frontController->getRouter();
 
 		$this->registerFallbackRoute($router);
-		$this->registerSlugRoute($router, $siteContext);
+		$hasSlug = $this->registerSlugRoute($router, $siteContext);
+		if (!$hasSlug) $this->registerRedirectRoute($router);
 		$this->registerBaseRoutes($router, $siteContext);
 	}
 
@@ -223,19 +235,19 @@ class DEEC_Site_Router
 		));
 	}
 
-	protected function registerSlugRoute(Zend_Controller_Router_Rewrite $router, DEEC_Site_Context $siteContext)
+	protected function registerSlugRoute(Zend_Controller_Router_Rewrite $router, DEEC_Site_Context $siteContext): bool
 	{
 		$path = trim((string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
 
 		if ($path === '') {
-			return;
+			return false;
 		}
 
 		$slugDb = new Shops_Model_DbTable_Slug();
 		$slug = $slugDb->resolvePath($path);
 
 		if (!$slug || !$this->isSlugControllerEnabled((string)$slug['controller'], $siteContext)) {
-			return;
+			return false;
 		}
 
 		$router->addRoute(
@@ -250,6 +262,28 @@ class DEEC_Site_Router
 				)
 			)
 		);
+
+		return true;
+	}
+
+	protected function registerRedirectRoute(Zend_Controller_Router_Rewrite $router): void
+	{
+		if (!in_array(strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')), ['GET', 'HEAD'], true)) return;
+
+		$path = trim((string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+		if (!DEEC_Site_Router::isRedirectablePath($path)) return;
+
+		$target = (new Shops_Model_DbTable_Slugredirect())->resolvePath($path);
+		if (!$target) return;
+
+		$router->addRoute('shop_redirect', new Zend_Controller_Router_Route(
+			$path,
+			array(
+				'module' => 'shops',
+				'controller' => 'redirect',
+				'action' => 'index'
+			)
+		));
 	}
 
 	protected function isSlugControllerEnabled($controller, DEEC_Site_Context $siteContext)

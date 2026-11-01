@@ -175,6 +175,20 @@ foreach (['GET', 'HEAD'] as $method) {
     $checks += 2;
 }
 
+foreach (['GET', 'HEAD'] as $method) {
+    [$request, $response] = permissionRoute('shops', 'redirect', 'index', $method);
+    check($request->getModuleName() === 'shops' && !$response->isRedirect() && $response->getHttpResponseCode() === 200, 'Guest website redirect denied: ' . $method);
+    check($publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Website redirect did not use the public ACL path: ' . $method);
+    $checks += 2;
+}
+
+foreach ([['index', 'POST'], ['preview', 'GET']] as [$action, $method]) {
+    [$request, $response] = permissionRoute('shops', 'redirect', $action, $method);
+    check($response->isRedirect(), 'Guest can dispatch non-public redirect request: ' . $action . '/' . $method);
+    check(!$publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Non-public redirect request matched the public ACL path: ' . $action . '/' . $method);
+    $checks += 2;
+}
+
 Zend_Auth::getInstance()->getStorage()->write((object)['id' => 42]);
 [$request, $response] = permissionRoute('shops', 'search', 'index');
 check($request->getModuleName() === 'shops' && !$response->isRedirect() && $response->getHttpResponseCode() === 200, 'Authenticated website search denied');

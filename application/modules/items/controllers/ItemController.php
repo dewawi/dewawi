@@ -577,6 +577,9 @@ class Items_ItemController extends DEEC_Controller_Action
 								}
 								//print_r($placeholders);
 								//print_r($updateData);
+								$adapter = $itemDb->getAdapter();
+								$adapter->beginTransaction();
+								try {
 
 								//Update eBay listing
 								if(isset($map['ebayuserid'])) {
@@ -615,6 +618,16 @@ class Items_ItemController extends DEEC_Controller_Action
 
 								//print_r($updateData);
 								$itemDb->updateItem($item['id'], $updateData);
+								$adapter->commit();
+								} catch (DomainException $exception) {
+									$adapter->rollBack();
+									echo htmlspecialchars((string)$this->view->translate($exception->getMessage()), ENT_QUOTES, 'UTF-8') . '<br>';
+									$row++;
+									continue;
+								} catch (Exception $exception) {
+									$adapter->rollBack();
+									throw $exception;
+								}
 								++$rowsUpdated;
 
 								//error_log(print_r($updateData,true));

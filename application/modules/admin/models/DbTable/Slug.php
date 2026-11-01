@@ -98,7 +98,7 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$entityid = (int)$entityid;
 		if ($module === 'shops' && $shopid > 0) $this->assertShopAccess($shopid);
 		$slug = $this->normalizeSlugValue($slug, $entityid);
-		$this->assertSlugAvailable($module, $controller, $shopid, $parentid, $entityid, $slug);
+		$redirects = $this->assertSlugAvailable($module, $controller, $shopid, $parentid, $entityid, $slug);
 
 		$data = array();
 		$data['module'] = $module;
@@ -111,7 +111,9 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$data['createdby'] = $this->_user['id'];
 		$data['clientid'] = $this->_client['id'];
 		$this->insert($data);
-		return $this->getAdapter()->lastInsertId();
+		$id = (int)$this->getAdapter()->lastInsertId();
+		$this->saveRedirects($shopid, $redirects);
+		return $id;
 	}
 
 	public function updateSlug($module, $controller, $shopid, $parentid, $entityid, $slug = null)
@@ -127,7 +129,7 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$slugValue = $slug !== null
 			? $this->normalizeSlugValue($slug, $entityid)
 			: (string)$existing['slug'];
-		$this->assertSlugAvailable($module, $controller, $shopid, $parentid, $entityid, $slugValue, (int)$existing['id']);
+		$redirects = $this->assertSlugAvailable($module, $controller, $shopid, $parentid, $entityid, $slugValue, (int)$existing['id']);
 
 		$where = array();
 		$where[] = $this->getAdapter()->quoteInto('module = ?', $module);
@@ -144,6 +146,7 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$data['modifiedby'] = $this->_user['id'];
 
 		$this->update($data, $where);
+		$this->saveRedirects($shopid, $redirects);
 	}
 
 	public function saveSlug($module, $controller, $shopid, $parentid, $entityid, $slug = null)
@@ -175,12 +178,13 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 				: (string)$existing['slug'];
 
 			if ($slug !== null) $data['slug'] = $slugValue;
-			$this->assertSlugAvailable($module, $controller, $shopid, $parentid, $entityid, $slugValue, (int)$existing['id']);
+			$redirects = $this->assertSlugAvailable($module, $controller, $shopid, $parentid, $entityid, $slugValue, (int)$existing['id']);
 
 			$data['modified'] = $this->_date;
 			$data['modifiedby'] = $this->_user['id'];
 
 			$this->update($data, 'id = ' . (int)$existing['id']);
+			$this->saveRedirects($shopid, $redirects);
 
 			return (int)$existing['id'];
 		}
@@ -237,11 +241,12 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		}
 	}
 
-	protected function assertSlugAvailable($module, $controller, int $shopId, int $parentId, int $entityId, string $slug, int $slugId = 0): void
+	protected function assertSlugAvailable($module, $controller, int $shopId, int $parentId, int $entityId, string $slug, int $slugId = 0): array
 	{
-		if ($module !== 'shops' || !in_array($controller, self::PUBLIC_CONTROLLERS, true)) return;
+		if ($module !== 'shops' || !in_array($controller, self::PUBLIC_CONTROLLERS, true)) return [];
 
 		$rows = $this->getActiveSlugs($shopId);
+		$oldRows = $rows;
 		$candidate = [
 			'id' => $slugId,
 			'module' => $module,
@@ -274,6 +279,7 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		$map[$candidateKey] = $candidate;
 		$affected = $this->getAffectedSlugKeys($rows, $candidateKey);
 		$paths = [];
+		$pathsByKey = [];
 
 		foreach ($rows as $row) {
 			if (!in_array((string)$row['controller'], self::PUBLIC_CONTROLLERS, true)) continue;
@@ -287,6 +293,7 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 			}
 
 			if ($path === null) continue;
+			$pathsByKey[$key] = $path;
 
 			if (isset($paths[$path])) {
 				if (isset($affected[$key]) || isset($affected[$paths[$path]['key']])) {
@@ -297,6 +304,52 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 
 			$paths[$path] = ['key' => $key, 'id' => (int)($row['id'] ?? 0)];
 		}
+
+		$redirectRows = $this->getRedirects($shopId);
+		$redirectsByPath = [];
+
+		foreach ($redirectRows as $redirect) {
+			$redirectsByPath[(string)$redirect['path']] = $redirect;
+		}
+
+		foreach ($pathsByKey as $key => $path) {
+			if (!isset($affected[$key], $redirectsByPath[$path])) continue;
+
+			$redirect = $redirectsByPath[$path];
+			$targetKey = (string)$redirect['controller'] . ':' . (int)$redirect['entityid'];
+			if ($targetKey !== $key) throw new DomainException('MESSAGES_REDIRECT_CONFLICT');
+		}
+
+		if ($slugId <= 0) return [];
+
+		$oldPathsByKey = $this->getPathsByKey($oldRows);
+		$redirects = [];
+
+		foreach ($affected as $key => $unused) {
+			$oldPath = $oldPathsByKey[$key] ?? null;
+			$newPath = $pathsByKey[$key] ?? null;
+
+			if (!$oldPath || !$newPath || $oldPath === $newPath) continue;
+			if (!DEEC_Site_Router::isRedirectablePath($oldPath)) continue;
+			if (isset($paths[$oldPath]) && $paths[$oldPath]['key'] !== $key) throw new DomainException('MESSAGES_REDIRECT_CONFLICT');
+
+			$row = $map[$key] ?? null;
+			if (!$row) throw new DomainException('MESSAGES_REDIRECT_TARGET_INVALID');
+
+			if (isset($redirectsByPath[$oldPath])) {
+				$redirect = $redirectsByPath[$oldPath];
+				$targetKey = (string)$redirect['controller'] . ':' . (int)$redirect['entityid'];
+				if ($targetKey !== $key) throw new DomainException('MESSAGES_REDIRECT_CONFLICT');
+			}
+
+			$redirects[] = [
+				'path' => $oldPath,
+				'controller' => (string)$row['controller'],
+				'entityid' => (int)$row['entityid'],
+			];
+		}
+
+		return $redirects;
 	}
 
 	protected function assertSlugHasNoChildren(array $slug): void
@@ -324,6 +377,42 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 				->order('id ASC')
 				->forUpdate(true)
 		)->toArray();
+	}
+
+	protected function getRedirects(int $shopId): array
+	{
+		return (new Admin_Model_DbTable_Slugredirect())->getAllByShopForUpdate($shopId);
+	}
+
+	protected function saveRedirects(int $shopId, array $redirects): void
+	{
+		if (!$redirects) return;
+
+		$db = new Admin_Model_DbTable_Slugredirect();
+
+		foreach ($redirects as $redirect) {
+			$db->savePath($shopId, $redirect['path'], $redirect['controller'], (int)$redirect['entityid']);
+		}
+	}
+
+	protected function getPathsByKey(array $rows): array
+	{
+		$map = [];
+
+		foreach ($rows as $row) {
+			if (!in_array((string)$row['controller'], self::PUBLIC_CONTROLLERS, true)) continue;
+			$key = $this->getSlugKey($row);
+			if (!isset($map[$key])) $map[$key] = $row;
+		}
+
+		$paths = [];
+
+		foreach ($map as $key => $row) {
+			$path = $this->buildSlugPath($row, $map);
+			if ($path !== null) $paths[$key] = $path;
+		}
+
+		return $paths;
 	}
 
 	protected function getAffectedSlugKeys(array $rows, string $candidateKey): array

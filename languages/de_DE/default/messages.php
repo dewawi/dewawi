@@ -49,6 +49,8 @@
 	'MESSAGES_SLUG_PARENT_INVALID' => 'Der übergeordnete öffentliche Pfad ist ungültig oder nicht vorhanden.',
 	'MESSAGES_SLUG_HAS_CHILDREN' => 'Der öffentliche Pfad besitzt untergeordnete URLs und kann nicht entfernt oder in eine andere Website verschoben werden.',
 	'MESSAGES_SLUG_SHOP_INVALID' => 'Die ausgewählte Website gehört nicht zum aktuellen Mandanten oder ist nicht verfügbar.',
+	'MESSAGES_REDIRECT_CONFLICT' => 'Die bisherige oder neue URL steht im Konflikt mit einer vorhandenen Weiterleitung.',
+	'MESSAGES_REDIRECT_TARGET_INVALID' => 'Das Ziel der Weiterleitung ist nicht mehr als öffentliche URL verfügbar.',
 	'MESSAGES_DISMISS' => 'Meldung schließen',
 	'MESSAGES_EMAIL_HISTORY_FAILED' => 'Die E-Mail-Historie konnte nicht aktualisiert werden. Bitte laden Sie die Ansicht neu.',
 	'MESSAGES_EMAIL_RESEND' => 'Erneut senden',

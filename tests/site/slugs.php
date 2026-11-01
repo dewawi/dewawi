@@ -49,6 +49,7 @@ function slugRow(int $id, int $shopId, string $controller, int $entityId, int $p
 		'entityid' => $entityId,
 		'parentid' => $parentId,
 		'slug' => $slug,
+		'clientid' => 3,
 		'deleted' => 0,
 	];
 }
@@ -56,6 +57,8 @@ function slugRow(int $id, int $shopId, string $controller, int $entityId, int $p
 class SlugTestTable extends Admin_Model_DbTable_Slug
 {
 	public array $rows;
+	public array $redirectRows = [];
+	public array $savedRedirects = [];
 
 	public function __construct(array $rows = [])
 	{
@@ -84,6 +87,24 @@ class SlugTestTable extends Admin_Model_DbTable_Slug
 				&& ($row['module'] ?? '') === 'shops'
 				&& empty($row['deleted']);
 		}));
+	}
+
+	protected function getRedirects(int $shopId): array
+	{
+		return array_values(array_filter($this->redirectRows, static function(array $row) use ($shopId): bool {
+			return (int)$row['shopid'] === $shopId;
+		}));
+	}
+
+	protected function saveRedirects(int $shopId, array $redirects): void
+	{
+		foreach ($redirects as $redirect) {
+			$redirect['id'] = count($this->redirectRows) + 1;
+			$redirect['shopid'] = $shopId;
+			$redirect['deleted'] = 0;
+			$this->savedRedirects[] = $redirect;
+			$this->redirectRows[] = $redirect;
+		}
 	}
 }
 
@@ -269,6 +290,48 @@ checkSlug(true, 'Leaf slug could not be removed');
 $reservedParent = new SlugTestTable([slugRow(20, 1, 'category', 200, 0, 'contact')]);
 expectSlugError('MESSAGES_SLUG_RESERVED', static fn() => $reservedParent->validate('item', 1, 200, 201, 'service'));
 
+$redirectStorage = new SlugStorageTestTable([
+	slugRow(30, 1, 'category', 300, 0, 'produkte'),
+	slugRow(31, 1, 'category', 301, 300, 'kuehlung'),
+	slugRow(32, 1, 'item', 302, 301, 'r290'),
+]);
+$redirectStorage->updateSlug('shops', 'category', 1, 0, 300, 'systeme');
+checkSlug(array_column($redirectStorage->savedRedirects, 'path') === [
+	'produkte',
+	'produkte/kuehlung',
+	'produkte/kuehlung/r290',
+], 'Parent slug change did not preserve every affected public path');
+checkSlug(array_column($redirectStorage->savedRedirects, 'entityid') === [300, 301, 302], 'Redirects do not retain their public entity targets');
+$redirectStorage->updateSlug('shops', 'category', 1, 0, 300, 'technik');
+checkSlug(array_slice(array_column($redirectStorage->savedRedirects, 'path'), -3) === [
+	'systeme',
+	'systeme/kuehlung',
+	'systeme/kuehlung/r290',
+], 'Second URL change did not create direct entity redirects');
+checkSlug(!array_key_exists('targetpath', $redirectStorage->savedRedirects[0]), 'Redirect chains are stored as path targets');
+
+$moveStorage = new SlugStorageTestTable([
+	slugRow(40, 1, 'category', 400, 0, 'produkte'),
+	slugRow(41, 1, 'category', 401, 400, 'pumpen'),
+	slugRow(42, 1, 'item', 402, 401, 'r290'),
+]);
+$moveStorage->updateSlug('shops', 'category', 1, 0, 401);
+checkSlug(array_column($moveStorage->savedRedirects, 'path') === ['produkte/pumpen', 'produkte/pumpen/r290'], 'Category move did not preserve child product paths');
+
+$redirectConflict = new SlugStorageTestTable([slugRow(50, 1, 'page', 500, 0, 'aktuell')]);
+$redirectConflict->redirectRows = [[
+	'id' => 1, 'shopid' => 1, 'path' => 'historisch', 'controller' => 'page', 'entityid' => 999, 'deleted' => 0,
+]];
+expectSlugError('MESSAGES_REDIRECT_CONFLICT', static fn() => $redirectConflict->updateSlug('shops', 'page', 1, 0, 500, 'historisch'));
+checkSlug($redirectConflict->getEntitySlug('shops', 'page', 500)['slug'] === 'aktuell', 'Redirect conflict changed the current slug before failing');
+$redirectConflict->redirectRows[0]['deleted'] = 1;
+expectSlugError('MESSAGES_REDIRECT_CONFLICT', static fn() => $redirectConflict->updateSlug('shops', 'page', 1, 0, 500, 'historisch'));
+checkSlug($redirectConflict->getEntitySlug('shops', 'page', 500)['slug'] === 'aktuell', 'Deleted historical redirect was reassigned after changing the slug');
+$redirectConflict->redirectRows[0]['deleted'] = 0;
+$redirectConflict->redirectRows[0]['shopid'] = 2;
+$redirectConflict->updateSlug('shops', 'page', 1, 0, 500, 'historisch');
+checkSlug($redirectConflict->getEntitySlug('shops', 'page', 500)['slug'] === 'historisch', 'Redirect from another shop blocked the URL change');
+
 $itemController = file_get_contents($root . '/application/modules/items/controllers/ItemController.php');
 checkSlug(!str_contains($itemController, 'function slugify') && !str_contains($itemController, '->slugify('), 'Item slug generation is not centralized');
 checkSlug(str_contains($itemController, 'saveShopSlug((int)$item[\'id\'], array_replace($item, $updateData))'), 'Item import can overwrite an existing public slug');
@@ -289,8 +352,9 @@ checkSlug(str_contains($slugSource, 'assertShopAccess') && str_contains($slugSou
 
 $actionSource = file_get_contents($root . '/library/DEEC/Controller/Action.php');
 checkSlug(substr_count($actionSource, '$this->splitEditValues($values)') === 2, 'Normal and AJAX saves do not both separate the slug field');
-checkSlug(substr_count($actionSource, 'str_starts_with($e->getMessage(), \'MESSAGES_SLUG_\')') === 2
-	&& str_contains($actionSource, '$this->_flashMessenger->addMessage($e->getMessage())'), 'Slug save errors are not safely reported in both form save modes');
+checkSlug(substr_count($actionSource, '$this->isPublicUrlError($e->getMessage())') === 2
+	&& str_contains($actionSource, "str_starts_with(\$message, 'MESSAGES_REDIRECT_')")
+	&& str_contains($actionSource, '$this->_flashMessenger->addMessage($e->getMessage())'), 'Public URL errors are not safely reported in both form save modes');
 
 $tagSource = file_get_contents($root . '/application/modules/admin/controllers/TagController.php');
 checkSlug(substr_count($tagSource, 'beginTransaction()') >= 3 && substr_count($tagSource, 'rollBack()') >= 3, 'Independent tag slug writes are not transactional');

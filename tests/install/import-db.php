@@ -43,6 +43,8 @@ check($db->query('SELECT GROUP_CONCAT(title ORDER BY id) FROM uom WHERE `default
 check($db->query("SHOW COLUMNS FROM address LIKE 'street'")->fetch_assoc()['Type'] === 'text', 'Street type changed');
 check($db->query("SHOW INDEX FROM address WHERE Column_name = 'street'")->num_rows === 0, 'Street index still exists');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.STATISTICS s JOIN information_schema.COLUMNS c ON c.TABLE_SCHEMA = s.TABLE_SCHEMA AND c.TABLE_NAME = s.TABLE_NAME AND c.COLUMN_NAME = s.COLUMN_NAME WHERE s.TABLE_SCHEMA = DATABASE() AND c.DATA_TYPE IN ('tinytext', 'text', 'mediumtext', 'longtext', 'tinyblob', 'blob', 'mediumblob', 'longblob') AND s.SUB_PART IS NULL AND s.INDEX_TYPE <> 'FULLTEXT'")->fetch_row()[0] === 0, 'Unprefixed TEXT/BLOB index remains');
+check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'path'")->fetch_assoc()['Type'] === 'varchar(2048)', 'Fresh installation has no full redirect path storage');
+check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'slugredirect' AND index_name = 'clientid_shopid_pathhash' AND non_unique = 0")->fetch_row()[0] === 3, 'Fresh installation redirect uniqueness is not tenant- and shop-scoped');
 
 $structure = 'CREATE TABLE import_before (id INT);';
 $data = 'INSERT INTO import_before VALUES (1);';
@@ -78,6 +80,25 @@ check($db->query('SELECT street FROM address WHERE id = 1')->fetch_row()[0] === 
 // Existing MariaDB installations may have an automatically prefixed street index.
 $db->query('ALTER TABLE address ADD INDEX street (street(255))');
 check($db->query('SELECT street FROM address WHERE id = 1')->fetch_row()[0] === "First line\nSecond line", 'Existing installation with a street index lost data');
+
+// The current 1.1.8 upgrade adds isolated, tenant- and shop-scoped historical public paths.
+$db->query('CREATE DATABASE redirect_upgrade');
+$db->select_db('redirect_upgrade');
+$db->query('CREATE TABLE slug (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL) ENGINE=InnoDB');
+$db->query("INSERT INTO slug VALUES (1, 'existing-path')");
+$redirectQueries = [];
+PMA_splitSqlFile($redirectQueries, file_get_contents($root . '/install/config/update-1.1.7-1.1.8.sql'));
+$redirectCreateQueries = array_values(array_filter($redirectQueries, static function(array $query): bool {
+    return str_starts_with(trim($query['query']), 'CREATE TABLE IF NOT EXISTS `slugredirect`');
+}));
+check(count($redirectCreateQueries) === 1, 'Current upgrade does not contain exactly one redirect table migration');
+foreach ($redirectCreateQueries as $query) $db->query($query['query']);
+check($db->query("SHOW TABLES LIKE 'slugredirect'")->num_rows === 1, 'Redirect upgrade did not create its table');
+check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'pathhash'")->fetch_assoc()['Type'] === 'char(64)', 'Redirect upgrade path hash has the wrong type');
+check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'slugredirect' AND index_name = 'clientid_shopid_pathhash' AND non_unique = 0")->fetch_row()[0] === 3, 'Redirect upgrade unique index has the wrong scope');
+check($db->query('SELECT slug FROM slug WHERE id = 1')->fetch_row()[0] === 'existing-path', 'Redirect upgrade changed an existing slug');
+foreach ($redirectCreateQueries as $query) $db->query($query['query']);
+check($db->query("SHOW TABLES LIKE 'slugredirect'")->num_rows === 1, 'Repeated redirect upgrade changed the schema unexpectedly');
 
 // Version 1.1.8 maps explicit contact roles and normalizes inquiry tokens before adding indexes.
 $db->query('CREATE DATABASE contact_role_upgrade');

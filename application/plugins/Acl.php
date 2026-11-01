@@ -132,6 +132,18 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 		if (
 			$request instanceof Zend_Controller_Request_Http
 			&& $request->getModuleName() === 'shops'
+			&& $request->getControllerName() === 'redirect'
+			&& $request->getActionName() === 'index'
+			&& in_array(strtoupper($request->getMethod()), ['GET', 'HEAD'], true)
+			&& Zend_Registry::isRegistered('SiteContext')
+			&& Zend_Registry::get('SiteContext') instanceof DEEC_Site_Context
+		) {
+			return true;
+		}
+
+		if (
+			$request instanceof Zend_Controller_Request_Http
+			&& $request->getModuleName() === 'shops'
 			&& $request->getControllerName() === 'search'
 			&& $request->getActionName() === 'index'
 			&& in_array(strtoupper($request->getMethod()), ['GET', 'HEAD'], true)

@@ -54,6 +54,8 @@
 	'MESSAGES_SLUG_PARENT_INVALID' => 'The parent public path is invalid or missing.',
 	'MESSAGES_SLUG_HAS_CHILDREN' => 'The public path has child URLs and cannot be removed or moved to another website.',
 	'MESSAGES_SLUG_SHOP_INVALID' => 'The selected website does not belong to the current tenant or is unavailable.',
+	'MESSAGES_REDIRECT_CONFLICT' => 'The previous or new URL conflicts with an existing redirect.',
+	'MESSAGES_REDIRECT_TARGET_INVALID' => 'The redirect target is no longer available as a public URL.',
 	'MESSAGES_DISMISS' => 'Dismiss message',
 	'MESSAGES_EMAIL_HISTORY_FAILED' => 'The email history could not be updated. Please reload the view.',
 	'MESSAGES_EMAIL_RESEND' => 'Send again',
