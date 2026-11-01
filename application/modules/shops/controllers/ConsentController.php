@@ -53,7 +53,12 @@ class Shops_ConsentController extends Shops_Controller_Action
 
 		$requestPath = parse_url($path, PHP_URL_PATH);
 		if (!is_string($requestPath)) return $fallback;
-		if ($basePath !== '' && $requestPath !== $basePath && !str_starts_with($requestPath, $basePath . '/')) return $fallback;
+		if (preg_match('~%(?:25|2e|2f|5c)~i', $requestPath) || preg_match('~%(?![0-9a-f]{2})~i', $requestPath)) return $fallback;
+		$decodedPath = rawurldecode($requestPath);
+		if (preg_match('~[\\\\\x00-\x20\x7f]|//|(?:^|/)\.{1,2}(?:/|$)~', $decodedPath)) return $fallback;
+		if ($basePath !== '' && $decodedPath !== $basePath && !str_starts_with($decodedPath, $basePath . '/')) return $fallback;
+		$consentPath = $basePath . '/cookie-consent';
+		if (rtrim($decodedPath, '/') === $consentPath) return $fallback;
 
 		return $path;
 	}

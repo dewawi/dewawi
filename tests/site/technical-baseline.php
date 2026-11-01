@@ -221,9 +221,16 @@ foreach ([
 
 foreach ([
 	['/site/category?order=title', '/site/category?order=title', 'Valid subdirectory consent return path changed'],
+	['/site/k%C3%BChlung?filter=%2F', '/site/k%C3%BChlung?filter=%2F', 'Valid encoded category consent return path changed'],
 	['/site/', '/site/', 'Website home consent return path changed'],
 	['/outside', '/site/', 'Consent return escaped the active website base path'],
 	['//other.example.test/path', '/site/', 'Protocol-relative consent return was accepted'],
+	['/site//broken', '/site/', 'Consent return accepted a double slash path'],
+	['/site/../outside', '/site/', 'Consent return accepted a dot segment'],
+	['/site/%2e%2e/outside', '/site/', 'Consent return accepted an encoded dot segment'],
+	['/site/%252e%252e/outside', '/site/', 'Consent return accepted a double-encoded dot segment'],
+	['/site/category%2Foutside', '/site/', 'Consent return accepted an encoded path separator'],
+	['/site/cookie-consent', '/site/', 'Consent return pointed back to the POST-only endpoint'],
 	["/site/page\r\nLocation: /outside", '/site/', 'Consent return accepted response splitting'],
 ] as [$returnPath, $expected, $message]) {
 	$consentRequest->setParam('return', $returnPath);
