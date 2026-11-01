@@ -87,11 +87,12 @@ checkPlanning($partial['futureReservations'] === 5.5, 'Partial fulfillment remai
 checkPlanning($partial['available'] === 6.0, 'Decimal quantities lost precision');
 checkPlanning($partial['shortage'] === 0.0, 'Exact decimal availability has a shortage');
 
+$tomorrow = date('Y-m-d', strtotime('+1 day'));
 $unconfirmed = $service->calculateAvailability(2, [
-	['id' => 20, 'type' => 'incoming', 'planningdate' => '2026-11-01', 'dateconfirmed' => 0, 'remaining' => 100],
+	['id' => 20, 'type' => 'incoming', 'planningdate' => $tomorrow, 'dateconfirmed' => 0, 'remaining' => 100],
 	['id' => 21, 'type' => 'incoming', 'planningdate' => null, 'dateconfirmed' => 0, 'remaining' => 50],
-	['id' => 22, 'type' => 'reservation', 'planningdate' => '2026-11-01', 'dateconfirmed' => 0, 'remaining' => 4],
-], '2026-11-01', 1);
+	['id' => 22, 'type' => 'reservation', 'planningdate' => $tomorrow, 'dateconfirmed' => 0, 'remaining' => 4],
+], $tomorrow, 1);
 checkPlanning($unconfirmed['openIncoming'] === 150.0, 'Unconfirmed incoming is missing from open totals');
 checkPlanning($unconfirmed['available'] === -2.0, 'Unconfirmed incoming was incorrectly guaranteed');
 checkPlanning($unconfirmed['shortage'] === 3.0, 'Overreservation shortage is incorrect');

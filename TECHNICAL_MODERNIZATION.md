@@ -38,9 +38,11 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 | Kennzeichnung | Bedeutung |
 |---|---|
 | Umgesetzt | Die Anforderung ist für den derzeit vorhandenen Funktionsumfang im Repository umgesetzt. |
+| Umgesetzt / reale Prüfung offen | Die Implementierung und isolierte Regression sind abgeschlossen; die Freigabe auf der konkreten Zielinstallation fehlt noch. |
 | Teilweise | Eine geeignete Grundlage existiert, die Anforderung ist aber noch nicht durchgängig abgeschlossen. |
 | Offen | Im Repository wurde keine ausreichende Umsetzung gefunden. |
-| Infrastruktur | Umsetzung oder Verifikation benötigt Server-, Deployment- oder externen Systemzugriff. |
+| Betreiber-/Infrastrukturaufgabe | Umsetzung oder Verifikation benötigt Server-, Deployment- oder externen Systemzugriff und ist kein weiterer allgemeiner Codepunkt. |
+| Geplante Modernisierung | Die bestehende Funktion bleibt kompatibel, soll aber in einer getrennten späteren Phase modernisiert werden. |
 | Derzeit nicht anwendbar | Die genannte Funktion existiert noch nicht; die Anforderung wird bei ihrer Einführung verbindlich. |
 
 Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase, P2 = geplante Qualitätsverbesserung, P3 = spätere Optimierung.
@@ -49,14 +51,14 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 
 | Nr. | Status | Priorität | Befund und nächste Maßnahme |
 |---:|---|---|---|
-| 1 | Infrastruktur vorbereitet | P0 | Eine installationsneutrale VHost-/Proxy-Strategie und ein isolierter HTTP-/HTTPS-Test sind dokumentiert. Zertifikate, DNS und produktive VHosts bleiben je Installation einzurichten: GET/HEAD per 301, schreibende Methoden methodenerhaltend per 308, ACME ausgenommen. Anschließend Mixed Content prüfen und HSTS erst nach Stabilisierung aktivieren. |
+| 1 | Umgesetzt / reale Prüfung offen | P0 | Eine installationsneutrale VHost-/Proxy-Strategie und ein isolierter HTTP-/HTTPS-Test sind dokumentiert. Zertifikate, DNS und produktive VHosts bleiben je Installation einzurichten: GET/HEAD per 301, schreibende Methoden methodenerhaltend per 308, ACME ausgenommen. Anschließend Mixed Content prüfen und HSTS erst nach Stabilisierung aktivieren. |
 | 2 | Umgesetzt | P0 | `shop.indexable` steuert die Freigabe pro Shop. Development und Staging bleiben immer ausgeschlossen. Neue Shops starten mit `indexable = 0`; die Migration lässt bestehende Shops aus Kompatibilitätsgründen zunächst freigegeben. Noindex ist kein Zugriffsschutz; bei Bedarf zusätzlich Authentifizierung einsetzen. |
 | 3 | Umgesetzt | P0 | Nicht indexierbare Websites geben keine Canonical-URL aus. Kanonische Basis, Open Graph, Sitemap und Robots verwenden ausschließlich die streng normalisierte `shop.url`; Request- und Forwarded-Header sind keine URL-Quelle. Vor Livegang muss dort die endgültige HTTPS-Adresse einschließlich eines möglichen Basispfads stehen. |
 | 4 | Umgesetzt | P1 | Bootstrap, Anwendungslayouts, Login, Fehlerausgabe und Installer verwenden HTML5. Fremde Demo-/Vendor-Dateien wurden nicht verändert. |
 | 5 | Umgesetzt | P1 | Veraltete Content-Type-Metaelemente wurden aus den anwendungseigenen Dokumenten entfernt; `<meta charset="UTF-8">` bleibt erhalten. |
 | 6 | Umgesetzt | P0 vor Relaunch | Neue und ausdrücklich geänderte öffentliche Slugs werden zentral nach `ae/oe/ue/ss` normalisiert. Vollständige verschachtelte Pfade werden je Mandant und Website auf Kollisionen und reservierte Systemrouten geprüft. Bestehende Slugs bleiben ohne ausdrückliche URL-Änderung unverändert; es gab keine Massenmigration. |
 | 7 | Teilweise | P1 | Generierte öffentliche Pfade verwenden aktuell keine abschließenden Schrägstriche. Diese Strategie für neue URLs beibehalten und nach einem Routen-Audit eine serverseitige 301-Normalisierung ergänzen, ohne Dateien, Startseite oder Legacy-Routen zu beschädigen. |
-| 8 | Teilweise / Infrastruktur | P0 vor Relaunch | Die Anwendung löst ausschließlich den exakt konfigurierten Host und zulässige Ports aus `shop.url` auf; `www` wird nicht mehr pauschal entfernt und mehrdeutige Authorities scheitern geschlossen. Alternative Hosts müssen nach DNS-/Zertifikatsprüfung in einem eigenen VHost oder am vertrauenswürdigen Proxy direkt auf die Hauptdomain weiterleiten. |
+| 8 | Umgesetzt / reale Prüfung offen | P0 vor Relaunch | Die Anwendung löst ausschließlich den exakt konfigurierten Host und zulässige Ports aus `shop.url` auf; `www` wird nicht mehr pauschal entfernt und mehrdeutige Authorities scheitern geschlossen. Alternative Hosts müssen nach DNS-/Zertifikatsprüfung in einem eigenen VHost oder am vertrauenswürdigen Proxy direkt auf die Hauptdomain weiterleiten. |
 | 9 | Teilweise | P0 vor Relaunch | Ausdrückliche Änderungen öffentlicher Seiten-, Kategorie-, Produkt- und Tag-Pfade erzeugen automatisch mandanten- und websitebezogene 301-Weiterleitungen. Ziele werden bei jedem Abruf aus der aktuellen öffentlichen Entität ermittelt. Ein fachlich geprüfter Import bekannter Alt-URLs und eine manuelle Admin-Zuordnung bleiben offen. |
 | 10 | Offen | P0 vor Relaunch | Historische Doppelungen wurden nicht vollständig inventarisiert. Jede bekannte Alt-URL einzeln der fachlich passenden neuen Seite zuordnen und aus Navigation sowie Sitemap entfernen; die neue Redirect-Tabelle kann anschließend als technische Grundlage dienen. |
 | 11 | Umgesetzt | P1 | Vorhandene individuelle Metatitel und -Descriptions werden für Startseite, CMS-Seiten und Kategorien verwendet. Produkte und Tags nutzen sinnvolle Bestandsdaten als Fallback. Eine zentrale Ausgabe verhindert doppelte Elemente und doppelte Websitenamen; leere Werte werden ausgelassen. |
@@ -72,16 +74,16 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 21 | Umgesetzt | P1 | Für sicher auflösbare Rasterbilder werden die tatsächlichen Originalmaße als `width` und `height` ausgegeben. Der Produktbildbereich reserviert zusätzlich adaptiv ein 4:3-Verhältnis statt einer starren 400-Pixel-Höhe; modale Bilder bleiben auf 80 Prozent der Viewporthöhe und maximal 800 Pixel begrenzt. |
 | 22 | Umgesetzt | P1 | Inhalts-, Karten-, Kategorie-, Listen- und Galeriebilder laden lazy. Der sichtbare CMS-Hero, die erste Startseiten-Slide und das initiale Produktbild sind explizit ausgenommen. |
 | 23 | Teilweise | P1 | Nur der erste CMS-Hero bzw. Bild/Text-Block, die erste Startseiten-Slide oder das initiale Produktbild verwendet `fetchpriority="high"` ohne Lazy Loading. Spätere Hero-/Galeriebilder bleiben lazy; reine Text-LCP-Seiten erzeugen keinen unnötigen Bild-Preload. Die tatsächliche LCP-Wirkung bleibt mit finalen Staging-Inhalten zu messen. |
-| 24 | Teilweise | P1 Sicherheit | Das öffentliche Frontend verwendet den vollständigen jQuery-Build 3.7.1 und Bootstrap 4.6.2. AJAX, Navigation, Collapse, Tabs, Carousel und Modal sind im Chromium-Test abgedeckt. Bootstrap 4 ist seit 2023 EOL; die dokumentierte Bootstrap-5-Migration bleibt offen. Die älteren internen ERP-Abhängigkeiten wurden bewusst nicht verändert. |
+| 24 | Geplante Modernisierung | P1 Sicherheit | Das öffentliche Frontend verwendet den vollständigen jQuery-Build 3.7.1 und Bootstrap 4.6.2. AJAX, Navigation, Collapse, Tabs, Carousel und Modal sind im Chromium-Test abgedeckt. Bootstrap 4 ist seit 2023 EOL; die dokumentierte Bootstrap-5-Migration bleibt offen. Die älteren internen ERP-Abhängigkeiten wurden bewusst nicht verändert. |
 | 25 | Umgesetzt | P1 Sicherheit | Alle drei externen öffentlichen Bibliotheksdateien besitzen feste Versions-URLs, kryptografisch gegen die ausgelieferten Dateien geprüfte SHA-384-SRI-Werte und `crossorigin="anonymous"`. Das lokale Shop-CSS und -JavaScript bleiben First Party. |
 | 26 | Für aktuellen Umfang umgesetzt | P2 | Die drei abhängigen Scripts stehen in korrekter Reihenfolge am Dokumentende und werden vom Browser als nicht render-blockierend gemessen. `defer` wurde nicht ergänzt, weil es dort keinen belegten Rendergewinn bringt und kundenspezifisches nachfolgendes Analytics-Markup beziehungsweise vorhandene Inline-Scripts umordnen könnte. |
-| 27 | Teilweise | P2 | Zwei nachweislich doppelte generische Header-Regeln wurden entfernt. Eine breitflächige CSS-Bereinigung oder neue Build-/Minifizierungsarchitektur erfolgte ohne reale Theme- und Nutzungsdaten bewusst nicht. Webserver-Caching und versionierte lokale Anwendungsassets bleiben offen. |
+| 27 | Umgesetzt / reale Prüfung offen | P2 | Zwei nachweislich doppelte generische Header-Regeln wurden entfernt. Lokale Anwendungsassets sind inhaltsversioniert; Cache- und Kompressionsregeln sind isoliert geprüft. Eine breitflächige CSS-Bereinigung oder neue Build-/Minifizierungsarchitektur erfolgt erst nach Messung realer Theme- und Nutzungsdaten. Die Ziel-Proxykette bleibt zu prüfen. |
 | 28 | Teilweise | P1 | Eine reproduzierbare lokale Chromium-Fixture vergleicht unoptimierte und responsive Bildausgabe, Ressourcenauswahl, Prioritäten und CLS. Mangels freigegebener Staging-URL und realer Medien sind keine belastbaren Feldwerte vorhanden; LCP und INP müssen weiterhin mit finalen Inhalten und realen Interaktionen gemessen werden. |
 | 29 | Teilweise | P1 | `navbar-expand-xl` funktioniert in Chromium bei 320, 375, 500, 768 und 1365 Pixeln einschließlich Collapse, verschachtelter Untermenüs und Mega-Menü. Die endgültige Entscheidung bleibt mit realen mandantenbezogenen Menüpunkten und Textlängen auf Staging zu prüfen. |
 | 30 | Teilweise | P1 | Footerlinks sind von einer beschrifteten nativen Navigation umgeben; bei konfiguriertem Analytics bleibt dort zusätzlich eine funktionierende Schaltfläche für die Cookie-Einstellungen erreichbar. Die tatsächliche Erreichbarkeit von Impressum, Datenschutz und AGB hängt weiterhin vom je Website gepflegten Menü ab. |
 | 31 | Für aktuellen Umfang umgesetzt | P1 fachliche Prüfung | Die schlanke Einwilligungsoberfläche bietet gleich erreichbares Zustimmen und Ablehnen, speichert beide Entscheidungen website- und mandantenbezogen und lässt sie im Footer erneut öffnen und ändern. Die konkrete Beschriftung und Datenschutzerklärung müssen je Betreiber fachlich geprüft werden. |
 | 32 | Für aktuellen Umfang umgesetzt | P1 fachliche Prüfung | Das tatsächlich vorhandene öffentliche Statistik-Markup aus `shop.analytics` wird nur mit gültiger Zustimmung, in Production und auf einer indexierbaren Website serverseitig ausgegeben. Development, Staging, Erstbesuch, Ablehnung und Widerruf laden es nicht. Weitere künftig eingeführte Dienste müssen ausdrücklich inventarisiert und klassifiziert werden. |
-| 33 | Teilweise | P0 | Öffentliche Kontakt-, Checkout- und Anfragewege besitzen serverseitige Validierung, CSRF-Schutz, Mandantenbezug und sichere Fehlerbehandlung; Spam-/Rate-Limit-Schutz ist nicht überall einheitlich. Alle schreibenden Formulare inventarisieren und standardisieren. |
+| 33 | Für aktuellen Umfang umgesetzt | P0 | Öffentliche Kontakt-, Checkout- und technische Anfragewege besitzen serverseitige Validierung, CSRF-, Honeypot-, Größen-, Replay- und website-/mandantenbezogenen Rate-Limit-Schutz sowie sichere Fehlerbehandlung. Neue öffentliche Schreibwege müssen dieselbe Basis verwenden; reale Staging-Konfigurationen und Mailziele bleiben Ende-zu-Ende zu prüfen. |
 | 34 | Derzeit nicht anwendbar | P0 bei Einführung | Ein öffentlicher Partnerzugang wurde nicht gefunden. Partnerauthentifizierung getrennt von ERP-Benutzern entwerfen und vorhandene sichere Session-Komponenten wiederverwenden. |
 | 35 | Derzeit nicht anwendbar | P1 bei Einführung | Kein öffentlicher Partnerkonto-Lebenszyklus vorhanden. Bei Einführung einmalige, ablaufende Reset-/Verifikationstokens und nicht verratende Antworten implementieren. |
 | 36 | Teilweise | P0 | Vorhandene geschützte Dateien werden über authentifizierte, mandanten- und berechtigungsgeprüfte Controller ausgeliefert. Dieses Muster für jeden zukünftigen Partnerdownload wiederverwenden und negativ testen. |
@@ -94,11 +96,11 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 43 | Umgesetzt | P1 | `robots.txt` wird pro Website dynamisch ausgeliefert. Alle öffentlichen Seiten bleiben crawlbar, damit Suchmaschinen vorhandenes `noindex` lesen können. Nur indexierbare Websites verweisen bei gültiger kanonischer URL auf die Sitemap. Robots bleibt ausdrücklich kein Zugriffsschutz. |
 | 44 | Teilweise | P1 | Fehlende Routen und Entitäten liefern echte 404-Antworten; die Seite ist noch generisch. Eine hilfreiche öffentliche 404-Seite mit Navigation, Suche und Kontakt ergänzen, ohne den Statuscode zu verändern. |
 | 45 | Teilweise | P0 | 403/404/500 werden explizit behandelt; bekannte automatisch gespeicherte Altpfade liefern 301, unbekannte Pfade weiterhin 404. Eine fachliche 410-Strategie und vollständige Statusprüfungen im Relaunch-Crawl fehlen. |
-| 46 | Umgesetzt / Infrastrukturprüfung offen | P1 | Inhaltsversionierte lokale CSS-/JavaScript-Dateien erhalten ein Jahr `public, immutable`; unversionierte statische Ressourcen werden mit ETag/Last-Modified revalidiert. Dynamische und private Antworten bleiben `private, no-store`, öffentliche Anwendungsmedien erhalten eine Stunde plus Validatoren. Die Regeln sind für Root- und Unterverzeichnisinstallationen isoliert geprüft; die tatsächlich eingesetzte Proxy-/Serverkonfiguration bleibt beim Deployment zu verifizieren. |
-| 47 | Umgesetzt / Infrastrukturprüfung offen | P1 | Apache komprimiert HTML, CSS, JavaScript, JSON und XML bei vorhandenen Modulen mit Brotli beziehungsweise gzip und setzt `Vary: Accept-Encoding`. Binärformate bleiben unkomprimiert; fehlendes Brotli fällt auf gzip zurück und fehlende optionale Module beeinträchtigen die Auslieferung nicht. An einem Reverse Proxy darf Kompression nur an einer kontrollierten Schicht aktiv sein. |
-| 48 | Infrastruktur | P1 | HTTP/2-/HTTP/3-Unterstützung ist eine Server-/Proxy-Eigenschaft. HTTP/2 nach TLS prüfen; HTTP/3 nur bei unterstützter Infrastruktur und messbarem Nutzen aktivieren. |
+| 46 | Umgesetzt / reale Prüfung offen | P1 | Inhaltsversionierte lokale CSS-/JavaScript-Dateien erhalten ein Jahr `public, immutable`; unversionierte statische Ressourcen werden mit ETag/Last-Modified revalidiert. Dynamische und private Antworten bleiben `private, no-store`, öffentliche Anwendungsmedien erhalten eine Stunde plus Validatoren. Die Regeln sind für Root- und Unterverzeichnisinstallationen isoliert geprüft; die tatsächlich eingesetzte Proxy-/Serverkonfiguration bleibt beim Deployment zu verifizieren. |
+| 47 | Umgesetzt / reale Prüfung offen | P1 | Apache komprimiert HTML, CSS, JavaScript, JSON und XML bei vorhandenen Modulen mit Brotli beziehungsweise gzip und setzt `Vary: Accept-Encoding`. Binärformate bleiben unkomprimiert; fehlendes Brotli fällt auf gzip zurück und fehlende optionale Module beeinträchtigen die Auslieferung nicht. An einem Reverse Proxy darf Kompression nur an einer kontrollierten Schicht aktiv sein. |
+| 48 | Betreiber-/Infrastrukturaufgabe | P1 | HTTP/2-/HTTP/3-Unterstützung ist eine Server-/Proxy-Eigenschaft. HTTP/2 nach TLS prüfen; HTTP/3 nur bei unterstützter Infrastruktur und messbarem Nutzen aktivieren. |
 | 49 | Teilweise | P0/P1 | Global werden `X-Content-Type-Options`, `Referrer-Policy` und eine konservative `Permissions-Policy` gesetzt. Interne Seiten erhalten zusätzlich SAMEORIGIN und CSP `frame-ancestors 'self'`. Der isolierte TLS-Test verifiziert die globalen Header. Eine öffentliche CSP-/Frame-Regel bleibt bis zum Audit realer Analytics-, Zahlungs-, Medien- und Embeddingquellen bewusst offen. |
-| 50 | Infrastruktur | P1 nach TLS | HSTS ist bewusst weder in PHP noch global gesetzt und wird negativ getestet. Erst nach vollständiger HTTPS-/Subdomain-Prüfung mit kurzer Laufzeit beginnen; `includeSubDomains` und Preload bleiben bis zu einem separaten Subdomain-Audit ausgeschlossen. |
+| 50 | Betreiber-/Infrastrukturaufgabe | P1 nach TLS | HSTS ist bewusst weder in PHP noch global gesetzt und wird negativ getestet. Erst nach vollständiger HTTPS-/Subdomain-Prüfung mit kurzer Laufzeit beginnen; `includeSubDomains` und Preload bleiben bis zu einem separaten Subdomain-Audit ausgeschlossen. |
 | 51 | Umgesetzt | P1 | Der zentrale View-Helper erzeugt `og:type`, Titel, Description, URL, optionales Bild, Websitename und Locale. Absolute URLs stammen ausschließlich aus der validierten Shop-Konfiguration; Bilder sind auf öffentliche Medienverzeichnisse des aktiven Shops beschränkt. |
 | 52 | Teilweise | P2 | Ein klassisches Favicon existiert, moderne Icon-Größen und mandantenfähige Konfiguration fehlen. Icons je Website ermöglichen; Manifest nur bei tatsächlich gewünschtem App-Verhalten ergänzen. |
 | 53 | Teilweise | P2 | Sprachfelder und Übersetzungen existieren, aber kein vollständiges öffentliches Locale-Routing und kein `hreflang`. URL-Eigentümerschaft pro Sprache zuerst entwerfen, anschließend gegenseitige Self-/Hreflang-Links ausgeben. |
@@ -111,14 +113,16 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 60 | Teilweise | P1 | Wichtige Blöcke besitzen getrennte Felder und Allowlists; generische HTML-/WYSIWYG-Felder bestehen weiterhin. Feldlimits und Medienauswahl ausbauen und Inhalte inkrementell migrieren. |
 | 61 | Teilweise | P0 vor Relaunch | Ein begrenzter CLI-Crawler prüft reale HTTP-Antworten für Links, Status, Redirects, Titel, Descriptions, H1, Canonicals, Open Graph, JSON-LD, Sitemap, Robots und Ressourcen und kann Text oder JSON ausgeben. Vor dem Relaunch bleibt der ausdrücklich freizugebende Lauf gegen die echte Staging-Website samt fachlicher Auswertung offen. |
 | 62 | Umgesetzt | P0 vor Relaunch | Redirects speichern keine weiteren Pfadziele, sondern die öffentliche Entität. Dadurch werden auch nach mehrfachen URL-Änderungen alle historischen Pfade direkt auf den aktuellen kanonischen Pfad aufgelöst; aktuelle URLs haben Vorrang und Schleifen werden verworfen. |
-| 63 | Infrastruktur | P1 nach Relaunch | Search-Console-/Webmaster-Zustand liegt außerhalb des Repositories. Eigentum prüfen, Produktionssitemap einreichen und Indexierung sowie 404 nach dem Relaunch beobachten. |
+| 63 | Betreiber-/Infrastrukturaufgabe | P1 nach Relaunch | Search-Console-/Webmaster-Zustand liegt außerhalb des Repositories. Eigentum prüfen, Produktionssitemap einreichen und Indexierung sowie 404 nach dem Relaunch beobachten. |
 | 64 | Teilweise | P0 vor Relaunch | Analytics und die Ereignisse `contact_submitted`, `technical_inquiry_submitted` und `order_submitted` sind consent-, umgebungs- und indexierungsabhängig. Der Bestellwert wird nicht als Zahlungserfolg bezeichnet. Bestehende externe Konten, Ziele und alte Conversion-Aktionen müssen vor dem Relaunch weiterhin inventarisiert und einzeln validiert werden. |
 | 65 | Derzeit nicht anwendbar | P1 bei Einführung | Kein öffentlicher Partnerzugang vorhanden. Datenschutzgerechte Events für Start, Erfolg, Login, autorisierten Download und Anfrage definieren, ohne sensible Daten zu übertragen. |
 | 66 | Teilweise | P0 | Production, Staging und Development sind als Anwendungsprofile vorhanden. Staging benötigt eine explizite, von Production abweichende Datenbankkonfiguration. Getrennte Hosts, Secrets, Mailziele und Deployments bleiben operative Aufgaben. |
 | 67 | Für den vorgegebenen Testbetrieb umgesetzt | P1 Betrieb | Development und Staging behalten bewusst den konfigurierten SMTP-Versand, damit echte E-Mail-Funktionstests vollständig möglich bleiben. Es gibt keine pauschale Sperre, keinen erzwungenen Test-Sink und keine Empfänger-Allowlist; Testverantwortliche müssen Empfänger und Testabläufe deshalb operativ kontrollieren. |
-| 68 | Teilweise / Infrastruktur | P0 vor Relaunch | Sicherungsumfang, konkrete Befehle, Integritätsprüfung, isolierte Wiederherstellung und zustandsabhängiger Rollback sind dokumentiert und lokal automatisiert geprüft. Betreiber müssen verschlüsselte getrennte Speicherung, Aufbewahrung, RPO/RTO, externe Serverkonfiguration und eine vollständige Probe mit freigegebenen Staging-Daten verbindlich festlegen. |
-| 69 | Repository vorbereitet / Infrastruktur offen | P1 vor Relaunch | Ein schlanker externer CLI-Check erkennt DNS-/TCP-/TLS-/HTTP-Ausfälle, Zertifikatsablauf, Statusabweichungen, Redirectfehler und langsame Antworten für ausschließlich lokal konfigurierte Ziele. Text, JSON und feste Exit-Codes sind automatisierbar; es wurden jedoch bewusst weder produktiver Scheduler noch Alarmkonto eingerichtet. Betreiber müssen Ausführung außerhalb des überwachten Servers, Eskalation, Entstörung und Wiederherstellungsmeldungen konfigurieren. |
-| 70 | Teilweise | P1 Entscheidung | Das öffentliche Frontend ist auf die letzten vorgesehenen 3.x-/4.x-Stände jQuery 3.7.1 und Bootstrap 4.6.2 aktualisiert. Bootstrap 4 bleibt EOL. Bootstrap 5 erfordert die gezielte Migration von `data-toggle`/`data-target`/`data-slide`, jQuery-Pluginaufrufen, Utility-Klassen und Komponentenmarkup; das interne ERP bleibt davon getrennt. |
+| 68 | Umgesetzt / reale Prüfung offen | P0 vor Relaunch | Sicherungsumfang, konkrete Befehle, Integritätsprüfung, isolierte Wiederherstellung und zustandsabhängiger Rollback sind dokumentiert und mit 38 automatisierten Prüfungen bestätigt. Betreiber müssen verschlüsselte getrennte Speicherung, Aufbewahrung, RPO/RTO, externe Serverkonfiguration und eine vollständige Probe mit freigegebenen Staging-Daten verbindlich festlegen. |
+| 69 | Umgesetzt / reale Prüfung offen | P1 vor Relaunch | Ein schlanker externer CLI-Check erkennt DNS-/TCP-/TLS-/HTTP-Ausfälle, Zertifikatsablauf, Statusabweichungen, Redirectfehler und langsame Antworten für ausschließlich lokal konfigurierte Ziele. 28 isolierte Prüfungen bestätigen Text, JSON und feste Exit-Codes; Betreiber müssen Ausführung außerhalb des überwachten Servers, Scheduler, Eskalation, Entstörung und Wiederherstellungsmeldungen konfigurieren. |
+| 70 | Geplante Modernisierung | P1 Entscheidung | Das öffentliche Frontend ist auf die letzten vorgesehenen 3.x-/4.x-Stände jQuery 3.7.1 und Bootstrap 4.6.2 aktualisiert. Bootstrap 4 bleibt EOL. Bootstrap 5 erfordert die gezielte Migration von `data-toggle`/`data-target`/`data-slide`, jQuery-Pluginaufrufen, Utility-Klassen und Komponentenmarkup; das interne ERP bleibt davon getrennt. |
+
+Gesamtstand der 70 Anforderungen: 25 umgesetzt beziehungsweise für den vorhandenen Umfang umgesetzt, 7 implementiert mit offener Realprüfung, 27 teilweise umgesetzt, 3 offen, 3 derzeit nicht anwendbar, 3 reine Betreiber-/Infrastrukturaufgaben und 2 geplante Modernisierungen. In den 25 umgesetzten Punkten ist die für den vorgegebenen Umfang abgeschlossene Testbetriebsregel für E-Mail-Versand enthalten. Diese Zählung bewertet den Repository-Stand; die Produktionsfreigabe richtet sich ausschließlich nach Abschnitt 7.
 
 ## 5. Bereits implementierte Änderungen
 
@@ -673,11 +677,51 @@ Der externe Check ersetzt keine lesenden Betreiberprüfungen innerhalb der Infra
 
 `tests/site/monitor-http.py` prüft den Monitor ausschließlich lokal mit temporären HTTP-/HTTPS-Servern, eigener Test-CA sowie gültigen, bald ablaufenden, abgelaufenen und hostnamefalschen Zertifikaten. Abgedeckt sind 200, 301, 308, erwarteter und unerwarteter 404, 500, DNS-/Verbindungs-/HTTP-Timeout, unerreichbares Ziel, Redirectschleife, externer Redirect, Root-/Unterverzeichnispfad, indexierbare und nicht indexierbare Sitemap, Text/JSON, alle Exit-Codes, Query-Redaktion und der ausschließliche Einsatz von GET/HEAD. Dies belegt die lokale Funktion, nicht den Betrieb eines externen Produktionsmonitorings.
 
+### 5.23 Infrastruktur-Abschlussprüfung und Release Readiness
+
+Phase 5.5 führt die Ergebnisse aus HTTPS und kanonischen Hosts, Backup und Wiederherstellung, HTTP-Caching und Kompression sowie Monitoring zusammen. Die vollständigen isolierten Infrastruktur-, Shop-, SEO-, Sicherheits-, Mandanten-, Browser- und Accessibility-Regressionen wurden erneut ausgeführt. Der zuvor datumsabhängige Lagerplanungstest verwendet jetzt einen relativen Folgetag und bleibt dadurch unabhängig vom Ausführungsdatum fachlich reproduzierbar. Der Installations-/Migrationstest vergleicht zusätzlich Typ, Nullbarkeit und die genaue Reihenfolge samt Präfixlänge des Checkout-Token-Indexes zwischen Neuinstallation und Upgrade und bestätigt den Erhalt vorhandener Bestellungen.
+
+Die technische Repository-Basis ist damit geprüft. Eine Produktionsfreigabe folgt daraus ausdrücklich nicht: DNS, Zertifikate, konkrete VHosts und Proxyregeln, reale Shopkonfigurationen und Inhalte, eine Wiederherstellungsprobe mit freigegebenem vollständigem Snapshot sowie unabhängige Monitoring- und Alarmwege wurden mangels freigegebener Zielinstallation nicht geprüft. Diese Nachweise sind in der folgenden Matrix blockierend gekennzeichnet.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
-`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Die Phasen 4.3, 4.4, 5.1, 5.2, 5.3 und 5.4 benötigen keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
+`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten die benötigten Definitionen und Nacharbeiten für `slugredirect`, `shop.indexable`, `contactrole`, `contactperson`, `shopinquirydata`, `shoporder.token`, `stockplanning`, UOM und abgeleitete Bestandswerte. Für `shoporder.token` stimmen `char(64)`, Nullbarkeit und der eindeutige Index `clientid_shopid_token (clientid, shopid(64), token)` zwischen Neuinstallation und Migration überein. Die isolierte Migration erhält alle Bestellungen und ergänzt ausschließlich fehlende Legacy-Token deterministisch. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank gelesen oder verändert.
 
-Installationen, auf denen eine frühere Fassung der laufenden 1.1.8-Anweisungen bereits manuell ausgeführt wurde, müssen vor dem Anwendungsdeployment das Checkout-Token-Schema prüfen. Nur wenn Spalte und Index noch fehlen, sind exakt die weiterhin in `update-1.1.7-1.1.8.sql` enthaltenen Anweisungen kontrolliert anzuwenden; bei einem teilweise vorhandenen Stand darf ausschließlich der jeweils fehlende Schritt ausgeführt werden:
+### 6.1 Lesende Prüfung teilweise migrierter Installationen
+
+Installationen, auf denen eine frühere Fassung der laufenden 1.1.8-Anweisungen bereits manuell ausgeführt wurde, müssen unter Schreibsperre zuerst lesend geprüft werden. Die folgenden Abfragen enthalten keine installationsspezifischen Werte und verändern keine Daten:
+
+```sql
+SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ORDINAL_POSITION
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'shoporder'
+  AND COLUMN_NAME IN ('orderid', 'token')
+ORDER BY ORDINAL_POSITION;
+
+SELECT NON_UNIQUE, SEQ_IN_INDEX, COLUMN_NAME, SUB_PART
+FROM information_schema.STATISTICS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'shoporder'
+  AND INDEX_NAME = 'clientid_shopid_token'
+ORDER BY SEQ_IN_INDEX;
+
+SELECT COUNT(*) AS token_null_count
+FROM shoporder
+WHERE token IS NULL;
+
+SELECT clientid, shopid, token, COUNT(*) AS duplicate_count
+FROM shoporder
+WHERE token IS NOT NULL
+GROUP BY clientid, shopid, token
+HAVING COUNT(*) > 1;
+```
+
+Der Sollzustand ist genau eine direkt auf `orderid` folgende nullable Spalte `token` vom Typ `char(64)` mit Standard `NULL` sowie ein eindeutiger Index mit `NON_UNIQUE = 0` und den Positionen `clientid`, `shopid` mit `SUB_PART = 64`, `token`. Die Duplikatabfrage muss leer sein und vor der Funktionsfreigabe darf kein `token IS NULL` verbleiben. Eine abweichende vorhandene Spalte oder ein abweichender gleichnamiger Index ist ein NO-GO und benötigt nach Backup eine gesondert freigegebene Korrektur; er darf nicht blind gelöscht oder umgebaut werden.
+
+### 6.2 Zustandsabhängige Nacharbeit
+
+Nur wenn der jeweils geprüfte Teil fehlt, sind nach vollständigem Backup genau die offiziellen Anweisungen aus `update-1.1.7-1.1.8.sql` anzuwenden:
 
 ```sql
 ALTER TABLE `shoporder` ADD `token` char(64) DEFAULT NULL AFTER `orderid`;
@@ -686,30 +730,55 @@ ALTER TABLE `shoporder`
   ADD UNIQUE INDEX `clientid_shopid_token` (`clientid`, `shopid`(64), `token`);
 ```
 
-Zustandsabhängige Nacharbeit:
+Reihenfolge: fehlende Spalte anlegen, ausschließlich `NULL`-Token nachbelegen, Null- und Duplikatprüfung wiederholen und erst danach den fehlenden Index anlegen. Bestehende Nicht-NULL-Token, Bestellnummern, Positionen und sonstige Bestelldaten bleiben unverändert. Ist die Spalte bereits korrekt vorhanden, entfällt das erste `ALTER`; sind keine NULL-Werte vorhanden, ist das `UPDATE` wirkungslos und muss nicht wiederholt werden; ist der korrekte Index vorhanden, entfällt das zweite `ALTER`. Die gesamte laufende Migration darf nicht erneut ausgeführt werden. Anschließend sind Checkout-Replay, Parallelität und Mandanten-/Shopisolation auf einer freigegebenen Staging-Kopie zu prüfen.
 
-1. Existenz von `shoporder.token` und des Indexes `clientid_shopid_token` in `information_schema.COLUMNS` beziehungsweise `information_schema.STATISTICS` prüfen.
-2. Fehlt die Spalte, ausschließlich das erste `ALTER TABLE` ausführen.
-3. Danach die `UPDATE`-Anweisung ausführen; sie ergänzt ausschließlich Zeilen mit `token IS NULL` und erhält bestehende Bestellungen und vorhandene Token.
-4. Fehlt der Unique-Index, erst nach erfolgreicher Nachbelegung ausschließlich das zweite `ALTER TABLE` ausführen. Ein bereits vorhandener gleichnamiger Index darf nicht erneut angelegt werden.
-5. Anschließend die isolierte Replay-/Parallelitätsprüfung beziehungsweise eine freigegebene äquivalente Staging-Prüfung ausführen. Nicht die gesamte laufende 1.1.8-Migration ungeprüft wiederholen.
+### 6.3 Installationsneutrale Deployment-Reihenfolge
 
-Empfohlene Reihenfolge:
-
-1. Vollständige, gemeinsam konsistente Datenbank-, Code-, Datei- und Konfigurationssicherung nach Abschnitt 5.20 erstellen und isolierte Wiederherstellbarkeit bestätigen.
-2. Prüfen, ob die vorgesehene Migration in der Zielinstallation bereits ausgeführt wurde.
-3. Falls sie bereits ausgeführt wurde, die nachträglich ergänzten Schemaanweisungen einschließlich `slugredirect` kontrolliert und separat freigegeben anwenden; die Anwendung benötigt die Tabelle vor der ersten öffentlichen URL-Änderung.
-4. Für jede Entwicklungs-/Testwebsite die Indexierung im Shop-Datensatz deaktivieren.
-5. Anwendungscode einschließlich PHP und `js/shops.js` gemeinsam deployen und Robots-Meta, `X-Robots-Tag`, Canonical, Redirects, Analytics-Ausgabe und die drei Conversion-Ereignisse vor und nach einer Testeinwilligung prüfen.
-6. Indexierung einer Produktionswebsite erst nach TLS-, Canonical-, Redirect- und Content-Freigabe aktivieren.
+1. Releaseumfang, Verantwortliche, Wartungsfenster, Kommunikations- und Abbruchkriterien festlegen; Zielkonfiguration und aktuelle Version ausschließlich lesend inventarisieren.
+2. Gemeinsam konsistente Sicherung von Datenbank, Code, Medien, geschützten Dateien, Konfiguration, Vorlagen sowie Git- und Migrationsstand erstellen; Prüfsummen und restriktive Berechtigungen bestätigen.
+3. Die Sicherung isoliert wiederherstellen und Datenbankobjekte, Dateien, Mandantentrennung und Anwendungsstart prüfen. Ohne erfolgreiche Probe bleibt der Stand NO-GO.
+4. Schreibzugriffe kontrolliert sperren und erst dann die 1.1.7-/1.1.8-Schemaprüfung aus Abschnitt 6.1 ausführen. Nur nachgewiesen fehlende Schritte aus Abschnitt 6.2 anwenden.
+5. Den geprüften Code als zusammengehöriges Release bereitstellen; `slugredirect` und Checkout-Token müssen vor ihrer ersten Nutzung vorhanden sein. Keine gemischten alten und neuen Dateien ausliefern.
+6. PHP-Opcode-/Prozesscache gemäß der konkret eingesetzten Laufzeit neu laden. Inhaltsversionierte Assets benötigen keinen pauschalen Browsercache-Purge; Edge-/Proxycaches nur gezielt invalidieren und niemals private Antworten zwischenspeichern.
+7. VHost-/Proxy-Syntax, TLS-Kette, kanonischen Host, 301/308, ACME, Default-VHost, HTTP/2, Sicherheitsheader, Cache, Kompression, Validatoren und fehlende Doppelkompression auf der Zielkette prüfen.
+8. Startseite, CMS, Navigation, Suche, Kategorien, Produkt, Galerie, Warenkorb, Checkout, Kontakt, technische Anfrage, Medien und Downloads zuerst auf freigegebenem Staging testen. E-Mail-Empfänger und Testdaten operativ kontrollieren.
+9. Robots, Sitemap, Canonicals, Open Graph, strukturierte Daten, Alt-URL-Liste, Mixed Content, WYSIWYG-Ressourcen und interne Links mit dem Crawler prüfen; Indexierung erst nach fachlicher Freigabe aktivieren.
+10. Unabhängigen Monitor mit freigegebenen Zielen aktivieren, Alarm- und Wiederherstellungsweg prüfen und Backup-, 5xx-, Speicher-, Datenbank- und Mailstatus ergänzen.
+11. Releaseverantwortliche bestätigen alle Kriterien der Matrix. Erst eine ausdrückliche Betreiberentscheidung darf den Livegang freigeben.
+12. Bei Abbruch vor Datenänderungen das vorherige Code-/Konfigurationsrelease atomar reaktivieren. Nach Schema- oder Datenänderungen keinen ungeprüften Down-Migrationsversuch durchführen: abhängig vom dokumentierten Zustand vorwärts korrigieren oder das gemeinsam konsistente, zuvor getestete Backup vollständig wiederherstellen.
 
 Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch Datenabfluss. Nicht öffentliche Umgebungen sollten zusätzlich durch Authentifizierung, Netzwerkregeln oder einen vorgeschalteten Zugriffsschutz abgesichert werden.
 
-## 7. Durchgeführte Prüfungen
+## 7. Verbindliche GO-/NO-GO-Matrix
+
+Die Bewertung gilt für einen konkreten Produktionsrelease. `GO` bedeutet nicht nur vorhandenen Code, sondern einen vollständigen Nachweis auf der Zielumgebung. `NICHT GEPRÜFT` ist wie `NO-GO` releaseblockierend. Diese Matrix erteilt keine Releasefreigabe.
+
+| Prüfthema | Technischer Status | Nachweis/Test | Noch erforderliche Betreiberaktion | Verantwortliche Rolle | Freigabekriterium | Bewertung |
+|---|---|---|---|---|---|---|
+| Datenbank-Migration 1.1.7 → 1.1.8 | SQL und isolierte Migration vollständig geprüft | Installations-/Migrationstest einschließlich exakter Checkout-Spalte/-Indexdefinition und Datenerhalt bestanden | Zielschema lesend prüfen, Backup bestätigen, nur fehlende Schritte anwenden und Ergebnis protokollieren | Datenbank- und Releaseverantwortung | Sollschema vollständig, keine NULL-/Duplikat-Token, Staging-Checkout grün | NO-GO |
+| Backup und Restore | Verfahren und 38 isolierte Prüfungen vorhanden | Synthetische Code-/Datei-/MariaDB-Wiederherstellung bestanden | Verschlüsselte getrennte Ablage, RPO/RTO/Rotation festlegen und vollständigen freigegebenen Staging-Snapshot wiederherstellen | Betrieb und Datenbankadministration | Aktuelle vollständige Sicherung mit Prüfsummen und erfolgreichem Restore-Protokoll | NO-GO |
+| DNS und HTTPS | VHost-/Proxy-Strategie und 35 isolierte Fälle geprüft | Lokale HTTP-/HTTPS-, TLS-, ACME- und Redirect-Fixture bestanden | Reales DNS, Zertifikatskette, Renewal und externe Erreichbarkeit prüfen | DNS-/TLS-Betrieb | Alle freigegebenen Hosts mit gültiger Kette, Renewal und ohne Mixed Content erreichbar | NICHT GEPRÜFT |
+| Kanonische Domains | Strikte Host-/Port-/Basispfadlogik implementiert | Canonical-, Sitemap-, Open-Graph- und Tenantregressionen bestanden | `shop.url`, Haupt-/Alternativhost und alle aktiven Shops fachlich prüfen | Anwendungsbetrieb und SEO-Verantwortung | Genau eine kanonische Authority je Website; Alternativen leiten direkt und tenanttreu weiter | NO-GO |
+| Apache und Reverse Proxy | Installationsneutrale Regeln isoliert geprüft | Root-/Unterverzeichnis-, GET/HEAD-, 301/308- und Headerfälle bestanden | Reale Module, Overrides, Trustgrenze, Default-VHost und Proxyheader prüfen | Plattformbetrieb | Zielkette entspricht den Regeln, unbekannte Hosts scheitern geschlossen, keine Schleife | NICHT GEPRÜFT |
+| Caching und Kompression | Inhaltsversionierung, No-Store, Validatoren, gzip/Brotli implementiert | 8.546 Apache-Fälle und Bytevergleich bestanden | Reale Edgekette auf 304, `Vary`, Content-Length, private Caches und Doppelkompression prüfen | Plattformbetrieb | Versionierte Assets invalidieren sicher; private/dynamische Antworten werden nirgends öffentlich gecacht | NO-GO |
+| Monitoring und Alarmierung | Lesender Monitor mit 28 isolierten Prüfungen vorhanden | DNS/TCP/TLS/HTTP, Zeit, Redirects, Text/JSON und Exit-Codes bestanden | Unabhängigen Scheduler, Zielkonfiguration, Zustands-/Recoveryalarm, Eskalation und Vertretung einrichten | Monitoring-/Bereitschaftsverantwortung | Externer Probealarm und Recovery bestätigt; Zertifikat, 5xx, Backup und Ressourcen überwacht | NO-GO |
+| Shop-Funktionen | Repository-Regressionssuite grün | CMS, Suche, Medien, Warenkorb, Checkout, Kontakt und Anfrage lokal bestanden | Mit realen Staging-Daten, Themes, Zahl-/Mailkonfigurationen kontrolliert Ende-zu-Ende prüfen | QA und Shop-Fachverantwortung | Abnahmeprotokoll aller kritischen Journeys ohne produktive Testübertragung | NO-GO |
+| Consent und Analytics | Consent- und Conversionsteuerung implementiert | 41 Serverfälle sowie Chromium-/Formularregressionen bestanden | Reale Dienste, Snippets, Datenschutzerklärung, Ziele und Anbieterempfang fachlich prüfen | Datenschutz- und Marketingverantwortung | Kein Dienst vor Einwilligung; Ablehnung/Widerruf wirksam; freigegebene Events korrekt empfangen | NO-GO |
+| Sicherheit und Mandantenisolierung | Umfangreiche negative Regressionen grün | Berechtigungs-, Tenant-, Datei-, Session-, Host-, CSRF-, Injection-, Cache- und Checkouttests bestanden | Zielkonfiguration, Secrets, Berechtigungsrollen, Logs und externe CDN-/Embeddingquellen abnehmen | Sicherheits- und Anwendungsverantwortung | Keine offene kritische Abweichung; dokumentierte Konfigurations- und Rollenprüfung | NO-GO |
+| SEO und Redirects | Technische Ausgabe und automatische Historie implementiert | 34 Crawler-, 37 Robots/Sitemap-, 46 Metadaten- und 71 Slugfälle bestanden | Vollständige Alt-URL-Liste fachlich zuordnen; reale Website crawlen und Befunde schließen | SEO- und Contentverantwortung | Keine defekten internen Links, Ketten, falschen Canonicals oder ungeklärten wichtigen Alt-URLs | NO-GO |
+| Reale Staging-Inhalte | Kein freigegebenes Ziel vorhanden | Ausschließlich synthetische lokale Inhalte geprüft | Medien, WYSIWYG, Einbettungen, Menüs, Rechtstexte, Formulare und Mixed Content real prüfen | Content-, Datenschutz- und QA-Verantwortung | Vollständiger archivierter Crawl und fachliche Inhaltsabnahme ohne P0/P1-Befund | NICHT GEPRÜFT |
+| Manuelle Accessibility-Prüfung | Automatisierte Basis grün | 95 Chromium-Fälle; kein vollständiger WCAG-Nachweis | Screenreader, Tastatur, Zoom, Forced Colors, Touch, reale Themes/Inhalte manuell prüfen | Accessibility- und QA-Verantwortung | Dokumentierte manuelle Abnahme der vereinbarten WCAG-2.2-AA-Stichprobe | NICHT GEPRÜFT |
+| Deployment und Rollback | Reihenfolge und zustandsabhängiger Rollback dokumentiert | Synthetische Restore- und technische Regressionen bestanden | Wartungsfenster, Rollen, Stop-/Rollbackkriterien und vollständige Generalprobe bestätigen | Releaseleitung und Betrieb | Abgezeichnetes Runbook, getesteter Snapshot, erreichbare Verantwortliche und erfolgreiche Generalprobe | NO-GO |
+
+Gesamtbewertung: **NO-GO für einen Produktionsrelease**, bis alle NO-GO- und NICHT-GEPRÜFT-Punkte mit installationsbezogenen Nachweisen geschlossen und durch den Betreiber ausdrücklich freigegeben wurden. Der Repository-Stand selbst ist kein Ersatz für diese Entscheidung.
+
+## 8. Durchgeführte Prüfungen
 
 | Prüfung | Ergebnis |
 |---|---|
-| PHP-Syntax der geänderten PHP-/PHTML-Dateien | Bestanden |
+| PHP-/PHTML-Syntax | 4.008 Dateien bestanden |
+| Python-Syntax | 22 Dateien bestanden |
+| JavaScript-Ausführung | Chromium-Frontend-, Conversion-, Navigation-, Formular- und Accessibility-Prüfungen bestanden; ein eigenständiges Node.js-Binary ist in der Testumgebung nicht installiert |
 | Consent-gesteuerte Conversionmarker, sofortiger Widerruf, Datenminimierung, Einmaligkeit, Schnittstellen- und Shopisolation | 41 Prüfungen bestanden |
 | Reale lokale HTTP-Crawler-, SEO-, Redirect-, Sitemap-, Ressourcen-, Bildperformance- und Begrenzungsfälle | 34 Prüfungen bestanden |
 | SEO-Metadaten, Open Graph, Breadcrumbs, strukturierte Daten und Überschriften | 46 Prüfungen bestanden |
@@ -724,7 +793,7 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | ChromeDriver-Tastatur, Fokus, ARIA, Consent, Tracking-Requests, Formulare, Warenkorb, Header-Komponenten, Kontrast und Reflow | 95 Prüfungen bei 320, 375, 500, 768 und 1365 Pixeln bestanden |
 | Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 101 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
-| Browsermeldungen, Übersetzungen und Benachrichtigungen | 1.979 Browserprüfungen bei 390 Pixeln und 24 serverseitige Rendering-Prüfungen bestanden |
+| Browsermeldungen, Übersetzungen und Benachrichtigungen | Je 1.979 Browserprüfungen bei 390 und 1.280 Pixeln bestanden |
 | Sicherheitskonfiguration und Umgebungswahl | 22 Prüfungen bestanden |
 | SMTP-Routing ohne nichtproduktive Versandsperre | 15 Prüfungen bestanden |
 | Shop-Anfragen | 58 Prüfungen bestanden |
@@ -742,12 +811,12 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | HTTP-Fehlerbehandlung | 140 Prüfungen bestanden |
 | Isolierter MariaDB-Installations-/Migrationstest | Bestanden; einschließlich 66 UOM-Prüfungen |
 | Isolierte Code-/Datei-/MariaDB-Sicherung und Wiederherstellung | 38 Prüfungen bestanden; einschließlich Releasearchiv, Schemaabweichung, Trigger, Routine, Event, Integrität, Berechtigungen, Überschreibschutz und Mandantentrennung |
+| Lagerplanungs-Regressionsprüfung | Bestanden; die Fixture verwendet einen relativen Folgetag und ist nicht mehr vom Ausführungsdatum abhängig |
 | `git diff --check` | Bestanden |
-| Lagerplanungs-Regressionsprüfung | Fehlgeschlagen: bestehende Prüfung erwartet den aktuellen Lagerbestand als frühesten Liefertermin. Der Lagerplanungsbereich wurde durch diese Arbeiten nicht verändert. |
 
-Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und vergleicht zugleich mit dem aktuellen Systemdatum. Am 1. November wird eine feste Reservierung deshalb als heutiges Ereignis verrechnet, während die Prüfung weiterhin den unveränderten Anfangsbestand als sofort verfügbar erwartet. Im Lagerplanungsbereich existiert kein Diff aus dieser Modernisierung; der Fehler ist unabhängig zu korrigieren, indem der Test seine Bezugszeit kontrolliert.
+Alle aufgeführten HTTP-, TLS-, Browser- und Datenbankprüfungen liefen ausschließlich gegen temporäre lokale Fixtures. Sie enthalten keine produktiven Zieladressen, Käufe, Formularübertragungen oder Datenbankzugriffe.
 
-## 8. Kompatibilitätsrisiken und offene Punkte
+## 9. Kompatibilitätsrisiken und offene Punkte
 
 - Bestehende Shops werden bei der Schema-Migration absichtlich nicht automatisch auf Noindex gestellt. Die gewünschte Einstellung muss je Installation geprüft werden.
 - Wird der Redirect-Code vor der ergänzten Datenbankmigration bereitgestellt, schlagen Redirect-Prüfungen bei öffentlichen URL-Änderungen wegen der fehlenden Tabelle fehl. Migration und Deployment müssen deshalb koordiniert werden.
@@ -780,47 +849,29 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Der Crawler erzeugt keine Aussage über unbekannte historische URLs. Eine vollständige fachliche Alt-URL-Liste muss vor dem Relaunch über `--paths` zusätzlich geprüft werden. Heuristische Soft-404- und Alt-Text-Hinweise benötigen eine manuelle Bewertung.
 - Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
 
-## 9. Empfohlene nächste Phasen
+## 10. Empfohlene nächste Prioritäten
 
-### Phase 2 – URL-, SEO- und Relaunch-Basis
+### P0 – Releaseblocker auf einer freigegebenen Zielinstallation
 
-- Bekannte historische URLs inventarisieren und einen geprüften Import- oder kleinen manuellen Zuordnungsweg ergänzen.
-- Legacy-Inhalte mit mehreren gespeicherten H1 redaktionell bereinigen und die hilfreiche 404-Seite vervollständigen.
-- Den vorhandenen Crawler mit ausdrücklich freigegebener Staging-URL und vollständiger Alt-URL-Liste ausführen, JSON-Report archivieren und Befunde abarbeiten.
+- Die GO-/NO-GO-Matrix in Abschnitt 7 installationsbezogen abarbeiten: Schema lesen, vollständiges Backup wiederherstellen, DNS/TLS/Proxy prüfen, unabhängiges Monitoring samt Alarmweg aktivieren und das Runbook vollständig proben.
+- Den vorhandenen Crawler mit realen Staging-Inhalten und vollständiger fachlich zugeordneter Alt-URL-Liste ausführen; Canonicals, Redirects, Mixed Content, WYSIWYG-Drittquellen, Rechtstexte und wichtige Journeys abnehmen.
+- Consent, Analytics und die drei Conversion-Ereignisse mit den tatsächlich freigegebenen Diensten, Konten und Datenschutzhinweisen validieren. Entwicklungs- und Staging-Mailtests mit kontrollierten Empfängern durchführen, ohne den Versand pauschal abzuschalten.
 
-### Phase 3 – Performance und Assets
+### P1 – Noch zu entwickelnde oder fachlich abzuschließende Funktionen
 
-- Die implementierte responsive Bildausgabe, Einzel-LCP-Priorisierung und adaptive Produktbildfläche anhand realer Staging-Inhalte nachmessen und verbleibende Legacy-WYSIWYG-Bilder auditieren.
-- WebP-/AVIF-Derivate sowie einen gegebenenfalls erforderlichen kontrollierten Backfill für ältere Medien separat bewerten.
-- Die bestehende CDN-/SRI-Entscheidung im Betrieb auf Verfügbarkeit und Datenschutz prüfen; Self-Hosting nur mit versionierten Cache- und Updateprozessen umsetzen.
-- Bootstrap 5 als getrennte öffentliche Migration mit Datenattribut-, Utility-, Komponenten- und Browseraudit planen; interne ERP-Abhängigkeiten nicht gleichzeitig umstellen.
-- Lokales CSS/JS anhand realer Staging-Nutzung weiter messen, kontrolliert bereinigen und minifizieren; die implementierte Inhaltsversionierung und Cache-Invalidierung dabei verifizieren.
-- Core Web Vitals mit realen Inhalten messen.
+- Einen geprüften Import- oder kleinen Verwaltungsweg für bekannte historische URLs ergänzen, die hilfreiche 404-Seite vervollständigen und eine fachliche 410-Strategie festlegen.
+- Legacy-Inhalte mit mehreren H1, Platzhalter-/Leerzielen, fehlenden Alt-Texten und externen Einbettungen redaktionell bereinigen.
+- Vor Einführung eines Partnerzugangs Authentifizierung, Registrierung, Verifikation, Reset, Brute-Force-Schutz, serverseitig autorisierte Dokumente und getrennte Marketingeinwilligung entwerfen.
+- Die manuelle WCAG-2.2-AA-Stichprobe mit Screenreader, Zoom, Forced Colors, physischen Touchgeräten, realen Themes, Menüs und Inhalten durchführen.
 
-### Phase 4 – Consent, Tracking und Formulare
+### P2 – Geplante Modernisierung und Optimierung
 
-- Die implementierte Analytics-Einwilligung mit realen Betreiberkonfigurationen und Datenschutzerklärungen fachlich abnehmen.
-- Die drei implementierten Conversion-Ereignisse in ausdrücklich freigegebenen Testkonten prüfen, externe Ziele und alte Conversion-Aktionen einzeln zuordnen und erst danach produktiv aktivieren.
-- OpenCart-Videoexporte, mögliche bestehende WYSIWYG-Drittinhalte sowie externe Bild-/CSS-Ressourcen auf echtem Staging inventarisieren und je Dienst eine ausdrückliche Freigabe- oder Click-to-load-Strategie festlegen.
-- Die implementierten CSRF-, Honeypot-, Größen-, Token-, Rate-Limit-, Replay- und Transaktionsschutzmaßnahmen mit realen Staging-Formularkonfigurationen und kontrollierten Testempfängern Ende-zu-Ende abnehmen; neue öffentliche Formulare müssen dieselbe Basis verwenden.
-- Development und Staging für vollständige echte E-Mail-Funktionstests nutzbar halten; Testempfänger und Versandabläufe operativ bewusst kontrollieren, ohne pauschale SMTP-Sperre, erzwungenen Test-Sink oder Empfänger-Allowlist.
+- Bootstrap 5 als getrennte öffentliche Migration planen; interne ERP-Abhängigkeiten nicht gleichzeitig umstellen.
+- WebP-/AVIF-Lebenszyklus einschließlich Fallback, Kopieren, Löschen, Backup und kontrolliertem Bestands-Backfill entwickeln, wenn reale Messungen den Aufwand rechtfertigen.
+- CSS-/JavaScript-Nutzung und Core Web Vitals mit finalen Inhalten messen; erst danach Altregeln, CDN-/Self-Hosting-Entscheidung, Minifizierung und weitere Performancearbeit priorisieren.
+- Vollständiges öffentliches Locale-Routing und `hreflang` erst mit redaktionell gepflegten Sprachfassungen ergänzen.
 
-### Phase 5 – Partnerzugang
-
-- Authentifizierung, Registrierung, Verifikation, Reset und Brute-Force-Schutz konzipieren.
-- Dokumente ausschließlich serverseitig autorisiert ausliefern.
-- Marketingeinwilligung getrennt und revisionsfähig speichern.
-- Datenschutzgerechte Conversion-Ereignisse definieren.
-
-### Phase 6 – Infrastruktur und Livegang
-
-- Die in Abschnitt 5.19 dokumentierte VHost-/Proxy-Strategie pro Website mit realem DNS, Zertifikatskette, Renewal, kanonischem Host, alternativen Hosts, Unterverzeichnispfad und unbekanntem Default-Host umsetzen und Ende-zu-Ende prüfen.
-- Die implementierte Kompression und Cache-Policy auf der realen Apache-/Proxykette einschließlich 304, `Vary`, fehlender Doppelkompression und Deployment-Invalidierung verifizieren; HTTP/2 prüfen und den Mixed-Content-Crawl mit den endgültigen Staging-Inhalten ausführen.
-- HSTS nach stabiler HTTPS-Phase mit kurzer Laufzeit kontrolliert einführen; Subdomains und Preload getrennt freigeben.
-- Den in Abschnitt 5.20 geprüften Kernablauf mit einem freigegebenen vollständigen Staging-Snapshot sowie der realen verschlüsselten und getrennten Backup-Ablage proben; RPO, RTO, Rotation und Verantwortlichkeit abnehmen.
-- Den Monitoring-CLI-Check auf einem unabhängigen System mit ausschließlich freigegebenen Ziel- und Erwartungswerten planen, Zustands-/Wiederherstellungsalarmierung und Verantwortlichkeit konfigurieren sowie Log-, Speicher-, Datenbank-, Backup- und Mailstatus ergänzen; Webmaster-Werkzeuge, Sitemap und Conversion-Messung verifizieren.
-
-## 10. Lokale Commits
+## 11. Lokale Commits
 
 Die Modernisierungsschritte werden in fachlich getrennten lokalen Commits geführt. Dateien mit mehreren Themen wurden bei den früheren Phasen hunkgenau zugeordnet; die folgenden Phasen bauen jeweils auf dem dokumentierten Vorgängerstand auf.
 
@@ -1093,8 +1144,18 @@ Inhalt:
 - Maschinenlesbare JSON- und kompakte Textausgabe mit `OK`, `WARNING`, `CRITICAL`, `UNKNOWN`, festen Exit-Codes, Zeitstempeln, Dauern und redigierten sensitiven Querywerten.
 - Isolierte HTTP-/HTTPS-Regression mit temporärer Test-CA und Dokumentation für unabhängige Ausführung, Alarmdämpfung, Wiederherstellungsmeldung, Betreiberzuständigkeit sowie ergänzendes Log-, Speicher-, Datenbank-, Backup- und Mailmonitoring.
 
+### Commit 24: `complete site infrastructure readiness review`
+
+Inhalt:
+
+- Gemeinsame Abschlussprüfung der Infrastrukturphasen 5.1 bis 5.5 mit verbindlicher, rollen- und nachweisbezogener GO-/NO-GO-Matrix ohne vorweggenommene Betreiberfreigabe.
+- Zustandsabhängige lesende Checkout-Token-Schemaprüfung sowie sichere Reihenfolge für ausschließlich fehlende DDL-/DML-Schritte bei teilweise ausgeführter 1.1.8-Migration.
+- Installationsneutrales Deployment- und Rollback-Runbook für Vorbereitung, Backup/Restore, Migration, Code, Cache, Infrastruktur, Funktionen, Crawler, Monitoring und Freigabe.
+- Exakter Neuinstallations-/Migrationsvergleich der Checkout-Token-Spalte und des Tenant-/Shop-Unique-Indexes sowie Nachweis, dass vorhandene Bestellungen erhalten bleiben.
+- Datumstabile Lagerplanungs-Fixture und erneute vollständige Infrastruktur-, Shop-, SEO-, Sicherheits-, Mandanten-, MariaDB-, Chromium-, Accessibility- und Syntaxregression.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
-## 11. Abschlussstatus
+## 12. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, inhaltsversionierte lokale Assets, statisches Browser-Caching, gzip-/Brotli-Kompression, konservatives dynamisches No-Store, einen lesenden extern ausführbaren Verfügbarkeits-/TLS-Monitor, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, strikte kanonische Host-/Portauflösung, einheitliche Slug-Erzeugung, automatische interne 301-Weiterleitungen sowie einen geprüften Sicherungs- und isolierten Wiederherstellungskern ist vorbereitet und getestet. Phase 5.4 ist auf Repository-Ebene abgeschlossen; dies ist ausdrücklich keine Freigabe oder Aktivierung realer DNS-, TLS-, Proxy-, Monitoring-, Alarmierungs-, Datenschutz-, WCAG-, Backup-Speicher-, Aufbewahrungs- oder Edge-Konfigurationen. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die produktive Umsetzung und Liveprüfung von Zertifikaten, VHosts, Host-/HTTPS-Redirects, Cache-/Kompressionsverhalten der Zielkette, unabhängiger Monitoringausführung und Alarmwegen, Mixed Content und später HSTS, die Betreiberprobe mit vollständigem freigegebenem Snapshot und realer verschlüsselter getrennter Sicherungsablage sowie historischer Alt-URL-Import, tatsächlicher Staging-Crawl, reale Drittanbieter-/Legacy-Inhalte und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, inhaltsversionierte lokale Assets, statisches Browser-Caching, gzip-/Brotli-Kompression, konservatives dynamisches No-Store, einen lesenden extern ausführbaren Verfügbarkeits-/TLS-Monitor, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, strikte kanonische Host-/Portauflösung, einheitliche Slug-Erzeugung, automatische interne 301-Weiterleitungen sowie einen geprüften Sicherungs- und isolierten Wiederherstellungskern ist vorbereitet und getestet. Phase 5.5 ist auf Repository-Ebene abgeschlossen. Die verbindliche Releasebewertung bleibt **NO-GO**, solange die installationsbezogenen Nachweise aus Abschnitt 7 fehlen; dies ist ausdrücklich keine Freigabe oder Aktivierung realer DNS-, TLS-, Proxy-, Monitoring-, Alarmierungs-, Datenschutz-, WCAG-, Backup-Speicher-, Aufbewahrungs- oder Edge-Konfigurationen. Vor einem Livegang bleiben insbesondere Schema- und Restore-Nachweis, reale Zertifikate/VHosts/Redirects, Cache-/Kompressionsverhalten der Zielkette, unabhängige Monitoring- und Alarmwege, Mixed Content, vollständige Alt-URL-Zuordnung, tatsächlicher Staging-Crawl, reale Drittanbieter-/Legacy-Inhalte und ein geprobter Deployment-/Rollbackprozess verbindlich zu bearbeiten. Bootstrap 5, moderne Bildderivate, Mehrsprachigkeitsrouting, Partnerzugang und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte spätere Aufgaben.

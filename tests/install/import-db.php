@@ -24,6 +24,23 @@ function check(bool $condition, string $message): void {
     if (!$condition) throw new RuntimeException($message);
 }
 
+function checkCheckoutTokenSchema(mysqli $db, string $context): void {
+    $column = $db->query("SHOW COLUMNS FROM shoporder LIKE 'token'")->fetch_assoc();
+    check($column && strtolower($column['Type']) === 'char(64)' && $column['Null'] === 'YES' && $column['Default'] === null, $context . ' checkout token column differs from the official structure');
+    $columns = array_column($db->query('SHOW COLUMNS FROM shoporder')->fetch_all(MYSQLI_ASSOC), 'Field');
+    $tokenPosition = array_search('token', $columns, true);
+    $orderPosition = array_search('orderid', $columns, true);
+    check($tokenPosition !== false && $orderPosition !== false && $tokenPosition === $orderPosition + 1, $context . ' checkout token column is not located after the order ID');
+
+    $index = $db->query("SELECT NON_UNIQUE, SEQ_IN_INDEX, COLUMN_NAME, SUB_PART FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'shoporder' AND INDEX_NAME = 'clientid_shopid_token' ORDER BY SEQ_IN_INDEX")->fetch_all(MYSQLI_ASSOC);
+    $expected = [['clientid', null], ['shopid', 64], ['token', null]];
+    check(count($index) === count($expected), $context . ' checkout token unique index has the wrong column count');
+    foreach ($expected as $position => [$name, $prefix]) {
+        $actual = $index[$position];
+        check((int)$actual['NON_UNIQUE'] === 0 && (int)$actual['SEQ_IN_INDEX'] === $position + 1 && $actual['COLUMN_NAME'] === $name && ($actual['SUB_PART'] === null ? null : (int)$actual['SUB_PART']) === $prefix, $context . ' checkout token unique index differs from the official structure');
+    }
+}
+
 function importFixture(string $database, string $structure, string $data): array {
     global $db, $work;
     $db->query('CREATE DATABASE `' . $database . '`');
@@ -45,8 +62,7 @@ check($db->query("SHOW INDEX FROM address WHERE Column_name = 'street'")->num_ro
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.STATISTICS s JOIN information_schema.COLUMNS c ON c.TABLE_SCHEMA = s.TABLE_SCHEMA AND c.TABLE_NAME = s.TABLE_NAME AND c.COLUMN_NAME = s.COLUMN_NAME WHERE s.TABLE_SCHEMA = DATABASE() AND c.DATA_TYPE IN ('tinytext', 'text', 'mediumtext', 'longtext', 'tinyblob', 'blob', 'mediumblob', 'longblob') AND s.SUB_PART IS NULL AND s.INDEX_TYPE <> 'FULLTEXT'")->fetch_row()[0] === 0, 'Unprefixed TEXT/BLOB index remains');
 check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'path'")->fetch_assoc()['Type'] === 'varchar(2048)', 'Fresh installation has no full redirect path storage');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'slugredirect' AND index_name = 'clientid_shopid_pathhash' AND non_unique = 0")->fetch_row()[0] === 3, 'Fresh installation redirect uniqueness is not tenant- and shop-scoped');
-check($db->query("SHOW COLUMNS FROM shoporder LIKE 'token'")->fetch_assoc()['Null'] === 'YES', 'Fresh installation checkout token breaks existing internal order writers');
-check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shoporder' AND index_name = 'clientid_shopid_token' AND non_unique = 0")->fetch_row()[0] === 3, 'Fresh installation checkout token uniqueness is not tenant- and shop-scoped');
+checkCheckoutTokenSchema($db, 'Fresh installation');
 
 $structure = 'CREATE TABLE import_before (id INT);';
 $data = 'INSERT INTO import_before VALUES (1);';
@@ -148,7 +164,8 @@ check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE 
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_quoteid_deleted'")->fetch_row()[0] === 3, 'Inquiry quote relation index is missing or has the wrong columns');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquiryform' AND index_name = 'clientid_shopid_deleted_id'")->fetch_row()[0] === 4, 'Inquiry form lookup index is missing or has the wrong columns');
 check((int)$db->query('SELECT COUNT(*) FROM shoporder WHERE token IS NOT NULL AND CHAR_LENGTH(token) = 64')->fetch_row()[0] === 4, 'Checkout migration did not backfill legacy order tokens');
-check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shoporder' AND index_name = 'clientid_shopid_token' AND non_unique = 0")->fetch_row()[0] === 3, 'Checkout token unique index is missing or has the wrong columns');
+check($db->query("SELECT GROUP_CONCAT(CONCAT(id, ':', orderid) ORDER BY id) FROM shoporder")->fetch_row()[0] === '1:1000,2:1001,3:1000,4:1000', 'Checkout migration changed or removed an existing order');
+checkCheckoutTokenSchema($db, 'Upgrade');
 foreach ($roleQueries as $query) {
     if (str_starts_with(trim($query['query']), 'INSERT IGNORE INTO `contactrole`')) $db->query($query['query']);
 }
