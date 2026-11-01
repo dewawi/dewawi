@@ -11,13 +11,17 @@ class Shops_RedirectController extends Shops_Controller_Action
 			throw new Zend_Controller_Action_Exception('Redirect not found', 404);
 		}
 
-		$path = trim((string)parse_url($this->getRequest()->getRequestUri(), PHP_URL_PATH), '/');
+		$path = DEEC_Site_Router::getRelativeRequestPath(
+			$this->getRequest()->getRequestUri(),
+			$this->_siteContext->getBasePath()
+		);
+		if ($path === null) throw new Zend_Controller_Action_Exception('Redirect not found', 404);
 		$target = (new Shops_Model_DbTable_Slugredirect())->resolvePath($path);
 
 		if (!$target) throw new Zend_Controller_Action_Exception('Redirect not found', 404);
 
 		$this->getResponse()
 			->setHttpResponseCode(301)
-			->setHeader('Location', '/' . ltrim($target, '/'), true);
+			->setHeader('Location', $this->_siteContext->getBasePath() . '/' . ltrim($target, '/'), true);
 	}
 }

@@ -64,6 +64,13 @@ class DEEC_Site_Context
 		return $parts['origin'] ?? null;
 	}
 
+	public function getBasePath(): string
+	{
+		$parts = self::parseCanonicalUrl((string)($this->site['url'] ?? ''));
+
+		return (string)($parts['path'] ?? '');
+	}
+
 	public static function parseCanonicalUrl(string $url): ?array
 	{
 		$url = trim($url);

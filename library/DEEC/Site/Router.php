@@ -8,7 +8,9 @@ class DEEC_Site_Router
 
 		return in_array($segment, [
 			'robots.txt', 'sitemap.xml', 'search', 'contact', 'inquiry', 'cart',
-			'checkout', 'cookie-consent', 'products-de.xml', 'product',
+			'checkout', 'cookie-consent', 'products-de.xml', 'product', 'files',
+			'media', 'cache', 'library', 'admin', 'user', 'users', 'login', 'logout',
+			'email-delivery', 'campaigns',
 		], true);
 	}
 
@@ -21,6 +23,21 @@ class DEEC_Site_Router
 		if (preg_match('~(?:^|/)[^/]*\.[^/]*(?:/|$)~', $path)) return false;
 
 		return true;
+	}
+
+	public static function getRelativeRequestPath(string $requestUri, string $basePath = ''): ?string
+	{
+		$path = parse_url($requestUri, PHP_URL_PATH);
+		if (!is_string($path)) return null;
+
+		$basePath = rtrim($basePath, '/');
+		if ($basePath !== '') {
+			if ($path === $basePath || $path === $basePath . '/') return '';
+			if (!str_starts_with($path, $basePath . '/')) return null;
+			$path = substr($path, strlen($basePath));
+		}
+
+		return trim($path, '/');
 	}
 
 	public function registerRoutes(DEEC_Site_Context $siteContext)
@@ -255,9 +272,12 @@ class DEEC_Site_Router
 
 	protected function registerSlugRoute(Zend_Controller_Router_Rewrite $router, DEEC_Site_Context $siteContext): bool
 	{
-		$path = trim((string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+		$path = self::getRelativeRequestPath(
+			(string)($_SERVER['REQUEST_URI'] ?? ''),
+			$siteContext->getBasePath()
+		);
 
-		if ($path === '') {
+		if ($path === null || $path === '') {
 			return false;
 		}
 
@@ -288,7 +308,12 @@ class DEEC_Site_Router
 	{
 		if (!in_array(strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')), ['GET', 'HEAD'], true)) return;
 
-		$path = trim((string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+		$siteContext = Zend_Registry::get('SiteContext');
+		$path = self::getRelativeRequestPath(
+			(string)($_SERVER['REQUEST_URI'] ?? ''),
+			$siteContext instanceof DEEC_Site_Context ? $siteContext->getBasePath() : ''
+		);
+		if ($path === null) return;
 		if (!DEEC_Site_Router::isRedirectablePath($path)) return;
 
 		$target = (new Shops_Model_DbTable_Slugredirect())->resolvePath($path);

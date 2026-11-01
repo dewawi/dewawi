@@ -39,7 +39,7 @@ Zend_Auth::getInstance()->getStorage()->write(['id' => 42]);
 $checks = 0;
 foreach ([0, 1] as $admin) {
     Zend_Registry::set('User', ['id' => 42, 'admin' => $admin]);
-    foreach (['user', 'config', 'permission', 'client', 'export', 'error', 'uom'] as $controller) {
+    foreach (['user', 'config', 'permission', 'client', 'export', 'error', 'uom', 'shop'] as $controller) {
         foreach (['GET', 'POST'] as $method) {
             foreach ([false, true] as $ajax) {
                 $request = new Zend_Controller_Request_Http();
@@ -63,6 +63,23 @@ foreach ([0, 1] as $admin) {
                 $checks++;
             }
         }
+    }
+}
+
+foreach (['legacyredirect', 'legacyredirectimport'] as $action) {
+    foreach ([0, 1] as $admin) {
+        Zend_Registry::set('User', ['id' => 42, 'admin' => $admin]);
+        $request = new Zend_Controller_Request_Http();
+        $request->setModuleName('admin')->setControllerName('shop')->setActionName($action)->setParam('id', 7);
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $response = new Zend_Controller_Response_Http();
+        $plugin = new Application_Plugin_Acl();
+        $plugin->setResponse($response);
+        $plugin->routeShutdown($request);
+        $route = [$request->getModuleName(), $request->getControllerName(), $request->getActionName()];
+        check($route === ($admin ? ['admin', 'shop', $action] : ['default', 'error', 'forbidden']), 'Legacy redirect action permission mismatch');
+        check($response->getHttpResponseCode() === ($admin ? 200 : 403), 'Legacy redirect action returned the wrong permission status');
+        $checks++;
     }
 }
 

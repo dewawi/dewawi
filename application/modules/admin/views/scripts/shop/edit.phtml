@@ -28,6 +28,17 @@ echo $this->form->renderForm([
 				'shoptitle' => $shopTitle,
 			]),
 		],
+		'redirects' => [
+			'title' => 'ADMIN_LEGACY_REDIRECTS',
+			'html' => $this->partial('shop/_redirects.phtml', [
+				'shopId' => $shopId,
+				'redirects' => $this->legacyRedirects,
+				'targets' => $this->legacyRedirectTargets,
+				'csrf' => $this->legacyRedirectCsrf,
+				'preview' => $this->legacyRedirectPreview,
+				'previewToken' => $this->legacyRedirectPreviewToken,
+			]),
+		],
 		'design' => ['title' => 'ADMIN_DESIGN'],
 		'content' => ['title' => 'TABS_CONTENT'],
 		'features' => ['title' => 'ADMIN_SITE_FEATURES'],

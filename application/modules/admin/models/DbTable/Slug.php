@@ -91,6 +91,43 @@ class Admin_Model_DbTable_Slug extends DEEC_Model_DbTable_Entity
 		return $path;
 	}
 
+	public function getPublicPathsByShop(int $shopId): array
+	{
+		$this->assertShopReadAccess($shopId);
+		$rows = $this->getActiveSlugsForRead($shopId);
+		$paths = $this->getPathsByKey($rows);
+		$result = [];
+
+		foreach ($rows as $row) {
+			if (!in_array((string)$row['controller'], self::PUBLIC_CONTROLLERS, true)) continue;
+			$key = $this->getSlugKey($row);
+			if (!isset($paths[$key])) continue;
+			$row['path'] = $paths[$key];
+			$result[] = $row;
+		}
+
+		return $result;
+	}
+
+	protected function getActiveSlugsForRead(int $shopId): array
+	{
+		return $this->fetchAll(
+			$this->select()
+				->where('clientid = ?', (int)$this->_client['id'])
+				->where('shopid = ?', $shopId)
+				->where('module = ?', 'shops')
+				->where('deleted = ?', 0)
+				->order('id ASC')
+		)->toArray();
+	}
+
+	protected function assertShopReadAccess(int $shopId): void
+	{
+		if (!(new Admin_Model_DbTable_Shop())->getById($shopId)) {
+			throw new DomainException('MESSAGES_SLUG_SHOP_INVALID');
+		}
+	}
+
 	public function addSlug($module, $controller, $shopid, $parentid, $entityid, $slug)
 	{
 		$shopid = (int)$shopid;

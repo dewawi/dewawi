@@ -21,6 +21,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Interne DEWAWI-Seiten erhalten grundlegende Sicherheits- und Noindex-Header.
 - Eine eigene Staging-Konfiguration wurde vorbereitet; Staging darf nicht stillschweigend die Produktionsdatenbank verwenden.
 - Automatische historische Pfade werden mandanten- und websitebezogen gespeichert und per HTTP 301 auf die jeweils aktuelle öffentliche Entitäts-URL weitergeleitet.
+- Administratoren können fachlich bekannte historische Pfade im jeweiligen Shop manuell oder per validierter CSV-Vorschau aktuellen öffentlichen Entitäten zuordnen.
 - `robots.txt`, Sitemap und Canonicals verwenden dieselbe validierte, mandantenbezogene Shop-URL; nicht indexierbare Websites bleiben zum Erkennen von `noindex` crawlbar und bewerben keine Sitemap.
 - Öffentliche Hosts werden exakt gegen die normalisierte `shop.url` aufgelöst. `www` und Non-`www`, nichtstandardisierte Ports, ungültige Host-Header sowie mehrdeutig konfigurierte Shops werden nicht mehr stillschweigend zusammengeführt; Proxy-Header bleiben für die Shopauswahl unbeachtet.
 - SEO-Titel, Descriptions und Open-Graph-Daten werden für öffentliche Seiten zentral erzeugt; Breadcrumbs verwenden für HTML und JSON-LD dieselbe aktuelle Pfadhierarchie.
@@ -30,7 +31,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Lokale öffentliche CSS-/JavaScript-Assets verwenden in der Websiteausgabe inhaltsbasierte Versionsparameter und können dadurch langfristig unveränderlich gecacht werden. Unversionierte statische Dateien werden revalidiert; Textantworten werden bei verfügbaren Apache-Modulen mit Brotli beziehungsweise gzip komprimiert.
 - Dynamische Antworten bleiben standardmäßig `private, no-store`; geschützte Dateien behalten dieselbe Policy. Ausschließlich tatsächlich öffentliche Medien erhalten eine kurze öffentliche Cachefreigabe mit Validatoren.
 - Ein rein lesender CLI-Verfügbarkeitscheck prüft ausdrücklich konfigurierte HTTP-/HTTPS-Endpunkte, DNS, TCP, TLS-Zertifikate, Statuscodes, Redirects, Antwortdauer und Zertifikatsrestlaufzeit mit Text-/JSON-Ausgabe und eindeutigen Exit-Codes.
-- TLS, bekannte Alt-URL-Importe, moderne Bildformate, weitere Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
+- TLS, die fachliche Alt-URL-Inventur und -Abnahme, moderne Bildformate, weitere Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
 - Der wiederherstellungsrelevante Daten-, Datei-, Konfigurations- und Codestand ist inventarisiert; ein installationsneutraler Sicherungs-, Integritäts-, isolierter Restore- und Rollbackablauf wird durch eine temporäre MariaDB-/Dateisystemprobe geprüft.
 
 ## 3. Status- und Prioritätsdefinitionen
@@ -59,8 +60,8 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 6 | Umgesetzt | P0 vor Relaunch | Neue und ausdrücklich geänderte öffentliche Slugs werden zentral nach `ae/oe/ue/ss` normalisiert. Vollständige verschachtelte Pfade werden je Mandant und Website auf Kollisionen und reservierte Systemrouten geprüft. Bestehende Slugs bleiben ohne ausdrückliche URL-Änderung unverändert; es gab keine Massenmigration. |
 | 7 | Teilweise | P1 | Generierte öffentliche Pfade verwenden aktuell keine abschließenden Schrägstriche. Diese Strategie für neue URLs beibehalten und nach einem Routen-Audit eine serverseitige 301-Normalisierung ergänzen, ohne Dateien, Startseite oder Legacy-Routen zu beschädigen. |
 | 8 | Umgesetzt / reale Prüfung offen | P0 vor Relaunch | Die Anwendung löst ausschließlich den exakt konfigurierten Host und zulässige Ports aus `shop.url` auf; `www` wird nicht mehr pauschal entfernt und mehrdeutige Authorities scheitern geschlossen. Alternative Hosts müssen nach DNS-/Zertifikatsprüfung in einem eigenen VHost oder am vertrauenswürdigen Proxy direkt auf die Hauptdomain weiterleiten. |
-| 9 | Teilweise | P0 vor Relaunch | Ausdrückliche Änderungen öffentlicher Seiten-, Kategorie-, Produkt- und Tag-Pfade erzeugen automatisch mandanten- und websitebezogene 301-Weiterleitungen. Ziele werden bei jedem Abruf aus der aktuellen öffentlichen Entität ermittelt. Ein fachlich geprüfter Import bekannter Alt-URLs und eine manuelle Admin-Zuordnung bleiben offen. |
-| 10 | Offen | P0 vor Relaunch | Historische Doppelungen wurden nicht vollständig inventarisiert. Jede bekannte Alt-URL einzeln der fachlich passenden neuen Seite zuordnen und aus Navigation sowie Sitemap entfernen; die neue Redirect-Tabelle kann anschließend als technische Grundlage dienen. |
+| 9 | Umgesetzt / fachliche Zuordnung offen | P0 vor Relaunch | Ausdrückliche Änderungen öffentlicher Pfade erzeugen automatisch mandanten- und websitebezogene 301-Weiterleitungen. Administratoren können bekannte relative Altpfade außerdem manuell oder per geprüfter CSV-Vorschau aktuellen öffentlichen Entitäten zuordnen. Die reale Alt-URL-Liste bleibt fachlich zu erstellen und abzunehmen. |
+| 10 | Teilweise | P0 vor Relaunch | Historische Doppelungen können gezielt im jeweiligen Shop deaktiviert oder einer aktuellen öffentlichen Entität zugeordnet werden. Die vollständige Inventur realer Alt-URLs, ihre fachliche Zuordnung und die Bereinigung von Navigation und Inhalten bleiben Relaunch-Aufgaben. |
 | 11 | Umgesetzt | P1 | Vorhandene individuelle Metatitel und -Descriptions werden für Startseite, CMS-Seiten und Kategorien verwendet. Produkte und Tags nutzen sinnvolle Bestandsdaten als Fallback. Eine zentrale Ausgabe verhindert doppelte Elemente und doppelte Websitenamen; leere Werte werden ausgelassen. |
 | 12 | Teilweise | P1 | Öffentliche Templates definieren eine Haupt-H1; bei mehreren Hero-Blöcken wird nur der erste als H1 ausgegeben. Vorhandene H1 in Legacy-HTML werden erkannt und nicht durch eine zusätzliche Template-H1 ergänzt. Mehrere bereits gespeicherte H1 innerhalb eines einzelnen Legacy-Inhalts werden bewusst nicht automatisch umgeschrieben und bleiben redaktionell zu prüfen. |
 | 13 | Umgesetzt | P1 | Mega- und Kategorie-Untermenüs verwenden native Buttons mit eindeutigen `aria-controls`, synchronem `aria-expanded` und tatsächlich verborgenen Panels. Tab, Shift+Tab, Enter, Leertaste und Escape einschließlich Fokusrückgabe sind mit echten WebDriver-Eingaben geprüft; Touch und Desktop-Hover bleiben erhalten. |
@@ -188,7 +189,18 @@ Eine umfassende Script-/Style-CSP ist noch nicht aktiviert, weil Inline-Code, ex
 - Das Ziel wird bei jedem Abruf aus der aktuellen kanonischen URL der gespeicherten Entität gebildet. Mehrfache Änderungen erzeugen deshalb keine Redirect-Ketten. Gelöschte, deaktivierte, mandantenfremde oder durch ein deaktiviertes Website-Feature nicht öffentliche Ziele werden nicht weitergeleitet.
 - Reservierte Systemrouten, Dateipfade und statische Ressourcen sind ausgeschlossen. Unbekannte Pfade bleiben echte 404-Antworten; es gibt keinen Startseiten-Fallback.
 - Canonicals und Sitemap verwenden weiterhin ausschließlich die bestehende Slug-Tabelle. Historische Pfade erscheinen dort nicht.
-- Bekannte historische URLs aus der Zeit vor dieser Funktion werden nicht automatisch erraten. Ein geprüfter Alt-URL-Import und eine kleine manuelle Admin-Zuordnung sind bewusst noch nicht enthalten.
+- Bekannte historische URLs aus der Zeit vor dieser Funktion werden nicht automatisch erraten. Sie können im Shop-Tab „Historische URLs“ einzeln oder per geprüfter CSV-Vorschau einer aktuellen öffentlichen Entität zugeordnet werden.
+
+### 5.7a Manuelle Verwaltung historischer URLs
+
+- Die Shop-Administration zeigt alte relative Pfade, ihren aus der aktuellen Entität berechneten Zielpfad und den Aktivstatus. Administratoren können sichere Altpfade anlegen und bestehende Einträge deaktivieren; freie externe Ziel-URLs und direkt übermittelte Entitäts-IDs werden nicht akzeptiert.
+- Als Ziele stehen nur aktuell öffentliche CMS-Seiten, Kategorien, Produkte, Tags und vorhandene öffentliche Anfrageformulare desselben Mandanten und Shops zur Auswahl. Gelöschte, deaktivierte, fremde oder mehrdeutige Ziele werden abgewiesen.
+- Quelle und Ziel bleiben unverändert relative Pfade. Reservierte Systemrouten, geschützte Datei- und Modulpfade, statische Dateinamen, Traversalsegmente, aktuelle öffentliche URLs, Schleifen und widersprüchliche bestehende Redirects werden zentral abgewiesen.
+- Der CSV-Import erwartet UTF-8 mit exakt `old_path,target_path`, maximal 256 KiB und 500 Datenzeilen. Die serverseitige Vorschau kennzeichnet neue, zu reaktivierende, identische, doppelte und fehlerhafte Zeilen. Die Bestätigung ist zeitlich begrenzt sowie an CSRF-Token, Mandant und Shop gebunden.
+- Vor dem Schreiben wird die gesamte Vorschau erneut validiert. Bei einem Fehler wird die Transaktion vollständig zurückgerollt; identische Zuordnungen und identische doppelte CSV-Zeilen werden übersprungen.
+- Die öffentliche Auflösung bleibt entitätsbezogen: GET und HEAD liefern direkt 301 auf den aktuellen Pfad, POST wird nicht umgeleitet, aktuelle Slugs haben Vorrang und historische Pfade gelangen weder in Canonicals noch in die Sitemap.
+- Unterstützt werden Pfade, die der vorhandene relative Router sicher verarbeiten kann. Domains, Querystrings, Fragmente, Dateipfade und andere Ursprünge werden nicht gespeichert. Reale historische Kunden-URLs wurden nicht importiert.
+- Es wurden keine Tabellen oder Migrationen geändert. Bestehende Slugs, Redirects, Produktzuordnungen, Canonicals und Sitemap-Pfade bleiben unverändert.
 
 ### 5.8 Dynamische Robots- und Sitemap-Ausgabe
 
@@ -792,6 +804,7 @@ Gesamtbewertung: **NO-GO für einen Produktionsrelease**, bis alle NO-GO- und NI
 | Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, Shop-Abläufe, AJAX, Conversion-Dispatcher, Suche und Checkout | 75 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
 | ChromeDriver-Tastatur, Fokus, ARIA, Consent, Tracking-Requests, Formulare, Warenkorb, Header-Komponenten, Kontrast und Reflow | 95 Prüfungen bei 320, 375, 500, 768 und 1365 Pixeln bestanden |
 | Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 101 Prüfungen bestanden |
+| Manuelle historische Redirects, CSV-Vorschau/-Import, Konflikte, CSRF, Isolation, Root-/Unterpfade und Transaktionsrollback | 46 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
 | Browsermeldungen, Übersetzungen und Benachrichtigungen | Je 1.979 Browserprüfungen bei 390 und 1.280 Pixeln bestanden |
 | Sicherheitskonfiguration und Umgebungswahl | 22 Prüfungen bestanden |
@@ -803,6 +816,7 @@ Gesamtbewertung: **NO-GO für einen Produktionsrelease**, bis alle NO-GO- und NI
 | Kontaktpersonen | 66 Prüfungen bestanden |
 | Kontaktrollen | 32 Prüfungen bestanden |
 | Berechtigungen | 408 Prüfungen bestanden |
+| Adminzugriff einschließlich historischer Redirect-Aktionen | 68 Prüfungen bestanden |
 | Mandantenzugriff | 268 Prüfungen bestanden |
 | Mandantenwechsel | 53 Prüfungen bestanden |
 | HTTP-Sessions | 25 Prüfungen bestanden |
@@ -831,7 +845,7 @@ Alle aufgeführten HTTP-, TLS-, Browser- und Datenbankprüfungen liefen ausschli
 - Die strengere Hostauflösung behandelt `www` und Non-`www` nicht mehr als automatische Aliasse. Jede bisher nur implizit erreichbare Variante benötigt vor dem Deployment einen ausdrücklich geprüften Redirect-VHost beziehungsweise eine Edge-Regel. Doppelt konfigurierte aktive Host-/Basispfad-Kombinationen werden absichtlich nicht aufgelöst, bis die Daten bereinigt sind; unterschiedliche segmentgenaue Basispfade bleiben möglich.
 - Ein expliziter nichtstandardisierter Port in `shop.url` muss auch im Request-Host vorhanden sein. Standardports 80/443 bleiben ohne explizite Angabe zulässig, damit die vorgeschaltete HTTPS-Normalisierung greifen kann. Reverse-Proxies müssen den externen kanonischen Host erhalten; die Anwendung vertraut keinem Forwarded-Header.
 - Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Redirects entstehen erst bei einer ausdrücklichen Slug- oder Elternänderung innerhalb derselben Website; ein Websitewechsel erzeugt keine domainübergreifende Weiterleitung.
-- Vorhandene historische URLs werden nicht automatisch importiert. Dafür sind vor dem Relaunch eine fachliche Zuordnung und ein eigener sicherer Import- oder Verwaltungsweg erforderlich.
+- Vorhandene historische URLs werden nicht automatisch erraten oder aus Kundendaten importiert. Vor dem Relaunch muss eine fachlich geprüfte Liste über den neuen Shop-Tab manuell beziehungsweise per CSV zugeordnet und anschließend mit dem Crawler kontrolliert werden.
 - Eine ungültige oder fehlende `shop.url` unterdrückt Canonical und Sitemap-Verweis; der Sitemap-Endpunkt liefert dann bewusst 404. Die Produktionsadresse muss vor Indexierungsfreigabe geprüft werden.
 - Open-Graph-URL, Breadcrumb-JSON-LD und Organization-Markup werden bei fehlender oder ungültiger `shop.url` ebenfalls ausgelassen. Externe Bild-URLs und Medien außerhalb der ausdrücklich öffentlichen Bildverzeichnisse werden nicht übernommen.
 - Legacy-WYSIWYG-Inhalte können bereits mehrere eigene H1 enthalten. Die Templates fügen in diesem Fall keine weitere H1 hinzu, verändern bestehende Kundendaten aber nicht; der Bestand bleibt im Relaunch-Crawl redaktionell zu bereinigen.
@@ -859,7 +873,7 @@ Alle aufgeführten HTTP-, TLS-, Browser- und Datenbankprüfungen liefen ausschli
 
 ### P1 – Noch zu entwickelnde oder fachlich abzuschließende Funktionen
 
-- Einen geprüften Import- oder kleinen Verwaltungsweg für bekannte historische URLs ergänzen, die hilfreiche 404-Seite vervollständigen und eine fachliche 410-Strategie festlegen.
+- Die fachlich zugeordnete Liste bekannter historischer URLs über die neue Verwaltung importieren und mit dem Crawler abnehmen; außerdem die hilfreiche 404-Seite vervollständigen und eine fachliche 410-Strategie festlegen.
 - Legacy-Inhalte mit mehreren H1, Platzhalter-/Leerzielen, fehlenden Alt-Texten und externen Einbettungen redaktionell bereinigen.
 - Vor Einführung eines Partnerzugangs Authentifizierung, Registrierung, Verifikation, Reset, Brute-Force-Schutz, serverseitig autorisierte Dokumente und getrennte Marketingeinwilligung entwerfen.
 - Die manuelle WCAG-2.2-AA-Stichprobe mit Screenreader, Zoom, Forced Colors, physischen Touchgeräten, realen Themes, Menüs und Inhalten durchführen.
@@ -1153,6 +1167,16 @@ Inhalt:
 - Installationsneutrales Deployment- und Rollback-Runbook für Vorbereitung, Backup/Restore, Migration, Code, Cache, Infrastruktur, Funktionen, Crawler, Monitoring und Freigabe.
 - Exakter Neuinstallations-/Migrationsvergleich der Checkout-Token-Spalte und des Tenant-/Shop-Unique-Indexes sowie Nachweis, dass vorhandene Bestellungen erhalten bleiben.
 - Datumstabile Lagerplanungs-Fixture und erneute vollständige Infrastruktur-, Shop-, SEO-, Sicherheits-, Mandanten-, MariaDB-, Chromium-, Accessibility- und Syntaxregression.
+
+### Commit 25: `add manual legacy site redirects`
+
+Inhalt:
+
+- Kleine Shop-Administration für historische relative Pfade mit aktuellem öffentlichem Ziel, Status, Anlage und Deaktivierung.
+- UTF-8-CSV-Import mit festem `old_path,target_path`-Format, begrenzter Vorschau, Zeilenstatus und atomarer Bestätigung.
+- Zentrale Quellen-, Ziel-, Kollisions-, Systemrouten-, Datei-, Mandanten-, Shop-, CSRF- und Berechtigungsprüfung ohne freie externe Ziele oder manipulierbare Entitäts-IDs.
+- Korrekte öffentliche 301-Ziele für Root- und Unterverzeichnisinstallationen bei unverändertem Vorrang aktueller URLs sowie unveränderten Canonicals und Sitemap-Pfaden.
+- Automatisierte Verwaltungs-, Import-, Rollback-, ACL-, Routing-, SEO- und Isolationsregressionen ohne Schema- oder Kundendatenänderung.
 
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
