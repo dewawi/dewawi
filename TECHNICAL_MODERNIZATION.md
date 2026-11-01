@@ -64,12 +64,12 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 21 | Umgesetzt | P1 | Für sicher auflösbare Rasterbilder werden die tatsächlichen Originalmaße als `width` und `height` ausgegeben. Der Produktbildbereich reserviert zusätzlich adaptiv ein 4:3-Verhältnis statt einer starren 400-Pixel-Höhe; modale Bilder bleiben auf 80 Prozent der Viewporthöhe und maximal 800 Pixel begrenzt. |
 | 22 | Umgesetzt | P1 | Inhalts-, Karten-, Kategorie-, Listen- und Galeriebilder laden lazy. Der sichtbare CMS-Hero, die erste Startseiten-Slide und das initiale Produktbild sind explizit ausgenommen. |
 | 23 | Teilweise | P1 | Nur der erste CMS-Hero bzw. Bild/Text-Block, die erste Startseiten-Slide oder das initiale Produktbild verwendet `fetchpriority="high"` ohne Lazy Loading. Spätere Hero-/Galeriebilder bleiben lazy; reine Text-LCP-Seiten erzeugen keinen unnötigen Bild-Preload. Die tatsächliche LCP-Wirkung bleibt mit finalen Staging-Inhalten zu messen. |
-| 24 | Teilweise | P1 Sicherheit | Öffentliche Seiten verwenden Bootstrap 4.5.2, jQuery 3.5.1 und ein externes Bootstrap-Bundle; das ERP besitzt tiefere Legacy-Abhängigkeiten. Sicherheits-/Kompatibilitätsinventar erstellen und öffentliche Assets inkrementell aktualisieren. |
-| 25 | Offen | P1 Sicherheit | Externe CDN-Tags besitzen weder SRI noch `crossorigin`. Bevorzugt geprüfte Assets selbst hosten oder exakte Integritätswerte und Ausfalltests ergänzen. |
-| 26 | Teilweise | P2 | Öffentliche jQuery-, Bootstrap- und Shop-Scripts stehen bereits am Dokumentende und blockieren das initiale HTML-Parsing nicht. `defer` wurde wegen der danach folgenden kundenspezifischen Analytics-Ausgabe und der bestehenden Abhängigkeitsreihenfolge nicht pauschal ergänzt; eine sichere Entkopplung bleibt Phase 3.3. |
-| 27 | Offen | P2 | Keine dokumentierte CSS-Bereinigung, Minifizierung oder cache-gebundene Asset-Versionierung. Nutzung messen, öffentliche und interne Bundles getrennt optimieren und reproduzierbare Builds vorsehen. |
+| 24 | Teilweise | P1 Sicherheit | Das öffentliche Frontend verwendet den vollständigen jQuery-Build 3.7.1 und Bootstrap 4.6.2. AJAX, Navigation, Collapse, Tabs, Carousel und Modal sind im Chromium-Test abgedeckt. Bootstrap 4 ist seit 2023 EOL; die dokumentierte Bootstrap-5-Migration bleibt offen. Die älteren internen ERP-Abhängigkeiten wurden bewusst nicht verändert. |
+| 25 | Umgesetzt | P1 Sicherheit | Alle drei externen öffentlichen Bibliotheksdateien besitzen feste Versions-URLs, kryptografisch gegen die ausgelieferten Dateien geprüfte SHA-384-SRI-Werte und `crossorigin="anonymous"`. Das lokale Shop-CSS und -JavaScript bleiben First Party. |
+| 26 | Für aktuellen Umfang umgesetzt | P2 | Die drei abhängigen Scripts stehen in korrekter Reihenfolge am Dokumentende und werden vom Browser als nicht render-blockierend gemessen. `defer` wurde nicht ergänzt, weil es dort keinen belegten Rendergewinn bringt und kundenspezifisches nachfolgendes Analytics-Markup beziehungsweise vorhandene Inline-Scripts umordnen könnte. |
+| 27 | Teilweise | P2 | Zwei nachweislich doppelte generische Header-Regeln wurden entfernt. Eine breitflächige CSS-Bereinigung oder neue Build-/Minifizierungsarchitektur erfolgte ohne reale Theme- und Nutzungsdaten bewusst nicht. Webserver-Caching und versionierte lokale Anwendungsassets bleiben offen. |
 | 28 | Teilweise | P1 | Eine reproduzierbare lokale Chromium-Fixture vergleicht unoptimierte und responsive Bildausgabe, Ressourcenauswahl, Prioritäten und CLS. Mangels freigegebener Staging-URL und realer Medien sind keine belastbaren Feldwerte vorhanden; LCP und INP müssen weiterhin mit finalen Inhalten und realen Interaktionen gemessen werden. |
-| 29 | Offen | P1 | `navbar-expand-xl` ist fest gesetzt; eine Prüfung mit finalen Menüpunkten fehlt. Breakpoint anhand realer Breiten testen und gegebenenfalls mandantenbezogen anpassen. |
+| 29 | Teilweise | P1 | `navbar-expand-xl` funktioniert in der lokalen Chromium-Fixture bei 500 und 1365 Pixeln einschließlich Collapse und Mega-Menü. Die endgültige Entscheidung bleibt mit realen mandantenbezogenen Menüpunkten und Textlängen auf Staging zu prüfen. |
 | 30 | Teilweise | P1 | Footerlinks werden als Liste ausgegeben, aber nicht vollständig als beschriftete Navigation. `<nav aria-label="Footer">` ergänzen und Erreichbarkeit aller rechtlichen sowie Consent-Ziele je Website prüfen. |
 | 31 | Offen | P0 vor Tracking | Ein vollständiges Consent-System mit Zustimmen, Ablehnen und späterem Ändern existiert nicht. Vor optionalem Tracking eine mandantenfähige Einwilligungsverwaltung implementieren. |
 | 32 | Teilweise | P0 vor Tracking | Öffentliches Analytics-Markup wird bei nicht indexierbaren Websites unterdrückt; internes Analytics läuft nur in Production. In indexierbarer Produktion fehlt weiterhin Consent-Gating. Dienste klassifizieren und optionale Tags erst nach Einwilligung laden. |
@@ -110,7 +110,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 67 | Offen | P0 | Nicht produktives Analytics wird unterdrückt, zentrale Mailfunktionen können aber weiterhin konfiguriertes SMTP verwenden. Eine verbindliche Nicht-Produktions-Mailstrategie mit Deaktivierung oder Allowlist/Test-Sink ergänzen. |
 | 68 | Infrastruktur | P0 vor Relaunch | Kein vollständiger Backup-/Rollback-Ablauf im Repository dokumentiert. Anwendung, Datenbank, Medien und Redirects sichern und objektive Rollback-Kriterien erproben. |
 | 69 | Infrastruktur | P1 vor Relaunch | Keine externe Überwachung für Erreichbarkeit, Zertifikatsablauf, 5xx, Formulare oder Login gefunden. Synthetische Checks und klare Alarmverantwortung einrichten. |
-| 70 | Teilweise | P1 Entscheidung | Öffentliche Seiten bleiben an Bootstrap 4 und jQuery 3 gebunden; das ERP besitzt zusätzliche ältere jQuery-Abhängigkeiten. Öffentlichen Bereich inkrementell modernisieren und keinen vollständigen Backend-Rewrite mit dem Relaunch koppeln. |
+| 70 | Teilweise | P1 Entscheidung | Das öffentliche Frontend ist auf die letzten vorgesehenen 3.x-/4.x-Stände jQuery 3.7.1 und Bootstrap 4.6.2 aktualisiert. Bootstrap 4 bleibt EOL. Bootstrap 5 erfordert die gezielte Migration von `data-toggle`/`data-target`/`data-slide`, jQuery-Pluginaufrufen, Utility-Klassen und Komponentenmarkup; das interne ERP bleibt davon getrennt. |
 
 ## 5. Bereits implementierte Änderungen
 
@@ -239,7 +239,31 @@ Die lokale Medienablage enthält in diesem Stand keine realen Websitebilder oder
 | hoch priorisierte Bilder | 2 | 1 | 1 |
 | CLS | 0 | 0 | 0 |
 
-Die mobile Bildübertragung sank in dieser synthetischen Fixture um 2.009.509 Bytes beziehungsweise rund 57,2 Prozent. Das ist ein Laborvergleich der Ressourcenauswahl und keine Prognose für konkrete Kundenbilder. Chromium stellte im verwendeten Headless-Dump keinen LCP-Eintrag bereit; deshalb wird kein LCP-Zeitwert behauptet. Der Headless-Modus lud außerdem das weit entfernte Lazy-Bild innerhalb des Messfensters, sodass daraus keine reale Lazy-Loading-Ersparnis abgeleitet wird. INP ist ohne repräsentative reale Benutzerinteraktion nicht messbar. Feldwerte für LCP, CLS und INP bleiben nach Einbau finaler Inhalte auf einer freigegebenen Staging-Website zu erheben.
+Die mobile Bildübertragung sank in dieser synthetischen Fixture um 2.009.509 Bytes beziehungsweise rund 57,2 Prozent. Das ist ein Laborvergleich der Ressourcenauswahl und keine Prognose für konkrete Kundenbilder. Chromium stellt im verwendeten Headless-Dump LCP-Einträge nicht zuverlässig für alle Läufe bereit; deshalb wird kein LCP-Zeitwert behauptet. Der Headless-Modus lud außerdem das weit entfernte Lazy-Bild innerhalb des Messfensters, sodass daraus keine reale Lazy-Loading-Ersparnis abgeleitet wird. INP ist ohne repräsentative reale Benutzerinteraktion nicht messbar. Feldwerte für LCP, CLS und INP bleiben nach Einbau finaler Inhalte auf einer freigegebenen Staging-Website zu erheben.
+
+### 5.13 Öffentliche Frontend-Abhängigkeiten
+
+- Das öffentliche Site-Layout lädt den vollständigen jQuery-Build 3.7.1 mit AJAX-Unterstützung und Bootstrap 4.6.2 CSS sowie Bundle einschließlich Popper. jQuery Migrate, der Slim-Build und zusätzliche Bibliothekskopien werden nicht geladen. Das interne ERP behält seine vorhandenen Legacy-Abhängigkeiten.
+- Die versionsgenauen Dateien wurden direkt von `code.jquery.com` beziehungsweise `cdn.jsdelivr.net` geladen. Ihre SHA-384-Werte wurden lokal aus den ausgelieferten Bytes berechnet; alle drei externen Tags verwenden diese SRI-Werte und `crossorigin="anonymous"`.
+- Eine lokale Kopie würde dieselben drei Dateien zusätzlich im Repository pflegen, ohne Requests oder Bytes zu reduzieren. Deshalb bleiben die geprüften CDNs bestehen. Ausfallsicherheit und Datenschutz sind gegen den Vorteil der zentralen, unveränderlichen Dateien abzuwägen; ein späteres Self-Hosting muss Cache-Header, Updates und Integritätsprüfung gemeinsam regeln.
+- Die Reihenfolge jQuery, Bootstrap-Bundle und `shops.js` bleibt am Dokumentende erhalten. Chromium klassifiziert diese drei Ressourcen dort als nicht render-blockierend. `defer` wurde nicht ergänzt, da nachfolgende kundenspezifische Analytics- und vorhandene Inline-Scripts ohne vollständige Entkopplung ihre Ausführungsreihenfolge ändern könnten.
+- In `shop.css` wurden nur die beiden generischen `header`-/`header.home`-Regeln entfernt, die von den identischen spezifischen `.dw-site-header`-Regeln vollständig abgedeckt waren. Themes, Klassen, Breakpoints und Komponentenlayouts bleiben unverändert.
+
+Die reproduzierbare lokale Chromium-Fixture `tests/site/frontend-assets-http.py` lädt die echten, hashverifizierten Bibliotheksdateien über einen lokalen HTTP-Server. Sie prüft Start- und CMS-Seite, Desktop- und Mobilnavigation, Mega-Menü samt Escape, Suche, Produktliste, Collapse, Tabs, Modal, Carousel, Warenkorb-AJAX, Anfrageformular und Checkout. Es traten keine Konsolen-, JavaScript- oder Ressourcenfehler auf. Die Assetmessung umfasst ausschließlich die initialen öffentlichen CSS-/JS-Dateien ohne Bilder und optionale Theme-Datei:
+
+Ein separater JavaScript-Parser ist in der lokalen Umgebung nicht installiert. `shops.js` wurde deshalb nicht nur statisch gelesen, sondern mit beiden aktualisierten Bibliotheken in Chromium vollständig geparst und in den genannten Interaktionen ausgeführt.
+
+| Laborwert | Vorher: jQuery 3.5.1 / Bootstrap 4.5.2 | Nachher: jQuery 3.7.1 / Bootstrap 4.6.2 |
+|---|---:|---:|
+| initiale CSS-/JS-Requests | 5 | 5 |
+| render-blockierende Ressourcen | 2 CSS | 2 CSS |
+| nicht render-blockierende Scripts am Dokumentende | 3 | 3 |
+| rohe Assetbytes | 357.342 | 359.713 |
+| lokal gzip-komprimierte Assetbytes | 82.974 | 83.193 |
+
+Die Aktualisierung erhöht diese Laborgröße damit um 2.371 rohe beziehungsweise 219 gzip-komprimierte Bytes. Sie wird als Kompatibilitäts- und Sicherheitswartung eingeordnet, nicht als gemessene Byte-Einsparung. Reale CDN-Header, TLS-Verbindungen, Cachetreffer, optionale Theme-Dateien und kundenspezifisches Analytics sind in diesen Bytewerten nicht enthalten. LCP, CLS und INP wurden in dieser Abhängigkeits-Fixture nicht ermittelt.
+
+Bootstrap 4.6.2 ist die letzte 4.x-Version und seit Januar 2023 EOL. Eine spätere Bootstrap-5-Migration muss mindestens alle `data-toggle`, `data-target`, `data-slide`, `data-ride` und `data-parent` Attribute auf die neue Datenattributsyntax umstellen, direkte jQuery-Aufrufe wie `.collapse()`, `.tab()`, `.modal()` und `.carousel()` ersetzen, `ml-*`-/`mr-*`-Utilities sowie Input-Groups und Navbars prüfen und sämtliche öffentlichen Komponenten erneut im Browser testen. Diese Migration darf nicht mit den älteren internen ERP-Bibliotheken gekoppelt werden.
 
 ## 6. Datenbank- und Deployment-Hinweise
 
@@ -266,9 +290,10 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Technische HTML5-/Indexierungs-/Header-Baseline | 40 Prüfungen bestanden |
 | Robots, Sitemap, kanonische Basis-URL, Routing und Isolation | 31 Prüfungen bestanden |
 | Slug-Normalisierung, Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 67 Prüfungen bestanden |
-| Site-CMS-Struktur, Bildpriorisierung und responsive Medienflächen | 157 Prüfungen bestanden |
+| Site-CMS-Struktur, Assets, SRI, Bildpriorisierung und responsive Medienflächen | 165 Prüfungen bestanden |
 | Dateizugriff, Medienvarianten, LCP-Attribute und Mandantenisolation | 327 Prüfungen bestanden |
 | Isolierte Chromium-Bildprioritäts-, Doppeldownload-, CLS- und Übertragungsmessung | 4 Prüfungen bestanden; LCP-/INP-Grenzen ausdrücklich dokumentiert |
+| Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, AJAX, Suche und Checkout | 41 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
 | Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 101 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
 | Browsermeldungen, Übersetzungen und Benachrichtigungen | 370 Prüfungen bestanden; zusätzlich 60 Sales- und 24 Purchases-Helper-Prüfungen |
@@ -303,7 +328,10 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Legacy-WYSIWYG-Inhalte können bereits mehrere eigene H1 enthalten. Die Templates fügen in diesem Fall keine weitere H1 hinzu, verändern bestehende Kundendaten aber nicht; der Bestand bleibt im Relaunch-Crawl redaktionell zu bereinigen.
 - Bereits vorhandene Medien ohne die vom MediaManager erzeugten Varianten bleiben als Original erreichbar und erhalten weiterhin reale Maße und Ladeattribute, aber kein künstliches `srcset`. Ein kontrollierter Bestands-Backfill wurde nicht durchgeführt.
 - SVG-Dateien und Formate ohne zuverlässig lesbare Rastermaße werden sicher ausgegeben, jedoch ohne erfundene `width`-/`height`-Werte. Moderne WebP-/AVIF-Konvertierung und reale LCP-/CLS-Messungen bleiben offen.
-- Die lokale Chromium-Fixture bewertet Ressourcenauswahl und synthetisches CLS, ersetzt aber weder Lighthouse auf der finalen Website noch reale Chrome-UX-Felddaten. Ihr Headless-Dump liefert derzeit keinen LCP-Eintrag und lädt Lazy-Bilder innerhalb des Messfensters; diese Grenzen sind Teil des Reports.
+- Die lokale Chromium-Fixture bewertet Ressourcenauswahl und synthetisches CLS, ersetzt aber weder Lighthouse auf der finalen Website noch reale Chrome-UX-Felddaten. Ihr Headless-Dump liefert LCP nicht zuverlässig in allen Läufen und lädt Lazy-Bilder innerhalb des Messfensters; diese Grenzen sind Teil des Reports.
+- Bootstrap 4.6.2 ist trotz des Updates EOL und erhält keine regulären Sicherheitskorrekturen. Die getestete 4.x-Aktualisierung reduziert das aktuelle Kompatibilitätsrisiko, ersetzt aber nicht die separat geplante Bootstrap-5-Migration.
+- Die drei öffentlichen Bibliotheksdateien bleiben von zwei externen CDN-Ursprüngen abhängig. SRI verhindert die Ausführung abweichender Bytes, bietet jedoch keinen Verfügbarkeits-Fallback. Ein ungeprüfter lokaler Fallback wurde bewusst nicht ergänzt.
+- Kundenspezifisches Analytics kann weiterhin Inline-Abhängigkeiten besitzen. Deshalb bleiben die Scripts am Dokumentende ohne `defer`; eine spätere Entkopplung muss alle konfigurierten Analytics-Ausgaben und Consent-Gating gemeinsam prüfen.
 - Eine spätere WebP-/AVIF-Pipeline muss Erzeugung, Original-Fallback, Umbenennung, Kopieren, Löschen, Backups und kontrollierten Bestands-Backfill gemeinsam lösen. Einzelne Konvertierungsdateien ohne diesen Lebenszyklus dürfen nicht ergänzt werden.
 - Der Crawler erzeugt keine Aussage über unbekannte historische URLs. Eine vollständige fachliche Alt-URL-Liste muss vor dem Relaunch über `--paths` zusätzlich geprüft werden. Heuristische Soft-404- und Alt-Text-Hinweise benötigen eine manuelle Bewertung.
 - Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
@@ -320,8 +348,9 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 
 - Die implementierte responsive Bildausgabe, Einzel-LCP-Priorisierung und adaptive Produktbildfläche anhand realer Staging-Inhalte nachmessen und verbleibende Legacy-WYSIWYG-Bilder auditieren.
 - WebP-/AVIF-Derivate sowie einen gegebenenfalls erforderlichen kontrollierten Backfill für ältere Medien separat bewerten.
-- CDN-/SRI-Entscheidung und unterstützte Frontend-Versionen festlegen.
-- CSS/JS messen, modernisieren, minifizieren und versioniert cachen.
+- Die bestehende CDN-/SRI-Entscheidung im Betrieb auf Verfügbarkeit und Datenschutz prüfen; Self-Hosting nur mit versionierten Cache- und Updateprozessen umsetzen.
+- Bootstrap 5 als getrennte öffentliche Migration mit Datenattribut-, Utility-, Komponenten- und Browseraudit planen; interne ERP-Abhängigkeiten nicht gleichzeitig umstellen.
+- Lokales CSS/JS anhand realer Staging-Nutzung weiter messen, kontrolliert bereinigen, minifizieren und versioniert cachen.
 - Core Web Vitals mit realen Inhalten messen.
 
 ### Phase 4 – Consent, Tracking und Formulare
@@ -510,8 +539,18 @@ Inhalt:
 - Reproduzierbare lokale Chromium-Fixture für Ressourcenauswahl, übertragene Bildbytes und CLS mit ausdrücklich dokumentierten LCP-/INP-Grenzen.
 - Dokumentierte Entscheidung gegen eine unvollständige WebP-/AVIF-Pipeline ohne sicheren Medienlebenszyklus und reale Bestandsmessung.
 
+### Commit 13: `update site frontend dependencies`
+
+Inhalt:
+
+- Aktualisierung ausschließlich des öffentlichen Frontends auf den vollständigen jQuery-Build 3.7.1 und Bootstrap 4.6.2 einschließlich Bundle.
+- Versionsgenaue CDN-URLs mit lokal verifizierten SHA-384-SRI-Werten und anonymem CORS ohne Migrate, Slim-Build oder doppelte Bibliotheken.
+- Beibehaltung der getesteten Abhängigkeitsreihenfolge am Dokumentende und dokumentierte Entscheidung gegen eine riskante pauschale `defer`-Umstellung.
+- Entfernung zweier vollständig redundanter generischer Header-Regeln ohne Änderung der spezifischen Shop- oder Theme-Selektoren.
+- Reproduzierbare Chromium-Regression für öffentliche Komponenten, AJAX, Navigation, Suche, Checkout, Breakpoints, Browserfehler und Assetmessung.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, tatsächlicher Staging-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, tatsächlicher Staging-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 bleibt eine getrennte technische Migration.

@@ -4,15 +4,6 @@
   }
 }
 
-header {
-	background-color: #fff;
-	padding: 0px;
-}
-
-header.home {
-	background-color: #e9ecef;
-}
-
 .header-text {
 	position: absolute;
 	bottom: 0;

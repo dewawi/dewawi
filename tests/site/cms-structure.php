@@ -156,5 +156,18 @@ checkCms(str_contains($pageRenderer, "in_array(\$type, ['hero', 'image_text'], t
 	&& str_contains($heroTemplate, "'fetchpriority' => \$priorityImage ? 'high' : ''"), 'CMS images can prioritize more than the first visible media block');
 checkCms(str_contains($shopCss, '.main-image-wrapper {') && str_contains($shopCss, 'aspect-ratio: 4 / 3;'), 'Product media does not reserve a responsive aspect ratio');
 checkCms(!str_contains($siteLayoutSource, 'as="image"'), 'Public layout preloads an image without a page-specific responsive source');
+checkCms(str_contains($siteLayoutSource, 'jquery-3.7.1.min.js') && !str_contains($siteLayoutSource, 'jquery-3.5.1'), 'Public layout does not use jQuery 3.7.1 exclusively');
+checkCms(!str_contains($siteLayoutSource, 'jquery-3.7.1.slim') && !str_contains($siteLayoutSource, 'jquery-migrate'), 'Public layout uses an incompatible jQuery build or Migrate');
+checkCms(str_contains($siteLayoutSource, 'bootstrap@4.6.2/dist/css/bootstrap.min.css')
+	&& str_contains($siteLayoutSource, 'bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js')
+	&& !str_contains($siteLayoutSource, 'bootstrap/4.5.2'), 'Public layout does not use Bootstrap 4.6.2 exclusively');
+checkCms(substr_count($siteLayoutSource, 'integrity="sha384-') === 3 && substr_count($siteLayoutSource, 'crossorigin="anonymous"') === 3, 'External public assets are not protected by SRI and anonymous CORS');
+checkCms(str_contains($siteLayoutSource, 'sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs')
+	&& str_contains($siteLayoutSource, 'sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N')
+	&& str_contains($siteLayoutSource, 'sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct'), 'Public asset integrity hashes changed unexpectedly');
+checkCms(substr_count($siteLayoutSource, '<script src=') === 2 && substr_count($siteLayoutSource, '/js/shops.js') === 1, 'Public layout loads duplicate JavaScript libraries');
+checkCms(strpos($siteLayoutSource, 'jquery-3.7.1.min.js') < strpos($siteLayoutSource, 'bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js')
+	&& strpos($siteLayoutSource, 'bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js') < strpos($siteLayoutSource, '/js/shops.js'), 'Public script dependency order is invalid');
+checkCms(substr_count($shopCss, '.dw-site-header {') === 1 && !preg_match('/^header(?:\.home)?\s*\{/m', $shopCss), 'Public stylesheet retains duplicate generic header rules');
 
 echo 'PASS: ' . $checks . " CMS block, CTA, theme and 404 structure cases\n";
