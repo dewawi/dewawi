@@ -254,6 +254,11 @@ $renderView->category['description'] = '<h1>Stored category heading</h1>';
 $renderView->categories[1] = $renderView->category;
 $legacyCategory = $renderView->render('category/index.phtml');
 checkMetadata(substr_count(strtolower($legacyCategory), '<h1') === 1, 'A legacy category H1 receives a duplicate template H1');
+$renderView->category = array_replace($renderView->category, ['id' => 2, 'parentid' => 1, 'description' => '', 'shortdescription' => '<p>Category description</p>']);
+$renderView->categories[2] = $renderView->category;
+$renderView->images['categories'][2] = [];
+$categoryWithoutImages = $renderView->render('category/index.phtml');
+checkMetadata(!str_contains($categoryWithoutImages, 'dw-category-carousel') && str_contains($categoryWithoutImages, 'class="col-md-12 mb-4"'), 'A category without renderable images reserves an empty carousel area');
 
 resetMetadataPlaceholders();
 $renderView = new SeoMetadataView($context, $root);

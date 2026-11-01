@@ -76,29 +76,35 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 <!-- Display description if the category is a child category -->
 <?php if($this->category['parentid'] != 0) : ?>
 	<?php if($this->category['shortdescription']) : ?>
+		<?php
+		$categorySlides = [];
+		foreach ($categoryImages as $image) {
+			$imageAlt = trim((string)($image['title'] ?? '')) ?: (string)$this->category['title'];
+			$imageHtml = $this->SiteImage('/media/category/' . (string)$image['url'], $imageAlt, [
+				'class' => 'd-block w-100 dw-category-carousel__image',
+				'sizes' => '(max-width: 767.98px) 100vw, 50vw',
+			]);
+			if ($imageHtml !== '') $categorySlides[] = $imageHtml;
+		}
+		?>
 		<section id="description" class="jumbotron jumbotron-fluid py-5">
 			<div class="container">
 				<?php if(!$this->category['header'] && !$contentHasH1) : ?>
 					<h2 class="text-center mb-4"><?php echo $this->escape($this->category['title']); ?></h2>
 				<?php endif; ?>
 				<div class="row">
+					<?php if($categorySlides) : ?>
 					<div class="col-md-6 mb-4" style="padding: 0 50px;">
 						<div class="card">
 							<div id="carousel_<?php echo $this->category['id']; ?>" class="carousel slide dw-category-carousel" data-ride="carousel">
 								<div class="carousel-inner">
-									<?php foreach($categoryImages as $index => $image) : ?>
+									<?php foreach($categorySlides as $index => $imageHtml) : ?>
 										<div class="carousel-item<?php echo $index === 0 ? ' active' : ''; ?>">
-							<?php
-							$imageAlt = trim((string)($image['title'] ?? '')) ?: (string)$this->category['title'];
-							echo $this->SiteImage('/media/category/' . (string)$image['url'], $imageAlt, [
-								'class' => 'd-block w-100 dw-category-carousel__image',
-								'sizes' => '(max-width: 767.98px) 100vw, 50vw',
-							]);
-							?>
+											<?php echo $imageHtml; ?>
 										</div>
 									<?php endforeach; ?>
 								</div>
-								<?php if(count($categoryImages) > 1) : ?>
+								<?php if(count($categorySlides) > 1) : ?>
 									<a class="carousel-control-prev" href="#carousel_<?php echo $this->category['id']; ?>" role="button" data-slide="prev">
 										<span class="carousel-control-prev-icon" aria-hidden="true"></span>
 										<span class="sr-only">Previous</span>
@@ -111,7 +117,8 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 							</div>
 						</div>
 					</div>
-					<div class="col-md-6 mb-4">
+					<?php endif; ?>
+					<div class="<?php echo $categorySlides ? 'col-md-6' : 'col-md-12'; ?> mb-4">
 						<?php echo $this->category['shortdescription']; ?>
 						<?php $i = 1; ?>
 						<?php $tagCount = count($this->tagEntities); ?>
