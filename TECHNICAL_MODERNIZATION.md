@@ -29,6 +29,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Pro Seite wird nur der erste tatsächlich sichtbare CMS-Medienblock beziehungsweise das initiale Slider- oder Produktbild hoch priorisiert; nachgelagerte Bilder decodieren asynchron.
 - Lokale öffentliche CSS-/JavaScript-Assets verwenden in der Websiteausgabe inhaltsbasierte Versionsparameter und können dadurch langfristig unveränderlich gecacht werden. Unversionierte statische Dateien werden revalidiert; Textantworten werden bei verfügbaren Apache-Modulen mit Brotli beziehungsweise gzip komprimiert.
 - Dynamische Antworten bleiben standardmäßig `private, no-store`; geschützte Dateien behalten dieselbe Policy. Ausschließlich tatsächlich öffentliche Medien erhalten eine kurze öffentliche Cachefreigabe mit Validatoren.
+- Ein rein lesender CLI-Verfügbarkeitscheck prüft ausdrücklich konfigurierte HTTP-/HTTPS-Endpunkte, DNS, TCP, TLS-Zertifikate, Statuscodes, Redirects, Antwortdauer und Zertifikatsrestlaufzeit mit Text-/JSON-Ausgabe und eindeutigen Exit-Codes.
 - TLS, bekannte Alt-URL-Importe, moderne Bildformate, weitere Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
 - Der wiederherstellungsrelevante Daten-, Datei-, Konfigurations- und Codestand ist inventarisiert; ein installationsneutraler Sicherungs-, Integritäts-, isolierter Restore- und Rollbackablauf wird durch eine temporäre MariaDB-/Dateisystemprobe geprüft.
 
@@ -116,7 +117,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 66 | Teilweise | P0 | Production, Staging und Development sind als Anwendungsprofile vorhanden. Staging benötigt eine explizite, von Production abweichende Datenbankkonfiguration. Getrennte Hosts, Secrets, Mailziele und Deployments bleiben operative Aufgaben. |
 | 67 | Für den vorgegebenen Testbetrieb umgesetzt | P1 Betrieb | Development und Staging behalten bewusst den konfigurierten SMTP-Versand, damit echte E-Mail-Funktionstests vollständig möglich bleiben. Es gibt keine pauschale Sperre, keinen erzwungenen Test-Sink und keine Empfänger-Allowlist; Testverantwortliche müssen Empfänger und Testabläufe deshalb operativ kontrollieren. |
 | 68 | Teilweise / Infrastruktur | P0 vor Relaunch | Sicherungsumfang, konkrete Befehle, Integritätsprüfung, isolierte Wiederherstellung und zustandsabhängiger Rollback sind dokumentiert und lokal automatisiert geprüft. Betreiber müssen verschlüsselte getrennte Speicherung, Aufbewahrung, RPO/RTO, externe Serverkonfiguration und eine vollständige Probe mit freigegebenen Staging-Daten verbindlich festlegen. |
-| 69 | Infrastruktur | P1 vor Relaunch | Keine externe Überwachung für Erreichbarkeit, Zertifikatsablauf, 5xx, Formulare oder Login gefunden. Synthetische Checks und klare Alarmverantwortung einrichten. |
+| 69 | Repository vorbereitet / Infrastruktur offen | P1 vor Relaunch | Ein schlanker externer CLI-Check erkennt DNS-/TCP-/TLS-/HTTP-Ausfälle, Zertifikatsablauf, Statusabweichungen, Redirectfehler und langsame Antworten für ausschließlich lokal konfigurierte Ziele. Text, JSON und feste Exit-Codes sind automatisierbar; es wurden jedoch bewusst weder produktiver Scheduler noch Alarmkonto eingerichtet. Betreiber müssen Ausführung außerhalb des überwachten Servers, Eskalation, Entstörung und Wiederherstellungsmeldungen konfigurieren. |
 | 70 | Teilweise | P1 Entscheidung | Das öffentliche Frontend ist auf die letzten vorgesehenen 3.x-/4.x-Stände jQuery 3.7.1 und Bootstrap 4.6.2 aktualisiert. Bootstrap 4 bleibt EOL. Bootstrap 5 erfordert die gezielte Migration von `data-toggle`/`data-target`/`data-slide`, jQuery-Pluginaufrufen, Utility-Klassen und Komponentenmarkup; das interne ERP bleibt davon getrennt. |
 
 ## 5. Bereits implementierte Änderungen
@@ -611,9 +612,70 @@ Der in `Bootstrap` registrierte Zend-Dateicache besitzt weiterhin 24 Stunden Leb
 
 Für bestehende Installationen sind vor Aktivierung die verfügbaren Apache-Module und zulässigen Overrides zu prüfen. Wenn ein Reverse Proxy oder CDN komprimiert, muss genau eine kontrollierte Schicht die Inhaltskodierung übernehmen; am Edge sind `Vary: Accept-Encoding`, unveränderte Cache-Control-/Validatorheader sowie keine Kompression von Binärdownloads zu verifizieren. Proxy-Caches dürfen dynamische oder private Antworten nicht entgegen `private, no-store` speichern. Änderungen der VHost-/Proxykonfiguration gehören in deren getrenntes Backup und benötigen Syntax-, Root-/Unterverzeichnis-, HTTP-/HTTPS-, GET-/HEAD-, 304- und Mandantentests. HTTP/2/HTTP/3 und reale Core Web Vitals bleiben Eigenschaften der Zielinfrastruktur und finalen Inhalte.
 
+### 5.22 Verfügbarkeit und Störungserkennung
+
+`tests/site/monitor.py` ergänzt den vorhandenen vollständigen Website-Crawler um einen bewusst kleinen Endpoint-Check. Der Monitor analysiert keine Seitenstruktur und folgt keinen Links. Er liest ausschließlich eine ausdrücklich angegebene lokale JSON-Konfiguration, akzeptiert nur GET und HEAD und führt weder Login, Formularübertragung, Consent-Änderung, Warenkorbzugriff, Bestellung, E-Mail noch Datenbankabfrage aus. Es existiert keine öffentliche Monitoring- oder Diagnose-Route.
+
+Je konfiguriertem Ziel werden DNS-Auflösung, TCP-Verbindung, bei HTTPS die Zertifikatskette und Hostnamensbindung sowie anschließend der erwartete HTTP-Status geprüft. Die Ausgabe enthält Prüfzeitpunkt, Gesamtdauer, DNS-/TCP-/TLS-/HTTP-Dauer, tatsächlichen Status, End-URL, Redirectschritte und bei HTTPS Ablaufdatum sowie verbleibende Tage. DNS-, TCP- und HTTP-Timeouts sind begrenzt. Redirects werden nur auf ausdrückliche Konfiguration verfolgt; Schleifen, fehlende oder ungültige Ziele, HTTPS-Downgrades und Wechsel aus der konfigurierten Menge von Scheme, Host und Port sind kritisch. Ein bewusst erwarteter 404, beispielsweise für die Sitemap einer nicht indexierbaren Website, ist dagegen erfolgreich.
+
+Zertifikate werden immer mit dem System-Truststore oder einem ausdrücklich über `--ca-file` angegebenen Betreiber-Truststore validiert. Es gibt keine Option zum Abschalten der Ketten- oder Hostnamenprüfung. Die Standardschwellen liegen bei 30, 14 und 7 Tagen. Der jeweils nächste erreichte Schwellenwert erzeugt `WARNING`; abgelaufene Zertifikate, falsche Hostnamen und sonstige Validierungsfehler sind `CRITICAL`.
+
+Beispiel einer ausschließlich lokal zu pflegenden Konfiguration mit Platzhalteradressen:
+
+```json
+{
+  "timeout": 10,
+  "max_redirects": 10,
+  "certificate_warning_days": [30, 14, 7],
+  "targets": [
+    {
+      "name": "Canonical homepage",
+      "url": "https://www.example.invalid/",
+      "expected_status": 200,
+      "response_warning_ms": 2000
+    },
+    {
+      "name": "HTTP to HTTPS redirect",
+      "url": "http://www.example.invalid/",
+      "expected_status": 301,
+      "expected_location": "https://www.example.invalid/"
+    },
+    {
+      "name": "Non-indexable sitemap",
+      "url": "https://staging.example.invalid/sitemap.xml",
+      "expected_status": 404
+    }
+  ]
+}
+```
+
+Typischer manueller oder durch einen externen Scheduler gestarteter Aufruf:
+
+```bash
+python3 tests/site/monitor.py --config /path/to/monitor.json --format text
+python3 tests/site/monitor.py --config /path/to/monitor.json --format json
+```
+
+Ein optionaler privater CA-Bestand darf für interne PKI oder isolierte Tests mit `--ca-file /path/to/trusted-ca.pem` angegeben werden. Die Konfiguration sollte auch ohne Zugangsdaten restriktiv lesbar sein und darf keine Tokens oder Passwörter enthalten. Benutzerinformationen in URLs sind verboten; Werte möglicher sensibler Queryparameter werden in Berichten ersetzt. Es werden keine Proxyvariablen aus der Prozessumgebung übernommen, damit der Test die direkte externe Erreichbarkeit misst.
+
+`expected_status` akzeptiert einen Status oder eine Liste ausdrücklich zulässiger Statuswerte. Standardmethode ist GET; HEAD kann je Ziel gewählt werden, andere Methoden werden bereits bei der Konfigurationsprüfung abgelehnt. Ein einzelner Redirect wird mit deaktiviertem `follow_redirects` und exaktem `expected_location` geprüft. Soll eine kontrollierte Kette bis zur kanonischen Seite geprüft werden, sind `follow_redirects: true` und `expected_final_url` gemeinsam zu setzen; nur die Ursprungs- und ausdrücklich erwarteten Origins sind dann zulässig.
+
+| Zustand | Exit-Code | Bedeutung |
+|---|---:|---|
+| `OK` | 0 | Alle Ziele liefern den ausdrücklich erwarteten Zustand. Dazu kann ein konfigurierter 301, 308 oder 404 gehören. |
+| `WARNING` | 1 | Das Ziel ist funktionsfähig, aber ein Zertifikat erreicht eine Warnschwelle oder die konfigurierte Antwortzeit wird überschritten. |
+| `CRITICAL` | 2 | DNS, TCP, TLS oder HTTP ist ausgefallen, HTTP 5xx beziehungsweise ein anderer Status weicht ab oder ein Redirect ist unsicher beziehungsweise fehlerhaft. |
+| `UNKNOWN` | 3 | Die lokale Konfiguration oder Initialisierung ist ungültig; es wird kein Ziel ungeprüft angenommen. |
+
+Die JSON-Ausgabe ist für Cron, systemd oder ein unabhängiges Monitoring-System bestimmt, installiert aber selbst keinen Scheduler und versendet keine Benachrichtigung. Empfohlene betriebliche Startwerte sind eine Minute für kanonische Startseite und HTTP-zu-HTTPS-Redirect, fünf Minuten für repräsentative CMS-, Kategorie-, Produkt-, Such-, Robots- und Sitemap-Endpunkte, täglich für den vollständigen Crawler sowie mindestens täglich für Zertifikate. Ein externer Alarmdienst sollte gewöhnlich zwei oder drei aufeinanderfolgende Verfügbarkeitsfehler bestätigen, akute TLS-Validierungsfehler und nahen Zertifikatsablauf jedoch unmittelbar eskalieren. Zustandsübergänge statt jeder Wiederholung melden, Alarme pro Ziel deduplizieren, nach zwei erfolgreichen Prüfungen eine Wiederherstellung melden und eine verantwortliche Primär- sowie Vertretungsrolle mit Eskalationsweg festlegen. Der Monitor muss auf einem unabhängigen System laufen, weil ein Job auf dem ausgefallenen DEWAWI-Server dessen Totalausfall nicht melden kann.
+
+Der externe Check ersetzt keine lesenden Betreiberprüfungen innerhalb der Infrastruktur. Apache-Zugriffs- und Fehlerprotokolle sowie PHP-Fehlerprotokolle sollten zentral mit restriktivem Zugriff gesammelt und auf 5xx-Rate, wiederholte Exceptions und Prozessabbrüche ausgewertet werden, ohne personenbezogene Requestdaten in Alarmtexte zu kopieren. Freier Speicher und Inodes benötigen beispielsweise Warn-/Kritisch-Schwellen bei 80/90 Prozent, die lokale Datenbankverbindung einen geschützten technischen Ping ohne öffentliche Diagnose-URL. Backupjobs müssen nach jedem Lauf Fertigstellungsmarker, Alter, Prüfsummen und eine regelmäßig isoliert bestätigte Wiederherstellung melden. Fehlgeschlagene Mailzustellungen dürfen nur über privilegierte, mandantengetrennte Aggregationen von Versandstatus ausgewertet werden; Empfänger, Betreff und Inhalt gehören nicht in Monitoringmeldungen. Für Datenbank-, Log-, Backup-, Speicher- und Mailprüfungen bleiben konkrete Zugangsmethode, Aufbewahrung, Intervall und Alarmverantwortung Betreiberkonfiguration.
+
+`tests/site/monitor-http.py` prüft den Monitor ausschließlich lokal mit temporären HTTP-/HTTPS-Servern, eigener Test-CA sowie gültigen, bald ablaufenden, abgelaufenen und hostnamefalschen Zertifikaten. Abgedeckt sind 200, 301, 308, erwarteter und unerwarteter 404, 500, DNS-/Verbindungs-/HTTP-Timeout, unerreichbares Ziel, Redirectschleife, externer Redirect, Root-/Unterverzeichnispfad, indexierbare und nicht indexierbare Sitemap, Text/JSON, alle Exit-Codes, Query-Redaktion und der ausschließliche Einsatz von GET/HEAD. Dies belegt die lokale Funktion, nicht den Betrieb eines externen Produktionsmonitorings.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
-`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Die Phasen 4.3, 4.4, 5.1, 5.2 und 5.3 benötigen keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
+`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Die Phasen 4.3, 4.4, 5.1, 5.2, 5.3 und 5.4 benötigen keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
 
 Installationen, auf denen eine frühere Fassung der laufenden 1.1.8-Anweisungen bereits manuell ausgeführt wurde, müssen vor dem Anwendungsdeployment das Checkout-Token-Schema prüfen. Nur wenn Spalte und Index noch fehlen, sind exakt die weiterhin in `update-1.1.7-1.1.8.sql` enthaltenen Anweisungen kontrolliert anzuwenden; bei einem teilweise vorhandenen Stand darf ausschließlich der jeweils fehlende Schritt ausgeführt werden:
 
@@ -676,6 +738,7 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Mandantenwechsel | 53 Prüfungen bestanden |
 | HTTP-Sessions | 25 Prüfungen bestanden |
 | HTTP-Konfiguration einschließlich Cache-Control, Expires, ETag/Last-Modified, 304, GET/HEAD, gzip, Brotli, Vary, Content-Length, Root-/Unterverzeichnis und fehlenden optionalen Modulen | 8.546 Prüfungen bestanden; gemessene Laborwerte in Abschnitt 5.21 |
+| Isoliertes Verfügbarkeitsmonitoring für DNS, TCP, TLS, HTTP, Redirects, Antwortdauer, Zertifikatsfristen, Text/JSON, Exit-Codes und ausschließlich lesende Methoden | 28 Prüfungen bestanden; temporäre lokale Test-CA und keine externen Ziele |
 | HTTP-Fehlerbehandlung | 140 Prüfungen bestanden |
 | Isolierter MariaDB-Installations-/Migrationstest | Bestanden; einschließlich 66 UOM-Prüfungen |
 | Isolierte Code-/Datei-/MariaDB-Sicherung und Wiederherstellung | 38 Prüfungen bestanden; einschließlich Releasearchiv, Schemaabweichung, Trigger, Routine, Event, Integrität, Berechtigungen, Überschreibschutz und Mandantentrennung |
@@ -695,6 +758,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Conversion-Ereignisse werden nur für erkannte direkte `gtag.js`- oder Google-Tag-Manager-`dataLayer`-Konfigurationen erzeugt. Andere freie Analytics-Snippets benötigen eine getrennte, konkret getestete Schnittstelle. Lokale Dispatch-Tests sind kein Nachweis für den Empfang beim Anbieter.
 - Externe Bilder und CSS-URLs in erlaubten freien HTML-Feldern sowie ungeprüfte Legacy-Datensätze können Drittanbieterressourcen außerhalb von `shop.analytics` laden. Eine pauschale automatische Klassifizierung oder Umschreibung wäre fachlich unsicher; der reale Inhalt muss vor Livegang auf Staging inventarisiert werden.
 - TLS, Host-Redirects, HSTS und Protokollversionen sind nicht allein durch den PHP-Code abgeschlossen. Cache- und Kompressionsregeln sind im Repository implementiert, benötigen aber weiterhin die dokumentierten Apache-Module beziehungsweise eine gleichwertige kontrollierte Edge-Konfiguration und eine Prüfung auf der Zielinfrastruktur.
+- Der Monitoring-CLI-Check ist nur ein Werkzeug. Ohne getrennten Ausführungsort, Scheduler, persistente externe Zustandsauswertung und festgelegte Alarmverantwortung erkennt beziehungsweise meldet er keinen realen Produktionsausfall. DNS- und Netzsicht müssen zur gewünschten Nutzerperspektive passen; interne Ausführung allein belegt keine externe Erreichbarkeit.
 - Die strengere Hostauflösung behandelt `www` und Non-`www` nicht mehr als automatische Aliasse. Jede bisher nur implizit erreichbare Variante benötigt vor dem Deployment einen ausdrücklich geprüften Redirect-VHost beziehungsweise eine Edge-Regel. Doppelt konfigurierte aktive Host-/Basispfad-Kombinationen werden absichtlich nicht aufgelöst, bis die Daten bereinigt sind; unterschiedliche segmentgenaue Basispfade bleiben möglich.
 - Ein expliziter nichtstandardisierter Port in `shop.url` muss auch im Request-Host vorhanden sein. Standardports 80/443 bleiben ohne explizite Angabe zulässig, damit die vorgeschaltete HTTPS-Normalisierung greifen kann. Reverse-Proxies müssen den externen kanonischen Host erhalten; die Anwendung vertraut keinem Forwarded-Header.
 - Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Redirects entstehen erst bei einer ausdrücklichen Slug- oder Elternänderung innerhalb derselben Website; ein Websitewechsel erzeugt keine domainübergreifende Weiterleitung.
@@ -754,7 +818,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Die implementierte Kompression und Cache-Policy auf der realen Apache-/Proxykette einschließlich 304, `Vary`, fehlender Doppelkompression und Deployment-Invalidierung verifizieren; HTTP/2 prüfen und den Mixed-Content-Crawl mit den endgültigen Staging-Inhalten ausführen.
 - HSTS nach stabiler HTTPS-Phase mit kurzer Laufzeit kontrolliert einführen; Subdomains und Preload getrennt freigeben.
 - Den in Abschnitt 5.20 geprüften Kernablauf mit einem freigegebenen vollständigen Staging-Snapshot sowie der realen verschlüsselten und getrennten Backup-Ablage proben; RPO, RTO, Rotation und Verantwortlichkeit abnehmen.
-- Monitoring, Webmaster-Werkzeuge, Sitemap und Conversion-Messung verifizieren.
+- Den Monitoring-CLI-Check auf einem unabhängigen System mit ausschließlich freigegebenen Ziel- und Erwartungswerten planen, Zustands-/Wiederherstellungsalarmierung und Verantwortlichkeit konfigurieren sowie Log-, Speicher-, Datenbank-, Backup- und Mailstatus ergänzen; Webmaster-Werkzeuge, Sitemap und Conversion-Messung verifizieren.
 
 ## 10. Lokale Commits
 
@@ -1020,8 +1084,17 @@ Inhalt:
 - Dynamische Antworten standardmäßig `private, no-store`; private Downloads bleiben unverändert geschützt und ausschließlich bisher veröffentlichte Medien erhalten kurze öffentliche Cachefreigabe, Validatoren und 304-Unterstützung.
 - Isolierte Root-/Unterverzeichnis-, Modul-Fallback-, GET-/HEAD-/304-, Content-Length-, Mandanten-, Medien-, Chromium- und Bytevergleichsregressionen ohne Datenbankänderung.
 
+### Commit 23: `add site availability monitoring checks`
+
+Inhalt:
+
+- Rein lesender, ausschließlich lokal konfigurierbarer CLI-Check für DNS, TCP, validiertes TLS, Zertifikatsrestlaufzeit, HTTP-Status, Antwortdauer, Redirects und kanonische Endziele ohne öffentliche Diagnose-Route oder Datenbankzugriff.
+- Sichere erwartete 200-/301-/308-/404-Zustände, Erkennung von 5xx, Timeout, Verbindungsfehler, Redirectschleife, unerwartetem Originwechsel, HTTPS-Downgrade sowie abgelaufenem oder hostnamefalschem Zertifikat.
+- Maschinenlesbare JSON- und kompakte Textausgabe mit `OK`, `WARNING`, `CRITICAL`, `UNKNOWN`, festen Exit-Codes, Zeitstempeln, Dauern und redigierten sensitiven Querywerten.
+- Isolierte HTTP-/HTTPS-Regression mit temporärer Test-CA und Dokumentation für unabhängige Ausführung, Alarmdämpfung, Wiederherstellungsmeldung, Betreiberzuständigkeit sowie ergänzendes Log-, Speicher-, Datenbank-, Backup- und Mailmonitoring.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, inhaltsversionierte lokale Assets, statisches Browser-Caching, gzip-/Brotli-Kompression, konservatives dynamisches No-Store, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, strikte kanonische Host-/Portauflösung, einheitliche Slug-Erzeugung, automatische interne 301-Weiterleitungen sowie einen geprüften Sicherungs- und isolierten Wiederherstellungskern ist vorbereitet und getestet. Phase 5.3 ist auf Repository-Ebene abgeschlossen; dies ist ausdrücklich keine Freigabe realer DNS-, TLS-, Proxy-, Datenschutz-, WCAG-, Backup-Speicher-, Aufbewahrungs- oder Edge-Kompressionskonfigurationen. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die produktive Umsetzung und Liveprüfung von Zertifikaten, VHosts, Host-/HTTPS-Redirects, Cache-/Kompressionsverhalten der Zielkette, Mixed Content und später HSTS, die Betreiberprobe mit vollständigem freigegebenem Snapshot und realer verschlüsselter getrennter Sicherungsablage sowie historischer Alt-URL-Import, tatsächlicher Staging-Crawl, reale Drittanbieter-/Legacy-Inhalte und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, inhaltsversionierte lokale Assets, statisches Browser-Caching, gzip-/Brotli-Kompression, konservatives dynamisches No-Store, einen lesenden extern ausführbaren Verfügbarkeits-/TLS-Monitor, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, strikte kanonische Host-/Portauflösung, einheitliche Slug-Erzeugung, automatische interne 301-Weiterleitungen sowie einen geprüften Sicherungs- und isolierten Wiederherstellungskern ist vorbereitet und getestet. Phase 5.4 ist auf Repository-Ebene abgeschlossen; dies ist ausdrücklich keine Freigabe oder Aktivierung realer DNS-, TLS-, Proxy-, Monitoring-, Alarmierungs-, Datenschutz-, WCAG-, Backup-Speicher-, Aufbewahrungs- oder Edge-Konfigurationen. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die produktive Umsetzung und Liveprüfung von Zertifikaten, VHosts, Host-/HTTPS-Redirects, Cache-/Kompressionsverhalten der Zielkette, unabhängiger Monitoringausführung und Alarmwegen, Mixed Content und später HSTS, die Betreiberprobe mit vollständigem freigegebenem Snapshot und realer verschlüsselter getrennter Sicherungsablage sowie historischer Alt-URL-Import, tatsächlicher Staging-Crawl, reale Drittanbieter-/Legacy-Inhalte und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
