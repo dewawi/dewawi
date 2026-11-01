@@ -81,7 +81,17 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 			<div class="col-md-6 mb-4">
 				<div class="main-image-wrapper">
 					<?php if($previewImage) : ?>
-						<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" id="mainImage" class="img-fluid" alt="<?php echo $this->escape($previewImage['title'] ?? $itemTitle); ?>" onclick="openModal()">
+						<?php
+						$imageAlt = trim((string)($previewImage['title'] ?? '')) ?: $itemTitle;
+						echo $this->SiteImage('/media/images/' . (string)$previewImage['url'], $imageAlt, [
+							'id' => 'mainImage',
+							'class' => 'img-fluid',
+							'onclick' => 'openModal()',
+							'loading' => false,
+							'fetchpriority' => 'high',
+							'sizes' => '(max-width: 767.98px) 100vw, 50vw',
+						]);
+						?>
 					<?php endif; ?>
 				</div>
 				<?php if($previewImage) : ?>
@@ -99,7 +109,13 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 												<?php foreach($itemImages as $index => $image) : ?>
 													<div class="carousel-item<?php echo $index === 0 ? ' active' : ''; ?>">
 														<div class="modal-image-wrapper">
-															<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" class="d-block w-100" alt="<?php echo $this->escape($image['title'] ?? $itemTitle); ?>">
+														<?php
+														$imageAlt = trim((string)($image['title'] ?? '')) ?: $itemTitle;
+														echo $this->SiteImage('/media/images/' . (string)$image['url'], $imageAlt, [
+															'class' => 'd-block w-100',
+															'sizes' => '100vw',
+														]);
+														?>
 														</div>
 														<?php if(!empty($image['title'])) : ?>
 															<span><?php echo $this->escape($image['title']); ?></span>

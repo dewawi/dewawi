@@ -48,7 +48,7 @@ echo $this->doctype();
 		<nav class="navbar navbar-expand-xl navbar-light">
 			<div class="container">
 				<a class="navbar-brand" href="<?php echo $this->url(array(), 'shop_home'); ?>">
-					<img src="<?php echo $this->baseUrl(); ?>/media/header/<?php echo $shop['logo'] ?? ''; ?>" alt="<?php echo $shop['title'] ?? ''; ?>" height="75">
+					<?php echo $this->SiteImage('/media/header/' . (string)($shop['logo'] ?? ''), (string)($shop['title'] ?? ''), ['loading' => false, 'sizes' => '280px']); ?>
 				</a>
 				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
 					<span class="navbar-toggler-icon"></span>

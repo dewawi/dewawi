@@ -83,7 +83,13 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 								<div class="carousel-inner">
 									<?php foreach($categoryImages as $index => $image) : ?>
 										<div class="carousel-item<?php echo $index === 0 ? ' active' : ''; ?>">
-											<img src="<?php echo $this->baseUrl(); ?>/media/category/<?php echo $this->escape($image['url']); ?>" class="d-block w-100" alt="<?php echo $this->escape($image['title'] ?? $this->category['title']); ?>">
+							<?php
+							$imageAlt = trim((string)($image['title'] ?? '')) ?: (string)$this->category['title'];
+							echo $this->SiteImage('/media/category/' . (string)$image['url'], $imageAlt, [
+								'class' => 'd-block w-100',
+								'sizes' => '(max-width: 767.98px) 100vw, 50vw',
+							]);
+							?>
 										</div>
 									<?php endforeach; ?>
 								</div>
@@ -200,7 +206,14 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 										<div class="image-grid" style="width: 100%;">
 											<div class="image">
 												<a href="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" target="_blank">
-													<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" alt="<?php echo $this->escape($previewImage['title'] ?? $item->title); ?>" class="image-thumbnail" style="width: 100%;">
+												<?php
+												$imageAlt = trim((string)($previewImage['title'] ?? '')) ?: (string)$item->title;
+												echo $this->SiteImage('/media/images/' . (string)$previewImage['url'], $imageAlt, [
+													'class' => 'image-thumbnail',
+													'style' => 'width: 100%;',
+													'sizes' => '(max-width: 767.98px) 100vw, 8vw',
+												]);
+												?>
 												</a>
 											</div>
 										</div>
@@ -326,7 +339,13 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 																<?php foreach($itemImages as $image) : ?>
 																	<div class="image">
 																		<a href="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" target="_blank">
-																			<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($image['url']); ?>" alt="<?php echo $this->escape($image['title'] ?? $item->title); ?>" class="image-thumbnail">
+															<?php
+															$imageAlt = trim((string)($image['title'] ?? '')) ?: (string)$item->title;
+															echo $this->SiteImage('/media/images/' . (string)$image['url'], $imageAlt, [
+																'class' => 'image-thumbnail',
+																'sizes' => '(max-width: 767.98px) 100vw, 33vw',
+															]);
+															?>
 																		</a>
 																	</div>
 																<?php endforeach; ?>

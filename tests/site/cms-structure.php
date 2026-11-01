@@ -126,9 +126,27 @@ checkCms(substr_count($blockSource, "'data-filemanager' => 'media'") === 3, 'Pag
 checkCms(str_contains($globalJsSource, "=== 'media' ? 'MediaManager' : 'FileManager'") && str_contains($globalJsSource, "'/library/' + manager + '/dialog.php'"), 'File picker does not route public image fields to MediaManager');
 
 $itemViewSource = file_get_contents($root . '/application/modules/shops/views/scripts/item/index.phtml');
-checkCms(substr_count($itemViewSource, 'id="mainImage"') === 1, 'Product detail renders duplicate main image IDs');
+checkCms(substr_count($itemViewSource, "'id' => 'mainImage'") === 1, 'Product detail renders duplicate main image IDs');
 checkCms(substr_count($itemViewSource, 'id="imageModal"') === 1, 'Product detail renders duplicate image modal IDs');
 checkCms(substr_count($itemViewSource, 'id="carouselExampleControls"') === 1, 'Product detail renders duplicate carousel IDs');
 checkCms(!str_contains($itemViewSource, 'data-bs-'), 'Product detail mixes Bootstrap 5 controls into its Bootstrap 4 layout');
+
+$imageTemplates = [
+	'application/layouts/scripts/site.phtml',
+	'application/modules/shops/views/helpers/RenderCategory.php',
+	'application/modules/shops/views/helpers/Slide.php',
+	'application/modules/shops/views/scripts/page/blocks/hero.phtml',
+	'application/modules/shops/views/scripts/page/blocks/image_text.phtml',
+	'application/modules/shops/views/scripts/page/blocks/card.phtml',
+	'application/modules/shops/views/scripts/category/index.phtml',
+	'application/modules/shops/views/scripts/item/index.phtml',
+	'application/modules/shops/views/scripts/inquiry/index.phtml',
+];
+foreach ($imageTemplates as $template) {
+	checkCms(str_contains(file_get_contents($root . '/' . $template), 'SiteImage('), 'Public image template bypasses the shared renderer: ' . $template);
+}
+$mediaConfig = file_get_contents($root . '/library/MediaManager/config/config.php');
+checkCms(str_contains($mediaConfig, "'relative_image_creation'                 => true")
+	&& str_contains($mediaConfig, "array( '300/', '500/', '800/', '1000/' )"), 'Managed media uploads no longer create the fixed responsive variants');
 
 echo 'PASS: ' . $checks . " CMS block, CTA, theme and 404 structure cases\n";

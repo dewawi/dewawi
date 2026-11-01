@@ -7,6 +7,18 @@ class Zend_View_Helper_Slide extends Zend_View_Helper_Abstract
 		if (empty($slideImages)) {
 			return '';
 		}
+		$slides = [];
+		foreach ($slideImages as $slideImage) {
+			$imageUrl = $this->view->baseUrl() . '/media/slide/' . ltrim((string)($slideImage['url'] ?? ''), '/');
+			$imageHtml = $this->view->SiteImage($imageUrl, (string)($slideImage['title'] ?? ''), [
+				'class' => 'd-block w-100',
+				'loading' => $slides ? 'lazy' : false,
+				'fetchpriority' => $slides ? '' : 'high',
+				'sizes' => '100vw',
+			]);
+			if ($imageHtml !== '') $slides[] = ['data' => $slideImage, 'image' => $imageHtml];
+		}
+		if (!$slides) return '';
 
 		ob_start();
 		?>
@@ -14,7 +26,7 @@ class Zend_View_Helper_Slide extends Zend_View_Helper_Abstract
 		<section id="carousel" class="carousel slide" data-ride="carousel" data-interval="5000">
 
 			<ol class="carousel-indicators">
-				<?php foreach ($slideImages as $index => $slideImage) : ?>
+				<?php foreach ($slides as $index => $slide) : ?>
 					<li
 						data-target="#carousel"
 						data-slide-to="<?php echo $index; ?>"
@@ -25,13 +37,10 @@ class Zend_View_Helper_Slide extends Zend_View_Helper_Abstract
 
 			<div class="carousel-inner">
 
-				<?php foreach ($slideImages as $index => $slideImage) : ?>
+				<?php foreach ($slides as $index => $slide) : ?>
 
 					<?php
-					$imageUrl = $this->view->baseUrl()
-						. '/media/slide/'
-						. ltrim((string)($slideImage['url'] ?? ''), '/');
-
+					$slideImage = $slide['data'];
 					$target = trim((string)($slideImage['target'] ?? ''));
 					?>
 
@@ -41,10 +50,7 @@ class Zend_View_Helper_Slide extends Zend_View_Helper_Abstract
 							<a href="<?php echo $this->view->escape($target); ?>">
 						<?php endif; ?>
 
-						<img
-							src="<?php echo $this->view->escape($imageUrl); ?>"
-							class="d-block w-100"
-							alt="<?php echo $this->view->escape($slideImage['title'] ?? ''); ?>">
+						<?php echo $slide['image']; ?>
 
 						<?php if ($target !== '') : ?>
 							</a>

@@ -8,6 +8,7 @@ ob_end_clean();
 require_once $root . '/application/controllers/MediaController.php';
 require_once $root . '/application/modules/contacts/controllers/DownloadController.php';
 require_once $root . '/application/controllers/helpers/Directory.php';
+require_once $root . '/application/modules/shops/views/helpers/SiteImage.php';
 Zend_Session::setOptions(['save_path' => BASE_PATH, 'use_cookies' => false, 'cache_limiter' => '']);
 Zend_Session::start();
 ini_set('error_log', BASE_PATH . '/file-access-test.log');
@@ -60,6 +61,16 @@ function storedFixture(string $relative, string $contents = 'Private stored file
     $path = BASE_PATH . '/' . $relative;
     if (!is_dir(dirname($path))) mkdir(dirname($path), 0775, true);
     file_put_contents($path, $contents);
+    return $path;
+}
+function storedImageFixture(string $relative, int $width, int $height): string
+{
+    $path = BASE_PATH . '/' . $relative;
+    if (!is_dir(dirname($path))) mkdir(dirname($path), 0775, true);
+    $image = imagecreatetruecolor($width, $height);
+    imagefilledrectangle($image, 0, 0, $width, $height, imagecolorallocate($image, 20, 80, 140));
+    imagepng($image, $path);
+    imagedestroy($image);
     return $path;
 }
 function storedHeader($controller, string $name): ?string
@@ -279,9 +290,30 @@ check(storedResponse('cache/thumbs/media/header/logo.png')[0] === 404, 'Executab
 symlink(BASE_PATH . '/media/7/0/7/header', BASE_PATH . '/cache/thumbs/media/7/0/7/linked');
 storedFixture('media/7/0/7/linked/logo.png');
 check(storedResponse('cache/thumbs/media/linked/logo.png')[0] === 404, 'Thumbnail directory symlink accepted');
+
+storedImageFixture('media/7/0/7/images/responsive.png', 1200, 600);
+storedImageFixture('media/7/0/7/images/300/responsive.png', 300, 150);
+storedImageFixture('media/7/0/7/images/500/responsive.png', 500, 250);
+storedImageFixture('media/7/0/7/images/800/responsive.png', 800, 800);
+$originalHash = hash_file('sha256', BASE_PATH . '/media/7/0/7/images/responsive.png');
+$imageView = new Zend_View();
+$siteImage = new Zend_View_Helper_SiteImage();
+$siteImage->setView($imageView);
+$responsive = $siteImage->SiteImage('/media/images/responsive.png', 'Pump & "Safe"', ['class' => 'img-fluid', 'sizes' => '50vw']);
+check(str_contains($responsive, 'src="/media/images/responsive.png"') && str_contains($responsive, 'width="1200"') && str_contains($responsive, 'height="600"'), 'Public image path or dimensions are missing or incorrect');
+check(str_contains($responsive, '/media/images/300/responsive.png 300w') && str_contains($responsive, '/media/images/500/responsive.png 500w') && str_contains($responsive, '/media/images/responsive.png 1200w'), 'Existing responsive variants are missing');
+check(!str_contains($responsive, '/800/responsive.png') && !str_contains($responsive, '/1000/responsive.png'), 'Missing or wrong-aspect variants were advertised');
+check(str_contains($responsive, 'sizes="50vw"') && str_contains($responsive, 'loading="lazy"'), 'Responsive sizes or lazy loading are missing');
+check(str_contains($responsive, 'alt="Pump &amp; &quot;Safe&quot;"') && str_contains($responsive, 'class="img-fluid"'), 'Image attributes are not safely escaped');
+$critical = $siteImage->SiteImage('/media/images/responsive.png', '', ['loading' => false, 'fetchpriority' => 'high', 'sizes' => '100vw']);
+check(str_contains($critical, 'alt=""') && str_contains($critical, 'fetchpriority="high"') && !str_contains($critical, 'loading='), 'Critical or decorative image semantics are incorrect');
+check(hash_file('sha256', BASE_PATH . '/media/7/0/7/images/responsive.png') === $originalHash, 'Responsive rendering changed the original image');
+check($siteImage->SiteImage('/media/images/missing.png', 'Missing') === '' && $siteImage->SiteImage('https://foreign.invalid/image.png', 'Foreign') === '' && $siteImage->SiteImage('/media/images/../header/logo.png', 'Traversal') === '', 'Invalid image source was rendered');
+
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 2, 'clientid' => 8]));
 check(storedResponse('media/7/0/7/images/product.png')[0] === 404, 'Wrong shop served a published image from another tenant');
 check(storedResponse('cache/thumbs/media/7/0/7/images/product.png')[0] === 404, 'Wrong shop served a thumbnail from another tenant');
+check($siteImage->SiteImage('/media/7/0/7/images/responsive.png', 'Foreign') === '', 'Responsive image helper crossed tenants');
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 120, 'clientid' => 100, 'logo' => 'renocold.png']));
 foreach (['header/kaeltemaschine.jpg', 'category/kaltwassererzeuger.jpg', 'header/renocold.png', 'header/extra.png', 'other/nested/banner.png'] as $relative) {
     storedFixture('media/1/0/100/' . $relative);

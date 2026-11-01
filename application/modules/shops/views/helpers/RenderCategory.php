@@ -23,9 +23,9 @@ class Zend_View_Helper_RenderCategory extends Zend_View_Helper_Abstract
 
 		if ($image) {
 			$imageUrl = $this->view->baseUrl() . '/media/category/' . (string)$image['url'];
-			$html .= '<a href="' . $this->view->escape($url) . '">';
-			$html .= '<img src="' . $this->view->escape($imageUrl) . '" class="card-img-top" alt="' . $this->view->escape($title) . '">';
-			$html .= '</a>';
+			$imageAlt = trim((string)($image['title'] ?? '')) ?: $title;
+			$imageHtml = $this->view->SiteImage($imageUrl, $imageAlt, ['class' => 'card-img-top', 'sizes' => '(max-width: 767.98px) 100vw, 25vw']);
+			if ($imageHtml !== '') $html .= '<a href="' . $this->view->escape($url) . '">' . $imageHtml . '</a>';
 
 			$imageTitle = trim((string)($image['title'] ?? ''));
 			$imageSubtitle = $imageTitle !== '' ? $imageTitle : $subtitle;

@@ -11,12 +11,15 @@ $buttonUrl = trim((string)($this->data['buttonurl'] ?? ''));
 if ($buttonUrl !== '' && preg_match('~^[a-z][a-z0-9+.-]*:~i', $buttonUrl) && !preg_match('~^(https?|mailto|tel):~i', $buttonUrl)) {
 	$buttonUrl = '';
 }
+$imageHtml = $image !== '' ? $this->SiteImage($image, $imageAlt, [
+	'sizes' => '(max-width: 767.98px) 100vw, 33vw',
+]) : '';
 ?>
 
-<article class="dw-site-card<?php echo $image !== '' ? ' has-image' : ''; ?>">
-	<?php if($image !== '') : ?>
+<article class="dw-site-card<?php echo $imageHtml !== '' ? ' has-image' : ''; ?>">
+	<?php if($imageHtml !== '') : ?>
 		<div class="dw-site-card__media">
-			<img src="<?php echo $this->escape($image); ?>" alt="<?php echo $this->escape($imageAlt); ?>">
+			<?php echo $imageHtml; ?>
 		</div>
 	<?php endif; ?>
 

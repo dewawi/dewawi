@@ -15,13 +15,18 @@ foreach (['buttonUrl', 'buttonUrl2'] as $variable) {
 	if ($$variable !== '' && preg_match('~^[a-z][a-z0-9+.-]*:~i', $$variable) && !preg_match('~^(https?|mailto|tel):~i', $$variable)) $$variable = '';
 }
 
-$secondaryButtonClass = $image !== '' ? 'btn-outline-light' : 'btn-outline-primary';
+$imageHtml = $image !== '' ? $this->SiteImage($image, '', [
+	'loading' => false,
+	'fetchpriority' => 'high',
+	'sizes' => '100vw',
+]) : '';
+$secondaryButtonClass = $imageHtml !== '' ? 'btn-outline-light' : 'btn-outline-primary';
 ?>
 
-<section class="dw-site-block dw-site-block--hero<?php echo $image !== '' ? ' has-image' : ''; ?>">
-	<?php if($image !== '') : ?>
+<section class="dw-site-block dw-site-block--hero<?php echo $imageHtml !== '' ? ' has-image' : ''; ?>">
+	<?php if($imageHtml !== '') : ?>
 		<div class="dw-site-block__media">
-			<img src="<?php echo $this->escape($image); ?>" alt="">
+			<?php echo $imageHtml; ?>
 		</div>
 	<?php endif; ?>
 

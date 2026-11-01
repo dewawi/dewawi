@@ -21,7 +21,8 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - `robots.txt`, Sitemap und Canonicals verwenden dieselbe validierte, mandantenbezogene Shop-URL; nicht indexierbare Websites bleiben zum Erkennen von `noindex` crawlbar und bewerben keine Sitemap.
 - SEO-Titel, Descriptions und Open-Graph-Daten werden für öffentliche Seiten zentral erzeugt; Breadcrumbs verwenden für HTML und JSON-LD dieselbe aktuelle Pfadhierarchie.
 - Ein explizit zu startender HTTP-Crawler prüft reale öffentliche Antworten, interne Links, Redirects, SEO-Metadaten, strukturierte Daten, Sitemap, Robots und interne Ressourcen ohne Formulare abzusenden.
-- TLS, bekannte Alt-URL-Importe, Consent Management, responsive Bilder, Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
+- Öffentliche verwaltete Bilder verwenden tatsächliche Abmessungen, vorhandene feste Medienvarianten, kontextabhängiges Lazy Loading und eine explizite Priorisierung kritischer Hero- und Produktbilder.
+- TLS, bekannte Alt-URL-Importe, Consent Management, moderne Bildformate, Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
 
 ## 3. Status- und Prioritätsdefinitionen
 
@@ -57,11 +58,11 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 16 | Umgesetzt | P1 | Suchparameter sind begrenzt, Datenbankabfragen parametrisiert, Ausgaben escaped und Ergebnislisten auf `noindex, follow` gesetzt. Regressionstests beibehalten. |
 | 17 | Teilweise | P0 vor Relaunch | Leere CMS-Ziele werden teilweise ausgelassen; Legacy-Steuerelemente und Fallback-Navigation enthalten noch `href="#"`. Der neue HTTP-Crawler erkennt defekte interne Links und Ressourcen; verbleibende Bedienelemente sind zu bereinigen und der Crawl muss mit der freigegebenen Staging-URL ausgeführt werden. |
 | 18 | Teilweise | P1 | Keine versionierte Referenz auf das bekannte Platzhalterbild gefunden. Reale Mandantenmedien wurden nicht geprüft; Alt-Texte und Bildmetadaten sind nicht überall vollständig. Medienbestand vor Livegang auditieren. |
-| 19 | Offen | P1 | Öffentliche Templates erzeugen noch keine systematischen `srcset`-/`sizes`-Angaben. Medienvarianten und einen wiederverwendbaren responsiven Bild-Renderer ergänzen. |
+| 19 | Umgesetzt | P1 | Ein gemeinsamer Renderer verwendet ausschließlich tatsächlich vorhandene, seitenverhältnisgleiche 300-/500-/800-/1000-Pixel-Varianten der bestehenden Medienverwaltung und ergänzt kontextbezogene `srcset`-/`sizes`-Angaben. Fehlen Varianten, bleibt das unveränderte Original ohne erfundene Quellen erhalten. |
 | 20 | Offen | P2 | Es existiert keine WebP-/AVIF-Derivatpipeline. Nach Klärung von Medienspeicherung und Backup-Regeln moderne Derivate mit Fallback-Ausgabe ergänzen. |
-| 21 | Teilweise | P1 | Einzelne feste Assets reservieren Abmessungen, die meisten Inhalts- und Produktbilder nicht. Bildmaße speichern/auslesen und `width`/`height` oder `aspect-ratio` ausgeben. |
-| 22 | Offen | P1 | Lazy Loading wird in öffentlichen Inhaltsbildern nicht durchgängig eingesetzt. Unterhalb des sichtbaren Bereichs `loading="lazy"` ergänzen; LCP-/Hero-Bilder explizit ausnehmen. |
-| 23 | Offen | P1 | Hero-/Slide-Ausgabe setzt keine LCP-Priorisierung oder responsiven Quellen. Pro Seitentyp ein LCP-Bild definieren, früh ausgeben, korrekt dimensionieren und mit realen Inhalten messen. |
+| 21 | Umgesetzt | P1 | Für sicher auflösbare Rasterbilder werden die tatsächlichen Originalmaße als `width` und `height` ausgegeben. SVG oder nicht lesbare Medien erhalten keine erfundenen Maße; vorhandene CSS-Begrenzungen bleiben erhalten. |
+| 22 | Umgesetzt | P1 | Inhalts-, Karten-, Kategorie-, Listen- und Galeriebilder laden lazy. Der sichtbare CMS-Hero, die erste Startseiten-Slide und das initiale Produktbild sind explizit ausgenommen. |
+| 23 | Teilweise | P1 | CMS-Hero, erste Startseiten-Slide und initiales Produktbild verwenden vorhandene responsive Quellen, reale Maße und `fetchpriority="high"` ohne Lazy Loading. Die tatsächliche LCP-Wirkung bleibt mit finalen Staging-Inhalten zu messen. |
 | 24 | Teilweise | P1 Sicherheit | Öffentliche Seiten verwenden Bootstrap 4.5.2, jQuery 3.5.1 und ein externes Bootstrap-Bundle; das ERP besitzt tiefere Legacy-Abhängigkeiten. Sicherheits-/Kompatibilitätsinventar erstellen und öffentliche Assets inkrementell aktualisieren. |
 | 25 | Offen | P1 Sicherheit | Externe CDN-Tags besitzen weder SRI noch `crossorigin`. Bevorzugt geprüfte Assets selbst hosten oder exakte Integritätswerte und Ausfalltests ergänzen. |
 | 26 | Offen | P2 | Nicht kritische Scripts werden noch nicht systematisch mit `defer` geladen. Abhängigkeitsreihenfolge und Inline-Code zuerst prüfen, dann kompatible Scripts verzögert laden. |
@@ -94,7 +95,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 53 | Teilweise | P2 | Sprachfelder und Übersetzungen existieren, aber kein vollständiges öffentliches Locale-Routing und kein `hreflang`. URL-Eigentümerschaft pro Sprache zuerst entwerfen, anschließend gegenseitige Self-/Hreflang-Links ausgeben. |
 | 54 | Für aktuellen Umfang umgesetzt | P2 | Es existiert kein Mechanismus für automatisch generierte Maschinenübersetzungs-URLs. Zukünftige Sprachen über redaktionelle Inhalte und stabile Locale-Pfade abbilden. |
 | 55 | Teilweise | P1 | Semantik, Labels und Fokuszustände sind teilweise vorhanden; ein vollständiger WCAG-Audit fehlt. Automatisierte und manuelle Prüfungen für Tastatur, Screenreader, Kontrast und Fehlerzustände durchführen. |
-| 56 | Teilweise | P1 | Manche Bilder verwenden beschreibende Titel oder leere Alt-Texte für Dekoration, andere Werte sind uneinheitlich. Dekorativ/informativ strukturiert kennzeichnen und reale Inhalte auditieren. |
+| 56 | Teilweise | P1 | Verwaltete Produkt-, Kategorie-, Karten-, Logo- und Slide-Bilder verwenden vorhandene Titel bzw. fachliche Namen als Alt-Text; dekorative Hero-Bilder behalten `alt=""`. Legacy-WYSIWYG-Inhalte und reale Medienbestände bleiben redaktionell zu auditieren. |
 | 57 | Teilweise | P2 | Zeichen-Icons besitzen teilweise Screenreader-Text, bleiben aber typografische Symbole. Durch wiederverwendbare SVG-Icons ersetzen und zugängliche Beschriftungen erhalten. |
 | 58 | Teilweise | P1 | Strukturierte CMS-Blöcke existieren, gleichzeitig bleiben Legacy-WYSIWYG-Felder. Neue Inhalte nur über typisierte Komponenten pflegen und Bestandsinhalte schrittweise migrieren. |
 | 59 | Umgesetzt | P1 | `DEEC_Site_Block` und Partials bilden wiederverwendbare Hero-, CTA-, Text-, Bild/Text-, Karten-, Kontakt- und Kategorieblöcke ab. Nur bei konkretem Wiederverwendungsbedarf erweitern. |
@@ -208,6 +209,16 @@ Eine umfassende Script-/Style-CSP ist noch nicht aktiviert, weil Inline-Code, ex
 - Soft-404 und möglicherweise informative Bilder mit leerem Alt-Text bleiben heuristische Hinweise. Historische URLs können nur geprüft werden, wenn sie verlinkt, in der Sitemap enthalten oder ausdrücklich über `--paths` übergeben werden.
 - Der Crawler verändert keine Anwendungs- oder Kundendaten. Es wurden keine installationsspezifischen Ergebnisse eingecheckt und keine Datenbankänderungen benötigt.
 
+### 5.11 Responsive öffentliche Bilder
+
+- Der gemeinsame `SiteImage`-Helper löst ausschließlich Medien auf, die durch die bestehende mandantenbezogene Publikationsprüfung des aktiven Shops freigegeben sind. Externe URLs, Traversal, fehlende Dateien, geschützte Speicherbereiche und fremde Mandanten werden nicht ausgegeben.
+- Die bereits aktive MediaManager-Verarbeitung erzeugt bei Uploads seitenverhältnisgetreue Varianten mit 300, 500, 800 und 1000 Pixeln. Der Renderer referenziert nur wirklich vorhandene Varianten mit passendem Seitenverhältnis und erzeugt beim Seitenabruf keine Dateien.
+- Tatsächliche Originalmaße werden pro Request zwischengespeichert und als `width`/`height` ausgegeben. Vorhandene Originaldateien und gespeicherte Medienpfade bleiben unverändert; Bestandsbilder ohne Varianten funktionieren weiterhin mit dem Original.
+- CMS-Hero, erste Startseiten-Slide und initiales Produktbild werden nicht lazy geladen und mit hoher Fetch-Priorität versehen. Nachgelagerte CMS-, Karten-, Kategorie-, Listen-, Galerie- und Anfragebilder verwenden `loading="lazy"`.
+- Aussagekräftige vorhandene Alt-Texte werden übernommen, leere Medientitel fallen bei Produkten und Kategorien auf deren fachlichen Titel zurück. Das dekorative CMS-Hero-Bild verwendet weiterhin `alt=""`; alle Attribute werden escaped.
+- Die zentrale Ausgabe ist in CMS-Hero, Bild/Text- und Kartenblöcken, Kategorien, Produktlisten und -details, Galerien, Anfragekarten, Startseiten-Slides sowie dem Shop-Logo eingebunden. Bestehende Klassen, Bootstrap-Carousels, Modal-IDs und JavaScript-Ereignisse bleiben erhalten.
+- Es wurden keine Datenbankfelder, SQL-Migrationen oder Laufzeit-Konvertierungen ergänzt. WebP-/AVIF-Derivate und endgültige Core-Web-Vitals-Messungen bleiben getrennte Folgethemen.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
 `structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect`. Phase 2.3 hat beide Dateien ausschließlich geprüft und nicht verändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
@@ -233,7 +244,8 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Technische HTML5-/Indexierungs-/Header-Baseline | 40 Prüfungen bestanden |
 | Robots, Sitemap, kanonische Basis-URL, Routing und Isolation | 31 Prüfungen bestanden |
 | Slug-Normalisierung, Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 67 Prüfungen bestanden |
-| Site-CMS-Struktur | 144 Prüfungen bestanden |
+| Site-CMS-Struktur und Einbindung responsiver Bilder | 154 Prüfungen bestanden |
+| Dateizugriff, Medienvarianten, Bildattribute und Mandantenisolation | 326 Prüfungen bestanden |
 | Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 101 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
 | Browsermeldungen, Übersetzungen und Benachrichtigungen | 370 Prüfungen bestanden; zusätzlich 60 Sales- und 24 Purchases-Helper-Prüfungen |
@@ -266,6 +278,8 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Eine ungültige oder fehlende `shop.url` unterdrückt Canonical und Sitemap-Verweis; der Sitemap-Endpunkt liefert dann bewusst 404. Die Produktionsadresse muss vor Indexierungsfreigabe geprüft werden.
 - Open-Graph-URL, Breadcrumb-JSON-LD und Organization-Markup werden bei fehlender oder ungültiger `shop.url` ebenfalls ausgelassen. Externe Bild-URLs und Medien außerhalb der ausdrücklich öffentlichen Bildverzeichnisse werden nicht übernommen.
 - Legacy-WYSIWYG-Inhalte können bereits mehrere eigene H1 enthalten. Die Templates fügen in diesem Fall keine weitere H1 hinzu, verändern bestehende Kundendaten aber nicht; der Bestand bleibt im Relaunch-Crawl redaktionell zu bereinigen.
+- Bereits vorhandene Medien ohne die vom MediaManager erzeugten Varianten bleiben als Original erreichbar und erhalten weiterhin reale Maße und Ladeattribute, aber kein künstliches `srcset`. Ein kontrollierter Bestands-Backfill wurde nicht durchgeführt.
+- SVG-Dateien und Formate ohne zuverlässig lesbare Rastermaße werden sicher ausgegeben, jedoch ohne erfundene `width`-/`height`-Werte. Moderne WebP-/AVIF-Konvertierung und reale LCP-/CLS-Messungen bleiben offen.
 - Der Crawler erzeugt keine Aussage über unbekannte historische URLs. Eine vollständige fachliche Alt-URL-Liste muss vor dem Relaunch über `--paths` zusätzlich geprüft werden. Heuristische Soft-404- und Alt-Text-Hinweise benötigen eine manuelle Bewertung.
 - Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
 
@@ -279,7 +293,8 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 
 ### Phase 3 – Performance und Assets
 
-- Responsive Bilder, feste Dimensionen, Lazy Loading und LCP-Priorisierung ergänzen.
+- Responsive Bildausgabe mit realen Maßen, Lazy Loading und LCP-Priorisierung anhand realer Staging-Inhalte nachmessen und verbleibende Legacy-WYSIWYG-Bilder auditieren.
+- WebP-/AVIF-Derivate sowie einen gegebenenfalls erforderlichen kontrollierten Backfill für ältere Medien separat bewerten.
 - CDN-/SRI-Entscheidung und unterstützte Frontend-Versionen festlegen.
 - CSS/JS messen, modernisieren, minifizieren und versioniert cachen.
 - Core Web Vitals mit realen Inhalten messen.
@@ -450,8 +465,18 @@ Inhalt:
 - Lesbarer Terminalbericht und strukturierter JSON-Bericht mit URL und konkreter Beschreibung je Befund.
 - Isolierte reale HTTP-Fixtures für Erfolgs-, Fehler-, Noindex-, Mandanten-, Timeout- und Begrenzungsfälle.
 
+### Commit 11: `optimize responsive site images`
+
+Inhalt:
+
+- Gemeinsame sichere Ausgabe verwalteter öffentlicher Bilder mit tatsächlichen Abmessungen und escaped Attributen.
+- Wiederverwendung vorhandener 300-/500-/800-/1000-Pixel-Varianten für `srcset` und kontextbezogene `sizes` ohne Laufzeit-Generierung.
+- Lazy Loading für nachgelagerte Bilder sowie Priorisierung von CMS-Hero, erster Startseiten-Slide und initialem Produktbild.
+- Einbindung in CMS-Blöcke, Kategorien, Produkte, Galerien, Anfragekarten, Slides und Shop-Logo.
+- Automatisierte Medien-, Varianten-, Template-, Pfad- und Mandantenregressionen ohne Datenbankänderung.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, tatsächlicher Staging-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, tatsächlicher Staging-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.
