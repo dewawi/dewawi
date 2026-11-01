@@ -78,7 +78,8 @@ $robots = (new ReflectionClass(RobotsControllerFixture::class))->newInstanceWith
 $indexableBody = $robots->body($canonical);
 checkSeo($indexableBody === "User-agent: *\nAllow: /\nSitemap: https://www.example.test/site/sitemap.xml\n", 'Indexable robots.txt is incomplete');
 $nonIndexable = new DEEC_Site_Context(['url' => 'https://www.example.test'], ['indexable' => false]);
-checkSeo($robots->body($nonIndexable) === "User-agent: *\nDisallow: /\n", 'Non-indexable robots.txt does not block crawling');
+checkSeo($robots->body($nonIndexable) === "User-agent: *\nAllow: /\n", 'Non-indexable robots.txt prevents crawlers from reading noindex');
+checkSeo(!str_contains($robots->body($nonIndexable), 'Sitemap:'), 'Non-indexable robots.txt advertises a sitemap');
 $invalidCanonical = new DEEC_Site_Context(['url' => ''], ['indexable' => true]);
 checkSeo($robots->body($invalidCanonical) === "User-agent: *\nAllow: /\n", 'Invalid canonical URL leaked into robots.txt');
 

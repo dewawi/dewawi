@@ -19,7 +19,7 @@ class Shops_RobotsController extends Shops_Controller_Action
 	protected function buildBody(): string
 	{
 		if (!$this->_siteContext->isIndexable()) {
-			return "User-agent: *\nDisallow: /\n";
+			return "User-agent: *\nAllow: /\n";
 		}
 
 		$body = "User-agent: *\nAllow: /\n";
