@@ -57,7 +57,7 @@ $this->headTitle($this->title);
 
 		<div class="row justify-content-center mt-4">
 			<div class="col-md-8 text-center">
-				<a href="/" class="btn btn-error btn-lg">Zurück zur Startseite</a>
+				<a href="<?php echo $this->escape($this->url([], 'shop_home')); ?>" class="btn btn-error btn-lg">Zurück zur Startseite</a>
 			</div>
 		</div>
 	</div>

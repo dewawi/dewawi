@@ -40,6 +40,60 @@ class DEEC_Site_Router
 		return trim($path, '/');
 	}
 
+	public static function isCanonicalPublicPathRequest(string $requestUri, string $basePath, string $path): bool
+	{
+		$requestPath = parse_url($requestUri, PHP_URL_PATH);
+		if (!is_string($requestPath)) return false;
+
+		$basePath = rtrim($basePath, '/');
+		$path = trim($path, '/');
+		$canonicalPath = $basePath . ($path === '' ? '/' : '/' . $path);
+
+		return $requestPath === $canonicalPath;
+	}
+
+	public static function isTrailingSlashPublicPathRequest(string $requestUri, string $basePath, string $path): bool
+	{
+		$requestPath = parse_url($requestUri, PHP_URL_PATH);
+		if (!is_string($requestPath)) return false;
+
+		$basePath = rtrim($basePath, '/');
+		$path = trim($path, '/');
+		if ($path === '') return $basePath !== '' && $requestPath === $basePath;
+
+		return $requestPath === $basePath . '/' . $path . '/';
+	}
+
+	public static function getCanonicalRedirectLocation(string $requestUri, string $method, string $basePath, string $path, ?string $controller = null): ?string
+	{
+		if (!in_array(strtoupper($method), ['GET', 'HEAD'], true)) return null;
+		if (!self::isTrailingSlashPublicPathRequest($requestUri, $basePath, $path)) return null;
+
+		$basePath = rtrim($basePath, '/');
+		$path = trim($path, '/');
+		if ($path !== '' && !self::isRedirectablePath($path)) return null;
+
+		$location = $basePath . ($path === '' ? '/' : '/' . $path);
+		if ($controller !== 'category') return $location;
+
+		$query = parse_url($requestUri, PHP_URL_QUERY);
+		if (!is_string($query) || $query === '') return $location;
+
+		parse_str($query, $parameters);
+		$allowed = [];
+		$order = $parameters['order'] ?? null;
+		if (is_string($order) && in_array($order, ['created', 'title'], true)) $allowed['order'] = $order;
+		$sort = $parameters['sort'] ?? null;
+		if (is_string($sort) && strtoupper($sort) === 'ASC') $allowed['sort'] = 'ASC';
+		$page = $parameters['page'] ?? null;
+		if (is_string($page) && preg_match('/^[0-9]+$/D', $page)) {
+			$page = filter_var($page, FILTER_VALIDATE_INT, ['options' => ['min_range' => 2]]);
+			if ($page !== false) $allowed['page'] = $page;
+		}
+
+		return $location . ($allowed ? '?' . http_build_query($allowed, '', '&', PHP_QUERY_RFC3986) : '');
+	}
+
 	public function registerRoutes(DEEC_Site_Context $siteContext)
 	{
 		$frontController = Zend_Controller_Front::getInstance();
@@ -53,12 +107,27 @@ class DEEC_Site_Router
 
 	protected function registerBaseRoutes(Zend_Controller_Router_Rewrite $router, DEEC_Site_Context $siteContext)
 	{
+		$requestUri = (string)($_SERVER['REQUEST_URI'] ?? '');
+		$requestMethod = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
+		$homeController = 'index';
+		$homeId = null;
+		if (self::getCanonicalRedirectLocation($requestUri, $requestMethod, $siteContext->getBasePath(), '') !== null) {
+			$homeController = 'redirect';
+		} elseif (
+			!self::isCanonicalPublicPathRequest($requestUri, $siteContext->getBasePath(), '')
+			&& !self::isTrailingSlashPublicPathRequest($requestUri, $siteContext->getBasePath(), '')
+		) {
+			$homeController = 'page';
+			$homeId = 0;
+		}
+
 		$router->addRoute('shop_home', new Zend_Controller_Router_Route(
 			'/',
 			array(
 				'module' => 'shops',
-				'controller' => 'index',
-				'action' => 'index'
+				'controller' => $homeController,
+				'action' => 'index',
+				'id' => $homeId
 			)
 		));
 
@@ -272,8 +341,9 @@ class DEEC_Site_Router
 
 	protected function registerSlugRoute(Zend_Controller_Router_Rewrite $router, DEEC_Site_Context $siteContext): bool
 	{
+		$requestUri = (string)($_SERVER['REQUEST_URI'] ?? '');
 		$path = self::getRelativeRequestPath(
-			(string)($_SERVER['REQUEST_URI'] ?? ''),
+			$requestUri,
 			$siteContext->getBasePath()
 		);
 
@@ -284,9 +354,22 @@ class DEEC_Site_Router
 		$slugDb = new Shops_Model_DbTable_Slug();
 		$slug = $slugDb->resolvePath($path);
 
-		if (!$slug || !$this->isSlugControllerEnabled((string)$slug['controller'], $siteContext)) {
+		if (!$slug || !self::isSlugControllerEnabled((string)$slug['controller'], $siteContext)) {
 			return false;
 		}
+		if (
+			!self::isCanonicalPublicPathRequest($requestUri, $siteContext->getBasePath(), $path)
+			&& !self::isTrailingSlashPublicPathRequest($requestUri, $siteContext->getBasePath(), $path)
+		) return false;
+
+		$controller = (string)$slug['controller'];
+		if (self::getCanonicalRedirectLocation(
+			$requestUri,
+			(string)($_SERVER['REQUEST_METHOD'] ?? 'GET'),
+			$siteContext->getBasePath(),
+			$path,
+			$controller
+		) !== null) $controller = 'redirect';
 
 		$router->addRoute(
 			'shop_slug',
@@ -294,7 +377,7 @@ class DEEC_Site_Router
 				$path,
 				array(
 					'module' => 'shops',
-					'controller' => $slug['controller'],
+					'controller' => $controller,
 					'action' => 'index',
 					'id' => $slug['entityid']
 				)
@@ -315,6 +398,11 @@ class DEEC_Site_Router
 		);
 		if ($path === null) return;
 		if (!DEEC_Site_Router::isRedirectablePath($path)) return;
+		if (!self::isCanonicalPublicPathRequest(
+			(string)($_SERVER['REQUEST_URI'] ?? ''),
+			$siteContext instanceof DEEC_Site_Context ? $siteContext->getBasePath() : '',
+			$path
+		)) return;
 
 		$result = (new Shops_Model_DbTable_Slugredirect())->resolve($path);
 		if (!$result) return;
@@ -329,7 +417,7 @@ class DEEC_Site_Router
 		));
 	}
 
-	protected function isSlugControllerEnabled($controller, DEEC_Site_Context $siteContext)
+	public static function isSlugControllerEnabled($controller, DEEC_Site_Context $siteContext)
 	{
 		if ($controller === 'inquiry') {
 			return $siteContext->hasFeature('inquiry');

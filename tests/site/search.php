@@ -20,6 +20,8 @@ require_once $root . '/library/DEEC/Site/Router.php';
 require_once $root . '/application/modules/shops/models/Search.php';
 require_once $root . '/application/modules/shops/models/DbTable/Item.php';
 require_once $root . '/application/modules/shops/models/DbTable/Category.php';
+require_once $root . '/application/modules/shops/models/DbTable/Page.php';
+require_once $root . '/application/modules/shops/models/DbTable/Tag.php';
 require_once $root . '/application/modules/shops/models/DbTable/Slug.php';
 require_once $root . '/application/modules/shops/models/DbTable/Slugredirect.php';
 require_once $root . '/application/modules/shops/views/helpers/Breadcrumbs.php';
@@ -349,6 +351,13 @@ $adapter->rows = [
 	],
 	'category' => [
 		['id' => 10, 'clientid' => 3, 'shopid' => 7, 'type' => 'shop', 'activated' => 1, 'deleted' => 0],
+		['id' => 11, 'clientid' => 3, 'shopid' => 7, 'type' => 'shop', 'activated' => 1, 'deleted' => 0],
+	],
+	'page' => [
+		['id' => 20, 'clientid' => 3, 'shopid' => 7, 'type' => 'content', 'activated' => 1, 'deleted' => 0],
+	],
+	'tag' => [
+		['id' => 30, 'clientid' => 3, 'shopid' => 7, 'deleted' => 0],
 	],
 	'slug' => [
 		['id' => 200, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'products', 'deleted' => 0],
@@ -356,6 +365,10 @@ $adapter->rows = [
 		['id' => 202, 'clientid' => 4, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'foreign-tenant', 'deleted' => 0],
 		['id' => 203, 'clientid' => 3, 'shopid' => 8, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'foreign-shop', 'deleted' => 0],
 		['id' => 204, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'deleted-slug', 'deleted' => 1],
+		['id' => 205, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 11, 'parentid' => 10, 'slug' => 'nested', 'deleted' => 0],
+		['id' => 206, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'page', 'entityid' => 20, 'parentid' => 0, 'slug' => 'company', 'deleted' => 0],
+		['id' => 207, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'tag', 'entityid' => 30, 'parentid' => 0, 'slug' => 'efficient', 'deleted' => 0],
+		['id' => 208, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 40, 'parentid' => 0, 'slug' => 'project-inquiry', 'deleted' => 0],
 	],
 	'slugredirect' => [
 		['id' => 300, 'clientid' => 3, 'shopid' => 7, 'path' => 'old-products', 'pathhash' => hash('sha256', 'old-products'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 0],
@@ -376,7 +389,7 @@ checkSearch(array_column($categoryItems, 'id') === [100] && (int)$categoryItems[
 $resolvedItem = (new Shops_Model_DbTable_Slug())->resolvePath('products/existing-item');
 checkSearch((int)($resolvedItem['entityid'] ?? 0) === 100 && ($resolvedItem['controller'] ?? '') === 'item', 'Existing item slug without shop approval is not publicly resolvable');
 $publicSlugIds = array_map(static fn($row): int => (int)$row['id'], iterator_to_array((new Shops_Model_DbTable_Slug())->getSlugs()));
-checkSearch($publicSlugIds === [200, 201], 'Public slug enumeration crossed a tenant or shop boundary');
+checkSearch($publicSlugIds === [200, 201, 205, 206, 207, 208], 'Public slug enumeration crossed a tenant or shop boundary');
 
 $redirectDb = new Shops_Model_DbTable_Slugredirect();
 checkSearch($redirectDb->resolvePath('old-products') === 'products', 'Historical path does not resolve to the current canonical entity path');
@@ -397,6 +410,69 @@ Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 7, 'clientid' =
 checkSearch((new Shops_Model_DbTable_Slugredirect())->resolvePath('old-products') === null, 'Redirect to a disabled website feature remains active');
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 7, 'clientid' => 3], [], ['cms', 'catalog']));
 
+checkSearch(DEEC_Site_Router::isCanonicalPublicPathRequest('/products?ref=1', '', 'products'), 'Canonical root path was not recognized');
+checkSearch(DEEC_Site_Router::isCanonicalPublicPathRequest('/site/products', '/site', 'products'), 'Canonical subdirectory path was not recognized');
+checkSearch(DEEC_Site_Router::isCanonicalPublicPathRequest('/site/', '/site', ''), 'Canonical subdirectory home was not recognized');
+checkSearch(!DEEC_Site_Router::isCanonicalPublicPathRequest('/site', '/site', ''), 'Home without its canonical slash was accepted');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/site', 'GET', '/site', '') === '/site/', 'Subdirectory home slash redirect is incorrect');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/', 'GET', '', '') === null, 'Root home was redirected unnecessarily');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/products/', 'GET', '', 'products', 'category') === '/products', 'Root content slash redirect is incorrect');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/site/products/nested/', 'HEAD', '/site', 'products/nested', 'category') === '/site/products/nested', 'Nested subdirectory HEAD redirect is incorrect');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/products/existing-item/?secret=1', 'GET', '', 'products/existing-item', 'item') === '/products/existing-item', 'Product redirect retained an uncontrolled query');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/products/?page=2&order=title&sort=asc&token=secret', 'GET', '', 'products', 'category') === '/products?order=title&sort=ASC&page=2', 'Category redirect did not normalize its meaningful query');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/products/?page=1&order=modified&sort=DESC&q=secret', 'GET', '', 'products', 'category') === '/products', 'Category redirect retained default or uncontrolled parameters');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/products/?page[]=2&sort[]=ASC', 'GET', '', 'products', 'category') === '/products', 'Category redirect accepted array parameters');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/products/', 'POST', '', 'products', 'category') === null, 'Writing request was normalized');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/products//', 'GET', '', 'products', 'category') === null, 'Double slash was normalized');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/%70roducts/', 'GET', '', 'products', 'category') === null, 'Encoded path was normalized to a different spelling');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/Products/', 'GET', '', 'products', 'category') === null, 'Path case was normalized implicitly');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/products/%2F/', 'GET', '', 'products', 'category') === null, 'Encoded slash was normalized');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('/products/../company/', 'GET', '', 'products/../company', 'page') === null, 'Dot segment was normalized');
+checkSearch(DEEC_Site_Router::getCanonicalRedirectLocation('https://example.test:8443/site/company/', 'GET', '/site', 'company', 'page') === '/site/company', 'Absolute request URI with a nonstandard port changed the relative redirect');
+
+$routeContext = new DEEC_Site_Context(['id' => 7, 'clientid' => 3, 'url' => 'https://example.test/site'], [], ['cms', 'catalog', 'inquiry']);
+Zend_Registry::set('SiteContext', $routeContext);
+$slugMethod = new ReflectionMethod(DEEC_Site_Router::class, 'registerSlugRoute');
+$slugMethod->setAccessible(true);
+$routeController = static function(string $uri, string $method = 'GET') use ($slugMethod, $routeContext): ?string {
+	$_SERVER['REQUEST_URI'] = $uri;
+	$_SERVER['REQUEST_METHOD'] = $method;
+	$router = new Zend_Controller_Router_Rewrite();
+	if (!$slugMethod->invoke(new DEEC_Site_Router(), $router, $routeContext)) return null;
+	$path = DEEC_Site_Router::getRelativeRequestPath($uri, $routeContext->getBasePath());
+	$route = $router->getRoute('shop_slug')->match((string)$path);
+	return $route['controller'] ?? null;
+};
+foreach ([
+	'/site/products/' => 'category',
+	'/site/products/nested/' => 'category',
+	'/site/products/existing-item/' => 'item',
+	'/site/company/' => 'page',
+	'/site/efficient/' => 'tag',
+	'/site/project-inquiry/' => 'inquiry',
+] as $uri => $entityController) {
+	checkSearch($routeController($uri) === 'redirect', 'Slash variant was not normalized for ' . $entityController);
+	checkSearch($routeController(rtrim($uri, '/')) === $entityController, 'Canonical path did not retain its controller for ' . $entityController);
+}
+checkSearch($routeController('/site/products/', 'HEAD') === 'redirect', 'HEAD slash variant was not normalized');
+checkSearch($routeController('/site/products/', 'POST') === 'category', 'POST slash variant was redirected or rejected');
+checkSearch($routeController('/site/products//') === null, 'Double slash resolved as current content');
+checkSearch($routeController('/site/%70roducts/') === null, 'Encoded path resolved as current content');
+
+$_SERVER['REQUEST_URI'] = '/site';
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$homeRouter = new Zend_Controller_Router_Rewrite();
+$baseMethod = new ReflectionMethod(DEEC_Site_Router::class, 'registerBaseRoutes');
+$baseMethod->setAccessible(true);
+$baseMethod->invoke(new DEEC_Site_Router(), $homeRouter, $routeContext);
+checkSearch(($homeRouter->getRoute('shop_home')->match('')['controller'] ?? '') === 'redirect', 'Subdirectory home without slash was not normalized');
+$_SERVER['REQUEST_URI'] = '/site/';
+$canonicalHomeRouter = new Zend_Controller_Router_Rewrite();
+$baseMethod->invoke(new DEEC_Site_Router(), $canonicalHomeRouter, $routeContext);
+checkSearch(($canonicalHomeRouter->getRoute('shop_home')->match('')['controller'] ?? '') === 'index', 'Canonical subdirectory home does not resolve normally');
+
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 7, 'clientid' => 3], [], ['cms', 'catalog']));
+
 $_SERVER['REQUEST_URI'] = '/old-products';
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $redirectRouter = new Zend_Controller_Router_Rewrite();
@@ -413,6 +489,17 @@ $redirectMethod->invoke(new DEEC_Site_Router(), $goneRouter);
 $goneRoute = $goneRouter->getRoute('shop_redirect')->match('removed-page');
 checkSearch(($goneRoute['controller'] ?? '') === 'redirect', 'HEAD route was not registered for configured HTTP 410 path');
 
+$_SERVER['REQUEST_URI'] = '/old-products/';
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$historicalSlashRouter = new Zend_Controller_Router_Rewrite();
+$redirectMethod->invoke(new DEEC_Site_Router(), $historicalSlashRouter);
+checkSearch(!isset($historicalSlashRouter->getRoutes()['shop_redirect']), 'Historical slash variant was normalized without an explicit mapping');
+
+$_SERVER['REQUEST_URI'] = '/removed-page/';
+$goneSlashRouter = new Zend_Controller_Router_Rewrite();
+$redirectMethod->invoke(new DEEC_Site_Router(), $goneSlashRouter);
+checkSearch(!isset($goneSlashRouter->getRoutes()['shop_redirect']), 'Unconfigured slash variant inherited HTTP 410');
+
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $postRouter = new Zend_Controller_Router_Rewrite();
 $redirectMethod->invoke(new DEEC_Site_Router(), $postRouter);
@@ -425,14 +512,16 @@ $redirectMethod->invoke(new DEEC_Site_Router(), $unknownRouter);
 checkSearch(!isset($unknownRouter->getRoutes()['shop_redirect']), 'Unknown path was turned into a catch-all redirect');
 
 $_SERVER['REQUEST_URI'] = '/products';
-$slugMethod = new ReflectionMethod(DEEC_Site_Router::class, 'registerSlugRoute');
-$slugMethod->setAccessible(true);
 checkSearch($slugMethod->invoke(new DEEC_Site_Router(), new Zend_Controller_Router_Rewrite(), $context) === true, 'Current public URL does not take precedence over redirects');
 
 $redirectControllerSource = file_get_contents($root . '/application/modules/shops/controllers/RedirectController.php');
 checkSearch(str_contains($redirectControllerSource, 'setHttpResponseCode(301)') && str_contains($redirectControllerSource, "setHeader('Location'")
 	&& str_contains($redirectControllerSource, 'isHead()') && str_contains($redirectControllerSource, "404"), 'Redirect response is missing HTTP 301, Location, HEAD or 404 handling');
 checkSearch(!str_contains($sitemapSource, 'Slugredirect'), 'Historical redirect paths can enter the sitemap');
+foreach (['checkout/success', 'checkout/error', 'inquiry/success', 'contact/success', 'contact/error'] as $view) {
+	$source = file_get_contents($root . '/application/modules/shops/views/scripts/' . $view . '.phtml');
+	checkSearch(!str_contains($source, 'href="/"') && str_contains($source, "'shop_home'"), 'Public result page bypasses the canonical home route: ' . $view);
+}
 
 $itemDb = new Shops_Model_DbTable_Item();
 foreach ([0, 1, 25, 26, 60] as $total) {

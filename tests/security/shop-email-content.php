@@ -57,6 +57,7 @@ class ShopEmailContentTestView
     public function headTitle(string $title): void {}
     public function Messages(): string { return ''; }
     public function escape($value): string { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
+    public function url(array $options, string $route): string { return $route === 'shop_home' ? '/site/' : ''; }
 
     public function render(string $script, array $values): string
     {
