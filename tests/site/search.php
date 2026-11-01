@@ -312,6 +312,10 @@ $method->setAccessible(true);
 $method->invoke(new DEEC_Site_Router(), $router, new DEEC_Site_Context([], [], ['cms']));
 $route = $router->getRoute('search')->match('search');
 checkSearch(($route['controller'] ?? '') === 'search', 'Search route is not registered without catalog');
+$consentRoute = $router->getRoute('site_consent');
+$consentMatch = $consentRoute->match('cookie-consent');
+checkSearch(($consentMatch['module'] ?? '') === 'shops' && ($consentMatch['controller'] ?? '') === 'consent' && ($consentMatch['action'] ?? '') === 'save', 'Cookie consent POST route is not registered');
+checkSearch('/' . $consentRoute->assemble([], true) === '/cookie-consent', 'Root cookie consent form action is invalid');
 $collisionRouter = new Zend_Controller_Router_Rewrite();
 $collisionRouter->addRoute('conflicting_slug', new Zend_Controller_Router_Route('search', ['module' => 'shops', 'controller' => 'page', 'action' => 'index', 'id' => 99]));
 $method->invoke(new DEEC_Site_Router(), $collisionRouter, new DEEC_Site_Context([], [], ['cms']));
@@ -470,6 +474,8 @@ $_SERVER['REQUEST_URI'] = '/site/';
 $canonicalHomeRouter = new Zend_Controller_Router_Rewrite();
 $baseMethod->invoke(new DEEC_Site_Router(), $canonicalHomeRouter, $routeContext);
 checkSearch(($canonicalHomeRouter->getRoute('shop_home')->match('')['controller'] ?? '') === 'index', 'Canonical subdirectory home does not resolve normally');
+$subdirectoryConsentRoute = $canonicalHomeRouter->getRoute('site_consent');
+checkSearch($routeContext->getBasePath() . '/' . $subdirectoryConsentRoute->assemble([], true) === '/site/cookie-consent', 'Subdirectory cookie consent form action is invalid');
 
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 7, 'clientid' => 3], [], ['cms', 'catalog']));
 

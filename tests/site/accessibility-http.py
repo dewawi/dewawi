@@ -304,6 +304,19 @@ def main() -> int:
         check(driver.execute("return !window.consentTrackingLoaded&&!performance.getEntriesByName(location.origin+'/tracking.js').length"), "Tracking remained after consent revocation", checks)
         driver.navigate(consent_url)
         check(driver.execute("return document.body.dataset.consentState==='declined'&&document.querySelector('[data-consent-panel]').hidden&&!window.consentTrackingLoaded"), "Declined consent did not persist across reload", checks)
+
+        subdirectory_consent_url = origin + "/site/consent-fixture?client=6&shop=9&env=production"
+        driver.navigate(subdirectory_consent_url)
+        check(driver.execute("return new URL(document.querySelector('[data-consent-panel] form').action).pathname==='/site/cookie-consent-fixture'&&document.querySelector('input[name=return]').value.startsWith('/site/consent-fixture')"), "Subdirectory consent form action or return path is invalid", checks)
+        driver.click('button[name="consent"][value="accepted"]')
+        driver.wait("return location.pathname==='/site/consent-fixture'&&document.body.dataset.consentState==='accepted'&&window.consentTrackingLoaded===true")
+        subdirectory_cookie = next((item for item in driver.cookies() if item["name"] == "dw_site_consent_6_9"), None)
+        check(bool(subdirectory_cookie) and subdirectory_cookie["value"] == "1:accepted:6:9" and subdirectory_cookie.get("path") == "/site/", "Subdirectory consent acceptance or cookie path is incorrect", checks)
+        driver.click("[data-consent-open]")
+        driver.click('button[name="consent"][value="declined"]')
+        driver.wait("return location.pathname==='/site/consent-fixture'&&document.body.dataset.consentState==='declined'&&!window.consentTrackingLoaded")
+        check(driver.execute("return document.querySelector('[data-consent-panel]').hidden"), "Subdirectory consent decline did not return to the website", checks)
+
         driver.navigate(origin + "/consent-fixture?client=3&shop=8&env=production")
         check(driver.execute("return document.body.dataset.consentState==='unknown'&&!window.consentTrackingLoaded"), "Consent leaked into another shop", checks)
         driver.add_cookie("dw_site_consent_3_8", "invalid")

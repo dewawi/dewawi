@@ -85,10 +85,10 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if path == "/js/shops.js":
             self.send_body((ROOT / "js/shops.js").read_bytes(), "application/javascript")
             return
-        if path == "/tracking.js":
+        if path in {"/tracking.js", "/site/tracking.js"}:
             self.send_body(b"window.consentTrackingLoaded=true;", "application/javascript")
             return
-        if path == "/consent-fixture":
+        if path in {"/consent-fixture", "/site/consent-fixture"}:
             self.send_body(self.consent_fixture(parsed).encode(), "text/html; charset=utf-8")
             return
         if path == "/checkout":
@@ -122,7 +122,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
         body = self.rfile.read(length)
         parsed = urllib.parse.urlsplit(self.path)
         path = parsed.path
-        if path == "/cookie-consent-fixture":
+        if path in {"/cookie-consent-fixture", "/site/cookie-consent-fixture"}:
             query = urllib.parse.parse_qs(parsed.query)
             form = urllib.parse.parse_qs(body.decode())
             client = int(query.get("client", ["3"])[0])
@@ -134,7 +134,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 return
             self.send_response(303)
             self.send_header("Location", return_path)
-            self.send_header("Set-Cookie", f"dw_site_consent_{client}_{shop}=1:{consent}:{client}:{shop}; Path=/; HttpOnly; SameSite=Lax")
+            cookie_path = "/site/" if path.startswith("/site/") else "/"
+            self.send_header("Set-Cookie", f"dw_site_consent_{client}_{shop}=1:{consent}:{client}:{shop}; Path={cookie_path}; HttpOnly; SameSite=Lax")
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
             return
@@ -188,6 +189,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
 
     def consent_fixture(self, parsed: urllib.parse.SplitResult) -> str:
         query = urllib.parse.parse_qs(parsed.query)
+        base_path = "/site" if parsed.path.startswith("/site/") else ""
         client = int(query.get("client", ["3"])[0])
         shop = int(query.get("shop", ["7"])[0])
         environment = query.get("env", ["production"])[0]
@@ -204,8 +206,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
             if cookies.get(cookie_name) == f"1:{choice}:{client}:{shop}":
                 state = choice
         return_path = parsed.path + ("?" + parsed.query if parsed.query else "")
-        action = f"/cookie-consent-fixture?client={client}&shop={shop}"
-        tracking = '<script src="/tracking.js"></script>' if analytics and indexable and environment == "production" and state == "accepted" else ""
+        action = f"{base_path}/cookie-consent-fixture?client={client}&shop={shop}"
+        tracking = f'<script src="{base_path}/tracking.js"></script>' if analytics and indexable and environment == "production" and state == "accepted" else ""
         status = "" if state is None else f'<p class="dw-consent-panel__status" role="status">Analytics {state}</p>'
         close = "" if state is None else '<button class="btn btn-link" type="button" data-consent-close>Close</button>'
         hidden = "" if state is None else " hidden"

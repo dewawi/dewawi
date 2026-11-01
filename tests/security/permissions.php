@@ -168,6 +168,18 @@ $siteContext = new DEEC_Site_Context(['id' => 5, 'clientid' => 70], [], ['cms'])
 Zend_Registry::set('SiteContext', $siteContext);
 $publicRequest = new ReflectionMethod(Application_Plugin_Acl::class, 'isPublicRequest');
 $publicRequest->setAccessible(true);
+[$request, $response] = permissionRoute('shops', 'consent', 'save', 'POST');
+check($request->getModuleName() === 'shops' && $request->getControllerName() === 'consent' && $request->getActionName() === 'save' && !$response->isRedirect(), 'Guest cookie consent POST did not reach its controller');
+check($publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Cookie consent POST did not use the exact public ACL path');
+$checks += 2;
+
+foreach ([['save', 'GET'], ['preview', 'POST']] as [$action, $method]) {
+    [$request, $response] = permissionRoute('shops', 'consent', $action, $method);
+    check($response->isRedirect(), 'Guest can dispatch a non-public consent request: ' . $action . '/' . $method);
+    check(!$publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Non-public consent request matched the public ACL path: ' . $action . '/' . $method);
+    $checks += 2;
+}
+
 foreach (['robots', 'sitemap'] as $controller) {
     foreach (['GET', 'HEAD'] as $method) {
         [$request, $response] = permissionRoute('shops', $controller, 'index', $method);

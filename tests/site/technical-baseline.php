@@ -192,9 +192,15 @@ $consentReflection = new ReflectionClass(Shops_ConsentController::class);
 $consentInstance = $consentReflection->newInstanceWithoutConstructor();
 $sameOriginMethod = $consentReflection->getMethod('isSameOriginRequest');
 $sameOriginMethod->setAccessible(true);
+$returnPathMethod = $consentReflection->getMethod('returnPath');
+$returnPathMethod->setAccessible(true);
 $siteContextProperty = $consentReflection->getProperty('_siteContext');
 $siteContextProperty->setAccessible(true);
 $siteContextProperty->setValue($consentInstance, new DEEC_Site_Context(['url' => 'https://shop.example.test/site']));
+$requestProperty = new ReflectionProperty(Zend_Controller_Action::class, '_request');
+$requestProperty->setAccessible(true);
+$consentRequest = new Zend_Controller_Request_Http();
+$requestProperty->setValue($consentInstance, $consentRequest);
 $originalServer = $_SERVER;
 
 foreach ([
@@ -211,6 +217,17 @@ foreach ([
 ] as [$headers, $expected, $message]) {
 	$_SERVER = ['HTTP_HOST' => 'manipulated.example.test'] + $headers;
 	checkBaseline($sameOriginMethod->invoke($consentInstance) === $expected, $message);
+}
+
+foreach ([
+	['/site/category?order=title', '/site/category?order=title', 'Valid subdirectory consent return path changed'],
+	['/site/', '/site/', 'Website home consent return path changed'],
+	['/outside', '/site/', 'Consent return escaped the active website base path'],
+	['//other.example.test/path', '/site/', 'Protocol-relative consent return was accepted'],
+	["/site/page\r\nLocation: /outside", '/site/', 'Consent return accepted response splitting'],
+] as [$returnPath, $expected, $message]) {
+	$consentRequest->setParam('return', $returnPath);
+	checkBaseline($returnPathMethod->invoke($consentInstance) === $expected, $message);
 }
 
 $_SERVER = $originalServer;

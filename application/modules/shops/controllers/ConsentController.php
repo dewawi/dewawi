@@ -47,8 +47,15 @@ class Shops_ConsentController extends Shops_Controller_Action
 	private function returnPath(): string
 	{
 		$path = (string)$this->_getParam('return', '/');
+		$basePath = rtrim($this->_siteContext->getBasePath(), '/');
+		$fallback = $basePath === '' ? '/' : $basePath . '/';
+		if (!preg_match('~^/(?!/)[^\r\n]*$~D', $path)) return $fallback;
 
-		return preg_match('~^/(?!/)[^\r\n]*$~D', $path) ? $path : '/';
+		$requestPath = parse_url($path, PHP_URL_PATH);
+		if (!is_string($requestPath)) return $fallback;
+		if ($basePath !== '' && $requestPath !== $basePath && !str_starts_with($requestPath, $basePath . '/')) return $fallback;
+
+		return $path;
 	}
 
 	private function isSameOriginRequest(): bool
