@@ -107,6 +107,24 @@ class ShopInquiryTestController extends Shops_InquiryController
         $this->csrfToken = $expected;
         return $this->isValidCsrf(['csrf_token' => $submitted]);
     }
+    public function validatePriorSteps(string $step, array $steps, array $data): bool
+    {
+        return $this->hasCompletedPriorSteps($step, $steps, $data);
+    }
+    public function validateInquiryToken(string $current, string $last, string $submitted): bool
+    {
+        $this->formDataSession = new stdClass();
+        $this->formDataSession->inquiryToken = $current;
+        $this->formDataSession->lastInquiryToken = $last;
+        return $this->isValidInquiryToken($submitted);
+    }
+    public function validateAllSteps(array $config, array $data): bool
+    {
+        $this->formConfig = $config;
+        $this->csrfToken = 'csrf-value';
+        $this->inquiryToken = str_repeat('a', 32);
+        return $this->validateCompletedSteps(array_keys($config), $data);
+    }
 }
 
 $adapter = new ShopInquiryTestAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
@@ -185,7 +203,9 @@ if (!is_dir($sessionDir) && !mkdir($sessionDir, 0700)) throw new RuntimeExceptio
 Zend_Session::setOptions(['save_path' => $sessionDir, 'use_cookies' => false]);
 $view = new Zend_View();
 $contactGet = new Shops_Form_Contact(['view' => $view]);
-$contactGet->render($view);
+$contactHtml = $contactGet->render($view);
+check(str_contains($contactHtml, 'name="fax_number"'), 'Contact honeypot is not rendered');
+check(str_contains($contactHtml, 'aria-hidden="true"') && str_contains($contactHtml, 'tabindex="-1"'), 'Contact honeypot is exposed to keyboard or assistive technology');
 $contactValues = [
     'csrf_token' => $contactGet->getElement('csrf_token')->getHash(),
     'inquiry_token' => $contactGet->getElement('inquiry_token')->getValue(),
@@ -208,6 +228,21 @@ check(!(new Shops_Form_Contact(['view' => $view]))->isValid($invalidContact), 'I
 $invalidCsrf = $contactValues;
 $invalidCsrf['csrf_token'] = str_repeat('0', 32);
 check(!(new Shops_Form_Contact(['view' => $view]))->isValid($invalidCsrf), 'Invalid contact CSRF token was accepted');
+$oversizedContact = $contactValues;
+$oversizedContact['message'] = str_repeat('x', 10001);
+check(!(new Shops_Form_Contact(['view' => $view]))->isValid($oversizedContact), 'Oversized contact message was accepted');
+$manipulatedControl = $contactValues;
+$manipulatedControl['controller'] = 'checkout';
+check(!(new Shops_Form_Contact(['view' => $view]))->isValid($manipulatedControl), 'Manipulated contact control field was accepted');
+$checkoutForm = new Shops_Form_Checkout(['view' => $view]);
+check((bool)preg_match('/^[a-f0-9]{32}$/D', (string)$checkoutForm->getElement('checkout_token')->getValue()), 'Checkout idempotency token is missing');
+check($checkoutForm->getElement('controller')->getValue() === 'checkout', 'Checkout control field points to another submission path');
+check((int)$checkoutForm->getElement('message')->getAttrib('maxlength') === 10000, 'Checkout message has no bounded length');
+$contactSiteToken = (string)$contactGet->getElement('inquiry_token')->getValue();
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 42, 'clientid' => 7]));
+$otherSiteContact = new Shops_Form_Contact(['view' => $view]);
+check($otherSiteContact->getElement('inquiry_token')->getValue() !== $contactSiteToken, 'Contact session token leaked to another site');
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 41, 'clientid' => 7]));
 $contactRow = (new Shops_Model_DbTable_Inquirydata())->saveOnce(0, $contactValues['inquiry_token'], [
     'name' => $contactValues['name'],
     'email' => $contactValues['email'],
@@ -233,12 +268,26 @@ check($config->getConfig(16) === [], 'Inquiry form was allowed to replace a rese
 $detailsForm = new Shops_Form_DynamicForm($config->getConfig(11), 'details', 'csrf-value', str_repeat('a', 32));
 check($detailsForm->isValid(['csrf_token' => 'csrf-value', 'inquiry_token' => str_repeat('a', 32), 'firma' => 'Example GmbH']), 'Valid first inquiry step was rejected');
 check(!$detailsForm->isValid(['csrf_token' => 'csrf-value', 'inquiry_token' => str_repeat('a', 32), 'firma' => '']), 'Missing required inquiry value was accepted');
+check(!$detailsForm->isValid(['csrf_token' => 'csrf-value', 'inquiry_token' => str_repeat('a', 32), 'firma' => str_repeat('x', 1001)]), 'Oversized dynamic inquiry value was accepted');
 $contactForm = new Shops_Form_DynamicForm($config->getConfig(11), 'contact', 'csrf-value', str_repeat('a', 32));
 check($contactForm->isValid(['csrf_token' => 'csrf-value', 'inquiry_token' => str_repeat('a', 32), 'email' => 'ada@example.com', 'privacy' => '1']), 'Valid final inquiry step was rejected');
 check(!$contactForm->isValid(['csrf_token' => 'csrf-value', 'inquiry_token' => str_repeat('a', 32), 'email' => 'invalid', 'privacy' => '0']), 'Invalid final inquiry step was accepted');
 $controller = new ShopInquiryTestController(new Zend_Controller_Request_Simple(), new Zend_Controller_Response_Http());
 check($controller->validateCsrf('csrf-value', 'csrf-value'), 'Valid inquiry CSRF token was rejected');
 check(!$controller->validateCsrf('csrf-value', 'other-value'), 'Invalid inquiry CSRF token was accepted');
+check($controller->validateInquiryToken(str_repeat('a', 32), '', str_repeat('a', 32)), 'Current inquiry token was rejected');
+check($controller->validateInquiryToken(str_repeat('b', 32), str_repeat('a', 32), str_repeat('a', 32)), 'Safe inquiry replay token was rejected');
+check(!$controller->validateInquiryToken(str_repeat('a', 32), '', str_repeat('b', 32)), 'Manipulated inquiry token was accepted');
+check(!$controller->validatePriorSteps('contact', ['details', 'contact'], []), 'Later inquiry step was accepted without prior data');
+check($controller->validatePriorSteps('contact', ['details', 'contact'], ['details' => ['firma' => 'Example GmbH']]), 'Reachable inquiry step was rejected');
+check($controller->validateAllSteps($config->getConfig(11), [
+    'details' => ['firma' => 'Example GmbH'],
+    'contact' => ['email' => 'ada@example.com', 'privacy' => '1'],
+]), 'Complete inquiry steps failed final server validation');
+check(!$controller->validateAllSteps($config->getConfig(11), [
+    'details' => ['firma' => 'Example GmbH'],
+    'contact' => ['email' => 'manipulated', 'privacy' => '1'],
+]), 'Manipulated stored inquiry value passed final server validation');
 
 // Persistence includes origin data and site/client ownership, and is idempotent per token.
 $token = str_repeat('a', 32);
@@ -270,7 +319,7 @@ $migrationPath = $root . '/install/config/update-1.1.7-1.1.8.sql';
 $migration = file_get_contents($migrationPath);
 $structure = file_get_contents($root . '/install/config/structure.sql');
 check(!is_file($root . '/install/config/update-1.1.8-1.1.9.sql'), 'Inquiry migration still introduces an unsupported version 1.1.9');
-check(substr_count($migration, 'ADD UNIQUE INDEX `clientid_shopid_token`') === 1, 'Inquiry token unique index is missing or duplicated in the 1.1.8 migration');
+check(substr_count($migration, 'ADD UNIQUE INDEX `clientid_shopid_token`') === 2, 'Inquiry or checkout token unique index is missing or duplicated in the 1.1.8 migration');
 check(substr_count($migration, 'ADD INDEX `clientid_shopid_deleted_id`') === 1, 'Inquiry form lookup index is missing or duplicated in the 1.1.8 migration');
 check(substr_count($migration, 'ADD INDEX `clientid_shopid_formid_deleted`') === 1, 'Inquiry data lookup index is missing or duplicated in the 1.1.8 migration');
 check(substr_count($migration, 'ADD INDEX `clientid_status_shopid_formid_deleted`') === 1, 'Inquiry management index is missing or duplicated in the 1.1.8 migration');
@@ -283,5 +332,8 @@ check(str_contains($structure, 'KEY `clientid_shopid_deleted_id` (`clientid`, `s
 check(str_contains($structure, 'KEY `clientid_shopid_formid_deleted` (`clientid`, `shopid`, `formid`, `deleted`)'), 'Install schema lacks the inquiry data lookup index');
 check(str_contains($structure, "`status` varchar(32) NOT NULL DEFAULT 'new'"), 'Install schema lacks the inquiry processing status');
 check(str_contains($structure, 'KEY `clientid_status_shopid_formid_deleted` (`clientid`, `status`, `shopid`, `formid`, `deleted`)'), 'Install schema lacks the inquiry management index');
+check(str_contains($structure, '`token` char(64) DEFAULT NULL'), 'Install schema lacks the compatible checkout idempotency token');
+check(str_contains($migration, "UPDATE `shoporder` SET `token` = SHA2(CONCAT('legacy:'"), 'Checkout migration does not backfill legacy orders');
+check(str_contains($migration, 'ADD UNIQUE INDEX `clientid_shopid_token` (`clientid`, `shopid`(64), `token`)'), 'Checkout migration lacks the scoped token constraint');
 
 echo "OK ({$checks} checks)\n";

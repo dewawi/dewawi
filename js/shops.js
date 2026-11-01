@@ -365,6 +365,16 @@ function enhancePublicForms(context) {
 		$error.attr({ id: errorId, role: 'alert' });
 		$control.attr({ 'aria-invalid': 'true', 'aria-describedby': describedBy.join(' ') });
 	});
+
+	$(context).find('form#contact, form#checkout').off('submit.dewawiSubmission').on('submit.dewawiSubmission', function (event) {
+		const $form = $(this);
+		if ($form.data('submitting')) {
+			event.preventDefault();
+			return;
+		}
+		$form.data('submitting', true);
+		$form.find('button[type="submit"], input[type="submit"]').prop('disabled', true);
+	});
 }
 
 function toggleDependentFields() {
@@ -405,6 +415,8 @@ function submitStep(formElement, currentStep) {
 	}
 
 	const $form = $(formElement);
+	if ($form.data('submitting')) return false;
+	$form.data('submitting', true);
 	const $buttons = $form.find('button, input[type="submit"]');
 	$buttons.prop('disabled', true);
 	const formData = $(formElement).serialize() + '&step=' + encodeURIComponent(currentStep);
@@ -428,6 +440,7 @@ function submitStep(formElement, currentStep) {
 		const response = xhr.responseJSON || {};
 		window.alert(response.message || 'Das Formular konnte nicht verarbeitet werden. Bitte laden Sie die Seite neu.');
 	}).always(function () {
+		$form.data('submitting', false);
 		$buttons.prop('disabled', false);
 	});
 
@@ -436,6 +449,10 @@ function submitStep(formElement, currentStep) {
 
 function goBackStep(currentStep) {
 	var $form = $('#inquiry-form');
+	if ($form.data('submitting')) return false;
+	$form.data('submitting', true);
+	var $buttons = $form.find('button, input[type="submit"]');
+	$buttons.prop('disabled', true);
 	var url = $form.attr('action') || window.location.href;
 
 	// include existing form fields + back flag + current step
@@ -451,7 +468,13 @@ function goBackStep(currentStep) {
 			enhancePublicForms(newContainer);
 			newContainer.attr('tabindex', '-1').trigger('focus');
 		}
-	}, 'json');
+	}, 'json').fail(function (xhr) {
+		const response = xhr.responseJSON || {};
+		window.alert(response.message || 'Das Formular konnte nicht verarbeitet werden. Bitte laden Sie die Seite neu.');
+	}).always(function () {
+		$form.data('submitting', false);
+		$buttons.prop('disabled', false);
+	});
 
 	return false;
 }

@@ -65,6 +65,11 @@ ALTER TABLE `shopinquirydata`
   ADD INDEX `clientid_contactid_deleted` (`clientid`, `contactid`, `deleted`),
   ADD INDEX `clientid_quoteid_deleted` (`clientid`, `quoteid`, `deleted`);
 
+ALTER TABLE `shoporder` ADD `token` char(64) DEFAULT NULL AFTER `orderid`;
+UPDATE `shoporder` SET `token` = SHA2(CONCAT('legacy:', `clientid`, ':', `shopid`, ':', `id`), 256) WHERE `token` IS NULL;
+ALTER TABLE `shoporder`
+  ADD UNIQUE INDEX `clientid_shopid_token` (`clientid`, `shopid`(64), `token`);
+
 -- Preserve publication for existing shops; newly created shops remain noindex until approved.
 ALTER TABLE `shop` ADD `indexable` tinyint(1) NOT NULL DEFAULT 1 AFTER `activated`;
 ALTER TABLE `shop` ALTER COLUMN `indexable` SET DEFAULT 0;

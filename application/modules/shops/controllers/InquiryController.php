@@ -23,7 +23,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				? (new Shops_Model_FormConfig($inquiryformDb))->getConfig($this->formId)
 				: [];
 
-			$context = $this->_siteContext->getSiteId() . ':' . $this->formId;
+			$context = $this->_siteContext->getClientId() . ':' . $this->_siteContext->getSiteId() . ':' . $this->formId;
 
 			if (($this->formDataSession->context ?? '') !== $context) {
 				unset(
@@ -34,6 +34,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 					$this->formDataSession->downloadFile,
 					$this->formDataSession->submittedData,
 					$this->formDataSession->inquiryToken,
+					$this->formDataSession->lastInquiryToken,
 					$this->formDataSession->csrfToken
 				);
 				$this->formDataSession->context = $context;
@@ -60,7 +61,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		if (!$this->formRow || !$this->formConfig) {
 			if ($request->isPost()) {
 				$this->getResponse()->setHttpResponseCode(404);
-				return $this->_helper->json(['status' => 'error', 'message' => 'Anfrageformular nicht gefunden.']);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_FORM_EXPIRED')]);
 			}
 
 			throw new Zend_Controller_Action_Exception('Inquiry form not found', 404);
@@ -72,7 +73,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		if (!isset($this->formConfig[$step])) {
 			if ($request->isPost()) {
 				$this->getResponse()->setHttpResponseCode(400);
-				return $this->_helper->json(['status' => 'error', 'message' => 'Ungültiger Formularschritt.']);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_STEP_ORDER_INVALID')]);
 			}
 
 			throw new Zend_Controller_Action_Exception('Invalid inquiry form step', 404);
@@ -97,17 +98,26 @@ class Shops_InquiryController extends Shops_Controller_Action
 		if ($request->isPost()) {
 			$this->_helper->layout()->disableLayout();
 			$post = (array)$request->getPost();
+			if (!$this->isReasonableSubmission($post, 200, 65536, 3)) {
+				$this->getResponse()->setHttpResponseCode(413);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_SUBMISSION_TOO_LARGE')]);
+			}
 
 			if (!$this->isValidCsrf($post)) {
 				$this->getResponse()->setHttpResponseCode(400);
-				return $this->_helper->json(['status' => 'error', 'message' => 'Das Formular ist abgelaufen. Bitte laden Sie die Seite neu.']);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_FORM_EXPIRED')]);
 			}
 
 			$submittedToken = strtolower(trim((string)($post['inquiry_token'] ?? '')));
 
 			if (!preg_match('/^[a-f0-9]{32,64}$/D', $submittedToken)) {
 				$this->getResponse()->setHttpResponseCode(400);
-				return $this->_helper->json(['status' => 'error', 'message' => 'Ungültige Anfragekennung.']);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_INVALID_TOKEN')]);
+			}
+
+			if (!$this->isValidInquiryToken($submittedToken)) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_INVALID_TOKEN')]);
 			}
 
 			if (!$request->getPost('back')) {
@@ -115,10 +125,15 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 				if ($existing) {
 					$data = json_decode((string)$existing['data'], true);
-					$this->completeInquiry(is_array($data) ? $data : [], null, null, true);
+					$this->completeInquiry(is_array($data) ? $data : [], null, null, true, $submittedToken);
 
 					return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
 				}
+			}
+
+			if (!$this->hasCompletedPriorSteps($step, $stepOrder, (array)($this->formDataSession->formData ?? []))) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_STEP_ORDER_INVALID')]);
 			}
 
 			if ($request->getPost('back')) {
@@ -293,12 +308,17 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$allFormValues = array_merge($allFormValues, $stepValues);
 			}
 
+			if (!$this->validateCompletedSteps($stepOrder, (array)$this->formDataSession->formData)) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_FORM_INVALID')]);
+			}
+
 			// Datenschutz-Checkbox MUSS bestätigt sein
 			$privacyOk = !empty($allFormValues['privacy']) && (int)$allFormValues['privacy'] === 1;
 			if (!$privacyOk) {
 				$this->_helper->json([
 					'status' => 'error',
-					'message' => 'Bitte bestätigen Sie die Datenschutzbestimmungen.'
+					'message' => $this->view->translate('SHOPS_ERROR_PRIVACY_REQUIRED')
 				]);
 				return;
 			}
@@ -307,9 +327,21 @@ class Shops_InquiryController extends Shops_Controller_Action
 			if (empty($allFormValues['email']) || !filter_var($allFormValues['email'], FILTER_VALIDATE_EMAIL)) {
 				$this->_helper->json([
 					'status' => 'error',
-					'message' => 'Bitte geben Sie eine gültige E-Mail-Adresse ein.'
+					'message' => $this->view->translate('SHOPS_ERROR_EMAIL_INVALID')
 				]);
 				return;
+			}
+
+			try {
+				$rate = $this->consumeSubmissionLimit('inquiry', 5, 3600);
+			} catch (Throwable $e) {
+				error_log('Shop inquiry rate limiter unavailable: ' . $e->getMessage());
+				$this->getResponse()->setHttpResponseCode(503);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_SUBMISSION_UNAVAILABLE')]);
+			}
+			if (!$rate['allowed']) {
+				$this->setRateLimitResponse((int)$rate['retryAfter']);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_RATE_LIMIT')]);
 			}
 
 			$storedData = array_merge($allFormValues, [
@@ -318,10 +350,16 @@ class Shops_InquiryController extends Shops_Controller_Action
 			]);
 
 			$inquiryDb = new Shops_Model_DbTable_Inquirydata();
-			$stored = $inquiryDb->saveOnce($this->formId, $submittedToken, $storedData);
+			try {
+				$stored = $inquiryDb->saveOnce($this->formId, $submittedToken, $storedData);
+			} catch (Throwable $e) {
+				error_log('Shop inquiry could not be stored: ' . $e->getMessage());
+				$this->getResponse()->setHttpResponseCode(500);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_SUBMISSION_FAILED')]);
+			}
 
 			if (!$stored['inserted']) {
-				$this->completeInquiry($allFormValues, null, null, true);
+				$this->completeInquiry($allFormValues, null, null, true, $submittedToken);
 
 				return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
 			}
@@ -332,14 +370,14 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 			try {
 				$quoteId = $this->createQuoteFromInquiry($allFormValues, $shop);
-			} catch (Exception $e) {
+			} catch (Throwable $e) {
 				error_log('Stored shop inquiry could not create a quote: ' . $e->getMessage());
 			}
 
 			if ($quoteId) {
 				try {
 					$this->linkInquiryQuote((int)$stored['id'], (int)$quoteId);
-				} catch (Exception $e) {
+				} catch (Throwable $e) {
 					error_log('Stored shop inquiry quote could not be linked: ' . $e->getMessage());
 				}
 			}
@@ -352,7 +390,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 						'documentId' => $quoteId,
 						'output' => 'file',
 					]);
-				} catch (Exception $e) {
+				} catch (Throwable $e) {
 					error_log('Stored shop inquiry quote PDF could not be generated: ' . $e->getMessage());
 				}
 			}
@@ -369,7 +407,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				}
 			}
 
-			$this->completeInquiry($allFormValues, $pdfInfo['url'] ?? null, $notificationSent, false);
+			$this->completeInquiry($allFormValues, $pdfInfo['url'] ?? null, $notificationSent, false, $submittedToken);
 
 			return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
 		}
@@ -423,6 +461,42 @@ class Shops_InquiryController extends Shops_Controller_Action
 		return $token !== '' && hash_equals($this->csrfToken, $token);
 	}
 
+	protected function isValidInquiryToken(string $token): bool
+	{
+		$currentToken = (string)($this->formDataSession->inquiryToken ?? '');
+		$lastToken = (string)($this->formDataSession->lastInquiryToken ?? '');
+		if ($currentToken !== '' && hash_equals($currentToken, $token)) return true;
+
+		return $lastToken !== '' && hash_equals($lastToken, $token);
+	}
+
+	protected function hasCompletedPriorSteps(string $step, array $stepOrder, array $formData): bool
+	{
+		$position = array_search($step, $stepOrder, true);
+		if ($position === false) return false;
+
+		foreach (array_slice($stepOrder, 0, $position) as $priorStep) {
+			if (!isset($formData[$priorStep]) || !is_array($formData[$priorStep])) return false;
+		}
+
+		return true;
+	}
+
+	protected function validateCompletedSteps(array $stepOrder, array $formData): bool
+	{
+		foreach ($stepOrder as $step) {
+			if (!isset($formData[$step]) || !is_array($formData[$step])) return false;
+			$form = $this->createStepForm((string)$step);
+			$values = array_merge($formData[$step], [
+				'csrf_token' => $this->csrfToken,
+				'inquiry_token' => $this->inquiryToken,
+			]);
+			if (!$form->isValid($values)) return false;
+		}
+
+		return true;
+	}
+
 	protected function sendInquiryNotification(array $data): bool
 	{
 		$this->getRequest()->setPost(array_merge($data, [
@@ -436,7 +510,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 			if(($result['internalAccepted'] ?? null) === false) error_log('Stored shop inquiry internal notification was not accepted by SMTP');
 
 			return !empty($result['customerAccepted']);
-		} catch (Exception $e) {
+		} catch (Throwable $e) {
 			error_log('Stored shop inquiry could not be emailed: ' . $e->getMessage());
 
 			return false;
@@ -455,19 +529,20 @@ class Shops_InquiryController extends Shops_Controller_Action
 			if(($result['internalAccepted'] ?? null) === false) error_log('Stored shop inquiry offer internal notification was not accepted by SMTP');
 
 			return !empty($result['customerAccepted']);
-		} catch (Exception $e) {
+		} catch (Throwable $e) {
 			error_log('Stored shop inquiry offer could not be emailed: ' . $e->getMessage());
 
 			return false;
 		}
 	}
 
-	protected function completeInquiry(array $data, ?string $downloadUrl, ?bool $notificationSent, bool $duplicate): void
+	protected function completeInquiry(array $data, ?string $downloadUrl, ?bool $notificationSent, bool $duplicate, ?string $completedToken = null): void
 	{
 		$this->formDataSession->submittedData = $data;
 		$this->formDataSession->downloadUrl = $downloadUrl;
 		$this->formDataSession->notificationSent = $notificationSent;
 		$this->formDataSession->duplicate = $duplicate;
+		$this->formDataSession->lastInquiryToken = $completedToken ?? $this->inquiryToken;
 		$this->formDataSession->inquiryToken = bin2hex(random_bytes(16));
 		$this->inquiryToken = (string)$this->formDataSession->inquiryToken;
 

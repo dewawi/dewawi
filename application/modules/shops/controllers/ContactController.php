@@ -20,6 +20,19 @@ class Shops_ContactController extends Shops_Controller_Action
 		}
 
 		$data = (array)$request->getPost();
+		if (!$this->isReasonableSubmission($data, 30, 16384, 2)) {
+			return $this->rejectSubmission(413, 'SHOPS_SUBMISSION_TOO_LARGE');
+		}
+
+		try {
+			$rate = $this->consumeSubmissionLimit('contact', 5, 900);
+		} catch (Throwable $e) {
+			error_log('Shop contact rate limiter unavailable: ' . $e->getMessage());
+			return $this->rejectSubmission(503, 'SHOPS_SUBMISSION_UNAVAILABLE');
+		}
+		if (!$rate['allowed']) {
+			return $this->rejectSubmission(429, 'SHOPS_RATE_LIMIT', (int)$rate['retryAfter']);
+		}
 
 		if (!empty($data['fax_number'])) {
 			$this->contactDataSession->formData = [];
@@ -39,13 +52,22 @@ class Shops_ContactController extends Shops_Controller_Action
 
 		$values = $form->getValues();
 		$token = (string)($values['inquiry_token'] ?? '');
+		$expectedToken = (string)($this->contactDataSession->inquiryToken ?? '');
+		if ($expectedToken === '' || !hash_equals($expectedToken, $token)) {
+			return $this->rejectSubmission(400, 'SHOPS_FORM_EXPIRED');
+		}
 		$storedData = array_merge($this->getDisplayData($values), [
 			'origin' => 'contact',
 			'source_path' => $this->getSourcePath(),
 		]);
 
 		$inquiryDb = new Shops_Model_DbTable_Inquirydata();
-		$stored = $inquiryDb->saveOnce(0, $token, $storedData);
+		try {
+			$stored = $inquiryDb->saveOnce(0, $token, $storedData);
+		} catch (Throwable $e) {
+			error_log('Shop contact inquiry could not be stored: ' . $e->getMessage());
+			return $this->rejectSubmission(500, 'SHOPS_SUBMISSION_FAILED');
+		}
 
 		$this->contactDataSession->formData = $this->getDisplayData($values);
 		$this->contactDataSession->stored = true;
@@ -57,7 +79,7 @@ class Shops_ContactController extends Shops_Controller_Action
 				$emailResult = $this->_helper->Email->sendEmail('shops', 'contact', 'contact');
 				$this->contactDataSession->notificationSent = !empty($emailResult['customerAccepted']);
 				if(($emailResult['internalAccepted'] ?? null) === false) error_log('Stored shop contact internal notification was not accepted by SMTP');
-			} catch (Exception $e) {
+			} catch (Throwable $e) {
 				error_log('Stored shop contact inquiry could not be emailed: ' . $e->getMessage());
 				$this->contactDataSession->notificationSent = false;
 			}
@@ -102,5 +124,17 @@ class Shops_ContactController extends Shops_Controller_Action
 		$path = parse_url((string)$this->getRequest()->getHeader('Referer'), PHP_URL_PATH);
 
 		return is_string($path) ? $path : '';
+	}
+
+	private function rejectSubmission(int $status, string $message, int $retryAfter = 0)
+	{
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->getHelper('layout')->disableLayout();
+		$this->getResponse()->setHttpResponseCode($status);
+		$this->getResponse()->setHeader('Content-Type', 'text/plain; charset=UTF-8', true);
+		if ($retryAfter > 0) $this->getResponse()->setHeader('Retry-After', (string)$retryAfter, true);
+		$this->getResponse()->setBody((string)$this->view->translate($message));
+
+		return null;
 	}
 }

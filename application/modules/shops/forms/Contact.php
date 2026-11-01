@@ -13,6 +13,14 @@ class Shops_Form_Contact extends Zend_Form
 		$this->addElement($csrf);
 
 		$contactSession = new Zend_Session_Namespace('ShopsContact');
+		if (Zend_Registry::isRegistered('SiteContext')) {
+			$siteContext = Zend_Registry::get('SiteContext');
+			$context = $siteContext->getClientId() . ':' . $siteContext->getSiteId();
+			if (($contactSession->context ?? '') !== $context) {
+				unset($contactSession->inquiryToken, $contactSession->formData, $contactSession->errors);
+				$contactSession->context = $context;
+			}
+		}
 
 		if (empty($contactSession->inquiryToken)) {
 			$contactSession->inquiryToken = bin2hex(random_bytes(16));
@@ -28,7 +36,9 @@ class Shops_Form_Contact extends Zend_Form
 		// Honeypot field (must stay empty)
 		$honeypot = new Zend_Form_Element_Text('fax_number');
 		$honeypot->removeDecorator('Label')
-			->setAttrib('class', 'hidden') // per CSS ausblenden
+			->setAttrib('class', 'hidden')
+			->setAttrib('aria-hidden', 'true')
+			->setAttrib('tabindex', '-1')
 			->setAttrib('autocomplete', 'off')
 			->setRequired(false);
 		$this->addElement($honeypot);
@@ -78,13 +88,15 @@ class Shops_Form_Contact extends Zend_Form
 		$module = new Zend_Form_Element_Hidden('module');
 		$module->removeDecorator('Label')
 			->setValue('shops')
-			->setRequired(true);
+			->setRequired(true)
+			->addValidator('Identical', true, ['token' => 'shops']);
 
 		// Hidden field for controller
 		$controller = new Zend_Form_Element_Hidden('controller');
 		$controller->removeDecorator('Label')
 			->setValue('contact')
-			->setRequired(true);
+			->setRequired(true)
+			->addValidator('Identical', true, ['token' => 'contact']);
 
 		// Privacy checkbox (must be checked)
 		$privacy = new Zend_Form_Element_Checkbox('privacy');
@@ -100,6 +112,11 @@ class Shops_Form_Contact extends Zend_Form
 
 		// Add elements to form
 		$this->addElements(array($subject, $name, $email, $phone, $message, $module, $controller, $privacy, $submit));
+
+		foreach (['subject' => 255, 'name' => 255, 'email' => 254, 'phone' => 100, 'message' => 10000] as $field => $maximum) {
+			$this->getElement($field)->setAttrib('maxlength', (string)$maximum)
+				->addValidator('StringLength', true, ['max' => $maximum]);
+		}
 	}
 }
 

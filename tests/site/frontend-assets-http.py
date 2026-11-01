@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import time
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -66,6 +67,7 @@ def load_assets() -> dict[str, bytes]:
 
 class FixtureHandler(BaseHTTPRequestHandler):
     assets: dict[str, bytes] = {}
+    inquiry_posts: dict[str, int] = {}
 
     def log_message(self, format, *args):  # noqa: A002, ANN001
         return
@@ -167,7 +169,10 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self.send_json({"success": True, "cart": {}, "total": 0, "cartItemCount": 0})
             return
         if path in {"/", "/cms/"}:
-            self.send_json({"status": "ok", "formHtml": '<main><div id="form-container" data-saved="true"><div class="dw-field"><label for="saved-field">Saved</label><input id="saved-field" class="is-invalid"><div class="dw-field__error">Check field</div></div></div></main>'})
+            self.inquiry_posts[path] = self.inquiry_posts.get(path, 0) + 1
+            request_count = self.inquiry_posts[path]
+            time.sleep(0.15)
+            self.send_json({"status": "ok", "formHtml": f'<main><div id="form-container" data-saved="true" data-request-count="{request_count}"><div class="dw-field"><label for="saved-field">Saved</label><input id="saved-field" class="is-invalid"><div class="dw-field__error">Check field</div></div></div></main>'})
             return
         self.send_json({"success": False}, 404)
 
@@ -276,7 +281,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
   $('#cart-items .remove-item').first().trigger('click');await wait(350);check($('#cart-count').text()==='1'&&$('#cart-items .product-title').text()==='Remaining item','cart remove failed');
   $('#clear-cart').trigger('click');await wait(350);check($('#cart-count').text()==='0'&&$('#cart-items').text()==='Empty','cart clear failed');
   document.querySelector('#inquiry-form input').value='';check(submitStep(document.getElementById('inquiry-form'),1)===false&&document.querySelector('#inquiry-form input:invalid'),'native form validation failed');document.querySelector('#inquiry-form input').value='Request';
-  submitStep(document.getElementById('inquiry-form'),1);await wait(350);check($('#form-container').attr('data-saved')==='true','inquiry AJAX response was not rendered');check($('#saved-field').attr('aria-invalid')==='true'&&$('#saved-field-error').attr('role')==='alert','inquiry AJAX errors were not announced');
+  submitStep(document.getElementById('inquiry-form'),1);submitStep(document.getElementById('inquiry-form'),1);await wait(500);check($('#form-container').attr('data-saved')==='true','inquiry AJAX response was not rendered');check($('#form-container').attr('data-request-count')==='1','inquiry multiple click sent more than one request');check($('#saved-field').attr('aria-invalid')==='true'&&$('#saved-field-error').attr('role')==='alert','inquiry AJAX errors were not announced');
   const search=document.querySelector('.dw-header-search');check(search&&search.method==='get'&&search.action.endsWith('/search')&&document.querySelector('label[for=query]'),'search form is inaccessible or invalid');
   check(document.querySelectorAll('main').length===1&&document.getElementById('main-content')&&document.querySelector('nav[aria-label="Main navigation"]')&&document.querySelector('nav[aria-label="Footer navigation"]'),'page landmarks are invalid');
   check(document.body.dataset.theme==='default'&&document.querySelector('.navbar-brand img[width][height]')&&document.querySelector('#breadcrumb [aria-current=page]'),'theme, logo or breadcrumb fixture failed');

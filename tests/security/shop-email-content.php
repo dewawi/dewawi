@@ -163,17 +163,29 @@ check(substr_count($helperSource, "if(\$module !== 'shops' && !\$this->getReques
 foreach (['ContactController.php', 'InquiryController.php', 'CheckoutController.php'] as $controller) {
     $source = file_get_contents($root . '/application/modules/shops/controllers/' . $controller);
     check(!str_contains($source, "addMessage('MESSAGES_EMAIL_SENT_ERROR')"), $controller . ' still duplicates the shop email failure message');
+    check(!str_contains($source, 'AnalyticsConsent') && !str_contains($source, 'analyticsConsent'), $controller . ' incorrectly depends on analytics consent');
 }
 $contactController = file_get_contents($root . '/application/modules/shops/controllers/ContactController.php');
 check(str_contains($contactController, "if (!empty(\$data['fax_number']))"), 'Contact honeypot handling changed');
 check(str_contains($contactController, '$this->contactDataSession->stored = false;'), 'Honeypot request no longer remains unstored');
 check(strpos($contactController, '->saveOnce(') < strpos($contactController, "->sendEmail('shops', 'contact'"), 'Contact email is attempted before persistence');
+$contactForm = file_get_contents($root . '/application/modules/shops/forms/Contact.php');
+check(str_contains($contactForm, "->setAttrib('aria-hidden', 'true')") && str_contains($contactForm, "->setAttrib('tabindex', '-1')"), 'Contact honeypot is not hidden from assistive technology and keyboard focus');
 $inquiryController = file_get_contents($root . '/application/modules/shops/controllers/InquiryController.php');
 check(strpos($inquiryController, '->saveOnce(') < strpos($inquiryController, 'sendInquiryNotification('), 'Inquiry email is attempted before persistence');
 $checkoutController = file_get_contents($root . '/application/modules/shops/controllers/CheckoutController.php');
-check(strpos($checkoutController, '->addOrder([') < strpos($checkoutController, "->sendEmail('shops', 'checkout'"), 'Checkout email is attempted before order persistence');
-check(strpos($checkoutController, '->addOrderpos([') < strpos($checkoutController, "->sendEmail('shops', 'checkout'"), 'Checkout email is attempted before position persistence');
+$checkoutSaveAt = strpos($checkoutController, '->saveCheckoutOnce(');
+$checkoutEmailAt = strpos($checkoutController, "->sendEmail('shops', 'checkout'");
+check($checkoutSaveAt !== false && $checkoutEmailAt !== false && $checkoutSaveAt < $checkoutEmailAt, 'Checkout email is attempted before the transactional order persistence');
+check(str_contains($checkoutController, "if (\$result['inserted'])"), 'Checkout replay can send a duplicate notification');
+$orderModel = file_get_contents($root . '/application/modules/shops/models/DbTable/Order.php');
+check(str_contains($orderModel, '->commit()') && !str_contains($orderModel, 'sendEmail('), 'Checkout transaction mixes persistence and email delivery');
 $messages = require $root . '/languages/de_DE/default/messages.php';
 check($messages['MESSAGES_EMAIL_SENT_SUCCESS'] === 'Die E-Mail wurde zum Versand übergeben.', 'Normal email success message claims more than handoff');
+$german = require $root . '/languages/de_DE/shops/shops.php';
+$english = require $root . '/languages/en_US/default/common.php';
+foreach (['SHOPS_FORM_EXPIRED', 'SHOPS_SUBMISSION_TOO_LARGE', 'SHOPS_RATE_LIMIT', 'SHOPS_SUBMISSION_FAILED', 'SHOPS_CHECKOUT_FAILED'] as $key) {
+    check(!empty($german[$key]) && !empty($english[$key]) && $german[$key] !== $english[$key], 'Public submission error is not translated: ' . $key);
+}
 
 echo "OK ({$checks} checks)\n";

@@ -45,6 +45,8 @@ check($db->query("SHOW INDEX FROM address WHERE Column_name = 'street'")->num_ro
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.STATISTICS s JOIN information_schema.COLUMNS c ON c.TABLE_SCHEMA = s.TABLE_SCHEMA AND c.TABLE_NAME = s.TABLE_NAME AND c.COLUMN_NAME = s.COLUMN_NAME WHERE s.TABLE_SCHEMA = DATABASE() AND c.DATA_TYPE IN ('tinytext', 'text', 'mediumtext', 'longtext', 'tinyblob', 'blob', 'mediumblob', 'longblob') AND s.SUB_PART IS NULL AND s.INDEX_TYPE <> 'FULLTEXT'")->fetch_row()[0] === 0, 'Unprefixed TEXT/BLOB index remains');
 check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'path'")->fetch_assoc()['Type'] === 'varchar(2048)', 'Fresh installation has no full redirect path storage');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'slugredirect' AND index_name = 'clientid_shopid_pathhash' AND non_unique = 0")->fetch_row()[0] === 3, 'Fresh installation redirect uniqueness is not tenant- and shop-scoped');
+check($db->query("SHOW COLUMNS FROM shoporder LIKE 'token'")->fetch_assoc()['Null'] === 'YES', 'Fresh installation checkout token breaks existing internal order writers');
+check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shoporder' AND index_name = 'clientid_shopid_token' AND non_unique = 0")->fetch_row()[0] === 3, 'Fresh installation checkout token uniqueness is not tenant- and shop-scoped');
 
 $structure = 'CREATE TABLE import_before (id INT);';
 $data = 'INSERT INTO import_before VALUES (1);';
@@ -107,6 +109,7 @@ $db->query('CREATE TABLE contactperson (id INT PRIMARY KEY, name1 VARCHAR(255) N
 $db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquiryform (id INT PRIMARY KEY, shopid INT NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquirydata (id INT PRIMARY KEY, formid INT NOT NULL, shopid INT NOT NULL, token VARCHAR(255) NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+$db->query('CREATE TABLE shoporder (id INT PRIMARY KEY, shopid VARCHAR(255) NOT NULL, orderid VARCHAR(255) NOT NULL, clientid INT NOT NULL) ENGINE=InnoDB');
 $db->query('CREATE TABLE shop (id INT PRIMARY KEY, activated TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('INSERT INTO shop (id, activated) VALUES (1, 1)');
 $db->query('CREATE TABLE uom LIKE install_success.uom');
@@ -115,6 +118,7 @@ $db->query('INSERT INTO itemstock (itemid, warehouseid, quantity, reserved, inco
 $db->query("INSERT INTO uom (id, clientid, ordering, `default`, deleted) VALUES (20, 7, 0, 1, 1), (21, 7, 2, 0, 0), (23, 7, 1, 0, 0), (25, 7, 1, 0, 0), (30, 8, 0, 0, 0), (31, 8, 9, 1, 0), (40, 9, 2, 1, 0), (41, 9, 1, 1, 0), (42, 9, 1, 1, 0), (43, 9, 0, 1, 1), (50, 10, 0, 1, 1), (60, 12, -1, 0, 0), (61, 12, 0, 2, 0)");
 $db->query("INSERT INTO contact (id, type, clientid, deleted) VALUES (1, ' customer ', 7, 0), (2, 'supplier', 7, 0), (3, 'customer,supplier', 7, 0), (4, '', 7, 0), (5, 'partner', 7, 1), (6, 'Prospect', 7, 0)");
 $db->query("INSERT INTO shopinquirydata (id, formid, shopid, token, clientid, deleted) VALUES (1, 11, 41, 'duplicate-token', 7, 0), (2, 11, 41, 'duplicate-token', 7, 0), (3, 11, 42, 'duplicate-token', 7, 0), (4, 11, 41, 'duplicate-token', 8, 0)");
+$db->query("INSERT INTO shoporder (id, shopid, orderid, clientid) VALUES (1, '41', '1000', 7), (2, '41', '1001', 7), (3, '42', '1000', 7), (4, '41', '1000', 8)");
 $roleQueries = [];
 PMA_splitSqlFile($roleQueries, file_get_contents($root . '/install/config/update-1.1.7-1.1.8.sql'));
 foreach ($roleQueries as $query) $db->query($query['query']);
@@ -143,6 +147,8 @@ check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE 
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_contactid_deleted'")->fetch_row()[0] === 3, 'Inquiry contact relation index is missing or has the wrong columns');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquirydata' AND index_name = 'clientid_quoteid_deleted'")->fetch_row()[0] === 3, 'Inquiry quote relation index is missing or has the wrong columns');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shopinquiryform' AND index_name = 'clientid_shopid_deleted_id'")->fetch_row()[0] === 4, 'Inquiry form lookup index is missing or has the wrong columns');
+check((int)$db->query('SELECT COUNT(*) FROM shoporder WHERE token IS NOT NULL AND CHAR_LENGTH(token) = 64')->fetch_row()[0] === 4, 'Checkout migration did not backfill legacy order tokens');
+check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'shoporder' AND index_name = 'clientid_shopid_token' AND non_unique = 0")->fetch_row()[0] === 3, 'Checkout token unique index is missing or has the wrong columns');
 foreach ($roleQueries as $query) {
     if (str_starts_with(trim($query['query']), 'INSERT IGNORE INTO `contactrole`')) $db->query($query['query']);
 }

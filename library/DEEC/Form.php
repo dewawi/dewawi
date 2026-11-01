@@ -381,6 +381,8 @@ class DEEC_Form
 				return $this->translate('VALIDATION_MIN');
 			case 'max':
 				return $this->translate('VALIDATION_MAX');
+			case 'maxlength':
+				return $this->translate('VALIDATION_MAX_LENGTH');
 			case 'pattern':
 				return $this->translate('VALIDATION_PATTERN');
 			default:

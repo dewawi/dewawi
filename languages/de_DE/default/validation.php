@@ -4,6 +4,7 @@
     'VALIDATION_NUMBER' => 'Bitte geben Sie eine Zahl ein.',
     'VALIDATION_MIN' => 'Der eingegebene Wert ist zu klein.',
     'VALIDATION_MAX' => 'Der eingegebene Wert ist zu groß.',
+	'VALIDATION_MAX_LENGTH' => 'Die Eingabe ist zu lang.',
     'VALIDATION_PATTERN' => 'Das Format ist ungültig.',
     'VALIDATION_INVALID' => 'Ungültige Eingabe.',
 );

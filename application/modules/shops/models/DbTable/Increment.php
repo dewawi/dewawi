@@ -24,4 +24,23 @@ class Shops_Model_DbTable_Increment extends DEEC_Model_DbTable_SiteEntity
 			$type => $increment + 1,
 		], $this->getAccessWhere());
 	}
+
+	public function reserveIncrement(string $type): int
+	{
+		if (!in_array($type, ['shoporderid'], true)) throw new InvalidArgumentException('Unsupported increment type');
+
+		$adapter = $this->getAdapter();
+		$select = $adapter->select()
+			->from($this->_name, [$type])
+			->where('clientid = ?', $this->getClientId())
+			->forUpdate(true);
+		$row = $adapter->fetchRow($select);
+		if (!$row) throw new RuntimeException("Could not find increment $type");
+
+		$increment = (int)$row[$type];
+		$updated = $adapter->update($this->_name, [$type => $increment + 1], $adapter->quoteInto('clientid = ?', $this->getClientId()));
+		if ($updated !== 1) throw new RuntimeException("Could not reserve increment $type");
+
+		return $increment;
+	}
 }

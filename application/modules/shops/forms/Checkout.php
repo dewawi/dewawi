@@ -12,6 +12,15 @@ class Shops_Form_Checkout extends Zend_Form
 		$csrf->setTimeout(600); // Token expires in 10 minutes
 		$this->addElement($csrf);
 
+		$checkoutSession = new Zend_Session_Namespace('ShopsCheckout');
+		if (empty($checkoutSession->checkoutToken)) $checkoutSession->checkoutToken = bin2hex(random_bytes(16));
+		$checkoutToken = new Zend_Form_Element_Hidden('checkout_token');
+		$checkoutToken->removeDecorator('Label')
+			->setValue($checkoutSession->checkoutToken)
+			->setRequired(true)
+			->addValidator('Regex', true, ['pattern' => '/^[a-f0-9]{32,64}$/D']);
+		$this->addElement($checkoutToken);
+
 		// Hidden field for subject
 		$subject = new Zend_Form_Element_Hidden('subject');
 		$subject->removeDecorator('Label')
@@ -167,13 +176,15 @@ class Shops_Form_Checkout extends Zend_Form
 		$module = new Zend_Form_Element_Hidden('module');
 		$module->removeDecorator('Label')
 			->setValue('shops')
-			->setRequired(true);
+			->setRequired(true)
+			->addValidator('Identical', true, ['token' => 'shops']);
 
 		// Hidden field for controller
 		$controller = new Zend_Form_Element_Hidden('controller');
 		$controller->removeDecorator('Label')
-			->setValue('contact')
-			->setRequired(true);
+			->setValue('checkout')
+			->setRequired(true)
+			->addValidator('Identical', true, ['token' => 'checkout']);
 
 		// Privacy checkbox (must be checked)
 		$privacy = new Zend_Form_Element_Checkbox('privacy');
@@ -189,6 +200,17 @@ class Shops_Form_Checkout extends Zend_Form
 
 		// Add elements to form
 		$this->addElements(array($subject, $billingname, $billingcompany, $billingdepartment, $billingstreet, $billingpostcode, $billingcity, $billingcountry, $billingphone, $differentshippingaddress, $shippingname, $shippingcompany, $shippingdepartment, $shippingstreet, $shippingpostcode, $shippingcity, $shippingcountry, $shippingphone, $email, $message, $module, $controller, $privacy, $submit));
+
+		foreach ([
+			'subject' => 255, 'billingname' => 255, 'billingcompany' => 255, 'billingdepartment' => 255,
+			'billingstreet' => 255, 'billingpostcode' => 32, 'billingcity' => 255, 'billingphone' => 100,
+			'shippingname' => 255, 'shippingcompany' => 255, 'shippingdepartment' => 255,
+			'shippingstreet' => 255, 'shippingpostcode' => 32, 'shippingcity' => 255, 'shippingphone' => 100,
+			'email' => 254, 'message' => 10000,
+		] as $field => $maximum) {
+			$this->getElement($field)->setAttrib('maxlength', (string)$maximum)
+				->addValidator('StringLength', true, ['max' => $maximum]);
+		}
 	}
 }
 

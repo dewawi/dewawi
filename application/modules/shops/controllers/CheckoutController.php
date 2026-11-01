@@ -9,6 +9,17 @@ class Shops_CheckoutController extends Shops_Controller_Action
 
 		$this->initSiteCart();
 		$this->checkoutDataSession = new Zend_Session_Namespace('ShopsCheckout');
+		$context = $this->_siteContext->getClientId() . ':' . $this->_siteContext->getSiteId();
+		if (($this->checkoutDataSession->context ?? '') !== $context) {
+			unset(
+				$this->checkoutDataSession->formData,
+				$this->checkoutDataSession->notificationSent,
+				$this->checkoutDataSession->duplicate,
+				$this->checkoutDataSession->checkoutToken,
+				$this->checkoutDataSession->lastCheckoutToken
+			);
+			$this->checkoutDataSession->context = $context;
+		}
 	}
 
 	public function indexAction()
@@ -62,10 +73,10 @@ class Shops_CheckoutController extends Shops_Controller_Action
 
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
-
-		$cart = $this->cart->getItems();
-		if(empty($cart)) {
-			return $this->_helper->json(['success' => false, 'message' => 'Cart is empty']);
+		$post = (array)$request->getPost();
+		if (!$this->isReasonableSubmission($post, 100, 32768, 2)) {
+			$this->getResponse()->setHttpResponseCode(413);
+			return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_SUBMISSION_TOO_LARGE')]);
 		}
 
 		$checkout = new Shops_Form_Checkout();
@@ -74,8 +85,6 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		$countries = $countryDb->getCountries();
 		$checkout->billingcountry->addMultiOptions($countries);
 		$checkout->shippingcountry->addMultiOptions($countries);
-
-		$post = $request->getPost();
 
 		if(!empty($post['differentshippingaddress'])) {
 			foreach(['shippingname', 'shippingstreet', 'shippingpostcode', 'shippingcity', 'shippingcountry'] as $field) {
@@ -86,17 +95,78 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		if(!$checkout->isValid($post)) {
 			return $this->_helper->json([
 				'success' => false,
-				'message' => 'Please check your input',
+				'message' => $this->view->translate('SHOPS_FORM_INVALID'),
 				'errors' => $checkout->getMessages(),
 			]);
 		}
 
 		$data = $checkout->getValues();
 		$shop = $this->_site;
-		$total = $this->cart->getTotalPrice();
+		$token = strtolower(trim((string)($data['checkout_token'] ?? '')));
+		$currentToken = (string)($this->checkoutDataSession->checkoutToken ?? '');
+		$lastToken = (string)($this->checkoutDataSession->lastCheckoutToken ?? '');
+		if ($token === '' || (!hash_equals($currentToken, $token) && ($lastToken === '' || !hash_equals($lastToken, $token)))) {
+			$this->getResponse()->setHttpResponseCode(400);
+			return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_FORM_EXPIRED')]);
+		}
+
+		$orderDb = (new Shops_Model_DbTable_Order())->setClientId((int)$shop['clientid']);
+		$existing = $orderDb->getByCheckoutToken((int)$shop['id'], $token);
+		if ($existing) {
+			$this->checkoutDataSession->duplicate = true;
+			$this->checkoutDataSession->lastCheckoutToken = $token;
+			$this->checkoutDataSession->checkoutToken = bin2hex(random_bytes(16));
+			$this->cart->clearCart();
+			return $this->_helper->redirector->gotoRoute([], 'checkout_success', true);
+		}
+
+		$cart = $this->cart->getItems();
+		if(empty($cart)) {
+			return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_CART_EMPTY')]);
+		}
+
+		$itemDb = new Shops_Model_DbTable_Item();
+		$positions = [];
+		$total = 0.0;
+		foreach($cart as $cartId => $row) {
+			if (!is_array($row) || !isset($row['sku'], $row['quantity'], $row['price'])
+				|| !is_numeric($row['quantity']) || !is_numeric($row['price'])) {
+				return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_CART_CHANGED')]);
+			}
+
+			$quantity = (float)$row['quantity'];
+			$price = (float)$row['price'];
+			$item = $itemDb->getItemBySku((string)$row['sku']);
+			$currentPrice = $item && !empty($item['specialprice']) ? (float)$item['specialprice'] : (float)($item['price'] ?? 0);
+			if (!$item || (int)$item['id'] !== (int)$cartId || !is_finite($quantity) || !is_finite($price)
+				|| $quantity <= 0 || $quantity > 100000 || $price < 0 || abs($currentPrice - $price) > 0.0001) {
+				return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_CART_CHANGED')]);
+			}
+
+			$lineTotal = $quantity * $price;
+			$total += $lineTotal;
+			$positions[] = [
+				'itemid' => (int)$item['id'],
+				'total' => $lineTotal,
+				'quantity' => $quantity,
+				'price' => $price,
+			];
+		}
+
+		try {
+			$rate = $this->consumeSubmissionLimit('checkout', 10, 3600);
+		} catch (Throwable $e) {
+			error_log('Shop checkout rate limiter unavailable: ' . $e->getMessage());
+			$this->getResponse()->setHttpResponseCode(503);
+			return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_SUBMISSION_UNAVAILABLE')]);
+		}
+		if (!$rate['allowed']) {
+			$this->setRateLimitResponse((int)$rate['retryAfter']);
+			return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_RATE_LIMIT')]);
+		}
 
 		if(!$this->processPayment($total)) {
-			return $this->_helper->json(['success' => false, 'message' => 'Payment failed']);
+			return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_PAYMENT_FAILED')]);
 		}
 
 		$contactId = 0;
@@ -105,47 +175,25 @@ class Shops_CheckoutController extends Shops_Controller_Action
 			$contactId = (int)$emailDb->findContactIdByEmail($data['email']);
 		}
 
-		$incrementDb = new Shops_Model_DbTable_Increment();
-		$orderNumber = $incrementDb->getIncrement('shoporderid');
 		$orderDate = date('Y-m-d');
 
-		$orderDb = (new Shops_Model_DbTable_Order())->setClientId((int)$shop['clientid']);
-		$orderDb->addOrder([
-			'shopid' => $shop['id'],
-			'orderid' => $orderNumber,
-			'contactid' => $contactId,
-			'invoiceid' => 0,
-			'orderdate' => $orderDate,
-			'total' => $total,
-			'clientid' => $shop['clientid'],
-		]);
-
-		$orderposDb = new Shops_Model_DbTable_Orderpos();
-		$itemDb = new Shops_Model_DbTable_Item();
-
-		foreach($cart as $row) {
-			$sku = $row['sku'];
-			$quantity = (float)$row['quantity'];
-			$price = (float)$row['price'];
-			$lineTotal = $quantity * $price;
-
-			$item = $itemDb->getItemBySku($sku);
-			if(!$item) {
-				return $this->_helper->json(['success' => false, 'message' => 'Cart item not found']);
-			}
-
-			$orderposDb->addOrderpos([
-				'shopid' => $shop['id'],
-				'orderid' => $orderNumber,
-				'itemid' => (int)$item['id'],
-				'total' => $lineTotal,
-				'quantity' => $quantity,
-				'price' => $price,
-				'clientid' => $shop['clientid'],
-			]);
+		try {
+			$result = $orderDb->saveCheckoutOnce((int)$shop['id'], $token, [
+				'contactid' => $contactId,
+				'invoiceid' => 0,
+				'orderdate' => $orderDate,
+				'total' => $total,
+			], $positions);
+		} catch (Throwable $e) {
+			error_log('Shop checkout could not be stored: ' . $e->getMessage());
+			$this->getResponse()->setHttpResponseCode(500);
+			return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_CHECKOUT_FAILED')]);
 		}
 
-		$incrementDb->setIncrement($orderNumber, 'shoporderid');
+		$orderNumber = (string)$result['order']['orderid'];
+		$this->checkoutDataSession->duplicate = !$result['inserted'];
+		$this->checkoutDataSession->lastCheckoutToken = $token;
+		$this->checkoutDataSession->checkoutToken = bin2hex(random_bytes(16));
 
 		$this->checkoutDataSession->formData = [
 			'billingname' => $data['billingname'],
@@ -180,13 +228,15 @@ class Shops_CheckoutController extends Shops_Controller_Action
 			]
 		));
 
-		try {
-			$emailResult = $this->_helper->Email->sendEmail('shops', 'checkout', 'checkout', $cart);
-			$this->checkoutDataSession->notificationSent = !empty($emailResult['customerAccepted']);
-			if(($emailResult['internalAccepted'] ?? null) === false) error_log('Stored shop order internal notification was not accepted by SMTP');
-		} catch (Exception $e) {
-			error_log('Stored shop order could not be emailed: ' . $e->getMessage());
-			$this->checkoutDataSession->notificationSent = false;
+		if ($result['inserted']) {
+			try {
+				$emailResult = $this->_helper->Email->sendEmail('shops', 'checkout', 'checkout', $cart);
+				$this->checkoutDataSession->notificationSent = !empty($emailResult['customerAccepted']);
+				if(($emailResult['internalAccepted'] ?? null) === false) error_log('Stored shop order internal notification was not accepted by SMTP');
+			} catch (Throwable $e) {
+				error_log('Stored shop order could not be emailed: ' . $e->getMessage());
+				$this->checkoutDataSession->notificationSent = false;
+			}
 		}
 
 		$this->cart->clearCart();
