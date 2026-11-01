@@ -20,6 +20,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Automatische historische Pfade werden mandanten- und websitebezogen gespeichert und per HTTP 301 auf die jeweils aktuelle öffentliche Entitäts-URL weitergeleitet.
 - `robots.txt`, Sitemap und Canonicals verwenden dieselbe validierte, mandantenbezogene Shop-URL; nicht indexierbare Websites bleiben zum Erkennen von `noindex` crawlbar und bewerben keine Sitemap.
 - SEO-Titel, Descriptions und Open-Graph-Daten werden für öffentliche Seiten zentral erzeugt; Breadcrumbs verwenden für HTML und JSON-LD dieselbe aktuelle Pfadhierarchie.
+- Ein explizit zu startender HTTP-Crawler prüft reale öffentliche Antworten, interne Links, Redirects, SEO-Metadaten, strukturierte Daten, Sitemap, Robots und interne Ressourcen ohne Formulare abzusenden.
 - TLS, bekannte Alt-URL-Importe, Consent Management, responsive Bilder, Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
 
 ## 3. Status- und Prioritätsdefinitionen
@@ -54,7 +55,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 14 | Teilweise | P1 | Bootstrap-Collapse und mobile CSS-Regeln existieren, aber keine vollständige Regression für reale Menütiefen. Finale Navigation auf Telefon und Tablet testen und bei Bedarf als Akkordeon mit sauberer Fokussteuerung ausbauen. |
 | 15 | Teilweise | P2 | Suche und Ergebnisformular besitzen Label, GET-Parameter und eine sinnvolle Ergebnisroute. Falls das Design nur ein Icon zeigt, eine zugängliche, fokussierte und per Escape schließbare Suchoberfläche ergänzen. |
 | 16 | Umgesetzt | P1 | Suchparameter sind begrenzt, Datenbankabfragen parametrisiert, Ausgaben escaped und Ergebnislisten auf `noindex, follow` gesetzt. Regressionstests beibehalten. |
-| 17 | Teilweise | P0 vor Relaunch | Leere CMS-Ziele werden teilweise ausgelassen; Legacy-Steuerelemente und Fallback-Navigation enthalten noch `href="#"`. Bedienelemente als Buttons auszeichnen und vor Livegang einen vollständigen internen Link-Crawl ausführen. |
+| 17 | Teilweise | P0 vor Relaunch | Leere CMS-Ziele werden teilweise ausgelassen; Legacy-Steuerelemente und Fallback-Navigation enthalten noch `href="#"`. Der neue HTTP-Crawler erkennt defekte interne Links und Ressourcen; verbleibende Bedienelemente sind zu bereinigen und der Crawl muss mit der freigegebenen Staging-URL ausgeführt werden. |
 | 18 | Teilweise | P1 | Keine versionierte Referenz auf das bekannte Platzhalterbild gefunden. Reale Mandantenmedien wurden nicht geprüft; Alt-Texte und Bildmetadaten sind nicht überall vollständig. Medienbestand vor Livegang auditieren. |
 | 19 | Offen | P1 | Öffentliche Templates erzeugen noch keine systematischen `srcset`-/`sizes`-Angaben. Medienvarianten und einen wiederverwendbaren responsiven Bild-Renderer ergänzen. |
 | 20 | Offen | P2 | Es existiert keine WebP-/AVIF-Derivatpipeline. Nach Klärung von Medienspeicherung und Backup-Regeln moderne Derivate mit Fallback-Ausgabe ergänzen. |
@@ -98,7 +99,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 58 | Teilweise | P1 | Strukturierte CMS-Blöcke existieren, gleichzeitig bleiben Legacy-WYSIWYG-Felder. Neue Inhalte nur über typisierte Komponenten pflegen und Bestandsinhalte schrittweise migrieren. |
 | 59 | Umgesetzt | P1 | `DEEC_Site_Block` und Partials bilden wiederverwendbare Hero-, CTA-, Text-, Bild/Text-, Karten-, Kontakt- und Kategorieblöcke ab. Nur bei konkretem Wiederverwendungsbedarf erweitern. |
 | 60 | Teilweise | P1 | Wichtige Blöcke besitzen getrennte Felder und Allowlists; generische HTML-/WYSIWYG-Felder bestehen weiterhin. Feldlimits und Medienauswahl ausbauen und Inhalte inkrementell migrieren. |
-| 61 | Offen | P0 vor Relaunch | Einzeltests existieren, aber kein vollständiger Crawl für Links, Status, Titel, H1, Canonicals und Redirect-Ketten. Einen sicheren Staging-Crawl als reproduzierbaren Relaunch-Report implementieren. |
+| 61 | Teilweise | P0 vor Relaunch | Ein begrenzter CLI-Crawler prüft reale HTTP-Antworten für Links, Status, Redirects, Titel, Descriptions, H1, Canonicals, Open Graph, JSON-LD, Sitemap, Robots und Ressourcen und kann Text oder JSON ausgeben. Vor dem Relaunch bleibt der ausdrücklich freizugebende Lauf gegen die echte Staging-Website samt fachlicher Auswertung offen. |
 | 62 | Umgesetzt | P0 vor Relaunch | Redirects speichern keine weiteren Pfadziele, sondern die öffentliche Entität. Dadurch werden auch nach mehrfachen URL-Änderungen alle historischen Pfade direkt auf den aktuellen kanonischen Pfad aufgelöst; aktuelle URLs haben Vorrang und Schleifen werden verworfen. |
 | 63 | Infrastruktur | P1 nach Relaunch | Search-Console-/Webmaster-Zustand liegt außerhalb des Repositories. Eigentum prüfen, Produktionssitemap einreichen und Indexierung sowie 404 nach dem Relaunch beobachten. |
 | 64 | Teilweise | P0 vor Relaunch | Analytics ist konfigurierbar und jetzt umgebungs-/indexierungsabhängig, aber weder consent-gesteuert noch durch eine Conversion-Migrationsliste abgesichert. Bestehende Ereignisse inventarisieren und einzeln validieren. |
@@ -194,6 +195,19 @@ Eine umfassende Script-/Style-CSP ist noch nicht aktiviert, weil Inline-Code, ex
 - Öffentliche CMS-Templates erkennen vorhandene H1 in Legacy-Inhalten. Der erste geeignete Hero kann die Haupt-H1 liefern; weitere Hero-Blöcke werden als H2 ausgegeben. Gespeicherte Inhalte werden nicht verändert.
 - Die Änderung benötigt keine neuen Felder, Tabellen oder SQL-Migrationen. Bestehende Slugs, Redirects, Canonicals und Sitemap-Pfade bleiben unverändert.
 
+### 5.10 Automatisierte HTTP-Website-Prüfung
+
+- `tests/site/crawl.py` startet ausschließlich mit einer ausdrücklich angegebenen `--url`. Der Crawler bleibt auf Schema, Host, Port und gegebenenfalls Unterpfad dieser Website begrenzt; externe Domains werden nicht verfolgt.
+- Seiten werden per GET gelesen, interne Bilder, CSS, JavaScript und Downloads grundsätzlich per HEAD geprüft. Falls ein Server HEAD mit 405 oder 501 ablehnt, wird nur ein stark begrenzter GET-Abruf verwendet. Formulare und schreibende Requests werden nicht ausgeführt.
+- Seitenzahl, Crawltiefe, Query-Varianten, Ressourcenanzahl, Redirects, Antwortgröße und Request-Timeout sind begrenzt. Trackingparameter werden für die Deduplizierung entfernt.
+- Die Prüfung umfasst HTTP-Fehler, Soft-404, Redirect-Ketten und -Schleifen, ungültige oder externe Redirectziele, Titel, Descriptions, H1, Canonicals, Noindex, Open Graph, JSON-LD und aktuelle Breadcrumb-Pfade.
+- Robots und XML-Sitemaps einschließlich Sitemap-Indizes werden geprüft. Doppelte, fremde, parametrisierte, suchbezogene, weiterleitende, nicht kanonische oder Noindex-URLs werden gemeldet.
+- Interne Bilder und Assets werden auf Erreichbarkeit, Bild-Alt-Attribute und Mixed Content geprüft. Externe Ressourcen werden nur als Referenz analysiert und nicht heruntergeladen.
+- Der Terminalbericht nennt jede URL und einen konkreten Befund. `--format=json` liefert dieselben Ergebnisse strukturiert. Mit `--paths` kann eine redaktionell geprüfte Liste zusätzlicher historischer Pfade einbezogen werden.
+- Beispiel: `python3 tests/site/crawl.py --url <website-url> --indexable=yes --max-pages=500`. Für maschinelle Weiterverarbeitung zusätzlich `--format=json` verwenden.
+- Soft-404 und möglicherweise informative Bilder mit leerem Alt-Text bleiben heuristische Hinweise. Historische URLs können nur geprüft werden, wenn sie verlinkt, in der Sitemap enthalten oder ausdrücklich über `--paths` übergeben werden.
+- Der Crawler verändert keine Anwendungs- oder Kundendaten. Es wurden keine installationsspezifischen Ergebnisse eingecheckt und keine Datenbankänderungen benötigt.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
 `structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect`. Phase 2.3 hat beide Dateien ausschließlich geprüft und nicht verändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
@@ -214,6 +228,7 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Prüfung | Ergebnis |
 |---|---|
 | PHP-Syntax der geänderten PHP-/PHTML-Dateien | Bestanden |
+| Reale lokale HTTP-Crawler-, SEO-, Redirect-, Sitemap-, Ressourcen- und Begrenzungsfälle | 31 Prüfungen bestanden |
 | SEO-Metadaten, Open Graph, Breadcrumbs, strukturierte Daten und Überschriften | 46 Prüfungen bestanden |
 | Technische HTML5-/Indexierungs-/Header-Baseline | 40 Prüfungen bestanden |
 | Robots, Sitemap, kanonische Basis-URL, Routing und Isolation | 31 Prüfungen bestanden |
@@ -251,6 +266,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Eine ungültige oder fehlende `shop.url` unterdrückt Canonical und Sitemap-Verweis; der Sitemap-Endpunkt liefert dann bewusst 404. Die Produktionsadresse muss vor Indexierungsfreigabe geprüft werden.
 - Open-Graph-URL, Breadcrumb-JSON-LD und Organization-Markup werden bei fehlender oder ungültiger `shop.url` ebenfalls ausgelassen. Externe Bild-URLs und Medien außerhalb der ausdrücklich öffentlichen Bildverzeichnisse werden nicht übernommen.
 - Legacy-WYSIWYG-Inhalte können bereits mehrere eigene H1 enthalten. Die Templates fügen in diesem Fall keine weitere H1 hinzu, verändern bestehende Kundendaten aber nicht; der Bestand bleibt im Relaunch-Crawl redaktionell zu bereinigen.
+- Der Crawler erzeugt keine Aussage über unbekannte historische URLs. Eine vollständige fachliche Alt-URL-Liste muss vor dem Relaunch über `--paths` zusätzlich geprüft werden. Heuristische Soft-404- und Alt-Text-Hinweise benötigen eine manuelle Bewertung.
 - Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
 
 ## 9. Empfohlene nächste Phasen
@@ -259,7 +275,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 
 - Bekannte historische URLs inventarisieren und einen geprüften Import- oder kleinen manuellen Zuordnungsweg ergänzen.
 - Legacy-Inhalte mit mehreren gespeicherten H1 redaktionell bereinigen und die hilfreiche 404-Seite vervollständigen.
-- Vollständigen Staging-Crawl als Release-Prüfung erstellen.
+- Den vorhandenen Crawler mit ausdrücklich freigegebener Staging-URL und vollständiger Alt-URL-Liste ausführen, JSON-Report archivieren und Befunde abarbeiten.
 
 ### Phase 3 – Performance und Assets
 
@@ -424,8 +440,18 @@ Inhalt:
 - Eindeutige Template-H1 mit Hero-Abstufung und Kompatibilitätsbehandlung für vorhandene Legacy-H1.
 - Automatisierte SEO-, Mandanten-, URL-, JSON-LD- und Überschriftenregressionen ohne Datenbankänderung.
 
+### Commit 10: `add site seo crawl checks`
+
+Inhalt:
+
+- Explizit zu startender und auf eine freigegebene Website begrenzter HTTP-Crawler ohne externe Abhängigkeiten.
+- Prüfungen für Statuscodes, Redirects, Soft-404, interne Links, Canonicals, SEO-Metadaten, Open Graph, JSON-LD, Breadcrumbs, Robots, Sitemap und interne Ressourcen.
+- Begrenzungen für Requests, Seiten, Tiefe, Query-Varianten, Ressourcen, Redirects und Antwortgrößen sowie optionale historische Pfadlisten.
+- Lesbarer Terminalbericht und strukturierter JSON-Bericht mit URL und konkreter Beschreibung je Befund.
+- Isolierte reale HTTP-Fixtures für Erfolgs-, Fehler-, Noindex-, Mandanten-, Timeout- und Begrenzungsfälle.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, Relaunch-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, tatsächlicher Staging-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.
