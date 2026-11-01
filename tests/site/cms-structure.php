@@ -111,4 +111,24 @@ $error = (object)[
 ];
 checkCms($controller->isNotFoundError($error), 'Page action exceptions are not classified as HTTP 404');
 
+$itemEditSource = file_get_contents($root . '/application/modules/items/views/scripts/item/edit.phtml');
+checkCms(str_contains($itemEditSource, "\$this->Media([") && str_contains($itemEditSource, "'path' => 'images'"), 'Item editor does not use the managed media workflow');
+checkCms(!str_contains($itemEditSource, '$this->Images()'), 'Item editor still uses the obsolete image workflow');
+
+$itemControllerSource = file_get_contents($root . '/application/modules/items/controllers/ItemController.php');
+checkCms(str_contains($itemControllerSource, "getMediaByParentID(\$id, 'items', 'item')"), 'Item editor does not load its managed media');
+
+$pageBlockViewSource = file_get_contents($root . '/application/modules/admin/views/scripts/pageblock/edit.phtml');
+$globalJsSource = file_get_contents($root . '/js/global.js');
+$blockSource = file_get_contents($root . '/library/DEEC/Site/Block.php');
+checkCms(str_contains($pageBlockViewSource, '$this->MediaManager()') && !str_contains($pageBlockViewSource, '$this->FileManager()'), 'Page block editor does not use the public media library');
+checkCms(substr_count($blockSource, "'data-filemanager' => 'media'") === 3, 'Page block image fields do not select public media');
+checkCms(str_contains($globalJsSource, "=== 'media' ? 'MediaManager' : 'FileManager'") && str_contains($globalJsSource, "'/library/' + manager + '/dialog.php'"), 'File picker does not route public image fields to MediaManager');
+
+$itemViewSource = file_get_contents($root . '/application/modules/shops/views/scripts/item/index.phtml');
+checkCms(substr_count($itemViewSource, 'id="mainImage"') === 1, 'Product detail renders duplicate main image IDs');
+checkCms(substr_count($itemViewSource, 'id="imageModal"') === 1, 'Product detail renders duplicate image modal IDs');
+checkCms(substr_count($itemViewSource, 'id="carouselExampleControls"') === 1, 'Product detail renders duplicate carousel IDs');
+checkCms(!str_contains($itemViewSource, 'data-bs-'), 'Product detail mixes Bootstrap 5 controls into its Bootstrap 4 layout');
+
 echo 'PASS: ' . $checks . " CMS block, CTA, theme and 404 structure cases\n";

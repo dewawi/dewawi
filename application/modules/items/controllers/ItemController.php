@@ -29,6 +29,7 @@ class Items_ItemController extends DEEC_Controller_Action
 		$planningDb = new Items_Model_DbTable_Stockplanning();
 		$stockDb = new Items_Model_DbTable_Itemstock();
 		$itemDb = new Items_Model_DbTable_Item();
+		$mediaDb = new Application_Model_DbTable_Media();
 
 		$variants = [];
 		$parent = null;
@@ -71,6 +72,9 @@ class Items_ItemController extends DEEC_Controller_Action
 		}
 
 		$planning = $planningDb->getByItemId($id);
+		$media = $mediaDb->getMediaByParentID($id, 'items', 'item')->toArray();
+		$clientId = (string)(int)$this->view->client['id'];
+		$mediaPath = substr($clientId, 0, 1) . '/' . (strlen($clientId) > 1 ? substr($clientId, 1, 1) : '0') . '/' . $clientId;
 		$availability = [];
 		$planningService = new Items_Service_StockPlanning();
 		$warehouseDb = new Application_Model_DbTable_Warehouse();
@@ -92,6 +96,11 @@ class Items_ItemController extends DEEC_Controller_Action
 			'itemVariantOptionSets' => $variantOptionSets,
 			'itemParent' => $parent,
 			'itemVariantOptions' => $variantOptions,
+			'media' => $media,
+			'mediaPath' => $mediaPath,
+			'subfolders' => [
+				'images' => $this->getSubfolders(BASE_PATH . '/media/' . $mediaPath . '/images/'),
+			],
 		];
 	}
 

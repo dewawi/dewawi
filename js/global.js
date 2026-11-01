@@ -147,9 +147,10 @@ $(document).ready(function(){
 
 		if(!fieldId) return;
 
+		var manager = $('#' + fieldId).data('filemanager') === 'media' ? 'MediaManager' : 'FileManager';
 		var lang = typeof language !== 'undefined' ? language : 'en';
 		var url = baseUrl
-			+ '/library/FileManager/dialog.php'
+			+ '/library/' + manager + '/dialog.php'
 			+ '?type=1'
 			+ '&popup=1'
 			+ '&field_id=' + encodeURIComponent(fieldId)
@@ -157,7 +158,7 @@ $(document).ready(function(){
 
 		window.open(
 			url,
-			'dewawiFileManager',
+			'dewawi' + manager,
 			'width=1200,height=800,resizable=yes,scrollbars=yes'
 		);
 	});

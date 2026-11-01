@@ -122,7 +122,7 @@ class DEEC_Site_Block
 						'label' => 'ADMIN_CATEGORY_IMAGE',
 						'format' => ['type' => 'string'],
 						'attribs' => [
-							'data-filemanager' => 'image',
+							'data-filemanager' => 'media',
 						],
 						'col' => 12,
 					],
@@ -221,7 +221,7 @@ class DEEC_Site_Block
 						'label' => 'ADMIN_CATEGORY_IMAGE',
 						'format' => ['type' => 'string'],
 						'attribs' => [
-							'data-filemanager' => 'image',
+							'data-filemanager' => 'media',
 						],
 						'col' => 12,
 					],
@@ -369,7 +369,7 @@ class DEEC_Site_Block
 						'type' => 'text',
 						'label' => 'ADMIN_CATEGORY_IMAGE',
 						'format' => ['type' => 'string'],
-						'attribs' => ['data-filemanager' => 'image'],
+						'attribs' => ['data-filemanager' => 'media'],
 						'col' => 12,
 					],
 					[

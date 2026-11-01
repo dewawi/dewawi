@@ -70,9 +70,6 @@ if ($manufacturer !== '') {
 					<span class="imagetitle"><?php echo $this->escape($previewImage['title'] ?? ''); ?></span>
 					<span class="imagedescription"></span>
 				<?php endif; ?>
-				<?php if($previewImage) : ?>
-					<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" id="mainImage" class="img-fluid" alt="<?php echo $this->escape($previewImage['title'] ?? $itemTitle); ?>" onclick="openModal()">
-				<?php endif; ?>
 				<div class="row">
 					<?php if($itemImages) : ?>
 						<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -310,37 +307,6 @@ if ($manufacturer !== '') {
 	</section>
 <?php endif; ?>
 
-<!-- Modal for larger images -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-xl">
-		<div class="modal-content">
-			<div class="modal-body">
-				<div id="carouselExampleControls" class="carousel slide" data-bs-interval="false">
-					<div class="carousel-inner">
-						<?php foreach ($this->images as $index => $image): ?>
-						<div class="carousel-item <?php echo $index == 0 ? 'active' : ''; ?>">
-							<div class="modal-image-wrapper">
-								<img src="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $image['url']; ?>" class="d-block w-100" alt="Product Image">
-							</div>
-							<span><?php echo $image['title']; ?></span>
-							<span><?php //echo $this->images->description; ?></span>
-						</div>
-						<?php endforeach; ?>
-					</div>
-					<button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
-						<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-						<span class="visually-hidden">Previous</span>
-					</button>
-					<button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
-						<span class="carousel-control-next-icon" aria-hidden="true"></span>
-						<span class="visually-hidden">Next</span>
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
-
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
 		$('#carouselExampleControls').on('slid.bs.carousel', function () {
@@ -348,32 +314,6 @@ if ($manufacturer !== '') {
 			if (activeImage) $('#mainImage').attr('src', activeImage.src);
 		});
 	});
-
-	function changeMainImage(thumbnail) {
-		var mainImage = document.getElementById('mainImage');
-		var imageModal = document.getElementById('imageModal');
-		var modalImages = imageModal.querySelectorAll('.carousel-item img');
-
-		// Change the main image
-		mainImage.src = thumbnail.src;
-
-		// Fetch the title and description from the thumbnail
-		var title = thumbnail.nextElementSibling.innerText;
-		var description = thumbnail.nextElementSibling.nextElementSibling.innerText;
-
-		// Update the title and description displayed on the page
-		document.querySelector('.imagetitle').innerText = title;
-		document.querySelector('.imagedescription').innerText = description;
-
-		// Change the active image in the modal carousel
-		modalImages.forEach(function(image) {
-			if (image.src === thumbnail.src) {
-				image.closest('.carousel-item').classList.add('active');
-			} else {
-				image.closest('.carousel-item').classList.remove('active');
-			}
-		});
-	}
 
 	// Function to show the accordion and open the relevant tab
 	function showTab(itemId, tabName) {

@@ -110,7 +110,13 @@ echo $this->FileManager();
 			'html' => $this->Variants(),
 			'show' => empty($this->item['parentid']),
 		],
-		'images' => ['title' => 'TABS_IMAGES', 'html' => $this->Images()],
+		'images' => ['title' => 'TABS_IMAGES', 'html' => $this->Media([
+			'module' => 'items',
+			'controller' => 'item',
+			'parentid' => $this->id,
+			'type' => 'image',
+			'path' => 'images',
+		])],
 		'files' => ['title' => 'TABS_FILES', 'html' => $this->Files(), 'show' => (bool)$this->dirwritable],
 	]
 ]); ?>
