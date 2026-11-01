@@ -182,6 +182,7 @@ def main() -> int:
                 const controls=[...document.querySelectorAll('[aria-controls]')];
                 const ids=[...document.querySelectorAll('[id]')].map(node=>node.id);
                 const toggles=[...document.querySelectorAll('.navbar-toggler,.dw-mega-toggle,.dw-submenu-toggle,[data-carousel-toggle]')];
+                const content=[...document.querySelectorAll('.navbar-brand,#breadcrumb,.product-card,footer')];
                 const navStyle=getComputedStyle(document.querySelector('.dw-mega-toggle'));
                 const footerStyle=getComputedStyle(document.querySelector('footer'));
                 return {
@@ -193,7 +194,9 @@ def main() -> int:
                     hiddenFocusable: [...document.querySelectorAll('[hidden] a,[hidden] button,[hidden] input')].some(node=>node.tabIndex >= 0 && node.getClientRects().length),
                     targetSize: toggles.filter(node=>node.getClientRects().length).every(node=>{const box=node.getBoundingClientRect();return box.width>=24&&box.height>=24}),
                     labels: [...document.querySelectorAll('input:not([type=hidden]),select,textarea')].every(node=>node.labels&&node.labels.length||node.getAttribute('aria-label')),
-                    contrast: contrast(navStyle.color,'rgb(255,255,255)')>=4.5&&contrast(footerStyle.color,footerStyle.backgroundColor)>=4.5
+                    contrast: contrast(navStyle.color,'rgb(255,255,255)')>=4.5&&contrast(footerStyle.color,footerStyle.backgroundColor)>=4.5,
+                    contentFits: content.every(node=>{const box=node.getBoundingClientRect();return box.left>=-1&&box.right<=document.documentElement.clientWidth+1}),
+                    theme: document.body.dataset.theme==='default'&&document.body.classList.contains('dw-theme-default')&&!!document.querySelector('.navbar-brand img[width][height]')
                 };
             """)
             check(metrics["width"] == width, f"Viewport emulation failed at {width}px", checks)
@@ -204,6 +207,11 @@ def main() -> int:
             check(metrics["targetSize"], f"Control target is smaller than 24px at {width}px", checks)
             check(metrics["labels"], f"Form control label missing at {width}px", checks)
             check(metrics["contrast"], f"Navigation or footer text contrast failed at {width}px", checks)
+            check(metrics["contentFits"] and metrics["theme"], f"Logo, theme, breadcrumb, product card or footer failed at {width}px", checks)
+            if width < 1200:
+                driver.click(".navbar-toggler")
+                driver.wait("return document.getElementById('navbarNav').classList.contains('show')")
+            check(driver.execute("return ['.dw-header-search','#navbar-cart'].every(selector=>{const node=document.querySelector(selector);if(!node||!node.getClientRects().length)return false;const box=node.getBoundingClientRect();return box.left>=-1&&box.right<=document.documentElement.clientWidth+1})&&document.documentElement.scrollWidth<=document.documentElement.clientWidth+1"), f"Open header search or cart failed at {width}px", checks)
 
         driver.emulate_viewport(375)
         driver.navigate(origin + "/?manual=1&keyboard=1")
@@ -251,7 +259,7 @@ def main() -> int:
         check(driver.execute("return document.activeElement.id==='gallery-button'"), "Modal did not return focus", checks)
 
         driver.execute("document.querySelector('.quantity-input').value='3';document.querySelector('.quantity-input').dispatchEvent(new Event('change',{bubbles:true}))")
-        driver.wait("return document.getElementById('cart-count').textContent==='3'")
+        driver.wait("return document.getElementById('cart-count').textContent==='4'")
         check(driver.execute("return !document.querySelector('#cart-items img,#cart-items script')&&document.getElementById('cart-items').textContent.includes('<img src=x onerror=alert(1)>')"), "Cart data created executable markup", checks)
 
         driver.execute("document.querySelector('#inquiry-form input').value=''")

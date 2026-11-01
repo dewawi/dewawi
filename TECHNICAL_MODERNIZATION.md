@@ -282,6 +282,20 @@ Die initiale CSS-/JS-Requestzahl bleibt trotz der Accessibility-Erweiterungen be
 
 Die automatisierten Prüfungen belegen keinen vollständigen WCAG-2.2-AA-Status. Offen bleiben insbesondere manuelle Screenreader-Tests, Sprach- und Verständlichkeitsprüfung, vollständige Kontrastmessung aller realen Theme-/CMS-Kombinationen, physische Touchgeräte, High-Contrast-/Forced-Colors-Modi sowie die Prüfung finaler Inhalte und realer Menütiefen auf Staging. Ein zusätzliches Accessibility-Paket war lokal nicht installiert und wurde nicht nachinstalliert.
 
+### 5.15 Frontend-Abschlussprüfung Phase 3
+
+Die Phasen 3.1 bis 3.4 wurden auf dem dokumentierten Stand gemeinsam und ausschließlich mit lokalen, isolierten Fixtures erneut geprüft. Es wurden keine produktiven Websites gecrawlt, keine Testbestellungen versendet und keine externen Formulare oder Datenbanken beschrieben. Die vorhandenen Testprogramme wurden erweitert; ein zweiter Testapparat oder zusätzliche Abhängigkeiten waren nicht erforderlich.
+
+- Die reale Chromium-Fixture deckt nun neben Navigation, Collapse, Tabs, Modal, Slider, Suche, Checkout und Anfrageformular auch Warenkorb-Hinzufügen, Mengenänderung, Entfernen und Leeren ab. Manipulierte Titel und Artikelnummern bleiben dabei Text. Produktempfehlungs-Auswahl, Optionsdarstellung, Theme-Fallback, Logoabmessungen und Breadcrumbs werden ebenfalls geprüft.
+- Die ChromeDriver-Prüfung öffnet die mobile Navigation bei 320, 375, 500 und 768 CSS-Pixeln und kontrolliert die sichtbare Header-Suche sowie den Warenkorb auf Überlauf. Bei allen vier mobilen Breiten und bei 1365 Pixeln passen Logo, Breadcrumbs, Produktkarte und Footer in den Viewport. Die vorhandenen echten Tastatureingaben, Modal-Fokusbindung, ARIA-Zustände, Formularfehler, Reduced Motion, Kontrast und Zielgrößen bleiben Bestandteil derselben Regression.
+- Die Shop-, Kontakt-, Medien-, Datei-, ACL-, CSRF- und Mandantenprüfungen wurden gemeinsam mit SEO, Slugs, Redirects, Robots und Sitemap erneut ausgeführt. Die HTTP-Sicherheitsfixtures blieben vollständig lokal und bestätigten insbesondere geschützte Dateien, veröffentlichte Medien, Unterverzeichnisinstallationen, Sessionverhalten und Fehlerantworten.
+- Ein veraltetes statisches Testmuster erkannte die inzwischen strengere Unterdrückung von Flash-Meldungen bei Shop- und AJAX-Mailversand nicht. Die Regression prüft jetzt die tatsächlich verwendete kombinierte Guard-Bedingung. Zusätzlich wurde die zwischenzeitlich wieder verschärfte Erfolgsmeldung von „versendet“ auf die nachweisbare Aussage „zum Versand übergeben“ zurückgestellt.
+- Weitere funktionale Fehler in den durch Phase 3 geänderten Layout-, Bild-, Asset-, Navigations- oder Accessibility-Pfaden wurden nicht reproduziert. Es erfolgten deshalb keine vorsorglichen Umbauten an Anwendungslogik, Themes oder Routing.
+
+Die abschließende Assetmessung ist gegenüber Phase 3.4 unverändert: fünf initiale CSS-/JavaScript-Requests, zwei render-blockierende Stylesheets, drei nicht render-blockierende Scripts am Dokumentende, 368.900 rohe und 85.115 lokal gzip-komprimierte Bytes. Die responsive Bildfixture bestätigt weiterhin 1.503.417 statt 3.512.926 übertragene Bildbytes im synthetischen Mobilvergleich, genau ein hoch priorisiertes Bild und CLS 0. Chromium lieferte weiterhin keinen in allen Läufen belastbaren LCP-Eintrag; INP ist ohne repräsentative reale Benutzerinteraktion nicht bewertet.
+
+Der lokale Abschluss ist keine Produktionsfreigabe. Im Repository befindet sich derzeit keine versionsverwaltete Datei unter `css/themes/`; geprüft sind daher das gemeinsame Stylesheet und der sichere Default-Fallback, nicht unbekannte produktive Themes. Vor einem Rollout bleiben reale Mandantenmenüs, finale Inhalte und Medien, Screenreader, Forced Colors, physische Touchgeräte, CDN-Verfügbarkeit sowie reale LCP-/INP-Feldwerte auf einer ausdrücklich freigegebenen Staging-Umgebung manuell zu prüfen. Bootstrap 5, WebP/AVIF und Self-Hosting bleiben getrennte Entscheidungen.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
 `structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect`. Phase 2.3 hat beide Dateien ausschließlich geprüft und nicht verändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
@@ -310,14 +324,15 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Site-CMS-Struktur, Assets, Accessibility, SRI, Bildpriorisierung und responsive Medienflächen | 176 Prüfungen bestanden |
 | Dateizugriff, Medienvarianten, LCP-Attribute und Mandantenisolation | 327 Prüfungen bestanden |
 | Isolierte Chromium-Bildprioritäts-, Doppeldownload-, CLS- und Übertragungsmessung | 4 Prüfungen bestanden; LCP-/INP-Grenzen ausdrücklich dokumentiert |
-| Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, AJAX, Suche und Checkout | 51 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
-| ChromeDriver-Tastatur, Fokus, ARIA, Modal, Formulare, Warenkorb, Kontrast und Reflow | 67 Prüfungen bei 320, 375, 500, 768 und 1365 Pixeln bestanden |
+| Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, Shop-Abläufe, AJAX, Suche und Checkout | 63 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
+| ChromeDriver-Tastatur, Fokus, ARIA, Modal, Formulare, Warenkorb, Header-Komponenten, Kontrast und Reflow | 77 Prüfungen bei 320, 375, 500, 768 und 1365 Pixeln bestanden |
 | Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 101 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
-| Browsermeldungen, Übersetzungen und Benachrichtigungen | 370 Prüfungen bestanden; zusätzlich 60 Sales- und 24 Purchases-Helper-Prüfungen |
+| Browsermeldungen, Übersetzungen und Benachrichtigungen | 1.979 Browserprüfungen bei 390 Pixeln und 24 serverseitige Rendering-Prüfungen bestanden |
 | Sicherheitskonfiguration und Umgebungswahl | 22 Prüfungen bestanden |
 | Shop-Anfragen | 39 Prüfungen bestanden |
 | Kontaktanfragen | 45 Prüfungen bestanden |
+| Öffentliche Shop-Mailinhalte, Persistenzreihenfolge und Versandstatus | 56 Prüfungen bestanden |
 | Kontaktpersonen | 66 Prüfungen bestanden |
 | Kontaktrollen | 32 Prüfungen bestanden |
 | Berechtigungen | 408 Prüfungen bestanden |
@@ -579,8 +594,18 @@ Inhalt:
 - Verknüpfte und angekündigte Formularfehler, explizite Button-Typen und sichere textbasierte Warenkorb-DOM-Ausgabe.
 - Reale ChromeDriver-Regressionsprüfung für Tastatureingaben, Fokus, ARIA, Modal, Formulare, Warenkorb, Kontrast und Viewports von 320 bis 1365 Pixeln.
 
+### Commit 15: `complete site frontend regression review`
+
+Inhalt:
+
+- Gemeinsame Abschlussprüfung der responsiven Medien-, Performance-, Abhängigkeits-, Navigations- und Accessibility-Änderungen aus Phase 3.
+- Erweiterte reale Chromium-Regression für Warenkorb-Hinzufügen, Mengenänderung, Entfernen, Leeren, Produktempfehlungen, Optionen, Theme-Fallback, Logo und Breadcrumbs.
+- Erweiterte ChromeDriver-Reflow-Prüfung der geöffneten mobilen Navigation einschließlich Header-Suche und Warenkorb bei allen festgelegten Viewports.
+- Korrektur der veralteten Shop-Mail-Testbedingung und Wiederherstellung einer fachlich belastbaren Meldung für die SMTP-Annahme.
+- Dokumentierte unveränderte Asset-/Bildlaborwerte sowie klare Abgrenzung unbekannter Themes, manueller WCAG-Prüfungen und realer Core Web Vitals.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, tatsächlicher Staging-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Phase 3 ist mit einer gemeinsamen lokalen Funktions-, Sicherheits-, Performance- und Accessibility-Regression abgeschlossen; dies ist ausdrücklich keine Produktions- oder WCAG-Freigabe. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, tatsächlicher Staging-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
