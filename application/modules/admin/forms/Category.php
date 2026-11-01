@@ -145,8 +145,9 @@ class Admin_Form_Category extends DEEC_Form
 			'label' => 'ADMIN_CATEGORY_DESCRIPTION',
 			'format' => [
 				'type' => 'html',
+				'managedMediaOnly' => true,
 				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href', 'id', 'alt', 'width', 'height'],
 			],
 			'attribs' => [
 				'cols' => 75,
@@ -163,8 +164,9 @@ class Admin_Form_Category extends DEEC_Form
 			'label' => 'ADMIN_CATEGORY_SHORT_DESCRIPTION',
 			'format' => [
 				'type' => 'html',
+				'managedMediaOnly' => true,
 				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href', 'id', 'alt', 'width', 'height'],
 			],
 			'attribs' => [
 				'cols' => 75,
@@ -181,8 +183,9 @@ class Admin_Form_Category extends DEEC_Form
 			'label' => 'ADMIN_CATEGORY_MINI_DESCRIPTION',
 			'format' => [
 				'type' => 'html',
+				'managedMediaOnly' => true,
 				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href', 'id', 'alt', 'width', 'height'],
 			],
 			'attribs' => [
 				'cols' => 75,
@@ -199,8 +202,9 @@ class Admin_Form_Category extends DEEC_Form
 			'label' => 'ADMIN_CATEGORY_HEADER',
 			'format' => [
 				'type' => 'html',
+				'managedMediaOnly' => true,
 				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href', 'id', 'alt', 'width', 'height'],
 			],
 			'attribs' => [
 				'cols' => 75,
@@ -217,8 +221,9 @@ class Admin_Form_Category extends DEEC_Form
 			'label' => 'ADMIN_CATEGORY_FOOTER',
 			'format' => [
 				'type' => 'html',
+				'managedMediaOnly' => true,
 				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href', 'id', 'alt', 'width', 'height'],
 			],
 			'attribs' => [
 				'cols' => 75,

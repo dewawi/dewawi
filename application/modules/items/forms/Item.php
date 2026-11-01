@@ -453,7 +453,7 @@ class Items_Form_Item extends DEEC_Form
 			'format' => [
 				'type' => 'html',
 				'allowTags' => ['a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'],
-				'allowAttribs' => ['style','title','href'],
+				'allowAttribs' => ['style','title','href','id','class'],
 			],
 			'attribs'=> [
 				'cols' => 75,
@@ -470,7 +470,7 @@ class Items_Form_Item extends DEEC_Form
 			'format' => [
 				'type' => 'html',
 				'allowTags' => ['a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'],
-				'allowAttribs' => ['style','title','href'],
+				'allowAttribs' => ['style','title','href','id','class'],
 			],
 			'attribs'=> [
 				'cols' => 75,
@@ -487,7 +487,7 @@ class Items_Form_Item extends DEEC_Form
 			'format' => [
 				'type' => 'html',
 				'allowTags' => ['a','p','span','br','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6'],
-				'allowAttribs' => ['style','title','href'],
+				'allowAttribs' => ['style','title','href','id','class'],
 			],
 			'attribs'=> [
 				'cols' => 75,

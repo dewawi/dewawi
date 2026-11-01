@@ -496,6 +496,33 @@ function submitStep(formElement, currentStep) {
 	return false;
 }
 
+$(document).on('submit', '#inquiry-form', function (event) {
+	event.preventDefault();
+	submitStep(this, String($(this).data('current-step') || ''));
+});
+
+$(document).on('click', '[data-show-tab]', function () {
+	const itemId = String($(this).data('item-id') || '');
+	const tabName = String($(this).data('show-tab') || '');
+	if (!/^\d+$/.test(itemId) || !/^[a-z0-9_-]+$/i.test(tabName)) return;
+	$('#details_' + itemId).collapse('show');
+	$('#productTab_' + itemId + ' a[href="#' + tabName + '_' + itemId + '"]').tab('show');
+});
+
+$(document).on('click', '[data-show-section]', function () {
+	const sectionName = String($(this).data('show-section') || '');
+	if (!/^[a-z0-9_-]+$/i.test(sectionName)) return;
+	const section = document.getElementById(sectionName);
+	if (!section) return;
+	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	section.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+	section.style.transition = 'background-color 0.5s ease';
+	section.style.backgroundColor = '#f8f9fa';
+	setTimeout(function () {
+		section.style.backgroundColor = '';
+	}, 2000);
+});
+
 function goBackStep(currentStep) {
 	var $form = $('#inquiry-form');
 	if ($form.data('submitting')) return false;

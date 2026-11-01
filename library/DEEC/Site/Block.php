@@ -29,7 +29,7 @@ class DEEC_Site_Block
 						'format' => [
 							'type' => 'html',
 							'allowTags' => ['a', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li'],
-							'allowAttribs' => ['href', 'title'],
+							'allowAttribs' => ['href', 'title', 'id', 'class', 'style'],
 						],
 						'attribs' => [
 							'rows' => 10,
@@ -180,7 +180,7 @@ class DEEC_Site_Block
 						'format' => [
 							'type' => 'html',
 							'allowTags' => ['a', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h2', 'h3', 'h4', 'h5'],
-							'allowAttribs' => ['href', 'title'],
+							'allowAttribs' => ['href', 'title', 'id', 'class', 'style'],
 						],
 						'attribs' => [
 							'rows' => 12,
@@ -207,7 +207,7 @@ class DEEC_Site_Block
 						'format' => [
 							'type' => 'html',
 							'allowTags' => ['a', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h2', 'h3', 'h4', 'h5'],
-							'allowAttribs' => ['href', 'title'],
+							'allowAttribs' => ['href', 'title', 'id', 'class', 'style'],
 						],
 						'attribs' => [
 							'rows' => 10,
@@ -294,7 +294,7 @@ class DEEC_Site_Block
 						'format' => [
 							'type' => 'html',
 							'allowTags' => ['a', 'p', 'br', 'strong', 'em'],
-							'allowAttribs' => ['href', 'title'],
+							'allowAttribs' => ['href', 'title', 'id', 'class', 'style'],
 						],
 						'attribs' => [
 							'rows' => 6,
@@ -356,7 +356,7 @@ class DEEC_Site_Block
 						'format' => [
 							'type' => 'html',
 							'allowTags' => ['a', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li'],
-							'allowAttribs' => ['href', 'title'],
+							'allowAttribs' => ['href', 'title', 'id', 'class', 'style'],
 						],
 						'attribs' => [
 							'rows' => 8,

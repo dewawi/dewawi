@@ -117,30 +117,100 @@ class DEEC_Filter
 		if ($value === '') return null;
 
 		$allowTags = $fmt['allowTags'] ?? ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'b', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-		$allowAttribs = $fmt['allowAttribs'] ?? ['href', 'src', 'title', 'target', 'alt', 'class', 'width', 'height'];
+		$allowAttribs = $fmt['allowAttribs'] ?? ['href', 'src', 'title', 'alt', 'class', 'width', 'height'];
 
 		$filter = new Zend_Filter_StripTags([
 			'allowTags' => $allowTags,
 			'allowAttribs' => $allowAttribs,
 		]);
 
-		return self::sanitizeHtmlUrls(trim($filter->filter($value)));
+		$html = trim($filter->filter($value));
+		$html = self::sanitizeHtmlAttributes($html);
+		$html = self::sanitizeHtmlUrls($html, !empty($fmt['managedMediaOnly']));
+
+		return preg_replace('~<img\b(?![^>]*\bsrc\s*=)[^>]*>~iu', '', $html);
 	}
 
-	protected static function sanitizeHtmlUrls(string $html): string
+	protected static function sanitizeHtmlAttributes(string $html): string
 	{
+		$html = preg_replace('~\s(?:on[a-z0-9_-]+|srcdoc|formaction)\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)~iu', '', $html);
+
 		return preg_replace_callback(
-			'~\s(href|src)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))~iu',
+			'~\sstyle\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))~iu',
 			function ($match) {
+				$value = html_entity_decode($match[1] ?? $match[2] ?? $match[3] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+				$declarations = [];
+				$allowed = [
+					'text-align', 'color', 'background-color', 'font-size', 'font-weight', 'font-style',
+					'text-decoration', 'line-height', 'margin', 'margin-top', 'margin-right',
+					'margin-bottom', 'margin-left', 'padding', 'padding-top', 'padding-right',
+					'padding-bottom', 'padding-left', 'width', 'max-width', 'height',
+				];
+
+				foreach (explode(';', $value) as $declaration) {
+					if (strpos($declaration, ':') === false) continue;
+					list($property, $propertyValue) = explode(':', $declaration, 2);
+					$property = strtolower(trim($property));
+					$propertyValue = trim($propertyValue);
+					if (!in_array($property, $allowed, true) || $propertyValue === '') continue;
+					if (preg_match('~(?:url\s*\(|expression\s*\(|@import|behavior\s*:|-moz-binding|[{}\\\\])~i', $propertyValue)) continue;
+					$propertyValue = preg_replace('~\s*!important\s*$~i', '', $propertyValue);
+					if ($propertyValue === '') continue;
+					$declarations[] = $property . ': ' . $propertyValue;
+				}
+
+				if (!$declarations) return '';
+				return ' style="' . htmlspecialchars(implode('; ', $declarations), ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';
+			},
+			$html
+		);
+	}
+
+	protected static function sanitizeHtmlUrls(string $html, bool $managedMediaOnly = false): string
+	{
+		$html = preg_replace_callback(
+			'~\s(href|src)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))~iu',
+			function ($match) use ($managedMediaOnly) {
+				$attribute = strtolower($match[1]);
 				$url = $match[2] ?? $match[3] ?? $match[4] ?? '';
 				$url = html_entity_decode(trim($url), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 				$normalized = preg_replace('~[\x00-\x20\x7F]+~u', '', $url);
 
-				if (preg_match('~^[a-z][a-z0-9+.-]*:~i', $normalized) && !preg_match('~^(https?|mailto|tel):~i', $normalized)) {
-					return '';
+				if ($normalized === '' || ($attribute === 'href' && $normalized === '#')) return '';
+				if (preg_match('~^[a-z][a-z0-9+.-]*:~i', $normalized)) {
+					if ($attribute === 'src' && !preg_match('~^https?:~i', $normalized)) return '';
+					if ($attribute === 'href' && !preg_match('~^(https?|mailto|tel):~i', $normalized)) return '';
+				}
+				if ($attribute === 'src' && $managedMediaOnly) {
+					if (preg_match('~^(?:[a-z][a-z0-9+.-]*:)?//~i', $normalized)) return '';
+					$path = rawurldecode((string)parse_url($normalized, PHP_URL_PATH));
+					$path = preg_replace('~^(?:\./)+~', '', $path);
+					if (str_contains($path, '..') || !preg_match('~^(?:/[^/?#]+)*/media/(?:[^/]+/)*[^/]+$|^media/(?:[^/]+/)*[^/]+$~D', $path)) return '';
+				}
+				if ($attribute === 'href') {
+					$path = rawurldecode((string)parse_url($normalized, PHP_URL_PATH));
+					if (preg_match('~(?:^|/)\.\.(?:/|$)~', $path)) return '';
+					if (preg_match('~(?:^|/)(?:files|cache|library)(?:/|$)~i', ltrim($path, '/'))) return '';
 				}
 
 				return $match[0];
+			},
+			$html
+		);
+
+		return preg_replace('~<a\b(?![^>]*\b(?:href|id|name)\s*=)[^>]*>(.*?)</a>~isu', '$1', $html);
+	}
+
+	public static function removeEmptyHeadings(string $html, int $level = 1): string
+	{
+		if ($level < 1 || $level > 6 || $html === '') return $html;
+
+		return preg_replace_callback(
+			'~<h' . $level . '\b[^>]*>(.*?)</h' . $level . '\s*>~isu',
+			function ($match) {
+				$text = html_entity_decode(strip_tags($match[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+				$text = preg_replace('~[\s\p{Z}\x{00AD}\x{200B}-\x{200F}\x{2060}-\x{206F}\x{FEFF}]+~u', '', $text);
+				return preg_match('~[\pL\pN]~u', $text) ? $match[0] : '';
 			},
 			$html
 		);

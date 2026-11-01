@@ -31,7 +31,12 @@ class Admin_Form_Tag extends DEEC_Form
 			'name' => 'description',
 			'type' => 'textarea',
 			'label' => 'ADMIN_TAG_DESCRIPTION',
-			'format' => ['type' => 'html'],
+			'format' => [
+				'type' => 'html',
+				'managedMediaOnly' => true,
+				'allowTags' => ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'b', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['href', 'src', 'title', 'alt', 'class', 'id', 'style', 'width', 'height'],
+			],
 			'attribs' => [
 				'cols' => 75,
 				'rows' => 18,
@@ -44,7 +49,12 @@ class Admin_Form_Tag extends DEEC_Form
 			'name' => 'shortdescription',
 			'type' => 'textarea',
 			'label' => 'ADMIN_TAG_SHORT_DESCRIPTION',
-			'format' => ['type' => 'html'],
+			'format' => [
+				'type' => 'html',
+				'managedMediaOnly' => true,
+				'allowTags' => ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'b', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['href', 'src', 'title', 'alt', 'class', 'id', 'style', 'width', 'height'],
+			],
 			'attribs' => [
 				'cols' => 75,
 				'rows' => 18,
@@ -57,7 +67,12 @@ class Admin_Form_Tag extends DEEC_Form
 			'name' => 'minidescription',
 			'type' => 'textarea',
 			'label' => 'ADMIN_TAG_MINI_DESCRIPTION',
-			'format' => ['type' => 'html'],
+			'format' => [
+				'type' => 'html',
+				'managedMediaOnly' => true,
+				'allowTags' => ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'b', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['href', 'src', 'title', 'alt', 'class', 'id', 'style', 'width', 'height'],
+			],
 			'attribs' => [
 				'cols' => 75,
 				'rows' => 18,
@@ -70,7 +85,12 @@ class Admin_Form_Tag extends DEEC_Form
 			'name' => 'header',
 			'type' => 'textarea',
 			'label' => 'CREDIT_NOTES_HEADER',
-			'format' => ['type' => 'html'],
+			'format' => [
+				'type' => 'html',
+				'managedMediaOnly' => true,
+				'allowTags' => ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'b', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['href', 'src', 'title', 'alt', 'class', 'id', 'style', 'width', 'height'],
+			],
 			'attribs' => [
 				'cols' => 75,
 				'rows' => 18,
@@ -83,7 +103,12 @@ class Admin_Form_Tag extends DEEC_Form
 			'name' => 'footer',
 			'type' => 'textarea',
 			'label' => 'CREDIT_NOTES_FOOTER',
-			'format' => ['type' => 'html'],
+			'format' => [
+				'type' => 'html',
+				'managedMediaOnly' => true,
+				'allowTags' => ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'b', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+				'allowAttribs' => ['href', 'src', 'title', 'alt', 'class', 'id', 'style', 'width', 'height'],
+			],
 			'attribs' => [
 				'cols' => 75,
 				'rows' => 18,

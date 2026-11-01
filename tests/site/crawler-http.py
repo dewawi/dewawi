@@ -88,6 +88,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if remainder == "missing.png" or remainder == "missing":
             self.send_text("Not found", status=404, head=head)
             return
+        if scenario == "gone" and remainder == "removed":
+            self.send_text("Gone", status=410, head=head)
+            return
 
         if scenario == "chain" and remainder == "old":
             self.send_redirect(f"/{scenario}/mid")
@@ -155,6 +158,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
             canonical = f"{self.base_url}/{scenario}/other"
         elif scenario == "h1":
             h1 = "First</h1><h1>Second"
+        elif scenario == "h1-empty":
+            h1 = "&nbsp;<span></span>"
         elif scenario == "description":
             descriptions = 2
         elif scenario == "json":
@@ -179,6 +184,20 @@ class FixtureHandler(BaseHTTPRequestHandler):
             link = f'<script src="/{scenario}/missing.js"></script><img src="/{scenario}/image.png">'
         elif scenario == "performance":
             link = f'<img src="/{scenario}/image.png" width="800" height="450" alt="Second" fetchpriority="high">'
+        elif scenario == "gone":
+            link = f'<a href="/{scenario}/removed">Removed</a>'
+        elif scenario == "legacy-content":
+            link = """
+                <a>Missing</a><a href="">Empty</a><a href="#">Hash</a>
+                <a href="#section">Valid fragment</a><a href="#missing">Missing fragment</a>
+                <a href="javascript:alert(1)">Unsafe</a><a href="https://example.invalid/page">External</a>
+                <div id="section" onclick="alert(1)" style="background-image:url(https://cdn.invalid/background.png)">Section</div>
+                <img src="/legacy-content/image.png" width="10" height="10">
+                <img src="/legacy-content/image.png" width="10" height="10" alt="" class="decorative">
+                <img src="https://cdn.invalid/pixel.png" width="1" height="1" alt="Tracking pixel">
+                <link rel="stylesheet" href="https://cdn.invalid/site.css">
+                <iframe src="https://video.invalid/embed/123" title="Video"></iframe>
+            """
 
         headers = {"X-Robots-Tag": "noindex, nofollow"} if noindex else {}
         self.send_text(
@@ -310,6 +329,7 @@ try:
     check(single["summary"]["redirects"] == 1 and "redirect_chain" not in codes(single), "Legitimate one-hop redirect was treated as a chain")
     check("canonical_mismatch" in codes(run("canonical")), "Incorrect canonical was not detected")
     check("legacy_multiple_h1" in codes(run("h1")), "Duplicate legacy H1 was not classified")
+    check("h1_empty" in codes(run("h1-empty")), "Empty H1 was not detected")
     check("description_duplicate" in codes(run("description")), "Duplicate meta description was not detected")
     check("json_ld_invalid" in codes(run("json")), "Invalid JSON-LD was not detected")
     check("sitemap_invalid" in codes(run("sitemap-bad")), "Invalid XML sitemap was not detected")
@@ -320,12 +340,21 @@ try:
     check("breadcrumb_redirect" in codes(run("breadcrumb")), "Redirecting historical breadcrumb URL was not detected")
     check("redirect_location_missing" in codes(run("invalid-redirect")), "Redirect without Location was not detected")
     check("soft_404" in codes(run("soft404")), "Soft 404 was not detected")
+    check("http_error" in codes(run("gone")), "Linked HTTP 410 response was not detected")
     asset_codes = codes(run("asset"))
     check("asset_missing" in asset_codes and "image_alt_missing" in asset_codes, "Missing asset or image alt attribute was not detected")
     performance_codes = codes(run("performance"))
     check("priority_image_lazy" in performance_codes, "Lazy-loaded priority image was not detected")
     check("priority_image_multiple" in performance_codes, "Multiple high-priority images were not detected")
     check("image_sizes_missing" in performance_codes, "Responsive image without sizes was not detected")
+    legacy_codes = codes(run("legacy-content"))
+    expected_legacy_codes = {
+        "link_target_empty", "fragment_target_missing", "link_scheme_unsafe", "external_link",
+        "image_alt_missing", "external_resource", "third_party_embed", "unsafe_html_attribute",
+    }
+    check(expected_legacy_codes <= legacy_codes, f"Legacy content findings are incomplete: {legacy_codes}")
+    check("image_alt_empty" not in legacy_codes, "Explicitly decorative image was treated as informative")
+    check("internal_link_redirect" in codes(single), "Historical internal link redirect was not reported")
 
     noindex = run("noindex", expected_indexable=False)
     check(noindex["summary"]["errors"] == 0, f"Correct noindex website has errors: {noindex['findings']}")

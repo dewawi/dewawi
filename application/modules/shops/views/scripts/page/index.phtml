@@ -3,15 +3,15 @@
 $title = trim((string)($this->page['title'] ?? ''));
 $metaTitle = trim((string)($this->page['metatitle'] ?? ''));
 $metaDescription = trim((string)($this->page['metadescription'] ?? ''));
+$content = DEEC_Filter::removeEmptyHeadings((string)($this->page['content'] ?? ''));
 
 $this->title = $title;
-$descriptionSource = $metaDescription !== '' ? $metaDescription : trim(html_entity_decode(strip_tags((string)($this->page['content'] ?? '')), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+$descriptionSource = $metaDescription !== '' ? $metaDescription : trim(html_entity_decode(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 $this->SiteMetadata([
 	'title' => $metaTitle !== '' ? $metaTitle : $title,
 	'description' => $descriptionSource,
 ]);
 
-$content = (string)($this->page['content'] ?? '');
 $contentHasH1 = preg_match('/<h1\b/i', $content) === 1;
 $contact = $this->siteContext->hasFeature('contact') ? $this->ContactForm($this->translate('SHOPS_CONTACT_FORM')) : '';
 $content = str_replace('{contact}', $contact, $content);

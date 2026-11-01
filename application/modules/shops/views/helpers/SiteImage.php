@@ -26,7 +26,7 @@ class Zend_View_Helper_SiteImage extends Zend_View_Helper_Abstract
 			if (!empty($options['sizes'])) $attributes['sizes'] = (string)$options['sizes'];
 		}
 
-		foreach (['id', 'class', 'style', 'onclick'] as $name) {
+		foreach (['id', 'class', 'style'] as $name) {
 			if (isset($options[$name]) && $options[$name] !== '') $attributes[$name] = (string)$options[$name];
 		}
 		if (($options['loading'] ?? 'lazy') === 'lazy') $attributes['loading'] = 'lazy';

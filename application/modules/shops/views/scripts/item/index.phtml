@@ -1,6 +1,10 @@
 <?php
 
 $item = $this->item;
+$item['shopdescription'] = DEEC_Filter::removeEmptyHeadings((string)($item['shopdescription'] ?? ''));
+$item['shopdescriptionshort'] = DEEC_Filter::removeEmptyHeadings((string)($item['shopdescriptionshort'] ?? ''));
+$item['shopdescriptionmini'] = DEEC_Filter::removeEmptyHeadings((string)($item['shopdescriptionmini'] ?? ''));
+$this->item = $item;
 $itemId = (int)$item['id'];
 $itemTitle = trim((string)($item['title'] ?? ''));
 $itemUrl = $this->SlugUrl('item', $itemId);
@@ -201,7 +205,7 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 						</button>
 					<?php endif; ?>
 					<?php if($this->siteContext->hasFeature('inquiry')) : ?>
-						<button class="btn btn-info btn-lg" type="button" onclick="showSection('<?php echo $this->item['id']; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
+						<button class="btn btn-info btn-lg" type="button" data-show-section="inquiry"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -353,33 +357,4 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 			if (activeImage) $('#mainImage').attr('src', activeImage.src);
 		});
 	});
-
-	// Function to show the accordion and open the relevant tab
-	function showTab(itemId, tabName) {
-		// Open the accordion
-		$('#details_' + itemId).collapse('show');
-
-		// Activate the correct tab
-		$('#productTab_' + itemId + ' a[href="#' + tabName + '_' + itemId + '"]').tab('show');
-	}
-
-	function showSection(itemId, sectionName) {
-		// Find the section by ID
-		const section = document.getElementById(sectionName);
-
-		if (section) {
-			// Scroll to the section smoothly
-			const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-			section.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
-
-			// Optionally, highlight the section for better visibility
-			section.style.transition = 'background-color 0.5s ease';
-			section.style.backgroundColor = '#f8f9fa';
-
-			// Remove the highlight after a short delay
-			setTimeout(() => {
-				section.style.backgroundColor = '';
-			}, 2000);
-		}
-	}
 </script>

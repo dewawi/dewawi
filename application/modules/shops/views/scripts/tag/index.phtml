@@ -1,5 +1,10 @@
 <?php
-$this->title = $this->tag['title'];
+$tag = $this->tag;
+$tag['header'] = DEEC_Filter::removeEmptyHeadings((string)($tag['header'] ?? ''));
+$tag['description'] = DEEC_Filter::removeEmptyHeadings((string)($tag['description'] ?? ''));
+$tag['footer'] = DEEC_Filter::removeEmptyHeadings((string)($tag['footer'] ?? ''));
+$this->tag = $tag;
+$this->title = $tag['title'];
 $metaDescription = trim(html_entity_decode(strip_tags((string)($this->tag['description'] ?? '')), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 $this->SiteMetadata([
 	'title' => $this->title,

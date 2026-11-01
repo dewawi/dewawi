@@ -72,6 +72,20 @@ class SeoMetadataView extends Zend_View
 	{
 		return null;
 	}
+
+	public function RenderPageBlocks(array $blocks, bool $allowHeroH1 = true): string
+	{
+		$html = '';
+		$renderedH1 = false;
+		foreach ($blocks as $block) {
+			if (($block['type'] ?? '') !== 'hero') continue;
+			$data = json_decode((string)($block['data'] ?? ''), true);
+			$headingLevel = $allowHeroH1 && !$renderedH1 ? 1 : 2;
+			if ($headingLevel === 1 && trim((string)($data['title'] ?? '')) !== '') $renderedH1 = true;
+			$html .= $this->partial('page/blocks/hero.phtml', ['data' => $data, 'headingLevel' => $headingLevel]);
+		}
+		return $html;
+	}
 }
 
 function resetMetadataPlaceholders(): void
@@ -181,6 +195,19 @@ $renderView->page = [
 $renderView->pageblocks = [];
 $legacyPage = $renderView->render('page/index.phtml');
 checkMetadata(substr_count(strtolower($legacyPage), '<h1') === 1, 'A legacy CMS H1 receives a duplicate template H1');
+
+$renderView->page['content'] = '<h1>First heading</h1><h1>Second heading</h1>';
+$multipleLegacyH1 = $renderView->render('page/index.phtml');
+checkMetadata(substr_count(strtolower($multipleLegacyH1), '<h1') === 2, 'Multiple meaningful stored H1 elements were changed without editorial approval');
+
+$renderView->page['content'] = '<h1>&nbsp;<span> </span></h1><p>Content</p>';
+$emptyLegacyH1 = $renderView->render('page/index.phtml');
+checkMetadata(substr_count(strtolower($emptyLegacyH1), '<h1') === 1 && !str_contains($emptyLegacyH1, '&nbsp;'), 'An empty stored H1 suppresses the meaningful template H1');
+
+$renderView->page['content'] = '<h1>Stored heading</h1>';
+$renderView->pageblocks = [['type' => 'hero', 'data' => '{"title":"Hero heading"}']];
+$heroAndLegacy = $renderView->render('page/index.phtml');
+checkMetadata(substr_count(strtolower($heroAndLegacy), '<h1') === 1 && str_contains($heroAndLegacy, '<h2>Hero heading</h2>'), 'Hero and legacy H1 rendering creates a duplicate main heading');
 
 resetMetadataPlaceholders();
 $renderView = new SeoMetadataView($context, $root);

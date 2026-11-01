@@ -42,18 +42,34 @@ class ParsedHtml(HTMLParser):
         self.descriptions: list[str] = []
         self.canonicals: list[str] = []
         self.open_graph: dict[str, list[str]] = {}
-        self.links: list[str] = []
+        self.links: list[dict[str, Any]] = []
         self.images: list[dict[str, Any]] = []
         self.resources: list[tuple[str, str]] = []
+        self.embeds: list[tuple[str, str | None]] = []
+        self.unsafe_attributes: list[tuple[str, str]] = []
+        self.styles: list[str] = []
+        self.ids: set[str] = set()
         self.json_ld: list[str] = []
         self.base_href: str | None = None
         self._capture: str | None = None
         self._text: list[str] = []
         self._json: list[str] | None = None
+        self._style: list[str] | None = None
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = {key.lower(): value for key, value in attrs}
         tag = tag.lower()
+
+        if values.get("id"):
+            self.ids.add(values["id"] or "")
+        for name, value in attrs:
+            name = name.lower()
+            if name.startswith("on") or name in {"srcdoc", "formaction"}:
+                self.unsafe_attributes.append((tag, name))
+            if name == "style" and value:
+                self.styles.append(value)
+                if re.search(r"(?:expression\s*\(|@import|behavior\s*:|-moz-binding)", value, re.I):
+                    self.unsafe_attributes.append((tag, "style"))
 
         if tag in {"title", "h1"}:
             self._capture = tag
@@ -66,8 +82,8 @@ class ParsedHtml(HTMLParser):
                 self.descriptions.append(content)
             if prop.startswith("og:"):
                 self.open_graph.setdefault(prop, []).append(content)
-        elif tag == "a" and values.get("href") is not None:
-            self.links.append(values["href"] or "")
+        elif tag == "a":
+            self.links.append({"present": "href" in values, "href": values.get("href") or ""})
         elif tag == "base" and self.base_href is None and values.get("href"):
             self.base_href = values["href"]
         elif tag == "img":
@@ -88,13 +104,24 @@ class ParsedHtml(HTMLParser):
             rel = {part.lower() for part in (values.get("rel") or "").split()}
             if "canonical" in rel:
                 self.canonicals.append(values["href"] or "")
-            if "stylesheet" in rel or "icon" in rel:
-                self.resources.append(("css" if "stylesheet" in rel else "image", values["href"] or ""))
+            if rel.intersection({"stylesheet", "icon", "preload", "modulepreload"}):
+                kind = "css" if "stylesheet" in rel else "image" if "icon" in rel else (values.get("as") or "resource")
+                self.resources.append((kind, values["href"] or ""))
         elif tag == "script":
             if values.get("src"):
                 self.resources.append(("js", values["src"] or ""))
             if (values.get("type") or "").lower() == "application/ld+json":
                 self._json = []
+        elif tag == "style":
+            self._style = []
+        elif tag in {"iframe", "embed", "video", "audio", "source"}:
+            self.embeds.append((tag, values.get("src")))
+            if values.get("src"):
+                self.resources.append((tag, values["src"] or ""))
+        elif tag == "object":
+            self.embeds.append((tag, values.get("data")))
+            if values.get("data"):
+                self.resources.append((tag, values["data"] or ""))
 
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
@@ -106,12 +133,17 @@ class ParsedHtml(HTMLParser):
         if tag == "script" and self._json is not None:
             self.json_ld.append("".join(self._json).strip())
             self._json = None
+        if tag == "style" and self._style is not None:
+            self.styles.append("".join(self._style))
+            self._style = None
 
     def handle_data(self, data: str) -> None:
         if self._capture is not None:
             self._text.append(data)
         if self._json is not None:
             self._json.append(data)
+        if self._style is not None:
+            self._style.append(data)
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -351,6 +383,8 @@ class SiteCrawler:
             return
         if self.is_internal(url):
             self.resources.setdefault(url, set()).add(kind)
+        else:
+            self.add_finding("warning", "resource", "external_resource", page_url, f"External {kind} resource requires editorial and consent review: {url}")
 
     def parse_html(self, result: dict[str, Any], depth: int) -> dict[str, Any]:
         page_url = result["final_url"]
@@ -385,6 +419,8 @@ class SiteCrawler:
             code = "legacy_multiple_h1" if len(parser.h1) > 1 else "h1_missing"
             message = f"Found {len(parser.h1)} H1 elements; additional stored legacy headings may require editorial cleanup" if len(parser.h1) > 1 else "No main H1 found"
             self.add_finding("warning" if len(parser.h1) > 1 else "error", "seo", code, page_url, message)
+        if any(not re.search(r"[\w\d]", heading, re.UNICODE) for heading in parser.h1):
+            self.add_finding("error", "seo", "h1_empty", page_url, "At least one H1 has no meaningful text")
 
         canonical_urls = [self.resolve_url(value, page_url) for value in parser.canonicals]
         canonical = canonical_urls[0] if len(canonical_urls) == 1 else None
@@ -427,11 +463,29 @@ class SiteCrawler:
             else:
                 link_base = candidate
 
-        for value in parser.links:
+        for link in parser.links:
+            value = link["href"]
+            if not link["present"] or not value.strip() or value.strip() == "#":
+                self.add_finding("warning", "link", "link_target_empty", page_url, "Anchor has no usable link target")
+                continue
+            if re.match(r"^(?:javascript|data|vbscript):", re.sub(r"[\x00-\x20\x7f]+", "", value), re.I):
+                self.add_finding("error", "link", "link_scheme_unsafe", page_url, f"Anchor uses an unsafe URL scheme: {value}")
+                continue
+            if value.startswith("#"):
+                fragment = urllib.parse.unquote(value[1:])
+                if fragment not in parser.ids:
+                    self.add_finding("warning", "link", "fragment_target_missing", page_url, f"Fragment target does not exist on this page: {value}")
+                continue
+            if re.match(r"^(?:mailto|tel):", value, re.I):
+                continue
             if page_url.startswith("https://") and value.strip().lower().startswith("http://"):
                 self.add_finding("error", "link", "mixed_content", page_url, f"HTTP link on HTTPS page: {value}")
             url = self.resolve_url(value, link_base)
-            if url is None or not self.is_internal(url):
+            if url is None:
+                self.add_finding("warning", "link", "link_target_invalid", page_url, f"Anchor target is not a valid HTTP, HTTPS, mail or telephone URL: {value}")
+                continue
+            if not self.is_internal(url):
+                self.add_finding("warning", "link", "external_link", page_url, f"External link requires editorial review: {url}")
                 continue
             self.internal_links.add(url)
             extension = posixpath.splitext(urllib.parse.urlsplit(url).path.lower())[1]
@@ -474,6 +528,23 @@ class SiteCrawler:
 
         for kind, value in parser.resources:
             self.record_resource(kind, value, page_url)
+
+        for tag, value in parser.embeds:
+            if not value:
+                self.add_finding("warning", "resource", "embed_source_missing", page_url, f"{tag} element has no source")
+                continue
+            url = self.resolve_url(value, page_url)
+            if url is not None and not self.is_internal(url):
+                self.add_finding("warning", "resource", "third_party_embed", page_url, f"External {tag} embed requires provider-specific consent review: {url}")
+
+        for tag, attribute in parser.unsafe_attributes:
+            self.add_finding("error", "security", "unsafe_html_attribute", page_url, f"Unsafe {attribute} attribute found on {tag} element")
+
+        for style in parser.styles:
+            for match in re.finditer(r"url\s*\(\s*(['\"]?)(.*?)\1\s*\)", style, re.I):
+                value = match.group(2).strip()
+                if value:
+                    self.record_resource("css", value, page_url)
 
         heading_text = " ".join(parser.titles + parser.h1)
         if SOFT_404.search(heading_text):
@@ -551,6 +622,9 @@ class SiteCrawler:
         self.pages.append(page)
         self._page_results[url] = page
         self._page_results[result["final_url"]] = page
+
+        if source == "link" and result["hops"]:
+            self.add_finding("warning", "link", "internal_link_redirect", url, f"Internal link redirects to {result['final_url']}")
 
         if status == 0:
             self.add_finding("error", "http", "request_failed", url, f"Request failed or timed out: {result.get('error') or 'unknown error'}")

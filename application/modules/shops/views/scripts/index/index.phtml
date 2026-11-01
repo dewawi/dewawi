@@ -1,7 +1,7 @@
 <?php
 
 $page = is_array($this->page ?? null) ? $this->page : [];
-$content = (string)($page['content'] ?? '');
+$content = DEEC_Filter::removeEmptyHeadings((string)($page['content'] ?? ''));
 
 $metaTitle = trim((string)($page['metatitle'] ?? ''));
 $metaDescription = trim((string)($page['metadescription'] ?? ''));

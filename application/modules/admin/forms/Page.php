@@ -91,8 +91,9 @@ class Admin_Form_Page extends DEEC_Form
 			'label' => 'ADMIN_CATEGORY_DESCRIPTION',
 			'format' => [
 				'type' => 'html',
+				'managedMediaOnly' => true,
 				'allowTags' => ['a', 'p', 'span', 'img', 'div', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href', 'id', 'alt', 'width', 'height'],
 			],
 			'attribs' => [
 				'cols' => 75,
@@ -109,8 +110,9 @@ class Admin_Form_Page extends DEEC_Form
 			'label' => 'ADMIN_HEADER',
 			'format' => [
 				'type' => 'html',
+				'managedMediaOnly' => true,
 				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href', 'id', 'alt', 'width', 'height'],
 			],
 			'attribs' => [
 				'cols' => 75,
@@ -127,8 +129,9 @@ class Admin_Form_Page extends DEEC_Form
 			'label' => 'ADMIN_FOOTER',
 			'format' => [
 				'type' => 'html',
+				'managedMediaOnly' => true,
 				'allowTags' => ['a', 'p', 'span', 'img', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-				'allowAttribs' => ['src', 'style', 'class', 'title', 'href'],
+				'allowAttribs' => ['src', 'style', 'class', 'title', 'href', 'id', 'alt', 'width', 'height'],
 			],
 			'attribs' => [
 				'cols' => 75,

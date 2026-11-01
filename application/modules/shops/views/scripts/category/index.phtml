@@ -1,6 +1,11 @@
 <?php
 
 $category = $this->category;
+$category['header'] = DEEC_Filter::removeEmptyHeadings((string)($category['header'] ?? ''));
+$category['shortdescription'] = DEEC_Filter::removeEmptyHeadings((string)($category['shortdescription'] ?? ''));
+$category['description'] = DEEC_Filter::removeEmptyHeadings((string)($category['description'] ?? ''));
+$category['footer'] = DEEC_Filter::removeEmptyHeadings((string)($category['footer'] ?? ''));
+$this->category = $category;
 $categoryId = (int)$category['id'];
 $parentCategoryId = (int)$category['parentid'];
 
@@ -283,7 +288,7 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 								</div>
 								<?php if($inquiryEnabled) : ?>
 									<div class="col-md-2 d-flex justify-content-between">
-										<button class="btn btn-info" type="button" onclick="showTab('<?php echo $itemId; ?>', 'inquiry')"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
+										<button class="btn btn-info" type="button" data-show-tab="inquiry" data-item-id="<?php echo $itemId; ?>"><?php echo $this->translate('SHOPS_SEND_INQUIRY'); ?></button>
 									</div>
 								<?php endif; ?>
 
@@ -488,17 +493,6 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 		</div>
 	</section>
 <?php endif; ?>
-
-<script>
-	// Function to show the accordion and open the relevant tab
-	function showTab(itemId, tabName) {
-		// Open the accordion
-		$('#details_' + itemId).collapse('show');
-
-		// Activate the correct tab
-		$('#productTab_' + itemId + ' a[href="#' + tabName + '_' + itemId + '"]').tab('show');
-	}
-</script>
 
 <!-- Footer section -->
 <section id="footer">
