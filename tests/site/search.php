@@ -64,12 +64,14 @@ class ShopVisibilityTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
 	public function query($sql, $bind = [])
 	{
 		if (!$sql instanceof Zend_Db_Table_Select || $bind) throw new RuntimeException('Unexpected shop visibility database access');
-		$sql->assemble();
+		$assembled = $sql->assemble();
+		$isCount = str_contains($assembled, 'COUNT(*)');
 		$from = $sql->getPart(Zend_Db_Select::FROM);
 		$table = reset($from)['tableName'];
 		$rows = array_values(array_filter($this->rows[$table], static fn(array $row): bool => shopVisibilityMatches($sql->getPart(Zend_Db_Select::WHERE), $row)));
+		if ($isCount) $rows = [['count' => count($rows)]];
 		$orders = $sql->getPart(Zend_Db_Select::ORDER);
-		usort($rows, static function(array $a, array $b) use ($orders): int {
+		if (!$isCount) usort($rows, static function(array $a, array $b) use ($orders): int {
 			foreach ($orders as [$field, $direction]) {
 				$result = $a[$field] <=> $b[$field];
 				if ($result) return $direction === 'DESC' ? -$result : $result;
@@ -80,6 +82,7 @@ class ShopVisibilityTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
 		return new class($rows) {
 			public function __construct(private array $rows) {}
 			public function fetchAll($mode) { return $this->rows; }
+			public function fetchColumn($column = 0) { return array_values($this->rows[0] ?? [null])[$column] ?? false; }
 		};
 	}
 }
@@ -357,5 +360,42 @@ $categoryItems = (new Shops_Model_DbTable_Item())->getItemsByCategory(10)->toArr
 checkSearch(array_column($categoryItems, 'id') === [100] && (int)$categoryItems[0]['shopenabled'] === 0, 'Existing item without shop approval is missing from its category');
 $resolvedItem = (new Shops_Model_DbTable_Slug())->resolvePath('products/existing-item');
 checkSearch((int)($resolvedItem['entityid'] ?? 0) === 100 && ($resolvedItem['controller'] ?? '') === 'item', 'Existing item slug without shop approval is not publicly resolvable');
+
+$itemDb = new Shops_Model_DbTable_Item();
+foreach ([0, 1, 25, 26, 60] as $total) {
+	$adapter->rows['item'] = [];
+	for ($itemId = 1; $itemId <= $total; $itemId++) {
+		$adapter->rows['item'][] = [
+			'id' => $itemId, 'clientid' => 3, 'shopid' => 7, 'shopcatid' => 10, 'shopenabled' => 0,
+			'title' => 'Product', 'modified' => '2026-01-01', 'created' => '2026-01-01', 'deleted' => 0,
+		];
+	}
+	$adapter->rows['item'][] = ['id' => 1001, 'clientid' => 4, 'shopid' => 7, 'shopcatid' => 10, 'title' => 'Foreign', 'modified' => '2026-01-01', 'created' => '2026-01-01', 'deleted' => 0];
+	$adapter->rows['item'][] = ['id' => 1002, 'clientid' => 3, 'shopid' => 7, 'shopcatid' => 10, 'title' => 'Deleted', 'modified' => '2026-01-01', 'created' => '2026-01-01', 'deleted' => 1];
+
+	checkSearch($itemDb->countItemsByCategory(10) === $total, 'Category count failed for ' . $total . ' products');
+	$pages = Shops_Model_DbTable_Item::getPageCount($total);
+	checkSearch($pages === max(1, (int)ceil($total / 25)), 'Page count failed for ' . $total . ' products');
+	$collected = [];
+	for ($page = 1; $page <= $pages; $page++) {
+		$rows = $itemDb->getItemsByCategory(10, ['limit' => 25, 'offset' => ($page - 1) * 25])->toArray();
+		$collected = array_merge($collected, array_map('intval', array_column($rows, 'id')));
+	}
+	$expected = $total > 0 ? array_reverse(range(1, $total)) : [];
+	checkSearch($collected === $expected, 'Pagination duplicated, skipped or reordered products for total ' . $total);
+	if ($total === 60) {
+		$ascending = $itemDb->getItemsByCategory(10, ['order' => 'title', 'sort' => 'ASC', 'limit' => 25, 'offset' => 25])->toArray();
+		checkSearch(array_map('intval', array_column($ascending, 'id')) === range(26, 50), 'Ascending category sort is not stable between pages');
+	}
+}
+
+foreach ([[0, 60, 1], [-1, 60, 1], ['invalid', 60, 1], [[2], 60, 1], [999, 60, 3], [2, 26, 2], [2, 0, 1]] as [$requested, $total, $expected]) {
+	checkSearch(Shops_Model_DbTable_Item::normalizePage($requested, $total) === $expected, 'Invalid category page was not normalized');
+}
+
+$categoryControllerSource = file_get_contents($root . '/application/modules/shops/controllers/CategoryController.php');
+$categoryViewSource = file_get_contents($root . '/application/modules/shops/views/scripts/category/index.phtml');
+checkSearch(str_contains($categoryControllerSource, 'countItemsByCategory') && str_contains($categoryControllerSource, "'?page=' . \$page"), 'Category controller does not count or canonicalize pages');
+checkSearch(str_contains($categoryViewSource, 'pagination justify-content-center') && str_contains($categoryViewSource, 'aria-current="page"'), 'Category pagination UI is missing or inaccessible');
 
 echo 'PASS: ' . $checks . " website search, visibility, ranking, pagination and SEO cases\n";

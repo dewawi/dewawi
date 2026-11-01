@@ -146,6 +146,17 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 <!-- Display product list if available -->
 <?php if (count($this->items) > 0): ?>
 	<?php $shippingPage = $this->PageByType('shipping'); ?>
+	<?php
+	$pagination = is_array($this->categoryPagination ?? null) ? $this->categoryPagination : [];
+	$categoryPath = $this->SlugUrl('category', (int)$this->category['id']);
+	$pageUrl = static function(int $page) use ($pagination, $categoryPath): string {
+		$params = [];
+		if (($pagination['order'] ?? 'modified') !== 'modified') $params['order'] = $pagination['order'];
+		if (($pagination['sort'] ?? 'DESC') !== 'DESC') $params['sort'] = $pagination['sort'];
+		if ($page > 1) $params['page'] = $page;
+		return $categoryPath . ($params ? '?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986) : '');
+	};
+	?>
 	<section id="category" class="py-5">
 		<div class="container">
 			<h2 class="text-center mb-4"><?php echo $this->category['title']; ?></h2>
@@ -459,6 +470,22 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 					<?php endif; ?>
 				<?php endforeach; ?>
 			</div>
+
+			<?php if((int)($pagination['pages'] ?? 1) > 1) : ?>
+				<nav class="mt-4" aria-label="<?php echo $this->translate('PAGINATION_PAGE'); ?>">
+					<ul class="pagination justify-content-center">
+						<?php for($number = 1; $number <= (int)$pagination['pages']; $number++) : ?>
+							<?php if($number === 1 || $number === (int)$pagination['pages'] || abs($number - (int)$pagination['page']) <= 2) : ?>
+								<li class="page-item<?php echo $number === (int)$pagination['page'] ? ' active' : ''; ?>">
+									<a class="page-link" href="<?php echo $this->escape($pageUrl($number)); ?>"<?php echo $number === (int)$pagination['page'] ? ' aria-current="page"' : ''; ?>><?php echo $number; ?></a>
+								</li>
+							<?php elseif($number === 2 || $number === (int)$pagination['pages'] - 1) : ?>
+								<li class="page-item disabled" aria-hidden="true"><span class="page-link">…</span></li>
+							<?php endif; ?>
+						<?php endfor; ?>
+					</ul>
+				</nav>
+			<?php endif; ?>
 		</div>
 	</section>
 <?php endif; ?>

@@ -18,7 +18,6 @@ class Shops_CategoryController extends Shops_Controller_Action
 		}
 
 		$path = (new Shops_Model_DbTable_Slug())->getPublicPath('category', (int)$category['id']);
-		if ($path) $this->setCanonicalPath($path);
 
 		$taxratesDb = new Shops_Model_DbTable_Taxrate();
 		$taxrates = $taxratesDb->getTaxRates();
@@ -28,9 +27,18 @@ class Shops_CategoryController extends Shops_Controller_Action
 
 		$toolbar = new Items_Form_Toolbar();
 		$params = $this->_helper->Params->getParams($toolbar);
+		$params['order'] = in_array(($params['order'] ?? ''), ['modified', 'created', 'title'], true) ? $params['order'] : 'modified';
+		$params['sort'] = in_array(strtoupper((string)($params['sort'] ?? '')), ['ASC', 'DESC'], true) ? strtoupper((string)$params['sort']) : 'DESC';
 
 		$itemDb = new Shops_Model_DbTable_Item();
+		$totalItems = $itemDb->countItemsByCategory((int)$category['id']);
+		$pages = Shops_Model_DbTable_Item::getPageCount($totalItems);
+		$page = Shops_Model_DbTable_Item::normalizePage($this->_getParam('page', 1), $totalItems);
+		$params['limit'] = Shops_Model_DbTable_Item::PER_PAGE;
+		$params['offset'] = ($page - 1) * Shops_Model_DbTable_Item::PER_PAGE;
 		$items = $itemDb->getItemsByCategory((int)$category['id'], $params);
+
+		if ($path) $this->setCanonicalPath($path . ($page > 1 ? '?page=' . $page : ''));
 
 		$prices = [];
 		foreach ($items as $item) {
@@ -80,6 +88,14 @@ class Shops_CategoryController extends Shops_Controller_Action
 		$this->view->imagePath = $dir1 . '/' . $dir2 . '/' . $clientid;
 		$this->view->attributeSets = $attributeSets;
 		$this->view->optionSets = $optionSets;
+		$this->view->categoryPagination = [
+			'page' => $page,
+			'pages' => $pages,
+			'total' => $totalItems,
+			'perPage' => Shops_Model_DbTable_Item::PER_PAGE,
+			'order' => (string)($params['order'] ?? 'modified'),
+			'sort' => strtoupper((string)($params['sort'] ?? 'DESC')),
+		];
 
 		$this->assignMessages();
 	}
