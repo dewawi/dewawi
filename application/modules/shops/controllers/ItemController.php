@@ -35,6 +35,7 @@ class Shops_ItemController extends Shops_Controller_Action
 			'raw' => $item['price'],
 			'rawtax' => $priceWithTax,
 			'rawspecialprice' => $item['specialprice'],
+			'rawspecialpricetax' => $specialPriceWithTax,
 			'formatted' => $currency->toCurrency($item['price']),
 			'formattedtax' => $currency->toCurrency($priceWithTax),
 			'formattedspecialprice' => $currency->toCurrency($item['specialprice']),

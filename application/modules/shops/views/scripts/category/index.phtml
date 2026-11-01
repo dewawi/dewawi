@@ -15,10 +15,13 @@ if ($parentCategoryId > 0 && isset($this->categories[$parentCategoryId])) {
 	$this->title .= ' ' . trim((string)$this->categories[$parentCategoryId]['title']);
 }
 
-$this->headTitle($metaTitle !== '' ? $metaTitle : $this->title);
-
 $descriptionSource = $metaDescription !== '' ? $metaDescription : trim(html_entity_decode(strip_tags((string)($category['shortdescription'] ?: $category['description'])), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-if ($descriptionSource !== '') $this->headMeta()->setName('description', mb_substr($descriptionSource, 0, 160, 'UTF-8'));
+$contentHasH1 = preg_match('/<h1\b/i', implode(' ', [
+	(string)($category['header'] ?? ''),
+	(string)($category['shortdescription'] ?? ''),
+	(string)($category['description'] ?? ''),
+	(string)($category['footer'] ?? ''),
+])) === 1;
 
 $categoryMedia = $this->images['categories'][$categoryId] ?? [];
 $parentCategoryMedia = $parentCategoryId > 0 ? ($this->images['categories'][$parentCategoryId] ?? []) : [];
@@ -26,6 +29,14 @@ $parentCategoryMedia = $parentCategoryId > 0 ? ($this->images['categories'][$par
 $categoryImages = array_values(array_filter($categoryMedia, static function($media) {
 	return ($media['type'] ?? '') === 'image';
 }));
+
+$categoryImage = $categoryImages[0] ?? null;
+$this->SiteMetadata([
+	'title' => $metaTitle !== '' ? $metaTitle : $this->title,
+	'description' => $descriptionSource,
+	'imageDirectory' => $categoryImage ? 'category' : null,
+	'image' => $categoryImage['url'] ?? null,
+]);
 
 $categoryDownloads = array_values(array_filter($categoryMedia, static function($media) {
 	return ($media['type'] ?? '') === 'download';
@@ -43,13 +54,15 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 <?php if($this->category['header']) : ?>
 	<section id="header" style="position: relative;">
 		<?php echo $this->category['header']; ?>
-		<div class="header-text">
-			<h1 class="text-center text-white"><?php echo $this->escape($this->category['subtitle'] ?: $this->category['title']); ?></h1>
-		</div>
+		<?php if(!$contentHasH1) : ?>
+			<div class="header-text">
+				<h1 class="text-center text-white"><?php echo $this->escape($this->category['subtitle'] ?: $this->category['title']); ?></h1>
+			</div>
+		<?php endif; ?>
 	</section>
 <?php endif; ?>
 
-<?php if(!$this->category['header']) : ?>
+<?php if(!$this->category['header'] && !$contentHasH1) : ?>
 	<div class="container pt-5">
 		<h1><?php echo $this->escape($this->category['title']); ?></h1>
 	</div>
@@ -60,8 +73,8 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 	<?php if($this->category['shortdescription']) : ?>
 		<section id="description" class="jumbotron jumbotron-fluid py-5">
 			<div class="container">
-				<?php if(!$this->category['header']) : ?>
-					<h2 class="text-center mb-4"><?php echo $this->category['title']; ?></h2>
+				<?php if(!$this->category['header'] && !$contentHasH1) : ?>
+					<h2 class="text-center mb-4"><?php echo $this->escape($this->category['title']); ?></h2>
 				<?php endif; ?>
 				<div class="row">
 					<div class="col-md-6 mb-4" style="padding: 0 50px;">
@@ -114,8 +127,8 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 <?php if ($hasSubcategories) : ?>
 	<section id="subcategories" class="py-5">
 		<div class="container">
-			<?php if(!$this->category['header']) : ?>
-				<h2 class="text-center mb-4"><?php echo $this->category['title']; ?></h2>
+			<?php if(!$this->category['header'] && !$contentHasH1) : ?>
+				<h2 class="text-center mb-4"><?php echo $this->escape($this->category['title']); ?></h2>
 			<?php endif; ?>
 			<div class="row">
 				<div class="text-center col-md-12 mb-4">
@@ -159,7 +172,7 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 	?>
 	<section id="category" class="py-5">
 		<div class="container">
-			<h2 class="text-center mb-4"><?php echo $this->category['title']; ?></h2>
+			<h2 class="text-center mb-4"><?php echo $this->escape($this->category['title']); ?></h2>
 
 			<!-- List Overview of Products -->
 			<div class="list-group">
@@ -177,40 +190,7 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 					}));
 
 					$previewImage = $itemImages[0] ?? null;
-					$itemImageUrls = [];
-
-					foreach ($itemImages as $image) {
-						$itemImageUrls[] = $this->baseUrl() . '/media/images/' . (string)$image['url'];
-					}
-
-					$productSchema = [
-						'@context' => 'https://schema.org/',
-						'@type' => 'Product',
-						'name' => (string)$item->title,
-						'description' => trim(strip_tags((string)$item->shopdescriptionshort)),
-						'sku' => (string)$item->sku,
-						'offers' => [
-							'@type' => 'Offer',
-							'url' => (string)($this->shop['url'] ?? '') . (string)$itemUrl,
-							'priceCurrency' => (string)$item->currency,
-							'price' => (float)$itemPrice['rawtax'],
-						],
-					];
-
-					if ($itemImageUrls) {
-						$productSchema['image'] = $itemImageUrls;
-					}
-
-					$manufacturer = trim((string)($this->manufacturers[(int)$item->manufacturerid] ?? ''));
-
-					if ($manufacturer !== '') {
-						$productSchema['brand'] = [
-							'@type' => 'Brand',
-							'name' => $manufacturer,
-						];
-					}
 					?>
-					<script type="application/ld+json"><?php echo Zend_Json::encode($productSchema); ?></script>
 					<?php if($item->title) : ?>
 						<div class="list-group-item">
 							<div class="row d-flex align-items-center"> <!-- Flexbox and vertical alignment -->

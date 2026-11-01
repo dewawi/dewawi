@@ -22,6 +22,7 @@ class Shops_PageController extends Shops_Controller_Action
 		$pageblockDb->setClientId($this->_siteContext->getClientId());
 
 		$this->view->page = $page;
+		$this->view->pages = $pageDb->getPages();
 		$this->view->pageblocks = $pageblockDb->getBlocksByPageId((int)$page['id'], true, 0);
 
 		$this->assignMessages();

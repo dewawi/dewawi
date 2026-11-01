@@ -64,9 +64,6 @@ class Shops_CategoryController extends Shops_Controller_Action
 			'categories' => $imageDb->getCategoryMedia($categories),
 		];
 
-		$manufacturersDb = new Shops_Model_DbTable_Manufacturer();
-		$manufacturers = $manufacturersDb->getManufacturers();
-
 		$clientid = (string)$shop['clientid'];
 		$dir1 = substr($clientid, 0, 1);
 		$dir2 = strlen($clientid) > 1 ? substr($clientid, 1, 1) : '0';
@@ -82,7 +79,6 @@ class Shops_CategoryController extends Shops_Controller_Action
 		$this->view->category = $category;
 		$this->view->items = $items;
 		$this->view->tagEntities = $tagEntities;
-		$this->view->manufacturers = $manufacturers;
 		$this->view->prices = $prices;
 		$this->view->images = $images;
 		$this->view->imagePath = $dir1 . '/' . $dir2 . '/' . $clientid;

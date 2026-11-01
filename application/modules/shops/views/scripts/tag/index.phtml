@@ -1,25 +1,34 @@
 <?php
 $this->title = $this->tag['title'];
-$this->headTitle($this->title);
 $metaDescription = trim(html_entity_decode(strip_tags((string)($this->tag['description'] ?? '')), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-if ($metaDescription !== '') $this->headMeta()->setName('description', mb_substr($metaDescription, 0, 160, 'UTF-8'));
+$this->SiteMetadata([
+	'title' => $this->title,
+	'description' => $metaDescription,
+]);
 $hasHeader = !empty($this->tag['header']);
+$contentHasH1 = preg_match('/<h1\b/i', implode(' ', [
+	(string)($this->tag['header'] ?? ''),
+	(string)($this->tag['description'] ?? ''),
+	(string)($this->tag['footer'] ?? ''),
+])) === 1;
 ?>
 
 <?php if($hasHeader) : ?>
 	<section id="header" style="position: relative;">
 		<?php echo $this->tag['header']; ?>
-		<div class="header-text">
-			<h1 class="text-center text-white"><?php echo $this->escape($this->tag['title']); ?></h1>
-		</div>
+		<?php if(!$contentHasH1) : ?>
+			<div class="header-text">
+				<h1 class="text-center text-white"><?php echo $this->escape($this->tag['title']); ?></h1>
+			</div>
+		<?php endif; ?>
 	</section>
 <?php endif; ?>
 
 	<section id="subcategories" class="py-5">
 		<div class="container">
-			<?php if($hasHeader) : ?>
+			<?php if($hasHeader && !$contentHasH1) : ?>
 				<h2 class="text-center mb-4"><?php echo $this->escape($this->tag['title']); ?></h2>
-			<?php else : ?>
+			<?php elseif(!$contentHasH1) : ?>
 				<h1 class="text-center mb-4"><?php echo $this->escape($this->tag['title']); ?></h1>
 			<?php endif; ?>
 			<div class="row">
@@ -29,7 +38,7 @@ $hasHeader = !empty($this->tag['header']);
 			</div>
 			<div class="row">
 				<div class="text-center col-md-12 mb-4">
-					<h3 class="text-center mb-4">Relevante Produkte und Lösungen (<?php echo $this->tag['title']; ?>)</h3>
+					<h3 class="text-center mb-4">Relevante Produkte und Lösungen (<?php echo $this->escape($this->tag['title']); ?>)</h3>
 				</div>
 			</div>
 			<div class="row">

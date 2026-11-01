@@ -18,7 +18,8 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Interne DEWAWI-Seiten erhalten grundlegende Sicherheits- und Noindex-Header.
 - Eine eigene Staging-Konfiguration wurde vorbereitet; Staging darf nicht stillschweigend die Produktionsdatenbank verwenden.
 - Automatische historische Pfade werden mandanten- und websitebezogen gespeichert und per HTTP 301 auf die jeweils aktuelle öffentliche Entitäts-URL weitergeleitet.
-- `robots.txt`, Sitemap und Canonicals verwenden dieselbe validierte, mandantenbezogene Shop-URL; nicht indexierbare Websites sperren Crawling zusätzlich dynamisch.
+- `robots.txt`, Sitemap und Canonicals verwenden dieselbe validierte, mandantenbezogene Shop-URL; nicht indexierbare Websites bleiben zum Erkennen von `noindex` crawlbar und bewerben keine Sitemap.
+- SEO-Titel, Descriptions und Open-Graph-Daten werden für öffentliche Seiten zentral erzeugt; Breadcrumbs verwenden für HTML und JSON-LD dieselbe aktuelle Pfadhierarchie.
 - TLS, bekannte Alt-URL-Importe, Consent Management, responsive Bilder, Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
 
 ## 3. Status- und Prioritätsdefinitionen
@@ -47,8 +48,8 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 8 | Infrastruktur | P0 vor Relaunch | Die kanonische Domain kommt mandantenbezogen aus `shop.url`; eine globale Host-Weiterleitung existiert nicht. Pro öffentlicher Website eine Hauptdomain festlegen und alternative Hosts nach DNS-/TLS-Prüfung per 301 umleiten. |
 | 9 | Teilweise | P0 vor Relaunch | Ausdrückliche Änderungen öffentlicher Seiten-, Kategorie-, Produkt- und Tag-Pfade erzeugen automatisch mandanten- und websitebezogene 301-Weiterleitungen. Ziele werden bei jedem Abruf aus der aktuellen öffentlichen Entität ermittelt. Ein fachlich geprüfter Import bekannter Alt-URLs und eine manuelle Admin-Zuordnung bleiben offen. |
 | 10 | Offen | P0 vor Relaunch | Historische Doppelungen wurden nicht vollständig inventarisiert. Jede bekannte Alt-URL einzeln der fachlich passenden neuen Seite zuordnen und aus Navigation sowie Sitemap entfernen; die neue Redirect-Tabelle kann anschließend als technische Grundlage dienen. |
-| 11 | Teilweise | P1 | Seiten und Kategorien unterstützen `metatitle` und `metadescription`; einzelne Entitäten verwenden nur Fallbacks. Metadatenfelder und Fallback-Regeln pro öffentlichem Seitentyp vervollständigen und auf Duplikate prüfen. |
-| 12 | Teilweise | P1 | CMS-Blöcke und Views enthalten semantische Überschriften, jedoch erlauben Legacy-WYSIWYG-Felder beliebige H1–H6. Pro Template eine H1-Quelle definieren, Komponentenebenen begrenzen und gerenderte Seiten automatisiert prüfen. |
+| 11 | Umgesetzt | P1 | Vorhandene individuelle Metatitel und -Descriptions werden für Startseite, CMS-Seiten und Kategorien verwendet. Produkte und Tags nutzen sinnvolle Bestandsdaten als Fallback. Eine zentrale Ausgabe verhindert doppelte Elemente und doppelte Websitenamen; leere Werte werden ausgelassen. |
+| 12 | Teilweise | P1 | Öffentliche Templates definieren eine Haupt-H1; bei mehreren Hero-Blöcken wird nur der erste als H1 ausgegeben. Vorhandene H1 in Legacy-HTML werden erkannt und nicht durch eine zusätzliche Template-H1 ergänzt. Mehrere bereits gespeicherte H1 innerhalb eines einzelnen Legacy-Inhalts werden bewusst nicht automatisch umgeschrieben und bleiben redaktionell zu prüfen. |
 | 13 | Teilweise | P1 | Mega-Menü-Schaltflächen, `aria-expanded`, Escape-Behandlung und Fokusdarstellung sind teilweise vorhanden. Fokusrückgabe, gegebenenfalls Pfeiltastensteuerung sowie Browser-/Tastaturtests ergänzen. |
 | 14 | Teilweise | P1 | Bootstrap-Collapse und mobile CSS-Regeln existieren, aber keine vollständige Regression für reale Menütiefen. Finale Navigation auf Telefon und Tablet testen und bei Bedarf als Akkordeon mit sauberer Fokussteuerung ausbauen. |
 | 15 | Teilweise | P2 | Suche und Ergebnisformular besitzen Label, GET-Parameter und eine sinnvolle Ergebnisroute. Falls das Design nur ein Icon zeigt, eine zugängliche, fokussierte und per Escape schließbare Suchoberfläche ergänzen. |
@@ -76,8 +77,8 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 37 | Teilweise | P0 | Direkter Zugriff auf vorhandene geschützte Dateien wird verhindert; ein partnerspezifischer Speicher existiert nicht. Partnerdokumente außerhalb statischer Auslieferung halten und nur nach serverseitiger Autorisierung senden. |
 | 38 | Teilweise | P2 | Kontaktanfragen speichern bereits einen Quellpfad. Für eine spätere Registrierung ein validiertes First-Party-Quellfeld wiederverwenden; keine beliebigen externen URLs übernehmen. |
 | 39 | Offen | P0 bei Einführung | Kein Partner-Marketing-Consent-Datensatz vorhanden. Registrierung und freiwillige Marketingeinwilligung getrennt mit Textversion, Zeitpunkt und Quelle speichern. |
-| 40 | Teilweise | P1 | Produkt-JSON-LD existiert in einzelnen Ansichten. `Organization` und `BreadcrumbList` fehlen; vorhandenes Product-Markup muss semantisch geprüft werden. Nur vollständige, passende strukturierte Daten ausgeben. |
-| 41 | Teilweise | P1 | Visuelle Breadcrumbs existieren; `BreadcrumbList` fehlt. Dieselben aufgelösten Breadcrumb-Daten für HTML und JSON-LD verwenden. |
+| 40 | Umgesetzt | P1 | `Organization` wird aus vorhandenen Website-Daten erzeugt; `BreadcrumbList` basiert auf aktuellen öffentlichen Pfaden. Produkt-JSON-LD erscheint nur auf Produktdetails. Leere Felder sowie Offers ohne gültige URL, positiven realen Preis und Währung werden ausgelassen; Verfügbarkeit und Bewertungen werden nicht erfunden. |
+| 41 | Umgesetzt | P1 | Visuelle Breadcrumbs und `BreadcrumbList` verwenden dieselbe Hierarchie für Kategorien, Unterkategorien, Produkte und tatsächlich verschachtelte CMS-Seiten. Fehlt ein aktueller öffentlicher Pfad, wird kein partielles JSON-LD ausgegeben. |
 | 42 | Umgesetzt | P0 vor Relaunch | Die Sitemap verwendet ausschließlich die validierte kanonische Shop-URL und aktuell öffentliche, mandanten- und websitebezogene Entitätspfade. Duplikate, deaktivierte Features, gelöschte Ziele, Suche und historische Redirects bleiben ausgeschlossen. Nicht indexierbare oder falsch konfigurierte Websites liefern HTTP 404. |
 | 43 | Umgesetzt | P1 | `robots.txt` wird pro Website dynamisch ausgeliefert. Alle öffentlichen Seiten bleiben crawlbar, damit Suchmaschinen vorhandenes `noindex` lesen können. Nur indexierbare Websites verweisen bei gültiger kanonischer URL auf die Sitemap. Robots bleibt ausdrücklich kein Zugriffsschutz. |
 | 44 | Teilweise | P1 | Fehlende Routen und Entitäten liefern echte 404-Antworten; die Seite ist noch generisch. Eine hilfreiche öffentliche 404-Seite mit Navigation, Suche und Kontakt ergänzen, ohne den Statuscode zu verändern. |
@@ -87,7 +88,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 48 | Infrastruktur | P1 | HTTP/2-/HTTP/3-Unterstützung ist eine Server-/Proxy-Eigenschaft. HTTP/2 nach TLS prüfen; HTTP/3 nur bei unterstützter Infrastruktur und messbarem Nutzen aktivieren. |
 | 49 | Teilweise | P0/P1 | Global werden `X-Content-Type-Options`, `Referrer-Policy` und eine konservative `Permissions-Policy` gesetzt. Interne Seiten erhalten zusätzlich SAMEORIGIN und CSP `frame-ancestors 'self'`. Öffentliche CSP-/Frame-Regeln erst nach Abhängigkeits- und Embedding-Audit festlegen. |
 | 50 | Infrastruktur | P1 nach TLS | HSTS ist bewusst noch nicht gesetzt. Nach vollständiger HTTPS-Stabilisierung mit kurzer Laufzeit beginnen; `includeSubDomains` erst nach Subdomain-Audit verwenden. |
-| 51 | Offen | P1 | Keine allgemeine Open-Graph-/Social-Metadaten-Unterstützung gefunden. Escapte Felder/Fallbacks je Entität und validierte absolute Bild-URLs ergänzen. |
+| 51 | Umgesetzt | P1 | Der zentrale View-Helper erzeugt `og:type`, Titel, Description, URL, optionales Bild, Websitename und Locale. Absolute URLs stammen ausschließlich aus der validierten Shop-Konfiguration; Bilder sind auf öffentliche Medienverzeichnisse des aktiven Shops beschränkt. |
 | 52 | Teilweise | P2 | Ein klassisches Favicon existiert, moderne Icon-Größen und mandantenfähige Konfiguration fehlen. Icons je Website ermöglichen; Manifest nur bei tatsächlich gewünschtem App-Verhalten ergänzen. |
 | 53 | Teilweise | P2 | Sprachfelder und Übersetzungen existieren, aber kein vollständiges öffentliches Locale-Routing und kein `hreflang`. URL-Eigentümerschaft pro Sprache zuerst entwerfen, anschließend gegenseitige Self-/Hreflang-Links ausgeben. |
 | 54 | Für aktuellen Umfang umgesetzt | P2 | Es existiert kein Mechanismus für automatisch generierte Maschinenübersetzungs-URLs. Zukünftige Sprachen über redaktionelle Inhalte und stabile Locale-Pfade abbilden. |
@@ -183,6 +184,16 @@ Eine umfassende Script-/Style-CSP ist noch nicht aktiviert, weil Inline-Code, ex
 - Die Sitemap selbst erhält `X-Robots-Tag: noindex, follow`. Nicht indexierbare Websites oder Websites ohne gültige kanonische Basisadresse erhalten am Sitemap-Endpunkt HTTP 404.
 - `robots.txt` und `sitemap.xml` sind reservierte Systemrouten. Die Ausgabe ist ausschließlich lesend und verändert keine Inhalte oder Datenbankdaten.
 
+### 5.9 SEO-Metadaten und strukturierte Daten
+
+- Ein zentraler öffentlicher View-Helper bereinigt und escaped Titel sowie Descriptions, verwendet vorhandene SEO-Felder und verhindert einen doppelt angehängten Websitenamen.
+- Open Graph verwendet ausschließlich die validierte kanonische Shop-Basis-URL und aktuelle Slug-Pfade. Optionale Bilder werden nur aus den öffentlichen Verzeichnissen für Header-, Kategorie- und Produktmedien übernommen; externe, geschützte oder traversierende Pfade werden verworfen.
+- Das öffentliche Layout gibt minimales `Organization`-JSON-LD aus vorhandenen Werten für Name, Website-URL und optionales Logo aus. Nicht vorhandene Kontakt-, Adress- oder Social-Daten werden nicht ergänzt.
+- Visuelle Breadcrumbs und `BreadcrumbList` werden aus derselben Datenliste erzeugt. Kategorien, Produkte und vorhandene verschachtelte CMS-Seiten verwenden ausschließlich aktuelle öffentliche Slugs des aktiven Shops und Mandanten.
+- Produkt-JSON-LD wurde aus Kategorieergebnislisten entfernt. Auf Produktdetails werden nur tatsächlich vorhandene Werte ausgegeben; ein Offer erfordert eine aktuelle öffentliche URL, einen positiven realen Preis und eine gültige Währung. Bewertungen und Verfügbarkeit werden nicht angenommen.
+- Öffentliche CMS-Templates erkennen vorhandene H1 in Legacy-Inhalten. Der erste geeignete Hero kann die Haupt-H1 liefern; weitere Hero-Blöcke werden als H2 ausgegeben. Gespeicherte Inhalte werden nicht verändert.
+- Die Änderung benötigt keine neuen Felder, Tabellen oder SQL-Migrationen. Bestehende Slugs, Redirects, Canonicals und Sitemap-Pfade bleiben unverändert.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
 `structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect`. Phase 2.3 hat beide Dateien ausschließlich geprüft und nicht verändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
@@ -203,6 +214,7 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Prüfung | Ergebnis |
 |---|---|
 | PHP-Syntax der geänderten PHP-/PHTML-Dateien | Bestanden |
+| SEO-Metadaten, Open Graph, Breadcrumbs, strukturierte Daten und Überschriften | 46 Prüfungen bestanden |
 | Technische HTML5-/Indexierungs-/Header-Baseline | 40 Prüfungen bestanden |
 | Robots, Sitemap, kanonische Basis-URL, Routing und Isolation | 31 Prüfungen bestanden |
 | Slug-Normalisierung, Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 67 Prüfungen bestanden |
@@ -237,6 +249,8 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Redirects entstehen erst bei einer ausdrücklichen Slug- oder Elternänderung innerhalb derselben Website; ein Websitewechsel erzeugt keine domainübergreifende Weiterleitung.
 - Vorhandene historische URLs werden nicht automatisch importiert. Dafür sind vor dem Relaunch eine fachliche Zuordnung und ein eigener sicherer Import- oder Verwaltungsweg erforderlich.
 - Eine ungültige oder fehlende `shop.url` unterdrückt Canonical und Sitemap-Verweis; der Sitemap-Endpunkt liefert dann bewusst 404. Die Produktionsadresse muss vor Indexierungsfreigabe geprüft werden.
+- Open-Graph-URL, Breadcrumb-JSON-LD und Organization-Markup werden bei fehlender oder ungültiger `shop.url` ebenfalls ausgelassen. Externe Bild-URLs und Medien außerhalb der ausdrücklich öffentlichen Bildverzeichnisse werden nicht übernommen.
+- Legacy-WYSIWYG-Inhalte können bereits mehrere eigene H1 enthalten. Die Templates fügen in diesem Fall keine weitere H1 hinzu, verändern bestehende Kundendaten aber nicht; der Bestand bleibt im Relaunch-Crawl redaktionell zu bereinigen.
 - Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
 
 ## 9. Empfohlene nächste Phasen
@@ -244,7 +258,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 ### Phase 2 – URL-, SEO- und Relaunch-Basis
 
 - Bekannte historische URLs inventarisieren und einen geprüften Import- oder kleinen manuellen Zuordnungsweg ergänzen.
-- Metadaten, Überschriftenhierarchie, Breadcrumb-JSON-LD und 404-Seite vervollständigen.
+- Legacy-Inhalte mit mehreren gespeicherten H1 redaktionell bereinigen und die hilfreiche 404-Seite vervollständigen.
 - Vollständigen Staging-Crawl als Release-Prüfung erstellen.
 
 ### Phase 3 – Performance und Assets
@@ -277,7 +291,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 
 ## 10. Lokale Commits
 
-Die vorherigen Änderungen wurden hunkgenau in vier fachliche Einheiten getrennt. Dateien mit mehreren Themen wurden nicht pauschal einem einzelnen Commit zugeordnet. Die Slug-Vereinheitlichung aus Phase 2.1 wird als eigener fünfter lokaler Commit geführt.
+Die Modernisierungsschritte werden in fachlich getrennten lokalen Commits geführt. Dateien mit mehreren Themen wurden bei den früheren Phasen hunkgenau zugeordnet; die folgenden Phasen bauen jeweils auf dem dokumentierten Vorgängerstand auf.
 
 ### Commit 1: `modernize html document structure`
 
@@ -392,8 +406,26 @@ Inhalt:
 - Lesebeschränkung auf GET/HEAD, reservierte SEO-Routen und mandanten-/websitebezogene ACL-Prüfung.
 - Automatisierte Robots-, Sitemap-, Routing-, Feature-, Shop-, Mandanten- und SQL-Schema-Regressionen.
 
+### Commit 8: `fix site robots noindex handling`
+
+Inhalt:
+
+- Nicht indexierbare Websites bleiben crawlbar, damit Robots-Meta und `X-Robots-Tag` ausgewertet werden können.
+- Keine Sitemap-Werbung und weiterhin HTTP 404 am Sitemap-Endpunkt nicht indexierbarer Websites.
+- Aktualisierte Robots-, Sitemap- und Baseline-Regressionen.
+
+### Commit 9: `improve site seo metadata and structured data`
+
+Inhalt:
+
+- Zentrale, escaped SEO-Titel, Descriptions und Open-Graph-Ausgabe mit validierten Shop- und Medien-URLs.
+- Gemeinsame visuelle und strukturierte Breadcrumb-Hierarchie einschließlich verschachtelter CMS-Seiten.
+- Minimales Organization-Markup und fachlich begrenztes Product-Markup ohne erfundene Angaben.
+- Eindeutige Template-H1 mit Hero-Abstufung und Kompatibilitätsbehandlung für vorhandene Legacy-H1.
+- Automatisierte SEO-, Mandanten-, URL-, JSON-LD- und Überschriftenregressionen ohne Datenbankänderung.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, Relaunch-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, Relaunch-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.

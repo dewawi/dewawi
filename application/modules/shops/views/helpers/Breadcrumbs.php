@@ -1,115 +1,141 @@
 <?php
-/**
-* Class inserts neccery code for Breadcrumbs	
-*/
-class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract{
 
-	public function Breadcrumbs() {
-		// Start the breadcrumb HTML
-		$html = '<section id="breadcrumb" class="">
-					<div class="container">
-						<nav aria-label="breadcrumb">
-							<ol class="breadcrumb mb-0">';
+require_once dirname(__FILE__) . '/SiteMetadata.php';
 
-		// Add the Home link
-		$html .= '<li class="breadcrumb-item">
-					  <a href="' . $this->view->url([], 'shop_home') . '">' . $this->view->translate('SHOPS_HOME') . '</a>
-				  </li>';
+class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract
+{
+	public function Breadcrumbs(): string
+	{
+		$items = $this->getItems();
+		if (count($items) < 2) return '';
 
-		// Check for different controllers and build the breadcrumbs dynamically
-		if ($this->view->controller === 'category' && isset($this->view->category)) {
-			// Get the current category and its parent categories
-			$breadcrumbs = $this->CategoryBreadcrumbs($this->view->category, $this->view->categories);
+		$html = '<section id="breadcrumb"><div class="container"><nav aria-label="breadcrumb"><ol class="breadcrumb mb-0">';
+		$last = count($items) - 1;
 
-			foreach ($breadcrumbs as $breadcrumb) {
-				$html .= '<li class="breadcrumb-item">
-							  <a href="' . $this->view->SlugUrl('category', $breadcrumb['id']) . '">'
-							  . $this->view->escape($breadcrumb['title']) . '</a>
-						  </li>';
+		foreach ($items as $index => $item) {
+			$title = $this->view->escape($item['title']);
+
+			if ($index === $last) {
+				$html .= '<li class="breadcrumb-item active" aria-current="page">' . $title . '</li>';
+			} elseif ($item['url'] !== null) {
+				$html .= '<li class="breadcrumb-item"><a href="' . $this->view->escape($item['url']) . '">' . $title . '</a></li>';
+			} else {
+				$html .= '<li class="breadcrumb-item">' . $title . '</li>';
 			}
-			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->escape($this->view->category['title']) . '</li>';
-
-			// Get the current category and its parent categories
-			$breadcrumbs = $this->CategoryBreadcrumbs($this->view->category, $this->view->categories);
-		} elseif ($this->view->controller === 'item' && isset($this->view->item)) {
-			// Get the current item and its parent categories
-			$breadcrumbs = $this->CategoryBreadcrumbs($this->view->category, $this->view->categories);
-
-			foreach ($breadcrumbs as $breadcrumb) {
-				$html .= '<li class="breadcrumb-item">
-							  <a href="' . $this->view->SlugUrl('category', $breadcrumb['id']) . '">'
-							  . $this->view->escape($breadcrumb['title']) . '</a>
-						  </li>';
-			}
-			$html .= '<li class="breadcrumb-item">
-						  <a href="' . $this->view->SlugUrl('category', $this->view->category['id']) . '">'
-						  . $this->view->escape($this->view->category['title']) . '</a>
-					  </li>';
-			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->escape($this->view->item['title']) . '</li>';
-
-			// Get the current category and its parent categories
-			$breadcrumbs = $this->CategoryBreadcrumbs($this->view->category, $this->view->categories);
-		} elseif ($this->view->controller === 'tag' && isset($this->view->tag)) {
-			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->escape($this->view->tag['title']) . '</li>';
-		} elseif ($this->view->controller === 'page' && isset($this->view->page)) {
-			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->escape($this->view->page['title']) . '</li>';
-		} elseif ($this->view->controller === 'contact') {
-			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->translate('SHOPS_CONTACT_FORM') . '</li>';
-		} elseif ($this->view->controller === 'cart') {
-			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->translate('SHOPS_SHOPPING_CART') . '</li>';
-		} elseif ($this->view->controller === 'checkout') {
-			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->translate('SHOPS_ORDER_FORM') . '</li>';
-		} elseif ($this->view->controller === 'search') {
-			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->translate('SHOPS_SEARCH') . '</li>';
-		} else {
-			$html .= '<li class="breadcrumb-item active" aria-current="page">'
-				  . $this->view->escape($this->view->controller) . '</li>';
 		}
 
-		// Close the breadcrumb HTML
-		$html .= '</ol>
-						</nav>
-					</div>
-				  </section>';
+		$html .= '</ol></nav></div></section>';
+		if (!($this->view->siteContext ?? null) instanceof DEEC_Site_Context) return $html;
+
+		$list = [];
+		$metadata = new Zend_View_Helper_SiteMetadata();
+		$metadata->setView($this->view);
+		$completeList = true;
+
+		foreach ($items as $item) {
+			$url = $item['url'] !== null ? $metadata->absoluteUrl($item['url']) : null;
+			if ($url === null) {
+				$completeList = false;
+				break;
+			}
+
+			$list[] = [
+				'@type' => 'ListItem',
+				'position' => count($list) + 1,
+				'name' => $item['title'],
+				'item' => $url,
+			];
+		}
+
+		if ($completeList && count($list) > 1) {
+			$html .= $metadata->jsonLd([
+				'@context' => 'https://schema.org',
+				'@type' => 'BreadcrumbList',
+				'itemListElement' => $list,
+			]);
+		}
 
 		return $html;
 	}
 
-	public function CategoryBreadcrumbs($category, $categories)
+	public function getItems(): array
 	{
-		$breadcrumbs = [];
+		$items = [[
+			'title' => (string)$this->view->translate('SHOPS_HOME'),
+			'url' => (string)$this->view->url([], 'shop_home'),
+		]];
+		$controller = (string)($this->view->controller ?? '');
 
-		// Loop to find parent categories
-		while ($category && $category['parentid'] != 0) {
-			$parentCategory = $this->findCategoryById($category['parentid'], $categories);
-			if ($parentCategory) {
-				array_unshift($breadcrumbs, $parentCategory);
-				$category = $parentCategory;
-			} else {
-				break;
-			}
+		if ($controller === 'category' && isset($this->view->category)) {
+			foreach ($this->categoryParents($this->view->category) as $category) $items[] = $this->entityItem('category', $category);
+			$items[] = $this->entityItem('category', $this->view->category);
+		} elseif ($controller === 'item' && isset($this->view->item, $this->view->category)) {
+			foreach ($this->categoryParents($this->view->category) as $category) $items[] = $this->entityItem('category', $category);
+			$items[] = $this->entityItem('category', $this->view->category);
+			$items[] = $this->entityItem('item', $this->view->item);
+		} elseif ($controller === 'page' && isset($this->view->page)) {
+			foreach ($this->pageParents($this->view->page) as $page) $items[] = $this->entityItem('page', $page);
+			$items[] = $this->entityItem('page', $this->view->page);
+		} elseif ($controller === 'tag' && isset($this->view->tag)) {
+			$items[] = $this->entityItem('tag', $this->view->tag);
+		} else {
+			$items[] = [
+				'title' => $this->controllerTitle($controller),
+				'url' => $this->view->canonicalPath ?? null,
+			];
 		}
 
-		return $breadcrumbs;
+		return array_values(array_filter($items, static function(array $item): bool {
+			return trim((string)$item['title']) !== '';
+		}));
 	}
 
-	// Helper function to find a category by ID in the categories array
-	private function findCategoryById($id, $categories)
+	protected function entityItem(string $controller, $entity): array
 	{
-		foreach ($categories as $category) {
-			if ($category['id'] == $id) {
-				return $category;
-			}
+		return [
+			'title' => trim((string)($entity['title'] ?? '')),
+			'url' => $this->view->SlugUrl($controller, (int)($entity['id'] ?? 0)),
+		];
+	}
+
+	protected function categoryParents($category): array
+	{
+		return $this->parents($category, is_array($this->view->categories ?? null) ? $this->view->categories : []);
+	}
+
+	protected function pageParents($page): array
+	{
+		$pages = [];
+		foreach ((array)($this->view->pages ?? []) as $item) $pages[(int)$item['id']] = $item;
+
+		return $this->parents($page, $pages);
+	}
+
+	protected function parents($entity, array $entities): array
+	{
+		$parents = [];
+		$visited = [(int)($entity['id'] ?? 0) => true];
+		$parentId = (int)($entity['parentid'] ?? 0);
+
+		while ($parentId > 0 && isset($entities[$parentId]) && !isset($visited[$parentId])) {
+			$parent = $entities[$parentId];
+			array_unshift($parents, $parent);
+			$visited[$parentId] = true;
+			$parentId = (int)($parent['parentid'] ?? 0);
 		}
 
-		return null; // Return null if the category is not found
+		return $parents;
+	}
+
+	protected function controllerTitle(string $controller): string
+	{
+		switch ($controller) {
+			case 'contact': return (string)$this->view->translate('SHOPS_CONTACT_FORM');
+			case 'cart': return (string)$this->view->translate('SHOPS_SHOPPING_CART');
+			case 'checkout': return (string)$this->view->translate('SHOPS_ORDER_FORM');
+			case 'search': return (string)$this->view->translate('SHOPS_SEARCH');
+		}
+
+		return $controller;
 	}
 }

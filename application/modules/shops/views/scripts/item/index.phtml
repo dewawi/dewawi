@@ -9,11 +9,18 @@ $itemImages = array_values(array_filter($itemMedia, static function($media) {
 	return ($media['type'] ?? '') === 'image';
 }));
 $previewImage = $itemImages[0] ?? null;
+$downloads = false;
+$contentHasH1 = preg_match('/<h1\b/i', (string)($item['shopdescription'] ?: $item['description'])) === 1;
 
 $this->title = $itemTitle;
-$this->headTitle($itemTitle);
 $metaDescription = trim(html_entity_decode(strip_tags((string)($item['shopdescriptionshort'] ?: ($item['shopdescription'] ?: $item['description']))), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-if ($metaDescription !== '') $this->headMeta()->setName('description', mb_substr($metaDescription, 0, 160, 'UTF-8'));
+$seo = $this->SiteMetadata([
+	'title' => $itemTitle,
+	'description' => $metaDescription,
+	'type' => 'product',
+	'imageDirectory' => $previewImage ? 'images' : null,
+	'image' => $previewImage['url'] ?? null,
+]);
 
 $hasSpecial = !empty($this->prices['rawspecialprice']);
 $base = (float)($this->prices['raw'] ?? 0);
@@ -22,26 +29,20 @@ $discountPct = $hasSpecial && $base > 0 && $special > 0 && $special < $base ? ro
 
 $itemImageUrls = [];
 foreach ($itemImages as $image) {
-	$itemImageUrls[] = $this->baseUrl() . '/media/images/' . (string)$image['url'];
+	$imageUrl = $seo->mediaUrl('images', (string)$image['url']);
+	if ($imageUrl !== null) $itemImageUrls[] = $imageUrl;
 }
 
 $productSchema = [
-	'@context' => 'https://schema.org/',
+	'@context' => 'https://schema.org',
 	'@type' => 'Product',
 	'name' => $itemTitle,
-	'description' => trim(strip_tags((string)($item['shopdescriptionshort'] ?? ''))),
-	'sku' => (string)($item['sku'] ?? ''),
-	'offers' => [
-		'@type' => 'Offer',
-		'url' => (string)($this->shop['url'] ?? '') . (string)$itemUrl,
-		'priceCurrency' => (string)($item['currency'] ?? ''),
-		'price' => (float)$this->prices['rawtax'],
-	],
 ];
 
-if ($itemImageUrls) {
-	$productSchema['image'] = $itemImageUrls;
-}
+$sku = trim((string)($item['sku'] ?? ''));
+if ($metaDescription !== '') $productSchema['description'] = $metaDescription;
+if ($sku !== '') $productSchema['sku'] = $sku;
+if ($itemImageUrls) $productSchema['image'] = $itemImageUrls;
 
 $manufacturer = trim((string)($this->manufacturers[(int)($item['manufacturerid'] ?? 0)] ?? ''));
 
@@ -51,15 +52,32 @@ if ($manufacturer !== '') {
 		'name' => $manufacturer,
 	];
 }
+
+$productUrl = is_string($itemUrl) ? $seo->absoluteUrl($itemUrl) : null;
+$price = $hasSpecial && (float)($this->prices['rawspecialprice'] ?? 0) > 0
+	? (float)($this->prices['rawspecialpricetax'] ?? 0)
+	: (float)($this->prices['rawtax'] ?? 0);
+$currency = strtoupper(trim((string)($item['currency'] ?? '')));
+
+if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency)) {
+	$productSchema['offers'] = [
+		'@type' => 'Offer',
+		'url' => $productUrl,
+		'priceCurrency' => $currency,
+		'price' => $price,
+	];
+}
 ?>
-<script type="application/ld+json"><?php echo Zend_Json::encode($productSchema); ?></script>
+<?php if ($itemTitle !== '') echo $seo->jsonLd($productSchema); ?>
 
 <section id="item" class="py-5">
 	<div class="container">
 		<div class="row">
-			<div class="col-md-12 mb-4">
-				<h1><?php echo $this->escape($this->item['title']); ?></h1>
-			</div>
+			<?php if(!$contentHasH1) : ?>
+				<div class="col-md-12 mb-4">
+					<h1><?php echo $this->escape($this->item['title']); ?></h1>
+				</div>
+			<?php endif; ?>
 			<div class="col-md-6 mb-4">
 				<div class="main-image-wrapper">
 					<?php if($previewImage) : ?>
@@ -117,7 +135,7 @@ if ($manufacturer !== '') {
 				<p><?php //echo $this->item['shopdescriptionshort']; ?></p>
 
 				<div style="margin-bottom: 10px;">
-					<span><?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $this->item['sku']; ?></span>
+					<span><?php echo $this->translate('SHOPS_SKU'); ?>: <?php echo $this->escape($this->item['sku']); ?></span>
 				</div>
 
 				<div style="margin-bottom: 10px;">

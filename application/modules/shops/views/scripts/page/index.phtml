@@ -5,12 +5,14 @@ $metaTitle = trim((string)($this->page['metatitle'] ?? ''));
 $metaDescription = trim((string)($this->page['metadescription'] ?? ''));
 
 $this->title = $title;
-$this->headTitle($metaTitle !== '' ? $metaTitle : $title);
-
 $descriptionSource = $metaDescription !== '' ? $metaDescription : trim(html_entity_decode(strip_tags((string)($this->page['content'] ?? '')), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-if ($descriptionSource !== '') $this->headMeta()->setName('description', mb_substr($descriptionSource, 0, 160, 'UTF-8'));
+$this->SiteMetadata([
+	'title' => $metaTitle !== '' ? $metaTitle : $title,
+	'description' => $descriptionSource,
+]);
 
 $content = (string)($this->page['content'] ?? '');
+$contentHasH1 = preg_match('/<h1\b/i', $content) === 1;
 $contact = $this->siteContext->hasFeature('contact') ? $this->ContactForm($this->translate('SHOPS_CONTACT_FORM')) : '';
 $content = str_replace('{contact}', $contact, $content);
 
@@ -26,23 +28,19 @@ foreach ($pageblocks as $pageblock) {
 }
 ?>
 
-<?php if ($pageblocks && !$hasHero && $title !== ''): ?>
+<?php if (!$hasHero && !$contentHasH1 && $title !== ''): ?>
 	<div class="container pt-5">
 		<h1><?php echo $this->escape($title); ?></h1>
 	</div>
 <?php endif; ?>
 
 <?php if ($pageblocks): ?>
-	<?php echo $this->RenderPageBlocks($pageblocks); ?>
+	<?php echo $this->RenderPageBlocks($pageblocks, !$contentHasH1); ?>
 <?php endif; ?>
 
 <?php if (trim($content) !== ''): ?>
 	<section class="py-5">
 		<div class="container">
-			<?php if (!$pageblocks && $title !== ''): ?>
-				<h1 class="text-center mb-4"><?php echo $this->escape($title); ?></h1>
-			<?php endif; ?>
-
 			<?php echo $content; ?>
 		</div>
 	</section>

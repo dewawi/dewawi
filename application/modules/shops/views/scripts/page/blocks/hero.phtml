@@ -9,6 +9,7 @@ $buttonUrl = trim((string)($this->data['buttonurl'] ?? ''));
 $buttonLabel2 = trim((string)($this->data['buttonlabel2'] ?? ''));
 $buttonUrl2 = trim((string)($this->data['buttonurl2'] ?? ''));
 $trust = trim((string)($this->data['trust'] ?? ''));
+$headingLevel = (int)($this->headingLevel ?? 2) === 1 ? 1 : 2;
 
 foreach (['buttonUrl', 'buttonUrl2'] as $variable) {
 	if ($$variable !== '' && preg_match('~^[a-z][a-z0-9+.-]*:~i', $$variable) && !preg_match('~^(https?|mailto|tel):~i', $$variable)) $$variable = '';
@@ -30,7 +31,7 @@ $secondaryButtonClass = $image !== '' ? 'btn-outline-light' : 'btn-outline-prima
 		<?php endif; ?>
 
 		<?php if($title !== '') : ?>
-			<h1><?php echo $this->escape($title); ?></h1>
+			<h<?php echo $headingLevel; ?>><?php echo $this->escape($title); ?></h<?php echo $headingLevel; ?>>
 		<?php endif; ?>
 
 		<?php if($text !== '') : ?>

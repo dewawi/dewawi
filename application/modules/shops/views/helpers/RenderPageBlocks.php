@@ -2,9 +2,10 @@
 
 class Zend_View_Helper_RenderPageBlocks extends Zend_View_Helper_Abstract
 {
-	public function RenderPageBlocks(array $blocks): string
+	public function RenderPageBlocks(array $blocks, bool $allowHeroH1 = true): string
 	{
 		$html = '';
+		$heroH1Rendered = false;
 
 		$pageblockDb = new Application_Model_DbTable_Pageblock();
 
@@ -39,6 +40,9 @@ class Zend_View_Helper_RenderPageBlocks extends Zend_View_Helper_Abstract
 				);
 			}
 
+			$headingLevel = $type === 'hero' && $allowHeroH1 && !$heroH1Rendered ? 1 : 2;
+			if ($type === 'hero' && trim((string)($data['title'] ?? '')) !== '' && $headingLevel === 1) $heroH1Rendered = true;
+
 			$html .= $this->view->partial('page/blocks/' . $type . '.phtml', [
 				'block' => $block,
 				'data' => $data,
@@ -48,6 +52,7 @@ class Zend_View_Helper_RenderPageBlocks extends Zend_View_Helper_Abstract
 				'categories' => is_array($this->view->categories ?? null) ? $this->view->categories : [],
 				'images' => is_array($this->view->images ?? null) ? $this->view->images : [],
 				'contact' => $this->view->contact ?? null,
+				'headingLevel' => $headingLevel,
 			]);
 		}
 
