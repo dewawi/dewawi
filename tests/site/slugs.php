@@ -17,6 +17,7 @@ spl_autoload_register(static function(string $class): void {
 require_once $root . '/library/DEEC/Filter.php';
 require_once $root . '/library/DEEC/Site/Router.php';
 require_once $root . '/application/modules/admin/models/DbTable/Slug.php';
+require_once $root . '/application/modules/admin/forms/Tag.php';
 
 $checks = 0;
 
@@ -359,6 +360,14 @@ checkSlug(substr_count($actionSource, '$this->isPublicUrlError($e->getMessage())
 $tagSource = file_get_contents($root . '/application/modules/admin/controllers/TagController.php');
 checkSlug(substr_count($tagSource, 'beginTransaction()') >= 3 && substr_count($tagSource, 'rollBack()') >= 3, 'Independent tag slug writes are not transactional');
 checkSlug(substr_count($tagSource, "'ok' => true") >= 4, 'Independent tag saves do not return the autosave success contract');
+checkSlug(substr_count($tagSource, 'getFilteredValuesPartial(') >= 2 && !str_contains($tagSource, 'if(true)'), 'Independent tag writes bypass the declared form filters');
+
+$tagForm = new Admin_Form_Tag();
+$tagInput = ['description' => '<script src="https://tracker.example.invalid/x.js"></script><iframe src="https://tracker.example.invalid"></iframe><p><a href="javascript:alert(1)">Text</a></p>'];
+checkSlug($tagForm->isValidPartial($tagInput), 'Valid tag content was rejected before filtering');
+$filteredTag = $tagForm->getFilteredValuesPartial($tagInput);
+checkSlug(!str_contains($filteredTag['description'], '<script') && !str_contains($filteredTag['description'], '<iframe')
+	&& !str_contains($filteredTag['description'], 'javascript:'), 'Tag form did not remove executable third-party markup');
 
 $globalJs = file_get_contents($root . '/js/global.js');
 checkSlug(str_contains($globalJs, 'response && response.message') && str_contains($globalJs, 'Dewawi.message(response.message)'), 'Autosave does not translate a slug conflict message');

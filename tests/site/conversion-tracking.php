@@ -44,6 +44,7 @@ class SiteConversionTestController extends Shops_Controller_Action
 	{
 		return $this->consumeSiteConversions($now, $cookies, $environment);
 	}
+	public function clear(): void { $this->clearSiteConversions(); }
 }
 
 $sessionDirectory = sys_get_temp_dir() . '/dewawi-conversion-session-' . getmypid() . '-' . bin2hex(random_bytes(4));
@@ -98,6 +99,10 @@ foreach ([
 $controller->mark('contact_submitted', null, null, $now, $accepted, 'production');
 check($controller->consume($now, $declined, 'production') === [], 'Consent revocation did not discard a pending conversion');
 check($controller->consume($now, $accepted, 'production') === [], 'Revoked conversion was sent after later acceptance');
+
+$controller->mark('contact_submitted', null, null, $now, $accepted, 'production');
+$controller->clear();
+check($controller->consume($now, $accepted, 'production') === [], 'Explicit consent revocation did not clear its pending conversion immediately');
 
 $controller->mark('contact_submitted', null, null, $now, $accepted, 'production');
 $controller->mark('contact_submitted', null, null, $now, $declined, 'production');
@@ -155,6 +160,8 @@ check($checkoutEmailAt !== false && $checkoutEventAt < $checkoutEmailAt, 'Order 
 
 $layout = file_get_contents($root . '/application/layouts/scripts/site.phtml');
 check(str_contains($layout, 'JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT'), 'Conversion payload is not safely JSON serialized');
+$consentController = file_get_contents($root . '/application/modules/shops/controllers/ConsentController.php');
+check(str_contains($consentController, "if (\$state === 'declined') \$this->clearSiteConversions()"), 'Consent revocation does not immediately discard pending conversions');
 $javascript = file_get_contents($root . '/js/shops.js');
 foreach (['name', 'email', 'phone', 'address', 'message', 'token'] as $personalField) {
 	check(!preg_match('/parameters\.' . preg_quote($personalField, '/') . '\b/', $javascript), 'Frontend conversion supports personal field: ' . $personalField);

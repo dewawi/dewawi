@@ -147,6 +147,29 @@ checkBaseline(str_contains($consentController, "'httponly' => true") && str_cont
 checkBaseline(str_contains($consentController, "'secure' => \$secure") && str_contains($consentController, "'path' => \$this->cookiePath()"), 'Consent cookie transport or path scope is missing');
 checkBaseline(str_contains($consentController, "preg_match('~^/(?!/)[^\\r\\n]*$~D'"), 'Consent return path is not constrained locally');
 
+require_once $root . '/application/modules/shops/controllers/Action.php';
+require_once $root . '/application/modules/shops/controllers/ConsentController.php';
+$consentReflection = new ReflectionClass(Shops_ConsentController::class);
+$consentInstance = $consentReflection->newInstanceWithoutConstructor();
+$sameOriginMethod = $consentReflection->getMethod('isSameOriginRequest');
+$sameOriginMethod->setAccessible(true);
+$originalServer = $_SERVER;
+
+foreach ([
+	[[], false, 'Consent request without browser origin signals was accepted'],
+	[['HTTP_ORIGIN' => 'https://shop.example.test'], true, 'Same-origin consent request was rejected'],
+	[['HTTP_ORIGIN' => 'https://other.example.test'], false, 'Cross-origin consent request was accepted'],
+	[['HTTP_REFERER' => 'https://shop.example.test/page'], true, 'Same-origin consent referrer fallback was rejected'],
+	[['HTTP_REFERER' => 'https://other.example.test/page'], false, 'Cross-origin consent referrer fallback was accepted'],
+	[['HTTP_SEC_FETCH_SITE' => 'same-origin'], true, 'Same-origin Fetch Metadata request was rejected'],
+	[['HTTP_SEC_FETCH_SITE' => 'cross-site'], false, 'Cross-site Fetch Metadata request was accepted'],
+] as [$headers, $expected, $message]) {
+	$_SERVER = ['HTTP_HOST' => 'shop.example.test'] + $headers;
+	checkBaseline($sameOriginMethod->invoke($consentInstance) === $expected, $message);
+}
+
+$_SERVER = $originalServer;
+
 $siteController = file_get_contents($root . '/application/modules/shops/controllers/Action.php');
 checkBaseline(str_contains($siteController, 'if (!$this->_siteContext->isIndexable())'), 'Non-indexable sites can emit canonical links');
 

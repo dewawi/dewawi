@@ -125,8 +125,7 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 			if (!in_array($name, ['contact_submitted', 'technical_inquiry_submitted', 'order_submitted'], true)) return;
 			$interface = $this->_siteContext->getAnalyticsEventInterface();
 			if ($interface === null || !$this->_siteContext->canLoadAnalytics($cookies, $environment)) {
-				$session = $this->getSiteConversionSession();
-				unset($session->events);
+				$this->clearSiteConversions();
 				return;
 			}
 
@@ -152,6 +151,16 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 			$session->events = array_slice($events, -self::CONVERSION_LIMIT);
 		} catch (Throwable $e) {
 			error_log('Shop conversion marker could not be stored: ' . $e->getMessage());
+		}
+	}
+
+	protected function clearSiteConversions(): void
+	{
+		try {
+			$session = $this->getSiteConversionSession();
+			unset($session->events);
+		} catch (Throwable $e) {
+			error_log('Shop conversion markers could not be cleared: ' . $e->getMessage());
 		}
 	}
 

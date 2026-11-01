@@ -83,39 +83,39 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 			$form = new Admin_Form_Tag();
 			$options = $this->_helper->Options->getOptions($form);
 			$params = $this->_helper->Params->getParams($form, $options);
-			$data = $request->getPost();
-			//if($form->isValid($data)) {
-				$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
-				if(!isset($data['shopid'])) $data['shopid'] = 0;
-				//$data['parentid'] = $params['parentid'];
+			$post = (array)$request->getPost();
+			if (!$form->isValidPartial($post)) {
+				echo Zend_Json::encode(['ok' => false, 'message' => 'MESSAGES_FORM_IS_INVALID']);
+				return;
+			}
+			$data = $form->getFilteredValuesPartial($post);
+			$data['shopid'] = (int)($post['shopid'] ?? 0);
+			$data['ordering'] = $this->getLatestOrdering($params['clientid'], $params['type'], $data['parentid']) + 1;
+			//$data['parentid'] = $params['parentid'];
 
-				$tagDb = new Admin_Model_DbTable_Tag();
-				$adapter = $tagDb->getAdapter();
-				$adapter->beginTransaction();
-				try {
-					$id = $tagDb->addTag($data);
+			$tagDb = new Admin_Model_DbTable_Tag();
+			$adapter = $tagDb->getAdapter();
+			$adapter->beginTransaction();
+			try {
+				$id = $tagDb->addTag($data);
 
-					if($data['shopid']) {
-						$slugDb = new Admin_Model_DbTable_Slug();
-						$slugDb->addSlug('shops', 'tag', $data['shopid'], $data['parentid'], $id, $id);
-					}
-
-					$adapter->commit();
-				} catch (DomainException $exception) {
-					$adapter->rollBack();
-					echo Zend_Json::encode(array('ok' => false, 'message' => $exception->getMessage()));
-					return;
-				} catch (Exception $exception) {
-					$adapter->rollBack();
-					throw $exception;
+				if($data['shopid']) {
+					$slugDb = new Admin_Model_DbTable_Slug();
+					$slugDb->addSlug('shops', 'tag', $data['shopid'], $data['parentid'], $id, $id);
 				}
 
-				//echo Zend_Json::encode($data);
-				echo Zend_Json::encode(array('ok' => true, 'id' => $id, 'values' => $tagDb->getTag($id)));
-			//} else {
-			//	echo Zend_Json::encode($data);
-				//echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			//}
+				$adapter->commit();
+			} catch (DomainException $exception) {
+				$adapter->rollBack();
+				echo Zend_Json::encode(array('ok' => false, 'message' => $exception->getMessage()));
+				return;
+			} catch (Exception $exception) {
+				$adapter->rollBack();
+				throw $exception;
+			}
+
+			//echo Zend_Json::encode($data);
+			echo Zend_Json::encode(array('ok' => true, 'id' => $id, 'values' => $tagDb->getTag($id)));
 		}
 	}
 
@@ -150,11 +150,20 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 				header('Content-type: application/json');
 				$this->_helper->viewRenderer->setNoRender();
 				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
+				$data = (array)$request->getPost();
 				$element = key($data);
-				//if(isset($form->$element) && $form->isValidPartial($data)) { // to do add options for parentid before form validation
-				if(true) {
-					$tagDb = new Admin_Model_DbTable_Tag();
+				if ($element !== 'slug') {
+					if (!$form->isValidPartial($data)) {
+						echo Zend_Json::encode(['ok' => false, 'message' => 'MESSAGES_FORM_IS_INVALID']);
+						return;
+					}
+					$data = $form->getFilteredValuesPartial($data);
+					if (!array_key_exists((string)$element, $data)) {
+						echo Zend_Json::encode(['ok' => false, 'message' => 'MESSAGES_FORM_IS_INVALID']);
+						return;
+					}
+				}
+				$tagDb = new Admin_Model_DbTable_Tag();
 					if($element == 'parentid') {
 						$adapter = $tagDb->getAdapter();
 						$adapter->beginTransaction();
@@ -212,9 +221,6 @@ class Admin_TagController extends DEEC_Controller_AdminAction
 						$tagDb->updateTag($id, $data);
 						echo Zend_Json::encode(array('ok' => true, 'id' => $id, 'values' => $tagDb->getTag($id)));
 					}
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
 			} else {
 				if($id > 0) {
 					$form->populate($tag);

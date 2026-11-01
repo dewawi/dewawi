@@ -16,11 +16,13 @@ class Shops_ConsentController extends Shops_Controller_Action
 			return;
 		}
 
-		$value = $this->_siteContext->getAnalyticsConsentValue((string)$this->_getParam('consent', ''));
+		$state = (string)$this->_getParam('consent', '');
+		$value = $this->_siteContext->getAnalyticsConsentValue($state);
 		if ($value === null || !$this->_siteContext->hasAnalytics()) {
 			$response->setHttpResponseCode(400)->setBody('Invalid consent choice');
 			return;
 		}
+		if ($state === 'declined') $this->clearSiteConversions();
 
 		$canonicalUrl = $this->_siteContext->getCanonicalBaseUrl();
 		$secure = $this->getRequest()->isSecure() || ($canonicalUrl !== null && parse_url($canonicalUrl, PHP_URL_SCHEME) === 'https');
@@ -52,12 +54,13 @@ class Shops_ConsentController extends Shops_Controller_Action
 	private function isSameOriginRequest(): bool
 	{
 		$fetchSite = strtolower((string)($_SERVER['HTTP_SEC_FETCH_SITE'] ?? ''));
-		if ($fetchSite !== '' && !in_array($fetchSite, ['same-origin', 'none'], true)) return false;
+		if ($fetchSite !== '') return in_array($fetchSite, ['same-origin', 'none'], true);
 
-		$origin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
-		if ($origin === '') return true;
+		$source = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
+		if ($source === '') $source = trim((string)($_SERVER['HTTP_REFERER'] ?? ''));
+		if ($source === '') return false;
 
-		$originHost = strtolower((string)parse_url($origin, PHP_URL_HOST));
+		$originHost = strtolower((string)parse_url($source, PHP_URL_HOST));
 		$requestHost = strtolower(preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? '')));
 
 		return $originHost !== '' && hash_equals($requestHost, $originHost);
