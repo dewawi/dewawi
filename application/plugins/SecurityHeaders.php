@@ -14,6 +14,7 @@ class Application_Plugin_SecurityHeaders extends Zend_Controller_Plugin_Abstract
 		$response->setHeader('X-Content-Type-Options', 'nosniff', true);
 		$response->setHeader('Referrer-Policy', 'strict-origin-when-cross-origin', true);
 		$response->setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()', true);
+		if (!$this->hasHeader($response, 'Cache-Control')) $response->setHeader('Cache-Control', 'private, no-store', true);
 
 		if (!$publicSite) {
 			$response->setHeader('X-Robots-Tag', 'noindex, nofollow', true);
@@ -25,5 +26,14 @@ class Application_Plugin_SecurityHeaders extends Zend_Controller_Plugin_Abstract
 		if (!Zend_Registry::get('SiteContext')->isIndexable()) {
 			$response->setHeader('X-Robots-Tag', 'noindex, nofollow', true);
 		}
+	}
+
+	private function hasHeader(Zend_Controller_Response_Http $response, string $name): bool
+	{
+		foreach ($response->getHeaders() as $header) {
+			if (strcasecmp($header['name'], $name) === 0) return true;
+		}
+
+		return false;
 	}
 }

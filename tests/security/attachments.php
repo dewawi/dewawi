@@ -45,7 +45,9 @@ class AttachmentTestLayout extends Zend_Controller_Action_Helper_Abstract
 class AttachmentTestRequest extends Zend_Controller_Request_Http
 {
     public string $body = '';
+    public array $headers = [];
     public function getRawBody() { return $this->body; }
+    public function getHeader($header) { return $this->headers[strtolower($header)] ?? false; }
 }
 class AttachmentTestUpload
 {
@@ -117,13 +119,14 @@ function setupAttachments(bool $shared = false): void
     AttachmentTestController::$upload = new AttachmentTestUpload();
 }
 
-function attachmentAction(string $action, array $params = [], string $method = 'GET', ?array $body = null, ?string $uri = null): array
+function attachmentAction(string $action, array $params = [], string $method = 'GET', ?array $body = null, ?string $uri = null, array $headers = []): array
 {
     $_SERVER['REQUEST_METHOD'] = $method;
     $_POST = [];
     $_GET = [];
     $request = new AttachmentTestRequest();
     $request->setModuleName('contacts')->setControllerName('attachment')->setActionName($action)->setParams($params);
+    $request->headers = array_change_key_case($headers, CASE_LOWER);
     if ($body !== null) $request->body = json_encode($body);
     if ($uri !== null) $request->setRequestUri($uri);
     $response = new Zend_Controller_Response_Http();

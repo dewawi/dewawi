@@ -27,6 +27,8 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Ein explizit zu startender HTTP-Crawler prüft reale öffentliche Antworten, interne Links, Redirects, SEO-Metadaten, strukturierte Daten, Sitemap, Robots und interne Ressourcen ohne Formulare abzusenden.
 - Öffentliche verwaltete Bilder verwenden tatsächliche Abmessungen, vorhandene feste Medienvarianten, kontextabhängiges Lazy Loading und eine explizite Priorisierung kritischer Hero- und Produktbilder.
 - Pro Seite wird nur der erste tatsächlich sichtbare CMS-Medienblock beziehungsweise das initiale Slider- oder Produktbild hoch priorisiert; nachgelagerte Bilder decodieren asynchron.
+- Lokale öffentliche CSS-/JavaScript-Assets verwenden in der Websiteausgabe inhaltsbasierte Versionsparameter und können dadurch langfristig unveränderlich gecacht werden. Unversionierte statische Dateien werden revalidiert; Textantworten werden bei verfügbaren Apache-Modulen mit Brotli beziehungsweise gzip komprimiert.
+- Dynamische Antworten bleiben standardmäßig `private, no-store`; geschützte Dateien behalten dieselbe Policy. Ausschließlich tatsächlich öffentliche Medien erhalten eine kurze öffentliche Cachefreigabe mit Validatoren.
 - TLS, bekannte Alt-URL-Importe, moderne Bildformate, weitere Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
 - Der wiederherstellungsrelevante Daten-, Datei-, Konfigurations- und Codestand ist inventarisiert; ein installationsneutraler Sicherungs-, Integritäts-, isolierter Restore- und Rollbackablauf wird durch eine temporäre MariaDB-/Dateisystemprobe geprüft.
 
@@ -91,8 +93,8 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 43 | Umgesetzt | P1 | `robots.txt` wird pro Website dynamisch ausgeliefert. Alle öffentlichen Seiten bleiben crawlbar, damit Suchmaschinen vorhandenes `noindex` lesen können. Nur indexierbare Websites verweisen bei gültiger kanonischer URL auf die Sitemap. Robots bleibt ausdrücklich kein Zugriffsschutz. |
 | 44 | Teilweise | P1 | Fehlende Routen und Entitäten liefern echte 404-Antworten; die Seite ist noch generisch. Eine hilfreiche öffentliche 404-Seite mit Navigation, Suche und Kontakt ergänzen, ohne den Statuscode zu verändern. |
 | 45 | Teilweise | P0 | 403/404/500 werden explizit behandelt; bekannte automatisch gespeicherte Altpfade liefern 301, unbekannte Pfade weiterhin 404. Eine fachliche 410-Strategie und vollständige Statusprüfungen im Relaunch-Crawl fehlen. |
-| 46 | Infrastruktur | P1 | Anwendungscache ist vorhanden; eine geprüfte statische Cache-Control-/Expires-Strategie ist nicht im Repository abgebildet. Versionierte Assets serverseitig langfristig cachen; Seitencache nur mit mandanten-, Consent- und Session-sicheren Schlüsseln. |
-| 47 | Infrastruktur | P1 | Keine gzip-/Brotli-Konfiguration im Repository. Kompression am Webserver oder Proxy aktivieren und Content-Types, `Vary` sowie bereits komprimierte Formate prüfen. |
+| 46 | Umgesetzt / Infrastrukturprüfung offen | P1 | Inhaltsversionierte lokale CSS-/JavaScript-Dateien erhalten ein Jahr `public, immutable`; unversionierte statische Ressourcen werden mit ETag/Last-Modified revalidiert. Dynamische und private Antworten bleiben `private, no-store`, öffentliche Anwendungsmedien erhalten eine Stunde plus Validatoren. Die Regeln sind für Root- und Unterverzeichnisinstallationen isoliert geprüft; die tatsächlich eingesetzte Proxy-/Serverkonfiguration bleibt beim Deployment zu verifizieren. |
+| 47 | Umgesetzt / Infrastrukturprüfung offen | P1 | Apache komprimiert HTML, CSS, JavaScript, JSON und XML bei vorhandenen Modulen mit Brotli beziehungsweise gzip und setzt `Vary: Accept-Encoding`. Binärformate bleiben unkomprimiert; fehlendes Brotli fällt auf gzip zurück und fehlende optionale Module beeinträchtigen die Auslieferung nicht. An einem Reverse Proxy darf Kompression nur an einer kontrollierten Schicht aktiv sein. |
 | 48 | Infrastruktur | P1 | HTTP/2-/HTTP/3-Unterstützung ist eine Server-/Proxy-Eigenschaft. HTTP/2 nach TLS prüfen; HTTP/3 nur bei unterstützter Infrastruktur und messbarem Nutzen aktivieren. |
 | 49 | Teilweise | P0/P1 | Global werden `X-Content-Type-Options`, `Referrer-Policy` und eine konservative `Permissions-Policy` gesetzt. Interne Seiten erhalten zusätzlich SAMEORIGIN und CSP `frame-ancestors 'self'`. Der isolierte TLS-Test verifiziert die globalen Header. Eine öffentliche CSP-/Frame-Regel bleibt bis zum Audit realer Analytics-, Zahlungs-, Medien- und Embeddingquellen bewusst offen. |
 | 50 | Infrastruktur | P1 nach TLS | HSTS ist bewusst weder in PHP noch global gesetzt und wird negativ getestet. Erst nach vollständiger HTTPS-/Subdomain-Prüfung mit kurzer Laufzeit beginnen; `includeSubDomains` und Preload bleiben bis zu einem separaten Subdomain-Audit ausgeschlossen. |
@@ -577,9 +579,41 @@ Ein vollständiges Systembackup enthält alle Mandanten, weil gemeinsame Stammda
 
 Für die laufende Migration von `1.1.7` nach `1.1.8` ist unmittelbar vor dem ersten SQL-Schritt eine vollständige gemeinsame Sicherung Pflicht. Ein teilweise migriertes Schema wird nicht durch erneutes blindes Ausführen oder eine erfundene Down-Migration zurückgesetzt. Entweder wird nach Zustandsprüfung und separater Freigabe vorwärts vervollständigt, oder die gesamte Vor-Migrationsdatenbank zusammen mit passendem Code und Dateistand wiederhergestellt. Die in Abschnitt 6 beschriebene zustandsabhängige Nacharbeit ist ausschließlich ein kontrollierter Vorwärtsweg.
 
+### 5.21 HTTP-Caching und Kompression
+
+Die Auslieferung ist nach der bestehenden Vertrauensgrenze klassifiziert. Die Regeln für `files/`, `media/` und `cache/` stehen weiterhin vor dem vorhandenen statischen Dateibypass und führen diese Anfragen durch die Anwendung. Es wurde weder eine zweite Medienroute noch ein öffentlicher HTML-Seitencache eingeführt.
+
+| Ressourcentyp | Cache- und Validatorstrategie | Kompression |
+|---|---|---|
+| Vorhandene statische CSS-, JavaScript-, Font-, Icon- und Bilddateien mit 12-stelligem Inhalts-Hash `v` | `public, max-age=31536000, immutable`; ETag, Last-Modified und typabhängiges Expires. Der Hash wird aus den realen Dateibytes gebildet und ändert die URL bei jedem Inhaltswechsel. | CSS, JavaScript und SVG werden bei Clientunterstützung komprimiert; Fonts und Rasterbilder nicht. |
+| Dieselben statischen Dateitypen ohne gültigen Versionsparameter | `public, max-age=0, must-revalidate` und bereits abgelaufenes Expires; ETag/Last-Modified ermöglichen 304 statt erneuter Übertragung. | Textbasierte Dateien werden komprimiert. |
+| Tatsächlich veröffentlichte Medien aus der bestehenden Anwendungsauslieferung | `public, max-age=3600` mit ETag, Last-Modified und Expires; `If-None-Match` beziehungsweise `If-Modified-Since` erzeugt 304. Die bisherige Shop-, Pfad- und Mandantenauflösung entscheidet weiterhin vor diesen Headern über die Veröffentlichung. | Bilder, PDF und andere binäre Downloads werden nicht zusätzlich komprimiert. |
+| Öffentliche dynamische Website-, CMS-, Produkt-, Kategorie-, Such-, Sitemap- und Robots-Antworten | Standardmäßig `private, no-store`; eine ausdrücklich vorher gesetzte fachliche Route-Policy wird nicht überschrieben. Dadurch werden Shopkontext, Consent, Warenkorb, Conversionmarker und Sessiondaten nicht in gemeinsamen Browser-/Proxy-Caches vermischt. | HTML, JSON und XML können über Inhaltsaushandlung komprimiert werden. |
+| Interne ERP-, Login-, Checkout-, Formular-, Consent-, Conversion-, personalisierte AJAX- und geschützte Dateiantworten | `private, no-store`; private Dateien erhalten bewusst keine öffentlichen Validatoren. | Text kann transportseitig komprimiert werden; bereits komprimierte Downloads nicht. |
+
+Das öffentliche Site-Layout hängt an die drei lokalen Anwendungsassets `shop.css`, eine optionale Theme-CSS und `shops.js` automatisch die ersten zwölf Hexzeichen ihres SHA-256-Inhaltshashes an. Dateipfade, Bibliotheksreihenfolge und externe SRI-geschützte CDN-URLs bleiben unverändert. Dadurch gibt es nach einem Deployment keine veraltete Langzeitkopie unter derselben Asset-URL und keine neue Build-Pipeline.
+
+Die `.htaccess`-Regeln verwenden ausschließlich optionale `<IfModule>`-Blöcke. `mod_headers` setzt die statische Cache-Policy, `mod_expires` ergänzt nur gemeinsam mit `mod_headers` typbezogenes Expires, `mod_filter` mit `mod_deflate` stellt gzip bereit und `mod_brotli` ergänzt Brotli. Apache setzt bei komprimierten Antworten `Vary: Accept-Encoding`; GET, HEAD, unveränderte Clients und Content-Length wurden real geprüft. Fehlt Brotli, wird gzip verwendet. Fehlen `mod_headers` oder alle optionalen Header-/Expires-/Kompressionsmodule, werden statische Dateien ohne riskante Langzeitfrist weiterhin ausgeliefert. `mod_rewrite` bleibt unabhängig davon eine bestehende Pflichtvoraussetzung der Anwendung.
+
+Die isolierte Apache-Fixture hat für identische Laborinhalte folgende übertragenen Bodygrößen gemessen. Dies sind keine Produktions- oder Core-Web-Vitals-Werte:
+
+| Fixture | Unkomprimiert | Komprimiert | Verfahren |
+|---|---:|---:|---|
+| HTML | 10.822 Bytes | 115 Bytes | gzip |
+| CSS (`ui.css`) | 46.443 Bytes | 8.391 Bytes | gzip |
+| JavaScript (`global.js`) | 144.684 Bytes | 31.131 Bytes | Brotli |
+| JSON | 10.814 Bytes | 106 Bytes | gzip |
+| XML | 10.840 Bytes | 129 Bytes | gzip |
+
+Die stark repetitiven HTML-/JSON-/XML-Fixtures dienen bewusst nur dem deterministischen Funktions- und Bytevergleich. Zusätzlich wurden Rohantworten ohne `Accept-Encoding`, Brotli-Priorität, gzip-Fallback ohne Brotli, keine Kompression von PNG, Validatoren, zweiter Abruf mit 304, Cache-Control, Expires, Vary, Content-Length, Root- und Unterverzeichnisinstallation getestet.
+
+Der in `Bootstrap` registrierte Zend-Dateicache besitzt weiterhin 24 Stunden Lebensdauer. Im Anwendungscode wurde kein Verbraucher dieses registrierten Caches gefunden; die vorhandenen Zugriffe in Zend-Bibliothekscode rechtfertigen keine Änderung. Direkter HTTP-Zugriff auf `cache/` bleibt durch die Anwendungsroute gesperrt. Deshalb wurden weder Lebensdauer noch Schlüssel oder Invalidierung ohne nachgewiesenen Fehler geändert.
+
+Für bestehende Installationen sind vor Aktivierung die verfügbaren Apache-Module und zulässigen Overrides zu prüfen. Wenn ein Reverse Proxy oder CDN komprimiert, muss genau eine kontrollierte Schicht die Inhaltskodierung übernehmen; am Edge sind `Vary: Accept-Encoding`, unveränderte Cache-Control-/Validatorheader sowie keine Kompression von Binärdownloads zu verifizieren. Proxy-Caches dürfen dynamische oder private Antworten nicht entgegen `private, no-store` speichern. Änderungen der VHost-/Proxykonfiguration gehören in deren getrenntes Backup und benötigen Syntax-, Root-/Unterverzeichnis-, HTTP-/HTTPS-, GET-/HEAD-, 304- und Mandantentests. HTTP/2/HTTP/3 und reale Core Web Vitals bleiben Eigenschaften der Zielinfrastruktur und finalen Inhalte.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
-`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Die Phasen 4.3, 4.4, 5.1 und 5.2 benötigen keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
+`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Die Phasen 4.3, 4.4, 5.1, 5.2 und 5.3 benötigen keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
 
 Installationen, auf denen eine frühere Fassung der laufenden 1.1.8-Anweisungen bereits manuell ausgeführt wurde, müssen vor dem Anwendungsdeployment das Checkout-Token-Schema prüfen. Nur wenn Spalte und Index noch fehlen, sind exakt die weiterhin in `update-1.1.7-1.1.8.sql` enthaltenen Anweisungen kontrolliert anzuwenden; bei einem teilweise vorhandenen Stand darf ausschließlich der jeweils fehlende Schritt ausgeführt werden:
 
@@ -617,12 +651,12 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Consent-gesteuerte Conversionmarker, sofortiger Widerruf, Datenminimierung, Einmaligkeit, Schnittstellen- und Shopisolation | 41 Prüfungen bestanden |
 | Reale lokale HTTP-Crawler-, SEO-, Redirect-, Sitemap-, Ressourcen-, Bildperformance- und Begrenzungsfälle | 34 Prüfungen bestanden |
 | SEO-Metadaten, Open Graph, Breadcrumbs, strukturierte Daten und Überschriften | 46 Prüfungen bestanden |
-| Technische HTML5-/Indexierungs-/Header-/Consent-Baseline einschließlich strikter Host-, Port-, Basispfad- und Origin-Prüfung | 99 Prüfungen bestanden |
+| Technische HTML5-/Indexierungs-/Header-/Consent-Baseline einschließlich dynamischer No-Store-Policy sowie strikter Host-, Port-, Basispfad- und Origin-Prüfung | 103 Prüfungen bestanden |
 | Robots, Sitemap, normalisierte kanonische Basis-URL, Routing und Isolation | 37 Prüfungen bestanden |
 | Isolierte Apache-HTTP-/HTTPS-, Canonical-Host-, Methoden-, ACME-, Proxy-Header- und TLS-Header-Prüfung | 35 Prüfungen bestanden; temporäres selbstsigniertes Zertifikat, keine externe Verbindung |
 | Slug-Normalisierung, Tag-HTML-Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 71 Prüfungen bestanden |
-| Site-CMS-Struktur, Assets, Accessibility, SRI, Bildpriorisierung und responsive Medienflächen | 176 Prüfungen bestanden |
-| Dateizugriff, Medienvarianten, LCP-Attribute und Mandantenisolation | 327 Prüfungen bestanden |
+| Site-CMS-Struktur, inhaltsversionierte Assets, Accessibility, SRI, Bildpriorisierung und responsive Medienflächen | 178 Prüfungen bestanden |
+| Dateizugriff, öffentliche Medienvalidatoren/304, private No-Store-Policy, Medienvarianten, LCP-Attribute und Mandantenisolation | 395 Prüfungen bestanden |
 | Isolierte Chromium-Bildprioritäts-, Doppeldownload-, CLS- und Übertragungsmessung | 4 Prüfungen bestanden; LCP-/INP-Grenzen ausdrücklich dokumentiert |
 | Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, Shop-Abläufe, AJAX, Conversion-Dispatcher, Suche und Checkout | 75 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
 | ChromeDriver-Tastatur, Fokus, ARIA, Consent, Tracking-Requests, Formulare, Warenkorb, Header-Komponenten, Kontrast und Reflow | 95 Prüfungen bei 320, 375, 500, 768 und 1365 Pixeln bestanden |
@@ -641,7 +675,7 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Mandantenzugriff | 268 Prüfungen bestanden |
 | Mandantenwechsel | 53 Prüfungen bestanden |
 | HTTP-Sessions | 25 Prüfungen bestanden |
-| HTTP-Konfiguration | 8.513 Prüfungen bestanden |
+| HTTP-Konfiguration einschließlich Cache-Control, Expires, ETag/Last-Modified, 304, GET/HEAD, gzip, Brotli, Vary, Content-Length, Root-/Unterverzeichnis und fehlenden optionalen Modulen | 8.546 Prüfungen bestanden; gemessene Laborwerte in Abschnitt 5.21 |
 | HTTP-Fehlerbehandlung | 140 Prüfungen bestanden |
 | Isolierter MariaDB-Installations-/Migrationstest | Bestanden; einschließlich 66 UOM-Prüfungen |
 | Isolierte Code-/Datei-/MariaDB-Sicherung und Wiederherstellung | 38 Prüfungen bestanden; einschließlich Releasearchiv, Schemaabweichung, Trigger, Routine, Event, Integrität, Berechtigungen, Überschreibschutz und Mandantentrennung |
@@ -660,7 +694,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Die Consent-Entscheidung ist eine Benutzerpräferenz und keine Sicherheitsberechtigung. Exakt passende Cookiewerte sind bewusst nicht kryptografisch signiert; veraltete, fehlerhafte sowie mandanten- oder websitefremde Werte werden abgelehnt.
 - Conversion-Ereignisse werden nur für erkannte direkte `gtag.js`- oder Google-Tag-Manager-`dataLayer`-Konfigurationen erzeugt. Andere freie Analytics-Snippets benötigen eine getrennte, konkret getestete Schnittstelle. Lokale Dispatch-Tests sind kein Nachweis für den Empfang beim Anbieter.
 - Externe Bilder und CSS-URLs in erlaubten freien HTML-Feldern sowie ungeprüfte Legacy-Datensätze können Drittanbieterressourcen außerhalb von `shop.analytics` laden. Eine pauschale automatische Klassifizierung oder Umschreibung wäre fachlich unsicher; der reale Inhalt muss vor Livegang auf Staging inventarisiert werden.
-- TLS, Host-Redirects, HSTS, Kompression, Protokollversionen und Caching sind nicht allein durch den PHP-Code abgeschlossen.
+- TLS, Host-Redirects, HSTS und Protokollversionen sind nicht allein durch den PHP-Code abgeschlossen. Cache- und Kompressionsregeln sind im Repository implementiert, benötigen aber weiterhin die dokumentierten Apache-Module beziehungsweise eine gleichwertige kontrollierte Edge-Konfiguration und eine Prüfung auf der Zielinfrastruktur.
 - Die strengere Hostauflösung behandelt `www` und Non-`www` nicht mehr als automatische Aliasse. Jede bisher nur implizit erreichbare Variante benötigt vor dem Deployment einen ausdrücklich geprüften Redirect-VHost beziehungsweise eine Edge-Regel. Doppelt konfigurierte aktive Host-/Basispfad-Kombinationen werden absichtlich nicht aufgelöst, bis die Daten bereinigt sind; unterschiedliche segmentgenaue Basispfade bleiben möglich.
 - Ein expliziter nichtstandardisierter Port in `shop.url` muss auch im Request-Host vorhanden sein. Standardports 80/443 bleiben ohne explizite Angabe zulässig, damit die vorgeschaltete HTTPS-Normalisierung greifen kann. Reverse-Proxies müssen den externen kanonischen Host erhalten; die Anwendung vertraut keinem Forwarded-Header.
 - Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Redirects entstehen erst bei einer ausdrücklichen Slug- oder Elternänderung innerhalb derselben Website; ein Websitewechsel erzeugt keine domainübergreifende Weiterleitung.
@@ -696,7 +730,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - WebP-/AVIF-Derivate sowie einen gegebenenfalls erforderlichen kontrollierten Backfill für ältere Medien separat bewerten.
 - Die bestehende CDN-/SRI-Entscheidung im Betrieb auf Verfügbarkeit und Datenschutz prüfen; Self-Hosting nur mit versionierten Cache- und Updateprozessen umsetzen.
 - Bootstrap 5 als getrennte öffentliche Migration mit Datenattribut-, Utility-, Komponenten- und Browseraudit planen; interne ERP-Abhängigkeiten nicht gleichzeitig umstellen.
-- Lokales CSS/JS anhand realer Staging-Nutzung weiter messen, kontrolliert bereinigen, minifizieren und versioniert cachen.
+- Lokales CSS/JS anhand realer Staging-Nutzung weiter messen, kontrolliert bereinigen und minifizieren; die implementierte Inhaltsversionierung und Cache-Invalidierung dabei verifizieren.
 - Core Web Vitals mit realen Inhalten messen.
 
 ### Phase 4 – Consent, Tracking und Formulare
@@ -717,7 +751,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 ### Phase 6 – Infrastruktur und Livegang
 
 - Die in Abschnitt 5.19 dokumentierte VHost-/Proxy-Strategie pro Website mit realem DNS, Zertifikatskette, Renewal, kanonischem Host, alternativen Hosts, Unterverzeichnispfad und unbekanntem Default-Host umsetzen und Ende-zu-Ende prüfen.
-- Kompression, Caching und HTTP/2 prüfen; Mixed-Content-Crawl mit den endgültigen Staging-Inhalten ausführen.
+- Die implementierte Kompression und Cache-Policy auf der realen Apache-/Proxykette einschließlich 304, `Vary`, fehlender Doppelkompression und Deployment-Invalidierung verifizieren; HTTP/2 prüfen und den Mixed-Content-Crawl mit den endgültigen Staging-Inhalten ausführen.
 - HSTS nach stabiler HTTPS-Phase mit kurzer Laufzeit kontrolliert einführen; Subdomains und Preload getrennt freigeben.
 - Den in Abschnitt 5.20 geprüften Kernablauf mit einem freigegebenen vollständigen Staging-Snapshot sowie der realen verschlüsselten und getrennten Backup-Ablage proben; RPO, RTO, Rotation und Verantwortlichkeit abnehmen.
 - Monitoring, Webmaster-Werkzeuge, Sitemap und Conversion-Messung verifizieren.
@@ -977,8 +1011,17 @@ Inhalt:
 - Zustandsabhängige Rollback-Matrix für Code, Dateien, gemeinsam referenzierte Daten, Migrationen und Infrastruktur ohne automatische Down-Migration.
 - Automatisierte temporäre MariaDB-/Dateisystemprobe für Erfolg, fehlerhafte und unvollständige Sicherungen, Symlinks, Prüfsummen, Überschreibschutz, Trigger, Routinen, Events und Tenantpfade ohne produktive Daten oder Schemaänderung.
 
+### Commit 22: `optimize site http caching and compression`
+
+Inhalt:
+
+- Inhaltsbasierte Versionsparameter für lokale öffentliche CSS-/JavaScript-Dateien mit langfristigem unveränderlichem Browser-Caching und revalidierbarer Policy für unversionierte statische Ressourcen.
+- Optionale Apache-Kompression für HTML, CSS, JavaScript, JSON und XML mit Brotli-Präferenz, gzip-Fallback, `Vary: Accept-Encoding` und unveränderter Auslieferung bereits komprimierter Binärformate.
+- Dynamische Antworten standardmäßig `private, no-store`; private Downloads bleiben unverändert geschützt und ausschließlich bisher veröffentlichte Medien erhalten kurze öffentliche Cachefreigabe, Validatoren und 304-Unterstützung.
+- Isolierte Root-/Unterverzeichnis-, Modul-Fallback-, GET-/HEAD-/304-, Content-Length-, Mandanten-, Medien-, Chromium- und Bytevergleichsregressionen ohne Datenbankänderung.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, strikte kanonische Host-/Portauflösung, einheitliche Slug-Erzeugung, automatische interne 301-Weiterleitungen sowie einen geprüften Sicherungs- und isolierten Wiederherstellungskern ist vorbereitet und getestet. Phase 5.2 ist auf Repository-Ebene abgeschlossen; dies ist ausdrücklich keine Freigabe realer DNS-, TLS-, Proxy-, Datenschutz-, WCAG-, Backup-Speicher- oder Aufbewahrungskonfigurationen. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die produktive Umsetzung und Liveprüfung von Zertifikaten, VHosts, Host-/HTTPS-Redirects, Mixed Content und später HSTS, die Betreiberprobe mit vollständigem freigegebenem Snapshot und realer verschlüsselter getrennter Sicherungsablage sowie historischer Alt-URL-Import, tatsächlicher Staging-Crawl, reale Drittanbieter-/Legacy-Inhalte und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, inhaltsversionierte lokale Assets, statisches Browser-Caching, gzip-/Brotli-Kompression, konservatives dynamisches No-Store, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, strikte kanonische Host-/Portauflösung, einheitliche Slug-Erzeugung, automatische interne 301-Weiterleitungen sowie einen geprüften Sicherungs- und isolierten Wiederherstellungskern ist vorbereitet und getestet. Phase 5.3 ist auf Repository-Ebene abgeschlossen; dies ist ausdrücklich keine Freigabe realer DNS-, TLS-, Proxy-, Datenschutz-, WCAG-, Backup-Speicher-, Aufbewahrungs- oder Edge-Kompressionskonfigurationen. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die produktive Umsetzung und Liveprüfung von Zertifikaten, VHosts, Host-/HTTPS-Redirects, Cache-/Kompressionsverhalten der Zielkette, Mixed Content und später HSTS, die Betreiberprobe mit vollständigem freigegebenem Snapshot und realer verschlüsselter getrennter Sicherungsablage sowie historischer Alt-URL-Import, tatsächlicher Staging-Crawl, reale Drittanbieter-/Legacy-Inhalte und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.

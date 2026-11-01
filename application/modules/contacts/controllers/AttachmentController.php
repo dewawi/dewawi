@@ -190,12 +190,44 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 		$filename = rawurlencode(basename($path));
 		$response = $this->getResponse();
 		$response->setHeader('Content-Type', $inline ? $type : 'application/octet-stream', true);
-		$response->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $filename . '"; filename*=UTF-8\'\'' . $filename, true);
-		$response->setHeader('Content-Length', (string)fstat($stream)['size'], true);
 		$response->setHeader('X-Content-Type-Options', 'nosniff', true);
 		$response->setHeader('Content-Security-Policy', "sandbox; default-src 'none'; style-src 'unsafe-inline'", true);
 		$response->setHeader('Cache-Control', $public ? 'public, max-age=3600' : 'private, no-store', true);
+		$stat = fstat($stream);
+		if ($public && $this->setPublicValidators($stat)) {
+			fclose($stream);
+			$response->setHttpResponseCode(304)->setBody('');
+			return;
+		}
+		$response->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $filename . '"; filename*=UTF-8\'\'' . $filename, true);
+		$response->setHeader('Content-Length', (string)$stat['size'], true);
 		$this->sendAttachmentFile($stream);
+	}
+
+	private function setPublicValidators(array $stat): bool
+	{
+		$modified = (int)($stat['mtime'] ?? 0);
+		$size = (int)($stat['size'] ?? 0);
+		$etag = '"' . dechex($modified) . '-' . dechex($size) . '"';
+		$response = $this->getResponse();
+		$response->setHeader('ETag', $etag, true);
+		$response->setHeader('Last-Modified', gmdate('D, d M Y H:i:s', $modified) . ' GMT', true);
+		$response->setHeader('Expires', gmdate('D, d M Y H:i:s', time() + 3600) . ' GMT', true);
+
+		$ifNoneMatch = $this->getRequest()->getHeader('If-None-Match');
+		if (is_string($ifNoneMatch) && $ifNoneMatch !== '') {
+			foreach (explode(',', $ifNoneMatch) as $candidate) {
+				$candidate = trim($candidate);
+				if ($candidate === '*' || preg_replace('/^W\//', '', $candidate) === $etag) return true;
+			}
+			return false;
+		}
+
+		$ifModifiedSince = $this->getRequest()->getHeader('If-Modified-Since');
+		if (!is_string($ifModifiedSince) || $ifModifiedSince === '') return false;
+		$since = strtotime(explode(';', $ifModifiedSince, 2)[0]);
+
+		return $since !== false && $since >= $modified;
 	}
 
 	protected function sendAttachmentFile($stream): void

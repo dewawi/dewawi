@@ -78,9 +78,9 @@ function storedHeader($controller, string $name): ?string
     foreach ($controller->getResponse()->getHeaders() as $header) if (strcasecmp($header['name'], $name) === 0) return $header['value'];
     return null;
 }
-function storedResponse(string $relative, string $method = 'GET', string $base = ''): array
+function storedResponse(string $relative, string $method = 'GET', string $base = '', array $headers = []): array
 {
-    return attachmentAction('file', [], $method, null, $base . '/' . $relative);
+    return attachmentAction('file', [], $method, null, $base . '/' . $relative, $headers);
 }
 function setupStoredFiles(bool $shared = false): void
 {
@@ -117,6 +117,7 @@ foreach ([false, true] as $shared) {
         [$status, $body, $controller] = storedResponse($relative);
         check($status === 200 && $body === 'Private stored file fixture', 'Authorized file failed: ' . $relative);
         check(storedHeader($controller, 'Cache-Control') === 'private, no-store' && storedHeader($controller, 'X-Content-Type-Options') === 'nosniff', 'Private file headers missing');
+        check(storedHeader($controller, 'ETag') === null && storedHeader($controller, 'Last-Modified') === null, 'Private file exposes public cache validators');
         check(storedHeader($controller, 'Content-Type') === 'application/octet-stream' && str_starts_with(storedHeader($controller, 'Content-Disposition'), 'attachment;'), 'Unknown MIME rendered inline');
         check(storedResponse($relative, 'HEAD')[1] === '', 'HEAD exposed a body');
         check(storedResponse($relative, 'POST')[0] === 405, 'Unsafe file method accepted');
@@ -248,6 +249,10 @@ foreach ($public as $relative) {
     foreach (['media/' . $relative, 'media/7/0/7/' . $relative] as $url) {
         [$status, $body, $controller] = storedResponse($url);
         check($status === 200 && $body === $contents && storedHeader($controller, 'Cache-Control') === 'public, max-age=3600', 'Published media unavailable: ' . $url);
+        $etag = storedHeader($controller, 'ETag');
+        check($etag !== null && storedHeader($controller, 'Last-Modified') !== null && storedHeader($controller, 'Expires') !== null, 'Published media lacks cache validators: ' . $url);
+        [$conditionalStatus, $conditionalBody] = storedResponse($url, 'GET', '', ['If-None-Match' => $etag]);
+        check($conditionalStatus === 304 && $conditionalBody === '', 'Published media conditional request failed: ' . $url);
         check(storedHeader($controller, 'X-Content-Type-Options') === 'nosniff' && str_starts_with(storedHeader($controller, 'Content-Security-Policy'), 'sandbox;'), 'Public file protection headers missing');
         check(storedResponse($url, 'HEAD')[1] === '' && storedResponse($url, 'POST')[0] === 405, 'Public file method handling failed');
     }

@@ -165,7 +165,10 @@ checkCms(substr_count($siteLayoutSource, 'integrity="sha384-') === 3 && substr_c
 checkCms(str_contains($siteLayoutSource, 'sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs')
 	&& str_contains($siteLayoutSource, 'sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N')
 	&& str_contains($siteLayoutSource, 'sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct'), 'Public asset integrity hashes changed unexpectedly');
-checkCms(substr_count($siteLayoutSource, '<script src=') === 2 && substr_count($siteLayoutSource, '/js/shops.js') === 1, 'Public layout loads duplicate JavaScript libraries');
+checkCms(substr_count($siteLayoutSource, '<script src=') === 2
+	&& substr_count($siteLayoutSource, 'src="<?php echo $this->baseUrl(); ?>/js/shops.js') === 1, 'Public layout loads duplicate JavaScript libraries');
+checkCms(str_contains($siteLayoutSource, "substr(hash_file('sha256', \$file), 0, 12)"), 'Local public assets lack content-derived version URLs');
+checkCms(substr_count($siteLayoutSource, '$assetVersion(') === 3, 'Not all local public layout assets use content-derived version URLs');
 checkCms(strpos($siteLayoutSource, 'jquery-3.7.1.min.js') < strpos($siteLayoutSource, 'bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js')
 	&& strpos($siteLayoutSource, 'bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js') < strpos($siteLayoutSource, '/js/shops.js'), 'Public script dependency order is invalid');
 checkCms(substr_count($shopCss, '.dw-site-header {') === 1 && !preg_match('/^header(?:\.home)?\s*\{/m', $shopCss), 'Public stylesheet retains duplicate generic header rules');

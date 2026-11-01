@@ -34,7 +34,7 @@ function responseHeaders(Zend_Controller_Response_Http $response): array
 	return $headers;
 }
 
-function applySecurityHeaders(string $module, ?DEEC_Site_Context $context = null): array
+function applySecurityHeaders(string $module, ?DEEC_Site_Context $context = null, ?string $cacheControl = null): array
 {
 	if (Zend_Registry::isRegistered('SiteContext')) Zend_Registry::getInstance()->offsetUnset('SiteContext');
 	if ($context) Zend_Registry::set('SiteContext', $context);
@@ -42,6 +42,7 @@ function applySecurityHeaders(string $module, ?DEEC_Site_Context $context = null
 	$request = new Zend_Controller_Request_Http();
 	$request->setModuleName($module);
 	$response = new Zend_Controller_Response_Http();
+	if ($cacheControl !== null) $response->setHeader('Cache-Control', $cacheControl, true);
 	$plugin = new Application_Plugin_SecurityHeaders();
 	$plugin->setRequest($request);
 	$plugin->setResponse($response);
@@ -116,11 +117,14 @@ checkBaseline(!isset($stagingHeaders['x-frame-options'], $stagingHeaders['conten
 $productionHeaders = applySecurityHeaders('shops', $indexable);
 checkBaseline(!isset($productionHeaders['x-robots-tag']), 'Indexable public sites receive a global noindex header');
 foreach ([$internalHeaders, $stagingHeaders, $productionHeaders] as $headers) {
+	checkBaseline(($headers['cache-control'] ?? '') === 'private, no-store', 'Dynamic response is publicly cacheable');
 	checkBaseline(($headers['x-content-type-options'] ?? '') === 'nosniff', 'X-Content-Type-Options is missing');
 	checkBaseline(($headers['referrer-policy'] ?? '') === 'strict-origin-when-cross-origin', 'Referrer-Policy is missing');
 	checkBaseline(($headers['permissions-policy'] ?? '') === 'camera=(), microphone=(), geolocation=()', 'Permissions-Policy is missing');
 	checkBaseline(!isset($headers['strict-transport-security']), 'HSTS was enabled before installation-wide HTTPS verification');
 }
+$explicitCacheHeaders = applySecurityHeaders('shops', $indexable, 'public, max-age=60');
+checkBaseline(($explicitCacheHeaders['cache-control'] ?? '') === 'public, max-age=60', 'Explicit route cache policy was overwritten');
 
 $config = file_get_contents($root . '/configs/application.ini');
 checkBaseline(str_contains($config, 'resources.view.doctype = "HTML5"'), 'HTML5 is not the configured view doctype');

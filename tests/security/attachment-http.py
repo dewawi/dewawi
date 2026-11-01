@@ -232,17 +232,21 @@ DocumentRoot "{site}"
 
         last_headers = {}
 
-        def fetch(path, user=None, method="GET", host="localhost"):
+        def fetch(path, user=None, method="GET", host="localhost", extra_headers=None):
             try:
                 headers = {"Host": host}
                 if user:
                     headers['X-Attachment-Test-User'] = user
+                if extra_headers:
+                    headers.update(extra_headers)
                 request = urllib.request.Request(f"http://127.0.0.1:{port}{path}", headers=headers, method=method)
                 with urllib.request.urlopen(request, timeout=5) as response:
                     last_headers.clear()
                     last_headers.update(response.headers)
                     return response.status, response.read()
             except urllib.error.HTTPError as error:
+                last_headers.clear()
+                last_headers.update(error.headers)
                 return error.code, error.read()
 
         def upload(files, user="upload"):
@@ -310,6 +314,9 @@ DocumentRoot "{site}"
         for requested in ['/media/images/product.png', '/media/7/0/7/images/product.png']:
             assert fetch(requested) == (200, b"Public media fixture"), 'Public product media affected'
             assert last_headers['Cache-Control'] == 'public, max-age=3600'
+            assert 'Etag' in last_headers and 'Last-Modified' in last_headers and 'Expires' in last_headers, last_headers
+            etag = last_headers['Etag']
+            assert fetch(requested, extra_headers={'If-None-Match': etag}) == (304, b''), 'Public media ETag did not produce 304'
         shutil.copytree(site, temp / 'subdirectory', symlinks=True)
         (temp / 'subdirectory').rename(site / 'dewawi')
         for relative in stored_files[:2] + [stored_files[3]]:

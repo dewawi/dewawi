@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Exercise the repository's Apache rules in isolated root and subdirectory installations."""
 import grp
+import gzip
+import hashlib
 import http.client
 import json
 import os
@@ -13,6 +15,11 @@ import subprocess
 import tempfile
 import time
 from urllib.parse import urlencode
+
+try:
+    import brotli
+except ImportError:
+    brotli = None
 
 root = Path(__file__).resolve().parents[2]
 apache = shutil.which("apache2")
@@ -119,6 +126,7 @@ echo json_encode([
 '''.replace("ROOT_PATH", "'" + str(root).replace("'", "\\'") + "'")
 
 checks = 0
+metrics = {}
 with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
     temp = Path(temp)
     site = temp / "site"
@@ -155,6 +163,12 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
         ".well-known/acme-challenge/fixture", "images/configs-logo.png",
     ]:
         public[relative] = b"Public HTTP resource fixture"
+    compressible = (b"DEWAWI compression fixture " * 400)
+    public.update({
+        "assets/compress.html": b"<!doctype html><p>" + compressible + b"</p>",
+        "assets/compress.json": b'{"content":"' + compressible + b'"}',
+        "assets/compress.xml": b"<?xml version=\"1.0\"?><content>" + compressible + b"</content>",
+    })
     for relative, contents in public.items():
         target = site / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -249,6 +263,11 @@ LogLevel warn
 LoadModule mpm_prefork_module "{modules}/mod_mpm_prefork.so"
 LoadModule authz_core_module "{modules}/mod_authz_core.so"
 LoadModule rewrite_module "{modules}/mod_rewrite.so"
+LoadModule headers_module "{modules}/mod_headers.so"
+LoadModule filter_module "{modules}/mod_filter.so"
+LoadModule deflate_module "{modules}/mod_deflate.so"
+{'LoadModule brotli_module "' + str(modules / 'mod_brotli.so') + '"' if brotli is not None and (modules / 'mod_brotli.so').is_file() else ''}
+LoadModule expires_module "{modules}/mod_expires.so"
 LoadModule dir_module "{modules}/mod_dir.so"
 LoadModule autoindex_module "{modules}/mod_autoindex.so"
 LoadModule mime_module "{modules}/mod_mime.so"
@@ -282,11 +301,15 @@ php_admin_value session.save_path "{temp}"
         else:
             raise RuntimeError("Isolated Apache did not start")
 
+        last_response_headers = {}
+
         def fetch(path, method="GET", body=None, headers=None):
             global checks
             connection = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
             connection.request(method, path, body, headers or {})
             response = connection.getresponse()
+            last_response_headers.clear()
+            last_response_headers.update(response.getheaders())
             result = response.status, response.read()
             connection.close()
             checks += 1
@@ -313,6 +336,47 @@ php_admin_value session.save_path "{temp}"
                     assert status == 403 and marker not in body, f"Private path exposed: {method} {prefix}/{path} (HTTP {status})"
             for path, contents in public.items():
                 assert fetch(prefix + "/" + path) == (200, contents), f"Public resource affected: {prefix}/{path}"
+            asset_version = hashlib.sha256(public["css/ui.css"]).hexdigest()[:12]
+            asset_path = prefix + "/css/ui.css?v=" + asset_version
+            status, body = fetch(asset_path, headers={"Accept-Encoding": "gzip"})
+            assert status == 200 and last_response_headers.get("Content-Encoding") == "gzip", "Versioned CSS was not compressed with gzip"
+            assert gzip.decompress(body) == public["css/ui.css"] and len(body) < len(public["css/ui.css"]), "gzip changed CSS or did not reduce its bytes"
+            assert last_response_headers.get("Cache-Control") == "public, max-age=31536000, immutable", ("Versioned CSS is not cached immutably", last_response_headers)
+            assert "ETag" in last_response_headers and "Last-Modified" in last_response_headers and "Expires" in last_response_headers, "Versioned CSS lacks validators or expiry"
+            assert "Accept-Encoding" in last_response_headers.get("Vary", ""), "Compressed CSS lacks Accept-Encoding variance"
+            if "Content-Length" in last_response_headers:
+                assert int(last_response_headers["Content-Length"]) == len(body), "Compressed CSS has an invalid Content-Length"
+            if prefix == "":
+                metrics["css"] = {"raw": len(public["css/ui.css"]), "gzip": len(body)}
+            modified = last_response_headers["Last-Modified"]
+            conditional = fetch(asset_path, headers={"If-Modified-Since": modified, "Accept-Encoding": "gzip"})
+            assert conditional == (304, b""), ("Static Last-Modified did not produce 304", conditional, modified, last_response_headers)
+            assert last_response_headers.get("Cache-Control") == "public, max-age=31536000, immutable", "Static 304 lost its cache policy"
+            status, _ = fetch(asset_path)
+            etag = last_response_headers["ETag"]
+            assert fetch(asset_path, headers={"If-None-Match": etag}) == (304, b""), "Uncompressed static ETag did not produce 304"
+            assert fetch(asset_path, "HEAD")[0] == 200 and fetch(asset_path, "HEAD")[1] == b"", "Static HEAD returned a body"
+
+            status, body = fetch(prefix + "/js/global.js", headers={"Accept-Encoding": "br, gzip"})
+            expected_encoding = "br" if brotli is not None and (modules / "mod_brotli.so").is_file() else "gzip"
+            assert status == 200 and last_response_headers.get("Content-Encoding") == expected_encoding, "Preferred available JavaScript compression was not used"
+            decoded = brotli.decompress(body) if expected_encoding == "br" else gzip.decompress(body)
+            assert decoded == public["js/global.js"] and len(body) < len(public["js/global.js"]), "Compression changed JavaScript or did not reduce its bytes"
+            assert last_response_headers.get("Cache-Control") == "public, max-age=0, must-revalidate", "Unversioned JavaScript is not revalidated"
+            assert last_response_headers.get("Expires") == "Thu, 01 Jan 1970 00:00:00 GMT", "Unversioned JavaScript has no stale expiry"
+            if prefix == "":
+                metrics["javascript"] = {"raw": len(public["js/global.js"]), expected_encoding: len(body)}
+
+            for path, content_type in [("compress.html", "text/html"), ("compress.json", "application/json"), ("compress.xml", "application/xml")]:
+                status, body = fetch(prefix + "/assets/" + path, headers={"Accept-Encoding": "gzip"})
+                assert status == 200 and last_response_headers.get("Content-Encoding") == "gzip", f"{content_type} was not compressed"
+                assert gzip.decompress(body) == public["assets/" + path], f"Compressed {content_type} changed bytes"
+                assert "Accept-Encoding" in last_response_headers.get("Vary", ""), f"Compressed {content_type} lacks Vary"
+                if prefix == "":
+                    metrics[content_type] = {"raw": len(public["assets/" + path]), "gzip": len(body)}
+            assert fetch(prefix + "/assets/compress.html") == (200, public["assets/compress.html"]), "Client without Accept-Encoding received compressed HTML"
+            status, body = fetch(prefix + "/images/saved.png", headers={"Accept-Encoding": "br, gzip"})
+            assert status == 200 and body == public["images/saved.png"] and "Content-Encoding" not in last_response_headers, "Already compressed image was recompressed"
             assert fetch(prefix + "/media/")[0] in (403, 404), "Directory listing enabled"
             for path in ['files/contacts/unmapped.pdf', 'files/uploads/unmapped.pdf', 'cache/item/42.pdf', 'cache/thumbs/files/unmapped.png', 'media/linked.png']:
                 assert fetch(prefix + '/' + path)[0] == 404, f'Unmapped file exposed: {path}'
@@ -400,7 +464,7 @@ php_admin_value session.save_path "{temp}"
             raise RuntimeError("Chromium is required for the manager CSRF and upload ARIA browser regression")
         browser = subprocess.run([chromium, "--headless", "--disable-gpu", "--disable-background-networking", "--no-first-run", "--no-default-browser-check", "--user-data-dir=" + str(temp / "browser-profile"), "--virtual-time-budget=5000", "--dump-dom", f"http://127.0.0.1:{port}/browser-test.html"], capture_output=True, text=True, timeout=30)
         assert browser.returncode == 0 and '<pre id="result">PASS:' in browser.stdout, browser.stdout[-3000:] + browser.stderr[-2000:]
-        print(f"PASS: {checks} Apache HTTP cases; {len(inventory)} inventoried PHP/include files; manager CSRF and upload ARIA browser regression")
+        browser_passed = True
     except Exception:
         print((temp / "error.log").read_text())
         raise
@@ -411,3 +475,64 @@ php_admin_value session.save_path "{temp}"
         except subprocess.TimeoutExpired:
             server.kill()
             server.communicate()
+
+    def optional_modules_case(name, removed_modules, expected_encoding, expect_cache):
+        global checks
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            variant_port = listener.getsockname()[1]
+        variant_config = config.read_text()
+        for module in removed_modules:
+            variant_config = re.sub(rf'^LoadModule {module}_module .*$\n', '', variant_config, flags=re.MULTILINE)
+        variant_config = variant_config.replace(f'Listen 127.0.0.1:{port}', f'Listen 127.0.0.1:{variant_port}')
+        variant_config = variant_config.replace(f'PidFile "{temp}/apache.pid"', f'PidFile "{temp}/apache-{name}.pid"')
+        variant_path = temp / f"apache-{name}.conf"
+        variant_path.write_text(variant_config)
+        subprocess.run([apache, "-t", "-f", str(variant_path)], check=True, capture_output=True)
+        variant_server = subprocess.Popen([apache, "-f", str(variant_path), "-DFOREGROUND"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+        try:
+            for _ in range(100):
+                if variant_server.poll() is not None:
+                    raise RuntimeError(variant_server.communicate()[1].decode())
+                try:
+                    with socket.create_connection(("127.0.0.1", variant_port), timeout=0.1):
+                        break
+                except OSError:
+                    time.sleep(0.05)
+            else:
+                raise RuntimeError(f"Isolated Apache variant {name} did not start")
+            asset_version = hashlib.sha256(public["css/ui.css"]).hexdigest()[:12]
+            connection = http.client.HTTPConnection("127.0.0.1", variant_port, timeout=5)
+            connection.request("GET", "/css/ui.css?v=" + asset_version, headers={"Accept-Encoding": "br, gzip"})
+            response = connection.getresponse()
+            headers = dict(response.getheaders())
+            body = response.read()
+            connection.close()
+            checks += 1
+            assert response.status == 200, f"Optional-module variant {name} failed"
+            if expected_encoding == "br":
+                assert headers.get("Content-Encoding") == "br" and brotli.decompress(body) == public["css/ui.css"], "Brotli delivery without headers module failed"
+            elif expected_encoding == "gzip":
+                assert headers.get("Content-Encoding") == "gzip" and gzip.decompress(body) == public["css/ui.css"], "gzip fallback without Brotli failed"
+            else:
+                assert "Content-Encoding" not in headers and body == public["css/ui.css"], "Static delivery without compression modules failed"
+            if expect_cache:
+                assert headers.get("Cache-Control") == "public, max-age=31536000, immutable", "Cache headers without Brotli failed"
+            else:
+                assert "Cache-Control" not in headers, "Missing headers module produced an unexpected cache policy"
+                assert "Expires" not in headers, "Missing headers module left an unsafe long-lived expiry"
+        finally:
+            variant_server.terminate()
+            try:
+                variant_server.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                variant_server.kill()
+                variant_server.communicate()
+
+    if brotli is not None and (modules / "mod_brotli.so").is_file():
+        optional_modules_case("no-brotli", ["brotli"], "gzip", True)
+    optional_modules_case("no-headers", ["headers"], "br" if brotli is not None and (modules / "mod_brotli.so").is_file() else "gzip", False)
+    optional_modules_case("core-only", ["headers", "filter", "deflate", "brotli", "expires"], None, False)
+    assert browser_passed
+    print("MEASURED: " + json.dumps(metrics, sort_keys=True))
+    print(f"PASS: {checks} Apache HTTP cases; {len(inventory)} inventoried PHP/include files; manager CSRF and upload ARIA browser regression; optional Apache modules")
