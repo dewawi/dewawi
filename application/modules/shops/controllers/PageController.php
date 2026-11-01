@@ -12,7 +12,8 @@ class Shops_PageController extends Shops_Controller_Action
 		$page = $pageDb->getPage($id);
 
 		if (!$page) {
-			throw new Zend_Controller_Action_Exception('Page not found', 404);
+			$this->renderSiteError(404);
+			return;
 		}
 
 		$path = (new Shops_Model_DbTable_Slug())->getPublicPath('page', (int)$page['id']);

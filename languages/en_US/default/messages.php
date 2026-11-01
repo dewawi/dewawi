@@ -61,6 +61,7 @@
 	'MESSAGES_REDIRECT_NOT_FOUND' => 'The redirect was not found in this shop.',
 	'MESSAGES_REDIRECT_CSRF_INVALID' => 'The security check failed. Please reload the page.',
 	'MESSAGES_REDIRECT_CREATED' => 'The legacy redirect has been saved.',
+	'MESSAGES_GONE_CREATED' => 'The permanently removed URL has been saved.',
 	'MESSAGES_REDIRECT_DISABLED' => 'The legacy redirect has been disabled.',
 	'MESSAGES_REDIRECT_CSV_INVALID' => 'The CSV file is empty, invalid, not UTF-8 encoded, or too large.',
 	'MESSAGES_REDIRECT_CSV_HEADER_INVALID' => 'The CSV header must be old_path,target_path.',

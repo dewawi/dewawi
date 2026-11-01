@@ -102,7 +102,7 @@ echo $this->doctype();
 				</div>
 			</div>
 		</nav>
-		<?php if(!$home) : ?>
+		<?php if(!$home && empty($this->siteErrorStatus)) : ?>
 			<!-- Breadcrumbs -->
 			<?php echo $this->Breadcrumbs(); ?>
 		<?php endif; ?>

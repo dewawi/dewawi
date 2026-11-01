@@ -14,7 +14,8 @@ class Shops_CategoryController extends Shops_Controller_Action
 		$category = $categoryDb->getCategory($id);
 
 		if (!$category) {
-			throw new Zend_Controller_Action_Exception('Category not found', 404);
+			$this->renderSiteError(404);
+			return;
 		}
 
 		$path = (new Shops_Model_DbTable_Slug())->getPublicPath('category', (int)$category['id']);

@@ -17,15 +17,22 @@ $hasErrors = (bool)array_filter($preview, static fn(array $row): bool => $row['s
 			<input id="legacy-old-path" type="text" name="old_path" maxlength="2048" required placeholder="alte-seite">
 		</div>
 		<div class="dw-form-row">
+			<label for="legacy-response-type"><?php echo $this->escape($this->translate('ADMIN_LEGACY_RESPONSE_TYPE')); ?></label>
+			<select id="legacy-response-type" name="response_type">
+				<option value="redirect"><?php echo $this->escape($this->translate('ADMIN_LEGACY_RESPONSE_REDIRECT')); ?></option>
+				<option value="gone"><?php echo $this->escape($this->translate('ADMIN_LEGACY_RESPONSE_GONE')); ?></option>
+			</select>
+		</div>
+		<div class="dw-form-row">
 			<label for="legacy-target-path"><?php echo $this->escape($this->translate('ADMIN_LEGACY_TARGET_PATH')); ?></label>
-			<select id="legacy-target-path" name="target_path" required>
+			<select id="legacy-target-path" name="target_path">
 				<option value=""><?php echo $this->escape($this->translate('ADMIN_LEGACY_SELECT_TARGET')); ?></option>
 				<?php foreach ((array)$this->targets as $target): ?>
 					<option value="<?php echo $this->escape($target['path']); ?>"><?php echo $this->escape($target['path']); ?></option>
 				<?php endforeach; ?>
 			</select>
 		</div>
-		<button type="submit"><?php echo $this->escape($this->translate('ADMIN_LEGACY_ADD_REDIRECT')); ?></button>
+		<button type="submit"><?php echo $this->escape($this->translate('ADMIN_LEGACY_ADD_RESPONSE')); ?></button>
 	</form>
 
 	<h3><?php echo $this->escape($this->translate('ADMIN_LEGACY_EXISTING_REDIRECTS')); ?></h3>
@@ -33,15 +40,18 @@ $hasErrors = (bool)array_filter($preview, static fn(array $row): bool => $row['s
 		<table>
 			<thead><tr>
 				<th scope="col"><?php echo $this->escape($this->translate('ADMIN_LEGACY_OLD_PATH')); ?></th>
+				<th scope="col"><?php echo $this->escape($this->translate('ADMIN_LEGACY_RESPONSE_TYPE')); ?></th>
 				<th scope="col"><?php echo $this->escape($this->translate('ADMIN_LEGACY_TARGET_PATH')); ?></th>
 				<th scope="col"><?php echo $this->escape($this->translate('ADMIN_LEGACY_STATUS')); ?></th>
 				<th scope="col"><?php echo $this->escape($this->translate('ADMIN_LEGACY_ACTION')); ?></th>
 			</tr></thead>
 			<tbody>
 			<?php foreach ((array)$this->redirects as $redirect): ?>
+				<?php $gone = ($redirect['status'] ?? 'redirect') === 'gone'; ?>
 				<tr>
 					<td><?php echo $this->escape($redirect['path']); ?></td>
-					<td><?php echo $this->escape($redirect['targetpath'] ?: $this->translate('ADMIN_LEGACY_TARGET_UNAVAILABLE')); ?></td>
+					<td><?php echo $this->escape($this->translate($gone ? 'ADMIN_LEGACY_RESPONSE_GONE' : 'ADMIN_LEGACY_RESPONSE_REDIRECT')); ?></td>
+					<td><?php echo $gone ? '&mdash;' : $this->escape($redirect['targetpath'] ?: $this->translate('ADMIN_LEGACY_TARGET_UNAVAILABLE')); ?></td>
 					<td><?php echo $this->escape($this->translate(empty($redirect['deleted']) ? 'ADMIN_ACTIVE' : 'ADMIN_INACTIVE')); ?></td>
 					<td>
 					<?php if (empty($redirect['deleted'])): ?>
@@ -56,7 +66,7 @@ $hasErrors = (bool)array_filter($preview, static fn(array $row): bool => $row['s
 				</tr>
 			<?php endforeach; ?>
 			<?php if (!$this->redirects): ?>
-				<tr><td colspan="4"><?php echo $this->escape($this->translate('ADMIN_LEGACY_NONE')); ?></td></tr>
+				<tr><td colspan="5"><?php echo $this->escape($this->translate('ADMIN_LEGACY_NONE')); ?></td></tr>
 			<?php endif; ?>
 			</tbody>
 		</table>

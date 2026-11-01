@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS `slugredirect` (
   `shopid` int(11) NOT NULL,
   `path` varchar(2048) NOT NULL,
   `pathhash` char(64) NOT NULL,
+  `status` varchar(16) NOT NULL DEFAULT 'redirect',
   `module` varchar(255) NOT NULL DEFAULT 'shops',
   `controller` varchar(255) NOT NULL,
   `entityid` int(11) NOT NULL,
@@ -169,3 +170,19 @@ CREATE TABLE IF NOT EXISTS `slugredirect` (
   UNIQUE KEY `clientid_shopid_pathhash` (`clientid`, `shopid`, `pathhash`),
   KEY `clientid_shopid_target` (`clientid`, `shopid`, `module`, `controller`, `entityid`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET @dewawi_slugredirect_status_exists = (
+  SELECT COUNT(*)
+  FROM `information_schema`.`COLUMNS`
+  WHERE `TABLE_SCHEMA` = DATABASE()
+    AND `TABLE_NAME` = 'slugredirect'
+    AND `COLUMN_NAME` = 'status'
+);
+SET @dewawi_slugredirect_status_sql = IF(
+  @dewawi_slugredirect_status_exists = 0,
+  'ALTER TABLE `slugredirect` ADD `status` varchar(16) NOT NULL DEFAULT ''redirect'' AFTER `pathhash`',
+  'SELECT 1'
+);
+PREPARE dewawi_slugredirect_status_statement FROM @dewawi_slugredirect_status_sql;
+EXECUTE dewawi_slugredirect_status_statement;
+DEALLOCATE PREPARE dewawi_slugredirect_status_statement;

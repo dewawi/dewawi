@@ -63,6 +63,9 @@ class Admin_ShopController extends DEEC_Controller_AdminAction
 			if ((string)$request->getPost('redirect_action', '') === 'disable') {
 				$db->disablePath($shopId, (int)$request->getPost('redirect_id', 0));
 				$message = 'MESSAGES_REDIRECT_DISABLED';
+			} elseif ((string)$request->getPost('response_type', '') === Admin_Model_DbTable_Slugredirect::STATUS_GONE) {
+				$db->saveGonePath($shopId, (string)$request->getPost('old_path', ''));
+				$message = 'MESSAGES_GONE_CREATED';
 			} else {
 				$db->saveManualPath($shopId, (string)$request->getPost('old_path', ''), (string)$request->getPost('target_path', ''));
 				$message = 'MESSAGES_REDIRECT_CREATED';

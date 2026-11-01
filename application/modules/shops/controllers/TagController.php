@@ -13,7 +13,8 @@ class Shops_TagController extends Shops_Controller_Action
 		$tag = $tagDb->getTag($id);
 
 		if (!$tag) {
-			throw new Zend_Controller_Action_Exception('Tag not found', 404);
+			$this->renderSiteError(404);
+			return;
 		}
 
 		$path = (new Shops_Model_DbTable_Slug())->getPublicPath('tag', (int)$tag['id']);

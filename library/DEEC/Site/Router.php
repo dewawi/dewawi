@@ -316,8 +316,8 @@ class DEEC_Site_Router
 		if ($path === null) return;
 		if (!DEEC_Site_Router::isRedirectablePath($path)) return;
 
-		$target = (new Shops_Model_DbTable_Slugredirect())->resolvePath($path);
-		if (!$target) return;
+		$result = (new Shops_Model_DbTable_Slugredirect())->resolve($path);
+		if (!$result) return;
 
 		$router->addRoute('shop_redirect', new Zend_Controller_Router_Route(
 			$path,

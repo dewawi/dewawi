@@ -1,0 +1,19 @@
+<section class="dw-site-error" aria-labelledby="site-error-title">
+	<div class="container">
+		<p class="dw-site-error__code" aria-hidden="true"><?php echo (int)$this->siteErrorStatus; ?></p>
+		<h1 id="site-error-title"><?php echo $this->escape($this->siteErrorTitle); ?></h1>
+		<p><?php echo $this->escape($this->siteErrorMessage); ?></p>
+		<div class="dw-site-error__actions">
+			<a class="btn btn-primary" href="<?php echo $this->url([], 'shop_home'); ?>"><?php echo $this->escape($this->translate('SHOPS_ERROR_HOME')); ?></a>
+		</div>
+		<form class="dw-site-error__search" action="<?php echo $this->url([], 'search', true); ?>" method="get" role="search">
+			<label for="site-error-search"><?php echo $this->escape($this->translate('SHOPS_SEARCH_LABEL')); ?></label>
+			<div class="input-group">
+				<input id="site-error-search" class="form-control" type="search" name="q" maxlength="100">
+				<div class="input-group-append">
+					<button class="btn btn-outline-secondary" type="submit"><?php echo $this->escape($this->translate('SHOPS_SEARCH_SUBMIT')); ?></button>
+				</div>
+			</div>
+		</form>
+	</div>
+</section>

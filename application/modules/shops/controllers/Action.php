@@ -6,6 +6,7 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 	private const CONVERSION_LIMIT = 10;
 	protected $cart = null;
 	private ?DEEC_Site_SubmissionLimiter $submissionLimiter = null;
+	private bool $siteLayoutInitialized = false;
 
 	protected function initSiteCart(): Shops_Model_ShoppingCart
 	{
@@ -19,6 +20,8 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 
 	protected function initSiteLayout(): void
 	{
+		if ($this->siteLayoutInitialized) return;
+		$this->siteLayoutInitialized = true;
 		$this->_helper->getHelper('layout')->setLayout('site');
 
 		$categories = [];
@@ -48,6 +51,50 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 		$this->view->menus = $menus;
 		$this->view->menuitems = $menuitems;
 		$this->view->conversionEvents = $this->consumeSiteConversions();
+	}
+
+	protected function renderSiteError(int $status): void
+	{
+		if (!in_array($status, [404, 410], true)) throw new InvalidArgumentException('Unsupported public error status');
+
+		$this->initSiteLayout();
+		$key = $status === 410 ? 'SHOPS_ERROR_GONE' : 'SHOPS_ERROR_NOT_FOUND';
+		$title = (string)$this->view->translate($key . '_TITLE');
+		$message = (string)$this->view->translate($key . '_MESSAGE');
+		$response = $this->getResponse();
+		$response->setHttpResponseCode($status);
+		$this->view->headTitle()->set($title);
+		$this->view->headMeta()->setName('robots', 'noindex, follow');
+		$this->clearCanonicalLinks();
+		unset($this->view->canonicalPath, $this->view->item, $this->view->category, $this->view->page, $this->view->tag);
+		$this->view->siteErrorStatus = $status;
+		$this->view->siteErrorTitle = $title;
+		$this->view->siteErrorMessage = $message;
+
+		$this->_helper->viewRenderer->setNoRender();
+		if ($this->getRequest()->isHead()) {
+			$this->_helper->layout->disableLayout();
+			$response->setBody('');
+			return;
+		}
+
+		$accept = (string)$this->getRequest()->getHeader('Accept');
+		if ($this->getRequest()->isXmlHttpRequest() || stripos($accept, 'application/json') !== false) {
+			$this->_helper->layout->disableLayout();
+			$response->setHeader('Content-Type', 'application/json; charset=UTF-8', true);
+			$response->setBody(json_encode(['status' => 'error', 'message' => $message], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+			return;
+		}
+
+		$this->renderScript('error/site-error.phtml');
+	}
+
+	private function clearCanonicalLinks(): void
+	{
+		$headLink = $this->view->headLink();
+		foreach ($headLink as $index => $link) {
+			if (strtolower((string)($link->rel ?? '')) === 'canonical') $headLink->offsetUnset($index);
+		}
 	}
 
 	protected function initSiteContactForm(): void

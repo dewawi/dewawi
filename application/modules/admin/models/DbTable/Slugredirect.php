@@ -4,6 +4,8 @@ class Admin_Model_DbTable_Slugredirect extends DEEC_Model_DbTable_Entity
 {
 	public const MAX_CSV_SIZE = 262144;
 	public const MAX_CSV_ROWS = 500;
+	public const STATUS_REDIRECT = 'redirect';
+	public const STATUS_GONE = 'gone';
 	protected const CONTROLLERS = ['page', 'category', 'item', 'tag', 'inquiry'];
 
 	protected $_name = 'slugredirect';
@@ -75,6 +77,48 @@ class Admin_Model_DbTable_Slugredirect extends DEEC_Model_DbTable_Entity
 	public function savePath(int $shopId, string $path, string $controller, int $entityId): int
 	{
 		return $this->saveAssignment($shopId, $path, $controller, $entityId, false);
+	}
+
+	public function saveGonePath(int $shopId, string $path): int
+	{
+		$this->assertShopAccess($shopId, true);
+		$this->validatePath($path);
+
+		foreach ($this->getTargetSlugRows($shopId) as $target) {
+			if ((string)$target['path'] === $path) throw new DomainException('MESSAGES_REDIRECT_CURRENT_PATH_CONFLICT');
+		}
+
+		$row = $this->findRedirectByPath($shopId, $path, true);
+		if ($row && ((string)$row['path'] !== $path || (string)($row['status'] ?? self::STATUS_REDIRECT) !== self::STATUS_GONE)) {
+			throw new DomainException('MESSAGES_REDIRECT_CONFLICT');
+		}
+		if ($row && empty($row['deleted'])) return (int)$row['id'];
+
+		$data = [
+			'path' => $path,
+			'pathhash' => hash('sha256', $path),
+			'status' => self::STATUS_GONE,
+			'module' => 'shops',
+			'controller' => '',
+			'entityid' => 0,
+			'deleted' => 0,
+		];
+
+		if ($row) {
+			$data['modified'] = $this->_date;
+			$data['modifiedby'] = $this->getUserId();
+			$this->update($data, 'id = ' . (int)$row['id']);
+
+			return (int)$row['id'];
+		}
+
+		$data['shopid'] = $shopId;
+		$data['clientid'] = $this->getClientId();
+		$data['created'] = $this->_date;
+		$data['createdby'] = $this->getUserId();
+		$this->insert($data);
+
+		return (int)$this->getAdapter()->lastInsertId();
 	}
 
 	public function disablePath(int $shopId, int $id): void
@@ -209,6 +253,7 @@ class Admin_Model_DbTable_Slugredirect extends DEEC_Model_DbTable_Entity
 		$data = [
 			'path' => $path,
 			'pathhash' => $hash,
+			'status' => self::STATUS_REDIRECT,
 			'module' => 'shops',
 			'controller' => $controller,
 			'entityid' => $entityId,
@@ -247,7 +292,8 @@ class Admin_Model_DbTable_Slugredirect extends DEEC_Model_DbTable_Entity
 
 		$row = $this->findRedirectByPath($shopId, $path, false);
 		if (!$row) return 'new';
-		if ((string)$row['path'] !== $path || (string)$row['controller'] !== $controller || (int)$row['entityid'] !== $entityId) {
+		if ((string)$row['path'] !== $path || (string)($row['status'] ?? self::STATUS_REDIRECT) !== self::STATUS_REDIRECT
+			|| (string)$row['controller'] !== $controller || (int)$row['entityid'] !== $entityId) {
 			throw new DomainException('MESSAGES_REDIRECT_CONFLICT');
 		}
 

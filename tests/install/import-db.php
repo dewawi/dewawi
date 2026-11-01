@@ -61,6 +61,7 @@ check($db->query("SHOW COLUMNS FROM address LIKE 'street'")->fetch_assoc()['Type
 check($db->query("SHOW INDEX FROM address WHERE Column_name = 'street'")->num_rows === 0, 'Street index still exists');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.STATISTICS s JOIN information_schema.COLUMNS c ON c.TABLE_SCHEMA = s.TABLE_SCHEMA AND c.TABLE_NAME = s.TABLE_NAME AND c.COLUMN_NAME = s.COLUMN_NAME WHERE s.TABLE_SCHEMA = DATABASE() AND c.DATA_TYPE IN ('tinytext', 'text', 'mediumtext', 'longtext', 'tinyblob', 'blob', 'mediumblob', 'longblob') AND s.SUB_PART IS NULL AND s.INDEX_TYPE <> 'FULLTEXT'")->fetch_row()[0] === 0, 'Unprefixed TEXT/BLOB index remains');
 check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'path'")->fetch_assoc()['Type'] === 'varchar(2048)', 'Fresh installation has no full redirect path storage');
+check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'status'")->fetch_assoc()['Default'] === 'redirect', 'Fresh installation has no redirect response status default');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'slugredirect' AND index_name = 'clientid_shopid_pathhash' AND non_unique = 0")->fetch_row()[0] === 3, 'Fresh installation redirect uniqueness is not tenant- and shop-scoped');
 checkCheckoutTokenSchema($db, 'Fresh installation');
 
@@ -113,10 +114,26 @@ check(count($redirectCreateQueries) === 1, 'Current upgrade does not contain exa
 foreach ($redirectCreateQueries as $query) $db->query($query['query']);
 check($db->query("SHOW TABLES LIKE 'slugredirect'")->num_rows === 1, 'Redirect upgrade did not create its table');
 check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'pathhash'")->fetch_assoc()['Type'] === 'char(64)', 'Redirect upgrade path hash has the wrong type');
+check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'status'")->fetch_assoc()['Default'] === 'redirect', 'Redirect upgrade status has the wrong default');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'slugredirect' AND index_name = 'clientid_shopid_pathhash' AND non_unique = 0")->fetch_row()[0] === 3, 'Redirect upgrade unique index has the wrong scope');
 check($db->query('SELECT slug FROM slug WHERE id = 1')->fetch_row()[0] === 'existing-path', 'Redirect upgrade changed an existing slug');
 foreach ($redirectCreateQueries as $query) $db->query($query['query']);
 check($db->query("SHOW TABLES LIKE 'slugredirect'")->num_rows === 1, 'Repeated redirect upgrade changed the schema unexpectedly');
+
+// A partially applied 1.1.8 upgrade receives the additive status column without changing existing redirects.
+$db->query('CREATE DATABASE redirect_partial_upgrade');
+$db->select_db('redirect_partial_upgrade');
+$db->query("CREATE TABLE slugredirect (id INT AUTO_INCREMENT PRIMARY KEY, shopid INT NOT NULL, path VARCHAR(2048) NOT NULL, pathhash CHAR(64) NOT NULL, module VARCHAR(255) NOT NULL DEFAULT 'shops', controller VARCHAR(255) NOT NULL, entityid INT NOT NULL, clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB");
+$db->query("INSERT INTO slugredirect (shopid, path, pathhash, controller, entityid, clientid) VALUES (7, 'old-page', SHA2('old-page', 256), 'page', 11, 3)");
+$statusQueries = array_values(array_filter($redirectQueries, static function(array $query): bool {
+    return str_contains($query['query'], 'dewawi_slugredirect_status');
+}));
+check(count($statusQueries) === 5, 'Current upgrade does not contain the partial redirect migration remediation');
+foreach ($statusQueries as $query) $db->query($query['query']);
+check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'status'")->fetch_assoc()['Default'] === 'redirect', 'Partial redirect upgrade did not add the response status');
+check($db->query('SELECT status FROM slugredirect WHERE id = 1')->fetch_row()[0] === 'redirect', 'Partial redirect upgrade changed an existing redirect away from HTTP 301');
+foreach ($statusQueries as $query) $db->query($query['query']);
+check((int)$db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'slugredirect' AND COLUMN_NAME = 'status'")->fetch_row()[0] === 1, 'Repeated partial redirect upgrade duplicated the status column');
 
 // Version 1.1.8 maps explicit contact roles and normalizes inquiry tokens before adding indexes.
 $db->query('CREATE DATABASE contact_role_upgrade');

@@ -56,6 +56,7 @@
 	'MESSAGES_REDIRECT_NOT_FOUND' => 'Die Weiterleitung wurde in diesem Shop nicht gefunden.',
 	'MESSAGES_REDIRECT_CSRF_INVALID' => 'Die Sicherheitsprüfung ist fehlgeschlagen. Bitte laden Sie die Seite neu.',
 	'MESSAGES_REDIRECT_CREATED' => 'Die historische Weiterleitung wurde gespeichert.',
+	'MESSAGES_GONE_CREATED' => 'Die dauerhaft entfernte URL wurde gespeichert.',
 	'MESSAGES_REDIRECT_DISABLED' => 'Die historische Weiterleitung wurde deaktiviert.',
 	'MESSAGES_REDIRECT_CSV_INVALID' => 'Die CSV-Datei ist leer, ungültig, nicht UTF-8-kodiert oder zu groß.',
 	'MESSAGES_REDIRECT_CSV_HEADER_INVALID' => 'Die CSV-Kopfzeile muss old_path,target_path lauten.',

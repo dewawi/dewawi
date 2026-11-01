@@ -1320,3 +1320,26 @@ form .hidden {
 	margin-top: 1rem;
 	font-weight: 600;
 }
+/* Public error pages */
+.dw-site-error {
+	padding: clamp(3rem, 8vw, 7rem) 0;
+	text-align: center;
+}
+
+.dw-site-error__code {
+	margin-bottom: .25rem;
+	font-size: clamp(3rem, 10vw, 6rem);
+	font-weight: 700;
+	line-height: 1;
+	opacity: .18;
+}
+
+.dw-site-error__actions {
+	margin: 1.5rem 0;
+}
+
+.dw-site-error__search {
+	max-width: 36rem;
+	margin: 2rem auto 0;
+	text-align: left;
+}

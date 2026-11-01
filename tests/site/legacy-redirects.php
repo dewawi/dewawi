@@ -207,6 +207,20 @@ $db->shops = [];
 expectLegacy('MESSAGES_SLUG_SHOP_INVALID', fn() => $db->getAllByShop(7));
 $db->shops = [7];
 
+$goneId = $db->saveGonePath(7, 'dauerhaft-entfernt');
+checkLegacy($goneId === 5 && $db->redirects[4]['status'] === 'gone' && $db->redirects[4]['controller'] === '' && (int)$db->redirects[4]['entityid'] === 0, 'Explicit HTTP 410 path was not stored without an artificial target');
+checkLegacy($db->saveGonePath(7, 'dauerhaft-entfernt') === $goneId && count($db->redirects) === 5, 'Identical HTTP 410 path was inserted twice');
+$db->disablePath(7, $goneId);
+checkLegacy((int)$db->redirects[4]['deleted'] === 1, 'HTTP 410 path was not disabled');
+checkLegacy($db->saveGonePath(7, 'dauerhaft-entfernt') === $goneId && (int)$db->redirects[4]['deleted'] === 0, 'Disabled HTTP 410 path was not restored');
+expectLegacy('MESSAGES_REDIRECT_CURRENT_PATH_CONFLICT', fn() => $db->saveGonePath(7, 'produkte'));
+expectLegacy('MESSAGES_REDIRECT_CONFLICT', fn() => $db->saveGonePath(7, 'alte-seite'));
+expectLegacy('MESSAGES_REDIRECT_CONFLICT', fn() => $db->saveManualPath(7, 'dauerhaft-entfernt', 'produkte'));
+foreach (['search', 'files/removed.pdf', '../removed', '/removed', 'removed/'] as $path) {
+	expectLegacy('MESSAGES_REDIRECT_PATH_INVALID', fn() => $db->saveGonePath(7, $path));
+}
+expectLegacy('MESSAGES_SLUG_SHOP_INVALID', fn() => $db->saveGonePath(8, 'foreign-gone'));
+
 $csv = "\xEF\xBB\xBFold_path,target_path\nalt-eins,informationen/aktuell\nalt-zwei,produkte/geraet\n";
 $rows = $db->parseCsv($csv);
 $preview = $db->previewImport(7, $rows);
@@ -222,6 +236,8 @@ checkLegacy($preview[0]['status'] === 'new' && $preview[1]['status'] === 'duplic
 $conflict = $db->parseCsv("old_path,target_path\nkonflikt,produkte\nkonflikt,informationen/aktuell\n");
 $preview = $db->previewImport(7, $conflict);
 checkLegacy($preview[1]['status'] === 'error' && $preview[1]['error'] === 'MESSAGES_REDIRECT_CONFLICT', 'Conflicting CSV rows were accepted');
+$goneConflict = $db->previewImport(7, $db->parseCsv("old_path,target_path\ndauerhaft-entfernt,produkte\n"));
+checkLegacy($goneConflict[0]['status'] === 'error' && $goneConflict[0]['error'] === 'MESSAGES_REDIRECT_CONFLICT', 'CSV import replaced an explicit HTTP 410 path');
 expectLegacy('MESSAGES_REDIRECT_CSV_HEADER_INVALID', fn() => $db->parseCsv("source,target\na,b\n"));
 expectLegacy('MESSAGES_REDIRECT_CSV_INVALID', fn() => $db->parseCsv("old_path,target_path\n"));
 expectLegacy('MESSAGES_REDIRECT_CSV_INVALID', fn() => $db->parseCsv("old_path,target_path\na,\xFF\n"));
@@ -253,6 +269,7 @@ $controllerSource = file_get_contents($root . '/application/modules/admin/contro
 $viewSource = file_get_contents($root . '/application/modules/admin/views/scripts/shop/_redirects.phtml');
 $publicControllerSource = file_get_contents($root . '/application/modules/shops/controllers/RedirectController.php');
 checkLegacy(str_contains($controllerSource, 'isValidRedirectCsrf') && str_contains($controllerSource, 'is_uploaded_file'), 'CSRF or secure upload validation is missing');
+checkLegacy(str_contains($controllerSource, 'saveGonePath') && str_contains($viewSource, 'name="response_type"'), 'Admin UI cannot create an explicit HTTP 410 path');
 checkLegacy(str_contains($viewSource, '$this->escape') && !str_contains($viewSource, 'name="controller"') && !str_contains($viewSource, 'name="entityid"'), 'Admin output or target IDs are client-manipulable');
 checkLegacy(substr_count($publicControllerSource, 'getBasePath()') >= 2, 'Public redirect does not preserve a configured installation base path');
 

@@ -364,6 +364,9 @@ $adapter->rows = [
 		['id' => 303, 'clientid' => 3, 'shopid' => 7, 'path' => 'deleted-redirect', 'pathhash' => hash('sha256', 'deleted-redirect'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 1],
 		['id' => 304, 'clientid' => 3, 'shopid' => 7, 'path' => 'products', 'pathhash' => hash('sha256', 'products'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 0],
 		['id' => 305, 'clientid' => 3, 'shopid' => 7, 'path' => 'old-products/old-item', 'pathhash' => hash('sha256', 'old-products/old-item'), 'module' => 'shops', 'controller' => 'item', 'entityid' => 100, 'deleted' => 0],
+		['id' => 306, 'clientid' => 3, 'shopid' => 7, 'path' => 'removed-page', 'pathhash' => hash('sha256', 'removed-page'), 'status' => 'gone', 'module' => 'shops', 'controller' => '', 'entityid' => 0, 'deleted' => 0],
+		['id' => 307, 'clientid' => 4, 'shopid' => 7, 'path' => 'foreign-removed', 'pathhash' => hash('sha256', 'foreign-removed'), 'status' => 'gone', 'module' => 'shops', 'controller' => '', 'entityid' => 0, 'deleted' => 0],
+		['id' => 308, 'clientid' => 3, 'shopid' => 7, 'path' => 'disabled-removed', 'pathhash' => hash('sha256', 'disabled-removed'), 'status' => 'gone', 'module' => 'shops', 'controller' => '', 'entityid' => 0, 'deleted' => 1],
 	],
 ];
 Zend_Db_Table::setDefaultAdapter($adapter);
@@ -382,6 +385,9 @@ checkSearch($redirectDb->resolvePath('foreign') === null && $redirectDb->resolve
 checkSearch($redirectDb->resolvePath('deleted-redirect') === null, 'Deleted redirect remains public');
 checkSearch($redirectDb->resolvePath('products') === null, 'Redirect loop to the current path was accepted');
 checkSearch($redirectDb->resolvePath('search') === null && $redirectDb->resolvePath('asset.css') === null, 'Reserved or static path was accepted as a redirect');
+$gone = $redirectDb->resolve('removed-page');
+checkSearch(($gone['status'] ?? '') === 'gone' && $gone['target'] === null, 'Configured HTTP 410 path was not resolved');
+checkSearch($redirectDb->resolve('foreign-removed') === null && $redirectDb->resolve('disabled-removed') === null, 'HTTP 410 path crossed a tenant boundary or ignored its disabled state');
 
 $adapter->rows['category'][0]['activated'] = 0;
 checkSearch($redirectDb->resolvePath('old-products') === null, 'Redirect to a disabled entity remains active');
@@ -399,6 +405,13 @@ $redirectMethod->setAccessible(true);
 $redirectMethod->invoke(new DEEC_Site_Router(), $redirectRouter);
 $redirectRoute = $redirectRouter->getRoute('shop_redirect')->match('old-products');
 checkSearch(($redirectRoute['controller'] ?? '') === 'redirect', 'GET redirect route was not registered');
+
+$_SERVER['REQUEST_URI'] = '/removed-page';
+$_SERVER['REQUEST_METHOD'] = 'HEAD';
+$goneRouter = new Zend_Controller_Router_Rewrite();
+$redirectMethod->invoke(new DEEC_Site_Router(), $goneRouter);
+$goneRoute = $goneRouter->getRoute('shop_redirect')->match('removed-page');
+checkSearch(($goneRoute['controller'] ?? '') === 'redirect', 'HEAD route was not registered for configured HTTP 410 path');
 
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $postRouter = new Zend_Controller_Router_Rewrite();

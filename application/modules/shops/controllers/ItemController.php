@@ -13,7 +13,8 @@ class Shops_ItemController extends Shops_Controller_Action
 		$item = $itemDb->getItem($id);
 
 		if (!$item) {
-			throw new Zend_Controller_Action_Exception('Item not found', 404);
+			$this->renderSiteError(404);
+			return;
 		}
 
 		$path = (new Shops_Model_DbTable_Slug())->getPublicPath('item', (int)$item['id']);
@@ -46,7 +47,8 @@ class Shops_ItemController extends Shops_Controller_Action
 		$category = $categoryDb->getCategory((int)$item['shopcatid']);
 
 		if (!$category) {
-			throw new Zend_Controller_Action_Exception('Category not found', 404);
+			$this->renderSiteError(404);
+			return;
 		}
 
 		$mediaDb = new Shops_Model_DbTable_Media();

@@ -22,6 +22,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Eine eigene Staging-Konfiguration wurde vorbereitet; Staging darf nicht stillschweigend die Produktionsdatenbank verwenden.
 - Automatische historische Pfade werden mandanten- und websitebezogen gespeichert und per HTTP 301 auf die jeweils aktuelle öffentliche Entitäts-URL weitergeleitet.
 - Administratoren können fachlich bekannte historische Pfade im jeweiligen Shop manuell oder per validierter CSV-Vorschau aktuellen öffentlichen Entitäten zuordnen.
+- Öffentliche unbekannte oder nicht mehr verfügbare Inhalte liefern eine hilfreiche 404-Seite im jeweiligen Website-Layout. Nur ausdrücklich im Shop als dauerhaft entfernt markierte Pfade liefern HTTP 410.
 - `robots.txt`, Sitemap und Canonicals verwenden dieselbe validierte, mandantenbezogene Shop-URL; nicht indexierbare Websites bleiben zum Erkennen von `noindex` crawlbar und bewerben keine Sitemap.
 - Öffentliche Hosts werden exakt gegen die normalisierte `shop.url` aufgelöst. `www` und Non-`www`, nichtstandardisierte Ports, ungültige Host-Header sowie mehrdeutig konfigurierte Shops werden nicht mehr stillschweigend zusammengeführt; Proxy-Header bleiben für die Shopauswahl unbeachtet.
 - SEO-Titel, Descriptions und Open-Graph-Daten werden für öffentliche Seiten zentral erzeugt; Breadcrumbs verwenden für HTML und JSON-LD dieselbe aktuelle Pfadhierarchie.
@@ -95,8 +96,8 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 41 | Umgesetzt | P1 | Visuelle Breadcrumbs und `BreadcrumbList` verwenden dieselbe Hierarchie für Kategorien, Unterkategorien, Produkte und tatsächlich verschachtelte CMS-Seiten. Fehlt ein aktueller öffentlicher Pfad, wird kein partielles JSON-LD ausgegeben. |
 | 42 | Umgesetzt | P0 vor Relaunch | Die Sitemap verwendet ausschließlich die validierte kanonische Shop-URL und aktuell öffentliche, mandanten- und websitebezogene Entitätspfade. Duplikate, deaktivierte Features, gelöschte Ziele, Suche und historische Redirects bleiben ausgeschlossen. Nicht indexierbare oder falsch konfigurierte Websites liefern HTTP 404. |
 | 43 | Umgesetzt | P1 | `robots.txt` wird pro Website dynamisch ausgeliefert. Alle öffentlichen Seiten bleiben crawlbar, damit Suchmaschinen vorhandenes `noindex` lesen können. Nur indexierbare Websites verweisen bei gültiger kanonischer URL auf die Sitemap. Robots bleibt ausdrücklich kein Zugriffsschutz. |
-| 44 | Teilweise | P1 | Fehlende Routen und Entitäten liefern echte 404-Antworten; die Seite ist noch generisch. Eine hilfreiche öffentliche 404-Seite mit Navigation, Suche und Kontakt ergänzen, ohne den Statuscode zu verändern. |
-| 45 | Teilweise | P0 | 403/404/500 werden explizit behandelt; bekannte automatisch gespeicherte Altpfade liefern 301, unbekannte Pfade weiterhin 404. Eine fachliche 410-Strategie und vollständige Statusprüfungen im Relaunch-Crawl fehlen. |
+| 44 | Umgesetzt | P1 | Fehlende öffentliche Routen und Entitäten liefern eine responsive, übersetzte 404-Seite im Website-Layout mit Navigation, Startseitenlink und Suche. Status 404, JSON-Fehler und bodyloses HEAD bleiben erhalten; interne oder keinem Shop zuordenbare Fehler verwenden weiterhin die generische Behandlung. |
+| 45 | Umgesetzt / fachliche Zuordnung offen | P0 | 403/404/500 bleiben explizit getrennt. Historische Zuordnungen liefern unverändert 301; ausdrücklich als dauerhaft entfernt markierte Pfade liefern 410; alles andere bleibt 404. Welche realen Alt-URLs fachlich 301 beziehungsweise 410 erhalten, ist vor dem Relaunch abzunehmen. |
 | 46 | Umgesetzt / reale Prüfung offen | P1 | Inhaltsversionierte lokale CSS-/JavaScript-Dateien erhalten ein Jahr `public, immutable`; unversionierte statische Ressourcen werden mit ETag/Last-Modified revalidiert. Dynamische und private Antworten bleiben `private, no-store`, öffentliche Anwendungsmedien erhalten eine Stunde plus Validatoren. Die Regeln sind für Root- und Unterverzeichnisinstallationen isoliert geprüft; die tatsächlich eingesetzte Proxy-/Serverkonfiguration bleibt beim Deployment zu verifizieren. |
 | 47 | Umgesetzt / reale Prüfung offen | P1 | Apache komprimiert HTML, CSS, JavaScript, JSON und XML bei vorhandenen Modulen mit Brotli beziehungsweise gzip und setzt `Vary: Accept-Encoding`. Binärformate bleiben unkomprimiert; fehlendes Brotli fällt auf gzip zurück und fehlende optionale Module beeinträchtigen die Auslieferung nicht. An einem Reverse Proxy darf Kompression nur an einer kontrollierten Schicht aktiv sein. |
 | 48 | Betreiber-/Infrastrukturaufgabe | P1 | HTTP/2-/HTTP/3-Unterstützung ist eine Server-/Proxy-Eigenschaft. HTTP/2 nach TLS prüfen; HTTP/3 nur bei unterstützter Infrastruktur und messbarem Nutzen aktivieren. |
@@ -200,7 +201,15 @@ Eine umfassende Script-/Style-CSP ist noch nicht aktiviert, weil Inline-Code, ex
 - Vor dem Schreiben wird die gesamte Vorschau erneut validiert. Bei einem Fehler wird die Transaktion vollständig zurückgerollt; identische Zuordnungen und identische doppelte CSV-Zeilen werden übersprungen.
 - Die öffentliche Auflösung bleibt entitätsbezogen: GET und HEAD liefern direkt 301 auf den aktuellen Pfad, POST wird nicht umgeleitet, aktuelle Slugs haben Vorrang und historische Pfade gelangen weder in Canonicals noch in die Sitemap.
 - Unterstützt werden Pfade, die der vorhandene relative Router sicher verarbeiten kann. Domains, Querystrings, Fragmente, Dateipfade und andere Ursprünge werden nicht gespeichert. Reale historische Kunden-URLs wurden nicht importiert.
-- Es wurden keine Tabellen oder Migrationen geändert. Bestehende Slugs, Redirects, Produktzuordnungen, Canonicals und Sitemap-Pfade bleiben unverändert.
+- Bestehende Slugs, Redirectziele, Produktzuordnungen, Canonicals und Sitemap-Pfade bleiben unverändert. Das zusätzliche Redirect-Statusfeld verwendet für vorhandene Zeilen den kompatiblen Standardwert `redirect`.
+
+### 5.7b Öffentliche 404- und 410-Antworten
+
+- Unbekannte, gelöschte oder nicht mehr öffentliche CMS-, Kategorie-, Produkt-, Tag- und Anfrageziele bleiben HTTP 404. Bei gültigem Websitekontext erscheint das vorhandene Layout mit Logo, Navigation, verständlichem Hinweis, Startseitenlink und zugänglicher Suche; interne ERP- und unbekannte Hostfehler bleiben generisch.
+- HTTP 410 entsteht ausschließlich durch einen aktiven, ausdrücklich als `gone` gespeicherten historischen Pfad. Dafür ist kein künstliches Ziel erforderlich. Aktuelle öffentliche Slugs, reservierte Systemrouten, Datei- und Traversalpfade sowie widersprüchliche 301-Einträge blockieren die Speicherung.
+- Der Router prüft aktuelle Slugs vor historischen Einträgen. Danach werden aktive 301- und 410-Zuordnungen desselben Mandanten und Shops nur für GET und HEAD verarbeitet. HEAD bleibt bodylos; schreibende Requests werden weder umgeleitet noch als 410 behandelt.
+- 404 und 410 senden den tatsächlichen Status, `noindex, follow`, keine Canonical-URL und keine Produktstrukturdaten. Weder historische noch entfernte Pfade gelangen in die Sitemap. Die vorhandene Robots- und Nichtindexierungssteuerung bleibt vorrangig.
+- Das Feld `slugredirect.status` wird ausschließlich in `structure.sql` und `update-1.1.7-1.1.8.sql` geführt. `redirect` ist der Standard für alle vorhandenen Einträge; die Migration ergänzt das Feld idempotent auch bei einer bereits teilweise angelegten Tabelle.
 
 ### 5.8 Dynamische Robots- und Sitemap-Ausgabe
 
@@ -798,13 +807,14 @@ Gesamtbewertung: **NO-GO für einen Produktionsrelease**, bis alle NO-GO- und NI
 | Robots, Sitemap, normalisierte kanonische Basis-URL, Routing und Isolation | 37 Prüfungen bestanden |
 | Isolierte Apache-HTTP-/HTTPS-, Canonical-Host-, Methoden-, ACME-, Proxy-Header- und TLS-Header-Prüfung | 35 Prüfungen bestanden; temporäres selbstsigniertes Zertifikat, keine externe Verbindung |
 | Slug-Normalisierung, Tag-HTML-Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 71 Prüfungen bestanden |
-| Site-CMS-Struktur, inhaltsversionierte Assets, Accessibility, SRI, Bildpriorisierung und responsive Medienflächen | 178 Prüfungen bestanden |
+| Site-CMS-Struktur, öffentliche Fehlerdarstellung, inhaltsversionierte Assets, Accessibility, SRI, Bildpriorisierung und responsive Medienflächen | 191 Prüfungen bestanden |
 | Dateizugriff, öffentliche Medienvalidatoren/304, private No-Store-Policy, Medienvarianten, LCP-Attribute und Mandantenisolation | 395 Prüfungen bestanden |
 | Isolierte Chromium-Bildprioritäts-, Doppeldownload-, CLS- und Übertragungsmessung | 4 Prüfungen bestanden; LCP-/INP-Grenzen ausdrücklich dokumentiert |
 | Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, Shop-Abläufe, AJAX, Conversion-Dispatcher, Suche und Checkout | 75 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
 | ChromeDriver-Tastatur, Fokus, ARIA, Consent, Tracking-Requests, Formulare, Warenkorb, Header-Komponenten, Kontrast und Reflow | 95 Prüfungen bei 320, 375, 500, 768 und 1365 Pixeln bestanden |
-| Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 101 Prüfungen bestanden |
-| Manuelle historische Redirects, CSV-Vorschau/-Import, Konflikte, CSRF, Isolation, Root-/Unterpfade und Transaktionsrollback | 46 Prüfungen bestanden |
+| Öffentliche Suche, 301-/410-Auflösung und Statusverhalten | 104 Prüfungen bestanden |
+| Öffentliche HTML-/JSON-/HEAD-Fehlerantworten, Canonical- und Noindex-Verhalten | 10 Prüfungen bestanden |
+| Manuelle historische Redirects und 410-Pfade, CSV-Vorschau/-Import, Konflikte, CSRF, Isolation, Root-/Unterpfade und Transaktionsrollback | 61 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
 | Browsermeldungen, Übersetzungen und Benachrichtigungen | Je 1.979 Browserprüfungen bei 390 und 1.280 Pixeln bestanden |
 | Sicherheitskonfiguration und Umgebungswahl | 22 Prüfungen bestanden |
@@ -833,7 +843,7 @@ Alle aufgeführten HTTP-, TLS-, Browser- und Datenbankprüfungen liefen ausschli
 ## 9. Kompatibilitätsrisiken und offene Punkte
 
 - Bestehende Shops werden bei der Schema-Migration absichtlich nicht automatisch auf Noindex gestellt. Die gewünschte Einstellung muss je Installation geprüft werden.
-- Wird der Redirect-Code vor der ergänzten Datenbankmigration bereitgestellt, schlagen Redirect-Prüfungen bei öffentlichen URL-Änderungen wegen der fehlenden Tabelle fehl. Migration und Deployment müssen deshalb koordiniert werden.
+- Wird der Redirect-Code vor der ergänzten Datenbankmigration bereitgestellt, schlagen Redirect- und 410-Prüfungen wegen der fehlenden Tabelle beziehungsweise Statusspalte fehl. Migration und Deployment müssen deshalb koordiniert werden. Bei einer teilweise ausgeführten Migration ist vor dem Codewechsel lesend zu prüfen, ob `slugredirect.status` vorhanden ist; fehlt es, muss die idempotente Nacharbeit aus `update-1.1.7-1.1.8.sql` ausgeführt und anschließend der Standardwert `redirect` verifiziert werden.
 - Das Hinzufügen von Headern kann kundenspezifische Einbettungen beeinflussen; die Frame-Beschränkung gilt derzeit nur für interne Seiten.
 - Das freie Feld `shop.analytics` kann beliebiges Betreiber-Markup enthalten. Die technische Freigabe verhindert seine Ausgabe vor Einwilligung, ersetzt aber weder die Anbieterinventur noch eine fachliche Prüfung des gespeicherten Codes und der Datenschutzerklärung.
 - Bestehende produktive Legacy-WYSIWYG-Datensätze wurden nicht gelesen. Bereits gespeicherte externe Scripts oder Iframes könnten außerhalb von `shop.analytics` liegen; der reale Bestand muss vor Livegang kontrolliert werden. Die identifizierten YouTube-Einbettungen benötigen eine getrennte Datenschutzentscheidung.
@@ -873,7 +883,7 @@ Alle aufgeführten HTTP-, TLS-, Browser- und Datenbankprüfungen liefen ausschli
 
 ### P1 – Noch zu entwickelnde oder fachlich abzuschließende Funktionen
 
-- Die fachlich zugeordnete Liste bekannter historischer URLs über die neue Verwaltung importieren und mit dem Crawler abnehmen; außerdem die hilfreiche 404-Seite vervollständigen und eine fachliche 410-Strategie festlegen.
+- Die fachlich zugeordnete Liste bekannter historischer URLs über die Verwaltung importieren, ausdrücklich dauerhaft entfernte Pfade gezielt als 410 kennzeichnen und beide Gruppen mit dem Crawler abnehmen.
 - Legacy-Inhalte mit mehreren H1, Platzhalter-/Leerzielen, fehlenden Alt-Texten und externen Einbettungen redaktionell bereinigen.
 - Vor Einführung eines Partnerzugangs Authentifizierung, Registrierung, Verifikation, Reset, Brute-Force-Schutz, serverseitig autorisierte Dokumente und getrennte Marketingeinwilligung entwerfen.
 - Die manuelle WCAG-2.2-AA-Stichprobe mit Screenreader, Zoom, Forced Colors, physischen Touchgeräten, realen Themes, Menüs und Inhalten durchführen.
@@ -1178,7 +1188,17 @@ Inhalt:
 - Korrekte öffentliche 301-Ziele für Root- und Unterverzeichnisinstallationen bei unverändertem Vorrang aktueller URLs sowie unveränderten Canonicals und Sitemap-Pfaden.
 - Automatisierte Verwaltungs-, Import-, Rollback-, ACL-, Routing-, SEO- und Isolationsregressionen ohne Schema- oder Kundendatenänderung.
 
-Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
+### Commit 26: `improve public 404 and 410 handling`
+
+Inhalt:
+
+- Übersetzte, responsive und zugängliche öffentliche 404-/410-Darstellung im bestehenden Website-Layout bei unveränderten internen Fehlerseiten.
+- Expliziter `gone`-Status in der vorhandenen historischen URL-Verwaltung ohne künstliches Ziel; bestehende Einträge bleiben durch den Standard `redirect` HTTP 301.
+- Aktuelle-Slug-, Systemrouten-, Datei-, Mandanten-, Shop-, CSRF- und Methodenschutz sowie echte Statuscodes für GET, bodyloses HEAD und JSON.
+- Keine Canonicals, Produktstrukturdaten oder Sitemap-Aufnahme für Fehlerpfade; bestehende Robots-/Noindex-Regeln bleiben wirksam.
+- Idempotente Schemaergänzung ausschließlich in Neuinstallation und `update-1.1.7-1.1.8.sql`, einschließlich teilweiser Migrationen.
+
+Wegen der Schemaänderungen in Commit 3, Commit 6 und Commit 26 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 12. Abschlussstatus
 

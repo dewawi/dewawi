@@ -64,7 +64,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_FORM_EXPIRED')]);
 			}
 
-			throw new Zend_Controller_Action_Exception('Inquiry form not found', 404);
+			$this->renderSiteError(404);
+			return;
 		}
 
 		$stepOrder = array_keys($this->formConfig);
@@ -76,7 +77,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_STEP_ORDER_INVALID')]);
 			}
 
-			throw new Zend_Controller_Action_Exception('Invalid inquiry form step', 404);
+			$this->renderSiteError(404);
+			return;
 		}
 
 		if (!$request->isPost()) {

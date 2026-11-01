@@ -2849,6 +2849,7 @@ CREATE TABLE IF NOT EXISTS `slugredirect` (
   `shopid` int(11) NOT NULL,
   `path` varchar(2048) NOT NULL,
   `pathhash` char(64) NOT NULL,
+  `status` varchar(16) NOT NULL DEFAULT 'redirect',
   `module` varchar(255) NOT NULL DEFAULT 'shops',
   `controller` varchar(255) NOT NULL,
   `entityid` int(11) NOT NULL,

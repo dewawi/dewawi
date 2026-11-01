@@ -104,6 +104,18 @@ checkCms(($fallback['module'] ?? '') === 'shops', 'Fallback uses the wrong modul
 checkCms(($fallback['controller'] ?? '') === 'page', 'Fallback does not use the 404 page controller');
 checkCms((int)($fallback['id'] ?? -1) === 0, 'Fallback does not force a missing page');
 
+$siteErrorView = file_get_contents($root . '/application/modules/shops/views/scripts/error/site-error.phtml');
+$siteAction = file_get_contents($root . '/application/modules/shops/controllers/Action.php');
+checkCms(str_contains($siteAction, 'setHttpResponseCode($status)') && str_contains($siteAction, '[404, 410]') && str_contains($siteAction, 'isHead()'), 'Public site errors do not preserve HTTP 404/410 and HEAD semantics');
+checkCms(str_contains($siteAction, "setName('robots', 'noindex, follow')") && str_contains($siteAction, 'clearCanonicalLinks()'), 'Public site errors expose incorrect SEO metadata');
+checkCms(str_contains($siteErrorView, 'aria-labelledby="site-error-title"') && str_contains($siteErrorView, "'shop_home'") && str_contains($siteErrorView, 'role="search"'), 'Public error view lacks accessible navigation or search');
+foreach (['de_DE', 'en_US'] as $language) {
+	$errorTranslations = require $root . '/languages/' . $language . '/shops/shops.php';
+	foreach (['SHOPS_ERROR_NOT_FOUND_TITLE', 'SHOPS_ERROR_NOT_FOUND_MESSAGE', 'SHOPS_ERROR_GONE_TITLE', 'SHOPS_ERROR_GONE_MESSAGE', 'SHOPS_ERROR_HOME'] as $key) {
+		checkCms(isset($errorTranslations[$key]), 'Missing public error translation: ' . $language . '/' . $key);
+	}
+}
+
 $controller = (new ReflectionClass(CmsTestErrorController::class))->newInstanceWithoutConstructor();
 $error = (object)[
 	'type' => Zend_Controller_Plugin_ErrorHandler::EXCEPTION_OTHER,

@@ -4,9 +4,6 @@ class Shops_RedirectController extends Shops_Controller_Action
 {
 	public function indexAction()
 	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->layout->disableLayout();
-
 		if (!$this->getRequest()->isGet() && !$this->getRequest()->isHead()) {
 			throw new Zend_Controller_Action_Exception('Redirect not found', 404);
 		}
@@ -16,9 +13,20 @@ class Shops_RedirectController extends Shops_Controller_Action
 			$this->_siteContext->getBasePath()
 		);
 		if ($path === null) throw new Zend_Controller_Action_Exception('Redirect not found', 404);
-		$target = (new Shops_Model_DbTable_Slugredirect())->resolvePath($path);
+		$result = (new Shops_Model_DbTable_Slugredirect())->resolve($path);
 
-		if (!$target) throw new Zend_Controller_Action_Exception('Redirect not found', 404);
+		if (!$result) {
+			$this->renderSiteError(404);
+			return;
+		}
+		if ($result['status'] === Shops_Model_DbTable_Slugredirect::STATUS_GONE) {
+			$this->renderSiteError(410);
+			return;
+		}
+
+		$this->_helper->viewRenderer->setNoRender();
+		$this->_helper->layout->disableLayout();
+		$target = (string)$result['target'];
 
 		$this->getResponse()
 			->setHttpResponseCode(301)
