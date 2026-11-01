@@ -48,6 +48,19 @@ class DEEC_Site_Context
 		return !array_key_exists('indexable', $this->domain) || (bool)$this->domain['indexable'];
 	}
 
+	public function getCanonicalBaseUrl(): ?string
+	{
+		$url = trim((string)($this->site['url'] ?? ''));
+
+		if (!filter_var($url, FILTER_VALIDATE_URL)) return null;
+
+		$parts = parse_url($url);
+		if (!is_array($parts) || !in_array($parts['scheme'] ?? '', ['http', 'https'], true) || empty($parts['host'])) return null;
+		if (isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment'])) return null;
+
+		return rtrim($url, '/');
+	}
+
 	public function getTheme()
 	{
 		$theme = strtolower(trim((string)($this->site['theme'] ?? '')));

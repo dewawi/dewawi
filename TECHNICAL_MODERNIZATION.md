@@ -18,6 +18,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Interne DEWAWI-Seiten erhalten grundlegende Sicherheits- und Noindex-Header.
 - Eine eigene Staging-Konfiguration wurde vorbereitet; Staging darf nicht stillschweigend die Produktionsdatenbank verwenden.
 - Automatische historische Pfade werden mandanten- und websitebezogen gespeichert und per HTTP 301 auf die jeweils aktuelle öffentliche Entitäts-URL weitergeleitet.
+- `robots.txt`, Sitemap und Canonicals verwenden dieselbe validierte, mandantenbezogene Shop-URL; nicht indexierbare Websites sperren Crawling zusätzlich dynamisch.
 - TLS, bekannte Alt-URL-Importe, Consent Management, responsive Bilder, Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
 
 ## 3. Status- und Prioritätsdefinitionen
@@ -77,8 +78,8 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 39 | Offen | P0 bei Einführung | Kein Partner-Marketing-Consent-Datensatz vorhanden. Registrierung und freiwillige Marketingeinwilligung getrennt mit Textversion, Zeitpunkt und Quelle speichern. |
 | 40 | Teilweise | P1 | Produkt-JSON-LD existiert in einzelnen Ansichten. `Organization` und `BreadcrumbList` fehlen; vorhandenes Product-Markup muss semantisch geprüft werden. Nur vollständige, passende strukturierte Daten ausgeben. |
 | 41 | Teilweise | P1 | Visuelle Breadcrumbs existieren; `BreadcrumbList` fehlt. Dieselben aufgelösten Breadcrumb-Daten für HTML und JSON-LD verwenden. |
-| 42 | Teilweise | P0 vor Relaunch | Die Sitemap verwendet öffentliche mandantenbezogene Slugs und die konfigurierte Basisadresse; Suche ist ausgeschlossen. Nicht indexierbare Websites liefern für die Sitemap jetzt HTTP 404. Weitere Status-/Entitätstests für indexierbare Websites ergänzen. |
-| 43 | Offen | P1 | Es gibt keine mandanten-/umgebungsabhängige `robots.txt`-Ausgabe. Eine dynamische Robots-Antwort ergänzen, CSS/JS crawlbar halten und Robots niemals als Zugriffsschutz verwenden. |
+| 42 | Umgesetzt | P0 vor Relaunch | Die Sitemap verwendet ausschließlich die validierte kanonische Shop-URL und aktuell öffentliche, mandanten- und websitebezogene Entitätspfade. Duplikate, deaktivierte Features, gelöschte Ziele, Suche und historische Redirects bleiben ausgeschlossen. Nicht indexierbare oder falsch konfigurierte Websites liefern HTTP 404. |
+| 43 | Umgesetzt | P1 | `robots.txt` wird pro Website dynamisch ausgeliefert. Indexierbare Websites erlauben Crawling und verweisen bei gültiger kanonischer URL auf die Sitemap; nicht indexierbare Umgebungen liefern `Disallow: /`. CSS-/JS-Pfade werden in freigegebenen Websites nicht blockiert. Robots bleibt ausdrücklich kein Zugriffsschutz. |
 | 44 | Teilweise | P1 | Fehlende Routen und Entitäten liefern echte 404-Antworten; die Seite ist noch generisch. Eine hilfreiche öffentliche 404-Seite mit Navigation, Suche und Kontakt ergänzen, ohne den Statuscode zu verändern. |
 | 45 | Teilweise | P0 | 403/404/500 werden explizit behandelt; bekannte automatisch gespeicherte Altpfade liefern 301, unbekannte Pfade weiterhin 404. Eine fachliche 410-Strategie und vollständige Statusprüfungen im Relaunch-Crawl fehlen. |
 | 46 | Infrastruktur | P1 | Anwendungscache ist vorhanden; eine geprüfte statische Cache-Control-/Expires-Strategie ist nicht im Repository abgebildet. Versionierte Assets serverseitig langfristig cachen; Seitencache nur mit mandanten-, Consent- und Session-sicheren Schlüsseln. |
@@ -173,9 +174,18 @@ Eine umfassende Script-/Style-CSP ist noch nicht aktiviert, weil Inline-Code, ex
 - Canonicals und Sitemap verwenden weiterhin ausschließlich die bestehende Slug-Tabelle. Historische Pfade erscheinen dort nicht.
 - Bekannte historische URLs aus der Zeit vor dieser Funktion werden nicht automatisch erraten. Ein geprüfter Alt-URL-Import und eine kleine manuelle Admin-Zuordnung sind bewusst noch nicht enthalten.
 
+### 5.8 Dynamische Robots- und Sitemap-Ausgabe
+
+- `/robots.txt` ist eine dynamische, mandantenbezogene Route. GET und HEAD sind öffentlich; schreibende Requests oder andere Actions bleiben gesperrt.
+- Indexierbare Websites liefern `Allow: /` und bei gültiger `shop.url` einen absoluten Sitemap-Verweis. Nicht indexierbare Websites liefern `Disallow: /`; ihr bestehendes Robots-Meta und der `X-Robots-Tag` bleiben zusätzlich aktiv.
+- Sitemap, Robots-Verweis und HTML-Canonicals verwenden gemeinsam die validierte Shop-Basis-URL. Anfrage-Host, Zugangsdaten, Query und Fragment werden nicht als kanonische Basis übernommen.
+- Die Sitemap liefert ausschließlich aktuelle öffentliche Slug-Ziele des aktiven Mandanten und Shops. Deaktivierte oder gelöschte Entitäten, nicht freigeschaltete Features, doppelte URLs, Suchseiten und historische Redirects werden ausgeschlossen.
+- Die Sitemap selbst erhält `X-Robots-Tag: noindex, follow`. Nicht indexierbare Websites oder Websites ohne gültige kanonische Basisadresse erhalten am Sitemap-Endpunkt HTTP 404.
+- `robots.txt` und `sitemap.xml` sind reservierte Systemrouten. Die Ausgabe ist ausschließlich lesend und verändert keine Inhalte oder Datenbankdaten.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
-Die Änderungen an `structure.sql` und der weiterhin aktuellen Migration `update-1.1.7-1.1.8.sql` ergänzen `slugredirect`; während dieser Arbeit wurde keine reale Bestandsdatenbank verändert. Es wurde keine neue Migrationsversionsdatei angelegt.
+`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect`. Phase 2.3 hat beide Dateien ausschließlich geprüft und nicht verändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
 
 Empfohlene Reihenfolge:
 
@@ -194,9 +204,10 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 |---|---|
 | PHP-Syntax der geänderten PHP-/PHTML-Dateien | Bestanden |
 | Technische HTML5-/Indexierungs-/Header-Baseline | 40 Prüfungen bestanden |
-| Slug-Normalisierung, Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 66 Prüfungen bestanden |
+| Robots, Sitemap, kanonische Basis-URL, Routing und Isolation | 30 Prüfungen bestanden |
+| Slug-Normalisierung, Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 67 Prüfungen bestanden |
 | Site-CMS-Struktur | 144 Prüfungen bestanden |
-| Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 100 Prüfungen bestanden |
+| Öffentliche Suche, Redirect-Auflösung und Statusverhalten | 101 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
 | Browsermeldungen, Übersetzungen und Benachrichtigungen | 370 Prüfungen bestanden; zusätzlich 60 Sales- und 24 Purchases-Helper-Prüfungen |
 | Sicherheitskonfiguration und Umgebungswahl | 22 Prüfungen bestanden |
@@ -204,7 +215,7 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Kontaktanfragen | 45 Prüfungen bestanden |
 | Kontaktpersonen | 66 Prüfungen bestanden |
 | Kontaktrollen | 32 Prüfungen bestanden |
-| Berechtigungen | 393 Prüfungen bestanden |
+| Berechtigungen | 408 Prüfungen bestanden |
 | Mandantenzugriff | 268 Prüfungen bestanden |
 | Mandantenwechsel | 53 Prüfungen bestanden |
 | HTTP-Sessions | 25 Prüfungen bestanden |
@@ -225,6 +236,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - TLS, Host-Redirects, HSTS, Kompression, Protokollversionen und Caching sind nicht allein durch den PHP-Code abgeschlossen.
 - Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Redirects entstehen erst bei einer ausdrücklichen Slug- oder Elternänderung innerhalb derselben Website; ein Websitewechsel erzeugt keine domainübergreifende Weiterleitung.
 - Vorhandene historische URLs werden nicht automatisch importiert. Dafür sind vor dem Relaunch eine fachliche Zuordnung und ein eigener sicherer Import- oder Verwaltungsweg erforderlich.
+- Eine ungültige oder fehlende `shop.url` unterdrückt Canonical und Sitemap-Verweis; der Sitemap-Endpunkt liefert dann bewusst 404. Die Produktionsadresse muss vor Indexierungsfreigabe geprüft werden.
 - Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
 
 ## 9. Empfohlene nächste Phasen
@@ -232,7 +244,6 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 ### Phase 2 – URL-, SEO- und Relaunch-Basis
 
 - Bekannte historische URLs inventarisieren und einen geprüften Import- oder kleinen manuellen Zuordnungsweg ergänzen.
-- Dynamische Robots-Ausgabe und zusätzliche Sitemap-Status-/Entitätstests ergänzen.
 - Metadaten, Überschriftenhierarchie, Breadcrumb-JSON-LD und 404-Seite vervollständigen.
 - Vollständigen Staging-Crawl als Release-Prüfung erstellen.
 
@@ -371,8 +382,18 @@ Inhalt:
 - HTTP 301 für GET/HEAD mit Vorrang aktueller URLs sowie Schutz vor Schleifen, Systemrouten, statischen Pfaden und nicht öffentlichen Zielen.
 - Schemaergänzung in Neuinstallation und weiterhin aktueller Migration `update-1.1.7-1.1.8.sql` sowie automatisierte Routing-, ACL-, Kollisions- und MariaDB-Migrationstests.
 
+### Commit 7: `improve site robots and sitemap`
+
+Inhalt:
+
+- Dynamische, indexierungsabhängige `robots.txt` pro öffentlicher Website.
+- Kanonische Sitemap-Ausgabe ohne Host-Header-Fallback, historische Redirects oder nicht öffentliche Entitäten.
+- Gemeinsame validierte Basis-URL für Canonicals, Robots-Sitemap-Verweis und XML-Sitemap.
+- Lesebeschränkung auf GET/HEAD, reservierte SEO-Routen und mandanten-/websitebezogene ACL-Prüfung.
+- Automatisierte Robots-, Sitemap-, Routing-, Feature-, Shop-, Mandanten- und SQL-Schema-Regressionen.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, Relaunch-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, Consent, Relaunch-Crawl, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten.

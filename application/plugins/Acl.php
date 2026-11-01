@@ -91,7 +91,7 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
     private function handleGuestRequest(
 	    Zend_Controller_Request_Abstract $request
     ): void {
-	    if ($request->getModuleName() === 'shops' && in_array($request->getControllerName(), ['index', 'item', 'category', 'page', 'tag', 'sitemap', 'cart', 'checkout', 'contact', 'inquiry'], true)) {
+	    if ($request->getModuleName() === 'shops' && in_array($request->getControllerName(), ['index', 'item', 'category', 'page', 'tag', 'cart', 'checkout', 'contact', 'inquiry'], true)) {
 		    return;
 	    }
 
@@ -129,6 +129,18 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 
 	private function isPublicRequest(Zend_Controller_Request_Abstract $request): bool
 	{
+		if (
+			$request instanceof Zend_Controller_Request_Http
+			&& $request->getModuleName() === 'shops'
+			&& in_array($request->getControllerName(), ['robots', 'sitemap'], true)
+			&& $request->getActionName() === 'index'
+			&& in_array(strtoupper($request->getMethod()), ['GET', 'HEAD'], true)
+			&& Zend_Registry::isRegistered('SiteContext')
+			&& Zend_Registry::get('SiteContext') instanceof DEEC_Site_Context
+		) {
+			return true;
+		}
+
 		if (
 			$request instanceof Zend_Controller_Request_Http
 			&& $request->getModuleName() === 'shops'

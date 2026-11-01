@@ -7,7 +7,7 @@ class DEEC_Site_Router
 		$segment = explode('/', trim($path, '/'))[0] ?? '';
 
 		return in_array($segment, [
-			'sitemap.xml', 'search', 'contact', 'inquiry', 'cart',
+			'robots.txt', 'sitemap.xml', 'search', 'contact', 'inquiry', 'cart',
 			'checkout', 'products-de.xml', 'product',
 		], true);
 	}
@@ -41,6 +41,15 @@ class DEEC_Site_Router
 			array(
 				'module' => 'shops',
 				'controller' => 'index',
+				'action' => 'index'
+			)
+		));
+
+		$router->addRoute('robots', new Zend_Controller_Router_Route(
+			'robots.txt',
+			array(
+				'module' => 'shops',
+				'controller' => 'robots',
 				'action' => 'index'
 			)
 		));

@@ -157,7 +157,7 @@ foreach (['account', 'order', 'log'] as $controller) {
     check($request->getModuleName() === 'users' && $request->getActionName() === 'session', 'Guest can dispatch shop administration: ' . $controller);
     $checks++;
 }
-foreach (['index', 'item', 'category', 'page', 'tag', 'sitemap', 'cart', 'checkout', 'contact', 'inquiry'] as $controller) {
+foreach (['index', 'item', 'category', 'page', 'tag', 'cart', 'checkout', 'contact', 'inquiry'] as $controller) {
     [$request, $response] = permissionRoute('shops', $controller, 'index');
     check($request->getModuleName() === 'shops' && $response->getHttpResponseCode() === 200, 'Public storefront denied: ' . $controller);
     $checks++;
@@ -168,6 +168,22 @@ $siteContext = new DEEC_Site_Context(['id' => 5, 'clientid' => 70], [], ['cms'])
 Zend_Registry::set('SiteContext', $siteContext);
 $publicRequest = new ReflectionMethod(Application_Plugin_Acl::class, 'isPublicRequest');
 $publicRequest->setAccessible(true);
+foreach (['robots', 'sitemap'] as $controller) {
+    foreach (['GET', 'HEAD'] as $method) {
+        [$request, $response] = permissionRoute('shops', $controller, 'index', $method);
+        check($request->getModuleName() === 'shops' && !$response->isRedirect() && $response->getHttpResponseCode() === 200, 'Guest website SEO endpoint denied: ' . $controller . '/' . $method);
+        check($publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Website SEO endpoint did not use the public ACL path: ' . $controller . '/' . $method);
+        $checks += 2;
+    }
+
+    foreach ([['index', 'POST'], ['preview', 'GET']] as [$action, $method]) {
+        [$request, $response] = permissionRoute('shops', $controller, $action, $method);
+        check($response->isRedirect(), 'Guest can dispatch non-public SEO endpoint: ' . $controller . '/' . $action . '/' . $method);
+        check(!$publicRequest->invoke(new Application_Plugin_Acl(), $request), 'Non-public SEO endpoint matched the public ACL path: ' . $controller . '/' . $action . '/' . $method);
+        $checks += 2;
+    }
+}
+
 foreach (['GET', 'HEAD'] as $method) {
     [$request, $response] = permissionRoute('shops', 'search', 'index', $method);
     check($request->getModuleName() === 'shops' && !$response->isRedirect() && $response->getHttpResponseCode() === 200, 'Guest website search denied: ' . $method);

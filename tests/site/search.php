@@ -353,6 +353,9 @@ $adapter->rows = [
 	'slug' => [
 		['id' => 200, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'products', 'deleted' => 0],
 		['id' => 201, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'item', 'entityid' => 100, 'parentid' => 10, 'slug' => 'existing-item', 'deleted' => 0],
+		['id' => 202, 'clientid' => 4, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'foreign-tenant', 'deleted' => 0],
+		['id' => 203, 'clientid' => 3, 'shopid' => 8, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'foreign-shop', 'deleted' => 0],
+		['id' => 204, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'parentid' => 0, 'slug' => 'deleted-slug', 'deleted' => 1],
 	],
 	'slugredirect' => [
 		['id' => 300, 'clientid' => 3, 'shopid' => 7, 'path' => 'old-products', 'pathhash' => hash('sha256', 'old-products'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 0],
@@ -369,6 +372,8 @@ $categoryItems = (new Shops_Model_DbTable_Item())->getItemsByCategory(10)->toArr
 checkSearch(array_column($categoryItems, 'id') === [100] && (int)$categoryItems[0]['shopenabled'] === 0, 'Existing item without shop approval is missing from its category');
 $resolvedItem = (new Shops_Model_DbTable_Slug())->resolvePath('products/existing-item');
 checkSearch((int)($resolvedItem['entityid'] ?? 0) === 100 && ($resolvedItem['controller'] ?? '') === 'item', 'Existing item slug without shop approval is not publicly resolvable');
+$publicSlugIds = array_map(static fn($row): int => (int)$row['id'], iterator_to_array((new Shops_Model_DbTable_Slug())->getSlugs()));
+checkSearch($publicSlugIds === [200, 201], 'Public slug enumeration crossed a tenant or shop boundary');
 
 $redirectDb = new Shops_Model_DbTable_Slugredirect();
 checkSearch($redirectDb->resolvePath('old-products') === 'products', 'Historical path does not resolve to the current canonical entity path');

@@ -7,27 +7,36 @@ class Shops_SitemapController extends Shops_Controller_Action
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->layout->disableLayout();
 
+		if (!$this->getRequest()->isGet() && !$this->getRequest()->isHead()) {
+			$this->getResponse()->setHttpResponseCode(404);
+			return;
+		}
+
 		if (!$this->_siteContext->isIndexable()) {
 			$this->getResponse()->setHttpResponseCode(404);
 			return;
 		}
 
+		$baseUrl = $this->_siteContext->getCanonicalBaseUrl();
+		if ($baseUrl === null) {
+			$this->getResponse()->setHttpResponseCode(404);
+			return;
+		}
+
 		$this->getResponse()->setHeader('Content-Type', 'application/xml; charset=UTF-8', true);
+		$this->getResponse()->setHeader('X-Robots-Tag', 'noindex, follow', true);
+		$this->getResponse()->setBody($this->buildXml($baseUrl, new Shops_Model_DbTable_Slug()));
+	}
 
-		$siteUrl = rtrim((string)($this->_site['url'] ?? ''), '/');
-		$baseUrl = filter_var($siteUrl, FILTER_VALIDATE_URL) && in_array(parse_url($siteUrl, PHP_URL_SCHEME), ['http', 'https'], true)
-			? $siteUrl
-			: rtrim($this->getRequest()->getScheme() . '://' . $this->getRequest()->getHttpHost(), '/');
-		$slugDb = new Shops_Model_DbTable_Slug();
-		$slugs = $slugDb->getSlugs();
-
+	protected function buildXml(string $baseUrl, Shops_Model_DbTable_Slug $slugDb): string
+	{
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>';
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 		$xml .= $this->renderUrl($baseUrl . '/', 'daily', '1.0');
 
 		$urls = [$baseUrl . '/' => true];
 
-		foreach ($slugs as $slug) {
+		foreach ($slugDb->getSlugs() as $slug) {
 			if ($slug['module'] !== 'shops' || empty($slug['slug']) || empty($slug['controller']) || empty($slug['entityid'])) {
 				continue;
 			}
@@ -58,7 +67,7 @@ class Shops_SitemapController extends Shops_Controller_Action
 
 		$xml .= '</urlset>';
 
-		$this->getResponse()->setBody($xml);
+		return $xml;
 	}
 
 	protected function renderUrl(string $url, string $changefreq, string $priority): string

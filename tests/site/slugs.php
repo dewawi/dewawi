@@ -248,7 +248,7 @@ checkSlug($storage->getEntitySlug('shops', 'page', 42)['slug'] === '42', 'Stored
 expectSlugError('MESSAGES_SLUG_CONFLICT', static fn() => $storage->updateSlug('shops', 'page', 1, 0, 42, 'Kühlung & Service'));
 checkSlug($storage->getEntitySlug('shops', 'page', 42)['slug'] === '42', 'Colliding slug update changed the stored value');
 
-foreach (['search', 'search/results', 'sitemap.xml', 'contact/send', 'inquiry/success', 'cart', 'checkout/send', 'product/12', 'products-de.xml'] as $path) {
+foreach (['robots.txt', 'search', 'search/results', 'sitemap.xml', 'contact/send', 'inquiry/success', 'cart', 'checkout/send', 'product/12', 'products-de.xml'] as $path) {
 	checkSlug(DEEC_Site_Router::isReservedPath($path), 'Reserved route is not protected: ' . $path);
 }
 checkSlug(!DEEC_Site_Router::isReservedPath('products') && !DEEC_Site_Router::isReservedPath('contact-us'), 'Regular public path is reserved');
