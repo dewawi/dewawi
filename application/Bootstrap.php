@@ -218,6 +218,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		$resolver = new DEEC_Site_Resolver();
 		$siteContext = $resolver->resolveByHost($host, [
 			'environment' => defined('APPLICATION_ENV') ? APPLICATION_ENV : 'production',
+			'requestPath' => (string)parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
 		]);
 
 		if ($siteContext) {

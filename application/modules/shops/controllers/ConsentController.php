@@ -60,9 +60,9 @@ class Shops_ConsentController extends Shops_Controller_Action
 		if ($source === '') $source = trim((string)($_SERVER['HTTP_REFERER'] ?? ''));
 		if ($source === '') return false;
 
-		$originHost = strtolower((string)parse_url($source, PHP_URL_HOST));
-		$requestHost = strtolower(preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? '')));
+		$sourceOrigin = DEEC_Site_Context::normalizeOrigin($source);
+		$canonicalOrigin = $this->_siteContext->getCanonicalOrigin();
 
-		return $originHost !== '' && hash_equals($requestHost, $originHost);
+		return $sourceOrigin !== null && $canonicalOrigin !== null && hash_equals($canonicalOrigin, $sourceOrigin);
 	}
 }

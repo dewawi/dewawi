@@ -22,6 +22,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Eine eigene Staging-Konfiguration wurde vorbereitet; Staging darf nicht stillschweigend die Produktionsdatenbank verwenden.
 - Automatische historische Pfade werden mandanten- und websitebezogen gespeichert und per HTTP 301 auf die jeweils aktuelle öffentliche Entitäts-URL weitergeleitet.
 - `robots.txt`, Sitemap und Canonicals verwenden dieselbe validierte, mandantenbezogene Shop-URL; nicht indexierbare Websites bleiben zum Erkennen von `noindex` crawlbar und bewerben keine Sitemap.
+- Öffentliche Hosts werden exakt gegen die normalisierte `shop.url` aufgelöst. `www` und Non-`www`, nichtstandardisierte Ports, ungültige Host-Header sowie mehrdeutig konfigurierte Shops werden nicht mehr stillschweigend zusammengeführt; Proxy-Header bleiben für die Shopauswahl unbeachtet.
 - SEO-Titel, Descriptions und Open-Graph-Daten werden für öffentliche Seiten zentral erzeugt; Breadcrumbs verwenden für HTML und JSON-LD dieselbe aktuelle Pfadhierarchie.
 - Ein explizit zu startender HTTP-Crawler prüft reale öffentliche Antworten, interne Links, Redirects, SEO-Metadaten, strukturierte Daten, Sitemap, Robots und interne Ressourcen ohne Formulare abzusenden.
 - Öffentliche verwaltete Bilder verwenden tatsächliche Abmessungen, vorhandene feste Medienvarianten, kontextabhängiges Lazy Loading und eine explizite Priorisierung kritischer Hero- und Produktbilder.
@@ -44,14 +45,14 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 
 | Nr. | Status | Priorität | Befund und nächste Maßnahme |
 |---:|---|---|---|
-| 1 | Infrastruktur | P0 | Im Repository ist keine vollständige TLS- und HTTP-zu-HTTPS-Konfiguration enthalten. Zertifikate pro öffentlicher Domain einrichten, HTTP am Webserver oder Proxy per 301 auf HTTPS umleiten und anschließend einen Mixed-Content-Crawl durchführen. HSTS erst nach erfolgreicher Stabilisierung aktivieren. |
+| 1 | Infrastruktur vorbereitet | P0 | Eine installationsneutrale VHost-/Proxy-Strategie und ein isolierter HTTP-/HTTPS-Test sind dokumentiert. Zertifikate, DNS und produktive VHosts bleiben je Installation einzurichten: GET/HEAD per 301, schreibende Methoden methodenerhaltend per 308, ACME ausgenommen. Anschließend Mixed Content prüfen und HSTS erst nach Stabilisierung aktivieren. |
 | 2 | Umgesetzt | P0 | `shop.indexable` steuert die Freigabe pro Shop. Development und Staging bleiben immer ausgeschlossen. Neue Shops starten mit `indexable = 0`; die Migration lässt bestehende Shops aus Kompatibilitätsgründen zunächst freigegeben. Noindex ist kein Zugriffsschutz; bei Bedarf zusätzlich Authentifizierung einsetzen. |
-| 3 | Umgesetzt | P0 | Nicht indexierbare Websites geben keine Canonical-URL aus. Vor dem Livegang muss `shop.url` die endgültige HTTPS-Produktionsadresse enthalten; anschließend alle Seitentypen prüfen. |
+| 3 | Umgesetzt | P0 | Nicht indexierbare Websites geben keine Canonical-URL aus. Kanonische Basis, Open Graph, Sitemap und Robots verwenden ausschließlich die streng normalisierte `shop.url`; Request- und Forwarded-Header sind keine URL-Quelle. Vor Livegang muss dort die endgültige HTTPS-Adresse einschließlich eines möglichen Basispfads stehen. |
 | 4 | Umgesetzt | P1 | Bootstrap, Anwendungslayouts, Login, Fehlerausgabe und Installer verwenden HTML5. Fremde Demo-/Vendor-Dateien wurden nicht verändert. |
 | 5 | Umgesetzt | P1 | Veraltete Content-Type-Metaelemente wurden aus den anwendungseigenen Dokumenten entfernt; `<meta charset="UTF-8">` bleibt erhalten. |
 | 6 | Umgesetzt | P0 vor Relaunch | Neue und ausdrücklich geänderte öffentliche Slugs werden zentral nach `ae/oe/ue/ss` normalisiert. Vollständige verschachtelte Pfade werden je Mandant und Website auf Kollisionen und reservierte Systemrouten geprüft. Bestehende Slugs bleiben ohne ausdrückliche URL-Änderung unverändert; es gab keine Massenmigration. |
 | 7 | Teilweise | P1 | Generierte öffentliche Pfade verwenden aktuell keine abschließenden Schrägstriche. Diese Strategie für neue URLs beibehalten und nach einem Routen-Audit eine serverseitige 301-Normalisierung ergänzen, ohne Dateien, Startseite oder Legacy-Routen zu beschädigen. |
-| 8 | Infrastruktur | P0 vor Relaunch | Die kanonische Domain kommt mandantenbezogen aus `shop.url`; eine globale Host-Weiterleitung existiert nicht. Pro öffentlicher Website eine Hauptdomain festlegen und alternative Hosts nach DNS-/TLS-Prüfung per 301 umleiten. |
+| 8 | Teilweise / Infrastruktur | P0 vor Relaunch | Die Anwendung löst ausschließlich den exakt konfigurierten Host und zulässige Ports aus `shop.url` auf; `www` wird nicht mehr pauschal entfernt und mehrdeutige Authorities scheitern geschlossen. Alternative Hosts müssen nach DNS-/Zertifikatsprüfung in einem eigenen VHost oder am vertrauenswürdigen Proxy direkt auf die Hauptdomain weiterleiten. |
 | 9 | Teilweise | P0 vor Relaunch | Ausdrückliche Änderungen öffentlicher Seiten-, Kategorie-, Produkt- und Tag-Pfade erzeugen automatisch mandanten- und websitebezogene 301-Weiterleitungen. Ziele werden bei jedem Abruf aus der aktuellen öffentlichen Entität ermittelt. Ein fachlich geprüfter Import bekannter Alt-URLs und eine manuelle Admin-Zuordnung bleiben offen. |
 | 10 | Offen | P0 vor Relaunch | Historische Doppelungen wurden nicht vollständig inventarisiert. Jede bekannte Alt-URL einzeln der fachlich passenden neuen Seite zuordnen und aus Navigation sowie Sitemap entfernen; die neue Redirect-Tabelle kann anschließend als technische Grundlage dienen. |
 | 11 | Umgesetzt | P1 | Vorhandene individuelle Metatitel und -Descriptions werden für Startseite, CMS-Seiten und Kategorien verwendet. Produkte und Tags nutzen sinnvolle Bestandsdaten als Fallback. Eine zentrale Ausgabe verhindert doppelte Elemente und doppelte Websitenamen; leere Werte werden ausgelassen. |
@@ -92,8 +93,8 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 46 | Infrastruktur | P1 | Anwendungscache ist vorhanden; eine geprüfte statische Cache-Control-/Expires-Strategie ist nicht im Repository abgebildet. Versionierte Assets serverseitig langfristig cachen; Seitencache nur mit mandanten-, Consent- und Session-sicheren Schlüsseln. |
 | 47 | Infrastruktur | P1 | Keine gzip-/Brotli-Konfiguration im Repository. Kompression am Webserver oder Proxy aktivieren und Content-Types, `Vary` sowie bereits komprimierte Formate prüfen. |
 | 48 | Infrastruktur | P1 | HTTP/2-/HTTP/3-Unterstützung ist eine Server-/Proxy-Eigenschaft. HTTP/2 nach TLS prüfen; HTTP/3 nur bei unterstützter Infrastruktur und messbarem Nutzen aktivieren. |
-| 49 | Teilweise | P0/P1 | Global werden `X-Content-Type-Options`, `Referrer-Policy` und eine konservative `Permissions-Policy` gesetzt. Interne Seiten erhalten zusätzlich SAMEORIGIN und CSP `frame-ancestors 'self'`. Öffentliche CSP-/Frame-Regeln erst nach Abhängigkeits- und Embedding-Audit festlegen. |
-| 50 | Infrastruktur | P1 nach TLS | HSTS ist bewusst noch nicht gesetzt. Nach vollständiger HTTPS-Stabilisierung mit kurzer Laufzeit beginnen; `includeSubDomains` erst nach Subdomain-Audit verwenden. |
+| 49 | Teilweise | P0/P1 | Global werden `X-Content-Type-Options`, `Referrer-Policy` und eine konservative `Permissions-Policy` gesetzt. Interne Seiten erhalten zusätzlich SAMEORIGIN und CSP `frame-ancestors 'self'`. Der isolierte TLS-Test verifiziert die globalen Header. Eine öffentliche CSP-/Frame-Regel bleibt bis zum Audit realer Analytics-, Zahlungs-, Medien- und Embeddingquellen bewusst offen. |
+| 50 | Infrastruktur | P1 nach TLS | HSTS ist bewusst weder in PHP noch global gesetzt und wird negativ getestet. Erst nach vollständiger HTTPS-/Subdomain-Prüfung mit kurzer Laufzeit beginnen; `includeSubDomains` und Preload bleiben bis zu einem separaten Subdomain-Audit ausgeschlossen. |
 | 51 | Umgesetzt | P1 | Der zentrale View-Helper erzeugt `og:type`, Titel, Description, URL, optionales Bild, Websitename und Locale. Absolute URLs stammen ausschließlich aus der validierten Shop-Konfiguration; Bilder sind auf öffentliche Medienverzeichnisse des aktiven Shops beschränkt. |
 | 52 | Teilweise | P2 | Ein klassisches Favicon existiert, moderne Icon-Größen und mandantenfähige Konfiguration fehlen. Icons je Website ermöglichen; Manifest nur bei tatsächlich gewünschtem App-Verhalten ergänzen. |
 | 53 | Teilweise | P2 | Sprachfelder und Übersetzungen existieren, aber kein vollständiges öffentliches Locale-Routing und kein `hreflang`. URL-Eigentümerschaft pro Sprache zuerst entwerfen, anschließend gegenseitige Self-/Hreflang-Links ausgeben. |
@@ -334,9 +335,70 @@ Die lokalen Chromium- und ChromeDriver-Fixtures prüfen Erstbesuch, Zustimmung, 
 - Das im Kategorie-Template gefundene feste YouTube-Markup liegt innerhalb eines HTML-Kommentars und wird vom Browser nicht geladen. `DEEC_Shop` kann dagegen beim Export in ein externes OpenCart-System aus dem Artikelfeld `video` ein YouTube-Iframe erzeugen; Datenschutz und Consent des Zielshops liegen außerhalb der öffentlichen DEWAWI-Consent-Ausgabe und sind separat zu prüfen.
 - jQuery und Bootstrap werden weiterhin als technisch erforderliche Frontend-Abhängigkeiten mit SRI von externen CDNs geladen. Sie sind nicht Teil von `shop.analytics`; Self-Hosting und die datenschutzrechtliche Betreiberbewertung bleiben vor dem Livegang offen.
 
+### 5.19 HTTPS, kanonische Hosts und Infrastrukturgrenze
+
+- `DEEC_Site_Resolver` vergleicht den Request-Host jetzt exakt mit der normalisierten Authority aus `shop.url`. `www` und Non-`www` sind unterschiedliche Hosts. Nichtstandardisierte Ports werden nur akzeptiert, wenn sie ausdrücklich in `shop.url` stehen; die Standardports 80 und 443 bleiben für den vorgeschalteten HTTP-/HTTPS-Wechsel erreichbar.
+- Ungültige Authorities mit Benutzerinformationen, Pfaden, Steuerzeichen, mehreren Ports oder ungültigen Portbereichen werden verworfen. Bei gemeinsam genutzter Authority wird der längste segmentgenau passende Basispfad aus `shop.url` gewählt. Gleich spezifische beziehungsweise doppelte Host-/Basispfad-Zuordnungen werden nicht aufgelöst. Damit kann weder Tabellenreihenfolge noch ein manipulierter Host-Header versehentlich einen anderen Shop oder Mandanten aktivieren.
+- `shop.url` wird auf HTTP(S), gültigen Host, Port, sicheren Basispfad und das Fehlen von Zugangsdaten, Query sowie Fragment geprüft. Canonical, Open Graph, Breadcrumb-/Organization-Daten, Robots und Sitemap bleiben dadurch auf derselben vertrauenswürdigen Konfiguration. Unterverzeichnisinstallationen behalten ihren konfigurierten Basispfad.
+- Consent-Fallbacks über `Origin` oder `Referer` vergleichen nun Scheme, Host und Port mit dem kanonischen Ursprung aus `shop.url`, nicht mit dem veränderbaren Request-Host. Browser-Fetch-Metadata bleibt die bevorzugte Prüfung.
+- `Forwarded` und `X-Forwarded-*` werden von Resolver und Canonical-Erzeugung nicht ausgewertet. Bei TLS-Terminierung vor Apache muss die HTTPS- und Host-Normalisierung am vertrauenswürdigen Edge erfolgen; der Backend-Port darf ausschließlich vom Proxy erreichbar sein und der Proxy muss eingehende Forwarded-Header entfernen und kontrolliert neu setzen.
+- Eine globale HTTPS-Regel in `.htaccess` wurde bewusst nicht ergänzt. PHP beziehungsweise `.htaccess` kann ohne installationsbezogene Vertrauensgrenze nicht sicher unterscheiden, ob TLS direkt oder an einem Reverse Proxy terminiert wurde. Eine globale Regel könnte Redirect-Schleifen erzeugen, ACME blockieren oder POST-Daten durch einen ungeeigneten Statuscode verlieren.
+
+Installationsneutrales VHost-Muster für eine direkt terminierende Apache-Installation; Platzhalter sind vor Aktivierung zu ersetzen und mit `apachectl -t` zu prüfen:
+
+```apache
+Define DEWAWI_CANONICAL_HOST canonical.example.invalid
+Define DEWAWI_DOCUMENT_ROOT /absolute/path/to/dewawi
+
+<VirtualHost *:80>
+    ServerName ${DEWAWI_CANONICAL_HOST}
+    # Add only DNS- and certificate-verified alternatives.
+    # ServerAlias verified-alternate.example.invalid
+    DocumentRoot ${DEWAWI_DOCUMENT_ROOT}
+
+    RewriteEngine On
+    RewriteRule ^/?\.well-known/acme-challenge/ - [END]
+    RewriteCond %{REQUEST_METHOD} =GET [OR]
+    RewriteCond %{REQUEST_METHOD} =HEAD
+    RewriteRule ^ https://${DEWAWI_CANONICAL_HOST}%{REQUEST_URI} [R=301,END,NE]
+    RewriteRule ^ https://${DEWAWI_CANONICAL_HOST}%{REQUEST_URI} [R=308,END,NE]
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName ${DEWAWI_CANONICAL_HOST}
+    DocumentRoot ${DEWAWI_DOCUMENT_ROOT}
+    SSLEngine On
+    SSLCertificateFile /absolute/path/to/fullchain.pem
+    SSLCertificateKeyFile /absolute/path/to/private-key.pem
+    Protocols h2 http/1.1
+
+    <Directory "${DEWAWI_DOCUMENT_ROOT}">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+```
+
+Alternative HTTPS-Hosts benötigen bereits für ihre Weiterleitung ein Zertifikat, das den aufgerufenen Host abdeckt. Sie gehören in einen getrennten TLS-VHost, der GET/HEAD mit 301 und sonstige Methoden mit 308 unmittelbar auf `<canonical-host>` weiterleitet. Ein zuerst geladener Default-VHost muss unbekannte Hosts ablehnen, statt sie an den ersten Shop-VHost durchzureichen. Bei Reverse Proxies gelten dieselben Regeln am Edge: kanonischen Host und HTTPS in einem Schritt normalisieren, `Host` kontrolliert weiterreichen, Backendzugriff netzseitig beschränken und keine frei angelieferten Proxy-Header als Vertrauenssignal verwenden.
+
+Vor der produktiven Aktivierung je öffentlicher Website:
+
+1. Vollständiges Backup von Anwendung, Datenbank, Medien und aktiver Serverkonfiguration erstellen sowie Rollback testen.
+2. A-/AAAA-/CNAME-Ziele der kanonischen und ausdrücklich vorgesehenen alternativen Hosts prüfen. Nicht konfigurierte Hosts dürfen den VHost nicht erreichen.
+3. `shop.url` exakt auf die endgültige `https://`-Adresse einschließlich gewünschtem `www`-/Non-`www`, optionalem Port und Unterverzeichnispfad setzen. Doppelte aktive Kombinationen aus Authority und Basispfad über alle Mandanten ausschließen.
+4. Zertifikat, SAN-Namen, vollständige Kette, Ablauf und automatische Erneuerung prüfen; bei Let's Encrypt zusätzlich `certbot renew --dry-run` oder das Äquivalent des eingesetzten Clients ausführen.
+5. Apache-/Proxy-Konfiguration syntaktisch prüfen, VHost-Reihenfolge kontrollieren und sicherstellen, dass ACME ohne Redirect erreichbar bleibt. GET/HEAD müssen genau einmal mit 301 auf HTTPS und den kanonischen Host führen; POST muss mit 308 methodenerhaltend weitergeleitet oder bereits am Edge ausschließlich über HTTPS angenommen werden.
+6. Canonical, Open Graph, Robots, Sitemap, historische Slug-301, Medien, Downloads, Consent, Kontakt, Anfrage und Checkout auf der freigegebenen Staging-Installation testen. Alternative und unbekannte Hosts sowie manipulierte Forwarded-Header negativ prüfen.
+7. `X-Content-Type-Options`, `Referrer-Policy` und `Permissions-Policy` kontrollieren. Eine öffentliche CSP zunächst anhand realer Ressourcen als `Content-Security-Policy-Report-Only` entwickeln; Frame-, Analytics-, Zahlungs- und Medienanforderungen vor Erzwingung fachlich abnehmen.
+8. Mixed Content und interne HTTP-Links mit dem vorhandenen Crawler und Browserkonsole prüfen, beispielsweise `python3 tests/site/crawl.py --url https://<canonical-host>/ --indexable auto --format json`.
+9. HTTP/2 mit dem tatsächlich eingesetzten Client/Monitoring prüfen. HTTP/3 ist nur bei unterstütztem Edge und eigener Betriebsfreigabe einzuführen.
+10. HSTS erst nach stabiler ausschließlicher HTTPS-Erreichbarkeit zunächst mit kurzer Laufzeit wie `max-age=300` aktivieren und überwachen. Schrittweise erhöhen; `includeSubDomains` und Preload erst nach vollständigem Subdomain-Audit.
+
+Geeignete Prüfkommandos sind unter anderem `apachectl -t`, `apachectl -S`, `openssl s_client -connect <canonical-host>:443 -servername <canonical-host> -verify_return_error`, `curl -I http://<canonical-host>/`, `curl -I https://<canonical-host>/`, `curl --http2 -I https://<canonical-host>/` sowie kontrollierte `curl --resolve`-Aufrufe vor einer DNS-Umschaltung. Diese Liveprüfungen wurden im Rahmen dieser Repository-Phase nicht ausgeführt.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
-`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Die Phasen 4.3 und 4.4 benötigen keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
+`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Die Phasen 4.3, 4.4 und 5.1 benötigen keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
 
 Installationen, auf denen eine frühere Fassung der laufenden 1.1.8-Anweisungen bereits manuell ausgeführt wurde, müssen vor dem Anwendungsdeployment das Checkout-Token-Schema prüfen. Nur wenn Spalte und Index noch fehlen, sind exakt die weiterhin in `update-1.1.7-1.1.8.sql` enthaltenen Anweisungen kontrolliert anzuwenden; bei einem teilweise vorhandenen Stand darf ausschließlich der jeweils fehlende Schritt ausgeführt werden:
 
@@ -374,8 +436,9 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | Consent-gesteuerte Conversionmarker, sofortiger Widerruf, Datenminimierung, Einmaligkeit, Schnittstellen- und Shopisolation | 41 Prüfungen bestanden |
 | Reale lokale HTTP-Crawler-, SEO-, Redirect-, Sitemap-, Ressourcen-, Bildperformance- und Begrenzungsfälle | 34 Prüfungen bestanden |
 | SEO-Metadaten, Open Graph, Breadcrumbs, strukturierte Daten und Überschriften | 46 Prüfungen bestanden |
-| Technische HTML5-/Indexierungs-/Header-/Consent-Baseline einschließlich Origin-Prüfung | 72 Prüfungen bestanden |
-| Robots, Sitemap, kanonische Basis-URL, Routing und Isolation | 31 Prüfungen bestanden |
+| Technische HTML5-/Indexierungs-/Header-/Consent-Baseline einschließlich strikter Host-, Port-, Basispfad- und Origin-Prüfung | 99 Prüfungen bestanden |
+| Robots, Sitemap, normalisierte kanonische Basis-URL, Routing und Isolation | 37 Prüfungen bestanden |
+| Isolierte Apache-HTTP-/HTTPS-, Canonical-Host-, Methoden-, ACME-, Proxy-Header- und TLS-Header-Prüfung | 35 Prüfungen bestanden; temporäres selbstsigniertes Zertifikat, keine externe Verbindung |
 | Slug-Normalisierung, Tag-HTML-Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 71 Prüfungen bestanden |
 | Site-CMS-Struktur, Assets, Accessibility, SRI, Bildpriorisierung und responsive Medienflächen | 176 Prüfungen bestanden |
 | Dateizugriff, Medienvarianten, LCP-Attribute und Mandantenisolation | 327 Prüfungen bestanden |
@@ -416,6 +479,8 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Conversion-Ereignisse werden nur für erkannte direkte `gtag.js`- oder Google-Tag-Manager-`dataLayer`-Konfigurationen erzeugt. Andere freie Analytics-Snippets benötigen eine getrennte, konkret getestete Schnittstelle. Lokale Dispatch-Tests sind kein Nachweis für den Empfang beim Anbieter.
 - Externe Bilder und CSS-URLs in erlaubten freien HTML-Feldern sowie ungeprüfte Legacy-Datensätze können Drittanbieterressourcen außerhalb von `shop.analytics` laden. Eine pauschale automatische Klassifizierung oder Umschreibung wäre fachlich unsicher; der reale Inhalt muss vor Livegang auf Staging inventarisiert werden.
 - TLS, Host-Redirects, HSTS, Kompression, Protokollversionen und Caching sind nicht allein durch den PHP-Code abgeschlossen.
+- Die strengere Hostauflösung behandelt `www` und Non-`www` nicht mehr als automatische Aliasse. Jede bisher nur implizit erreichbare Variante benötigt vor dem Deployment einen ausdrücklich geprüften Redirect-VHost beziehungsweise eine Edge-Regel. Doppelt konfigurierte aktive Host-/Basispfad-Kombinationen werden absichtlich nicht aufgelöst, bis die Daten bereinigt sind; unterschiedliche segmentgenaue Basispfade bleiben möglich.
+- Ein expliziter nichtstandardisierter Port in `shop.url` muss auch im Request-Host vorhanden sein. Standardports 80/443 bleiben ohne explizite Angabe zulässig, damit die vorgeschaltete HTTPS-Normalisierung greifen kann. Reverse-Proxies müssen den externen kanonischen Host erhalten; die Anwendung vertraut keinem Forwarded-Header.
 - Bestehende Slugs und URLs wurden bewusst nicht migriert oder aus Titeln neu erzeugt. Redirects entstehen erst bei einer ausdrücklichen Slug- oder Elternänderung innerhalb derselben Website; ein Websitewechsel erzeugt keine domainübergreifende Weiterleitung.
 - Vorhandene historische URLs werden nicht automatisch importiert. Dafür sind vor dem Relaunch eine fachliche Zuordnung und ein eigener sicherer Import- oder Verwaltungsweg erforderlich.
 - Eine ungültige oder fehlende `shop.url` unterdrückt Canonical und Sitemap-Verweis; der Sitemap-Endpunkt liefert dann bewusst 404. Die Produktionsadresse muss vor Indexierungsfreigabe geprüft werden.
@@ -467,8 +532,9 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 
 ### Phase 6 – Infrastruktur und Livegang
 
-- TLS, HTTPS-Redirects, Canonical-Host, Kompression, Caching und HTTP/2 prüfen.
-- HSTS kontrolliert einführen.
+- Die in Abschnitt 5.19 dokumentierte VHost-/Proxy-Strategie pro Website mit realem DNS, Zertifikatskette, Renewal, kanonischem Host, alternativen Hosts, Unterverzeichnispfad und unbekanntem Default-Host umsetzen und Ende-zu-Ende prüfen.
+- Kompression, Caching und HTTP/2 prüfen; Mixed-Content-Crawl mit den endgültigen Staging-Inhalten ausführen.
+- HSTS nach stabiler HTTPS-Phase mit kurzer Laufzeit kontrolliert einführen; Subdomains und Preload getrennt freigeben.
 - Backups und Rollback proben.
 - Monitoring, Webmaster-Werkzeuge, Sitemap und Conversion-Messung verifizieren.
 
@@ -708,8 +774,17 @@ Inhalt:
 - Gemeinsame Consent-, Conversion-, Formular-, Checkout-, Browser-, HTTP-, SEO-, CMS-, E-Mail-, Mandanten- und MariaDB-Abschlussregression.
 - Präzisierte Inventur freier HTML-, externer Ressourcen- und OpenCart-Video-Pfade sowie zustandsabhängige Checkout-Token-Nachmigration ohne Änderung bestehender Daten.
 
+### Commit 20: `improve site https and canonical host handling`
+
+Inhalt:
+
+- Strikte, validierte Host-/Portauflösung aus `shop.url` ohne automatische `www`-Gleichsetzung, Host-Header-Fallback oder willkürliche Auswahl mehrdeutiger Shops.
+- Gemeinsame Normalisierung der kanonischen Basisadresse für Canonical, Open Graph, Robots, Sitemap und Consent-Origin einschließlich Unterverzeichnissen und expliziten Ports.
+- Reproduzierbare isolierte Apache-HTTP-/HTTPS-Regression für 301/308, kanonische und alternative Hosts, unbekannte Hosts, ACME, Pfaderhalt, Proxy-Header und Sicherheitsheader.
+- Konkrete installationsneutrale VHost-/Proxy-, TLS-, DNS-, Renewal-, Mixed-Content-, HTTP/2-, Backup- und gestufte HSTS-Prüfanleitung ohne Änderung produktiver Infrastruktur.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Die Phasen 4.1 bis 4.4 sind für den vorhandenen Funktionsumfang technisch abgeschlossen; dies ist ausdrücklich keine Produktions-, Datenschutz- oder WCAG-Freigabe. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die offenen P0-Themen TLS-/Host-Redirects, historischer Alt-URL-Import, tatsächlicher Staging-Crawl, fachliche Prüfung realer Drittanbieter-/Legacy-Inhalte und externer WYSIWYG-Ressourcen, produktive Infrastruktur und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, strikte kanonische Host-/Portauflösung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Phase 5.1 ist auf Repository-Ebene abgeschlossen; dies ist ausdrücklich keine Freigabe realer DNS-, TLS-, Proxy-, Datenschutz- oder WCAG-Konfigurationen. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die produktive Umsetzung und Liveprüfung von Zertifikaten, VHosts, Host-/HTTPS-Redirects, Mixed Content und später HSTS sowie historischer Alt-URL-Import, tatsächlicher Staging-Crawl, reale Drittanbieter-/Legacy-Inhalte und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.

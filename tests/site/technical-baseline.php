@@ -52,9 +52,16 @@ function applySecurityHeaders(string $module, ?DEEC_Site_Context $context = null
 
 class BaselineSiteResolver extends DEEC_Site_Resolver
 {
+	public array $sites = [];
+
 	public function siteIsIndexable(array $site, array $options): bool
 	{
 		return $this->isIndexable($site, $options);
+	}
+
+	protected function getActiveSites()
+	{
+		return $this->sites;
 	}
 }
 
@@ -69,6 +76,33 @@ checkBaseline(!$resolver->siteIsIndexable(['indexable' => 0], ['environment' => 
 checkBaseline($resolver->siteIsIndexable(['indexable' => 1], ['environment' => 'production']), 'Enabled production site is not indexable');
 checkBaseline(!$resolver->siteIsIndexable(['indexable' => 1], ['environment' => 'staging']), 'Staging site is indexable');
 checkBaseline($resolver->siteIsIndexable([], ['environment' => 'production']), 'Legacy production site lost its compatible default');
+
+$resolver->sites = [
+	['id' => 11, 'clientid' => 7, 'url' => 'https://www.alpha.example.test/site', 'catalogenabled' => 1],
+	['id' => 12, 'clientid' => 8, 'url' => 'https://beta.example.test'],
+	['id' => 13, 'clientid' => 9, 'url' => 'https://port.example.test:8443/base'],
+];
+$alpha = $resolver->resolveByHost('www.alpha.example.test', ['environment' => 'production']);
+checkBaseline($alpha instanceof DEEC_Site_Context && $alpha->getSiteId() === 11 && $alpha->getClientId() === 7, 'Canonical host resolved to the wrong site or tenant');
+checkBaseline($alpha->getCanonicalBaseUrl() === 'https://www.alpha.example.test/site' && $alpha->hasFeature('catalog'), 'Subdirectory canonical URL or site features were lost');
+checkBaseline($resolver->resolveByHost('www.alpha.example.test:443')->getSiteId() === 11, 'Canonical standard HTTPS port did not resolve');
+checkBaseline($resolver->resolveByHost('www.alpha.example.test:80')->getSiteId() === 11, 'Canonical host on the HTTP redirect port did not resolve');
+checkBaseline($resolver->resolveByHost('alpha.example.test') === null, 'Non-www host was silently treated as a configured www host');
+checkBaseline($resolver->resolveByHost('www.alpha.example.test:8443') === null, 'Unconfigured public port resolved to a site');
+checkBaseline($resolver->resolveByHost('port.example.test') === null, 'Explicit canonical port was ignored');
+checkBaseline($resolver->resolveByHost('port.example.test:8443')->getSiteId() === 13, 'Explicit canonical port did not resolve');
+foreach (['', 'www.alpha.example.test:0', 'www.alpha.example.test:65536', 'www.alpha.example.test:443:80', 'user@www.alpha.example.test', "www.alpha.example.test\r\nX-Test: yes", 'www.alpha.example.test/path'] as $host) {
+	checkBaseline($resolver->resolveByHost($host) === null, 'Malformed Host authority resolved to a site: ' . json_encode($host));
+}
+$resolver->sites[] = ['id' => 14, 'clientid' => 10, 'url' => 'https://www.alpha.example.test/other'];
+checkBaseline($resolver->resolveByHost('www.alpha.example.test') === null, 'Ambiguous canonical authority selected an arbitrary site');
+checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => '/site/page'])->getSiteId() === 11, 'Configured site base path did not select the correct shop');
+checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => '/other/page'])->getSiteId() === 14, 'Second site base path did not remain tenant-isolated');
+checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => '/outside']) === null, 'Request outside configured site base paths selected a shop');
+checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => '/site/../other']) === null, 'Unsafe request path selected a shop');
+
+$resolver->sites[] = ['id' => 15, 'clientid' => 11, 'url' => 'https://www.alpha.example.test/site'];
+checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => '/site/page']) === null, 'Duplicate canonical host and base path selected an arbitrary tenant');
 
 $internalHeaders = applySecurityHeaders('admin');
 checkBaseline(($internalHeaders['x-robots-tag'] ?? '') === 'noindex, nofollow', 'Internal responses are indexable');
@@ -85,6 +119,7 @@ foreach ([$internalHeaders, $stagingHeaders, $productionHeaders] as $headers) {
 	checkBaseline(($headers['x-content-type-options'] ?? '') === 'nosniff', 'X-Content-Type-Options is missing');
 	checkBaseline(($headers['referrer-policy'] ?? '') === 'strict-origin-when-cross-origin', 'Referrer-Policy is missing');
 	checkBaseline(($headers['permissions-policy'] ?? '') === 'camera=(), microphone=(), geolocation=()', 'Permissions-Policy is missing');
+	checkBaseline(!isset($headers['strict-transport-security']), 'HSTS was enabled before installation-wide HTTPS verification');
 }
 
 $config = file_get_contents($root . '/configs/application.ini');
@@ -153,18 +188,24 @@ $consentReflection = new ReflectionClass(Shops_ConsentController::class);
 $consentInstance = $consentReflection->newInstanceWithoutConstructor();
 $sameOriginMethod = $consentReflection->getMethod('isSameOriginRequest');
 $sameOriginMethod->setAccessible(true);
+$siteContextProperty = $consentReflection->getProperty('_siteContext');
+$siteContextProperty->setAccessible(true);
+$siteContextProperty->setValue($consentInstance, new DEEC_Site_Context(['url' => 'https://shop.example.test/site']));
 $originalServer = $_SERVER;
 
 foreach ([
 	[[], false, 'Consent request without browser origin signals was accepted'],
 	[['HTTP_ORIGIN' => 'https://shop.example.test'], true, 'Same-origin consent request was rejected'],
+	[['HTTP_ORIGIN' => 'https://shop.example.test:443'], true, 'Explicit default consent origin port was rejected'],
+	[['HTTP_ORIGIN' => 'http://shop.example.test'], false, 'Cross-scheme consent request was accepted'],
+	[['HTTP_ORIGIN' => 'https://shop.example.test:8443'], false, 'Cross-port consent request was accepted'],
 	[['HTTP_ORIGIN' => 'https://other.example.test'], false, 'Cross-origin consent request was accepted'],
-	[['HTTP_REFERER' => 'https://shop.example.test/page'], true, 'Same-origin consent referrer fallback was rejected'],
+	[['HTTP_REFERER' => 'https://shop.example.test/page?return=1'], true, 'Same-origin consent referrer fallback was rejected'],
 	[['HTTP_REFERER' => 'https://other.example.test/page'], false, 'Cross-origin consent referrer fallback was accepted'],
 	[['HTTP_SEC_FETCH_SITE' => 'same-origin'], true, 'Same-origin Fetch Metadata request was rejected'],
 	[['HTTP_SEC_FETCH_SITE' => 'cross-site'], false, 'Cross-site Fetch Metadata request was accepted'],
 ] as [$headers, $expected, $message]) {
-	$_SERVER = ['HTTP_HOST' => 'shop.example.test'] + $headers;
+	$_SERVER = ['HTTP_HOST' => 'manipulated.example.test'] + $headers;
 	checkBaseline($sameOriginMethod->invoke($consentInstance) === $expected, $message);
 }
 

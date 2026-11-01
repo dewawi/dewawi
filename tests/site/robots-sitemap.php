@@ -70,7 +70,10 @@ class SitemapSlugFixture extends Shops_Model_DbTable_Slug
 
 $canonical = new DEEC_Site_Context(['url' => ' https://www.example.test/site/ '], ['indexable' => true]);
 checkSeo($canonical->getCanonicalBaseUrl() === 'https://www.example.test/site', 'Canonical site URL was not normalized');
-foreach (['', 'javascript:alert(1)', 'https://user:pass@example.test', 'https://example.test/?source=test', 'https://example.test/#section'] as $url) {
+checkSeo((new DEEC_Site_Context(['url' => 'HTTPS://WWW.EXAMPLE.TEST:443/site/']))->getCanonicalBaseUrl() === 'https://www.example.test/site', 'Canonical scheme, host or default port was not normalized');
+checkSeo((new DEEC_Site_Context(['url' => 'https://www.example.test./site']))->getCanonicalBaseUrl() === 'https://www.example.test/site', 'Canonical fully qualified host was not normalized');
+checkSeo((new DEEC_Site_Context(['url' => 'https://www.example.test:8443/site']))->getCanonicalOrigin() === 'https://www.example.test:8443', 'Canonical non-default origin port was lost');
+foreach (['', 'javascript:alert(1)', 'https://user:pass@example.test', 'https://example.test/?source=test', 'https://example.test/#section', 'https://example.test/a/../b', 'https://example.test//path', 'https://bad_host.example.test'] as $url) {
 	checkSeo((new DEEC_Site_Context(['url' => $url]))->getCanonicalBaseUrl() === null, 'Unsafe canonical site URL was accepted: ' . $url);
 }
 

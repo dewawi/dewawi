@@ -52,15 +52,105 @@ class DEEC_Site_Context
 
 	public function getCanonicalBaseUrl(): ?string
 	{
-		$url = trim((string)($this->site['url'] ?? ''));
+		$parts = self::parseCanonicalUrl((string)($this->site['url'] ?? ''));
 
-		if (!filter_var($url, FILTER_VALIDATE_URL)) return null;
+		return $parts['url'] ?? null;
+	}
+
+	public function getCanonicalOrigin(): ?string
+	{
+		$parts = self::parseCanonicalUrl((string)($this->site['url'] ?? ''));
+
+		return $parts['origin'] ?? null;
+	}
+
+	public static function parseCanonicalUrl(string $url): ?array
+	{
+		$url = trim($url);
+		if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) return null;
 
 		$parts = parse_url($url);
-		if (!is_array($parts) || !in_array($parts['scheme'] ?? '', ['http', 'https'], true) || empty($parts['host'])) return null;
-		if (isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment'])) return null;
+		if (!is_array($parts) || isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment'])) return null;
 
-		return rtrim($url, '/');
+		$scheme = strtolower((string)($parts['scheme'] ?? ''));
+		$host = rtrim(strtolower(trim((string)($parts['host'] ?? ''), '[]')), '.');
+		$port = isset($parts['port']) ? (int)$parts['port'] : null;
+		if (!in_array($scheme, ['http', 'https'], true) || !self::isValidHost($host) || ($port !== null && ($port < 1 || $port > 65535))) return null;
+		if (($scheme === 'http' && $port === 80) || ($scheme === 'https' && $port === 443)) $port = null;
+
+		$path = (string)($parts['path'] ?? '');
+		$decodedPath = rawurldecode($path);
+		if (($path !== '' && $path[0] !== '/') || str_starts_with($path, '//') || str_contains($decodedPath, '\\')
+			|| preg_match('/[\x00-\x1f\x7f]/', $decodedPath)
+			|| preg_match('~(?:^|/)\.{1,2}(?:/|$)~', $decodedPath)) return null;
+
+		$path = $path === '/' ? '' : rtrim($path, '/');
+		$authority = self::formatHost($host) . ($port !== null ? ':' . $port : '');
+		$origin = $scheme . '://' . $authority;
+
+		return [
+			'url' => $origin . $path,
+			'origin' => $origin,
+			'scheme' => $scheme,
+			'host' => $host,
+			'port' => $port,
+			'path' => $path,
+		];
+	}
+
+	public static function parseAuthority(string $authority): ?array
+	{
+		$authority = strtolower(trim($authority));
+		if ($authority === '' || preg_match('/[\x00-\x20\x7f\/@?#]/', $authority)) return null;
+
+		$host = '';
+		$port = null;
+		if ($authority[0] === '[') {
+			if (!preg_match('/^\[([^\]]+)\](?::([0-9]+))?$/D', $authority, $match)) return null;
+			$host = $match[1];
+			$port = isset($match[2]) && $match[2] !== '' ? (int)$match[2] : null;
+			if (!filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) return null;
+		} else {
+			if (substr_count($authority, ':') > 1 || !preg_match('/^([^:]+)(?::([0-9]+))?$/D', $authority, $match)) return null;
+			$host = rtrim($match[1], '.');
+			$port = isset($match[2]) && $match[2] !== '' ? (int)$match[2] : null;
+			if (!self::isValidHost($host)) return null;
+		}
+
+		if ($port !== null && ($port < 1 || $port > 65535)) return null;
+
+		return ['host' => $host, 'port' => $port];
+	}
+
+	public static function normalizeOrigin(string $url): ?string
+	{
+		$url = trim($url);
+		if ($url === '' || preg_match('/[\x00-\x1f\x7f]/', $url)) return null;
+
+		$parts = parse_url($url);
+		if (!is_array($parts)) return null;
+
+		$scheme = strtolower((string)($parts['scheme'] ?? ''));
+		$host = strtolower(trim((string)($parts['host'] ?? ''), '[]'));
+		$port = isset($parts['port']) ? (int)$parts['port'] : null;
+		if (!in_array($scheme, ['http', 'https'], true) || isset($parts['user']) || isset($parts['pass']) || !self::isValidHost($host)) return null;
+		if ($port !== null && ($port < 1 || $port > 65535)) return null;
+		if (($scheme === 'http' && $port === 80) || ($scheme === 'https' && $port === 443)) $port = null;
+
+		return $scheme . '://' . self::formatHost($host) . ($port !== null ? ':' . $port : '');
+	}
+
+	private static function isValidHost(string $host): bool
+	{
+		if ($host === '' || strlen($host) > 253) return false;
+		if (filter_var($host, FILTER_VALIDATE_IP)) return true;
+
+		return (bool)preg_match('/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/D', $host);
+	}
+
+	private static function formatHost(string $host): string
+	{
+		return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? '[' . $host . ']' : $host;
 	}
 
 	public function getTheme()

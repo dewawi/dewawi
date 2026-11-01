@@ -4,30 +4,69 @@ class DEEC_Site_Resolver
 {
 	public function resolveByHost($host, array $options = array())
 	{
-		$host = $this->normalizeHost($host);
+		$authority = DEEC_Site_Context::parseAuthority((string)$host);
+		if ($authority === null) return null;
 
-		if ($host === '') {
-			return null;
+		$matches = array();
+
+		foreach ($this->getActiveSites() as $shop) {
+			$shopData = is_array($shop) ? $shop : $shop->toArray();
+			$canonical = DEEC_Site_Context::parseCanonicalUrl((string)($shopData['url'] ?? ''));
+
+			if ($canonical !== null && $this->authorityMatches($authority, $canonical)) $matches[] = [$shopData, $canonical];
 		}
+		if (array_key_exists('requestPath', $options)) $matches = $this->matchRequestPath($matches, (string)$options['requestPath']);
 
-		$shopsTable = new Zend_Db_Table('shop');
-		$shops = $shopsTable->fetchAll(array('activated = ?' => 1));
+		if (count($matches) !== 1) return null;
 
-		foreach ($shops as $shop) {
-			$shopData = $shop->toArray();
-			$shopHost = $this->normalizeHost(parse_url($shopData['url'], PHP_URL_HOST));
+		[$shopData, $canonical] = $matches[0];
 
-			if ($shopHost !== '' && $shopHost === $host) {
-				$features = $this->detectFeatures($shopData);
+		return new DEEC_Site_Context($shopData, array(
+			'host' => $authority['host'],
+			'port' => $authority['port'],
+			'canonicalHost' => $canonical['host'],
+			'canonicalPort' => $canonical['port'],
+			'indexable' => $this->isIndexable($shopData, $options),
+		), $this->detectFeatures($shopData));
+	}
 
-				return new DEEC_Site_Context($shopData, array(
-					'host' => $host,
-					'indexable' => $this->isIndexable($shopData, $options),
-				), $features);
+	protected function getActiveSites()
+	{
+		return (new Zend_Db_Table('shop'))->fetchAll(array('activated = ?' => 1));
+	}
+
+	protected function authorityMatches(array $request, array $canonical): bool
+	{
+		if ($request['host'] !== $canonical['host']) return false;
+		if ($canonical['port'] !== null) return $request['port'] === $canonical['port'];
+
+		return $request['port'] === null || in_array($request['port'], [80, 443], true);
+	}
+
+	protected function matchRequestPath(array $matches, string $requestPath): array
+	{
+		$decodedPath = rawurldecode($requestPath);
+		if ($decodedPath === '' || $decodedPath[0] !== '/' || str_starts_with($decodedPath, '//') || str_contains($decodedPath, '\\')
+			|| preg_match('/[\x00-\x1f\x7f]/', $decodedPath)
+			|| preg_match('~(?:^|/)\.{1,2}(?:/|$)~', $decodedPath)) return [];
+
+		$decodedPath = $decodedPath === '/' ? '/' : rtrim($decodedPath, '/');
+		$matched = [];
+		$length = -1;
+		foreach ($matches as $match) {
+			$basePath = rawurldecode((string)$match[1]['path']);
+			if ($basePath !== '' && $decodedPath !== $basePath && !str_starts_with($decodedPath, $basePath . '/')) continue;
+
+			$baseLength = strlen($basePath);
+			if ($baseLength > $length) {
+				$matched = [$match];
+				$length = $baseLength;
+			} elseif ($baseLength === $length) {
+				$matched[] = $match;
 			}
 		}
 
-		return null;
+		return $matched;
 	}
 
 	protected function detectFeatures(array $site)
@@ -62,12 +101,4 @@ class DEEC_Site_Resolver
 			&& $siteIndexable;
 	}
 
-	protected function normalizeHost($host)
-	{
-		$host = strtolower(trim((string) $host));
-		$host = preg_replace('/:\d+$/', '', $host);
-		$host = preg_replace('/^www\./', '', $host);
-
-		return $host;
-	}
 }
