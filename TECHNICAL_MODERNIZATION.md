@@ -28,6 +28,7 @@ Geprüft wurden der PHP-/Zend-Framework-1-Code, öffentliche Shop- und CMS-Templ
 - Öffentliche verwaltete Bilder verwenden tatsächliche Abmessungen, vorhandene feste Medienvarianten, kontextabhängiges Lazy Loading und eine explizite Priorisierung kritischer Hero- und Produktbilder.
 - Pro Seite wird nur der erste tatsächlich sichtbare CMS-Medienblock beziehungsweise das initiale Slider- oder Produktbild hoch priorisiert; nachgelagerte Bilder decodieren asynchron.
 - TLS, bekannte Alt-URL-Importe, moderne Bildformate, weitere Asset-Modernisierung und mehrere Relaunch-Prüfungen benötigen weitere Umsetzungsphasen oder Infrastrukturzugriff.
+- Der wiederherstellungsrelevante Daten-, Datei-, Konfigurations- und Codestand ist inventarisiert; ein installationsneutraler Sicherungs-, Integritäts-, isolierter Restore- und Rollbackablauf wird durch eine temporäre MariaDB-/Dateisystemprobe geprüft.
 
 ## 3. Status- und Prioritätsdefinitionen
 
@@ -112,7 +113,7 @@ Prioritäten: P0 = Sicherheits-/Relaunch-Blocker, P1 = nächste Umsetzungsphase,
 | 65 | Derzeit nicht anwendbar | P1 bei Einführung | Kein öffentlicher Partnerzugang vorhanden. Datenschutzgerechte Events für Start, Erfolg, Login, autorisierten Download und Anfrage definieren, ohne sensible Daten zu übertragen. |
 | 66 | Teilweise | P0 | Production, Staging und Development sind als Anwendungsprofile vorhanden. Staging benötigt eine explizite, von Production abweichende Datenbankkonfiguration. Getrennte Hosts, Secrets, Mailziele und Deployments bleiben operative Aufgaben. |
 | 67 | Für den vorgegebenen Testbetrieb umgesetzt | P1 Betrieb | Development und Staging behalten bewusst den konfigurierten SMTP-Versand, damit echte E-Mail-Funktionstests vollständig möglich bleiben. Es gibt keine pauschale Sperre, keinen erzwungenen Test-Sink und keine Empfänger-Allowlist; Testverantwortliche müssen Empfänger und Testabläufe deshalb operativ kontrollieren. |
-| 68 | Infrastruktur | P0 vor Relaunch | Kein vollständiger Backup-/Rollback-Ablauf im Repository dokumentiert. Anwendung, Datenbank, Medien und Redirects sichern und objektive Rollback-Kriterien erproben. |
+| 68 | Teilweise / Infrastruktur | P0 vor Relaunch | Sicherungsumfang, konkrete Befehle, Integritätsprüfung, isolierte Wiederherstellung und zustandsabhängiger Rollback sind dokumentiert und lokal automatisiert geprüft. Betreiber müssen verschlüsselte getrennte Speicherung, Aufbewahrung, RPO/RTO, externe Serverkonfiguration und eine vollständige Probe mit freigegebenen Staging-Daten verbindlich festlegen. |
 | 69 | Infrastruktur | P1 vor Relaunch | Keine externe Überwachung für Erreichbarkeit, Zertifikatsablauf, 5xx, Formulare oder Login gefunden. Synthetische Checks und klare Alarmverantwortung einrichten. |
 | 70 | Teilweise | P1 Entscheidung | Das öffentliche Frontend ist auf die letzten vorgesehenen 3.x-/4.x-Stände jQuery 3.7.1 und Bootstrap 4.6.2 aktualisiert. Bootstrap 4 bleibt EOL. Bootstrap 5 erfordert die gezielte Migration von `data-toggle`/`data-target`/`data-slide`, jQuery-Pluginaufrufen, Utility-Klassen und Komponentenmarkup; das interne ERP bleibt davon getrennt. |
 
@@ -396,9 +397,189 @@ Vor der produktiven Aktivierung je öffentlicher Website:
 
 Geeignete Prüfkommandos sind unter anderem `apachectl -t`, `apachectl -S`, `openssl s_client -connect <canonical-host>:443 -servername <canonical-host> -verify_return_error`, `curl -I http://<canonical-host>/`, `curl -I https://<canonical-host>/`, `curl --http2 -I https://<canonical-host>/` sowie kontrollierte `curl --resolve`-Aufrufe vor einer DNS-Umschaltung. Diese Liveprüfungen wurden im Rahmen dieser Repository-Phase nicht ausgeführt.
 
+### 5.20 Backup, Wiederherstellung und Rollback
+
+Der Sicherungsumfang folgt den tatsächlichen Schreibpfaden der Anwendung:
+
+| Bestandteil | Behandlung | Begründung |
+|---|---|---|
+| MariaDB-Datenbank | Vollständig sichern | Enthält alle Mandanten-, Shop-, Beleg-, Berechtigungs-, Slug- und Redirectdaten sowie den tatsächlich migrierten Schemazustand. |
+| Versionierter Anwendungscode | Exakten Git-Commit als Releasearchiv sichern | Ermöglicht eine vom veränderbaren Arbeitsverzeichnis unabhängige Wiederherstellung desselben Codestands. |
+| `files/` | Vollständig außer `files/import/` sichern | Enthält unter anderem ausgestellte Belege, geschützte Anhänge, Artikeldateien, Downloads, Bilder und Exporte. `files/import/` ist ausschließlich temporäres Import-Staging und darf erst nach Schreibsperre ausgeschlossen werden. |
+| `media/` | Vollständig sichern | Enthält öffentliche, nach Mandant getrennte Website- und Shopmedien. |
+| `templates/` | Sichern | Kann installationsbezogene Druck- und Anwendungsvorlagen enthalten. |
+| `configs/database.ini` und vorhandenes `configs/magento.ini` | Verschlüsselt sichern | Diese ignorierten lokalen Dateien werden nicht durch Git wiederhergestellt und können Zugangsdaten enthalten. |
+| `cache/`, `session/` | Nicht sichern | Enthalten regenerierbare Vorschaubilder, Cache-, Rate-Limit- und Sitzungsdaten, aber keine maßgebliche Wiederherstellungsquelle. Nach einem Restore müssen Sitzungen bewusst neu beginnen. |
+| `logs/` | Nicht als Anwendungsbackup behandeln | Operative Logs benötigen eine eigene, zugriffs- und aufbewahrungsgeregelte Archivierung, sind aber nicht zum Wiederanlauf erforderlich. |
+| VHost-/Proxy-, TLS-, Dienst-, Cron-, Queue-, Firewall- und Secret-Store-Konfiguration außerhalb des Repositorys | Getrennt sichern und inventarisieren | Diese Werte sind installationsabhängig und dürfen nicht in dieses Repository oder das öffentliche Dokumentverzeichnis kopiert werden. |
+
+Eine Sicherung muss außerhalb von Repository und Document Root liegen. Das Zielverzeichnis erhält Modus `0700`, jede Sicherungsdatei `0600`; der Transfer und die Speicherung auf einem getrennten Medium müssen verschlüsselt sein. Mindestens eine Kopie muss von Anwendung und Datenbankserver getrennt und gegen Änderung oder Löschung geschützt sein. Aufbewahrungsfristen, Rotation, RPO, RTO, Schlüsselverwaltung, Zugriffsprotokollierung und Löschung sind Betreiberentscheidungen und vor dem Livegang schriftlich festzulegen. Eine bloß lokal angeschlossene Kopie ist kein ausreichender Schutz gegen Serververlust oder Kompromittierung.
+
+#### Konsistente Sicherung
+
+Vor Beginn müssen Wartungsmodus oder vorgeschaltete Zugriffssperre aktiv sein, schreibende HTTP-Anfragen beendet und Hintergrundjobs, Imports, Exporte sowie Queues angehalten sein. Erst nach dem finalen Checksum-Manifest darf die Schreibsperre aufgehoben werden. Dadurch gehören Datenbankreferenzen und Dateien zu demselben Zeitpunkt. `--single-transaction` erzeugt für InnoDB eine konsistente Datenbanksicht; nichttransaktionale Tabellen und gleichzeitig laufende DDL sind deshalb zusätzlich durch die Schreibsperre auszuschließen.
+
+Passwörter dürfen weder als Kommandozeilenargument noch in Shell-History oder Logs erscheinen. `DB_CNF` verweist auf eine außerhalb des Webroots durch Secret-Provisionierung angelegte Datei mit Modus `0600`:
+
+```ini
+[client]
+user = <backup-user>
+password = <secret-from-approved-secret-store>
+host = <database-host>
+```
+
+Bei lokaler Socketverbindung wird `host` durch `socket = <database-socket>` ersetzt. Der Backup-Benutzer benötigt nur die für vollständigen Dump einschließlich Trigger, Routinen und Events erforderlichen Leserechte. Die Platzhalter im folgenden Bash-Ablauf sind bewusst installationsneutral:
+
+```bash
+set -euo pipefail
+umask 077
+
+export APP_ROOT="<absolute-application-root>"
+export BACKUP_ROOT="<absolute-backup-root-outside-document-root>"
+export DB_CNF="<absolute-root-only-client-file>"
+export DB_NAME="<database-name>"
+
+BACKUP_ID="$(date -u +%Y%m%dT%H%M%SZ)"
+STAGE="$BACKUP_ROOT/$BACKUP_ID.partial"
+FINAL="$BACKUP_ROOT/$BACKUP_ID"
+test ! -e "$STAGE" && test ! -e "$FINAL"
+mkdir -m 0700 -p "$BACKUP_ROOT"
+mkdir -m 0700 "$STAGE"
+test -f "$APP_ROOT/configs/database.ini"
+test "$(stat -c %a "$DB_CNF")" = 600
+
+SOURCE_COMMIT="$(git -C "$APP_ROOT" rev-parse --verify HEAD)"
+test -z "$(git -C "$APP_ROOT" status --porcelain --untracked-files=all)"
+git -C "$APP_ROOT" archive --format=tar --output="$STAGE/application.tar.partial" "$SOURCE_COMMIT"
+test -s "$STAGE/application.tar.partial"
+mv "$STAGE/application.tar.partial" "$STAGE/application.tar"
+
+test ! -L "$APP_ROOT/configs/database.ini"
+test ! -e "$APP_ROOT/configs/magento.ini" || test ! -L "$APP_ROOT/configs/magento.ini"
+if find "$APP_ROOT/files" "$APP_ROOT/media" "$APP_ROOT/templates" -type l -print -quit | grep -q .; then
+    echo "Persistent paths contain a symbolic link; backup aborted" >&2
+    exit 1
+fi
+
+FILE_PATHS=(files media templates configs/database.ini)
+if test -e "$APP_ROOT/configs/magento.ini"; then
+    FILE_PATHS+=(configs/magento.ini)
+fi
+tar --create --numeric-owner --file="$STAGE/files.tar.partial" \
+    --directory="$APP_ROOT" --exclude='files/import' --exclude='files/import/**' \
+    -- "${FILE_PATHS[@]}"
+test -s "$STAGE/files.tar.partial"
+mv "$STAGE/files.tar.partial" "$STAGE/files.tar"
+
+(
+    cd "$APP_ROOT"
+    {
+        find files media templates -type f ! -path 'files/import/*' -print0
+        printf '%s\0' configs/database.ini
+        test ! -e configs/magento.ini || printf '%s\0' configs/magento.ini
+    } | sort -z | xargs -0 sha256sum
+) > "$STAGE/files.sha256.partial"
+test -s "$STAGE/files.sha256.partial"
+mv "$STAGE/files.sha256.partial" "$STAGE/files.sha256"
+
+if ! mariadb-dump --defaults-extra-file="$DB_CNF" \
+    --single-transaction --quick --routines --events --triggers --hex-blob \
+    --default-character-set=utf8mb4 --databases "$DB_NAME" \
+    > "$STAGE/database.sql.partial"; then
+    echo "Database dump failed; partial backup retained for diagnosis" >&2
+    exit 1
+fi
+test -s "$STAGE/database.sql.partial"
+mv "$STAGE/database.sql.partial" "$STAGE/database.sql"
+
+{
+    printf 'backup_id=%s\n' "$BACKUP_ID"
+    printf 'source_commit=%s\n' "$SOURCE_COMMIT"
+    printf 'application_version=1.1.7\n'
+    printf 'next_migration=1.1.8\n'
+    mariadb --defaults-extra-file="$DB_CNF" --batch --skip-column-names \
+        -e 'SELECT CONCAT("database_version=", VERSION())'
+    (
+        cd "$APP_ROOT"
+        sha256sum install/config/structure.sql install/config/update-1.1.7-1.1.8.sql
+    )
+} > "$STAGE/metadata.txt.partial"
+mv "$STAGE/metadata.txt.partial" "$STAGE/metadata.txt"
+
+(
+    cd "$STAGE"
+    sha256sum application.tar files.tar files.sha256 database.sql metadata.txt \
+        > SHA256SUMS.partial
+    mv SHA256SUMS.partial SHA256SUMS
+    chmod 0600 application.tar files.tar files.sha256 database.sql metadata.txt SHA256SUMS
+    sha256sum --check SHA256SUMS
+)
+mv "$STAGE" "$FINAL"
+```
+
+Der Metadatensatz muss zusätzlich das betriebliche Wartungsfenster, Sicherungsziel, verantwortliche Person und den tatsächlich geprüften Schemazustand nennen. Da DEWAWI keine universelle Migrationstabelle besitzt, sind vor einer Migration insbesondere die erwarteten Tabellen, Spalten und Indizes aus `information_schema` zu protokollieren. Vor `1.1.7` nach `1.1.8` gehören dazu mindestens `slugredirect` sowie `shoporder.token` und `clientid_shopid_token`. Der Dump selbst bleibt die maßgebliche vollständige Schemaaufnahme. Ein fehlgeschlagener Lauf behält den Suffix `.partial` und darf weder als gültige Sicherung rotiert noch ausgelagert werden.
+
+#### Isolierte Wiederherstellungsprobe
+
+Eine Wiederherstellung erfolgt zunächst ausschließlich auf einem getrennten Host oder in einem abgeschotteten Testnetz mit leerer MariaDB-Instanz und leerem Restore-Verzeichnis. Ausgehende E-Mails, Tracking, Webhooks, Cronjobs, Queues und externe Integrationen bleiben deaktiviert. Das ursprüngliche `database.ini` wird nur als verschlüsseltes Sicherungsobjekt behandelt; vor dem ersten Anwendungsstart muss eine Testkonfiguration auf die isolierte Datenbank und kontrollierte Testdienste zeigen. Niemals mit den wiederhergestellten Produktionszugängen eine Testanwendung starten.
+
+Beispiel für die vorbereitenden Schritte; `RESTORE_CNF` darf ausschließlich die leere isolierte MariaDB erreichen:
+
+```bash
+set -euo pipefail
+umask 077
+export BACKUP_SET="<absolute-verified-backup-set>"
+export RESTORE_ROOT="<absolute-empty-release-directory>"
+export RESTORE_DATA="<absolute-empty-data-staging-directory>"
+export RESTORE_CNF="<absolute-isolated-restore-client-file>"
+
+test "$(stat -c %a "$RESTORE_CNF")" = 600
+(cd "$BACKUP_SET" && sha256sum --check SHA256SUMS)
+mkdir -m 0700 "$RESTORE_ROOT" "$RESTORE_DATA"
+tar --extract --file="$BACKUP_SET/application.tar" --directory="$RESTORE_ROOT" \
+    --same-permissions --no-same-owner
+tar --extract --file="$BACKUP_SET/files.tar" --directory="$RESTORE_DATA" \
+    --same-permissions --no-same-owner --keep-old-files
+(cd "$RESTORE_DATA" && sha256sum --check "$BACKUP_SET/files.sha256")
+test ! -e "$RESTORE_ROOT/configs/database.ini"
+install -m 0600 "$RESTORE_DATA/configs/database.ini" "$RESTORE_ROOT/configs/database.ini"
+# Before starting PHP, replace production endpoints with isolated test endpoints.
+mariadb --defaults-extra-file="$RESTORE_CNF" < "$BACKUP_SET/database.sql"
+```
+
+Danach werden Schema und Daten geprüft. Erst bei erfolgreichem Datenbankvergleich dürfen `files/`, `media/`, `templates/` und gegebenenfalls die separat geprüfte optionale Konfiguration aus `RESTORE_DATA` in den neuen Release übernommen werden. Vorher muss eine vollständige Kollisionsprüfung belegen, dass das Ziel außer den versionierten `.gitkeep`-Platzhaltern keine Dateien enthält. Die Übernahme muss vorhandene Ziele ablehnen; sie darf nicht mit einer überschreibenden Kopieroption erfolgen.
+
+Reihenfolge und Mindestprüfungen:
+
+1. Sicherung in ein Verzeichnis mit Modus `0700` übertragen, Besitz und Berechtigung prüfen und im Sicherungsverzeichnis `sha256sum --check SHA256SUMS` ausführen. Bei einem Fehler sofort abbrechen.
+2. `source_commit` aus `metadata.txt` mit dem freigegebenen Release abgleichen. `application.tar` in ein leeres Release-Verzeichnis mit `tar --extract --same-permissions --no-same-owner` entpacken. Der Commit muss im vertrauenswürdigen Repository weiterhin als Commitobjekt vorhanden sein.
+3. `files.tar` zunächst in ein separates leeres Daten-Restore-Verzeichnis entpacken. GNU tar erhält `--same-permissions --no-same-owner --keep-old-files`; vorhandene Dateien, absolute Pfade, `..`, symbolische Links, Hardlinks und Gerätedateien sind vor dem Entpacken als Fehler zu behandeln. Danach aus diesem Verzeichnis `sha256sum --check <backup>/files.sha256` ausführen.
+4. Nur die wiederhergestellten Konfigurationen auf Modus `0600` und kontrollierte Testziele prüfen und in den neuen Release übernehmen. Produktionsziele müssen vor dem ersten PHP-Prozess durch isolierte Testziele ersetzt sein.
+5. Eine ausschließlich für die leere isolierte MariaDB gültige Clientdatei mit Modus `0600` verwenden und `mariadb --defaults-extra-file=<restore-client-file> < database.sql` ausführen. Der im Dump enthaltene Datenbankname darf auf keinem produktiven Server verwendet werden.
+6. Tabellenanzahl, Engines, Zeichensätze, Constraints, Trigger, Routinen, Events, relevante `information_schema`-Merkmale und die erwartete Migrationsebene mit `metadata.txt` vergleichen. Mandantenanzahl und je Mandant ausgewählte Zeilenzahlen beziehungsweise fachliche Kontrollsummen prüfen; keine Rohdaten in Prüfprotokolle schreiben.
+7. Erst danach `files/`, `media/` und `templates/` ohne Überschreiben in den neuen Release übernehmen. Dateianzahl, Prüfsummen und Berechtigungen erneut prüfen. Stichproben für ausgestellte Belege, geschützte Anhänge, Artikeldateien, Downloads, Exporte, Vorlagen und öffentliche Medien aus mindestens zwei Mandanten durchführen. Private Dateien müssen unter `files/`, öffentliche Medien unter `media/` und alle Tenantpfade unverändert bleiben.
+8. Die Anwendung erst danach mit blockiertem externem Netz und Testkonfiguration starten. Login, Berechtigungen, Mandantenwechsel, Beleganzeige, geschützte Downloads, öffentliche Medien, Canonicals, Sitemap und Redirects prüfen. Schreibtests dürfen ausschließlich in dieser wiederhergestellten Kopie stattfinden.
+9. Dauer, Ergebnis, erkannte Abweichungen und tatsächlich erreichbares RPO/RTO protokollieren. Erst eine vollständig erfolgreiche Probe erlaubt die Sicherung als wiederherstellbar zu kennzeichnen; ein erfolgreicher `mariadb-dump` allein genügt nicht.
+
+`python3 -B tests/install/backup-restore.py` automatisiert diesen Kern lokal ohne bestehende Daten zu verwenden. Die Prüfung erzeugt und liest ein Releasearchiv des protokollierten Git-Commits, startet eine temporäre MariaDB, sichert und rekonstruiert InnoDB-Daten einschließlich Trigger, Routine und Event, erkennt einen abweichenden Schemazustand, verifiziert Mandantentrennung und Fehlerverhalten und entfernt die Instanz anschließend. Eine synthetische Dateihierarchie prüft Ausschlüsse, Symlink-Abbruch, Prüfsummen, Modi, unveränderte private und öffentliche Pfade sowie den Abbruch vor einem Überschreiben vorhandener Medien.
+
+Ein vollständiges Systembackup enthält alle Mandanten, weil gemeinsame Stammdaten, Berechtigungen und Beziehungen nicht sicher durch rohe SQL- oder Tar-Filter getrennt werden können. Ein Restore nur eines Mandanten ist daher kein Standard-Rollback. Er benötigt einen eigens fachlich freigegebenen, referenzbewussten Export-/Importweg und negative Cross-Tenant-Tests; bis dahin wird nur das vollständige Backup in einer isolierten Umgebung wiederhergestellt.
+
+#### Rollback-Entscheidung
+
+| Änderung seit Sicherung | Zulässige Rücknahme | Auswirkung |
+|---|---|---|
+| Nur Code, keine Schema- oder Datenänderung | Auf den zuvor freigegebenen Release-Commit umschalten; Datenbank und persistente Dateien unangetastet lassen. | Kurzer Release-Rollback möglich, sofern der alte Code mit dem unveränderten Schema kompatibel ist. |
+| Persistente Dateien ohne Datenbankbezug | Betroffene Dateien nach Schreibsperre aus dem passenden Snapshot wiederherstellen; nie pauschal bestehende Medien überschreiben. | Nach dem Backup entstandene Dateiversionen gehen für den gezielt ersetzten Umfang verloren. |
+| Daten und Dateien mit gemeinsamen Referenzen | Zusammengehörige Datenbank- und Dateisicherung vollständig auf eine isoliert geprüfte Zeitmarke zurücksetzen. | Alle nach dieser Zeitmarke entstandenen Schreibvorgänge gehen verloren; RPO und Fachfreigabe sind zwingend. |
+| Begonnene oder abgeschlossene Migration | Kein automatisches Down-SQL und kein reiner Code-Rollback. Code, Datenbank und persistente Dateien aus der unmittelbar vor der Migration erstellten, gemeinsam geprüften Sicherung vollständig wiederherstellen. | Geplantes Wartungsfenster und bewusster Datenverlust seit dem Snapshot; alternativ Vorwärtskorrektur nach eigener Freigabe. |
+| Infrastruktur-/TLS-Änderung ohne Anwendungsdatenänderung | Vorherige geprüfte VHost-/Proxy-/Dienstkonfiguration aus deren getrenntem Backup aktivieren und Syntax sowie Erreichbarkeit neu prüfen. | Anwendungssnapshot bleibt unverändert; DNS- und Zertifikatszustand müssen weiterhin passen. |
+
+Für die laufende Migration von `1.1.7` nach `1.1.8` ist unmittelbar vor dem ersten SQL-Schritt eine vollständige gemeinsame Sicherung Pflicht. Ein teilweise migriertes Schema wird nicht durch erneutes blindes Ausführen oder eine erfundene Down-Migration zurückgesetzt. Entweder wird nach Zustandsprüfung und separater Freigabe vorwärts vervollständigt, oder die gesamte Vor-Migrationsdatenbank zusammen mit passendem Code und Dateistand wiederhergestellt. Die in Abschnitt 6 beschriebene zustandsabhängige Nacharbeit ist ausschließlich ein kontrollierter Vorwärtsweg.
+
 ## 6. Datenbank- und Deployment-Hinweise
 
-`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Die Phasen 4.3, 4.4 und 5.1 benötigen keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
+`structure.sql` und die weiterhin aktuelle Migration `update-1.1.7-1.1.8.sql` enthalten dieselbe vollständige Definition von `slugredirect` sowie die Checkout-Token-Struktur aus Phase 4.2. Die Phasen 4.3, 4.4, 5.1 und 5.2 benötigen keine weitere Schemaänderung; beide SQL-Dateien blieben unverändert. Es wurde keine weitere SQL-Datei oder Versionsnummer angelegt und keine reale Bestandsdatenbank verändert.
 
 Installationen, auf denen eine frühere Fassung der laufenden 1.1.8-Anweisungen bereits manuell ausgeführt wurde, müssen vor dem Anwendungsdeployment das Checkout-Token-Schema prüfen. Nur wenn Spalte und Index noch fehlen, sind exakt die weiterhin in `update-1.1.7-1.1.8.sql` enthaltenen Anweisungen kontrolliert anzuwenden; bei einem teilweise vorhandenen Stand darf ausschließlich der jeweils fehlende Schritt ausgeführt werden:
 
@@ -419,7 +600,7 @@ Zustandsabhängige Nacharbeit:
 
 Empfohlene Reihenfolge:
 
-1. Vollständiges Datenbank-Backup erstellen.
+1. Vollständige, gemeinsam konsistente Datenbank-, Code-, Datei- und Konfigurationssicherung nach Abschnitt 5.20 erstellen und isolierte Wiederherstellbarkeit bestätigen.
 2. Prüfen, ob die vorgesehene Migration in der Zielinstallation bereits ausgeführt wurde.
 3. Falls sie bereits ausgeführt wurde, die nachträglich ergänzten Schemaanweisungen einschließlich `slugredirect` kontrolliert und separat freigegeben anwenden; die Anwendung benötigt die Tabelle vor der ersten öffentlichen URL-Änderung.
 4. Für jede Entwicklungs-/Testwebsite die Indexierung im Shop-Datensatz deaktivieren.
@@ -463,6 +644,7 @@ Wichtig: `noindex` verhindert Suchmaschinenindexierung, aber weder Zugriff noch 
 | HTTP-Konfiguration | 8.513 Prüfungen bestanden |
 | HTTP-Fehlerbehandlung | 140 Prüfungen bestanden |
 | Isolierter MariaDB-Installations-/Migrationstest | Bestanden; einschließlich 66 UOM-Prüfungen |
+| Isolierte Code-/Datei-/MariaDB-Sicherung und Wiederherstellung | 38 Prüfungen bestanden; einschließlich Releasearchiv, Schemaabweichung, Trigger, Routine, Event, Integrität, Berechtigungen, Überschreibschutz und Mandantentrennung |
 | `git diff --check` | Bestanden |
 | Lagerplanungs-Regressionsprüfung | Fehlgeschlagen: bestehende Prüfung erwartet den aktuellen Lagerbestand als frühesten Liefertermin. Der Lagerplanungsbereich wurde durch diese Arbeiten nicht verändert. |
 
@@ -495,6 +677,8 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Die automatisierten Accessibility-Fixtures verwenden repräsentatives, aber synthetisches Markup. Reale Mandantenmenüs, WYSIWYG-Inhalte, Theme-Dateien, Sprachen und Formularkonfigurationen können zusätzliche Probleme enthalten und müssen auf Staging manuell geprüft werden.
 - Der technische Tastatur-, Fokus-, Reflow- und Kontrastnachweis ist kein vollständiges WCAG-2.2-AA-Audit. Insbesondere Screenreader, Forced Colors, Vergrößerungssoftware, kognitive Verständlichkeit und physische Touchgeräte benötigen eine fachliche manuelle Abnahme.
 - Eine spätere WebP-/AVIF-Pipeline muss Erzeugung, Original-Fallback, Umbenennung, Kopieren, Löschen, Backups und kontrollierten Bestands-Backfill gemeinsam lösen. Einzelne Konvertierungsdateien ohne diesen Lebenszyklus dürfen nicht ergänzt werden.
+- Die lokale Recovery-Fixture verwendet ausschließlich synthetische Daten und belegt die technischen Kernschritte, nicht Kapazität, Dauer oder Vollständigkeit einer konkreten Installation. Externe Serverkonfiguration, Verschlüsselungs- und Aufbewahrungssystem, Schlüsselzugriff sowie erreichbares RPO/RTO benötigen eine dokumentierte Betreiberprobe mit freigegebenem Staging-Snapshot.
+- Der Standardablauf stellt das vollständige mandantenfähige System wieder her. Ein isolierter Einzelmandanten-Restore ist wegen gemeinsamer Beziehungen nicht durch ungeprüftes Filtern von SQL oder Dateipfaden zulässig.
 - Der Crawler erzeugt keine Aussage über unbekannte historische URLs. Eine vollständige fachliche Alt-URL-Liste muss vor dem Relaunch über `--paths` zusätzlich geprüft werden. Heuristische Soft-404- und Alt-Text-Hinweise benötigen eine manuelle Bewertung.
 - Es erfolgten kein Push, kein Deployment und keine produktive Datenbankänderung.
 
@@ -535,7 +719,7 @@ Der Lagerplanungstest enthält feste Planungsdaten ab dem 1. November 2026 und v
 - Die in Abschnitt 5.19 dokumentierte VHost-/Proxy-Strategie pro Website mit realem DNS, Zertifikatskette, Renewal, kanonischem Host, alternativen Hosts, Unterverzeichnispfad und unbekanntem Default-Host umsetzen und Ende-zu-Ende prüfen.
 - Kompression, Caching und HTTP/2 prüfen; Mixed-Content-Crawl mit den endgültigen Staging-Inhalten ausführen.
 - HSTS nach stabiler HTTPS-Phase mit kurzer Laufzeit kontrolliert einführen; Subdomains und Preload getrennt freigeben.
-- Backups und Rollback proben.
+- Den in Abschnitt 5.20 geprüften Kernablauf mit einem freigegebenen vollständigen Staging-Snapshot sowie der realen verschlüsselten und getrennten Backup-Ablage proben; RPO, RTO, Rotation und Verantwortlichkeit abnehmen.
 - Monitoring, Webmaster-Werkzeuge, Sitemap und Conversion-Messung verifizieren.
 
 ## 10. Lokale Commits
@@ -783,8 +967,18 @@ Inhalt:
 - Reproduzierbare isolierte Apache-HTTP-/HTTPS-Regression für 301/308, kanonische und alternative Hosts, unbekannte Hosts, ACME, Pfaderhalt, Proxy-Header und Sicherheitsheader.
 - Konkrete installationsneutrale VHost-/Proxy-, TLS-, DNS-, Renewal-, Mixed-Content-, HTTP/2-, Backup- und gestufte HSTS-Prüfanleitung ohne Änderung produktiver Infrastruktur.
 
+### Commit 21: `document and test backup recovery procedures`
+
+Inhalt:
+
+- Aus den realen Schreibpfaden abgeleitete Inventur von Datenbank, Code, privaten Dateien, öffentlichen Medien, lokalen Vorlagen und installationsbezogenen Konfigurationen einschließlich begründeter Laufzeit-Ausschlüsse.
+- Konkreter installationsneutraler Ablauf für Schreibsperre, transaktionalen MariaDB-Dump, Release- und Dateiarchiv, Prüfsummen, restriktive Berechtigungen, getrennte verschlüsselte Ablage und atomare Fertigstellung.
+- Isolierte Wiederherstellungsreihenfolge mit Integritäts-, Schema-, Migrations-, Objekt-, Berechtigungs-, Datei-, Mandanten- und Anwendungsprüfungen ohne Verbindung zu produktiven Diensten.
+- Zustandsabhängige Rollback-Matrix für Code, Dateien, gemeinsam referenzierte Daten, Migrationen und Infrastruktur ohne automatische Down-Migration.
+- Automatisierte temporäre MariaDB-/Dateisystemprobe für Erfolg, fehlerhafte und unvollständige Sicherungen, Symlinks, Prüfsummen, Überschreibschutz, Trigger, Routinen, Events und Tenantpfade ohne produktive Daten oder Schemaänderung.
+
 Wegen der Schemaänderungen in Commit 3 und Commit 6 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 11. Abschlussstatus
 
-Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, strikte kanonische Host-/Portauflösung, einheitliche Slug-Erzeugung und automatische interne 301-Weiterleitungen ist vorbereitet und getestet. Phase 5.1 ist auf Repository-Ebene abgeschlossen; dies ist ausdrücklich keine Freigabe realer DNS-, TLS-, Proxy-, Datenschutz- oder WCAG-Konfigurationen. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die produktive Umsetzung und Liveprüfung von Zertifikaten, VHosts, Host-/HTTPS-Redirects, Mixed Content und später HSTS sowie historischer Alt-URL-Import, tatsächlicher Staging-Crawl, reale Drittanbieter-/Legacy-Inhalte und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
+Die technische Basis für HTML5, mandantenbezogene Indexierungssteuerung, dynamische Robots-/Sitemap-Ausgabe, zentrale SEO-/Open-Graph-Metadaten, Breadcrumb- und Organization-Strukturdaten, einen begrenzten realen HTTP-/SEO-Crawler, sichere responsive Bildausgabe mit kontrollierter LCP-Priorisierung, aktualisierte und integritätsgeschützte öffentliche Frontend-Abhängigkeiten, tastatur- und touchbedienbare Navigation mit grundlegenden Accessibility-Regressionsprüfungen, serverseitig consent-gesteuertes öffentliches Analytics und minimierte Conversion-Ereignisse, abgesicherte öffentliche Kontakt-/Anfrage-/Checkout-Übertragungen, grundlegende Response-Header, eine sicherere Staging-Trennung, strikte kanonische Host-/Portauflösung, einheitliche Slug-Erzeugung, automatische interne 301-Weiterleitungen sowie einen geprüften Sicherungs- und isolierten Wiederherstellungskern ist vorbereitet und getestet. Phase 5.2 ist auf Repository-Ebene abgeschlossen; dies ist ausdrücklich keine Freigabe realer DNS-, TLS-, Proxy-, Datenschutz-, WCAG-, Backup-Speicher- oder Aufbewahrungskonfigurationen. Der Gesamtauftrag mit 70 Punkten ist damit nicht vollständig abgeschlossen: Die produktive Umsetzung und Liveprüfung von Zertifikaten, VHosts, Host-/HTTPS-Redirects, Mixed Content und später HSTS, die Betreiberprobe mit vollständigem freigegebenem Snapshot und realer verschlüsselter getrennter Sicherungsablage sowie historischer Alt-URL-Import, tatsächlicher Staging-Crawl, reale Drittanbieter-/Legacy-Inhalte und Deployment-Prozesse bleiben vor einem Livegang verbindlich zu bearbeiten; Bootstrap 5 und ein vollständiger manueller WCAG-2.2-AA-Audit bleiben getrennte Aufgaben.
