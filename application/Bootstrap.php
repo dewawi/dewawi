@@ -202,6 +202,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		$front->registerPlugin(new Application_Plugin_Client());
 		$front->registerPlugin(new Application_Plugin_Translate());
 		$front->registerPlugin(new Application_Plugin_ListResponse());
+		$front->registerPlugin(new Application_Plugin_SecurityHeaders());
 	}
 
 	protected function _initControllerHelpers() {

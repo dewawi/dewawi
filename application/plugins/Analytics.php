@@ -4,6 +4,8 @@ class Application_Plugin_Analytics extends Zend_Controller_Plugin_Abstract
 {
 	public function routeShutdown(Zend_Controller_Request_Abstract $request)
 	{
+		if (!defined('APPLICATION_ENV') || APPLICATION_ENV !== 'production') return;
+
 		$auth = Zend_Auth::getInstance();
 		if($auth->hasIdentity()) {
 			$config = Zend_Registry::get('Config');

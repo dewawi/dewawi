@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
     <title><?php echo $product; ?> - PHP Installer - <?php echo $step; ?></title>
 
     <!-- Framework CSS -->

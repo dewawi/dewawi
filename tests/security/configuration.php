@@ -37,10 +37,11 @@ try {
     foreach (['configs/database.sample.ini', 'install/config/database_template.ini'] as $template) {
         foreach ([false, true] as $override) {
             $database = file_get_contents($root . '/' . $template);
+            $database .= "\n[staging : production]\nresources.db.params.dbname = staging_fixture\n";
             if ($override) $database .= "\n[development : production]\nresources.db.params.dbname = development_fixture\n";
             file_put_contents($temp . '/configs/database.ini', $database);
             $production = parse_ini_string($database, true)['production'];
-            foreach (['unset', '', 'production', 'development'] as $environment) {
+            foreach (['unset', '', 'production', 'staging', 'development'] as $environment) {
                 $pipes = [];
                 $process = proc_open([PHP_BINARY, '-d', 'error_reporting=8191', '-d', 'display_errors=1', '-d', 'display_startup_errors=1', __FILE__, $temp, $environment], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
                 $output = stream_get_contents($pipes[1]);
@@ -50,17 +51,28 @@ try {
                 if (proc_close($process) !== 0) throw new RuntimeException('Entry point failed: ' . $errors . $output);
                 $result = json_decode($output, true, 512, JSON_THROW_ON_ERROR);
                 $debug = $environment === 'development';
-                $expected = $debug ? 'development' : 'production';
+                $expected = $environment === 'staging' ? 'staging' : ($debug ? 'development' : 'production');
                 if ($result['environment'] !== $expected || $result['applicationEnvironment'] !== $expected) throw new RuntimeException('Environment selected outside APPLICATION_ENV');
                 foreach (['display_errors', 'display_startup_errors', 'displayExceptions'] as $setting) {
                     if ($result[$setting] !== $debug) throw new RuntimeException($expected . ': incorrect ' . $setting);
                 }
                 if ($result['bootstrap']['path'] !== $root . '/application/Bootstrap.php') throw new RuntimeException('Development did not inherit production bootstrap');
-                $expectedDatabase = $debug && $override ? 'development_fixture' : $production['resources.db.params.dbname'];
+                $expectedDatabase = $environment === 'staging' ? 'staging_fixture' : ($debug && $override ? 'development_fixture' : $production['resources.db.params.dbname']);
                 if ($result['db']['params']['dbname'] !== $expectedDatabase || $result['db']['params']['host'] !== $production['resources.db.params.host'] || $result['db']['adapter'] !== 'pdo_mysql') throw new RuntimeException('Database options or environment override lost');
                 $checks++;
             }
         }
+
+		$database = file_get_contents($root . '/' . $template);
+		file_put_contents($temp . '/configs/database.ini', $database);
+		$pipes = [];
+		$process = proc_open([PHP_BINARY, '-d', 'display_errors=1', __FILE__, $temp, 'staging'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+		$output = stream_get_contents($pipes[1]);
+		$errors = stream_get_contents($pipes[2]);
+		fclose($pipes[1]);
+		fclose($pipes[2]);
+		if (proc_close($process) === 0 || !str_contains($output . $errors, 'Application error')) throw new RuntimeException('Staging accepted the production database fallback');
+		$checks++;
     }
     echo 'PASS: ' . $checks . " entry point cases (safe defaults, explicit development, inherited options, legacy database configurations and environment overrides)\n";
 } finally {

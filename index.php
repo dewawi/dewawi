@@ -62,9 +62,17 @@ try {
 
 	// Keep existing production-only database configurations usable in development.
 	$databaseConfig = new Zend_Config_Ini(BASE_PATH . '/configs/database.ini');
+	$databaseEnvironment = $databaseConfig->get(APPLICATION_ENV);
+	if (!$databaseEnvironment) {
+		if (APPLICATION_ENV !== 'development') throw new RuntimeException('Database configuration is missing for ' . APPLICATION_ENV);
+		$databaseEnvironment = $databaseConfig->production;
+	}
+	if (APPLICATION_ENV === 'staging' && $databaseEnvironment->toArray() === $databaseConfig->production->toArray()) {
+		throw new RuntimeException('Staging must not use the production database configuration');
+	}
 	$application = new Zend_Application(
 		APPLICATION_ENV,
-		array_merge($databaseConfig->get(APPLICATION_ENV, $databaseConfig->production)->toArray(), array(
+		array_merge($databaseEnvironment->toArray(), array(
 			'config' => BASE_PATH . '/configs/application.ini'
 		))
 	);
