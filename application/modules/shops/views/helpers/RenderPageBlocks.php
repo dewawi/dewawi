@@ -15,6 +15,7 @@ class Zend_View_Helper_RenderPageBlocks extends Zend_View_Helper_Abstract
 
 		foreach ($blocks as $block) {
 			$type = (string)($block['type'] ?? '');
+			$priorityImage = in_array($type, ['hero', 'image_text'], true) && $html === '';
 
 			$definition = DEEC_Site_Block::getDefinition($type);
 
@@ -53,6 +54,7 @@ class Zend_View_Helper_RenderPageBlocks extends Zend_View_Helper_Abstract
 				'images' => is_array($this->view->images ?? null) ? $this->view->images : [],
 				'contact' => $this->view->contact ?? null,
 				'headingLevel' => $headingLevel,
+				'priorityImage' => $priorityImage,
 			]);
 		}
 

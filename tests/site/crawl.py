@@ -74,6 +74,11 @@ class ParsedHtml(HTMLParser):
             self.images.append({
                 "src": values.get("src"),
                 "srcset": values.get("srcset"),
+                "sizes": values.get("sizes"),
+                "width": values.get("width"),
+                "height": values.get("height"),
+                "loading": (values.get("loading") or "").lower(),
+                "fetchpriority": (values.get("fetchpriority") or "").lower(),
                 "alt_present": "alt" in values,
                 "alt": values.get("alt") or "",
                 "role": (values.get("role") or "").lower(),
@@ -446,10 +451,26 @@ class SiteCrawler:
                     value = candidate.strip().split()[0] if candidate.strip() else ""
                     if value:
                         self.record_resource("image", value, page_url)
+                if not image["sizes"]:
+                    self.add_finding("warning", "performance", "image_sizes_missing", page_url, f"Responsive image has no sizes attribute: {src or '[missing src]'}")
+            width = image["width"]
+            height = image["height"]
+            if (width is None) != (height is None):
+                self.add_finding("error", "performance", "image_dimensions_incomplete", page_url, f"Image has only one dimension: {src or '[missing src]'}")
+            elif width is None and not re.search(r"\.svg(?:$|[?#])", src or "", re.I):
+                self.add_finding("warning", "performance", "image_dimensions_missing", page_url, f"Raster image has no intrinsic dimensions: {src or '[missing src]'}")
+            elif width is not None and (not width.isdigit() or not height.isdigit() or int(width) < 1 or int(height) < 1):
+                self.add_finding("error", "performance", "image_dimensions_invalid", page_url, f"Image dimensions are not positive integers: {src or '[missing src]'}")
+            if image["fetchpriority"] == "high" and image["loading"] == "lazy":
+                self.add_finding("error", "performance", "priority_image_lazy", page_url, f"High-priority image is lazy loaded: {src or '[missing src]'}")
             if not image["alt_present"]:
                 self.add_finding("error", "accessibility", "image_alt_missing", page_url, f"Image has no alt attribute: {src or '[missing src]'}")
             elif image["alt"].strip() == "" and image["role"] not in {"presentation", "none"} and "decorative" not in image["class"].lower():
                 self.add_finding("warning", "accessibility", "image_alt_empty", page_url, f"Possibly informative image has an empty alt attribute: {src or '[missing src]'}")
+
+        high_priority = [image for image in parser.images if image["fetchpriority"] == "high"]
+        if len(high_priority) > 1:
+            self.add_finding("warning", "performance", "priority_image_multiple", page_url, f"Found {len(high_priority)} high-priority images; only the actual LCP candidate should be prioritized")
 
         for kind, value in parser.resources:
             self.record_resource(kind, value, page_url)

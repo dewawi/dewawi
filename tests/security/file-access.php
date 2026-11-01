@@ -303,10 +303,16 @@ $responsive = $siteImage->SiteImage('/media/images/responsive.png', 'Pump & "Saf
 check(str_contains($responsive, 'src="/media/images/responsive.png"') && str_contains($responsive, 'width="1200"') && str_contains($responsive, 'height="600"'), 'Public image path or dimensions are missing or incorrect');
 check(str_contains($responsive, '/media/images/300/responsive.png 300w') && str_contains($responsive, '/media/images/500/responsive.png 500w') && str_contains($responsive, '/media/images/responsive.png 1200w'), 'Existing responsive variants are missing');
 check(!str_contains($responsive, '/800/responsive.png') && !str_contains($responsive, '/1000/responsive.png'), 'Missing or wrong-aspect variants were advertised');
-check(str_contains($responsive, 'sizes="50vw"') && str_contains($responsive, 'loading="lazy"'), 'Responsive sizes or lazy loading are missing');
+check(str_contains($responsive, 'sizes="50vw"') && str_contains($responsive, 'loading="lazy"') && str_contains($responsive, 'decoding="async"'), 'Responsive sizes, lazy loading or asynchronous decoding are missing');
 check(str_contains($responsive, 'alt="Pump &amp; &quot;Safe&quot;"') && str_contains($responsive, 'class="img-fluid"'), 'Image attributes are not safely escaped');
 $critical = $siteImage->SiteImage('/media/images/responsive.png', '', ['loading' => false, 'fetchpriority' => 'high', 'sizes' => '100vw']);
-check(str_contains($critical, 'alt=""') && str_contains($critical, 'fetchpriority="high"') && !str_contains($critical, 'loading='), 'Critical or decorative image semantics are incorrect');
+check(str_contains($critical, 'alt=""') && str_contains($critical, 'fetchpriority="high"') && !str_contains($critical, 'loading=') && !str_contains($critical, 'decoding='), 'Critical or decorative image semantics are incorrect');
+$imageView->setScriptPath($root . '/application/modules/shops/views/scripts');
+$imageView->addHelperPath($root . '/application/modules/shops/views/helpers', 'Zend_View_Helper');
+$primaryHero = $imageView->partial('page/blocks/hero.phtml', ['data' => ['image' => '/media/images/responsive.png'], 'priorityImage' => true]);
+$laterHero = $imageView->partial('page/blocks/hero.phtml', ['data' => ['image' => '/media/images/responsive.png'], 'priorityImage' => false]);
+check(str_contains($primaryHero, 'fetchpriority="high"') && !str_contains($primaryHero, 'loading=')
+    && str_contains($laterHero, 'loading="lazy"') && !str_contains($laterHero, 'fetchpriority='), 'CMS hero priority is not limited to the initial media block');
 check(hash_file('sha256', BASE_PATH . '/media/7/0/7/images/responsive.png') === $originalHash, 'Responsive rendering changed the original image');
 check($siteImage->SiteImage('/media/images/missing.png', 'Missing') === '' && $siteImage->SiteImage('https://foreign.invalid/image.png', 'Foreign') === '' && $siteImage->SiteImage('/media/images/../header/logo.png', 'Traversal') === '', 'Invalid image source was rendered');
 

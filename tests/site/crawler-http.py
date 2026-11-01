@@ -177,6 +177,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
             h1 = "404 Not Found"
         elif scenario == "asset":
             link = f'<script src="/{scenario}/missing.js"></script><img src="/{scenario}/image.png">'
+        elif scenario == "performance":
+            link = f'<img src="/{scenario}/image.png" width="800" height="450" alt="Second" fetchpriority="high">'
 
         headers = {"X-Robots-Tag": "noindex, nofollow"} if noindex else {}
         self.send_text(
@@ -190,6 +192,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 json_ld=json_ld,
                 image=image,
                 noindex=noindex,
+                image_attributes='width="1200" height="675" loading="lazy" fetchpriority="high" srcset="image.png 1200w"' if scenario == "performance" else 'width="1200" height="675" loading="lazy" decoding="async"',
             ),
             headers=headers,
             head=head,
@@ -207,6 +210,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
         json_ld: str | None = None,
         image: str = "image.png",
         noindex: bool = False,
+        image_attributes: str = 'width="1200" height="675" loading="lazy" decoding="async"',
     ) -> str:
         current = f"{self.base_url}{path}"
         if path.endswith(f"/{scenario}"):
@@ -235,7 +239,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
 <meta property="og:url" content="{current}"><meta property="og:image" content="{self.base_url}/{scenario}/{image}">
 <link rel="stylesheet" href="/{scenario}/site.css"><script src="/{scenario}/site.js"></script>
 <script type="application/ld+json">{structured}</script></head>
-<body><h1>{h1}</h1>{body}<img src="/{scenario}/{image}" alt="Fixture image"></body></html>"""
+<body><h1>{h1}</h1>{body}<img src="/{scenario}/{image}" alt="Fixture image" {image_attributes}></body></html>"""
 
     @staticmethod
     def sitemap(entries: list[str]) -> str:
@@ -318,6 +322,10 @@ try:
     check("soft_404" in codes(run("soft404")), "Soft 404 was not detected")
     asset_codes = codes(run("asset"))
     check("asset_missing" in asset_codes and "image_alt_missing" in asset_codes, "Missing asset or image alt attribute was not detected")
+    performance_codes = codes(run("performance"))
+    check("priority_image_lazy" in performance_codes, "Lazy-loaded priority image was not detected")
+    check("priority_image_multiple" in performance_codes, "Multiple high-priority images were not detected")
+    check("image_sizes_missing" in performance_codes, "Responsive image without sizes was not detected")
 
     noindex = run("noindex", expected_indexable=False)
     check(noindex["summary"]["errors"] == 0, f"Correct noindex website has errors: {noindex['findings']}")

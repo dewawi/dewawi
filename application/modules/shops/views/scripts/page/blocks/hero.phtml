@@ -10,14 +10,15 @@ $buttonLabel2 = trim((string)($this->data['buttonlabel2'] ?? ''));
 $buttonUrl2 = trim((string)($this->data['buttonurl2'] ?? ''));
 $trust = trim((string)($this->data['trust'] ?? ''));
 $headingLevel = (int)($this->headingLevel ?? 2) === 1 ? 1 : 2;
+$priorityImage = !empty($this->priorityImage);
 
 foreach (['buttonUrl', 'buttonUrl2'] as $variable) {
 	if ($$variable !== '' && preg_match('~^[a-z][a-z0-9+.-]*:~i', $$variable) && !preg_match('~^(https?|mailto|tel):~i', $$variable)) $$variable = '';
 }
 
 $imageHtml = $image !== '' ? $this->SiteImage($image, '', [
-	'loading' => false,
-	'fetchpriority' => 'high',
+	'loading' => $priorityImage ? false : 'lazy',
+	'fetchpriority' => $priorityImage ? 'high' : '',
 	'sizes' => '100vw',
 ]) : '';
 $secondaryButtonClass = $imageHtml !== '' ? 'btn-outline-light' : 'btn-outline-primary';

@@ -30,6 +30,7 @@ class Zend_View_Helper_SiteImage extends Zend_View_Helper_Abstract
 			if (isset($options[$name]) && $options[$name] !== '') $attributes[$name] = (string)$options[$name];
 		}
 		if (($options['loading'] ?? 'lazy') === 'lazy') $attributes['loading'] = 'lazy';
+		if (isset($attributes['loading'])) $attributes['decoding'] = 'async';
 		if (($options['fetchpriority'] ?? '') === 'high') $attributes['fetchpriority'] = 'high';
 
 		$html = '<img';

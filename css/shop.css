@@ -659,7 +659,8 @@ footer {
 }
 
 .main-image-wrapper {
-	height: 400px; /* Set the desired height for the main image wrapper */
+	height: auto;
+	aspect-ratio: 4 / 3;
 	width: 100%; /* Ensure the wrapper takes up the full width */
 	display: flex;
 	justify-content: center; /* Center horizontally */
@@ -690,7 +691,8 @@ footer {
 }
 
 .modal-image-wrapper {
-	height: 800px; /* Set the desired height for the modal image wrapper */
+	height: 80vh;
+	max-height: 800px;
 	display: flex;
 	justify-content: center; /* Center horizontally */
 	align-items: center; /* Center vertically */

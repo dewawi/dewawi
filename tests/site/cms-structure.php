@@ -148,5 +148,13 @@ foreach ($imageTemplates as $template) {
 $mediaConfig = file_get_contents($root . '/library/MediaManager/config/config.php');
 checkCms(str_contains($mediaConfig, "'relative_image_creation'                 => true")
 	&& str_contains($mediaConfig, "array( '300/', '500/', '800/', '1000/' )"), 'Managed media uploads no longer create the fixed responsive variants');
+$pageRenderer = file_get_contents($root . '/application/modules/shops/views/helpers/RenderPageBlocks.php');
+$heroTemplate = file_get_contents($root . '/application/modules/shops/views/scripts/page/blocks/hero.phtml');
+$shopCss = file_get_contents($root . '/css/shop.css');
+$siteLayoutSource = file_get_contents($root . '/application/layouts/scripts/site.phtml');
+checkCms(str_contains($pageRenderer, "in_array(\$type, ['hero', 'image_text'], true) && \$html === ''")
+	&& str_contains($heroTemplate, "'fetchpriority' => \$priorityImage ? 'high' : ''"), 'CMS images can prioritize more than the first visible media block');
+checkCms(str_contains($shopCss, '.main-image-wrapper {') && str_contains($shopCss, 'aspect-ratio: 4 / 3;'), 'Product media does not reserve a responsive aspect ratio');
+checkCms(!str_contains($siteLayoutSource, 'as="image"'), 'Public layout preloads an image without a page-specific responsive source');
 
 echo 'PASS: ' . $checks . " CMS block, CTA, theme and 404 structure cases\n";

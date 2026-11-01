@@ -5,11 +5,14 @@ $text = trim((string)($this->data['text'] ?? ''));
 $image = trim((string)($this->data['image'] ?? ''));
 $imageAlt = trim((string)($this->data['imagealt'] ?? ''));
 $imagePosition = ($this->data['imageposition'] ?? 'left') === 'right' ? 'right' : 'left';
+$priorityImage = !empty($this->priorityImage);
 
 $imageClass = $imagePosition === 'right' ? ' order-md-2' : '';
 $textClass = $imagePosition === 'right' ? ' order-md-1' : '';
 $imageHtml = $image !== '' ? $this->SiteImage($image, $imageAlt, [
 	'class' => 'dw-site-block__image img-fluid',
+	'loading' => $priorityImage ? false : 'lazy',
+	'fetchpriority' => $priorityImage ? 'high' : '',
 	'sizes' => '(max-width: 767.98px) 100vw, 50vw',
 ]) : '';
 ?>
