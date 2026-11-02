@@ -206,10 +206,12 @@ check(str_contains($structure, 'clientid_status_shopid_formid_deleted'), 'Inquir
 
 $contactSource = file_get_contents($root.'/application/modules/contacts/models/DbTable/Contact.php');
 $shopController = file_get_contents($root.'/application/modules/shops/controllers/InquiryController.php');
+$inquiryDataSource = file_get_contents($root.'/application/modules/shops/models/DbTable/Inquirydata.php');
 $workflowSource = file_get_contents($root.'/application/modules/contacts/services/InquiryWorkflow.php');
 check(str_contains($contactSource, "cpe.controller = \\'contactperson\\'") && str_contains($contactSource, 'OR cpe.email LIKE'), 'Contact suggestions do not search contact-person email addresses');
 check(str_contains($contactSource, 'a2.clientid = c.clientid') && str_contains($contactSource, 'a2.deleted = 0'), 'Contact suggestion address join is not tenant/deletion scoped');
-check(str_contains($shopController, 'linkInquiryQuote((int)$stored[\'id\'], (int)$quoteId)'), 'Automatic shop quote is not linked to its inquiry');
+check(str_contains($shopController, 'linkQuoteIfEmpty($inquiryId, $contactRowId, $quoteId)'), 'Automatic shop quote is not linked to its inquiry');
+check(str_contains($inquiryDataSource, "'(quoteid IS NULL OR quoteid = 0)'") && str_contains($inquiryDataSource, 'getEntityWhere($id)'), 'Automatic shop quote link is not tenant-scoped and conditional');
 check(str_contains($workflowSource, 'return $count === 1 ? $item : null;'), 'Ambiguous SKUs are not excluded from quote position suggestions');
 check(!str_contains($workflowSource, 'saveQuote(') && !str_contains($workflowSource, 'DEEC_Pdf') && !str_contains($workflowSource, 'sendEmail'), 'Inquiry quote workflow finalizes or sends a draft');
 

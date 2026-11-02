@@ -4,6 +4,12 @@ class Shops_Model_DbTable_Template extends DEEC_Model_DbTable_SiteEntity
 {
 	protected $_name = 'template';
 	protected ?string $siteField = null;
+	protected ?string $publicField = 'activated';
+
+	public function getTemplate(int $id): ?array
+	{
+		return $this->getPublicById($id);
+	}
 
 	public function getPrimaryTemplate(): array
 	{

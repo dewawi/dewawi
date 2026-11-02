@@ -61,4 +61,15 @@ class Shops_Model_DbTable_Inquirydata extends DEEC_Model_DbTable_SiteEntity
 
 		return $row ? $row->toArray() : null;
 	}
+
+	public function linkQuoteIfEmpty(int $id, int $contactId, int $quoteId): bool
+	{
+		$where = $this->getEntityWhere($id);
+		$where[] = '(quoteid IS NULL OR quoteid = 0)';
+
+		return $this->update($this->prepareUpdateData([
+			'contactid' => $contactId,
+			'quoteid' => $quoteId,
+		]), $where) === 1;
+	}
 }

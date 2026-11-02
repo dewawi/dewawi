@@ -268,7 +268,7 @@ class DEEC_Pdf
 		$pages = [];
 
 		if (!empty($settings['showCover'])) {
-			$coverY = $this->renderCoverAndMeta($pdf, $document, $template, $controller);
+			$coverY = $this->renderCoverAndMeta($pdf, $document, $template, $controller, $payload['contact'] ?? []);
 
 			$pages['product_start'] = $pdf->getPage();
 			$this->renderProductDescription($pdf, $positions);
@@ -278,7 +278,7 @@ class DEEC_Pdf
 				$this->renderIncludedOptions($pdf, $positions, $options, $optionSets);
 			}
 		} else {
-			$this->renderCompactHeader($pdf, $document, $template, $controller, $website);
+			$this->renderCompactHeader($pdf, $document, $template, $controller, $website, $payload['contact'] ?? []);
 		}
 
 		$pages['offer_start'] = $pdf->getPage();
@@ -460,14 +460,8 @@ class DEEC_Pdf
 		return $dir1.'/'.$dir2.'/'.$clientId.'/'.$c1.'/'.$c2.'/'.$contactId.'/';
 	}
 
-	private function renderCompactHeader(TCPDF $pdf, array $document, array $template, string $controller, string $website = '')
+	private function renderCompactHeader(TCPDF $pdf, array $document, array $template, string $controller, string $website = '', array $contact = [])
 	{
-		$contact = null;
-		if (!empty($document['contactid'])) {
-			$contactDb = new Contacts_Model_DbTable_Contact();
-			$contact = $contactDb->getContactWithID((int)$document['contactid']);
-		}
-
 		$docIdField = $this->getDocumentIdField($controller);
 		$docDateField = $this->getDocumentDateField($controller);
 
@@ -619,14 +613,8 @@ class DEEC_Pdf
 	 * Renders the first page: headline, meta box (id/date/customer/etc),
 	 * letterhead, billing/shipping address, subject/reference, intro text.
 	 */
-	private function renderCoverAndMeta(TCPDF $pdf, array $document, array $template, $controller)
+	private function renderCoverAndMeta(TCPDF $pdf, array $document, array $template, $controller, array $contact = [])
 	{
-		$contact = null;
-		if (!empty($document['contactid'])) {
-			$cDb = new Contacts_Model_DbTable_Contact();
-			$contact = $cDb->getContactWithID($document['contactid']);
-		}
-
 		$docIdField = $this->getDocumentIdField($controller);
 		$documentId = $document[$docIdField] ?? '';
 		$docDateField = $this->getDocumentDateField($controller);

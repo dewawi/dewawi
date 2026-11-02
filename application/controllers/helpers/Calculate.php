@@ -2,7 +2,7 @@
 
 class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Action_Helper_Abstract
 {
-	public function direct(int $id, string $module, string $controller)
+	public function direct(int $id, string $module, string $controller, ?int $clientId = null)
 	{
 		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
 		$classPos = $class . 'pos';
@@ -13,8 +13,13 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 			);
 		}
 
-		$client = Zend_Registry::get('Client');
-		$owner = (int)($client['modules'][$module] ?? $client['id']);
+		if ($clientId !== null) {
+			$owner = $clientId;
+		} else {
+			$client = Zend_Registry::get('Client');
+			$owner = (int)($client['modules'][$module] ?? $client['id']);
+		}
+		if ($owner <= 0) throw new RuntimeException('Client context is missing');
 		$objectDb = (new $class())->setClientId($owner);
 		$object = $objectDb->getById($id);
 
@@ -26,7 +31,7 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 
 		$positionsDb = (new $classPos())->setClientId($owner);
 		$positions = $positionsDb->getPositions($id);
-		$calculations = $this->calculate($object, $positions, $module, $controller);
+		$calculations = $this->calculate($object, $positions, $module, $controller, $owner);
 
 		foreach ($positions as $position) {
 			$positionsDb->updatePosition($position->id, ['total' => $calculations['row'][$position->id]['gross']]);
@@ -41,13 +46,13 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 		return $calculations;
 	}
 
-	public function calculate(array $object, $positions, string $module, string $controller): array
+	public function calculate(array $object, $positions, string $module, string $controller, ?int $clientId = null): array
 	{
 		$calculations = ['row' => ['subtotal' => 0, 'taxes' => []], 'locale' => []];
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
 		$currency = $currencyHelper->getCurrency($object['currency'], 'USE_SYMBOL');
 		$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
-		$prices = $priceRuleHelper->usePriceRulesOnPositions($positions, $module, $controller . 'pos');
+		$prices = $priceRuleHelper->usePriceRulesOnPositions($positions, $module, $controller . 'pos', $clientId);
 
 		foreach ($positions as $position) {
 			$price = $prices['calculated'][$position->id];

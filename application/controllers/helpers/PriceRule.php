@@ -3,9 +3,10 @@
 class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Action_Helper_Abstract
 {
 
-	public function getPriceRulePositions($module, $parent, $parentid) {
+	public function getPriceRulePositions($module, $parent, $parentid, ?int $clientId = null) {
 		//Get price rule positions
 		$pricerulesDb = new Items_Model_DbTable_Pricerulepos();
+		if ($clientId !== null) $pricerulesDb->setClientId($clientId);
 		$positions = $pricerulesDb->getByParentId($parentid, $module, $parent);
 		return $positions;
 	}
@@ -27,7 +28,7 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 		return $price;
 	}
 
-	public function usePriceRulesOnPositions($positions, $module, $parent) {
+	public function usePriceRulesOnPositions($positions, $module, $parent, ?int $clientId = null) {
 		//Use price rules on all positions
 		$price = array();
 		$price['rules'] = array();
@@ -36,7 +37,7 @@ class Application_Controller_Action_Helper_PriceRule extends Zend_Controller_Act
 		foreach($positions as $position) {
 			//Get price rules and properties
 			if(!$position->masterid) {
-				$price['rules'][$position->id] = $this->getPriceRulePositions($module, $parent, $position->id);
+				$price['rules'][$position->id] = $this->getPriceRulePositions($module, $parent, $position->id, $clientId);
 				$price['master'][$position->id] = $position->pricerulemaster;
 			}
 		}

@@ -1,6 +1,7 @@
 <?php
 $this->title = $this->translate('SHOPS_ACCOUNTS');
 $this->headTitle($this->title);
+$offerStatus = $this->offerStatus ?? null;
 ?>
 
 <section id="success" class="py-5">
@@ -23,6 +24,17 @@ $this->headTitle($this->title);
 				<?php endif; ?>
 			</div>
 		</div>
+
+		<?php if (!empty($this->downloadUrl)): ?>
+			<div class="alert alert-success">
+				<strong>Ihr Angebot ist fertig.</strong>
+				<a href="<?php echo $this->escape($this->downloadUrl); ?>" target="_blank" rel="noopener">PDF herunterladen</a>
+			</div>
+		<?php elseif ($offerStatus === 'quote_failed'): ?>
+			<div class="alert alert-warning">Ihre Anfrage wurde gespeichert, das Angebot konnte jedoch noch nicht erstellt werden. Bitte senden Sie die Anfrage nicht erneut.</div>
+		<?php elseif ($offerStatus === 'pdf_failed'): ?>
+			<div class="alert alert-warning">Ihr Angebot wurde erstellt, das PDF ist derzeit jedoch nicht verfügbar. Bitte senden Sie die Anfrage nicht erneut.</div>
+		<?php endif; ?>
 
 		<!-- Accordion to display form data -->
 		<div class="accordion mt-4" id="accordionExample">

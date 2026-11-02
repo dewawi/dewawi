@@ -33,6 +33,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 					$this->formDataSession->requestValues,
 					$this->formDataSession->downloadUrl,
 					$this->formDataSession->downloadFile,
+					$this->formDataSession->offerStatus,
 					$this->formDataSession->submittedData,
 					$this->formDataSession->inquiryToken,
 					$this->formDataSession->lastInquiryToken,
@@ -128,7 +129,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 				if ($existing) {
 					$data = json_decode((string)$existing['data'], true);
-					$this->completeInquiry(is_array($data) ? $data : [], null, null, true, $submittedToken);
+					$result = $this->restoreInquiryResult($existing);
+					$this->completeInquiry(is_array($data) ? $data : [], $result['url'], null, true, $submittedToken, $result['status']);
 
 					return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
 				}
@@ -292,7 +294,9 @@ class Shops_InquiryController extends Shops_Controller_Action
 			}
 
 			if (!$stored['inserted']) {
-				$this->completeInquiry($allFormValues, null, null, true, $submittedToken);
+				$existing = $inquiryDb->getByToken($submittedToken);
+				$result = $existing ? $this->restoreInquiryResult($existing) : ['url' => null, 'status' => null];
+				$this->completeInquiry($allFormValues, $result['url'], null, true, $submittedToken, $result['status']);
 
 				return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
 			}
@@ -302,29 +306,19 @@ class Shops_InquiryController extends Shops_Controller_Action
 			// Auto-create quote if a SKU was provided
 			$quoteId = null;
 			$pdfInfo = [];
+			$offerStatus = trim((string)($allFormValues['sku'] ?? '')) === '' ? null : 'quote_failed';
 
 			try {
-				$quoteId = $this->createQuoteFromInquiry($allFormValues, $shop);
+				$quoteId = $this->createQuoteFromInquiry($allFormValues, (int)$stored['id']);
 			} catch (Throwable $e) {
 				error_log('Stored shop inquiry could not create a quote: ' . $e->getMessage());
 			}
 
 			if ($quoteId) {
+				$offerStatus = 'pdf_failed';
 				try {
-					$this->linkInquiryQuote((int)$stored['id'], (int)$quoteId);
-				} catch (Throwable $e) {
-					error_log('Stored shop inquiry quote could not be linked: ' . $e->getMessage());
-				}
-			}
-
-			if ($quoteId) {
-				try {
-					$pdfInfo = (new DEEC_Pdf())->generate([
-						'module' => 'shops',
-						'controller' => 'quote',
-						'documentId' => $quoteId,
-						'output' => 'file',
-					]);
+					$pdfInfo = $this->generateQuotePdf((int)$quoteId);
+					$offerStatus = 'ready';
 				} catch (Throwable $e) {
 					error_log('Stored shop inquiry quote PDF could not be generated: ' . $e->getMessage());
 				}
@@ -332,17 +326,12 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 			$notificationSent = $this->sendInquiryNotification($allFormValues);
 			if ($quoteId && !empty($pdfInfo['path'])) {
-				DEEC_Emailattachment::checkPath($pdfInfo['path']);
-				$this->formDataSession->downloadFile = ['siteid' => (int)$this->_siteContext->getSiteId(), 'clientid' => (int)$this->_siteContext->getClientId(), 'quoteid' => (int)$quoteId, 'relative' => substr($pdfInfo['path'], strlen(realpath(BASE_PATH)) + 1)];
-			}
-
-			if ($quoteId && !empty($pdfInfo['path'])) {
 				if (!$this->sendOfferNotification($allFormValues, (string)$pdfInfo['path'])) {
 					$notificationSent = false;
 				}
 			}
 
-			$this->completeInquiry($allFormValues, $pdfInfo['url'] ?? null, $notificationSent, false, $submittedToken);
+			$this->completeInquiry($allFormValues, $pdfInfo['url'] ?? null, $notificationSent, false, $submittedToken, $offerStatus);
 
 			return $this->_helper->redirector->gotoRoute([], 'inquiry_success', true);
 		}
@@ -358,6 +347,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$this->view->downloadUrl = $this->formDataSession->downloadUrl ?? null;
 		$this->view->notificationSent = $this->formDataSession->notificationSent ?? null;
 		$this->view->duplicate = $this->formDataSession->duplicate ?? false;
+		$this->view->offerStatus = $this->formDataSession->offerStatus ?? null;
 		if (!$this->view->formData) {
 			if ($this->getRequest()->isXmlHttpRequest()) {
 				$this->getResponse()->setHttpResponseCode(400);
@@ -376,6 +366,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				'downloadUrl' => $this->view->downloadUrl,
 				'notificationSent' => $this->view->notificationSent,
 				'duplicate' => $this->view->duplicate,
+				'offerStatus' => $this->view->offerStatus,
 			]);
 
 			$this->_helper->json([
@@ -628,12 +619,13 @@ class Shops_InquiryController extends Shops_Controller_Action
 		}
 	}
 
-	protected function completeInquiry(array $data, ?string $downloadUrl, ?bool $notificationSent, bool $duplicate, ?string $completedToken = null): void
+	protected function completeInquiry(array $data, ?string $downloadUrl, ?bool $notificationSent, bool $duplicate, ?string $completedToken = null, ?string $offerStatus = null): void
 	{
 		$this->formDataSession->submittedData = $data;
 		$this->formDataSession->downloadUrl = $downloadUrl;
 		$this->formDataSession->notificationSent = $notificationSent;
 		$this->formDataSession->duplicate = $duplicate;
+		$this->formDataSession->offerStatus = $offerStatus;
 		$this->formDataSession->lastInquiryToken = $completedToken ?? $this->inquiryToken;
 		$this->formDataSession->inquiryToken = bin2hex(random_bytes(16));
 		$this->inquiryToken = (string)$this->formDataSession->inquiryToken;
@@ -725,230 +717,213 @@ class Shops_InquiryController extends Shops_Controller_Action
 		return $matches;
 	}
 
-	/**
-	 * Existing optional auto-quote flow, invoked only after the inquiry was inserted:
-	 * resolve SKU and defaults, resolve/create the contact and address, create quote and
-	 * position, calculate totals, then finalize number and filename. PDF generation and
-	 * both notification emails remain in indexAction after this method returns a quote ID.
-	 */
-	private function createQuoteFromInquiry(array $data, array $shop)
+	protected function createQuoteFromInquiry(array $data, int $inquiryId): ?int
 	{
-		// need: sku (required), qty (optional), title (optional)
 		$sku = trim((string)($data['sku'] ?? ''));
 		if ($sku === '') return null;
+		if (!$this->isValidSuggestedSku($sku)) throw new RuntimeException('Selected item is no longer available');
 
-		$qty = (float)($data['quantity'] ?? 1);
-		if ($qty <= 0) $qty = 1;
+		$quantity = self::parseDecimal($data['quantity'] ?? 1);
+		if ($quantity === null || $quantity <= 0) throw new RuntimeException('Invalid quote quantity');
 
-		// 1) Find the item by SKU
-		$itemDb = new Shops_Model_DbTable_Item();
-		$item = $itemDb->getItemBySku($sku);
-		if (!$item) return null; // invalid sku, silently skip
-
-		// 2) Pick defaults (currency/language/template) like Sales_QuoteController::addAction()
-		$currencyDb = new Shops_Model_DbTable_Currency();
-		$currency = $currencyDb->getPrimaryCurrency();
-
-		$langDb = new Shops_Model_DbTable_Language();
-		$lang = $langDb->getPrimaryLanguage();
-
-		$tplDb = new Shops_Model_DbTable_Template();
-		$tpl = $tplDb->getPrimaryTemplate();
-
-		$formRow = $this->formRow ?? [];
-
-		// 3) (Optional) resolve/create a contact from inquiry data
-		// adjust to your real fields!
-		$contactId = 0;
-		$contactRowId = 0;
-		if (!empty($data['email'])) {
- 	 		$emailDb = new Shops_Model_DbTable_Email();
- 	 		$contactRowId = (int)$emailDb->findContactIdByEmail($data['email']);
-
-		 	// auto-create if not found
-		 	if ($contactRowId === 0) {
-		 	 	try {
-					//Set new quote Id
-					$incrementDb = new Shops_Model_DbTable_Increment();
-					$contactId = $incrementDb->getIncrement('contactid');
-					$incrementDb->setIncrement(($contactId), 'contactid');
-
-					$contactData = [
-		 	 	 	 	'catid' => 0,
-		 	 	 	 	'name1' => trim($data['firma']),
-		 	 	 	 	'name2' => trim($data['ansprechpartner']),
-		 	 	 	 	'contactid' => $contactId
-		 	 	 	];
-		 	 	 	$contactDb = new Shops_Model_DbTable_Contact();
-		 	 	 	$contactRowId = $contactDb->addContact($contactData);
-
-					//Add address
-					$addressDb = new Shops_Model_DbTable_Address();
-					$addressDb->addAddress($contactRowId, [
-						'type' => 'billing',
-						'street' => trim($data['adresse']),
-						'postcode' => trim($data['plz']),
-						'city' => trim($data['stadt']),
-						'country' => 'DE',
-						'ordering' => 1,
-					]);
-
-		 	 	 	// attach email row
-					$password = password_hash(bin2hex(openssl_random_pseudo_bytes(5)), PASSWORD_DEFAULT);
-		 	 	 	$emailDb->addEmail([
-		 	 	 	 	'module' => 'contacts',
-		 	 	 	 	'controller' => 'contact',
-		 	 	 	 	'parentid' => $contactRowId,
-		 	 	 	 	'ordering' => 1,
-		 	 	 	 	'email' => trim($data['email']),
-		 	 	 	 	'password' => $password,
-		 	 	 	]);
-		 	 	} catch (\Exception $e) {
-		 	 	 	return;
-		 	 	}
-		 	} else {
-	 	 	 	$contactDb = new Shops_Model_DbTable_Contact();
-	 	 	 	$contact = $contactDb->getContact($contactRowId);
-				$contactId = $contact['contactid'];
-			}
+		$item = (new Shops_Model_DbTable_Item())->getItemBySku($sku);
+		if (!$item || !(new Shops_Model_DbTable_Category())->getCategory((int)($item['shopcatid'] ?? 0))) {
+			throw new RuntimeException('Selected item is no longer public');
 		}
 
-		// choose special price if available
-		$basePrice = isset($item['specialprice']) && $item['specialprice'] > 0
+		$currency = (new Shops_Model_DbTable_Currency())->getPrimaryCurrency();
+		$language = trim((string)($this->formRow['language'] ?? ''));
+		if ($language === '') $language = (string)(new Shops_Model_DbTable_Language())->getPrimaryLanguage()['code'];
+		$templateDb = new Shops_Model_DbTable_Template();
+		$templateId = (int)($this->formRow['quotetemplateid'] ?? 0);
+		$template = $templateId > 0 ? $templateDb->getTemplate($templateId) : $templateDb->getPrimaryTemplate();
+		if (!$template) throw new RuntimeException('Configured quote template is unavailable');
+
+		$price = !empty($item['specialprice']) && (float)$item['specialprice'] > 0
 			? (float)$item['specialprice']
 			: (float)($item['price'] ?? 0);
-
-		if ($contactId) {
-			// Create the quote
-			$quoteDb = new Shops_Model_DbTable_Quote();
-			$quoteId = (int)$quoteDb->addQuote([
-			 	'title' => $data['titel'] ?? ($item['title'] ?? 'Angebot'),
-			 	'reference' => $data['projektname'],
-			 	'currency' => $currency['code'],
-			 	'state' => 100,
-			 	'header' => $formRow['quoteheader'] ?? null,
-			 	'footer' => $formRow['quotefooter'] ?? null,
-			 	'contactid' => $contactId,
-			 	'subtotal' => $basePrice ?? 0,
-			 	'taxes' => $basePrice * 0.19,
-			 	'total' => $basePrice * 1.19,
-			 	'language' => $formRow['language'] ?? $lang['code'],
-			 	'contactperson' => 'System',
-			 	'templateid' => (int)($formRow['quotetemplateid'] ?? 0) ?: $tpl['id'],
-			]);
-
-			$this->applyContactToQuote($quoteId, $contactId);
-
-			// 5) Add one position with the item
-			$posDb = new Shops_Model_DbTable_Quotepos();
-			$posDb->addPosition([
-			 	'parentid' => $quoteId,
-			 	'itemid' => (int)$item['id'],
-			 	'possetid' => 0,
-			 	'sku' => $item['sku'],
-			 	'title' => $item['title'],
-			 	'description' => $item['description'] ?? '',
-			 	'price' => $basePrice,
-			 	'taxrate' => 19.0000,
-			 	'total' => $basePrice,
-			 	'quantity' => $qty,
-			 	'uom' => 'Stück',
-			 	'currency' => $currency['code'],
-			 	'ordering' => 1,
-			]);
-
-			// trigger calculation once so totals are set
-			try {
-			 	$this->_helper->Calculate($quoteId, 'sales', 'quote');
-			} catch (Exception $e) {}
-
-			$quote = $quoteDb->getQuote($quoteId);
-	 	 	$contactDb = new Shops_Model_DbTable_Contact();
-			$contact = $contactDb->getContactWithID($quote['contactid']);
-
-			//Set new quote Id
-			$incrementDb = new Shops_Model_DbTable_Increment();
-			$increment = $incrementDb->getIncrement('quoteid');
-			$filenameDb = new Shops_Model_DbTable_Filename();
-			$filename = $filenameDb->getFilename('quote', $quote['language']);
-			$filename = str_replace('%NUMBER%', $increment, $filename);
-			$quoteDb->saveQuote($quoteId, $increment, $filename);
-			$incrementDb->setIncrement(($increment), 'quoteid');
-
-			return $quoteId;
-		}
-	}
-
-	private function applyContactToQuote(int $quoteId, int $contactId): void
-	{
-		if ($quoteId <= 0 || $contactId <= 0) return;
+		if (!is_finite($price) || $price < 0) throw new RuntimeException('Invalid item price');
+		$tax = (new Shops_Model_DbTable_Taxrate())->getTaxRate((int)($item['taxid'] ?? 0));
+		$taxRate = self::parseDecimal($tax['rate'] ?? null);
+		if ($taxRate === null || $taxRate < 0) throw new RuntimeException('Invalid item tax rate');
+		$uoms = (new Application_Model_DbTable_Uom())->setClientId((int)$this->_siteContext->getClientId())->getUoms();
+		$uom = trim((string)($uoms[(int)($item['uomid'] ?? 0)] ?? ''));
+		if ($uom === '') throw new RuntimeException('Invalid item unit');
 
 		$quoteDb = new Shops_Model_DbTable_Quote();
-		$contactDb = new Shops_Model_DbTable_Contact();
-		$addrDb 	= new Shops_Model_DbTable_Address();
+		$adapter = $quoteDb->getAdapter();
+		$adapter->beginTransaction();
 
-		$contact = $contactDb->getContactWithID($contactId);
-		if (!$contact) return;
+		try {
+			[$contactRowId, $contact] = $this->resolveInquiryContact($data);
+			$contactId = (int)($contact['contactid'] ?? 0);
+			if ($contactRowId <= 0 || $contactId <= 0) throw new RuntimeException('Inquiry contact is unavailable');
+			$snapshot = $this->buildInquiryAddressSnapshot($data, (int)($contact['taxfree'] ?? 0));
+			$quoteId = $quoteDb->addQuote(array_merge($snapshot, [
+				'title' => trim((string)($data['titel'] ?? '')) ?: (string)$item['title'],
+				'reference' => trim((string)($data['projektname'] ?? '')),
+				'currency' => (string)$currency['code'],
+				'state' => 100,
+				'header' => $this->formRow['quoteheader'] ?? null,
+				'footer' => $this->formRow['quotefooter'] ?? null,
+				'contactid' => $contactId,
+				'subtotal' => 0,
+				'taxes' => 0,
+				'total' => 0,
+				'language' => $language,
+				'contactperson' => '',
+				'templateid' => (int)$template['id'],
+				'pdfshowprices' => 1,
+			]));
 
-		// Load all addresses for the contact (adapt method name if yours differs)
-		// Expecting rows like: ['type' => 'billing'|'shipping', 'street'=>..., 'postcode'=>..., 'city'=>..., 'country'=>...]
-		$addresses = $addrDb->getAddresses($contact['id']);
-		$billing = null;
-		$shipping = null;
+			(new Shops_Model_DbTable_Quotepos())->addPosition([
+				'parentid' => $quoteId,
+				'itemid' => (int)$item['id'],
+				'possetid' => 0,
+				'sku' => (string)$item['sku'],
+				'title' => (string)$item['title'],
+				'description' => (string)($item['description'] ?? ''),
+				'price' => $price,
+				'taxrate' => $taxRate,
+				'total' => 0,
+				'quantity' => $quantity,
+				'uom' => $uom,
+				'currency' => (string)$currency['code'],
+			]);
 
-		foreach ((array)$addresses as $a) {
-		 	// Some table layers return objects; normalize access
-		 	$type = is_array($a) ? ($a['type'] ?? '') : ($a->type ?? '');
-		 	if (strcasecmp($type, 'billing') === 0) $billing = $a;
-		 	if (strcasecmp($type, 'shipping') === 0) $shipping = $a;
+			$clientId = (int)$this->_siteContext->getClientId();
+			Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->direct($quoteId, 'sales', 'quote', $clientId);
+
+			$incrementDb = new Shops_Model_DbTable_Increment();
+			$quoteNumber = $incrementDb->reserveIncrement('quoteid');
+			$filename = (new Shops_Model_DbTable_Filename())->getFilename('quote', $language);
+			$quoteDb->saveQuote($quoteId, $quoteNumber, str_replace('%NUMBER%', (string)$quoteNumber, $filename));
+			if (!(new Shops_Model_DbTable_Inquirydata())->linkQuoteIfEmpty($inquiryId, $contactRowId, $quoteId)) {
+				throw new RuntimeException('Inquiry quote was already linked');
+			}
+
+			$adapter->commit();
+			return $quoteId;
+		} catch (Throwable $e) {
+			$adapter->rollBack();
+			throw $e;
 		}
-
-		// Fallbacks
-		if (!$billing && !empty($addresses[0])) $billing = $addresses[0];
-		if (!$shipping) $shipping = $billing;
-
-		// Small access helpers
-		$get = function($row, $key, $default = '') {
-		 	if (is_array($row)) return $row[$key] ?? $default;
-		 	if (is_object($row)) return $row->$key ?? $default;
-		 	return $default;
-		};
-
-		$data = [
-		 	// billing from contact + billing address
-		 	'billingname1' => $contact['name1'] ?? '',
-		 	'billingname2' => $contact['name2'] ?? '',
-		 	'billingdepartment'=> $contact['department'] ?? '',
-		 	'billingstreet' => $get($billing, 'street'),
-		 	'billingpostcode' => $get($billing, 'postcode'),
-		 	'billingcity' => $get($billing, 'city'),
-		 	'billingcountry' => $get($billing, 'country'),
-		 	'taxfree' => (int)($contact['taxfree'] ?? 0),
-
-		 	// shipping from contact + shipping address (fallback to billing if missing)
-		 	'shippingname1' => $contact['name1'] ?? '',
-		 	'shippingname2' => $contact['name2'] ?? '',
-		 	'shippingdepartment'=> $contact['department']?? '',
-		 	'shippingstreet' => $get($shipping, 'street'),
-		 	'shippingpostcode' => $get($shipping, 'postcode'),
-		 	'shippingcity' => $get($shipping, 'city'),
-		 	'shippingcountry' => $get($shipping, 'country'),
-		 	'shippingphone' => $contact['phone'] ?? '', // if you store phone elsewhere, swap in your lookup
-		];
-
-		// Persist to quote
-		$quoteDb->updateQuote($quoteId, $data);
 	}
 
-	private function linkInquiryQuote(int $inquiryId, int $quoteId): void
+	protected function resolveInquiryContact(array $data): array
 	{
-		$quote = (new Shops_Model_DbTable_Quote())->getQuote($quoteId);
-		$contact = (new Shops_Model_DbTable_Contact())->getContactWithID((int)$quote['contactid']);
-		if (!$contact) throw new RuntimeException('Auto-created quote contact is not available.');
+		$email = trim((string)($data['email'] ?? ''));
+		if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new RuntimeException('Invalid inquiry email');
 
-		(new Shops_Model_DbTable_Inquirydata())->updateById($inquiryId, [
-			'contactid' => (int)$contact['id'],
-			'quoteid' => $quoteId,
+		$emailDb = new Shops_Model_DbTable_Email();
+		$contactDb = new Shops_Model_DbTable_Contact();
+		$contactRowId = $emailDb->findContactIdByEmail($email);
+		if ($contactRowId > 0) {
+			$contact = $contactDb->getContact($contactRowId);
+			if (!$contact) throw new RuntimeException('Matched inquiry contact is unavailable');
+			return [$contactRowId, $contact];
+		}
+
+		$contactId = (new Shops_Model_DbTable_Increment())->reserveIncrement('contactid');
+		$contactRowId = $contactDb->addContact([
+			'catid' => 0,
+			'name1' => trim((string)($data['firma'] ?? '')),
+			'name2' => trim((string)($data['ansprechpartner'] ?? '')),
+			'contactid' => $contactId,
 		]);
+		$country = trim((string)($data['country'] ?? $data['land'] ?? ''));
+		(new Shops_Model_DbTable_Address())->addAddress($contactRowId, [
+			'type' => 'billing',
+			'street' => trim((string)($data['adresse'] ?? '')),
+			'postcode' => trim((string)($data['plz'] ?? '')),
+			'city' => trim((string)($data['stadt'] ?? '')),
+			'country' => $country,
+			'ordering' => 1,
+		]);
+		$emailDb->addEmail([
+			'module' => 'contacts',
+			'controller' => 'contact',
+			'parentid' => $contactRowId,
+			'ordering' => 1,
+			'email' => $email,
+			'password' => password_hash(bin2hex(random_bytes(10)), PASSWORD_DEFAULT),
+		]);
+
+		return [$contactRowId, $contactDb->getContact($contactRowId)];
+	}
+
+	protected function buildInquiryAddressSnapshot(array $data, int $taxfree): array
+	{
+		$name1 = trim((string)($data['firma'] ?? ''));
+		$name2 = trim((string)($data['ansprechpartner'] ?? ''));
+		$street = trim((string)($data['adresse'] ?? ''));
+		$postcode = trim((string)($data['plz'] ?? ''));
+		$city = trim((string)($data['stadt'] ?? ''));
+		$country = trim((string)($data['country'] ?? $data['land'] ?? ''));
+
+		return [
+			'billingname1' => $name1,
+			'billingname2' => $name2,
+			'billingdepartment' => '',
+			'billingstreet' => $street,
+			'billingpostcode' => $postcode,
+			'billingcity' => $city,
+			'billingcountry' => $country,
+			'shippingname1' => $name1,
+			'shippingname2' => $name2,
+			'shippingdepartment' => '',
+			'shippingstreet' => $street,
+			'shippingpostcode' => $postcode,
+			'shippingcity' => $city,
+			'shippingcountry' => $country,
+			'shippingphone' => trim((string)($data['telefon'] ?? '')),
+			'taxfree' => $taxfree ? 1 : 0,
+		];
+	}
+
+	protected function generateQuotePdf(int $quoteId): array
+	{
+		$result = (new DEEC_Pdf())->generate([
+			'module' => 'shops',
+			'controller' => 'quote',
+			'documentId' => $quoteId,
+			'output' => 'file',
+		]);
+		if (!empty($result['path'])) $this->setQuoteDownloadGrant($quoteId, (string)$result['path']);
+
+		return $result;
+	}
+
+	protected function setQuoteDownloadGrant(int $quoteId, string $path): void
+	{
+		DEEC_Emailattachment::checkPath($path);
+		$basePath = realpath(BASE_PATH);
+		$realPath = realpath($path);
+		if ($basePath === false || $realPath === false || !str_starts_with($realPath, $basePath . DIRECTORY_SEPARATOR)) {
+			throw new RuntimeException('Quote PDF path is invalid');
+		}
+
+		$this->formDataSession->downloadFile = [
+			'siteid' => (int)$this->_siteContext->getSiteId(),
+			'clientid' => (int)$this->_siteContext->getClientId(),
+			'quoteid' => $quoteId,
+			'relative' => substr($realPath, strlen($basePath) + 1),
+		];
+	}
+
+	protected function restoreInquiryResult(array $inquiry): array
+	{
+		$storedData = json_decode((string)($inquiry['data'] ?? ''), true);
+		$status = is_array($storedData) && trim((string)($storedData['sku'] ?? '')) !== '' ? 'quote_failed' : null;
+		$quoteId = (int)($inquiry['quoteid'] ?? 0);
+		if ($quoteId <= 0 || !(new Shops_Model_DbTable_Quote())->getById($quoteId)) return ['url' => null, 'status' => $status];
+
+		try {
+			$pdf = $this->generateQuotePdf($quoteId);
+			return ['url' => $pdf['url'] ?? null, 'status' => 'ready'];
+		} catch (Throwable $e) {
+			error_log('Stored shop inquiry result could not be restored: ' . $e->getMessage());
+			return ['url' => null, 'status' => 'pdf_failed'];
+		}
 	}
 }

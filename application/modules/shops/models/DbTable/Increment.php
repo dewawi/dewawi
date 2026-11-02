@@ -27,7 +27,7 @@ class Shops_Model_DbTable_Increment extends DEEC_Model_DbTable_SiteEntity
 
 	public function reserveIncrement(string $type): int
 	{
-		if (!in_array($type, ['shoporderid'], true)) throw new InvalidArgumentException('Unsupported increment type');
+		if (!in_array($type, ['contactid', 'quoteid', 'shoporderid'], true)) throw new InvalidArgumentException('Unsupported increment type');
 
 		$adapter = $this->getAdapter();
 		$select = $adapter->select()
