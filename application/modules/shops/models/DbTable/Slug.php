@@ -123,10 +123,27 @@ class Shops_Model_DbTable_Slug extends DEEC_Model_DbTable_SiteEntity
 				->where('slug = ?', $slug)
 				->order('id ASC')
 		);
+		$fullPathRows = [];
+		if (str_contains($path, '/')) {
+			$fullPathRows = $this->fetchAll(
+				$this->getPublicSelect()
+					->where('module = ?', 'shops')
+					->where('controller = ?', 'inquiry')
+					->where('parentid = ?', 0)
+					->where('slug = ?', $path)
+					->order('id ASC')
+			);
+		}
 
 		$resolved = null;
+		$candidates = [];
+		foreach ([$rows, $fullPathRows] as $candidateRows) {
+			foreach ($candidateRows as $row) {
+				$candidates[(int)$row->id] = $row;
+			}
+		}
 
-		foreach ($rows as $row) {
+		foreach ($candidates as $row) {
 			$item = $row->toArray();
 
 			if (empty($item['controller']) || empty($item['entityid'])) {
@@ -168,7 +185,7 @@ class Shops_Model_DbTable_Slug extends DEEC_Model_DbTable_SiteEntity
 			case 'tag':
 				return (bool)(new Shops_Model_DbTable_Tag())->getTag($entityId);
 			case 'inquiry':
-				return true;
+				return (bool)(new Shops_Model_DbTable_Inquiryform())->getInquiryform($entityId);
 		}
 
 		return false;

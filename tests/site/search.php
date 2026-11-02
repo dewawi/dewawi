@@ -22,6 +22,7 @@ require_once $root . '/application/modules/shops/models/DbTable/Item.php';
 require_once $root . '/application/modules/shops/models/DbTable/Category.php';
 require_once $root . '/application/modules/shops/models/DbTable/Page.php';
 require_once $root . '/application/modules/shops/models/DbTable/Tag.php';
+require_once $root . '/application/modules/shops/models/DbTable/Inquiryform.php';
 require_once $root . '/application/modules/shops/models/DbTable/Slug.php';
 require_once $root . '/application/modules/shops/models/DbTable/Slugredirect.php';
 require_once $root . '/application/modules/shops/views/helpers/Breadcrumbs.php';
@@ -356,6 +357,10 @@ $adapter->rows = [
 	'category' => [
 		['id' => 10, 'clientid' => 3, 'shopid' => 7, 'type' => 'shop', 'activated' => 1, 'deleted' => 0],
 		['id' => 11, 'clientid' => 3, 'shopid' => 7, 'type' => 'shop', 'activated' => 1, 'deleted' => 0],
+		['id' => 12, 'clientid' => 3, 'shopid' => 7, 'type' => 'shop', 'activated' => 1, 'deleted' => 0],
+		['id' => 13, 'clientid' => 3, 'shopid' => 7, 'type' => 'shop', 'activated' => 1, 'deleted' => 0],
+		['id' => 14, 'clientid' => 3, 'shopid' => 7, 'type' => 'shop', 'activated' => 1, 'deleted' => 0],
+		['id' => 15, 'clientid' => 3, 'shopid' => 7, 'type' => 'shop', 'activated' => 1, 'deleted' => 0],
 	],
 	'page' => [
 		['id' => 20, 'clientid' => 3, 'shopid' => 7, 'type' => 'content', 'activated' => 1, 'deleted' => 0],
@@ -373,6 +378,28 @@ $adapter->rows = [
 		['id' => 206, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'page', 'entityid' => 20, 'parentid' => 0, 'slug' => 'company', 'deleted' => 0],
 		['id' => 207, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'tag', 'entityid' => 30, 'parentid' => 0, 'slug' => 'efficient', 'deleted' => 0],
 		['id' => 208, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 40, 'parentid' => 0, 'slug' => 'project-inquiry', 'deleted' => 0],
+		['id' => 209, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 41, 'parentid' => 0, 'slug' => 'angebot/kaltwassersatz', 'deleted' => 0],
+		['id' => 210, 'clientid' => 4, 'shopid' => 7, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 42, 'parentid' => 0, 'slug' => 'angebot/fremder-mandant', 'deleted' => 0],
+		['id' => 211, 'clientid' => 3, 'shopid' => 8, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 43, 'parentid' => 0, 'slug' => 'angebot/fremder-shop', 'deleted' => 0],
+		['id' => 212, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 44, 'parentid' => 0, 'slug' => 'angebot/geloescht', 'deleted' => 1],
+		['id' => 213, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 45, 'parentid' => 0, 'slug' => 'angebot/fehlendes-formular', 'deleted' => 0],
+		['id' => 214, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 46, 'parentid' => 0, 'slug' => 'angebot/fremdes-formular', 'deleted' => 0],
+		['id' => 215, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 12, 'parentid' => 0, 'slug' => 'beratung', 'deleted' => 0],
+		['id' => 216, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 13, 'parentid' => 12, 'slug' => 'kollision', 'deleted' => 0],
+		['id' => 217, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 47, 'parentid' => 0, 'slug' => 'beratung/kollision', 'deleted' => 0],
+		['id' => 218, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 14, 'parentid' => 0, 'slug' => 'andere-beratung', 'deleted' => 0],
+		['id' => 219, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'category', 'entityid' => 15, 'parentid' => 14, 'slug' => 'kollision', 'deleted' => 0],
+		['id' => 220, 'clientid' => 3, 'shopid' => 7, 'module' => 'shops', 'controller' => 'inquiry', 'entityid' => 48, 'parentid' => 0, 'slug' => 'search/angebot', 'deleted' => 0],
+	],
+	'shopinquiryform' => [
+		['id' => 40, 'clientid' => 3, 'shopid' => 7, 'deleted' => 0],
+		['id' => 41, 'clientid' => 3, 'shopid' => 7, 'deleted' => 0],
+		['id' => 42, 'clientid' => 4, 'shopid' => 7, 'deleted' => 0],
+		['id' => 43, 'clientid' => 3, 'shopid' => 8, 'deleted' => 0],
+		['id' => 44, 'clientid' => 3, 'shopid' => 7, 'deleted' => 1],
+		['id' => 46, 'clientid' => 3, 'shopid' => 8, 'deleted' => 0],
+		['id' => 47, 'clientid' => 3, 'shopid' => 7, 'deleted' => 0],
+		['id' => 48, 'clientid' => 3, 'shopid' => 7, 'deleted' => 0],
 	],
 	'slugredirect' => [
 		['id' => 300, 'clientid' => 3, 'shopid' => 7, 'path' => 'old-products', 'pathhash' => hash('sha256', 'old-products'), 'module' => 'shops', 'controller' => 'category', 'entityid' => 10, 'deleted' => 0],
@@ -393,7 +420,15 @@ checkSearch(array_column($categoryItems, 'id') === [100] && (int)$categoryItems[
 $resolvedItem = (new Shops_Model_DbTable_Slug())->resolvePath('products/existing-item');
 checkSearch((int)($resolvedItem['entityid'] ?? 0) === 100 && ($resolvedItem['controller'] ?? '') === 'item', 'Existing item slug without shop approval is not publicly resolvable');
 $publicSlugIds = array_map(static fn($row): int => (int)$row['id'], iterator_to_array((new Shops_Model_DbTable_Slug())->getSlugs()));
-checkSearch($publicSlugIds === [200, 201, 205, 206, 207, 208], 'Public slug enumeration crossed a tenant or shop boundary');
+checkSearch($publicSlugIds === [200, 201, 205, 206, 207, 208, 209, 213, 214, 215, 216, 217, 218, 219, 220], 'Public slug enumeration crossed a tenant or shop boundary');
+checkSearch((int)((new Shops_Model_DbTable_Slug())->resolvePath('angebot/kaltwassersatz')['entityid'] ?? 0) === 41, 'Stored root inquiry full path was not resolved');
+checkSearch((new Shops_Model_DbTable_Slug())->resolvePath('angebot/fremder-mandant') === null, 'Root inquiry full path crossed a tenant boundary');
+checkSearch((new Shops_Model_DbTable_Slug())->resolvePath('angebot/fremder-shop') === null, 'Root inquiry full path crossed a shop boundary');
+checkSearch((new Shops_Model_DbTable_Slug())->resolvePath('angebot/geloescht') === null, 'Deleted root inquiry full path was resolved');
+checkSearch((new Shops_Model_DbTable_Slug())->resolvePath('angebot/fehlendes-formular') === null, 'Inquiry slug without a form was resolved');
+checkSearch((new Shops_Model_DbTable_Slug())->resolvePath('angebot/fremdes-formular') === null, 'Inquiry slug resolved a form from another shop');
+checkSearch((new Shops_Model_DbTable_Slug())->resolvePath('beratung/kollision') === null, 'Ambiguity between a full inquiry path and a hierarchical path was ignored');
+checkSearch((int)((new Shops_Model_DbTable_Slug())->resolvePath('andere-beratung/kollision')['entityid'] ?? 0) === 15, 'Same final segment under a distinct full path was not resolved exactly');
 
 $redirectDb = new Shops_Model_DbTable_Slugredirect();
 checkSearch($redirectDb->resolvePath('old-products') === 'products', 'Historical path does not resolve to the current canonical entity path');
@@ -454,6 +489,7 @@ foreach ([
 	'/site/company/' => 'page',
 	'/site/efficient/' => 'tag',
 	'/site/project-inquiry/' => 'inquiry',
+	'/site/angebot/kaltwassersatz/' => 'inquiry',
 ] as $uri => $entityController) {
 	checkSearch($routeController($uri) === 'redirect', 'Slash variant was not normalized for ' . $entityController);
 	checkSearch($routeController(rtrim($uri, '/')) === $entityController, 'Canonical path did not retain its controller for ' . $entityController);
@@ -462,6 +498,13 @@ checkSearch($routeController('/site/products/', 'HEAD') === 'redirect', 'HEAD sl
 checkSearch($routeController('/site/products/', 'POST') === 'category', 'POST slash variant was redirected or rejected');
 checkSearch($routeController('/site/products//') === null, 'Double slash resolved as current content');
 checkSearch($routeController('/site/%70roducts/') === null, 'Encoded path resolved as current content');
+checkSearch($routeController('/site/angebot/kaltwassersatz') === 'inquiry', 'Enabled inquiry feature did not route the full path');
+$disabledInquiryContext = new DEEC_Site_Context(['id' => 7, 'clientid' => 3, 'url' => 'https://example.test/site'], [], ['cms', 'catalog']);
+$_SERVER['REQUEST_URI'] = '/site/angebot/kaltwassersatz';
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$disabledInquiryRouter = new Zend_Controller_Router_Rewrite();
+checkSearch(!$slugMethod->invoke(new DEEC_Site_Router(), $disabledInquiryRouter, $disabledInquiryContext), 'Disabled inquiry feature routed a full inquiry path');
+checkSearch($routeController('/site/search/angebot') === null, 'Reserved path was routed through a full inquiry slug');
 
 $_SERVER['REQUEST_URI'] = '/site';
 $_SERVER['REQUEST_METHOD'] = 'GET';

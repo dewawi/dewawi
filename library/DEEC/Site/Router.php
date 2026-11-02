@@ -350,6 +350,9 @@ class DEEC_Site_Router
 		if ($path === null || $path === '') {
 			return false;
 		}
+		if (self::isReservedPath($path)) {
+			return false;
+		}
 
 		$slugDb = new Shops_Model_DbTable_Slug();
 		$slug = $slugDb->resolvePath($path);
