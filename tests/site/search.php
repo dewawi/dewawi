@@ -417,6 +417,11 @@ Zend_Db_Table::setDefaultAdapter($adapter);
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 7, 'clientid' => 3], [], ['cms', 'catalog']));
 $categoryItems = (new Shops_Model_DbTable_Item())->getItemsByCategory(10)->toArray();
 checkSearch(array_column($categoryItems, 'id') === [100] && (int)$categoryItems[0]['shopenabled'] === 0, 'Existing item without shop approval is missing from its category');
+$feedItems = (new Shops_Model_DbTable_Item())->getItems()->toArray();
+checkSearch(array_column($feedItems, 'id') === [100], 'Public item enumeration crossed a tenant or included deleted rows');
+$feedSource = file_get_contents($root . '/application/modules/shops/controllers/ItemController.php');
+checkSearch(str_contains($feedSource, 'new Shops_Model_DbTable_Item()') && str_contains($feedSource, 'new Shops_Model_DbTable_Slug()')
+	&& !str_contains($feedSource, "new Zend_Db_Table('item')") && !str_contains($feedSource, "new Zend_Db_Table('slug')"), 'Product feed bypasses site-scoped models');
 $resolvedItem = (new Shops_Model_DbTable_Slug())->resolvePath('products/existing-item');
 checkSearch((int)($resolvedItem['entityid'] ?? 0) === 100 && ($resolvedItem['controller'] ?? '') === 'item', 'Existing item slug without shop approval is not publicly resolvable');
 $publicSlugIds = array_map(static fn($row): int => (int)$row['id'], iterator_to_array((new Shops_Model_DbTable_Slug())->getSlugs()));

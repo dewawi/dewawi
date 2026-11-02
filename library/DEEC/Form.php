@@ -653,6 +653,10 @@ class DEEC_Form
 				continue;
 			}
 			if ($val === null || $val === '') continue;
+			if (!$this->validateValueShape($el, $val) || !$this->validateFormattedValue($el, $val)) {
+				$this->errors[$name][] = 'invalid';
+				continue;
+			}
 
 			// email
 			$isEmail = $type === 'email' || (($el['format']['type'] ?? '') === 'email');
@@ -701,6 +705,35 @@ class DEEC_Form
 		return empty($this->errors);
 	}
 
+	protected function validateValueShape(array $element, $value): bool
+	{
+		$type = (string)($element['type'] ?? '');
+		if(in_array($type, ['select', 'radio'], true)) return is_scalar($value);
+		if($type === 'multicheckbox') return is_array($value);
+		return true;
+	}
+
+	protected function validateFormattedValue(array $element, $value): bool
+	{
+		$format = $element['format'] ?? null;
+		if(!is_array($format) || empty($format['type'])) return true;
+
+		switch($format['type']) {
+			case 'decimal':
+				return DEEC_Filter::isValidDecimal($value, $this->getLocale());
+
+			case 'int':
+				return is_scalar($value) && filter_var((string)$value, FILTER_VALIDATE_INT) !== false;
+
+			case 'date':
+				if(!is_scalar($value)) return false;
+				$result = DEEC_Filter::applyAll(['value' => $value], ['value' => $format], $this->getLocale());
+				return $result['value'] !== null;
+		}
+
+		return true;
+	}
+
 	public function isValidPartial(array $data): bool
 	{
 		$this->errors = [];
@@ -722,6 +755,10 @@ class DEEC_Form
 				continue;
 			}
 			if ($val === null || $val === '') continue;
+			if (!$this->validateValueShape($el, $val) || !$this->validateFormattedValue($el, $val)) {
+				$this->errors[$name][] = 'invalid';
+				continue;
+			}
 
 			if ($type === 'email' && !filter_var($val, FILTER_VALIDATE_EMAIL)) {
 				$this->errors[$name][] = 'email';

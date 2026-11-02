@@ -231,6 +231,7 @@ class Items_Form_Item extends DEEC_Form
 			'type' => 'select',
 			'label' => 'ITEMS_WAREHOUSE',
 			'required' => true,
+			'source' => 'warehouse',
 			'format' => ['type' => 'int'],
 			'tab' => 'details',
 			'section' => 'ITEMS_WAREHOUSE',

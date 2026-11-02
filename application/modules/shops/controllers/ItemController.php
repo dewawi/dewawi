@@ -86,10 +86,11 @@ class Shops_ItemController extends Shops_Controller_Action
 		$this->_helper->layout->disableLayout();
 
 		// Set the content type to XML
-		$this->getResponse()->setHeader('Content-Type', 'application/xml');
+		$this->getResponse()->setHeader('Content-Type', 'application/rss+xml; charset=UTF-8');
 
 		// Initialize the base URL
 		$baseUrl = $this->getRequest()->getScheme() . '://' . $this->getRequest()->getHttpHost();
+		$xml = static fn($value): string => htmlspecialchars((string)$value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 
 		// Begin XML output
 		echo '<?xml version="1.0" encoding="UTF-8"?>';
@@ -97,13 +98,13 @@ class Shops_ItemController extends Shops_Controller_Action
 		echo '<channel>';
 
 		// Store information
-		echo '<title>' . $shop['title'] . '</title>';
-		echo '<link>' . $baseUrl . '/</link>';
-		echo '<description>'.$shop['title'].'</description>';
+		echo '<title>' . $xml($shop['title']) . '</title>';
+		echo '<link>' . $xml($baseUrl . '/') . '</link>';
+		echo '<description>' . $xml($shop['title']) . '</description>';
 
 		// Fetch slugs for the current shop
-		$slugTable = new Zend_Db_Table('slug');
-		$slugs = $slugTable->fetchAll(['shopid = ?' => $shop['id']]);
+		$slugTable = new Shops_Model_DbTable_Slug();
+		$slugs = $slugTable->getSlugs();
 
 		// Organize slugs into a dictionary with entityid as the key
 		$slugDict = [];
@@ -147,8 +148,8 @@ class Shops_ItemController extends Shops_Controller_Action
 		}
 
 		// Get items for this shop
-		$itemTable = new Zend_Db_Table('item');
-		$items = $itemTable->fetchAll(['shopid = ?' => $shop['id']]);
+		$itemTable = new Shops_Model_DbTable_Item();
+		$items = $itemTable->getItems();
 
 		$images = array();
 		$mediaDb = new Shops_Model_DbTable_Media();
@@ -178,24 +179,24 @@ class Shops_ItemController extends Shops_Controller_Action
 				}
 
 				echo '<item>';
-				echo '<g:id>' . $item['sku'] . '</g:id>';
-				echo '<g:title>' . $item['title'] . '</g:title>';
-				echo '<g:description>' . htmlspecialchars($item['description']) . '</g:description>';
-				echo '<g:link>' . htmlspecialchars($slugUrl) . '</g:link>';
+				echo '<g:id>' . $xml($item['sku']) . '</g:id>';
+				echo '<g:title>' . $xml($item['title']) . '</g:title>';
+				echo '<g:description>' . $xml($item['description']) . '</g:description>';
+				echo '<g:link>' . $xml($slugUrl) . '</g:link>';
 				$i = 0;
 				foreach ($images['items'][$item->id] as $image) {
 					if ($i == 0) {
-						echo '<g:image_link>' . $shop['url'] . '/media/images/' . $image['url'] . '</g:image_link>';
+						echo '<g:image_link>' . $xml($shop['url'] . '/media/images/' . $image['url']) . '</g:image_link>';
 					} else {
-						echo '<g:additional_image_link>' . $shop['url'] . '/media/images/' . $image['url'] . '</g:additional_image_link>';
+						echo '<g:additional_image_link>' . $xml($shop['url'] . '/media/images/' . $image['url']) . '</g:additional_image_link>';
 					}
 
 					$i++;
 				}
 				echo '<g:availability>in_stock</g:availability>';
 				echo '<g:quantity>10</g:quantity>';
-				echo '<g:price>' . $priceWithTax . ' ' . $item['currency'] . '</g:price>';
-				echo '<g:brand>'.$shop['title'].'</g:brand>';
+				echo '<g:price>' . $xml($priceWithTax . ' ' . $item['currency']) . '</g:price>';
+				echo '<g:brand>' . $xml($shop['title']) . '</g:brand>';
 				echo '<g:condition>new</g:condition>';
 				echo '<g:shipping>';
 				echo '<g:country>DE</g:country>';

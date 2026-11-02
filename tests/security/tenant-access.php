@@ -90,6 +90,14 @@ check($adapter->rows['item'][0]['sku'] === 'saved', 'Valid field was not saved')
 $id = $itemDb->create(['id' => 102, 'clientid' => 9, 'sku' => 'new']);
 check($itemDb->getById($id)['clientid'] === 1 && $id !== 102, 'Create accepted browser ID or client');
 
+$adapter->rows['contact'] = [
+    ['id' => 10, 'clientid' => 1, 'catid' => 50, 'deleted' => 0],
+    ['id' => 20, 'clientid' => 9, 'catid' => 50, 'deleted' => 0],
+    ['id' => 30, 'clientid' => 1, 'catid' => 50, 'deleted' => 1],
+];
+$categoryContacts = (new Contacts_Model_DbTable_Contact())->setClientId(1)->getContactsByCategory(50);
+check(array_column($categoryContacts, 'id') === [10], 'Contact category lookup crossed tenant or included deleted contacts');
+
 function contactpersonRequest(string $action, int $id, array $post = [], string $mode = 'full'): array
 {
     $adapter = tenantAccessFixture($mode);

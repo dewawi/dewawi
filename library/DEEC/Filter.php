@@ -49,6 +49,16 @@ class DEEC_Filter
 		}
 	}
 
+	public static function isValidDecimal($value, $locale = null): bool
+	{
+		if(!is_scalar($value)) return false;
+
+		$value = trim((string)$value);
+		if($value === '' || preg_match('~\p{L}~u', $value)) return false;
+
+		return self::parseDecimalLocale($value, $locale) !== null;
+	}
+
 	protected static function parseDecimalLocale(string $raw, $locale): ?float
 	{
 		$s = trim($raw);
@@ -223,14 +233,20 @@ class DEEC_Filter
 
 		// wenn input schon db-like ist
 		$dt = \DateTime::createFromFormat($dbPat, $s);
-		if ($dt instanceof \DateTime) return $dt->format($dbPat);
+		if ($dt instanceof \DateTime && self::isDateParseValid()) return $dt->format($dbPat);
 
 		if ($uiPat) {
 			$dt = \DateTime::createFromFormat($uiPat, $s);
-			if ($dt instanceof \DateTime) return $dt->format($dbPat);
+			if ($dt instanceof \DateTime && self::isDateParseValid()) return $dt->format($dbPat);
 		}
 
 		return null;
+	}
+
+	protected static function isDateParseValid(): bool
+	{
+		$errors = \DateTime::getLastErrors();
+		return $errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0);
 	}
 
 	public static function slug(string $value): string

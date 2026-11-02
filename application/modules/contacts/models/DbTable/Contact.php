@@ -93,11 +93,12 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 	public function getContactsByCategory($catid)
 	{
 		$catid = (int)$catid;
-		$row = $this->fetchAll('catid = ' . $catid);
-		if (!$row) {
-			throw new Exception("Could not find row $catid");
-		}
-		return $row->toArray();
+		$select = $this->select()
+			->where('catid = ?', $catid)
+			->where('clientid = ?', $this->getClientId())
+			->where('deleted = ?', 0);
+
+		return $this->fetchAll($select)->toArray();
 	}
 
 	public function getLatestContacts()

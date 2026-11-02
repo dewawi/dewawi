@@ -26,6 +26,13 @@ class Shops_Model_DbTable_Item extends DEEC_Model_DbTable_SiteEntity
 		return $row ? $row->toArray() : null;
 	}
 
+	public function getItems(): Zend_Db_Table_Rowset_Abstract
+	{
+		return $this->fetchAll(
+			$this->getPublicSelect()->order('id ASC')
+		);
+	}
+
 	public function getItemsByCategory(int $categoryId, array $params = []): Zend_Db_Table_Rowset_Abstract
 	{
 		$order = $params['order'] ?? 'modified';

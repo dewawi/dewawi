@@ -172,6 +172,7 @@ class Items_ItemController extends DEEC_Controller_Action
 		array $row
 	): array {
 		$values = (new Items_Service_ShopAssignment())->normalize($values, $row);
+		$this->validateReferenceValues($values, $row);
 
 		if(empty($row['parentid'])) {
 			return $values;
@@ -183,6 +184,45 @@ class Items_ItemController extends DEEC_Controller_Action
 				Items_Model_Entity_Item::inheritedFields()
 			)
 		);
+	}
+
+	protected function validateReferenceValues(array $values, array $row): void
+	{
+		$references = [
+			'catid' => [Application_Model_DbTable_Category::class, true],
+			'taxid' => [Admin_Model_DbTable_Taxrate::class, true],
+			'warehouseid' => [Application_Model_DbTable_Warehouse::class, false],
+			'uomid' => [Application_Model_DbTable_Uom::class, true],
+			'manufacturerid' => [Application_Model_DbTable_Manufacturer::class, true],
+			'deliverytime' => [Application_Model_DbTable_Deliverytime::class, true],
+			'deliverytimeoos' => [Application_Model_DbTable_Deliverytime::class, true],
+		];
+
+		foreach($references as $field => [$class, $allowZero]) {
+			if(!array_key_exists($field, $values) || (string)$values[$field] === (string)($row[$field] ?? '')) continue;
+			if(!is_int($values[$field])) throw new InvalidArgumentException('Invalid item reference');
+
+			$id = $values[$field];
+			if($id === 0 && $allowZero) continue;
+			if($id <= 0) throw new InvalidArgumentException('Invalid item reference');
+
+			$reference = (new $class())->getById($id);
+			if(!$reference || ($field === 'catid' && ($reference['type'] ?? '') !== 'item')) {
+				throw new InvalidArgumentException('Invalid item reference');
+			}
+		}
+
+		if(array_key_exists('currency', $values) && (string)$values['currency'] !== (string)($row['currency'] ?? '')) {
+			$currencies = (new Application_Model_DbTable_Currency())->getCurrencies();
+			if(!is_string($values['currency']) || !array_key_exists($values['currency'], $currencies)) {
+				throw new InvalidArgumentException('Invalid item currency');
+			}
+		}
+
+		if(array_key_exists('type', $values) && (string)$values['type'] !== (string)($row['type'] ?? '')
+			&& !in_array($values['type'], ['stockItem', 'deliveryItem', 'service'], true)) {
+			throw new InvalidArgumentException('Invalid item type');
+		}
 	}
 
 	public function getAction()
