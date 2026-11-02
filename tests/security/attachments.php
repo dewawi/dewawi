@@ -163,6 +163,9 @@ $partialView->assign([
 ]);
 $composerHtml = $partialView->render('partials/email-messages.phtml');
 check((bool)preg_match('/<input\b(?=[^>]*\bname="file\[\]")(?=[^>]*\bvalue="600")(?=[^>]*\bchecked\b)[^>]*>/', $composerHtml), 'Existing attachment is not selected by the shared email partial');
+$partialView->mode = 'campaign';
+check(!preg_match('/<input\b(?=[^>]*\bname="file\[\]")(?=[^>]*\bchecked\b)[^>]*>/', $partialView->render('partials/email-messages.phtml')), 'Campaign attachment selection changed');
+$partialView->mode = 'send';
 $partialView->attachments = [];
 check(!str_contains($partialView->render('partials/email-messages.phtml'), 'name="file[]"'), 'Attachment-free email partial rendered a selection');
 
