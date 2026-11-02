@@ -2,6 +2,12 @@
 
 class Items_Model_Get
 {
+	public function items($params, $options, bool $all = false): array
+	{
+		if($all) $params['_export'] = true;
+		return (new DEEC_List_Query())->fetch($params, $options, Items_Model_Entity_Item::listConfig());
+	}
+
 	public function ledger($params, $options)
 	{
 		$ordering = DEEC_List_Ordering::clause($params, [
@@ -96,19 +102,8 @@ class Items_Model_Get
 
 	public function tags($module, $controller, $id = null) {
 		if($id) {
-			$client = Zend_Registry::get('Client');
 			$tagEntityDb = new Application_Model_DbTable_Tagentity();
-			$tags = $tagEntityDb->fetchAll(
-				$tagEntityDb->select()
-					->setIntegrityCheck(false)
-					->from(array('t' => 'tagentity'))
-					->join(array('tag' => 'tag'), 't.tagid = tag.id', array('title as tag', 'module', 'controller'))
-					->group('t.id')
-					->where('(t.entityid = "'.$id.'") AND (t.module = "'.$module.'") AND (t.controller = "'.$controller.'") AND (t.clientid = "'.$client['id'].'") AND (t.deleted = 0)')
-					//->order($order.' '.$params['sort'])
-					//->limit($params['limit'], $params['offset'])
-			);
-			$tags = $tags->toArray();
+			$tags = $tagEntityDb->getTagEntities($module, $controller, (int)$id);
 		} else {
 			$tagsDb = new Application_Model_DbTable_Tag();
 			$tags = $tagsDb->getTags($module, $controller);

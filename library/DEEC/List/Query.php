@@ -492,7 +492,15 @@ class DEEC_List_Query
 
 		if ((!isset($categories[$catid]) || !is_array($categories[$catid])) && !empty($filter['categoryType'])) {
 			$categoryDb = new Application_Model_DbTable_Category();
-			$categoryDb->setClientId($this->getClientId($config));
+			$categoryConfig = $config;
+			if(!empty($filter['clientModule'])) {
+				$categoryConfig['clientModule'] = $filter['clientModule'];
+			} elseif($filter['categoryType'] === 'contact') {
+				$categoryConfig['clientModule'] = 'contacts';
+			} elseif($filter['categoryType'] === 'item') {
+				$categoryConfig['clientModule'] = 'items';
+			}
+			$categoryDb->setClientId($this->getClientId($categoryConfig));
 			$categories = $categoryDb->getCategories((string)$filter['categoryType']);
 		}
 

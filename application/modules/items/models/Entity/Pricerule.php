@@ -15,6 +15,7 @@ class Items_Model_Entity_Pricerule
 			'filters' => [
 				'catid' => [
 					'type' => 'category',
+					'categoryType' => 'item',
 				],
 			],
 

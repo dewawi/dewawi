@@ -46,6 +46,7 @@ class Processes_Model_Entity_Process
 				'catid' => [
 					'type' => 'category',
 					'alias' => 'c',
+					'categoryType' => 'contact',
 				],
 				'states' => [
 					'type' => 'states',

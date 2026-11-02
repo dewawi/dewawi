@@ -38,6 +38,7 @@ class Sales_Model_Entity_Invoice
 				'catid' => [
 					'type' => 'category',
 					'alias' => 'c',
+					'categoryType' => 'contact',
 				],
 				'states' => [
 					'type' => 'states',

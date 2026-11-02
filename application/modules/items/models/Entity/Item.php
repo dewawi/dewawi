@@ -96,6 +96,7 @@ class Items_Model_Entity_Item
 			'filters' => [
 				'catid' => [
 					'type' => 'category',
+					'categoryType' => 'item',
 				],
 				'quantity' => [
 					'type' => 'quantity',

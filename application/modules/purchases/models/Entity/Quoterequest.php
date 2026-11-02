@@ -38,6 +38,7 @@ class Purchases_Model_Entity_Quoterequest
 				'catid' => [
 					'type' => 'category',
 					'alias' => 'c',
+					'categoryType' => 'contact',
 				],
 				'states' => [
 					'type' => 'states',

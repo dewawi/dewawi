@@ -87,8 +87,7 @@ class Items_ItemlistController extends DEEC_Controller_Action
 		$id = $this->_getParam('id', 0);
 
 		if($id) {
-			//$this->_helper->viewRenderer->setRender('pdf');
-			$this->_helper->viewRenderer->setNoRender();
+			$this->_helper->viewRenderer->setRender('pdf');
 
 			$itemlistDb = new Items_Model_DbTable_Itemlist();
 			$itemlist = $itemlistDb->getItemlist($id);
@@ -107,6 +106,9 @@ class Items_ItemlistController extends DEEC_Controller_Action
 
 			$toolbar = new Items_Form_Toolbar();
 			$options = $this->_helper->Options->getOptions($toolbar);
+			$categories = (new Application_Model_DbTable_Category())->getCategories('item');
+			$options['catid'] = $categories;
+			$options['categories'] = $categories;
 
 			$itemlists = array();
 			$get = new Items_Model_Get();
@@ -121,7 +123,6 @@ class Items_ItemlistController extends DEEC_Controller_Action
 
 					$currency = $currencyHelper->setCurrency($currency, $item['currency'], 'USE_SYMBOL');
 					$item['cost'] = $currency->toCurrency($item['cost']);
-					if(true) $item['price'] = floor($item['price']); //TODO
 					$item['price'] = $currency->toCurrency($item['price']);
 					$itemlists[$catid][$item['id']] = $item;
 				}
@@ -194,8 +195,8 @@ class Items_ItemlistController extends DEEC_Controller_Action
 
 		if ($this->getRequest()->isPost()) {
 			$id = $this->_getParam('id', 0);
-			$item = new Items_Model_DbTable_Item();
-			$item->deleteItem($id);
+			$itemlist = new Items_Model_DbTable_Itemlist();
+			$itemlist->deleteItemlist($id);
 		}
 		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 	}

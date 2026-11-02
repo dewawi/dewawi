@@ -22,6 +22,7 @@ class Campaigns_Model_Entity_Campaign
 				'catid' => [
 					'type' => 'category',
 					'column' => 'contactcatid',
+					'categoryType' => 'contact',
 				],
 				'states' => [
 					'type' => 'states',

@@ -77,6 +77,14 @@ class Application_Controller_Action_Helper_Options extends Zend_Controller_Actio
 		}
 
 		$model = new $class();
+		if($this->normalizeAlias($alias) === 'category' && method_exists($model, 'setClientId') && Zend_Registry::isRegistered('Client')) {
+			$type = strtolower((string)($args[0] ?? 'item'));
+			$module = $type === 'contact' ? 'contacts' : ($type === 'item' ? 'items' : '');
+			$client = Zend_Registry::get('Client');
+			if($module !== '' && !empty($client['parentid']) && !empty($client['modules'][$module])) {
+				$model->setClientId((int)$client['modules'][$module]);
+			}
+		}
 
 		if (!method_exists($model, 'getSelectOptions')) {
 			return $this->cache[$source] = [];

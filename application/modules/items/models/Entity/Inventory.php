@@ -18,6 +18,7 @@ class Items_Model_Entity_Inventory
 			'filters' => [
 				'catid' => [
 					'type' => 'category',
+					'categoryType' => 'item',
 				],
 				'quantity' => [
 					'type' => 'quantity',
