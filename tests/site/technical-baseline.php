@@ -246,6 +246,17 @@ foreach ([
 	checkBaseline($returnPathMethod->invoke($consentInstance) === $expected, $message);
 }
 
+$siteContextProperty->setValue($consentInstance, new DEEC_Site_Context(['url' => 'https://shop.example.test/k%C3%BChlung']));
+foreach ([
+	['/k%C3%BChlung/category?filter=%2F', '/k%C3%BChlung/category?filter=%2F', 'Valid return under encoded website base path changed'],
+	['/k%C3%BChlung/', '/k%C3%BChlung/', 'Encoded website home consent return path changed'],
+	['/outside', '/k%C3%BChlung/', 'Consent return escaped the encoded website base path'],
+	['/k%C3%BChlung/cookie-consent', '/k%C3%BChlung/', 'Consent return pointed back to the encoded POST-only endpoint'],
+] as [$returnPath, $expected, $message]) {
+	$consentRequest->setParam('return', $returnPath);
+	checkBaseline($returnPathMethod->invoke($consentInstance) === $expected, $message);
+}
+
 $_SERVER = $originalServer;
 
 $siteController = file_get_contents($root . '/application/modules/shops/controllers/Action.php');
