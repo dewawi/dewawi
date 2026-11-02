@@ -32,6 +32,41 @@ catalogs = {}
 for locale in ['de_DE', 'en_US']:
     result = subprocess.run(['php', '-r', 'echo json_encode(array_replace(require $argv[1], require $argv[2], require $argv[3]));', str(root / 'languages' / locale / 'default/messages.php'), str(root / 'languages' / locale / 'default/document.php'), str(root / 'languages' / locale / 'sales/invoice.php')], check=True, capture_output=True, text=True)
     catalogs[locale] = json.loads(result.stdout)
+# Render the real shared composer partial so this fixture catches attachment-default regressions.
+email_composer = subprocess.run(['php', '-r', r'''
+set_include_path($argv[1] . '/library' . PATH_SEPARATOR . get_include_path());
+require 'Zend/View.php';
+class NotificationEmailFormFixture {
+    public function getElement($name) { return $name === 'feedback'; }
+    public function renderElement($name) {
+        $elements = [
+            'recipient' => '<input name="recipient" value="300">',
+            'cc' => '<input name="cc">',
+            'bcc' => '<input name="bcc">',
+            'replyto' => '<input name="replyto">',
+            'subject' => '<input name="subject" value="Fixture">',
+            'body' => '<textarea id="body" name="body">Fixture body</textarea>',
+            'feedback' => '<input name="feedback" value="1">',
+        ];
+        return $elements[$name] ?? '';
+    }
+}
+class NotificationViewFixture extends Zend_View {
+    public function translate($value) { return $value; }
+    public function baseUrl($url = null) { return '/fixture' . (string)$url; }
+    public function HumanFileSize($size) { return $size . ' B'; }
+}
+$view = new NotificationViewFixture(['scriptPath' => $argv[1] . '/application/views/scripts']);
+$view->assign([
+    'emailForm' => new NotificationEmailFormFixture(),
+    'attachments' => [
+        ['id' => 710, 'filename' => 'fixture.pdf', 'filesize' => 100],
+        ['id' => 711, 'filename' => 'second.pdf', 'filesize' => 200],
+    ],
+    'module' => 'contacts', 'controller' => 'contact', 'id' => 100, 'mode' => 'send',
+]);
+echo $view->render('partials/email-messages.phtml');
+''', str(root)], check=True, capture_output=True, text=True)
 # Execute the actual rendered editor save callbacks with a captured editor API in the browser.
 editor = subprocess.run(['php', '-r', """
 set_include_path($argv[1] . '/library' . PATH_SEPARATOR . get_include_path());
@@ -44,6 +79,7 @@ echo $view->headScript();
 """, str(root)], check=True, capture_output=True, text=True)
 editor_script = '\n'.join(re.findall(r'<script[^>]*>(.*?)</script>', editor.stdout, re.S))
 html = Path(__file__).with_suffix('.html').read_text().replace('__ROOT__', root.as_uri())
+html = html.replace('<!-- productive email composer -->', email_composer.stdout)
 html = html.replace('/* editor helper */', editor_script)
 html = html.replace('/* translations */', 'var catalogs = ' + json.dumps(catalogs) + ';')
 with tempfile.TemporaryDirectory(prefix='dewawi-notifications-ui-') as directory:

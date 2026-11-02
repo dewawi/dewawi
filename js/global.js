@@ -4154,7 +4154,6 @@ function initAttachmentUpload($form) {
 			$attachments.children('.dw-attachment-list__empty').remove();
 			$attachments.append(this);
 		});
-		$attachments.find('input[type="checkbox"][name="file[]"]').prop('checked', true);
 	} catch (error) {
 		pushMessages(Dewawi.message('MESSAGES_UPLOAD_UNKNOWN'), 'warning', '#messages');
 	}

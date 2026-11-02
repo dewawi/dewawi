@@ -5,18 +5,12 @@
 <link rel="stylesheet" href="__ROOT__/css/ui.css">
 <div id="content">
   <div id="messages"><div class="dw-alert dw-alert--success" role="status"><ul><li>Flash fixture</li></ul><button class="dw-alert__close">×</button></div></div>
-  <div id="output" style="display:none"></div>
-  <form id="emailmessage" data-autosave="false">
-    <input name="recipient" value="300"><input name="subject" value="Fixture">
-    <textarea id="body" name="body">Fixture body</textarea><input name="feedback" value="1">
-    <div id="attachments"><input type="checkbox" name="file[]" value="10" checked></div>
-    <button type="button" class="send dw-btn dw-btn--primary" onclick="sendMessage()"><span>Send</span></button>
-  </form>
+  <!-- productive email composer -->
   <button id="resend" type="button" class="dw-btn" onclick="resendMessage(400, this)">Send again</button>
   <button id="disabled" class="dw-btn" disabled aria-disabled="true" aria-busy="false"><b>Disabled</b></button>
   <a href="/fixture/finalize" class="dw-btn" data-document-finalize data-error-message="Validation failed">Finalize</a>
   <div class="dw-document-validation"></div>
-  <div id="emailmessages"></div><div id="loading"></div>
+  <div id="loading"></div>
   <div id="document-fixture" class="edit"><form id="document-fixture-form" data-autosave="false"></form></div>
 </div>
 <div id="autosave-positions" class="dw-positions" data-type="pos"></div><div id="autosave-other" class="dw-positions" data-type="opt"></div>
@@ -63,6 +57,7 @@ $(function() {
     if (options.complete) options.complete();
   }
   var $send = $('#emailmessage button.send'), original = $send.html();
+  check($('#attachments input[name="file[]"]:checked').length === 2, 'Existing attachments are not selected by the productive email partial');
   check($('#messages').text().indexOf('Flash fixture') !== -1, 'Ready handler removed flash feedback');
   $('#messages .dw-alert__close').trigger('click');
   check(!$('#messages .dw-alert').length, 'Server-rendered flash cannot be dismissed');
@@ -95,7 +90,7 @@ $(function() {
     check(calls.length === 1 && confirms === 0, locale + ': parallel send or resend allowed');
     check($send.prop('disabled') && $send.hasClass('is-loading') && $send.attr('aria-busy') === 'true', locale + ': missing button loading state');
     check($('#output .dw-alert--info li').text() === dwMessages.MESSAGES_EMAIL_SENDING, locale + ': missing translated progress');
-    check(calls[0].options.url === '/fixture/contacts/email/send/contactid/100' && calls[0].options.data.files[10] === '10' && calls[0].options.data.body === 'Fixture body', locale + ': send payload or route changed');
+    check(calls[0].options.url === '/fixture/contacts/email/send/contactid/100' && calls[0].options.data.files[710] === '710' && calls[0].options.data.files[711] === '711' && calls[0].options.data.body === 'Fixture body', locale + ': send payload or route changed');
     check(calls[0].options.timeout > 0 && $('#loading').css('display') === 'none' && !$('#resend').prop('disabled'), locale + ': timeout missing or unrelated controls blocked');
     // An unrelated background request must remain available while sending.
     $.ajax({url: '/fixture/keepalive'});
@@ -135,6 +130,23 @@ $(function() {
     pushMessages('save_failed');
     check($('#messages li').text() === dwMessages.MESSAGES_SAVE_FAILED, locale + ': technical save key not translated');
   });
+
+  var $existingAttachments = $('#attachments input[name="file[]"]'), $existingAttachment = $existingAttachments.filter('[value="710"]');
+  $existingAttachment.prop('checked', false);
+  calls = []; sendMessage();
+  check(calls.length === 1 && calls[0].options.data.files[710] === undefined && calls[0].options.data.files[711] === '711', 'Deselected attachment remained in the send payload');
+  finish(calls[0], {ok: false});
+  check(!$existingAttachment.prop('checked'), 'Send failure reset the attachment selection');
+  $existingAttachments.prop('checked', false);
+  calls = []; sendMessage(); finish(calls[0], {ok: true});
+  check(calls.length === 2 && Object.keys(calls[0].options.data.files).length === 0 && !$existingAttachments.filter(':checked').length, 'Fully deselected attachments were sent or reset during history refresh');
+  finish(calls[1], '<p>Updated history</p>');
+  check(!$existingAttachments.filter(':checked').length, 'History update reset the attachment selection');
+  var $existingItems = $existingAttachments.closest('.dw-attachment-item').detach();
+  calls = []; sendMessage();
+  check(calls.length === 1 && Object.keys(calls[0].options.data.files).length === 0, 'Email form without attachments did not submit normally');
+  finish(calls[0], {ok: false});
+  $('#attachments').append($existingItems);
 
   calls = []; module = 'sales'; controller = 'invoice';
   $('<input name="contactid" value="500">').appendTo('#content');
@@ -1429,11 +1441,12 @@ $(function() {
     child.eval('var $ = parent.jQuery, Dewawi = parent.Dewawi, pushMessages = parent.pushMessages; ' + initAttachmentUpload.toString());
     var $parentAttachments = $('#attachments'); if (!$parentAttachments.length) $parentAttachments = $('<div id="attachments">').appendTo('body');
     ['error', '', 'confirmed', 'partial'].forEach(function(state) {
-      child.document.body.innerHTML = '<form data-upload-result="' + state + '"></form><div id="uploads"><div id="attachment9801" class="dw-attachment-item"><input name="file[]" type="checkbox" value="9801"><a href="/fixture/contacts/attachment/download/id/9801" target="_blank">Fixture file</a></div><div id="attachment9802" class="dw-attachment-item"><input name="file[]" type="checkbox" value="9802"></div></div>';
+      $parentAttachments.find('input[name="file[]"][value="710"],input[name="file[]"][value="711"]').prop('checked', false);
+      child.document.body.innerHTML = '<form data-upload-result="' + state + '"></form><div id="uploads"><div id="attachment9801" class="dw-attachment-item"><input name="file[]" type="checkbox" value="9801" checked><a href="/fixture/contacts/attachment/download/id/9801" target="_blank">Fixture file</a></div><div id="attachment9802" class="dw-attachment-item"><input name="file[]" type="checkbox" value="9802" checked></div></div>';
       $parentAttachments.find('#attachment9801,#attachment9802').remove();
       child.initAttachmentUpload($(child.document).find('form'));
       check($parentAttachments.find('#attachment9801,#attachment9802').length === ($.inArray(state, ['confirmed', 'partial']) === -1 ? 0 : 2), 'iframe load/error transferred unconfirmed rows or dropped confirmed partial uploads');
-      if (state === 'confirmed' || state === 'partial') check($parentAttachments.find('#attachment9801 input').prop('checked') && $parentAttachments.find('#attachment9801 a').attr('href') === '/fixture/contacts/attachment/download/id/9801', 'Confirmed upload lost parent selection or native download route');
+      if (state === 'confirmed' || state === 'partial') check($parentAttachments.find('#attachment9801 input').prop('checked') && !$parentAttachments.find('input[name="file[]"][value="710"],input[name="file[]"][value="711"]').filter(':checked').length && $parentAttachments.find('#attachment9801 a').attr('href') === '/fixture/contacts/attachment/download/id/9801', 'Confirmed upload lost its selection, reset an existing selection or changed the native download route');
       child.initAttachmentUpload($(child.document).find('form'));
       check($parentAttachments.find('#attachment9801').length <= 1, 'Repeated upload initializer duplicated attachments');
     });

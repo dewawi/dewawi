@@ -82,6 +82,18 @@ class AttachmentTestController extends Contacts_AttachmentController
         fclose($stream);
     }
 }
+class AttachmentPartialForm
+{
+    public function getElement($name) { return false; }
+    public function renderElement($name) { return ''; }
+}
+class AttachmentPartialView extends Zend_View
+{
+    public function translate($value) { return $value; }
+    public function baseUrl($url = null) { return (string)$url; }
+    public function HumanFileSize($size) { return $size . ' B'; }
+    public function Messages() { return ''; }
+}
 
 $adapter = new AttachmentTestAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
 Zend_Db_Table::setDefaultAdapter($adapter);
@@ -142,6 +154,25 @@ function uploadFixture(string $filename): array
     file_put_contents($path, "%PDF-1.4\nUploaded attachment security fixture\n%%EOF\n");
     return ['name' => $filename, 'tmp_name' => $path, 'size' => filesize($path)];
 }
+
+$partialView = new AttachmentPartialView(['scriptPath' => $root . '/application/views/scripts']);
+$partialView->assign([
+    'emailForm' => new AttachmentPartialForm(),
+    'attachments' => [['id' => 600, 'filename' => 'quote.pdf', 'filesize' => 100]],
+    'module' => 'sales', 'controller' => 'quote', 'id' => 10, 'mode' => 'send',
+]);
+$composerHtml = $partialView->render('partials/email-messages.phtml');
+check((bool)preg_match('/<input\b(?=[^>]*\bname="file\[\]")(?=[^>]*\bvalue="600")(?=[^>]*\bchecked\b)[^>]*>/', $composerHtml), 'Existing attachment is not selected by the shared email partial');
+$partialView->attachments = [];
+check(!str_contains($partialView->render('partials/email-messages.phtml'), 'name="file[]"'), 'Attachment-free email partial rendered a selection');
+
+$uploadView = new AttachmentPartialView(['scriptPath' => $root . '/application/modules/contacts/views/scripts']);
+$uploadView->assign([
+    'form' => new AttachmentPartialForm(), 'uploadResult' => 'confirmed',
+    'uploads' => [700 => ['filename' => 'uploaded.pdf', 'filesize' => 100]],
+]);
+$uploadHtml = $uploadView->render('attachment/upload.phtml');
+check((bool)preg_match('/<input\b(?=[^>]*\bname="file\[\]")(?=[^>]*\bvalue="700")(?=[^>]*\bchecked\b)[^>]*>/', $uploadHtml), 'New upload is not selected by the upload partial');
 
 foreach ([false, true] as $shared) {
     setupAttachments($shared);
