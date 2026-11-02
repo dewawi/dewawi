@@ -30,7 +30,7 @@ function auditTestCheck(bool $condition, string $message): void
 }
 
 try {
-	$header = ['module', 'controller', 'id', 'clientid', 'contactid', 'document_number', 'document_date', 'filename', 'state', 'completed', 'completeddate', 'deleted', 'focus_from_may_2026', 'attachment_id', 'attachment_filename', 'attachment_filesize', 'attachment_location', 'attachment_deleted'];
+	$header = ['module', 'controller', 'id', 'clientid', 'contactid', 'contact_record_id', 'contact_number', 'document_number', 'document_date', 'filename', 'state', 'completed', 'completeddate', 'deleted', 'focus_from_may_2026', 'attachment_id', 'attachment_filename', 'attachment_filesize', 'attachment_location', 'attachment_deleted'];
 	$rows = [];
 	$pdf = "%PDF-1.4\nOriginal audit fixture\n%%EOF\n";
 	foreach ([
@@ -41,7 +41,7 @@ try {
 		[5, '7305', '../invalid.pdf', null, 1],
 	] as [$id, $number, $filename, $attachmentId, $focus]) {
 		$attachmentLocation = $attachmentId ? $work . '/files/attachments/sales/invoice/7/0/7/' . (string)$id . '/0/' . (string)$id : 'NULL';
-		$rows[] = ['sales', 'invoice', $id, 7, 80560, $number, '2026-05-0' . $id, $filename, 105, 1, '2026-05-01 12:00:00', 0, $focus, $attachmentId ?? 'NULL', $attachmentId ? $filename : 'NULL', $attachmentId ? strlen($pdf) : 'NULL', $attachmentLocation, $attachmentId ? 0 : 'NULL'];
+		$rows[] = ['sales', 'invoice', $id, 7, 58101, 80560, 58101, $number, '2026-05-0' . $id, $filename, 105, 1, '2026-05-01 12:00:00', 0, $focus, $attachmentId ?? 'NULL', $attachmentId ? $filename : 'NULL', $attachmentId ? strlen($pdf) : 'NULL', $attachmentLocation, $attachmentId ? 0 : 'NULL'];
 	}
 	$tsv = $work . '/documents.tsv';
 	$stream = fopen($tsv, 'wb');
@@ -50,11 +50,12 @@ try {
 	fclose($stream);
 
 	$contact = 'files/contacts/7/0/7/8/0/80560/';
+	$current = 'files/contacts/7/0/7/5/8/58101/';
 	$attachment = 'files/attachments/sales/invoice/7/0/7/';
 	$original1 = auditTestFile($work, $contact . 'invoice-1.pdf', $pdf);
 	auditTestFile($work, $attachment . '1/0/1/invoice-1.pdf', $pdf);
 	auditTestFile($work, $attachment . '2/0/2/invoice-2.pdf', $pdf);
-	auditTestFile($work, $contact . 'invoice-3.pdf', $pdf);
+	auditTestFile($work, $current . 'invoice-3.pdf', $pdf);
 	auditTestFile($work, $attachment . '3/0/3/invoice-3.pdf', "%PDF-1.4\nDifferent fixture\n%%EOF\n");
 	auditTestFile($work, $contact . 'invoice-4.pdf', '');
 	auditTestFile($work, $contact . 'unassigned.pdf', $pdf);

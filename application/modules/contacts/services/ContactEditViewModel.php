@@ -131,6 +131,7 @@ class Contacts_Service_ContactEditViewModel
 
 		$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
 		$attachments = $emailattachmentDb->getEmailattachments($contactId, 'contacts', 'contact');
+		$documentFiles = $emailattachmentDb->getContactDocumentFiles($contactId);
 
 		return [
 			'tags' => $tags,
@@ -140,6 +141,7 @@ class Contacts_Service_ContactEditViewModel
 			'emailForm' => $emailForm,
 			'contactpersonAssignmentForm' => $assignmentForm,
 			'attachments' => $attachments,
+			'documentFiles' => $documentFiles,
 			'address' => $address,
 			'phone' => $phone,
 			'email' => $email,

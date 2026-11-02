@@ -525,7 +525,10 @@ $config = array(
     // set the names of any folders you want hidden (eg "hidden_folder1", "hidden_folder2" ) Remember all folders with these names will be hidden (you can set any exceptions in config.php files on folders)
     'hidden_folders'                          => array(),
     // set the names of any files you want hidden. Remember these names will be hidden in all folders (eg "this_document.pdf", "that_image.jpg" )
-    'hidden_files'                            => array( 'config.php' ),
+    'hidden_files'                            => array_merge(array('config.php'), array_values(array_filter(
+        (array)($_SESSION['FileManager']['hidden_files'] ?? []),
+        static fn($filename) => is_string($filename) && DEEC_Directory::validUploadName($filename)
+    ))),
 
     /*******************
     * URL upload

@@ -1,0 +1,50 @@
+<?php if (!empty($this->documentFiles)) : ?>
+	<section class="dw-contact-document-files">
+		<h3><?php echo $this->escape($this->translate('CONTACTS_ISSUED_DOCUMENT_FILES')); ?></h3>
+		<table class="dw-table">
+			<thead>
+				<tr>
+					<th><?php echo $this->escape($this->translate('CONTACTS_DOCUMENT_TYPE')); ?></th>
+					<th><?php echo $this->escape($this->translate('CONTACTS_DOCUMENT_ID')); ?></th>
+					<th><?php echo $this->escape($this->translate('CONTACTS_DOCUMENT_DATE')); ?></th>
+					<th><?php echo $this->escape($this->translate('CONTACTS_FILE_NAME')); ?></th>
+					<th><?php echo $this->escape($this->translate('CONTACTS_DOCUMENT_FILE_STATUS')); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($this->documentFiles as $file) : ?>
+					<?php
+					$url = '';
+					if (!empty($file['relative'])) {
+						$url = $this->baseUrl() . '/' . implode('/', array_map('rawurlencode', explode('/', $file['relative'])));
+					} elseif (!empty($file['attachmentId'])) {
+						$url = $this->url([
+							'module' => 'contacts', 'controller' => 'attachment', 'action' => 'download',
+							'id' => (int)$file['attachmentId'],
+						], null, true);
+					}
+					$status = 'CONTACTS_DOCUMENT_FILE_' . strtoupper((string)$file['status']);
+					?>
+					<tr>
+						<td><?php echo $this->escape($this->translate(mb_strtoupper((string)$file['controller']))); ?></td>
+						<td>
+							<a href="<?php echo $this->escape($this->url([
+								'module' => $file['module'], 'controller' => $file['controller'],
+								'action' => 'view', 'id' => (int)$file['id'],
+							], null, true)); ?>"><?php echo $this->escape((string)$file['number']); ?></a>
+						</td>
+						<td><?php echo $this->escape($file['date'] ? date('d.m.Y', strtotime($file['date'])) : ''); ?></td>
+						<td>
+							<?php if ($url !== '') : ?>
+								<a href="<?php echo $this->escape($url); ?>" target="_blank" rel="noopener"><?php echo $this->escape((string)$file['filename']); ?></a>
+							<?php else : ?>
+								<?php echo $this->escape((string)$file['filename']); ?>
+							<?php endif; ?>
+						</td>
+						<td><?php echo $this->escape($this->translate($status)); ?></td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</section>
+<?php endif; ?>

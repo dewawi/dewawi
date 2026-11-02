@@ -110,6 +110,7 @@ class DocumentPdfTestGenerator extends DEEC_Pdf
 }
 
 require_once $root . '/application/modules/sales/models/DbTable/Invoice.php';
+require_once $root . '/application/modules/contacts/models/DbTable/Contact.php';
 
 class DocumentPdfTestController extends DEEC_Controller_DocumentAction
 {
@@ -142,6 +143,7 @@ $document = [
     'state' => 105, 'completed' => 1, 'completeddate' => '2026-09-09 12:00:00', 'completedby' => 42,
     'modified' => '2026-09-10 12:00:00', 'modifiedby' => 42,
 ];
+$adapter->rows['contact'] = [['id' => 99, 'contactid' => 12, 'clientid' => 7, 'deleted' => 0]];
 $originalDir = BASE_PATH . '/files/contacts/7/0/7/1/2/12';
 mkdir($originalDir, 0775, true);
 $original = $originalDir . '/original.pdf';
@@ -164,6 +166,29 @@ foreach (['sales' => ['quote', 'invoice', 'salesorder', 'deliveryorder', 'credit
         check($generator->bootstraps === 0 && $generator->resolutions === 0 && $generator->renders === 0, 'Existing original triggered generation');
     }
 }
+
+// Originals created before the contact-number storage convention remain the authoritative file.
+$adapter->rows['invoice'] = [$document + ['invoiceid' => 1001]];
+$legacyDir = BASE_PATH . '/files/contacts/7/0/7/9/9/99';
+if (!is_dir($legacyDir)) mkdir($legacyDir, 0775, true);
+$legacyOriginal = $legacyDir . '/original.pdf';
+rename($original, $legacyOriginal);
+$legacyResult = (new DocumentPdfTestGenerator())->generate([
+    'module' => 'sales', 'controller' => 'invoice', 'documentId' => 1, 'output' => 'download', 'storage' => 'cache', 'overwrite' => true,
+]);
+check($legacyResult['path'] === $legacyOriginal && $legacyResult['url'] === '/files/contacts/7/0/7/9/9/99/original.pdf', 'Legacy contact-record path was not selected');
+check(!is_file($original) && file_get_contents($legacyOriginal) === $originalBytes, 'Legacy retrieval copied or changed the original');
+file_put_contents($original, "%PDF-1.4\nConflicting current document\n%%EOF\n");
+try {
+    (new DocumentPdfTestGenerator())->generate([
+        'module' => 'sales', 'controller' => 'invoice', 'documentId' => 1, 'output' => 'download',
+    ]);
+    throw new LogicException('Conflicting document locations were accepted');
+} catch (RuntimeException $expected) {
+    check($expected->getMessage() === 'Original PDF locations differ', 'Unexpected location conflict error');
+}
+unlink($original);
+rename($legacyOriginal, $original);
 
 $request = ['module' => 'sales', 'controller' => 'invoice', 'documentId' => 1, 'output' => 'download', 'storage' => 'cache', 'overwrite' => true, 'templateid' => 999];
 $issued = $document + ['invoiceid' => 1001];

@@ -2,6 +2,11 @@
 
 class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 {
+	private const DOCUMENTS = [
+		'sales' => ['quote', 'salesorder', 'invoice', 'deliveryorder', 'creditnote', 'reminder'],
+		'purchases' => ['quoterequest', 'purchaseorder'],
+	];
+
 	protected $_name = 'emailattachment';
 
 	public function getPublishedFilePath(string $relative): ?string
@@ -74,18 +79,10 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			$prefix = 'files/' . $kind . '/' . (new DEEC_Directory())->getUrl($id, $owner) . '/';
 			if (!str_starts_with($relative, $prefix)) return false;
 			if ($kind === 'contacts') {
-				$matches = [];
-				foreach (['sales' => ['quote', 'salesorder', 'invoice', 'deliveryorder', 'creditnote', 'reminder'], 'purchases' => ['quoterequest', 'purchaseorder']] as $module => $controllers) {
-					foreach ($controllers as $controller) {
-						$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
-						$db = new $class();
-						$rows = $db->fetchAll($db->select()->where('clientid = ?', (int)$owner)->where('contactid = ?', (int)$id)->where('filename = ?', basename($filename)));
-						foreach ($rows as $row) $matches[] = [$module, $controller, (int)$row['id']];
-					}
-				}
+				$matches = $this->getStoredDocumentMatches((int)$owner, (int)$id, basename($filename));
 				if ($matches) {
 					if (count($matches) !== 1) return false;
-					[$module, $controller, $documentId] = $matches[0];
+					[$module, $controller, $documentId] = array_values($matches[0]);
 					$context = $this->getParentContext($documentId, $module, $controller, $action);
 					return $context && $context['clientid'] === (int)$owner
 						&& ($action === 'view' || !DEEC_Permission::isDocumentReadonly($module, $controller, $context['parent']));
@@ -126,6 +123,183 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		if ($module === 'users') return ($context['controller'] ?? '') === 'user' && ($context['id'] ?? 0) === (int)$user['id'] && $folder === 'uploads/' . (new DEEC_Directory())->getShortUrl($user['clientid']) . '/users/' . (int)$user['id'];
 		if (str_starts_with($parts[2], 'uploads/')) return false;
 		return $this->getParentContext($context['id'] ?? 0, $module, $context['controller'] ?? '') !== null;
+	}
+
+	private function getStoredDocumentMatches(int $owner, int $pathContactId, string $filename): array
+	{
+		$matches = [];
+		$contactIds = [];
+		foreach (self::DOCUMENTS as $module => $controllers) {
+			foreach ($controllers as $controller) {
+				$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+				$db = new $class();
+				$rows = $db->fetchAll($db->select()->where('clientid = ?', $owner)->where('filename = ?', $filename));
+				foreach ($rows as $row) {
+					$data = $row instanceof Zend_Db_Table_Row_Abstract ? $row->toArray() : (array)$row;
+					$contactNumber = (int)($data['contactid'] ?? 0);
+					if ($contactNumber !== $pathContactId) {
+						if (!array_key_exists($contactNumber, $contactIds)) $contactIds[$contactNumber] = $this->getContactRecordId($contactNumber);
+						if ($contactIds[$contactNumber] !== $pathContactId) continue;
+					}
+					$matches[] = ['module' => $module, 'controller' => $controller, 'id' => (int)$data['id']];
+				}
+			}
+		}
+		return $matches;
+	}
+
+	private function getContactRecordId(int $contactNumber): int
+	{
+		if ($contactNumber <= 0 || !Zend_Registry::isRegistered('Client') || !Zend_Registry::isRegistered('User')) return 0;
+		$client = Zend_Registry::get('Client');
+		$user = Zend_Registry::get('User');
+		$owner = (int)($client['modules']['contacts'] ?? $user['clientid']);
+		if ($owner <= 0) return 0;
+		$contact = (new Contacts_Model_DbTable_Contact())->setClientId($owner)->getContactWithID($contactNumber);
+		return (int)($contact['id'] ?? 0);
+	}
+
+	public function getContactDocumentFiles(int $contactId): array
+	{
+		$contactContext = $this->getParentContext($contactId, 'contacts', 'contact');
+		if (!$contactContext) return [];
+		$contact = $contactContext['parent'];
+		$contactNumber = (int)($contact['contactid'] ?? 0);
+		if ($contactNumber <= 0) return [];
+
+		$user = Zend_Registry::get('User');
+		$client = Zend_Registry::get('Client');
+		$permission = new DEEC_Permission((array)$user);
+		$files = [];
+		foreach (self::DOCUMENTS as $module => $controllers) {
+			$owner = (int)($client['modules'][$module] ?? $user['clientid']);
+			if ($owner <= 0) continue;
+			foreach ($controllers as $controller) {
+				if (!$permission->hasActionPermission($module, $controller, 'view')) continue;
+				$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+				$rows = (new $class())->setClientId($owner)->getByContactId($contactNumber, 'id DESC');
+				foreach ($rows as $row) {
+					$document = $row instanceof Zend_Db_Table_Row_Abstract ? $row->toArray() : (array)$row;
+					if (!DEEC_Permission::isDocumentReadonly($module, $controller, $document)) continue;
+					$context = $this->getParentContext((int)$document['id'], $module, $controller);
+					if (!$context || $context['clientid'] !== $owner) continue;
+					$files[] = $this->resolveContactDocumentFile($context['parent'], $module, $controller, $contactId, $contactNumber, $owner);
+				}
+			}
+		}
+		usort($files, static function (array $left, array $right): int {
+			return strcmp((string)($right['date'] ?? ''), (string)($left['date'] ?? '')) ?: ((int)$right['id'] <=> (int)$left['id']);
+		});
+		$paths = [];
+		foreach ($files as $index => $file) if ($file['relative'] !== '') $paths[$file['relative']][] = $index;
+		foreach ($paths as $indexes) {
+			if (count($indexes) < 2) continue;
+			foreach ($indexes as $index) {
+				if ($files[$index]['fallbackAttachmentId']) {
+					$files[$index]['source'] = 'attachment';
+					$files[$index]['relative'] = '';
+					$files[$index]['attachmentId'] = $files[$index]['fallbackAttachmentId'];
+				} else {
+					$files[$index]['status'] = 'conflict';
+					$files[$index]['source'] = $files[$index]['relative'] = '';
+				}
+			}
+		}
+		foreach ($files as &$file) unset($file['fallbackAttachmentId']);
+		unset($file);
+		return $files;
+	}
+
+	public function getContactDocumentFilenames(int $contactId): array
+	{
+		$contactContext = $this->getParentContext($contactId, 'contacts', 'contact');
+		if (!$contactContext) return [];
+		$contactNumber = (int)($contactContext['parent']['contactid'] ?? 0);
+		if ($contactNumber <= 0) return [];
+		$user = Zend_Registry::get('User');
+		$client = Zend_Registry::get('Client');
+		$filenames = [];
+		foreach (self::DOCUMENTS as $module => $controllers) {
+			$owner = (int)($client['modules'][$module] ?? $user['clientid']);
+			if ($owner <= 0) continue;
+			foreach ($controllers as $controller) {
+				$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+				foreach ((new $class())->setClientId($owner)->getByContactId($contactNumber) as $row) {
+					$document = $row instanceof Zend_Db_Table_Row_Abstract ? $row->toArray() : (array)$row;
+					$filename = (string)($document['filename'] ?? '');
+					if (DEEC_Permission::isDocumentReadonly($module, $controller, $document) && DEEC_Emailattachment::validFilename($filename)) {
+						$filenames[$filename] = true;
+					}
+				}
+			}
+		}
+		return array_keys($filenames);
+	}
+
+	private function resolveContactDocumentFile(array $document, string $module, string $controller, int $contactId, int $contactNumber, int $owner): array
+	{
+		$filename = (string)($document['filename'] ?? '');
+		$result = [
+			'id' => (int)$document['id'], 'module' => $module, 'controller' => $controller,
+			'number' => (string)($document[$controller . 'id'] ?? ''),
+			'date' => (string)($document[$controller . 'date'] ?? ''), 'filename' => $filename,
+			'status' => 'missing', 'source' => '', 'relative' => '', 'attachmentId' => 0, 'fallbackAttachmentId' => 0,
+		];
+		if (!DEEC_Emailattachment::validFilename($filename)) return $result;
+
+		$directory = new DEEC_Directory();
+		$originals = [];
+		$invalid = false;
+		foreach (array_unique([$contactNumber, $contactId]) as $storageId) {
+			$relative = 'files/contacts/' . $directory->getUrl((string)$storageId, (string)$owner) . '/' . $filename;
+			$file = $this->readStoredPdf($relative);
+			if (!empty($file['valid'])) $originals[] = $file + ['source' => $storageId === $contactNumber ? 'current' : 'legacy'];
+			elseif (!empty($file['exists'])) $invalid = true;
+		}
+
+		$attachments = [];
+		foreach ($this->getEmailattachments((int)$document['id'], $module, $controller) as $attachment) {
+			if ((string)$attachment['filename'] !== $filename) continue;
+			try {
+				$path = DEEC_Emailattachment::getPath($attachment);
+				DEEC_Pdf::assertCompletePdfFile($path);
+				$attachments[] = ['hash' => hash_file('sha256', $path), 'attachmentId' => (int)$attachment['id'], 'source' => 'attachment'];
+			} catch (Exception $exception) {
+				$invalid = true;
+			}
+		}
+
+		$candidates = array_merge($originals, $attachments);
+		$hashes = array_values(array_unique(array_column($candidates, 'hash')));
+		if (count($hashes) > 1) {
+			$result['status'] = 'conflict';
+			return $result;
+		}
+		if (!$candidates) {
+			if ($invalid) $result['status'] = 'invalid';
+			return $result;
+		}
+
+		$chosen = $originals[0] ?? $attachments[0];
+		$result['source'] = $chosen['source'];
+		$result['relative'] = (string)($chosen['relative'] ?? '');
+		$result['attachmentId'] = (int)($chosen['attachmentId'] ?? 0);
+		$result['fallbackAttachmentId'] = (int)($attachments[0]['attachmentId'] ?? 0);
+		$result['status'] = $invalid ? 'invalid' : (!$originals ? 'attachment_only' : (!$attachments ? 'original_only' : 'available'));
+		return $result;
+	}
+
+	private function readStoredPdf(string $relative): array
+	{
+		$path = realpath(BASE_PATH) . '/' . $relative;
+		if (!file_exists($path) && !is_link($path)) return ['exists' => false, 'valid' => false];
+		try {
+			$path = DEEC_Directory::storedPath($relative);
+			DEEC_Pdf::assertCompletePdfFile($path);
+			return ['exists' => true, 'valid' => true, 'relative' => $relative, 'hash' => hash_file('sha256', $path)];
+		} catch (Exception $exception) {
+			return ['exists' => true, 'valid' => false];
+		}
 	}
 
 	public function getParentContext($documentId, $module, $controller, string $action = 'view'): ?array
@@ -214,11 +388,24 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		if(!$context) return ['contactUrl' => '', 'documentUrl' => '', 'attachments' => []];
 		$document = $context['parent'];
 		$directory = new DEEC_Directory();
-		$contactUrl = $directory->getUrl((string)(int)$document['contactid'], (string)$context['clientid']);
+		$contactIds = [(int)$document['contactid']];
+		$contactRecordId = $this->getContactRecordId((int)$document['contactid']);
+		if ($contactRecordId > 0 && $contactRecordId !== (int)$document['contactid']) $contactIds[] = $contactRecordId;
+		$contactUrls = array_map(static fn(int $contactId): string => $directory->getUrl((string)$contactId, (string)$context['clientid']), $contactIds);
+		$contactUrl = $contactUrls[0];
 		$documentUrl = $directory->getUrl((string)$document['id'], (string)$context['clientid']);
 		$filename = (string)($document['filename'] ?? '');
-		$source = realpath(BASE_PATH) . '/files/contacts/' . $contactUrl . '/' . $filename;
-		DEEC_Emailattachment::checkPath($source);
+		$sources = [];
+		foreach ($contactUrls as $url) {
+			$path = realpath(BASE_PATH) . '/files/contacts/' . $url . '/' . $filename;
+			DEEC_Emailattachment::checkPath($path);
+			if (!is_file($path)) continue;
+			DEEC_Pdf::assertCompletePdfFile($path);
+			$sources[] = ['path' => $path, 'url' => $url, 'hash' => hash_file('sha256', $path)];
+		}
+		if (count(array_unique(array_column($sources, 'hash'))) > 1) throw new RuntimeException('Original PDF locations differ');
+		$source = $sources[0]['path'] ?? realpath(BASE_PATH) . '/files/contacts/' . $contactUrl . '/' . $filename;
+		if ($sources) $contactUrl = $sources[0]['url'];
 		$attachments = $this->getEmailattachments($document['id'], $module, $controller);
 		$exists = false;
 		foreach($attachments as $attachment) {
@@ -227,7 +414,6 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 				$attachmentPath = DEEC_Emailattachment::getPath($attachment);
 				DEEC_Pdf::assertCompletePdfFile($attachmentPath);
 				if (is_file($source)) {
-					DEEC_Pdf::assertCompletePdfFile($source);
 					if (!hash_equals(hash_file('sha256', $source), hash_file('sha256', $attachmentPath))) throw new RuntimeException('Attachment differs from original PDF');
 				}
 			}
@@ -235,7 +421,6 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		if(!$exists && (int)$document['contactid'] > 0 && DEEC_Emailattachment::validFilename($filename)) {
 			$target = DEEC_Emailattachment::getDirectory($module, $controller, (int)$document['id'], $context['clientid']);
 			if(is_file($source)) {
-				DEEC_Pdf::assertCompletePdfFile($source);
 				if(!is_dir($target) && !mkdir($target, 0775, true) && !is_dir($target)) throw new RuntimeException('Attachment directory is not available');
 				$path = $target . '/' . $filename;
 				DEEC_Emailattachment::checkPath($path);

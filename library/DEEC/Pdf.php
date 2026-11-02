@@ -453,9 +453,31 @@ class DEEC_Pdf
 		$dirUrl = '';
 
 		if ($storage === 'contact' && $clientId > 0 && $contactId > 0) {
-			$relativeDir = $this->contactUrl((string)$contactId, (string)$clientId);
-			$dirAbs = BASE_PATH . '/files/contacts/' . $relativeDir;
-			$dirUrl = $baseUrl . '/files/contacts/' . $relativeDir;
+			$storageIds = [$contactId];
+			$contactRecordId = $this->getContactRecordId($contactId, $clientId);
+			if ($contactRecordId > 0 && $contactRecordId !== $contactId) $storageIds[] = $contactRecordId;
+			$locations = [];
+			foreach ($storageIds as $storageId) {
+				$directory = $this->contactUrl((string)$storageId, (string)$clientId);
+				$path = BASE_PATH . '/files/contacts/' . $directory . $filename;
+				DEEC_Emailattachment::checkPath($path);
+				$locations[] = [
+					'relative' => $directory,
+					'path' => $path,
+					'url' => $baseUrl . '/files/contacts/' . $directory . rawurlencode($filename),
+				];
+			}
+			$existing = array_values(array_filter($locations, static fn(array $location): bool => is_file($location['path'])));
+			if (count($existing) > 1) {
+				foreach ($existing as $location) self::assertCompletePdfFile($location['path']);
+				if (count(array_unique(array_map(static fn(array $location): string => hash_file('sha256', $location['path']), $existing))) > 1) {
+					throw new RuntimeException('Original PDF locations differ');
+				}
+			}
+			$location = $existing[0] ?? $locations[0];
+			$relativeDir = $location['relative'];
+			$dirAbs = dirname($location['path']) . '/';
+			$dirUrl = substr($location['url'], 0, -strlen(rawurlencode($filename)));
 		} else {
 			$safeModule = preg_replace('/[^a-z0-9_-]+/i', '_', $module);
 			$safeController = preg_replace('/[^a-z0-9_-]+/i', '_', $controller);
@@ -477,6 +499,16 @@ class DEEC_Pdf
 			'storage' => $storage,
 			'exists' => is_file($fileAbs),
 		];
+	}
+
+	private function getContactRecordId(int $contactNumber, int $documentClientId): int
+	{
+		if (!Zend_Registry::isRegistered('Client')) return 0;
+		$client = Zend_Registry::get('Client');
+		$owner = (int)($client['modules']['contacts'] ?? $documentClientId);
+		if ($owner <= 0) return 0;
+		$contact = (new Contacts_Model_DbTable_Contact())->setClientId($owner)->getContactWithID($contactNumber);
+		return (int)($contact['id'] ?? 0);
 	}
 
 	private function mkdirp($dir)

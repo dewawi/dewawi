@@ -1,8 +1,9 @@
--- Read-only operator diagnostic for contact number 80560 (Atalay & Roos).
--- Set the exact document tenant below before running this file. The default 0 returns no documents.
+-- Read-only operator diagnostic for Atalay & Roos.
+-- Confirmed mapping: tenant 100, contact.id 80560, contact.contactid 58101.
 -- Recommended invocation is documented in original-document-audit.md.
-SET @clientid := 0;
-SET @contactid := 80560;
+SET @clientid := 100;
+SET @contact_record_id := 80560;
+SET @contact_number := 58101;
 SET @focus_date := '2026-05-01';
 
 START TRANSACTION READ ONLY;
@@ -13,6 +14,8 @@ SELECT
 	d.id,
 	d.clientid,
 	d.contactid,
+	@contact_record_id AS contact_record_id,
+	@contact_number AS contact_number,
 	d.document_number,
 	d.document_date,
 	d.filename,
@@ -43,6 +46,11 @@ FROM (
 	UNION ALL
 	SELECT 'purchases', 'purchaseorder', id, clientid, contactid, CAST(purchaseorderid AS CHAR), purchaseorderdate, filename, state, completed, completeddate, deleted FROM purchaseorder
 ) d
+JOIN contact c
+	ON c.id = @contact_record_id
+	AND c.contactid = @contact_number
+	AND c.clientid = @clientid
+	AND c.deleted = 0
 LEFT JOIN emailattachment a
 	ON a.documentid = d.id
 	AND a.module = d.module
@@ -50,7 +58,7 @@ LEFT JOIN emailattachment a
 	AND a.clientid = d.clientid
 	AND a.filename = d.filename
 WHERE d.clientid = @clientid
-	AND d.contactid = @contactid
+	AND d.contactid = @contact_number
 ORDER BY d.document_date, d.module, d.controller, d.id, a.deleted, a.id;
 
 ROLLBACK;

@@ -53,6 +53,12 @@ class StoredDownloadController extends Contacts_DownloadController
     protected function getUploadAdapter() { return AttachmentTestController::$upload; }
     public function receiveFixture(string $directory): ?array { return $this->receiveFile($directory); }
 }
+class ContactFilesPartialView extends AttachmentPartialView
+{
+    public function url($options = [], $name = null, $reset = false, $encode = true) { return '/' . implode('/', array_filter([
+        $options['module'] ?? '', $options['controller'] ?? '', $options['action'] ?? '', isset($options['id']) ? 'id/' . $options['id'] : '',
+    ])); }
+}
 $adapter = new StoredFileAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
 Zend_Db_Table::setDefaultAdapter($adapter);
 
@@ -152,6 +158,110 @@ foreach ([false, true] as $shared) {
     Zend_Registry::getInstance()->offsetUnset('Client');
     foreach ($paths as $relative) check(storedResponse($relative)[0] === 404, 'Anonymous file exposed: ' . $relative);
 }
+
+// Production regression: contact.id and the customer number stored in documents use different directories.
+setupStoredFiles();
+Zend_Registry::set('User', ['id' => 42, 'clientid' => 100]);
+Zend_Registry::set('Client', ['id' => 100, 'parentid' => 0, 'modules' => ['contacts' => 100, 'sales' => 100, 'purchases' => 100]]);
+$adapter->rows['permission'] = [[
+    'id' => 1, 'userid' => 42, 'clientid' => 100, 'deleted' => 0,
+    'contacts' => '{"contact":["view","edit"]}',
+    'sales' => '{"quote":["view"],"salesorder":["view"],"invoice":["view"],"deliveryorder":["view"],"creditnote":["view"],"reminder":["view"]}',
+    'purchases' => '{"quoterequest":["view"],"purchaseorder":["view"]}',
+]];
+$adapter->rows['contact'] = [['id' => 80560, 'contactid' => 58101, 'clientid' => 100, 'deleted' => 0]];
+$documentTypes = [
+    'quote' => 'sales', 'salesorder' => 'sales', 'deliveryorder' => 'sales', 'creditnote' => 'sales',
+    'reminder' => 'sales', 'quoterequest' => 'purchases', 'purchaseorder' => 'purchases',
+];
+$adapter->rows['invoice'] = [];
+$adapter->rows['emailattachment'] = [];
+$productionDocuments = [];
+foreach ([112153, 112279, 112468] as $index => $number) {
+    $id = 900 + $index;
+    $filename = 'invoice-' . $number . '.pdf';
+    $row = ['id' => $id, 'invoiceid' => $number, 'invoicedate' => '2026-0' . (4 + $index) . '-15', 'clientid' => 100, 'contactid' => 58101,
+        'filename' => $filename, 'state' => 105, 'completed' => 1, 'cancelled' => 0, 'deleted' => 0];
+    $adapter->rows['invoice'][] = $row;
+    $productionDocuments[$number] = $row;
+}
+$nextId = 910;
+foreach ($documentTypes as $controller => $module) {
+    $row = ['id' => $nextId, $controller . 'id' => 200000 + $nextId, $controller . 'date' => '2026-08-01', 'clientid' => 100,
+        'contactid' => 58101, 'filename' => $controller . '-' . $nextId . '.pdf', 'state' => 105, 'completed' => 1, 'cancelled' => 0, 'deleted' => 0];
+    $adapter->rows[$controller] = [$row];
+    $nextId++;
+}
+$adapter->rows['invoice'][] = ['id' => 920, 'invoiceid' => 112500, 'invoicedate' => '2026-09-01', 'clientid' => 100, 'contactid' => 58101,
+    'filename' => 'invoice-112500.pdf', 'state' => 105, 'completed' => 1, 'cancelled' => 0, 'deleted' => 0];
+$pdf = "%PDF-1.4\nContact document location fixture\n%%EOF\n";
+$legacyFolder = 'files/contacts/' . (new DEEC_Directory())->getUrl(80560, 100) . '/';
+$currentFolder = 'files/contacts/' . (new DEEC_Directory())->getUrl(58101, 100) . '/';
+storedFixture($legacyFolder . 'invoice-112153.pdf', $pdf);
+storedFixture($currentFolder . 'invoice-112279.pdf', $pdf);
+storedFixture($currentFolder . 'invoice-112468.pdf', $pdf);
+storedFixture($legacyFolder . 'manual-note.txt', 'Manual contact file');
+foreach (array_merge($productionDocuments, array_merge(...array_map(static fn(string $controller): array => $adapter->rows[$controller], array_keys($documentTypes)))) as $row) {
+    $controller = isset($row['invoiceid']) ? 'invoice' : array_values(array_filter(array_keys($documentTypes), static fn(string $candidate): bool => isset($row[$candidate . 'id'])))[0];
+    $module = $controller === 'quoterequest' || $controller === 'purchaseorder' ? 'purchases' : 'sales';
+    if (!isset($productionDocuments[$row[$controller . 'id'] ?? 0])) storedFixture($currentFolder . $row['filename'], $pdf);
+    $attachment = attachmentFile([
+        'id' => 1000 + (int)$row['id'], 'documentid' => (int)$row['id'], 'module' => $module, 'controller' => $controller,
+        'clientid' => 100, 'filename' => $row['filename'],
+    ]);
+    file_put_contents(DEEC_Emailattachment::getPath($attachment), $pdf);
+    $attachment['filesize'] = strlen($pdf);
+    $adapter->rows['emailattachment'][] = $attachment;
+}
+
+$writesBeforeDocumentFiles = $adapter->writes;
+$documentFiles = (new Contacts_Model_DbTable_Emailattachment())->getContactDocumentFiles(80560);
+$byNumber = array_column($documentFiles, null, 'number');
+$hiddenDocumentFiles = (new Contacts_Model_DbTable_Emailattachment())->getContactDocumentFilenames(80560);
+check(in_array('invoice-112153.pdf', $hiddenDocumentFiles, true) && in_array('purchaseorder-916.pdf', $hiddenDocumentFiles, true),
+    'Issued documents were not separated from manual FileManager files');
+check($adapter->writes === $writesBeforeDocumentFiles, 'Contact document file discovery wrote database data');
+check($byNumber['112153']['source'] === 'legacy' && $byNumber['112153']['status'] === 'available', 'Legacy internal contact ID original was not resolved');
+check($byNumber['112279']['source'] === 'current' && $byNumber['112468']['source'] === 'current', 'Customer-number originals were not resolved');
+check($byNumber['112500']['status'] === 'missing' && $byNumber['112500']['relative'] === '' && $byNumber['112500']['attachmentId'] === 0, 'Missing original was not reported explicitly');
+foreach ($documentTypes as $controller => $module) {
+    check(count(array_filter($documentFiles, static fn(array $file): bool => $file['controller'] === $controller && $file['status'] === 'available')) === 1,
+        'Document file mapping missing for ' . $module . '/' . $controller);
+}
+require_once $root . '/application/modules/contacts/views/helpers/Files.php';
+$filesView = new ContactFilesPartialView(['scriptPath' => $root . '/application/modules/contacts/views/scripts']);
+$filesView->documentFiles = $documentFiles;
+$filesHelper = new Zend_View_Helper_Files();
+$filesHelper->setView($filesView);
+$filesHtml = $filesHelper->Files();
+check(str_contains($filesHtml, 'invoice-112153.pdf') && str_contains($filesHtml, 'CONTACTS_DOCUMENT_FILE_MISSING')
+    && str_contains($filesHtml, '/library/FileManager/dialog.php'), 'Contact files tab lost document statuses or the manual FileManager');
+check(storedResponse($legacyFolder . 'invoice-112153.pdf')[0] === 200, 'Authorized legacy original is unavailable');
+check(storedResponse($currentFolder . 'invoice-112279.pdf')[0] === 200, 'Authorized current original is unavailable');
+$media = new StoredFileMediaController(new Zend_Controller_Request_Http(), new Zend_Controller_Response_Http());
+check(!$media->allowed(substr($legacyFolder, strlen('files/')), substr($legacyFolder . 'invoice-112153.pdf', strlen('files/')), 'edit'), 'Legacy original remained writable');
+$adapter->rows['permission'][0]['sales'] = '{"quote":["view"],"salesorder":["view"],"deliveryorder":["view"],"creditnote":["view"],"reminder":["view"]}';
+check(storedResponse($legacyFolder . 'invoice-112153.pdf')[0] === 404, 'Contact permission exposed a legacy invoice without invoice permission');
+check(storedResponse($currentFolder . 'invoice-112279.pdf')[0] === 404, 'Contact permission exposed a current invoice without invoice permission');
+check(storedResponse($legacyFolder . 'manual-note.txt')[0] === 200, 'Manual contact file was hidden with document permission');
+check(in_array('invoice-112153.pdf', (new Contacts_Model_DbTable_Emailattachment())->getContactDocumentFilenames(80560), true),
+    'FileManager exposed an issued filename when its document permission was missing');
+$foreignLegacy = str_replace('/1/0/100/', '/1/0/101/', $legacyFolder) . 'invoice-112153.pdf';
+storedFixture($foreignLegacy, $pdf);
+check(storedResponse($foreignLegacy)[0] === 404, 'Legacy original crossed tenants');
+
+// Parent-child contact sharing still authorizes through the document tenant and its document permission.
+Zend_Registry::set('User', ['id' => 42, 'clientid' => 7]);
+Zend_Registry::set('Client', ['id' => 70, 'parentid' => 70, 'modules' => ['contacts' => 70, 'sales' => 7, 'purchases' => 7]]);
+$adapter->rows['permission'] = [['id' => 1, 'userid' => 42, 'clientid' => 7, 'deleted' => 0, 'contacts' => '{}', 'sales' => '{"invoice":["view"]}']];
+$adapter->rows['contact'] = [['id' => 80560, 'contactid' => 58101, 'clientid' => 70, 'deleted' => 0]];
+$adapter->rows['invoice'] = [array_replace($productionDocuments[112153], ['clientid' => 7])];
+foreach (array_keys($documentTypes) as $controller) $adapter->rows[$controller] = [];
+$sharedLegacy = 'files/contacts/' . (new DEEC_Directory())->getUrl(80560, 7) . '/invoice-112153.pdf';
+storedFixture($sharedLegacy, $pdf);
+check(storedResponse($sharedLegacy)[0] === 200, 'Parent-child document permission lost the legacy original');
+$adapter->rows['permission'][0]['sales'] = '{}';
+check(storedResponse($sharedLegacy)[0] === 404, 'Parent-child contact sharing bypassed the document permission');
 
 setupStoredFiles();
 $user = Zend_Registry::get('User');

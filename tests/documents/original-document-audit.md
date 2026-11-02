@@ -4,7 +4,11 @@ Stand: 02.11.2026. Diese Anleitung ist bewusst read-only. Sie öffnet keine Prod
 
 ## Nachgewiesener lokaler Ist-Stand
 
-Die Kontakt-Historie liest die acht Belegtabellen unabhängig vom Dateisystem. Deshalb belegen 23 Historienzeilen nicht, dass 23 Original-PDFs vorhanden sind. Der FileManager zeigt dagegen den Kontaktordner `files/contacts/<Mandant>/<Kontaktnummer>/`; die E-Mail-Kopie liegt separat unter `files/attachments/<Modul>/<Belegart>/<Mandant>/<interner Beleg-ID>/`. Fünf sichtbare PDFs können daher sowohl echte Verluste als auch nur eine unvollständige Betrachtung der zweiten Ablage bedeuten.
+Die Kontakt-Historie liest die acht Belegtabellen unabhängig vom Dateisystem. Deshalb belegen 23 Historienzeilen nicht, dass 23 Original-PDFs vorhanden sind. Für Atalay & Roos ist die abweichende Identität bestätigt: `contact.id = 80560`, `contact.contactid = 58101`. Der FileManager für manuelle Kontaktdateien verwendet die interne ID und damit `files/contacts/1/0/100/8/0/80560/`. Ältere PDF-Erzeugung verwendete ebenfalls diese interne ID; die generische PDF-Erzeugung verwendet dagegen die in den Belegen gespeicherte Kundennummer und damit `files/contacts/1/0/100/5/8/58101/`. Die E-Mail-Kopie liegt separat unter `files/attachments/<Modul>/<Belegart>/<Mandant>/<interner Beleg-ID>/`.
+
+Der Dateien-Tab führt diese Verzeichnisse nicht pauschal zusammen. Manuelle Dateien bleiben im FileManager der internen Kontakt-ID. Ausgestellte Belege werden zusätzlich über ihre Datenbankzuordnung ermittelt und anschließend am aktuellen Pfad, am historischen Pfad und in der registrierten Attachment-Ablage geprüft. Abweichende Fassungen werden als Konflikt angezeigt; ein fehlendes Original wird nicht aus aktuellen Daten erzeugt.
+
+Die bestätigten Referenzfälle sind Rechnung `112153` am historischen Pfad der internen ID sowie `112279` und `112468` am aktuellen Pfad der Kundennummer; alle drei besitzen eine dokumentbezogene Attachment-Kopie. Der Audit muss diese drei Zeilen entsprechend klassifizieren und anschließend dieselbe Prüfung auf alle 23 Rechnungszeilen ausweiten.
 
 Vor dieser Änderung wurde die Belegtransaktion vor der PDF-Erzeugung committed. Ein Schreib-, Template- oder Prozessfehler konnte damit einen nummerierten, als fertig markierten Beleg ohne Original hinterlassen. Außerdem verweigerten nur Rechnung und Gutschrift eine Rekonstruktion aus aktuellen Daten. FileManager-Schreibaktionen mit ausreichender Edit-Berechtigung und das Löschen der automatisch erzeugten E-Mail-Kopie waren nicht durch den Belegstatus selbst gesperrt.
 
@@ -12,7 +16,7 @@ Der GoBD-Export enthält CSV-Daten, Datenwörterbuch, Beziehungen, Metadaten und
 
 ## Produktionsdiagnose für Kontakt 80560
 
-1. Der Betreiber ermittelt den exakten Belegmandanten für Atalay & Roos und arbeitet auf einem konsistenten read-only Snapshot oder einer isoliert wiederhergestellten Sicherung. Eine geschützte Arbeitskopie von `original-document-production-audit.sql` wird angelegt; darin muss ausschließlich `@clientid := 0` durch diese ID ersetzt werden. Kontakt `80560` und der Fokus ab `2026-05-01` sind bereits gesetzt.
+1. Der Betreiber arbeitet auf einem konsistenten read-only Snapshot oder einer isoliert wiederhergestellten Sicherung. Das SQL enthält die bestätigten Werte Mandant `100`, interne Kontakt-ID `80560`, Kundennummer `58101` und den Fokus ab `2026-05-01`. Vor Ausführung müssen diese Werte gegen den Snapshot kontrolliert werden; der Join auf `contact` liefert bei einer abweichenden Zuordnung keine Belegzeilen.
 2. Mit einem ausschließlich leseberechtigten Datenbankkonto wird der TSV-Export erstellt. `--raw` verhindert Escape-Umformungen; das SQL selbst startet eine read-only Transaktion.
 
 ```sh
@@ -29,7 +33,7 @@ php tests/documents/original-document-audit.php \
   > /secure/contact-80560-original-audit.csv
 ```
 
-Der Bericht unterscheidet `ok`, `database_filename_missing`, `both_files_missing`, `original_missing_attachment_recoverable`, `attachment_missing`, `attachment_file_missing`, `attachment_unregistered`, `attachment_metadata_ambiguous`, `copies_differ`, `invalid_or_unreadable_file`, `duplicate_contact_filename` und zusätzliche nicht zugeordnete PDFs im Kontaktordner. Er enthält Größe und SHA-256 beider Kopien. `empty`, `invalid_pdf`, `unreadable` und `symlink` bleiben als konkrete Dateizustände sichtbar. Abweichende Attachment-`location` oder gespeicherte `filesize` werden in `attachment_metadata` markiert.
+Der Bericht prüft beide Kontaktpfade getrennt und unterscheidet zusätzlich `original_locations_differ`. Daneben bleiben `ok`, `database_filename_missing`, `both_files_missing`, `original_missing_attachment_recoverable`, `attachment_missing`, `attachment_file_missing`, `attachment_unregistered`, `attachment_metadata_ambiguous`, `copies_differ`, `invalid_or_unreadable_file`, `duplicate_contact_filename` und zusätzliche nicht zugeordnete PDFs sichtbar. Er enthält Größe und SHA-256 für aktuellen Pfad, historischen Pfad und Attachment. `empty`, `invalid_pdf`, `unreadable` und `symlink` bleiben als konkrete Dateizustände erhalten.
 
 Die Resultate, die der Betreiber zurückgeben muss, sind: vollständige CSV, exakter Mandant, geprüfter Snapshot-/Backup-Zeitpunkt, Basisverzeichnis und eine Liste vorhandener Sicherungen seit spätestens April 2026. Dateiinhalte oder Kundendaten außerhalb dieses Kontakts sind nicht erforderlich. Keine gefundene Datei darf verschoben, überschrieben oder gelöscht werden. Wiederherstellungskandidaten werden zunächst in ein isoliertes Verzeichnis kopiert und per SHA-256/PDF-Struktur sowie fachlichem Sichtvergleich bestätigt.
 

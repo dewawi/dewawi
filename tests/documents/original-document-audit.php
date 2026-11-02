@@ -54,7 +54,7 @@ function auditValue(array $row, string $column): string
 
 $handle = fopen($input, 'rb');
 $columns = fgetcsv($handle, 0, "\t");
-$required = ['module', 'controller', 'id', 'clientid', 'contactid', 'document_number', 'document_date', 'filename', 'state', 'completed', 'completeddate', 'deleted', 'focus_from_may_2026', 'attachment_id', 'attachment_filename', 'attachment_filesize', 'attachment_location', 'attachment_deleted'];
+$required = ['module', 'controller', 'id', 'clientid', 'contactid', 'contact_record_id', 'contact_number', 'document_number', 'document_date', 'filename', 'state', 'completed', 'completeddate', 'deleted', 'focus_from_may_2026', 'attachment_id', 'attachment_filename', 'attachment_filesize', 'attachment_location', 'attachment_deleted'];
 if (!$columns || array_diff($required, $columns)) {
 	fwrite(STDERR, "The TSV header does not match original-document-production-audit.sql.\n");
 	exit(2);
@@ -71,8 +71,10 @@ while (($values = fgetcsv($handle, 0, "\t")) !== false) {
 fclose($handle);
 
 $outputColumns = [
-	'module', 'controller', 'id', 'clientid', 'contactid', 'document_number', 'document_date', 'filename',
-	'state', 'completed', 'completeddate', 'deleted', 'focus_from_may_2026', 'original_path', 'original_status',
+	'module', 'controller', 'id', 'clientid', 'contactid', 'contact_record_id', 'contact_number', 'document_number', 'document_date', 'filename',
+	'state', 'completed', 'completeddate', 'deleted', 'focus_from_may_2026',
+	'current_path', 'current_status', 'current_size', 'current_sha256', 'legacy_path', 'legacy_status', 'legacy_size', 'legacy_sha256',
+	'original_path', 'original_status',
 	'original_size', 'original_sha256', 'attachment_path', 'attachment_metadata', 'attachment_status',
 	'attachment_size', 'attachment_sha256', 'comparison', 'classification',
 ];
@@ -88,14 +90,20 @@ foreach ($documents as $key => $entry) {
 	$controller = auditValue($row, 'controller');
 	$id = (int)auditValue($row, 'id');
 	$clientId = (int)auditValue($row, 'clientid');
-	$contactId = (int)auditValue($row, 'contactid');
+	$contactNumber = (int)auditValue($row, 'contact_number');
+	$contactRecordId = (int)auditValue($row, 'contact_record_id');
 	$filename = auditValue($row, 'filename');
 	$filenameValid = auditFilename($filename);
-	$originalRelative = 'files/contacts/' . auditShard($clientId) . '/' . auditShard($contactId) . '/' . $filename;
+	$currentRelative = 'files/contacts/' . auditShard($clientId) . '/' . auditShard($contactNumber) . '/' . $filename;
+	$legacyRelative = 'files/contacts/' . auditShard($clientId) . '/' . auditShard($contactRecordId) . '/' . $filename;
 	$attachmentRelative = 'files/attachments/' . $module . '/' . $controller . '/' . auditShard($clientId) . '/' . auditShard($id) . '/' . $filename;
-	$originalPath = $base . '/' . $originalRelative;
 	$attachmentPath = $base . '/' . $attachmentRelative;
-	[$originalStatus, $originalSize, $originalHash] = $filenameValid ? auditPdf($originalPath, $base) : [$filename === '' ? 'filename_missing' : 'filename_invalid', null, null];
+	[$currentStatus, $currentSize, $currentHash] = $filenameValid ? auditPdf($base . '/' . $currentRelative, $base) : [$filename === '' ? 'filename_missing' : 'filename_invalid', null, null];
+	[$legacyStatus, $legacySize, $legacyHash] = $filenameValid ? auditPdf($base . '/' . $legacyRelative, $base) : [$filename === '' ? 'filename_missing' : 'filename_invalid', null, null];
+	if ($currentStatus === 'ok') [$originalRelative, $originalStatus, $originalSize, $originalHash] = [$currentRelative, $currentStatus, $currentSize, $currentHash];
+	elseif ($legacyStatus === 'ok') [$originalRelative, $originalStatus, $originalSize, $originalHash] = [$legacyRelative, $legacyStatus, $legacySize, $legacyHash];
+	elseif ($currentStatus !== 'missing') [$originalRelative, $originalStatus, $originalSize, $originalHash] = [$currentRelative, $currentStatus, $currentSize, $currentHash];
+	else [$originalRelative, $originalStatus, $originalSize, $originalHash] = [$legacyRelative, $legacyStatus, $legacySize, $legacyHash];
 	[$attachmentStatus, $attachmentSize, $attachmentHash] = $filenameValid ? auditPdf($attachmentPath, $base) : [$filename === '' ? 'filename_missing' : 'filename_invalid', null, null];
 	$activeAttachments = array_values(array_filter($entry['attachments'], static fn(array $attachment): bool => auditValue($attachment, 'attachment_deleted') === '0'));
 	$deletedAttachments = count($entry['attachments']) - count($activeAttachments);
@@ -110,7 +118,8 @@ foreach ($documents as $key => $entry) {
 	}
 	$comparison = $originalStatus === 'ok' && $attachmentStatus === 'ok'
 		? (hash_equals((string)$originalHash, (string)$attachmentHash) ? 'identical' : 'different') : 'not_comparable';
-	if ($filename === '') $classification = 'database_filename_missing';
+	if ($currentStatus === 'ok' && $legacyStatus === 'ok' && !hash_equals((string)$currentHash, (string)$legacyHash)) $classification = 'original_locations_differ';
+	elseif ($filename === '') $classification = 'database_filename_missing';
 	elseif (!$filenameValid) $classification = 'database_filename_invalid';
 	elseif ($originalStatus === 'ok' && $attachmentStatus === 'ok' && $comparison === 'different') $classification = 'copies_differ';
 	elseif ($originalStatus === 'ok' && $attachmentStatus === 'ok' && count($activeAttachments) === 0) $classification = 'attachment_unregistered';
@@ -121,12 +130,15 @@ foreach ($documents as $key => $entry) {
 	else $classification = 'invalid_or_unreadable_file';
 
 	if ($filenameValid) {
-		$filenameKey = $clientId . '/' . $contactId . '/' . $filename;
+		$filenameKey = $clientId . '/' . $contactNumber . '/' . $filename;
 		$filenames[$filenameKey][] = $key;
-		$assignedFiles[$originalRelative] = true;
+		$assignedFiles[$currentRelative] = true;
+		$assignedFiles[$legacyRelative] = true;
 	}
-	$directories[$base . '/files/contacts/' . auditShard($clientId) . '/' . auditShard($contactId)] = true;
-	$results[$key] = array_merge(array_map(static fn(string $column): string => auditValue($row, $column), array_slice($outputColumns, 0, 13)), [
+	$directories[$base . '/files/contacts/' . auditShard($clientId) . '/' . auditShard($contactNumber)] = true;
+	$directories[$base . '/files/contacts/' . auditShard($clientId) . '/' . auditShard($contactRecordId)] = true;
+	$results[$key] = array_merge(array_map(static fn(string $column): string => auditValue($row, $column), array_slice($outputColumns, 0, 15)), [
+		$currentRelative, $currentStatus, $currentSize, $currentHash, $legacyRelative, $legacyStatus, $legacySize, $legacyHash,
 		$originalRelative, $originalStatus, $originalSize, $originalHash, $attachmentRelative, $metadata,
 		$attachmentStatus, $attachmentSize, $attachmentHash, $comparison, $classification,
 	]);

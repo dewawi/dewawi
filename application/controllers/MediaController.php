@@ -54,6 +54,11 @@ class MediaController extends DEEC_Controller_Action
 		if ($manager === 'FileManager' && str_starts_with($folder, 'uploads/') && $module !== 'admin'
 			&& ($module !== 'users' || $controller !== 'user' || ($context['id'] ?? 0) !== (int)$user['id'] || $folder !== 'uploads/' . (new DEEC_Directory())->getShortUrl($user['clientid']) . '/users/' . (int)$user['id'])) return $this->rejectManager(403);
 		if ($folder === '' || $folder === 'uploads' || !$this->isManagerPath($base, '', $folder)) return $this->rejectManager(403);
+		$managerSession->hidden_files = [];
+		if ($manager === 'FileManager' && $module === 'contacts' && $controller === 'contact' && ($context['id'] ?? 0) > 0
+			&& $folder === 'contacts/' . (new DEEC_Directory())->getUrl((string)$context['id'], (string)$owner)) {
+			$managerSession->hidden_files = (new Contacts_Model_DbTable_Emailattachment())->getContactDocumentFilenames((int)$context['id']);
+		}
 		$scope = $base . $folder;
 		if (!is_dir($scope)) {
 			if ($script !== 'dialog' || !$writable) return $this->rejectManager(404);

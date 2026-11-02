@@ -348,6 +348,21 @@ foreach (['sales' => 'quote', 'purchases' => 'purchaseorder', 'processes' => 'pr
     check(file_get_contents($source) === $original, 'Attachment operation modified the original document');
 }
 
+// Document attachment synchronization also recognizes the pre-refactoring contact.id location.
+setupAttachments(true);
+$adapter->rows['permission'][0]['sales'] = '{"quote":["view","add","delete"]}';
+$legacyDocument = array_replace($adapter->rows['quote'][0], ['id' => 30, 'filename' => 'legacy-original.pdf']);
+$adapter->rows['quote'][] = $legacyDocument;
+$legacyDirectory = BASE_PATH . '/files/contacts/' . (new DEEC_Directory())->getUrl('100', '7');
+if (!is_dir($legacyDirectory)) mkdir($legacyDirectory, 0775, true);
+$legacySource = $legacyDirectory . '/legacy-original.pdf';
+$legacyBytes = "%PDF-1.4\nLegacy contact record original\n%%EOF\n";
+file_put_contents($legacySource, $legacyBytes);
+$legacyResult = (new Sales_Service_AttachmentService())->sync($legacyDocument, $adapter->rows['contact'][0], 'quote');
+check($legacyResult['contactUrl'] === '7/0/7/1/0/100' && count($legacyResult['attachments']) === 1, 'Legacy contact record original was not synchronized');
+check(file_get_contents(DEEC_Emailattachment::getPath($legacyResult['attachments'][0])) === $legacyBytes
+    && file_get_contents($legacySource) === $legacyBytes, 'Legacy attachment synchronization changed original bytes');
+
 // A user upload may not pre-empt the immutable attachment name of an issued document.
 setupAttachments();
 $adapter->rows['quote'][0]['filename'] = 'protected-original.pdf';
