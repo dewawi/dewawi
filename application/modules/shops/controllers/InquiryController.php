@@ -29,6 +29,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				unset(
 					$this->formDataSession->formData,
 					$this->formDataSession->suggestions,
+					$this->formDataSession->suggestionStep,
 					$this->formDataSession->requestValues,
 					$this->formDataSession->downloadUrl,
 					$this->formDataSession->downloadFile,
@@ -68,7 +69,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 			return;
 		}
 
-		$stepOrder = array_keys($this->formConfig);
+		$stepOrder = $this->getStepOrder();
 		$step = (string)$request->getPost('step', (string)$stepOrder[0]);
 
 		if (!isset($this->formConfig[$step])) {
@@ -152,7 +153,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 					'step' => $prevStep,
 					'ajax' => true,
 					'suggestions' => $this->formDataSession->suggestions ?? [],
-					'suggestedItems' => [],
+					'suggestedItems' => $this->buildSuggestedItems($this->formDataSession->suggestions ?? []),
 					'requestValues' => $this->formDataSession->requestValues ?? [],
 					'formRow' => $this->formRow
 				]);
@@ -172,6 +173,9 @@ class Shops_InquiryController extends Shops_Controller_Action
 					'step' => $step,
 					'ajax' => true,
 					'errors' => $form->getErrors(),
+					'suggestions' => $this->formDataSession->suggestions ?? [],
+					'suggestedItems' => $this->buildSuggestedItems($this->formDataSession->suggestions ?? []),
+					'requestValues' => $this->formDataSession->requestValues ?? [],
 					'formRow' => $this->formRow,
 				]);
 
@@ -185,80 +189,18 @@ class Shops_InquiryController extends Shops_Controller_Action
 			// Save valid data to session under structured key
 			$formValues = $form->getFilteredValues();
 			unset($formValues['csrf_token'], $formValues['inquiry_token'], $formValues['next']);
+			$currentIndex = array_search($step, $stepOrder, true);
+			$this->discardFollowingSteps($stepOrder, (int)$currentIndex);
 			$this->formDataSession->formData[$step] = $formValues;
 
-			// Step 1 suggestions (use validated values!)
-			if ($step === '1') {
-				foreach ($this->formConfig[$step] as $field) {
-	 	 	 		if (empty($field['calculate']) || !is_array($field['calculate'])) continue;
-
-				 	$targetExpr = $field['calculate']['target'] ?? null;
-				 	$referenceTitle = $field['calculate']['reference'] ?? null;
-				 	$tolerance = $field['calculate']['tolerance'] ?? null;
-
-		 	 	 	if (!$targetExpr || !$referenceTitle || !isset($formValues[$field['name']])) continue;
-
-					// Zielausdruck vorbereiten (z. B. vorlauf_temp / umgebung_temp_max)
-					preg_match_all('/[a-zA-Z0-9_]+/', $targetExpr, $matches);
-					$expr = $targetExpr;
-					foreach ($matches[0] as $token) {
-						$value = isset($formValues[$token]) ? floatval($formValues[$token]) : 0;
-						$expr = str_replace($token, $value, $expr);
-					}
-
-					// Titel
-					$targetTitle = $field['name'] . "_{$expr}";
-
-					// Datenbankzugriffe
-					$itemAttrDb = new Shops_Model_DbTable_Itematr();
-					$attrsTarget = $itemAttrDb->getPositionsBySku('FORM_CALC')->toArray();
-					$attrsReference = $itemAttrDb->getPositionsByTitle($referenceTitle)->toArray();
-
-					// Zielwert aus Target-Attributen extrahieren
-					$targetAttrValue = null;
-					foreach ($attrsTarget as $attrTarget) {
-						if ($attrTarget['title'] === $targetTitle) {
-							$targetAttrValue = (float)$attrTarget['value'];
-							break;
-						}
-					}
-					if ($targetAttrValue === null) continue;
-
-					$requiredCooling = isset($formValues['kuehlleistung']) ? floatval($formValues['kuehlleistung']) : null;
-					if ($requiredCooling === null) {
-						continue; // oder logge den Fehler
-					}
-
-					// Passende Referenzwerte mit Toleranz prüfen
-					$matches = $this->findMatchingReferences(
-						$attrsReference,
-						$targetAttrValue,
-						$requiredCooling,
-						$tolerance
-					);
-
-					// Falls zu wenige Treffer: Toleranz verdoppeln und erneut suchen
-					if (count($matches) < 2) {
-						$matches = $this->findMatchingReferences(
-							$attrsReference,
-							$targetAttrValue,
-							$requiredCooling,
-							$tolerance * 2
-						);
-					}
-
-					if (!empty($matches)) {
-						$this->formDataSession->suggestions = $matches;
-						$this->formDataSession->requestValues = $formValues;
-					} else {
-						$this->formDataSession->suggestions = [];
-						$this->formDataSession->requestValues = [];
-					}
-				}
+			if ($this->hasCalculation($this->formConfig[$step])) {
+				$suggestions = $this->calculateSuggestions($this->formConfig[$step], $formValues);
+				$this->formDataSession->suggestions = $suggestions;
+				$this->formDataSession->suggestionStep = $step;
+				$this->formDataSession->requestValues = $suggestions ? $this->normalizeRequestValues($formValues) : [];
 			}
 
 			// Get next step key
-			$currentIndex = array_search($step, $stepOrder);
 			$nextStep = $stepOrder[$currentIndex + 1] ?? null;
 
 			if ($nextStep && isset($this->formConfig[$nextStep])) {
@@ -267,23 +209,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 					$nextForm->setValues($this->formDataSession->formData[$nextStep]);
 				}
 
-				$itemDb = new Shops_Model_DbTable_Item();
-				$mediaDb = new Shops_Model_DbTable_Media();
-
-				$itemsWithImages = [];
-				foreach ($this->formDataSession->suggestions ?? [] as $suggestion) {
-					$item = $itemDb->getItemBySku($suggestion['description']);
-					if (!$item) continue;
-
-					$images = $mediaDb->getMedia($item['id'], 'items', 'item');
-					$itemsWithImages[] = [
-						'item' => $item,
-						'images' => $images,
-						'description' => $suggestion['description'],
-						'value' => $suggestion['value'],
-						'percent' => $suggestion['percent']
-					];
-				}
+				$itemsWithImages = $this->buildSuggestedItems($this->formDataSession->suggestions ?? []);
 
 				$this->view->suggestedItems = $itemsWithImages;
 
@@ -311,6 +237,11 @@ class Shops_InquiryController extends Shops_Controller_Action
 			}
 
 			if (!$this->validateCompletedSteps($stepOrder, (array)$this->formDataSession->formData)) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_FORM_INVALID')]);
+			}
+
+			if (!$this->isValidSuggestedSku((string)($allFormValues['sku'] ?? ''))) {
 				$this->getResponse()->setHttpResponseCode(400);
 				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_FORM_INVALID')]);
 			}
@@ -470,6 +401,151 @@ class Shops_InquiryController extends Shops_Controller_Action
 		);
 	}
 
+	protected function getStepOrder(): array
+	{
+		return array_map('strval', array_keys($this->formConfig));
+	}
+
+	protected function discardFollowingSteps(array $stepOrder, int $currentIndex): void
+	{
+		foreach (array_slice($stepOrder, $currentIndex + 1) as $laterStep) {
+			unset($this->formDataSession->formData[$laterStep]);
+		}
+
+		$suggestionStep = (string)($this->formDataSession->suggestionStep ?? '');
+		$suggestionIndex = array_search($suggestionStep, $stepOrder, true);
+		if ($suggestionIndex !== false && $currentIndex <= $suggestionIndex) {
+			unset(
+				$this->formDataSession->suggestions,
+				$this->formDataSession->requestValues,
+				$this->formDataSession->suggestionStep
+			);
+		}
+	}
+
+	protected function hasCalculation(array $fields): bool
+	{
+		return count(array_filter($fields, static fn($field): bool => is_array($field['calculate'] ?? null))) === 1;
+	}
+
+	protected function calculateSuggestions(array $fields, array $values): array
+	{
+		$calculationFields = array_values(array_filter($fields, static fn($field): bool => is_array($field['calculate'] ?? null)));
+		if (count($calculationFields) !== 1) return [];
+
+		$field = $calculationFields[0];
+		$calculation = $field['calculate'];
+		$fieldName = trim((string)($field['name'] ?? ''));
+		$targetExpression = trim((string)($calculation['target'] ?? ''));
+		$referenceTitle = trim((string)($calculation['reference'] ?? ''));
+		$tolerance = self::parseDecimal($calculation['tolerance'] ?? null);
+		$requiredCooling = self::parseDecimal($values['kuehlleistung'] ?? null);
+		if ($fieldName === '' || $targetExpression === '' || $referenceTitle === '' || $tolerance === null || $tolerance < 0
+			|| $requiredCooling === null || $requiredCooling <= 0) return [];
+
+		$invalidExpression = false;
+		$resolvedExpression = preg_replace_callback('/[a-zA-Z_][a-zA-Z0-9_]*/', static function(array $match) use ($values, &$invalidExpression): string {
+			$value = self::parseDecimal($values[$match[0]] ?? null);
+			if ($value === null) {
+				$invalidExpression = true;
+				return $match[0];
+			}
+
+			return (string)$value;
+		}, $targetExpression);
+		if ($invalidExpression || !is_string($resolvedExpression)) return [];
+
+		$itemAttrDb = new Shops_Model_DbTable_Itematr();
+		$targetRows = $itemAttrDb->getPositionsBySkuAndTitle('FORM_CALC', $fieldName . '_' . $resolvedExpression)->toArray();
+		if (count($targetRows) !== 1) return [];
+		$targetValue = self::parseDecimal($targetRows[0]['value'] ?? null);
+		if ($targetValue === null) return [];
+
+		$referenceRows = $itemAttrDb->getPositionsBySkuAndTitle('FORM_CALC', $referenceTitle)->toArray();
+		$matches = $this->findMatchingReferences($referenceRows, $targetValue, $requiredCooling, $tolerance);
+		if (count($matches) < 2) {
+			$matches = $this->findMatchingReferences($referenceRows, $targetValue, $requiredCooling, $tolerance * 2);
+		}
+
+		return $this->filterAvailableSuggestions($matches);
+	}
+
+	protected static function parseDecimal($value): ?float
+	{
+		if (is_int($value) || is_float($value)) {
+			$value = (float)$value;
+			return is_finite($value) ? $value : null;
+		}
+		if (!is_string($value)) return null;
+
+		$value = trim($value);
+		if ($value === '' || !preg_match('/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/D', $value)) return null;
+		$number = (float)str_replace(',', '.', $value);
+
+		return is_finite($number) ? $number : null;
+	}
+
+	protected function normalizeRequestValues(array $values): array
+	{
+		if (array_key_exists('kuehlleistung', $values)) {
+			$value = self::parseDecimal($values['kuehlleistung']);
+			if ($value !== null) $values['kuehlleistung'] = $value;
+		}
+
+		return $values;
+	}
+
+	protected function filterAvailableSuggestions(array $suggestions): array
+	{
+		$itemDb = new Shops_Model_DbTable_Item();
+		$categoryDb = new Shops_Model_DbTable_Category();
+		$available = [];
+		foreach ($suggestions as $suggestion) {
+			$sku = trim((string)($suggestion['description'] ?? ''));
+			$item = $sku !== '' ? $itemDb->getItemBySku($sku) : null;
+			if (!$item || !$categoryDb->getCategory((int)($item['shopcatid'] ?? 0))) continue;
+			$suggestion['description'] = (string)$item['sku'];
+			$available[] = $suggestion;
+		}
+
+		return $available;
+	}
+
+	protected function buildSuggestedItems(array $suggestions): array
+	{
+		$itemDb = new Shops_Model_DbTable_Item();
+		$categoryDb = new Shops_Model_DbTable_Category();
+		$mediaDb = new Shops_Model_DbTable_Media();
+		$items = [];
+		foreach ($suggestions as $suggestion) {
+			$item = $itemDb->getItemBySku((string)($suggestion['description'] ?? ''));
+			if (!$item || !$categoryDb->getCategory((int)($item['shopcatid'] ?? 0))) continue;
+			$items[] = [
+				'item' => $item,
+				'images' => $mediaDb->getMedia((int)$item['id'], 'items', 'item'),
+				'description' => (string)$item['sku'],
+				'value' => $suggestion['value'],
+				'percent' => $suggestion['percent'],
+			];
+		}
+
+		return $items;
+	}
+
+	protected function isValidSuggestedSku(string $sku): bool
+	{
+		$sku = trim($sku);
+		if ($sku === '') return true;
+
+		foreach ((array)($this->formDataSession->suggestions ?? []) as $suggestion) {
+			if (hash_equals((string)($suggestion['description'] ?? ''), $sku)) {
+				return (bool)$this->filterAvailableSuggestions([$suggestion]);
+			}
+		}
+
+		return false;
+	}
+
 	protected function isValidCsrf(array $data): bool
 	{
 		$token = (string)($data['csrf_token'] ?? '');
@@ -565,7 +641,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 		unset(
 			$this->formDataSession->formData,
 			$this->formDataSession->suggestions,
-			$this->formDataSession->requestValues
+			$this->formDataSession->requestValues,
+			$this->formDataSession->suggestionStep
 		);
 	}
 
@@ -578,6 +655,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 	protected function findMatchingReferences($attrsReference, $targetAttrValue, $requiredCooling, $tolerance)
 	{
+		if (!is_finite((float)$targetAttrValue) || !is_finite((float)$requiredCooling) || $requiredCooling <= 0
+			|| !is_finite((float)$tolerance) || $tolerance < 0) return [];
 		$min = $requiredCooling * (1 - $tolerance);
 		$max = $requiredCooling * (1 + $tolerance);
 
@@ -586,44 +665,57 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$smallestDiffBelow = PHP_FLOAT_MAX;
 		$smallestDiffAbove = PHP_FLOAT_MAX;
 
+		$uniqueReferences = [];
+		$ambiguous = [];
 		foreach ($attrsReference as $attrReference) {
-		 	$factor = floatval($attrReference['value']);
-		 	$result = $factor * $targetAttrValue;
+			$description = trim((string)($attrReference['description'] ?? ''));
+			$factor = self::parseDecimal($attrReference['value'] ?? null);
+			if ($description === '' || $factor === null) continue;
+			if (isset($uniqueReferences[$description])) {
+				$ambiguous[$description] = true;
+				continue;
+			}
+			$uniqueReferences[$description] = $attrReference;
+		}
+
+		foreach ($uniqueReferences as $description => $attrReference) {
+			if (isset($ambiguous[$description])) continue;
+			$factor = self::parseDecimal($attrReference['value']);
+			$result = $factor * $targetAttrValue;
 			$percent = round(($result / $requiredCooling) * 100, 1);
 
-		 	if ($result >= $min && $result <= $max) {
-		 	 	$diff = abs($result - $requiredCooling);
+			if ($result >= $min && $result <= $max) {
+				$diff = abs($result - $requiredCooling);
 
-		 	 	if ($result < $requiredCooling && $diff < $smallestDiffBelow) {
-		 	 	 	$smallestDiffBelow = $diff;
-		 	 	 	$smaller = [
-		 	 	 	 	'title' => $attrReference['title'],
-		 	 	 	 	'value' => round($result, 2),
-		 	 	 	 	'description' => $attrReference['description'],
+				if ($result < $requiredCooling && $diff < $smallestDiffBelow) {
+					$smallestDiffBelow = $diff;
+					$smaller = [
+						'title' => $attrReference['title'],
+						'value' => round($result, 2),
+						'description' => $description,
 						'percent' => $percent
-		 	 	 	];
-		 	 	}
+					];
+				}
 
-		 	 	if ($result > $requiredCooling && $diff < $smallestDiffAbove) {
-		 	 	 	$smallestDiffAbove = $diff;
-		 	 	 	$bigger = [
-		 	 	 	 	'title' => $attrReference['title'],
-		 	 	 	 	'value' => round($result, 2),
-		 	 	 	 	'description' => $attrReference['description'],
+				if ($result > $requiredCooling && $diff < $smallestDiffAbove) {
+					$smallestDiffAbove = $diff;
+					$bigger = [
+						'title' => $attrReference['title'],
+						'value' => round($result, 2),
+						'description' => $description,
 						'percent' => $percent
-		 	 	 	];
-		 	 	}
+					];
+				}
 
-		 	 	// Optional: wenn exakt gleich, kannst du auch sofort zurückgeben
-		 	 	if ($result == $requiredCooling) {
-		 	 	 	return [[
-		 	 	 	 	'title' => $attrReference['title'],
-		 	 	 	 	'value' => round($result, 2),
-		 	 	 	 	'description' => $attrReference['description'],
+				if ($result == $requiredCooling) {
+					return [[
+						'title' => $attrReference['title'],
+						'value' => round($result, 2),
+						'description' => $description,
 						'percent' => 100.0
-		 	 	 	]];
-		 	 	}
-		 	}
+					]];
+				}
+			}
 		}
 
 		$matches = [];

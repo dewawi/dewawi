@@ -43,4 +43,18 @@ class Shops_Model_DbTable_Itematr extends DEEC_Model_DbTable_SiteEntity
 
 		return $this->fetchAll($select);
 	}
+
+	public function getPositionsBySkuAndTitle(string $sku, string $title, ?int $setId = null): Zend_Db_Table_Rowset_Abstract
+	{
+		$select = $this->getPublicSelect()
+			->where('sku = ?', $sku)
+			->where('title = ?', $title)
+			->order('ordering ASC');
+
+		if ($setId !== null) {
+			$select->where('atrsetid = ?', $setId);
+		}
+
+		return $this->fetchAll($select);
+	}
 }
