@@ -755,10 +755,13 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$adapter->beginTransaction();
 
 		try {
-			[$contactRowId, $contact] = $this->resolveInquiryContact($data);
+			[$contactRowId, $contact, $existingContact] = $this->resolveInquiryContact($data);
 			$contactId = (int)($contact['contactid'] ?? 0);
 			if ($contactRowId <= 0 || $contactId <= 0) throw new RuntimeException('Inquiry contact is unavailable');
-			$snapshot = $this->buildInquiryAddressSnapshot($data, (int)($contact['taxfree'] ?? 0));
+			if ($existingContact && !empty($contact['taxfree'])) {
+				throw new RuntimeException('Unverified inquiry contact requires manual tax handling');
+			}
+			$snapshot = $this->buildInquiryAddressSnapshot($data);
 			$quoteId = $quoteDb->addQuote(array_merge($snapshot, [
 				'title' => trim((string)($data['titel'] ?? '')) ?: (string)$item['title'],
 				'reference' => trim((string)($data['projektname'] ?? '')),
@@ -817,11 +820,13 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 		$emailDb = new Shops_Model_DbTable_Email();
 		$contactDb = new Shops_Model_DbTable_Contact();
-		$contactRowId = $emailDb->findContactIdByEmail($email);
+		$contactIds = $emailDb->findContactIdsByEmail($email);
+		if (count($contactIds) > 1) throw new RuntimeException('Inquiry email matches multiple contacts');
+		$contactRowId = $contactIds[0] ?? 0;
 		if ($contactRowId > 0) {
 			$contact = $contactDb->getContact($contactRowId);
 			if (!$contact) throw new RuntimeException('Matched inquiry contact is unavailable');
-			return [$contactRowId, $contact];
+			return [$contactRowId, $contact, true];
 		}
 
 		$contactId = (new Shops_Model_DbTable_Increment())->reserveIncrement('contactid');
@@ -849,10 +854,10 @@ class Shops_InquiryController extends Shops_Controller_Action
 			'password' => password_hash(bin2hex(random_bytes(10)), PASSWORD_DEFAULT),
 		]);
 
-		return [$contactRowId, $contactDb->getContact($contactRowId)];
+		return [$contactRowId, $contactDb->getContact($contactRowId), false];
 	}
 
-	protected function buildInquiryAddressSnapshot(array $data, int $taxfree): array
+	protected function buildInquiryAddressSnapshot(array $data): array
 	{
 		$name1 = trim((string)($data['firma'] ?? ''));
 		$name2 = trim((string)($data['ansprechpartner'] ?? ''));
@@ -877,7 +882,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 			'shippingcity' => $city,
 			'shippingcountry' => $country,
 			'shippingphone' => trim((string)($data['telefon'] ?? '')),
-			'taxfree' => $taxfree ? 1 : 0,
+			'taxfree' => 0,
 		];
 	}
 

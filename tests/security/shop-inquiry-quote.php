@@ -116,7 +116,17 @@ $adapter->insert('filename', [
 	'invoice' => 'Rechnung-%NUMBER%.pdf', 'purchaseorder' => 'Bestellung-%NUMBER%.pdf', 'quote' => 'Angebot-%NUMBER%.pdf',
 	'quoterequest' => 'Anfrage-%NUMBER%.pdf', 'reminder' => 'Mahnung-%NUMBER%.pdf', 'salesorder' => 'Auftrag-%NUMBER%.pdf', 'language' => 'de_DE',
 ]);
-$adapter->insert('contact', ['id' => 1, 'contactid' => 500, 'catid' => 0, 'name1' => 'Private Master Name', 'taxfree' => 0, 'clientid' => 100]);
+$adapter->insert('contact', [
+	'id' => 1, 'contactid' => 500, 'catid' => 8, 'name1' => 'Private Master Name', 'taxfree' => 0,
+	'currency' => 'USD', 'priceruleamount' => 35, 'priceruleaction' => 'bypercent', 'paymentterm' => 'private terms', 'clientid' => 100,
+]);
+$adapter->insert('contact', ['id' => 2, 'contactid' => 600, 'catid' => 0, 'name1' => 'Tax Free Contact', 'taxfree' => 1, 'clientid' => 100]);
+$adapter->insert('contact', ['id' => 3, 'contactid' => 601, 'catid' => 0, 'name1' => 'Ambiguous One', 'taxfree' => 0, 'clientid' => 100]);
+$adapter->insert('contact', ['id' => 4, 'contactid' => 602, 'catid' => 0, 'name1' => 'Ambiguous Two', 'taxfree' => 0, 'clientid' => 100]);
+$adapter->insert('contact', [
+	'id' => 5, 'contactid' => 700, 'catid' => 9, 'name1' => 'Foreign Privileged Contact', 'taxfree' => 1,
+	'priceruleamount' => 50, 'priceruleaction' => 'bypercent', 'clientid' => 200,
+]);
 $adapter->insert('address', [
 	'id' => 1, 'parentid' => 1, 'module' => 'contacts', 'controller' => 'contact', 'type' => 'billing',
 	'street' => 'Private Master Street 99', 'postcode' => '99999', 'city' => 'Private City', 'country' => 'DE', 'ordering' => 1, 'clientid' => 100,
@@ -125,6 +135,10 @@ $adapter->insert('email', [
 	'id' => 1, 'parentid' => 1, 'module' => 'contacts', 'controller' => 'contact', 'email' => 'buyer@example.test',
 	'password' => 'unused', 'ordering' => 1, 'clientid' => 100,
 ]);
+$adapter->insert('email', ['id' => 2, 'parentid' => 2, 'module' => 'contacts', 'controller' => 'contact', 'email' => 'taxfree@example.test', 'password' => 'unused', 'ordering' => 1, 'clientid' => 100]);
+$adapter->insert('email', ['id' => 3, 'parentid' => 3, 'module' => 'contacts', 'controller' => 'contact', 'email' => 'shared@example.test', 'password' => 'unused', 'ordering' => 1, 'clientid' => 100]);
+$adapter->insert('email', ['id' => 4, 'parentid' => 4, 'module' => 'contacts', 'controller' => 'contact', 'email' => 'shared@example.test', 'password' => 'unused', 'ordering' => 2, 'clientid' => 100]);
+$adapter->insert('email', ['id' => 5, 'parentid' => 5, 'module' => 'contacts', 'controller' => 'contact', 'email' => 'foreign@example.test', 'password' => 'unused', 'ordering' => 1, 'clientid' => 200]);
 $inquiryData = [
 	'sku' => 'ZCE110', 'quantity' => '2', 'firma' => 'Submitted GmbH', 'ansprechpartner' => 'Ada Submitted',
 	'email' => 'buyer@example.test', 'adresse' => 'Submitted Street 1', 'plz' => '12345', 'stadt' => 'Submitted City',
@@ -153,6 +167,7 @@ $controller->setup($context, ['id' => 865, 'language' => 'de_DE', 'quotetemplate
 ]);
 checkInquiryQuote(!Zend_Registry::isRegistered('Client') && !Zend_Registry::isRegistered('User'), 'Guest test injected internal Client or User registry state');
 
+$matchedContactBefore = $adapter->fetchRow('SELECT * FROM contact WHERE id = 1');
 $quoteId = $controller->createQuote($inquiryData, 1);
 checkInquiryQuote($quoteId > 0, 'Guest inquiry did not create a quote');
 $quote = $adapter->fetchRow('SELECT * FROM quote WHERE id = ?', [$quoteId]);
@@ -161,8 +176,12 @@ $inquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 1');
 checkInquiryQuote((int)$quote['quoteid'] === 1000 && $quote['filename'] === 'Angebot-1000.pdf', 'Quote number or filename was not finalized');
 checkInquiryQuote(abs((float)$quote['subtotal'] - 1800) < 0.001 && abs((float)$quote['taxes'] - 126) < 0.001 && abs((float)$quote['total'] - 1926) < 0.001, 'Quantity, special price or configured tax rate was calculated incorrectly');
 checkInquiryQuote((float)$position['price'] === 900.0 && (float)$position['quantity'] === 2.0 && (float)$position['taxrate'] === 7.0 && $position['title'] === 'ZCE 110', 'Quote position did not use trusted item values');
+checkInquiryQuote((int)$quote['taxfree'] === 0 && $quote['currency'] === 'EUR' && empty($quote['paymentmethod']), 'Unverified contact tax or commercial terms reached the public quote');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM pricerulepos WHERE parentid = ?', [$position['id']]) === 0, 'Unverified contact pricing created a quote price rule');
 checkInquiryQuote($quote['billingname1'] === 'Submitted GmbH' && $quote['billingstreet'] === 'Submitted Street 1' && !str_contains(implode(' ', $quote), 'Private Master'), 'Existing email match exposed private contact master data');
 checkInquiryQuote((int)$quote['contactid'] === 500 && (int)$inquiry['contactid'] === 1 && (int)$inquiry['quoteid'] === $quoteId, 'Inquiry, contact and quote were not linked consistently');
+checkInquiryQuote($adapter->fetchRow('SELECT * FROM contact WHERE id = 1') === $matchedContactBefore, 'Existing contact data was changed by the public inquiry');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 100') === 4, 'Existing contact email match created a duplicate contact');
 checkInquiryQuote((int)$adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100') === 1001, 'Quote number was not reserved exactly once');
 
 $pdf = $controller->createPdf($quoteId);
@@ -173,22 +192,77 @@ checkInquiryQuote($grant['status'] === 'ready' && $grant['url'] === $pdf['url'],
 checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM quote') === 1 && (int)$adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100') === 1001, 'Safe replay created another quote or consumed a number');
 
 $adapter->insert('shopinquirydata', [
-	'id' => 2, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('b', 32), 'data' => json_encode($inquiryData),
+	'id' => 2, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('b', 32),
+	'data' => json_encode(array_replace($inquiryData, ['email' => 'taxfree@example.test'])),
 	'status' => 'new', 'clientid' => 100,
 ]);
+$manualTax = false;
+try {
+	$controller->createQuote(array_replace($inquiryData, ['email' => 'taxfree@example.test']), 2);
+} catch (Throwable $e) {
+	$manualTax = true;
+}
+checkInquiryQuote($manualTax, 'Unverified tax-free contact received an automatic quote');
+$taxInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 2');
+checkInquiryQuote($taxInquiry['quoteid'] === null && $taxInquiry['contactid'] === null, 'Manual tax case was linked to an automatic quote or contact');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM quote') === 1 && (int)$adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100') === 1001, 'Manual tax case changed quote data or numbering');
+
+$adapter->insert('shopinquirydata', [
+	'id' => 3, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('c', 32),
+	'data' => json_encode(array_replace($inquiryData, ['email' => 'shared@example.test'])),
+	'status' => 'new', 'clientid' => 100,
+]);
+$ambiguous = false;
+try {
+	$controller->createQuote(array_replace($inquiryData, ['email' => 'shared@example.test']), 3);
+} catch (Throwable $e) {
+	$ambiguous = true;
+}
+checkInquiryQuote($ambiguous, 'Ambiguous contact email received an automatic quote');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 100') === 4, 'Ambiguous contact email created another contact');
+$ambiguousInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 3');
+checkInquiryQuote($ambiguousInquiry['quoteid'] === null && $ambiguousInquiry['contactid'] === null, 'Ambiguous contact email was linked automatically');
+
+$foreignData = array_replace($inquiryData, ['email' => 'foreign@example.test', 'firma' => 'Submitted Foreign Match GmbH']);
+$adapter->insert('shopinquirydata', [
+	'id' => 4, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('d', 32), 'data' => json_encode($foreignData),
+	'status' => 'new', 'clientid' => 100,
+]);
+$foreignQuoteId = $controller->createQuote($foreignData, 4);
+$foreignQuote = $adapter->fetchRow('SELECT * FROM quote WHERE id = ?', [$foreignQuoteId]);
+$foreignPosition = $adapter->fetchRow('SELECT * FROM quotepos WHERE parentid = ?', [$foreignQuoteId]);
+$localContact = $adapter->fetchRow('SELECT * FROM contact WHERE clientid = 100 AND contactid = 501');
+$foreignInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 4');
+checkInquiryQuote($foreignQuoteId > 0 && (int)$foreignQuote['quoteid'] === 1001, 'Foreign-tenant email did not create an isolated local quote');
+checkInquiryQuote((int)$foreignQuote['contactid'] === 501 && (int)$foreignInquiry['contactid'] === (int)$localContact['id'] && (int)$foreignInquiry['quoteid'] === $foreignQuoteId, 'Foreign-tenant email crossed the contact or inquiry boundary');
+checkInquiryQuote((int)$foreignQuote['taxfree'] === 0 && abs((float)$foreignQuote['taxes'] - 126) < 0.001 && (float)$foreignPosition['price'] === 900.0, 'Foreign contact tax or pricing affected the local public quote');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 200 AND contactid = 700 AND taxfree = 1') === 1, 'Foreign contact was changed');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 100') === 5, 'Foreign-tenant email did not create exactly one local contact');
+
+$failedData = array_replace($inquiryData, ['email' => 'new-buyer@example.test']);
+$adapter->insert('shopinquirydata', [
+	'id' => 5, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('e', 32), 'data' => json_encode($failedData),
+	'status' => 'new', 'clientid' => 100,
+]);
+$beforeFailure = [
+	'quotes' => (int)$adapter->fetchOne('SELECT COUNT(*) FROM quote WHERE clientid = 100'),
+	'positions' => (int)$adapter->fetchOne('SELECT COUNT(*) FROM quotepos WHERE clientid = 100'),
+	'contacts' => (int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 100'),
+	'emails' => (int)$adapter->fetchOne('SELECT COUNT(*) FROM email WHERE clientid = 100'),
+];
 $adapter->query("CREATE TRIGGER reject_inquiry_quote_position BEFORE INSERT ON quotepos FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fixture position failure'");
 $failed = false;
 try {
-	$controller->createQuote(array_replace($inquiryData, ['email' => 'new-buyer@example.test']), 2);
+	$controller->createQuote($failedData, 5);
 } catch (Throwable $e) {
 	$failed = true;
 }
 checkInquiryQuote($failed, 'Quote position failure did not reach the transaction');
-checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM quote') === 1 && (int)$adapter->fetchOne('SELECT COUNT(*) FROM quotepos') === 1, 'Failed quote left partial document data');
-checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact') === 1 && (int)$adapter->fetchOne('SELECT COUNT(*) FROM email') === 1, 'Failed quote left a partial contact');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM quote WHERE clientid = 100') === $beforeFailure['quotes'] && (int)$adapter->fetchOne('SELECT COUNT(*) FROM quotepos WHERE clientid = 100') === $beforeFailure['positions'], 'Failed quote left partial document data');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 100') === $beforeFailure['contacts'] && (int)$adapter->fetchOne('SELECT COUNT(*) FROM email WHERE clientid = 100') === $beforeFailure['emails'], 'Failed quote left a partial contact');
 $increments = $adapter->fetchRow('SELECT contactid, quoteid FROM increment WHERE clientid = 100');
-checkInquiryQuote((int)$increments['contactid'] === 501 && (int)$increments['quoteid'] === 1001, 'Failed quote consumed a contact or document number');
-$failedInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 2');
+checkInquiryQuote((int)$increments['contactid'] === 502 && (int)$increments['quoteid'] === 1002, 'Failed quote consumed a contact or document number');
+$failedInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 5');
 checkInquiryQuote($failedInquiry['quoteid'] === null && $failedInquiry['contactid'] === null, 'Failed quote partially linked the inquiry');
 
 echo "PASS: $checks guest quote transaction, calculation, privacy, PDF and replay cases\n";
