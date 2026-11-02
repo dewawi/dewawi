@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CHROMIUM = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
 VIEWPORTS = (1365, 768, 500, 390)
 IMAGES = (("square", 1000, 1000), ("portrait", 400, 1200), ("landscape", 1200, 600))
+CARD_IMAGES = (("landscape", 1672, 941), ("square", 1000, 1000), ("portrait", 400, 1200))
 
 
 class FixtureHandler(BaseHTTPRequestHandler):
@@ -36,6 +37,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if parsed.path == "/thumbnail":
             width = int(urllib.parse.parse_qs(parsed.query).get("width", ["1365"])[0])
             self.send_body(self.runner(width).encode(), "text/html; charset=utf-8")
+            return
+        if parsed.path == "/cards-frame":
+            self.send_body(self.cards_frame().encode(), "text/html; charset=utf-8")
+            return
+        if parsed.path == "/cards":
+            width = int(urllib.parse.parse_qs(parsed.query).get("width", ["1365"])[0])
+            self.send_body(self.cards_runner(width).encode(), "text/html; charset=utf-8")
             return
         match = re.fullmatch(r"/image-(\d+)x(\d+)\.svg", parsed.path)
         if match:
@@ -81,6 +89,45 @@ frame.addEventListener('load',async function(){
 """
         return f"""<!doctype html><html><body><iframe id="fixture" title="Thumbnail fixture" src="/thumbnail-frame" style="width:{width}px;height:400px;border:0"></iframe><pre id="metrics"></pre><script>{script}</script></body></html>"""
 
+    @staticmethod
+    def cards_frame() -> str:
+        layouts = []
+        for columns in (2, 3, 4):
+            cards = []
+            for name, width, height in CARD_IMAGES:
+                cards.append(f"""<article class="dw-site-card" data-image="{name}"><div class="dw-site-card__media">
+<img src="/image-{width}x{height}.svg" width="{width}" height="{height}" alt="{name}" loading="lazy" decoding="async" data-original="{width}x{height}">
+</div><div class="dw-site-card__content">Card {name}</div></article>""")
+            layouts.append(f'<section class="fixture-layout" data-columns="{columns}" style="--columns:{columns}">{"".join(cards)}</section>')
+        return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/css/shop.css"><style>*{{box-sizing:border-box}}body{{margin:0}}.fixture-layout{{display:grid;grid-template-columns:repeat(var(--columns),minmax(0,1fr));gap:24px;width:1200px;max-width:100%;margin-bottom:24px}}</style></head>
+<body>{''.join(layouts)}</body></html>"""
+
+    @staticmethod
+    def cards_runner(width: int) -> str:
+        script = """
+const frame=document.getElementById('fixture');
+frame.addEventListener('load',async function(){
+ const doc=frame.contentDocument;const failures=[];let checks=0;
+ function check(value,message){checks++;if(!value)failures.push(message)}
+ await Promise.all(Array.from(doc.images).map(image=>image.decode()));
+ doc.querySelectorAll('.fixture-layout').forEach(function(layout){
+  const columns=Number(layout.dataset.columns);const media=Array.from(layout.querySelectorAll('.dw-site-card__media'));const expectedHeight=media[0].getBoundingClientRect().height;
+  check(frame.contentWindow.getComputedStyle(layout).gridTemplateColumns.split(' ').length===columns,columns+'-column card layout was not applied');
+  media.forEach(function(area){
+   const image=area.querySelector('img');const areaBox=area.getBoundingClientRect();const imageBox=image.getBoundingClientRect();const style=frame.contentWindow.getComputedStyle(image);const original=image.dataset.original.split('x');
+   check(Math.abs(areaBox.width/areaBox.height-4/3)<0.001,columns+'-column '+image.alt+' media is not 4:3');
+   check(Math.abs(areaBox.height-expectedHeight)<0.01,columns+'-column card heights depend on the source image');
+   check(Math.abs(imageBox.width-areaBox.width)<0.01&&Math.abs(imageBox.height-areaBox.height)<0.01,columns+'-column '+image.alt+' image does not fill its media area');
+   check(style.objectFit==='cover',columns+'-column '+image.alt+' image is not covered');
+   check(image.getAttribute('width')===original[0]&&image.getAttribute('height')===original[1],columns+'-column '+image.alt+' original dimensions changed');
+  });
+ });
+ document.getElementById('metrics').textContent=JSON.stringify({checks,failures,viewport:frame.contentWindow.innerWidth});
+});
+"""
+        return f"""<!doctype html><html><body><iframe id="fixture" title="CMS card fixture" src="/cards-frame" style="width:{width}px;height:1800px;border:0"></iframe><pre id="metrics"></pre><script>{script}</script></body></html>"""
+
     def send_body(self, body: bytes, content_type: str, status: int = 200) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
@@ -90,14 +137,14 @@ frame.addEventListener('load',async function(){
         self.wfile.write(body)
 
 
-def measure(origin: str, width: int) -> dict:
+def measure(origin: str, fixture: str, width: int) -> dict:
     if not CHROMIUM:
         raise RuntimeError("Chromium is not installed")
     with tempfile.TemporaryDirectory(prefix="dewawi-image-layout-") as profile:
         command = [
             CHROMIUM, "--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
             f"--user-data-dir={profile}", f"--window-size={max(width + 40, 600)},700",
-            "--virtual-time-budget=3000", "--dump-dom", f"{origin}/thumbnail?width={width}",
+            "--virtual-time-budget=3000", "--dump-dom", f"{origin}/{fixture}?width={width}",
         ]
         result = subprocess.run(command, check=False, capture_output=True, text=True, timeout=30)
     if result.returncode != 0:
@@ -114,18 +161,24 @@ def main() -> int:
     thread.start()
     origin = f"http://127.0.0.1:{server.server_port}"
     try:
-        results = [measure(origin, width) for width in VIEWPORTS]
+        thumbnail_results = [measure(origin, "thumbnail", width) for width in VIEWPORTS]
+        card_result = measure(origin, "cards", 1365)
     finally:
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
-    for result in results:
+    for result in thumbnail_results:
         if result["viewport"] not in VIEWPORTS:
             raise AssertionError(f"Unexpected viewport: {result['viewport']}")
         if result["failures"]:
             raise AssertionError("; ".join(result["failures"]))
-    print(json.dumps(results, indent=2, sort_keys=True))
-    print(f"PASS: {sum(result['checks'] for result in results)} Chromium product thumbnail layout checks")
+    if card_result["viewport"] != 1365:
+        raise AssertionError(f"Unexpected card viewport: {card_result['viewport']}")
+    if card_result["failures"]:
+        raise AssertionError("; ".join(card_result["failures"]))
+    print(json.dumps({"thumbnails": thumbnail_results, "cards": card_result}, indent=2, sort_keys=True))
+    checks = sum(result["checks"] for result in thumbnail_results) + card_result["checks"]
+    print(f"PASS: {checks} Chromium product thumbnail and CMS card layout checks")
     return 0
 
 

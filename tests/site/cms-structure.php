@@ -201,6 +201,8 @@ checkCms(str_contains($categoryView, 'dw-product-list__thumbnail')
 	&& !str_contains($categoryView, "'style' => 'width: 100%;'"), 'Product list thumbnails do not use their dedicated responsive image area');
 checkCms(str_contains($shopCss, '.dw-product-list__thumbnail-image {')
 	&& str_contains($shopCss, 'object-fit: contain;'), 'Product list thumbnail dimensions are not scoped to the list component');
+checkCms((bool)preg_match('/\.dw-site-card__media\s*\{[^}]*aspect-ratio:\s*4\s*\/\s*3;[^}]*\}/s', $shopCss)
+	&& (bool)preg_match('/\.dw-site-card__media img\s*\{[^}]*height:\s*100%;[^}]*object-fit:\s*cover;[^}]*\}/s', $shopCss), 'CMS card images do not fill a dedicated 4:3 media area');
 $categoryImageView = new CmsCategoryImageView();
 $categoryImageView->images = ['categories' => [5 => [['type' => 'image', 'url' => 'missing.jpg', 'title' => 'Image title']]]];
 $categoryRendererHelper = new Zend_View_Helper_RenderCategory();

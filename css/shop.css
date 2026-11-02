@@ -1354,12 +1354,13 @@ form .hidden {
 .dw-site-card__media {
 	overflow: hidden;
 	margin-bottom: 1.5rem;
+	aspect-ratio: 4 / 3;
 }
 
 .dw-site-card__media img {
 	display: block;
 	width: 100%;
-	aspect-ratio: 4 / 3;
+	height: 100%;
 	object-fit: cover;
 }
 
