@@ -87,8 +87,9 @@ class DEEC_Site_Context
 
 		$path = (string)($parts['path'] ?? '');
 		$decodedPath = rawurldecode($path);
-		if (($path !== '' && $path[0] !== '/') || str_starts_with($path, '//') || str_contains($decodedPath, '\\')
-			|| preg_match('/[\x00-\x1f\x7f]/', $decodedPath)
+		if (($path !== '' && $path[0] !== '/') || preg_match('~%(?:25)~i', $path) || preg_match('~%(?![0-9a-f]{2})~i', $path)
+			|| str_contains($decodedPath, '//') || str_contains($decodedPath, '\\')
+			|| preg_match('/[\x00-\x20\x7f]/', $decodedPath)
 			|| preg_match('~(?:^|/)\.{1,2}(?:/|$)~', $decodedPath)) return null;
 
 		$path = $path === '/' ? '' : rtrim($path, '/');

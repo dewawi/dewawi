@@ -46,8 +46,9 @@ class DEEC_Site_Resolver
 	protected function matchRequestPath(array $matches, string $requestPath): array
 	{
 		$decodedPath = rawurldecode($requestPath);
-		if ($decodedPath === '' || $decodedPath[0] !== '/' || str_starts_with($decodedPath, '//') || str_contains($decodedPath, '\\')
-			|| preg_match('/[\x00-\x1f\x7f]/', $decodedPath)
+		if ($decodedPath === '' || $decodedPath[0] !== '/' || preg_match('~%(?:25)~i', $requestPath) || preg_match('~%(?![0-9a-f]{2})~i', $requestPath)
+			|| str_contains($decodedPath, '//') || str_contains($decodedPath, '\\')
+			|| preg_match('/[\x00-\x20\x7f]/', $decodedPath)
 			|| preg_match('~(?:^|/)\.{1,2}(?:/|$)~', $decodedPath)) return [];
 
 		$decodedPath = $decodedPath === '/' ? '/' : rtrim($decodedPath, '/');

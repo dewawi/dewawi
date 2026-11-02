@@ -78,6 +78,12 @@ checkBaseline($resolver->siteIsIndexable(['indexable' => 1], ['environment' => '
 checkBaseline(!$resolver->siteIsIndexable(['indexable' => 1], ['environment' => 'staging']), 'Staging site is indexable');
 checkBaseline($resolver->siteIsIndexable([], ['environment' => 'production']), 'Legacy production site lost its compatible default');
 
+$encodedCanonical = DEEC_Site_Context::parseCanonicalUrl('https://example.test/k%C3%BChlung');
+checkBaseline(($encodedCanonical['path'] ?? null) === '/k%C3%BChlung', 'Valid encoded canonical base path changed');
+foreach (['/site//other', '/site/%2fother', '/site/%5cother', '/site/%252fother', '/site/%zz', '/site/%20other'] as $path) {
+	checkBaseline(DEEC_Site_Context::parseCanonicalUrl('https://example.test' . $path) === null, 'Ambiguous canonical base path was accepted: ' . $path);
+}
+
 $resolver->sites = [
 	['id' => 11, 'clientid' => 7, 'url' => 'https://www.alpha.example.test/site', 'catalogenabled' => 1],
 	['id' => 12, 'clientid' => 8, 'url' => 'https://beta.example.test'],
@@ -101,6 +107,9 @@ checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' 
 checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => '/other/page'])->getSiteId() === 14, 'Second site base path did not remain tenant-isolated');
 checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => '/outside']) === null, 'Request outside configured site base paths selected a shop');
 checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => '/site/../other']) === null, 'Unsafe request path selected a shop');
+foreach (['/site//page', '/site/%2fpage', '/site/%5cpage', '/site/%252fpage', '/site/%zz', '/site/%20page'] as $path) {
+	checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => $path]) === null, 'Ambiguous request path selected a shop: ' . $path);
+}
 
 $resolver->sites[] = ['id' => 15, 'clientid' => 11, 'url' => 'https://www.alpha.example.test/site'];
 checkBaseline($resolver->resolveByHost('www.alpha.example.test', ['requestPath' => '/site/page']) === null, 'Duplicate canonical host and base path selected an arbitrary tenant');
